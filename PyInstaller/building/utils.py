@@ -438,8 +438,6 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
     toc_datas = set()
 
     for src_root_path_or_glob, trg_root_dir in binaries_or_datas:
-        # catch wrong input data from hooks, see issue #1885
-        assert src_root_path_or_glob and trg_root_dir, "Hook created wrong data"
         # Convert relative to absolute paths if required.
         if workingdir and not os.path.isabs(src_root_path_or_glob):
             src_root_path_or_glob = os.path.join(
