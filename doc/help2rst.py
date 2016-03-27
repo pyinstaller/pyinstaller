@@ -65,7 +65,13 @@ def process(program, generate_headings, headings_character):
     if generate_headings:
         help = textwrap.dedent(help)
         help = gen_headings(help, headings_character)
-    print(help)
+    return help
+
+
+def to_file(program, generate_headings, headings_character, outfile):
+    help = process(program, generate_headings, headings_character)
+    with open(outfile, 'w') as ofh:
+        print(help, file=ofh)
 
 
 def main():
@@ -82,6 +88,7 @@ def main():
                               " (default: -)"))
     parser.add_argument('program')
     args = parser.parse_args()
-    process(**vars(args))
+    print(process(**vars(args)))
 
-main()
+if __name__ == '__main__':
+    main()
