@@ -1,0 +1,9 @@
+@import url("theme.css");
+
+/* tune option lists */
+.rst-content table.docutils.option-list tr td {
+    white-space: normal !important;
+}
+.rst-content table.docutils.option-list tr:nth-child(2n-1) td {
+    background-color: transparent !important;
+}
