@@ -51,7 +51,7 @@ Options
 General Options
 ------------------
 
-.. include:: _pyinstaller-options.tmp
+.. include:: man/_pyinstaller-options.tmp
 
 
 

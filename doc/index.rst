@@ -56,6 +56,7 @@ Contents:
    bootloader-building
    CHANGES
    CREDITS
+   man-pages
 
 
 Indices and tables
