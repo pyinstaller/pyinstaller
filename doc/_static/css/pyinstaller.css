@@ -8,6 +8,8 @@
     background-color: transparent !important;
 }
 
+.wy-nav-side { background-color: white ; }
+
 
 tt, span.literal {
 	font-family: monospace;
