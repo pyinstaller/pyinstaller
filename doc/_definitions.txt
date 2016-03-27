@@ -1,0 +1,15 @@
+.. _PyInstaller: http://www.pyinstaller.org
+
+.. |Homepage| replace:: http://www.pyinstaller.org
+.. |PyInstaller| replace:: `PyInstaller`
+.. |Version| replace:: 3.1
+.. |PyInstallerVersion| replace:: PyInstaller |Version|
+.. |unzipped_download| replace:: ``pyinstaller``
+.. |bootloader| replace:: bootloader
+
+
+.. Emacs config:
+ Local Variables:
+ mode: rst
+ ispell-local-dictionary: "american"
+ End:

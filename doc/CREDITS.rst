@@ -143,3 +143,9 @@ Contributions to PyInstaller 2.1 and older
 - Eugene Prigorodov <eprigorodov at naumen dot ru> - KInterasDB import hook.
 - David C. Morrill - vtkpython import hook.
 - Alan James Salmoni - Tkinter interface to PyInstaller.
+
+.. Emacs config:
+ Local Variables:
+ mode: rst
+ ispell-local-dictionary: "american"
+ End:
