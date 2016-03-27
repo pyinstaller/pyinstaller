@@ -94,7 +94,7 @@ Python imports in a bundled app
 |PyInstaller| injects its code into the
 normal Python import mechanism.
 Python allows this;
-the support is described in `PEP 302`_  "New Import Hooks".
+the support is described in :pep:`302`  "New Import Hooks".
 
 PyInstaller implements the PEP 302 specification for
 importing built-in modules,
@@ -102,7 +102,7 @@ importing "frozen" modules (compiled python code
 bundled with the app) and for C-extensions.
 The code can be read in ``./PyInstaller/loader/pyi_mod03_importers.py``.
 
-At runtime the PyInstaller PEP 302 hooks are appended
+At runtime the PyInstaller :pep:`302` hooks are appended
 to the variable ``sys.meta_path``.
 When trying to import modules the interpreter will
 first try PEP 302 hooks in ``sys.meta_path``
