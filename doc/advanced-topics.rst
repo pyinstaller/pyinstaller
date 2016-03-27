@@ -7,14 +7,17 @@ but such details are helpful if you want to investigate
 the |PyInstaller| code and possibly contribute to it,
 as described in `How to Contribute`_.
 
+
+.. _the bootstrap process in detail:
+
 The Bootstrap Process in Detail
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 There are many steps that must take place before the bundled
 script can begin execution.
 A summary of these steps was given in the Overview
-(`How the One-Folder Program Works`_ and
-`How the One-File Program Works`_).
+(:ref:`How the One-Folder Program Works` and
+:ref:`How the One-File Program Works`).
 Here is more detail to help you understand what the |bootloader|
 does and how to figure out problems.
 
@@ -130,6 +133,8 @@ in a bundled app:
 5. If the module was not found then
    raise ``ImportError``.
 
+
+.. _the toc and tree classes:
 
 The TOC and Tree Classes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -271,6 +276,8 @@ Each tuple in this TOC has:
 * A *typecode* of ``EXTENSION`` (``BINARY`` could be used as well).
 
 
+.. _inspecting archives:
+
 Inspecting Archives
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -409,6 +416,8 @@ The ``pyi-archive_viewer`` command has these options:
 
 
 
+.. _inspecting executables:
+
 Inspecting Executables
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -424,6 +433,9 @@ an executable or by another DLL.
 ``pyi-bindepend`` is used by |PyInstaller| to
 follow the chain of dependencies of binary extensions
 during Analysis.
+
+
+.. _creating a reproducible build:
 
 Creating a Reproducible Build
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -1,3 +1,5 @@
+.. _understanding pyinstaller hooks:
+
 Understanding PyInstaller Hooks
 ==================================
      
@@ -5,7 +7,7 @@ In summary, a "hook" file extends |PyInstaller| to adapt it to
 the special needs and methods used by a Python package.
 The word "hook" is used for two kinds of files.
 A *runtime* hook helps the bootloader to launch an app.
-For more on runtime hooks, see `Changing Runtime Behavior`_.
+For more on runtime hooks, see :ref:`Changing Runtime Behavior`.
 Other hooks run while an app is being analyzed.
 They help the Analysis phase find needed files. 
 
@@ -128,7 +130,7 @@ applies them to the bundle being created.
    and the second specifies the name(s) the file(s) are to have in
    the bundle.
    (This is the same format as used for the ``datas=`` argument,
-   see `Adding Data Files`_.)
+   see :ref:`Adding Data Files`.)
    Example::
 
       datas = [ ('/usr/share/icons/education_*.png', 'icons') ]
@@ -145,7 +147,7 @@ applies them to the bundle being created.
    for example because the files are
    in different places on different platforms or under different versions.
    Then you can write a ``hook()`` function as described
-   below under `The ``hook(hook_api)`` Function`_.
+   below under :ref:`The hook(hook_api) Function`.
    
 
 ``binaries``
@@ -381,6 +383,9 @@ You are welcome to read the ``PyInstaller.utils.hooks`` module
    Return a list of all necessary Django modules specified in
    the Django settings.py file, such as the
    ``Django.settings.INSTALLED_APPS`` list and many others.
+
+
+.. _the hook(hook_api) function:
 
 The ``hook(hook_api)`` Function
 --------------------------------

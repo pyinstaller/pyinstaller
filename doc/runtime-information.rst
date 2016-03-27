@@ -1,3 +1,5 @@
+.. _run-time information:
+
 Run-time Information
 =====================
 
@@ -20,7 +22,7 @@ So the test for "are we bundled?" is::
 When your app is running, it may need to access data files in any of
 three general locations:
 
-* Files that were bundled with it (see `Adding Data Files`_).
+* Files that were bundled with it (see :ref:`Adding Data Files`).
 
 * Files the user has placed with the app bundle, say in the same folder.
 
@@ -40,7 +42,7 @@ and stores the absolute path to the bundle folder in ``sys._MEIPASS``.
 For a one-folder bundle, this is the path to that folder, 
 wherever the user may have put it.
 For a one-file bundle, this is the path to the ``_MEIxxxxxx`` temporary folder
-created by the |bootloader| (see `How the One-File Program Works`_).
+created by the |bootloader| (see :ref:`How the One-File Program Works`).
 
 
 Using ``sys.executable`` and ``sys.argv[0]``
@@ -96,6 +98,7 @@ symbolic link::
 	print( 'sys.argv[0] is', sys.argv[0] )
 	print( 'sys.executable is', sys.executable )
 	print( 'os.getcwd is', os.getcwd() )
+
 
 
 .. include:: _common_definitions.txt

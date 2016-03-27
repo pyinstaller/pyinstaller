@@ -1,3 +1,5 @@
+.. _using spec files:
+
 Using Spec Files
 =================
 
@@ -97,7 +99,7 @@ The statements in a spec file create instances of four classes,
   - ``datas``: non-binary files included in the app.
 
 * An instance of class ``PYZ`` is a ``.pyz`` archive (described
-  under `Inspecting Archives`_ below), which contains all the
+  under :ref:`Inspecting Archives` below), which contains all the
   Python modules from ``a.pure``.
 
 * An instance of ``EXE`` is built from the analyzed scripts and the ``PYZ``
@@ -111,12 +113,18 @@ In one-file mode, there is no call to ``COLLECT``, and the
 You modify the spec file to pass additional values to ``Analysis`` and
 to ``EXE``.
 
+
+.. _adding files to the bundle:
+
 Adding Files to the Bundle
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To add files to the bundle, you create a list that describes the files
 and supply it to the ``Analysis`` call.
-To find the data files at run-time, see `Run-time Information`_.
+To find the data files at run-time, see :ref:`Run-time Information`.
+
+
+.. _adding data files:
 
 Adding Data Files
 ------------------
@@ -180,6 +188,9 @@ You can also include the entire contents of a folder::
 The folder ``/mygame/data`` will be reproduced under the name
 ``data`` in the bundle.
 
+
+.. _using data files from a module:
+
 Using Data Files from a Module
 --------------------------------
 
@@ -220,6 +231,9 @@ If it is actually characters, you must decode it::
 
 	help_utf = help_bin.decode('UTF-8', 'ignore')
 
+
+.. _adding binary files:
+
 Adding Binary Files
 --------------------
 
@@ -252,8 +266,10 @@ Advanced Methods of Adding Files
 
 |PyInstaller| supports a more advanced (and complex) way of adding
 files to the bundle that may be useful for special cases.
-See `The TOC and Tree Classes`_ below.
+See :ref:`The TOC and Tree Classes` below.
 
+
+.. _giving run-time python options:
 
 Giving Run-time Python Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -291,6 +307,9 @@ For example modify the spec file this way::
           options,   <--- added line
           exclude_binaries=...
           )
+
+
+.. _spec file options for a mac os x bundle:
 
 Spec File Options for a Mac OS X Bundle
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -498,7 +517,7 @@ You can use all the Python facilities (``for`` and ``with``
 and the members of ``sys`` and ``io``)
 in creating the Analysis
 objects and performing the ``PYZ``, ``EXE`` and ``COLLECT`` statements.
-You may also need to know and use `The TOC and Tree Classes`_ described below.
+You may also need to know and use :ref:`The TOC and Tree Classes` described below.
 
 Globals Available to the Spec File
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

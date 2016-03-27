@@ -1,3 +1,5 @@
+.. _when things go wrong:
+
 When Things Go Wrong
 ====================
 
@@ -9,6 +11,9 @@ It may happen that when you attempt to bundle your app either
 Then please consider the following actions in sequence, before
 asking for technical help.
 
+
+.. _recipes and examples for specific problems:
+
 Recipes and Examples for Specific Problems
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -18,7 +23,7 @@ problems are available on our `PyInstaller Recipes`_ page.
 Some of the recipes there include:
 
 * A more sophisticated way of collecting data files
-  than the one shown above (`Adding Files to the Bundle`_).
+  than the one shown above (:ref:`Adding Files to the Bundle`).
 
 * Bundling a typical Django app.
 
@@ -29,6 +34,9 @@ Some of the recipes there include:
 and others.
 Many of these Recipes were contributed by users.
 Please feel free to contribute more recipes!
+
+
+.. _finding out what went wrong:
 
 Finding out What Went Wrong
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -63,7 +71,8 @@ but their absence has no effect.
 
 When you run the bundled app and it terminates with an ImportError,
 that is the time to examine the warning file.
-Then see `Helping PyInstaller Find Modules`_ below for how to proceed.
+Then see :ref:`Helping PyInstaller Find Modules` below for how to proceed.
+
 
 Build-Time Dependency Graph
 ----------------------------
@@ -138,11 +147,13 @@ Remember to bundle without ``--debug`` for your production version.
 Users would find the messages annoying.
 
 
+.. _getting python's verbose imports:
+
 Getting Python's Verbose Imports
 --------------------------------
 
 You can also pass a ``-v`` (verbose imports) flag to the embedded Python interpreter
-(see `Giving Run-time Python Options`_ above).
+(see :ref:`Giving Run-time Python Options` above).
 This can be extremely useful.
 It can be informative even with apps that are apparently working,
 to make sure that they are getting all imports from the bundle,
@@ -152,6 +163,8 @@ Python verbose and warning messages always go to standard output
 and are not visible when the ``--windowed`` option is used.
 Remember to not use this in the distributed program.
 
+
+.. _helping pyinstaller find modules:
 
 Helping PyInstaller Find Modules
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -187,13 +200,13 @@ When this occurs, Analysis can detect nothing.
 There will be no warnings, only an ImportError at run-time.
 
 To find these hidden imports,
-build the app with the ``-v`` flag (`Getting Python's Verbose Imports`_ above)
+build the app with the ``-v`` flag (:ref:`Getting Python's Verbose Imports` above)
 and run it.
 
 Once you know what modules are needed, you add the needed modules
 to the bundle using the ``--hidden-import=`` command option,
 or by editing the spec file,
-or with a hook file (see `Understanding PyInstaller Hooks`_ below).
+or with a hook file (see :ref:`Understanding PyInstaller Hooks` below).
 
 
 Extending a Package's ``__path__``
@@ -212,7 +225,7 @@ Because the ``__init__.py`` of an imported module
 is not actually executed during analysis,
 changes it makes to ``__path__`` are not seen by |PyInstaller|.
 We fix the problem with the same hook mechanism we use for hidden imports,
-with some additional logic; see `Understanding PyInstaller Hooks`_ below.
+with some additional logic; see :ref:`Understanding PyInstaller Hooks` below.
 
 Note that manipulations of ``__path__`` hooked in this way apply only
 to the Analysis.
@@ -223,6 +236,8 @@ knows nothing of ``../win32comext``.
 
 Once in a while, that's not enough.
 
+
+.. _changing runtime behavior:
 
 Changing Runtime Behavior
 -------------------------
@@ -274,6 +289,8 @@ The runtime hook does this as follows::
     def _find_commands(_):
         return """cleanup shell runfcgi runserver""".split()
     django.core.management.find_commands = _find_commands
+
+
 
 Getting the Latest Version
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~

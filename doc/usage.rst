@@ -1,3 +1,5 @@
+.. _using pyinstaller:
+
 Using PyInstaller
 ====================
 
@@ -29,7 +31,7 @@ spec file and for the executable folder or file.
 Its code is the first to execute at run-time.
 
 For certain uses you may edit the contents of ``myscript.spec``
-(described under `Using Spec Files`_).
+(described under :ref:`Using Spec Files`).
 After you do this, you name the spec file to |PyInstaller| instead of the script:
 
     ``pyinstaller myscript.spec``
@@ -115,6 +117,8 @@ unless the ``--noupx`` option was given.
 UPX has been used with |PyInstaller| output often, usually with no problems.
 
 
+.. _encrypting python bytecode:
+
 Encrypting Python Bytecode
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -127,6 +131,9 @@ module installed.
 The *key-string* is a string of 16 characters which is used to
 encrypt each file of Python byte-code before it is stored in
 the archive inside the executable file.
+
+
+.. _supporting multiple platforms:
 
 Supporting Multiple Platforms
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -229,6 +236,8 @@ As a result you cannot bundle your app on a 32-bit system and run it
 on a 64-bit installation, nor vice-versa.
 You must make a unique version of the app for each word-length supported.
 
+
+.. _capturing windows version data:
 
 Capturing Windows Version Data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -336,7 +345,7 @@ Use the ``icon=`` argument to specify a custom icon for the application.
 file ``icon-windowed.icns`` with the |PyInstaller| logo.)
 
 You can add items to the ``Info.plist`` by editing the spec file;
-see `Spec File Options for a Mac OS X Bundle`_ below.
+see :ref:`Spec File Options for a Mac OS X Bundle` below.
 
 Making Mac OS X apps Forward-Compatible
 ----------------------------------------

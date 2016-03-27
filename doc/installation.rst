@@ -25,7 +25,7 @@ along with the correct version of PyWin32_.
 pip-Win_ also provides virtualenv_, which makes it simple
 to maintain multiple different Python interpreters and install packages
 such as |PyInstaller| in each of them.
-(For more on the uses of virtualenv, see `Supporting Multiple Platforms`_ below.)
+(For more on the uses of virtualenv, see :ref:`Supporting Multiple Platforms` below.)
 
 When pip-Win is working, enter this command in its Command field
 and click Run:
@@ -76,7 +76,7 @@ Execute ``python setup.py install``
 with administrator privilege to install or upgrade |PyInstaller|.
 
 For platforms other than Windows, Linux and Mac OS, you must first
-build a |bootloader| program for your platform: see `Building the Bootloader`_.
+build a |bootloader| program for your platform: see :ref:`Building the Bootloader`.
 After the |bootloader| has been created,
 use ``python setup.py install`` with administrator privileges
 to complete the installation.
@@ -115,18 +115,18 @@ Installed commands
 The complete installation places these commands on the execution path:
 
 * ``pyinstaller`` is the main command to build a bundled application.
-  See `Using PyInstaller`_.
+  See :ref:`Using PyInstaller`.
 
-* ``pyi-makespec`` is used to create a spec file. See `Using Spec Files`_.
+* ``pyi-makespec`` is used to create a spec file. See :ref:`Using Spec Files`.
 
 * ``pyi-archive_viewer`` is used to inspect a bundled application.
-  See `Inspecting Archives`_.
+  See :ref:`Inspecting Archives`.
 
 * ``pyi-bindepend`` is used to display dependencies of an executable.
-  See `Inspecting Executables`_.
+  See :ref:`Inspecting Executables`.
 
 * ``pyi-grab_version`` is used to extract a version resource from a Windows
-  executable.  See `Capturing Windows Version Data`_.
+  executable.  See :ref:`Capturing Windows Version Data`.
 
 If you do not perform a complete installation
 (installing via ``pip`` or executing ``setup.py``),

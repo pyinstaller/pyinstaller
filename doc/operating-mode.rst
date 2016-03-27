@@ -3,7 +3,7 @@ What |PyInstaller| Does and How It Does It
 
 This section covers the basic ideas of |PyInstaller|.
 These ideas apply to all platforms.
-Options and special cases are covered below, under `Using PyInstaller`_.
+Options and special cases are covered below, under :ref:`Using PyInstaller`.
 
 |PyInstaller| reads a Python script written by you.
 It analyzes your code to discover every other module and library
@@ -86,13 +86,13 @@ you must help it:
 If your program depends on access to certain data files,
 you can tell |PyInstaller| to include them in the bundle as well.
 You do this by modifying the spec file, an advanced topic that is
-covered under `Using Spec Files`_.
+covered under :ref:`Using Spec Files`.
 
 In order to locate included files at run time,
 your program needs to be able to learn its path at run time
 in a way that works regardless of
 whether or not it is running from a bundle.
-This is covered under `Run-time Information`_.
+This is covered under :ref:`Run-time Information`.
 
 |PyInstaller| does *not* include libraries that should exist in
 any installation of this OS.
@@ -136,6 +136,8 @@ in a long list of names or among a big array of icons.
 Also your user can create
 a problem by accidentally dragging files out of the folder.
 
+.. _how the one-folder program works:
+
 How the One-Folder Program Works
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -156,7 +158,7 @@ Everything follows normally from there, provided
 that all the necessary support files were included.
 
 (This is an overview.
-For more detail, see `The Bootstrap Process in Detail`_ below.)
+For more detail, see :ref:`The Bootstrap Process in Detail` below.)
 
 
 Bundling to One File
@@ -175,6 +177,8 @@ the one-folder bundle.
 Before you attempt to bundle to one file, make sure your app
 works correctly when bundled to one folder.
 It is is *much* easier to diagnose problems in one-folder mode.
+
+.. _how the one-file program works:
 
 How the One-File Program Works
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

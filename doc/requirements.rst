@@ -46,7 +46,7 @@ The ``ldd`` and ``objdump`` commands are needed.
 
 Each bundled app contains a copy of a *bootloader*,
 a program that sets up the application and starts it
-(see `The Bootstrap Process in Detail`_).
+(see :ref:`The Bootstrap Process in Detail`).
 
 When you install |PyInstaller| using pip_, the setup will attempt
 to build a bootloader for this platform.
@@ -55,7 +55,7 @@ If that succeeds, the installation continues and |PyInstaller| is ready to use.
 If the pip_ setup fails to build a bootloader,
 or if you do not use pip_ to install,
 you must compile a bootloader manually.
-The process is described under `Building the Bootloader`_.
+The process is described under :ref:`Building the Bootloader`.
 
 
 .. include:: _common_definitions.txt

@@ -34,8 +34,8 @@ and resolutions for many old issues.
 Functional changes include
 removal of support for Python prior to 2.7,
 an easier way to include data files
-in the bundle (`Adding Files to the Bundle`_),
-and changes to the "hook" API (`Understanding PyInstaller Hooks`_).
+in the bundle (:ref:`Adding Files to the Bundle`),
+and changes to the "hook" API (:ref:`Understanding PyInstaller Hooks`).
 
 Contents:
 
