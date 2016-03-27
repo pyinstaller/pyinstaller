@@ -37,7 +37,8 @@ def get_repo_revision():
     try:
         # need to update index first to get reliable state
         exec_command_rc('git', 'update-index', '-q', '--refresh', cwd=cwd)
-        recent = exec_command('git', 'describe', '--long', '--dirty', cwd=cwd).strip()
+        recent = exec_command('git', 'describe', '--long', '--dirty', '--tag',
+                              cwd=cwd).strip()
         tag, changes, rev = recent.rsplit('-', 2)
         if changes == '0':
             return ''
