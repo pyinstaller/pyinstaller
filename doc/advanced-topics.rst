@@ -322,7 +322,7 @@ This will not tell your user anything useful,
 but if they send you a Python error trace,
 you can make sense of it.
 
-.. figure:: images/ZlibArchive.png
+.. figure:: _static/ZlibArchive.png
    :alt: Structure of the ZlibArchive
 
    Structure of the ZlibArchive
@@ -361,12 +361,12 @@ functionality. For this reason, a CArchive's Table of Contents is
 at the end of the archive. The executable can open itself as a binary
 file, seek to the end and 'open' the CArchive.
 
-.. figure:: images/CArchive.png
+.. figure:: _static/CArchive.png
    :alt: CArchive
 
    Structure of the CArchive
 
-.. figure:: images/SE_exe.png
+.. figure:: _static/SE_exe.png
    :alt: Structure of the Self Extracting Executable
 
    Structure of the Self Extracting Executable
