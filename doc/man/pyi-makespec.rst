@@ -62,7 +62,7 @@ SEE ALSO
 
 Project Homepage |Homepage|
 
-.. include:: ../_definitions.txt
+.. include:: ../_common_definitions.txt
 
 .. Emacs config:
  Local Variables:

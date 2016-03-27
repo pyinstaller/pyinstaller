@@ -53,7 +53,7 @@ PyInstaller Manual, ``pyinstaller``\(1)
 
 Project Homepage |Homepage|
 
-.. include:: ../_definitions.txt
+.. include:: ../_common_definitions.txt
 
 .. Emacs config:
  Local Variables:
