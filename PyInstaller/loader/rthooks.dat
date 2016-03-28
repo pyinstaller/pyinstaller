@@ -8,6 +8,7 @@
     'gi.repository.Gtk':    ['pyi_rth_gtk.py'],
     'gi.repository.Gst':    ['pyi_rth_gstreamer.py'],
     'gst':        ['pyi_rth_gstreamer.py'],
+    'kivy':       ['pyi_rth_kivy.py'],
     'kivy.lib.gstplayer': ['pyi_rth_gstreamer.py'],
     'matplotlib': ['pyi_rth_mplconfig.py', 'pyi_rth_mpldata.py'],
     'osgeo':      ['pyi_rth_osgeo.py'],
@@ -18,8 +19,8 @@
     'PyQt5.QtWebEngineWidgets': ['pyi_rth_qt5webengine.py'],
     'PySide':      ['pyi_rth_qt4plugins.py'],
     '_tkinter':    ['pyi_rth__tkinter.py'],
+    'traitlets':  ['pyi_rth_traitlets.py'],
     'twisted.internet.reactor':        ['pyi_rth_twisted.py'],
     'usb':        ['pyi_rth_usb.py'],
     'win32com':   ['pyi_rth_win32comgenpy.py'],
-    'kivy':       ['pyi_rth_kivy.py'],
 }
