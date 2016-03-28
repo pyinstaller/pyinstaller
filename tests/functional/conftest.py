@@ -30,6 +30,7 @@ import shutil
 # Third-party imports
 # -------------------
 import py
+import psutil # Manages subprocess timeout.
 
 # Local imports
 # -------------
@@ -57,6 +58,9 @@ _LOGS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logs')
 _DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 # Directory with .spec files used in some tests.
 _SPEC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'specs')
+# Timeout for running the executable. If executable does not exit in this time
+# then it is interpreted as test failure.
+_EXE_TIMEOUT = 5  # In sec.
 
 # Code
 # ====
@@ -188,7 +192,7 @@ class AppBuilder(object):
         :param pyi_args: Additional arguments to pass to PyInstaller when creating executable.
         :param app_name: Name of the executable. This is equivalent to argument --name=APPNAME.
         :param app_args: Additional arguments to pass to
-        :param runtime: Time in milliseconds how long to keep executable running.
+        :param runtime: Time in seconds how long to keep executable running.
         :param toc_log: List of modules that are expected to be bundled with the executable.
         """
         if pyi_args is None:
@@ -324,19 +328,29 @@ class AppBuilder(object):
         # Using sys.stdout/sys.stderr for subprocess fixes printing messages in
         # Windows command prompt. Py.test is then able to collect stdout/sterr
         # messages and display them if a test fails.
-        if is_py2:  # Timeout keyword supported only in Python 3.3+
-            # TODO use module 'subprocess32' which implements timeout for Python 2.7.
-            retcode = subprocess.call(args, executable=exe_path, stdout=sys.stdout,
-                                      stderr=sys.stderr, env=prog_env, cwd=prog_cwd)
-        else:
-            try:
-                retcode = subprocess.call(args, executable=exe_path, stdout=sys.stdout, stderr=sys.stderr,
-                                      env=prog_env, cwd=prog_cwd, timeout=runtime)
-            except subprocess.TimeoutExpired:
-                # When 'timeout' is set then expired timeout is a good sing
+
+        process = psutil.Popen(args, executable=exe_path, stdout=sys.stdout,
+                               stderr=sys.stderr, env=prog_env, cwd=prog_cwd)
+        # 'psutil' allows to use timeout in waiting for a subprocess.
+        # If not timeout was specified then it is 'None' - no timeout, just waiting.
+        # Runtime is useful mostly for interactive tests.
+        try:
+            timeout = runtime if runtime else _EXE_TIMEOUT
+            retcode = process.wait(timeout=timeout)
+        except psutil.TimeoutExpired:
+            if runtime:
+                # When 'runtime' is set then expired timeout is a good sing
                 # that the executable was running successfully for a specified time.
                 # TODO Is there a better way return success than 'retcode = 0'?
                 retcode = 0
+            else:
+                # Exe is still running and it is not an interactive test. Fail the test.
+                retcode = 1
+            # Kill the subprocess and its child processes.
+            for p in process.children(recursive=True):
+                p.kill()
+            process.kill()
+
         return retcode
 
     def _test_building(self, args):
