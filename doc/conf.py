@@ -31,8 +31,8 @@ import help2rst
 if os.environ.get('READTHEDOCS', None) == 'True':
     # running on 'Read the Docs'
 
-    # For some yet-not-understood reason the repository is modified
-    # when Read the Docs is building the docs. Remove this marker.
+    # Read the Docs is adding stuff to this file when building the
+    # docs, thus the repository is modified. Remove this marker.
     if __version__.endswith('.mod'):
         __version__ = __version__[:-4]
 
