@@ -1,5 +1,3 @@
-.. -*- mode: rst ; ispell-local-dictionary: "american" -*-
-
 ==========================
 pyi-makespec
 ==========================
@@ -64,4 +62,10 @@ SEE ALSO
 
 Project Homepage |Homepage|
 
-.. include:: _definitions.txt
+.. include:: ../_common_definitions.txt
+
+.. Emacs config:
+ Local Variables:
+ mode: rst
+ ispell-local-dictionary: "american"
+ End:

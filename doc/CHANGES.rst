@@ -500,3 +500,9 @@ Fixed the following issues:
 - Restyle documentation (now using docutils and reStructuredText).
 - New Windows build system for automatic compilations of bootloader in all
   the required flavours (using Scons)
+
+.. Emacs config:
+ Local Variables:
+ mode: rst
+ ispell-local-dictionary: "american"
+ End:

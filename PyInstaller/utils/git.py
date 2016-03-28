@@ -37,12 +37,15 @@ def get_repo_revision():
     try:
         # need to update index first to get reliable state
         exec_command_rc('git', 'update-index', '-q', '--refresh', cwd=cwd)
-        recent = exec_command('git', 'describe', '--long', '--dirty', cwd=cwd).strip()
-        tag, changes, rev = recent.rsplit('-', 2)
+        recent = exec_command('git', 'describe', '--long', '--dirty', '--tag',
+                              cwd=cwd).strip()
+        if recent.endswith('-dirty'):
+            tag, changes, rev, dirty = recent.rsplit('-', 3)
+            rev = rev + '.mod'
+        else:
+            tag, changes, rev = recent.rsplit('-', 2)
         if changes == '0':
             return ''
-        if rev == 'dirty':
-            rev = changes + '.mod'
         # According to pep440 local version identifier starts with '+'.
         return '+' + rev
     except (FileNotFoundError, WindowsError):
