@@ -14,6 +14,7 @@ with previous versions of Python from 2.7 onward.
 """
 
 
+import io
 import os
 import platform
 import site
@@ -79,6 +80,12 @@ else:
     raise SystemExit('Your platform is not yet supported. '
                      'Please define constant PYDYLIB_NAMES for your platform.')
 
+
+# Function with which to open files. In Python 3, this is the open() built-in;
+# in Python 2, this is the Python 3 open() built-in backported into the "io"
+# module as io.open(). The Python 2 open() built-in is commonly regarded as
+# unsafe in regards to character encodings and hence inferior to io.open().
+open_file = open if is_py3 else io.open
 
 # In Python 3 there is exception FileExistsError. But it is not available
 # in Python 2. For Python 2 fall back to OSError exception.
@@ -271,14 +278,59 @@ def unsetenv(name):
 
 # Exec commands in subprocesses.
 
-
 def exec_command(*cmdargs, **kwargs):
     """
-    Wrap creating subprocesses
+    Run the command specified by the passed positional arguments, optionally
+    configured by the passed keyword arguments.
 
-    Return stdout of the invoked command. On Python 3, the 'encoding' kwarg controls
-    how the output is decoded to 'str'
+    .. DANGER::
+       **Ignore this function's return value** -- unless this command's standard
+       output contains _only_ pathnames, in which case this function returns the
+       correct filesystem-encoded string expected by PyInstaller. In all other
+       cases, this function's return value is _not_ safely usable. Consider
+       calling the general-purpose `exec_command_stdout()` function instead.
+
+       For backward compatibility, this function's return value non-portably
+       depends on the current Python version and passed keyword arguments:
+
+       * Under Python 2.7, this value is an **encoded `str` string** rather than
+         a decoded `unicode` string. This value _cannot_ be safely used for any
+         purpose (e.g., string manipulation or parsing), except to be passed
+         directly to another non-Python command.
+       * Under Python 3.x, this value is a **decoded `str` string**. However,
+         even this value is _not_ necessarily safely usable:
+         * If the `encoding` parameter is passed, this value is guaranteed to be
+           safely usable.
+         * Else, this value _cannot_ be safely used for any purpose (e.g.,
+           string manipulation or parsing), except to be passed directly to
+           another non-Python command. Why? Because this value has been decoded
+           with the encoding specified by `sys.getfilesystemencoding()`, the
+           encoding used by `os.fsencode()` and `os.fsdecode()` to convert from
+           platform-agnostic to platform-specific pathnames. This is _not_
+           necessarily the encoding with which this command's standard output
+           was encoded. Cue edge-case decoding exceptions.
+
+    Parameters
+    ----------
+    cmdargs : list
+        Variadic list whose:
+        1. Mandatory first element is the absolute path, relative path,
+           or basename in the current `${PATH}` of the command to run.
+        1. Optional remaining elements are arguments to pass to this command.
+    encoding : str, optional
+        Optional keyword argument specifying the encoding with which to decode
+        this command's standard output under Python 3. As this function's return
+        value should be ignored, this argument should _never_ be passed.
+
+    All remaining keyword arguments are passed as is to the `subprocess.Popen()`
+    constructor.
+
+    Returns
+    ----------
+    str
+        Ignore this value. See discussion above.
     """
+
     encoding = kwargs.pop('encoding', None)
     out = subprocess.Popen(cmdargs, stdout=subprocess.PIPE, **kwargs).communicate()[0]
     # Python 3 returns stdout/stderr as a byte array NOT as string.
@@ -297,10 +349,26 @@ def exec_command(*cmdargs, **kwargs):
 
 def exec_command_rc(*cmdargs, **kwargs):
     """
-    Wrap creating subprocesses.
+    Return the exit code of the command specified by the passed positional
+    arguments, optionally configured by the passed keyword arguments.
 
-    Return exit code of the invoked command.
+    Parameters
+    ----------
+    cmdargs : list
+        Variadic list whose:
+        1. Mandatory first element is the absolute path, relative path,
+           or basename in the current `${PATH}` of the command to run.
+        1. Optional remaining elements are arguments to pass to this command.
+
+    All keyword arguments are passed as is to the `subprocess.call()` function.
+
+    Returns
+    ----------
+    int
+        This command's exit code as an unsigned byte in the range `[0, 255]`,
+        where 0 signifies success and all other values failure.
     """
+
     # 'encoding' keyword is not supported for 'subprocess.call'.
     # Remove it thus from kwargs.
     if 'encoding' in kwargs:
@@ -308,13 +376,96 @@ def exec_command_rc(*cmdargs, **kwargs):
     return subprocess.call(cmdargs, **kwargs)
 
 
+def exec_command_stdout(*command_args, **kwargs):
+    """
+    Capture and return the standard output of the command specified by the
+    passed positional arguments, optionally configured by the passed keyword
+    arguments.
+
+    Unlike the legacy `exec_command()` and `exec_command_all()` functions, this
+    modern function is explicitly designed for cross-platform portability. The
+    return value may be safely used for any purpose, including string
+    manipulation and parsing.
+
+    .. NOTE::
+       If this command's standard output contains _only_ pathnames, this
+       function does _not_ return the correct filesystem-encoded string expected
+       by PyInstaller. If this is the case, consider calling the
+       filesystem-specific `exec_command()` function instead.
+
+    Parameters
+    ----------
+    cmdargs : list
+        Variadic list whose:
+        1. Mandatory first element is the absolute path, relative path,
+           or basename in the current `${PATH}` of the command to run.
+        1. Optional remaining elements are arguments to pass to this command.
+    encoding : str, optional
+        Optional name of the encoding with which to decode this command's
+        standard output (e.g., `utf8`), passed as a keyword argument. If
+        unpassed , this output will be decoded in a portable manner specific to
+        to the current platform, shell environment, and system settings with
+        Python's built-in `universal_newlines` functionality.
+
+    All remaining keyword arguments are passed as is to the
+    `subprocess.check_output()` function.
+
+    Returns
+    ----------
+    unicode or str
+        Unicode string of this command's standard output decoded according to
+        the "encoding" keyword argument. This string's type depends on the
+        current Python version as follows:
+        * Under Python 2.7, this is a decoded `unicode` string.
+        * Under Python 3.x, this is a decoded `str` string.
+    """
+
+    # Value of the passed "encoding" parameter, defaulting to None.
+    encoding = kwargs.pop('encoding', None)
+
+    # If no encoding was specified, the current locale is defaulted to. Else, an
+    # encoding was specified. To ensure this encoding is respected, the
+    # "universal_newlines" option is disabled if also passed. Nice, eh?
+    kwargs['universal_newlines'] = encoding is None
+
+    # Standard output captured from this command as a decoded Unicode string if
+    # "universal_newlines" is enabled or an encoded byte array otherwise.
+    stdout = subprocess.check_output(command_args, **kwargs)
+
+    # Return a Unicode string, decoded from this encoded byte array if needed.
+    return stdout if encoding is None else stdout.decode(encoding)
+
+
 def exec_command_all(*cmdargs, **kwargs):
     """
-    Wrap creating subprocesses
+    Run the command specified by the passed positional arguments, optionally
+    configured by the passed keyword arguments.
 
-    Return tuple (exit_code, stdout, stderr) of the invoked command.
+    .. DANGER::
+       **Ignore this function's return value.** If this command's standard
+       output consists solely of pathnames, consider calling `exec_command()`;
+       else, consider calling `exec_command_stdout()`.
 
-    On Python 3, the 'encoding' kwarg controls how stdout and stderr are decoded to 'str'
+    Parameters
+    ----------
+    cmdargs : list
+        Variadic list whose:
+        1. Mandatory first element is the absolute path, relative path,
+           or basename in the current `${PATH}` of the command to run.
+        1. Optional remaining elements are arguments to pass to this command.
+    encoding : str, optional
+        Optional keyword argument specifying the encoding with which to decode
+        this command's standard output under Python 3. As this function's return
+        value should be ignored, this argument should _never_ be passed.
+
+    All remaining keyword arguments are passed as is to the `subprocess.Popen()`
+    constructor.
+
+    Returns
+    ----------
+    (int, str, str)
+        Ignore this 3-element tuple `(exit_code, stdout, stderr)`. See the
+        `exec_command()` function for discussion.
     """
     proc = subprocess.Popen(cmdargs, bufsize=-1,  # Default OS buffer size.
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs)
@@ -363,7 +514,7 @@ def __wrap_python(args, kwargs):
         env['PYTHONIOENCODING'] = 'UTF-8'
         # ... and ensure we read output as utf-8
         kwargs['encoding'] = 'UTF-8'
-     
+
     return cmdargs, kwargs
 
 
@@ -396,6 +547,8 @@ def exec_python_all(*args, **kwargs):
     cmdargs, kwargs = __wrap_python(args, kwargs)
     return exec_command_all(*cmdargs, **kwargs)
 
+
+## Path handling.
 
 # The function os.getcwd() in Python 2 does not work with unicode paths on Windows.
 def getcwd():
@@ -430,6 +583,76 @@ def expand_path(path):
     return os.path.expandvars(os.path.expanduser(path))
 
 
+# Define the shutil.which() function, first introduced by Python 3.3.
+try:
+    from shutil import which
+# If undefined, this is Python 2.7. For compatibility, this function has been
+# backported without modification from the most recent stable version of
+# Python as of this writing: Python 3.5.1.
+except ImportError:
+    def which(cmd, mode=os.F_OK | os.X_OK, path=None):
+        """Given a command, mode, and a PATH string, return the path which
+        conforms to the given mode on the PATH, or None if there is no such
+        file.
+
+        `mode` defaults to os.F_OK | os.X_OK. `path` defaults to the result
+        of os.environ.get("PATH"), or can be overridden with a custom search
+        path.
+
+        """
+        # Check that a given file can be accessed with the correct mode.
+        # Additionally check that `file` is not a directory, as on Windows
+        # directories pass the os.access check.
+        def _access_check(fn, mode):
+            return (os.path.exists(fn) and os.access(fn, mode)
+                    and not os.path.isdir(fn))
+
+        # If we're given a path with a directory part, look it up directly rather
+        # than referring to PATH directories. This includes checking relative to the
+        # current directory, e.g. ./script
+        if os.path.dirname(cmd):
+            if _access_check(cmd, mode):
+                return cmd
+            return None
+
+        if path is None:
+            path = os.environ.get("PATH", os.defpath)
+        if not path:
+            return None
+        path = path.split(os.pathsep)
+
+        if sys.platform == "win32":
+            # The current directory takes precedence on Windows.
+            if not os.curdir in path:
+                path.insert(0, os.curdir)
+
+            # PATHEXT is necessary to check on Windows.
+            pathext = os.environ.get("PATHEXT", "").split(os.pathsep)
+            # See if the given file matches any of the expected path extensions.
+            # This will allow us to short circuit when given "python.exe".
+            # If it does match, only test that one, otherwise we have to try
+            # others.
+            if any(cmd.lower().endswith(ext.lower()) for ext in pathext):
+                files = [cmd]
+            else:
+                files = [cmd + ext for ext in pathext]
+        else:
+            # On other platforms you don't have things like PATHEXT to tell you
+            # what file suffixes are executable, so just pass on cmd as-is.
+            files = [cmd]
+
+        seen = set()
+        for dir in path:
+            normdir = os.path.normcase(dir)
+            if not normdir in seen:
+                seen.add(normdir)
+                for thefile in files:
+                    name = os.path.join(dir, thefile)
+                    if _access_check(name, mode):
+                        return name
+        return None
+
+
 # Obsolete command line options.
 
 class __obsolete_option:
@@ -453,7 +676,7 @@ def __add_obsolete_options(parser):
     print error message when they are present.
     """
     g = parser.add_argument_group('Obsolete options (not used anymore)')
-    g.add_argument(*_OLD_OPTIONS, 
+    g.add_argument(*_OLD_OPTIONS,
                    action=__obsolete_option,
                    help='These options do not exist anymore.')
 

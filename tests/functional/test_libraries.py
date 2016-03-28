@@ -493,15 +493,27 @@ def test_scapy3(pyi_builder):
 def test_scipy(pyi_builder):
     pyi_builder.test_source(
         """
-        # General SciPy import.
+        from distutils.version import LooseVersion
+
+        # Test top-level SciPy importability.
+        import scipy
         from scipy import *
-        # Test import hooks for the following modules.
+
+        # Test hooked SciPy modules.
         import scipy.io.matlab
         import scipy.sparse.csgraph
-        # Some other "problematic" scipy submodules.
-        import scipy.lib
+
+        # Test problematic SciPy modules.
         import scipy.linalg
         import scipy.signal
+
+        # SciPy >= 0.16 privatized the previously public "scipy.lib" package as
+        # "scipy._lib". Since this package is problematic, test its
+        # importability regardless of SciPy version.
+        if LooseVersion(scipy.__version__) >= LooseVersion('0.16.0'):
+            import scipy._lib
+        else:
+            import scipy.lib
         """)
 
 
@@ -538,43 +550,6 @@ def test_twisted(pyi_builder):
             raise SystemExit('Twisted reactor not properly initialized.')
         """)
 
-# matplotlib tries to import any of PyQt4, PyQt5 or PySide. But if we
-# have more then one of these in the frozen app, the app's
-# runtime-hooks will crash. Thus we need to exclude the other two.
-all_qt_pkgs = ['PyQt4', 'PyQt5', 'PySide']
-excludes = []
-for pkg in all_qt_pkgs:
-    p = [p for p in all_qt_pkgs]
-    p = importorskip(pkg)(p)
-    excludes.append(p)
-
-@importorskip('matplotlib')
-@pytest.mark.parametrize("excludes", excludes, ids=all_qt_pkgs)
-def test_matplotlib(pyi_builder, excludes):
-    pyi_args = ['--exclude-module=%s' % e for e in excludes]
-    pyi_builder.test_source(
-        """
-        import os
-        import matplotlib
-        import sys
-        import tempfile
-        # In frozen state rthook should force matplotlib to create config directory
-        # in temp directory and not $HOME/.matplotlib.
-        configdir = os.environ['MPLCONFIGDIR']
-        print(('MPLCONFIGDIR: %s' % configdir))
-        if not configdir.startswith(tempfile.gettempdir()):
-            raise SystemExit('MPLCONFIGDIR not pointing to temp directory.')
-        # matplotlib data directory should point to sys._MEIPASS.
-        datadir = os.environ['MATPLOTLIBDATA']
-        print(('MATPLOTLIBDATA: %s' % datadir))
-        if not datadir.startswith(sys._MEIPASS):
-            raise SystemExit('MATPLOTLIBDATA not pointing to sys._MEIPASS.')
-        # This import was reported to fail with matplotlib 1.3.0.
-        from mpl_toolkits import axes_grid1
-        """, pyi_args=pyi_args)
-
-del all_qt_pkgs, excludes
-
 
 @importorskip('pyexcelerate')
 @pytest.mark.xfail(reason='TODO - known to fail')
@@ -608,62 +583,6 @@ def test_usb(pyi_builder):
         """)
 
 
-@importorskip('gi.repository.Gio')
-def test_gi_gio_binding(pyi_builder):
-    pyi_builder.test_source(
-        """
-        import gi
-        gi.require_version('Gio', '2.0')
-        from gi.repository import Gio
-        print(Gio)
-        """)
-
-
-@importorskip('gi.repository.GLib')
-def test_gi_glib_binding(pyi_builder):
-    pyi_builder.test_source(
-        """
-        import gi
-        gi.require_version('GLib', '2.0')
-        from gi.repository import GLib
-        print(GLib)
-        """)
-
-
-@importorskip('gi.repository.GModule')
-def test_gi_gmodule_binding(pyi_builder):
-    pyi_builder.test_source(
-        """
-        import gi
-        gi.require_version('GModule', '2.0')
-        from gi.repository import GModule
-        print(GModule)
-        """)
-
-
-@importorskip('gi.repository.GObject')
-def test_gi_gobject_binding(pyi_builder):
-    pyi_builder.test_source(
-        """
-        import gi
-        gi.require_version('GObject', '2.0')
-        from gi.repository import GObject
-        print(GObject)
-        """)
-
-
-@importorskip('gi.repository.Gst')
-def test_gi_gst_binding(pyi_builder):
-    pyi_builder.test_source(
-        """
-        import gi
-        gi.require_version('Gst', '1.0')
-        from gi.repository import Gst
-        Gst.init(None)
-        print(Gst)
-        """)
-
-
 @importorskip('PIL')
 @pytest.mark.xfail(reason="Fails with Pillow 3.0.0")
 def test_pil_img_conversion(pyi_builder_spec):
@@ -671,7 +590,8 @@ def test_pil_img_conversion(pyi_builder_spec):
 
 
 @xfail(is_darwin, reason='Issue #1895.')
-@importorskip('PIL', 'FixTk')
+@importorskip('PIL')
+@importorskip('FixTk')
 def test_pil_FixTk(pyi_builder):
     # hook-PIL is excluding FixTk, but is must still be included
     # since it is imported elsewhere. Also see issue #1584.
@@ -684,7 +604,8 @@ def test_pil_FixTk(pyi_builder):
     import FixTk, PIL
     """)
 
-@importorskip('PIL.ImageQt', 'PyQt5')
+@importorskip('PIL.ImageQt')
+@importorskip('PyQt5')
 def test_pil_PyQt5(pyi_builder):
     # hook-PIL is excluding PyQt5, but is must still be included
     # since it is imported elsewhere. Also see issue #1584.
@@ -694,7 +615,8 @@ def test_pil_PyQt5(pyi_builder):
     import PIL.ImageQt
     """)
 
-@importorskip('PIL.ImageQt', 'PyQt4')
+@importorskip('PIL.ImageQt')
+@importorskip('PyQt4')
 def test_pil_PyQt4(pyi_builder):
     # hook-PIL is excluding PyQt4, but is must still be included
     # since it is imported elsewhere. Also see issue #1584.
