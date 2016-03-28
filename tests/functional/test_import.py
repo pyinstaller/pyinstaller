@@ -117,11 +117,9 @@ def test_import_respects_path(pyi_builder, script_dir):
 
 
 def test_import_pyqt5_uic_port(monkeypatch, pyi_builder):
-    extra_path = os.path.join(_MODULES_DIR, 'pyi_import_pyqt.uic.port')
-    # Override Python sys.path just for this test.
-    # Using PyInstaller option --path affects sys.path for other tests.
-    monkeypatch.syspath_prepend(extra_path)
-    pyi_builder.test_script('pyi_import_pyqt5.uic.port.py')
+    extra_path = os.path.join(_MODULES_DIR, 'pyi_import_pyqt_uic_port')
+    pyi_builder.test_script('pyi_import_pyqt5_uic_port.py',
+                            pyi_args=['--path', extra_path])
 
 
 #--- ctypes ----

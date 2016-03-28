@@ -17,7 +17,7 @@ Note: All tests in this file should use the argument 'runtime'.
 
 from PyInstaller.utils.tests import importorskip
 
-_RUNTIME = 5  # In seconds.
+_RUNTIME = 10  # In seconds.
 
 
 @importorskip('IPython')

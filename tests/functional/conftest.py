@@ -60,7 +60,7 @@ _DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 _SPEC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'specs')
 # Timeout for running the executable. If executable does not exit in this time
 # then it is interpreted as test failure.
-_EXE_TIMEOUT = 5  # In sec.
+_EXE_TIMEOUT = 30  # In sec.
 
 # Code
 # ====
