@@ -228,3 +228,21 @@ def load_py_data_struct(filename):
 
 def absnormpath(apath):
     return os.path.abspath(os.path.normpath(apath))
+
+
+def module_parent_packages(full_modname):
+    """
+    Return list of parent package names.
+        'aaa.bb.c.dddd' ->  ['aaa', 'aaa.bb', 'aaa.bb.c']
+    :param full_modname: Full name of a module.
+    :return: List of parent module names.
+    """
+    prefix = ''
+    parents = []
+    # Ignore the last component in module name and get really just
+    # parent, grand parent, grandgrand parent, etc.
+    for pkg in full_modname.split('.')[0:-1]:
+        # Ensure first item does not start with dot '.'
+        prefix += '.' + pkg if prefix else pkg
+        parents.append(prefix)
+    return parents
