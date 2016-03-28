@@ -28,7 +28,8 @@ import help2rst
 
 #--  PyInstaller HACK -----------------------------------------------
 
-if os.environ.get('READTHEDOCS', None) == 'True':
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+if on_rtd:
     # running on 'Read the Docs'
 
     # Read the Docs is adding stuff to this file when building the
@@ -134,10 +135,23 @@ todo_include_todos = False
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'alabaster'
-html_theme = 'sphinx_rtd_theme'
 
-html_style = 'css/pyinstaller.css'
+if not on_rtd:  # only import and set the theme if we're building docs locally
+    import sphinx_rtd_theme
+    html_theme = 'sphinx_rtd_theme'
+    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+    html_style = 'css/pyinstaller.css'
+else:
+    # RTD adds some defaults to conf.py which make it behave
+    # differently. So we need a different way to specify our css.
+    html_context = {
+        'css_files': [
+            'https://media.readthedocs.org/css/sphinx_rtd_theme.css',
+            'https://media.readthedocs.org/css/readthedocs-doc-embed.css',
+            '_static/css/pyinstaller.css',
+        ],
+    }
+
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
