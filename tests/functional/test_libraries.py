@@ -17,9 +17,9 @@ import os
 # -------------
 import sys
 
-from PyInstaller.compat import is_win, is_py3, is_darwin
+from PyInstaller.compat import is_win, is_py3, is_py36, is_darwin
 from PyInstaller.utils.hooks import get_module_attribute, is_module_satisfies
-from PyInstaller.utils.tests import importorskip, xfail
+from PyInstaller.utils.tests import importorskip, xfail, skipif
 
 # :todo: find a way to get this from `conftest` or such
 # Directory with testing modules used in some tests.
@@ -87,6 +87,7 @@ def test_gevent(pyi_builder):
         """)
 
 
+@xfail(is_py36, reason='Fails on python 3.6')
 @importorskip('gevent')
 def test_gevent_monkey(pyi_builder):
     pyi_builder.test_source(
@@ -203,6 +204,7 @@ def test_sphinx(tmpdir, pyi_builder, data_dir):
     pyi_builder.test_script('pyi_lib_sphinx.py')
 
 
+@xfail(is_py36, reason='Fails on python 3.6')
 @importorskip('pylint')
 def test_pylint(pyi_builder):
     pyi_builder.test_source(
@@ -489,6 +491,7 @@ def test_scapy3(pyi_builder):
         """)
 
 
+@xfail(is_darwin, reason='Issue #1895.')
 @importorskip('scipy')
 def test_scipy(pyi_builder):
     pyi_builder.test_source(

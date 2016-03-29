@@ -72,6 +72,7 @@ install:
   # piping output through another program (if output is not a tty, no
   # progress bars)
   - pip install pip-accel | cat
+  - pip-accel install -r tests/requirements-tools.txt | cat
   - pip-accel install -r tests/requirements.txt | cat
 
 script:

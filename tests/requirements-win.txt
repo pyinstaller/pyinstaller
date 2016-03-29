@@ -1,6 +1,7 @@
 # Include some common dependencies for tests.
--r requirements.txt
+-r requirements-libraries.txt
 
 pypiwin32  # This package is a pip-installable version of PyWin32.
 pyenchant
-PySide==1.2.2
+# No wheel for python 3.5
+PySide ; python_version <= '3.4'
