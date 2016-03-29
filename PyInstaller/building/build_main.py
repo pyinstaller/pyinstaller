@@ -384,7 +384,9 @@ class Analysis(Target):
 
         # List of all directories containing hook scripts. Default hooks are
         # listed before and hence take precedence over custom hooks.
-        module_hook_dirs = [get_importhooks_dir()] + self.hookspath
+        module_hook_dirs = [get_importhooks_dir()]
+        if self.hookspath:
+            module_hook_dirs.extend(self.hookspath)
 
         # Hook cache prepopulated with these lazy loadable hook scripts.
         module_hook_cache = ModuleHookCache(
