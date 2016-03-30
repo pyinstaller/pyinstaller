@@ -9,6 +9,7 @@ pytest-timeout # Plugin to abort hanging tests.
 pytest-catchlog  # Capture log output separately from stdout/stderr
 pytest-drop-dup-tests # allows specifying order without duplicates
 pyreadline  # Colors in ipython on Windows.
+psutil  # Better subprocess alternative with implemented timeout.
 ipython  # Better interactive Python shell.
 mock
 

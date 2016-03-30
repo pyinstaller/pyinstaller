@@ -54,8 +54,12 @@ def create_py3_base_library(libzip_filename, graph):
 
     # Construct regular expression for matching modules that should be bundled
     # into base_library.zip.
-    regex_str = '|'.join(['(%s.*)' % x for x in PY3_BASE_MODULES])
-    regex = re.compile(regex_str)
+    # Excluded are plain 'modules' or 'submodules.ANY_NAME'.
+    # The match has to be exact - start and end of string not substring.
+    regex_modules = '|'.join([r'(^%s$)' % x for x in PY3_BASE_MODULES])
+    regex_submod = '|'.join([r'(^%s\..*$)' % x for x in PY3_BASE_MODULES])
+    regex_str = regex_modules + '|' + regex_submod
+    module_filter = re.compile(regex_str)
 
     try:
         # Remove .zip from previous run.
@@ -68,7 +72,7 @@ def create_py3_base_library(libzip_filename, graph):
             for mod in graph.flatten():
                 if type(mod) in (modulegraph.SourceModule, modulegraph.Package):
                     # Bundling just required modules.
-                    if regex.match(mod.identifier):
+                    if module_filter.match(mod.identifier):
                         st = os.stat(mod.filename)
                         timestamp = int(st.st_mtime)
                         size = st.st_size & 0xFFFFFFFF
