@@ -15,16 +15,12 @@ the executable for some time. Otherwise it is marked as fail.
 Note: All tests in this file should use the argument 'runtime'.
 """
 
-import pytest
-# TODO 'runtime' argument does not work for Python 2.7.
-from PyInstaller.utils.tests import importorskip, xfail_py2
+from PyInstaller.utils.tests import importorskip, xfail
 
-_RUNTIME = 3  # In seconds.
+_RUNTIME = 10  # In seconds.
 
 
-#@xfail_py2
 @importorskip('IPython')
-@pytest.mark.xfail(reason='TODO - known to fail')
 def test_ipython(pyi_builder):
     pyi_builder.test_source(
         """
@@ -33,6 +29,7 @@ def test_ipython(pyi_builder):
         """, runtime=_RUNTIME)
 
 
+@xfail(reason='TODO - known to fail')
 @importorskip('PySide')
 def test_pyside(pyi_builder):
     pyi_builder.test_script('pyi_interact_pyside.py', #pyi_args=['--windowed'],

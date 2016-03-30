@@ -500,6 +500,10 @@ def initialize_modgraph(excludes=(), user_hook_dirs=None):
     Create the module graph and, for Python 3, analyze dependencies for
     `base_library.zip` (which remain the same for every executable).
 
+    This function might appear weird but is necessary for speeding up
+    test runtime because it allows caching basic ModuleGraph object that
+    gets created for 'base_library.zip'.
+
     Parameters
     ----------
     excludes : list
