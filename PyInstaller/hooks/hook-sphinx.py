@@ -79,6 +79,8 @@ datas = collect_data_files('sphinx')
 # Sphinx 1.3.1 adds additional mandatory dependencies unconditionally imported
 # by the "sphinx.themes" module regardless of the current Sphinx configuration:
 # the "alabaster" and "sphinx_rtd_theme" themes, each relying on data files.
-if is_module_satisfies('sphinx >= 1.3.1'):
+if is_module_satisfies('sphinx >= 1.3.1') and is_module_satisfies('sphinx < 1.4'):
     datas.extend(collect_data_files('alabaster'))
     datas.extend(collect_data_files('sphinx_rtd_theme'))
+elif is_module_satisfies('sphinx >= 1.3.1'):
+    datas.extend(collect_data_files('alabaster'))
