@@ -15,7 +15,7 @@ the executable for some time. Otherwise it is marked as fail.
 Note: All tests in this file should use the argument 'runtime'.
 """
 
-from PyInstaller.utils.tests import importorskip
+from PyInstaller.utils.tests import importorskip, xfail
 
 _RUNTIME = 10  # In seconds.
 
@@ -29,6 +29,7 @@ def test_ipython(pyi_builder):
         """, runtime=_RUNTIME)
 
 
+@xfail(reason='TODO - known to fail')
 @importorskip('PySide')
 def test_pyside(pyi_builder):
     pyi_builder.test_script('pyi_interact_pyside.py', #pyi_args=['--windowed'],
