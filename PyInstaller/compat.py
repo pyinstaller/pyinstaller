@@ -63,7 +63,9 @@ elif is_darwin:
     PYDYLIB_NAMES = {'Python', '.Python', 'libpython%d.%d.dylib' % _pyver}
 elif is_aix:
     # Shared libs on AIX are archives with shared object members, thus the ".a" suffix.
-    PYDYLIB_NAMES = {'libpython%d.%d.a' % _pyver}
+    # However, python 2.7.11 built with XLC produces libpython?.?.so file, too.
+    PYDYLIB_NAMES = {'libpython%d.%d.a' % _pyver,
+                     'libpython%d.%d.so' % _pyver}
 elif is_freebsd:
     PYDYLIB_NAMES = {'libpython%d.%d.so.1' % _pyver,
                      'libpython%d.%dm.so.1' % _pyver,
