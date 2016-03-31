@@ -274,12 +274,12 @@ def set_arch_flags(ctx):
     # AIX specific flags
     elif is_aix:
         if ctx.env.CC_NAME == 'gcc':
-	    ctx.check_cc(ccflags='-m32', msg='Checking for flags -m32')
+            ctx.check_cc(ccflags='-m32', msg='Checking for flags -m32')
             ctx.env.append_value('CFLAGS', '-m32')
             ctx.env.append_value('LINKFLAGS', '-m32')
-	else:
-	    # We use xlc compiler
-	    pass
+        else:
+            # We use xlc compiler
+            pass
 
     # Other compiler - not msvc.
     else:
@@ -368,7 +368,7 @@ def configure(ctx):
         ctx.load('strip', tooldir='tools')
 
     if ctx.env.CC_NAME == 'gcc':
-	# !! These flags are gcc specific
+        # !! These flags are gcc specific
 
         # Make sure we don't use declarations after statement. It breaks
         # MSVC (Visual Studio).
@@ -441,7 +441,7 @@ def configure(ctx):
         #  dlopen("libpython2.7.a(libpython2.7.so)", RTLD_MEMBER)
         ctx.env.append_value('DEFINES', '_ALL_SOURCE')
 
-	# On AIX using gcc the linker options for shared and static
+        # On AIX using gcc the linker options for shared and static
         # libraries are slightly different from other platforms.
         ctx.env['SHLIB_MARKER'] = '-Wl,-bdynamic'
         ctx.env['STLIB_MARKER'] = '-Wl,-bstatic'
