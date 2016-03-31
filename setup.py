@@ -21,6 +21,8 @@ from PyInstaller import (__version__ as version, is_linux, is_win, is_cygwin,
 REQUIREMENTS = ['setuptools']
 # For Windows install PyWin32 if not already installed.
 if sys.platform.startswith('win'):
+    # Windows support depends on pefile library.
+    REQUIREMENTS.append('pefile')
     try:
         import pywintypes
     except ImportError:

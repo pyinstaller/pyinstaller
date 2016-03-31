@@ -1,6 +1,7 @@
 # Include some common dependencies for tests.
 -r requirements-libraries.txt
 
+pefile  # For parsing PE headers and get list of dependent DLLs.
 pyreadline  # Colors in IPython on Windows. This is Windows-only package.
 pypiwin32  # This package is a pip-installable version of PyWin32.
 pyenchant
