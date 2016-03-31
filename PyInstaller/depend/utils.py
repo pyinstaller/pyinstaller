@@ -397,8 +397,8 @@ def load_ldconfig_cache():
 
         # if we still couldn't find 'ldconfig' command
         if ldconfig is None:
-	    LDCONFIG_CACHE = {}
-	    return
+            LDCONFIG_CACHE = {}
+            return
 
     if is_freebsd:
         # This has a quite different format than other Unixes
