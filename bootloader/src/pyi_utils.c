@@ -506,9 +506,8 @@ pyi_copy_file(const char *src, const char *dst, const char *filename)
             }
         }
         else {
-            fwrite(buf, 4096, 1, out);
-
-            if (ferror(out)) {
+            int rc = fwrite(buf, 4096, 1, out);
+            if (rc <= 0 || ferror(out)) {
                 clearerr(out);
                 error = -1;
                 break;
