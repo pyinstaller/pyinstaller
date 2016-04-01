@@ -446,8 +446,9 @@ def configure(ctx):
         ctx.env['SHLIB_MARKER'] = '-Wl,-bdynamic'
         ctx.env['STLIB_MARKER'] = '-Wl,-bstatic'
 
-    # Adding python includedir into our environment
-    ctx.env.append_value('INCLUDES', sysconfig.get_config_var('INCLUDEDIR'))
+    # Adding python includedir into our environment - does not work on Windows
+    if not is_win:
+        ctx.env.append_value('INCLUDES', sysconfig.get_config_var('INCLUDEDIR'))
 
     ### Libraries
 
