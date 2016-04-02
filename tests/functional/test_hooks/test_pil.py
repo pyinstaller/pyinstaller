@@ -14,7 +14,7 @@ Note that the original unmaintained PIL has been obsoleted by the PIL-compatible
 fork Pillow, which retains the same Python package `PIL`.
 """
 
-from PyInstaller.compat import modname_tkinter
+from PyInstaller.compat import modname_tkinter, is_darwin
 from PyInstaller.utils.tests import importorskip, skip
 
 
@@ -54,6 +54,7 @@ def test_pil_no_tkinter(pyi_builder):
 
 @importorskip('PIL')
 @importorskip(modname_tkinter)
+@xfail(is_darwin, reason='Issue #1895. Known to fail with macpython - python.org binary.')
 def test_pil_tkinter(pyi_builder):
     """
     Ensure that the Tkinter package excluded by `PIL` package hooks is
