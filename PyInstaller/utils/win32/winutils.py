@@ -12,13 +12,13 @@
 Utils for Windows platform.
 """
 
-
 __all__ = ['get_windows_dir']
 
 import os
 import sys
 
 from PyInstaller import compat
+from PyInstaller.compat import is_py3
 
 import PyInstaller.log as logging
 logger = logging.getLogger(__name__)
@@ -144,3 +144,17 @@ def import_pywin32_module(module_name):
             raise
 
     return module
+
+
+def convert_dll_name_to_str(dll_name):
+    """
+    Convert dll names from 'bytes' to 'str'.
+
+    Latest pefile returns type 'bytes'.
+    :param dll_name:
+    :return:
+    """
+    if is_py3 and isinstance(dll_name, bytes):
+        return str(dll_name, encoding='UTF-8')
+    else:
+        return dll_name

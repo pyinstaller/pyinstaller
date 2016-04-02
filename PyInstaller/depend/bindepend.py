@@ -11,22 +11,18 @@
 Find external dependencies of binary libraries.
 """
 
-
-import os
-import sys
-import re
-import platform
 import ctypes.util
+import os
+import re
+import sys
 from glob import glob
-
 # Required for extracting eggs.
 import zipfile
 import collections
 
 from .. import compat
 from ..compat import (is_win, is_unix, is_aix, is_solar, is_cygwin,
-                      is_darwin, is_freebsd, is_venv,
-                      base_prefix, PYDYLIB_NAMES)
+                      is_darwin, is_freebsd, is_venv, base_prefix, PYDYLIB_NAMES)
 from . import dylib, utils
 
 
@@ -107,14 +103,14 @@ def _getImports_pe(pth):
     pe.parse_data_directories(directories=[
         pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_IMPORT'],
         pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_EXPORT'],
-        ], forwarded_exports_only=True,
-        import_dllnames_only=True)
+        ])
 
     # Some libraries have no other binary dependencies. Use empty list
     # in that case. Otherwise pefile would return None.
     # e.g. C:\windows\system32\kernel32.dll on Wine
     for entry in getattr(pe, 'DIRECTORY_ENTRY_IMPORT', []):
-        dlls.add(entry.dll)
+        dll_str = winutils.convert_dll_name_to_str(entry.dll)
+        dlls.add(dll_str)
 
     # We must also read the exports table to find forwarded symbols:
     # http://blogs.msdn.com/b/oldnewthing/archive/2006/07/19/671238.aspx
@@ -124,7 +120,7 @@ def _getImports_pe(pth):
             if sym.forwarder is not None:
                 # sym.forwarder is for example 'KERNEL32.EnterCriticalSection'
                 dll, _ = sym.forwarder.split('.')
-                dlls.add(dll + ".dll")
+                dlls.add(winutils.convert_dll_name_to_str(dll) + ".dll")
 
     return dlls
 
@@ -179,7 +175,7 @@ def matchDLLArch(filename):
     if not is_win:
         return True
 
-    from ..lib import pefile
+    import pefile
 
     global _exe_machine_type
     if _exe_machine_type is None:
