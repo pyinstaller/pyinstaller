@@ -15,7 +15,7 @@ fork Pillow, which retains the same Python package `PIL`.
 """
 
 from PyInstaller.compat import modname_tkinter, is_darwin
-from PyInstaller.utils.tests import importorskip, skip
+from PyInstaller.utils.tests import importorskip, skip, xfail
 
 
 # "excludedimports" support is currently non-deterministic and hence cannot be
