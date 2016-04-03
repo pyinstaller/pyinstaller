@@ -54,7 +54,10 @@ if os.path.exists(os.path.join(HOMEPATH, 'setup.py')):
         # and 'setup.py' was not called with 'sdist' argument.
         # For creating source tarball we do not want git revision
         # in the filename.
-        __version__ += get_repo_revision()
+        try:
+            __version__ += get_repo_revision()
+        except Exception:
+            print('WARN: failed to parse git revision')
 else:
     # PyInstaller was installed by `python setup.py install'.
     import pkg_resources
