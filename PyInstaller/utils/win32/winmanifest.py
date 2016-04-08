@@ -269,8 +269,21 @@ class Manifest(object):
         self.bindingRedirects = []
         self.files = files or []
         self.comInterfaceExternalProxyStubs = comInterfaceExternalProxyStubs or [] # TO-DO: implement
-    
-    def add_dependent_assembly(self, manifestVersion=None, noInheritable=False, 
+
+    def __eq__(self, other):
+        if isinstance(other, Manifest):
+            return self.toxml() == other.toxml()
+        if isinstance(other, string_types):
+            return self.toxml() == other
+        return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __repr__(self):
+        return repr(self.toxml())
+
+    def add_dependent_assembly(self, manifestVersion=None, noInheritable=False,
                  noInherit=False, type_=None, name=None, language=None, 
                  processorArchitecture=None, version=None, 
                  publicKeyToken=None, description=None, 
@@ -921,9 +934,10 @@ class Manifest(object):
         # version-encoding-standalone (standalone being optional), otherwise 
         # if it is embedded in an exe the exe will fail to launch! 
         # ('application configuration incorrect')
-        xmlstr = domtree.toxml(encoding).replace(
-            '<?xml version="1.0" encoding="%s"?>' % encoding, 
-            '<?xml version="1.0" encoding="%s" standalone="yes"?>' % encoding)
+        xmlstr = domtree.toxml(encoding).decode().replace(
+                '<?xml version="1.0" encoding="%s"?>' % encoding,
+                '<?xml version="1.0" encoding="%s" standalone="yes"?>' %
+                encoding)
         domtree.unlink()
         return xmlstr
 
@@ -1062,7 +1076,19 @@ def create_manifest(filename, manifest, console, uac_admin=False, uac_uiaccess=F
         manifest.requestedExecutionLevel = 'requireAdministrator'
     if uac_uiaccess:
         manifest.uiAccess = True
-    manifest.writeprettyxml(filename)
+
+    # only write a new manifest if it is different from the old
+    need_new = not os.path.exists(filename)
+    if not need_new:
+        with open(filename) as f:
+            old_xml = f.read()
+        new_xml = manifest.toprettyxml().replace('\r','')
+
+        # this only works if PYTHONHASHSEED is set in environment
+        need_new = (old_xml != new_xml)
+    if need_new:
+        manifest.writeprettyxml(filename)
+
     return manifest
 
 
