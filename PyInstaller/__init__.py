@@ -57,7 +57,9 @@ if os.path.exists(os.path.join(HOMEPATH, 'setup.py')):
         try:
             __version__ += get_repo_revision()
         except Exception:
-            print('WARN: failed to parse git revision')
+            # Write to stderr because stdout is used for eval() statement
+            # in some subprocesses.
+            sys.stderr.write('WARN: failed to parse git revision')
 else:
     # PyInstaller was installed by `python setup.py install'.
     import pkg_resources
