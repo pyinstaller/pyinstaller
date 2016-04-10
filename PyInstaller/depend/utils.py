@@ -283,7 +283,11 @@ def __scan_code_instruction_for_ctypes(co, instructions):
             if co.co_names[oparg] == "find_library":
                 libname = _libFromConst()
                 if libname:
-                    return ctypes.util.find_library(libname)
+                    lib = ctypes.util.find_library(libname)
+                    if lib:
+                        # On Windows, `find_library` may return
+                        # a full pathname. See issue #1934
+                        return os.path.basename(lib)
 
 
 # TODO Reuse this code with modulegraph implementation
