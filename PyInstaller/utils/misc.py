@@ -34,10 +34,14 @@ def dlls_in_subdirs(directory):
 
 def dlls_in_dir(directory):
     """Returns a list of *.dll, *.so, *.dylib in given directory."""
+    return files_in_dir(directory, ["*.so", "*.dll", "*.dylib"])
+
+
+def files_in_dir(directory, file_patterns=[]):
+    """Returns a list of files which match a pattern in given directory."""
     files = []
-    files.extend(glob.glob(os.path.join(directory, '*.so')))
-    files.extend(glob.glob(os.path.join(directory, '*.dll')))
-    files.extend(glob.glob(os.path.join(directory, '*.dylib')))
+    for file_pattern in file_patterns:
+        files.extend(glob.glob(os.path.join(directory, file_pattern)))
     return files
 
 
@@ -99,7 +103,7 @@ def compile_py_files(toc, workpath):
     Given a TOC or equivalent list of tuples, generates all the required
     pyc/pyo files, writing in a local directory if required, and returns the
     list of tuples with the updated pathnames.
-    
+
     In the old system using ImpTracker, the generated TOC of "pure" modules
     already contains paths to nm.pyc or nm.pyo and it is only necessary
     to check that these files are not older than the source.
