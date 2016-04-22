@@ -13,6 +13,7 @@ import argparse
 import subprocess
 import textwrap
 import re
+import sys
 
 __copyright__ = "Copyright (c) 2015-2016 PyInstaller Development Team, Copyright (c) 2015 Hartmut Goebel"
 __author__ = "Hartmut Goebel <h.goebel@crazy-compilers.com>"
@@ -48,8 +49,8 @@ def gen_headings(text, headings_character):
 
 
 def process(program, generate_headings, headings_character):
-    help = subprocess.check_output([program, '--help'],
-                                   universal_newlines=True)
+    help = subprocess.check_output([sys.executable, program, '--help'],
+                                   universal_newlines=True, shell=True)
     if '\nOptions:' in help:
         # optparse style
         help = help.split('\nOptions:', 1)[1]
