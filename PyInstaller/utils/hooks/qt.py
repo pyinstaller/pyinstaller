@@ -202,7 +202,10 @@ def qt5_qml_plugins_binaries(directory):
     """
     binaries = []
     qmldir = qt5_qml_dir()
-    files = misc.dlls_in_subdirs(os.path.join(qmldir, directory))
+
+    qt5_qml_plugin_dir = os.path.join(qmldir, directory)
+    files = misc.dlls_in_subdirs(qt5_qml_plugin_dir)
+
     for f in files:
         relpath = os.path.relpath(f, qmldir)
         instdir, file = os.path.split(relpath)
@@ -212,5 +215,29 @@ def qt5_qml_plugins_binaries(directory):
         binaries.append((f, instdir))
     return binaries
 
+
+def qt5_qml_plugins_datas(directory):
+    """
+    Return list of data files for mod.binaries. (qmldir, *.qmltypes)
+    """
+    datas = []
+    qmldir = qt5_qml_dir()
+
+    qt5_qml_plugin_dir = os.path.join(qmldir, directory)
+
+    files = []
+    for root, _dirs, _files in os.walk(qt5_qml_plugin_dir):
+        files.extend(misc.files_in_dir(root, ["qmldir", "*.qmltypes"]))
+
+    for f in files:
+        relpath = os.path.relpath(f, qmldir)
+        instdir, file = os.path.split(relpath)
+        instdir = os.path.join("qml", instdir)
+        logger.debug("qt5_qml_plugins_datas installing %s in %s"
+                     % (f, instdir))
+        datas.append((f, instdir))
+    return datas
+
+
 __all__ = ('qt_plugins_dir', 'qt_plugins_binaries', 'qt_menu_nib_dir', 'get_qmake_path', 'qt5_qml_dir', 'qt5_qml_data',
-           'qt5_qml_plugins_binaries')
+           'qt5_qml_plugins_binaries', 'qt5_qml_plugins_datas')
