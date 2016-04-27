@@ -16,7 +16,7 @@ import sys
 # causes 100% CPU load. (Tested on OSX.)
 os.environ['GST_REGISTRY_FORK'] = 'no'
 
-os.environ['GST_PLUGIN_PATH'] = '{};{}'.format(
+os.environ['GST_PLUGIN_PATH'] = '{}:{}'.format(
     sys._MEIPASS, os.path.join(sys._MEIPASS, 'gst-plugins'))
 
 # Prevent permission issues on Windows
