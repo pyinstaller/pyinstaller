@@ -22,8 +22,9 @@ import shutil
 import sys
 
 from PyInstaller.config import CONF
-from .. import is_darwin, is_win, compat
-from ..compat import EXTENSION_SUFFIXES, FileNotFoundError
+from .. import compat
+from ..compat import is_darwin, is_win, is_py3, EXTENSION_SUFFIXES, \
+    FileNotFoundError, open_file
 from ..depend import dylib
 from ..depend.bindepend import match_binding_redirect
 from ..utils import misc
@@ -32,6 +33,8 @@ from .. import log as logging
 
 if is_win:
     from ..utils.win32 import winmanifest, winresource
+if is_py3:
+    import importlib
 
 logger = logging.getLogger(__name__)
 
@@ -518,9 +521,24 @@ def _load_code(modname, filename):
         loader = importer.find_module(modname)
         portions = []
 
-    assert loader and hasattr(loader, 'get_code')
     logger.debug('Compiling %s', filename)
-    return loader.get_code(modname)
+    if loader and hasattr(loader, 'get_code'):
+        return loader.get_code(modname)
+    else:
+        # If we get here, this shouldn't be a source file.
+        if is_py3:
+            assert (os.path.splitext(filename)[1] not in 
+                    importlib.machinery.SOURCE_SUFFIXES)
+        # Just as ``python foo.bar`` will read and execute statement in 
+        # ``foo.bar``,  even though it lacks the ``.py`` extension, so 
+        # ``pyinstaller foo.bar``  should also work. However, Python's import 
+        # machinery doesn't load files without a ``.py`` extension. So, use 
+        # ``compile`` instead.
+        #
+        # Note: this fails to support `PEP 263 <https://www.python.org/dev/peps/pep-0263/>`_.
+        with open_file(filename, 'r', encoding='utf-8' if is_py3 else 'ASCII') as f:
+            source = f.read()
+        return compile(source, filename, 'exec')
 
 def get_code_object(modname, filename):
     """
