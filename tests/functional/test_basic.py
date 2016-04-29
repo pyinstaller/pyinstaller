@@ -531,3 +531,7 @@ def test_hook_collect_submodules(pyi_builder, script_dir):
         __import__('pyi_testmod_relimp.B.C')
         """,
         ['--additional-hooks-dir=%s' % script_dir.join('pyi_hooks')])
+    
+# Test that PyInstaller can handle a script with an arbitrary extension.
+def test_arbitrary_ext(pyi_builder):
+    pyi_builder.test_script('pyi_arbitrary_ext.foo')
