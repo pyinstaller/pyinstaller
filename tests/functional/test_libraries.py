@@ -77,6 +77,14 @@ def test_cherrypy(pyi_builder):
 def test_enchant(pyi_builder):
     pyi_builder.test_script('pyi_lib_enchant.py')
 
+@skipif(is_py3, reason="Only tests Python 2.7 feature")
+def test_future_queue(pyi_builder):
+    pyi_builder.test_source(
+        """
+        import queue
+        queue.Queue()
+        """
+    )
 
 @importorskip('gevent')
 def test_gevent(pyi_builder):
