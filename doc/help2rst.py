@@ -50,7 +50,7 @@ def gen_headings(text, headings_character):
 
 def process(program, generate_headings, headings_character):
     help = subprocess.check_output([sys.executable, program, '--help'],
-                                   universal_newlines=True, shell=True)
+                                   universal_newlines=True)
     if '\nOptions:' in help:
         # optparse style
         help = help.split('\nOptions:', 1)[1]
