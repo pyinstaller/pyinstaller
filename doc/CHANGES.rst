@@ -1,7 +1,7 @@
 Changelog for PyInstaller
 =========================
 
-3.2 (unreleased)
+3.2 (2016-05-03)
 ----------------
 
 - New Hooks: traitlets,
