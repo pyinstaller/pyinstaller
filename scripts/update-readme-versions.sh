@@ -2,7 +2,6 @@
 #
 # This script updates the version within the README file.
 #
-# - Change URL for the manual to point to pythonhosted.org
 # - Change version in the badge-images and related links
 #
 
