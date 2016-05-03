@@ -37,7 +37,7 @@ if on_rtd:
     if __version__.endswith('.mod'):
         __version__ = __version__[:-4]
 
-# FIXME: This should become something more spfisitcated, e.g. a sphinx
+# FIXME: This should become something more sophisticated, e.g. a sphinx
 # extension
 for prog, outfile in (
         ('../pyinstaller.py', 'man/_pyinstaller-options.tmp'),
@@ -295,8 +295,12 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'pyinstaller', 'PyInstaller Documentation',
-     [author], 1)
+    ('man/pyinstaller', 'pyinstaller',
+     'Configure and build a PyInstaller project in one run',
+     ['Hartmut Goebel'], 1),
+    ('man/pyi-makespec', 'pyi-makespec',
+     'Create a spec file for your PyInstaller project',
+     ['Hartmut Goebel'], 1)
 ]
 
 # If true, show URL addresses after external links.

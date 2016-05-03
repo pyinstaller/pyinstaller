@@ -1,19 +1,12 @@
 ==========================
 pyinstaller
 ==========================
--------------------------------------------------------------
-Configure and build y |PyInstaller| project in one run
--------------------------------------------------------------
-
-:Copyright: 2010-2016 PyInstaller Development Team, 2005-2009 Giovanni Bajo, based on previous work under copyright 2002 McMillan Enterprises, Inc.
-:Version:   |PyInstallerVersion|
-:Manual section: 1
 
 .. raw:: manpage
 
    .\" disable justification (adjust text to left margin only)
    .ad l
-
+   \
 
 SYNOPSIS
 ==========
