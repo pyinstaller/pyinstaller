@@ -622,7 +622,7 @@ def _getImports_macholib(pth):
             #    '../lib\x00\x00')
             cmd_type = command[0].cmd
             if cmd_type == LC_RPATH:
-                rpath = str(command[2])
+                rpath = command[2].decode('ascii')
                 # Remove trailing '\x00' characters.
                 # e.g. '../lib\x00\x00'
                 rpath = rpath.rstrip('\x00')
