@@ -5,6 +5,35 @@ Thanks goes to all the kind PyInstaller contributors who have contributed
 new code, bug reports, fixes, comments and ideas. A brief list follows,
 please let us know if your name is omitted by accident:
 
+Contributions to PyInstaller 3.2
+----------------------------------
+
+- Hartmut Goebel - Core developer and release manager.
+- Martin Zibricky - Core developer.
+- David Cortesi - Core developer and documentation manager.
+- Bryan A. Jones - Core developer.
+- David Vierra - Core developer and encoding specialist.
+- Cecil Curry - brave bug-fixing and code-refactoring
+
+- And Cycle - unicode fixes.
+- Chris Hager - QtQuick hook.
+- David Schoorisse - wrong icon paramter in Windows example.
+- Florian Bruhin - typo hunting.
+- Garth Bushell - Support for objcopy.
+- Insoleet - lib2to3 hook
+- Jonathan Springer - hook fixes, brave works on PyQt.
+- Matteo Bertini - code refactoring.
+- Jonathan Stewmon - bug hunting.
+- Kenneth Zhao - waf update.
+- Leonid Rozenberg - typo hunting.
+- Merlijn Wajer -  bug fixing.
+- Nicholas Chammas - cleanups.
+- nih - hook fixes.
+- Olli-Pekka Heinisuo -  CherryPy hook.
+- Rui Carmo - cygwin fixes.
+- Stephen Rauch - hooks and fixes for unnecessary rebuilds.
+- Tim Stumbaugh - bug hunting.
+
 
 Contributions to PyInstaller 3.1.1
 ----------------------------------
