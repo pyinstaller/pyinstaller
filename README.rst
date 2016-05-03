@@ -41,8 +41,8 @@ interpreter or any modules.
    :alt: IRC
 
 
-:Documentation: https://pythonhosted.org/PyInstaller/
-:Website:       http://www.pyinstaller.org
+:Documentation: http://pyinstaller.rtfd.io/
+:Website:       http://www.pyinstaller.org/
 :Code:          https://github.com/pyinstaller/pyinstaller
 
 

@@ -8,7 +8,7 @@
 #-----------------------------------------------------------------------------
 
 # This contains tests for the class:``TOC``, see
-# https://pythonhosted.org/PyInstaller/#the-tree-class
+# http://pyinstaller.rtfd.io/en/latest/advanced-topics.html#the-toc-and-tree-classes
 
 import pytest
 from PyInstaller.building.datastruct import TOC

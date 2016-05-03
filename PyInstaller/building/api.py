@@ -763,6 +763,6 @@ COMPRESSED = 1
 
 _MISSING_BOOTLOADER_ERRORMSG = """
 Fatal error: PyInstaller does not include a pre-compiled bootloader for your
-platform. See <http://pythonhosted.org/PyInstaller/#building-the-bootloader>
+platform. See <http://pyinstaller.rtfd.io/en/stable/bootloader-building.html>
 for more details and instructions how to build the bootloader.
 """

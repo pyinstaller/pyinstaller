@@ -20,7 +20,7 @@ Directory Structure
 Build instructions
 ----------------------
 
-See <http://pythonhosted.org/PyInstaller/#building-the-bootloader>.
+See <http://pyinstaller.rtfd.io/en/latest/bootloader-building.html>.
 
 In short::
 
