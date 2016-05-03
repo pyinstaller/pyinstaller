@@ -30,6 +30,7 @@ ELEMS3 = (
     ('PIL.Image.py', '/usr/lib/python2.7/encodings/__init__.py','PYMODULE'),
 )
 
+
 def test_init_empty():
     toc = TOC()
     assert len(toc) == 0
@@ -40,6 +41,7 @@ def test_init():
     assert len(toc) == 3
     assert toc == list(ELEMS1)
 
+
 def test_append():
     toc = TOC(ELEMS1)
     toc.append(('li-la-lu', '/home/myself/li-la-su', 'SOMETHING'))
@@ -47,19 +49,13 @@ def test_append():
     expected.append(('li-la-lu', '/home/myself/li-la-su', 'SOMETHING'))
     assert toc == expected
 
+
 def test_append_existing():
     toc = TOC(ELEMS1)
     toc.append(ELEMS1[-1])
     expected = list(ELEMS1)
     assert toc == expected
 
-@skipif_notwin
-def test_append_other_case():
-    # should not be added if the filenames are the same on a case-insensitive system.
-    toc = TOC(ELEMS1)
-    toc.append(('EnCodIngs', '/usr/lib/python2.7/encodings.py', 'BINARY'))
-    expected = list(ELEMS1)
-    assert toc == expected
 
 def test_append_keep_filename():
     # name in TOC should be the same as the one added
@@ -68,6 +64,7 @@ def test_append_keep_filename():
     toc.append(entry)
     assert toc[0][0] == entry[0]
 
+
 def test_insert():
     toc = TOC(ELEMS1)
     toc.insert(1, ('li-la-lu', '/home/myself/li-la-su', 'SOMETHING'))
@@ -75,21 +72,15 @@ def test_insert():
     expected.insert(1, ('li-la-lu', '/home/myself/li-la-su', 'SOMETHING'))
     assert toc == expected
 
+
 def test_insert_existing():
     toc = TOC(ELEMS1)
     toc.insert(0, ELEMS1[-1])
     toc.insert(1, ELEMS1[-1])
     expected = list(ELEMS1)
     assert toc == expected
-
-@skipif_notwin
-def test_insert_other_case():
-    # should not be added if the filenames are the same on a case-insensitive system.
-    toc = TOC(ELEMS1)
-    toc.insert(1, ('EnCodIngs', '/usr/lib/python2.7/encodings.py', 'BINARY'))
-    expected = list(ELEMS1)
-    assert toc == expected
-
+    
+    
 def test_insert_keep_filename():
     # name in TOC should be the same as the one added
     toc = TOC()
@@ -104,6 +95,7 @@ def test_extend():
     expected = list(ELEMS1)
     expected.extend(ELEMS2)
     assert toc == expected
+
 
 def test_extend_existing():
     toc = TOC(ELEMS1)
@@ -122,6 +114,7 @@ def test_add_list():
     expected = list(ELEMS1) + list(ELEMS2)
     assert result == expected
 
+
 def test_add_tuple():
     toc = TOC(ELEMS1)
     other = ELEMS2
@@ -131,6 +124,7 @@ def test_add_tuple():
     assert isinstance(result, TOC)
     expected = list(ELEMS1) + list(ELEMS2)
     assert result == expected
+
 
 def test_add_toc():
     toc = TOC(ELEMS1)
@@ -153,6 +147,7 @@ def test_radd_list():
     expected = list(ELEMS2) + list(ELEMS1)
     assert result == expected
 
+
 def test_radd_tuple():
     toc = TOC(ELEMS1)
     other = ELEMS2
@@ -162,6 +157,7 @@ def test_radd_tuple():
     assert isinstance(result, TOC)
     expected = list(ELEMS2) + list(ELEMS1)
     assert result == expected
+
 
 def test_radd_toc():
     toc = TOC(ELEMS1)
@@ -184,6 +180,7 @@ def test_sub_list():
     expected = list(ELEMS1)
     assert result == expected
 
+
 def test_sub_tuple():
     toc = TOC(ELEMS1) + ELEMS2
     other = ELEMS2
@@ -194,6 +191,7 @@ def test_sub_tuple():
     expected = list(ELEMS1)
     assert result == expected
 
+
 def test_sub_toc():
     toc = TOC(ELEMS1) + ELEMS2
     other = TOC(ELEMS2)
@@ -203,6 +201,7 @@ def test_sub_toc():
     assert isinstance(result, TOC)
     expected = list(ELEMS1)
     assert result == expected
+
 
 def test_sub_non_existing():
     toc = TOC(ELEMS1)
@@ -225,6 +224,7 @@ def test_rsub_list():
     expected = list(ELEMS2)
     assert result == expected
 
+
 def test_rsub_tuple():
     toc = TOC(ELEMS1)
     other = tuple(list(ELEMS1) + list(ELEMS2))
@@ -234,6 +234,7 @@ def test_rsub_tuple():
     assert isinstance(result, TOC)
     expected = list(ELEMS2)
     assert result == expected
+
 
 def test_rsub_toc():
     toc = TOC(ELEMS1)
@@ -245,6 +246,7 @@ def test_rsub_toc():
     expected = list(ELEMS2)
     assert result == expected
 
+
 def test_rsub_non_existing():
     toc = TOC(ELEMS3)
     other = ELEMS1
@@ -254,3 +256,72 @@ def test_rsub_non_existing():
     assert isinstance(result, TOC)
     expected = list(ELEMS1)
     assert result == expected
+
+
+# The following tests verify that case-insensitive comparisons are used on Windows
+# and only for appropriate TOC entry types
+
+@skipif_notwin
+def test_append_other_case_mixed():
+    # If a binary file is added with the same filename as an existing pymodule,
+    # it should not be added.
+
+    toc = TOC(ELEMS1)
+    elem = ('EnCodIngs', '/usr/lib/python2.7/encodings.py', 'BINARY')
+    toc.append(elem)
+    expected = list(ELEMS1)
+    assert toc == expected
+    
+
+@skipif_notwin
+def test_append_other_case_pymodule():
+    # python modules should not use C-I comparisons. Both 'encodings' and
+    # 'EnCodIngs' should be added.
+    toc = TOC(ELEMS1)
+    elem = ('EnCodIngs', '/usr/lib/python2.7/encodings.py', 'PYMODULE')
+    toc.append(elem)
+    expected = list(ELEMS1)
+    expected.append(elem)
+    assert toc == expected
+
+
+@skipif_notwin
+def test_append_other_case_binary():
+    # binary files should use C-I comparisons. 'LiBrEADlInE.so.6' should not be added.
+    toc = TOC(ELEMS1)
+    toc.append(('LiBrEADlInE.so.6', '/lib64/libreadline.so.6', 'BINARY'))
+    expected = list(ELEMS1)
+    assert toc == expected
+
+
+@skipif_notwin
+def test_insert_other_case_mixed():
+    # If a binary file is added with the same filename as an existing pymodule,
+    # it should not be added
+
+    toc = TOC(ELEMS1)
+    elem = ('EnCodIngs', '/usr/lib/python2.7/encodings.py', 'BINARY')
+    toc.insert(1, elem)
+    expected = list(ELEMS1)
+    assert toc == expected
+
+
+@skipif_notwin
+def test_insert_other_case_pymodule():
+    # python modules should not use C-I comparisons. Both 'encodings' and
+    # 'EnCodIngs' should be added.
+    toc = TOC(ELEMS1)
+    elem = ('EnCodIngs', '/usr/lib/python2.7/encodings.py', 'PYMODULE')
+    toc.insert(1, elem)
+    expected = list(ELEMS1)
+    expected.insert(1, elem)
+    assert toc == expected
+
+
+@skipif_notwin
+def test_insert_other_case_binary():
+    # binary files should use C-I comparisons. 'LiBrEADlInE.so.6' should not be added.
+    toc = TOC(ELEMS1)
+    toc.insert(1, ('LiBrEADlInE.so.6', '/lib64/libreadline.so.6', 'BINARY'))
+    expected = list(ELEMS1)
+    assert toc == expected

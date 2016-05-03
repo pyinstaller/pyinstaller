@@ -20,30 +20,23 @@ from collections import MutableSet
 logger = logging.getLogger(__name__)
 
 
-class FilenameSet(MutableSet):
+def unique_name(entry):
     """
-    Used by TOC to contain a unique set of filenames, even on case-insensitive systems.
+    Return the filename used to enforce uniqueness for the given TOC entry
+
+    Parameters
+    ----------
+    entry : tuple
+
+    Returns
+    -------
+    unique_name: str
     """
-    def __init__(self, arg=None):
-        if arg:
-            self._set = set(arg)
-        else:
-            self._set = set()
+    name, path, typecode = entry
+    if typecode in ('BINARY', 'DATA'):
+        name = os.path.normcase(name)
 
-    def __contains__(self, name):
-        return os.path.normcase(name) in self._set
-
-    def __len__(self):
-        return len(self._set)
-
-    def __iter__(self):
-        return iter(self._set)
-
-    def add(self, name):
-        self._set.add(os.path.normcase(name))
-
-    def discard(self, name):
-        self._set.discard(os.path.normcase(name))
+    return name
 
 
 class TOC(list):
@@ -67,7 +60,7 @@ class TOC(list):
     """
     def __init__(self, initlist=None):
         super(TOC, self).__init__(self)
-        self.filenames = FilenameSet()
+        self.filenames = set()
         if initlist:
             for entry in initlist:
                 self.append(entry)
@@ -76,25 +69,22 @@ class TOC(list):
         if not isinstance(entry, tuple):
             logger.info("TOC found a %s, not a tuple", entry)
             raise TypeError("Expected tuple, not %s." % type(entry).__name__)
-        name, path, typecode = entry
-        if name not in self.filenames:
-            self.filenames.add(name)
-            super(TOC, self).append((name, path, typecode))
-        else:
-            if typecode in ('EXTENSION', 'PYSOURCE', 'PYMODULE') and name != os.path.normcase(name):
-                logger.warn("Attempted to add Python module twice with different upper/lowercases: %s", name)
+
+        unique = unique_name(entry)
+
+        if unique not in self.filenames:
+            self.filenames.add(unique)
+            super(TOC, self).append(entry)
 
     def insert(self, pos, entry):
         if not isinstance(entry, tuple):
             logger.info("TOC found a %s, not a tuple", entry)
             raise TypeError("Expected tuple, not %s." % type(entry).__name__)
-        name, path, typecode = entry
-        if name not in self.filenames:
-            self.filenames.add(name)
-            super(TOC, self).insert(pos, (name, path, typecode))
-        else:
-            if typecode in ('EXTENSION', 'PYSOURCE', 'PYMODULE') and name != os.path.normcase(name):
-                logger.warn("Attempted to add Python module twice with different upper/lowercases: %s", name)
+        unique = unique_name(entry)
+
+        if unique not in self.filenames:
+            self.filenames.add(unique)
+            super(TOC, self).insert(pos, entry)
 
     def __add__(self, other):
         result = TOC(self)
@@ -116,23 +106,16 @@ class TOC(list):
         other = TOC(other)
         filenames = self.filenames - other.filenames
         result = TOC()
-        for name, path, typecode in self:
-            if name in filenames:
-                super(TOC, result).append((name, path, typecode))
+        for entry in self:
+            unique = unique_name(entry)
+
+            if unique in filenames:
+                super(TOC, result).append(entry)
         return result
 
     def __rsub__(self, other):
         result = TOC(other)
         return result.__sub__(self)
-
-    def intersect(self, other):
-        other = TOC(other)
-        filenames = self.filenames.intersection(other.filenames)
-        result = TOC()
-        for name, path, typecode in other:
-            if name in filenames:
-                super(TOC, result).append((name, path, typecode))
-        return result
 
 
 class Target(object):
