@@ -37,7 +37,7 @@ if on_rtd:
     if __version__.endswith('.mod'):
         __version__ = __version__[:-4]
 
-# FIXME: This should become something more spfisitcated, e.g. a sphinx
+# FIXME: This should become something more sophisticated, e.g. a sphinx
 # extension
 for prog, outfile in (
         ('../pyinstaller.py', 'man/_pyinstaller-options.tmp'),

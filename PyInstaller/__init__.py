@@ -46,7 +46,7 @@ if is_win and is_py2:
 
 # Update __version__ as necessary.
 if os.path.exists(os.path.join(HOMEPATH, 'setup.py')):
-    # PyInstaller is run directly of source without installation or
+    # PyInstaller is run directly from source without installation or
     # __version__ is called from 'setup.py' ...
     # Note: The documenation's Makefile also passes `sdist` when run
     # with 'DO_RELEASE=1' to suppress the git revision.
