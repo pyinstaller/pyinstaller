@@ -36,24 +36,26 @@ matrix:
       - os: osx
 
 addons:
+  # Ubuntu 12.04 (LTS) packages installed into this Travis-CI container. Since
+  # Ubuntu 12.04 provides *NO* Python 3 packages prefixed by "python3-", only
+  # Python 2.7 packages prefixed by "python-" are installable. Installing only
+  # Python 2.7 packages would be useless, however! Python packages should thus
+  # be installed by "pip" via the "test/requirements-library.txt" specification.
+  #
+  # Travis-CI intends to add support for Ubuntu 14.04 (LTS) at some future date.
+  # To track progress on this long-standing issue, see:
+  #
+  #     https://github.com/travis-ci/travis-ci/issues/2046
   apt:
     packages:
-    # TODO Review installing dependencies.
-    # NB: Travis-CI uses Ubuntu 12.04 TLS, thus these are only
-    #     available for Python 2.7.
-    - python-imaging
-    - python-gst0.10
-    #- python-matplotlib  # outdated: v1.1.1
-    - python-mysqldb
-    # required to build lxml
+    # lxml dependencies.
     - libxml2-dev
     - libxslt1-dev
-    - python-numpy
-    - python-pyodbc
-    - python-qt4
-    - python-scipy
-    - python-wxgtk2.8
-    - libespeak1  # required by pyttsx
+    # pyttsx dependencies.
+    - libespeak1
+    # SciPy dependencies.
+    - gfortran
+    - libatlas-base-dev
 
 before_install:
   # Compile bootloader
@@ -73,7 +75,7 @@ install:
   # progress bars)
   - pip install pip-accel | cat
   - pip-accel install -r tests/requirements-tools.txt | cat
-  - pip-accel install -r tests/requirements.txt | cat
+  - pip-accel install -r tests/requirements-linux.txt | cat
 
 script:
   # Run tests and speed them up by sending them to multiple CPUs.

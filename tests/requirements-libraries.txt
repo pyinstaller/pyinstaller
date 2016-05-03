@@ -1,7 +1,13 @@
-# Test libraries
+# Platform-agnostic test libraries.
+#
+# Libraries listed below are unconditionally installed by all continuous
+# integration (CI) services, regardless of platform. Each platform-specific
+# requirements file (e.g., "requirements-linux.txt") includes this file.
+
 # Url for downloading PyCrypto prebuilt Windows binaries:
 # http://www.voidspace.org.uk/python/pycrypto-2.6.1/
 pycrypto  # Required for crypto feature - encrypting bytecode.
+
 Django<1.8.11 # PyInstaller doesn't yet work with Django 1.9
 babel>2.0  # Required by sphinx. Version 2.0 doesn't work on Windows.
 boto
