@@ -295,8 +295,12 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'pyinstaller', 'PyInstaller Documentation',
-     [author], 1)
+    ('man/pyinstaller', 'pyinstaller',
+     'Configure and build a PyInstaller project in one run',
+     ['Hartmut Goebel'], 1),
+    ('man/pyi-makespec', 'pyi-makespec',
+     'Create a spec file for your PyInstaller project',
+     ['Hartmut Goebel'], 1)
 ]
 
 # If true, show URL addresses after external links.
