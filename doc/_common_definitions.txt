@@ -1,0 +1,85 @@
+.. _PyInstaller: http://www.pyinstaller.org
+
+.. |Homepage| replace:: http://www.pyinstaller.org
+.. |PyInstaller| replace:: `PyInstaller`
+.. |PyInstallerVersion| replace:: PyInstaller |release|
+
+.. how we punctuate boot loader as a proper noun "the bootloader"
+.. |bootloader| replace:: bootloader
+
+
+.. _`activation context`: http://msdn.microsoft.com/en-us/library/windows/desktop/aa374153(v=vs.85).aspx
+.. _`Apple bundle overview`: https://developer.apple.com/library/mac/documentation/CoreFoundation/Conceptual/CFBundles/BundleTypes/BundleTypes.html
+.. _`Apple code signing overview`: https://developer.apple.com/library/mac/technotes/tn2206/_index.html
+.. _`Apple document types`: https://developer.apple.com/library/ios/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html#//apple_ref/doc/uid/20001431-101685
+.. _Cython: http://www.cython.org/
+.. _Django: https://www.djangoproject.com/
+.. _dnspython: http://www.dnspython.org/
+.. _Dropbox: https://www.dropbox.com/home
+.. _`easy_install`: http://peak.telecommunity.com/DevCenter/EasyInstall
+.. _`Microsoft COM`: http://www.microsoft.com/com/default.mspx
+.. _`GPL License`: https://raw.github.com/pyinstaller/pyinstaller/develop/COPYING.txt
+.. _FAQ: https://github.com/pyinstaller/pyinstaller/wiki/FAQ
+.. _Git: http://git-scm.com/downloads
+.. _GraphicConverter: http://www.lemkesoft.de/en/products/graphic-converter/
+.. _GraphViz: http://graphviz.org/Home.php
+.. _Homebrew: http://brew.sh/
+.. _`How to Contribute`: https://github.com/pyinstaller/pyinstaller/wiki/How-to-Contribute
+.. _`How to Report Bugs`: https://github.com/pyinstaller/pyinstaller/wiki/How-to-Report-Bugs
+.. _ImageMagick: http://www.imagemagick.org/script/index.php
+.. _imputil: http://docs.python.org/2.7/library/imputil.html
+.. _`Info Property List`: https://developer.apple.com/library/mac/#documentation/MacOSX/Conceptual/BPRuntimeConfig/Articles/ConfigFiles.html
+.. _`LSB sdk 4.0`: http://ftp.linuxfoundation.org/pub/lsb/bundles/released-4.0.0/sdk/
+.. _MacPorts: https://www.macports.org/
+.. _makeicns: https://bitbucket.org/mkae/makeicns
+.. _marshalled: http://docs.python.org/library/marshal
+.. _MinGW: http://sourceforge.net/downloads/mingw/
+.. _MinGW-w64: http://mingw-w64.sourceforge.net/
+.. _Modulefinder: http://docs.python.org/2.7/library/modulefinder.html
+.. _netpbm package: http://netpbm.sourceforge.net/
+.. _Parallels: http://www.parallels.com
+.. _pefile: https://pypi.python.org/pypi/pefile/
+.. _PIL: http://www.pythonware.com/products/pil/
+.. _pip: http://www.pip-installer.org/
+.. _pip-Win: https://sites.google.com/site/pydatalog/python/pip-for-windows
+.. _png2icns: http://icns.sourceforge.net/
+.. _PyCrypto: https://pypi.python.org/pypi/pycrypto/
+.. _PyInstaller.org: https://github.com/pyinstaller/pyinstaller/wiki/Community
+.. _`PyInstaller at GitHub`: https://github.com/pyinstaller/pyinstaller
+.. _`PyInstaller code signing recipe`: https://github.com/pyinstaller/pyinstaller/wiki/Recipe-OSX-Code-Signing
+.. _`PyInstaller Downloads`:  https://github.com/pyinstaller/pyinstaller/releases
+.. _PyInstaller\/hooks\/hook-win32com.py: http://www.pyinstaller.org/browser/trunk/PyInstaller/hooks/hook-win32com.py?rev=latest
+.. _`PyInstaller Email List`: https://groups.google.com/forum/#!forum/pyinstaller
+.. _`PyInstaller Issue #1309`: https://github.com/pyinstaller/pyinstaller/issues/1309
+.. _`PyInstaller Issue #1527`: https://github.com/pyinstaller/pyinstaller/issues/1527
+.. _`PyInstaller Recipes`: https://github.com/pyinstaller/pyinstaller/wiki/Recipes
+.. _pypi: https://pypi.python.org/pypi/PyInstaller/
+.. _pypiwin32: https://pypi.python.org/pypi/pypiwin32/219
+.. _PyQt: http://www.riverbankcomputing.co.uk/software/pyqt/intro
+.. _PySide: http://qt-project.org/wiki/About-PySide
+.. _pyvenv: https://docs.python.org/3.4/library/venv.html
+.. _PyWin32: http://sourceforge.net/projects/pywin32/files/
+.. _Qt: http://www.qt-project.org
+.. _Recipe: http://www.pyinstaller.org/wiki/Recipe
+.. _setup_tools: https://pypi.python.org/pypi/setuptools
+.. _`Package resources`: https://pythonhosted.org/setuptools/pkg_resources.html#requirements-parsing
+.. _source/common/launch.c: http://www.pyinstaller.org/browser/trunk/source/common/launch.c?rev=latest
+.. _`Supported Packages`: https://github.com/pyinstaller/pyinstaller/wiki/Supported-Packages
+.. _TDM-GCC: http://tdm-gcc.tdragon.net/
+.. _TkInter: http://wiki.python.org/moin/TkInter
+.. _UPX: http://upx.sourceforge.net/
+.. _virtualenv:  http://www.virtualenv.org/
+.. _`Visual Studio Express`: http://www.microsoft.com/express/
+.. _wiki: http://www.pyinstaller.org/wiki
+.. _`Version Information Structures`: http://msdn.microsoft.com/en-us/library/ff468916(v=vs.85).aspx
+.. _virtualBox: https://www.virtualbox.org
+.. _VMWare: http://www.vmware.com/solutions/desktop/
+.. _Wine: http://www.winehq.org/
+.. _WxPython: http://www.wxpython.org/
+.. _Xcode: http://developer.apple.com/xcode
+
+.. Emacs config:
+ Local Variables:
+ mode: rst
+ ispell-local-dictionary: "american"
+ End:

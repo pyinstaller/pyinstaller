@@ -15,11 +15,10 @@ fi
 
 INFILE="$(dirname "$0")/../README.rst"
 
-sed -e '/\/develop.doc.Manual.html/ s!http:.*!https://pythonhosted.org/PyInstaller!' \
-    -e '/img\.shields\.io.*travis/   s/\<develop\>/'$VERSION'/' \
+sed -e '/img\.shields\.io.*travis/   s/\<develop\>/'$VERSION'/' \
     -e '/img\.shields\.io.*appveyor/ s/\<develop\>/'$VERSION'/' \
     -e '/ci\.appveyor/  s/\<develop\>/'$VERSION'/' \
     -e '/landscape\.io/ s/\<develop\>/master/' \
     -e '/img\.shields\.io\/badge\// s/-latest-/-v'$VERSION'-/' \
-    -e '/github.com.*\/blob\// s/\<develop\>/'$VERSION'/' \
+    -e '/pyinstaller\.rtfd\.org\// s/\<latest\>/'$VERSION'/' \
     -i "$INFILE"

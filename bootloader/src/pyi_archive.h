@@ -8,15 +8,12 @@
  * ****************************************************************************
  */
 
-
 /*
  * Declarations related to an PyInstaller archive.
  */
 
-
 #ifndef PYI_ARCHIVE_H
 #define PYI_ARCHIVE_H
-
 
 /* Types of CArchive items. */
 #define ARCHIVE_ITEM_BINARY           'b'  /* binary */
@@ -31,33 +28,33 @@
 
 /* TOC entry for a CArchive */
 typedef struct _toc {
-    int structlen;    /*len of this one - including full len of name */
-    int pos;          /* pos rel to start of concatenation */
-    int len;          /* len of the data (compressed) */
-    int ulen;         /* len of data (uncompressed) */
-    char cflag;       /* is it compressed (really a byte) */
-    char typcd;       /* type code -'b' binary, 'z' zlib, 'm' module,
-                       * 's' script (v3),'x' data, 'o' runtime option  */
+    int  structlen;  /*len of this one - including full len of name */
+    int  pos;        /* pos rel to start of concatenation */
+    int  len;        /* len of the data (compressed) */
+    int  ulen;       /* len of data (uncompressed) */
+    char cflag;      /* is it compressed (really a byte) */
+    char typcd;      /* type code -'b' binary, 'z' zlib, 'm' module,
+                      * 's' script (v3),'x' data, 'o' runtime option  */
     char name[1];    /* the name to save it as */
-	/* starting in v5, we stretch this out to a mult of 16 */
+    /* starting in v5, we stretch this out to a mult of 16 */
 } TOC;
 
 /* The CArchive Cookie, from end of the archive. */
 typedef struct _cookie {
-    char magic[8]; /* 'MEI\014\013\012\013\016' */
-    int  len;      /* len of entire package */
-    int  TOC;      /* pos (rel to start) of TableOfContents */
-    int  TOClen;   /* length of TableOfContents */
-    int  pyvers;   /* new in v4 */
-    char pylibname[64];    /* Filename of Python dynamic library e.g. python2.7.dll. */
+    char magic[8];      /* 'MEI\014\013\012\013\016' */
+    int  len;           /* len of entire package */
+    int  TOC;           /* pos (rel to start) of TableOfContents */
+    int  TOClen;        /* length of TableOfContents */
+    int  pyvers;        /* new in v4 */
+    char pylibname[64]; /* Filename of Python dynamic library e.g. python2.7.dll. */
 } COOKIE;
 
 typedef struct _archive_status {
-    FILE    *fp;
-    int     pkgstart;
-    TOC     *tocbuff;
-    TOC     *tocend;
-    COOKIE  cookie;
+    FILE * fp;
+    int    pkgstart;
+    TOC *  tocbuff;
+    TOC *  tocend;
+    COOKIE cookie;
     /*
      * On Windows:
      *    These strings are UTF-8 encoded (via pyi_win32_utils_to_utf8). On Python 2,
@@ -69,37 +66,37 @@ typedef struct _archive_status {
      *    On Python 3, they are decoded to wchar_t using Py_DecodeLocale
      *    (formerly called _Py_char2wchar) first.
      */
-    char    archivename[PATH_MAX];
-    char    homepath[PATH_MAX];
-    char    temppath[PATH_MAX];
+    char archivename[PATH_MAX];
+    char homepath[PATH_MAX];
+    char temppath[PATH_MAX];
     /*
      * Main path could be homepath or temppath. It will be temppath
      * if temppath is available. Sometimes we do not need to know if temppath
      * or homepath should be used. We only need to know the path. This variable
      * is used for example to set sys.path, sys.prefix, and sys._MEIPASS.
      */
-    char    mainpath[PATH_MAX];
-    /* 
+    char mainpath[PATH_MAX];
+    /*
      * Flag if temporary directory is available. This usually means running
      * executable in onefile mode. Bootloader has to behave differently
      * in this mode.
      */
-    bool  has_temp_directory;
+    bool has_temp_directory;
     /*
      * Flag if Python library was loaded. This indicates if it is safe
-     * to call function PI_Py_Finalize(). If Python dll is missing 
+     * to call function PI_Py_Finalize(). If Python dll is missing
      * calling this function would cause segmentation fault.
      */
-    bool  is_pylib_loaded;
+    bool is_pylib_loaded;
     /*
      * Cached command-line arguments.
      */
-    int argc;         /* Count of command-line arguments. */
-    char **argv;      /* On Windows, UTF-8 encoded form of __wargv. */
-                      /* On OS X/Linux, as received in main() */
+    int    argc;      /* Count of command-line arguments. */
+    char **argv;      /*
+                       * On Windows, UTF-8 encoded form of __wargv.
+                       * On OS X/Linux, as received in main()
+                       */
 } ARCHIVE_STATUS;
-
-
 
 TOC *pyi_arch_increment_toc_ptr(ARCHIVE_STATUS *status, TOC* ptoc);
 
@@ -114,9 +111,9 @@ int pyi_arch_get_pyversion(ARCHIVE_STATUS *status);
 /**
  * The gory detail level
  */
-int pyi_arch_set_paths(ARCHIVE_STATUS *status, char const * archivePath, char const * archiveName);
+int pyi_arch_set_paths(ARCHIVE_STATUS *status, char const * archivePath,
+                       char const * archiveName);
 int pyi_arch_open(ARCHIVE_STATUS *status);
-
 
 /*
  * Memory allocation wrappers.
@@ -138,12 +135,12 @@ void pyi_arch_status_free_memory(ARCHIVE_STATUS *status);
  *
  * @return 0 on success, non-zero otherwise.
  */
-int pyi_arch_setup(ARCHIVE_STATUS *status, char const * archivePath, char  const * archiveName);
+int pyi_arch_setup(ARCHIVE_STATUS *status, char const * archivePath,
+                   char const * archiveName);
 
 TOC *getFirstTocEntry(ARCHIVE_STATUS *status);
 TOC *getNextTocEntry(ARCHIVE_STATUS *status, TOC *entry);
 
 char * pyi_arch_get_option(ARCHIVE_STATUS * status, char * optname);
 
-
-#endif /* PYI_ARCHIVE_H */
+#endif  /* PYI_ARCHIVE_H */

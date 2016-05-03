@@ -1,0 +1,17 @@
+# OS X-specific test libraries.
+#
+# Libraries listed below are only installed by OS X-specific continuous
+# integration (CI) services (e.g., Travis). Platform-agnostic libraries are
+# listed in the "requirements-libraries.txt" file included below.
+
+# Prohibit "gevent" wheels, which cause py.test to crash on Travis under OS X.
+--no-binary gevent
+
+# Install all platform-agnostic libraries.
+-r requirements-libraries.txt
+
+pyenchant
+
+# SciPy currently provides no binary wheel for Windows and hence must be
+# isolated to non-Windows platforms. See also: scipy/scipy#5461
+scipy

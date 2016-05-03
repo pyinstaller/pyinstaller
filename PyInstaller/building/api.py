@@ -17,23 +17,19 @@ is a way how PyInstaller does the dependency analysis and creates executable.
 import os
 import shutil
 import tempfile
-import pkgutil
 import pprint
-import sys
 from operator import itemgetter
 
-from PyInstaller import is_win, is_darwin, HOMEPATH, PLATFORM
+from PyInstaller import is_win, is_darwin, is_linux, HOMEPATH, PLATFORM
 from PyInstaller.archive.writers import ZlibArchiveWriter, CArchiveWriter
-from PyInstaller.building.utils import _check_guts_toc_mtime, _check_guts_toc, add_suffix_to_extensions, \
-    checkCache, _check_path_overlap, _rmtree
-from PyInstaller.compat import is_cygwin
-from PyInstaller.config import CONF
+from PyInstaller.building.utils import _check_guts_toc, add_suffix_to_extensions, \
+    checkCache, _check_path_overlap, _rmtree, strip_paths_in_code, get_code_object
+from PyInstaller.compat import is_cygwin, exec_command_all
 from PyInstaller.depend import bindepend
 from PyInstaller.depend.analysis import get_bootstrap_modules
 from PyInstaller.depend.utils import is_path_to_egg
 from PyInstaller.building.datastruct import TOC, Target, logger, _check_guts_eq
 from PyInstaller.utils import misc
-from PyInstaller.utils.misc import save_py_data_struct
 from .. import log as logging
 
 logger = logging.getLogger(__name__)
@@ -81,11 +77,6 @@ class PYZ(Target):
             self.toc.extend(t)
             self.code_dict.update(getattr(t, '_code_cache', {}))
 
-        # Paths to remove from filenames embedded in code objects
-        self.replace_paths = sys.path + CONF['pathex']
-        # Make sure paths end with os.sep
-        self.replace_paths = [os.path.join(f, '') for f in self.replace_paths]
-
         self.name = name
         if name is None:
             self.name = os.path.splitext(self.tocfilename)[0] + '.pyz'
@@ -116,56 +107,6 @@ class PYZ(Target):
             return True
         return False
 
-    # TODO Could this function be merged with 'PyInstaller.utils.misc:get_code_object()'?
-    def __get_code(self, modname, filename):
-        """
-        Get the code-object for a module.
-
-        This is a extra-simple version for compiling a module. It's
-        not worth spending more effort here, as it is only used in the
-        rare case if outXX-Analysis.toc exists, but outXX-PYZ.toc does
-        not.
-        """
-
-        def load_code(modname, filename):
-            path_item = os.path.dirname(filename)
-            if os.path.basename(filename).startswith('__init__.py'):
-                # this is a package
-                path_item = os.path.dirname(path_item)
-            if os.path.basename(path_item) == '__pycache__':
-                path_item = os.path.dirname(path_item)
-            importer = pkgutil.get_importer(path_item)
-            package, _, modname = modname.rpartition('.')
-
-            if sys.version_info >= (3,3) and hasattr(importer, 'find_loader'):
-                loader, portions = importer.find_loader(modname)
-            else:
-                loader = importer.find_module(modname)
-                portions = []
-
-            assert loader and hasattr(loader, 'get_code')
-            logger.debug('Compiling %s', filename)
-            return loader.get_code(modname)
-
-        try:
-            if filename in ('-', None):
-                # This is a NamespacePackage, modulegraph marks them
-                # by using the filename '-'. (But wants to use None,
-                # so check for None, too, to be forward-compatible.)
-                logger.debug('Compiling namespace package %s', modname)
-                txt = '#\n'
-                return compile(txt, filename, 'exec')
-            else:
-                logger.debug('Compiling %s', filename)
-                co = load_code(modname, filename)
-                if not co:
-                    raise ValueError("Module file %s is missing" % filename)
-                return co
-        except SyntaxError as e:
-            print("Syntax error in ", filename)
-            print(e.args)
-            raise
-
     def assemble(self):
         logger.info("Building PYZ (ZlibArchive) %s", self.name)
         # Do not bundle PyInstaller bootstrap modules into PYZ archive.
@@ -174,50 +115,18 @@ class PYZ(Target):
             if not entry[0] in self.code_dict and entry[2] == 'PYMODULE':
                 # For some reason the code-object, modulegraph created
                 # is not available. Recreate it
-                self.code_dict[entry[0]] = self.__get_code(entry[0], entry[1])
+                self.code_dict[entry[0]] = get_code_object(entry[0], entry[1])
         # sort content alphabetically to support reproducible builds
         toc.sort()
 
         # Remove leading parts of paths in code objects
         self.code_dict = {
-            key: self._strip_paths_in_code(code)
+            key: strip_paths_in_code(code)
             for key, code in self.code_dict.items()
         }
 
         pyz = ZlibArchiveWriter(self.name, toc, code_dict=self.code_dict, cipher=self.cipher)
 
-    def _strip_paths_in_code(self, co, new_filename=None):
-        if new_filename is None:
-            original_filename = os.path.normpath(co.co_filename)
-            for f in self.replace_paths:
-                if original_filename.startswith(f):
-                    new_filename = original_filename[len(f):]
-                    break
-
-            else:
-                return co
-
-        code_func = type(co)
-
-        consts = tuple(
-            self._strip_paths_in_code(const_co, new_filename)
-            if isinstance(const_co, code_func) else const_co
-            for const_co in co.co_consts
-        )
-
-        # co_kwonlyargcount added in some version of Python 3
-        if hasattr(co, 'co_kwonlyargcount'):
-            return code_func(co.co_argcount, co.co_kwonlyargcount, co.co_nlocals, co.co_stacksize,
-                         co.co_flags, co.co_code, consts, co.co_names,
-                         co.co_varnames, new_filename, co.co_name,
-                         co.co_firstlineno, co.co_lnotab,
-                         co.co_freevars, co.co_cellvars)
-        else:
-            return code_func(co.co_argcount, co.co_nlocals, co.co_stacksize,
-                         co.co_flags, co.co_code, consts, co.co_names,
-                         co.co_varnames, new_filename, co.co_name,
-                         co.co_firstlineno, co.co_lnotab,
-                         co.co_freevars, co.co_cellvars)
 
 class PKG(Target):
     """
@@ -572,7 +481,6 @@ class EXE(Target):
         trash = []
         if not os.path.exists(os.path.dirname(self.name)):
             os.makedirs(os.path.dirname(self.name))
-        outf = open(self.name, 'wb')
         exe = self.exefiles[0][1]  # pathname of bootloader
         if not os.path.exists(exe):
             raise SystemExit(_MISSING_BOOTLOADER_ERRORMSG)
@@ -580,7 +488,7 @@ class EXE(Target):
 
         if is_win and (self.icon or self.versrsrc or self.resources):
             tmpnm = tempfile.mktemp()
-            shutil.copy(exe, tmpnm)
+            self._copyfile(exe, tmpnm)
             os.chmod(tmpnm, 0o755)
             if self.icon:
                 icon.CopyIcons(tmpnm, self.icon)
@@ -634,22 +542,42 @@ class EXE(Target):
                                      restype, resname, tmpnm, resfile, exc_info=1)
             trash.append(tmpnm)
             exe = tmpnm
-        exe = checkCache(exe, strip=self.strip, upx=self.upx)
-        self.copy(exe, outf)
-        if self.append_pkg:
-            logger.info("Appending archive to EXE %s", self.name)
-            self.copy(self.pkg.name, outf)
-        else:
+
+        # NOTE: Do not look up for bootloader file in the cache because it might
+        #       get corrupted by UPX when UPX is available. See #1863 for details.
+
+        if not self.append_pkg:
+            logger.info("Copying bootloader exe to %s", self.name)
+            self._copyfile(exe, self.name)
             logger.info("Copying archive to %s", self.pkgname)
-            shutil.copy(self.pkg.name, self.pkgname)
-        outf.close()
+            self._copyfile(self.pkg.name, self.pkgname)
+        elif is_linux:
+            self._copyfile(exe, self.name)
+            logger.info("Appending archive to ELF section in EXE %s", self.name)
+            retcode, stdout, stderr = exec_command_all(
+                'objcopy', '--add-section', 'pydata=%s' % self.pkg.name,
+                self.name)
+            logger.debug("objcopy returned %i", retcode)
+            logger.debug(stdout)
+            logger.debug(stderr)
+            if retcode != 0:
+                raise SystemError("objcopy Failure: %s" % stderr)
+        else:
+            # Fall back to just append on end of file
+            logger.info("Appending archive to EXE %s", self.name)
+            with open(self.name, 'wb') as outf:
+                # write the bootloader data
+                with open(exe, 'rb') as infh:
+                    shutil.copyfileobj(infh, outf, length=64*1024)
+                # write the archive data
+                with open(self.pkg.name, 'rb') as infh:
+                    shutil.copyfileobj(infh, outf, length=64*1024)
 
         if is_darwin:
             # Fix Mach-O header for codesigning on OS X.
             logger.info("Fixing EXE for code signing %s", self.name)
             import PyInstaller.utils.osx as osxutils
             osxutils.fix_exe_for_code_signing(self.name)
-            pass
 
         os.chmod(self.name, 0o755)
         # get mtime for storing into the guts
@@ -658,13 +586,10 @@ class EXE(Target):
             os.remove(item)
 
 
-    def copy(self, fnm, outf):
-        inf = open(fnm, 'rb')
-        while 1:
-            data = inf.read(64 * 1024)
-            if not data:
-                break
-            outf.write(data)
+    def _copyfile(self, infile, outfile):
+        with open(infile, 'rb') as infh:
+            with open(outfile, 'wb') as outfh:
+                shutil.copyfileobj(infh, outfh, length=64*1024)
 
 
 class COLLECT(Target):

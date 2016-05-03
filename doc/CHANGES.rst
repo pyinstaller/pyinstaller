@@ -1,6 +1,56 @@
 Changelog for PyInstaller
 =========================
 
+3.2 (2016-05-03)
+----------------
+
+- Even the "main" script is now byte-compiled (#1847, #1856)
+- The manual is on readthedocs.io now (#1578)
+- On installation try to compile the bootloader if there is none for
+  the current plattform (#1377)
+
+- (Unix) Use ``objcopy`` to create a valid ELF file (#1812, #1831)
+- (Linux): Compile with ``_FORTIFY_SOURCE`` (#1820)
+
+- New, updated and fixed hooks: CherryPy (#1860), Cryptography (#1425,
+  #1861), enchant (1562), gi.repository.GdkPixbuf (#1843), gst
+  (#1963), Lib2to3 (#1768), PyQt4, PyQt5, PySide (#1783, #1897,
+  #1887), SciPy (#1908, #1909), sphinx (#1911, #1912), sqlalchemy
+  (#1951), traitlets wx.lib.pubsub (#1837, #1838),
+
+- For windowed mode add ``isatty()`` for our dummy NullWriter (#1883)
+- Suppress "Failed to execute script" in case of SystemExit (#1869)
+- Do not apply Upx compressor for bootloader files (#1863)
+- Fix absolute path for lib used via ctypes (#1934)
+- (OSX) Fix binary cache on NFS (#1573, #1849)
+- (Windows) Fix message in grab_version (#1923)
+- (Windows) Fix wrong icon paramter in Windows example (#1764)
+- (Windows) Fix win32 unicode handling (#1878)
+- (Windows) Fix unnecessary rebuilds caused by rebuilding winmanifest
+  (#1933)
+- (Cygwin) Fix finding the Python library for Cygwin 64-bit (#1307,
+  #1810, #1811)
+- (OSX) Fix compilation issue (#1882)
+- (Windows) No longer bundle ``pefile``, use package from for windows
+  (#1357)
+- (Windows) Provide a more robust means of executing a Python script
+- AIX fixes.
+
+- Update waf to version 1.8.20 (#1868)
+- Fix excludedimports, more predictable order how hooks are applied
+  #1651
+- Internal impovements and code clean-up (#1754, #1760, #1794, #1858,
+  #1862, #1887, #1907, #1913)
+- Clean-ups fixes and improvements for the test suite
+
+**Known Issues**
+
+- Apps built with Windows 10 and Python 3.5 may not run on Windows versions
+  earlier than 10 (#1566).
+- The multipackage (MERGE) feature (#1527) is currently broken.
+- (OSX) Support for OpenDocument events (#1309) is broken.
+
+
 3.1.1 (2016-01-31)
 ------------------
 
@@ -494,3 +544,9 @@ Fixed the following issues:
 - Restyle documentation (now using docutils and reStructuredText).
 - New Windows build system for automatic compilations of bootloader in all
   the required flavours (using Scons)
+
+.. Emacs config:
+ Local Variables:
+ mode: rst
+ ispell-local-dictionary: "american"
+ End:

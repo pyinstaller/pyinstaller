@@ -6,7 +6,7 @@ package. The user can run the packaged app without installing a Python
 interpreter or any modules.
 
 
-.. image:: https://img.shields.io/travis/pyinstaller/pyinstaller/3.1.1.svg?label=Linux
+.. image:: https://img.shields.io/travis/pyinstaller/pyinstaller/3.2.svg?label=Linux
    :target: https://travis-ci.org/pyinstaller/pyinstaller/
    :alt: Travis CI test status (Linux)
 
@@ -14,8 +14,8 @@ interpreter or any modules.
    :target: https://travis-ci.org/pyinstaller/pyinstaller-osx-tests
    :alt: Travis CI test status (OS X)
 
-.. image:: https://img.shields.io/appveyor/ci/matysek/pyinstaller/3.1.1.svg?label=Windows
-   :target: https://ci.appveyor.com/project/matysek/pyinstaller/branch/3.1.1
+.. image:: https://img.shields.io/appveyor/ci/matysek/pyinstaller/3.2.svg?label=Windows
+   :target: https://ci.appveyor.com/project/matysek/pyinstaller/branch/3.2
    :alt: AppVeyor CI test status (Windows)
 
 .. image:: https://landscape.io/github/pyinstaller/pyinstaller/master/landscape.svg?
@@ -28,12 +28,12 @@ interpreter or any modules.
 .. image:: https://img.shields.io/pypi/dm/PyInstaller.svg
    :target: https://pypi.python.org/pypi/PyInstaller
 
-.. image:: https://img.shields.io/badge/docs-v3.1-blue.svg
-   :target: https://pythonhosted.org/PyInstaller
+.. image:: https://img.shields.io/badge/docs-v3.2-blue.svg
+   :target: https://pyinstaller.rtfd.org/en/3.2/
    :alt: Manual
 
-.. image:: https://img.shields.io/badge/changes-v3.1-blue.svg
-   :target: https://github.com/pyinstaller/pyinstaller/blob/3.1.1/doc/CHANGES.rst
+.. image:: https://img.shields.io/badge/changes-v3.2-blue.svg
+   :target: https://pyinstaller.rtfd.org/en/3.2/CHANGES.html
    :alt: Changelog
 
 .. image:: https://img.shields.io/badge/IRC-pyinstalller-blue.svg
@@ -103,10 +103,13 @@ Requirements and Tested Platforms
  - objdump: Console application to display information from 
    object files. This typically can be found in the
    distribution-package `binutils`.
+ - objcopy: Console application to copy and translate object files.
+   This typically can be found in the distribution-package `binutils`,
+   too.
 
 - Mac OS X (64bit):
 
- - Mac OS X 10.6 (Snow Leopard) or newer.
+ - Mac OS X 10.7 (Lion) or newer.
 
 
 Usage
@@ -157,5 +160,5 @@ or simply use it directly from the source (pyinstaller.py).
 
 
 .. _PyCrypto: https://www.dlitz.net/software/pycrypto/
-.. _`manual`: https://pythonhosted.org/PyInstaller
+.. _`manual`: https://pyinstaller.rtfd.org/en/3.2/
 

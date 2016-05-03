@@ -19,7 +19,7 @@ from PyInstaller.compat import EXTENSION_SUFFIXES
 from PyInstaller.utils.hooks import collect_submodules, get_module_file_attribute
 
 # Add the OpenSSL FFI binding modules as hidden imports
-hiddenimports = collect_submodules('cryptography.hazmat.bindings.openssl')
+hiddenimports = collect_submodules('cryptography.hazmat.bindings.openssl') + ['_cffi_backend']
 
 
 # Include the cffi extensions as binaries in a subfolder named like the package.

@@ -10,16 +10,27 @@
 
 import os
 import pytest
+import glob
 import ctypes, ctypes.util
 
-from PyInstaller.compat import is_win
-from PyInstaller.utils.tests import skipif, importorskip, xfail_py2, \
-  skipif_notwin, xfail
+from PyInstaller.compat import is_darwin
+from PyInstaller.utils.tests import skipif, importorskip, \
+  skipif_notwin, xfail, is_py2
 
 
 # :todo: find a way to get this from `conftest` or such
 # Directory with testing modules used in some tests.
 _MODULES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modules')
+
+def test_nameclash(pyi_builder):
+    # test-case for issue #964: Nameclashes in module information gathering
+    # All pyinstaller specific module attributes should be prefixed,
+    # to avoid nameclashes.
+    pyi_builder.test_source(
+        """
+        import pyi_testmod_nameclash.nameclash
+        """)
+
 
 def test_relative_import(pyi_builder):
     pyi_builder.test_source(
@@ -55,6 +66,40 @@ def test_relative_import3(pyi_builder):
         """
     )
 
+
+def test_module_with_coding_utf8(pyi_builder):
+    # Module ``utf8_encoded_module`` simply has an ``coding`` header
+    # and uses same German umlauts.
+    pyi_builder.test_source("import module_with_coding_utf8")
+
+
+def test_hiddenimport(pyi_builder):
+    # The script simply does nothing, not even print out a line.
+    pyi_builder.test_source('pass',
+                            ['--hidden-import=a_hidden_import'])
+
+
+
+def test_error_during_import(pyi_builder):
+    # See ticket #27: historically, PyInstaller was catching all
+    # errors during imports...
+    pyi_builder.test_source(
+        """
+        try:
+            import error_during_import2
+        except KeyError:
+            print("OK")
+        else:
+            raise RuntimeError("failure!")
+        """)
+
+# :todo: Use some package which is already installed for some other
+# reason instead of `simplejson` which is only used here.
+@importorskip('simplejson')
+def test_c_extension(pyi_builder):
+    pyi_builder.test_script('pyi_c_extension.py')
+
+
 # Verify that __path__ is respected for imports from the filesystem:
 #
 # * pyi_testmod_path/
@@ -71,10 +116,10 @@ def test_import_respects_path(pyi_builder, script_dir):
       ['--additional-hooks-dir='+script_dir.join('pyi_hooks').strpath])
 
 
-def test_import_pyqt5_uic_port(pyi_builder):
-    extra_path = os.path.join(_MODULES_DIR, 'pyi_import_pyqt.uic.port')
-    pyi_builder.test_script('pyi_import_pyqt5.uic.port.py',
-                            pyi_args=['--path', extra_path], )
+def test_import_pyqt5_uic_port(monkeypatch, pyi_builder):
+    extra_path = os.path.join(_MODULES_DIR, 'pyi_import_pyqt_uic_port')
+    pyi_builder.test_script('pyi_import_pyqt5_uic_port.py',
+                            pyi_args=['--path', extra_path])
 
 
 #--- ctypes ----
@@ -278,3 +323,166 @@ def test_egg_zipped(pyi_builder):
         """,
         pyi_args=['--paths', pathex],
     )
+
+
+#--- namespaces ---
+
+def test_nspkg1(pyi_builder):
+    # Test inclusion of namespace packages implemented using
+    # pkg_resources.declare_namespace
+    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg1-pkg', '*.egg'))
+    pyi_builder.test_source(
+        """
+        import nspkg1.aaa
+        import nspkg1.bbb.zzz
+        import nspkg1.ccc
+        """,
+        pyi_args=['--paths', os.pathsep.join(pathex)],
+    )
+
+
+def test_nspkg1_empty(pyi_builder):
+    # Test inclusion of a namespace-only packages in an zipped egg.
+    # This package only defines the namespace, nothing is contained there.
+    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg1-pkg', '*.egg'))
+    pyi_builder.test_source(
+        """
+        import nspkg1
+        print (nspkg1)
+        """,
+        pyi_args=['--paths', os.pathsep.join(pathex)],
+    )
+
+
+def test_nspkg1_bbb_zzz(pyi_builder):
+    # Test inclusion of a namespace packages in an zipped egg
+    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg1-pkg', '*.egg'))
+    pyi_builder.test_source(
+        """
+        import nspkg1.bbb.zzz
+        """,
+        pyi_args=['--paths', os.pathsep.join(pathex)],
+    )
+
+
+def test_nspkg2(pyi_builder):
+    # Test inclusion of namespace packages implemented as nspkg.pth-files
+    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg2-pkg'))
+    pyi_builder.test_source(
+        """
+        import nspkg2.aaa
+        import nspkg2.bbb.zzz
+        import nspkg2.ccc
+        """,
+        pyi_args=['--paths', os.pathsep.join(pathex)],
+    )
+
+
+@xfail(reason="modulegraph implements `pkgutil.extend_path` wrong")
+def test_nspkg3(pyi_builder):
+    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg3-pkg', '*.egg'))
+    pyi_builder.test_source(
+        """
+        import nspkg3.aaa
+        try:
+            # pkgutil ignores items of sys.path that are not strings
+            # referring to existing directories. So this zipped egg
+            # *must* be ignored.
+            import nspkg3.bbb.zzz
+        except ImportError:
+            pass
+        else:
+            raise SystemExit('nspkg3.bbb.zzz found but should not')
+        try:
+            import nspkg3.a
+        except ImportError:
+            pass
+        else:
+            raise SystemExit('nspkg3.a found but should not')
+        import nspkg3.ccc
+        """,
+        pyi_args=['--paths', os.pathsep.join(pathex)],
+    )
+
+def test_nspkg3_empty(pyi_builder):
+    # Test inclusion of a namespace-only package in a zipped egg
+    # using pkgutil.extend_path.
+    # This package only defines namespace, nothing is contained there.
+    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg3-pkg', '*_empty.egg'))
+    pyi_builder.test_source(
+        """
+        import nspkg3
+        print (nspkg3)
+        """,
+        pyi_args=['--paths', os.pathsep.join(pathex)],
+    )
+
+def test_nspkg3_aaa(pyi_builder):
+    # Test inclusion of a namespace package in an directory using
+    # pkgutil.extend_path
+    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg3-pkg', '*.egg'))
+    pyi_builder.test_source(
+        """
+        import nspkg3.aaa
+        """,
+        pyi_args=['--paths', os.pathsep.join(pathex)],
+    )
+
+def test_nspkg3_bbb_zzz(pyi_builder):
+    # Test inclusion of a namespace package in an zipped egg using
+    # pkgutil.extend_path
+    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg3-pkg', '*.egg'))
+    pyi_builder.test_source(
+        """
+        import nspkg3.bbb.zzz
+        """,
+        pyi_args=['--paths', os.pathsep.join(pathex)],
+    )
+
+@skipif(is_py2, reason="requires Python 3.3")
+def test_nspkg_pep420(pyi_builder):
+    # Test inclusion of PEP 420 namespace packages.
+    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg-pep420', 'path*'))
+    pyi_builder.test_source(
+        """
+        import package.sub1
+        import package.sub2
+        import package.subpackage.sub
+        import package.nspkg.mod
+        """,
+        pyi_args=['--paths', os.pathsep.join(pathex)],
+    )
+
+
+#--- hooks related stuff ---
+
+def test_pkg_without_hook_for_pkg(pyi_builder, script_dir):
+    # The package `pkg_without_hook_for_pkg` does not have a hook, but
+    # `pkg_without_hook_for_pkg.sub1` has one. And this hook includes
+    # the "hidden" import `pkg_without_hook_for_pkg.sub1.sub11`
+    pyi_builder.test_source(
+        'import pkg_without_hook_for_pkg.sub1',
+        ['--additional-hooks-dir=%s' % script_dir.join('pyi_hooks')])
+
+
+@xfail(is_darwin, reason='Issue #1895.')
+def test_app_with_plugin(pyi_builder, data_dir, monkeypatch):
+
+    from PyInstaller.building.build_main import Analysis
+    class MyAnalysis(Analysis):
+        def __init__(self, *args, **kwargs):
+            kwargs['datas'] = datas
+            # Setting back is required to make `super()` within
+            # Analysis access the correct class. Do not use
+            # `monkeypatch.undo()` as this will undo *all*
+            # monkeypathes.
+            monkeypatch.setattr('PyInstaller.building.build_main.Analysis',
+                                Analysis)
+            super(MyAnalysis, self).__init__(*args, **kwargs)
+
+    monkeypatch.setattr('PyInstaller.building.build_main.Analysis', MyAnalysis)
+
+    # :fixme: When PyInstaller supports setting datas via the
+    # command-line, us this here instead of monkeypatching Analysis.
+    datas = [('data/*/static_plugin.py', '.')]
+    pyi_builder.test_script('pyi_app_with_plugin.py')

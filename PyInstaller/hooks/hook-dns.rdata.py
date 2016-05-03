@@ -10,7 +10,5 @@
 
 # This is hook for DNS python package dnspython.
 
-hiddenimports = [
-    "dns.rdtypes.*",
-    "dns.rdtypes.ANY.*"
-]
+from PyInstaller.utils.hooks import collect_submodules
+hiddenimports = collect_submodules('dns.rdtypes')

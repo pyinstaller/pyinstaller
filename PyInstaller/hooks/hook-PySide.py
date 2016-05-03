@@ -11,7 +11,7 @@
 import os
 
 from PyInstaller.compat import getsitepackages, is_darwin, is_win
-from PyInstaller.utils.hooks import qt4_menu_nib_dir
+from PyInstaller.utils.hooks import qt_menu_nib_dir
 
 
 # On Windows system PATH has to be extended to point to the PySide directory.
@@ -27,5 +27,5 @@ if is_win:
 # app.
 if is_darwin:
     datas = [
-        (qt4_menu_nib_dir(), ''),
+        (qt_menu_nib_dir('PySide'), ''),
     ]

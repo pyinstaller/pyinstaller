@@ -8,16 +8,13 @@
  * ****************************************************************************
  */
 
-
 /*
  * Portable wrapper for some utility functions like getenv/setenv,
  * file path manipulation and other shared data types or functions.
  */
 
-
 #ifndef HEADER_PYI_UTILS_H
 #define HEADER_PYI_UTILS_H
-
 
 /* Environment variables. */
 
@@ -39,5 +36,4 @@ dylib_t pyi_utils_dlopen(const char *dllpath);
 int pyi_utils_create_child(const char *thisfile, const int argc, char *const argv[]);
 int pyi_utils_set_environment(const ARCHIVE_STATUS *status);
 
-
-#endif /* HEADER_PY_UTILS_H */
+#endif  /* HEADER_PY_UTILS_H */

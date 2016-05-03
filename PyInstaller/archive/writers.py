@@ -28,7 +28,8 @@ from types import CodeType
 import marshal
 import zlib
 
-from .readers import CArchiveReader, PYZ_TYPE_MODULE, PYZ_TYPE_PKG, PYZ_TYPE_DATA
+from PyInstaller.building.utils import get_code_object, strip_paths_in_code
+from .readers import PYZ_TYPE_MODULE, PYZ_TYPE_PKG, PYZ_TYPE_DATA
 from ..compat import BYTECODE_MAGIC
 
 
@@ -356,24 +357,23 @@ class CArchiveWriter(ArchiveWriter):
         (nm, pathnm, flag, typcd) = entry[:4]
         # FIXME Could we make the version 5 the default one?
         # Version 5 - allow type 'o' = runtime option.
+        code_data = None
+        fh = None
         try:
             if typcd in ('o', 'd'):
-                fh = None
                 ulen = 0
-                postfix = b''
                 flag = 0
             elif typcd == 's':
-                # If it's a source code file, add \0 terminator as it will be
-                # executed as-is by the bootloader.
-                # Must read this in binary-mode, too, because
-                # compression only accepts a binary stream. Further we
-                # do not process it here, so why decode?
-                fh = open(pathnm, 'rb')
-                postfix = b'\n\0'
-                ulen = os.fstat(fh.fileno()).st_size + len(postfix)
+                # If it's a source code file, compile it to a code object and marshall
+                # the object so it can be unmarshalled by the bootloader.
+
+                code = get_code_object(nm, pathnm)
+                code = strip_paths_in_code(code)
+
+                code_data = marshal.dumps(code)
+                ulen = len(code_data)
             else:
                 fh = open(pathnm, 'rb')
-                postfix = b''
                 ulen = os.fstat(fh.fileno()).st_size
         except IOError:
             print("Cannot find ('%s', '%s', %s, '%s')" % (nm, pathnm, flag, typcd))
@@ -381,27 +381,32 @@ class CArchiveWriter(ArchiveWriter):
 
         where = self.lib.tell()
         assert flag in range(3)
-        if not fh:
+        if not fh and not code_data:
             # no need to write anything
             pass
         elif flag == 1:
-            assert fh
             comprobj = zlib.compressobj(self.LEVEL)
-            while 1:
-                buf = fh.read(16*1024)
-                if not buf:
-                    break
-                self.lib.write(comprobj.compress(buf))
-            self.lib.write(comprobj.compress(postfix))
+            if code_data is not None:
+                self.lib.write(comprobj.compress(code_data))
+            else:
+                assert fh
+                while 1:
+                    buf = fh.read(16*1024)
+                    if not buf:
+                        break
+                    self.lib.write(comprobj.compress(buf))
             self.lib.write(comprobj.flush())
+
         else:
-            assert fh
-            while 1:
-                buf = fh.read(16*1024)
-                if not buf:
-                    break
-                self.lib.write(buf)
-            self.lib.write(postfix)
+            if code_data is not None:
+                self.lib.write(code_data)
+            else:
+                assert fh
+                while 1:
+                    buf = fh.read(16*1024)
+                    if not buf:
+                        break
+                    self.lib.write(buf)
 
         dlen = self.lib.tell() - where
         if typcd == 'm':

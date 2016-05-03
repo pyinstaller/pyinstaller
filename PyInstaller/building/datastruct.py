@@ -10,7 +10,6 @@
 
 import os
 
-from PyInstaller import compat as compat
 from PyInstaller.utils import misc
 from PyInstaller.utils.misc import load_py_data_struct, save_py_data_struct
 from .. import log as logging
@@ -45,9 +44,6 @@ class FilenameSet(MutableSet):
 
     def discard(self, name):
         self._set.discard(os.path.normcase(name))
-
-
-    
 
 
 class TOC(list):
@@ -154,7 +150,6 @@ class Target(object):
         self.tocbasename = os.path.basename(self.tocfilename)
         self.dependencies = TOC()
 
-
     def __postinit__(self):
         """
         Check if the target need to be rebuild and if so, re-assemble.
@@ -183,7 +178,6 @@ class Target(object):
             self.assemble()
             self._save_guts()
 
-
     _GUTS = []
 
     def _check_guts(self, data, last_build):
@@ -200,7 +194,6 @@ class Target(object):
             if func(attr, data[attr], getattr(self, attr), last_build):
                 return True
         return False
-
 
     def _save_guts(self):
         """
@@ -275,13 +268,11 @@ class Tree(Target, TOC):
         self[:] = data['data']  # collected files
         return False
 
-
     def _save_guts(self):
         # Use the attribute `data` to save the list
         self.data = self
         super(Tree, self)._save_guts()
         del self.data
-
 
     def assemble(self):
         logger.info("Building Tree %s", self.tocbasename)

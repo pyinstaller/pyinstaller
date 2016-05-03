@@ -38,7 +38,7 @@ To easy rebuilding the bootloader for other platforms and other
 word-sizes, you may use the enclosed ``Vagrantfile``. Example::
 
   rm -f ../PyInstaller/bootloader/Linux-32*/*
-  vagrant up linux32 # will also rebuild
+  vagrant up linux32 --provision # will also rebuild
   vagrant halt linux32
   # verify the bootloader has been rebuild
   git status ../PyInstaller/bootloader/

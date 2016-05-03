@@ -10,6 +10,6 @@
 
 hiddenimports = ['sip']
 
-from PyInstaller.utils.hooks import qt5_plugins_binaries
+from PyInstaller.utils.hooks import qt_plugins_binaries
 
-binaries = qt5_plugins_binaries('codecs')
+binaries = qt_plugins_binaries('codecs', namespace='PyQt5')

@@ -48,11 +48,13 @@ variants = {
     'releasew': 'runw',
 }
 
-# TODO use following variable only on darwin and for 32bit loader.
-# TODO Do we still need this variable on OS X?
-# OS X 10.6 might not understand some load commands.
-# The following variable fixes 10.6 compatibility.
-os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.6'
+
+if is_darwin:
+    # OS X 10.7 might not understand some load commands.
+    # The following variable fixes 10.7 compatibility.
+    # According to OS X doc this variable is equivalent to gcc option:
+    #   -mmacosx-version-min=10.7
+    os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.7'
 
 
 # TODO strip created binaries.
@@ -269,6 +271,16 @@ def set_arch_flags(ctx):
         ctx.env.append_value('CXXFLAGS', mac_arch)
         ctx.env.append_value('LINKFLAGS', mac_arch)
 
+    # AIX specific flags
+    elif is_aix:
+        if ctx.env.CC_NAME == 'gcc':
+            ctx.check_cc(ccflags='-m32', msg='Checking for flags -m32')
+            ctx.env.append_value('CFLAGS', '-m32')
+            ctx.env.append_value('LINKFLAGS', '-m32')
+        else:
+            # We use xlc compiler
+            pass
+
     # Other compiler - not msvc.
     else:
         if machine() == 'sw_64':
@@ -355,9 +367,9 @@ def configure(ctx):
         # This tool allows reduce the size of executables.
         ctx.load('strip', tooldir='tools')
 
-    ### Defines, Includes
+    if ctx.env.CC_NAME == 'gcc':
+        # !! These flags are gcc specific
 
-    if ctx.env.CC_NAME != 'msvc':
         # Make sure we don't use declarations after statement. It breaks
         # MSVC (Visual Studio).
         ctx.env.append_value('CFLAGS', '-Wdeclaration-after-statement')
@@ -366,6 +378,8 @@ def configure(ctx):
         # Implicit return value is 'int' which is only 32 bits on Windows.
         ctx.env.append_value('CFLAGS', '-Wimplicit-function-declaration')
         ctx.env.append_value('CFLAGS', '-Werror')
+
+    ### Defines, Includes
 
     if not is_win:
         # Defines common for Unix and Unix-like platforms.
@@ -378,19 +392,36 @@ def configure(ctx):
         #   Mac OS X 10.5 is UNIX 03 compliant.
         ctx.env.append_value('DEFINES', '_XOPEN_SOURCE=600')
         ctx.env.append_value('DEFINES', '_REENTRANT')
-        # Recent GCC 5.x complains about _BSD_SOURCE:
-        #  warning "_BSD_SOURCE and _SVID_SOURCE are deprecated, use _DEFAULT_SOURCE"
-        if is_linux:
-            ctx.env.append_value('DEFINES', '_DEFAULT_SOURCE')
-        # Function 'mkdtemp' is available only if _BSD_SOURCE is defined.
+
+        # mkdtemp() is available only if _BSD_SOURCE is defined.
         ctx.env.append_value('DEFINES', '_BSD_SOURCE')
-        # On Mac OS X is 'mkdtemp' available only with _DARWIN_C_SOURCE.
-        if is_darwin:
+
+        if is_linux:
+            # Recent GCC 5.x complains about _BSD_SOURCE under Linux:
+            #     _BSD_SOURCE and _SVID_SOURCE are deprecated, use _DEFAULT_SOURCE
+            ctx.env.append_value('DEFINES', '_DEFAULT_SOURCE')
+
+            # TODO What other platforms support _FORTIFY_SOURCE macro? OS X?
+            # TODO OS X's CLang appears to support this macro as well. See:
+            # http://permalink.gmane.org/gmane.comp.compilers.clang.devel/2442
+
+            # For security, enable the _FORTIFY_SOURCE macro detecting buffer
+            # overflows in various string and memory manipulation functions.
+            if ctx.env.CC_NAME == 'gcc':
+                # Undefine this macro if already defined by default to avoid
+                # "macro redefinition" errors.
+                ctx.env.append_value('CFLAGS', '-U_FORTIFY_SOURCE')
+
+                # Define this macro.
+                ctx.env.append_value('DEFINES', '_FORTIFY_SOURCE=2')
+        # On Mac OS X, mkdtemp() is available only with _DARWIN_C_SOURCE.
+        elif is_darwin:
             ctx.env.append_value('DEFINES', '_DARWIN_C_SOURCE')
 
     if is_win:
         ctx.env.append_value('DEFINES', 'WIN32')
         ctx.env.append_value('CPPPATH', '../zlib')
+
     if is_solar:
         ctx.env.append_value('DEFINES', 'SUNOS')
         if ctx.env.CC_NAME == 'gcc':
@@ -400,6 +431,7 @@ def configure(ctx):
             ctx.env['STLIB_MARKER'] = '-Wl,-Bstatic'
             # On Solaris using gcc, the compiler needs to be gnu99
             ctx.env.append_value('CFLAGS', '-std=gnu99')
+
     if is_aix:
         ctx.env.append_value('DEFINES', 'AIX')
         # On AIX some APIs are restricted if _ALL_SOURCE is not defined.
@@ -408,11 +440,15 @@ def configure(ctx):
         # archive. We need to load the Python library like this:
         #  dlopen("libpython2.7.a(libpython2.7.so)", RTLD_MEMBER)
         ctx.env.append_value('DEFINES', '_ALL_SOURCE')
-        if ctx.env.CC_NAME == 'gcc':
-            # On AIX using gcc the linker options for shared and static
-            # libraries are slightly different from other platforms.
-            ctx.env['SHLIB_MARKER'] = '-Wl,-bdynamic'
-            ctx.env['STATICLIB_MARKER'] = '-Wl,-bstatic'
+
+        # On AIX using gcc the linker options for shared and static
+        # libraries are slightly different from other platforms.
+        ctx.env['SHLIB_MARKER'] = '-Wl,-bdynamic'
+        ctx.env['STLIB_MARKER'] = '-Wl,-bstatic'
+
+    # Adding python includedir into our environment - does not work on Windows
+    if not is_win:
+        ctx.env.append_value('INCLUDES', sysconfig.get_config_var('INCLUDEDIR'))
 
     ### Libraries
 
@@ -463,7 +499,7 @@ def configure(ctx):
             ctx.env.append_value('LINKFLAGS', '-municode')
 
     if is_darwin:
-        ctx.env.append_value('CFLAGS', '-mmacosx-version-min=10.6')
+        ctx.env.append_value('CFLAGS', '-mmacosx-version-min=10.7')
 
     # On linux link only with needed libraries.
     # -Wl,--as-needed is on some platforms detected during configure but
@@ -574,9 +610,9 @@ def build(ctx):
             # to be loaded in the main process
             if is_freebsd and sysconfig.get_config_vars('HAVE_PTHREAD_H').pop():
                 libs.append('THR')
-        elif sys.platform.startswith('aix'):
-            libs = ['DL', 'M']
-            staticlibs = ['Z']
+        elif is_aix:
+            libs = ['dl', 'm']
+            staticlibs = ['z']
 
         if ctx.options.boehmgc:
             libs.append('GC')

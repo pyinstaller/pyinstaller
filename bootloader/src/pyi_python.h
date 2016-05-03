@@ -8,7 +8,6 @@
  * ****************************************************************************
  */
 
-
 /*
  * Python.h replacements.
  *
@@ -16,17 +15,15 @@
  * version. This is the cruft necessary to do dynamic loading.
  */
 
-
 #ifndef PYI_PYTHON_H
 #define PYI_PYTHON_H
 
 #include "pyi_global.h"
 #ifdef _WIN32
-    #include <windows.h>  // HMODULE
+    #include <windows.h>  /* HMODULE */
 #endif
 #include <wchar.h>
 #include "pyi_python27_compat.h"
-
 
 /*
  * These macros used to define variables to hold dynamically accessed entry
@@ -34,31 +31,31 @@
  */
 #ifdef _WIN32
 
-#define EXTDECLPROC(result, name, args)\
-    typedef result (__cdecl *__PROC__##name) args;\
-    extern __PROC__##name PI_##name;
+    #define EXTDECLPROC(result, name, args) \
+    typedef result (__cdecl *__PROC__ ## name) args; \
+    extern __PROC__ ## name PI_ ## name;
 
-#define EXTDECLVAR(vartyp, name)\
-    typedef vartyp __VAR__##name;\
-    extern __VAR__##name *PI_##name;
+    #define EXTDECLVAR(vartyp, name) \
+    typedef vartyp __VAR__ ## name; \
+    extern __VAR__ ## name *PI_ ## name;
 
 #else
 
-#define EXTDECLPROC(result, name, args)\
-    typedef result (*__PROC__##name) args;\
-    extern __PROC__##name PI_##name;
+    #define EXTDECLPROC(result, name, args) \
+    typedef result (*__PROC__ ## name) args; \
+    extern __PROC__ ## name PI_ ## name;
 
-#define EXTDECLVAR(vartyp, name)\
-    typedef vartyp __VAR__##name;\
-    extern __VAR__##name *PI_##name;
+    #define EXTDECLVAR(vartyp, name) \
+    typedef vartyp __VAR__ ## name; \
+    extern __VAR__ ## name *PI_ ## name;
 
-#endif /* WIN32 */
+#endif  /* WIN32 */
 
 /*
  * Python.h replacements.
  *
  * We do not want to include Python.h because we do no want to bind
- * to a specific version of Python. If we were to, eg., use the 
+ * to a specific version of Python. If we were to, eg., use the
  * Py_INCREF macro from Python.h, the compiled code would depend
  * on the specific layout in memory of PyObject, and thus change
  * when Python changes (or if your platform changes between 32bit
@@ -99,19 +96,18 @@ EXTDECLPROC(int, Py_Finalize, (void));
 EXTDECLPROC(void, Py_IncRef, (PyObject *));
 EXTDECLPROC(void, Py_DecRef, (PyObject *));
 
-
 /*
  * These functions have to be called before Py_Initialize()
  */
 EXTDECLPROC(void, Py_SetProgramName, (wchar_t *));
 EXTDECLPROC(void, Py_SetPythonHome, (wchar_t *));
-EXTDECLPROC(void, Py_SetPath, (wchar_t *));  // new in Python 3
+EXTDECLPROC(void, Py_SetPath, (wchar_t *));  /* new in Python 3 */
 
 EXTDECLPROC(void, PySys_SetPath, (wchar_t *));
 EXTDECLPROC(int, PySys_SetArgvEx, (int, wchar_t **, int));
-EXTDECLPROC(int, PyRun_SimpleString, (char *)); // Py3: UTF-8 encoded string
+EXTDECLPROC(int, PyRun_SimpleString, (char *));  /* Py3: UTF-8 encoded string */
 
-// In Python 3 for these the first argument has to be a UTF-8 encoded string:
+/* In Python 3 for these the first argument has to be a UTF-8 encoded string: */
 EXTDECLPROC(PyObject *, PyImport_ExecCodeModule, (char *, PyObject *));
 EXTDECLPROC(PyObject *, PyImport_ImportModule, (char *));
 EXTDECLPROC(PyObject *, PyImport_AddModule, (char *));
@@ -134,18 +130,12 @@ EXTDECLPROC(void, PySys_AddWarnOption, (wchar_t *));
 /* Return a C long representation of the contents of pylong. */
 EXTDECLPROC(long, PyLong_AsLong, (PyObject *) );
 
-
-/* Functions used in dllmain.c on Windows. */
-EXTDECLPROC(void, PyEval_InitThreads, (void) );
-EXTDECLPROC(void, PyEval_AcquireThread, (PyThreadState *) );
-EXTDECLPROC(void, PyEval_ReleaseThread, (PyThreadState *) );
-EXTDECLPROC(PyThreadState *, PyThreadState_Swap, (PyThreadState *) );
-EXTDECLPROC(PyThreadState *, Py_NewInterpreter, (void) );
-EXTDECLPROC(void, Py_EndInterpreter, (PyThreadState *) );
 EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
 
-/* Used to convert argv to wchar_t on Linux/OS X */
-/* On Python 3.0-3.4, this function was called _Py_char2wchar */
+/*
+ * Used to convert argv to wchar_t on Linux/OS X
+ * On Python 3.0-3.4, this function was called _Py_char2wchar
+ */
 EXTDECLPROC(wchar_t *, Py_DecodeLocale, (char *, size_t *));
 
 /* Used to add PYZ to sys.path */
@@ -153,9 +143,12 @@ EXTDECLPROC(PyObject *, PySys_GetObject, (const char *));
 EXTDECLPROC(PyObject *, PyString_FromFormat, (const char *, ...));
 EXTDECLPROC(PyObject *, PyUnicode_FromFormat, (const char *, ...));
 EXTDECLPROC(PyObject *, PyUnicode_DecodeFSDefault, (const char *));
-EXTDECLPROC(PyObject *, PyUnicode_Decode, (const char *, size_t, const char *, const char *)); // Py_ssize_t
+EXTDECLPROC(PyObject *, PyUnicode_Decode,
+            (const char *, size_t, const char *, const char *));                               /* Py_ssize_t */
 
-
+/* Used to load and execute marshalled code objects */
+EXTDECLPROC(PyObject *, PyEval_EvalCode, (PyObject *, PyObject *, PyObject *));
+EXTDECLPROC(PyObject *, PyMarshal_ReadObjectFromString, (const char *, size_t));  /* Py_ssize_t */
 
 /*
  * Macros for reference counting through exported functions
@@ -185,62 +178,60 @@ EXTDECLPROC(PyObject *, PyUnicode_Decode, (const char *, size_t, const char *, c
  */
 #ifdef _WIN32
 
-#define DECLPROC(name)\
-    __PROC__##name PI_##name = NULL;
-#define GETPROCOPT(dll, name, sym)\
-    PI_##name = (__PROC__##name)GetProcAddress (dll, #sym)
-#define GETPROC(dll, name)\
+    #define DECLPROC(name) \
+    __PROC__ ## name PI_ ## name = NULL;
+    #define GETPROCOPT(dll, name, sym) \
+    PI_ ## name = (__PROC__ ## name)GetProcAddress (dll, #sym)
+    #define GETPROC(dll, name) \
     GETPROCOPT(dll, name, name); \
-    if (!PI_##name) {\
-        FATALERROR ("Cannot GetProcAddress for " #name "\n");\
-        return -1;\
+    if (!PI_ ## name) { \
+        FATALERROR ("Cannot GetProcAddress for " #name "\n"); \
+        return -1; \
     }
-#define GETPROC_RENAMED(dll, name, sym)\
+    #define GETPROC_RENAMED(dll, name, sym) \
     GETPROCOPT(dll, name, sym); \
-    if (!PI_##name) {\
-        FATALERROR ("Cannot GetProcAddress for " #sym "\n");\
-        return -1;\
+    if (!PI_ ## name) { \
+        FATALERROR ("Cannot GetProcAddress for " #sym "\n"); \
+        return -1; \
     }
-#define DECLVAR(name)\
-    __VAR__##name *PI_##name = NULL;
-#define GETVAR(dll, name)\
-    PI_##name = (__VAR__##name *)GetProcAddress (dll, #name);\
-    if (!PI_##name) {\
-        FATALERROR ("Cannot GetProcAddress for " #name "\n");\
-        return -1;\
-    }
-
-#else
-
-#define DECLPROC(name)\
-    __PROC__##name PI_##name = NULL;
-#define GETPROCOPT(dll, name, sym)\
-    PI_##name = (__PROC__##name)dlsym (dll, #sym)
-#define GETPROC(dll, name)\
-    GETPROCOPT(dll, name, name);\
-    if (!PI_##name) {\
-        FATALERROR ("Cannot dlsym for " #name "\n");\
-        return -1;\
-    }
-#define GETPROC_RENAMED(dll, name, sym)\
-    GETPROCOPT(dll, name, sym);\
-    if (!PI_##name) {\
-        FATALERROR ("Cannot dlsym for " #sym "\n");\
-        return -1;\
-    }
-#define DECLVAR(name)\
-    __VAR__##name *PI_##name = NULL;
-#define GETVAR(dll, name)\
-    PI_##name = (__VAR__##name *)dlsym(dll, #name);\
-    if (!PI_##name) {\
-        FATALERROR ("Cannot dlsym for " #name "\n");\
-        return -1;\
+    #define DECLVAR(name) \
+    __VAR__ ## name * PI_ ## name = NULL;
+    #define GETVAR(dll, name) \
+    PI_ ## name = (__VAR__ ## name *)GetProcAddress (dll, #name); \
+    if (!PI_ ## name) { \
+        FATALERROR ("Cannot GetProcAddress for " #name "\n"); \
+        return -1; \
     }
 
-#endif /* WIN32 */
+#else /* ifdef _WIN32 */
 
+    #define DECLPROC(name) \
+    __PROC__ ## name PI_ ## name = NULL;
+    #define GETPROCOPT(dll, name, sym) \
+    PI_ ## name = (__PROC__ ## name)dlsym (dll, #sym)
+    #define GETPROC(dll, name) \
+    GETPROCOPT(dll, name, name); \
+    if (!PI_ ## name) { \
+        FATALERROR ("Cannot dlsym for " #name "\n"); \
+        return -1; \
+    }
+    #define GETPROC_RENAMED(dll, name, sym) \
+    GETPROCOPT(dll, name, sym); \
+    if (!PI_ ## name) { \
+        FATALERROR ("Cannot dlsym for " #sym "\n"); \
+        return -1; \
+    }
+    #define DECLVAR(name) \
+    __VAR__ ## name * PI_ ## name = NULL;
+    #define GETVAR(dll, name) \
+    PI_ ## name = (__VAR__ ## name *)dlsym(dll, #name); \
+    if (!PI_ ## name) { \
+        FATALERROR ("Cannot dlsym for " #name "\n"); \
+        return -1; \
+    }
+
+#endif  /* WIN32 */
 
 int pyi_python_map_names(HMODULE dll, int pyvers);
 
-
-#endif /* PYI_PYTHON_H */
+#endif  /* PYI_PYTHON_H */

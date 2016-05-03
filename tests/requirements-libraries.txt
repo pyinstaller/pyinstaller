@@ -1,0 +1,42 @@
+# Platform-agnostic test libraries.
+#
+# Libraries listed below are unconditionally installed by all continuous
+# integration (CI) services, regardless of platform. Each platform-specific
+# requirements file (e.g., "requirements-linux.txt") includes this file.
+
+# Url for downloading PyCrypto prebuilt Windows binaries:
+# http://www.voidspace.org.uk/python/pycrypto-2.6.1/
+pycrypto  # Required for crypto feature - encrypting bytecode.
+
+Django<1.8.11 # PyInstaller doesn't yet work with Django 1.9
+babel>2.0  # Required by sphinx. Version 2.0 doesn't work on Windows.
+boto
+boto3
+botocore
+cherrypy
+gevent
+pygments
+pylint>=1.5
+markdown
+simplejson # simplejson is used for text_c_extension
+sphinx
+pyzmq
+zope.interface  # Required for test_namespace_package
+# numpy 1.11 is broken and does not compile on AppVeyor (Windows)
+numpy==1.10.4
+lxml
+keyring
+pycparser
+pytz
+sqlalchemy
+twisted
+pyexcelerate
+Pillow
+
+# dateutil.tz is a package in 2.5.0 and does not play nice with PyInstaller.
+python-dateutil>2.5.0
+pandas
+
+# matplotlib 1.5+ does not provide binaries for python 3.3
+matplotlib ; python_version < '2.8' or python_version >= '3.4'
+matplotlib==1.4.3 ; python_version >= '3.3' and python_version < '3.4'

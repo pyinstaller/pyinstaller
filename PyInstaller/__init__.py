@@ -14,13 +14,13 @@ import os
 import sys
 
 from . import compat
-from .compat import is_darwin, is_win, is_py2
+from .compat import is_darwin, is_win, is_cygwin, is_py2, is_linux
 from .utils.git import get_repo_revision
 
 
 # Note: Keep this variable as plain string so it could be updated automatically
 #       when doing a release.
-__version__ = '3.1.1'
+__version__ = '3.2'
 
 
 # Absolute path of this package's directory. Save this early so all
@@ -46,15 +46,21 @@ if is_win and is_py2:
 
 # Update __version__ as necessary.
 if os.path.exists(os.path.join(HOMEPATH, 'setup.py')):
-    # PyInstaller is run directly of source without installation or
+    # PyInstaller is run directly from source without installation or
     # __version__ is called from 'setup.py' ...
-    # Note: The documenation's Makefile also passes `sdist` when run
-    # with 'DO_RELEASE=1' to suppress the git revision.
-    if 'sdist' not in sys.argv:
+    if compat.getenv('PYINSTALLER_DO_RELEASE') == '1':
+        # Suppress the git revision when doing a release.
+        pass
+    elif 'sdist' not in sys.argv:
         # and 'setup.py' was not called with 'sdist' argument.
         # For creating source tarball we do not want git revision
         # in the filename.
-        __version__ += get_repo_revision()
+        try:
+            __version__ += get_repo_revision()
+        except Exception:
+            # Write to stderr because stdout is used for eval() statement
+            # in some subprocesses.
+            sys.stderr.write('WARN: failed to parse git revision')
 else:
     # PyInstaller was installed by `python setup.py install'.
     import pkg_resources

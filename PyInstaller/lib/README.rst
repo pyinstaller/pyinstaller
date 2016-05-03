@@ -27,27 +27,6 @@ with relative prefix::
     from . import ordlookup
 
 
-pefile
-------
-
-Two versions of pefile are included to make PyInstaller runnable on both
-Python 2 and 3. Importing pefile.py will import the correct version for
-the running Python version.
-
-- Official Python 2 version of pefile is from here:
-  https://github.com/erocarrera/pefile
-
-- There is no official port of pefile to Python 3 yet. We use this branch for PyInstaller
-  https://github.com/BlackXeronic/pefile_py3
-
-- For status of official support for Python3 see
-  https://github.com/erocarrera/pefile/issues/36
-
-Our copies of pefile.py are modified with two optimizations to speed up our specific
-use-case of finding DLL names: When scanning the import table, only DLL names are
-loaded and the imported symbols are not parsed; and when scanning the export table,
-only "forwarded" symbols that implicitly import a DLL are returned.
-
 macholib
 --------
 

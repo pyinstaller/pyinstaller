@@ -54,8 +54,12 @@ def create_py3_base_library(libzip_filename, graph):
 
     # Construct regular expression for matching modules that should be bundled
     # into base_library.zip.
-    regex_str = '|'.join(['(%s.*)' % x for x in PY3_BASE_MODULES])
-    regex = re.compile(regex_str)
+    # Excluded are plain 'modules' or 'submodules.ANY_NAME'.
+    # The match has to be exact - start and end of string not substring.
+    regex_modules = '|'.join([r'(^%s$)' % x for x in PY3_BASE_MODULES])
+    regex_submod = '|'.join([r'(^%s\..*$)' % x for x in PY3_BASE_MODULES])
+    regex_str = regex_modules + '|' + regex_submod
+    module_filter = re.compile(regex_str)
 
     try:
         # Remove .zip from previous run.
@@ -68,7 +72,7 @@ def create_py3_base_library(libzip_filename, graph):
             for mod in graph.flatten():
                 if type(mod) in (modulegraph.SourceModule, modulegraph.Package):
                     # Bundling just required modules.
-                    if regex.match(mod.identifier):
+                    if module_filter.match(mod.identifier):
                         st = os.stat(mod.filename)
                         timestamp = int(st.st_mtime)
                         size = st.st_size & 0xFFFFFFFF
@@ -279,7 +283,11 @@ def __scan_code_instruction_for_ctypes(co, instructions):
             if co.co_names[oparg] == "find_library":
                 libname = _libFromConst()
                 if libname:
-                    return ctypes.util.find_library(libname)
+                    lib = ctypes.util.find_library(libname)
+                    if lib:
+                        # On Windows, `find_library` may return
+                        # a full pathname. See issue #1934
+                        return os.path.basename(lib)
 
 
 # TODO Reuse this code with modulegraph implementation
@@ -390,6 +398,12 @@ def load_ldconfig_cache():
         # around with checks for empty env-vars and string-concat.
         ldconfig = find_executable('ldconfig',
                                    '/usr/sbin:/sbin:/usr/bin:/usr/sbin')
+
+        # if we still couldn't find 'ldconfig' command
+        if ldconfig is None:
+            LDCONFIG_CACHE = {}
+            return
+
     if is_freebsd:
         # This has a quite different format than other Unixes
         # [vagrant@freebsd-10 ~]$ ldconfig -r

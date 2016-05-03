@@ -1,0 +1,6 @@
+[
+ 'nspkg3',
+ 'nspkg3.aaa',
+ # nspkg3.bbb is not included
+ 'nspkg3.ccc',
+]

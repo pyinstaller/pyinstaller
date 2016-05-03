@@ -1,7 +1,0 @@
-[
- 'nspkg3',
- 'nspkg3.aaa',
- 'nspkg3.bbb',
- 'nspkg3.bbb.zzz',
- 'nspkg3.ccc',
-]

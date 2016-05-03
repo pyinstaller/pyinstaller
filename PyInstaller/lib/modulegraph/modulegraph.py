@@ -430,6 +430,7 @@ header = """\
     <title>%(TITLE)s</title>
     <style>
       .node { margin:1em 0; }
+      .moduletype { font: smaller italic }
     </style>
   </head>
   <body>
@@ -441,7 +442,8 @@ entry = """
 </div>"""
 contpl = """<tt>%(NAME)s</tt> %(TYPE)s"""
 contpl_linked = """\
-<a target="code" href="%(URL)s" type="text/plain"><tt>%(NAME)s</tt></a>"""
+<a target="code" href="%(URL)s" type="text/plain"><tt>%(NAME)s</tt></a>
+<span class="moduletype">%(TYPE)s</span>"""
 imports = """\
   <div class="import">
 %(HEAD)s:
@@ -607,10 +609,14 @@ class ModuleGraph(ObjectGraph):
             self.lazynodes[m] = None
         self.replace_paths = replace_paths
 
-        self.nspackages = self._calc_setuptools_nspackages()
+        self.set_setuptools_nspackages()
         # Maintain own list of package path mappings in the scope of Modulegraph
         # object.
         self._package_path_map = _packagePathMap
+
+    def set_setuptools_nspackages(self):
+        # This is used when running in the test-suite
+        self.nspackages = self._calc_setuptools_nspackages()
 
     def _calc_setuptools_nspackages(self):
         # Setuptools has some magic handling for namespace
@@ -1913,7 +1919,8 @@ class ModuleGraph(ObjectGraph):
                                     "TYPE": "<tt>%s</tt>" % m.filename}
             else:
                 url = pathname2url(m.filename or "")
-                content = contpl_linked % {"NAME": name, "URL": url}
+                content = contpl_linked % {"NAME": name, "URL": url,
+                                           'TYPE': m.__class__.__name__}
             oute, ince = map(sorted_namelist, self.get_edges(m))
             if oute:
                 links = ""

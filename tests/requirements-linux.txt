@@ -1,0 +1,12 @@
+# Linux-specific test libraries.
+#
+# Libraries listed below are only installed by Linux-specific continuous
+# integration (CI) services (e.g., Travis). Platform-agnostic libraries are
+# listed in the "requirements-libraries.txt" file included below.
+
+# Install all platform-agnostic libraries.
+-r requirements-libraries.txt
+
+# SciPy currently provides no binary wheel for Windows and hence must be
+# isolated to non-Windows platforms. See also: scipy/scipy#5461
+scipy

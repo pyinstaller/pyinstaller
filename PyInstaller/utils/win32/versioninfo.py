@@ -14,8 +14,7 @@ import struct
 
 import pywintypes
 import win32api
-
-from PyInstaller.lib.pefile import RESOURCE_TYPE
+import pefile
 
 
 
@@ -106,8 +105,8 @@ def getRaw(o):
 
 def decode(pathnm):
     h = win32api.LoadLibraryEx(pathnm, 0, LOAD_LIBRARY_AS_DATAFILE)
-    nm = win32api.EnumResourceNames(h, RESOURCE_TYPE['RT_VERSION'])[0]
-    data = win32api.LoadResource(h, RESOURCE_TYPE['RT_VERSION'], nm)
+    nm = win32api.EnumResourceNames(h, pefile.RESOURCE_TYPE['RT_VERSION'])[0]
+    data = win32api.LoadResource(h, pefile.RESOURCE_TYPE['RT_VERSION'], nm)
     vs = VSVersionInfo()
     j = vs.fromRaw(data)
     win32api.FreeLibrary(h)
@@ -555,5 +554,5 @@ def SetVersion(exenm, versionfile):
         fp.close()
         vs = eval(txt)
     hdst = win32api.BeginUpdateResource(exenm, 0)
-    win32api.UpdateResource(hdst, RESOURCE_TYPE['RT_VERSION'], 1, vs.toRaw())
+    win32api.UpdateResource(hdst, pefile.RESOURCE_TYPE['RT_VERSION'], 1, vs.toRaw())
     win32api.EndUpdateResource (hdst, 0)

@@ -85,11 +85,15 @@ class PreSafeImportModuleAPI(object):
         "Current module graph"
         return self._module_graph
 
+    #FIXME: Remove this property and publicize the "_module_name" attribute to
+    #"module_name". This attribute is intended to be modifiable by hooks.
     @property
     def module_name(self):
         "Fully-qualified name of this module (e.g., `email.mime.text`)."
         return self._module_name
 
+    #FIXME: Remove this property and publicize the "_module_basename" attribute
+    #to "module_basename". This attribute is intended to be modifiable by hooks.
     @property
     def module_basename(self):
         "Unqualified name of the module to be imported (e.g., `text`)."
@@ -315,6 +319,10 @@ class PostGraphAPI(object):
         # into an immutable tuple.
         self.___path__ = tuple(self.module.packagepath) \
             if self.module.packagepath is not None else None
+
+        #FIXME: Refactor "_added_datas", "_added_binaries", and
+        #"_deleted_imports" into sets. Since order of importation is
+        #significant, "_added_imports" must remain a list.
 
         # Private attributes.
         self._added_binaries = []

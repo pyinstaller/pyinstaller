@@ -25,10 +25,12 @@ environment:
 #      WAF_ARGS: ""
 
     # TODO Enable Python 3.5 one day. Issue #1547.
-    #- PYTHON: "C:\\Python35"
-      #PYTHON_VERSION: "3.5"
-      #PYTHON_ARCH: "32"
+    - PYTHON: "C:\\Python35"
+      PYTHON_VERSION: "3.5"
+      PYTHON_ARCH: "32"
       #WAF_ARGS: "--gcc"
+      # TODO use temporily msvc to compile bootloader until mingw-w64 is natively supported by Appveyor.
+      WAF_ARGS: ""
 
     - PYTHON: "C:\\Python34"
       PYTHON_VERSION: "3.4"
@@ -55,7 +57,7 @@ cache:
   # 'pip-accel' requires caching of downloaded pip packages.
   - C:\Users\appveyor\AppData\Local\pip
   # Cache binary Python packages e.g. numpy, pycrypto
-  - C:\Users\appveyor\.pip-accel
+  - C:\Users\appveyor\AppData\Roaming\.pip-accel
   # Cache downloaded mingw-w64 - it might take 5 min. in appveyor.
   # TODO Remove mingw-w64 caching when it is natively supported by apppveyor:
   #    https://github.com/appveyor/ci/issues/466
@@ -103,17 +105,14 @@ install:
 
   # Install pip-accel to cache pypi packages and avoid compiling some packages.
   # (numpy or pycrypto take a lot of tome to compile).
-  #
-  # TODO Use upstream version when windows support is merged.
-  # Windows support is not yet merged upstream so use own 'pip-accel' fork:
-  #   https://github.com/paylogic/pip-accel/pull/60
-  - "%CMD_IN_ENV% pip install git+https://github.com/matysek/pip-accel.git"
+  - "%CMD_IN_ENV% pip install pip-accel>=0.33"
 
   # Install lxml from anaconda.org channel since PyPI fails (or it takes too long).
   # See: https://github.com/pyinstaller/pyinstaller/pull/1638
   - "%CMD_IN_ENV% pip-accel install -i https://pypi.anaconda.org/giumas/simple lxml" 
 
   # Install the PyInstaller test dependencies.
+  - "%CMD_IN_ENV% pip-accel install --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-tools.txt"
   - "%CMD_IN_ENV% pip-accel install --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-win.txt"
 
   # Install PyInstaller into virtualenv.

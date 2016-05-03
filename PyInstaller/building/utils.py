@@ -16,10 +16,12 @@ import glob
 import hashlib
 import os
 import os.path
+import pkgutil
 import platform
 import shutil
 import sys
 
+from PyInstaller.config import CONF
 from .. import is_darwin, is_win, compat
 from ..compat import EXTENSION_SUFFIXES, FileNotFoundError
 from ..depend import dylib
@@ -249,7 +251,10 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
         # Some libraries on FreeBSD have immunable flag (libthr.so.3, for example)
         # If flags still remains, os.chmod will failed with:
         # OSError: [Errno 1] Operation not permitted.
-        os.chflags(cachedfile, 0)
+        try:
+            os.chflags(cachedfile, 0)
+        except OSError:
+            pass
     os.chmod(cachedfile, 0o755)
 
     if os.path.splitext(fnm.lower())[1] in (".pyd", ".dll"):
@@ -386,36 +391,61 @@ def _rmtree(path):
 #  to instead pass such basename.
 def format_binaries_and_datas(binaries_or_datas, workingdir=None):
     """
-    Convert the passed `hook.datas` list to a list of `TOC`-style 3-tuples.
+    Convert the passed list of hook-style 2-tuples into a returned set of
+    `TOC`-style 2-tuples.
 
-    :param datas: is a list of 2-tuples whose:
+    Elements of the passed list are 2-tuples `(source_dir_or_glob, target_dir)`.
+    Elements of the returned set are 2-tuples `(target_file, source_file)`.
+    For backwards compatibility, the order of elements in the former tuples are
+    the reverse of the order of elements in the latter tuples!
 
-    * First item is either:
-      * A glob matching only the absolute paths of source non-Python data
-        files.
-      * The absolute path of a directory containing only such files.
-    * Second item is either:
-      * The relative path of the target directory into which such files will
-        be recursively copied.
-      * The empty string. In such case, if the first item was:
-        * A glob, such files will be recursively copied into the top-level
-          target directory. (This is usually *not* what you want.)
-        * A directory, such files will be recursively copied into a new
-          target subdirectory whose name is such directory's basename.
-          (This is usually what you want.)
+    Parameters
+    ----------
+    binaries_or_datas : list
+        List of hook-style 2-tuples (e.g., the top-level `binaries` and `datas`
+        attributes defined by hooks) whose:
+        * First element is either:
+          * A glob matching only the absolute or relative paths of source
+            non-Python data files. The second element is then either:
+            * The relative path of the target directory into which these source
+              files will be recursively copied.
+            * The empty string, in which case these source files will be
+              recursively copied into the top-level target directory. (This is
+              usually _not_ what you want.)
+          * The absolute or relative path of a source directory containing only
+            source non-Python data files. The second element is then either:
+            * The relative path of the target directory into which these source
+              files will be recursively copied.
+            * The empty string, in which case these source files will be
+              recursively copied into a new target subdirectory whose name is
+              this source directory's basename. (This is usually what you want.)
+        If the optional `workingdir` parameter is passed, source paths may be
+        either absolute or relative; else, source paths _must_ be absolute.
+    workingdir : str
+        Optional absolute path of the directory to which all relative source
+        paths in the `binaries_or_datas` parameter will be prepended by (and
+        hence converted into absolute paths) _or_ `None` if these paths are to
+        be preserved as relative. Defaults to `None`.
 
-    :param workingdir: Optional argument, if datas contains relative paths then
-                       paths are relative to this directory and all relative
-                       paths are converted to absolute.
+    Returns
+    ----------
+    set
+        Set of `TOC`-style 2-tuples whose:
+        * First element is the absolute or relative path of a target file.
+        * Second element is the absolute or relative path of the corresponding
+          source file to be copied to this target file.
     """
-    toc_datas = []
+    toc_datas = set()
 
     for src_root_path_or_glob, trg_root_dir in binaries_or_datas:
-        # Covert relative paths to absolute if required.
+        # Convert relative to absolute paths if required.
         if workingdir and not os.path.isabs(src_root_path_or_glob):
-            src_root_path_or_glob = os.path.join(workingdir, src_root_path_or_glob)
+            src_root_path_or_glob = os.path.join(
+                workingdir, src_root_path_or_glob)
+
         # Normalize paths.
         src_root_path_or_glob = os.path.normpath(src_root_path_or_glob)
+
         # List of the absolute paths of all source paths matching the
         # current glob.
         src_root_paths = glob.glob(src_root_path_or_glob)
@@ -429,7 +459,7 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
             if os.path.isfile(src_root_path):
                 # Normalizing the result to remove redundant relative
                 # paths (e.g., removing "./" from "trg/./file").
-                toc_datas.append((
+                toc_datas.add((
                     os.path.normpath(os.path.join(
                         trg_root_dir, os.path.basename(src_root_path))),
                     os.path.normpath(src_root_path)))
@@ -455,18 +485,108 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
                     #   "/top/dir").
                     # * Normalizing the result to remove redundant relative
                     #   paths (e.g., removing "./" from "trg/./file").
-                    trg_dir = os.path.normpath(
-                        os.path.join(
-                            trg_root_dir,
-                            os.path.relpath(src_dir, src_root_path)))
+                    trg_dir = os.path.normpath(os.path.join(
+                        trg_root_dir,
+                        os.path.relpath(src_dir, src_root_path)))
 
                     for src_file_basename in src_file_basenames:
                         src_file = os.path.join(src_dir, src_file_basename)
                         if os.path.isfile(src_file):
-                            # Normalizing the result to remove redundant relative
+                            # Normalize the result to remove redundant relative
                             # paths (e.g., removing "./" from "trg/./file").
-                            toc_datas.append((
-                                os.path.normpath(os.path.join(trg_dir, src_file_basename)),
+                            toc_datas.add((
+                                os.path.normpath(
+                                    os.path.join(trg_dir, src_file_basename)),
                                 os.path.normpath(src_file)))
 
     return toc_datas
+
+
+def _load_code(modname, filename):
+    path_item = os.path.dirname(filename)
+    if os.path.basename(filename).startswith('__init__.py'):
+        # this is a package
+        path_item = os.path.dirname(path_item)
+    if os.path.basename(path_item) == '__pycache__':
+        path_item = os.path.dirname(path_item)
+    importer = pkgutil.get_importer(path_item)
+    package, _, modname = modname.rpartition('.')
+
+    if sys.version_info >= (3, 3) and hasattr(importer, 'find_loader'):
+        loader, portions = importer.find_loader(modname)
+    else:
+        loader = importer.find_module(modname)
+        portions = []
+
+    assert loader and hasattr(loader, 'get_code')
+    logger.debug('Compiling %s', filename)
+    return loader.get_code(modname)
+
+def get_code_object(modname, filename):
+    """
+    Get the code-object for a module.
+
+    This is a extra-simple version for compiling a module. It's
+    not worth spending more effort here, as it is only used in the
+    rare case if outXX-Analysis.toc exists, but outXX-PYZ.toc does
+    not.
+    """
+
+    try:
+        if filename in ('-', None):
+            # This is a NamespacePackage, modulegraph marks them
+            # by using the filename '-'. (But wants to use None,
+            # so check for None, too, to be forward-compatible.)
+            logger.debug('Compiling namespace package %s', modname)
+            txt = '#\n'
+            return compile(txt, filename, 'exec')
+        else:
+            logger.debug('Compiling %s', filename)
+            co = _load_code(modname, filename)
+            if not co:
+                raise ValueError("Module file %s is missing" % filename)
+            return co
+    except SyntaxError as e:
+        print("Syntax error in ", filename)
+        print(e.args)
+        raise
+
+
+def strip_paths_in_code(co, new_filename=None):
+
+    # Paths to remove from filenames embedded in code objects
+    replace_paths = sys.path + CONF['pathex']
+    # Make sure paths end with os.sep
+    replace_paths = [os.path.join(f, '') for f in replace_paths]
+
+    if new_filename is None:
+        original_filename = os.path.normpath(co.co_filename)
+        for f in replace_paths:
+            if original_filename.startswith(f):
+                new_filename = original_filename[len(f):]
+                break
+
+        else:
+            return co
+
+    code_func = type(co)
+
+    consts = tuple(
+        strip_paths_in_code(const_co, new_filename)
+        if isinstance(const_co, code_func) else const_co
+        for const_co in co.co_consts
+    )
+
+    # co_kwonlyargcount added in some version of Python 3
+    if hasattr(co, 'co_kwonlyargcount'):
+        return code_func(co.co_argcount, co.co_kwonlyargcount, co.co_nlocals, co.co_stacksize,
+                     co.co_flags, co.co_code, consts, co.co_names,
+                     co.co_varnames, new_filename, co.co_name,
+                     co.co_firstlineno, co.co_lnotab,
+                     co.co_freevars, co.co_cellvars)
+    else:
+        return code_func(co.co_argcount, co.co_nlocals, co.co_stacksize,
+                     co.co_flags, co.co_code, consts, co.co_names,
+                     co.co_varnames, new_filename, co.co_name,
+                     co.co_firstlineno, co.co_lnotab,
+                     co.co_freevars, co.co_cellvars)
