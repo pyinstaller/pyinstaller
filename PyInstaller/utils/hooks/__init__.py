@@ -560,7 +560,7 @@ def collect_submodules(package, subdir=None, pattern=None, endswith=False):
     PyInstaller.
     """
     # Accept only strings as packages.
-    if type(package) is not str:
+    if not (type(package) is str or type(package) is unicode):
         raise ValueError
 
     logger.debug('Collecting submodules for %s' % package)
