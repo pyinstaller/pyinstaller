@@ -35,6 +35,7 @@ if is_win:
     from ..utils.win32 import winmanifest, winresource
 if is_py3:
     import importlib
+    import tokenize
 
 logger = logging.getLogger(__name__)
 
@@ -527,17 +528,24 @@ def _load_code(modname, filename):
     else:
         # If we get here, this shouldn't be a source file.
         if is_py3:
-            assert (os.path.splitext(filename)[1] not in 
+            assert (os.path.splitext(filename)[1] not in
                     importlib.machinery.SOURCE_SUFFIXES)
-        # Just as ``python foo.bar`` will read and execute statement in 
-        # ``foo.bar``,  even though it lacks the ``.py`` extension, so 
-        # ``pyinstaller foo.bar``  should also work. However, Python's import 
-        # machinery doesn't load files without a ``.py`` extension. So, use 
-        # ``compile`` instead.
+        # Just as ``python foo.bar`` will read and execute statements in
+        # ``foo.bar``,  even though it lacks the ``.py`` extension, so
+        # ``pyinstaller foo.bar``  should also work. However, Python's import
+        # machinery doesn't load files without a ``.py`` extension. So, use
+        # ``compile`` instead. This also suports ``.pyw`` files, a more common
+        # case.
         #
-        # Note: this fails to support `PEP 263 <https://www.python.org/dev/peps/pep-0263/>`_.
-        with open_file(filename, 'r', encoding='utf-8' if is_py3 else 'ASCII') as f:
-            source = f.read()
+        # On Python 3, ``tokenize.open`` implements `PEP 263 <https://www.python.org/dev/peps/pep-0263/>`_.
+        # (as I understand it). Since python 2.7 is so broken wrt unicode and
+        # since ``tokenize.open`` isn't available there, assume ASCII.
+        if is_py3:
+            with tokenize.open(filename) as f:
+                source = f.read()
+        else:
+            with open_file(filename, 'r', encoding='ASCII') as f:
+                source = f.read()
         return compile(source, filename, 'exec')
 
 def get_code_object(modname, filename):
