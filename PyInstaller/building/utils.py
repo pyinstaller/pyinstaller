@@ -526,25 +526,27 @@ def _load_code(modname, filename):
     if loader and hasattr(loader, 'get_code'):
         return loader.get_code(modname)
     else:
-        # If we get here, this shouldn't be a source file.
-        if is_py3:
-            assert (os.path.splitext(filename)[1] not in
-                    importlib.machinery.SOURCE_SUFFIXES)
         # Just as ``python foo.bar`` will read and execute statements in
         # ``foo.bar``,  even though it lacks the ``.py`` extension, so
         # ``pyinstaller foo.bar``  should also work. However, Python's import
         # machinery doesn't load files without a ``.py`` extension. So, use
-        # ``compile`` instead. This also suports ``.pyw`` files, a more common
-        # case.
+        # ``compile`` instead.
         #
-        # On Python 3, ``tokenize.open`` implements `PEP 263 <https://www.python.org/dev/peps/pep-0263/>`_.
-        # (as I understand it). Since python 2.7 is so broken wrt unicode and
-        # since ``tokenize.open`` isn't available there, assume ASCII.
+        # On a side note, neither the Python 2 nor Python 3 calls to
+        # ``pkgutil`` and ``find_module`` above handle modules ending in
+        # ``.pyw``, even though ``imp.find_module`` and ``import <name>`` both
+        # work. This code supports ``.pyw`` files.
         if is_py3:
+            # On Python 3, ``tokenize.open`` implements `PEP 263 <https://www.python.org/dev/peps/pep-0263/>`_.
             with tokenize.open(filename) as f:
                 source = f.read()
         else:
-            with open_file(filename, 'r', encoding='ASCII') as f:
+            # I can't find equivalent code in the Python 2 standard library and
+            # I don't want to backport the Python 3 PEP 263 code. Although
+            # Python 2's default encoding is ASCII, many will use UTF-8
+            # instead. Assume UTF-8, since this still works for all ASCII
+            # files and covers the most common encoding.
+            with open_file(filename, 'r', encoding='utf-8') as f:
                 source = f.read()
         return compile(source, filename, 'exec')
 
