@@ -60,7 +60,10 @@ elif is_cygwin:
                      'libpython%d.%d.dll' % _pyver,
                      'libpython%d.%dm.dll' % _pyver}
 elif is_darwin:
-    PYDYLIB_NAMES = {'Python', '.Python', 'libpython%d.%d.dylib' % _pyver}
+    # libpython%d.%dm.dylib for Conda virtual environment installations
+    PYDYLIB_NAMES = {'Python', '.Python', 
+                     'libpython%d.%d.dylib' % _pyver, 
+                     'libpython%d.%dm.dylib' % _pyver}
 elif is_aix:
     # Shared libs on AIX are archives with shared object members, thus the ".a" suffix.
     # However, python 2.7.11 built with XLC produces libpython?.?.so file, too.
