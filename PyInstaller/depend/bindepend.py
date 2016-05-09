@@ -118,9 +118,11 @@ def _getImports_pe(pth):
     if exportSymbols:
         for sym in exportSymbols.symbols:
             if sym.forwarder is not None:
+                # sym.forwarder is a bytes object. Convert it to a string.
+                forwarder = winutils.convert_dll_name_to_str(sym.forwarder)
                 # sym.forwarder is for example 'KERNEL32.EnterCriticalSection'
-                dll, _ = sym.forwarder.split('.')
-                dlls.add(winutils.convert_dll_name_to_str(dll) + ".dll")
+                dll, _ = forwarder.split('.')
+                dlls.add(dll + ".dll")
 
     return dlls
 
