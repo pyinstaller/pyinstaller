@@ -56,6 +56,7 @@ if is_win:
 elif is_cygwin:
     PYDYLIB_NAMES = {'libpython%d%d.dll' % _pyver}
 elif is_darwin:
+    # libpython%d.%dm.dylib for Conda virtual environment installations
     PYDYLIB_NAMES = {'Python', '.Python', 
                      'libpython%d.%d.dylib' % _pyver, 
                      'libpython%d.%dm.dylib' % _pyver}
