@@ -2315,7 +2315,9 @@ class PE(object):
 
 
 
-    def parse_data_directories(self, directories=None):
+    def parse_data_directories(self, directories=None,
+                               forwarded_exports_only=False,
+                               import_dllnames_only=False):
         """Parse and process the PE file's data directories.
 
         If the optional argument 'directories' is given, only
@@ -2335,6 +2337,13 @@ class PE(object):
 
         If 'directories' is a list, the ones that are processed will be removed,
         leaving only the ones that are not present in the image.
+
+        If `forwarded_exports_only` is True, the IMAGE_DIRECTORY_ENTRY_EXPORT
+        attribute will only contain exports that are forwarded to another DLL.
+
+        If `import_dllnames_only` is True, symbols will not be parsed from
+        the import table and the entries in the IMAGE_DIRECTORY_ENTRY_IMPORT
+        attribute will not have a `symbols` attribute.
         """
 
         directory_parsing = (
@@ -2367,7 +2376,13 @@ class PE(object):
             if directories is None or directory_index in directories:
 
                 if dir_entry.VirtualAddress:
-                    value = entry[1](dir_entry.VirtualAddress, dir_entry.Size)
+                    if forwarded_exports_only and entry[0] == 'IMAGE_DIRECTORY_ENTRY_EXPORT':
+                        value = entry[1](dir_entry.VirtualAddress, dir_entry.Size, forwarded_only=True)
+                    elif import_dllnames_only and entry[0] == 'IMAGE_DIRECTORY_ENTRY_IMPORT':
+                        value = entry[1](dir_entry.VirtualAddress, dir_entry.Size, dllnames_only=True)
+
+                    else:
+                        value = entry[1](dir_entry.VirtualAddress, dir_entry.Size)
                     if value:
                         setattr(self, entry[0][6:], value)
 
@@ -3369,8 +3384,7 @@ class PE(object):
                 break
 
 
-
-    def parse_export_directory(self, rva, size):
+    def parse_export_directory(self, rva, size, forwarded_only=False):
         """Parse the export directory.
 
         Given the RVA of the export directory, it will process all
@@ -3425,27 +3439,9 @@ class PE(object):
             safety_boundary = section.VirtualAddress + len(section.get_data()) - export_dir.AddressOfNames
 
         for i in range( min( export_dir.NumberOfNames, old_div(safety_boundary,4)) ):
-            symbol_name_address = self.get_dword_from_data(address_of_names, i)
-
-            if symbol_name_address is None:
-                max_failed_entries_before_giving_up -= 1
-                if max_failed_entries_before_giving_up <= 0:
-                    break
-
-            symbol_name = self.get_string_at_rva( symbol_name_address )
-            if not is_valid_function_name(symbol_name):
-                break
-            try:
-                symbol_name_offset = self.get_offset_from_rva( symbol_name_address )
-            except PEFormatError:
-                max_failed_entries_before_giving_up -= 1
-                if max_failed_entries_before_giving_up <= 0:
-                    break
-                continue
 
             symbol_ordinal = self.get_word_from_data(
                 address_of_name_ordinals, i)
-
 
             if symbol_ordinal is not None and symbol_ordinal*4 < len(address_of_functions):
                 symbol_address = self.get_dword_from_data(
@@ -3469,8 +3465,28 @@ class PE(object):
                 except PEFormatError:
                     continue
             else:
+                if forwarded_only:
+                    continue
                 forwarder_str = None
                 forwarder_offset = None
+
+            symbol_name_address = self.get_dword_from_data(address_of_names, i)
+
+            if symbol_name_address is None:
+                max_failed_entries_before_giving_up -= 1
+                if max_failed_entries_before_giving_up <= 0:
+                    break
+
+            symbol_name = self.get_string_at_rva( symbol_name_address )
+            if not is_valid_function_name(symbol_name):
+                break
+            try:
+                symbol_name_offset = self.get_offset_from_rva( symbol_name_address )
+            except PEFormatError:
+                max_failed_entries_before_giving_up -= 1
+                if max_failed_entries_before_giving_up <= 0:
+                    break
+                continue
 
             exports.append(
                 ExportData(
@@ -3643,7 +3659,7 @@ class PE(object):
         return md5( ','.join( impstrs ) ).hexdigest()
 
 
-    def parse_import_directory(self, rva, size):
+    def parse_import_directory(self, rva, size, dllnames_only=False):
         """Walk and parse the import directory."""
 
         import_descs =  []
@@ -3677,27 +3693,28 @@ class PE(object):
                 max_len = max(rva-import_desc.OriginalFirstThunk, rva-import_desc.FirstThunk)
 
             import_data = []
-            try:
-                import_data =  self.parse_imports(
-                    import_desc.OriginalFirstThunk,
-                    import_desc.FirstThunk,
-                    import_desc.ForwarderChain,
-                    max_length = max_len)
-            except PEFormatError as e:
-                self.__warnings.append(
-                    'Error parsing the import directory. '
-                    'Invalid Import data at RVA: 0x{0:x} ({1})'.format(
-                        rva, e.value))
+            if not dllnames_only:
+                try:
+                    import_data =  self.parse_imports(
+                        import_desc.OriginalFirstThunk,
+                        import_desc.FirstThunk,
+                        import_desc.ForwarderChain,
+                        max_length = max_len)
+                except PEFormatError as e:
+                    self.__warnings.append(
+                        'Error parsing the import directory. '
+                        'Invalid Import data at RVA: 0x{0:x} ({1})'.format(
+                            rva, e.value))
 
-            if error_count > 5:
-                self.__warnings.append(
-                    'Too may errors parsing the import directory. '
-                    'Invalid import data at RVA: 0x{0:x}'.format(rva) )
-                break
+                if error_count > 5:
+                    self.__warnings.append(
+                        'Too may errors parsing the import directory. '
+                        'Invalid import data at RVA: 0x{0:x}'.format(rva) )
+                    break
 
-            if not import_data:
-                error_count += 1
-                continue
+                if not import_data:
+                    error_count += 1
+                    continue
 
             dll = self.get_string_at_rva(import_desc.Name)
             if not is_valid_dos_filename(dll):
@@ -3715,19 +3732,20 @@ class PE(object):
                         imports = import_data,
                         dll = dll))
 
-        suspicious_imports = set([ b'LoadLibrary', b'GetProcAddress' ])
-        suspicious_imports_count = 0
-        total_symbols = 0
-        for imp_dll in import_descs:
-            for symbol in imp_dll.imports:
-                for suspicious_symbol in suspicious_imports:
-                    if symbol and symbol.name and symbol.name.startswith( suspicious_symbol ):
-                        suspicious_imports_count += 1
-                        break
-                total_symbols += 1
-        if suspicious_imports_count == len(suspicious_imports) and total_symbols < 20:
-            self.__warnings.append(
-                'Imported symbols contain entries typical of packed executables.' )
+        if not dllnames_only:
+            suspicious_imports = set([ b'LoadLibrary', b'GetProcAddress' ])
+            suspicious_imports_count = 0
+            total_symbols = 0
+            for imp_dll in import_descs:
+                for symbol in imp_dll.imports:
+                    for suspicious_symbol in suspicious_imports:
+                        if symbol and symbol.name and symbol.name.startswith( suspicious_symbol ):
+                            suspicious_imports_count += 1
+                            break
+                    total_symbols += 1
+            if suspicious_imports_count == len(suspicious_imports) and total_symbols < 20:
+                self.__warnings.append(
+                    'Imported symbols contain entries typical of packed executables.' )
 
         return import_descs
 
