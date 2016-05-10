@@ -94,7 +94,7 @@ def get_gi_typelibs(module, version):
             datas.append(d)
 
         hiddenimports += collect_submodules('gi.overrides',
-                                            pattern='.' + module, endswith=True)
+                                            pattern='\.' + module + '$')
 
         # Load dependencies recursively
         for dep in typelibs_data['deps']:

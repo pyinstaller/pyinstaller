@@ -13,6 +13,7 @@ import pkg_resources
 import pkgutil
 import sys
 import textwrap
+import re
 
 from ...compat import base_prefix, exec_command_stdout, exec_python, is_darwin, is_py2, is_py3, is_venv,\
     open_file, EXTENSION_SUFFIXES
@@ -537,19 +538,15 @@ def get_package_paths(package):
     return pkg_base, pkg_dir
 
 
-def collect_submodules(package, subdir=None, pattern=None, endswith=False):
+def collect_submodules(package, pattern=''):
     """
-    :param pattern: String pattern to match only submodules containing
-                    this pattern in the name.
-    :param endswith: If True, will match using 'endswith'
-
-    This produces a list of strings which specify all the modules in
-    package.  Its results can be directly assigned to ``hiddenimports``
-    in a hook script; see, for example, hook-sphinx.py. The
-    package parameter must be a string which names the package. The
-    optional subdir give a subdirectory relative to package to search,
-    which is helpful when submodules are imported at run-time from a
-    directory lacking __init__.py. See hook-astroid.py for an example.
+    :param package: A string which names the package which will be search for
+        submodules.
+    :param pattern: Only submodules which match this regular expression will be
+        included in the returned list.
+    :return: A list of strings which specify all the modules in package. Its
+        results can be directly assigned to ``hiddenimports`` in a hook script;
+        see, for example, ``hook-sphinx.py``.
 
     This function is used only for hook scripts, but not by the body of
     PyInstaller.
@@ -559,28 +556,32 @@ def collect_submodules(package, subdir=None, pattern=None, endswith=False):
         raise ValueError
 
     logger.debug('Collecting submodules for %s' % package)
-    # Skip a module, which is not a package.
+    # Skip a module which is not a package.
     if not is_package(package):
         logger.debug('collect_submodules - Module %s is not a package.' % package)
         return []
 
     # Determine the filesystem path to the specified package.
     pkg_base, pkg_dir = get_package_paths(package)
-    if subdir:
-        pkg_dir = os.path.join(pkg_dir, subdir)
 
     # Walk the package. Since this performs imports, do it in a separate
     # process.
     names = exec_statement("""
-                           import pkgutil
-                           for module_loader, name, ispkg in pkgutil.walk_packages([r"{}"], "{}."):
-                               print(name)""".format(pkg_dir, package))
-    mods = set()
+        import sys
+        import pkgutil
+        # If the package isn't in sys.path, its submodules won't be found
+        # correctly. Specifically, test_hookutils.test_collect_submod_all_included
+        # will fail to find hookutils_files.subpkg.twelve.
+        sys.path += [{}]
+        for module_loader, name, ispkg in pkgutil.walk_packages([{}], '{}.'):
+            print(name)
+        """.format(
+                  # Use repr to escape Windows backslashes.
+                  repr(pkg_base), repr(pkg_dir), package))
+    # Include the package itself in the results.
+    mods = {package}
     for name in names.split():
-        # TODO convert this into regex matching.
-        # Skip submodules not matching pattern.
-        if not pattern or (endswith and name.endswith(pattern)) or \
-                          (not endswith and pattern in name):
+        if re.search(pattern, name):
             mods.add(name)
 
     logger.debug("collect_submodules - Found submodules: %s", mods)
