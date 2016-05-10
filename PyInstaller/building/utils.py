@@ -22,8 +22,9 @@ import shutil
 import sys
 
 from PyInstaller.config import CONF
-from .. import is_darwin, is_win, compat
-from ..compat import EXTENSION_SUFFIXES, FileNotFoundError
+from .. import compat
+from ..compat import is_darwin, is_win, EXTENSION_SUFFIXES, \
+    FileNotFoundError, open_file
 from ..depend import dylib
 from ..depend.bindepend import match_binding_redirect
 from ..utils import misc
@@ -516,11 +517,27 @@ def _load_code(modname, filename):
         loader, portions = importer.find_loader(modname)
     else:
         loader = importer.find_module(modname)
-        portions = []
 
-    assert loader and hasattr(loader, 'get_code')
     logger.debug('Compiling %s', filename)
-    return loader.get_code(modname)
+    if loader and hasattr(loader, 'get_code'):
+        return loader.get_code(modname)
+    else:
+        # Just as ``python foo.bar`` will read and execute statements in
+        # ``foo.bar``,  even though it lacks the ``.py`` extension, so
+        # ``pyinstaller foo.bar``  should also work. However, Python's import
+        # machinery doesn't load files without a ``.py`` extension. So, use
+        # ``compile`` instead.
+        #
+        # On a side note, neither the Python 2 nor Python 3 calls to
+        # ``pkgutil`` and ``find_module`` above handle modules ending in
+        # ``.pyw``, even though ``imp.find_module`` and ``import <name>`` both
+        # work. This code supports ``.pyw`` files.
+
+        # Open the source file in binary mode and allow the `compile()` call to
+        # detect the source encoding.
+        with open_file(filename, 'rb') as f:
+            source = f.read()
+        return compile(source, filename, 'exec')
 
 def get_code_object(modname, filename):
     """
