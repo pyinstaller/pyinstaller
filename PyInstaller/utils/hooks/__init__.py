@@ -539,9 +539,6 @@ def get_package_paths(package):
 
 def collect_submodules(package, subdir=None, pattern=None, endswith=False):
     """
-    The following two functions were originally written by Ryan Welsh
-    (welchr AT umich.edu).
-
     :param pattern: String pattern to match only submodules containing
                     this pattern in the name.
     :param endswith: If True, will match using 'endswith'
@@ -554,8 +551,6 @@ def collect_submodules(package, subdir=None, pattern=None, endswith=False):
     which is helpful when submodules are imported at run-time from a
     directory lacking __init__.py. See hook-astroid.py for an example.
 
-    This function does not work on zipped Python eggs.
-
     This function is used only for hook scripts, but not by the body of
     PyInstaller.
     """
@@ -564,43 +559,31 @@ def collect_submodules(package, subdir=None, pattern=None, endswith=False):
         raise ValueError
 
     logger.debug('Collecting submodules for %s' % package)
-    # Skip module that is not a package.
+    # Skip a module, which is not a package.
     if not is_package(package):
-        logger.debug('collect_submodules: Module %s is not a package.' % package)
+        logger.debug('collect_submodules - Module %s is not a package.' % package)
         return []
 
+    # Determine the filesystem path to the specified package.
     pkg_base, pkg_dir = get_package_paths(package)
     if subdir:
         pkg_dir = os.path.join(pkg_dir, subdir)
-    # Walk through all file in the given package, looking for submodules.
+
+    # Walk the package. Since this performs imports, do it in a separate
+    # process.
+    names = exec_statement("""
+                           import pkgutil
+                           for module_loader, name, ispkg in pkgutil.walk_packages([r"{}"], "{}."):
+                               print(name)""".format(pkg_dir, package))
     mods = set()
-    for dirpath, dirnames, filenames in os.walk(pkg_dir):
-        # Change from OS separators to a dotted Python module path,
-        # removing the path up to the package's name. For example,
-        # '/abs/path/to/desired_package/sub_package' becomes
-        # 'desired_package.sub_package'
-        mod_path = remove_prefix(dirpath, pkg_base).replace(os.sep, ".")
+    for name in names.split():
+        # TODO convert this into regex matching.
+        # Skip submodules not matching pattern.
+        if not pattern or (endswith and name.endswith(pattern)) or \
+                          (not endswith and pattern in name):
+            mods.add(name)
 
-        # If this subdirectory is a package, add it and all other .py
-        # files in this subdirectory to the list of modules.
-        if '__init__.py' in filenames:
-            mods.add(mod_path)
-            for f in filenames:
-                extension = os.path.splitext(f)[1]
-                if ((remove_file_extension(f) != '__init__') and
-                        extension in PY_EXECUTABLE_SUFFIXES):
-                    modname = mod_path + "." + remove_file_extension(f)
-                    # TODO convert this into regex matching.
-                    # Skip submodules not matching pattern.
-                    if not pattern or (endswith and modname.endswith(pattern)) or \
-                                      (not endswith and pattern in modname):
-                        mods.add(modname)
-        else:
-        # If not, nothing here is part of the package; don't visit any of
-        # these subdirs.
-            del dirnames[:]
-
-    logger.debug("- Found submodules: %s", mods)
+    logger.debug("collect_submodules - Found submodules: %s", mods)
     return list(mods)
 
 
