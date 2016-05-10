@@ -631,7 +631,7 @@ def _getImports_macholib(pth):
                 # Replace the @executable_path and @loader_path keywords
                 # with the actual path to the binary.
                 executable_path = os.path.dirname(pth)
-                rpath = re.sub('^@(executable|loader)_path/',
+                rpath = re.sub('^@(executable_path|loader_path|rpath)/',
                                executable_path + '/', rpath)
                 # Make rpath absolute. According to Apple doc LC_RPATH
                 # is always relative to the binary location.
