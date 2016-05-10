@@ -23,7 +23,7 @@ import sys
 
 from PyInstaller.config import CONF
 from .. import compat
-from ..compat import is_darwin, is_win, is_py3, EXTENSION_SUFFIXES, \
+from ..compat import is_darwin, is_win, EXTENSION_SUFFIXES, \
     FileNotFoundError, open_file
 from ..depend import dylib
 from ..depend.bindepend import match_binding_redirect
@@ -33,9 +33,6 @@ from .. import log as logging
 
 if is_win:
     from ..utils.win32 import winmanifest, winresource
-if is_py3:
-    import importlib
-    import tokenize
 
 logger = logging.getLogger(__name__)
 
@@ -520,7 +517,6 @@ def _load_code(modname, filename):
         loader, portions = importer.find_loader(modname)
     else:
         loader = importer.find_module(modname)
-        portions = []
 
     logger.debug('Compiling %s', filename)
     if loader and hasattr(loader, 'get_code'):
@@ -536,18 +532,11 @@ def _load_code(modname, filename):
         # ``pkgutil`` and ``find_module`` above handle modules ending in
         # ``.pyw``, even though ``imp.find_module`` and ``import <name>`` both
         # work. This code supports ``.pyw`` files.
-        if is_py3:
-            # On Python 3, ``tokenize.open`` implements `PEP 263 <https://www.python.org/dev/peps/pep-0263/>`_.
-            with tokenize.open(filename) as f:
-                source = f.read()
-        else:
-            # I can't find equivalent code in the Python 2 standard library and
-            # I don't want to backport the Python 3 PEP 263 code. Although
-            # Python 2's default encoding is ASCII, many will use UTF-8
-            # instead. Assume UTF-8, since this still works for all ASCII
-            # files and covers the most common encoding.
-            with open_file(filename, 'r', encoding='utf-8') as f:
-                source = f.read()
+
+        # Open the source file in binary mode and allow the `compile()` call to
+        # detect the source encoding.
+        with open_file(filename, 'rb') as f:
+            source = f.read()
         return compile(source, filename, 'exec')
 
 def get_code_object(modname, filename):
