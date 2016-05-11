@@ -65,19 +65,19 @@ class TestRemoveExtension(object):
     # Removing a suffix from a filename with no extension returns the filename.
     def test_no_extension(self):
         assert 'file' == remove_file_extension('file')
-        
+
     # A filename with two extensions should have only the first removed.
     def test_two_extensions(self):
         assert 'file.1' == remove_file_extension('file.1.2')
-        
+
     # Standard case - remove an extension
     def test_remove_ext(self):
         assert 'file' == remove_file_extension('file.1')
-        
+
     # Unix-style .files are not treated as extensions
     def test_unixstyle_not_ext(self):
         assert '.file' == remove_file_extension('.file')
-        
+
     # Unix-style .file.ext works
     def test_unixstyle_ext(self):
         assert '.file' == remove_file_extension('.file.1')
