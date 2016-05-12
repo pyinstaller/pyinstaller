@@ -383,7 +383,13 @@ pyi_arch_open(ARCHIVE_STATUS *status)
 
         /* The digital signature has been aligned to a boundary.
          *  We need to look for our cookie taking into account some
-         *  padding. */
+         *  padding.
+         *
+         * On Linux, we use objcopy to add the archive to the
+         *  exe, which causes the ELF section headers to come after the archive.
+         *  So we scan backwards up to 4096 bytes to find the cookie before the
+         *  section headers.
+         */
         for (i = 0; i < alignment; ++i) {
             if (pyi_arch_check_cookie(status, filelen) >= 0) {
                 break;
@@ -393,11 +399,11 @@ pyi_arch_open(ARCHIVE_STATUS *status)
 
         if (i == alignment) {
             VS(
-                "LOADER: %s does not contain an embedded package, even skipping the signature\n",
+                "LOADER: %s does not contain an embedded archive, even skipping the signature\n",
                 status->archivename);
             return -1;
         }
-        VS("LOADER: package found skipping digital signature in %s\n",
+        VS("LOADER: archive found skipping digital signature in %s\n",
            status->archivename);
 
     }
