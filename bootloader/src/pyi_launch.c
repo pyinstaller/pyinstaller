@@ -150,7 +150,7 @@ _get_archive(ARCHIVE_STATUS *archive_pool[], const char *path)
     archive->has_temp_directory = archive_pool[SELF]->has_temp_directory;
 
     if (pyi_arch_open(archive)) {
-        FATALERROR("Error openning archive %s\n", path);
+        FATALERROR("Error opening archive %s\n", path);
         free(archive);
         return NULL;
     }
