@@ -222,7 +222,8 @@ pyi_arch_extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
 /*
  * Look for the predefined string MAGIC in the embedded data before the given
  * search end position. If MAGIC is found, copies the entire COOKIE struct into
- * status->cookie and returns 0, otherwise returns -1.
+ * status->cookie, sets status->pkgstart to the location of the archive and returns 0.
+ * Returns -1 on failure.
  *
  * PyInstaller sets this cookie to a constant value. Bootloader
  * compares it with the expected value. If there is match then
@@ -246,7 +247,7 @@ pyi_arch_find_cookie(ARCHIVE_STATUS *status, int search_end)
 {
     int search_start = search_end - search_size;
     char buf[search_size];
-    char * search_pos = buf + search_size - sizeof(COOKIE);
+    char * search_ptr = buf + search_size - sizeof(COOKIE);
 
     if (fseek(status->fp, search_start, SEEK_SET)) {
         return -1;
@@ -259,13 +260,17 @@ pyi_arch_find_cookie(ARCHIVE_STATUS *status, int search_end)
 
     /* Search for MAGIC within search space */
 
-    while(search_pos >= buf) {
-        if(0 == strncmp(MAGIC, search_pos, strlen(MAGIC))) {
+    while(search_ptr >= buf) {
+        if(0 == strncmp(MAGIC, search_ptr, strlen(MAGIC))) {
             /* MAGIC found - Copy COOKIE to status->cookie */
-            memcpy(&status->cookie, search_pos, sizeof(COOKIE));
+            memcpy(&status->cookie, search_ptr, sizeof(COOKIE));
+
+            /* From the cookie, calculate the archive start */
+            status->pkgstart = search_start + sizeof(COOKIE) + (search_ptr - buf) - ntohl(status->cookie.len);
+
             return 0;
         }
-        search_pos--;
+        search_ptr--;
     }
 
     return -1;
@@ -408,9 +413,6 @@ pyi_arch_open(ARCHIVE_STATUS *status)
 
     /* Set the flag that Python library was not loaded yet. */
     status->is_pylib_loaded = false;
-
-    /* From the cookie, calculate the archive start */
-    status->pkgstart = search_end - ntohl(status->cookie.len);
 
     /* Read in in the table of contents */
     fseek(status->fp, status->pkgstart + ntohl(status->cookie.TOC), SEEK_SET);
