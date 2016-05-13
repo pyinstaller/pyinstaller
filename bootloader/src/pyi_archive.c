@@ -237,24 +237,24 @@ pyi_arch_extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
  * past the section headers to find the cookie.
  */
 #if defined(WIN32)
-const int search_size = 8 + sizeof(COOKIE);
+#define SEARCH_SIZE (8 + sizeof(COOKIE))
 #else
-const int search_size = 4096 + sizeof(COOKIE);
+#define SEARCH_SIZE (4096 + sizeof(COOKIE))
 #endif
 
 static int
 pyi_arch_find_cookie(ARCHIVE_STATUS *status, int search_end)
 {
-    int search_start = search_end - search_size;
-    char buf[search_size];
-    char * search_ptr = buf + search_size - sizeof(COOKIE);
+    int search_start = search_end - SEARCH_SIZE;
+    char buf[SEARCH_SIZE];
+    char * search_ptr = buf + SEARCH_SIZE - sizeof(COOKIE);
 
     if (fseek(status->fp, search_start, SEEK_SET)) {
         return -1;
     }
 
     /* Read the entire search space */
-    if (fread(buf, search_size, 1, status->fp) < 1) {
+    if (fread(buf, SEARCH_SIZE, 1, status->fp) < 1) {
         return -1;
     }
 
