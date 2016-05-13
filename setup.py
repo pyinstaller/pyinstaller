@@ -22,6 +22,7 @@ REQUIREMENTS = ['setuptools']
 # For Windows install PyWin32 if not already installed.
 if sys.platform.startswith('win'):
     # Windows support depends on pefile library.
+    # ::TODO:: #1920 require a specific version minimum
     REQUIREMENTS.append('pefile')
     try:
         import pywintypes

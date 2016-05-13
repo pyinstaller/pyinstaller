@@ -92,7 +92,8 @@ def _getImports_pe(pth):
     and uses library pefile for that and supports
     32/64bit Windows
     """
-    import pefile
+    # ::TODO:: #1920 revert to using pypi version
+    from ..lib import pefile
     dlls = set()
     # By default library pefile parses all PE information.
     # We are only interested in the list of dependent dlls.
@@ -103,7 +104,10 @@ def _getImports_pe(pth):
     pe.parse_data_directories(directories=[
         pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_IMPORT'],
         pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_EXPORT'],
-        ])
+        ],
+        forwarded_exports_only=True,
+        import_dllnames_only=True,
+        )
 
     # Some libraries have no other binary dependencies. Use empty list
     # in that case. Otherwise pefile would return None.
