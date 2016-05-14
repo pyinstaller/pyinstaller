@@ -67,6 +67,59 @@ def test_relative_import3(pyi_builder):
     )
 
 
+def test_import_submodule_global_shadowed(pyi_builder):
+    '''
+    Functional test validating issue #1919.
+
+    `ModuleGraph` previously ignored `from`-style imports of submodules from
+    packages whose `__init__` submodules declared global variables of the same
+    name as those submodules. This test exercises this sporadic edge case by
+    unsuccessfully importing a submodule "shadowed" by a global variable of the
+    same name defined by their package's `__init__` submodule.
+    '''
+
+    pyi_builder.test_source(
+        """
+        # Assert that this submodule is shadowed by a string global variable.
+        from pyi_testmod_submodule_global_shadowed import submodule
+        assert type(submodule) == str
+
+        # Assert that this submodule is still frozen into this test application.
+        # To do so:
+        #
+        # 1. Delete this global variable from its parent package.
+        # 2. Assert that this submodule is unshadowed by this global variable.
+        import pyi_testmod_submodule_global_shadowed, sys
+        del  pyi_testmod_submodule_global_shadowed.submodule
+        from pyi_testmod_submodule_global_shadowed import submodule
+        assert type(submodule) == type(sys)
+        """)
+
+
+def test_import_submodule_global_unshadowed(pyi_builder):
+    '''
+    Functional test validating issue #1919.
+
+    `ModuleGraph` previously ignored `from`-style imports of submodules from
+    packages whose `__init__` submodules declared global variables of the same
+    name as those submodules. This test exercises this sporadic edge case by
+    successfully importing a submodule:
+
+    * Initially "shadowed" by a global variable of the same name defined by
+      their package's `__init__` submodule.
+    * Subsequently "unshadowed" when this global variable is then undefined by
+      their package's `__init__` submodule.
+    '''
+
+    pyi_builder.test_source(
+        """
+        # Assert that this submodule is unshadowed by this global variable.
+        import sys
+        from pyi_testmod_submodule_global_unshadowed import submodule
+        assert type(submodule) == type(sys)
+        """)
+
+
 def test_module_with_coding_utf8(pyi_builder):
     # Module ``utf8_encoded_module`` simply has an ``coding`` header
     # and uses same German umlauts.
@@ -159,6 +212,7 @@ def __monkeypatch_resolveCtypesImports(monkeypatch, compiled_dylib):
                         mocked_resolveCtypesImports)
 
 
+#FIXME: For reusability, move this to "PyInstaller.utils.tests".
 def skip_if_lib_missing(libname, text=None):
     """
     pytest decorator to evaluate the required shared lib.
