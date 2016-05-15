@@ -100,6 +100,11 @@ def __add_options(parser):
                         "(default: first script's basename)")
 
     g = parser.add_argument_group('What to bundle, where to search')
+    g.add_argument('--datas',
+                   action='append', default=[],
+                   metavar="FILE;DEST or FOLDER;DEST", dest='datas',
+                   help='Add an additional file or a folder to the executable. '
+                   'This option can be used multiple times.')
     g.add_argument("-p", "--paths", dest="pathex",
                    metavar="DIR", action="append", default=[],
                    help="A path to search for imports (like using PYTHONPATH). "
@@ -215,7 +220,7 @@ def __add_options(parser):
 def main(scripts, name=None, onefile=None,
          console=True, debug=False, strip=False, noupx=False,
          pathex=None, version_file=None, specpath=None,
-         icon_file=None, manifest=None, resources=None, bundle_identifier=None,
+         datas=None, icon_file=None, manifest=None, resources=None, bundle_identifier=None,
          hiddenimports=None, hookspath=None, key=None, runtime_hooks=None,
          excludes=None, uac_admin=False, uac_uiaccess=False,
          win_no_prefer_redirects=False, win_private_assemblies=False,
@@ -262,6 +267,15 @@ def main(scripts, name=None, onefile=None,
         # On OSX default icon has to be copied into the .app bundle.
         # The the text value 'None' means - use default icon.
         icon_file = 'None'
+
+    converted_datas = []
+    if type(datas) == list:
+        for all in datas:
+            pair = []
+            for entry in all.split(";"):
+                pair.append(entry)
+            converted_datas.append(tuple(pair))
+        datas = converted_datas
 
     if bundle_identifier:
         # We need to encapsulate it into apostrofes.
@@ -312,6 +326,7 @@ def main(scripts, name=None, onefile=None,
     d = {
         'scripts': scripts,
         'pathex': pathex,
+        'datas': datas,
         'hiddenimports': hiddenimports,
         'name': name,
         'debug': debug,
