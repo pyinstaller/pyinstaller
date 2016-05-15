@@ -326,7 +326,7 @@ def main(scripts, name=None, onefile=None,
     d = {
         'scripts': scripts,
         'pathex': pathex,
-		'datas': datas,
+        'datas': datas,
         'hiddenimports': hiddenimports,
         'name': name,
         'debug': debug,
