@@ -261,6 +261,54 @@ You could add it to the bundle this way::
 As with data files, if you have multiple binary files to add,
 create the list in a separate statement and pass the list by name.
 
+Using the Command Line Options
+-------------------------------
+
+Another way to specify data and binary files for your executable than editing the ``datas`` argument in the
+spec file manually, you can pass them as command line options::
+
+* ``--add-data SRC:DEST``
+
+* ``--add-binary SRC:DEST``
+
+``SRC`` can be either a single file or a folder. Wildcards are also allowed. ``DEST`` is the destination folder
+in the resulting executable.
+
+In both cases ``SRC`` and ``DEST`` will be converted to the format described at the beginning of this section and 
+written to the spec file. The commands can be used multiple times.
+
+Examples::
+
+	pyinstaller --add-data 'src/README.txt:.' script.py
+
+will result in
+
+	a = Analysis(...
+             datas=[('src/README.txt', '.')],
+             ...
+             )
+
+
+A more complex example::
+
+	pyinstaller --add-data '/mygame/data:data' \
+                --add-data '/mygame/sfx/*.mp3:sfx' \
+                --add-data 'src/README.txt:.' \
+                --add-binary 'bin/libfoo.so:bin' \
+                script.py
+
+in
+
+	a = Analysis(...
+             datas=[
+             ( '/mygame/data', 'data' ),
+             ( '/mygame/sfx/*.mp3', 'sfx' ),
+             ( 'src/README.txt', '.' )
+             ]
+             binaries=[('bin/libfoo.so', 'bin')]
+             ...
+             )
+
 Advanced Methods of Adding Files
 ---------------------------------
 

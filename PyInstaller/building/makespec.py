@@ -14,6 +14,7 @@ Automatically build spec files containing a description of the project
 
 import os
 import sys
+import argparse
 
 from .. import HOMEPATH, DEFAULT_SPECPATH
 from .. import log as logging
@@ -51,6 +52,15 @@ def make_path_spec_relative(filename, spec_dir):
 path_conversions = (
     (HOMEPATH, "HOMEPATH"),
     )
+
+
+def add_data_or_binary(string):
+    # Or should we use a regex here?
+    if string.count(":") != 1:
+        raise argparse.ArgumentError("Wrong syntax, should be SRC:DEST")
+    if len(string) < 3:
+        raise argparse.ArgumentError("You have to specify both SRC and DEST")
+    return string
 
 
 def make_variable_path(filename, conversions=path_conversions):
@@ -100,10 +110,15 @@ def __add_options(parser):
                         "(default: first script's basename)")
 
     g = parser.add_argument_group('What to bundle, where to search')
-    g.add_argument('--datas',
-                   action='append', default=[],
-                   metavar="FILE;DEST or FOLDER;DEST", dest='datas',
-                   help='Add an additional file or a folder to the executable. '
+    g.add_argument('--add-data', '--adddata',  # Second one looks stange...
+                   action='append', default=[], type=add_data_or_binary,
+                   metavar="SRC:DEST", dest='datas',
+                   help='Additional non-binary files or folders to be added to the executable. SRC may be a glob, see the manual for details. '
+                   'This option can be used multiple times.')
+    g.add_argument('--add-binary', '--addbinary',
+                   action='append', default=[], type=add_data_or_binary,
+                   metavar="SRC:DEST", dest='binaries',
+                   help='Additional binary files to be added to the executable. See `--data` option for more details. '
                    'This option can be used multiple times.')
     g.add_argument("-p", "--paths", dest="pathex",
                    metavar="DIR", action="append", default=[],
@@ -220,7 +235,7 @@ def __add_options(parser):
 def main(scripts, name=None, onefile=None,
          console=True, debug=False, strip=False, noupx=False,
          pathex=None, version_file=None, specpath=None,
-         datas=None, icon_file=None, manifest=None, resources=None, bundle_identifier=None,
+         datas=None, binaries=None, icon_file=None, manifest=None, resources=None, bundle_identifier=None,
          hiddenimports=None, hookspath=None, key=None, runtime_hooks=None,
          excludes=None, uac_admin=False, uac_uiaccess=False,
          win_no_prefer_redirects=False, win_private_assemblies=False,
@@ -268,14 +283,14 @@ def main(scripts, name=None, onefile=None,
         # The the text value 'None' means - use default icon.
         icon_file = 'None'
 
-    converted_datas = []
-    if type(datas) == list:
-        for all in datas:
-            pair = []
-            for entry in all.split(";"):
-                pair.append(entry)
-            converted_datas.append(tuple(pair))
-        datas = converted_datas
+    if datas:
+        # Convert the list with one string per `--add-data` option usage
+        # given by the argparser to a list with tuples
+        datas = [tuple(e.split(':')) for e in datas]
+
+    if binaries:
+        # Same as above
+        binaries = [tuple(e.split(':')) for e in binaries]
 
     if bundle_identifier:
         # We need to encapsulate it into apostrofes.
@@ -326,6 +341,7 @@ def main(scripts, name=None, onefile=None,
     d = {
         'scripts': scripts,
         'pathex': pathex,
+        'binaries': binaries,
         'datas': datas,
         'hiddenimports': hiddenimports,
         'name': name,
