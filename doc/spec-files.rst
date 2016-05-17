@@ -129,7 +129,7 @@ To find the data files at run-time, see :ref:`Run-time Information`.
 Adding Data Files
 ------------------
 
-You can add data files to the bundle by using the `--add-data` command option, or by 
+You can add data files to the bundle by using the ``--add-data`` command option, or by 
 adding them as a list to the spec file.
 
 With using the spec file, provide a list that
@@ -244,7 +244,7 @@ If it is actually characters, you must decode it::
 Adding Binary Files
 --------------------
 
-You can add binary files to the bundle by using the `--add-binary` command option, 
+You can add binary files to the bundle by using the ``--add-binary`` command option, 
 or by adding them as a list to the spec file.
 
 In the spec file, make a list of tuples that describe the files needed.
