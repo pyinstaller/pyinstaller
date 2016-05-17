@@ -95,8 +95,8 @@ The statements in a spec file create instances of four classes,
 
   - ``scripts``: the python scripts named on the command line;
   - ``pure``: pure python modules needed by the scripts;
-  - ``binaries``: non-python modules needed by the scripts;
-  - ``datas``: non-binary files included in the app.
+  - ``binaries``: non-python modules needed by the scripts, including names given by the ``--add-binary`` option;
+  - ``datas``: non-binary files included in the app, including names given by the ``--add-data`` option.
 
 * An instance of class ``PYZ`` is a ``.pyz`` archive (described
   under :ref:`Inspecting Archives` below), which contains all the
@@ -129,7 +129,10 @@ To find the data files at run-time, see :ref:`Run-time Information`.
 Adding Data Files
 ------------------
 
-To have data files included in the bundle, provide a list that
+You can add data files to the bundle by using the `--add-data` command option, or by 
+adding them as a list to the spec file.
+
+With using the spec file, provide a list that
 describes the files as the value of the ``datas=`` argument to ``Analysis``.
 The list of data files is a list of tuples.
 Each tuple has two values, both of which must be strings:
@@ -146,6 +149,10 @@ you could modify the spec file as follows::
              datas=[ ('src/README.txt', '.') ],
              ...
              )
+
+Or the command line equivalent::
+
+	pyinstaller --add-data 'src/README.txt:.' myscript.py
 
 You have made the ``datas=`` argument a one-item list.
 The item is a tuple in which the first string says the existing file
@@ -237,7 +244,10 @@ If it is actually characters, you must decode it::
 Adding Binary Files
 --------------------
 
-To add binary files, make a list of tuples that describe the files needed.
+You can add binary files to the bundle by using the `--add-binary` command option, 
+or by adding them as a list to the spec file.
+
+In the spec file, make a list of tuples that describe the files needed.
 Assign the list of tuples to the ``binaries=`` argument of Analysis.
 
 Normally |PyInstaller| learns about ``.so`` and ``.dll`` libraries by
@@ -258,56 +268,12 @@ You could add it to the bundle this way::
              binaries=[ ( '/usr/lib/libiodbc.2.dylib', 'libiodbc.dylib' ) ],
              ...
 
+Or via the command line::
+
+	pyinstaller --add-binary '/usr/lib/libiodbc.2.dylib:libiodbc.dylib' myscript.py
+
 As with data files, if you have multiple binary files to add,
 create the list in a separate statement and pass the list by name.
-
-Using the Command Line Options
--------------------------------
-
-Another way to specify data and binary files for your executable than editing the ``datas`` argument in the
-spec file manually, you can pass them as command line options::
-
-* ``--add-data SRC:DEST``
-
-* ``--add-binary SRC:DEST``
-
-``SRC`` can be either a single file or a folder. Wildcards are also allowed. ``DEST`` is the destination folder
-in the resulting executable.
-
-In both cases ``SRC`` and ``DEST`` will be converted to the format described at the beginning of this section and 
-written to the spec file. The commands can be used multiple times.
-
-Examples::
-
-	pyinstaller --add-data 'src/README.txt:.' script.py
-
-will result in
-
-	a = Analysis(...
-             datas=[('src/README.txt', '.')],
-             ...
-             )
-
-
-A more complex example::
-
-	pyinstaller --add-data '/mygame/data:data' \
-                --add-data '/mygame/sfx/*.mp3:sfx' \
-                --add-data 'src/README.txt:.' \
-                --add-binary 'bin/libfoo.so:bin' \
-                script.py
-
-in
-
-	a = Analysis(...
-             datas=[
-             ( '/mygame/data', 'data' ),
-             ( '/mygame/sfx/*.mp3', 'sfx' ),
-             ( 'src/README.txt', '.' )
-             ]
-             binaries=[('bin/libfoo.so', 'bin')]
-             ...
-             )
 
 Advanced Methods of Adding Files
 ---------------------------------
