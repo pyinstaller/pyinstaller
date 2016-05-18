@@ -95,8 +95,10 @@ The statements in a spec file create instances of four classes,
 
   - ``scripts``: the python scripts named on the command line;
   - ``pure``: pure python modules needed by the scripts;
-  - ``binaries``: non-python modules needed by the scripts, including names given by the ``--add-binary`` option;
-  - ``datas``: non-binary files included in the app, including names given by the ``--add-data`` option.
+  - ``binaries``: non-python modules needed by the scripts, including names 
+    given by the ``--add-binary`` option;
+  - ``datas``: non-binary files included in the app, including names given 
+    by the ``--add-data`` option.
 
 * An instance of class ``PYZ`` is a ``.pyz`` archive (described
   under :ref:`Inspecting Archives` below), which contains all the
@@ -132,7 +134,7 @@ Adding Data Files
 You can add data files to the bundle by using the ``--add-data`` command option, or by 
 adding them as a list to the spec file.
 
-With using the spec file, provide a list that
+When using the spec file, provide a list that
 describes the files as the value of the ``datas=`` argument to ``Analysis``.
 The list of data files is a list of tuples.
 Each tuple has two values, both of which must be strings:
