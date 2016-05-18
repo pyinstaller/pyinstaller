@@ -132,7 +132,11 @@ class DependencyProcessor(object):
         # 'PyInstaller.config' cannot be imported as other top-level modules.
         from ..config import CONF
         workpath = os.path.join(CONF['workpath'], os.path.basename(zipfilename))
-        os.makedirs(workpath, exist_ok=True)
+        try:
+            os.makedirs(workpath)
+        except OSError, e:
+            if e.errno != 17:
+                raise
         # TODO extract only those file which whould then be included
         with zipfile.ZipFile(zipfilename) as zfh:
             zfh.extractall(workpath)
