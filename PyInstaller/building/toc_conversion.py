@@ -134,7 +134,7 @@ class DependencyProcessor(object):
         workpath = os.path.join(CONF['workpath'], os.path.basename(zipfilename))
         try:
             os.makedirs(workpath)
-        except OSError, e:
+        except OSError as e:
             if e.errno != 17:
                 raise
         # TODO extract only those file which whould then be included
