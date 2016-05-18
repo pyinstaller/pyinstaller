@@ -150,9 +150,9 @@ you could modify the spec file as follows::
              ...
              )
 
-Or the command line equivalent::
+And the command line equivalent::
 
-	pyinstaller --add-data 'src/README.txt:.' myscript.py
+	pyinstaller --add-data 'src/README.txt>.' myscript.py
 
 You have made the ``datas=`` argument a one-item list.
 The item is a tuple in which the first string says the existing file
@@ -270,7 +270,7 @@ You could add it to the bundle this way::
 
 Or via the command line::
 
-	pyinstaller --add-binary '/usr/lib/libiodbc.2.dylib:libiodbc.dylib' myscript.py
+	pyinstaller --add-binary '/usr/lib/libiodbc.2.dylib>libiodbc.dylib' myscript.py
 
 As with data files, if you have multiple binary files to add,
 create the list in a separate statement and pass the list by name.

@@ -23,6 +23,7 @@ from .templates import onefiletmplt, onedirtmplt, cipher_absent_template, \
     cipher_init_template, bundleexetmplt, bundletmplt
 
 logger = logging.getLogger(__name__)
+add_command_sep = ">"
 
 
 def quote_win_filepath(path):
@@ -56,8 +57,8 @@ path_conversions = (
 
 def add_data_or_binary(string):
     # Or should we use a regex here?
-    if string.count(":") != 1:
-        raise argparse.ArgumentError("Wrong syntax, should be SRC:DEST")
+    if string.count(add_command_sep) != 1:
+        raise argparse.ArgumentError("Wrong syntax, should be SRC{}DEST".format(add_command_sep))
     if len(string) < 3:
         raise argparse.ArgumentError("You have to specify both SRC and DEST")
     return string
@@ -112,13 +113,13 @@ def __add_options(parser):
     g = parser.add_argument_group('What to bundle, where to search')
     g.add_argument('--add-data', '--adddata',  # Second one looks stange...
                    action='append', default=[], type=add_data_or_binary,
-                   metavar="SRC:DEST", dest='datas',
+                   metavar='SRC{}DEST'.format(add_command_sep), dest='datas',
                    help='Additional non-binary files or folders to be added to the executable. SRC may be a glob, see the manual for details. '
                    'This option can be used multiple times.')
     g.add_argument('--add-binary', '--addbinary',
                    action='append', default=[], type=add_data_or_binary,
-                   metavar="SRC:DEST", dest='binaries',
-                   help='Additional binary files to be added to the executable. See `--data` option for more details. '
+                   metavar='SRC{}DEST'.format(add_command_sep), dest='binaries',
+                   help='Additional binary files to be added to the executable. See `--add-data` option for more details. '
                    'This option can be used multiple times.')
     g.add_argument("-p", "--paths", dest="pathex",
                    metavar="DIR", action="append", default=[],
