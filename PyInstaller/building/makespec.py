@@ -61,7 +61,8 @@ def add_data_or_binary(string):
         raise argparse.ArgumentError("Wrong syntax, should be SRC{}DEST".format(add_command_sep))
     if len(string) < 3:
         raise argparse.ArgumentError("You have to specify both SRC and DEST")
-    return string
+    # Return tuple containing src and dest
+    return tuple(string.split(add_command_sep))
 
 
 def make_variable_path(filename, conversions=path_conversions):
@@ -283,15 +284,6 @@ def main(scripts, name=None, onefile=None,
         # On OSX default icon has to be copied into the .app bundle.
         # The the text value 'None' means - use default icon.
         icon_file = 'None'
-
-    if datas:
-        # Convert the list with one string per `--add-data` option usage
-        # given by the argparser to a list with tuples
-        datas = [tuple(e.split(':')) for e in datas]
-
-    if binaries:
-        # Same as above
-        binaries = [tuple(e.split(':')) for e in binaries]
 
     if bundle_identifier:
         # We need to encapsulate it into apostrofes.
