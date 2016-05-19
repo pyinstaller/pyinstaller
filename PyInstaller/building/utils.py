@@ -182,7 +182,12 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
         basenm = os.path.normcase(dist_nm)
     else:
         basenm = os.path.normcase(os.path.basename(fnm))
-    digest = cacheDigest(fnm)
+
+    # Binding redirects should be taken into account to see if the file
+    # needs to be reprocessed. The redirects may change if the versions of dependent
+    # manifests change due to system updates.
+    redirects = CONF.get('binding_redirects', [])
+    digest = cacheDigest(fnm, redirects)
     cachedfile = os.path.join(cachedir, basenm)
     cmd = None
     if basenm in cache_index:
@@ -195,7 +200,6 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
                 dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
             return cachedfile
 
-    redirects = CONF.get('binding_redirects', [])
 
     # Optionally change manifest and its deps to private assemblies
     if fnm.lower().endswith(".manifest"):
@@ -326,9 +330,12 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
     return cachedfile
 
 
-def cacheDigest(fnm):
+def cacheDigest(fnm, redirects):
     data = open(fnm, "rb").read()
-    digest = hashlib.md5(data).digest()
+    hasher = hashlib.md5(data)
+    if redirects:
+        hasher.update(str(redirects))
+    digest = hasher.digest()
     return digest
 
 
