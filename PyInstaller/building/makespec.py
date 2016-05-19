@@ -56,13 +56,16 @@ path_conversions = (
 
 
 def add_data_or_binary(string):
-    # Or should we use a regex here?
-    if string.count(add_command_sep) != 1:
+    try:
+        src, dest = string.split(add_command_sep)
+    except ValueError:
+        # Split into SRC and DEST failed, wrong syntax
         raise argparse.ArgumentError("Wrong syntax, should be SRC{}DEST".format(add_command_sep))
-    if len(string) < 3:
+    if not src or not dest:
+        # Syntax was correct, but one or both of SRC and DEST was not given
         raise argparse.ArgumentError("You have to specify both SRC and DEST")
-    # Return tuple containing src and dest
-    return tuple(string.split(add_command_sep))
+    # Return tuple containing SRC and SRC
+    return (src, dest)
 
 
 def make_variable_path(filename, conversions=path_conversions):
