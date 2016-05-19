@@ -135,7 +135,8 @@ class DependencyProcessor(object):
         try:
             os.makedirs(workpath)
         except OSError as e:
-            if e.errno != 17:
+            import errno
+            if e.errno != errno.EEXIST:
                 raise
         # TODO extract only those file which whould then be included
         with zipfile.ZipFile(zipfilename) as zfh:
