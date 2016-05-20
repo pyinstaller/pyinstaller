@@ -143,6 +143,8 @@ enhancements on these are welcome.
    linked Python libraries.
  - ldd
 
+- PowerPC Linux (Debian)
+
 
 Before using any contributed platform, you need to build the PyInstaller
 bootloader, as we do not ship binary packages. Download PyInstaller
