@@ -290,11 +290,11 @@ For example the value ``(2, 0, 4, 0)`` resolves to
 ``0002000000040000`` in hex.
 
 You can also install a Version resource from a text file after
-the bundled app has been created, using the ``set_version`` command:
+the bundled app has been created, using the ``pyi-set_version`` command:
 
-    ``set_version`` *version_text_file* *executable_file*
+    ``pyi-set_version`` *version_text_file* *executable_file*
 
-The ``set_version`` utility reads a version text file as written
+The ``pyi-set_version`` utility reads a version text file as written
 by ``pyi-grab_version``, converts it to a Version resource,
 and installs that resource in the *executable_file* specified.
 
