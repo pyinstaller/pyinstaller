@@ -23,7 +23,7 @@ from .templates import onefiletmplt, onedirtmplt, cipher_absent_template, \
     cipher_init_template, bundleexetmplt, bundletmplt
 
 logger = logging.getLogger(__name__)
-add_command_sep = ">"
+add_command_sep = os.pathsep
 
 
 def quote_win_filepath(path):
@@ -115,15 +115,20 @@ def __add_options(parser):
                         "(default: first script's basename)")
 
     g = parser.add_argument_group('What to bundle, where to search')
-    g.add_argument('--add-data', '--adddata',  # Second one looks stange...
+    g.add_argument('--add-data',
                    action='append', default=[], type=add_data_or_binary,
                    metavar='SRC{}DEST'.format(add_command_sep), dest='datas',
-                   help='Additional non-binary files or folders to be added to the executable. SRC may be a glob, see the manual for details. '
-                   'This option can be used multiple times.')
-    g.add_argument('--add-binary', '--addbinary',
+                   help='Additional non-binary files or folders to be added '
+                        'to the executable. The path separator ({}) is '
+                        'platform specific, `os.pathsep` (; on Windows, : on most '
+                        'UNIX systems) is used. This option can be used '
+                        'multiple times.'
+                   .format(add_command_sep))
+    g.add_argument('--add-binary',
                    action='append', default=[], type=add_data_or_binary,
                    metavar='SRC{}DEST'.format(add_command_sep), dest='binaries',
-                   help='Additional binary files to be added to the executable. See `--add-data` option for more details. '
+                   help='Additional binary files to be added to the executable. '
+                        'See `--add-data` option for more details. '
                    'This option can be used multiple times.')
     g.add_argument("-p", "--paths", dest="pathex",
                    metavar="DIR", action="append", default=[],
