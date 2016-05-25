@@ -569,15 +569,49 @@ def collect_submodules(package, pattern=''):
     names = exec_statement("""
         import sys
         import pkgutil
-        # If the package isn't in sys.path, its submodules won't be found
-        # correctly. Specifically, test_hookutils.test_collect_submod_all_included
-        # will fail to find hookutils_files.subpkg.twelve.
-        sys.path += [{}]
-        for module_loader, name, ispkg in pkgutil.walk_packages([{}], '{}.'):
+
+        # ``pkgutil.walk_packages`` doesn't walk subpackages of zipped files
+        # per https://bugs.python.org/issue14209. This is a workaround.
+        def walk_packages(path=None, prefix='', onerror=None):
+            def seen(p, m={{}}):
+                if p in m:
+                    return True
+                m[p] = True
+
+            for importer, name, ispkg in pkgutil.iter_modules(path, prefix):
+                if not name.startswith(prefix):   ## Added
+                    name = prefix + name          ## Added
+                yield importer, name, ispkg
+
+                if ispkg:
+                    try:
+                        __import__(name)
+                    except ImportError:
+                        if onerror is not None:
+                            onerror(name)
+                    except Exception:
+                        if onerror is not None:
+                            onerror(name)
+                        else:
+                            raise
+                    else:
+                        path = getattr(sys.modules[name], '__path__', None) or []
+
+                        # don't traverse path items we've seen before
+                        path = [p for p in path if not seen(p)]
+
+                        ## Use Py2 code here. It still works in Py3.
+                        for item in walk_packages(path, name+'.', onerror):
+                            yield item
+                        ## This is the original Py3 code.
+                        #yield from walk_packages(path, name+'.', onerror)
+
+        for module_loader, name, ispkg in walk_packages([{}], '{}.'):
             print(name)
         """.format(
                   # Use repr to escape Windows backslashes.
-                  repr(pkg_base), repr(pkg_dir), package))
+                  repr(pkg_dir), package))
+
     # Include the package itself in the results.
     mods = {package}
     for name in names.split():
