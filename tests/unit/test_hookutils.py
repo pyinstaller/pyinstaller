@@ -98,6 +98,7 @@ TEST_MOD = 'hookutils_package'
 # The path to this directory.
 TEST_MOD_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hookutils_files')
 
+
 @pytest.fixture
 def mod_list(monkeypatch):
     # Add 'hookutils_files' to sys.path (so ``is_package`` can find it) and to
@@ -107,53 +108,48 @@ def mod_list(monkeypatch):
     # Use the hookutils_test_files package for testing.
     return collect_submodules(TEST_MOD)
 
+class TestCollectSubmodules(object):
+    # An error should be thrown if a module, not a package, was passed.
+    def test_collect_submod_module(self):
+        # os is a module, not a package.
+        with pytest.raises(ValueError):
+            collect_submodules(__import__('os'))
 
-# An error should be thrown if a module, not a package, was passed.
-def test_collect_submod_module():
-    # os is a module, not a package.
-    with pytest.raises(ValueError):
-        collect_submodules(__import__('os'))
+    # The package name itself should be in the returned list.
+    def test_collect_submod_itself(self, mod_list):
+        assert TEST_MOD in mod_list
 
+    # Python extension is included in the list.
+    def test_collect_submod_pyextension(self, mod_list):
+        assert TEST_MOD + '.pyextension' in mod_list
 
-# The package name itself should be in the returned list.
-def test_collect_submod_itself(mod_list):
-    assert TEST_MOD in mod_list
+    # Check that all packages get included
+    def test_collect_submod_all_included(self, mod_list):
+        mod_list.sort()
+        assert mod_list == [TEST_MOD,
+                            # Python extensions on Windows ends with '.pyd' and
+                            # '.so' on Linux, Mac OS X and other operating systems.
+                            TEST_MOD + '.pyextension',
+                            TEST_MOD + '.subpkg',
+                            TEST_MOD + '.subpkg.twelve',
+                            TEST_MOD + '.two']
 
+    # Dynamic libraries (.dll, .dylib) are not included in the list.
+    def test_collect_submod_no_dynamiclib(self, mod_list):
+        assert TEST_MOD + '.dynamiclib' not in mod_list
 
-# Python extension is included in the list.
-def test_collect_submod_pyextension(mod_list):
-    assert TEST_MOD + '.pyextension' in mod_list
+    # Subpackages without an __init__.py should not be included.
+    def test_collect_submod_subpkg_init(self, mod_list):
+        assert TEST_MOD + '.py_files_not_in_package.sub_pkg.three' not in mod_list
 
-
-# Check that all packages get included
-def test_collect_submod_all_included(mod_list):
-    mod_list.sort()
-    print(mod_list)
-    assert mod_list == [TEST_MOD,
-                        # Python extensions on Windows ends with '.pyd' and
-                        # '.so' on Linux, Mac OS X and other operating systems.
-                        TEST_MOD + '.pyextension',
-                        TEST_MOD + '.subpkg',
-                        TEST_MOD + '.subpkg.twelve',
-                        TEST_MOD + '.two']
-
-
-# Dynamic libraries (.dll, .dylib) are not included in the list.
-def test_collect_submod_no_dynamiclib(mod_list):
-    assert TEST_MOD + '.dynamiclib' not in mod_list
-
-
-# Subpackages without an __init__.py should not be included.
-def test_collect_submod_subpkg_init(mod_list):
-    assert TEST_MOD + '.py_files_not_in_package.sub_pkg.three' not in mod_list
-
-
-# Test with a subpackage.
-def test_collect_submod_subpkg(mod_list):
-    mod_list = collect_submodules(TEST_MOD + '.subpkg')
-    mod_list.sort()
-    assert mod_list == [TEST_MOD + '.subpkg',
-                        TEST_MOD + '.subpkg.twelve']
+    # Test with a subpackage.
+    def test_collect_submod_subpkg(self, mod_list):
+        # Note: Even though mod_list is overwritten, it's still needed as a
+        # fixture, so that the path to the TEST_MOD will be set correctly.
+        mod_list = collect_submodules(TEST_MOD + '.subpkg')
+        mod_list.sort()
+        assert mod_list == [TEST_MOD + '.subpkg',
+                            TEST_MOD + '.subpkg.twelve']
 
 
 _DATA_BASEPATH = join(TEST_MOD_PATH, TEST_MOD)
