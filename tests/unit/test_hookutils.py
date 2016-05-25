@@ -94,15 +94,16 @@ class TestRemoveExtension(object):
 
 
 # The name of the hookutils test files directory
-TEST_MOD = 'hookutils_files'
-
+TEST_MOD = 'hookutils_package'
+# The path to this directory.
+TEST_MOD_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hookutils_files')
 
 @pytest.fixture
 def mod_list(monkeypatch):
-    # Add path with 'hookutils_files' module to PYTHONPATH so tests
-    # could find this module - useful for subprocesses.
-    pth = os.path.dirname(os.path.abspath(__file__))
-    monkeypatch.setenv('PYTHONPATH', pth)
+    # Add 'hookutils_files' to sys.path (so ``is_package`` can find it) and to
+    # ``pathex`` (so code run in a subprocess can find it).
+    monkeypatch.setattr('PyInstaller.config.CONF', {'pathex': [TEST_MOD_PATH]})
+    monkeypatch.syspath_prepend(TEST_MOD_PATH)
     # Use the hookutils_test_files package for testing.
     return collect_submodules(TEST_MOD)
 
@@ -114,7 +115,7 @@ def test_collect_submod_module():
         collect_submodules(__import__('os'))
 
 
-# The package name itself should be in the returned list
+# The package name itself should be in the returned list.
 def test_collect_submod_itself(mod_list):
     assert TEST_MOD in mod_list
 
@@ -142,12 +143,12 @@ def test_collect_submod_no_dynamiclib(mod_list):
     assert TEST_MOD + '.dynamiclib' not in mod_list
 
 
-# Subpackages without an __init__.py should not be included
+# Subpackages without an __init__.py should not be included.
 def test_collect_submod_subpkg_init(mod_list):
     assert TEST_MOD + '.py_files_not_in_package.sub_pkg.three' not in mod_list
 
 
-# Test with a subpackage
+# Test with a subpackage.
 def test_collect_submod_subpkg(mod_list):
     mod_list = collect_submodules(TEST_MOD + '.subpkg')
     mod_list.sort()
@@ -155,7 +156,7 @@ def test_collect_submod_subpkg(mod_list):
                         TEST_MOD + '.subpkg.twelve']
 
 
-_DATA_BASEPATH = join(os.path.dirname(os.path.abspath(__file__)), TEST_MOD)
+_DATA_BASEPATH = join(TEST_MOD_PATH, TEST_MOD)
 _DATA_PARAMS = [
     (TEST_MOD, ('dynamiclib.dll',
                 'dynamiclib.dylib',
@@ -176,10 +177,9 @@ def data_lists(monkeypatch, request):
         l = list(sequence)
         l.sort()
         return tuple(l)
-    # Add path with 'hookutils_files' module to PYTHONPATH so tests
+    # Add path with 'hookutils_files' module to ``sys.path`` so tests
     # could find this module - useful for subprocesses.
-    pth = os.path.dirname(os.path.abspath(__file__))
-    monkeypatch.setenv('PYTHONPATH', pth)
+    monkeypatch.syspath_prepend(TEST_MOD_PATH)
     # Use the hookutils_test_files package for testing.
     mod_name = request.param[0]
     data = collect_data_files(mod_name)
