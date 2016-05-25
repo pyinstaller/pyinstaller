@@ -12,9 +12,9 @@ import os
 import pytest
 
 from os.path import join
-from PyInstaller.utils.hooks import collect_data_files, collect_submodules, get_module_file_attribute
-from PyInstaller.utils.hooks import remove_prefix, remove_suffix
-from PyInstaller.utils.hooks import remove_file_extension
+from PyInstaller.utils.hooks import collect_data_files, collect_submodules, \
+  get_module_file_attribute, remove_prefix, remove_suffix, \
+  remove_file_extension
 
 
 class TestRemovePrefix(object):
