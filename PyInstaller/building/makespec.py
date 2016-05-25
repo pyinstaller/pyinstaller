@@ -119,11 +119,10 @@ def __add_options(parser):
                    action='append', default=[], type=add_data_or_binary,
                    metavar='SRC{}DEST'.format(add_command_sep), dest='datas',
                    help='Additional non-binary files or folders to be added '
-                        'to the executable. The path separator ({}) is '
+                        'to the executable. The path separator  is '
                         'platform specific, `os.pathsep` (; on Windows, : on most '
                         'UNIX systems) is used. This option can be used '
                         'multiple times.'
-                   .format(add_command_sep))
     g.add_argument('--add-binary',
                    action='append', default=[], type=add_data_or_binary,
                    metavar='SRC{}DEST'.format(add_command_sep), dest='binaries',
