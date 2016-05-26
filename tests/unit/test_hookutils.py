@@ -10,12 +10,13 @@
 
 import os
 import pytest
+import shutil
 
 from os.path import join
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules, \
   get_module_file_attribute, remove_prefix, remove_suffix, \
   remove_file_extension
-
+from PyInstaller.compat import exec_python
 
 class TestRemovePrefix(object):
     # Verify that removing a prefix from an empty string is OK.
@@ -150,6 +151,33 @@ class TestCollectSubmodules(object):
         mod_list.sort()
         assert mod_list == [TEST_MOD + '.subpkg',
                             TEST_MOD + '.subpkg.twelve']
+
+    # Test in an ``.egg`` file.
+    def test_collect_submod_egg(self, tmpdir, monkeypatch):
+        # Copy files to a tmpdir for egg building.
+        dest_path = tmpdir.join('hookutils_package')
+        shutil.copytree(TEST_MOD_PATH, dest_path.strpath)
+        monkeypatch.chdir(dest_path)
+
+        # Create an egg from the test package. For debug, show the output of
+        # the egg build.
+        print(exec_python('setup.py', 'bdist_egg'))
+
+        # Obtain the name of the egg, which depends on the Python version.
+        dist_path = dest_path.join('dist')
+        fl = os.listdir(dist_path.strpath)
+        assert len(fl) == 1
+        egg_name = fl[0]
+        assert egg_name.endswith('.egg')
+
+        # Add the egg to Python's path.
+        pth = dist_path.join(egg_name).strpath
+        monkeypatch.setattr('PyInstaller.config.CONF', {'pathex': [pth]})
+        monkeypatch.syspath_prepend(pth)
+
+        # Verify its contents.
+        ml = collect_submodules(TEST_MOD)
+        self.test_collect_submod_all_included(ml)
 
 
 _DATA_BASEPATH = join(TEST_MOD_PATH, TEST_MOD)
