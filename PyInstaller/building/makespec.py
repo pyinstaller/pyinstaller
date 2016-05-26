@@ -122,7 +122,7 @@ def __add_options(parser):
                         'to the executable. The path separator  is '
                         'platform specific, `os.pathsep` (`;` on Windows, `:` on most '
                         'UNIX systems) is used. This option can be used '
-                        'multiple times.'
+                        'multiple times.')
     g.add_argument('--add-binary',
                    action='append', default=[], type=add_data_or_binary,
                    metavar='SRC{}DEST'.format(add_command_sep), dest='binaries',
