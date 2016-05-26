@@ -296,9 +296,11 @@ You are welcome to read the ``PyInstaller.utils.hooks`` module
    Returns an empty list when ``package`` does not name a package
    (a package is defined as a module that contains a ``__path__`` attribute).
 
-   The ``pattern``, if given, is a regular expresion that may be contained in
-   the names of modules.
-   Only modules containing the pattern will be returned.
+   The ``pattern``, if given, is a `regular expresion <https://docs.python.org/3/library/re.html#regular-expression-syntax>`_
+   that may be contained in the names of modules. A common pitfall: a
+   ``pattern`` of ``hello.world`` will match ``hello_world`` (and many others),
+   since ``.`` matches any character; use ``hello\.world`` instead. Only
+   modules containing the pattern will be returned.
    Example::
 
    		hiddenimports = collect_submodules( 'PIL', pattern='ImagePlugin' )
