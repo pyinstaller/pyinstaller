@@ -683,7 +683,9 @@ def collect_data_files(package, include_py_files=False, subdir=None):
     argument to True collects these files as well. This is typically used
     with Python routines (such as those in pkgutil) that search a given
     directory for Python executable files then load them as extensions or
-    plugins. See collect_submodules for a description of the subdir parameter.
+    plugins. The optional subdir give a subdirectory relative to package to
+    search, which is helpful when submodules are imported at run-time from a
+    directory lacking __init__.py
 
     This function does not work on zipped Python eggs.
 
