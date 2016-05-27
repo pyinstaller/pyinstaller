@@ -687,7 +687,7 @@ def collect_data_files(package, include_py_files=False, subdir=None):
             if include_py_files or (extension not in PY_IGNORE_EXTENSIONS):
                 # Produce the tuple
                 # (/abs/path/to/source/mod/submod/file.dat,
-                #  mod/submod/file.dat)
+                #  mod/submod)
                 source = os.path.join(dirpath, f)
                 dest = remove_prefix(dirpath,
                                      os.path.dirname(pkg_base) + os.sep)
@@ -717,7 +717,7 @@ def collect_system_data_files(path, destdir=None, include_py_files=False):
             if include_py_files or (extension not in PY_IGNORE_EXTENSIONS):
                 # Produce the tuple
                 # (/abs/path/to/source/mod/submod/file.dat,
-                #  mod/submod/file.dat)
+                #  mod/submod/destdir)
                 source = os.path.join(dirpath, f)
                 dest = remove_prefix(dirpath,
                                      os.path.dirname(path) + os.sep)
