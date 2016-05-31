@@ -296,14 +296,12 @@ You are welcome to read the ``PyInstaller.utils.hooks`` module
    Returns an empty list when ``package`` does not name a package
    (a package is defined as a module that contains a ``__path__`` attribute).
 
-   The ``pattern``, if given, is a `regular expresion <https://docs.python.org/3/library/re.html#regular-expression-syntax>`_
-   that may be contained in the names of modules. A common pitfall: a
-   ``pattern`` of ``hello.world`` will match ``hello_world`` (and many others),
-   since ``.`` matches any character; use ``hello\.world`` instead. Only
-   modules containing the pattern will be returned.
-   Example::
-
-   		hiddenimports = collect_submodules( 'PIL', pattern='ImagePlugin' )
+   The ``pattern``, if given, is function to filter through the submodules
+   found, selecting which should be included in the returned list. It takes one
+   argument, a string, which gives the name of a submodule. Only if the
+   function returns true is the given submodule is added to the list of
+   returned modules. For example, ``filter=lambda name: 'test' not in
+   name`` will return modules that don't contain the word ``test``.
 
 ``collect_data_files( 'module-name', subdir=None, include_py_files=False )``:
    Returns a list of (source, dest) tuples for all non-Python (i.e. data)

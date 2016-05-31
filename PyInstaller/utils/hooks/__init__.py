@@ -538,12 +538,16 @@ def get_package_paths(package):
     return pkg_base, pkg_dir
 
 
-def collect_submodules(package, pattern=''):
+def collect_submodules(package, filter=lambda name: True):
     """
     :param package: A string which names the package which will be search for
         submodules.
-    :param pattern: Only submodules which match this regular expression will be
-        included in the returned list.
+    :param approve: A function to filter through the submodules found,
+        selecting which should be included in the returned list. It takes one
+        argument, a string, which gives the name of a submodule. Only if the
+        function returns true is the given submodule is added to the list of
+        returned modules. For example, ``filter=lambda name: 'test' not in
+        name`` will return modules that don't contain the word ``test``.
     :return: A list of strings which specify all the modules in package. Its
         results can be directly assigned to ``hiddenimports`` in a hook script;
         see, for example, ``hook-sphinx.py``.
@@ -614,8 +618,9 @@ def collect_submodules(package, pattern=''):
 
     # Include the package itself in the results.
     mods = {package}
+    # Filter through the returend submodules.
     for name in names.split():
-        if re.search(pattern, name):
+        if filter(name):
             mods.add(name)
 
     logger.debug("collect_submodules - Found submodules: %s", mods)
