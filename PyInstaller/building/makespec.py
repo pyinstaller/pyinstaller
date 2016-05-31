@@ -124,8 +124,8 @@ def __add_options(parser):
                    'This option can be used multiple times.')
     g.add_argument('--exclude-module', dest='excludes', action='append',
                    default=[],
-                   help='Optional module or package (his Python names, '
-                   'not path names) that will be ignored (as though '
+                   help='Optional module or package (the Python name, '
+                   'not the path name) that will be ignored (as though '
                    'it was not found). '
                    'This option can be used multiple times.')
     g.add_argument('--key', dest='key',
