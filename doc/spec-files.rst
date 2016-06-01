@@ -272,7 +272,7 @@ You could add it to the bundle this way::
 
 Or via the command line::
 
-	pyinstaller --add-binary '/usr/lib/libiodbc.2.dylib>libiodbc.dylib' myscript.py
+	pyinstaller --add-binary '/usr/lib/libiodbc.2.dylib:libiodbc.dylib' myscript.py
 
 As with data files, if you have multiple binary files to add,
 create the list in a separate statement and pass the list by name.
