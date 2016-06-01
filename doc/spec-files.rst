@@ -154,7 +154,7 @@ you could modify the spec file as follows::
 
 And the command line equivalent::
 
-	pyinstaller --add-data 'src/README.txt>.' myscript.py
+	pyinstaller --add-data 'src/README.txt:.' myscript.py
 
 You have made the ``datas=`` argument a one-item list.
 The item is a tuple in which the first string says the existing file
