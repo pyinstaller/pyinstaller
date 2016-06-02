@@ -28,6 +28,10 @@ import marshal
 import struct
 import sys
 import zlib
+if sys.version_info[0] == 2:
+    import thread
+else:
+    import _thread as thread
 
 
 # For decrypting Python modules.
@@ -39,6 +43,17 @@ PYZ_TYPE_MODULE = 0
 PYZ_TYPE_PKG = 1
 PYZ_TYPE_DATA = 2
 
+class FilePos(object):
+    """
+    This class keeps track of the file object representing and current position
+    in a file.
+    """
+    def __init__(self):
+        # The file object representing this file.
+        self.file = None
+        # The position in the file when it was last closed.
+        self.pos = 0
+
 
 class ArchiveFile(object):
     """
@@ -49,41 +64,51 @@ class ArchiveFile(object):
     def __init__(self, *args, **kwargs):
         self.args = args
         self.kwargs = kwargs
-        self.pos = 0
-        self.fd = None
-        self.__open()
+        self._filePos = {}
+
+    def local(self):
+        """
+        Return an instance of FilePos for the current thread. This is a crude
+        # re-implementation of threading.local, which isn't a built-in module
+        # and therefore isn't available.
+        """
+        ti = thread.get_ident()
+        if ti not in self._filePos:
+            self._filePos[ti] = FilePos()
+        return self._filePos[ti]
 
     def __getattr__(self, name):
         """
-        Auto open file when access member from file object
-        This function only call when member of name not exist in self
+        Make this class act like a file, by invoking most methods on its
+        underlying file object.
         """
-        assert self.fd
-        return getattr(self.fd, name)
-
-    def __open(self):
-        """
-        Open file and seek to pos record from last close
-        """
-        if self.fd is None:
-            self.fd = open(*self.args, **self.kwargs)
-            self.fd.seek(self.pos)
+        file = self.local().file
+        assert file
+        return getattr(file, name)
 
     def __enter__(self):
-        self.__open()
+        """
+        Open file and seek to pos record from last close.
+        """
+        # The file shouldn't be open yet.
+        fp = self.local()
+        assert not fp.file
+        # Open the file and seek to the last position.
+        fp.file = open(*self.args, **self.kwargs)
+        fp.file.seek(fp.pos)
 
     def __exit__(self, type, value, traceback):
-        assert self.fd
-        self.close()
+        """
+        Close file and record pos.
+        """
+        # The file should still be open.
+        fp = self.local()
+        assert fp.file
 
-    def close(self):
-        """
-        Close file and record pos
-        """
-        if self.fd is not None:
-            self.pos = self.fd.tell()
-            self.fd.close()
-            self.fd = None
+        # Close the file and record its position.
+        fp.pos = fp.file.tell()
+        fp.file.close()
+        fp.file = None
 
 
 class ArchiveReadError(RuntimeError):
