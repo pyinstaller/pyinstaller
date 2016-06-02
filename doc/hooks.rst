@@ -303,6 +303,14 @@ You are welcome to read the ``PyInstaller.utils.hooks`` module
    returned modules. For example, ``filter=lambda name: 'test' not in
    name`` will return modules that don't contain the word ``test``.
 
+``is_module_or_submodule( name, mod_or_submod )``:
+   This helper function is designed for use in the ``filter`` argument of
+   ``collect_submodules``, by returning ``True`` if the given ``name`` is
+   a module or a submodule of ``mod_or_submod``. For example:
+   ``collect_submodules('foo', lambda name: not is_module_or_submodule(name,
+   'foo.test'))`` excludes ``foo.test`` and ``foo.test.one`` but not
+   ``foo.testifier``.
+
 ``collect_data_files( 'module-name', subdir=None, include_py_files=False )``:
    Returns a list of (source, dest) tuples for all non-Python (i.e. data)
    files found in *module-name*, ready to be assigned to the ``datas`` global.

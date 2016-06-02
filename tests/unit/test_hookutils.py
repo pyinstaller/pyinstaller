@@ -15,7 +15,7 @@ import shutil
 from os.path import join
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules, \
   get_module_file_attribute, remove_prefix, remove_suffix, \
-  remove_file_extension
+  remove_file_extension, is_module_or_submodule
 from PyInstaller.compat import exec_python
 
 class TestRemovePrefix(object):
@@ -178,6 +178,14 @@ class TestCollectSubmodules(object):
         # Verify its contents.
         ml = collect_submodules(TEST_MOD)
         self.test_collect_submod_all_included(ml)
+
+
+def test_is_module_or_submodule():
+    assert is_module_or_submodule('foo.bar', 'foo.bar')
+    assert is_module_or_submodule('foo.bar.baz', 'foo.bar')
+    assert not is_module_or_submodule('foo.bard', 'foo.bar')
+    assert not is_module_or_submodule('foo', 'foo.bar')
+
 
 
 _DATA_BASEPATH = join(TEST_MOD_PATH, TEST_MOD)
