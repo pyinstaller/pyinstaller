@@ -7,13 +7,15 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-# This test code is taken from the example code for the `future` library.
+# This test code is taken from the example code for the `future` library, with
+# a few modifications to allow execution on 32-bit platforms.
 # http://python-future.org/overview.html#code-examples
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 from builtins import (bytes, str, open, super, range,
                       zip, round, input, int, pow, object)
+import platform
 
 # Backported Py3 bytes object
 b = bytes(b'ABCD')
@@ -62,9 +64,23 @@ class VerboseList(list):
         print('Adding an item')
         super().append(item)
 
-# New iterable range object with slicing support
-for i in range(10**15)[:10]:
-    pass
+# Fix: this fails on 32-bit Python. The traceback::
+#
+#        E:\pyinstaller>python tests\functional\scripts\pyi_future.py
+#     Traceback (most recent call last):
+#      File "tests\functional\scripts\pyi_future.py", line 66, in <module>
+#        for i in range(10**15)[:10]:
+#      File "C:\Users\bjones\Downloads\WinPython-32bit-2.7.10.3\python-2.7.10\lib\site-packages\future\types\newrange.py", line 122, in __getitem__
+#        return self.__getitem_slice(index)
+#      File "C:\Users\bjones\Downloads\WinPython-32bit-2.7.10.3\python-2.7.10\lib\site-packages\future\types\newrange.py", line 134, in __getitem_slice
+#        scaled_indices = (self._step * n for n in slce.indices(self._len))
+#     OverflowError: cannot fit 'long' into an index-sized integer
+#
+# So, avoid this on 32-bit platforms; see https://docs.python.org/2.7/library/platform.html#platform.architecture.
+if platform.architecture()[0] != '32bit':
+    # New iterable range object with slicing support
+    for i in range(10**15)[:10]:
+        pass
 
 # Other iterators: map, zip, filter
 my_iter = zip(range(3), ['a', 'b', 'c'])
