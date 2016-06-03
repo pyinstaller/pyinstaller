@@ -15,8 +15,9 @@ import sys
 import textwrap
 import re
 
-from ...compat import base_prefix, exec_command_stdout, exec_python, is_darwin, is_py2, is_py3, is_venv,\
-    open_file, EXTENSION_SUFFIXES
+from ...compat import base_prefix, exec_command_stdout, exec_python, \
+    is_darwin, is_py2, is_py3, is_venv, string_types, open_file, \
+    EXTENSION_SUFFIXES
 from ... import HOMEPATH
 from ... import log as logging
 
@@ -556,7 +557,7 @@ def collect_submodules(package, filter=lambda name: True):
     PyInstaller.
     """
     # Accept only strings as packages.
-    if type(package) is not str:
+    if not isinstance(package, string_types):
         raise ValueError
 
     logger.debug('Collecting submodules for %s' % package)
@@ -663,7 +664,7 @@ def collect_dynamic_libs(package, destdir=None):
                     should be put.
     """
     # Accept only strings as packages.
-    if type(package) is not str:
+    if not isinstance(package, string_types):
         raise ValueError
 
     logger.debug('Collecting dynamic libraries for %s' % package)
@@ -710,7 +711,7 @@ def collect_data_files(package, include_py_files=False, subdir=None):
     PyInstaller.
     """
     # Accept only strings as packages.
-    if type(package) is not str:
+    if not isinstance(package, string_types):
         raise ValueError
 
     pkg_base, pkg_dir = get_package_paths(package)
@@ -743,7 +744,7 @@ def collect_system_data_files(path, destdir=None, include_py_files=False):
     PyInstaller.
     """
     # Accept only strings as paths.
-    if type(path) is not str:
+    if not isinstance(path, string_types):
         raise ValueError
 
     # Walk through all file in the given package, looking for data files.

@@ -61,8 +61,8 @@ elif is_cygwin:
                      'libpython%d.%dm.dll' % _pyver}
 elif is_darwin:
     # libpython%d.%dm.dylib for Conda virtual environment installations
-    PYDYLIB_NAMES = {'Python', '.Python', 
-                     'libpython%d.%d.dylib' % _pyver, 
+    PYDYLIB_NAMES = {'Python', '.Python',
+                     'libpython%d.%d.dylib' % _pyver,
                      'libpython%d.%dm.dylib' % _pyver}
 elif is_aix:
     # Shared libs on AIX are archives with shared object members, thus the ".a" suffix.
@@ -114,11 +114,18 @@ except NameError:
     stdin_input = input
 
 # Safe repr that always outputs ascii
-
 if is_py2:
     safe_repr = repr
 else:
     safe_repr = ascii
+
+# String types to replace `isinstance(foo, str)`
+# Use `isinstance(foo, string_types)` instead.
+if is_py2:
+    string_types = basestring
+else:
+    string_types = str
+
 
 
 # Correct extension ending: 'c' or 'o'
