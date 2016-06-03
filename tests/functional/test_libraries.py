@@ -250,7 +250,6 @@ def test_pygments(pyi_builder):
         print(highlight(code, PythonLexer(), HtmlFormatter()))
         """)
 
-
 @importorskip('markdown')
 def test_markdown(pyi_builder):
     # Markdown uses __import__ed extensions. Make sure these work by

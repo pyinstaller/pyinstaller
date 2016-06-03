@@ -11,12 +11,16 @@
 import os
 import pytest
 import shutil
-
 from os.path import join
+from threading import Thread
+from queue import Queue
+
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules, \
   get_module_file_attribute, remove_prefix, remove_suffix, \
   remove_file_extension, is_module_or_submodule
 from PyInstaller.compat import exec_python
+from PyInstaller.loader.pyimod02_archive import ArchiveFile
+
 
 class TestRemovePrefix(object):
     # Verify that removing a prefix from an empty string is OK.
