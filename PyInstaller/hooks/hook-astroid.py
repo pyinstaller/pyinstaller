@@ -28,7 +28,8 @@
 # since this is run-time discovered and loaded. Therefore, these
 # files are all data files.
 
-from PyInstaller.utils.hooks import collect_data_files, collect_submodules
+from PyInstaller.utils.hooks import collect_data_files, collect_submodules, \
+    is_module_or_submodule
 
 # Note that brain/ isn't a module (it lacks an __init__.py, so it can't be
 # referred to as astroid.brain; instead, locate it as package astriod,
@@ -37,7 +38,8 @@ datas = collect_data_files('astroid', True, 'brain')
 
 # Update: in astroid v 1.4.1, the brain/ module import parts of astroid. Since
 # everything in brain/ is dynamically imported, these are hidden imports. For
-# simplicity, include everything in astroid. Exclude all the tests/ subpackage
+# simplicity, include everything in astroid. Exclude all the test/ subpackage
 # contents and the test_util module.
-hiddenimports = [x for x in collect_submodules('astroid')
-                 if not x.startswith('astroid.test')]
+hiddenimports = collect_submodules('astroid',
+  lambda name: (not is_module_or_submodule(name, 'astroid.tests')) and
+               (not name == 'test_util'))
