@@ -14,8 +14,8 @@ import struct
 
 import pywintypes
 import win32api
-import pefile
-
+# ::TODO:: #1920 revert to using pypi version
+from ...lib import pefile
 
 
 # TODO implement read/write version information with pefile library.

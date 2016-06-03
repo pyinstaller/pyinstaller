@@ -23,7 +23,7 @@ REQUIREMENTS = ['setuptools']
 if sys.platform.startswith('win'):
     # Windows support depends on pefile library.
     # ::TODO:: #1920 require a specific version minimum
-    REQUIREMENTS.append('pefile')
+    # REQUIREMENTS.append('pefile')
     try:
         import pywintypes
     except ImportError:

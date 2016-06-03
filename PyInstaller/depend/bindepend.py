@@ -181,7 +181,8 @@ def matchDLLArch(filename):
     if not is_win:
         return True
 
-    import pefile
+    # ::TODO:: #1920 revert to using pypi version
+    from ..lib import pefile
 
     global _exe_machine_type
     if _exe_machine_type is None:
