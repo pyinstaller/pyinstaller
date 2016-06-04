@@ -66,6 +66,7 @@ cache:
 
 init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
+  - ECHO "%APPVEYOR_SCHEDULED_BUILD%"
 
 install:
   - ECHO "Filesystem root:"
@@ -123,4 +124,5 @@ build: none
 test_script:
   # Split tests into several subprocesses.
   # Run unitttest first.
-  - "%CMD_IN_ENV% py.test -n 3 --maxfail 5 --durations=10 tests\\unit tests"
+  - if not "%APPVEYOR_SCHEDULED_BUILD%" == "True" (
+      %CMD_IN_ENV% py.test -n 3 --maxfail 5 --durations=10 tests\\unit tests)
