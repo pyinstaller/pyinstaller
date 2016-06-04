@@ -128,6 +128,7 @@ def _getImports_pe(pth):
                 dll, _ = forwarder.split('.')
                 dlls.add(dll + ".dll")
 
+    pe.close()
     return dlls
 
 
@@ -187,10 +188,13 @@ def matchDLLArch(filename):
     if _exe_machine_type is None:
         exe_pe = pefile.PE(sys.executable, fast_load=True)
         _exe_machine_type = exe_pe.FILE_HEADER.Machine
+        exe_pe.close()
 
     pe = pefile.PE(filename, fast_load=True)
 
-    return pe.FILE_HEADER.Machine == _exe_machine_type
+    match_arch = pe.FILE_HEADER.Machine == _exe_machine_type
+    pe.close()
+    return match_arch
 
 def Dependencies(lTOC, xtrapath=None, manifest=None, redirects=None):
     """

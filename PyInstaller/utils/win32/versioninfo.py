@@ -89,6 +89,7 @@ def pefile_read_version(filename):
     print(dir(pe.VS_FIXEDFILEINFO))
     print(repr(pe.VS_FIXEDFILEINFO))
     print(pe.dump_info())
+    pe.close()
     return vers
 
 
