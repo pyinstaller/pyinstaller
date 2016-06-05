@@ -6,6 +6,20 @@ Changelog for PyInstaller
 
 - Nothing changed yet.
 
+- (Windows) Package ``pefile`` with pyinstaller.  This partially
+  undoes some changes in 3.2 in which the packaged pefiles were
+  removed to use the pypi version instead.  The pypi version was
+  considerably slower in some applications, and still has a couple
+  of small issues on PY3. (#1920)
+
+  Bundled version of ``pefile`` is of now (Early June 2016) the
+  upstream tip, as it has accepted the shortcuts which speed it up
+  when used by pyinstaller, and fixed some other bugs present on
+  the PyPi version.  There is however still a minor issue with the
+  pefile installer on some PY3 non-utf8 systems. So for now, pefile
+  is once again packaged with pyinstaller. The intent is to go back
+  to the pypi version, once the known issue with the pefile
+  installer on PY3 has been resolved. (#2019)
 
 3.2 (2016-05-03)
 ----------------
@@ -37,7 +51,7 @@ Changelog for PyInstaller
 - (Cygwin) Fix finding the Python library for Cygwin 64-bit (#1307,
   #1810, #1811)
 - (OSX) Fix compilation issue (#1882)
-- (Windows) No longer bundle ``pefile``, use package from for windows
+- (Windows) No longer bundle ``pefile``, use package from pypi for windows
   (#1357)
 - (Windows) Provide a more robust means of executing a Python script
 - AIX fixes.

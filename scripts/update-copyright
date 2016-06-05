@@ -42,8 +42,6 @@ EXCLUDE = set(
     doc/source/tools/rst2xml.py
     old/examples/file_version_info.txt
     PyInstaller/lib/pefile.py
-    PyInstaller/lib/pefile_py2.py
-    PyInstaller/lib/pefile_py3.py
     PyInstaller/utils/_gitrevision.py
     tests/functional/data/sphinx/conf.py
     tests/old_suite/basic/test_pkg_structures-version.txt
