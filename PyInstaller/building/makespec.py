@@ -14,6 +14,7 @@ Automatically build spec files containing a description of the project
 
 import os
 import sys
+import argparse
 
 from .. import HOMEPATH, DEFAULT_SPECPATH
 from .. import log as logging
@@ -22,6 +23,7 @@ from .templates import onefiletmplt, onedirtmplt, cipher_absent_template, \
     cipher_init_template, bundleexetmplt, bundletmplt
 
 logger = logging.getLogger(__name__)
+add_command_sep = os.pathsep
 
 
 def quote_win_filepath(path):
@@ -51,6 +53,19 @@ def make_path_spec_relative(filename, spec_dir):
 path_conversions = (
     (HOMEPATH, "HOMEPATH"),
     )
+
+
+def add_data_or_binary(string):
+    try:
+        src, dest = string.split(add_command_sep)
+    except ValueError:
+        # Split into SRC and DEST failed, wrong syntax
+        raise argparse.ArgumentError("Wrong syntax, should be SRC{}DEST".format(add_command_sep))
+    if not src or not dest:
+        # Syntax was correct, but one or both of SRC and DEST was not given
+        raise argparse.ArgumentError("You have to specify both SRC and DEST")
+    # Return tuple containing SRC and SRC
+    return (src, dest)
 
 
 def make_variable_path(filename, conversions=path_conversions):
@@ -100,6 +115,20 @@ def __add_options(parser):
                         "(default: first script's basename)")
 
     g = parser.add_argument_group('What to bundle, where to search')
+    g.add_argument('--add-data',
+                   action='append', default=[], type=add_data_or_binary,
+                   metavar='SRC{}DEST'.format(add_command_sep), dest='datas',
+                   help='Additional non-binary files or folders to be added '
+                        'to the executable. The path separator  is '
+                        'platform specific, `os.pathsep` (`;` on Windows, `:` on most '
+                        'UNIX systems) is used. This option can be used '
+                        'multiple times.')
+    g.add_argument('--add-binary',
+                   action='append', default=[], type=add_data_or_binary,
+                   metavar='SRC{}DEST'.format(add_command_sep), dest='binaries',
+                   help='Additional binary files to be added to the executable. '
+                        'See `--add-data` option for more details. '
+                   'This option can be used multiple times.')
     g.add_argument("-p", "--paths", dest="pathex",
                    metavar="DIR", action="append", default=[],
                    help="A path to search for imports (like using PYTHONPATH). "
@@ -215,7 +244,7 @@ def __add_options(parser):
 def main(scripts, name=None, onefile=None,
          console=True, debug=False, strip=False, noupx=False,
          pathex=None, version_file=None, specpath=None,
-         icon_file=None, manifest=None, resources=None, bundle_identifier=None,
+         datas=None, binaries=None, icon_file=None, manifest=None, resources=None, bundle_identifier=None,
          hiddenimports=None, hookspath=None, key=None, runtime_hooks=None,
          excludes=None, uac_admin=False, uac_uiaccess=False,
          win_no_prefer_redirects=False, win_private_assemblies=False,
@@ -312,6 +341,8 @@ def main(scripts, name=None, onefile=None,
     d = {
         'scripts': scripts,
         'pathex': pathex,
+        'binaries': binaries,
+        'datas': datas,
         'hiddenimports': hiddenimports,
         'name': name,
         'debug': debug,

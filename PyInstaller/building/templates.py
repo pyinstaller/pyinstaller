@@ -17,8 +17,8 @@ onefiletmplt = """# -*- mode: python -*-
 
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s,
-             binaries=None,
-             datas=None,
+             binaries=%(binaries)s,
+             datas=%(datas)s,
              hiddenimports=%(hiddenimports)r,
              hookspath=%(hookspath)r,
              runtime_hooks=%(runtime_hooks)r,
@@ -45,8 +45,8 @@ onedirtmplt = """# -*- mode: python -*-
 
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s,
-             binaries=None,
-             datas=None,
+             binaries=%(binaries)s,
+             datas=%(datas)s,
              hiddenimports=%(hiddenimports)r,
              hookspath=%(hookspath)r,
              runtime_hooks=%(runtime_hooks)r,
