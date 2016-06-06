@@ -15,7 +15,6 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 from builtins import (bytes, str, open, super, range,
                       zip, round, input, int, pow, object)
-import platform
 
 # Backported Py3 bytes object
 b = bytes(b'ABCD')
@@ -76,11 +75,11 @@ class VerboseList(list):
 #        scaled_indices = (self._step * n for n in slce.indices(self._len))
 #     OverflowError: cannot fit 'long' into an index-sized integer
 #
-# So, avoid this on 32-bit platforms; see https://docs.python.org/2.7/library/platform.html#platform.architecture.
-if platform.architecture()[0] != '32bit':
-    # New iterable range object with slicing support
-    for i in range(10**15)[:10]:
-        pass
+# So, pick a smaller (32-bit capable) range to iterate over.
+#
+# New iterable range object with slicing support
+for i in range(2**30)[:10]:
+    pass
 
 # Other iterators: map, zip, filter
 my_iter = zip(range(3), ['a', 'b', 'c'])
