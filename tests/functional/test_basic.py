@@ -22,7 +22,7 @@ import pytest
 # -------------
 from PyInstaller.compat import is_darwin, is_win, is_py2
 from PyInstaller.utils.tests import importorskip, skipif_win, skipif_winorosx, \
-    skipif_notwin, skipif_notosx, xfail
+    skipif_notwin, skipif_notosx, skipif_no_compiler, xfail
 
 
 def test_run_from_path_environ(pyi_builder):
@@ -214,8 +214,8 @@ def test_multiprocess_pool(pyi_builder):
     pyi_builder.test_script('pyi_multiprocess_pool.py')
 
 
-# TODO skip this test if C compiler is not found.
 # TODO test it on OS X.
+@skipif_no_compiler
 def test_load_dll_using_ctypes(monkeypatch, pyi_builder, compiled_dylib):
     # Note that including the data_dir fixture copies files needed by this test.
     #
@@ -531,7 +531,7 @@ def test_hook_collect_submodules(pyi_builder, script_dir):
         __import__('pyi_testmod_relimp.B.C')
         """,
         ['--additional-hooks-dir=%s' % script_dir.join('pyi_hooks')])
-    
+
 # Test that PyInstaller can handle a script with an arbitrary extension.
 def test_arbitrary_ext(pyi_builder):
     pyi_builder.test_script('pyi_arbitrary_ext.foo')

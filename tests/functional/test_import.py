@@ -9,14 +9,14 @@
 #-----------------------------------------------------------------------------
 
 import os
-import pytest
 import glob
 import ctypes, ctypes.util
 
-from PyInstaller.compat import is_darwin, is_py35, is_win
-from PyInstaller.utils.tests import skipif, importorskip, \
-  skipif_notwin, xfail, is_py2
+import pytest
 
+from PyInstaller.compat import is_darwin, is_py2, is_py35, is_win
+from PyInstaller.utils.tests import skipif, importorskip, \
+  skipif_notwin, skipif_no_compiler, xfail, has_compiler
 
 # :todo: find a way to get this from `conftest` or such
 # Directory with testing modules used in some tests.
@@ -124,6 +124,7 @@ def test_import_pyqt5_uic_port(monkeypatch, pyi_builder):
 
 #--- ctypes ----
 
+@skipif_no_compiler
 @skipif(is_py35 and is_win,
         reason="MSVCR not directly loadable on py3.5, see https://bugs.python.org/issue23606")
 def test_ctypes_CDLL_c(pyi_builder):
@@ -222,7 +223,11 @@ for prefix in ('', 'ctypes.'):
     for funcname in  ('CDLL', 'PyDLL', 'WinDLL', 'OleDLL', 'cdll.LoadLibrary'):
         ids.append(prefix+funcname)
         params = (prefix+funcname, ids[-1])
-        if funcname in ("WinDLL", "OleDLL"):
+        # Marking doesn't seem to chain here, so select just one skippping mark
+        # instead of both.
+        if not has_compiler:
+            params = skipif_no_compiler(params)
+        elif funcname in ("WinDLL", "OleDLL"):
             # WinDLL, OleDLL only work on windows.
             params = skipif_notwin(params)
         parameters.append(params)
