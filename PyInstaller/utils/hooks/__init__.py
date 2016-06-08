@@ -65,9 +65,10 @@ def __exec_python_cmd(cmd, env=None):
         if isinstance(pp, unicode):
             pp = pp.encode(sys.getfilesystemencoding())
 
-    # PYTHONPATH might be already defined in the 'env' argument. Prepend it.
-    if 'PYTHONPATH' in env:
-        pp = os.pathsep.join([env.get('PYTHONPATH'), pp])
+    # PYTHONPATH might be already defined in the 'env' argument or in
+    # the original 'os.environ'. Prepend it.
+    if 'PYTHONPATH' in pp_env:
+        pp = os.pathsep.join([pp_env.get('PYTHONPATH'), pp])
     pp_env['PYTHONPATH'] = pp
 
     try:
