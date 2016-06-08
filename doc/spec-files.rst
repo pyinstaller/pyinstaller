@@ -123,7 +123,15 @@ Adding Files to the Bundle
 
 To add files to the bundle, you create a list that describes the files
 and supply it to the ``Analysis`` call.
-To find the data files at run-time, see :ref:`Run-time Information`.
+When you bundle to a single folder (see :ref:`Bundling to One Folder`),
+the added data files are copied into the folder with the executable.
+When you bundle to a single executable (see :ref:`Bundling to One File`),
+copies of added files are compressed into the executable, and expanded to the
+``_MEI``\ *xxxxxx* temporary folder before execution.
+This means that any changes a one-file executable makes to an added file
+will be lost when the application ends.
+
+In either case, to find the data files at run-time, see :ref:`Run-time Information`.
 
 
 .. _adding data files:
