@@ -500,6 +500,12 @@ def __wrap_python(args, kwargs):
     if is_darwin:
         mapping = {'32bit': '-i386', '64bit': '-x86_64'}
         py_prefix = ['arch', mapping[architecture()]]
+        # Since OS X 10.11 the environment variable DYLD_LIBRARY_PATH is no
+        # more inherited by child processes, so we proactively propagate
+        # the current value using the `-e` option of the `arch` command.
+        if 'DYLD_LIBRARY_PATH' in os.environ:
+            path = os.environ['DYLD_LIBRARY_PATH']
+            py_prefix += ['-e', 'DYLD_LIBRARY_PATH=%s' % path]
         cmdargs = py_prefix + cmdargs
 
     if _PYOPTS:
