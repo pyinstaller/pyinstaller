@@ -97,7 +97,7 @@ def add_suffix_to_extensions(toc):
         if typ == 'EXTENSION':
             # In some rare cases extension might already contain a suffix.
             # Skip it in this case.
-            if not inm.endswith(EXTENSION_SUFFIXES[0]):
+            if os.path.splitext(inm)[1] not in EXTENSION_SUFFIXES:
                 # Use this file's existing extension.
                 inm = inm + os.path.splitext(fnm)[1]
 
