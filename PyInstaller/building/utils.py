@@ -95,12 +95,11 @@ def add_suffix_to_extensions(toc):
     new_toc = TOC()
     for inm, fnm, typ in toc:
         if typ == 'EXTENSION':
-            # In some rare cases extension might already contain suffix.
+            # In some rare cases extension might already contain a suffix.
             # Skip it in this case.
             if not inm.endswith(EXTENSION_SUFFIXES[0]):
-                # Use first suffix from the Python list of suffixes
-                # for C extensions.
-                inm = inm + EXTENSION_SUFFIXES[0]
+                # Use this file's existing extension.
+                inm = inm + os.path.splitext(fnm)[1]
 
         elif typ == 'DEPENDENCY':
             # Use the suffix from the filename.
