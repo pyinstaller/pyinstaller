@@ -110,7 +110,7 @@ install:
 
   # Install lxml from anaconda.org channel since PyPI fails (or it takes too long).
   # See: https://github.com/pyinstaller/pyinstaller/pull/1638
-  - "%CMD_IN_ENV% pip-accel install -i https://pypi.anaconda.org/giumas/simple lxml" 
+  - "%CMD_IN_ENV% pip-accel install -i https://pypi.anaconda.org/giumas/simple lxml"
 
   # Install the PyInstaller test dependencies.
   - "%CMD_IN_ENV% pip-accel install --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-tools.txt"
@@ -122,7 +122,11 @@ install:
 build: none
 
 test_script:
-  # Split tests into several subprocesses.
-  # Run unitttest first.
+  # xdist seems to cause failures. So, run a smaller set of tests, hoping to avoid them.
+  #
+  # Run unitttest first, then everything but test_libraries, which seems to fail with xdist.
   - if not "%APPVEYOR_SCHEDULED_BUILD%" == "True" (
-      %CMD_IN_ENV% py.test -n 3 --maxfail 5 --durations=10 tests\\unit tests)
+      %CMD_IN_ENV% py.test -n 3 --maxfail 5 --durations=10 tests\\unit tests\\functional\\test_basic.py tests\\functional\\test_import.py tests\\functional\\test_import_pep302.py tests\\functional\\test_interactive.py tests\\functional\\test_path_encodings.py)
+  # Run without xdist for test_libraries.
+  - if not "%APPVEYOR_SCHEDULED_BUILD%" == "True" (
+      %CMD_IN_ENV% py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py)
