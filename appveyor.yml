@@ -67,7 +67,7 @@ cache:
 init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
   - ECHO "%APPVEYOR_SCHEDULED_BUILD%"
-  - ECHO "WMIC CPU Get DeviceID,NumberOfCores,NumberOfLogicalProcessors"
+  - WMIC CPU Get DeviceID,NumberOfCores,NumberOfLogicalProcessors
 
 install:
   - ECHO "Filesystem root:"
