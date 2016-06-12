@@ -474,7 +474,7 @@ def pyi_builder(tmpdir, monkeypatch, request, pyi_modgraph, pyi_cleanup):
 # Fixture for .spec based tests.
 # With .spec it does not make sense to differentiate onefile/onedir mode.
 @pytest.fixture
-def pyi_builder_spec(tmpdir, monkeypatch, request, pyi_modgraph, pyi_cleanuo):
+def pyi_builder_spec(tmpdir, monkeypatch, request, pyi_modgraph, pyi_cleanup):
     tmp = tmpdir.strpath
     passed = pyi_cleanup
     # Save/restore environment variable PATH.
