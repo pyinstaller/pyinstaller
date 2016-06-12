@@ -126,7 +126,7 @@ test_script:
   #
   # Run unitttest first, then everything but test_libraries, which seems to fail with xdist.
   - if not "%APPVEYOR_SCHEDULED_BUILD%" == "True" (
-      %CMD_IN_ENV% py.test -n 3 --maxfail 5 --durations=10 tests\\unit tests\\functional\\test_basic.py tests\\functional\\test_import.py tests\\functional\\test_import_pep302.py tests\\functional\\test_interactive.py tests\\functional\\test_path_encodings.py)
+      %CMD_IN_ENV% py.test -n 3 --maxfail 5 --durations=10 tests\\unit tests\\functional\\test_basic.py tests\\functional\\test_import.py tests\\functional\\test_import_pep302.py tests\\functional\\test_interactive.py tests\\functional\\test_path_encodings.py tests\\functional\\test_hooks)
   # Run without xdist for test_libraries.
   - if not "%APPVEYOR_SCHEDULED_BUILD%" == "True" (
       %CMD_IN_ENV% py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py)
