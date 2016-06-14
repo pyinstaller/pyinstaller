@@ -16,11 +16,19 @@ Python.net requires Python.Runtime.dll which isn't found by PyInstaller.
 import ctypes.util
 from PyInstaller.compat import is_win
 
-
+pyruntime = 'Python.Runtime'
 # Python.net is available only for Windows.
 if is_win:
-    library = ctypes.util.find_library('Python.Runtime')
-    # :todo: Should be issue a warning-message, if the libary is not
-    # found?
+    library = ctypes.util.find_library(pyruntime)
+    datas = []
     if library:
         datas = [(library, '')]
+    else:
+    	import site
+    	from os.path import join as pjoin, exists
+    	for sitepack in site.getsitepackages():
+    		library = pjoin(sitepack, pyruntime + '.dll')
+    		if exists(library):
+    			datas = [(library, '')]
+    	if not datas:
+    		raise Exception(pyruntime + ' not found')
