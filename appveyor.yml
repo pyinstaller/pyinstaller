@@ -28,6 +28,10 @@ environment:
     - PYTHON: "C:\\Python35"
       PYTHON_VERSION: "3.5"
       PYTHON_ARCH: "32"
+      # On Python 3.5, xdist works. Run unit tests first, then functional tests.
+      TEST1_CMD: "py.test -n 3 --maxfail 5 --durations=10 tests\\unit tests\\functional"
+      # Nothing needed for part 2 of testing; everything is done in ``TEST1_CMD``.
+      TEST2_CMD: ""
       #WAF_ARGS: "--gcc"
       # TODO use temporily msvc to compile bootloader until mingw-w64 is natively supported by Appveyor.
       WAF_ARGS: ""
@@ -35,6 +39,21 @@ environment:
     - PYTHON: "C:\\Python34"
       PYTHON_VERSION: "3.4"
       PYTHON_ARCH: "32"
+      # Run unitttests first, then everything but test_libraries, which fails
+      # with xdist.
+      TEST1_CMD: "%CMD_IN_ENV% py.test -n 3 --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
+      # Run without xdist for test_libraries. Some notes:
+      #
+      # 1. xdist works fine with Python 3.5. It will hopefully work with Python
+      #    3.6 and higher.
+      # 2. xdist only fails while running test_libraries. I suspect that one or
+      #    more of the libraries tested somehow interfere with xdist. Perhaps
+      #    someone could identify the problem tests, allowing all other tests
+      #    to run with xdist.
+      #
+      # See https://github.com/pyinstaller/pyinstaller/issues/2024#issuecomment-224129520
+      # for more discussion.
+      TEST2_CMD: "%CMD_IN_ENV% py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
       #WAF_ARGS: "--gcc"
       # TODO use temporily msvc to compile bootloader until mingw-w64 is natively supported by Appveyor.
       WAF_ARGS: ""
@@ -42,6 +61,9 @@ environment:
     - PYTHON: "C:\\Python33"
       PYTHON_VERSION: "3.3"
       PYTHON_ARCH: "32"
+      # Same as Python 3.4; see comment there.
+      TEST1_CMD: "%CMD_IN_ENV% py.test -n 3 --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
+      TEST2_CMD: "%CMD_IN_ENV% py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
       #WAF_ARGS: "--gcc"
       # TODO use temporily msvc to compile bootloader until mingw-w64 is natively supported by Appveyor.
       WAF_ARGS: ""
@@ -49,6 +71,21 @@ environment:
     - PYTHON: "C:\\Python27"
       PYTHON_VERSION: "2.7"
       PYTHON_ARCH: "32"
+      # Python 2.7 has the same xdist problems as Python 3.3 and 3.4; see the
+      # comments there. In addition, the tests run slower, meaning they must be
+      # split between two separate Appveyor runs. See https://github.com/pyinstaller/pyinstaller/issues/2024#issuecomment-225273385.
+      TEST1_CMD: "%CMD_IN_ENV% py.test -n 3 --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
+      TEST2_CMD: ""
+      #WAF_ARGS: "--gcc"
+      # TODO use temporily msvc to compile bootloader until mingw-w64 is natively supported by Appveyor.
+      WAF_ARGS: ""
+
+    # Almost a duplicate of the Python 2.7 run, except that different tests are run. See comments on the other Python 2.7 matrix entry.
+    - PYTHON: "C:\\Python27"
+      PYTHON_VERSION: "2.7"
+      PYTHON_ARCH: "32"
+      TEST1_CMD: ""
+      TEST2_CMD: "%CMD_IN_ENV% py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
       #WAF_ARGS: "--gcc"
       # TODO use temporily msvc to compile bootloader until mingw-w64 is natively supported by Appveyor.
       WAF_ARGS: ""
@@ -110,7 +147,7 @@ install:
 
   # Install lxml from anaconda.org channel since PyPI fails (or it takes too long).
   # See: https://github.com/pyinstaller/pyinstaller/pull/1638
-  - "%CMD_IN_ENV% pip-accel install -i https://pypi.anaconda.org/giumas/simple lxml" 
+  - "%CMD_IN_ENV% pip-accel install -i https://pypi.anaconda.org/giumas/simple lxml"
 
   # Install the PyInstaller test dependencies.
   - "%CMD_IN_ENV% pip-accel install --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-tools.txt"
@@ -122,7 +159,9 @@ install:
 build: none
 
 test_script:
-  # Split tests into several subprocesses.
-  # Run unitttest first.
+  # Run the tests appropriate for this entry in the test matrix. Skip tests
+  # if we're just updating the cache.
   - if not "%APPVEYOR_SCHEDULED_BUILD%" == "True" (
-      %CMD_IN_ENV% py.test -n 3 --maxfail 5 --durations=10 tests\\unit tests)
+    "%TEST1_CMD%")
+  - if not "%APPVEYOR_SCHEDULED_BUILD%" == "True" (
+    "%TEST2_CMD%")
