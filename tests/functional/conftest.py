@@ -430,10 +430,25 @@ def pyi_modgraph():
     return initialize_modgraph()
 
 
+@pytest.fixture(scope='module')
+def pyi_cleanup(request):
+    passed = []
+
+    def del_temp_dirs():
+        for dir in passed:
+            if os.path.exists(dir):
+                shutil.rmtree(dir)
+
+    if is_darwin or is_win:
+        request.addfinalizer(del_temp_dirs)
+    return passed
+
+
 # Run by default test as onedir and onefile.
 @pytest.fixture(params=['onedir', 'onefile'])
-def pyi_builder(tmpdir, monkeypatch, request, pyi_modgraph):
+def pyi_builder(tmpdir, monkeypatch, request, pyi_modgraph, pyi_cleanup):
     tmp = tmpdir.strpath
+    passed = pyi_cleanup
     # Save/restore environment variable PATH.
     monkeypatch.setenv('PATH', os.environ['PATH'], )
     # PyInstaller or a test case might manipulate 'sys.path'.
@@ -446,22 +461,22 @@ def pyi_builder(tmpdir, monkeypatch, request, pyi_modgraph):
     # The value is same as the original value.
     monkeypatch.setattr('PyInstaller.config.CONF', {'pathex': []})
 
-    def del_temp_dir():
+    def add_tmp_dir():
         if request.node.rep_setup.passed:
             if request.node.rep_call.passed:
-                if os.path.exists(tmp):
-                    shutil.rmtree(tmp)
+                passed.append(request.node.funcargs['tmpdir'].strpath)
 
-    if is_darwin:
-        request.addfinalizer(del_temp_dir)
+    if is_darwin or is_win:
+        request.addfinalizer(add_tmp_dir)
     return AppBuilder(tmp, request.param, pyi_modgraph)
 
 
 # Fixture for .spec based tests.
 # With .spec it does not make sense to differentiate onefile/onedir mode.
 @pytest.fixture
-def pyi_builder_spec(tmpdir, monkeypatch, pyi_modgraph):
+def pyi_builder_spec(tmpdir, monkeypatch, request, pyi_modgraph, pyi_cleanup):
     tmp = tmpdir.strpath
+    passed = pyi_cleanup
     # Save/restore environment variable PATH.
     monkeypatch.setenv('PATH', os.environ['PATH'], )
     # Set current working directory to
@@ -474,6 +489,13 @@ def pyi_builder_spec(tmpdir, monkeypatch, pyi_modgraph):
     # The value is same as the original value.
     monkeypatch.setattr('PyInstaller.config.CONF', {'pathex': []})
 
+    def add_tmp_dir():
+        if request.node.rep_setup.passed:
+            if request.node.rep_call.passed:
+                passed.append(request.node.funcargs['tmpdir'].strpath)
+
+    if is_darwin or is_win:
+        request.addfinalizer(add_tmp_dir)
     return AppBuilder(tmp, None, pyi_modgraph)
 
 # Define a fixture which compiles the data/load_dll_using_ctypes/ctypes_dylib.c
