@@ -162,6 +162,6 @@ test_script:
   # Run the tests appropriate for this entry in the test matrix. Skip tests
   # if we're just updating the cache.
   - "if not \"%APPVEYOR_SCHEDULED_BUILD%\" == \"True\" (
-    echo %CMD_IN_ENV% %TEST1_CMD% )"
+    %CMD_IN_ENV% %TEST1_CMD% )"
   - "if not \"%APPVEYOR_SCHEDULED_BUILD%\" == \"True\" (
-    echo %CMD_IN_ENV% %TEST2_CMD% )"
+    %CMD_IN_ENV% %TEST2_CMD% )"
