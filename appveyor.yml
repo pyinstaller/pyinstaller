@@ -92,27 +92,27 @@ environment:
 
 cache:
   # 'pip-accel' requires caching of downloaded pip packages.
-  - C:\Users\appveyor\AppData\Local\pip
+  - "C:\\Users\\appveyor\\AppData\\Local\\pip"
   # Cache binary Python packages e.g. numpy, pycrypto
-  - C:\Users\appveyor\AppData\Roaming\.pip-accel
+  - "C:\\Users\\appveyor\\AppData\\Roaming\\.pip-accel"
   # Cache downloaded mingw-w64 - it might take 5 min. in appveyor.
   # TODO Remove mingw-w64 caching when it is natively supported by apppveyor:
   #    https://github.com/appveyor/ci/issues/466
   # TODO mingw-w64 caching takes a lot of time - unpacking/zipping 15000 files.
-  #- C:\tools\mingw32
+  #- "C:\\tools\\mingw32"
 
 init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
-  - ECHO "%APPVEYOR_SCHEDULED_BUILD%"
+  - "ECHO \"%APPVEYOR_SCHEDULED_BUILD%\""
 
 install:
-  - ECHO "Filesystem root:"
+  - "ECHO Filesystem root:"
   - ps: "ls \"C:/\""
 
-  - ECHO "Chocolatey tools:"
+  - "ECHO Chocolatey tools:"
   - ps: "ls \"C:/Tools\""
 
-  - ECHO "Installed SDKs:"
+  - "ECHO Installed SDKs:"
   - ps: "ls \"C:/Program Files/Microsoft SDKs/Windows\""
 
   # Prepend newly installed Python to the PATH of this build (this cannot be
@@ -135,9 +135,9 @@ install:
 
   # Compile bootloader, use 32bit mingw-w64.
   - "SET PATH=C:\\tools\\mingw32\\bin;%PATH%"
-  - cd bootloader
+  - "cd bootloader"
   - "python waf --msvc_version=\"msvc 12.0\" distclean all %WAF_ARGS%"
-  - cd ..
+  - "cd .."
 
   ### Install the PyInsaller dependencies.
 
@@ -161,7 +161,7 @@ build: none
 test_script:
   # Run the tests appropriate for this entry in the test matrix. Skip tests
   # if we're just updating the cache.
-  - if not "%APPVEYOR_SCHEDULED_BUILD%" == "True" (
-    "%TEST1_CMD%")
-  - if not "%APPVEYOR_SCHEDULED_BUILD%" == "True" (
-    "%TEST2_CMD%")
+  - "if not \"%APPVEYOR_SCHEDULED_BUILD%\" == \"True\" (
+    %TEST1_CMD% )"
+  - "if not \"%APPVEYOR_SCHEDULED_BUILD%\" == \"True\" (
+    %TEST2_CMD% )"
