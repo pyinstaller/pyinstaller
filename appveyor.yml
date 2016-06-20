@@ -41,7 +41,7 @@ environment:
       PYTHON_ARCH: "32"
       # Run unitttests first, then everything but test_libraries, which fails
       # with xdist.
-      TEST1_CMD: "%CMD_IN_ENV% py.test -n 3 --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
+      TEST1_CMD: "py.test -n 3 --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
       # Run without xdist for test_libraries. Some notes:
       #
       # 1. xdist works fine with Python 3.5. It will hopefully work with Python
@@ -53,7 +53,7 @@ environment:
       #
       # See https://github.com/pyinstaller/pyinstaller/issues/2024#issuecomment-224129520
       # for more discussion.
-      TEST2_CMD: "%CMD_IN_ENV% py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
+      TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
       #WAF_ARGS: "--gcc"
       # TODO use temporily msvc to compile bootloader until mingw-w64 is natively supported by Appveyor.
       WAF_ARGS: ""
@@ -62,8 +62,8 @@ environment:
       PYTHON_VERSION: "3.3"
       PYTHON_ARCH: "32"
       # Same as Python 3.4; see comment there.
-      TEST1_CMD: "%CMD_IN_ENV% py.test -n 3 --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
-      TEST2_CMD: "%CMD_IN_ENV% py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
+      TEST1_CMD: "py.test -n 3 --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
+      TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
       #WAF_ARGS: "--gcc"
       # TODO use temporily msvc to compile bootloader until mingw-w64 is natively supported by Appveyor.
       WAF_ARGS: ""
@@ -74,7 +74,7 @@ environment:
       # Python 2.7 has the same xdist problems as Python 3.3 and 3.4; see the
       # comments there. In addition, the tests run slower, meaning they must be
       # split between two separate Appveyor runs. See https://github.com/pyinstaller/pyinstaller/issues/2024#issuecomment-225273385.
-      TEST1_CMD: "%CMD_IN_ENV% py.test -n 3 --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
+      TEST1_CMD: "py.test -n 3 --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
       TEST2_CMD: ""
       #WAF_ARGS: "--gcc"
       # TODO use temporily msvc to compile bootloader until mingw-w64 is natively supported by Appveyor.
@@ -85,7 +85,7 @@ environment:
       PYTHON_VERSION: "2.7"
       PYTHON_ARCH: "32"
       TEST1_CMD: ""
-      TEST2_CMD: "%CMD_IN_ENV% py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
+      TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
       #WAF_ARGS: "--gcc"
       # TODO use temporily msvc to compile bootloader until mingw-w64 is natively supported by Appveyor.
       WAF_ARGS: ""
@@ -162,6 +162,6 @@ test_script:
   # Run the tests appropriate for this entry in the test matrix. Skip tests
   # if we're just updating the cache.
   - "if not \"%APPVEYOR_SCHEDULED_BUILD%\" == \"True\" (
-    %TEST1_CMD% )"
+    %CMD_IN_ENV% %TEST1_CMD% )"
   - "if not \"%APPVEYOR_SCHEDULED_BUILD%\" == \"True\" (
-    %TEST2_CMD% )"
+    %CMD_IN_ENV% %TEST2_CMD% )"
