@@ -24,39 +24,42 @@ environment:
 #      PYTHON_ARCH: "64"
 #      WAF_ARGS: ""
 
-    # TODO Enable Python 3.5 one day. Issue #1547.
     - PYTHON: "C:\\Python35"
       PYTHON_VERSION: "3.5"
       PYTHON_ARCH: "32"
-
-      # Nothing needed for part 2 of testing; everything is done in ``TEST1_CMD``.
-      TEST2_CMD: ""
       #WAF_ARGS: "--gcc"
       # TODO use temporily msvc to compile bootloader until mingw-w64 is natively supported by Appveyor.
       WAF_ARGS: ""
-
       # Break the tests into two runs, since together they exceed the 1 hour limit.
       # See https://github.com/pyinstaller/pyinstaller/issues/2024#issuecomment-224129520
       # for more discussion.
-      - TEST1_CMD: "py.test --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
-        TEST2_CMD: ""
+      TEST1_CMD: "py.test --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
+      TEST2_CMD: ""
 
-      - TEST1_CMD: ""
-        TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
+    - PYTHON: "C:\\Python35"
+      PYTHON_VERSION: "3.5"
+      PYTHON_ARCH: "32"
+      #WAF_ARGS: "--gcc"
+      # TODO use temporily msvc to compile bootloader until mingw-w64 is natively supported by Appveyor.
+      WAF_ARGS: ""
+      TEST1_CMD: ""
+      TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
 
     - PYTHON: "C:\\Python34"
       PYTHON_VERSION: "3.4"
       PYTHON_ARCH: "32"
-
-      - TEST1_CMD: "py.test --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
-        TEST2_CMD: ""
-
-      - TEST1_CMD: ""
-        TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
-
       #WAF_ARGS: "--gcc"
       # TODO use temporily msvc to compile bootloader until mingw-w64 is natively supported by Appveyor.
       WAF_ARGS: ""
+      TEST1_CMD: "py.test --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
+      TEST2_CMD: ""
+
+    - PYTHON: "C:\\Python34"
+      PYTHON_VERSION: "3.4"
+      PYTHON_ARCH: "32"
+      TEST1_CMD: ""
+      TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
+
 
     - PYTHON: "C:\\Python33"
       PYTHON_VERSION: "3.3"
@@ -65,12 +68,18 @@ environment:
       #WAF_ARGS: "--gcc"
       # TODO use temporily msvc to compile bootloader until mingw-w64 is natively supported by Appveyor.
       WAF_ARGS: ""
+      TEST1_CMD: "py.test --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
+      TEST2_CMD: ""
 
-      - TEST1_CMD: "py.test --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
-        TEST2_CMD: ""
-
-      - TEST1_CMD: ""
-        TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
+    - PYTHON: "C:\\Python33"
+      PYTHON_VERSION: "3.3"
+      PYTHON_ARCH: "32"
+      # Same as Python 3.4; see comment there.
+      #WAF_ARGS: "--gcc"
+      # TODO use temporily msvc to compile bootloader until mingw-w64 is natively supported by Appveyor.
+      WAF_ARGS: ""
+      TEST1_CMD: ""
+      TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
 
     - PYTHON: "C:\\Python27"
       PYTHON_VERSION: "2.7"
@@ -78,12 +87,17 @@ environment:
       #WAF_ARGS: "--gcc"
       # TODO use temporily msvc to compile bootloader until mingw-w64 is natively supported by Appveyor.
       WAF_ARGS: ""
+      TEST1_CMD: "py.test --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
+      TEST2_CMD: ""
 
-      - TEST1_CMD: "py.test --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
-        TEST2_CMD: ""
-
-      - TEST1_CMD: ""
-        TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
+    - PYTHON: "C:\\Python27"
+      PYTHON_VERSION: "2.7"
+      PYTHON_ARCH: "32"
+      #WAF_ARGS: "--gcc"
+      # TODO use temporily msvc to compile bootloader until mingw-w64 is natively supported by Appveyor.
+      WAF_ARGS: ""
+      TEST1_CMD: ""
+      TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
 
 cache:
   # 'pip-accel' requires caching of downloaded pip packages.
