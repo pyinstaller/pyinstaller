@@ -12,7 +12,7 @@ Django<1.8.11 # PyInstaller doesn't yet work with Django 1.9
 babel>2.0  # Required by sphinx. Version 2.0 doesn't work on Windows.
 boto
 boto3
-botocore
+botocore>=1.4.31
 cherrypy
 gevent
 pygments
