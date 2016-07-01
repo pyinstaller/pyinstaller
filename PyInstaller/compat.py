@@ -808,6 +808,8 @@ SPECIAL_MODULE_TYPES = {
     'AliasNode',
     'BuiltinModule',
     'RuntimeModule',
+    'RuntimePackage',
+
     # PyInstaller handles scripts differently and not as standard Python modules.
     'Script',
 }
@@ -827,6 +829,13 @@ BAD_MODULE_TYPES = {
     'InvalidSourceModule',
     'InvalidCompiledModule',
     'MissingModule',
+
+    # Runtime modules and packages are technically valid rather than bad, but
+    # exist only in-memory rather than on-disk (typically due to
+    # pre_safe_import_module() hooks) and hence cannot be physically frozen.
+    # For simplicity, these nodes are categorized as bad rather than valid.
+    'RuntimeModule',
+    'RuntimePackage',
 }
 ALL_MODULE_TYPES = VALID_MODULE_TYPES | BAD_MODULE_TYPES
 # TODO Review this mapping to TOC, remove useless entries.
@@ -835,10 +844,11 @@ MODULE_TYPES_TO_TOC_DICT = {
     # Pure modules.
     'AliasNode': 'PYMODULE',
     'Script': 'PYSOURCE',
-    'RuntimeModule': 'PYMODULE',
     'SourceModule': 'PYMODULE',
     'CompiledModule': 'PYMODULE',
     'Package': 'PYMODULE',
+    'FlatPackage': 'PYMODULE',
+    'ArchiveModule': 'PYMODULE',
     # Binary modules.
     'Extension': 'EXTENSION',
     # Special valid modules.
@@ -850,9 +860,9 @@ MODULE_TYPES_TO_TOC_DICT = {
     'InvalidSourceModule': 'invalid',
     'InvalidCompiledModule': 'invalid',
     'MissingModule': 'missing',
+    'RuntimeModule': 'runtime',
+    'RuntimePackage': 'runtime',
     # Other.
-    'FlatPackage': 'PYMODULE',
-    'ArchiveModule': 'PYMODULE',
     'does not occur': 'BINARY',
 }
 
