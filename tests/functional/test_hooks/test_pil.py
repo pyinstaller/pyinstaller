@@ -18,12 +18,8 @@ from PyInstaller.compat import modname_tkinter, is_darwin
 from PyInstaller.utils.tests import importorskip, skip, xfail
 
 
-# "excludedimports" support is currently non-deterministic and hence cannot be
-# marked as @xfail. If this test were marked as @xfail but succeeded, py.test
-# would record this test as an XPASS failure (i.e., an unexpected success).
 @importorskip('PIL')
 @importorskip(modname_tkinter)
-@skip(reason='"excludedimports" support is non-deterministically broken.')
 def test_pil_no_tkinter(pyi_builder):
     """
     Ensure that the Tkinter package excluded by `PIL` package hooks is
