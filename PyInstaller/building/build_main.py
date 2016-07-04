@@ -391,7 +391,7 @@ class Analysis(Target):
             module_hook_dirs.extend(self.hookspath)
 
         # Hook cache prepopulated with these lazy loadable hook scripts.
-        module_hook_cache = ModuleHookCache(
+        self.graph.module_hook_cache = ModuleHookCache(
             module_graph=self.graph, hook_dirs=module_hook_dirs)
 
 
@@ -450,7 +450,7 @@ class Analysis(Target):
             hooked_module_names = set()
 
             # For each remaining hookable module and corresponding hooks...
-            for module_name, module_hooks in module_hook_cache.items():
+            for module_name, module_hooks in self.graph.module_hook_cache.items():
                 # Graph node for this module if imported or "None" otherwise.
                 module_node = self.graph.findNode(
                     module_name, create_nspkg=False)
@@ -483,7 +483,7 @@ class Analysis(Target):
 
             # Prevent all post-graph hooks run above from being run again by the
             # next iteration.
-            module_hook_cache.remove_modules(*hooked_module_names)
+            self.graph.module_hook_cache.remove_modules(*hooked_module_names)
 
             # If no post-graph hooks were run, terminate iteration.
             if not hooked_module_names:

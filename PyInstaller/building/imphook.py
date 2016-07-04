@@ -312,7 +312,7 @@ class ModuleHook(object):
         # recursion, the superclass method rather than getattr() is called.
         if attr_name in _MAGIC_MODULE_HOOK_ATTRS:
             self._load_hook_module()
-            return super(ModuleHook, self).__getattr__(attr_name)
+            return getattr(self, attr_name)
         # Else, this is an undefined attribute. Raise an exception.
         else:
             raise AttributeError(attr_name)
@@ -415,7 +415,6 @@ class ModuleHook(object):
 
         # Order is insignificant here.
         self._process_hidden_imports()
-        self._process_excluded_imports()
 
 
     def _process_hook_func(self):
@@ -472,86 +471,6 @@ class ModuleHook(object):
             # and hence are only "soft" recommendations.
             except ImportError:
                 logger.warning('Hidden import "%s" not found!', import_module_name)
-
-
-    #FIXME: This is pretty... intense. Attempting to cleanly "undo" prior module
-    #graph operations is a recipe for subtle edge cases and difficult-to-debug
-    #issues. It would be both safer and simpler to prevent these imports from
-    #being added to the graph in the first place. To do so:
-    #
-    #* Remove the _process_excluded_imports() method below.
-    #* Remove the PostGraphAPI.del_imports() method, which cannot reasonably be
-    #  supported by the following solution, appears to be currently broken, and
-    #  (in any case) is not called anywhere in the PyInstaller codebase.
-    #* Override the ModuleGraph._safe_import_hook() superclass method with a new
-    #  PyiModuleGraph._safe_import_hook() subclass method resembling:
-    #
-    #      def _safe_import_hook(
-    #          self, target_module_name, source_module, fromlist,
-    #          level=DEFAULT_IMPORT_LEVEL, attr=None):
-    #
-    #          if source_module.identifier in self._module_hook_cache:
-    #              for module_hook in self._module_hook_cache[
-    #                  source_module.identifier]:
-    #                  if target_module_name in module_hook.excludedimports:
-    #                      return []
-    #
-    #          return super(PyiModuleGraph, self)._safe_import_hook(
-    #              target_module_name, source_module, fromlist,
-    #              level=level, attr=attr)
-    def _process_excluded_imports(self):
-        """
-        'excludedimports' is a list of Python module names that PyInstaller
-        should not detect as dependency of this module name.
-
-        So remove all import-edges from the current module (and it's
-        submodules) to the given `excludedimports` (end their submodules).
-        """
-
-        def find_all_package_nodes(name):
-            mods = [name]
-            name += '.'
-            for subnode in self.module_graph.nodes():
-                if subnode.identifier.startswith(name):
-                    mods.append(subnode.identifier)
-            return mods
-
-        # If this hook excludes no imports, noop.
-        if not self.excludedimports:
-            return
-
-        # Collect all submodules of this module.
-        hooked_mods = find_all_package_nodes(self.module_name)
-
-        # Collect all dependencies and their submodules
-        # TODO: Optimize this by using a pattern and walking the graph
-        # only once.
-        for item in set(self.excludedimports):
-            excluded_node = self.module_graph.findNode(item, create_nspkg=False)
-            if excluded_node is None:
-                logger.info("Import to be excluded not found: %r", item)
-                continue
-            logger.info("Excluding import %r", item)
-            imports_to_remove = set(find_all_package_nodes(item))
-
-            # Remove references between module nodes, as though they would
-            # not be imported from 'name'.
-            # Note: Doing this in a nested loop is less efficient than
-            # collecting all import to remove first, but log messages
-            # are easier to understand since related to the "Excluding ..."
-            # message above.
-            for src in hooked_mods:
-                # modules, this `src` does import
-                references = set(
-                    node.identifier
-                    for node in self.module_graph.getReferences(src))
-
-                # Remove all of these imports which are also in
-                # "imports_to_remove".
-                for dest in imports_to_remove & references:
-                    self.module_graph.removeReference(src, dest)
-                    logger.warning(
-                        "  Removing import %s from module %s", src, dest)
 
 
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

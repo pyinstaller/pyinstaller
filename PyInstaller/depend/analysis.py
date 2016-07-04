@@ -49,7 +49,7 @@ from ..compat import importlib_load_source, is_py2, PY3_BASE_MODULES,\
         PURE_PYTHON_MODULE_TYPES, BINARY_MODULE_TYPES, VALID_MODULE_TYPES, \
         BAD_MODULE_TYPES, MODULE_TYPES_TO_TOC_DICT
 from ..lib.modulegraph.find_modules import get_implies
-from ..lib.modulegraph.modulegraph import ModuleGraph
+from ..lib.modulegraph.modulegraph import ModuleGraph, DEFAULT_IMPORT_LEVEL, ExcludedModule, MissingModule
 from ..utils.hooks import collect_submodules, is_package
 from ..utils.misc import load_py_data_struct
 
@@ -94,6 +94,8 @@ class PyiModuleGraph(ModuleGraph):
         # modulegraph Node for the main python script that is analyzed
         # by PyInstaller.
         self._top_script_node = None
+        self.module_hook_cache = None
+        self.excludedimports = set()
 
         # Absolute paths of all user-defined hook directories.
         self._user_hook_dirs = \
@@ -269,6 +271,38 @@ class PyiModuleGraph(ModuleGraph):
         # Call the superclass method.
         return super(PyiModuleGraph, self)._safe_import_module(
             module_basename, module_name, parent_package)
+
+        # If module is importable record any excludedimports from its hook for use later
+        if self.module_hook_cache is not None and module and module.__class__.__name__ not in BAD_MODULE_TYPES:
+            if module_name in self.module_hook_cache:
+                for module_hook in self.module_hook_cache[module_name]:
+                    self.excludedimports.update(module_hook.excludedimports)
+        return module
+
+    def _safe_import_hook(self, target_module_name, source_module, fromlist, level=DEFAULT_IMPORT_LEVEL, edge_attr=None):
+
+        # If this source module is hooked by one or more hook scripts defining
+        # an "excludedimports" list containing this target module, ignore this
+        # import by returning a ExcludedModule.
+        if source_module is not None:
+            base_module_name = target_module_name.split('.')[0]
+            if base_module_name in self.excludedimports:
+                existing_node = self.findNode(base_module_name)
+                if existing_node.__class__.__name__ == 'ExcludedModule':
+                    logger.debug("%r already excluded", base_module_name)
+                elif not existing_node:
+                    logger.info("Excluding import %r", base_module_name)
+                    node = self.createNode(ExcludedModule, target_module_name)
+                    self._updateReference(source_module, node, edge_data=edge_attr)
+                    return [node]
+                elif existing_node:
+                    logger.info("%r already imported not excluding import", base_module_name)
+
+        # Else, import this target module from this source module.
+        return super(PyiModuleGraph, self)._safe_import_hook(
+            target_module_name, source_module, fromlist,
+            level=level, edge_attr=edge_attr)
+
 
     def _find_module_path(self, fullname, module_name, search_dirs):
         """
