@@ -96,6 +96,7 @@ class PyiModuleGraph(ModuleGraph):
         self._top_script_node = None
         self.module_hook_cache = None
         self.excludedimports = set()
+        self.script = None
 
         # Absolute paths of all user-defined hook directories.
         self._user_hook_dirs = \
@@ -279,7 +280,8 @@ class PyiModuleGraph(ModuleGraph):
                     self.excludedimports.update(module_hook.excludedimports)
         return module
 
-    def _safe_import_hook(self, target_module_name, source_module, fromlist, level=DEFAULT_IMPORT_LEVEL, edge_attr=None):
+    def _safe_import_hook(self, target_module_name, source_module, fromlist,
+                          level=DEFAULT_IMPORT_LEVEL, edge_attr=None):
 
         # If this source module is hooked by one or more hook scripts defining
         # an "excludedimports" list containing this target module, ignore this
@@ -288,15 +290,19 @@ class PyiModuleGraph(ModuleGraph):
             base_module_name = target_module_name.split('.')[0]
             if base_module_name in self.excludedimports:
                 existing_node = self.findNode(base_module_name)
-                if existing_node.__class__.__name__ == 'ExcludedModule':
-                    logger.debug("%r already excluded", base_module_name)
-                elif not existing_node:
-                    logger.info("Excluding import %r", base_module_name)
-                    node = self.createNode(ExcludedModule, target_module_name)
-                    self._updateReference(source_module, node, edge_data=edge_attr)
-                    return [node]
-                elif existing_node:
-                    logger.info("%r already imported not excluding import", base_module_name)
+                if existing_node:
+                    if existing_node.__class__.__name__ == 'ExcludedModule':
+                        logger.debug("%r already excluded", base_module_name)
+                    else:
+                        logger.debug("%r already imported not excluding import", base_module_name)
+                else:
+                    if source_module.filename.startswith(os.path.dirname(self.script)):
+                        logger.info("Not excluding %r import from analyzed script", base_module_name)
+                    else:
+                        logger.info("Excluding import %r", base_module_name)
+                        node = self.createNode(ExcludedModule, target_module_name)
+                        self._updateReference(source_module, node, edge_data=edge_attr)
+                        return [node]
 
         # Else, import this target module from this source module.
         return super(PyiModuleGraph, self)._safe_import_hook(

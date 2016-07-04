@@ -412,6 +412,7 @@ class Analysis(Target):
         # Save the graph nodes of each in sequence.
         for script in self.inputs:
             logger.info("Analyzing %s", script)
+            self.graph.script = script
             priority_scripts.append(self.graph.run_script(script))
 
 
