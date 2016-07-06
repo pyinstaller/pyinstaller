@@ -33,6 +33,7 @@ twisted
 pyexcelerate
 Pillow
 future
+pyusb
 
 # dateutil.tz is a package in 2.5.0 and does not play nice with PyInstaller.
 python-dateutil>2.5.0
