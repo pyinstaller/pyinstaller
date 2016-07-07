@@ -54,6 +54,9 @@ pyi_pylib_load(ARCHIVE_STATUS *status)
     char dllpath[PATH_MAX];
     char dllname[64];
     int pyvers = ntohl(status->cookie.pyvers);
+#ifdef AIX
+    char *p;
+#endif
 
     /* Are we going to load the Python 2.x library? */
     is_py2 = (pyvers / 10) == 2;
@@ -62,6 +65,8 @@ pyi_pylib_load(ARCHIVE_STATUS *status)
  * On AIX Append the shared object member to the library path
  * to make it look like this:
  *   libpython2.6.a(libpython2.6.so)
+ * or
+ *   libpython2.6.so
  */
 #ifdef AIX
     /*
