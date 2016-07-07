@@ -31,7 +31,8 @@ pytz
 sqlalchemy
 twisted
 pyexcelerate
-Pillow
+# Pillow 3.0+ does not compile on AppVeyor (Windows) w/o zlib
+Pillow==2.9.0
 future
 pyusb
 
