@@ -221,6 +221,20 @@ class PyiModuleGraph(ModuleGraph):
                 caller = self._top_script_node
             return super(PyiModuleGraph, self).run_script(pathname, caller=caller)
 
+    def _process_imports(self, source_module):
+        if self.script and not source_module.filename.startswith(os.path.dirname(self.script)):
+            processed_imports = []
+            for deferred_import in source_module._deferred_imports:
+                have_star, import_info, kwargs = deferred_import
+                base_module_name = import_info[0].split('.')[0]
+                existing_node = self.findNode(base_module_name)
+                if base_module_name not in self.excludedimports or existing_node:
+                    processed_imports.append(deferred_import)
+                else:
+                    logger.debug("Excluding %s", import_info[0])
+            source_module._deferred_imports = processed_imports
+        return super(PyiModuleGraph, self)._process_imports(source_module)
+
     def _safe_import_module(self, module_basename, module_name, parent_package):
         """
         Create a new graph node for the module with the passed name under the
@@ -308,7 +322,6 @@ class PyiModuleGraph(ModuleGraph):
         return super(PyiModuleGraph, self)._safe_import_hook(
             target_module_name, source_module, fromlist,
             level=level, edge_attr=edge_attr)
-
 
     def _find_module_path(self, fullname, module_name, search_dirs):
         """
