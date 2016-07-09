@@ -226,7 +226,10 @@ class PyiModuleGraph(ModuleGraph):
             processed_imports = []
             for deferred_import in source_module._deferred_imports:
                 have_star, import_info, kwargs = deferred_import
-                base_module_name = import_info[0].split('.')[0]
+                imports = import_info[0].split('.')
+                if len(imports) > 1:
+                    imports = imports[:-1]
+                base_module_name = '.'.join(imports)
                 existing_node = self.findNode(base_module_name)
                 if base_module_name not in self.excludedimports or existing_node:
                     processed_imports.append(deferred_import)
