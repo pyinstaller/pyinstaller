@@ -436,17 +436,6 @@ class ModuleHook(object):
         self.binaries.update(set(hook_api._added_binaries))
         self.hiddenimports.extend(hook_api._added_imports)
 
-        #FIXME: Deleted imports should be appended to
-        #"self.excludedimports" rather than handled here. However, see the
-        #_process_excluded_imports() FIXME below for a sensible alternative.
-        for deleted_module_name in hook_api._deleted_imports:
-            # Remove the graph link between the hooked module and item.
-            # This removes the 'item' node from the graph if no other
-            # links go to it (no other modules import it)
-            self.module_graph.removeReference(
-                hook_api.node, deleted_module_name)
-
-
     def _process_hidden_imports(self):
         """
         Add all imports listed in this hook script's `hiddenimports` attribute
@@ -650,11 +639,6 @@ class ImportHook(object):
         self.binaries.update(set(hook_api._added_binaries))
         for item in hook_api._added_imports:
             self._process_one_hiddenimport(item, mod_graph)
-        for item in hook_api._deleted_imports:
-            # Remove the graph link between the hooked module and item.
-            # This removes the 'item' node from the graph if no other
-            # links go to it (no other modules import it)
-            mod_graph.removeReference(hook_api.node, item)
 
     def _process_hiddenimports(self, mod_graph):
         """

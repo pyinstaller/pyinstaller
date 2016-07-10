@@ -381,7 +381,6 @@ class PostGraphAPI(object):
         self._added_binaries = []
         self._added_datas = []
         self._added_imports = []
-        self._deleted_imports = []
 
     # Immutable properties. No corresponding setters are defined.
     @property
@@ -466,18 +465,6 @@ class PostGraphAPI(object):
         """
         # Append such names to the current list of all such names.
         self._added_imports.extend(module_names)
-
-    def del_imports(self, *module_names):
-        """
-        Remove the named fully-qualified modules from the set of
-        imports (either hidden or visible) upon which the current
-        module depends.
-
-        This is equivalent to appending such names to the hook-specific
-        `excludedimports` attribute.
-
-        """
-        self._deleted_imports.extend(module_names)
 
     def add_binaries(self, list_of_tuples):
         """
