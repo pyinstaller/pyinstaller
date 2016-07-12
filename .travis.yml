@@ -31,12 +31,12 @@ matrix:
   - env: PY_VERSION=3.6
 
 script:
-  - ./travis-build.sh
+- ./travis-build.sh
 
 notifications:
-    irc:
-        channels:
-            - "irc.freenode.org#pyinstaller"
-        use_notice: true
-        # skip_join: true would require +n mode *not to be set on #pyinstaller
-        skip_join: false
+  irc:
+    channels:
+    - "irc.freenode.org#pyinstaller"
+    use_notice: true
+    # skip_join: true would require +n mode *not to be set on #pyinstaller
+    skip_join: false
