@@ -14,6 +14,10 @@
 #ifndef __MKDTEMP__
 #define __MKDTEMP__
 
+#if defined(_AIX) && defined(__GNUC__)
+/* mkdtemp() is defined by gnu C compiler */
+#else
+
 static char*
 mkdtemp(char *template)
 {
@@ -26,5 +30,7 @@ mkdtemp(char *template)
     }
     return template;
 }
+
+#endif
 
 #endif /* ifndef __MKDTEMP__ */
