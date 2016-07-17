@@ -72,7 +72,7 @@ please send us the hook file so we can make it available.
 
 
 How a Hook Is Loaded
-~~~~~~~~~~~~~~~~~~~~~
+-----------------------
 
 A hook is a module named ``hook-``\ *full-import-name*\ ``.py``
 in a folder where the Analysis object looks for hooks.
