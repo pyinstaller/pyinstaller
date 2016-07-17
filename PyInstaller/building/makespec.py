@@ -117,18 +117,18 @@ def __add_options(parser):
     g = parser.add_argument_group('What to bundle, where to search')
     g.add_argument('--add-data',
                    action='append', default=[], type=add_data_or_binary,
-                   metavar='SRC{}DEST'.format(add_command_sep), dest='datas',
+                   metavar='<SRC;DEST or SRC:DEST>', dest='datas',
                    help='Additional non-binary files or folders to be added '
-                        'to the executable. The path separator  is '
-                        'platform specific, `os.pathsep` (`;` on Windows, `:` on most '
-                        'UNIX systems) is used. This option can be used '
-                        'multiple times.')
+                        'to the executable. The path separator  is platform '
+                        'specific, ``os.pathsep`` (which is ``;`` on Windows '
+                        'and ``:`` on most unix systems) is used. This option '
+                        'can be used multiple times.')
     g.add_argument('--add-binary',
                    action='append', default=[], type=add_data_or_binary,
-                   metavar='SRC{}DEST'.format(add_command_sep), dest='binaries',
+                   metavar='<SRC;DEST or SRC:DEST>', dest="binaries",
                    help='Additional binary files to be added to the executable. '
-                        'See `--add-data` option for more details. '
-                   'This option can be used multiple times.')
+                        'See the ``--add-data`` option for more details. '
+                        'This option can be used multiple times.')
     g.add_argument("-p", "--paths", dest="pathex",
                    metavar="DIR", action="append", default=[],
                    help="A path to search for imports (like using PYTHONPATH). "
