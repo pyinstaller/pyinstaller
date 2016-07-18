@@ -54,7 +54,8 @@ pyi_pylib_load(ARCHIVE_STATUS *status)
     char dllpath[PATH_MAX];
     char dllname[64];
     int pyvers = ntohl(status->cookie.pyvers);
-
+    char *p;
+    
     /* Are we going to load the Python 2.x library? */
     is_py2 = (pyvers / 10) == 2;
 
