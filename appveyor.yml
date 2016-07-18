@@ -155,7 +155,7 @@ install:
 
   # Install pip-accel to cache pypi packages and avoid compiling some packages.
   # (numpy or pycrypto take a lot of tome to compile).
-  - "%CMD_IN_ENV% pip install pip-accel>=0.33"
+  - "%CMD_IN_ENV% python -m pip install pip-accel>=0.33"
 
   # Install lxml from anaconda.org channel since PyPI fails (or it takes too long).
   # See: https://github.com/pyinstaller/pyinstaller/pull/1638
