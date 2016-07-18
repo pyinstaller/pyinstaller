@@ -274,9 +274,9 @@ def set_arch_flags(ctx):
     # AIX specific flags
     elif is_aix:
         if ctx.env.CC_NAME == 'gcc':
-            ctx.check_cc(ccflags='-m32', msg='Checking for flags -m32')
-            ctx.env.append_value('CFLAGS', '-m32')
-            ctx.env.append_value('LINKFLAGS', '-m32')
+            ctx.check_cc(ccflags='-maix32', msg='Checking for flags -maix32')
+            ctx.env.append_value('CFLAGS', '-maix32')
+            ctx.env.append_value('LINKFLAGS', '-maix32')
         else:
             # We use xlc compiler
             pass
