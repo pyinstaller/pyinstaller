@@ -155,15 +155,15 @@ install:
 
   # Install pip-accel to cache pypi packages and avoid compiling some packages.
   # (numpy or pycrypto take a lot of tome to compile).
-  - "%CMD_IN_ENV% python -m pip install pip-accel>=0.33"
+  - "%CMD_IN_ENV% python -m pip install -U pip-accel>=0.33"
 
   # Install lxml from anaconda.org channel since PyPI fails (or it takes too long).
   # See: https://github.com/pyinstaller/pyinstaller/pull/1638
-  - "%CMD_IN_ENV% pip-accel install -i https://pypi.anaconda.org/giumas/simple lxml"
+  - "%CMD_IN_ENV% pip-accel install -U -i https://pypi.anaconda.org/giumas/simple lxml"
 
   # Install the PyInstaller test dependencies.
-  - "%CMD_IN_ENV% pip-accel install --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-tools.txt"
-  - "%CMD_IN_ENV% pip-accel install --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-win.txt"
+  - "%CMD_IN_ENV% pip-accel install -U --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-tools.txt"
+  - "%CMD_IN_ENV% pip-accel install -U --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-win.txt"
 
   # Install PyInstaller into virtualenv.
   - "%CMD_IN_ENV% pip install -e ."
