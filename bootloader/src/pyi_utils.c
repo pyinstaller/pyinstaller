@@ -60,7 +60,7 @@
  * - On AIX 5.2 function 'mkdtemp' is missing. It is there in version 6.1 but we don't know
  *   the runtime platform at compile time, so we always include our own implementation on AIX.
  */
-#if defined(SUNOS) || defined(AIX)
+#if defined(SUNOS) || defined(AIX) || defined(HPUX)
     #if !defined(HAVE_MKDTEMP)
     #include "mkdtemp.h"
     #endif
