@@ -42,12 +42,13 @@ is_linux = sys.platform.startswith('linux')
 is_solar = sys.platform.startswith('sun')  # Solaris
 is_aix = sys.platform.startswith('aix')
 is_freebsd = sys.platform.startswith('freebsd')
+is_hpux = sys.platform.startswith('hp-ux')
 
 # Some code parts are similar to several unix platforms
 # (e.g. Linux, Solaris, AIX)
 # Mac OS X is not considered as unix since there are many
 # platform specific details for Mac in PyInstaller.
-is_unix = is_linux or is_solar or is_aix or is_freebsd
+is_unix = is_linux or is_solar or is_aix or is_freebsd or is_hpux
 
 
 # On different platforms is different file for dynamic python library.
@@ -74,6 +75,8 @@ elif is_freebsd:
                      'libpython%d.%dm.so.1' % _pyver,
                      'libpython%d.%d.so.1.0' % _pyver,
                      'libpython%d.%dm.so.1.0' % _pyver}
+elif is_hpux:
+    PYDYLIB_NAMES = {'libpython%d.%d.so' % _pyver}
 elif is_unix:
     # Other *nix platforms.
     # Python 2 .so library on Linux is: libpython2.7.so.1.0
