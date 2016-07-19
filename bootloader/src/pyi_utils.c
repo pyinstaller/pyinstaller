@@ -61,7 +61,9 @@
  *   the runtime platform at compile time, so we always include our own implementation on AIX.
  */
 #if defined(SUNOS) || defined(AIX)
+    #if !defined(HAVE_MKDTEMP)
     #include "mkdtemp.h"
+    #endif
 #endif
 
 /* PyInstaller headers. */
