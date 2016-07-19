@@ -19,5 +19,23 @@
 # Tested with botocore 1.3.0
 
 from PyInstaller.utils.hooks import collect_data_files
+from PyInstaller.utils.hooks import is_py3
+from PyInstaller.utils.hooks import is_module_satisfies
+
+hiddenimports = []
+
+if is_module_satisfies('botocore >= 1.3.30'):
+    if is_py3:
+        hiddenimports.extend(
+            [
+                'html.parser'
+            ]
+        )
+    else:
+        hiddenimports.extend(
+            [
+                'HTMLParser'
+            ]
+        )
 
 datas = collect_data_files('botocore')
