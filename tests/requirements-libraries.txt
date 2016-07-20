@@ -13,7 +13,7 @@ babel>2.0  # Required by sphinx. Version 2.0 doesn't work on Windows.
 boto
 boto3
 botocore
-cherrypy
+cherrypy<6.1.0
 gevent
 pygments
 pylint>=1.5
