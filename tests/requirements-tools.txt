@@ -21,4 +21,3 @@ chardet  # character encoding detector.
 readme  # Check PYPI description.
 twine  # For secure upload of tar.gz to PYPI.
 pycmd  # Contains 'py.cleanup' that removes all .pyc files and similar.
-pip-accel  # Caches compiled pip packages and speeds up env setup in Travis/AppVeyor.

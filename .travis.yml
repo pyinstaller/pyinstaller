@@ -10,15 +10,11 @@ services:
 cache:
   directories:
   - $HOME/.cache/pip
-  - $HOME/.pip-accel
 
 os:
 - linux
 
 env:
-  global:
-  # shorten logging of pip-accel
-  - PIP_ACCEL_LOG_FORMAT="%(name)-18s %(levelname)s %(message)s"
   matrix:
   - PY_VERSION=2.7
   - PY_VERSION=3.3
