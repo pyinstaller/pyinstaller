@@ -7,7 +7,8 @@ ENV TOOL_DEPS \
 ENV LIBRARY_DEPS \
     gfortran \
     libatlas-base-dev \
-    libdbus-glib-1-dev
+    libdbus-glib-1-dev \
+    libfreetype6-dev
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
