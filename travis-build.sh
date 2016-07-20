@@ -27,6 +27,8 @@ docker cp $HOME/.pip-accel/. pyinstaller:/var/cache/pip-accel/
 
 docker start -i pyinstaller <<EOF
     set -e
+    set -o pipefail
+
     (cd bootloader && python waf distclean all --no-lsb)
 
     echo 'installing pyinstaller'
