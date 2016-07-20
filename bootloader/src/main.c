@@ -19,15 +19,9 @@
 #ifdef _WIN32
     #include <windows.h>
     #include <wchar.h>
-/* This function is declared in <internal.h>, not provided with MinGW */
-/* It is implemented by MSVCRT.DLL, the version from MSVC 6.0 that is shipped on all */
-/* Windows systems starting with XP. */
-typedef struct
-{
-    int newmode;
-} _startupinfo;
-int __wgetmainargs(int*, wchar_t***, wchar_t***, int, _startupinfo*);
 
+    /* Prevent the MS CRT from expanding wildcards in command-line arguments. */
+    int _CRT_glob = 0;
 #endif
 
 #include <stdlib.h>
