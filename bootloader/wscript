@@ -160,9 +160,9 @@ def set_lsb_compiler(ctx):
     except ctx.errors.ConfigurationError:
         # Fail hard and print warning if lsbcc is not available.
         # if not ctx.env.LSBCC:
-        ctx.fatal('RED', 'LSB (Linux Standard Base) tools >= 4.0 are '
-                         'required.\nTry --no-lsb option if not interested in '
-                         'building LSB binary.')
+        ctx.fatal('LSB (Linux Standard Base) tools >= 4.0 are '
+                  'required.\nTry --no-lsb option if not interested in '
+                  'building LSB binary.')
 
     # lsbcc as CC compiler
     ctx.env.append_value('CFLAGS', '--lsb-cc=%s' % ctx.env.CC[0])
@@ -242,7 +242,7 @@ def set_arch_flags(ctx):
             elif ctx.options.target_cpu == 'amd64':
                 ctx.env.append_value('LINKFLAGS', '/MACHINE:X64')
             else:
-                ctx.fatal('RED', 'Unrecognized target CPU: %s' % ctx.env.PYI_CPU)
+                ctx.fatal('Unrecognized target CPU: %s' % ctx.env.PYI_CPU)
         # Set msvc linkflags based on architecture.
         else:
             if ctx.env.PYI_ARCH == '32bit':
@@ -308,7 +308,7 @@ def set_arch_flags(ctx):
             ctx.env.append_value('CFLAGS', '-m64')
             ctx.env.append_value('LINKFLAGS', '-m64')
         else:
-            ctx.fatal('RED', 'Unrecognized target architecture: %s' % ctx.env.PYI_ARCH)
+            ctx.fatal('Unrecognized target architecture: %s' % ctx.env.PYI_ARCH)
 
     # We need to pass architecture switch to the 'windres' tool.
     if is_win and ctx.env.CC_NAME != 'msvc':
