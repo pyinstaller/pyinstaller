@@ -6,22 +6,41 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-# On Windows, numpy depends on a set of dynamically-detemined DLLs, which means
-# that PyInstaller's static analysis can't find them. See https://github.com/pyinstaller/pyinstaller/issues/1969
-# for more information. The typical error message: ``Intel MKL FATAL ERROR:
-# Cannot load mkl_intel_thread.dll.``
+# If numpy is built with MKL support it depends on a set of libraries loaded
+# at runtime. Since PyInstaller's static analysis can't find them they must be
+# included manually.
 #
-# So, include them manually.
+# See
+# https://github.com/pyinstaller/pyinstaller/issues/1881
+# https://github.com/pyinstaller/pyinstaller/issues/1969
+# for more information
 import os
 import os.path
+import re
 from PyInstaller.utils.hooks import get_package_paths
+from PyInstaller import log as logging 
+from PyInstaller import compat
 
+binaries = []
+
+# look for libraries in numpy package path
 pkg_base, pkg_dir = get_package_paths('numpy.core')
-# Walk through all files in ``numpy.core``, looking for DLLs.
-datas = []
-for f in os.listdir(pkg_dir):
-    extension = os.path.splitext(f)[1]
-    if extension == '.dll':
-        # Produce the tuple ('/abs/path/to/libs/numpy/core/file.dll', '')
-        source = os.path.join(pkg_dir, f)
-        datas.append((source, ''))
+re_anylib = re.compile(r'\w+\.(?:dll|so)', re.IGNORECASE)
+dlls_pkg = [f for f in os.listdir(pkg_dir) if re_anylib.match(f)]
+binaries += [(os.path.join(pkg_dir, f), '') for f in dlls_pkg]
+
+# look for MKL libraries in pythons lib directory
+# TODO: check numpy.__config__ if numpy is actually depending on MKL
+# TODO: determine which directories are searched by the os linker
+if compat.is_win:
+    lib_dir = os.path.join(compat.base_prefix, "Library", "bin")
+else:
+    lib_dir = os.path.join(compat.base_prefix, "lib")
+if os.path.isdir(lib_dir):
+    re_mkllib = re.compile(r'^(?:lib)?mkl\w+\.(?:dll|so)', re.IGNORECASE)
+    dlls_mkl = [f for f in os.listdir(lib_dir) if re_mkllib.match(f)]
+    if dlls_mkl:
+        logger = logging.getLogger(__name__)
+        logger.info("MKL libraries found when importing numpy. Adding MKL to binaries")
+        binaries += [(os.path.join(lib_dir, f), '') for f in dlls_mkl]
+
