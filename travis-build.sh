@@ -38,7 +38,7 @@ docker start -i pyinstaller <<EOF
     pip install --use-wheel -r tests/requirements-linux.txt | pv -ft -i 60
 
     echo 'running tests'
-    py.test -n 5 --maxfail 3 tests/unit/ tests/
+    py.test -n 3 --maxfail 3 tests/unit/ tests/
 EOF
 
 echo 'extracting pip cache'
