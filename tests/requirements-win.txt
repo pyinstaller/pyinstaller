@@ -12,5 +12,5 @@
 pyreadline  # Colors in IPython on Windows. This is Windows-only package.
 pypiwin32  # This package is a pip-installable version of PyWin32.
 pyenchant
-# No wheel for python 3.5
+# No wheel for python 3.5.
 PySide==1.2.4 ; python_version <= '3.4'
