@@ -5,7 +5,7 @@ environment:
     # /E:ON and /V:ON options are not enabled in the batch script intepreter
     # See: http://stackoverflow.com/a/13751649/163740
     CMD_IN_ENV: "cmd /E:ON /V:ON /C .\\tests\\scripts\\appveyor\\run_with_env.cmd"
-    PIP_ACCEL_LOG_FORMAT: "%(name)-18s %(levelname)s %(message)s"
+    APPVEYOR_SCHEDULED_BUILD: "True"
 
   matrix:
 
@@ -105,8 +105,6 @@ environment:
 cache:
   # 'pip-accel' requires caching of downloaded pip packages.
   - "C:\\Users\\appveyor\\AppData\\Local\\pip"
-  # Cache binary Python packages e.g. numpy, pycrypto
-  - "C:\\Users\\appveyor\\AppData\\Roaming\\.pip-accel"
   # Cache downloaded mingw-w64 - it might take 5 min. in appveyor.
   # TODO Remove mingw-w64 caching when it is natively supported by apppveyor:
   #    https://github.com/appveyor/ci/issues/466
@@ -153,17 +151,16 @@ install:
 
   ### Install the PyInsaller dependencies.
 
-  # Install pip-accel to cache pypi packages and avoid compiling some packages.
-  # (numpy or pycrypto take a lot of tome to compile).
-  - "%CMD_IN_ENV% python -m pip install -U pip-accel>=0.33"
+  # Upgrade to the latest pip.
+  - "%CMD_IN_ENV% python -m pip install -U pip"
 
   # Install lxml from anaconda.org channel since PyPI fails (or it takes too long).
   # See: https://github.com/pyinstaller/pyinstaller/pull/1638
-  - "%CMD_IN_ENV% pip-accel install -U -i https://pypi.anaconda.org/giumas/simple lxml"
+  - "%CMD_IN_ENV% pip install -U -i https://pypi.anaconda.org/giumas/simple lxml"
 
   # Install the PyInstaller test dependencies.
-  - "%CMD_IN_ENV% pip-accel install -U --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-tools.txt"
-  - "%CMD_IN_ENV% pip-accel install -U --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-win.txt"
+  - "%CMD_IN_ENV% pip install -U --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-tools.txt"
+  - "%CMD_IN_ENV% pip install -U --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-win.txt"
 
   # Install PyInstaller into virtualenv.
   - "%CMD_IN_ENV% pip install -e ."
