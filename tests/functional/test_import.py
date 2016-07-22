@@ -191,6 +191,17 @@ def test_ctypes_CDLL_c(pyi_builder):
         assert lib is not None
         """)
 
+@skipif_no_compiler
+def test_ctypes_CDLL_None(pyi_builder):
+    # Make sure we are able to load CDLL(None)
+    # -> pip does this for some reason
+    pyi_builder.test_source(
+        """
+        import ctypes, ctypes.util
+        lib = ctypes.CDLL(None)
+        assert lib is not None
+        """)
+
 import PyInstaller.depend.utils
 __orig_resolveCtypesImports = PyInstaller.depend.utils._resolveCtypesImports
 
