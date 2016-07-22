@@ -347,6 +347,15 @@ def test_numpy(pyi_builder):
         """)
 
 
+@importorskip('openpyxl')
+def test_openpyxl(pyi_builder):
+    pyi_builder.test_source(
+        """
+        # Test the hook to openpyxl
+        from openpyxl import __version__
+        """)
+
+
 @importorskip('pyodbc')
 def test_pyodbc(pyi_builder):
     pyi_builder.test_source(
