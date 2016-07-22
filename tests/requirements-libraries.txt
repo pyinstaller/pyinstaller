@@ -22,9 +22,7 @@ simplejson # simplejson is used for text_c_extension
 sphinx
 pyzmq
 zope.interface  # Required for test_namespace_package
-# numpy 1.11 is broken and does not compile on AppVeyor (Windows). See #2100.
-numpy==1.10.4 ; sys_platform == 'win32'
-numpy ; sys_platform != 'win32'
+numpy
 # Windows binaries on lxml are only available for this version. See #2100.
 lxml==3.4.4 ; sys_platform == 'win32'
 lxml ; sys_platform != 'win32'
