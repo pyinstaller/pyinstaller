@@ -21,7 +21,7 @@ import zipfile
 import collections
 
 from .. import compat
-from ..compat import (is_win, is_unix, is_aix, is_solar, is_cygwin,
+from ..compat import (is_win, is_unix, is_aix, is_solar, is_cygwin, is_hpux,
                       is_darwin, is_freebsd, is_venv, base_prefix, PYDYLIB_NAMES)
 from . import dylib, utils
 
@@ -552,6 +552,12 @@ def _getImports_ldd(pth):
         #   'sharedlib.so'
         # Will not match the fake lib '/unix'
         lddPattern = re.compile(r"^\s*(((?P<libarchive>(.*\.a))(?P<objectmember>\(.*\)))|((?P<libshared>(.*\.so))))$")
+    elif is_hpux:
+        # Match libs of the form
+        #   'sharedlib.so => full-path-to-lib
+        # e.g.
+        #   'libpython2.7.so =>      /usr/local/lib/hpux32/libpython2.7.so'
+        lddPattern = re.compile(r"^\s+(.*)\s+=>\s+(.*)$")
     elif is_solar:
         # Match libs of the form
         #   'sharedlib.so => full-path-to-lib
@@ -578,6 +584,8 @@ def _getImports_ldd(pth):
                     #   'sharedlib.so'
                     lib = m.group('libshared')
                     name = os.path.basename(lib)
+            elif is_hpux:
+                name, lib = m.group(1), m.group(2)
             else:
                 name, lib = m.group(1), m.group(2)
             if name[:10] in ('linux-gate', 'linux-vdso'):
@@ -787,6 +795,11 @@ def findLibrary(name):
 
         if is_aix:
             paths.append('/opt/freeware/lib')
+        elif is_hpux:
+            if arch == '32bit':
+                paths.append('/usr/local/lib/hpux32')
+            else:
+                paths.append('/usr/local/lib/hpux64')
         elif is_freebsd:
             paths.append('/usr/local/lib')
         for path in paths:
