@@ -29,6 +29,7 @@ numpy ; sys_platform != 'win32'
 lxml==3.4.4 ; sys_platform == 'win32'
 lxml ; sys_platform != 'win32'
 keyring
+openpyxl
 pycparser
 pytz
 sqlalchemy
