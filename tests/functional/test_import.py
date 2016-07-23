@@ -192,6 +192,7 @@ def test_ctypes_CDLL_c(pyi_builder):
         """)
 
 @skipif_no_compiler
+@skipif(is_win, reason="CDLL(None) seams to be not valid on Windows")
 def test_ctypes_CDLL_None(pyi_builder):
     # Make sure we are able to load CDLL(None)
     # -> pip does this for some reason
