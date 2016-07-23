@@ -5,7 +5,6 @@ environment:
     # /E:ON and /V:ON options are not enabled in the batch script intepreter
     # See: http://stackoverflow.com/a/13751649/163740
     CMD_IN_ENV: "cmd /E:ON /V:ON /C .\\tests\\scripts\\appveyor\\run_with_env.cmd"
-    APPVEYOR_SCHEDULED_BUILD: "True"
 
   matrix:
 
@@ -103,7 +102,7 @@ environment:
       TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
 
 cache:
-  # 'pip-accel' requires caching of downloaded pip packages.
+  # Cache downloaded pip packages.
   - "C:\\Users\\appveyor\\AppData\\Local\\pip"
   # Cache downloaded mingw-w64 - it might take 5 min. in appveyor.
   # TODO Remove mingw-w64 caching when it is natively supported by apppveyor:
