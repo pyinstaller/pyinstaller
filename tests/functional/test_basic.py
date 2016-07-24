@@ -20,9 +20,9 @@ import pytest
 
 # Local imports
 # -------------
-from PyInstaller.compat import is_darwin, is_win, is_py2
-from PyInstaller.utils.tests import importorskip, skipif_win, skipif_winorosx, \
-    skipif_notwin, skipif_notosx, skipif_no_compiler, xfail
+from PyInstaller.compat import is_darwin, is_win, is_py2, is_py27
+from PyInstaller.utils.tests import importorskip, skipif, skipif_win, \
+    skipif_winorosx, skipif_notwin, skipif_notosx, skipif_no_compiler, xfail
 
 
 def test_run_from_path_environ(pyi_builder):
@@ -199,6 +199,7 @@ def test_module_reload(pyi_builder):
 # TODO move 'multiprocessig' tests into 'test_multiprocess.py.
 
 
+@skipif(is_win and is_py27, reason="Issue #2116")
 @importorskip('multiprocessing')
 def test_multiprocess(pyi_builder):
     pyi_builder.test_script('pyi_multiprocess.py')
