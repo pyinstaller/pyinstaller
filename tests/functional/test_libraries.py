@@ -65,11 +65,10 @@ def test_botocore(pyi_builder):
 
 @importorskip('cherrypy')
 def test_cherrypy(pyi_builder):
-    # import wsgiserver3 on Python 3, or else wsgiserver2 on Python 2.
     pyi_builder.test_source(
         """
-        import cherrypy.wsgiserver.wsgiserver%s
-        """ % sys.version_info[0])
+        import cherrypy.wsgiserver
+        """)
 
 
 @xfail(is_darwin, reason='Issue #1895.')
