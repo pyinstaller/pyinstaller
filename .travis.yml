@@ -1,91 +1,38 @@
+sudo: true
+
 language: python
 
-# Use the new container-based Travis infrastructure.
-sudo: false
+services:
+- docker
 
 # Cache pip packages. Explicitly name the pip-cache directory since we
 # use a custom `install` step which annuls `cache: pip`.
 cache:
   directories:
-    - $HOME/.cache/pip
-    - $HOME/.pip-accel
+  - $HOME/.cache/pip
 
-# Try OS X.
 os:
-  - linux
-  #- osx
+- linux
 
 env:
-   # shorten logging of pip-accel
-   - PIP_ACCEL_LOG_FORMAT="%(name)-18s %(levelname)s %(message)s"
-#  - PYCRYPTO_VERSION=2.4.1
-#  - PYCRYPTO_VERSION=2.6.1
-
-python:
-  - "2.7"
-  - "3.3"
-  - "3.4"
-  - "3.5"
-  - "nightly"
+  matrix:
+  - PY_VERSION=2.7
+  - PY_VERSION=3.3
+  - PY_VERSION=3.4
+  - PY_VERSION=3.5
+  - PY_VERSION=3.6
 
 matrix:
   allow_failures:
-      # Just tests how PyInstaller performs with upcoming Python 3.6
-      - python: "nightly"
-      # Ignore failures from OS X.
-      - os: osx
-
-addons:
-  # Ubuntu 12.04 (LTS) packages installed into this Travis-CI container. Since
-  # Ubuntu 12.04 provides *NO* Python 3 packages prefixed by "python3-", only
-  # Python 2.7 packages prefixed by "python-" are installable. Installing only
-  # Python 2.7 packages would be useless, however! Python packages should thus
-  # be installed by "pip" via the "test/requirements-library.txt" specification.
-  #
-  # Travis-CI intends to add support for Ubuntu 14.04 (LTS) at some future date.
-  # To track progress on this long-standing issue, see:
-  #
-  #     https://github.com/travis-ci/travis-ci/issues/2046
-  apt:
-    packages:
-    # lxml dependencies.
-    - libxml2-dev
-    - libxslt1-dev
-    # pyttsx dependencies.
-    - libespeak1
-    # SciPy dependencies.
-    - gfortran
-    - libatlas-base-dev
-
-before_install:
-  # Compile bootloader
-  - cd bootloader
-  - python waf distclean all --no-lsb
-  - cd ..
-
-
-install:
-  # Install PyInstaller.
-  - pip install -e .
-
-  # Install dependencies for tests. Use pip-accel to cache compiled
-  # packages and safe recompiling each time.
-  # Download-progress bars break Travis's log view. Disable them by
-  # piping output through another program (if output is not a tty, no
-  # progress bars)
-  - pip install pip-accel | cat
-  - pip-accel install -r tests/requirements-tools.txt | cat
-  - pip-accel install -r tests/requirements-linux.txt | cat
+  - env: PY_VERSION=3.6
 
 script:
-  # Run tests and speed them up by sending them to multiple CPUs.
-  # Run unitttest first.
-  - py.test -n 5  --maxfail 3 tests/unit/ tests/
+- ./travis-build.sh
 
 notifications:
-    irc:
-        channels:
-            - "irc.freenode.org#pyinstaller"
-        use_notice: true
-        # skip_join: true would require +n mode *not to be set on #pyinstaller
-        skip_join: false
+  irc:
+    channels:
+    - "irc.freenode.org#pyinstaller"
+    use_notice: true
+    # skip_join: true would require +n mode *not to be set on #pyinstaller
+    skip_join: false

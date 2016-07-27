@@ -1,0 +1,20 @@
+FROM python:${PY_VERSION}
+
+ENV TOOL_DEPS \
+    mercurial \
+    pv
+
+ENV LIBRARY_DEPS \
+    gfortran \
+    libatlas-base-dev \
+    libdbus-glib-1-dev \
+    libfreetype6-dev
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        $TOOL_DEPS \
+        $LIBRARY_DEPS
+
+WORKDIR /opt/pyinstaller
+
+COPY . .
