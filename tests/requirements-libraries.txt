@@ -32,6 +32,7 @@ pycparser
 pytz
 sqlalchemy
 twisted
+zeep
 pyexcelerate
 Pillow
 future
