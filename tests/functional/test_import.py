@@ -68,7 +68,7 @@ def test_relative_import3(pyi_builder):
 
 
 def test_import_submodule_global_shadowed(pyi_builder):
-    '''
+    """
     Functional test validating issue #1919.
 
     `ModuleGraph` previously ignored `from`-style imports of submodules from
@@ -76,7 +76,7 @@ def test_import_submodule_global_shadowed(pyi_builder):
     name as those submodules. This test exercises this sporadic edge case by
     unsuccessfully importing a submodule "shadowed" by a global variable of the
     same name defined by their package's `__init__` submodule.
-    '''
+    """
 
     pyi_builder.test_source(
         """
@@ -192,6 +192,7 @@ def test_ctypes_CDLL_c(pyi_builder):
         """)
 
 @skipif_no_compiler
+@skipif(is_win, reason="CDLL(None) seams to be not valid on Windows")
 def test_ctypes_CDLL_None(pyi_builder):
     # Make sure we are able to load CDLL(None)
     # -> pip does this for some reason
