@@ -115,15 +115,6 @@ init:
   - "ECHO \"%APPVEYOR_SCHEDULED_BUILD%\""
 
 install:
-  - "ECHO Filesystem root:"
-  - ps: "ls \"C:/\""
-
-  - "ECHO Chocolatey tools:"
-  - ps: "ls \"C:/Tools\""
-
-  - "ECHO Installed SDKs:"
-  - ps: "ls \"C:/Program Files/Microsoft SDKs/Windows\""
-
   # Prepend newly installed Python to the PATH of this build (this cannot be
   # done from inside the powershell script as it would require to restart
   # the parent CMD process).
@@ -142,14 +133,13 @@ install:
   #
   #- ps: If ( -not ( Test-Path C:/tools/mingw32 ) )  { choco install -y mingw -x86 }
 
-  # Compile bootloader, use 32bit mingw-w64.
-  - "SET PATH=C:\\tools\\mingw32\\bin;%PATH%"
+  # Compile bootloader, use 32-bit mingw (see https://www.appveyor.com/docs/installed-software/#mingw-msys-cygwin).
+  - "PATH=C:\\MinGW\\bin;%PATH%"
   - "cd bootloader"
   - "python waf --msvc_version=\"msvc 12.0\" distclean all %WAF_ARGS%"
   - "cd .."
 
   ### Install the PyInsaller dependencies.
-
   # Upgrade to the latest pip.
   - "%CMD_IN_ENV% python -m pip install -U pip"
 
