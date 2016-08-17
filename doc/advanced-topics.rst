@@ -38,9 +38,14 @@ A. First process: bootloader starts.
 
     1. If one-file mode, extract bundled files to *temppath*\ ``_MEI``\ *xxxxxx*
 
-    2. Set/unset various environment variables,
-       e.g. override LD_LIBRARY_PATH on Linux or LIBPATH on AIX;
-       unset DYLD_LIBRARY_PATH on OSX.
+    2. Modify various environment variables:
+
+       - Linux: save original value of LD_LIBRARY_PATH into LD_LIBRARY_PATH_ORIG,
+         prepend our path to LD_LIBRARY_PATH.
+
+       - AIX: same thing, but using LIBPATH and LIBPATH_ORIG.
+
+       - OSX: unset DYLD_LIBRARY_PATH.
 
     3. Set up to handle signals for both processes.
 

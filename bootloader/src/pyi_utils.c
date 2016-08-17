@@ -94,6 +94,42 @@ static int argc_pyi = 0;
 static void process_apple_events_new();
 #endif
 
+char *
+pyi_strjoin(const char *first, const char *sep, const char *second){
+    /* join first and second string, using sep as separator.
+     * any of them may be either a null-terminated string or NULL.
+     * sep will be only used if first and second string are not empty.
+     * returns a null-terminated string which the caller is responsible
+     * for freeing. Returns NULL if memory could not be allocated.
+     */
+    int first_len=0, sep_len=0, second_len=0;
+    char *result;
+    if (first) {
+        first_len = strlen(first);
+    }
+    if (sep) {
+        sep_len = strlen(sep);
+    }
+    if (second) {
+        second_len = strlen(second);
+    }
+    result = malloc(first_len + sep_len + second_len + 1);
+    if (!result) {
+        return NULL;
+    }
+    *result = '\0';
+    if (first_len) {
+        strcat(result, first);
+    }
+    if (sep_len && first_len && second_len) {
+        strcat(result, sep);
+    }
+    if (second_len) {
+        strcat(result, second);
+    }
+    return result;
+}
+
 /* Return string copy of environment variable. */
 char *
 pyi_getenv(const char *variable)
@@ -632,17 +668,34 @@ static int
 set_dynamic_library_path(const char* path)
 {
     int rc = 0;
+    char *env_var, *env_var_orig;
+    char *new_path, *orig_path;
 
     #ifdef AIX
     /* LIBPATH is used to look up dynamic libraries on AIX. */
-    pyi_setenv("LIBPATH", path);
-    VS("LOADER: LIBPATH=%s\n", path);
+    env_var = "LIBPATH";
+    env_var_orig = "LIBPATH_ORIG";
     #else
     /* LD_LIBRARY_PATH is used on other *nix platforms (except Darwin). */
-    rc = pyi_setenv("LD_LIBRARY_PATH", path);
-    VS("LOADER: LD_LIBRARY_PATH=%s\n", path);
+    env_var = "LD_LIBRARY_PATH";
+    env_var_orig = "LD_LIBRARY_PATH_ORIG";
     #endif /* AIX */
 
+    /* keep original value in a new env var so the application can restore it
+     * before forking subprocesses. This is important so that e.g. a forked
+     * (system installed) ssh can find the matching (system installed) ssh
+     * related libraries - not the potentially different versions of same libs
+     * that we have bundled.
+     */
+    orig_path = pyi_getenv(env_var);
+    pyi_setenv(env_var_orig, orig_path);
+    VS("LOADER: %s=%s\n", env_var_orig, orig_path);
+
+    /* prepend our path to the original path */
+    new_path = pyi_strjoin(path, ":", orig_path);
+    rc = pyi_setenv(env_var, new_path);
+    VS("LOADER: %s=%s\n", env_var, new_path);
+    free(new_path);
     return rc;
 }
 
