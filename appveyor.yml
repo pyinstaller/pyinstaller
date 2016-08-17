@@ -118,7 +118,8 @@ install:
   # Install the PyInstaller test dependencies.
   - "%CMD_IN_ENV% pip install -U --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-tools.txt"
   - "%CMD_IN_ENV% pip install -U --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-win.txt"
-
+  - "if \"%PYTHON_ARCH%\" == \"32\" (
+    %CMD_IN_ENV% pip install -U --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-win32.txt )"
   # Install PyInstaller into virtualenv.
   - "%CMD_IN_ENV% pip install -e ."
 

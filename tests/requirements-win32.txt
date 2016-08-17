@@ -1,0 +1,9 @@
+# Windows 32-bit-specific test libraries.
+#
+# Libraries listed below are only installed by Windows-specific continuous
+# integration (CI) services (e.g., AppVeyor). Platform-agnostic libraries are
+# listed in the "requirements-libraries.txt" file included below.
+#
+# Current wheels only supply win32 versions.
+pyenchant
+
