@@ -117,9 +117,12 @@ install:
 
   # Install the PyInstaller test dependencies.
   - "%CMD_IN_ENV% pip install -U --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-tools.txt"
-  - "%CMD_IN_ENV% pip install -U --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-win.txt"
+  # Some libraries are available only for 32-bit Windows. Install those if we
+  # can. Otherwise, install libraries that work on 32-bit and 64-bit Windows systems.
   - "if \"%PYTHON_ARCH%\" == \"32\" (
-    %CMD_IN_ENV% pip install -U --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-win32.txt )"
+      %CMD_IN_ENV% pip install -U --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-win32.txt
+    ) ELSE (
+      %CMD_IN_ENV% pip install -U --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-win.txt )"
   # Install PyInstaller into virtualenv.
   - "%CMD_IN_ENV% pip install -e ."
 
