@@ -124,18 +124,9 @@ install:
   - "python --version"
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
 
-  # Install 32bit mingw-w64. Bootloader can be compiled only with mingw-w64.
-  # Install only if it is not cached from previous runs.
-  # TODO use temporily msvc to compile bootloader until mingw-w64 is natively supported by Appveyor.
-  #    It takes a lot of time to install mingw-w64.
-  #
-  #    https://github.com/appveyor/ci/issues/466
-  #
-  #- ps: If ( -not ( Test-Path C:/tools/mingw32 ) )  { choco install -y mingw -x86 }
-
-  # Compile bootloader, use 32-bit mingw (see https://www.appveyor.com/docs/installed-software/#mingw-msys-cygwin).
-  - "PATH=C:\\MinGW\\bin;%PATH%"
+  # Compile bootloader.
   - "cd bootloader"
+  - "\"C:\\Program Files (x86)\\Microsoft Visual Studio 12.0\\VC\\bin\\vcvars32.bat\""
   - "python waf --msvc_version=\"msvc 12.0\" distclean all %WAF_ARGS%"
   - "cd .."
 
