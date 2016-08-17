@@ -103,7 +103,7 @@ pyi_strjoin(const char *first, const char *sep, const char *second){
      * for freeing. Returns NULL if memory could not be allocated.
      */
     int first_len, sep_len, second_len;
-    char *result;
+    char *result, *tmp;
     first_len = first ? strlen(first) : 0;
     sep_len = sep ? strlen(sep) : 0;
     second_len = second ? strlen(second) : 0;
@@ -111,16 +111,20 @@ pyi_strjoin(const char *first, const char *sep, const char *second){
     if (!result) {
         return NULL;
     }
-    *result = '\0';
+    tmp = result;
     if (first_len) {
-        strcat(result, first);
+        memcpy(tmp, first, first_len);
+        tmp += first_len;
     }
     if (sep_len && first_len && second_len) {
-        strcat(result, sep);
+        memcpy(tmp, sep, sep_len);
+        tmp += sep_len;
     }
     if (second_len) {
-        strcat(result, second);
+        memcpy(tmp, second, second_len);
+        tmp += second_len;
     }
+    *tmp = '\0';
     return result;
 }
 
