@@ -102,17 +102,11 @@ pyi_strjoin(const char *first, const char *sep, const char *second){
      * returns a null-terminated string which the caller is responsible
      * for freeing. Returns NULL if memory could not be allocated.
      */
-    int first_len=0, sep_len=0, second_len=0;
+    int first_len, sep_len, second_len;
     char *result;
-    if (first) {
-        first_len = strlen(first);
-    }
-    if (sep) {
-        sep_len = strlen(sep);
-    }
-    if (second) {
-        second_len = strlen(second);
-    }
+    first_len = first ? strlen(first) : 0;
+    sep_len = sep ? strlen(sep) : 0;
+    second_len = second ? strlen(second) : 0;
     result = malloc(first_len + sep_len + second_len + 1);
     if (!result) {
         return NULL;
