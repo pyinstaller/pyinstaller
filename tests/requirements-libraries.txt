@@ -36,6 +36,7 @@ pyexcelerate
 Pillow
 future
 pyusb
+pyqt5 ; python_version >= '3.5'
 
 # dateutil.tz is a package in 2.5.0 and does not play nice with PyInstaller.
 python-dateutil>2.5.0
