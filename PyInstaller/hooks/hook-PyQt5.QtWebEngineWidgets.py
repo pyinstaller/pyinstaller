@@ -8,7 +8,7 @@
 #-----------------------------------------------------------------------------
 
 import os
-from PyInstaller.utils.hooks import get_qmake_path
+from PyInstaller.utils.hooks import collect_data_files, get_qmake_path
 import PyInstaller.compat as compat
 
 hiddenimports = ["sip",
@@ -16,10 +16,14 @@ hiddenimports = ["sip",
                  "PyQt5.QtGui",
                  "PyQt5.QtNetwork",
                  "PyQt5.QtWebChannel",
+                 "PyQt5.QtWebEngineCore",
                  ]
 
 # Find the additional files necessary for QtWebEngine.
-# Currently only implemented for OSX.
+datas = (collect_data_files('PyQt5', True, os.path.join('Qt', 'resources')) +
+         collect_data_files('PyQt5', True, os.path.join('Qt', 'translations')) +
+         [x for x in collect_data_files('PyQt5', False, os.path.join('Qt', 'bin'))
+          if x[0].endswith('QtWebEngineProcess.exe')])
 
 # Note that for QtWebEngineProcess to be able to find icudtl.dat the bundle_identifier
 # must be set to 'org.qt-project.Qt.QtWebEngineCore'. This can be done by passing
@@ -37,13 +41,13 @@ if qmake:
         ]
 
         resources_dir = os.path.join(libdir, 'QtWebEngineCore.framework', 'Versions', '5', 'Resources')
-        datas = [
+        datas += [
             (os.path.join(resources_dir, 'icudtl.dat'),''),
             (os.path.join(resources_dir, 'qtwebengine_resources.pak'), ''),
             # The distributed Info.plist has LSUIElement set to true, which prevents the
-            # icon from appearing in the dock. 
+            # icon from appearing in the dock.
             (os.path.join(libdir, 'QtWebEngineCore.framework', 'Versions', '5',\
                            'Helpers', 'QtWebEngineProcess.app', 'Contents', 'Info.plist'),
                      os.path.join('QtWebEngineProcess.app', 'Contents'))
         ]
-        
+

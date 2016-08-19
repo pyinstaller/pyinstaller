@@ -299,6 +299,20 @@ def test_PyQt5_uic(tmpdir, pyi_builder, data_dir):
     # Note that including the data_dir fixture copies files needed by this test.
     pyi_builder.test_script('pyi_lib_PyQt5-uic.py')
 
+@importorskip('PyQt5')
+def test_PyQt5_QWebEngine(pyi_builder):
+    pyi_builder.test_source(
+        """
+        from PyQt5.QtWidgets import QApplication
+        from PyQt5.QtWebEngineWidgets import QWebEngineView
+        from PyQt5.QtCore import QUrl
+        app = QApplication( [] )
+        view = QWebEngineView()
+        view.load( QUrl( "http://www.pyinstaller.org" ) )
+        view.show()
+        view.page().loadFinished.connect(lambda ok: app.quit())
+        app.exec_()
+        """)
 
 @importorskip('zope.interface')
 def test_zope_interface(pyi_builder):
