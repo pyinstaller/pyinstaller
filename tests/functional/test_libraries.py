@@ -17,7 +17,7 @@ import os
 # -------------
 import sys
 
-from PyInstaller.compat import is_win, is_py3, is_py36, is_darwin
+from PyInstaller.compat import is_win, is_py27, is_py3, is_py36, is_darwin
 from PyInstaller.utils.hooks import get_module_attribute, is_module_satisfies
 from PyInstaller.utils.tests import importorskip, xfail, skipif
 
@@ -130,6 +130,7 @@ def test_tkinter_FixTk(pyi_builder):
         import tkinter
     """)
 
+@xfail(is_win and is_py27, reason='Issue #2147')
 @importorskip('zmq')
 def test_zmq(pyi_builder):
     pyi_builder.test_source(
