@@ -11,4 +11,4 @@
 
 from PyInstaller.utils.hooks import collect_data_files
 
-datas = collect_data_files('appy.pod')
+datas = collect_data_files('appy.pod', True)

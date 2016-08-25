@@ -36,6 +36,7 @@ is_freebsd = sys.platform.startswith('freebsd')
 # TODO find out proper value for AIX/Solaris
 is_solar = platform.system() in ['Solaris', 'SunOS']
 is_aix = platform.system() == 'AIX'
+is_hpux = platform.system() == 'HP-UX'
 
 # Build variants of bootloader.
 # PyInstaller provides debug/release bootloaders and console/windowed
@@ -160,9 +161,9 @@ def set_lsb_compiler(ctx):
     except ctx.errors.ConfigurationError:
         # Fail hard and print warning if lsbcc is not available.
         # if not ctx.env.LSBCC:
-        ctx.fatal('RED', 'LSB (Linux Standard Base) tools >= 4.0 are '
-                         'required.\nTry --no-lsb option if not interested in '
-                         'building LSB binary.')
+        ctx.fatal('LSB (Linux Standard Base) tools >= 4.0 are '
+                  'required.\nTry --no-lsb option if not interested in '
+                  'building LSB binary.')
 
     # lsbcc as CC compiler
     ctx.env.append_value('CFLAGS', '--lsb-cc=%s' % ctx.env.CC[0])
@@ -242,7 +243,7 @@ def set_arch_flags(ctx):
             elif ctx.options.target_cpu == 'amd64':
                 ctx.env.append_value('LINKFLAGS', '/MACHINE:X64')
             else:
-                ctx.fatal('RED', 'Unrecognized target CPU: %s' % ctx.env.PYI_CPU)
+                ctx.fatal('Unrecognized target CPU: %s' % ctx.env.PYI_CPU)
         # Set msvc linkflags based on architecture.
         else:
             if ctx.env.PYI_ARCH == '32bit':
@@ -274,12 +275,27 @@ def set_arch_flags(ctx):
     # AIX specific flags
     elif is_aix:
         if ctx.env.CC_NAME == 'gcc':
-            ctx.check_cc(ccflags='-m32', msg='Checking for flags -m32')
-            ctx.env.append_value('CFLAGS', '-m32')
-            ctx.env.append_value('LINKFLAGS', '-m32')
+            ctx.check_cc(ccflags='-maix32', msg='Checking for flags -maix32')
+            ctx.env.append_value('CFLAGS', '-maix32')
+            ctx.env.append_value('LINKFLAGS', '-maix32')
         else:
             # We use xlc compiler
             pass
+
+    elif is_hpux:
+        if ctx.env.CC_NAME == 'gcc':
+            if ctx.env.PYI_ARCH == '32bit':
+                ctx.check_cc(ccflags='-milp32', msg='Checking for flags -milp32')
+                ctx.env.append_value('CFLAGS', '-milp32')
+                ctx.env.append_value('LINKFLAGS', '-milp32')
+            else:
+                ctx.check_cc(ccflags='-mlp64', msg='Checking for flags -mlp64')
+                ctx.env.append_value('CFLAGS', '-mlp64')
+                ctx.env.append_value('LINKFLAGS', '-mlp64')
+        else:
+            # We use xlc compiler
+            pass
+
 
     # Other compiler - not msvc.
     else:
@@ -308,7 +324,7 @@ def set_arch_flags(ctx):
             ctx.env.append_value('CFLAGS', '-m64')
             ctx.env.append_value('LINKFLAGS', '-m64')
         else:
-            ctx.fatal('RED', 'Unrecognized target architecture: %s' % ctx.env.PYI_ARCH)
+            ctx.fatal('Unrecognized target architecture: %s' % ctx.env.PYI_ARCH)
 
     # We need to pass architecture switch to the 'windres' tool.
     if is_win and ctx.env.CC_NAME != 'msvc':
@@ -446,6 +462,16 @@ def configure(ctx):
         ctx.env['SHLIB_MARKER'] = '-Wl,-bdynamic'
         ctx.env['STLIB_MARKER'] = '-Wl,-bstatic'
 
+    if is_hpux:
+        ctx.env.append_value('DEFINES', 'HPUX')
+        if ctx.env.CC_NAME == 'gcc':
+            if ctx.env.PYI_ARCH == '32bit':
+                ctx.env.append_value('LIBPATH', '/usr/local/lib/hpux32')
+                ctx.env.append_value('STATICLIBPATH', '/usr/local/lib/hpux32')
+            else:
+                ctx.env.append_value('LIBPATH', '/usr/local/lib/hpux64')
+                ctx.env.append_value('STATICLIBPATH', '/usr/local/lib/hpux64')
+
     # Adding python includedir into our environment - does not work on Windows
     if not is_win:
         ctx.env.append_value('INCLUDES', sysconfig.get_config_var('INCLUDEDIR'))
@@ -465,6 +491,8 @@ def configure(ctx):
         # Link to libthr on FreeBSD.
         if is_freebsd and sysconfig.get_config_vars('HAVE_PTHREAD_H').pop():
             ctx.check_cc(lib='thr', mandatory=True)
+        elif is_hpux  and sysconfig.get_config_vars('HAVE_PTHREAD_H').pop():
+            ctx.check_cc(lib='pthread', mandatory=True)
         ctx.check_cc(lib='m', mandatory=True)
         ctx.check_cc(lib='z', mandatory=True)
         # This uses Boehm GC to manage memory - it replaces malloc() / free()
@@ -480,6 +508,7 @@ def configure(ctx):
 
     # unsetenv not available on AIX, maybe others.
     ctx.check_cc(function_name='unsetenv', header_name="stdlib.h", mandatory=False)
+    ctx.check_cc(function_name='mkdtemp', header_name="stdlib.h", mandatory=False)
 
     ### CFLAGS
 

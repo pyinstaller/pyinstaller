@@ -13,9 +13,11 @@ import pkg_resources
 import pkgutil
 import sys
 import textwrap
+import re
 
-from ...compat import base_prefix, exec_command_stdout, exec_python, is_darwin, is_py2, is_py3, is_venv,\
-    open_file, EXTENSION_SUFFIXES
+from ...compat import base_prefix, exec_command_stdout, exec_python, \
+    is_darwin, is_py2, is_py3, is_venv, string_types, open_file, \
+    EXTENSION_SUFFIXES
 from ... import HOMEPATH
 from ... import log as logging
 
@@ -65,9 +67,10 @@ def __exec_python_cmd(cmd, env=None):
         if isinstance(pp, unicode):
             pp = pp.encode(sys.getfilesystemencoding())
 
-    # PYTHONPATH might be already defined in the 'env' argument. Prepend it.
-    if 'PYTHONPATH' in env:
-        pp = os.pathsep.join([env.get('PYTHONPATH'), pp])
+    # PYTHONPATH might be already defined in the 'env' argument or in
+    # the original 'os.environ'. Prepend it.
+    if 'PYTHONPATH' in pp_env:
+        pp = os.pathsep.join([pp_env.get('PYTHONPATH'), pp])
     pp_env['PYTHONPATH'] = pp
 
     try:
@@ -537,71 +540,105 @@ def get_package_paths(package):
     return pkg_base, pkg_dir
 
 
-def collect_submodules(package, subdir=None, pattern=None, endswith=False):
+def collect_submodules(package, filter=lambda name: True):
     """
-    The following two functions were originally written by Ryan Welsh
-    (welchr AT umich.edu).
-
-    :param pattern: String pattern to match only submodules containing
-                    this pattern in the name.
-    :param endswith: If True, will match using 'endswith'
-
-    This produces a list of strings which specify all the modules in
-    package.  Its results can be directly assigned to ``hiddenimports``
-    in a hook script; see, for example, hook-sphinx.py. The
-    package parameter must be a string which names the package. The
-    optional subdir give a subdirectory relative to package to search,
-    which is helpful when submodules are imported at run-time from a
-    directory lacking __init__.py. See hook-astroid.py for an example.
-
-    This function does not work on zipped Python eggs.
+    :param package: A string which names the package which will be search for
+        submodules.
+    :param approve: A function to filter through the submodules found,
+        selecting which should be included in the returned list. It takes one
+        argument, a string, which gives the name of a submodule. Only if the
+        function returns true is the given submodule is added to the list of
+        returned modules. For example, ``filter=lambda name: 'test' not in
+        name`` will return modules that don't contain the word ``test``.
+    :return: A list of strings which specify all the modules in package. Its
+        results can be directly assigned to ``hiddenimports`` in a hook script;
+        see, for example, ``hook-sphinx.py``.
 
     This function is used only for hook scripts, but not by the body of
     PyInstaller.
     """
     # Accept only strings as packages.
-    if type(package) is not str:
+    if not isinstance(package, string_types):
         raise ValueError
 
     logger.debug('Collecting submodules for %s' % package)
-    # Skip module that is not a package.
+    # Skip a module which is not a package.
     if not is_package(package):
-        logger.debug('collect_submodules: Module %s is not a package.' % package)
+        logger.debug('collect_submodules - Module %s is not a package.' % package)
         return []
 
+    # Determine the filesystem path to the specified package.
     pkg_base, pkg_dir = get_package_paths(package)
-    if subdir:
-        pkg_dir = os.path.join(pkg_dir, subdir)
-    # Walk through all file in the given package, looking for submodules.
-    mods = set()
-    for dirpath, dirnames, filenames in os.walk(pkg_dir):
-        # Change from OS separators to a dotted Python module path,
-        # removing the path up to the package's name. For example,
-        # '/abs/path/to/desired_package/sub_package' becomes
-        # 'desired_package.sub_package'
-        mod_path = remove_prefix(dirpath, pkg_base).replace(os.sep, ".")
 
-        # If this subdirectory is a package, add it and all other .py
-        # files in this subdirectory to the list of modules.
-        if '__init__.py' in filenames:
-            mods.add(mod_path)
-            for f in filenames:
-                extension = os.path.splitext(f)[1]
-                if ((remove_file_extension(f) != '__init__') and
-                        extension in PY_EXECUTABLE_SUFFIXES):
-                    modname = mod_path + "." + remove_file_extension(f)
-                    # TODO convert this into regex matching.
-                    # Skip submodules not matching pattern.
-                    if not pattern or (endswith and modname.endswith(pattern)) or \
-                                      (not endswith and pattern in modname):
-                        mods.add(modname)
-        else:
-        # If not, nothing here is part of the package; don't visit any of
-        # these subdirs.
-            del dirnames[:]
+    # Walk the package. Since this performs imports, do it in a separate
+    # process.
+    names = exec_statement("""
+        import sys
+        import pkgutil
 
-    logger.debug("- Found submodules: %s", mods)
+        # ``pkgutil.walk_packages`` doesn't walk subpackages of zipped files
+        # per https://bugs.python.org/issue14209. This is a workaround.
+        def walk_packages(path=None, prefix='', onerror=None):
+            def seen(p, m={{}}):
+                if p in m:
+                    return True
+                m[p] = True
+
+            for importer, name, ispkg in pkgutil.iter_modules(path, prefix):
+                if not name.startswith(prefix):   ## Added
+                    name = prefix + name          ## Added
+                yield importer, name, ispkg
+
+                if ispkg:
+                    try:
+                        __import__(name)
+                    except ImportError:
+                        if onerror is not None:
+                            onerror(name)
+                    except Exception:
+                        if onerror is not None:
+                            onerror(name)
+                        else:
+                            raise
+                    else:
+                        path = getattr(sys.modules[name], '__path__', None) or []
+
+                        # don't traverse path items we've seen before
+                        path = [p for p in path if not seen(p)]
+
+                        ## Use Py2 code here. It still works in Py3.
+                        for item in walk_packages(path, name+'.', onerror):
+                            yield item
+                        ## This is the original Py3 code.
+                        #yield from walk_packages(path, name+'.', onerror)
+
+        for module_loader, name, ispkg in walk_packages([{}], '{}.'):
+            print(name)
+        """.format(
+                  # Use repr to escape Windows backslashes.
+                  repr(pkg_dir), package))
+
+    # Include the package itself in the results.
+    mods = {package}
+    # Filter through the returend submodules.
+    for name in names.split():
+        if filter(name):
+            mods.add(name)
+
+    logger.debug("collect_submodules - Found submodules: %s", mods)
     return list(mods)
+
+
+def is_module_or_submodule(name, mod_or_submod):
+    """
+    This helper function is designed for use in the ``filter`` argument of
+    ``collect_submodules``, by returning ``True`` if the given ``name`` is
+    a module or a submodule of ``mod_or_submod``. For example:
+    ``collect_submodules('foo', lambda name: not is_module_or_submodule(name,
+    'foo.test'))`` excludes ``foo.test`` and ``foo.test.one`` but not
+    ``foo.testifier``.
+    """
+    return name.startswith(mod_or_submod + '.') or name == mod_or_submod
 
 
 # Patterns of dynamic library filenames that might be bundled with some
@@ -628,7 +665,7 @@ def collect_dynamic_libs(package, destdir=None):
                     should be put.
     """
     # Accept only strings as packages.
-    if type(package) is not str:
+    if not isinstance(package, string_types):
         raise ValueError
 
     logger.debug('Collecting dynamic libraries for %s' % package)
@@ -665,7 +702,9 @@ def collect_data_files(package, include_py_files=False, subdir=None):
     argument to True collects these files as well. This is typically used
     with Python routines (such as those in pkgutil) that search a given
     directory for Python executable files then load them as extensions or
-    plugins. See collect_submodules for a description of the subdir parameter.
+    plugins. The optional subdir give a subdirectory relative to package to
+    search, which is helpful when submodules are imported at run-time from a
+    directory lacking __init__.py
 
     This function does not work on zipped Python eggs.
 
@@ -673,7 +712,7 @@ def collect_data_files(package, include_py_files=False, subdir=None):
     PyInstaller.
     """
     # Accept only strings as packages.
-    if type(package) is not str:
+    if not isinstance(package, string_types):
         raise ValueError
 
     pkg_base, pkg_dir = get_package_paths(package)
@@ -687,7 +726,7 @@ def collect_data_files(package, include_py_files=False, subdir=None):
             if include_py_files or (extension not in PY_IGNORE_EXTENSIONS):
                 # Produce the tuple
                 # (/abs/path/to/source/mod/submod/file.dat,
-                #  mod/submod/file.dat)
+                #  mod/submod)
                 source = os.path.join(dirpath, f)
                 dest = remove_prefix(dirpath,
                                      os.path.dirname(pkg_base) + os.sep)
@@ -706,7 +745,7 @@ def collect_system_data_files(path, destdir=None, include_py_files=False):
     PyInstaller.
     """
     # Accept only strings as paths.
-    if type(path) is not str:
+    if not isinstance(path, string_types):
         raise ValueError
 
     # Walk through all file in the given package, looking for data files.
@@ -717,7 +756,7 @@ def collect_system_data_files(path, destdir=None, include_py_files=False):
             if include_py_files or (extension not in PY_IGNORE_EXTENSIONS):
                 # Produce the tuple
                 # (/abs/path/to/source/mod/submod/file.dat,
-                #  mod/submod/file.dat)
+                #  mod/submod/destdir)
                 source = os.path.join(dirpath, f)
                 dest = remove_prefix(dirpath,
                                      os.path.dirname(path) + os.sep)

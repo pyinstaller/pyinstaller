@@ -60,8 +60,10 @@
  * - On AIX 5.2 function 'mkdtemp' is missing. It is there in version 6.1 but we don't know
  *   the runtime platform at compile time, so we always include our own implementation on AIX.
  */
-#if defined(SUNOS) || defined(AIX)
+#if defined(SUNOS) || defined(AIX) || defined(HPUX)
+    #if !defined(HAVE_MKDTEMP)
     #include "mkdtemp.h"
+    #endif
 #endif
 
 /* PyInstaller headers. */
@@ -91,6 +93,40 @@ static int argc_pyi = 0;
 #if defined(__APPLE__) && defined(WINDOWED)
 static void process_apple_events_new();
 #endif
+
+char *
+pyi_strjoin(const char *first, const char *sep, const char *second){
+    /* join first and second string, using sep as separator.
+     * any of them may be either a null-terminated string or NULL.
+     * sep will be only used if first and second string are not empty.
+     * returns a null-terminated string which the caller is responsible
+     * for freeing. Returns NULL if memory could not be allocated.
+     */
+    int first_len, sep_len, second_len;
+    char *result, *tmp;
+    first_len = first ? strlen(first) : 0;
+    sep_len = sep ? strlen(sep) : 0;
+    second_len = second ? strlen(second) : 0;
+    result = malloc(first_len + sep_len + second_len + 1);
+    if (!result) {
+        return NULL;
+    }
+    tmp = result;
+    if (first_len) {
+        memcpy(tmp, first, first_len);
+        tmp += first_len;
+    }
+    if (sep_len && first_len && second_len) {
+        memcpy(tmp, sep, sep_len);
+        tmp += sep_len;
+    }
+    if (second_len) {
+        memcpy(tmp, second, second_len);
+        tmp += second_len;
+    }
+    *tmp = '\0';
+    return result;
+}
 
 /* Return string copy of environment variable. */
 char *
@@ -630,17 +666,34 @@ static int
 set_dynamic_library_path(const char* path)
 {
     int rc = 0;
+    char *env_var, *env_var_orig;
+    char *new_path, *orig_path;
 
     #ifdef AIX
     /* LIBPATH is used to look up dynamic libraries on AIX. */
-    pyi_setenv("LIBPATH", path);
-    VS("LOADER: LIBPATH=%s\n", path);
+    env_var = "LIBPATH";
+    env_var_orig = "LIBPATH_ORIG";
     #else
     /* LD_LIBRARY_PATH is used on other *nix platforms (except Darwin). */
-    rc = pyi_setenv("LD_LIBRARY_PATH", path);
-    VS("LOADER: LD_LIBRARY_PATH=%s\n", path);
+    env_var = "LD_LIBRARY_PATH";
+    env_var_orig = "LD_LIBRARY_PATH_ORIG";
     #endif /* AIX */
 
+    /* keep original value in a new env var so the application can restore it
+     * before forking subprocesses. This is important so that e.g. a forked
+     * (system installed) ssh can find the matching (system installed) ssh
+     * related libraries - not the potentially different versions of same libs
+     * that we have bundled.
+     */
+    orig_path = pyi_getenv(env_var);
+    pyi_setenv(env_var_orig, orig_path);
+    VS("LOADER: %s=%s\n", env_var_orig, orig_path);
+
+    /* prepend our path to the original path */
+    new_path = pyi_strjoin(path, ":", orig_path);
+    rc = pyi_setenv(env_var, new_path);
+    VS("LOADER: %s=%s\n", env_var, new_path);
+    free(new_path);
     return rc;
 }
 

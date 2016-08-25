@@ -5,78 +5,93 @@ environment:
     # /E:ON and /V:ON options are not enabled in the batch script intepreter
     # See: http://stackoverflow.com/a/13751649/163740
     CMD_IN_ENV: "cmd /E:ON /V:ON /C .\\tests\\scripts\\appveyor\\run_with_env.cmd"
-    PIP_ACCEL_LOG_FORMAT: "%(name)-18s %(levelname)s %(message)s"
 
   matrix:
+    - PYTHON: "C:\\Python35-x64"
+      PYTHON_VERSION: "3.5"
+      PYTHON_ARCH: "64"
+      VCVARSALL: "x64"
+      # Break the tests into two runs, since together they exceed the 1 hour limit.
+      # See https://github.com/pyinstaller/pyinstaller/issues/2024#issuecomment-224129520
+      # for more discussion.
+      TEST1_CMD: "py.test --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
+      TEST2_CMD: ""
 
-    # TODO Fix bootloader compilation of 64bit bootloader - either fix for msvc or install mingw-w64
-    # Pre-installed Python versions, which Appveyor may upgrade to
-    # a later point release.
-#    - PYTHON: "C:\\Python34-x64"
-#      PYTHON_VERSION: "3.4"
-#      PYTHON_ARCH: "64"
-#      # This forces to build bootloader with MSVC.
-#      # Appveyor does not have 64-bit mingw.
-#      WAF_ARGS: ""
-#
-#    - PYTHON: "C:\\Python33-x64"
-#      PYTHON_VERSION: "3.3"
-#      PYTHON_ARCH: "64"
-#      WAF_ARGS: ""
+    - PYTHON: "C:\\Python35-x64"
+      PYTHON_VERSION: "3.5"
+      PYTHON_ARCH: "64"
+      VCVARSALL: "x64"
+      TEST1_CMD: ""
+      TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
 
-    # TODO Enable Python 3.5 one day. Issue #1547.
     - PYTHON: "C:\\Python35"
       PYTHON_VERSION: "3.5"
       PYTHON_ARCH: "32"
-      #WAF_ARGS: "--gcc"
-      # TODO use temporily msvc to compile bootloader until mingw-w64 is natively supported by Appveyor.
-      WAF_ARGS: ""
+      VCVARSALL: "x86"
+      # Break the tests into two runs, since together they exceed the 1 hour limit.
+      # See https://github.com/pyinstaller/pyinstaller/issues/2024#issuecomment-224129520
+      # for more discussion.
+      TEST1_CMD: "py.test --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
+      TEST2_CMD: ""
+
+    - PYTHON: "C:\\Python35"
+      PYTHON_VERSION: "3.5"
+      PYTHON_ARCH: "32"
+      VCVARSALL: "x86"
+      TEST1_CMD: ""
+      TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
 
     - PYTHON: "C:\\Python34"
       PYTHON_VERSION: "3.4"
       PYTHON_ARCH: "32"
-      #WAF_ARGS: "--gcc"
-      # TODO use temporily msvc to compile bootloader until mingw-w64 is natively supported by Appveyor.
-      WAF_ARGS: ""
+      VCVARSALL: "x86"
+      TEST1_CMD: "py.test --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
+      TEST2_CMD: ""
+
+    - PYTHON: "C:\\Python34"
+      PYTHON_VERSION: "3.4"
+      PYTHON_ARCH: "32"
+      VCVARSALL: "x86"
+      TEST1_CMD: ""
+      TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
 
     - PYTHON: "C:\\Python33"
       PYTHON_VERSION: "3.3"
       PYTHON_ARCH: "32"
-      #WAF_ARGS: "--gcc"
-      # TODO use temporily msvc to compile bootloader until mingw-w64 is natively supported by Appveyor.
-      WAF_ARGS: ""
+      VCVARSALL: "x86"
+      TEST1_CMD: "py.test --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
+      TEST2_CMD: ""
+
+    - PYTHON: "C:\\Python33"
+      PYTHON_VERSION: "3.3"
+      PYTHON_ARCH: "32"
+      VCVARSALL: "x86"
+      TEST1_CMD: ""
+      TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
 
     - PYTHON: "C:\\Python27"
       PYTHON_VERSION: "2.7"
       PYTHON_ARCH: "32"
-      #WAF_ARGS: "--gcc"
-      # TODO use temporily msvc to compile bootloader until mingw-w64 is natively supported by Appveyor.
-      WAF_ARGS: ""
+      VCVARSALL: "x86"
+      TEST1_CMD: "py.test --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
+      TEST2_CMD: ""
+
+    - PYTHON: "C:\\Python27"
+      PYTHON_VERSION: "2.7"
+      PYTHON_ARCH: "32"
+      VCVARSALL: "x86"
+      TEST1_CMD: ""
+      TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
 
 cache:
-  # 'pip-accel' requires caching of downloaded pip packages.
-  - C:\Users\appveyor\AppData\Local\pip
-  # Cache binary Python packages e.g. numpy, pycrypto
-  - C:\Users\appveyor\AppData\Roaming\.pip-accel
-  # Cache downloaded mingw-w64 - it might take 5 min. in appveyor.
-  # TODO Remove mingw-w64 caching when it is natively supported by apppveyor:
-  #    https://github.com/appveyor/ci/issues/466
-  # TODO mingw-w64 caching takes a lot of time - unpacking/zipping 15000 files.
-  #- C:\tools\mingw32
+  # Cache downloaded pip packages.
+  - "C:\\Users\\appveyor\\AppData\\Local\\pip"
 
 init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
+  - "ECHO \"%APPVEYOR_SCHEDULED_BUILD%\""
 
 install:
-  - ECHO "Filesystem root:"
-  - ps: "ls \"C:/\""
-
-  - ECHO "Chocolatey tools:"
-  - ps: "ls \"C:/Tools\""
-
-  - ECHO "Installed SDKs:"
-  - ps: "ls \"C:/Program Files/Microsoft SDKs/Windows\""
-
   # Prepend newly installed Python to the PATH of this build (this cannot be
   # done from inside the powershell script as it would require to restart
   # the parent CMD process).
@@ -86,41 +101,37 @@ install:
   - "python --version"
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
 
-  # Install 32bit mingw-w64. Bootloader can be compiled only with mingw-w64.
-  # Install only if it is not cached from previous runs.
-  # TODO use temporily msvc to compile bootloader until mingw-w64 is natively supported by Appveyor.
-  #    It takes a lot of time to install mingw-w64.
-  #
-  #    https://github.com/appveyor/ci/issues/466
-  #
-  #- ps: If ( -not ( Test-Path C:/tools/mingw32 ) )  { choco install -y mingw -x86 }
-
-  # Compile bootloader, use 32bit mingw-w64.
-  - "SET PATH=C:\\tools\\mingw32\\bin;%PATH%"
-  - cd bootloader
-  - "python waf --msvc_version=\"msvc 12.0\" distclean all %WAF_ARGS%"
-  - cd ..
+  # Compile bootloader.
+  - "cd bootloader"
+  - "\"C:\\Program Files (x86)\\Microsoft Visual Studio 12.0\\VC\\vcvarsall.bat\" %VCVARSALL%"
+  - "python waf --msvc_version=\"msvc 12.0\" distclean all"
+  - "cd .."
 
   ### Install the PyInsaller dependencies.
-
-  # Install pip-accel to cache pypi packages and avoid compiling some packages.
-  # (numpy or pycrypto take a lot of tome to compile).
-  - "%CMD_IN_ENV% pip install pip-accel>=0.33"
+  # Upgrade to the latest pip.
+  - "%CMD_IN_ENV% python -m pip install -U pip"
 
   # Install lxml from anaconda.org channel since PyPI fails (or it takes too long).
   # See: https://github.com/pyinstaller/pyinstaller/pull/1638
-  - "%CMD_IN_ENV% pip-accel install -i https://pypi.anaconda.org/giumas/simple lxml" 
+  - "%CMD_IN_ENV% pip install -U -i https://pypi.anaconda.org/giumas/simple lxml"
 
   # Install the PyInstaller test dependencies.
-  - "%CMD_IN_ENV% pip-accel install --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-tools.txt"
-  - "%CMD_IN_ENV% pip-accel install --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-win.txt"
-
+  - "%CMD_IN_ENV% pip install -U --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-tools.txt"
+  # Some libraries are available only for 32-bit Windows. Install those if we
+  # can. Otherwise, install libraries that work on 32-bit and 64-bit Windows systems.
+  - "if \"%PYTHON_ARCH%\" == \"32\" (
+      %CMD_IN_ENV% pip install -U --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-win32.txt
+    ) ELSE (
+      %CMD_IN_ENV% pip install -U --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-win.txt )"
   # Install PyInstaller into virtualenv.
   - "%CMD_IN_ENV% pip install -e ."
 
 build: none
 
 test_script:
-  # Split tests into several subprocesses.
-  # Run unitttest first.
-  - "%CMD_IN_ENV% py.test -n 3 --maxfail 5 --durations=10 tests\\unit tests"
+  # Run the tests appropriate for this entry in the test matrix. Skip tests
+  # if we're just updating the cache.
+  - "if not \"%APPVEYOR_SCHEDULED_BUILD%\" == \"True\" (
+    %CMD_IN_ENV% %TEST1_CMD% )"
+  - "if not \"%APPVEYOR_SCHEDULED_BUILD%\" == \"True\" (
+    %CMD_IN_ENV% %TEST2_CMD% )"

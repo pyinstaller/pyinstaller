@@ -220,29 +220,60 @@ pyi_arch_extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
 }
 
 /*
- * Look for a predefined value in the embedded data.
+ * Look for the predefined string MAGIC in the embedded data before the given
+ * search end position. If MAGIC is found, copies the entire COOKIE struct into
+ * status->cookie, sets status->pkgstart to the location of the archive and returns 0.
+ * Returns -1 on failure.
  *
  * PyInstaller sets this cookie to a constant value. Bootloader
  * compares it with the expected value. If there is match then
- * bootloader knows the data was embedded correctly.
+ * bootloader knows where the data was embedded correctly.
+ *
+ * The search space uses the given sizes because on Windows and OS X, the code signing
+ * will add padding between the end of the COOKIE and the beginning of the signature
+ * to align the signature to a quadword or a page boundary respectively. On Linux,
+ * we use objtool to insert the archive into the bootloader, and objtool will
+ * move the ELF section headers so they follow the cookie, so we need to search backward
+ * past the section headers to find the cookie.
  */
+#if defined(WIN32)
+#define SEARCH_SIZE (8 + sizeof(COOKIE))
+#else
+#define SEARCH_SIZE (4096 + sizeof(COOKIE))
+#endif
+
 static int
-pyi_arch_check_cookie(ARCHIVE_STATUS *status, int filelen)
+pyi_arch_find_cookie(ARCHIVE_STATUS *status, int search_end)
 {
-    if (fseek(status->fp, filelen - (int)sizeof(COOKIE), SEEK_SET)) {
+    int search_start = search_end - SEARCH_SIZE;
+    char buf[SEARCH_SIZE];
+    char * search_ptr = buf + SEARCH_SIZE - sizeof(COOKIE);
+
+    if (fseek(status->fp, search_start, SEEK_SET)) {
         return -1;
     }
 
-    /* Read the Cookie, and check its MAGIC bytes */
-    if (fread(&(status->cookie), sizeof(COOKIE), 1, status->fp) < 1) {
+    /* Read the entire search space */
+    if (fread(buf, SEARCH_SIZE, 1, status->fp) < 1) {
         return -1;
     }
 
-    if (strncmp(status->cookie.magic, MAGIC, strlen(MAGIC))) {
-        return -1;
+    /* Search for MAGIC within search space */
+
+    while(search_ptr >= buf) {
+        if(0 == strncmp(MAGIC, search_ptr, strlen(MAGIC))) {
+            /* MAGIC found - Copy COOKIE to status->cookie */
+            memcpy(&status->cookie, search_ptr, sizeof(COOKIE));
+
+            /* From the cookie, calculate the archive start */
+            status->pkgstart = search_start + sizeof(COOKIE) + (search_ptr - buf) - ntohl(status->cookie.len);
+
+            return 0;
+        }
+        search_ptr--;
     }
 
-    return 0;
+    return -1;
 }
 
 static int
@@ -350,14 +381,7 @@ findDigitalSignature(ARCHIVE_STATUS * const status)
 int
 pyi_arch_open(ARCHIVE_STATUS *status)
 {
-#if defined(WIN32)
-    int i;
-    int alignment = 8;
-#else
-    int i;
-    int alignment = 4096;
-#endif
-    int filelen;
+    int search_end = 0;
     VS("LOADER: archivename is %s\n", status->archivename);
 
     /* Physically open the file */
@@ -366,47 +390,29 @@ pyi_arch_open(ARCHIVE_STATUS *status)
         return -1;
     }
 
-    /* Seek to the Cookie at the end of the file. */
-    fseek(status->fp, 0, SEEK_END);
-    filelen = ftell(status->fp);
-
-    if (pyi_arch_check_cookie(status, filelen) < 0) {
-        VS("LOADER: pyi_arch_check_cookie failed\n");
+    /* Find out where to stop searching for the cookie. First try to find
+     * a digital signature added by a code signing tool.
+     */
 #if defined(WIN32) || defined(__APPLE__)
-        filelen = findDigitalSignature(status);
-
-        if (filelen < 1) {
-            return -1;
-        }
+    search_end = findDigitalSignature(status);
 #endif
-        VS("LOADER: Search for cookie");
 
-        /* The digital signature has been aligned to a boundary.
-         *  We need to look for our cookie taking into account some
-         *  padding. */
-        for (i = 0; i < alignment; ++i) {
-            if (pyi_arch_check_cookie(status, filelen) >= 0) {
-                break;
-            }
-            --filelen;
-        }
+    /* Signature not found or not applicable for this platform. Stop searching
+     * at end of file.
+     */
+    if (search_end < 1) {
+        fseek(status->fp, 0, SEEK_END);
+        search_end = ftell(status->fp);
+    }
 
-        if (i == alignment) {
-            VS(
-                "LOADER: %s does not contain an embedded package, even skipping the signature\n",
-                status->archivename);
-            return -1;
-        }
-        VS("LOADER: package found skipping digital signature in %s\n",
-           status->archivename);
-
+    /* Load status->cookie */
+    if (-1 == pyi_arch_find_cookie(status, search_end)) {
+        VS("Loader: Cannot find cookie");
+        return -1;
     }
 
     /* Set the flag that Python library was not loaded yet. */
     status->is_pylib_loaded = false;
-
-    /* From the cookie, calculate the archive start */
-    status->pkgstart = filelen - ntohl(status->cookie.len);
 
     /* Read in in the table of contents */
     fseek(status->fp, status->pkgstart + ntohl(status->cookie.TOC), SEEK_SET);

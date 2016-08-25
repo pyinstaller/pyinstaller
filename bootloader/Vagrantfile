@@ -16,6 +16,10 @@ end
 def packages_debianoid
   return <<-EOF
     apt-get update
+    # avoid any prompts, from http://askubuntu.com/questions/146921
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get -y -o Dpkg::Options::="--force-confdef" \
+               -o Dpkg::Options::="--force-confold" upgrade
     apt-get install -y python python-dev python-setuptools libz-dev gcc
   EOF
 end
@@ -25,6 +29,7 @@ def packages_darwin
     sudo chown -R vagrant /usr/local  # brew must be able to create stuff here
     ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
     brew update
+    brew upgrade --all
     brew install openssl
     brew install lz4
     brew install fakeroot

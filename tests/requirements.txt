@@ -1,5 +1,0 @@
-# FIXME: Consider removing this file. All CI configuration files (e.g.,
-# ".travis.yml") only install from platform-specific requirement files (e.g.,
-# "requirements-linux.txt").
-
--r requirements-libraries.txt

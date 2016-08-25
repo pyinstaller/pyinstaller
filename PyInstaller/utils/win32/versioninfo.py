@@ -14,8 +14,8 @@ import struct
 
 import pywintypes
 import win32api
-import pefile
-
+# ::TODO:: #1920 revert to using pypi version
+from ...lib import pefile
 
 
 # TODO implement read/write version information with pefile library.
@@ -89,6 +89,7 @@ def pefile_read_version(filename):
     print(dir(pe.VS_FIXEDFILEINFO))
     print(repr(pe.VS_FIXEDFILEINFO))
     print(pe.dump_info())
+    pe.close()
     return vers
 
 

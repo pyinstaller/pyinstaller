@@ -42,12 +42,13 @@ is_linux = sys.platform.startswith('linux')
 is_solar = sys.platform.startswith('sun')  # Solaris
 is_aix = sys.platform.startswith('aix')
 is_freebsd = sys.platform.startswith('freebsd')
+is_hpux = sys.platform.startswith('hp-ux')
 
 # Some code parts are similar to several unix platforms
 # (e.g. Linux, Solaris, AIX)
 # Mac OS X is not considered as unix since there are many
 # platform specific details for Mac in PyInstaller.
-is_unix = is_linux or is_solar or is_aix or is_freebsd
+is_unix = is_linux or is_solar or is_aix or is_freebsd or is_hpux
 
 
 # On different platforms is different file for dynamic python library.
@@ -60,7 +61,10 @@ elif is_cygwin:
                      'libpython%d.%d.dll' % _pyver,
                      'libpython%d.%dm.dll' % _pyver}
 elif is_darwin:
-    PYDYLIB_NAMES = {'Python', '.Python', 'libpython%d.%d.dylib' % _pyver}
+    # libpython%d.%dm.dylib for Conda virtual environment installations
+    PYDYLIB_NAMES = {'Python', '.Python',
+                     'libpython%d.%d.dylib' % _pyver,
+                     'libpython%d.%dm.dylib' % _pyver}
 elif is_aix:
     # Shared libs on AIX are archives with shared object members, thus the ".a" suffix.
     # However, python 2.7.11 built with XLC produces libpython?.?.so file, too.
@@ -71,6 +75,8 @@ elif is_freebsd:
                      'libpython%d.%dm.so.1' % _pyver,
                      'libpython%d.%d.so.1.0' % _pyver,
                      'libpython%d.%dm.so.1.0' % _pyver}
+elif is_hpux:
+    PYDYLIB_NAMES = {'libpython%d.%d.so' % _pyver}
 elif is_unix:
     # Other *nix platforms.
     # Python 2 .so library on Linux is: libpython2.7.so.1.0
@@ -111,11 +117,18 @@ except NameError:
     stdin_input = input
 
 # Safe repr that always outputs ascii
-
 if is_py2:
     safe_repr = repr
 else:
     safe_repr = ascii
+
+# String types to replace `isinstance(foo, str)`
+# Use `isinstance(foo, string_types)` instead.
+if is_py2:
+    string_types = basestring
+else:
+    string_types = str
+
 
 
 # Correct extension ending: 'c' or 'o'
@@ -500,6 +513,12 @@ def __wrap_python(args, kwargs):
     if is_darwin:
         mapping = {'32bit': '-i386', '64bit': '-x86_64'}
         py_prefix = ['arch', mapping[architecture()]]
+        # Since OS X 10.11 the environment variable DYLD_LIBRARY_PATH is no
+        # more inherited by child processes, so we proactively propagate
+        # the current value using the `-e` option of the `arch` command.
+        if 'DYLD_LIBRARY_PATH' in os.environ:
+            path = os.environ['DYLD_LIBRARY_PATH']
+            py_prefix += ['-e', 'DYLD_LIBRARY_PATH=%s' % path]
         cmdargs = py_prefix + cmdargs
 
     if _PYOPTS:
@@ -792,6 +811,8 @@ SPECIAL_MODULE_TYPES = {
     'AliasNode',
     'BuiltinModule',
     'RuntimeModule',
+    'RuntimePackage',
+
     # PyInstaller handles scripts differently and not as standard Python modules.
     'Script',
 }
@@ -811,6 +832,13 @@ BAD_MODULE_TYPES = {
     'InvalidSourceModule',
     'InvalidCompiledModule',
     'MissingModule',
+
+    # Runtime modules and packages are technically valid rather than bad, but
+    # exist only in-memory rather than on-disk (typically due to
+    # pre_safe_import_module() hooks) and hence cannot be physically frozen.
+    # For simplicity, these nodes are categorized as bad rather than valid.
+    'RuntimeModule',
+    'RuntimePackage',
 }
 ALL_MODULE_TYPES = VALID_MODULE_TYPES | BAD_MODULE_TYPES
 # TODO Review this mapping to TOC, remove useless entries.
@@ -819,10 +847,11 @@ MODULE_TYPES_TO_TOC_DICT = {
     # Pure modules.
     'AliasNode': 'PYMODULE',
     'Script': 'PYSOURCE',
-    'RuntimeModule': 'PYMODULE',
     'SourceModule': 'PYMODULE',
     'CompiledModule': 'PYMODULE',
     'Package': 'PYMODULE',
+    'FlatPackage': 'PYMODULE',
+    'ArchiveModule': 'PYMODULE',
     # Binary modules.
     'Extension': 'EXTENSION',
     # Special valid modules.
@@ -834,9 +863,9 @@ MODULE_TYPES_TO_TOC_DICT = {
     'InvalidSourceModule': 'invalid',
     'InvalidCompiledModule': 'invalid',
     'MissingModule': 'missing',
+    'RuntimeModule': 'runtime',
+    'RuntimePackage': 'runtime',
     # Other.
-    'FlatPackage': 'PYMODULE',
-    'ArchiveModule': 'PYMODULE',
     'does not occur': 'BINARY',
 }
 

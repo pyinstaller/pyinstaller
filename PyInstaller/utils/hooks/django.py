@@ -56,14 +56,14 @@ def django_find_root_dir():
     # It could be the directory containing manage.py or any of its subdirectories.
     settings_dir = None
     files = set(os.listdir(manage_dir))
-    if 'settings.py' in files and 'urls.py' in files:
+    if ('settings.py' in files or 'settings' in files) and 'urls.py' in files:
         settings_dir = manage_dir
     else:
         for f in files:
             if os.path.isdir(os.path.join(manage_dir, f)):
                 subfiles = os.listdir(os.path.join(manage_dir, f))
                 # Subdirectory contains critical files.
-                if 'settings.py' in subfiles and 'urls.py' in subfiles:
+                if ('settings.py' in subfiles or 'settings' in subfiles) and 'urls.py' in subfiles:
                     settings_dir = os.path.join(manage_dir, f)
                     break  # Find the first directory.
 

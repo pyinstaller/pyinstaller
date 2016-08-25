@@ -465,7 +465,7 @@ class ModuleHook(object):
                     self.module_name, create_nspkg=False)
 
                 # Manually import this hidden import from this module.
-                self.module_graph.import_hook(import_module_name, caller=caller)
+                self.module_graph.import_hook(import_module_name, caller)
             # If this hidden import is unimportable, print a non-fatal warning.
             # Hidden imports often become desynchronized from upstream packages
             # and hence are only "soft" recommendations.

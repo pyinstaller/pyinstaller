@@ -2,7 +2,6 @@
 #
 # This script updates the version within the README file.
 #
-# - Change URL for the manual to point to pythonhosted.org
 # - Change version in the badge-images and related links
 #
 
@@ -20,5 +19,5 @@ sed -e '/img\.shields\.io.*travis/   s/\<develop\>/'$VERSION'/' \
     -e '/ci\.appveyor/  s/\<develop\>/'$VERSION'/' \
     -e '/landscape\.io/ s/\<develop\>/master/' \
     -e '/img\.shields\.io\/badge\// s/-latest-/-v'$VERSION'-/' \
-    -e '/pyinstaller\.rtfd\.org\// s/\<latest\>/'$VERSION'/' \
+    -e '/pyinstaller\.rtfd\.io\// s/\<latest\>/v'$VERSION'/' \
     -i "$INFILE"

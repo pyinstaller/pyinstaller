@@ -123,11 +123,16 @@ try:
     import os
     from ctypes import LibraryLoader, DEFAULT_MODE
 
-    class PyInstallerCDLL(ctypes.CDLL):
-        def __init__(self, name, *args, **kwargs):
+    def _frozen_name(name):
+        if name:
             frozen_name = os.path.join(sys._MEIPASS, os.path.basename(name))
             if os.path.exists(frozen_name):
                 name = frozen_name
+        return name
+
+    class PyInstallerCDLL(ctypes.CDLL):
+        def __init__(self, name, *args, **kwargs):
+            name = _frozen_name(name)
             super(PyInstallerCDLL, self).__init__(name, *args, **kwargs)
 
     ctypes.CDLL = PyInstallerCDLL
@@ -135,9 +140,7 @@ try:
 
     class PyInstallerPyDLL(ctypes.PyDLL):
         def __init__(self, name, *args, **kwargs):
-            frozen_name = os.path.join(sys._MEIPASS, os.path.basename(name))
-            if os.path.exists(frozen_name):
-                name = frozen_name
+            name = _frozen_name(name)
             super(PyInstallerPyDLL, self).__init__(name, *args, **kwargs)
 
     ctypes.PyDLL = PyInstallerPyDLL
@@ -146,9 +149,7 @@ try:
     if sys.platform.startswith('win'):
         class PyInstallerWinDLL(ctypes.WinDLL):
             def __init__(self, name,*args, **kwargs):
-                frozen_name = os.path.join(sys._MEIPASS, os.path.basename(name))
-                if os.path.exists(frozen_name):
-                    name = frozen_name
+                name = _frozen_name(name)
                 super(PyInstallerWinDLL, self).__init__(name, *args, **kwargs)
 
         ctypes.WinDLL = PyInstallerWinDLL
@@ -156,9 +157,7 @@ try:
 
         class PyInstallerOleDLL(ctypes.OleDLL):
             def __init__(self, name,*args, **kwargs):
-                frozen_name = os.path.join(sys._MEIPASS, os.path.basename(name))
-                if os.path.exists(frozen_name):
-                    name = frozen_name
+                name = _frozen_name(name)
                 super(PyInstallerOleDLL, self).__init__(name, *args, **kwargs)
 
         ctypes.OleDLL = PyInstallerOleDLL

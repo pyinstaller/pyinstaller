@@ -45,7 +45,6 @@ def test_scipy(pyi_builder):
         """)
 
 
-@skip(reason='Issue #1919.')
 @xfail(is_win, reason='Issue scipy/scipy#5461.')
 @xfail(is_darwin, reason='Issue #1895.')
 @importorskip('scipy')
