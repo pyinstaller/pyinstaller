@@ -580,6 +580,16 @@ def test_usb(pyi_builder):
         """)
 
 
+@importorskip('zeep')
+def test_zeep(pyi_builder):
+    pyi_builder.test_source(
+        """
+        # Test the hook to zeep
+        from zeep import utils
+        utils.get_version()
+        """)
+
+
 @importorskip('PIL')
 @pytest.mark.xfail(reason="Fails with Pillow 3.0.0")
 def test_pil_img_conversion(pyi_builder_spec):
