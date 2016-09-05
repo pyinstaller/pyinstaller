@@ -7,6 +7,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 # ----------------------------------------------------------------------------
 import os
+import sys
 
 from ..hooks import eval_statement, exec_statement, get_homebrew_path
 from ... import log as logging
@@ -111,7 +112,9 @@ def qt_menu_nib_dir(namespace):
     str = getattr(__builtins__, 'unicode', str)  # for Python 2
     print(str(path))
     """.format(namespace))
-    paths = [os.path.join(path, 'Resources'), os.path.join(path, 'QtGui.framework', 'Resources')]
+    anaconda_path = os.path.join(sys.exec_prefix, "python.app", "Contents", "Resources")
+    paths = [os.path.join(path, 'Resources'), os.path.join(path, 'QtGui.framework', 'Resources'), anaconda_path]
+
     for location in paths:
         # Check directory existence
         path = os.path.join(location, 'qt_menu.nib')
