@@ -35,7 +35,7 @@ def run():
         import PyInstaller.utils.win32.versioninfo
         vs = PyInstaller.utils.win32.versioninfo.decode(args.exe_file)
         fp = codecs.open(args.out_filename, 'w', 'utf-8')
-        fp.write(unicode(vs))
+        fp.write(str(vs))
         fp.close()
         print(('Version info written to: %s' % args.out_filename))
     except KeyboardInterrupt:
