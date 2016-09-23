@@ -220,17 +220,21 @@ pyi_unsetenv(const char *variable)
 
 /* TODO rename fuction and revisit */
 int
-pyi_get_temp_path(char *buffer)
+pyi_get_temp_path(char *buffer, char *tempdir)
 {
     int i;
     wchar_t *wchar_ret;
     wchar_t prefix[16];
     wchar_t wchar_buffer[PATH_MAX];
 
-    /*
-     * Get path to Windows temporary directory.
-     */
-    GetTempPathW(PATH_MAX, wchar_buffer);
+    if (NULL != tempdir) {
+      wcscpy(wchar_buffer, tempdir);
+    } else {
+      /*
+       * Get path to Windows temporary directory.
+       */
+      GetTempPathW(PATH_MAX, wchar_buffer);
+    }
 
     swprintf(prefix, 16, L"_MEI%d", getpid());
 
@@ -276,36 +280,42 @@ pyi_test_temp_path(char *buff)
 
 /* TODO merge this function with windows version. */
 static int
-pyi_get_temp_path(char *buff)
+pyi_get_temp_path(char *buff, char *tempdir)
 {
-    /* On OSX the variable TMPDIR is usually defined. */
-    static const char *envname[] = {
-        "TMPDIR", "TEMP", "TMP", 0
-    };
-    static const char *dirname[] = {
-        "/tmp", "/var/tmp", "/usr/tmp", 0
-    };
-    int i;
-    char *p;
+    if (NULL != tempdir) {
+      strcpy(buff, tempdir);
+      if (pyi_test_temp_path(buff))
+        return 1;
+    } else {
+      /* On OSX the variable TMPDIR is usually defined. */
+      static const char *envname[] = {
+          "TMPDIR", "TEMP", "TMP", 0
+      };
+      static const char *dirname[] = {
+          "/tmp", "/var/tmp", "/usr/tmp", 0
+      };
+      int i;
+      char *p;
 
-    for (i = 0; envname[i]; i++) {
-        p = pyi_getenv(envname[i]);
+      for (i = 0; envname[i]; i++) {
+          p = pyi_getenv(envname[i]);
 
-        if (p) {
-            strcpy(buff, p);
+          if (p) {
+              strcpy(buff, p);
 
-            if (pyi_test_temp_path(buff)) {
-                return 1;
-            }
-        }
-    }
+              if (pyi_test_temp_path(buff)) {
+                  return 1;
+              }
+          }
+      }
 
-    for (i = 0; dirname[i]; i++) {
-        strcpy(buff, dirname[i]);
+      for (i = 0; dirname[i]; i++) {
+          strcpy(buff, dirname[i]);
 
-        if (pyi_test_temp_path(buff)) {
-            return 1;
-        }
+          if (pyi_test_temp_path(buff)) {
+              return 1;
+          }
+      }
     }
     return 0;
 }
@@ -319,8 +329,15 @@ pyi_get_temp_path(char *buff)
 int
 pyi_create_temp_path(ARCHIVE_STATUS *status)
 {
+    char *tempdir = NULL;
+
     if (status->has_temp_directory != true) {
-        if (!pyi_get_temp_path(status->temppath)) {
+        tempdir = pyi_arch_get_option(status, "pyi-tempdir");
+        if(NULL != tempdir) {
+          VS("LOADER: Found tempdir %s\n", tempdir);
+        }
+
+        if (!pyi_get_temp_path(status->temppath, tempdir)) {
             FATALERROR("INTERNAL ERROR: cannot create temporary directory!\n");
             return -1;
         }
