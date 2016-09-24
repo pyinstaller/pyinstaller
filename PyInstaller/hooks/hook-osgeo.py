@@ -29,8 +29,6 @@ import sys
 # - Win7 64bit
 # - Ubuntu 15.04 64bit
 # - Mac OS X Yosemite 10.10
-#
-# TODO: Fix for gdal>=2.0: 'NameError: global name 'help' is not defined'
 
 # flag used to identify an Anaconda environment
 is_conda = False
@@ -73,4 +71,9 @@ if is_conda:
 
     if os.path.exists(proj4_lib):
         binaries = [(proj4_lib, ""), ]
+
+    # conda names its shared libraries in a non-standard way
+    import osgeo
+    if osgeo.__version__ >= '2.0.0':
+        binaries += [(osgeo._gdal.__file__, '')]
 

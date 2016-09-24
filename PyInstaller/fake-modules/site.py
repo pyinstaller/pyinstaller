@@ -56,3 +56,11 @@ class _Helper(object):
          # *every* frozen app
          pydoc = __import__(''.join('pydoc'))
          return pydoc.help(*args, **kwds)
+
+try:
+    import __builtin__ as builtins # Python 2
+except ImportError:
+    import builtins # Python 3
+# OSGeo wraps the builtin help function even though it is not available
+# https://github.com/pyinstaller/pyinstaller/issues/1522
+builtins.help = _Helper()
