@@ -172,6 +172,8 @@ def __add_options(parser):
     g.add_argument("--noupx", action="store_true", default=False,
                    help="Do not use UPX even if it is available "
                         "(works differently between Windows and *nix)")
+    g.add_argument("--tempdir", dest="tempdir", metavar="PATH",
+                   help="Where to extract libraries while initializing bundled app.")
 
     g = parser.add_argument_group('Windows and Mac OS X specific options')
     g.add_argument("-c", "--console", "--nowindowed", dest="console",
@@ -243,7 +245,7 @@ def __add_options(parser):
 
 
 def main(scripts, name=None, onefile=None,
-         console=True, debug=False, strip=False, noupx=False,
+         console=True, debug=False, strip=False, noupx=False, tempdir=None,
          pathex=None, version_file=None, specpath=None,
          datas=None, binaries=None, icon_file=None, manifest=None, resources=None, bundle_identifier=None,
          hiddenimports=None, hookspath=None, key=None, runtime_hooks=None,
@@ -343,6 +345,7 @@ def main(scripts, name=None, onefile=None,
         'debug': debug,
         'strip': strip,
         'upx': not noupx,
+        'tempdir': repr(tempdir),
         'exe_options': exe_options,
         'cipher_init': cipher_init,
         # Directory with additional custom import hooks.

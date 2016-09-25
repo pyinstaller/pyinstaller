@@ -37,6 +37,7 @@ exe = EXE(pyz,
           debug=%(debug)s,
           strip=%(strip)s,
           upx=%(upx)s,
+          tempdir=%(tempdir)s,
           console=%(console)s %(exe_options)s)
 """
 
