@@ -134,6 +134,25 @@ The *key-string* is a string of 16 characters which is used to
 encrypt each file of Python byte-code before it is stored in
 the archive inside the executable file.
 
+.. _extracting libraries:
+
+Extracting Libraries
+~~~~~~~~~~~~~~~~~~~~
+
+When building an executable using ``--onefile``, |PyInstaller| generates a single
+executable file with all the required Python libraries and modules packaged
+inside it. When the executable is run, a bootloader will extract all the libraries
+into a temporary directory, and will run the application from the temporary directory.
+
+The default location for the temporary directory is the system temporary directory.
+Some operating systems allow you to configure the system temporary directory as
+non-executable, which will prevent the extracted application from executing.
+
+In order to work around that, there are two options. One is to set the environment
+variable ``TMPDIR`` to point to a location which allows executing programs. In
+case there is no way to set the environment variable, you can use the ``--tempdir``
+command line option to configure the bootloader to use a different location.
+
 
 .. _supporting multiple platforms:
 
@@ -221,14 +240,14 @@ Under Linux, |PyInstaller| does not bundle ``libc``
 (the C standard library, usually ``glibc``, the Gnu version) with the app.
 Instead, the app expects to link dynamically to the ``libc`` from the
 local OS where it runs.
-The interface between any app and ``libc`` is forward compatible to 
+The interface between any app and ``libc`` is forward compatible to
 newer releases, but it is not backward compatible to older releases.
 
 For this reason, if you bundle your app on the current version of Linux,
 it may fail to execute (typically with a runtime dynamic link error) if
 it is executed on an older version of Linux.
 
-The solution is to always build your app on the *oldest* version of 
+The solution is to always build your app on the *oldest* version of
 Linux you mean to support.
 It should continue to work with the ``libc`` found on newer versions.
 
