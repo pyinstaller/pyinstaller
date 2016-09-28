@@ -225,6 +225,12 @@ or is killed (kill -9 on Unix, killed by the Task Manager on Windows,
 Thus if your app crashes frequently, your users will lose disk space to
 multiple :file:`_MEI{xxxxxx}` temporary folders.
 
+It is possible to control the location of the :file:`_MEI{xxxxxx}` folder by
+using the ``--runtime-tmpdir`` command line option. The specified path is
+stored in the executable, and the bootloader will create the
+:file:`_MEI{xxxxxx}` folder inside of the specified folder. Please see
+:ref:`defining the extraction location` for details.
+
 .. Note::
 
     Do *not* give administrator privileges to a one-file executable
