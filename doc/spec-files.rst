@@ -59,6 +59,7 @@ Only the following command-line options have an effect when building from a spec
 *  --workpath=
 *  --noconfirm
 *  --ascii
+*  --clean
 
 
 Spec File Operation
@@ -574,7 +575,7 @@ Other globals contain information about the build environment:
 	or ``source/myscript.spec``.
 
 ``SPECPATH``
-	The path prefix to the ``SPEC`` value as returned by ``os.split()``.
+	The path prefix to the ``SPEC`` value as returned by ``os.path.split()``.
 
 ``specnm``
 	The name of the spec file, for example ``myscript``.
