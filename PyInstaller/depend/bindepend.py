@@ -662,6 +662,10 @@ def _getImports_macholib(pth):
                 if '.framework' in pth:
                     run_paths.update(['../../../'])
 
+    # for distributions like Anaconda, all of the dylibs are stored in the lib directory
+    # of the Python distribution, not alongside of the .so's in each module's subdirectory.
+    run_paths.add(os.path.join(base_prefix, 'lib'))
+
     ## Try to find files in file system.
 
     # In cases with @loader_path or @executable_path
@@ -669,6 +673,7 @@ def _getImports_macholib(pth):
     # This seems to work in most cases.
     exec_path = os.path.abspath(os.path.dirname(pth))
 
+ 
     for lib in seen:
 
         # Suppose that @rpath is not used for system libraries and
