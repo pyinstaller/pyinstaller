@@ -226,9 +226,11 @@ pyi_get_temp_path(char *buffer, char *tempdir)
     wchar_t *wchar_ret;
     wchar_t prefix[16];
     wchar_t wchar_buffer[PATH_MAX];
+    wchar_t wtempdir[PATH_MAX + 1];
 
     if (NULL != tempdir) {
-      wcscpy(wchar_buffer, tempdir);
+      pyi_win32_utils_from_utf8(wtempdir, tempdir, PATH_MAX);
+      wcscpy(wchar_buffer, wtempdir);
     } else {
       /*
        * Get path to Windows temporary directory.
