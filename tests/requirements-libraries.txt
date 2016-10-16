@@ -53,6 +53,7 @@ twisted
 zeep
 pyexcelerate
 Pillow
+pycryptodomex
 future
 pyusb
 
