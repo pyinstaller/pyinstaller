@@ -35,6 +35,7 @@ twisted
 zeep
 pyexcelerate
 Pillow
+pycryptodomex
 future
 pyusb
 pyqt5 ; python_version >= '3.5'
