@@ -134,25 +134,26 @@ The *key-string* is a string of 16 characters which is used to
 encrypt each file of Python byte-code before it is stored in
 the archive inside the executable file.
 
-.. _extracting libraries:
+.. _extracting files:
 
-Extracting Libraries
-~~~~~~~~~~~~~~~~~~~~
+Extracting Files Added to Bundle
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-When building an executable using ``--onefile``, |PyInstaller| generates a single
-executable file with all the required Python libraries and modules packaged
-inside it. When the executable is run, a bootloader will extract all the libraries
-into a temporary directory, and will run the application from the temporary directory.
+When you bundle to a single executable (see :ref:`Bundling to One File`),
+copies of added files are compressed into the executable, and expanded to the
+``_MEI``\ *xxxxxx* temporary folder before execution.
 
-The default location for the temporary directory is the system temporary directory.
-Some operating systems allow you to configure the system temporary directory as
-non-executable, which will prevent the extracted application from executing.
+By default the temporary ``_MEI``\ *xxxxxx* folder will be created in the system
+configured temporary directory. At run time the location of the temporary directory
+can be configured by using the appropriate environment variables for the target
+operating system.
 
-In order to work around that, there are two options. One is to set the environment
-variable ``TMPDIR`` to point to a location which allows executing programs. In
-case there is no way to set the environment variable, you can use the ``--tempdir``
-command line option to configure the bootloader to use a different location.
-
+Sometimes you may want to control the location of the temporary directory at
+compile time. You may not want your application to depend on specific properties
+of the target environment, or you may not want to require the end-user to change
+their system configuration. In order to control the location of the temporary
+directory at compile time, the ``--tempdir`` allows setting the temporary
+directory when building the application bundle.
 
 .. _supporting multiple platforms:
 
