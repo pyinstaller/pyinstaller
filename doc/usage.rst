@@ -240,14 +240,14 @@ Under Linux, |PyInstaller| does not bundle ``libc``
 (the C standard library, usually ``glibc``, the Gnu version) with the app.
 Instead, the app expects to link dynamically to the ``libc`` from the
 local OS where it runs.
-The interface between any app and ``libc`` is forward compatible to
+The interface between any app and ``libc`` is forward compatible to 
 newer releases, but it is not backward compatible to older releases.
 
 For this reason, if you bundle your app on the current version of Linux,
 it may fail to execute (typically with a runtime dynamic link error) if
 it is executed on an older version of Linux.
 
-The solution is to always build your app on the *oldest* version of
+The solution is to always build your app on the *oldest* version of 
 Linux you mean to support.
 It should continue to work with the ``libc`` found on newer versions.
 
