@@ -337,7 +337,7 @@ def cacheDigest(fnm, redirects):
         if is_py3:
             redirects = redirects.encode('utf-8')
         hasher.update(redirects)
-    digest = hasher.digest()
+    digest = bytearray(hasher.digest())
     return digest
 
 
