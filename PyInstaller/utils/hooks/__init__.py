@@ -612,7 +612,15 @@ def collect_submodules(package, filter=lambda name: True):
                         ## This is the original Py3 code.
                         #yield from walk_packages(path, name+'.', onerror)
 
-        for module_loader, name, ispkg in walk_packages([{}], '{}.'):
+        def AllowRuntimeExceptions(exc):
+           # some modules, such as wx.lib.pubsub, are problematic in that they purposefully raise an exception
+           # if the user tries to import them directly.  In Pyinstaller, we are just querying, so we don't want
+           # to abort the search if the module doesn't want to play nice.  Partially addresses issue #2215.
+           typ, _, _ = sys.exc_info()
+           if typ == RuntimeError: return
+           else: raise
+
+        for module_loader, name, ispkg in walk_packages([{}], '{}.', onerror=AllowRuntimeExceptions):
             print(name)
         """.format(
                   # Use repr to escape Windows backslashes.
