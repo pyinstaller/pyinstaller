@@ -157,7 +157,7 @@ def get_qmake_path(version=''):
 
     for directory in dirs:
         try:
-            qmake = os.path.join(directory, 'qmake')
+            qmake = os.path.join(directory, 'bin', 'qmake')
             versionstring = subprocess.check_output([qmake, '-query',
                                                      'QT_VERSION']).strip()
             if is_py3:
