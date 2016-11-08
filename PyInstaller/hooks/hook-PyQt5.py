@@ -21,6 +21,7 @@ from PyInstaller.compat import getsitepackages, is_darwin, is_win
 if is_win:
     from PyInstaller.utils.win32.winutils import extend_system_path
     extend_system_path([os.path.join(x, 'PyQt5') for x in getsitepackages()])
+    extend_system_path([os.path.join(x, 'PyQt5\\Qt\\bin') for x in getsitepackages()])
 
 
 # In the new consolidated mode any PyQt depends on _qt
