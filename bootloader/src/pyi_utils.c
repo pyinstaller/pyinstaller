@@ -682,9 +682,10 @@ set_dynamic_library_path(const char* path)
      * that we have bundled.
      */
     orig_path = pyi_getenv(env_var);
-    pyi_setenv(env_var_orig, orig_path);
-    VS("LOADER: %s=%s\n", env_var_orig, orig_path);
-
+    if (orig_path) {
+        pyi_setenv(env_var_orig, orig_path);
+        VS("LOADER: %s=%s\n", env_var_orig, orig_path);
+    }
     /* prepend our path to the original path */
     new_path = pyi_strjoin(path, ":", orig_path);
     rc = pyi_setenv(env_var, new_path);
