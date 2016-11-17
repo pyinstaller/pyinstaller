@@ -16,6 +16,7 @@ hiddenimports = ["sip",
                  "PyQt5.QtGui",
                  "PyQt5.QtNetwork",
                  "PyQt5.QtWebChannel",
+                 "PyQt5.QtWebEngineCore",
                  ]
 
 # Find the additional files necessary for QtWebEngine.
