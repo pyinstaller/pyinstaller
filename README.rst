@@ -106,6 +106,8 @@ Requirements and Tested Platforms
  - objcopy: Console application to copy and translate object files.
    This typically can be found in the distribution-package `binutils`,
    too.
+ - build-essential python-dev - This package is required for if you are
+   using pyinstaller on Ubuntu. Install using sudo apt-get build-essential python-dev
 
 - Mac OS X (64bit):
 
