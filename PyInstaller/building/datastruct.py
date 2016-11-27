@@ -42,18 +42,18 @@ def unique_name(entry):
 class TOC(list):
     # TODO Simplify the representation and use directly Modulegraph objects.
     """
-    TOC (Table of Contents) class is a list of tuples of the form (name, path, tytecode).
+    TOC (Table of Contents) class is a list of tuples of the form (name, path, typecode).
 
-    typecode    name                   path                        description
+    name                    path                        typecode       description
     --------------------------------------------------------------------------------------
-    EXTENSION   Python internal name.  Full path name in build.    Extension module.
-    PYSOURCE    Python internal name.  Full path name in build.    Script.
-    PYMODULE    Python internal name.  Full path name in build.    Pure Python module (including __init__ modules).
-    PYZ         Runtime name.          Full path name in build.    A .pyz archive (ZlibArchive data structure).
-    PKG         Runtime name.          Full path name in build.    A .pkg archive (Carchive data structure).
-    BINARY      Runtime name.          Full path name in build.    Shared library.
-    DATA        Runtime name.          Full path name in build.    Arbitrary files.
-    OPTION      The option.            Unused.                     Python runtime option (frozen into executable).
+    Python internal name.   Full path name in build.    EXTENSION      Extension module.
+    Python internal name.   Full path name in build.    PYSOURCE       Script.
+    Python internal name.   Full path name in build.    PYMODULE       Pure Python module (including __init__ modules).
+    Runtime name.           Full path name in build.    PYZ            A .pyz archive (ZlibArchive data structure).
+    Runtime name.           Full path name in build.    PKG            A .pkg archive (Carchive data structure).
+    Runtime name.           Full path name in build.    BINARY         Shared library.
+    Runtime name.           Full path name in build.    DATA           Arbitrary files.
+    The option.             Unused.                     OPTION         Python runtime option (frozen into executable).
 
     A TOC contains various types of files. A TOC contains no duplicates and preserves order.
     PyInstaller uses TOC data type to collect necessary files bundle them into an executable.
@@ -185,6 +185,7 @@ class Target(object):
         """
         data = tuple(getattr(self, g[0]) for g in self._GUTS)
         save_py_data_struct(self.tocfilename, data)
+
 
 
 class Tree(Target, TOC):
