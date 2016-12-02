@@ -9,7 +9,7 @@
 
 
 import os
-import sys
+import platform
 
 from PyInstaller.utils.hooks import (
     get_module_attribute, is_module_satisfies, qt_menu_nib_dir)
@@ -22,7 +22,7 @@ from PyInstaller.compat import getsitepackages, is_darwin, is_win
 if is_win:
     from PyInstaller.utils.win32.winutils import extend_system_path
     extend_system_path([os.path.join(x, 'PyQt5') for x in getsitepackages()])
-    if sys.version_info[0] >= 3:
+    if platform.system() == 'Windows':
         extend_system_path([os.path.join(x, 'PyQt5', 'Qt', 'bin') for x in getsitepackages()])
 
 
