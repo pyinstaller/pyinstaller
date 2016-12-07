@@ -20,6 +20,7 @@ import platform
 import site
 import subprocess
 import sys
+from .lib.modulegraph.util import open_pysrc
 
 
 # Distinguish code for different major Python version.
@@ -889,3 +890,12 @@ def check_requirements():
             raise SystemExit('PyInstaller cannot check for assembly dependencies.\n'
                              'Please install PyWin32.\n\n'
                              'pip install pypiwin32\n')
+
+
+def read_pysrc(filename):
+    """
+    Read Python source file with proper detection of its encoding
+    """
+    with open_pysrc(filename) as fh:
+        code = fh.read().replace('\\r\\n', '\\n')
+    return code + '\n'

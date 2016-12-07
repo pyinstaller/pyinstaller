@@ -1,11 +1,14 @@
 from __future__ import absolute_import
 
+import io
 import os
 import imp
 import sys
 import re
 import marshal
 import warnings
+import tokenize
+from contextlib import contextmanager
 
 try:
     unicode
@@ -117,3 +120,16 @@ def guess_encoding(fp):
             return m.group(1).decode('ascii')
 
     return default_encoding
+
+@contextmanager
+def open_pysrc(filename):
+    if getattr(tokenize, 'open', None) is not None:
+        pysrc_f = tokenize.open(filename)
+    else:
+        with io.open(filename, 'rb') as tmp_f:
+            encoding = guess_encoding(tmp_f)
+        pysrc_f = io.open(filename, 'r', encoding=encoding)
+
+    yield pysrc_f
+
+    pysrc_f.close()

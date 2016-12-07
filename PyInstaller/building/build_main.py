@@ -28,7 +28,7 @@ from .. import HOMEPATH, DEFAULT_DISTPATH, DEFAULT_WORKPATH
 from .. import compat
 from .. import log as logging
 from ..utils.misc import absnormpath
-from ..compat import is_py2, is_win, PYDYLIB_NAMES, VALID_MODULE_TYPES
+from ..compat import is_py2, is_win, read_pysrc, PYDYLIB_NAMES, VALID_MODULE_TYPES
 from ..depend import bindepend
 from ..depend.analysis import initialize_modgraph
 from .api import PYZ, EXE, COLLECT, MERGE
@@ -728,9 +728,8 @@ def build(spec, distpath, workpath, clean_build):
     from ..config import CONF
     CONF['workpath'] = workpath
 
-    # Executing the specfile.
-    with open(spec, 'r') as f:
-        text = f.read()
+    # Executing the specfile
+    text = read_pysrc(spec)
     exec(text, spec_namespace)
 
 
