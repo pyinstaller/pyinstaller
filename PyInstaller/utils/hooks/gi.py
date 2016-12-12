@@ -111,6 +111,9 @@ def gir_library_path_fix(path):
 
     path = os.path.abspath(path)
     common_path = os.path.commonprefix([base_prefix, path])
+    # on windows the gir file is not in the same directory as linux.
+    if is_win:
+        common_path = os.path.join([common_path, "Lib", "site-packages", "gnome"])
     gir_path = os.path.join(common_path, 'share', 'gir-1.0')
 
     typelib_name = os.path.basename(path)
