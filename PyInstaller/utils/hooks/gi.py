@@ -109,7 +109,11 @@ def gir_library_path_fix(path):
     # 'PyInstaller.config' cannot be imported as other top-level modules.
     from ...config import CONF
 
+    # if typelib file exist is not necessary to check gir file.
     path = os.path.abspath(path)
+    if os.path.exists(path):
+        return path, 'gi_typelibs'
+        
     common_path = os.path.commonprefix([base_prefix, path])
     # on windows the gir file is not in the same directory as linux.
     if is_win:
