@@ -54,6 +54,9 @@ if sys.version_info[0] == 2:
 else:
     _READ_MODE = "r"
 
+import codecs
+BOM = codecs.BOM_UTF8.decode('utf-8')
+
 
 _HAVE_ARGUMENT_OPCODE = _Bchr(dis.HAVE_ARGUMENT)
 """
@@ -1418,6 +1421,9 @@ class ModuleGraph(ObjectGraph):
 
             with open(pathname, _READ_MODE, encoding=encoding) as fp:
                 contents = fp.read() + '\n'
+            if contents.startswith(BOM):
+                # Ignore BOM at start of input
+                contents = contents[1:]
 
         else:
             with open(pathname, _READ_MODE) as fp:
