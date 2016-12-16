@@ -59,6 +59,7 @@ hiddenimports = (
 #
 # So, include modules under "sphinx.websupport.search".
                   collect_submodules('sphinx.websupport.search') +
+                  collect_submodules('sphinx.domains') +
 #
 # From sphinx.util.inspect line 21:
 #
