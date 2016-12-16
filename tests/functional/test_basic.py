@@ -426,12 +426,10 @@ def test_threading_module(pyi_builder):
     pyi_builder.test_source(
         """
         import threading
-        print(threading.__file__)
 
         def doit(nm):
             print(('%s started' % nm))
             import pyi_testmod_threading
-            print(pyi_testmod_threading.__file__)
             print(('%s %s' % (nm, pyi_testmod_threading.x)))
 
         t1 = threading.Thread(target=doit, args=('t1',))
