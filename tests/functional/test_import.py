@@ -594,3 +594,17 @@ def test_app_with_plugin(pyi_builder, data_dir, monkeypatch):
     # command-line, us this here instead of monkeypatching Analysis.
     datas = [('data/*/static_plugin.py', '.')]
     pyi_builder.test_script('pyi_app_with_plugin.py')
+
+
+def test_excluded_imports(pyi_builder, script_dir):
+    pyi_builder.test_source(
+        """
+        import sys
+        import pyi_testmod_excluded_imports
+
+        if getattr(sys, 'frozen'):
+            assert not getattr(pyi_testmod_excluded_imports, "sub", False),\\
+            "pyi_testmod_excluded_imports.sub not excluded"
+        """,
+        ['--additional-hooks-dir=%s' % script_dir.join('pyi_hooks')]
+    )

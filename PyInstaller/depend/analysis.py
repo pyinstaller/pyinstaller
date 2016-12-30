@@ -34,6 +34,7 @@ about them, replacing what the old ImpTracker list could do.
 
 from __future__ import print_function
 
+import copy
 import os
 import re
 import sys
@@ -49,7 +50,7 @@ from ..compat import importlib_load_source, is_py2, PY3_BASE_MODULES,\
         PURE_PYTHON_MODULE_TYPES, BINARY_MODULE_TYPES, VALID_MODULE_TYPES, \
         BAD_MODULE_TYPES, MODULE_TYPES_TO_TOC_DICT
 from ..lib.modulegraph.find_modules import get_implies
-from ..lib.modulegraph.modulegraph import ModuleGraph, DEFAULT_IMPORT_LEVEL, ExcludedModule, MissingModule
+from ..lib.modulegraph.modulegraph import ModuleGraph, DEFAULT_IMPORT_LEVEL, ExcludedModule, MissingModule, Script
 from ..utils.hooks import collect_submodules, is_package
 from ..utils.misc import load_py_data_struct
 
@@ -97,6 +98,7 @@ class PyiModuleGraph(ModuleGraph):
         self.module_hook_cache = None
         self.excludedimports = set()
         self.script = None
+        self.level = 0
 
         # Absolute paths of all user-defined hook directories.
         self._user_hook_dirs = \
@@ -222,21 +224,43 @@ class PyiModuleGraph(ModuleGraph):
             return super(PyiModuleGraph, self).run_script(pathname, caller=caller)
 
     def _process_imports(self, source_module):
-        if self.script and not source_module.filename.startswith(os.path.dirname(self.script)):
-            processed_imports = []
-            for deferred_import in source_module._deferred_imports:
+        # If module is importable record any excludedimports from its hook for use later
+        if self.module_hook_cache is not None and source_module and \
+                source_module.__class__.__name__ not in BAD_MODULE_TYPES:
+            if source_module.identifier in self.module_hook_cache:
+                for module_hook in self.module_hook_cache[source_module.identifier]:
+                    for excludedimport in module_hook.excludedimports:
+                        if not self.findNode(excludedimport):
+                            self.excludedimports.add(excludedimport)
+        if self.script and not source_module.__class__ == Script:
+            temp_submodules = set()
+            temp_module = source_module
+            for deferred_import in copy.deepcopy(temp_module._deferred_imports):
                 have_star, import_info, kwargs = deferred_import
-                imports = import_info[0].split('.')
-                if len(imports) > 1:
-                    imports = imports[:-1]
-                base_module_name = '.'.join(imports)
-                existing_node = self.findNode(base_module_name)
-                if base_module_name not in self.excludedimports or existing_node:
-                    processed_imports.append(deferred_import)
-                else:
-                    logger.debug("Excluding %s", import_info[0])
-            source_module._deferred_imports = processed_imports
-        return super(PyiModuleGraph, self)._process_imports(source_module)
+                module, _, submodules, _ = import_info
+                if submodules:
+                    temp_submodules.update(submodules)
+                for excludedimport in self.excludedimports:
+                    if module.startswith(excludedimport) and not self.findNode(excludedimport):
+                        logger.debug("Excluding %s", module)
+                        temp_module._deferred_imports.remove(deferred_import)
+                        break
+                    elif submodules:
+                        index = temp_module._deferred_imports.index(deferred_import)
+                        for submodule in copy.deepcopy(submodules):
+                            full_module = module + '.' + submodule
+                            if full_module.startswith(excludedimport) and not self.findNode(excludedimport):
+                                logger.debug("Excluding %s", full_module)
+                                temp_module._deferred_imports[index][1][2].remove(submodule)
+            for submodule in temp_submodules:
+                if temp_module._global_attr_names and submodule in temp_module._global_attr_names:
+                    temp_module._global_attr_names.remove(submodule)
+            source_module = temp_module
+        # print('  ' * self.level, source_module.identifier, self.excludedimports)
+        self.level += 1
+        processed_imports = super(PyiModuleGraph, self)._process_imports(source_module)
+        self.level -= 1
+        return processed_imports
 
     def _safe_import_module(self, module_basename, module_name, parent_package):
         """
@@ -290,11 +314,6 @@ class PyiModuleGraph(ModuleGraph):
         return super(PyiModuleGraph, self)._safe_import_module(
             module_basename, module_name, parent_package)
 
-        # If module is importable record any excludedimports from its hook for use later
-        if self.module_hook_cache is not None and module and module.__class__.__name__ not in BAD_MODULE_TYPES:
-            if module_name in self.module_hook_cache:
-                for module_hook in self.module_hook_cache[module_name]:
-                    self.excludedimports.update(module_hook.excludedimports)
         return module
 
     def _safe_import_hook(self, target_module_name, source_module, fromlist,
