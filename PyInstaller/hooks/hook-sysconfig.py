@@ -15,6 +15,7 @@
 
 import sysconfig
 import os
+import sys
 
 from PyInstaller.utils.hooks import relpath_to_config_or_make
 
@@ -31,3 +32,8 @@ datas = [(_CONFIG_H, relpath_to_config_or_make(_CONFIG_H))]
 # The Makefile does not exist on all platforms, eg. on Windows
 if os.path.exists(_MAKEFILE):
     datas.append((_MAKEFILE, relpath_to_config_or_make(_MAKEFILE)))
+
+# See https://github.com/pyinstaller/pyinstaller/pull/2341#issuecomment-269879426
+# See https://github.com/python/cpython/blob/f8ec1c42360ecaeb5acca4ebcec3b3e46a4e3755/Lib/sysconfig.py#L417
+if sys.version_info >= (3, 6):
+    hiddenimports = [sysconfig._get_sysconfigdata_name()]
