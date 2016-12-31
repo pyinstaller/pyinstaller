@@ -2627,50 +2627,72 @@ class ModuleGraph(ObjectGraph):
                 if isinstance(c, cotype):
                     self._scan_bytecode_stores(c, m)
 
-        def _scan_bytecode(self, co, m):
-            constants = co.co_consts
-            n = len(code)
-            i = 0
+        def _scan_bytecode(
+            self, module, module_code_object, is_scanning_imports):
+            constants = module_code_object.co_consts
+            # List of all bytes comprising this source module's compiled bytecode. (n)
+            code_bytes = module_code_object.co_code
+
+            # Number of such bytes.
+            num_code_bytes = len(code_bytes)
+
+            # Index of the current byte in this list being parsed. (i)
+            code_byte_index = 0
+
 
             level = None
             fromlist = None
 
-            all_instructions = dis.get_instructions(co)
+            all_instructions = dis.get_instructions(module_code_object)
 
             for inst_idx, inst in enumerate(all_instructions):
                 if inst.opname == 'IMPORT_NAME':
-                    assert all_instructions[idx-2].opname == 'LOAD_CONST'
-                    assert all_instructions[idx-1].opname == 'LOAD_CONST'
+                    # If this method is ignoring import statements, skip to the
+                    # next opcode.
+                    if not is_scanning_imports:
+                        continue
 
-                    level = co.co_consts[all_instructions[idx-2].arg]
-                    fromlist = co.co_consts[all_instructions[idx-1].arg]
+                    assert all_instructions[code_byte_index-2].opname == 'LOAD_CONST'
+                    assert all_instructions[code_byte_index-1].opname == 'LOAD_CONST'
 
-                    assert fromlist is None or type(fromlist) is tuple
-                    name = co.co_names[inst.arg]
+                    level = module_code_object.co_consts[all_instructions[code_byte_index-2].arg]
+                    target_attr_names = module_code_object.co_consts[all_instructions[code_byte_index-1].arg]
+
+                    assert target_attr_names is None or type(target_attr_names) is tuple
+                    target_module_partname = module_code_object.co_names[inst.arg]
                     have_star = False
-                    if fromlist is not None:
-                        fromlist = set(fromlist)
-                        if '*' in fromlist:
-                            fromlist.remove('*')
+                    if target_attr_names is not None:
+                        target_attr_names = set(fromlist)
+                        if '*' in target_attr_names:
+                            target_attr_names.remove('*')
                             have_star = True
 
-                    imported_module = self._safe_import_hook(name, m, fromlist, level)[0]
-
-                    if have_star:
-                        m.globalnames.update(imported_module.globalnames)
-                        m.starimports.update(imported_module.starimports)
-                        if imported_module.code is None:
-                            m.starimports.add(name)
+                    # Record this import as originating from this module for
+                    # subsequent handling by the _process_imports() method.
+                    module._deferred_imports.append((
+                        have_star,
+                        (target_module_partname, module, target_attr_names, level),
+                        {}
+                    ))
 
                 elif inst.opname in ('STORE_NAME', 'STORE_GLOBAL'):
                     # keep track of all global names that are assigned to
-                    name = co.co_names[inst.arg]
-                    m.globalnames.add(name)
+                    name = module_code_object.co_names[inst.arg]
+                    module.add_global_attr(name)
 
-            cotype = type(co)
-            for c in constants:
-                if isinstance(c, cotype):
-                    self._scan_bytecode(c, m)
+                elif inst.opname in ('DELETE_NAME', 'DELETE_GLOBAL'):
+                    name = module_code_object.co_names[inst.arg]
+                    module.remove_global_attr_if_found(name)
+
+            # Type of all code objects.
+            code_object_type = type(module_code_object)
+
+            # For each constant in this code object that is itself a code object,
+            # parse this constant in the same manner.
+            for constant in constants:
+                if isinstance(constant, code_object_type):
+                    self._scan_bytecode(module, constant, is_scanning_imports)
+
     else:
         #FIXME: Optimize. Global attributes added by this method are tested by
         #other methods *ONLY* for packages, implying this method should scan and
