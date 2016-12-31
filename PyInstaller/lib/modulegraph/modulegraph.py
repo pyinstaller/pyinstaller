@@ -2719,8 +2719,14 @@ class ModuleGraph(ObjectGraph):
             list of names is the unsigned short (i.e., 2-byte integer) argument
             passed to the current bytecode operation.
             """
-            co_names_index = get_operation_arg()
-            return module_code_object.co_names[co_names_index]
+            try:
+                co_names_index = get_operation_arg()
+                return module_code_object.co_names[co_names_index]
+            except IndexError as e:
+                print('co_names_index: {}'.format(co_names_index))
+                print('co_names: {}'.format(module_code_object.co_names))
+                print(repr(self))
+                raise e
 
         # For each byte index into this list of bytecode bytes...
         while code_byte_index < num_code_bytes:
