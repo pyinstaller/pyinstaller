@@ -2615,18 +2615,6 @@ class ModuleGraph(ObjectGraph):
         # Note: This nicely sidesteps any issues caused by moving from bytecode
         # to wordcode in python 3.6.
 
-        def _scan_bytecode_stores(self, co, m):
-            constants = co.co_consts
-            for inst in dis.get_instructions(co):
-                if inst.opname in ('STORE_NAME', 'STORE_GLOBAL'):
-                    name = co.co_names[inst.arg]
-                    m.globalnames.add(name)
-
-            cotype = type(co)
-            for c in constants:
-                if isinstance(c, cotype):
-                    self._scan_bytecode_stores(c, m)
-
         def _scan_bytecode(
             self, module, module_code_object, is_scanning_imports):
             constants = module_code_object.co_consts
