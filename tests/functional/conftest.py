@@ -195,6 +195,13 @@ class AppBuilder(object):
         :param runtime: Time in seconds how long to keep executable running.
         :param toc_log: List of modules that are expected to be bundled with the executable.
         """
+
+        def marker(line):
+            # Print some marker to stdout and stderr to make it easier
+            # to distinguish the phases in the CI test output.
+            print('-------', line, '-------')
+            print('-------', line, '-------', file=sys.stderr)
+
         if pyi_args is None:
             pyi_args = []
         if app_args is None:
@@ -212,9 +219,12 @@ class AppBuilder(object):
         self.script = script
         assert os.path.exists(self.script), 'Script %s not found.' % script
 
+        marker('Starting build.')
         assert self._test_building(args=pyi_args), 'Building of %s failed.' % script
+        marker('Build finshed, now running executable.')
         self._test_executables(app_name, args=app_args,
                                runtime=runtime, run_from_path=run_from_path)
+        marker('Running executable finished.')
 
     def _test_executables(self, name, args, runtime, run_from_path):
         """
