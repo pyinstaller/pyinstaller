@@ -54,6 +54,9 @@ if sys.version_info[0] == 2:
 else:
     _READ_MODE = "r"
 
+import codecs
+BOM = codecs.BOM_UTF8.decode('utf-8')
+
 
 _HAVE_ARGUMENT_OPCODE = _Bchr(dis.HAVE_ARGUMENT)
 """
@@ -233,9 +236,11 @@ _packagePathMap = {}
 # The value is a list of such prefixes as the prefix varies with versions of
 # setuptools.
 _SETUPTOOLS_NAMESPACEPKG_PTHs=(
+    "import sys, types, os;has_mfs = sys.version_info > (3, 5);p = os.path.join(sys._getframe(1).f_locals['sitedir'], *('",
     "import sys,types,os; p = os.path.join(sys._getframe(1).f_locals['sitedir'], *('",
     "import sys,new,os; p = os.path.join(sys._getframe(1).f_locals['sitedir'], *('",
     "import sys, types, os;p = os.path.join(sys._getframe(1).f_locals['sitedir'], *('",
+    "import sys, types, os;pep420 = sys.version_info > (3, 3);p = os.path.join(sys._getframe(1).f_locals['sitedir'], *('",
 )
 
 
@@ -1416,6 +1421,9 @@ class ModuleGraph(ObjectGraph):
 
             with open(pathname, _READ_MODE, encoding=encoding) as fp:
                 contents = fp.read() + '\n'
+            if contents.startswith(BOM):
+                # Ignore BOM at start of input
+                contents = contents[1:]
 
         else:
             with open(pathname, _READ_MODE) as fp:
