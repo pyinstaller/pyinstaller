@@ -558,8 +558,10 @@ class EXE(Target):
                 'objcopy', '--add-section', 'pydata=%s' % self.pkg.name,
                 self.name)
             logger.debug("objcopy returned %i", retcode)
-            logger.debug(stdout)
-            logger.debug(stderr)
+            if stdout:
+                logger.debug(stdout)
+            if stderr:
+                logger.debug(stderr)
             if retcode != 0:
                 raise SystemError("objcopy Failure: %s" % stderr)
         else:
