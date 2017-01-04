@@ -159,7 +159,7 @@ class AppBuilder(object):
         All other arguments are passed streigth on to `test_script`.
 
         Ensure that the caller of `test_source` is in a UTF-8
-        encoded file with the correct "# -*- coding: utf-8 -*-" marker.
+        encoded file with the correct '# -*- coding: utf-8 -*-' marker.
 
         """
         if is_py2:
