@@ -9,7 +9,7 @@ Windows
 |PyInstaller| runs in Windows XP or newer.
 It can create graphical windowed apps (apps that do not need a command window).
 
-|PyInstaller| requires two Python modules in in a Windows system.
+|PyInstaller| requires two Python modules in a Windows system.
 It requires either the PyWin32_ or pypiwin32_ Python extension for Windows.
 If you install |PyInstaller| using pip, and PyWin32 is not already installed,
 pypiwin32 is automatically installed.
