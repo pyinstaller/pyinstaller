@@ -21,7 +21,7 @@ The spec file is the description of what you want |PyInstaller| to do
 with your program. ``pyi-makespec`` is a simple wizard to create spec
 files that cover basic usages::
 
-       pyi-Makespec [--onefile] yourprogram.py
+       pyi-makespec [--onefile] yourprogram.py
 
 By default, ``pyi-makespec`` generates a spec file that tells
 |PyInstaller| to create a distribution directory contains the main
