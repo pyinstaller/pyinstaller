@@ -126,6 +126,8 @@ class PYZ(Target):
         }
 
         pyz = ZlibArchiveWriter(self.name, toc, code_dict=self.code_dict, cipher=self.cipher)
+        logger.info("Building PYZ (ZlibArchive) %s completed successfully.",
+                    self.name)
 
 
 class PKG(Target):
@@ -275,6 +277,8 @@ class PKG(Target):
 
         for item in trash:
             os.remove(item)
+        logger.info("Building PKG (CArchive) %s completed successfully.",
+                    os.path.basename(self.name))
 
 
 class EXE(Target):
@@ -586,6 +590,8 @@ class EXE(Target):
         self.mtm = misc.mtime(self.name)
         for item in trash:
             os.remove(item)
+        logger.info("Building EXE from %s completed successfully.",
+                    self.tocbasename)
 
 
     def _copyfile(self, infile, outfile):
@@ -682,6 +688,8 @@ class COLLECT(Target):
                     logger.warn("failed to copy flags of %s", fnm)
             if typ in ('EXTENSION', 'BINARY'):
                 os.chmod(tofnm, 0o755)
+        logger.info("Building COLLECT %s completed successfully.",
+                    self.tocbasename)
 
 
 class MERGE(object):
