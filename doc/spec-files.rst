@@ -52,7 +52,7 @@ When you build from a spec file, those options cannot be changed.
 If they are given on the command line they are ignored and
 replaced by the options in the spec file.
 
-Only the following command-line options have an effect when building from a spec file:
+Only the following command-line options have an effect when building from a spec file::
 
     --upx-dir=
     --distpath=
