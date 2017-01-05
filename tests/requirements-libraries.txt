@@ -19,7 +19,11 @@ pygments
 pylint>=1.5
 markdown
 simplejson # simplejson is used for text_c_extension
-sphinx
+
+# sphinx 1.5 requires Python 2.7 or >= 3.4
+sphinx<1.5 ; python_version == '3.3'
+sphinx ; python_version != '3.3'
+
 pyzmq
 zope.interface  # Required for test_namespace_package
 numpy
