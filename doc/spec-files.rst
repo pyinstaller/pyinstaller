@@ -54,12 +54,12 @@ replaced by the options in the spec file.
 
 Only the following command-line options have an effect when building from a spec file:
 
-*  --upx-dir=
-*  --distpath=
-*  --workpath=
-*  --noconfirm
-*  --ascii
-*  --clean
+    --upx-dir=
+    --distpath=
+    --workpath=
+    --noconfirm
+    --ascii
+    --clean
 
 
 Spec File Operation
