@@ -302,7 +302,10 @@ def test_PyQt5_uic(tmpdir, pyi_builder, data_dir):
 
 @importorskip('zope.interface')
 def test_zope_interface(pyi_builder):
-    # Tests that modules without __init__.py file are bundled properly.
+    # Tests that `nspkg.pth`-based namespace package are bundled properly.
+    # The `nspkg.pth` file is created by setuptools and thus changes
+    # frequently. If this test fails most propably
+    # _SETUPTOOLS_NAMESPACEPKG_PTHs in modulegraph needs to be updated.
     pyi_builder.test_source(
         """
         # Package 'zope' does not contain __init__.py file.
