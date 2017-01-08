@@ -143,7 +143,7 @@ install:
 
   ### Install the PyInsaller dependencies.
   # Upgrade to the latest pip.
-  - "%CMD_IN_ENV% python -m pip install -U pip"
+  - "%CMD_IN_ENV% python -m pip install -U pip setuptools wheel"
 
   # Install lxml from anaconda.org channel since PyPI fails (or it takes too long).
   # See: https://github.com/pyinstaller/pyinstaller/pull/1638
