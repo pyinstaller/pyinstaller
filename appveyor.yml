@@ -119,7 +119,7 @@ environment:
 
 cache:
   # Cache downloaded pip packages.
-  - "C:\\Users\\appveyor\\AppData\\Local\\pip"
+  - "%LOCALAPPDATA%\\pip"
 
 init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
