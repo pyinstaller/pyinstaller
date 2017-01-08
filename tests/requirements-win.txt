@@ -1,3 +1,5 @@
+--extra-index-url https://pypi.anaconda.org/giumas/simple
+--extra-index-url https://pypi.anaconda.org/xoviat/simple
 # Windows-specific test libraries.
 #
 # Libraries listed below are only installed by Windows-specific continuous
