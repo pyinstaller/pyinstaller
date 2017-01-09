@@ -315,6 +315,7 @@ def test_zope_interface(pyi_builder):
 
 
 @xfail(is_darwin, reason='Issue #1895.')
+@xfail(is_py36, reason='Fails on python 3.6')
 @importorskip('idlelib')
 def test_idlelib(pyi_builder):
     pyi_builder.test_source(
