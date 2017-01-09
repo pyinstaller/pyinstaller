@@ -18,6 +18,7 @@ import os
 import sys
 
 from PyInstaller.utils.hooks import relpath_to_config_or_make
+from PyInstaller import is_win
 
 _CONFIG_H = sysconfig.get_config_h_filename()
 if hasattr(sysconfig, 'get_makefile_filename'):
@@ -35,5 +36,5 @@ if os.path.exists(_MAKEFILE):
 
 # See https://github.com/pyinstaller/pyinstaller/pull/2341#issuecomment-269879426
 # See https://github.com/python/cpython/blob/f8ec1c42360ecaeb5acca4ebcec3b3e46a4e3755/Lib/sysconfig.py#L417
-if sys.version_info >= (3, 6):
+if sys.version_info >= (3, 6) and not is_win:
     hiddenimports = [sysconfig._get_sysconfigdata_name()]
