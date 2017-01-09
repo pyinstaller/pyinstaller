@@ -2158,17 +2158,22 @@ class ModuleGraph(ObjectGraph):
 
         m = self.createNode(cls, fqname)
         m.filename = pathname
-        if co is not None:
-            if isinstance(co, ast.AST):
-                co_ast = co
-                co = compile(co_ast, pathname, 'exec', 0, True)
-            else:
-                co_ast = None
-            self._scan_code(m, co, co_ast)
+        try:
+            if co is not None:
+                if isinstance(co, ast.AST):
+                    co_ast = co
+                    co = compile(co_ast, pathname, 'exec', 0, True)
+                else:
+                    co_ast = None
+                self._scan_code(m, co, co_ast)
 
-            if self.replace_paths:
-                co = self._replace_paths_in_code(co)
-            m.code = co
+                if self.replace_paths:
+                    co = self._replace_paths_in_code(co)
+                m.code = co
+        except SyntaxError:
+            self.msg(2, "load_module: InvalidSourceModule", pathname)
+            cls = InvalidSourceModule
+            m = self.createNode(cls, fqname)
 
         self.msgout(2, "load_module ->", m)
         return m
