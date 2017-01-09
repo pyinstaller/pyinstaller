@@ -352,6 +352,7 @@ def test_numpy(pyi_builder):
 
 
 @importorskip('openpyxl')
+@xfail(is_py36 and not is_win, reason='Issue #2363.')
 def test_openpyxl(pyi_builder):
     pyi_builder.test_source(
         """
