@@ -44,7 +44,7 @@ def build_bootloader(boxname)
     cd /vagrant
     cd bootloader
     python ./waf clean
-    python ./waf configure --no-lsb all
+    python ./waf --no-lsb all
   EOF
 end
 
