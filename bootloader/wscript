@@ -123,26 +123,25 @@ def options(ctx):
                    default=None,
                    dest='target_cpu')
 
-    if is_linux:
-        grp = ctx.add_option_group('Linux Standard Base (LSB)',
-                                   'These options have effect only on Linux.')
-        grp.add_option('--no-lsb',
-                       action='store_true',
-                       help='Prevent building LSB (Linux Standard Base) bootloader.',
-                       default=False,
-                       dest='nolsb')
-        grp.add_option('--lsbcc-path',
-                       action='store',
-                       help='Path where to look for lsbcc. By default PATH is '
-                            'searched for lsbcc otherwise is tried file '
-                            '/opt/lsb/bin/lsbcc. [Default: lsbcc]',
-                       default=None,
-                       dest='lsbcc_path')
-        grp.add_option('--lsb-target-version',
-                       action='store',
-                       help='Specify LSB target version [Default: 4.0]',
-                       default='4.0',
-                       dest='lsb_version')
+    grp = ctx.add_option_group('Linux Standard Base (LSB)',
+                               'These options have effect only on Linux.')
+    grp.add_option('--no-lsb',
+                   action='store_true',
+                   help='Prevent building LSB (Linux Standard Base) bootloader.',
+                   default=False,
+                   dest='nolsb')
+    grp.add_option('--lsbcc-path',
+                   action='store',
+                   help='Path where to look for lsbcc. By default PATH is '
+                        'searched for lsbcc otherwise is tried file '
+                        '/opt/lsb/bin/lsbcc. [Default: lsbcc]',
+                   default=None,
+                   dest='lsbcc_path')
+    grp.add_option('--lsb-target-version',
+                   action='store',
+                   help='Specify LSB target version [Default: 4.0]',
+                   default='4.0',
+                   dest='lsb_version')
 
 
 @conf
