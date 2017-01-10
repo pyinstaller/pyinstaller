@@ -43,14 +43,18 @@ word-sizes, you may use the enclosed ``Vagrantfile``. Example::
 Target Linux
 ---------------
 
-.. note:: These boxes will be unified.
+The box ``linux64`` builds both 32- and 64-bit bootloaders.
 
-Currently the boxes ``linux32`` and ``linux64`` are supported.
 Example usage::
 
-  rm -f ../PyInstaller/bootloader/Linux-32*/*
-  vagrant up linux32 --provision   # will also rebuild
-  vagrant halt linux32
+  rm -f ../PyInstaller/bootloader/Linux-*/*
+  vagrant up linux64       # will also build the build loader
+
+  vagrant scp linux64:/vagrant/PyInstaller/bootloader/Linux-* \
+               ../PyInstaller/bootloader/
+
+  vagrant halt linux64
+
   # verify the bootloader has been rebuild
   git status ../PyInstaller/bootloader/
 
