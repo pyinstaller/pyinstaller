@@ -49,12 +49,24 @@ def build_bootloader(boxname)
 end
 
 Vagrant.configure(2) do |config|
-  # not let the VM access .. (which is the PyInstaller base directory)
-  # on the host machine via the default shared folder
-  config.vm.synced_folder "..", "/vagrant"
 
-  # fix permissions on synced folder
-  #config.vm.provision "fix perms", :type => :shell, :inline => fix_perms
+  # Do not let the VM access . on the host machine via the default
+  # shared folder! But ...
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+
+  # ... use rsync to copy content to the folder. Need to use the
+  # parent directory since for building the windows bootloader we need
+  # to access some image files in ../PyInstaller/bootloader/images/.
+  #
+  # We use rsynced folders since these are the only ones I got to work
+  # in Windows and they do not require VirtualBxo addons in the guest,
+  # which will allow us to switch to the official Debian boxes later.
+  config.vm.synced_folder "..", "/vagrant", :type => "rsync",
+      :rsync__args => ["--verbose", "--archive", "--delete", "-z",
+                       "--include=bootloader", "--include=PyInstaller",
+                       "--exclude=/*", "--cvs-exclude", "--exclude=*.pyc",
+                       "--exclude=bootloader/build"],
+      :rsync__chown => true
 
   config.vm.provider :virtualbox do |v|
     #v.gui = true
