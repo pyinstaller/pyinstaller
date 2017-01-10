@@ -49,6 +49,8 @@ def build_bootloader(boxname)
 end
 
 Vagrant.configure(2) do |config|
+  # Do not leak information about usage by by update-checks.
+  config.vm.box_check_update = false
 
   # Do not let the VM access . on the host machine via the default
   # shared folder! But ...
