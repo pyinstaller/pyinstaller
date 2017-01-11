@@ -210,10 +210,6 @@ def detect_arch(ctx):
     # Pass return values as environment variables.
     ctx.env.PYI_ARCH = arch  # '32bit' or '64bit'
 
-    if arch == '64bit':
-        ctx.env['MSVC_TARGETS'] = ['x64']
-    elif arch == '32bit':
-        ctx.env['MSVC_TARGETS'] = ['x86']
 
 
 @conf
@@ -225,11 +221,13 @@ def set_arch_flags(ctx):
     if is_win and ctx.env.CC_NAME == 'msvc':
         # Set msvc linkflags based on architecture.
         if ctx.env.PYI_ARCH == '32bit':
+            ctx.env['MSVC_TARGETS'] = ['x86']
             ctx.env.append_value('LINKFLAGS', '/MACHINE:X86')
             # Set LARGE_ADDRESS_AWARE_FLAG to True.
             # On Windows this allows 32bit apps to use 4GB of memory and
             ctx.env.append_value('LINKFLAGS', '/LARGEADDRESSAWARE')
         elif ctx.env.PYI_ARCH == '64bit':
+            ctx.env['MSVC_TARGETS'] = ['x64']
             ctx.env.append_value('LINKFLAGS', '/MACHINE:X64')
 
         # Enable 64bit porting warnings and other warnings too.
