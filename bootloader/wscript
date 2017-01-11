@@ -212,7 +212,7 @@ def detect_arch(ctx):
 
     # Pass return values as environment variables.
     ctx.env.PYI_ARCH = arch  # '32bit' or '64bit'
-
+    ctx.env.PYI_SYSTEM = system
 
 
 @conf
@@ -576,7 +576,7 @@ def build(ctx):
     exe_name = variants[ctx.variant]
 
     install_path = os.path.join(os.getcwd(), '../PyInstaller/bootloader',
-                                platform.system() + "-" + ctx.env.PYI_ARCH)
+                                ctx.env.PYI_SYSTEM + "-" + ctx.env.PYI_ARCH)
     install_path = os.path.normpath(install_path)
 
     if machine():
