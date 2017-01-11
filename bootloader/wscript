@@ -196,11 +196,14 @@ def detect_arch(ctx):
     architecture as the Python interpreter.
     """
     # Get arch values either from CLI or detect it.
-    arch = ctx.options.target_arch or architecture()
+    arch = architecture()
+    system = platform.system()
+
     if ctx.options.target_arch:
-        ctx.msg('Platform', '%s-%s manually chosen' % (platform.system(), arch))
+        arch = ctx.options.target_arch
+        ctx.msg('Platform', '%s-%s manually chosen' % (system, arch))
     else:
-        ctx.msg('Platform', '%s-%s detected' % (platform.system(), arch))
+        ctx.msg('Platform', '%s-%s detected' % (system, arch))
 
     if is_darwin and arch == '64bit':
         ctx.msg('CYAN', 'WARNING: Building bootloader for Python 64-bit on Mac OSX')
