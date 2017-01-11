@@ -195,7 +195,7 @@ def detect_arch(ctx):
     Handle options --target-arch or use the same
     architecture as the Python interpreter.
     """
-    # Get arch/cpu values either from CLI or detect it.
+    # Get arch values either from CLI or detect it.
     arch = ctx.options.target_arch or architecture()
     if ctx.options.target_arch:
         ctx.msg('Platform', '%s-%s manually chosen' % (platform.system(), arch))
