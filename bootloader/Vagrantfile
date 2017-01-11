@@ -22,7 +22,8 @@ def packages_debianoid
     apt-get -y -o Dpkg::Options::="--force-confdef" \
                -o Dpkg::Options::="--force-confold" upgrade
     apt-get install -y python python-dev python-setuptools \
-                       gcc libz-dev libc6-dev-i386 zlib1g-dev:i386
+                       gcc libz-dev libc6-dev-i386 zlib1g-dev:i386 \
+                       gcc-mingw-w64
   EOF
 end
 
@@ -109,6 +110,14 @@ def build_bootloader(boxname)
   EOF
 end
 
+def build_bootloader_cross(boxname)
+  return <<-EOF
+    cd /vagrant/bootloader
+    python ./waf --no-lsb all_cross CC=i686-w64-mingw32-gcc
+    python ./waf --no-lsb all_cross CC=x86_64-w64-mingw32-gcc
+  EOF
+end
+
 Vagrant.configure(2) do |config|
   # Do not leak information about usage by by update-checks.
   config.vm.box_check_update = false
@@ -146,6 +155,9 @@ Vagrant.configure(2) do |config|
     end
     b.vm.provision "packages debianoid", :type => :shell, :inline => packages_debianoid
     b.vm.provision "build bootloader", :type => :shell, :privileged => false, :inline => build_bootloader("linux64")
+    b.vm.provision "build bootloader cross", :type => :shell,
+        :privileged => false,
+        :inline => build_bootloader_cross("linux64")
   end
 
   #--- OS X --- not yet implemented

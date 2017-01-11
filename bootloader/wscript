@@ -685,6 +685,12 @@ def all(ctx):
         Options.commands += ['install_debugw', 'install_releasew']
 
 
+def all_cross(ctx):
+    # FIXME: Commands are defined prior to detection of cross-build.
+    global is_win
+    is_win = True
+    all(ctx)
+
 # Set up building several variants of bootloader.
 from waflib.Build import BuildContext, InstallContext
 
