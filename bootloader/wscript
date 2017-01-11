@@ -117,11 +117,6 @@ def options(ctx):
                         'and 64bit Python.',
                    default=None,
                    dest='target_arch')
-    ctx.add_option('--target-cpu',
-                   action='store',
-                   help='Target CPU format (x86, amd64).',
-                   default=None,
-                   dest='target_cpu')
 
     grp = ctx.add_option_group('Linux Standard Base (LSB) compliance',
                                'These options have effect only on Linux.')
@@ -195,26 +190,15 @@ def set_lsb_compiler(ctx):
 
 
 @conf
-def detect_arch_cpu(ctx):
+def detect_arch(ctx):
     """
-    Handle options --target-arch and --target-cpu or use the same
+    Handle options --target-arch or use the same
     architecture as the Python interpreter.
     """
     # Get arch/cpu values either from CLI or detect it.
     arch = ctx.options.target_arch or architecture()
-    # 'target_cpu is useful only on Windows for now.
-    cpu = ctx.options.target_cpu or ''  # Use empty string if not specified.
-
-    # Print message based on arch/cpu.
-    if ctx.options.target_arch or ctx.options.target_cpu:
-        if cpu == 'amd64':
-            ctx.env['MSVC_TARGETS'] = ['x64']
-            arch = '64bit'  # Force 64bit for amd64 cpu.
-        elif cpu == 'x86':
-            ctx.env['MSVC_TARGETS'] = ['x86']
-            arch = '32bit'  # Force 32bit for x86 cpu.
-            ctx.msg('Platform', 'Architecture manually chosen: x86')
-        ctx.msg('Platform', '%s-%s %s  manually chosen' % (platform.system(), arch, cpu))
+    if ctx.options.target_arch:
+        ctx.msg('Platform', '%s-%s manually chosen' % (platform.system(), arch))
     else:
         ctx.msg('Platform', '%s-%s detected' % (platform.system(), arch))
 
@@ -225,7 +209,6 @@ def detect_arch_cpu(ctx):
 
     # Pass return values as environment variables.
     ctx.env.PYI_ARCH = arch  # '32bit' or '64bit'
-    ctx.env.PYI_CPU = cpu  # 'x86' or 'amd64' or empty string
 
     if arch == '64bit':
         ctx.env['MSVC_TARGETS'] = ['x64']
@@ -240,27 +223,14 @@ def set_arch_flags(ctx):
     and CPU target for compiler.
     """
     if is_win and ctx.env.CC_NAME == 'msvc':
-        # Set msvc linkflags based on --target-cpu.
-        if ctx.env.PYI_CPU:
-            if ctx.options.target_cpu == 'x86':
-                ctx.env.append_value('LINKFLAGS', '/MACHINE:X86')
-                # Set LARGE_ADDRESS_AWARE_FLAG to True.
-                # On Windows this allows 32bit apps to use 4GB of memory and
-                ctx.env.append_value('LINKFLAGS', '/LARGEADDRESSAWARE')
-            elif ctx.options.target_cpu == 'amd64':
-                ctx.env.append_value('LINKFLAGS', '/MACHINE:X64')
-            else:
-                ctx.fatal('Unrecognized target CPU: %s' % ctx.env.PYI_CPU)
         # Set msvc linkflags based on architecture.
-        else:
-            if ctx.env.PYI_ARCH == '32bit':
-                ctx.env.append_value('LINKFLAGS', '/MACHINE:X86')
-                # Set LARGE_ADDRESS_AWARE_FLAG to True.
-                # On Windows this allows 32bit apps to use 4GB of memory and
-                ctx.env.append_value('LINKFLAGS', '/LARGEADDRESSAWARE')
-
-            elif ctx.env.PYI_ARCH == '64bit':
-                ctx.env.append_value('LINKFLAGS', '/MACHINE:X64')
+        if ctx.env.PYI_ARCH == '32bit':
+            ctx.env.append_value('LINKFLAGS', '/MACHINE:X86')
+            # Set LARGE_ADDRESS_AWARE_FLAG to True.
+            # On Windows this allows 32bit apps to use 4GB of memory and
+            ctx.env.append_value('LINKFLAGS', '/LARGEADDRESSAWARE')
+        elif ctx.env.PYI_ARCH == '64bit':
+            ctx.env.append_value('LINKFLAGS', '/MACHINE:X64')
 
         # Enable 64bit porting warnings and other warnings too.
         ctx.env.append_value('CFLAGS', '/W3')
@@ -343,7 +313,7 @@ def set_arch_flags(ctx):
 
 def configure(ctx):
     # Detect architecture and CPU
-    ctx.detect_arch_cpu()
+    ctx.detect_arch()
 
     ### C compiler
 
