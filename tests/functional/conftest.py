@@ -331,7 +331,7 @@ class AppBuilder(object):
             if isinstance(prog_cwd, unicode):
                 prog_cwd = prog_cwd.encode('mbcs')
 
-        args = [prog_name] + args + ['-v']
+        args = [prog_name] + args
         # Run executable. stderr is redirected to stdout.
         print('RUNNING: ', safe_repr(exe_path), ", args: ", safe_repr(args))
 
