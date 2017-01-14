@@ -194,15 +194,15 @@ if sys.version_info >= (3, 4):
                     return self
             raise ImportError(path)
 
-        def find_spec(self, fullname, path, target=None):
+        def find_spec(self, fullname, path=None, target=None):
             """
             PEP-451 finder.find_spec() method for the ``sys.meta_path`` hook.
 
             fullname     fully qualified name of the module
             path         None for a top-level module, or package.__path__ for submodules or subpackages.
 
-            Finders must return ModuleSpec objects when find_spec() is called. This new method replaces find_module() and
-            find_loader() (in the PathEntryFinder case). If a loader does not have find_spec(), find_module() and
+            Finders must return ModuleSpec objects when find_spec() is called. This new method replaces find_module()
+            and find_loader() (in the PathEntryFinder case). If a loader does not have find_spec(), find_module() and
             find_loader() are used instead, for backward-compatibility.
             """
             # Acquire the interpreter's import lock for the current thread. This
@@ -247,8 +247,11 @@ if sys.version_info >= (3, 4):
             else:
                 origin = pyi_os_path.os_path_join(SYS_PREFIX, filename.replace('.', pyi_os_path.os_sep) + '.pyc')
 
-            return _frozen_importlib.ModuleSpec(filename, self, is_package=is_pkg, origin=filename,
-                                                loader_state=(bytecode, origin))
+            if not hasattr(self, 'module_code'):
+                self.module_code = {}
+
+            self.module_code[fullname] = bytecode
+            return _frozen_importlib.ModuleSpec(fullname, self, is_package=is_pkg, origin=origin)
 
         def create_module(self, spec):
             """
@@ -262,23 +265,50 @@ if sys.version_info >= (3, 4):
             create_module() should properly handle the case where it is called more than once for the same spec/module.
             This may include returning None or raising ImportError.
             """
-            return imp_new_module(spec.origin)
+            return imp_new_module(spec.name)
 
         def exec_module(self, module):
             """
             PEP-451 loader.exec_module() method for the ``sys.meta_path`` hook.
 
-            Loaders will have a new method, exec_module(). Its only job is to "exec" the module and consequently populate
-            the module's namespace. It is not responsible for creating or preparing the module object, nor for any cleanup
-            afterward. It has no return value. exec_module() will be used during both loading and reloading.
+            Loaders will have a new method, exec_module(). Its only job is to "exec" the module and consequently
+            populate the module's namespace. It is not responsible for creating or preparing the module object, nor
+            for any cleanup afterward. It has no return value. exec_module() will be used during both loading and
+            reloading.
 
-            exec_module() should properly handle the case where it is called more than once. For some kinds of modules this
-            may mean raising ImportError every time after the first time the method is called. This is particularly
-            relevant for reloading, where some kinds of modules do not support in-place reloading.
+            exec_module() should properly handle the case where it is called more than once. For some kinds of modules
+            this may mean raising ImportError every time after the first time the method is called. This is
+            particularly relevant for reloading, where some kinds of modules do not support in-place reloading.
             """
-            module.__file__ = module.__spec__.loader_state[1]
-            exec(module.__spec__.loader_state[0], module.__dict__)
+            if hasattr(self, 'module_code') and module.__spec__.name in self.module_code:
+                bytecode = self.module_code[module.__spec__.name]
+                del self.module_code[module.__spec__.name]
+            else:
+                bytecode = self.get_code(module.__spec__.name)
 
+            if not hasattr(module, '__file__') and module.__spec__.origin:
+                module.__file__ = module.__spec__.origin
+
+            ### Set __path__  if 'fullname' is a package.
+            # Python has modules and packages. A Python package is container
+            # for several modules or packages.
+            if hasattr(module, '__file__') and module.__spec__.submodule_search_locations is not None:
+                # If a module has a __path__ attribute, the import mechanism
+                # will treat it as a package.
+                #
+                # Since PYTHONHOME is set in bootloader, 'sys.prefix' points to the
+                # correct path where PyInstaller should find bundled dynamic
+                # libraries. In one-file mode it points to the tmp directory where
+                # bundled files are extracted at execution time.
+                #
+                # __path__ cannot be empty list because 'wx' module prepends something to it.
+                # It cannot contain value 'sys.prefix' because 'xml.etree.cElementTree' fails
+                # Otherwise.
+                #
+                # Set __path__ to point to 'sys.prefix/package/subpackage'.
+                module.__path__ = [pyi_os_path.os_path_dirname(module.__file__)]
+
+            exec(bytecode, module.__dict__)
 
         # Optional Extensions to the PEP-302 Importer Protocol
         def is_package(self, fullname):
@@ -344,6 +374,18 @@ if sys.version_info >= (3, 4):
                 # read it.
                 with open(path, 'rb') as fp:
                     return fp.read()
+
+        def find_module(self, fullname, path=None):
+            """This method is deprecated.  Use exec_module() instead."""
+            spec = self.find_spec(fullname, path)
+            if spec is not None:
+                return spec.loader
+            else:
+                return None
+
+        def load_module(self, fullname):
+            """This module is deprecated."""
+            return _frozen_importlib._bootstrap._load_module_shim(self, fullname)
 else:
 
     class FrozenPackageImporter(object):
