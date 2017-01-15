@@ -6,20 +6,39 @@ Changelog for PyInstaller
 
 - Nothing changed yet.
 
+
+3.2.1 (2017-01-15)
+------------------
+
+- New, updated and fixed hooks: botocore (#2094), gi (#2347), jira (#2222),
+  PyQt5.QtWebEngineWidgets (#2269), skimage (#2195, 2225), sphinx (#2323,)
+  xsge_gui (#2251).
+
+Fixed the following issues:
+
+- Don't fail if working directory already exists (#1994)
+- Avoid encoding errors in main script (#1976)
+- Fix hasher digest bytes not str (#2229, #2230)
+
+- (Windows) Fix additional dependency on the msvcrt10.dll (#1974)
+- (Windows) Correctly decode a bytes object produced by pefile (#1981)
 - (Windows) Package ``pefile`` with pyinstaller.  This partially
   undoes some changes in 3.2 in which the packaged pefiles were
   removed to use the pypi version instead.  The pypi version was
   considerably slower in some applications, and still has a couple
   of small issues on PY3. (#1920)
 
-  Bundled version of ``pefile`` is of now (Early June 2016) the
-  upstream tip, as it has accepted the shortcuts which speed it up
-  when used by pyinstaller, and fixed some other bugs present on
-  the PyPi version.  There is however still a minor issue with the
-  pefile installer on some PY3 non-utf8 systems. So for now, pefile
-  is once again packaged with pyinstaller. The intent is to go back
-  to the pypi version, once the known issue with the pefile
-  installer on PY3 has been resolved. (#2019)
+- (OS X) PyQt5 packaging issues on MacOS (#1874)
+- (OS X) Replace run-time search path keyword (#1965)
+- (OS X) (Re-) add argv emulation for OSX, 64-bit (#2219)
+- (OS X) use decode("utf-8") to convert bytes in getImports_macholib() (#1973)
+
+- (Bootloader) fix segfaults (#2176)
+- (setup.py) pass option --no-lsb on GNU/Linux only (#1975)
+
+- Updates and fixes in documentation, manuals, et al. (#1986, 2002, #2153,
+  #2227, #2231)
+
 
 3.2 (2016-05-03)
 ----------------

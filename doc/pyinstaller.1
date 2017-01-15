@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "PYINSTALLER" "1" "2016-05-03" "3.2" "PyInstaller"
+.TH "PYINSTALLER" "1" "2017-01-15" "3.2.1" "PyInstaller"
 .SH NAME
 pyinstaller \- Configure and build a PyInstaller project in one run
 .
@@ -101,6 +101,18 @@ Name to assign to the bundled app and spec file
 .SS What to bundle, where to search
 .INDENT 0.0
 .TP
+.BI \-\-add\-data \ <SRC;DEST or SRC:DEST>
+Additional non\-binary files or folders to be added to
+the executable. The path separator is platform
+specific, \fBos.pathsep\fP (which is \fB;\fP on Windows
+and \fB:\fP on most unix systems) is used. This option
+can be used multiple times.
+.TP
+.BI \-\-add\-binary \ <SRC;DEST or SRC:DEST>
+Additional binary files to be added to the executable.
+See the \fB\-\-add\-data\fP option for more details. This
+option can be used multiple times.
+.TP
 .BI \-p \ DIR\fP,\fB \ \-\-paths \ DIR
 A path to search for imports (like using PYTHONPATH).
 Multiple paths are allowed, separated by \(aq:\(aq, or use
@@ -122,8 +134,8 @@ special features of the runtime environment. This
 option can be used multiple times.
 .TP
 .BI \-\-exclude\-module \ EXCLUDES
-Optional module or package (his Python names, not path
-names) that will be ignored (as though it was not
+Optional module or package (the Python name, not the
+path name) that will be ignored (as though it was not
 found). This option can be used multiple times.
 .TP
 .BI \-\-key \ KEY
