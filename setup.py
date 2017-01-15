@@ -17,12 +17,15 @@ from PyInstaller import (__version__ as version, is_linux, is_win, is_cygwin,
                          HOMEPATH, PLATFORM, compat)
 
 
-
 REQUIREMENTS = ['setuptools']
 # For Windows install PyWin32 if not already installed.
 if sys.platform.startswith('win'):
     # Windows support depends on pefile library.
-    REQUIREMENTS.append('pefile')
+    # ::TODO:: #1920 require a specific version minimum
+    # REQUIREMENTS.append('pefile')
+    # ::TODO:: #1920 future is currently only needed for the included pefile,
+    # remove 'future' as requirement when pypi pefile is used
+    REQUIREMENTS.append('future')
     try:
         import pywintypes
     except ImportError:
@@ -107,23 +110,23 @@ class build_bootloader(Command):
 
         src_dir = os.path.join(HOMEPATH, 'bootloader')
         cmd = [sys.executable, './waf', 'configure', 'all']
-        nolsb = True
         if is_linux:
             env = os.environ.copy()
             try:
                 env['PATH'] += ':/opt/lsb/bin'
             except:
                 env['PATH'] = '/opt/lsb/bin'
+            lsb = False
             try:
                 FNULL = open(os.devnull, 'w')
                 if subprocess.call(['which', 'lsbcc'], env=env,
                                    stderr=FNULL, stdout=FNULL,
                                    close_fds=True) == 0:
-                    nolsb = False
+                    lsb = True
             except compat.FileNotFoundError:
                 pass
-        if nolsb:
-            cmd.append('--no-lsb')
+            if not lsb:
+                cmd.append('--no-lsb')
         rc = subprocess.call(cmd, cwd=src_dir)
         if rc:
             raise SystemExit('ERROR: Failed compiling the bootloader. '

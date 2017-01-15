@@ -15,54 +15,125 @@ end
 
 def packages_debianoid
   return <<-EOF
+    dpkg --add-architecture i386
     apt-get update
-    apt-get install -y python python-dev python-setuptools libz-dev gcc
+    # avoid any prompts, from http://askubuntu.com/questions/146921
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get -y -o Dpkg::Options::="--force-confdef" \
+               -o Dpkg::Options::="--force-confold" upgrade
+    apt-get install -y python python-dev python-setuptools \
+                       gcc libz-dev libc6-dev-i386 zlib1g-dev:i386
   EOF
 end
 
 def packages_darwin
   return <<-EOF
+    ## for now do not install all the (security and other) updates
+    #sudo softwareupdate --install --all
     sudo chown -R vagrant /usr/local  # brew must be able to create stuff here
     ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
     brew update
-    brew install openssl
-    brew install lz4
-    brew install fakeroot
-    brew install git
-    brew install pkgconfig
+    brew upgrade --all
+    brew install pkg-config
     touch ~vagrant/.bash_profile ; chown vagrant ~vagrant/.bash_profile
+  EOF
+end
+
+# Install required cygwin packages and configure environment
+#
+# Microsoft/EdgeOnWindows10 image has MLS-OpenSSH installed by default,
+# which is based on cygwin x86_64 but should not be used together with cygwin.
+# In order to have have cygwin compatible bash 'ImagePath' is replaced with
+# cygrunsrv of newly installed cygwin
+#
+# supported cygwin versions:
+#   x86_64
+#   x86
+def packages_cygwin(version)
+  setup_exe = "setup-#{version}.exe"
+
+  return <<-EOF
+    mkdir -p /cygdrive/c/cygwin
+    powershell -Command '(New-Object System.Net.WebClient).DownloadFile("https://www.cygwin.com/#{setup_exe}","C:\\cygwin\\#{setup_exe}")'
+    echo '
+    REM --- Change to use different CygWin platform and final install path
+    set CYGSETUP=#{setup_exe}
+    REM --- Install build version of CygWin in a subfolder
+    set OURPATH=%cd%
+    set CYGBUILD="C:\\cygwin\\CygWin"
+    set CYGMIRROR=ftp://mirrors.kernel.org/sourceware/cygwin/
+    set BASEPKGS=openssh,rsync
+    set BUILDPKGS=p7zip
+    REM set BUILDPKGS=python3,python3-setuptools,python-devel,binutils,gcc-core
+    %CYGSETUP% -q -B -o -n -R %CYGBUILD% -L -D -s %CYGMIRROR% -P %BASEPKGS%,%BUILDPKGS%
+    cd /d C:\\cygwin\\CygWin\\bin
+    regtool set /HKLM/SYSTEM/CurrentControlSet/Services/OpenSSHd/ImagePath "C:\\cygwin\\CygWin\\bin\\cygrunsrv.exe"
+    bash -c "ssh-host-config --no"
+    ' > /cygdrive/c/cygwin/install.bat
+    cd /cygdrive/c/cygwin && cmd.exe /c install.bat
+    echo "alias mkdir='mkdir -p'" > ~/.profile
+    echo "export CYGWIN_ROOT=/cygdrive/c/cygwin/CygWin" >> ~/.profile
+    echo 'export PATH=$PATH:$CYGWIN_ROOT/bin' >> ~/.profile
+    echo '' > ~/.bash_profile
+    cmd.exe /c 'setx /m PATH "%PATH%;C:\\cygwin\\CygWin\\bin"'
+    source ~/.profile
+    echo 'db_home: windows' > $CYGWIN_ROOT/etc/nsswitch.conf
+  EOF
+end
+
+def windows_disable_updates()
+  return <<-EOF
+    regtool add /HKLM/SOFTWARE/Policies/Microsoft/Windows/WindowsUpdate
+    regtool add /HKLM/SOFTWARE/Policies/Microsoft/Windows/WindowsUpdate/AU
+    regtool set /HKLM/SOFTWARE/Policies/Microsoft/Windows/WindowsUpdate/AU/NoAutoUpdate 1
   EOF
 end
 
 def build_bootloader(boxname)
   return <<-EOF
-    cd /vagrant
-    cd bootloader
-    python ./waf clean
-    python ./waf configure --no-lsb all
+    set -x
+    for d in /vagrant /cygdrive/c/vagrant ; do
+       if [ -d "$d/bootloader" ] ; then
+          cd "$d"/bootloader
+          break
+       fi
+    done
+    for d in /cygdrive/c $HOME ; do
+       if [ -d "$d/mingw64" ] ; then
+          export PATH="$d/mingw64/bin:$d/mingw64/opt/bin:$PATH"
+          break
+       fi
+    done
+    python ./waf --no-lsb all
+    python ./waf --no-lsb all --target-arch=32bit
   EOF
 end
 
 Vagrant.configure(2) do |config|
-  # not let the VM access .. (which is the PyInstaller base directory)
-  # on the host machine via the default shared folder
-  config.vm.synced_folder "..", "/vagrant"
+  # Do not leak information about usage by by update-checks.
+  config.vm.box_check_update = false
 
-  # fix permissions on synced folder
-  #config.vm.provision "fix perms", :type => :shell, :inline => fix_perms
+  # Do not let the VM access . on the host machine via the default
+  # shared folder! But ...
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+
+  # ... use rsync to copy content to the folder. Need to use the
+  # parent directory since for building the windows bootloader we need
+  # to access some image files in ../PyInstaller/bootloader/images/.
+  #
+  # We use rsynced folders since these are the only ones I got to work
+  # in Windows and they do not require VirtualBxo addons in the guest,
+  # which will allow us to switch to the official Debian boxes later.
+  config.vm.synced_folder "..", "/vagrant", :type => "rsync",
+      :rsync__args => ["--verbose", "--archive", "--delete", "-z",
+                       "--include=bootloader", "--include=PyInstaller",
+                       "--exclude=/*", "--cvs-exclude", "--exclude=*.pyc",
+                       "--exclude=bootloader/build"],
+      :rsync__chown => true
 
   config.vm.provider :virtualbox do |v|
     #v.gui = true
     v.cpus = 1
-  end
-
-  #--- Linux 32 bit, using Debian 8.2 from boxcutter ---
-  # using images from buxcutter since they already include support for
-  # shared folders and Debian does not provide 32 bit versions
-  config.vm.define "linux32" do |b|
-    b.vm.box = "boxcutter/debian82-i386"
-    b.vm.provision "packages debianoid", :type => :shell, :inline => packages_debianoid
-    b.vm.provision "build bootloader", :type => :shell, :privileged => false, :inline => build_bootloader("linux32")
   end
 
   #--- Linux 64 bit, using Debian 8.2 from boxcutter ---
@@ -77,11 +148,64 @@ Vagrant.configure(2) do |config|
     b.vm.provision "build bootloader", :type => :shell, :privileged => false, :inline => build_bootloader("linux64")
   end
 
-#  #--- OS X --- not yet implemented
-#  config.vm.define "darwin64" do |b|
-#    b.vm.box = "jhcook/yosemite-clitools"
-#    #b.vm.provision "packages darwin", :type => :shell, :privileged => false, :inline => packages_darwin
-#    #b.vm.provision "build bootloader", :type => :shell, :privileged => false, :inline => build_bootloader("darwin64")
-#  end
+  #--- OS X --- not yet implemented
+  config.vm.define "darwin64" do |b|
+    b.vm.box = "jhcook/yosemite-clitools"
+    b.vm.provider :virtualbox do |v|
+      v.gui = true
+      # Enable the VM's virtual USB controller & enable the virtual
+      # USB 2.0 controller
+      v.customize ["modifyvm", :id, "--usb", "on", "--usbehci", "off"]
+    end
+    b.vm.provision "packages darwin", :type => :shell, :privileged => false,
+        :inline => packages_darwin
+    b.vm.provision "build bootloader", :type => :shell, :privileged => false,
+        :inline => build_bootloader("darwin64")
+  end
+
+  #--- Windows 64 bit
+  #- This box requires interaction, automated build is not possible at
+  #- the monment. Please read the README for more information.
+  config.vm.define "windows10" do |b|
+    b.vm.box = "Microsoft/EdgeOnWindows10"
+    b.vm.guest = :windows
+    b.vm.boot_timeout = 180
+    b.vm.graceful_halt_timeout = 120
+
+    b.ssh.shell = "sh -l"
+    b.ssh.username = "IEUser"
+    b.ssh.password = "Passw0rd!"
+    b.ssh.insert_key = false
+
+    b.vm.provider :virtualbox do |v|
+      v.memory = 2048
+      #v.gui = true
+    end
+
+    # Install cygwin to get rsync and 7zip
+    b.vm.provision "packages cygwin", :type => :shell, :privileged => false,
+        :inline => packages_cygwin("x86_64")
+
+    # Reload to get into the new cygwin environment and rsync the
+    # synced folder
+    b.vm.provision :reload
+
+    # Disable auto-update - only partially working
+    b.vm.provision "disable auto-updates", :type => :shell,
+        :privileged => false, :inline => windows_disable_updates()
+
+    # Install mingw-w64 into $HOME
+    # Note: Our wscript file currently dosn't support cross building,
+    # so be can't use mingw coming with cygwin.
+    b.vm.provision "download mingw-w64 archive", :type => :file,
+        source: "~/Downloads/x86_64-6.2.0-release-posix-sjlj-rt_v5-rev1.7z",
+        destination: "Downloads/mingw-w64.7z"  # will go into $HOME
+    b.vm.provision "install mingw-w64", :type => :shell, :privileged => false,
+        :inline => "7z x -o$HOME $HOME/Downloads/mingw-w64.7z"
+
+    # Build the bootloader
+    b.vm.provision "build bootloader", :type => :shell, :privileged => false,
+        :inline => build_bootloader("windows10-64")
+  end
 
 end

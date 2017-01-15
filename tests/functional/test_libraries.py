@@ -17,7 +17,7 @@ import os
 # -------------
 import sys
 
-from PyInstaller.compat import is_win, is_py3, is_py36, is_darwin
+from PyInstaller.compat import is_win, is_py27, is_py3, is_py36, is_darwin
 from PyInstaller.utils.hooks import get_module_attribute, is_module_satisfies
 from PyInstaller.utils.tests import importorskip, xfail, skipif
 
@@ -65,17 +65,31 @@ def test_botocore(pyi_builder):
 
 @importorskip('cherrypy')
 def test_cherrypy(pyi_builder):
-    # import wsgiserver3 on Python 3, or else wsgiserver2 on Python 2.
     pyi_builder.test_source(
         """
-        import cherrypy.wsgiserver.wsgiserver%s
-        """ % sys.version_info[0])
+        import cherrypy.wsgiserver
+        """)
 
 
 @xfail(is_darwin, reason='Issue #1895.')
 @importorskip('enchant')
 def test_enchant(pyi_builder):
     pyi_builder.test_script('pyi_lib_enchant.py')
+
+
+@skipif(is_py3, reason="Only tests Python 2.7 feature")
+def test_future(pyi_builder):
+    pyi_builder.test_script('pyi_future.py')
+
+
+@skipif(is_py3, reason="Only tests Python 2.7 feature")
+def test_future_queue(pyi_builder):
+    pyi_builder.test_source(
+        """
+        import queue
+        queue.Queue()
+        """
+    )
 
 
 @importorskip('gevent')
@@ -116,6 +130,7 @@ def test_tkinter_FixTk(pyi_builder):
         import tkinter
     """)
 
+@xfail(is_win and is_py27, reason='Issue #2147')
 @importorskip('zmq')
 def test_zmq(pyi_builder):
     pyi_builder.test_source(
@@ -235,7 +250,6 @@ def test_pygments(pyi_builder):
         print(highlight(code, PythonLexer(), HtmlFormatter()))
         """)
 
-
 @importorskip('markdown')
 def test_markdown(pyi_builder):
     # Markdown uses __import__ed extensions. Make sure these work by
@@ -288,7 +302,10 @@ def test_PyQt5_uic(tmpdir, pyi_builder, data_dir):
 
 @importorskip('zope.interface')
 def test_zope_interface(pyi_builder):
-    # Tests that modules without __init__.py file are bundled properly.
+    # Tests that `nspkg.pth`-based namespace package are bundled properly.
+    # The `nspkg.pth` file is created by setuptools and thus changes
+    # frequently. If this test fails most propably
+    # _SETUPTOOLS_NAMESPACEPKG_PTHs in modulegraph needs to be updated.
     pyi_builder.test_source(
         """
         # Package 'zope' does not contain __init__.py file.
@@ -330,6 +347,15 @@ def test_numpy(pyi_builder):
         import numpy
         from numpy.core.numeric import dot
         print('dot(3, 4):', dot(3, 4))
+        """)
+
+
+@importorskip('openpyxl')
+def test_openpyxl(pyi_builder):
+    pyi_builder.test_source(
+        """
+        # Test the hook to openpyxl
+        from openpyxl import __version__
         """)
 
 
@@ -554,6 +580,16 @@ def test_usb(pyi_builder):
         devices = usb.core.find(find_all = True)
         if not devices:
             raise SystemExit('No USB device found.')
+        """)
+
+
+@importorskip('zeep')
+def test_zeep(pyi_builder):
+    pyi_builder.test_source(
+        """
+        # Test the hook to zeep
+        from zeep import utils
+        utils.get_version()
         """)
 
 

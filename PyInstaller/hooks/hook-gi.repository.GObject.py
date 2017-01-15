@@ -19,4 +19,4 @@ from PyInstaller.utils.hooks import get_gi_typelibs
 
 binaries, datas, hiddenimports = get_gi_typelibs('GObject', '2.0')
 
-hiddenimports += ['gi._gobject.option', 'gi._gobject']
+hiddenimports += ['gi._gobject']

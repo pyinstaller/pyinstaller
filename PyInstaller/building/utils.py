@@ -22,8 +22,9 @@ import shutil
 import sys
 
 from PyInstaller.config import CONF
-from .. import is_darwin, is_win, compat
-from ..compat import EXTENSION_SUFFIXES, FileNotFoundError
+from .. import compat
+from ..compat import is_darwin, is_win, EXTENSION_SUFFIXES, \
+    FileNotFoundError, open_file, is_py3
 from ..depend import dylib
 from ..depend.bindepend import match_binding_redirect
 from ..utils import misc
@@ -94,12 +95,11 @@ def add_suffix_to_extensions(toc):
     new_toc = TOC()
     for inm, fnm, typ in toc:
         if typ == 'EXTENSION':
-            # In some rare cases extension might already contain suffix.
+            # In some rare cases extension might already contain a suffix.
             # Skip it in this case.
-            if not inm.endswith(EXTENSION_SUFFIXES[0]):
-                # Use first suffix from the Python list of suffixes
-                # for C extensions.
-                inm = inm + EXTENSION_SUFFIXES[0]
+            if os.path.splitext(inm)[1] not in EXTENSION_SUFFIXES:
+                # Use this file's existing extension.
+                inm = inm + os.path.splitext(fnm)[1]
 
         elif typ == 'DEPENDENCY':
             # Use the suffix from the filename.
@@ -181,7 +181,12 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
         basenm = os.path.normcase(dist_nm)
     else:
         basenm = os.path.normcase(os.path.basename(fnm))
-    digest = cacheDigest(fnm)
+
+    # Binding redirects should be taken into account to see if the file
+    # needs to be reprocessed. The redirects may change if the versions of dependent
+    # manifests change due to system updates.
+    redirects = CONF.get('binding_redirects', [])
+    digest = cacheDigest(fnm, redirects)
     cachedfile = os.path.join(cachedir, basenm)
     cmd = None
     if basenm in cache_index:
@@ -194,7 +199,6 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
                 dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
             return cachedfile
 
-    redirects = CONF.get('binding_redirects', [])
 
     # Optionally change manifest and its deps to private assemblies
     if fnm.lower().endswith(".manifest"):
@@ -325,9 +329,15 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
     return cachedfile
 
 
-def cacheDigest(fnm):
+def cacheDigest(fnm, redirects):
     data = open(fnm, "rb").read()
-    digest = hashlib.md5(data).digest()
+    hasher = hashlib.md5(data)
+    if redirects:
+        redirects = str(redirects)
+        if is_py3:
+            redirects = redirects.encode('utf-8')
+        hasher.update(redirects)
+    digest = bytearray(hasher.digest())
     return digest
 
 
@@ -516,11 +526,27 @@ def _load_code(modname, filename):
         loader, portions = importer.find_loader(modname)
     else:
         loader = importer.find_module(modname)
-        portions = []
 
-    assert loader and hasattr(loader, 'get_code')
     logger.debug('Compiling %s', filename)
-    return loader.get_code(modname)
+    if loader and hasattr(loader, 'get_code'):
+        return loader.get_code(modname)
+    else:
+        # Just as ``python foo.bar`` will read and execute statements in
+        # ``foo.bar``,  even though it lacks the ``.py`` extension, so
+        # ``pyinstaller foo.bar``  should also work. However, Python's import
+        # machinery doesn't load files without a ``.py`` extension. So, use
+        # ``compile`` instead.
+        #
+        # On a side note, neither the Python 2 nor Python 3 calls to
+        # ``pkgutil`` and ``find_module`` above handle modules ending in
+        # ``.pyw``, even though ``imp.find_module`` and ``import <name>`` both
+        # work. This code supports ``.pyw`` files.
+
+        # Open the source file in binary mode and allow the `compile()` call to
+        # detect the source encoding.
+        with open_file(filename, 'rb') as f:
+            source = f.read()
+        return compile(source, filename, 'exec')
 
 def get_code_object(modname, filename):
     """

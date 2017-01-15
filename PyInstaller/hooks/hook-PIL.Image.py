@@ -15,4 +15,4 @@ from PyInstaller.utils.hooks import collect_submodules
 
 # Include all PIL image plugins - module names containing 'ImagePlugin'.
 # e.g.  PIL.JpegImagePlugin
-hiddenimports = collect_submodules('PIL', pattern='ImagePlugin')
+hiddenimports = collect_submodules('PIL', lambda name: 'ImagePlugin' in name)

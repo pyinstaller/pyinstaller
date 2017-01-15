@@ -11,7 +11,6 @@
 import os
 import argparse
 
-import PyInstaller.utils.win32.versioninfo
 import PyInstaller.log
 
 def run():
@@ -28,6 +27,7 @@ def run():
     exe_file = os.path.abspath(args.exe_file)
 
     try:
+        import PyInstaller.utils.win32.versioninfo
         vs = PyInstaller.utils.win32.versioninfo.SetVersion(exe_file, info_file)
         print(('Version info set in: %s' % exe_file))
     except KeyboardInterrupt:

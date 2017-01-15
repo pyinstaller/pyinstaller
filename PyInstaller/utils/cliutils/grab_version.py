@@ -12,7 +12,6 @@ import codecs
 import os
 import argparse
 
-import PyInstaller.utils.win32.versioninfo
 import PyInstaller.log
 
 
@@ -33,6 +32,7 @@ def run():
     args = parser.parse_args()
 
     try:
+        import PyInstaller.utils.win32.versioninfo
         vs = PyInstaller.utils.win32.versioninfo.decode(args.exe_file)
         fp = codecs.open(args.out_filename, 'w', 'utf-8')
         fp.write(unicode(vs))

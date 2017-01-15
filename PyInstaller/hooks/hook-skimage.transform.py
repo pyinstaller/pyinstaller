@@ -12,6 +12,7 @@ from PyInstaller.utils.hooks import collect_data_files
 # 64-bit
 hiddenimports = ['skimage.draw.draw',
                  'skimage._shared.geometry',
+                 'skimage._shared.transform',
                  'skimage.filters.rank.core_cy']
 
 datas = collect_data_files('skimage')

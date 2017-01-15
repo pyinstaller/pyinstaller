@@ -126,6 +126,8 @@ class PYZ(Target):
         }
 
         pyz = ZlibArchiveWriter(self.name, toc, code_dict=self.code_dict, cipher=self.cipher)
+        logger.info("Building PYZ (ZlibArchive) %s completed successfully.",
+                    self.name)
 
 
 class PKG(Target):
@@ -275,6 +277,8 @@ class PKG(Target):
 
         for item in trash:
             os.remove(item)
+        logger.info("Building PKG (CArchive) %s completed successfully.",
+                    os.path.basename(self.name))
 
 
 class EXE(Target):
@@ -558,8 +562,10 @@ class EXE(Target):
                 'objcopy', '--add-section', 'pydata=%s' % self.pkg.name,
                 self.name)
             logger.debug("objcopy returned %i", retcode)
-            logger.debug(stdout)
-            logger.debug(stderr)
+            if stdout:
+                logger.debug(stdout)
+            if stderr:
+                logger.debug(stderr)
             if retcode != 0:
                 raise SystemError("objcopy Failure: %s" % stderr)
         else:
@@ -584,6 +590,8 @@ class EXE(Target):
         self.mtm = misc.mtime(self.name)
         for item in trash:
             os.remove(item)
+        logger.info("Building EXE from %s completed successfully.",
+                    self.tocbasename)
 
 
     def _copyfile(self, infile, outfile):
@@ -680,6 +688,8 @@ class COLLECT(Target):
                     logger.warn("failed to copy flags of %s", fnm)
             if typ in ('EXTENSION', 'BINARY'):
                 os.chmod(tofnm, 0o755)
+        logger.info("Building COLLECT %s completed successfully.",
+                    self.tocbasename)
 
 
 class MERGE(object):
@@ -763,6 +773,6 @@ COMPRESSED = 1
 
 _MISSING_BOOTLOADER_ERRORMSG = """
 Fatal error: PyInstaller does not include a pre-compiled bootloader for your
-platform. See <http://pythonhosted.org/PyInstaller/#building-the-bootloader>
+platform. See <http://pyinstaller.rtfd.io/en/stable/bootloader-building.html>
 for more details and instructions how to build the bootloader.
 """

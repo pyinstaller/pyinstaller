@@ -5,6 +5,55 @@ Thanks goes to all the kind PyInstaller contributors who have contributed
 new code, bug reports, fixes, comments and ideas. A brief list follows,
 please let us know if your name is omitted by accident:
 
+
+Contributions to PyInstaller 3.2.1
+----------------------------------
+
+Special Thanks to Thomas Waldmann and David Vierra for support when working on
+the new build system.
+
+- Hartmut Goebel - Core developer and release manager.
+- Martin Zibricky - Core developer.
+- David Cortesi - Core developer and documentation manager.
+- Bryan A. Jones - Core developer.
+- David Vierra - Core developer and encoding specialist.
+- Cecil Curry - brave bug-fixing and code-refactoring
+
+- Amane Suzuki
+- Andy Cycle
+- Axel Huebl
+- Bruno Oliveira
+- Dan Auerbach
+- Daniel Hyams
+- Denis Akhiyarov
+- Dror Asaf
+- Dustin Spicuzza
+- Emanuele Bertoldi
+- Glenn Ramsey
+- Hugh Dowling
+- Jesse Suen
+- Jonathan Dan
+- Jonathan Springer
+- Jonathan Stewmon
+- Julie Marchant
+- Kenneth Zhao
+- Linus Groh
+- Mansour Moufid
+- Martin Zibricky
+- Matteo Bertini
+- Nicolas Dickreuter
+- Peter Würtz
+- Ronald Oussoren
+- Santiago Reig
+- Sean Fisk
+- Sergei Litvinchuk
+- Stephen Rauch
+- Thomas Waldmann
+- Till Bald
+- xoviat
+
+
+
 Contributions to PyInstaller 3.2
 ----------------------------------
 

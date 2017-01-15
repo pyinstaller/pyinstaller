@@ -17,6 +17,7 @@ prune doc/source
 prune old
 prune scripts
 prune tests/scripts
+prune .github
 
 exclude .* *.yml
 global-exclude *.py[co]

@@ -14,8 +14,11 @@ Decorators for skipping PyInstaller tests when specific requirements are not met
 
 import sys
 import traceback
+import distutils.ccompiler
+
 import pytest
 from _pytest.runner import Skipped
+
 from PyInstaller.compat import is_darwin, is_win, is_py2, is_py3
 
 # Wrap some pytest decorators to be consistent in tests.
@@ -28,6 +31,26 @@ skipif_winorosx = skipif(is_win or is_darwin, reason='does not run on Windows or
 xfail = pytest.mark.xfail
 xfail_py2 = xfail(is_py2, reason='fails with Python 2.7')
 xfail_py3 = xfail(is_py3, reason='fails with Python 3')
+
+# A decorator to skip tests if a C compiler isn't detected.
+cc = distutils.ccompiler.new_compiler()
+if is_win:
+    try:
+        cc.initialize()
+        has_compiler = True
+    # This error is raised on Windows if a compiler can't be found.
+    except distutils.errors.DistutilsPlatformError:
+        has_compiler = False
+else:
+    # The C standard library contains the ``clock`` function. Use that to
+    # determine if a compiler is installed. This doesn't work on Windows::
+    #
+    #   Users\bjones\AppData\Local\Temp\a.out.exe.manifest : general error
+    #   c1010070: Failed to load and parse the manifest. The system cannot find
+    #   the file specified.
+    has_compiler = cc.has_function('clock', includes=['time.h'])
+del cc
+skipif_no_compiler = skipif(not has_compiler, reason="Requires a C compiler")
 
 
 def skip(reason):

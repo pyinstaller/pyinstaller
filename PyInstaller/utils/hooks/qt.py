@@ -7,6 +7,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 # ----------------------------------------------------------------------------
 import os
+import sys
 
 from ..hooks import eval_statement, exec_statement, get_homebrew_path
 from ... import log as logging
@@ -46,7 +47,7 @@ def qt_plugins_dir(namespace):
         raise Exception("""
             Cannot find existing {0} plugin directories
             Paths checked: {1}
-            """.format(namespace, paths))
+            """.format(namespace, ", ".join(paths)))
     return qt_plugin_paths
 
 
@@ -111,7 +112,10 @@ def qt_menu_nib_dir(namespace):
     str = getattr(__builtins__, 'unicode', str)  # for Python 2
     print(str(path))
     """.format(namespace))
-    for location in [os.path.join(path, 'Resources'), os.path.join(path, 'QtGui.framework', 'Resources')]:
+    anaconda_path = os.path.join(sys.exec_prefix, "python.app", "Contents", "Resources")
+    paths = [os.path.join(path, 'Resources'), os.path.join(path, 'QtGui.framework', 'Resources'), anaconda_path]
+
+    for location in paths:
         # Check directory existence
         path = os.path.join(location, 'qt_menu.nib')
         if os.path.exists(path):
@@ -122,7 +126,7 @@ def qt_menu_nib_dir(namespace):
         raise Exception("""
             Cannot find qt_menu.nib for {0}
             Path checked: {1}
-            """.format(namespace, path))
+            """.format(namespace, ", ".join(paths)))
     return menu_dir
 
 

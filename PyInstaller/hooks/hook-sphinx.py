@@ -51,14 +51,8 @@ hiddenimports = (
 #
 # So, we need all the languages in "sphinx.search".
                   collect_submodules('sphinx.search') +
-#
-# From sphinx.websupport line 100:
-#
-#    mod = 'sphinx.websupport.search.' + mod
-#    SearchClass = getattr(__import__(mod, None, None, [cls]), cls)
-#
-# So, include modules under "sphinx.websupport.search".
                   collect_submodules('sphinx.websupport.search') +
+                  collect_submodules('sphinx.domains') +
 #
 # From sphinx.util.inspect line 21:
 #

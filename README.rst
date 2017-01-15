@@ -6,7 +6,7 @@ package. The user can run the packaged app without installing a Python
 interpreter or any modules.
 
 
-.. image:: https://img.shields.io/travis/pyinstaller/pyinstaller/3.2.svg?label=Linux
+.. image:: https://img.shields.io/travis/pyinstaller/pyinstaller/3.2.1.svg?label=Linux
    :target: https://travis-ci.org/pyinstaller/pyinstaller/
    :alt: Travis CI test status (Linux)
 
@@ -14,8 +14,8 @@ interpreter or any modules.
    :target: https://travis-ci.org/pyinstaller/pyinstaller-osx-tests
    :alt: Travis CI test status (OS X)
 
-.. image:: https://img.shields.io/appveyor/ci/matysek/pyinstaller/3.2.svg?label=Windows
-   :target: https://ci.appveyor.com/project/matysek/pyinstaller/branch/3.2
+.. image:: https://img.shields.io/appveyor/ci/matysek/pyinstaller/3.2.1.svg?label=Windows
+   :target: https://ci.appveyor.com/project/matysek/pyinstaller/branch/3.2.1
    :alt: AppVeyor CI test status (Windows)
 
 .. image:: https://landscape.io/github/pyinstaller/pyinstaller/master/landscape.svg?
@@ -28,12 +28,12 @@ interpreter or any modules.
 .. image:: https://img.shields.io/pypi/dm/PyInstaller.svg
    :target: https://pypi.python.org/pypi/PyInstaller
 
-.. image:: https://img.shields.io/badge/docs-v3.2-blue.svg
-   :target: https://pyinstaller.rtfd.org/en/3.2/
+.. image:: https://img.shields.io/badge/docs-v3.2.1-blue.svg
+   :target: https://pyinstaller.rtfd.io/en/v3.2.1/
    :alt: Manual
 
-.. image:: https://img.shields.io/badge/changes-v3.2-blue.svg
-   :target: https://pyinstaller.rtfd.org/en/3.2/CHANGES.html
+.. image:: https://img.shields.io/badge/changes-v3.2.1-blue.svg
+   :target: https://pyinstaller.rtfd.io/en/v3.2.1/CHANGES.html
    :alt: Changelog
 
 .. image:: https://img.shields.io/badge/IRC-pyinstalller-blue.svg
@@ -41,8 +41,8 @@ interpreter or any modules.
    :alt: IRC
 
 
-:Documentation: https://pythonhosted.org/PyInstaller/
-:Website:       http://www.pyinstaller.org
+:Documentation: http://pyinstaller.rtfd.io/
+:Website:       http://www.pyinstaller.org/
 :Code:          https://github.com/pyinstaller/pyinstaller
 
 
@@ -143,6 +143,8 @@ enhancements on these are welcome.
    linked Python libraries.
  - ldd
 
+- PowerPC Linux (Debian)
+
 
 Before using any contributed platform, you need to build the PyInstaller
 bootloader, as we do not ship binary packages. Download PyInstaller
@@ -160,5 +162,5 @@ or simply use it directly from the source (pyinstaller.py).
 
 
 .. _PyCrypto: https://www.dlitz.net/software/pycrypto/
-.. _`manual`: https://pyinstaller.rtfd.org/en/3.2/
+.. _`manual`: https://pyinstaller.rtfd.io/en/v3.2.1/
 
