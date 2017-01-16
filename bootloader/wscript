@@ -500,8 +500,9 @@ def configure(ctx):
         # https://stackoverflow.com/questions/20169660/where-is-libdl-so-on-mac-os-x
         if not (is_darwin or is_freebsd):
             ctx.check_cc(lib='dl', mandatory=True)
-        # Link to libthr on FreeBSD.
         if is_freebsd and sysconfig.get_config_vars('HAVE_PTHREAD_H').pop():
+            # On FreeBSD if python has threads: libthr needs to be loaded in
+            # the main process, so the bootloader needs to be link to thr.
             ctx.check_cc(lib='thr', mandatory=True)
         elif is_hpux  and sysconfig.get_config_vars('HAVE_PTHREAD_H').pop():
             ctx.check_cc(lib='pthread', mandatory=True)
@@ -642,21 +643,20 @@ def build(ctx):
         )
     else:
         # Linux, Darwin (MacOSX), ...
-        libs = ['DL', 'M', 'Z']  # 'z' - zlib, 'm' - math,
+        # Only the libs found will actually be used, so it's safe to list all
+        # here. The decision if a lib is required for a specific platform is
+        # made in the configure phase.
+        libs = ['DL', 'M', 'Z',  # 'z' - zlib, 'm' - math,
+                'THR'] # may be used on FreBSD
         staticlibs = []
-        # Mac OS X and FreeBSD do not need libdl.
-        if is_darwin or is_freebsd:
-            libs = ['Z', 'M']
-            # Check if python has threads: libthr needs
-            # to be loaded in the main process
-            if is_freebsd and sysconfig.get_config_vars('HAVE_PTHREAD_H').pop():
-                libs.append('THR')
-        elif is_aix:
-            libs = ['dl', 'm']
-            staticlibs = ['z']
+        if is_aix:
+            # link statically with zlib
+            libs.remove('Z')
+            staticlibs.append('Z')
 
         if ctx.options.boehmgc:
             libs.append('GC')
+
         ctx.program(
             source=ctx.path.ant_glob('src/*.c'),
             target=exe_name,
