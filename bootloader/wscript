@@ -616,12 +616,13 @@ def build(ctx):
     if machine():
         install_path += '-' + machine()
 
-    if is_win:
+    # By default strip final executables to make them smaller.
+    features = 'strip'
+    if ctx.env.CC_NAME == 'msvc':
         # Do not strip bootloaders when using MSVC.
-        if ctx.env.CC_NAME != 'msvc':
-            features = 'strip'
-        else:
-            features = ''
+        features = ''
+
+    if is_win:
         # Use different RC file (icon) for console/windowed mode - remove '_d'
         icon_rc = 'windows/' + exe_name.replace('_d', '') + '.rc'
         # On Windows we need to link library zlib statically.
@@ -637,7 +638,6 @@ def build(ctx):
             install_path=install_path,
             use='USER32 COMCTL32 KERNEL32 WS2_32 zlib',
             includes='src windows zlib',
-            # Strip final executables to make them smaller.
             features=features,
         )
     else:
@@ -664,9 +664,7 @@ def build(ctx):
             use=libs,
             stlib=staticlibs,
             install_path=install_path,
-            # Strip final executables to make them smaller.
-            features='strip',
-        )
+            features=features)
 
 
 def all(ctx):
