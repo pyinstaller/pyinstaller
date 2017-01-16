@@ -633,7 +633,7 @@ def build(ctx):
             includes='zlib',
         )
         ctx.program(
-            source=ctx.path.ant_glob('%s src/*.c' % icon_rc),
+            source=ctx.path.ant_glob(['src/*.c', icon_rc]),
             target=exe_name,
             install_path=install_path,
             use='USER32 COMCTL32 KERNEL32 WS2_32 zlib',
