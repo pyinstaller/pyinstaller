@@ -507,7 +507,7 @@ def configure(ctx):
         elif is_hpux  and sysconfig.get_config_vars('HAVE_PTHREAD_H').pop():
             ctx.check_cc(lib='pthread', mandatory=True)
         ctx.check_cc(lib='m', mandatory=True)
-        ctx.check_cc(lib='z', mandatory=True)
+        ctx.check_cc(lib='z', mandatory=True, uselib_store='Z')
         # This uses Boehm GC to manage memory - it replaces malloc() / free()
         # functions. Some messages are printed if memory is not deallocated.
         if ctx.options.boehmgc:
@@ -617,6 +617,16 @@ def build(ctx):
     if machine():
         install_path += '-' + machine()
 
+    if not ctx.env.LIB_Z:
+        # If the operating system does not provide zlib, build our own. The
+        # configure phase defines whether or not zlib is mandatory for a
+        # platform.
+        ctx.stlib(
+            source=ctx.path.ant_glob('zlib/*.c'),
+            target='static_zlib',
+            name='Z',
+            includes='zlib')
+
     # By default strip final executables to make them smaller.
     features = 'strip'
     if ctx.env.CC_NAME == 'msvc':
@@ -627,17 +637,11 @@ def build(ctx):
         # Use different RC file (icon) for console/windowed mode - remove '_d'
         icon_rc = 'windows/' + exe_name.replace('_d', '') + '.rc'
         # On Windows we need to link library zlib statically.
-        ctx.stlib(
-            source=ctx.path.ant_glob('zlib/*.c'),
-            target='static_zlib',
-            name='zlib',
-            includes='zlib',
-        )
         ctx.program(
             source=ctx.path.ant_glob(['src/*.c', icon_rc]),
             target=exe_name,
             install_path=install_path,
-            use='USER32 COMCTL32 KERNEL32 WS2_32 zlib',
+            use='USER32 COMCTL32 KERNEL32 WS2_32 Z',
             includes='src windows zlib',
             features=features,
         )
