@@ -500,11 +500,11 @@ def configure(ctx):
         # https://stackoverflow.com/questions/20169660/where-is-libdl-so-on-mac-os-x
         if not (is_darwin or is_freebsd):
             ctx.check_cc(lib='dl', mandatory=True)
-        if is_freebsd and sysconfig.get_config_vars('HAVE_PTHREAD_H').pop():
+        if is_freebsd and sysconfig.get_config_var('HAVE_PTHREAD_H'):
             # On FreeBSD if python has threads: libthr needs to be loaded in
             # the main process, so the bootloader needs to be link to thr.
             ctx.check_cc(lib='thr', mandatory=True)
-        elif is_hpux  and sysconfig.get_config_vars('HAVE_PTHREAD_H').pop():
+        elif is_hpux  and sysconfig.get_config_var('HAVE_PTHREAD_H'):
             ctx.check_cc(lib='pthread', mandatory=True)
         ctx.check_cc(lib='m', mandatory=True)
         ctx.check_cc(lib='z', mandatory=True, uselib_store='Z')
