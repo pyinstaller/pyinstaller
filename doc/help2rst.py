@@ -15,7 +15,7 @@ import textwrap
 import re
 import sys
 
-__copyright__ = "Copyright (c) 2015-2016 PyInstaller Development Team, Copyright (c) 2015 Hartmut Goebel"
+__copyright__ = "Copyright (c) 2015-2017 PyInstaller Development Team, Copyright (c) 2015 Hartmut Goebel"
 __author__ = "Hartmut Goebel <h.goebel@crazy-compilers.com>"
 
 

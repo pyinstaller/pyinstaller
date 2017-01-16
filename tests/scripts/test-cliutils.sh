@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2005-2016, PyInstaller Development Team.
+# Copyright (c) 2005-2017, PyInstaller Development Team.
 #
 # This batch file ist used for testing running the cli-utls and script
 # entrypoints from the command line. It' meant to test argument
