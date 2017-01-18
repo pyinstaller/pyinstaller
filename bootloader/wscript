@@ -484,9 +484,7 @@ def configure(ctx):
                 ctx.env.append_value('LIBPATH', '/usr/local/lib/hpux64')
                 ctx.env.append_value('STATICLIBPATH', '/usr/local/lib/hpux64')
 
-    # Adding python includedir into our environment - does not work on Windows
-    if not is_win:
-        ctx.env.append_value('INCLUDES', sysconfig.get_config_var('INCLUDEDIR'))
+
 
     ### Libraries
 
