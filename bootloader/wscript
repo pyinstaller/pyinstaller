@@ -59,7 +59,6 @@ if is_darwin:
     os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.7'
 
 
-# TODO strip created binaries.
 
 
 def architecture():
@@ -67,9 +66,7 @@ def architecture():
     on 64bit Mac function platform.architecture() returns 64bit even
     for 32bit Python. This is the workaround for this.
     """
-
     if is_darwin and sys.maxsize <= 3 ** 32:
-
         return '32bit'
     else:
         return platform.architecture()[0]  # 32bit or 64bit
@@ -329,7 +326,8 @@ def set_arch_flags(ctx):
             # Set LARGE_ADDRESS_AWARE_FLAG to True.
             # On Windows this allows 32bit apps to use 4GB of memory and
             # not only 2GB.
-            # TODO verify if this option being as default might cause any side effects.
+            # TODO verify if this option being as default might cause any side
+            # effects.
             if is_win:
                 ctx.env.append_value('LINKFLAGS', '-Wl,--large-address-aware')
         elif ctx.env.PYI_ARCH == '64bit':
@@ -376,8 +374,9 @@ def configure(ctx):
     # Set proper architecture and CPU for C compiler
     ctx.set_arch_flags()
 
-    # TODO Set proper optimization flags for MSVC (Visual Studio).
+
     ### C Compiler optimizations.
+    # TODO Set proper optimization flags for MSVC (Visual Studio).
 
     if ctx.options.debug:
         if is_win and ctx.env.CC_NAME == 'msvc':
@@ -392,7 +391,7 @@ def configure(ctx):
         ctx.env.append_value('CFLAGS', '-O2')
 
     if ctx.env.CC_NAME != 'msvc':
-        # This tool allows reduce the size of executables.
+        # This tool allows reducing the size of executables.
         ctx.load('strip', tooldir='tools')
 
     if ctx.env.CC_NAME == 'gcc':
