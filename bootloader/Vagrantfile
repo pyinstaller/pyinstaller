@@ -118,8 +118,8 @@ end
 def build_bootloader_cross(boxname)
   return <<-EOF
     cd /vagrant/bootloader
-    python ./waf --no-lsb all_cross CC=i686-w64-mingw32-gcc
-    python ./waf --no-lsb all_cross CC=x86_64-w64-mingw32-gcc
+    python ./waf all CC=i686-w64-mingw32-gcc
+    python ./waf all CC=x86_64-w64-mingw32-gcc
   EOF
 end
 

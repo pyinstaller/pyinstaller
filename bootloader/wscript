@@ -29,16 +29,6 @@ APPNAME = ''
 top = '.'
 out = 'build'
 
-# Platform specific switches.
-is_win = platform.system() == 'Windows'
-is_darwin = platform.system() == 'Darwin'
-is_linux = platform.system() == 'Linux'
-is_freebsd = sys.platform.startswith('freebsd')
-# TODO find out proper value for AIX/Solaris
-is_solar = platform.system() in ['Solaris', 'SunOS']
-is_aix = platform.system() == 'AIX'
-is_hpux = platform.system() == 'HP-UX'
-
 # Build variants of bootloader.
 # PyInstaller provides debug/release bootloaders and console/windowed
 # variants.
@@ -51,12 +41,6 @@ variants = {
 }
 
 
-if is_darwin:
-    # OS X 10.7 might not understand some load commands.
-    # The following variable fixes 10.7 compatibility.
-    # According to OS X doc this variable is equivalent to gcc option:
-    #   -mmacosx-version-min=10.7
-    os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.7'
 
 
 
@@ -66,7 +50,7 @@ def architecture():
     on 64bit Mac function platform.architecture() returns 64bit even
     for 32bit Python. This is the workaround for this.
     """
-    if is_darwin and sys.maxsize <= 3 ** 32:
+    if ctx.env.DEST_OS == 'darwin' and sys.maxsize <= 3 ** 32:
         return '32bit'
     else:
         return platform.architecture()[0]  # 32bit or 64bit
@@ -193,9 +177,6 @@ def detect_arch(ctx):
     Handle options --target-arch or use the same
     architecture as the Python interpreter.
     """
-    global is_win, is_darwin, is_linux, is_freebsd
-    global is_solar, is_aix, is_hpux
-
     # Get arch values either from CLI or detect it.
     arch = architecture()
     system = platform.system()
@@ -222,10 +203,6 @@ def detect_arch(ctx):
             }[arch]
             ctx.msg('Platform', '%s-%s chosen based on compiler' % (system, arch))
 
-        # set the global flags
-        is_win = True
-        is_darwin = is_linux = is_freebsd = False
-        is_solar = is_aix = is_hpux = False
         # search other programs we need, based on the name of the compiler
         # (replace "gcc" the the tool name)
         cc = re.sub('^(.*/|.*-)gcc(-.*|$)', r'\1%s\2', cc)
@@ -237,7 +214,7 @@ def detect_arch(ctx):
     else:
         ctx.msg('Platform', '%s-%s detected' % (system, arch))
 
-    if is_darwin and arch == '64bit':
+    if ctx.env.DEST_OS == 'darwin' and arch == '64bit':
         ctx.msg('CYAN', 'WARNING: Building bootloader for Python 64-bit on Mac OSX')
         ctx.msg('CYAN', 'For 32b-bit bootloader prepend the python command with:')
         ctx.msg('CYAN', 'VERSIONER_PYTHON_PREFER_32_BIT=yes arch -i386 python')
@@ -253,7 +230,7 @@ def set_arch_flags(ctx):
     Set properly architecture flag (32 or 64 bit) cflags for compiler
     and CPU target for compiler.
     """
-    if is_win and ctx.env.CC_NAME == 'msvc':
+    if ctx.env.DEST_OS == 'win32' and ctx.env.CC_NAME == 'msvc':
         # Set msvc linkflags based on architecture.
         if ctx.env.PYI_ARCH == '32bit':
             ctx.env['MSVC_TARGETS'] = ['x86']
@@ -271,7 +248,7 @@ def set_arch_flags(ctx):
         ctx.env.append_value('CFLAGS', '/EHa')
 
     # Ensure proper architecture flags on Mac OS X.
-    elif is_darwin:
+    elif ctx.env.DEST_OS == 'darwin':
         # Default compiler on Mac OS X is Clang.
         # Clang does not have flags '-m32' and '-m64'.
         if ctx.env.PYI_ARCH == '32bit':
@@ -283,7 +260,7 @@ def set_arch_flags(ctx):
         ctx.env.append_value('LINKFLAGS', mac_arch)
 
     # AIX specific flags
-    elif is_aix:
+    elif ctx.env.DEST_OS == 'aix':
         if ctx.env.CC_NAME == 'gcc':
             ctx.check_cc(ccflags='-maix32', msg='Checking for flags -maix32')
             ctx.env.append_value('CFLAGS', '-maix32')
@@ -292,7 +269,7 @@ def set_arch_flags(ctx):
             # We use xlc compiler
             pass
 
-    elif is_hpux:
+    elif ctx.env.DEST_OS == 'hpux':
         if ctx.env.CC_NAME == 'gcc':
             if ctx.env.PYI_ARCH == '32bit':
                 ctx.check_cc(ccflags='-milp32', msg='Checking for flags -milp32')
@@ -319,7 +296,7 @@ def set_arch_flags(ctx):
         elif ctx.env.PYI_ARCH == '32bit':
             # It was reported that flag '-m32' does not work with gcc
             # on 32-bit arm Linux. So skip the -m32 flag.
-            if not (machine() == 'arm' and is_linux):
+            if not (machine() == 'arm' and ctx.env.DEST_OS == 'linux'):
                 ctx.check_cc(ccflags='-m32', msg='Checking for flags -m32')
                 ctx.env.append_value('CFLAGS', '-m32')
                 ctx.env.append_value('LINKFLAGS', '-m32')
@@ -328,7 +305,7 @@ def set_arch_flags(ctx):
             # not only 2GB.
             # TODO verify if this option being as default might cause any side
             # effects.
-            if is_win:
+            if ctx.env.DEST_OS == 'win32':
                 ctx.env.append_value('LINKFLAGS', '-Wl,--large-address-aware')
         elif ctx.env.PYI_ARCH == '64bit':
             ctx.check_cc(ccflags='-m64', msg='Checking for flags -m64')
@@ -338,7 +315,7 @@ def set_arch_flags(ctx):
             ctx.fatal('Unrecognized target architecture: %s' % ctx.env.PYI_ARCH)
 
     # We need to pass architecture switch to the 'windres' tool.
-    if is_win and ctx.env.CC_NAME != 'msvc':
+    if ctx.env.DEST_OS == 'win32' and ctx.env.CC_NAME != 'msvc':
         if ctx.env.PYI_ARCH == '32bit':
             ctx.env.WINRCFLAGS = ['--target=pe-i386']
         else:
@@ -360,10 +337,10 @@ def configure(ctx):
     ctx.detect_arch()
 
     # LSB compatible bootloader only for Linux and without cli option --no-lsb.
-    if is_linux and not ctx.options.nolsb:
+    if ctx.env.DEST_OS == 'linux' and not ctx.options.nolsb:
         ctx.set_lsb_compiler()
 
-    if is_win:
+    if ctx.env.DEST_OS == 'win32':
         # Do not embed manifest file when using MSVC (Visual Studio).
         # Manifest file will be added in the phase of packaging python
         # application by PyInstaller.
@@ -379,7 +356,7 @@ def configure(ctx):
     # TODO Set proper optimization flags for MSVC (Visual Studio).
 
     if ctx.options.debug:
-        if is_win and ctx.env.CC_NAME == 'msvc':
+        if ctx.env.DEST_OS == 'win32' and ctx.env.CC_NAME == 'msvc':
             # Include information for debugging in MSVC/msdebug
             ctx.env.append_value('CFLAGS', '/Z7')
             ctx.env.append_value('CFLAGS', '/Od')
@@ -408,7 +385,7 @@ def configure(ctx):
 
     ### Defines, Includes
 
-    if not is_win:
+    if not ctx.env.DEST_OS == 'win32':
         # Defines common for Unix and Unix-like platforms.
         # For details see:
         #   http://man.he.net/man7/feature_test_macros
@@ -423,7 +400,7 @@ def configure(ctx):
         # mkdtemp() is available only if _BSD_SOURCE is defined.
         ctx.env.append_value('DEFINES', '_BSD_SOURCE')
 
-        if is_linux:
+        if ctx.env.DEST_OS == 'linux':
             # Recent GCC 5.x complains about _BSD_SOURCE under Linux:
             #     _BSD_SOURCE and _SVID_SOURCE are deprecated, use _DEFAULT_SOURCE
             ctx.env.append_value('DEFINES', '_DEFAULT_SOURCE')
@@ -442,14 +419,14 @@ def configure(ctx):
                 # Define this macro.
                 ctx.env.append_value('DEFINES', '_FORTIFY_SOURCE=2')
         # On Mac OS X, mkdtemp() is available only with _DARWIN_C_SOURCE.
-        elif is_darwin:
+        elif ctx.env.DEST_OS == 'darwin':
             ctx.env.append_value('DEFINES', '_DARWIN_C_SOURCE')
 
-    if is_win:
+    if ctx.env.DEST_OS == 'win32':
         ctx.env.append_value('DEFINES', 'WIN32')
         ctx.env.append_value('CPPPATH', '../zlib')
 
-    if is_solar:
+    elif ctx.env.DEST_OS == 'sunos':
         ctx.env.append_value('DEFINES', 'SUNOS')
         if ctx.env.CC_NAME == 'gcc':
             # On Solaris using gcc the linker options for shared and static
@@ -459,7 +436,7 @@ def configure(ctx):
             # On Solaris using gcc, the compiler needs to be gnu99
             ctx.env.append_value('CFLAGS', '-std=gnu99')
 
-    if is_aix:
+    elif ctx.env.DEST_OS == 'aix':
         ctx.env.append_value('DEFINES', 'AIX')
         # On AIX some APIs are restricted if _ALL_SOURCE is not defined.
         # In the case of PyInstaller, we need the AIX specific flag RTLD_MEMBER
@@ -473,7 +450,7 @@ def configure(ctx):
         ctx.env['SHLIB_MARKER'] = '-Wl,-bdynamic'
         ctx.env['STLIB_MARKER'] = '-Wl,-bstatic'
 
-    if is_hpux:
+    elif ctx.env.DEST_OS == 'hpux':
         ctx.env.append_value('DEFINES', 'HPUX')
         if ctx.env.CC_NAME == 'gcc':
             if ctx.env.PYI_ARCH == '32bit':
@@ -484,10 +461,16 @@ def configure(ctx):
                 ctx.env.append_value('STATICLIBPATH', '/usr/local/lib/hpux64')
 
 
+    elif ctx.env.DEST_OS == 'darwin':
+        # OS X 10.7 might not understand some load commands.
+        # The following variable fixes 10.7 compatibility.
+        # According to OS X doc this variable is equivalent to gcc option:
+        #   -mmacosx-version-min=10.7
+        os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.7'
 
     ### Libraries
 
-    if is_win:
+    if ctx.env.DEST_OS == 'win32':
         ctx.check_cc(lib='user32', mandatory=True)
         ctx.check_cc(lib='comctl32', mandatory=True)
         ctx.check_cc(lib='kernel32', mandatory=True)
@@ -495,13 +478,13 @@ def configure(ctx):
     else:
         # Mac OS X and FreeBSD do not need libdl.
         # https://stackoverflow.com/questions/20169660/where-is-libdl-so-on-mac-os-x
-        if not (is_darwin or is_freebsd):
+        if ctx.env.DEST_OS not in ('darwin', 'freebsd'):
             ctx.check_cc(lib='dl', mandatory=True)
-        if is_freebsd and sysconfig.get_config_var('HAVE_PTHREAD_H'):
+        if ctx.env.DEST_OS == 'freebsd' and sysconfig.get_config_var('HAVE_PTHREAD_H'):
             # On FreeBSD if python has threads: libthr needs to be loaded in
             # the main process, so the bootloader needs to be link to thr.
             ctx.check_cc(lib='thr', mandatory=True)
-        elif is_hpux  and sysconfig.get_config_var('HAVE_PTHREAD_H'):
+        elif ctx.env.DEST_OS == 'hpux' and sysconfig.get_config_var('HAVE_PTHREAD_H'):
             ctx.check_cc(lib='pthread', mandatory=True)
         ctx.check_cc(lib='m', mandatory=True)
         ctx.check_cc(lib='z', mandatory=True, uselib_store='Z')
@@ -522,7 +505,7 @@ def configure(ctx):
 
     ### CFLAGS
 
-    if is_win:
+    if ctx.env.DEST_OS == 'win32':
         if ctx.env.CC_NAME == 'msvc':
             # Use Unicode entry point wmain/wWinMain and wchar_t WinAPI
             ctx.env.append_value('CFLAGS', '-DUNICODE')
@@ -537,13 +520,13 @@ def configure(ctx):
             # Use Unicode entry point wmain/wWinMain
             ctx.env.append_value('LINKFLAGS', '-municode')
 
-    if is_darwin:
+    if ctx.env.DEST_OS == 'darwin':
         ctx.env.append_value('CFLAGS', '-mmacosx-version-min=10.7')
 
     # On linux link only with needed libraries.
     # -Wl,--as-needed is on some platforms detected during configure but
     # fails during build. (Mac OS X, Solaris, AIX)
-    if is_linux and ctx.check_cc(ccflags='-Wl,--as-needed',
+    if ctx.env.DEST_OS == 'linux' and ctx.check_cc(ccflags='-Wl,--as-needed',
                                  msg='Checking for flags -Wl,--as-needed'):
         ctx.env.append_value('LINKFLAGS', '-Wl,--as-needed')
 
@@ -561,11 +544,11 @@ def configure(ctx):
     ctx.setenv('debugw', debug_env)  # Ensure env contains shared values.
     ctx.env.append_value('DEFINES', 'WINDOWED')
     # For MinGW disables console window on Windows- MinGW option
-    if is_win and not ctx.env.CC_NAME == 'msvc':
+    if ctx.env.DEST_OS == 'win32' and not ctx.env.CC_NAME == 'msvc':
         # TODO Is it necessary to have -mwindows for C and LINK flags?
         ctx.env.append_value('LINKFLAGS', '-mwindows')
         ctx.env.append_value('CFLAGS', '-mwindows')
-    elif is_darwin:
+    elif ctx.env.DEST_OS == 'darwin':
         # conf.env.append_value('CFLAGS', '-I/Developer/Headers/FlatCarbon')
         # To support catching AppleEvents and running as ordinary OSX GUI app,
         # we have to link against the Carbon framework.
@@ -585,11 +568,11 @@ def configure(ctx):
     ctx.env.append_value('DEFINES', 'WINDOWED')
 
     # For MinGW disables console window on Windows- MinGW option
-    if is_win and not ctx.env.CC_NAME == 'msvc':
+    if ctx.env.DEST_OS == 'win32' and not ctx.env.CC_NAME == 'msvc':
         # TODO Is it necessary to have -mwindows for C and LINK flags?
         ctx.env.append_value('LINKFLAGS', '-mwindows')
         ctx.env.append_value('CFLAGS', '-mwindows')
-    elif is_darwin:
+    elif ctx.env.DEST_OS == 'darwin':
         # To support catching AppleEvents and running as ordinary OSX GUI app,
         # we have to link against the Carbon framework.
         # This linkage only needs to be there for the windowed bootloaders.
@@ -630,7 +613,7 @@ def build(ctx):
         # Do not strip bootloaders when using MSVC.
         features = ''
 
-    if is_win:
+    if ctx.env.DEST_OS == 'win32':
         # Use different RC file (icon) for console/windowed mode - remove '_d'
         icon_rc = 'windows/' + exe_name.replace('_d', '') + '.rc'
         # On Windows we need to link library zlib statically.
@@ -650,7 +633,7 @@ def build(ctx):
         libs = ['DL', 'M', 'Z',  # 'z' - zlib, 'm' - math,
                 'THR'] # may be used on FreBSD
         staticlibs = []
-        if is_aix:
+        if ctx.env.DEST_OS == 'aix':
             # link statically with zlib
             libs.remove('Z')
             staticlibs.append('Z')
@@ -668,27 +651,35 @@ def build(ctx):
             features=features)
 
 
+from waflib.Build import BuildContext
+class make_all(BuildContext):
+    """
+    Do build and install in one step.
+    """
+    cmd = 'make_all'
+
+    def execute_build(ctx):
+        from waflib import Options, Scripting
+        Options.commands = ['build_debug', 'build_release']
+        # On Windows and Mac OS X we also need console/windowed bootloaders.
+        # On other platforms they make no sense.
+        if ctx.env.DEST_OS in ('win32', 'darwin'):
+            Options.commands += ['build_debugw', 'build_releasew']
+        # Install bootloaders.
+        Options.commands += ['install_debug', 'install_release']
+        if ctx.env.DEST_OS in ('win32', 'darwin'):
+            Options.commands += ['install_debugw', 'install_releasew']
+
 def all(ctx):
     """
-    Do configure, build, install in one step.
+    Do configure, build and install in one step.
     """
-    from waflib import Options
-    Options.commands = ['distclean', 'configure', 'build_debug', 'build_release']
-    # On Windows and Mac OS X we also need console/windowed bootloaders.
-    # On other platforms they make no sense.
-    if is_win or is_darwin:
-        Options.commands += ['build_debugw', 'build_releasew']
-    # Install bootloaders.
-    Options.commands += ['install_debug', 'install_release']
-    if is_win or is_darwin:
-        Options.commands += ['install_debugw', 'install_releasew']
+    # `all` is run prior to `configure`, thus it does not get a build context.
+    # Thus another command `make_all` is required which gets the build
+    # context and can make decisions based on the outcome of `configure`.
+    from waflib import Options, Scripting
+    Options.commands = ['distclean', 'configure', 'make_all']
 
-
-def all_cross(ctx):
-    # FIXME: Commands are defined prior to detection of cross-build.
-    global is_win
-    is_win = True
-    all(ctx)
 
 # Set up building several variants of bootloader.
 from waflib.Build import BuildContext, InstallContext
