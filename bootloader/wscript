@@ -22,8 +22,8 @@ from waflib.Configure import conf
 from waflib import Logs
 
 # The following two variables are used by the target "waf dist"
-VERSION = ''
-APPNAME = ''
+VERSION = 'nodist'
+APPNAME = 'PyInstallerBootloader'
 
 # These variables are mandatory ('/' are converted automatically)
 top = '.'
