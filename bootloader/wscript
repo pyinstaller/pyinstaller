@@ -40,20 +40,17 @@ variants = {
     'releasew': 'runw',
 }
 
+# PyInstaller only knows platform.system(), so we need to
+# map waf's DEST_OS to these values.
+DESTOS_TO_SYSTEM = {
+    'linux': 'Linux',
+    'win32': 'Windows',
+    'darwin': 'Darwin',
+    'sunos': platform.system(), ## FIXME: inhibits cross-compile
+    'hpux': 'HP-UX',
+    'aix': 'AIX',
+    }
 
-
-
-
-
-def architecture():
-    """
-    on 64bit Mac function platform.architecture() returns 64bit even
-    for 32bit Python. This is the workaround for this.
-    """
-    if ctx.env.DEST_OS == 'darwin' and sys.maxsize <= 3 ** 32:
-        return '32bit'
-    else:
-        return platform.architecture()[0]  # 32bit or 64bit
 
 
 def machine():
@@ -186,43 +183,55 @@ def set_lsb_compiler(ctx):
     ctx.env.append_value('LINKFLAGS', lsb_target_flag)
 
 
+def check_sizeof_pointer(ctx):
+
+    def check(type, expected):
+        # test code taken from autoconf resp. Scons: this is a pretty clever
+        # hack to find that a type is of a given size using only compilation.
+        # This speeds things up quite a bit compared to straightforward code
+        # actually running the code.
+        # Plus: This works cross :-)
+        fragment = '''
+        int main() {
+            static int test_array[1 - 2 * !(((long int) (sizeof(%s))) == %d)];
+            test_array[0] = 0;
+            return 0;
+        }''' % (type, expected)
+        return ctx.check_cc(fragment=fragment, execute=False, mandatory=False)
+
+
+    ctx.start_msg("Checking size of pointer")
+    for size in (4, 8):
+        if check("void *", size):
+            break
+    else:
+        ctx.end_msg(False)
+        ctx.fatal("Couldn't determine pointer size, only 32 or 64 bit are supported. Please use `--target-arch' to set the pointer size.")
+    ctx.end_msg(size)
+    return size
+
+
 @conf
 def detect_arch(ctx):
     """
     Handle options --target-arch or use the same
-    architecture as the Python interpreter.
+    architecture as the compiler.
     """
+    try:
+        system = DESTOS_TO_SYSTEM[ctx.env.DEST_OS]
+    except KeyError:
+        ctx.fatal('Unrecognized target system: %s' % ctx.env.DEST_OS)
+
     # Get arch values either from CLI or detect it.
-    arch = architecture()
-    system = platform.system()
-
-    # TODO: Implement target detection and selection more sophisticated,
-    # bases on whatever waf already detects.
-    if 'mingw' in ctx.env.CC[0]:
-        # assume we are cross-compiling for windows, set some variables
-        ctx.msg('System', 'Assuming cross-compilation for Windows')
-        # Hard-coded System
-        system = "Windows"
-
-        # If option `--target-arch` was not given: determine the arch from the
-        # compiler name. TODO: Find a better to determine the arch.
-        cc = ctx.env.CC[0]
-        arch = ctx.options.target_arch
-        if arch:
-            ctx.msg('Platform', '%s-%s manually chosen' % (system, arch))
-        else:
-            arch = cc.split('-', 1)[0]
-            arch = {
-                'i686': '32bit',
-                'x86_64': '64bit',
-            }[arch]
-            ctx.msg('Platform', '%s-%s chosen based on compiler' % (system, arch))
-
-    elif ctx.options.target_arch:
+    if ctx.options.target_arch:
         arch = ctx.options.target_arch
         ctx.msg('Platform', '%s-%s manually chosen' % (system, arch))
     else:
-        ctx.msg('Platform', '%s-%s detected' % (system, arch))
+        # PyInstaller uses the result of platform.architecture() to determine
+        # the bits and this is testing the pointer size (via module struct).
+        # We do the same here.
+        arch = "%sbit" % (8 * check_sizeof_pointer(ctx))
+        ctx.msg('Platform', '%s-%s detected based on compiler' % (system, arch))
 
     if ctx.env.DEST_OS == 'darwin' and arch == '64bit':
         ctx.msg('CYAN', 'WARNING: Building bootloader for Python 64-bit on Mac OSX')
