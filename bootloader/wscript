@@ -378,6 +378,16 @@ def configure(ctx):
         ctx.msg('System', 'Assuming cross-compilation for %s' %
                 DESTOS_TO_SYSTEM[ctx.env.DEST_OS])
 
+        if ctx.env.DEST_OS in ('freebsd', 'hpux', 'sunos'):
+            # For these FreeBSD and HP-UX we determine some settings from
+            # Python's sysconfig. For cross-compiling somebody needs to
+            # implement options to overwrite these values as they may be
+            # wrong.
+            # For SunOS/Solaris mappgin DEST_OS to system is not yet known.
+            ctx.fatal('Cross-compiling for target %s is not yet supported. '
+                      'If you want this feature, please help implementing. '
+                      'See the wscript file for details.' % ctx.env.DEST_OS)
+
     # Detect architecture after completing compiler search
     ctx.detect_arch()
 
