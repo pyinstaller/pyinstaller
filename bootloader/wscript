@@ -576,6 +576,7 @@ def configure(ctx):
 
     if ctx.env.DEST_OS == 'darwin':
         ctx.env.append_value('CFLAGS', '-mmacosx-version-min=10.7')
+        ctx.env.append_value('LINKFLAGS', '-mmacosx-version-min=10.7')
 
     # On linux link only with needed libraries.
     # -Wl,--as-needed is on some platforms detected during configure but
