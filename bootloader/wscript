@@ -19,7 +19,7 @@ import sys
 import re
 import sysconfig
 from waflib.Configure import conf
-from waflib import Logs
+from waflib import Logs, Utils
 
 # The following two variables are used by the target "waf dist"
 VERSION = 'nodist'
@@ -67,6 +67,21 @@ def machine():
     if platform.machine().startswith('arm'):
         mach = 'arm'
     return mach
+
+
+def assoc_programm(ctx, name):
+    # Search other programs we need, based on the name of the compiler
+    # (replace "gcc" or "clang" by the tool name)
+    cc = ctx.env.CC[0]
+    prog = re.sub(r'(^|^.*-)(gcc|clang)(-.*|\.exe$|$)',
+                  r'\1' + name + r'\3',
+                  os.path.basename(cc))
+    prog = os.path.join(os.path.dirname(cc), prog)
+    # waf unconditionally appends the extension even if there is one already.
+    # So we need to remove the existing one here.
+    exts = Utils.is_win32 and r'\.(exe|com|bat|cmd)$' or r'\.(sh|pl|py)$'
+    prog = re.sub(exts, '', prog)
+    return prog
 
 
 def options(ctx):
@@ -203,11 +218,6 @@ def detect_arch(ctx):
             }[arch]
             ctx.msg('Platform', '%s-%s chosen based on compiler' % (system, arch))
 
-        # search other programs we need, based on the name of the compiler
-        # (replace "gcc" the the tool name)
-        cc = re.sub('^(.*/|.*-)gcc(-.*|$)', r'\1%s\2', cc)
-        ctx.find_program([cc % 'windres'], var='WINRC')
-        ctx.find_program([cc % 'strip'], var='STRIP')
     elif ctx.options.target_arch:
         arch = ctx.options.target_arch
         ctx.msg('Platform', '%s-%s manually chosen' % (system, arch))
@@ -333,12 +343,17 @@ def configure(ctx):
     else:
         ctx.load('compiler_c')  # Any available C compiler.
 
-    # Detect architecture (and if cross-compiling for windows)
-    ctx.detect_arch()
-
     # LSB compatible bootloader only for Linux and without cli option --no-lsb.
     if ctx.env.DEST_OS == 'linux' and not ctx.options.nolsb:
         ctx.set_lsb_compiler()
+
+    # Detect architecture after completing compiler search
+    ctx.detect_arch()
+
+    # Set proper architecture and CPU for C compiler
+    ctx.set_arch_flags()
+
+    ### Other Tools
 
     if ctx.env.DEST_OS == 'win32':
         # Do not embed manifest file when using MSVC (Visual Studio).
@@ -346,11 +361,13 @@ def configure(ctx):
         # application by PyInstaller.
         ctx.env.MSVC_MANIFEST = False
         # Load tool to process *.rc* files for C/C++ like icon for exe files.
+        ctx.find_program([assoc_programm(ctx, 'windres')], var='WINRC')
         ctx.load('winres')
 
-    # Set proper architecture and CPU for C compiler
-    ctx.set_arch_flags()
-
+    if ctx.env.CC_NAME != 'msvc':
+        # This tool allows reducing the size of executables.
+        ctx.find_program([assoc_programm(ctx, 'strip')], var='STRIP')
+        ctx.load('strip', tooldir='tools')
 
     ### C Compiler optimizations.
     # TODO Set proper optimization flags for MSVC (Visual Studio).
@@ -366,10 +383,6 @@ def configure(ctx):
             ctx.env.append_value('CFLAGS', '-g')
     else:
         ctx.env.append_value('CFLAGS', '-O2')
-
-    if ctx.env.CC_NAME != 'msvc':
-        # This tool allows reducing the size of executables.
-        ctx.load('strip', tooldir='tools')
 
     if ctx.env.CC_NAME == 'gcc':
         # !! These flags are gcc specific
