@@ -11,7 +11,7 @@
 import os
 
 from PyInstaller.utils.hooks import (
-    get_module_attribute, is_module_satisfies, qt_menu_nib_dir)
+    get_module_attribute, is_module_satisfies, qt_menu_nib_dir, get_module_file_attribute)
 from PyInstaller.compat import getsitepackages, is_darwin, is_win
 
 
@@ -21,6 +21,7 @@ from PyInstaller.compat import getsitepackages, is_darwin, is_win
 if is_win:
     from PyInstaller.utils.win32.winutils import extend_system_path
     extend_system_path([os.path.join(x, 'PyQt5') for x in getsitepackages()])
+    extend_system_path([os.path.join(os.path.dirname(get_module_file_attribute('PyQt5')), 'Qt', 'bin')])
 
 
 # In the new consolidated mode any PyQt depends on _qt
