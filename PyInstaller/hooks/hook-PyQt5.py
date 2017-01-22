@@ -8,11 +8,23 @@
 #-----------------------------------------------------------------------------
 import os
 
-from PyInstaller.utils.hooks import (get_module_attribute,
-    is_module_satisfies, qt_menu_nib_dir, collect_data_files)
-from PyInstaller.compat import is_darwin
+from PyInstaller.utils.hooks import (
+    get_module_attribute, is_module_satisfies, qt_menu_nib_dir, get_module_file_attribute,
+    collect_data_files)
+from PyInstaller.compat import getsitepackages, is_darwin, is_win
 
-# In the new consolidated mode any PyQt depends on Qt.
+
+# On Windows system PATH has to be extended to point to the PyQt5 directory.
+# The PySide directory contains Qt dlls. We need to avoid including different
+# version of Qt libraries when there is installed another application (e.g. QtCreator)
+if is_win:
+    from PyInstaller.utils.win32.winutils import extend_system_path
+    extend_system_path([os.path.join(x, 'PyQt5') for x in getsitepackages()])
+    extend_system_path([os.path.join(os.path.dirname(get_module_file_attribute('PyQt5')),
+                                     'Qt', 'bin')])
+
+
+# In the new consolidated mode any PyQt depends on _qt
 hiddenimports = ['sip', 'PyQt5.Qt']
 
 # Collect just the qt.conf file.
