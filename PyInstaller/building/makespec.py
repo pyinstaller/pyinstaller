@@ -345,7 +345,7 @@ def main(scripts, name=None, onefile=None,
         'debug': debug,
         'strip': strip,
         'upx': not noupx,
-        'tempdir': repr(tempdir),
+        'tempdir': tempdir,
         'exe_options': exe_options,
         'cipher_init': cipher_init,
         # Directory with additional custom import hooks.
