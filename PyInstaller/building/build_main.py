@@ -31,7 +31,7 @@ from ..utils.misc import absnormpath
 from ..compat import is_py2, is_win, PYDYLIB_NAMES, VALID_MODULE_TYPES
 from ..depend import bindepend
 from ..depend.analysis import initialize_modgraph
-from .api import PYZ, EXE, COLLECT, MERGE
+from .api import PYZ, EXE, COLLECT
 from .datastruct import TOC, Target, Tree, _check_guts_eq
 from .imphook import AdditionalFilesCache, ModuleHookCache
 from .osx import BUNDLE
@@ -712,7 +712,6 @@ def build(spec, distpath, workpath, clean_build):
         'BUNDLE': BUNDLE,
         'COLLECT': COLLECT,
         'EXE': EXE,
-        'MERGE': MERGE,
         'PYZ': PYZ,
         'Tree': Tree,
         # Old classes for .spec - raise Exception for user.
