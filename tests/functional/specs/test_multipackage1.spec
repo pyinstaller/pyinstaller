@@ -8,20 +8,21 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-import sys
 
-# MULTIPROCESS FEATURE: file A (onefile pack) depends on file B (onedir pack)
+# MULTIPROCESS FEATURE: file A (onefile pack) depends on file B (onefile pack).
 
 
-__testname__ = 'test_multipackage2'
-__testdep__ = 'multipackage2_B'
+__testname__ = '../scripts/test_multipackage1'
+__testdep__ = '../scripts/multipackage1_B'
 
 a = Analysis([__testname__ + '.py'],
              pathex=['.'])
 b = Analysis([__testdep__ + '.py'],
              pathex=['.'])
 
-pyz = PYZ(a.pure, b.pure)
+pyz = PYZ(a.pure, a.zipped_data,
+          b.pure, b.zipped_data,
+          append=False)
 
 exe = EXE(pyz,
           a.scripts,
@@ -29,21 +30,22 @@ exe = EXE(pyz,
           a.zipfiles,
           a.datas,
           a.dependencies,
-          name=os.path.join('dist', __testname__ + '.exe'),
+          name=os.path.basename(__testname__),
           debug=True,
           strip=False,
-          upx=True,
+          upx=False,
           console=1 )
-
+                    
 exeB = EXE(pyz,
           b.scripts,
+          b.binaries,
+          b.zipfiles,
+          b.datas,
           b.dependencies,
-          exclude_binaries=1,
-          name=os.path.join('build', 'pyi.'+sys.platform, __testdep__,
-                            __testdep__ + '.exe'),
+          name=os.path.join('dist', __testdep__ + '.exe'),
           debug=True,
           strip=False,
-          upx=True,
+          upx=False,
           console=1 )
 
 coll = COLLECT(
@@ -57,5 +59,4 @@ coll = COLLECT(
         b.datas,
         strip=False,
         upx=True,
-        name=os.path.join('dist', __testdep__))
-
+        name=os.path.join('dist', __testname__))

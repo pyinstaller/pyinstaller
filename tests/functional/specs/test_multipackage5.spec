@@ -10,26 +10,29 @@
 
 import sys
 
-# MULTIPROCESS FEATURE: file A (onefile pack) depends on file B (onedir pack)
+# TESTING MULTIPROCESS FEATURE: file A (onedir pack) depends on file B (onedir pack)
+# and file C (onefile pack)
 
 
-__testname__ = 'test_multipackage2'
-__testdep__ = 'multipackage2_B'
+__testname__ = '../scripts/test_multipackage5'
+__testdep__ = '../scripts/multipackage5_B'
+__testdep2__ = '../scripts/multipackage5_C'
 
 a = Analysis([__testname__ + '.py'],
              pathex=['.'])
 b = Analysis([__testdep__ + '.py'],
              pathex=['.'])
+c = Analysis([__testdep2__ + '.py'],
+             pathex=['.'])
 
-pyz = PYZ(a.pure, b.pure)
+
+pyz = PYZ(a.pure, b.pure, c.pure)
 
 exe = EXE(pyz,
           a.scripts,
-          a.binaries,
-          a.zipfiles,
-          a.datas,
           a.dependencies,
-          name=os.path.join('dist', __testname__ + '.exe'),
+          exclude_binaries=1,
+          name=os.path.basename(__testname__),
           debug=True,
           strip=False,
           upx=True,
@@ -46,6 +49,18 @@ exeB = EXE(pyz,
           upx=True,
           console=1 )
 
+exeC = EXE(pyz,
+          c.scripts,
+          c.binaries,
+          c.zipfiles,
+          c.datas,
+          c.dependencies,
+          name=os.path.join('dist', __testdep2__ + '.exe'),
+          debug=True,
+          strip=False,
+          upx=True,
+          console=1 )
+
 coll = COLLECT(
         exe,
         a.binaries,
@@ -55,7 +70,10 @@ coll = COLLECT(
         b.binaries,
         b.zipfiles,
         b.datas,
+        exeC,
+        c.binaries,
+        c.zipfiles,
+        c.datas,
         strip=False,
         upx=True,
-        name=os.path.join('dist', __testdep__))
-
+        name=os.path.join('dist', __testname__))

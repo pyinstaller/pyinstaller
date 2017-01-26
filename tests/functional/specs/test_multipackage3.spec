@@ -10,11 +10,11 @@
 
 import sys
 
-# MULTIPROCESS FEATURE: file A (onefile pack) depends on file B (onedir pack)
+# TESTING MULTIPROCESS FEATURE: file A (onedir pack) depends on file B (onefile pack).
 
 
-__testname__ = 'test_multipackage2'
-__testdep__ = 'multipackage2_B'
+__testname__ = '../scripts/test_multipackage3'
+__testdep__ = '../scripts/multipackage3_B'
 
 a = Analysis([__testname__ + '.py'],
              pathex=['.'])
@@ -25,11 +25,9 @@ pyz = PYZ(a.pure, b.pure)
 
 exe = EXE(pyz,
           a.scripts,
-          a.binaries,
-          a.zipfiles,
-          a.datas,
           a.dependencies,
-          name=os.path.join('dist', __testname__ + '.exe'),
+          exclude_binaries=1,
+          name=os.path.basename(__testname__),
           debug=True,
           strip=False,
           upx=True,
@@ -37,10 +35,11 @@ exe = EXE(pyz,
 
 exeB = EXE(pyz,
           b.scripts,
+          b.binaries,
+          b.zipfiles,
+          b.datas,
           b.dependencies,
-          exclude_binaries=1,
-          name=os.path.join('build', 'pyi.'+sys.platform, __testdep__,
-                            __testdep__ + '.exe'),
+          name=os.path.join('dist', __testdep__ + '.exe'),
           debug=True,
           strip=False,
           upx=True,
@@ -57,5 +56,4 @@ coll = COLLECT(
         b.datas,
         strip=False,
         upx=True,
-        name=os.path.join('dist', __testdep__))
-
+        name=os.path.join('dist', __testname__ ))
