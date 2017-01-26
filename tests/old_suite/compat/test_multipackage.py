@@ -23,7 +23,7 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 import runtests
 
-for test in runtests.suite(Struct(opts), args)._tests:
+for test in sorted(runtests.suite(Struct(opts), args)._tests):
     test_name = str(test).split(' ')[0].title()
     TestClass = type('TestClass', (type(test),), test.__dict__)
     TestClass._testcase = None
