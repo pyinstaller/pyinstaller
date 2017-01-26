@@ -686,9 +686,8 @@ class __obsolete_option:
         self.nargs = self.const = self.choices = self.metavar=None
         self.required = False
 
-    def __call__(parser, namespace, values, opt):
+    def __call__(*args, **kw):
         return
-        parser.error('%s option does not exist anymore (obsolete).' % opt)
 
 
 def __add_obsolete_options(parser):
