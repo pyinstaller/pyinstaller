@@ -69,7 +69,7 @@ class PYZ(Target):
         Target.__init__(self)
         name = kwargs.get('name', None)
         cipher = kwargs.get('cipher', None)
-        self.append = kwargs.get('append', True)  # Should the PYZ be appended to the executable?
+        self.append_pkg = kwargs.get('append_pkg', True)  # Should the PYZ be appended to the executable?
         self.toc = TOC()
         # If available, use code objects directly from ModuleGraph to
         # speed up PyInstaller.
@@ -378,7 +378,7 @@ class EXE(Target):
 
         for arg in args:
             if isinstance(arg, PYZ):
-                append_pkg.append(PYZ.append)
+                append_pkg.append(PYZ.append_pkg)
             if isinstance(arg, TOC):
                 self.toc.extend(arg)
             elif isinstance(arg, Target):
