@@ -699,29 +699,7 @@ def run_tests(test_suite):
     return unittest.TextTestRunner(verbosity=2).run(test_suite)
 
 
-def main():
-    try:
-        parser = optparse.OptionParser(usage='%prog [options] [TEST-NAME ...]',
-              epilog='TEST-NAME can be the name of the .py-file, '
-              'the .spec-file or only the basename.')
-    except TypeError:
-        parser = optparse.OptionParser(usage='%prog [options] [TEST-NAME ...]')
-
-    parser.add_option('-a', '--all-with-crypto', action='store_true',
-                      help='Run the whole test suite with bytecode encryption enabled.')
-    parser.add_option('-c', '--clean', action='store_true',
-                      help='Clean up generated files')
-    parser.add_option('-i', '--interactive-tests', action='store_true',
-                      help='Run interactive tests (default: run normal tests)')
-    parser.add_option('-v', '--verbose',
-                      action='store_true',
-                      default=False,
-                      help='Verbose mode (default: %default)')
-    parser.add_option('--known-fails', action='store_true',
-                      dest='run_known_fails',
-                      help='Run tests known to fail, too.')
-
-    opts, args = parser.parse_args()
+def suite(opts, args=None):
 
     # Do only cleanup.
     if opts.clean:
@@ -795,7 +773,34 @@ def main():
     # Run created test suite.
     clean()
 
-    result = run_tests(suite)
+    return suite
+
+
+def main():
+    try:
+        parser = optparse.OptionParser(usage='%prog [options] [TEST-NAME ...]',
+              epilog='TEST-NAME can be the name of the .py-file, '
+              'the .spec-file or only the basename.')
+    except TypeError:
+        parser = optparse.OptionParser(usage='%prog [options] [TEST-NAME ...]')
+
+    parser.add_option('-a', '--all-with-crypto', action='store_true',
+                      help='Run the whole test suite with bytecode encryption enabled.')
+    parser.add_option('-c', '--clean', action='store_true',
+                      help='Clean up generated files')
+    parser.add_option('-i', '--interactive-tests', action='store_true',
+                      help='Run interactive tests (default: run normal tests)')
+    parser.add_option('-v', '--verbose',
+                      action='store_true',
+                      default=False,
+                      help='Verbose mode (default: %default)')
+    parser.add_option('--known-fails', action='store_true',
+                      dest='run_known_fails',
+                      help='Run tests known to fail, too.')
+
+    opts, args = parser.parse_args()
+
+    result = run_tests(suite(opts, args))
 
     sys.exit(int(bool(result.failures or result.errors)))
 
