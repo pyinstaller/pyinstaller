@@ -378,7 +378,7 @@ class EXE(Target):
 
         for arg in args:
             if isinstance(arg, PYZ):
-                append_pkg.append(PYZ.append_pkg)
+                append_pkg.append(arg.append_pkg)
             if isinstance(arg, TOC):
                 self.toc.extend(arg)
             elif isinstance(arg, Target):
