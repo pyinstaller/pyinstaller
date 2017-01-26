@@ -20,7 +20,8 @@ a = Analysis([__testname__ + '.py'],
 b = Analysis([__testdep__ + '.py'],
              pathex=['.'])
 
-pyz = PYZ(a, b,
+pyz = PYZ(a.pure, a.zipped_data,
+          b.pure, b.zipped_data,
           append=False)
 exe = EXE(pyz,
           a.scripts,
