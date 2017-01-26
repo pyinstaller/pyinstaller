@@ -727,7 +727,7 @@ def suite(opts, args=None):
                 test_script = os.path.basename(os.path.splitext(t)[0])
                 suite.addTest(GenericTestCase(test_script, test_dir=test_dir,
                         run_known_fails=opts.run_known_fails))
-                print('Running test: ', (test_dir + '/' + test_script))
+                # print('Running test: ', (test_dir + '/' + test_script))
 
     # Run all tests or all interactive tests.
     else:

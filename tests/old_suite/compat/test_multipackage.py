@@ -23,9 +23,9 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 import runtests
 
-for test in sorted(runtests.suite(Struct(opts), args)._tests, key=str):
+for test in sorted(runtests.suite(Struct(opts), args)._tests, key=lambda test: test._testMethodName):
     test_name = str(test).split(' ')[0].title()
-    TestClass = type('TestClass', (type(test),), test.__dict__)
+    TestClass = type(test_name, (type(test),), test.__dict__)
     TestClass._testcase = None
     exec('TestClass.{} = test._generic_test_function'.format(test._testMethodName))
     exec('{} = TestClass'.format(test_name))
