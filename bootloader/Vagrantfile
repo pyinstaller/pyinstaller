@@ -227,7 +227,8 @@ Vagrant.configure(2) do |config|
       v.memory = 768
     end
     b.vm.provision "fix permissions", :type => :shell, :privileged => true,
-        :inline => "chown -R vagrant: /vagrant"
+        # Allow some files to not be changed (e.g. due to directory layout)
+        :inline => "chown -R vagrant: /vagrant || true"
     b.vm.provision "packages debianoid", :type => :shell, :inline => packages_debianoid
     b.vm.provision "build bootloader", :type => :shell, :privileged => false, :inline => build_bootloader("linux64"),
         :keep_color => true
