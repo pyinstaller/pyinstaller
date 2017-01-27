@@ -32,6 +32,7 @@ is_py27 = sys.version_info >= (2, 7) and sys.version_info < (3, 0)
 is_py34 = sys.version_info >= (3, 4)
 is_py35 = sys.version_info >= (3, 5)
 is_py36 = sys.version_info >= (3, 6)
+is_py37 = sys.version_info >= (3, 7)
 
 is_win = sys.platform.startswith('win')
 is_cygwin = sys.platform == 'cygwin'
