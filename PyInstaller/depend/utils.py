@@ -98,20 +98,10 @@ def create_py3_base_library(libzip_filename, graph):
         raise
 
 
-# This code does not work with Python 3 and is not used
-# with modulegraph.
 LOAD_CONST = dis.opmap['LOAD_CONST']
 LOAD_GLOBAL = dis.opmap['LOAD_GLOBAL']
 LOAD_NAME = dis.opmap['LOAD_NAME']
 LOAD_ATTR = dis.opmap['LOAD_ATTR']
-COND_OPS = set([dis.opmap['POP_JUMP_IF_TRUE'],
-                dis.opmap['POP_JUMP_IF_FALSE'],
-                dis.opmap['JUMP_IF_TRUE_OR_POP'],
-                dis.opmap['JUMP_IF_FALSE_OR_POP'],
-            ])
-JUMP_FORWARD = dis.opmap['JUMP_FORWARD']
-HASJREL = set(dis.hasjrel)
-assert 'SET_LINENO' not in dis.opmap  # safty belt
 
 if is_py2:
     _cOrd = ord
@@ -126,13 +116,7 @@ def pass1(code):
     instrs = []
     i = 0
     n = len(code)
-    # TODO reestablish line numbers or remove them at all
-    curline = 0
-    incondition = 0
-    out = 0
     while i < n:
-        if i >= out:
-            incondition = 0
         c = code[i]
         i = i + 1
         op = _cOrd(c)
@@ -141,14 +125,7 @@ def pass1(code):
             i = i + 2
         else:
             oparg = None
-        if not incondition and op in COND_OPS:
-            incondition = 1
-            out = oparg
-            if op in HASJREL:
-                out += i
-        elif incondition and op == JUMP_FORWARD:
-            out = max(out, i + oparg)
-        instrs.append((op, oparg, incondition, curline))
+        instrs.append((op, oparg, 0, 0))
     return instrs
 
 
