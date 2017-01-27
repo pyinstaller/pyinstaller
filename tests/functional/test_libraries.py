@@ -63,14 +63,6 @@ def test_botocore(pyi_builder):
         """)
 
 
-@importorskip('cherrypy')
-def test_cherrypy(pyi_builder):
-    pyi_builder.test_source(
-        """
-        import cherrypy.wsgiserver
-        """)
-
-
 @xfail(is_darwin, reason='Issue #1895.')
 @importorskip('enchant')
 def test_enchant(pyi_builder):
