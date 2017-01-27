@@ -29,6 +29,49 @@ def packages_debianoid
   EOF
 end
 
+def packages_osxcross_debianoid
+  # Install packages required for building osxcross
+  return <<-EOF
+    apt-get update
+    # avoid any prompts, from http://askubuntu.com/questions/146921
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get -y -o Dpkg::Options::="--force-confdef" \
+               -o Dpkg::Options::="--force-confold" upgrade
+    # these are typically installed already on a GNU/Linux system
+    apt-get install -y cmake make sed kmod
+    apt-get install -y git fuse clang
+    # requirements for darling-dmg (not listed in tools/get_dependencies.sh)
+    apt-get install -y libxml2-dev libicu-dev libssl-dev libbz2-dev libfuse-dev
+  EOF
+end
+
+def prepare_osxcross_debianiod
+  # Download osxcross source and install packages defined there
+  return <<-EOF
+    git clone --depth 1 https://github.com/tpoechtrager/osxcross.git
+    # install requirements for cctools
+    sudo osxcross/tools/get_dependencies.sh
+  EOF
+end
+
+def build_osxcross
+  return <<-EOF
+    sudo modprobe fuse
+    PATH=$PATH:/sbin:/usr/sbin
+    cd osxcross
+    # Build darling-dmg, mount the ``.dmg`` image file via fuse and extract
+    # the SDK into MacOSX*.tar.*
+    ./tools/gen_sdk_package_darling_dmg.sh /vagrant/macOSX/Xcode_7.3.1.dmg
+    mv MacOSX*.tar.* tarballs/
+    # Build the build-tools into directory `target/`
+    UNATTENDED=1 ./build.sh
+    # Create a tar-ball including the SDK and the build-tools
+    echo "Packaging SDK and cctools - this may take a while"
+    tar -C target --xz -cf /tmp/osxcross.tar.xz .
+  EOF
+end
+
+
 def update_darwin
   return <<-EOF
     set +x
@@ -145,7 +188,8 @@ Vagrant.configure(2) do |config|
       :rsync__args => ["--verbose", "--archive", "--delete", "-z",
                        "--include=bootloader", "--include=PyInstaller",
                        "--exclude=/*", "--cvs-exclude", "--exclude=*.pyc",
-                       "--exclude=bootloader/build"],
+                       "--exclude=bootloader/build",
+                       "--exclude=bootloader/_sdks"]
       # chown fails on the OS X box, since group 'vagrant' is missing
       :rsync__chown => false
 
@@ -170,6 +214,32 @@ Vagrant.configure(2) do |config|
     b.vm.provision "build bootloader cross", :type => :shell,
         :privileged => false,
         :inline => build_bootloader_cross("linux64"),
+        :keep_color => true
+  end
+
+  #--- Build the Darwin SDK and tools ---
+  config.vm.define "build-osxcross" do |b|
+    b.vm.box = "boxcutter/debian82"
+    b.vm.provider :virtualbox do |v|
+      v.memory = 768
+    end
+
+    if File.exist?("_sdks/osx/Xcode_7.3.1.dmg")
+      # Do not rsync this to avoid copying 4.9 GB into the machine
+      config.vm.synced_folder "_sdks/osx", "/vagrant/macOSX",
+          :mount_options => ["ro"]
+    end
+
+    b.vm.provision "packages osxcross debianoid", :type => :shell,
+        :inline => packages_osxcross_debianoid,
+        :keep_color => true
+    b.vm.provision "prepare osxcross debianoid", :type => :shell,
+        :inline => prepare_osxcross_debianiod,
+        :keep_color => true
+    # Reload for the case the kernel changed, thus fuse will be loaded
+    b.vm.provision :reload
+    b.vm.provision "build osxcross", :type => :shell,
+        :inline => build_osxcross,
         :keep_color => true
   end
 
