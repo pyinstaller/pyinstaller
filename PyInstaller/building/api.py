@@ -111,11 +111,15 @@ class PYZ(Target):
         logger.info("Building PYZ (ZlibArchive) %s", self.name)
         # Do not bundle PyInstaller bootstrap modules into PYZ archive.
         toc = self.toc - self.dependencies
-        for entry in toc:
+        for entry in toc[:]:
             if not entry[0] in self.code_dict and entry[2] == 'PYMODULE':
                 # For some reason the code-object, modulegraph created
                 # is not available. Recreate it
-                self.code_dict[entry[0]] = get_code_object(entry[0], entry[1])
+                try:
+                    self.code_dict[entry[0]] = get_code_object(entry[0], entry[1])
+                except SyntaxError:
+                    # Exclude the module in case this is code meant for a newer Python version.
+                    toc.remove(entry)
         # sort content alphabetically to support reproducible builds
         toc.sort()
 

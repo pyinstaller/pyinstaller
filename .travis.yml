@@ -24,6 +24,7 @@ python:
   - "3.3"
   - "3.4"
   - "3.5"
+  - "3.6-dev"  # See https://docs.travis-ci.com/user/languages/python/#Choosing-Python-versions-to-test-against
   - "nightly"
 
 matrix:
@@ -64,7 +65,7 @@ before_install:
 
 install:
   # Update pip.
-  - python -m pip install -U pip
+  - python -m pip install -U pip setuptools wheel
   # Install PyInstaller.
   - pip install -e .
 

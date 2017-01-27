@@ -18,6 +18,9 @@ frozen_encoding = str(sys.getfilesystemencoding())
 # On Windows it should be still mbcs.
 if sys.platform.startswith('win'):
     encoding = 'mbcs'
+    if sys.version_info >= (3, 6):
+        # See PEP 529 for more information.
+        encoding = 'utf-8'
 # On Mac OS X the value should be still the same.
 elif sys.platform.startswith('darwin'):
     encoding = 'utf-8'
