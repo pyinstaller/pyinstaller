@@ -23,7 +23,7 @@ from PyInstaller.utils.hooks import (
 # If the "gdk-pixbuf-query-loaders" command is not in the current ${PATH}, GDK
 # and thus GdkPixbuf is unavailable. Return with a non-fatal warning.
 if which('gdk-pixbuf-query-loaders') is None:
-    logger.warn(
+    logger.warning(
         '"hook-gi.repository.GdkPixbuf" ignored, since GDK not found '
         '(i.e., "gdk-pixbuf-query-loaders" not in $PATH).'
     )
@@ -96,4 +96,4 @@ else:
         datas.append((cachefile, 'lib/gdk-pixbuf-2.0/2.10.0'))
     # Else, loader detection is unsupported on this platform.
     else:
-        logger.warn('GdkPixbuf loader bundling unsupported on your platform.')
+        logger.warning('GdkPixbuf loader bundling unsupported on your platform.')

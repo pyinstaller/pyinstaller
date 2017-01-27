@@ -22,4 +22,4 @@ if is_module_satisfies('kivy >= 1.9.1'):
                              hiddenimports))
 else:
     logger = logging.getLogger(__name__)
-    logger.warn('Hook disabled because of Kivy version < 1.9.1')
+    logger.warning('Hook disabled because of Kivy version < 1.9.1')

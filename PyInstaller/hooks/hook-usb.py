@@ -43,7 +43,7 @@ try:
             binaries = [(usblib._name, '')]
 
 except (ValueError, usb.core.USBError) as exc:
-    logger.warn("%s", exc)
+    logger.warning("%s", exc)
 
 
 # if nothing found, try to use our custom mechanism

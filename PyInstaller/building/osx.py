@@ -108,7 +108,7 @@ class BUNDLE(Target):
         if os.path.exists(self.icon):
             shutil.copy(self.icon, os.path.join(self.name, 'Contents', 'Resources'))
         else:
-            logger.warn("icon not found %s" % self.icon)
+            logger.warning("icon not found %s", self.icon)
 
         # Key/values for a minimal Info.plist file
         info_plist_dict = {"CFBundleDisplayName": self.appname,

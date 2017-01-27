@@ -173,7 +173,7 @@ def scan_code_for_ctypes(co):
             binaries.remove(binary)
         elif binary != os.path.basename(binary):
             # TODO make these warnings show up somewhere.
-            logger.warn("ignoring %s - ctypes imports only supported using bare filenames", binary)
+            logger.warning("ignoring %s - ctypes imports only supported using bare filenames", binary)
 
     binaries = _resolveCtypesImports(binaries)
     return binaries
@@ -368,7 +368,7 @@ def _resolveCtypesImports(cbinaries):
             # 'W: library kernel32.dll required via ctypes not found'
             if not include_library(cbin):
                 continue
-            logger.warn("library %s required via ctypes not found", cbin)
+            logger.warning("library %s required via ctypes not found", cbin)
         else:
             if not include_library(cpath):
                 continue

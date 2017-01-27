@@ -154,7 +154,7 @@ class Analysis(Target):
             if not os.path.isabs(script):
                 script = os.path.join(spec_dir, script)
             if absnormpath(script) in self._old_scripts:
-                logger.warn('Ignoring obsolete auto-added script %s', script)
+                logger.warning('Ignoring obsolete auto-added script %s', script)
                 continue
             # Normalize script path.
             script = os.path.normpath(script)
