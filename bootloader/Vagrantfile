@@ -164,10 +164,12 @@ Vagrant.configure(2) do |config|
     b.vm.provision "fix permissions", :type => :shell, :privileged => true,
         :inline => "chown -R vagrant: /vagrant"
     b.vm.provision "packages debianoid", :type => :shell, :inline => packages_debianoid
-    b.vm.provision "build bootloader", :type => :shell, :privileged => false, :inline => build_bootloader("linux64")
+    b.vm.provision "build bootloader", :type => :shell, :privileged => false, :inline => build_bootloader("linux64"),
+        :keep_color => true
     b.vm.provision "build bootloader cross", :type => :shell,
         :privileged => false,
-        :inline => build_bootloader_cross("linux64")
+        :inline => build_bootloader_cross("linux64"),
+        :keep_color => true
   end
 
   #--- Mac OS X ---
@@ -196,7 +198,8 @@ Vagrant.configure(2) do |config|
     #b.vm.provision "packages darwin", :type => :shell, :privileged => false,
     #    :inline => packages_darwin
     b.vm.provision "build bootloader", :type => :shell, :privileged => false,
-        :inline => build_bootloader("darwin64")
+        :inline => build_bootloader("darwin64"),
+        :keep_color => true
   end
 
   #--- Windows 64 bit
@@ -241,7 +244,8 @@ Vagrant.configure(2) do |config|
 
     # Build the bootloader
     b.vm.provision "build bootloader", :type => :shell, :privileged => false,
-        :inline => build_bootloader("windows10-64")
+        :inline => build_bootloader("windows10-64"),
+        :keep_color => true
   end
 
 end
