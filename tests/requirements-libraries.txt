@@ -29,7 +29,7 @@ numpy
 # Windows binaries on lxml are only available for this version. See #2100.
 lxml==3.4.4 ; sys_platform == 'win32'
 lxml ; sys_platform != 'win32'
-keyring
+keyring==9.0
 openpyxl
 pycparser
 pytz

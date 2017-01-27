@@ -8,11 +8,16 @@
 #-----------------------------------------------------------------------------
 
 
-import pytest
 from threading import Thread
-from queue import Queue
 
+from PyInstaller.compat import is_py2
 from PyInstaller.loader.pyimod02_archive import ArchiveFile
+
+if is_py2:
+    from Queue import Queue
+else:
+    from queue import Queue
+
 
 def test_threading_import(tmpdir):
     """
