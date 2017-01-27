@@ -14,7 +14,7 @@ environment:
       # Break the tests into two runs, since together they exceed the 1 hour limit.
       # See https://github.com/pyinstaller/pyinstaller/issues/2024#issuecomment-224129520
       # for more discussion.
-      TEST1_CMD: "py.test --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
+      TEST1_CMD: "py.test --junitxml=junit-results.xml --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
       TEST2_CMD: ""
 
     - PYTHON: "C:\\Python35-x64"
@@ -22,7 +22,7 @@ environment:
       PYTHON_ARCH: "64"
       VCVARSALL: "x64"
       TEST1_CMD: ""
-      TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
+      TEST2_CMD: "py.test --junitxml=junit-results.xml --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
 
     - PYTHON: "C:\\Python35"
       PYTHON_VERSION: "3.5"
@@ -31,7 +31,7 @@ environment:
       # Break the tests into two runs, since together they exceed the 1 hour limit.
       # See https://github.com/pyinstaller/pyinstaller/issues/2024#issuecomment-224129520
       # for more discussion.
-      TEST1_CMD: "py.test --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
+      TEST1_CMD: "py.test --junitxml=junit-results.xml --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
       TEST2_CMD: ""
 
     - PYTHON: "C:\\Python35"
@@ -39,13 +39,13 @@ environment:
       PYTHON_ARCH: "32"
       VCVARSALL: "x86"
       TEST1_CMD: ""
-      TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
+      TEST2_CMD: "py.test --junitxml=junit-results.xml --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
 
     - PYTHON: "C:\\Python34"
       PYTHON_VERSION: "3.4"
       PYTHON_ARCH: "32"
       VCVARSALL: "x86"
-      TEST1_CMD: "py.test --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
+      TEST1_CMD: "py.test --junitxml=junit-results.xml --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
       TEST2_CMD: ""
 
     - PYTHON: "C:\\Python34"
@@ -53,13 +53,13 @@ environment:
       PYTHON_ARCH: "32"
       VCVARSALL: "x86"
       TEST1_CMD: ""
-      TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
+      TEST2_CMD: "py.test --junitxml=junit-results.xml --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
 
     - PYTHON: "C:\\Python33"
       PYTHON_VERSION: "3.3"
       PYTHON_ARCH: "32"
       VCVARSALL: "x86"
-      TEST1_CMD: "py.test --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
+      TEST1_CMD: "py.test --junitxml=junit-results.xml --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
       TEST2_CMD: ""
 
     - PYTHON: "C:\\Python33"
@@ -67,13 +67,13 @@ environment:
       PYTHON_ARCH: "32"
       VCVARSALL: "x86"
       TEST1_CMD: ""
-      TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
+      TEST2_CMD: "py.test --junitxml=junit-results.xml --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
 
     - PYTHON: "C:\\Python27"
       PYTHON_VERSION: "2.7"
       PYTHON_ARCH: "32"
       VCVARSALL: "x86"
-      TEST1_CMD: "py.test --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
+      TEST1_CMD: "py.test --junitxml=junit-results.xml --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
       TEST2_CMD: ""
 
     - PYTHON: "C:\\Python27"
@@ -81,7 +81,7 @@ environment:
       PYTHON_ARCH: "32"
       VCVARSALL: "x86"
       TEST1_CMD: ""
-      TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
+      TEST2_CMD: "py.test --junitxml=junit-results.xml --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
 
 cache:
   # Cache downloaded pip packages.
@@ -135,3 +135,7 @@ test_script:
     %CMD_IN_ENV% %TEST1_CMD% )"
   - "if not \"%APPVEYOR_SCHEDULED_BUILD%\" == \"True\" (
     %CMD_IN_ENV% %TEST2_CMD% )"
+    
+on_finish:
+  - ps: (new-object net.webclient).UploadFile("https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path .\junit-results.xml))
+
