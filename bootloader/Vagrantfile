@@ -33,6 +33,7 @@ def update_darwin
   return <<-EOF
     set +x
     softwareupdate --ignore iTunesX
+    softwareupdate --ignore iTunes
     softwareupdate --install --all
   EOF
 end
@@ -185,6 +186,8 @@ Vagrant.configure(2) do |config|
                    '00000001', '000306a9', '00020800', '80000201', '178bfbff']
       # This should make make the box less choppy (source: geerlingguy)
       #v.customize ["modifyvm", :id, '--audio', 'off']
+      # Disable USB variant requiring Virtualbox proprietary extension packs
+      v.customize ["modifyvm", :id, '--usbehci', 'off', '--usbxhci', 'off']
       # Apple recommends 128MB (source: geerlingguy)
       #v.customize ["modifyvm", :id, '--videocapmaxsize', '128MB']
     end
@@ -192,7 +195,7 @@ Vagrant.configure(2) do |config|
         :inline => "chown -R vagrant: /vagrant"
     ## install (security and other) updates
     b.vm.provision "update software", :type => :shell, :privileged => true,
-        :inline => "softwareupdate --install --all"
+        :inline => update_darwin
     #b.vm.provision :reload  # for the case updates require reboot
     # For this box we do not need any additional packages
     #b.vm.provision "packages darwin", :type => :shell, :privileged => false,
