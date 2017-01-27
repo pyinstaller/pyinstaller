@@ -25,7 +25,7 @@ def packages_debianoid
                -o Dpkg::Options::="--force-confold" upgrade
     apt-get install -y python python-dev python-setuptools \
                        gcc libz-dev libc6-dev-i386 zlib1g-dev:i386 \
-                       gcc-mingw-w64
+                       gcc-mingw-w64 clang
   EOF
 end
 
@@ -169,6 +169,23 @@ def build_bootloader_target_win32(boxname)
   EOF
 end
 
+def build_bootloader_target_osx(boxname)
+  return <<-EOF
+    cd /vagrant/bootloader
+    # Unpack the SDK and the build-tools (cctools)
+    if [ ! -d ~/osxcross ] ; then
+        mkdir -p ~/osxcross
+        tar -C ~/osxcross --xz -xf /vagrant/macOSX/osxcross.tar.xz
+    fi
+    PATH=~/osxcross/bin:$PATH
+    echo $PATH
+    # TODO: Use CC=o32-clang and CC=o64-clang when possible, see
+    # <https://github.com/tpoechtrager/osxcross/issues/119>
+    python ./waf all CC=x86_64-apple-darwin15-clang
+    python ./waf all CC=i386-apple-darwin15-clang
+  EOF
+end
+
 Vagrant.configure(2) do |config|
   # Do not leak information about usage by by update-checks.
   config.vm.box_check_update = false
@@ -218,6 +235,15 @@ Vagrant.configure(2) do |config|
         :privileged => false,
         :inline => build_bootloader_target_win32("linux64"),
         :keep_color => true
+    if File.exist?("_sdks/osx/osxcross.tar.xz")
+      # Do not rsync this to avoid copying 4GB into the machine
+      config.vm.synced_folder "_sdks/osx", "/vagrant/macOSX",
+          :mount_options => ["ro"]
+      b.vm.provision "build bootloader for osx", :type => :shell,
+          :privileged => false,
+          :inline => build_bootloader_target_osx("linux64"),
+          :keep_color => true
+    end
   end
 
   #--- Build the Darwin SDK and tools ---
