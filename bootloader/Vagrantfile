@@ -161,7 +161,7 @@ def build_bootloader(boxname)
   EOF
 end
 
-def build_bootloader_cross(boxname)
+def build_bootloader_target_win32(boxname)
   return <<-EOF
     cd /vagrant/bootloader
     python ./waf all CC=i686-w64-mingw32-gcc
@@ -189,7 +189,10 @@ Vagrant.configure(2) do |config|
                        "--include=bootloader", "--include=PyInstaller",
                        "--exclude=/*", "--cvs-exclude", "--exclude=*.pyc",
                        "--exclude=bootloader/build",
-                       "--exclude=bootloader/_sdks"]
+                       "--exclude=bootloader/_sdks",
+                       "--exclude=bootloader/.lock-*",
+                       "--exclude=bootloader/.waf-*",
+                       "--exclude=bootloader/waf-*"],
       # chown fails on the OS X box, since group 'vagrant' is missing
       :rsync__chown => false
 
@@ -211,9 +214,9 @@ Vagrant.configure(2) do |config|
     b.vm.provision "packages debianoid", :type => :shell, :inline => packages_debianoid
     b.vm.provision "build bootloader", :type => :shell, :privileged => false, :inline => build_bootloader("linux64"),
         :keep_color => true
-    b.vm.provision "build bootloader cross", :type => :shell,
+    b.vm.provision "build bootloader for windows", :type => :shell,
         :privileged => false,
-        :inline => build_bootloader_cross("linux64"),
+        :inline => build_bootloader_target_win32("linux64"),
         :keep_color => true
   end
 
