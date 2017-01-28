@@ -253,9 +253,10 @@ class PKG(Target):
                     seenFnms[fnm] = inm
                     seenFnms_typ[fnm] = typ
 
-                    fnm = checkCache(fnm, strip=self.strip_binaries,
-                                     upx=(self.upx_binaries and (is_win or is_cygwin)),
-                                     dist_nm=inm)
+                    if typ != 'DEPENDENCY':
+                        fnm = checkCache(fnm, strip=self.strip_binaries,
+                                         upx=(self.upx_binaries and (is_win or is_cygwin)),
+                                         dist_nm=inm)
 
                     mytoc.append((inm, fnm, self.cdict.get(typ, 0),
                                   self.xformdict.get(typ, 'b')))
@@ -380,9 +381,10 @@ class EXE(Target):
         for arg in args:
             if isinstance(arg, PYZ):
                 if hasattr(arg, '_EXE'):
-                    arg.name = '{}.ref'.format(arg._EXE.name)
-                    open(arg.name, 'w+').close()
-                    arg.typ = 'DEPENDENCY'
+                    if not arg.name.startswith('{}/'.format(os.path.basename(arg._EXE.name))):
+                        arg.name = '{}/{}'.format(os.path.basename(arg._EXE.name), os.path.basename(arg.name))
+                    self.toc.append((arg.name, arg.name, 'DEPENDENCY'))
+                    continue
                 else:
                     arg._EXE = self
             if isinstance(arg, TOC):
