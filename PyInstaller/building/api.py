@@ -381,8 +381,9 @@ class EXE(Target):
         for arg in args:
             if isinstance(arg, PYZ):
                 if hasattr(arg, '_EXE'):
-                    if not arg.name.startswith('{}/'.format(os.path.basename(arg._EXE.name))):
-                        arg.name = '{}/{}'.format(os.path.basename(arg._EXE.name), os.path.basename(arg.name))
+                    base_path = os.path.basename(arg._EXE.name) + os.sep
+                    if not arg.name.startswith(base_path):
+                        arg.name = os.path.join(base_path, os.path.basename(arg.name))
                     self.toc.append((arg.name, arg.name, 'DEPENDENCY'))
                     continue
                 else:
