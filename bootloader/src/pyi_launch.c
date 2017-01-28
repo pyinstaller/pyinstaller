@@ -190,6 +190,21 @@ _extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
         return -1;
     }
 
+    TOC * ptoc;
+
+    VS("LOADER: Searching for %s in archive\n", archive_path);
+
+    /* Iterate through toc looking for zlibs (PYZ, type 'z') */
+    ptoc = status->tocbuff;
+    while (ptoc < status->tocend) {
+        if (ptoc->typcd == ARCHIVE_ITEM_PYZ && ptoc->name == archive_path) {
+            VS("LOADER: PYZ archive: %s\n", ptoc->name);
+            pyi_pylib_install_zlib(status, ptoc);
+        }
+
+        ptoc = pyi_arch_increment_toc_ptr(status, ptoc);
+    }
+
     return 0;
 }
 
