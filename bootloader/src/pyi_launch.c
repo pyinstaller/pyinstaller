@@ -165,11 +165,11 @@ extractDependencyFromArchive(ARCHIVE_STATUS *status, const char *filename)
  * then call the appropriate function.
  */
 static int
-_extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
+_extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item, const char* homepath)
 {
     ARCHIVE_STATUS *status = NULL;
     ARCHIVE_STATUS *archive_status = archive_pool[0];
-    char path[PATH_MAX];
+    char path[PATH_MAX];  /* The full path to the archive */
     char filename[PATH_MAX];  /* The filename of the archive */
     char srcpath[PATH_MAX];
     char archive_path[PATH_MAX];  /* The filename within the archive */
@@ -179,11 +179,12 @@ _extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
 
     pyi_path_basename(archive_path, item);
     pyi_path_dirname(filename, item);
+    pyi_path_join(path, homepath, filename);
 
-    VS("LOADER: Attempting to extract %s from %s\n", archive_path, filename);
+    VS("LOADER: Attempting to extract %s from %s\n", archive_path, path);
 
     /* Only extracting top-level dependencies from a onedir archive is currently supported */
-    status = _get_archive(archive_pool, filename);
+    status = _get_archive(archive_pool, path);
 
     if (status == NULL) {
         FATALERROR("Cannot open archive %s\n", filename);
@@ -240,7 +241,7 @@ pyi_launch_need_to_extract_binaries(ARCHIVE_STATUS *archive_status)
  * executables and thus reduce the final size of the executable.
  */
 int
-pyi_launch_extract_binaries(ARCHIVE_STATUS *archive_status)
+pyi_launch_extract_binaries(ARCHIVE_STATUS *archive_status, char* homepath)
 {
     int retcode = 0;
     ptrdiff_t index = 0;
@@ -271,7 +272,7 @@ pyi_launch_extract_binaries(ARCHIVE_STATUS *archive_status)
         else {
             /* 'Multipackage' feature - dependency is stored in different executables. */
             if (ptoc->typcd == ARCHIVE_ITEM_DEPENDENCY) {
-                if (_extract_dependency(archive_pool, ptoc->name) == -1) {
+                if (_extract_dependency(archive_pool, ptoc->name, homepath) == -1) {
                     retcode = -1;
                     break;  /* No need to extract other items in case of error. */
                 }
