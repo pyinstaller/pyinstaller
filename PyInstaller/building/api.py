@@ -378,6 +378,12 @@ class EXE(Target):
         self.toc = TOC()
 
         for arg in args:
+            if isinstance(arg, PYZ):
+                if hasattr(arg, '_EXE'):
+                    # TODO: Redirect ZlibArchive to this EXE
+                    pass
+                else:
+                    arg._EXE = self
             if isinstance(arg, TOC):
                 self.toc.extend(arg)
             elif isinstance(arg, Target):
