@@ -539,7 +539,7 @@ pyi_launch_execute(ARCHIVE_STATUS *status)
     }
 
     /* Install dependencies - now all hooks in place */
-    if (pyi_pylib_install_dependecies(status)) {
+    if (pyi_pylib_install_dependencies(status)) {
         return -1;
     }
 

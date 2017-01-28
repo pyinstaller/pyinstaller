@@ -19,7 +19,7 @@ int pyi_pylib_attach(ARCHIVE_STATUS *status, int *loadedNew);
 int pyi_pylib_load(ARCHIVE_STATUS *status);  /* note - pyi_pylib_attach will call this if not already loaded */
 int pyi_pylib_start_python(ARCHIVE_STATUS *status);
 int pyi_pylib_import_modules(ARCHIVE_STATUS *status);
-int pyi_pylib_install_dependencies(ARCHIVE_STATUS *status)
+int pyi_pylib_install_dependencies(ARCHIVE_STATUS *status);
 int pyi_pylib_install_zlibs(ARCHIVE_STATUS *status);
 int pyi_pylib_run_scripts(ARCHIVE_STATUS *status);
 
