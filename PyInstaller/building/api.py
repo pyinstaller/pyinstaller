@@ -380,11 +380,9 @@ class EXE(Target):
         for arg in args:
             if isinstance(arg, PYZ):
                 if hasattr(arg, '_EXE'):
-                    refpath = '{}.ref'.format(os.path.splitext(arg.name)[0])
-                    with open(refpath, 'w+') as ref:
-                        ref.write(os.path.basename(arg._EXE.name))
-                    arg.name = refpath
-                    arg.typ = 'BINARY'
+                    arg.name = '{}.ref'.format(arg._EXE.name)
+                    open(arg.name, 'w+').close()
+                    arg.typ = 'DEPENDENCY'
                 else:
                     arg._EXE = self
             if isinstance(arg, TOC):
