@@ -401,9 +401,12 @@ def configure(ctx):
         # Manifest file will be added in the phase of packaging python
         # application by PyInstaller.
         ctx.env.MSVC_MANIFEST = False
-        # Load tool to process *.rc* files for C/C++ like icon for exe files.
-        ctx.find_program([assoc_programm(ctx, 'windres')], var='WINRC')
-        ctx.load('winres')
+
+        if ctx.env.CC_NAME != 'msvc':
+            # Load tool to process *.rc* files for C/C++ like icon for exe
+            # files. For msvc waf loads this tool automatically
+            ctx.find_program([assoc_programm(ctx, 'windres')], var='WINRC')
+            ctx.load('winres')
 
     if ctx.env.CC_NAME != 'msvc':
         # This tool allows reducing the size of executables.
