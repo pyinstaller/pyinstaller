@@ -69,7 +69,6 @@ class PYZ(Target):
         Target.__init__(self)
         name = kwargs.get('name', None)
         cipher = kwargs.get('cipher', None)
-        self.external = kwargs.get('external', True)  # Should the PYZ be external to the CArchive? (PKG)
         self.toc = TOC()
         # If available, use code objects directly from ModuleGraph to
         # speed up PyInstaller.
