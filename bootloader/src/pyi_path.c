@@ -384,17 +384,3 @@ pyi_path_fopen(const char* filename, const char* mode)
 #else
     #define pyi_path_fopen(x, y)    fopen(x, y)
 #endif
-
-
-int
-pyi_path_endswith(char *path, char* tail)
-{
-    if (strlen(tail) > strlen(path)
-        return 0;
-
-    int len = strlen(path);
-
-    if (strcmp(&path[len-strlen(tail)],tail) == 0)
-        return 1;
-    return 0;
-}

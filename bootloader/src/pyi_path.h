@@ -37,5 +37,4 @@ FILE *pyi_path_fopen(const char *filename, const char *mode);
 
 #endif
 
-int pyi_path_endswith(char *path, char* tail);
 /* PYI_PATH_H */
