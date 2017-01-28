@@ -170,15 +170,15 @@ _extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
     ARCHIVE_STATUS *status = NULL;
     ARCHIVE_STATUS *archive_status = archive_pool[0];
     char path[PATH_MAX];
-    char filename[PATH_MAX];
+    char filename[PATH_MAX];  /* The filename of the archive */
     char srcpath[PATH_MAX];
-    char archive_path[PATH_MAX];
+    char archive_path[PATH_MAX];  /* The filename within the archive */
     char dirname[PATH_MAX];
 
     VS("LOADER: Extracting dependencies\n");
 
-    pyi_path_dirname(archive_path, path);
-    pyi_path_basename(filename, path);
+    pyi_path_basename(archive_path, item);
+    pyi_path_dirname(filename, item);
 
     VS("LOADER: Attempting to extract %s from %s\n", archive_path, filename);
 
