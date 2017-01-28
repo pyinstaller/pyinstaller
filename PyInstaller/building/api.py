@@ -69,7 +69,7 @@ class PYZ(Target):
         Target.__init__(self)
         name = kwargs.get('name', None)
         cipher = kwargs.get('cipher', None)
-        self.append_pkg = kwargs.get('append_pkg', True)  # Should the PYZ be appended to the executable?
+        self.external = kwargs.get('external', True)  # Should the PYZ be external to the CArchive? (PKG)
         self.toc = TOC()
         # If available, use code objects directly from ModuleGraph to
         # speed up PyInstaller.
@@ -340,6 +340,9 @@ class EXE(Target):
         self.manifest = kwargs.get('manifest', None)
         self.resources = kwargs.get('resources', [])
         self.strip = kwargs.get('strip', False)
+        # If ``append_pkg`` is false, the archive will not be appended
+        # to the exe, but copied beside it.
+        self.append_pkg = kwargs.get('append_pkg', True)
 
         # On Windows allows the exe to request admin privileges.
         self.uac_admin = kwargs.get('uac_admin', False)
@@ -374,11 +377,8 @@ class EXE(Target):
         self.pkgname = base_name + '.pkg'
 
         self.toc = TOC()
-        append_pkg = []
 
         for arg in args:
-            if isinstance(arg, PYZ):
-                append_pkg.append(arg.append_pkg)
             if isinstance(arg, TOC):
                 self.toc.extend(arg)
             elif isinstance(arg, Target):
@@ -386,13 +386,6 @@ class EXE(Target):
                 self.toc.extend(arg.dependencies)
             else:
                 self.toc.extend(arg)
-
-        # TODO: Add capability to load multiple packages if desired.
-        assert len(append_pkg) == 1
-
-        # If ``append_pkg`` is false, the archive will not be appended
-        # to the exe, but copied beside it.
-        self.append_pkg = append_pkg[0]
 
         if is_win:
             filename = os.path.join(CONF['workpath'], CONF['specnm'] + ".exe.manifest")
