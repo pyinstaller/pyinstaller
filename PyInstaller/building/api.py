@@ -380,8 +380,11 @@ class EXE(Target):
         for arg in args:
             if isinstance(arg, PYZ):
                 if hasattr(arg, '_EXE'):
-                    # TODO: Redirect ZlibArchive to this EXE
-                    pass
+                    refpath = '{}.ref'.format(os.path.splitext(arg.name)[0])
+                    with open(refpath, 'w+') as ref:
+                        ref.write(os.path.basename(arg._EXE.name))
+                    arg.name = refpath
+                    arg.typ = 'BINARY'
                 else:
                     arg._EXE = self
             if isinstance(arg, TOC):

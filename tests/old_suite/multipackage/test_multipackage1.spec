@@ -47,3 +47,15 @@ exeB = EXE(pyz,
           upx=False,
           console=1 )
 
+coll = COLLECT(
+        exe,
+        a.binaries,
+        a.zipfiles,
+        a.datas,
+        exeB,
+        b.binaries,
+        b.zipfiles,
+        b.datas,
+        strip=False,
+        upx=True,
+        name=os.path.join('dist', __testname__))
