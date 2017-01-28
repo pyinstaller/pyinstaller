@@ -44,6 +44,7 @@ pyqt5 ; python_version >= '3.5'
 
 # dateutil.tz is a package in 2.5.0 and does not play nice with PyInstaller.
 python-dateutil>2.5.0
+# pandas ; (python_version >= '3.4') or (python_version == '2.7')
 pandas
 
 # matplotlib 1.5+ does not provide binaries for python 3.3.
