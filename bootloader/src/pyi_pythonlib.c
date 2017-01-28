@@ -750,31 +750,6 @@ pyi_pylib_install_zlib(ARCHIVE_STATUS *status, TOC *ptoc)
 }
 
 /*
- * Install external PYZ files
- * Return non zero on failure
- */
-int
-pyi_pylib_install_dependencies(ARCHIVE_STATUS *status)
-{
-    TOC * ptoc;
-
-    VS("LOADER: Installing external PYZ dependencies.\n");
-
-    /* Iterate through toc looking for zlibs (PYZ, type 'z') */
-    ptoc = status->tocbuff;
-
-    while (ptoc < status->tocend) {
-        if (ptoc->typcd == ARCHIVE_ITEM_DEPENDENCY) {
-            VS("LOADER: External dependency: %s\n", ptoc->name);
-            /* TODO: Install external PYZ files from given CArchive */
-        }
-
-        ptoc = pyi_arch_increment_toc_ptr(status, ptoc);
-    }
-    return 0;
-}
-
-/*
  * Install PYZ
  * Return non zero on failure
  */

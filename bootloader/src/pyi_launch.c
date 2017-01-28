@@ -538,11 +538,6 @@ pyi_launch_execute(ARCHIVE_STATUS *status)
         return -1;
     }
 
-    /* Install dependencies - now all hooks in place */
-    if (pyi_pylib_install_dependencies(status)) {
-        return -1;
-    }
-
 #ifndef WIN32
 
     /*
