@@ -70,23 +70,6 @@ checkFile(char *buf, const char *fmt, ...)
     return stat(buf, &tmp);
 }
 
-/* Splits the item in the form path:filename */
-static int
-splitName(char *path, char *filename, const char *item)
-{
-    char name[PATH_MAX + 1];
-
-    VS("LOADER: Splitting item into path and filename\n");
-    strcpy(name, item);
-    strcpy(path, strtok(name, ":"));
-    strcpy(filename, strtok(NULL, ":"));
-
-    if (path[0] == 0 || filename[0] == 0) {
-        return -1;
-    }
-    return 0;
-}
-
 /* Copy the dependencies file from a directory to the tempdir */
 static int
 copyDependencyFromDir(ARCHIVE_STATUS *status, const char *srcpath, const char *filename)
@@ -190,68 +173,21 @@ _extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
     char filename[PATH_MAX];
     char srcpath[PATH_MAX];
     char archive_path[PATH_MAX];
-
     char dirname[PATH_MAX];
 
     VS("LOADER: Extracting dependencies\n");
 
-    if (splitName(path, filename, item) == -1) {
+    pyi_path_dirname(archive_path, path);
+    pyi_path_basename(filename, path);
+
+    VS("LOADER: Attempting to extract %s from %s\n", archive_path, filename);
+
+    /* Only extracting top-level dependencies from a onedir archive is currently supported */
+    status = _get_archive(archive_pool, filename);
+
+    if (status == NULL) {
+        FATALERROR("Cannot open archive %s\n", filename);
         return -1;
-    }
-
-    pyi_path_dirname(dirname, path);
-
-    /* We need to identify three situations: 1) dependecies are in a onedir archive
-     * next to the current onefile archive, 2) dependencies are in a onedir/onefile
-     * archive next to the current onedir archive, 3) dependencies are in a onefile
-     * archive next to the current onefile archive.
-     */
-    VS("LOADER: Checking if file exists\n");
-
-    /* TODO implement pyi_path_join to accept variable length of arguments for this case. */
-    if (checkFile(srcpath, "%s%s%s%s%s", archive_status->homepath, PYI_SEPSTR, dirname,
-                  PYI_SEPSTR, filename) == 0) {
-        VS("LOADER: File %s found, assuming is onedir\n", srcpath);
-
-        if (copyDependencyFromDir(archive_status, srcpath, filename) == -1) {
-            FATALERROR("Error coping %s\n", filename);
-            return -1;
-        }
-        /* TODO implement pyi_path_join to accept variable length of arguments for this case. */
-    }
-    else if (checkFile(srcpath, "%s%s%s%s%s%s%s", archive_status->homepath, PYI_SEPSTR,
-                       "..", PYI_SEPSTR, dirname, PYI_SEPSTR, filename) == 0) {
-        VS("LOADER: File %s found, assuming is onedir\n", srcpath);
-
-        if (copyDependencyFromDir(archive_status, srcpath, filename) == -1) {
-            FATALERROR("Error coping %s\n", filename);
-            return -1;
-        }
-    }
-    else {
-        VS("LOADER: File %s not found, assuming is onefile.\n", srcpath);
-
-        /* TODO implement pyi_path_join to accept variable length of arguments for this case. */
-        if ((checkFile(archive_path, "%s%s%s.pkg", archive_status->homepath, PYI_SEPSTR,
-                       path) != 0) &&
-            (checkFile(archive_path, "%s%s%s.exe", archive_status->homepath, PYI_SEPSTR,
-                       path) != 0) &&
-            (checkFile(archive_path, "%s%s%s", archive_status->homepath, PYI_SEPSTR,
-                       path) != 0)) {
-            FATALERROR("Archive not found: %s\n", archive_path);
-            return -1;
-        }
-
-        if ((status = _get_archive(archive_pool, archive_path)) == NULL) {
-            FATALERROR("Archive not found: %s\n", archive_path);
-            return -1;
-        }
-
-        if (extractDependencyFromArchive(status, filename) == -1) {
-            FATALERROR("Error extracting %s\n", filename);
-            free(status);
-            return -1;
-        }
     }
 
     return 0;
