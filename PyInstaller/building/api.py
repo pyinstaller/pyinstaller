@@ -385,6 +385,7 @@ class EXE(Target):
                     if not arg.name.startswith(base_path):
                         arg.name = os.path.join(base_path, os.path.basename(arg.name))
                     self.toc.append((arg.name, arg.name, 'DEPENDENCY'))
+                    self.toc.extend(arg.dependencies)
                     continue
                 else:
                     arg._EXE = self
