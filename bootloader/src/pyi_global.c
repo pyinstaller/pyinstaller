@@ -127,4 +127,8 @@ pyi_global_printf(const char *fmt, ...)
     vsyslog(LOG_NOTICE, fmt, v);
     va_end(v);
 #endif
+
+    /* Flush the output buffer because we care more about debug output than speed */
+    fflush(stdout);
+    fflush(stderr);
 }
