@@ -77,7 +77,7 @@ _get_archive(ARCHIVE_STATUS *archive_pool[], const char *path)
 
     if (archive == NULL) {
         FATALERROR("Error allocating memory for status\n");
-        return -1;
+        return NULL;
     }
 
     /*
@@ -89,7 +89,7 @@ _get_archive(ARCHIVE_STATUS *archive_pool[], const char *path)
     if (pyi_arch_setup(archive, archive->homepath, &path[strlen(archive->homepath)])) {
         FATALERROR("Error opening archive %s\n", path);
 
-        return -1;
+        return NULL;
     }
 
     archive_pool[index] = archive;
