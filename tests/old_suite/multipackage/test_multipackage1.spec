@@ -23,6 +23,7 @@ b = Analysis([__testdep__ + '.py'],
 pyz = PYZ(a.pure, a.zipped_data,
           b.pure, b.zipped_data,
           append=False)
+
 exe = EXE(pyz,
           a.scripts,
           a.binaries,
