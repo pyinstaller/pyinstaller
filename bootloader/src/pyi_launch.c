@@ -49,8 +49,6 @@
 #include "pyi_pythonlib.h"
 #include "pyi_win32_utils.h"  /* CreateActContext */
 
-/* Max count of possible opened archives in multipackage mode. */
-#define _MAX_ARCHIVE_POOL_LEN 20
 
 /*
  * The functions in this file defined in reverse order so that forward
@@ -86,55 +84,6 @@ copyDependencyFromDir(ARCHIVE_STATUS *status, const char *srcpath, const char *f
     return 0;
 }
 
-/*
- * Look for the archive identified by path into the ARCHIVE_STATUS pool archive_pool.
- * If the archive is found, a pointer to the associated ARCHIVE_STATUS is returned
- * otherwise the needed archive is opened and added to the pool and then returned.
- * If an error occurs, returns NULL.
- *
- * Having several archives is useful for sharing binary dependencies with several
- * executables (multipackage feature).
- */
-static ARCHIVE_STATUS *
-_get_archive(ARCHIVE_STATUS *archive_pool[], const char *path)
-{
-    ARCHIVE_STATUS *archive = NULL;
-    int index = 0;
-    int SELF = 0;
-
-    VS("LOADER: Getting file from archive.\n");
-
-    for (index = 1; archive_pool[index] != NULL; index++) {
-        if (strcmp(archive_pool[index]->archivename, path) == 0) {
-            VS("LOADER: Archive found: %s\n", path);
-            return archive_pool[index];
-        }
-        VS("LOADER: Checking next archive in the list...\n");
-    }
-
-    archive = (ARCHIVE_STATUS *) calloc(1, sizeof(ARCHIVE_STATUS));
-
-    if (archive == NULL) {
-        FATALERROR("Error allocating memory for status\n");
-        return -1;
-    }
-
-    /*
-     * Setting this flag prevents creating another temp directory and
-     * the directory from the main archive status is used.
-     */
-    archive->has_temp_directory = archive_pool[SELF]->has_temp_directory;
-
-    if (pyi_arch_setup(archive, archive->homepath, &path[strlen(archive->homepath)])) {
-        FATALERROR("Error opening archive %s\n", path);
-
-        return -1;
-    }
-
-    archive_pool[index] = archive;
-    return archive;
-}
-
 /* Extract a file identifed by filename from the archive associated to status. */
 static int
 extractDependencyFromArchive(ARCHIVE_STATUS *status, const char *filename)
@@ -151,54 +100,6 @@ extractDependencyFromArchive(ARCHIVE_STATUS *status, const char *filename)
         }
         ptoc = pyi_arch_increment_toc_ptr(status, ptoc);
     }
-    return 0;
-}
-
-/* Decide if the dependency identified by item is in a onedir or onfile archive
- * then call the appropriate function.
- */
-static int
-_extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item, const char* homepath)
-{
-    ARCHIVE_STATUS *status = NULL;
-    ARCHIVE_STATUS *archive_status = archive_pool[0];
-    char path[PATH_MAX];  /* The full path to the archive */
-    char filename[PATH_MAX];  /* The filename of the archive */
-    char srcpath[PATH_MAX];
-    char archive_path[PATH_MAX];  /* The filename within the archive */
-    char dirname[PATH_MAX];
-
-    VS("LOADER: Extracting dependencies\n");
-
-    pyi_path_basename(archive_path, item);
-    pyi_path_dirname(filename, item);
-    pyi_path_join(path, homepath, filename);
-
-    VS("LOADER: Attempting to extract %s from %s\n", archive_path, path);
-
-    /* Only extracting top-level dependencies from a onedir archive is currently supported */
-    status = _get_archive(archive_pool, path);
-
-    if (status == NULL) {
-        FATALERROR("Cannot open archive %s\n", filename);
-        return -1;
-    }
-
-    TOC * ptoc;
-
-    VS("LOADER: Searching for %s in archive\n", archive_path);
-
-    /* Iterate through toc looking for zlibs (PYZ, type 'z') */
-    ptoc = status->tocbuff;
-    while (ptoc < status->tocend) {
-        if (ptoc->typcd == ARCHIVE_ITEM_PYZ && ptoc->name == archive_path) {
-            VS("LOADER: PYZ archive: %s\n", ptoc->name);
-            pyi_pylib_install_zlib(status, ptoc);
-        }
-
-        ptoc = pyi_arch_increment_toc_ptr(status, ptoc);
-    }
-
     return 0;
 }
 
@@ -242,11 +143,11 @@ pyi_launch_extract_binaries(ARCHIVE_STATUS *archive_status, char* homepath)
     /*
      * archive_pool[0] is reserved for the main process, the others for dependencies.
      */
-    ARCHIVE_STATUS *archive_pool[_MAX_ARCHIVE_POOL_LEN];
+    ARCHIVE_STATUS *archive_pool[MAX_ARCHIVE_POOL_LEN];
     TOC * ptoc = archive_status->tocbuff;
 
     /* Clean memory for archive_pool list. */
-    memset(&archive_pool, 0, _MAX_ARCHIVE_POOL_LEN * sizeof(ARCHIVE_STATUS *));
+    memset(&archive_pool, 0, MAX_ARCHIVE_POOL_LEN * sizeof(ARCHIVE_STATUS *));
 
     /* Current process is the 1st item. */
     archive_pool[0] = archive_status;
@@ -262,16 +163,6 @@ pyi_launch_extract_binaries(ARCHIVE_STATUS *archive_status, char* homepath)
             }
         }
 
-        else {
-            /* 'Multipackage' feature - dependency is stored in different executables. */
-            if (ptoc->typcd == ARCHIVE_ITEM_DEPENDENCY) {
-                if (_extract_dependency(archive_pool, ptoc->name, homepath) == -1) {
-                    retcode = -1;
-                    break;  /* No need to extract other items in case of error. */
-                }
-
-            }
-        }
         ptoc = pyi_arch_increment_toc_ptr(archive_status, ptoc);
     }
 
