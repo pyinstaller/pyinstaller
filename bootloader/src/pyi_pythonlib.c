@@ -109,7 +109,8 @@ _extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item, const char
     char srcpath[PATH_MAX];
     char archive_path[PATH_MAX];  /* The filename within the archive */
     char dirname[PATH_MAX];
-
+    TOC * ptoc;
+    
     VS("LOADER: Extracting dependencies\n");
 
     pyi_path_basename(archive_path, item);
@@ -125,8 +126,6 @@ _extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item, const char
         FATALERROR("Cannot open archive %s\n", filename);
         return -1;
     }
-
-    TOC * ptoc;
 
     VS("LOADER: Searching for %s in archive\n", archive_path);
 
