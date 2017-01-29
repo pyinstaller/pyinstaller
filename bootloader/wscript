@@ -208,7 +208,7 @@ def check_sizeof_pointer(ctx):
         # Plus: This works cross :-)
         fragment = '''
         int main() {
-            static int test_array[1 - 2 * !(((long int) (sizeof(%s))) == %d)];
+            static int test_array[1 - 2 * !(sizeof(%s) == %d)];
             test_array[0] = 0;
             return 0;
         }''' % (type, expected)
