@@ -379,20 +379,17 @@ class EXE(Target):
         self.toc = TOC()
 
         for arg in args:
-            if isinstance(arg, PYZ):
+            if isinstance(arg, TOC):
+                self.toc.extend(arg)
+            elif isinstance(arg, Target):
                 if hasattr(arg, '_EXE'):
                     base_path = os.path.basename(arg._EXE.name) + os.sep
                     if not arg.name.startswith(base_path):
                         arg.name = os.path.join(base_path, os.path.basename(arg.name))
                     self.toc.append((arg.name, arg.name, 'DEPENDENCY'))
-                    self.toc.extend(arg.dependencies)
-                    continue
                 else:
                     arg._EXE = self
-            if isinstance(arg, TOC):
-                self.toc.extend(arg)
-            elif isinstance(arg, Target):
-                self.toc.append((os.path.basename(arg.name), arg.name, arg.typ))
+                    self.toc.append((os.path.basename(arg.name), arg.name, arg.typ))
                 self.toc.extend(arg.dependencies)
             else:
                 self.toc.extend(arg)
