@@ -585,33 +585,38 @@ def configure(ctx):
                                  msg='Checking for flags -Wl,--as-needed'):
         ctx.env.append_value('LINKFLAGS', '-Wl,--as-needed')
 
+    def windowed(name, baseenv):
+        """Setup windowed environment based on `baseenv`."""
+        ctx.setenv(name, baseenv)  # Inherit from `baseenv`.
+        ctx.env.append_value('DEFINES', 'WINDOWED')
+
+        if ctx.env.DEST_OS == 'win32' and ctx.env.CC_NAME != 'msvc':
+            # For MinGW disable console window on Windows - MinGW option
+            # TODO Is it necessary to have -mwindows for C and LINK flags?
+            ctx.env.append_value('LINKFLAGS', '-mwindows')
+            ctx.env.append_value('CFLAGS', '-mwindows')
+        elif ctx.env.DEST_OS == 'darwin':
+            # To support catching AppleEvents and running as ordinary OSX GUI
+            # app, we have to link against the Carbon framework.
+            # This linkage only needs to be there for the windowed bootloaders.
+            ctx.env.append_value('LINKFLAGS', '-framework')
+            ctx.env.append_value('LINKFLAGS', 'Carbon')
+            # TODO Do we need to link with this framework?
+            # conf.env.append_value('LINKFLAGS', '-framework')
+            # conf.env.append_value('LINKFLAGS', 'ApplicationServices')
+
     ### DEBUG and RELEASE environments
     basic_env = ctx.env
 
     ## setup DEBUG environment
     ctx.setenv('debug', basic_env)  # Ensure env contains shared values.
     debug_env = ctx.env
-    # This define enables verbose console output of the bootloader.
+    # This defines enable verbose console output of the bootloader.
     ctx.env.append_value('DEFINES', ['LAUNCH_DEBUG'])
     ctx.env.append_value('DEFINES', 'NDEBUG')
 
     ## setup windowed DEBUG environment
-    ctx.setenv('debugw', debug_env)  # Ensure env contains shared values.
-    ctx.env.append_value('DEFINES', 'WINDOWED')
-    # For MinGW disables console window on Windows- MinGW option
-    if ctx.env.DEST_OS == 'win32' and not ctx.env.CC_NAME == 'msvc':
-        # TODO Is it necessary to have -mwindows for C and LINK flags?
-        ctx.env.append_value('LINKFLAGS', '-mwindows')
-        ctx.env.append_value('CFLAGS', '-mwindows')
-    elif ctx.env.DEST_OS == 'darwin':
-        # conf.env.append_value('CFLAGS', '-I/Developer/Headers/FlatCarbon')
-        # To support catching AppleEvents and running as ordinary OSX GUI app,
-        # we have to link against the Carbon framework.
-        # This linkage only needs to be there for the windowed bootloaders.
-        ctx.env.append_value('LINKFLAGS', '-framework')
-        ctx.env.append_value('LINKFLAGS', 'Carbon')
-        # conf.env.append_value('LINKFLAGS', '-framework')
-        # conf.env.append_value('LINKFLAGS', 'ApplicationServices')
+    windowed('debugw', debug_env)
 
     ## setup RELEASE environment
     ctx.setenv('release', basic_env)  # Ensure env contains shared values.
@@ -619,23 +624,7 @@ def configure(ctx):
     ctx.env.append_value('DEFINES', 'NDEBUG')
 
     ## setup windowed RELEASE environment
-    ctx.setenv('releasew', release_env)  # Ensure env contains shared values.
-    ctx.env.append_value('DEFINES', 'WINDOWED')
-
-    # For MinGW disables console window on Windows- MinGW option
-    if ctx.env.DEST_OS == 'win32' and not ctx.env.CC_NAME == 'msvc':
-        # TODO Is it necessary to have -mwindows for C and LINK flags?
-        ctx.env.append_value('LINKFLAGS', '-mwindows')
-        ctx.env.append_value('CFLAGS', '-mwindows')
-    elif ctx.env.DEST_OS == 'darwin':
-        # To support catching AppleEvents and running as ordinary OSX GUI app,
-        # we have to link against the Carbon framework.
-        # This linkage only needs to be there for the windowed bootloaders.
-        ctx.env.append_value('LINKFLAGS', '-framework')
-        ctx.env.append_value('LINKFLAGS', 'Carbon')
-        # TODO Do we need to link with this framework?
-        # conf.env.append_value('LINKFLAGS', '-framework')
-        # conf.env.append_value('LINKFLAGS', 'ApplicationServices')
+    windowed('releasew', release_env)
 
 
 # TODO Use 'strip' command to decrease the size of compiled bootloaders.
