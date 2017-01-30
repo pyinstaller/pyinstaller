@@ -502,9 +502,6 @@ class FrozenImporter(object):
         and find_loader() (in the PathEntryFinder case). If a loader does not have find_spec(), find_module() and
         find_loader() are used instead, for backward-compatibility.
         """
-        # Acquire the interpreter's import lock for the current thread. This
-        # lock should be used by import hooks to ensure thread-safety when
-        # importing modules.
 
         filename = None  # None means - no module found in this importer.
 
