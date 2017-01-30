@@ -42,6 +42,9 @@ pyexcelerate
 Pillow
 future
 pyusb
+
+# While PyQt5 itself is provided as wheels for Python 3.4, it requires
+# SIP>=4.19 which is not available for Python 3.4 yet.
 pyqt5 ; python_version >= '3.5'
 
 # dateutil.tz is a package in 2.5.0 and does not play nice with PyInstaller.
