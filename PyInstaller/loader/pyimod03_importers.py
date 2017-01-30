@@ -463,7 +463,7 @@ class FrozenImporter(object):
         module.__file__ (or pkg.__path__ items)
         """
         assert path.startswith(SYS_PREFIX + pyi_os_path.os_sep)
-        fullname = path[len(SYS_PREFIX)+1:]
+        fullname = path[SYS_PREFIXLEN+1:]
         if fullname in self.toc:
             # If the file is in the archive, return this
             return self._pyz_archive.extract(fullname)[1]
@@ -517,7 +517,7 @@ class FrozenImporter(object):
             modname = fullname.rsplit('.')[-1]
 
             for p in path:
-                p = p[len(SYS_PREFIX):]
+                p = p[SYS_PREFIXLEN:]
                 parts = p.split(pyi_os_path.os_sep)
                 if not parts: continue
                 if not parts[0]:
