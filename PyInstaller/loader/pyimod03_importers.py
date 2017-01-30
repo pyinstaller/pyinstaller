@@ -140,6 +140,7 @@ class BuiltinImporter(object):
             # ImportError should be raised if module not found.
             raise ImportError('No module named ' + fullname)
 
+
 class FrozenPackageImporter(object):
     """
     Wrapper class for FrozenImporter that imports one specific fullname from
@@ -516,12 +517,12 @@ class FrozenImporter(object):
             # Reverse the fake __path__ we added to the package module to a
             # dotted module name and add the tail module from fullname onto that
             # to synthesize a new fullname
-            modname = fullname.split('.')[-1]
+            modname = fullname.rsplit('.')[-1]
 
             for p in path:
-                p = p.replace(SYS_PREFIX, "")
+                p = p[len(SYS_PREFIX):]
                 parts = p.split(pyi_os_path.os_sep)
-                if not len(parts): continue
+                if not parts: continue
                 if not parts[0]:
                     parts = parts[1:]
                 parts.append(modname)
@@ -538,9 +539,8 @@ class FrozenImporter(object):
 
         is_pkg, bytecode = self._pyz_archive.extract(filename)
         if is_pkg:
-            origin = pyi_os_path.os_path_join(pyi_os_path.os_path_join(SYS_PREFIX, filename.replace('.',
-                                                                                                    pyi_os_path.os_sep)),
-                                              '__init__.pyc')
+            origin = pyi_os_path.os_path_join(pyi_os_path.os_path_join(
+                SYS_PREFIX, filename.replace('.', pyi_os_path.os_sep)), '__init__.pyc')
         else:
             origin = pyi_os_path.os_path_join(SYS_PREFIX, filename.replace('.', pyi_os_path.os_sep) + '.pyc')
 
