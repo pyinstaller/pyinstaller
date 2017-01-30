@@ -4,7 +4,7 @@ Changelog for PyInstaller
 3.3 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Add support for Python 3.6 (thanks to xoviat).
 
 
 3.2.1 (2017-01-15)
