@@ -1126,6 +1126,7 @@ class ModuleGraph(ObjectGraph):
         # object.
         self._package_path_map = _packagePathMap
         self._deferred_modules = deque()
+        self._processed_modules = deque()
 
     def set_setuptools_nspackages(self):
         # This is used when running in the test-suite
@@ -1437,15 +1438,12 @@ class ModuleGraph(ObjectGraph):
         self._updateReference(caller, m, None)
         self._scan_code(m, co, co_ast)
 
-        processed = deque()
         while True:
             try:
                 module = self._deferred_modules.pop()
             except IndexError:
                 break
-            if module not in processed:
-                self._process_imports(module)
-                processed.append(module)
+            self._process_imports(module)
 
         m.code = co
         if self.replace_paths:
@@ -2607,7 +2605,8 @@ class ModuleGraph(ObjectGraph):
                 module, module_code_object, is_scanning_imports=True)
 
         # Add all imports parsed above to this graph.
-        self._deferred_modules.append(module)
+        if module not in self._processed_modules:
+            self._deferred_modules.append(module)
 
 
     def _scan_ast(self, module, module_code_object_ast):
@@ -2960,6 +2959,7 @@ class ModuleGraph(ObjectGraph):
             Graph node of the source module to graph target imports for.
         """
 
+        self._processed_modules.append(source_module)
         # If this source module imported no target modules, noop.
         if not source_module._deferred_imports:
             return
