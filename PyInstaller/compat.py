@@ -126,7 +126,10 @@ else:
 if is_py34:
     import dis
 else:
-    import dis3 as dis
+    try:
+        import dis3 as dis
+    except ImportError:  # This may not be available if called from setup.py
+        pass
 
 # String types to replace `isinstance(foo, str)`
 # Use `isinstance(foo, string_types)` instead.
