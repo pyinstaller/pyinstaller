@@ -18,8 +18,8 @@
 #
 # Tested with botocore 1.4.36
 
-from PyInstaller.utils.hooks import collect_data_files
-from PyInstaller.compat import is_py2, is_module_satisfies
+from PyInstaller.utils.hooks import collect_data_files, is_module_satisfies
+from PyInstaller.compat import is_py2
 
 if is_module_satisfies('botocore >= 1.4.36'):
     if is_py2:
