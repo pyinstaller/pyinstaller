@@ -20,18 +20,14 @@ import marshal
 import os
 import re
 import zipfile
+import functools
 
 from .dylib import include_library
 from .. import compat
 from .. import log as logging
-from ..compat import (is_darwin, is_unix, is_py2, is_py34, is_freebsd,
+from ..compat import (is_darwin, is_unix, is_py2, dis, is_freebsd,
                       BYTECODE_MAGIC, PY3_BASE_MODULES)
 from ..lib.modulegraph import modulegraph
-
-if is_py34:
-    import dis
-else:
-    import dis3 as dis
 
 logger = logging.getLogger(__name__)
 
@@ -99,7 +95,6 @@ def create_py3_base_library(libzip_filename, graph):
         logger.error('base_library.zip could not be created!')
         raise
 
-
 HASJREL = set(dis.hasjrel)
 assert 'SET_LINENO' not in dis.opmap  # safty belt
 
@@ -109,44 +104,11 @@ else:
     _cOrd = int
 
 
-def pass1(code):
-    """
-    Parse the bytecode int a list of easy-usable tokens:
-      (op, oparg, incondition, curline)
-    """
-    instrs = []
-    i = 0
-    n = len(code)
-    # TODO reestablish line numbers or remove them at all
-    curline = 0
-    incondition = 0
-    out = 0
-    while i < n:
-        if i >= out:
-            incondition = 0
-        c = code[i]
-        i = i + 1
-        op = _cOrd(c)
-        if op >= dis.HAVE_ARGUMENT:
-            oparg = _cOrd(code[i]) + _cOrd(code[i + 1]) * 256
-            i = i + 2
-        else:
-            oparg = None
-        if not incondition and op in COND_OPS:
-            incondition = 1
-            out = oparg
-            if op in HASJREL:
-                out += i
-        elif incondition and op == JUMP_FORWARD:
-            out = max(out, i + oparg)
-        instrs.append((op, oparg, incondition, curline))
-    return instrs
-
-
-def scan_code_for_ctypes(co):
+def scan_code_for_ctypes(graph, module_code_object):
     binaries = []
 
-    __recursively_scan_code_objects_for_ctypes(co, binaries)
+    graph.scan_bytecode(module_code_object,
+                        scanner=functools.partial(scan_code_instruction_for_ctypes, binaries))
 
     # If any of the libraries has been requested with anything
     # different then the bare filename, drop that entry and warn
@@ -170,31 +132,8 @@ def scan_code_for_ctypes(co):
     return binaries
 
 
-# On Python 3.4 or later the dis module has a much nicer interface
-# for working with bytecode, use that instead of peeking into the
-# raw bytecode.
-# Note: This nicely sidesteps any issues caused by moving from bytecode
-# to wordcode in python 3.6.
-def __recursively_scan_code_objects_for_ctypes(co, binaries):
-    # Note: `binaries` is a list, which gets extended here.
-    instructions = dis.get_instructions(co)
-    while 1:
-        # ctypes scanning requires a scope wider than one bytecode
-        # instruction, so the code resides in a separate function
-        # for clarity.
-        try:
-            bin = __scan_code_instruction_for_ctypes(co, instructions)
-            if bin:
-                binaries.append(bin)
-        except StopIteration:
-            break
-
-    for c in co.co_consts:
-        if isinstance(c, type(co)):
-            __recursively_scan_code_objects_for_ctypes(c, binaries)
-
-
-def __scan_code_instruction_for_ctypes(co, instructions):
+def scan_code_instruction_for_ctypes(
+        binaries, all_instructions, module_code_object, **kwargs):
     """
     Detects ctypes dependencies, using reasonable heuristics that
     should cover most common ctypes usages; returns a tuple of two
@@ -206,20 +145,21 @@ def __scan_code_instruction_for_ctypes(co, instructions):
         """Extracts library name from an expected LOAD_CONST instruction and
         appends it to local binaries list.
         """
-        instruction = next(instructions)
-        # op, oparg, conditional, curline = next(instructions)
+        instruction = next(all_instructions)
+        # op, oparg, conditional, curline = next(all_instructions)
         if instruction.opname == 'LOAD_CONST':
-            soname = co.co_consts[instruction.arg]
+            soname = module_code_object.co_consts[instruction.arg]
             if isinstance(soname, str):
-                return soname
+                binaries.append(soname)
+                return
 
-    instruction = next(instructions)
+    instruction = next(all_instructions)
     expected_ops = ('LOAD_GLOBAL', 'LOAD_NAME')
 
     if instruction.opname not in expected_ops:
-        return None
+        return
 
-    name = co.co_names[instruction.arg]
+    name = module_code_object.co_names[instruction.arg]
     if name == "ctypes":
         # Guesses ctypes has been imported as `import ctypes` and
         # the members are accessed like: ctypes.CDLL("library.so")
@@ -231,17 +171,18 @@ def __scan_code_instruction_for_ctypes(co, instructions):
         # In this case "strip" the `ctypes` by advancing and expecting
         # `LOAD_ATTR` next.
         expected_ops = ('LOAD_ATTR',)
-        instruction = next(instructions)
+        instruction = next(all_instructions)
         if instruction.opname not in expected_ops:
-            return None
-        name = co.co_names[instruction.arg]
+            return
+        name = module_code_object.co_names[instruction.arg]
 
     if name in ("CDLL", "WinDLL", "OleDLL", "PyDLL"):
         # Guesses ctypes imports of this type: CDLL("library.so")
         #
         #   LOAD_GLOBAL 0 (CDLL) <--- we "are" here right now
         #   LOAD_CONST 1 ('library.so')
-        return _libFromConst()
+        binaries.append(_libFromConst())
+        return
 
     elif name in ("cdll", "windll", "oledll", "pydll"):
         # Guesses ctypes imports of these types:
@@ -256,14 +197,16 @@ def __scan_code_instruction_for_ctypes(co, instructions):
         #     LOAD_GLOBAL   0 (cdll) <--- we "are" here right now
         #     LOAD_ATTR     1 (LoadLibrary)
         #     LOAD_CONST    1 ('library.so')
-        instruction = next(instructions)
+        instruction = next(all_instructions)
         if instruction.opname == 'LOAD_ATTR':
-            if co.co_names[instruction.arg] == "LoadLibrary":
+            if module_code_object.co_names[instruction.arg] == "LoadLibrary":
                 # Second type, needs to fetch one more instruction
-                return _libFromConst()
+                binaries.append(_libFromConst())
+                return
             else:
                 # First type
-                return co.co_names[instruction.arg] + ".dll"
+                binaries.append(module_code_object.co_names[instruction.arg] + ".dll")
+                return
 
     elif instruction.opname == 'LOAD_ATTR' and name in ("util",):
         # Guesses ctypes imports of these types::
@@ -274,16 +217,17 @@ def __scan_code_instruction_for_ctypes(co, instructions):
         #     LOAD_ATTR     1 (util) <--- we "are" here right now
         #     LOAD_ATTR     1 (find_library)
         #     LOAD_CONST    1 ('gs')
-        instruction = next(instructions)
+        instruction = next(all_instructions)
         if instruction.opname == 'LOAD_ATTR':
-            if co.co_names[instruction.arg] == "find_library":
+            if module_code_object.co_names[instruction.arg] == "find_library":
                 libname = _libFromConst()
                 if libname:
                     lib = ctypes.util.find_library(libname)
                     if lib:
                         # On Windows, `find_library` may return
                         # a full pathname. See issue #1934
-                        return os.path.basename(lib)
+                        binaries.append(os.path.basename(lib))
+                        return
 
 
 # TODO Reuse this code with modulegraph implementation

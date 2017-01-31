@@ -502,7 +502,7 @@ class Analysis(Target):
         for name, co in ctypes_code_objs.items():
             # Get dlls that might be needed by ctypes.
             logger.debug('Scanning %s for shared libraries or dlls', name)
-            ctypes_binaries = scan_code_for_ctypes(co)
+            ctypes_binaries = scan_code_for_ctypes(self.graph, co)
             self.binaries.extend(set(ctypes_binaries))
 
         # Analyze run-time hooks.

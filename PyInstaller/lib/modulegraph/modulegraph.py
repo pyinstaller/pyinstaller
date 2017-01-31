@@ -2590,12 +2590,12 @@ class ModuleGraph(ObjectGraph):
 
             # Parse this module's code object for all relevant non-imports
             # (e.g., global variable declarations and undeclarations).
-            self._scan_bytecode(
-                module, module_code_object, is_scanning_imports=False)
+            self.scan_bytecode(
+                module_code_object, module=module, is_scanning_imports=False)
         # Else, parse this module's code object for imports.
         else:
-            self._scan_bytecode(
-                module, module_code_object, is_scanning_imports=True)
+            self.scan_bytecode(
+                module_code_object, module=module, is_scanning_imports=True)
 
         if is_py3:
             # Add all imports parsed above to this graph.
@@ -2628,7 +2628,7 @@ class ModuleGraph(ObjectGraph):
     # to wordcode in python 3.6.
 
     def scan_bytecode(
-            self, module, module_code_object, is_scanning_imports, scanner=None):
+            self, module_code_object, scanner=None, **kwargs):
         constants = module_code_object.co_consts
         # List of all bytes comprising this source module's compiled bytecode. (n)
         code_bytes = module_code_object.co_code
@@ -2644,12 +2644,12 @@ class ModuleGraph(ObjectGraph):
 
         all_instructions = dis.get_instructions(module_code_object)
 
-        if scanner and type(scanner) is callable:
-            scanner(
-                module, all_instructions, module_code_object, code_byte_index, is_scanning_imports)
-        else:
-            self._enumerate_bytecode(
-                module, all_instructions, module_code_object, code_byte_index, is_scanning_imports)
+        if not scanner:
+            scanner = self._enumerate_bytecode
+
+        assert type(scanner) is callable
+
+        scanner(all_instructions, module_code_object, code_byte_index, **kwargs)
 
         # Type of all code objects.
         code_object_type = type(module_code_object)
@@ -2658,10 +2658,10 @@ class ModuleGraph(ObjectGraph):
         # parse this constant in the same manner.
         for constant in constants:
             if isinstance(constant, code_object_type):
-                self.scan_bytecode(module, constant, is_scanning_imports)
+                self.scan_bytecode(constant, **kwargs)
 
     def _enumerate_bytecode(
-            self, module, all_instructions, module_code_object, code_byte_index, is_scanning_imports):
+            self, all_instructions, module_code_object, code_byte_index, module, is_scanning_imports):
         for inst_idx, inst in enumerate(all_instructions):
             if inst.opname == 'IMPORT_NAME':
                 # If this method is ignoring import statements, skip to the
