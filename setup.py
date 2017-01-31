@@ -17,7 +17,7 @@ from PyInstaller import (__version__ as version, is_linux, is_win, is_cygwin,
                          HOMEPATH, PLATFORM, compat)
 
 
-REQUIREMENTS = ['setuptools']
+REQUIREMENTS = ['setuptools', 'dis3;python_version<"3.4"']
 # For Windows install PyWin32 if not already installed.
 if sys.platform.startswith('win'):
     # Windows support depends on pefile library.
