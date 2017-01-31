@@ -3,6 +3,9 @@
 
 clone_depth: 50
 
+# No reason for us to restrict the number concurrent jobs
+max_jobs: 100
+
 environment:
   global:
     # Wrapper to ensure extensions are build using the MSVC compiler matching
