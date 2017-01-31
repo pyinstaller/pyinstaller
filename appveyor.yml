@@ -1,153 +1,165 @@
-# As config example taken this file: https://github.com/ogrisel/python-appveyor-demo/blob/master/appveyor.yml
+# As config was originally based on an example by Olivier Grisel. Thanks!
+# https://github.com/ogrisel/python-appveyor-demo/blob/master/appveyor.yml
+
+clone_depth: 50
+
 environment:
   global:
+    # Wrapper to ensure extensions are build using the MSVC compiler matching
+    # the target Python version and architecture.
     # SDK v7.0 MSVC Express 2008's SetEnv.cmd script will fail if the
     # /E:ON and /V:ON options are not enabled in the batch script intepreter
     # See: http://stackoverflow.com/a/13751649/163740
-    CMD_IN_ENV: "cmd /E:ON /V:ON /C .\\tests\\scripts\\appveyor\\run_with_env.cmd"
+    CMD_IN_ENV: 'cmd /E:ON /V:ON /C .\tests\scripts\appveyor\run_with_env.cmd'
+
+  PYTEST: py.test --maxfail 5 --durations=10
+  # Break the tests into two runs, since together they exceed the 1 hour limit.
+  # See https://github.com/pyinstaller/pyinstaller/issues/2024#issuecomment-224129520
+  # for more discussion.
+  TESTS_PART_1: tests/unit tests/functional -k "not tests/functional/test_libraries.py"
+  TESTS_PART_2: tests/functional/test_libraries.py
 
   matrix:
-    - PYTHON: "C:\\Python36-x64"
-      PYTHON_VERSION: "3.6"
-      PYTHON_ARCH: "64"
-      VCVARSALL: "x64"
-      # Break the tests into two runs, since together they exceed the 1 hour limit.
-      # See https://github.com/pyinstaller/pyinstaller/issues/2024#issuecomment-224129520
-      # for more discussion.
-      TEST1_CMD: "py.test --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
-      TEST2_CMD: ""
+    - PYTHON: C:\Python36-x64
+      PYTHON_VERSION: 3.6
+      PYTHON_ARCH: 64
+      VCVARSALL: x64
+      TEST_CMD: '%PYTEST% %TESTS_PART_1%'
 
-    - PYTHON: "C:\\Python36-x64"
-      PYTHON_VERSION: "3.6"
-      PYTHON_ARCH: "64"
-      VCVARSALL: "x64"
-      TEST1_CMD: ""
-      TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
+    - PYTHON: C:\Python36-x64
+      PYTHON_VERSION: 3.6
+      PYTHON_ARCH: 64
+      VCVARSALL: x64
+      TEST_CMD: '%PYTEST% %TESTS_PART_2%'
 
-    - PYTHON: "C:\\Python36"
-      PYTHON_VERSION: "3.6"
-      PYTHON_ARCH: "32"
-      VCVARSALL: "x86"
-      # Break the tests into two runs, since together they exceed the 1 hour limit.
-      # See https://github.com/pyinstaller/pyinstaller/issues/2024#issuecomment-224129520
-      # for more discussion.
-      TEST1_CMD: "py.test --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
-      TEST2_CMD: ""
+    - PYTHON: C:\Python36
+      PYTHON_VERSION: 3.6
+      PYTHON_ARCH: 32
+      VCVARSALL: x86
+      TEST_CMD: '%PYTEST% %TESTS_PART_1%'
 
-    - PYTHON: "C:\\Python36"
-      PYTHON_VERSION: "3.6"
-      PYTHON_ARCH: "32"
-      VCVARSALL: "x86"
-      TEST1_CMD: ""
-      TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
+    - PYTHON: C:\Python36
+      PYTHON_VERSION: 3.6
+      PYTHON_ARCH: 32
+      VCVARSALL: x86
+      TEST_CMD: '%PYTEST% %TESTS_PART_2%'
 
-    - PYTHON: "C:\\Python35"
-      PYTHON_VERSION: "3.5"
-      PYTHON_ARCH: "32"
-      VCVARSALL: "x86"
-      # Break the tests into two runs, since together they exceed the 1 hour limit.
-      # See https://github.com/pyinstaller/pyinstaller/issues/2024#issuecomment-224129520
-      # for more discussion.
-      TEST1_CMD: "py.test --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
-      TEST2_CMD: ""
+    - PYTHON: C:\Python35
+      PYTHON_VERSION: 3.5
+      PYTHON_ARCH: 32
+      VCVARSALL: x86
+      TEST_CMD: '%PYTEST% %TESTS_PART_1%'
 
-    - PYTHON: "C:\\Python35"
-      PYTHON_VERSION: "3.5"
-      PYTHON_ARCH: "32"
-      VCVARSALL: "x86"
-      TEST1_CMD: ""
-      TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
+    - PYTHON: C:\Python35
+      PYTHON_VERSION: 3.5
+      PYTHON_ARCH: 32
+      VCVARSALL: x86
+      TEST_CMD: '%PYTEST% %TESTS_PART_2%'
 
-    - PYTHON: "C:\\Python34"
-      PYTHON_VERSION: "3.4"
-      PYTHON_ARCH: "32"
-      VCVARSALL: "x86"
-      TEST1_CMD: "py.test --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
-      TEST2_CMD: ""
+    - PYTHON: C:\Python34
+      PYTHON_VERSION: 3.4
+      PYTHON_ARCH: 32
+      VCVARSALL: x86
+      TEST_CMD: '%PYTEST% %TESTS_PART_1%'
 
-    - PYTHON: "C:\\Python34"
-      PYTHON_VERSION: "3.4"
-      PYTHON_ARCH: "32"
-      VCVARSALL: "x86"
-      TEST1_CMD: ""
-      TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
+    - PYTHON: C:\Python34
+      PYTHON_VERSION: 3.4
+      PYTHON_ARCH: 32
+      VCVARSALL: x86
+      TEST_CMD: '%PYTEST% %TESTS_PART_2%'
 
-    - PYTHON: "C:\\Python33"
-      PYTHON_VERSION: "3.3"
-      PYTHON_ARCH: "32"
-      VCVARSALL: "x86"
-      TEST1_CMD: "py.test --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
-      TEST2_CMD: ""
+    - PYTHON: C:\Python33
+      PYTHON_VERSION: 3.3
+      PYTHON_ARCH: 32
+      VCVARSALL: x86
+      TEST_CMD: '%PYTEST% %TESTS_PART_1%'
 
-    - PYTHON: "C:\\Python33"
-      PYTHON_VERSION: "3.3"
-      PYTHON_ARCH: "32"
-      VCVARSALL: "x86"
-      TEST1_CMD: ""
-      TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
+    - PYTHON: C:\Python33
+      PYTHON_VERSION: 3.3
+      PYTHON_ARCH: 32
+      VCVARSALL: x86
+      TEST_CMD: '%PYTEST% %TESTS_PART_2%'
 
-    - PYTHON: "C:\\Python27"
-      PYTHON_VERSION: "2.7"
-      PYTHON_ARCH: "32"
-      VCVARSALL: "x86"
-      TEST1_CMD: "py.test --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
-      TEST2_CMD: ""
+    - PYTHON: C:\Python27
+      PYTHON_VERSION: 2.7
+      PYTHON_ARCH: 32
+      VCVARSALL: x86
+      TEST_CMD: '%PYTEST% %TESTS_PART_1%'
 
-    - PYTHON: "C:\\Python27"
-      PYTHON_VERSION: "2.7"
-      PYTHON_ARCH: "32"
-      VCVARSALL: "x86"
-      TEST1_CMD: ""
-      TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
+    - PYTHON: C:\Python27
+      PYTHON_VERSION: 2.7
+      PYTHON_ARCH: 32
+      VCVARSALL: x86
+      TEST_CMD: '%PYTEST% %TESTS_PART_2%'
 
-cache:
-  # Cache downloaded pip packages.
-  - "%LOCALAPPDATA%\\pip"
 
 init:
-  - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
-  - "ECHO \"%APPVEYOR_SCHEDULED_BUILD%\""
+  - ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%
+  - ECHO "%APPVEYOR_SCHEDULED_BUILD%"
+
+cache:
+  # Cache downloaded pip packages and built wheels.
+  - '%LOCALAPPDATA%\pip\Cache\http'
+  - '%LOCALAPPDATA%\pip\Cache\wheels'
 
 install:
+  - C:\cygwin\bin\du -hs "%LOCALAPPDATA%\pip\Cache"
   # Prepend newly installed Python to the PATH of this build (this cannot be
   # done from inside the powershell script as it would require to restart
   # the parent CMD process).
-  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+  - SET PATH=%PYTHON%;%PYTHON%\Scripts;%PATH%
 
   # Check that we have the expected version and architecture for Python
-  - "python --version"
-  - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
+  - python --version
+  - python -c "import struct; print(struct.calcsize('P') * 8)"
 
   # Compile bootloader.
-  - "cd bootloader"
-  - "\"C:\\Program Files (x86)\\Microsoft Visual Studio 12.0\\VC\\vcvarsall.bat\" %VCVARSALL%"
-  - "python waf --msvc_version=\"msvc 12.0\" distclean all"
-  - "cd .."
+  - cd bootloader
+  - '"C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat" %VCVARSALL%'
+  - python waf --msvc_version="msvc 12.0" distclean all
+  - cd ..
 
-  ### Install the PyInsaller dependencies.
+  ### Install the PyInstaller dependencies.
+  # If some dependencies contain
+  # compiled extensions and are not provided as pre-built wheel packages, pip
+  # will build them from source using the MSVC compiler matching the target
+  # Python version and architecture. To achieve this, all commands are run
+  # under control of '%CMD_IN_ENV%' (see above).
+
   # Upgrade to the latest pip.
-  - "%CMD_IN_ENV% python -m pip install -U pip setuptools wheel"
+  - '%CMD_IN_ENV% python -m pip install -U pip setuptools wheel'
 
   # Install the PyInstaller test dependencies.
-  - "%CMD_IN_ENV% pip install -U --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-tools.txt"
+  - '%CMD_IN_ENV% pip install -U --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-tools.txt'
   # Some libraries are available only for 32-bit Windows. Install those if we
   # can. Otherwise, install libraries that work on 32-bit and 64-bit Windows systems.
-  - "if \"%PYTHON_ARCH%\" == \"32\" (
-      %CMD_IN_ENV% pip install -U --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-win32.txt
+  - 'if "%PYTHON_ARCH%" == "32" (
+        %CMD_IN_ENV% pip install -U --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-win32.txt
     ) ELSE (
-      %CMD_IN_ENV% pip install -U --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-win.txt )"
+        %CMD_IN_ENV% pip install -U --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-win.txt )'
   # Install PyInstaller into virtualenv.
-  - "%CMD_IN_ENV% pip install -e ."
+  - '%CMD_IN_ENV% pip install -e .'
 
   # as of 2017-01-30 pre-installed psutil has some problem
-  - "%CMD_IN_ENV% pip install -U --force-reinstall psutil"
+  - '%CMD_IN_ENV% pip install -U --force-reinstall psutil'
 
 build: none
 
 test_script:
   # Run the tests appropriate for this entry in the test matrix. Skip tests
   # if we're just updating the cache.
-  - "if not \"%APPVEYOR_SCHEDULED_BUILD%\" == \"True\" (
-    %CMD_IN_ENV% %TEST1_CMD% )"
-  - "if not \"%APPVEYOR_SCHEDULED_BUILD%\" == \"True\" (
-    %CMD_IN_ENV% %TEST2_CMD% )"
+  - if not "%APPVEYOR_SCHEDULED_BUILD%" == "True" ( %CMD_IN_ENV% %TEST_CMD% )
+
+on_success:
+  # Remove old or huge cache files to hopefully not exceed the 1GB cache limit.
+  #
+  # If the cache limit is reached, the cache will not be updated (of not even
+  # created in the first run). So this is a trade of between keeping the cache
+  # current and having a cache at all.
+  # NB: This is done only `on_success` since the cache in uploaded only on
+  # success anyway.
+  - C:\cygwin\bin\find "%LOCALAPPDATA%\pip" -type f -mtime +360 -delete
+  - C:\cygwin\bin\find "%LOCALAPPDATA%\pip" -type f -size +10M -delete
+  - C:\cygwin\bin\find "%LOCALAPPDATA%\pip" -empty -delete
+  # Show size of cache
+  - C:\cygwin\bin\du -hs "%LOCALAPPDATA%\pip\Cache"
