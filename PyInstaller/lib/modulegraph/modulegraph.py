@@ -17,6 +17,7 @@ import pkgutil
 import re
 import sys
 from collections import deque, namedtuple
+from copy import copy
 
 import pkg_resources
 
@@ -1102,7 +1103,6 @@ class ModuleGraph(ObjectGraph):
 
         return m
 
-
     def __init__(self, path=None, excludes=(), replace_paths=(), implies=(), graph=None, debug=0):
         super(ModuleGraph, self).__init__(graph=graph, debug=debug)
         if path is None:
@@ -1119,8 +1119,8 @@ class ModuleGraph(ObjectGraph):
         # Maintain own list of package path mappings in the scope of Modulegraph
         # object.
         self._package_path_map = _packagePathMap
-        self._deferred_modules = deque()
-        self._processed_modules = deque()
+        self._base_modules = deque()
+        self._initialized = False
 
     def msg(self, level, s, *args):
         """
@@ -1329,13 +1329,11 @@ class ModuleGraph(ObjectGraph):
         else:
             self.updateEdgeData(fromnode, tonode, ed._merged(edge_data))
 
-
     def createReference(self, fromnode, tonode, edge_data='direct'):
         """
         Create a reference from fromnode to tonode
         """
         return super(ModuleGraph, self).createReference(fromnode, tonode, edge_data=edge_data)
-
 
     def findNode(self, name, create_nspkg=True):
         """
@@ -1445,13 +1443,16 @@ class ModuleGraph(ObjectGraph):
         self._updateReference(caller, m, None)
         self._scan_code(m, co, co_ast)
 
-        if is_py3:
-            while True:
-                try:
-                    module = self._deferred_modules.pop()
-                except IndexError:
-                    break
-                self._process_imports(module)
+        unprocessed_modules = copy(self._base_modules)
+        self._initialized = True
+
+        while unprocessed_modules:
+            module = unprocessed_modules.pop()
+            for unprocessed_module in reversed(list(self._process_imports(module))):
+                if hasattr(unprocessed_module, '_deferred_imports'):
+                    unprocessed_modules.append(unprocessed_module)
+
+        self._initialized = False
 
         m.code = co
         if self.replace_paths:
@@ -2612,12 +2613,8 @@ class ModuleGraph(ObjectGraph):
             self.scan_bytecode(
                 module_code_object, module=module, is_scanning_imports=True)
 
-        if is_py3:
-            # Add all imports parsed above to this graph.
-            if module not in self._processed_modules:
-                self._deferred_modules.append(module)
-        else:
-            self._process_imports(module)
+        if not self._initialized:
+            self._base_modules.appendleft(module)
 
 
     def _scan_ast(self, module, module_code_object_ast):
@@ -2728,8 +2725,6 @@ class ModuleGraph(ObjectGraph):
             Graph node of the source module to graph target imports for.
         """
 
-        if is_py3:
-            self._processed_modules.append(source_module)
         # If this source module imported no target modules, noop.
         if not source_module._deferred_imports:
             return
@@ -2739,7 +2734,11 @@ class ModuleGraph(ObjectGraph):
             # Graph node of the target module specified by the "from" portion
             # of this "from"-style star import (e.g., an import resembling
             # "from {target_module_name} import *") or ignored otherwise.
-            target_module = self._safe_import_hook(*import_info, **kwargs)[0]
+            target_modules = self._safe_import_hook(*import_info, **kwargs)
+            for module in target_modules:
+                yield module
+
+            target_module = target_modules[0]
 
             # If this is a "from"-style star import, process this import.
             if have_star:
