@@ -24,7 +24,7 @@ from . import util
 from . import zipio
 from ..altgraph import GraphError
 from ..altgraph.ObjectGraph import ObjectGraph
-from ...compat import is_py2, is_py34
+from ...compat import is_py2, is_py3, is_py34
 
 if is_py34:
     import dis
@@ -1434,12 +1434,13 @@ class ModuleGraph(ObjectGraph):
         self._updateReference(caller, m, None)
         self._scan_code(m, co, co_ast)
 
-        while True:
-            try:
-                module = self._deferred_modules.pop()
-            except IndexError:
-                break
-            self._process_imports(module)
+        if is_py3:
+            while True:
+                try:
+                    module = self._deferred_modules.pop()
+                except IndexError:
+                    break
+                self._process_imports(module)
 
         m.code = co
         if self.replace_paths:
@@ -2600,9 +2601,12 @@ class ModuleGraph(ObjectGraph):
             self._scan_bytecode(
                 module, module_code_object, is_scanning_imports=True)
 
-        # Add all imports parsed above to this graph.
-        if module not in self._processed_modules:
-            self._deferred_modules.append(module)
+        if is_py3:
+            # Add all imports parsed above to this graph.
+            if module not in self._processed_modules:
+                self._deferred_modules.append(module)
+        else:
+            self._process_imports(module)
 
 
     def _scan_ast(self, module, module_code_object_ast):
@@ -2706,7 +2710,8 @@ class ModuleGraph(ObjectGraph):
             Graph node of the source module to graph target imports for.
         """
 
-        self._processed_modules.append(source_module)
+        if is_py3:
+            self._processed_modules.append(source_module)
         # If this source module imported no target modules, noop.
         if not source_module._deferred_imports:
             return
