@@ -2644,10 +2644,8 @@ class ModuleGraph(ObjectGraph):
 
         all_instructions = dis.get_instructions(module_code_object)
 
-        if not scanner:
+        if not callable(scanner):
             scanner = self._enumerate_bytecode
-
-        assert callable(scanner)
 
         scanner(all_instructions, module_code_object, code_byte_index, **kwargs)
 
