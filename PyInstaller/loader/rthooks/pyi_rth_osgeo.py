@@ -20,3 +20,7 @@ else:
 
 if os.path.exists(gdal_data):
     os.environ['GDAL_DATA'] = gdal_data
+
+# We *must* import site so that the 'help' builtin is added for Anaconda
+# installs, see https://github.com/pyinstaller/pyinstaller/issues/1522
+import site
