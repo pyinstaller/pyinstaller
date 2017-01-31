@@ -2631,8 +2631,8 @@ class ModuleGraph(ObjectGraph):
     # Note: This nicely sidesteps any issues caused by moving from bytecode
     # to wordcode in python 3.6.
 
-    def _scan_bytecode(
-            self, module, module_code_object, is_scanning_imports):
+    def scan_bytecode(
+            self, module, module_code_object, is_scanning_imports, scanner=None):
         constants = module_code_object.co_consts
         # List of all bytes comprising this source module's compiled bytecode. (n)
         code_bytes = module_code_object.co_code
@@ -2648,7 +2648,12 @@ class ModuleGraph(ObjectGraph):
 
         all_instructions = dis.get_instructions(module_code_object)
 
-        self._enumerate_bytecode(module, all_instructions, module_code_object, code_byte_index, is_scanning_imports)
+        if scanner and type(scanner) is callable:
+            scanner(
+                module, all_instructions, module_code_object, code_byte_index, is_scanning_imports)
+        else:
+            self._enumerate_bytecode(
+                module, all_instructions, module_code_object, code_byte_index, is_scanning_imports)
 
         # Type of all code objects.
         code_object_type = type(module_code_object)
@@ -2657,7 +2662,7 @@ class ModuleGraph(ObjectGraph):
         # parse this constant in the same manner.
         for constant in constants:
             if isinstance(constant, code_object_type):
-                self._scan_bytecode(module, constant, is_scanning_imports)
+                self.scan_bytecode(module, constant, is_scanning_imports)
 
     def _enumerate_bytecode(
             self, module, all_instructions, module_code_object, code_byte_index, is_scanning_imports):
