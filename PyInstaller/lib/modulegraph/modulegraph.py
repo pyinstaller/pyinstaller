@@ -25,7 +25,9 @@ from . import zipio
 from ..altgraph import GraphError
 from ..altgraph.ObjectGraph import ObjectGraph
 from ...compat import is_py2, is_py3, is_py34, dis
+from ... import log as logging
 
+logger = logging.getLogger(__name__)
 
 if is_py2:
     from StringIO import StringIO as BytesIO
@@ -1119,6 +1121,19 @@ class ModuleGraph(ObjectGraph):
         self._package_path_map = _packagePathMap
         self._deferred_modules = deque()
         self._processed_modules = deque()
+
+    def msg(self, level, s, *args):
+        """
+        Print a debug message with the given level
+        """
+        if s:
+            message = "%s %s" % (s, ' '.join(map(repr, args)))
+            if level <= 1:
+                logger.warning(message)
+            elif level <= 2:
+                logger.info(message)
+            elif level <= 3:
+                logger.debug(message)
 
     def set_setuptools_nspackages(self):
         # This is used when running in the test-suite
