@@ -432,6 +432,16 @@ def test_requests(tmpdir, pyi_builder, data_dir, monkeypatch):
     pyi_builder.test_script('pyi_lib_requests.py')
 
 
+@importorskip('urllib3.packages.six')
+def test_urllib3_six(pyi_builder):
+    # Test for pre-safe-import urllib3.packages.six.moves.
+    pyi_builder.test_source("""
+        import urllib3.connectionpool
+        import types
+        assert isinstance(urllib3.connectionpool.queue, types.ModuleType)
+        """)
+
+
 @importorskip('sqlite3')
 def test_sqlite3(pyi_builder):
     pyi_builder.test_source(
