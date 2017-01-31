@@ -15,21 +15,23 @@ Utility functions related to analyzing/bundling dependencies.
 
 import ctypes
 import ctypes.util
-import dis
 import io
 import marshal
 import os
 import re
 import zipfile
 
+from .dylib import include_library
+from .. import compat
+from .. import log as logging
+from ..compat import (is_darwin, is_unix, is_py2, is_py34, is_freebsd,
+                      BYTECODE_MAGIC, PY3_BASE_MODULES)
 from ..lib.modulegraph import modulegraph
 
-from .. import compat
-from ..compat import (is_darwin, is_unix, is_py2, is_py34, is_freebsd,
-                      BYTECODE_MAGIC, PY3_BASE_MODULES,
-                      exec_python_rc)
-from .dylib import include_library
-from .. import log as logging
+if is_py34:
+    import dis
+else:
+    import dis3 as dis
 
 logger = logging.getLogger(__name__)
 
@@ -98,55 +100,53 @@ def create_py3_base_library(libzip_filename, graph):
         raise
 
 
+HASJREL = set(dis.hasjrel)
+assert 'SET_LINENO' not in dis.opmap  # safty belt
+
 if is_py2:
     _cOrd = ord
 else:
     _cOrd = int
 
-if is_py34:
-    # In Python 3.4 or later the dis module has a much nicer interface
-    # for working with bytecode, use that instead of peeking into the
-    # raw bytecode.
-    # Note: This nicely sidesteps any issues caused by moving from bytecode
-    # to wordcode in python 3.6.
-    get_instructions = dis.get_instructions
-else:
-    assert 'SET_LINENO' not in dis.opmap  # safty belt
 
-    def get_instructions(code):
-        """
-        Iterator parsing the bytecode into easy-usable minimal emulation of
-        Python 3.4 `dis.Instruction` instances.
-        """
-
-        class Instruction:
-            # Minimal emulation of Python 3.4 dis.Instruction
-            def __init__(self, opcode, oparg):
-                self.opname = dis.opname[opcode]
-                self.arg = oparg
-                # opcode, argval, argrepr, offset, is_jump_target and
-                # starts_line are not used by our code, so we leave them away
-                # here.
-
-        code = code.co_code
-        i = 0
-        n = len(code)
-        while i < n:
-            c = code[i]
-            i = i + 1
-            op = _cOrd(c)
-            if op >= dis.HAVE_ARGUMENT:
-                oparg = _cOrd(code[i]) + _cOrd(code[i + 1]) * 256
-                i = i + 2
-            else:
-                oparg = None
-            yield Instruction(op, oparg)
+def pass1(code):
+    """
+    Parse the bytecode int a list of easy-usable tokens:
+      (op, oparg, incondition, curline)
+    """
+    instrs = []
+    i = 0
+    n = len(code)
+    # TODO reestablish line numbers or remove them at all
+    curline = 0
+    incondition = 0
+    out = 0
+    while i < n:
+        if i >= out:
+            incondition = 0
+        c = code[i]
+        i = i + 1
+        op = _cOrd(c)
+        if op >= dis.HAVE_ARGUMENT:
+            oparg = _cOrd(code[i]) + _cOrd(code[i + 1]) * 256
+            i = i + 2
+        else:
+            oparg = None
+        if not incondition and op in COND_OPS:
+            incondition = 1
+            out = oparg
+            if op in HASJREL:
+                out += i
+        elif incondition and op == JUMP_FORWARD:
+            out = max(out, i + oparg)
+        instrs.append((op, oparg, incondition, curline))
+    return instrs
 
 
 def scan_code_for_ctypes(co):
     binaries = []
 
-    __recursivly_scan_code_objects_for_ctypes(co, binaries)
+    __recursively_scan_code_objects_for_ctypes(co, binaries)
 
     # If any of the libraries has been requested with anything
     # different then the bare filename, drop that entry and warn
@@ -170,9 +170,14 @@ def scan_code_for_ctypes(co):
     return binaries
 
 
-def __recursivly_scan_code_objects_for_ctypes(co, binaries):
+# On Python 3.4 or later the dis module has a much nicer interface
+# for working with bytecode, use that instead of peeking into the
+# raw bytecode.
+# Note: This nicely sidesteps any issues caused by moving from bytecode
+# to wordcode in python 3.6.
+def __recursively_scan_code_objects_for_ctypes(co, binaries):
     # Note: `binaries` is a list, which gets extended here.
-    instructions = get_instructions(co)
+    instructions = dis.get_instructions(co)
     while 1:
         # ctypes scanning requires a scope wider than one bytecode
         # instruction, so the code resides in a separate function
@@ -186,7 +191,7 @@ def __recursivly_scan_code_objects_for_ctypes(co, binaries):
 
     for c in co.co_consts:
         if isinstance(c, type(co)):
-            __recursivly_scan_code_objects_for_ctypes(c, binaries)
+            __recursively_scan_code_objects_for_ctypes(c, binaries)
 
 
 def __scan_code_instruction_for_ctypes(co, instructions):
@@ -202,11 +207,11 @@ def __scan_code_instruction_for_ctypes(co, instructions):
         appends it to local binaries list.
         """
         instruction = next(instructions)
+        # op, oparg, conditional, curline = next(instructions)
         if instruction.opname == 'LOAD_CONST':
             soname = co.co_consts[instruction.arg]
             if isinstance(soname, str):
                 return soname
-
 
     instruction = next(instructions)
     expected_ops = ('LOAD_GLOBAL', 'LOAD_NAME')
@@ -359,7 +364,7 @@ def _resolveCtypesImports(cbinaries):
             # 'W: library kernel32.dll required via ctypes not found'
             if not include_library(cbin):
                 continue
-            logger.warning("library %s required via ctypes not found", cbin)
+            logger.warn("library %s required via ctypes not found", cbin)
         else:
             if not include_library(cpath):
                 continue
