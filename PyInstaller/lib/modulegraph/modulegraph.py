@@ -2656,7 +2656,7 @@ class ModuleGraph(ObjectGraph):
         # parse this constant in the same manner.
         for constant in constants:
             if isinstance(constant, code_object_type):
-                self.scan_bytecode(constant, **kwargs)
+                self.scan_bytecode(constant, scanner=scanner, **kwargs)
 
     def _enumerate_bytecode(
             self, all_instructions, module_code_object, code_byte_index, module, is_scanning_imports):
