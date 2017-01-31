@@ -1,9 +1,12 @@
-# As config example taken this file: https://github.com/ogrisel/python-appveyor-demo/blob/master/appveyor.yml
+# As config was originally based on an example by Olivier Grisel. Thanks!
+# https://github.com/ogrisel/python-appveyor-demo/blob/master/appveyor.yml
 
 clone_depth: 50
 
 environment:
   global:
+    # Wrapper to ensure extensions are build using the MSVC compiler matching
+    # the target Python version and architecture.
     # SDK v7.0 MSVC Express 2008's SetEnv.cmd script will fail if the
     # /E:ON and /V:ON options are not enabled in the batch script intepreter
     # See: http://stackoverflow.com/a/13751649/163740
@@ -116,7 +119,13 @@ install:
   - python waf --msvc_version="msvc 12.0" distclean all
   - cd ..
 
-  ### Install the PyInsaller dependencies.
+  ### Install the PyInstaller dependencies.
+  # If some dependencies contain
+  # compiled extensions and are not provided as pre-built wheel packages, pip
+  # will build them from source using the MSVC compiler matching the target
+  # Python version and architecture. To achieve this, all commands are run
+  # under control of '%CMD_IN_ENV%' (see above).
+
   # Upgrade to the latest pip.
   - '%CMD_IN_ENV% python -m pip install -U pip setuptools wheel'
 
