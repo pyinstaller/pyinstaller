@@ -36,7 +36,7 @@ lxml        ; sys_platform != 'win32'
 lxml==3.7.2 ; sys_platform == 'win32' and python_version  >= '3.5'
 lxml==3.6.0 ; sys_platform == 'win32' and python_version  <= '3.4'
 
-keyring
+keyring==9.0 # later versions fail to build on Travis-CI 2017-01
 openpyxl
 pycparser
 pytz
