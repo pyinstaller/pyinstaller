@@ -133,7 +133,7 @@ def scan_code_for_ctypes(graph, module_code_object):
 
 
 def scan_code_instruction_for_ctypes(
-        binaries, all_instructions, module_code_object, **kwargs):
+        binaries, all_instructions, module_code_object, *args, **kwargs):
     """
     Detects ctypes dependencies, using reasonable heuristics that
     should cover most common ctypes usages; returns a tuple of two
