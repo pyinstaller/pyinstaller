@@ -111,11 +111,15 @@ class PYZ(Target):
         logger.info("Building PYZ (ZlibArchive) %s", self.name)
         # Do not bundle PyInstaller bootstrap modules into PYZ archive.
         toc = self.toc - self.dependencies
-        for entry in toc:
+        for entry in toc[:]:
             if not entry[0] in self.code_dict and entry[2] == 'PYMODULE':
                 # For some reason the code-object, modulegraph created
                 # is not available. Recreate it
-                self.code_dict[entry[0]] = get_code_object(entry[0], entry[1])
+                try:
+                    self.code_dict[entry[0]] = get_code_object(entry[0], entry[1])
+                except SyntaxError:
+                    # Exclude the module in case this is code meant for a newer Python version.
+                    toc.remove(entry)
         # sort content alphabetically to support reproducible builds
         toc.sort()
 
@@ -231,20 +235,20 @@ class PKG(Target):
                         # happen if they come from different sources (eg. once from
                         # binary dependence, and once from direct import).
                         if inm in seenInms:
-                            logger.warn('Two binaries added with the same internal name.')
-                            logger.warn(pprint.pformat((inm, fnm, typ)))
-                            logger.warn('was placed previously at')
-                            logger.warn(pprint.pformat((inm, seenInms[inm], seenFnms_typ[seenInms[inm]])))
-                            logger.warn('Skipping %s.' % fnm)
+                            logger.warning('Two binaries added with the same internal name.')
+                            logger.warning(pprint.pformat((inm, fnm, typ)))
+                            logger.warning('was placed previously at')
+                            logger.warning(pprint.pformat((inm, seenInms[inm], seenFnms_typ[seenInms[inm]])))
+                            logger.warning('Skipping %s.' % fnm)
                             continue
 
                         # Warn if the same binary extension was included
                         # with multiple internal names
                         if fnm in seenFnms:
-                            logger.warn('One binary added with two internal names.')
-                            logger.warn(pprint.pformat((inm, fnm, typ)))
-                            logger.warn('was placed previously at')
-                            logger.warn(pprint.pformat((seenFnms[fnm], fnm, seenFnms_typ[fnm])))
+                            logger.warning('One binary added with two internal names.')
+                            logger.warning(pprint.pformat((inm, fnm, typ)))
+                            logger.warning('was placed previously at')
+                            logger.warning(pprint.pformat((seenFnms[fnm], fnm, seenFnms_typ[fnm])))
                     seenInms[inm] = fnm
                     seenFnms[fnm] = inm
                     seenFnms_typ[fnm] = typ
@@ -447,9 +451,9 @@ class EXE(Target):
 
         if (data['versrsrc'] or data['resources']) and not is_win:
             # todo: really ignore :-)
-            logger.warn('ignoring version, manifest and resources, platform not capable')
+            logger.warning('ignoring version, manifest and resources, platform not capable')
         if data['icon'] and not (is_win or is_darwin):
-            logger.warn('ignoring icon, platform not capable')
+            logger.warning('ignoring icon, platform not capable')
 
         mtm = data['mtm']
         if mtm != misc.mtime(self.name):
@@ -685,7 +689,7 @@ class COLLECT(Target):
                 try:
                     shutil.copystat(fnm, tofnm)
                 except OSError:
-                    logger.warn("failed to copy flags of %s", fnm)
+                    logger.warning("failed to copy flags of %s", fnm)
             if typ in ('EXTENSION', 'BINARY'):
                 os.chmod(tofnm, 0o755)
         logger.info("Building COLLECT %s completed successfully.",

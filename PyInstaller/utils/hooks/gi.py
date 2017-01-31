@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 def get_typelibs(module, version):
     """deprecated; only here for backwards compat.
     """
-    logger.warn("get_typelibs is deprecated, use get_gi_typelibs instead")
+    logger.warning("get_typelibs is deprecated, use get_gi_typelibs instead")
     return get_gi_typelibs(module, version)[1]
 
 

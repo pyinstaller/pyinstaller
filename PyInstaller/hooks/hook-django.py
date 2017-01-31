@@ -114,4 +114,4 @@ if root_dir:
 
 
 else:
-    logger.warn('No django root directory could be found!')
+    logger.warning('No django root directory could be found!')

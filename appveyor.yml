@@ -7,8 +7,8 @@ environment:
     CMD_IN_ENV: "cmd /E:ON /V:ON /C .\\tests\\scripts\\appveyor\\run_with_env.cmd"
 
   matrix:
-    - PYTHON: "C:\\Python35-x64"
-      PYTHON_VERSION: "3.5"
+    - PYTHON: "C:\\Python36-x64"
+      PYTHON_VERSION: "3.6"
       PYTHON_ARCH: "64"
       VCVARSALL: "x64"
       # Break the tests into two runs, since together they exceed the 1 hour limit.
@@ -17,10 +17,27 @@ environment:
       TEST1_CMD: "py.test --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
       TEST2_CMD: ""
 
-    - PYTHON: "C:\\Python35-x64"
-      PYTHON_VERSION: "3.5"
+    - PYTHON: "C:\\Python36-x64"
+      PYTHON_VERSION: "3.6"
       PYTHON_ARCH: "64"
       VCVARSALL: "x64"
+      TEST1_CMD: ""
+      TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
+
+    - PYTHON: "C:\\Python36"
+      PYTHON_VERSION: "3.6"
+      PYTHON_ARCH: "32"
+      VCVARSALL: "x86"
+      # Break the tests into two runs, since together they exceed the 1 hour limit.
+      # See https://github.com/pyinstaller/pyinstaller/issues/2024#issuecomment-224129520
+      # for more discussion.
+      TEST1_CMD: "py.test --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
+      TEST2_CMD: ""
+
+    - PYTHON: "C:\\Python36"
+      PYTHON_VERSION: "3.6"
+      PYTHON_ARCH: "32"
+      VCVARSALL: "x86"
       TEST1_CMD: ""
       TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
 
@@ -85,7 +102,7 @@ environment:
 
 cache:
   # Cache downloaded pip packages.
-  - "C:\\Users\\appveyor\\AppData\\Local\\pip"
+  - "%LOCALAPPDATA%\\pip"
 
 init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
@@ -109,11 +126,7 @@ install:
 
   ### Install the PyInsaller dependencies.
   # Upgrade to the latest pip.
-  - "%CMD_IN_ENV% python -m pip install -U pip"
-
-  # Install lxml from anaconda.org channel since PyPI fails (or it takes too long).
-  # See: https://github.com/pyinstaller/pyinstaller/pull/1638
-  - "%CMD_IN_ENV% pip install -U -i https://pypi.anaconda.org/giumas/simple lxml"
+  - "%CMD_IN_ENV% python -m pip install -U pip setuptools wheel"
 
   # Install the PyInstaller test dependencies.
   - "%CMD_IN_ENV% pip install -U --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-tools.txt"
