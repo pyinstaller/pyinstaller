@@ -28,13 +28,14 @@ import re
 from collections import deque, namedtuple
 from struct import unpack
 
+from ...compat import is_py2
 from ..altgraph.ObjectGraph import ObjectGraph
 from ..altgraph import GraphError
 
 from . import util
 from . import zipio
 
-if sys.version_info[0] == 2:
+if is_py2:
     from StringIO import StringIO as BytesIO
     from StringIO import StringIO
     from  urllib import pathname2url
@@ -1124,6 +1125,7 @@ class ModuleGraph(ObjectGraph):
         # Maintain own list of package path mappings in the scope of Modulegraph
         # object.
         self._package_path_map = _packagePathMap
+        self._deferred_modules = deque()
 
     def set_setuptools_nspackages(self):
         # This is used when running in the test-suite
@@ -1434,6 +1436,17 @@ class ModuleGraph(ObjectGraph):
         m = self.createNode(Script, pathname)
         self._updateReference(caller, m, None)
         self._scan_code(m, co, co_ast)
+
+        processed = deque()
+        while True:
+            try:
+                module = self._deferred_modules.pop()
+            except IndexError:
+                break
+            if module not in processed:
+                self._process_imports(module)
+                processed.append(module)
+
         m.code = co
         if self.replace_paths:
             m.code = self._replace_paths_in_code(m.code)
@@ -2594,7 +2607,7 @@ class ModuleGraph(ObjectGraph):
                 module, module_code_object, is_scanning_imports=True)
 
         # Add all imports parsed above to this graph.
-        self._process_imports(module)
+        self._deferred_modules.append(module)
 
 
     def _scan_ast(self, module, module_code_object_ast):
