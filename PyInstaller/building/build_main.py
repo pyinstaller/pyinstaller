@@ -322,7 +322,13 @@ class Analysis(Target):
             Print a debug message with the given level
             """
             if s:
-                logger.debug("%s %s" % (s, ' '.join(map(repr, args))))
+                message = "%s %s" % (s, ' '.join(map(repr, args)))
+                if level <= 1:
+                    logger.warning(message)
+                elif level <= 2:
+                    logger.info(message)
+                elif level <= 3:
+                    logger.debug(message)
 
         self.graph.msg = msg
 
