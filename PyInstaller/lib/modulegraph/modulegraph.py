@@ -24,12 +24,8 @@ from . import util
 from . import zipio
 from ..altgraph import GraphError
 from ..altgraph.ObjectGraph import ObjectGraph
-from ...compat import is_py2, is_py3, is_py34
+from ...compat import is_py2, is_py3, is_py34, dis
 
-if is_py34:
-    import dis
-else:
-    import dis3 as dis
 
 if is_py2:
     from StringIO import StringIO as BytesIO

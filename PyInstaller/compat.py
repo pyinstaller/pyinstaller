@@ -123,6 +123,11 @@ if is_py2:
 else:
     safe_repr = ascii
 
+if is_py34:
+    import dis
+else:
+    import dis3 as dis
+
 # String types to replace `isinstance(foo, str)`
 # Use `isinstance(foo, string_types)` instead.
 if is_py2:
