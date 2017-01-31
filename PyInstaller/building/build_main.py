@@ -316,6 +316,16 @@ class Analysis(Target):
             self.graph = initialize_modgraph(
                 excludes=self.excludes, user_hook_dirs=self.hookspath)
 
+        # Monkeypatch the ModuleGraph msg function so that the messages print out.
+        def msg(self, level, s, *args):
+            """
+            Print a debug message with the given level
+            """
+            if s and level <= self.debug:
+                logger.debug("%s %s" % ("  " * self.indent, s, ' '.join(map(repr, args))))
+
+        self.graph.msg = msg
+
         # TODO Find a better place where to put 'base_library.zip' and when to created it.
         # For Python 3 it is necessary to create file 'base_library.zip'
         # containing core Python modules. In Python 3 some built-in modules
