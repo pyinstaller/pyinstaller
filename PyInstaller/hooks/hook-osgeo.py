@@ -30,7 +30,7 @@ import sys
 # - Ubuntu 15.04 64bit
 # - Mac OS X Yosemite 10.10
 #
-# TODO: Fix for gdal>=2.0: 'NameError: global name 'help' is not defined'
+# TODO: Fix for gdal>=2.0.0, <2.0.3: 'NameError: global name 'help' is not defined'
 
 # flag used to identify an Anaconda environment
 is_conda = False
@@ -50,8 +50,12 @@ if len(datas) == 0:
 
     # - conda-specific
     if is_win:
-        tgt_gdal_data = os.path.join('Library', 'data')
-        src_gdal_data = os.path.join(root_path, 'Library', 'data')
+        tgt_gdal_data = os.path.join('Library', 'share', 'gdal')
+        src_gdal_data = os.path.join(root_path, 'Library', 'share', 'gdal')
+        if not os.path.exists(src_gdal_data):
+            tgt_gdal_data = os.path.join('Library', 'data')
+            src_gdal_data = os.path.join(root_path, 'Library', 'data')
+
     else:  # both linux and darwin
         tgt_gdal_data = os.path.join('share', 'gdal')
         src_gdal_data = os.path.join(root_path, 'share', 'gdal')

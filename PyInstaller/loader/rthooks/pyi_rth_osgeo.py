@@ -14,7 +14,11 @@ import sys
 
 is_win = sys.platform.startswith('win')
 if is_win:
-    gdal_data = os.path.join(sys._MEIPASS, 'Library', 'data')
+    gdal_data = os.path.join(sys._MEIPASS, 'data', 'gdal')
+    if not os.path.exists(gdal_data):
+        gdal_data = os.path.join(sys._MEIPASS, 'Library', 'share', 'gdal')
+        if not os.path.exists(gdal_data):
+            gdal_data = os.path.join(sys._MEIPASS, 'Library', 'data')
 else:
     gdal_data = os.path.join(sys._MEIPASS, 'share', 'gdal')
 
