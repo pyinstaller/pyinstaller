@@ -1,4 +1,7 @@
 # As config example taken this file: https://github.com/ogrisel/python-appveyor-demo/blob/master/appveyor.yml
+
+clone_depth: 50
+
 environment:
   global:
     # SDK v7.0 MSVC Express 2008's SetEnv.cmd script will fail if the
