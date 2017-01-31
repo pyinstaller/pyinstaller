@@ -28,7 +28,7 @@ def test_ctypes_util_find_library_as_default_argument():
     """
     code = textwrap.dedent(code)
     co = compile(code, '<ctypes_util_find_library_as_default_argument>', 'exec')
-    utils.scan_code_for_ctypes(ModuleGraph(), co)
+    utils.scan_code_for_ctypes(co, ModuleGraph())
 
 
 @pytest.mark.skipif(not is_unix, reason="requires a Unix System")
