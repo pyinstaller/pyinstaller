@@ -6,99 +6,85 @@ environment:
     # See: http://stackoverflow.com/a/13751649/163740
     CMD_IN_ENV: "cmd /E:ON /V:ON /C .\\tests\\scripts\\appveyor\\run_with_env.cmd"
 
+  PYTEST: py.test --maxfail 5 --durations=10
+  # Break the tests into two runs, since together they exceed the 1 hour limit.
+  # See https://github.com/pyinstaller/pyinstaller/issues/2024#issuecomment-224129520
+  # for more discussion.
+  TESTS_PART_1: tests/unit tests/functional -k "not tests/functional/test_libraries.py"
+  TESTS_PART_2: tests/functional/test_libraries.py
+
   matrix:
     - PYTHON: "C:\\Python36-x64"
       PYTHON_VERSION: "3.6"
       PYTHON_ARCH: "64"
       VCVARSALL: "x64"
-      # Break the tests into two runs, since together they exceed the 1 hour limit.
-      # See https://github.com/pyinstaller/pyinstaller/issues/2024#issuecomment-224129520
-      # for more discussion.
-      TEST1_CMD: "py.test --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
-      TEST2_CMD: ""
+      TEST_CMD: '%PYTEST% %TESTS_PART_1%'
 
     - PYTHON: "C:\\Python36-x64"
       PYTHON_VERSION: "3.6"
       PYTHON_ARCH: "64"
       VCVARSALL: "x64"
-      TEST1_CMD: ""
-      TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
+      TEST_CMD: '%PYTEST% %TESTS_PART_2%'
 
     - PYTHON: "C:\\Python36"
       PYTHON_VERSION: "3.6"
       PYTHON_ARCH: "32"
       VCVARSALL: "x86"
-      # Break the tests into two runs, since together they exceed the 1 hour limit.
-      # See https://github.com/pyinstaller/pyinstaller/issues/2024#issuecomment-224129520
-      # for more discussion.
-      TEST1_CMD: "py.test --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
-      TEST2_CMD: ""
+      TEST_CMD: '%PYTEST% %TESTS_PART_1%'
 
     - PYTHON: "C:\\Python36"
       PYTHON_VERSION: "3.6"
       PYTHON_ARCH: "32"
       VCVARSALL: "x86"
-      TEST1_CMD: ""
-      TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
+      TEST_CMD: '%PYTEST% %TESTS_PART_2%'
 
     - PYTHON: "C:\\Python35"
       PYTHON_VERSION: "3.5"
       PYTHON_ARCH: "32"
       VCVARSALL: "x86"
-      # Break the tests into two runs, since together they exceed the 1 hour limit.
-      # See https://github.com/pyinstaller/pyinstaller/issues/2024#issuecomment-224129520
-      # for more discussion.
-      TEST1_CMD: "py.test --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
-      TEST2_CMD: ""
+      TEST_CMD: '%PYTEST% %TESTS_PART_1%'
 
     - PYTHON: "C:\\Python35"
       PYTHON_VERSION: "3.5"
       PYTHON_ARCH: "32"
       VCVARSALL: "x86"
-      TEST1_CMD: ""
-      TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
+      TEST_CMD: '%PYTEST% %TESTS_PART_2%'
 
     - PYTHON: "C:\\Python34"
       PYTHON_VERSION: "3.4"
       PYTHON_ARCH: "32"
       VCVARSALL: "x86"
-      TEST1_CMD: "py.test --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
-      TEST2_CMD: ""
+      TEST_CMD: '%PYTEST% %TESTS_PART_1%'
 
     - PYTHON: "C:\\Python34"
       PYTHON_VERSION: "3.4"
       PYTHON_ARCH: "32"
       VCVARSALL: "x86"
-      TEST1_CMD: ""
-      TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
+      TEST_CMD: '%PYTEST% %TESTS_PART_2%'
 
     - PYTHON: "C:\\Python33"
       PYTHON_VERSION: "3.3"
       PYTHON_ARCH: "32"
       VCVARSALL: "x86"
-      TEST1_CMD: "py.test --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
-      TEST2_CMD: ""
+      TEST_CMD: '%PYTEST% %TESTS_PART_1%'
 
     - PYTHON: "C:\\Python33"
       PYTHON_VERSION: "3.3"
       PYTHON_ARCH: "32"
       VCVARSALL: "x86"
-      TEST1_CMD: ""
-      TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
+      TEST_CMD: '%PYTEST% %TESTS_PART_2%'
 
     - PYTHON: "C:\\Python27"
       PYTHON_VERSION: "2.7"
       PYTHON_ARCH: "32"
       VCVARSALL: "x86"
-      TEST1_CMD: "py.test --maxfail 5 --durations=10 tests\\unit tests\\functional -k \"not tests/functional/test_libraries.py\""
-      TEST2_CMD: ""
+      TEST_CMD: '%PYTEST% %TESTS_PART_1%'
 
     - PYTHON: "C:\\Python27"
       PYTHON_VERSION: "2.7"
       PYTHON_ARCH: "32"
       VCVARSALL: "x86"
-      TEST1_CMD: ""
-      TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
+      TEST_CMD: '%PYTEST% %TESTS_PART_2%'
 
 
 init:
@@ -150,10 +136,7 @@ build: none
 test_script:
   # Run the tests appropriate for this entry in the test matrix. Skip tests
   # if we're just updating the cache.
-  - "if not \"%APPVEYOR_SCHEDULED_BUILD%\" == \"True\" (
-    %CMD_IN_ENV% %TEST1_CMD% )"
-  - "if not \"%APPVEYOR_SCHEDULED_BUILD%\" == \"True\" (
-    %CMD_IN_ENV% %TEST2_CMD% )"
+  - if not "%APPVEYOR_SCHEDULED_BUILD%" == "True" ( %CMD_IN_ENV% %TEST_CMD% )
 
 on_success:
   # Remove old or huge cache files to hopefully not exceed the 1GB cache limit.
