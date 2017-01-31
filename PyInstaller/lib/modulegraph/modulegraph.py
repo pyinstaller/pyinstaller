@@ -2648,6 +2648,19 @@ class ModuleGraph(ObjectGraph):
 
         all_instructions = dis.get_instructions(module_code_object)
 
+        self._enumerate_bytecode(module, all_instructions, module_code_object, code_byte_index, is_scanning_imports)
+
+        # Type of all code objects.
+        code_object_type = type(module_code_object)
+
+        # For each constant in this code object that is itself a code object,
+        # parse this constant in the same manner.
+        for constant in constants:
+            if isinstance(constant, code_object_type):
+                self._scan_bytecode(module, constant, is_scanning_imports)
+
+    def _enumerate_bytecode(
+            self, module, all_instructions, module_code_object, code_byte_index, is_scanning_imports):
         for inst_idx, inst in enumerate(all_instructions):
             if inst.opname == 'IMPORT_NAME':
                 # If this method is ignoring import statements, skip to the
@@ -2686,15 +2699,6 @@ class ModuleGraph(ObjectGraph):
             elif inst.opname in ('DELETE_NAME', 'DELETE_GLOBAL'):
                 name = module_code_object.co_names[inst.arg]
                 module.remove_global_attr_if_found(name)
-
-        # Type of all code objects.
-        code_object_type = type(module_code_object)
-
-        # For each constant in this code object that is itself a code object,
-        # parse this constant in the same manner.
-        for constant in constants:
-            if isinstance(constant, code_object_type):
-                self._scan_bytecode(module, constant, is_scanning_imports)
 
 
     def _process_imports(self, source_module):
