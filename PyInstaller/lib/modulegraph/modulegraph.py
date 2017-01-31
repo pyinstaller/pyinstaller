@@ -2647,7 +2647,7 @@ class ModuleGraph(ObjectGraph):
         if not scanner:
             scanner = self._enumerate_bytecode
 
-        assert type(scanner) is callable
+        assert callable(scanner)
 
         scanner(all_instructions, module_code_object, code_byte_index, **kwargs)
 
