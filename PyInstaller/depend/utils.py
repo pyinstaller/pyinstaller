@@ -104,7 +104,7 @@ else:
     _cOrd = int
 
 
-def scan_code_for_ctypes(graph, module_code_object):
+def scan_code_for_ctypes(module_code_object, graph):
     binaries = []
 
     graph.scan_bytecode(module_code_object,
