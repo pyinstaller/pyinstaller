@@ -100,13 +100,15 @@ environment:
       TEST1_CMD: ""
       TEST2_CMD: "py.test --maxfail 5 --durations=10 tests\\functional\\test_libraries.py"
 
-cache:
-  # Cache downloaded pip packages.
-  - "%LOCALAPPDATA%\\pip"
 
 init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
   - "ECHO \"%APPVEYOR_SCHEDULED_BUILD%\""
+
+cache:
+  # Cache downloaded pip packages and built wheels.
+  - '%LOCALAPPDATA%\pip\Cache\http'
+  - '%LOCALAPPDATA%\pip\Cache\wheels'
 
 install:
   # Prepend newly installed Python to the PATH of this build (this cannot be
