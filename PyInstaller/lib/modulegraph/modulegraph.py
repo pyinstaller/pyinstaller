@@ -25,8 +25,8 @@ from . import util
 from . import zipio
 from ..altgraph import GraphError
 from ..altgraph.ObjectGraph import ObjectGraph
-from ...compat import is_py2, is_py3, is_py34, dis
 from ... import log as logging
+from ...compat import is_py2, is_py3, dis
 
 logger = logging.getLogger(__name__)
 
@@ -2609,7 +2609,11 @@ class ModuleGraph(ObjectGraph):
             self._scan_bytecode(
                 module_code_object, scanner=self._enumerate_bytecode, module=module, is_scanning_imports=True)
 
-        self._deferred_modules.appendleft(module)
+        if is_py3:
+            self._deferred_modules.appendleft(module)
+        else:
+            # FIXME: Recursion is still required for Python 2.7.
+            self._process_imports(module)
 
 
     def _scan_ast(self, module, module_code_object_ast):
