@@ -61,19 +61,26 @@ officially supported by PyInstaller.
 
 ### Python Packages
 
-Regardless of platform or CI service, cross-platform Python packages to be
-tested should be listed in `test/requirements-library.txt` using the usual
-`requirements.txt` syntax (e.g., `{package_name}>={minimum_version}`). These
-packages will be installed with `pip` into remote testing environments managed
-by third-party CI services for _all_ supported platforms.
+Regardless of platform or CI service, all Python packages to be tested should
+be listed in `test/requirements-library.txt`. Python packages required for
+exercising tests (e.g., `pytest`) should instead be listed in
+`test/requirements-tools.txt`.
 
-Platform-specific Python packages to be tested should instead be:
+Both files are usual pip [requirements
+files](https://pip.pypa.io/en/stable/reference/pip_install/#requirements-file-format)
+following the respective syntax (e.g.,
+[`{package_name}>={minimum_version}`](https://pip.pypa.io/en/stable/reference/pip_install/#requirement-specifiers).
+These packages will be installed with `pip` into remote testing environments
+managed by third-party CI services.
 
-- For OS X, listed in `test/requirements-mac.txt`.
-- For Windows, listed in `test/requirements-win.txt`.
-
-Cross-platform Python packages required for exercising tests (e.g., `pytest`)
-should instead be listed in `test/requirements-tools.txt`.
+Packages only available for specific version or platforms should get an appropriate
+[environment
+marker](https://www.python.org/dev/peps/pep-0426/#environment-markers) like
+so:
+```
+SomeProject ==5.4 ; python_version != '3.3'
+SomeProject       ; sys_platform == 'win32'
+```
 
 ### Linux
 
