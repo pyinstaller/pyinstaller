@@ -2119,8 +2119,7 @@ class ModuleGraph(ObjectGraph):
         self.msgout(3, "safe_import_module ->", module)
         return module
 
-
-    #FIXME: For clarity, rename method parameters to:
+    # FIXME: For clarity, rename method parameters to:
     #    def _load_module(self, module_name, file_handle, pathname, imp_info):
     def _load_module(self, fqname, fp, pathname, info):
         suffix, mode, typ = info
@@ -2149,6 +2148,7 @@ class ModuleGraph(ObjectGraph):
             except SyntaxError:
                 co = None
                 cls = InvalidSourceModule
+                self.msg(2, "load_module: InvalidSourceModule", pathname)
 
             else:
                 cls = SourceModule
@@ -2191,7 +2191,7 @@ class ModuleGraph(ObjectGraph):
                     co = self._replace_paths_in_code(co)
                 m.code = co
             except SyntaxError:
-                self.msg(2, "load_module: SynaxError in ", pathname)
+                self.msg(1, "load_module: SyntaxError in ", pathname)
                 cls = InvalidSourceModule
                 m = self.createNode(cls, fqname)
 
@@ -3042,7 +3042,7 @@ class ModuleGraph(ObjectGraph):
                     path_data = (None, namespace_dirs[0], (
                         '', namespace_dirs, imp.PKG_DIRECTORY))
         except UnicodeDecodeError as exc:
-            self.msgout(4, "_find_module_path -> unicode error", exc)
+            self.msgout(1, "_find_module_path -> unicode error", exc)
         # Ensure that exceptions are logged, as this function is typically
         # called by the import_module() method which squelches ImportErrors.
         except Exception as exc:
