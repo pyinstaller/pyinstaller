@@ -133,7 +133,7 @@ def scan_code_for_ctypes(module_code_object, graph):
 
 
 def _scan_code_instruction_for_ctypes(
-        binaries, all_instructions, module_code_object, *args, **kwargs):
+        binaries, all_instructions, *args, **kwargs):
     """
     Detects ctypes dependencies, using reasonable heuristics that
     should cover most common ctypes usages; returns a tuple of two
@@ -148,7 +148,7 @@ def _scan_code_instruction_for_ctypes(
         instruction = next(all_instructions)
         # op, oparg, conditional, curline = next(all_instructions)
         if instruction.opname == 'LOAD_CONST':
-            soname = module_code_object.co_consts[instruction.arg]
+            soname = instruction.argval
             if isinstance(soname, str):
                 binaries.append(soname)
                 return
@@ -161,7 +161,7 @@ def _scan_code_instruction_for_ctypes(
             if instruction.opname not in expected_ops:
                 continue
 
-            name = module_code_object.co_names[instruction.arg]
+            name = instruction.argval
             if name == "ctypes":
                 # Guesses ctypes has been imported as `import ctypes` and
                 # the members are accessed like: ctypes.CDLL("library.so")
@@ -176,7 +176,7 @@ def _scan_code_instruction_for_ctypes(
                 instruction = next(all_instructions)
                 if instruction.opname not in expected_ops:
                     continue
-                name = module_code_object.co_names[instruction.arg]
+                name = instruction.argval
 
             if name in ("CDLL", "WinDLL", "OleDLL", "PyDLL"):
                 # Guesses ctypes imports of this type: CDLL("library.so")
@@ -201,13 +201,13 @@ def _scan_code_instruction_for_ctypes(
                 #     LOAD_CONST    1 ('library.so')
                 instruction = next(all_instructions)
                 if instruction.opname == 'LOAD_ATTR':
-                    if module_code_object.co_names[instruction.arg] == "LoadLibrary":
+                    if instruction.argval == "LoadLibrary":
                         # Second type, needs to fetch one more instruction
                         binaries.append(_libFromConst())
                         continue
                     else:
                         # First type
-                        binaries.append(module_code_object.co_names[instruction.arg] + ".dll")
+                        binaries.append(instruction.argval + ".dll")
                         continue
 
             elif instruction.opname == 'LOAD_ATTR' and name in ("util",):
@@ -221,7 +221,7 @@ def _scan_code_instruction_for_ctypes(
                 #     LOAD_CONST    1 ('gs')
                 instruction = next(all_instructions)
                 if instruction.opname == 'LOAD_ATTR':
-                    if module_code_object.co_names[instruction.arg] == "find_library":
+                    if instruction.argval == "find_library":
                         libname = _libFromConst()
                         if libname:
                             lib = ctypes.util.find_library(libname)

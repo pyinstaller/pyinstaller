@@ -2638,7 +2638,8 @@ class ModuleGraph(ObjectGraph):
             self, module_code_object, scanner, **kwargs):
         assert callable(scanner)
 
-        scanner(dis.get_instructions(module_code_object), module_code_object, **kwargs)
+        # FIXME: Scanners should not receive module_code_object
+        scanner(dis.get_instructions(module_code_object), **kwargs)
 
         # Type of all code objects.
         code_object_type = type(module_code_object)
@@ -2651,7 +2652,7 @@ class ModuleGraph(ObjectGraph):
 
     @staticmethod
     def _enumerate_bytecode(
-            all_instructions, module_code_object, module, is_scanning_imports):
+            all_instructions, module, is_scanning_imports):
         previous_instructions = deque(maxlen=2)
         for inst_idx, inst in enumerate(all_instructions):
             if inst.opname == 'IMPORT_NAME':
@@ -2667,7 +2668,7 @@ class ModuleGraph(ObjectGraph):
                 target_attr_names = previous_instructions[1].argval
 
                 assert target_attr_names is None or type(target_attr_names) is tuple
-                target_module_partname = module_code_object.co_names[inst.arg]
+                target_module_partname = inst.argval
                 have_star = False
                 if target_attr_names is not None:
                     target_attr_names = set()
