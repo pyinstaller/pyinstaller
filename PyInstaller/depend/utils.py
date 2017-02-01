@@ -147,8 +147,7 @@ def _scan_code_instruction_for_ctypes(all_instructions, binaries):
         if instruction.opname == 'LOAD_CONST':
             soname = instruction.argval
             if isinstance(soname, str):
-                binaries.append(soname)
-                return
+                return soname
 
     while True:
         try:
