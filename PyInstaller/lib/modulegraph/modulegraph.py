@@ -2663,8 +2663,8 @@ class ModuleGraph(ObjectGraph):
                 assert previous_instructions[0].opname == 'LOAD_CONST'
                 assert previous_instructions[1].opname == 'LOAD_CONST'
 
-                level = module_code_object.co_consts[previous_instructions[0].arg]
-                target_attr_names = module_code_object.co_consts[previous_instructions[1].arg]
+                level = previous_instructions[0].argval
+                target_attr_names = previous_instructions[1].argval
 
                 assert target_attr_names is None or type(target_attr_names) is tuple
                 target_module_partname = module_code_object.co_names[inst.arg]
@@ -2685,11 +2685,11 @@ class ModuleGraph(ObjectGraph):
 
             elif inst.opname in ('STORE_NAME', 'STORE_GLOBAL'):
                 # keep track of all global names that are assigned to
-                name = module_code_object.co_names[inst.arg]
+                name = inst.argval
                 module.add_global_attr(name)
 
             elif inst.opname in ('DELETE_NAME', 'DELETE_GLOBAL'):
-                name = module_code_object.co_names[inst.arg]
+                name = inst.argval
                 module.remove_global_attr_if_found(name)
 
             previous_instructions.append(inst)
