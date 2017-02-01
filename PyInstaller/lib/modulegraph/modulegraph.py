@@ -2640,25 +2640,23 @@ class ModuleGraph(ObjectGraph):
 
     def _scan_bytecode(
             self, module_code_object, scanner, **kwargs):
-        constants = module_code_object.co_consts
-        # Index of the current byte in this list being parsed. (i)
-        code_byte_index = 0
-
         assert callable(scanner)
 
-        scanner(dis.get_instructions(module_code_object), module_code_object, code_byte_index, **kwargs)
+        scanner(dis.get_instructions(module_code_object), module_code_object, **kwargs)
 
         # Type of all code objects.
         code_object_type = type(module_code_object)
 
         # For each constant in this code object that is itself a code object,
         # parse this constant in the same manner.
-        for constant in constants:
+        for constant in module_code_object.co_consts:
             if isinstance(constant, code_object_type):
                 self._scan_bytecode(constant, scanner=scanner, **kwargs)
 
+    @staticmethod
     def _enumerate_bytecode(
-            self, all_instructions, module_code_object, code_byte_index, module, is_scanning_imports):
+            all_instructions, module_code_object, module, is_scanning_imports):
+        previous_instructions = deque(maxlen=2)
         for inst_idx, inst in enumerate(all_instructions):
             if inst.opname == 'IMPORT_NAME':
                 # If this method is ignoring import statements, skip to the
@@ -2666,17 +2664,17 @@ class ModuleGraph(ObjectGraph):
                 if not is_scanning_imports:
                     continue
 
-                assert all_instructions[code_byte_index - 2].opname == 'LOAD_CONST'
-                assert all_instructions[code_byte_index - 1].opname == 'LOAD_CONST'
+                assert previous_instructions[0].opname == 'LOAD_CONST'
+                assert previous_instructions[1].opname == 'LOAD_CONST'
 
-                level = module_code_object.co_consts[all_instructions[code_byte_index - 2].arg]
-                target_attr_names = module_code_object.co_consts[all_instructions[code_byte_index - 1].arg]
+                level = module_code_object.co_consts[previous_instructions[0].arg]
+                target_attr_names = module_code_object.co_consts[previous_instructions[1].arg]
 
                 assert target_attr_names is None or type(target_attr_names) is tuple
                 target_module_partname = module_code_object.co_names[inst.arg]
                 have_star = False
                 if target_attr_names is not None:
-                    target_attr_names = set(fromlist)
+                    target_attr_names = set()
                     if '*' in target_attr_names:
                         target_attr_names.remove('*')
                         have_star = True
@@ -2698,6 +2696,7 @@ class ModuleGraph(ObjectGraph):
                 name = module_code_object.co_names[inst.arg]
                 module.remove_global_attr_if_found(name)
 
+            previous_instructions.append(inst)
 
     def _process_imports(self, source_module):
         """
