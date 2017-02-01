@@ -107,8 +107,8 @@ else:
 def scan_code_for_ctypes(module_code_object, graph):
     binaries = []
 
-    graph.scan_bytecode(module_code_object,
-                        scanner=functools.partial(scan_code_instruction_for_ctypes, binaries))
+    graph._scan_bytecode(module_code_object,
+                         scanner=functools.partial(_scan_code_instruction_for_ctypes, binaries))
 
     # If any of the libraries has been requested with anything
     # different then the bare filename, drop that entry and warn
@@ -132,7 +132,7 @@ def scan_code_for_ctypes(module_code_object, graph):
     return binaries
 
 
-def scan_code_instruction_for_ctypes(
+def _scan_code_instruction_for_ctypes(
         binaries, all_instructions, module_code_object, *args, **kwargs):
     """
     Detects ctypes dependencies, using reasonable heuristics that

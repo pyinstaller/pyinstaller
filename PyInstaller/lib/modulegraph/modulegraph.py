@@ -2547,7 +2547,6 @@ class ModuleGraph(ObjectGraph):
         # Return the list of all target modules imported by this call.
         return target_modules
 
-
     def _scan_code(
         self,
         module,
@@ -2606,12 +2605,12 @@ class ModuleGraph(ObjectGraph):
 
             # Parse this module's code object for all relevant non-imports
             # (e.g., global variable declarations and undeclarations).
-            self.scan_bytecode(
-                module_code_object, module=module, is_scanning_imports=False)
+            self._scan_bytecode(
+                module_code_object, scanner=self._enumerate_bytecode, module=module, is_scanning_imports=False)
         # Else, parse this module's code object for imports.
         else:
-            self.scan_bytecode(
-                module_code_object, module=module, is_scanning_imports=True)
+            self._scan_bytecode(
+                module_code_object, scanner=self._enumerate_bytecode, module=module, is_scanning_imports=True)
 
         if not self._initialized:
             self._base_modules.appendleft(module)
@@ -2639,27 +2638,15 @@ class ModuleGraph(ObjectGraph):
     # Note: This nicely sidesteps any issues caused by moving from bytecode
     # to wordcode in python 3.6.
 
-    def scan_bytecode(
-            self, module_code_object, scanner=None, **kwargs):
+    def _scan_bytecode(
+            self, module_code_object, scanner, **kwargs):
         constants = module_code_object.co_consts
-        # List of all bytes comprising this source module's compiled bytecode. (n)
-        code_bytes = module_code_object.co_code
-
-        # Number of such bytes.
-        num_code_bytes = len(code_bytes)
-
         # Index of the current byte in this list being parsed. (i)
         code_byte_index = 0
 
-        level = None
-        fromlist = None
+        assert callable(scanner)
 
-        all_instructions = dis.get_instructions(module_code_object)
-
-        if not callable(scanner):
-            scanner = self._enumerate_bytecode
-
-        scanner(all_instructions, module_code_object, code_byte_index, **kwargs)
+        scanner(dis.get_instructions(module_code_object), module_code_object, code_byte_index, **kwargs)
 
         # Type of all code objects.
         code_object_type = type(module_code_object)
@@ -2668,7 +2655,7 @@ class ModuleGraph(ObjectGraph):
         # parse this constant in the same manner.
         for constant in constants:
             if isinstance(constant, code_object_type):
-                self.scan_bytecode(constant, scanner=scanner, **kwargs)
+                self._scan_bytecode(constant, scanner=scanner, **kwargs)
 
     def _enumerate_bytecode(
             self, all_instructions, module_code_object, code_byte_index, module, is_scanning_imports):
