@@ -128,6 +128,10 @@ if is_py34:
 else:
     try:
         import dis3 as dis
+
+        if is_py3 and not is_py34:
+            # The dis3 module uses the unicode type because it is written for Python 2.7.
+            dis.unicode = str
     except ImportError:  # This may not be available if called from setup.py
         pass
 
