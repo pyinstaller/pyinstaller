@@ -20,7 +20,6 @@ import marshal
 import os
 import re
 import zipfile
-import functools
 
 from .dylib import include_library
 from .. import compat
@@ -107,8 +106,7 @@ else:
 def scan_code_for_ctypes(module_code_object, graph):
     binaries = []
 
-    graph._scan_bytecode(module_code_object,
-                         scanner=functools.partial(_scan_code_instruction_for_ctypes, binaries))
+    graph._scan_bytecode(module_code_object, scanner=_scan_code_instruction_for_ctypes, binaries=binaries)
 
     # If any of the libraries has been requested with anything
     # different then the bare filename, drop that entry and warn
@@ -132,8 +130,7 @@ def scan_code_for_ctypes(module_code_object, graph):
     return binaries
 
 
-def _scan_code_instruction_for_ctypes(
-        binaries, all_instructions, *args, **kwargs):
+def _scan_code_instruction_for_ctypes(all_instructions, binaries):
     """
     Detects ctypes dependencies, using reasonable heuristics that
     should cover most common ctypes usages; returns a tuple of two
