@@ -1119,7 +1119,7 @@ class ModuleGraph(ObjectGraph):
         # Maintain own list of package path mappings in the scope of Modulegraph
         # object.
         self._package_path_map = _packagePathMap
-        self._base_modules = deque()
+        self._deferred_modules = deque()
         self._initialized = False
 
     def msg(self, level, s, *args):
@@ -1443,16 +1443,13 @@ class ModuleGraph(ObjectGraph):
         self._updateReference(caller, m, None)
         self._scan_code(m, co, co_ast)
 
-        unprocessed_modules = copy(self._base_modules)
-        self._initialized = True
+        unprocessed_modules = copy(self._deferred_modules)
+        self._deferred_modules.clear()
 
         while unprocessed_modules:
-            module = unprocessed_modules.pop()
-            for unprocessed_module in reversed(list(self._process_imports(module))):
-                if hasattr(unprocessed_module, '_deferred_imports'):
-                    unprocessed_modules.append(unprocessed_module)
-
-        self._initialized = False
+            self._process_imports(unprocessed_modules.pop())
+            unprocessed_modules.extend(self._deferred_modules)
+            self._deferred_modules.clear()
 
         m.code = co
         if self.replace_paths:
@@ -2612,8 +2609,7 @@ class ModuleGraph(ObjectGraph):
             self._scan_bytecode(
                 module_code_object, scanner=self._enumerate_bytecode, module=module, is_scanning_imports=True)
 
-        if not self._initialized:
-            self._base_modules.appendleft(module)
+        self._deferred_modules.appendleft(module)
 
 
     def _scan_ast(self, module, module_code_object_ast):
@@ -2720,11 +2716,7 @@ class ModuleGraph(ObjectGraph):
             # Graph node of the target module specified by the "from" portion
             # of this "from"-style star import (e.g., an import resembling
             # "from {target_module_name} import *") or ignored otherwise.
-            target_modules = self._safe_import_hook(*import_info, **kwargs)
-            for module in target_modules:
-                yield module
-
-            target_module = target_modules[0]
+            target_module = self._safe_import_hook(*import_info, **kwargs)[0]
 
             # If this is a "from"-style star import, process this import.
             if have_star:
