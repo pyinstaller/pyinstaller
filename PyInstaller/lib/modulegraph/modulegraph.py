@@ -3274,6 +3274,8 @@ class ModuleGraph(ObjectGraph):
                 if namespace_dirs:
                     path_data = (None, namespace_dirs[0], (
                         '', namespace_dirs, imp.PKG_DIRECTORY))
+        except UnicodeDecodeError as exc:
+            self.msgout(1, "_find_module_path -> unicode error", exc)
         # Ensure that exceptions are logged, as this function is typically
         # called by the import_module() method which squelches ImportErrors.
         except Exception as exc:
