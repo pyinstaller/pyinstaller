@@ -2130,6 +2130,7 @@ class ModuleGraph(ObjectGraph):
             except SyntaxError:
                 co = None
                 cls = InvalidSourceModule
+                self.msg(2, "load_module: InvalidSourceModule", pathname)
 
             else:
                 cls = SourceModule
@@ -2172,7 +2173,7 @@ class ModuleGraph(ObjectGraph):
                     co = self._replace_paths_in_code(co)
                 m.code = co
             except SyntaxError:
-                self.msg(2, "load_module: SynaxError in ", pathname)
+                self.msg(1, "load_module: SyntaxError in ", pathname)
                 cls = InvalidSourceModule
                 m = self.createNode(cls, fqname)
 
