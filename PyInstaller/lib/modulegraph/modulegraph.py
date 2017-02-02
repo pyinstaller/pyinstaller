@@ -2129,6 +2129,7 @@ class ModuleGraph(ObjectGraph):
             except SyntaxError:
                 co = None
                 cls = InvalidSourceModule
+                self.msg(2, "load_module: InvalidSourceModule", pathname)
 
             else:
                 cls = SourceModule
@@ -2171,7 +2172,7 @@ class ModuleGraph(ObjectGraph):
                     co = self._replace_paths_in_code(co)
                 m.code = co
             except SyntaxError:
-                self.msg(2, "load_module: SynaxError in ", pathname)
+                self.msg(1, "load_module: SyntaxError in ", pathname)
                 cls = InvalidSourceModule
                 m = self.createNode(cls, fqname)
 
@@ -3272,6 +3273,8 @@ class ModuleGraph(ObjectGraph):
                 if namespace_dirs:
                     path_data = (None, namespace_dirs[0], (
                         '', namespace_dirs, imp.PKG_DIRECTORY))
+        except UnicodeDecodeError as exc:
+            self.msgout(1, "_find_module_path -> unicode error", exc)
         # Ensure that exceptions are logged, as this function is typically
         # called by the import_module() method which squelches ImportErrors.
         except Exception as exc:
