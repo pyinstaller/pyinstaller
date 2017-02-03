@@ -269,9 +269,9 @@ class FrozenImporter(object):
             modname = fullname.split('.')[-1]
 
             for p in path:
-                p = p.replace(SYS_PREFIX, "")
+                p = p[SYS_PREFIXLEN:]
                 parts = p.split(pyi_os_path.os_sep)
-                if not len(parts): continue
+                if not parts: continue
                 if not parts[0]:
                     parts = parts[1:]
                 parts.append(modname)
@@ -320,17 +320,9 @@ class FrozenImporter(object):
                 # e.g. /absolute/path/frozen_executable/path/to/module/module_name.pyc
                 # Paths from developer machine are masked.
 
-                ### Set __file__ attribute of a module relative to the executable
-                # so that data files can be found. The absolute absolute path
-                # to the executable is taken from sys.prefix. In onefile mode it
-                # points to the temp directory where files are unpacked by PyInstaller.
-                # Then, append the appropriate suffix (__init__.pyc for a package, or just .pyc for a module).
-                if is_pkg:
-                    module.__file__ = pyi_os_path.os_path_join(pyi_os_path.os_path_join(SYS_PREFIX,
-                        fullname.replace('.', pyi_os_path.os_sep)), '__init__.pyc')
-                else:
-                    module.__file__ = pyi_os_path.os_path_join(SYS_PREFIX,
-                        fullname.replace('.', pyi_os_path.os_sep) + '.pyc')
+                # Set __file__ attribute of a module relative to the
+                # executable so that data files can be found.
+                module.__file__ = self.get_filename(fullname)
 
                 ### Set __path__  if 'fullname' is a package.
                 # Python has modules and packages. A Python package is container
@@ -428,13 +420,12 @@ class FrozenImporter(object):
 
         ImportError should be raised if module not found.
         """
-        if fullname in self.toc:
-            try:
-                is_pkg, bytecode = self._pyz_archive.extract(fullname)
-                return bytecode
-            except Exception:
-                raise ImportError('Loader FrozenImporter cannot handle module ' + fullname)
-        else:
+        try:
+            # extract() returns None if fullname not in the archive, thus the
+            # next line will raise an execpion which will be catched just
+            # below and raise the ImportError.
+            return self._pyz_archive.extract(fullname)[1]
+        except:
             raise ImportError('Loader FrozenImporter cannot handle module ' + fullname)
 
     def get_source(self, fullname):
