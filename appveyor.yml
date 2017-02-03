@@ -143,9 +143,6 @@ install:
   # Install PyInstaller into virtualenv.
   - '%CMD_IN_ENV% pip install -e .'
 
-  # as of 2017-01-30 pre-installed psutil has some problem
-  - '%CMD_IN_ENV% pip install -U --force-reinstall psutil'
-
 build: none
 
 test_script:
