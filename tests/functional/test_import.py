@@ -161,6 +161,17 @@ def test_error_during_import(pyi_builder):
             raise RuntimeError("failure!")
         """)
 
+def test_import_non_existing_raises_import_error(pyi_builder):
+    pyi_builder.test_source(
+        """
+        try:
+            import zzzzzz.zzzzzzzz.zzzzzzz.non.existing.module.error_during_import2
+        except ImportError:
+            print("OK")
+        else:
+            raise RuntimeError("ImportError not raised")
+        """)
+
 # :todo: Use some package which is already installed for some other
 # reason instead of `simplejson` which is only used here.
 @importorskip('simplejson')
