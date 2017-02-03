@@ -5,9 +5,9 @@ This directory contains tests for PyInstaller:
 
 - `functional` directory contains tests where executables are created from
   Python scripts.
+- `unit` directory contains simple unit tests.
 - `old_suite` directory contains old structure of tests (TODO migrate all tests
   to a new structure).
-- `unit` directory contains simple unit tests.
 
 Prerequisites
 -------------
@@ -15,8 +15,14 @@ Prerequisites
 In order to run the tests, you will need the following Python packages/libraries
 installed:
 
-- Mock
 - pytest
+- psutil
+- execnet
+
+The easiest way to install these (and some useful pytest add-ons) is running
+```
+pip install -U tests/requirements-tools.txt
+```
 
 Running the Tests
 -----------------
@@ -30,14 +36,22 @@ Or, to speed up test runs by sending tests to multiple CPUs:
 
     py.test -n NUM
 
-Or, to run only the unit or functional tests, run the following command:
+Or, to run only the unit or functional tests, run one the following command:
 
-    TODO
+    py.test tests/unit
+    py.test tests/functional
+    py.test tests/functional -k "not tests/functional/test_libraries.py"
+
+Or, to run only the unit and functional tests, but not the huge library
+test-suite:
+
+    py.test tests/unit tests/functional -k "not tests/functional/test_libraries.py"
+
 
 Or, to run only a particular test suite within a file, run the following
 command:
 
-    TODO
+    py.test tests/functional/test_basic.py -k test_pyz_as_external_file
 
 Run all tests matching `test_ctypes_CDLL` resp. `ctypes_CDLL`:
 
