@@ -76,6 +76,7 @@ class BuiltinImporter(object):
     modules in the bundled ZIP archive.
     """
     def find_module(self, fullname, path=None):
+        # Deprecated in Python 3.4, see PEP-451
         imp_lock()
         module_loader = None  # None means - no module found by this importer.
 
@@ -87,6 +88,7 @@ class BuiltinImporter(object):
         return module_loader
 
     def load_module(self, fullname, path=None):
+        # Deprecated in Python 3.4, see PEP-451
         imp_lock()
 
         try:
@@ -155,6 +157,7 @@ class FrozenPackageImporter(object):
         self._importer = importer
 
     def load_module(self, fullname):
+        # Deprecated in Python 3.4, see PEP-451
         return self._importer.load_module(fullname, self._fullname)
 
 
@@ -175,11 +178,16 @@ class FrozenImporter(object):
     class with method load_module(). Both these methods are implemented
     in one class.
 
+    This is also a PEP-451 finder and loader class for the ModuleSpec type
+    import system. A PEP-451 finder requires method find_spec(), a PEP-451
+    loader requires methods exec_module(), load_module(9 and (optionally)
+    create_module(). All these methods are implemented in this one class.
 
     To use this class just call
 
         FrozenImporter.install()
     """
+
     def __init__(self):
         """
         Load, unzip and initialize the Zip archive bundled with the executable.
@@ -241,15 +249,19 @@ class FrozenImporter(object):
 
 
     def find_module(self, fullname, path=None):
+        # Deprecated in Python 3.4, see PEP-451
         """
         PEP-302 finder.find_module() method for the ``sys.meta_path`` hook.
 
         fullname     fully qualified name of the module
-        path         None for a top-level module, or package.__path__ for submodules or subpackages.
+        path         None for a top-level module, or package.__path__
+                     for submodules or subpackages.
 
-        Return a loader object if the module was found, or None if it wasn't. If find_module() raises
-        an exception, it will be propagated to the caller, aborting the import.
+        Return a loader object if the module was found, or None if it wasn't.
+        If find_module() raises an exception, it will be propagated to the
+        caller, aborting the import.
         """
+
         # Acquire the interpreter's import lock for the current thread. This
         # lock should be used by import hooks to ensure thread-safety when
         # importing modules.
@@ -288,6 +300,7 @@ class FrozenImporter(object):
         return module_loader
 
     def load_module(self, fullname, real_fullname=None):
+        # Deprecated in Python 3.4, see PEP-451
         """
         PEP-302 loader.load_module() method for the ``sys.meta_path`` hook.
 
@@ -366,6 +379,8 @@ class FrozenImporter(object):
                 # In Python 3.4 was introduced module attribute __spec__ to
                 # consolidate all module attributes.
                 if sys.version_info[0:2] > (3, 3):
+                    # This is still needed as long as CExtensionImporter does
+                    # not implement PEP-451.
                     module.__spec__ = _frozen_importlib.ModuleSpec(
                         real_fullname, self, is_package=is_pkg)
 
@@ -464,14 +479,16 @@ class FrozenImporter(object):
             with open(path, 'rb') as fp:
                 return fp.read()
 
-    # TODO Do we really need to implement this method?
     def get_filename(self, fullname):
         """
         This method should return the value that __file__ would be set to
         if the named module was loaded. If the module is not found, then
         ImportError should be raised.
         """
-        # Then, append the appropriate suffix (__init__.pyc for a package, or just .pyc for a module).
+        # The absolute absolute path to the executable is taken from
+        # sys.prefix. In onefile mode it points to the temp directory where
+        # files are unpacked by PyInstaller. Then, append the appropriate
+        # suffix (__init__.pyc for a package, or just .pyc for a module).
         # Method is_package() will raise ImportError if module not found.
         if self.is_package(fullname):
             filename = pyi_os_path.os_path_join(pyi_os_path.os_path_join(SYS_PREFIX,
@@ -500,6 +517,7 @@ class CExtensionImporter(object):
         self._file_cache = set(files)
 
     def find_module(self, fullname, path=None):
+        # Deprecated in Python 3.4, see PEP-451
         imp_lock()
         module_loader = None  # None means - no module found by this importer.
 
@@ -513,6 +531,7 @@ class CExtensionImporter(object):
         return module_loader
 
     def load_module(self, fullname, path=None):
+        # Deprecated in Python 3.4, see PEP-451
         imp_lock()
 
         module = None
@@ -614,7 +633,6 @@ class CExtensionImporter(object):
         fp.close()
         return content
 
-    # TODO Do we really need to implement this method?
     def get_filename(self, fullname):
         """
         This method should return the value that __file__ would be set to
