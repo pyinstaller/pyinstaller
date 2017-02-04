@@ -19,81 +19,81 @@ environment:
   # Break the tests into two runs, since together they exceed the 1 hour limit.
   # See https://github.com/pyinstaller/pyinstaller/issues/2024#issuecomment-224129520
   # for more discussion.
-  TESTS_PART_1: tests/unit tests/functional -k "not tests/functional/test_libraries.py"
-  TESTS_PART_2: tests/functional/test_libraries.py
+  TESTS_UNITTESTS: tests/unit tests/functional -k "not tests/functional/test_libraries.py"
+  TESTS_LIBRARIES: tests/functional/test_libraries.py
 
   matrix:
     - PYTHON: C:\Python36-x64
       PYTHON_VERSION: 3.6
       PYTHON_ARCH: 64
       VCVARSALL: x64
-      TEST_CMD: '%PYTEST% %TESTS_PART_1%'
+      TEST_LIBRARIES: NO
 
     - PYTHON: C:\Python36-x64
       PYTHON_VERSION: 3.6
       PYTHON_ARCH: 64
       VCVARSALL: x64
-      TEST_CMD: '%PYTEST% %TESTS_PART_2%'
+      TEST_LIBRARIES: YES
 
     - PYTHON: C:\Python36
       PYTHON_VERSION: 3.6
       PYTHON_ARCH: 32
       VCVARSALL: x86
-      TEST_CMD: '%PYTEST% %TESTS_PART_1%'
+      TEST_LIBRARIES: NO
 
     - PYTHON: C:\Python36
       PYTHON_VERSION: 3.6
       PYTHON_ARCH: 32
       VCVARSALL: x86
-      TEST_CMD: '%PYTEST% %TESTS_PART_2%'
+      TEST_LIBRARIES: YES
 
     - PYTHON: C:\Python35
       PYTHON_VERSION: 3.5
       PYTHON_ARCH: 32
       VCVARSALL: x86
-      TEST_CMD: '%PYTEST% %TESTS_PART_1%'
+      TEST_LIBRARIES: NO
 
     - PYTHON: C:\Python35
       PYTHON_VERSION: 3.5
       PYTHON_ARCH: 32
       VCVARSALL: x86
-      TEST_CMD: '%PYTEST% %TESTS_PART_2%'
+      TEST_LIBRARIES: YES
 
     - PYTHON: C:\Python34
       PYTHON_VERSION: 3.4
       PYTHON_ARCH: 32
       VCVARSALL: x86
-      TEST_CMD: '%PYTEST% %TESTS_PART_1%'
+      TEST_LIBRARIES: NO
 
     - PYTHON: C:\Python34
       PYTHON_VERSION: 3.4
       PYTHON_ARCH: 32
       VCVARSALL: x86
-      TEST_CMD: '%PYTEST% %TESTS_PART_2%'
+      TEST_LIBRARIES: YES
 
     - PYTHON: C:\Python33
       PYTHON_VERSION: 3.3
       PYTHON_ARCH: 32
       VCVARSALL: x86
-      TEST_CMD: '%PYTEST% %TESTS_PART_1%'
+      TEST_LIBRARIES: NO
 
     - PYTHON: C:\Python33
       PYTHON_VERSION: 3.3
       PYTHON_ARCH: 32
       VCVARSALL: x86
-      TEST_CMD: '%PYTEST% %TESTS_PART_2%'
+      TEST_LIBRARIES: YES
 
     - PYTHON: C:\Python27
       PYTHON_VERSION: 2.7
       PYTHON_ARCH: 32
       VCVARSALL: x86
-      TEST_CMD: '%PYTEST% %TESTS_PART_1%'
+      TEST_LIBRARIES: NO
 
     - PYTHON: C:\Python27
       PYTHON_VERSION: 2.7
       PYTHON_ARCH: 32
       VCVARSALL: x86
-      TEST_CMD: '%PYTEST% %TESTS_PART_2%'
+      TEST_LIBRARIES: YES
 
 
 init:
@@ -114,7 +114,10 @@ install:
 
   # Check that we have the expected version and architecture for Python
   - python --version
-  - python -c "import struct; print(struct.calcsize('P') * 8)"
+  - >-
+     %CMD_IN_ENV%
+     python -c "import sys,platform,struct;
+     print(sys.platform, platform.machine(), struct.calcsize('P') * 8, )"
 
   # Compile bootloader.
   - cd bootloader
@@ -133,13 +136,12 @@ install:
   - '%CMD_IN_ENV% python -m pip install -U pip setuptools wheel'
 
   # Install the PyInstaller test dependencies.
-  - '%CMD_IN_ENV% pip install -U --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-tools.txt'
-  # Some libraries are available only for 32-bit Windows. Install those if we
-  # can. Otherwise, install libraries that work on 32-bit and 64-bit Windows systems.
-  - 'if "%PYTHON_ARCH%" == "32" (
-        %CMD_IN_ENV% pip install -U --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-win32.txt
-    ) ELSE (
-        %CMD_IN_ENV% pip install -U --disable-pip-version-check --timeout 5 --retries 2 -r tests/requirements-win.txt )'
+  - '%CMD_IN_ENV% pip install -U --timeout 5 --retries 2
+        -r tests/requirements-tools.txt'
+  - 'if "%TEST_LIBRARIES%" == "YES" (
+        %CMD_IN_ENV% pip install -U --timeout 5 --retries 2
+             -r tests/requirements-libraries.txt
+    )'
   # Install PyInstaller into virtualenv.
   - '%CMD_IN_ENV% pip install -e .'
 
@@ -148,7 +150,12 @@ build: none
 test_script:
   # Run the tests appropriate for this entry in the test matrix. Skip tests
   # if we're just updating the cache.
-  - if not "%APPVEYOR_SCHEDULED_BUILD%" == "True" ( %CMD_IN_ENV% %TEST_CMD% )
+  - 'if not "%APPVEYOR_SCHEDULED_BUILD%" == "True" (
+        if /i "%TEST_LIBRARIES%" == "YES" (
+          %CMD_IN_ENV% %PYTEST% %TESTS_LIBRARIES%
+        ) else (
+          %CMD_IN_ENV% %PYTEST% %TESTS_UNITTESTS%
+    ))'
 
 on_success:
   # Remove old or huge cache files to hopefully not exceed the 1GB cache limit.
@@ -166,4 +173,4 @@ on_success:
 
 
 on_finish:
-  - ps: (new-object net.webclient).UploadFile("https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path .\junit-results.xml))
+  - ps: 'if (Test-Path ".\junit-results.xml") { (new-object net.webclient).UploadFile("https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path .\junit-results.xml)) }'

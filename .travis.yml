@@ -8,7 +8,6 @@ sudo: false
 cache:
   directories:
     - $HOME/.cache/pip
-    - $HOME/.pip-accel
 
 # Try OS X.
 os:
@@ -71,7 +70,7 @@ install:
 
   # Install dependencies for tests.
   - pip install -U -r tests/requirements-tools.txt
-  - pip install -U -r tests/requirements-linux.txt
+  - pip install -U -r tests/requirements-libraries.txt
 
 script:
   # Run tests and speed them up by sending them to multiple CPUs.

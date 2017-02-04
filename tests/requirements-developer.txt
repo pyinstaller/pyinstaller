@@ -1,0 +1,19 @@
+### Helpers for development
+
+ipython  # Better interactive Python shell.
+pyreadline ; sys_platform == 'win32'  # Colors in IPython, Windows-only package.
+pycmd  # Contains 'py.cleanup' that removes all .pyc files and similar.
+
+### Helpers for releases
+
+wheel>0.24.0  # For creating .whl packages
+twine         # For secure upload of tar.gz to PYPI.
+
+zest.releaser # Makes releasing easier
+# Addons for zest.releaser:
+check-manifest  # Checks MANIFEST.in
+pyroma   # Checks if package follows best practices of Python packaging.
+chardet  # character encoding detector.
+readme   # Check PyPI description is valid reStructuredText
+
+-r requirements-tools.txt
