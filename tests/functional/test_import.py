@@ -169,6 +169,15 @@ def test_import_respects_path(pyi_builder, script_dir):
       ['--additional-hooks-dir='+script_dir.join('pyi_hooks').strpath])
 
 
+# Verify correct handling of sys.meta_path redirects like pkg_resources 28.6.1
+# does: '_vendor.xxx' gets imported as 'extern.xxx' and using '__import__()'.
+# Note: This also requires a hook, since 'pyi_testmod_metapath1._vendor' is
+# not imported directly and won't be found by modulegraph.
+def test_import_metapath1(pyi_builder, script_dir):
+    pyi_builder.test_source('import pyi_testmod_metapath1',
+      ['--additional-hooks-dir='+script_dir.join('pyi_hooks').strpath])
+
+
 def test_import_pyqt5_uic_port(monkeypatch, pyi_builder):
     extra_path = os.path.join(_MODULES_DIR, 'pyi_import_pyqt_uic_port')
     pyi_builder.test_script('pyi_import_pyqt5_uic_port.py',
