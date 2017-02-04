@@ -1,4 +1,4 @@
-from modulegraph import zipio
+from PyInstaller.lib.modulegraph import zipio
 import os
 import time
 import sys

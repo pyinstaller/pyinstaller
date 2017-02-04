@@ -5,7 +5,7 @@ if sys.version_info[:2] <= (2,6):
 else:
     import unittest
 
-from modulegraph import modulegraph
+from PyInstaller.lib.modulegraph import modulegraph
 
 
 # XXX: Todo: simular tests with bytecompiled modules

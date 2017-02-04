@@ -1,7 +1,7 @@
 import unittest
 import encodings
 import encodings.aliases
-from modulegraph import util
+from PyInstaller.lib.modulegraph import util
 import sys
 import os
 

@@ -2,7 +2,7 @@ import unittest
 
 import os, shutil, sys
 
-from modulegraph import modulegraph
+from PyInstaller.lib.modulegraph import modulegraph
 
 class ImpliesTestCase(unittest.TestCase):
     if not hasattr(unittest.TestCase, 'assertIsInstance'):

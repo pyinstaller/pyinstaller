@@ -2,7 +2,7 @@ import unittest
 
 import os, shutil
 
-from modulegraph import modulegraph
+from PyInstaller.lib.modulegraph import modulegraph
 
 class DummyModule(object):
     packagepath = None

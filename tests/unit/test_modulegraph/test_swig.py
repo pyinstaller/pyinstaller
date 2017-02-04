@@ -3,7 +3,7 @@ Test importability of SWIG-generated C extensions.
 """
 import os
 import sys
-from modulegraph import modulegraph
+from PyInstaller.lib.modulegraph import modulegraph
 
 if sys.version_info[:2] <= (2,6):
     import unittest2 as unittest

@@ -3,8 +3,8 @@ import unittest
 
 import os, shutil, sys
 
-from modulegraph import find_modules
-from modulegraph import modulegraph
+from PyInstaller.lib.modulegraph import find_modules
+from PyInstaller.lib.modulegraph import modulegraph
 
 
 class PackagesTestCase (unittest.TestCase):

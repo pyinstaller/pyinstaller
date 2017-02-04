@@ -14,7 +14,7 @@ if sys.version_info[:2] <= (2,6):
 else:
     import unittest
 
-from modulegraph import modulegraph
+from PyInstaller.lib.modulegraph import modulegraph
 
 gRootDir = os.path.dirname(os.path.abspath(__file__))
 gSrcDir = os.path.join(gRootDir, 'testpkg-pep420-namespace')

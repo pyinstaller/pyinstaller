@@ -1,12 +1,12 @@
 import unittest
-from modulegraph import modulegraph
+from PyInstaller.lib.modulegraph import modulegraph
 import pkg_resources
 import os
 import imp
 import sys
 import shutil
 import warnings
-from altgraph import Graph
+from PyInstaller.lib.altgraph import Graph
 import textwrap
 import xml.etree.ElementTree as ET
 import pickle

@@ -6,7 +6,7 @@ import sys
 import textwrap
 import subprocess
 import os
-from modulegraph import modulegraph
+from PyInstaller.lib.modulegraph import modulegraph
 
 class TestNativeImport (unittest.TestCase):
     # The tests check that Python's import statement

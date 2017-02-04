@@ -10,7 +10,7 @@ import subprocess
 import unittest
 import textwrap
 
-from modulegraph import modulegraph
+from PyInstaller.lib.modulegraph import modulegraph
 
 gRootDir = os.path.dirname(os.path.abspath(__file__))
 gSrcDir = os.path.join(gRootDir, 'testpkg-setuptools-namespace')
