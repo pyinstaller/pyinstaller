@@ -66,6 +66,21 @@ def test_relative_import3(pyi_builder):
         """
     )
 
+@xfail(reason='modulegraph bug')
+def test_import_missing_submodule(pyi_builder):
+    # If a submodule is missing, the parent submodule must be imported.
+    pyi_builder.test_source(
+        """
+        try:
+            import pyi_testmod_missing_submod.aaa.bbb
+        except ImportError as e:
+            assert e.message.endswith(' bbb')
+        else:
+            raise RuntimeError('Buggy test-case: module'
+                       'pyi_testmod_missing_submod.aaa.bbb must not exist')
+        # parent module exists and must be included
+        __import__('pyi_testmod_missing_submod.aaa')
+        """)
 
 def test_import_submodule_global_shadowed(pyi_builder):
     """
