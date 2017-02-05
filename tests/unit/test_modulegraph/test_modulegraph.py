@@ -286,7 +286,6 @@ class TestFunctions (unittest.TestCase):
             self.assertEqual(info[2], imp.C_EXTENSION)
 
     if sys.version_info[:2] > (2,5):
-        exec(textwrap.dedent('''\
             def test_deprecated(self):
                 saved_add = modulegraph.addPackagePath
                 saved_replace = modulegraph.replacePackage
@@ -318,7 +317,6 @@ class TestFunctions (unittest.TestCase):
                 finally:
                     modulegraph.addPackagePath = saved_add
                     modulegraph.replacePackage = saved_replace
-            '''), locals(), globals())
 
     def test_addPackage(self):
         saved = modulegraph._packagePathMap
