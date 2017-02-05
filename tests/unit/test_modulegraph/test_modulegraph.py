@@ -25,6 +25,8 @@ TESTDATA = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
         "testdata", "nspkg")
 
+READ_MODE = "U" if sys.version_info[:2] < (3,4) else "r"
+
 try:
     expectedFailure = unittest.expectedFailure
 except AttributeError:
@@ -169,7 +171,8 @@ class TestFunctions (unittest.TestCase):
                 os.unlink(os.path.join(path, 'mymodule.pyc'))
 
             # Plain module
-            info = modulegraph.find_module('mymodule', path=[path] + sys.path)
+            modgraph = modulegraph.ModuleGraph()
+            info = modgraph._find_module('mymodule', path=[path] + sys.path)
 
             fp = info[0]
             filename = info[1]
@@ -181,7 +184,7 @@ class TestFunctions (unittest.TestCase):
                 # Zip importers may precompile
                 if filename.endswith('.py'):
                     self.assertEqual(filename, os.path.join(path, 'mymodule.py'))
-                    self.assertEqual(description, ('.py', 'rU', imp.PY_SOURCE))
+                    self.assertEqual(description, ('.py', READ_MODE, imp.PY_SOURCE))
 
                 else:
                     self.assertEqual(filename, os.path.join(path, 'mymodule.pyc'))
@@ -189,14 +192,14 @@ class TestFunctions (unittest.TestCase):
 
             else:
                 self.assertEqual(filename, os.path.join(path, 'mymodule.py'))
-                self.assertEqual(description, ('.py', 'rU', imp.PY_SOURCE))
+                self.assertEqual(description, ('.py', READ_MODE, imp.PY_SOURCE))
 
             # Compiled plain module, no source
             if path.endswith('.zip') or path.endswith('.egg'):
-                self.assertRaises(ImportError, modulegraph.find_module, 'mymodule2', path=[path] + sys.path)
+                self.assertRaises(ImportError, modgraph._find_module, 'mymodule2', path=[path] + sys.path)
 
             else:
-                info = modulegraph.find_module('mymodule2', path=[path] + sys.path)
+                info = modgraph._find_module('mymodule2', path=[path] + sys.path)
 
                 fp = info[0]
                 filename = info[1]
@@ -209,7 +212,7 @@ class TestFunctions (unittest.TestCase):
                 fp.close()
 
             # Compiled plain module, with source
-#            info = modulegraph.find_module('mymodule3', path=[path] + sys.path)
+#            info = modgraph._find_module('mymodule3', path=[path] + sys.path)
 #
 #            fp = info[0]
 #            filename = info[1]
@@ -225,7 +228,7 @@ class TestFunctions (unittest.TestCase):
 
 
             # Package
-            info = modulegraph.find_module('mypkg', path=[path] + sys.path)
+            info = modgraph._find_module('mypkg', path=[path] + sys.path)
             fp = info[0]
             filename = info[1]
             description = info[2]
@@ -236,10 +239,10 @@ class TestFunctions (unittest.TestCase):
 
             # Extension
             if path.endswith('.zip'):
-                self.assertRaises(ImportError, modulegraph.find_module, 'myext', path=[path] + sys.path)
+                self.assertRaises(ImportError, modgraph._find_module, 'myext', path=[path] + sys.path)
 
             else:
-                info = modulegraph.find_module('myext', path=[path] + sys.path)
+                info = modgraph._find_module('myext', path=[path] + sys.path)
                 fp = info[0]
                 filename = info[1]
                 description = info[2]
@@ -807,28 +810,27 @@ class TestModuleGraph (unittest.TestCase):
 
     def test_find_module(self):
         record = []
-        def mock_finder(name, path):
-            record.append((name, path))
-            return saved_finder(name, path)
+        class MockedModuleGraph(modulegraph.ModuleGraph):
+            def _find_module(self, name, path, parent=None):
+                if path == None:
+                    path = sys.path
+                record.append((name, path))
+                return super(MockedModuleGraph, self)._find_module(name, path, parent)
 
-        saved_finder = modulegraph.find_module
+        mockedgraph = MockedModuleGraph()
         try:
-            modulegraph.find_module = mock_finder
-
             graph = modulegraph.ModuleGraph()
             m = graph._find_module('sys', None)
             self.assertEqual(record, [])
             self.assertEqual(m, (None, None, ("", "", imp.C_BUILTIN)))
 
-            modulegraph.find_module = saved_finder
             xml = graph.import_hook("xml")[0]
             self.assertEqual(xml.identifier, 'xml')
-            modulegraph.find_module = mock_finder
 
             self.assertRaises(ImportError, graph._find_module, 'xml', None)
 
             self.assertEqual(record, [])
-            m = graph._find_module('shutil', None)
+            m = mockedgraph._find_module('shutil', None)
             self.assertEqual(record, [
                 ('shutil', graph.path),
             ])
@@ -840,7 +842,7 @@ class TestModuleGraph (unittest.TestCase):
             if srcfn.endswith('.pyc'):
                 srcfn = srcfn[:-1]
             self.assertEqual(os.path.realpath(m[1]), os.path.realpath(srcfn))
-            self.assertEqual(m[2], ('.py', 'rU', imp.PY_SOURCE))
+            self.assertEqual(m[2], ('.py', READ_MODE, imp.PY_SOURCE))
             m[0].close()
 
             m2 = graph._find_module('shutil', None)
@@ -849,7 +851,7 @@ class TestModuleGraph (unittest.TestCase):
 
 
             record[:] = []
-            m = graph._find_module('sax', xml.packagepath, xml)
+            m = mockedgraph._find_module('sax', xml.packagepath, xml)
             self.assertEqual(m,
                     (None, os.path.join(os.path.dirname(xml.filename), 'sax'),
                     ('', '', imp.PKG_DIRECTORY)))
@@ -859,7 +861,7 @@ class TestModuleGraph (unittest.TestCase):
             if m[0] is not None: m[0].close()
 
         finally:
-            modulegraph.find_module = saved_finder
+            pass
 
     @expectedFailure
     def test_create_xref(self):
