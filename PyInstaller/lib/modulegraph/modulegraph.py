@@ -206,8 +206,11 @@ def os_listdir(path):
 
 def _code_to_file(co):
     """ Convert code object to a .pyc pseudo-file """
-    return BytesIO(
-            imp.get_magic() + b'\0\0\0\0' + marshal.dumps(co))
+    if sys.version_info >= (3, 4):
+        header = imp.get_magic() + (b'\0' * 8)
+    else:
+        header = imp.get_magic() + (b'\0' * 4)
+    return BytesIO(header + marshal.dumps(co))
 
 def moduleInfoForPath(path):
     for (ext, readmode, typ) in imp.get_suffixes():
@@ -2048,17 +2051,23 @@ class ModuleGraph(ObjectGraph):
                 cls = SourceModule
 
         elif typ == imp.PY_COMPILED:
-            if fp.read(4) != imp.get_magic():
-                self.msg(2, "load_module: InvalidCompiledModule", pathname)
+            data = fp.read(4)
+            magic = imp.get_magic()
+            if data != magic:
+                self.msg(2, "load_module: InvalidCompiledModule, "
+                         "bad magic number", pathname, data, magic)
                 co = None
                 cls = InvalidCompiledModule
-
             else:
                 fp.read(4)
+                if sys.version_info >= (3,4):
+                    fp.read(4)
                 try:
                     co = marshal.loads(fp.read())
                     cls = CompiledModule
-                except Exception:
+                except Exception as exc:
+                    self.msg(2, "load_module: InvalidCompiledModule, "
+                             "Cannot load code", pathname, exc)
                     co = None
                     cls = InvalidCompiledModule
 
