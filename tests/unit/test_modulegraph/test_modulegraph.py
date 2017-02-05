@@ -373,27 +373,37 @@ class TestNode (unittest.TestCase):
             self.assertTrue(isinstance(obj, types), '%r is not instance of %r'%(obj, types))
     def testBasicAttributes(self):
         n = modulegraph.Node("foobar.xyz")
-        self.assertIsInstance(n.debug, int)
         self.assertEqual(n.identifier, n.graphident)
         self.assertEqual(n.identifier, 'foobar.xyz')
         self.assertEqual(n.filename, None)
         self.assertEqual(n.packagepath, None)
         self.assertEqual(n.code, None)
-        self.assertEqual(n.globalnames, set())
-        self.assertEqual(n.starimports, set())
+        self.assertEqual(n._deferred_imports, None)
+        self.assertEqual(n._starimported_ignored_module_names, set())
 
-    def testMapping(self):
+    def test_global_attrs(self):
         n = modulegraph.Node("foobar.xyz")
-        self.assertEqual(n._namespace, {})
+        self.assertEqual(n._global_attr_names, set())
 
-        self.assertFalse('foo' in n)
-        self.assertRaises(KeyError, n.__getitem__, 'foo')
-        self.assertEqual(n.get('foo'), None)
-        self.assertEqual(n.get('foo', 'a'), 'a')
-        n['foo'] = 42
-        self.assertEqual(n['foo'], 42)
-        self.assertIn('foo', n)
-        self.assertEqual(n._namespace, {'foo':42})
+        self.assertFalse(n.is_global_attr('foo'))
+        n.add_global_attr('foo')
+        self.assertTrue(n.is_global_attr('foo'))
+        n.remove_global_attr_if_found('foo')
+        self.assertFalse(n.is_global_attr('foo'))
+        # removing then name again must not fail
+        n.remove_global_attr_if_found('foo')
+
+    def test_submodules(self):
+        n = modulegraph.Node("foobar.xyz")
+        self.assertEqual(n._submodule_basename_to_node, {})
+
+        sm = modulegraph.Node("bar.baz")
+        self.assertFalse(n.is_submodule('bar'))
+        n.add_submodule('bar', sm)
+        self.assertTrue(n.is_submodule('bar'))
+        self.assertIs(n.get_submodule('bar'), sm)
+        self.assertRaises(KeyError, n.get_submodule, 'XXX')
+        self.assertIs(n.get_submodule_or_none('XXX'), None)
 
     def testOrder(self):
         n1 = modulegraph.Node("n1")
@@ -494,9 +504,13 @@ class TestNode (unittest.TestCase):
         self.assertEqual(a1.graphident, 'a1')
         self.assertEqual(a1.identifier, 'n1')
         self.assertTrue(a1.packagepath is n1.packagepath)
-        self.assertTrue(a1._namespace is n1._namespace)
-        self.assertTrue(a1.globalnames is n1.globalnames)
-        self.assertTrue(a1.starimports is n1.starimports)
+
+        self.assertIs(a1._deferred_imports, None)
+        self.assertIs(a1._global_attr_names, n1._global_attr_names)
+        self.assertIs(a1._starimported_ignored_module_names,
+                      n1._starimported_ignored_module_names)
+        self.assertIs(a1._submodule_basename_to_node,
+                      n1._submodule_basename_to_node)
 
         v = a1.infoTuple()
         self.assertEqual(v, ('a1', 'n1'))
