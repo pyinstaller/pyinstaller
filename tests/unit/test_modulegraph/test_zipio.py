@@ -16,11 +16,22 @@ TESTDATA=os.path.join(
 class TestModuleGraph (unittest.TestCase):
     def test_locating(self):
         # Private function
-        self.assertEqual(zipio._locate('/usr/bin/ditto'), ('/usr/bin/ditto', None))
-        self.assertEqual(zipio._locate('/usr/bin/ditto/bar'), ('/usr/bin/ditto', 'bar'))
-        self.assertEqual(zipio._locate('/usr/bin/ditto/foo/bar///bar/'), ('/usr/bin/ditto', 'foo/bar/bar'))
-        self.assertEqual(zipio._locate('/usr/bin/ditto///foo/bar///bar/'), ('/usr/bin/ditto', 'foo/bar/bar'))
-        self.assertRaises(IOError, zipio._locate, '/usr/bin/ditto.bar')
+        # According to POSIX 'sh' has to be searched on $PATH, see
+        # http://pubs.opengroup.org/onlinepubs/007904875/utilities/sh.html
+        # Also try to find a program for Windows.
+        from distutils.spawn import find_executable
+        for name in ('sh', 'bash', 'cmd'):
+            prog = find_executable(name)
+            if prog:
+                break
+        self.assertIsNot(prog, None)
+        for suffix, part in (
+            ('', None),
+            ('/bar', 'bar'),
+            ('/foo/bar///bar/', 'foo/bar/bar'),
+            ('///foo/bar///bar/', 'foo/bar/bar')):
+            self.assertEqual(zipio._locate(prog+suffix), (prog, part))
+        self.assertRaises(IOError, zipio._locate, '/usr/bin/sh.bar')
         self.assertRaises(IOError, zipio._locate, '/foo/bar/baz.txt')
 
     def test_open(self):
