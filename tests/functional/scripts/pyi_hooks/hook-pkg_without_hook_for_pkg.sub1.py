@@ -14,10 +14,14 @@ if is_py2:
     def find_module(hookmodnm, searchpath):
         return imp.find_module(hookmodnm, searchpath)
 else:
-    import importlib.util
+    from importlib.machinery import FileFinder
 
     def find_module(hookmodnm, searchpath):
-        return importlib.util.find_module(hookmodnm, searchpath)
+        for path in searchpath:
+            res = FileFinder(searchpath).find_spec(hookmodnm)
+            if res:
+                return res
+            
 
 # 1. ensure self-test is working by searching for _this_ hook
 hookmodnm = 'hook-' + NAME
