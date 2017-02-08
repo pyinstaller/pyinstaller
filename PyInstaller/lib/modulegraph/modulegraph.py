@@ -1723,6 +1723,7 @@ class ModuleGraph(ObjectGraph):
             submodule = self._safe_import_module(head, mname, submodule)
 
             if submodule is None:
+                # FIXME: Why do we no longer return a MissingModule instance?
                 # result = self.createNode(MissingModule, mname)
                 self.msgout(4, "raise ImportError: No module named", mname)
                 raise ImportError("No module named " + repr(mname))
