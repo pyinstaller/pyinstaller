@@ -339,7 +339,7 @@ class EXE(Target):
         self.manifest = kwargs.get('manifest', None)
         self.resources = kwargs.get('resources', [])
         self.strip = kwargs.get('strip', False)
-        self.tempdir = kwargs.get('tempdir', None)
+        self.runtime_tmpdir = kwargs.get('runtime_tmpdir', None)
         # If ``append_pkg`` is false, the archive will not be appended
         # to the exe, but copied beside it.
         self.append_pkg = kwargs.get('append_pkg', True)
@@ -387,8 +387,8 @@ class EXE(Target):
             else:
                 self.toc.extend(arg)
 
-        if self.tempdir is not None:
-            self.toc.append(("pyi-tempdir " + self.tempdir, "", "OPTION"))
+        if self.runtime_tmpdir is not None:
+            self.toc.append(("pyi-runtime-tmpdir " + self.runtime_tmpdir, "", "OPTION"))
 
         if is_win:
             filename = os.path.join(CONF['workpath'], CONF['specnm'] + ".exe.manifest")

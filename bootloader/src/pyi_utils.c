@@ -220,17 +220,17 @@ pyi_unsetenv(const char *variable)
 
 /* TODO rename fuction and revisit */
 int
-pyi_get_temp_path(char *buffer, char *tempdir)
+pyi_get_temp_path(char *buffer, char *runtime_tmpdir)
 {
     int i;
     wchar_t *wchar_ret;
     wchar_t prefix[16];
     wchar_t wchar_buffer[PATH_MAX];
-    wchar_t wtempdir[PATH_MAX + 1];
+    wchar_t wruntime_tmpdir[PATH_MAX + 1];
 
-    if (NULL != tempdir) {
-      pyi_win32_utils_from_utf8(wtempdir, tempdir, PATH_MAX);
-      wcscpy(wchar_buffer, wtempdir);
+    if (NULL != runtime_tmpdir) {
+      pyi_win32_utils_from_utf8(wtempdir, runtime_tmpdir, PATH_MAX);
+      wcscpy(wchar_buffer, wruntime_tmpdir);
     } else {
       /*
        * Get path to Windows temporary directory.
@@ -282,10 +282,10 @@ pyi_test_temp_path(char *buff)
 
 /* TODO merge this function with windows version. */
 static int
-pyi_get_temp_path(char *buff, char *tempdir)
+pyi_get_temp_path(char *buff, char *runtime_tmpdir)
 {
-    if (NULL != tempdir) {
-      strcpy(buff, tempdir);
+    if (NULL != runtime_tmpdir) {
+      strcpy(buff, runtime_tmpdir);
       if (pyi_test_temp_path(buff))
         return 1;
     } else {
@@ -331,15 +331,15 @@ pyi_get_temp_path(char *buff, char *tempdir)
 int
 pyi_create_temp_path(ARCHIVE_STATUS *status)
 {
-    char *tempdir = NULL;
+    char *runtime_tmpdir = NULL;
 
     if (status->has_temp_directory != true) {
-        tempdir = pyi_arch_get_option(status, "pyi-tempdir");
-        if(NULL != tempdir) {
-          VS("LOADER: Found tempdir %s\n", tempdir);
+        runtime_tmpdir = pyi_arch_get_option(status, "pyi-runtime-tmpdir");
+        if(NULL != runtime_tmpdir) {
+          VS("LOADER: Found runtime-tmpdir %s\n", runtime_tmpdir);
         }
 
-        if (!pyi_get_temp_path(status->temppath, tempdir)) {
+        if (!pyi_get_temp_path(status->temppath, runtime_tmpdir)) {
             FATALERROR("INTERNAL ERROR: cannot create temporary directory!\n");
             return -1;
         }

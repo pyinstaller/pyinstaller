@@ -152,7 +152,7 @@ Sometimes you may want to control the location of the temporary directory at
 compile time. You may not want your application to depend on specific properties
 of the target environment, or you may not want to require the end-user to change
 their system configuration. In order to control the location of the temporary
-directory at compile time, the ``--tempdir`` allows setting the temporary
+directory at compile time, the ``--runtime-tmpdir`` allows setting the temporary
 directory when building the application bundle.
 
 .. _supporting multiple platforms:
