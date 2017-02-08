@@ -35,7 +35,7 @@ about them, replacing what the old ImpTracker list could do.
 import logging
 import os
 import re
-
+from importlib import import_module
 from ..building.datastruct import TOC
 from ..building.imphook import HooksCache
 from ..building.imphookapi import PreSafeImportModuleAPI, PreFindModulePathAPI
@@ -50,6 +50,19 @@ from ..utils.hooks import collect_submodules, is_package
 
 logger = logging.getLogger(__name__)
 
+
+def expend_mod(modnm):
+    m = import_module(modnm)
+    basedir = os.path.dirname(m.__file__)
+    ext = []
+    for f in os.listdir(basedir):
+        if f.endswith('.py'):
+            n = modnm + '.'+f[:-3]
+            ext.append(n)
+        elif not f == '__pycache__':
+            n = modnm + '.' + f
+            ext += expend_mod(n)
+    return ext
 
 class PyiModuleGraph(ModuleGraph):
     """
@@ -459,6 +472,9 @@ class PyiModuleGraph(ModuleGraph):
                 continue
             logger.info("Analyzing hidden import %r", modnm)
             # ModuleGraph throws ImportError if import not found
+            if modnm.endswith('.*'):
+                module_list += expend_mod(modnm[:-2])
+                continue
             try :
                 node = self.import_hook(modnm)
             except ImportError:
