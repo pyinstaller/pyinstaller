@@ -26,7 +26,7 @@ class TestSWIGImportability(unittest.TestCase):
 
         # Graph node corresponding to a mock SWIG module.
         swig_module = module_graph._safe_import_hook(
-            name='pkg.sample', caller=None, fromlist=())[0]
+            'pkg.sample', source_module=None, target_attr_names=())[0]
         self.assertIsInstance(swig_module, modulegraph.SourceModule)
 
         # Graph node corresponding to a mock SWIG C extension imported by the
