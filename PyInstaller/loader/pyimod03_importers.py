@@ -257,6 +257,23 @@ class FrozenImporter(object):
         imp_lock()
         module_loader = None  # None means - no module found in this importer.
 
+        # ::HACK:: There is currently no way to have the two module whose names
+        # differ on in case in a TOC.  SO unless that is changed, or the toc
+        # is made case insensitive (lower()??) then there is no way that I can
+        # see to support 'queue' (lowercase) in Python 2, since it requries the
+        # 'Queue' (uppercase) module.
+        #
+        # Problem appears to be that pyinstaller cannot have two modules of
+        # the same name that differ only by lower/upper case.  The from the
+        # future 'queue' simply imports all of the 'Queue' module.  So there is
+        # no way to include the 'queue' module and the 'Queue' module at the
+        # same time.  But I could find no way to have an 'import queue'
+        # statement resolve to the 'Queue' module.
+        # ::HACK:: Seems like there should be a better way to achieve this
+        if sys.version_info[0] == 2 and fullname == 'queue' and \
+                'queue' not in self.toc and 'Queue' in self.toc:
+            fullname = 'Queue'
+
         if fullname in self.toc:
             # Tell the import machinery to use self.load_module() to load the module.
             module_loader = self
@@ -302,6 +319,12 @@ class FrozenImporter(object):
         # Acquire the interpreter's import lock.
         imp_lock()
         module = None
+
+        # ::HACK:: Seems like there should be a better way to achieve this
+        if sys.version_info[0] == 2 and fullname == 'queue' and \
+                'queue' not in self.toc and 'Queue' in self.toc:
+            fullname = 'Queue'
+
         if real_fullname is None:
             real_fullname=fullname
         try:
