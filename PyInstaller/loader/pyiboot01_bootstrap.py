@@ -96,6 +96,21 @@ if sys.stderr is None or sys.stderr.fileno() < 0:
     sys.stderr = NullWriter()
 
 
+# Modify os.path behavior in the site packages directory
+from importlib.util import find_spec
+
+def monkeypatched_listdir(original_listdir):
+    
+    def listdir(path):
+        split_path = path.split(os.sep)
+        if split_path[0] == 'site-packages':
+            loader = find_spec('.'.join(split_path[1:])).loader
+            if loader:
+                pass
+
+        return original_listdir(path)
+    
+os.path.listdir = monkeypatched_listdir(os.path.listdir)
 # At least on Windows, Python seems to hook up the codecs on this
 # import, so it's not enough to just package up all the encodings.
 #
