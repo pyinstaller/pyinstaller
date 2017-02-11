@@ -209,11 +209,16 @@ class TestEdgeData (unittest.TestCase):
         script_node = mf.findNode(script_name)
         self.assertIsInstance(script_node, modulegraph.Script)
 
-
-        node = mf.findNode('os.path')
-        ed = mf.edgeData(script_node, node)
-        self.assertIsInstance(ed, modulegraph.DependencyInfo)
-        self.assertEqual(ed, modulegraph.DependencyInfo(conditional=False, function=False, tryexcept=True, fromlist=False))
+        # FIXME PyInstaller: original _load_tail returned a MissingModule if
+        # (_save)_import_module did return None. PyInstaller changed this in
+        # cae47e4f5b51a94ac3ceb5d093283ba0cc895589 and raises an ImportError.
+        # Thus the MissingModule node (which was expected to be created when
+        # scanning the script above) doesn't exist and findNode will return
+        # None, which makes this test fail.
+        #node = mf.findNode('os.path')
+        #ed = mf.edgeData(script_node, node)
+        #self.assertIsInstance(ed, modulegraph.DependencyInfo)
+        #self.assertEqual(ed, modulegraph.DependencyInfo(conditional=False, function=False, tryexcept=True, fromlist=False))
 
         node = mf.findNode('os')
         ed = mf.edgeData(script_node, node)

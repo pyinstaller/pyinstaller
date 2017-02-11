@@ -668,8 +668,12 @@ class TestModuleGraph (unittest.TestCase):
 
     def test_determine_parent(self):
         graph = modulegraph.ModuleGraph()
-        graph.import_hook('os.path', None)
-        graph.import_hook('idlelib', None)
+        # FIXME PyInstaller: original _load_tail returned a MissingModule if
+        # the module was not found. PyInstaller changed this in
+        # cae47e4f5b51a94ac3ceb5d093283ba0cc895589 and raises an ImportError,
+        # which makes these two calls fail.
+        #graph.import_hook('os.path', None)
+        #graph.import_hook('idlelib', None)
         graph.import_hook('xml.dom', None)
 
         for node in graph.nodes():
@@ -708,7 +712,10 @@ class TestModuleGraph (unittest.TestCase):
             def _safe_import_module(self, partname, fqname, parent):
                 record.append((partname, fqname, parent))
                 if partname == 'raises' or '.raises.' in fqname:
-                    return None
+                    # FIXME: original _load_tail returned a MissingModule if
+                    # _import_module did return None. PyInstaller changed this
+                    # in cae47e4f5b51a94ac3ceb5d093283ba0cc895589
+                    return self.createNode(modulegraph.MissingModule, fqname)
                 return modulegraph.Node(fqname)
 
         graph = MockedModuleGraph()
