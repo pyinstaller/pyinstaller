@@ -655,16 +655,15 @@ class TestModuleGraph (unittest.TestCase):
 
     def test_load_tail(self):
         # XXX: This test is dodgy!
-        graph = modulegraph.ModuleGraph()
 
-        record = []
-        def _import_module(partname, fqname, parent):
-            record.append((partname, fqname, parent))
-            if partname == 'raises' or '.raises.' in fqname:
-                return None
-            return modulegraph.Node(fqname)
+        class MockedModuleGraph(modulegraph.ModuleGraph):
+            def _safe_import_module(self, partname, fqname, parent):
+                record.append((partname, fqname, parent))
+                if partname == 'raises' or '.raises.' in fqname:
+                    return None
+                return modulegraph.Node(fqname)
 
-        graph._import_module = _import_module
+        graph = MockedModuleGraph()
 
         record = []
         root = modulegraph.Node('root')
