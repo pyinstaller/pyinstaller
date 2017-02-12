@@ -1048,7 +1048,11 @@ class TestModuleGraph (unittest.TestCase):
         graph.import_hook('os')
         graph.import_hook('xml.etree')
         graph.import_hook('unittest')
-        graph.import_hook('distutils.command.build')
+        # Upstream uses 'distutils.command.build', but this does not work at
+        # Travis which uses a virtualenv (PyInstaller has a
+        # pre_find_module_path hook for this case, plain modulegraph can't
+        # handle this).
+        graph.import_hook('lib2to3.fixes.fix_apply')
 
         fp = StringIO()
         list(graph.itergraphreport())
