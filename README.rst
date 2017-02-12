@@ -25,9 +25,6 @@ interpreter or any modules.
 .. image:: https://img.shields.io/pypi/v/PyInstaller.svg
    :target: https://pypi.python.org/pypi/PyInstaller
 
-.. image:: https://img.shields.io/pypi/dm/PyInstaller.svg
-   :target: https://pypi.python.org/pypi/PyInstaller
-
 .. image:: https://img.shields.io/badge/docs-latest-blue.svg
    :target: https://pyinstaller.rtfd.io/en/latest/
    :alt: Manual
