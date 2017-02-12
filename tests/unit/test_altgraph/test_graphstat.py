@@ -1,7 +1,7 @@
 import unittest
 
-from altgraph import GraphStat
-from altgraph import Graph
+from PyInstaller.lib.altgraph import GraphStat
+from PyInstaller.lib.altgraph import Graph
 import sys
 
 class TestDegreesDist (unittest.TestCase):

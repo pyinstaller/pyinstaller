@@ -2,7 +2,7 @@
 import os
 import sys
 
-from altgraph import Graph, GraphAlgo
+from PyInstaller.lib.altgraph import Graph, GraphAlgo
 import unittest
 
 class BasicTests (unittest.TestCase):

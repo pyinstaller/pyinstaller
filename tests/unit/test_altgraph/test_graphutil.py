@@ -1,6 +1,6 @@
 import unittest
-from altgraph import GraphUtil
-from altgraph import Graph, GraphError
+from PyInstaller.lib.altgraph import GraphUtil
+from PyInstaller.lib.altgraph import Graph, GraphError
 
 class TestGraphUtil (unittest.TestCase):
 
