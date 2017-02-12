@@ -2,7 +2,7 @@
 altgraph.GraphAlgo - Graph algorithms
 =====================================
 '''
-from altgraph import GraphError
+from . import GraphError
 
 def dijkstra(graph, start, end=None):
     """
