@@ -455,7 +455,7 @@ class TestRegression5 (unittest.TestCase):
     def testRegr1(self):
         node = self.mf.findNode('distutils')
         self.assertIsInstance(node, modulegraph.Package)
-        self.assertIn('distutils/__init__', node.filename)
+        self.assertIn(os.path.join('distutils', '__init__'), node.filename)
 
 class TestDeeplyNested (unittest.TestCase):
     def setUp(self):

@@ -15,26 +15,26 @@ class ImpliesTestCase(unittest.TestCase):
                 os.path.dirname(os.path.abspath(__file__)),
                 'testpkg-relimport')
 
-        # First check that 'syslog' isn't accidently in the graph:
+        # First check that 'getopt' isn't accidently in the graph:
         mg = modulegraph.ModuleGraph(path=[root]+sys.path)
         mg.run_script(os.path.join(root, 'script.py'))
         node = mg.findNode('mod')
         self.assertIsInstance(node, modulegraph.SourceModule)
 
-        node = mg.findNode('syslog')
+        node = mg.findNode('getopt')
         self.assertEqual(node, None)
 
         # Now check that adding an implied dependency actually adds
-        # 'syslog' to the graph:
+        # 'getopt' to the graph:
         mg = modulegraph.ModuleGraph(path=[root]+sys.path, implies={
-            'mod': ['syslog']})
+            'mod': ['getopt']})
         self.assertEqual(node, None)
         mg.run_script(os.path.join(root, 'script.py'))
         node = mg.findNode('mod')
         self.assertIsInstance(node, modulegraph.SourceModule)
 
-        node = mg.findNode('syslog')
-        self.assertIsInstance(node, modulegraph.Extension)
+        node = mg.findNode('getopt')
+        self.assertIsInstance(node, modulegraph.SourceModule)
 
         # Check that the edges are correct:
         self.assertIn(mg.findNode('mod'), mg.get_edges(node)[1])
@@ -45,29 +45,28 @@ class ImpliesTestCase(unittest.TestCase):
                 os.path.dirname(os.path.abspath(__file__)),
                 'testpkg-relimport')
 
-        # First check that 'syslog' isn't accidently in the graph:
+        # First check that 'getopt' isn't accidently in the graph:
         mg = modulegraph.ModuleGraph(path=[root]+sys.path)
         mg.run_script(os.path.join(root, 'script.py'))
         node = mg.findNode('mod')
         self.assertIsInstance(node, modulegraph.SourceModule)
 
-        node = mg.findNode('syslog')
+        node = mg.findNode('getopt')
         self.assertEqual(node, None)
 
 
         # Now check that adding an implied dependency actually adds
-        # 'syslog' to the graph:
+        # 'getopt' to the graph:
         mg = modulegraph.ModuleGraph(path=[root]+sys.path, implies={
-            'pkg.relative': ['syslog']})
-        node = mg.findNode('syslog')
+            'pkg.relative': ['getopt']})
+        node = mg.findNode('getopt')
         self.assertEqual(node, None)
-
         mg.run_script(os.path.join(root, 'script.py'))
         node = mg.findNode('pkg.relative')
         self.assertIsInstance(node, modulegraph.SourceModule)
 
-        node = mg.findNode('syslog')
-        self.assertIsInstance(node, modulegraph.Extension)
+        node = mg.findNode('getopt')
+        self.assertIsInstance(node, modulegraph.SourceModule)
 
         # Check that the edges are correct:
         self.assertIn(mg.findNode('pkg.relative'), mg.get_edges(node)[1])

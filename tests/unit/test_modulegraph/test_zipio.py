@@ -126,6 +126,8 @@ class TestModuleGraph (unittest.TestCase):
         self.assertRaises(IOError, zipio.isdir, os.path.join(TESTDATA, 'zipped.egg', 'no-such-file'))
         self.assertRaises(IOError, zipio.isdir, os.path.join(TESTDATA, 'zipped.egg', 'subdir', 'no-such-file'))
 
+    @unittest.skipUnless(hasattr(os, "symlink"),
+                         "os.symlink is not available")
     def test_islink(self):
         fn = os.path.join(TESTDATA, 'symlink')
         os.symlink('test.txt', fn)
@@ -146,7 +148,8 @@ class TestModuleGraph (unittest.TestCase):
         self.assertRaises(IOError, zipio.islink, os.path.join(TESTDATA, 'no-such-file'))
         self.assertRaises(IOError, zipio.islink, os.path.join(TESTDATA, 'zipped.egg', 'no-such-file'))
 
-
+    @unittest.skipUnless(hasattr(os, "symlink"),
+                         "os.symlink is not available")
     def test_readlink(self):
         fn = os.path.join(TESTDATA, 'symlink')
         os.symlink('test.txt', fn)

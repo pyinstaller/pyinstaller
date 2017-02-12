@@ -7,6 +7,7 @@ import sys
 import shutil
 import warnings
 from PyInstaller.lib.altgraph import Graph
+from PyInstaller.compat import is_win
 import textwrap
 import xml.etree.ElementTree as ET
 import pickle
@@ -133,9 +134,15 @@ class TestFunctions (unittest.TestCase):
         try:
             pkg_resources.WorkingSet = WS
 
-            self.assertEqual(modulegraph._namespace_package_path("sys", ["appdir/pkg"]), ["appdir/pkg"])
-            self.assertEqual(modulegraph._namespace_package_path("foo", ["appdir/pkg"]), ["appdir/pkg", "/pkg/pkg2/foo", "/pkg/pkg4/foo"])
-            self.assertEqual(modulegraph._namespace_package_path("bar.baz", ["appdir/pkg"]), ["appdir/pkg", "/pkg/pkg3/bar/baz"])
+            self.assertEqual(modulegraph._namespace_package_path("sys", ["appdir/pkg"]),
+                             ["appdir/pkg"])
+            self.assertEqual(modulegraph._namespace_package_path("foo", ["appdir/pkg"]),
+                             ["appdir/pkg",
+                              os.path.join("/pkg/pkg2", "foo"),
+                              os.path.join("/pkg/pkg4", "foo")])
+            self.assertEqual(modulegraph._namespace_package_path("bar.baz", ["appdir/pkg"]),
+                             ["appdir/pkg",
+                              os.path.join("/pkg/pkg3", "bar", "baz")])
 
         finally:
             pkg_resources.WorkingSet = saved_ws
@@ -144,8 +151,15 @@ class TestFunctions (unittest.TestCase):
         root = os.path.join(
                 os.path.dirname(os.path.abspath(__file__)), 'testdata')
 
-        self.assertEqual(modulegraph.os_listdir('/etc/'), os.listdir('/etc'))
-        self.assertRaises(IOError, modulegraph.os_listdir, '/etc/hosts/foobar')
+        if is_win:
+            dirname = 'C:\\Windows\\'
+            filename = 'C:\\Windows\\user32.dll\\foobar'
+        else:
+            dirname = '/etc/'
+            filename = '/etc/hosts/foobar'
+
+        self.assertEqual(modulegraph.os_listdir(dirname), os.listdir(dirname))
+        self.assertRaises(IOError, modulegraph.os_listdir, filename)
         self.assertRaises(IOError, modulegraph.os_listdir, os.path.join(root, 'test.egg', 'bar'))
 
         self.assertEqual(list(sorted(modulegraph.os_listdir(os.path.join(root, 'test.egg', 'foo')))),
@@ -940,45 +954,46 @@ class TestModuleGraph (unittest.TestCase):
 
 
     def test_replace_paths_in_code(self):
+        join = os.path.join # shortcut
         graph = modulegraph.ModuleGraph(replace_paths=[
                 ('path1', 'path2'),
-                ('path3/path5', 'path4'),
+                (join('path3', 'path5'), 'path4'),
             ])
 
         co = compile(textwrap.dedent("""
         [x for x in range(4)]
-        """), "path4/index.py", 'exec', 0, 1)
+        """), join("path4", "index.py"), 'exec', 0, 1)
         co = graph._replace_paths_in_code(co)
-        self.assertEqual(co.co_filename, 'path4/index.py')
+        self.assertEqual(co.co_filename, join('path4', 'index.py'))
 
         co = compile(textwrap.dedent("""
         [x for x in range(4)]
         (x for x in range(4))
-        """), "path1/index.py", 'exec', 0, 1)
-        self.assertEqual(co.co_filename, 'path1/index.py')
+        """), join("path1", "index.py"), 'exec', 0, 1)
+        self.assertEqual(co.co_filename, join('path1', 'index.py'))
         co = graph._replace_paths_in_code(co)
-        self.assertEqual(co.co_filename, 'path2/index.py')
+        self.assertEqual(co.co_filename, join('path2', 'index.py'))
         for c in co.co_consts:
             if isinstance(c, type(co)):
-                self.assertEqual(c.co_filename, 'path2/index.py')
+                self.assertEqual(c.co_filename, join('path2', 'index.py'))
 
         co = compile(textwrap.dedent("""
         [x for x in range(4)]
-        """), "path3/path4/index.py", 'exec', 0, 1)
+        """), join("path3", "path4", "index.py"), 'exec', 0, 1)
         co = graph._replace_paths_in_code(co)
-        self.assertEqual(co.co_filename, 'path3/path4/index.py')
+        self.assertEqual(co.co_filename, join('path3', 'path4', 'index.py'))
 
         co = compile(textwrap.dedent("""
         [x for x in range(4)]
-        """), "path3/path5.py", 'exec', 0, 1)
+        """), join("path3", "path5.py"), 'exec', 0, 1)
         co = graph._replace_paths_in_code(co)
-        self.assertEqual(co.co_filename, 'path3/path5.py')
+        self.assertEqual(co.co_filename, join('path3', 'path5.py'))
 
         co = compile(textwrap.dedent("""
         [x for x in range(4)]
-        """), "path3/path5/index.py", 'exec', 0, 1)
+        """), join("path3", "path5", "index.py"), 'exec', 0, 1)
         co = graph._replace_paths_in_code(co)
-        self.assertEqual(co.co_filename, 'path4/index.py')
+        self.assertEqual(co.co_filename, join('path4', 'index.py'))
 
     def test_createReference(self):
         graph = modulegraph.ModuleGraph()
