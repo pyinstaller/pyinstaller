@@ -6,9 +6,9 @@ A graph of objects that have a "graphident" attribute.
 graphident is the key for the object in the graph
 """
 
-from PyInstaller.lib.altgraph import GraphError
-from PyInstaller.lib.altgraph.Graph import Graph
-from PyInstaller.lib.altgraph.GraphUtil import filter_stack
+from . import GraphError
+from .Graph import Graph
+from .GraphUtil import filter_stack
 
 class ObjectGraph(object):
     """
