@@ -463,7 +463,7 @@ class FrozenImporter(object):
         module.__file__ (or pkg.__path__ items)
         """
         assert path.startswith(SYS_PREFIX + pyi_os_path.os_sep)
-        fullname = path[len(SYS_PREFIX)+1:]
+        fullname = path[SYS_PREFIXLEN+1:]
         if fullname in self.toc:
             # If the file is in the archive, return this
             return self._pyz_archive.extract(fullname)[1]
@@ -490,6 +490,119 @@ class FrozenImporter(object):
             filename = pyi_os_path.os_path_join(SYS_PREFIX,
                 fullname.replace('.', pyi_os_path.os_sep) + '.pyc')
         return filename
+
+    def find_spec(self, fullname, path=None, target=None):
+        """
+        PEP-451 finder.find_spec() method for the ``sys.meta_path`` hook.
+
+        fullname     fully qualified name of the module
+        path         None for a top-level module, or package.__path__ for submodules or subpackages.
+
+        Finders must return ModuleSpec objects when find_spec() is called. This new method replaces find_module()
+        and find_loader() (in the PathEntryFinder case). If a loader does not have find_spec(), find_module() and
+        find_loader() are used instead, for backward-compatibility.
+        """
+
+        filename = None  # None means - no module found in this importer.
+
+        if fullname in self.toc:
+            # Tell the import machinery to use self.load_module() to load the module.
+            filename = fullname
+            trace("import %s # PyInstaller PYZ", fullname)
+        elif path is not None:
+            # Try to handle module.__path__ modifications by the modules themselves
+            # Reverse the fake __path__ we added to the package module to a
+            # dotted module name and add the tail module from fullname onto that
+            # to synthesize a new fullname
+            modname = fullname.rsplit('.')[-1]
+
+            for p in path:
+                p = p[SYS_PREFIXLEN:]
+                parts = p.split(pyi_os_path.os_sep)
+                if not parts: continue
+                if not parts[0]:
+                    parts = parts[1:]
+                parts.append(modname)
+                path = ".".join(parts)
+                if path in self.toc:
+                    filename = path
+                    trace("import %s as %s # PyInstaller PYZ (__path__ override: %s)",
+                          path, fullname, p)
+                    break
+
+        if filename is None:
+            trace("# %s not found in PYZ", fullname)
+            return None
+
+        is_pkg, bytecode = self._pyz_archive.extract(filename)
+        if is_pkg:
+            origin = pyi_os_path.os_path_join(pyi_os_path.os_path_join(
+                SYS_PREFIX, filename.replace('.', pyi_os_path.os_sep)), '__init__.pyc')
+        else:
+            origin = pyi_os_path.os_path_join(SYS_PREFIX, filename.replace('.', pyi_os_path.os_sep) + '.pyc')
+
+        if not hasattr(self, 'module_code'):
+            self.module_code = {}
+
+        self.module_code[fullname] = bytecode
+        return _frozen_importlib.ModuleSpec(fullname, self, is_package=is_pkg, origin=origin)
+
+    def create_module(self, spec):
+        """
+        PEP-451 loader.create_module() method for the ``sys.meta_path`` hook.
+
+        Loaders may also implement create_module() that will return a new module to exec. It may return None to
+        indicate that the default module creation code should be used. One use case, though atypical, for
+        create_module() is to provide a module that is a subclass of the builtin module type. Most loaders will not
+        need to implement create_module(),
+
+        create_module() should properly handle the case where it is called more than once for the same spec/module.
+        This may include returning None or raising ImportError.
+        """
+        return imp_new_module(spec.name)
+
+    def exec_module(self, module):
+        """
+        PEP-451 loader.exec_module() method for the ``sys.meta_path`` hook.
+
+        Loaders will have a new method, exec_module(). Its only job is to "exec" the module and consequently
+        populate the module's namespace. It is not responsible for creating or preparing the module object, nor
+        for any cleanup afterward. It has no return value. exec_module() will be used during both loading and
+        reloading.
+
+        exec_module() should properly handle the case where it is called more than once. For some kinds of modules
+        this may mean raising ImportError every time after the first time the method is called. This is
+        particularly relevant for reloading, where some kinds of modules do not support in-place reloading.
+        """
+        if hasattr(self, 'module_code') and module.__spec__.name in self.module_code:
+            bytecode = self.module_code[module.__spec__.name]
+            del self.module_code[module.__spec__.name]
+        else:
+            bytecode = self.get_code(module.__spec__.name)
+
+        if not hasattr(module, '__file__') and module.__spec__.origin:
+            module.__file__ = module.__spec__.origin
+
+        ### Set __path__  if 'fullname' is a package.
+        # Python has modules and packages. A Python package is container
+        # for several modules or packages.
+        if hasattr(module, '__file__') and module.__spec__.submodule_search_locations is not None:
+            # If a module has a __path__ attribute, the import mechanism
+            # will treat it as a package.
+            #
+            # Since PYTHONHOME is set in bootloader, 'sys.prefix' points to the
+            # correct path where PyInstaller should find bundled dynamic
+            # libraries. In one-file mode it points to the tmp directory where
+            # bundled files are extracted at execution time.
+            #
+            # __path__ cannot be empty list because 'wx' module prepends something to it.
+            # It cannot contain value 'sys.prefix' because 'xml.etree.cElementTree' fails
+            # Otherwise.
+            #
+            # Set __path__ to point to 'sys.prefix/package/subpackage'.
+            module.__path__ = [pyi_os_path.os_path_dirname(module.__file__)]
+
+        exec(bytecode, module.__dict__)
 
 
 class CExtensionImporter(object):
