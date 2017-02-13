@@ -8,12 +8,15 @@
 #-----------------------------------------------------------------------------
 
 from PyInstaller.compat import is_win
+from PyInstaller.utils.hooks import collect_submodules
+
 import sys
+
+hiddenimports = collect_submodules('package')
 
 if is_win:
   datas = [
-    (sys.prefix+'\DLLs\tix84*.dll', 'dlls'),
-    (sys.prefix+'\tcl\tix8.4.3', '/tcl/tix8.4.3'),
-    (sys.prefix+'\tcl\tix8.4.3\bitmaps', '/tcl/tix8.4.3/bitmaps'),
-    (sys.prefix+'\tcl\tix8.4.3\pref', '/tcl/tix8.4.3/pref')
+    (sys.prefix+r'\tcl\tix8.4.3', r'/tcl/tix8.4.3'),
+    (sys.prefix+r'\tcl\tix8.4.3\bitmaps', r'/tcl/tix8.4.3/bitmaps'),
+    (sys.prefix+r'\tcl\tix8.4.3\pref', r'/tcl/tix8.4.3/pref')
   ]
