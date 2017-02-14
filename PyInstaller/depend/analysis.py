@@ -37,17 +37,17 @@ import os
 import re
 from logging import WARNING, INFO, DEBUG
 
+from .. import HOMEPATH, configure
 from ..building.datastruct import TOC
 from ..building.imphook import HooksCache
 from ..building.imphookapi import PreSafeImportModuleAPI, PreFindModulePathAPI
-from ..utils.misc import load_py_data_struct
-from ..lib.modulegraph.modulegraph import ModuleGraph
-from ..lib.modulegraph.find_modules import get_implies
 from ..compat import importlib_load_source, is_py2, PY3_BASE_MODULES,\
         PURE_PYTHON_MODULE_TYPES, BINARY_MODULE_TYPES, VALID_MODULE_TYPES, \
         BAD_MODULE_TYPES, MODULE_TYPES_TO_TOC_DICT
-from .. import HOMEPATH, configure
+from ..lib.modulegraph.find_modules import get_implies
+from ..lib.modulegraph.modulegraph import ModuleGraph
 from ..utils.hooks import collect_submodules, is_package
+from ..utils.misc import load_py_data_struct
 
 logger = logging.getLogger(__name__)
 
