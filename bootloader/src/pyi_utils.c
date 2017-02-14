@@ -229,7 +229,7 @@ pyi_get_temp_path(char *buffer, char *runtime_tmpdir)
     wchar_t wruntime_tmpdir[PATH_MAX + 1];
 
     if (NULL != runtime_tmpdir) {
-      pyi_win32_utils_from_utf8(wtempdir, runtime_tmpdir, PATH_MAX);
+      pyi_win32_utils_from_utf8(wruntime_tmpdir, runtime_tmpdir, PATH_MAX);
       wcscpy(wchar_buffer, wruntime_tmpdir);
     } else {
       /*
