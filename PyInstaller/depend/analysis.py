@@ -130,10 +130,10 @@ class PyiModuleGraph(ModuleGraph):
 
         if is_py2:
             record = logger.makeRecord(
-                logger.name, level, fn, lno, msg, args, None, func, None)
+                logger.name, level, fn, lno, msg, [], None, func, None)
         else:
             record = logger.makeRecord(
-                logger.name, level, fn, lno, msg, args, None, func, None, sinfo)
+                logger.name, level, fn, lno, msg, [], None, func, None, sinfo)
 
         logger.handle(record)
 
