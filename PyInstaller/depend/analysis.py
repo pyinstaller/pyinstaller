@@ -35,7 +35,7 @@ about them, replacing what the old ImpTracker list could do.
 import logging
 import os
 import re
-from logging import WARNING, INFO
+from logging import WARNING, INFO, DEBUG
 
 from .. import HOMEPATH, configure
 from ..building.datastruct import TOC
@@ -119,6 +119,8 @@ class PyiModuleGraph(ModuleGraph):
                 level = WARNING
             elif lvl <= 2:
                 level = INFO
+            elif lvl <= 4:
+                level = DEBUG
 
         if level is None:
             return
