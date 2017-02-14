@@ -35,6 +35,7 @@ about them, replacing what the old ImpTracker list could do.
 import logging
 import os
 import re
+from logging import WARNING, INFO, DEBUG
 
 from ..building.datastruct import TOC
 from ..building.imphook import HooksCache
@@ -99,6 +100,32 @@ class PyiModuleGraph(ModuleGraph):
         self._available_rthooks = load_py_data_struct(
             os.path.join(self._homepath, 'PyInstaller', 'loader', 'rthooks.dat')
         )
+
+    def msg(self, lvl, s, *args):
+        """
+        Print a debug message with the given level
+        """
+        sinfo = None
+
+        # Note: these levels are completely arbitrary and may be adjusted if needed.
+        if s:
+            msg = "%s %s" % (s, ' '.join(map(repr, args)))
+            if lvl <= 1:
+                level = WARNING
+            elif lvl <= 2:
+                level = INFO
+            elif lvl <= 4:
+                level = DEBUG
+
+        try:
+            fn, lno, func, sinfo = logger.findCaller()
+        except ValueError:  # pragma: no cover
+            fn, lno, func = "(unknown file)", 0, "(unknown function)"
+
+        record = logger.makeRecord(
+            logger.name, level, fn, lno, msg, args, None, func, None, sinfo)
+
+        logger.handle(record)
 
     def _cache_hooks(self, hook_type):
         """
