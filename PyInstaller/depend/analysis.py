@@ -35,7 +35,7 @@ about them, replacing what the old ImpTracker list could do.
 import logging
 import os
 import re
-from logging import WARNING, INFO, DEBUG
+from logging import WARNING, INFO
 
 from .. import HOMEPATH, configure
 from ..building.datastruct import TOC
@@ -124,8 +124,12 @@ class PyiModuleGraph(ModuleGraph):
         except ValueError:  # pragma: no cover
             fn, lno, func = "(unknown file)", 0, "(unknown function)"
 
-        record = logger.makeRecord(
-            logger.name, level, fn, lno, msg, args, None, func, None, sinfo)
+        if is_py2:
+            record = logger.makeRecord(
+                logger.name, level, fn, lno, msg, args, None, func, None)
+        else:
+            record = logger.makeRecord(
+                logger.name, level, fn, lno, msg, args, None, func, None, sinfo)
 
         logger.handle(record)
 
