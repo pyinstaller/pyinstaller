@@ -106,6 +106,7 @@ class PyiModuleGraph(ModuleGraph):
         Print a debug message with the given level
         """
         sinfo = None
+        level = None
 
         # Note: these levels are completely arbitrary and may be adjusted if needed.
         if s:
@@ -114,8 +115,9 @@ class PyiModuleGraph(ModuleGraph):
                 level = WARNING
             elif lvl <= 2:
                 level = INFO
-            elif lvl <= 4:
-                level = DEBUG
+
+        if level is None:
+            return
 
         try:
             fn, lno, func, sinfo = logger.findCaller()
