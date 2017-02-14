@@ -82,6 +82,10 @@ class PyiModuleGraph(ModuleGraph):
 
 
     def __init__(self, pyi_homepath, user_hook_dirs=None, *args, **kwargs):
+        # Set logging methods so that the stack is correctly detected.
+        self.msgin = self.msg
+        self.msgout = self.msg
+      
         super(PyiModuleGraph, self).__init__(*args, **kwargs)
         # Homepath to the place where is PyInstaller located.
         self._homepath = pyi_homepath
