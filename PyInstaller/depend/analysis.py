@@ -105,7 +105,10 @@ class PyiModuleGraph(ModuleGraph):
             os.path.join(self._homepath, 'PyInstaller', 'loader', 'rthooks.dat')
         )
 
-    def msg(self, lvl, s, *args):
+    def msg(self, *args, **kwargs):
+        self._msg(*args, **kwargs)
+
+    def _msg(self, lvl, s, *args):
         """
         Print a debug message with the given level
         """
