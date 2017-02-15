@@ -335,7 +335,7 @@ class FrozenImporter(object):
 
                 # Set __file__ attribute of a module relative to the
                 # executable so that data files can be found.
-                module.__file__ = self.get_filename(fullname)
+                module.__file__ = self.get_filename(entry_name)
 
                 ### Set __path__  if 'fullname' is a package.
                 # Python has modules and packages. A Python package is container
