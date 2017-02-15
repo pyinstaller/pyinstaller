@@ -112,7 +112,14 @@ class PyiModuleGraph(ModuleGraph):
 
     def _msg(self, level, s, *args):
         """
-        Print a debug message with the given level
+        Print a debug message with the given level.
+
+        1. Map the msg log level to a logger log level.
+        2. Generate the message format (the same format as ModuleGraph)
+        3. Find the caller, which is two functions above:
+            [3] caller -> [2] msg -> [1] _msg (here) -> [0] logger.findCaller
+        4. Create a logRecord with the caller's information.
+        5. Handle the logRecord.
         """
         try:
             level = self.LOG_LEVEL_MAPPING[level]
