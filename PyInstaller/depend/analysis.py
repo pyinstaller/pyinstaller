@@ -128,15 +128,20 @@ class PyiModuleGraph(ModuleGraph):
 
         msg = "%s %s" % (s, ' '.join(map(repr, args)))
 
-        try:
-            fn, lno, func, sinfo = logger.findCaller()
-        except ValueError:  # pragma: no cover
-            fn, lno, func, sinfo = "(unknown file)", 0, "(unknown function)", None
-
         if is_py2:
+            try:
+                fn, lno, func = logger.findCaller()
+            except ValueError:  # pragma: no cover
+                fn, lno, func = "(unknown file)", 0, "(unknown function)", None
+            
             record = logger.makeRecord(
                 logger.name, level, fn, lno, msg, [], None, func, None)
         else:
+            try:
+                fn, lno, func, sinfo = logger.findCaller()
+            except ValueError:  # pragma: no cover
+                fn, lno, func, sinfo = "(unknown file)", 0, "(unknown function)", None
+            
             record = logger.makeRecord(
                 logger.name, level, fn, lno, msg, [], None, func, None, sinfo)
 
