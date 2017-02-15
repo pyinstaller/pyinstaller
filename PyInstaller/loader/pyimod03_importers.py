@@ -585,7 +585,11 @@ class FrozenImporter(object):
         more than once for the same spec/module. This may include returning
         None or raising ImportError.
         """
-        return imp_new_module(spec.name)
+        # Opposed to what is defined in PEP-451, this method is not optional.
+        # We want the default results, so we simply return None (which is
+        # handled for su my the import machinery). See
+        # https://bugs.python.org/issue23014 for more information.
+        return None
 
     def exec_module(self, module):
         """
