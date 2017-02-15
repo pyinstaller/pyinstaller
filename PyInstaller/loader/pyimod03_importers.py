@@ -585,7 +585,6 @@ class FrozenImporter(object):
         more than once for the same spec/module. This may include returning
         None or raising ImportError.
         """
-        return None
         return imp_new_module(spec.name)
 
     def exec_module(self, module):
