@@ -80,6 +80,8 @@ class PyiModuleGraph(ModuleGraph):
         hooks for the current application.
     """
 
+    # Note: these levels are completely arbitrary and may be adjusted if needed.
+    LOG_LEVEL_MAPPING = {0: WARNING, 1:WARNING, 2: INFO, 3: DEBUG}
 
     def __init__(self, pyi_homepath, user_hook_dirs=None, *args, **kwargs):
         super(PyiModuleGraph, self).__init__(*args, **kwargs)
@@ -108,30 +110,21 @@ class PyiModuleGraph(ModuleGraph):
     msgin = msg
     msgout = msg
 
-    def _msg(self, lvl, s, *args):
+    def _msg(self, level, s, *args):
         """
         Print a debug message with the given level
         """
-        sinfo = None
-        level = None
-
-        # Note: these levels are completely arbitrary and may be adjusted if needed.
-        if s:
-            msg = "%s %s" % (s, ' '.join(map(repr, args)))
-            if lvl <= 1:
-                level = WARNING
-            elif lvl <= 2:
-                level = INFO
-            elif lvl <= 4:
-                level = DEBUG
-
-        if level is None:
+        try:
+            level = self.LOG_LEVEL_MAPPING[level]
+        except KeyError:
             return
+
+        msg = "%s %s" % (s, ' '.join(map(repr, args)))
 
         try:
             fn, lno, func, sinfo = logger.findCaller()
         except ValueError:  # pragma: no cover
-            fn, lno, func = "(unknown file)", 0, "(unknown function)"
+            fn, lno, func, sinfo = "(unknown file)", 0, "(unknown function)", None
 
         if is_py2:
             record = logger.makeRecord(
