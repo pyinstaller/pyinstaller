@@ -152,13 +152,13 @@ class FrozenPackageImporter(object):
     This is called by FrozenImporter.find_module whenever a module is found as a result
     of searching module.__path__
     """
-    def __init__(self, importer, fullname):
-        self._fullname = fullname
+    def __init__(self, importer, entry_name):
+        self._entry_name = entry_name
         self._importer = importer
 
     def load_module(self, fullname):
         # Deprecated in Python 3.4, see PEP-451
-        return self._importer.load_module(fullname, self._fullname)
+        return self._importer.load_module(fullname, self._entry_name)
 
 
 class FrozenImporter(object):
@@ -287,11 +287,11 @@ class FrozenImporter(object):
                 if not parts[0]:
                     parts = parts[1:]
                 parts.append(modname)
-                real_fullname = ".".join(parts)
-                if real_fullname in self.toc:
-                    module_loader = FrozenPackageImporter(self, real_fullname)
+                entry_name = ".".join(parts)
+                if entry_name in self.toc:
+                    module_loader = FrozenPackageImporter(self, entry_name)
                     trace("import %s as %s # PyInstaller PYZ (__path__ override: %s)",
-                          real_fullname, fullname, p)
+                          entry_name, fullname, p)
                     break
         # Release the interpreter's import lock.
         imp_unlock()
@@ -299,7 +299,7 @@ class FrozenImporter(object):
             trace("# %s not found in PYZ", fullname)
         return module_loader
 
-    def load_module(self, fullname, real_fullname=None):
+    def load_module(self, fullname, entry_name=None):
         # Deprecated in Python 3.4, see PEP-451
         """
         PEP-302 loader.load_module() method for the ``sys.meta_path`` hook.
@@ -308,15 +308,15 @@ class FrozenImporter(object):
         an exception, preferably ImportError if an existing exception
         is not being propagated.
 
-        When called from FrozenPackageImporter, `real_fullname` is the name of the
+        When called from FrozenPackageImporter, `entry_name` is the name of the
         module as it is stored in the archive. This module will be loaded and installed
         into sys.modules using `fullname` as its name
         """
         # Acquire the interpreter's import lock.
         imp_lock()
         module = None
-        if real_fullname is None:
-            real_fullname=fullname
+        if entry_name is None:
+            entry_name = fullname
         try:
             # PEP302 If there is an existing module object named 'fullname'
             # in sys.modules, the loader must use that existing module.
@@ -325,7 +325,7 @@ class FrozenImporter(object):
             # Module not in sys.modules - load it and it to sys.modules.
             if module is None:
                 # Load code object from the bundled ZIP archive.
-                is_pkg, bytecode = self._pyz_archive.extract(real_fullname)
+                is_pkg, bytecode = self._pyz_archive.extract(entry_name)
                 # Create new empty 'module' object.
                 module = imp_new_module(fullname)
 
@@ -382,7 +382,7 @@ class FrozenImporter(object):
                     # This is still needed as long as CExtensionImporter does
                     # not implement PEP-451.
                     module.__spec__ = _frozen_importlib.ModuleSpec(
-                        real_fullname, self, is_package=is_pkg)
+                        entry_name, self, is_package=is_pkg)
 
                 ### Add module object to sys.modules dictionary.
                 # Module object must be in sys.modules before the loader
