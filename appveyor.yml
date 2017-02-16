@@ -122,7 +122,7 @@ install:
   # Compile bootloader.
   - cd bootloader
   - '"C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat" %VCVARSALL%'
-  - python waf --msvc_version="msvc 12.0" distclean all
+  - python waf --msvc_version="msvc 12.0" distclean all --msvc_target=%VCVARSALL%
   - cd ..
 
   ### Install the PyInstaller dependencies.
