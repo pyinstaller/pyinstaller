@@ -29,7 +29,6 @@
 .. _ImageMagick: http://www.imagemagick.org/script/index.php
 .. _imputil: http://docs.python.org/2.7/library/imputil.html
 .. _`Info Property List`: https://developer.apple.com/library/mac/#documentation/MacOSX/Conceptual/BPRuntimeConfig/Articles/ConfigFiles.html
-.. _`LSB sdk 4.0`: http://ftp.linuxfoundation.org/pub/lsb/bundles/released-4.0.0/sdk/
 .. _MacPorts: https://www.macports.org/
 .. _makeicns: https://bitbucket.org/mkae/makeicns
 .. _marshalled: http://docs.python.org/library/marshal
