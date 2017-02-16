@@ -129,6 +129,9 @@ class PyiModuleGraph(ModuleGraph):
         except KeyError:
             return
 
+        if not logger.isEnabledFor(level):
+            return
+
         msg = "%s %s" % (s, ' '.join(map(repr, args)))
 
         if is_py2:
