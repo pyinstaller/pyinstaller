@@ -563,28 +563,12 @@ def initialize_modgraph(excludes=(), user_hook_dirs=None):
     """
     logger.info('Initializing module dependency graph...')
 
-    # Module graph-specific debug level, defaulting to the "MODULEGRAPH_DEBUG"
-    # environment variable if defined or 0 otherwise. This is a non-negative
-    # integer such that:
-    #
-    # * If 0, no module graph debug messages will be printed.
-    # * If 1, only high-level module graph debug messages will be printed.
-    # * If 2, both high-level and "second-level" module graph debug messages
-    #   will be printed.
-    # * And so on.
-    debug = os.environ.get("MODULEGRAPH_DEBUG", 0)
-    try:
-        debug = int(debug)
-    except ValueError:
-        debug = 0
-
     # Construct the initial module graph by analyzing all import statements.
     graph = PyiModuleGraph(
         HOMEPATH,
         excludes=excludes,
         # get_implies() are hidden imports known by modulgraph.
         implies=get_implies(),
-        debug=debug,
         user_hook_dirs=user_hook_dirs,
     )
 
