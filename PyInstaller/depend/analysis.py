@@ -32,12 +32,12 @@ Other added methods look up nodes by identifier and return facts
 about them, replacing what the old ImpTracker list could do.
 """
 
-import logging
 import os
 import re
-from logging import WARNING, INFO, DEBUG
 
 from .. import HOMEPATH, configure
+from .. import log as logging
+from ..log import INFO, DEBUG, TRACE
 from ..building.datastruct import TOC
 from ..building.imphook import HooksCache
 from ..building.imphookapi import PreSafeImportModuleAPI, PreFindModulePathAPI
@@ -81,7 +81,7 @@ class PyiModuleGraph(ModuleGraph):
     """
 
     # Note: these levels are completely arbitrary and may be adjusted if needed.
-    LOG_LEVEL_MAPPING = {0: WARNING, 1:WARNING, 2: INFO, 3: DEBUG}
+    LOG_LEVEL_MAPPING = {0: INFO, 1: DEBUG, 2: TRACE, 3: TRACE, 4: TRACE}
 
     def __init__(self, pyi_homepath, user_hook_dirs=None, *args, **kwargs):
         super(PyiModuleGraph, self).__init__(*args, **kwargs)
