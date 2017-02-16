@@ -81,7 +81,10 @@ class PyiModuleGraph(ModuleGraph):
     """
 
     # Note: these levels are completely arbitrary and may be adjusted if needed.
-    LOG_LEVEL_MAPPING = {0: WARNING, 1:WARNING, 2: INFO, 3: DEBUG}
+    if is_py2:
+        LOG_LEVEL_MAPPING = {0: WARNING, 1:WARNING, 2: INFO}
+    else:
+        LOG_LEVEL_MAPPING = {0: WARNING, 1:WARNING, 2: INFO, 3: DEBUG}
 
     def __init__(self, pyi_homepath, user_hook_dirs=None, *args, **kwargs):
         super(PyiModuleGraph, self).__init__(*args, **kwargs)
