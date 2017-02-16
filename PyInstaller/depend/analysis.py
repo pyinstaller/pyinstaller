@@ -32,12 +32,11 @@ Other added methods look up nodes by identifier and return facts
 about them, replacing what the old ImpTracker list could do.
 """
 
-import logging
 import os
 import re
-from logging import INFO, DEBUG
 
 from .. import HOMEPATH, configure
+from .. import log as logging
 from ..building.datastruct import TOC
 from ..building.imphook import HooksCache
 from ..building.imphookapi import PreSafeImportModuleAPI, PreFindModulePathAPI
@@ -46,11 +45,9 @@ from ..compat import importlib_load_source, is_py2, PY3_BASE_MODULES,\
         BAD_MODULE_TYPES, MODULE_TYPES_TO_TOC_DICT
 from ..lib.modulegraph.find_modules import get_implies
 from ..lib.modulegraph.modulegraph import ModuleGraph
+from ..log import INFO, DEBUG, TRACE
 from ..utils.hooks import collect_submodules, is_package
 from ..utils.misc import load_py_data_struct
-
-TRACE = logging.TRACE = DEBUG - 5
-logging.addLevelName(logging.TRACE, 'TRACE')
 
 logger = logging.getLogger(__name__)
 
