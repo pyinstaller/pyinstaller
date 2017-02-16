@@ -35,7 +35,7 @@ about them, replacing what the old ImpTracker list could do.
 import logging
 import os
 import re
-from logging import WARNING, INFO, DEBUG
+from logging import INFO, DEBUG
 
 from .. import HOMEPATH, configure
 from ..building.datastruct import TOC
@@ -48,6 +48,9 @@ from ..lib.modulegraph.find_modules import get_implies
 from ..lib.modulegraph.modulegraph import ModuleGraph
 from ..utils.hooks import collect_submodules, is_package
 from ..utils.misc import load_py_data_struct
+
+TRACE = logging.TRACE = DEBUG - 5
+logging.addLevelName(logging.TRACE, 'TRACE')
 
 logger = logging.getLogger(__name__)
 
@@ -81,10 +84,7 @@ class PyiModuleGraph(ModuleGraph):
     """
 
     # Note: these levels are completely arbitrary and may be adjusted if needed.
-    if is_py2:
-        LOG_LEVEL_MAPPING = {0: WARNING, 1:WARNING, 2: INFO}
-    else:
-        LOG_LEVEL_MAPPING = {0: WARNING, 1:WARNING, 2: INFO, 3: DEBUG}
+    LOG_LEVEL_MAPPING = {0: INFO, 1: DEBUG, 2: TRACE, 3: TRACE, 4: TRACE}
 
     def __init__(self, pyi_homepath, user_hook_dirs=None, *args, **kwargs):
         super(PyiModuleGraph, self).__init__(*args, **kwargs)
