@@ -110,23 +110,6 @@ class build_bootloader(Command):
 
         src_dir = os.path.join(HOMEPATH, 'bootloader')
         cmd = [sys.executable, './waf', 'configure', 'all']
-        if is_linux:
-            env = os.environ.copy()
-            try:
-                env['PATH'] += ':/opt/lsb/bin'
-            except:
-                env['PATH'] = '/opt/lsb/bin'
-            lsb = False
-            try:
-                FNULL = open(os.devnull, 'w')
-                if subprocess.call(['which', 'lsbcc'], env=env,
-                                   stderr=FNULL, stdout=FNULL,
-                                   close_fds=True) == 0:
-                    lsb = True
-            except compat.FileNotFoundError:
-                pass
-            if not lsb:
-                cmd.append('--no-lsb')
         rc = subprocess.call(cmd, cwd=src_dir)
         if rc:
             raise SystemExit('ERROR: Failed compiling the bootloader. '

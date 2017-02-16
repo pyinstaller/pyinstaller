@@ -123,12 +123,18 @@ def options(ctx):
                    default=None,
                    dest='target_cpu')
 
-    grp = ctx.add_option_group('Linux Standard Base (LSB)',
+    grp = ctx.add_option_group('Linux Standard Base (LSB) compliance',
                                'These options have effect only on Linux.')
     grp.add_option('--no-lsb',
                    action='store_true',
-                   help='Prevent building LSB (Linux Standard Base) bootloader.',
-                   default=False,
+                   help=('Build "normal" (non-LSB-compliant) bootloader.'
+                         '(this is the default).'),
+                   default=True,
+                   dest='nolsb')
+    grp.add_option('--lsb',
+                   action='store_false',
+                   help='Build LSB compliant bootloader.',
+                   default=True,
                    dest='nolsb')
     grp.add_option('--lsbcc-path',
                    action='store',
