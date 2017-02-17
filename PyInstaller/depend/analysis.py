@@ -32,21 +32,22 @@ Other added methods look up nodes by identifier and return facts
 about them, replacing what the old ImpTracker list could do.
 """
 
-import logging
 import os
 import re
 
+from .. import HOMEPATH, configure
+from .. import log as logging
 from ..building.datastruct import TOC
 from ..building.imphook import HooksCache
 from ..building.imphookapi import PreSafeImportModuleAPI, PreFindModulePathAPI
-from ..utils.misc import load_py_data_struct
-from ..lib.modulegraph.modulegraph import ModuleGraph
-from ..lib.modulegraph.find_modules import get_implies
 from ..compat import importlib_load_source, is_py2, PY3_BASE_MODULES,\
         PURE_PYTHON_MODULE_TYPES, BINARY_MODULE_TYPES, VALID_MODULE_TYPES, \
         BAD_MODULE_TYPES, MODULE_TYPES_TO_TOC_DICT
-from .. import HOMEPATH, configure
+from ..lib.modulegraph.find_modules import get_implies
+from ..lib.modulegraph.modulegraph import ModuleGraph
+from ..log import INFO, DEBUG, TRACE
 from ..utils.hooks import collect_submodules, is_package
+from ..utils.misc import load_py_data_struct
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +80,8 @@ class PyiModuleGraph(ModuleGraph):
         hooks for the current application.
     """
 
+    # Note: these levels are completely arbitrary and may be adjusted if needed.
+    LOG_LEVEL_MAPPING = {0: INFO, 1: DEBUG, 2: TRACE, 3: TRACE, 4: TRACE}
 
     def __init__(self, pyi_homepath, user_hook_dirs=None, *args, **kwargs):
         super(PyiModuleGraph, self).__init__(*args, **kwargs)
@@ -99,6 +102,54 @@ class PyiModuleGraph(ModuleGraph):
         self._available_rthooks = load_py_data_struct(
             os.path.join(self._homepath, 'PyInstaller', 'loader', 'rthooks.dat')
         )
+
+    @staticmethod
+    def _findCaller(*args, **kwargs):
+        return logger.findCaller(*args, **kwargs)
+
+    def msg(self, level, s, *args):
+        """
+        Print a debug message with the given level.
+
+        1. Map the msg log level to a logger log level.
+        2. Generate the message format (the same format as ModuleGraph)
+        3. Find the caller, which is two functions above:
+            [3] caller -> [2] msg (here) -> [1] _findCaller -> [0] logger.findCaller
+        4. Create a logRecord with the caller's information.
+        5. Handle the logRecord.
+        """
+        try:
+            level = self.LOG_LEVEL_MAPPING[level]
+        except KeyError:
+            return
+
+        if not logger.isEnabledFor(level):
+            return
+
+        msg = "%s %s" % (s, ' '.join(map(repr, args)))
+
+        if is_py2:
+            try:
+                fn, lno, func = self._findCaller()
+            except ValueError:  # pragma: no cover
+                fn, lno, func = "(unknown file)", 0, "(unknown function)", None
+            
+            record = logger.makeRecord(
+                logger.name, level, fn, lno, msg, [], None, func, None)
+        else:
+            try:
+                fn, lno, func, sinfo = self._findCaller()
+            except ValueError:  # pragma: no cover
+                fn, lno, func, sinfo = "(unknown file)", 0, "(unknown function)", None
+            
+            record = logger.makeRecord(
+                logger.name, level, fn, lno, msg, [], None, func, None, sinfo)
+
+        logger.handle(record)
+
+    # Set logging methods so that the stack is correctly detected.
+    msgin = msg
+    msgout = msg
 
     def _cache_hooks(self, hook_type):
         """
