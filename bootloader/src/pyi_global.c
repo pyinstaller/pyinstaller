@@ -129,6 +129,6 @@ pyi_global_printf(const char *fmt, ...)
 #endif
 
     /* Flush the output buffer because we care more about debug output than speed */
-    fflush(stdout);
     fflush(stderr);
+    fflush(stdout);
 }
