@@ -103,21 +103,21 @@ class PyiModuleGraph(ModuleGraph):
             os.path.join(self._homepath, 'PyInstaller', 'loader', 'rthooks.dat')
         )
 
-    def msg(self, *args, **kwargs):
-        self._msg(*args, **kwargs)
+    @staticmethod
+    def _findCaller(*args, **kwargs):
+        # Used to add an additional stack-frame above logger.findCaller.
+        # findCaller expects the caller to be three stack-frames above itself.
+        return logger.findCaller(*args, **kwargs)
 
-    # Set logging methods so that the stack is correctly detected.
-    msgin = msg
-    msgout = msg
-
-    def _msg(self, level, s, *args):
+    def msg(self, level, s, *args):
         """
         Print a debug message with the given level.
 
         1. Map the msg log level to a logger log level.
         2. Generate the message format (the same format as ModuleGraph)
-        3. Find the caller, which is two functions above:
-            [3] caller -> [2] msg -> [1] _msg (here) -> [0] logger.findCaller
+        3. Find the caller, which findCaller expects three stack-frames above
+           itself:
+            [3] caller -> [2] msg (here) -> [1] _findCaller -> [0] logger.findCaller
         4. Create a logRecord with the caller's information.
         5. Handle the logRecord.
         """
@@ -133,20 +133,24 @@ class PyiModuleGraph(ModuleGraph):
         if is_py2:
             # Python 2 does not have 'sinfo'
             try:
-                fn, lno, func = logger.findCaller()
+                fn, lno, func = self._findCaller()
             except ValueError:  # pragma: no cover
                 fn, lno, func = "(unknown file)", 0, "(unknown function)"
             record = logger.makeRecord(
                 logger.name, level, fn, lno, msg, [], None, func, None)
         else:
             try:
-                fn, lno, func, sinfo = logger.findCaller()
+                fn, lno, func, sinfo = self._findCaller()
             except ValueError:  # pragma: no cover
                 fn, lno, func, sinfo = "(unknown file)", 0, "(unknown function)", None
             record = logger.makeRecord(
                 logger.name, level, fn, lno, msg, [], None, func, None, sinfo)
 
         logger.handle(record)
+
+    # Set logging methods so that the stack is correctly detected.
+    msgin = msg
+    msgout = msg
 
     def _cache_hooks(self, hook_type):
         """
