@@ -57,7 +57,6 @@ def test_format_binaries_and_datas_1(tmpdir):
     assert res == expected
 
 
-@xfail(reason='issue #2314: brackets are interpreted by glob()')
 def test_format_binaries_and_datas_with_bracket(tmpdir):
     # See issue #2314: the filename contains brackets which are
     # interpreted by glob().
