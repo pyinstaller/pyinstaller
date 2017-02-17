@@ -12,11 +12,13 @@
 Logging module for PyInstaller
 """
 
-
-__all__ = ['getLogger', 'INFO', 'WARN', 'DEBUG', 'ERROR', 'FATAL']
+__all__ = ['getLogger', 'INFO', 'WARN', 'DEBUG', 'TRACE', 'ERROR', 'FATAL']
 
 import logging
 from logging import getLogger, INFO, WARN, DEBUG, ERROR, FATAL
+
+TRACE = logging.TRACE = DEBUG - 5
+logging.addLevelName(TRACE, 'TRACE')
 
 FORMAT = '%(relativeCreated)d %(levelname)s: %(message)s'
 
@@ -29,7 +31,7 @@ def init():
 
 
 def __add_options(parser):
-    levels = ('DEBUG', 'INFO', 'WARN', 'ERROR', 'CRITICAL')
+    levels = ('TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'CRITICAL')
     parser.add_argument('--log-level',
                         choices=levels, metavar="LEVEL",
                         default='INFO',
