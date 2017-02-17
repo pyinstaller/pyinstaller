@@ -16,7 +16,7 @@ import zipfile
 import pytest
 
 from PyInstaller.lib.modulegraph import modulegraph
-from PyInstaller.utils.tests import skipif, skipif_win, is_py2, is_py3
+from PyInstaller.utils.tests import xfail, skipif, skipif_win, is_py2, is_py3
 
 def _import_and_get_node(tmpdir, module_name, path=None):
     script = tmpdir.join('script.py')
@@ -213,3 +213,95 @@ def test_symlinks(tmpdir):
 
     node = _import_and_get_node(base_dir, 'p1.p2')
     assert isinstance(node, modulegraph.SourceModule)
+
+
+@xfail(reason="FIXME: modulegraph does not use correct order")
+def test_import_order_1(tmpdir):
+    # Ensure modulegraph processes modules in the same order as Python does.
+
+    class MyModuleGraph(modulegraph.ModuleGraph):
+        def _load_module(self, fqname, fp, pathname, info):
+            if not record or record[-1] != fqname:
+                record.append(fqname) # record non-consecutive entries
+            return super(MyModuleGraph, self)._load_module(fqname, fp,
+                                                           pathname, info)
+
+    record = []
+
+    for filename, content in (
+        ('a/',     ' from . import c, d'),
+        ('a/c',            '#'),
+        ('a/d/',    'from . import f, g, h'),
+        ('a/d/f/',  'from . import j, k'),
+        ('a/d/f/j',         '#'),
+        ('a/d/f/k',         '#'),
+        ('a/d/g/',   'from . import l, m'),
+        ('a/d/g/l',         '#'),
+        ('a/d/g/m',         '#'),
+        ('a/d/h',           '#'),
+        ('b/',      'from . import e'),
+        ('b/e/',    'from . import i'),
+        ('b/e/i',           '#')):
+        if filename.endswith('/'): filename += '__init__'
+        tmpdir.join(*(filename+'.py').split('/')).ensure().write(content)
+
+    script = tmpdir.join('script.py')
+    script.write('import a, b')
+    mg = MyModuleGraph([str(tmpdir)])
+    mg.run_script(str(script))
+
+    # This is the order Python imports these modules given that script.
+    expected = ['a',
+                    'a.c', 'a.d', 'a.d.f', 'a.d.f.j', 'a.d.f.k',
+                    'a.d.g', 'a.d.g.l', 'a.d.g.m',
+                    'a.d.h',
+               'b', 'b.e', 'b.e.i']
+    assert record == expected
+
+
+def test_import_order_2(tmpdir):
+    # Ensure modulegraph processes modules in the same order as Python does.
+
+    class MyModuleGraph(modulegraph.ModuleGraph):
+        def _load_module(self, fqname, fp, pathname, info):
+            if not record or record[-1] != fqname:
+                record.append(fqname) # record non-consecutive entries
+            return super(MyModuleGraph, self)._load_module(fqname, fp,
+                                                           pathname, info)
+
+    record = []
+
+    for filename, content in (
+        ('a/',      '#'),
+        ('a/c/',    '#'),
+        ('a/c/g',   '#'),
+        ('a/c/h',   'from . import g'),
+        ('a/d/',    '#'),
+        ('a/d/i',   'from ..c import h'),
+        ('a/d/j/',  'from .. import i'),
+        ('a/d/j/o', '#'),
+        ('b/',      'from .e import k'),
+        ('b/e/',    'import a.c.g'),
+        ('b/e/k',   'from .. import f'),
+        ('b/e/l',   'import a.d.j'),
+        ('b/f/',    '#'),
+        ('b/f/m',   '#'),
+        ('b/f/n/',  '#'),
+        ('b/f/n/p', 'from ...e import l')):
+        if filename.endswith('/'): filename += '__init__'
+        tmpdir.join(*(filename+'.py').split('/')).ensure().write(content)
+
+    script = tmpdir.join('script.py')
+    script.write('import b.f.n.p')
+    mg = MyModuleGraph([str(tmpdir)])
+    mg.run_script(str(script))
+
+    # This is the order Python imports these modules given that script.
+    expected = ['b', 'b.e',
+                'a', 'a.c', 'a.c.g',
+                'b.e.k',
+                'b.f', 'b.f.n', 'b.f.n.p',
+                'b.e.l',
+                'a.d', 'a.d.j', 'a.d.i', 'a.c.h']
+    assert record == expected
+    print(record)
