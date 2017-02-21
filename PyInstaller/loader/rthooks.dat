@@ -23,4 +23,5 @@
     'twisted.internet.reactor':        ['pyi_rth_twisted.py'],
     'usb':        ['pyi_rth_usb.py'],
     'win32com':   ['pyi_rth_win32comgenpy.py'],
+    'cryptography': ['pyi_rth_cryptography.py'],
 }
