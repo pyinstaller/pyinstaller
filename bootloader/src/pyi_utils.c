@@ -227,10 +227,11 @@ pyi_get_temp_path(char *buffer, char *runtime_tmpdir)
     wchar_t prefix[16];
     wchar_t wchar_buffer[PATH_MAX];
     wchar_t wruntime_tmpdir[PATH_MAX + 1];
+    wchar_t wruntime_tmpdir_abspath[PATH_MAX + 1];
 
     if (NULL != runtime_tmpdir) {
       pyi_win32_utils_from_utf8(wruntime_tmpdir, runtime_tmpdir, PATH_MAX);
-      wcscpy(wchar_buffer, wruntime_tmpdir);
+      _wfullpath(wruntime_tmpdir_abspath, wruntime_tmpdir, PATH_MAX);
     } else {
       /*
        * Get path to Windows temporary directory.
@@ -247,7 +248,12 @@ pyi_get_temp_path(char *buffer, char *runtime_tmpdir)
      */
     for (i = 0; i < 5; i++) {
         /* TODO use race-free fuction - if any exists? */
-        wchar_ret = _wtempnam(wchar_buffer, prefix);
+        if (NULL != runtime_tmpdir) {
+          wchar_ret = malloc((_scwprintf(L"%s\\%s", wruntime_tmpdir_abspath, prefix) + 1)*sizeof(wchar_t));
+          swprintf_s(wchar_ret, PATH_MAX, L"%s\\%s", wruntime_tmpdir_abspath, prefix);
+        } else {
+          wchar_ret = _wtempnam(wchar_buffer, prefix);
+        }
 
         if (_wmkdir(wchar_ret) == 0) {
             pyi_win32_utils_to_utf8(buffer, wchar_ret, PATH_MAX);
