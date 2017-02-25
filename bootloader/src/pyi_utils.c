@@ -218,48 +218,6 @@ pyi_unsetenv(const char *variable)
 
 #ifdef _WIN32
 
-/*
- * Generate random strings to use in temp filenames below
- */
-void
-random_string(char *out, size_t n) {
-  char charset[] = "0123456789"
-                   "abcdefghijklmnopqrstuvwxyz"
-                   "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
-  while (n-- > 0) {
-    size_t index = (double) rand() / RAND_MAX * (sizeof charset - 1);
-    *out++ = charset[index];
-  }
-
-  *out = '\0';
-}
-
-/*
- * Like _wtempnam(), but use dir instead of TMP.
- */
-wchar_t *
-wtempnam_in_dir(const wchar_t *dir, const wchar_t *prefix)
-{
-  wchar_t *wchar_ret;
-  size_t rnd_len = 4;
-  char rnd[4 + 1];
-  struct _stat buf;
-
-  for (int i = 0; i < TMP_MAX; i++) {
-    random_string(rnd, rnd_len);
-    wchar_ret = malloc((_scwprintf(L"%s\\%s%S", dir, prefix, rnd) + 1)*sizeof(wchar_t));
-    swprintf_s(wchar_ret, PATH_MAX, L"%s\\%s%S", dir, prefix, rnd);
-    /* Check if file exists */
-    if (0 != _wstat32(wchar_ret, &buf)) {
-      return wchar_ret;
-    } else {
-      free(wchar_ret);
-    }
-  }
-  return NULL;
-}
-
 /* TODO rename fuction and revisit */
 int
 pyi_get_temp_path(char *buffer, char *runtime_tmpdir)
@@ -269,11 +227,10 @@ pyi_get_temp_path(char *buffer, char *runtime_tmpdir)
     wchar_t prefix[16];
     wchar_t wchar_buffer[PATH_MAX];
     wchar_t wruntime_tmpdir[PATH_MAX + 1];
-    wchar_t wruntime_tmpdir_abspath[PATH_MAX + 1];
 
     if (NULL != runtime_tmpdir) {
       pyi_win32_utils_from_utf8(wruntime_tmpdir, runtime_tmpdir, PATH_MAX);
-      _wfullpath(wruntime_tmpdir_abspath, wruntime_tmpdir, PATH_MAX);
+      wcscpy(wchar_buffer, wruntime_tmpdir);
     } else {
       /*
        * Get path to Windows temporary directory.
@@ -290,11 +247,7 @@ pyi_get_temp_path(char *buffer, char *runtime_tmpdir)
      */
     for (i = 0; i < 5; i++) {
         /* TODO use race-free fuction - if any exists? */
-        if (NULL != runtime_tmpdir) {
-          wchar_ret = wtempnam_in_dir(wruntime_tmpdir_abspath, prefix);
-        } else {
-          wchar_ret = _wtempnam(wchar_buffer, prefix);
-        }
+        wchar_ret = _wtempnam(wchar_buffer, prefix);
 
         if (_wmkdir(wchar_ret) == 0) {
             pyi_win32_utils_to_utf8(buffer, wchar_ret, PATH_MAX);
