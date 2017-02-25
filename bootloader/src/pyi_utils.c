@@ -226,17 +226,36 @@ pyi_get_temp_path(char *buffer, char *runtime_tmpdir)
     wchar_t *wchar_ret;
     wchar_t prefix[16];
     wchar_t wchar_buffer[PATH_MAX];
+    size_t requiredSize;
+    wchar_t *original_tmpdir;
     wchar_t wruntime_tmpdir[PATH_MAX + 1];
+    wchar_t wruntime_tmpdir_abspath[PATH_MAX + 1];
 
     if (NULL != runtime_tmpdir) {
-      pyi_win32_utils_from_utf8(wruntime_tmpdir, runtime_tmpdir, PATH_MAX);
-      wcscpy(wchar_buffer, wruntime_tmpdir);
-    } else {
       /*
-       * Get path to Windows temporary directory.
+       * Get original TMP environment variable so it can be restored
+       * after this is done.
        */
-      GetTempPathW(PATH_MAX, wchar_buffer);
+      _wgetenv_s(&requiredSize, NULL, 0, L"TMP");
+      if (requiredSize == 0) {
+        original_tmpdir = NULL;
+      } else {
+        original_tmpdir = (wchar_t *) malloc(requiredSize * sizeof(wchar_t));
+        if (!original_tmpdir) {
+          return 0;
+        }
+        _wgetenv_s(&requiredSize, original_tmpdir, requiredSize, L"TMP");
+      }
+      /*
+       * Set TMP to runtime_tmpdir for _wtempnam() later
+       */
+      pyi_win32_utils_from_utf8(wruntime_tmpdir, runtime_tmpdir, PATH_MAX);
+      _wfullpath(wruntime_tmpdir_abspath, wruntime_tmpdir, PATH_MAX);
+      _wputenv_s(L"TMP", wruntime_tmpdir_abspath);
+      //wchar_buffer = NULL;
     }
+
+    GetTempPathW(PATH_MAX, wchar_buffer);
 
     swprintf(prefix, 16, L"_MEI%d", getpid());
 
@@ -252,9 +271,31 @@ pyi_get_temp_path(char *buffer, char *runtime_tmpdir)
         if (_wmkdir(wchar_ret) == 0) {
             pyi_win32_utils_to_utf8(buffer, wchar_ret, PATH_MAX);
             free(wchar_ret);
+            if (NULL != runtime_tmpdir) {
+              /*
+               * Restore TMP to what it was
+               */
+              if (NULL != original_tmpdir) {
+                _wputenv_s(L"TMP", original_tmpdir);
+                free(original_tmpdir);
+              } else {
+                _wputenv_s(L"TMP", L"");
+              }
+            }
             return 1;
         }
         free(wchar_ret);
+    }
+    if (NULL != runtime_tmpdir) {
+      /*
+       * Restore TMP to what it was
+       */
+      if (NULL != original_tmpdir) {
+        _wputenv_s(L"TMP", original_tmpdir);
+        free(original_tmpdir);
+      } else {
+        _wputenv_s(L"TMP", L"");
+      }
     }
     return 0;
 }
