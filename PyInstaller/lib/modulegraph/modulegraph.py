@@ -1031,7 +1031,6 @@ class _Visitor(ast.NodeVisitor):
                  function=self.in_def,
                  fromlist=False)}))
 
-
     def visit_Import(self, node):
         for nm in _ast_names(node.names):
             self._collect_import(nm, None, self._level)
@@ -1090,6 +1089,56 @@ class _Visitor(ast.NodeVisitor):
     visit_Call = visit_Expression
 
 
+class Engine(object):
+    """
+    This object removes the complexity needed for iterative behavior out of modulegraph.
+
+    Usage:
+        if Engine.begin():
+            Engine.put(action)
+            Engine.end()
+        else:
+            recurse(action)
+            while action = Engine.consume();
+                recurse(action)
+            Engine.unlock()
+    """
+
+    def __init__(self):
+        self.lock = False  # We use a simple non-thread safe lock
+        self.begun = False
+        self.actions = deque()
+        self.register = deque()
+
+    def begin(self):
+        if self.lock:
+            self.begun = True
+            return self.begun
+        else:
+            self.lock = True
+            return False
+
+    def end(self):
+        if not self.begun or not self.lock:
+            raise ValueError('Lock must be active and begun to end an Engine.')
+
+        self.begun = False
+
+    def unlock(self):
+        if not self.lock:
+            raise ValueError('Lock must be active to end an Engine.')
+
+        self.lock = False
+
+    def put(self, action):
+        self.register.appendleft(action)
+
+    def consume(self):
+        self.actions += self.register
+        self.register = deque()
+
+        return self.actions.pop()
+
 
 class ModuleGraph(ObjectGraph):
     """
@@ -1124,6 +1173,7 @@ class ModuleGraph(ObjectGraph):
         # Maintain own list of package path mappings in the scope of Modulegraph
         # object.
         self._package_path_map = _packagePathMap
+        self.engine = Engine()
 
     def set_setuptools_nspackages(self):
         # This is used when running in the test-suite
