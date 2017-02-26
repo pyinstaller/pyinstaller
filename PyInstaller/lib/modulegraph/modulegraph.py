@@ -2231,18 +2231,7 @@ class ModuleGraph(ObjectGraph):
         self.msgout(2, "load_module ->", m)
         return m
 
-    def _safe_import_hook(self, *args, **kwargs):
-        if self.engine.begin():
-            self.engine.put((args, kwargs))
-            self.engine.end()
-        else:
-            self._safe_import_hook_deferred(*args, **kwargs)
-            while self.engine.actions:
-                args, kwargs = self.engine.consume()
-                self._safe_import_hook_deferred(*args, **kwargs)
-            self.engine.unlock()
-
-    def _safe_import_hook_deferred(
+    def _safe_import_hook(
         self, target_module_partname, source_module, target_attr_names,
         level=DEFAULT_IMPORT_LEVEL, edge_attr=None):
         """
@@ -3016,42 +3005,56 @@ class ModuleGraph(ObjectGraph):
 
         # For each target module imported by this source module...
         for have_star, import_info, kwargs in source_module._deferred_imports:
-            # Graph node of the target module specified by the "from" portion
-            # of this "from"-style star import (e.g., an import resembling
-            # "from {target_module_name} import *") or ignored otherwise.
-            target_module = self._safe_import_hook(*import_info, **kwargs)[0]
-
-            # If this is a "from"-style star import, process this import.
-            if have_star:
-                #FIXME: Sadly, the current approach to importing attributes
-                #from "from"-style star imports is... simplistic. This should
-                #be revised as follows. If this target module is:
-                #
-                #* A package:
-                #  * Whose "__init__" submodule defines the "__all__" global
-                #    attribute, only attributes listed by this attribute should
-                #    be imported.
-                #  * Else, *NO* attributes should be imported.
-                #* A non-package:
-                #  * Defining the "__all__" global attribute, only attributes
-                #    listed by this attribute should be imported.
-                #  * Else, only public attributes whose names are *NOT*
-                #    prefixed by "_" should be imported.
-                source_module.add_global_attrs_from_module(target_module)
-
-                source_module._starimported_ignored_module_names.update(
-                    target_module._starimported_ignored_module_names)
-
-                # If this target module has no code object and hence is
-                # unparsable, record its name for posterity.
-                if target_module.code is None:
-                    target_module_name = import_info[0]
-                    source_module._starimported_ignored_module_names.add(
-                        target_module_name)
+            self._process_imports_module(source_module, have_star, import_info, kwargs)
 
         # For safety, prevent these imports from being reprocessed.
         source_module._deferred_imports = None
 
+    def _process_imports_module(self, *args, **kwargs):
+        # TODO: Move this into a handle method inside the Engine
+        if self.engine.begin():
+            self.engine.put((args, kwargs))
+            self.engine.end()
+        else:
+            self._process_imports_module_deferred(*args, **kwargs)
+            while self.engine.actions:
+                args, kwargs = self.engine.consume()
+                self._process_imports_module_deferred(*args, **kwargs)
+            self.engine.unlock()
+
+    def _process_imports_module_deferred(self, source_module, have_star, import_info, kwargs):
+        # Graph node of the target module specified by the "from" portion
+        # of this "from"-style star import (e.g., an import resembling
+        # "from {target_module_name} import *") or ignored otherwise.
+        target_module = self._safe_import_hook(*import_info, **kwargs)[0]
+
+        # If this is a "from"-style star import, process this import.
+        if have_star:
+            # FIXME: Sadly, the current approach to importing attributes
+            # from "from"-style star imports is... simplistic. This should
+            # be revised as follows. If this target module is:
+            #
+            # * A package:
+            #  * Whose "__init__" submodule defines the "__all__" global
+            #    attribute, only attributes listed by this attribute should
+            #    be imported.
+            #  * Else, *NO* attributes should be imported.
+            # * A non-package:
+            #  * Defining the "__all__" global attribute, only attributes
+            #    listed by this attribute should be imported.
+            #  * Else, only public attributes whose names are *NOT*
+            #    prefixed by "_" should be imported.
+            source_module.add_global_attrs_from_module(target_module)
+
+            source_module._starimported_ignored_module_names.update(
+                target_module._starimported_ignored_module_names)
+
+            # If this target module has no code object and hence is
+            # unparsable, record its name for posterity.
+            if target_module.code is None:
+                target_module_name = import_info[0]
+                source_module._starimported_ignored_module_names.add(
+                    target_module_name)
 
     def _load_package(self, fqname, pathname, pkgpath):
         """
