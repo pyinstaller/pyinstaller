@@ -1175,6 +1175,7 @@ class ModuleGraph(ObjectGraph):
         # object.
         self._package_path_map = _packagePathMap
         self.engine = Engine()
+        self.running = False
 
     def set_setuptools_nspackages(self):
         # This is used when running in the test-suite
@@ -1460,6 +1461,8 @@ class ModuleGraph(ObjectGraph):
         source file, and will be scanned for dependencies.
         """
         self.msg(2, "run_script", pathname)
+        self.running = True
+        self.engine.begin()
 
         pathname = os.path.realpath(pathname)
         m = self.findNode(pathname)
@@ -1488,6 +1491,12 @@ class ModuleGraph(ObjectGraph):
         m.code = co
         if self.replace_paths:
             m.code = self._replace_paths_in_code(m.code)
+
+        while self.engine.actions or self.engine.register:
+            args, kwargs = self.engine.consume()
+            self._process_imports_module_deferred(*args, **kwargs)
+        self.engine.unlock()
+
         return m
 
 
@@ -3012,15 +3021,18 @@ class ModuleGraph(ObjectGraph):
 
     def _process_imports_module(self, *args, **kwargs):
         # TODO: Move this into a handle method inside the Engine
-        if self.engine.begin():
-            self.engine.put((args, kwargs))
-            self.engine.end()
+        if self.running:
+            if self.engine.begin():
+                self.engine.put((args, kwargs))
+                self.engine.end()
+            else:
+                self._process_imports_module_deferred(*args, **kwargs)
+                while self.engine.actions or self.engine.register:
+                    args, kwargs = self.engine.consume()
+                    self._process_imports_module_deferred(*args, **kwargs)
+                self.engine.unlock()
         else:
             self._process_imports_module_deferred(*args, **kwargs)
-            while self.engine.actions:
-                args, kwargs = self.engine.consume()
-                self._process_imports_module_deferred(*args, **kwargs)
-            self.engine.unlock()
 
     def _process_imports_module_deferred(self, source_module, have_star, import_info, kwargs):
         # Graph node of the target module specified by the "from" portion
