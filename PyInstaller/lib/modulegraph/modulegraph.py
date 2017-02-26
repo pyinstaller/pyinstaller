@@ -968,6 +968,8 @@ class _Visitor(ast.NodeVisitor):
         self.generic_visit(node)
         self._in_def.pop()
 
+    visit_AsyncFunctionDef = visit_FunctionDef
+
     def visit_Try(self, node):
         self._in_tryexcept.append(True)
         self.generic_visit(node)
@@ -1006,7 +1008,7 @@ class _Visitor(ast.NodeVisitor):
     visit_YieldFrom = visit_Expression
     visit_Await = visit_Expression
     visit_Call = visit_Expression
-
+    visit_Await = visit_Expression
 
 
 class ModuleGraph(ObjectGraph):
