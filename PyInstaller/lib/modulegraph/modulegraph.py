@@ -1095,11 +1095,12 @@ class Engine(object):
 
     Usage:
         if Engine.begin():
-            Engine.put(action)
+            Engine.put((args, kwargs))
             Engine.end()
         else:
             recurse(action)
-            while action = Engine.consume();
+            while Engine.actions:
+                action = Engine.consume()
                 recurse(action)
             Engine.unlock()
     """
@@ -2230,8 +2231,18 @@ class ModuleGraph(ObjectGraph):
         self.msgout(2, "load_module ->", m)
         return m
 
+    def _safe_import_hook(self, *args, **kwargs):
+        if self.engine.begin():
+            self.engine.put((args, kwargs))
+            self.engine.end()
+        else:
+            self._safe_import_hook_deferred(*args, **kwargs)
+            while self.engine.actions:
+                args, kwargs = self.engine.consume()
+                self._safe_import_hook_deferred(*args, **kwargs)
+            self.engine.unlock()
 
-    def _safe_import_hook(
+    def _safe_import_hook_deferred(
         self, target_module_partname, source_module, target_attr_names,
         level=DEFAULT_IMPORT_LEVEL, edge_attr=None):
         """
