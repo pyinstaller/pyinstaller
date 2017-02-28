@@ -319,13 +319,11 @@ def main(scripts, name=None, onefile=None,
         # version is >= 2.4.
         try:
             import Crypto
-
-            pycrypto_version = list(map(int, Crypto.__version__.split('.')))
-            is_version_acceptable = pycrypto_version[0] >= 2 and pycrypto_version[1] >= 4
-
+            major, minor,_,_,_ = Crypto.version_info
+            temp_version = major*10+minor
+            is_version_acceptable = 24 <= temp_version
             if not is_version_acceptable:
                 logger.error('PyCrypto version must be >= 2.4, older versions are not supported.')
-
                 sys.exit(1)
         except ImportError:
             logger.error('We need PyCrypto >= 2.4 to use byte-code obufscation but we could not')
