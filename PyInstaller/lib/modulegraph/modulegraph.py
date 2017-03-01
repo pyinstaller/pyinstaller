@@ -1492,12 +1492,21 @@ class ModuleGraph(ObjectGraph):
             m.code = self._replace_paths_in_code(m.code)
         return m
 
+    def import_hook(
+            self,
+            target_module_partname,
+            source_module=None,
+            target_attr_names=None,
+            level=DEFAULT_IMPORT_LEVEL,
+            edge_attr=None,
+    ):
+        pass
 
     #FIXME: For safety, the "source_module" parameter should default to the
     #root node of the current graph if unpassed. This parameter currently
     #defaults to None, thus disconnected modules imported in this manner (e.g.,
     #hidden imports imported by depend.analysis.initialize_modgraph()).
-    def import_hook(
+    def _import_hook_deferred(
         self,
         target_module_partname,
         source_module=None,
@@ -2127,6 +2136,9 @@ class ModuleGraph(ObjectGraph):
                     self.msgout(3, "safe_import_module -> None (%r)" % exc)
                     return None
 
+                module_from_spec = self._find_spec(
+                    module_name, file_handle, pathname, metadata)
+
                 module = self._load_module(
                     module_name, file_handle, pathname, metadata)
             finally:
@@ -2163,7 +2175,7 @@ class ModuleGraph(ObjectGraph):
             else:
                 packagepath = []
 
-            m = self._load_package(fqname, pathname, packagepath)
+            m = self._load_package(fqname, pathname, packagepath, use_find_spec=True)
             self.msgout(2, "load_module ->", m)
             return m
 
@@ -3118,7 +3130,7 @@ class ModuleGraph(ObjectGraph):
                 source_module._starimported_ignored_module_names.add(
                     target_module_name)
 
-    def _load_package(self, fqname, pathname, pkgpath):
+    def _load_package(self, fqname, pathname, pkgpath, use_find_spec=False):
         """
         Called only when an imp.PKG_DIRECTORY is found
         """
@@ -3154,7 +3166,10 @@ class ModuleGraph(ObjectGraph):
         else:
             try:
                 self.msg(2, "load __init__ for %s"%(m.packagepath,))
-                self._load_module(fqname, fp, buf, stuff)
+                if use_find_spec:
+                    self._find_spec(fqname, fp, buf, stuff)
+                else:
+                    self._load_module(fqname, fp, buf, stuff)
             finally:
                 if fp is not None:
                     fp.close()
