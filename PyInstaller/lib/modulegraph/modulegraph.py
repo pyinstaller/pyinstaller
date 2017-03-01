@@ -1175,7 +1175,6 @@ class ModuleGraph(ObjectGraph):
         # object.
         self._package_path_map = _packagePathMap
         self.engine = Engine()
-        self.running = False
 
     def set_setuptools_nspackages(self):
         # This is used when running in the test-suite
@@ -1491,12 +1490,6 @@ class ModuleGraph(ObjectGraph):
         m.code = co
         if self.replace_paths:
             m.code = self._replace_paths_in_code(m.code)
-
-        while self.engine.actions or self.engine.register:
-            args, kwargs = self.engine.consume()
-            self._process_imports_module_deferred(*args, **kwargs)
-        self.engine.unlock()
-
         return m
 
 
@@ -2160,6 +2153,78 @@ class ModuleGraph(ObjectGraph):
         self.msgout(3, "safe_import_module ->", module)
         return module
 
+    def _find_spec(self, fqname, fp, pathname, info):
+        suffix, mode, typ = info
+        self.msgin(2, "load_module", fqname, fp and "fp", pathname)
+
+        if typ == imp.PKG_DIRECTORY:
+            if isinstance(mode, (list, tuple)):
+                packagepath = mode
+            else:
+                packagepath = []
+
+            m = self._load_package(fqname, pathname, packagepath)
+            self.msgout(2, "load_module ->", m)
+            return m
+
+        if typ == imp.PY_SOURCE:
+            contents = fp.read()
+            if isinstance(contents, bytes):
+                contents += b'\n'
+            else:
+                contents += '\n'
+
+            try:
+                co = compile(contents, pathname, 'exec', ast.PyCF_ONLY_AST, True)
+            except SyntaxError:
+                co = None
+                cls = InvalidSourceModule
+                self.msg(2, "load_module: InvalidSourceModule", pathname)
+
+            else:
+                cls = SourceModule
+
+        elif typ == imp.PY_COMPILED:
+            if fp.read(4) != imp.get_magic():
+                self.msg(2, "load_module: InvalidCompiledModule", pathname)
+                co = None
+                cls = InvalidCompiledModule
+
+            else:
+                fp.read(4)
+                try:
+                    co = marshal.loads(fp.read())
+                    cls = CompiledModule
+                except Exception:
+                    co = None
+                    cls = InvalidCompiledModule
+
+        elif typ == imp.C_BUILTIN:
+            cls = BuiltinModule
+            co = None
+
+        else:
+            cls = Extension
+            co = None
+
+        m = self.createNode(cls, fqname)
+        m.filename = pathname
+        if co is not None:
+            try:
+                if isinstance(co, ast.AST):
+                    co_ast = co
+                    co = compile(co_ast, pathname, 'exec', 0, True)
+                else:
+                    co_ast = None
+
+                m.code = co
+            except SyntaxError:
+                self.msg(1, "load_module: SyntaxError in ", pathname)
+                cls = InvalidSourceModule
+                m = self.createNode(cls, fqname)
+
+        self.msgout(2, "load_module ->", m)
+        return m
 
     #FIXME: For clarity, rename method parameters to:
     #    def _load_module(self, module_name, file_handle, pathname, imp_info):
@@ -3019,22 +3084,7 @@ class ModuleGraph(ObjectGraph):
         # For safety, prevent these imports from being reprocessed.
         source_module._deferred_imports = None
 
-    def _process_imports_module(self, *args, **kwargs):
-        # TODO: Move this into a handle method inside the Engine
-        if self.running:
-            if self.engine.begin():
-                self.engine.put((args, kwargs))
-                self.engine.end()
-            else:
-                self._process_imports_module_deferred(*args, **kwargs)
-                while self.engine.actions or self.engine.register:
-                    args, kwargs = self.engine.consume()
-                    self._process_imports_module_deferred(*args, **kwargs)
-                self.engine.unlock()
-        else:
-            self._process_imports_module_deferred(*args, **kwargs)
-
-    def _process_imports_module_deferred(self, source_module, have_star, import_info, kwargs):
+    def _process_imports_module(self, source_module, have_star, import_info, kwargs):
         # Graph node of the target module specified by the "from" portion
         # of this "from"-style star import (e.g., an import resembling
         # "from {target_module_name} import *") or ignored otherwise.
