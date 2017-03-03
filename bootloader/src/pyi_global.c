@@ -96,9 +96,13 @@ mbvs(const char *fmt, ...)
 {
     char msg[MBTXTLEN];
     va_list args;
+    int pid_len;
+
+    /* Add pid to the message */
+    pid_len = sprintf(msg, "[%d] ", getpid());
 
     va_start(args, fmt);
-    vsnprintf(msg, MBTXTLEN, fmt, args);
+    vsnprintf(&msg[pid_len], MBTXTLEN-pid_len, fmt, args);
     /* Ensure message is trimmed to fit the buffer. */
     /* msg[MBTXTLEN-1] = '\0'; */
     va_end(args);
