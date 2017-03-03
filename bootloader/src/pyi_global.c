@@ -33,6 +33,9 @@
     #include <direct.h>
     #include <process.h>
     #include <io.h>
+#else
+    #include <sys/types.h>
+    #include <unistd.h>
 #endif
 
 /* On Mac OS X send debug msg also to syslog for gui app in debug mode. */
@@ -113,6 +116,8 @@ void
 pyi_global_printf(const char *fmt, ...)
 {
     va_list v;
+
+    fprintf(stderr, "[%d] ", getpid());
 
     va_start(v, fmt);
     /* Sent 'LOADER text' messages to stderr. */
