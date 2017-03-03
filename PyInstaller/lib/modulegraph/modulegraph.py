@@ -1492,15 +1492,13 @@ class ModuleGraph(ObjectGraph):
             m.code = self._replace_paths_in_code(m.code)
         return m
 
-    def import_hook(
-            self,
-            target_module_partname,
-            source_module=None,
-            target_attr_names=None,
-            level=DEFAULT_IMPORT_LEVEL,
-            edge_attr=None,
-    ):
-        pass
+    def import_hook(self, *args, **kwargs):
+        self._import_hook_deferred(*args, **kwargs)
+
+        while True:
+            action = self.engine.consume()
+            self._load_module(**action)
+
 
     #FIXME: For safety, the "source_module" parameter should default to the
     #root node of the current graph if unpassed. This parameter currently
@@ -2139,8 +2137,7 @@ class ModuleGraph(ObjectGraph):
                 module_from_spec = self._find_spec(
                     module_name, file_handle, pathname, metadata)
 
-                module = self._load_module(
-                    module_name, file_handle, pathname, metadata)
+                self.engine.put((module_name, file_handle, pathname, metadata))
             finally:
                 if file_handle is not None:
                     file_handle.close()
