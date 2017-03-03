@@ -441,6 +441,11 @@ class AppBuilder(object):
 # for every executable.
 @pytest.fixture(scope='session')
 def pyi_modgraph():
+    # Explicitly set the log level since the plugin `pytest-catchlog` (un-)
+    # sets the root logger's level to NOTSET for the setup phase, which will
+    # lead to TRACE messages been written out.
+    import PyInstaller.log as logging
+    logging.logger.setLevel(logging.DEBUG)
     return initialize_modgraph()
 
 
