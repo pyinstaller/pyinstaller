@@ -21,13 +21,8 @@ TRACE = logging.TRACE = DEBUG - 5
 logging.addLevelName(TRACE, 'TRACE')
 
 FORMAT = '%(relativeCreated)d %(levelname)s: %(message)s'
-
-
-def init():
-    # Allow deferring initialization
-    global logger
-    logging.basicConfig(format=FORMAT, level=logging.INFO)
-    logger = getLogger('PyInstaller')
+logging.basicConfig(format=FORMAT, level=logging.INFO)
+logger = getLogger('PyInstaller')
 
 
 def __add_options(parser):

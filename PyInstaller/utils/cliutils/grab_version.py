@@ -16,8 +16,6 @@ import PyInstaller.log
 
 
 def run():
-    PyInstaller.log.init()
-
     parser = argparse.ArgumentParser(
         epilog = ('The printed output may be saved to a file, edited and '
                   'used as the input for a version resource on any of the '

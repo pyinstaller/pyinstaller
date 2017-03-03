@@ -21,8 +21,6 @@ import PyInstaller.log
 
 
 def run():
-    PyInstaller.log.init()
-
     p = argparse.ArgumentParser()
     PyInstaller.building.makespec.__add_options(p)
     PyInstaller.log.__add_options(p)
