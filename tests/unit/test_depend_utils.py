@@ -14,6 +14,7 @@ import textwrap
 
 from PyInstaller.depend import utils
 from PyInstaller.compat import (is_unix, PYDYLIB_NAMES)
+from PyInstaller.lib.modulegraph.modulegraph import ModuleGraph
 
 
 def test_ctypes_util_find_library_as_default_argument():
@@ -27,7 +28,7 @@ def test_ctypes_util_find_library_as_default_argument():
     """
     code = textwrap.dedent(code)
     co = compile(code, '<ctypes_util_find_library_as_default_argument>', 'exec')
-    utils.scan_code_for_ctypes(co)
+    utils.scan_code_for_ctypes(co, ModuleGraph())
 
 
 @pytest.mark.skipif(not is_unix, reason="requires a Unix System")
