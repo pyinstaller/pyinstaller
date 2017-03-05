@@ -2625,48 +2625,39 @@ class ModuleGraph(ObjectGraph):
         def _scan_bytecode(
             self, module, module_code_object, is_scanning_imports):
             constants = module_code_object.co_consts
-            # List of all bytes comprising this source module's compiled bytecode. (n)
-            code_bytes = module_code_object.co_code
-
-            # Number of such bytes.
-            num_code_bytes = len(code_bytes)
-
-            # Index of the current byte in this list being parsed. (i)
-            code_byte_index = 0
-
 
             level = None
             fromlist = None
 
-            all_instructions = dis.get_instructions(module_code_object)
+            prev_insts = []
 
-            for inst_idx, inst in enumerate(all_instructions):
+            for inst in dis.get_instructions(module_code_object):
                 if inst.opname == 'IMPORT_NAME':
                     # If this method is ignoring import statements, skip to the
                     # next opcode.
                     if not is_scanning_imports:
                         continue
 
-                    assert all_instructions[code_byte_index-2].opname == 'LOAD_CONST'
-                    assert all_instructions[code_byte_index-1].opname == 'LOAD_CONST'
+                    assert prev_insts[-2].opname == 'LOAD_CONST'
+                    assert prev_insts[-1].opname == 'LOAD_CONST'
 
-                    level = module_code_object.co_consts[all_instructions[code_byte_index-2].arg]
-                    target_attr_names = module_code_object.co_consts[all_instructions[code_byte_index-1].arg]
+                    level = module_code_object.co_consts[prev_insts[-2].arg]
+                    fromlist = module_code_object.co_consts[prev_insts[-1].arg]
 
-                    assert target_attr_names is None or type(target_attr_names) is tuple
+                    assert fromlist is None or type(fromlist) is tuple
                     target_module_partname = module_code_object.co_names[inst.arg]
                     have_star = False
-                    if target_attr_names is not None:
-                        target_attr_names = set(fromlist)
-                        if '*' in target_attr_names:
-                            target_attr_names.remove('*')
+                    if fromlist is not None:
+                        fromlist = set(fromlist)
+                        if '*' in fromlist:
+                            fromlist.remove('*')
                             have_star = True
 
                     # Record this import as originating from this module for
                     # subsequent handling by the _process_imports() method.
                     module._deferred_imports.append((
                         have_star,
-                        (target_module_partname, module, target_attr_names, level),
+                        (target_module_partname, module, fromlist, level),
                         {}
                     ))
 
@@ -2678,6 +2669,9 @@ class ModuleGraph(ObjectGraph):
                 elif inst.opname in ('DELETE_NAME', 'DELETE_GLOBAL'):
                     name = module_code_object.co_names[inst.arg]
                     module.remove_global_attr_if_found(name)
+
+                prev_insts.append(inst)
+                del prev_insts[:-2]
 
             # Type of all code objects.
             code_object_type = type(module_code_object)
