@@ -21,7 +21,7 @@ module 'win32com.shell' is in reality 'win32comext.shell'.
 import os
 
 from PyInstaller.utils.hooks import logger, get_module_file_attribute
-from PyInstaller.compat import is_win, is_cygwin:
+from PyInstaller.compat import is_win, is_cygwin
 
 
 def pre_safe_import_module(api):

@@ -1103,17 +1103,5 @@ class TestModuleGraph (unittest.TestCase):
         #list(graph.itergraphreport(flatpackages=...))
 
 
-
-
-class CompatTests (unittest.TestCase):
-    def test_Bchr(self):
-        v = modulegraph._Bchr(ord('A'))
-        if sys.version_info[0] == 2:
-            self.assertTrue(isinstance(v, bytes))
-            self.assertEqual(v, b'A')
-        else:
-            self.assertTrue(isinstance(v, int))
-            self.assertEqual(v, ord('A'))
-
 if __name__ == "__main__":
     unittest.main()

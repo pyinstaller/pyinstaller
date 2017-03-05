@@ -7,10 +7,12 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+import ast
 import os
 import os.path
 import sys
 import py_compile
+import textwrap
 import zipfile
 
 import pytest
@@ -305,3 +307,50 @@ def test_import_order_2(tmpdir):
                 'a.d', 'a.d.j', 'a.d.i', 'a.c.h']
     assert record == expected
     print(record)
+
+
+#---- scan bytecode
+
+def __scan_code(code, use_ast, monkeypatch):
+    mg = modulegraph.ModuleGraph()
+    # _process_imports would set _deferred_imports to None
+    monkeypatch.setattr(mg, '_process_imports', lambda m: None)
+    module = mg.createNode(modulegraph.Script, 'dummy.py')
+
+    code = textwrap.dedent(code)
+    if use_ast:
+        co_ast = compile(code, 'dummy', 'exec', ast.PyCF_ONLY_AST)
+        co = compile(co_ast, 'dummy', 'exec')
+    else:
+        co_ast = None
+        co = compile(code, 'dummy', 'exec')
+    mg._scan_code(module, co)
+    return module
+
+
+@pytest.mark.parametrize("use_ast", (True, False))
+def test_scan_code__empty(monkeypatch, use_ast):
+    code = "# empty code"
+    module = __scan_code(code, use_ast, monkeypatch)
+    assert len(module._deferred_imports) == 0
+    assert len(module._global_attr_names) == 0
+
+
+@pytest.mark.parametrize("use_ast", (True, False))
+def test_scan_code__basic(monkeypatch, use_ast):
+    code = """
+    import os.path
+    from sys import maxint, exitfunc, platform
+    del exitfunc
+    def testfunc():
+        import shutil
+    """
+    module = __scan_code(code, use_ast, monkeypatch)
+    assert len(module._deferred_imports) == 3
+    assert ([di[1][0] for di in module._deferred_imports]
+            == ['os.path', 'sys', 'shutil'])
+    assert module.is_global_attr('maxint')
+    assert module.is_global_attr('os')
+    assert module.is_global_attr('platform')
+    assert not module.is_global_attr('shutil') # not imported at module level
+    assert not module.is_global_attr('exitfunc')
