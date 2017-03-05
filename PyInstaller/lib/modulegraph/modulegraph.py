@@ -1481,8 +1481,10 @@ class ModuleGraph(ObjectGraph):
 
     def import_hook(self, *args, **kwargs):
 
-        self._import_hook_deferred(*args, **kwargs)
+        target_modules = self._import_hook_deferred(*args, **kwargs)
         self.engine.process()
+
+        return target_modules
 
 
     #FIXME: For safety, the "source_module" parameter should default to the
