@@ -1105,31 +1105,12 @@ class Engine(object):
             Engine.unlock()
     """
 
-    def __init__(self):
-        self.lock = False  # We use a simple non-thread safe lock
-        self.begun = False
+    def __init__(self, processor):
+        assert callable(processor)
+
         self.actions = deque()
         self.register = deque()
-
-    def begin(self):
-        if self.lock:
-            self.begun = True
-            return self.begun
-        else:
-            self.lock = True
-            return False
-
-    def end(self):
-        if not self.begun or not self.lock:
-            raise ValueError('Lock must be active and begun to end an Engine.')
-
-        self.begun = False
-
-    def unlock(self):
-        if not self.lock:
-            raise ValueError('Lock must be active to end an Engine.')
-
-        self.lock = False
+        self.processor = processor
 
     def put(self, action):
         self.register.appendleft(action)
@@ -1140,6 +1121,10 @@ class Engine(object):
             self.register = deque()
 
             yield self.actions.pop()
+
+    def process(self):
+        for action in self.consume():
+            self.processor(*action)
 
 
 class ModuleGraph(ObjectGraph):
@@ -1175,7 +1160,7 @@ class ModuleGraph(ObjectGraph):
         # Maintain own list of package path mappings in the scope of Modulegraph
         # object.
         self._package_path_map = _packagePathMap
-        self.engine = Engine()
+        self.engine = Engine(processor=self._load_module)
 
     def set_setuptools_nspackages(self):
         # This is used when running in the test-suite
@@ -1490,17 +1475,14 @@ class ModuleGraph(ObjectGraph):
         if self.replace_paths:
             m.code = self._replace_paths_in_code(m.code)
 
-        for action in self.engine.consume():
-            self._load_module(*action)
+        self.engine.process()
 
         return m
 
     def import_hook(self, *args, **kwargs):
 
         self._import_hook_deferred(*args, **kwargs)
-
-        for action in self.engine.consume():
-            self._load_module(*action)
+        self.engine.process()
 
 
     #FIXME: For safety, the "source_module" parameter should default to the
