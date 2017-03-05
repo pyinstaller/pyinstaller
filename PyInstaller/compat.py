@@ -138,18 +138,6 @@ if __debug__:
 else:
     PYCO = 'o'
 
-
-# Obsolete command line options (do not exist anymore).
-_OLD_OPTIONS = [
-    '--upx', '-X',
-    '-K', '--tk',
-    '-C', '--configfile',
-    '--skip-configure',
-    '-o', '--out',
-    '--buildpath',
-    ]
-
-
 # Options for python interpreter when invoked in a subprocess.
 if __debug__:
     # Python started *without* -O
@@ -673,33 +661,6 @@ except ImportError:
                     if _access_check(name, mode):
                         return name
         return None
-
-
-# Obsolete command line options.
-
-class __obsolete_option:
-    def __init__(self, option_strings, dest, help, **kwargs):
-        self.type = bool
-        self.option_strings = option_strings
-        self.dest = dest
-        self.help = help
-        self.default = self.const = False
-        self.nargs = self.const = self.choices = self.metavar=None
-        self.required = False
-
-    def __call__(*args, **kw):
-        return
-
-
-def __add_obsolete_options(parser):
-    """
-    Add the obsolete options to a option-parser instance and
-    print error message when they are present.
-    """
-    g = parser.add_argument_group('Obsolete options (not used anymore)')
-    g.add_argument(*_OLD_OPTIONS,
-                   action=__obsolete_option,
-                   help='These options do not exist anymore.')
 
 
 # Site-packages functions - use native function if available.

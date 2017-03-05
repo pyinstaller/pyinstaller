@@ -19,7 +19,6 @@ import sys
 
 import PyInstaller.building.makespec
 import PyInstaller.building.build_main
-import PyInstaller.compat
 import PyInstaller.log
 
 
@@ -64,7 +63,6 @@ def run(pyi_args=None, pyi_config=None):
         PyInstaller.building.makespec.__add_options(parser)
         PyInstaller.building.build_main.__add_options(parser)
         PyInstaller.log.__add_options(parser)
-        PyInstaller.compat.__add_obsolete_options(parser)
         parser.add_argument('filenames', metavar='scriptname', nargs='+',
                             help=("name of scriptfiles to be processed or "
                                   "exactly one .spec-file"))
