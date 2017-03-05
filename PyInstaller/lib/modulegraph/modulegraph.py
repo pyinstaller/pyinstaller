@@ -38,12 +38,13 @@ if sys.version_info[0] == 2:
     from StringIO import StringIO as BytesIO
     from StringIO import StringIO
     from  urllib import pathname2url
+    _cOrd = ord
     def _Bchr(value):
         return chr(value)
 else:
     from urllib.request  import pathname2url
     from io import BytesIO, StringIO
-
+    _cOrd = int
     def _Bchr(value):
         return value
 
@@ -56,6 +57,53 @@ else:
 
 import codecs
 BOM = codecs.BOM_UTF8.decode('utf-8')
+
+if sys.version_info >= (3,4):
+    # In Python 3.4 or later the dis module has a much nicer interface
+    # for working with bytecode, use that instead of peeking into the
+    # raw bytecode.
+    # Note: This nicely sidesteps any issues caused by moving from bytecode
+    # to wordcode in python 3.6.
+    get_instructions = dis.get_instructions
+else:
+    assert 'SET_LINENO' not in dis.opmap  # safty belt
+
+    def get_instructions(code):
+        """
+        Iterator parsing the bytecode into easy-usable minimal emulation of
+        Python 3.4 `dis.Instruction` instances.
+        """
+
+        # shortcuts
+        HAVE_ARGUMENT = dis.HAVE_ARGUMENT
+        EXTENDED_ARG = dis.EXTENDED_ARG
+
+        class Instruction:
+            # Minimal emulation of Python 3.4 dis.Instruction
+            def __init__(self, opcode, oparg):
+                self.opname = dis.opname[opcode]
+                self.arg = oparg
+                # opcode, argval, argrepr, offset, is_jump_target and
+                # starts_line are not used by our code, so we leave them away
+                # here.
+
+        code = code.co_code
+        extended_arg = 0
+        i = 0
+        n = len(code)
+        while i < n:
+            c = code[i]
+            i = i + 1
+            op = _cOrd(c)
+            if op >= HAVE_ARGUMENT:
+                oparg = _cOrd(code[i]) + _cOrd(code[i + 1]) * 256 + extended_arg
+                extended_arg = 0
+                i += 2
+                if op == EXTENDED_ARG:
+                    extended_arg = oparg*65536
+            else:
+                oparg = None
+            yield Instruction(op, oparg)
 
 
 _HAVE_ARGUMENT_OPCODE = _Bchr(dis.HAVE_ARGUMENT)
@@ -2615,13 +2663,7 @@ class ModuleGraph(ObjectGraph):
         visitor = _Visitor(self, module)
         visitor.visit(module_code_object_ast)
 
-    if sys.version_info[:2] >= (3, 4):
-        # On Python 3.4 or later the dis module has a much nicer interface
-        # for working with bytecode, use that instead of peeking into the
-        # raw bytecode.
-        # Note: This nicely sidesteps any issues caused by moving from bytecode
-        # to wordcode in python 3.6.
-
+    if True:
         def _scan_bytecode(
             self, module, module_code_object, is_scanning_imports):
             constants = module_code_object.co_consts
@@ -2631,7 +2673,7 @@ class ModuleGraph(ObjectGraph):
 
             prev_insts = []
 
-            for inst in dis.get_instructions(module_code_object):
+            for inst in get_instructions(module_code_object):
                 if inst.opname == 'IMPORT_NAME':
                     # If this method is ignoring import statements, skip to the
                     # next opcode.
