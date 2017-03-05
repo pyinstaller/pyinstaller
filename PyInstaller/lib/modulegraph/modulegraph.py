@@ -2202,7 +2202,11 @@ class ModuleGraph(ObjectGraph):
                 else:
                     co_ast = None
 
-                m.ast = co_ast
+                self._scan_code(m, co, co_ast, defer_imports=True)
+
+                if self.replace_paths:
+                    co = self._replace_paths_in_code(co)
+
                 m.code = co
             except SyntaxError:
                 self.msg(1, "find_spec: SyntaxError in ", pathname)
@@ -2217,24 +2221,9 @@ class ModuleGraph(ObjectGraph):
     def _load_module(self, fqname, m, pathname, info):
 
         self.msgin(2, "load_module", fqname, m and "m", pathname)
-
-        co = m.code
-        co_ast = getattr(m, 'ast', None)
-
-        if co is not None:
-            try:
-
-                self._scan_code(m, co, co_ast)
-
-                if self.replace_paths:
-                    co = self._replace_paths_in_code(co)
-                m.code = co
-            except SyntaxError:
-                self.msg(1, "load_module: SyntaxError in ", pathname)
-                cls = InvalidSourceModule
-                m = self.createNode(cls, fqname)
-
+        self._process_imports(m)
         self.msgout(2, "load_module ->", m)
+
         return m
 
     def _safe_import_hook(
@@ -2590,7 +2579,8 @@ class ModuleGraph(ObjectGraph):
         self,
         module,
         module_code_object,
-        module_code_object_ast=None):
+        module_code_object_ast=None,
+        defer_imports=False):
         """
         Parse and add all import statements from the passed code object of the
         passed source module to this graph, recursively.
@@ -2651,8 +2641,9 @@ class ModuleGraph(ObjectGraph):
             self._scan_bytecode(
                 module, module_code_object, is_scanning_imports=True)
 
-        # Add all imports parsed above to this graph.
-        self._process_imports(module)
+        if not defer_imports:
+            # Add all imports parsed above to this graph.
+            self._process_imports(module)
 
 
     def _scan_ast(self, module, module_code_object_ast):
