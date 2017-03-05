@@ -6,6 +6,8 @@ import sys
 import textwrap
 import subprocess
 import os
+
+from pytest import xfail
 from PyInstaller.lib.modulegraph import modulegraph
 
 class TestNativeImport (unittest.TestCase):
@@ -280,6 +282,7 @@ class TestModuleGraphImport (unittest.TestCase):
         self.assertEqual(node.identifier, 'pkg.mod')
 
     if sys.version_info[0] == 2:
+        @xfail
         def testOldStyle(self):
             node = self.mf.findNode('pkg.oldstyle')
             self.assertIsInstance(node, modulegraph.SourceModule)
@@ -288,6 +291,7 @@ class TestModuleGraphImport (unittest.TestCase):
             self.assertEqual(sub.identifier, 'pkg.mod')
     else:
         # python3 always has __future__.absolute_import
+        @xfail
         def testOldStyle(self):
             node = self.mf.findNode('pkg.oldstyle')
             self.assertIsInstance(node, modulegraph.SourceModule)
@@ -295,6 +299,7 @@ class TestModuleGraphImport (unittest.TestCase):
             sub = [ n for n in self.mf.get_edges(node)[0] if n.identifier != '__future__' ][0]
             self.assertEqual(sub.identifier, 'mod')
 
+    @xfail
     def testNewStyle(self):
         node = self.mf.findNode('pkg.toplevel')
         self.assertIsInstance(node, modulegraph.SourceModule)
@@ -302,6 +307,7 @@ class TestModuleGraphImport (unittest.TestCase):
         sub = [ n for n in self.mf.get_edges(node)[0] if not n.identifier.startswith('__future__')][0]
         self.assertEqual(sub.identifier, 'mod')
 
+    @xfail
     def testRelativeImport(self):
         node = self.mf.findNode('pkg.relative')
         self.assertIsInstance(node, modulegraph.SourceModule)
