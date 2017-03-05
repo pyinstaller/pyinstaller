@@ -2664,6 +2664,16 @@ class ModuleGraph(ObjectGraph):
         visitor.visit(module_code_object_ast)
 
     if True:
+        #FIXME: Optimize. Global attributes added by this method are tested by
+        #other methods *ONLY* for packages, implying this method should scan and
+        #handle opcodes pertaining to global attributes (e.g.,
+        #"STORE_NAME", "DELETE_GLOBAL") only if the passed "module"
+        #object is an instance of the "Package" class. For all other module types,
+        #these opcodes should simply be ignored.
+        #
+        #After doing so, the "Node._global_attr_names" attribute and all methods
+        #using this attribute (e.g., Node.is_global()) should be moved from the
+        #"Node" superclass to the "Package" subclass.
         def _scan_bytecode(
             self, module, module_code_object, is_scanning_imports):
             """
@@ -2821,16 +2831,6 @@ class ModuleGraph(ObjectGraph):
                     self._scan_bytecode(module, constant, is_scanning_imports)
 
     else:
-        #FIXME: Optimize. Global attributes added by this method are tested by
-        #other methods *ONLY* for packages, implying this method should scan and
-        #handle opcodes pertaining to global attributes (e.g.,
-        #"_STORE_NAME_OPCODE", "_DELETE_GLOBAL_OPCODE") only if the passed "module"
-        #object is an instance of the "Package" class. For all other module types,
-        #these opcodes should simply be ignored.
-        #
-        #After doing so, the "Node._global_attr_names" attribute and all methods
-        #using this attribute (e.g., Node.is_global()) should be moved from the
-        #"Node" superclass to the "Package" subclass.
         def _scan_bytecode(
             self, module, module_code_object, is_scanning_imports):
             #FIXME: Since PyInstaller requires Python >= 2.7, "extended_import" is
