@@ -1135,10 +1135,11 @@ class Engine(object):
         self.register.appendleft(action)
 
     def consume(self):
-        self.actions += self.register
-        self.register = deque()
+        while self.actions or self.register:
+            self.actions += self.register
+            self.register = deque()
 
-        return self.actions.pop()
+            yield self.actions.pop()
 
 
 class ModuleGraph(ObjectGraph):
@@ -1460,8 +1461,6 @@ class ModuleGraph(ObjectGraph):
         source file, and will be scanned for dependencies.
         """
         self.msg(2, "run_script", pathname)
-        self.running = True
-        self.engine.begin()
 
         pathname = os.path.realpath(pathname)
         m = self.findNode(pathname)
@@ -1490,14 +1489,18 @@ class ModuleGraph(ObjectGraph):
         m.code = co
         if self.replace_paths:
             m.code = self._replace_paths_in_code(m.code)
+
+        for action in self.engine.consume():
+            self._load_module(*action)
+
         return m
 
     def import_hook(self, *args, **kwargs):
+
         self._import_hook_deferred(*args, **kwargs)
 
-        while True:
-            action = self.engine.consume()
-            self._load_module(**action)
+        for action in self.engine.consume():
+            self._load_module(*action)
 
 
     #FIXME: For safety, the "source_module" parameter should default to the
@@ -2134,10 +2137,10 @@ class ModuleGraph(ObjectGraph):
                     self.msgout(3, "safe_import_module -> None (%r)" % exc)
                     return None
 
-                module_from_spec = self._find_spec(
+                module = self._find_spec(
                     module_name, file_handle, pathname, metadata)
 
-                self.engine.put((module_name, file_handle, pathname, metadata))
+                self.engine.put((module_name, module, pathname, metadata))
             finally:
                 if file_handle is not None:
                     file_handle.close()
@@ -2164,7 +2167,7 @@ class ModuleGraph(ObjectGraph):
 
     def _find_spec(self, fqname, fp, pathname, info):
         suffix, mode, typ = info
-        self.msgin(2, "load_module", fqname, fp and "fp", pathname)
+        self.msgin(2, "find_spec", fqname, fp and "fp", pathname)
 
         if typ == imp.PKG_DIRECTORY:
             if isinstance(mode, (list, tuple)):
@@ -2173,7 +2176,7 @@ class ModuleGraph(ObjectGraph):
                 packagepath = []
 
             m = self._load_package(fqname, pathname, packagepath, use_find_spec=True)
-            self.msgout(2, "load_module ->", m)
+            self.msgout(2, "find_spec ->", m)
             return m
 
         if typ == imp.PY_SOURCE:
@@ -2188,14 +2191,14 @@ class ModuleGraph(ObjectGraph):
             except SyntaxError:
                 co = None
                 cls = InvalidSourceModule
-                self.msg(2, "load_module: InvalidSourceModule", pathname)
+                self.msg(2, "find_spec: InvalidSourceModule", pathname)
 
             else:
                 cls = SourceModule
 
         elif typ == imp.PY_COMPILED:
             if fp.read(4) != imp.get_magic():
-                self.msg(2, "load_module: InvalidCompiledModule", pathname)
+                self.msg(2, "find_spec: InvalidCompiledModule", pathname)
                 co = None
                 cls = InvalidCompiledModule
 
@@ -2226,81 +2229,28 @@ class ModuleGraph(ObjectGraph):
                 else:
                     co_ast = None
 
+                m.ast = co_ast
                 m.code = co
             except SyntaxError:
-                self.msg(1, "load_module: SyntaxError in ", pathname)
+                self.msg(1, "find_spec: SyntaxError in ", pathname)
                 cls = InvalidSourceModule
                 m = self.createNode(cls, fqname)
 
-        self.msgout(2, "load_module ->", m)
+        self.msgout(2, "find_spec ->", m)
         return m
 
     #FIXME: For clarity, rename method parameters to:
     #    def _load_module(self, module_name, file_handle, pathname, imp_info):
-    def _load_module(self, fqname, fp, pathname, info):
-        suffix, mode, typ = info
-        self.msgin(2, "load_module", fqname, fp and "fp", pathname)
+    def _load_module(self, fqname, m, pathname, info):
 
-        if typ == imp.PKG_DIRECTORY:
-            if isinstance(mode, (list, tuple)):
-                packagepath = mode
-            else:
-                packagepath = []
+        self.msgin(2, "load_module", fqname, m and "m", pathname)
 
-            m = self._load_package(fqname, pathname, packagepath)
-            self.msgout(2, "load_module ->", m)
-            return m
+        co = m.code
+        co_ast = getattr(m, 'ast')
 
-        if typ == imp.PY_SOURCE:
-            contents = fp.read()
-            if isinstance(contents, bytes):
-                contents += b'\n'
-            else:
-                contents += '\n'
-
-            try:
-                co = compile(contents, pathname, 'exec', ast.PyCF_ONLY_AST, True)
-                #co = compile(contents, pathname, 'exec', 0, True)
-            except SyntaxError:
-                co = None
-                cls = InvalidSourceModule
-                self.msg(2, "load_module: InvalidSourceModule", pathname)
-
-            else:
-                cls = SourceModule
-
-        elif typ == imp.PY_COMPILED:
-            if fp.read(4) != imp.get_magic():
-                self.msg(2, "load_module: InvalidCompiledModule", pathname)
-                co = None
-                cls = InvalidCompiledModule
-
-            else:
-                fp.read(4)
-                try:
-                    co = marshal.loads(fp.read())
-                    cls = CompiledModule
-                except Exception:
-                    co = None
-                    cls = InvalidCompiledModule
-
-        elif typ == imp.C_BUILTIN:
-            cls = BuiltinModule
-            co = None
-
-        else:
-            cls = Extension
-            co = None
-
-        m = self.createNode(cls, fqname)
-        m.filename = pathname
         if co is not None:
             try:
-                if isinstance(co, ast.AST):
-                    co_ast = co
-                    co = compile(co_ast, pathname, 'exec', 0, True)
-                else:
-                    co_ast = None
+
                 self._scan_code(m, co, co_ast)
 
                 if self.replace_paths:
@@ -2413,7 +2363,7 @@ class ModuleGraph(ObjectGraph):
 
         # Attempt to import this target module in the customary way.
         try:
-            target_modules = self.import_hook(
+            target_modules = self._import_hook_deferred(
                 target_module_partname, source_module,
                 target_attr_names=None, level=level, edge_attr=edge_attr)
         # Failing that, defer to custom module importers handling non-standard
@@ -2488,7 +2438,7 @@ class ModuleGraph(ObjectGraph):
 
                         # Import this target SWIG C extension's package.
                         try:
-                            target_modules = self.import_hook(
+                            target_modules = self._import_hook_deferred(
                                 target_module_partname, source_module,
                                 target_attr_names=None,
                                 level=level,
@@ -2598,7 +2548,7 @@ class ModuleGraph(ObjectGraph):
                         # length of this list, doing so would render this code
                         # dependent on import_hook() details subject to change.
                         # Instead, call findNode() to decide the truthiness.
-                        self.import_hook(
+                        self._import_hook_deferred(
                             target_module_partname, source_module,
                             target_attr_names=[target_submodule_partname],
                             level=level,
