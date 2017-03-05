@@ -1092,17 +1092,6 @@ class _Visitor(ast.NodeVisitor):
 class Engine(object):
     """
     This object removes the complexity needed for iterative behavior out of modulegraph.
-
-    Usage:
-        if Engine.begin():
-            Engine.put((args, kwargs))
-            Engine.end()
-        else:
-            recurse(action)
-            while Engine.actions:
-                action = Engine.consume()
-                recurse(action)
-            Engine.unlock()
     """
 
     def __init__(self, processor):
