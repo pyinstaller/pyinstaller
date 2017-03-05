@@ -7,7 +7,7 @@ import textwrap
 import subprocess
 import os
 
-from pytest import xfail
+from PyInstaller.utils.tests import xfail
 from PyInstaller.lib.modulegraph import modulegraph
 
 class TestNativeImport (unittest.TestCase):
