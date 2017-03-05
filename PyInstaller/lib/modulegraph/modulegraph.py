@@ -2246,7 +2246,7 @@ class ModuleGraph(ObjectGraph):
         self.msgin(2, "load_module", fqname, m and "m", pathname)
 
         co = m.code
-        co_ast = getattr(m, 'ast')
+        co_ast = getattr(m, 'ast', None)
 
         if co is not None:
             try:
