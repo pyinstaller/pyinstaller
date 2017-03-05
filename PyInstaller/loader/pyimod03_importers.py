@@ -8,7 +8,7 @@
 #-----------------------------------------------------------------------------
 
 """
-PEP-302 importers for frozen applications.
+PEP-302 and PEP-451 importers for frozen applications.
 """
 
 
