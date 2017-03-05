@@ -2666,77 +2666,6 @@ class ModuleGraph(ObjectGraph):
     if True:
         def _scan_bytecode(
             self, module, module_code_object, is_scanning_imports):
-            constants = module_code_object.co_consts
-
-            level = None
-            fromlist = None
-
-            prev_insts = []
-
-            for inst in get_instructions(module_code_object):
-                if inst.opname == 'IMPORT_NAME':
-                    # If this method is ignoring import statements, skip to the
-                    # next opcode.
-                    if not is_scanning_imports:
-                        continue
-
-                    assert prev_insts[-2].opname == 'LOAD_CONST'
-                    assert prev_insts[-1].opname == 'LOAD_CONST'
-
-                    level = module_code_object.co_consts[prev_insts[-2].arg]
-                    fromlist = module_code_object.co_consts[prev_insts[-1].arg]
-
-                    assert fromlist is None or type(fromlist) is tuple
-                    target_module_partname = module_code_object.co_names[inst.arg]
-                    have_star = False
-                    if fromlist is not None:
-                        fromlist = set(fromlist)
-                        if '*' in fromlist:
-                            fromlist.remove('*')
-                            have_star = True
-
-                    # Record this import as originating from this module for
-                    # subsequent handling by the _process_imports() method.
-                    module._deferred_imports.append((
-                        have_star,
-                        (target_module_partname, module, fromlist, level),
-                        {}
-                    ))
-
-                elif inst.opname in ('STORE_NAME', 'STORE_GLOBAL'):
-                    # keep track of all global names that are assigned to
-                    name = module_code_object.co_names[inst.arg]
-                    module.add_global_attr(name)
-
-                elif inst.opname in ('DELETE_NAME', 'DELETE_GLOBAL'):
-                    name = module_code_object.co_names[inst.arg]
-                    module.remove_global_attr_if_found(name)
-
-                prev_insts.append(inst)
-                del prev_insts[:-2]
-
-            # Type of all code objects.
-            code_object_type = type(module_code_object)
-
-            # For each constant in this code object that is itself a code object,
-            # parse this constant in the same manner.
-            for constant in constants:
-                if isinstance(constant, code_object_type):
-                    self._scan_bytecode(module, constant, is_scanning_imports)
-
-    else:
-        #FIXME: Optimize. Global attributes added by this method are tested by
-        #other methods *ONLY* for packages, implying this method should scan and
-        #handle opcodes pertaining to global attributes (e.g.,
-        #"_STORE_NAME_OPCODE", "_DELETE_GLOBAL_OPCODE") only if the passed "module"
-        #object is an instance of the "Package" class. For all other module types,
-        #these opcodes should simply be ignored.
-        #
-        #After doing so, the "Node._global_attr_names" attribute and all methods
-        #using this attribute (e.g., Node.is_global()) should be moved from the
-        #"Node" superclass to the "Package" subclass.
-        def _scan_bytecode(
-            self, module, module_code_object, is_scanning_imports):
             """
             Parse and add all import statements from the passed code object of the
             passed source module to this graph, non-recursively.
@@ -2746,9 +2675,9 @@ class ModuleGraph(ObjectGraph):
             requiring Turing-complete interpretation) directly or indirectly
             involving module importation from this code object. This includes:
 
-            * `_IMPORT_NAME_OPCODE`, denoting an import statement. Ignored unless
+            * `IMPORT_NAME`, denoting an import statement. Ignored unless
               the passed `is_scanning_imports` parameter is `True`.
-            * `_STORE_NAME_OPCODE` and `_STORE_GLOBAL_OPCODE`, denoting the
+            * `STORE_NAME` and `STORE_GLOBAL`, denoting the
               declaration of a global attribute (e.g., class, variable) in this
               module. This method stores each such declaration for subsequent
               lookup. While global attributes are usually irrelevant to import
@@ -2758,7 +2687,7 @@ class ModuleGraph(ObjectGraph):
               attributes of a package's `__init__` submodule (e.g., the `bar` in
               `from foo import bar`, which is either a non-ignorable submodule of
               `foo` or an ignorable global attribute of `foo.__init__`).
-            * `_DELETE_NAME_OPCODE` and `_DELETE_GLOBAL_OPCODE`, denoting the
+            * `DELETE_NAME` and `DELETE_GLOBAL`, denoting the
               undeclaration of a previously declared global attribute in this
               module.
 
@@ -2798,7 +2727,112 @@ class ModuleGraph(ObjectGraph):
                   parsing will have already parsed import statements, which this
                   parsing must avoid repeating.
             """
+            constants = module_code_object.co_consts
 
+            level = None
+            fromlist = None
+
+            prev_insts = []
+
+            for inst in get_instructions(module_code_object):
+                # If this is an import statement originating from this module,
+                # parse this import.
+                #
+                # Note that the related "IMPORT_FROM" opcode need *NOT* be parsed.
+                # "IMPORT_NAME" suffices. For further details, see
+                #     http://probablyprogramming.com/2008/04/14/python-import_name
+                if inst.opname == 'IMPORT_NAME':
+                    # If this method is ignoring import statements, skip to the
+                    # next opcode.
+                    if not is_scanning_imports:
+                        continue
+
+                    assert prev_insts[-2].opname == 'LOAD_CONST'
+                    assert prev_insts[-1].opname == 'LOAD_CONST'
+
+                    # Python >=2.5: LOAD_CONST flags, LOAD_CONST names, IMPORT_NAME name
+                    level = module_code_object.co_consts[prev_insts[-2].arg]
+                    fromlist = module_code_object.co_consts[prev_insts[-1].arg]
+
+                    assert fromlist is None or type(fromlist) is tuple
+                    target_module_partname = module_code_object.co_names[inst.arg]
+
+                    #FIXME: The exact same logic appears in _collect_import(),
+                    #which isn't particularly helpful. Instead, defer this logic
+                    #until later by:
+                    #
+                    #* Refactor the "_deferred_imports" list to contain 2-tuples
+                    #  "(_safe_import_hook_args, _safe_import_hook_kwargs)" rather
+                    #  than 3-tuples "(have_star, _safe_import_hook_args,
+                    #  _safe_import_hook_kwargs)".
+                    #* Stop prepending these tuples by a "have_star" boolean both
+                    #  here, in _collect_import(), and in _process_imports().
+                    #* Shift the logic below to _process_imports().
+                    #* Remove the same logic from _collect_import().
+                    have_star = False
+                    if fromlist is not None:
+                        fromlist = set(fromlist)
+                        if '*' in fromlist:
+                            fromlist.remove('*')
+                            have_star = True
+
+                    # Record this import as originating from this module for
+                    # subsequent handling by the _process_imports() method.
+                    module._deferred_imports.append((
+                        have_star,
+                        (target_module_partname, module, fromlist, level),
+                        {}
+                    ))
+
+                elif inst.opname in ('STORE_NAME', 'STORE_GLOBAL'):
+                    # If this is the declaration of a global attribute (e.g.,
+                    # class, variable) in this module, store this declaration for
+                    # subsequent lookup. See method docstring for further details.
+                    #
+                    # Global attributes are usually irrelevant to import parsing, but
+                    # remain the only means of distinguishing erroneous non-ignorable
+                    # attempts to import non-existent submodules of a package from
+                    # successful ignorable attempts to import existing global
+                    # attributes of a package's "__init__" submodule (e.g., the "bar"
+                    # in "from foo import bar", which is either a non-ignorable
+                    # submodule of "foo" or an ignorable global attribute of
+                    # "foo.__init__").
+                    name = module_code_object.co_names[inst.arg]
+                    module.add_global_attr(name)
+
+                elif inst.opname in ('DELETE_NAME', 'DELETE_GLOBAL'):
+                    # If this is the undeclaration of a previously declared global
+                    # attribute (e.g., class, variable) in this module, remove that
+                    # declaration to prevent subsequent lookup. See method docstring
+                    # for further details.
+                    name = module_code_object.co_names[inst.arg]
+                    module.remove_global_attr_if_found(name)
+
+                prev_insts.append(inst)
+                del prev_insts[:-2]
+
+            # Type of all code objects.
+            code_object_type = type(module_code_object)
+
+            # For each constant in this code object that is itself a code object,
+            # parse this constant in the same manner.
+            for constant in constants:
+                if isinstance(constant, code_object_type):
+                    self._scan_bytecode(module, constant, is_scanning_imports)
+
+    else:
+        #FIXME: Optimize. Global attributes added by this method are tested by
+        #other methods *ONLY* for packages, implying this method should scan and
+        #handle opcodes pertaining to global attributes (e.g.,
+        #"_STORE_NAME_OPCODE", "_DELETE_GLOBAL_OPCODE") only if the passed "module"
+        #object is an instance of the "Package" class. For all other module types,
+        #these opcodes should simply be ignored.
+        #
+        #After doing so, the "Node._global_attr_names" attribute and all methods
+        #using this attribute (e.g., Node.is_global()) should be moved from the
+        #"Node" superclass to the "Package" subclass.
+        def _scan_bytecode(
+            self, module, module_code_object, is_scanning_imports):
             #FIXME: Since PyInstaller requires Python >= 2.7, "extended_import" is
             #guaranteed to *ALWAYS* be "True". Therefore:
             #
@@ -2875,12 +2909,6 @@ class ModuleGraph(ObjectGraph):
                 if code_byte >= _HAVE_ARGUMENT_OPCODE:
                     code_byte_index = code_byte_index+2
 
-                # If this is an import statement originating from this module,
-                # parse this import.
-                #
-                # Note that the related "IMPORT_FROM" opcode need *NOT* be parsed.
-                # "IMPORT_NAME" suffices. For further details, see
-                #     http://probablyprogramming.com/2008/04/14/python-import_name
                 if code_byte == _IMPORT_NAME_OPCODE:
                     # If this method is ignoring import statements, skip to the
                     # next opcode.
@@ -2903,18 +2931,6 @@ class ModuleGraph(ObjectGraph):
                     assert target_attr_names is None or type(target_attr_names) is tuple
                     target_module_partname = get_operation_arg_name()
 
-                    #FIXME: The exact same logic appears in _collect_import(),
-                    #which isn't particularly helpful. Instead, defer this logic
-                    #until later by:
-                    #
-                    #* Refactor the "_deferred_imports" list to contain 2-tuples
-                    #  "(_safe_import_hook_args, _safe_import_hook_kwargs)" rather
-                    #  than 3-tuples "(have_star, _safe_import_hook_args,
-                    #  _safe_import_hook_kwargs)".
-                    #* Stop prepending these tuples by a "have_star" boolean both
-                    #  here, in _collect_import(), and in _process_imports().
-                    #* Shift the logic below to _process_imports().
-                    #* Remove the same logic from _collect_import().
                     have_star = False
                     if target_attr_names is not None:
                         target_attr_names = set(target_attr_names)
@@ -2929,27 +2945,11 @@ class ModuleGraph(ObjectGraph):
                         (target_module_partname, module, target_attr_names, level),
                         {}
                     ))
-                # Else if this is the declaration of a global attribute (e.g.,
-                # class, variable) in this module, store this declaration for
-                # subsequent lookup. See method docstring for further details.
-                #
-                # Global attributes are usually irrelevant to import parsing, but
-                # remain the only means of distinguishing erroneous non-ignorable
-                # attempts to import non-existent submodules of a package from
-                # successful ignorable attempts to import existing global
-                # attributes of a package's "__init__" submodule (e.g., the "bar"
-                # in "from foo import bar", which is either a non-ignorable
-                # submodule of "foo" or an ignorable global attribute of
-                # "foo.__init__").
                 elif (
                     code_byte == _STORE_NAME_OPCODE or
                     code_byte == _STORE_GLOBAL_OPCODE):
                     global_attr_name = get_operation_arg_name()
                     module.add_global_attr(global_attr_name)
-                # Else if this is the undeclaration of a previously declared global
-                # attribute (e.g., class, variable) in this module, remove that
-                # declaration to prevent subsequent lookup. See method docstring
-                # for further details.
                 elif (
                     code_byte == _DELETE_NAME_OPCODE or
                     code_byte == _DELETE_GLOBAL_OPCODE):
