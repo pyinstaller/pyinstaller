@@ -31,9 +31,9 @@ binary_module_names = (
     'Cryptodome.Hash',
 )
 
-for module_path in binary_module_names:
-    m_dir = os.path.dirname(get_module_file_attribute(module_path))
+for module_name in binary_module_names:
+    m_dir = os.path.dirname(get_module_file_attribute(module_name))
     for ext in EXTENSION_SUFFIXES:
         module_bin = glob.glob(os.path.join(m_dir, '_*%s' % ext))
         for f in module_bin:
-            binaries.append((f, module_path.replace('.', '/')))
+            binaries.append((f, module_name.replace('.', '/')))
