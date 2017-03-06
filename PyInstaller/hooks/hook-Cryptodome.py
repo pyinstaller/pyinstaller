@@ -25,11 +25,12 @@ from PyInstaller.utils.hooks import get_module_file_attribute
 # modules outside the package.
 
 binaries = []
-binary_module_names = (
+binary_module_names = [
     'Cryptodome.Cipher',
     'Cryptodome.Util',
     'Cryptodome.Hash',
-)
+    'Cryptodome.Protocol',
+]
 
 for module_name in binary_module_names:
     m_dir = os.path.dirname(get_module_file_attribute(module_name))
