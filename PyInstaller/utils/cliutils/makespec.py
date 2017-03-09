@@ -16,7 +16,6 @@ import argparse
 import os
 
 import PyInstaller.building.makespec
-import PyInstaller.compat
 import PyInstaller.log
 
 
@@ -24,7 +23,6 @@ def run():
     p = argparse.ArgumentParser()
     PyInstaller.building.makespec.__add_options(p)
     PyInstaller.log.__add_options(p)
-    PyInstaller.compat.__add_obsolete_options(p)
     p.add_argument('scriptname', nargs='+')
 
     args = p.parse_args()
