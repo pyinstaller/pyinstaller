@@ -9,10 +9,21 @@
 
 
 import pytest
+import types
 
 from PyInstaller import HOMEPATH
 from PyInstaller.depend import analysis
 from PyInstaller.lib.modulegraph import modulegraph
+
+
+def test_get_co_using_ctypes(tmpdir):
+    script = tmpdir.join('script.py')
+    script.write('import ctypes')
+    mg = analysis.PyiModuleGraph(HOMEPATH)
+    mg.run_script(str(script))
+    res = mg.get_co_using_ctypes()
+    assert len(res) == 1
+    assert isinstance(res[str(script)], types.CodeType)
 
 
 def test_get_co_using_ctypes_from_extension():
