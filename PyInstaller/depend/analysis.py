@@ -534,9 +534,8 @@ class PyiModuleGraph(ModuleGraph):
             referers = self.getReferers(node)
             for r in referers:
                 r_ident =  r.identifier
-                r_type = type(node).__name__
                 # Ensure that modulegraph objects has attribute 'code'.
-                if r_type in PURE_PYTHON_MODULE_TYPES:
+                if type(r).__name__ in PURE_PYTHON_MODULE_TYPES:
                     if r_ident == 'ctypes' or r_ident.startswith('ctypes.'):
                         # Skip modules of 'ctypes' package.
                         continue
