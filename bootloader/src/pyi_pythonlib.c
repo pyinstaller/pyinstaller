@@ -454,6 +454,9 @@ pyi_pylib_start_python(ARCHIVE_STATUS *status)
             return -1;
         }
         VS("LOADER: Pre-init sys.path is %s\n", pypath);
+        // Call GetPath first, so the static dllpath will be set as a side
+        // effect. Workaround for http://bugs.python.org/issue29778, see #2496.
+        PI_Py_GetPath();
         PI_Py_SetPath(pypath_w);
     }
     ;
