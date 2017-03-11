@@ -19,18 +19,18 @@ from PyInstaller.lib.modulegraph import modulegraph
 def test_get_co_using_ctypes(tmpdir):
     script = tmpdir.join('script.py')
     script.write('import ctypes')
-    mg = analysis.PyiModuleGraph(HOMEPATH)
+    mg = analysis.PyiModuleGraph(HOMEPATH, excludes=("platform",))
     mg.run_script(str(script))
     res = mg.get_co_using_ctypes()
-    assert len(res) == 1
-    assert isinstance(res[str(script)], types.CodeType)
+    assert len(res) == 1, res
+    assert isinstance(res[str(script)], types.CodeType), res
 
 
 def test_get_co_using_ctypes_from_extension():
     # If an extension module has an hidden import to ctypes (e.g. added by the
     # hook), the extension moduel must nor show up in the result of
     # get_co_using_ctypes(). See issue #2492 and test_regression::issue_2492.
-    mg = analysis.PyiModuleGraph(HOMEPATH)
+    mg = analysis.PyiModuleGraph(HOMEPATH, excludes=("platform",))
     struct = mg.createNode(modulegraph.Extension, '_struct', 'struct.so')
     mg.implyNodeReference(struct, 'ctypes') # simulate the hidden import
     res = mg.get_co_using_ctypes()
