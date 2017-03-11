@@ -14,9 +14,11 @@ import types
 from PyInstaller import HOMEPATH
 from PyInstaller.depend import analysis
 from PyInstaller.lib.modulegraph import modulegraph
+import PyInstaller.log as logging
 
 
 def test_get_co_using_ctypes(tmpdir):
+    logging.logger.setLevel(logging.DEBUG)
     script = tmpdir.join('script.py')
     script.write('import ctypes')
     mg = analysis.PyiModuleGraph(HOMEPATH, excludes=("platform",))
@@ -27,6 +29,7 @@ def test_get_co_using_ctypes(tmpdir):
 
 
 def test_get_co_using_ctypes_from_extension():
+    logging.logger.setLevel(logging.DEBUG)
     # If an extension module has an hidden import to ctypes (e.g. added by the
     # hook), the extension moduel must nor show up in the result of
     # get_co_using_ctypes(). See issue #2492 and test_regression::issue_2492.
