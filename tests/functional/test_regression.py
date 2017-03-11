@@ -23,6 +23,8 @@ def test_issue_2492(monkeypatch, tmpdir):
                         {'workpath': str(tmpdir),
                          'spec': str(tmpdir),
                          'warnfile': str(tmpdir.join('warn.txt')),
+                         'dot-file': str(tmpdir.join('imports.dot')),
+                         'xref-file': str(tmpdir.join('imports.xref')),
                          'hiddenimports': []})
     # Speedup: avoid analyzing base_library.zip
     monkeypatch.setattr(analysis, 'PY3_BASE_MODULES', [])
