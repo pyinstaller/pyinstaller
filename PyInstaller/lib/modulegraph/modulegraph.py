@@ -2614,11 +2614,11 @@ class ModuleGraph(ObjectGraph):
                 assert prev_insts[-1].opname == 'LOAD_CONST'
 
                 # Python >=2.5: LOAD_CONST flags, LOAD_CONST names, IMPORT_NAME name
-                level = module_code_object.co_consts[prev_insts[-2].arg]
-                fromlist = module_code_object.co_consts[prev_insts[-1].arg]
+                level = prev_insts[-2].argval
+                fromlist = prev_insts[-1].argval
 
                 assert fromlist is None or type(fromlist) is tuple
-                target_module_partname = module_code_object.co_names[inst.arg]
+                target_module_partname = inst.argval
 
                 #FIXME: The exact same logic appears in _collect_import(),
                 #which isn't particularly helpful. Instead, defer this logic
@@ -2660,7 +2660,7 @@ class ModuleGraph(ObjectGraph):
                 # in "from foo import bar", which is either a non-ignorable
                 # submodule of "foo" or an ignorable global attribute of
                 # "foo.__init__").
-                name = module_code_object.co_names[inst.arg]
+                name = inst.argval
                 module.add_global_attr(name)
 
             elif inst.opname in ('DELETE_NAME', 'DELETE_GLOBAL'):
@@ -2668,7 +2668,7 @@ class ModuleGraph(ObjectGraph):
                 # attribute (e.g., class, variable) in this module, remove that
                 # declaration to prevent subsequent lookup. See method docstring
                 # for further details.
-                name = module_code_object.co_names[inst.arg]
+                name = inst.argval
                 module.remove_global_attr_if_found(name)
 
             prev_insts.append(inst)
