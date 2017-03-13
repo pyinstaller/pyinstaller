@@ -418,7 +418,8 @@ pyi_remove_temp_path(const char *dir)
     struct dirent *finfo;
     int dirnmlen;
 
-    strcpy(fnm, dir);
+    /* Leave 1 char for PY_SEP if needed */
+    strncpy(fnm, dir, PATH_MAX);
     dirnmlen = strlen(fnm);
 
     if (fnm[dirnmlen - 1] != PYI_SEP) {
@@ -468,13 +469,25 @@ pyi_open_target(const char *path, const char* name_)
     char fnm[PATH_MAX];
     char name[PATH_MAX];
     char *dir;
+    size_t len;
 
-    strcpy(fnm, path);
-    strcpy(name, name_);
+    strncpy(fnm, path, PATH_MAX);
+    strncpy(name, name_, PATH_MAX);
 
+    /* Check if the path names could be copied */
+    if (fnm[PATH_MAX-1] != '\0' || name[PATH_MAX-1] != '\0') {
+        return NULL;
+    }
+
+    len = strlen(fnm);
     dir = strtok(name, PYI_SEPSTR);
 
     while (dir != NULL) {
+        len += strlen(dir) + strlen(PYI_SEPSTR);;
+        /* Check if fnm does not exceed the buffer size */
+        if (len >= PATH_MAX-1) {
+            return NULL;
+        }
         strcat(fnm, PYI_SEPSTR);
         strcat(fnm, dir);
         dir = strtok(NULL, PYI_SEPSTR);
