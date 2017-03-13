@@ -127,6 +127,19 @@ if sys.version_info >= (3,4):
     # Note: This nicely sidesteps any issues caused by moving from bytecode
     # to wordcode in python 3.6.
     get_instructions = dis.get_instructions
+
+    def enumerate_instructions(module_code_object):
+        # Type of all code objects.
+        code_object_type = type(module_code_object)
+
+        yield from enumerate_instructions(module_code_object)
+
+        # For each constant in this code object that is itself a code object,
+        # parse this constant in the same manner.
+        for constant in module_code_object.co_consts:
+            if isinstance(constant, code_object_type):
+                yield from enumerate_instructions(module_code_object)
+
 else:
     assert 'SET_LINENO' not in dis.opmap  # safty belt
 
@@ -166,3 +179,18 @@ else:
             else:
                 oparg = None
             yield Instruction(op, oparg)
+
+
+    def enumerate_instructions(module_code_object):
+        # Type of all code objects.
+        code_object_type = type(module_code_object)
+
+        for instruction in enumerate_instructions(module_code_object):
+            yield instruction
+
+        # For each constant in this code object that is itself a code object,
+        # parse this constant in the same manner.
+        for constant in module_code_object.co_consts:
+            if isinstance(constant, code_object_type):
+                for instruction in enumerate_instructions(module_code_object):
+                    yield instruction
