@@ -81,7 +81,7 @@ pyi_pylib_load(ARCHIVE_STATUS *status)
       pyvers_major = pyvers / 10;
       pyvers_minor = pyvers % 10;
 
-      len = snprintf(dllname, 64
+      len = snprintf(dllname, 64,
               "libpython%01d.%01d.a(libpython%01d.%01d.so)",
               pyvers_major, pyvers_minor, pyvers_major, pyvers_minor);
     }
