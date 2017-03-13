@@ -8,6 +8,8 @@ import re
 import marshal
 import warnings
 
+from collections import deque
+
 try:
     unicode
 except NameError:
@@ -17,10 +19,10 @@ except NameError:
 if sys.version_info[0] == 2:
     from StringIO import StringIO as BytesIO
     from StringIO import StringIO
-
+    _cOrd = ord
 else:
     from io import BytesIO, StringIO
-
+    _cOrd = int
 
 
 def imp_find_module(name, path=None):
@@ -128,18 +130,6 @@ if sys.version_info >= (3,4):
     # to wordcode in python 3.6.
     get_instructions = dis.get_instructions
 
-    def enumerate_instructions(module_code_object):
-        # Type of all code objects.
-        code_object_type = type(module_code_object)
-
-        yield from enumerate_instructions(module_code_object)
-
-        # For each constant in this code object that is itself a code object,
-        # parse this constant in the same manner.
-        for constant in module_code_object.co_consts:
-            if isinstance(constant, code_object_type):
-                yield from enumerate_instructions(module_code_object)
-
 else:
     assert 'SET_LINENO' not in dis.opmap  # safty belt
 
@@ -181,16 +171,23 @@ else:
             yield Instruction(op, oparg)
 
 
-    def enumerate_instructions(module_code_object):
-        # Type of all code objects.
-        code_object_type = type(module_code_object)
+def enumerate_instructions(module_code_object):
+    # Type of all code objects.
+    code_object_type = type(module_code_object)
+    code_objects = deque([module_code_object])
+    current_objects = deque()
 
-        for instruction in enumerate_instructions(module_code_object):
+    while code_objects:
+        code_object = code_objects.pop()
+
+        for instruction in get_instructions(code_object):
             yield instruction
 
         # For each constant in this code object that is itself a code object,
         # parse this constant in the same manner.
-        for constant in module_code_object.co_consts:
+        for constant in code_object.co_consts:
             if isinstance(constant, code_object_type):
-                for instruction in enumerate_instructions(module_code_object):
-                    yield instruction
+                current_objects.appendleft(constant)
+
+        code_objects += current_objects
+        current_objects = deque()
