@@ -846,7 +846,7 @@ static pascal OSErr handle_open_doc_ae(const AppleEvent *theAppleEvent, AppleEve
    DescType returnedType;
    AEKeyword keywd;
    FSRef theRef;
- 
+
    VS("LOADER [ARGV_EMU]: OpenDocument handler called.\n");
 
    OSErr err = AEGetParamDesc(theAppleEvent, keyDirectObject, typeAEList, &docList);
@@ -858,7 +858,7 @@ static pascal OSErr handle_open_doc_ae(const AppleEvent *theAppleEvent, AppleEve
    for (index = 1; index <= count; index++)
    {
      err = AEGetNthPtr(&docList, index, typeFSRef, &keywd, &returnedType, &theRef, sizeof(theRef), &actualSize);
- 
+
      CFURLRef fullURLRef;
      fullURLRef = CFURLCreateFromFSRef(NULL, &theRef);
      CFStringRef cfString = CFURLCopyFileSystemPath(fullURLRef, kCFURLPOSIXPathStyle);
@@ -870,22 +870,22 @@ static pascal OSErr handle_open_doc_ae(const AppleEvent *theAppleEvent, AppleEve
      const int bufferSize = (len+1)*6;  // in theory up to six bytes per Unicode code point, for UTF-8.
      char* buffer = (char*)malloc(bufferSize);
      CFStringGetCString(cfMutableString, buffer, bufferSize, kCFStringEncodingUTF8);
- 
+
      argv_pyi = (char**)realloc(argv_pyi,(argc_pyi+2)*sizeof(char*));
      argv_pyi[argc_pyi++] = strdup(buffer);
      argv_pyi[argc_pyi] = NULL;
 
      VS("LOADER [ARGV_EMU]: argv entry appended.");
- 
+
      free(buffer);
    }
- 
+
   err = AEDisposeDesc(&docList);
 
- 
+
   return (err);
 }
- 
+
 
 static void process_apple_events()
 {
@@ -918,7 +918,7 @@ static void process_apple_events()
 
         while(!gQuit) {
            VS("LOADER [ARGV_EMU]: AppleEvent - calling ReceiveNextEvent\n");
-           rcv_status = ReceiveNextEvent(1, event_types, timeout, true, &event_ref); 
+           rcv_status = ReceiveNextEvent(1, event_types, timeout, true, &event_ref);
 
            if (rcv_status == eventLoopTimedOutErr) {
               VS("LOADER [ARGV_EMU]: ReceiveNextEvent timed out\n");
@@ -942,7 +942,7 @@ static void process_apple_events()
 
         VS("LOADER [ARGV_EMU]: Out of the event loop.");
 
-        handler_remove_status = RemoveEventHandler(handler_ref); 
+        handler_remove_status = RemoveEventHandler(handler_ref);
 
     }
     else {
