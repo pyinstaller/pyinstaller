@@ -483,7 +483,7 @@ pyi_open_target(const char *path, const char* name_)
     dir = strtok(name, PYI_SEPSTR);
 
     while (dir != NULL) {
-        len += strlen(dir) + strlen(PYI_SEPSTR);;
+        len += strlen(dir) + strlen(PYI_SEPSTR);
         /* Check if fnm does not exceed the buffer size */
         if (len >= PATH_MAX-1) {
             return NULL;
