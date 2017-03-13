@@ -2595,12 +2595,7 @@ class ModuleGraph(ObjectGraph):
               parsing will have already parsed import statements, which this
               parsing must avoid repeating.
         """
-        constants = module_code_object.co_consts
-
-        level = None
-        fromlist = None
-
-        prev_insts = []
+        prev_insts = deque(maxlen=2)
 
         for inst in enumerate_instructions(module_code_object):
             # If this is an import statement originating from this module,
@@ -2677,7 +2672,6 @@ class ModuleGraph(ObjectGraph):
                 module.remove_global_attr_if_found(name)
 
             prev_insts.append(inst)
-            del prev_insts[:-2]
 
 
     def _process_imports(self, source_module):
