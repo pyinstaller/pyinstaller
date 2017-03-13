@@ -36,6 +36,7 @@
 
 /* PyInstaller headers. */
 #include "pyi_global.h"  /* PATH_MAX */
+#include "pyi_utils.h"
 #include "pyi_win32_utils.h"
 #include "pyi_python27_compat.h"  /* is_py2 */
 
@@ -202,7 +203,7 @@ pyi_path_exists(char * path)
 int
 pyi_search_path(char * result, const char * appname)
 {
-    char * path = getenv("PATH");
+    char * path = pyi_getenv("PATH");
     char dirname[PATH_MAX + 1];
     char filename[PATH_MAX + 1];
 
