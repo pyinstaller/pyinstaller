@@ -154,7 +154,7 @@ def __scan_code_instruction_for_ctypes(co, instructions):
         """
         instruction = next(instructions)
         if instruction.opname == 'LOAD_CONST':
-            soname = co.co_consts[instruction.arg]
+            soname = instruction.argval
             if isinstance(soname, str):
                 return soname
 
@@ -165,7 +165,7 @@ def __scan_code_instruction_for_ctypes(co, instructions):
     if instruction.opname not in expected_ops:
         return None
 
-    name = co.co_names[instruction.arg]
+    name = instruction.argval
     if name == "ctypes":
         # Guesses ctypes has been imported as `import ctypes` and
         # the members are accessed like: ctypes.CDLL("library.so")
@@ -180,7 +180,7 @@ def __scan_code_instruction_for_ctypes(co, instructions):
         instruction = next(instructions)
         if instruction.opname not in expected_ops:
             return None
-        name = co.co_names[instruction.arg]
+        name = instruction.argval
 
     if name in ("CDLL", "WinDLL", "OleDLL", "PyDLL"):
         # Guesses ctypes imports of this type: CDLL("library.so")
@@ -204,12 +204,12 @@ def __scan_code_instruction_for_ctypes(co, instructions):
         #     LOAD_CONST    1 ('library.so')
         instruction = next(instructions)
         if instruction.opname == 'LOAD_ATTR':
-            if co.co_names[instruction.arg] == "LoadLibrary":
+            if instruction.argval == "LoadLibrary":
                 # Second type, needs to fetch one more instruction
                 return _libFromConst()
             else:
                 # First type
-                return co.co_names[instruction.arg] + ".dll"
+                return instruction.argval + ".dll"
 
     elif instruction.opname == 'LOAD_ATTR' and name in ("util",):
         # Guesses ctypes imports of these types::
@@ -222,7 +222,7 @@ def __scan_code_instruction_for_ctypes(co, instructions):
         #     LOAD_CONST    1 ('gs')
         instruction = next(instructions)
         if instruction.opname == 'LOAD_ATTR':
-            if co.co_names[instruction.arg] == "find_library":
+            if instruction.argval == "find_library":
                 libname = _libFromConst()
                 if libname:
                     lib = ctypes.util.find_library(libname)
