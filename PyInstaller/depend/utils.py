@@ -127,7 +127,7 @@ def scan_code_for_ctypes(co):
 
 def __recursivly_scan_code_objects_for_ctypes(co, binaries):
     # Note: `binaries` is a list, which gets extended here.
-    instructions = modulegraph.get_instructions(co)
+    instructions = modulegraph.enumerate_instructions(co)
     while 1:
         # ctypes scanning requires a scope wider than one bytecode
         # instruction, so the code resides in a separate function
@@ -138,10 +138,6 @@ def __recursivly_scan_code_objects_for_ctypes(co, binaries):
                 binaries.append(bin)
         except StopIteration:
             break
-
-    for c in co.co_consts:
-        if isinstance(c, type(co)):
-            __recursivly_scan_code_objects_for_ctypes(c, binaries)
 
 
 def __scan_code_instruction_for_ctypes(co, instructions):
