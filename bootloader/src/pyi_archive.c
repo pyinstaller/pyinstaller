@@ -449,6 +449,15 @@ int
 pyi_arch_set_paths(ARCHIVE_STATUS *status, char const * archivePath,
                    char const * archiveName)
 {
+    size_t pathlen, namelen;
+
+    pathlen = strnlen(archivePath, PATH_MAX);
+    namelen = strnlen(archiveName, PATH_MAX);
+
+    if (pathlen+namelen+1 > PATH_MAX) {
+        return -1;
+    }
+
     /* Get the archive Path */
     strcpy(status->archivename, archivePath);
     strcat(status->archivename, archiveName);
