@@ -63,6 +63,8 @@ addons:
     - libatlas-base-dev
 
 before_install:
+  - SECONDS=0
+  - function timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
   # Skip build if the commit message contains [skip travis] or [travis skip]
   - >
       echo "$TRAVIS_COMMIT_MESSAGE"
@@ -98,7 +100,7 @@ install:
 script:
   # Run tests and speed them up by sending them to multiple CPUs.
   # Run unitttest first.
-  - py.test -n 3 --maxfail 3 tests/unit/ tests/
+  - timeout $((2400 - $SECONDS)) py.test -n 3 --maxfail 3 tests/unit/ tests/
 
 notifications:
     irc:
