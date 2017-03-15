@@ -30,7 +30,7 @@ from .. import log as logging
 from ..utils.misc import absnormpath
 from ..compat import is_py2, is_win, PYDYLIB_NAMES, VALID_MODULE_TYPES
 from ..depend import bindepend
-from ..depend.analysis import initialize_modgraph
+from ..depend.analysis import PyiModuleGraph
 from .api import PYZ, EXE, COLLECT, MERGE
 from .datastruct import TOC, Target, Tree, _check_guts_eq
 from .imphook import AdditionalFilesCache, ModuleHookCache
@@ -313,7 +313,7 @@ class Analysis(Target):
         else:
             for m in self.excludes:
                 logger.debug("Excluding module '%s'" % m)
-            self.graph = initialize_modgraph(
+            self.graph = PyiModuleGraph(
                 excludes=self.excludes, user_hook_dirs=self.hookspath)
 
         # TODO Find a better place where to put 'base_library.zip' and when to created it.

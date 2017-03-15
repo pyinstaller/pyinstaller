@@ -43,7 +43,7 @@ from PyInstaller import __main__ as pyi_main
 from PyInstaller.utils.cliutils import archive_viewer
 from PyInstaller.compat import is_darwin, is_win, is_py2, safe_repr, \
   architecture
-from PyInstaller.depend.analysis import initialize_modgraph
+from PyInstaller.depend.analysis import PyiModuleGraph
 from PyInstaller.utils.win32 import winutils
 
 # Globals
@@ -446,7 +446,7 @@ def pyi_modgraph():
     # lead to TRACE messages been written out.
     import PyInstaller.log as logging
     logging.logger.setLevel(logging.DEBUG)
-    return initialize_modgraph()
+    return PyiModuleGraph()
 
 
 # Run by default test as onedir and onefile.
