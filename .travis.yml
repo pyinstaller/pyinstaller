@@ -12,7 +12,6 @@ cache:
 # Try OS X.
 os:
   - linux
-  #- osx
 
 env:
 #  - PYCRYPTO_VERSION=2.4.1
@@ -32,6 +31,12 @@ matrix:
       - python: "nightly"
       # Ignore failures from OS X.
       - os: osx
+  include:
+      # Use generic language for osx
+      - os: osx
+        sudo: required
+        language: generic
+
 
 addons:
   # Ubuntu 12.04 (LTS) packages installed into this Travis-CI container. Since
@@ -62,6 +67,16 @@ before_install:
       | grep -E  '\[(skip travis|travis skip)\]'
       && echo "[skip travis] has been found, exiting."
       && exit 0 || true
+
+  # Perform the manual steps on osx to install python3 and activate venv
+  - >
+      if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
+          brew update;
+          brew install python3;
+          python3 -m venv venv;
+          source venv/bin/activate;
+      fi
+
   # Compile bootloader
   - cd bootloader
   - python waf distclean all
