@@ -9,7 +9,6 @@ cache:
   directories:
     - $HOME/.cache/pip
     - /Users/travis/Library/Caches/pip
-    - /Users/travis/Library/Caches/Homebrew
 
 # Try OS X.
 os:
