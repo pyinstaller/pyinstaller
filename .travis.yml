@@ -15,6 +15,7 @@ os:
   - linux
 
 env:
+  - TESTS_FILTER="tests/unit/ tests/"
 #  - PYCRYPTO_VERSION=2.4.1
 #  - PYCRYPTO_VERSION=2.6.1
 
@@ -37,6 +38,11 @@ matrix:
       - os: osx
         sudo: required
         language: generic
+        env: TESTS_FILTER="tests/unit tests/functional -k \"not tests/functional/test_libraries.py\""
+      - os: osx
+        sudo: required
+        language: generic
+        env: TESTS_FILTER="tests/functional/test_libraries.py"
 
 
 addons:
@@ -62,8 +68,7 @@ addons:
     - libatlas-base-dev
 
 before_install:
-  - SECONDS=0
-  - function timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
+  - SECONDS=0 && function timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
   # Skip build if the commit message contains [skip travis] or [travis skip]
   - >
       echo "$TRAVIS_COMMIT_MESSAGE"
@@ -99,7 +104,7 @@ install:
 script:
   # Run tests and speed them up by sending them to multiple CPUs.
   # Run unitttest first.
-  - timeout $((2400 - $SECONDS)) py.test -n 3 --maxfail 3 tests/unit/ tests/
+  - eval "timeout $((2640 - $SECONDS)) py.test -n 3 --maxfail 3 $TESTS_FILTER"
 
 notifications:
     irc:
