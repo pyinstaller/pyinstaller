@@ -454,6 +454,7 @@ pyi_pylib_start_python(ARCHIVE_STATUS *status)
             return -1;
         }
         VS("LOADER: Pre-init sys.path is %s\n", pypath);
+        PI_Py_GetPath();
         PI_Py_SetPath(pypath_w);
     }
     ;
