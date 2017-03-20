@@ -320,8 +320,8 @@ def main(scripts, name=None, onefile=None,
         # version is >= 2.4.
         try:
             import Crypto
-            is_version_acceptable = LooseVersion('2.4') >= LooseVersion(Crypto.__version__)
-            if not is_version_acceptable:
+            version_acceptable = LooseVersion(Crypto.__version__) >= LooseVersion('2.4')
+            if not version_acceptable:
                 logger.error('PyCrypto version must be >= 2.4, older versions are not supported.')
                 sys.exit(1)
         except ImportError:
