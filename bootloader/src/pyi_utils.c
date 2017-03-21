@@ -183,10 +183,14 @@ pyi_setenv(const char *variable, const char *value)
 
 #ifdef _WIN32
     wchar_t * wvar, *wval;
+
     wvar = pyi_win32_utils_from_utf8(NULL, variable, 0);
     wval = pyi_win32_utils_from_utf8(NULL, value, 0);
 
-    rc = SetEnvironmentVariableW(wvar, wval);
+    // Not sure why, but SetEnvironmentVariableW() didn't work with _wtempnam()
+    // Replaced it with _wputenv_s()
+    rc = _wputenv_s(wvar, wval);
+
     free(wvar);
     free(wval);
 #else
