@@ -558,7 +558,7 @@ def test_option_runtime_tmpdir(pyi_builder):
         if sys.platform == 'win32':
             import win32api
         cwd = os.path.abspath(os.getcwd())
-        if sys.platform == 'win32' and sys.version_info.major == 2 and sys.version_info.minor == 7:
+        if sys.platform == 'win32' and sys.version_info < (3,):
             cwd = win32api.GetShortPathName(cwd)
         runtime_tmpdir = os.path.abspath(sys._MEIPASS)
         # for onedir mode, runtime_tmpdir == cwd
