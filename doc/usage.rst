@@ -134,26 +134,15 @@ The *key-string* is a string of 16 characters which is used to
 encrypt each file of Python byte-code before it is stored in
 the archive inside the executable file.
 
-.. _extracting files:
+.. _defining the extraction location:
 
-Extracting Files Added to Bundle
+Defining the Extraction Location
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-When you bundle to a single executable (see :ref:`Bundling to One File`),
-copies of added files are compressed into the executable, and expanded to the
-``_MEI``\ *xxxxxx* temporary folder before execution.
-
-By default the temporary ``_MEI``\ *xxxxxx* folder will be created in the system
-configured temporary directory. At run time the location of the temporary directory
-can be configured by using the appropriate environment variables for the target
-operating system.
-
-Sometimes you may want to control the location of the temporary directory at
-compile time. You may not want your application to depend on specific properties
-of the target environment, or you may not want to require the end-user to change
-their system configuration. In order to control the location of the temporary
-directory at compile time, the ``--runtime-tmpdir`` allows setting the temporary
-directory when building the application bundle.
+When you bundle to a single executable
+(see :ref:Bundling to One File and :ref:how the one-file program works),
+you sometimes may want to control the location of the temporary directory
+at compile time. This can be done using the --runtime-tmpdir option.
 
 .. _supporting multiple platforms:
 
