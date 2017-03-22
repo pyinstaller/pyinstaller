@@ -8,7 +8,7 @@ sudo: false
 cache:
   directories:
     - $HOME/.cache/pip
-    - /Users/travis/Library/Caches/pip
+    - $HOME/Library/Caches/pip
 
 # Try OS X.
 os:
