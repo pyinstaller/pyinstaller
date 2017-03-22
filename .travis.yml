@@ -37,11 +37,7 @@ matrix:
       - os: osx
         sudo: required
         language: generic
-        env: TEST_LIBRARIES="NO"
-      - os: osx
-        sudo: required
-        language: generic
-        env: TEST_LIBRARIES="YES"
+        python: "3.6"
 
 addons:
   # Ubuntu 12.04 (LTS) packages installed into this Travis-CI container. Since
@@ -97,22 +93,13 @@ install:
 
   # Install dependencies for tests.
   - pip install -U -r tests/requirements-tools.txt
-  - > 
-      if [[ $TEST_LIBRARIES != 'NO' ]]; then
-        pip install -U -r tests/requirements-libraries.txt
-      fi
+  - pip install -U -r tests/requirements-libraries.txt
 
 script:
   # Run tests and speed them up by sending them to multiple CPUs.
   # Run unitttest first.
-  - >
-      if [[ $TEST_LIBRARIES == 'NO' ]]; then
-          timeout $((2760 - $SECONDS)) py.test -n 3 --maxfail 3 tests/unit tests/functional -k "not tests/functional/test_libraries.py"
-      elif [[ $TEST_LIBRARIES == 'YES' ]]; then
-          timeout $((2760 - $SECONDS)) py.test -n 3 --maxfail 3 tests/functional/test_libraries.py
-      else
-          timeout $((2760 - $SECONDS)) py.test -n 3 --maxfail 3 tests/unit tests/functional
-      fi
+  # Timeout before travis does so that the cache is always updated.
+  - timeout $((2760 - $SECONDS)) py.test -n 3 --maxfail 3 tests/unit tests/functional
 
 notifications:
     irc:
