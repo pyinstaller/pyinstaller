@@ -607,7 +607,7 @@ class Analysis(Target):
                 return
 
         # Python lib not in dependencies - try to find it.
-        logger.info('Python library not in binary depedencies. Doing additional searching...')
+        logger.info('Python library not in binary dependencies. Doing additional searching...')
         python_lib = bindepend.get_python_library_path()
         if python_lib:
             logger.debug('Adding Python library to binary dependencies')
