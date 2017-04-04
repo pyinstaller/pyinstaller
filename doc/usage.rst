@@ -99,10 +99,6 @@ UPX is available for most operating systems and can compress
 a large number of executable file formats.
 See the UPX_ home page for downloads, and for the list of
 supported executable formats.
-Development of UPX appears to have ended in September 2013,
-at which time it supported most executable formats except for
-64-bit binaries for Mac OS X.
-UPX has no effect on those.
 
 A compressed executable program is wrapped in UPX
 startup code that dynamically decompresses the program
