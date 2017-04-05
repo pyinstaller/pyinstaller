@@ -130,7 +130,7 @@ try:
                 name = frozen_name
         return name
 
-    class PyInstallerImportError(Exception):
+    class PyInstallerImportError(OSError):
         def __init__(self, name):
             self.msg = ("Failed to load dynlib/dll %r. "
                         "Most probably this dynlib/dll was not found "
