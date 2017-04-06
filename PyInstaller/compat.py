@@ -214,6 +214,9 @@ def architecture():
         else:
             return '32bit'
     else:
+        #arm support
+        if 'arm' in platform.machine():
+            return platform.architecture()[0]+'-arm'
         return platform.architecture()[0]
 
 
