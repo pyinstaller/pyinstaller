@@ -674,3 +674,10 @@ def test_pandas_extension(pyi_builder):
         from pandas.lib import is_float
         assert is_float(1) == 0
         """)
+
+
+@importorskip('h5py')
+def test_h5py(pyi_builder):
+    pyi_builder.test_source("""
+        import h5py
+        """)
