@@ -204,7 +204,7 @@ class FrozenImporter(object):
             imp_lock()
             try:
                 # Unzip zip archive bundled with the executable.
-                self._pyz_archive = ZlibArchiveReader(pyz_filepath)
+                self._pyz_archive = ZlibArchiveReader(unicode(pyz_filepath, "utf-8"))
                 # Verify the integrity of the zip archive with Python modules.
                 # This is already done when creating the ZlibArchiveReader instance.
                 #self._pyz_archive.checkmagic()
