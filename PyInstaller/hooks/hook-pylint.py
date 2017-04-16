@@ -48,11 +48,10 @@
 # pylint/__init__.py file must be included, since submodules must be children of
 # a module.
 
-from PyInstaller.utils.hooks import collect_data_files
-import pylint
+from PyInstaller.utils.hooks import collect_data_files, get_module_file_attribute
 
 datas = (
-         [(pylint.__file__, 'pylint')] +
+         [(get_module_file_attribute('pylint.__init__'), 'pylint')] +
          collect_data_files('pylint.checkers', True) +
          collect_data_files('pylint.reporters', True)
          )
