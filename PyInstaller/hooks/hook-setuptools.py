@@ -14,6 +14,7 @@ hiddenimports = [
     # Test case import/test_zipimport2 fails during importing
     # pkg_resources or setuptools when module not present.
     'distutils.command.build_ext',
+    'setuptools.msvc',
 ]
 
 # Necessary for setuptools on Mac/Unix
