@@ -254,6 +254,7 @@ def _resolveCtypesImports(cbinaries):
     [(libgs.so', ''/usr/lib/libgs.so', 'BINARY')]
 
     """
+    cbinaries = list(set(cbinaries))
     from ctypes.util import find_library
     from ..config import CONF
 
