@@ -136,6 +136,8 @@ _SETUPTOOLS_NAMESPACEPKG_PTHs=(
     "import sys, types, os;pep420 = sys.version_info > (3, 3);p = os.path.join(sys._getframe(1).f_locals['sitedir'], *('",
 )
 
+class InvalidRelativeImportError (ImportError):
+    pass
 
 def _namespace_package_path(fqname, pathnames, path=None):
     """
@@ -734,6 +736,20 @@ class ExcludedModule(BadModule):
 
 class MissingModule(BadModule):
     pass
+
+class InvalidRelativeImport (BadModule):
+    def __init__(self, relative_path, from_name):
+        identifier = relative_path
+        if relative_path.endswith('.'):
+            identifier += from_name
+        else:
+            identifier += '.' + from_name
+        super(InvalidRelativeImport, self).__init__(identifier)
+        self.relative_path = relative_path
+        self.from_name = from_name
+
+    def infoTuple(self):
+        return (self.relative_path, self.from_name)
 
 class Script(Node):
     def __init__(self, filename):
@@ -1549,19 +1565,19 @@ class ModuleGraph(ObjectGraph):
         else:
             if source_package is None:
                 self.msg(2, "Relative import outside of package")
-                raise ImportError("Relative import outside of package (name=%r, parent=%r, level=%r)"%(target_module_partname, source_package, level))
+                raise InvalidRelativeImportError("Relative import outside of package (name=%r, parent=%r, level=%r)"%(target_module_partname, source_package, level))
 
             for i in range(level - 1):
                 if '.' not in source_package.identifier:
                     self.msg(2, "Relative import outside of package")
-                    raise ImportError("Relative import outside of package (name=%r, parent=%r, level=%r)"%(target_module_partname, source_package, level))
+                    raise InvalidRelativeImportError("Relative import outside of package (name=%r, parent=%r, level=%r)"%(target_module_partname, source_package, level))
 
                 p_fqdn = source_package.identifier.rsplit('.', 1)[0]
                 new_parent = self.findNode(p_fqdn)
                 if new_parent is None:
                     #FIXME: Repetition detected. Exterminate. Exterminate.
                     self.msg(2, "Relative import outside of package")
-                    raise ImportError("Relative import outside of package (name=%r, parent=%r, level=%r)"%(target_module_partname, source_package, level))
+                    raise InvalidRelativeImportError("Relative import outside of package (name=%r, parent=%r, level=%r)"%(target_module_partname, source_package, level))
 
                 assert new_parent is not source_package, (
                     new_parent, source_package)
@@ -2232,6 +2248,16 @@ class ModuleGraph(ObjectGraph):
                 target_attr_names=None, level=level, edge_attr=edge_attr)
         # Failing that, defer to custom module importers handling non-standard
         # import schemes (namely, SWIG).
+        except InvalidRelativeImportError as exc:
+            self.msgout(2, "Invalid relative import", level,
+                        target_module_partname, target_attr_names)
+            result = []
+            for sub in target_attr_names or '*':
+                m = self.createNode(InvalidRelativeImport,
+                                    '.' * level + target_module_partname, sub)
+                self._updateReference(source_module, m, edge_data=edge_attr)
+                result.append(m)
+            return result
         except ImportError as msg:
             # If this is an absolute top-level import under Python 3 and if the
             # name to be imported is the caller's name prefixed by "_", this
