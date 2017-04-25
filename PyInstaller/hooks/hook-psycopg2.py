@@ -9,3 +9,4 @@
 
 
 hiddenimports = ['mx.DateTime']
+excludedimports = ['psycopg2.tests']
