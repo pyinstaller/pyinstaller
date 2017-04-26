@@ -2339,6 +2339,24 @@ class ModuleGraph(ObjectGraph):
         # Target module imported above.
         target_module = target_modules[0]
 
+        if (isinstance(target_module, MissingModule) and
+                source_module is not None and
+                target_attr_names is None and
+                level == ABSOLUTE_IMPORT_LEVEL and
+                type(source_module) is SourceModule and
+                target_module_partname ==
+                    '_' + source_module.identifier.rpartition('.')[2] and
+                sys.version_info[0] == 3):
+            # if this possible swig C module was previously imported from
+            # a python module other than its corresponding swig python
+            # module, then it may have been considering a MissingModule.
+            # Try to reimport it now
+            self.removeNode(target_module)
+            target_modules = self._safe_import_hook(
+                target_module_partname, source_module,
+                target_attr_names=None, level=level, edge_attr=edge_attr)
+            target_module = target_modules[0]
+
         if isinstance(edge_attr, DependencyInfo):
             edge_attr = edge_attr._replace(fromlist=True)
 
