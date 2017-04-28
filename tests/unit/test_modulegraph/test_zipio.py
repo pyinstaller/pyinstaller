@@ -170,12 +170,12 @@ class TestModuleGraph (unittest.TestCase):
         self.assertEqual(os.path.getmtime(fn), zipio.getmtime(fn))
 
         fn = os.path.join(TESTDATA, 'zipped.egg/test.txt')
-        # FIXME On travis and appveyor this returns 1300197280.0 (1 hour off)
-        #self.assertIn(zipio.getmtime(fn), (1300193680.0, 1300222480.0))
+        mtime = zipio.getmtime(fn)
+        self.assertEqual(time.mktime((2011, 3, 15, 13, 54, 40, 0, 0, -1)), mtime)
 
         fn = os.path.join(TESTDATA, 'zipped.egg/subdir')
-        # FIXME On travis and appveyor this returns 1300197490. (1 hour off)
-        #self.assertIn(zipio.getmtime(fn), (1300193890.0, 1300222690.0))
+        mtime = zipio.getmtime(fn)
+        self.assertEqual(time.mktime((2011, 3, 15, 13, 58, 10, 0, 0, -1)), mtime)
 
         fn = os.path.join(TESTDATA, 'zipped.egg/subdir4')
         self.assertEqual(zipio.getmtime(fn), os.path.getmtime(os.path.join(TESTDATA, 'zipped.egg')))
