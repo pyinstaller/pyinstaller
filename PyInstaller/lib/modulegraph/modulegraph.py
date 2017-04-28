@@ -2060,6 +2060,11 @@ class ModuleGraph(ObjectGraph):
             try:
                 co = compile(contents, pathname, 'exec', ast.PyCF_ONLY_AST, True)
                 #co = compile(contents, pathname, 'exec', 0, True)
+
+                if sys.version_info[:2] == (3, 5):
+                    # In Python 3.5 some syntax problems with async
+                    # functions are only reported when compiling to bytecode
+                    compile(co, '-', 'exec', 0, True)
             except SyntaxError:
                 co = None
                 cls = InvalidSourceModule
