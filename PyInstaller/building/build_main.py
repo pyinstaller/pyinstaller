@@ -720,6 +720,7 @@ def build(spec, distpath, workpath, clean_build):
         'TkTree': TkTree,
         # Python modules available for .spec.
         'os': os,
+        'sys': sys,
         'pyi_crypto': pyz_crypto,
     }
 
