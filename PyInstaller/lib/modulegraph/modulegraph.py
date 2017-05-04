@@ -2357,11 +2357,9 @@ class ModuleGraph(ObjectGraph):
             target_modules = self._safe_import_hook(
                 target_module_partname, source_module,
                 target_attr_names=None, level=level, edge_attr=edge_attr)
-            # Ensure that the above logic imported exactly one target module.
-            assert len(target_modules) == 1, (
-                'Expected _safe_import_hook() to'
-                'return only one module but received: {}'.format(target_modules))
-            target_module = target_modules[0]
+            # return the output regardless because it would just be
+            # duplicating the processing below
+            return target_modules
 
         if isinstance(edge_attr, DependencyInfo):
             edge_attr = edge_attr._replace(fromlist=True)
