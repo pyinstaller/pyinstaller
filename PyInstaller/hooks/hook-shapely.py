@@ -3,6 +3,9 @@ import os
 from PyInstaller.utils.hooks import get_package_paths
 from PyInstaller import compat
 
+# Necessary when using the vectorized subpackage
+hiddenimports = ['shapely.prepared']
+
 pkb_base, pkg_dir = get_package_paths('shapely')
 
 if compat.is_win:
