@@ -16,8 +16,8 @@ boto3
 botocore
 
 # Prohibit "gevent" wheels, which cause py.test to crash on Travis under OS X.
-gevent             ; sys_platform != "darwin"
 --no-binary gevent ; sys_platform == "darwin"
+gevent             ; sys_platform != "darwin"
 
 pygments
 pylint>=1.5
