@@ -603,14 +603,6 @@ class Node(object):
             self._global_attr_names.remove(attr_name)
 
 
-    def __cmp__(self, other):
-        try:
-            otherIdent = getattr(other, 'graphident')
-        except AttributeError:
-            return NotImplemented
-
-        return cmp(self.graphident, otherIdent)
-
     def __eq__(self, other):
         try:
             otherIdent = getattr(other, 'graphident')
@@ -1190,7 +1182,7 @@ class ModuleGraph(ObjectGraph):
             if not n.identifier.startswith(pkg.identifier + '.'):
                 continue
 
-            iter_out, iter_inc = n.get_edges()
+            iter_out, iter_in = n.get_edges()
             for other in iter_out:
                 if other.identifier.startswith(pkg.identifier + '.'):
                     continue
