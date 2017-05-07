@@ -5,6 +5,7 @@ import argparse
 import textwrap
 from .modulegraph import ModuleGraph
 
+
 def main():
     # Parse command line
     usage = textwrap.dedent('''\

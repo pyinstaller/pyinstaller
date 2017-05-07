@@ -18,6 +18,7 @@ from __future__ import absolute_import, print_function
 import pkg_resources
 
 import ast
+import codecs
 import dis
 import imp
 import marshal
@@ -27,6 +28,7 @@ import sys
 import re
 from collections import deque, namedtuple
 from struct import unpack
+import warnings
 
 from altgraph.ObjectGraph import ObjectGraph
 from altgraph import GraphError
@@ -37,7 +39,6 @@ from ._compat import get_instructions, BytesIO, StringIO, \
      pathname2url, _cOrd, _READ_MODE
 
 
-import codecs
 BOM = codecs.BOM_UTF8.decode('utf-8')
 
 
@@ -129,15 +130,22 @@ _packagePathMap = {}
 # The value is a list of such prefixes as the prefix varies with versions of
 # setuptools.
 _SETUPTOOLS_NAMESPACEPKG_PTHs=(
-    "import sys, types, os;has_mfs = sys.version_info > (3, 5);p = os.path.join(sys._getframe(1).f_locals['sitedir'], *('",
-    "import sys,types,os; p = os.path.join(sys._getframe(1).f_locals['sitedir'], *('",
-    "import sys,new,os; p = os.path.join(sys._getframe(1).f_locals['sitedir'], *('",
-    "import sys, types, os;p = os.path.join(sys._getframe(1).f_locals['sitedir'], *('",
-    "import sys, types, os;pep420 = sys.version_info > (3, 3);p = os.path.join(sys._getframe(1).f_locals['sitedir'], *('",
+    ("import sys, types, os;has_mfs = sys.version_info > (3, 5);"
+         "p = os.path.join(sys._getframe(1).f_locals['sitedir'], *('"),
+    ("import sys,types,os; p = os.path.join("
+         "sys._getframe(1).f_locals['sitedir'], *('"),
+    ("import sys,new,os; p = os.path.join(sys._getframe("
+         "1).f_locals['sitedir'], *('"),
+    ("import sys, types, os;p = os.path.join("
+         "sys._getframe(1).f_locals['sitedir'], *('"),
+    ("import sys, types, os;pep420 = sys.version_info > (3, 3);"
+         "p = os.path.join(sys._getframe(1).f_locals['sitedir'], *('",)
 )
+
 
 class InvalidRelativeImportError (ImportError):
     pass
+
 
 def _namespace_package_path(fqname, pathnames, path=None):
     """
@@ -161,7 +169,8 @@ def _namespace_package_path(fqname, pathnames, path=None):
 
     return path
 
-_strs = re.compile(r'''^\s*["']([A-Za-z0-9_]+)["'],?\s*''') # "<- emacs happy
+_strs = re.compile(r'''^\s*["']([A-Za-z0-9_]+)["'],?\s*''')  # "<- emacs happy
+
 
 def _eval_str_tuple(value):
     """
@@ -188,6 +197,7 @@ def _eval_str_tuple(value):
 
     return tuple(result)
 
+
 def _path_from_importerror(exc, default):
     # This is a hack, but sadly enough the necessary information
     # isn't available otherwise.
@@ -197,12 +207,14 @@ def _path_from_importerror(exc, default):
 
     return default
 
+
 def os_listdir(path):
     """
     Deprecated name
     """
-    warnings.warn("Use zipio.listdir instead of os_listdir",
-            DeprecationWarning)
+    warnings.warn(
+        "Use zipio.listdir instead of os_listdir",
+        DeprecationWarning)
     return zipio.listdir(path)
 
 
@@ -214,26 +226,29 @@ def _code_to_file(co):
         header = imp.get_magic() + (b'\0' * 4)
     return BytesIO(header + marshal.dumps(co))
 
+
 def moduleInfoForPath(path):
     for (ext, readmode, typ) in imp.get_suffixes():
         if path.endswith(ext):
             return os.path.basename(path)[:-len(ext)], readmode, typ
     return None
 
-# A Public interface
-import warnings
-def AddPackagePath(packagename, path):
-    warnings.warn("Use addPackagePath instead of AddPackagePath",
-            DeprecationWarning)
 
+def AddPackagePath(packagename, path):
+    warnings.warn(
+        "Use addPackagePath instead of AddPackagePath",
+        DeprecationWarning)
     addPackagePath(packagename, path)
+
 
 def addPackagePath(packagename, path):
     paths = _packagePathMap.get(packagename, [])
     paths.append(path)
     _packagePathMap[packagename] = paths
 
+
 _replacePackageMap = {}
+
 
 # This ReplacePackage mechanism allows modulefinder to work around the
 # way the _xmlplus package injects itself under the name "xml" into
@@ -244,6 +259,7 @@ def ReplacePackage(oldname, newname):
             DeprecationWarning)
     replacePackage(oldname, newname)
 
+
 def replacePackage(oldname, newname):
     _replacePackageMap[oldname] = newname
 
@@ -252,13 +268,18 @@ def replacePackage(oldname, newname):
 #significantly more fine-grained metadata than PyInstaller will ever require.
 #It consumes a great deal of space (slots or no slots), since we store an
 #instance of this class for each edge of the graph.
-class DependencyInfo (namedtuple("DependencyInfo", ["conditional", "function", "tryexcept", "fromlist"])):
+class DependencyInfo (namedtuple("DependencyInfo",
+                      ["conditional", "function", "tryexcept", "fromlist"])):
     __slots__ = ()
 
     def _merged(self, other):
         if (not self.conditional and not self.function and not self.tryexcept) \
-                or (not other.conditional and not other.function and not other.tryexcept):
-            return DependencyInfo(conditional=False, function=False, tryexcept=False, fromlist=self.fromlist and other.fromlist)
+           or (not other.conditional and not other.function and not other.tryexcept):
+            return DependencyInfo(
+                conditional=False,
+                function=False,
+                tryexcept=False,
+                fromlist=self.fromlist and other.fromlist)
 
         else:
             return DependencyInfo(
@@ -662,7 +683,6 @@ class Node(object):
 
         return self.graphident >= otherIdent
 
-
     def __hash__(self):
         return hash(self.graphident)
 
@@ -731,11 +751,14 @@ class AliasNode(Node):
 class BadModule(Node):
     pass
 
+
 class ExcludedModule(BadModule):
     pass
 
+
 class MissingModule(BadModule):
     pass
+
 
 class InvalidRelativeImport (BadModule):
     def __init__(self, relative_path, from_name):
@@ -751,6 +774,7 @@ class InvalidRelativeImport (BadModule):
     def infoTuple(self):
         return (self.relative_path, self.from_name)
 
+
 class Script(Node):
     def __init__(self, filename):
         super(Script, self).__init__(filename)
@@ -758,6 +782,7 @@ class Script(Node):
 
     def infoTuple(self):
         return (self.filename,)
+
 
 class BaseModule(Node):
     def __init__(self, name, filename=None, path=None):
@@ -768,20 +793,26 @@ class BaseModule(Node):
     def infoTuple(self):
         return tuple(filter(None, (self.identifier, self.filename, self.packagepath)))
 
+
 class BuiltinModule(BaseModule):
     pass
+
 
 class SourceModule(BaseModule):
     pass
 
+
 class InvalidSourceModule(SourceModule):
     pass
+
 
 class CompiledModule(BaseModule):
     pass
 
+
 class InvalidCompiledModule(BaseModule):
     pass
+
 
 class Extension(BaseModule):
     pass
@@ -847,17 +878,20 @@ class RuntimePackage(Package):
 
 #FIXME: Safely removable. We don't actually use this anywhere. After removing
 #this class, remove the corresponding entry from "compat".
-class FlatPackage(BaseModule): # nocoverage
+class FlatPackage(BaseModule):
     def __init__(self, *args, **kwds):
-        warnings.warn("This class will be removed in a future version of modulegraph",
+        warnings.warn(
+            "This class will be removed in a future version of modulegraph",
             DeprecationWarning)
         super(FlatPackage, *args, **kwds)
 
+
 #FIXME: Safely removable. We don't actually use this anywhere. After removing
 #this class, remove the corresponding entry from "compat".
-class ArchiveModule(BaseModule): # nocoverage
+class ArchiveModule(BaseModule):
     def __init__(self, *args, **kwds):
-        warnings.warn("This class will be removed in a future version of modulegraph",
+        warnings.warn(
+            "This class will be removed in a future version of modulegraph",
             DeprecationWarning)
         super(FlatPackage, *args, **kwds)
 
@@ -895,6 +929,7 @@ footer = """
   </body>
 </html>"""
 
+
 def _ast_names(names):
     result = []
     for nm in names:
@@ -916,9 +951,10 @@ def uniq(seq):
 
 
 if sys.version_info[0] == 2:
-    DEFAULT_IMPORT_LEVEL= -1
+    DEFAULT_IMPORT_LEVEL = -1
 else:
-    DEFAULT_IMPORT_LEVEL= 0
+    DEFAULT_IMPORT_LEVEL = 0
+
 
 class _Visitor(ast.NodeVisitor):
     def __init__(self, graph, module):
@@ -987,11 +1023,6 @@ class _Visitor(ast.NodeVisitor):
     visit_AsyncFunctionDef = visit_FunctionDef
 
     def visit_Try(self, node):
-        self._in_tryexcept.append(True)
-        self.generic_visit(node)
-        self._in_tryexcept.pop()
-
-    def visit_ExceptHandler(self, node):
         self._in_tryexcept.append(True)
         self.generic_visit(node)
         self._in_tryexcept.pop()
@@ -1087,7 +1118,7 @@ class ModuleGraph(ObjectGraph):
             except ImportError:
                 ImpImporter = pkg_resources.ImpWrapper
 
-        if sys.version_info[:2] >= (3,3):
+        if sys.version_info[:2] >= (3, 3):
             import importlib.machinery
             ImpImporter = importlib.machinery.FileFinder
 
@@ -1116,7 +1147,8 @@ class ModuleGraph(ObjectGraph):
                                         identifier = ".".join(pkg)
                                         subdir = os.path.join(entry, *pkg)
                                         if os.path.exists(os.path.join(subdir, '__init__.py')):
-                                            # There is a real __init__.py, ignore the setuptools hack
+                                            # There is a real __init__.py,
+                                            # ignore the setuptools hack
                                             continue
 
                                         if identifier in pkgmap:
@@ -1126,7 +1158,6 @@ class ModuleGraph(ObjectGraph):
                                         break
 
         return pkgmap
-
 
     def implyNodeReference(self, node, other, edge_data=None):
         """
@@ -1160,11 +1191,9 @@ class ModuleGraph(ObjectGraph):
         else:
             if isinstance(other, tuple):
                 raise ValueError(other)
-
             others = self._safe_import_hook(other, node, None)
             for other in others:
                 self._updateReference(node, other, edge_data)
-
 
     def getReferences(self, fromnode):
         """
@@ -1175,7 +1204,6 @@ class ModuleGraph(ObjectGraph):
         node = self.findNode(fromnode)
         out_edges, _ = self.get_edges(node)
         return out_edges
-
 
     def getReferers(self, tonode, collapse_missing_modules=True):
         node = self.findNode(tonode)
@@ -1194,14 +1222,12 @@ class ModuleGraph(ObjectGraph):
             for n in in_edges:
                 yield n
 
-
     def hasEdge(self, fromnode, tonode):
         """ Return True iff there is an edge from 'fromnode' to 'tonode' """
         fromnode = self.findNode(fromnode)
         tonode = self.findNode(tonode)
 
         return self.graph.edge_by_node(fromnode, tonode) is not None
-
 
     def foldReferences(self, packagenode):
         """
@@ -1225,7 +1251,7 @@ class ModuleGraph(ObjectGraph):
                     # Ignore circular dependencies
                     self._updateReference(pkg, other, 'pkg-internal-import')
 
-            for other in iter_in:
+            for other in iter_inc:
                 if other.identifier.startswith(pkg.identifier + '.'):
                     # Ignore circular dependencies
                     continue
@@ -1240,11 +1266,10 @@ class ModuleGraph(ObjectGraph):
     #       be taken to ensure that references are correct if multiple packages
     #       are folded and then one of them in unfolded
 
-
     def _updateReference(self, fromnode, tonode, edge_data):
         try:
             ed = self.edgeData(fromnode, tonode)
-        except (KeyError, GraphError): # XXX: Why 'GraphError'
+        except (KeyError, GraphError):  # XXX: Why 'GraphError'
             return self.createReference(fromnode, tonode, edge_data)
 
         if not (isinstance(ed, DependencyInfo) and isinstance(edge_data, DependencyInfo)):
@@ -1252,13 +1277,11 @@ class ModuleGraph(ObjectGraph):
         else:
             self.updateEdgeData(fromnode, tonode, ed._merged(edge_data))
 
-
     def createReference(self, fromnode, tonode, edge_data='direct'):
         """
         Create a reference from fromnode to tonode
         """
         return super(ModuleGraph, self).createReference(fromnode, tonode, edge_data=edge_data)
-
 
     def findNode(self, name, create_nspkg=True):
         """
@@ -1490,7 +1513,6 @@ class ModuleGraph(ObjectGraph):
                 # is necessary.
                 parent = self.findNode(pname)
 
-
         self.msgout(4, "determine_parent ->", parent)
         return parent
 
@@ -1565,19 +1587,25 @@ class ModuleGraph(ObjectGraph):
         else:
             if source_package is None:
                 self.msg(2, "Relative import outside of package")
-                raise InvalidRelativeImportError("Relative import outside of package (name=%r, parent=%r, level=%r)"%(target_module_partname, source_package, level))
+                raise InvalidRelativeImportError(
+                    "Relative import outside of package (name=%r, parent=%r, level=%r)" % (
+                        target_module_partname, source_package, level))
 
             for i in range(level - 1):
                 if '.' not in source_package.identifier:
                     self.msg(2, "Relative import outside of package")
-                    raise InvalidRelativeImportError("Relative import outside of package (name=%r, parent=%r, level=%r)"%(target_module_partname, source_package, level))
+                    raise InvalidRelativeImportError(
+                        "Relative import outside of package (name=%r, parent=%r, level=%r)" % (
+                            target_module_partname, source_package, level))
 
                 p_fqdn = source_package.identifier.rsplit('.', 1)[0]
                 new_parent = self.findNode(p_fqdn)
                 if new_parent is None:
                     #FIXME: Repetition detected. Exterminate. Exterminate.
                     self.msg(2, "Relative import outside of package")
-                    raise InvalidRelativeImportError("Relative import outside of package (name=%r, parent=%r, level=%r)"%(target_module_partname, source_package, level))
+                    raise InvalidRelativeImportError(
+                        "Relative import outside of package (name=%r, parent=%r, level=%r)" % (
+                            target_module_partname, source_package, level))
 
                 assert new_parent is not source_package, (
                     new_parent, source_package)
@@ -1650,7 +1678,8 @@ class ModuleGraph(ObjectGraph):
         submodule = package
         while submodule_name:
             i = submodule_name.find('.')
-            if i < 0: i = len(submodule_name)
+            if i < 0:
+                i = len(submodule_name)
             head, submodule_name = submodule_name[:i], submodule_name[i+1:]
             mname = "%s.%s" % (submodule.identifier, head)
             submodule = self._safe_import_module(head, mname, submodule)
@@ -1827,13 +1856,9 @@ class ModuleGraph(ObjectGraph):
     def _find_all_submodules(self, m):
         if not m.packagepath:
             return
-
-        # TODO: Unused and hence safely removable.
         # 'suffixes' used to be a list hardcoded to [".py", ".pyc", ".pyo"].
         # But we must also collect Python extension modules - although
         # we cannot separate normal dlls from Python extensions.
-        # suffixes = [triple[0] for triple in imp.get_suffixes()]
-
         for path in m.packagepath:
             try:
                 names = zipio.listdir(path)
@@ -1841,7 +1866,8 @@ class ModuleGraph(ObjectGraph):
                 self.msg(2, "can't list directory", path)
                 continue
             for info in (moduleInfoForPath(p) for p in names):
-                if info is None: continue
+                if info is None:
+                    continue
                 if info[0] != '__init__':
                     yield info[0]
 
@@ -1875,7 +1901,9 @@ class ModuleGraph(ObjectGraph):
         if trg_module is not None and not (
            isinstance(trg_module, AliasNode) and
            trg_module.identifier == src_module_name):
-            raise ValueError('Target module "%s" already imported as "%s".' % (trg_module_name, trg_module))
+            raise ValueError(
+                'Target module "%s" already imported as "%s".' % (
+                    trg_module_name, trg_module))
 
         # See findNode() for details.
         self.lazynodes[trg_module_name] = Alias(src_module_name)
@@ -1905,7 +1933,7 @@ class ModuleGraph(ObjectGraph):
         if module_added is None:
             self.addNode(module)
         else:
-            assert module == module_added, 'Newly added module "%s" != previously added module "%s".' % (str(module), str(module_added))
+            assert module == module_added, 'New module %r != previous %r.' % (module, module_added)
 
         # If this module has a previously added parent, reference this module to
         # its parent and add this module to its parent's namespace.
@@ -2059,8 +2087,6 @@ class ModuleGraph(ObjectGraph):
 
             try:
                 co = compile(contents, pathname, 'exec', ast.PyCF_ONLY_AST, True)
-                #co = compile(contents, pathname, 'exec', 0, True)
-
                 if sys.version_info[:2] == (3, 5):
                     # In Python 3.5 some syntax problems with async
                     # functions are only reported when compiling to bytecode
@@ -2083,7 +2109,7 @@ class ModuleGraph(ObjectGraph):
                 cls = InvalidCompiledModule
             else:
                 fp.read(4)
-                if sys.version_info >= (3,4):
+                if sys.version_info >= (3, 4):
                     fp.read(4)
                 try:
                     co = marshal.loads(fp.read())
@@ -2253,7 +2279,7 @@ class ModuleGraph(ObjectGraph):
                 target_attr_names=None, level=level, edge_attr=edge_attr)
         # Failing that, defer to custom module importers handling non-standard
         # import schemes (namely, SWIG).
-        except InvalidRelativeImportError as exc:
+        except InvalidRelativeImportError:
             self.msgout(2, "Invalid relative import", level,
                         target_module_partname, target_attr_names)
             result = []
@@ -2276,7 +2302,8 @@ class ModuleGraph(ObjectGraph):
             #     def swig_import_helper():
             #         ...
             #         try:
-            #             fp, pathname, description = imp.find_module('_csr', [dirname(__file__)])
+            #             fp, pathname, description = imp.find_module('_csr',
+            #                   [dirname(__file__)])
             #         except ImportError:
             #             import _csr
             #             return _csr
@@ -2297,7 +2324,10 @@ class ModuleGraph(ObjectGraph):
             # Only source modules (e.g., ".py"-suffixed files) are SWIG import
             # candidates. All other node types are safely ignorable.
             if is_swig_candidate():
-                self.msg(4, 'SWIG import candidate (name=%r, caller=%r, level=%r)' % (target_module_partname, source_module, level))
+                self.msg(
+                    4,
+                    'SWIG import candidate (name=%r, caller=%r, level=%r)' % (
+                        target_module_partname, source_module, level))
                 is_swig_import = is_swig_wrapper(source_module)
                 if is_swig_import:
                     # Convert this Python 2-compliant implicit relative
@@ -2489,15 +2519,23 @@ class ModuleGraph(ObjectGraph):
                             # If a graph node with this name already exists,
                             # avoid collisions by emitting an error instead.
                             if self.findNode(target_submodule_partname):
-                                self.msg(2, 'SWIG import error: %r basename %r already exists' % (target_submodule_name, target_submodule_partname))
+                                self.msg(
+                                    2,
+                                    'SWIG import error: %r basename %r '
+                                    'already exists' % (
+                                        target_submodule_name,
+                                        target_submodule_partname))
                             else:
-                                self.msg(4, 'SWIG import renamed from %r to %r' % (target_submodule_name, target_submodule_partname))
+                                self.msg(
+                                    4,
+                                    'SWIG import renamed from %r to %r' % (
+                                        target_submodule_name,
+                                        target_submodule_partname))
                                 target_submodule.identifier = (
                                     target_submodule_partname)
                     # If this submodule is unimportable, add a MissingModule.
                     except ImportError as msg:
                         self.msg(2, "ImportError:", str(msg))
-                        #sm = self.createNode(MissingModule, _path_from_importerror(msg, fullname))
                         target_submodule = self.createNode(
                             MissingModule, target_submodule_name)
 
@@ -3128,11 +3166,11 @@ class ModuleGraph(ObjectGraph):
                 mods.append((name, mod))
         scripts.sort()
         mods.sort()
-        scriptnames = [name for name, m in scripts]
+        scriptnames = [sn for sn, m in scripts]
         scripts.extend(mods)
         mods = scripts
 
-        title = "modulegraph cross reference for "  + ', '.join(scriptnames)
+        title = "modulegraph cross reference for " + ', '.join(scriptnames)
         print(header % {"TITLE": title}, file=out)
 
         def sorted_namelist(mods):
@@ -3145,7 +3183,7 @@ class ModuleGraph(ObjectGraph):
                 content = contpl % {"NAME": name,
                                     "TYPE": "<i>(builtin module)</i>"}
             elif isinstance(m, Extension):
-                content = contpl % {"NAME": name,\
+                content = contpl % {"NAME": name,
                                     "TYPE": "<tt>%s</tt>" % m.filename}
             else:
                 url = pathname2url(m.filename or "")
@@ -3170,9 +3208,8 @@ class ModuleGraph(ObjectGraph):
                 # does't supprot them.
                 links = " &#8226; ".join(links)
                 content += imports % {"HEAD": "imported by", "LINKS": links}
-            print(entry % {"NAME": name,"CONTENT": content}, file=out)
+            print(entry % {"NAME": name, "CONTENT": content}, file=out)
         print(footer, file=out)
-
 
     def itergraphreport(self, name='G', flatpackages=()):
         # XXX: Can this be implemented using Dot()?
@@ -3194,23 +3231,23 @@ class ModuleGraph(ObjectGraph):
             #if isinstance(d, (ExcludedModule, MissingModule, BadModule)):
             #    return None
             s = '<f0> ' + type(data).__name__
-            for i,v in enumerate(data.infoTuple()[:1], 1):
-                s += '| <f%d> %s' % (i,v)
-            return {'label':s, 'shape':'record'}
+            for i, v in enumerate(data.infoTuple()[:1], 1):
+                s += '| <f%d> %s' % (i, v)
+            return {'label': s, 'shape': 'record'}
 
 
         def edgevisitor(edge, data, head, tail):
             # XXX: This method nonsense, the edge
             # data is never initialized.
             if data == 'orphan':
-                return {'style':'dashed'}
+                return {'style': 'dashed'}
             elif data == 'pkgref':
-                return {'style':'dotted'}
+                return {'style': 'dotted'}
             return {}
 
         yield 'digraph %s {\n' % (name,)
         attr = dict(rankdir='LR', concentrate='true')
-        cpatt  = '%s="%s"'
+        cpatt = '%s="%s"'
         for item in attr.items():
             yield '\t%s;\n' % (cpatt % item,)
 
@@ -3221,7 +3258,6 @@ class ModuleGraph(ObjectGraph):
                 packageidents[data.identifier] = node
                 inpackages[node] = set([node])
                 packagenodes.add(node)
-
 
         # create sets for subgraph, write out descriptions
         for (node, data, outgoing, incoming) in nodes:
@@ -3247,7 +3283,6 @@ class ModuleGraph(ObjectGraph):
             pkgnode = packageidents.get(ident[:ident.rfind('.')])
             if pkgnode is not None:
                 inside.add(pkgnode)
-
 
         graph = []
         subgraphs = {}
@@ -3303,7 +3338,6 @@ class ModuleGraph(ObjectGraph):
 
         yield '}\n'
 
-
     def graphreport(self, fileobj=None, flatpackages=()):
         if fileobj is None:
             fileobj = sys.stdout
@@ -3317,7 +3351,8 @@ class ModuleGraph(ObjectGraph):
         print("%-15s %-25s %s" % ("Class", "Name", "File"))
         print("%-15s %-25s %s" % ("-----", "----", "----"))
         # Print modules found
-        sorted = [(os.path.basename(mod.identifier), mod) for mod in self.flatten()]
+        sorted = [
+            (os.path.basename(mod.identifier), mod) for mod in self.flatten()]
         sorted.sort()
         for (name, m) in sorted:
             print("%-15s %-25s %s" % (type(m).__name__, name, m.filename or ""))
@@ -3342,14 +3377,16 @@ class ModuleGraph(ObjectGraph):
         code_func = type(co)
 
         if hasattr(co, 'co_kwonlyargcount'):
-            return code_func(co.co_argcount, co.co_kwonlyargcount, co.co_nlocals, co.co_stacksize,
-                         co.co_flags, co.co_code, tuple(consts), co.co_names,
-                         co.co_varnames, new_filename, co.co_name,
-                         co.co_firstlineno, co.co_lnotab,
-                         co.co_freevars, co.co_cellvars)
+            return code_func(
+                        co.co_argcount, co.co_kwonlyargcount, co.co_nlocals,
+                        co.co_stacksize, co.co_flags, co.co_code,
+                        tuple(consts), co.co_names, co.co_varnames,
+                        new_filename, co.co_name, co.co_firstlineno,
+                        co.co_lnotab, co.co_freevars, co.co_cellvars)
         else:
-            return code_func(co.co_argcount, co.co_nlocals, co.co_stacksize,
-                         co.co_flags, co.co_code, tuple(consts), co.co_names,
-                         co.co_varnames, new_filename, co.co_name,
-                         co.co_firstlineno, co.co_lnotab,
-                         co.co_freevars, co.co_cellvars)
+            return code_func(
+                        co.co_argcount, co.co_nlocals, co.co_stacksize,
+                        co.co_flags, co.co_code, tuple(consts), co.co_names,
+                        co.co_varnames, new_filename, co.co_name,
+                        co.co_firstlineno, co.co_lnotab,
+                        co.co_freevars, co.co_cellvars)
