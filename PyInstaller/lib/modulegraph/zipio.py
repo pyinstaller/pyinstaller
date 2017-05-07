@@ -15,8 +15,7 @@ import sys as _sys
 import stat as _stat
 
 _DFLT_DIR_MODE = (
-      _stat.S_IFDIR
-    | _stat.S_IXOTH
+      _stat.S_IXOTH
     | _stat.S_IXGRP
     | _stat.S_IXUSR
     | _stat.S_IROTH
@@ -24,8 +23,7 @@ _DFLT_DIR_MODE = (
     | _stat.S_IRUSR)
 
 _DFLT_FILE_MODE = (
-      _stat.S_IFREG
-    | _stat.S_IROTH
+      _stat.S_IROTH
     | _stat.S_IRGRP
     | _stat.S_IRUSR)
 
@@ -334,7 +332,7 @@ def getmode(path):
     full_path = path
     path, rest = _locate(path)
     if not rest:
-        return _os.stat(path).st_mode
+        return _stat.S_IMODE(_os.stat(path).st_mode)
 
     zf = None
     try:
@@ -367,7 +365,7 @@ def getmode(path):
 
         # The mode is stored without file-type in external_attr.
         if (info.external_attr >> 16) != 0:
-            return _stat.S_IFREG | (info.external_attr >> 16)
+            return _stat.S_IMODE(info.external_attr >> 16)
         else:
             return _DFLT_FILE_MODE
 

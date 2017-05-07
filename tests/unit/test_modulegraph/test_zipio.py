@@ -2,6 +2,7 @@ from PyInstaller.lib.modulegraph import zipio
 import os
 import time
 import sys
+import stat
 
 if sys.version_info[:2] <= (2,6):
     import unittest2 as unittest
@@ -161,6 +162,30 @@ class TestModuleGraph (unittest.TestCase):
         self.assertRaises(OSError, zipio.readlink, os.path.join(TESTDATA, 'zipped.egg', 'subdir4'))
         self.assertRaises(OSError, zipio.readlink, os.path.join(TESTDATA, 'zipped.egg', 'no-such-file'))
         self.assertRaises(OSError, zipio.readlink, os.path.join(TESTDATA, 'zipped.egg', 'subdir/no-such-file'))
+
+    def test_getmode(self):
+        fn = os.path.join(TESTDATA, 'test.txt')
+        self.assertEqual(stat.S_IMODE(os.stat(fn).st_mode), zipio.getmode(fn))
+
+        # XXX: Not too happy about this...
+        fn = os.path.join(TESTDATA, 'zipped.egg')
+        self.assertEqual(stat.S_IMODE(os.stat(fn).st_mode), zipio.getmode(fn))
+
+
+        fn = os.path.join(TESTDATA, 'zipped.egg/test.txt')
+        mode = zipio.getmode(fn)
+        self.assertEqual(mode, 0o644)
+
+        fn = os.path.join(TESTDATA, 'zipped.egg/subdir')
+        mode = zipio.getmode(fn)
+        self.assertEqual(mode, 0o755)
+
+        fn = os.path.join(TESTDATA, 'zipped.egg/subdir4')
+        self.assertEqual(zipio.getmode(fn), stat.S_IMODE(zipio._DFLT_DIR_MODE))
+
+        self.assertRaises(IOError, zipio.getmode, os.path.join(TESTDATA, 'no-file'))
+        self.assertRaises(IOError, zipio.getmode, os.path.join(TESTDATA, 'zipped.egg/no-file'))
+
 
     def test_getmtime(self):
         fn = os.path.join(TESTDATA, 'test.txt')
