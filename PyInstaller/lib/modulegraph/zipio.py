@@ -364,18 +364,14 @@ def getmode(path):
             return _DFLT_DIR_MODE
 
         # The mode is stored without file-type in external_attr.
-        if (info.external_attr >> 16) != 0:
+        if (info.external_attr >> 16) != 0: # pragma: no-cover
             return _stat.S_IMODE(info.external_attr >> 16)
         else:
             return _DFLT_FILE_MODE
 
-
-    except KeyError:
+    finally:
         if zf is not None:
             zf.close()
-        raise IOError(
-            _errno.ENOENT, full_path,
-            "No such file or directory")
 
 def getmtime(path):
     full_path = path
@@ -416,9 +412,6 @@ def getmtime(path):
 
         return _time.mktime(info.date_time + (0, 0, -1))
 
-    except KeyError:
+    finally:
         if zf is not None:
             zf.close()
-        raise IOError(
-            _errno.ENOENT, full_path,
-            "No such file or directory")
