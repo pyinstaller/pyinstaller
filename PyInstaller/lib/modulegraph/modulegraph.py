@@ -3350,12 +3350,8 @@ class ModuleGraph(ObjectGraph):
         print()
         print("%-15s %-25s %s" % ("Class", "Name", "File"))
         print("%-15s %-25s %s" % ("-----", "----", "----"))
-        # Print modules found
-        sorted = [
-            (os.path.basename(mod.identifier), mod) for mod in self.flatten()]
-        sorted.sort()
-        for (name, m) in sorted:
-            print("%-15s %-25s %s" % (type(m).__name__, name, m.filename or ""))
+        for m in sorted(self.flatten(), key=lambda n: n.identifier):
+            print("%-15s %-25s %s" % (type(m).__name__, m.identifier, m.filename or ""))
 
     def _replace_paths_in_code(self, co):
         new_filename = original_filename = os.path.normpath(co.co_filename)
