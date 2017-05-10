@@ -338,29 +338,3 @@ def find_modules(
     )
     find_needed_modules(mf, scripts, includes, packages)
     return mf
-
-
-def test():
-    if '-g' in sys.argv[1:]:
-        sys.argv.remove('-g')
-        dograph = True
-    else:
-        dograph = False
-    if '-x' in sys.argv[1:]:
-        sys.argv.remove('-x')
-        doxref = True
-    else:
-        doxref = False
-
-    scripts = sys.argv[1:] or [__file__]
-    mf = find_modules(scripts=scripts)
-    if doxref:
-        mf.create_xref()
-    elif dograph:
-        mf.graphreport()
-    else:
-        mf.report()
-
-
-if __name__ == '__main__':
-    test()
