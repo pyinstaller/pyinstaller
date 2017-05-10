@@ -13,7 +13,7 @@ Hook for Cryptodome module: https://pypi.python.org/pypi/pycryptodomex
 Tested with Cryptodomex 3.4.2, Python 2.7 & 3.5, Windows
 """
 
-import os.path
+import os
 import glob
 
 from PyInstaller.compat import EXTENSION_SUFFIXES
