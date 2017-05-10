@@ -16,13 +16,26 @@ import subprocess
 
 from PyInstaller.config import CONF
 from PyInstaller.compat import (
-    exec_command_stdout, is_darwin, is_win, is_linux, open_file, which)
+    architecture, exec_command_stdout, is_darwin, is_win, is_linux, open_file, which)
 from PyInstaller.utils.hooks import (
     collect_glib_translations, get_gi_typelibs, get_gi_libdir, logger)
 
 # If the "gdk-pixbuf-query-loaders" command is not in the current ${PATH}, GDK
 # and thus GdkPixbuf is unavailable. Return with a non-fatal warning.
-if which('gdk-pixbuf-query-loaders') is None:
+gdk_pixbuf_query_loaders = None
+
+if architecture() == '64bit':
+    # CentOS/Fedora package as -64
+    cmds = ['gdk-pixbuf-query-loaders-64', 'gdk-pixbuf-query-loaders']
+else:
+    cmds = ['gdk-pixbuf-query-loaders']
+
+for cmd in cmds:
+    gdk_pixbuf_query_loaders = which(cmd)
+    if gdk_pixbuf_query_loaders is not None:
+        break
+
+if gdk_pixbuf_query_loaders is None:
     logger.warning(
         '"hook-gi.repository.GdkPixbuf" ignored, since GDK not found '
         '(i.e., "gdk-pixbuf-query-loaders" not in $PATH).'
@@ -64,7 +77,7 @@ else:
             #
             # * Under Python 2.7, "cachedata" will be a decoded "unicode" object.
             # * Under Python 3.x, "cachedata" will be a decoded "str" object.
-            cachedata = exec_command_stdout('gdk-pixbuf-query-loaders')
+            cachedata = exec_command_stdout(gdk_pixbuf_query_loaders)
 
             cd = []
             prefix = '"' + os.path.join(libdir, 'gdk-pixbuf-2.0', '2.10.0')
@@ -90,7 +103,7 @@ else:
         # command's encoded byte output is written as is without being decoded.
         else:
             with open_file(cachefile, 'wb') as fp:
-                fp.write(subprocess.check_output('gdk-pixbuf-query-loaders'))
+                fp.write(subprocess.check_output(gdk_pixbuf_query_loaders))
 
         # Bundle this loader cache with this frozen application.
         datas.append((cachefile, 'lib/gdk-pixbuf'))
