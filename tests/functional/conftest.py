@@ -133,6 +133,7 @@ class AppBuilder(object):
         """
         Test a Python script that is referenced in the supplied .spec file.
         """
+        __tracebackhide__ = True
         specfile = os.path.join(_SPEC_DIR, specfile)
         # 'test_script' should handle .spec properly as script.
         return self.test_script(specfile, *args, **kwargs)
@@ -162,6 +163,7 @@ class AppBuilder(object):
         encoded file with the correct '# -*- coding: utf-8 -*-' marker.
 
         """
+        __tracebackhide__ = True
         if is_py2:
             if isinstance(source, str):
                 source = source.decode('UTF-8')
@@ -195,6 +197,7 @@ class AppBuilder(object):
         :param runtime: Time in seconds how long to keep executable running.
         :param toc_log: List of modules that are expected to be bundled with the executable.
         """
+        __tracebackhide__ = True
 
         def marker(line):
             # Print some marker to stdout and stderr to make it easier
@@ -238,6 +241,7 @@ class AppBuilder(object):
 
         :return: Exit code of the executable.
         """
+        __tracebackhide__ = True
         # TODO implement runtime - kill the app (Ctrl+C) when time times out
         exes = self._find_executables(name)
         # Empty list means that PyInstaller probably failed to create any executable.
@@ -437,6 +441,11 @@ class AppBuilder(object):
 # for every executable.
 @pytest.fixture(scope='session')
 def pyi_modgraph():
+    # Explicitly set the log level since the plugin `pytest-catchlog` (un-)
+    # sets the root logger's level to NOTSET for the setup phase, which will
+    # lead to TRACE messages been written out.
+    import PyInstaller.log as logging
+    logging.logger.setLevel(logging.DEBUG)
     return initialize_modgraph()
 
 

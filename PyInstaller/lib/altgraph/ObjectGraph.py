@@ -6,9 +6,9 @@ A graph of objects that have a "graphident" attribute.
 graphident is the key for the object in the graph
 """
 
-from PyInstaller.lib.altgraph import GraphError
-from PyInstaller.lib.altgraph.Graph import Graph
-from PyInstaller.lib.altgraph.GraphUtil import filter_stack
+from . import GraphError
+from .Graph import Graph
+from .GraphUtil import filter_stack
 
 class ObjectGraph(object):
     """
@@ -69,6 +69,8 @@ class ObjectGraph(object):
             for tpl in (self.graph.describe_edge(e) for e in lst):
                 ident = tpl[n]
 
+                # FIXME: This behaviour differs from upstream modulegraph, see
+                # test_imports.TestModuleGraphImport.testGraphStructure.
                 # If the identifier for the node at the other end of this edge
                 # is the current graph, skip this node. For example, this occurs
                 # for edges connecting to MissingModule nodes (e.g., the

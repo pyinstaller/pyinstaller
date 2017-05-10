@@ -36,11 +36,14 @@ macholib
     # package-resource.
     __version__ = '1.7.0'
 
+altgraph
+----------
+
 - add fixed version string to ./altgraph/__init__.py::
 
     # For PyInstaller/lib/ define the version here, since there is no
     # package-resource.
-    __version__ = '0.12'
+    __version__ = '0.13'
 
 
 modulegraph
@@ -50,12 +53,10 @@ https://bitbucket.org/ronaldoussoren/modulegraph/downloads
 
 - TODO Use official modulegraph version when following issue is resolved and pull request merged
   https://bitbucket.org/ronaldoussoren/modulegraph/issues/28/__main__-module-being-analyzed-for-wheel
-  https://bitbucket.org/ronaldoussoren/modulegraph/pull-requests/12/
-  https://bitbucket.org/ronaldoussoren/modulegraph/pull-requests/13/
 
 - add fixed version string to ./modulegraph/__init__.py::
 
     # For PyInstaller/lib/ define the version here, since there is no
     # package-resource.
-    __version__ = '0.12.1'
+    __version__ = '0.13'
 

@@ -14,8 +14,6 @@ import argparse
 import PyInstaller.log
 
 def run():
-    PyInstaller.log.init()
-
     parser = argparse.ArgumentParser()
     parser.add_argument('info_file', metavar='info-file',
                         help="text file containing version info")

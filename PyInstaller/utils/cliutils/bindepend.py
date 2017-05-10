@@ -24,8 +24,6 @@ import PyInstaller.log
 
 
 def run():
-    PyInstaller.log.init()
-
     parser = argparse.ArgumentParser()
     PyInstaller.log.__add_options(parser)
     parser.add_argument('filenames', nargs='+',

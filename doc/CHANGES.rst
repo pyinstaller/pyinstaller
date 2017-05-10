@@ -6,6 +6,10 @@ Changelog for PyInstaller
 
 - Add support for Python 3.6 (thanks to xoviat).
 
+- (Bootloader) Linux bootloaders are now officially no LSB binaries. This was
+  already the case since release 3.1, but documented the other way round. Also
+  build defaults to non-LSB binaries now. (#2369)
+
 
 3.2.1 (2017-01-15)
 ------------------

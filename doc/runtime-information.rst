@@ -105,7 +105,7 @@ LD_LIBRARY_PATH / LIBPATH considerations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This environment variable is used to discover libraries, it is the library
-search path - on Linux and *BSD `LD_LIBRARY_PATH` is used, on AIX it is
+search path - on Linux and \*BSD `LD_LIBRARY_PATH` is used, on AIX it is
 `LIBPATH`.
 
 PyInstaller saves the original value to `*_ORIG`, then modifies the search

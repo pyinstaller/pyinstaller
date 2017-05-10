@@ -184,6 +184,12 @@ class ArchiveReader(object):
     ##  def get_code(self, parent, modname, fqname):
     ##      pass
 
+    def is_package(self, name):
+        ispkg, pos = self.toc.get(name, (0, None))
+        if pos is None:
+            return None
+        return bool(ispkg)
+
     ####### Core method - Override as needed  #########
     def extract(self, name):
         """
@@ -338,6 +344,12 @@ class ZlibArchiveReader(ArchiveReader):
             self.cipher = Cipher()
         except ImportError:
             self.cipher = None
+
+    def is_package(self, name):
+        (typ, pos, length) = self.toc.get(name, (0, None, 0))
+        if pos is None:
+            return None
+        return typ == PYZ_TYPE_PKG
 
     def extract(self, name):
         (typ, pos, length) = self.toc.get(name, (0, None, 0))

@@ -104,8 +104,8 @@ def build_bootloader(boxname)
           break
        fi
     done
-    python ./waf --no-lsb all
-    python ./waf --no-lsb all --target-arch=32bit
+    python ./waf all
+    python ./waf all --target-arch=32bit
   EOF
 end
 

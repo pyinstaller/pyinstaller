@@ -7,16 +7,18 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+import ast
 import os
 import os.path
 import sys
 import py_compile
+import textwrap
 import zipfile
 
 import pytest
 
 from PyInstaller.lib.modulegraph import modulegraph
-from PyInstaller.utils.tests import skipif, skipif_win, is_py2, is_py3
+from PyInstaller.utils.tests import xfail, skipif, skipif_win, is_py2, is_py3
 
 def _import_and_get_node(tmpdir, module_name, path=None):
     script = tmpdir.join('script.py')
@@ -213,3 +215,142 @@ def test_symlinks(tmpdir):
 
     node = _import_and_get_node(base_dir, 'p1.p2')
     assert isinstance(node, modulegraph.SourceModule)
+
+
+@xfail(reason="FIXME: modulegraph does not use correct order")
+def test_import_order_1(tmpdir):
+    # Ensure modulegraph processes modules in the same order as Python does.
+
+    class MyModuleGraph(modulegraph.ModuleGraph):
+        def _load_module(self, fqname, fp, pathname, info):
+            if not record or record[-1] != fqname:
+                record.append(fqname) # record non-consecutive entries
+            return super(MyModuleGraph, self)._load_module(fqname, fp,
+                                                           pathname, info)
+
+    record = []
+
+    for filename, content in (
+        ('a/',     ' from . import c, d'),
+        ('a/c',            '#'),
+        ('a/d/',    'from . import f, g, h'),
+        ('a/d/f/',  'from . import j, k'),
+        ('a/d/f/j',         '#'),
+        ('a/d/f/k',         '#'),
+        ('a/d/g/',   'from . import l, m'),
+        ('a/d/g/l',         '#'),
+        ('a/d/g/m',         '#'),
+        ('a/d/h',           '#'),
+        ('b/',      'from . import e'),
+        ('b/e/',    'from . import i'),
+        ('b/e/i',           '#')):
+        if filename.endswith('/'): filename += '__init__'
+        tmpdir.join(*(filename+'.py').split('/')).ensure().write(content)
+
+    script = tmpdir.join('script.py')
+    script.write('import a, b')
+    mg = MyModuleGraph([str(tmpdir)])
+    mg.run_script(str(script))
+
+    # This is the order Python imports these modules given that script.
+    expected = ['a',
+                    'a.c', 'a.d', 'a.d.f', 'a.d.f.j', 'a.d.f.k',
+                    'a.d.g', 'a.d.g.l', 'a.d.g.m',
+                    'a.d.h',
+               'b', 'b.e', 'b.e.i']
+    assert record == expected
+
+
+def test_import_order_2(tmpdir):
+    # Ensure modulegraph processes modules in the same order as Python does.
+
+    class MyModuleGraph(modulegraph.ModuleGraph):
+        def _load_module(self, fqname, fp, pathname, info):
+            if not record or record[-1] != fqname:
+                record.append(fqname) # record non-consecutive entries
+            return super(MyModuleGraph, self)._load_module(fqname, fp,
+                                                           pathname, info)
+
+    record = []
+
+    for filename, content in (
+        ('a/',      '#'),
+        ('a/c/',    '#'),
+        ('a/c/g',   '#'),
+        ('a/c/h',   'from . import g'),
+        ('a/d/',    '#'),
+        ('a/d/i',   'from ..c import h'),
+        ('a/d/j/',  'from .. import i'),
+        ('a/d/j/o', '#'),
+        ('b/',      'from .e import k'),
+        ('b/e/',    'import a.c.g'),
+        ('b/e/k',   'from .. import f'),
+        ('b/e/l',   'import a.d.j'),
+        ('b/f/',    '#'),
+        ('b/f/m',   '#'),
+        ('b/f/n/',  '#'),
+        ('b/f/n/p', 'from ...e import l')):
+        if filename.endswith('/'): filename += '__init__'
+        tmpdir.join(*(filename+'.py').split('/')).ensure().write(content)
+
+    script = tmpdir.join('script.py')
+    script.write('import b.f.n.p')
+    mg = MyModuleGraph([str(tmpdir)])
+    mg.run_script(str(script))
+
+    # This is the order Python imports these modules given that script.
+    expected = ['b', 'b.e',
+                'a', 'a.c', 'a.c.g',
+                'b.e.k',
+                'b.f', 'b.f.n', 'b.f.n.p',
+                'b.e.l',
+                'a.d', 'a.d.j', 'a.d.i', 'a.c.h']
+    assert record == expected
+    print(record)
+
+
+#---- scan bytecode
+
+def __scan_code(code, use_ast, monkeypatch):
+    mg = modulegraph.ModuleGraph()
+    # _process_imports would set _deferred_imports to None
+    monkeypatch.setattr(mg, '_process_imports', lambda m: None)
+    module = mg.createNode(modulegraph.Script, 'dummy.py')
+
+    code = textwrap.dedent(code)
+    if use_ast:
+        co_ast = compile(code, 'dummy', 'exec', ast.PyCF_ONLY_AST)
+        co = compile(co_ast, 'dummy', 'exec')
+    else:
+        co_ast = None
+        co = compile(code, 'dummy', 'exec')
+    mg._scan_code(module, co)
+    return module
+
+
+@pytest.mark.parametrize("use_ast", (True, False))
+def test_scan_code__empty(monkeypatch, use_ast):
+    code = "# empty code"
+    module = __scan_code(code, use_ast, monkeypatch)
+    assert len(module._deferred_imports) == 0
+    assert len(module._global_attr_names) == 0
+
+
+@pytest.mark.parametrize("use_ast", (True, False))
+def test_scan_code__basic(monkeypatch, use_ast):
+    code = """
+    import os.path
+    from sys import maxint, exitfunc, platform
+    del exitfunc
+    def testfunc():
+        import shutil
+    """
+    module = __scan_code(code, use_ast, monkeypatch)
+    assert len(module._deferred_imports) == 3
+    assert ([di[1][0] for di in module._deferred_imports]
+            == ['os.path', 'sys', 'shutil'])
+    assert module.is_global_attr('maxint')
+    assert module.is_global_attr('os')
+    assert module.is_global_attr('platform')
+    assert not module.is_global_attr('shutil') # not imported at module level
+    assert not module.is_global_attr('exitfunc')

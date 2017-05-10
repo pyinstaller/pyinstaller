@@ -232,8 +232,6 @@ class ZlibArchive(pyimod02_archive.ZlibArchiveReader):
 
 
 def run():
-    PyInstaller.log.init()
-
     parser = argparse.ArgumentParser()
     parser.add_argument('-l', '--log',
                         default=False,

@@ -85,56 +85,29 @@ This will produce the bootloader executables ``run*.exe``
 in the ``.\PyInstaller\bootloader\YOUR_OS`` directory.
 
 
-Building for LINUX
-~~~~~~~~~~~~~~~~~~~~~
+Building Linux Standard Base (LSB) compliant binaries
+============================================================
 
-By default, the bootloaders on Linux are LSB binaries.
+By default, the bootloaders on Linux are ”normal“, non-LSB binaries, which
+should be fine for all GNU/Linux distributions.
 
-LSB is a set of open standards that should increase compatibility among Linux
-distributions.
-|PyInstaller| produces a bootloader as an LSB binary in order
-to increase compatibility for packaged applications among distributions.
+If for some reason you want to build Linux Standard Base (LSB) compliant
+binaries [*]_, you can do so by specifying ``--lsb`` on the waf command line,
+as follows::
 
-*Note:* LSB version 4.0 is required for successfull building of |bootloader|.
+       python waf distclean all --lsb
 
-On Debian- and Ubuntu-based distros, you can install LSB 4.0 tools by adding
-the following repository to the sources.list file::
+LSB version 4.0 is required for successfull building of |bootloader|. Please
+refer to ``python waf --help`` for further options related to LSB building.
 
-        deb http://ftp.linux-foundation.org/pub/lsb/repositories/debian lsb-4.0 main
-
-then after having update the apt repository::
-
-        sudo apt-get update
-
-you can install LSB 4.0::
-
-        sudo apt-get install lsb lsb-build-cc
-
-Most other distributions contain only LSB 3.0 in their software
-repositories and thus LSB build tools 4.0 must be downloaded by hand.
-From Linux Foundation download `LSB sdk 4.0`_ for your architecture.
-
-Unpack it by::
-
-        tar -xvzf lsb-sdk-4.0.3-1.ia32.tar.gz
-
-To install it run::
-
-        cd lsb-sdk
-        ./install.sh
+The bootloaders will still end up in :file:`support/loader/{YOUR_OS}/run`.
 
 
-After having installed the LSB tools, you can follow the standard building
-instructions.
-
-*NOTE:* if for some reason you want to avoid LSB compilation, you can
-do so by specifying --no-lsb on the waf command line, as follows::
-
-       python waf configure --no-lsb build install
-
-This will also produce ``support/loader/YOUR_OS/run``,
-``support/loader/YOUR_OS/run_d``, ``support/loader/YOUR_OS/runw`` and
-``support/loader/YOUR_OS/runw_d``, but they will not be LSB binaries.
+.. [*] Linux Standard Base (LSB) is a set of open standards that should
+       increase compatibility among Linux distributions. Unfortunalty it is
+       not widely adopted and both Debian and Ubuntu dropped support for LSB
+       in autumn 2015. Thus |PyInstaller| bootloader are no longer provided
+       as LSB binary.
 
 
 .. include:: _common_definitions.txt

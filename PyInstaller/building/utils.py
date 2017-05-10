@@ -455,14 +455,16 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
 
         # Normalize paths.
         src_root_path_or_glob = os.path.normpath(src_root_path_or_glob)
-
-        # List of the absolute paths of all source paths matching the
-        # current glob.
-        src_root_paths = glob.glob(src_root_path_or_glob)
+        if os.path.isfile(src_root_path_or_glob):
+            src_root_paths = [src_root_path_or_glob]
+        else:
+            # List of the absolute paths of all source paths matching the
+            # current glob.
+            src_root_paths = glob.glob(src_root_path_or_glob)
 
         if not src_root_paths:
-            raise FileNotFoundError(
-                'Path or glob "%s" not found or matches no files.' % (
+            raise SystemExit(
+                'Unable to find "%s" when adding binary and data files.' % (
                 src_root_path_or_glob))
 
         for src_root_path in src_root_paths:

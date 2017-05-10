@@ -29,9 +29,9 @@ In short::
 
   ./waf all
 
-or::
+or for building a Linux Standard Base (LSB) compliant bootloader::
 
-  ./waf --no-lsb all
+  ./waf --lsb all
 
 
 Building for other platforms

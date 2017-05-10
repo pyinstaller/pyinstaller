@@ -92,6 +92,7 @@ _win_includes = set([
     r'api-ms-win-core.*',
     r'api-ms-win-crt.*',
     r'ucrtbase\.dll',
+    r'vcruntime140\.dll',
 
     # Allow pythonNN.dll, pythoncomNN.dll, pywintypesNN.dll
     r'py(?:thon(?:com(?:loader)?)?|wintypes)\d+\.dll',
