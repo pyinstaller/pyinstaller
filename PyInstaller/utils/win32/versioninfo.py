@@ -347,8 +347,6 @@ class StringFileInfo(object):
             pad = '\000\000'
         tmp = ''.join([kid.toRaw() for kid in self.kids])
         sublen = sublen + len(pad) + len(tmp)
-        if tmp[-2:] == '\000\000':
-            sublen = sublen - 2
         return (struct.pack('hhh', sublen, vallen, typ)
                 + getRaw(self.name) + '\000\000' + pad + tmp)
 
@@ -398,8 +396,6 @@ class StringTable:
             tmp.append(raw)
         tmp = ''.join(tmp)
         sublen += len(tmp)
-        if tmp[-2:] == '\000\000':
-            sublen -= 2
         return (struct.pack('hhh', sublen, vallen, typ)
                 + getRaw(self.name) + '\000\000' + tmp)
 
@@ -446,13 +442,13 @@ class StringStruct:
         if sublen % 4:
             pad = '\000\000'
         sublen = sublen + len(pad) + vallen
-        abcd = (struct.pack('hhh', sublen, vallen, typ)
+        abcd = (struct.pack('hhh', sublen, vallen / 2, typ)
                 + raw_name + '\000\000' + pad
                 + raw_val + '\000\000')
         return abcd
 
     def __unicode__(self, indent=''):
-        return u"StringStruct(u'%s', u'%s')" % (self.name, self.val) 
+        return u"StringStruct(u'%s', u'%s')" % (self.name, self.val)
 
 
 def parseCodePage(data, i, limit):
