@@ -109,34 +109,30 @@ def gir_library_path_fix(path):
     # 'PyInstaller.config' cannot be imported as other top-level modules.
     from ...config import CONF
 
-    # if typelib file exist is not necessary to check gir file.
     path = os.path.abspath(path)
-    if os.path.exists(path):
-        return path, 'gi_typelibs'
-        
-    common_path = os.path.commonprefix([base_prefix, path])
-    # on windows the gir file is not in the same directory as linux.
-    if is_win:
-        common_path = os.path.join([common_path, "Lib", "site-packages", "gnome"])
-    gir_path = os.path.join(common_path, 'share', 'gir-1.0')
 
-    typelib_name = os.path.basename(path)
-    gir_name = os.path.splitext(typelib_name)[0] + '.gir'
-
-    gir_file = os.path.join(gir_path, gir_name)
-
-    if not os.path.exists(gir_path):
-        logger.error('Unable to find gir directory: %s.\n'
-                     'Try installing your platforms gobject-introspection '
-                     'package.', gir_path)
-        return None
-    if not os.path.exists(gir_file):
-        logger.error('Unable to find gir file: %s.\n'
-                     'Try installing your platforms gobject-introspection '
-                     'package.', gir_file)
-        return None
-
+    # On OSX we need to recompile the GIR files to reference the loader path,
+    # but this is not necessary on other platforms
     if is_darwin:
+        common_path = os.path.commonprefix([base_prefix, path])
+        gir_path = os.path.join(common_path, 'share', 'gir-1.0')
+
+        typelib_name = os.path.basename(path)
+        gir_name = os.path.splitext(typelib_name)[0] + '.gir'
+
+        gir_file = os.path.join(gir_path, gir_name)
+
+        if not os.path.exists(gir_path):
+            logger.error('Unable to find gir directory: %s.\n'
+                         'Try installing your platforms gobject-introspection '
+                         'package.', gir_path)
+            return None
+        if not os.path.exists(gir_file):
+            logger.error('Unable to find gir file: %s.\n'
+                         'Try installing your platforms gobject-introspection '
+                         'package.', gir_file)
+            return None
+
         with open(gir_file, 'r') as f:
             lines = f.readlines()
         with open(os.path.join(CONF['workpath'], gir_name), 'w') as f:
