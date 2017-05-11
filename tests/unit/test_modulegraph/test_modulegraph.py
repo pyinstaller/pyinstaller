@@ -23,15 +23,15 @@ except ImportError:
     from io import StringIO
 
 TESTDATA = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        "testdata", "nspkg")
+    os.path.dirname(os.path.abspath(__file__)), "testdata", "nspkg")
 
-READ_MODE = "U" if sys.version_info[:2] < (3,4) else "r"
+READ_MODE = "U" if sys.version_info[:2] < (3, 4) else "r"
 
 try:
     expectedFailure = unittest.expectedFailure
 except AttributeError:
     import functools
+
     def expectedFailure(function):
         @functools.wraps(function)
         def wrapper(*args, **kwds):
@@ -43,9 +43,11 @@ except AttributeError:
             else:
                 self.fail("unexpected pass")
 
-class TestDependencyInfo (unittest.TestCase):
+
+class TestDependencyInfo(unittest.TestCase):
     def test_pickling(self):
-        info = modulegraph.DependencyInfo(function=True, conditional=False, tryexcept=True, fromlist=False)
+        info = modulegraph.DependencyInfo(
+            function=True, conditional=False, tryexcept=True, fromlist=False)
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             b = pickle.dumps(info, proto)
             self.assertTrue(isinstance(b, bytes))
@@ -54,53 +56,89 @@ class TestDependencyInfo (unittest.TestCase):
             self.assertEqual(o, info)
 
     def test_merging(self):
-        info1 = modulegraph.DependencyInfo(function=True, conditional=False, tryexcept=True, fromlist=False)
-        info2 = modulegraph.DependencyInfo(function=False, conditional=True, tryexcept=True, fromlist=False)
+        info1 = modulegraph.DependencyInfo(
+            function=True, conditional=False, tryexcept=True, fromlist=False)
+        info2 = modulegraph.DependencyInfo(
+            function=False, conditional=True, tryexcept=True, fromlist=False)
         self.assertEqual(
-            info1._merged(info2), modulegraph.DependencyInfo(function=True, conditional=True, tryexcept=True, fromlist=False))
+            info1._merged(info2),
+            modulegraph.DependencyInfo(
+                function=True,
+                conditional=True,
+                tryexcept=True,
+                fromlist=False))
 
-        info2 = modulegraph.DependencyInfo(function=False, conditional=True, tryexcept=False, fromlist=False)
+        info2 = modulegraph.DependencyInfo(
+            function=False, conditional=True, tryexcept=False, fromlist=False)
         self.assertEqual(
-            info1._merged(info2), modulegraph.DependencyInfo(function=True, conditional=True, tryexcept=True, fromlist=False))
+            info1._merged(info2),
+            modulegraph.DependencyInfo(
+                function=True,
+                conditional=True,
+                tryexcept=True,
+                fromlist=False))
 
-        info2 = modulegraph.DependencyInfo(function=False, conditional=False, tryexcept=False, fromlist=False)
+        info2 = modulegraph.DependencyInfo(
+            function=False, conditional=False, tryexcept=False, fromlist=False)
         self.assertEqual(
-            info1._merged(info2), modulegraph.DependencyInfo(function=False, conditional=False, tryexcept=False, fromlist=False))
+            info1._merged(info2),
+            modulegraph.DependencyInfo(
+                function=False,
+                conditional=False,
+                tryexcept=False,
+                fromlist=False))
 
-        info1 = modulegraph.DependencyInfo(function=True, conditional=False, tryexcept=True, fromlist=True)
+        info1 = modulegraph.DependencyInfo(
+            function=True, conditional=False, tryexcept=True, fromlist=True)
         self.assertEqual(
-            info1._merged(info2), modulegraph.DependencyInfo(function=False, conditional=False, tryexcept=False, fromlist=False))
+            info1._merged(info2),
+            modulegraph.DependencyInfo(
+                function=False,
+                conditional=False,
+                tryexcept=False,
+                fromlist=False))
 
-        info2 = modulegraph.DependencyInfo(function=False, conditional=False, tryexcept=False, fromlist=True)
+        info2 = modulegraph.DependencyInfo(
+            function=False, conditional=False, tryexcept=False, fromlist=True)
         self.assertEqual(
-            info1._merged(info2), modulegraph.DependencyInfo(function=False, conditional=False, tryexcept=False, fromlist=True))
+            info1._merged(info2),
+            modulegraph.DependencyInfo(
+                function=False,
+                conditional=False,
+                tryexcept=False,
+                fromlist=True))
 
 
-class TestFunctions (unittest.TestCase):
+class TestFunctions(unittest.TestCase):
     if not hasattr(unittest.TestCase, 'assertIsInstance'):
+
         def assertIsInstance(self, obj, types):
-            self.assertTrue(isinstance(obj, types), '%r is not instance of %r'%(obj, types))
+            self.assertTrue(
+                isinstance(obj, types), '%r is not instance of %r' % (obj,
+                                                                      types))
 
     def test_eval_str_tuple(self):
         for v in [
-            '()',
-            '("hello",)',
-            '("hello", "world")',
-            "('hello',)",
-            "('hello', 'world')",
-            "('hello', \"world\")",
-            ]:
+                '()',
+                '("hello",)',
+                '("hello", "world")',
+                "('hello',)",
+                "('hello', 'world')",
+                "('hello', \"world\")",
+        ]:
 
             self.assertEqual(modulegraph._eval_str_tuple(v), eval(v))
 
         self.assertRaises(ValueError, modulegraph._eval_str_tuple, "")
         self.assertRaises(ValueError, modulegraph._eval_str_tuple, "'a'")
         self.assertRaises(ValueError, modulegraph._eval_str_tuple, "'a', 'b'")
-        self.assertRaises(ValueError, modulegraph._eval_str_tuple, "('a', ('b', 'c'))")
-        self.assertRaises(ValueError, modulegraph._eval_str_tuple, "('a', ('b\", 'c'))")
+        self.assertRaises(ValueError, modulegraph._eval_str_tuple,
+                          "('a', ('b', 'c'))")
+        self.assertRaises(ValueError, modulegraph._eval_str_tuple,
+                          "('a', ('b\", 'c'))")
 
     def test_namespace_package_path(self):
-        class DS (object):
+        class DS(object):
             def __init__(self, path, namespace_packages=None):
                 self.location = path
                 self._namespace_packages = namespace_packages
@@ -120,7 +158,7 @@ class TestFunctions (unittest.TestCase):
 
                 raise ValueError("invalid lookup key")
 
-        class WS (object):
+        class WS(object):
             def __init__(self, path=None):
                 pass
 
@@ -134,22 +172,24 @@ class TestFunctions (unittest.TestCase):
         try:
             pkg_resources.WorkingSet = WS
 
-            self.assertEqual(modulegraph._namespace_package_path("sys", ["appdir/pkg"]),
-                             ["appdir/pkg"])
-            self.assertEqual(modulegraph._namespace_package_path("foo", ["appdir/pkg"]),
-                             ["appdir/pkg",
-                              os.path.join("/pkg/pkg2", "foo"),
-                              os.path.join("/pkg/pkg4", "foo")])
-            self.assertEqual(modulegraph._namespace_package_path("bar.baz", ["appdir/pkg"]),
-                             ["appdir/pkg",
-                              os.path.join("/pkg/pkg3", "bar", "baz")])
+            self.assertEqual(
+                modulegraph._namespace_package_path("sys", ["appdir/pkg"]),
+                ["appdir/pkg"])
+            self.assertEqual(
+                modulegraph._namespace_package_path("foo", ["appdir/pkg"]), [
+                    "appdir/pkg", os.path.join("/pkg/pkg2", "foo"),
+                    os.path.join("/pkg/pkg4", "foo")
+                ])
+            self.assertEqual(
+                modulegraph._namespace_package_path("bar.baz", ["appdir/pkg"]),
+                ["appdir/pkg", os.path.join("/pkg/pkg3", "bar", "baz")])
 
         finally:
             pkg_resources.WorkingSet = saved_ws
 
     def test_os_listdir(self):
         root = os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), 'testdata')
+            os.path.dirname(os.path.abspath(__file__)), 'testdata')
 
         if is_win:
             dirname = 'C:\\Windows\\'
@@ -160,10 +200,15 @@ class TestFunctions (unittest.TestCase):
 
         self.assertEqual(modulegraph.os_listdir(dirname), os.listdir(dirname))
         self.assertRaises(IOError, modulegraph.os_listdir, filename)
-        self.assertRaises(IOError, modulegraph.os_listdir, os.path.join(root, 'test.egg', 'bar'))
+        self.assertRaises(IOError, modulegraph.os_listdir,
+                          os.path.join(root, 'test.egg', 'bar'))
 
-        self.assertEqual(list(sorted(modulegraph.os_listdir(os.path.join(root, 'test.egg', 'foo')))),
-            [ 'bar', 'bar.txt', 'baz.txt' ])
+        self.assertEqual(
+            list(
+                sorted(
+                    modulegraph.os_listdir(
+                        os.path.join(root, 'test.egg', 'foo')))),
+            ['bar', 'bar.txt', 'baz.txt'])
 
     def test_code_to_file(self):
         try:
@@ -197,23 +242,33 @@ class TestFunctions (unittest.TestCase):
             if path.endswith('.zip') or path.endswith('.egg'):
                 # Zip importers may precompile
                 if filename.endswith('.py'):
-                    self.assertEqual(filename, os.path.join(path, 'mymodule.py'))
-                    self.assertEqual(description, ('.py', READ_MODE, imp.PY_SOURCE))
+                    self.assertEqual(filename,
+                                     os.path.join(path, 'mymodule.py'))
+                    self.assertEqual(description, ('.py', READ_MODE,
+                                                   imp.PY_SOURCE))
 
                 else:
-                    self.assertEqual(filename, os.path.join(path, 'mymodule.pyc'))
-                    self.assertEqual(description, ('.pyc', 'rb', imp.PY_COMPILED))
+                    self.assertEqual(filename,
+                                     os.path.join(path, 'mymodule.pyc'))
+                    self.assertEqual(description, ('.pyc', 'rb',
+                                                   imp.PY_COMPILED))
 
             else:
                 self.assertEqual(filename, os.path.join(path, 'mymodule.py'))
-                self.assertEqual(description, ('.py', READ_MODE, imp.PY_SOURCE))
+                self.assertEqual(description, ('.py', READ_MODE,
+                                               imp.PY_SOURCE))
 
             # Compiled plain module, no source
             if path.endswith('.zip') or path.endswith('.egg'):
-                self.assertRaises(ImportError, modgraph._find_module, 'mymodule2', path=[path] + sys.path)
+                self.assertRaises(
+                    ImportError,
+                    modgraph._find_module,
+                    'mymodule2',
+                    path=[path] + sys.path)
 
             else:
-                info = modgraph._find_module('mymodule2', path=[path] + sys.path)
+                info = modgraph._find_module(
+                    'mymodule2', path=[path] + sys.path)
 
                 fp = info[0]
                 filename = info[1]
@@ -226,20 +281,19 @@ class TestFunctions (unittest.TestCase):
                 fp.close()
 
             # Compiled plain module, with source
-#            info = modgraph._find_module('mymodule3', path=[path] + sys.path)
-#
-#            fp = info[0]
-#            filename = info[1]
-#            description = info[2]
-#
-#            self.assertTrue(hasattr(fp, 'read'))
-#
-#            if sys.version_info[:2] >= (3,2):
-#                self.assertEqual(filename, os.path.join(path, '__pycache__', 'mymodule3.cpython-32.pyc'))
-#            else:
-#                self.assertEqual(filename, os.path.join(path, 'mymodule3.pyc'))
-#            self.assertEqual(description, ('.pyc', 'rb', imp.PY_COMPILED))
-
+            #            info = modgraph._find_module('mymodule3', path=[path] + sys.path)
+            #
+            #            fp = info[0]
+            #            filename = info[1]
+            #            description = info[2]
+            #
+            #            self.assertTrue(hasattr(fp, 'read'))
+            #
+            #            if sys.version_info[:2] >= (3,2):
+            #                self.assertEqual(filename, os.path.join(path, '__pycache__', 'mymodule3.cpython-32.pyc'))
+            #            else:
+            #                self.assertEqual(filename, os.path.join(path, 'mymodule3.pyc'))
+            #            self.assertEqual(description, ('.pyc', 'rb', imp.PY_COMPILED))
 
             # Package
             info = modgraph._find_module('mypkg', path=[path] + sys.path)
@@ -254,7 +308,11 @@ class TestFunctions (unittest.TestCase):
 
             # Extension
             if path.endswith('.zip'):
-                self.assertRaises(ImportError, modgraph._find_module, 'myext', path=[path] + sys.path)
+                self.assertRaises(
+                    ImportError,
+                    modgraph._find_module,
+                    'myext',
+                    path=[path] + sys.path)
 
             elif path.endswith('.egg'):
                 # FIXME: restore modulegraph's behaviour
@@ -291,11 +349,12 @@ class TestFunctions (unittest.TestCase):
                 self.assertEqual(fp, None)
 
     def test_moduleInfoForPath(self):
-        self.assertEqual(modulegraph.moduleInfoForPath("/somewhere/else/file.txt"), None)
+        self.assertEqual(
+            modulegraph.moduleInfoForPath("/somewhere/else/file.txt"), None)
 
         info = modulegraph.moduleInfoForPath("/somewhere/else/file.py")
         self.assertEqual(info[0], "file")
-        if sys.version_info[:2] >= (3,4):
+        if sys.version_info[:2] >= (3, 4):
             self.assertEqual(info[1], "r")
         else:
             self.assertEqual(info[1], "U")
@@ -312,44 +371,46 @@ class TestFunctions (unittest.TestCase):
             self.assertEqual(info[1], "rb")
             self.assertEqual(info[2], imp.C_EXTENSION)
 
-        elif sys.platform in ('win32',):
+        elif sys.platform in ('win32', ):
             info = modulegraph.moduleInfoForPath("/somewhere/else/file.pyd")
             self.assertEqual(info[0], "file")
             self.assertEqual(info[1], "rb")
             self.assertEqual(info[2], imp.C_EXTENSION)
 
-    if sys.version_info[:2] > (2,5):
-            def test_deprecated(self):
-                saved_add = modulegraph.addPackagePath
-                saved_replace = modulegraph.replacePackage
-                try:
-                    called = []
+    if sys.version_info[:2] > (2, 5):
 
-                    def log_add(*args, **kwds):
-                        called.append(('add', args, kwds))
-                    def log_replace(*args, **kwds):
-                        called.append(('replace', args, kwds))
+        def test_deprecated(self):
+            saved_add = modulegraph.addPackagePath
+            saved_replace = modulegraph.replacePackage
+            try:
+                called = []
 
-                    modulegraph.addPackagePath = log_add
-                    modulegraph.replacePackage = log_replace
+                def log_add(*args, **kwds):
+                    called.append(('add', args, kwds))
 
-                    with warnings.catch_warnings(record=True) as w:
-                        warnings.simplefilter("always")
-                        modulegraph.ReplacePackage('a', 'b')
-                        modulegraph.AddPackagePath('c', 'd')
+                def log_replace(*args, **kwds):
+                    called.append(('replace', args, kwds))
 
-                    self.assertEqual(len(w), 2)
-                    self.assertTrue(w[-1].category is DeprecationWarning)
-                    self.assertTrue(w[-2].category is DeprecationWarning)
+                modulegraph.addPackagePath = log_add
+                modulegraph.replacePackage = log_replace
 
-                    self.assertEqual(called, [
-                        ('replace', ('a', 'b'), {}),
-                        ('add', ('c', 'd'), {}),
-                    ])
+                with warnings.catch_warnings(record=True) as w:
+                    warnings.simplefilter("always")
+                    modulegraph.ReplacePackage('a', 'b')
+                    modulegraph.AddPackagePath('c', 'd')
 
-                finally:
-                    modulegraph.addPackagePath = saved_add
-                    modulegraph.replacePackage = saved_replace
+                self.assertEqual(len(w), 2)
+                self.assertTrue(w[-1].category is DeprecationWarning)
+                self.assertTrue(w[-2].category is DeprecationWarning)
+
+                self.assertEqual(called, [
+                    ('replace', ('a', 'b'), {}),
+                    ('add', ('c', 'd'), {}),
+                ])
+
+            finally:
+                modulegraph.addPackagePath = saved_add
+                modulegraph.replacePackage = saved_replace
 
     def test_addPackage(self):
         saved = modulegraph._packagePathMap
@@ -358,17 +419,18 @@ class TestFunctions (unittest.TestCase):
             modulegraph._packagePathMap = {}
 
             modulegraph.addPackagePath('foo', 'a')
-            self.assertEqual(modulegraph._packagePathMap, { 'foo': ['a'] })
+            self.assertEqual(modulegraph._packagePathMap, {'foo': ['a']})
 
             modulegraph.addPackagePath('foo', 'b')
-            self.assertEqual(modulegraph._packagePathMap, { 'foo': ['a', 'b'] })
+            self.assertEqual(modulegraph._packagePathMap, {'foo': ['a', 'b']})
 
             modulegraph.addPackagePath('bar', 'b')
-            self.assertEqual(modulegraph._packagePathMap, { 'foo': ['a', 'b'], 'bar': ['b'] })
+            self.assertEqual(modulegraph._packagePathMap,
+                             {'foo': ['a', 'b'],
+                              'bar': ['b']})
 
         finally:
             modulegraph._packagePathMap = saved
-
 
     def test_replacePackage(self):
         saved = modulegraph._replacePackageMap
@@ -381,15 +443,22 @@ class TestFunctions (unittest.TestCase):
             modulegraph.replacePackage("a", "c")
             self.assertEqual(modulegraph._replacePackageMap, {"a": "c"})
             modulegraph.replacePackage("b", "c")
-            self.assertEqual(modulegraph._replacePackageMap, {"a": "c", 'b': 'c'})
+            self.assertEqual(modulegraph._replacePackageMap,
+                             {"a": "c",
+                              'b': 'c'})
 
         finally:
             modulegraph._replacePackageMap = saved
 
-class TestNode (unittest.TestCase):
+
+class TestNode(unittest.TestCase):
     if not hasattr(unittest.TestCase, 'assertIsInstance'):
+
         def assertIsInstance(self, obj, types):
-            self.assertTrue(isinstance(obj, types), '%r is not instance of %r'%(obj, types))
+            self.assertTrue(
+                isinstance(obj, types), '%r is not instance of %r' % (obj,
+                                                                      types))
+
     def testBasicAttributes(self):
         n = modulegraph.Node("foobar.xyz")
         self.assertEqual(n.identifier, n.graphident)
@@ -453,7 +522,7 @@ class TestNode (unittest.TestCase):
 
     def test_infoTuple(self):
         n = modulegraph.Node('n1')
-        self.assertEqual(n.infoTuple(), ('n1',))
+        self.assertEqual(n.infoTuple(), ('n1', ))
 
     def assertNoMethods(self, klass):
         d = dict(klass.__dict__)
@@ -465,6 +534,10 @@ class TestNode (unittest.TestCase):
         if '__dict__' in d:
             # New in Python 3.4
             del d['__dict__']
+        if '__slotnames__' in d:
+            # From __slots__
+            del d['__slotnames__']
+
         self.assertEqual(d, {})
 
     def assertHasExactMethods(self, klass, *methods):
@@ -477,29 +550,37 @@ class TestNode (unittest.TestCase):
         if '__dict__' in d:
             # New in Python 3.4
             del d['__dict__']
+        if '__slotnames__' in d:
+            # From __slots__
+            del d['__slotnames__']
 
         for nm in methods:
-            self.assertTrue(nm in d, "%s doesn't have attribute %r"%(klass, nm))
+            self.assertTrue(nm in d, "%s doesn't have attribute %r" % (klass,
+                                                                       nm))
             del d[nm]
 
         self.assertEqual(d, {})
 
-
     if not hasattr(unittest.TestCase, 'assertIsSubclass'):
+
         def assertIsSubclass(self, cls1, cls2, message=None):
-            self.assertTrue(issubclass(cls1, cls2),
-                    message or "%r is not a subclass of %r"%(cls1, cls2))
+            self.assertTrue(
+                issubclass(cls1, cls2), message or
+                "%r is not a subclass of %r" % (cls1, cls2))
 
     def test_subclasses(self):
         self.assertIsSubclass(modulegraph.AliasNode, modulegraph.Node)
         self.assertIsSubclass(modulegraph.Script, modulegraph.Node)
         self.assertIsSubclass(modulegraph.BadModule, modulegraph.Node)
-        self.assertIsSubclass(modulegraph.ExcludedModule, modulegraph.BadModule)
+        self.assertIsSubclass(modulegraph.ExcludedModule,
+                              modulegraph.BadModule)
         self.assertIsSubclass(modulegraph.MissingModule, modulegraph.BadModule)
         self.assertIsSubclass(modulegraph.BaseModule, modulegraph.Node)
-        self.assertIsSubclass(modulegraph.BuiltinModule, modulegraph.BaseModule)
+        self.assertIsSubclass(modulegraph.BuiltinModule,
+                              modulegraph.BaseModule)
         self.assertIsSubclass(modulegraph.SourceModule, modulegraph.BaseModule)
-        self.assertIsSubclass(modulegraph.CompiledModule, modulegraph.BaseModule)
+        self.assertIsSubclass(modulegraph.CompiledModule,
+                              modulegraph.BaseModule)
         self.assertIsSubclass(modulegraph.Package, modulegraph.BaseModule)
         self.assertIsSubclass(modulegraph.Extension, modulegraph.BaseModule)
 
@@ -542,27 +623,32 @@ class TestNode (unittest.TestCase):
         self.assertEqual(s1.filename, 'do_import')
 
         v = s1.infoTuple()
-        self.assertEqual(v, ('do_import',))
+        self.assertEqual(v, ('do_import', ))
 
         # BaseModule adds some attributes and a custom infotuple
-        self.assertHasExactMethods(modulegraph.BaseModule, '__init__', 'infoTuple')
+        self.assertHasExactMethods(modulegraph.BaseModule, '__init__',
+                                   'infoTuple')
         m1 = modulegraph.BaseModule('foo')
         self.assertEqual(m1.graphident, 'foo')
         self.assertEqual(m1.identifier, 'foo')
         self.assertEqual(m1.filename, None)
         self.assertEqual(m1.packagepath, None)
 
-        m1 = modulegraph.BaseModule('foo', 'bar',  ['a'])
+        m1 = modulegraph.BaseModule('foo', 'bar', ['a'])
         self.assertEqual(m1.graphident, 'foo')
         self.assertEqual(m1.identifier, 'foo')
         self.assertEqual(m1.filename, 'bar')
         self.assertEqual(m1.packagepath, ['a'])
 
-class TestModuleGraph (unittest.TestCase):
+
+class TestModuleGraph(unittest.TestCase):
     # Test for class modulegraph.modulegraph.ModuleGraph
     if not hasattr(unittest.TestCase, 'assertIsInstance'):
+
         def assertIsInstance(self, obj, types):
-            self.assertTrue(isinstance(obj, types), '%r is not instance of %r'%(obj, types))
+            self.assertTrue(
+                isinstance(obj, types), '%r is not instance of %r' % (obj,
+                                                                      types))
 
     def test_constructor(self):
         o = modulegraph.ModuleGraph()
@@ -576,12 +662,11 @@ class TestModuleGraph (unittest.TestCase):
         self.assertIsInstance(o.nspackages, dict)
 
         g = Graph.Graph()
-        o = modulegraph.ModuleGraph(['a', 'b', 'c'], ['modA'], [
-                ('fromA', 'toB'), ('fromC', 'toD')],
-                {
-                    'modA': ['modB', 'modC'],
-                    'modC': ['modE', 'modF'],
-                }, g, 1)
+        o = modulegraph.ModuleGraph(['a', 'b', 'c'], ['modA'],
+                                    [('fromA', 'toB'), ('fromC', 'toD')], {
+                                        'modA': ['modB', 'modC'],
+                                        'modC': ['modE', 'modF'],
+                                    }, g, 1)
         self.assertEqual(o.path, ['a', 'b', 'c'])
         self.assertEqual(o.lazynodes, {
             'modA': None,
@@ -593,33 +678,44 @@ class TestModuleGraph (unittest.TestCase):
         self.assertEqual(o.debug, 1)
 
     def test_calc_setuptools_nspackages(self):
-        stdlib = [ fn for fn in sys.path if fn.startswith(sys.prefix) and 'site-packages' not in fn ]
-        for subdir in [ nm for nm in os.listdir(TESTDATA) if nm != 'src' ]:
+        stdlib = [
+            fn for fn in sys.path
+            if fn.startswith(sys.prefix) and 'site-packages' not in fn
+        ]
+        for subdir in [nm for nm in os.listdir(TESTDATA) if nm != 'src']:
             graph = modulegraph.ModuleGraph(path=[
-                    os.path.join(TESTDATA, subdir, "parent"),
-                    os.path.join(TESTDATA, subdir, "child"),
-                ] + stdlib)
+                os.path.join(TESTDATA, subdir, "parent"),
+                os.path.join(TESTDATA, subdir, "child"),
+            ] + stdlib)
 
             pkgs = graph.nspackages
             self.assertTrue('namedpkg' in pkgs)
-            self.assertEqual(set(pkgs['namedpkg']),
-                    set([
-                        os.path.join(TESTDATA, subdir, "parent", "namedpkg"),
-                        os.path.join(TESTDATA, subdir, "child", "namedpkg"),
-                    ]))
-            self.assertFalse(os.path.exists(os.path.join(TESTDATA, subdir, "parent", "namedpkg", "__init__.py")))
-            self.assertFalse(os.path.exists(os.path.join(TESTDATA, subdir, "child", "namedpkg", "__init__.py")))
+            self.assertEqual(
+                set(pkgs['namedpkg']),
+                set([
+                    os.path.join(TESTDATA, subdir, "parent", "namedpkg"),
+                    os.path.join(TESTDATA, subdir, "child", "namedpkg"),
+                ]))
+            self.assertFalse(
+                os.path.exists(
+                    os.path.join(TESTDATA, subdir, "parent", "namedpkg",
+                                 "__init__.py")))
+            self.assertFalse(
+                os.path.exists(
+                    os.path.join(TESTDATA, subdir, "child", "namedpkg",
+                                 "__init__.py")))
 
     def testImpliedReference(self):
         graph = modulegraph.ModuleGraph()
 
         record = []
+
         def import_hook(*args):
-            record.append(('import_hook',) + args)
+            record.append(('import_hook', ) + args)
             return [graph.createNode(modulegraph.Node, args[0])]
 
         def _safe_import_hook(*args):
-            record.append(('_safe_import_hook',) + args)
+            record.append(('_safe_import_hook', ) + args)
             return [graph.createNode(modulegraph.Node, args[0])]
 
         graph.import_hook = import_hook
@@ -640,11 +736,7 @@ class TestModuleGraph (unittest.TestCase):
         outs, ins = map(list, graph.get_edges(n2))
         self.assertEqual(outs, [n3])
         self.assertEqual(ins, [n1])
-        self.assertEqual(record, [
-            ('_safe_import_hook', 'n3', n2, None)
-        ])
-
-
+        self.assertEqual(record, [('_safe_import_hook', 'n3', n2, None)])
 
     @expectedFailure
     def test_findNode(self):
@@ -657,10 +749,12 @@ class TestModuleGraph (unittest.TestCase):
         master = graph.createNode(modulegraph.Node, 'root')
         m = graph.run_script(script, master)
         self.assertEqual(list(graph.get_edges(master)[0])[0], m)
-        self.assertEqual(set(graph.get_edges(m)[0]), set([
-            graph.findNode('sys'),
-            graph.findNode('os'),
-        ]))
+        self.assertEqual(
+            set(graph.get_edges(m)[0]),
+            set([
+                graph.findNode('sys'),
+                graph.findNode('os'),
+            ]))
 
     @expectedFailure
     def test_import_hook(self):
@@ -700,7 +794,6 @@ class TestModuleGraph (unittest.TestCase):
         m = graph.findNode('xml.dom')
         self.assertEqual(graph._determine_parent(m), graph.findNode('xml.dom'))
 
-
     @expectedFailure
     def test_find_head_package(self):
         self.fail("find_head_package")
@@ -724,16 +817,15 @@ class TestModuleGraph (unittest.TestCase):
         root = modulegraph.Node('root')
         m = graph._load_tail(root, '')
         self.assertTrue(m is root)
-        self.assertEqual(record, [
-            ])
+        self.assertEqual(record, [])
 
         record = []
         root = modulegraph.Node('root')
         m = graph._load_tail(root, 'sub')
         self.assertFalse(m is root)
         self.assertEqual(record, [
-                ('sub', 'root.sub', root),
-            ])
+            ('sub', 'root.sub', root),
+        ])
 
         record = []
         root = modulegraph.Node('root')
@@ -741,9 +833,9 @@ class TestModuleGraph (unittest.TestCase):
         self.assertFalse(m is root)
         node = modulegraph.Node('root.sub')
         self.assertEqual(record, [
-                ('sub', 'root.sub', root),
-                ('sub1', 'root.sub.sub1', node),
-            ])
+            ('sub', 'root.sub', root),
+            ('sub1', 'root.sub.sub1', node),
+        ])
 
         record = []
         root = modulegraph.Node('root')
@@ -752,10 +844,10 @@ class TestModuleGraph (unittest.TestCase):
         node = modulegraph.Node('root.sub')
         node2 = modulegraph.Node('root.sub.sub1')
         self.assertEqual(record, [
-                ('sub', 'root.sub', root),
-                ('sub1', 'root.sub.sub1', node),
-                ('sub2', 'root.sub.sub1.sub2', node2),
-            ])
+            ('sub', 'root.sub', root),
+            ('sub1', 'root.sub.sub1', node),
+            ('sub2', 'root.sub.sub1.sub2', node2),
+        ])
 
         n = graph._load_tail(root, 'raises')
         self.assertIsInstance(n, modulegraph.MissingModule)
@@ -768,8 +860,6 @@ class TestModuleGraph (unittest.TestCase):
         n = graph._load_tail(root, 'sub.raises.sub')
         self.assertIsInstance(n, modulegraph.MissingModule)
         self.assertEqual(n.identifier, 'root.sub.raises.sub')
-
-
 
     @expectedFailure
     def test_ensure_fromlist(self):
@@ -812,6 +902,7 @@ class TestModuleGraph (unittest.TestCase):
         self.assertEqual(list(graph.nodes()), [])
 
         node_map = {}
+
         def _safe_import(name, mod, fromlist, level):
             if name in node_map:
                 node = node_map[name]
@@ -823,7 +914,8 @@ class TestModuleGraph (unittest.TestCase):
         graph = modulegraph.ModuleGraph()
         graph._safe_import_hook = _safe_import
 
-        code = compile(textwrap.dedent('''\
+        code = compile(
+            textwrap.dedent('''\
             import sys
             import os.path
 
@@ -833,7 +925,6 @@ class TestModuleGraph (unittest.TestCase):
         graph.scan_code(code, mod)
         modules = [node.identifier for node in graph.nodes()]
         self.assertEqual(set(node_map), set(['sys', 'os.path', 'shutil']))
-
 
         # from module import a, b, c
         # from module import *
@@ -854,20 +945,20 @@ class TestModuleGraph (unittest.TestCase):
 
         self.fail("actual test needed")
 
-
-
     @expectedFailure
     def test_load_package(self):
         self.fail("load_package")
 
     def test_find_module(self):
         record = []
+
         class MockedModuleGraph(modulegraph.ModuleGraph):
             def _find_module(self, name, path, parent=None):
                 if path == None:
                     path = sys.path
                 record.append((name, path))
-                return super(MockedModuleGraph, self)._find_module(name, path, parent)
+                return super(MockedModuleGraph, self)._find_module(
+                    name, path, parent)
 
         mockedgraph = MockedModuleGraph()
         try:
@@ -900,7 +991,6 @@ class TestModuleGraph (unittest.TestCase):
             m2 = graph._find_module('shutil', None)
             self.assertEqual(m[1:], m2[1:])
             m2[0].close()
-
 
             record[:] = []
             m = mockedgraph._find_module('sax', xml.packagepath, xml)
@@ -936,8 +1026,10 @@ class TestModuleGraph (unittest.TestCase):
 
             self.assertEqual(len(lines), 3)
             self.assertEqual(lines[0], '')
-            self.assertEqual(lines[1], 'Class           Name                      File')
-            self.assertEqual(lines[2], '-----           ----                      ----')
+            self.assertEqual(lines[1],
+                             'Class           Name                      File')
+            self.assertEqual(lines[2],
+                             '-----           ----                      ----')
 
             fp = sys.stdout = StringIO()
             graph._safe_import_hook('os', None, ())
@@ -948,12 +1040,15 @@ class TestModuleGraph (unittest.TestCase):
             fp.close()
 
             self.assertEqual(lines[0], '')
-            self.assertEqual(lines[1], 'Class           Name                      File')
-            self.assertEqual(lines[2], '-----           ----                      ----')
+            self.assertEqual(lines[1],
+                             'Class           Name                      File')
+            self.assertEqual(lines[2],
+                             '-----           ----                      ----')
             expected = []
             for n in graph.flatten():
                 if n.filename:
-                    expected.append([type(n).__name__, n.identifier, n.filename])
+                    expected.append(
+                        [type(n).__name__, n.identifier, n.filename])
                 else:
                     expected.append([type(n).__name__, n.identifier])
 
@@ -962,12 +1057,10 @@ class TestModuleGraph (unittest.TestCase):
             actual.sort()
             self.assertEqual(expected, actual)
 
-
         finally:
             sys.stdout = saved_stdout
 
     def test_graphreport(self):
-
         def my_iter(flatpackages="packages"):
             yield "line1\n"
             yield str(flatpackages) + "\n"
@@ -993,21 +1086,22 @@ class TestModuleGraph (unittest.TestCase):
         finally:
             sys.stdout = saved_stdout
 
-
     def test_replace_paths_in_code(self):
-        join = os.path.join # shortcut
+        join = os.path.join  # shortcut
         graph = modulegraph.ModuleGraph(replace_paths=[
-                ('path1', 'path2'),
-                (join('path3', 'path5'), 'path4'),
-            ])
+            ('path1', 'path2'),
+            (join('path3', 'path5'), 'path4'),
+        ])
 
-        co = compile(textwrap.dedent("""
+        co = compile(
+            textwrap.dedent("""
         [x for x in range(4)]
         """), join("path4", "index.py"), 'exec', 0, 1)
         co = graph._replace_paths_in_code(co)
         self.assertEqual(co.co_filename, join('path4', 'index.py'))
 
-        co = compile(textwrap.dedent("""
+        co = compile(
+            textwrap.dedent("""
         [x for x in range(4)]
         (x for x in range(4))
         """), join("path1", "index.py"), 'exec', 0, 1)
@@ -1018,19 +1112,22 @@ class TestModuleGraph (unittest.TestCase):
             if isinstance(c, type(co)):
                 self.assertEqual(c.co_filename, join('path2', 'index.py'))
 
-        co = compile(textwrap.dedent("""
+        co = compile(
+            textwrap.dedent("""
         [x for x in range(4)]
         """), join("path3", "path4", "index.py"), 'exec', 0, 1)
         co = graph._replace_paths_in_code(co)
         self.assertEqual(co.co_filename, join('path3', 'path4', 'index.py'))
 
-        co = compile(textwrap.dedent("""
+        co = compile(
+            textwrap.dedent("""
         [x for x in range(4)]
         """), join("path3", "path5.py"), 'exec', 0, 1)
         co = graph._replace_paths_in_code(co)
         self.assertEqual(co.co_filename, join('path3', 'path5.py'))
 
-        co = compile(textwrap.dedent("""
+        co = compile(
+            textwrap.dedent("""
         [x for x in range(4)]
         """), join("path3", "path5", "index.py"), 'exec', 0, 1)
         co = graph._replace_paths_in_code(co)
