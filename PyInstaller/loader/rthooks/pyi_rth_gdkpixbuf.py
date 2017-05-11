@@ -7,7 +7,30 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+import atexit
 import os
+import tempfile
 import sys
 
-os.environ['GDK_PIXBUF_MODULE_FILE'] = os.path.join(sys._MEIPASS, 'lib', 'gdk-pixbuf', 'loaders.cache')
+pixbuf_file = os.path.join(sys._MEIPASS, 'lib', 'gdk-pixbuf', 'loaders.cache')
+
+# If we're not on Windows or OSX we need to rewrite the cache
+if os.path.exists(pixbuf_file) and sys.platform not in ('win32', 'darwin'):
+
+    with open(pixbuf_file, 'rb') as fp:
+        contents = fp.read()
+
+    # create a temporary file with the cache and cleverly replace the prefix
+    # we injected with the actual path
+    fd, pixbuf_file = tempfile.mkstemp()
+    with os.fdopen(fd, 'wb') as fp:
+        fp.write(contents.replace(b'@executable_path/lib',
+                                  os.path.join(sys._MEIPASS, 'lib').encode('utf-8')))
+
+    try:
+        atexit.register(os.unlink, pixbuf_file)
+    except OSError:
+        pass
+
+
+os.environ['GDK_PIXBUF_MODULE_FILE'] = pixbuf_file
