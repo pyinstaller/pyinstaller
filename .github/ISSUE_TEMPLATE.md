@@ -1,5 +1,11 @@
 If you have problems to get your application running, please first
 
+* try the latest development version, using the following command:
+
+```
+pip install https://github.com/pyinstaller/pyinstaller/archive/develop.zip
+```
+
 * follow *all* the instructions in our "If Things Go Wrong" Guide
   (https://github.com/pyinstaller/pyinstaller/wiki/If-Things-Go-Wrong) and
 
