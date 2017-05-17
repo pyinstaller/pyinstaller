@@ -79,3 +79,6 @@ if is_module_satisfies('sphinx >= 1.3.1') and is_module_satisfies(
     datas.extend(collect_data_files('sphinx_rtd_theme'))
 elif is_module_satisfies('sphinx >= 1.3.1'):
     datas.extend(collect_data_files('alabaster'))
+
+if is_module_satisfies('sphinx >= 1.6.1'):
+    hiddenimports += collect_submodules('sphinx.environment.collectors')
