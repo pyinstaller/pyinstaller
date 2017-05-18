@@ -844,6 +844,11 @@ def check_requirements():
         raise SystemExit('PyInstaller requires at least Python 2.7 or 3.3+.')
 
     if is_win:
+        if 'win32api' in sys.modules or 'pywintypes' in sys.modules:
+            # Users should never see this error; if it occurs, it means someone
+            # wasn't careful and added an import where it shouldn't be
+            raise SystemExit("Internal error: early pywin32 import was introduced")
+        
         try:
             from PyInstaller.utils.win32 import winutils
             try:
