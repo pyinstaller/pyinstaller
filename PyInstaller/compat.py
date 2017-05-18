@@ -846,8 +846,17 @@ def check_requirements():
     if is_win:
         try:
             from PyInstaller.utils.win32 import winutils
-            pywintypes = winutils.import_pywin32_module('pywintypes')
+            try:
+                pywintypes = winutils.import_pywin32_module('pywintypes')
+            except ImportError:
+                from win32ctypes.pywin32 import pywintypes
+                from win32ctypes.pywin32 import win32api
+                
+                # if this succeeded, then install pywin32-ctypes into sys.modules
+                sys.modules['win32api'] = win32api
+                sys.modules['pywintypes'] = pywintypes
+                
         except ImportError:
             raise SystemExit('PyInstaller cannot check for assembly dependencies.\n'
-                             'Please install PyWin32.\n\n'
+                             'Please install PyWin32 or pywin32-ctypes.\n\n'
                              'pip install pypiwin32\n')
