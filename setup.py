@@ -29,9 +29,13 @@ if sys.platform.startswith('win'):
     try:
         import pywintypes
     except ImportError:
-        # 'pypiwin32' is PyWin32 package made installable by 'pip install'
-        # command.
-        REQUIREMENTS.append('pypiwin32')
+        # try using pywin32-ctypes, as pypiwin32 doesn't compile for msys2
+        try:
+            import win32ctypes.pywin32.pywintypes
+        except ImportError:
+            # 'pypiwin32' is PyWin32 package made installable by 'pip install'
+            # command. Prefer it by default.
+            REQUIREMENTS.append('pypiwin32')
 
 
 # Create long description from README.rst and doc/CHANGES.rst.
