@@ -217,7 +217,8 @@ elif is_win:
     class WinExcludeList(object):
         def __init__(self, global_exclude_list):
             self._exclude_list = global_exclude_list
-            self._windows_dir = winutils.get_windows_dir().lower()
+            # use normpath because msys2 uses / instead of \
+            self._windows_dir = os.path.normpath(winutils.get_windows_dir().lower())
 
         def search(self, libname):
             libname = libname.lower()
@@ -227,7 +228,8 @@ elif is_win:
             else:
                 # Exclude everything from the Windows directory by default.
                 # .. sometimes realpath changes the case of libname, lower it
-                fn = os.path.realpath(libname).lower()
+                # .. use normpath because msys2 uses / instead of \
+                fn = os.path.normpath(os.path.realpath(libname).lower())
                 return fn.startswith(self._windows_dir)
 
     exclude_list = WinExcludeList(exclude_list)
