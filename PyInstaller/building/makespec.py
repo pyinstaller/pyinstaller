@@ -319,9 +319,12 @@ def main(scripts, name=None, onefile=None,
         # version is >= 2.4.
         try:
             import Crypto
-
-            pycrypto_version = list(map(int, Crypto.__version__.split('.')))
-            is_version_acceptable = pycrypto_version[0] >= 2 and pycrypto_version[1] >= 4
+            
+            try:
+                pycrypto_version = tuple(map(int, Crypto.__version__.split('.')))
+            except AttributeError:
+                pycrypto_version = Crypto.version_info
+            is_version_acceptable = pycrypto_version > (2, 4)
 
             if not is_version_acceptable:
                 logger.error('PyCrypto version must be >= 2.4, older versions are not supported.')

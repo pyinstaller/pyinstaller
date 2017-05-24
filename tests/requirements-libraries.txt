@@ -7,7 +7,7 @@
 # Url for downloading PyCrypto prebuilt Windows binaries:
 # http://www.voidspace.org.uk/python/pycrypto-2.6.1/
 # Required for crypto feature - encrypting bytecode.
-pycrypto ; (python_version <= '3.5') or (sys_platform != 'win32')
+pycryptodome
 
 Django<1.8.11 # PyInstaller doesn't yet work with Django 1.9
 babel>2.0  # Required by sphinx. Version 2.0 doesn't work on Windows.
