@@ -132,11 +132,13 @@ class DependencyProcessor(object):
         # 'PyInstaller.config' cannot be imported as other top-level modules.
         from ..config import CONF
         workpath = os.path.join(CONF['workpath'], os.path.basename(zipfilename))
+        # Todo: python 3 only: use os.makedirs(workpath, exist_ok=True)
         try:
             os.makedirs(workpath)
         except OSError as e:
             import errno
-            if e.errno != errno.EEXIST:
+            # ignore if directory already exists.
+            if e.errno != errno.EEXIST: 
                 raise
         # TODO extract only those file which whould then be included
         with zipfile.ZipFile(zipfilename) as zfh:
