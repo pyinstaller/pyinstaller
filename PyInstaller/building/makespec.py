@@ -171,74 +171,76 @@ def __add_options(parser):
     g.add_argument("--noupx", action="store_true", default=False,
                    help="Do not use UPX even if it is available "
                         "(works differently between Windows and *nix)")
+    
+    if sys.platform.startswith('darwin') or sys.platform.startswith('win'):
+        g = parser.add_argument_group('Windows and Mac OS X specific options')
+        g.add_argument("-c", "--console", "--nowindowed", dest="console",
+                       action="store_true", default=True,
+                       help="Open a console window for standard i/o (default)")
+        g.add_argument("-w", "--windowed", "--noconsole", dest="console",
+                       action="store_false",
+                       help="Windows and Mac OS X: do not provide a console window "
+                            "for standard i/o. "
+                            "On Mac OS X this also triggers building an OS X .app bundle. "
+                            "This option is ignored in *NIX systems.")
+        g.add_argument("-i", "--icon", dest="icon_file",
+                       metavar="<FILE.ico or FILE.exe,ID or FILE.icns>",
+                       help="FILE.ico: apply that icon to a Windows executable. "
+                            "FILE.exe,ID, extract the icon with ID from an exe. "
+                            "FILE.icns: apply the icon to the "
+                            ".app bundle on Mac OS X")
+    
+    if sys.platform.startswith('win'):
+        g = parser.add_argument_group('Windows specific options')
+        g.add_argument("--version-file",
+                       dest="version_file", metavar="FILE",
+                       help="add a version resource from FILE to the exe")
+        g.add_argument("-m", "--manifest", metavar="<FILE or XML>",
+                       help="add manifest FILE or XML to the exe")
+        g.add_argument("-r", "--resource", dest="resources",
+                       metavar="RESOURCE", action="append",
+                       default=[],
+                       help="Add or update a resource to a Windows executable. "
+                            "The RESOURCE is one to four items, "
+                            "FILE[,TYPE[,NAME[,LANGUAGE]]]. "
+                            "FILE can be a "
+                            "data file or an exe/dll. For data files, at least "
+                            "TYPE and NAME must be specified. LANGUAGE defaults "
+                            "to 0 or may be specified as wildcard * to update all "
+                            "resources of the given TYPE and NAME. For exe/dll "
+                            "files, all resources from FILE will be added/updated "
+                            "to the final executable if TYPE, NAME and LANGUAGE "
+                            "are omitted or specified as wildcard *."
+                            "This option can be used multiple times.")
+        g.add_argument('--uac-admin', dest='uac_admin', action="store_true", default=False,
+                       help='Using this option creates a Manifest '
+                            'which will request elevation upon application restart.')
+        g.add_argument('--uac-uiaccess', dest='uac_uiaccess', action="store_true", default=False,
+                       help='Using this option allows an elevated application to '
+                            'work with Remote Desktop.')
 
-    g = parser.add_argument_group('Windows and Mac OS X specific options')
-    g.add_argument("-c", "--console", "--nowindowed", dest="console",
-                   action="store_true", default=True,
-                   help="Open a console window for standard i/o (default)")
-    g.add_argument("-w", "--windowed", "--noconsole", dest="console",
-                   action="store_false",
-                   help="Windows and Mac OS X: do not provide a console window "
-                        "for standard i/o. "
-                        "On Mac OS X this also triggers building an OS X .app bundle. "
-                        "This option is ignored in *NIX systems.")
-    g.add_argument("-i", "--icon", dest="icon_file",
-                   metavar="<FILE.ico or FILE.exe,ID or FILE.icns>",
-                   help="FILE.ico: apply that icon to a Windows executable. "
-                        "FILE.exe,ID, extract the icon with ID from an exe. "
-                        "FILE.icns: apply the icon to the "
-                        ".app bundle on Mac OS X")
+        g = parser.add_argument_group('Windows Side-by-side Assembly searching options (advanced)')
+        g.add_argument("--win-private-assemblies", dest="win_private_assemblies",
+                       action="store_true",
+                       help="Any Shared Assemblies bundled into the application "
+                            "will be changed into Private Assemblies. This means "
+                            "the exact versions of these assemblies will always "
+                            "be used, and any newer versions installed on user "
+                            "machines at the system level will be ignored.")
+        g.add_argument("--win-no-prefer-redirects", dest="win_no_prefer_redirects",
+                       action="store_true",
+                       help="While searching for Shared or Private Assemblies to "
+                            "bundle into the application, PyInstaller will prefer "
+                            "not to follow policies that redirect to newer versions, "
+                            "and will try to bundle the exact versions of the assembly.")
 
-    g = parser.add_argument_group('Windows specific options')
-    g.add_argument("--version-file",
-                   dest="version_file", metavar="FILE",
-                   help="add a version resource from FILE to the exe")
-    g.add_argument("-m", "--manifest", metavar="<FILE or XML>",
-                   help="add manifest FILE or XML to the exe")
-    g.add_argument("-r", "--resource", dest="resources",
-                   metavar="RESOURCE", action="append",
-                   default=[],
-                   help="Add or update a resource to a Windows executable. "
-                        "The RESOURCE is one to four items, "
-                        "FILE[,TYPE[,NAME[,LANGUAGE]]]. "
-                        "FILE can be a "
-                        "data file or an exe/dll. For data files, at least "
-                        "TYPE and NAME must be specified. LANGUAGE defaults "
-                        "to 0 or may be specified as wildcard * to update all "
-                        "resources of the given TYPE and NAME. For exe/dll "
-                        "files, all resources from FILE will be added/updated "
-                        "to the final executable if TYPE, NAME and LANGUAGE "
-                        "are omitted or specified as wildcard *."
-                        "This option can be used multiple times.")
-    g.add_argument('--uac-admin', dest='uac_admin', action="store_true", default=False,
-                   help='Using this option creates a Manifest '
-                        'which will request elevation upon application restart.')
-    g.add_argument('--uac-uiaccess', dest='uac_uiaccess', action="store_true", default=False,
-                   help='Using this option allows an elevated application to '
-                        'work with Remote Desktop.')
-
-    g = parser.add_argument_group('Windows Side-by-side Assembly searching options (advanced)')
-    g.add_argument("--win-private-assemblies", dest="win_private_assemblies",
-                   action="store_true",
-                   help="Any Shared Assemblies bundled into the application "
-                        "will be changed into Private Assemblies. This means "
-                        "the exact versions of these assemblies will always "
-                        "be used, and any newer versions installed on user "
-                        "machines at the system level will be ignored.")
-    g.add_argument("--win-no-prefer-redirects", dest="win_no_prefer_redirects",
-                   action="store_true",
-                   help="While searching for Shared or Private Assemblies to "
-                        "bundle into the application, PyInstaller will prefer "
-                        "not to follow policies that redirect to newer versions, "
-                        "and will try to bundle the exact versions of the assembly.")
-
-
-    g = parser.add_argument_group('Mac OS X specific options')
-    g.add_argument('--osx-bundle-identifier', dest='bundle_identifier',
-                   help='Mac OS X .app bundle identifier is used as the default unique program '
-                        'name for code signing purposes. The usual form is a hierarchical name '
-                        'in reverse DNS notation. For example: com.mycompany.department.appname '
-                        "(default: first script's basename)")
+    if sys.platform.startswith('darwin'):
+        g = parser.add_argument_group('Mac OS X specific options')
+        g.add_argument('--osx-bundle-identifier', dest='bundle_identifier',
+                       help='Mac OS X .app bundle identifier is used as the default unique program '
+                            'name for code signing purposes. The usual form is a hierarchical name '
+                            'in reverse DNS notation. For example: com.mycompany.department.appname '
+                            "(default: first script's basename)")
 
 
 def main(scripts, name=None, onefile=None,
