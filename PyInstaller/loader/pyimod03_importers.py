@@ -828,3 +828,13 @@ def install():
         pf = sys.meta_path.pop(pf_idx)
         sys.meta_path.append(pf)
         # TODO Do we need for Python 3 _frozen_importlib.FrozenImporter? Could it be also removed?
+
+    global trace
+    import logging
+    logger = logging.getLogger('pyimod03_importers')
+
+    # Redefine trace to use the builtin logging. Note that this
+    # cannot be done until we have defined the import machinery.
+    def trace_logging(msg, *a):
+        logger.debug(msg, *a)
+    trace = trace_logging
