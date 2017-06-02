@@ -12,6 +12,11 @@ or upgrade to a newer version::
 
     pip install --upgrade pyinstaller
 
+To install the current development version use::
+
+    pip install https://github.com/pyinstaller/pyinstaller/tarball/develop
+
+
 Installing in Windows
 ~~~~~~~~~~~~~~~~~~~~~~~
 
