@@ -25,6 +25,8 @@ import os
 import sys
 import struct
 from types import CodeType
+from collections import deque
+from multiprocessing.pool import Pool
 import marshal
 import zlib
 
@@ -180,9 +182,16 @@ class ZlibArchiveWriter(ArchiveWriter):
         # to avoid writting .pyc/pyo files to hdd.
         self.code_dict = code_dict or {}
         self.cipher = cipher or None
+        self._pool = Pool()
+        self._write_actions = deque()
 
         super(ZlibArchiveWriter, self).__init__(archive_path, logical_toc)
 
+    def _finalize(self):
+        for name, typ, async_result in self._write_actions:
+            self._write_object(name, typ, async_result.get())
+
+        super(ZlibArchiveWriter, self)._finalize()
 
     def add(self, entry):
         name, path, typ = entry
@@ -206,12 +215,22 @@ class ZlibArchiveWriter(ArchiveWriter):
             # No need to use forward slash as path-separator here since
             # pkg_resources on Windows back slash as path-separator.
 
-        obj = zlib.compress(data, self.COMPRESSION_LEVEL)
+        self._write_actions.append((
+            name, typ, self._pool.apply_async(
+                self._compress_object, (data, self.COMPRESSION_LEVEL, self.cipher))))
+
+    @staticmethod  # For multiprocessing capability
+    def _compress_object(data, compression_level, cipher):
+
+        obj = zlib.compress(data, compression_level)
 
         # First compress then encrypt.
-        if self.cipher:
-            obj = self.cipher.encrypt(obj)
+        if cipher:
+            obj = cipher.encrypt(obj)
 
+        return obj
+
+    def _write_object(self, name, typ, obj):
         self.toc.append((name, (typ, self.lib.tell(), len(obj))))
         self.lib.write(obj)
 
