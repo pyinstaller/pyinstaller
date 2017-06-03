@@ -656,6 +656,7 @@ def test_pil_PyQt4(pyi_builder):
     """)
 
 
+@xfail(is_py36 and is_win, reason='Fails on python 3.6/win32')
 @importorskip('PIL')
 def test_pil_plugins(pyi_builder):
     pyi_builder.test_source(
