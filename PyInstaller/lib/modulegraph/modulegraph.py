@@ -30,6 +30,7 @@ from struct import unpack
 
 from ..altgraph.ObjectGraph import ObjectGraph
 from ..altgraph import GraphError
+from .util import enumerate_instructions
 
 from . import util
 from . import zipio
@@ -53,54 +54,6 @@ else:
 
 import codecs
 BOM = codecs.BOM_UTF8.decode('utf-8')
-
-if sys.version_info >= (3,4):
-    # In Python 3.4 or later the dis module has a much nicer interface
-    # for working with bytecode, use that instead of peeking into the
-    # raw bytecode.
-    # Note: This nicely sidesteps any issues caused by moving from bytecode
-    # to wordcode in python 3.6.
-    get_instructions = dis.get_instructions
-else:
-    assert 'SET_LINENO' not in dis.opmap  # safty belt
-
-    def get_instructions(code):
-        """
-        Iterator parsing the bytecode into easy-usable minimal emulation of
-        Python 3.4 `dis.Instruction` instances.
-        """
-
-        # shortcuts
-        HAVE_ARGUMENT = dis.HAVE_ARGUMENT
-        EXTENDED_ARG = dis.EXTENDED_ARG
-
-        class Instruction:
-            # Minimal emulation of Python 3.4 dis.Instruction
-            def __init__(self, opcode, oparg):
-                self.opname = dis.opname[opcode]
-                self.arg = oparg
-                # opcode, argval, argrepr, offset, is_jump_target and
-                # starts_line are not used by our code, so we leave them away
-                # here.
-
-        code = code.co_code
-        extended_arg = 0
-        i = 0
-        n = len(code)
-        while i < n:
-            c = code[i]
-            i = i + 1
-            op = _cOrd(c)
-            if op >= HAVE_ARGUMENT:
-                oparg = _cOrd(code[i]) + _cOrd(code[i + 1]) * 256 + extended_arg
-                extended_arg = 0
-                i += 2
-                if op == EXTENDED_ARG:
-                    extended_arg = oparg*65536
-            else:
-                oparg = None
-            yield Instruction(op, oparg)
-
 
 #FIXME: Leverage this rather than magic numbers below.
 ABSOLUTE_OR_RELATIVE_IMPORT_LEVEL = -1
@@ -649,14 +602,6 @@ class Node(object):
         if self.is_global_attr(attr_name):
             self._global_attr_names.remove(attr_name)
 
-
-    def __cmp__(self, other):
-        try:
-            otherIdent = getattr(other, 'graphident')
-        except AttributeError:
-            return NotImplemented
-
-        return cmp(self.graphident, otherIdent)
 
     def __eq__(self, other):
         try:
@@ -1237,7 +1182,7 @@ class ModuleGraph(ObjectGraph):
             if not n.identifier.startswith(pkg.identifier + '.'):
                 continue
 
-            iter_out, iter_inc = n.get_edges()
+            iter_out, iter_in = n.get_edges()
             for other in iter_out:
                 if other.identifier.startswith(pkg.identifier + '.'):
                     continue
@@ -2642,14 +2587,9 @@ class ModuleGraph(ObjectGraph):
               parsing will have already parsed import statements, which this
               parsing must avoid repeating.
         """
-        constants = module_code_object.co_consts
+        prev_insts = deque(maxlen=2)
 
-        level = None
-        fromlist = None
-
-        prev_insts = []
-
-        for inst in get_instructions(module_code_object):
+        for inst in enumerate_instructions(module_code_object):
             # If this is an import statement originating from this module,
             # parse this import.
             #
@@ -2666,11 +2606,11 @@ class ModuleGraph(ObjectGraph):
                 assert prev_insts[-1].opname == 'LOAD_CONST'
 
                 # Python >=2.5: LOAD_CONST flags, LOAD_CONST names, IMPORT_NAME name
-                level = module_code_object.co_consts[prev_insts[-2].arg]
-                fromlist = module_code_object.co_consts[prev_insts[-1].arg]
+                level = prev_insts[-2].argval
+                fromlist = prev_insts[-1].argval
 
                 assert fromlist is None or type(fromlist) is tuple
-                target_module_partname = module_code_object.co_names[inst.arg]
+                target_module_partname = inst.argval
 
                 #FIXME: The exact same logic appears in _collect_import(),
                 #which isn't particularly helpful. Instead, defer this logic
@@ -2712,7 +2652,7 @@ class ModuleGraph(ObjectGraph):
                 # in "from foo import bar", which is either a non-ignorable
                 # submodule of "foo" or an ignorable global attribute of
                 # "foo.__init__").
-                name = module_code_object.co_names[inst.arg]
+                name = inst.argval
                 module.add_global_attr(name)
 
             elif inst.opname in ('DELETE_NAME', 'DELETE_GLOBAL'):
@@ -2720,20 +2660,10 @@ class ModuleGraph(ObjectGraph):
                 # attribute (e.g., class, variable) in this module, remove that
                 # declaration to prevent subsequent lookup. See method docstring
                 # for further details.
-                name = module_code_object.co_names[inst.arg]
+                name = inst.argval
                 module.remove_global_attr_if_found(name)
 
             prev_insts.append(inst)
-            del prev_insts[:-2]
-
-        # Type of all code objects.
-        code_object_type = type(module_code_object)
-
-        # For each constant in this code object that is itself a code object,
-        # parse this constant in the same manner.
-        for constant in constants:
-            if isinstance(constant, code_object_type):
-                self._scan_bytecode(module, constant, is_scanning_imports)
 
 
     def _process_imports(self, source_module):

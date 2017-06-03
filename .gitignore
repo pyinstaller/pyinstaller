@@ -86,3 +86,8 @@ tests/old_suite/basic/test_pyz_as_external_file.exe.pkg
 
 # py.test cache folder
 .cache
+
+# cython files
+/PyInstaller/**/*.c
+/PyInstaller/**/*.so
+/PyInstaller/**/*.pyd
