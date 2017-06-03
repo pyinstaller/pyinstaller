@@ -52,13 +52,14 @@ When you build from a spec file, those options cannot be changed.
 If they are given on the command line they are ignored and
 replaced by the options in the spec file.
 
-Only the following command-line options have an effect when building from a spec file:
+Only the following command-line options have an effect when building from a spec file::
 
-*  --upx-dir=
-*  --distpath=
-*  --workpath=
-*  --noconfirm
-*  --ascii
+    --upx-dir=
+    --distpath=
+    --workpath=
+    --noconfirm
+    --ascii
+    --clean
 
 
 Spec File Operation
@@ -574,7 +575,7 @@ Other globals contain information about the build environment:
 	or ``source/myscript.spec``.
 
 ``SPECPATH``
-	The path prefix to the ``SPEC`` value as returned by ``os.split()``.
+	The path prefix to the ``SPEC`` value as returned by ``os.path.split()``.
 
 ``specnm``
 	The name of the spec file, for example ``myscript``.
