@@ -83,10 +83,14 @@ class PyiModuleGraph(ModuleGraph):
     # Note: these levels are completely arbitrary and may be adjusted if needed.
     LOG_LEVEL_MAPPING = {0: INFO, 1: DEBUG, 2: TRACE, 3: TRACE, 4: TRACE}
 
-    def __init__(self, pyi_homepath, user_hook_dirs=None, *args, **kwargs):
-        super(PyiModuleGraph, self).__init__(*args, **kwargs)
+    def __init__(self, user_hook_dirs=None, *args, **kwargs):
+
+        # get_implies() are hidden imports known by modulegraph.
+
+        super(PyiModuleGraph, self).__init__(*args,
+                                             implies=get_implies(), **kwargs)
         # Homepath to the place where is PyInstaller located.
-        self._homepath = pyi_homepath
+        self._homepath = HOMEPATH
         # modulegraph Node for the main python script that is analyzed
         # by PyInstaller.
         self._top_script_node = None
@@ -102,6 +106,47 @@ class PyiModuleGraph(ModuleGraph):
         self._available_rthooks = load_py_data_struct(
             os.path.join(self._homepath, 'PyInstaller', 'loader', 'rthooks.dat')
         )
+
+        self._initialize_modgraph()
+
+    def _initialize_modgraph(self):
+        """
+        Create the module graph and, for Python 3, analyze dependencies for
+        `base_library.zip` (which remain the same for every executable).
+
+        This function might appear weird but is necessary for speeding up
+        test runtime because it allows caching basic ModuleGraph object that
+        gets created for 'base_library.zip'.
+
+        Parameters
+        ----------
+        excludes : list
+            List of the fully-qualified names of all modules to be "excluded" and
+            hence _not_ frozen into the executable.
+        user_hook_dirs : list
+            List of the absolute paths of all directories containing user-defined
+            hooks for the current application or `None` if no such directories were
+            specified.
+
+        Returns
+        ----------
+        PyiModuleGraph
+            Module graph with core dependencies.
+        """
+        logger.info('Initializing module dependency graph...')
+
+        if not is_py2:
+            logger.info('Analyzing base_library.zip ...')
+            required_mods = []
+            # Collect submodules from required modules in base_library.zip.
+            for m in PY3_BASE_MODULES:
+                if is_package(m):
+                    required_mods += collect_submodules(m)
+                else:
+                    required_mods.append(m)
+            # Initialize ModuleGraph.
+            for m in required_mods:
+                self.import_hook(m)
 
     @staticmethod
     def _findCaller(*args, **kwargs):
@@ -542,59 +587,6 @@ class PyiModuleGraph(ModuleGraph):
                         continue
                     co_dict[r.identifier] = r.code
         return co_dict
-
-
-# TODO: A little odd. Couldn't we just push this functionality into the
-# PyiModuleGraph.__init__() constructor and then construct PyiModuleGraph
-# objects directly?
-def initialize_modgraph(excludes=(), user_hook_dirs=None):
-    """
-    Create the module graph and, for Python 3, analyze dependencies for
-    `base_library.zip` (which remain the same for every executable).
-
-    This function might appear weird but is necessary for speeding up
-    test runtime because it allows caching basic ModuleGraph object that
-    gets created for 'base_library.zip'.
-
-    Parameters
-    ----------
-    excludes : list
-        List of the fully-qualified names of all modules to be "excluded" and
-        hence _not_ frozen into the executable.
-    user_hook_dirs : list
-        List of the absolute paths of all directories containing user-defined
-        hooks for the current application or `None` if no such directories were
-        specified.
-
-    Returns
-    ----------
-    PyiModuleGraph
-        Module graph with core dependencies.
-    """
-    logger.info('Initializing module dependency graph...')
-
-    # Construct the initial module graph by analyzing all import statements.
-    graph = PyiModuleGraph(
-        HOMEPATH,
-        excludes=excludes,
-        # get_implies() are hidden imports known by modulgraph.
-        implies=get_implies(),
-        user_hook_dirs=user_hook_dirs,
-    )
-
-    if not is_py2:
-        logger.info('Analyzing base_library.zip ...')
-        required_mods = []
-        # Collect submodules from required modules in base_library.zip.
-        for m in PY3_BASE_MODULES:
-            if is_package(m):
-                required_mods += collect_submodules(m)
-            else:
-                required_mods.append(m)
-        # Initialize ModuleGraph.
-        for m in required_mods:
-            graph.import_hook(m)
-    return graph
 
 
 def get_bootstrap_modules():
