@@ -144,7 +144,7 @@ pyi_main(int argc, char * argv[])
     else {
 
         /* status->temppath is created if necessary. */
-        if (pyi_launch_extract_binaries(archive_status)) {
+        if (pyi_launch_extract_binaries(archive_status, homepath)) {
             VS("LOADER: temppath is %s\n", archive_status->temppath);
             VS("LOADER: Error extracting binaries\n");
             return -1;

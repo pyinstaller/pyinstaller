@@ -42,17 +42,17 @@ def test_pyz_as_external_file(pyi_builder, monkeypatch):
     # This tests the not well documented and seldom used feature of
     # having the PYZ-archive in a separate file (.pkg).
 
-    def MyEXE(*args, **kwargs):
+    def MyPYZ(*args, **kwargs):
         kwargs['append_pkg'] = False
-        return EXE(*args, **kwargs)
+        return PYZ(*args, **kwargs)
 
     # :todo: find a better way to not even run this test in ondir-mode
     if pyi_builder._mode == 'onefile':
         pytest.skip('only --onedir')
 
     import PyInstaller
-    EXE = PyInstaller.building.build_main.EXE
-    monkeypatch.setattr('PyInstaller.building.build_main.EXE', MyEXE)
+    PYZ = PyInstaller.building.build_main.PYZ
+    monkeypatch.setattr('PyInstaller.building.build_main.PYZ', MyPYZ)
 
     pyi_builder.test_source("print('Hello Python!')")
 

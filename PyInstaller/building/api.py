@@ -253,9 +253,10 @@ class PKG(Target):
                     seenFnms[fnm] = inm
                     seenFnms_typ[fnm] = typ
 
-                    fnm = checkCache(fnm, strip=self.strip_binaries,
-                                     upx=(self.upx_binaries and (is_win or is_cygwin)),
-                                     dist_nm=inm)
+                    if typ != 'DEPENDENCY':
+                        fnm = checkCache(fnm, strip=self.strip_binaries,
+                                         upx=(self.upx_binaries and (is_win or is_cygwin)),
+                                         dist_nm=inm)
 
                     mytoc.append((inm, fnm, self.cdict.get(typ, 0),
                                   self.xformdict.get(typ, 'b')))
@@ -381,7 +382,14 @@ class EXE(Target):
             if isinstance(arg, TOC):
                 self.toc.extend(arg)
             elif isinstance(arg, Target):
-                self.toc.append((os.path.basename(arg.name), arg.name, arg.typ))
+                if hasattr(arg, '_EXE'):
+                    base_path = os.path.basename(arg._EXE.name) + os.sep
+                    if not arg.name.startswith(base_path):
+                        arg.name = os.path.join(base_path, os.path.basename(arg.name))
+                    self.toc.append((arg.name, arg.name, 'DEPENDENCY'))
+                else:
+                    arg._EXE = self
+                    self.toc.append((os.path.basename(arg.name), arg.name, arg.typ))
                 self.toc.extend(arg.dependencies)
             else:
                 self.toc.extend(arg)
@@ -489,6 +497,9 @@ class EXE(Target):
         trash = []
         if not os.path.exists(os.path.dirname(self.name)):
             os.makedirs(os.path.dirname(self.name))
+
+        assert len(self.exefiles) == 1
+
         exe = self.exefiles[0][1]  # pathname of bootloader
         if not os.path.exists(exe):
             raise SystemExit(_MISSING_BOOTLOADER_ERRORMSG)
@@ -694,83 +705,6 @@ class COLLECT(Target):
                 os.chmod(tofnm, 0o755)
         logger.info("Building COLLECT %s completed successfully.",
                     self.tocbasename)
-
-
-class MERGE(object):
-    """
-    Merge repeated dependencies from other executables into the first
-    execuable. Data and binary files are then present only once and some
-    disk space is thus reduced.
-    """
-    def __init__(self, *args):
-        """
-        Repeated dependencies are then present only once in the first
-        executable in the 'args' list. Other executables depend on the
-        first one. Other executables have to extract necessary files
-        from the first executable.
-
-        args  dependencies in a list of (Analysis, id, filename) tuples.
-              Replace id with the correct filename.
-        """
-        # The first Analysis object with all dependencies.
-        # Any item from the first executable cannot be removed.
-        self._main = None
-
-        self._dependencies = {}
-
-        self._id_to_path = {}
-        for _, i, p in args:
-            self._id_to_path[os.path.normcase(i)] = p
-
-        # Get the longest common path
-        common_prefix = os.path.commonprefix([os.path.normcase(os.path.abspath(a.scripts[-1][1])) for a, _, _ in args])
-        self._common_prefix = os.path.dirname(common_prefix)
-        if self._common_prefix[-1] != os.sep:
-            self._common_prefix += os.sep
-        logger.info("Common prefix: %s", self._common_prefix)
-
-        self._merge_dependencies(args)
-
-    def _merge_dependencies(self, args):
-        """
-        Filter shared dependencies to be only in first executable.
-        """
-        for analysis, _, _ in args:
-            path = os.path.abspath(analysis.scripts[-1][1]).replace(self._common_prefix, "", 1)
-            path = os.path.splitext(path)[0]
-            if os.path.normcase(path) in self._id_to_path:
-                path = self._id_to_path[os.path.normcase(path)]
-            self._set_dependencies(analysis, path)
-
-    def _set_dependencies(self, analysis, path):
-        """
-        Synchronize the Analysis result with the needed dependencies.
-        """
-        for toc in (analysis.binaries, analysis.datas):
-            for i, tpl in enumerate(toc):
-                if not tpl[1] in self._dependencies:
-                    logger.debug("Adding dependency %s located in %s" % (tpl[1], path))
-                    self._dependencies[tpl[1]] = path
-                else:
-                    dep_path = self._get_relative_path(path, self._dependencies[tpl[1]])
-                    logger.debug("Referencing %s to be a dependecy for %s, located in %s" % (tpl[1], path, dep_path))
-                    analysis.dependencies.append((":".join((dep_path, tpl[0])), tpl[1], "DEPENDENCY"))
-                    toc[i] = (None, None, None)
-            # Clean the list
-            toc[:] = [tpl for tpl in toc if tpl != (None, None, None)]
-
-    # TODO move this function to PyInstaller.compat module (probably improve
-    #      function compat.relpath()
-    # TODO use os.path.relpath instead
-    def _get_relative_path(self, startpath, topath):
-        start = startpath.split(os.sep)[:-1]
-        start = ['..'] * len(start)
-        if start:
-            start.append(topath)
-            return os.sep.join(start)
-        else:
-            return topath
-
 
 UNCOMPRESSED = 0
 COMPRESSED = 1

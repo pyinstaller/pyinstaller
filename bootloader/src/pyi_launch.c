@@ -49,8 +49,6 @@
 #include "pyi_pythonlib.h"
 #include "pyi_win32_utils.h"  /* CreateActContext */
 
-/* Max count of possible opened archives in multipackage mode. */
-#define _MAX_ARCHIVE_POOL_LEN 20
 
 /*
  * The functions in this file defined in reverse order so that forward
@@ -70,23 +68,6 @@ checkFile(char *buf, const char *fmt, ...)
     return stat(buf, &tmp);
 }
 
-/* Splits the item in the form path:filename */
-static int
-splitName(char *path, char *filename, const char *item)
-{
-    char name[PATH_MAX + 1];
-
-    VS("LOADER: Splitting item into path and filename\n");
-    strcpy(name, item);
-    strcpy(path, strtok(name, ":"));
-    strcpy(filename, strtok(NULL, ":"));
-
-    if (path[0] == 0 || filename[0] == 0) {
-        return -1;
-    }
-    return 0;
-}
-
 /* Copy the dependencies file from a directory to the tempdir */
 static int
 copyDependencyFromDir(ARCHIVE_STATUS *status, const char *srcpath, const char *filename)
@@ -101,62 +82,6 @@ copyDependencyFromDir(ARCHIVE_STATUS *status, const char *srcpath, const char *f
         return -1;
     }
     return 0;
-}
-
-/*
- * Look for the archive identified by path into the ARCHIVE_STATUS pool archive_pool.
- * If the archive is found, a pointer to the associated ARCHIVE_STATUS is returned
- * otherwise the needed archive is opened and added to the pool and then returned.
- * If an error occurs, returns NULL.
- *
- * Having several archives is useful for sharing binary dependencies with several
- * executables (multipackage feature).
- */
-static ARCHIVE_STATUS *
-_get_archive(ARCHIVE_STATUS *archive_pool[], const char *path)
-{
-    ARCHIVE_STATUS *archive = NULL;
-    int index = 0;
-    int SELF = 0;
-
-    VS("LOADER: Getting file from archive.\n");
-
-    if (pyi_create_temp_path(archive_pool[SELF]) == -1) {
-        return NULL;
-    }
-
-    for (index = 1; archive_pool[index] != NULL; index++) {
-        if (strcmp(archive_pool[index]->archivename, path) == 0) {
-            VS("LOADER: Archive found: %s\n", path);
-            return archive_pool[index];
-        }
-        VS("LOADER: Checking next archive in the list...\n");
-    }
-
-    archive = (ARCHIVE_STATUS *) malloc(sizeof(ARCHIVE_STATUS));
-
-    if (archive == NULL) {
-        FATALERROR("Error allocating memory for status\n");
-        return NULL;
-    }
-
-    strcpy(archive->archivename, path);
-    strcpy(archive->homepath, archive_pool[SELF]->homepath);
-    strcpy(archive->temppath, archive_pool[SELF]->temppath);
-    /*
-     * Setting this flag prevents creating another temp directory and
-     * the directory from the main archive status is used.
-     */
-    archive->has_temp_directory = archive_pool[SELF]->has_temp_directory;
-
-    if (pyi_arch_open(archive)) {
-        FATALERROR("Error opening archive %s\n", path);
-        free(archive);
-        return NULL;
-    }
-
-    archive_pool[index] = archive;
-    return archive;
 }
 
 /* Extract a file identifed by filename from the archive associated to status. */
@@ -175,85 +100,6 @@ extractDependencyFromArchive(ARCHIVE_STATUS *status, const char *filename)
         }
         ptoc = pyi_arch_increment_toc_ptr(status, ptoc);
     }
-    return 0;
-}
-
-/* Decide if the dependency identified by item is in a onedir or onfile archive
- * then call the appropriate function.
- */
-static int
-_extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
-{
-    ARCHIVE_STATUS *status = NULL;
-    ARCHIVE_STATUS *archive_status = archive_pool[0];
-    char path[PATH_MAX];
-    char filename[PATH_MAX];
-    char srcpath[PATH_MAX];
-    char archive_path[PATH_MAX];
-
-    char dirname[PATH_MAX];
-
-    VS("LOADER: Extracting dependencies\n");
-
-    if (splitName(path, filename, item) == -1) {
-        return -1;
-    }
-
-    pyi_path_dirname(dirname, path);
-
-    /* We need to identify three situations: 1) dependecies are in a onedir archive
-     * next to the current onefile archive, 2) dependencies are in a onedir/onefile
-     * archive next to the current onedir archive, 3) dependencies are in a onefile
-     * archive next to the current onefile archive.
-     */
-    VS("LOADER: Checking if file exists\n");
-
-    /* TODO implement pyi_path_join to accept variable length of arguments for this case. */
-    if (checkFile(srcpath, "%s%s%s%s%s", archive_status->homepath, PYI_SEPSTR, dirname,
-                  PYI_SEPSTR, filename) == 0) {
-        VS("LOADER: File %s found, assuming is onedir\n", srcpath);
-
-        if (copyDependencyFromDir(archive_status, srcpath, filename) == -1) {
-            FATALERROR("Error coping %s\n", filename);
-            return -1;
-        }
-        /* TODO implement pyi_path_join to accept variable length of arguments for this case. */
-    }
-    else if (checkFile(srcpath, "%s%s%s%s%s%s%s", archive_status->homepath, PYI_SEPSTR,
-                       "..", PYI_SEPSTR, dirname, PYI_SEPSTR, filename) == 0) {
-        VS("LOADER: File %s found, assuming is onedir\n", srcpath);
-
-        if (copyDependencyFromDir(archive_status, srcpath, filename) == -1) {
-            FATALERROR("Error coping %s\n", filename);
-            return -1;
-        }
-    }
-    else {
-        VS("LOADER: File %s not found, assuming is onefile.\n", srcpath);
-
-        /* TODO implement pyi_path_join to accept variable length of arguments for this case. */
-        if ((checkFile(archive_path, "%s%s%s.pkg", archive_status->homepath, PYI_SEPSTR,
-                       path) != 0) &&
-            (checkFile(archive_path, "%s%s%s.exe", archive_status->homepath, PYI_SEPSTR,
-                       path) != 0) &&
-            (checkFile(archive_path, "%s%s%s", archive_status->homepath, PYI_SEPSTR,
-                       path) != 0)) {
-            FATALERROR("Archive not found: %s\n", archive_path);
-            return -1;
-        }
-
-        if ((status = _get_archive(archive_pool, archive_path)) == NULL) {
-            FATALERROR("Archive not found: %s\n", archive_path);
-            return -1;
-        }
-
-        if (extractDependencyFromArchive(status, filename) == -1) {
-            FATALERROR("Error extracting %s\n", filename);
-            free(status);
-            return -1;
-        }
-    }
-
     return 0;
 }
 
@@ -289,7 +135,7 @@ pyi_launch_need_to_extract_binaries(ARCHIVE_STATUS *archive_status)
  * executables and thus reduce the final size of the executable.
  */
 int
-pyi_launch_extract_binaries(ARCHIVE_STATUS *archive_status)
+pyi_launch_extract_binaries(ARCHIVE_STATUS *archive_status, char* homepath)
 {
     int retcode = 0;
     ptrdiff_t index = 0;
@@ -297,11 +143,11 @@ pyi_launch_extract_binaries(ARCHIVE_STATUS *archive_status)
     /*
      * archive_pool[0] is reserved for the main process, the others for dependencies.
      */
-    ARCHIVE_STATUS *archive_pool[_MAX_ARCHIVE_POOL_LEN];
+    ARCHIVE_STATUS *archive_pool[MAX_ARCHIVE_POOL_LEN];
     TOC * ptoc = archive_status->tocbuff;
 
     /* Clean memory for archive_pool list. */
-    memset(&archive_pool, 0, _MAX_ARCHIVE_POOL_LEN * sizeof(ARCHIVE_STATUS *));
+    memset(&archive_pool, 0, MAX_ARCHIVE_POOL_LEN * sizeof(ARCHIVE_STATUS *));
 
     /* Current process is the 1st item. */
     archive_pool[0] = archive_status;
@@ -317,16 +163,6 @@ pyi_launch_extract_binaries(ARCHIVE_STATUS *archive_status)
             }
         }
 
-        else {
-            /* 'Multipackage' feature - dependency is stored in different executables. */
-            if (ptoc->typcd == ARCHIVE_ITEM_DEPENDENCY) {
-                if (_extract_dependency(archive_pool, ptoc->name) == -1) {
-                    retcode = -1;
-                    break;  /* No need to extract other items in case of error. */
-                }
-
-            }
-        }
         ptoc = pyi_arch_increment_toc_ptr(archive_status, ptoc);
     }
 

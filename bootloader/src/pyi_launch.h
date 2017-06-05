@@ -27,7 +27,7 @@
  *
  * @return 0 on success, non-zero otherwise.
  */
-int pyi_launch_extract_binaries(ARCHIVE_STATUS *archive_status);
+int pyi_launch_extract_binaries(ARCHIVE_STATUS *archive_status, char* homepath);
 
 /*
  * Check if binaries need to be extracted. If not, this is probably a onedir
