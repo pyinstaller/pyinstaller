@@ -29,6 +29,12 @@ class TestSWIGImportability(unittest.TestCase):
             'pkg.sample', source_module=None, target_attr_names=())[0]
         self.assertIsInstance(swig_module, modulegraph.SourceModule)
 
+        # Because the test calls a private method, pending actions are not
+        # processed; we need to process all pending actions so that the
+        # following passes.
+
+        module_graph.engine.process()
+
         # Graph node corresponding to a mock SWIG C extension imported by the
         # prior module. While this should technically be a C extension rather
         # than a module, reliably testing the latter in a cross-platform manner
