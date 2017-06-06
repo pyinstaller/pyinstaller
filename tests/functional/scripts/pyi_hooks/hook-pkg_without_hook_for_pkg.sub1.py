@@ -6,18 +6,32 @@ NAME = 'pkg_without_hook_for_pkg.sub1'
 # self-test for this test-case:
 import PyInstaller.hooks
 import os
-# TODO For Python 3 replace this by importlib, imp is deprecated
-import imp
+
+from PyInstaller.compat import is_py2
+if is_py2:
+    import imp
+
+    def find_module(hookmodnm, searchpath):
+        return imp.find_module(hookmodnm, searchpath)
+else:
+    from importlib.machinery import FileFinder
+
+    def find_module(hookmodnm, searchpath):
+        for path in searchpath:
+            res = FileFinder(searchpath).find_spec(hookmodnm)
+            if res:
+                return res
+            
 
 # 1. ensure self-test is working by searching for _this_ hook
 hookmodnm = 'hook-' + NAME
 searchpath = PyInstaller.hooks.__path__ + [os.path.dirname(__file__)]
-assert imp.find_module(hookmodnm, searchpath) is not None, "Error in the hook's self-test"
+assert find_module(hookmodnm, searchpath) is not None, "Error in the hook's self-test"
 
 # 2. The actual self-test: there must be no hook for the parent module
 hookmodnm = 'hook-pkg_without_hook_for_pkg'
 try:
-    imp.find_module(hookmodnm, searchpath)
+    find_module(hookmodnm, searchpath)
     raise Exception('Self-test of hook %s failed: hook for parent exists'
                     % NAME)
 except ImportError as e:
