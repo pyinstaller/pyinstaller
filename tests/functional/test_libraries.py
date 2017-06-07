@@ -313,7 +313,10 @@ def test_idlelib(pyi_builder):
     pyi_builder.test_source(
         """
         # This file depends on loading some icons, located based on __file__.
-        import idlelib.TreeWidget
+        try:
+            import idlelib.TreeWidget
+        except:
+            import idlelib.tree
         """)
 
 
