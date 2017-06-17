@@ -25,8 +25,8 @@ It can also import helper methods from ``PyInstaller.utils.hooks``
 and useful variables from ``PyInstaller.compat``.
 These helpers are documented below.
 
-The name of a hook file is ``hook-``\ *full-import-name*\ ``.py``,
-where *full-import-name* is
+The name of a hook file is :file:`hook-{full.import.name}.py`,
+where *full.import.name* is
 the fully-qualified name of an imported script or module.
 You can browse through the existing hooks in the
 ``hooks`` folder of the |PyInstaller| distribution folder
@@ -74,7 +74,7 @@ please send us the hook file so we can make it available.
 How a Hook Is Loaded
 -----------------------
 
-A hook is a module named ``hook-``\ *full-import-name*\ ``.py``
+A hook is a module named :file:`hook-{full.import.name}.py`
 in a folder where the Analysis object looks for hooks.
 Each time Analysis detects an import, it looks for a hook file with
 a matching name.
@@ -211,7 +211,8 @@ for example::
 
 ``EXTENSION_SUFFIXES``:
    List of Python C-extension file suffixes. Used for finding all
-   binary dependencies in a folder; see ``hook-cryptography.py`` for an example.
+   binary dependencies in a folder; see file:`hook-cryptography.py`
+   for an example.
 
 Useful Items in ``PyInstaller.utils.hooks``
 --------------------------------------------
@@ -482,7 +483,7 @@ Immediately after return from ``pre_find_module_path()``, the contents
 of ``search_dirs`` will be used to find and analyze the module.
 
 For an example of use,
-see the file ``hooks/pre_find_module_path/hook-distutils.py``.
+see the file :file:`hooks/pre_find_module_path/hook-distutils.py`.
 It uses this method to redirect a search for distutils when
 |PyInstaller| is executing in a virtual environment.
 

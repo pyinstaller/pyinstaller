@@ -14,15 +14,15 @@ and execute::
 
     pyinstaller myscript.py
 
-|PyInstaller| analyzes ``myscript.py`` and:
+|PyInstaller| analyzes :file:`myscript.py` and:
 
-* Writes ``myscript.spec`` in the same folder as the script.
-* Creates a folder ``build`` in the same folder as the script if it does not exist.
+* Writes :file:`myscript.spec` in the same folder as the script.
+* Creates a folder :file:`build` in the same folder as the script if it does not exist.
 * Writes some log files and working files in the ``build`` folder.
-* Creates a folder ``dist`` in the same folder as the script if it does not exist.
-* Writes the ``myscript`` executable folder in the ``dist`` folder.
+* Creates a folder :file:`dist` in the same folder as the script if it does not exist.
+* Writes the :file:`myscript` executable folder in the :file:`dist` folder.
 
-In the ``dist`` folder you find the bundled app you distribute to your users.
+In the :file:`dist` folder you find the bundled app you distribute to your users.
 
 Normally you name one script on the command line.
 If you name more, all are analyzed and included in the output.
@@ -321,23 +321,24 @@ Building Mac OS X App Bundles
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you specify only ``--onefile`` under Mac OS X, the output
-in ``dist`` is a UNIX executable
-``myscript``.
+in :file:`dist` is a UNIX executable
+:file:`myscript`.
 It can be executed from a Terminal command line.
 Standard input and output work as normal through the Terminal window.
 
 If you also specify ``--windowed``, the ``dist`` folder contains
-two outputs: the UNIX executable ``myscript``
-and also an OS X application named ``myscript.app``.
+two outputs: the UNIX executable :file:`myscript`
+and also an OS X application named :file:`myscript.app`.
 
 As you probably know, an application is a special type of folder.
-The one built by |PyInstaller| contains a folder always named ``Contents``.
+The one built by |PyInstaller| contains a folder always named :file:`Contents`.
 It contains:
 
-  + A folder ``Frameworks`` which is empty.
-  + A folder ``MacOS`` that contains a copy of the same ``myscript`` UNIX executable.
-  + A folder ``Resources`` that contains an icon file.
-  + A file ``Info.plist`` that describes the app.
+  + A folder :file:`Frameworks` which is empty.
+  + A folder :file:`MacOS` that contains a copy of the same
+    :file:`myscript` UNIX executable.
+  + A folder :file:`Resources` that contains an icon file.
+  + A file :file:`Info.plist` that describes the app.
 
 |PyInstaller| builds minimal versions of these elements.
 
@@ -348,9 +349,9 @@ and for more detail, the `Apple code signing overview`_ technical note).
 
 Use the ``icon=`` argument to specify a custom icon for the application.
 (If you do not specify an icon file, |PyInstaller| supplies a
-file ``icon-windowed.icns`` with the |PyInstaller| logo.)
+file :file:`icon-windowed.icns` with the |PyInstaller| logo.)
 
-You can add items to the ``Info.plist`` by editing the spec file;
+You can add items to the :file:`Info.plist` by editing the spec file;
 see :ref:`Spec File Options for a Mac OS X Bundle` below.
 
 Making Mac OS X apps Forward-Compatible

@@ -75,7 +75,7 @@ you must help it:
 
 * You can give additional files on the ``pyinstaller`` command line.
 * You can give additional import paths on the command line.
-* You can edit the ``myscript.spec`` file
+* You can edit the :file:`{myscript}.spec` file
   that |PyInstaller| writes the first time you run it for your script.
   In the spec file you can tell |Pyinstaller| about code modules
   that are unique to your script.
@@ -97,23 +97,24 @@ This is covered under :ref:`Run-time Information`.
 |PyInstaller| does *not* include libraries that should exist in
 any installation of this OS.
 For example in Linux, it does not bundle any file
-from ``/lib`` or ``/usr/lib``, assuming these will be found in every system.
+from :file:`/lib` or :file:`/usr/lib`, assuming
+these will be found in every system.
 
 
 Bundling to One Folder
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-When you apply |PyInstaller| to ``myscript.py`` the default
-result is a single folder named ``myscript``.
+When you apply |PyInstaller| to :file:`myscript.py` the default
+result is a single folder named :file:`myscript`.
 This folder contains all your script's dependencies,
-and an executable file also named ``myscript``
-(``myscript.exe`` in Windows).
+and an executable file also named :file:`myscript`
+(:file:`myscript.exe` in Windows).
 
 You compress the folder
-to ``myscript.zip`` and transmit it to your users.
+to :file:`myscript.zip` and transmit it to your users.
 They install the program simply by unzipping it.
 A user runs your app by
-opening the folder and launching the ``myscript`` executable inside it.
+opening the folder and launching the :file:`myscript` executable inside it.
 
 It is easy to debug problems that occur when building the app
 when you use one-folder mode.
@@ -122,7 +123,7 @@ You can see exactly what files |PyInstaller| collected into the folder.
 Another advantage of a one-folder bundle
 is that when you change your code, as long
 as it imports `exactly the same set of dependencies`, you could send out
-only the updated ``myscript`` executable.
+only the updated :file:`myscript` executable.
 That is typically much smaller
 than the entire folder.
 (If you change the script so that it imports more
@@ -131,7 +132,7 @@ are upgraded, you must redistribute the whole bundle.)
 
 A small disadvantage of the one-folder format is that the one folder contains
 a large number of files.
-Your user must find the ``myscript`` executable
+Your user must find the :file:`myscript` executable
 in a long list of names or among a big array of icons.
 Also your user can create
 a problem by accidentally dragging files out of the folder.
@@ -165,7 +166,7 @@ Bundling to One File
 ~~~~~~~~~~~~~~~~~~~~~
 
 |PyInstaller| can bundle your script and all its dependencies into a single
-executable named ``myscript`` (``myscript.exe`` in Windows).
+executable named :file:`myscript` (:file:`myscript.exe` in Windows).
 
 The advantage is that your users get something they understand,
 a single executable to launch.
@@ -186,7 +187,7 @@ How the One-File Program Works
 The |bootloader| is the heart of the one-file bundle also.
 When started it creates a temporary folder
 in the appropriate temp-folder location for this OS.
-The folder is named ``_MEI``\ *xxxxxx*, where *xxxxxx* is a random number.
+The folder is named :file:`_MEI{xxxxxx}`, where *xxxxxx* is a random number.
 
 The one executable file contains an embedded archive of all the Python
 modules used by your script, as well as
@@ -206,7 +207,7 @@ the |bootloader| deletes the temporary folder.
 (In Linux and related systems, it is possible
 to mount the ``/tmp`` folder with a "no-execution" option.
 That option is not compatible with a |PyInstaller|
-one-file bundle. It needs to execute code out of ``/tmp``.)
+one-file bundle. It needs to execute code out of :file:`/tmp`.)
 
 Because the program makes a temporary folder with a unique name,
 you can run multiple copies of the app;
@@ -214,11 +215,11 @@ they won't interfere with each other.
 However, running multiple copies is expensive in disk space because
 nothing is shared.
 
-The ``_MEI``\ *xxxxxx* folder is not removed if the program crashes
+The :file:`_MEI{xxxxxx} folder is not removed if the program crashes
 or is killed (kill -9 on Unix, killed by the Task Manager on Windows,
 "Force Quit" on Mac OS).
 Thus if your app crashes frequently, your users will lose disk space to
-multiple ``_MEI``\ *xxxxxx* temporary folders.
+multiple :file:`_MEI{xxxxxx}` temporary folders.
 
 .. Note::
 

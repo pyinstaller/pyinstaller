@@ -47,7 +47,7 @@ Build-time Messages
 When the ``Analysis`` step runs, it produces error and warning messages.
 These display after the command line if the ``--log-level`` option allows it.
 Analysis also puts messages in a warnings file
-named ``build/``\ *name*\ ``/warn``\ *name*\ ``.txt`` in the
+named :file:`build/{name}/warn{name}.txt` in the
 ``work-path=`` directory.
 
 Analysis creates a message when it detects an import
@@ -64,7 +64,7 @@ conditionally import modules for different platforms that may or may
 not be present.
 
 All "module not found" messages are written to the
-``build/``\ *name*\ ``/warn``\ *name*\ ``.txt`` file.
+:file:`build/{name}/warn{name}.txt`` file.
 They are not displayed to standard output because there are many of them.
 Examine the warning file; often there will be dozens of modules not found,
 but their absence has no effect.
@@ -81,7 +81,7 @@ If you specify ``--log-level=DEBUG`` to the ``pyinstaller`` command,
 |PyInstaller| writes two files of data about dependencies into the
 build folder.
 
-The file ``build/``\ *name*\ ``/xref-``\ *name*\ ``.html`` in the
+The file :file:`build/{name}/xref-{name}.html` in the
 ``work-path=`` directory is an HTML file that lists the full
 contents of the import graph, showing which modules are imported
 by which.
@@ -89,7 +89,7 @@ You can open it in any web browser.
 Find a module name, then keep clicking the "imported by" links
 until you find the top-level import that causes that module to be included.
 
-The file ``build/``\ *name*\ ``/graph-``\ *name*\ ``.dot`` in the
+The file :file:`build/{name}/graph-{name}.dot` in the
 ``work-path=`` directory is a GraphViz_ input file.
 You can process it with the GraphViz_ command ``dot`` to produce
 a graphical display of the import dependencies.
@@ -252,7 +252,7 @@ You can name them with the option ``--runtime-hook=``\ *path-to-script*.
 Second, some runtime hooks are provided.
 At the end of an analysis,
 the names in the module list produced by the Analysis phase are looked up in
-``loader/rthooks.dat`` in the |PyInstaller| install folder.
+:file:`loader/rthooks.dat` in the |PyInstaller| install folder.
 This text file is the string representation of a
 Python dictionary. The key is the module name, and the value is a list
 of hook-script pathnames.
@@ -264,10 +264,10 @@ in the order given, and before any installed runtime hooks.
 If you specify  ``--runtime-hook=file1.py --runtime-hook=file2.py``
 then the execution order at runtime will be:
 
-1. Code of ``file1.py``.
-2. Code of ``file2.py``.
+1. Code of :file:`file1.py`.
+2. Code of :file:`file2.py`.
 3. Any hook specified for an included module that is found
-   in ``rthooks/rthooks.dat``.
+   in :file:`rthooks/rthooks.dat`.
 4. Your main script.
 
 Hooks called in this way, while they need to be careful of what they import,

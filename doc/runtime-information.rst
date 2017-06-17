@@ -41,7 +41,8 @@ the |bootloader| sets the ``sys.frozen`` attribute
 and stores the absolute path to the bundle folder in ``sys._MEIPASS``.
 For a one-folder bundle, this is the path to that folder, 
 wherever the user may have put it.
-For a one-file bundle, this is the path to the ``_MEIxxxxxx`` temporary folder
+For a one-file bundle, this is the path to the :file:`_MEI{xxxxxx}`
+temporary folder
 created by the |bootloader| (see :ref:`How the One-File Program Works`).
 
 

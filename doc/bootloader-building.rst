@@ -18,10 +18,10 @@ To do this,
 
 This will produce the |bootloader| executables,
 
-* ``./PyInstaller/bootloader/YOUR_OS/run``,
-* ``./PyInstaller/bootloader/YOUR_OS/run_d``
-* ``./PyInstaller/bootloader/YOUR_OS/runw`` and
-* ``./PyInstaller/bootloader/YOUR_OS/runw_d``
+* :file:`../PyInstaller/bootloader/{YOUR_OS}/run`,
+* :file:`../PyInstaller/bootloader/{YOUR_OS}/run_d`,
+* :file:`../PyInstaller/bootloader/{YOUR_OS}/runw`, and
+* :file:`../PyInstaller/bootloader/{YOUR_OS}/runw_d`
 
 *Note:* If you have multiple versions of Python, the Python you use to run
 ``waf`` is the one whose configuration is used.
@@ -82,7 +82,7 @@ Change to the ``bootloader`` subdirectory. Run::
         python ./waf distclean all
 
 This will produce the bootloader executables ``run*.exe``
-in the ``.\PyInstaller\bootloader\YOUR_OS`` directory.
+in the :file:`..\PyInstaller\bootloader\{YOUR_OS}` directory.
 
 
 Building Linux Standard Base (LSB) compliant binaries
@@ -100,7 +100,8 @@ as follows::
 LSB version 4.0 is required for successfull building of |bootloader|. Please
 refer to ``python waf --help`` for further options related to LSB building.
 
-The bootloaders will still end up in :file:`support/loader/{YOUR_OS}/run`.
+The bootloaders will still end up in the
+:file:`../PyInstaller/bootloader/{YOUR_OS}/` directory.
 
 
 .. [*] Linux Standard Base (LSB) is a set of open standards that should

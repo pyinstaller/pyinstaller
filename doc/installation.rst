@@ -134,8 +134,8 @@ these commands will not be installed as commands.
 However, you can still execute all the functions documented below
 by running Python scripts found in the distribution folder.
 The equivalent of the ``pyinstaller`` command is
-*pyinstaller-folder*\ ``/pyinstaller.py``.
-The other commands are found in *pyinstaller-folder* ``/cliutils/``
+:file:`{pyinstaller-folder}/pyinstaller.py`.
+The other commands are found in :file:`{pyinstaller-folder}/cliutils/`
 with meaningful names (``makespec.py``, etc.)
 
 

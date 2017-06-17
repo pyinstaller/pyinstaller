@@ -8,7 +8,7 @@ When you execute
     ``pyinstaller`` *options*.. ``myscript.py``
 
 the first thing |PyInstaller| does is to build a spec (specification) file
-``myscript.spec``.
+file:`myscript.spec`.
 That file is stored in the ``--specpath=`` directory,
 by default the current directory.
 
@@ -35,17 +35,17 @@ These uses are covered in topics below.
 
 You create a spec file using this command:
 
-    ``pyi-makespec`` *options* *name*\ ``.py`` [*other scripts* ...]
+    ``pyi-makespec`` *options* :file:`{name}.py` [*other scripts* ...]
 
 The *options* are the same options documented above
 for the ``pyinstaller`` command.
-This command creates the *name*\ ``.spec`` file but does not
+This command creates the :file:`{name}.spec` file but does not
 go on to build the executable.
 
 After you have created a spec file and modified it as necessary,
 you build the application by passing the spec file to the ``pyinstaller`` command:
 
-    ``pyinstaller`` *options* *name*\ ``.spec``
+    ``pyinstaller`` *options* :file:`{name}.spec`
 
 When you create a spec file, most command options are encoded in the spec file.
 When you build from a spec file, those options cannot be changed.
@@ -127,7 +127,7 @@ When you bundle to a single folder (see :ref:`Bundling to One Folder`),
 the added data files are copied into the folder with the executable.
 When you bundle to a single executable (see :ref:`Bundling to One File`),
 copies of added files are compressed into the executable, and expanded to the
-``_MEI``\ *xxxxxx* temporary folder before execution.
+:file:`_MEI{xxxxxx}` temporary folder before execution.
 This means that any changes a one-file executable makes to an added file
 will be lost when the application ends.
 
@@ -166,7 +166,7 @@ And the command line equivalent::
 
 You have made the ``datas=`` argument a one-item list.
 The item is a tuple in which the first string says the existing file
-is ``src/README.txt``.
+is :file:`src/README.txt`.
 That file will be looked up (relative to the location of the spec file)
 and copied into the top level of the bundled app.
 
@@ -179,7 +179,7 @@ For example to include all the ``.mp3`` files from a certain folder::
              ...
              )
 
-All the ``.mp3`` files in the folder ``/mygame/sfx`` will be copied
+All the ``.mp3`` files in the folder :file:`/mygame/sfx` will be copied
 into a folder named ``sfx`` in the bundled app.
 
 The spec file is more readable if you create the list of added files
@@ -202,8 +202,8 @@ You can also include the entire contents of a folder::
              ( 'src/README.txt', '.' )
              ]
 
-The folder ``/mygame/data`` will be reproduced under the name
-``data`` in the bundle.
+The folder :file:`/mygame/data` will be reproduced under the name
+:file:`data` in the bundle.
 
 
 .. _using data files from a module:
@@ -226,7 +226,7 @@ arrangement::
 Because your script includes the statement ``import helpmod``, 
 |PyInstaller| will create this folder arrangement in your bundled app.
 However, it will only include the ``.py`` files.
-The data file ``help_data.txt`` will not be automatically included.
+The data file :file:`help_data.txt` will not be automatically included.
 To cause it to be included also, you would add a ``datas`` tuple
 to the spec file::
 
@@ -243,7 +243,8 @@ its contents using the standard library function ``pkgutil.get_data()``::
 	import pkgutil
 	help_bin = pkgutil.get_data( 'helpmod', 'help_data.txt' )
 
-In Python 3, this returns the contents of the ``help_data.txt`` file as a binary string.
+In Python 3, this returns the contents of the :file:`help_data.txt`
+file as a binary string.
 If it is actually characters, you must decode it::
 
 	help_utf = help_bin.decode('UTF-8', 'ignore')
@@ -353,15 +354,16 @@ that you specify using the ``--icon=`` option.
 The ``bundle_identifier`` will have the value you specify with the
 ``--osx-bundle-identifier=`` option.
 
-An ``Info.plist`` file is an important part of a Mac OS X app bundle.
+An :file:`Info.plist` file is an important part of a Mac OS X app bundle.
 (See the `Apple bundle overview`_ for a discussion of the contents
 of ``Info.plist``.)
 
-|PyInstaller| creates a minimal ``Info.plist``.
+|PyInstaller| creates a minimal :file:`Info.plist`.
 You can add or overwrite entries in the plist by passing an
 ``info_plist=`` parameter to the BUNDLE call.
 The value of this argument is a Python dict.
-Each key and value in the dict becomes a key and value in the ``Info.plist`` file.
+Each key and value in the dict becomes a key and value in the
+:file:`Info.plist` file.
 For example, when you use PyQt5,
 you can set ``NSHighResolutionCapable`` to ``True`` to let your app
 also work in retina screen::
@@ -377,17 +379,17 @@ also work in retina screen::
 
 The ``info_plist=`` parameter only handles simple key:value pairs.
 It cannot handle nested XML arrays.
-For example, if you want to modify ``Info.plist`` to tell Mac OS X
+For example, if you want to modify :file:`Info.plist` to tell Mac OS X
 what filetypes your app supports, you must add a 
-``CFBundleDocumentTypes`` entry to ``Info.plist``
+``CFBundleDocumentTypes`` entry to :file:`Info.plist`
 (see `Apple document types`_).
 The value of that keyword is a list of dicts,
 each containing up to five key:value pairs.
 
-To add such a value to your app's ``Info.plist`` you must edit the
+To add such a value to your app's :file:`Info.plist` you must edit the
 plist file separately after |PyInstaller| has created the app.
 However, when you re-run |PyInstaller|, your changes will be wiped out.
-One solution is to prepare a complete ``Info.plist`` file and
+One solution is to prepare a complete :file:`Info.plist` file and
 copy it into the app after creating it.
 
 Begin by building and testing the windowed app.
@@ -489,7 +491,8 @@ Suppose you have a product that comprises three apps named
 Check for warnings and test each of the apps individually.
 Deal with any hidden imports and other problems.
 When all three work correctly,
-combine the statements from the three files ``foo.spec``, ``bar.spec`` and ``zap.spec``
+combine the statements from the three files :file:`foo.spec`,
+:file:`bar.spec` and :file:`zap.spec`
 as follows.
 
 First copy the Analysis statements from each,
@@ -529,12 +532,12 @@ Save the combined spec file as ``foobarzap.spec`` and then build it::
 
     pyi-build foobarzap.spec
 
-The output in the ``dist`` folder will be all three apps, but
-the apps ``dist/bar/bar`` and ``dist/zap/zap`` will refer to
-the contents of ``dist/foo/`` for shared dependencies.
+The output in the :file:`dist` folder will be all three apps, but
+the apps :file:`dist/bar/bar` and :file:`dist/zap/zap` will refer to
+the contents of :file:`dist/foo/` for shared dependencies.
 
 There are several multipackage examples in the 
-|PyInstaller| distribution folder under ``/tests/old_suite/multipackage``.
+|PyInstaller| distribution folder under :file:`/tests/old_suite/multipackage`.
 
 Remember that a spec file is executable Python.
 You can use all the Python facilities (``for`` and ``with``
@@ -555,7 +558,7 @@ which are discussed in the preceding sections.
 Other globals contain information about the build environment:
 
 ``DISTPATH``
-	The relative path to the ``dist`` folder where
+	The relative path to the :file:`dist` folder where
 	the application will be stored.
 	The default path is relative to the current directory.
 	If the ``--distpath=`` option is used, ``DISTPATH`` contains that value.
@@ -566,23 +569,23 @@ Other globals contain information about the build environment:
 
 ``SPEC``
 	The complete spec file argument given to the
-	``pyinstaller`` command, for example ``myscript.spec``
-	or ``source/myscript.spec``.
+	``pyinstaller`` command, for example :file:`myscript.spec`
+	or :file:`source/myscript.spec`.
 
 ``SPECPATH``
 	The path prefix to the ``SPEC`` value as returned by ``os.split()``.
 
 ``specnm``
-	The name of the spec file, for example ``myscript``.
+	The name of the spec file, for example :file:`myscript`.
 
 ``workpath``
-	The path to the ``build`` directory. The default is relative to
+	The path to the :file:`build` directory. The default is relative to
 	the current directory. If the ``workpath=`` option is used,
 	``workpath`` contains that value.
 
 ``WARNFILE``
 	The full path to the warnings file in the build directory,
-	for example ``build/warnmyscript.txt``.
+	for example :file:`build/warnmyscript.txt`.
 
 
 .. include:: _common_definitions.txt
