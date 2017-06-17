@@ -101,6 +101,8 @@ from :file:`/lib` or :file:`/usr/lib`, assuming
 these will be found in every system.
 
 
+.. _Bundling to One Folder:
+
 Bundling to One Folder
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -161,6 +163,8 @@ that all the necessary support files were included.
 (This is an overview.
 For more detail, see :ref:`The Bootstrap Process in Detail` below.)
 
+
+.. _Bundling to One File:
 
 Bundling to One File
 ~~~~~~~~~~~~~~~~~~~~~
