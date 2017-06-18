@@ -83,3 +83,6 @@ elif is_module_satisfies('sphinx >= 1.3.1'):
 
 if is_module_satisfies('sphinx >= 1.6.1'):
     hiddenimports += collect_submodules('sphinx.environment.collectors')
+
+if is_module_satisfies('sphinx >= 1.6.2'):
+    hiddenimports += collect_submodules('sphinx.parsers')
