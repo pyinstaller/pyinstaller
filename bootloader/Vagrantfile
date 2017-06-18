@@ -219,7 +219,7 @@ Vagrant.configure(2) do |config|
   end
 
   #--- Linux 64 bit, using Debian 8.2 from boxcutter ---
-  # using images from buxcutter since they already include support for
+  # using images from boxcutter since they already include support for
   # shared folders
   config.vm.define "linux64" do |b|
     b.vm.box = "boxcutter/debian82"
@@ -307,7 +307,7 @@ Vagrant.configure(2) do |config|
 
   #--- Windows 64 bit
   #- This box requires interaction, automated build is not possible at
-  #- the monment. Please read the README for more information.
+  #- the moment. Please see the README for more information.
   config.vm.define "windows10" do |b|
     b.vm.box = "Microsoft/EdgeOnWindows10"
     b.vm.guest = :windows
@@ -337,7 +337,7 @@ Vagrant.configure(2) do |config|
         :privileged => false, :inline => windows_disable_updates()
 
     # Install mingw-w64 into $HOME
-    # Note: Our wscript file currently dosn't support cross building,
+    # Note: Our wscript file currently doesn't support cross building,
     # so be can't use mingw coming with cygwin.
     b.vm.provision "download mingw-w64 archive", :type => :file,
         source: "~/Downloads/x86_64-6.2.0-release-posix-sjlj-rt_v5-rev1.7z",
