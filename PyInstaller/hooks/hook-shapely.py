@@ -10,6 +10,7 @@
 import os
 
 from PyInstaller.utils.hooks import get_package_paths
+from PyInstaller.utils.hooks import is_module_satisfies
 from PyInstaller import compat
 
 # Necessary when using the vectorized subpackage
@@ -34,4 +35,5 @@ elif compat.is_linux:
     # ./libs directory under its' package. There is a proposed fix for this in
     # shapely but it has not been accepted it:
     # https://github.com/Toblerity/Shapely/pull/485
-    binaries += [(os.path.join(lib_dir, f), dest_dir) for f in os.listdir(lib_dir)]
+    if is_module_satisfies('shapely <= 1.6'):
+        binaries += [(os.path.join(lib_dir, f), dest_dir) for f in os.listdir(lib_dir)]
