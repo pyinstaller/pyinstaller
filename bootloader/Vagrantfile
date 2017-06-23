@@ -134,10 +134,15 @@ def packages_cygwin(version)
 end
 
 def windows_disable_updates()
+  # TODO: Add more entries to really disable all auto-updates and reboots.
   return <<-EOF
-    regtool add /HKLM/SOFTWARE/Policies/Microsoft/Windows/WindowsUpdate
-    regtool add /HKLM/SOFTWARE/Policies/Microsoft/Windows/WindowsUpdate/AU
-    regtool set /HKLM/SOFTWARE/Policies/Microsoft/Windows/WindowsUpdate/AU/NoAutoUpdate 1
+    echo > no-updates.ps1 '
+    $base = "HKLM:/Software/Policies/Microsoft/Windows/"
+    New-Item -Force -Path "$base/WindowsUpdate" | Out-Null
+    New-Item -Force -Path "$base/WindowsUpdate/AU" | Out-Null
+    New-ItemProperty -Path "$base/WindowsUpdate/AU" -Name "NoAutoUpdate" -Value 1 -PropertyType DWORD -Force | Out-Null
+    Get-ItemProperty "$base/WindowsUpdate/AU"
+    ' ; powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./no-updates.ps1
   EOF
 end
 
