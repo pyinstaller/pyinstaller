@@ -324,6 +324,11 @@ Vagrant.configure(2) do |config|
     b.ssh.password = "Passw0rd!"
     b.ssh.insert_key = false
 
+    # Disable auto-update - only partially working
+    b.vm.provision "disable auto-updates", :type => :shell,
+        :privileged => false, :inline => windows_disable_updates(),
+        :keep_color => true
+
     b.vm.provider :virtualbox do |v|
       v.memory = 2048
       #v.gui = true
@@ -336,10 +341,6 @@ Vagrant.configure(2) do |config|
     # Reload to get into the new cygwin environment and rsync the
     # synced folder
     b.vm.provision :reload
-
-    # Disable auto-update - only partially working
-    b.vm.provision "disable auto-updates", :type => :shell,
-        :privileged => false, :inline => windows_disable_updates()
 
     # Install mingw-w64 into $HOME
     # Note: Our wscript file currently doesn't support cross building,
