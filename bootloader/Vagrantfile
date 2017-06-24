@@ -9,7 +9,7 @@
 # Copyright (C) 2015 The Borg Collective http://borgbackup.readthedocs.org/
 
 
-Vagrant.require_version ">= 1.5" # shared-folder w/ mount-options
+Vagrant.require_version ">= 1.9.5" # Enabling shared folders for winssh
 
 if not (Dir.exist?('./src') and File.exist?('./wscript'))
    abort("vagrant must be called from within the 'bootloader' directory")
