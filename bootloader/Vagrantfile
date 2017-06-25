@@ -58,16 +58,18 @@ def build_osxcross
   return <<-EOF
     sudo modprobe fuse
     PATH=$PATH:/sbin:/usr/sbin
+    SDK=/vagrant/bootloader/_sdks/osx
     cd osxcross
+    mkdir -p $SDK
     # Build darling-dmg, mount the ``.dmg`` image file via fuse and extract
     # the SDK into MacOSX*.tar.*
-    ./tools/gen_sdk_package_darling_dmg.sh /vagrant/macOSX/Xcode_7.3.1.dmg
+    ./tools/gen_sdk_package_darling_dmg.sh $SDK/Xcode_7.3.1.dmg
     mv MacOSX*.tar.* tarballs/
     # Build the build-tools into directory `target/`
     UNATTENDED=1 ./build.sh
     # Create a tar-ball including the SDK and the build-tools
     echo "Packaging SDK and cctools - this may take a while"
-    tar -C target --xz -cf /tmp/osxcross.tar.xz .
+    tar -C target --xz -cf $SDK/osxcross.tar.xz .
   EOF
 end
 
@@ -190,7 +192,7 @@ def build_bootloader_target_osx(boxname)
     # Unpack the SDK and the build-tools (cctools)
     if [ ! -d ~/osxcross ] ; then
         mkdir -p ~/osxcross
-        tar -C ~/osxcross --xz -xf /vagrant/macOSX/osxcross.tar.xz
+        tar -C ~/osxcross --xz -xf /vagrant/bootloader/_sdks/osx/osxcross.tar.xz
     fi
     PATH=~/osxcross/bin:$PATH
     echo $PATH
@@ -205,28 +207,11 @@ Vagrant.configure(2) do |config|
   # Do not leak information about usage by by update-checks.
   config.vm.box_check_update = false
 
-  # Do not let the VM access . on the host machine via the default
-  # shared folder! But ...
-  config.vm.synced_folder ".", "/vagrant", disabled: true
-
-  # ... use rsync to copy content to the folder. Need to use the
-  # parent directory since for building the windows bootloader we need
-  # to access some image files in ../PyInstaller/bootloader/images/.
-  #
-  # We use rsynced folders since these are the only ones I got to work
-  # in Windows and they do not require VirtualBxo addons in the guest,
-  # which will allow us to switch to the official Debian boxes later.
-  config.vm.synced_folder "..", "/vagrant", :type => "rsync",
-      :rsync__args => ["--verbose", "--archive", "--delete", "-z",
-                       "--include=bootloader", "--include=PyInstaller",
-                       "--exclude=/*", "--cvs-exclude", "--exclude=*.pyc",
-                       "--exclude=bootloader/build",
-                       "--exclude=bootloader/_sdks",
-                       "--exclude=bootloader/.lock-*",
-                       "--exclude=bootloader/.waf-*",
-                       "--exclude=bootloader/waf-*"],
-      # chown fails on the OS X box, since group 'vagrant' is missing
-      :rsync__chown => false
+  # Let the VM access the dirstribution folder (the parent directory) on the
+  # host machine via the default shared folder. We need to use the parent
+  # directory since for building the windows bootloader we need to access some
+  # image files in ../PyInstaller/bootloader/images/.
+  config.vm.synced_folder "..", "/vagrant"
 
   config.vm.provider :virtualbox do |v|
     #v.gui = true
@@ -241,9 +226,6 @@ Vagrant.configure(2) do |config|
     b.vm.provider :virtualbox do |v|
       v.memory = 768
     end
-    b.vm.provision "fix permissions", :type => :shell, :privileged => true,
-        # Allow some files to not be changed (e.g. due to directory layout)
-        :inline => "chown -R vagrant: /vagrant || true"
     b.vm.provision "packages debianoid", :type => :shell, :inline => packages_debianoid
     b.vm.provision "build bootloader", :type => :shell, :privileged => false, :inline => build_bootloader("linux64"),
         :keep_color => true
@@ -252,9 +234,6 @@ Vagrant.configure(2) do |config|
         :inline => build_bootloader_target_win32("linux64"),
         :keep_color => true
     if File.exist?("_sdks/osx/osxcross.tar.xz")
-      # Do not rsync this to avoid copying 4GB into the machine
-      config.vm.synced_folder "_sdks/osx", "/vagrant/macOSX",
-          :mount_options => ["ro"]
       b.vm.provision "build bootloader for osx", :type => :shell,
           :privileged => false,
           :inline => build_bootloader_target_osx("linux64"),
@@ -268,13 +247,6 @@ Vagrant.configure(2) do |config|
     b.vm.provider :virtualbox do |v|
       v.memory = 768
     end
-
-    if File.exist?("_sdks/osx/Xcode_7.3.1.dmg")
-      # Do not rsync this to avoid copying 4.9 GB into the machine
-      config.vm.synced_folder "_sdks/osx", "/vagrant/macOSX",
-          :mount_options => ["ro"]
-    end
-
     b.vm.provision "packages osxcross debianoid", :type => :shell,
         :inline => packages_osxcross_debianoid,
         :keep_color => true
@@ -291,6 +263,21 @@ Vagrant.configure(2) do |config|
   #--- Mac OS X ---
   config.vm.define "darwin64" do |b|
     b.vm.box = "jhcook/yosemite-clitools"
+
+    # Guest additions are not available for OS X and thus no shared folders
+    config.vm.synced_folder "..", "/vagrant", :type => "rsync",
+      # Avoid rsyncing the huge SDKs not used here
+      :rsync__args => ["--verbose", "--archive", "--delete", "-z",
+                       "--include=bootloader", "--include=PyInstaller",
+                       "--exclude=/*", "--cvs-exclude", "--exclude=*.pyc",
+                       "--exclude=bootloader/build",
+                       "--exclude=bootloader/_sdks",
+                       "--exclude=bootloader/.lock-*",
+                       "--exclude=bootloader/.waf-*",
+                       "--exclude=bootloader/waf-*"],
+      # chown fails on the OS X box, since group 'vagrant' is missing
+      :rsync__chown => false
+
     b.vm.provider :virtualbox do |v|
       v.gui = true
       v.customize ['modifyvm', :id, '--ostype', 'MacOS1010_64']
@@ -348,8 +335,7 @@ Vagrant.configure(2) do |config|
     b.vm.provision "packages cygwin", :type => :shell, :privileged => false,
         :inline => packages_cygwin("x86_64")
 
-    # Reload to get into the new cygwin environment and rsync the
-    # synced folder
+    # Reload to get into the new cygwin environment
     b.vm.provision :reload
 
     # Install mingw-w64 into $HOME
