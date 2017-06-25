@@ -63,7 +63,7 @@ def build_osxcross
     mkdir -p $SDK
     # Build darling-dmg, mount the ``.dmg`` image file via fuse and extract
     # the SDK into MacOSX*.tar.*
-    ./tools/gen_sdk_package_darling_dmg.sh $SDK/Xcode_7.3.1.dmg
+    ./tools/gen_sdk_package_darling_dmg.sh $SDK/Xcode_7.3.1.dmg || exit 1
     mv MacOSX*.tar.* tarballs/
     # Build the build-tools into directory `target/`
     UNATTENDED=1 ./build.sh
