@@ -357,6 +357,13 @@ def set_arch_flags(ctx):
 
 
 def configure(ctx):
+    # For MSVC the target arch must already been set when the compiler is
+    # searched.
+    if ctx.options.target_arch == '32bit':
+        ctx.env['MSVC_TARGETS'] = ['x86']
+    elif ctx.options.target_arch == '64bit':
+        ctx.env['MSVC_TARGETS'] = ['x64']
+
     ### C compiler
     # Allow to use Clang if preferred.
     if ctx.options.clang:
@@ -528,10 +535,14 @@ def configure(ctx):
     ### Libraries
 
     if ctx.env.DEST_OS == 'win32':
-        ctx.check_cc(lib='user32', mandatory=True)
-        ctx.check_cc(lib='comctl32', mandatory=True)
-        ctx.check_cc(lib='kernel32', mandatory=True)
-        ctx.check_cc(lib='ws2_32', mandatory=True)
+        if ctx.env.CC_NAME == 'msvc':
+            ctx.check_libs_msvc('user32 comctl32 kernel32 ws2_32',
+                                mandatory=True)
+        else:
+            ctx.check_cc(lib='user32', mandatory=True)
+            ctx.check_cc(lib='comctl32', mandatory=True)
+            ctx.check_cc(lib='kernel32', mandatory=True)
+            ctx.check_cc(lib='ws2_32', mandatory=True)
     else:
         # Mac OS X and FreeBSD do not need libdl.
         # https://stackoverflow.com/questions/20169660/where-is-libdl-so-on-mac-os-x
