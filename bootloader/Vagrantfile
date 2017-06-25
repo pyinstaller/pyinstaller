@@ -106,7 +106,10 @@ def packages_cygwin(version)
 
   return <<-EOF
     mkdir -p /cygdrive/c/cygwin
+    # Download setup.exe
     powershell -Command '(New-Object System.Net.WebClient).DownloadFile("https://www.cygwin.com/#{setup_exe}","C:\\cygwin\\#{setup_exe}")'
+
+    # Create a .bat file performing the installation
     echo '
     REM --- Change to use different CygWin platform and final install path
     set CYGSETUP=#{setup_exe}
@@ -123,12 +126,17 @@ def packages_cygwin(version)
     bash -c "ssh-host-config --no"
     ' > /cygdrive/c/cygwin/install.bat
     cd /cygdrive/c/cygwin && cmd.exe /c install.bat
+
+    # Prepare and source our profile
     echo "alias mkdir='mkdir -p'" > ~/.profile
     echo "export CYGWIN_ROOT=/cygdrive/c/cygwin/CygWin" >> ~/.profile
     echo 'export PATH=$PATH:$CYGWIN_ROOT/bin' >> ~/.profile
+
     echo '' > ~/.bash_profile
+
     cmd.exe /c 'setx /m PATH "%PATH%;C:\\cygwin\\CygWin\\bin"'
     source ~/.profile
+
     echo 'db_home: windows' > $CYGWIN_ROOT/etc/nsswitch.conf
   EOF
 end
