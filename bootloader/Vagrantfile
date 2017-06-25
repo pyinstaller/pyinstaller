@@ -15,6 +15,12 @@ if not (Dir.exist?('./src') and File.exist?('./wscript'))
    abort("vagrant must be called from within the 'bootloader' directory")
 end
 
+# Test if a variable is `true`, like a shell-variable: Unset (nil), empty
+# string or some value expressing `false` means `false`.
+def is_set?(s)
+  not (s == nil or s == "" or (s =~ /^(false|f|n|no|0)$/i))
+end
+
 def packages_debianoid
   return <<-EOF
     dpkg --add-architecture i386
@@ -145,6 +151,26 @@ def packages_cygwin(version)
   EOF
 end
 
+def packages_chocolatey()
+  return <<-EOF
+    echo > install-choco.ps1 '
+    "Install chocolatey"
+    iex ((New-Object System.Net.WebClient).DownloadString("https://chocolatey.org/install.ps1"))
+    ' ; powershell -NoProfile -ExecutionPolicy Bypass -File ./install-choco.ps1
+  EOF
+end
+
+def choco_install(packages)
+  # Using the full path for `choco` here saves the need to reload the machine
+  # to get $PATH set.
+   return <<-EOF
+    echo > install-choco.ps1 '
+    $env:Path += ";$($env:ProgramData)/Chocolatey/bin"
+    choco install -y #{packages}
+    ' ; powershell -NoProfile -ExecutionPolicy Bypass -File ./install-choco.ps1
+  EOF
+end
+
 def windows_disable_updates()
   # TODO: Add more entries to really disable all auto-updates and reboots.
   return <<-EOF
@@ -175,6 +201,14 @@ def build_bootloader(boxname)
     done
     python ./waf all
     python ./waf all --target-arch=32bit
+  EOF
+end
+
+def build_bootloader_on_windows(boxname)
+  return <<-EOF
+    cd c:/vagrant/bootloader
+    c:/python27/python.exe ./waf all --target-arch=64bit
+    c:/python27/python.exe ./waf all --target-arch=32bit
   EOF
 end
 
@@ -331,26 +365,42 @@ Vagrant.configure(2) do |config|
       #v.gui = true
     end
 
-    # Install cygwin to get rsync and 7zip
-    b.vm.provision "packages cygwin", :type => :shell, :privileged => false,
+    if is_set?(ENV['MINGW'])
+      #-- Build using MinGW-64 in cygwin
+      # Install cygwin to get rsync and 7zip
+      b.vm.provision "packages cygwin", :type => :shell, :privileged => false,
         :inline => packages_cygwin("x86_64")
 
-    # Reload to get into the new cygwin environment
-    b.vm.provision :reload
+      # Reload to get into the new cygwin environment
+      b.vm.provision :reload
 
-    # Install mingw-w64 into $HOME
-    # Note: Our wscript file currently doesn't support cross building (here:
-    # from cygwin to win32), so be can't use mingw coming with cygwin.
-    b.vm.provision "download mingw-w64 archive", :type => :file,
+      # Install mingw-w64 into $HOME
+      # Note: Our wscript file currently doesn't support cross building (here:
+      # from cygwin to win32), so be can't use mingw coming with cygwin.
+      b.vm.provision "download mingw-w64 archive", :type => :file,
         source: "~/Downloads/x86_64-6.2.0-release-posix-sjlj-rt_v5-rev1.7z",
         destination: "Downloads/mingw-w64.7z"  # will go into $HOME
-    b.vm.provision "install mingw-w64", :type => :shell, :privileged => false,
+      b.vm.provision "install mingw-w64", :type => :shell, :privileged => false,
         :inline => "7z x -o$HOME $HOME/Downloads/mingw-w64.7z"
 
-    # Build the bootloader
-    b.vm.provision "build bootloader", :type => :shell, :privileged => false,
+      # Build the bootloader
+      b.vm.provision "build bootloader", :type => :shell, :privileged => false,
         :inline => build_bootloader("windows10-64"),
         :keep_color => true
+
+    else
+      #-- Build using Visual C++
+      b.vm.provision "install chocolatey",
+        :type => :shell, :privileged => false, :keep_color => true,
+        :inline => packages_chocolatey()
+      b.vm.provision "install packages",
+        :type => :shell, :privileged => false, :keep_color => true,
+        :inline => choco_install("python2 vcbuildtools")
+      b.vm.provision "build bootloader",
+        :type => :shell, :privileged => false, :keep_color => true,
+        :inline => build_bootloader_on_windows("windows10")
+    end
+
   end
 
 end
