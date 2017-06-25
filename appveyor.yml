@@ -26,73 +26,61 @@ environment:
     - PYTHON: C:\Python36-x64
       PYTHON_VERSION: 3.6
       PYTHON_ARCH: 64
-      VCVARSALL: x64
       TEST_LIBRARIES: NO
 
     - PYTHON: C:\Python36-x64
       PYTHON_VERSION: 3.6
       PYTHON_ARCH: 64
-      VCVARSALL: x64
       TEST_LIBRARIES: YES
 
     - PYTHON: C:\Python36
       PYTHON_VERSION: 3.6
       PYTHON_ARCH: 32
-      VCVARSALL: x86
       TEST_LIBRARIES: NO
 
     - PYTHON: C:\Python36
       PYTHON_VERSION: 3.6
       PYTHON_ARCH: 32
-      VCVARSALL: x86
       TEST_LIBRARIES: YES
 
     - PYTHON: C:\Python35
       PYTHON_VERSION: 3.5
       PYTHON_ARCH: 32
-      VCVARSALL: x86
       TEST_LIBRARIES: NO
 
     - PYTHON: C:\Python35
       PYTHON_VERSION: 3.5
       PYTHON_ARCH: 32
-      VCVARSALL: x86
       TEST_LIBRARIES: YES
 
     - PYTHON: C:\Python34
       PYTHON_VERSION: 3.4
       PYTHON_ARCH: 32
-      VCVARSALL: x86
       TEST_LIBRARIES: NO
 
     - PYTHON: C:\Python34
       PYTHON_VERSION: 3.4
       PYTHON_ARCH: 32
-      VCVARSALL: x86
       TEST_LIBRARIES: YES
 
     - PYTHON: C:\Python33
       PYTHON_VERSION: 3.3
       PYTHON_ARCH: 32
-      VCVARSALL: x86
       TEST_LIBRARIES: NO
 
     - PYTHON: C:\Python33
       PYTHON_VERSION: 3.3
       PYTHON_ARCH: 32
-      VCVARSALL: x86
       TEST_LIBRARIES: YES
 
     - PYTHON: C:\Python27
       PYTHON_VERSION: 2.7
       PYTHON_ARCH: 32
-      VCVARSALL: x86
       TEST_LIBRARIES: NO
 
     - PYTHON: C:\Python27
       PYTHON_VERSION: 2.7
       PYTHON_ARCH: 32
-      VCVARSALL: x86
       TEST_LIBRARIES: YES
 
 
@@ -121,8 +109,7 @@ install:
 
   # Compile bootloader.
   - cd bootloader
-  - '"C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat" %VCVARSALL%'
-  - python waf --msvc_version="msvc 12.0" distclean all --msvc_target=%VCVARSALL%
+  - python waf all --target-arch=%PYTHON_ARCH%bit
   - cd ..
 
   ### Install the PyInstaller dependencies.
