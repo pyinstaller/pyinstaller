@@ -14,6 +14,9 @@ pip install https://github.com/pyinstaller/pyinstaller/archive/develop.zip
 
 If you problem persists, please provide all information as stated in our "How to Report Bugs" guide.
 https://github.com/pyinstaller/pyinstaller/wiki/How-to-Report-Bugs.
+The help for github's text-editor is hidden behind "Styling with Markdown is
+supported" just below the edit-box.
+
 
 **Otherwise we will not be willed to help you.**
 
