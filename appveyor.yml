@@ -110,6 +110,8 @@ install:
   # Compile bootloader.
   - cd bootloader
   - python waf all --target-arch=%PYTHON_ARCH%bit
+  # Verify the bootloaders have the expected arch
+  - python ../tests/scripts/check-pefile-arch.py %PYTHON_ARCH% build/*/*.exe
   - cd ..
 
   ### Install the PyInstaller dependencies.
