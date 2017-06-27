@@ -248,7 +248,7 @@ Vagrant.configure(2) do |config|
   config.vm.synced_folder "..", "/vagrant"
 
   config.vm.provider :virtualbox do |v|
-    #v.gui = true
+    v.gui = is_set?(ENV['GUI'])
     v.cpus = 1
   end
 
@@ -313,7 +313,6 @@ Vagrant.configure(2) do |config|
       :rsync__chown => false
 
     b.vm.provider :virtualbox do |v|
-      v.gui = true
       v.customize ['modifyvm', :id, '--ostype', 'MacOS1010_64']
       v.customize ['modifyvm', :id, '--paravirtprovider', 'default']
       # Adjust CPU settings according to
@@ -362,7 +361,6 @@ Vagrant.configure(2) do |config|
 
     b.vm.provider :virtualbox do |v|
       v.memory = 2048
-      #v.gui = true
     end
 
     if is_set?(ENV['MINGW'])
