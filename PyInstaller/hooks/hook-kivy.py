@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2015-2016, PyInstaller Development Team.
+# Copyright (c) 2015-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -22,4 +22,4 @@ if is_module_satisfies('kivy >= 1.9.1'):
                              hiddenimports))
 else:
     logger = logging.getLogger(__name__)
-    logger.warn('Hook disabled because of Kivy version < 1.9.1')
+    logger.warning('Hook disabled because of Kivy version < 1.9.1')

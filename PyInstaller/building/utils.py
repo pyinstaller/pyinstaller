@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2016, PyInstaller Development Team.
+# Copyright (c) 2005-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -170,7 +170,15 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
         os.makedirs(cachedir)
     cacheindexfn = os.path.join(cachedir, "index.dat")
     if os.path.exists(cacheindexfn):
-        cache_index = load_py_data_struct(cacheindexfn)
+        try:
+            cache_index = load_py_data_struct(cacheindexfn)
+        except Exception as e:
+            # tell the user they may want to fix their cache
+            # .. however, don't delete it for them; if it keeps getting
+            #    corrupted, we'll never find out
+            logger.warn("pyinstaller bincache may be corrupted; "
+                        "use pyinstaller --clean to fix")
+            raise
     else:
         cache_index = {}
 
@@ -455,14 +463,16 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
 
         # Normalize paths.
         src_root_path_or_glob = os.path.normpath(src_root_path_or_glob)
-
-        # List of the absolute paths of all source paths matching the
-        # current glob.
-        src_root_paths = glob.glob(src_root_path_or_glob)
+        if os.path.isfile(src_root_path_or_glob):
+            src_root_paths = [src_root_path_or_glob]
+        else:
+            # List of the absolute paths of all source paths matching the
+            # current glob.
+            src_root_paths = glob.glob(src_root_path_or_glob)
 
         if not src_root_paths:
-            raise FileNotFoundError(
-                'Path or glob "%s" not found or matches no files.' % (
+            raise SystemExit(
+                'Unable to find "%s" when adding binary and data files.' % (
                 src_root_path_or_glob))
 
         for src_root_path in src_root_paths:

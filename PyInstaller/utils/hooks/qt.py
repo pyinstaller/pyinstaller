@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2005-2016, PyInstaller Development Team.
+# Copyright (c) 2005-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -157,7 +157,7 @@ def get_qmake_path(version=''):
 
     for directory in dirs:
         try:
-            qmake = os.path.join(directory, 'qmake')
+            qmake = os.path.join(directory, 'bin', 'qmake')
             versionstring = subprocess.check_output([qmake, '-query',
                                                      'QT_VERSION']).strip()
             if is_py3:

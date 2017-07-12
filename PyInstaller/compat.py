@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2016, PyInstaller Development Team.
+# Copyright (c) 2005-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -32,6 +32,7 @@ is_py27 = sys.version_info >= (2, 7) and sys.version_info < (3, 0)
 is_py34 = sys.version_info >= (3, 4)
 is_py35 = sys.version_info >= (3, 5)
 is_py36 = sys.version_info >= (3, 6)
+is_py37 = sys.version_info >= (3, 7)
 
 is_win = sys.platform.startswith('win')
 is_cygwin = sys.platform == 'cygwin'
@@ -54,7 +55,8 @@ is_unix = is_linux or is_solar or is_aix or is_freebsd or is_hpux
 # On different platforms is different file for dynamic python library.
 _pyver = sys.version_info[:2]
 if is_win:
-    PYDYLIB_NAMES = {'python%d%d.dll' % _pyver}
+    PYDYLIB_NAMES = {'python%d%d.dll' % _pyver,
+                     'libpython%d.%d.dll' % _pyver}  # For MSYS2 environment
 elif is_cygwin:
     PYDYLIB_NAMES = {'libpython%d%d.dll' % _pyver,
                      'libpython%d%dm.dll' % _pyver,
@@ -136,18 +138,6 @@ if __debug__:
     PYCO = 'c'
 else:
     PYCO = 'o'
-
-
-# Obsolete command line options (do not exist anymore).
-_OLD_OPTIONS = [
-    '--upx', '-X',
-    '-K', '--tk',
-    '-C', '--configfile',
-    '--skip-configure',
-    '-o', '--out',
-    '--buildpath',
-    ]
-
 
 # Options for python interpreter when invoked in a subprocess.
 if __debug__:
@@ -672,34 +662,6 @@ except ImportError:
                     if _access_check(name, mode):
                         return name
         return None
-
-
-# Obsolete command line options.
-
-class __obsolete_option:
-    def __init__(self, option_strings, dest, help, **kwargs):
-        self.type = bool
-        self.option_strings = option_strings
-        self.dest = dest
-        self.help = help
-        self.default = self.const = False
-        self.nargs = self.const = self.choices = self.metavar=None
-        self.required = False
-
-    def __call__(parser, namespace, values, opt):
-        return
-        parser.error('%s option does not exist anymore (obsolete).' % opt)
-
-
-def __add_obsolete_options(parser):
-    """
-    Add the obsolete options to a option-parser instance and
-    print error message when they are present.
-    """
-    g = parser.add_argument_group('Obsolete options (not used anymore)')
-    g.add_argument(*_OLD_OPTIONS,
-                   action=__obsolete_option,
-                   help='These options do not exist anymore.')
 
 
 # Site-packages functions - use native function if available.

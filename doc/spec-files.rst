@@ -54,11 +54,12 @@ replaced by the options in the spec file.
 
 Only the following command-line options have an effect when building from a spec file:
 
-*  --upx-dir=
-*  --distpath=
-*  --workpath=
-*  --noconfirm
-*  --ascii
+* ``--upx-dir=``
+* ``--distpath=``
+* ``--workpath=``
+* ``--noconfirm``
+* ``--ascii``
+* ``--clean``
 
 
 Spec File Operation
@@ -149,7 +150,7 @@ Each tuple has two values, both of which must be strings:
 
     * The first string specifies the file or files as they are in this system now.
 
-    * The second specifies the name of the folder to contain
+    * The second specifies the name of the *folder* to contain
       the files at run-time.
 
 For example, to add a single README file to the top level of a one-folder app,
@@ -160,7 +161,9 @@ you could modify the spec file as follows::
              ...
              )
 
-And the command line equivalent::
+And the command line equivalent (see
+:ref:`pyinstaller What to bundle, where to search`
+for platform-specific details)::
 
 	pyinstaller --add-data 'src/README.txt:.' myscript.py
 
@@ -186,8 +189,8 @@ The spec file is more readable if you create the list of added files
 in a separate statement::
 
     added_files = [
-             ( '/mygame/sfx/*.mp3', 'sfx' ),
              ( 'src/README.txt', '.' )
+             ( '/mygame/sfx/*.mp3', 'sfx' ),
              ]
 	a = Analysis(...
              datas = added_files,
@@ -197,9 +200,9 @@ in a separate statement::
 You can also include the entire contents of a folder::
 
     added_files = [
+             ( 'src/README.txt', '.' )
              ( '/mygame/data', 'data' ),
              ( '/mygame/sfx/*.mp3', 'sfx' ),
-             ( 'src/README.txt', '.' )
              ]
 
 The folder ``/mygame/data`` will be reproduced under the name
@@ -275,12 +278,14 @@ But perhaps ``special_ops.so`` links to ``libiodbc.2.dylib``.
 You could add it to the bundle this way::
 
     a = Analysis(...
-             binaries=[ ( '/usr/lib/libiodbc.2.dylib', 'libiodbc.dylib' ) ],
+             binaries=[ ( '/usr/lib/libiodbc.2.dylib', '.' ) ],
              ...
 
-Or via the command line::
+Or via the command line (again, see
+:ref:`pyinstaller What to bundle, where to search`
+for platform-specific details)::
 
-	pyinstaller --add-binary '/usr/lib/libiodbc.2.dylib:libiodbc.dylib' myscript.py
+	pyinstaller --add-binary '/usr/lib/libiodbc.2.dylib:.' myscript.py
 
 As with data files, if you have multiple binary files to add,
 create the list in a separate statement and pass the list by name.
@@ -570,7 +575,7 @@ Other globals contain information about the build environment:
 	or ``source/myscript.spec``.
 
 ``SPECPATH``
-	The path prefix to the ``SPEC`` value as returned by ``os.split()``.
+	The path prefix to the ``SPEC`` value as returned by ``os.path.split()``.
 
 ``specnm``
 	The name of the spec file, for example ``myscript``.

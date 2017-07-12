@@ -5,8 +5,8 @@ altgraph.GraphUtil - Utility classes and functions
 
 import random
 from collections import deque
-from PyInstaller.lib.altgraph import Graph
-from PyInstaller.lib.altgraph import GraphError
+from . import Graph
+from . import GraphError
 
 def generate_random_graph(node_num, edge_num, self_loops=False, multi_edges=False):
     '''

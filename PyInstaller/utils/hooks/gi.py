@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2005-2016, PyInstaller Development Team.
+# Copyright (c) 2005-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 def get_typelibs(module, version):
     """deprecated; only here for backwards compat.
     """
-    logger.warn("get_typelibs is deprecated, use get_gi_typelibs instead")
+    logger.warning("get_typelibs is deprecated, use get_gi_typelibs instead")
     return get_gi_typelibs(module, version)[1]
 
 
@@ -109,8 +109,15 @@ def gir_library_path_fix(path):
     # 'PyInstaller.config' cannot be imported as other top-level modules.
     from ...config import CONF
 
+    # if typelib file exist is not necessary to check gir file.
     path = os.path.abspath(path)
+    if os.path.exists(path):
+        return path, 'gi_typelibs'
+        
     common_path = os.path.commonprefix([base_prefix, path])
+    # on windows the gir file is not in the same directory as linux.
+    if is_win:
+        common_path = os.path.join([common_path, "Lib", "site-packages", "gnome"])
     gir_path = os.path.join(common_path, 'share', 'gir-1.0')
 
     typelib_name = os.path.basename(path)

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2016, PyInstaller Development Team.
+# Copyright (c) 2005-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -60,14 +60,6 @@ def test_botocore(pyi_builder):
         # verify all services
         for service in session.get_available_services():
             session.create_client(service, region_name='us-west-2')
-        """)
-
-
-@importorskip('cherrypy')
-def test_cherrypy(pyi_builder):
-    pyi_builder.test_source(
-        """
-        import cherrypy.wsgiserver
         """)
 
 
@@ -315,6 +307,7 @@ def test_zope_interface(pyi_builder):
 
 
 @xfail(is_darwin, reason='Issue #1895.')
+@xfail(is_py36, reason='Fails on python 3.6')
 @importorskip('idlelib')
 def test_idlelib(pyi_builder):
     pyi_builder.test_source(
@@ -351,6 +344,7 @@ def test_numpy(pyi_builder):
 
 
 @importorskip('openpyxl')
+@xfail(is_py36 and not is_win, reason='Issue #2363.')
 def test_openpyxl(pyi_builder):
     pyi_builder.test_source(
         """
@@ -436,6 +430,31 @@ def test_requests(tmpdir, pyi_builder, data_dir, monkeypatch):
     # command-line, us this here instead of monkeypatching Analysis.
     datas = [(str(data_dir.join('*')), '.')]
     pyi_builder.test_script('pyi_lib_requests.py')
+
+
+@importorskip('requests.packages.urllib3.packages.six')
+def test_requests_urllib3_six(pyi_builder):
+    # Test for pre-safe-import requests.packages.urllib3.packages.six.moves.
+    pyi_builder.test_source(
+        """
+        import requests.packages.urllib3.connectionpool
+        import types
+        assert isinstance(requests.packages.urllib3.connectionpool.queue,
+                          types.ModuleType)
+        """,
+        # Need to exclude urllib3, otherwise requests.packages would
+        # fall back to this
+        pyi_args=['--exclude-module', 'urllib3'])
+
+
+@importorskip('urllib3.packages.six')
+def test_urllib3_six(pyi_builder):
+    # Test for pre-safe-import urllib3.packages.six.moves.
+    pyi_builder.test_source("""
+        import urllib3.connectionpool
+        import types
+        assert isinstance(urllib3.connectionpool.queue, types.ModuleType)
+        """)
 
 
 @importorskip('sqlite3')

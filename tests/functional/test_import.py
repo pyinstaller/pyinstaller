@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2016, PyInstaller Development Team.
+# Copyright (c) 2005-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -66,6 +66,21 @@ def test_relative_import3(pyi_builder):
         """
     )
 
+@xfail(reason='modulegraph bug')
+def test_import_missing_submodule(pyi_builder):
+    # If a submodule is missing, the parent submodule must be imported.
+    pyi_builder.test_source(
+        """
+        try:
+            import pyi_testmod_missing_submod.aaa.bbb
+        except ImportError as e:
+            assert e.message.endswith(' bbb')
+        else:
+            raise RuntimeError('Buggy test-case: module'
+                       'pyi_testmod_missing_submod.aaa.bbb must not exist')
+        # parent module exists and must be included
+        __import__('pyi_testmod_missing_submod.aaa')
+        """)
 
 def test_import_submodule_global_shadowed(pyi_builder):
     """
@@ -146,6 +161,17 @@ def test_error_during_import(pyi_builder):
             raise RuntimeError("failure!")
         """)
 
+def test_import_non_existing_raises_import_error(pyi_builder):
+    pyi_builder.test_source(
+        """
+        try:
+            import zzzzzz.zzzzzzzz.zzzzzzz.non.existing.module.error_during_import2
+        except ImportError:
+            print("OK")
+        else:
+            raise RuntimeError("ImportError not raised")
+        """)
+
 # :todo: Use some package which is already installed for some other
 # reason instead of `simplejson` which is only used here.
 @importorskip('simplejson')
@@ -166,6 +192,15 @@ def test_c_extension(pyi_builder):
 @xfail(reason='__path__ not respected for filesystem modules.')
 def test_import_respects_path(pyi_builder, script_dir):
     pyi_builder.test_source('import pyi_testmod_path',
+      ['--additional-hooks-dir='+script_dir.join('pyi_hooks').strpath])
+
+
+# Verify correct handling of sys.meta_path redirects like pkg_resources 28.6.1
+# does: '_vendor.xxx' gets imported as 'extern.xxx' and using '__import__()'.
+# Note: This also requires a hook, since 'pyi_testmod_metapath1._vendor' is
+# not imported directly and won't be found by modulegraph.
+def test_import_metapath1(pyi_builder, script_dir):
+    pyi_builder.test_source('import pyi_testmod_metapath1',
       ['--additional-hooks-dir='+script_dir.join('pyi_hooks').strpath])
 
 

@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2016, PyInstaller Development Team.
+# Copyright (c) 2013-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -17,7 +17,7 @@ import sys
 os.environ['GST_REGISTRY_FORK'] = 'no'
 
 gst_plugin_paths = [sys._MEIPASS, os.path.join(sys._MEIPASS, 'gst-plugins')]
-os.environ['GST_PLUGIN_PATH'] = ':'.join(gst_plugin_paths)
+os.environ['GST_PLUGIN_PATH'] = os.pathsep.join(gst_plugin_paths)
 
 # Prevent permission issues on Windows
 os.environ['GST_REGISTRY'] = os.path.join(sys._MEIPASS, 'registry.bin')

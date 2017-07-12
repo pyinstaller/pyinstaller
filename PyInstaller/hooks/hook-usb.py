@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2016, PyInstaller Development Team.
+# Copyright (c) 2013-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -43,7 +43,7 @@ try:
             binaries = [(usblib._name, '')]
 
 except (ValueError, usb.core.USBError) as exc:
-    logger.warn("%s", exc)
+    logger.warning("%s", exc)
 
 
 # if nothing found, try to use our custom mechanism

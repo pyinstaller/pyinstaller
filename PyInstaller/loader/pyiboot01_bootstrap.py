@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2016, PyInstaller Development Team.
+# Copyright (c) 2005-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -130,10 +130,20 @@ try:
                 name = frozen_name
         return name
 
+    class PyInstallerImportError(OSError):
+        def __init__(self, name):
+            self.msg = ("Failed to load dynlib/dll %r. "
+                        "Most probably this dynlib/dll was not found "
+                        "when the application was frozen.") % name
+            self.args = (self.msg,)
+
     class PyInstallerCDLL(ctypes.CDLL):
         def __init__(self, name, *args, **kwargs):
             name = _frozen_name(name)
-            super(PyInstallerCDLL, self).__init__(name, *args, **kwargs)
+            try:
+                super(PyInstallerCDLL, self).__init__(name, *args, **kwargs)
+            except Exception as base_error:
+                raise PyInstallerImportError(name)
 
     ctypes.CDLL = PyInstallerCDLL
     ctypes.cdll = LibraryLoader(PyInstallerCDLL)
@@ -141,7 +151,10 @@ try:
     class PyInstallerPyDLL(ctypes.PyDLL):
         def __init__(self, name, *args, **kwargs):
             name = _frozen_name(name)
-            super(PyInstallerPyDLL, self).__init__(name, *args, **kwargs)
+            try:
+                super(PyInstallerPyDLL, self).__init__(name, *args, **kwargs)
+            except Exception as base_error:
+                raise PyInstallerImportError(name)
 
     ctypes.PyDLL = PyInstallerPyDLL
     ctypes.pydll = LibraryLoader(PyInstallerPyDLL)
@@ -150,7 +163,10 @@ try:
         class PyInstallerWinDLL(ctypes.WinDLL):
             def __init__(self, name,*args, **kwargs):
                 name = _frozen_name(name)
-                super(PyInstallerWinDLL, self).__init__(name, *args, **kwargs)
+                try:
+                    super(PyInstallerWinDLL, self).__init__(name, *args, **kwargs)
+                except Exception as base_error:
+                    raise PyInstallerImportError(name)
 
         ctypes.WinDLL = PyInstallerWinDLL
         ctypes.windll = LibraryLoader(PyInstallerWinDLL)
@@ -158,7 +174,10 @@ try:
         class PyInstallerOleDLL(ctypes.OleDLL):
             def __init__(self, name,*args, **kwargs):
                 name = _frozen_name(name)
-                super(PyInstallerOleDLL, self).__init__(name, *args, **kwargs)
+                try:
+                    super(PyInstallerOleDLL, self).__init__(name, *args, **kwargs)
+                except Exception as base_error:
+                    raise PyInstallerImportError(name)
 
         ctypes.OleDLL = PyInstallerOleDLL
         ctypes.oledll = LibraryLoader(PyInstallerOleDLL)

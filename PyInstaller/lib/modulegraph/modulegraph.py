@@ -38,14 +38,11 @@ if sys.version_info[0] == 2:
     from StringIO import StringIO as BytesIO
     from StringIO import StringIO
     from  urllib import pathname2url
-    def _Bchr(value):
-        return chr(value)
+    _cOrd = ord
 else:
     from urllib.request  import pathname2url
     from io import BytesIO, StringIO
-
-    def _Bchr(value):
-        return value
+    _cOrd = int
 
 
 # File open mode for reading (univeral newlines)
@@ -57,95 +54,52 @@ else:
 import codecs
 BOM = codecs.BOM_UTF8.decode('utf-8')
 
+if sys.version_info >= (3,4):
+    # In Python 3.4 or later the dis module has a much nicer interface
+    # for working with bytecode, use that instead of peeking into the
+    # raw bytecode.
+    # Note: This nicely sidesteps any issues caused by moving from bytecode
+    # to wordcode in python 3.6.
+    get_instructions = dis.get_instructions
+else:
+    assert 'SET_LINENO' not in dis.opmap  # safty belt
 
-_HAVE_ARGUMENT_OPCODE = _Bchr(dis.HAVE_ARGUMENT)
-"""
-Minimum value of opcodes accepting arguments.
+    def get_instructions(code):
+        """
+        Iterator parsing the bytecode into easy-usable minimal emulation of
+        Python 3.4 `dis.Instruction` instances.
+        """
 
-All opcodes greater than or equal to this value accept arguments. Contrariwise,
-all opcodes less than this value accept _no_ arguments.
-"""
+        # shortcuts
+        HAVE_ARGUMENT = dis.HAVE_ARGUMENT
+        EXTENDED_ARG = dis.EXTENDED_ARG
 
+        class Instruction:
+            # Minimal emulation of Python 3.4 dis.Instruction
+            def __init__(self, opcode, oparg):
+                self.opname = dis.opname[opcode]
+                self.arg = oparg
+                # opcode, argval, argrepr, offset, is_jump_target and
+                # starts_line are not used by our code, so we leave them away
+                # here.
 
-_LOAD_CONST_OPCODE = _Bchr(dis.opname.index('LOAD_CONST'))
-"""
-Opcode signifying the `LOAD_CONST(consti)` operation, where `consti` is the
-index of the constant in the attribute `co_consts` of this module's code
-object.
-
-This operation pushes `co_consts[consti]` onto the stack.
-"""
-
-
-_IMPORT_NAME_OPCODE = _Bchr(dis.opname.index('IMPORT_NAME'))
-"""
-Opcode signifying the `IMPORT_NAME(namei)` operation, where `namei` is the
-index of the name in the attribute `co_names` of this module's code object.
-
-This operation imports the module `co_names[namei]`. TOS and TOS1 are popped
-and provide the _fromlist_ and _level_ arguments of `__import__()`. The module
-object is pushed onto the stack. The current namespace is not affected: for a
-proper import statement, a subsequent `STORE_FAST` instruction modifies the
-namespace.
-"""
-
-
-_STORE_NAME_OPCODE = _Bchr(dis.opname.index('STORE_NAME'))
-"""
-Opcode signifying the `STORE_NAME(namei)` operation, where `namei` is the
-index of the name in the attribute `co_names` of this module's code object.
-
-This operation implements `name = TOS` when compile-time analysis _cannot_
-infer that the `name` variable is:
-
-* Referenced and bound only in the local namespace (e.g., function), instead
-  implemented by the more efficient `STORE_FAST` operation.
-* Referenced but _not_ bound in the local namespace (e.g., function), instead
-  implemented by the more efficient `STORE_GLOBAL` operation.
-
-See Also
-----------
-https://tech.blog.aknin.name/2010/06/05/pythons-innards-naming
-    Human-readable discussion of the subtle differences between the
-    `STORE_NAME`, `STORE_GLOBAL`, and `STORE_FAST` opcodes.
-"""
-
-
-_STORE_GLOBAL_OPCODE = _Bchr(dis.opname.index('STORE_GLOBAL'))
-"""
-Opcode signifying the `STORE_GLOBAL(namei)` operation, where `namei` is the
-index of the name in the attribute `co_names` of this module's code object.
-
-This operation implements `name = TOS` when compile-time analysis can infer
-that the `name` variable is referenced but _not_ bound in the local namespace
-(e.g., function).
-"""
-
-
-_DELETE_NAME_OPCODE = _Bchr(dis.opname.index('DELETE_NAME'))
-"""
-Opcode signifying the `DELETE_NAME(namei)` operation, where `namei` is the
-index of the name in the attribute `co_names` of this module's code object.
-
-This operation implements `del name` when compile-time analysis _cannot_
-infer that the `name` variable is:
-
-* Referenced and bound only in the local namespace (e.g., function), instead
-  implemented by the more efficient `DELETE_FAST` operation.
-* Referenced but _not_ bound in the local namespace (e.g., function), instead
-  implemented by the more efficient `DELETE_GLOBAL` operation.
-"""
-
-
-_DELETE_GLOBAL_OPCODE = _Bchr(dis.opname.index('DELETE_GLOBAL'))
-"""
-Opcode signifying the `DELETE_GLOBAL(namei)` operation, where `namei` is the
-index of the name in the attribute `co_names` of this module's code object.
-
-This operation implements `del name` when compile-time analysis can infer that
-the `name` variable is referenced but _not_ bound in the local namespace (e.g.,
-function).
-"""
+        code = code.co_code
+        extended_arg = 0
+        i = 0
+        n = len(code)
+        while i < n:
+            c = code[i]
+            i = i + 1
+            op = _cOrd(c)
+            if op >= HAVE_ARGUMENT:
+                oparg = _cOrd(code[i]) + _cOrd(code[i + 1]) * 256 + extended_arg
+                extended_arg = 0
+                i += 2
+                if op == EXTENDED_ARG:
+                    extended_arg = oparg*65536
+            else:
+                oparg = None
+            yield Instruction(op, oparg)
 
 
 #FIXME: Leverage this rather than magic numbers below.
@@ -1723,6 +1677,7 @@ class ModuleGraph(ObjectGraph):
             submodule = self._safe_import_module(head, mname, submodule)
 
             if submodule is None:
+                # FIXME: Why do we no longer return a MissingModule instance?
                 # result = self.createNode(MissingModule, mname)
                 self.msgout(4, "raise ImportError: No module named", mname)
                 raise ImportError("No module named " + repr(mname))
@@ -2129,6 +2084,7 @@ class ModuleGraph(ObjectGraph):
             except SyntaxError:
                 co = None
                 cls = InvalidSourceModule
+                self.msg(2, "load_module: InvalidSourceModule", pathname)
 
             else:
                 cls = SourceModule
@@ -2159,16 +2115,21 @@ class ModuleGraph(ObjectGraph):
         m = self.createNode(cls, fqname)
         m.filename = pathname
         if co is not None:
-            if isinstance(co, ast.AST):
-                co_ast = co
-                co = compile(co_ast, pathname, 'exec', 0, True)
-            else:
-                co_ast = None
-            self._scan_code(m, co, co_ast)
+            try:
+                if isinstance(co, ast.AST):
+                    co_ast = co
+                    co = compile(co_ast, pathname, 'exec', 0, True)
+                else:
+                    co_ast = None
+                self._scan_code(m, co, co_ast)
 
-            if self.replace_paths:
-                co = self._replace_paths_in_code(co)
-            m.code = co
+                if self.replace_paths:
+                    co = self._replace_paths_in_code(co)
+                m.code = co
+            except SyntaxError:
+                self.msg(1, "load_module: SyntaxError in ", pathname)
+                cls = InvalidSourceModule
+                m = self.createNode(cls, fqname)
 
         self.msgout(2, "load_module ->", m)
         return m
@@ -2608,11 +2569,10 @@ class ModuleGraph(ObjectGraph):
         visitor = _Visitor(self, module)
         visitor.visit(module_code_object_ast)
 
-
     #FIXME: Optimize. Global attributes added by this method are tested by
     #other methods *ONLY* for packages, implying this method should scan and
     #handle opcodes pertaining to global attributes (e.g.,
-    #"_STORE_NAME_OPCODE", "_DELETE_GLOBAL_OPCODE") only if the passed "module"
+    #"STORE_NAME", "DELETE_GLOBAL") only if the passed "module"
     #object is an instance of the "Package" class. For all other module types,
     #these opcodes should simply be ignored.
     #
@@ -2630,9 +2590,9 @@ class ModuleGraph(ObjectGraph):
         requiring Turing-complete interpretation) directly or indirectly
         involving module importation from this code object. This includes:
 
-        * `_IMPORT_NAME_OPCODE`, denoting an import statement. Ignored unless
+        * `IMPORT_NAME`, denoting an import statement. Ignored unless
           the passed `is_scanning_imports` parameter is `True`.
-        * `_STORE_NAME_OPCODE` and `_STORE_GLOBAL_OPCODE`, denoting the
+        * `STORE_NAME` and `STORE_GLOBAL`, denoting the
           declaration of a global attribute (e.g., class, variable) in this
           module. This method stores each such declaration for subsequent
           lookup. While global attributes are usually irrelevant to import
@@ -2642,7 +2602,7 @@ class ModuleGraph(ObjectGraph):
           attributes of a package's `__init__` submodule (e.g., the `bar` in
           `from foo import bar`, which is either a non-ignorable submodule of
           `foo` or an ignorable global attribute of `foo.__init__`).
-        * `_DELETE_NAME_OPCODE` and `_DELETE_GLOBAL_OPCODE`, denoting the
+        * `DELETE_NAME` and `DELETE_GLOBAL`, denoting the
           undeclaration of a previously declared global attribute in this
           module.
 
@@ -2682,110 +2642,35 @@ class ModuleGraph(ObjectGraph):
               parsing will have already parsed import statements, which this
               parsing must avoid repeating.
         """
+        constants = module_code_object.co_consts
 
-        #FIXME: Since PyInstaller requires Python >= 2.7, "extended_import" is
-        #guaranteed to *ALWAYS* be "True". Therefore:
-        #
-        #* Remove this boolean.
-        #* Reduce the conditional testing this boolean below to only the body
-        #  of the "if extended_import:" branch.
+        level = None
+        fromlist = None
 
-        # Python >=2.5: LOAD_CONST flags, LOAD_CONST names, IMPORT_NAME name
-        # Python < 2.5: LOAD_CONST names, IMPORT_NAME name
-        extended_import = bool(sys.version_info[:2] >= (2,5))
+        prev_insts = []
 
-        # List of all bytes comprising this source module's compiled bytecode.
-        code_bytes = module_code_object.co_code
-
-        # Number of such bytes.
-        num_code_bytes = len(code_bytes)
-
-        # Index of the current byte in this list being parsed.
-        code_byte_index = 0
-
-        #FIXME: Repeating "code_byte_index - 2" everywhere below to obtain the
-        #first byte of this opcode's argument is silly, obfuscatory, and
-        #inefficient. Instead:
-        #
-        #* Define a new "code_byte_arg_index" integer local.
-        #* Set "code_byte_arg_index = code_byte_index" here.
-        #* Use "code_byte_arg_index" in lieu of "code_byte_index - 2" below.
-        #
-        #No other changes are required, which is relieving to us all.
-
-        def get_operation_arg():
-            """
-            Get the argument passed to the current bytecode operation as an
-            unsigned short (i.e., 2-byte integer).
-            """
-            return unpack(
-                '<H', code_bytes[code_byte_index - 2:code_byte_index])[0]
-
-        def get_operation_arg_name():
-            """
-            Get the name from this module's code object whose index in this
-            list of names is the unsigned short (i.e., 2-byte integer) argument
-            passed to the current bytecode operation.
-            """
-            co_names_index = get_operation_arg()
-            return module_code_object.co_names[co_names_index]
-
-        # For each byte index into this list of bytecode bytes...
-        while code_byte_index < num_code_bytes:
-            # Opcode signifying the current type of operation being performed.
-            code_byte = code_bytes[code_byte_index]
-
-            # Iterate the current byte index past this 1-byte opcode.
-            code_byte_index += 1
-
-            # If this opcode accepts an argument, this argument is guaranteed
-            # by design to be two bytes in size. As the current byte index is
-            # at the first of these two bytes, iterating this index past both
-            # bytes guarantees this index to now point at another opcode.
-            #
-            # To obtain the index of the first byte of this argument, simply
-            # decrement "2" from this index (e.g., "code_byte_index - 2").
-            #
-            # Note, however, that this brute-force approach effectively ignores
-            # extended arguments. While most opcodes accepting an argument only
-            # require a 2-byte argument, some require a 4-byte argument. To
-            # seamlessly support both, the most significant two bytes of such
-            # 4-byte arguments are split into a preceding "EXTENDED_ARG"
-            # opcode. For the moment, no opcode below requires such arguments.
-            #
-            # For further details, see:
-            #     https://docs.python.org/3/library/dis.html#opcode-HAVE_ARGUMENT
-            #     https://docs.python.org/3/library/dis.html#opcode-EXTENDED_ARG
-            if code_byte >= _HAVE_ARGUMENT_OPCODE:
-                code_byte_index = code_byte_index+2
-
+        for inst in get_instructions(module_code_object):
             # If this is an import statement originating from this module,
             # parse this import.
             #
             # Note that the related "IMPORT_FROM" opcode need *NOT* be parsed.
             # "IMPORT_NAME" suffices. For further details, see
             #     http://probablyprogramming.com/2008/04/14/python-import_name
-            if code_byte == _IMPORT_NAME_OPCODE:
+            if inst.opname == 'IMPORT_NAME':
                 # If this method is ignoring import statements, skip to the
                 # next opcode.
                 if not is_scanning_imports:
                     continue
 
-                if extended_import:
-                    assert code_bytes[code_byte_index-9] == _LOAD_CONST_OPCODE
-                    assert code_bytes[code_byte_index-6] == _LOAD_CONST_OPCODE
-                    arg1, arg2 = unpack('<xHxH', code_bytes[code_byte_index-9:code_byte_index-3])
-                    level = module_code_object.co_consts[arg1]
-                    target_attr_names = module_code_object.co_consts[arg2]
-                else:
-                    assert code_bytes[-6] == _LOAD_CONST_OPCODE
-                    arg1, = unpack(
-                        '<xH', code_bytes[code_byte_index-6:code_byte_index-3])
-                    level = -1
-                    target_attr_names = module_code_object.co_consts[arg1]
+                assert prev_insts[-2].opname == 'LOAD_CONST'
+                assert prev_insts[-1].opname == 'LOAD_CONST'
 
-                assert target_attr_names is None or type(target_attr_names) is tuple
-                target_module_partname = get_operation_arg_name()
+                # Python >=2.5: LOAD_CONST flags, LOAD_CONST names, IMPORT_NAME name
+                level = module_code_object.co_consts[prev_insts[-2].arg]
+                fromlist = module_code_object.co_consts[prev_insts[-1].arg]
+
+                assert fromlist is None or type(fromlist) is tuple
+                target_module_partname = module_code_object.co_names[inst.arg]
 
                 #FIXME: The exact same logic appears in _collect_import(),
                 #which isn't particularly helpful. Instead, defer this logic
@@ -2800,54 +2685,49 @@ class ModuleGraph(ObjectGraph):
                 #* Shift the logic below to _process_imports().
                 #* Remove the same logic from _collect_import().
                 have_star = False
-                if target_attr_names is not None:
-                    target_attr_names = set(target_attr_names)
-                    if '*' in target_attr_names:
-                        target_attr_names.remove('*')
+                if fromlist is not None:
+                    fromlist = set(fromlist)
+                    if '*' in fromlist:
+                        fromlist.remove('*')
                         have_star = True
 
                 # Record this import as originating from this module for
                 # subsequent handling by the _process_imports() method.
                 module._deferred_imports.append((
                     have_star,
-                    (target_module_partname, module, target_attr_names, level),
+                    (target_module_partname, module, fromlist, level),
                     {}
                 ))
-            # Else if this is the declaration of a global attribute (e.g.,
-            # class, variable) in this module, store this declaration for
-            # subsequent lookup. See method docstring for further details.
-            #
-            # Global attributes are usually irrelevant to import parsing, but
-            # remain the only means of distinguishing erroneous non-ignorable
-            # attempts to import non-existent submodules of a package from
-            # successful ignorable attempts to import existing global
-            # attributes of a package's "__init__" submodule (e.g., the "bar"
-            # in "from foo import bar", which is either a non-ignorable
-            # submodule of "foo" or an ignorable global attribute of
-            # "foo.__init__").
-            elif (
-                code_byte == _STORE_NAME_OPCODE or
-                code_byte == _STORE_GLOBAL_OPCODE):
-                global_attr_name = get_operation_arg_name()
-                module.add_global_attr(global_attr_name)
-            # Else if this is the undeclaration of a previously declared global
-            # attribute (e.g., class, variable) in this module, remove that
-            # declaration to prevent subsequent lookup. See method docstring
-            # for further details.
-            elif (
-                code_byte == _DELETE_NAME_OPCODE or
-                code_byte == _DELETE_GLOBAL_OPCODE):
-                global_attr_name = get_operation_arg_name()
-                module.remove_global_attr_if_found(global_attr_name)
 
-        #FIXME: This should really be a global constant declared at the top of
-        #this module instead.
+            elif inst.opname in ('STORE_NAME', 'STORE_GLOBAL'):
+                # If this is the declaration of a global attribute (e.g.,
+                # class, variable) in this module, store this declaration for
+                # subsequent lookup. See method docstring for further details.
+                #
+                # Global attributes are usually irrelevant to import parsing, but
+                # remain the only means of distinguishing erroneous non-ignorable
+                # attempts to import non-existent submodules of a package from
+                # successful ignorable attempts to import existing global
+                # attributes of a package's "__init__" submodule (e.g., the "bar"
+                # in "from foo import bar", which is either a non-ignorable
+                # submodule of "foo" or an ignorable global attribute of
+                # "foo.__init__").
+                name = module_code_object.co_names[inst.arg]
+                module.add_global_attr(name)
+
+            elif inst.opname in ('DELETE_NAME', 'DELETE_GLOBAL'):
+                # If this is the undeclaration of a previously declared global
+                # attribute (e.g., class, variable) in this module, remove that
+                # declaration to prevent subsequent lookup. See method docstring
+                # for further details.
+                name = module_code_object.co_names[inst.arg]
+                module.remove_global_attr_if_found(name)
+
+            prev_insts.append(inst)
+            del prev_insts[:-2]
 
         # Type of all code objects.
         code_object_type = type(module_code_object)
-
-        # List of all constants in this code object.
-        constants = module_code_object.co_consts
 
         # For each constant in this code object that is itself a code object,
         # parse this constant in the same manner.
@@ -3194,6 +3074,8 @@ class ModuleGraph(ObjectGraph):
                 if namespace_dirs:
                     path_data = (None, namespace_dirs[0], (
                         '', namespace_dirs, imp.PKG_DIRECTORY))
+        except UnicodeDecodeError as exc:
+            self.msgout(1, "_find_module_path -> unicode error", exc)
         # Ensure that exceptions are logged, as this function is typically
         # called by the import_module() method which squelches ImportErrors.
         except Exception as exc:

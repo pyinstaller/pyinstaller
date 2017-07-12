@@ -13,7 +13,7 @@ altgraph.Graph - Base Graph class
   #--Nathan Denny, May 27, 1999
 """
 
-from PyInstaller.lib.altgraph import GraphError
+from . import GraphError
 from collections import deque
 
 class Graph(object):
@@ -466,7 +466,10 @@ class Graph(object):
 
         for node in bfs_list:
             for nbr_id in get_nbrs(node):
-                g.add_edge(node, nbr_id)
+                if forward:
+                    g.add_edge(node, nbr_id)
+                else:
+                    g.add_edge(nbr_id, node)
 
         return g
 

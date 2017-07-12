@@ -1,6 +1,6 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2016, PyInstaller Development Team.
+ * Copyright (c) 2013-2017, PyInstaller Development Team.
  * Distributed under the terms of the GNU General Public License with exception
  * for distributing bootloader.
  *
@@ -33,6 +33,9 @@
     #include <direct.h>
     #include <process.h>
     #include <io.h>
+#else
+    #include <sys/types.h>
+    #include <unistd.h>
 #endif
 
 /* On Mac OS X send debug msg also to syslog for gui app in debug mode. */
@@ -93,9 +96,13 @@ mbvs(const char *fmt, ...)
 {
     char msg[MBTXTLEN];
     va_list args;
+    int pid_len;
+
+    /* Add pid to the message */
+    pid_len = sprintf(msg, "[%d] ", getpid());
 
     va_start(args, fmt);
-    vsnprintf(msg, MBTXTLEN, fmt, args);
+    vsnprintf(&msg[pid_len], MBTXTLEN-pid_len, fmt, args);
     /* Ensure message is trimmed to fit the buffer. */
     /* msg[MBTXTLEN-1] = '\0'; */
     va_end(args);
@@ -113,6 +120,8 @@ void
 pyi_global_printf(const char *fmt, ...)
 {
     va_list v;
+
+    fprintf(stderr, "[%d] ", getpid());
 
     va_start(v, fmt);
     /* Sent 'LOADER text' messages to stderr. */

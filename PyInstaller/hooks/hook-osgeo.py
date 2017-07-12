@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2015-2016, PyInstaller Development Team.
+# Copyright (c) 2015-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -26,11 +26,11 @@ import sys
 # (e.g., on Windows in PYTHONHOME) for being added to the bundle.
 #
 # This hook has been tested with gdal (v.1.11.2 and 1.11.3) on:
-# - Win7 64bit
+# - Win 7 and 10 64bit
 # - Ubuntu 15.04 64bit
 # - Mac OS X Yosemite 10.10
 #
-# TODO: Fix for gdal>=2.0: 'NameError: global name 'help' is not defined'
+# TODO: Fix for gdal>=2.0.0, <2.0.3: 'NameError: global name 'help' is not defined'
 
 # flag used to identify an Anaconda environment
 is_conda = False
@@ -50,8 +50,12 @@ if len(datas) == 0:
 
     # - conda-specific
     if is_win:
-        tgt_gdal_data = os.path.join('Library', 'data')
-        src_gdal_data = os.path.join(root_path, 'Library', 'data')
+        tgt_gdal_data = os.path.join('Library', 'share', 'gdal')
+        src_gdal_data = os.path.join(root_path, 'Library', 'share', 'gdal')
+        if not os.path.exists(src_gdal_data):
+            tgt_gdal_data = os.path.join('Library', 'data')
+            src_gdal_data = os.path.join(root_path, 'Library', 'data')
+
     else:  # both linux and darwin
         tgt_gdal_data = os.path.join('share', 'gdal')
         src_gdal_data = os.path.join(root_path, 'share', 'gdal')
@@ -73,4 +77,3 @@ if is_conda:
 
     if os.path.exists(proj4_lib):
         binaries = [(proj4_lib, ""), ]
-

@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2016, PyInstaller Development Team.
+# Copyright (c) 2005-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -46,4 +46,4 @@ if pattern:
 else:
     # To add a new platform add a new elif above with the proper is_<platform> and
     # proper pattern for finding the Gio modules on your platform.
-    logger.warn('Bundling Gio modules is currently not supported on your platform.')
+    logger.warning('Bundling Gio modules is currently not supported on your platform.')

@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2016, PyInstaller Development Team.
+# Copyright (c) 2013-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -728,7 +728,8 @@ def getImports(pth):
             # dependencies should already have been handled by
             # selectAssemblies in that case, so just warn, return an empty
             # list and continue.
-            logger.warn('Can not get binary dependencies for file: %s', pth, exc_info=1)
+            logger.warning('Can not get binary dependencies for file: %s', pth,
+                           exc_info=1)
             return []
     elif is_darwin:
         return _getImports_macholib(pth)

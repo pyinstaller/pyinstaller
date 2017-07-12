@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2016, PyInstaller Development Team.
+# Copyright (c) 2005-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -15,6 +15,7 @@ Automatically build spec files containing a description of the project
 import os
 import sys
 import argparse
+from distutils.version import LooseVersion
 
 from .. import HOMEPATH, DEFAULT_SPECPATH
 from .. import log as logging
@@ -319,21 +320,15 @@ def main(scripts, name=None, onefile=None,
         # version is >= 2.4.
         try:
             import Crypto
-
-            pycrypto_version = list(map(int, Crypto.__version__.split('.')))
-            is_version_acceptable = pycrypto_version[0] >= 2 and pycrypto_version[1] >= 4
-
+            is_version_acceptable = LooseVersion(Crypto.__version__) >= LooseVersion('2.4')
             if not is_version_acceptable:
                 logger.error('PyCrypto version must be >= 2.4, older versions are not supported.')
-
                 sys.exit(1)
         except ImportError:
-            logger.error('We need PyCrypto >= 2.4 to use byte-code obufscation but we could not')
+            logger.error('We need PyCrypto >= 2.4 to use byte-code obfuscation but we could not')
             logger.error('find it. You can install it with pip by running:')
             logger.error('  pip install PyCrypto')
-
             sys.exit(1)
-
         cipher_init = cipher_init_template % {'key': key}
     else:
         cipher_init = cipher_absent_template

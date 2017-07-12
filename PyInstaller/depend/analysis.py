@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2016, PyInstaller Development Team.
+# Copyright (c) 2005-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -32,21 +32,22 @@ Other added methods look up nodes by identifier and return facts
 about them, replacing what the old ImpTracker list could do.
 """
 
-import logging
 import os
 import re
 
+from .. import HOMEPATH, configure
+from .. import log as logging
+from ..log import INFO, DEBUG, TRACE
 from ..building.datastruct import TOC
 from ..building.imphook import HooksCache
 from ..building.imphookapi import PreSafeImportModuleAPI, PreFindModulePathAPI
-from ..utils.misc import load_py_data_struct
-from ..lib.modulegraph.modulegraph import ModuleGraph
-from ..lib.modulegraph.find_modules import get_implies
 from ..compat import importlib_load_source, is_py2, PY3_BASE_MODULES,\
         PURE_PYTHON_MODULE_TYPES, BINARY_MODULE_TYPES, VALID_MODULE_TYPES, \
         BAD_MODULE_TYPES, MODULE_TYPES_TO_TOC_DICT
-from .. import HOMEPATH, configure
+from ..lib.modulegraph.find_modules import get_implies
+from ..lib.modulegraph.modulegraph import ModuleGraph
 from ..utils.hooks import collect_submodules, is_package
+from ..utils.misc import load_py_data_struct
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +80,8 @@ class PyiModuleGraph(ModuleGraph):
         hooks for the current application.
     """
 
+    # Note: these levels are completely arbitrary and may be adjusted if needed.
+    LOG_LEVEL_MAPPING = {0: INFO, 1: DEBUG, 2: TRACE, 3: TRACE, 4: TRACE}
 
     def __init__(self, pyi_homepath, user_hook_dirs=None, *args, **kwargs):
         super(PyiModuleGraph, self).__init__(*args, **kwargs)
@@ -99,6 +102,55 @@ class PyiModuleGraph(ModuleGraph):
         self._available_rthooks = load_py_data_struct(
             os.path.join(self._homepath, 'PyInstaller', 'loader', 'rthooks.dat')
         )
+
+    @staticmethod
+    def _findCaller(*args, **kwargs):
+        # Used to add an additional stack-frame above logger.findCaller.
+        # findCaller expects the caller to be three stack-frames above itself.
+        return logger.findCaller(*args, **kwargs)
+
+    def msg(self, level, s, *args):
+        """
+        Print a debug message with the given level.
+
+        1. Map the msg log level to a logger log level.
+        2. Generate the message format (the same format as ModuleGraph)
+        3. Find the caller, which findCaller expects three stack-frames above
+           itself:
+            [3] caller -> [2] msg (here) -> [1] _findCaller -> [0] logger.findCaller
+        4. Create a logRecord with the caller's information.
+        5. Handle the logRecord.
+        """
+        try:
+            level = self.LOG_LEVEL_MAPPING[level]
+        except KeyError:
+            return
+        if not logger.isEnabledFor(level):
+            return
+
+        msg = "%s %s" % (s, ' '.join(map(repr, args)))
+
+        if is_py2:
+            # Python 2 does not have 'sinfo'
+            try:
+                fn, lno, func = self._findCaller()
+            except ValueError:  # pragma: no cover
+                fn, lno, func = "(unknown file)", 0, "(unknown function)"
+            record = logger.makeRecord(
+                logger.name, level, fn, lno, msg, [], None, func, None)
+        else:
+            try:
+                fn, lno, func, sinfo = self._findCaller()
+            except ValueError:  # pragma: no cover
+                fn, lno, func, sinfo = "(unknown file)", 0, "(unknown function)", None
+            record = logger.makeRecord(
+                logger.name, level, fn, lno, msg, [], None, func, None, sinfo)
+
+        logger.handle(record)
+
+    # Set logging methods so that the stack is correctly detected.
+    msgin = msg
+    msgout = msg
 
     def _cache_hooks(self, hook_type):
         """
@@ -477,14 +529,14 @@ class PyiModuleGraph(ModuleGraph):
         :return: Code objects that might be scanned for module dependencies.
         """
         co_dict = {}
+        pure_python_module_types = PURE_PYTHON_MODULE_TYPES | {'Script',}
         node = self.findNode('ctypes')
         if node:
             referers = self.getReferers(node)
             for r in referers:
                 r_ident =  r.identifier
-                r_type = type(node).__name__
                 # Ensure that modulegraph objects has attribute 'code'.
-                if r_type in PURE_PYTHON_MODULE_TYPES:
+                if type(r).__name__ in pure_python_module_types:
                     if r_ident == 'ctypes' or r_ident.startswith('ctypes.'):
                         # Skip modules of 'ctypes' package.
                         continue
@@ -521,28 +573,12 @@ def initialize_modgraph(excludes=(), user_hook_dirs=None):
     """
     logger.info('Initializing module dependency graph...')
 
-    # Module graph-specific debug level, defaulting to the "MODULEGRAPH_DEBUG"
-    # environment variable if defined or 0 otherwise. This is a non-negative
-    # integer such that:
-    #
-    # * If 0, no module graph debug messages will be printed.
-    # * If 1, only high-level module graph debug messages will be printed.
-    # * If 2, both high-level and "second-level" module graph debug messages
-    #   will be printed.
-    # * And so on.
-    debug = os.environ.get("MODULEGRAPH_DEBUG", 0)
-    try:
-        debug = int(debug)
-    except ValueError:
-        debug = 0
-
     # Construct the initial module graph by analyzing all import statements.
     graph = PyiModuleGraph(
         HOMEPATH,
         excludes=excludes,
         # get_implies() are hidden imports known by modulgraph.
         implies=get_implies(),
-        debug=debug,
         user_hook_dirs=user_hook_dirs,
     )
 

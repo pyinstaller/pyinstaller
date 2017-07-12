@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2016, PyInstaller Development Team.
+# Copyright (c) 2005-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -154,7 +154,7 @@ class Analysis(Target):
             if not os.path.isabs(script):
                 script = os.path.join(spec_dir, script)
             if absnormpath(script) in self._old_scripts:
-                logger.warn('Ignoring obsolete auto-added script %s', script)
+                logger.warning('Ignoring obsolete auto-added script %s', script)
                 continue
             # Normalize script path.
             script = os.path.normpath(script)
@@ -607,7 +607,7 @@ class Analysis(Target):
                 return
 
         # Python lib not in dependencies - try to find it.
-        logger.info('Python library not in binary depedencies. Doing additional searching...')
+        logger.info('Python library not in binary dependencies. Doing additional searching...')
         python_lib = bindepend.get_python_library_path()
         if python_lib:
             logger.debug('Adding Python library to binary dependencies')

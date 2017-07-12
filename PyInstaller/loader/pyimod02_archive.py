@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2016, PyInstaller Development Team.
+# Copyright (c) 2005-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -184,6 +184,12 @@ class ArchiveReader(object):
     ##  def get_code(self, parent, modname, fqname):
     ##      pass
 
+    def is_package(self, name):
+        ispkg, pos = self.toc.get(name, (0, None))
+        if pos is None:
+            return None
+        return bool(ispkg)
+
     ####### Core method - Override as needed  #########
     def extract(self, name):
         """
@@ -338,6 +344,12 @@ class ZlibArchiveReader(ArchiveReader):
             self.cipher = Cipher()
         except ImportError:
             self.cipher = None
+
+    def is_package(self, name):
+        (typ, pos, length) = self.toc.get(name, (0, None, 0))
+        if pos is None:
+            return None
+        return typ == PYZ_TYPE_PKG
 
     def extract(self, name):
         (typ, pos, length) = self.toc.get(name, (0, None, 0))

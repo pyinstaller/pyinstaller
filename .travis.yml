@@ -8,7 +8,6 @@ sudo: false
 cache:
   directories:
     - $HOME/.cache/pip
-    - $HOME/.pip-accel
 
 # Try OS X.
 os:
@@ -24,6 +23,7 @@ python:
   - "3.3"
   - "3.4"
   - "3.5"
+  - "3.6"
   - "nightly"
 
 matrix:
@@ -56,21 +56,27 @@ addons:
     - libatlas-base-dev
 
 before_install:
+  # Skip build if the commit message contains [skip travis] or [travis skip]
+  - >
+      echo "$TRAVIS_COMMIT_MESSAGE"
+      | grep -E  '\[(skip travis|travis skip)\]'
+      && echo "[skip travis] has been found, exiting."
+      && exit 0 || true
   # Compile bootloader
   - cd bootloader
-  - python waf distclean all --no-lsb
+  - python waf distclean all
   - cd ..
 
 
 install:
   # Update pip.
-  - python -m pip install -U pip
+  - python -m pip install -U pip setuptools wheel
   # Install PyInstaller.
   - pip install -e .
 
   # Install dependencies for tests.
   - pip install -U -r tests/requirements-tools.txt
-  - pip install -U -r tests/requirements-linux.txt
+  - pip install -U -r tests/requirements-libraries.txt
 
 script:
   # Run tests and speed them up by sending them to multiple CPUs.

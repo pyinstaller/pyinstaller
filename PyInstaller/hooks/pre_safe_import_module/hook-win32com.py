@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2016, PyInstaller Development Team.
+# Copyright (c) 2005-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -21,9 +21,12 @@ module 'win32com.shell' is in reality 'win32comext.shell'.
 import os
 
 from PyInstaller.utils.hooks import logger, get_module_file_attribute
+from PyInstaller.compat import is_win, is_cygwin
 
 
 def pre_safe_import_module(api):
+    if not (is_win or is_cygwin):
+        return
     win32com_dir = os.path.dirname(get_module_file_attribute('win32com'))
     comext_dir = os.path.join(os.path.dirname(win32com_dir), 'win32comext')
     logger.debug('win32com: extending __path__ with dir %r' % comext_dir)

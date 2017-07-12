@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2016, PyInstaller Development Team.
+# Copyright (c) 2013-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -197,7 +197,7 @@ class File(_File):
             logger.info("Found file %s", fn)
             return fn
         else:
-            logger.warn("No such file %s", fn)
+            logger.warning("No such file %s", fn)
             return None
 
 
@@ -313,10 +313,10 @@ class Manifest(object):
     def get_manifest_dir(cls):
         winsxs = cls.get_winsxs_dir()
         if not os.path.isdir(winsxs):
-            logger.warn("No such dir %s", winsxs)
+            logger.warning("No such dir %s", winsxs)
         manifests = os.path.join(winsxs, "Manifests")
         if not os.path.isdir(manifests):
-            logger.warn("No such dir %s", manifests)
+            logger.warning("No such dir %s", manifests)
         return manifests
 
     @classmethod
@@ -326,7 +326,7 @@ class Manifest(object):
             # Windows XP
             pcfiles = os.path.join(winsxs, "Policies")
             if not os.path.isdir(pcfiles):
-                logger.warn("No such dir %s", pcfiles)
+                logger.warning("No such dir %s", pcfiles)
         else:
             # Vista or later
             pcfiles = cls.get_manifest_dir()
@@ -372,7 +372,7 @@ class Manifest(object):
                                         ".manifest")
             for manifestpth in glob(policies):
                 if not os.path.isfile(manifestpth):
-                    logger.warn("Not a file %s", manifestpth)
+                    logger.warning("Not a file %s", manifestpth)
                     continue
                 logger.info("Found %s", manifestpth)
                 try:
@@ -503,7 +503,7 @@ class Manifest(object):
                         self.getid(language=language, version=version))
             for manifestpth in paths:
                 if not os.path.isfile(manifestpth):
-                    logger.warn("Not a file %s", manifestpth)
+                    logger.warning("Not a file %s", manifestpth)
                     continue
                 assemblynm = os.path.basename(
                     os.path.splitext(manifestpth)[0])
@@ -523,8 +523,8 @@ class Manifest(object):
                         # dir is in Windows\WinSxS
                         assemblydir = os.path.join(winsxs, assemblynm)
                         if not os.path.isdir(assemblydir):
-                            logger.warn("No such dir %s", assemblydir)
-                            logger.warn("Assembly incomplete")
+                            logger.warning("No such dir %s", assemblydir)
+                            logger.warning("Assembly incomplete")
                             return []
                     else:
                         # Manifest is inside assembly dir.
@@ -537,11 +537,11 @@ class Manifest(object):
                         else:
                             # If any of our files does not exist,
                             # the assembly is incomplete
-                            logger.warn("Assembly incomplete")
+                            logger.warning("Assembly incomplete")
                             return []
                 return files
 
-        logger.warn("Assembly not found")
+        logger.warning("Assembly not found")
         return []
 
     def getid(self, language=None, version=None):
@@ -558,7 +558,7 @@ class Manifest(object):
 
         """
         if not self.name:
-            logger.warn("Assembly metadata incomplete")
+            logger.warning("Assembly metadata incomplete")
             return ""
         id = []
         if self.processorArchitecture:
@@ -606,7 +606,7 @@ class Manifest(object):
 
         """
         if not self.name:
-            logger.warn("Assembly metadata incomplete")
+            logger.warning("Assembly metadata incomplete")
             return ""
         id = []
         if self.processorArchitecture:
