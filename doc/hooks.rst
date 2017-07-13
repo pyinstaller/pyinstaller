@@ -108,7 +108,7 @@ applies them to the bundle being created.
     only when the hooked module is imported.
     Example::
 
-        hiddenimports = ['_proxy', 'utils', 'defs']
+        hiddenimports = ['h5py._proxy', 'h5py.utils', 'h5py.defs', 'h5py.h5ac']
 
 ``excludedimports``
     A list of absolute module names that should
