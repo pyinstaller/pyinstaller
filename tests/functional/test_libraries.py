@@ -23,7 +23,9 @@ from PyInstaller.utils.tests import importorskip, xfail, skipif
 
 # :todo: find a way to get this from `conftest` or such
 # Directory with testing modules used in some tests.
-_MODULES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modules')
+_MODULES_DIR = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), 'modules')
+
 
 @importorskip('boto')
 @pytest.mark.skipif(is_py3, reason='boto does not fully support Python 3')
@@ -34,8 +36,7 @@ def test_boto(pyi_builder):
 @xfail(reason='Issue #1844.')
 @importorskip('boto3')
 def test_boto3(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         import boto3
         session = boto3.Session(region_name='us-west-2')
 
@@ -52,8 +53,7 @@ def test_boto3(pyi_builder):
 @xfail(reason='Issue #1844.')
 @importorskip('botocore')
 def test_botocore(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         import botocore
         from botocore.session import Session
         session = Session()
@@ -76,18 +76,15 @@ def test_future(pyi_builder):
 
 @skipif(is_py3, reason="Only tests Python 2.7 feature")
 def test_future_queue(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         import queue
         queue.Queue()
-        """
-    )
+        """)
 
 
 @importorskip('gevent')
 def test_gevent(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         import gevent
         gevent.spawn(lambda: x)
         """)
@@ -96,8 +93,7 @@ def test_gevent(pyi_builder):
 @xfail(is_py36, reason='Fails on python 3.6')
 @importorskip('gevent')
 def test_gevent_monkey(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         from gevent.monkey import patch_all
         patch_all()
         """)
@@ -122,11 +118,11 @@ def test_tkinter_FixTk(pyi_builder):
         import tkinter
     """)
 
+
 @xfail(is_win and is_py27, reason='Issue #2147')
 @importorskip('zmq')
 def test_zmq(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         import zmq
         print(zmq.__version__)
         print(zmq.zmq_version())
@@ -134,9 +130,11 @@ def test_zmq(pyi_builder):
         import zmq.utils.strtypes
         """)
 
+
 def test_pkg_resource_res_string(pyi_builder, monkeypatch):
 
     from PyInstaller.building.build_main import Analysis
+
     class MyAnalysis(Analysis):
         def __init__(self, *args, **kwargs):
             kwargs['datas'] = datas
@@ -160,6 +158,7 @@ def test_pkg_resource_res_string(pyi_builder, monkeypatch):
 def test_pkgutil_get_data(pyi_builder, monkeypatch):
 
     from PyInstaller.building.build_main import Analysis
+
     class MyAnalysis(Analysis):
         def __init__(self, *args, **kwargs):
             kwargs['datas'] = datas
@@ -180,10 +179,12 @@ def test_pkgutil_get_data(pyi_builder, monkeypatch):
     pyi_builder.test_script('pkgutil_get_data.py')
 
 
-@xfail(reason='Our import mechanism returns the wrong loader-class for __main__.')
+@xfail(
+    reason='Our import mechanism returns the wrong loader-class for __main__.')
 def test_pkgutil_get_data__main__(pyi_builder, monkeypatch):
 
     from PyInstaller.building.build_main import Analysis
+
     class MyAnalysis(Analysis):
         def __init__(self, *args, **kwargs):
             kwargs['datas'] = datas
@@ -204,7 +205,6 @@ def test_pkgutil_get_data__main__(pyi_builder, monkeypatch):
     pyi_builder.test_script('pkgutil_get_data__main__.py')
 
 
-
 @importorskip('sphinx')
 def test_sphinx(tmpdir, pyi_builder, data_dir):
     # Note that including the data_dir fixture copies files needed by this test.
@@ -214,8 +214,7 @@ def test_sphinx(tmpdir, pyi_builder, data_dir):
 @xfail(is_py36, reason='Fails on python 3.6')
 @importorskip('pylint')
 def test_pylint(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         # The following more obvious test doesn't work::
         #
         #   import pylint
@@ -231,8 +230,7 @@ def test_pylint(pyi_builder):
 
 @importorskip('pygments')
 def test_pygments(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         # This sample code is taken from http://pygments.org/docs/quickstart/.
         from pygments import highlight
         from pygments.lexers import PythonLexer
@@ -242,12 +240,12 @@ def test_pygments(pyi_builder):
         print(highlight(code, PythonLexer(), HtmlFormatter()))
         """)
 
+
 @importorskip('markdown')
 def test_markdown(pyi_builder):
     # Markdown uses __import__ed extensions. Make sure these work by
     # trying to use the 'toc' extension..
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         import markdown
         print(markdown.markdown('testing',  ['toc']))
         """)
@@ -255,8 +253,7 @@ def test_markdown(pyi_builder):
 
 @importorskip('PyQt4')
 def test_PyQt4_QtWebKit(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         from PyQt4.QtGui import QApplication
         from PyQt4.QtWebKit import QWebView
         from PyQt4.QtCore import QTimer
@@ -277,15 +274,21 @@ def test_PyQt4_uic(tmpdir, pyi_builder, data_dir):
     pyi_builder.test_script('pyi_lib_PyQt4-uic.py')
 
 
-@pytest.mark.skipif(is_module_satisfies('Qt >= 5.6', get_module_attribute('PyQt5.QtCore', 'QT_VERSION_STR')),
-                    reason='QtWebKit is depreciated in Qt 5.6+')
+@pytest.mark.skipif(
+    is_module_satisfies('Qt >= 5.6',
+                        get_module_attribute('PyQt5.QtCore',
+                                             'QT_VERSION_STR')),
+    reason='QtWebKit is depreciated in Qt 5.6+')
 @importorskip('PyQt5')
 def test_PyQt5_QtWebKit(pyi_builder):
     pyi_builder.test_script('pyi_lib_PyQt5-QtWebKit.py')
 
 
-@pytest.mark.skipif(is_module_satisfies('Qt >= 5.6', get_module_attribute('PyQt5.QtCore', 'QT_VERSION_STR')),
-                    reason='QtWebKit is depreciated in Qt 5.6+')
+@pytest.mark.skipif(
+    is_module_satisfies('Qt >= 5.6',
+                        get_module_attribute('PyQt5.QtCore',
+                                             'QT_VERSION_STR')),
+    reason='QtWebKit is depreciated in Qt 5.6+')
 @importorskip('PyQt5')
 def test_PyQt5_uic(tmpdir, pyi_builder, data_dir):
     # Note that including the data_dir fixture copies files needed by this test.
@@ -298,8 +301,7 @@ def test_zope_interface(pyi_builder):
     # The `nspkg.pth` file is created by setuptools and thus changes
     # frequently. If this test fails most propably
     # _SETUPTOOLS_NAMESPACEPKG_PTHs in modulegraph needs to be updated.
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         # Package 'zope' does not contain __init__.py file.
         # Just importing 'zope.interface' is sufficient.
         import zope.interface
@@ -310,8 +312,7 @@ def test_zope_interface(pyi_builder):
 @xfail(is_py36, reason='Fails on python 3.6')
 @importorskip('idlelib')
 def test_idlelib(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         # This file depends on loading some icons, located based on __file__.
         import idlelib.TreeWidget
         """)
@@ -324,8 +325,7 @@ def test_keyring(pyi_builder):
 
 @importorskip('lxml')
 def test_lxml_isoschematron(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         # The import of this module triggers the loading of some
         # required XML files.
         from lxml import isoschematron
@@ -334,8 +334,7 @@ def test_lxml_isoschematron(pyi_builder):
 
 @importorskip('numpy')
 def test_numpy(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         from __future__ import print_function
         import numpy
         from numpy.core.numeric import dot
@@ -346,8 +345,7 @@ def test_numpy(pyi_builder):
 @importorskip('openpyxl')
 @xfail(is_py36 and not is_win, reason='Issue #2363.')
 def test_openpyxl(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         # Test the hook to openpyxl
         from openpyxl import __version__
         """)
@@ -355,8 +353,7 @@ def test_openpyxl(pyi_builder):
 
 @importorskip('pyodbc')
 def test_pyodbc(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         # pyodbc is a binary Python module. On Windows when installed with easy_install
         # it is installed as zipped Python egg. This binary module is extracted
         # to PYTHON_EGG_CACHE directory. PyInstaller should find the binary there and
@@ -367,8 +364,7 @@ def test_pyodbc(pyi_builder):
 
 @importorskip('pytz')
 def test_pytz(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         import pytz
         pytz.timezone('US/Eastern')
         """)
@@ -376,8 +372,7 @@ def test_pytz(pyi_builder):
 
 @importorskip('pyttsx')
 def test_pyttsx(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         # Basic code example from pyttsx tutorial.
         # http://packages.python.org/pyttsx/engine.html#examples
         import pyttsx
@@ -395,8 +390,7 @@ def test_pycparser(pyi_builder):
 
 @importorskip('Crypto')
 def test_pycrypto(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         from __future__ import print_function
         import binascii
         from Crypto.Cipher import AES
@@ -407,11 +401,13 @@ def test_pycrypto(pyi_builder):
             AES.new("\\0" * BLOCK_SIZE).encrypt("\\0" * BLOCK_SIZE)))
         """)
 
+
 @importorskip('requests')
 def test_requests(tmpdir, pyi_builder, data_dir, monkeypatch):
     # Note that including the data_dir fixture copies files needed by this test.
 
     from PyInstaller.building.build_main import Analysis
+
     class MyAnalysis(Analysis):
         def __init__(self, *args, **kwargs):
             kwargs['datas'] = datas
@@ -459,8 +455,7 @@ def test_urllib3_six(pyi_builder):
 
 @importorskip('sqlite3')
 def test_sqlite3(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         # PyInstaller did not included module 'sqlite3.dump'.
         import sqlite3
         conn = sqlite3.connect(':memory:')
@@ -476,8 +471,7 @@ def test_sqlite3(pyi_builder):
 # the backends, skipping this test if they aren't installed.
 @importorskip('scapy.all')
 def test_scapy(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         # Test-cases taken from issue #834
         import scapy.all
         scapy.all.IP
@@ -495,8 +489,7 @@ def test_scapy(pyi_builder):
 
 @importorskip('scapy.all')
 def test_scapy2(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         # Test the hook to scapy.layers.all
         from scapy.layers.all import DHCP
         """)
@@ -504,8 +497,7 @@ def test_scapy2(pyi_builder):
 
 @importorskip('scapy.all')
 def test_scapy3(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         # Test whether
         # a) scapy packet layers are not included if neither scapy.all nor
         #    scapy.layers.all are imported.
@@ -538,8 +530,7 @@ def test_scapy3(pyi_builder):
 
 @importorskip('sqlalchemy')
 def test_sqlalchemy(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         # The hook behaviour is to include with sqlalchemy all installed database
         # backends.
         import sqlalchemy
@@ -551,8 +542,7 @@ def test_sqlalchemy(pyi_builder):
 @importorskip('twisted')
 @pytest.mark.skipif(is_win, reason='Python 3 syntax error on Windows')
 def test_twisted(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         # Twisted is an event-driven networking engine.
         #
         # The 'reactor' is object that starts the eventloop.
@@ -573,8 +563,7 @@ def test_twisted(pyi_builder):
 @importorskip('pyexcelerate')
 @pytest.mark.xfail(reason='TODO - known to fail')
 def test_pyexcelerate(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         # Requires PyExcelerate 0.6.1 or higher
         # Tested on Windows 7 x64 SP1 with CPython 2.7.6
         import pyexcelerate
@@ -588,12 +577,11 @@ def test_usb(pyi_builder):
         import usb
         # This will verify that the backend is present; if not, it will
         # skip this test.
-        usb.core.find(find_all = True)
+        usb.core.find(find_all=True)
     except (ImportError, ValueError):
         pytest.skip('USB backnd not found.')
 
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         import usb.core
         # Detect usb devices.
         devices = usb.core.find(find_all = True)
@@ -604,8 +592,7 @@ def test_usb(pyi_builder):
 
 @importorskip('zeep')
 def test_zeep(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         # Test the hook to zeep
         from zeep import utils
         utils.get_version()
@@ -633,6 +620,7 @@ def test_pil_FixTk(pyi_builder):
     import FixTk, PIL
     """)
 
+
 @importorskip('PIL.ImageQt')
 @importorskip('PyQt5')
 def test_pil_PyQt5(pyi_builder):
@@ -643,6 +631,7 @@ def test_pil_PyQt5(pyi_builder):
     import PIL
     import PIL.ImageQt
     """)
+
 
 @importorskip('PIL.ImageQt')
 @importorskip('PyQt4')
@@ -658,8 +647,7 @@ def test_pil_PyQt4(pyi_builder):
 
 @importorskip('PIL')
 def test_pil_plugins(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         # Verify packaging of PIL.Image. Specifically, the hidden import of FixTk
         # importing tkinter is causing some problems.
         from PIL.Image import fromstring
@@ -682,8 +670,14 @@ def test_pil_plugins(pyi_builder):
 @importorskip('pandas')
 def test_pandas_extension(pyi_builder):
     # Tests that C extension 'pandas.lib' is properly bundled. Issue #1580.
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         from pandas.lib import is_float
         assert is_float(1) == 0
+        """)
+
+
+@importorskip('h5py')
+def test_h5py(pyi_builder):
+    pyi_builder.test_source("""
+        import h5py
         """)
