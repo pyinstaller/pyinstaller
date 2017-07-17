@@ -9,11 +9,27 @@
 # Copyright (C) 2015 The Borg Collective http://borgbackup.readthedocs.org/
 
 
+Vagrant.require_version ">= 1.9.5" # Enabling shared folders for winssh
+
 if not (Dir.exist?('./src') and File.exist?('./wscript'))
    abort("vagrant must be called from within the 'bootloader' directory")
 end
 
+# Test if a variable is `true`, like a shell-variable: Unset (nil), empty
+# string or some value expressing `false` means `false`.
+def is_set?(s)
+  not (s == nil or s == "" or (s =~ /^(false|f|n|no|0)$/i))
+end
+
+# Test if the environment variable `name` is set to `value` (case-insensitive)
+def is_env?(name, value)
+  ENV[name] and ENV[name].downcase == value.downcase
+end
+
+
 def packages_debianoid
+  # This always also installs the software for cross-building for OS X and
+  # Windows. Differentiating here is most probably not worth the effort.
   return <<-EOF
     dpkg --add-architecture i386
     apt-get update
@@ -22,15 +38,67 @@ def packages_debianoid
     apt-get -y -o Dpkg::Options::="--force-confdef" \
                -o Dpkg::Options::="--force-confold" upgrade
     apt-get install -y python python-dev python-setuptools \
-                       gcc libz-dev libc6-dev-i386 zlib1g-dev:i386
+                       gcc libz-dev libc6-dev-i386 zlib1g-dev:i386 \
+                       gcc-mingw-w64 clang
+  EOF
+end
+
+def packages_osxcross_debianoid
+  # Install packages required for building osxcross
+  return <<-EOF
+    apt-get update
+    # avoid any prompts, from http://askubuntu.com/questions/146921
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get -y -o Dpkg::Options::="--force-confdef" \
+               -o Dpkg::Options::="--force-confold" upgrade
+    # these are typically installed already on a GNU/Linux system
+    apt-get install -y cmake make sed kmod
+    apt-get install -y git fuse clang
+    # requirements for darling-dmg (not listed in tools/get_dependencies.sh)
+    apt-get install -y libxml2-dev libicu-dev libssl-dev libbz2-dev libfuse-dev
+  EOF
+end
+
+def prepare_osxcross_debianiod
+  # Download osxcross source and install packages defined there
+  return <<-EOF
+    git clone --depth 1 https://github.com/tpoechtrager/osxcross.git
+    # install requirements for cctools
+    sudo osxcross/tools/get_dependencies.sh
+  EOF
+end
+
+def build_osxcross
+  return <<-EOF
+    sudo modprobe fuse
+    PATH=$PATH:/sbin:/usr/sbin
+    SDK=/vagrant/bootloader/_sdks/osx
+    cd osxcross
+    mkdir -p $SDK
+    # Build darling-dmg, mount the ``.dmg`` image file via fuse and extract
+    # the SDK into MacOSX*.tar.*
+    ./tools/gen_sdk_package_darling_dmg.sh $SDK/Xcode_7.3.1.dmg || exit 1
+    mv MacOSX*.tar.* tarballs/
+    # Build the build-tools into directory `target/`
+    UNATTENDED=1 ./build.sh
+    # Create a tar-ball including the SDK and the build-tools
+    echo "Packaging SDK and cctools - this may take a while"
+    tar -C target --xz -cf $SDK/osxcross.tar.xz .
+  EOF
+end
+
+
+def update_darwin
+  return <<-EOF
+    set +x
+    softwareupdate --ignore iTunesX
+    softwareupdate --ignore iTunes
+    softwareupdate --install --all
   EOF
 end
 
 def packages_darwin
   return <<-EOF
-    ## for now do not install all the (security and other) updates
-    #sudo softwareupdate --install --all
-    sudo chown -R vagrant /usr/local  # brew must be able to create stuff here
     ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
     brew update
     brew upgrade --all
@@ -54,14 +122,17 @@ def packages_cygwin(version)
 
   return <<-EOF
     mkdir -p /cygdrive/c/cygwin
+    # Download setup.exe
     powershell -Command '(New-Object System.Net.WebClient).DownloadFile("https://www.cygwin.com/#{setup_exe}","C:\\cygwin\\#{setup_exe}")'
+
+    # Create a .bat file performing the installation
     echo '
     REM --- Change to use different CygWin platform and final install path
     set CYGSETUP=#{setup_exe}
     REM --- Install build version of CygWin in a subfolder
     set OURPATH=%cd%
     set CYGBUILD="C:\\cygwin\\CygWin"
-    set CYGMIRROR=ftp://mirrors.kernel.org/sourceware/cygwin/
+    set CYGMIRROR=http://mirrors.kernel.org/sourceware/cygwin/
     set BASEPKGS=openssh,rsync
     set BUILDPKGS=p7zip
     REM set BUILDPKGS=python3,python3-setuptools,python-devel,binutils,gcc-core
@@ -69,23 +140,55 @@ def packages_cygwin(version)
     cd /d C:\\cygwin\\CygWin\\bin
     regtool set /HKLM/SYSTEM/CurrentControlSet/Services/OpenSSHd/ImagePath "C:\\cygwin\\CygWin\\bin\\cygrunsrv.exe"
     bash -c "ssh-host-config --no"
+    bash -c "chown sshd_server /cygdrive/c/cygwin/CygWin/var/empty"
     ' > /cygdrive/c/cygwin/install.bat
-    cd /cygdrive/c/cygwin && cmd.exe /c install.bat
+
+    # Prepare and source our profile
     echo "alias mkdir='mkdir -p'" > ~/.profile
     echo "export CYGWIN_ROOT=/cygdrive/c/cygwin/CygWin" >> ~/.profile
-    echo 'export PATH=$PATH:$CYGWIN_ROOT/bin' >> ~/.profile
+    echo 'export PATH=$CYGWIN_ROOT/bin:$PATH' >> ~/.profile
+
     echo '' > ~/.bash_profile
-    cmd.exe /c 'setx /m PATH "%PATH%;C:\\cygwin\\CygWin\\bin"'
+
+    cmd.exe /c 'setx /m PATH "C:\\cygwin\\CygWin\\bin;%PATH%"'
     source ~/.profile
+
+    cd /cygdrive/c/cygwin && cmd.exe /c install.bat
+
     echo 'db_home: windows' > $CYGWIN_ROOT/etc/nsswitch.conf
   EOF
 end
 
-def windows_disable_updates()
+def packages_chocolatey()
   return <<-EOF
-    regtool add /HKLM/SOFTWARE/Policies/Microsoft/Windows/WindowsUpdate
-    regtool add /HKLM/SOFTWARE/Policies/Microsoft/Windows/WindowsUpdate/AU
-    regtool set /HKLM/SOFTWARE/Policies/Microsoft/Windows/WindowsUpdate/AU/NoAutoUpdate 1
+    echo > install-choco.ps1 '
+    "Install chocolatey"
+    iex ((New-Object System.Net.WebClient).DownloadString("https://chocolatey.org/install.ps1"))
+    ' ; powershell -NoProfile -ExecutionPolicy Bypass -File ./install-choco.ps1
+  EOF
+end
+
+def choco_install(packages)
+  # Using the full path for `choco` here saves the need to reload the machine
+  # to get $PATH set.
+   return <<-EOF
+    echo > install-choco.ps1 '
+    $env:Path += ";$($env:ProgramData)/Chocolatey/bin"
+    choco install -y #{packages}
+    ' ; powershell -NoProfile -ExecutionPolicy Bypass -File ./install-choco.ps1
+  EOF
+end
+
+def windows_disable_updates()
+  # TODO: Add more entries to really disable all auto-updates and reboots.
+  return <<-EOF
+    echo > no-updates.ps1 '
+    $base = "HKLM:/Software/Policies/Microsoft/Windows/"
+    New-Item -Force -Path "$base/WindowsUpdate" | Out-Null
+    New-Item -Force -Path "$base/WindowsUpdate/AU" | Out-Null
+    New-ItemProperty -Path "$base/WindowsUpdate/AU" -Name "NoAutoUpdate" -Value 1 -PropertyType DWORD -Force | Out-Null
+    Get-ItemProperty "$base/WindowsUpdate/AU"
+    ' ; powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./no-updates.ps1
   EOF
 end
 
@@ -109,35 +212,56 @@ def build_bootloader(boxname)
   EOF
 end
 
+def build_bootloader_on_windows(boxname)
+  return <<-EOF
+    cd c:/vagrant/bootloader
+    c:/python27/python.exe ./waf all --target-arch=64bit
+    c:/python27/python.exe ./waf all --target-arch=32bit
+  EOF
+end
+
+def build_bootloader_target_win32(boxname)
+  return <<-EOF
+    cd /vagrant/bootloader
+    python ./waf all CC=i686-w64-mingw32-gcc
+    python ./waf all CC=x86_64-w64-mingw32-gcc
+  EOF
+end
+
+def build_bootloader_target_osx(boxname)
+  return <<-EOF
+    cd /vagrant/bootloader
+    # Unpack the SDK and the build-tools (cctools)
+    if [ ! -d ~/osxcross ] ; then
+        mkdir -p ~/osxcross
+        tar -C ~/osxcross --xz -xf /vagrant/bootloader/_sdks/osx/osxcross.tar.xz
+    fi
+    PATH=~/osxcross/bin:$PATH
+    echo $PATH
+    # TODO: Use CC=o32-clang and CC=o64-clang when possible, see
+    # <https://github.com/tpoechtrager/osxcross/issues/119>
+    python ./waf all CC=x86_64-apple-darwin15-clang
+    python ./waf all CC=i386-apple-darwin15-clang
+  EOF
+end
+
 Vagrant.configure(2) do |config|
   # Do not leak information about usage by by update-checks.
   config.vm.box_check_update = false
 
-  # Do not let the VM access . on the host machine via the default
-  # shared folder! But ...
-  config.vm.synced_folder ".", "/vagrant", disabled: true
-
-  # ... use rsync to copy content to the folder. Need to use the
-  # parent directory since for building the windows bootloader we need
-  # to access some image files in ../PyInstaller/bootloader/images/.
-  #
-  # We use rsynced folders since these are the only ones I got to work
-  # in Windows and they do not require VirtualBxo addons in the guest,
-  # which will allow us to switch to the official Debian boxes later.
-  config.vm.synced_folder "..", "/vagrant", :type => "rsync",
-      :rsync__args => ["--verbose", "--archive", "--delete", "-z",
-                       "--include=bootloader", "--include=PyInstaller",
-                       "--exclude=/*", "--cvs-exclude", "--exclude=*.pyc",
-                       "--exclude=bootloader/build"],
-      :rsync__chown => true
+  # Let the VM access the dirstribution folder (the parent directory) on the
+  # host machine via the default shared folder. We need to use the parent
+  # directory since for building the windows bootloader we need to access some
+  # image files in ../PyInstaller/bootloader/images/.
+  config.vm.synced_folder "..", "/vagrant"
 
   config.vm.provider :virtualbox do |v|
-    #v.gui = true
+    v.gui = is_set?(ENV['GUI'])
     v.cpus = 1
   end
 
   #--- Linux 64 bit, using Debian 8.2 from boxcutter ---
-  # using images from buxcutter since they already include support for
+  # using images from boxcutter since they already include support for
   # shared folders
   config.vm.define "linux64" do |b|
     b.vm.box = "boxcutter/debian82"
@@ -145,27 +269,94 @@ Vagrant.configure(2) do |config|
       v.memory = 768
     end
     b.vm.provision "packages debianoid", :type => :shell, :inline => packages_debianoid
-    b.vm.provision "build bootloader", :type => :shell, :privileged => false, :inline => build_bootloader("linux64")
+
+    if is_env?("TARGET", "WINDOWS")
+      b.vm.provision "build bootloader for windows",
+        :type => :shell, :privileged => false, :keep_color => true,
+        :inline => build_bootloader_target_win32("linux64")
+    elsif is_env?("TARGET", "OSX")
+      if (not File.exist?("_sdks/osx/osxcross.tar.xz"))
+        abort("\nERROR: OS X cross SDK is missing. Please run once the "\
+              "`build-osxcross` machine.\n\n")
+      end
+      b.vm.provision "build bootloader for osx",
+        :type => :shell, :privileged => false, :keep_color => true,
+        :inline => build_bootloader_target_osx("linux64")
+    else
+      b.vm.provision "build bootloader",
+        :type => :shell, :privileged => false, :keep_color => true,
+        :inline => build_bootloader("linux64")
+    end
   end
 
-  #--- OS X --- not yet implemented
+  #--- Build the Darwin SDK and tools ---
+  config.vm.define "build-osxcross" do |b|
+    b.vm.box = "boxcutter/debian82"
+    b.vm.provider :virtualbox do |v|
+      v.memory = 768
+    end
+    b.vm.provision "packages osxcross debianoid", :type => :shell,
+        :inline => packages_osxcross_debianoid,
+        :keep_color => true
+    b.vm.provision "prepare osxcross debianoid", :type => :shell,
+        :inline => prepare_osxcross_debianiod,
+        :keep_color => true
+    # Reload for the case the kernel changed, thus fuse will be loaded
+    b.vm.provision :reload
+    b.vm.provision "build osxcross", :type => :shell,
+        :inline => build_osxcross,
+        :keep_color => true
+  end
+
+  #--- Mac OS X ---
   config.vm.define "darwin64" do |b|
     b.vm.box = "jhcook/yosemite-clitools"
+
+    # Guest additions are not available for OS X and thus no shared folders
+    config.vm.synced_folder "..", "/vagrant", :type => "rsync",
+      # Avoid rsyncing the huge SDKs not used here
+      :rsync__args => ["--verbose", "--archive", "--delete", "-z",
+                       "--include=bootloader", "--include=PyInstaller",
+                       "--exclude=/*", "--cvs-exclude", "--exclude=*.pyc",
+                       "--exclude=bootloader/build",
+                       "--exclude=bootloader/_sdks",
+                       "--exclude=bootloader/.lock-*",
+                       "--exclude=bootloader/.waf-*",
+                       "--exclude=bootloader/waf-*"],
+      # chown fails on the OS X box, since group 'vagrant' is missing
+      :rsync__chown => false
+
     b.vm.provider :virtualbox do |v|
-      v.gui = true
-      # Enable the VM's virtual USB controller & enable the virtual
-      # USB 2.0 controller
-      v.customize ["modifyvm", :id, "--usb", "on", "--usbehci", "off"]
+      v.customize ['modifyvm', :id, '--ostype', 'MacOS1010_64']
+      v.customize ['modifyvm', :id, '--paravirtprovider', 'default']
+      # Adjust CPU settings according to
+      # https://github.com/geerlingguy/macos-virtualbox-vm
+      v.customize ['modifyvm', :id, '--cpuidset',
+                   '00000001', '000306a9', '00020800', '80000201', '178bfbff']
+      # This should make make the box less choppy (source: geerlingguy)
+      #v.customize ["modifyvm", :id, '--audio', 'off']
+      # Disable USB variant requiring Virtualbox proprietary extension packs
+      v.customize ["modifyvm", :id, '--usbehci', 'off', '--usbxhci', 'off']
+      # Apple recommends 128MB (source: geerlingguy)
+      #v.customize ["modifyvm", :id, '--videocapmaxsize', '128MB']
     end
-    b.vm.provision "packages darwin", :type => :shell, :privileged => false,
-        :inline => packages_darwin
+    b.vm.provision "fix permissions", :type => :shell, :privileged => true,
+        :inline => "chown -R vagrant: /vagrant"
+    ## install (security and other) updates
+    b.vm.provision "update software", :type => :shell, :privileged => true,
+        :inline => update_darwin
+    #b.vm.provision :reload  # for the case updates require reboot
+    # For this box we do not need any additional packages
+    #b.vm.provision "packages darwin", :type => :shell, :privileged => false,
+    #    :inline => packages_darwin
     b.vm.provision "build bootloader", :type => :shell, :privileged => false,
-        :inline => build_bootloader("darwin64")
+        :inline => build_bootloader("darwin64"),
+        :keep_color => true
   end
 
   #--- Windows 64 bit
   #- This box requires interaction, automated build is not possible at
-  #- the monment. Please read the README for more information.
+  #- the moment. Please see the README for more information.
   config.vm.define "windows10" do |b|
     b.vm.box = "Microsoft/EdgeOnWindows10"
     b.vm.guest = :windows
@@ -177,35 +368,51 @@ Vagrant.configure(2) do |config|
     b.ssh.password = "Passw0rd!"
     b.ssh.insert_key = false
 
-    b.vm.provider :virtualbox do |v|
-      v.memory = 2048
-      #v.gui = true
-    end
-
-    # Install cygwin to get rsync and 7zip
-    b.vm.provision "packages cygwin", :type => :shell, :privileged => false,
-        :inline => packages_cygwin("x86_64")
-
-    # Reload to get into the new cygwin environment and rsync the
-    # synced folder
-    b.vm.provision :reload
-
     # Disable auto-update - only partially working
     b.vm.provision "disable auto-updates", :type => :shell,
-        :privileged => false, :inline => windows_disable_updates()
+        :privileged => false, :inline => windows_disable_updates(),
+        :keep_color => true
 
-    # Install mingw-w64 into $HOME
-    # Note: Our wscript file currently dosn't support cross building,
-    # so be can't use mingw coming with cygwin.
-    b.vm.provision "download mingw-w64 archive", :type => :file,
+    b.vm.provider :virtualbox do |v|
+      v.memory = 2048
+    end
+
+    if is_set?(ENV['MINGW'])
+      #-- Build using MinGW-64 in cygwin
+      # Install cygwin to get rsync and 7zip
+      b.vm.provision "packages cygwin", :type => :shell, :privileged => false,
+        :inline => packages_cygwin("x86_64")
+
+      # Reload to get into the new cygwin environment
+      b.vm.provision :reload
+
+      # Install mingw-w64 into $HOME
+      # Note: Our wscript file currently doesn't support cross building (here:
+      # from cygwin to win32), so be can't use mingw coming with cygwin.
+      b.vm.provision "download mingw-w64 archive", :type => :file,
         source: "~/Downloads/x86_64-6.2.0-release-posix-sjlj-rt_v5-rev1.7z",
         destination: "Downloads/mingw-w64.7z"  # will go into $HOME
-    b.vm.provision "install mingw-w64", :type => :shell, :privileged => false,
+      b.vm.provision "install mingw-w64", :type => :shell, :privileged => false,
         :inline => "7z x -o$HOME $HOME/Downloads/mingw-w64.7z"
 
-    # Build the bootloader
-    b.vm.provision "build bootloader", :type => :shell, :privileged => false,
-        :inline => build_bootloader("windows10-64")
+      # Build the bootloader
+      b.vm.provision "build bootloader", :type => :shell, :privileged => false,
+        :inline => build_bootloader("windows10-64"),
+        :keep_color => true
+
+    else
+      #-- Build using Visual C++
+      b.vm.provision "install chocolatey",
+        :type => :shell, :privileged => false, :keep_color => true,
+        :inline => packages_chocolatey()
+      b.vm.provision "install packages",
+        :type => :shell, :privileged => false, :keep_color => true,
+        :inline => choco_install("python2 vcbuildtools")
+      b.vm.provision "build bootloader",
+        :type => :shell, :privileged => false, :keep_color => true,
+        :inline => build_bootloader_on_windows("windows10")
+    end
+
   end
 
 end

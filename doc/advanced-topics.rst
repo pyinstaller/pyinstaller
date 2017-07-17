@@ -36,7 +36,8 @@ What happens during execution of bootloader:
 
 A. First process: bootloader starts.
 
-    1. If one-file mode, extract bundled files to *temppath*\ ``_MEI``\ *xxxxxx*
+    1. If one-file mode, extract bundled files to
+       :file:`{temppath}/_MEI{xxxxxx}`.
 
     2. Modify various environment variables:
 
@@ -53,7 +54,7 @@ A. First process: bootloader starts.
 
     5. Wait for the child process to finish.
 
-    6. If one-file mode, delete *temppath*\ ``_MEI``\ *xxxxxx*.
+    6. If one-file mode, delete :file:`{temppath}/_MEI{xxxxxx}`.
 
 B. Second process: bootloader itself started as a child process.
 
@@ -83,7 +84,7 @@ Running Python code requires several steps:
 
 3. Install python "egg" files.
    When a module is part of a zip file (.egg),
-   it has been bundled into the ``./eggs`` directory.
+   it has been bundled into the :file:`./eggs` directory.
    Installing means appending .egg file names to ``sys.path``.
    Python automatically detects whether an
    item in ``sys.path`` is a zip file or a directory.
@@ -105,7 +106,7 @@ PyInstaller implements the PEP 302 specification for
 importing built-in modules,
 importing "frozen" modules (compiled python code
 bundled with the app) and for C-extensions.
-The code can be read in ``./PyInstaller/loader/pyi_mod03_importers.py``.
+The code can be read in :file:`./PyInstaller/loader/pyi_mod03_importers.py`.
 
 At runtime the PyInstaller :pep:`302` hooks are appended
 to the variable ``sys.meta_path``.
@@ -128,8 +129,8 @@ in a bundled app:
 
 3. Is it a C-extension?
    The app will try to find a file with name
-   *package.subpackage.module*\ ``.pyd`` or
-   *package.subpackage.module*\ ``.so``
+   :file:`{package.subpackage.module}.pyd` or
+   :file:`{package.subpackage.module}.so`.
 
 4. Next examine paths in the ``sys.path``.
    There could be any additional location with python modules
@@ -210,7 +211,7 @@ but for the normal case you need to know only these:
 +---------------+--------------------------------------+-----------------------+--------------------------------------+
 
 The run-time name of a file will be used in the final bundle.
-It may include path elements, for example ``extras/mydata.txt``.
+It may include path elements, for example :file:`extras/mydata.txt`.
 
 A ``BINARY`` file or an ``EXTENSION`` file is assumed to be loadable, executable code,
 for example a dynamic library.
@@ -254,14 +255,15 @@ For example::
     extras_toc = Tree('../src/extras', prefix='extras', excludes=['tmp','*.pyc'])
 
 This creates ``extras_toc`` as a TOC object that lists
-all files from the relative path ``../src/extras``,
+all files from the relative path :file:`../src/extras`,
 omitting those that have the basename (or are in a folder named) ``tmp``
 or that have the type ``.pyc``.
 Each tuple in this TOC has:
 
-* A *name* composed of ``extras/``\ *filename*.
+* A *name* composed of :file:`extras/{filename}`.
 
-* A *path* consisting of a complete, absolute path to that file in the ``../src/extras`` folder (relative to the location of the spec file).
+* A *path* consisting of a complete, absolute path to that file in the
+  :file:`../src/extras` folder (relative to the location of the spec file).
 
 * A *typecode* of ``DATA`` (by default).
 
@@ -269,14 +271,15 @@ An example of creating a TOC listing some binary modules::
 
     cython_mods = Tree( '..src/cy_mods', excludes=['*.pyx','*.py','*.pyc'], typecode='EXTENSION' )
 
-This creates a TOC with a tuple for every file in the ``cy_mods`` folder,
+This creates a TOC with a tuple for every file in the :file:`cy_mods` folder,
 excluding any with the ``.pyx``, ``.py`` or ``.pyc`` suffixes
 (so presumably collecting the ``.pyd`` or ``.so`` modules created by Cython).
 Each tuple in this TOC has:
 
 * Its own filename as *name* (no prefix; the file will be at the top level of the bundle).
 
-* A *path* as an absolute path to that file in ``../src/cy_mods`` relative to the spec file.
+* A *path* as an absolute path to that file in :file:`../src/cy_mods`
+  relative to the spec file.
 
 * A *typecode* of ``EXTENSION`` (``BINARY`` could be used as well).
 
