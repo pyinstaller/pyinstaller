@@ -2,7 +2,7 @@ If you have problems to get your application running, please first
 
 * try the latest development version, using the following command:
 
-```
+```shell
 pip install https://github.com/pyinstaller/pyinstaller/archive/develop.zip
 ```
 
@@ -12,16 +12,16 @@ pip install https://github.com/pyinstaller/pyinstaller/archive/develop.zip
 * make sure everything is packaged correctly
   https://github.com/pyinstaller/pyinstaller/wiki/How-to-Report-Bugs#make-sure-everything-is-packaged-correctly
 
-If you problem persists, please provide all information as stated in our "How to Report Bugs" guide.
+If your problem persists, please provide all information as stated in our "How to Report Bugs" guide.
 https://github.com/pyinstaller/pyinstaller/wiki/How-to-Report-Bugs.
-The help for github's text-editor is hidden behind "Styling with Markdown is
+The help for GitHub's text-editor is hidden behind "Styling with Markdown is
 supported" just below the edit-box.
 
 
-**Otherwise we will not be willed to help you.**
+**Otherwise we will not be willing to help you.**
 
-Please mind that PyInstaller is a voluntary project. We spent quite some time
-for writing these guides to make both you and us lifes easier. Please
-understand that we are not willed to spend our spare time to help you if you
-are not willed to help on your side. (Sorry for having to said this, but we
-are tired about asking the same question over and over again.)
+Please be aware that PyInstaller is a voluntary project. We spent quite some time
+writing these guides to make both of our lives easier. Please
+understand that we are not willing to spend our spare time to help you if you
+are not willing to help on your side. (Sorry for having to said this, but we
+are tired of being asked the same questions over and over again.)
