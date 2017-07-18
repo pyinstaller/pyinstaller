@@ -21,6 +21,7 @@ environment:
   # for more discussion.
   TESTS_UNITTESTS: tests/unit tests/functional -k "not tests/functional/test_libraries.py"
   TESTS_LIBRARIES: tests/functional/test_libraries.py
+  APPVEYOR_SAVE_CACHE_ON_ERROR: true
 
   matrix:
     - PYTHON: C:\Python36-x64
