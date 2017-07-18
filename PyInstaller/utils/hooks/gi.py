@@ -114,7 +114,14 @@ def gir_library_path_fix(path):
     # On OSX we need to recompile the GIR files to reference the loader path,
     # but this is not necessary on other platforms
     if is_darwin:
+
+        # If using a virtualenv, the base prefix and the path of the typelib
+        # have really nothing to do with each other, so try to detect that
         common_path = os.path.commonprefix([base_prefix, path])
+        if common_path == '/':
+            logger.debug("virtualenv detected? fixing the gir path...")
+            common_path = os.path.abspath(os.path.join(path, '..', '..', '..'))
+
         gir_path = os.path.join(common_path, 'share', 'gir-1.0')
 
         typelib_name = os.path.basename(path)
