@@ -264,7 +264,7 @@ pyi_wargv_from_argv(int argc, char ** argv)
         return NULL;
     }
 
-    wargv = (wchar_t **)malloc(sizeof(wchar_t*) * (argc + 1));
+    wargv = (wchar_t **)calloc(sizeof(wchar_t*) * (argc + 1), 1);
 
     if (!wargv) {
         FATALERROR("out of memory\n");
