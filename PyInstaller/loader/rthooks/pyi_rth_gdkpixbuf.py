@@ -14,8 +14,9 @@ import sys
 
 pixbuf_file = os.path.join(sys._MEIPASS, 'lib', 'gdk-pixbuf', 'loaders.cache')
 
-# If we're not on Windows or OSX we need to rewrite the cache
-if os.path.exists(pixbuf_file) and sys.platform not in ('win32', 'darwin'):
+# If we're not on Windows we need to rewrite the cache
+# -> we rewrite on OSX to support --onefile mode
+if os.path.exists(pixbuf_file) and sys.platform != 'win32':
 
     with open(pixbuf_file, 'rb') as fp:
         contents = fp.read()
