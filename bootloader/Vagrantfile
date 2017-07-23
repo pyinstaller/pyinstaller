@@ -73,7 +73,7 @@ def build_osxcross
     sudo modprobe fuse
     PATH=$PATH:/sbin:/usr/sbin
     SDK=/vagrant/bootloader/_sdks/osx
-    cd osxcross
+    cd ~vagrant/osxcross
     mkdir -p $SDK
     # Build darling-dmg, mount the ``.dmg`` image file via fuse and extract
     # the SDK into MacOSX*.tar.*
@@ -81,6 +81,21 @@ def build_osxcross
     mv MacOSX*.tar.* tarballs/
     # Build the build-tools into directory `target/`
     UNATTENDED=1 ./build.sh
+
+    cd ~vagrant/osxcross/target
+    echo "Minimizing the SDK to include only what is required for building"
+    echo "PyInstaller"
+    rm -rf libexec/as/{arm,ppc,ppc64} # platforms not supported by pyinstaller
+    rm -rf SDK/tools # darling-dmg, not used for building the bootloader
+    cd SDK/MacOSX*.sdk
+    rm -rf usr/lib/{php,dtrace} usr/share usr/bin
+    cd System/Library/
+    mv Frameworks Frameworks.off
+    mkdir Frameworks
+    mv Frameworks.off/{ApplicationServices,CoreGraphics,ImageIO,Carbon,CoreServices,IOKit,CFNetwork,CoreText,IOSurface,CoreFoundation,DiskArbitration,Security}.framework Frameworks
+    rm -rf Frameworks.off CoreServices Printers PrivateFrameworks
+    cd ~vagrant/osxcross
+
     # Create a tar-ball including the SDK and the build-tools
     echo "Packaging SDK and cctools - this may take a while"
     tar -C target --xz -cf $SDK/osxcross.tar.xz .
