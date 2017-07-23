@@ -455,10 +455,10 @@ def configure(ctx):
         #   http://man.he.net/man7/feature_test_macros
         #
         ## Without these definitions compiling might fail on OSX.
-        ctx.env.append_value('DEFINES', '_POSIX_C_SOURCE=200112L')
+        #ctx.env.append_value('DEFINES', '_POSIX_C_SOURCE=200112L')
         # SUS v2 (UNIX 98) definitions.
         #   Mac OS X 10.5 is UNIX 03 compliant.
-        ctx.env.append_value('DEFINES', '_XOPEN_SOURCE=600')
+        #ctx.env.append_value('DEFINES', '_XOPEN_SOURCE=600')
         ctx.env.append_value('DEFINES', '_REENTRANT')
 
         # mkdtemp() is available only if _BSD_SOURCE is defined.
