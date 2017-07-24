@@ -161,6 +161,7 @@ pyi_arch_extract(ARCHIVE_STATUS *status, TOC *ptoc)
 
     if (fread(data, ntohl(ptoc->len), 1, status->fp) < 1) {
         OTHERERROR("Could not read from file\n");
+        free(data);
         return NULL;
     }
 

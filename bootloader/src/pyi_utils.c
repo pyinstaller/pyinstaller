@@ -539,6 +539,12 @@ pyi_copy_file(const char *src, const char *dst, const char *filename)
     int error = 0;
 
     if (in == NULL || out == NULL) {
+        if (in) {
+            fclose(in);
+        }
+        if (out) {
+            fclose(out);
+        }
         return -1;
     }
 

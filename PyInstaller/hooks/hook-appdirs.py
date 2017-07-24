@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2017, PyInstaller Development Team.
+# Copyright (c) 2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -9,8 +9,12 @@
 
 
 """
-Hook for http://pypi.python.org/pypi/h5py/
+Import hook for appdirs.
+
+On Windows, appdirs tries 2 different methods to get well-known directories
+from the system: First with win32com, then with ctypes. Excluding win32com here
+avoids including all the win32com related DLLs in programs that don't include
+them otherwise.
 """
 
-
-hiddenimports = ['h5py._proxy', 'h5py.utils', 'h5py.defs', 'h5py.h5ac']
+excludedimports = ['win32com']

@@ -7,6 +7,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+import codecs
 import os
 import shutil
 from ..compat import is_darwin, FileExistsError
@@ -150,17 +151,16 @@ class BUNDLE(Target):
         if isinstance(self.info_plist, dict) and self.info_plist:
             info_plist_dict.update(self.info_plist)
 
-        info_plist = """<?xml version="1.0" encoding="UTF-8"?>
+        info_plist = u"""<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>"""
         for k, v in info_plist_dict.items():
-            info_plist += "<key>%s</key>\n<string>%s</string>\n" % (k, v)
-        info_plist += """</dict>
+            info_plist += u"<key>%s</key>\n<string>%s</string>\n" % (k, v)
+        info_plist += u"""</dict>
 </plist>"""
-        f = open(os.path.join(self.name, "Contents", "Info.plist"), "w")
-        f.write(info_plist)
-        f.close()
+        with codecs.open(os.path.join(self.name, "Contents", "Info.plist"), "w", "utf-8") as f:
+            f.write(info_plist)
 
         links = []
         toc = add_suffix_to_extensions(self.toc)
