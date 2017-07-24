@@ -55,6 +55,7 @@ pyi_pylib_load(ARCHIVE_STATUS *status)
     char dllname[64];
     int pyvers = ntohl(status->cookie.pyvers);
     char *p;
+    int len;
 
     /* Are we going to load the Python 2.x library? */
     is_py2 = (pyvers / 10) == 2;
@@ -80,16 +81,22 @@ pyi_pylib_load(ARCHIVE_STATUS *status)
       pyvers_major = pyvers / 10;
       pyvers_minor = pyvers % 10;
 
-      sprintf(dllname,
+      len = snprintf(dllname, 64,
               "libpython%01d.%01d.a(libpython%01d.%01d.so)",
               pyvers_major, pyvers_minor, pyvers_major, pyvers_minor);
     }
     else {
-      strcpy(dllname, status->cookie.pylibname);
+      strncpy(dllname, status->cookie.pylibname, 64);
     }
 #else
-    strcpy(dllname, status->cookie.pylibname);
+    len = 0;
+    strncpy(dllname, status->cookie.pylibname, 64);
 #endif
+
+    if (len >= 64 || dllname[64-1] != '\0') {
+        FATALERROR("DLL name length exceeds buffer\n");
+        return -1;
+    }
 
     /*
      * Look for Python library in homepath or temppath.

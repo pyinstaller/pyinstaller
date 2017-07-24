@@ -77,7 +77,12 @@ splitName(char *path, char *filename, const char *item)
     char name[PATH_MAX + 1];
 
     VS("LOADER: Splitting item into path and filename\n");
-    strcpy(name, item);
+    strncpy(name, item, PATH_MAX + 1);
+
+    if (name[PATH_MAX] != '\0') {
+        return -1;
+    }
+
     strcpy(path, strtok(name, ":"));
     strcpy(filename, strtok(NULL, ":"));
 
@@ -140,9 +145,18 @@ _get_archive(ARCHIVE_STATUS *archive_pool[], const char *path)
         return NULL;
     }
 
-    strcpy(archive->archivename, path);
-    strcpy(archive->homepath, archive_pool[SELF]->homepath);
-    strcpy(archive->temppath, archive_pool[SELF]->temppath);
+    strncpy(archive->archivename, path, PATH_MAX);
+    strncpy(archive->homepath, archive_pool[SELF]->homepath, PATH_MAX);
+    strncpy(archive->temppath, archive_pool[SELF]->temppath, PATH_MAX);
+
+    if (archive->archivename[PATH_MAX-1] != '\0'
+        || archive->homepath[PATH_MAX-1] != '\0'
+        || archive->temppath[PATH_MAX-1] != '\0') {
+        FATALERROR("Archive path exceeds PATH_MAX\n");
+        free(archive);
+        return NULL;
+    }
+
     /*
      * Setting this flag prevents creating another temp directory and
      * the directory from the main archive status is used.
@@ -350,6 +364,7 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
 {
     unsigned char *data;
     char buf[PATH_MAX];
+    size_t namelen;
     TOC * ptoc = status->tocbuff;
     PyObject *__main__;
     PyObject *__file__;
@@ -377,6 +392,12 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
             data = pyi_arch_extract(status, ptoc);
             /* Set the __file__ attribute within the __main__ module,
              *  for full compatibility with normal execution. */
+            namelen = strnlen(ptoc->name, PATH_MAX);
+            if (namelen >= PATH_MAX-strlen(".py")-1) {
+                FATALERROR("Name exceeds PATH_MAX\n");
+                return -1;
+            }
+
             strcpy(buf, ptoc->name);
             strcat(buf, ".py");
             VS("LOADER: Running %s\n", buf);
