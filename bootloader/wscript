@@ -248,11 +248,6 @@ def detect_arch(ctx):
         arch = "%sbit" % (8 * check_sizeof_pointer(ctx))
         ctx.msg('Platform', '%s-%s detected based on compiler' % (system, arch))
 
-    if ctx.env.DEST_OS == 'darwin' and arch == '64bit':
-        ctx.msg('CYAN', 'WARNING: Building bootloader for Python 64-bit on Mac OSX')
-        ctx.msg('CYAN', 'For 32b-bit bootloader prepend the python command with:')
-        ctx.msg('CYAN', 'VERSIONER_PYTHON_PREFER_32_BIT=yes arch -i386 python')
-
     # Pass return values as environment variables.
     ctx.env.PYI_ARCH = arch  # '32bit' or '64bit'
     ctx.env.PYI_SYSTEM = system
