@@ -102,13 +102,17 @@ pyi_main(int argc, char * argv[])
     archive_status->argc = argc;
     archive_status->argv = argv;
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__APPLE__)
 
-    /* On Windows use single-process for --onedir mode. */
+    /* On Windows and Mac use single-process for --onedir mode. */
     if (!extractionpath && !pyi_launch_need_to_extract_binaries(archive_status)) {
         VS("LOADER: No need to extract files to run; setting extractionpath to homepath\n");
         extractionpath = homepath;
     }
+
+#endif
+
+#ifdef _WIN32
 
     if (extractionpath) {
         /* Add extraction folder to DLL search path */
