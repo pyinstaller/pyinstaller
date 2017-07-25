@@ -219,7 +219,7 @@ they won't interfere with each other.
 However, running multiple copies is expensive in disk space because
 nothing is shared.
 
-The :file:`_MEI{xxxxxx} folder is not removed if the program crashes
+The :file:`_MEI{xxxxxx}` folder is not removed if the program crashes
 or is killed (kill -9 on Unix, killed by the Task Manager on Windows,
 "Force Quit" on Mac OS).
 Thus if your app crashes frequently, your users will lose disk space to
