@@ -199,6 +199,27 @@ else:
     modname_tkinter = 'tkinter'
 
 
+if is_win:
+    try:
+        import pywintypes
+        if is_py3:
+            # pywintypes.Unicode() breaks under Python 3, just stub it out if we're running
+            # under such a Python version.
+            pywintypes.Unicode = str
+    except ImportError:
+        # Do nothing here. User should be warned when check_requirements() is
+        # called.
+        pass
+
+def encode(text):
+    """
+    Encodes a string as bytes.
+    """
+    if is_py3:
+        return str.encode(text)
+    else:
+        return str(text)
+
 def architecture():
     """
     Returns the bit depth of the python interpreter's architecture as
