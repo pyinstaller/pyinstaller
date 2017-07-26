@@ -369,7 +369,8 @@ class ModuleHook(object):
         if self._hook_module is not None:
             return
 
-        # Load this hook script into a private in-memory module.
+        # Load and execute the hook script. Even if mechanisms from the import
+        # machinery are used, this does not import the hook as the module.
         logger.info(
             'Loading module hook "%s"...', os.path.basename(self.hook_filename))
         self._hook_module = importlib_load_source(
