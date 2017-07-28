@@ -15,9 +15,14 @@ or if you want to modify the |bootloader| source,
 you need to build the |bootloader|.
 To do this,
 
-* ``cd`` into the distribution folder,
+* Download and install Python, which is required for running `:command:waf`,
+* `git clone` or download the source (see the
+  :ref:`Download section in the manual <website:Downloads>`),
+* ``cd`` into the folder where you cloned or unpacked the source to,
 * ``cd bootloader``, and
-* make the bootloader with: ``python ./waf all``.
+* make the bootloader with: ``python ./waf all``,
+* test the build by `running (parts of) the test-suite
+  <https://github.com/pyinstaller/pyinstaller/wiki/Running-the-test-suite>`_.
 
 This will produce the |bootloader| executables for your current platform
 (of course, for Windows these files will have the ``.exe`` extension):
@@ -260,8 +265,11 @@ between three options:
        issue_.
 
 
-In both cases you may want to peek into the Vagrantfile or
-:file:`../appveyor.yml` to learn how we are building.
+In all cases you may want
+
+* to set the path to include python, e.g. ``set PATH=%PATH%;c:\python35``,
+* to peek into the Vagrantfile or
+  :file:`../appveyor.yml` to learn how we are building.
 
 You can also build the bootloaders for cygwin.
 
