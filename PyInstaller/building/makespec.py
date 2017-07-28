@@ -241,9 +241,19 @@ def __add_options(parser):
                         'in reverse DNS notation. For example: com.mycompany.department.appname '
                         "(default: first script's basename)")
 
+    g = parser.add_argument_group('Rarely used special options')
+    g.add_argument("--runtime-tmpdir", dest="runtime_tmpdir", metavar="PATH",
+                   help="Where to extract libraries and support files in "
+                        "`onefile`-mode. "
+                        "If this option is given, the bootloader will ignore "
+                        "any temp-folder location defined by the run-time OS. "
+                        "The ``_MEIxxxxxx``-folder will be created here. "
+                        "Please use this option only if you know what you "
+                        "are doing.")
+
 
 def main(scripts, name=None, onefile=None,
-         console=True, debug=False, strip=False, noupx=False,
+         console=True, debug=False, strip=False, noupx=False, runtime_tmpdir=None,
          pathex=None, version_file=None, specpath=None,
          datas=None, binaries=None, icon_file=None, manifest=None, resources=None, bundle_identifier=None,
          hiddenimports=None, hookspath=None, key=None, runtime_hooks=None,
@@ -343,6 +353,7 @@ def main(scripts, name=None, onefile=None,
         'debug': debug,
         'strip': strip,
         'upx': not noupx,
+        'runtime_tmpdir': runtime_tmpdir,
         'exe_options': exe_options,
         'cipher_init': cipher_init,
         # Directory with additional custom import hooks.

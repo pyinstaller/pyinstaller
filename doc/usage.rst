@@ -135,6 +135,19 @@ encrypt each file of Python byte-code before it is stored in
 the archive inside the executable file.
 
 
+.. _defining the extraction location:
+
+Defining the Extraction Location
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In rare cases, when you bundle to a single executable
+(see :ref:`Bundling to One File` and :ref:`how the one-file program works`),
+you may want to control the location of the temporary directory at compile
+time. This can be done using the ``--runtime-tmpdir`` option. If this option is
+given, the bootloader will ignore any temp-folder location defined by the
+run-time OS. Please use this option only if you know what you are doing.
+
+
 .. _supporting multiple platforms:
 
 Supporting Multiple Platforms
