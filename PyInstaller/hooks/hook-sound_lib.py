@@ -1,10 +1,16 @@
+#-----------------------------------------------------------------------------
+# Copyright (c) 2016, PyInstaller Development Team.
+#
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
+#
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
+
 """
 sound_lib: http://hg.q-continuum.net/sound_lib
 """
 
-import os.path
-import sound_lib as _sound_lib
+from pyinstaller.utils.hooks import collect_dynamic_libs
 
-_dir = os.path.dirname(_sound_lib.__file__)
-
-binaries = [(os.path.join(_dir, 'lib'), os.path.join('sound_lib', 'lib'))]
+binaries = collect_dynamic_libs('sound_lib')
