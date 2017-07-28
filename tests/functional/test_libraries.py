@@ -306,14 +306,15 @@ def test_zope_interface(pyi_builder):
         """)
 
 
-@xfail(is_darwin, reason='Issue #1895.')
-@xfail(is_py36, reason='Fails on python 3.6')
 @importorskip('idlelib')
 def test_idlelib(pyi_builder):
     pyi_builder.test_source(
         """
         # This file depends on loading some icons, located based on __file__.
-        import idlelib.TreeWidget
+        try:
+            import idlelib.TreeWidget
+        except:
+            import idlelib.tree
         """)
 
 
