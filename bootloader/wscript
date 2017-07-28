@@ -447,7 +447,7 @@ def configure(ctx):
         ctx.find_program([assoc_programm(ctx, 'strip')], var='STRIP')
         ctx.load('strip', tooldir='tools')
         # There is a strip flag for AIX environment
-        if is_aix:
+        if ctx.env.DEST_OS == 'aix':
             if ctx.env.PYI_ARCH == '32bit':
                 ctx.env.append_value('STRIPFLAGS', '-X32')
             elif ctx.env.PYI_ARCH == '64bit':
