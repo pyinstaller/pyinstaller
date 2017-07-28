@@ -1,5 +1,6 @@
 .. _building the bootloader:
 
+=========================
 Building the Bootloader
 =========================
 
