@@ -408,6 +408,16 @@ def test_pycrypto(pyi_builder):
             AES.new("\\0" * BLOCK_SIZE).encrypt("\\0" * BLOCK_SIZE)))
         """)
 
+
+@importorskip('Cryptodome')
+def test_cryptodome(pyi_builder):
+    pyi_builder.test_source(
+        """
+        from Cryptodome import Cipher
+        print('Cryptodome Cipher Module:', Cipher)
+        """)
+
+
 @importorskip('requests')
 def test_requests(tmpdir, pyi_builder, data_dir, monkeypatch):
     # Note that including the data_dir fixture copies files needed by this test.
