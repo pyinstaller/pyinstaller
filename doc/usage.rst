@@ -134,6 +134,15 @@ The *key-string* is a string of 16 characters which is used to
 encrypt each file of Python byte-code before it is stored in
 the archive inside the executable file.
 
+.. _defining the extraction location:
+
+Defining the Extraction Location
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When you bundle to a single executable
+(see :ref:Bundling to One File and :ref:how the one-file program works),
+you sometimes may want to control the location of the temporary directory
+at compile time. This can be done using the --runtime-tmpdir option.
 
 .. _supporting multiple platforms:
 
