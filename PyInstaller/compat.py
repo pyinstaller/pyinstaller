@@ -132,17 +132,6 @@ if is_py2:
 else:
     string_types = str
 
-
-if is_py3:
-    def encode(text):
-        "Encodes a string as bytes."
-        return str.encode(text)
-else:
-    def encode(text):
-        "Encodes a string as bytes."
-        return str(text)
-
-
 # Correct extension ending: 'c' or 'o'
 if __debug__:
     PYCO = 'c'
@@ -207,19 +196,6 @@ if is_py2:
     modname_tkinter = 'Tkinter'
 else:
     modname_tkinter = 'tkinter'
-
-
-if is_win:
-    try:
-        import pywintypes
-        if is_py3:
-            # pywintypes.Unicode() breaks under Python 3, just stub it out if we're running
-            # under such a Python version.
-            pywintypes.Unicode = str
-    except ImportError:
-        # Do nothing here. User should be warned when check_requirements() is
-        # called.
-        pass
 
 
 def architecture():
@@ -886,7 +862,7 @@ def check_requirements():
                 # if this succeeded, then install pywin32-ctypes into sys.modules
                 sys.modules['win32api'] = win32api
                 sys.modules['pywintypes'] = pywintypes
-                
+
         except ImportError:
             raise SystemExit('PyInstaller cannot check for assembly dependencies.\n'
                              'Please install PyWin32 or pywin32-ctypes.\n\n'
