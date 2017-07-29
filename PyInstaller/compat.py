@@ -21,6 +21,7 @@ import site
 import subprocess
 import sys
 
+from .log import logger
 
 # Distinguish code for different major Python version.
 is_py2 = sys.version_info[0] == 2
@@ -171,9 +172,9 @@ else:
 # compat.base_prefix with the path to the
 # base Python installation.
 
-base_prefix = getattr( sys, 'real_prefix',
-                       getattr( sys, 'base_prefix', sys.prefix )
-                        )
+base_prefix = getattr(sys, 'real_prefix',
+                      getattr(sys, 'base_prefix', sys.prefix)
+                      )
 # Ensure `base_prefix` is not containing any relative parts.
 base_prefix = os.path.abspath(base_prefix)
 is_venv = is_virtualenv = base_prefix != os.path.abspath(sys.prefix)
@@ -359,7 +360,8 @@ def exec_command(*cmdargs, **kwargs):
     """
 
     encoding = kwargs.pop('encoding', None)
-    out = subprocess.Popen(cmdargs, stdout=subprocess.PIPE, **kwargs).communicate()[0]
+    out = subprocess.Popen(cmdargs, stdout=subprocess.PIPE,
+                           **kwargs).communicate()[0]
     # Python 3 returns stdout/stderr as a byte array NOT as string.
     # Thus we need to convert that to proper encoding.
 
@@ -495,7 +497,7 @@ def exec_command_all(*cmdargs, **kwargs):
         `exec_command()` function for discussion.
     """
     proc = subprocess.Popen(cmdargs, bufsize=-1,  # Default OS buffer size.
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs)
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs)
     # Waits for subprocess to complete.
     out, err = proc.communicate()
     # Python 3 returns stdout/stderr as a byte array NOT as string.
@@ -510,7 +512,6 @@ def exec_command_all(*cmdargs, **kwargs):
             # only because it's the common case.
             out = os.fsdecode(out)
             err = os.fsdecode(err)
-
 
     return proc.returncode, out, err
 
@@ -581,7 +582,7 @@ def exec_python_all(*args, **kwargs):
     return exec_command_all(*cmdargs, **kwargs)
 
 
-## Path handling.
+# Path handling.
 
 # The function os.getcwd() in Python 2 does not work with unicode paths on Windows.
 def getcwd():
@@ -723,7 +724,9 @@ if is_py2:
     importlib_load_source = imp.load_source
 else:
     import importlib.machinery
-    def importlib_load_source(name, pathname):                # Import module from a file.
+
+    # Import module from a file.
+    def importlib_load_source(name, pathname):
         mod_loader = importlib.machinery.SourceFileLoader(name, pathname)
         return mod_loader.load_module()
 
@@ -769,7 +772,7 @@ PY3_BASE_MODULES = {
     'weakref',
 }
 
-#FIXME: Reduce this pair of nested tests to "if sys.version_info >= (3, 4)".
+# FIXME: Reduce this pair of nested tests to "if sys.version_info >= (3, 4)".
 if sys.version_info[0] == 3:
     if sys.version_info[1] >= 4:
         PY3_BASE_MODULES.update({
@@ -869,8 +872,9 @@ def check_requirements():
         if 'win32api' in sys.modules or 'pywintypes' in sys.modules:
             # Users should never see this error; if it occurs, it means someone
             # wasn't careful and added an import where it shouldn't be
-            raise SystemExit("Internal error: early pywin32 import was introduced")
-        
+            logger.warning(
+                "Internal error: early pywin32 import was introduced")
+            return
         try:
             from PyInstaller.utils.win32 import winutils
             try:
@@ -878,11 +882,11 @@ def check_requirements():
             except ImportError:
                 from win32ctypes.pywin32 import pywintypes
                 from win32ctypes.pywin32 import win32api
-                
+
                 # if this succeeded, then install pywin32-ctypes into sys.modules
                 sys.modules['win32api'] = win32api
                 sys.modules['pywintypes'] = pywintypes
-                
+
         except ImportError:
             raise SystemExit('PyInstaller cannot check for assembly dependencies.\n'
                              'Please install PyWin32 or pywin32-ctypes.\n\n'
