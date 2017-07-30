@@ -19,8 +19,8 @@ environment:
   # Break the tests into two runs, since together they exceed the 1 hour limit.
   # See https://github.com/pyinstaller/pyinstaller/issues/2024#issuecomment-224129520
   # for more discussion.
-  TESTS_UNITTESTS: tests/unit tests/functional -k "not tests/functional/test_libraries.py"
-  TESTS_LIBRARIES: tests/functional/test_libraries.py
+  TESTS_UNITTESTS: tests/unit tests/functional --ignore=tests/functional/test_libraries.py --ignore=tests/functional/test_hooks
+  TESTS_LIBRARIES: tests/functional/test_libraries.py tests/functional/test_hooks
   APPVEYOR_SAVE_CACHE_ON_ERROR: true
 
   matrix:
