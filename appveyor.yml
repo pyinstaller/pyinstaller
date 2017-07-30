@@ -156,7 +156,7 @@ test_script:
           %CMD_IN_ENV% %PYTEST% %TESTS_UNITTESTS%
     ))'
 
-on_success:
+on_finish:
   # Remove old or huge cache files to hopefully not exceed the 1GB cache limit.
   #
   # If the cache limit is reached, the cache will not be updated (of not even
@@ -169,9 +169,6 @@ on_success:
   - C:\cygwin\bin\find "%LOCALAPPDATA%\pip" -empty -delete
   # Show size of cache
   - C:\cygwin\bin\du -hs "%LOCALAPPDATA%\pip\Cache"
-
-
-on_finish:
   - ps: |
       (new-object net.webclient).UploadFile(
         "https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)",
