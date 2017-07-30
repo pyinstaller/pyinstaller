@@ -49,9 +49,6 @@
 #include "pyi_pythonlib.h"
 #include "pyi_win32_utils.h"  /* CreateActContext */
 
-/* Max count of possible opened archives in multipackage mode. */
-#define _MAX_ARCHIVE_POOL_LEN 20
-
 /*
  * The functions in this file defined in reverse order so that forward
  * declarations are not necessary.
@@ -195,7 +192,7 @@ extractDependencyFromArchive(ARCHIVE_STATUS *status, const char *filename)
 /* Decide if the dependency identified by item is in a onedir or onfile archive
  * then call the appropriate function.
  */
-static int
+extern int
 _extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
 {
     ARCHIVE_STATUS *status = NULL;
@@ -302,7 +299,7 @@ pyi_launch_need_to_extract_binaries(ARCHIVE_STATUS *archive_status)
  * .exe files. Having files in other executables allows share binary files among
  * executables and thus reduce the final size of the executable.
  */
-int
+extern int
 pyi_launch_extract_binaries(ARCHIVE_STATUS *archive_status)
 {
     int retcode = 0;

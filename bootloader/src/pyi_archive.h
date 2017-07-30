@@ -17,7 +17,7 @@
 
 /* Types of CArchive items. */
 #define ARCHIVE_ITEM_BINARY           'b'  /* binary */
-#define ARCHIVE_ITEM_DEPENDENCY       'd'  /* runtime option */
+#define ARCHIVE_ITEM_DEPENDENCY       'd'  /* reference to external CArchive containing a pyz */
 #define ARCHIVE_ITEM_PYZ              'z'  /* zlib (pyz) - frozen Python code */
 #define ARCHIVE_ITEM_ZIPFILE          'Z'  /* zlib (pyz) - frozen Python code */
 #define ARCHIVE_ITEM_PYPACKAGE        'M'  /* Python package (__init__.py) */
