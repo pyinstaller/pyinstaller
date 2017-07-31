@@ -1,6 +1,5 @@
 # Work-around for a bug in execnet 1.4.1
-# :todo: remove this again, once a version of execnet fixing this is released
-hg+https://htgoebel@bitbucket.org/htgoebel/execnet
+git+https://github.com/pytest-dev/execnet.git
 
 # For running tests
 pytest >= 2.7.3  # Testing framework.
