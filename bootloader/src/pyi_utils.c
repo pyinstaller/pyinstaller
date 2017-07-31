@@ -810,6 +810,38 @@ pyi_utils_set_environment(const ARCHIVE_STATUS *status)
     return rc;
 }
 
+/*
+ * If the program is actived by a systemd socket, systemd will set
+ * LISTEN_PID, LISTEN_FDS environment variable for that process.
+ *
+ * LISTEN_PID is set to the pid of the parent process of bootloader,
+ * which is forked by systemd.
+ *
+ * Bootloader will duplicate LISTEN_FDS to child process, but the
+ * LISTEN_PID environment variable remains unchanged.
+ *
+ * Here we change the LISTEN_PID to the child pid in child process.
+ * So the application can detecte it and use the LISTEN_FDS created
+ * by systemd.
+ */
+int
+set_systemd_env()
+{
+    const char * env_var = "LISTEN_PID";
+    if(pyi_getenv(env_var) != NULL) {
+        /* the ULONG_STRING_SIZE is roughly equal to log10(max number)
+         * but can be calculated in compile time.
+         * The idea is from an answer on stackoverflow,
+         * https://stackoverflow.com/questions/8257714/
+         */
+        #define ULONG_STRING_SIZE (sizeof (unsigned long) * CHAR_BIT / 3 + 2)
+        char pid_str[ULONG_STRING_SIZE];
+        snprintf(pid_str, ULONG_STRING_SIZE, "%ld", (unsigned long)getpid());
+        return pyi_setenv(env_var, pid_str);
+    }
+    return 0;
+}
+
 /* Remember child process id. It allows sending a signal to child process.
  * Frozen application always runs in a child process. Parent process is used
  * to setup environment for child process and clean the environment when
@@ -859,6 +891,10 @@ pyi_utils_create_child(const char *thisfile, const int argc, char *const argv[])
     /* Child code. */
     if (pid == 0) {
         /* Replace process by starting a new application. */
+        if (set_systemd_env() != 0) {
+            VS("WARNING: Application is started by systemd socket,"
+               "but we can't set proper LISTEN_PID on it.\n");
+        }
         execvp(thisfile, argv_pyi);
     }
     /* Parent code. */
