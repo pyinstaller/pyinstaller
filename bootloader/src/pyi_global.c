@@ -212,7 +212,7 @@ void pyi_global_perror(const char *funcname, const char *fmt, ...) {
     #if defined(__APPLE__) && defined(WINDOWED) && defined(LAUNCH_DEBUG)
         va_start(v, fmt);
             vsyslog(LOG_NOTICE, fmt, v);
-            vsyslog(LOG_NOTICE, "%m\n");  // %m emits the result of strerror()
+            vsyslog(LOG_NOTICE, "%m\n", NULL);  // %m emits the result of strerror()
         va_end(v);
     #endif
 }
