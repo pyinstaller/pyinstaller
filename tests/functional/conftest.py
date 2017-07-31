@@ -26,6 +26,8 @@ import inspect
 import textwrap
 import io
 import shutil
+import tempfile
+import shutil
 
 # Third-party imports
 # -------------------
@@ -41,7 +43,7 @@ sys.path.append(_ROOT_DIR)
 from PyInstaller import configure, config
 from PyInstaller import __main__ as pyi_main
 from PyInstaller.utils.cliutils import archive_viewer
-from PyInstaller.compat import is_darwin, is_win, is_py2, safe_repr, \
+from PyInstaller.compat import is_darwin, is_win, is_py2, is_py3, safe_repr, \
   architecture
 from PyInstaller.depend.analysis import initialize_modgraph
 from PyInstaller.utils.win32 import winutils
@@ -343,27 +345,59 @@ class AppBuilder(object):
         # Windows command prompt. Py.test is then able to collect stdout/sterr
         # messages and display them if a test fails.
 
-        process = psutil.Popen(args, executable=exe_path, stdout=sys.stdout,
-                               stderr=sys.stderr, env=prog_env, cwd=prog_cwd)
-        # 'psutil' allows to use timeout in waiting for a subprocess.
-        # If not timeout was specified then it is 'None' - no timeout, just waiting.
-        # Runtime is useful mostly for interactive tests.
-        try:
-            timeout = runtime if runtime else _EXE_TIMEOUT
-            retcode = process.wait(timeout=timeout)
-        except psutil.TimeoutExpired:
+        # Note that we cannot let Popen get ahold of sys.stderr/out because it
+        # will attempt to close the files with nonstandard (system-level) 
+        # methods via fileno(). This causes problems on win32 from which pytest
+        # cannot correctly recover. 
+
+        def timeout_process(process):
+            # Kill the subprocess and its child processes.
+            for p in process.children(recursive=True):
+                p.kill()
+
             if runtime:
                 # When 'runtime' is set then expired timeout is a good sing
                 # that the executable was running successfully for a specified time.
                 # TODO Is there a better way return success than 'retcode = 0'?
-                retcode = 0
+                return 0
             else:
                 # Exe is still running and it is not an interactive test. Fail the test.
-                retcode = 1
-            # Kill the subprocess and its child processes.
-            for p in process.children(recursive=True):
-                p.kill()
-            process.kill()
+                return 1
+        
+        # 'psutil' allows to use timeout in waiting for a subprocess.
+        # If not timeout was specified then it is 'None' - no timeout, just waiting.
+        # Runtime is useful mostly for interactive tests.
+        timeout = runtime if runtime else _EXE_TIMEOUT
+        if is_py3:
+            process = subprocess.Popen(args, executable=exe_path, stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE, env=prog_env, cwd=prog_cwd)
+            try:
+                stdout, stderr = process.communicate(timeout=timeout)
+                retcode = process.returncode
+            except subprocess.TimeoutExpired:
+                retcode = timeout_process(psutil.Process(process.pid))
+                process.kill()
+                stdout, stderr = process.communicate()
+
+            sys.stdout.write(stdout)
+            sys.stderr.write(stderr)
+        else:
+            stderr = tempfile.TemporaryFile()
+            stdout = tempfile.TemporaryFile()
+            process = psutil.Popen(args, executable=exe_path, stdout=stdout,
+                                stderr=stderr, env=prog_env, cwd=prog_cwd)
+
+            stderr.seek(0)
+            stdout.seek(0)
+            
+            shutil.copyfileobj(stderr, sys.stderr)
+            shutil.copyfileobj(stdout, sys.stdout)
+
+            try:
+                retcode = process.wait(timeout=timeout)
+            except psutil.TimeoutExpired:
+                retcode = timeout_process(process)
+                process.kill()
 
         return retcode
 
