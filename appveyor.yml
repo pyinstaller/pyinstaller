@@ -15,7 +15,7 @@ environment:
     # See: http://stackoverflow.com/a/13751649/163740
     CMD_IN_ENV: 'cmd /E:ON /V:ON /C .\tests\scripts\appveyor\run_with_env.cmd'
 
-  PYTEST: py.test --maxfail 5 --durations=10 --junitxml=junit-results.xml
+  PYTEST: py.test -n3 --maxfail 5 --durations=10 --junitxml=junit-results.xml
   # Break the tests into two runs, since together they exceed the 1 hour limit.
   # See https://github.com/pyinstaller/pyinstaller/issues/2024#issuecomment-224129520
   # for more discussion.
@@ -27,63 +27,26 @@ environment:
     - PYTHON: C:\Python36-x64
       PYTHON_VERSION: 3.6
       PYTHON_ARCH: 64
-      TEST_LIBRARIES: NO
-
-    - PYTHON: C:\Python36-x64
-      PYTHON_VERSION: 3.6
-      PYTHON_ARCH: 64
-      TEST_LIBRARIES: YES
 
     - PYTHON: C:\Python36
       PYTHON_VERSION: 3.6
       PYTHON_ARCH: 32
-      TEST_LIBRARIES: NO
-
-    - PYTHON: C:\Python36
-      PYTHON_VERSION: 3.6
-      PYTHON_ARCH: 32
-      TEST_LIBRARIES: YES
 
     - PYTHON: C:\Python35
       PYTHON_VERSION: 3.5
       PYTHON_ARCH: 32
-      TEST_LIBRARIES: NO
-
-    - PYTHON: C:\Python35
-      PYTHON_VERSION: 3.5
-      PYTHON_ARCH: 32
-      TEST_LIBRARIES: YES
 
     - PYTHON: C:\Python34
       PYTHON_VERSION: 3.4
       PYTHON_ARCH: 32
-      TEST_LIBRARIES: NO
-
-    - PYTHON: C:\Python34
-      PYTHON_VERSION: 3.4
-      PYTHON_ARCH: 32
-      TEST_LIBRARIES: YES
 
     - PYTHON: C:\Python33
       PYTHON_VERSION: 3.3
       PYTHON_ARCH: 32
-      TEST_LIBRARIES: NO
-
-    - PYTHON: C:\Python33
-      PYTHON_VERSION: 3.3
-      PYTHON_ARCH: 32
-      TEST_LIBRARIES: YES
 
     - PYTHON: C:\Python27
       PYTHON_VERSION: 2.7
       PYTHON_ARCH: 32
-      TEST_LIBRARIES: NO
-
-    - PYTHON: C:\Python27
-      PYTHON_VERSION: 2.7
-      PYTHON_ARCH: 32
-      TEST_LIBRARIES: YES
-
 
 init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
@@ -136,11 +99,7 @@ install:
 
   # Install the PyInstaller test dependencies.
   - '%CMD_IN_ENV% pip install -U --timeout 5 --retries 2
-        -r tests/requirements-tools.txt'
-  - 'if "%TEST_LIBRARIES%" == "YES" (
-        %CMD_IN_ENV% pip install -U --timeout 5 --retries 2
-             -r tests/requirements-libraries.txt
-    )'
+        -r tests/requirements-libraries.txt -r tests/requirements-tools.txt'
   # Install PyInstaller into virtualenv.
   - '%CMD_IN_ENV% pip install -e .'
 
@@ -150,11 +109,8 @@ test_script:
   # Run the tests appropriate for this entry in the test matrix. Skip tests
   # if we're just updating the cache.
   - 'if not "%APPVEYOR_SCHEDULED_BUILD%" == "True" (
-        if /i "%TEST_LIBRARIES%" == "YES" (
-          %CMD_IN_ENV% %PYTEST% %TESTS_LIBRARIES%
-        ) else (
-          %CMD_IN_ENV% %PYTEST% %TESTS_UNITTESTS%
-    ))'
+          %CMD_IN_ENV% %PYTEST% 2> nul
+    )'
 
 on_success:
   # Remove old or huge cache files to hopefully not exceed the 1GB cache limit.
@@ -173,6 +129,7 @@ on_success:
 
 on_finish:
   - ps: |
+      python .\scripts\compact-junit.py junit-results.xml
       (new-object net.webclient).UploadFile(
         "https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)",
         (Resolve-Path .\junit-results.xml)
