@@ -30,7 +30,7 @@ from collections import deque, namedtuple
 from ._node import *
 from ._ast import *
 from ._ast import _Visitor, _packagePathMap, _SETUPTOOLS_NAMESPACEPKG_PTHs, _IMPORTABLE_FILETYPE_TO_METADATA
-from ._compat import get_instructions, enumerate_instructions, pathname2url, BytesIO, StringIO
+from ._compat import get_instructions, enumerate_instructions, pathname2url, BytesIO, StringIO, find_spec
 from ._compat import Bchr as _Bchr
 
 from . import util
@@ -1376,46 +1376,16 @@ class ModuleGraph(ObjectGraph):
             self.msgout(2, "load_module ->", m)
             return m
 
-        if typ == imp.PY_SOURCE:
-            contents = fp.read()
-            if isinstance(contents, bytes):
-                contents += b'\n'
-            else:
-                contents += '\n'
-
-            try:
-                co = compile(contents, pathname, 'exec', ast.PyCF_ONLY_AST,
-                             True)
-                #co = compile(contents, pathname, 'exec', 0, True)
-            except SyntaxError:
-                co = None
-                cls = InvalidSourceModule
-
-            else:
-                cls = SourceModule
-
-        elif typ == imp.PY_COMPILED:
-            if fp.read(4) != imp.get_magic():
-                self.msg(2, "load_module: InvalidCompiledModule", pathname)
-                co = None
-                cls = InvalidCompiledModule
-
-            else:
-                fp.read(4)
-                try:
-                    co = marshal.loads(fp.read())
-                    cls = CompiledModule
-                except Exception:
-                    co = None
-                    cls = InvalidCompiledModule
-
-        elif typ == imp.C_BUILTIN:
-            cls = BuiltinModule
+        spec = find_spec(fqname)
+        if not spec.loader:
             co = None
-
+            cls = InvalidCompiledModule
         else:
-            cls = Extension
-            co = None
+            co = spec.loader.get_code(fqname)
+            if co:
+                cls = CompiledModule
+            else:
+                cls = ExtensionModule
 
         m = self.createNode(cls, fqname)
         m.filename = pathname

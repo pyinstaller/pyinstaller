@@ -3,7 +3,6 @@ import textwrap
 
 from collections import deque
 
-
 if sys.version_info >= (3, 4):
     # In Python 3.4 or later the dis module has a much nicer interface
     # for working with bytecode, use that instead of peeking into the
@@ -42,6 +41,7 @@ if sys.version_info < (3, 0):
 else:
     from urllib.request import pathname2url
     from io import BytesIO, StringIO
+    from importlib.util import find_spec
 
     def Bchr(value):
         return value
