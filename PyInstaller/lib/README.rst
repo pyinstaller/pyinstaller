@@ -14,27 +14,16 @@ All libraries are tweaked to be importable as::
 
 In libraries replace imports like::
 
-    from macholib import x
     from altgraph import y
     from modulegraph import z
     import ordlookup
 
 with relative prefix::
 
-    from ..macholib import x
     from ..altgraph import y
     from ..modulegraph import z
     from . import ordlookup
 
-
-macholib
---------
-
-- add fixed version string to ./macholib/__init__.py::
-
-    # For PyInstaller/lib/ define the version here, since there is no
-    # package-resource.
-    __version__ = '1.7.0'
 
 altgraph
 ----------
