@@ -16,7 +16,4 @@ pyroma   # Checks if package follows best practices of Python packaging.
 chardet  # character encoding detector.
 readme   # Check PyPI description is valid reStructuredText
 
-# pefile is required for all PyInstaller operations (not just libraries)
-https://github.com/erocarrera/pefile/archive/master.zip
-
 -r requirements-tools.txt
