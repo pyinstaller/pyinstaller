@@ -16,7 +16,7 @@ import os
 import sys
 
 from ..compat import base_prefix, exec_command
-from ..lib.macholib.MachO import MachO
+from macholib.MachO import MachO
 
 
 def is_homebrew_env():

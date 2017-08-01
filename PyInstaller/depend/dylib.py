@@ -194,7 +194,7 @@ include_list = IncludeList()
 
 if is_darwin:
     # On Mac use macholib to decide if a binary is a system one.
-    from PyInstaller.lib.macholib import util
+    from macholib import util
 
     class MacExcludeList(object):
         def __init__(self, global_exclude_list):
@@ -276,8 +276,8 @@ def mac_set_relative_dylib_deps(libname, distname):
                 dependencies and qt plugins will not be loaded.
     """
 
-    from PyInstaller.lib.macholib import util
-    from PyInstaller.lib.macholib.MachO import MachO
+    from macholib import util
+    from macholib.MachO import MachO
 
     # Ignore bootloader otherwise PyInstaller fails with exception like
     # 'ValueError: total_size > low_offset (288 > 0)'
