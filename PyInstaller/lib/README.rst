@@ -16,13 +16,11 @@ In libraries replace imports like::
 
     from altgraph import y
     from modulegraph import z
-    import ordlookup
 
 with relative prefix::
 
     from ..altgraph import y
     from ..modulegraph import z
-    from . import ordlookup
 
 
 altgraph
