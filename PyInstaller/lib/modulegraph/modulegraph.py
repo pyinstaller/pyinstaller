@@ -1363,7 +1363,7 @@ class ModuleGraph(ObjectGraph):
     # FIXME: For clarity, rename method parameters to:
     #    def _load_module(self, module_name, file_handle, pathname, imp_info):
     def _load_module(self, fqname, *args, **kw):
-        self.msgin(2, "load_module", fqname, fp and "fp", pathname)
+        # self.msgin(2, "load_module", fqname, fp and "fp", pathname)
 
         spec = find_spec(fqname)
         if spec.submodule_search_locations:
