@@ -7,6 +7,8 @@ import re
 import marshal
 import warnings
 
+from collections import deque
+
 try:
     unicode
 except NameError:
@@ -19,7 +21,6 @@ if sys.version_info[0] == 2:
 
 else:
     from io import BytesIO, StringIO
-
 
 
 def imp_find_module(name, path=None):
@@ -37,6 +38,7 @@ def imp_find_module(name, path=None):
         path = [result[1]]
     return result
 
+
 def _check_importer_for_path(name, path_item):
     try:
         importer = sys.path_importer_cache[path_item]
@@ -51,7 +53,6 @@ def _check_importer_for_path(name, path_item):
             importer = None
         sys.path_importer_cache.setdefault(path_item, importer)
 
-
     if importer is None:
         try:
             return imp.find_module(name, [path_item])
@@ -59,13 +60,16 @@ def _check_importer_for_path(name, path_item):
             return None
     return importer.find_module(name)
 
+
 def imp_walk(name):
     """
     yields namepart, tuple_or_importer for each path item
 
     raise ImportError if a name can not be found.
     """
-    warnings.warn("imp_walk will be removed in a future version", DeprecationWarning)
+    warnings.warn(
+        "imp_walk will be removed in a future version",
+        DeprecationWarning)
 
     if name in sys.builtin_module_names:
         yield name, (None, None, ("", "", imp.C_BUILTIN))
@@ -80,12 +84,21 @@ def imp_walk(name):
                     fp = StringIO(res.get_source(namepart))
                     res = (fp, res.path, ('.py', 'rU', imp.PY_SOURCE))
                 elif res.path.endswith('.pyc') or res.path.endswith('.pyo'):
-                    co  = res.get_code(namepart)
-                    fp = BytesIO(imp.get_magic() + b'\0\0\0\0' + marshal.dumps(co))
+                    co = res.get_code(namepart)
+                    fp = BytesIO(
+                        imp.get_magic() + b'\0\0\0\0' + marshal.dumps(co))
                     res = (fp, res.path, ('.pyc', 'rb', imp.PY_COMPILED))
 
                 else:
-                    res = (None, loader.path, (os.path.splitext(loader.path)[-1], 'rb', imp.C_EXTENSION))
+                    res = (
+                        None,
+                        res.path,
+                        (
+                            os.path.splitext(res.path)[-1],
+                            'rb',
+                            imp.C_EXTENSION
+                        )
+                    )
 
                 break
             elif isinstance(res, tuple):
@@ -107,6 +120,7 @@ if sys.version_info[0] == 2:
 else:
     default_encoding = 'utf-8'
 
+
 def guess_encoding(fp):
 
     for i in range(2):
@@ -117,3 +131,30 @@ def guess_encoding(fp):
             return m.group(1).decode('ascii')
 
     return default_encoding
+
+
+class Engine(object):
+    """
+    This object removes the complexity needed for iterative behavior out of modulegraph.
+    """
+
+    def __init__(self, processor):
+        assert callable(processor)
+
+        self.actions = deque()
+        self.register = deque()
+        self.processor = processor
+
+    def put(self, action):
+        self.register.appendleft(action)
+
+    def consume(self):
+        while self.actions or self.register:
+            self.actions += self.register
+            self.register = deque()
+
+            yield self.actions.pop()
+
+    def process(self):
+        for action in self.consume():
+            self.processor(*action)
