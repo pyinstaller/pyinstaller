@@ -1362,21 +1362,19 @@ class ModuleGraph(ObjectGraph):
 
     # FIXME: For clarity, rename method parameters to:
     #    def _load_module(self, module_name, file_handle, pathname, imp_info):
-    def _load_module(self, fqname, fp, pathname, info):
+    def _load_module(self, fqname, *args, **kw):
         suffix, mode, typ = info
         self.msgin(2, "load_module", fqname, fp and "fp", pathname)
 
-        if typ == imp.PKG_DIRECTORY:
-            if isinstance(mode, (list, tuple)):
-                packagepath = mode
-            else:
-                packagepath = []
+        spec = find_spec(fqname)
+        if spec.submodule_search_locations:
+            packagepath = submodule_search_locations
+            pathname = spec.loader.get_source(fqname)
 
             m = self._load_package(fqname, pathname, packagepath)
             self.msgout(2, "load_module ->", m)
             return m
 
-        spec = find_spec(fqname)
         if not spec.loader:
             co = None
             cls = InvalidCompiledModule
