@@ -16,8 +16,11 @@ from setuptools import setup
 from PyInstaller import (__version__ as version, is_linux, is_win, is_cygwin,
                          HOMEPATH, PLATFORM, compat)
 
-
-REQUIREMENTS = ['setuptools']
+REQUIREMENTS = [
+    'setuptools',
+    'pefile >= 2017.8.1',
+    'macholib >= 1.8',
+]
 # For Windows install PyWin32 if not already installed.
 if sys.platform.startswith('win'):
     # Windows support depends on pefile library.
