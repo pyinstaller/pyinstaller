@@ -377,6 +377,20 @@ def _check_path_overlap(path):
     return True
 
 
+def _make_clean_directory(path):
+    """
+    Create a clean directory from the given directory name
+    """
+    if _check_path_overlap(path):
+        if os.path.isdir(path):
+            try:
+                os.remove(path)
+            except OSError:
+                _rmtree(path)
+
+        os.makedirs(path)
+
+
 def _rmtree(path):
     """
     Remove directory and all its contents, but only after user confirmation,

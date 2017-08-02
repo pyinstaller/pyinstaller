@@ -23,7 +23,8 @@ from operator import itemgetter
 from PyInstaller import is_win, is_darwin, is_linux, HOMEPATH, PLATFORM
 from PyInstaller.archive.writers import ZlibArchiveWriter, CArchiveWriter
 from PyInstaller.building.utils import _check_guts_toc, add_suffix_to_extensions, \
-    checkCache, _check_path_overlap, _rmtree, strip_paths_in_code, get_code_object
+    checkCache, _check_path_overlap, _rmtree, strip_paths_in_code, get_code_object, \
+    _make_clean_directory
 from PyInstaller.compat import is_cygwin, exec_command_all
 from PyInstaller.depend import bindepend
 from PyInstaller.depend.analysis import get_bootstrap_modules
