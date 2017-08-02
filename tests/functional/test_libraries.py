@@ -593,6 +593,7 @@ def test_pyexcelerate(pyi_builder):
 
 
 @importorskip('usb')
+@pytest.mark.skipif(not is_win, reason='Crashes Python on travis')
 def test_usb(pyi_builder):
     # See if the usb package is supported on this platform.
     try:
