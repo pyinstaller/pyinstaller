@@ -459,6 +459,8 @@ class TestNode (unittest.TestCase):
         d = dict(klass.__dict__)
         del d['__doc__']
         del d['__module__']
+        if '__weakref__' in d:
+            del d['__weakref__']
         if '__qualname__' in d:
             # New in Python 3.3
             del d['__qualname__']
@@ -471,13 +473,14 @@ class TestNode (unittest.TestCase):
         d = dict(klass.__dict__)
         del d['__doc__']
         del d['__module__']
+        if '__weakref__' in d:
+            del d['__weakref__']
         if '__qualname__' in d:
             # New in Python 3.3
             del d['__qualname__']
         if '__dict__' in d:
             # New in Python 3.4
             del d['__dict__']
-
         for nm in methods:
             self.assertTrue(nm in d, "%s doesn't have attribute %r"%(klass, nm))
             del d[nm]
