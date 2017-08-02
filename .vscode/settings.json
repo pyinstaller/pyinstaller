@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "*.i": "plaintext",
+        "pyi_global.h": "c"
+    }
+}

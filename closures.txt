@@ -1,0 +1,56 @@
+Traceback (most recent call last):
+  File "c:\users\geoffrey\workspace\pytest\_pytest\capture.py", line 24, in _close
+    raise ValueError
+ValueError
+Traceback (most recent call last):
+  File "c:\program files\python36\lib\subprocess.py", line 707, in __init__
+    restore_signals, start_new_session)
+  File "c:\program files\python36\lib\subprocess.py", line 992, in _execute_child
+    startupinfo)
+FileNotFoundError: [WinError 2] The system cannot find the file specified
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "c:\users\geoffrey\workspace\pytest\_pytest\capture.py", line 24, in _close
+    raise ValueError
+ValueError
+Traceback (most recent call last):
+  File "c:\program files\python36\lib\subprocess.py", line 707, in __init__
+    restore_signals, start_new_session)
+  File "c:\program files\python36\lib\subprocess.py", line 992, in _execute_child
+    startupinfo)
+FileNotFoundError: [WinError 2] The system cannot find the file specified
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "c:\users\geoffrey\workspace\pytest\_pytest\capture.py", line 24, in _close
+    raise ValueError
+ValueError
+Traceback (most recent call last):
+  File "c:\program files\python36\lib\subprocess.py", line 707, in __init__
+    restore_signals, start_new_session)
+  File "c:\program files\python36\lib\subprocess.py", line 992, in _execute_child
+    startupinfo)
+FileNotFoundError: [WinError 2] The system cannot find the file specified
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "c:\users\geoffrey\workspace\pytest\_pytest\capture.py", line 24, in _close
+    raise ValueError
+ValueError
+Traceback (most recent call last):
+  File "c:\program files\python36\lib\subprocess.py", line 707, in __init__
+    restore_signals, start_new_session)
+  File "c:\program files\python36\lib\subprocess.py", line 992, in _execute_child
+    startupinfo)
+FileNotFoundError: [WinError 2] The system cannot find the file specified
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "c:\users\geoffrey\workspace\pytest\_pytest\capture.py", line 24, in _close
+    raise ValueError
+ValueError
