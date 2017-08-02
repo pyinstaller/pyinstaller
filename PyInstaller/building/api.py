@@ -492,6 +492,8 @@ class EXE(Target):
     def assemble(self):
         logger.info("Building EXE from %s", self.tocbasename)
         trash = []
+        if os.path.exists(self.name):
+            os.remove(self.name)
         if not os.path.exists(os.path.dirname(self.name)):
             os.makedirs(os.path.dirname(self.name))
         exe = self.exefiles[0][1]  # pathname of bootloader
@@ -669,10 +671,8 @@ class COLLECT(Target):
         return 1
 
     def assemble(self):
-        if _check_path_overlap(self.name) and os.path.isdir(self.name):
-            _rmtree(self.name)
+        _make_clean_directory(self.name)
         logger.info("Building COLLECT %s", self.tocbasename)
-        os.makedirs(self.name)
         toc = add_suffix_to_extensions(self.toc)
         for inm, fnm, typ in toc:
             if not os.path.exists(fnm) or not os.path.isfile(fnm) and is_path_to_egg(fnm):
