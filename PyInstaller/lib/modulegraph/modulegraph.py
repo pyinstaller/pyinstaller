@@ -365,6 +365,18 @@ class Node(object):
         `os` module containing the `os.path` submodule).
     """
 
+    __slots__ = [
+        'code',
+        'filename',
+        'graphident',
+        'identifier',
+        'packagepath',
+        '_deferred_imports',
+        '_global_attr_names',
+        '_starimported_ignored_module_names',
+        '_submodule_basename_to_node',
+    ]
+
     def __init__(self, identifier):
         """
         Initialize this graph node.
