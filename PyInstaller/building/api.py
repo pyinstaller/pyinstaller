@@ -412,7 +412,7 @@ class EXE(Target):
                     self.toc.append((arg.name, arg.name, 'DEPENDENCY'))
                 # Bootloader limitation: references other than EXE are not supported
                 else:
-                    if isinstance(arg, EXE): arg._executable = self
+                    if isinstance(arg, PYZ): arg._executable = self
                     self.toc.append((os.path.basename(arg.name), arg.name,
                                      arg.typ))
                 self.toc.extend(arg.dependencies)
