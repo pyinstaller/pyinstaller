@@ -129,6 +129,23 @@ def decode(pathnm):
     return vs
 
 
+def nextDWord(offset):
+    """ Align `offset` to the next 4-byte boundary """
+    return ((offset + 3) >> 2) << 2
+
+if is_py3:
+    def _py3_str_compat(cls):
+        """
+        On Python 3, the special method __str__ is equivalent to the Python 2
+        method __unicode__.
+        """
+        cls.__str__ = cls.__unicode__
+        return cls
+else:
+    def _py3_str_compat(cls):
+        return cls
+
+@_py3_str_compat
 class VSVersionInfo:
     """
     WORD  wLength;        // length of the VS_VERSION_INFO structure
@@ -150,7 +167,7 @@ class VSVersionInfo:
     def fromRaw(self, data):
         i, (sublen, vallen, wType, nm) = parseCommon(data)
         #vallen is length of the ffi, typ is 0, nm is 'VS_VERSION_INFO'.
-        i = ((i + 3) / 4) * 4
+        i = nextDWord(i)
         # Now a VS_FIXEDFILEINFO
         self.ffi = FixedFileInfo()
         j = self.ffi.fromRaw(data, i)
@@ -158,7 +175,7 @@ class VSVersionInfo:
         while i < sublen:
             j = i
             i, (csublen, cvallen, ctyp, nm) = parseCommon(data, i)
-            if unicode(nm).strip() == u'StringFileInfo':
+            if nm.strip() == u'StringFileInfo':
                 sfi = StringFileInfo()
                 k = sfi.fromRaw(csublen, cvallen, nm, data, i, j+csublen)
                 self.kids.append(sfi)
@@ -169,7 +186,7 @@ class VSVersionInfo:
                 self.kids.append(vfi)
                 i = k
             i = j + csublen
-            i = ((i + 3) / 4) * 4
+            i = nextDWord(i)
         return i
 
     def toRaw(self):
@@ -220,11 +237,11 @@ def parseUString(data, start, limit):
         if data[i:i+2] == b'\000\000':
             break
         i += 2
-    text = unicode(data[start:i], 'UTF-16LE')
+    text = data[start:i].decode('UTF-16LE')
     i += 2
     return i, text
 
-
+@_py3_str_compat
 class FixedFileInfo:
     """
     DWORD dwSignature;        //Contains the value 0xFEEFO4BD
@@ -306,8 +323,8 @@ class FixedFileInfo:
         tmp = [u'FixedFileInfo(',
             u'# filevers and prodvers should be always a tuple with four items: (1, 2, 3, 4)',
             u'# Set not needed items to zero 0.',
-            u'filevers=%s,' % unicode(fv),
-            u'prodvers=%s,' % unicode(pv),
+            u'filevers=%s,' % (fv,),
+            u'prodvers=%s,' % (pv,),
             u"# Contains a bitmask that specifies the valid bits 'flags'r",
             u'mask=%s,' % hex(self.fileFlagsMask),
             u'# Contains a bitmask that specifies the Boolean attributes of the file.',
@@ -322,12 +339,13 @@ class FixedFileInfo:
             u'# 0x0 - the function is not defined for this fileType',
             u'subtype=%s,' % hex(self.fileSubtype),
             u'# Creation date and time stamp.',
-            u'date=%s' % unicode(fd),
+            u'date=%s' % (fd,),
             u')'
         ]
         return (u'\n'+indent+u'  ').join(tmp)
 
 
+@_py3_str_compat
 class StringFileInfo(object):
     """
     WORD        wLength;      // length of the version resource
@@ -373,6 +391,7 @@ class StringFileInfo(object):
                 % (indent, newindent, tmp, newindent))
 
 
+@_py3_str_compat
 class StringTable:
     """
     WORD   wLength;
@@ -387,13 +406,13 @@ class StringTable:
 
     def fromRaw(self, data, i, limit):
         i, (cpsublen, cpwValueLength, cpwType, self.name) = parseCodePage(data, i, limit) # should be code page junk
-        #i = ((i + 3) / 4) * 4
+        i = nextDWord(i)
         while i < limit:
             ss = StringStruct()
             j = ss.fromRaw(data, i, limit)
             i = j
             self.kids.append(ss)
-            i = ((i + 3) / 4) * 4
+            i = nextDWord(i)
         return i
 
     def toRaw(self):
@@ -414,12 +433,12 @@ class StringTable:
 
     def __unicode__(self, indent=u''):
         newindent = indent + u'  '
-        tmp = map(unicode, self.kids)
-        tmp = (u',\n%s' % newindent).join(tmp)
+        tmp = (u',\n%s' % newindent).join(u'%s' % (kid,) for kid in self.kids)
         return (u"%sStringTable(\n%su'%s',\n%s[%s])"
                 % (indent, newindent, self.name, newindent, tmp))
 
 
+@_py3_str_compat
 class StringStruct:
     """
     WORD   wLength;
@@ -436,7 +455,7 @@ class StringStruct:
     def fromRaw(self, data, i, limit):
         i, (sublen, vallen, typ, self.name) = parseCommon(data, i)
         limit = i + sublen
-        i = ((i + 3) / 4) * 4
+        i = nextDWord(i)
         i, self.val = parseUString(data, i, limit)
         return i
 
@@ -465,6 +484,7 @@ def parseCodePage(data, i, limit):
     return i, (sublen, wValueLength, wType, nm)
 
 
+@_py3_str_compat
 class VarFileInfo:
     """
     WORD  wLength;        // length of the version resource
@@ -482,7 +502,7 @@ class VarFileInfo:
         self.sublen = sublen
         self.vallen = vallen
         self.name = name
-        i = ((i + 3) / 4) * 4
+        i = nextDWord(i)
         while i < limit:
             vs = VarStruct()
             j = vs.fromRaw(data, i, limit)
@@ -505,10 +525,10 @@ class VarFileInfo:
                 + raw_name + b'\000\000' + pad + tmp)
 
     def __unicode__(self, indent=''):
-        tmp = map(unicode, self.kids)
-        return "%sVarFileInfo([%s])" % (indent, ', '.join(tmp))
+        return "%sVarFileInfo([%s])" % (indent, ', '.join(u'%s' % (kid,) for kid in self.kids))
 
 
+@_py3_str_compat
 class VarStruct:
     """
     WORD  wLength;        // length of the version resource
@@ -527,8 +547,8 @@ class VarStruct:
 
     def fromRaw(self, data, i, limit):
         i, (self.sublen, self.wValueLength, self.wType, self.name) = parseCommon(data, i)
-        i = ((i + 3) / 4) * 4
-        for j in range(self.wValueLength/2):
+        i = nextDWord(i)
+        for j in range(0, self.wValueLength, 2):
             kid = struct.unpack('h', data[i:i+2])[0]
             self.kids.append(kid)
             i += 2
