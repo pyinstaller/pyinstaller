@@ -20,9 +20,10 @@ a = Analysis([__testname__ + '.py'],
 b = Analysis([__testdep__ + '.py'],
              pathex=['.'])
 
-MERGE((b, __testdep__, __testdep__ + '.exe'), (a, __testname__, __testname__ + '.exe'))
+pyz = PYZ(a.pure, a.zipped_data,
+          b.pure, b.zipped_data,
+          append=False)
 
-pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
           a.binaries,
@@ -35,8 +36,7 @@ exe = EXE(pyz,
           upx=False,
           console=1 )
                     
-pyzB = PYZ(b.pure)
-exeB = EXE(pyzB,
+exeB = EXE(pyz,
           b.scripts,
           b.binaries,
           b.zipfiles,
@@ -48,3 +48,15 @@ exeB = EXE(pyzB,
           upx=False,
           console=1 )
 
+coll = COLLECT(
+        exe,
+        a.binaries,
+        a.zipfiles,
+        a.datas,
+        exeB,
+        b.binaries,
+        b.zipfiles,
+        b.datas,
+        strip=False,
+        upx=True,
+        name=os.path.join('dist', __testname__))

@@ -13,8 +13,8 @@ import sys
 # MULTIPROCESS FEATURE: file A (onefile pack) depends on file B (onedir pack)
 
 
-__testname__ = 'test_multipackage2'
-__testdep__ = 'multipackage2_B'
+__testname__ = '../scripts/test_multipackage2'
+__testdep__ = '../scripts/multipackage2_B'
 
 a = Analysis([__testname__ + '.py'],
              pathex=['.'])
@@ -29,7 +29,7 @@ exe = EXE(pyz,
           a.zipfiles,
           a.datas,
           a.dependencies,
-          name=os.path.join('dist', __testname__ + '.exe'),
+          name=os.path.basename(__testname__),
           debug=True,
           strip=False,
           upx=True,

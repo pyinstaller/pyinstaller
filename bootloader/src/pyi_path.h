@@ -35,4 +35,6 @@ FILE *pyi_path_fopen(const char *filename, const char *mode);
 #endif
 #define pyi_path_fclose(x)    fclose(x)
 
-#endif  /* PYI_PATH_H */
+#endif
+
+/* PYI_PATH_H */
