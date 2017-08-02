@@ -8,7 +8,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 import codecs
 import struct
 
@@ -16,7 +15,11 @@ from ...compat import pywintypes, encode
 
 import win32api
 # ::TODO:: #1920 revert to using pypi version
-from ...lib import pefile
+import pefile
+
+# Assume that binaries are not malicious
+# Significantly reduces processing time
+pefile.fast_load = True
 
 
 # TODO implement read/write version information with pefile library.
