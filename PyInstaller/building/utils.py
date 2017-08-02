@@ -8,7 +8,6 @@
 #-----------------------------------------------------------------------------
 
 
-
 #--- functions for checking guts ---
 # NOTE: By GUTS it is meant intermediate files and data structures that
 # PyInstaller creates for bundling files and creating final executable.
@@ -110,6 +109,7 @@ def add_suffix_to_extensions(toc):
         new_toc.append((inm, fnm, typ))
     return new_toc
 
+
 def applyRedirects(manifest, redirects):
     """
     Apply the binding redirects specified by 'redirects' to the dependent assemblies
@@ -128,6 +128,7 @@ def applyRedirects(manifest, redirects):
                 logger.info("Redirecting %s version %s -> %s",
                             binding.name, dep.version, binding.newVersion)
                 dep.version = binding.newVersion
+
 
 def checkCache(fnm, strip=False, upx=False, dist_nm=None):
     """
@@ -165,7 +166,8 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
     # Python versions as one user.
     pyver = ('py%d%s') % (sys.version_info[0], sys.version_info[1])
     arch = platform.architecture()[0]
-    cachedir = os.path.join(CONF['cachedir'], 'bincache%d%d_%s_%s' % (strip, upx, pyver, arch))
+    cachedir = os.path.join(
+        CONF['cachedir'], 'bincache%d%d_%s_%s' % (strip, upx, pyver, arch))
     if not os.path.exists(cachedir):
         os.makedirs(cachedir)
     cacheindexfn = os.path.join(cachedir, "index.dat")
@@ -207,7 +209,6 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
                 dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
             return cachedfile
 
-
     # Optionally change manifest and its deps to private assemblies
     if fnm.lower().endswith(".manifest"):
         manifest = winmanifest.Manifest()
@@ -216,7 +217,8 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
             manifest.parse_string(f.read())
         if CONF.get('win_private_assemblies', False):
             if manifest.publicKeyToken:
-                logger.info("Changing %s into private assembly", os.path.basename(fnm))
+                logger.info("Changing %s into private assembly",
+                            os.path.basename(fnm))
             manifest.publicKeyToken = None
             for dep in manifest.dependentAssemblies:
                 # Exclude common-controls which is not bundled
@@ -296,7 +298,8 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
                         except Exception as exc:
                             logger.error("Cannot parse manifest resource %s, "
                                          "%s", name, language)
-                            logger.error("From file %s", cachedfile, exc_info=1)
+                            logger.error("From file %s",
+                                         cachedfile, exc_info=1)
                         else:
                             # optionally change manifest to private assembly
                             if CONF.get('win_private_assemblies', False):
@@ -384,7 +387,7 @@ def _rmtree(path):
         choice = 'y'
     elif sys.stdout.isatty():
         choice = compat.stdin_input('WARNING: The output directory "%s" and ALL ITS '
-                           'CONTENTS will be REMOVED! Continue? (y/n)' % path)
+                                    'CONTENTS will be REMOVED! Continue? (y/n)' % path)
     else:
         raise SystemExit('Error: The output directory "%s" is not empty. '
                          'Please remove all its contents or use the '
@@ -398,10 +401,10 @@ def _rmtree(path):
 
 
 # TODO Refactor to prohibit empty target directories. As the docstring
-#below documents, this function currently permits the second item of each
-#2-tuple in "hook.datas" to be the empty string, in which case the target
-#directory defaults to the source directory's basename. However, this
-#functionality is very fragile and hence bad. Instead:
+# below documents, this function currently permits the second item of each
+# 2-tuple in "hook.datas" to be the empty string, in which case the target
+# directory defaults to the source directory's basename. However, this
+# functionality is very fragile and hence bad. Instead:
 #
 #* An exception should be raised if such item is empty.
 #* All hooks currently passing the empty string for such item (e.g.,
@@ -473,7 +476,7 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
         if not src_root_paths:
             raise SystemExit(
                 'Unable to find "%s" when adding binary and data files.' % (
-                src_root_path_or_glob))
+                    src_root_path_or_glob))
 
         for src_root_path in src_root_paths:
             if os.path.isfile(src_root_path):
@@ -490,7 +493,7 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
                     trg_root_dir = os.path.basename(src_root_path)
 
                 for src_dir, src_subdir_basenames, src_file_basenames in \
-                    os.walk(src_root_path):
+                        os.walk(src_root_path):
                     # Ensure the current source directory is a subdirectory
                     # of the passed top-level source directory. Since
                     # os.walk() does *NOT* follow symlinks by default, this
@@ -558,6 +561,7 @@ def _load_code(modname, filename):
             source = f.read()
         return compile(source, filename, 'exec')
 
+
 def get_code_object(modname, filename):
     """
     Get the code-object for a module.
@@ -616,13 +620,13 @@ def strip_paths_in_code(co, new_filename=None):
     # co_kwonlyargcount added in some version of Python 3
     if hasattr(co, 'co_kwonlyargcount'):
         return code_func(co.co_argcount, co.co_kwonlyargcount, co.co_nlocals, co.co_stacksize,
-                     co.co_flags, co.co_code, consts, co.co_names,
-                     co.co_varnames, new_filename, co.co_name,
-                     co.co_firstlineno, co.co_lnotab,
-                     co.co_freevars, co.co_cellvars)
+                         co.co_flags, co.co_code, consts, co.co_names,
+                         co.co_varnames, new_filename, co.co_name,
+                         co.co_firstlineno, co.co_lnotab,
+                         co.co_freevars, co.co_cellvars)
     else:
         return code_func(co.co_argcount, co.co_nlocals, co.co_stacksize,
-                     co.co_flags, co.co_code, consts, co.co_names,
-                     co.co_varnames, new_filename, co.co_name,
-                     co.co_firstlineno, co.co_lnotab,
-                     co.co_freevars, co.co_cellvars)
+                         co.co_flags, co.co_code, consts, co.co_names,
+                         co.co_varnames, new_filename, co.co_name,
+                         co.co_firstlineno, co.co_lnotab,
+                         co.co_freevars, co.co_cellvars)
