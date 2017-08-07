@@ -9,15 +9,21 @@ include pyinstaller.py
 include pyinstaller-gui.py
 
 prune bootloader/build
-prune bootloader/.waf*
+prune bootloader/.waf-*
+prune bootloader/.waf3-*
+prune bootloader/waf-*
 prune bootloader/waf3-*
+prune bootloader/_sdks
 exclude bootloader/.lock-waf*
 
 prune doc/source
+prune doc/_build
+recursive-exclude doc *.tmp
+
 prune old
 prune scripts
 prune tests/scripts
 prune .github
 
-exclude .* *.yml
+exclude .* *.yml *~ .directory
 global-exclude *.py[co]
