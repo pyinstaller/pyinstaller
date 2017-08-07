@@ -23,7 +23,8 @@ from operator import itemgetter
 from PyInstaller import is_win, is_darwin, is_linux, HOMEPATH, PLATFORM
 from PyInstaller.archive.writers import ZlibArchiveWriter, CArchiveWriter
 from PyInstaller.building.utils import _check_guts_toc, add_suffix_to_extensions, \
-    checkCache, _check_path_overlap, _rmtree, strip_paths_in_code, get_code_object
+    checkCache, _check_path_overlap, _rmtree, strip_paths_in_code, get_code_object, \
+    _make_clean_directory
 from PyInstaller.compat import is_cygwin, exec_command_all
 from PyInstaller.depend import bindepend
 from PyInstaller.depend.analysis import get_bootstrap_modules
@@ -86,21 +87,23 @@ class PYZ(Target):
         self.cipher = cipher
         if cipher:
             key_file = ('pyimod00_crypto_key',
-                         os.path.join(CONF['workpath'], 'pyimod00_crypto_key.pyc'),
-                         'PYMODULE')
+                        os.path.join(CONF['workpath'],
+                                     'pyimod00_crypto_key.pyc'),
+                        'PYMODULE')
             # Insert the key as the first module in the list. The key module contains
             # just variables and does not depend on other modules.
             self.dependencies.insert(0, key_file)
         # Compile the top-level modules so that they end up in the CArchive and can be
         # imported by the bootstrap script.
-        self.dependencies = misc.compile_py_files(self.dependencies, CONF['workpath'])
+        self.dependencies = misc.compile_py_files(
+            self.dependencies, CONF['workpath'])
         self.__postinit__()
 
-    _GUTS = (# input parameters
+    _GUTS = (  # input parameters
             ('name', _check_guts_eq),
             ('toc', _check_guts_toc),  # todo: pyc=1
-            # no calculated/analysed values
-            )
+        # no calculated/analysed values
+    )
 
     def _check_guts(self, data, last_build):
         if Target._check_guts(self, data, last_build):
@@ -116,7 +119,8 @@ class PYZ(Target):
                 # For some reason the code-object, modulegraph created
                 # is not available. Recreate it
                 try:
-                    self.code_dict[entry[0]] = get_code_object(entry[0], entry[1])
+                    self.code_dict[entry[0]] = get_code_object(
+                        entry[0], entry[1])
                 except SyntaxError:
                     # Exclude the module in case this is code meant for a newer Python version.
                     toc.remove(entry)
@@ -129,7 +133,8 @@ class PYZ(Target):
             for key, code in self.code_dict.items()
         }
 
-        pyz = ZlibArchiveWriter(self.name, toc, code_dict=self.code_dict, cipher=self.cipher)
+        pyz = ZlibArchiveWriter(
+            self.name, toc, code_dict=self.code_dict, cipher=self.cipher)
         logger.info("Building PYZ (ZlibArchive) %s completed successfully.",
                     self.name)
 
@@ -194,15 +199,15 @@ class PKG(Target):
                           'PYZ': UNCOMPRESSED}
         self.__postinit__()
 
-    _GUTS = (# input parameters
+    _GUTS = (  # input parameters
             ('name', _check_guts_eq),
             ('cdict', _check_guts_eq),
             ('toc', _check_guts_toc),  # list unchanged and no newer files
             ('exclude_binaries', _check_guts_eq),
             ('strip_binaries', _check_guts_eq),
             ('upx_binaries', _check_guts_eq),
-            # no calculated/analysed values
-            )
+        # no calculated/analysed values
+    )
 
     def _check_guts(self, data, last_build):
         if Target._check_guts(self, data, last_build):
@@ -235,26 +240,31 @@ class PKG(Target):
                         # happen if they come from different sources (eg. once from
                         # binary dependence, and once from direct import).
                         if inm in seenInms:
-                            logger.warning('Two binaries added with the same internal name.')
+                            logger.warning(
+                                'Two binaries added with the same internal name.')
                             logger.warning(pprint.pformat((inm, fnm, typ)))
                             logger.warning('was placed previously at')
-                            logger.warning(pprint.pformat((inm, seenInms[inm], seenFnms_typ[seenInms[inm]])))
+                            logger.warning(pprint.pformat(
+                                (inm, seenInms[inm], seenFnms_typ[seenInms[inm]])))
                             logger.warning('Skipping %s.' % fnm)
                             continue
 
                         # Warn if the same binary extension was included
                         # with multiple internal names
                         if fnm in seenFnms:
-                            logger.warning('One binary added with two internal names.')
+                            logger.warning(
+                                'One binary added with two internal names.')
                             logger.warning(pprint.pformat((inm, fnm, typ)))
                             logger.warning('was placed previously at')
-                            logger.warning(pprint.pformat((seenFnms[fnm], fnm, seenFnms_typ[fnm])))
+                            logger.warning(pprint.pformat(
+                                (seenFnms[fnm], fnm, seenFnms_typ[fnm])))
                     seenInms[inm] = fnm
                     seenFnms[fnm] = inm
                     seenFnms_typ[fnm] = typ
 
                     fnm = checkCache(fnm, strip=self.strip_binaries,
-                                     upx=(self.upx_binaries and (is_win or is_cygwin)),
+                                     upx=(self.upx_binaries and (
+                                         is_win or is_cygwin)),
                                      dist_nm=inm)
 
                     mytoc.append((inm, fnm, self.cdict.get(typ, 0),
@@ -266,7 +276,8 @@ class PKG(Target):
                 # which will not be sorted.
                 srctoc.append((inm, fnm, self.cdict[typ], self.xformdict[typ]))
             else:
-                mytoc.append((inm, fnm, self.cdict.get(typ, 0), self.xformdict.get(typ, 'b')))
+                mytoc.append((inm, fnm, self.cdict.get(
+                    typ, 0), self.xformdict.get(typ, 'b')))
 
         # Bootloader has to know the name of Python library. Pass python libname to CArchive.
         pylib_name = os.path.basename(bindepend.get_python_library_path())
@@ -361,10 +372,12 @@ class EXE(Target):
         # WORKPATH - onedir
         if self.exclude_binaries:
             # onedir mode - create executable in WORKPATH.
-            self.name = os.path.join(CONF['workpath'], os.path.basename(self.name))
+            self.name = os.path.join(
+                CONF['workpath'], os.path.basename(self.name))
         else:
             # onefile mode - create executable in DISTPATH.
-            self.name = os.path.join(CONF['distpath'], os.path.basename(self.name))
+            self.name = os.path.join(
+                CONF['distpath'], os.path.basename(self.name))
 
         # Old .spec format included on Windows in 'name' .exe suffix.
         if is_win or is_cygwin:
@@ -382,18 +395,21 @@ class EXE(Target):
             if isinstance(arg, TOC):
                 self.toc.extend(arg)
             elif isinstance(arg, Target):
-                self.toc.append((os.path.basename(arg.name), arg.name, arg.typ))
+                self.toc.append(
+                    (os.path.basename(arg.name), arg.name, arg.typ))
                 self.toc.extend(arg.dependencies)
             else:
                 self.toc.extend(arg)
 
         if self.runtime_tmpdir is not None:
-            self.toc.append(("pyi-runtime-tmpdir " + self.runtime_tmpdir, "", "OPTION"))
+            self.toc.append(
+                ("pyi-runtime-tmpdir " + self.runtime_tmpdir, "", "OPTION"))
 
         if is_win:
-            filename = os.path.join(CONF['workpath'], CONF['specnm'] + ".exe.manifest")
+            filename = os.path.join(
+                CONF['workpath'], CONF['specnm'] + ".exe.manifest")
             self.manifest = winmanifest.create_manifest(filename, self.manifest,
-                self.console, self.uac_admin, self.uac_uiaccess)
+                                                        self.console, self.uac_admin, self.uac_uiaccess)
 
             manifest_filename = os.path.basename(self.name) + ".manifest"
 
@@ -413,12 +429,13 @@ class EXE(Target):
 
         # Get the path of the bootloader and store it in a TOC, so it
         # can be checked for being changed.
-        exe = self._bootloader_file('run', '.exe' if is_win or is_cygwin else '')
+        exe = self._bootloader_file(
+            'run', '.exe' if is_win or is_cygwin else '')
         self.exefiles = TOC([(os.path.basename(exe), exe, 'EXECUTABLE')])
 
         self.__postinit__()
 
-    _GUTS = (# input parameters
+    _GUTS = (  # input parameters
             ('name', _check_guts_eq),
             ('console', _check_guts_eq),
             ('debug', _check_guts_eq),
@@ -429,16 +446,16 @@ class EXE(Target):
             ('uac_uiaccess', _check_guts_eq),
             ('manifest', _check_guts_eq),
             ('append_pkg', _check_guts_eq),
-            # for the case the directory ius shared between platforms:
+        # for the case the directory ius shared between platforms:
             ('pkgname', _check_guts_eq),
             ('toc', _check_guts_eq),
             ('resources', _check_guts_eq),
             ('strip', _check_guts_eq),
             ('upx', _check_guts_eq),
             ('mtm', None,),  # checked below
-            # no calculated/analysed values
+        # no calculated/analysed values
             ('exefiles', _check_guts_toc),
-            )
+    )
 
     def _check_guts(self, data, last_build):
         if not os.path.exists(self.name):
@@ -455,16 +472,19 @@ class EXE(Target):
 
         if (data['versrsrc'] or data['resources']) and not is_win:
             # todo: really ignore :-)
-            logger.warning('ignoring version, manifest and resources, platform not capable')
+            logger.warning(
+                'ignoring version, manifest and resources, platform not capable')
         if data['icon'] and not (is_win or is_darwin):
             logger.warning('ignoring icon, platform not capable')
 
         mtm = data['mtm']
         if mtm != misc.mtime(self.name):
-            logger.info("Rebuilding %s because mtimes don't match", self.tocbasename)
+            logger.info("Rebuilding %s because mtimes don't match",
+                        self.tocbasename)
             return True
         if mtm < misc.mtime(self.pkg.tocfilename):
-            logger.info("Rebuilding %s because pkg is more recent", self.tocbasename)
+            logger.info("Rebuilding %s because pkg is more recent",
+                        self.tocbasename)
             return True
         return False
 
@@ -484,19 +504,21 @@ class EXE(Target):
             exe = exe + '_d'
         if extension:
             exe = exe + extension
-        bootloader_file = os.path.join(HOMEPATH, 'PyInstaller', 'bootloader', PLATFORM, exe)
+        bootloader_file = os.path.join(
+            HOMEPATH, 'PyInstaller', 'bootloader', PLATFORM, exe)
         logger.info('Bootloader %s' % bootloader_file)
         return bootloader_file
 
     def assemble(self):
         logger.info("Building EXE from %s", self.tocbasename)
         trash = []
+        if os.path.exists(self.name):
+            os.remove(self.name)
         if not os.path.exists(os.path.dirname(self.name)):
             os.makedirs(os.path.dirname(self.name))
         exe = self.exefiles[0][1]  # pathname of bootloader
         if not os.path.exists(exe):
             raise SystemExit(_MISSING_BOOTLOADER_ERRORMSG)
-
 
         if is_win and (self.icon or self.versrsrc or self.resources):
             tmpnm = tempfile.mktemp()
@@ -523,9 +545,9 @@ class EXE(Target):
                     reslang = res[3]
                 try:
                     winresource.UpdateResourcesFromResFile(tmpnm, resfile,
-                                                        [restype or "*"],
-                                                        [resname or "*"],
-                                                        [reslang or "*"])
+                                                           [restype or "*"],
+                                                           [resname or "*"],
+                                                           [reslang or "*"])
                 except winresource.pywintypes.error as exc:
                     if exc.args[0] != winresource.ERROR_BAD_EXE_FORMAT:
                         logger.error("Error while updating resources in %s"
@@ -544,10 +566,10 @@ class EXE(Target):
                         continue
                     try:
                         winresource.UpdateResourcesFromDataFile(tmpnm,
-                                                             resfile,
-                                                             restype,
-                                                             [resname],
-                                                             [reslang or 0])
+                                                                resfile,
+                                                                restype,
+                                                                [resname],
+                                                                [reslang or 0])
                     except winresource.pywintypes.error:
                         logger.error("Error while updating resource %s %s in %s"
                                      " from data file %s",
@@ -565,7 +587,8 @@ class EXE(Target):
             self._copyfile(self.pkg.name, self.pkgname)
         elif is_linux:
             self._copyfile(exe, self.name)
-            logger.info("Appending archive to ELF section in EXE %s", self.name)
+            logger.info(
+                "Appending archive to ELF section in EXE %s", self.name)
             retcode, stdout, stderr = exec_command_all(
                 'objcopy', '--add-section', 'pydata=%s' % self.pkg.name,
                 self.name)
@@ -582,10 +605,10 @@ class EXE(Target):
             with open(self.name, 'wb') as outf:
                 # write the bootloader data
                 with open(exe, 'rb') as infh:
-                    shutil.copyfileobj(infh, outf, length=64*1024)
+                    shutil.copyfileobj(infh, outf, length=64 * 1024)
                 # write the archive data
                 with open(self.pkg.name, 'rb') as infh:
-                    shutil.copyfileobj(infh, outf, length=64*1024)
+                    shutil.copyfileobj(infh, outf, length=64 * 1024)
 
         if is_darwin:
             # Fix Mach-O header for codesigning on OS X.
@@ -601,17 +624,17 @@ class EXE(Target):
         logger.info("Building EXE from %s completed successfully.",
                     self.tocbasename)
 
-
     def _copyfile(self, infile, outfile):
         with open(infile, 'rb') as infh:
             with open(outfile, 'wb') as outfh:
-                shutil.copyfileobj(infh, outfh, length=64*1024)
+                shutil.copyfileobj(infh, outfh, length=64 * 1024)
 
 
 class COLLECT(Target):
     """
     In one-dir mode creates the output folder with all necessary files.
     """
+
     def __init__(self, *args, **kws):
         """
         args
@@ -645,13 +668,15 @@ class COLLECT(Target):
             if isinstance(arg, TOC):
                 self.toc.extend(arg)
             elif isinstance(arg, Target):
-                self.toc.append((os.path.basename(arg.name), arg.name, arg.typ))
+                self.toc.append(
+                    (os.path.basename(arg.name), arg.name, arg.typ))
                 if isinstance(arg, EXE):
                     for tocnm, fnm, typ in arg.toc:
                         if tocnm == os.path.basename(arg.name) + ".manifest":
                             self.toc.append((tocnm, fnm, typ))
                     if not arg.append_pkg:
-                        self.toc.append((os.path.basename(arg.pkgname), arg.pkgname, 'PKG'))
+                        self.toc.append(
+                            (os.path.basename(arg.pkgname), arg.pkgname, 'PKG'))
                 self.toc.extend(arg.dependencies)
             else:
                 self.toc.extend(arg)
@@ -668,10 +693,8 @@ class COLLECT(Target):
         return 1
 
     def assemble(self):
-        if _check_path_overlap(self.name) and os.path.isdir(self.name):
-            _rmtree(self.name)
+        _make_clean_directory(self.name)
         logger.info("Building COLLECT %s", self.tocbasename)
-        os.makedirs(self.name)
         toc = add_suffix_to_extensions(self.toc)
         for inm, fnm, typ in toc:
             if not os.path.exists(fnm) or not os.path.isfile(fnm) and is_path_to_egg(fnm):
@@ -686,7 +709,8 @@ class COLLECT(Target):
                 os.makedirs(todir)
             if typ in ('EXTENSION', 'BINARY'):
                 fnm = checkCache(fnm, strip=self.strip_binaries,
-                                 upx=(self.upx_binaries and (is_win or is_cygwin)),
+                                 upx=(self.upx_binaries and (
+                                     is_win or is_cygwin)),
                                  dist_nm=inm)
             if typ != 'DEPENDENCY':
                 shutil.copy(fnm, tofnm)
@@ -706,6 +730,7 @@ class MERGE(object):
     execuable. Data and binary files are then present only once and some
     disk space is thus reduced.
     """
+
     def __init__(self, *args):
         """
         Repeated dependencies are then present only once in the first
@@ -727,7 +752,8 @@ class MERGE(object):
             self._id_to_path[os.path.normcase(i)] = p
 
         # Get the longest common path
-        common_prefix = os.path.commonprefix([os.path.normcase(os.path.abspath(a.scripts[-1][1])) for a, _, _ in args])
+        common_prefix = os.path.commonprefix(
+            [os.path.normcase(os.path.abspath(a.scripts[-1][1])) for a, _, _ in args])
         self._common_prefix = os.path.dirname(common_prefix)
         if self._common_prefix[-1] != os.sep:
             self._common_prefix += os.sep
@@ -740,7 +766,8 @@ class MERGE(object):
         Filter shared dependencies to be only in first executable.
         """
         for analysis, _, _ in args:
-            path = os.path.abspath(analysis.scripts[-1][1]).replace(self._common_prefix, "", 1)
+            path = os.path.abspath(
+                analysis.scripts[-1][1]).replace(self._common_prefix, "", 1)
             path = os.path.splitext(path)[0]
             if os.path.normcase(path) in self._id_to_path:
                 path = self._id_to_path[os.path.normcase(path)]
@@ -753,12 +780,16 @@ class MERGE(object):
         for toc in (analysis.binaries, analysis.datas):
             for i, tpl in enumerate(toc):
                 if not tpl[1] in self._dependencies:
-                    logger.debug("Adding dependency %s located in %s" % (tpl[1], path))
+                    logger.debug("Adding dependency %s located in %s" %
+                                 (tpl[1], path))
                     self._dependencies[tpl[1]] = path
                 else:
-                    dep_path = self._get_relative_path(path, self._dependencies[tpl[1]])
-                    logger.debug("Referencing %s to be a dependecy for %s, located in %s" % (tpl[1], path, dep_path))
-                    analysis.dependencies.append((":".join((dep_path, tpl[0])), tpl[1], "DEPENDENCY"))
+                    dep_path = self._get_relative_path(
+                        path, self._dependencies[tpl[1]])
+                    logger.debug("Referencing %s to be a dependecy for %s, located in %s" % (
+                        tpl[1], path, dep_path))
+                    analysis.dependencies.append(
+                        (":".join((dep_path, tpl[0])), tpl[1], "DEPENDENCY"))
                     toc[i] = (None, None, None)
             # Clean the list
             toc[:] = [tpl for tpl in toc if tpl != (None, None, None)]
