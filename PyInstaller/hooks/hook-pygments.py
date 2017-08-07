@@ -6,8 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
-
 """
 PyInstaller hook file for Pygments. Tested with version 2.0.2.
 """

@@ -16,7 +16,6 @@ from .datastruct import Target, TOC, logger, _check_guts_eq
 from .utils import _check_path_overlap, _rmtree, add_suffix_to_extensions, checkCache
 
 
-
 class BUNDLE(Target):
     def __init__(self, *args, **kws):
         from ..config import CONF
@@ -29,8 +28,9 @@ class BUNDLE(Target):
         # Use icon supplied by user or just use the default one from PyInstaller.
         self.icon = kws.get('icon')
         if not self.icon:
-            self.icon = os.path.join(os.path.dirname(os.path.dirname(__file__)),
-                'bootloader', 'images', 'icon-windowed.icns')
+            self.icon = os.path.join(
+                os.path.dirname(os.path.dirname(__file__)), 'bootloader',
+                'images', 'icon-windowed.icns')
         # Ensure icon path is absolute.
         self.icon = os.path.abspath(self.icon)
 
@@ -57,7 +57,8 @@ class BUNDLE(Target):
 
         for arg in args:
             if isinstance(arg, EXE):
-                self.toc.append((os.path.basename(arg.name), arg.name, arg.typ))
+                self.toc.append((os.path.basename(arg.name), arg.name,
+                                 arg.typ))
                 self.toc.extend(arg.dependencies)
                 self.strip = arg.strip
                 self.upx = arg.upx
@@ -78,8 +79,9 @@ class BUNDLE(Target):
             if typ == "EXECUTABLE":
                 self.exename = name
                 if self.name is None:
-                    self.appname = "Mac%s" % (os.path.splitext(inm)[0],)
-                    self.name = os.path.join(CONF['specpath'], self.appname + ".app")
+                    self.appname = "Mac%s" % (os.path.splitext(inm)[0], )
+                    self.name = os.path.join(CONF['specpath'],
+                                             self.appname + ".app")
                 else:
                     self.name = os.path.join(CONF['specpath'], self.name)
                 break
@@ -87,8 +89,7 @@ class BUNDLE(Target):
 
     _GUTS = (
         # BUNDLE always builds, just want the toc to be written out
-        ('toc', None),
-    )
+        ('toc', None), )
 
     def _check_guts(self, data, last_build):
         # BUNDLE always needs to be executed, since it will clean the output
@@ -107,45 +108,46 @@ class BUNDLE(Target):
 
         # Copy icns icon to Resources directory.
         if os.path.exists(self.icon):
-            shutil.copy(self.icon, os.path.join(self.name, 'Contents', 'Resources'))
+            shutil.copy(self.icon,
+                        os.path.join(self.name, 'Contents', 'Resources'))
         else:
             logger.warning("icon not found %s", self.icon)
 
         # Key/values for a minimal Info.plist file
-        info_plist_dict = {"CFBundleDisplayName": self.appname,
-                           "CFBundleName": self.appname,
+        info_plist_dict = {
+            "CFBundleDisplayName": self.appname,
+            "CFBundleName": self.appname,
 
-                           # Required by 'codesign' utility.
-                           # The value for CFBundleIdentifier is used as the default unique
-                           # name of your program for Code Signing purposes.
-                           # It even identifies the APP for access to restricted OS X areas
-                           # like Keychain.
-                           #
-                           # The identifier used for signing must be globally unique. The usal
-                           # form for this identifier is a hierarchical name in reverse DNS
-                           # notation, starting with the toplevel domain, followed by the
-                           # company name, followed by the department within the company, and
-                           # ending with the product name. Usually in the form:
-                           #   com.mycompany.department.appname
-                           # Cli option --osx-bundle-identifier sets this value.
-                           "CFBundleIdentifier": self.bundle_identifier,
+            # Required by 'codesign' utility.
+            # The value for CFBundleIdentifier is used as the default unique
+            # name of your program for Code Signing purposes.
+            # It even identifies the APP for access to restricted OS X areas
+            # like Keychain.
+            #
+            # The identifier used for signing must be globally unique. The usal
+            # form for this identifier is a hierarchical name in reverse DNS
+            # notation, starting with the toplevel domain, followed by the
+            # company name, followed by the department within the company, and
+            # ending with the product name. Usually in the form:
+            #   com.mycompany.department.appname
+            # Cli option --osx-bundle-identifier sets this value.
+            "CFBundleIdentifier": self.bundle_identifier,
 
-                           # Fix for #156 - 'MacOS' must be in the name - not sure why
-                           "CFBundleExecutable": 'MacOS/%s' % os.path.basename(self.exename),
-                           "CFBundleIconFile": os.path.basename(self.icon),
-                           "CFBundleInfoDictionaryVersion": "6.0",
-                           "CFBundlePackageType": "APPL",
-                           "CFBundleShortVersionString": self.version,
+            # Fix for #156 - 'MacOS' must be in the name - not sure why
+            "CFBundleExecutable": 'MacOS/%s' % os.path.basename(self.exename),
+            "CFBundleIconFile": os.path.basename(self.icon),
+            "CFBundleInfoDictionaryVersion": "6.0",
+            "CFBundlePackageType": "APPL",
+            "CFBundleShortVersionString": self.version,
 
-                           # Setting this to 1 will cause Mac OS X *not* to show
-                           # a dock icon for the PyInstaller process which
-                           # decompresses the real executable's contents. As a
-                           # side effect, the main application doesn't get one
-                           # as well, but at startup time the loader will take
-                           # care of transforming the process type.
-                           "LSBackgroundOnly": "0",
-
-                           }
+            # Setting this to 1 will cause Mac OS X *not* to show
+            # a dock icon for the PyInstaller process which
+            # decompresses the real executable's contents. As a
+            # side effect, the main application doesn't get one
+            # as well, but at startup time the loader will take
+            # care of transforming the process type.
+            "LSBackgroundOnly": "0",
+        }
 
         # Merge info_plist settings from spec file
         if isinstance(self.info_plist, dict) and self.info_plist:
@@ -159,7 +161,9 @@ class BUNDLE(Target):
             info_plist += u"<key>%s</key>\n<string>%s</string>\n" % (k, v)
         info_plist += u"""</dict>
 </plist>"""
-        with codecs.open(os.path.join(self.name, "Contents", "Info.plist"), "w", "utf-8") as f:
+        with codecs.open(
+                os.path.join(self.name, "Contents", "Info.plist"), "w",
+                "utf-8") as f:
             f.write(info_plist)
 
         links = []
@@ -168,7 +172,8 @@ class BUNDLE(Target):
             # Copy files from cache. This ensures that are used files with relative
             # paths to dynamic library dependencies (@executable_path)
             if typ in ('EXTENSION', 'BINARY'):
-                fnm = checkCache(fnm, strip=self.strip, upx=self.upx, dist_nm=inm)
+                fnm = checkCache(
+                    fnm, strip=self.strip, upx=self.upx, dist_nm=inm)
             if typ == 'DATA':  # add all data files to a list for symlinking later
                 links.append((inm, fnm))
             else:
@@ -201,21 +206,26 @@ class BUNDLE(Target):
                             # Build path from previous path and the next part of the base path
                             path = os.path.join(path, part)
                             try:
-                                relative_source_path = os.path.relpath(os.path.join(res_dir, path),
-                                                                       os.path.split(os.path.join(bin_dir, path))[0])
+                                relative_source_path = os.path.relpath(
+                                    os.path.join(res_dir, path),
+                                    os.path.split(
+                                        os.path.join(bin_dir, path))[0])
                                 dest_path = os.path.join(bin_dir, path)
                                 os.symlink(relative_source_path, dest_path)
                                 break
                             except FileExistsError:
                                 pass
                         if not os.path.exists(os.path.join(bin_dir, inm)):
-                            relative_source_path = os.path.relpath(os.path.join(res_dir, inm),
-                                                                   os.path.split(os.path.join(bin_dir, inm))[0])
+                            relative_source_path = os.path.relpath(
+                                os.path.join(res_dir, inm),
+                                os.path.split(os.path.join(bin_dir, inm))[0])
                             dest_path = os.path.join(bin_dir, inm)
                             os.symlink(relative_source_path, dest_path)
                 else:  # If path is empty, e.g., a top level file, try to just symlink the file
-                    os.symlink(os.path.relpath(os.path.join(res_dir, inm),
-                                               os.path.split(os.path.join(bin_dir, inm))[0]),
-                               os.path.join(bin_dir, inm))
+                    os.symlink(
+                        os.path.relpath(
+                            os.path.join(res_dir, inm),
+                            os.path.split(os.path.join(bin_dir, inm))[0]),
+                        os.path.join(bin_dir, inm))
             else:
                 shutil.copy(fnm, bin_dir)

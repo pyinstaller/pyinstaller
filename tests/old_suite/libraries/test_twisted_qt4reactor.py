@@ -7,14 +7,11 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 # Twisted is an event-driven networking engine.
-# 
+#
 # This is the test for qt4reactor - Twisted is driven by the Qt mainloop.
 
-
 import sys
-
 
 # Workaround to remove the reactor module created by PyInstaller twisted rthook.
 # Otherwise you will get error
@@ -22,11 +19,9 @@ import sys
 if 'twisted.internet.reactor' in sys.modules:
     del sys.modules['twisted.internet.reactor']
 
-
 # Code to init Qt.
 from PyQt4 import QtCore
 app = QtCore.QCoreApplication(sys.argv)
-
 
 # Install reactor.
 import qt4reactor

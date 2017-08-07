@@ -16,6 +16,7 @@ _STRICT_FRAMEWORK_RE = re.compile(r"""(?x)
 )$
 """)
 
+
 def framework_info(filename):
     """
     A framework name can take one of the following four forms:

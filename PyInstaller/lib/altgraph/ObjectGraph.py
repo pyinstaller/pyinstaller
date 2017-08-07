@@ -10,11 +10,13 @@ from . import GraphError
 from .Graph import Graph
 from .GraphUtil import filter_stack
 
+
 class ObjectGraph(object):
     """
     A graph of objects that have a "graphident" attribute.
     graphident is the key for the object in the graph
     """
+
     def __init__(self, graph=None, debug=0):
         if graph is None:
             graph = Graph()
@@ -25,7 +27,7 @@ class ObjectGraph(object):
         graph.add_node(self, None)
 
     def __repr__(self):
-        return '<%s>' % (type(self).__name__,)
+        return '<%s>' % (type(self).__name__, )
 
     def flatten(self, condition=None, start=None):
         """
@@ -42,7 +44,6 @@ class ObjectGraph(object):
             node = self.graph.node_data(ident)
             if node is not None:
                 yield self.graph.node_data(ident)
-
 
     def get_edges(self, node):
         """
@@ -64,6 +65,7 @@ class ObjectGraph(object):
         """
         start = self.getRawIdent(node)
         _, _, outraw, incraw = self.graph.describe_node(start)
+
         def iter_edges(lst, n):
             seen = set()
             for tpl in (self.graph.describe_edge(e) for e in lst):
@@ -76,12 +78,14 @@ class ObjectGraph(object):
                 # for edges connecting to MissingModule nodes (e.g., the
                 # Windows-specific "winreg" module under OS X and Linux).
                 if ident is self:
-                    self.msg(1, 'Erroneous edge %s for node %s.' % (str(tpl), str(node)))
+                    self.msg(1, 'Erroneous edge %s for node %s.' % (str(tpl),
+                                                                    str(node)))
                     continue
                 # Else if this node has not yet been yielded, do so.
                 elif ident not in seen:
                     yield self.findNode(ident)
                     seen.add(ident)
+
         return iter_edges(outraw, 3), iter_edges(incraw, 2)
 
     def edgeData(self, fromNode, toNode):
@@ -111,7 +115,7 @@ class ObjectGraph(object):
         for node in removes:
             self.graph.hide_node(node)
 
-        return len(visited)-1, len(removes), len(orphans)
+        return len(visited) - 1, len(removes), len(orphans)
 
     def removeNode(self, node):
         """
@@ -211,7 +215,8 @@ class ObjectGraph(object):
         Print a debug message with the given level
         """
         if s and level <= self.debug:
-            print ("%s%s %s" % ("  " * self.indent, s, ' '.join(map(repr, args))))
+            print("%s%s %s" % ("  " * self.indent, s,
+                               ' '.join(map(repr, args))))
 
     def msgin(self, level, s, *args):
         """

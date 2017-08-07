@@ -7,6 +7,5 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 from PyInstaller.utils.hooks import collect_submodules
 hiddenimports = collect_submodules('django.core.cache.backends')

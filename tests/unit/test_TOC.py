@@ -14,21 +14,17 @@ import pytest
 from PyInstaller.building.datastruct import TOC
 from PyInstaller.utils.tests import skipif_notwin
 
+ELEMS1 = (('encodings', '/usr/lib/python2.7/encodings/__init__.py',
+           'PYMODULE'),
+          ('_random', '/usr/lib/python2.7/lib-dynload/_random.so',
+           'EXTENSION'), ('libreadline.so.6', '/lib64/libreadline.so.6',
+                          'BINARY'), )
 
-ELEMS1 = (
-    ('encodings', '/usr/lib/python2.7/encodings/__init__.py','PYMODULE'),
-    ('_random', '/usr/lib/python2.7/lib-dynload/_random.so', 'EXTENSION'),
-    ('libreadline.so.6', '/lib64/libreadline.so.6', 'BINARY'),
-)
+ELEMS2 = (('li-la-lu', '/home/myself/li-la-su', 'SOMETHING'),
+          ('schubidu', '/home/otherguy/schibidu', 'PKG'), )
 
-ELEMS2 = (
-    ('li-la-lu', '/home/myself/li-la-su', 'SOMETHING'),
-    ('schubidu', '/home/otherguy/schibidu', 'PKG'),
-)
-
-ELEMS3 = (
-    ('PIL.Image.py', '/usr/lib/python2.7/encodings/__init__.py','PYMODULE'),
-)
+ELEMS3 = (('PIL.Image.py', '/usr/lib/python2.7/encodings/__init__.py',
+           'PYMODULE'), )
 
 
 def test_init_empty():
@@ -79,8 +75,8 @@ def test_insert_existing():
     toc.insert(1, ELEMS1[-1])
     expected = list(ELEMS1)
     assert toc == expected
-    
-    
+
+
 def test_insert_keep_filename():
     # name in TOC should be the same as the one added
     toc = TOC()
@@ -261,6 +257,7 @@ def test_rsub_non_existing():
 # The following tests verify that case-insensitive comparisons are used on Windows
 # and only for appropriate TOC entry types
 
+
 @skipif_notwin
 def test_append_other_case_mixed():
     # If a binary file is added with the same filename as an existing pymodule,
@@ -271,7 +268,7 @@ def test_append_other_case_mixed():
     toc.append(elem)
     expected = list(ELEMS1)
     assert toc == expected
-    
+
 
 @skipif_notwin
 def test_append_other_case_pymodule():

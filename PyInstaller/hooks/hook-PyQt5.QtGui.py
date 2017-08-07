@@ -7,12 +7,10 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 hiddenimports = ['sip', 'PyQt5.QtCore']
 
 from PyInstaller.utils.hooks import qt_plugins_binaries
 from PyInstaller.compat import is_linux
-
 
 binaries = []
 binaries.extend(qt_plugins_binaries('accessible', namespace='PyQt5'))

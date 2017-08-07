@@ -23,7 +23,6 @@ from ... import log as logging
 
 logger = logging.getLogger(__name__)
 
-
 # All these extension represent Python modules or extension modules
 PY_EXECUTABLE_SUFFIXES = set(['.py', '.pyc', '.pyd', '.pyo', '.so'])
 
@@ -100,11 +99,13 @@ def exec_script(script_filename, env=None, *args):
     must be located in the `PyInstaller/utils/hooks/subproc` directory.
     """
     script_filename = os.path.basename(script_filename)
-    script_filename = os.path.join(os.path.dirname(__file__), 'subproc', script_filename)
+    script_filename = os.path.join(
+        os.path.dirname(__file__), 'subproc', script_filename)
     if not os.path.exists(script_filename):
-        raise SystemError("To prevent misuse, the script passed to "
-                          "PyInstaller.utils.hooks.exec_script must be located "
-                          "in the `PyInstaller/utils/hooks/subproc` directory.")
+        raise SystemError(
+            "To prevent misuse, the script passed to "
+            "PyInstaller.utils.hooks.exec_script must be located "
+            "in the `PyInstaller/utils/hooks/subproc` directory.")
 
     cmd = [script_filename]
     cmd.extend(args)
@@ -155,7 +156,9 @@ def get_pyextension_imports(modname):
         diff.discard('%(modname)s')
         # Print module list to stdout.
         print(list(diff))
-    """ % {'modname': modname}
+    """ % {
+        'modname': modname
+    }
     module_imports = eval_statement(statement)
 
     if not module_imports:
@@ -294,8 +297,8 @@ def get_module_attribute(module_name, attr_name):
     """ % (module_name, attr_name, attr_value_if_undefined))
 
     if attr_value == attr_value_if_undefined:
-        raise AttributeError(
-            'Module %r has no attribute %r' % (module_name, attr_name))
+        raise AttributeError('Module %r has no attribute %r' % (module_name,
+                                                                attr_name))
     else:
         return attr_value
 
@@ -337,7 +340,8 @@ def get_module_file_attribute(package):
     return attr
 
 
-def is_module_satisfies(requirements, version=None, version_attr='__version__'):
+def is_module_satisfies(requirements, version=None,
+                        version_attr='__version__'):
     """
     `True` if the module, package, or C extension described by the passed
     requirements string both exists and satisfies these requirements.
@@ -564,7 +568,8 @@ def collect_submodules(package, filter=lambda name: True):
     logger.debug('Collecting submodules for %s' % package)
     # Skip a module which is not a package.
     if not is_package(package):
-        logger.debug('collect_submodules - Module %s is not a package.' % package)
+        logger.debug(
+            'collect_submodules - Module %s is not a package.' % package)
         return []
 
     # Determine the filesystem path to the specified package.
@@ -615,8 +620,9 @@ def collect_submodules(package, filter=lambda name: True):
         for module_loader, name, ispkg in walk_packages([{}], '{}.'):
             print(name)
         """.format(
-                  # Use repr to escape Windows backslashes.
-                  repr(pkg_dir), package))
+        # Use repr to escape Windows backslashes.
+        repr(pkg_dir),
+        package))
 
     # Include the package itself in the results.
     mods = {package}
@@ -685,7 +691,8 @@ def collect_dynamic_libs(package, destdir=None):
                     dest = destdir
                 else:
                     # The directory hierarchy is preserved as in the original package.
-                    dest = remove_prefix(dirpath, os.path.dirname(pkg_base) + os.sep)
+                    dest = remove_prefix(dirpath,
+                                         os.path.dirname(pkg_base) + os.sep)
                 logger.debug(' %s, %s' % (source, dest))
                 dylibs.append((source, dest))
     return dylibs
@@ -758,8 +765,7 @@ def collect_system_data_files(path, destdir=None, include_py_files=False):
                 # (/abs/path/to/source/mod/submod/file.dat,
                 #  mod/submod/destdir)
                 source = os.path.join(dirpath, f)
-                dest = remove_prefix(dirpath,
-                                     os.path.dirname(path) + os.sep)
+                dest = remove_prefix(dirpath, os.path.dirname(path) + os.sep)
                 if destdir is not None:
                     dest = os.path.join(destdir, dest)
                 datas.append((source, dest))
@@ -862,7 +868,7 @@ def copy_metadata(package_name):
 
     assert os.path.exists(metadata_dir)
     logger.debug('Package {} metadata found in {} belongs in {}'.format(
-      package_name, metadata_dir, dest_dir))
+        package_name, metadata_dir, dest_dir))
 
     return [(metadata_dir, dest_dir)]
 
@@ -875,7 +881,8 @@ def get_installer(module):
     :return: Package manager or None
     """
     file_name = get_module_file_attribute(module)
-    site_dir = file_name[:file_name.index('site-packages') + len('site-packages')]
+    site_dir = file_name[:file_name.index('site-packages') + len(
+        'site-packages')]
     # This is necessary for situations where the project name and module name don't match, i.e.
     # Project name: pyenchant Module name: enchant
     pkgs = pkg_resources.find_distributions(site_dir)
@@ -894,24 +901,27 @@ def get_installer(module):
             if lines[0] != '':
                 installer = lines[0].rstrip('\r\n')
                 logger.debug(
-                    'Found installer: \'{0}\' for module: \'{1}\' from package: \'{2}\''.format(installer, module,
-                                                                                                package))
+                    'Found installer: \'{0}\' for module: \'{1}\' from package: \'{2}\''.
+                    format(installer, module, package))
                 return installer
     if is_darwin:
         try:
             output = exec_command_stdout('port', 'provides', file_name)
             if 'is provided by' in output:
                 logger.debug(
-                    'Found installer: \'macports\' for module: \'{0}\' from package: \'{1}\''.format(module, package))
+                    'Found installer: \'macports\' for module: \'{0}\' from package: \'{1}\''.
+                    format(module, package))
                 return 'macports'
         except OSError:
             pass
         real_path = os.path.realpath(file_name)
         if 'Cellar' in real_path:
             logger.debug(
-                'Found installer: \'homebrew\' for module: \'{0}\' from package: \'{1}\''.format(module, package))
+                'Found installer: \'homebrew\' for module: \'{0}\' from package: \'{1}\''.
+                format(module, package))
             return 'homebrew'
     return None
+
 
 # These imports need to be here due to these modules recursively importing this module.
 from .django import *

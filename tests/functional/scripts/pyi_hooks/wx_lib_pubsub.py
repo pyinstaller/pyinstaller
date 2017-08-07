@@ -6,7 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
 """
 Functional test exercising PyPubSub's default protocol.
 
@@ -65,8 +64,8 @@ else:
     def on_message(message):
         print('Message received.')
         if not message.data == 762:
-            raise SystemExit(
-                'Message data "762" expected but received "%s".' % str(message.data))
+            raise SystemExit('Message data "762" expected but received "%s".' %
+                             str(message.data))
 
     Publisher.subscribe(on_message, 'topic.subtopic')
     Publisher.sendMessage('topic.subtopic', 762)

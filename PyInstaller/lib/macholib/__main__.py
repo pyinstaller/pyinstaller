@@ -7,10 +7,12 @@ from macholib import macho_standalone
 
 gCommand = None
 
+
 def check_file(fp, path, callback):
     if not os.path.exists(path):
-        print('%s: %s: No such file or directory' % (gCommand, path),
-                file=sys.stderr)
+        print(
+            '%s: %s: No such file or directory' % (gCommand, path),
+            file=sys.stderr)
         return 1
 
     try:
@@ -25,6 +27,7 @@ def check_file(fp, path, callback):
             callback(fp, path)
     return 0
 
+
 def walk_tree(callback, paths):
     args = sys.argv[1:]
     err = 0
@@ -33,18 +36,20 @@ def walk_tree(callback, paths):
         if os.path.isdir(base):
             for root, dirs, files in os.walk(base):
                 for fn in files:
-                    err |= check_file(
-                            sys.stdout, os.path.join(root, fn), callback)
+                    err |= check_file(sys.stdout,
+                                      os.path.join(root, fn), callback)
         else:
             err |= check_file(sys.stdout, base, callback)
 
     return err
+
 
 def print_usage(fp):
     print("Usage:", file=sys.stderr)
     print("  python -mmacholib dump FILE ...", file=fp)
     print("  python -mmacholib find DIR ...", file=fp)
     print("  python -mmacholib standalone DIR ...", file=fp)
+
 
 def main():
     global gCommand

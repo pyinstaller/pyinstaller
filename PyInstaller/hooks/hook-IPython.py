@@ -7,7 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 # Tested with IPython 4.0.0.
 
 from PyInstaller.compat import modname_tkinter, is_win, is_darwin

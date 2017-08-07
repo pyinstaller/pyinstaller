@@ -7,8 +7,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
-
 """
 Utility functions related to analyzing/bundling dependencies.
 """
@@ -26,8 +24,7 @@ from ..lib.modulegraph import modulegraph
 
 from .. import compat
 from ..compat import (is_darwin, is_unix, is_py2, is_py34, is_freebsd,
-                      BYTECODE_MAGIC, PY3_BASE_MODULES,
-                      exec_python_rc)
+                      BYTECODE_MAGIC, PY3_BASE_MODULES, exec_python_rc)
 from .dylib import include_library
 from .. import log as logging
 
@@ -41,16 +38,17 @@ def create_py3_base_library(libzip_filename, graph):
     modules is necessary to have on PYTHONPATH for initializing libpython3
     in order to run the frozen executable with Python 3.
     """
+
     # TODO Replace this function with something better or something from standard Python library.
     # Helper functions.
     def _write_long(f, x):
         """
         Write a 32-bit int to a file in little-endian order.
         """
-        f.write(bytes([x & 0xff,
-                       (x >> 8) & 0xff,
-                       (x >> 16) & 0xff,
-                       (x >> 24) & 0xff]))
+        f.write(
+            bytes([
+                x & 0xff, (x >> 8) & 0xff, (x >> 16) & 0xff, (x >> 24) & 0xff
+            ]))
 
     # Construct regular expression for matching modules that should be bundled
     # into base_library.zip.
@@ -70,7 +68,8 @@ def create_py3_base_library(libzip_filename, graph):
         with zipfile.ZipFile(libzip_filename, mode='w') as zf:
             zf.debug = 3
             for mod in graph.flatten():
-                if type(mod) in (modulegraph.SourceModule, modulegraph.Package):
+                if type(mod) in (modulegraph.SourceModule,
+                                 modulegraph.Package):
                     # Bundling just required modules.
                     if module_filter.match(mod.identifier):
                         st = os.stat(mod.filename)
@@ -79,9 +78,11 @@ def create_py3_base_library(libzip_filename, graph):
                         # Name inside a zip archive.
                         # TODO use .pyo suffix if optimize flag is enabled.
                         if type(mod) is modulegraph.Package:
-                            new_name = mod.identifier.replace('.', os.sep) + os.sep + '__init__' + '.pyc'
+                            new_name = mod.identifier.replace(
+                                '.', os.sep) + os.sep + '__init__' + '.pyc'
                         else:
-                            new_name = mod.identifier.replace('.', os.sep) + '.pyc'
+                            new_name = mod.identifier.replace('.',
+                                                              os.sep) + '.pyc'
 
                         # Write code to a file.
                         # This code is similar to py_compile.compile().
@@ -119,7 +120,9 @@ def scan_code_for_ctypes(co):
             binaries.remove(binary)
         elif binary != os.path.basename(binary):
             # TODO make these warnings show up somewhere.
-            logger.warning("ignoring %s - ctypes imports only supported using bare filenames", binary)
+            logger.warning(
+                "ignoring %s - ctypes imports only supported using bare filenames",
+                binary)
 
     binaries = _resolveCtypesImports(binaries)
     return binaries
@@ -162,7 +165,6 @@ def __scan_code_instruction_for_ctypes(co, instructions):
             if isinstance(soname, str):
                 return soname
 
-
     instruction = next(instructions)
     expected_ops = ('LOAD_GLOBAL', 'LOAD_NAME')
 
@@ -180,7 +182,7 @@ def __scan_code_instruction_for_ctypes(co, instructions):
         #
         # In this case "strip" the `ctypes` by advancing and expecting
         # `LOAD_ATTR` next.
-        expected_ops = ('LOAD_ATTR',)
+        expected_ops = ('LOAD_ATTR', )
         instruction = next(instructions)
         if instruction.opname not in expected_ops:
             return None
@@ -215,7 +217,7 @@ def __scan_code_instruction_for_ctypes(co, instructions):
                 # First type
                 return co.co_names[instruction.arg] + ".dll"
 
-    elif instruction.opname == 'LOAD_ATTR' and name in ("util",):
+    elif instruction.opname == 'LOAD_ATTR' and name in ("util", ):
         # Guesses ctypes imports of these types::
         #
         #  ctypes.util.find_library('gs')
@@ -324,6 +326,7 @@ def _resolveCtypesImports(cbinaries):
 
 
 LDCONFIG_CACHE = None  # cache the output of `/sbin/ldconfig -p`
+
 
 def load_ldconfig_cache():
     """

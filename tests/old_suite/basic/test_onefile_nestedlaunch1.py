@@ -7,15 +7,13 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 import os
 import sys
 
-
 if __name__ == '__main__':
 
-    filename =  os.path.join(os.path.dirname(sys.executable),
-            'test_onefile_nestedlaunch0.exe')
+    filename = os.path.join(
+        os.path.dirname(sys.executable), 'test_onefile_nestedlaunch0.exe')
 
     try:
         import subprocess

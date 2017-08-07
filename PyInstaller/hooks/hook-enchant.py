@@ -6,8 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
-
 """
 Import hook for PyEnchant.
 
@@ -57,5 +55,7 @@ if is_darwin:
         # Collect all available dictionaries from Macports. Using same file structure as on Windows.
         # In Macports are available mostly hunspell (myspell) and aspell dictionaries.
         libdir = os.path.dirname(libenchant)  # e.g. /opt/local/lib
-        sharedir = os.path.join(os.path.dirname(libdir), 'share')  # e.g. /opt/local/share
-        datas.append((os.path.join(sharedir, 'enchant'), 'enchant/share/enchant'))
+        sharedir = os.path.join(os.path.dirname(libdir),
+                                'share')  # e.g. /opt/local/share
+        datas.append((os.path.join(sharedir, 'enchant'),
+                      'enchant/share/enchant'))

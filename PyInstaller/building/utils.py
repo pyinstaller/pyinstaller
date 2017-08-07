@@ -7,8 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
-
 #--- functions for checking guts ---
 # NOTE: By GUTS it is meant intermediate files and data structures that
 # PyInstaller creates for bundling files and creating final executable.
@@ -36,11 +34,11 @@ if is_win:
 
 logger = logging.getLogger(__name__)
 
-
 #-- Helpers for checking guts.
 #
 # NOTE: By _GUTS it is meant intermediate files and data structures that
 # PyInstaller creates for bundling files and creating final executable.
+
 
 def _check_guts_eq(attr, old, new, last_build):
     """
@@ -86,6 +84,7 @@ def _check_guts_toc(attr, old, toc, last_build, pyc=0):
 
 #---
 
+
 def add_suffix_to_extensions(toc):
     """
     Returns a new TOC with proper library suffix for EXTENSION items.
@@ -110,6 +109,7 @@ def add_suffix_to_extensions(toc):
         new_toc.append((inm, fnm, typ))
     return new_toc
 
+
 def applyRedirects(manifest, redirects):
     """
     Apply the binding redirects specified by 'redirects' to the dependent assemblies
@@ -125,9 +125,10 @@ def applyRedirects(manifest, redirects):
     for binding in redirects:
         for dep in manifest.dependentAssemblies:
             if match_binding_redirect(dep, binding):
-                logger.info("Redirecting %s version %s -> %s",
-                            binding.name, dep.version, binding.newVersion)
+                logger.info("Redirecting %s version %s -> %s", binding.name,
+                            dep.version, binding.newVersion)
                 dep.version = binding.newVersion
+
 
 def checkCache(fnm, strip=False, upx=False, dist_nm=None):
     """
@@ -165,7 +166,8 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
     # Python versions as one user.
     pyver = ('py%d%s') % (sys.version_info[0], sys.version_info[1])
     arch = platform.architecture()[0]
-    cachedir = os.path.join(CONF['cachedir'], 'bincache%d%d_%s_%s' % (strip, upx, pyver, arch))
+    cachedir = os.path.join(CONF['cachedir'],
+                            'bincache%d%d_%s_%s' % (strip, upx, pyver, arch))
     if not os.path.exists(cachedir):
         os.makedirs(cachedir)
     cacheindexfn = os.path.join(cachedir, "index.dat")
@@ -207,7 +209,6 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
                 dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
             return cachedfile
 
-
     # Optionally change manifest and its deps to private assemblies
     if fnm.lower().endswith(".manifest"):
         manifest = winmanifest.Manifest()
@@ -216,7 +217,8 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
             manifest.parse_string(f.read())
         if CONF.get('win_private_assemblies', False):
             if manifest.publicKeyToken:
-                logger.info("Changing %s into private assembly", os.path.basename(fnm))
+                logger.info("Changing %s into private assembly",
+                            os.path.basename(fnm))
             manifest.publicKeyToken = None
             for dep in manifest.dependentAssemblies:
                 # Exclude common-controls which is not bundled
@@ -234,7 +236,7 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
         bestopt = "--best"
         # FIXME: Linux builds of UPX do not seem to contain LZMA (they assert out)
         # A better configure-time check is due.
-        if CONF["hasUPX"] >= (3,) and os.name == "nt":
+        if CONF["hasUPX"] >= (3, ) and os.name == "nt":
             bestopt = "--lzma"
 
         upx_executable = "upx"
@@ -282,27 +284,33 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
                 logger.error(os.path.abspath(cachedfile))
                 raise
         else:
-            if winmanifest.RT_MANIFEST in res and len(res[winmanifest.RT_MANIFEST]):
+            if winmanifest.RT_MANIFEST in res and len(
+                    res[winmanifest.RT_MANIFEST]):
                 for name in res[winmanifest.RT_MANIFEST]:
                     for language in res[winmanifest.RT_MANIFEST][name]:
                         try:
                             manifest = winmanifest.Manifest()
-                            manifest.filename = ":".join([cachedfile,
-                                                          str(winmanifest.RT_MANIFEST),
-                                                          str(name),
-                                                          str(language)])
-                            manifest.parse_string(res[winmanifest.RT_MANIFEST][name][language],
-                                                  False)
+                            manifest.filename = ":".join([
+                                cachedfile,
+                                str(winmanifest.RT_MANIFEST),
+                                str(name),
+                                str(language)
+                            ])
+                            manifest.parse_string(
+                                res[winmanifest.RT_MANIFEST][name][language],
+                                False)
                         except Exception as exc:
                             logger.error("Cannot parse manifest resource %s, "
                                          "%s", name, language)
-                            logger.error("From file %s", cachedfile, exc_info=1)
+                            logger.error(
+                                "From file %s", cachedfile, exc_info=1)
                         else:
                             # optionally change manifest to private assembly
                             if CONF.get('win_private_assemblies', False):
                                 if manifest.publicKeyToken:
-                                    logger.info("Changing %s into a private assembly",
-                                                os.path.basename(fnm))
+                                    logger.info(
+                                        "Changing %s into a private assembly",
+                                        os.path.basename(fnm))
                                 manifest.publicKeyToken = None
 
                                 # Change dep to private assembly
@@ -312,9 +320,9 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
                                         dep.publicKeyToken = None
                             applyRedirects(manifest, redirects)
                             try:
-                                manifest.update_resources(os.path.abspath(cachedfile),
-                                                          [name],
-                                                          [language])
+                                manifest.update_resources(
+                                    os.path.abspath(cachedfile), [name],
+                                    [language])
                             except Exception as e:
                                 logger.error(os.path.abspath(cachedfile))
                                 raise
@@ -368,9 +376,9 @@ def _check_path_overlap(path):
                      'SPECPATH (%s)', path, CONF['specpath'])
         specerr += 1
     if specerr:
-        raise SystemExit('Error: Please edit/recreate the specfile (%s) '
-                         'and set a different output name (e.g. "dist").'
-                         % CONF['spec'])
+        raise SystemExit(
+            'Error: Please edit/recreate the specfile (%s) '
+            'and set a different output name (e.g. "dist").' % CONF['spec'])
     return True
 
 
@@ -383,8 +391,9 @@ def _rmtree(path):
     if CONF['noconfirm']:
         choice = 'y'
     elif sys.stdout.isatty():
-        choice = compat.stdin_input('WARNING: The output directory "%s" and ALL ITS '
-                           'CONTENTS will be REMOVED! Continue? (y/n)' % path)
+        choice = compat.stdin_input(
+            'WARNING: The output directory "%s" and ALL ITS '
+            'CONTENTS will be REMOVED! Continue? (y/n)' % path)
     else:
         raise SystemExit('Error: The output directory "%s" is not empty. '
                          'Please remove all its contents or use the '
@@ -458,8 +467,8 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
     for src_root_path_or_glob, trg_root_dir in binaries_or_datas:
         # Convert relative to absolute paths if required.
         if workingdir and not os.path.isabs(src_root_path_or_glob):
-            src_root_path_or_glob = os.path.join(
-                workingdir, src_root_path_or_glob)
+            src_root_path_or_glob = os.path.join(workingdir,
+                                                 src_root_path_or_glob)
 
         # Normalize paths.
         src_root_path_or_glob = os.path.normpath(src_root_path_or_glob)
@@ -472,17 +481,16 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
 
         if not src_root_paths:
             raise SystemExit(
-                'Unable to find "%s" when adding binary and data files.' % (
-                src_root_path_or_glob))
+                'Unable to find "%s" when adding binary and data files.' %
+                (src_root_path_or_glob))
 
         for src_root_path in src_root_paths:
             if os.path.isfile(src_root_path):
                 # Normalizing the result to remove redundant relative
                 # paths (e.g., removing "./" from "trg/./file").
-                toc_datas.add((
-                    os.path.normpath(os.path.join(
-                        trg_root_dir, os.path.basename(src_root_path))),
-                    os.path.normpath(src_root_path)))
+                toc_datas.add((os.path.normpath(
+                    os.path.join(trg_root_dir, os.path.basename(
+                        src_root_path))), os.path.normpath(src_root_path)))
             elif os.path.isdir(src_root_path):
                 # If no top-level target directory was passed, default this
                 # to the basename of the top-level source directory.
@@ -505,19 +513,18 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
                     #   "/top/dir").
                     # * Normalizing the result to remove redundant relative
                     #   paths (e.g., removing "./" from "trg/./file").
-                    trg_dir = os.path.normpath(os.path.join(
-                        trg_root_dir,
-                        os.path.relpath(src_dir, src_root_path)))
+                    trg_dir = os.path.normpath(
+                        os.path.join(trg_root_dir,
+                                     os.path.relpath(src_dir, src_root_path)))
 
                     for src_file_basename in src_file_basenames:
                         src_file = os.path.join(src_dir, src_file_basename)
                         if os.path.isfile(src_file):
                             # Normalize the result to remove redundant relative
                             # paths (e.g., removing "./" from "trg/./file").
-                            toc_datas.add((
-                                os.path.normpath(
-                                    os.path.join(trg_dir, src_file_basename)),
-                                os.path.normpath(src_file)))
+                            toc_datas.add((os.path.normpath(
+                                os.path.join(trg_dir, src_file_basename)),
+                                           os.path.normpath(src_file)))
 
     return toc_datas
 
@@ -557,6 +564,7 @@ def _load_code(modname, filename):
         with open_file(filename, 'rb') as f:
             source = f.read()
         return compile(source, filename, 'exec')
+
 
 def get_code_object(modname, filename):
     """
@@ -610,19 +618,18 @@ def strip_paths_in_code(co, new_filename=None):
     consts = tuple(
         strip_paths_in_code(const_co, new_filename)
         if isinstance(const_co, code_func) else const_co
-        for const_co in co.co_consts
-    )
+        for const_co in co.co_consts)
 
     # co_kwonlyargcount added in some version of Python 3
     if hasattr(co, 'co_kwonlyargcount'):
-        return code_func(co.co_argcount, co.co_kwonlyargcount, co.co_nlocals, co.co_stacksize,
-                     co.co_flags, co.co_code, consts, co.co_names,
-                     co.co_varnames, new_filename, co.co_name,
-                     co.co_firstlineno, co.co_lnotab,
-                     co.co_freevars, co.co_cellvars)
+        return code_func(co.co_argcount, co.co_kwonlyargcount, co.co_nlocals,
+                         co.co_stacksize, co.co_flags, co.co_code, consts,
+                         co.co_names, co.co_varnames, new_filename, co.co_name,
+                         co.co_firstlineno, co.co_lnotab, co.co_freevars,
+                         co.co_cellvars)
     else:
         return code_func(co.co_argcount, co.co_nlocals, co.co_stacksize,
-                     co.co_flags, co.co_code, consts, co.co_names,
-                     co.co_varnames, new_filename, co.co_name,
-                     co.co_firstlineno, co.co_lnotab,
-                     co.co_freevars, co.co_cellvars)
+                         co.co_flags, co.co_code, consts, co.co_names,
+                         co.co_varnames, new_filename, co.co_name,
+                         co.co_firstlineno, co.co_lnotab, co.co_freevars,
+                         co.co_cellvars)

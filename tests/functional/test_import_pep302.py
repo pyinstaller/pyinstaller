@@ -31,8 +31,7 @@ import pytest
 
 
 def test_pep302_loader_builtin(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         mod = 'sys'
         import pkgutil
         ldr = pkgutil.get_loader(mod)
@@ -44,8 +43,7 @@ def test_pep302_loader_builtin(pyi_builder):
 
 
 def test_pep302_loader_frozen_module(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         mod = 'compileall'
         import pkgutil
         ldr = pkgutil.get_loader(mod)
@@ -59,8 +57,7 @@ def test_pep302_loader_frozen_module(pyi_builder):
 
 
 def test_pep302_loader_frozen_package(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         mod = 'distutils'
         import pkgutil
         ldr = pkgutil.get_loader(mod)
@@ -74,8 +71,7 @@ def test_pep302_loader_frozen_package(pyi_builder):
 
 
 def test_pep302_loader_frozen_submodule(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         mod = 'distutils.config'
         import pkgutil
         ldr = pkgutil.get_loader(mod)
@@ -89,8 +85,7 @@ def test_pep302_loader_frozen_submodule(pyi_builder):
 
 
 def test_pep302_loader_cextension(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         mod = '_sqlite3'
         import pkgutil
         ldr = pkgutil.get_loader(mod)

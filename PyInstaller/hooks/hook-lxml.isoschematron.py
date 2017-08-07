@@ -11,4 +11,5 @@ from PyInstaller.utils.hooks import collect_data_files
 import os
 
 # Auxiliary data for isoschematron
-datas = collect_data_files('lxml', subdir=os.path.join('isoschematron', 'resources'))
+datas = collect_data_files(
+    'lxml', subdir=os.path.join('isoschematron', 'resources'))

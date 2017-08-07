@@ -15,13 +15,22 @@ from PyInstaller.lib.modulegraph import modulegraph
 gRootDir = os.path.dirname(os.path.abspath(__file__))
 gSrcDir = os.path.join(gRootDir, 'testpkg-setuptools-namespace')
 
+
 def install_testpkg(test_dir):
-    p = subprocess.Popen([
-        sys.executable, 'setup.py', 'install',
-            '--install-lib', test_dir,
+    p = subprocess.Popen(
+        [
+            sys.executable,
+            'setup.py',
+            'install',
+            '--install-lib',
+            test_dir,
             '--single-version-externally-managed',
-            '--record', os.path.join(test_dir, 'record.lst'),
-        ], cwd=gSrcDir, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            '--record',
+            os.path.join(test_dir, 'record.lst'),
+        ],
+        cwd=gSrcDir,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT)
 
     data = p.communicate()[0]
 
@@ -29,7 +38,7 @@ def install_testpkg(test_dir):
     return exit
 
 
-class TestPythonBehaviour (unittest.TestCase):
+class TestPythonBehaviour(unittest.TestCase):
     def setUp(self):
         test_dir = os.path.join(gRootDir, 'test.dir')
         if os.path.exists(test_dir):
@@ -55,22 +64,22 @@ class TestPythonBehaviour (unittest.TestCase):
                 except ImportError:
                     import %s
                 print (%s.__name__)
-            """) %(test_dir, name, name.rsplit('.', 1)[0], name)
+            """) % (test_dir, name, name.rsplit('.', 1)[0], name)
         else:
             script = textwrap.dedent("""\
                 import site
                 site.addsitedir(%r)
                 import %s
                 print (%s.__name__)
-            """) %(test_dir, name, name)
+            """) % (test_dir, name, name)
 
-        p = subprocess.Popen([sys.executable, '-c', script],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                cwd=os.path.join(
-                    os.path.dirname(os.path.abspath(__file__)),
-                    'testpkg-relimport'),
-        )
+        p = subprocess.Popen(
+            [sys.executable, '-c', script],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            cwd=os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                'testpkg-relimport'), )
         data = p.communicate()[0]
         if sys.version_info[0] != 2:
             data = data.decode('UTF-8')
@@ -81,8 +90,8 @@ class TestPythonBehaviour (unittest.TestCase):
         sts = p.wait()
 
         if sts != 0:
-            print (data)
-            self.fail("import of %r failed"%(name,))
+            print(data)
+            self.fail("import of %r failed" % (name, ))
 
         return data
 
@@ -94,8 +103,10 @@ class TestPythonBehaviour (unittest.TestCase):
         m = self.importModule('nspkg.nssubpkg.sub')
         self.assertEqual(m, 'nspkg.nssubpkg.sub')
 
-class TestModuleGraphImport (unittest.TestCase):
+
+class TestModuleGraphImport(unittest.TestCase):
     if not hasattr(unittest.TestCase, 'assertIsInstance'):
+
         def assertIsInstance(self, value, types):
             if not isinstance(value, types):
                 self.fail("%r is not an instance of %r", value, types)
@@ -109,7 +120,7 @@ class TestModuleGraphImport (unittest.TestCase):
         exit = install_testpkg(test_dir)
         self.assertEqual(exit, 0)
 
-        self.mf = modulegraph.ModuleGraph(path=[ test_dir ] + sys.path)
+        self.mf = modulegraph.ModuleGraph(path=[test_dir] + sys.path)
 
     def tearDown(self):
         test_dir = os.path.join(gRootDir, 'test.dir')
@@ -137,7 +148,6 @@ class TestModuleGraphImport (unittest.TestCase):
         node = self.mf.findNode('nspkg.nssubpkg.sub')
         self.assertIsInstance(node, modulegraph.SourceModule)
         self.assertEqual(node.identifier, 'nspkg.nssubpkg.sub')
-
 
         node = self.mf.findNode('nspkg')
         self.assertIsInstance(node, modulegraph.NamespacePackage)

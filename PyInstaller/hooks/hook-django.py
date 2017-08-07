@@ -7,9 +7,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 # Tested with django 1.8.
-
 
 import sys
 import glob
@@ -18,11 +16,9 @@ from PyInstaller import log as logging
 from PyInstaller.utils.hooks import django_find_root_dir, django_dottedstring_imports, \
         collect_data_files, collect_submodules, get_module_file_attribute, get_module_attribute
 
-
 logger = logging.getLogger(__name__)
 
 hiddenimports = []
-
 
 root_dir = django_find_root_dir()
 if root_dir:
@@ -37,37 +33,37 @@ if root_dir:
     # Without them the django server won't run.
     package_name = os.path.basename(root_dir)
     hiddenimports += [
-            # TODO Consider including 'mysite.settings.py' in source code as a data files.
-            #      Since users might need to edit this file.
-            package_name + '.settings',
-            package_name + '.urls',
-            package_name + '.wsgi',
+        # TODO Consider including 'mysite.settings.py' in source code as a data files.
+        #      Since users might need to edit this file.
+        package_name + '.settings',
+        package_name + '.urls',
+        package_name + '.wsgi',
     ]
     # Include some hidden modules that are not imported directly in django.
     hiddenimports += [
-            'django.template.defaultfilters',
-            'django.template.defaulttags',
-            'django.template.loader_tags',
-            'django.template.context_processors',
+        'django.template.defaultfilters',
+        'django.template.defaulttags',
+        'django.template.loader_tags',
+        'django.template.context_processors',
     ]
     hiddenimports += collect_submodules('django.middleware')
     hiddenimports += collect_submodules('django.templatetags')
     # Other hidden imports to get Django example startproject working.
     hiddenimports += [
-            'django.contrib.messages.storage.fallback',
+        'django.contrib.messages.storage.fallback',
     ]
     # Django hiddenimports from the standard Python library.
     if sys.version_info.major == 3:
         # Python 3.x
         hiddenimports += [
-                'http.cookies',
-                'html.parser',
+            'http.cookies',
+            'html.parser',
         ]
     else:
         # Python 2.x
         hiddenimports += [
-                'Cookie',
-                'HTMLParser',
+            'Cookie',
+            'HTMLParser',
         ]
 
     # Include django data files - localizations, etc.
@@ -77,18 +73,20 @@ if root_dir:
     # They are necessary for some commands.
     logger.info('Collecting Django migration scripts.')
     migration_modules = [
-             'django.conf.app_template.migrations',
-             'django.contrib.admin.migrations',
-             'django.contrib.auth.migrations',
-             'django.contrib.contenttypes.migrations',
-             'django.contrib.flatpages.migrations',
-             'django.contrib.redirects.migrations',
-             'django.contrib.sessions.migrations',
-             'django.contrib.sites.migrations',
+        'django.conf.app_template.migrations',
+        'django.contrib.admin.migrations',
+        'django.contrib.auth.migrations',
+        'django.contrib.contenttypes.migrations',
+        'django.contrib.flatpages.migrations',
+        'django.contrib.redirects.migrations',
+        'django.contrib.sessions.migrations',
+        'django.contrib.sites.migrations',
     ]
     # Include migration scripts of Django-based apps too.
-    installed_apps = eval(get_module_attribute(package_name + '.settings', 'INSTALLED_APPS'))
-    migration_modules.extend(set(app + '.migrations' for app in installed_apps))
+    installed_apps = eval(
+        get_module_attribute(package_name + '.settings', 'INSTALLED_APPS'))
+    migration_modules.extend(
+        set(app + '.migrations' for app in installed_apps))
     # Copy migration files.
     for mod in migration_modules:
         mod_name, bundle_name = mod.split('.', 1)
@@ -111,7 +109,6 @@ if root_dir:
         for f in files:
             # Place those files next to the executable.
             datas.append((f, '.'))
-
 
 else:
     logger.warning('No django root directory could be found!')

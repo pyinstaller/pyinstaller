@@ -7,10 +7,8 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 from PyInstaller.compat import is_darwin
-from PyInstaller.utils.hooks import (
-    eval_statement, exec_statement, logger)
+from PyInstaller.utils.hooks import (eval_statement, exec_statement, logger)
 
 
 def get_matplotlib_backend_module_names():
@@ -73,9 +71,11 @@ except Exception:
             module_names.append(module_name)
             logger.info('  Matplotlib backend "%s": added' % backend_name)
         else:
-            logger.info('  Matplotlib backend "%s": ignored\n    %s' % (backend_name, stdout))
+            logger.info('  Matplotlib backend "%s": ignored\n    %s' %
+                        (backend_name, stdout))
 
     return module_names
+
 
 # Freeze all importable backends, as PyInstaller is unable to determine exactly
 # which backends are required by the current program.

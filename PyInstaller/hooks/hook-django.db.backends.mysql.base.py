@@ -7,6 +7,5 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 # Compiler module (see class DatabaseOperations)
 hiddenimports = ["django.db.backends.mysql.compiler"]

@@ -1,5 +1,5 @@
 import sys
-if sys.version_info[:2] <= (2,6):
+if sys.version_info[:2] <= (2, 6):
     import unittest2 as unittest
 else:
     import unittest
@@ -8,7 +8,8 @@ import subprocess
 import os
 from PyInstaller.lib.modulegraph import modulegraph
 
-class TestNativeImport (unittest.TestCase):
+
+class TestNativeImport(unittest.TestCase):
     # The tests check that Python's import statement
     # works as these tests expect.
 
@@ -20,20 +21,20 @@ class TestNativeImport (unittest.TestCase):
                 except ImportError:
                     import %s
                 print (%s.__name__)
-            """) %(name, name.rsplit('.', 1)[0], name)
+            """) % (name, name.rsplit('.', 1)[0], name)
         else:
             script = textwrap.dedent("""\
                 import %s
                 print (%s.__name__)
-            """) %(name, name)
+            """) % (name, name)
 
-        p = subprocess.Popen([sys.executable, '-c', script],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                cwd=os.path.join(
-                    os.path.dirname(os.path.abspath(__file__)),
-                    'testpkg-import-from-init'),
-        )
+        p = subprocess.Popen(
+            [sys.executable, '-c', script],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            cwd=os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                'testpkg-import-from-init'), )
         data = p.communicate()[0]
         if sys.version_info[0] != 2:
             data = data.decode('UTF-8')
@@ -46,10 +47,9 @@ class TestNativeImport (unittest.TestCase):
         sts = p.wait()
 
         if sts != 0:
-            print (data)
+            print(data)
         self.assertEqual(sts, 0)
         return data
-
 
     @unittest.skipUnless(sys.version_info[0] == 2, "Python 2.x test")
     def testRootPkg(self):
@@ -70,20 +70,20 @@ class TestNativeImport (unittest.TestCase):
         self.assertEqual(m, 'pkg2.subpkg')
 
 
-class TestModuleGraphImport (unittest.TestCase):
+class TestModuleGraphImport(unittest.TestCase):
     if not hasattr(unittest.TestCase, 'assertIsInstance'):
+
         def assertIsInstance(self, value, types):
             if not isinstance(value, types):
-                self.fail("%r is not an instance of %r"%(value, types))
+                self.fail("%r is not an instance of %r" % (value, types))
 
     def setUp(self):
         root = os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                'testpkg-import-from-init')
-        self.mf = modulegraph.ModuleGraph(path=[ root ] + sys.path)
+            os.path.dirname(os.path.abspath(__file__)),
+            'testpkg-import-from-init')
+        self.mf = modulegraph.ModuleGraph(path=[root] + sys.path)
         #self.mf.debug = 999
         self.mf.run_script(os.path.join(root, 'script.py'))
-
 
     @unittest.skipUnless(sys.version_info[0] == 2, "Python 2.x test")
     def testRootPkg(self):

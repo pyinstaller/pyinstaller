@@ -7,16 +7,13 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 import sys
 import os
 
 import PIL.Image
 
-
 # Disable "leaking" the installed version.
 PIL.Image.__file__ = '/'
-
 
 # Convert tiff to png.
 basedir = sys._MEIPASS

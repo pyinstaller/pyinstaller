@@ -9,7 +9,6 @@
 
 from PyInstaller.compat import modname_tkinter
 
-
 # PIL's SpiderImagePlugin features a tkPhotoImage() method which imports
 # ImageTk (and thus brings the whole Tcl/Tk library in).
 # Assume that if people are really using tkinter in their application, they

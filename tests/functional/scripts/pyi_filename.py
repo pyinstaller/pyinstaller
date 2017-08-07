@@ -7,6 +7,5 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 if __file__ != 'pyi_filename.py':
-   raise ValueError(__file__)
+    raise ValueError(__file__)

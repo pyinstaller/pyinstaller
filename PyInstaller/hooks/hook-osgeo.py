@@ -7,7 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 from PyInstaller.utils.hooks import collect_data_files
 from PyInstaller.compat import is_win, is_darwin
 
@@ -65,7 +64,7 @@ if len(datas) == 0:
         datas.append((src_gdal_data, tgt_gdal_data))
         # a real-time hook takes case to define the path for `GDAL_DATA`
 
-# Hidden dependencies
+    # Hidden dependencies
 if is_conda:
     # if `proj.4` is present, it provides additional functionalities
     if is_win:
@@ -76,4 +75,6 @@ if is_conda:
         proj4_lib = os.path.join(root_path, 'lib', 'libproj.so')
 
     if os.path.exists(proj4_lib):
-        binaries = [(proj4_lib, ""), ]
+        binaries = [
+            (proj4_lib, ""),
+        ]

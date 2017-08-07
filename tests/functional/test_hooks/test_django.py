@@ -6,7 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
 """
 Functional tests for the Django content management system (CMS).
 """
@@ -16,9 +15,10 @@ import pytest
 
 from PyInstaller.utils.tests import importorskip
 
+
 @importorskip('django')
 # Django test might sometimes hang.
-@pytest.mark.timeout(timeout=7*60)
+@pytest.mark.timeout(timeout=7 * 60)
 def test_django(pyi_builder, monkeypatch, data_dir):
     # Extend sys.path so PyInstaller could find modules from 'tmpdir/django/'.
     monkeypatch.syspath_prepend(data_dir.strpath)

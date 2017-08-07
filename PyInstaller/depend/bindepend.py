@@ -6,7 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
 """
 Find external dependencies of binary libraries.
 """
@@ -22,9 +21,9 @@ import collections
 
 from .. import compat
 from ..compat import (is_win, is_unix, is_aix, is_solar, is_cygwin, is_hpux,
-                      is_darwin, is_freebsd, is_venv, base_prefix, PYDYLIB_NAMES)
+                      is_darwin, is_freebsd, is_venv, base_prefix,
+                      PYDYLIB_NAMES)
 from . import dylib, utils
-
 
 from .. import log as logging
 from ..utils.win32 import winutils
@@ -61,8 +60,7 @@ def getfullnameof(mod, xtrapath=None):
     # Then include this path too.
     if is_venv:
         numpy_core_paths.append(
-            os.path.join(base_prefix, 'Lib', 'site-packages', 'numpy', 'core')
-        )
+            os.path.join(base_prefix, 'Lib', 'site-packages', 'numpy', 'core'))
 
     # TODO check if this 'numpy' workaround is still necessary!
     # Search sys.path first!
@@ -101,13 +99,13 @@ def _getImports_pe(pth):
     # https://code.google.com/p/pefile/wiki/UsageExamples
 
     pe = pefile.PE(pth, fast_load=True)
-    pe.parse_data_directories(directories=[
-        pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_IMPORT'],
-        pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_EXPORT'],
+    pe.parse_data_directories(
+        directories=[
+            pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_IMPORT'],
+            pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_EXPORT'],
         ],
         forwarded_exports_only=True,
-        import_dllnames_only=True,
-        )
+        import_dllnames_only=True, )
 
     # Some libraries have no other binary dependencies. Use empty list
     # in that case. Otherwise pefile would return None.
@@ -152,8 +150,10 @@ def _extract_from_egg(toc):
     return new_toc
 
 
-BindingRedirect = collections.namedtuple('BindingRedirect',
-                                         'name language arch oldVersion newVersion publicKeyToken')
+BindingRedirect = collections.namedtuple(
+    'BindingRedirect',
+    'name language arch oldVersion newVersion publicKeyToken')
+
 
 def match_binding_redirect(manifest, redirect):
     return all([
@@ -164,7 +164,9 @@ def match_binding_redirect(manifest, redirect):
         manifest.publicKeyToken == redirect.publicKeyToken,
     ])
 
+
 _exe_machine_type = None
+
 
 def matchDLLArch(filename):
     """
@@ -196,6 +198,7 @@ def matchDLLArch(filename):
     match_arch = pe.FILE_HEADER.Machine == _exe_machine_type
     pe.close()
     return match_arch
+
 
 def Dependencies(lTOC, xtrapath=None, manifest=None, redirects=None):
     """
@@ -249,14 +252,14 @@ def pkg_resources_get_default_cache():
     if os.name != 'nt':
         return os.path.expanduser('~/.python-eggs')
 
-    app_data = 'Application Data'   # XXX this may be locale-specific!
+    app_data = 'Application Data'  # XXX this may be locale-specific!
     app_homes = [
-        (('APPDATA',), None),       # best option, should be locale-safe
-        (('USERPROFILE',), app_data),
+        (('APPDATA', ), None),  # best option, should be locale-safe
+        (('USERPROFILE', ), app_data),
         (('HOMEDRIVE', 'HOMEPATH'), app_data),
-        (('HOMEPATH',), app_data),
-        (('HOME',), None),
-        (('WINDIR',), app_data),    # 95/98/ME
+        (('HOMEPATH', ), app_data),
+        (('HOME', ), None),
+        (('WINDIR', ), app_data),  # 95/98/ME
     ]
 
     for keys, subdir in app_homes:
@@ -272,8 +275,7 @@ def pkg_resources_get_default_cache():
             return os.path.join(dirname, 'Python-Eggs')
     else:
         raise RuntimeError(
-            "Please set the PYTHON_EGG_CACHE enviroment variable"
-        )
+            "Please set the PYTHON_EGG_CACHE enviroment variable")
 
 
 def check_extract_from_egg(pth, todir=None):
@@ -365,19 +367,27 @@ def getAssemblies(pth):
                 # check the manifest for dependent assemblies
                 try:
                     manifest = Manifest()
-                    manifest.filename = ":".join([pth, str(RT_MANIFEST),
-                                                  str(name), str(language)])
+                    manifest.filename = ":".join(
+                        [pth, str(RT_MANIFEST),
+                         str(name),
+                         str(language)])
                     manifest.parse_string(res[RT_MANIFEST][name][language],
                                           False)
                 except Exception as exc:
-                    logger.error("Can not parse manifest resource %s, %s"
-                                 " from %s", name, language, pth, exc_info=1)
+                    logger.error(
+                        "Can not parse manifest resource %s, %s"
+                        " from %s",
+                        name,
+                        language,
+                        pth,
+                        exc_info=1)
                 else:
                     if manifest.dependentAssemblies:
                         logger.debug("Dependent assemblies of %s:", pth)
-                        logger.debug(", ".join([assembly.getid()
-                                               for assembly in
-                                               manifest.dependentAssemblies]))
+                        logger.debug(", ".join([
+                            assembly.getid()
+                            for assembly in manifest.dependentAssemblies
+                        ]))
                     rv.extend(manifest.dependentAssemblies)
     return rv
 
@@ -406,8 +416,8 @@ def getAssemblyFiles(pth, manifest=None, redirects=None):
         if manifest and assembly.name not in _depNames:
             # Add assembly as dependency to our final output exe's manifest
             logger.info("Adding %s to dependent assemblies "
-                        "of final executable\n  required by %s",
-                        assembly.name, pth)
+                        "of final executable\n  required by %s", assembly.name,
+                        pth)
             manifest.dependentAssemblies.append(assembly)
             _depNames.add(assembly.name)
         if not dylib.include_library(assembly.name):
@@ -434,14 +444,14 @@ def getAssemblyFiles(pth, manifest=None, redirects=None):
                 new_version = assembly.get_policy_redirect()
                 logger.info("Adding redirect %s version %s -> %s",
                             assembly.name, old_version, new_version)
-                redirects.append(BindingRedirect(
-                    name=assembly.name,
-                    language=assembly.language,
-                    arch=assembly.processorArchitecture,
-                    publicKeyToken=assembly.publicKeyToken,
-                    oldVersion=old_version,
-                    newVersion=new_version,
-                ))
+                redirects.append(
+                    BindingRedirect(
+                        name=assembly.name,
+                        language=assembly.language,
+                        arch=assembly.processorArchitecture,
+                        publicKeyToken=assembly.publicKeyToken,
+                        oldVersion=old_version,
+                        newVersion=new_version, ))
 
         if files:
             seen.add(assembly.getid().upper())
@@ -453,13 +463,11 @@ def getAssemblyFiles(pth, manifest=None, redirects=None):
                     nm = os.path.basename(fn)
                 ftocnm = nm
                 if assembly.language not in (None, "", "*", "neutral"):
-                    ftocnm = os.path.join(assembly.getlanguage(),
-                                          ftocnm)
-                nm, ftocnm, fn = [item.encode(sys.getfilesystemencoding())
-                                  for item in
-                                  (nm,
-                                   ftocnm,
-                                   fn)]
+                    ftocnm = os.path.join(assembly.getlanguage(), ftocnm)
+                nm, ftocnm, fn = [
+                    item.encode(sys.getfilesystemencoding())
+                    for item in (nm, ftocnm, fn)
+                ]
                 if fn.upper() not in seen:
                     logger.debug("Adding %s", ftocnm)
                     seen.add(nm.upper())
@@ -517,20 +525,20 @@ def selectImports(pth, xtrapath=None):
             candidatelib = lib
 
         if not dylib.include_library(candidatelib):
-            if (candidatelib.find('libpython') < 0 and
-               candidatelib.find('Python.framework') < 0):
+            if (candidatelib.find('libpython') < 0
+                    and candidatelib.find('Python.framework') < 0):
                 # skip libs not containing (libpython or Python.framework)
                 if npth.upper() not in seen:
-                    logger.debug("Skipping %s dependency of %s",
-                                 lib, os.path.basename(pth))
+                    logger.debug("Skipping %s dependency of %s", lib,
+                                 os.path.basename(pth))
                 continue
             else:
                 pass
 
         if npth:
             if npth.upper() not in seen:
-                logger.debug("Adding %s dependency of %s from %s",
-                             lib, os.path.basename(pth), npth)
+                logger.debug("Adding %s dependency of %s from %s", lib,
+                             os.path.basename(pth), npth)
                 rv.append((lib, npth))
         else:
             logger.warning("lib not found: %s dependency of %s", lib, pth)
@@ -551,7 +559,9 @@ def _getImports_ldd(pth):
         # or
         #   'sharedlib.so'
         # Will not match the fake lib '/unix'
-        lddPattern = re.compile(r"^\s*(((?P<libarchive>(.*\.a))(?P<objectmember>\(.*\)))|((?P<libshared>(.*\.so))))$")
+        lddPattern = re.compile(
+            r"^\s*(((?P<libarchive>(.*\.a))(?P<objectmember>\(.*\)))|((?P<libshared>(.*\.so))))$"
+        )
     elif is_hpux:
         # Match libs of the form
         #   'sharedlib.so => full-path-to-lib
@@ -599,8 +609,8 @@ def _getImports_ldd(pth):
                 if lib not in rslt:
                     rslt.add(lib)
             else:
-                logger.error('Can not find %s in path %s (needed by %s)',
-                             name, lib, pth)
+                logger.error('Can not find %s in path %s (needed by %s)', name,
+                             lib, pth)
     return rslt
 
 
@@ -673,7 +683,6 @@ def _getImports_macholib(pth):
     # This seems to work in most cases.
     exec_path = os.path.abspath(os.path.dirname(pth))
 
- 
     for lib in seen:
 
         # Suppose that @rpath is not used for system libraries and
@@ -728,8 +737,10 @@ def getImports(pth):
             # dependencies should already have been handled by
             # selectAssemblies in that case, so just warn, return an empty
             # list and continue.
-            logger.warning('Can not get binary dependencies for file: %s', pth,
-                           exc_info=1)
+            logger.warning(
+                'Can not get binary dependencies for file: %s',
+                pth,
+                exc_info=1)
             return []
     elif is_darwin:
         return _getImports_macholib(pth)
@@ -780,7 +791,6 @@ def findLibrary(name):
             paths.extend(['/lib32', '/usr/lib32', '/usr/lib/i386-linux-gnu'])
         else:
             paths.extend(['/lib64', '/usr/lib64', '/usr/lib/x86_64-linux-gnu'])
-
 
         # On Debian/Ubuntu /usr/bin/python is linked statically with libpython.
         # Newer Debian/Ubuntu with multiarch support putsh the libpythonX.Y.so
@@ -898,7 +908,10 @@ def get_python_library_path():
         # We need special care for this case.
         # Anaconda places the python library in the lib directory, so
         # we search this one as well.
-        prefixes = [compat.base_prefix, os.path.join(compat.base_prefix, 'lib')]
+        prefixes = [
+            compat.base_prefix,
+            os.path.join(compat.base_prefix, 'lib')
+        ]
         for prefix in prefixes:
             for name in PYDYLIB_NAMES:
                 full_path = os.path.join(prefix, name)
@@ -907,6 +920,7 @@ def get_python_library_path():
 
     # Python library NOT found. Return just None.
     return None
+
 
 def findSystemLibrary(name):
     '''

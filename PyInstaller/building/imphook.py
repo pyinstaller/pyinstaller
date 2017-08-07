@@ -6,8 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
-
 """
 Code related to processing of import hooks.
 """
@@ -17,7 +15,10 @@ import os.path
 
 from .. import log as logging
 from ..compat import (
-    expand_path, importlib_load_source, FileNotFoundError, UserDict,)
+    expand_path,
+    importlib_load_source,
+    FileNotFoundError,
+    UserDict, )
 from .imphookapi import PostGraphAPI
 from .utils import format_binaries_and_datas
 
@@ -97,7 +98,6 @@ class ModuleHookCache(UserDict):
         # Cache all hook scripts in the passed directories.
         self._cache_hook_dirs(hook_dirs)
 
-
     def _cache_hook_dirs(self, hook_dirs):
         """
         Cache all hook scripts in the passed directories.
@@ -128,13 +128,11 @@ class ModuleHookCache(UserDict):
                     module_graph=self.module_graph,
                     module_name=module_name,
                     hook_filename=hook_filename,
-                    hook_module_name_prefix=self._hook_module_name_prefix,
-                )
+                    hook_module_name_prefix=self._hook_module_name_prefix, )
 
                 # Add this hook to this module's list of hooks.
                 module_hooks = self.setdefault(module_name, [])
                 module_hooks.append(module_hook)
-
 
     def remove_modules(self, *module_names):
         """
@@ -159,6 +157,7 @@ class ModuleHookCache(UserDict):
             # Remove this module and its hook script objects from this cache.
             self.pop(module_name, None)
 
+
 # Dictionary mapping the names of magic attributes required by the "ModuleHook"
 # class to 2-tuples "(default_type, sanitizer_func)", where:
 #
@@ -178,7 +177,7 @@ _MAGIC_MODULE_HOOK_ATTRS = {
     # * "datas", sanitized from hook-style 2-tuple lists defined by hooks into
     #   TOC-style 2-tuple sets consumable by "ModuleHook" callers.
     # * "binaries", sanitized in the same way.
-    'datas':    (set, format_binaries_and_datas),
+    'datas': (set, format_binaries_and_datas),
     'binaries': (set, format_binaries_and_datas),
     'excludedimports': (set, None),
 
@@ -191,6 +190,7 @@ _MAGIC_MODULE_HOOK_ATTRS = {
     #   can have side effects dependent on this order!
     'hiddenimports': (list, None),
 }
+
 
 class ModuleHook(object):
     """
@@ -285,7 +285,6 @@ class ModuleHook(object):
         # Attributes subsequently defined by the _load_hook_module() method.
         self._hook_module = None
 
-
     def __getattr__(self, attr_name):
         '''
         Get the magic attribute with the passed name (e.g., `datas`) from this
@@ -317,7 +316,6 @@ class ModuleHook(object):
         else:
             raise AttributeError(attr_name)
 
-
     def __setattr__(self, attr_name, attr_value):
         '''
         Set the attribute with the passed name to the passed value.
@@ -340,7 +338,6 @@ class ModuleHook(object):
         # Set this attribute to the passed value. To avoid recursion, the
         # superclass method rather than setattr() is called.
         return super(ModuleHook, self).__setattr__(attr_name, attr_value)
-
 
     ## Loading
 
@@ -371,15 +368,15 @@ class ModuleHook(object):
 
         # Load and execute the hook script. Even if mechanisms from the import
         # machinery are used, this does not import the hook as the module.
-        logger.info(
-            'Loading module hook "%s"...', os.path.basename(self.hook_filename))
-        self._hook_module = importlib_load_source(
-            self.hook_module_name, self.hook_filename)
+        logger.info('Loading module hook "%s"...',
+                    os.path.basename(self.hook_filename))
+        self._hook_module = importlib_load_source(self.hook_module_name,
+                                                  self.hook_filename)
 
         # Copy hook script attributes into magic attributes exposed as instance
         # variables of the current "ModuleHook" instance.
-        for attr_name, (default_type, sanitizer_func) in (
-            _MAGIC_MODULE_HOOK_ATTRS.items()):
+        for attr_name, (default_type,
+                        sanitizer_func) in (_MAGIC_MODULE_HOOK_ATTRS.items()):
             # Unsanitized value of this attribute.
             attr_value = getattr(self._hook_module, attr_name, None)
 
@@ -393,7 +390,6 @@ class ModuleHook(object):
 
             # Expose this attribute as an instance variable of the same name.
             setattr(self, attr_name, attr_value)
-
 
     ## Hooks
 
@@ -416,7 +412,6 @@ class ModuleHook(object):
         # Order is insignificant here.
         self._process_hidden_imports()
         self._process_excluded_imports()
-
 
     def _process_hook_func(self):
         """
@@ -444,9 +439,8 @@ class ModuleHook(object):
             # Remove the graph link between the hooked module and item.
             # This removes the 'item' node from the graph if no other
             # links go to it (no other modules import it)
-            self.module_graph.removeReference(
-                hook_api.node, deleted_module_name)
-
+            self.module_graph.removeReference(hook_api.node,
+                                              deleted_module_name)
 
     def _process_hidden_imports(self):
         """
@@ -471,8 +465,8 @@ class ModuleHook(object):
             # Hidden imports often become desynchronized from upstream packages
             # and hence are only "soft" recommendations.
             except ImportError:
-                logger.warning('Hidden import "%s" not found!', import_module_name)
-
+                logger.warning('Hidden import "%s" not found!',
+                               import_module_name)
 
     #FIXME: This is pretty... intense. Attempting to cleanly "undo" prior module
     #graph operations is a recipe for subtle edge cases and difficult-to-debug
@@ -527,7 +521,8 @@ class ModuleHook(object):
         # TODO: Optimize this by using a pattern and walking the graph
         # only once.
         for item in set(self.excludedimports):
-            excluded_node = self.module_graph.findNode(item, create_nspkg=False)
+            excluded_node = self.module_graph.findNode(
+                item, create_nspkg=False)
             if excluded_node is None:
                 logger.info("Import to be excluded not found: %r", item)
                 continue
@@ -550,8 +545,8 @@ class ModuleHook(object):
                 # "imports_to_remove".
                 for dest in imports_to_remove & references:
                     self.module_graph.removeReference(src, dest)
-                    logger.warning(
-                        "  Removing import %s from module %s", src, dest)
+                    logger.warning("  Removing import %s from module %s", src,
+                                   dest)
 
 
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -573,6 +568,7 @@ class HooksCache(dict):
     `_load_file_list()`
         For details on hook priority.
     """
+
     def __init__(self, hooks_dir):
         """
         Initialize this dictionary.
@@ -669,6 +665,7 @@ class AdditionalFilesCache(object):
     Cache for storing what binaries and datas were pushed by what modules
     when import hooks were processed.
     """
+
     def __init__(self):
         self._binaries = {}
         self._datas = {}
@@ -700,6 +697,7 @@ class ImportHook(object):
     """
     Class encapsulating processing of hook attributes like hiddenimports, etc.
     """
+
     def __init__(self, modname, hook_filename):
         """
         :param hook_filename: File name where to load hook from.
@@ -800,12 +798,12 @@ class ImportHook(object):
             # message above.
             for src in hooked_mods:
                 # modules, this `src` does import
-                references = set(n.identifier for n in mod_graph.getReferences(src))
+                references = set(
+                    n.identifier for n in mod_graph.getReferences(src))
                 # Remove all of these imports which are also in `imports_to_remove`
                 for dest in imports_to_remove & references:
                     mod_graph.removeReference(src, dest)
                     logger.warning("  From %s removing import %s", src, dest)
-
 
     def _process_datas(self, mod_graph):
         """
@@ -822,7 +820,8 @@ class ImportHook(object):
         Binaries are special that PyInstaller will check if they
         might depend on other dlls (dynamic libraries).
         """
-        self.binaries.update(set(format_binaries_and_datas(self._module.binaries)))
+        self.binaries.update(
+            set(format_binaries_and_datas(self._module.binaries)))
 
     # Public methods
 

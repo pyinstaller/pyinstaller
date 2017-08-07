@@ -7,6 +7,5 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 # cElementTree has a hidden import (Python >=2.5 stdlib version)
 hiddenimports = ['xml.etree.ElementTree']

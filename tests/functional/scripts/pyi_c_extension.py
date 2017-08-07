@@ -22,8 +22,9 @@ try:
 except ImportError:
     # Python 2 does not have this
     import imp
-    EXTENSION_SUFFIXES = [f[0] for f in imp.get_suffixes()
-                          if f[2] == imp.C_EXTENSION]
+    EXTENSION_SUFFIXES = [
+        f[0] for f in imp.get_suffixes() if f[2] == imp.C_EXTENSION
+    ]
 
 from simplejson import _speedups
 

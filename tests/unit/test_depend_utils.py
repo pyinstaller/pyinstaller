@@ -7,7 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 import os
 import pytest
 import textwrap
@@ -15,12 +14,8 @@ import textwrap
 from PyInstaller.depend import utils
 from PyInstaller.compat import (is_unix, is_win, PYDYLIB_NAMES)
 
-
-CTYPES_CLASSNAMES = (
-    'CDLL',   'ctypes.CDLL',
-    'WinDLL', 'ctypes.WinDLL',
-    'OleDLL', 'ctypes.OleDLL',
-    'PyDLL',  'ctypes.PyDLL')
+CTYPES_CLASSNAMES = ('CDLL', 'ctypes.CDLL', 'WinDLL', 'ctypes.WinDLL',
+                     'OleDLL', 'ctypes.OleDLL', 'PyDLL', 'ctypes.PyDLL')
 
 
 def __scan_code_for_ctypes(code, monkeypatch):
@@ -77,7 +72,8 @@ def test_ctypes_util_find_library_as_default_argument():
         pass
     """
     code = textwrap.dedent(code)
-    co = compile(code, '<ctypes_util_find_library_as_default_argument>', 'exec')
+    co = compile(code, '<ctypes_util_find_library_as_default_argument>',
+                 'exec')
     utils.scan_code_for_ctypes(co)
 
 

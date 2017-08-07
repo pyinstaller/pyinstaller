@@ -7,9 +7,4 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
-hiddenimports = ['sip',
-                 'PyQt5.QtCore',
-                 'PyQt5.QtWidgets',
-                 'PyQt5.QtGui']
-
+hiddenimports = ['sip', 'PyQt5.QtCore', 'PyQt5.QtWidgets', 'PyQt5.QtGui']

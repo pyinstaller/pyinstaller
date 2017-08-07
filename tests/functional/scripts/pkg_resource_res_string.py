@@ -12,7 +12,8 @@
 import pkg_resources as res
 import pkg3
 
-expected_data = 'This is data text for testing the packaging module data.'.encode('ascii')
+expected_data = 'This is data text for testing the packaging module data.'.encode(
+    'ascii')
 
 # With frozen app the resources is available in directory
 # os.path.join(sys._MEIPASS, 'pkg3/sample-data.txt')

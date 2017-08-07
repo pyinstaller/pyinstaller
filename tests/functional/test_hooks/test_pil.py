@@ -6,7 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
 """
 Functional tests for the Python Imaging Library (PIL).
 
@@ -54,7 +53,9 @@ def test_pil_no_tkinter(pyi_builder):
 
 @importorskip('PIL')
 @importorskip(modname_tkinter)
-@xfail(is_darwin, reason='Issue #1895. Known to fail with macpython - python.org binary.')
+@xfail(
+    is_darwin,
+    reason='Issue #1895. Known to fail with macpython - python.org binary.')
 def test_pil_tkinter(pyi_builder):
     """
     Ensure that the Tkinter package excluded by `PIL` package hooks is

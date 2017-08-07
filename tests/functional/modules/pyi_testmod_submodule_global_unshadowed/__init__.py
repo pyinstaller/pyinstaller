@@ -7,7 +7,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
 '''
 Mock package defining and then deleting a global variable of the same name as a
 mock submodule of this package.
@@ -16,14 +15,12 @@ This package is exercised by the `test_import_submodule_global_unshadowed`
 functional test.
 '''
 
-
 submodule = 'And with strange aeons even death may die.'
 '''
 Global variable of the same name as a mock submodule of this package.
 
 This variable's value is both arbitrary _and_ always ignored by this test.
 '''
-
 
 # Permit the "submodule" submodule to be imported. Since globals take precedence
 # over submodules of the same name, failing to undefine this global would

@@ -14,16 +14,13 @@ from __future__ import print_function
 # fail to import modules when currect working
 # directory is changed.
 
-
 import os
 
 import sys
 import tempfile
 
-
 # Python 3 does not have function os.getcwdu() since all strings are unicode.
 getcwd = os.getcwdu if sys.version_info[0] < 3 else os.getcwd
-
 
 print('sys.stderr.encoding:', sys.stderr.encoding)
 print('sys.path', sys.path)

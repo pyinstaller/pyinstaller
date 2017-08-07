@@ -11,9 +11,11 @@ import pytest
 import PyInstaller
 from PyInstaller.utils.cliutils import makespec
 
+
 def test_maskespec_basic(tmpdir, monkeypatch):
     py = tmpdir.join('abcd.py').ensure()
-    print(); print(py)
+    print()
+    print(py)
     spec = tmpdir.join('abcd.spec')
     monkeypatch.setattr('sys.argv', ['foobar', str(py)])
     # changing cwd does not work, since DEFAULT_SPECPATH is set *very* early

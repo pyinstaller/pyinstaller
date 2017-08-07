@@ -7,6 +7,5 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 # The hidden import is necessary for SciPy 0.11+.
 hiddenimports = ['scipy.sparse.csgraph._validation']

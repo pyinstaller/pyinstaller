@@ -6,8 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
-
 """
 This module contains code useful for doing releases of PyInstaller.
 
@@ -18,7 +16,6 @@ zest.releaser allows customization by exposing some entry points. For details:
 
 https://zestreleaser.readthedocs.org/en/latest/entrypoints.html
 """
-
 
 import os
 from ..compat import exec_command

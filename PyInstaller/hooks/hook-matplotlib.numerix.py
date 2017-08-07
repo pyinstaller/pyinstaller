@@ -6,12 +6,9 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
-
 """
 The matplotlib.numerix package sneaks these imports in under the radar:
 """
-
 
 hiddenimports = [
     'fft',
@@ -20,4 +17,3 @@ hiddenimports = [
     'ma',
     'mlab',
 ]
-

@@ -7,7 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 import os
 
 from PyInstaller.utils import misc
@@ -58,6 +57,7 @@ class TOC(list):
     A TOC contains various types of files. A TOC contains no duplicates and preserves order.
     PyInstaller uses TOC data type to collect necessary files bundle them into an executable.
     """
+
     def __init__(self, initlist=None):
         super(TOC, self).__init__(self)
         self.filenames = set()
@@ -129,7 +129,8 @@ class Target(object):
         self.__class__.invcnum += 1
         # TODO Think about renaming these file into e.g. `.c4che`
         self.tocfilename = os.path.join(CONF['workpath'], 'out%02d-%s.toc' %
-                                        (self.invcnum, self.__class__.__name__))
+                                        (self.invcnum,
+                                         self.__class__.__name__))
         self.tocbasename = os.path.basename(self.tocfilename)
         self.dependencies = TOC()
 
@@ -192,6 +193,7 @@ class Tree(Target, TOC):
     This class is a way of creating a TOC (Table of Contents) that describes
     some or all of the files within a directory.
     """
+
     def __init__(self, root=None, prefix=None, excludes=None, typecode='DATA'):
         """
         root
@@ -220,14 +222,14 @@ class Tree(Target, TOC):
             self.excludes = []
         self.__postinit__()
 
-    _GUTS = (# input parameters
-            ('root', _check_guts_eq),
-            ('prefix', _check_guts_eq),
-            ('excludes', _check_guts_eq),
-            ('typecode', _check_guts_eq),
-            ('data', None),  # tested below
-            # no calculated/analysed values
-            )
+    _GUTS = (  # input parameters
+        ('root', _check_guts_eq),
+        ('prefix', _check_guts_eq),
+        ('excludes', _check_guts_eq),
+        ('typecode', _check_guts_eq),
+        ('data', None),  # tested below
+        # no calculated/analysed values
+    )
 
     def _check_guts(self, data, last_build):
         if Target._check_guts(self, data, last_build):

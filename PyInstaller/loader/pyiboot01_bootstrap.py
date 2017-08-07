@@ -7,7 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 ### Start bootstrap process
 # Only python built-in modules can be used.
 
@@ -17,13 +16,10 @@ import pyimod03_importers
 # Extend Python import machinery by adding PEP302 importers to sys.meta_path.
 pyimod03_importers.install()
 
-
 ### Bootstrap process is complete.
 # We can use other python modules (e.g. os)
 
-
 import os
-
 
 # Let other python modules know that the code is running in frozen mode.
 if not hasattr(sys, 'frozen'):
@@ -31,18 +27,15 @@ if not hasattr(sys, 'frozen'):
 
 # sys._MEIPASS is now set in the bootloader. Hooray.
 
-
 # Python 3 C-API function Py_SetPath() resets sys.prefix to empty string.
 # Python 2 was using PYTHONHOME for sys.prefix. Let's do the same for Python 3.
 sys.prefix = sys._MEIPASS
 sys.exec_prefix = sys.prefix
 
-
 # Python 3.3+ defines also sys.base_prefix. Let's set them too.
 # TODO Do these variables does not hurt on Python 3.2 and 2.7?
 sys.base_prefix = sys.prefix
 sys.base_exec_prefix = sys.exec_prefix
-
 
 # Some packages behaves differently when running inside virtual environment.
 # E.g. IPython tries to append path VIRTUAL_ENV to sys.path.
@@ -53,7 +46,6 @@ if VIRTENV in os.environ:
     # deleting the var from os.environ does not delete it from the environment.
     os.environ[VIRTENV] = ''
     del os.environ[VIRTENV]
-
 
 # Ensure sys.path contains absolute paths. Otherwise import of other python
 # modules will fail when current working directory is changed by frozen
@@ -95,7 +87,6 @@ if sys.stdout is None or sys.stdout.fileno() < 0:
 if sys.stderr is None or sys.stderr.fileno() < 0:
     sys.stderr = NullWriter()
 
-
 # At least on Windows, Python seems to hook up the codecs on this
 # import, so it's not enough to just package up all the encodings.
 #
@@ -111,7 +102,6 @@ try:
     import encodings
 except ImportError:
     pass
-
 
 # In the Python interpreter 'warnings' module is imported when 'sys.warnoptions'
 # is not empty. Mimic this behavior in PyInstaller.
@@ -135,7 +125,7 @@ try:
             self.msg = ("Failed to load dynlib/dll %r. "
                         "Most probably this dynlib/dll was not found "
                         "when the application was frozen.") % name
-            self.args = (self.msg,)
+            self.args = (self.msg, )
 
     class PyInstallerCDLL(ctypes.CDLL):
         def __init__(self, name, *args, **kwargs):
@@ -160,11 +150,13 @@ try:
     ctypes.pydll = LibraryLoader(PyInstallerPyDLL)
 
     if sys.platform.startswith('win'):
+
         class PyInstallerWinDLL(ctypes.WinDLL):
-            def __init__(self, name,*args, **kwargs):
+            def __init__(self, name, *args, **kwargs):
                 name = _frozen_name(name)
                 try:
-                    super(PyInstallerWinDLL, self).__init__(name, *args, **kwargs)
+                    super(PyInstallerWinDLL, self).__init__(
+                        name, *args, **kwargs)
                 except Exception as base_error:
                     raise PyInstallerImportError(name)
 
@@ -172,10 +164,11 @@ try:
         ctypes.windll = LibraryLoader(PyInstallerWinDLL)
 
         class PyInstallerOleDLL(ctypes.OleDLL):
-            def __init__(self, name,*args, **kwargs):
+            def __init__(self, name, *args, **kwargs):
                 name = _frozen_name(name)
                 try:
-                    super(PyInstallerOleDLL, self).__init__(name, *args, **kwargs)
+                    super(PyInstallerOleDLL, self).__init__(
+                        name, *args, **kwargs)
                 except Exception as base_error:
                     raise PyInstallerImportError(name)
 
@@ -197,7 +190,6 @@ if sys.platform.startswith('darwin'):
     except ImportError:
         # Do nothing when module 'ctypes' is not available.
         pass
-
 
 # Make .eggs and zipfiles available at runtime
 d = "eggs"

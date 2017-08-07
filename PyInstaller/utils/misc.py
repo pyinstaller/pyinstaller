@@ -6,8 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
-
 """
 This module is for the miscellaneous routines which do not fit somewhere else.
 """
@@ -125,18 +123,18 @@ def compile_py_files(toc, workpath):
             new_toc.append((nm, fnm, typ))
             continue
 
-        if fnm.endswith('.py') :
+        if fnm.endswith('.py'):
             # we are given a source path, determine the object path if any
             src_fnm = fnm
             # assume we want pyo only when now running -O or -OO
             obj_fnm = src_fnm + ('o' if sys.flags.optimize else 'c')
-            if not os.path.exists(obj_fnm) :
+            if not os.path.exists(obj_fnm):
                 # alas that one is not there so assume the other choice
                 obj_fnm = src_fnm + ('c' if sys.flags.optimize else 'o')
         else:
             # fnm is not "name.py" so assume we are given name.pyc/.pyo
-            obj_fnm = fnm # take that namae to be the desired object
-            src_fnm = fnm[:-1] # drop the 'c' or 'o' to make a source name
+            obj_fnm = fnm  # take that namae to be the desired object
+            src_fnm = fnm[:-1]  # drop the 'c' or 'o' to make a source name
 
         # We need to perform a build ourselves if obj_fnm doesn't exist,
         # or if src_fnm is newer than obj_fnm, or if obj_fnm was created
@@ -145,10 +143,8 @@ def compile_py_files(toc, workpath):
         # instead of just read(4)? Yes for many a .pyc file, it is all
         # in one sector so there's no difference in I/O but still it
         # seems inelegant to copy it all then subscript 4 bytes.
-        needs_compile = ( (mtime(src_fnm) > mtime(obj_fnm) )
-                          or
-                          (open(obj_fnm, 'rb').read()[:4] != BYTECODE_MAGIC)
-                        )
+        needs_compile = ((mtime(src_fnm) > mtime(obj_fnm))
+                         or (open(obj_fnm, 'rb').read()[:4] != BYTECODE_MAGIC))
         if needs_compile:
             try:
                 # TODO: there should be no need to repeat the compile,
@@ -179,9 +175,9 @@ def compile_py_files(toc, workpath):
 
                 obj_fnm = os.path.join(leading, mod_name + ext)
                 # TODO see above regarding read()[:4] versus read(4)
-                needs_compile = (mtime(src_fnm) > mtime(obj_fnm)
-                                 or
-                                 open(obj_fnm, 'rb').read()[:4] != BYTECODE_MAGIC)
+                needs_compile = (
+                    mtime(src_fnm) > mtime(obj_fnm)
+                    or open(obj_fnm, 'rb').read()[:4] != BYTECODE_MAGIC)
                 if needs_compile:
                     # TODO see above todo regarding using node.code
                     py_compile.compile(src_fnm, obj_fnm)

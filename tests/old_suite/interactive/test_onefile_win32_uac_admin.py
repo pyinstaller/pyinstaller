@@ -6,8 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
-
 """
 This test tests on Windows the option --uac-admin with onefile mode.
 
@@ -17,8 +15,7 @@ This test tests on Windows the option --uac-admin with onefile mode.
 
 """
 
-
 # Accessing directory where only admin has access.
 import os
-admin_dir = os.path.join(os.environ.get('SystemRoot','C:\\windows'), 'temp')
+admin_dir = os.path.join(os.environ.get('SystemRoot', 'C:\\windows'), 'temp')
 os.listdir(admin_dir)

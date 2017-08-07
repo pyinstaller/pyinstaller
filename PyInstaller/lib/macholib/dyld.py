@@ -10,8 +10,10 @@ from PyInstaller.lib.macholib.framework import framework_info
 from PyInstaller.lib.macholib.dylib import dylib_info
 
 __all__ = [
-    'dyld_find', 'framework_find',
-    'framework_info', 'dylib_info',
+    'dyld_find',
+    'framework_find',
+    'framework_info',
+    'dylib_info',
 ]
 
 # These are the defaults as per man dyld(1)
@@ -32,12 +34,14 @@ _DEFAULT_LIBRARY_FALLBACK = [
 
 # XXX: Is this function still needed?
 if sys.version_info[0] == 2:
+
     def _ensure_utf8(s):
         """Not all of PyObjC and Python understand unicode paths very well yet"""
         if isinstance(s, unicode):
             return s.encode('utf8')
         return s
 else:
+
     def _ensure_utf8(s):
         if s is not None and not isinstance(s, str):
             raise ValueError(s)
@@ -52,28 +56,35 @@ def _dyld_env(env, var):
         return []
     return rval.split(':')
 
+
 def dyld_image_suffix(env=None):
     if env is None:
         env = os.environ
     return env.get('DYLD_IMAGE_SUFFIX')
 
+
 def dyld_framework_path(env=None):
     return _dyld_env(env, 'DYLD_FRAMEWORK_PATH')
+
 
 def dyld_library_path(env=None):
     return _dyld_env(env, 'DYLD_LIBRARY_PATH')
 
+
 def dyld_fallback_framework_path(env=None):
     return _dyld_env(env, 'DYLD_FALLBACK_FRAMEWORK_PATH')
 
+
 def dyld_fallback_library_path(env=None):
     return _dyld_env(env, 'DYLD_FALLBACK_LIBRARY_PATH')
+
 
 def dyld_image_suffix_search(iterator, env=None):
     """For a potential path iterator, add DYLD_IMAGE_SUFFIX semantics"""
     suffix = dyld_image_suffix(env)
     if suffix is None:
         return iterator
+
     def _inject(iterator=iterator, suffix=suffix):
         for path in iterator:
             if path.endswith('.dylib'):
@@ -81,7 +92,9 @@ def dyld_image_suffix_search(iterator, env=None):
             else:
                 yield path + suffix
             yield path
+
     return _inject()
+
 
 def dyld_override_search(name, env=None):
     # If DYLD_FRAMEWORK_PATH is set and this dylib_name is a
@@ -100,6 +113,7 @@ def dyld_override_search(name, env=None):
     for path in dyld_library_path(env):
         yield os.path.join(path, os.path.basename(name))
 
+
 def dyld_executable_path_search(name, executable_path=None):
     # If we haven't done any searching and found a library and the
     # dylib_name starts with "@executable_path/" then construct the
@@ -107,12 +121,14 @@ def dyld_executable_path_search(name, executable_path=None):
     if name.startswith('@executable_path/') and executable_path is not None:
         yield os.path.join(executable_path, name[len('@executable_path/'):])
 
+
 def dyld_loader_search(name, loader_path=None):
     # If we haven't done any searching and found a library and the
     # dylib_name starts with "@loader_path/" then construct the
     # library name.
     if name.startswith('@loader_path/') and loader_path is not None:
         yield os.path.join(loader_path, name[len('@loader_path/'):])
+
 
 def dyld_default_search(name, env=None):
     yield name
@@ -139,21 +155,23 @@ def dyld_default_search(name, env=None):
         for path in _DEFAULT_LIBRARY_FALLBACK:
             yield os.path.join(path, os.path.basename(name))
 
+
 def dyld_find(name, executable_path=None, env=None, loader_path=None):
     """
     Find a library or framework using dyld semantics
     """
     name = _ensure_utf8(name)
     executable_path = _ensure_utf8(executable_path)
-    for path in dyld_image_suffix_search(chain(
+    for path in dyld_image_suffix_search(
+            chain(
                 dyld_override_search(name, env),
                 dyld_executable_path_search(name, executable_path),
                 dyld_loader_search(name, loader_path),
-                dyld_default_search(name, env),
-            ), env):
+                dyld_default_search(name, env), ), env):
         if os.path.isfile(path):
             return path
-    raise ValueError("dylib %s could not be found" % (name,))
+    raise ValueError("dylib %s could not be found" % (name, ))
+
 
 def framework_find(fn, executable_path=None, env=None):
     """

@@ -10,11 +10,12 @@ try:
 except ImportError:
     from cStringIO import StringIO as BytesIO
 
-class TestUtil (unittest.TestCase):
+
+class TestUtil(unittest.TestCase):
     def assertStartsWith(self, a, b, message=None):
         if not a.startswith(b):
             if message is None:
-                message = "%r does not start with %r"%(a, b)
+                message = "%r does not start with %r" % (a, b)
             self.fail(message)
 
     def assertSamePath(self, a, b):
@@ -39,7 +40,6 @@ class TestUtil (unittest.TestCase):
             if i[1][0] is not None:
                 i[1][0].close()
 
-
     def test_guess_encoding(self):
         fp = BytesIO(b"# coding: utf-8")
         self.assertEqual(util.guess_encoding(fp), "utf-8")
@@ -53,7 +53,8 @@ class TestUtil (unittest.TestCase):
         fp = BytesIO(b"\n# coding: latin-1")
         self.assertEqual(util.guess_encoding(fp), "latin-1")
 
-        fp = BytesIO(b"#!/usr/bin/env/python\n# vim: set fileencoding=latin-1 :")
+        fp = BytesIO(
+            b"#!/usr/bin/env/python\n# vim: set fileencoding=latin-1 :")
         self.assertEqual(util.guess_encoding(fp), "latin-1")
 
         fp = BytesIO(b"\n\n\n# coding: latin-1")

@@ -6,8 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
-
 """
 Classes facilitating communication between PyInstaller and import hooks.
 
@@ -78,7 +76,6 @@ class PreSafeImportModuleAPI(object):
         self._module_name = module_name
         self._parent_package = parent_package
 
-
     # Immutable properties. No corresponding setters are defined.
     @property
     def module_graph(self):
@@ -103,7 +100,6 @@ class PreSafeImportModuleAPI(object):
     def parent_package(self):
         "Parent Package of this node"
         return self._parent_package
-
 
     def add_runtime_module(self, module_name):
         """
@@ -137,7 +133,6 @@ class PreSafeImportModuleAPI(object):
 
         self._module_graph.add_module(RuntimeModule(module_name))
 
-
     def add_runtime_package(self, package_name):
         """
         Add a graph node representing a non-namespace Python package with the
@@ -169,7 +164,6 @@ class PreSafeImportModuleAPI(object):
 
         self._module_graph.add_module(RuntimePackage(package_name))
 
-
     def add_alias_module(self, real_module_name, alias_module_name):
         """
         Alias the source module to the target module with the passed names.
@@ -190,7 +184,6 @@ class PreSafeImportModuleAPI(object):
         """
 
         self._module_graph.alias_module(real_module_name, alias_module_name)
-
 
     def append_package_path(self, directory):
         """
@@ -261,11 +254,10 @@ class PreFindModulePathAPI(object):
     """
 
     def __init__(
-        self,
-        module_graph,
-        module_name,
-        search_dirs,
-    ):
+            self,
+            module_graph,
+            module_name,
+            search_dirs, ):
         # Mutable attributes.
         self.search_dirs = search_dirs
 

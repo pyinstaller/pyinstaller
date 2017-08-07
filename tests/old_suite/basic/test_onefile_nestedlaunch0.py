@@ -7,9 +7,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 import cmath
-
 
 if __name__ == '__main__':
     print((dir()))

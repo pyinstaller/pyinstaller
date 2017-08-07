@@ -8,13 +8,11 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 # In Python 3 module name is 'tkinter'
 try:
     from tkinter import *
 except ImportError:
     from Tkinter import *
-
 
 root = Tk()
 root.title("Test for tkinter")

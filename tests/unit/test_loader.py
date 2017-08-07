@@ -7,7 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 from threading import Thread
 
 from PyInstaller.compat import is_py2
@@ -62,4 +61,3 @@ def test_threading_import(tmpdir):
 
     # Wait for the other thread to finish.
     thread.join()
-

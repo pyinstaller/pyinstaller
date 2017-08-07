@@ -7,7 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 import os
 import sys
 
@@ -90,8 +89,7 @@ def _warn_if_activetcl_or_teapot_installed(tcl_root, tcltree):
                 break
 
     if mentions_activetcl and mentions_teapot:
-        logger.warning(
-            """
+        logger.warning("""
 You appear to be using an ActiveTcl build of Tcl/Tk, which PyInstaller has
 difficulty freezing. To fix this, comment out all references to "teapot" in:
 
@@ -119,7 +117,7 @@ def _find_tcl_tk_darwin_frameworks(binaries):
         if nm == 'Tcl':
             tcl_root = os.path.join(os.path.dirname(fnm), 'Resources/Scripts')
         elif nm == 'Tk':
-            tk_root =  os.path.join(os.path.dirname(fnm), 'Resources/Scripts')
+            tk_root = os.path.join(os.path.dirname(fnm), 'Resources/Scripts')
     return tcl_root, tk_root
 
 
@@ -136,7 +134,8 @@ def _find_tcl_tk_dir():
     """
     # Python code to get path to TCL_LIBRARY.
     tcl_root = exec_statement(
-        'from %s import Tcl; print(Tcl().eval("info library"))' % modname_tkinter)
+        'from %s import Tcl; print(Tcl().eval("info library"))' %
+        modname_tkinter)
     tk_version = exec_statement(
         'from _tkinter import TK_VERSION; print(TK_VERSION)')
 
@@ -244,4 +243,5 @@ def hook(hook_api):
         # with "too many values to unpack".
         hook_api.add_datas(_collect_tcl_tk_files(hook_api))
     else:
-        logger.error("... skipping Tcl/Tk handling on unsupported platform %s", sys.platform)
+        logger.error("... skipping Tcl/Tk handling on unsupported platform %s",
+                     sys.platform)

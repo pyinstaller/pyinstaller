@@ -7,7 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 # TODO Do we still use this module? Could it be remmoved?
 
 RT_ICON = 3
@@ -19,10 +18,11 @@ import types
 try:
     StringTypes = types.StringTypes
 except AttributeError:
-    StringTypes = [ type("") ]
+    StringTypes = [type("")]
 
 import PyInstaller.log as logging
 logger = logging.getLogger(__name__)
+
 
 class Structure:
     def __init__(self):
@@ -62,23 +62,28 @@ class Structure:
         data = file.read(self._sizeInBytes)
         self._fields_ = list(struct.unpack(self._format_, data))
 
+
 class ICONDIRHEADER(Structure):
     _names_ = "idReserved", "idType", "idCount"
     _format_ = "hhh"
+
 
 class ICONDIRENTRY(Structure):
     _names_ = ("bWidth", "bHeight", "bColorCount", "bReserved", "wPlanes",
                "wBitCount", "dwBytesInRes", "dwImageOffset")
     _format_ = "bbbbhhii"
 
+
 class GRPICONDIR(Structure):
     _names_ = "idReserved", "idType", "idCount"
     _format_ = "hhh"
+
 
 class GRPICONDIRENTRY(Structure):
     _names_ = ("bWidth", "bHeight", "bColorCount", "bReserved", "wPlanes",
                "wBitCount", "dwBytesInRes", "nID")
     _format_ = "bbbbhhih"
+
 
 class IconFile:
     def __init__(self, path):
@@ -112,7 +117,7 @@ class IconFile:
 
 
 def CopyIcons_FromIco(dstpath, srcpath, id=1):
-    import win32api #, win32con
+    import win32api  #, win32con
     icons = map(IconFile, srcpath)
     logger.info("Updating icons from %s to %s", srcpath, dstpath)
 
@@ -123,19 +128,22 @@ def CopyIcons_FromIco(dstpath, srcpath, id=1):
         data = f.grp_icon_dir()
         data = data + f.grp_icondir_entries(iconid)
         win32api.UpdateResource(hdst, RT_GROUP_ICON, i, data)
-        logger.info("Writing RT_GROUP_ICON %d resource with %d bytes", i, len(data))
+        logger.info("Writing RT_GROUP_ICON %d resource with %d bytes", i,
+                    len(data))
         for data in f.images:
             win32api.UpdateResource(hdst, RT_ICON, iconid, data)
-            logger.info("Writing RT_ICON %d resource with %d bytes", iconid, len(data))
+            logger.info("Writing RT_ICON %d resource with %d bytes", iconid,
+                        len(data))
             iconid = iconid + 1
 
     win32api.EndUpdateResource(hdst, 0)
+
 
 def CopyIcons(dstpath, srcpath):
     import os.path
 
     if type(srcpath) in StringTypes:
-        srcpath = [ srcpath ]
+        srcpath = [srcpath]
 
     def splitter(s):
         try:
@@ -153,21 +161,23 @@ def CopyIcons(dstpath, srcpath):
         for s in srcpath:
             e = os.path.splitext(s[0])[1]
             if e.lower() != '.ico':
-                raise ValueError('Multiple icons supported only from .ico files')
+                raise ValueError(
+                    'Multiple icons supported only from .ico files')
             if s[1] is not None:
                 raise ValueError('index not allowed for .ico files')
             srcs.append(s[0])
         return CopyIcons_FromIco(dstpath, srcs)
 
-    srcpath,index = srcpath[0]
+    srcpath, index = srcpath[0]
     srcext = os.path.splitext(srcpath)[1]
     if srcext.lower() == '.ico':
         return CopyIcons_FromIco(dstpath, [srcpath])
     if index is not None:
-        logger.info("Updating icons from %s, %d to %s", srcpath, index, dstpath)
+        logger.info("Updating icons from %s, %d to %s", srcpath, index,
+                    dstpath)
     else:
         logger.info("Updating icons from %s to %s", srcpath, dstpath)
-    import win32api #, win32con
+    import win32api  #, win32con
     hdst = win32api.BeginUpdateResource(dstpath, 0)
     hsrc = win32api.LoadLibraryEx(srcpath, 0, LOAD_LIBRARY_AS_DATAFILE)
     if index is None:
@@ -183,6 +193,7 @@ def CopyIcons(dstpath, srcpath):
         win32api.UpdateResource(hdst, RT_ICON, iconname, data)
     win32api.FreeLibrary(hsrc)
     win32api.EndUpdateResource(hdst, 0)
+
 
 if __name__ == "__main__":
     import sys

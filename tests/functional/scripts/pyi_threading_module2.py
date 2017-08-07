@@ -7,23 +7,20 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 # Test bootloader behaviour for threading code.
 # Default behaviour of Python interpreter is to wait for all threads
 # before exiting main process.
 # Bootloader should behave also this way.
 
-
 import os
 import sys
 import threading
 
-
 _OUT_EXPECTED = ['ONE', 'TWO', 'THREE']
-
 
 # Code for the subprocess.
 if 'PYI_THREAD_TEST_CASE' in os.environ:
+
     class TestThreadClass(threading.Thread):
         def __init__(self):
             threading.Thread.__init__(self)
@@ -32,10 +29,10 @@ if 'PYI_THREAD_TEST_CASE' in os.environ:
             print('ONE')
             print('TWO')
             print('THREE')
+
     # Main process should not exit before the thread stops.
     # This is the behaviour of Python interpreter.
     TestThreadClass().start()
-
 
 # Execute itself in a subprocess.
 else:
@@ -48,9 +45,12 @@ else:
     env = dict(os.environ)
     env['PYI_THREAD_TEST_CASE'] = 'yes'
 
-    proc = subprocess.Popen([itself], stdout=subprocess.PIPE,
-                            env=env,
-                            stderr=subprocess.PIPE, shell=False)
+    proc = subprocess.Popen(
+        [itself],
+        stdout=subprocess.PIPE,
+        env=env,
+        stderr=subprocess.PIPE,
+        shell=False)
     # Waits for subprocess to complete.
     out, err = proc.communicate()
 
@@ -68,5 +68,6 @@ else:
     if out != _OUT_EXPECTED:
         print(" +++++++ SUBPROCESS ERROR OUTPUT +++++++")
         print(err)
-        raise SystemExit('Subprocess did not print ONE, TWO, THREE in correct order. '
-                         '(output was %r, return code was %s)' % (out, proc.returncode))
+        raise SystemExit(
+            'Subprocess did not print ONE, TWO, THREE in correct order. '
+            '(output was %r, return code was %s)' % (out, proc.returncode))

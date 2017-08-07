@@ -7,7 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 # matplotlib will create $HOME/.matplotlib folder in user's home directory.
 # In this directory there is fontList.cache file which lists paths
 # to matplotlib fonts.
@@ -25,17 +24,14 @@
 # We need to force matplotlib to recreate config directory every time you run
 # your app.
 
-
 import atexit
 import os
 import shutil
 import tempfile
 
-
 # Put matplot config dir to temp directory.
 configdir = tempfile.mkdtemp()
 os.environ['MPLCONFIGDIR'] = configdir
-
 
 try:
     # Remove temp directory at application exit and ignore any errors.

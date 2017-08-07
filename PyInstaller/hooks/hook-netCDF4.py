@@ -7,6 +7,5 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 # netCDF4 (tested with v.1.1.9) has some hidden imports
 hiddenimports = ['netCDF4.utils', 'netcdftime']

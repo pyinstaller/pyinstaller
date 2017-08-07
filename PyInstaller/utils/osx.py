@@ -6,8 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
-
 """
 Utils for Mac OS X platform.
 """
@@ -84,7 +82,8 @@ def fix_exe_for_code_signing(filename):
     """
     exe_data = MachO(filename)
     # Every load command is a tupple: (cmd_metadata, segment, [section1, section2])
-    cmds = exe_data.headers[0].commands  # '0' - Exe contains only one architecture.
+    cmds = exe_data.headers[
+        0].commands  # '0' - Exe contains only one architecture.
     file_size = exe_data.headers[0].size
 
     ## Make the embedded .pkg archive part of the Mach-O 'String Table'.

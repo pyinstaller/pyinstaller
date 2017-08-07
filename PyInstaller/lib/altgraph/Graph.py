@@ -16,6 +16,7 @@ altgraph.Graph - Base Graph class
 from . import GraphError
 from collections import deque
 
+
 class Graph(object):
     """
     The Graph class represents a directed graph with *N* nodes and *E* edges.
@@ -54,12 +55,11 @@ class Graph(object):
                     head, tail, data = item
                     self.add_edge(head, tail, data)
                 else:
-                    raise GraphError("Cannot create edge from %s"%(item,))
-
+                    raise GraphError("Cannot create edge from %s" % (item, ))
 
     def __repr__(self):
-        return '<Graph: %d nodes, %d edges>' % (
-            self.number_of_nodes(), self.number_of_edges())
+        return '<Graph: %d nodes, %d edges>' % (self.number_of_nodes(),
+                                                self.number_of_edges())
 
     def add_node(self, node, node_data=None):
         """
@@ -115,7 +115,6 @@ class Graph(object):
         # store edge information
         self.edges[edge] = (head_id, tail_id, edge_data)
 
-
         self.next_edge += 1
 
     def hide_edge(self, edge):
@@ -124,7 +123,8 @@ class Graph(object):
         time.
         """
         try:
-            head_id, tail_id, edge_data = self.hidden_edges[edge] = self.edges[edge]
+            head_id, tail_id, edge_data = self.hidden_edges[edge] = self.edges[
+                edge]
             self.nodes[tail_id][0].remove(edge)
             self.nodes[head_id][1].remove(edge)
             del self.edges[edge]
@@ -199,7 +199,7 @@ class Graph(object):
         Returns the edge that connects the head_id and tail_id nodes
         """
         try:
-            head, tail, data =  self.edges[edge]
+            head, tail, data = self.edges[edge]
         except KeyError:
             head, tail = None, None
             raise GraphError('Invalid edge %s' % edge)
@@ -299,7 +299,7 @@ class Graph(object):
         """
         Replace the edge data for a specific edge
         """
-        self.edges[edge] = self.edges[edge][0:2] + (edge_data,)
+        self.edges[edge] = self.edges[edge][0:2] + (edge_data, )
 
     def head(self, edge):
         """
@@ -331,7 +331,7 @@ class Graph(object):
         """
         List of nodes connected by incoming and outgoing edges
         """
-        l = dict.fromkeys( self.inc_nbrs(node) + self.out_nbrs(node) )
+        l = dict.fromkeys(self.inc_nbrs(node) + self.out_nbrs(node))
         return list(l)
 
     def out_edges(self, node):
@@ -453,10 +453,10 @@ class Graph(object):
         traversal.
         """
         if forward:
-            get_bfs  = self.forw_bfs
+            get_bfs = self.forw_bfs
             get_nbrs = self.out_nbrs
         else:
-            get_bfs  = self.back_bfs
+            get_bfs = self.back_bfs
             get_nbrs = self.inc_nbrs
 
         g = Graph()
@@ -574,7 +574,6 @@ class Graph(object):
                     visited.add(tail)
                     queue.append((tail, curr_step + 1))
 
-
     def forw_bfs(self, start, end=None):
         """
         Returns a list of nodes in some forward BFS order.
@@ -591,7 +590,9 @@ class Graph(object):
         Starting from the start node the breadth first search proceeds along
         incoming edges.
         """
-        return [node for node, step in self._iterbfs(start, end, forward=False)]
+        return [
+            node for node, step in self._iterbfs(start, end, forward=False)
+        ]
 
     def forw_dfs(self, start, end=None):
         """
@@ -636,12 +637,12 @@ class Graph(object):
         nbr_set = set(self.out_nbrs(node))
 
         if node in nbr_set:
-            nbr_set.remove(node) # loop defense
+            nbr_set.remove(node)  # loop defense
 
         for nbr in nbr_set:
             sec_set = set(self.out_nbrs(nbr))
             if nbr in sec_set:
-                sec_set.remove(nbr) # loop defense
+                sec_set.remove(nbr)  # loop defense
             num += len(nbr_set & sec_set)
 
         nbr_num = len(nbr_set)

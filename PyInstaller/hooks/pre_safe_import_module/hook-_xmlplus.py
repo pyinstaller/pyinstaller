@@ -26,6 +26,7 @@
 # PyInstaller is dropping support for Python 2.7.  2015-11-06
 #
 
+
 def pre_safe_import_module(api):
     # preserve path of existing `xml` package
     for p in api.module_graph.findNode('xml').packagepath:

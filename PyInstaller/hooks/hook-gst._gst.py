@@ -7,17 +7,14 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 # GStreamer contains a lot of plugins. We need to collect them and bundle
 # them wih the exe file.
 # We also need to resolve binary dependencies of these GStreamer plugins.
-
 
 import glob
 import os
 from PyInstaller.compat import is_win
 from PyInstaller.utils.hooks import exec_statement
-
 
 hiddenimports = ['gmodule', 'gobject']
 
@@ -42,4 +39,5 @@ else:
 binaries = [
     (os.path.join('gst_plugins', os.path.basename(f)), f)
     # 'f' contains the absolute path
-    for f in glob.glob(pattern)]
+    for f in glob.glob(pattern)
+]

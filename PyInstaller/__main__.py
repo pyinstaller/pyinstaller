@@ -6,8 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
-
 """
 Main command-line interface to PyInstaller.
 """
@@ -16,7 +14,6 @@ import os
 import argparse
 import platform
 import sys
-
 
 from . import __version__
 from . import log as logging
@@ -47,9 +44,13 @@ def run_build(pyi_config, spec_file, **kwargs):
 
 
 def __add_options(parser):
-    parser.add_argument('-v', '--version', action='version',
-                        version=__version__,
-                        help='Show program version info and exit.')
+    parser.add_argument(
+        '-v',
+        '--version',
+        action='version',
+        version=__version__,
+        help='Show program version info and exit.')
+
 
 def run(pyi_args=None, pyi_config=None):
     """
@@ -57,7 +58,7 @@ def run(pyi_args=None, pyi_config=None):
     pyi_config   allows checking configuration once when running multiple tests
     """
     check_requirements()
-    
+
     import PyInstaller.building.makespec
     import PyInstaller.building.build_main
     import PyInstaller.log
@@ -68,9 +69,12 @@ def run(pyi_args=None, pyi_config=None):
         PyInstaller.building.makespec.__add_options(parser)
         PyInstaller.building.build_main.__add_options(parser)
         PyInstaller.log.__add_options(parser)
-        parser.add_argument('filenames', metavar='scriptname', nargs='+',
-                            help=("name of scriptfiles to be processed or "
-                                  "exactly one .spec-file"))
+        parser.add_argument(
+            'filenames',
+            metavar='scriptname',
+            nargs='+',
+            help=("name of scriptfiles to be processed or "
+                  "exactly one .spec-file"))
 
         args = parser.parse_args(pyi_args)
         PyInstaller.log.__process_options(parser, args)

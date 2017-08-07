@@ -41,7 +41,8 @@ def qt_plugins_dir(namespace):
         valid_paths = []
         for path in paths:
             if os.path.isdir(path):
-                valid_paths.append(str(path))  # must be 8-bit chars for one-file builds
+                valid_paths.append(
+                    str(path))  # must be 8-bit chars for one-file builds
         qt_plugin_paths = valid_paths
     if not qt_plugin_paths:
         raise Exception("""
@@ -82,15 +83,14 @@ def qt_plugins_binaries(plugin_type, namespace):
     elif is_win and namespace is 'PyQt5':
         files = [f for f in files if not f.endswith("d.dll")]
 
-    logger.debug('Found plugin files {0} for plugin \'{1}\''.format(files, plugin_type))
+    logger.debug(
+        'Found plugin files {0} for plugin \'{1}\''.format(files, plugin_type))
     if namespace in ['PyQt4', 'PySide']:
         plugin_dir = 'qt4_plugins'
     else:
         plugin_dir = 'qt5_plugins'
     dest_dir = os.path.join(plugin_dir, plugin_type)
-    binaries = [
-        (f, dest_dir)
-        for f in files]
+    binaries = [(f, dest_dir) for f in files]
     return binaries
 
 
@@ -112,15 +112,20 @@ def qt_menu_nib_dir(namespace):
     str = getattr(__builtins__, 'unicode', str)  # for Python 2
     print(str(path))
     """.format(namespace))
-    anaconda_path = os.path.join(sys.exec_prefix, "python.app", "Contents", "Resources")
-    paths = [os.path.join(path, 'Resources'), os.path.join(path, 'QtGui.framework', 'Resources'), anaconda_path]
+    anaconda_path = os.path.join(sys.exec_prefix, "python.app", "Contents",
+                                 "Resources")
+    paths = [
+        os.path.join(path, 'Resources'),
+        os.path.join(path, 'QtGui.framework', 'Resources'), anaconda_path
+    ]
 
     for location in paths:
         # Check directory existence
         path = os.path.join(location, 'qt_menu.nib')
         if os.path.exists(path):
             menu_dir = path
-            logger.debug('Found qt_menu.nib for {0} at {1}'.format(namespace, path))
+            logger.debug(
+                'Found qt_menu.nib for {0} at {1}'.format(namespace, path))
             break
     if not menu_dir:
         raise Exception("""
@@ -158,14 +163,14 @@ def get_qmake_path(version=''):
     for directory in dirs:
         try:
             qmake = os.path.join(directory, 'bin', 'qmake')
-            versionstring = subprocess.check_output([qmake, '-query',
-                                                     'QT_VERSION']).strip()
+            versionstring = subprocess.check_output(
+                [qmake, '-query', 'QT_VERSION']).strip()
             if is_py3:
                 # version string is probably just ASCII
                 versionstring = versionstring.decode('utf8')
             if versionstring.find(version) == 0:
-                logger.debug('Found qmake version "%s" at "%s".'
-                             % (versionstring, qmake))
+                logger.debug('Found qmake version "%s" at "%s".' %
+                             (versionstring, qmake))
                 return qmake
         except (OSError, subprocess.CalledProcessError):
             pass
@@ -214,8 +219,8 @@ def qt5_qml_plugins_binaries(directory):
         relpath = os.path.relpath(f, qmldir)
         instdir, file = os.path.split(relpath)
         instdir = os.path.join("qml", instdir)
-        logger.debug("qt5_qml_plugins_binaries installing %s in %s"
-                     % (f, instdir))
+        logger.debug("qt5_qml_plugins_binaries installing %s in %s" %
+                     (f, instdir))
         binaries.append((f, instdir))
     return binaries
 
@@ -237,11 +242,12 @@ def qt5_qml_plugins_datas(directory):
         relpath = os.path.relpath(f, qmldir)
         instdir, file = os.path.split(relpath)
         instdir = os.path.join("qml", instdir)
-        logger.debug("qt5_qml_plugins_datas installing %s in %s"
-                     % (f, instdir))
+        logger.debug("qt5_qml_plugins_datas installing %s in %s" % (f,
+                                                                    instdir))
         datas.append((f, instdir))
     return datas
 
 
-__all__ = ('qt_plugins_dir', 'qt_plugins_binaries', 'qt_menu_nib_dir', 'get_qmake_path', 'qt5_qml_dir', 'qt5_qml_data',
+__all__ = ('qt_plugins_dir', 'qt_plugins_binaries', 'qt_menu_nib_dir',
+           'get_qmake_path', 'qt5_qml_dir', 'qt5_qml_data',
            'qt5_qml_plugins_binaries', 'qt5_qml_plugins_datas')

@@ -8,6 +8,7 @@ __all__ = ['SymbolTable']
 
 # XXX: Does not support 64-bit, probably broken anyway
 
+
 class SymbolTable(object):
     def __init__(self, macho, openfile=None):
         if openfile is None:
@@ -35,15 +36,17 @@ class SymbolTable(object):
             if cmd.n_un == 0:
                 nlists.append((cmd, ''))
             else:
-                nlists.append((cmd, strtab[cmd.n_un:strtab.find(b'\x00', cmd.n_un)]))
+                nlists.append(
+                    (cmd, strtab[cmd.n_un:strtab.find(b'\x00', cmd.n_un)]))
         self.nlists = nlists
 
     def readDynamicSymbolTable(self, fh):
         cmd = self.dysymtab
         nlists = self.nlists
-        self.localsyms = nlists[cmd.ilocalsym:cmd.ilocalsym+cmd.nlocalsym]
-        self.extdefsyms = nlists[cmd.iextdefsym:cmd.iextdefsym+cmd.nextdefsym]
-        self.undefsyms = nlists[cmd.iundefsym:cmd.iundefsym+cmd.nundefsym]
+        self.localsyms = nlists[cmd.ilocalsym:cmd.ilocalsym + cmd.nlocalsym]
+        self.extdefsyms = nlists[cmd.iextdefsym:
+                                 cmd.iextdefsym + cmd.nextdefsym]
+        self.undefsyms = nlists[cmd.iundefsym:cmd.iundefsym + cmd.nundefsym]
         #if cmd.tocoff == 0:
         #    self.toc = None
         #else:
@@ -55,7 +58,8 @@ class SymbolTable(object):
         if cmd.extrefsymoff == 0:
             self.extrefsym = None
         else:
-            self.extrefsym = self.readsym(fh, cmd.extrefsymoff, cmd.nextrefsyms)
+            self.extrefsym = self.readsym(fh, cmd.extrefsymoff,
+                                          cmd.nextrefsyms)
         #if cmd.indirectsymoff == 0:
         #    self.indirectsym = None
         #else:

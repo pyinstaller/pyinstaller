@@ -7,14 +7,11 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 # This little sample application generates a plugin on the fly,
 # and then tries to import it.
 
-
 import os
 import sys
-
 
 # We first import a static plugin; the application might have
 # certain plugins that it always loads.
@@ -24,14 +21,12 @@ try:
 except ImportError:
     raise SystemExit('Failed to import the static plugin.')
 
-
 plugin_contents = """
 print('DYNAMIC PLUGIN IMPORTED.')
 print('This is some user-generated plugin that does not exist until')
 print('  the application starts and other modules in the directory')
 print('  are imported (like the static_plugin).')
 """
-
 
 # Create the dynamic plugin in the same directory as the executable.
 if hasattr(sys, 'frozen'):
@@ -43,7 +38,6 @@ fp = open(plugin_filename, 'w')
 fp.write(plugin_contents)
 fp.close()
 
-
 # Try import dynamic plugin.
 is_error = False
 try:
@@ -52,14 +46,12 @@ try:
 except ImportError:
     is_error = True
 
-
 # Clean up. Remove files dynamic_plugin.py[c]
 for f in (plugin_filename, plugin_filename + 'c'):
     try:
         os.remove(plugin_filename)
     except OSError:
         pass
-
 
 # Statement 'try except finally' is available since Python 2.5+.
 if is_error:

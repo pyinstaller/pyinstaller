@@ -7,7 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 # import a very simple and rarely used pure-python lib ...
 import getopt
 # ... and a module importing a shared lib

@@ -25,13 +25,14 @@ if os.path.exists(pixbuf_file) and sys.platform != 'win32':
     # we injected with the actual path
     fd, pixbuf_file = tempfile.mkstemp()
     with os.fdopen(fd, 'wb') as fp:
-        fp.write(contents.replace(b'@executable_path/lib',
-                                  os.path.join(sys._MEIPASS, 'lib').encode('utf-8')))
+        fp.write(
+            contents.replace(b'@executable_path/lib',
+                             os.path.join(sys._MEIPASS, 'lib').encode(
+                                 'utf-8')))
 
     try:
         atexit.register(os.unlink, pixbuf_file)
     except OSError:
         pass
-
 
 os.environ['GDK_PIXBUF_MODULE_FILE'] = pixbuf_file

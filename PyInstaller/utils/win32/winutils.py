@@ -6,8 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
-
 """
 Utils for Windows platform.
 """
@@ -127,7 +125,10 @@ def import_pywin32_module(module_name):
                     sys.path.append(pywin32_dll_dir)
                     try:
                         module = __import__(
-                            name=module_name, globals={}, locals={}, fromlist=[''])
+                            name=module_name,
+                            globals={},
+                            locals={},
+                            fromlist=[''])
                         break
                     except ImportError:
                         pass

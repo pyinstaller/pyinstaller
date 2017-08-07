@@ -7,6 +7,5 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 # xml.dom.domreg line 54
 hiddenimports = ['xml.dom.minidom']

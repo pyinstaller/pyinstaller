@@ -30,12 +30,13 @@ import shutil
 # Third-party imports
 # -------------------
 import py
-import psutil # Manages subprocess timeout.
+import psutil  # Manages subprocess timeout.
 
 # Local imports
 # -------------
 # Expand sys.path with PyInstaller source.
-_ROOT_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+_ROOT_DIR = os.path.normpath(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
 sys.path.append(_ROOT_DIR)
 
 from PyInstaller import configure, config
@@ -49,9 +50,11 @@ from PyInstaller.utils.win32 import winutils
 # Globals
 # =======
 # Directory with Python scripts for functional tests. E.g. main scripts, etc.
-_SCRIPT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'scripts')
+_SCRIPT_DIR = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), 'scripts')
 # Directory with testing modules used in some tests.
-_MODULES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modules')
+_MODULES_DIR = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), 'modules')
 # Directory with .toc log files.
 _LOGS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logs')
 # Directory storing test-specific data.
@@ -84,13 +87,14 @@ def pytest_runtest_makereport(item, call):
 def script_dir():
     return py.path.local(_SCRIPT_DIR)
 
+
 # A helper function to copy from data/dir to tmpdir/data.
 def _data_dir_copy(
-  # The name of the subdirectory located in data/name to copy.
-  subdir_name,
-  # The tmpdir object for this test. See
-  # https://pytest.org/latest/tmpdir.html.
-  tmpdir):
+        # The name of the subdirectory located in data/name to copy.
+        subdir_name,
+        # The tmpdir object for this test. See
+        # https://pytest.org/latest/tmpdir.html.
+        tmpdir):
 
     # Form the source and tmp paths.
     source_data_dir = py.path.local(_DATA_DIR).join(subdir_name)
@@ -101,25 +105,26 @@ def _data_dir_copy(
     # used.
     return tmp_data_dir
 
+
 # Define a fixure for the DataDir object.
 @pytest.fixture
 def data_dir(
-  # The request object for this test. See
-  # https://pytest.org/latest/builtin.html#_pytest.python.FixtureRequest
-  # and
-  # https://pytest.org/latest/fixture.html#fixtures-can-introspect-the-requesting-test-context.
-  request,
-  # The tmpdir object for this test. See
-  # https://pytest.org/latest/tmpdir.html.
-  tmpdir):
+        # The request object for this test. See
+        # https://pytest.org/latest/builtin.html#_pytest.python.FixtureRequest
+        # and
+        # https://pytest.org/latest/fixture.html#fixtures-can-introspect-the-requesting-test-context.
+        request,
+        # The tmpdir object for this test. See
+        # https://pytest.org/latest/tmpdir.html.
+        tmpdir):
 
     # Strip the leading 'test_' from the test's name.
     name = request.function.__name__[5:]
     # Copy to tmpdir and return the path.
     return _data_dir_copy(name, tmpdir)
 
-class AppBuilder(object):
 
+class AppBuilder(object):
     def __init__(self, tmpdir, bundle_mode, module_graph):
         self._tmpdir = tmpdir
         self._mode = bundle_mode
@@ -127,7 +132,6 @@ class AppBuilder(object):
         self._distdir = os.path.join(self._tmpdir, 'dist')
         self._builddir = os.path.join(self._tmpdir, 'build')
         self._modgraph = module_graph
-
 
     def test_spec(self, specfile, *args, **kwargs):
         """
@@ -137,7 +141,6 @@ class AppBuilder(object):
         specfile = os.path.join(_SPEC_DIR, specfile)
         # 'test_script' should handle .spec properly as script.
         return self.test_script(specfile, *args, **kwargs)
-
 
     def test_source(self, source, *args, **kwargs):
         """
@@ -176,17 +179,21 @@ class AppBuilder(object):
         # Periods are not allowed in Python module names.
         testname = testname.replace('.', '_')
 
-        scriptfile = os.path.join(os.path.abspath(self._tmpdir),
-                                  testname + '.py')
+        scriptfile = os.path.join(
+            os.path.abspath(self._tmpdir), testname + '.py')
         source = textwrap.dedent(source)
         with io.open(scriptfile, 'w', encoding='utf-8') as ofh:
             print(u'# -*- coding: utf-8 -*-', file=ofh)
             print(source, file=ofh)
         return self.test_script(scriptfile, *args, **kwargs)
 
-
-    def test_script(self, script, pyi_args=None, app_name=None,
-                    app_args=None, runtime=None, run_from_path=False):
+    def test_script(self,
+                    script,
+                    pyi_args=None,
+                    app_name=None,
+                    app_args=None,
+                    runtime=None,
+                    run_from_path=False):
         """
         Main method to wrap all phases of testing a Python script.
 
@@ -223,10 +230,14 @@ class AppBuilder(object):
         assert os.path.exists(self.script), 'Script %s not found.' % script
 
         marker('Starting build.')
-        assert self._test_building(args=pyi_args), 'Building of %s failed.' % script
+        assert self._test_building(
+            args=pyi_args), 'Building of %s failed.' % script
         marker('Build finshed, now running executable.')
-        self._test_executables(app_name, args=app_args,
-                               runtime=runtime, run_from_path=run_from_path)
+        self._test_executables(
+            app_name,
+            args=app_args,
+            runtime=runtime,
+            run_from_path=run_from_path)
         marker('Running executable finished.')
 
     def _test_executables(self, name, args, runtime, run_from_path):
@@ -250,9 +261,11 @@ class AppBuilder(object):
             # Try to find .toc log file. .toc log file has the same basename as exe file.
             toc_log = os.path.join(_LOGS_DIR, os.path.basename(exe) + '.toc')
             if os.path.exists(toc_log):
-                assert self._examine_executable(exe, toc_log), 'Matching .toc of %s failed.' % exe
+                assert self._examine_executable(
+                    exe, toc_log), 'Matching .toc of %s failed.' % exe
             retcode = self._run_executable(exe, args, run_from_path, runtime)
-            assert retcode == 0, 'Running exe %s failed with return-code %s.' % (exe, retcode)
+            assert retcode == 0, 'Running exe %s failed with return-code %s.' % (
+                exe, retcode)
 
     def _find_executables(self, name):
         """
@@ -269,18 +282,22 @@ class AppBuilder(object):
         exes = []
         onedir_pt = os.path.join(self._distdir, name, name)
         onefile_pt = os.path.join(self._distdir, name)
-        patterns = [onedir_pt, onefile_pt,
-                    # Multipackage one-dir
-                    onedir_pt + '_?',
-                    # Multipackage one-file
-                    onefile_pt + '_?']
+        patterns = [
+            onedir_pt,
+            onefile_pt,
+            # Multipackage one-dir
+            onedir_pt + '_?',
+            # Multipackage one-file
+            onefile_pt + '_?'
+        ]
         # For Windows append .exe extension to patterns.
         if is_win:
             patterns = [pt + '.exe' for pt in patterns]
         # For Mac OS X append pattern for .app bundles.
         if is_darwin:
             # e.g:  ./dist/name.app/Contents/MacOS/name
-            pt = os.path.join(self._distdir, name + '.app', 'Contents', 'MacOS', name)
+            pt = os.path.join(self._distdir, name + '.app', 'Contents',
+                              'MacOS', name)
             patterns.append(pt)
         # Apply file patterns.
         for pattern in patterns:
@@ -305,13 +322,15 @@ class AppBuilder(object):
             prog_env['PATH'] = os.pathsep.join(winutils.get_system_path())
 
         exe_path = prog
-        if(run_from_path):
+        if (run_from_path):
             # Run executable in the temp directory
             # Add the directory containing the executable to $PATH
             # Basically, pretend we are a shell executing the program from $PATH.
             prog_cwd = self._tmpdir
             prog_name = os.path.basename(prog)
-            prog_env['PATH'] = os.pathsep.join([prog_env.get('PATH', ''), os.path.dirname(prog)])
+            prog_env['PATH'] = os.pathsep.join(
+                [prog_env.get('PATH', ''),
+                 os.path.dirname(prog)])
 
         else:
             # Run executable in the directory where it is.
@@ -343,8 +362,13 @@ class AppBuilder(object):
         # Windows command prompt. Py.test is then able to collect stdout/sterr
         # messages and display them if a test fails.
 
-        process = psutil.Popen(args, executable=exe_path, stdout=sys.stdout,
-                               stderr=sys.stderr, env=prog_env, cwd=prog_cwd)
+        process = psutil.Popen(
+            args,
+            executable=exe_path,
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+            env=prog_env,
+            cwd=prog_cwd)
         # 'psutil' allows to use timeout in waiting for a subprocess.
         # If not timeout was specified then it is 'None' - no timeout, just waiting.
         # Runtime is useful mostly for interactive tests.
@@ -375,11 +399,10 @@ class AppBuilder(object):
 
         Return True if build succeded False otherwise.
         """
-        default_args = ['--debug', '--noupx',
-                '--specpath', self._specdir,
-                '--distpath', self._distdir,
-                '--workpath', self._builddir,
-                '--path', _MODULES_DIR]
+        default_args = [
+            '--debug', '--noupx', '--specpath', self._specdir, '--distpath',
+            self._distdir, '--workpath', self._builddir, '--path', _MODULES_DIR
+        ]
         default_args.extend(['--debug', '--log-level=DEBUG'])
 
         # Choose bundle mode.
@@ -454,7 +477,9 @@ def pyi_modgraph():
 def pyi_builder(tmpdir, monkeypatch, request, pyi_modgraph):
     tmp = tmpdir.strpath
     # Save/restore environment variable PATH.
-    monkeypatch.setenv('PATH', os.environ['PATH'], )
+    monkeypatch.setenv(
+        'PATH',
+        os.environ['PATH'], )
     # PyInstaller or a test case might manipulate 'sys.path'.
     # Reset it for every test.
     monkeypatch.syspath_prepend(None)
@@ -482,7 +507,9 @@ def pyi_builder(tmpdir, monkeypatch, request, pyi_modgraph):
 def pyi_builder_spec(tmpdir, monkeypatch, pyi_modgraph):
     tmp = tmpdir.strpath
     # Save/restore environment variable PATH.
-    monkeypatch.setenv('PATH', os.environ['PATH'], )
+    monkeypatch.setenv(
+        'PATH',
+        os.environ['PATH'], )
     # Set current working directory to
     monkeypatch.chdir(tmp)
     # PyInstaller or a test case might manipulate 'sys.path'.
@@ -494,6 +521,7 @@ def pyi_builder_spec(tmpdir, monkeypatch, pyi_modgraph):
     monkeypatch.setattr('PyInstaller.config.CONF', {'pathex': []})
 
     return AppBuilder(tmp, None, pyi_modgraph)
+
 
 # Define a fixture which compiles the data/load_dll_using_ctypes/ctypes_dylib.c
 # program in the tmpdir, returning the tmpdir object.
@@ -511,7 +539,9 @@ def compiled_dylib(tmpdir):
             tmp_data_dir = tmp_data_dir.join('ctypes_dylib.dll')
             # For Mingw-x64 we must pass '-m32' to build 32-bit binaries
             march = '-m32' if architecture() == '32bit' else '-m64'
-            ret = subprocess.call('gcc -shared ' + march + ' ctypes_dylib.c -o ctypes_dylib.dll', shell=True)
+            ret = subprocess.call(
+                'gcc -shared ' + march + ' ctypes_dylib.c -o ctypes_dylib.dll',
+                shell=True)
             if ret != 0:
                 # Find path to cl.exe file.
                 from distutils.msvccompiler import MSVCCompiler
@@ -519,19 +549,26 @@ def compiled_dylib(tmpdir):
                 comp.initialize()
                 cl_path = comp.cc
                 # Fallback to msvc.
-                ret = subprocess.call([cl_path, '/LD', 'ctypes_dylib.c'], shell=False)
+                ret = subprocess.call(
+                    [cl_path, '/LD', 'ctypes_dylib.c'], shell=False)
         elif is_darwin:
             tmp_data_dir = tmp_data_dir.join('ctypes_dylib.dylib')
             # On Mac OS X we need to detect architecture - 32 bit or 64 bit.
             arch = 'i386' if architecture() == '32bit' else 'x86_64'
-            cmd = ('gcc -arch ' + arch + ' -Wall -dynamiclib '
-                'ctypes_dylib.c -o ctypes_dylib.dylib -headerpad_max_install_names')
+            cmd = (
+                'gcc -arch ' + arch + ' -Wall -dynamiclib '
+                'ctypes_dylib.c -o ctypes_dylib.dylib -headerpad_max_install_names'
+            )
             ret = subprocess.call(cmd, shell=True)
             id_dylib = os.path.abspath('ctypes_dylib.dylib')
-            ret = subprocess.call('install_name_tool -id %s ctypes_dylib.dylib' % (id_dylib,), shell=True)
+            ret = subprocess.call(
+                'install_name_tool -id %s ctypes_dylib.dylib' % (id_dylib, ),
+                shell=True)
         else:
             tmp_data_dir = tmp_data_dir.join('ctypes_dylib.so')
-            ret = subprocess.call('gcc -fPIC -shared ctypes_dylib.c -o ctypes_dylib.so', shell=True)
+            ret = subprocess.call(
+                'gcc -fPIC -shared ctypes_dylib.c -o ctypes_dylib.so',
+                shell=True)
         assert ret == 0, 'Compile ctypes_dylib failed.'
     finally:
         # Reset the CWD directory.

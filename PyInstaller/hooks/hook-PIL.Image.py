@@ -7,7 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 # This hook was tested with Pillow 2.9.0 (Maintained fork of PIL):
 # https://pypi.python.org/pypi/Pillow
 

@@ -13,9 +13,9 @@ from PyInstaller.utils.hooks import eval_statement
 ### adopted to requests.packages.urllib3.packages.six.
 ### Please see pre_safe_import_module/hook-six.moves.py for documentation.
 
+
 def pre_safe_import_module(api):
-    real_to_six_module_name = eval_statement(
-'''
+    real_to_six_module_name = eval_statement('''
 import requests.packages.urllib3.packages.six as six
 print('{')
 

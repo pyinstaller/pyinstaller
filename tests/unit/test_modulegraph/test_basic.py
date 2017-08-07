@@ -4,10 +4,13 @@ import os, shutil
 
 from PyInstaller.lib.modulegraph import modulegraph
 
+
 class DummyModule(object):
     packagepath = None
+
     def __init__(self, ppath):
         self.packagepath = ppath
+
 
 class FindAllSubmodulesTestCase(unittest.TestCase):
     def testNone(self):
@@ -38,6 +41,7 @@ class FindAllSubmodulesTestCase(unittest.TestCase):
         for sm in mg._find_all_submodules(m):
             sub_ms.append(sm)
         self.assertEqual(sub_ms, [])
+
 
 if __name__ == '__main__':
     unittest.main()

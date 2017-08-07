@@ -27,8 +27,10 @@ def django_dottedstring_imports(django_root_dir):
     pths.append(django_root_dir)
 
     package_name = os.path.basename(django_root_dir) + '.settings'
-    env = {'DJANGO_SETTINGS_MODULE': package_name,
-           'PYTHONPATH': os.pathsep.join(pths)}
+    env = {
+        'DJANGO_SETTINGS_MODULE': package_name,
+        'PYTHONPATH': os.pathsep.join(pths)
+    }
     ret = eval_script('django_import_finder.py', env=env)
 
     return ret
@@ -63,10 +65,12 @@ def django_find_root_dir():
             if os.path.isdir(os.path.join(manage_dir, f)):
                 subfiles = os.listdir(os.path.join(manage_dir, f))
                 # Subdirectory contains critical files.
-                if ('settings.py' in subfiles or 'settings' in subfiles) and 'urls.py' in subfiles:
+                if ('settings.py' in subfiles
+                        or 'settings' in subfiles) and 'urls.py' in subfiles:
                     settings_dir = os.path.join(manage_dir, f)
                     break  # Find the first directory.
 
     return settings_dir
+
 
 __all__ = ('django_dottedstring_imports', 'django_find_root_dir')

@@ -7,7 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 # The 'sysconfig' module requires Makefile and pyconfig.h files from
 # Python installation. 'sysconfig' parses these files to get some
 # information from them.
@@ -25,7 +24,6 @@ if hasattr(sysconfig, 'get_makefile_filename'):
     _MAKEFILE = sysconfig.get_makefile_filename()
 else:
     _MAKEFILE = sysconfig._get_makefile_filename()
-
 
 datas = [(_CONFIG_H, relpath_to_config_or_make(_CONFIG_H))]
 

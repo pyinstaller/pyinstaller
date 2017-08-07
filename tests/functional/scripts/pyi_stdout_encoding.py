@@ -10,7 +10,6 @@
 import sys
 import codecs
 
-
 # Get the expected stdout/stderr encoding for this platform.
 from pyi_testmod_gettemp import gettemp
 
@@ -24,11 +23,9 @@ if not encoding == 'None' and not frozen_encoding == 'None':
     encoding = codecs.lookup(encoding).name
     frozen_encoding = codecs.lookup(frozen_encoding).name
 
-
 print('Encoding expected: ' + encoding)
 print('Encoding current: ' + frozen_encoding)
 
 if not frozen_encoding == encoding:
     raise SystemExit('Frozen encoding %s is not the same as unfrozen %s.' %
                      (frozen_encoding, encoding))
-

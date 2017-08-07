@@ -7,12 +7,9 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 import sys
 
-
 frozen_encoding = str(sys.getfilesystemencoding())
-
 
 # For various OS is encoding different.
 # On Windows it should be still mbcs up to Python 3.5
@@ -34,10 +31,8 @@ else:
     else:
         encoding = 'utf-8'
 
-
 print('Encoding expected: ' + encoding)
 print('Encoding current: ' + frozen_encoding)
-
 
 if not frozen_encoding == encoding:
     raise SystemExit('Frozen encoding %s is not the same as unfrozen %s.' %

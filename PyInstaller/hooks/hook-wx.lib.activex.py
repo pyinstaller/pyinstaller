@@ -7,8 +7,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 from PyInstaller.utils.hooks import exec_statement
 
 # This needed because comtypes wx.lib.activex generates some stuff.
-exec_statement("import wx.lib.activex") 
+exec_statement("import wx.lib.activex")

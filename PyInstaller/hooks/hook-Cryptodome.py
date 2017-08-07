@@ -6,7 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
 """
 Hook for Cryptodome module: https://pypi.python.org/pypi/pycryptodomex
 

@@ -7,12 +7,9 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 # PYTHONHOME (sys.prefix) has to be same as sys._MEIPASS.
 
-
 import sys
-
 
 print(('sys._MEIPASS: ' + sys._MEIPASS))
 print(('sys.prefix: ' + sys.prefix))

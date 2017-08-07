@@ -16,14 +16,13 @@ from PyInstaller.depend.utils import _resolveCtypesImports
 from PyInstaller.compat import is_cygwin
 from PyInstaller.utils.hooks import logger
 
-
 # Include glob for library lookup in run-time hook.
 hiddenimports = ['glob']
 
 # https://github.com/walac/pyusb/blob/master/docs/faq.rst
 # https://github.com/walac/pyusb/blob/master/docs/tutorial.rst
 
-binaries=[]
+binaries = []
 
 # first try to use pyusb library locator
 try:
@@ -45,7 +44,6 @@ try:
 except (ValueError, usb.core.USBError) as exc:
     logger.warning("%s", exc)
 
-
 # if nothing found, try to use our custom mechanism
 if not binaries:
     # Try to resolve your libusb libraries in the following order:
@@ -55,12 +53,14 @@ if not binaries:
     # NOTE: Mind updating run-time hook when adding further libs.
     libusb_candidates = (
         # libusb10
-        'usb-1.0', 'usb', 'libusb-1.0',
+        'usb-1.0',
+        'usb',
+        'libusb-1.0',
         # libusb01
-        'usb-0.1', 'libusb0',
+        'usb-0.1',
+        'libusb0',
         # openusb
-        'openusb',
-    )
+        'openusb', )
 
     for candidate in libusb_candidates:
         libname = ctypes.util.find_library(candidate)
@@ -74,7 +74,7 @@ if not binaries:
         binaries = _resolveCtypesImports(bins)
     elif is_cygwin:
         bins = ['cygusb-1.0-0.dll', 'cygusb0.dll']
-        binaries = _resolveCtypesImports(bins)[:1] # use only the first one
+        binaries = _resolveCtypesImports(bins)[:1]  # use only the first one
     else:
         binaries = []
 

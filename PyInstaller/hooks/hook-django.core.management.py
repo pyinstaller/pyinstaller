@@ -7,7 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 from PyInstaller.compat import modname_tkinter
 from PyInstaller.utils.hooks import collect_submodules
 

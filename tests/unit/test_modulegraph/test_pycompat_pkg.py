@@ -8,17 +8,18 @@ import subprocess
 import os
 from PyInstaller.lib.modulegraph import modulegraph
 
-class TestModuleGraphImport (unittest.TestCase):
+
+class TestModuleGraphImport(unittest.TestCase):
     if not hasattr(unittest.TestCase, 'assertIsInstance'):
+
         def assertIsInstance(self, value, types):
             if not isinstance(value, types):
-                self.fail("%r is not an instance of %r"%(value, types))
+                self.fail("%r is not an instance of %r" % (value, types))
 
     def test_compat(self):
         root = os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                'testpkg-compatmodule')
-        mf = modulegraph.ModuleGraph(path=[ root ] + sys.path)
+            os.path.dirname(os.path.abspath(__file__)), 'testpkg-compatmodule')
+        mf = modulegraph.ModuleGraph(path=[root] + sys.path)
         mf.import_hook('pkg.api')
 
         node = mf.findNode('pkg')
@@ -52,8 +53,6 @@ class TestModuleGraphImport (unittest.TestCase):
 
             node = mf.findNode('urllib2')
             self.assertIs(node, None)
-
-
 
 
 if __name__ == "__main__":

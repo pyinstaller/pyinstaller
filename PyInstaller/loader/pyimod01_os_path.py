@@ -7,24 +7,18 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 ### **NOTE** This module is used during bootstrap.
 ### Import *ONLY* builtin modules.
 ### List of built-in modules: sys.builtin_module_names
-
-
 """
 Set up 'os' and 'os.path' module replacement functions for use during import
 bootstrap.
 """
 
-
 import sys
-
 
 _builtin_names = sys.builtin_module_names
 _mindirlen = 0
-
 
 # Wrap os.environ, os.listdir(), os.sep
 
@@ -99,9 +93,11 @@ else:
 
 
 if 'PYTHONCASEOK' not in os_environ:
+
     def caseOk(filename):
         files = os_listdir(os_path_dirname(filename))
         return os_path_basename(filename) in files
 else:
+
     def caseOk(filename):
         return True

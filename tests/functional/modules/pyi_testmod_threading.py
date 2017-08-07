@@ -7,7 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 import time
 # add a short delay to trigger concurrency problems,
 # see issue #2371.

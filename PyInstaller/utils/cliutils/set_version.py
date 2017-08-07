@@ -7,18 +7,22 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 import os
 import argparse
 
 import PyInstaller.log
 
+
 def run():
     parser = argparse.ArgumentParser()
-    parser.add_argument('info_file', metavar='info-file',
-                        help="text file containing version info")
-    parser.add_argument('exe_file', metavar='exe-file',
-                        help="full pathname of a Windows executable")
+    parser.add_argument(
+        'info_file',
+        metavar='info-file',
+        help="text file containing version info")
+    parser.add_argument(
+        'exe_file',
+        metavar='exe-file',
+        help="full pathname of a Windows executable")
     args = parser.parse_args()
 
     info_file = os.path.abspath(args.info_file)
@@ -26,10 +30,12 @@ def run():
 
     try:
         import PyInstaller.utils.win32.versioninfo
-        vs = PyInstaller.utils.win32.versioninfo.SetVersion(exe_file, info_file)
+        vs = PyInstaller.utils.win32.versioninfo.SetVersion(
+            exe_file, info_file)
         print(('Version info set in: %s' % exe_file))
     except KeyboardInterrupt:
         raise SystemExit("Aborted by user request.")
+
 
 if __name__ == '__main__':
     run()

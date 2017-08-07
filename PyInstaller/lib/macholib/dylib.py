@@ -16,6 +16,7 @@ _DYLIB_RE = re.compile(r"""(?x)
 )
 """)
 
+
 def dylib_info(filename):
     """
     A dylib name can take one of the following four forms:

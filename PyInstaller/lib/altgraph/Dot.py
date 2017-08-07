@@ -118,7 +118,17 @@ class Dot(object):
     their location needs to be specified in the contructor.
     '''
 
-    def __init__(self, graph=None, nodes=None, edgefn=None, nodevisitor=None, edgevisitor=None, name="G", dot='dot', dotty='dotty', neato='neato', graphtype="digraph"):
+    def __init__(self,
+                 graph=None,
+                 nodes=None,
+                 edgefn=None,
+                 nodevisitor=None,
+                 edgevisitor=None,
+                 name="G",
+                 dot='dot',
+                 dotty='dotty',
+                 neato='neato',
+                 graphtype="digraph"):
         '''
         Initialization.
         '''
@@ -139,8 +149,10 @@ class Dot(object):
         if graph is not None and nodes is None:
             nodes = graph
         if graph is not None and edgefn is None:
+
             def edgefn(node, graph=graph):
                 return graph.out_nbrs(node)
+
         if nodes is None:
             nodes = ()
 
@@ -178,9 +190,10 @@ class Dot(object):
         Displays the current graph via dotty
         '''
 
-        if  mode == 'neato':
+        if mode == 'neato':
             self.save_dot(self.temp_neo)
-            neato_cmd = "%s -o %s %s" % (self.neato, self.temp_dot, self.temp_neo)
+            neato_cmd = "%s -o %s %s" % (self.neato, self.temp_dot,
+                                         self.temp_neo)
             os.system(neato_cmd)
         else:
             self.save_dot(self.temp_dot)
@@ -208,24 +221,24 @@ class Dot(object):
         Modifies an edge style to the dot representation.
         '''
         if tail not in self.nodes:
-            raise GraphError("invalid node %s" % (tail,))
+            raise GraphError("invalid node %s" % (tail, ))
 
         try:
             if tail not in self.edges[head]:
-                self.edges[head][tail]= {}
+                self.edges[head][tail] = {}
             self.edges[head][tail] = kwargs
         except KeyError:
-            raise GraphError("invalid edge  %s -> %s " % (head, tail) )
+            raise GraphError("invalid edge  %s -> %s " % (head, tail))
 
     def iterdot(self):
         # write graph title
         if self.type == 'digraph':
-            yield 'digraph %s {\n' % (self.name,)
+            yield 'digraph %s {\n' % (self.name, )
         elif self.type == 'graph':
-            yield 'graph %s {\n' % (self.name,)
+            yield 'graph %s {\n' % (self.name, )
 
         else:
-            raise GraphError("unsupported graphtype %s" % (self.type,))
+            raise GraphError("unsupported graphtype %s" % (self.type, ))
 
         # write overall graph attributes
         for attr_name, attr_value in sorted(self.attr.items()):
@@ -233,12 +246,12 @@ class Dot(object):
         yield '\n'
 
         # some reusable patterns
-        cpatt  = '%s="%s",'      # to separate attributes
-        epatt  = '];\n'          # to end attributes
+        cpatt = '%s="%s",'  # to separate attributes
+        epatt = '];\n'  # to end attributes
 
         # write node attributes
         for node_name, node_attr in sorted(self.nodes.items()):
-            yield '\t"%s" [' % (node_name,)
+            yield '\t"%s" [' % (node_name, )
             for attr_name, attr_value in sorted(node_attr.items()):
                 yield cpatt % (attr_name, attr_value)
             yield epatt
@@ -250,7 +263,8 @@ class Dot(object):
                     yield '\t"%s" -> "%s" [' % (head, tail)
                 else:
                     yield '\t"%s" -- "%s" [' % (head, tail)
-                for attr_name, attr_value in sorted(self.edges[head][tail].items()):
+                for attr_name, attr_value in sorted(
+                        self.edges[head][tail].items()):
                     yield cpatt % (attr_name, attr_value)
                 yield epatt
 
@@ -269,7 +283,7 @@ class Dot(object):
             warnings.warn(DeprecationWarning, "always pass a file_name")
             file_name = self.temp_dot
 
-        fp   = open(file_name, "w")
+        fp = open(file_name, "w")
         try:
             for chunk in self.iterdot():
                 fp.write(chunk)
@@ -285,15 +299,17 @@ class Dot(object):
             warnings.warn(DeprecationWarning, "always pass a file_name")
             file_name = "out"
 
-        if  mode == 'neato':
+        if mode == 'neato':
             self.save_dot(self.temp_neo)
-            neato_cmd = "%s -o %s %s" % (self.neato, self.temp_dot, self.temp_neo)
+            neato_cmd = "%s -o %s %s" % (self.neato, self.temp_dot,
+                                         self.temp_neo)
             os.system(neato_cmd)
             plot_cmd = self.dot
         else:
             self.save_dot(self.temp_dot)
             plot_cmd = self.dot
 
-        file_name  = "%s.%s" % (file_name, file_type)
-        create_cmd = "%s -T%s %s -o %s" % (plot_cmd, file_type, self.temp_dot, file_name)
+        file_name = "%s.%s" % (file_name, file_type)
+        create_cmd = "%s -T%s %s -o %s" % (plot_cmd, file_type, self.temp_dot,
+                                           file_name)
         os.system(create_cmd)

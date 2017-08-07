@@ -3,8 +3,8 @@ import unittest
 from PyInstaller.lib.altgraph import GraphError
 from PyInstaller.lib.altgraph.Graph import Graph
 
-class TestGraph (unittest.TestCase):
 
+class TestGraph(unittest.TestCase):
     def test_nodes(self):
         graph = Graph()
 
@@ -36,7 +36,6 @@ class TestGraph (unittest.TestCase):
         graph.hide_node(1)
         graph.hide_node(2)
         graph.hide_node(3)
-
 
         self.assertEqual(graph.number_of_nodes(), 0)
         self.assertEqual(graph.number_of_hidden_nodes(), 3)
@@ -77,7 +76,8 @@ class TestGraph (unittest.TestCase):
         graph.add_edge(1, 2)
         graph.add_edge(4, 5, 'a')
 
-        self.assertRaises(GraphError, graph.add_edge, 'a', 'b', create_nodes=False)
+        self.assertRaises(
+            GraphError, graph.add_edge, 'a', 'b', create_nodes=False)
 
         self.assertEqual(graph.number_of_hidden_edges(), 0)
         self.assertEqual(graph.number_of_edges(), 2)
@@ -105,8 +105,9 @@ class TestGraph (unittest.TestCase):
         graph.restore_all_edges()
         self.assertEqual(graph.number_of_edges(), 2)
 
-        self.assertEqual(graph.edge_by_id(e1), (1,2))
-        self.assertRaises(GraphError, graph.edge_by_id, (e1+1)*(e2+1)+1)
+        self.assertEqual(graph.edge_by_id(e1), (1, 2))
+        self.assertRaises(GraphError, graph.edge_by_id,
+                          (e1 + 1) * (e2 + 1) + 1)
 
         self.assertEqual(list(sorted(graph.edge_list())), [e1, e2])
 
@@ -154,7 +155,8 @@ class TestGraph (unittest.TestCase):
 
         v = graph.all_edges(5)
         for e in v:
-            self.assertTrue(graph.edge_by_id(e)[1] == 5 or graph.edge_by_id(e)[0] == 5)
+            self.assertTrue(
+                graph.edge_by_id(e)[1] == 5 or graph.edge_by_id(e)[0] == 5)
 
         e1 = graph.edge_by_node(1, 2)
         self.assertTrue(isinstance(e1, int))
@@ -163,8 +165,6 @@ class TestGraph (unittest.TestCase):
         graph.restore_node(1)
         e2 = graph.edge_by_node(1, 2)
         self.assertEqual(e1, e2)
-
-
 
     def test_toposort(self):
         graph = Graph()
@@ -197,7 +197,6 @@ class TestGraph (unittest.TestCase):
         self.assertTrue(result.index(3) < result.index(1))
         self.assertTrue(result.index(4) < result.index(2))
         self.assertTrue(result.index(5) < result.index(3))
-
 
         # Same graph as before, but with edges
         # reversed, which means we should get
@@ -235,7 +234,6 @@ class TestGraph (unittest.TestCase):
         self.assertTrue(result.index(3) < result.index(1))
         self.assertTrue(result.index(4) < result.index(2))
         self.assertTrue(result.index(5) < result.index(3))
-
 
         # Create a cycle
         graph.add_edge(1, 5)
@@ -338,24 +336,24 @@ class TestGraph (unittest.TestCase):
 
         result = list(graph.iterdfs("1"))
         self.assertEqual(result, [
-            '1', '1.3', '1.2', '1.2.2', '1.2.2.3', '1.2.2.2',
-            '1.2.2.1', '1.2.1', '1.1', '1.1.2', '1.1.1'
+            '1', '1.3', '1.2', '1.2.2', '1.2.2.3', '1.2.2.2', '1.2.2.1',
+            '1.2.1', '1.1', '1.1.2', '1.1.1'
         ])
         result = list(graph.iterdfs("1", "1.2.1"))
         self.assertEqual(result, [
-            '1', '1.3', '1.2', '1.2.2', '1.2.2.3', '1.2.2.2',
-            '1.2.2.1', '1.2.1'
+            '1', '1.3', '1.2', '1.2.2', '1.2.2.3', '1.2.2.2', '1.2.2.1',
+            '1.2.1'
         ])
 
         result = graph.forw_dfs("1")
         self.assertEqual(result, [
-            '1', '1.3', '1.2', '1.2.2', '1.2.2.3', '1.2.2.2',
-            '1.2.2.1', '1.2.1', '1.1', '1.1.2', '1.1.1'
+            '1', '1.3', '1.2', '1.2.2', '1.2.2.3', '1.2.2.2', '1.2.2.1',
+            '1.2.1', '1.1', '1.1.2', '1.1.1'
         ])
         result = graph.forw_dfs("1", "1.2.1")
         self.assertEqual(result, [
-            '1', '1.3', '1.2', '1.2.2', '1.2.2.3', '1.2.2.2',
-            '1.2.2.1', '1.2.1'
+            '1', '1.3', '1.2', '1.2.2', '1.2.2.3', '1.2.2.2', '1.2.2.1',
+            '1.2.1'
         ])
 
         graph = Graph()
@@ -372,40 +370,38 @@ class TestGraph (unittest.TestCase):
 
         result = list(graph.iterdfs("1", forward=False))
         self.assertEqual(result, [
-            '1', '1.3', '1.2', '1.2.2', '1.2.2.3', '1.2.2.2',
-            '1.2.2.1', '1.2.1', '1.1', '1.1.2', '1.1.1'
+            '1', '1.3', '1.2', '1.2.2', '1.2.2.3', '1.2.2.2', '1.2.2.1',
+            '1.2.1', '1.1', '1.1.2', '1.1.1'
         ])
         result = list(graph.iterdfs("1", "1.2.1", forward=False))
         self.assertEqual(result, [
-            '1', '1.3', '1.2', '1.2.2', '1.2.2.3', '1.2.2.2',
-            '1.2.2.1', '1.2.1'
+            '1', '1.3', '1.2', '1.2.2', '1.2.2.3', '1.2.2.2', '1.2.2.1',
+            '1.2.1'
         ])
         result = graph.back_dfs("1")
         self.assertEqual(result, [
-            '1', '1.3', '1.2', '1.2.2', '1.2.2.3', '1.2.2.2',
-            '1.2.2.1', '1.2.1', '1.1', '1.1.2', '1.1.1'
+            '1', '1.3', '1.2', '1.2.2', '1.2.2.3', '1.2.2.2', '1.2.2.1',
+            '1.2.1', '1.1', '1.1.2', '1.1.1'
         ])
         result = graph.back_dfs("1", "1.2.1")
         self.assertEqual(result, [
-            '1', '1.3', '1.2', '1.2.2', '1.2.2.3', '1.2.2.2',
-            '1.2.2.1', '1.2.1'
+            '1', '1.3', '1.2', '1.2.2', '1.2.2.3', '1.2.2.2', '1.2.2.1',
+            '1.2.1'
         ])
-
 
         # Introduce cyle:
         graph.add_edge("1", "1.2")
         result = list(graph.iterdfs("1", forward=False))
         self.assertEqual(result, [
-            '1', '1.3', '1.2', '1.2.2', '1.2.2.3', '1.2.2.2',
-            '1.2.2.1', '1.2.1', '1.1', '1.1.2', '1.1.1'
+            '1', '1.3', '1.2', '1.2.2', '1.2.2.3', '1.2.2.2', '1.2.2.1',
+            '1.2.1', '1.1', '1.1.2', '1.1.1'
         ])
 
         result = graph.back_dfs("1")
         self.assertEqual(result, [
-            '1', '1.3', '1.2', '1.2.2', '1.2.2.3', '1.2.2.2',
-            '1.2.2.1', '1.2.1', '1.1', '1.1.2', '1.1.1'
+            '1', '1.3', '1.2', '1.2.2', '1.2.2.3', '1.2.2.2', '1.2.2.1',
+            '1.2.1', '1.1', '1.1.2', '1.1.1'
         ])
-
 
     def test_iterdata(self):
         graph = Graph()
@@ -444,12 +440,9 @@ class TestGraph (unittest.TestCase):
             'I.II.II.I', 'I.II.I'
         ])
 
-        result = list(graph.iterdata("1", condition=lambda n: len(n) < 6, forward=True))
-        self.assertEqual(result, [
-            'I', 'I.III', 'I.II',
-            'I.I', 'I.I.I'
-        ])
-
+        result = list(
+            graph.iterdata("1", condition=lambda n: len(n) < 6, forward=True))
+        self.assertEqual(result, ['I', 'I.III', 'I.II', 'I.I', 'I.I.I'])
 
         # And the revese option:
         graph = Graph()
@@ -488,11 +481,9 @@ class TestGraph (unittest.TestCase):
             'I.II.II.I', 'I.II.I'
         ])
 
-        result = list(graph.iterdata("1", condition=lambda n: len(n) < 6, forward=False))
-        self.assertEqual(result, [
-            'I', 'I.III', 'I.II',
-            'I.I', 'I.I.I'
-        ])
+        result = list(
+            graph.iterdata("1", condition=lambda n: len(n) < 6, forward=False))
+        self.assertEqual(result, ['I', 'I.III', 'I.II', 'I.I', 'I.I.I'])
 
     def test_bfs(self):
         graph = Graph()
@@ -505,11 +496,13 @@ class TestGraph (unittest.TestCase):
         graph.add_edge("1", "1.3")
         graph.add_edge("1.2", "1.2.1")
 
-        self.assertEqual(graph.forw_bfs("1"),
-                ['1', '1.1', '1.2', '1.3', '1.1.1', '1.1.2', '1.2.1', '1.1.2.1', '1.1.2.2'])
-        self.assertEqual(graph.forw_bfs("1", "1.1.1"),
-                ['1', '1.1', '1.2', '1.3', '1.1.1'])
-
+        self.assertEqual(
+            graph.forw_bfs("1"), [
+                '1', '1.1', '1.2', '1.3', '1.1.1', '1.1.2', '1.2.1', '1.1.2.1',
+                '1.1.2.2'
+            ])
+        self.assertEqual(
+            graph.forw_bfs("1", "1.1.1"), ['1', '1.1', '1.2', '1.3', '1.1.1'])
 
         # And the "reverse" graph
         graph = Graph()
@@ -522,18 +515,21 @@ class TestGraph (unittest.TestCase):
         graph.add_edge("1.3", "1")
         graph.add_edge("1.2.1", "1.2")
 
-        self.assertEqual(graph.back_bfs("1"),
-                ['1', '1.1', '1.2', '1.3', '1.1.1', '1.1.2', '1.2.1', '1.1.2.1', '1.1.2.2'])
-        self.assertEqual(graph.back_bfs("1", "1.1.1"),
-                ['1', '1.1', '1.2', '1.3', '1.1.1'])
-
-
+        self.assertEqual(
+            graph.back_bfs("1"), [
+                '1', '1.1', '1.2', '1.3', '1.1.1', '1.1.2', '1.2.1', '1.1.2.1',
+                '1.1.2.2'
+            ])
+        self.assertEqual(
+            graph.back_bfs("1", "1.1.1"), ['1', '1.1', '1.2', '1.3', '1.1.1'])
 
         # check cycle handling
         graph.add_edge("1", "1.2.1")
-        self.assertEqual(graph.back_bfs("1"),
-                ['1', '1.1', '1.2', '1.3', '1.1.1', '1.1.2', '1.2.1', '1.1.2.1', '1.1.2.2'])
-
+        self.assertEqual(
+            graph.back_bfs("1"), [
+                '1', '1.1', '1.2', '1.3', '1.1.1', '1.1.2', '1.2.1', '1.1.2.1',
+                '1.1.2.2'
+            ])
 
     def test_connected(self):
         graph = Graph()
@@ -555,7 +551,7 @@ class TestGraph (unittest.TestCase):
     def test_edges_complex(self):
         g = Graph()
         g.add_edge(1, 2)
-        e = g.edge_by_node(1,2)
+        e = g.edge_by_node(1, 2)
         g.hide_edge(e)
         g.hide_node(2)
         self.assertRaises(GraphError, g.restore_edge, e)
@@ -576,11 +572,11 @@ class TestGraph (unittest.TestCase):
         self.assertEqual(g.clust_coef(1), 0)
 
         g.add_edge(2, 3)
-        self.assertEqual(g.clust_coef(1), 1./6)
+        self.assertEqual(g.clust_coef(1), 1. / 6)
         g.add_edge(2, 4)
-        self.assertEqual(g.clust_coef(1), 2./6)
+        self.assertEqual(g.clust_coef(1), 2. / 6)
         g.add_edge(4, 2)
-        self.assertEqual(g.clust_coef(1), 3./6)
+        self.assertEqual(g.clust_coef(1), 3. / 6)
 
         g.add_edge(2, 3)
         g.add_edge(2, 4)
@@ -589,7 +585,6 @@ class TestGraph (unittest.TestCase):
         g.add_edge(4, 2)
         g.add_edge(4, 3)
         self.assertEqual(g.clust_coef(1), 1)
-
 
     def test_get_hops(self):
         graph = Graph()
@@ -600,18 +595,20 @@ class TestGraph (unittest.TestCase):
         graph.add_edge(5, 7)
         graph.add_edge(7, 8)
 
-        self.assertEqual(graph.get_hops(1),
-            [(1, 0), (2, 1), (3, 1), (4, 2), (5, 3), (7, 4), (8, 5)])
+        self.assertEqual(
+            graph.get_hops(1), [(1, 0), (2, 1), (3, 1), (4, 2), (5, 3), (7, 4),
+                                (8, 5)])
 
-        self.assertEqual(graph.get_hops(1, 5),
-            [(1, 0), (2, 1), (3, 1), (4, 2), (5, 3)])
+        self.assertEqual(
+            graph.get_hops(1, 5), [(1, 0), (2, 1), (3, 1), (4, 2), (5, 3)])
 
         graph.add_edge(5, 1)
         graph.add_edge(7, 1)
         graph.add_edge(7, 4)
 
-        self.assertEqual(graph.get_hops(1),
-            [(1, 0), (2, 1), (3, 1), (4, 2), (5, 3), (7, 4), (8, 5)])
+        self.assertEqual(
+            graph.get_hops(1), [(1, 0), (2, 1), (3, 1), (4, 2), (5, 3), (7, 4),
+                                (8, 5)])
 
         # And the reverse graph
         graph = Graph()
@@ -622,40 +619,43 @@ class TestGraph (unittest.TestCase):
         graph.add_edge(7, 5)
         graph.add_edge(8, 7)
 
-        self.assertEqual(graph.get_hops(1, forward=False),
-            [(1, 0), (2, 1), (3, 1), (4, 2), (5, 3), (7, 4), (8, 5)])
+        self.assertEqual(
+            graph.get_hops(1, forward=False), [(1, 0), (2, 1), (3, 1), (4, 2),
+                                               (5, 3), (7, 4), (8, 5)])
 
-        self.assertEqual(graph.get_hops(1, 5, forward=False),
-            [(1, 0), (2, 1), (3, 1), (4, 2), (5, 3)])
+        self.assertEqual(
+            graph.get_hops(1, 5, forward=False), [(1, 0), (2, 1), (3, 1),
+                                                  (4, 2), (5, 3)])
 
         graph.add_edge(1, 5)
         graph.add_edge(1, 7)
         graph.add_edge(4, 7)
 
-        self.assertEqual(graph.get_hops(1, forward=False),
-            [(1, 0), (2, 1), (3, 1), (4, 2), (5, 3), (7, 4), (8, 5)])
-
+        self.assertEqual(
+            graph.get_hops(1, forward=False), [(1, 0), (2, 1), (3, 1), (4, 2),
+                                               (5, 3), (7, 4), (8, 5)])
 
     def test_constructor(self):
         graph = Graph(iter([
-                (1, 2),
-                (2, 3, 'a'),
-                (1, 3),
-                (3, 4),
-            ]))
+            (1, 2),
+            (2, 3, 'a'),
+            (1, 3),
+            (3, 4),
+        ]))
         self.assertEqual(graph.number_of_nodes(), 4)
         self.assertEqual(graph.number_of_edges(), 4)
         try:
-            graph.edge_by_node(1,2)
-            graph.edge_by_node(2,3)
-            graph.edge_by_node(1,3)
-            graph.edge_by_node(3,4)
+            graph.edge_by_node(1, 2)
+            graph.edge_by_node(2, 3)
+            graph.edge_by_node(1, 3)
+            graph.edge_by_node(3, 4)
         except GraphError:
             self.fail("Incorrect graph")
 
         self.assertEqual(graph.edge_data(graph.edge_by_node(2, 3)), 'a')
 
-        self.assertRaises(GraphError, Graph, [(1,2,3,4)])
+        self.assertRaises(GraphError, Graph, [(1, 2, 3, 4)])
 
-if __name__ == "__main__": # pragma: no cover
+
+if __name__ == "__main__":  # pragma: no cover
     unittest.main()

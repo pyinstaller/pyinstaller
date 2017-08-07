@@ -36,4 +36,5 @@ elif compat.is_linux:
     # shapely but it has not been accepted it:
     # https://github.com/Toblerity/Shapely/pull/485
     if is_module_satisfies('shapely <= 1.6'):
-        binaries += [(os.path.join(lib_dir, f), dest_dir) for f in os.listdir(lib_dir)]
+        binaries += [(os.path.join(lib_dir, f), dest_dir)
+                     for f in os.listdir(lib_dir)]

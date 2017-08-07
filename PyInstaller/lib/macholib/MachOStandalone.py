@@ -6,8 +6,10 @@ from PyInstaller.lib.macholib.util import iter_platform_files, in_system_path, m
 from PyInstaller.lib.macholib.dyld import framework_info
 from collections import deque
 
+
 class ExcludedMachO(MissingMachO):
     pass
+
 
 class FilteredMachOGraph(MachOGraph):
     def __init__(self, delegate, *args, **kwargs):
@@ -25,15 +27,20 @@ class FilteredMachOGraph(MachOGraph):
             return None
         return self.delegate.locate(newname)
 
+
 class MachOStandalone(object):
-    def __init__(self, base, dest=None, graph=None, env=None,
-            executable_path=None):
+    def __init__(self,
+                 base,
+                 dest=None,
+                 graph=None,
+                 env=None,
+                 executable_path=None):
         self.base = os.path.join(os.path.abspath(base), '')
         if dest is None:
             dest = os.path.join(self.base, 'Contents', 'Frameworks')
         self.dest = dest
-        self.mm = FilteredMachOGraph(self, graph=graph, env=env,
-            executable_path=executable_path)
+        self.mm = FilteredMachOGraph(
+            self, graph=graph, env=env, executable_path=executable_path)
         self.changemap = {}
         self.excludes = []
         self.pending = deque()
@@ -71,7 +78,8 @@ class MachOStandalone(object):
         # as the name in standalone bundle. This avoids problems when two libraries
         # link to the same dylib but using different symlinks.
         if os.path.islink(filename):
-            dest = os.path.join(self.dest, os.path.basename(os.path.realpath(filename)))
+            dest = os.path.join(self.dest,
+                                os.path.basename(os.path.realpath(filename)))
         else:
             dest = os.path.join(self.dest, os.path.basename(filename))
 

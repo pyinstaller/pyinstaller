@@ -93,8 +93,8 @@ def get_gi_typelibs(module, version):
             logger.debug('Found gir typelib at %s', d)
             datas.append(d)
 
-        hiddenimports += collect_submodules('gi.overrides',
-                           lambda name: name.endswith('.' + module))
+        hiddenimports += collect_submodules(
+            'gi.overrides', lambda name: name.endswith('.' + module))
 
         # Load dependencies recursively
         for dep in typelibs_data['deps']:
@@ -149,13 +149,15 @@ def gir_library_path_fix(path):
                     files = re.split('(["|,])', split[2])
                     for count, item in enumerate(files):
                         if 'lib' in item:
-                            files[count] = '@loader_path/' + os.path.basename(item)
+                            files[count] = '@loader_path/' + os.path.basename(
+                                item)
                     line = ''.join(split[0:2]) + ''.join(files)
                 f.write(line)
 
         # g-ir-compiler expects a file so we cannot just pipe the fixed file to it.
-        command = subprocess.Popen(('g-ir-compiler', os.path.join(CONF['workpath'], gir_name),
-                                    '-o', os.path.join(CONF['workpath'], typelib_name)))
+        command = subprocess.Popen(('g-ir-compiler', os.path.join(
+            CONF['workpath'], gir_name), '-o', os.path.join(
+                CONF['workpath'], typelib_name)))
         command.wait()
 
         return os.path.join(CONF['workpath'], typelib_name), 'gi_typelibs'
@@ -215,7 +217,8 @@ def collect_glib_share_files(*path):
     collected = []
     for data_dir in glib_data_dirs:
         p = os.path.join(data_dir, *path)
-        collected += collect_system_data_files(p, destdir=destdir, include_py_files=False)
+        collected += collect_system_data_files(
+            p, destdir=destdir, include_py_files=False)
 
     return collected
 
@@ -232,9 +235,11 @@ def collect_glib_etc_files(*path):
     collected = []
     for config_dir in glib_config_dirs:
         p = os.path.join(config_dir, *path)
-        collected += collect_system_data_files(p, destdir=destdir, include_py_files=False)
+        collected += collect_system_data_files(
+            p, destdir=destdir, include_py_files=False)
 
     return collected
+
 
 _glib_translations = None
 
@@ -247,11 +252,14 @@ def collect_glib_translations(prog):
     if _glib_translations is None:
         _glib_translations = collect_glib_share_files('locale')
 
-    names = [os.sep + prog + '.mo',
-             os.sep + prog + '.po']
+    names = [os.sep + prog + '.mo', os.sep + prog + '.po']
     namelen = len(names[0])
 
-    return [(src, dst) for src, dst in _glib_translations if src[-namelen:] in names]
+    return [(src, dst) for src, dst in _glib_translations
+            if src[-namelen:] in names]
 
-__all__ = ('get_typelibs', 'get_gi_libdir', 'get_gi_typelibs', 'gir_library_path_fix', 'get_glib_system_data_dirs',
-           'get_glib_sysconf_dirs', 'collect_glib_share_files', 'collect_glib_etc_files', 'collect_glib_translations')
+
+__all__ = ('get_typelibs', 'get_gi_libdir', 'get_gi_typelibs',
+           'gir_library_path_fix', 'get_glib_system_data_dirs',
+           'get_glib_sysconf_dirs', 'collect_glib_share_files',
+           'collect_glib_etc_files', 'collect_glib_translations')

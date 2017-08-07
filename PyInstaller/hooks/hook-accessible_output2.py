@@ -6,7 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
 """
 accessible_output2: http://hg.q-continuum.net/accessible_output2
 """

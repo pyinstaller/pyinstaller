@@ -6,21 +6,16 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
-
 """
 Hook for Python bindings for Amazon's Product Advertising API.
 https://bitbucket.org/basti/python-amazon-product-api
 """
 
-
-hiddenimports = ['amazonproduct.processors.__init__',
-                 'amazonproduct.processors._lxml',
-                 'amazonproduct.processors.objectify',
-                 'amazonproduct.processors.elementtree',
-                 'amazonproduct.processors.etree',
-                 'amazonproduct.processors.minidom',
-                 'amazonproduct.contrib.__init__',
-                 'amazonproduct.contrib.cart',
-                 'amazonproduct.contrib.caching',
-                 'amazonproduct.contrib.retry']
+hiddenimports = [
+    'amazonproduct.processors.__init__', 'amazonproduct.processors._lxml',
+    'amazonproduct.processors.objectify',
+    'amazonproduct.processors.elementtree', 'amazonproduct.processors.etree',
+    'amazonproduct.processors.minidom', 'amazonproduct.contrib.__init__',
+    'amazonproduct.contrib.cart', 'amazonproduct.contrib.caching',
+    'amazonproduct.contrib.retry'
+]

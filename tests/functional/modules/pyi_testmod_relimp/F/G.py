@@ -7,5 +7,4 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 name = 'pyi_testmod_relimp.F.G'

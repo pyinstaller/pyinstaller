@@ -6,8 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
-
 """
 This module parses all Django dependencies from the module mysite.settings.py.
 
@@ -16,7 +14,6 @@ NOTE: With newer version of Django this is most likely the part of PyInstaller
 
 Tested with Django 1.8.
 """
-
 
 import os
 
@@ -99,12 +96,11 @@ for app in settings.INSTALLED_APPS:
     hiddenimports += collect_submodules(app_templatetag_module)
     hiddenimports.append(app_ctx_proc_module)
 
-
 from django.core.urlresolvers import RegexURLPattern, RegexURLResolver
 
-
 # Construct base module name - without 'settings' suffix.
-base_module_name = '.'.join(os.environ['DJANGO_SETTINGS_MODULE'].split('.')[0:-1])
+base_module_name = '.'.join(
+    os.environ['DJANGO_SETTINGS_MODULE'].split('.')[0:-1])
 base_module = __import__(base_module_name, {}, {}, ["urls"])
 urls = base_module.urls
 

@@ -7,7 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 hiddenimports = [
     # win32com client and server util
     # modules could be hidden imports

@@ -6,11 +6,8 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
-
 """
 Hook for http://pypi.python.org/pypi/adios/
 """
-
 
 hiddenimports = ['adios._hl.selections']
