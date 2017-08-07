@@ -13,6 +13,7 @@ except ImportError:
 
 __all__ = ['itergraphreport']
 
+
 def itergraphreport(nodes, describe_edge, name='G'):
     edges = deque()
     nodetoident = {}
@@ -24,11 +25,11 @@ def itergraphreport(nodes, describe_edge, name='G'):
     def edgevisitor(edge, data, head, tail):
         return {}
 
-    yield 'digraph %s {\n' % (name,)
+    yield 'digraph %s {\n' % (name, )
     attr = dict(rankdir='LR', concentrate='true')
-    cpatt  = '%s="%s"'
+    cpatt = '%s="%s"'
     for item in attr.iteritems():
-        yield '\t%s;\n' % (cpatt % item,)
+        yield '\t%s;\n' % (cpatt % item, )
 
     # find all packages (subgraphs)
     for (node, data, outgoing, incoming) in nodes:
@@ -42,12 +43,9 @@ def itergraphreport(nodes, describe_edge, name='G'):
 
         # describe node
         yield '\t"%s" [%s];\n' % (
-            node,
-            ','.join([
-                (cpatt % item) for item in
-                nodevisitor(node, data, outgoing, incoming).iteritems()
-            ]),
-        )
+            node, ','.join([(cpatt % item)
+                            for item in nodevisitor(node, data, outgoing,
+                                                    incoming).iteritems()]), )
 
     graph = []
 
@@ -61,11 +59,9 @@ def itergraphreport(nodes, describe_edge, name='G'):
         # describe edge
         for (edge, data, head, tail) in edges:
             attribs = edgevisitor(edge, data, head, tail)
-            yield edgestr % (
-                head,
-                tail,
-                ','.join([(cpatt % item) for item in attribs.iteritems()]),
-            )
+            yield edgestr % (head, tail,
+                             ','.join([(cpatt % item)
+                                       for item in attribs.iteritems()]), )
 
     for s in do_graph(graph, '\t'):
         yield s

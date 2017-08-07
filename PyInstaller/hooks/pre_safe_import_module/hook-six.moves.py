@@ -7,7 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 from PyInstaller.utils.hooks import eval_statement
 
 
@@ -32,8 +31,7 @@ def pre_safe_import_module(api):
     """
     # Dictionary from conventional module names to "six.moves" attribute names
     # (e.g., from `tkinter.tix` to `six.moves.tkinter_tix`).
-    real_to_six_module_name = eval_statement(
-'''
+    real_to_six_module_name = eval_statement('''
 import six
 print('{')
 

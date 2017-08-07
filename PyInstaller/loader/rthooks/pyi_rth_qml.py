@@ -10,7 +10,7 @@
 # By default Qt looks for the qml import libraries in the app dir but we can't
 # put theme there because of a name clash (on OSX) with the QtQuick dll. So
 # they are put in a "qml" directory. Some of the import files are data but
-# others are dlls. See hooks/hook-PyQt5.QtQuick.py and the associated 
+# others are dlls. See hooks/hook-PyQt5.QtQuick.py and the associated
 # support functions in PyInstaller/utiles/hooks/__init__.py.
 
 # Add a runtime hook to tell Qt5 where to find the Qml import libs.

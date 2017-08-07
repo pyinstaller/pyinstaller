@@ -9,9 +9,6 @@
 
 # Shorten list of hidden imports to what PyQt5.QtWebKitWidgets actually
 # does link to. It does not need Qml, QSql, or QtQuick.
-hiddenimports = ["sip",
-                 "PyQt5.QtCore",
-                 "PyQt5.QtGui",
-                 "PyQt5.QtNetwork",
-                 "PyQt5.QtWebKit"
-                 ]
+hiddenimports = [
+    "sip", "PyQt5.QtCore", "PyQt5.QtGui", "PyQt5.QtNetwork", "PyQt5.QtWebKit"
+]

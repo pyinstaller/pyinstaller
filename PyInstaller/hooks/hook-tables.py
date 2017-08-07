@@ -7,6 +7,5 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 # PyTables is a package for managing hierarchical datasets
 hiddenimports = ["tables._comp_lzo", "tables._comp_bzip2"]

@@ -6,8 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
-
 """
 Hook for _mysql, required if higher-level pure python module is not imported
 """

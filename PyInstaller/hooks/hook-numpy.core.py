@@ -18,7 +18,7 @@ import os
 import os.path
 import re
 from PyInstaller.utils.hooks import get_package_paths
-from PyInstaller import log as logging 
+from PyInstaller import log as logging
 from PyInstaller import compat
 
 binaries = []
@@ -41,5 +41,6 @@ if os.path.isdir(lib_dir):
     dlls_mkl = [f for f in os.listdir(lib_dir) if re_mkllib.match(f)]
     if dlls_mkl:
         logger = logging.getLogger(__name__)
-        logger.info("MKL libraries found when importing numpy. Adding MKL to binaries")
+        logger.info(
+            "MKL libraries found when importing numpy. Adding MKL to binaries")
         binaries += [(os.path.join(lib_dir, f), '') for f in dlls_mkl]

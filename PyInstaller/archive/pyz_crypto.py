@@ -42,6 +42,7 @@ class PyiBlockCipher(object):
     """
     This class is used only to encrypt Python modules.
     """
+
     def __init__(self, key=None):
         assert type(key) is str
         if len(key) > BLOCK_SIZE:

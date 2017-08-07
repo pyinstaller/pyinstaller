@@ -6,8 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
-
 """
 Python 2 module 'pydoc' causes the inclusion of Tcl/Tk library even in case
 of simple hello_world script. Most of the we do not want this behavior.
@@ -17,7 +15,6 @@ This hook just removes this implicit dependency on Tcl/Tk.
 """
 
 from PyInstaller.compat import is_py2, modname_tkinter
-
 
 # Ignore 'Tkinter' to prevent inclusion of Tcl/Tk library.
 if is_py2:

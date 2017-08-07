@@ -6,13 +6,10 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
-
 """
 pyttsx imports drivers module based on specific platform.
 Found at http://mrmekon.tumblr.com/post/5272210442/pyinstaller-and-pyttsx
 """
-
 
 hiddenimports = [
     'drivers',

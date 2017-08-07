@@ -5,6 +5,7 @@ import argparse
 import textwrap
 from .modulegraph import ModuleGraph
 
+
 def main():
     # Parse command line
     usage = textwrap.dedent('''\
@@ -26,12 +27,14 @@ def main():
     parser.add_argument('-d', action='count', dest='debug', default=1)
     parser.add_argument('-q', action='store_const', dest='debug', const=0)
 
-    parser.add_argument('-m', action='store_true', dest='domods', default=False)
+    parser.add_argument(
+        '-m', action='store_true', dest='domods', default=False)
     parser.add_argument('-x', action='append', dest='excludes', default=[])
     parser.add_argument('-p', action='append', dest='addpath', default=[])
 
     parser.add_argument('-g', action='store_const', dest='output', const='dot')
-    parser.add_argument('-h', action='store_const', dest='output', const='html')
+    parser.add_argument(
+        '-h', action='store_const', dest='output', const='html')
     opts, args = parser.parse_args()
 
     if not args:

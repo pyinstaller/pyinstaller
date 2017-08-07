@@ -6,13 +6,10 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
-
 """
 Various classes and functions to provide some backwards-compatibility
 with previous versions of Python from 2.7 onward.
 """
-
 
 import io
 import os
@@ -52,45 +49,50 @@ is_hpux = sys.platform.startswith('hp-ux')
 # platform specific details for Mac in PyInstaller.
 is_unix = is_linux or is_solar or is_aix or is_freebsd or is_hpux
 
-
 # On different platforms is different file for dynamic python library.
 _pyver = sys.version_info[:2]
 if is_win:
     PYDYLIB_NAMES = {'python%d%d.dll' % _pyver,
                      'libpython%d.%d.dll' % _pyver}  # For MSYS2 environment
 elif is_cygwin:
-    PYDYLIB_NAMES = {'libpython%d%d.dll' % _pyver,
-                     'libpython%d%dm.dll' % _pyver,
-                     'libpython%d.%d.dll' % _pyver,
-                     'libpython%d.%dm.dll' % _pyver}
+    PYDYLIB_NAMES = {
+        'libpython%d%d.dll' % _pyver,
+        'libpython%d%dm.dll' % _pyver,
+        'libpython%d.%d.dll' % _pyver,
+        'libpython%d.%dm.dll' % _pyver
+    }
 elif is_darwin:
     # libpython%d.%dm.dylib for Conda virtual environment installations
-    PYDYLIB_NAMES = {'Python', '.Python',
-                     'libpython%d.%d.dylib' % _pyver,
-                     'libpython%d.%dm.dylib' % _pyver}
+    PYDYLIB_NAMES = {
+        'Python', '.Python',
+        'libpython%d.%d.dylib' % _pyver,
+        'libpython%d.%dm.dylib' % _pyver
+    }
 elif is_aix:
     # Shared libs on AIX are archives with shared object members, thus the ".a" suffix.
     # However, python 2.7.11 built with XLC produces libpython?.?.so file, too.
-    PYDYLIB_NAMES = {'libpython%d.%d.a' % _pyver,
-                     'libpython%d.%d.so' % _pyver}
+    PYDYLIB_NAMES = {'libpython%d.%d.a' % _pyver, 'libpython%d.%d.so' % _pyver}
 elif is_freebsd:
-    PYDYLIB_NAMES = {'libpython%d.%d.so.1' % _pyver,
-                     'libpython%d.%dm.so.1' % _pyver,
-                     'libpython%d.%d.so.1.0' % _pyver,
-                     'libpython%d.%dm.so.1.0' % _pyver}
+    PYDYLIB_NAMES = {
+        'libpython%d.%d.so.1' % _pyver,
+        'libpython%d.%dm.so.1' % _pyver,
+        'libpython%d.%d.so.1.0' % _pyver,
+        'libpython%d.%dm.so.1.0' % _pyver
+    }
 elif is_hpux:
     PYDYLIB_NAMES = {'libpython%d.%d.so' % _pyver}
 elif is_unix:
     # Other *nix platforms.
     # Python 2 .so library on Linux is: libpython2.7.so.1.0
     # Python 3 .so library on Linux is: libpython3.2mu.so.1.0, libpython3.3m.so.1.0
-    PYDYLIB_NAMES = {'libpython%d.%d.so.1.0' % _pyver,
-                     'libpython%d.%dm.so.1.0' % _pyver,
-                     'libpython%d.%dmu.so.1.0' % _pyver}
+    PYDYLIB_NAMES = {
+        'libpython%d.%d.so.1.0' % _pyver,
+        'libpython%d.%dm.so.1.0' % _pyver,
+        'libpython%d.%dmu.so.1.0' % _pyver
+    }
 else:
     raise SystemExit('Your platform is not yet supported. '
                      'Please define constant PYDYLIB_NAMES for your platform.')
-
 
 # Function with which to open files. In Python 3, this is the open() built-in;
 # in Python 2, this is the Python 3 open() built-in backported into the "io"
@@ -145,7 +147,6 @@ if __debug__:
 else:
     _PYOPTS = '-O'
 
-
 # In a virtual environment created by virtualenv (github.com/pypa/virtualenv)
 # there exists sys.real_prefix with the path to the base Python
 # installation from which the virtual environment was created. This is true regardless of
@@ -161,13 +162,11 @@ else:
 # compat.base_prefix with the path to the
 # base Python installation.
 
-base_prefix = getattr( sys, 'real_prefix',
-                       getattr( sys, 'base_prefix', sys.prefix )
-                        )
+base_prefix = getattr(sys, 'real_prefix',
+                      getattr(sys, 'base_prefix', sys.prefix))
 # Ensure `base_prefix` is not containing any relative parts.
 base_prefix = os.path.abspath(base_prefix)
 is_venv = is_virtualenv = base_prefix != os.path.abspath(sys.prefix)
-
 
 # In Python 3.4 module 'imp' is deprecated and there is another way how
 # to obtain magic value.
@@ -179,16 +178,15 @@ else:
     import imp
     BYTECODE_MAGIC = imp.get_magic()
 
-
 # List of suffixes for Python C extension modules.
 try:
     # In Python 3.3+ There is a list
     from importlib.machinery import EXTENSION_SUFFIXES
 except ImportError:
     import imp
-    EXTENSION_SUFFIXES = [f[0] for f in imp.get_suffixes()
-                          if f[2] == imp.C_EXTENSION]
-
+    EXTENSION_SUFFIXES = [
+        f[0] for f in imp.get_suffixes() if f[2] == imp.C_EXTENSION
+    ]
 
 # In Python 3 'Tkinter' has been made lowercase - 'tkinter'. Keep Python 2
 # compatibility.
@@ -209,7 +207,7 @@ def architecture():
         # returns "64bit" event for the 32bit version of Python's
         # universal binary. So we roll out our own (that works
         # on Darwin).
-        if sys.maxsize > 2 ** 32:
+        if sys.maxsize > 2**32:
             return '64bit'
         else:
             return '32bit'
@@ -254,6 +252,7 @@ def machine():
 # "Calling putenv() directly does not change os.environ, so it's
 # better to modify os.environ." (Same for unsetenv.)
 
+
 def getenv(name, default=None):
     """
     Returns unicode string containing value of environment variable 'name'.
@@ -281,6 +280,7 @@ def unsetenv(name):
 
 
 # Exec commands in subprocesses.
+
 
 def exec_command(*cmdargs, **kwargs):
     """
@@ -336,7 +336,8 @@ def exec_command(*cmdargs, **kwargs):
     """
 
     encoding = kwargs.pop('encoding', None)
-    out = subprocess.Popen(cmdargs, stdout=subprocess.PIPE, **kwargs).communicate()[0]
+    out = subprocess.Popen(
+        cmdargs, stdout=subprocess.PIPE, **kwargs).communicate()[0]
     # Python 3 returns stdout/stderr as a byte array NOT as string.
     # Thus we need to convert that to proper encoding.
 
@@ -471,8 +472,12 @@ def exec_command_all(*cmdargs, **kwargs):
         Ignore this 3-element tuple `(exit_code, stdout, stderr)`. See the
         `exec_command()` function for discussion.
     """
-    proc = subprocess.Popen(cmdargs, bufsize=-1,  # Default OS buffer size.
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs)
+    proc = subprocess.Popen(
+        cmdargs,
+        bufsize=-1,  # Default OS buffer size.
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        **kwargs)
     # Waits for subprocess to complete.
     out, err = proc.communicate()
     # Python 3 returns stdout/stderr as a byte array NOT as string.
@@ -487,7 +492,6 @@ def exec_command_all(*cmdargs, **kwargs):
             # only because it's the common case.
             out = os.fsdecode(out)
             err = os.fsdecode(err)
-
 
     return proc.returncode, out, err
 
@@ -560,6 +564,7 @@ def exec_python_all(*args, **kwargs):
 
 ## Path handling.
 
+
 # The function os.getcwd() in Python 2 does not work with unicode paths on Windows.
 def getcwd():
     """
@@ -600,6 +605,7 @@ try:
 # backported without modification from the most recent stable version of
 # Python as of this writing: Python 3.5.1.
 except ImportError:
+
     def which(cmd, mode=os.F_OK | os.X_OK, path=None):
         """Given a command, mode, and a PATH string, return the path which
         conforms to the given mode on the PATH, or None if there is no such
@@ -610,6 +616,7 @@ except ImportError:
         path.
 
         """
+
         # Check that a given file can be accessed with the correct mode.
         # Additionally check that `file` is not a directory, as on Windows
         # directories pass the os.access check.
@@ -669,6 +676,7 @@ if hasattr(site, 'getsitepackages'):
 # Backported For Python 2.6 and virtualenv.
 # Module 'site' in virtualenv might not have this attribute.
 else:
+
     def getsitepackages():
         """
         Return only one item as list with one item.
@@ -692,7 +700,6 @@ try:
 except ImportError:
     from imp import reload as module_reload
 
-
 # Wrapper to load a module from a Python source file.
 # This function loads import hooks when processing them.
 if is_py2:
@@ -700,7 +707,8 @@ if is_py2:
     importlib_load_source = imp.load_source
 else:
     import importlib.machinery
-    def importlib_load_source(name, pathname):                # Import module from a file.
+
+    def importlib_load_source(name, pathname):  # Import module from a file.
         mod_loader = importlib.machinery.SourceFileLoader(name, pathname)
         return mod_loader.load_module()
 
@@ -709,12 +717,12 @@ try:
     # new in Python 3
     FileNotFoundError_ = FileNotFoundError
 except NameError:
+
     class FileNotFoundError(OSError):
         pass
 else:
     FileNotFoundError = FileNotFoundError_
     del FileNotFoundError_
-
 
 # Patterns of module names that should be bundled into the base_library.zip.
 
@@ -848,7 +856,8 @@ def check_requirements():
             # wasn't careful and added an import where it shouldn't be
             # Unfortunately this error is triggered when running under pytest
             # since all PyInstaller runs are done in the same process
-            logger.warning("Internal error: early pywin32 import was introduced")
+            logger.warning(
+                "Internal error: early pywin32 import was introduced")
             return
 
         try:
@@ -858,12 +867,13 @@ def check_requirements():
             except ImportError:
                 from win32ctypes.pywin32 import pywintypes
                 from win32ctypes.pywin32 import win32api
-                
+
                 # if this succeeded, then install pywin32-ctypes into sys.modules
                 sys.modules['win32api'] = win32api
                 sys.modules['pywintypes'] = pywintypes
 
         except ImportError:
-            raise SystemExit('PyInstaller cannot check for assembly dependencies.\n'
-                             'Please install PyWin32 or pywin32-ctypes.\n\n'
-                             'pip install pypiwin32\n')
+            raise SystemExit(
+                'PyInstaller cannot check for assembly dependencies.\n'
+                'Please install PyWin32 or pywin32-ctypes.\n\n'
+                'pip install pypiwin32\n')

@@ -6,12 +6,9 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
-
 """
 Python library httplib does not work when trying to use ssl. The following
 modules should be included with httplib.
 """
-
 
 hiddenimports = ['_ssl', 'ssl']

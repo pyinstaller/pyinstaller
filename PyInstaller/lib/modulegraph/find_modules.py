@@ -18,45 +18,43 @@ from . import modulegraph
 from .modulegraph import Alias, Script, Extension
 from .util import imp_find_module
 
-__all__ = [
-    'find_modules', 'parse_mf_results'
-]
+__all__ = ['find_modules', 'parse_mf_results']
+
 
 def get_implies():
     result = {
         # imports done from builtin modules in C code (untrackable by modulegraph)
-        "_curses":      ["curses"],
-        "posix":        ["resource"],
-        "gc":           ["time"],
-        "time":         ["_strptime"],
-        "datetime":     ["time"],
-        "MacOS":        ["macresource"],
-        "cPickle":      ["copy_reg", "cStringIO"],
-        "parser":       ["copy_reg"],
-        "codecs":       ["encodings"],
-        "cStringIO":    ["copy_reg"],
-        "_sre":         ["copy", "string", "sre"],
-        "zipimport":    ["zlib"],
+        "_curses": ["curses"],
+        "posix": ["resource"],
+        "gc": ["time"],
+        "time": ["_strptime"],
+        "datetime": ["time"],
+        "MacOS": ["macresource"],
+        "cPickle": ["copy_reg", "cStringIO"],
+        "parser": ["copy_reg"],
+        "codecs": ["encodings"],
+        "cStringIO": ["copy_reg"],
+        "_sre": ["copy", "string", "sre"],
+        "zipimport": ["zlib"],
 
         # Python 3.2:
-        "_datetime":    ["time", "_strptime"],
-        "_json":        ["json.decoder"],
-        "_pickle":      ["codecs", "copyreg", "_compat_pickle"],
+        "_datetime": ["time", "_strptime"],
+        "_json": ["json.decoder"],
+        "_pickle": ["codecs", "copyreg", "_compat_pickle"],
         "_posixsubprocess": ["gc"],
-        "_ssl":         ["socket"],
+        "_ssl": ["socket"],
 
         # Python 3.3:
-        "_elementtree": ["copy", "xml.etree.ElementPath" ],
+        "_elementtree": ["copy", "xml.etree.ElementPath"],
 
         # mactoolboxglue can do a bunch more of these
         # that are far harder to predict, these should be tracked
         # manually for now.
 
         # this isn't C, but it uses __import__
-        "anydbm":       ["dbhash", "gdbm", "dbm", "dumbdbm", "whichdb"],
+        "anydbm": ["dbhash", "gdbm", "dbm", "dumbdbm", "whichdb"],
         # package aliases
-        "wxPython.wx":  Alias('wx'),
-
+        "wxPython.wx": Alias('wx'),
     }
 
     if sys.version_info[0] == 3:
@@ -68,25 +66,44 @@ def get_implies():
 
     if sys.version_info[0] == 2 and sys.version_info[1] >= 5:
         result.update({
-            "email.base64MIME":         Alias("email.base64mime"),
-            "email.Charset":            Alias("email.charset"),
-            "email.Encoders":           Alias("email.encoders"),
-            "email.Errors":             Alias("email.errors"),
-            "email.Feedparser":         Alias("email.feedParser"),
-            "email.Generator":          Alias("email.generator"),
-            "email.Header":             Alias("email.header"),
-            "email.Iterators":          Alias("email.iterators"),
-            "email.Message":            Alias("email.message"),
-            "email.Parser":             Alias("email.parser"),
-            "email.quopriMIME":         Alias("email.quoprimime"),
-            "email.Utils":              Alias("email.utils"),
-            "email.MIMEAudio":          Alias("email.mime.audio"),
-            "email.MIMEBase":           Alias("email.mime.base"),
-            "email.MIMEImage":          Alias("email.mime.image"),
-            "email.MIMEMessage":        Alias("email.mime.message"),
-            "email.MIMEMultipart":      Alias("email.mime.multipart"),
-            "email.MIMENonMultipart":   Alias("email.mime.nonmultipart"),
-            "email.MIMEText":           Alias("email.mime.text"),
+            "email.base64MIME":
+            Alias("email.base64mime"),
+            "email.Charset":
+            Alias("email.charset"),
+            "email.Encoders":
+            Alias("email.encoders"),
+            "email.Errors":
+            Alias("email.errors"),
+            "email.Feedparser":
+            Alias("email.feedParser"),
+            "email.Generator":
+            Alias("email.generator"),
+            "email.Header":
+            Alias("email.header"),
+            "email.Iterators":
+            Alias("email.iterators"),
+            "email.Message":
+            Alias("email.message"),
+            "email.Parser":
+            Alias("email.parser"),
+            "email.quopriMIME":
+            Alias("email.quoprimime"),
+            "email.Utils":
+            Alias("email.utils"),
+            "email.MIMEAudio":
+            Alias("email.mime.audio"),
+            "email.MIMEBase":
+            Alias("email.mime.base"),
+            "email.MIMEImage":
+            Alias("email.mime.image"),
+            "email.MIMEMessage":
+            Alias("email.mime.message"),
+            "email.MIMEMultipart":
+            Alias("email.mime.multipart"),
+            "email.MIMENonMultipart":
+            Alias("email.mime.nonmultipart"),
+            "email.MIMEText":
+            Alias("email.mime.text"),
         })
 
     if sys.version_info[:2] >= (2, 5):
@@ -96,7 +113,7 @@ def get_implies():
         files = os.listdir(xml.etree.__path__[0])
         for fn in files:
             if fn.endswith('.py') and fn != "__init__.py":
-                result["_elementtree"].append("xml.etree.%s"%(fn[:-3],))
+                result["_elementtree"].append("xml.etree.%s" % (fn[:-3], ))
 
     if sys.version_info[:2] >= (2, 6):
         result['future_builtins'] = ['itertools']
@@ -105,8 +122,8 @@ def get_implies():
     # ensure that the graph shows this.
     result['os.path'] = Alias(os.path.__name__)
 
-
     return result
+
 
 def parse_mf_results(mf):
     """
@@ -152,11 +169,11 @@ def plat_prepare(includes, packages, excludes):
     includes.update(["warnings", "unicodedata", "weakref"])
 
     #if os.uname()[0] != 'java':
-        # Jython specific imports in the stdlib:
-        #excludes.update([
-        #    'java.lang',
-        #    'org.python.core',
-        #])
+    # Jython specific imports in the stdlib:
+    #excludes.update([
+    #    'java.lang',
+    #    'org.python.core',
+    #])
 
     if not sys.platform.startswith('irix'):
         excludes.update([
@@ -204,14 +221,14 @@ def plat_prepare(includes, packages, excludes):
             'msvcrt',
             'winreg',
             '_subprocess',
-         ])
+        ])
 
     if not sys.platform == 'riscos':
         excludes.update([
-             'riscosenviron',
-             #'riscospath',
-             'rourl2path',
-          ])
+            'riscosenviron',
+            #'riscospath',
+            'rourl2path',
+        ])
 
     if not sys.platform == 'dos' or sys.platform.startswith('ms-dos'):
         excludes.update([
@@ -224,7 +241,9 @@ def plat_prepare(includes, packages, excludes):
             '_emx_link',
         ])
 
-    excludes.update(set(['posix', 'nt', 'os2', 'mac', 'ce', 'riscos']) - set(sys.builtin_module_names))
+    excludes.update(
+        set(['posix', 'nt', 'os2', 'mac', 'ce', 'riscos']) -
+        set(sys.builtin_module_names))
 
     # Carbon.Res depends on this, but the module hasn't been present
     # for a while...
@@ -241,7 +260,12 @@ def plat_prepare(includes, packages, excludes):
             'poll',
         ])
 
-def find_needed_modules(mf=None, scripts=(), includes=(), packages=(), warn=warnings.warn):
+
+def find_needed_modules(mf=None,
+                        scripts=(),
+                        includes=(),
+                        packages=(),
+                        warn=warnings.warn):
     if mf is None:
         mf = modulegraph.ModuleGraph()
     # feed Modulefinder with everything, and return it.
@@ -256,7 +280,7 @@ def find_needed_modules(mf=None, scripts=(), includes=(), packages=(), warn=warn
             else:
                 mf.import_hook(mod)
         except ImportError:
-            warn("No module named %s"%(mod,))
+            warn("No module named %s" % (mod, ))
 
     for f in packages:
         # If modulegraph has seen a reference to the package, then
@@ -284,7 +308,8 @@ def find_needed_modules(mf=None, scripts=(), includes=(), packages=(), warn=warn
         # 2) Code is fairly dodgy and needs better tests
         for (dirpath, dirnames, filenames) in os.walk(path):
             if '__init__.py' in filenames and dirpath.startswith(path):
-                package = f + '.' + dirpath[len(path)+1:].replace(os.sep, '.')
+                package = f + '.' + dirpath[len(path) + 1:].replace(
+                    os.sep, '.')
                 if package.endswith('.'):
                     package = package[:-1]
                 m = mf.import_hook(package, None, ["*"])
@@ -292,8 +317,8 @@ def find_needed_modules(mf=None, scripts=(), includes=(), packages=(), warn=warn
                 # Exclude subtrees that aren't packages
                 dirnames[:] = []
 
-
     return mf
+
 
 #
 # resource constants
@@ -308,16 +333,24 @@ C_SUFFIXES = [
 # side-effects
 #
 
+
 def _replacePackages():
     REPLACEPACKAGES = {
-        '_xmlplus':     'xml',
+        '_xmlplus': 'xml',
     }
-    for k,v in REPLACEPACKAGES.items():
+    for k, v in REPLACEPACKAGES.items():
         modulegraph.replacePackage(k, v)
+
 
 _replacePackages()
 
-def find_modules(scripts=(), includes=(), packages=(), excludes=(), path=None, debug=0):
+
+def find_modules(scripts=(),
+                 includes=(),
+                 packages=(),
+                 excludes=(),
+                 path=None,
+                 debug=0):
     """
     High-level interface, takes iterables for:
         scripts, includes, packages, excludes
@@ -337,10 +370,10 @@ def find_modules(scripts=(), includes=(), packages=(), excludes=(), path=None, d
         path=path,
         excludes=(excludes - includes),
         implies=get_implies(),
-        debug=debug,
-    )
+        debug=debug, )
     find_needed_modules(mf, scripts, includes, packages)
     return mf
+
 
 def test():
     if '-g' in sys.argv[1:]:
@@ -352,7 +385,7 @@ def test():
         sys.argv.remove('-x')
         doxref = True
     else:
-        doxref= False
+        doxref = False
 
     scripts = sys.argv[1:] or [__file__]
     mf = find_modules(scripts=scripts)
@@ -362,6 +395,7 @@ def test():
         mf.graphreport()
     else:
         mf.report()
+
 
 if __name__ == '__main__':
     test()

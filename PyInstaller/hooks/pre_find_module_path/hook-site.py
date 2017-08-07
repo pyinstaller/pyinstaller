@@ -6,7 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
 """
 Replace the code of real 'site' module by fake code doing nothing.
 
@@ -21,6 +20,7 @@ import os
 
 from PyInstaller.utils.hooks import logger
 from PyInstaller import PACKAGEPATH
+
 
 def pre_find_module_path(api):
     #FIXME: For reusability, move this into a new

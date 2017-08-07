@@ -6,8 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
-
 """
 This is a fake 'site' module available in default Python Library.
 
@@ -23,14 +21,12 @@ __pyinstaller__faked__site__module__ = True
 
 # TODO test the following code stub from real 'site' module.
 
-
 # Prefixes for site-packages; add additional prefixes like /usr/local here
 PREFIXES = []
 
 # Enable per user site-packages directory
 # set it to False to disable the feature or True to force the feature
 ENABLE_USER_SITE = False
-
 
 # For distutils.commands.install
 # These values are initialized by the getuserbase() and getusersitepackages()
@@ -44,15 +40,17 @@ USER_BASE = None
 # This code could be probably removed when the following bug is fixed:
 # https://github.com/ipython/ipython/issues/2606
 class _Helper(object):
-     """
+    """
      Define the builtin 'help'.
      This is a wrapper around pydoc.help (with a twist).
      """
-     def __repr__(self):
-         return "Type help() for interactive help, " \
-                "or help(object) for help about object."
-     def __call__(self, *args, **kwds):
-         # Do *not* use `import` here, otherwise pydoc will be included in
-         # *every* frozen app
-         pydoc = __import__(''.join('pydoc'))
-         return pydoc.help(*args, **kwds)
+
+    def __repr__(self):
+        return "Type help() for interactive help, " \
+               "or help(object) for help about object."
+
+    def __call__(self, *args, **kwds):
+        # Do *not* use `import` here, otherwise pydoc will be included in
+        # *every* frozen app
+        pydoc = __import__(''.join('pydoc'))
+        return pydoc.help(*args, **kwds)

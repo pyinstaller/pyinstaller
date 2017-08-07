@@ -7,11 +7,11 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 from PyInstaller.utils.hooks import qt_plugins_binaries
 
 hiddenimports = ['PySide.QtCore']
 
 binaries = []
-for plug in ('accessible', 'iconengines', 'imageformats', 'inputmethods', 'graphicssystems'):
+for plug in ('accessible', 'iconengines', 'imageformats', 'inputmethods',
+             'graphicssystems'):
     binaries.extend(qt_plugins_binaries(plug, namespace='PySide'))

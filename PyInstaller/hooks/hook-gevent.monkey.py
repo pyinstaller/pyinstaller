@@ -19,13 +19,7 @@ from PyInstaller.utils.hooks import is_module_satisfies
 # monkey patching in gevent 1.1 uses dynamic imports
 if is_module_satisfies('gevent >= 1.1b0'):
     hiddenimports = [
-        'gevent.builtins',
-        'gevent.os',
-        'gevent.select',
-        'gevent.signal',
-        'gevent.socket',
-        'gevent.subprocess',
-        'gevent.ssl',
-        'gevent.thread',
+        'gevent.builtins', 'gevent.os', 'gevent.select', 'gevent.signal',
+        'gevent.socket', 'gevent.subprocess', 'gevent.ssl', 'gevent.thread',
         'gevent.threading'
     ]

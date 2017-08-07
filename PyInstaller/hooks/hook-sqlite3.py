@@ -7,7 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 from PyInstaller.utils.hooks import collect_submodules
 
 hiddenimports = []
@@ -17,4 +16,3 @@ hiddenimports = []
 for mod in collect_submodules('sqlite3'):
     if not mod.startswith('sqlite3.test'):
         hiddenimports.append(mod)
-

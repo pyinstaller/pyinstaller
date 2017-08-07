@@ -7,7 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 # Hook for the diStorm3 module: https://pypi.python.org/pypi/distorm3
 # Tested with distorm3 3.3.0, Python 2.7, Windows
 

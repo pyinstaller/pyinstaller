@@ -6,8 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
-
 """
 This CArchiveReader is used only by the archieve_viewer utility.
 """
@@ -15,7 +13,6 @@ This CArchiveReader is used only by the archieve_viewer utility.
 # TODO clean up this module
 
 import struct
-
 
 from PyInstaller.loader.pyimod02_archive import (
     ArchiveReader, PYZ_TYPE_MODULE, PYZ_TYPE_PKG, PYZ_TYPE_DATA)
@@ -46,18 +43,17 @@ class CTOCReader(object):
         p = 0
 
         while p < len(s):
-            (slen, dpos, dlen, ulen, flag, typcd) = struct.unpack(self.ENTRYSTRUCT,
-                                                        s[p:p + self.ENTRYLEN])
+            (slen, dpos, dlen, ulen, flag, typcd) = struct.unpack(
+                self.ENTRYSTRUCT, s[p:p + self.ENTRYLEN])
             nmlen = slen - self.ENTRYLEN
             p = p + self.ENTRYLEN
-            (nm,) = struct.unpack('%is' % nmlen, s[p:p + nmlen])
+            (nm, ) = struct.unpack('%is' % nmlen, s[p:p + nmlen])
             p = p + nmlen
             # nm may have up to 15 bytes of padding
             nm = nm.rstrip(b'\0')
             nm = nm.decode('utf-8')
             typcd = chr(typcd)
             self.data.append((dpos, dlen, ulen, flag, typcd, nm))
-
 
     def get(self, ndx):
         """
@@ -124,7 +120,6 @@ class CArchiveReader(ArchiveReader):
         self.length = length
         self._pylib_name = pylib_name
 
-
         # A CArchive created from scratch starts at 0, no leading bootloader.
         self.pkg_start = 0
         super(CArchiveReader, self).__init__(archive_path, start)
@@ -143,8 +138,8 @@ class CArchiveReader(ArchiveReader):
         else:
             self.lib.seek(0, 2)
         filelen = self.lib.tell()
-        
-        self.lib.seek(max(0, filelen-4096)) 
+
+        self.lib.seek(max(0, filelen - 4096))
         searchpos = self.lib.tell()
         buf = self.lib.read(min(filelen, 4096))
         pos = buf.rfind(self.MAGIC)
@@ -153,7 +148,7 @@ class CArchiveReader(ArchiveReader):
                                (self.path, self.__class__.__name__))
         filelen = searchpos + pos + self._cookie_size
         (magic, totallen, tocpos, toclen, pyvers, pylib_name) = struct.unpack(
-            self._cookie_format, buf[pos:pos+self._cookie_size])
+            self._cookie_format, buf[pos:pos + self._cookie_size])
         if magic != self.MAGIC:
             raise RuntimeError("%s is not a valid %s archive file" %
                                (self.path, self.__class__.__name__))
@@ -161,11 +156,12 @@ class CArchiveReader(ArchiveReader):
         self.pkg_start = filelen - totallen
         if self.length:
             if totallen != self.length or self.pkg_start != self.start:
-                raise RuntimeError('Problem with embedded archive in %s' %
-                        self.path)
+                raise RuntimeError(
+                    'Problem with embedded archive in %s' % self.path)
         # Verify presence of Python library name.
         if not pylib_name:
-            raise RuntimeError('Python library filename not defined in archive.')
+            raise RuntimeError(
+                'Python library filename not defined in archive.')
         self.tocpos, self.toclen = tocpos, toclen
 
     def loadtoc(self):
@@ -232,6 +228,6 @@ class CArchiveReader(ArchiveReader):
             raise NotAnArchiveError('%s is not an archive' % name)
 
         if flag:
-            raise ValueError('Cannot open compressed archive %s in place' %
-                    name)
+            raise ValueError(
+                'Cannot open compressed archive %s in place' % name)
         return CArchiveReader(self.path, self.pkg_start + dpos, dlen)

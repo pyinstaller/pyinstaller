@@ -7,9 +7,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 from PyInstaller.utils.hooks import get_pyextension_imports
-
 
 # It's hard to detect imports of binary Python module without importing it.
 # Let's try importing that module in a subprocess.

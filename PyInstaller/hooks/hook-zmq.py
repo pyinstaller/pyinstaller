@@ -6,8 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
-
 """
 Hook for PyZMQ. Cython based Python bindings for messaging library ZeroMQ.
 http://www.zeromq.org/

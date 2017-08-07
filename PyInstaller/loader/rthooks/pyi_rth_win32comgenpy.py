@@ -7,7 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 # The win32.client.gencache code must be allowed to create the cache in %temp%
 # (user's temp). It is necessary to get the gencache code to use a suitable
 # directory other than the default in lib\site-packages\win32com\client\gen_py.
@@ -17,18 +16,15 @@
 #
 # http://www.py2exe.org/index.cgi/UsingEnsureDispatch
 
-
 import atexit
 import os
 import shutil
 import tempfile
 
-
 # Put gen_py cache in temp directory.
 supportdir = tempfile.mkdtemp()
 # gen_py has to be put into directory 'gen_py'.
 genpydir = os.path.join(supportdir, 'gen_py')
-
 
 # Create 'gen_py' directory. This directory does not need
 # to contain '__init__.py' file.
@@ -42,18 +38,15 @@ try:
 except OSError:
     pass
 
-
 # Override the default path to gen_py cache.
 import win32com
 win32com.__gen_path__ = genpydir
-
 
 # The attribute __loader__ makes module 'pkg_resources' working but On Windows
 # it breaks pywin32 (win32com) and test 'basic/test_pyttsx' will fail. Just
 # removing that attribute for win32com fixes that and gencache is created properly.
 if hasattr(win32com, '__loader__'):
     del win32com.__loader__
-
 
 # Ensure genpydir is in 'gen_py' module paths.
 import win32com.gen_py

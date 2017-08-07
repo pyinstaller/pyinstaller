@@ -21,14 +21,12 @@ def collect_native_files(package, files):
     pkg_base, pkg_dir = get_package_paths(package)
     return [(os.path.join(pkg_dir, file), '') for file in files]
 
+
 if is_win:
-    files = ['Bacon.dll', 
-             'd3dcompiler_46.dll',
-             'libEGL.dll',
-             'libGLESv2.dll',
-             'msvcp110.dll',
-             'msvcr110.dll',
-             'vccorllib110.dll']
+    files = [
+        'Bacon.dll', 'd3dcompiler_46.dll', 'libEGL.dll', 'libGLESv2.dll',
+        'msvcp110.dll', 'msvcr110.dll', 'vccorllib110.dll'
+    ]
     if ctypes.sizeof(ctypes.c_void_p) == 4:
         hiddenimports = ["bacon.windows32"]
         datas = collect_native_files('bacon.windows32', files)

@@ -6,7 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
 """
 PyWin32 package 'win32com' extends it's __path__ attribute with win32comext
 directory and thus PyInstaller is not able to find modules in it. For example
@@ -16,7 +15,6 @@ module 'win32com.shell' is in reality 'win32comext.shell'.
 ['win32com', 'C:\\Python27\\Lib\\site-packages\\win32comext']
 
 """
-
 
 import os
 

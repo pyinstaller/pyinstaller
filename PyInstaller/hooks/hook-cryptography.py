@@ -6,8 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
-
 """
 Hook for cryptography module from the Python Cryptography Authority.
 """
@@ -26,8 +24,9 @@ datas = copy_metadata('cryptography')
 hiddenimports = collect_submodules('cryptography.hazmat.backends')
 
 # Add the OpenSSL FFI binding modules as hidden imports
-hiddenimports += collect_submodules('cryptography.hazmat.bindings.openssl') + ['_cffi_backend']
-
+hiddenimports += collect_submodules('cryptography.hazmat.bindings.openssl') + [
+    '_cffi_backend'
+]
 
 # Include the cffi extensions as binaries in a subfolder named like the package.
 # The cffi verifier expects to find them inside the package directory for

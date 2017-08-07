@@ -7,7 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 import codecs
 import os
 import argparse
@@ -17,15 +16,20 @@ import PyInstaller.log
 
 def run():
     parser = argparse.ArgumentParser(
-        epilog = ('The printed output may be saved to a file, edited and '
-                  'used as the input for a version resource on any of the '
-                  'executable targets in an Installer spec file.'))
-    parser.add_argument('exe_file', metavar='exe-file',
-                        help="full pathname of a Windows executable")
-    parser.add_argument('out_filename', metavar='out-filename', nargs='?',
-                        default='file_version_info.txt',
-                        help=("filename where the grabbed version info "
-                              "will be saved"))
+        epilog=('The printed output may be saved to a file, edited and '
+                'used as the input for a version resource on any of the '
+                'executable targets in an Installer spec file.'))
+    parser.add_argument(
+        'exe_file',
+        metavar='exe-file',
+        help="full pathname of a Windows executable")
+    parser.add_argument(
+        'out_filename',
+        metavar='out-filename',
+        nargs='?',
+        default='file_version_info.txt',
+        help=("filename where the grabbed version info "
+              "will be saved"))
 
     args = parser.parse_args()
 
@@ -33,11 +37,12 @@ def run():
         import PyInstaller.utils.win32.versioninfo
         vs = PyInstaller.utils.win32.versioninfo.decode(args.exe_file)
         fp = codecs.open(args.out_filename, 'w', 'utf-8')
-        fp.write(u"%s" % (vs,))
+        fp.write(u"%s" % (vs, ))
         fp.close()
         print(('Version info written to: %s' % args.out_filename))
     except KeyboardInterrupt:
         raise SystemExit("Aborted by user request.")
+
 
 if __name__ == '__main__':
     run()

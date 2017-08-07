@@ -7,10 +7,8 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 import os
 import sys
-
 
 # Without this environment variable set to 'no' importing 'gst'
 # causes 100% CPU load. (Tested on OSX.)

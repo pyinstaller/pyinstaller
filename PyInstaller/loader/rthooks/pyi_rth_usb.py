@@ -7,7 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 import ctypes
 import glob
 import os
@@ -20,7 +19,7 @@ except:
 try:
     import usb.backend.libusb01 as libusb01
 except:
-    import usb.backend.libusb0 as libusb01 
+    import usb.backend.libusb0 as libusb01
 import usb.backend.openusb as openusb
 
 
@@ -58,6 +57,7 @@ def get_load_func(type, candidates):
             if not hasattr(l, 'libusb_init'):
                 raise OSError('USB library could not be found')
         return l
+
     return _load_library
 
 
@@ -67,6 +67,8 @@ if sys.platform == 'cygwin':
     libusb01._load_library = get_load_func('libusb01', ('cygusb0', ))
     openusb._load_library = get_load_func('openusb', ('openusb', ))
 else:
-    libusb10._load_library = get_load_func('libusb10', ('usb-1.0', 'libusb-1.0', 'usb'))
-    libusb01._load_library = get_load_func('libusb01', ('usb-0.1', 'usb', 'libusb0', 'libusb'))
+    libusb10._load_library = get_load_func('libusb10', ('usb-1.0',
+                                                        'libusb-1.0', 'usb'))
+    libusb01._load_library = get_load_func('libusb01', ('usb-0.1', 'usb',
+                                                        'libusb0', 'libusb'))
     openusb._load_library = get_load_func('openusb', ('openusb', ))

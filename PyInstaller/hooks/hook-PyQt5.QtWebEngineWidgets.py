@@ -11,13 +11,14 @@ import os
 from PyInstaller.utils.hooks import get_qmake_path
 import PyInstaller.compat as compat
 
-hiddenimports = ["sip",
-                 "PyQt5.QtCore",
-                 "PyQt5.QtGui",
-                 "PyQt5.QtNetwork",
-                 "PyQt5.QtWebChannel",
-                 "PyQt5.QtWebEngineCore",
-                 ]
+hiddenimports = [
+    "sip",
+    "PyQt5.QtCore",
+    "PyQt5.QtGui",
+    "PyQt5.QtNetwork",
+    "PyQt5.QtWebChannel",
+    "PyQt5.QtWebEngineCore",
+]
 
 # Find the additional files necessary for QtWebEngine.
 # Currently only implemented for OSX.
@@ -37,14 +38,14 @@ if qmake:
              os.path.join('QtWebEngineProcess.app', 'Contents', 'MacOS'))
         ]
 
-        resources_dir = os.path.join(libdir, 'QtWebEngineCore.framework', 'Versions', '5', 'Resources')
+        resources_dir = os.path.join(libdir, 'QtWebEngineCore.framework',
+                                     'Versions', '5', 'Resources')
         datas = [
             (os.path.join(resources_dir, 'icudtl.dat'),''),
             (os.path.join(resources_dir, 'qtwebengine_resources.pak'), ''),
             # The distributed Info.plist has LSUIElement set to true, which prevents the
-            # icon from appearing in the dock. 
+            # icon from appearing in the dock.
             (os.path.join(libdir, 'QtWebEngineCore.framework', 'Versions', '5',\
                            'Helpers', 'QtWebEngineProcess.app', 'Contents', 'Info.plist'),
                      os.path.join('QtWebEngineProcess.app', 'Contents'))
         ]
-        

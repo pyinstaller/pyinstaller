@@ -6,8 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
-
 """
 pywin32 module supports frozen mode. In frozen mode it is looking
 in sys.path for file pywintypesXX.dll. Include the pywintypesXX.dll

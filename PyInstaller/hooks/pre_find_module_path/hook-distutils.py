@@ -6,7 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
 """
 `distutils`-specific pre-find module path hook.
 
@@ -15,7 +14,6 @@ When run from within a venv (virtual environment), this hook changes the
 venv-specific `distutils` package. While the former is suitable for freezing,
 the latter is intended for use _only_ from within venvs.
 """
-
 
 import distutils
 import os
@@ -30,4 +28,5 @@ def pre_find_module_path(api):
     if distutils_dir is not None:
         # Find this package in its parent directory.
         api.search_dirs = [os.path.dirname(distutils_dir)]
-        logger.info('distutils: retargeting to non-venv dir %r' % distutils_dir)
+        logger.info(
+            'distutils: retargeting to non-venv dir %r' % distutils_dir)

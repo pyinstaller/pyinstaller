@@ -20,6 +20,7 @@ try:
 except NameError:
     unicode = str
 
+
 class MissingMachO(object):
     def __init__(self, filename):
         self.graphident = filename
@@ -28,10 +29,12 @@ class MissingMachO(object):
     def __repr__(self):
         return '<%s graphident=%r>' % (type(self).__name__, self.graphident)
 
+
 class MachOGraph(ObjectGraph):
     """
     Graph data structure of Mach-O dependencies
     """
+
     def __init__(self, debug=0, graph=None, env=None, executable_path=None):
         super(MachOGraph, self).__init__(debug=debug, graph=graph)
         self.env = env
@@ -44,7 +47,9 @@ class MachOGraph(ObjectGraph):
             fn = self.trans_table.get((loader.filename, filename))
             if fn is None:
                 try:
-                    fn = dyld_find(filename, env=self.env,
+                    fn = dyld_find(
+                        filename,
+                        env=self.env,
                         executable_path=self.executable_path,
                         loader=loader.filename)
                     self.trans_table[(loader.filename, filename)] = fn
@@ -55,7 +60,9 @@ class MachOGraph(ObjectGraph):
             fn = self.trans_table.get(filename)
             if fn is None:
                 try:
-                    fn = dyld_find(filename, env=self.env,
+                    fn = dyld_find(
+                        filename,
+                        env=self.env,
                         executable_path=self.executable_path)
                     self.trans_table[filename] = fn
                 except ValueError:
@@ -78,7 +85,7 @@ class MachOGraph(ObjectGraph):
         m = self.findNode(pathname, loader=caller)
         if m is None:
             if not os.path.exists(pathname):
-                raise ValueError('%r does not exist' % (pathname,))
+                raise ValueError('%r does not exist' % (pathname, ))
             m = self.createNode(MachO, pathname)
             self.createReference(caller, m, edge_data='run_file')
             self.scan_node(m)
@@ -121,11 +128,13 @@ class MachOGraph(ObjectGraph):
             fileobj = sys.stdout
         fileobj.writelines(self.itergraphreport())
 
+
 def main(args):
     g = MachOGraph()
     for arg in args:
         g.run_file(arg)
     g.graphreport()
+
 
 if __name__ == '__main__':
     main(sys.argv[1:] or ['/bin/ls'])

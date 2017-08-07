@@ -28,17 +28,20 @@ def fsencoding(s, encoding=sys.getfilesystemencoding()):
         s = s.encode(encoding)
     return s
 
+
 def move(src, dst):
     """
     move that ensures filesystem encoding of paths
     """
     shutil.move(fsencoding(src), fsencoding(dst))
 
+
 def copy2(src, dst):
     """
     copy2 that ensures filesystem encoding of paths
     """
     shutil.copy2(fsencoding(src), fsencoding(dst))
+
 
 def flipwritable(fn, mode=None):
     """
@@ -51,6 +54,7 @@ def flipwritable(fn, mode=None):
     os.chmod(fn, stat.S_IWRITE | old_mode)
     return old_mode
 
+
 class fileview(object):
     """
     A proxy for file-like objects that exposes a given view of a file
@@ -62,16 +66,16 @@ class fileview(object):
         self._end = start + size
 
     def __repr__(self):
-        return '<fileview [%d, %d] %r>' % (
-            self._start, self._end, self._fileobj)
+        return '<fileview [%d, %d] %r>' % (self._start, self._end,
+                                           self._fileobj)
 
     def tell(self):
         return self._fileobj.tell() - self._start
 
     def _checkwindow(self, seekto, op):
         if not (self._start <= seekto <= self._end):
-            raise IOError("%s to offset %d is outside window [%d, %d]" % (
-                op, seekto, self._start, self._end))
+            raise IOError("%s to offset %d is outside window [%d, %d]" %
+                          (op, seekto, self._start, self._end))
 
     def seek(self, offset, whence=0):
         seekto = offset
@@ -82,7 +86,7 @@ class fileview(object):
         elif whence == 2:
             seekto += self._end
         else:
-            raise IOError("Invalid whence argument to seek: %r" % (whence,))
+            raise IOError("Invalid whence argument to seek: %r" % (whence, ))
         self._checkwindow(seekto, 'seek')
         self._fileobj.seek(seekto)
 
@@ -94,7 +98,8 @@ class fileview(object):
 
     def read(self, size=sys.maxsize):
         if size < 0:
-            raise ValueError("Invalid size %s while reading from %s", size, self._fileobj)
+            raise ValueError("Invalid size %s while reading from %s", size,
+                             self._fileobj)
         here = self._fileobj.tell()
         self._checkwindow(here, 'read')
         bytes = min(size, self._end - here)
@@ -105,10 +110,12 @@ def mergecopy(src, dest):
     """
     copy2, but only if the destination isn't up to date
     """
-    if os.path.exists(dest) and os.stat(dest).st_mtime >= os.stat(src).st_mtime:
+    if os.path.exists(
+            dest) and os.stat(dest).st_mtime >= os.stat(src).st_mtime:
         return
 
     copy2(src, dest)
+
 
 def mergetree(src, dst, condition=None, copyfn=mergecopy, srcbase=None):
     """
@@ -135,14 +142,19 @@ def mergetree(src, dst, condition=None, copyfn=mergecopy, srcbase=None):
                 realsrc = os.readlink(srcname)
                 os.symlink(realsrc, dstname)
             elif os.path.isdir(srcname):
-                mergetree(srcname, dstname,
-                    condition=condition, copyfn=copyfn, srcbase=srcbase)
+                mergetree(
+                    srcname,
+                    dstname,
+                    condition=condition,
+                    copyfn=copyfn,
+                    srcbase=srcbase)
             else:
                 copyfn(srcname, dstname)
         except (IOError, os.error) as why:
             errors.append((srcname, dstname, why))
     if errors:
         raise IOError(errors)
+
 
 def sdk_normalize(filename):
     """
@@ -155,7 +167,9 @@ def sdk_normalize(filename):
         filename = '/'.join(pathcomp)
     return filename
 
-NOT_SYSTEM_FILES=[]
+
+NOT_SYSTEM_FILES = []
+
 
 def in_system_path(filename):
     """
@@ -171,17 +185,20 @@ def in_system_path(filename):
     else:
         return False
 
+
 def has_filename_filter(module):
     """
     Return False if the module does not have a filename attribute
     """
     return getattr(module, 'filename', None) is not None
 
+
 def get_magic():
     """
     Get a list of valid Mach-O header signatures, not including the fat header
     """
     return MAGIC
+
 
 def is_platform_file(path):
     """
@@ -208,6 +225,7 @@ def is_platform_file(path):
             return True
     return False
 
+
 def iter_platform_files(dst):
     """
     Walk a directory and yield each full path that is a Mach-O file
@@ -217,6 +235,7 @@ def iter_platform_files(dst):
             fn = os.path.join(root, fn)
             if is_platform_file(fn):
                 yield fn
+
 
 def strip_files(files, argv_max=(256 * 1024)):
     """

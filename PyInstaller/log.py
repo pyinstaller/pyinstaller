@@ -6,8 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
-
 """
 Logging module for PyInstaller
 """
@@ -27,14 +25,15 @@ logger = getLogger('PyInstaller')
 
 def __add_options(parser):
     levels = ('TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'CRITICAL')
-    parser.add_argument('--log-level',
-                        choices=levels, metavar="LEVEL",
-                        default='INFO',
-                        dest='loglevel',
-                        help=('Amount of detail in build-time console messages. '
-                              'LEVEL may be one of %s (default: %%(default)s).'
-                              % ', '.join(levels))
-    )
+    parser.add_argument(
+        '--log-level',
+        choices=levels,
+        metavar="LEVEL",
+        default='INFO',
+        dest='loglevel',
+        help=('Amount of detail in build-time console messages. '
+              'LEVEL may be one of %s (default: %%(default)s).' %
+              ', '.join(levels)))
 
 
 def __process_options(parser, opts):

@@ -4,6 +4,7 @@ altgraph.GraphAlgo - Graph algorithms
 '''
 from . import GraphError
 
+
 def dijkstra(graph, start, end=None):
     """
     Dijkstra's algorithm for shortest paths
@@ -22,9 +23,9 @@ def dijkstra(graph, start, end=None):
     *Adapted to altgraph by Istvan Albert, Pennsylvania State University - June, 9 2004*
 
     """
-    D = {}    # dictionary of final distances
-    P = {}    # dictionary of predecessors
-    Q = _priorityDictionary()    # estimated distances of non-final vertices
+    D = {}  # dictionary of final distances
+    P = {}  # dictionary of predecessors
+    Q = _priorityDictionary()  # estimated distances of non-final vertices
     Q[start] = 0
 
     for v in Q:
@@ -32,16 +33,18 @@ def dijkstra(graph, start, end=None):
         if v == end: break
 
         for w in graph.out_nbrs(v):
-            edge_id  = graph.edge_by_node(v,w)
+            edge_id = graph.edge_by_node(v, w)
             vwLength = D[v] + graph.edge_data(edge_id)
             if w in D:
                 if vwLength < D[w]:
-                    raise GraphError("Dijkstra: found better path to already-final vertex")
+                    raise GraphError(
+                        "Dijkstra: found better path to already-final vertex")
             elif w not in Q or vwLength < Q[w]:
                 Q[w] = vwLength
                 P[w] = v
 
-    return (D,P)
+    return (D, P)
+
 
 def shortest_path(graph, start, end):
     """
@@ -52,7 +55,7 @@ def shortest_path(graph, start, end):
     **Note that the distances must be stored in the edge data as numeric data**
     """
 
-    D,P = dijkstra(graph, start, end)
+    D, P = dijkstra(graph, start, end)
     Path = []
     while 1:
         Path.append(end)
@@ -60,6 +63,7 @@ def shortest_path(graph, start, end):
         end = P[end]
     Path.reverse()
     return Path
+
 
 #
 # Utility classes and functions
@@ -78,6 +82,7 @@ class _priorityDictionary(dict):
             return a useful value until the next iteration of the for-loop.
             Each operation takes logarithmic amortized time.
     '''
+
     def __init__(self):
         '''
         Initialize priorityDictionary by creating binary heap of pairs (value,key).
@@ -98,8 +103,9 @@ class _priorityDictionary(dict):
             lastItem = heap.pop()
             insertionPoint = 0
             while 1:
-                smallChild = 2*insertionPoint+1
-                if smallChild+1 < len(heap) and heap[smallChild] > heap[smallChild+1] :
+                smallChild = 2 * insertionPoint + 1
+                if smallChild + 1 < len(
+                        heap) and heap[smallChild] > heap[smallChild + 1]:
                     smallChild += 1
                 if smallChild >= len(heap) or lastItem <= heap[smallChild]:
                     heap[insertionPoint] = lastItem
@@ -112,33 +118,37 @@ class _priorityDictionary(dict):
         '''
         Create destructive sorted iterator of priorityDictionary.
         '''
+
         def iterfn():
             while len(self) > 0:
                 x = self.smallest()
                 yield x
                 del self[x]
+
         return iterfn()
 
-    def __setitem__(self,key,val):
+    def __setitem__(self, key, val):
         '''
         Change value stored in dictionary and add corresponding pair to heap.
         Rebuilds the heap if the number of deleted items gets large, to avoid memory leakage.
         '''
-        dict.__setitem__(self,key,val)
+        dict.__setitem__(self, key, val)
         heap = self.__heap
         if len(heap) > 2 * len(self):
-            self.__heap = [(v,k) for k,v in self.iteritems()]
-            self.__heap.sort()  # builtin sort probably faster than O(n)-time heapify
+            self.__heap = [(v, k) for k, v in self.iteritems()]
+            self.__heap.sort(
+            )  # builtin sort probably faster than O(n)-time heapify
         else:
-            newPair = (val,key)
+            newPair = (val, key)
             insertionPoint = len(heap)
             heap.append(None)
-            while insertionPoint > 0 and newPair < heap[(insertionPoint-1)//2]:
-                heap[insertionPoint] = heap[(insertionPoint-1)//2]
-                insertionPoint = (insertionPoint-1)//2
+            while insertionPoint > 0 and newPair < heap[(
+                    insertionPoint - 1) // 2]:
+                heap[insertionPoint] = heap[(insertionPoint - 1) // 2]
+                insertionPoint = (insertionPoint - 1) // 2
             heap[insertionPoint] = newPair
 
-    def setdefault(self,key,val):
+    def setdefault(self, key, val):
         '''
         Reimplement setdefault to pass through our customized __setitem__.
         '''

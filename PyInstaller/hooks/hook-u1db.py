@@ -6,7 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
 """
 Pyinstaller hook for u1db module
 

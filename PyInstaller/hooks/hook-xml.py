@@ -7,5 +7,4 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
-hiddenimports = ['xml.sax.xmlreader','xml.sax.expatreader']
+hiddenimports = ['xml.sax.xmlreader', 'xml.sax.expatreader']

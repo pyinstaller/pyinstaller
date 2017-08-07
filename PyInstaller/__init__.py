@@ -7,7 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 __all__ = ('HOMEPATH', 'PLATFORM', '__version__')
 
 import os
@@ -17,11 +16,9 @@ from . import compat
 from .compat import is_darwin, is_win, is_cygwin, is_py2, is_linux
 from .utils.git import get_repo_revision
 
-
 # Note: Keep this variable as plain string so it could be updated automatically
 #       when doing a release.
 __version__ = '3.3.dev0'
-
 
 # Absolute path of this package's directory. Save this early so all
 # submodules can use the absolute path. This is required e.g. if the
@@ -42,7 +39,6 @@ if is_win and is_py2:
             HOMEPATH = win32api.GetShortPathName(HOMEPATH)
         except ImportError:
             pass
-
 
 # Update __version__ as necessary.
 if os.path.exists(os.path.join(HOMEPATH, 'setup.py')):
@@ -66,7 +62,6 @@ else:
     import pkg_resources
     __version__ = pkg_resources.get_distribution('PyInstaller').version
 
-
 ## Default values of paths where to put files created by PyInstaller.
 ## Mind option-help in build_main when changes these
 # Folder where to put created .spec file.
@@ -76,7 +71,6 @@ DEFAULT_SPECPATH = compat.getcwd()
 DEFAULT_DISTPATH = os.path.join(compat.getcwd(), 'dist')
 # Where to put all the temporary work files, .log, .pyz and etc.
 DEFAULT_WORKPATH = os.path.join(compat.getcwd(), 'build')
-
 
 PLATFORM = compat.system() + '-' + compat.architecture()
 # Include machine name in path to bootloader for some machines.

@@ -7,7 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 # Qt5 plugins are bundled as data files (see hooks/hook-PyQt5*),
 # within a "qt5_plugins" directory.
 # We add a runtime hook to tell Qt5 where to find them.
@@ -17,7 +16,6 @@ import sys
 
 d = "qt5_plugins"
 d = os.path.join(sys._MEIPASS, d)
-
 
 # We remove QT_PLUGIN_PATH variable, because we want Qt5 to load
 # plugins only from one path.
@@ -38,7 +36,6 @@ except ImportError:
         sys.modules['sip'] = sip
     except ImportError:
         pass  # if this didn't work, there will be a NameError later
-
 
 # We cannot use QT_PLUGIN_PATH here, because it would not work when
 # PyQt5 is compiled with a different CRT from Python (eg: it happens

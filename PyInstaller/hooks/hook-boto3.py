@@ -19,8 +19,6 @@
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
 hiddenimports = (
-    collect_submodules('boto3.dynamodb') +
-    collect_submodules('boto3.ec2') +
-    collect_submodules('boto3.s3')
-)
+    collect_submodules('boto3.dynamodb') + collect_submodules('boto3.ec2') +
+    collect_submodules('boto3.s3'))
 datas = collect_data_files('boto3')

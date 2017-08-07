@@ -37,7 +37,9 @@ from PyInstaller.compat import is_linux
 # it, not any code in hook-PyQt4.QtCore.
 if is_linux:
     try:
-        hiddenimports = collect_submodules('PyKDE4') + ['PyQt4.QtSvg', 'PyQt4.QtXml']
+        hiddenimports = collect_submodules('PyKDE4') + [
+            'PyQt4.QtSvg', 'PyQt4.QtXml'
+        ]
     except AssertionError:
         pass
 # Need to include modules in PyQt4.uic.widget-plugins, so they can be

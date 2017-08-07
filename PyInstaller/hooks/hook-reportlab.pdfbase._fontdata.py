@@ -11,5 +11,6 @@ from PyInstaller.utils.hooks import collect_submodules
 
 # Tested on Windows 7 x64 with Python 2.7.6 x32 using ReportLab 3.0
 # This has been observed to *not* work on ReportLab 2.7
-hiddenimports = collect_submodules('reportlab.pdfbase',
-                  lambda name: name.startswith('reportlab.pdfbase._fontdata_'))
+hiddenimports = collect_submodules(
+    'reportlab.pdfbase',
+    lambda name: name.startswith('reportlab.pdfbase._fontdata_'))

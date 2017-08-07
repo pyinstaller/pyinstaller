@@ -6,8 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
-
 """
 Configure PyInstaller for the current Python installation.
 """
@@ -17,7 +15,7 @@ import os
 import sys
 import time
 
-from . import  compat
+from . import compat
 from . import log as logging
 from .compat import is_win, is_darwin
 
@@ -37,7 +35,9 @@ def test_UPX(config, upx_dir):
             v = vers[0].split()[1]
             hasUPX = tuple(map(int, v.split(".")))
             if is_win and hasUPX < (1, 92):
-                logger.error('UPX is too old! Python 2.4 under Windows requires UPX 1.92+')
+                logger.error(
+                    'UPX is too old! Python 2.4 under Windows requires UPX 1.92+'
+                )
                 hasUPX = 0
     except Exception as e:
         if isinstance(e, OSError) and e.errno == 2:

@@ -6,8 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
-
 """
 Utilities to create data structures for embedding Python modules and additional
 files into the executable.
@@ -94,7 +92,6 @@ class ArchiveWriter(object):
             self.update_headers(toc_pos)
         self.lib.close()
 
-
     ####### manages keeping the internal TOC and the guts in sync #######
     def add(self, entry):
         """
@@ -129,21 +126,26 @@ class ArchiveWriter(object):
             if str(exception) == 'unmarshallable object':
 
                 # List of all marshallable types.
-                MARSHALLABLE_TYPES = set((
-                    bool, int, float, complex, str, bytes, bytearray,
-                    tuple, list, set, frozenset, dict, CodeType))
+                MARSHALLABLE_TYPES = set(
+                    (bool, int, float, complex, str, bytes, bytearray, tuple,
+                     list, set, frozenset, dict, CodeType))
                 if sys.version_info[0] == 2:
                     MARSHALLABLE_TYPES.add(long)
 
                 for module_name, module_tuple in self.toc.items():
                     if type(module_name) not in MARSHALLABLE_TYPES:
-                        print('Module name "%s" (%s) unmarshallable.' % (module_name, type(module_name)))
+                        print('Module name "%s" (%s) unmarshallable.' %
+                              (module_name, type(module_name)))
                     if type(module_tuple) not in MARSHALLABLE_TYPES:
-                        print('Module "%s" tuple "%s" (%s) unmarshallable.' % (module_name, module_tuple, type(module_tuple)))
+                        print('Module "%s" tuple "%s" (%s) unmarshallable.' %
+                              (module_name, module_tuple, type(module_tuple)))
                     elif type(module_tuple) == tuple:
                         for i in range(len(module_tuple)):
                             if type(module_tuple[i]) not in MARSHALLABLE_TYPES:
-                                print('Module "%s" tuple index %s item "%s" (%s) unmarshallable.' % (module_name, i, module_tuple[i], type(module_tuple[i])))
+                                print(
+                                    'Module "%s" tuple index %s item "%s" (%s) unmarshallable.'
+                                    % (module_name, i, module_tuple[i],
+                                       type(module_tuple[i])))
 
             raise
 
@@ -182,7 +184,6 @@ class ZlibArchiveWriter(ArchiveWriter):
         self.cipher = cipher or None
 
         super(ZlibArchiveWriter, self).__init__(archive_path, logical_toc)
-
 
     def add(self, entry):
         name, path, typ = entry
@@ -223,7 +224,6 @@ class ZlibArchiveWriter(ArchiveWriter):
         self.lib.write(struct.pack('!B', self.cipher is not None))
 
 
-
 class CTOC(object):
     """
     A class encapsulating the table of contents of a CArchive.
@@ -250,7 +250,7 @@ class CTOC(object):
                 nm = nm.decode(sys.getfilesystemencoding())
 
             nm = nm.encode('utf-8')
-            nmlen = len(nm) + 1       # add 1 for a '\0'
+            nmlen = len(nm) + 1  # add 1 for a '\0'
             # align to 16 byte boundary so xplatform C can read
             toclen = nmlen + self.ENTRYLEN
             if toclen % 16 == 0:
@@ -259,9 +259,10 @@ class CTOC(object):
                 padlen = 16 - (toclen % 16)
                 pad = b'\0' * padlen
                 nmlen = nmlen + padlen
-            rslt.append(struct.pack(self.ENTRYSTRUCT + '%is' % nmlen,
-                                    nmlen + self.ENTRYLEN, dpos, dlen, ulen,
-                                    flag, ord(typcd), nm + pad))
+            rslt.append(
+                struct.pack(self.ENTRYSTRUCT + '%is' % nmlen, nmlen +
+                            self.ENTRYLEN, dpos, dlen, ulen, flag,
+                            ord(typcd), nm + pad))
 
         return b''.join(rslt)
 
@@ -379,7 +380,8 @@ class CArchiveWriter(ArchiveWriter):
                 fh = open(pathnm, 'rb')
                 ulen = os.fstat(fh.fileno()).st_size
         except IOError:
-            print("Cannot find ('%s', '%s', %s, '%s')" % (nm, pathnm, flag, typcd))
+            print("Cannot find ('%s', '%s', %s, '%s')" % (nm, pathnm, flag,
+                                                          typcd))
             raise
 
         where = self.lib.tell()
@@ -394,7 +396,7 @@ class CArchiveWriter(ArchiveWriter):
             else:
                 assert fh
                 while 1:
-                    buf = fh.read(16*1024)
+                    buf = fh.read(16 * 1024)
                     if not buf:
                         break
                     self.lib.write(comprobj.compress(buf))
@@ -406,7 +408,7 @@ class CArchiveWriter(ArchiveWriter):
             else:
                 assert fh
                 while 1:
-                    buf = fh.read(16*1024)
+                    buf = fh.read(16 * 1024)
                     if not buf:
                         break
                     self.lib.write(buf)
@@ -418,7 +420,6 @@ class CArchiveWriter(ArchiveWriter):
 
         # Record the entry in the CTOC
         self.toc.add(where, dlen, ulen, flag, typcd, nm)
-
 
     def save_trailer(self, tocpos):
         """

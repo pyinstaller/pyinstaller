@@ -7,10 +7,8 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 import pkg_resources as res
 from pyimod03_importers import FrozenImporter
-
 
 # To make pkg_resources work with froze moduels we need to set the 'Provider'
 # class for FrozenImporter. This class decides where to look for resources

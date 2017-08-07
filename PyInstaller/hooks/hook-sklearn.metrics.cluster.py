@@ -8,7 +8,8 @@
 #-----------------------------------------------------------------------------
 
 # Tested on Windows 7 64bit with scikit-learn 0.17 and Python 2.7
-hiddenimports = ['sklearn.utils.sparsetools._graph_validation',
-                 'sklearn.utils.sparsetools._graph_tools',
-                 'sklearn.utils.lgamma',
-                 'sklearn.utils.weight_vector']
+hiddenimports = [
+    'sklearn.utils.sparsetools._graph_validation',
+    'sklearn.utils.sparsetools._graph_tools', 'sklearn.utils.lgamma',
+    'sklearn.utils.weight_vector'
+]

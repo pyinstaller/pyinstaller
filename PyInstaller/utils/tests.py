@@ -6,8 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
-
 """
 Decorators for skipping PyInstaller tests when specific requirements are not met.
 """
@@ -27,10 +25,12 @@ skipif = pytest.mark.skipif
 skipif_notwin = skipif(not is_win, reason='requires Windows')
 skipif_notosx = skipif(not is_darwin, reason='requires Mac OS X')
 skipif_win = skipif(is_win, reason='does not run on Windows')
-skipif_winorosx = skipif(is_win or is_darwin, reason='does not run on Windows or Mac OS X')
+skipif_winorosx = skipif(
+    is_win or is_darwin, reason='does not run on Windows or Mac OS X')
 xfail = pytest.mark.xfail
 xfail_py2 = xfail(is_py2, reason='fails with Python 2.7')
 xfail_py3 = xfail(is_py3, reason='fails with Python 3')
+
 
 def _check_for_compiler():
     import tempfile, sys
@@ -58,8 +58,9 @@ def _check_for_compiler():
     os.chdir(old_wd)
     return has_compiler
 
+
 # A decorator to skip tests if a C compiler isn't detected.
-has_compiler = _check_for_compiler,()
+has_compiler = _check_for_compiler, ()
 skipif_no_compiler = skipif(not has_compiler, reason="Requires a C compiler")
 
 

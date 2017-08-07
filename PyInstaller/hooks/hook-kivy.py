@@ -18,8 +18,8 @@ if is_module_satisfies('kivy >= 1.9.1'):
     add_dep_paths()
 
     hiddenimports = get_deps_all()['hiddenimports']
-    hiddenimports = list(set(get_factory_modules() + kivy_modules +
-                             hiddenimports))
+    hiddenimports = list(
+        set(get_factory_modules() + kivy_modules + hiddenimports))
 else:
     logger = logging.getLogger(__name__)
     logger.warning('Hook disabled because of Kivy version < 1.9.1')

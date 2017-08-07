@@ -51,13 +51,12 @@
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules, is_module_or_submodule,\
     get_module_file_attribute
 
-datas = (
-         [(get_module_file_attribute('pylint.__init__'), 'pylint')] +
-         collect_data_files('pylint.checkers', True) +
-         collect_data_files('pylint.reporters', True)
-         )
+datas = ([(get_module_file_attribute('pylint.__init__'), 'pylint')] +
+         collect_data_files('pylint.checkers', True) + collect_data_files(
+             'pylint.reporters', True))
 
 # Add imports from dynamically loaded modules excluding tests and testutils
-hiddenimports = collect_submodules('pylint',
-                                   lambda name: (not is_module_or_submodule(name, 'pylint.test')) and
-                                   (not name == 'testutils'))
+hiddenimports = collect_submodules(
+    'pylint',
+    lambda name: (not is_module_or_submodule(name, 'pylint.test')) and (not name == 'testutils')
+)

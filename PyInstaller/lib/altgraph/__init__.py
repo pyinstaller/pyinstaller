@@ -132,5 +132,6 @@ To display the graph we can use the GraphViz backend::
 # package-resource.
 __version__ = '0.13'
 
+
 class GraphError(ValueError):
     pass

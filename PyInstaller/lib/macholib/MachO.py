@@ -26,8 +26,7 @@ _RELOCATABLE = set((
     LC_LOAD_DYLIB,
     LC_LOAD_WEAK_DYLIB,
     LC_PREBOUND_DYLIB,
-    LC_REEXPORT_DYLIB,
-))
+    LC_REEXPORT_DYLIB, ))
 
 _RELOCATABLE_NAMES = {
     LC_LOAD_DYLIB: 'load_dylib',
@@ -36,16 +35,19 @@ _RELOCATABLE_NAMES = {
     LC_REEXPORT_DYLIB: 'reexport_dylib',
 }
 
+
 def _shouldRelocateCommand(cmd):
     """
     Should this command id be investigated for relocation?
     """
     return cmd in _RELOCATABLE
 
+
 class MachO(object):
     """
     Provides reading/writing the Mach-O header of a specific existing file
     """
+
     #   filename   - the original filename of this mach-o
     #   sizediff   - the current deviation from the initial mach-o size
     #   header     - the mach-o header
@@ -54,7 +56,6 @@ class MachO(object):
     #   total_size - the current mach-o header size (including header)
     #   low_offset - essentially, the maximum mach-o header size
     #   id_cmd     - the index of my id command, or None
-
 
     def __init__(self, filename):
 
@@ -69,7 +70,7 @@ class MachO(object):
             self.load(fp)
 
     def __repr__(self):
-        return "<MachO filename=%r>" % (self.filename,)
+        return "<MachO filename=%r>" % (self.filename, )
 
     def load(self, fh):
         assert fh.tell() == 0
@@ -109,8 +110,8 @@ class MachO(object):
         elif header == MH_CIGAM_64:
             magic, hdr, endian = MH_CIGAM_64, mach_header_64, '<'
         else:
-            raise ValueError("Unknown Mach-O header: 0x%08x in %r" % (
-                header, fh))
+            raise ValueError("Unknown Mach-O header: 0x%08x in %r" % (header,
+                                                                      fh))
         hdr = MachOHeader(self, fh, offset, size, magic, hdr, endian)
         self.headers.append(hdr)
 
@@ -118,10 +119,12 @@ class MachO(object):
         for header in self.headers:
             header.write(f)
 
+
 class MachOHeader(object):
     """
     Provides reading/writing the Mach-O header of a specific existing file
     """
+
     #   filename   - the original filename of this mach-o
     #   sizediff   - the current deviation from the initial mach-o size
     #   header     - the mach-o header
@@ -130,7 +133,6 @@ class MachOHeader(object):
     #   total_size - the current mach-o header size (including header)
     #   low_offset - essentially, the maximum mach-o header size
     #   id_cmd     - the index of my id command, or None
-
 
     def __init__(self, parent, fh, offset, size, magic, hdr, endian):
         self.MH_MAGIC = magic
@@ -183,7 +185,7 @@ class MachOHeader(object):
             # read the specific command
             klass = LC_REGISTRY.get(cmd_load.cmd, None)
             if klass is None:
-                raise ValueError("Unknown load command: %d" % (cmd_load.cmd,))
+                raise ValueError("Unknown load command: %d" % (cmd_load.cmd, ))
             cmd_cmd = klass.from_fileobj(fh, **kw)
 
             if cmd_load.cmd == LC_ID_DYLIB:
@@ -198,13 +200,11 @@ class MachOHeader(object):
                 # assert that the size makes sense
                 if cmd_load.cmd == LC_SEGMENT:
                     section_cls = section
-                else: # LC_SEGMENT_64
+                else:  # LC_SEGMENT_64
                     section_cls = section_64
 
-                expected_size = (
-                    sizeof(klass) + sizeof(load_command) +
-                    (sizeof(section_cls) * cmd_cmd.nsects)
-                )
+                expected_size = (sizeof(klass) + sizeof(load_command) +
+                                 (sizeof(section_cls) * cmd_cmd.nsects))
                 if cmd_load.cmdsize != expected_size:
                     raise ValueError("Segment size mismatch")
                 # this is a zero block or something
@@ -247,23 +247,22 @@ class MachOHeader(object):
             else:
                 # data is a raw str
                 data_size = (
-                    cmd_load.cmdsize - sizeof(klass) - sizeof(load_command)
-                )
+                    cmd_load.cmdsize - sizeof(klass) - sizeof(load_command))
                 cmd_data = fh.read(data_size)
             cmd.append((cmd_load, cmd_cmd, cmd_data))
             read_bytes += cmd_load.cmdsize
 
         # make sure the header made sense
         if read_bytes != header.sizeofcmds:
-            raise ValueError("Read %d bytes, header reports %d bytes" % (
-                read_bytes, header.sizeofcmds))
+            raise ValueError("Read %d bytes, header reports %d bytes" %
+                             (read_bytes, header.sizeofcmds))
         self.total_size = sizeof(self.mach_header) + read_bytes
         self.low_offset = low_offset
 
         # this header overwrites a segment, what the heck?
         if self.total_size > low_offset:
-            raise ValueError("total_size > low_offset (%d > %d)" % (
-                self.total_size, low_offset))
+            raise ValueError("total_size > low_offset (%d > %d)" %
+                             (self.total_size, low_offset))
 
     def walkRelocatables(self, shouldRelocateCommand=_shouldRelocateCommand):
         """
@@ -275,7 +274,7 @@ class MachOHeader(object):
                 name = _RELOCATABLE_NAMES[lc.cmd]
                 ofs = cmd.name - sizeof(lc.__class__) - sizeof(cmd.__class__)
                 yield idx, name, data[ofs:data.find(b'\x00', ofs)].decode(
-                        sys.getfilesystemencoding())
+                    sys.getfilesystemencoding())
 
     def rewriteInstallNameCommand(self, loadcmd):
         """Rewrite the load command of this dylib"""
@@ -287,7 +286,8 @@ class MachOHeader(object):
     def changedHeaderSizeBy(self, bytes):
         self.sizediff += bytes
         if (self.total_size + self.sizediff) > self.low_offset:
-            print("WARNING: Mach-O header in %r may be too large to relocate"%(self.parent.filename,))
+            print("WARNING: Mach-O header in %r may be too large to relocate" %
+                  (self.parent.filename, ))
 
     def rewriteLoadCommands(self, changefunc):
         """
@@ -302,8 +302,8 @@ class MachOHeader(object):
         for idx, name, filename in self.walkRelocatables():
             data = changefunc(filename)
             if data is not None:
-                if self.rewriteDataForCommand(idx, data.encode(
-                        sys.getfilesystemencoding())):
+                if self.rewriteDataForCommand(
+                        idx, data.encode(sys.getfilesystemencoding())):
                     changed = True
         return changed
 
@@ -320,7 +320,9 @@ class MachOHeader(object):
 
     def synchronize_size(self):
         if (self.total_size + self.sizediff) > self.low_offset:
-            raise ValueError("New Mach-O header is too large to relocate in %r"%(self.parent.filename,))
+            raise ValueError(
+                "New Mach-O header is too large to relocate in %r" %
+                (self.parent.filename, ))
         self.header.sizeofcmds += self.sizediff
         self.total_size = sizeof(self.mach_header) + self.header.sizeofcmds
         self.sizediff = 0
@@ -381,6 +383,7 @@ class MachOHeader(object):
         else:
             return 'unknown'
 
+
 def main(fn):
     m = MachO(fn)
     seen = set()
@@ -389,6 +392,7 @@ def main(fn):
             if other not in seen:
                 seen.add(other)
                 print('\t' + name + ": " + other)
+
 
 if __name__ == '__main__':
     import sys

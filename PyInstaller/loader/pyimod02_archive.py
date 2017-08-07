@@ -20,7 +20,6 @@
 # See pyi_carchive.py for a more general archive (contains anything)
 # that can be understood by a C program.
 
-
 ### **NOTE** This module is used during bootstrap.
 ### Import *ONLY* builtin modules.
 
@@ -33,21 +32,21 @@ if sys.version_info[0] == 2:
 else:
     import _thread as thread
 
-
 # For decrypting Python modules.
 CRYPT_BLOCK_SIZE = 16
-
 
 # content types for PYZ
 PYZ_TYPE_MODULE = 0
 PYZ_TYPE_PKG = 1
 PYZ_TYPE_DATA = 2
 
+
 class FilePos(object):
     """
     This class keeps track of the file object representing and current position
     in a file.
     """
+
     def __init__(self):
         # The file object representing this file.
         self.file = None
@@ -163,7 +162,6 @@ class ArchiveReader(object):
                 self.checkmagic()
                 self.loadtoc()
 
-
     def loadtoc(self):
         """
         Overridable.
@@ -172,7 +170,7 @@ class ArchiveReader(object):
         Default: The TOC is a marshal-able string.
         """
         self.lib.seek(self.start + self.TOCPOS)
-        (offset,) = struct.unpack('!i', self.lib.read(4))
+        (offset, ) = struct.unpack('!i', self.lib.read(4))
         self.lib.seek(self.start + offset)
         # Use marshal.loads() since load() arg must be a file object
         # Convert the read list into a dict for faster access
@@ -234,12 +232,12 @@ class ArchiveReader(object):
         self.lib.seek(self.start)  # default - magic is at start of file
 
         if self.lib.read(len(self.MAGIC)) != self.MAGIC:
-            raise ArchiveReadError("%s is not a valid %s archive file"
-                                   % (self.path, self.__class__.__name__))
+            raise ArchiveReadError("%s is not a valid %s archive file" %
+                                   (self.path, self.__class__.__name__))
 
         if self.lib.read(len(self.pymagic)) != self.pymagic:
             raise ArchiveReadError("%s has version mismatch to dll" %
-                (self.path))
+                                   (self.path))
 
         self.lib.read(4)
 
@@ -248,6 +246,7 @@ class Cipher(object):
     """
     This class is used only to decrypt Python modules.
     """
+
     def __init__(self):
         # At build-type the key is given to us from inside the spec file, at
         # bootstrap-time, we must look for it ourselves by trying to import
@@ -301,7 +300,8 @@ class Cipher(object):
         return self._aes.new(self.key, self._aes.MODE_CFB, iv)
 
     def decrypt(self, data):
-        return self.__create_cipher(data[:CRYPT_BLOCK_SIZE]).decrypt(data[CRYPT_BLOCK_SIZE:])
+        return self.__create_cipher(data[:CRYPT_BLOCK_SIZE]).decrypt(
+            data[CRYPT_BLOCK_SIZE:])
 
 
 class ZlibArchiveReader(ArchiveReader):
@@ -322,7 +322,7 @@ class ZlibArchiveReader(ArchiveReader):
         if path is None:
             offset = 0
         elif offset is None:
-            for i in range(len(path) - 1, - 1, - 1):
+            for i in range(len(path) - 1, -1, -1):
                 if path[i] == '?':
                     try:
                         offset = int(path[i + 1:])
