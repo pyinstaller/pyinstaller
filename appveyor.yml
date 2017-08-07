@@ -15,7 +15,7 @@ environment:
     # See: http://stackoverflow.com/a/13751649/163740
     CMD_IN_ENV: 'cmd /E:ON /V:ON /C .\tests\scripts\appveyor\run_with_env.cmd'
 
-  PYTEST: py.test --flake8 --maxfail 5 --durations=10 --junitxml=junit-results.xml
+  PYTEST: py.test --flake8 --durations=10 --junitxml=junit-results.xml
   # Break the tests into two runs, since together they exceed the 1 hour limit.
   # See https://github.com/pyinstaller/pyinstaller/issues/2024#issuecomment-224129520
   # for more discussion.

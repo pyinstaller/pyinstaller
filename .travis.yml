@@ -99,7 +99,7 @@ script:
   # Run tests and speed them up by sending them to multiple CPUs.
   # Run unitttest first.
   # Timeout before travis does so that the cache is always updated.
-  - timeout $((2760 - $SECONDS)) py.test -n 3 --flake8 --maxfail 3 tests/unit tests/functional
+  - timeout $((2760 - $SECONDS)) py.test -n 3 --flake8 tests/unit tests/functional
 
 notifications:
     irc:
