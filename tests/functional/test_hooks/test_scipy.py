@@ -6,7 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
 """
 Functional tests for SciPy.
 """
@@ -19,8 +18,7 @@ from PyInstaller.utils.tests import importorskip, skip, xfail
 @xfail(is_darwin, reason='Issue #1895.')
 @importorskip('scipy')
 def test_scipy(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         from distutils.version import LooseVersion
 
         # Test top-level SciPy importability.

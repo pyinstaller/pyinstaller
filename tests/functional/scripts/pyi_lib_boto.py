@@ -14,8 +14,7 @@ import boto.exception
 
 credentials = dict(
     aws_access_key_id='ASIAIH3F2FU3T63KIXKA',
-    aws_secret_access_key='lnN4qk1a0SuQAFVsGA+Y+ujo2/5rLq2j+a1O4Vuy'
-)
+    aws_secret_access_key='lnN4qk1a0SuQAFVsGA+Y+ujo2/5rLq2j+a1O4Vuy')
 # connect_cloudsearchdomain is broken in boto; the rest require custom params
 skip = {
     'connect_cloudsearchdomain',
@@ -27,12 +26,11 @@ skip = {
 }
 connect_funcs = [
     func for name, func in getmembers(boto)
-    if isfunction(func)
-        and name.startswith('connect_')
-        and name not in skip
+    if isfunction(func) and name.startswith('connect_') and name not in skip
 ]
 connect_funcs += [
-    partial(boto.connect_ec2_endpoint, 'https://ec2.amazonaws.com', **credentials),
+    partial(boto.connect_ec2_endpoint, 'https://ec2.amazonaws.com',
+            **credentials),
     partial(boto.connect_gs, gs_access_key_id='', gs_secret_access_key=''),
     partial(boto.connect_euca, host=None, **credentials),
     partial(boto.connect_ia, ia_access_key_id='', ia_secret_access_key=''),

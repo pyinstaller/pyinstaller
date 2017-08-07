@@ -50,6 +50,7 @@ def test_linux_non_unicode_path(pyi_builder, monkeypatch):
 
     pyi_builder.test_script('pyi_path_encoding.py')
 
+
 @skipif_win
 def test_osx_linux_unicode_path(pyi_builder, monkeypatch):
     # Mac and Linux should handle 'unicode' type filenames without problem.
@@ -92,6 +93,7 @@ def test_win_codepage_path(pyi_builder, monkeypatch):
 
     pyi_builder.test_script('pyi_path_encoding.py')
 
+
 @skipif_notwin
 def test_win_codepage_path_disabled_shortfilename(pyi_builder, monkeypatch):
     distdir = pyi_builder._distdir
@@ -114,8 +116,9 @@ def test_win_codepage_path_disabled_shortfilename(pyi_builder, monkeypatch):
         # Python 3 accepts 'unicode' type.
         fsutil_distdir = pyi_builder._distdir
 
-    if(subprocess.call(['fsutil', '8dot3name', 'strip', fsutil_distdir])):
-        pytest.xfail("Administrator privileges required to strip ShortFileName.")
+    if (subprocess.call(['fsutil', '8dot3name', 'strip', fsutil_distdir])):
+        pytest.xfail(
+            "Administrator privileges required to strip ShortFileName.")
 
     tmpdir = os.path.join(pyi_builder._tmpdir, cp_filename + "_TMP")
 
@@ -131,8 +134,10 @@ def test_win_codepage_path_disabled_shortfilename(pyi_builder, monkeypatch):
 
 
 @skipif_notwin
-@pytest.mark.xfail(is_py2, reason="Python 2's subprocess.Popen calls CreateProcessA "
-                           "which doesn't work with non-codepage paths")
+@pytest.mark.xfail(
+    is_py2,
+    reason="Python 2's subprocess.Popen calls CreateProcessA "
+    "which doesn't work with non-codepage paths")
 def test_win_non_codepage_path(pyi_builder, monkeypatch):
     # This test is expected to fail on python 2 as it does not have a useful result:
     # On py2 on Windows, subprocess.Popen calls CreateProcessA, which only accepts
@@ -165,6 +170,7 @@ def test_win_non_codepage_path(pyi_builder, monkeypatch):
     monkeypatch.setenv('TMP', tmpdir)
 
     pyi_builder.test_script('pyi_path_encoding.py')
+
 
 @skipif_notwin
 @pytest.mark.skipif(is_py2, reason="Python 3 only.")

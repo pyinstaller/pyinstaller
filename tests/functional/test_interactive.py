@@ -6,8 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
-
 """
 Interactive tests are successful when they are able to run
 the executable for some time. Otherwise it is marked as fail.
@@ -26,12 +24,13 @@ def test_ipython(pyi_builder):
         """
         from IPython import embed
         embed()
-        """, runtime=_RUNTIME)
+        """,
+        runtime=_RUNTIME)
 
 
 @xfail(reason='TODO - known to fail')
 @importorskip('PySide')
 def test_pyside(pyi_builder):
-    pyi_builder.test_script('pyi_interact_pyside.py', #pyi_args=['--windowed'],
-                            runtime=_RUNTIME)
-
+    pyi_builder.test_script(
+        'pyi_interact_pyside.py',  #pyi_args=['--windowed'],
+        runtime=_RUNTIME)

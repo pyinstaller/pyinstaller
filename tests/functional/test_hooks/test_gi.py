@@ -6,15 +6,14 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
 """
 Functional tests for PyGObject.
 """
 
 from PyInstaller.utils.tests import importorskip, parametrize
 
-
 ## For PyGObject >= 1.0
+
 
 # Test the usability of "gi.repository" packages provided by PyGObject >= 1.0.
 @importorskip('gi.repository.Gst')
@@ -32,13 +31,20 @@ def test_gi_gst_binding(pyi_builder):
 
 # Names of all "gi.repository" packages provided by PyGObject >= 2.0 to be
 # tested below, typically corresponding to those packages hooked by PyInstaller.
-gi2_repository_names = ['GLib', 'GModule', 'GObject', 'GdkPixbuf', 'Gio',]
+gi2_repository_names = [
+    'GLib',
+    'GModule',
+    'GObject',
+    'GdkPixbuf',
+    'Gio',
+]
 
 # Names of the same packages, decorated to be skipped if unimportable.
 gi2_repository_names_skipped_if_unimportable = [
     importorskip('gi.repository.' + gi2_repository_name)(gi2_repository_name)
     for gi2_repository_name in gi2_repository_names
 ]
+
 
 # Test the usability of "gi.repository" packages provided by PyGObject >= 2.0.
 # For simplicity, these tests are parametrized as

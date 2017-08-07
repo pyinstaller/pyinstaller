@@ -6,14 +6,12 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
 """
 Functional tests for Matplotlib.
 """
 
 import pytest
 from PyInstaller.utils.tests import importorskip
-
 
 # List of 4-tuples "(backend_name, package_name, rcParams_key, rcParams_value)",
 # where:
@@ -45,14 +43,15 @@ package_names = [
     for backend_rcParams_key_value in backend_rcParams_key_values
 ]
 
+
 # Test Matplotlib with access to only one backend at a time.
 @importorskip('matplotlib')
 @pytest.mark.parametrize(
     'backend_name, package_name, rcParams_key, rcParams_value',
     backend_rcParams_key_values_skipped_if_unimportable,
     ids=package_names)
-def test_matplotlib(
-    pyi_builder, backend_name, package_name, rcParams_key, rcParams_value):
+def test_matplotlib(pyi_builder, backend_name, package_name, rcParams_key,
+                    rcParams_value):
     '''
     Test Matplotlib with the passed backend enabled, the passed backend package
     included with this frozen application, all other backend packages explicitly
@@ -70,7 +69,7 @@ def test_matplotlib(
     pyi_args = [
         '--exclude-module=' + package_name_excludable
         for package_name_excludable in package_names
-        if  package_name_excludable != package_name
+        if package_name_excludable != package_name
     ]
 
     # Script to be tested, enabling this Qt backend.
@@ -116,8 +115,7 @@ def test_matplotlib(
     '''.format(
         backend_name=backend_name,
         rcParams_key=rcParams_key,
-        rcParams_value=rcParams_value,
-    ))
+        rcParams_value=rcParams_value, ))
 
     # Test this script.
     pyi_builder.test_source(test_script, pyi_args=pyi_args)

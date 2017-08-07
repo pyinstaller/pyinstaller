@@ -7,13 +7,11 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 # Test that the Pythons 'site' module is disabled and Python is not searching
 # for any user-specific site directories.
 
 # Check that option -S is passed to Python interpreter and that sys.path has
 # not been modified.
-
 
 import sys
 
@@ -46,7 +44,6 @@ if site.USER_SITE is not None:
 if site.USER_BASE is not None:
     if site.USER_SITE in sys.path:
         raise SystemExit('USER_BASE found in sys.path')
-
 
 # Check if this is realy our fake-site module
 assert site.__pyinstaller__faked__site__module__ == True

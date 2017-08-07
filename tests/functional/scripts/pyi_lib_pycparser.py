@@ -7,9 +7,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 import os
-
 
 fnames_to_track = [
     'lextab.py',
@@ -18,10 +16,7 @@ fnames_to_track = [
 
 
 def fnames_found():
-    return [
-        fname for fname in fnames_to_track
-        if os.path.isfile(fname)
-    ]
+    return [fname for fname in fnames_to_track if os.path.isfile(fname)]
 
 
 if __name__ == '__main__':
@@ -55,4 +50,3 @@ if __name__ == '__main__':
             raise SystemExit('FAIL: Files generated but removed.')
 
     # Success.
-

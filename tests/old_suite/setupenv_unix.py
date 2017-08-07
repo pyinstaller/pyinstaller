@@ -14,10 +14,8 @@ from __future__ import print_function
 # https://jenkins.shiningpanda.com/pyinstaller/
 # Python there is mostly 64bit.
 
-
 import os
 import sys
-
 
 # Expand PYTHONPATH with PyInstaller package to support running without
 # installation -- only if not running in a virtualenv.
@@ -25,9 +23,7 @@ if not hasattr(sys, 'real_prefix'):
     pyi_home = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
     sys.path.insert(0, pyi_home)
 
-
 import PyInstaller.compat as compat
-
 
 # Pick a PyCrypto version to use to test bytecode encryption. This is typically
 # used in conjunction with continuous integration.
@@ -35,7 +31,6 @@ if 'PYCRYPTO_VERSION' in os.environ:
     pycrypto = 'PyCrypto==%s' % os.environ['PYCRYPTO_VERSION']
 else:
     pycrypto = 'PyCrypto'
-
 
 _PACKAGES = [
     'docutils',
@@ -54,7 +49,7 @@ _PACKAGES = [
     'pyodbc',
     'pyttsx',
     'pytz',
-    'pyusb', # package usb
+    'pyusb',  # package usb
     'qt4reactor',
     'requests',
     'scapy',

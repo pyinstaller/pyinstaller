@@ -7,7 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 import os
 import pytest
 import shutil
@@ -98,7 +97,8 @@ class TestRemoveExtension(object):
 # The name of the hookutils test files directory
 TEST_MOD = 'hookutils_package'
 # The path to this directory.
-TEST_MOD_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hookutils_files')
+TEST_MOD_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), 'hookutils_files')
 
 
 @pytest.fixture
@@ -109,6 +109,7 @@ def mod_list(monkeypatch):
     monkeypatch.syspath_prepend(TEST_MOD_PATH)
     # Use the hookutils_test_files package for testing.
     return collect_submodules(TEST_MOD)
+
 
 class TestCollectSubmodules(object):
     # An error should be thrown if a module, not a package, was passed.
@@ -128,13 +129,15 @@ class TestCollectSubmodules(object):
     # Check that all packages get included
     def test_collect_submod_all_included(self, mod_list):
         mod_list.sort()
-        assert mod_list == [TEST_MOD,
-                            # Python extensions on Windows ends with '.pyd' and
-                            # '.so' on Linux, Mac OS X and other operating systems.
-                            TEST_MOD + '.pyextension',
-                            TEST_MOD + '.subpkg',
-                            TEST_MOD + '.subpkg.twelve',
-                            TEST_MOD + '.two']
+        assert mod_list == [
+            TEST_MOD,
+            # Python extensions on Windows ends with '.pyd' and
+            # '.so' on Linux, Mac OS X and other operating systems.
+            TEST_MOD + '.pyextension',
+            TEST_MOD + '.subpkg',
+            TEST_MOD + '.subpkg.twelve',
+            TEST_MOD + '.two'
+        ]
 
     # Dynamic libraries (.dll, .dylib) are not included in the list.
     def test_collect_submod_no_dynamiclib(self, mod_list):
@@ -150,8 +153,7 @@ class TestCollectSubmodules(object):
         # fixture, so that the path to the TEST_MOD will be set correctly.
         mod_list = collect_submodules(TEST_MOD + '.subpkg')
         mod_list.sort()
-        assert mod_list == [TEST_MOD + '.subpkg',
-                            TEST_MOD + '.subpkg.twelve']
+        assert mod_list == [TEST_MOD + '.subpkg', TEST_MOD + '.subpkg.twelve']
 
     # Test in an ``.egg`` file.
     def test_collect_submod_egg(self, tmpdir, monkeypatch):
@@ -188,20 +190,13 @@ def test_is_module_or_submodule():
     assert not is_module_or_submodule('foo', 'foo.bar')
 
 
-
 _DATA_BASEPATH = join(TEST_MOD_PATH, TEST_MOD)
-_DATA_PARAMS = [
-    (TEST_MOD, ('dynamiclib.dll',
-                'dynamiclib.dylib',
-                'nine.dat',
-                join('py_files_not_in_package', 'data', 'eleven.dat'),
-                join('py_files_not_in_package', 'ten.dat'),
-                join('subpkg', 'thirteen.txt'),
-    )),
-    (TEST_MOD + '.subpkg', (
-                join('subpkg', 'thirteen.txt'),
-    ))
-]
+_DATA_PARAMS = [(TEST_MOD,
+                 ('dynamiclib.dll', 'dynamiclib.dylib', 'nine.dat', join(
+                     'py_files_not_in_package', 'data', 'eleven.dat'), join(
+                         'py_files_not_in_package', 'ten.dat'), join(
+                             'subpkg', 'thirteen.txt'), )),
+                (TEST_MOD + '.subpkg', (join('subpkg', 'thirteen.txt'), ))]
 
 
 @pytest.fixture(params=_DATA_PARAMS, ids=['package', 'subpackage'])
@@ -210,6 +205,7 @@ def data_lists(monkeypatch, request):
         l = list(sequence)
         l.sort()
         return tuple(l)
+
     # Add path with 'hookutils_files' module to ``sys.path`` so tests
     # could find this module - useful for subprocesses.
     monkeypatch.syspath_prepend(TEST_MOD_PATH)
@@ -244,8 +240,11 @@ def test_collect_data_all_included(data_lists):
     subfiles, src, dst = data_lists
     # Check the source and dest lists against the correct values in
     # subfiles.
-    src_compare = tuple([join(_DATA_BASEPATH, subpath) for subpath in subfiles])
-    dst_compare = [os.path.dirname(join(TEST_MOD, subpath)) for subpath in subfiles]
+    src_compare = tuple(
+        [join(_DATA_BASEPATH, subpath) for subpath in subfiles])
+    dst_compare = [
+        os.path.dirname(join(TEST_MOD, subpath)) for subpath in subfiles
+    ]
     dst_compare.sort()
     dst_compare = tuple(dst_compare)
     assert src == src_compare

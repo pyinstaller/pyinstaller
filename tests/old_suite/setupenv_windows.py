@@ -7,7 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 # Install necessary 3rd party Python modules to run all tests.
 # This script is supposed to be used in a continuous integration system:
 # https://jenkins.shiningpanda.com/pyinstaller/
@@ -24,16 +23,13 @@ import sys
 # easy_install command used in a Python script.
 from setuptools.command import easy_install
 
-
 # Expand PYTHONPATH with PyInstaller package to support running without
 # installation -- only if not running in a virtualenv.
 if not hasattr(sys, 'real_prefix'):
     pyi_home = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
     sys.path.insert(0, pyi_home)
 
-
 from PyInstaller.compat import is_py2
-
 
 PYVER = '.'.join([str(x) for x in sys.version_info[0:2]])
 
@@ -54,7 +50,6 @@ if 'PYCRYPTO_VERSION' in os.environ:
 else:
     pycrypto = 'PyCrypto'
 
-
 _PACKAGES = {
     # 'modulename': 'pypi_name_or_url_or_path'
     'docutils': ['docutils'],
@@ -73,7 +68,7 @@ _PACKAGES = {
     'pyodbc': ['pyodbc'],
     'pyttsx': ['pyttsx'],
     'pytz': ['pytz'],
-    'pyusb': ['pyusb'], # package usb
+    'pyusb': ['pyusb'],  # package usb
     'qt4reactor': ['qt4reactor'],
     'requests': ['requests'],
     'scapy': ['scapy'],
@@ -81,11 +76,15 @@ _PACKAGES = {
     'sphinx': ['sphinx'],
     'sqlalchemy': ['SQLAlchemy-*%s-py%s.exe' % (py_arch(), PYVER)],
     'twisted': ['twisted'],
-    'wx': ['wxPython-common-*%s-py%s.exe' % (py_arch(), PYVER),
-        'wxPython-2*%s-py%s.exe' % (py_arch(), PYVER)],
+    'wx': [
+        'wxPython-common-*%s-py%s.exe' % (py_arch(), PYVER),
+        'wxPython-2*%s-py%s.exe' % (py_arch(), PYVER)
+    ],
     # PyWin32 is installed on ShiningPanda hosting.
-    'win32api': ['http://downloads.sourceforge.net/project/pywin32/pywin32/Build%%20217/pywin32-217.%s-py%s.exe' %
-        (py_arch(), PYVER)],
+    'win32api': [
+        'http://downloads.sourceforge.net/project/pywin32/pywin32/Build%%20217/pywin32-217.%s-py%s.exe'
+        % (py_arch(), PYVER)
+    ],
 }
 
 _PY_VERSION = {
@@ -103,9 +102,10 @@ _PY_VERSION = {
 
 def main():
     parser = optparse.OptionParser()
-    parser.add_option('-d', '--download-dir',
-        help='Directory with maually downloaded python modules.'
-    )
+    parser.add_option(
+        '-d',
+        '--download-dir',
+        help='Directory with maually downloaded python modules.')
     opts, _ = parser.parse_args()
 
     # Install packages.

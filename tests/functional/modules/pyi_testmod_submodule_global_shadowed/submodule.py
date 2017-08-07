@@ -7,7 +7,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
 '''
 Mock module of the same name as _and_ shadowed by a global variable defined by
 the `__init__` submodule of this package.

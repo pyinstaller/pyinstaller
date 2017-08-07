@@ -8,21 +8,19 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 import sys
 
 from PyQt4 import Qt
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 
-class MyDialog(QtGui.QDialog):
 
+class MyDialog(QtGui.QDialog):
     def __init__(self):
         super(MyDialog, self).__init__()
 
         self.label = Qt.QLabel(
-            u"Press <ESC> to exit. Some non-ascii chars: řčšěíáŘ",
-            self)
+            u"Press <ESC> to exit. Some non-ascii chars: řčšěíáŘ", self)
         self.setWindowTitle("Hello World from PyQt4")
         self.resize(400, 200)
         self.show()
@@ -41,7 +39,8 @@ def main():
         for format in QtGui.QImageReader.supportedImageFormats()])
     print(("Qt4 plugin paths: " + unicode(list(app.libraryPaths()))))
     print(("Qt4 image read support: " + read_formats))
-    print(('Qt4 Libraries path: ' + unicode(QtCore.QLibraryInfo.location(QtCore.QLibraryInfo.LibrariesPath))))
+    print(('Qt4 Libraries path: ' + unicode(
+        QtCore.QLibraryInfo.location(QtCore.QLibraryInfo.LibrariesPath))))
     ex = MyDialog()
     app.exec_()
 

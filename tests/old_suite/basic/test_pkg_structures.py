@@ -7,7 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 # Tests - hooks, strange pkg structures, version, icon.
 #
 # In this test, the *whole* package `pkg1` is replaced by the code and
@@ -28,7 +27,6 @@
 e1 = 'a_func from pkg2.a'
 e2 = 'b_func from pkg2.b (pkg2/extra/b.py)'
 e3 = 'notamodule from pkg2.__init__'
-
 
 from pkg1 import *
 

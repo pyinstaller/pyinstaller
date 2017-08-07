@@ -8,7 +8,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 import sys
 
 from PySide import QtCore
@@ -21,8 +20,7 @@ class MyDialog(QtGui.QDialog):
 
         self.label = QtGui.QLabel(
             u'Press <ESC> to exit. Some non-ascii chars: řčšěíáŘ'
-            u'\nor wait some seconds',
-            self)
+            u'\nor wait some seconds', self)
         self.setWindowTitle('Hello World from PySide')
         self.resize(400, 200)
         self.show()
@@ -44,8 +42,8 @@ def main():
                               for format in QtGui.QImageReader.supportedImageFormats()])
     print('Qt4 plugin paths: ' + str(list(app.libraryPaths())))
     print('Qt4 image read support: ' + read_formats)
-    print('Qt4 Libraries path: ' + str(
-        QtCore.QLibraryInfo.location(QtCore.QLibraryInfo.LibrariesPath)))
+    print('Qt4 Libraries path: ' +
+          str(QtCore.QLibraryInfo.location(QtCore.QLibraryInfo.LibrariesPath)))
     ex = MyDialog()
     app.exec_()
 

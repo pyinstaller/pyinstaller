@@ -7,12 +7,12 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
-attrs = [('notamodule','')]
+attrs = [('notamodule', '')]
 
 # Replace package `pkg1` the code and content of `pkg2`, while the
 # name `pkg1` is kept. `pkg2` is not contained in the fozen exe.
 # See test_pkg_structures.py for more details.
+
 
 def hook(mod):
     import os

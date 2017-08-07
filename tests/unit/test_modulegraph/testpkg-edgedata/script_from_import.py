@@ -1,9 +1,11 @@
 from pkg import toplevel_existing
 from pkg import toplevel_nonexisting
 
+
 class MyClass:
     from pkg import toplevel_class_existing
     from pkg import toplevel_class_nonexisting
+
 
 if a == b:
     from pkg import toplevel_conditional_existing
@@ -20,6 +22,7 @@ try:
 except:
     from pkg import toplevel_import2_existing
     from pkg import toplevel_import2_nonexisting
+
 
 def function():
     from pkg import function_existing, function_nonexisting

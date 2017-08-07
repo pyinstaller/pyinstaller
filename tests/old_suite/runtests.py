@@ -15,7 +15,6 @@
 
 from __future__ import print_function
 
-
 import glob
 import optparse
 import os
@@ -28,9 +27,8 @@ import unittest
 # ignore some warnings which only confuse when running tests
 import warnings
 
-warnings.filterwarnings('ignore',
-    "Parent module '.*' not found while handling absolute import")
-
+warnings.filterwarnings(
+    'ignore', "Parent module '.*' not found while handling absolute import")
 
 # Expand PYTHONPATH with PyInstaller package to support running without
 # installation -- only if not running in a virtualenv.
@@ -41,7 +39,6 @@ sys.path.insert(0, pyi_home)
 # Unbuffered sys.stdout, so we can follow stdout continuously when
 # running the test-cases, esp. the generated executables.
 #sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
-
 
 import PyInstaller
 from PyInstaller import compat, configure
@@ -67,6 +64,7 @@ class SkipChecker(object):
     """
     Check conditions if a test case should be skipped.
     """
+
     def __init__(self):
         # Required Python or OS version for some tests.
         self.MIN_VERSION_OR_OS = {
@@ -74,14 +72,18 @@ class SkipChecker(object):
             'interactive/test_onefile_win32_uac_admin': is_win,
             'libraries/test_enchant': is_win,
             'import/test_nspkg-pep420': sys.version_info >= (3, 4),
-            }
+        }
 
         # Test-cases failing for a known reason and the reason
         self.KNOWN_TO_FAIL = {
-            'import/test_onefile_pkgutil-get_data__main__': 'Our import mechanism returns the wrong loader-class for __main__.',
-            'import/test_nspkg3': 'due to missing support for extendpath in modulegraph',
-            'import/test_nspkg3-bbb-zzz': 'due to missing support for extendpath in modulegraph',
-            'import/test_nspkg3-empty': 'due to missing support for extendpath in modulegraph',
+            'import/test_onefile_pkgutil-get_data__main__':
+            'Our import mechanism returns the wrong loader-class for __main__.',
+            'import/test_nspkg3':
+            'due to missing support for extendpath in modulegraph',
+            'import/test_nspkg3-bbb-zzz':
+            'due to missing support for extendpath in modulegraph',
+            'import/test_nspkg3-empty':
+            'due to missing support for extendpath in modulegraph',
         }
 
         # The dependencies for Windows and Mac differ from Linux dependencies
@@ -107,12 +109,14 @@ class SkipChecker(object):
         self.MODULES = {
             'basic/test_onefile_nestedlaunch1': ['ctypes'],
             'basic/test_pkg_structures': ['pkg_resources'],
-
             'libraries/test_enchant': ['enchant'],
             'libraries/test_gst': ['gst'],
-            'libraries/test_idlelib': ['idlelib'], # some Linux distibs put this into a searate package
-            'libraries/test_Image': ['Image'], # PIL allows to use its submodules as top-level modules
-            'libraries/test_Image2': ['Image'], # PIL allows to use its submodules as top-level modules
+            'libraries/test_idlelib':
+            ['idlelib'],  # some Linux distibs put this into a searate package
+            'libraries/test_Image':
+            ['Image'],  # PIL allows to use its submodules as top-level modules
+            'libraries/test_Image2':
+            ['Image'],  # PIL allows to use its submodules as top-level modules
             'libraries/test_keyring': ['keyring'],
             'libraries/test_markdown': ['markdown'],
             'libraries/test_numpy': ['numpy'],
@@ -133,13 +137,18 @@ class SkipChecker(object):
             'libraries/test_PyQt4-uic': ['PyQt4'],
             'libraries/test_requests': ['requests'],
             'libraries/test_sysconfig': ['sysconfig'],
-            'libraries/test_scapy1': scapy_modules,
-            'libraries/test_scapy2': scapy_modules,
-            'libraries/test_scapy3': scapy_modules,
+            'libraries/test_scapy1':
+            scapy_modules,
+            'libraries/test_scapy2':
+            scapy_modules,
+            'libraries/test_scapy3':
+            scapy_modules,
             'libraries/test_scipy': ['numpy', 'scipy'],
             'libraries/test_sqlite3': ['sqlite3'],
             'libraries/test_sqlalchemy': ['sqlalchemy', 'MySQLdb', 'psycopg2'],
-            'libraries/test_twisted_qt4reactor': ['twisted', 'PyQt4', 'qt4reactor'],
+            'libraries/test_twisted_qt4reactor': [
+                'twisted', 'PyQt4', 'qt4reactor'
+            ],
             'libraries/test_twisted_reactor': ['twisted'],
             'libraries/test_usb': ['ctypes', 'usb'],
             'libraries/test_wx': ['wx'],
@@ -155,21 +164,21 @@ class SkipChecker(object):
             'import/test_onefile_zipimport': ['pkg_resources'],
             'import/test_onefile_zipimport2': ['pkg_resources', 'setuptools'],
             'import/test_pep302_import_protokol': ['sqlite3'],
-
             'interactive/test_ipython': ['IPython'],
             'interactive/test_matplotlib': ['matplotlib'],
             'interactive/test_pygame': ['pygame'],
-            'interactive/test_pyqt4_multiprocessing': ['multiprocessing', 'PyQt4'],
+            'interactive/test_pyqt4_multiprocessing': [
+                'multiprocessing', 'PyQt4'
+            ],
             'interactive/test_qt4': ['PyQt4'],
             'interactive/test_qt5': ['PyQt5'],
             'interactive/test_tix': ['Tix'],
             'interactive/test_tkinter': [modname_tkinter],
             'interactive/test_wx': ['wx'],
-            }
+        }
 
         # Other dependencies of some tests.
-        self.DEPENDENCIES = {
-            }
+        self.DEPENDENCIES = {}
 
     def _check_known_fail(self, test_name):
         """
@@ -183,8 +192,8 @@ class SkipChecker(object):
         Return True if test name is not in the list or Python or OS
         version is not met.
         """
-        if (test_name in self.MIN_VERSION_OR_OS and
-                not self.MIN_VERSION_OR_OS[test_name]):
+        if (test_name in self.MIN_VERSION_OR_OS
+                and not self.MIN_VERSION_OR_OS[test_name]):
             return False
         return True
 
@@ -198,8 +207,8 @@ class SkipChecker(object):
                 # STDOUT and STDERR are discarded (devnull) to hide
                 # import exceptions.
                 trash = open(os.devnull)
-                retcode = compat.exec_python_rc('-c', "import %s" % mod_name,
-                        stdout=trash, stderr=trash)
+                retcode = compat.exec_python_rc(
+                    '-c', "import %s" % mod_name, stdout=trash, stderr=trash)
                 trash.close()
                 if retcode != 0:
                     return mod_name
@@ -276,8 +285,11 @@ SPEC_FILE = set([
 
 
 class BuildTestRunner(object):
-
-    def __init__(self, test_name, verbose=False, report=False, with_crypto=False):
+    def __init__(self,
+                 test_name,
+                 verbose=False,
+                 report=False,
+                 with_crypto=False):
         # Use path separator '/' even on windows for test_name name.
         self.test_name = test_name.replace('\\', '/')
         self.verbose = verbose
@@ -304,7 +316,8 @@ class BuildTestRunner(object):
         """
         if self.verbose:
             # This allows to redirect stdout to junit xml report.
-            sys.stdout.write('\n' + 10 * '#' + ' ' + text + ' ' + 10 * '#' + '\n\n')
+            sys.stdout.write('\n' + 10 * '#' + ' ' + text + ' ' + 10 * '#' +
+                             '\n\n')
             sys.stdout.flush()
 
     def _plain_msg(self, text, newline=True):
@@ -331,13 +344,13 @@ class BuildTestRunner(object):
         parent_dir = self._distdir
         patterns = [
             # one-file deploy pattern
-            os.path.join(parent_dir, test+'.exe'),
+            os.path.join(parent_dir, test + '.exe'),
             # one-dir deploy pattern
-            os.path.join(parent_dir, test, test+'.exe'),
+            os.path.join(parent_dir, test, test + '.exe'),
             # search for e.g. `multipackage2_B`, too:
-            os.path.join(parent_dir, name+'.exe'),
-            os.path.join(parent_dir, name, name+'.exe'),
-            ]
+            os.path.join(parent_dir, name + '.exe'),
+            os.path.join(parent_dir, name, name + '.exe'),
+        ]
         for pattern in patterns:
             for prog in glob.glob(pattern):
                 if os.path.isfile(prog):
@@ -361,7 +374,8 @@ class BuildTestRunner(object):
         os.chdir(os.path.dirname(prog))
         # Run executable.
         prog = os.path.join(os.curdir, os.path.basename(prog))
-        proc = subprocess.Popen([prog], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        proc = subprocess.Popen(
+            [prog], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         # Prints stdout of subprocess continuously.
         self._msg('STDOUT %s' % self.test_name)
         while proc.poll() is None:
@@ -382,7 +396,6 @@ class BuildTestRunner(object):
         os.chdir(old_wd)
         return proc.returncode, stderr
 
-
     def test_exists(self):
         """
         Return True if test file exists.
@@ -395,10 +408,10 @@ class BuildTestRunner(object):
 
         Return True if build succeded False otherwise.
         """
-        OPTS = ['--debug', '--noupx',
-                '--specpath', self._specdir,
-                '--distpath', self._distdir,
-                '--workpath', self._builddir]
+        OPTS = [
+            '--debug', '--noupx', '--specpath', self._specdir, '--distpath',
+            self._distdir, '--workpath', self._builddir
+        ]
 
         if self.verbose:
             OPTS.extend(['--debug', '--log-level=INFO'])
@@ -412,7 +425,8 @@ class BuildTestRunner(object):
             OPTS.append('--onedir')
 
         if self.with_crypto or '_crypto' in self.test_file:
-            print('NOTE: Bytecode encryption is enabled for this test.', end="")
+            print(
+                'NOTE: Bytecode encryption is enabled for this test.', end="")
             OPTS.append('--key=test_key')
 
         self._msg("BUILDING TEST " + self.test_name)
@@ -429,14 +443,14 @@ class BuildTestRunner(object):
         # TODO Fix redirecting stdout/stderr
         # In report mode is stdout and sys.stderr redirected.
         #if self.report:
-            ## Write output from subprocess to stdout/err.
-            #retcode, out, err = compat.exec_python_all(pyinst_script,
-                  #testfile_spec, *OPTS)
-            #sys.stdout.write(out)
-            #sys.stdout.write(err)
+        ## Write output from subprocess to stdout/err.
+        #retcode, out, err = compat.exec_python_all(pyinst_script,
+        #testfile_spec, *OPTS)
+        #sys.stdout.write(out)
+        #sys.stdout.write(err)
         #else:
-            #retcode = compat.exec_python_rc(pyinst_script,
-                  #testfile_spec, *OPTS)
+        #retcode = compat.exec_python_rc(pyinst_script,
+        #testfile_spec, *OPTS)
         # abspath is required due to makespec.make_path_spec_relative()
         testfile_spec = os.path.abspath(testfile_spec)
         pyi_args = [testfile_spec] + OPTS
@@ -459,7 +473,7 @@ class BuildTestRunner(object):
         stderr = ''
         for exe in self._find_exepath(self.test_file):
             found = True
-            rc, err  = self._run_created_exe(exe)
+            rc, err = self._run_created_exe(exe)
             retcode = retcode or rc
             if rc != 0:
                 stderr = '\n'.join((stderr, '--- %s ---' % exe, err))
@@ -467,7 +481,6 @@ class BuildTestRunner(object):
             self._plain_msg('ERROR: no file generated by PyInstaller found!')
             return 1, list(self._find_exepath(self.test_file))
         return retcode, stderr.strip()
-
 
     def test_logs(self):
         """
@@ -516,7 +529,10 @@ class BuildTestRunner(object):
 
 
 class GenericTestCase(unittest.TestCase):
-    def __init__(self, func_name, test_dir=None, with_crypto=False,
+    def __init__(self,
+                 func_name,
+                 test_dir=None,
+                 with_crypto=False,
                  run_known_fails=False):
         """
         func_name   Name of test function to create.
@@ -554,16 +570,20 @@ class GenericTestCase(unittest.TestCase):
         if not req_met:
             raise unittest.SkipTest(msg)
         # Create a build and test it.
-        b = BuildTestRunner(self.test_name, verbose=VERBOSE, report=REPORT, with_crypto=self.with_crypto)
-        self.assertTrue(b.test_exists(),
-                msg='Test %s not found.' % self.test_name)
-        self.assertTrue(b.test_building(),
-                msg='Build of %s failed.' % self.test_name)
+        b = BuildTestRunner(
+            self.test_name,
+            verbose=VERBOSE,
+            report=REPORT,
+            with_crypto=self.with_crypto)
+        self.assertTrue(
+            b.test_exists(), msg='Test %s not found.' % self.test_name)
+        self.assertTrue(
+            b.test_building(), msg='Build of %s failed.' % self.test_name)
 
         okay, msg = b.test_logs()
         if not okay:
-            self.fail('Matching .toc of %s failed.\n\n%s' %
-                      (self.test_name, msg))
+            self.fail('Matching .toc of %s failed.\n\n%s' % (self.test_name,
+                                                             msg))
 
         retcode, stderr = b.test_exe()
         if retcode != 0:
@@ -580,8 +600,8 @@ class CryptoTestCase(GenericTestCase):
 
     def __init__(self, func_name, with_crypto=False, run_known_fails=False):
         # Crypto tests MUST NOT run 'with' crypto enabled.
-        super(CryptoTestCase, self).__init__(func_name, with_crypto=False,
-                                             run_known_fails=run_known_fails)
+        super(CryptoTestCase, self).__init__(
+            func_name, with_crypto=False, run_known_fails=run_known_fails)
 
 
 class ImportTestCase(GenericTestCase):
@@ -610,6 +630,7 @@ class TestCaseGenerator(object):
     """
     Generate test cases.
     """
+
     def _detect_tests(self, directory):
         files = glob.glob(os.path.join(directory, 'test_*.py'))
         # Test name is a file name without extension.
@@ -617,7 +638,9 @@ class TestCaseGenerator(object):
         tests.sort()
         return tests
 
-    def create_suite(self, test_types, with_crypto=False,
+    def create_suite(self,
+                     test_types,
+                     with_crypto=False,
                      run_known_fails=False):
         """
         Create test suite and add test cases to it.
@@ -632,8 +655,11 @@ class TestCaseGenerator(object):
             tests = self._detect_tests(_type.test_dir)
             # Create test cases for a specific type.
             for test_name in tests:
-                suite.addTest(_type(test_name, with_crypto=with_crypto,
-                                    run_known_fails=run_known_fails))
+                suite.addTest(
+                    _type(
+                        test_name,
+                        with_crypto=with_crypto,
+                        run_known_fails=run_known_fails))
 
         return suite
 
@@ -686,7 +712,8 @@ def clean():
                     print(e)
         # Delete *.spec files for tests without spec file.
         for pth in glob.glob(os.path.join(directory, '*.spec')):
-            test_name = directory + '/' + os.path.splitext(os.path.basename(pth))[0]
+            test_name = directory + '/' + os.path.splitext(
+                os.path.basename(pth))[0]
             if not test_name in SPEC_FILE:
                 if os.path.exists(pth):
                     os.remove(pth)
@@ -701,25 +728,36 @@ def run_tests(test_suite):
 
 def main():
     try:
-        parser = optparse.OptionParser(usage='%prog [options] [TEST-NAME ...]',
-              epilog='TEST-NAME can be the name of the .py-file, '
-              'the .spec-file or only the basename.')
+        parser = optparse.OptionParser(
+            usage='%prog [options] [TEST-NAME ...]',
+            epilog='TEST-NAME can be the name of the .py-file, '
+            'the .spec-file or only the basename.')
     except TypeError:
         parser = optparse.OptionParser(usage='%prog [options] [TEST-NAME ...]')
 
-    parser.add_option('-a', '--all-with-crypto', action='store_true',
-                      help='Run the whole test suite with bytecode encryption enabled.')
-    parser.add_option('-c', '--clean', action='store_true',
-                      help='Clean up generated files')
-    parser.add_option('-i', '--interactive-tests', action='store_true',
-                      help='Run interactive tests (default: run normal tests)')
-    parser.add_option('-v', '--verbose',
-                      action='store_true',
-                      default=False,
-                      help='Verbose mode (default: %default)')
-    parser.add_option('--known-fails', action='store_true',
-                      dest='run_known_fails',
-                      help='Run tests known to fail, too.')
+    parser.add_option(
+        '-a',
+        '--all-with-crypto',
+        action='store_true',
+        help='Run the whole test suite with bytecode encryption enabled.')
+    parser.add_option(
+        '-c', '--clean', action='store_true', help='Clean up generated files')
+    parser.add_option(
+        '-i',
+        '--interactive-tests',
+        action='store_true',
+        help='Run interactive tests (default: run normal tests)')
+    parser.add_option(
+        '-v',
+        '--verbose',
+        action='store_true',
+        default=False,
+        help='Verbose mode (default: %default)')
+    parser.add_option(
+        '--known-fails',
+        action='store_true',
+        dest='run_known_fails',
+        help='Run tests known to fail, too.')
 
     opts, args = parser.parse_args()
 
@@ -731,15 +769,19 @@ def main():
     # Run only specified tests.
     if args:
         if opts.interactive_tests:
-            parser.error('Must not specify -i/--interactive-tests when passing test names.')
+            parser.error(
+                'Must not specify -i/--interactive-tests when passing test names.'
+            )
         suite = unittest.TestSuite()
         for arg in args:
             test_list = glob.glob(arg)
             if not test_list:
                 test_list = [arg]
             else:
-                test_list = [x for x in test_list
-                             if os.path.splitext(x)[1] in (".py", ".spec")]
+                test_list = [
+                    x for x in test_list
+                    if os.path.splitext(x)[1] in (".py", ".spec")
+                ]
             # Sort tests aplhabetically. For example test
             # basic/test_nested_launch1 depends on the executable from
             # basic/test_nested_launch0, which it runs.
@@ -747,7 +789,10 @@ def main():
             for t in test_list:
                 test_dir = os.path.dirname(t)
                 test_script = os.path.basename(os.path.splitext(t)[0])
-                suite.addTest(GenericTestCase(test_script, test_dir=test_dir,
+                suite.addTest(
+                    GenericTestCase(
+                        test_script,
+                        test_dir=test_dir,
                         run_known_fails=opts.run_known_fails))
                 print('Running test: ', (test_dir + '/' + test_script))
 
@@ -760,12 +805,16 @@ def main():
             print('Running normal tests with bytecode encryption...')
             # Make sure to exclude CryptoTestCase here since we are building
             # everything else with crypto enabled.
-            test_classes = [BasicTestCase, ImportTestCase,
-                    LibrariesTestCase, MultipackageTestCase]
+            test_classes = [
+                BasicTestCase, ImportTestCase, LibrariesTestCase,
+                MultipackageTestCase
+            ]
         else:
             print('Running normal tests (-i for interactive tests)...')
-            test_classes = [BasicTestCase, CryptoTestCase, ImportTestCase,
-                    LibrariesTestCase, MultipackageTestCase]
+            test_classes = [
+                BasicTestCase, CryptoTestCase, ImportTestCase,
+                LibrariesTestCase, MultipackageTestCase
+            ]
 
         # Create test suite.
         generator = TestCaseGenerator()
@@ -789,8 +838,8 @@ def main():
         # Set the logging level to ERROR.
         logger = logging.getLogger('PyInstaller')
         logger.setLevel(logging.ERROR)
-    PYI_CONFIG = configure.get_config(upx_dir=None)  # Run configure phase only once.
-
+    PYI_CONFIG = configure.get_config(
+        upx_dir=None)  # Run configure phase only once.
 
     # Run created test suite.
     clean()

@@ -8,7 +8,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 # This import forces Python 2 to handle string as unicode - as with prefix 'u'.
 from __future__ import unicode_literals
 
@@ -16,7 +15,6 @@ from __future__ import unicode_literals
 # The original string and the result should be equal.
 
 import codecs
-
 
 str_a = 'foo bar fóó bář, fěě, ďěž'
 str_a_utf8 = codecs.getencoder('utf-8')(str_a)[0]

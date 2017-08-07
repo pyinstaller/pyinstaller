@@ -10,10 +10,10 @@
 
 import pytest
 
-def test_ctypes_cdll_unknown_dll(pyi_builder,capfd):
+
+def test_ctypes_cdll_unknown_dll(pyi_builder, capfd):
     with pytest.raises(AssertionError):
-        pyi_builder.test_source(
-            """
+        pyi_builder.test_source("""
             import ctypes
             ctypes.cdll.LoadLibrary('non-existing-2017')
             """)

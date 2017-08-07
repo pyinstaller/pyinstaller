@@ -7,7 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 name = 'pyi_testmod_relimp.pyi_testmod_relimp.relimp2'
 
 from . import relimp3
@@ -26,4 +25,3 @@ assert pyi_testmod_relimp.relimp2.name == 'pyi_testmod_relimp.relimp2'
 #  .pyi_testmod_relimp should be a sibling of this package
 #from .pyi_testmod_relimp import relimp2
 #assert pyi_testmod_relimp2.name == 'pyi_testmod_relimp.relimp2'
-

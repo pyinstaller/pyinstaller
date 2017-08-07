@@ -9,7 +9,8 @@
 
 import pkgutil
 
-expected_data = 'This is data text for testing the packaging module data.'.encode('ascii')
+expected_data = 'This is data text for testing the packaging module data.'.encode(
+    'ascii')
 
 data = pkgutil.get_data('__main__', 'pkg3/sample-data.txt')
 if data:

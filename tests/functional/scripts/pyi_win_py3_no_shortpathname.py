@@ -22,6 +22,7 @@ if sys.version_info[0] == 2:
 else:
     safe_repr = ascii
 
+
 def check_shortpathname(fn):
     lfn = win32api.GetLongPathNameW(fn)
     fn = os.path.normcase(fn)
@@ -29,6 +30,7 @@ def check_shortpathname(fn):
     if lfn != fn:
         print("ShortPathName: Expected %s, got %s" % (fn, lfn))
         raise SystemExit(-1)
+
 
 print("sys.executable: %s" % safe_repr(sys.executable))
 
@@ -47,4 +49,3 @@ print("sys._MEIPASS: %s" % safe_repr(sys._MEIPASS))
 if not os.path.exists(sys._MEIPASS):
     raise SystemExit("sys._MEIPASS does not exist.")
 check_shortpathname(sys._MEIPASS)
-

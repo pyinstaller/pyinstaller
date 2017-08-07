@@ -7,7 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 # LD_LIBRARY_PATH set by bootloader should not contain ./
 #
 # This test assumes the LD_LIBRARY_PATH is not set before running the test.
@@ -20,10 +19,8 @@
 #  $ unset LD_LIBRARY_PATH
 #  $ ./runtests.py basic/test_absolute_ld_library_path.py
 
-
 import os
 import sys
-
 
 # Bootloader should override set LD_LIBRARY_PATH.
 

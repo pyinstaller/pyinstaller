@@ -7,7 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 # Bootloader unsets _MEIPASS2 for child processes to allow running
 # PyInstaller binaries inside pyinstaller binaries.
 # This is ok for mac or unix with fork() system call.
@@ -15,7 +14,6 @@
 # mode.
 #
 # See http://www.pyinstaller.org/wiki/Recipe/Multiprocessing
-
 
 import multiprocessing
 import sys

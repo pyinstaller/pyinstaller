@@ -47,5 +47,6 @@ from PySide import QtGui
     logger.warn("Analysis duration: %s", duration)
     shutil.rmtree(tempdir, ignore_errors=True)
 
+
 if __name__ == '__main__':
     speed_pefile()

@@ -28,6 +28,7 @@
 #--- Code of pkg_resources/extern/__init__.py starts here
 import sys
 
+
 class VendorImporter:
     """
     A PEP 302 meta path importer for finding optionally-vendored
@@ -85,8 +86,8 @@ class VendorImporter:
                 "The '{target}' package is required; "
                 "normally this is bundled with this package so if you get "
                 "this warning, consult the packager of your "
-                "distribution.".format(**locals())
-            )
+                "distribution.".format(**locals()))
+
     def install(self):
         """
         Install this importer into sys.meta_path if not already present.
@@ -94,7 +95,9 @@ class VendorImporter:
         if self not in sys.meta_path:
             sys.meta_path.append(self)
 
+
 #--- Code of pkg_resources/extern/__init__.py ends here
+
 
 class MyVendorImporter(VendorImporter):
     @property
@@ -103,6 +106,7 @@ class MyVendorImporter(VendorImporter):
         Only search the vendor package, and not a natural package.
         """
         yield self.vendor_pkg + '.'
+
 
 names = ('aaa', 'bbb', 'ccc')
 MyVendorImporter(__name__, names).install()

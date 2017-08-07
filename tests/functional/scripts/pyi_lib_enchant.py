@@ -7,12 +7,10 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 # Enchant hook test. Tested with PyEnchant 1.6.6.
 
 import sys
 import enchant
-
 
 print(80 * '-')
 print('PYTHONPATH: %s' % sys.path)
@@ -33,7 +31,6 @@ print(80 * '-')
 print('Languages: %s' % ', '.join(langs))
 print('Dictionaries: %s' % dicts)
 print(80 * '-')
-
 
 # Try spell checking if English is availale
 l = 'en_US'

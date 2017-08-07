@@ -20,6 +20,7 @@ import pytest
 from PyInstaller.lib.modulegraph import modulegraph
 from PyInstaller.utils.tests import xfail, skipif, skipif_win, is_py2, is_py3
 
+
 def _import_and_get_node(tmpdir, module_name, path=None):
     script = tmpdir.join('script.py')
     script.write('import %s' % module_name)
@@ -73,7 +74,7 @@ def test_package(tmpdir):
     pysrc.write('###', ensure=True)
     node = _import_and_get_node(tmpdir, 'stuff')
     assert node.__class__ is modulegraph.Package
-    assert node.filename in (str(pysrc), str(pysrc)+'c')
+    assert node.filename in (str(pysrc), str(pysrc) + 'c')
     assert node.packagepath == [pysrc.dirname]
 
 
@@ -88,7 +89,9 @@ def test_compiled_package(tmpdir):
     assert node.filename == str(pysrc) + 'c'
     assert node.packagepath == [str(pysrc.dirname)]
 
+
 #-- Tests with a single module in a zip-file
+
 
 def _zip_directory(filename, path):
     with zipfile.ZipFile(filename, mode='w') as zfh:
@@ -115,7 +118,8 @@ def test_zipped_module_source_and_compiled(tmpdir):
     node = _import_and_get_node(tmpdir, 'stuff', path=[zipfilename])
     # Do not care whether it's source or compiled, as long as it is
     # neither invalid nor missing.
-    assert node.__class__ in (modulegraph.SourceModule, modulegraph.CompiledModule)
+    assert node.__class__ in (modulegraph.SourceModule,
+                              modulegraph.CompiledModule)
     assert node.filename.startswith(os.path.join(zipfilename, 'stuff.py'))
 
 
@@ -134,10 +138,12 @@ def test_zipped_module_compiled(tmpdir):
 
 #-- Tests with a package in a zip-file
 
+
 def _zip_package(filename, path):
     with zipfile.ZipFile(filename, mode='w') as zfh:
         for filename in path.visit():
             zfh.write(str(filename), filename.relto(path.dirname))
+
 
 def test_zipped_package_source(tmpdir):
     pysrc = tmpdir.join('stuff', '__init__.py')
@@ -175,6 +181,7 @@ def test_zipped_package_compiled(tmpdir):
 
 #-- Namespace packages
 
+
 @skipif(is_py2, reason='Requires Python 3 or newer')
 def test_nspackage_pep420(tmpdir):
     p1 = tmpdir.join('p1')
@@ -197,8 +204,10 @@ def test_nspackage_pep420(tmpdir):
     assert isinstance(node, modulegraph.NamespacePackage)
     assert node.packagepath == [os.path.join(p, 'stuff') for p in path]
 
+
 # :todo: test_namespace_setuptools
 # :todo: test_namespace_pkg_resources
+
 
 @skipif_win
 def test_symlinks(tmpdir):
@@ -224,28 +233,24 @@ def test_import_order_1(tmpdir):
     class MyModuleGraph(modulegraph.ModuleGraph):
         def _load_module(self, fqname, fp, pathname, info):
             if not record or record[-1] != fqname:
-                record.append(fqname) # record non-consecutive entries
-            return super(MyModuleGraph, self)._load_module(fqname, fp,
-                                                           pathname, info)
+                record.append(fqname)  # record non-consecutive entries
+            return super(MyModuleGraph, self)._load_module(
+                fqname, fp, pathname, info)
 
     record = []
 
-    for filename, content in (
-        ('a/',     ' from . import c, d'),
-        ('a/c',            '#'),
-        ('a/d/',    'from . import f, g, h'),
-        ('a/d/f/',  'from . import j, k'),
-        ('a/d/f/j',         '#'),
-        ('a/d/f/k',         '#'),
-        ('a/d/g/',   'from . import l, m'),
-        ('a/d/g/l',         '#'),
-        ('a/d/g/m',         '#'),
-        ('a/d/h',           '#'),
-        ('b/',      'from . import e'),
-        ('b/e/',    'from . import i'),
-        ('b/e/i',           '#')):
+    for filename, content in (('a/', ' from . import c, d'), ('a/c', '#'),
+                              ('a/d/', 'from . import f, g, h'),
+                              ('a/d/f/',
+                               'from . import j, k'), ('a/d/f/j',
+                                                       '#'), ('a/d/f/k', '#'),
+                              ('a/d/g/',
+                               'from . import l, m'), ('a/d/g/l',
+                                                       '#'), ('a/d/g/m', '#'),
+                              ('a/d/h', '#'), ('b/', 'from . import e'),
+                              ('b/e/', 'from . import i'), ('b/e/i', '#')):
         if filename.endswith('/'): filename += '__init__'
-        tmpdir.join(*(filename+'.py').split('/')).ensure().write(content)
+        tmpdir.join(*(filename + '.py').split('/')).ensure().write(content)
 
     script = tmpdir.join('script.py')
     script.write('import a, b')
@@ -253,11 +258,10 @@ def test_import_order_1(tmpdir):
     mg.run_script(str(script))
 
     # This is the order Python imports these modules given that script.
-    expected = ['a',
-                    'a.c', 'a.d', 'a.d.f', 'a.d.f.j', 'a.d.f.k',
-                    'a.d.g', 'a.d.g.l', 'a.d.g.m',
-                    'a.d.h',
-               'b', 'b.e', 'b.e.i']
+    expected = [
+        'a', 'a.c', 'a.d', 'a.d.f', 'a.d.f.j', 'a.d.f.k', 'a.d.g', 'a.d.g.l',
+        'a.d.g.m', 'a.d.h', 'b', 'b.e', 'b.e.i'
+    ]
     assert record == expected
 
 
@@ -267,31 +271,29 @@ def test_import_order_2(tmpdir):
     class MyModuleGraph(modulegraph.ModuleGraph):
         def _load_module(self, fqname, fp, pathname, info):
             if not record or record[-1] != fqname:
-                record.append(fqname) # record non-consecutive entries
-            return super(MyModuleGraph, self)._load_module(fqname, fp,
-                                                           pathname, info)
+                record.append(fqname)  # record non-consecutive entries
+            return super(MyModuleGraph, self)._load_module(
+                fqname, fp, pathname, info)
 
     record = []
 
-    for filename, content in (
-        ('a/',      '#'),
-        ('a/c/',    '#'),
-        ('a/c/g',   '#'),
-        ('a/c/h',   'from . import g'),
-        ('a/d/',    '#'),
-        ('a/d/i',   'from ..c import h'),
-        ('a/d/j/',  'from .. import i'),
-        ('a/d/j/o', '#'),
-        ('b/',      'from .e import k'),
-        ('b/e/',    'import a.c.g'),
-        ('b/e/k',   'from .. import f'),
-        ('b/e/l',   'import a.d.j'),
-        ('b/f/',    '#'),
-        ('b/f/m',   '#'),
-        ('b/f/n/',  '#'),
-        ('b/f/n/p', 'from ...e import l')):
+    for filename, content in (('a/', '#'), ('a/c/',
+                                            '#'), ('a/c/g',
+                                                   '#'), ('a/c/h',
+                                                          'from . import g'),
+                              ('a/d/', '#'), ('a/d/i', 'from ..c import h'),
+                              ('a/d/j/', 'from .. import i'), ('a/d/j/o', '#'),
+                              ('b/', 'from .e import k'), ('b/e/',
+                                                           'import a.c.g'),
+                              ('b/e/k', 'from .. import f'), ('b/e/l',
+                                                              'import a.d.j'),
+                              ('b/f/',
+                               '#'), ('b/f/m',
+                                      '#'), ('b/f/n/',
+                                             '#'), ('b/f/n/p',
+                                                    'from ...e import l')):
         if filename.endswith('/'): filename += '__init__'
-        tmpdir.join(*(filename+'.py').split('/')).ensure().write(content)
+        tmpdir.join(*(filename + '.py').split('/')).ensure().write(content)
 
     script = tmpdir.join('script.py')
     script.write('import b.f.n.p')
@@ -299,17 +301,16 @@ def test_import_order_2(tmpdir):
     mg.run_script(str(script))
 
     # This is the order Python imports these modules given that script.
-    expected = ['b', 'b.e',
-                'a', 'a.c', 'a.c.g',
-                'b.e.k',
-                'b.f', 'b.f.n', 'b.f.n.p',
-                'b.e.l',
-                'a.d', 'a.d.j', 'a.d.i', 'a.c.h']
+    expected = [
+        'b', 'b.e', 'a', 'a.c', 'a.c.g', 'b.e.k', 'b.f', 'b.f.n', 'b.f.n.p',
+        'b.e.l', 'a.d', 'a.d.j', 'a.d.i', 'a.c.h'
+    ]
     assert record == expected
     print(record)
 
 
 #---- scan bytecode
+
 
 def __scan_code(code, use_ast, monkeypatch):
     mg = modulegraph.ModuleGraph()
@@ -347,10 +348,11 @@ def test_scan_code__basic(monkeypatch, use_ast):
     """
     module = __scan_code(code, use_ast, monkeypatch)
     assert len(module._deferred_imports) == 3
-    assert ([di[1][0] for di in module._deferred_imports]
-            == ['os.path', 'sys', 'shutil'])
+    assert ([di[1][0] for di in module._deferred_imports] == [
+        'os.path', 'sys', 'shutil'
+    ])
     assert module.is_global_attr('maxint')
     assert module.is_global_attr('os')
     assert module.is_global_attr('platform')
-    assert not module.is_global_attr('shutil') # not imported at module level
+    assert not module.is_global_attr('shutil')  # not imported at module level
     assert not module.is_global_attr('exitfunc')

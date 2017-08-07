@@ -2,10 +2,10 @@ import unittest
 from PyInstaller.lib.altgraph import GraphUtil
 from PyInstaller.lib.altgraph import Graph, GraphError
 
-class TestGraphUtil (unittest.TestCase):
 
+class TestGraphUtil(unittest.TestCase):
     def test_generate_random(self):
-        g =  GraphUtil.generate_random_graph(10, 50)
+        g = GraphUtil.generate_random_graph(10, 50)
         self.assertEqual(g.number_of_nodes(), 10)
         self.assertEqual(g.number_of_edges(), 50)
 
@@ -17,7 +17,7 @@ class TestGraphUtil (unittest.TestCase):
             self.assertTrue((h, t) not in seen)
             seen.add((h, t))
 
-        g =  GraphUtil.generate_random_graph(5, 30, multi_edges=True)
+        g = GraphUtil.generate_random_graph(5, 30, multi_edges=True)
         self.assertEqual(g.number_of_nodes(), 5)
         self.assertEqual(g.number_of_edges(), 30)
 
@@ -33,7 +33,7 @@ class TestGraphUtil (unittest.TestCase):
         else:
             self.fail("no duplicates?")
 
-        g =  GraphUtil.generate_random_graph(5, 21, self_loops=True)
+        g = GraphUtil.generate_random_graph(5, 21, self_loops=True)
         self.assertEqual(g.number_of_nodes(), 5)
         self.assertEqual(g.number_of_edges(), 21)
 
@@ -51,7 +51,8 @@ class TestGraphUtil (unittest.TestCase):
 
         self.assertRaises(GraphError, GraphUtil.generate_random_graph, 5, 21)
         g = GraphUtil.generate_random_graph(5, 21, True)
-        self.assertRaises(GraphError, GraphUtil.generate_random_graph, 5, 26, True)
+        self.assertRaises(GraphError, GraphUtil.generate_random_graph, 5, 26,
+                          True)
 
     def test_generate_scale_free(self):
         graph = GraphUtil.generate_scale_free_graph(50, 10)
@@ -103,38 +104,33 @@ class TestGraphUtil (unittest.TestCase):
         g.add_edge("1.1.2", "1.1.2.2")
         g.add_edge("1.1.2", "1.1.2.3")
 
-        v, r, o =  GraphUtil.filter_stack(g, "1", [
-            lambda n: n != "N.1.1.1", lambda n: n != "N.1.1.2.3" ])
+        v, r, o = GraphUtil.filter_stack(
+            g, "1", [lambda n: n != "N.1.1.1", lambda n: n != "N.1.1.2.3"])
 
         self.assertEqual(v,
-            set(["1", "1.1", "1.1.1", "1.1.2", "1.1.3",
-                "1.1.1.1", "1.1.1.2", "1.1.2.1", "1.1.2.2",
-                "1.1.2.3"]))
-        self.assertEqual(r, set([
-                "1.1.1", "1.1.2.3"]))
+                         set([
+                             "1", "1.1", "1.1.1", "1.1.2", "1.1.3", "1.1.1.1",
+                             "1.1.1.2", "1.1.2.1", "1.1.2.2", "1.1.2.3"
+                         ]))
+        self.assertEqual(r, set(["1.1.1", "1.1.2.3"]))
 
         o.sort()
-        self.assertEqual(o,
-            [
-                ("1.1", "1.1.1.1"),
-                ("1.1", "1.1.1.2")
-            ])
+        self.assertEqual(o, [("1.1", "1.1.1.1"), ("1.1", "1.1.1.2")])
 
-        v, r, o =  GraphUtil.filter_stack(g, "1", [
-            lambda n: n != "N.1.1.1", lambda n: n != "N.1.1.1.2" ])
+        v, r, o = GraphUtil.filter_stack(
+            g, "1", [lambda n: n != "N.1.1.1", lambda n: n != "N.1.1.1.2"])
 
         self.assertEqual(v,
-            set(["1", "1.1", "1.1.1", "1.1.2", "1.1.3",
-                "1.1.1.1", "1.1.1.2", "1.1.2.1", "1.1.2.2",
-                "1.1.2.3"]))
-        self.assertEqual(r, set([
-                "1.1.1", "1.1.1.2"]))
+                         set([
+                             "1", "1.1", "1.1.1", "1.1.2", "1.1.3", "1.1.1.1",
+                             "1.1.1.2", "1.1.2.1", "1.1.2.2", "1.1.2.3"
+                         ]))
+        self.assertEqual(r, set(["1.1.1", "1.1.1.2"]))
 
-        self.assertEqual(o,
-            [
-                ("1.1", "1.1.1.1"),
-            ])
+        self.assertEqual(o, [
+            ("1.1", "1.1.1.1"),
+        ])
 
 
-if __name__ == "__main__": # pragma: no cover
+if __name__ == "__main__":  # pragma: no cover
     unittest.main()

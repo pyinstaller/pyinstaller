@@ -7,13 +7,11 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 # Test of PyQt4 and multiprocessing.
 #
 # Running this code creates a PyQt4 window in a child process and exits when it
 # is closed. If run with the argument 'single', the window is created in the
 # same process instead.
-
 
 import multiprocessing
 import sys
@@ -34,6 +32,6 @@ if __name__ == '__main__':
     if 'single' in sys.argv:
         run_qt('Same process')
     else:
-        p = multiprocessing.Process(target=run_qt, args=('Child process',))
+        p = multiprocessing.Process(target=run_qt, args=('Child process', ))
         p.start()
         p.join()

@@ -31,4 +31,3 @@ print("sys._MEIPASS: %s" % safe_repr(sys._MEIPASS))
 
 if not os.path.exists(sys._MEIPASS):
     raise SystemExit("sys._MEIPASS does not exist.")
-

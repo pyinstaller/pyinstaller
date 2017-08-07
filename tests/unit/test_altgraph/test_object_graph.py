@@ -9,24 +9,26 @@ except ImportError:
     from io import StringIO
 
 
-class Node (object):
+class Node(object):
     def __init__(self, graphident):
         self.graphident = graphident
 
-class SubNode (Node):
+
+class SubNode(Node):
     pass
 
-class ArgNode (object):
+
+class ArgNode(object):
     def __init__(self, graphident, *args, **kwds):
         self.graphident = graphident
         self.args = args
         self.kwds = kwds
 
     def __repr__(self):
-        return '<ArgNode %s>'%(self.graphident,)
+        return '<ArgNode %s>' % (self.graphident, )
 
-class TestObjectGraph (unittest.TestCase):
 
+class TestObjectGraph(unittest.TestCase):
     def test_constructor(self):
         graph = ObjectGraph()
         self.assertTrue(isinstance(graph, ObjectGraph))
@@ -44,7 +46,6 @@ class TestObjectGraph (unittest.TestCase):
         graph = ObjectGraph()
         self.assertEqual(repr(graph), '<ObjectGraph>')
 
-
     def testNodes(self):
         graph = ObjectGraph()
         n1 = Node("n1")
@@ -54,8 +55,8 @@ class TestObjectGraph (unittest.TestCase):
 
         n1b = Node("n1")
 
-        self.assertTrue(graph.getIdent(graph)  is graph)
-        self.assertTrue(graph.getRawIdent(graph)  is graph)
+        self.assertTrue(graph.getIdent(graph) is graph)
+        self.assertTrue(graph.getRawIdent(graph) is graph)
 
         graph.addNode(n1)
         graph.addNode(n2)
@@ -103,7 +104,7 @@ class TestObjectGraph (unittest.TestCase):
         self.assertTrue(n in graph)
         self.assertTrue(graph.findNode("args") is n)
         self.assertEqual(n.args, (1, 2, 3))
-        self.assertEqual(n.kwds, {'a':'a', 'b':'b'})
+        self.assertEqual(n.kwds, {'a': 'a', 'b': 'b'})
 
     def testEdges(self):
         graph = ObjectGraph()
@@ -144,7 +145,6 @@ class TestObjectGraph (unittest.TestCase):
         e = g.edge_by_node("n1", "n2")
         self.assertTrue(e is not None)
         self.assertEqual(g.edge_data(e), "foo")
-
 
     def test_flatten(self):
         graph = ObjectGraph()
@@ -250,7 +250,6 @@ class TestObjectGraph (unittest.TestCase):
         ins = list(ins)
         outs = list(outs)
 
-
         self.assertTrue(n1 not in outs)
         self.assertTrue(n2 in outs)
         self.assertTrue(n3 in outs)
@@ -271,7 +270,7 @@ class TestObjectGraph (unittest.TestCase):
         n11 = graph.createNode(ArgNode, "n1.1", 1)
         n12 = graph.createNode(ArgNode, "n1.2", 0)
         n111 = graph.createNode(ArgNode, "n1.1.1", 0)
-        n112 = graph.createNode(ArgNode, "n1.1.2",2)
+        n112 = graph.createNode(ArgNode, "n1.1.2", 2)
         n2 = graph.createNode(ArgNode, "n2", 0)
         n3 = graph.createNode(ArgNode, "n2", 0)
 
@@ -292,7 +291,7 @@ class TestObjectGraph (unittest.TestCase):
         self.assertTrue(n3 in graph)
 
         visited, removes, orphans = graph.filterStack(
-                [lambda n: n.args[0] != 1, lambda n: n.args[0] != 2])
+            [lambda n: n.args[0] != 1, lambda n: n.args[0] != 2])
 
         self.assertEqual(visited, 6)
         self.assertEqual(removes, 2)
@@ -311,7 +310,7 @@ class TestObjectGraph (unittest.TestCase):
         self.assertTrue(n3 in graph)
 
 
-class TestObjectGraphIO (unittest.TestCase):
+class TestObjectGraphIO(unittest.TestCase):
     def setUp(self):
         self._stdout = sys.stdout
 
@@ -342,8 +341,9 @@ class TestObjectGraphIO (unittest.TestCase):
         graph.msgin(0, "hello", "world")
         graph.msg(0, "test me")
         graph.msgout(0, "bye bye")
-        self.assertEqual(fp.getvalue(), "hello 'world'\n  test me \nbye bye \n")
+        self.assertEqual(fp.getvalue(),
+                         "hello 'world'\n  test me \nbye bye \n")
 
 
-if __name__ == "__main__": # pragma: no cover
+if __name__ == "__main__":  # pragma: no cover
     unittest.main()

@@ -7,14 +7,13 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 import numpy
 from matplotlib import mlab
 from matplotlib import pyplot
 
 
 def main():
-    # Part of the example at 
+    # Part of the example at
     # http://matplotlib.sourceforge.net/plot_directive/mpl_examples/pylab_examples/contour_demo.py
     delta = 0.025
     x = numpy.arange(-3.0, 3.0, delta)

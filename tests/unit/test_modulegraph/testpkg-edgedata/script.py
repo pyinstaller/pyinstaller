@@ -1,10 +1,11 @@
-
 import toplevel_existing
 import toplevel_nonexisting
+
 
 class MyClass:
     import toplevel_class_existing
     import toplevel_class_nonexisting
+
 
 if a == b:
     import toplevel_conditional_existing
@@ -23,6 +24,7 @@ try:
 except:
     import toplevel_import2_existing
     import toplevel_import2_nonexisting
+
 
 def function():
     import function_existing

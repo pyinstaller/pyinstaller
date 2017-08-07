@@ -7,17 +7,13 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 # Test for GStreamer Python bindings.
-
 
 # gst module is trying to load some plugins
 # and loading plugins should fail when they are not bundled.
 
-
 import sys
 import gst
-
 
 reg = gst.registry_get_default()
 plug = reg.find_plugin('coreelements')

@@ -56,24 +56,24 @@ def test_pyz_as_external_file(pyi_builder, monkeypatch):
 
     pyi_builder.test_source("print('Hello Python!')")
 
+
 def test_base_modules_regex(pyi_builder):
     """
     Verify that the regex for excluding modules listed in
     PY3_BASE_MODULES does not exclude other modules.
     """
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         import resources_testmod
         print('OK')
         """)
 
 
 def test_celementtree(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         from xml.etree.cElementTree import ElementTree
         print('OK')
         """)
+
 
 @importorskip('codecs')
 def test_codecs(pyi_builder):
@@ -89,9 +89,9 @@ def test_compiled_filenames(pyi_builder):
     assert not isabs(pyi_dummy_module.DummyClass.dummyMethod.__code__.co_filename), "pyi_dummy_module.DummyClass.dummyMethod.__code__.co_filename has compiled filename: %s" % (pyi_dummy_module.DummyClass.dummyMethod.__code__.co_filename,)
     """)
 
+
 def test_decoders_ascii(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         # This import forces Python 2 to handle string as unicode -
         # as with prefix 'u'.
         from __future__ import unicode_literals
@@ -104,15 +104,13 @@ def test_decoders_ascii(pyi_builder):
 def test_distutils_submod(pyi_builder):
     # Test import of submodules of distutils package
     # PyI fails to include `distutils.version` when running from virtualenv
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         from distutils.version import LooseVersion
         """)
 
 
 def test_dynamic_module(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         import pyi_testmod_dynamic
 
         # The value 'foo' should  not be None.
@@ -125,14 +123,14 @@ def test_dynamic_module(pyi_builder):
 def test_email(pyi_builder):
     # Test import of new-style email module names.
     # This should work on Python 2.5+
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         from email import utils
         from email.header import Header
         from email.mime.text import MIMEText
         from email.mime.multipart import MIMEMultipart
         from email.mime.nonmultipart import MIMENonMultipart
         """)
+
 
 @importorskip('Crypto')
 def test_feature_crypto(pyi_builder):
@@ -152,8 +150,7 @@ def test_feature_crypto(pyi_builder):
 
 
 def test_feature_nocrypto(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         try:
             import pyimod00_crypto_key
 
@@ -242,8 +239,7 @@ def test_get_meipass_value(pyi_builder):
 
 def test_chdir_meipass(pyi_builder):
     # Ensure meipass dir exists.
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         import os, sys
         os.chdir(sys._MEIPASS)
         print(os.getcwd())
@@ -273,6 +269,7 @@ def test_option_exclude_module(pyi_builder):
 
 def test_option_verbose(pyi_builder, monkeypatch):
     "Test to ensure that option V can be set and has effect."
+
     # This option is like 'python -v' - trace import statements.
     # 'None' should be allowed or '' also.
 
@@ -285,8 +282,7 @@ def test_option_verbose(pyi_builder, monkeypatch):
     EXE = PyInstaller.building.build_main.EXE
     monkeypatch.setattr('PyInstaller.building.build_main.EXE', MyEXE)
 
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         print('test - PYTHONVERBOSE - trace import statements')
         import re # just import anything
         print('test - done')
@@ -295,11 +291,11 @@ def test_option_verbose(pyi_builder, monkeypatch):
 
 def test_option_w_unset(pyi_builder):
     "Test to ensure that option W is not set by default."
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         import sys
         assert 'ignore' not in sys.warnoptions
         """)
+
 
 def test_option_w_ignore(pyi_builder, monkeypatch):
     "Test to ensure that option W can be set."
@@ -313,8 +309,7 @@ def test_option_w_ignore(pyi_builder, monkeypatch):
     EXE = PyInstaller.building.build_main.EXE
     monkeypatch.setattr('PyInstaller.building.build_main.EXE', MyEXE)
 
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         import sys
         assert 'ignore' in sys.warnoptions
         """)
@@ -330,7 +325,10 @@ def test_set_icon(pyi_builder, data_dir):
         args = ['--icon', os.path.join(data_dir.strpath, 'pyi_icon.ico')]
     elif is_darwin:
         # On OS X icon is applied only for windowed mode.
-        args = ['--windowed', '--icon', os.path.join(data_dir.strpath, 'pyi_icon.icns')]
+        args = [
+            '--windowed', '--icon',
+            os.path.join(data_dir.strpath, 'pyi_icon.icns')
+        ]
     else:
         pytest.skip('option --icon works only on Windows and Mac OS X')
     pyi_builder.test_source("print('Hello Python!')", pyi_args=args)
@@ -390,8 +388,7 @@ def test_site_module_disabled(pyi_builder):
 
 
 def test_time_module(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         import time
         print(time.strptime(time.ctime()))
         """)
@@ -406,16 +403,14 @@ def test_time_module_localized(pyi_builder, monkeypatch):
     # time.strptime was using 'xx_YY' from the environment.
     lang = 'cs_CZ' if is_darwin else 'cs_CZ.UTF-8'
     monkeypatch.setenv('LC_ALL', lang)
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         import time
         print(time.strptime(time.ctime()))
         """)
 
 
 def test_xmldom_module(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         print('Importing xml.dom')
         from xml.dom import pulldom
         print('Importing done')
@@ -424,8 +419,7 @@ def test_xmldom_module(pyi_builder):
 
 @xfail(is_py3 and not is_py34, reason='Known issue for Python 3.3, see #2377')
 def test_threading_module(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         from __future__ import print_function
         import threading
         import sys
@@ -467,8 +461,7 @@ def test_argument(pyi_builder):
 
 @importorskip('win32com')
 def test_pywin32_win32com(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         # Test importing some modules from pywin32 package.
         # All modules from pywin32 depens on module pywintypes.
         # This module should be also included.
@@ -481,8 +474,7 @@ def test_pywin32_win32com(pyi_builder):
 #@pytest.mark.xfail(reason="Requires post-create-package hooks (issue #1322)")
 @importorskip('win32com')
 def test_pywin32_comext(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         # Test importing modules from win32com that are actually present in
         # win32comext, and made available by __path__ changes in win32com.
         from win32com.shell import shell
@@ -493,8 +485,7 @@ def test_pywin32_comext(pyi_builder):
 
 @importorskip('win32ui')
 def test_pywin32_win32ui(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         # Test importing some modules from pywin32 package.
         # All modules from pywin32 depens on module pywintypes.
         # This module should be also included.
@@ -507,12 +498,14 @@ def test_pywin32_win32ui(pyi_builder):
 @skipif_notwin
 def test_renamed_exe(pyi_builder):
     _old_find_executables = pyi_builder._find_executables
+
     def _find_executables(name):
         oldexes = _old_find_executables(name)
         newexes = []
         for old in oldexes:
 
-            new = os.path.join(os.path.dirname(old), "renamed_" + os.path.basename(old))
+            new = os.path.join(
+                os.path.dirname(old), "renamed_" + os.path.basename(old))
             os.rename(old, new)
             newexes.append(new)
         return newexes
@@ -525,6 +518,7 @@ def test_renamed_exe(pyi_builder):
 def test_osx_override_info_plist(pyi_builder_spec):
     pyi_builder_spec.test_spec('pyi_osx_override_info_plist.spec')
 
+
 def test_hook_collect_submodules(pyi_builder, script_dir):
     # This is designed to test the operation of
     # PyInstaller.utils.hook.collect_submodules. To do so:
@@ -536,22 +530,21 @@ def test_hook_collect_submodules(pyi_builder, script_dir):
     #    collects from modules/pyi_testmod_relimp.
     # 3. Therefore, we should be able to find hidden imports under
     #    pyi_testmod_relimp.
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         import pyi_collect_submodules_mod
         __import__('pyi_testmod_relimp.B.C')
-        """,
-        ['--additional-hooks-dir=%s' % script_dir.join('pyi_hooks')])
+        """, ['--additional-hooks-dir=%s' % script_dir.join('pyi_hooks')])
+
 
 # Test that PyInstaller can handle a script with an arbitrary extension.
 def test_arbitrary_ext(pyi_builder):
     pyi_builder.test_script('pyi_arbitrary_ext.foo')
-    
+
+
 def test_option_runtime_tmpdir(pyi_builder):
     "Test to ensure that option `runtime_tmpdir` can be set and has effect."
 
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         print('test - runtime_tmpdir - custom runtime temporary directory')
         import os
         import sys
@@ -567,5 +560,5 @@ def test_option_runtime_tmpdir(pyi_builder):
             raise SystemExit('Expected sys._MEIPASS to be under current working dir.'
                              ' sys._MEIPASS = ' + runtime_tmpdir + ', cwd = ' + cwd)
         print('test - done')
-        """,
-        ['--runtime-tmpdir=.']) # set runtime-tmpdir to current working dir
+        """, ['--runtime-tmpdir=.'
+              ])  # set runtime-tmpdir to current working dir
