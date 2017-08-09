@@ -1,12 +1,8 @@
 # Work-around for a bug in execnet 1.4.1
 git+https://github.com/pytest-dev/execnet.git
 
-# TMP require newer pytest for win32 3.6
-# See pytest-dev/pytest#103
-git+https://github.com/pytest-dev/pytest.git ; sys_platform == 'win32' and python_version >= '3.6'
-
 # For running tests
-pytest >= 2.7.3 ; sys_platform != 'win32' or python_version < '3.6' # Testing framework.
+pytest >= 3.2.1  # Testing framework.
 pytest-xdist     # Plugin allowing running tests in parallel.
 pytest-timeout   # Plugin to abort hanging tests.
 pytest-catchlog  # Capture log output separately from stdout/stderr
