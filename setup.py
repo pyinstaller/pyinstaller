@@ -1,4 +1,4 @@
->= 2017.8.1#! /usr/bin/env python
+#! /usr/bin/env python
 #-----------------------------------------------------------------------------
 # Copyright (c) 2005-2017, PyInstaller Development Team.
 #
