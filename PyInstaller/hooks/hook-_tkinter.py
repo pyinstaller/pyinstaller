@@ -7,7 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 import os
 import sys
 
@@ -62,7 +61,7 @@ def _warn_if_activetcl_or_teapot_installed(tcl_root, tcltree):
     -------
     https://github.com/pyinstaller/pyinstaller/issues/621
     """
-    from PyInstaller.lib.macholib import util
+    from macholib import util
 
     # System libraries do not experience this problem.
     if util.in_system_path(tcl_root):

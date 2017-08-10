@@ -6,7 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
 """
 Find external dependencies of binary libraries.
 """
@@ -15,6 +14,7 @@ import ctypes.util
 import os
 import re
 import sys
+import pefile
 from glob import glob
 # Required for extracting eggs.
 import zipfile
@@ -32,6 +32,9 @@ from ..utils.win32 import winutils
 logger = logging.getLogger(__name__)
 
 seen = set()
+# Assume that binaries are not malicious
+# Significantly reduces processing time
+pefile.fast_load = True
 
 # Import windows specific stuff.
 if is_win:
@@ -92,8 +95,6 @@ def _getImports_pe(pth):
     and uses library pefile for that and supports
     32/64bit Windows
     """
-    # ::TODO:: #1920 revert to using pypi version
-    from ..lib import pefile
     dlls = set()
     # By default library pefile parses all PE information.
     # We are only interested in the list of dependent dlls.
@@ -164,7 +165,9 @@ def match_binding_redirect(manifest, redirect):
         manifest.publicKeyToken == redirect.publicKeyToken,
     ])
 
+
 _exe_machine_type = None
+
 
 def matchDLLArch(filename):
     """
@@ -182,9 +185,6 @@ def matchDLLArch(filename):
     if not is_win:
         return True
 
-    # ::TODO:: #1920 revert to using pypi version
-    from ..lib import pefile
-
     global _exe_machine_type
     if _exe_machine_type is None:
         exe_pe = pefile.PE(sys.executable, fast_load=True)
@@ -196,6 +196,7 @@ def matchDLLArch(filename):
     match_arch = pe.FILE_HEADER.Machine == _exe_machine_type
     pe.close()
     return match_arch
+
 
 def Dependencies(lTOC, xtrapath=None, manifest=None, redirects=None):
     """
@@ -610,9 +611,9 @@ def _getImports_macholib(pth):
 
     This implementation is for Mac OS X and uses library macholib.
     """
-    from ..lib.macholib.MachO import MachO
-    from ..lib.macholib.mach_o import LC_RPATH
-    from ..lib.macholib.dyld import dyld_find
+    from macholib.MachO import MachO
+    from macholib.mach_o import LC_RPATH
+    from macholib.dyld import dyld_find
     rslt = set()
     seen = set()  # Libraries read from binary headers.
 

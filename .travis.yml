@@ -88,12 +88,13 @@ before_install:
 install:
   # Update pip.
   - python -m pip install -U pip setuptools wheel
+
+  # Install dependencies for tests.
+  - pip install -U -r tests/requirements-tools.txt -r tests/requirements-libraries.txt
+
   # Install PyInstaller.
   - pip install -e .
 
-  # Install dependencies for tests.
-  - pip install -U -r tests/requirements-tools.txt
-  - pip install -U -r tests/requirements-libraries.txt
 
 script:
   # Run tests and speed them up by sending them to multiple CPUs.
