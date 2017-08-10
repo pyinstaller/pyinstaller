@@ -2584,7 +2584,9 @@ class ModuleGraph(ObjectGraph):
         level = None
         fromlist = None
 
-        prev_insts = []
+        # 'deque' is a list-like container with fast appends, pops on
+        # either end, and automatically discarding elements too much.
+        prev_insts = deque(maxlen=2)
         for inst in util.iterate_instructions(module_code_object):
             if not inst:
                 continue
@@ -2662,7 +2664,6 @@ class ModuleGraph(ObjectGraph):
                 module.remove_global_attr_if_found(name)
 
             prev_insts.append(inst)
-            del prev_insts[:-2]
 
 
     def _process_imports(self, source_module):
