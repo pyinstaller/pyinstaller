@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+>= 2017.8.1#! /usr/bin/env python
 #-----------------------------------------------------------------------------
 # Copyright (c) 2005-2017, PyInstaller Development Team.
 #
@@ -18,7 +18,7 @@ from PyInstaller import (__version__ as version, is_linux, is_win, is_cygwin,
 
 REQUIREMENTS = [
     'setuptools',
-    'pefile > 2016.3.28',
+    'pefile >= 2017.8.1',
     'macholib >= 1.8',
 ]
 # For Windows install PyWin32 if not already installed.
