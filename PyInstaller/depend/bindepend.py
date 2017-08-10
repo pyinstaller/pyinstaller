@@ -33,6 +33,8 @@ from ..utils.win32 import winutils
 logger = logging.getLogger(__name__)
 
 seen = set()
+
+# Do not load all the directories information from the PE file
 pefile.fast_load = True
 
 # Import windows specific stuff.
