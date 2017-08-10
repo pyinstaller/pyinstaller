@@ -6,13 +6,14 @@ import sys
 import re
 import marshal
 import warnings
+import inspect
 
 try:
     unicode
 except NameError:
     unicode = str
 
-from ._compat import StringIO, BytesIO
+from ._compat import StringIO, BytesIO, get_instructions
 
 
 def imp_find_module(name, path=None):
@@ -110,3 +111,18 @@ def guess_encoding(fp):
             return m.group(1).decode('ascii')
 
     return default_encoding
+
+def iterate_instructions(code_object):
+    # TODO: Implement "yield from" for python 3
+
+    for instruction in get_instructions(code_object):
+        yield instruction
+
+    yield None
+
+    # For each constant in this code object that is itself a code object,
+    # parse this constant in the same manner.
+    for constant in code_object.co_consts:
+        if inspect.iscode(constant):
+            for instruction in iterate_instructions(constant):
+                yield instruction
