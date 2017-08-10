@@ -13,9 +13,4 @@ hiddenimports = ["sip",
                  "PyQt5.QtGui",
                  "PyQt5.QtNetwork"
                  ]
-# WebKit definitely does not imply any of the following,
-# which needlessly inflate the app.
-#"PyQt5.QtQuick",
-#"PyQt5.QtQml",
-#"PyQt5.QtSql",
-#"PyQt5.QtSensors"
+

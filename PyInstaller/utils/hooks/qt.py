@@ -86,7 +86,7 @@ def qt_plugins_binaries(plugin_type, namespace):
     if namespace in ['PyQt4', 'PySide']:
         plugin_dir = 'qt4_plugins'
     else:
-        plugin_dir = 'qt5_plugins'
+        plugin_dir = os.path.join('PyQt5', 'Qt', 'plugins')
     dest_dir = os.path.join(plugin_dir, plugin_type)
     binaries = [
         (f, dest_dir)
@@ -197,7 +197,7 @@ def qt5_qml_data(directory):
     Return Qml library directory formatted for data.
     """
     qmldir = qt5_qml_dir()
-    return os.path.join(qmldir, directory), 'qml'
+    return os.path.join(qmldir, directory), os.path.join('PyQt5', 'Qt', 'qml')
 
 
 def qt5_qml_plugins_binaries(directory):

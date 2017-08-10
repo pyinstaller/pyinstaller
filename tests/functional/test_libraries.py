@@ -17,7 +17,7 @@ import os
 # -------------
 import sys
 
-from PyInstaller.compat import is_win, is_py27, is_py3, is_py36, is_darwin
+from PyInstaller.compat import is_win, is_py27, is_py3, is_py36, is_py35, is_darwin, is_linux
 from PyInstaller.utils.hooks import get_module_attribute, is_module_satisfies
 from PyInstaller.utils.tests import importorskip, xfail, skipif
 
@@ -291,6 +291,23 @@ def test_PyQt5_uic(tmpdir, pyi_builder, data_dir):
     # Note that including the data_dir fixture copies files needed by this test.
     pyi_builder.test_script('pyi_lib_PyQt5-uic.py')
 
+@xfail(is_linux and is_py35, reason="Fails on linux >3.5")
+@xfail(is_darwin, reason="Fails on OSX")
+@xfail(is_win and is_py35 and not is_py36, reason="Fails on win == 3.6")
+@importorskip('PyQt5')
+def test_PyQt5_QWebEngine(pyi_builder):
+    pyi_builder.test_source(
+        """
+        from PyQt5.QtWidgets import QApplication
+        from PyQt5.QtWebEngineWidgets import QWebEngineView
+        from PyQt5.QtCore import QUrl
+        app = QApplication( [] )
+        view = QWebEngineView()
+        view.load( QUrl( "http://www.pyinstaller.org" ) )
+        view.show()
+        view.page().loadFinished.connect(lambda ok: app.quit())
+        app.exec_()
+        """)
 
 @importorskip('zope.interface')
 def test_zope_interface(pyi_builder):
