@@ -20,6 +20,8 @@ REQUIREMENTS = [
     'setuptools',
     'pefile >= 2017.8.1',
     'macholib >= 1.8',
+    "xdis ; python_version < '3.4' and python_version >= '3.0'",
+    "dis3 ; python_version < '3.0'",
 ]
 # For Windows install PyWin32 if not already installed.
 if sys.platform.startswith('win'):
