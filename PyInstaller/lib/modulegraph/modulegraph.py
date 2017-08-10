@@ -2581,14 +2581,13 @@ class ModuleGraph(ObjectGraph):
               parsing will have already parsed import statements, which this
               parsing must avoid repeating.
         """
-        constants = module_code_object.co_consts
-
         level = None
         fromlist = None
 
         prev_insts = []
-
-        for inst in get_instructions(module_code_object):
+        for inst in util.enumerate_instructions(module_code_object):
+            if not inst:
+                continue
             # If this is an import statement originating from this module,
             # parse this import.
             #
@@ -2605,11 +2604,11 @@ class ModuleGraph(ObjectGraph):
                 assert prev_insts[-1].opname == 'LOAD_CONST'
 
                 # Python >=2.5: LOAD_CONST flags, LOAD_CONST names, IMPORT_NAME name
-                level = module_code_object.co_consts[prev_insts[-2].arg]
-                fromlist = module_code_object.co_consts[prev_insts[-1].arg]
+                level = prev_insts[-2].argval
+                fromlist = prev_insts[-1].argval
 
                 assert fromlist is None or type(fromlist) is tuple
-                target_module_partname = module_code_object.co_names[inst.arg]
+                target_module_partname = inst.argval
 
                 #FIXME: The exact same logic appears in _collect_import(),
                 #which isn't particularly helpful. Instead, defer this logic
@@ -2651,7 +2650,7 @@ class ModuleGraph(ObjectGraph):
                 # in "from foo import bar", which is either a non-ignorable
                 # submodule of "foo" or an ignorable global attribute of
                 # "foo.__init__").
-                name = module_code_object.co_names[inst.arg]
+                name = inst.argval
                 module.add_global_attr(name)
 
             elif inst.opname in ('DELETE_NAME', 'DELETE_GLOBAL'):
@@ -2659,20 +2658,11 @@ class ModuleGraph(ObjectGraph):
                 # attribute (e.g., class, variable) in this module, remove that
                 # declaration to prevent subsequent lookup. See method docstring
                 # for further details.
-                name = module_code_object.co_names[inst.arg]
+                name = inst.argval
                 module.remove_global_attr_if_found(name)
 
             prev_insts.append(inst)
             del prev_insts[:-2]
-
-        # Type of all code objects.
-        code_object_type = type(module_code_object)
-
-        # For each constant in this code object that is itself a code object,
-        # parse this constant in the same manner.
-        for constant in constants:
-            if isinstance(constant, code_object_type):
-                self._scan_bytecode(module, constant, is_scanning_imports)
 
 
     def _process_imports(self, source_module):
