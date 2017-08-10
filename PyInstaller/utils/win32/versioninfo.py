@@ -16,7 +16,7 @@ from ...compat import is_py3
 
 import win32api
 # ::TODO:: #1920 revert to using pypi version
-from ...lib import pefile
+import pefile
 
 
 # TODO implement read/write version information with pefile library.
