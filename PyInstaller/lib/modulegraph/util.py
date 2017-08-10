@@ -12,14 +12,7 @@ try:
 except NameError:
     unicode = str
 
-
-if sys.version_info[0] == 2:
-    from StringIO import StringIO as BytesIO
-    from StringIO import StringIO
-
-else:
-    from io import BytesIO, StringIO
-
+from ._compat import StringIO, BytesIO
 
 
 def imp_find_module(name, path=None):
