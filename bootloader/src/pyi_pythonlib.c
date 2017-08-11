@@ -793,7 +793,7 @@ pyi_pylib_install_zlibs(ARCHIVE_STATUS *status)
         else {
             /* 'Multipackage' feature - dependency is stored in different executables. */
             if (ptoc->typcd == ARCHIVE_ITEM_DEPENDENCY) {
-                if (_extract_dependency(archive_pool, ptoc->name, status->homepath) == -1) {
+                if (extract_dependency(archive_pool, ptoc->name, status->homepath) == -1) {
                     return -1;
                 }
 
