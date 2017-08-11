@@ -180,76 +180,45 @@ extractDependencyFromArchive(ARCHIVE_STATUS *status, const char *filename)
  * then call the appropriate function.
  */
 static int
-_extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
+_extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item, const char* homepath)
 {
     ARCHIVE_STATUS *status = NULL;
     ARCHIVE_STATUS *archive_status = archive_pool[0];
-    char path[PATH_MAX];
-    char filename[PATH_MAX];
+    char path[PATH_MAX];  /* The full path to the archive */
+    char filename[PATH_MAX];  /* The filename of the archive */
     char srcpath[PATH_MAX];
-    char archive_path[PATH_MAX];
-
+    char archive_path[PATH_MAX];  /* The filename within the archive */
     char dirname[PATH_MAX];
-
+    TOC * ptoc;
+    
     VS("LOADER: Extracting dependencies\n");
 
-    if (splitName(path, filename, item) == -1) {
+    pyi_path_basename(archive_path, item);
+    pyi_path_dirname(filename, item);
+    pyi_path_join(path, homepath, filename);
+
+    VS("LOADER: Attempting to extract %s from %s\n", archive_path, path);
+
+    /* Only extracting top-level dependencies from a onedir archive is currently supported */
+    status = _get_archive(archive_pool, path);
+
+    if (status == NULL) {
+        FATALERROR("Cannot open archive %s\n", filename);
         return -1;
     }
 
-    pyi_path_dirname(dirname, path);
+    VS("LOADER: Searching for %s in archive\n", archive_path);
 
-    /* We need to identify three situations: 1) dependecies are in a onedir archive
-     * next to the current onefile archive, 2) dependencies are in a onedir/onefile
-     * archive next to the current onedir archive, 3) dependencies are in a onefile
-     * archive next to the current onefile archive.
-     */
-    VS("LOADER: Checking if file exists\n");
-
-    /* TODO implement pyi_path_join to accept variable length of arguments for this case. */
-    if (checkFile(srcpath, "%s%s%s%s%s", archive_status->homepath, PYI_SEPSTR, dirname,
-                  PYI_SEPSTR, filename) == 0) {
-        VS("LOADER: File %s found, assuming is onedir\n", srcpath);
-
-        if (copyDependencyFromDir(archive_status, srcpath, filename) == -1) {
-            FATALERROR("Error copying %s\n", filename);
-            return -1;
-        }
-        /* TODO implement pyi_path_join to accept variable length of arguments for this case. */
-    }
-    else if (checkFile(srcpath, "%s%s%s%s%s%s%s", archive_status->homepath, PYI_SEPSTR,
-                       "..", PYI_SEPSTR, dirname, PYI_SEPSTR, filename) == 0) {
-        VS("LOADER: File %s found, assuming is onedir\n", srcpath);
-
-        if (copyDependencyFromDir(archive_status, srcpath, filename) == -1) {
-            FATALERROR("Error copying %s\n", filename);
-            return -1;
-        }
-    }
-    else {
-        VS("LOADER: File %s not found, assuming is onefile.\n", srcpath);
-
-        /* TODO implement pyi_path_join to accept variable length of arguments for this case. */
-        if ((checkFile(archive_path, "%s%s%s.pkg", archive_status->homepath, PYI_SEPSTR,
-                       path) != 0) &&
-            (checkFile(archive_path, "%s%s%s.exe", archive_status->homepath, PYI_SEPSTR,
-                       path) != 0) &&
-            (checkFile(archive_path, "%s%s%s", archive_status->homepath, PYI_SEPSTR,
-                       path) != 0)) {
-            FATALERROR("Archive not found: %s\n", archive_path);
-            return -1;
+    /* Iterate through toc looking for zlibs (PYZ, type 'z') */
+    ptoc = status->tocbuff;
+    while (ptoc < status->tocend) {
+        VS("LOADER: Archive item %s\n", ptoc->name);
+        if (ptoc->typcd == ARCHIVE_ITEM_PYZ) {
+            VS("LOADER: PYZ archive: %s\n", ptoc->name);
+            pyi_pylib_install_zlib(status, ptoc);
         }
 
-        if ((status = _get_archive(archive_pool, archive_path)) == NULL) {
-            FATALERROR("Archive not found: %s\n", archive_path);
-            return -1;
-        }
-
-        if (extractDependencyFromArchive(status, filename) == -1) {
-            FATALERROR("Error extracting %s\n", filename);
-            free(status);
-            return -1;
-        }
+        ptoc = pyi_arch_increment_toc_ptr(status, ptoc);
     }
 
     return 0;
