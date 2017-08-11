@@ -759,14 +759,25 @@ pyi_pylib_install_zlib(ARCHIVE_STATUS *status, TOC *ptoc)
     return rc;
 }
 
-/*
- * Install PYZ
- * Return non zero on failure
- */
+ /*
+  * Install PYZ
+  * Return non zero on failure
+  */
 int
 pyi_pylib_install_zlibs(ARCHIVE_STATUS *status)
 {
     TOC * ptoc;
+
+    /*
+    * archive_pool[0] is reserved for the main process, the others for dependencies.
+    */
+    ARCHIVE_STATUS *archive_pool[MAX_ARCHIVE_POOL_LEN];
+
+    /* Clean memory for archive_pool list. */
+    memset(&archive_pool, 0, MAX_ARCHIVE_POOL_LEN * sizeof(ARCHIVE_STATUS *));
+
+    /* Current process is the 1st item. */
+    archive_pool[0] = status;
 
     VS("LOADER: Installing PYZ archive with Python modules.\n");
 
@@ -777,6 +788,15 @@ pyi_pylib_install_zlibs(ARCHIVE_STATUS *status)
         if (ptoc->typcd == ARCHIVE_ITEM_PYZ) {
             VS("LOADER: PYZ archive: %s\n", ptoc->name);
             pyi_pylib_install_zlib(status, ptoc);
+        }
+        else {
+            /* 'Multipackage' feature - dependency is stored in different executables. */
+            if (ptoc->typcd == ARCHIVE_ITEM_DEPENDENCY) {
+                if (_extract_dependency(archive_pool, ptoc->name, status->homepath) == -1) {
+                    return -1;
+                }
+
+            }
         }
 
         ptoc = pyi_arch_increment_toc_ptr(status, ptoc);
