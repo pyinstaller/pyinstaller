@@ -126,10 +126,6 @@ _get_archive(ARCHIVE_STATUS *archive_pool[], const char *path)
 
     VS("LOADER: Getting file from archive.\n");
 
-    if (pyi_create_temp_path(archive_pool[SELF]) == -1) {
-        return NULL;
-    }
-
     for (index = 1; archive_pool[index] != NULL; index++) {
         if (strcmp(archive_pool[index]->archivename, path) == 0) {
             VS("LOADER: Archive found: %s\n", path);
@@ -138,34 +134,22 @@ _get_archive(ARCHIVE_STATUS *archive_pool[], const char *path)
         VS("LOADER: Checking next archive in the list...\n");
     }
 
-    archive = (ARCHIVE_STATUS *) malloc(sizeof(ARCHIVE_STATUS));
+    archive = (ARCHIVE_STATUS *) calloc(1, sizeof(ARCHIVE_STATUS));
 
     if (archive == NULL) {
-        FATAL_PERROR("malloc", "Error allocating memory for status\n");
-        return NULL;
-    }
-
-    strncpy(archive->archivename, path, PATH_MAX);
-    strncpy(archive->homepath, archive_pool[SELF]->homepath, PATH_MAX);
-    strncpy(archive->temppath, archive_pool[SELF]->temppath, PATH_MAX);
-
-    if (archive->archivename[PATH_MAX-1] != '\0'
-        || archive->homepath[PATH_MAX-1] != '\0'
-        || archive->temppath[PATH_MAX-1] != '\0') {
-        FATALERROR("Archive path exceeds PATH_MAX\n");
-        free(archive);
+        FATALERROR("Error allocating memory for status\n");
         return NULL;
     }
 
     /*
-     * Setting this flag prevents creating another temp directory and
-     * the directory from the main archive status is used.
-     */
+        * Setting this flag prevents creating another temp directory and
+        * the directory from the main archive status is used.
+        */
     archive->has_temp_directory = archive_pool[SELF]->has_temp_directory;
 
-    if (pyi_arch_open(archive)) {
-        FATAL_PERROR("malloc", "Error opening archive %s\n", path);
-        free(archive);
+    if (pyi_arch_setup(archive, archive->homepath, &path[strlen(archive->homepath)])) {
+        FATALERROR("Error opening archive %s\n", path);
+
         return NULL;
     }
 
