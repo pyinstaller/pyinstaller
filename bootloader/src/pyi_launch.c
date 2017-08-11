@@ -331,16 +331,6 @@ pyi_launch_extract_binaries(ARCHIVE_STATUS *archive_status)
             }
         }
 
-        else {
-            /* 'Multipackage' feature - dependency is stored in different executables. */
-            if (ptoc->typcd == ARCHIVE_ITEM_DEPENDENCY) {
-                if (_extract_dependency(archive_pool, ptoc->name) == -1) {
-                    retcode = -1;
-                    break;  /* No need to extract other items in case of error. */
-                }
-
-            }
-        }
         ptoc = pyi_arch_increment_toc_ptr(archive_status, ptoc);
     }
 
