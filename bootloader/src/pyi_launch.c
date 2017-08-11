@@ -179,8 +179,8 @@ extractDependencyFromArchive(ARCHIVE_STATUS *status, const char *filename)
 /* Decide if the dependency identified by item is in a onedir or onfile archive
  * then call the appropriate function.
  */
-static int
-_extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item, const char* homepath)
+extern int
+extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item, const char* homepath)
 {
     ARCHIVE_STATUS *status = NULL;
     ARCHIVE_STATUS *archive_status = archive_pool[0];
