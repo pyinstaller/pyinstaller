@@ -683,7 +683,7 @@ pyi_pylib_import_modules(ARCHIVE_STATUS *status)
  * Return non zero on failure.
  * NB: This entry is removed from sys.path by the bootstrap scripts.
  */
-int
+extern int
 pyi_pylib_install_zlib(ARCHIVE_STATUS *status, TOC *ptoc)
 {
     int rc = 0;
