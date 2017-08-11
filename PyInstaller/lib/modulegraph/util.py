@@ -113,6 +113,11 @@ def guess_encoding(fp):
     return default_encoding
 
 def iterate_instructions(code_object):
+    """Delivers the byte-code instructions as a continuous stream.
+
+    Yields `dis.Instruction`. After each code-block (`co_code`), `None` is
+    yielded to mark the end of the block and to interrupt the steam.
+    """
     # TODO: Implement "yield from" for python 3
 
     for instruction in get_instructions(code_object):
