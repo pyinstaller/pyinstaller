@@ -22,7 +22,7 @@ import os
 import re
 import zipfile
 
-from ..lib.modulegraph import modulegraph
+from ..lib.modulegraph import util, modulegraph
 
 from .. import compat
 from ..compat import (is_darwin, is_unix, is_py2, is_py34, is_freebsd,
@@ -119,121 +119,115 @@ def scan_code_for_ctypes(co):
             binaries.remove(binary)
         elif binary != os.path.basename(binary):
             # TODO make these warnings show up somewhere.
-            logger.warning("ignoring %s - ctypes imports only supported using bare filenames", binary)
+            logger.warning(
+                "ignoring %s - ctypes imports only supported using bare filenames", binary)
 
     binaries = _resolveCtypesImports(binaries)
     return binaries
 
 
 def __recursivly_scan_code_objects_for_ctypes(co, binaries):
-    # Note: `binaries` is a list, which gets extended here.
-    instructions = modulegraph.get_instructions(co)
-    while 1:
-        # ctypes scanning requires a scope wider than one bytecode
-        # instruction, so the code resides in a separate function
-        # for clarity.
-        try:
-            bin = __scan_code_instruction_for_ctypes(co, instructions)
-            if bin:
-                binaries.append(bin)
-        except StopIteration:
-            break
-
-    for c in co.co_consts:
-        if isinstance(c, type(co)):
-            __recursivly_scan_code_objects_for_ctypes(c, binaries)
+    # ctypes scanning requires a scope wider than one bytecode
+    # instruction, so the code resides in a separate function
+    # for clarity.
+    binaries.extend(
+        __scan_code_instruction_for_ctypes(
+            util.iterate_instructions(co)))
 
 
-def __scan_code_instruction_for_ctypes(co, instructions):
+def __scan_code_instruction_for_ctypes(instructions):
     """
     Detects ctypes dependencies, using reasonable heuristics that
     should cover most common ctypes usages; returns a tuple of two
     lists, one containing names of binaries detected as
     dependencies, the other containing warnings.
     """
-
     def _libFromConst():
         """Extracts library name from an expected LOAD_CONST instruction and
         appends it to local binaries list.
         """
         instruction = next(instructions)
         if instruction.opname == 'LOAD_CONST':
-            soname = co.co_consts[instruction.arg]
+            soname = instruction.argval
             if isinstance(soname, str):
                 return soname
 
+    while True:
+        try:
+            instruction = next(instructions)
+            expected_ops = ('LOAD_GLOBAL', 'LOAD_NAME')
 
-    instruction = next(instructions)
-    expected_ops = ('LOAD_GLOBAL', 'LOAD_NAME')
+            if not instruction or instruction.opname not in expected_ops:
+                continue
 
-    if instruction.opname not in expected_ops:
-        return None
+            name = instruction.argval
+            if name == "ctypes":
+                # Guesses ctypes has been imported as `import ctypes` and
+                # the members are accessed like: ctypes.CDLL("library.so")
+                #
+                #   LOAD_GLOBAL 0 (ctypes) <--- we "are" here right now
+                #   LOAD_ATTR 1 (CDLL)
+                #   LOAD_CONST 1 ('library.so')
+                #
+                # In this case "strip" the `ctypes` by advancing and expecting
+                # `LOAD_ATTR` next.
+                expected_ops = ('LOAD_ATTR',)
+                instruction = next(instructions)
+                if instruction.opname not in expected_ops:
+                    continue
+                name = instruction.argval
 
-    name = co.co_names[instruction.arg]
-    if name == "ctypes":
-        # Guesses ctypes has been imported as `import ctypes` and
-        # the members are accessed like: ctypes.CDLL("library.so")
-        #
-        #   LOAD_GLOBAL 0 (ctypes) <--- we "are" here right now
-        #   LOAD_ATTR 1 (CDLL)
-        #   LOAD_CONST 1 ('library.so')
-        #
-        # In this case "strip" the `ctypes` by advancing and expecting
-        # `LOAD_ATTR` next.
-        expected_ops = ('LOAD_ATTR',)
-        instruction = next(instructions)
-        if instruction.opname not in expected_ops:
-            return None
-        name = co.co_names[instruction.arg]
+            if name in ("CDLL", "WinDLL", "OleDLL", "PyDLL"):
+                # Guesses ctypes imports of this type: CDLL("library.so")
+                #
+                #   LOAD_GLOBAL 0 (CDLL) <--- we "are" here right now
+                #   LOAD_CONST 1 ('library.so')
 
-    if name in ("CDLL", "WinDLL", "OleDLL", "PyDLL"):
-        # Guesses ctypes imports of this type: CDLL("library.so")
-        #
-        #   LOAD_GLOBAL 0 (CDLL) <--- we "are" here right now
-        #   LOAD_CONST 1 ('library.so')
-        return _libFromConst()
+                yield _libFromConst()
 
-    elif name in ("cdll", "windll", "oledll", "pydll"):
-        # Guesses ctypes imports of these types:
-        #
-        #  * cdll.library (only valid on Windows)
-        #
-        #     LOAD_GLOBAL 0 (cdll) <--- we "are" here right now
-        #     LOAD_ATTR 1 (library)
-        #
-        #  * cdll.LoadLibrary("library.so")
-        #
-        #     LOAD_GLOBAL   0 (cdll) <--- we "are" here right now
-        #     LOAD_ATTR     1 (LoadLibrary)
-        #     LOAD_CONST    1 ('library.so')
-        instruction = next(instructions)
-        if instruction.opname == 'LOAD_ATTR':
-            if co.co_names[instruction.arg] == "LoadLibrary":
-                # Second type, needs to fetch one more instruction
-                return _libFromConst()
-            else:
-                # First type
-                return co.co_names[instruction.arg] + ".dll"
+            elif name in ("cdll", "windll", "oledll", "pydll"):
+                # Guesses ctypes imports of these types:
+                #
+                #  * cdll.library (only valid on Windows)
+                #
+                #     LOAD_GLOBAL 0 (cdll) <--- we "are" here right now
+                #     LOAD_ATTR 1 (library)
+                #
+                #  * cdll.LoadLibrary("library.so")
+                #
+                #     LOAD_GLOBAL   0 (cdll) <--- we "are" here right now
+                #     LOAD_ATTR     1 (LoadLibrary)
+                #     LOAD_CONST    1 ('library.so')
+                instruction = next(instructions)
+                if instruction.opname == 'LOAD_ATTR':
+                    if instruction.argval == "LoadLibrary":
+                        # Second type, needs to fetch one more instruction
+                        yield _libFromConst()
+                    else:
+                        # First type
+                        yield instruction.argval + ".dll"
 
-    elif instruction.opname == 'LOAD_ATTR' and name in ("util",):
-        # Guesses ctypes imports of these types::
-        #
-        #  ctypes.util.find_library('gs')
-        #
-        #     LOAD_GLOBAL   0 (ctypes)
-        #     LOAD_ATTR     1 (util) <--- we "are" here right now
-        #     LOAD_ATTR     1 (find_library)
-        #     LOAD_CONST    1 ('gs')
-        instruction = next(instructions)
-        if instruction.opname == 'LOAD_ATTR':
-            if co.co_names[instruction.arg] == "find_library":
-                libname = _libFromConst()
-                if libname:
-                    lib = ctypes.util.find_library(libname)
-                    if lib:
-                        # On Windows, `find_library` may return
-                        # a full pathname. See issue #1934
-                        return os.path.basename(lib)
+            elif instruction.opname == 'LOAD_ATTR' and name in ("util",):
+                # Guesses ctypes imports of these types::
+                #
+                #  ctypes.util.find_library('gs')
+                #
+                #     LOAD_GLOBAL   0 (ctypes)
+                #     LOAD_ATTR     1 (util) <--- we "are" here right now
+                #     LOAD_ATTR     1 (find_library)
+                #     LOAD_CONST    1 ('gs')
+                instruction = next(instructions)
+                if instruction.opname == 'LOAD_ATTR':
+                    if instruction.argval == "find_library":
+                        libname = _libFromConst()
+                        if libname:
+                            lib = ctypes.util.find_library(libname)
+                            if lib:
+                                # On Windows, `find_library` may return
+                                # a full pathname. See issue #1934
+                                yield os.path.basename(lib)
+        except StopIteration:
+            break
 
 
 # TODO Reuse this code with modulegraph implementation
