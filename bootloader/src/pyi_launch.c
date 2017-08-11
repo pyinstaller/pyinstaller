@@ -46,11 +46,10 @@
 #include "pyi_archive.h"
 #include "pyi_utils.h"
 #include "pyi_python.h"
+#include "pyi_launch.h"
 #include "pyi_pythonlib.h"
 #include "pyi_win32_utils.h"  /* CreateActContext */
 
-/* Max count of possible opened archives in multipackage mode. */
-#define _MAX_ARCHIVE_POOL_LEN 20
 
 /*
  * The functions in this file defined in reverse order so that forward
@@ -264,11 +263,11 @@ pyi_launch_extract_binaries(ARCHIVE_STATUS *archive_status)
     /*
      * archive_pool[0] is reserved for the main process, the others for dependencies.
      */
-    ARCHIVE_STATUS *archive_pool[_MAX_ARCHIVE_POOL_LEN];
+    ARCHIVE_STATUS *archive_pool[MAX_ARCHIVE_POOL_LEN];
     TOC * ptoc = archive_status->tocbuff;
 
     /* Clean memory for archive_pool list. */
-    memset(&archive_pool, 0, _MAX_ARCHIVE_POOL_LEN * sizeof(ARCHIVE_STATUS *));
+    memset(&archive_pool, 0, MAX_ARCHIVE_POOL_LEN * sizeof(ARCHIVE_STATUS *));
 
     /* Current process is the 1st item. */
     archive_pool[0] = archive_status;

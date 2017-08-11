@@ -19,6 +19,9 @@
 * use to 2 steps to execute
 *****************************************************************/
 
+/* Max count of possible opened archives in multipackage mode. */
+#define MAX_ARCHIVE_POOL_LEN 20
+
 /*
  * Extract binaries in the archive
  *

@@ -40,6 +40,7 @@
 #include "pyi_global.h"
 #include "pyi_path.h"
 #include "pyi_archive.h"
+#include "pyi_launch.h"
 #include "pyi_utils.h"
 #include "pyi_python.h"
 #include "pyi_win32_utils.h"
