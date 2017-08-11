@@ -520,6 +520,8 @@ def test_renamed_exe(pyi_builder):
     pyi_builder._find_executables = _find_executables
     pyi_builder.test_source("print('Hello Python!')")
 
+def test_spec_with_utf8(pyi_builder_spec):
+    pyi_builder_spec.test_spec('spec-with-utf8.spec')
 
 @skipif_notosx
 def test_osx_override_info_plist(pyi_builder_spec):
