@@ -345,6 +345,60 @@ def test_PyQt5_QtQuick(pyi_builder):
         """)
 
 
+@xfail(is_linux and is_py35, reason="Fails on linux >3.5")
+@xfail(is_darwin, reason="Fails on OSX")
+@xfail(is_win and is_py35 and not is_py36, reason="Fails on win == 3.6")
+@importorskip('PySide2')
+def test_PySide2_QWebEngine(pyi_builder):
+    pyi_builder.test_source(
+        """
+        from PySide2.QtWidgets import QApplication
+        from PySide2.QtWebEngineWidgets import QWebEngineView
+        from PySide2.QtCore import QUrl
+        app = QApplication( [] )
+        view = QWebEngineView()
+        view.load( QUrl( "http://www.pyinstaller.org" ) )
+        view.show()
+        view.page().loadFinished.connect(lambda ok: app.quit())
+        app.exec_()
+        """)
+
+
+@importorskip('PySide2')
+def test_PySide2_QtQuick(pyi_builder):
+    pyi_builder.test_source(
+        """
+        import sys
+
+        # Not used. Only here to trigger the hook
+        import PySide2.QtQuick
+
+        from PySide2.QtGui import QGuiApplication
+        from PySide2.QtQml import QQmlApplicationEngine
+        from PySide2.QtCore import QTimer, QUrl
+
+        app = QGuiApplication([])
+        engine = QQmlApplicationEngine()
+        engine.loadData(b'''
+            import QtQuick 2.0
+            import QtQuick.Controls 2.0
+
+            ApplicationWindow {
+                visible: true
+                color: "green"
+            }
+            ''', QUrl())
+
+        if not engine.rootObjects():
+            sys.exit(-1)
+
+        # Exit Qt when the main loop becomes idle.
+        QTimer.singleShot(0, app.exit)
+
+        sys.exit(app.exec_())
+        """)
+
+
 @importorskip('zope.interface')
 def test_zope_interface(pyi_builder):
     # Tests that `nspkg.pth`-based namespace package are bundled properly.
