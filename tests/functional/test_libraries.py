@@ -309,6 +309,42 @@ def test_PyQt5_QWebEngine(pyi_builder):
         app.exec_()
         """)
 
+
+@importorskip('PyQt5')
+def test_PyQt5_QtQuick(pyi_builder):
+    pyi_builder.test_source(
+        """
+        import sys
+
+        # Not used. Only here to trigger the hook
+        import PyQt5.QtQuick
+
+        from PyQt5.QtGui import QGuiApplication
+        from PyQt5.QtQml import QQmlApplicationEngine
+        from PyQt5.QtCore import QTimer, QUrl
+
+        app = QGuiApplication([])
+        engine = QQmlApplicationEngine()
+        engine.loadData(b'''
+            import QtQuick 2.0
+            import QtQuick.Controls 2.0
+
+            ApplicationWindow {
+                visible: true
+                color: "green"
+            }
+            ''', QUrl())
+
+        if not engine.rootObjects():
+            sys.exit(-1)
+
+        # Exit Qt when the main loop becomes idle.
+        QTimer.singleShot(0, app.exit)
+
+        sys.exit(app.exec_())
+        """)
+
+
 @importorskip('zope.interface')
 def test_zope_interface(pyi_builder):
     # Tests that `nspkg.pth`-based namespace package are bundled properly.
