@@ -7,6 +7,9 @@ branches:
   except:
     - /pyup-.*/
 
+# Make sure we are on Ubuntu 14.04
+dist: trusty
+
 # Cache pip packages. Explicitly name the pip-cache directory since we
 # use a custom `install` step which annuls `cache: pip`.
 cache:
@@ -116,16 +119,7 @@ jobs:
       - python: "nightly"
 
 addons:
-  # Ubuntu 12.04 (LTS) packages installed into this Travis-CI container. Since
-  # Ubuntu 12.04 provides *NO* Python 3 packages prefixed by "python3-", only
-  # Python 2.7 packages prefixed by "python-" are installable. Installing only
-  # Python 2.7 packages would be useless, however! Python packages should thus
-  # be installed by "pip" via the "test/requirements-library.txt" specification.
-  #
-  # Travis-CI intends to add support for Ubuntu 14.04 (LTS) at some future date.
-  # To track progress on this long-standing issue, see:
-  #
-  #     https://github.com/travis-ci/travis-ci/issues/2046
+  # Python packages should be installed by "pip" via the "test/requirements-library.txt" specification.
   apt:
     packages:
     # lxml dependencies.
