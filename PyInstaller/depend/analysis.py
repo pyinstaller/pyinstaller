@@ -32,8 +32,12 @@ Other added methods look up nodes by identifier and return facts
 about them, replacing what the old ImpTracker list could do.
 """
 
+from __future__ import print_function
+
 import os
 import re
+import sys
+import traceback
 
 from .. import HOMEPATH, configure
 from .. import log as logging
@@ -193,7 +197,13 @@ class PyiModuleGraph(ModuleGraph):
         if self._top_script_node is None:
             nodes_without_parent = [x for x in self.flatten()]
             # Remember the node for the first script.
-            self._top_script_node = super(PyiModuleGraph, self).run_script(pathname)
+            try:
+                self._top_script_node = super(PyiModuleGraph, self).run_script(pathname)
+            except SyntaxError as e:
+                print("\nSyntax error in", pathname, file=sys.stderr)
+                formatted_lines = traceback.format_exc().splitlines(True)
+                print(*formatted_lines[-4:], file=sys.stderr)
+                raise SystemExit(1)
             # Create references from top_script to current modules in graph.
             # These modules without parents are dependencies that are necessary
             # for base_library.zip.
