@@ -3,6 +3,10 @@
 
 clone_depth: 50
 
+branches:
+  except:
+    - /pyup-.*/
+
 # No reason for us to restrict the number concurrent jobs
 max_jobs: 100
 

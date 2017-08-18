@@ -3,6 +3,10 @@ language: python
 # Use the new container-based Travis infrastructure.
 sudo: false
 
+branches:
+  except:
+    - /pyup-.*/
+
 # Cache pip packages. Explicitly name the pip-cache directory since we
 # use a custom `install` step which annuls `cache: pip`.
 cache:
