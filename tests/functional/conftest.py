@@ -42,7 +42,7 @@ from PyInstaller import configure, config
 from PyInstaller import __main__ as pyi_main
 from PyInstaller.utils.cliutils import archive_viewer
 from PyInstaller.compat import is_darwin, is_win, is_py2, safe_repr, \
-  architecture
+  architecture, is_linux
 from PyInstaller.depend.analysis import initialize_modgraph
 from PyInstaller.utils.win32 import winutils
 
@@ -471,7 +471,7 @@ def pyi_builder(tmpdir, monkeypatch, request, pyi_modgraph):
                 if os.path.exists(tmp):
                     shutil.rmtree(tmp)
 
-    if is_darwin:
+    if is_darwin or is_linux:
         request.addfinalizer(del_temp_dir)
     return AppBuilder(tmp, request.param, pyi_modgraph)
 
