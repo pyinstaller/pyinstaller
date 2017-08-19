@@ -175,7 +175,16 @@ def get_qmake_path(version=''):
     return None
 
 
-def qt5_qml_dir():
+def qt5_qml_dir(namespace):
+    if namespace not in ['PyQt5', 'PySide2']:
+        raise Exception('Invalid namespace: {0}'.format(namespace))
+
+    if namespace == 'PyQt5':
+        import PyQt5
+        qmldir = os.path.join(PyQt5.__path__[0], 'Qt', 'qml')
+        if os.path.isdir(qmldir):
+            return qmldir
+
     qmake = get_qmake_path('5')
     if qmake is None:
         qmldir = ''
@@ -194,20 +203,18 @@ def qt5_qml_dir():
     return qmldir
 
 
-def qt5_qml_data(directory):
+def qt5_qml_data(qmldir, directory):
     """
     Return Qml library directory formatted for data.
     """
-    qmldir = qt5_qml_dir()
     return os.path.join(qmldir, directory), os.path.join('qml', directory)
 
 
-def qt5_qml_plugins_binaries(directory):
+def qt5_qml_plugins_binaries(qmldir, directory):
     """
     Return list of dynamic libraries formatted for mod.binaries.
     """
     binaries = []
-    qmldir = qt5_qml_dir()
 
     qt5_qml_plugin_dir = os.path.join(qmldir, directory)
     files = misc.dlls_in_subdirs(qt5_qml_plugin_dir)
@@ -222,12 +229,11 @@ def qt5_qml_plugins_binaries(directory):
     return binaries
 
 
-def qt5_qml_plugins_datas(directory):
+def qt5_qml_plugins_datas(qmldir, directory):
     """
     Return list of data files for mod.binaries. (qmldir, *.qmltypes)
     """
     datas = []
-    qmldir = qt5_qml_dir()
 
     qt5_qml_plugin_dir = os.path.join(qmldir, directory)
 
