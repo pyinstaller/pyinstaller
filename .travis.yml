@@ -96,6 +96,16 @@ install:
   - pip install -e .
 
 
+before_script:
+  - >
+      if [[ $TRAVIS_OS_NAME == 'linux' ]]; then
+          # Run X Virtual Framebuffer to imitate a display
+          export DISPLAY=:99.0;
+          sh -e /etc/init.d/xvfb start;
+          sleep 3 # give xvfb some time to start
+      fi
+
+
 script:
   # Run tests and speed them up by sending them to multiple CPUs.
   # Run unitttest first.
