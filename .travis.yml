@@ -110,8 +110,6 @@ jobs:
   allow_failures:
       # Just tests how PyInstaller performs with upcoming Python 3.6
       - python: "nightly"
-      # Ignore failures from OS X.
-      - os: osx
 
 addons:
   # Ubuntu 12.04 (LTS) packages installed into this Travis-CI container. Since
