@@ -205,6 +205,7 @@ def test_multiprocess(pyi_builder):
     pyi_builder.test_script('pyi_multiprocess.py')
 
 
+@xfail(is_darwin, reason="Pull Request #2505")
 @importorskip('multiprocessing')
 def test_multiprocess_forking(pyi_builder):
     pyi_builder.test_script('pyi_multiprocess_forking.py')
