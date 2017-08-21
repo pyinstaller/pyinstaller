@@ -15,7 +15,7 @@ from PyInstaller.utils.tests import skipif_notosx, xfail_py2
 
 
 def test_ctypes_cdll_unknown_dll(pyi_builder, capfd):
-    with pytest.raises(AssertionError):
+    with pytest.raises(pytest.fail.Exception, match="Running exe .* failed"):
         pyi_builder.test_source("""
             import ctypes
             ctypes.cdll.LoadLibrary('non-existing-2017')
