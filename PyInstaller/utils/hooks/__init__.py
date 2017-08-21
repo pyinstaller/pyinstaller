@@ -247,7 +247,6 @@ def remove_suffix(string, suffix):
 def remove_file_extension(filename):
     """
     This function returns filename without its extension.
-
     For Python C modules it removes even whole '.cpython-34m.so' etc.
     """
     for suff in EXTENSION_SUFFIXES:
@@ -262,23 +261,19 @@ def get_module_attribute(module_name, attr_name):
     """
     Get the string value of the passed attribute from the passed module if this
     attribute is defined by this module _or_ raise `AttributeError` otherwise.
-
     Since modules cannot be directly imported during analysis, this function
     spawns a subprocess importing this module and returning the string value of
     this attribute in this module.
-
     Parameters
     ----------
     module_name : str
         Fully-qualified name of this module.
     attr_name : str
         Name of the attribute in this module to be retrieved.
-
     Returns
     ----------
     str
         String value of this attribute.
-
     Raises
     ----------
     AttributeError
@@ -303,16 +298,13 @@ def get_module_attribute(module_name, attr_name):
 def get_module_file_attribute(package):
     """
     Get the absolute path of the module with the passed name.
-
     Since modules *cannot* be directly imported during analysis, this function
     spawns a subprocess importing this module and returning the value of this
     module's `__file__` attribute.
-
     Parameters
     ----------
     package : str
         Fully-qualified name of this module.
-
     Returns
     ----------
     str
@@ -341,21 +333,18 @@ def is_module_satisfies(requirements, version=None, version_attr='__version__'):
     """
     `True` if the module, package, or C extension described by the passed
     requirements string both exists and satisfies these requirements.
-
     This function checks module versions and extras (i.e., optional install-
     time features) via the same low-level algorithm leveraged by
     `easy_install` and `pip`, and should _always_ be called in lieu of manual
     checking. Attempting to manually check versions and extras invites subtle
     issues, particularly when comparing versions lexicographically (e.g.,
     `'00.5' > '0.6'` is `True`, despite being semantically untrue).
-
     Requirements
     ----------
     This function is typically used to compare the version of a currently
     installed module with some desired version. To do so, a string of the form
     `{module_name} {comparison_operator} {version}` (e.g., `sphinx >= 1.3`) is
     passed as the `requirements` parameter, where:
-
     * `{module_name}` is the fully-qualified name of the module, package, or C
       extension to be tested (e.g., `yaml`). This is _not_ a `setuptools`-
       specific distribution name (e.g., `PyYAML`).
@@ -363,16 +352,13 @@ def is_module_satisfies(requirements, version=None, version_attr='__version__'):
       numeric Python comparisons are supported (e.g., `!=`, `==`, `<`, `>=`).
     * `{version}` is the desired PEP 0440-compliant version (e.g., `3.14-rc5`)
       to be compared against the current version of this module.
-
     This function may also be used to test multiple versions and/or extras.  To
     do so, a string formatted ala the `pkg_resources.Requirements.parse()`
     class method (e.g., `idontevenknow<1.6,>1.9,!=1.9.6,<2.0a0,==2.4c1`) is
     passed as the `requirements` parameter. (See URL below.)
-
     Implementation
     ----------
     This function behaves as follows:
-
     * If one or more `setuptools` distributions exist for this module, this
       module was installed via either `easy_install` or `pip`. In either case,
       `setuptools` machinery is used to validate the passed requirements.
@@ -391,19 +377,16 @@ def is_module_satisfies(requirements, version=None, version_attr='__version__'):
              name of this attribute defaults to `__version__` but may be
              configured with the passed `version_attr` parameter.
         1. These requirements are validated against this version.
-
     Note that `setuptools` is generally considered to be the most robust means
     of comparing version strings in Python. The alternative `LooseVersion()`
     and `StrictVersion()` functions provided by the standard
     `distutils.version` module fail for common edge cases: e.g.,
-
         >>> from distutils.version import LooseVersion
         >>> LooseVersion('1.5') >= LooseVersion('1.5-rc2')
         False
         >>> from pkg_resources import parse_version
         >>> parse_version('1.5') >= parse_version('1.5-rc2')
         True
-
     Parameters
     ----------
     requirements : str
@@ -421,12 +404,10 @@ def is_module_satisfies(requirements, version=None, version_attr='__version__'):
         defaulting to `__version__`. If a `setuptools` distribution exists for
         this module (there usually does) _and_ the `version` parameter is
         `None` (it usually is), this parameter is ignored.
-
     Returns
     ----------
     bool
         Boolean result of the desired validation.
-
     Raises
     ----------
     AttributeError
@@ -436,12 +417,10 @@ def is_module_satisfies(requirements, version=None, version_attr='__version__'):
     ValueError
         If the passed specification does _not_ comply with
         `pkg_resources.Requirements` syntax.
-
     See Also
     ----------
     https://pythonhosted.org/setuptools/pkg_resources.html#id12
         `pkg_resources.Requirements` syntax details.
-
     Examples
     ----------
         # Assume PIL 2.9.0, Sphinx 1.3.1, and SQLAlchemy 0.6 are all installed.
@@ -450,12 +429,10 @@ def is_module_satisfies(requirements, version=None, version_attr='__version__'):
         True
         >>> is_module_satisfies('sqlalchemy != 0.6')
         False
-
         # Compare two arbitrary versions. In this case, the module name
         # "sqlalchemy" is simply ignored.
         >>> is_module_satisfies('sqlalchemy != 0.6', version='0.5')
         True
-
         # Since the "pillow" project providing PIL publishes its version via
         # the custom "PILLOW_VERSION" attribute (rather than the standard
         # "__version__" attribute), an attribute name is passed as a fallback
@@ -499,7 +476,6 @@ def is_package(module_name):
     """
     Check if a Python module is really a module or is a package containing
     other modules.
-
     :param module_name: Module name to check.
     :return: True if module is a package else otherwise.
     """
@@ -553,7 +529,6 @@ def collect_submodules(package, filter=lambda name: True):
     :return: A list of strings which specify all the modules in package. Its
         results can be directly assigned to ``hiddenimports`` in a hook script;
         see, for example, ``hook-sphinx.py``.
-
     This function is used only for hook scripts, but not by the body of
     PyInstaller.
     """
@@ -575,7 +550,6 @@ def collect_submodules(package, filter=lambda name: True):
     names = exec_statement("""
         import sys
         import pkgutil
-
         # ``pkgutil.walk_packages`` doesn't walk subpackages of zipped files
         # per https://bugs.python.org/issue14209. This is a workaround.
         def walk_packages(path=None, prefix='', onerror=None):
@@ -583,12 +557,10 @@ def collect_submodules(package, filter=lambda name: True):
                 if p in m:
                     return True
                 m[p] = True
-
             for importer, name, ispkg in pkgutil.iter_modules(path, prefix):
                 if not name.startswith(prefix):   ## Added
                     name = prefix + name          ## Added
                 yield importer, name, ispkg
-
                 if ispkg:
                     try:
                         __import__(name)
@@ -602,25 +574,14 @@ def collect_submodules(package, filter=lambda name: True):
                             raise
                     else:
                         path = getattr(sys.modules[name], '__path__', None) or []
-
                         # don't traverse path items we've seen before
                         path = [p for p in path if not seen(p)]
-
                         ## Use Py2 code here. It still works in Py3.
                         for item in walk_packages(path, name+'.', onerror):
                             yield item
                         ## This is the original Py3 code.
                         #yield from walk_packages(path, name+'.', onerror)
-
-        def AllowRuntimeExceptions(exc):
-           # some modules, such as wx.lib.pubsub, are problematic in that they purposefully raise an exception
-           # if the user tries to import them directly.  In Pyinstaller, we are just querying, so we don't want
-           # to abort the search if the module doesn't want to play nice.  Partially addresses issue #2215.
-           typ, _, _ = sys.exc_info()
-           if typ == RuntimeError: return
-           else: raise
-
-        for module_loader, name, ispkg in walk_packages([{}], '{}.', onerror=AllowRuntimeExceptions):
+        for module_loader, name, ispkg in walk_packages([{}], '{}.'):
             print(name)
         """.format(
                   # Use repr to escape Windows backslashes.
@@ -668,7 +629,6 @@ def collect_dynamic_libs(package, destdir=None):
     files which reside in package. Its results can be directly assigned to
     ``binaries`` in a hook script; see, for example, hook-zmq.py. The
     package parameter must be a string which names the package.
-
     :param destdir: Relative path to ./dist/APPNAME where the libraries
                     should be put.
     """
@@ -713,9 +673,7 @@ def collect_data_files(package, include_py_files=False, subdir=None):
     plugins. The optional subdir give a subdirectory relative to package to
     search, which is helpful when submodules are imported at run-time from a
     directory lacking __init__.py
-
     This function does not work on zipped Python eggs.
-
     This function is used only for hook scripts, but not by the body of
     PyInstaller.
     """
@@ -751,7 +709,6 @@ def collect_system_data_files(path, destdir=None, include_py_files=False):
     This routine produces a list of (source, dest) non-Python (i.e. data)
     files which reside somewhere on the system. Its results can be directly
     assigned to ``datas`` in a hook script.
-
     This function is used only for hook scripts, but not by the body of
     PyInstaller.
     """
@@ -814,17 +771,14 @@ def copy_metadata(package_name):
     This function returns a list to be assigned to the ``datas`` global
     variable. This list instructs PyInstaller to copy the metadata for the
     given package to PyInstaller's data directory.
-
     Parameters
     ----------
     package_name : str
         Specifies the name of the package for which metadata should be copied.
-
     Returns
     ----------
     list
         This should be assigned to ``datas``.
-
     Examples
     ----------
         >>> from PyInstaller.utils.hooks import copy_metadata
@@ -881,7 +835,6 @@ def copy_metadata(package_name):
 def get_installer(module):
     """
     Try to find which package manager installed a module.
-
     :param module: Module to check
     :return: Package manager or None
     """
