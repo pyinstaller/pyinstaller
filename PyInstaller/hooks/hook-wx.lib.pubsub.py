@@ -15,6 +15,8 @@
 from PyInstaller.utils.hooks import collect_submodules, collect_data_files
 
 hiddenimports = collect_submodules('wx.lib.pubsub')
+hiddenimports += collect_submodules('wx.lib.pubsub.core.kwargs')
+hiddenimports += collect_submodules('wx.lib.pubsub.core.arg1')
 
 # collect_submodules does not find `pubsub1` or `pubsub2` because
 # they are not packages, just folders without an `__init__.py`
