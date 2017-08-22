@@ -304,7 +304,7 @@ version from the `PyInstaller Downloads`_ page.
 You can also install the latest version of |PyInstaller| directly
 using pip_::
 
-    pip install -e https://github.com/pyinstaller/pyinstaller/archive/develop.zip
+    pip install https://github.com/pyinstaller/pyinstaller/archive/develop.zip
 
 Asking for Help
 ~~~~~~~~~~~~~~~~~~
