@@ -9,11 +9,11 @@
 # Required for crypto feature - encrypting bytecode.
 pycrypto==2.6.1; python_version <= '3.5' or sys_platform != 'win32'
 
-Django==1.8.18 # PyInstaller doesn't yet work with Django 1.9+
+Django==1.11.4 # PyInstaller doesn't yet work with Django 1.9+
 babel==2.5.0
 boto==2.48.0
 boto3==1.4.6
-botocore==1.6.3
+botocore==1.6.5
 
 gevent==1.2.2
 
@@ -54,7 +54,7 @@ Pillow==4.2.1
 pycryptodomex==3.4.6
 future==0.16.0
 pyusb==1.0.0
-requests==2.15.1 # Newest version of requests that allows tests to pass
+requests==2.18.4 # Newest version of requests that allows tests to pass
 
 # Install wheels only on OS X and Win 32, no wheel for Py 3.6 yet.
 pyenchant==1.6.11; (sys_platform == 'darwin' or sys_platform == 'win32') and python_version <= '3.5'
