@@ -230,9 +230,6 @@ pyi_get_temp_path(char *buffer, char *runtime_tmpdir)
     wchar_t *wchar_ret;
     wchar_t prefix[16];
     wchar_t wchar_buffer[PATH_MAX];
-    #ifdef _WIN32
-        wchar_t wchar_buffer_short[PATH_MAX];
-    #endif
     char *original_tmpdir;
     char runtime_tmpdir_abspath[PATH_MAX + 1];
 
@@ -251,8 +248,7 @@ pyi_get_temp_path(char *buffer, char *runtime_tmpdir)
 
     GetTempPathW(PATH_MAX, wchar_buffer);
     #ifdef _WIN32
-        GetShortPathName(wchar_buffer, wchar_buffer_short, PATH_MAX);
-        wcscpy(wchar_buffer, wchar_buffer_short);
+        GetShortPathName(wchar_buffer, wchar_buffer, PATH_MAX);
     #endif
 
     swprintf(prefix, 16, L"_MEI%d", getpid());
