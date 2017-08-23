@@ -194,7 +194,7 @@ include_list = IncludeList()
 
 if is_darwin:
     # On Mac use macholib to decide if a binary is a system one.
-    from PyInstaller.lib.macholib import util
+    from macholib import util
 
     class MacExcludeList(object):
         def __init__(self, global_exclude_list):
@@ -217,7 +217,8 @@ elif is_win:
     class WinExcludeList(object):
         def __init__(self, global_exclude_list):
             self._exclude_list = global_exclude_list
-            self._windows_dir = winutils.get_windows_dir().lower()
+            # use normpath because msys2 uses / instead of \
+            self._windows_dir = os.path.normpath(winutils.get_windows_dir().lower())
 
         def search(self, libname):
             libname = libname.lower()
@@ -227,7 +228,8 @@ elif is_win:
             else:
                 # Exclude everything from the Windows directory by default.
                 # .. sometimes realpath changes the case of libname, lower it
-                fn = os.path.realpath(libname).lower()
+                # .. use normpath because msys2 uses / instead of \
+                fn = os.path.normpath(os.path.realpath(libname).lower())
                 return fn.startswith(self._windows_dir)
 
     exclude_list = WinExcludeList(exclude_list)
@@ -274,8 +276,8 @@ def mac_set_relative_dylib_deps(libname, distname):
                 dependencies and qt plugins will not be loaded.
     """
 
-    from PyInstaller.lib.macholib import util
-    from PyInstaller.lib.macholib.MachO import MachO
+    from macholib import util
+    from macholib.MachO import MachO
 
     # Ignore bootloader otherwise PyInstaller fails with exception like
     # 'ValueError: total_size > low_offset (288 > 0)'

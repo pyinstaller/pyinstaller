@@ -205,6 +205,7 @@ def test_multiprocess(pyi_builder):
     pyi_builder.test_script('pyi_multiprocess.py')
 
 
+@xfail(is_darwin, reason="Pull Request #2505")
 @importorskip('multiprocessing')
 def test_multiprocess_forking(pyi_builder):
     pyi_builder.test_script('pyi_multiprocess_forking.py')
@@ -520,6 +521,8 @@ def test_renamed_exe(pyi_builder):
     pyi_builder._find_executables = _find_executables
     pyi_builder.test_source("print('Hello Python!')")
 
+def test_spec_with_utf8(pyi_builder_spec):
+    pyi_builder_spec.test_spec('spec-with-utf8.spec')
 
 @skipif_notosx
 def test_osx_override_info_plist(pyi_builder_spec):
@@ -546,3 +549,26 @@ def test_hook_collect_submodules(pyi_builder, script_dir):
 # Test that PyInstaller can handle a script with an arbitrary extension.
 def test_arbitrary_ext(pyi_builder):
     pyi_builder.test_script('pyi_arbitrary_ext.foo')
+    
+def test_option_runtime_tmpdir(pyi_builder):
+    "Test to ensure that option `runtime_tmpdir` can be set and has effect."
+
+    pyi_builder.test_source(
+        """
+        print('test - runtime_tmpdir - custom runtime temporary directory')
+        import os
+        import sys
+        if sys.platform == 'win32':
+            import win32api
+        cwd = os.path.abspath(os.getcwd())
+        if sys.platform == 'win32' and sys.version_info < (3,):
+            cwd = win32api.GetShortPathName(cwd)
+        runtime_tmpdir = os.path.abspath(sys._MEIPASS)
+        # for onedir mode, runtime_tmpdir == cwd
+        # for onefile mode, os.path.dirname(runtime_tmpdir) == cwd
+        if not runtime_tmpdir == cwd and not os.path.dirname(runtime_tmpdir) == cwd:
+            raise SystemExit('Expected sys._MEIPASS to be under current working dir.'
+                             ' sys._MEIPASS = ' + runtime_tmpdir + ', cwd = ' + cwd)
+        print('test - done')
+        """,
+        ['--runtime-tmpdir=.']) # set runtime-tmpdir to current working dir

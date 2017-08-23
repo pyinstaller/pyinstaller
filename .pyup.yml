@@ -1,0 +1,6 @@
+branch: develop
+
+search: False
+
+requirements:
+  - tests/requirements-libraries.txt

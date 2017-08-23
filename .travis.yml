@@ -3,47 +3,123 @@ language: python
 # Use the new container-based Travis infrastructure.
 sudo: false
 
+branches:
+  except:
+    - /pyup-.*/
+
+# Make sure we are on Ubuntu 14.04
+dist: trusty
+
 # Cache pip packages. Explicitly name the pip-cache directory since we
 # use a custom `install` step which annuls `cache: pip`.
 cache:
   directories:
     - $HOME/.cache/pip
 
-# Try OS X.
 os:
   - linux
-  #- osx
 
-env:
-#  - PYCRYPTO_VERSION=2.4.1
-#  - PYCRYPTO_VERSION=2.6.1
+jobs:
+  fast_finish: true
+  include:
+    # macOS is first to account for the delay in starting the build on macOS. This prevents the build from hanging on
+    # macOS as the last job to finish in a stage.
+    - stage: Cache
+      os: osx
+      language: generic
+      python: 3.6
+      cache:
+        directories:
+          - $HOME/Library/Caches/pip
+    - stage: Test - PyInstaller
+      os: osx
+      language: generic
+      python: 3.6
+      cache:
+        directories:
+          - $HOME/Library/Caches/pip
+      install:
+        # Update pip.
+        - python -m pip install -U pip setuptools wheel | cat
 
-python:
-  - "2.7"
-  - "3.3"
-  - "3.4"
-  - "3.5"
-  - "3.6"
-  - "nightly"
+        # Install dependencies for PyInstaller tests.
+        - pip install -U -r tests/requirements-tools.txt | cat
 
-matrix:
+        # Install PyInstaller.
+        - pip install -e . | cat
+      script: py.test -n 3 --maxfail 3 tests/unit tests/functional --ignore=tests/functional/test_libraries.py --ignore=tests/functional/test_hooks
+    - stage: Test - Libraries
+      os: osx
+      language: generic
+      python: 3.6
+      cache:
+        directories:
+          - $HOME/Library/Caches/pip
+      script: py.test -n 3 --maxfail 3 tests/functional/test_libraries.py tests/functional/test_hooks
+
+    - &cache
+      stage: Cache
+      python: 2.7
+    - &test-pyinstaller
+      stage: Test - PyInstaller
+      python: 2.7
+      install:
+        # Update pip.
+        - python -m pip install -U pip setuptools wheel | cat
+
+        # Install dependencies for PyInstaller tests.
+        - pip install -U -r tests/requirements-tools.txt | cat
+
+        # Install PyInstaller.
+        - pip install -e . | cat
+      # Run tests and speed them up by sending them to multiple CPUs.
+      script: py.test -n 3 --maxfail 3 tests/unit tests/functional --ignore=tests/functional/test_libraries.py --ignore=tests/functional/test_hooks
+    - &test-libraries
+      stage: Test - Libraries
+      python: 2.7
+      # Run tests and speed them up by sending them to multiple CPUs.
+      script: py.test -n 3 --maxfail 3 tests/functional/test_libraries.py tests/functional/test_hooks
+
+    - <<: *cache
+      python: 3.3
+    - <<: *test-pyinstaller
+      python: 3.3
+    - <<: *test-libraries
+      python: 3.3
+
+    - <<: *cache
+      python: 3.4
+    - <<: *test-pyinstaller
+      python: 3.4
+    - <<: *test-libraries
+      python: 3.4
+
+    - <<: *cache
+      python: 3.5
+    - <<: *test-pyinstaller
+      python: 3.5
+    - <<: *test-libraries
+      python: 3.5
+
+    - <<: *cache
+      python: 3.6
+    - <<: *test-pyinstaller
+      python: 3.6
+    - <<: *test-libraries
+      python: 3.6
+
+    - <<: *cache
+      python: nightly
+    - <<: *test-pyinstaller
+      python: nightly
+    - <<: *test-libraries
+      python: nightly
   allow_failures:
       # Just tests how PyInstaller performs with upcoming Python 3.6
       - python: "nightly"
-      # Ignore failures from OS X.
-      - os: osx
 
 addons:
-  # Ubuntu 12.04 (LTS) packages installed into this Travis-CI container. Since
-  # Ubuntu 12.04 provides *NO* Python 3 packages prefixed by "python3-", only
-  # Python 2.7 packages prefixed by "python-" are installable. Installing only
-  # Python 2.7 packages would be useless, however! Python packages should thus
-  # be installed by "pip" via the "test/requirements-library.txt" specification.
-  #
-  # Travis-CI intends to add support for Ubuntu 14.04 (LTS) at some future date.
-  # To track progress on this long-standing issue, see:
-  #
-  #     https://github.com/travis-ci/travis-ci/issues/2046
+  # Python packages should be installed by "pip" via the "test/requirements-library.txt" specification.
   apt:
     packages:
     # lxml dependencies.
@@ -62,26 +138,43 @@ before_install:
       | grep -E  '\[(skip travis|travis skip)\]'
       && echo "[skip travis] has been found, exiting."
       && exit 0 || true
+
+  # Perform the manual steps on osx to install python3 and activate venv
+  - >
+      if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
+          brew update;
+          brew install python3;
+          python3 -m venv venv;
+          source venv/bin/activate;
+      fi
+
   # Compile bootloader
   - cd bootloader
   - python waf distclean all
   - cd ..
 
-
 install:
   # Update pip.
-  - python -m pip install -U pip setuptools wheel
-  # Install PyInstaller.
-  - pip install -e .
+  - python -m pip install -U pip setuptools wheel | cat
 
   # Install dependencies for tests.
-  - pip install -U -r tests/requirements-tools.txt
-  - pip install -U -r tests/requirements-libraries.txt
+  - pip install -U -r tests/requirements-tools.txt -r tests/requirements-libraries.txt | cat
+
+  # Install PyInstaller.
+  - pip install -e . | cat
+
+before_script:
+  - >
+      if [[ $TRAVIS_OS_NAME == 'linux' ]]; then
+          # Run X Virtual Framebuffer to imitate a display
+          export DISPLAY=:99.0;
+          sh -e /etc/init.d/xvfb start;
+          sleep 3 # give xvfb some time to start
+      fi
+
 
 script:
-  # Run tests and speed them up by sending them to multiple CPUs.
-  # Run unitttest first.
-  - py.test -n 3 --maxfail 3 tests/unit/ tests/
+  - true
 
 notifications:
     irc:

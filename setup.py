@@ -16,8 +16,18 @@ from setuptools import setup
 from PyInstaller import (__version__ as version, is_linux, is_win, is_cygwin,
                          HOMEPATH, PLATFORM, compat)
 
+REQUIREMENTS = [
+    'setuptools',
+    'pefile >= 2017.8.1',
+    'macholib >= 1.8',
+]
 
-REQUIREMENTS = ['setuptools']
+# dis3 and xdis are used for our version of modulegraph
+if sys.version_info < (3,):
+    REQUIREMENTS.append('dis3')
+elif sys.version_info < (3, 4):
+    REQUIREMENTS.append('xdis')
+
 # For Windows install PyWin32 if not already installed.
 if sys.platform.startswith('win'):
     # Windows support depends on pefile library.
@@ -29,9 +39,13 @@ if sys.platform.startswith('win'):
     try:
         import pywintypes
     except ImportError:
-        # 'pypiwin32' is PyWin32 package made installable by 'pip install'
-        # command.
-        REQUIREMENTS.append('pypiwin32')
+        # try using pywin32-ctypes, as pypiwin32 doesn't compile for msys2
+        try:
+            import win32ctypes.pywin32.pywintypes
+        except ImportError:
+            # 'pypiwin32' is PyWin32 package made installable by 'pip install'
+            # command. Prefer it by default.
+            REQUIREMENTS.append('pypiwin32')
 
 
 # Create long description from README.rst and doc/CHANGES.rst.

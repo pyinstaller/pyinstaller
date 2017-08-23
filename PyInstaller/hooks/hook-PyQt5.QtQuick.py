@@ -16,6 +16,7 @@ hiddenimports = ['sip',
                  ]
 
 from PyInstaller.utils.hooks import (
+    qt5_qml_dir,
     qt5_qml_data,
     qt5_qml_plugins_binaries,
     qt5_qml_plugins_datas
@@ -33,14 +34,16 @@ dirs = ['Qt',
         #'QtTest'
         ]
 
+qmldir = qt5_qml_dir('PyQt5')
+
 # Add base qml directories
-datas = [qt5_qml_data(dir) for dir in dirs]
+datas = [qt5_qml_data(qmldir, dir) for dir in dirs]
 
 # Add qmldir and *.qmltypes files
 for dir in dirs:
-    datas.extend(qt5_qml_plugins_datas(dir))
+    datas.extend(qt5_qml_plugins_datas(qmldir, dir))
 
 # Add binaries
 binaries = []
 for dir in dirs:
-    binaries.extend(qt5_qml_plugins_binaries(dir))
+    binaries.extend(qt5_qml_plugins_binaries(qmldir, dir))

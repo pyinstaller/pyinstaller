@@ -9,7 +9,7 @@ Makefile	text=auto
 *.tiff	-text
 *.png	-text
 
-# excutables
+# executables
 run	-text
 run_d	-text
 runw	-text

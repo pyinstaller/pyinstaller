@@ -4,9 +4,10 @@
 .. |PyInstaller| replace:: `PyInstaller`
 .. |PyInstallerVersion| replace:: PyInstaller |release|
 
+.. _issue: https://github.com/pyinstaller/pyinstaller/issues/
+
 .. how we punctuate boot loader as a proper noun "the bootloader"
 .. |bootloader| replace:: bootloader
-
 
 .. _`activation context`: http://msdn.microsoft.com/en-us/library/windows/desktop/aa374153(v=vs.85).aspx
 .. _`Apple bundle overview`: https://developer.apple.com/library/mac/documentation/CoreFoundation/Conceptual/CFBundles/BundleTypes/BundleTypes.html

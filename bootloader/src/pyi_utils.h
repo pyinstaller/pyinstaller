@@ -16,6 +16,8 @@
 #ifndef HEADER_PYI_UTILS_H
 #define HEADER_PYI_UTILS_H
 
+#include "pyi_archive.h"
+
 /* Environment variables. */
 
 char *pyi_getenv(const char *variable);

@@ -23,7 +23,8 @@ from operator import itemgetter
 from PyInstaller import is_win, is_darwin, is_linux, HOMEPATH, PLATFORM
 from PyInstaller.archive.writers import ZlibArchiveWriter, CArchiveWriter
 from PyInstaller.building.utils import _check_guts_toc, add_suffix_to_extensions, \
-    checkCache, _check_path_overlap, _rmtree, strip_paths_in_code, get_code_object
+    checkCache, _check_path_overlap, _rmtree, strip_paths_in_code, get_code_object, \
+    _make_clean_directory
 from PyInstaller.compat import is_cygwin, exec_command_all
 from PyInstaller.depend import bindepend
 from PyInstaller.depend.analysis import get_bootstrap_modules
@@ -339,6 +340,7 @@ class EXE(Target):
         self.manifest = kwargs.get('manifest', None)
         self.resources = kwargs.get('resources', [])
         self.strip = kwargs.get('strip', False)
+        self.runtime_tmpdir = kwargs.get('runtime_tmpdir', None)
         # If ``append_pkg`` is false, the archive will not be appended
         # to the exe, but copied beside it.
         self.append_pkg = kwargs.get('append_pkg', True)
@@ -385,6 +387,9 @@ class EXE(Target):
                 self.toc.extend(arg.dependencies)
             else:
                 self.toc.extend(arg)
+
+        if self.runtime_tmpdir is not None:
+            self.toc.append(("pyi-runtime-tmpdir " + self.runtime_tmpdir, "", "OPTION"))
 
         if is_win:
             filename = os.path.join(CONF['workpath'], CONF['specnm'] + ".exe.manifest")
@@ -487,6 +492,8 @@ class EXE(Target):
     def assemble(self):
         logger.info("Building EXE from %s", self.tocbasename)
         trash = []
+        if os.path.exists(self.name):
+            os.remove(self.name)
         if not os.path.exists(os.path.dirname(self.name)):
             os.makedirs(os.path.dirname(self.name))
         exe = self.exefiles[0][1]  # pathname of bootloader
@@ -664,10 +671,8 @@ class COLLECT(Target):
         return 1
 
     def assemble(self):
-        if _check_path_overlap(self.name) and os.path.isdir(self.name):
-            _rmtree(self.name)
+        _make_clean_directory(self.name)
         logger.info("Building COLLECT %s", self.tocbasename)
-        os.makedirs(self.name)
         toc = add_suffix_to_extensions(self.toc)
         for inm, fnm, typ in toc:
             if not os.path.exists(fnm) or not os.path.isfile(fnm) and is_path_to_egg(fnm):

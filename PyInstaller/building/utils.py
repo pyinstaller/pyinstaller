@@ -170,7 +170,15 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
         os.makedirs(cachedir)
     cacheindexfn = os.path.join(cachedir, "index.dat")
     if os.path.exists(cacheindexfn):
-        cache_index = load_py_data_struct(cacheindexfn)
+        try:
+            cache_index = load_py_data_struct(cacheindexfn)
+        except Exception as e:
+            # tell the user they may want to fix their cache
+            # .. however, don't delete it for them; if it keeps getting
+            #    corrupted, we'll never find out
+            logger.warn("pyinstaller bincache may be corrupted; "
+                        "use pyinstaller --clean to fix")
+            raise
     else:
         cache_index = {}
 
@@ -364,6 +372,20 @@ def _check_path_overlap(path):
                          'and set a different output name (e.g. "dist").'
                          % CONF['spec'])
     return True
+
+
+def _make_clean_directory(path):
+    """
+    Create a clean directory from the given directory name
+    """
+    if _check_path_overlap(path):
+        if os.path.isdir(path):
+            try:
+                os.remove(path)
+            except OSError:
+                _rmtree(path)
+
+        os.makedirs(path)
 
 
 def _rmtree(path):

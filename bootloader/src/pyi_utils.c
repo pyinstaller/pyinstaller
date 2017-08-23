@@ -183,10 +183,14 @@ pyi_setenv(const char *variable, const char *value)
 
 #ifdef _WIN32
     wchar_t * wvar, *wval;
+
     wvar = pyi_win32_utils_from_utf8(NULL, variable, 0);
     wval = pyi_win32_utils_from_utf8(NULL, value, 0);
 
-    rc = SetEnvironmentVariableW(wvar, wval);
+    // Not sure why, but SetEnvironmentVariableW() didn't work with _wtempnam()
+    // Replaced it with _wputenv_s()
+    rc = _wputenv_s(wvar, wval);
+
     free(wvar);
     free(wval);
 #else
@@ -220,16 +224,28 @@ pyi_unsetenv(const char *variable)
 
 /* TODO rename fuction and revisit */
 int
-pyi_get_temp_path(char *buffer)
+pyi_get_temp_path(char *buffer, char *runtime_tmpdir)
 {
     int i;
     wchar_t *wchar_ret;
     wchar_t prefix[16];
     wchar_t wchar_buffer[PATH_MAX];
+    char *original_tmpdir;
+    char runtime_tmpdir_abspath[PATH_MAX + 1];
 
-    /*
-     * Get path to Windows temporary directory.
-     */
+    if (runtime_tmpdir != NULL) {
+      /*
+       * Get original TMP environment variable so it can be restored
+       * after this is done.
+       */
+      original_tmpdir = pyi_getenv("TMP");
+      /*
+       * Set TMP to runtime_tmpdir for _wtempnam() later
+       */
+      pyi_path_fullpath(runtime_tmpdir_abspath, PATH_MAX, runtime_tmpdir);
+      pyi_setenv("TMP", runtime_tmpdir_abspath);
+    }
+
     GetTempPathW(PATH_MAX, wchar_buffer);
 
     swprintf(prefix, 16, L"_MEI%d", getpid());
@@ -246,9 +262,31 @@ pyi_get_temp_path(char *buffer)
         if (_wmkdir(wchar_ret) == 0) {
             pyi_win32_utils_to_utf8(buffer, wchar_ret, PATH_MAX);
             free(wchar_ret);
+            if (runtime_tmpdir != NULL) {
+              /*
+               * Restore TMP to what it was
+               */
+              if (original_tmpdir != NULL) {
+                pyi_setenv("TMP", original_tmpdir);
+                free(original_tmpdir);
+              } else {
+                pyi_unsetenv("TMP");
+              }
+            }
             return 1;
         }
         free(wchar_ret);
+    }
+    if (runtime_tmpdir != NULL) {
+      /*
+       * Restore TMP to what it was
+       */
+      if (original_tmpdir != NULL) {
+        pyi_setenv("TMP", original_tmpdir);
+        free(original_tmpdir);
+      } else {
+        pyi_unsetenv("TMP");
+      }
     }
     return 0;
 }
@@ -276,36 +314,42 @@ pyi_test_temp_path(char *buff)
 
 /* TODO merge this function with windows version. */
 static int
-pyi_get_temp_path(char *buff)
+pyi_get_temp_path(char *buff, char *runtime_tmpdir)
 {
-    /* On OSX the variable TMPDIR is usually defined. */
-    static const char *envname[] = {
-        "TMPDIR", "TEMP", "TMP", 0
-    };
-    static const char *dirname[] = {
-        "/tmp", "/var/tmp", "/usr/tmp", 0
-    };
-    int i;
-    char *p;
+    if (runtime_tmpdir != NULL) {
+      strcpy(buff, runtime_tmpdir);
+      if (pyi_test_temp_path(buff))
+        return 1;
+    } else {
+      /* On OSX the variable TMPDIR is usually defined. */
+      static const char *envname[] = {
+          "TMPDIR", "TEMP", "TMP", 0
+      };
+      static const char *dirname[] = {
+          "/tmp", "/var/tmp", "/usr/tmp", 0
+      };
+      int i;
+      char *p;
 
-    for (i = 0; envname[i]; i++) {
-        p = pyi_getenv(envname[i]);
+      for (i = 0; envname[i]; i++) {
+          p = pyi_getenv(envname[i]);
 
-        if (p) {
-            strcpy(buff, p);
+          if (p) {
+              strcpy(buff, p);
 
-            if (pyi_test_temp_path(buff)) {
-                return 1;
-            }
-        }
-    }
+              if (pyi_test_temp_path(buff)) {
+                  return 1;
+              }
+          }
+      }
 
-    for (i = 0; dirname[i]; i++) {
-        strcpy(buff, dirname[i]);
+      for (i = 0; dirname[i]; i++) {
+          strcpy(buff, dirname[i]);
 
-        if (pyi_test_temp_path(buff)) {
-            return 1;
-        }
+          if (pyi_test_temp_path(buff)) {
+              return 1;
+          }
+      }
     }
     return 0;
 }
@@ -319,8 +363,15 @@ pyi_get_temp_path(char *buff)
 int
 pyi_create_temp_path(ARCHIVE_STATUS *status)
 {
+    char *runtime_tmpdir = NULL;
+
     if (status->has_temp_directory != true) {
-        if (!pyi_get_temp_path(status->temppath)) {
+        runtime_tmpdir = pyi_arch_get_option(status, "pyi-runtime-tmpdir");
+        if(runtime_tmpdir != NULL) {
+          VS("LOADER: Found runtime-tmpdir %s\n", runtime_tmpdir);
+        }
+
+        if (!pyi_get_temp_path(status->temppath, runtime_tmpdir)) {
             FATALERROR("INTERNAL ERROR: cannot create temporary directory!\n");
             return -1;
         }
@@ -418,7 +469,8 @@ pyi_remove_temp_path(const char *dir)
     struct dirent *finfo;
     int dirnmlen;
 
-    strcpy(fnm, dir);
+    /* Leave 1 char for PY_SEP if needed */
+    strncpy(fnm, dir, PATH_MAX);
     dirnmlen = strlen(fnm);
 
     if (fnm[dirnmlen - 1] != PYI_SEP) {
@@ -468,13 +520,25 @@ pyi_open_target(const char *path, const char* name_)
     char fnm[PATH_MAX];
     char name[PATH_MAX];
     char *dir;
+    size_t len;
 
-    strcpy(fnm, path);
-    strcpy(name, name_);
+    strncpy(fnm, path, PATH_MAX);
+    strncpy(name, name_, PATH_MAX);
 
+    /* Check if the path names could be copied */
+    if (fnm[PATH_MAX-1] != '\0' || name[PATH_MAX-1] != '\0') {
+        return NULL;
+    }
+
+    len = strlen(fnm);
     dir = strtok(name, PYI_SEPSTR);
 
     while (dir != NULL) {
+        len += strlen(dir) + strlen(PYI_SEPSTR);
+        /* Check if fnm does not exceed the buffer size */
+        if (len >= PATH_MAX-1) {
+            return NULL;
+        }
         strcat(fnm, PYI_SEPSTR);
         strcat(fnm, dir);
         dir = strtok(NULL, PYI_SEPSTR);
@@ -526,6 +590,12 @@ pyi_copy_file(const char *src, const char *dst, const char *filename)
     int error = 0;
 
     if (in == NULL || out == NULL) {
+        if (in) {
+            fclose(in);
+        }
+        if (out) {
+            fclose(out);
+        }
         return -1;
     }
 
@@ -650,7 +720,7 @@ pyi_utils_create_child(const char *thisfile, const int argc, char *const argv[])
         GetExitCodeProcess(pi.hProcess, (unsigned long *)&rc);
     }
     else {
-        FATALERROR("Error creating child process!\n");
+        FATAL_WINERROR("CreateProcessW", "Error creating child process!\n");
         rc = -1;
     }
     return rc;
@@ -740,6 +810,38 @@ pyi_utils_set_environment(const ARCHIVE_STATUS *status)
     return rc;
 }
 
+/*
+ * If the program is actived by a systemd socket, systemd will set
+ * LISTEN_PID, LISTEN_FDS environment variable for that process.
+ *
+ * LISTEN_PID is set to the pid of the parent process of bootloader,
+ * which is forked by systemd.
+ *
+ * Bootloader will duplicate LISTEN_FDS to child process, but the
+ * LISTEN_PID environment variable remains unchanged.
+ *
+ * Here we change the LISTEN_PID to the child pid in child process.
+ * So the application can detecte it and use the LISTEN_FDS created
+ * by systemd.
+ */
+int
+set_systemd_env()
+{
+    const char * env_var = "LISTEN_PID";
+    if(pyi_getenv(env_var) != NULL) {
+        /* the ULONG_STRING_SIZE is roughly equal to log10(max number)
+         * but can be calculated in compile time.
+         * The idea is from an answer on stackoverflow,
+         * https://stackoverflow.com/questions/8257714/
+         */
+        #define ULONG_STRING_SIZE (sizeof (unsigned long) * CHAR_BIT / 3 + 2)
+        char pid_str[ULONG_STRING_SIZE];
+        snprintf(pid_str, ULONG_STRING_SIZE, "%ld", (unsigned long)getpid());
+        return pyi_setenv(env_var, pid_str);
+    }
+    return 0;
+}
+
 /* Remember child process id. It allows sending a signal to child process.
  * Frozen application always runs in a child process. Parent process is used
  * to setup environment for child process and clean the environment when
@@ -789,6 +891,10 @@ pyi_utils_create_child(const char *thisfile, const int argc, char *const argv[])
     /* Child code. */
     if (pid == 0) {
         /* Replace process by starting a new application. */
+        if (set_systemd_env() != 0) {
+            VS("WARNING: Application is started by systemd socket,"
+               "but we can't set proper LISTEN_PID on it.\n");
+        }
         execvp(thisfile, argv_pyi);
     }
     /* Parent code. */
@@ -846,7 +952,7 @@ static pascal OSErr handle_open_doc_ae(const AppleEvent *theAppleEvent, AppleEve
    DescType returnedType;
    AEKeyword keywd;
    FSRef theRef;
- 
+
    VS("LOADER [ARGV_EMU]: OpenDocument handler called.\n");
 
    OSErr err = AEGetParamDesc(theAppleEvent, keyDirectObject, typeAEList, &docList);
@@ -858,7 +964,7 @@ static pascal OSErr handle_open_doc_ae(const AppleEvent *theAppleEvent, AppleEve
    for (index = 1; index <= count; index++)
    {
      err = AEGetNthPtr(&docList, index, typeFSRef, &keywd, &returnedType, &theRef, sizeof(theRef), &actualSize);
- 
+
      CFURLRef fullURLRef;
      fullURLRef = CFURLCreateFromFSRef(NULL, &theRef);
      CFStringRef cfString = CFURLCopyFileSystemPath(fullURLRef, kCFURLPOSIXPathStyle);
@@ -870,22 +976,22 @@ static pascal OSErr handle_open_doc_ae(const AppleEvent *theAppleEvent, AppleEve
      const int bufferSize = (len+1)*6;  // in theory up to six bytes per Unicode code point, for UTF-8.
      char* buffer = (char*)malloc(bufferSize);
      CFStringGetCString(cfMutableString, buffer, bufferSize, kCFStringEncodingUTF8);
- 
+
      argv_pyi = (char**)realloc(argv_pyi,(argc_pyi+2)*sizeof(char*));
      argv_pyi[argc_pyi++] = strdup(buffer);
      argv_pyi[argc_pyi] = NULL;
 
      VS("LOADER [ARGV_EMU]: argv entry appended.");
- 
+
      free(buffer);
    }
- 
+
   err = AEDisposeDesc(&docList);
 
- 
+
   return (err);
 }
- 
+
 
 static void process_apple_events()
 {
@@ -918,7 +1024,7 @@ static void process_apple_events()
 
         while(!gQuit) {
            VS("LOADER [ARGV_EMU]: AppleEvent - calling ReceiveNextEvent\n");
-           rcv_status = ReceiveNextEvent(1, event_types, timeout, true, &event_ref); 
+           rcv_status = ReceiveNextEvent(1, event_types, timeout, true, &event_ref);
 
            if (rcv_status == eventLoopTimedOutErr) {
               VS("LOADER [ARGV_EMU]: ReceiveNextEvent timed out\n");
@@ -942,7 +1048,7 @@ static void process_apple_events()
 
         VS("LOADER [ARGV_EMU]: Out of the event loop.");
 
-        handler_remove_status = RemoveEventHandler(handler_ref); 
+        handler_remove_status = RemoveEventHandler(handler_ref);
 
     }
     else {

@@ -6,12 +6,11 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
-
 import os
 
 from PyInstaller.utils.hooks import (
-    get_module_attribute, is_module_satisfies, qt_menu_nib_dir)
+    get_module_attribute, is_module_satisfies, qt_menu_nib_dir, get_module_file_attribute,
+    collect_data_files)
 from PyInstaller.compat import getsitepackages, is_darwin, is_win
 
 
@@ -21,10 +20,16 @@ from PyInstaller.compat import getsitepackages, is_darwin, is_win
 if is_win:
     from PyInstaller.utils.win32.winutils import extend_system_path
     extend_system_path([os.path.join(x, 'PyQt5') for x in getsitepackages()])
+    extend_system_path([os.path.join(os.path.dirname(get_module_file_attribute('PyQt5')),
+                                     'Qt', 'bin')])
 
 
 # In the new consolidated mode any PyQt depends on _qt
 hiddenimports = ['sip', 'PyQt5.Qt']
+
+# Collect just the qt.conf file.
+datas = [x for x in collect_data_files('PyQt5', False, os.path.join('Qt', 'bin')) if
+         x[0].endswith('qt.conf')]
 
 
 # For Qt<5.4 to work on Mac OS X it is necessary to include `qt_menu.nib`.

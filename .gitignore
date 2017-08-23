@@ -72,6 +72,7 @@ tests/old_suite/basic/test_pyz_as_external_file.exe.pkg
 /bootloader/.lock-waf*
 /bootloader/.lock-wscript
 /bootloader/build/
+/bootloader/_sdks
 /bootloader/.vagrant/
 /bootloader/waf-*/
 /bootloader/waf3-*/
@@ -86,3 +87,4 @@ tests/old_suite/basic/test_pyz_as_external_file.exe.pkg
 
 # py.test cache folder
 .cache
+*.prof

@@ -62,7 +62,7 @@ def _warn_if_activetcl_or_teapot_installed(tcl_root, tcltree):
     -------
     https://github.com/pyinstaller/pyinstaller/issues/621
     """
-    from PyInstaller.lib.macholib import util
+    from macholib import util
 
     # System libraries do not experience this problem.
     if util.in_system_path(tcl_root):

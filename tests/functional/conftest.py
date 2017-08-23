@@ -42,7 +42,7 @@ from PyInstaller import configure, config
 from PyInstaller import __main__ as pyi_main
 from PyInstaller.utils.cliutils import archive_viewer
 from PyInstaller.compat import is_darwin, is_win, is_py2, safe_repr, \
-  architecture
+  architecture, is_linux
 from PyInstaller.depend.analysis import initialize_modgraph
 from PyInstaller.utils.win32 import winutils
 
@@ -223,7 +223,9 @@ class AppBuilder(object):
         assert os.path.exists(self.script), 'Script %s not found.' % script
 
         marker('Starting build.')
-        assert self._test_building(args=pyi_args), 'Building of %s failed.' % script
+        if not self._test_building(args=pyi_args):
+            pytest.fail('Building of %s failed.' % script)
+
         marker('Build finshed, now running executable.')
         self._test_executables(app_name, args=app_args,
                                runtime=runtime, run_from_path=run_from_path)
@@ -250,9 +252,12 @@ class AppBuilder(object):
             # Try to find .toc log file. .toc log file has the same basename as exe file.
             toc_log = os.path.join(_LOGS_DIR, os.path.basename(exe) + '.toc')
             if os.path.exists(toc_log):
-                assert self._examine_executable(exe, toc_log), 'Matching .toc of %s failed.' % exe
+                if not self._examine_executable(exe, toc_log):
+                    pytest.fail('Matching .toc of %s failed.' % exe)
             retcode = self._run_executable(exe, args, run_from_path, runtime)
-            assert retcode == 0, 'Running exe %s failed with return-code %s.' % (exe, retcode)
+            if retcode != 0:
+                pytest.fail('Running exe %s failed with return-code %s.' %
+                            (exe, retcode))
 
     def _find_executables(self, name):
         """
@@ -471,7 +476,7 @@ def pyi_builder(tmpdir, monkeypatch, request, pyi_modgraph):
                 if os.path.exists(tmp):
                     shutil.rmtree(tmp)
 
-    if is_darwin:
+    if is_darwin or is_linux:
         request.addfinalizer(del_temp_dir)
     return AppBuilder(tmp, request.param, pyi_modgraph)
 
