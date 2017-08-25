@@ -41,6 +41,7 @@ interpreter or any modules.
 :Documentation: http://pyinstaller.rtfd.io/
 :Website:       http://www.pyinstaller.org/
 :Code:          https://github.com/pyinstaller/pyinstaller
+:Donate:        https://www.bountysource.com/teams/pyinstaller
 
 
 PyInstaller reads a Python script written by you. It analyzes your code
