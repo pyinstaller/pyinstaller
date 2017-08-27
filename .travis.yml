@@ -103,7 +103,9 @@ jobs:
 
     - <<: *cache
       python: 3.6
-      script: flake8-diff develop
+      script: 
+        - git fetch origin develop:develop --depth 1
+        - flake8-diff origin/develop
     - <<: *test-pyinstaller
       python: 3.6
     - <<: *test-libraries
