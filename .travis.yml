@@ -31,12 +31,6 @@ jobs:
       cache:
         directories:
           - $HOME/Library/Caches/pip
-      script:
-        - >
-            if [[ $TRAVIS_PULL_REQUEST != 'false' ]]; then
-                git fetch origin $TRAVIS_BRANCH:$TRAVIS_BRANCH --depth 1;
-                flake8-diff -v -v -v develop;
-            fi
     - stage: Test - PyInstaller
       os: osx
       language: generic
@@ -66,6 +60,12 @@ jobs:
     - &cache
       stage: Lint
       python: 2.7
+      script:
+        - >
+            if [[ $TRAVIS_PULL_REQUEST != 'false' ]]; then
+                git fetch origin $TRAVIS_BRANCH:$TRAVIS_BRANCH --depth 1;
+                flake8-diff -v -v -v develop;
+            fi
     - &test-pyinstaller
       stage: Test - PyInstaller
       python: 2.7
