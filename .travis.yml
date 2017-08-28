@@ -63,8 +63,8 @@ jobs:
       script:
         - >
             if [[ $TRAVIS_PULL_REQUEST != 'false' ]]; then
-                git fetch origin $TRAVIS_BRANCH:$TRAVIS_BRANCH --depth 1;
-                flake8-diff -v -v -v develop;
+                git fetch origin $TRAVIS_BRANCH: --depth 1;
+                flake8-diff -v -v -v $TRAVIS_BRANCH;
             fi
     - &test-pyinstaller
       stage: Test - PyInstaller
