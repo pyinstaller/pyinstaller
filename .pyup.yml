@@ -6,3 +6,5 @@ requirements:
   - tests/requirements-libraries.txt
 
 pr_prefix: "Tests: Requirements:"
+
+branch_prefix: pyup/
