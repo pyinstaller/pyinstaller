@@ -64,7 +64,7 @@ jobs:
       script: py.test -n 3 --maxfail 3 tests/functional/test_libraries.py tests/functional/test_hooks
 
     - &cache
-      stage: Cache
+      stage: Lint
       python: 2.7
     - &test-pyinstaller
       stage: Test - PyInstaller
