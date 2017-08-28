@@ -54,7 +54,7 @@ Pillow==4.2.1
 pycryptodomex==3.4.7
 future==0.16.0
 pyusb==1.0.0
-requests==2.15.1 # Newest version of requests that allows tests to pass
+requests==2.18.4 # Newest version of requests that allows tests to pass
 
 # Install wheels only on OS X and Win 32, no wheel for Py 3.6 yet.
 pyenchant==1.6.11; (sys_platform == 'darwin' or sys_platform == 'win32') and python_version <= '3.5'
