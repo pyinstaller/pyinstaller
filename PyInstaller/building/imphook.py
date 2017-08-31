@@ -550,8 +550,8 @@ class ModuleHook(object):
                 # "imports_to_remove".
                 for dest in imports_to_remove & references:
                     self.module_graph.removeReference(src, dest)
-                    logger.warning(
-                        "  Removing import %s from module %s", src, dest)
+                    logger.info(
+                        "  Removing import of %s from module %s", dest, src)
 
 
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
