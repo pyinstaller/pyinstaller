@@ -31,6 +31,11 @@ if (sys.platform == 'darwin' or sys.platform == 'linux') and sys.version_info >=
 
     multiprocessing.freeze_support = spawn.freeze_support = _freeze_support
 
+# Bootloader unsets _MEIPASS2 for child processes to allow running
+# PyInstaller binaries inside pyinstaller binaries.
+# This is ok for mac or unix with fork() system call.
+# But on Windows we need to overcome missing fork() function.
+
 # Module multiprocessing is organized differently in Python 3.4+
 try:
     # Python 3.4+
