@@ -9,3 +9,4 @@ pytest-catchlog  # Capture log output separately from stdout/stderr
 pytest-drop-dup-tests # allows specifying order without duplicates
 
 psutil  # Better subprocess alternative with implemented timeout.
+flake8-diff  # Check new flake8 violations on pull requests

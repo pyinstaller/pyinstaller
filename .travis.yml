@@ -24,7 +24,7 @@ jobs:
   include:
     # macOS is first to account for the delay in starting the build on macOS. This prevents the build from hanging on
     # macOS as the last job to finish in a stage.
-    - stage: Cache
+    - stage: Lint
       os: osx
       language: generic
       python: 3.6
@@ -58,8 +58,14 @@ jobs:
       script: py.test -n 3 --maxfail 3 tests/functional/test_libraries.py tests/functional/test_hooks
 
     - &cache
-      stage: Cache
+      stage: Lint
       python: 2.7
+      script:
+        - >
+            if [[ $TRAVIS_PULL_REQUEST != 'false' ]]; then
+                git fetch origin $TRAVIS_BRANCH:$TRAVIS_BRANCH --depth 1;
+                flake8-diff -v -v -v $TRAVIS_BRANCH;
+            fi
     - &test-pyinstaller
       stage: Test - PyInstaller
       python: 2.7
