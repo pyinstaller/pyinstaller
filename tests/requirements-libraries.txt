@@ -88,3 +88,5 @@ pypiwin32==219; python_version <= '3.5' and sys_platform == 'win32' # pyup: igno
 # For parsing PE headers and get list of dependent DLLs.
 # ::TODO:: #1920 revert to using pypi version
 #pefile; sys_platform == 'win32'
+
+h5py==2.7.0
