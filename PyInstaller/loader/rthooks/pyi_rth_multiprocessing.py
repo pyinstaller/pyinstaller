@@ -1,8 +1,7 @@
-from sys import platform as _platform
+import sys
 
 # 'spawn' multiprocessing needs some adjustments on osx
-if _platform == 'darwin':
-    import sys
+if (sys.platform == 'darwin' or sys.platform == 'linux') and sys.version_info >= (3, 4):
     import os
     import re
     import multiprocessing
@@ -32,16 +31,17 @@ if _platform == 'darwin':
 
     multiprocessing.freeze_support = spawn.freeze_support = _freeze_support
 
-    # Module multiprocessing is organized differently in Python 3.4+
-    try:
-        # Python 3.4+
-        if sys.platform.startswith('win'):
-            import multiprocessing.popen_spawn_win32 as forking
-        else:
-            import multiprocessing.popen_fork as forking
-    except ImportError:
-        import multiprocessing.forking as forking
+# Module multiprocessing is organized differently in Python 3.4+
+try:
+    # Python 3.4+
+    if sys.platform.startswith('win'):
+        import multiprocessing.popen_spawn_win32 as forking
+    else:
+        import multiprocessing.popen_fork as forking
+except ImportError:
+    import multiprocessing.forking as forking
 
+if sys.platform.startswith('win'):
     # First define a modified version of Popen.
     class _Popen(forking.Popen):
         def __init__(self, *args, **kw):
