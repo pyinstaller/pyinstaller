@@ -5,7 +5,7 @@ sudo: false
 
 branches:
   except:
-    - /pyup-.*/
+    - /pyup\/.*/
 
 # Make sure we are on Ubuntu 14.04
 dist: trusty
