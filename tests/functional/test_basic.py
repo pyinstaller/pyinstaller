@@ -196,25 +196,6 @@ def test_module_reload(pyi_builder):
     pyi_builder.test_script('pyi_module_reload.py')
 
 
-# TODO move 'multiprocessig' tests into 'test_multiprocess.py.
-
-
-@skipif_win(reason="Issue #2116")
-@importorskip('multiprocessing')
-def test_multiprocess(pyi_builder):
-    pyi_builder.test_script('pyi_multiprocess.py')
-
-
-@importorskip('multiprocessing')
-def test_multiprocess_forking(pyi_builder):
-    pyi_builder.test_script('pyi_multiprocess_forking.py')
-
-
-@importorskip('multiprocessing')
-def test_multiprocess_pool(pyi_builder):
-    pyi_builder.test_script('pyi_multiprocess_pool.py')
-
-
 # TODO test it on OS X.
 @skipif_no_compiler
 def test_load_dll_using_ctypes(monkeypatch, pyi_builder, compiled_dylib):
