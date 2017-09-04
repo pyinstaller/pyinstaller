@@ -38,6 +38,8 @@ def test_multiprocess_pool(pyi_builder):
 @importorskip('multiprocessing')
 def test_multiprocess_spawn(pyi_builder, capfd):
     pyi_builder.test_source("""
+        import sys 
+
         from multiprocessing import set_start_method, Process
         from multiprocessing import freeze_support
         from multiprocessing.util import log_to_stderr
@@ -51,6 +53,7 @@ def test_multiprocess_spawn(pyi_builder, capfd):
             set_start_method('spawn')
 
             print('In main')
+            sys.stdout.flush()
             proc = Process(target=test)
             proc.start()
             proc.join()
