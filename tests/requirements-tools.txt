@@ -8,4 +8,5 @@ pytest-timeout   # Plugin to abort hanging tests.
 pytest-catchlog  # Capture log output separately from stdout/stderr
 pytest-drop-dup-tests # allows specifying order without duplicates
 
-psutil  # Better subprocess alternative with implemented timeout.
+# psutil 5.3.0 caused intermittent issues with the AppVeyor tests
+psutil < 5.3.0 # Better subprocess alternative with implemented timeout.
