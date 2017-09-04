@@ -10,6 +10,7 @@
 
 # Library imports
 # ---------------
+import os
 import sys
 
 # Local imports
@@ -63,7 +64,7 @@ def test_multiprocess_spawn(pyi_builder, capfd):
 
     expected = ["In main", "In subprocess"]
 
-    assert "\n".join(expected) in out
+    assert os.linesep.join(expected) in out
     for substring in expected:
         assert out.count(substring) == 1
 
