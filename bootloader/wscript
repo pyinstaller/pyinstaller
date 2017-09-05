@@ -78,6 +78,8 @@ def machine():
     # Different name for arm is necessary.
     if platform.machine().startswith('arm'):
         mach = 'arm'
+    elif platform.machine().startswith('aarch'):
+        mach = 'aarch'
     return mach
 
 
@@ -357,7 +359,9 @@ def set_arch_flags(ctx):
         elif ctx.env.PYI_ARCH == '32bit':
             # It was reported that flag '-m32' does not work with gcc
             # on 32-bit arm Linux. So skip the -m32 flag.
-            if not (machine() == 'arm' and ctx.env.DEST_OS == 'linux'):
+            if machine() in ('arm', 'aarch') and ctx.env.DEST_OS == 'linux':
+                pass
+            else:
                 ctx.check_cc(ccflags='-m32', msg='Checking for flags -m32')
                 ctx.env.append_value('CFLAGS', '-m32')
                 ctx.env.append_value('LINKFLAGS', '-m32')
@@ -369,9 +373,13 @@ def set_arch_flags(ctx):
             if ctx.env.DEST_OS == 'win32':
                 ctx.env.append_value('LINKFLAGS', '-Wl,--large-address-aware')
         elif ctx.env.PYI_ARCH == '64bit':
-            ctx.check_cc(ccflags='-m64', msg='Checking for flags -m64')
-            ctx.env.append_value('CFLAGS', '-m64')
-            ctx.env.append_value('LINKFLAGS', '-m64')
+            # flag '-m64' does not work with gcc on 64-bit arm/aarch Linux.
+            if machine() in ('arm', 'aarch') and ctx.env.DEST_OS == 'linux':
+                pass
+            else:
+                ctx.check_cc(ccflags='-m64', msg='Checking for flags -m64')
+                ctx.env.append_value('CFLAGS', '-m64')
+                ctx.env.append_value('LINKFLAGS', '-m64')
         else:
             ctx.fatal('Unrecognized target architecture: %s' % ctx.env.PYI_ARCH)
 
