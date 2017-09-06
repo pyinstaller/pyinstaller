@@ -15,6 +15,7 @@ import ctypes.util
 import os
 import re
 import sys
+import pefile
 from glob import glob
 # Required for extracting eggs.
 import zipfile
@@ -32,6 +33,9 @@ from ..utils.win32 import winutils
 logger = logging.getLogger(__name__)
 
 seen = set()
+
+# Do not load all the directories information from the PE file
+pefile.fast_load = True
 
 # Import windows specific stuff.
 if is_win:
@@ -92,8 +96,6 @@ def _getImports_pe(pth):
     and uses library pefile for that and supports
     32/64bit Windows
     """
-    # ::TODO:: #1920 revert to using pypi version
-    from ..lib import pefile
     dlls = set()
     # By default library pefile parses all PE information.
     # We are only interested in the list of dependent dlls.
@@ -181,9 +183,6 @@ def matchDLLArch(filename):
     # TODO: check machine type on other platforms?
     if not is_win:
         return True
-
-    # ::TODO:: #1920 revert to using pypi version
-    from ..lib import pefile
 
     global _exe_machine_type
     if _exe_machine_type is None:
@@ -610,9 +609,9 @@ def _getImports_macholib(pth):
 
     This implementation is for Mac OS X and uses library macholib.
     """
-    from ..lib.macholib.MachO import MachO
-    from ..lib.macholib.mach_o import LC_RPATH
-    from ..lib.macholib.dyld import dyld_find
+    from macholib.MachO import MachO
+    from macholib.mach_o import LC_RPATH
+    from macholib.dyld import dyld_find
     rslt = set()
     seen = set()  # Libraries read from binary headers.
 

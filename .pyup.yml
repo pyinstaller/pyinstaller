@@ -1,0 +1,10 @@
+branch: develop
+
+search: False
+
+requirements:
+  - tests/requirements-libraries.txt
+
+pr_prefix: "Tests: Requirements:"
+
+branch_prefix: pyup/

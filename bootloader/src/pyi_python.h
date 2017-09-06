@@ -186,13 +186,13 @@ EXTDECLPROC(PyObject *, PyMarshal_ReadObjectFromString, (const char *, size_t));
     #define GETPROC(dll, name) \
     GETPROCOPT(dll, name, name); \
     if (!PI_ ## name) { \
-        FATALERROR ("Cannot GetProcAddress for " #name "\n"); \
+        FATAL_WINERROR("GetProcAddress", "Failed to get address for " #name "\n");\
         return -1; \
     }
     #define GETPROC_RENAMED(dll, name, sym) \
     GETPROCOPT(dll, name, sym); \
     if (!PI_ ## name) { \
-        FATALERROR ("Cannot GetProcAddress for " #sym "\n"); \
+        FATAL_WINERROR("GetProcAddress", "Failed to get address for " #sym "\n");\
         return -1; \
     }
     #define DECLVAR(name) \
@@ -200,7 +200,7 @@ EXTDECLPROC(PyObject *, PyMarshal_ReadObjectFromString, (const char *, size_t));
     #define GETVAR(dll, name) \
     PI_ ## name = (__VAR__ ## name *)GetProcAddress (dll, #name); \
     if (!PI_ ## name) { \
-        FATALERROR ("Cannot GetProcAddress for " #name "\n"); \
+        FATAL_WINERROR("GetProcAddress", "Failed to get address for " #name "\n");\
         return -1; \
     }
 

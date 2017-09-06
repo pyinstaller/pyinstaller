@@ -55,7 +55,8 @@ pyi_pylib_load(ARCHIVE_STATUS *status)
     char dllname[64];
     int pyvers = ntohl(status->cookie.pyvers);
     char *p;
-    
+    int len;
+
     /* Are we going to load the Python 2.x library? */
     is_py2 = (pyvers / 10) == 2;
 
@@ -80,16 +81,22 @@ pyi_pylib_load(ARCHIVE_STATUS *status)
       pyvers_major = pyvers / 10;
       pyvers_minor = pyvers % 10;
 
-      sprintf(dllname,
+      len = snprintf(dllname, 64,
               "libpython%01d.%01d.a(libpython%01d.%01d.so)",
               pyvers_major, pyvers_minor, pyvers_major, pyvers_minor);
     }
     else {
-      strcpy(dllname, status->cookie.pylibname);
+      strncpy(dllname, status->cookie.pylibname, 64);
     }
 #else
-    strcpy(dllname, status->cookie.pylibname);
+    len = 0;
+    strncpy(dllname, status->cookie.pylibname, 64);
 #endif
+
+    if (len >= 64 || dllname[64-1] != '\0') {
+        FATALERROR("DLL name length exceeds buffer\n");
+        return -1;
+    }
 
     /*
      * Look for Python library in homepath or temppath.
@@ -105,10 +112,9 @@ pyi_pylib_load(ARCHIVE_STATUS *status)
     /* Check success of loading Python library. */
     if (dll == 0) {
 #ifdef _WIN32
-        FATALERROR("Error loading Python DLL: %s (error code %d)\n",
-                   dllpath, GetLastError());
+        FATAL_WINERROR("LoadLibrary", "Error loading Python DLL '%s'.\n", dllpath);
 #else
-        FATALERROR("Error loading Python lib '%s': %s\n",
+        FATALERROR("Error loading Python lib '%s': dlopen: %s\n",
                    dllpath, dlerror());
 #endif
         return -1;
@@ -201,7 +207,7 @@ pyi_pylib_set_runtime_opts(ARCHIVE_STATUS *status)
                     /* as all known Wflags are ASCII. */
                     if ((size_t)-1 == mbstowcs(wchar_tmp, &ptoc->name[2], PATH_MAX)) {
                         FATALERROR("Failed to convert Wflag %s using mbstowcs "
-                                   "(invalid multibyte string)", &ptoc->name[2]);
+                                   "(invalid multibyte string)\n", &ptoc->name[2]);
                         return -1;
                     }
                     PI_PySys_AddWarnOption(wchar_tmp);
@@ -229,6 +235,18 @@ pyi_pylib_set_runtime_opts(ARCHIVE_STATUS *status)
     return 0;
 }
 
+void
+pyi_free_wargv(wchar_t ** wargv)
+{
+    wchar_t ** arg = wargv;
+
+    while (arg[0]) {
+        free(arg[0]);
+        arg++;
+    }
+    free(wargv);
+}
+
 /* Convert argv to wchar_t for Python 3. Based on code from Python's main().
  *
  * Uses 'Py_DecodeLocale' ('_Py_char2wchar' in 3.0-3.4) function from python lib,
@@ -252,7 +270,7 @@ pyi_wargv_from_argv(int argc, char ** argv)
         return NULL;
     }
 
-    wargv = (wchar_t **)malloc(sizeof(wchar_t*) * (argc + 1));
+    wargv = (wchar_t **)calloc(sizeof(wchar_t*) * (argc + 1), 1);
 
     if (!wargv) {
         FATALERROR("out of memory\n");
@@ -266,6 +284,7 @@ pyi_wargv_from_argv(int argc, char ** argv)
         wargv[i] = PI_Py_DecodeLocale(argv[i], NULL);
 
         if (!wargv[i]) {
+            pyi_free_wargv(wargv);
             free(oldloc);
             FATALERROR("Fatal error: "
                        "unable to decode the command line argument #%i\n",
@@ -278,18 +297,6 @@ pyi_wargv_from_argv(int argc, char ** argv)
     setlocale(LC_CTYPE, oldloc);
     free(oldloc);
     return wargv;
-}
-
-void
-pyi_free_wargv(wchar_t ** wargv)
-{
-    wchar_t ** arg = wargv;
-
-    while (arg[0]) {
-        free(arg[0]);
-        arg++;
-    }
-    free(wargv);
 }
 
 /*

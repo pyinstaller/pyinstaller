@@ -14,7 +14,7 @@
 
 #ifdef _WIN32
 
-char * GetWinErrorString();
+char * GetWinErrorString(DWORD error_code);
 int CreateActContext(const char *manifestpath);
 
 char * pyi_win32_wcs_to_mbs(const wchar_t *wstr);

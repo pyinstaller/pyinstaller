@@ -3,6 +3,10 @@
 
 clone_depth: 50
 
+branches:
+  except:
+    - /pyup\/.*/
+
 # No reason for us to restrict the number concurrent jobs
 max_jobs: 100
 
@@ -19,86 +23,84 @@ environment:
   # Break the tests into two runs, since together they exceed the 1 hour limit.
   # See https://github.com/pyinstaller/pyinstaller/issues/2024#issuecomment-224129520
   # for more discussion.
-  TESTS_UNITTESTS: tests/unit tests/functional -k "not tests/functional/test_libraries.py"
-  TESTS_LIBRARIES: tests/functional/test_libraries.py
+  TESTS_UNITTESTS: tests/unit tests/functional --ignore=tests/functional/test_libraries.py --ignore=tests/functional/test_hooks
+  TESTS_LIBRARIES: tests/functional/test_libraries.py tests/functional/test_hooks
+  APPVEYOR_SAVE_CACHE_ON_ERROR: true
 
   matrix:
     - PYTHON: C:\Python36-x64
       PYTHON_VERSION: 3.6
       PYTHON_ARCH: 64
-      VCVARSALL: x64
       TEST_LIBRARIES: NO
 
     - PYTHON: C:\Python36-x64
       PYTHON_VERSION: 3.6
       PYTHON_ARCH: 64
-      VCVARSALL: x64
       TEST_LIBRARIES: YES
 
     - PYTHON: C:\Python36
       PYTHON_VERSION: 3.6
       PYTHON_ARCH: 32
-      VCVARSALL: x86
       TEST_LIBRARIES: NO
 
     - PYTHON: C:\Python36
       PYTHON_VERSION: 3.6
       PYTHON_ARCH: 32
-      VCVARSALL: x86
       TEST_LIBRARIES: YES
 
     - PYTHON: C:\Python35
       PYTHON_VERSION: 3.5
       PYTHON_ARCH: 32
-      VCVARSALL: x86
       TEST_LIBRARIES: NO
 
     - PYTHON: C:\Python35
       PYTHON_VERSION: 3.5
       PYTHON_ARCH: 32
-      VCVARSALL: x86
       TEST_LIBRARIES: YES
 
     - PYTHON: C:\Python34
       PYTHON_VERSION: 3.4
       PYTHON_ARCH: 32
-      VCVARSALL: x86
       TEST_LIBRARIES: NO
 
     - PYTHON: C:\Python34
       PYTHON_VERSION: 3.4
       PYTHON_ARCH: 32
-      VCVARSALL: x86
       TEST_LIBRARIES: YES
 
     - PYTHON: C:\Python33
       PYTHON_VERSION: 3.3
       PYTHON_ARCH: 32
-      VCVARSALL: x86
       TEST_LIBRARIES: NO
 
     - PYTHON: C:\Python33
       PYTHON_VERSION: 3.3
       PYTHON_ARCH: 32
-      VCVARSALL: x86
       TEST_LIBRARIES: YES
 
     - PYTHON: C:\Python27
       PYTHON_VERSION: 2.7
       PYTHON_ARCH: 32
-      VCVARSALL: x86
       TEST_LIBRARIES: NO
 
     - PYTHON: C:\Python27
       PYTHON_VERSION: 2.7
       PYTHON_ARCH: 32
-      VCVARSALL: x86
       TEST_LIBRARIES: YES
 
 
 init:
-  - ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%
-  - ECHO "%APPVEYOR_SCHEDULED_BUILD%"
+  - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
+  - "ECHO \"%APPVEYOR_SCHEDULED_BUILD%\""
+  # If there is a newer build queued for the same PR, cancel this one.
+  # The AppVeyor 'rollout builds' option is supposed to serve the same
+  # purpose but it is problematic because it tends to cancel builds pushed
+  # directly to master instead of just PR builds (or the converse).
+  # credits: JuliaLang developers.
+  - ps: if ($env:APPVEYOR_PULL_REQUEST_NUMBER -and $env:APPVEYOR_BUILD_NUMBER -ne ((Invoke-RestMethod `
+        https://ci.appveyor.com/api/projects/$env:APPVEYOR_ACCOUNT_NAME/$env:APPVEYOR_PROJECT_SLUG/history?recordsNumber=50).builds | `
+        Where-Object pullRequestId -eq $env:APPVEYOR_PULL_REQUEST_NUMBER)[0].buildNumber) { `
+          throw "There are newer queued builds for this pull request, failing early." }
 
 cache:
   # Cache downloaded pip packages and built wheels.
@@ -121,8 +123,9 @@ install:
 
   # Compile bootloader.
   - cd bootloader
-  - '"C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat" %VCVARSALL%'
-  - python waf --msvc_version="msvc 12.0" distclean all
+  - python waf all --target-arch=%PYTHON_ARCH%bit
+  # Verify the bootloaders have the expected arch
+  - python ../tests/scripts/check-pefile-arch.py %PYTHON_ARCH% build/*/*.exe
   - cd ..
 
   ### Install the PyInstaller dependencies.
@@ -157,7 +160,7 @@ test_script:
           %CMD_IN_ENV% %PYTEST% %TESTS_UNITTESTS%
     ))'
 
-on_success:
+on_finish:
   # Remove old or huge cache files to hopefully not exceed the 1GB cache limit.
   #
   # If the cache limit is reached, the cache will not be updated (of not even
@@ -170,7 +173,9 @@ on_success:
   - C:\cygwin\bin\find "%LOCALAPPDATA%\pip" -empty -delete
   # Show size of cache
   - C:\cygwin\bin\du -hs "%LOCALAPPDATA%\pip\Cache"
-
-
-on_finish:
-  - ps: 'if (Test-Path ".\junit-results.xml") { (new-object net.webclient).UploadFile("https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path .\junit-results.xml)) }'
+  - ps: |
+      (new-object net.webclient).UploadFile(
+        "https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)",
+        (Resolve-Path .\junit-results.xml)
+      )
+      $LastExitCode = 0

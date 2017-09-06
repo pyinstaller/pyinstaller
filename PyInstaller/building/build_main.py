@@ -208,6 +208,7 @@ class Analysis(Target):
         self.binding_redirects = CONF['binding_redirects'] = []
         self.win_no_prefer_redirects = win_no_prefer_redirects
         self.win_private_assemblies = win_private_assemblies
+        self._python_version = sys.version
 
         self.__postinit__()
 
@@ -237,6 +238,7 @@ class Analysis(Target):
             # additional hidden import
 
             #calculated/analysed values
+            ('_python_version', _check_guts_eq),
             ('scripts', _check_guts_toc_mtime),
             ('pure', lambda *args: _check_guts_toc_mtime(*args, **{'pyc': 1})),
             ('binaries', _check_guts_toc_mtime),

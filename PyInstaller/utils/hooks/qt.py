@@ -21,11 +21,11 @@ def qt_plugins_dir(namespace):
     """
     Return list of paths searched for plugins.
 
-    :param namespace: Import namespace, i.e., PyQt4, PyQt5, or PySide
+    :param namespace: Import namespace, i.e., PyQt4, PyQt5, PySide, or PySide2
 
     :return: Plugin directory paths
     """
-    if namespace not in ['PyQt4', 'PyQt5', 'PySide']:
+    if namespace not in ['PyQt4', 'PyQt5', 'PySide', 'PySide2']:
         raise Exception('Invalid namespace: {0}'.format(namespace))
     paths = eval_statement("""
         from {0}.QtCore import QCoreApplication;
@@ -56,11 +56,11 @@ def qt_plugins_binaries(plugin_type, namespace):
     Return list of dynamic libraries formatted for mod.binaries.
 
     :param plugin_type: Plugin to look for
-    :param namespace: Import namespace, i.e., PyQt4, PyQt5 or PySide
+    :param namespace: Import namespace, i.e., PyQt4, PyQt5, PySide, or PySide2
 
     :return: Plugin directory path corresponding to the given plugin_type
     """
-    if namespace not in ['PyQt4', 'PyQt5', 'PySide']:
+    if namespace not in ['PyQt4', 'PyQt5', 'PySide', 'PySide2']:
         raise Exception('Invalid namespace: {0}'.format(namespace))
     pdir = qt_plugins_dir(namespace=namespace)
     files = []
@@ -74,17 +74,19 @@ def qt_plugins_binaries(plugin_type, namespace):
     # causes PyInstaller to add a dependency on the Debug CRT __in addition__ to the
     # release CRT.
     #
-    # Since on Windows debug copies of Qt4 plugins end with "d4.dll" and Qt 5 plugins
+    # Since on Windows debug copies of Qt4 plugins end with "d4.dll" and Qt5 plugins
     # end with "d.dll" we filter them out of the list.
     #
     if is_win and (namespace in ['PyQt4', 'PySide']):
         files = [f for f in files if not f.endswith("d4.dll")]
-    elif is_win and namespace is 'PyQt5':
+    elif is_win and namespace in ['PyQt5', 'PySide2']:
         files = [f for f in files if not f.endswith("d.dll")]
 
     logger.debug('Found plugin files {0} for plugin \'{1}\''.format(files, plugin_type))
     if namespace in ['PyQt4', 'PySide']:
         plugin_dir = 'qt4_plugins'
+    elif namespace == 'PyQt5':
+        plugin_dir = os.path.join('PyQt5', 'Qt', 'plugins')
     else:
         plugin_dir = 'qt5_plugins'
     dest_dir = os.path.join(plugin_dir, plugin_type)
@@ -98,11 +100,11 @@ def qt_menu_nib_dir(namespace):
     """
     Return path to Qt resource dir qt_menu.nib on OSX only.
 
-    :param namespace: Import namespace, i.e., PyQt4, PyQt5, or PySide
+    :param namespace: Import namespace, i.e., PyQt4, PyQt5,  PySide, or PySide2
 
     :return: Directory containing qt_menu.nib for specified namespace
     """
-    if namespace not in ['PyQt4', 'PyQt5', 'PySide']:
+    if namespace not in ['PyQt4', 'PyQt5', 'PySide', 'PySide2']:
         raise Exception('Invalid namespace: {0}'.format(namespace))
     menu_dir = None
 
@@ -173,7 +175,16 @@ def get_qmake_path(version=''):
     return None
 
 
-def qt5_qml_dir():
+def qt5_qml_dir(namespace):
+    if namespace not in ['PyQt5', 'PySide2']:
+        raise Exception('Invalid namespace: {0}'.format(namespace))
+
+    if namespace == 'PyQt5':
+        import PyQt5
+        qmldir = os.path.join(PyQt5.__path__[0], 'Qt', 'qml')
+        if os.path.isdir(qmldir):
+            return qmldir
+
     qmake = get_qmake_path('5')
     if qmake is None:
         qmldir = ''
@@ -192,20 +203,18 @@ def qt5_qml_dir():
     return qmldir
 
 
-def qt5_qml_data(directory):
+def qt5_qml_data(qmldir, directory):
     """
     Return Qml library directory formatted for data.
     """
-    qmldir = qt5_qml_dir()
-    return os.path.join(qmldir, directory), 'qml'
+    return os.path.join(qmldir, directory), os.path.join('qml', directory)
 
 
-def qt5_qml_plugins_binaries(directory):
+def qt5_qml_plugins_binaries(qmldir, directory):
     """
     Return list of dynamic libraries formatted for mod.binaries.
     """
     binaries = []
-    qmldir = qt5_qml_dir()
 
     qt5_qml_plugin_dir = os.path.join(qmldir, directory)
     files = misc.dlls_in_subdirs(qt5_qml_plugin_dir)
@@ -220,12 +229,11 @@ def qt5_qml_plugins_binaries(directory):
     return binaries
 
 
-def qt5_qml_plugins_datas(directory):
+def qt5_qml_plugins_datas(qmldir, directory):
     """
     Return list of data files for mod.binaries. (qmldir, *.qmltypes)
     """
     datas = []
-    qmldir = qt5_qml_dir()
 
     qt5_qml_plugin_dir = os.path.join(qmldir, directory)
 
