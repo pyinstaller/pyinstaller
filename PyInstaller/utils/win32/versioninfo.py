@@ -121,8 +121,11 @@ else:
 
 def decode(pathnm):
     h = win32api.LoadLibraryEx(pathnm, 0, LOAD_LIBRARY_AS_DATAFILE)
-    nm = win32api.EnumResourceNames(h, pefile.RESOURCE_TYPE['RT_VERSION'])[0]
-    data = win32api.LoadResource(h, pefile.RESOURCE_TYPE['RT_VERSION'], nm)
+    res = win32api.EnumResourceNames(h, pefile.RESOURCE_TYPE['RT_VERSION'])
+    if not len(res):
+        return None
+    data = win32api.LoadResource(h, pefile.RESOURCE_TYPE['RT_VERSION'],
+                                 res[0])
     vs = VSVersionInfo()
     j = vs.fromRaw(data)
     win32api.FreeLibrary(h)
