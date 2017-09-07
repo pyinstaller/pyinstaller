@@ -2170,6 +2170,16 @@ class ModuleGraph(ObjectGraph):
         """
         self.msg(3, "_safe_import_hook", target_module_partname, source_module, target_attr_names, level)
 
+        def is_swig_candidate():
+            return (source_module is not None and
+                    target_attr_names is None and
+                    level == ABSOLUTE_IMPORT_LEVEL and
+                    type(source_module) is SourceModule and
+                    target_module_partname ==
+                      '_' + source_module.identifier.rpartition('.')[2] and
+                    sys.version_info[0] == 3)
+            
+
         # List of the graph nodes created for all target modules both
         # imported by and returned from this call, whose:
         #
@@ -2223,14 +2233,7 @@ class ModuleGraph(ObjectGraph):
             #
             # Only source modules (e.g., ".py"-suffixed files) are SWIG import
             # candidates. All other node types are safely ignorable.
-            if (
-                source_module is not None and
-                target_attr_names is None and
-                level == ABSOLUTE_IMPORT_LEVEL and
-                type(source_module) is SourceModule and
-                target_module_partname ==
-                    '_' + source_module.identifier.rpartition('.')[2] and
-                sys.version_info[0] == 3):
+            if is_swig_candidate():
                 self.msg(4, 'SWIG import candidate (name=%r, caller=%r, level=%r)' % (target_module_partname, source_module, level))
 
                 # TODO Define a new function util.open_text_file() performing
@@ -2289,6 +2292,25 @@ class ModuleGraph(ObjectGraph):
 
         # Target module imported above.
         target_module = target_modules[0]
+
+        if isinstance(target_module, MissingModule) and is_swig_candidate():
+            # if this possible swig C module was previously imported from
+            # a python module other than its corresponding swig python
+            # module, then it may have been considered a MissingModule.
+            # Try to reimport it now. For details see pull-request #2578
+            # and issue #1522.
+            # Remove the MissingModule node from the graph so that we can
+            # attempt a reimport and avoid collisions. This node should be
+            # fine to remove because the proper module will be imported and
+            # added to the graph in the next line (call to _safe_import_hook).
+            self.removeNode(target_module)
+            # Reimport the SWIG C module
+            target_modules = self._safe_import_hook(
+                target_module_partname, source_module,
+                target_attr_names=None, level=level, edge_attr=edge_attr)
+            # return the output regardless because it would just be
+            # duplicating the processing below
+            return target_modules
 
         if isinstance(edge_attr, DependencyInfo):
             edge_attr = edge_attr._replace(fromlist=True)
