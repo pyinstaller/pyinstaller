@@ -1,3 +1,6 @@
+
+.. _how-to-contribute:
+
 How To Contribute
 =====================
 

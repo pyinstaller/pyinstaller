@@ -457,6 +457,38 @@ are delivered after the program has launched, you must
 set up the appropriate handlers.
 
 
+Platform-specific Notes
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Windows
+---------------
+
+For **Python >= 3.5** targeting *Windows < 10*, the developer needs to take
+special care to include the Visual C++ run-time .dlls:
+Python 3.5 uses Visual Studio 2015 run-time, which has been renamed into
+`“Universal CRT“
+<https://blogs.msdn.microsoft.com/vcblog/2015/03/03/introducing-the-universal-crt/>`_
+and has become part of Windows 10.
+For Windows Vista through Windows 8.1 there are Windows Update packages,
+which may or may not be installed in the target-system.
+So you have the following options:
+
+1. Build on *Windows 7* which has been reported to work.
+
+2. Include one of the VCRedist packages (the redistributable package files)
+   into your application's installer. This is Microsoft's recommended way, see
+   “Distributing Software that uses the Universal CRT“ in the above-mentioned
+   link, numbers 2 and 3.
+
+3. Install the `Windows Software Development Kit (SDK) for Windows 10
+   <https://dev.windows.com/en-us/downloads/windows-10-sdk>`_ and expand the
+   `.spec`-file to include the required DLLs, see “Distributing Software that
+   uses the Universal CRT“ in the above-mentioned link, number 6.
+
+   If you think, |PyInstaller| should to this by itself, please :ref:`help
+   improving <how-to-contribute>` |PyInstaller|.
+
+
 .. include:: _common_definitions.txt
 
 .. Emacs config:
