@@ -40,6 +40,27 @@ class strip(Task.Task):
     color   = 'BLUE'
     after   = ['cprogram', 'cxxprogram', 'cshlib', 'cxxshlib', 'fcprogram', 'fcshlib']
 
+    # In AIX, if we strip the same file more than once, it will return none-zero value
+    # thus, causing crash
+
+    # The following is a kludge
+    
+    def _run_ignore_error(self):
+        if hasattr(self, '_orig_run'):
+            try:
+                ret = self._orig_run()
+            except:
+                pass
+            return 0
+        else:
+            return -1
+    
+    def process(self):
+        if not hasattr(self, '_orig_run'):
+            self._orig_run = self.run
+            self.run = self._run_ignore_error
+        super(Task.Task,self).process()
+
 @TaskGen.feature('strip')
 @TaskGen.after('apply_link')
 def add_strip_task(self):
