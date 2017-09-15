@@ -548,6 +548,13 @@ def configure(ctx):
         #  dlopen("libpython2.7.a(libpython2.7.so)", RTLD_MEMBER)
         ctx.env.append_value('DEFINES', '_ALL_SOURCE')
 
+        # Make use of IBM's freeware build
+        ctx.env.append_value('CPPPATH', '/opt/freeware/include')
+        ctx.env.append_value('LIBPATH', '/opt/freeware/lib')
+        if ctx.env.PYI_ARCH == '64bit':
+            ctx.env.append_value('LIBPATH', '/opt/freeware/64/lib')
+            ctx.env.append_value('LIBPATH', '/opt/freeware/lib64')
+                 
         # On AIX using gcc the linker options for shared and static
         # libraries are slightly different from other platforms.
         ctx.env['SHLIB_MARKER'] = '-Wl,-bdynamic'
