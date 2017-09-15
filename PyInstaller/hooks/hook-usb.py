@@ -40,11 +40,12 @@ try:
     binaries = []
     for usblib in [getattr(usb.backend, be)._lib for be in backends]:
         if usblib is not None:
-            binaries = [(usblib._name, '')]
+            binaries = _resolveCtypesImports([os.path.basename(usblib._name)])
+            assert len(binaries[0]) == 3
+            binaries = [(binaries[0][1], '')]
 
 except (ValueError, usb.core.USBError) as exc:
     logger.warning("%s", exc)
-
 
 # if nothing found, try to use our custom mechanism
 if not binaries:
