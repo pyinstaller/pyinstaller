@@ -601,7 +601,12 @@ def configure(ctx):
         elif ctx.env.DEST_OS == 'hpux' and sysconfig.get_config_var('HAVE_PTHREAD_H'):
             ctx.check_cc(lib='pthread', mandatory=True)
         ctx.check_cc(lib='m', mandatory=True)
-        ctx.check_cc(lib='z', mandatory=True, uselib_store='Z')
+        if not ctx.env.DEST_OS == 'aix':
+            ctx.check_cc(lib='z', mandatory=True, uselib_store='Z')
+        else:
+            # zlib is not part of the AIX.  We have to statically link
+            # against it.
+            ctx.check_cc(stlib='z', mandatory=True, uselib_store='Z')
         # This uses Boehm GC to manage memory - it replaces malloc() / free()
         # functions. Some messages are printed if memory is not deallocated.
         if ctx.options.boehmgc:
@@ -701,7 +706,7 @@ def build(ctx):
     if machine():
         install_path += '-' + machine()
 
-    if not ctx.env.LIB_Z:
+    if not ctx.env.LIB_Z and not ctx.env.STLIB_Z:
         # If the operating system does not provide zlib, build our own. The
         # configure phase defines whether or not zlib is mandatory for a
         # platform.
@@ -734,13 +739,10 @@ def build(ctx):
         # Only the libs found will actually be used, so it's safe to list all
         # here. The decision if a lib is required for a specific platform is
         # made in the configure phase.
-        libs = ['DL', 'M', 'Z',  # 'z' - zlib, 'm' - math,
-                'THR'] # may be used on FreBSD
-        staticlibs = []
-        if ctx.env.DEST_OS == 'aix':
-            # link statically with zlib
-            libs.remove('Z')
-            staticlibs.append('Z')
+        libs = ['DL', 'M', 'Z']  # 'z' - zlib, 'm' - math,
+
+        if ctx.env.DEST_OS == 'freebsd' and sysconfig.get_config_var('HAVE_PTHREAD_H'):
+            libs.append('THR')
 
         if ctx.options.boehmgc:
             libs.append('GC')
@@ -750,7 +752,6 @@ def build(ctx):
             target=exe_name,
             includes='src',
             use=libs,
-            stlib=staticlibs,
             install_path=install_path,
             features=features)
 
