@@ -46,7 +46,7 @@ DESTOS_TO_SYSTEM = {
     'linux': 'Linux',
     'win32': 'Windows',
     'darwin': 'Darwin',
-    'sunos': platform.system(), ## FIXME: inhibits cross-compile
+    'sunos': 'SunOS',
     'hpux': 'HP-UX',
     'aix': 'AIX',
     }
@@ -87,7 +87,7 @@ def assoc_programm(ctx, name):
     # Search other programs we need, based on the name of the compiler
     # (replace "gcc" or "clang" by the tool name)
     cc = ctx.env.CC[0]
-    prog = re.sub(r'(^|^.*-)(gcc|clang)(-.*|\.exe$|$)',
+    prog = re.sub(r'(^|^.*-)(gcc|clang|xlc)(-.*|\.exe$|$)',
                   r'\1' + name + r'\3',
                   os.path.basename(cc))
     prog = os.path.join(os.path.dirname(cc), prog)
