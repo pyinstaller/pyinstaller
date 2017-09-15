@@ -247,7 +247,7 @@ def detect_arch(ctx):
         # PyInstaller uses the result of platform.architecture() to determine
         # the bits and this is testing the pointer size (via module struct).
         # We do the same here.
-        arch = "%sbit" % (8 * check_sizeof_pointer(ctx))
+        arch, ignored = platform.architecture()
         ctx.msg('Platform', '%s-%s detected based on compiler' % (system, arch))
 
     # Pass return values as environment variables.
