@@ -15,7 +15,6 @@ import ctypes.util
 import os
 import re
 import sys
-import pefile
 from glob import glob
 # Required for extracting eggs.
 import zipfile
@@ -26,7 +25,6 @@ from ..compat import (is_win, is_unix, is_aix, is_solar, is_cygwin, is_hpux,
                       is_darwin, is_freebsd, is_venv, base_prefix, PYDYLIB_NAMES)
 from . import dylib, utils
 
-
 from .. import log as logging
 from ..utils.win32 import winutils
 
@@ -34,15 +32,15 @@ logger = logging.getLogger(__name__)
 
 seen = set()
 
-# Do not load all the directories information from the PE file
-pefile.fast_load = True
-
 # Import windows specific stuff.
 if is_win:
     from ..utils.win32.winmanifest import RT_MANIFEST
     from ..utils.win32.winmanifest import GetManifestResources
     from ..utils.win32.winmanifest import Manifest
     from ..utils.win32 import winresource
+    import pefile
+    # Do not load all the directories information from the PE file
+    pefile.fast_load = True
 
 
 def getfullnameof(mod, xtrapath=None):
