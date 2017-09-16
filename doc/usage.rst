@@ -462,6 +462,8 @@ set up the appropriate handlers.
 Platform-specific Notes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. _Platform-specific Notes - Windows:
+
 Windows
 ---------------
 
