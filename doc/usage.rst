@@ -168,8 +168,8 @@ or a supported version that uses Qt4 and a development version that uses Qt5 --
 we recommend you use virtualenv_.
 With virtualenv you can maintain different combinations of Python
 and installed packages, and switch from one combination to another easily.
-(If you work only with Python 3.4 and later, the built-in script pyvenv_
-does the same job.)
+(If you work only with Python 3.4 and later, ``python3 -m venv``
+does the same job, see module venv_.)
 
 * Use virtualenv to create as many different development environments as you need,
   each with its unique combination of Python and installed packages.
@@ -184,6 +184,8 @@ Note that when using virtualenv, the path to the |PyInstaller| commands is:
 Under Windows, the pip-Win_ package installs virtualenv and makes it
 especially easy to set up different environments and switch between them.
 Under Linux and Mac OS, you switch environments at the command line.
+
+See :pep:`405` for more information about Python virtual environments.
 
 
 Supporting Multiple Operating Systems
