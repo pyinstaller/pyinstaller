@@ -38,8 +38,7 @@ if is_win and is_py2:
         # Do conversion to ShortPathName really only in case HOMEPATH is not
         # ascii only - conversion to unicode type cause this unicode error.
         try:
-            import win32api
-            HOMEPATH = win32api.GetShortPathName(HOMEPATH)
+            HOMEPATH = compat.win32api.GetShortPathName(HOMEPATH)
         except ImportError:
             pass
 
