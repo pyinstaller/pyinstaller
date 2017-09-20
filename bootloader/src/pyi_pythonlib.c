@@ -461,9 +461,15 @@ pyi_pylib_start_python(ARCHIVE_STATUS *status)
             return -1;
         }
         VS("LOADER: Pre-init sys.path is %s\n", pypath);
+#ifdef _WIN32
         // Call GetPath first, so the static dllpath will be set as a side
         // effect. Workaround for http://bugs.python.org/issue29778, see #2496.
+        // Due to another bug calling this on non-win32 with Python 3.6 causes
+        // memory corruption, see #2812 and
+        // https://bugs.python.org/issue31532. But the workaround is only
+        // needed for win32.
         PI_Py_GetPath();
+#endif
         PI_Py_SetPath(pypath_w);
     }
     ;
