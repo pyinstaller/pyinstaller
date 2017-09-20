@@ -12,9 +12,8 @@
 import codecs
 import struct
 
-from ...compat import is_py3
+from ...compat import is_py3, win32api
 
-import win32api
 # ::TODO:: #1920 revert to using pypi version
 import pefile
 

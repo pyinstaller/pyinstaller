@@ -21,6 +21,8 @@ try:
 except AttributeError:
     StringTypes = [ type("") ]
 
+from ...compat import win32api
+
 import PyInstaller.log as logging
 logger = logging.getLogger(__name__)
 
@@ -112,7 +114,6 @@ class IconFile:
 
 
 def CopyIcons_FromIco(dstpath, srcpath, id=1):
-    import win32api #, win32con
     icons = map(IconFile, srcpath)
     logger.info("Updating icons from %s to %s", srcpath, dstpath)
 
@@ -167,7 +168,7 @@ def CopyIcons(dstpath, srcpath):
         logger.info("Updating icons from %s, %d to %s", srcpath, index, dstpath)
     else:
         logger.info("Updating icons from %s to %s", srcpath, dstpath)
-    import win32api #, win32con
+
     hdst = win32api.BeginUpdateResource(dstpath, 0)
     hsrc = win32api.LoadLibraryEx(srcpath, 0, LOAD_LIBRARY_AS_DATAFILE)
     if index is None:

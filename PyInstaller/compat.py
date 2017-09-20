@@ -198,6 +198,30 @@ else:
     modname_tkinter = 'tkinter'
 
 
+# On Windows we require pypiwin32 or pywin32-ctypes
+# -> all pyinstaller modules should use win32api from PyInstaller.compat to
+#    ensure that it can work on MSYS2 (which requires pywin32-ctypes)
+if is_win:
+    try:
+        from PyInstaller.utils.win32 import winutils
+        try:
+            pywintypes = winutils.import_pywin32_module('pywintypes', _is_venv=is_venv)
+            win32api = winutils.import_pywin32_module('win32api', _is_venv=is_venv)
+        except ImportError:
+            try:
+                from win32ctypes.pywin32 import pywintypes
+                from win32ctypes.pywin32 import win32api
+            except ImportError:
+                raise
+    except ImportError:
+        # This environment variable is set by seutp.py
+        # - It's not an error for pywin32 to not be installed at that point
+        if not os.environ.get('PYINSTALLER_NO_PYWIN32_FAILURE'):
+            raise SystemExit('PyInstaller cannot check for assembly dependencies.\n'
+                             'Please install PyWin32 or pywin32-ctypes.\n\n'
+                             'pip install pypiwin32\n')
+
+
 def architecture():
     """
     Returns the bit depth of the python interpreter's architecture as
@@ -578,7 +602,6 @@ def getcwd():
             # Do conversion to ShortPathName really only in case 'cwd' is not
             # ascii only - conversion to unicode type cause this unicode error.
             try:
-                import win32api
                 cwd = win32api.GetShortPathName(cwd)
             except ImportError:
                 pass
@@ -833,37 +856,10 @@ MODULE_TYPES_TO_TOC_DICT = {
 
 def check_requirements():
     """
-    Verify that all requirements to run PyInstaller are met. Especially
-    PyWin32 is installed on Windows.
+    Verify that all requirements to run PyInstaller are met.
 
     Fail hard if any requirement is not met.
     """
     # Fail hard if Python does not have minimum required version
     if sys.version_info < (3, 3) and sys.version_info[:2] != (2, 7):
         raise SystemExit('PyInstaller requires at least Python 2.7 or 3.3+.')
-
-    if is_win:
-        if 'win32api' in sys.modules or 'pywintypes' in sys.modules:
-            # Users should never see this error; if it occurs, it means someone
-            # wasn't careful and added an import where it shouldn't be
-            # Unfortunately this error is triggered when running under pytest
-            # since all PyInstaller runs are done in the same process
-            logger.warning("Internal error: early pywin32 import was introduced")
-            return
-
-        try:
-            from PyInstaller.utils.win32 import winutils
-            try:
-                pywintypes = winutils.import_pywin32_module('pywintypes')
-            except ImportError:
-                from win32ctypes.pywin32 import pywintypes
-                from win32ctypes.pywin32 import win32api
-                
-                # if this succeeded, then install pywin32-ctypes into sys.modules
-                sys.modules['win32api'] = win32api
-                sys.modules['pywintypes'] = pywintypes
-
-        except ImportError:
-            raise SystemExit('PyInstaller cannot check for assembly dependencies.\n'
-                             'Please install PyWin32 or pywin32-ctypes.\n\n'
-                             'pip install pypiwin32\n')
