@@ -17,7 +17,8 @@ __all__ = ['get_windows_dir']
 import os
 import sys
 
-# Do not import this globally, import_pywin32_module is used by compat
+# Do not import 'compat' globally to avoid circual import:
+# import_pywin32_module() is used by compat
 #from ... import compat
 
 import PyInstaller.log as logging
@@ -28,7 +29,7 @@ def get_windows_dir():
     """
     Return the Windows directory e.g. C:\\Windows.
     """
-    # imported here because of circular import
+    # imported here to avoid circular import
     from ... import compat
     windir = compat.win32api.GetWindowsDirectory()
     if not windir:
@@ -40,7 +41,7 @@ def get_system_path():
     """
     Return the path that Windows will search for dlls.
     """
-    # imported here because of circular import
+    # imported here to avoid circular import
     from ... import compat
     _bpath = []
     sys_dir = compat.win32api.GetSystemDirectory()
@@ -60,7 +61,7 @@ def extend_system_path(paths):
 
     Some hooks might extend PATH where PyInstaller should look for dlls.
     """
-    # imported here because of circular import
+    # imported here to avoid circular import
     from ... import compat
     old_PATH = compat.getenv('PATH', '')
     paths.append(old_PATH)
@@ -85,8 +86,10 @@ def import_pywin32_module(module_name, _is_venv=None):
     module_name : str
         Fully-qualified name of this module.
     _is_venv: bool
-        Internal paramter used by compat.py, to prevent circular import. If not
-        None, should be the same as compat.is_venv, else compat.is_venv is used
+        Internal paramter used by compat.py, to prevent circular import. If None
+        (the default), compat is imported and comapt.is_venv ist used. If not
+        None, it is assumed to be called from compat and the value to be the same
+        as compat.is_venv.
 
     Returns
     ----------
@@ -112,13 +115,12 @@ def import_pywin32_module(module_name, _is_venv=None):
             # an ugly hack, but there is no other way.
             sys.frozen = '|_|GLYH@CK'
 
-            # If isolated to a venv, the preferred site.getsitepackages()
-            # function is unreliable. Fallback to searching "sys.path" instead.
-            if _is_venv is None:
-                # imported here because of circular import
+            if _is_venv is None:  # not called from within compat
+                # imported here to avoid circular import
                 from ... import compat
                 _is_venv = compat.is_venv
-
+            # If isolated to a venv, the preferred site.getsitepackages()
+            # function is unreliable. Fallback to searching "sys.path" instead.
             if _is_venv:
                 sys_paths = sys.path
             else:
@@ -159,7 +161,7 @@ def convert_dll_name_to_str(dll_name):
     :param dll_name:
     :return:
     """
-    # imported here because of circular import
+    # imported here to avoid circular import
     from ...compat import is_py3
     if is_py3 and isinstance(dll_name, bytes):
         return str(dll_name, encoding='UTF-8')
