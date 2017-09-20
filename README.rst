@@ -26,11 +26,11 @@ interpreter or any modules.
    :target: https://pypi.python.org/pypi/PyInstaller
 
 .. image:: https://img.shields.io/badge/docs-latest-blue.svg
-   :target: https://pyinstaller.rtfd.io/en/latest/
+   :target: https://pyinstaller.readthedocs.io/en/latest/
    :alt: Manual
 
 .. image:: https://img.shields.io/badge/changes-latest-blue.svg
-   :target: https://pyinstaller.rtfd.io/en/latest/CHANGES.html
+   :target: https://pyinstaller.readthedocs.io/en/latest/CHANGES.html
    :alt: Changelog
 
 .. image:: https://img.shields.io/badge/IRC-pyinstalller-blue.svg
@@ -38,7 +38,7 @@ interpreter or any modules.
    :alt: IRC
 
 
-:Documentation: http://pyinstaller.rtfd.io/
+:Documentation: https://pyinstaller.readthedocs.io/
 :Website:       http://www.pyinstaller.org/
 :Code:          https://github.com/pyinstaller/pyinstaller
 :Donate:        | https://www.bountysource.com/teams/pyinstaller
@@ -162,5 +162,5 @@ or simply use it directly from the source (pyinstaller.py).
 
 
 .. _PyCrypto: https://www.dlitz.net/software/pycrypto/
-.. _`manual`: https://pyinstaller.rtfd.io/en/latest/
+.. _`manual`: https://pyinstaller.readthedocs.io/en/latest/
 
