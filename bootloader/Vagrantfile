@@ -256,7 +256,7 @@ def build_bootloader_target_osx(boxname)
     # TODO: Use CC=o32-clang and CC=o64-clang when possible, see
     # <https://github.com/tpoechtrager/osxcross/issues/119>
     python ./waf all CC=x86_64-apple-darwin15-clang
-    python ./waf all CC=i386-apple-darwin15-clang
+    #python ./waf all CC=i386-apple-darwin15-clang
   EOF
 end
 
