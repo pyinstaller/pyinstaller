@@ -8,6 +8,12 @@ Changelog for PyInstaller
 .. role:: program
 
 
+3.4 (unreleased)
+----------------
+
+- Nothing changed yet.
+
+
 3.3 (2017-09-21)
 ----------------
 
