@@ -849,18 +849,20 @@ header = """\
   <head>
     <title>%(TITLE)s</title>
     <style>
-      .node { margin:1em 0; }
+      .node { padding: 0.5em 0 0.5em; border-top: thin grey dotted; }
       .moduletype { font: smaller italic }
+      .node a { text-decoration: none; color: #006699; }
+      .node a:visited { text-decoration: none; color: #2f0099; }
     </style>
   </head>
   <body>
     <h1>%(TITLE)s</h1>"""
 entry = """
 <div class="node">
-  <a name="%(NAME)s" />
+  <a name="%(NAME)s"></a>
   %(CONTENT)s
 </div>"""
-contpl = """<tt>%(NAME)s</tt> %(TYPE)s"""
+contpl = """<tt>%(NAME)s</tt> <span class="moduletype">%(TYPE)s</span>"""
 contpl_linked = """\
 <a target="code" href="%(URL)s" type="text/plain"><tt>%(NAME)s</tt></a>
 <span class="moduletype">%(TYPE)s</span>"""
@@ -3093,14 +3095,22 @@ class ModuleGraph(ObjectGraph):
                                            'TYPE': m.__class__.__name__}
             oute, ince = map(sorted_namelist, self.get_edges(m))
             if oute:
-                links = ""
+                links = []
                 for n in oute:
-                    links += """  <a href="#%s">%s</a>\n""" % (n, n)
+                    links.append("""  <a href="#%s">%s</a>\n""" % (n, n))
+                # #8226 = bullet-point; can't use html-entities since the
+                # test-suite uses xml.etree.ElementTree.XMLParser, which
+                # does't supprot them.
+                links = " &#8226; ".join(links)
                 content += imports % {"HEAD": "imports", "LINKS": links}
             if ince:
-                links = ""
+                links = []
                 for n in ince:
-                    links += """  <a href="#%s">%s</a>\n""" % (n, n)
+                    links.append("""  <a href="#%s">%s</a>\n""" % (n, n))
+                # #8226 = bullet-point; can't use html-entities since the
+                # test-suite uses xml.etree.ElementTree.XMLParser, which
+                # does't supprot them.
+                links = " &#8226; ".join(links)
                 content += imports % {"HEAD": "imported by", "LINKS": links}
             print(entry % {"NAME": name,"CONTENT": content}, file=out)
         print(footer, file=out)
