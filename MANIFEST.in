@@ -14,6 +14,7 @@ prune bootloader/.waf3-*
 prune bootloader/waf-*
 prune bootloader/waf3-*
 prune bootloader/_sdks
+prune bootloader/.vagrant
 exclude bootloader/.lock-waf*
 
 prune doc/source
