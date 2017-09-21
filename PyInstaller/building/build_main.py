@@ -582,17 +582,18 @@ class Analysis(Target):
             logger.info("Warnings written to %s", CONF['warnfile'])
 
     def _write_graph_debug(self):
-        # With `--log-level DEBUG` write a xref and a dot-drawing of
-        # the graph.
-        if logger.getEffectiveLevel() > logging.DEBUG:
-            return
+        """Write a xref (in html) and with `--log-level DEBUG` a dot-drawing
+        of the graph.
+        """
         from ..config import CONF
-        with open(CONF['dot-file'], 'w') as fh:
-            self.graph.graphreport(fh)
-            logger.info("Graph drawing written to %s", CONF['dot-file'])
         with open(CONF['xref-file'], 'w') as fh:
             self.graph.create_xref(fh)
             logger.info("Graph cross-reference written to %s", CONF['xref-file'])
+        if logger.getEffectiveLevel() > logging.DEBUG:
+            return
+        with open(CONF['dot-file'], 'w') as fh:
+            self.graph.graphreport(fh)
+            logger.info("Graph drawing written to %s", CONF['dot-file'])
 
 
     def _check_python_library(self, binaries):
