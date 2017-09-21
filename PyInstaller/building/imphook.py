@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2016, PyInstaller Development Team.
+# Copyright (c) 2005-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -369,7 +369,8 @@ class ModuleHook(object):
         if self._hook_module is not None:
             return
 
-        # Load this hook script into a private in-memory module.
+        # Load and execute the hook script. Even if mechanisms from the import
+        # machinery are used, this does not import the hook as the module.
         logger.info(
             'Loading module hook "%s"...', os.path.basename(self.hook_filename))
         self._hook_module = importlib_load_source(
@@ -470,7 +471,7 @@ class ModuleHook(object):
             # Hidden imports often become desynchronized from upstream packages
             # and hence are only "soft" recommendations.
             except ImportError:
-                logger.warn('Hidden import "%s" not found!', import_module_name)
+                logger.warning('Hidden import "%s" not found!', import_module_name)
 
 
     #FIXME: This is pretty... intense. Attempting to cleanly "undo" prior module
@@ -549,8 +550,8 @@ class ModuleHook(object):
                 # "imports_to_remove".
                 for dest in imports_to_remove & references:
                     self.module_graph.removeReference(src, dest)
-                    logger.warn(
-                        "  Removing import %s from module %s", src, dest)
+                    logger.info(
+                        "  Removing import of %s from module %s", dest, src)
 
 
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -757,7 +758,8 @@ class ImportHook(object):
             # modulegraph raises ImporError when a module is not found.
             # Import hook with non-existing hiddenimport is probably a stale hook
             # that was not updated for a long time.
-            logger.warn("Hidden import '%s' not found (probably old hook)" % item)
+            logger.warning("Hidden import '%s' not found (probably old hook)",
+                           item)
 
     def _process_excludedimports(self, mod_graph):
         """
@@ -802,7 +804,7 @@ class ImportHook(object):
                 # Remove all of these imports which are also in `imports_to_remove`
                 for dest in imports_to_remove & references:
                     mod_graph.removeReference(src, dest)
-                    logger.warn("  From %s removing import %s", src, dest)
+                    logger.warning("  From %s removing import %s", src, dest)
 
 
     def _process_datas(self, mod_graph):

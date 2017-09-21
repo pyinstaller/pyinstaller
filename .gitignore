@@ -65,6 +65,7 @@ tests/old_suite/basic/test_pyz_as_external_file.exe.pkg
 
 # /doc/
 /doc/source/_definitions.txt
+/doc/_pyi*-options.tmp
 /doc/man/_pyi*.tmp
 /doc/_build
 
@@ -72,6 +73,7 @@ tests/old_suite/basic/test_pyz_as_external_file.exe.pkg
 /bootloader/.lock-waf*
 /bootloader/.lock-wscript
 /bootloader/build/
+/bootloader/_sdks
 /bootloader/.vagrant/
 /bootloader/waf-*/
 /bootloader/waf3-*/
@@ -86,3 +88,4 @@ tests/old_suite/basic/test_pyz_as_external_file.exe.pkg
 
 # py.test cache folder
 .cache
+*.prof

@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2016, PyInstaller Development Team.
+# Copyright (c) 2005-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -42,7 +42,7 @@ from PyInstaller import configure, config
 from PyInstaller import __main__ as pyi_main
 from PyInstaller.utils.cliutils import archive_viewer
 from PyInstaller.compat import is_darwin, is_win, is_py2, safe_repr, \
-  architecture
+  architecture, is_linux
 from PyInstaller.depend.analysis import initialize_modgraph
 from PyInstaller.utils.win32 import winutils
 
@@ -133,6 +133,7 @@ class AppBuilder(object):
         """
         Test a Python script that is referenced in the supplied .spec file.
         """
+        __tracebackhide__ = True
         specfile = os.path.join(_SPEC_DIR, specfile)
         # 'test_script' should handle .spec properly as script.
         return self.test_script(specfile, *args, **kwargs)
@@ -162,6 +163,7 @@ class AppBuilder(object):
         encoded file with the correct '# -*- coding: utf-8 -*-' marker.
 
         """
+        __tracebackhide__ = True
         if is_py2:
             if isinstance(source, str):
                 source = source.decode('UTF-8')
@@ -195,6 +197,7 @@ class AppBuilder(object):
         :param runtime: Time in seconds how long to keep executable running.
         :param toc_log: List of modules that are expected to be bundled with the executable.
         """
+        __tracebackhide__ = True
 
         def marker(line):
             # Print some marker to stdout and stderr to make it easier
@@ -220,7 +223,9 @@ class AppBuilder(object):
         assert os.path.exists(self.script), 'Script %s not found.' % script
 
         marker('Starting build.')
-        assert self._test_building(args=pyi_args), 'Building of %s failed.' % script
+        if not self._test_building(args=pyi_args):
+            pytest.fail('Building of %s failed.' % script)
+
         marker('Build finshed, now running executable.')
         self._test_executables(app_name, args=app_args,
                                runtime=runtime, run_from_path=run_from_path)
@@ -238,6 +243,7 @@ class AppBuilder(object):
 
         :return: Exit code of the executable.
         """
+        __tracebackhide__ = True
         # TODO implement runtime - kill the app (Ctrl+C) when time times out
         exes = self._find_executables(name)
         # Empty list means that PyInstaller probably failed to create any executable.
@@ -246,9 +252,12 @@ class AppBuilder(object):
             # Try to find .toc log file. .toc log file has the same basename as exe file.
             toc_log = os.path.join(_LOGS_DIR, os.path.basename(exe) + '.toc')
             if os.path.exists(toc_log):
-                assert self._examine_executable(exe, toc_log), 'Matching .toc of %s failed.' % exe
+                if not self._examine_executable(exe, toc_log):
+                    pytest.fail('Matching .toc of %s failed.' % exe)
             retcode = self._run_executable(exe, args, run_from_path, runtime)
-            assert retcode == 0, 'Running exe %s failed with return-code %s.' % (exe, retcode)
+            if retcode != 0:
+                pytest.fail('Running exe %s failed with return-code %s.' %
+                            (exe, retcode))
 
     def _find_executables(self, name):
         """
@@ -437,6 +446,11 @@ class AppBuilder(object):
 # for every executable.
 @pytest.fixture(scope='session')
 def pyi_modgraph():
+    # Explicitly set the log level since the plugin `pytest-catchlog` (un-)
+    # sets the root logger's level to NOTSET for the setup phase, which will
+    # lead to TRACE messages been written out.
+    import PyInstaller.log as logging
+    logging.logger.setLevel(logging.DEBUG)
     return initialize_modgraph()
 
 
@@ -462,7 +476,7 @@ def pyi_builder(tmpdir, monkeypatch, request, pyi_modgraph):
                 if os.path.exists(tmp):
                     shutil.rmtree(tmp)
 
-    if is_darwin:
+    if is_darwin or is_linux:
         request.addfinalizer(del_temp_dir)
     return AppBuilder(tmp, request.param, pyi_modgraph)
 

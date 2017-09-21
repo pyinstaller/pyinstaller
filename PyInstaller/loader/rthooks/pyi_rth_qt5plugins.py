@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2016, PyInstaller Development Team.
+# Copyright (c) 2013-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -43,6 +43,10 @@ except ImportError:
 # We cannot use QT_PLUGIN_PATH here, because it would not work when
 # PyQt5 is compiled with a different CRT from Python (eg: it happens
 # with Riverbank's GPL package).
-from PyQt5.QtCore import QCoreApplication
+try:
+    from PyQt5.QtCore import QCoreApplication
+except ImportError:
+    from PySide2.QtCore import QCoreApplication
+
 # We set "qt5_plugins" as only one path for Qt5 plugins
 QCoreApplication.setLibraryPaths([os.path.abspath(d)])

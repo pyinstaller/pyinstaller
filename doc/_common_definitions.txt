@@ -4,9 +4,10 @@
 .. |PyInstaller| replace:: `PyInstaller`
 .. |PyInstallerVersion| replace:: PyInstaller |release|
 
+.. _issue: https://github.com/pyinstaller/pyinstaller/issues/
+
 .. how we punctuate boot loader as a proper noun "the bootloader"
 .. |bootloader| replace:: bootloader
-
 
 .. _`activation context`: http://msdn.microsoft.com/en-us/library/windows/desktop/aa374153(v=vs.85).aspx
 .. _`Apple bundle overview`: https://developer.apple.com/library/mac/documentation/CoreFoundation/Conceptual/CFBundles/BundleTypes/BundleTypes.html
@@ -29,7 +30,6 @@
 .. _ImageMagick: http://www.imagemagick.org/script/index.php
 .. _imputil: http://docs.python.org/2.7/library/imputil.html
 .. _`Info Property List`: https://developer.apple.com/library/mac/#documentation/MacOSX/Conceptual/BPRuntimeConfig/Articles/ConfigFiles.html
-.. _`LSB sdk 4.0`: http://ftp.linuxfoundation.org/pub/lsb/bundles/released-4.0.0/sdk/
 .. _MacPorts: https://www.macports.org/
 .. _makeicns: https://bitbucket.org/mkae/makeicns
 .. _marshalled: http://docs.python.org/library/marshal
@@ -57,7 +57,6 @@
 .. _pypiwin32: https://pypi.python.org/pypi/pypiwin32/219
 .. _PyQt: http://www.riverbankcomputing.co.uk/software/pyqt/intro
 .. _PySide: http://qt-project.org/wiki/About-PySide
-.. _pyvenv: https://docs.python.org/3.4/library/venv.html
 .. _PyWin32: http://sourceforge.net/projects/pywin32/files/
 .. _Qt: http://www.qt-project.org
 .. _Recipe: http://www.pyinstaller.org/wiki/Recipe
@@ -68,7 +67,8 @@
 .. _TDM-GCC: http://tdm-gcc.tdragon.net/
 .. _TkInter: http://wiki.python.org/moin/TkInter
 .. _UPX: http://upx.sourceforge.net/
-.. _virtualenv:  http://www.virtualenv.org/
+.. _venv: https://docs.python.org/3/library/venv.html
+.. _virtualenv:  https://virtualenv.pypa.io
 .. _`Visual Studio Express`: http://www.microsoft.com/express/
 .. _wiki: http://www.pyinstaller.org/wiki
 .. _`Version Information Structures`: http://msdn.microsoft.com/en-us/library/ff468916(v=vs.85).aspx

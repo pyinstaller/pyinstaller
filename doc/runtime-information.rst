@@ -41,7 +41,8 @@ the |bootloader| sets the ``sys.frozen`` attribute
 and stores the absolute path to the bundle folder in ``sys._MEIPASS``.
 For a one-folder bundle, this is the path to that folder, 
 wherever the user may have put it.
-For a one-file bundle, this is the path to the ``_MEIxxxxxx`` temporary folder
+For a one-file bundle, this is the path to the :file:`_MEI{xxxxxx}`
+temporary folder
 created by the |bootloader| (see :ref:`How the One-File Program Works`).
 
 
@@ -105,7 +106,7 @@ LD_LIBRARY_PATH / LIBPATH considerations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This environment variable is used to discover libraries, it is the library
-search path - on Linux and *BSD `LD_LIBRARY_PATH` is used, on AIX it is
+search path - on Linux and \*BSD `LD_LIBRARY_PATH` is used, on AIX it is
 `LIBPATH`.
 
 PyInstaller saves the original value to `*_ORIG`, then modifies the search

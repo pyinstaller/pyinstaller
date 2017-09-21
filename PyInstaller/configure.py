@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2016, PyInstaller Development Team.
+# Copyright (c) 2005-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -79,6 +79,9 @@ def _get_pyinst_cache_dir():
     if old_cache_dir and not os.path.exists(cache_dir):
         old_cache_dir = os.path.join(old_cache_dir, 'pyinstaller')
         if os.path.exists(old_cache_dir):
+            parent_dir = os.path.dirname(cache_dir)
+            if not os.path.exists(parent_dir):
+                os.makedirs(parent_dir)
             os.rename(old_cache_dir, cache_dir)
     return cache_dir
 

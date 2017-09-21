@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2016, PyInstaller Development Team.
+# Copyright (c) 2013-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -17,8 +17,9 @@ __all__ = ['get_windows_dir']
 import os
 import sys
 
-from PyInstaller import compat
-from PyInstaller.compat import is_py3
+# Do not import 'compat' globally to avoid circual import:
+# import_pywin32_module() is used by compat
+#from ... import compat
 
 import PyInstaller.log as logging
 logger = logging.getLogger(__name__)
@@ -28,12 +29,9 @@ def get_windows_dir():
     """
     Return the Windows directory e.g. C:\\Windows.
     """
-    try:
-        import win32api
-    except ImportError:
-        windir = compat.getenv('SystemRoot', compat.getenv('WINDIR'))
-    else:
-        windir = win32api.GetWindowsDirectory()
+    # imported here to avoid circular import
+    from ... import compat
+    windir = compat.win32api.GetWindowsDirectory()
     if not windir:
         raise SystemExit("Error: Can not determine your Windows directory")
     return windir
@@ -43,12 +41,10 @@ def get_system_path():
     """
     Return the path that Windows will search for dlls.
     """
+    # imported here to avoid circular import
+    from ... import compat
     _bpath = []
-    try:
-        import win32api
-        sys_dir = win32api.GetSystemDirectory()
-    except ImportError:
-        sys_dir = os.path.normpath(os.path.join(get_windows_dir(), 'system32'))
+    sys_dir = compat.win32api.GetSystemDirectory()
     # Ensure C:\Windows\system32  and C:\Windows directories are
     # always present in PATH variable.
     # C:\Windows\system32 is valid even for 64bit Windows. Access do DLLs are
@@ -65,13 +61,15 @@ def extend_system_path(paths):
 
     Some hooks might extend PATH where PyInstaller should look for dlls.
     """
+    # imported here to avoid circular import
+    from ... import compat
     old_PATH = compat.getenv('PATH', '')
     paths.append(old_PATH)
     new_PATH = os.pathsep.join(paths)
     compat.setenv('PATH', new_PATH)
 
 
-def import_pywin32_module(module_name):
+def import_pywin32_module(module_name, _is_venv=None):
     """
     Import and return the PyWin32 module with the passed name.
 
@@ -87,6 +85,11 @@ def import_pywin32_module(module_name):
     ----------
     module_name : str
         Fully-qualified name of this module.
+    _is_venv: bool
+        Internal paramter used by compat.py, to prevent circular import. If None
+        (the default), compat is imported and comapt.is_venv ist used. If not
+        None, it is assumed to be called from compat and the value to be the same
+        as compat.is_venv.
 
     Returns
     ----------
@@ -112,9 +115,13 @@ def import_pywin32_module(module_name):
             # an ugly hack, but there is no other way.
             sys.frozen = '|_|GLYH@CK'
 
+            if _is_venv is None:  # not called from within compat
+                # imported here to avoid circular import
+                from ... import compat
+                _is_venv = compat.is_venv
             # If isolated to a venv, the preferred site.getsitepackages()
             # function is unreliable. Fallback to searching "sys.path" instead.
-            if compat.is_venv:
+            if _is_venv:
                 sys_paths = sys.path
             else:
                 import site
@@ -154,6 +161,8 @@ def convert_dll_name_to_str(dll_name):
     :param dll_name:
     :return:
     """
+    # imported here to avoid circular import
+    from ...compat import is_py3
     if is_py3 and isinstance(dll_name, bytes):
         return str(dll_name, encoding='UTF-8')
     else:

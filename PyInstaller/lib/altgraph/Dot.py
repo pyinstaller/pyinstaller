@@ -105,7 +105,7 @@ Valid attributes
 import os
 import warnings
 
-from altgraph import GraphError
+from . import GraphError
 
 
 class Dot(object):

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #-----------------------------------------------------------------------------
-# Copyright (c) 2016, PyInstaller Development Team.
+# Copyright (c) 2016-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -18,7 +18,7 @@ Run this at the beginning of each new year.
 
 from __future__ import print_function
 
-__copyright__ = "Copyright (c) 2016, PyInstaller Development Team."
+__copyright__ = "Copyright (c) 2016-2017, PyInstaller Development Team."
 __author__ = "Hartmut Goebel <h.goebel@crazy-compilers.com>"
 
 import os, sys, re
@@ -45,9 +45,12 @@ EXCLUDE = set(
     PyInstaller/utils/_gitrevision.py
     tests/functional/data/sphinx/conf.py
     tests/old_suite/basic/test_pkg_structures-version.txt
+    tests/scripts/eggs4testing/unzipped_egg/data/datafile.txt
+    tests/scripts/eggs4testing/zipped_egg/data/datafile.txt
     '''.split())
 
 EXCLUDE_GLOBS = '''
+    bootloader/.waf-*
     doc/*.html
     doc/*.1
     */EGG-INFO/*
@@ -148,3 +151,10 @@ if missing_copyright:
     print('File missing our copyright:')
     for f in missing_copyright:
         print(f)
+
+print("""
+You may now run
+  git diff develop # verify changes
+  git add -u       # batch-commit all these chages
+  git grep 2016    # grep for remaining years
+""")

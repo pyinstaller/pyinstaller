@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2005-2016, PyInstaller Development Team.
+# Copyright (c) 2005-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 def get_typelibs(module, version):
     """deprecated; only here for backwards compat.
     """
-    logger.warn("get_typelibs is deprecated, use get_gi_typelibs instead")
+    logger.warning("get_typelibs is deprecated, use get_gi_typelibs instead")
     return get_gi_typelibs(module, version)[1]
 
 
@@ -110,26 +110,36 @@ def gir_library_path_fix(path):
     from ...config import CONF
 
     path = os.path.abspath(path)
-    common_path = os.path.commonprefix([base_prefix, path])
-    gir_path = os.path.join(common_path, 'share', 'gir-1.0')
 
-    typelib_name = os.path.basename(path)
-    gir_name = os.path.splitext(typelib_name)[0] + '.gir'
-
-    gir_file = os.path.join(gir_path, gir_name)
-
-    if not os.path.exists(gir_path):
-        logger.error('Unable to find gir directory: %s.\n'
-                     'Try installing your platforms gobject-introspection '
-                     'package.', gir_path)
-        return None
-    if not os.path.exists(gir_file):
-        logger.error('Unable to find gir file: %s.\n'
-                     'Try installing your platforms gobject-introspection '
-                     'package.', gir_file)
-        return None
-
+    # On OSX we need to recompile the GIR files to reference the loader path,
+    # but this is not necessary on other platforms
     if is_darwin:
+
+        # If using a virtualenv, the base prefix and the path of the typelib
+        # have really nothing to do with each other, so try to detect that
+        common_path = os.path.commonprefix([base_prefix, path])
+        if common_path == '/':
+            logger.debug("virtualenv detected? fixing the gir path...")
+            common_path = os.path.abspath(os.path.join(path, '..', '..', '..'))
+
+        gir_path = os.path.join(common_path, 'share', 'gir-1.0')
+
+        typelib_name = os.path.basename(path)
+        gir_name = os.path.splitext(typelib_name)[0] + '.gir'
+
+        gir_file = os.path.join(gir_path, gir_name)
+
+        if not os.path.exists(gir_path):
+            logger.error('Unable to find gir directory: %s.\n'
+                         'Try installing your platforms gobject-introspection '
+                         'package.', gir_path)
+            return None
+        if not os.path.exists(gir_file):
+            logger.error('Unable to find gir file: %s.\n'
+                         'Try installing your platforms gobject-introspection '
+                         'package.', gir_file)
+            return None
+
         with open(gir_file, 'r') as f:
             lines = f.readlines()
         with open(os.path.join(CONF['workpath'], gir_name), 'w') as f:

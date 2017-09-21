@@ -1,6 +1,6 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2016, PyInstaller Development Team.
+ * Copyright (c) 2013-2017, PyInstaller Development Team.
  * Distributed under the terms of the GNU General Public License with exception
  * for distributing bootloader.
  *
@@ -36,6 +36,7 @@
 
 /* PyInstaller headers. */
 #include "pyi_global.h"  /* PATH_MAX */
+#include "pyi_utils.h"
 #include "pyi_win32_utils.h"
 #include "pyi_python27_compat.h"  /* is_py2 */
 
@@ -202,7 +203,7 @@ pyi_path_exists(char * path)
 int
 pyi_search_path(char * result, const char * appname)
 {
-    char * path = getenv("PATH");
+    char * path = pyi_getenv("PATH");
     char dirname[PATH_MAX + 1];
     char filename[PATH_MAX + 1];
 
@@ -261,14 +262,12 @@ pyi_path_executable(char *execfile, const char *appname)
     /* GetModuleFileNameW returns an absolute, fully qualified path
      */
     if (!GetModuleFileNameW(NULL, modulename_w, PATH_MAX)) {
-        FATALERROR("Failed to get executable path. \nGetModuleFileNameW: %s",
-                   GetWinErrorString());
+        FATAL_WINERROR("GetModuleFileNameW", "Failed to get executable path.");
         return -1;
     }
 
     if (!pyi_win32_utils_to_utf8(execfile, modulename_w, PATH_MAX)) {
-        FATALERROR("Failed to convert executable path to UTF-8.",
-                   GetWinErrorString());
+        FATALERROR("Failed to convert executable path to UTF-8.");
         return -1;
     }
 
@@ -279,7 +278,7 @@ pyi_path_executable(char *execfile, const char *appname)
      * This may return a symlink.
      */
     if (_NSGetExecutablePath(buffer, &length) != 0) {
-        FATALERROR("System error - unable to load!");
+        FATALERROR("System error - unable to load!\n");
         return -1;
     }
 
@@ -324,7 +323,11 @@ pyi_path_executable(char *execfile, const char *appname)
             if (-1 == result) {
                 /* Searching $PATH failed, user is crazy. */
                 VS("LOADER: Searching $PATH failed for %s", appname);
-                strcpy(buffer, appname);
+                strncpy(buffer, appname, PATH_MAX);
+                if (buffer[PATH_MAX-1] != '\0') {
+                    VS("LOADER: Appname too large %s\n", appname);
+                    return -1;
+                }
             }
 
             if (pyi_path_fullpath(execfile, PATH_MAX, buffer) == false) {

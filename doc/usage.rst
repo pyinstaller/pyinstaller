@@ -14,15 +14,15 @@ and execute::
 
     pyinstaller myscript.py
 
-|PyInstaller| analyzes ``myscript.py`` and:
+|PyInstaller| analyzes :file:`myscript.py` and:
 
-* Writes ``myscript.spec`` in the same folder as the script.
-* Creates a folder ``build`` in the same folder as the script if it does not exist.
+* Writes :file:`myscript.spec` in the same folder as the script.
+* Creates a folder :file:`build` in the same folder as the script if it does not exist.
 * Writes some log files and working files in the ``build`` folder.
-* Creates a folder ``dist`` in the same folder as the script if it does not exist.
-* Writes the ``myscript`` executable folder in the ``dist`` folder.
+* Creates a folder :file:`dist` in the same folder as the script if it does not exist.
+* Writes the :file:`myscript` executable folder in the :file:`dist` folder.
 
-In the ``dist`` folder you find the bundled app you distribute to your users.
+In the :file:`dist` folder you find the bundled app you distribute to your users.
 
 Normally you name one script on the command line.
 If you name more, all are analyzed and included in the output.
@@ -51,7 +51,7 @@ Options
 General Options
 ------------------
 
-.. include:: man/_pyinstaller-options.tmp
+.. include:: _pyinstaller-options.tmp
 
 
 
@@ -99,10 +99,6 @@ UPX is available for most operating systems and can compress
 a large number of executable file formats.
 See the UPX_ home page for downloads, and for the list of
 supported executable formats.
-Development of UPX appears to have ended in September 2013,
-at which time it supported most executable formats except for
-64-bit binaries for Mac OS X.
-UPX has no effect on those.
 
 A compressed executable program is wrapped in UPX
 startup code that dynamically decompresses the program
@@ -139,6 +135,19 @@ encrypt each file of Python byte-code before it is stored in
 the archive inside the executable file.
 
 
+.. _defining the extraction location:
+
+Defining the Extraction Location
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In rare cases, when you bundle to a single executable
+(see :ref:`Bundling to One File` and :ref:`how the one-file program works`),
+you may want to control the location of the temporary directory at compile
+time. This can be done using the ``--runtime-tmpdir`` option. If this option is
+given, the bootloader will ignore any temp-folder location defined by the
+run-time OS. Please use this option only if you know what you are doing.
+
+
 .. _supporting multiple platforms:
 
 Supporting Multiple Platforms
@@ -159,8 +168,8 @@ or a supported version that uses Qt4 and a development version that uses Qt5 --
 we recommend you use virtualenv_.
 With virtualenv you can maintain different combinations of Python
 and installed packages, and switch from one combination to another easily.
-(If you work only with Python 3.4 and later, the built-in script pyvenv_
-does the same job.)
+(If you work only with Python 3.4 and later, ``python3 -m venv``
+does the same job, see module venv_.)
 
 * Use virtualenv to create as many different development environments as you need,
   each with its unique combination of Python and installed packages.
@@ -175,6 +184,8 @@ Note that when using virtualenv, the path to the |PyInstaller| commands is:
 Under Windows, the pip-Win_ package installs virtualenv and makes it
 especially easy to set up different environments and switch between them.
 Under Linux and Mac OS, you switch environments at the command line.
+
+See :pep:`405` for more information about Python virtual environments.
 
 
 Supporting Multiple Operating Systems
@@ -321,23 +332,24 @@ Building Mac OS X App Bundles
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you specify only ``--onefile`` under Mac OS X, the output
-in ``dist`` is a UNIX executable
-``myscript``.
+in :file:`dist` is a UNIX executable
+:file:`myscript`.
 It can be executed from a Terminal command line.
 Standard input and output work as normal through the Terminal window.
 
 If you also specify ``--windowed``, the ``dist`` folder contains
-two outputs: the UNIX executable ``myscript``
-and also an OS X application named ``myscript.app``.
+two outputs: the UNIX executable :file:`myscript`
+and also an OS X application named :file:`myscript.app`.
 
 As you probably know, an application is a special type of folder.
-The one built by |PyInstaller| contains a folder always named ``Contents``.
+The one built by |PyInstaller| contains a folder always named :file:`Contents`.
 It contains:
 
-  + A folder ``Frameworks`` which is empty.
-  + A folder ``MacOS`` that contains a copy of the same ``myscript`` UNIX executable.
-  + A folder ``Resources`` that contains an icon file.
-  + A file ``Info.plist`` that describes the app.
+  + A folder :file:`Frameworks` which is empty.
+  + A folder :file:`MacOS` that contains a copy of the same
+    :file:`myscript` UNIX executable.
+  + A folder :file:`Resources` that contains an icon file.
+  + A file :file:`Info.plist` that describes the app.
 
 |PyInstaller| builds minimal versions of these elements.
 
@@ -348,9 +360,9 @@ and for more detail, the `Apple code signing overview`_ technical note).
 
 Use the ``icon=`` argument to specify a custom icon for the application.
 (If you do not specify an icon file, |PyInstaller| supplies a
-file ``icon-windowed.icns`` with the |PyInstaller| logo.)
+file :file:`icon-windowed.icns` with the |PyInstaller| logo.)
 
-You can add items to the ``Info.plist`` by editing the spec file;
+You can add items to the :file:`Info.plist` by editing the spec file;
 see :ref:`Spec File Options for a Mac OS X Bundle` below.
 
 Making Mac OS X apps Forward-Compatible
@@ -445,6 +457,40 @@ OpenDocument is the only AppleEvent the |bootloader| handles.
 If you want to handle other events, or events that
 are delivered after the program has launched, you must
 set up the appropriate handlers.
+
+
+Platform-specific Notes
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. _Platform-specific Notes - Windows:
+
+Windows
+---------------
+
+For **Python >= 3.5** targeting *Windows < 10*, the developer needs to take
+special care to include the Visual C++ run-time .dlls:
+Python 3.5 uses Visual Studio 2015 run-time, which has been renamed into
+`“Universal CRT“
+<https://blogs.msdn.microsoft.com/vcblog/2015/03/03/introducing-the-universal-crt/>`_
+and has become part of Windows 10.
+For Windows Vista through Windows 8.1 there are Windows Update packages,
+which may or may not be installed in the target-system.
+So you have the following options:
+
+1. Build on *Windows 7* which has been reported to work.
+
+2. Include one of the VCRedist packages (the redistributable package files)
+   into your application's installer. This is Microsoft's recommended way, see
+   “Distributing Software that uses the Universal CRT“ in the above-mentioned
+   link, numbers 2 and 3.
+
+3. Install the `Windows Software Development Kit (SDK) for Windows 10
+   <https://dev.windows.com/en-us/downloads/windows-10-sdk>`_ and expand the
+   `.spec`-file to include the required DLLs, see “Distributing Software that
+   uses the Universal CRT“ in the above-mentioned link, number 6.
+
+   If you think, |PyInstaller| should to this by itself, please :ref:`help
+   improving <how-to-contribute>` |PyInstaller|.
 
 
 .. include:: _common_definitions.txt

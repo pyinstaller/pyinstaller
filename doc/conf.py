@@ -45,8 +45,13 @@ for prog, outfile in (
         ):
     prog = os.path.abspath(os.path.join(os.path.dirname(__file__), prog))
     help2rst.to_file(prog, True, '-', outfile)
-del prog, outfile
-
+# Create a version with different labels to avoid warnings
+with open('man/_pyinstaller-options.tmp') as fh:
+    text = fh.read()
+text = text.replace('\n.. _pyinstaller ', '\n.. _options-group ')
+with open('_pyinstaller-options.tmp', 'w') as fh:
+    fh.write(text)
+del prog, outfile, fh, text
 
 # -- General configuration ------------------------------------------------
 
@@ -56,7 +61,11 @@ del prog, outfile
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = []
+extensions = ['sphinx.ext.intersphinx']
+
+intersphinx_mapping = {
+    'website': ('http://www.pyinstaller.org//', None),
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

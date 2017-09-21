@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2016, PyInstaller Development Team.
+# Copyright (c) 2013-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -12,24 +12,21 @@
 Logging module for PyInstaller
 """
 
-
-__all__ = ['getLogger', 'INFO', 'WARN', 'DEBUG', 'ERROR', 'FATAL']
+__all__ = ['getLogger', 'INFO', 'WARN', 'DEBUG', 'TRACE', 'ERROR', 'FATAL']
 
 import logging
 from logging import getLogger, INFO, WARN, DEBUG, ERROR, FATAL
 
+TRACE = logging.TRACE = DEBUG - 5
+logging.addLevelName(TRACE, 'TRACE')
+
 FORMAT = '%(relativeCreated)d %(levelname)s: %(message)s'
-
-
-def init():
-    # Allow deferring initialization
-    global logger
-    logging.basicConfig(format=FORMAT, level=logging.INFO)
-    logger = getLogger('PyInstaller')
+logging.basicConfig(format=FORMAT, level=logging.INFO)
+logger = getLogger('PyInstaller')
 
 
 def __add_options(parser):
-    levels = ('DEBUG', 'INFO', 'WARN', 'ERROR', 'CRITICAL')
+    levels = ('TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'CRITICAL')
     parser.add_argument('--log-level',
                         choices=levels, metavar="LEVEL",
                         default='INFO',

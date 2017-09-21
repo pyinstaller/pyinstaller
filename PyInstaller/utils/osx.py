@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2014-2016, PyInstaller Development Team.
+# Copyright (c) 2014-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -16,7 +16,7 @@ import os
 import sys
 
 from ..compat import base_prefix, exec_command
-from ..lib.macholib.MachO import MachO
+from macholib.MachO import MachO
 
 
 def is_homebrew_env():

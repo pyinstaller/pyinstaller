@@ -14,12 +14,13 @@ import subprocess
 import textwrap
 import re
 import sys
+import os
 
-__copyright__ = "Copyright (c) 2015-2016 PyInstaller Development Team, Copyright (c) 2015 Hartmut Goebel"
+__copyright__ = "Copyright (c) 2015-2017 PyInstaller Development Team, Copyright (c) 2015-2017 Hartmut Goebel"
 __author__ = "Hartmut Goebel <h.goebel@crazy-compilers.com>"
 
 
-def gen_headings(text, headings_character):
+def gen_headings(program, text, headings_character):
     text = (t.rstrip() for t in text.splitlines())
     new_text = []
     dedent = 0
@@ -40,6 +41,11 @@ def gen_headings(text, headings_character):
             if leading_whitespace:
                 dedent = len(leading_whitespace[0])
                 line = line[dedent:]
+        if heading:
+            # add a sphinx reference label
+            new_text.extend(('',
+                             '.. _%s %s:' % (program, line.lower()),
+                             ''))
         new_text.append(line)
         if heading:
             # append underline
@@ -66,8 +72,9 @@ def process(program, generate_headings, headings_character):
     # escape stars prior to other processing
     help = help.replace('*', r'\*')
     if generate_headings:
+        program = os.path.splitext(os.path.basename(program))[0].lower()
         help = textwrap.dedent(help)
-        help = gen_headings(help, headings_character)
+        help = gen_headings(program, help, headings_character)
     return help
 
 

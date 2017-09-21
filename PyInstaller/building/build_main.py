@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2016, PyInstaller Development Team.
+# Copyright (c) 2005-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -154,7 +154,7 @@ class Analysis(Target):
             if not os.path.isabs(script):
                 script = os.path.join(spec_dir, script)
             if absnormpath(script) in self._old_scripts:
-                logger.warn('Ignoring obsolete auto-added script %s', script)
+                logger.warning('Ignoring obsolete auto-added script %s', script)
                 continue
             # Normalize script path.
             script = os.path.normpath(script)
@@ -208,6 +208,7 @@ class Analysis(Target):
         self.binding_redirects = CONF['binding_redirects'] = []
         self.win_no_prefer_redirects = win_no_prefer_redirects
         self.win_private_assemblies = win_private_assemblies
+        self._python_version = sys.version
 
         self.__postinit__()
 
@@ -237,6 +238,7 @@ class Analysis(Target):
             # additional hidden import
 
             #calculated/analysed values
+            ('_python_version', _check_guts_eq),
             ('scripts', _check_guts_toc_mtime),
             ('pure', lambda *args: _check_guts_toc_mtime(*args, **{'pyc': 1})),
             ('binaries', _check_guts_toc_mtime),
@@ -580,17 +582,18 @@ class Analysis(Target):
             logger.info("Warnings written to %s", CONF['warnfile'])
 
     def _write_graph_debug(self):
-        # With `--log-level DEBUG` write a xref and a dot-drawing of
-        # the graph.
-        if logger.getEffectiveLevel() > logging.DEBUG:
-            return
+        """Write a xref (in html) and with `--log-level DEBUG` a dot-drawing
+        of the graph.
+        """
         from ..config import CONF
-        with open(CONF['dot-file'], 'w') as fh:
-            self.graph.graphreport(fh)
-            logger.info("Graph drawing written to %s", CONF['dot-file'])
         with open(CONF['xref-file'], 'w') as fh:
             self.graph.create_xref(fh)
             logger.info("Graph cross-reference written to %s", CONF['xref-file'])
+        if logger.getEffectiveLevel() > logging.DEBUG:
+            return
+        with open(CONF['dot-file'], 'w') as fh:
+            self.graph.graphreport(fh)
+            logger.info("Graph drawing written to %s", CONF['dot-file'])
 
 
     def _check_python_library(self, binaries):
@@ -607,7 +610,7 @@ class Analysis(Target):
                 return
 
         # Python lib not in dependencies - try to find it.
-        logger.info('Python library not in binary depedencies. Doing additional searching...')
+        logger.info('Python library not in binary dependencies. Doing additional searching...')
         python_lib = bindepend.get_python_library_path()
         if python_lib:
             logger.debug('Adding Python library to binary dependencies')

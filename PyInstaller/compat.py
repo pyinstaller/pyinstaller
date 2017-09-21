@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2016, PyInstaller Development Team.
+# Copyright (c) 2005-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -21,6 +21,7 @@ import site
 import subprocess
 import sys
 
+from .log import logger
 
 # Distinguish code for different major Python version.
 is_py2 = sys.version_info[0] == 2
@@ -32,6 +33,7 @@ is_py27 = sys.version_info >= (2, 7) and sys.version_info < (3, 0)
 is_py34 = sys.version_info >= (3, 4)
 is_py35 = sys.version_info >= (3, 5)
 is_py36 = sys.version_info >= (3, 6)
+is_py37 = sys.version_info >= (3, 7)
 
 is_win = sys.platform.startswith('win')
 is_cygwin = sys.platform == 'cygwin'
@@ -54,7 +56,8 @@ is_unix = is_linux or is_solar or is_aix or is_freebsd or is_hpux
 # On different platforms is different file for dynamic python library.
 _pyver = sys.version_info[:2]
 if is_win:
-    PYDYLIB_NAMES = {'python%d%d.dll' % _pyver}
+    PYDYLIB_NAMES = {'python%d%d.dll' % _pyver,
+                     'libpython%d.%d.dll' % _pyver}  # For MSYS2 environment
 elif is_cygwin:
     PYDYLIB_NAMES = {'libpython%d%d.dll' % _pyver,
                      'libpython%d%dm.dll' % _pyver,
@@ -129,25 +132,11 @@ if is_py2:
 else:
     string_types = str
 
-
-
 # Correct extension ending: 'c' or 'o'
 if __debug__:
     PYCO = 'c'
 else:
     PYCO = 'o'
-
-
-# Obsolete command line options (do not exist anymore).
-_OLD_OPTIONS = [
-    '--upx', '-X',
-    '-K', '--tk',
-    '-C', '--configfile',
-    '--skip-configure',
-    '-o', '--out',
-    '--buildpath',
-    ]
-
 
 # Options for python interpreter when invoked in a subprocess.
 if __debug__:
@@ -207,6 +196,30 @@ if is_py2:
     modname_tkinter = 'Tkinter'
 else:
     modname_tkinter = 'tkinter'
+
+
+# On Windows we require pypiwin32 or pywin32-ctypes
+# -> all pyinstaller modules should use win32api from PyInstaller.compat to
+#    ensure that it can work on MSYS2 (which requires pywin32-ctypes)
+if is_win:
+    try:
+        from PyInstaller.utils.win32 import winutils
+        try:
+            pywintypes = winutils.import_pywin32_module('pywintypes', _is_venv=is_venv)
+            win32api = winutils.import_pywin32_module('win32api', _is_venv=is_venv)
+        except ImportError:
+            try:
+                from win32ctypes.pywin32 import pywintypes
+                from win32ctypes.pywin32 import win32api
+            except ImportError:
+                raise
+    except ImportError:
+        # This environment variable is set by seutp.py
+        # - It's not an error for pywin32 to not be installed at that point
+        if not os.environ.get('PYINSTALLER_NO_PYWIN32_FAILURE'):
+            raise SystemExit('PyInstaller cannot check for assembly dependencies.\n'
+                             'Please install PyWin32 or pywin32-ctypes.\n\n'
+                             'pip install pypiwin32\n')
 
 
 def architecture():
@@ -589,7 +602,6 @@ def getcwd():
             # Do conversion to ShortPathName really only in case 'cwd' is not
             # ascii only - conversion to unicode type cause this unicode error.
             try:
-                import win32api
                 cwd = win32api.GetShortPathName(cwd)
             except ImportError:
                 pass
@@ -672,34 +684,6 @@ except ImportError:
                     if _access_check(name, mode):
                         return name
         return None
-
-
-# Obsolete command line options.
-
-class __obsolete_option:
-    def __init__(self, option_strings, dest, help, **kwargs):
-        self.type = bool
-        self.option_strings = option_strings
-        self.dest = dest
-        self.help = help
-        self.default = self.const = False
-        self.nargs = self.const = self.choices = self.metavar=None
-        self.required = False
-
-    def __call__(parser, namespace, values, opt):
-        return
-        parser.error('%s option does not exist anymore (obsolete).' % opt)
-
-
-def __add_obsolete_options(parser):
-    """
-    Add the obsolete options to a option-parser instance and
-    print error message when they are present.
-    """
-    g = parser.add_argument_group('Obsolete options (not used anymore)')
-    g.add_argument(*_OLD_OPTIONS,
-                   action=__obsolete_option,
-                   help='These options do not exist anymore.')
 
 
 # Site-packages functions - use native function if available.
@@ -872,20 +856,10 @@ MODULE_TYPES_TO_TOC_DICT = {
 
 def check_requirements():
     """
-    Verify that all requirements to run PyInstaller are met. Especially
-    PyWin32 is installed on Windows.
+    Verify that all requirements to run PyInstaller are met.
 
     Fail hard if any requirement is not met.
     """
     # Fail hard if Python does not have minimum required version
     if sys.version_info < (3, 3) and sys.version_info[:2] != (2, 7):
         raise SystemExit('PyInstaller requires at least Python 2.7 or 3.3+.')
-
-    if is_win:
-        try:
-            from PyInstaller.utils.win32 import winutils
-            pywintypes = winutils.import_pywin32_module('pywintypes')
-        except ImportError:
-            raise SystemExit('PyInstaller cannot check for assembly dependencies.\n'
-                             'Please install PyWin32.\n\n'
-                             'pip install pypiwin32\n')

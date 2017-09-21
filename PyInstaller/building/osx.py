@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2016, PyInstaller Development Team.
+# Copyright (c) 2005-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -7,6 +7,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+import codecs
 import os
 import shutil
 from ..compat import is_darwin, FileExistsError
@@ -108,7 +109,7 @@ class BUNDLE(Target):
         if os.path.exists(self.icon):
             shutil.copy(self.icon, os.path.join(self.name, 'Contents', 'Resources'))
         else:
-            logger.warn("icon not found %s" % self.icon)
+            logger.warning("icon not found %s", self.icon)
 
         # Key/values for a minimal Info.plist file
         info_plist_dict = {"CFBundleDisplayName": self.appname,
@@ -150,17 +151,16 @@ class BUNDLE(Target):
         if isinstance(self.info_plist, dict) and self.info_plist:
             info_plist_dict.update(self.info_plist)
 
-        info_plist = """<?xml version="1.0" encoding="UTF-8"?>
+        info_plist = u"""<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>"""
         for k, v in info_plist_dict.items():
-            info_plist += "<key>%s</key>\n<string>%s</string>\n" % (k, v)
-        info_plist += """</dict>
+            info_plist += u"<key>%s</key>\n<string>%s</string>\n" % (k, v)
+        info_plist += u"""</dict>
 </plist>"""
-        f = open(os.path.join(self.name, "Contents", "Info.plist"), "w")
-        f.write(info_plist)
-        f.close()
+        with codecs.open(os.path.join(self.name, "Contents", "Info.plist"), "w", "utf-8") as f:
+            f.write(info_plist)
 
         links = []
         toc = add_suffix_to_extensions(self.toc)

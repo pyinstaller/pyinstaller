@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2016, PyInstaller Development Team.
+# Copyright (c) 2005-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -20,7 +20,7 @@ from .utils.git import get_repo_revision
 
 # Note: Keep this variable as plain string so it could be updated automatically
 #       when doing a release.
-__version__ = '3.2.1'
+__version__ = '3.3'
 
 
 # Absolute path of this package's directory. Save this early so all
@@ -38,8 +38,7 @@ if is_win and is_py2:
         # Do conversion to ShortPathName really only in case HOMEPATH is not
         # ascii only - conversion to unicode type cause this unicode error.
         try:
-            import win32api
-            HOMEPATH = win32api.GetShortPathName(HOMEPATH)
+            HOMEPATH = compat.win32api.GetShortPathName(HOMEPATH)
         except ImportError:
             pass
 

@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2016, PyInstaller Development Team.
+# Copyright (c) 2005-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -711,6 +711,8 @@ def collect_data_files(package, include_py_files=False, subdir=None):
     This function is used only for hook scripts, but not by the body of
     PyInstaller.
     """
+    logger.debug('Collecting data files for %s' % package)
+
     # Accept only strings as packages.
     if not isinstance(package, string_types):
         raise ValueError
@@ -732,6 +734,7 @@ def collect_data_files(package, include_py_files=False, subdir=None):
                                      os.path.dirname(pkg_base) + os.sep)
                 datas.append((source, dest))
 
+    logger.debug("collect_data_files - Found files: %s", datas)
     return datas
 
 

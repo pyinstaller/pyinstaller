@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2016, PyInstaller Development Team.
+# Copyright (c) 2013-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -16,8 +16,6 @@ import PyInstaller.log
 
 
 def run():
-    PyInstaller.log.init()
-
     parser = argparse.ArgumentParser(
         epilog = ('The printed output may be saved to a file, edited and '
                   'used as the input for a version resource on any of the '
@@ -34,8 +32,10 @@ def run():
     try:
         import PyInstaller.utils.win32.versioninfo
         vs = PyInstaller.utils.win32.versioninfo.decode(args.exe_file)
+        if not vs:
+            raise SystemExit("Error: VersionInfo resource not found in exe")
         fp = codecs.open(args.out_filename, 'w', 'utf-8')
-        fp.write(unicode(vs))
+        fp.write(u"%s" % (vs,))
         fp.close()
         print(('Version info written to: %s' % args.out_filename))
     except KeyboardInterrupt:

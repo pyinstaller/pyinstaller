@@ -1,6 +1,6 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2016, PyInstaller Development Team.
+ * Copyright (c) 2013-2017, PyInstaller Development Team.
  * Distributed under the terms of the GNU General Public License with exception
  * for distributing bootloader.
  *
@@ -59,7 +59,7 @@ pyi_main(int argc, char * argv[])
     archive_status = (ARCHIVE_STATUS *) calloc(1, sizeof(ARCHIVE_STATUS));
 
     if (archive_status == NULL) {
-        FATALERROR("Cannot allocate memory for ARCHIVE_STATUS\n");
+        FATAL_PERROR("calloc", "Cannot allocate memory for ARCHIVE_STATUS\n");
         return -1;
 
     }
@@ -102,13 +102,17 @@ pyi_main(int argc, char * argv[])
     archive_status->argc = argc;
     archive_status->argv = argv;
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__APPLE__)
 
-    /* On Windows use single-process for --onedir mode. */
+    /* On Windows and Mac use single-process for --onedir mode. */
     if (!extractionpath && !pyi_launch_need_to_extract_binaries(archive_status)) {
         VS("LOADER: No need to extract files to run; setting extractionpath to homepath\n");
         extractionpath = homepath;
     }
+
+#endif
+
+#ifdef _WIN32
 
     if (extractionpath) {
         /* Add extraction folder to DLL search path */
@@ -126,7 +130,11 @@ pyi_main(int argc, char * argv[])
          *  we pass it through status variable
          */
         if (strcmp(homepath, extractionpath) != 0) {
-            strcpy(archive_status->temppath, extractionpath);
+            strncpy(archive_status->temppath, extractionpath, PATH_MAX);
+            if (archive_status->temppath[PATH_MAX-1] != '\0') {
+                VS("LOADER: temppath exceeds PATH_MAX\n");
+                return -1;
+            }
             /*
              * Temp path exits - set appropriate flag and change
              * status->mainpath to point to temppath.

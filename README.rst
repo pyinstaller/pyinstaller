@@ -6,7 +6,7 @@ package. The user can run the packaged app without installing a Python
 interpreter or any modules.
 
 
-.. image:: https://img.shields.io/travis/pyinstaller/pyinstaller/3.2.1.svg?label=Linux
+.. image:: https://img.shields.io/travis/pyinstaller/pyinstaller/v3.3.svg?label=Linux
    :target: https://travis-ci.org/pyinstaller/pyinstaller/
    :alt: Travis CI test status (Linux)
 
@@ -14,8 +14,8 @@ interpreter or any modules.
    :target: https://travis-ci.org/pyinstaller/pyinstaller-osx-tests
    :alt: Travis CI test status (OS X)
 
-.. image:: https://img.shields.io/appveyor/ci/matysek/pyinstaller/3.2.1.svg?label=Windows
-   :target: https://ci.appveyor.com/project/matysek/pyinstaller/branch/3.2.1
+.. image:: https://img.shields.io/appveyor/ci/matysek/pyinstaller/v3.3.svg?label=Windows
+   :target: https://ci.appveyor.com/project/matysek/pyinstaller/branch/v3.3
    :alt: AppVeyor CI test status (Windows)
 
 .. image:: https://landscape.io/github/pyinstaller/pyinstaller/master/landscape.svg?
@@ -25,15 +25,12 @@ interpreter or any modules.
 .. image:: https://img.shields.io/pypi/v/PyInstaller.svg
    :target: https://pypi.python.org/pypi/PyInstaller
 
-.. image:: https://img.shields.io/pypi/dm/PyInstaller.svg
-   :target: https://pypi.python.org/pypi/PyInstaller
-
-.. image:: https://img.shields.io/badge/docs-v3.2.1-blue.svg
-   :target: https://pyinstaller.rtfd.io/en/v3.2.1/
+.. image:: https://img.shields.io/badge/docs-v3.3-blue.svg
+   :target: https://pyinstaller.readthedocs.io/en/v3.3/
    :alt: Manual
 
-.. image:: https://img.shields.io/badge/changes-v3.2.1-blue.svg
-   :target: https://pyinstaller.rtfd.io/en/v3.2.1/CHANGES.html
+.. image:: https://img.shields.io/badge/changes-v3.3-blue.svg
+   :target: https://pyinstaller.readthedocs.io/en/v3.3/CHANGES.html
    :alt: Changelog
 
 .. image:: https://img.shields.io/badge/IRC-pyinstalller-blue.svg
@@ -41,9 +38,12 @@ interpreter or any modules.
    :alt: IRC
 
 
-:Documentation: http://pyinstaller.rtfd.io/
+:Documentation: https://pyinstaller.readthedocs.io/
 :Website:       http://www.pyinstaller.org/
 :Code:          https://github.com/pyinstaller/pyinstaller
+:Donate:        | https://www.bountysource.com/teams/pyinstaller
+                | Bitcoin: 1JUFjawzWDR7Tc8z9TKXstVFdjkDY9FbtK
+                | `more ways to donate … <http://www.pyinstaller.org/donate.html>`_
 
 
 PyInstaller reads a Python script written by you. It analyzes your code
@@ -88,7 +88,7 @@ Requirements and Tested Platforms
 
 - Python: 
 
- - 2.7 or 3.3+
+ - 2.7 or 3.3-3.5
  - PyCrypto_ 2.4+ (only if using bytecode encryption)
 
 - Windows (32bit/64bit):
@@ -162,5 +162,5 @@ or simply use it directly from the source (pyinstaller.py).
 
 
 .. _PyCrypto: https://www.dlitz.net/software/pycrypto/
-.. _`manual`: https://pyinstaller.rtfd.io/en/v3.2.1/
+.. _`manual`: https://pyinstaller.readthedocs.io/en/v3.3/
 

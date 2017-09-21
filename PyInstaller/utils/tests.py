@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2016, PyInstaller Development Team.
+# Copyright (c) 2005-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -32,24 +32,34 @@ xfail = pytest.mark.xfail
 xfail_py2 = xfail(is_py2, reason='fails with Python 2.7')
 xfail_py3 = xfail(is_py3, reason='fails with Python 3')
 
+def _check_for_compiler():
+    import tempfile, sys
+    # change to some tempdir since cc.has_function() would compile into the
+    # current directory, leaving garbage
+    old_wd = os.getcwd()
+    tmp = tempfile.mkdtemp()
+    os.chdir(tmp)
+    cc = distutils.ccompiler.new_compiler()
+    if is_win:
+        try:
+            cc.initialize()
+            has_compiler = True
+        # This error is raised on Windows if a compiler can't be found.
+        except distutils.errors.DistutilsPlatformError:
+            has_compiler = False
+    else:
+        # The C standard library contains the ``clock`` function. Use that to
+        # determine if a compiler is installed. This doesn't work on Windows::
+        #
+        #   Users\bjones\AppData\Local\Temp\a.out.exe.manifest : general error
+        #   c1010070: Failed to load and parse the manifest. The system cannot
+        #   find the file specified.
+        has_compiler = cc.has_function('clock', includes=['time.h'])
+    os.chdir(old_wd)
+    return has_compiler
+
 # A decorator to skip tests if a C compiler isn't detected.
-cc = distutils.ccompiler.new_compiler()
-if is_win:
-    try:
-        cc.initialize()
-        has_compiler = True
-    # This error is raised on Windows if a compiler can't be found.
-    except distutils.errors.DistutilsPlatformError:
-        has_compiler = False
-else:
-    # The C standard library contains the ``clock`` function. Use that to
-    # determine if a compiler is installed. This doesn't work on Windows::
-    #
-    #   Users\bjones\AppData\Local\Temp\a.out.exe.manifest : general error
-    #   c1010070: Failed to load and parse the manifest. The system cannot find
-    #   the file specified.
-    has_compiler = cc.has_function('clock', includes=['time.h'])
-del cc
+has_compiler = _check_for_compiler,()
 skipif_no_compiler = skipif(not has_compiler, reason="Requires a C compiler")
 
 

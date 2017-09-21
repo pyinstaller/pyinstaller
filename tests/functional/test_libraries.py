@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2016, PyInstaller Development Team.
+# Copyright (c) 2005-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -17,7 +17,7 @@ import os
 # -------------
 import sys
 
-from PyInstaller.compat import is_win, is_py27, is_py3, is_py36, is_darwin
+from PyInstaller.compat import is_win, is_py27, is_py3, is_py36, is_py35, is_darwin, is_linux
 from PyInstaller.utils.hooks import get_module_attribute, is_module_satisfies
 from PyInstaller.utils.tests import importorskip, xfail, skipif
 
@@ -60,14 +60,6 @@ def test_botocore(pyi_builder):
         # verify all services
         for service in session.get_available_services():
             session.create_client(service, region_name='us-west-2')
-        """)
-
-
-@importorskip('cherrypy')
-def test_cherrypy(pyi_builder):
-    pyi_builder.test_source(
-        """
-        import cherrypy.wsgiserver
         """)
 
 
@@ -299,6 +291,113 @@ def test_PyQt5_uic(tmpdir, pyi_builder, data_dir):
     # Note that including the data_dir fixture copies files needed by this test.
     pyi_builder.test_script('pyi_lib_PyQt5-uic.py')
 
+@xfail(is_linux and is_py35, reason="Fails on linux >3.5")
+@xfail(is_darwin, reason="Fails on OSX")
+@xfail(is_win and is_py35 and not is_py36, reason="Fails on win == 3.6")
+@importorskip('PyQt5')
+def test_PyQt5_QWebEngine(pyi_builder):
+    pyi_builder.test_source(
+        """
+        from PyQt5.QtWidgets import QApplication
+        from PyQt5.QtWebEngineWidgets import QWebEngineView
+        from PyQt5.QtCore import QUrl
+        app = QApplication( [] )
+        view = QWebEngineView()
+        view.load( QUrl( "http://www.pyinstaller.org" ) )
+        view.show()
+        view.page().loadFinished.connect(lambda ok: app.quit())
+        app.exec_()
+        """)
+
+
+@importorskip('PyQt5')
+def test_PyQt5_QtQuick(pyi_builder):
+    pyi_builder.test_source(
+        """
+        import sys
+
+        # Not used. Only here to trigger the hook
+        import PyQt5.QtQuick
+
+        from PyQt5.QtGui import QGuiApplication
+        from PyQt5.QtQml import QQmlApplicationEngine
+        from PyQt5.QtCore import QTimer, QUrl
+
+        app = QGuiApplication([])
+        engine = QQmlApplicationEngine()
+        engine.loadData(b'''
+            import QtQuick 2.0
+            import QtQuick.Controls 2.0
+
+            ApplicationWindow {
+                visible: true
+                color: "green"
+            }
+            ''', QUrl())
+
+        if not engine.rootObjects():
+            sys.exit(-1)
+
+        # Exit Qt when the main loop becomes idle.
+        QTimer.singleShot(0, app.exit)
+
+        sys.exit(app.exec_())
+        """)
+
+
+@xfail(is_linux and is_py35, reason="Fails on linux >3.5")
+@xfail(is_darwin, reason="Fails on OSX")
+@xfail(is_win and is_py35 and not is_py36, reason="Fails on win == 3.6")
+@importorskip('PySide2')
+def test_PySide2_QWebEngine(pyi_builder):
+    pyi_builder.test_source(
+        """
+        from PySide2.QtWidgets import QApplication
+        from PySide2.QtWebEngineWidgets import QWebEngineView
+        from PySide2.QtCore import QUrl
+        app = QApplication( [] )
+        view = QWebEngineView()
+        view.load( QUrl( "http://www.pyinstaller.org" ) )
+        view.show()
+        view.page().loadFinished.connect(lambda ok: app.quit())
+        app.exec_()
+        """)
+
+
+@importorskip('PySide2')
+def test_PySide2_QtQuick(pyi_builder):
+    pyi_builder.test_source(
+        """
+        import sys
+
+        # Not used. Only here to trigger the hook
+        import PySide2.QtQuick
+
+        from PySide2.QtGui import QGuiApplication
+        from PySide2.QtQml import QQmlApplicationEngine
+        from PySide2.QtCore import QTimer, QUrl
+
+        app = QGuiApplication([])
+        engine = QQmlApplicationEngine()
+        engine.loadData(b'''
+            import QtQuick 2.0
+            import QtQuick.Controls 2.0
+
+            ApplicationWindow {
+                visible: true
+                color: "green"
+            }
+            ''', QUrl())
+
+        if not engine.rootObjects():
+            sys.exit(-1)
+
+        # Exit Qt when the main loop becomes idle.
+        QTimer.singleShot(0, app.exit)
+
+        sys.exit(app.exec_())
+        """)
+
 
 @importorskip('zope.interface')
 def test_zope_interface(pyi_builder):
@@ -314,13 +413,15 @@ def test_zope_interface(pyi_builder):
         """)
 
 
-@xfail(is_darwin, reason='Issue #1895.')
 @importorskip('idlelib')
 def test_idlelib(pyi_builder):
     pyi_builder.test_source(
         """
         # This file depends on loading some icons, located based on __file__.
-        import idlelib.TreeWidget
+        try:
+            import idlelib.TreeWidget
+        except:
+            import idlelib.tree
         """)
 
 
@@ -351,6 +452,7 @@ def test_numpy(pyi_builder):
 
 
 @importorskip('openpyxl')
+@xfail(is_py36 and not is_win, reason='Issue #2363.')
 def test_openpyxl(pyi_builder):
     pyi_builder.test_source(
         """
@@ -413,6 +515,16 @@ def test_pycrypto(pyi_builder):
             AES.new("\\0" * BLOCK_SIZE).encrypt("\\0" * BLOCK_SIZE)))
         """)
 
+
+@importorskip('Cryptodome')
+def test_cryptodome(pyi_builder):
+    pyi_builder.test_source(
+        """
+        from Cryptodome import Cipher
+        print('Cryptodome Cipher Module:', Cipher)
+        """)
+
+
 @importorskip('requests')
 def test_requests(tmpdir, pyi_builder, data_dir, monkeypatch):
     # Note that including the data_dir fixture copies files needed by this test.
@@ -436,6 +548,31 @@ def test_requests(tmpdir, pyi_builder, data_dir, monkeypatch):
     # command-line, us this here instead of monkeypatching Analysis.
     datas = [(str(data_dir.join('*')), '.')]
     pyi_builder.test_script('pyi_lib_requests.py')
+
+
+@importorskip('requests.packages.urllib3.packages.six')
+def test_requests_urllib3_six(pyi_builder):
+    # Test for pre-safe-import requests.packages.urllib3.packages.six.moves.
+    pyi_builder.test_source(
+        """
+        import requests.packages.urllib3.connectionpool
+        import types
+        assert isinstance(requests.packages.urllib3.connectionpool.queue,
+                          types.ModuleType)
+        """,
+        # Need to exclude urllib3, otherwise requests.packages would
+        # fall back to this
+        pyi_args=['--exclude-module', 'urllib3'])
+
+
+@importorskip('urllib3.packages.six')
+def test_urllib3_six(pyi_builder):
+    # Test for pre-safe-import urllib3.packages.six.moves.
+    pyi_builder.test_source("""
+        import urllib3.connectionpool
+        import types
+        assert isinstance(urllib3.connectionpool.queue, types.ModuleType)
+        """)
 
 
 @importorskip('sqlite3')
@@ -563,6 +700,7 @@ def test_pyexcelerate(pyi_builder):
 
 
 @importorskip('usb')
+@pytest.mark.skipif(not is_win, reason='Crashes Python on travis')
 def test_usb(pyi_builder):
     # See if the usb package is supported on this platform.
     try:
@@ -667,4 +805,10 @@ def test_pandas_extension(pyi_builder):
         """
         from pandas.lib import is_float
         assert is_float(1) == 0
+        """)
+
+@importorskip('h5py')
+def test_h5py(pyi_builder):
+    pyi_builder.test_source("""
+        import h5py
         """)

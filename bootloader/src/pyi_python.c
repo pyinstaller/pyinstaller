@@ -1,6 +1,6 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2016, PyInstaller Development Team.
+ * Copyright (c) 2013-2017, PyInstaller Development Team.
  * Distributed under the terms of the GNU General Public License with exception
  * for distributing bootloader.
  *
@@ -45,6 +45,7 @@ DECLPROC(Py_Finalize);
 DECLPROC(Py_IncRef);
 DECLPROC(Py_Initialize);
 DECLPROC(Py_SetPath);
+DECLPROC(Py_GetPath);
 DECLPROC(Py_SetProgramName);
 DECLPROC(Py_SetPythonHome);
 
@@ -107,6 +108,7 @@ pyi_python_map_names(HMODULE dll, int pyvers)
     if (pyvers >= 30) {
         /* new in Python 3 */
         GETPROC(dll, Py_SetPath);
+        GETPROC(dll, Py_GetPath);
     }
     ;
     GETPROC(dll, Py_SetProgramName);

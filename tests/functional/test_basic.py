@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2016, PyInstaller Development Team.
+# Copyright (c) 2005-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -20,7 +20,7 @@ import pytest
 
 # Local imports
 # -------------
-from PyInstaller.compat import is_darwin, is_win, is_py2
+from PyInstaller.compat import is_darwin, is_win, is_py2, is_py3, is_py34
 from PyInstaller.utils.tests import importorskip, skipif_win, \
     skipif_winorosx, skipif_notwin, skipif_notosx, skipif_no_compiler, xfail
 
@@ -194,25 +194,6 @@ def test_module_attributes(tmpdir, pyi_builder):
 @xfail(is_darwin, reason='Issue #1895.')
 def test_module_reload(pyi_builder):
     pyi_builder.test_script('pyi_module_reload.py')
-
-
-# TODO move 'multiprocessig' tests into 'test_multiprocess.py.
-
-
-@skipif_win(reason="Issue #2116")
-@importorskip('multiprocessing')
-def test_multiprocess(pyi_builder):
-    pyi_builder.test_script('pyi_multiprocess.py')
-
-
-@importorskip('multiprocessing')
-def test_multiprocess_forking(pyi_builder):
-    pyi_builder.test_script('pyi_multiprocess_forking.py')
-
-
-@importorskip('multiprocessing')
-def test_multiprocess_pool(pyi_builder):
-    pyi_builder.test_script('pyi_multiprocess_pool.py')
 
 
 # TODO test it on OS X.
@@ -422,6 +403,7 @@ def test_xmldom_module(pyi_builder):
         """)
 
 
+@xfail(is_py3 and not is_py34, reason='Known issue for Python 3.3, see #2377')
 def test_threading_module(pyi_builder):
     pyi_builder.test_source(
         """
@@ -519,6 +501,8 @@ def test_renamed_exe(pyi_builder):
     pyi_builder._find_executables = _find_executables
     pyi_builder.test_source("print('Hello Python!')")
 
+def test_spec_with_utf8(pyi_builder_spec):
+    pyi_builder_spec.test_spec('spec-with-utf8.spec')
 
 @skipif_notosx
 def test_osx_override_info_plist(pyi_builder_spec):
@@ -545,3 +529,26 @@ def test_hook_collect_submodules(pyi_builder, script_dir):
 # Test that PyInstaller can handle a script with an arbitrary extension.
 def test_arbitrary_ext(pyi_builder):
     pyi_builder.test_script('pyi_arbitrary_ext.foo')
+    
+def test_option_runtime_tmpdir(pyi_builder):
+    "Test to ensure that option `runtime_tmpdir` can be set and has effect."
+
+    pyi_builder.test_source(
+        """
+        print('test - runtime_tmpdir - custom runtime temporary directory')
+        import os
+        import sys
+        if sys.platform == 'win32':
+            import win32api
+        cwd = os.path.abspath(os.getcwd())
+        if sys.platform == 'win32' and sys.version_info < (3,):
+            cwd = win32api.GetShortPathName(cwd)
+        runtime_tmpdir = os.path.abspath(sys._MEIPASS)
+        # for onedir mode, runtime_tmpdir == cwd
+        # for onefile mode, os.path.dirname(runtime_tmpdir) == cwd
+        if not runtime_tmpdir == cwd and not os.path.dirname(runtime_tmpdir) == cwd:
+            raise SystemExit('Expected sys._MEIPASS to be under current working dir.'
+                             ' sys._MEIPASS = ' + runtime_tmpdir + ', cwd = ' + cwd)
+        print('test - done')
+        """,
+        ['--runtime-tmpdir=.']) # set runtime-tmpdir to current working dir

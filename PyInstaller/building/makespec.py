@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2016, PyInstaller Development Team.
+# Copyright (c) 2005-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -15,6 +15,7 @@ Automatically build spec files containing a description of the project
 import os
 import sys
 import argparse
+from distutils.version import LooseVersion
 
 from .. import HOMEPATH, DEFAULT_SPECPATH
 from .. import log as logging
@@ -240,9 +241,19 @@ def __add_options(parser):
                         'in reverse DNS notation. For example: com.mycompany.department.appname '
                         "(default: first script's basename)")
 
+    g = parser.add_argument_group('Rarely used special options')
+    g.add_argument("--runtime-tmpdir", dest="runtime_tmpdir", metavar="PATH",
+                   help="Where to extract libraries and support files in "
+                        "`onefile`-mode. "
+                        "If this option is given, the bootloader will ignore "
+                        "any temp-folder location defined by the run-time OS. "
+                        "The ``_MEIxxxxxx``-folder will be created here. "
+                        "Please use this option only if you know what you "
+                        "are doing.")
+
 
 def main(scripts, name=None, onefile=None,
-         console=True, debug=False, strip=False, noupx=False,
+         console=True, debug=False, strip=False, noupx=False, runtime_tmpdir=None,
          pathex=None, version_file=None, specpath=None,
          datas=None, binaries=None, icon_file=None, manifest=None, resources=None, bundle_identifier=None,
          hiddenimports=None, hookspath=None, key=None, runtime_hooks=None,
@@ -319,21 +330,15 @@ def main(scripts, name=None, onefile=None,
         # version is >= 2.4.
         try:
             import Crypto
-
-            pycrypto_version = list(map(int, Crypto.__version__.split('.')))
-            is_version_acceptable = pycrypto_version[0] >= 2 and pycrypto_version[1] >= 4
-
+            is_version_acceptable = LooseVersion(Crypto.__version__) >= LooseVersion('2.4')
             if not is_version_acceptable:
                 logger.error('PyCrypto version must be >= 2.4, older versions are not supported.')
-
                 sys.exit(1)
         except ImportError:
-            logger.error('We need PyCrypto >= 2.4 to use byte-code obufscation but we could not')
+            logger.error('We need PyCrypto >= 2.4 to use byte-code obfuscation but we could not')
             logger.error('find it. You can install it with pip by running:')
             logger.error('  pip install PyCrypto')
-
             sys.exit(1)
-
         cipher_init = cipher_init_template % {'key': key}
     else:
         cipher_init = cipher_absent_template
@@ -348,6 +353,7 @@ def main(scripts, name=None, onefile=None,
         'debug': debug,
         'strip': strip,
         'upx': not noupx,
+        'runtime_tmpdir': runtime_tmpdir,
         'exe_options': exe_options,
         'cipher_init': cipher_init,
         # Directory with additional custom import hooks.

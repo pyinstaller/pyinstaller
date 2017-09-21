@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2016, PyInstaller Development Team.
+# Copyright (c) 2013-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -17,15 +17,12 @@ import argparse
 import platform
 import sys
 
-import PyInstaller.building.makespec
-import PyInstaller.building.build_main
-import PyInstaller.compat
-import PyInstaller.log
-
 
 from . import __version__
-from .compat import check_requirements
 from . import log as logging
+
+# note: don't import anything else until this function is run!
+from .compat import check_requirements
 
 logger = logging.getLogger(__name__)
 
@@ -37,12 +34,15 @@ def run_makespec(filenames, **opts):
     for p in temppaths:
         pathex.extend(p.split(os.pathsep))
 
+    import PyInstaller.building.makespec
+
     spec_file = PyInstaller.building.makespec.main(filenames, **opts)
     logger.info('wrote %s' % spec_file)
     return spec_file
 
 
 def run_build(pyi_config, spec_file, **kwargs):
+    import PyInstaller.building.build_main
     PyInstaller.building.build_main.main(pyi_config, spec_file, **kwargs)
 
 
@@ -56,8 +56,11 @@ def run(pyi_args=None, pyi_config=None):
     pyi_args     allows running PyInstaller programatically without a subprocess
     pyi_config   allows checking configuration once when running multiple tests
     """
-    PyInstaller.log.init()
     check_requirements()
+    
+    import PyInstaller.building.makespec
+    import PyInstaller.building.build_main
+    import PyInstaller.log
 
     try:
         parser = argparse.ArgumentParser()
@@ -65,7 +68,6 @@ def run(pyi_args=None, pyi_config=None):
         PyInstaller.building.makespec.__add_options(parser)
         PyInstaller.building.build_main.__add_options(parser)
         PyInstaller.log.__add_options(parser)
-        PyInstaller.compat.__add_obsolete_options(parser)
         parser.add_argument('filenames', metavar='scriptname', nargs='+',
                             help=("name of scriptfiles to be processed or "
                                   "exactly one .spec-file"))

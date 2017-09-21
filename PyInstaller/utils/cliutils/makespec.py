@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2016, PyInstaller Development Team.
+# Copyright (c) 2013-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -16,17 +16,13 @@ import argparse
 import os
 
 import PyInstaller.building.makespec
-import PyInstaller.compat
 import PyInstaller.log
 
 
 def run():
-    PyInstaller.log.init()
-
     p = argparse.ArgumentParser()
     PyInstaller.building.makespec.__add_options(p)
     PyInstaller.log.__add_options(p)
-    PyInstaller.compat.__add_obsolete_options(p)
     p.add_argument('scriptname', nargs='+')
 
     args = p.parse_args()

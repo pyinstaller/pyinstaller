@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2016, PyInstaller Development Team.
+# Copyright (c) 2005-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -15,9 +15,12 @@ frozen_encoding = str(sys.getfilesystemencoding())
 
 
 # For various OS is encoding different.
-# On Windows it should be still mbcs.
+# On Windows it should be still mbcs up to Python 3.5
 if sys.platform.startswith('win'):
     encoding = 'mbcs'
+    if sys.version_info >= (3, 6):
+        # See PEP 529 for more information.
+        encoding = 'utf-8'
 # On Mac OS X the value should be still the same.
 elif sys.platform.startswith('darwin'):
     encoding = 'utf-8'

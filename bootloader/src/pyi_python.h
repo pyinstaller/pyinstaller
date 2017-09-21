@@ -1,6 +1,6 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2016, PyInstaller Development Team.
+ * Copyright (c) 2013-2017, PyInstaller Development Team.
  * Distributed under the terms of the GNU General Public License with exception
  * for distributing bootloader.
  *
@@ -102,6 +102,7 @@ EXTDECLPROC(void, Py_DecRef, (PyObject *));
 EXTDECLPROC(void, Py_SetProgramName, (wchar_t *));
 EXTDECLPROC(void, Py_SetPythonHome, (wchar_t *));
 EXTDECLPROC(void, Py_SetPath, (wchar_t *));  /* new in Python 3 */
+EXTDECLPROC(wchar_t *, Py_GetPath, (void));  /* new in Python 3 */
 
 EXTDECLPROC(void, PySys_SetPath, (wchar_t *));
 EXTDECLPROC(int, PySys_SetArgvEx, (int, wchar_t **, int));
@@ -185,13 +186,13 @@ EXTDECLPROC(PyObject *, PyMarshal_ReadObjectFromString, (const char *, size_t));
     #define GETPROC(dll, name) \
     GETPROCOPT(dll, name, name); \
     if (!PI_ ## name) { \
-        FATALERROR ("Cannot GetProcAddress for " #name "\n"); \
+        FATAL_WINERROR("GetProcAddress", "Failed to get address for " #name "\n");\
         return -1; \
     }
     #define GETPROC_RENAMED(dll, name, sym) \
     GETPROCOPT(dll, name, sym); \
     if (!PI_ ## name) { \
-        FATALERROR ("Cannot GetProcAddress for " #sym "\n"); \
+        FATAL_WINERROR("GetProcAddress", "Failed to get address for " #sym "\n");\
         return -1; \
     }
     #define DECLVAR(name) \
@@ -199,7 +200,7 @@ EXTDECLPROC(PyObject *, PyMarshal_ReadObjectFromString, (const char *, size_t));
     #define GETVAR(dll, name) \
     PI_ ## name = (__VAR__ ## name *)GetProcAddress (dll, #name); \
     if (!PI_ ## name) { \
-        FATALERROR ("Cannot GetProcAddress for " #name "\n"); \
+        FATAL_WINERROR("GetProcAddress", "Failed to get address for " #name "\n");\
         return -1; \
     }
 
