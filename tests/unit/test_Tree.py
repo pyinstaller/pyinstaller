@@ -8,7 +8,7 @@
 #-----------------------------------------------------------------------------
 
 # This contains tests for the class:``Tree``, see
-# http://pyinstaller.rtfd.io/en/latest/advanced-topics.html#the-tree-class
+# https://pyinstaller.readthedocs.io/en/latest/advanced-topics.html#the-tree-class
 
 import os
 import pytest

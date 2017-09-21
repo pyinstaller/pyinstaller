@@ -45,7 +45,13 @@ for prog, outfile in (
         ):
     prog = os.path.abspath(os.path.join(os.path.dirname(__file__), prog))
     help2rst.to_file(prog, True, '-', outfile)
-del prog, outfile
+# Create a version with different labels to avoid warnings
+with open('man/_pyinstaller-options.tmp') as fh:
+    text = fh.read()
+text = text.replace('\n.. _pyinstaller ', '\n.. _options-group ')
+with open('_pyinstaller-options.tmp', 'w') as fh:
+    fh.write(text)
+del prog, outfile, fh, text
 
 # -- General configuration ------------------------------------------------
 
