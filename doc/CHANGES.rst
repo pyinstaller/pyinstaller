@@ -8,7 +8,7 @@ Changelog for PyInstaller
 .. role:: program
 
 
-3.3 (unreleased)
+3.3 (2017-09-21)
 ----------------
 
 * **Add Support for Python 3.6!** Many thanks to xiovat! (#2331, #2341)
