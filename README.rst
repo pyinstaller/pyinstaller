@@ -6,7 +6,7 @@ package. The user can run the packaged app without installing a Python
 interpreter or any modules.
 
 
-.. image:: https://img.shields.io/travis/pyinstaller/pyinstaller/v3.3.svg?label=Linux
+.. image:: https://img.shields.io/travis/pyinstaller/pyinstaller/develop.svg?label=Linux
    :target: https://travis-ci.org/pyinstaller/pyinstaller/
    :alt: Travis CI test status (Linux)
 
@@ -14,23 +14,23 @@ interpreter or any modules.
    :target: https://travis-ci.org/pyinstaller/pyinstaller-osx-tests
    :alt: Travis CI test status (OS X)
 
-.. image:: https://img.shields.io/appveyor/ci/matysek/pyinstaller/v3.3.svg?label=Windows
-   :target: https://ci.appveyor.com/project/matysek/pyinstaller/branch/v3.3
+.. image:: https://img.shields.io/appveyor/ci/matysek/pyinstaller/develop.svg?label=Windows
+   :target: https://ci.appveyor.com/project/matysek/pyinstaller/branch/develop
    :alt: AppVeyor CI test status (Windows)
 
-.. image:: https://landscape.io/github/pyinstaller/pyinstaller/master/landscape.svg?
-   :target: https://landscape.io/github/pyinstaller/pyinstaller/master
+.. image:: https://landscape.io/github/pyinstaller/pyinstaller/develop/landscape.svg?
+   :target: https://landscape.io/github/pyinstaller/pyinstaller/develop
    :alt: Code health
 
 .. image:: https://img.shields.io/pypi/v/PyInstaller.svg
    :target: https://pypi.python.org/pypi/PyInstaller
 
-.. image:: https://img.shields.io/badge/docs-v3.3-blue.svg
-   :target: https://pyinstaller.readthedocs.io/en/v3.3/
+.. image:: https://img.shields.io/badge/docs-latest-blue.svg
+   :target: https://pyinstaller.readthedocs.io/en/latest/
    :alt: Manual
 
-.. image:: https://img.shields.io/badge/changes-v3.3-blue.svg
-   :target: https://pyinstaller.readthedocs.io/en/v3.3/CHANGES.html
+.. image:: https://img.shields.io/badge/changes-latest-blue.svg
+   :target: https://pyinstaller.readthedocs.io/en/latest/CHANGES.html
    :alt: Changelog
 
 .. image:: https://img.shields.io/badge/IRC-pyinstalller-blue.svg
@@ -162,5 +162,5 @@ or simply use it directly from the source (pyinstaller.py).
 
 
 .. _PyCrypto: https://www.dlitz.net/software/pycrypto/
-.. _`manual`: https://pyinstaller.readthedocs.io/en/v3.3/
+.. _`manual`: https://pyinstaller.readthedocs.io/en/latest/
 
