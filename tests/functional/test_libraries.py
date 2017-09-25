@@ -812,3 +812,10 @@ def test_h5py(pyi_builder):
     pyi_builder.test_source("""
         import h5py
         """)
+
+
+@importorskip('pinyin')
+def test_pinyin(pyi_builder):
+    pyi_builder.test_source("""
+        import pinyin
+        """)
