@@ -79,12 +79,23 @@ jobs:
       python: 2.7
       # Run tests and speed them up by sending them to multiple CPUs.
       script: py.test -n 3 --maxfail 3 tests/functional/test_libraries.py tests/functional/test_hooks
+    - &lint
+      stage: Lint
+      python: 2.7
+      script:
+        - >
+            if [ "$TRAVIS_PULL_REQUEST" != "false" ] ; then
+                git fetch origin $TRAVIS_BRANCH:$TRAVIS_BRANCH --depth 1;
+                flake8-diff -v -v -v $TRAVIS_BRANCH;
+            fi
 
     - <<: *cache
       python: 3.3
     - <<: *test-pyinstaller
       python: 3.3
     - <<: *test-libraries
+      python: 3.3
+    - <<: *lint
       python: 3.3
 
     - <<: *cache
@@ -93,12 +104,16 @@ jobs:
       python: 3.4
     - <<: *test-libraries
       python: 3.4
+    - <<: *lint
+      python: 3.4
 
     - <<: *cache
       python: 3.5
     - <<: *test-pyinstaller
       python: 3.5
     - <<: *test-libraries
+      python: 3.5
+    - <<: *lint
       python: 3.5
 
     - <<: *cache
@@ -107,6 +122,8 @@ jobs:
       python: 3.6
     - <<: *test-libraries
       python: 3.6
+    - <<: *lint
+      python: 3.6
 
     - <<: *cache
       python: nightly
@@ -114,6 +131,9 @@ jobs:
       python: nightly
     - <<: *test-libraries
       python: nightly
+    - <<: *lint
+      python: nightly
+
   allow_failures:
       # Just tests how PyInstaller performs with upcoming Python 3.6
       - python: "nightly"

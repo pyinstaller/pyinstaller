@@ -10,3 +10,5 @@ pytest-drop-dup-tests # allows specifying order without duplicates
 
 # psutil 5.3.0 caused intermittent issues with the AppVeyor tests
 psutil < 5.3.0 # Better subprocess alternative with implemented timeout.
+
+flake8-diff  # Check new flake8 violations on pull requests
