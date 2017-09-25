@@ -44,6 +44,7 @@ variants = {
 # map waf's DEST_OS to these values.
 DESTOS_TO_SYSTEM = {
     'linux': 'Linux',
+    'freebsd': 'FreeBSD',
     'win32': 'Windows',
     'darwin': 'Darwin',
     'sunos': platform.system(), ## FIXME: inhibits cross-compile
@@ -54,6 +55,7 @@ DESTOS_TO_SYSTEM = {
 # Map from platform.system() to waf's DEST_OS
 SYSTEM_TO_BUILDOS = {
     'Linux': 'linux',
+    'FreeBSD': 'freebsd',
     'Windows': 'win32',
     'Darwin': 'darwin',
     'Solaris': 'sunos',
