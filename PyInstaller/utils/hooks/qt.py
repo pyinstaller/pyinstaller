@@ -85,8 +85,6 @@ def qt_plugins_binaries(plugin_type, namespace):
     logger.debug('Found plugin files {0} for plugin \'{1}\''.format(files, plugin_type))
     if namespace in ['PyQt4', 'PySide']:
         plugin_dir = 'qt4_plugins'
-    elif namespace == 'PyQt5':
-        plugin_dir = os.path.join('PyQt5', 'Qt', 'plugins')
     else:
         plugin_dir = 'qt5_plugins'
     dest_dir = os.path.join(plugin_dir, plugin_type)
