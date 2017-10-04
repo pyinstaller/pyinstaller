@@ -20,6 +20,7 @@ int pyi_pylib_load(ARCHIVE_STATUS *status);  /* note - pyi_pylib_attach will cal
 int pyi_pylib_start_python(ARCHIVE_STATUS *status);
 int pyi_pylib_import_modules(ARCHIVE_STATUS *status);
 int pyi_pylib_install_zlibs(ARCHIVE_STATUS *status);
+extern int pyi_pylib_install_zlib(ARCHIVE_STATUS *status, TOC *ptoc);
 int pyi_pylib_run_scripts(ARCHIVE_STATUS *status);
 
 void pyi_pylib_finalize(ARCHIVE_STATUS *status);

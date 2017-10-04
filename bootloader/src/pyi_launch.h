@@ -19,6 +19,9 @@
 * use to 2 steps to execute
 *****************************************************************/
 
+/* Max count of possible opened archives in multipackage mode. */
+#define MAX_ARCHIVE_POOL_LEN 20
+
 /*
  * Extract binaries in the archive
  *
@@ -28,6 +31,11 @@
  * @return 0 on success, non-zero otherwise.
  */
 int pyi_launch_extract_binaries(ARCHIVE_STATUS *archive_status);
+
+/*
+ * Extract and install all zlib archives specified in another CArchive 
+ */
+extern int extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item, const char* homepath);
 
 /*
  * Check if binaries need to be extracted. If not, this is probably a onedir
