@@ -101,7 +101,18 @@ decompress(unsigned char * buff, TOC *ptoc)
     int rc;
 
     ver = (zlibVersion)();
-    out = (unsigned char *)malloc(ntohl(ptoc->ulen));
+    /*
+     * -- kenneth.zhao@gmail.com
+     * Note: If the underlying file size is 0, malloc() may return NULL,
+     *       which causes problem.
+     *       So the right approach is to make sure buffer size is always
+     *       positive!
+     *      
+     *       This happened when file future/backports/test/nullcert.pem
+     *       has the size zero for package future-0.16.0
+     *       
+     */
+    out = (unsigned char *)malloc(ntohl(ptoc->ulen)+1);
 
     if (out == NULL) {
         OTHERERROR("Error allocating decompression buffer\n");
