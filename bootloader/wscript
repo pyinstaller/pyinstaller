@@ -87,7 +87,7 @@ def assoc_programm(ctx, name):
     # Search other programs we need, based on the name of the compiler
     # (replace "gcc" or "clang" by the tool name)
     cc = ctx.env.CC[0]
-    prog = re.sub(r'(^|^.*-)(gcc|clang|xlc)(-.*|\.exe$|$)',
+    prog = re.sub(r'(^|^.*-)(gcc|clang|xlc|xlc_r)(-.*|\.exe$|$)',
                   r'\1' + name + r'\3',
                   os.path.basename(cc))
     prog = os.path.join(os.path.dirname(cc), prog)
@@ -96,7 +96,6 @@ def assoc_programm(ctx, name):
     exts = Utils.is_win32 and r'\.(exe|com|bat|cmd)$' or r'\.(sh|pl|py)$'
     prog = re.sub(exts, '', prog)
     return prog
-
 
 def options(ctx):
     ctx.load('compiler_c')
@@ -451,11 +450,20 @@ def configure(ctx):
             ctx.load('winres')
 
     if ctx.env.CC_NAME != 'msvc':
-        # This tool allows reducing the size of executables.
-        ctx.find_program([assoc_programm(ctx, 'strip')], var='STRIP')
-        ctx.load('strip', tooldir='tools')
-        # There is a strip flag for AIX environment
-        if ctx.env.DEST_OS == 'aix':
+        if ctx.env.DEST_OS != 'aix':
+            # This tool allows reducing the size of executables.
+            ctx.find_program([assoc_programm(ctx, 'strip')], var='STRIP')
+            ctx.load('strip', tooldir='tools')
+        else:
+            # In AIX, c compiler and 'strip' program are not in the same dir.
+            def guess_program(name):
+                # Compose program full path based on the system search path
+                return [os.path.join(d, name) for d in os.environ['PATH'].split(':')]
+
+            ctx.find_program(guess_program('strip'), var='STRIP')
+            ctx.load('strip', tooldir='tools')
+
+            # There is a strip flag for AIX environment
             if ctx.env.PYI_ARCH == '32bit':
                 ctx.env.append_value('STRIPFLAGS', '-X32')
             elif ctx.env.PYI_ARCH == '64bit':
