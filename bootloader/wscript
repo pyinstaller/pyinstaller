@@ -44,6 +44,7 @@ variants = {
 # map waf's DEST_OS to these values.
 DESTOS_TO_SYSTEM = {
     'linux': 'Linux',
+    'cygwin': 'Linux',
     'freebsd': 'FreeBSD',
     'win32': 'Windows',
     'darwin': 'Darwin',
