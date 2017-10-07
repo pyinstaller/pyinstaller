@@ -107,7 +107,7 @@ by executing it as a Python module, rather than using the ``pyinstaller`` comman
 
 You can use any PyInstaller options that are otherwise available with the ``pyinstaller`` command. For example::
 
-   python -O -m PyInstaller --onefile myscript.py
+    python -O -m PyInstaller --onefile myscript.py
 
 Alternatively, you can also use the path to pyinstaller::
 
