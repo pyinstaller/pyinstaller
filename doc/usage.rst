@@ -89,6 +89,30 @@ Or in Windows, use the little-known BAT file line continuation::
         myscript.spec
 
 
+Running PyInstaller with Python optimizations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. Note::
+
+	You should be aware of the ``PYTHONOPTIMIZE`` mechanism when using
+	this option. Using ``-O``, ``__debug__`` is set to ``False`` and
+	``assert`` statements are not executed. The ``-OO`` option
+	additionally omits docstrings. If your code relies on any of these
+	features, your program may break or have unexpected behavior.
+
+PyInstaller can be run with Python optimization options (``-O`` or ``-OO``)
+by executing it as a Python module, rather than using the ``pyinstaller`` command::
+
+    python -O -m PyInstaller myscript.py
+
+You can use any PyInstaller options that are otherwise available with the ``pyinstaller`` command. For example::
+
+   python -O -m PyInstaller --onefile myscript.py
+
+Alternatively, you can also use the path to pyinstaller::
+
+    python -O /path/to/pyinstaller/ myscript.py
+
 Using UPX
 ~~~~~~~~~~~~~~~~~~~
 
