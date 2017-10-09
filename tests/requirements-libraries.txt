@@ -53,7 +53,7 @@ pyexcelerate==0.7.1
 Pillow==4.2.1
 pycryptodomex==3.4.7
 future==0.16.0
-pyusb==1.0.0
+pyusb==1.0.1
 requests==2.15.1 # Newest version of requests that allows tests to pass
 Unidecode==0.4.21
 
