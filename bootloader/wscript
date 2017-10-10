@@ -572,6 +572,8 @@ def configure(ctx):
         # https://stackoverflow.com/questions/20169660/where-is-libdl-so-on-mac-os-x
         if ctx.env.DEST_OS not in ('darwin', 'freebsd', 'openbsd'):
             ctx.check_cc(lib='dl', mandatory=True)
+            # libdl to be thread-safe requires libpthread!
+            ctx.check_cc(lib='pthread', mandatory=True)
         if ctx.env.DEST_OS == 'freebsd' and sysconfig.get_config_var('HAVE_PTHREAD_H'):
             # On FreeBSD if python has threads: libthr needs to be loaded in
             # the main process, so the bootloader needs to be link to thr.
@@ -763,7 +765,8 @@ def build(ctx):
         # here. The decision if a lib is required for a specific platform is
         # made in the configure phase.
         libs = ['DL', 'M', 'Z',  # 'z' - zlib, 'm' - math,
-                'THR']  # may be used on FreBSD
+                'PTHREAD', # important! needs for libdl to be thread-safe
+                'THR'] # may be used on FreBSD
         staticlibs = []
         if ctx.env.DEST_OS == 'aix':
             # link statically with zlib, case sensitive
