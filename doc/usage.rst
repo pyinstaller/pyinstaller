@@ -489,7 +489,7 @@ So you have the following options:
    `.spec`-file to include the required DLLs, see “Distributing Software that
    uses the Universal CRT“ in the above-mentioned link, number 6.
 
-   If you think, |PyInstaller| should to this by itself, please :ref:`help
+   If you think, |PyInstaller| should do this by itself, please :ref:`help
    improving <how-to-contribute>` |PyInstaller|.
 
 
