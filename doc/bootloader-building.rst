@@ -21,8 +21,8 @@ To do this,
 * ``cd`` into the folder where you cloned or unpacked the source to,
 * ``cd bootloader``, and
 * make the bootloader with: ``python ./waf all``,
-* test the build by `running (parts of) the test-suite
-  <https://github.com/pyinstaller/pyinstaller/wiki/Running-the-test-suite>`_.
+* test the build by ref:`running (parts of) the test-suite
+  <running-the-test-suite>`.
 
 This will produce the |bootloader| executables for your current platform
 (of course, for Windows these files will have the ``.exe`` extension):
