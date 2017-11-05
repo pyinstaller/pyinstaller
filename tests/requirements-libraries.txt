@@ -20,7 +20,7 @@ gevent==1.2.2
 pygments==2.2.0
 pylint==1.7.2
 markdown==2.6.9
-simplejson==3.11.1 # simplejson is used for text_c_extension
+simplejson==3.12.0 # simplejson is used for text_c_extension
 
 # sphinx 1.5 requires Python 2.7 or >= 3.4
 sphinx==1.6.3; python_version != '3.3'
