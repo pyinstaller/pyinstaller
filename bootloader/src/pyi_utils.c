@@ -907,7 +907,7 @@ pyi_utils_create_child(const char *thisfile, const int argc, char *const argv[])
         signal(SIGTERM, &_signal_handler);
     }
 
-    wait(&rc);
+    waitpid(child_pid, &rc, 0);
 
     /* Parent code. */
     if (child_pid != 0) {
