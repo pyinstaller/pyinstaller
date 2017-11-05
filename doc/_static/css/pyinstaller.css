@@ -74,6 +74,9 @@ code, .rst-content tt, .rst-content code {
     background-color: #ECF0F3;
 }
 
+a.reference.commitid {
+	font-size: 95%;
+}
 
 // Admonitions
 
