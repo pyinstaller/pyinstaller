@@ -658,29 +658,11 @@ def configure(ctx):
             # conf.env.append_value('LINKFLAGS', '-framework')
             # conf.env.append_value('LINKFLAGS', 'ApplicationServices')
 
-    def set_xp_target_for_msvc(env, win_app):
-        """set XP target as minimal target OS ver. when using Windows w/MSVC
-
-        This is required to let the compiler know we want to target XP as it is
-        not the default minimal windows version since VS2012:
-        https://blogs.msdn.microsoft.com/vcblog/2012/11/26/visual-studio-2012-update-1-now-available/
-        """
-        if env.DEST_OS == 'win32' and env.CC_NAME == 'msvc':
-            windowed_app, console_app = True, False
-            bits32, bits64 = True, False
-            _ui = {windowed_app: 'WINDOWS',
-                   console_app: 'CONSOLE'}
-            _wver = {bits32: '5.01',
-                     bits64: '5.02'}
-            env.append_value('LINKFLAGS', '/SUBSYSTEM:%s,%s' % (
-                             _ui[win_app], _wver[env.PYI_ARCH == '32bit']))
-
     ### DEBUG and RELEASE environments
     basic_env = ctx.env
 
     ## setup DEBUG environment
     ctx.setenv('debug', basic_env)  # Ensure env contains shared values.
-    set_xp_target_for_msvc(ctx.env, False)
     debug_env = ctx.env
     # This defines enable verbose console output of the bootloader.
     ctx.env.append_value('DEFINES', ['LAUNCH_DEBUG'])
@@ -688,17 +670,14 @@ def configure(ctx):
 
     ## setup windowed DEBUG environment
     windowed('debugw', debug_env)
-    set_xp_target_for_msvc(ctx.env, True)
 
     ## setup RELEASE environment
     ctx.setenv('release', basic_env)  # Ensure env contains shared values.
     release_env = ctx.env
-    set_xp_target_for_msvc(ctx.env, False)
     ctx.env.append_value('DEFINES', 'NDEBUG')
 
     ## setup windowed RELEASE environment
     windowed('releasew', release_env)
-    set_xp_target_for_msvc(ctx.env, True)
 
 
 # TODO Use 'strip' command to decrease the size of compiled bootloaders.
