@@ -76,7 +76,7 @@ Some ideas how you can help:
 
 * **Help improving the documentation:** There is a list of `documentation
   issues`__ you can pick one from. Please provide a pull-request for your
-  changes.
+  changes. :ref:`Read more »» <writing documentation>`
 
   __ https://github.com/pyinstaller/pyinstaller/issues?q=is%3Aopen+is%3Aissue+label%3Adocumentation
 
