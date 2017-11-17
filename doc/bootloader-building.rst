@@ -17,7 +17,7 @@ To do this,
 
 * Download and install Python, which is required for running `:command:waf`,
 * `git clone` or download the source (see the
-  :ref:`Download section in the manual <website:Downloads>`),
+  :ref:`Download section on the web-site <website:Downloads>`),
 * ``cd`` into the folder where you cloned or unpacked the source to,
 * ``cd bootloader``, and
 * make the bootloader with: ``python ./waf all``,
