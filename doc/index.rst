@@ -50,6 +50,7 @@ Contents:
    usage
    runtime-information
    spec-files
+   feature-notes
    when-things-go-wrong
    advanced-topics
    hooks

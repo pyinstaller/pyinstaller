@@ -61,6 +61,7 @@ Only the following command-line options have an effect when building from a spec
 * ``--ascii``
 * ``--clean``
 
+.. _spec-file operations:
 
 Spec File Operation
 ~~~~~~~~~~~~~~~~~~~~
