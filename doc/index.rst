@@ -58,6 +58,7 @@ Contents:
    CHANGES
    CREDITS
    man-pages
+   development/index
 
 
 Indices and tables
