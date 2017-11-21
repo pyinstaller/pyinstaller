@@ -888,6 +888,14 @@ def _ast_names(names):
     return result
 
 
+def uniq(seq):
+    """Remove duplicates from a list, preserving order"""
+    # Taken from https://stackoverflow.com/questions/480214
+    seen = set()
+    seen_add = seen.add
+    return [x for x in seq if not (x in seen or seen_add(x))]
+
+
 if sys.version_info[0] == 2:
     DEFAULT_IMPORT_LEVEL= -1
 else:
@@ -922,7 +930,7 @@ class _Visitor(ast.NodeVisitor):
 
         have_star = False
         if fromlist is not None:
-            fromlist = set(fromlist)
+            fromlist = uniq(fromlist)
             if '*' in fromlist:
                 fromlist.remove('*')
                 have_star = True
@@ -2662,7 +2670,7 @@ class ModuleGraph(ObjectGraph):
                 #* Remove the same logic from _collect_import().
                 have_star = False
                 if fromlist is not None:
-                    fromlist = set(fromlist)
+                    fromlist = uniq(fromlist)
                     if '*' in fromlist:
                         fromlist.remove('*')
                         have_star = True

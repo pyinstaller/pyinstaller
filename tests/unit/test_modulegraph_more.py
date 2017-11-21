@@ -217,7 +217,6 @@ def test_symlinks(tmpdir):
     assert isinstance(node, modulegraph.SourceModule)
 
 
-@xfail(reason="FIXME: modulegraph does not use correct order")
 def test_import_order_1(tmpdir):
     # Ensure modulegraph processes modules in the same order as Python does.
 
