@@ -713,8 +713,8 @@ class CExtensionImporter(object):
                         loader = EXTENSION_LOADER(fullname, filename)
                         try:
                             module = loader.load_module(fullname)
-                        except ImportError as err:
-                            raise ImportError('{}: {}'.format(str(err), fullname))
+                        except ImportError as e:
+                            raise ImportError('%s: %s' % (e, fullname))
 
         except Exception:
             # Remove 'fullname' from sys.modules if it was appended there.
