@@ -231,7 +231,7 @@ def test_import_order_1(tmpdir):
     record = []
 
     for filename, content in (
-        ('a/',     ' from . import c, d'),
+        ('a/',      'from . import c, d'),
         ('a/c',            '#'),
         ('a/d/',    'from . import f, g, h'),
         ('a/d/f/',  'from . import j, k'),
