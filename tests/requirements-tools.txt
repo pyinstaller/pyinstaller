@@ -1,5 +1,5 @@
 # Work-around for a bug in execnet 1.4.1
-git+https://github.com/pytest-dev/execnet.git
+execnet >= 1.5.0
 
 # For running tests
 pytest >= 2.7.3  # Testing framework.
