@@ -552,3 +552,19 @@ def test_option_runtime_tmpdir(pyi_builder):
         print('test - done')
         """,
         ['--runtime-tmpdir=.']) # set runtime-tmpdir to current working dir
+
+
+@xfail(reason='Issue #3037 - all scripts share the same global vars')
+def test_several_scripts1(pyi_builder_spec):
+    """Verify each script has it's own global vars (original case, see issue
+    #2949).
+    """
+    pyi_builder_spec.test_spec('several-scripts1.spec')
+
+
+@xfail(reason='Issue #3037 - all scripts share the same global vars')
+def test_several_scripts2(pyi_builder_spec):
+    """
+    Verify each script has it's own global vars (basic test).
+    """
+    pyi_builder_spec.test_spec('several-scripts2.spec')
