@@ -7,6 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
+# Filename nust not contain a directory
 if __file__ != 'pyi_filename.py':
    raise ValueError(__file__)
