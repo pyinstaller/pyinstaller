@@ -385,8 +385,6 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
         if (ptoc->typcd == ARCHIVE_ITEM_PYSOURCE) {
             /* Get data out of the archive.  */
             data = pyi_arch_extract(status, ptoc);
-            /* Set the __file__ attribute within the __main__ module,
-             *  for full compatibility with normal execution. */
             VS("LOADER: Running %s.py\n", ptoc->name);
 
             /* Unmarshall code object */
@@ -396,7 +394,13 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
                 PI_PyErr_Print();
                 return -1;
             }
-            /* Run it */
+
+            /* Run the code */
+            /* For full compatibility with normal execution, the __file__
+             * attribute within the __main__ module needs to be set.
+             * PyImport_ExecCodeModule() will set it based on
+             * code.co_filename. PyInstaller takes care that co_filename is
+             * correct. */
             module = PI_PyImport_ExecCodeModule("__main__", code);
 
             /* If retval is NULL, an error occured. Otherwise, it is a Python object.
