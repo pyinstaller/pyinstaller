@@ -568,3 +568,15 @@ def test_several_scripts2(pyi_builder_spec):
     Verify each script has it's own global vars (basic test).
     """
     pyi_builder_spec.test_spec('several-scripts2.spec')
+
+
+def test_main_exists(pyi_builder):
+    pyi_builder.test_source("import sys ; sys.modules['__main__']")
+
+
+def test_name_is_main(pyi_builder):
+    pyi_builder.test_source("assert __name__ == '__main__'")
+
+
+def test_name_is_main_in_all_scripts(pyi_builder_spec):
+    pyi_builder_spec.test_spec('several-scripts3.spec')
