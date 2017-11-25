@@ -224,6 +224,14 @@ def test_module_reload(pyi_builder):
     pyi_builder.test_script('pyi_module_reload.py')
 
 
+def test_ctypes_hooks_are_in_place(pyi_builder):
+    pyi_builder.test_source(
+        """
+        import ctypes
+        assert ctypes.CDLL.__name__ == 'PyInstallerCDLL', ctypes.CDLL
+        """)
+
+
 # TODO test it on OS X.
 @skipif_no_compiler
 def test_load_dll_using_ctypes(monkeypatch, pyi_builder, compiled_dylib):
