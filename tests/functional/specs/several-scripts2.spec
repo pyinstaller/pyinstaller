@@ -18,7 +18,7 @@ exe = EXE(pyz,
           a.scripts,
           exclude_binaries=True,
           name=app_name,
-          debug=False,
+          debug=True,
           console=True)
 coll = COLLECT(exe,
                a.binaries,
