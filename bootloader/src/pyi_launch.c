@@ -363,8 +363,6 @@ int
 pyi_launch_run_scripts(ARCHIVE_STATUS *status)
 {
     unsigned char *data;
-    char buf[PATH_MAX];
-    size_t namelen;
     TOC * ptoc = status->tocbuff;
     PyObject *__main__name;
     PyObject *sys_modules;
@@ -389,16 +387,7 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
             data = pyi_arch_extract(status, ptoc);
             /* Set the __file__ attribute within the __main__ module,
              *  for full compatibility with normal execution. */
-            namelen = strnlen(ptoc->name, PATH_MAX);
-            if (namelen >= PATH_MAX-strlen(".py")-1) {
-                FATALERROR("Name exceeds PATH_MAX\n");
-                return -1;
-            }
-
-            strcpy(buf, ptoc->name);
-            strcat(buf, ".py");
-            VS("LOADER: Running %s\n", buf);
-
+            VS("LOADER: Running %s.py\n", ptoc->name);
 
             /* Unmarshall code object */
             code = PI_PyMarshal_ReadObjectFromString((const char *) data, ntohl(ptoc->ulen));
