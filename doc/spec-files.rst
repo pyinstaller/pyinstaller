@@ -8,7 +8,7 @@ When you execute
     ``pyinstaller`` *options*.. ``myscript.py``
 
 the first thing |PyInstaller| does is to build a spec (specification) file
-file:`myscript.spec`.
+:file:`myscript.spec`.
 That file is stored in the ``--specpath=`` directory,
 by default the current directory.
 
