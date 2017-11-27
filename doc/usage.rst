@@ -37,6 +37,18 @@ After you do this, you name the spec file to |PyInstaller| instead of the script
 
     ``pyinstaller myscript.spec``
 
+The :file:`myscript.spec` file contains most of the information provided by the options that were specified
+when ``pyinstaller`` (or ``pyi-makespec``) was run with the script file as the argument.
+You typically do not need to specify any options when running ``pyinstaller`` with the spec file.
+Only the following command-line options (described below) have an effect when building from a spec file:
+
+* ``--upx-dir=``
+* ``--distpath=``
+* ``--workpath=``
+* ``--noconfirm``
+* ``--ascii``
+* ``--clean``
+
 You may give a path to the script or spec file, for example
 
     ``pyinstaller`` `options...` ``~/myproject/source/myscript.py``
@@ -75,7 +87,7 @@ For example, in Linux::
         --hidden-import=secret1 \
         --hidden-import=secret2 \
         --upx-dir=/usr/local/share/ \
-        myscript.spec
+        myscript.py
 
 Or in Windows, use the little-known BAT file line continuation::
 
@@ -87,7 +99,7 @@ Or in Windows, use the little-known BAT file line continuation::
         --hidden-import=secret1 ^
         --hidden-import=secret2 ^
         --icon=..\MLNMFLCN.ICO ^
-        myscript.spec
+        myscript.py
 
 
 Using UPX
