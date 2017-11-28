@@ -48,7 +48,7 @@ if sys.platform.startswith('win'):
         except ImportError:
             # 'pypiwin32' is PyWin32 package made installable by 'pip install'
             # command. Prefer it by default.
-            REQUIREMENTS.append('pypiwin32')
+            REQUIREMENTS.append('pywin32-ctypes')
 
 
 # Create long description from README.rst and doc/CHANGES.rst.
