@@ -2325,10 +2325,10 @@ class ModuleGraph(ObjectGraph):
             # fine to remove because the proper module will be imported and
             # added to the graph in the next line (call to _safe_import_hook).
             self.removeNode(target_module)
-            # Reimport the SWIG C module
+            # Reimport the SWIG C module relative to the wrapper
             target_modules = self._safe_import_hook(
                 target_module_partname, source_module,
-                target_attr_names=None, level=level, edge_attr=edge_attr)
+                target_attr_names=None, level=1, edge_attr=edge_attr)
             # return the output regardless because it would just be
             # duplicating the processing below
             return target_modules
