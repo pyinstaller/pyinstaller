@@ -42,7 +42,7 @@ from PyInstaller import configure, config
 from PyInstaller import __main__ as pyi_main
 from PyInstaller.utils.cliutils import archive_viewer
 from PyInstaller.compat import is_darwin, is_win, is_py2, safe_repr, \
-  architecture, is_linux
+  architecture, is_linux, suppress
 from PyInstaller.depend.analysis import initialize_modgraph
 from PyInstaller.utils.win32 import winutils
 
@@ -348,8 +348,8 @@ class AppBuilder(object):
         # Windows command prompt. Py.test is then able to collect stdout/sterr
         # messages and display them if a test fails.
 
-        process = psutil.Popen(args, executable=exe_path, stdout=sys.stdout,
-                               stderr=sys.stderr, env=prog_env, cwd=prog_cwd)
+        process = psutil.Popen(args, executable=exe_path, stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE, env=prog_env, cwd=prog_cwd)
         # 'psutil' allows to use timeout in waiting for a subprocess.
         # If not timeout was specified then it is 'None' - no timeout, just waiting.
         # Runtime is useful mostly for interactive tests.
@@ -368,7 +368,13 @@ class AppBuilder(object):
             # Kill the subprocess and its child processes.
             for p in process.children(recursive=True):
                 p.kill()
-            process.kill()
+            
+            with suppress(psutil.NoSuchProcess):
+                process.kill()
+
+        outs, errs = proc.communicate()
+        sys.stdout.write(outs)
+        sys.stderr.write(errs)
 
         return retcode
 
