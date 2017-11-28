@@ -368,7 +368,7 @@ class AppBuilder(object):
             # Kill the subprocess and its child processes.
             for p in process.children(recursive=True):
                 p.kill()
-            
+
             with suppress(psutil.NoSuchProcess):
                 process.kill()
 
