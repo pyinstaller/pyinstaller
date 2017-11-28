@@ -432,3 +432,86 @@ def test_swig_import_from_top_level_missing(tmpdir):
     assert mg.findNode('_pyi_gdal') is None
     # This would be the correct implementation:
     #assert isinstance(mg.findNode('_pyi_gdal'), modulegraph.MissingModule)
+
+
+def test_swig_top_level_but_no_swig_at_all(tmpdir):
+    # From the script import an absolute module which looks like a SWIG
+    # candidate but is no SWIG module. See issue #3040 ('_decimal')
+    # The center of this test-case is that it doesn't raise a recursion too
+    # deep error.
+    libdir = tmpdir.join('lib')
+    path = [str(libdir)]
+    libdir.join('pyi_dezimal.py').ensure().write('import _pyi_dezimal')
+    # no module '_pyi_dezimal.py'
+
+    script = tmpdir.join('script.py')
+    script.write('import pyi_dezimal')
+    mg = modulegraph.ModuleGraph(path)
+    mg.run_script(str(script))
+    assert isinstance(mg.findNode('pyi_dezimal'), modulegraph.SourceModule)
+    assert isinstance(mg.findNode('_pyi_dezimal'), modulegraph.MissingModule)
+
+
+def test_swig_top_level_but_no_swig_at_all_existing(tmpdir):
+    # Like test_swig_top_level_but_no_swig_at_all, but the "C" module exists.
+    # The test-case is here for symmetry.
+    libdir = tmpdir.join('lib')
+    path = [str(libdir)]
+    libdir.join('pyi_dezimal.py').ensure().write('import _pyi_dezimal')
+    libdir.join('_pyi_dezimal.py').ensure().write('#')
+
+    script = tmpdir.join('script.py')
+    script.write('import pyi_dezimal')
+    mg = modulegraph.ModuleGraph(path)
+    mg.run_script(str(script))
+    assert isinstance(mg.findNode('pyi_dezimal'), modulegraph.SourceModule)
+    assert isinstance(mg.findNode('_pyi_dezimal'), modulegraph.SourceModule)
+
+
+def test_swig_candidate_but_not_swig(tmpdir):
+    # From a package module import an absolute module which looks like a SWIG
+    # candidate but is no SWIG module . See issue #2911 (tifffile).
+    # The center of this test-case is that it doesn't raise a recursion too
+    # deep error.
+    libdir = tmpdir.join('lib')
+    path = [str(libdir)]
+    pkg = libdir.join('pkg')
+    pkg.join('__init__.py').ensure().write('from . import mymod')
+    pkg.join('mymod.py').write('import _mymod')
+    pkg.join('_mymod.py').write('#')
+
+    script = tmpdir.join('script.py')
+    script.write('from pkg import XXX')
+    mg = modulegraph.ModuleGraph(path)
+    mg.run_script(str(script))
+    assert isinstance(mg.findNode('pkg'), modulegraph.Package)
+    assert isinstance(mg.findNode('pkg.mymod'), modulegraph.SourceModule)
+    if is_py2:
+        # In Python 2 this is a relative import, global module should exist
+        assert isinstance(mg.findNode('pkg._mymod'), modulegraph.SourceModule)
+        assert mg.findNode('_mymod') is None
+    else:
+        assert mg.findNode('pkg._mymod') is None
+        # This is not a SWIG module, thus the SWIG import mechanism should not
+        # trigger.
+        assert isinstance(mg.findNode('_mymod'), modulegraph.MissingModule)
+
+
+def test_swig_candidate_but_not_swig_missing(tmpdir):
+    # Like test_swig_candidate_but_not_swig, but the "C" module is missing and
+    # should be reported as a MissingModule.
+    libdir = tmpdir.join('lib')
+    path = [str(libdir)]
+    pkg = libdir.join('pkg')
+    pkg.join('__init__.py').ensure().write('from . import mymod')
+    pkg.join('mymod.py').write('import _mymod')
+    # no module '_mymod.py'
+
+    script = tmpdir.join('script.py')
+    script.write('import pkg')
+    mg = modulegraph.ModuleGraph(path)
+    mg.run_script(str(script))
+    assert isinstance(mg.findNode('pkg'), modulegraph.Package)
+    assert isinstance(mg.findNode('pkg.mymod'), modulegraph.SourceModule)
+    assert mg.findNode('pkg._mymod') is None
+    assert isinstance(mg.findNode('_mymod'), modulegraph.MissingModule)
