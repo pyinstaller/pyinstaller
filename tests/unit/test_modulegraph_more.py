@@ -88,6 +88,28 @@ def test_compiled_package(tmpdir):
     assert node.filename == str(pysrc) + 'c'
     assert node.packagepath == [str(pysrc.dirname)]
 
+
+#-- Basic tests - these seem to be missing in the original modulegraph
+#-- test-suite
+
+def test_relative_import_missing(tmpdir):
+    libdir = tmpdir.join('lib')
+    path = [str(libdir)]
+    pkg = libdir.join('pkg')
+    pkg.join('__init__.py').ensure().write('#')
+    pkg.join('x', '__init__.py').ensure().write('#')
+    pkg.join('x', 'y', '__init__.py').ensure().write('#')
+    pkg.join('x', 'y', 'z.py').ensure().write('from . import DoesNotExist')
+
+    script = tmpdir.join('script.py')
+    script.write('import pkg.x.y.z')
+    mg = modulegraph.ModuleGraph(path)
+    mg.run_script(str(script))
+    assert isinstance(mg.findNode('pkg.x.y.z'), modulegraph.SourceModule)
+    assert isinstance(mg.findNode('pkg.x.y.DoesNotExist'),
+                      modulegraph.MissingModule)
+
+
 #-- Tests with a single module in a zip-file
 
 def _zip_directory(filename, path):
