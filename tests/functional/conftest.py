@@ -348,8 +348,8 @@ class AppBuilder(object):
         # Windows command prompt. Py.test is then able to collect stdout/sterr
         # messages and display them if a test fails.
 
-        process = psutil.Popen(args, executable=exe_path, stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE, env=prog_env, cwd=prog_cwd)
+        process = psutil.Popen(args, executable=exe_path, stdout=sys.stdout,
+                               stderr=sys.stderr, env=prog_env, cwd=prog_cwd)
         # 'psutil' allows to use timeout in waiting for a subprocess.
         # If not timeout was specified then it is 'None' - no timeout, just waiting.
         # Runtime is useful mostly for interactive tests.
@@ -365,16 +365,11 @@ class AppBuilder(object):
             else:
                 # Exe is still running and it is not an interactive test. Fail the test.
                 retcode = 1
+
             # Kill the subprocess and its child processes.
-            for p in process.children(recursive=True):
-                p.kill()
-
-            with suppress(psutil.NoSuchProcess):
-                process.kill()
-
-        outs, errs = process.communicate()
-        sys.stdout.write(outs)
-        sys.stderr.write(errs)
+            for p in list(process.children(recursive=True)) + [process]:
+                with suppress(psutil.NoSuchProcess):
+                    p.kill()
 
         return retcode
 
