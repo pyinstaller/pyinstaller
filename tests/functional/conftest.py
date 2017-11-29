@@ -42,7 +42,7 @@ from PyInstaller import configure, config
 from PyInstaller import __main__ as pyi_main
 from PyInstaller.utils.cliutils import archive_viewer
 from PyInstaller.compat import is_darwin, is_win, is_py2, safe_repr, \
-  architecture, is_linux
+  architecture, is_linux, suppress
 from PyInstaller.depend.analysis import initialize_modgraph
 from PyInstaller.utils.win32 import winutils
 
@@ -365,10 +365,11 @@ class AppBuilder(object):
             else:
                 # Exe is still running and it is not an interactive test. Fail the test.
                 retcode = 1
+
             # Kill the subprocess and its child processes.
-            for p in process.children(recursive=True):
-                p.kill()
-            process.kill()
+            for p in list(process.children(recursive=True)) + [process]:
+                with suppress(psutil.NoSuchProcess):
+                    p.kill()
 
         return retcode
 
