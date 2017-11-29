@@ -372,7 +372,7 @@ class AppBuilder(object):
             with suppress(psutil.NoSuchProcess):
                 process.kill()
 
-        outs, errs = proc.communicate()
+        outs, errs = process.communicate()
         sys.stdout.write(outs)
         sys.stderr.write(errs)
 
