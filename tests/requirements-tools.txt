@@ -2,7 +2,10 @@
 git+https://github.com/pytest-dev/execnet.git
 
 # For running tests
-pytest >= 2.7.3  # Testing framework.
+# Testing framework.
+pytest >= 2.7.3; python_version != '3.3'
+pytest >= 2.7.3,<3.3; python_version == '3.3' # pyup: ignore
+
 pytest-xdist     # Plugin allowing running tests in parallel.
 pytest-timeout   # Plugin to abort hanging tests.
 pytest-catchlog  # Capture log output separately from stdout/stderr
