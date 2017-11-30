@@ -113,6 +113,26 @@ implemented:
   ``pkg2._cmod``), as one would overwrite the other.
 
 
+Cython support
+======================
+
+|PyInstaller| can follow import statements that refer to Cython C object
+modules and bundle them – like for any other module implemented in C.
+
+But – again, as for any other module implemented in C – |PyInstaller| can not
+determine if the Cython C object module is importing some Python module.
+These will typically show up as in a traceback like this
+(mind the ``.pyx`` extension)::
+
+    Traceback (most recent call last):
+    […]
+    File "myapp\cython_module.pyx", line 3, in init myapp.cython_module
+    ModuleNotFoundError: No module named 'csv'
+
+So if you are using a Cython C object module, which imports Python modules,
+you will have to list these as ``--hidden-import``.
+
+
 .. include:: _common_definitions.txt
 
 .. Emacs config:
