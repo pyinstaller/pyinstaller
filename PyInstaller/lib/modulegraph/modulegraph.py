@@ -633,7 +633,7 @@ class Node(object):
         except AttributeError:
             return NotImplemented
 
-        return cmp(self.graphident, otherIdent)
+        return cmp(self.graphident, otherIdent)  # noqa: F821
 
     def __eq__(self, other):
         try:
