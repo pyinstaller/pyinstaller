@@ -259,9 +259,13 @@ If it is actually characters, you must decode it::
 Adding Binary Files
 --------------------
 
+.. Note:: `Binary` files refers to DLLs, dynamic libraries, shared
+   object-files, and such, which |PyInstaller| is going to search for further
+   `binary` dependencies. Files like images and PDFs should go into the
+   ``datas``.
+
 You can add binary files to the bundle by using the ``--add-binary`` command option, 
 or by adding them as a list to the spec file.
-
 In the spec file, make a list of tuples that describe the files needed.
 Assign the list of tuples to the ``binaries=`` argument of Analysis.
 
