@@ -67,6 +67,13 @@ More in detail, the following restrictions apply:
 We feel that it should be enough to cover most ctypes' usages, with little or
 no modification required in your code.
 
+If |PyInstaller| does not detect a library, you can add it to your
+bundle by passing the respective information to ``--add-binary`` option or
+:ref:`listing it in the .spec-file <adding binary files>`. If your frozen
+application will be able to pick up the library at run-time can not be
+guaranteed as it depends on the detailed implementation.
+
+
 Gotchas
 ~~~~~~~~~~~~~~~
 
