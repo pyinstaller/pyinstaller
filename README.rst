@@ -56,7 +56,7 @@ Requirements and Tested Platforms
 
 - Python: 
 
- - 2.7 or 3.3-3.5
+ - 2.7 or 3.3-3.6
  - PyCrypto_ 2.4+ (only if using bytecode encryption)
 
 - Windows (32bit/64bit):
