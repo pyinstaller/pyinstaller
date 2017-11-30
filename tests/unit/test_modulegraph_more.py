@@ -607,6 +607,33 @@ def test_swig_candidate_but_not_swig(tmpdir):
         assert isinstance(mg.findNode('_mymod'), modulegraph.MissingModule)
 
 
+def test_swig_candidate_but_not_swig2(tmpdir):
+    """
+    Variation of test_swig_candidate_but_not_swig using differnt import
+    statements (like tifffile/tifffile.py does)
+    """
+    libdir = tmpdir.join('lib')
+    path = [str(libdir)]
+    pkg = libdir.join('pkg')
+    pkg.join('__init__.py').ensure().write('from . import mymod')
+    pkg.join('mymod.py').write('from . import _mymod\n'
+                               'import _mymod')
+    pkg.join('_mymod.py').write('#')
+
+    script = tmpdir.join('script.py')
+    script.write('from pkg import XXX')
+    mg = modulegraph.ModuleGraph(path)
+    mg.run_script(str(script))
+    assert isinstance(mg.findNode('pkg'), modulegraph.Package)
+    assert isinstance(mg.findNode('pkg.mymod'), modulegraph.SourceModule)
+    assert isinstance(mg.findNode('pkg._mymod'), modulegraph.SourceModule)
+    if is_py2:
+        # In Python 2 both are relative imports, global module should not exist
+        assert mg.findNode('_mymod') is None
+    else:
+        assert isinstance(mg.findNode('_mymod'), modulegraph.MissingModule)
+
+
 def test_swig_candidate_but_not_swig_missing(tmpdir):
     # Like test_swig_candidate_but_not_swig, but the "C" module is missing and
     # should be reported as a MissingModule.
@@ -625,3 +652,30 @@ def test_swig_candidate_but_not_swig_missing(tmpdir):
     assert isinstance(mg.findNode('pkg.mymod'), modulegraph.SourceModule)
     assert mg.findNode('pkg._mymod') is None
     assert isinstance(mg.findNode('_mymod'), modulegraph.MissingModule)
+
+
+def test_swig_candidate_but_not_swig_missing2(tmpdir):
+    """
+    Variation of test_swig_candidate_but_not_swig_missing using differnt import
+    statements (like tifffile/tifffile.py does)
+    """
+    libdir = tmpdir.join('lib')
+    path = [str(libdir)]
+    pkg = libdir.join('pkg')
+    pkg.join('__init__.py').ensure().write('from . import mymod')
+    pkg.join('mymod.py').write('from . import _mymod\n'
+                               'import _mymod')
+    # no module '_mymod.py'
+
+    script = tmpdir.join('script.py')
+    script.write('import pkg')
+    mg = modulegraph.ModuleGraph(path)
+    mg.run_script(str(script))
+    assert isinstance(mg.findNode('pkg'), modulegraph.Package)
+    assert isinstance(mg.findNode('pkg.mymod'), modulegraph.SourceModule)
+    assert isinstance(mg.findNode('pkg._mymod'), modulegraph.MissingModule)
+    if is_py2:
+        # In Python 2 both are relative imports, global module should not exist
+        assert mg.findNode('_mymod') is None
+    else:
+        assert isinstance(mg.findNode('_mymod'), modulegraph.MissingModule)
