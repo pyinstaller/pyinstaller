@@ -15,6 +15,7 @@ class ObjectGraph(object):
     A graph of objects that have a "graphident" attribute.
     graphident is the key for the object in the graph
     """
+
     def __init__(self, graph=None, debug=0):
         if graph is None:
             graph = Graph()
@@ -43,54 +44,32 @@ class ObjectGraph(object):
             if node is not None:
                 yield self.graph.node_data(ident)
 
-
     def get_edges(self, node):
-        """
-        Get a 2-tuple of all nodes directly connected to the passed node.
-
-        Parameters
-        ----------
-        node : object
-            Graph node to be examined.
-
-        Returns
-        ----------
-        (outgoing_nodes, incoming_nodes)
-            2-tuple whose:
-            * First element is a generator yielding all nodes having an outgoing
-              edge directed to the passed node.
-            * Second element is a generator yielding all nodes having an
-              incoming edge directed from the passed node.
-        """
+        if node is None:
+            node = self
         start = self.getRawIdent(node)
         _, _, outraw, incraw = self.graph.describe_node(start)
+
         def iter_edges(lst, n):
             seen = set()
             for tpl in (self.graph.describe_edge(e) for e in lst):
                 ident = tpl[n]
-
-                # FIXME: This behaviour differs from upstream modulegraph, see
-                # test_imports.TestModuleGraphImport.testGraphStructure.
-                # If the identifier for the node at the other end of this edge
-                # is the current graph, skip this node. For example, this occurs
-                # for edges connecting to MissingModule nodes (e.g., the
-                # Windows-specific "winreg" module under OS X and Linux).
-                if ident is self:
-                    self.msg(1, 'Erroneous edge %s for node %s.' % (str(tpl), str(node)))
-                    continue
-                # Else if this node has not yet been yielded, do so.
-                elif ident not in seen:
+                if ident not in seen:
                     yield self.findNode(ident)
                     seen.add(ident)
         return iter_edges(outraw, 3), iter_edges(incraw, 2)
 
     def edgeData(self, fromNode, toNode):
+        if fromNode is None:
+            fromNode = self
         start = self.getRawIdent(fromNode)
         stop = self.getRawIdent(toNode)
         edge = self.graph.edge_by_node(start, stop)
         return self.graph.edge_data(edge)
 
     def updateEdgeData(self, fromNode, toNode, edgeData):
+        if fromNode is None:
+            fromNode = self
         start = self.getRawIdent(fromNode)
         stop = self.getRawIdent(toNode)
         edge = self.graph.edge_by_node(start, stop)
@@ -101,7 +80,8 @@ class ObjectGraph(object):
         Filter the ObjectGraph in-place by removing all edges to nodes that
         do not match every filter in the given filter list
 
-        Returns a tuple containing the number of: (nodes_visited, nodes_removed, nodes_orphaned)
+        Returns a tuple containing the number of:
+            (nodes_visited, nodes_removed, nodes_orphaned)
         """
         visited, removes, orphans = filter_stack(self.graph, self, filters)
 
@@ -211,7 +191,8 @@ class ObjectGraph(object):
         Print a debug message with the given level
         """
         if s and level <= self.debug:
-            print ("%s%s %s" % ("  " * self.indent, s, ' '.join(map(repr, args))))
+            print("%s%s %s" % (
+                "  " * self.indent, s, ' '.join(map(repr, args))))
 
     def msgin(self, level, s, *args):
         """
