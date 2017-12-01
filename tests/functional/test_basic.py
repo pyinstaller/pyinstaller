@@ -403,7 +403,6 @@ def test_xmldom_module(pyi_builder):
         """)
 
 
-@xfail(is_py3 and not is_py34, reason='Known issue for Python 3.3, see #2377')
 def test_threading_module(pyi_builder):
     pyi_builder.test_source(
         """
