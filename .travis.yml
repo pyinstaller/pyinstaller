@@ -89,11 +89,6 @@ jobs:
             fi
 
     - <<: *test-pyinstaller
-      python: 3.3
-    - <<: *test-libraries
-      python: 3.3
-
-    - <<: *test-pyinstaller
       python: 3.4
     - <<: *test-libraries
       python: 3.4
