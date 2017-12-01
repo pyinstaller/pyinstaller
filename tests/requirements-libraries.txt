@@ -14,24 +14,15 @@ babel==2.5.1
 boto==2.48.0
 boto3==1.4.7
 botocore==1.7.1
-
 gevent==1.2.2
-
 pygments==2.2.0
 pylint==1.7.2
 markdown==2.6.9
 simplejson==3.11.1 # simplejson is used for text_c_extension
-
-# sphinx 1.5 requires Python 2.7 or >= 3.4
-sphinx==1.6.3; python_version != '3.3'
-sphinx==1.4.9; python_version == '3.3' # pyup: ignore
-
+sphinx==1.6.3
 pyzmq==16.0.2
 zope.interface==4.4.3  # Required for test_namespace_package
-
-# numpy 1.12 dropped support for Python 3.3
-numpy==1.13.1; python_version != '3.3'
-numpy==1.11.3; python_version == '3.3' # pyup: ignore
+numpy==1.13.1
 
 # SciPy currently provides no binary wheel for Windows and hence must be
 # isolated to non-Windows platforms. See also: scipy/scipy#5461
@@ -73,12 +64,9 @@ ipython==5.4.1; python_version == '2.7' # pyup: ignore
 # dateutil.tz is a package in 2.5.0 and does not play nice with PyInstaller.
 python-dateutil==2.6.1
 
-pandas==0.20.3; python_version != '3.3'
-pandas==0.16.2; python_version == '3.3' # pyup: ignore
+pandas==0.20.3
 
-# matplotlib 1.5+ does not provide binaries for python 3.3.
-matplotlib==2.0.2; python_version == '2.7' or python_version >= '3.4'
-matplotlib==1.4.3; python_version == '3.3' # pyup: ignore
+matplotlib==2.0.2
 
 #### Windows specific packages
 
@@ -90,4 +78,4 @@ pypiwin32==219; python_version <= '3.5' and sys_platform == 'win32' # pyup: igno
 # ::TODO:: #1920 revert to using pypi version
 #pefile; sys_platform == 'win32'
 
-h5py==2.7.0; python_version != '3.3'
+h5py==2.7.0
