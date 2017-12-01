@@ -822,3 +822,10 @@ def test_unidecode(pyi_builder):
         # Unidecode should not skip non-ASCII chars if mappings for them exist.
         assert unidecode(u"kožušček") == "kozuscek"
         """)
+
+
+@importorskip('pinyin')
+def test_pinyin(pyi_builder):
+    pyi_builder.test_source("""
+        import pinyin
+        """)
