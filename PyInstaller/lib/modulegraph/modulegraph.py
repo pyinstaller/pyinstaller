@@ -2200,8 +2200,9 @@ class ModuleGraph(ObjectGraph):
         target_modules = None
 
         # True if this is a Python 2-style implicit relative import of a
-        # SWIG-generated C extension.
-        is_swig_import = False
+        # SWIG-generated C extension. False if we are certain it is not SWIG.
+        # None if we haven't checked yet
+        is_swig_import = None
 
         # Attempt to import this target module in the customary way.
         try:
@@ -2280,6 +2281,12 @@ class ModuleGraph(ObjectGraph):
                                 edge_attr=edge_attr)
                         except ImportError as msg:
                             self.msg(2, "SWIG ImportError:", str(msg))
+                    else:
+                        # This looked like a SWIG module but it doesn't
+                        # have all the right properties. We now assume that
+                        # there isn't a magic `swig_import_helper()`-like
+                        # function that will mess up our imports
+                        is_swig_import = False
 
             # If this module remains unimportable...
             if target_modules is None:
@@ -2303,12 +2310,24 @@ class ModuleGraph(ObjectGraph):
         # Target module imported above.
         target_module = target_modules[0]
 
-        if isinstance(target_module, MissingModule) and is_swig_candidate():
+        if isinstance(target_module, MissingModule) and \
+                is_swig_candidate() and is_swig_import is not False:
             # if this possible swig C module was previously imported from
             # a python module other than its corresponding swig python
             # module, then it may have been considered a MissingModule.
             # Try to reimport it now. For details see pull-request #2578
             # and issue #1522.
+            # Some libraries use a double import depending on the presence
+            # of `__package__` or the python version (see #2911). Either
+            # `from . import _test` or `import _test` (old).
+            # In those cases we can't tell which import will be used and
+            # are incorrectly identifying the unused `import _test` as a
+            # SWIG candidate when it should result in an `ImportError`.
+            # If the import is SWIG then `is_swig_candidate()` should return
+            # False due to the modifications of `target_attr_names` done by
+            # the SWIG check above. If `is_swig_import` is None and we are
+            # still a swig candidate then that means we haven't properly
+            # imported this swig module yet so do that below.
             # Remove the MissingModule node from the graph so that we can
             # attempt a reimport and avoid collisions. This node should be
             # fine to remove because the proper module will be imported and
