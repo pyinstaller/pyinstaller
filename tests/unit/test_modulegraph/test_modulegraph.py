@@ -6,7 +6,7 @@ import imp
 import sys
 import shutil
 import warnings
-from PyInstaller.lib.altgraph import Graph
+from altgraph import Graph
 from PyInstaller.compat import is_win
 import textwrap
 import xml.etree.ElementTree as ET
