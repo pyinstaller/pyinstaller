@@ -42,9 +42,14 @@ from PyInstaller import configure, config
 from PyInstaller import __main__ as pyi_main
 from PyInstaller.utils.cliutils import archive_viewer
 from PyInstaller.compat import is_darwin, is_win, is_py2, safe_repr, \
-  architecture, is_linux
+    architecture, is_linux, suppress
 from PyInstaller.depend.analysis import initialize_modgraph
 from PyInstaller.utils.win32 import winutils
+
+# Monkeypatch the psutil subprocess on Python 2
+if is_py2:
+    import subprocess32
+    psutil.subprocess = subprocess32
 
 # Globals
 # =======
@@ -348,27 +353,37 @@ class AppBuilder(object):
         # Windows command prompt. Py.test is then able to collect stdout/sterr
         # messages and display them if a test fails.
 
-        process = psutil.Popen(args, executable=exe_path, stdout=sys.stdout,
-                               stderr=sys.stderr, env=prog_env, cwd=prog_cwd)
+        process = psutil.Popen(args, executable=exe_path,
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE,
+                               env=prog_env, cwd=prog_cwd)
         # 'psutil' allows to use timeout in waiting for a subprocess.
         # If not timeout was specified then it is 'None' - no timeout, just waiting.
         # Runtime is useful mostly for interactive tests.
         try:
             timeout = runtime if runtime else _EXE_TIMEOUT
-            retcode = process.wait(timeout=timeout)
-        except psutil.TimeoutExpired:
+            stdout, stderr = process.communicate(timeout=timeout)
+            retcode = process.returncode
+        except (psutil.TimeoutExpired, subprocess.TimeoutExpired):
             if runtime:
                 # When 'runtime' is set then expired timeout is a good sing
                 # that the executable was running successfully for a specified time.
                 # TODO Is there a better way return success than 'retcode = 0'?
                 retcode = 0
             else:
-                # Exe is still running and it is not an interactive test. Fail the test.
+                # Exe is running and it is not interactive. Fail the test.
                 retcode = 1
+                print('TIMED OUT: ', safe_repr(exe_path), ", args: ",
+                      safe_repr(args))
+
             # Kill the subprocess and its child processes.
-            for p in process.children(recursive=True):
-                p.kill()
-            process.kill()
+            for p in list(process.children(recursive=True)) + [process]:
+                with suppress(psutil.NoSuchProcess):
+                    p.kill()
+            stdout, stderr = process.communicate()
+
+        sys.stdout.write(stdout)
+        sys.stderr.write(stderr)
 
         return retcode
 
