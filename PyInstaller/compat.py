@@ -265,6 +265,8 @@ def machine():
     mach = platform.machine()
     if mach.startswith('arm'):
         return 'arm'
+    elif mach.startswith('aarch'):
+        return 'aarch'
     else:
         # Assume x86/x86_64 machine.
         return None
