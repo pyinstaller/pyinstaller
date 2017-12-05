@@ -169,8 +169,15 @@ def CopyIcons(dstpath, srcpath):
     else:
         logger.info("Updating icons from %s to %s", srcpath, dstpath)
 
+    try:
+        hsrc = win32api.LoadLibraryEx(srcpath, 0, LOAD_LIBRARY_AS_DATAFILE)
+    except:
+        # When srcpath is missing or points to an invalid file type,
+        # LoadLibraryEx returns a null handle and win32api raises an exception.
+        # Give the user some helpful info, and leave the icon resource unset.
+        logger.error("Unable to load icon file {}, ignoring --icon".format(srcpath))
+        return
     hdst = win32api.BeginUpdateResource(dstpath, 0)
-    hsrc = win32api.LoadLibraryEx(srcpath, 0, LOAD_LIBRARY_AS_DATAFILE)
     if index is None:
         grpname = win32api.EnumResourceNames(hsrc, RT_GROUP_ICON)[0]
     elif index >= 0:
