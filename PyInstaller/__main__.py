@@ -70,8 +70,7 @@ def run(pyi_args=None, pyi_config=None):
         PyInstaller.log.__add_options(parser)
         parser.add_argument('filenames', metavar='scriptname', nargs='+',
                             help=("name of scriptfiles to be processed or "
-                                  "exactly one .spec-file. If a .spec-file is "
-                                  "specified, most options are unnecessary and ignored."))
+                                  "exactly one .spec-file"))
 
         args = parser.parse_args(pyi_args)
         PyInstaller.log.__process_options(parser, args)
