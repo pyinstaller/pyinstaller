@@ -80,7 +80,7 @@ For example, in Linux::
         --hidden-import=secret1 \
         --hidden-import=secret2 \
         --upx-dir=/usr/local/share/ \
-        myscript.spec
+        myscript.py
 
 Or in Windows, use the little-known BAT file line continuation::
 
@@ -92,7 +92,7 @@ Or in Windows, use the little-known BAT file line continuation::
         --hidden-import=secret1 ^
         --hidden-import=secret2 ^
         --icon=..\MLNMFLCN.ICO ^
-        myscript.spec
+        myscript.py
 
 
 Using UPX
