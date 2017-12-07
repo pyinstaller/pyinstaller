@@ -17,7 +17,7 @@ Quick-start
     pip install -r tests/requirements-tools.txt
     
 * Commit often and in logical chunks. Try to make small patches, consistent
-  increments. :ref:`»» Detailed Commit Guideline <commit guideline>`
+  increments. :ref:`»» Detailed Commit Guideline <Guidelines for Commits>`
 
 * Provide tests that cover your changes and try to run the tests locally
   first.
@@ -39,19 +39,17 @@ Quick-start
 .. _PyInstaller/init.py: https://github.com/pyinstaller/pyinstaller/blob/develop/PyInstaller/__init__.py
 
 
-.. _commit guideline:
+.. _Guidelines for Commits:
 
 Guidelines for Commits
 =============================
 
-* **Commit often and in logical chunks**
-
+* **Commit often and in logical chunks.**
   A commit should be one (and just one) logical unit. It should be something
   that someone might want to patch or revert in its entirety, and never
   piecewise. If it could be useful in pieces, make separate commits.
 
 * **Write meaningful commit messages.**
-
   Using atomic commits will result in short, clear, and concise commit messages.
   Non-atomic commits make for awful run-on commit messages.
 
