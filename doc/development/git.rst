@@ -12,6 +12,17 @@ If you are new to Git there are a
 `excellent book available online <https://git-scm.com/book>`_.
 
 
+.. Don't use a toctree here to avoid the sections to show up twice in then
+   toc of development/index.
+
+**Further Reading**
+
+* :ref:`commit messages`
+* :ref:`creating pull-requests`
+* :ref:`updating pull-request`
+* :ref:`branch model`
+
+
 .. include:: ../_common_definitions.txt
 
 .. Emacs config:
