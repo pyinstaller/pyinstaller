@@ -1,4 +1,4 @@
-.. _creating pull-request:
+.. _creating pull-requests:
 
 Creating Pull-Requests
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
