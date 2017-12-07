@@ -76,13 +76,15 @@ def machine():
 
     Machine name in bootloader is necessary only for non-x86 architecture.
     """
-    mach = None  # Assume x86/x86_64 machine.
-    # Different name for arm is necessary.
-    if platform.machine().startswith('arm'):
-        mach = 'arm'
-    elif platform.machine().startswith('aarch'):
-        mach = 'aarch'
-    return mach
+    # IMPORTANT: Keep this in line with PyInstaller.compat.machine()
+    mach = platform.machine()
+    if mach.startswith('arm'):
+        return 'arm'
+    elif mach.startswith('aarch'):
+        return 'aarch'
+    else:
+        # Assume x86/x86_64 machine.
+        return None
 
 
 def assoc_programm(ctx, name):
