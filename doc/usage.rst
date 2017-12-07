@@ -100,7 +100,7 @@ Running |PyInstaller| with Python optimizations
     The ``-OO`` flag additionally removes docstrings.
 
     Using this feature affects not only your main script, but *all* modules
-    compiled by |PyInstaller|. If your code (or any module imported by your
+    included by |PyInstaller|. If your code (or any module imported by your
     script) relies on these features, your program may break or have
     unexpected behavior.
 
