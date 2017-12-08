@@ -178,8 +178,8 @@ for example::
    True when the active Python is version 2.7.
 ``is_py3``:
    True when the active Python is version 3.X.
-``is_py34``, ``is_py35``, ``is_py36``:
-   True when the current version of Python is at least 3.4, 3.5 or 3.6 respectively.
+``is_py35``, ``is_py36``:
+   True when the current version of Python is at least 3.5 or 3.6 respectively.
 
 ``is_win``:
    True in a Windows system.
