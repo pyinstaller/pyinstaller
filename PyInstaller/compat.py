@@ -593,16 +593,6 @@ def exec_python_rc(*args, **kwargs):
     return exec_command_rc(*cmdargs, **kwargs)
 
 
-def exec_python_all(*args, **kwargs):
-    """
-    Wrap running python script in a subprocess.
-
-    Return tuple (exit_code, stdout, stderr) of the invoked command.
-    """
-    cmdargs, kwargs = __wrap_python(args, kwargs)
-    return exec_command_all(*cmdargs, **kwargs)
-
-
 ## Path handling.
 
 # The function os.getcwd() in Python 2 does not work with unicode paths on Windows.

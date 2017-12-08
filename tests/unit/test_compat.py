@@ -26,16 +26,3 @@ def test_exec_command_subprocess_wrong_encoding_reports_nicely(capsys):
         res = compat.exec_python('-c', prog)
     out, err = capsys.readouterr()
     assert 'bytes around the offending' in err
-
-
-@skipif(is_py2, reason="In Python 2, subprocess' stdout is not decoded")
-def test_exec_command_all_subprocess_wrong_encoding_reports_nicely(capsys):
-    # Ensure a nice error message is printed if decoding the output of the
-    # subprocess fails.
-    # Actually `exec_python_all()` is used for running the progam, so we can
-    # use a small Python script.
-    prog = ("""import sys; sys.stdout.buffer.write(b'dfadfadf\\xa0:::::')""")
-    with pytest.raises(UnicodeDecodeError):
-        res = compat.exec_python_all('-c', prog)
-    out, err = capsys.readouterr()
-    assert 'bytes around the offending' in err
