@@ -20,7 +20,7 @@ import pytest
 
 # Local imports
 # -------------
-from PyInstaller.compat import is_darwin, is_win, is_py2, is_py3, is_py34
+from PyInstaller.compat import is_darwin, is_win, is_py2, is_py3
 from PyInstaller.utils.tests import importorskip, skipif_win, \
     skipif_winorosx, skipif_notwin, skipif_notosx, skipif_no_compiler, xfail
 

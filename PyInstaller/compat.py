@@ -30,7 +30,6 @@ is_py3 = sys.version_info[0] == 3
 is_py27 = sys.version_info >= (2, 7) and sys.version_info < (3, 0)
 # PyInstaller supports only Python 3.4+
 # Variables 'is_pyXY' mean that Python X.Y and up is supported.
-is_py34 = sys.version_info >= (3, 4)
 is_py35 = sys.version_info >= (3, 5)
 is_py36 = sys.version_info >= (3, 6)
 is_py37 = sys.version_info >= (3, 7)
@@ -171,7 +170,7 @@ is_venv = is_virtualenv = base_prefix != os.path.abspath(sys.prefix)
 
 # In Python 3.4 module 'imp' is deprecated and there is another way how
 # to obtain magic value.
-if is_py34:
+if is_py3:
     import importlib.util
     BYTECODE_MAGIC = importlib.util.MAGIC_NUMBER
 else:
