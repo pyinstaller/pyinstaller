@@ -13,6 +13,7 @@ Various classes and functions to provide some backwards-compatibility
 with previous versions of Python from 2.7 onward.
 """
 
+from __future__ import print_function
 
 import io
 import os
@@ -367,13 +368,22 @@ def exec_command(*cmdargs, **kwargs):
     # Thus we need to convert that to proper encoding.
 
     if is_py3:
-        if encoding:
-            out = out.decode(encoding)
-        else:
-            # If no encoding is given, assume we're reading filenames from stdout
-            # only because it's the common case.
-            out = os.fsdecode(out)
-
+        try:
+            if encoding:
+                out = out.decode(encoding)
+            else:
+                # If no encoding is given, assume we're reading filenames from
+                # stdout only because it's the common case.
+                out = os.fsdecode(out)
+        except UnicodeDecodeError as e:
+            # The sub-process used a different encoding,
+            # provide more information to ease debugging.
+            print('--' * 20, file=sys.stderr)
+            print(str(e), file=sys.stderr)
+            print('These are the bytes around the offending byte:',
+                  file=sys.stderr)
+            print('--' * 20, file=sys.stderr)
+            raise
     return out
 
 
@@ -505,15 +515,24 @@ def exec_command_all(*cmdargs, **kwargs):
     # Thus we need to convert that to proper encoding.
     if is_py3:
         encoding = kwargs.get('encoding')
-        if encoding:
-            out = out.decode(encoding)
-            err = err.decode(encoding)
-        else:
-            # If no encoding is given, assume we're reading filenames from stdout
-            # only because it's the common case.
-            out = os.fsdecode(out)
-            err = os.fsdecode(err)
-
+        try:
+            if encoding:
+                out = out.decode(encoding)
+                err = err.decode(encoding)
+            else:
+                # If no encoding is given, assume we're reading filenames from
+                # stdout only because it's the common case.
+                out = os.fsdecode(out)
+                err = os.fsdecode(err)
+        except UnicodeDecodeError as e:
+            # The sub-process used a different encoding,
+            # provide more information to ease debugging.
+            print('--' * 20, file=sys.stderr)
+            print(str(e), file=sys.stderr)
+            print('These are the bytes around the offending byte:',
+                  file=sys.stderr)
+            print('--' * 20, file=sys.stderr)
+            raise
 
     return proc.returncode, out, err
 
