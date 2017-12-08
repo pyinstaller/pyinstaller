@@ -785,13 +785,11 @@ PY3_BASE_MODULES = {
     'weakref',
 }
 
-#FIXME: Reduce this pair of nested tests to "if sys.version_info >= (3, 4)".
-if sys.version_info[0] == 3:
-    if sys.version_info[1] >= 4:
-        PY3_BASE_MODULES.update({
-            '_bootlocale',
-            '_collections_abc',
-        })
+if sys.version_info >= (3, 4):
+    PY3_BASE_MODULES.update({
+        '_bootlocale',
+        '_collections_abc',
+    })
 
 # Object types of Pure Python modules in modulegraph dependency graph.
 # Pure Python modules have code object (attribute co_code).
