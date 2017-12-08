@@ -507,6 +507,7 @@ def exec_command_all(*cmdargs, **kwargs):
         Ignore this 3-element tuple `(exit_code, stdout, stderr)`. See the
         `exec_command()` function for discussion.
     """
+    encoding = kwargs.pop('encoding', None)
     proc = subprocess.Popen(cmdargs, bufsize=-1,  # Default OS buffer size.
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs)
     # Waits for subprocess to complete.
@@ -514,7 +515,6 @@ def exec_command_all(*cmdargs, **kwargs):
     # Python 3 returns stdout/stderr as a byte array NOT as string.
     # Thus we need to convert that to proper encoding.
     if is_py3:
-        encoding = kwargs.get('encoding')
         try:
             if encoding:
                 out = out.decode(encoding)
