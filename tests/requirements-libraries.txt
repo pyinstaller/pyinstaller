@@ -58,7 +58,7 @@ requests==2.15.1 # Newest version of requests that allows tests to pass
 Unidecode==0.4.21
 
 # Install wheels only on OS X and Win 32, no wheel for Py 3.6 yet.
-pyenchant==1.6.11; (sys_platform == 'darwin' or sys_platform == 'win32') and python_version <= '3.5'
+pyenchant==2.0.0; (sys_platform == 'darwin' or sys_platform == 'win32') and python_version <= '3.5'
 
 # While PyQt5 itself is provided as wheels for Python 3.4, it requires
 # SIP>=4.19 which is not available for Python 3.4 yet.
