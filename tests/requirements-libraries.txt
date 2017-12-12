@@ -77,7 +77,7 @@ pandas==0.20.3; python_version != '3.3'
 pandas==0.16.2; python_version == '3.3' # pyup: ignore
 
 # matplotlib 1.5+ does not provide binaries for python 3.3.
-matplotlib==2.0.2; python_version == '2.7' or python_version >= '3.4'
+matplotlib==2.1.0; python_version == '2.7' or python_version >= '3.4'
 matplotlib==1.4.3; python_version == '3.3' # pyup: ignore
 
 #### Windows specific packages
