@@ -24,13 +24,6 @@ jobs:
   include:
     # macOS is first to account for the delay in starting the build on macOS. This prevents the build from hanging on
     # macOS as the last job to finish in a stage.
-    - stage: Cache
-      os: osx
-      language: generic
-      python: 3.6
-      cache:
-        directories:
-          - $HOME/Library/Caches/pip
     - stage: Test - PyInstaller
       os: osx
       language: generic
@@ -57,9 +50,6 @@ jobs:
           - $HOME/Library/Caches/pip
       script: py.test -n 3 --maxfail 3 tests/functional/test_libraries.py tests/functional/test_hooks
 
-    - &cache
-      stage: Cache
-      python: 2.7
     - &test-pyinstaller
       stage: Test - PyInstaller
       python: 2.7
@@ -89,35 +79,21 @@ jobs:
                 flake8-diff -v -v -v $TRAVIS_BRANCH;
             fi
 
-    - <<: *cache
-      python: 3.3
     - <<: *test-pyinstaller
       python: 3.3
     - <<: *test-libraries
       python: 3.3
-    - <<: *lint
-      python: 3.3
 
-    - <<: *cache
-      python: 3.4
     - <<: *test-pyinstaller
       python: 3.4
     - <<: *test-libraries
       python: 3.4
-    - <<: *lint
-      python: 3.4
 
-    - <<: *cache
-      python: 3.5
     - <<: *test-pyinstaller
       python: 3.5
     - <<: *test-libraries
       python: 3.5
-    - <<: *lint
-      python: 3.5
 
-    - <<: *cache
-      python: 3.6
     - <<: *test-pyinstaller
       python: 3.6
     - <<: *test-libraries
@@ -125,13 +101,9 @@ jobs:
     - <<: *lint
       python: 3.6
 
-    - <<: *cache
-      python: nightly
     - <<: *test-pyinstaller
       python: nightly
     - <<: *test-libraries
-      python: nightly
-    - <<: *lint
       python: nightly
 
   allow_failures:
