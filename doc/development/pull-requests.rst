@@ -43,6 +43,7 @@ Example
       git remote add upstream https://github.com/pyinstaller/pyinstaller.git
       git checkout my-patch
       git pull --rebase upstream develop
+      git log --online --graph
 
   2. Merging the current development head into your changes::
 
@@ -50,6 +51,7 @@ Example
       git fetch upstream develop
       git checkout my-patch
       git merge upstream/develop
+      git log --online --graph
 
   For details see `syncing a fork at github
   <https://help.github.com/articles/syncing-a-fork>`_
