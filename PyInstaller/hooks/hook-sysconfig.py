@@ -17,7 +17,7 @@ import sysconfig
 import os
 
 from PyInstaller.utils.hooks import relpath_to_config_or_make
-from PyInstaller.compat import is_win
+from PyInstaller.compat import is_py36, is_win
 
 _CONFIG_H = sysconfig.get_config_h_filename()
 if hasattr(sysconfig, 'get_makefile_filename'):
@@ -33,7 +33,7 @@ datas = [(_CONFIG_H, relpath_to_config_or_make(_CONFIG_H))]
 if os.path.exists(_MAKEFILE):
     datas.append((_MAKEFILE, relpath_to_config_or_make(_MAKEFILE)))
 
-if not is_win and hasattr(sysconfig, '_get_sysconfigdata_name'):
+if not is_win and (is_py36 or hasattr(sysconfig, '_get_sysconfigdata_name')):
     # Python 3.6 uses additional modules like
     # `_sysconfigdata_m_linux_x86_64-linux-gnu`, see
     # https://github.com/python/cpython/blob/3.6/Lib/sysconfig.py#L417
