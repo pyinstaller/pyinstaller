@@ -21,18 +21,24 @@ Example
     git clone git@github.com:YOUR_GITHUB_USERNAME/pyinstaller.git
     cd pyinstaller
 
-* If you are going to implement a hook, start with creating a minimalistic
-  build-test (see below). You will need to test your hook anyway, so why not
-  use a build-test from the start?
+* Develop your changes (aka "hack")
 
-* Incorporate your changes into |PyInstaller|.
+  * Create a branch to work on (optional)::
 
-* Test your changes by running *all* build tests to ensure nothing else is
-  broken. Please test on as many platform as you can.
+      git checkout -b my-patch
 
-* You may reference relevant issues in commit messages (like #1259) to make
-  GitHub link issues and commits together, and with phrase like “fixes #1259”
-  you can even close relevant issues automatically.
+  * If you are going to implement a hook, start with creating a minimalistic
+    build-test (see below). You will need to test your hook anyway, so why not
+    use a build-test from the start?
+
+  * Incorporate your changes into |PyInstaller|.
+
+  * Test your changes by running *all* build tests to ensure nothing else is
+    broken. Please test on as many platform as you can.
+
+  * You may reference relevant issues in commit messages (like #1259) to make
+    GitHub link issues and commits together, and with phrase like “fixes #1259”
+    you can even close relevant issues automatically.
 
 * Synchronize your fork with the PyInstaller upstream repository. There are two
   ways for this:
