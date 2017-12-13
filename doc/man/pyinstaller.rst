@@ -40,10 +40,10 @@ ENVIRONMENT VARIABLES
 SEE ALSO
 =============
 
-``pyi-configure``\(1), ``pyi-makespec``\(1), ``pyi-build``\(1), The
-PyInstaller Manual, ``pyinstaller``\(1)
-
+``pyi-makespec``\(1),
+The PyInstaller Manual |Manual|,
 Project Homepage |Homepage|
+
 
 .. include:: ../_common_definitions.txt
 

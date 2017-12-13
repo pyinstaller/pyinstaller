@@ -51,9 +51,10 @@ ENVIRONMENT VARIABLES
 SEE ALSO
 =============
 
-``pyi-build``\(1), The PyInstaller Manual, ``pyinstaller``\(1)
-
+``pyinstaller``\(1),
+The PyInstaller Manual |Manual|,
 Project Homepage |Homepage|
+
 
 .. include:: ../_common_definitions.txt
 
