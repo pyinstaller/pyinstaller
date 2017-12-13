@@ -11,7 +11,91 @@ Changelog for PyInstaller
 3.3.1 (2017-12-13)
 ------------------
 
-- Nothing changed yet.
+Hooks
+~~~~~~~~~~
+
+* Fix imports in hooks accessible_output and sound_lib (#2860).
+* Fix ImportError for sysconfig for 3.5.4 Conda (#3105, #3106).
+* Fix shapely hook for conda environments on Windows (#2838).
+* Add hook for unidecode.
+
+Bootloader
+~~~~~~~~~~~~~~
+
+* (Windows) Pre-build bootloaders (and custom-build ones using MSVC) can be
+  used on Windows XP again. Set minimum target OS to XP (#2974).
+
+Bootloader build
+~~~~~~~~~~~~~~~~~~~
+
+* Fix build for FreeBSD (#2861, #2862).
+
+PyInstaller Core
+~~~~~~~~~~~~~~~~~~~~~~~
+
+* Usage: Add help-message clarifying use of options when a spec-file is
+  provided (#3039).
+
+* Add printing infos on UnicodeDecodeError in exec_command(_all).
+* (win32) Issue an error message on errors loading the icon file (#2039).
+* (aarch64) Use correct bootloader for 64-bit ARM (#2873).
+* (OS X) Fix replacement of run-time search path keywords (``@…`` ) (#3100).
+
+* Modulegraph
+
+  * Fix recursion too deep errors cause by reimporting SWIG-like modules
+    (#2911, #3040, #3061).
+  * Keep order of imported identifiers.
+
+
+Test-suite and Continuous Integration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* In Continuous Integration tests: Enable flake8-diff linting. This will
+  refuse all changed lines not following PEP 8.
+
+* Enable parallel testing on Windows,
+* Update requirements.
+* Add more test cases for modulegraph.
+* Fix a test-case for order of module import.
+
+* Add test-cases to check scripts do not share the same global vars (see
+  :ref:`v3.3.1 known issues`).
+
+Documentation
+~~~~~~~~~~~~~~~~~~~
+
+* Add clarification about treatment of options when a spec-file is provided
+  (#3039).
+* Add docs for running PyInstaller with Python optimizations (#2905).
+
+* Add notes about limitations of Cython support.
+* Add information how to handle undetected ctypes libraries.
+* Add notes about requirements and restrictions of SWIG support.
+* Add note to clarify what `binary files` are.
+
+* Add a Development Guide.
+* Extend "How to Contribute".
+* Add "Running the Test Suite".
+
+* Remove badges from the Readme (#2853).
+
+* Update outdated sections in man-pages and otehr enhancements to the
+  man-page.
+
+
+.. _v3.3.1 known issues:
+
+Known Issues
+~~~~~~~~~~~~~~~~~~
+
+* All scripts frozen into the package, as well as all run-time hooks, share
+  the same global variables. This issue exists since v3.2 but was discovered
+  only lately, see :issue:`3037`. This may lead to leaking global variables
+  from run-time hooks into the script and from one script to subsequent ones.
+  It should have effects in rare cases only, though.
+
+* Further see the :ref:`Known Issues for release 3.3 <v3.3 known issues>`.
 
 
 3.3 (2017-09-21)
@@ -294,6 +378,8 @@ Documentation
 * help2rst: Add cross-reference labels for option-headers.
 * Enable sphinx.ext.intersphinx and links to our website.
 * Sphinx should not "adjust" display of command line documentation (#2217)
+
+.. _v3.3 known issues:
 
 Known Issues
 ~~~~~~~~~~~~~~~~~~
