@@ -7,87 +7,34 @@ branches:
   except:
     - /pyup\/.*/
 
-# No reason for us to restrict the number concurrent jobs
-max_jobs: 100
-
 environment:
-  global:
-    # Wrapper to ensure extensions are build using the MSVC compiler matching
-    # the target Python version and architecture.
-    # SDK v7.0 MSVC Express 2008's SetEnv.cmd script will fail if the
-    # /E:ON and /V:ON options are not enabled in the batch script intepreter
-    # See: http://stackoverflow.com/a/13751649/163740
-    CMD_IN_ENV: 'cmd /E:ON /V:ON /C .\tests\scripts\appveyor\run_with_env.cmd'
-
   PYTEST: py.test -n3 --maxfail 5 --durations=10 --junitxml=junit-results.xml
-  # Break the tests into two runs, since together they exceed the 1 hour limit.
-  # See https://github.com/pyinstaller/pyinstaller/issues/2024#issuecomment-224129520
-  # for more discussion.
-  TESTS_UNITTESTS: tests/unit tests/functional --ignore=tests/functional/test_libraries.py --ignore=tests/functional/test_hooks
-  TESTS_LIBRARIES: tests/functional/test_libraries.py tests/functional/test_hooks
   APPVEYOR_SAVE_CACHE_ON_ERROR: true
 
   matrix:
     - PYTHON: C:\Python36-x64
       PYTHON_VERSION: 3.6
       PYTHON_ARCH: 64
-      TEST_LIBRARIES: NO
-
-    - PYTHON: C:\Python36-x64
-      PYTHON_VERSION: 3.6
-      PYTHON_ARCH: 64
-      TEST_LIBRARIES: YES
 
     - PYTHON: C:\Python36
       PYTHON_VERSION: 3.6
       PYTHON_ARCH: 32
-      TEST_LIBRARIES: NO
-
-    - PYTHON: C:\Python36
-      PYTHON_VERSION: 3.6
-      PYTHON_ARCH: 32
-      TEST_LIBRARIES: YES
 
     - PYTHON: C:\Python35
       PYTHON_VERSION: 3.5
       PYTHON_ARCH: 32
-      TEST_LIBRARIES: NO
-
-    - PYTHON: C:\Python35
-      PYTHON_VERSION: 3.5
-      PYTHON_ARCH: 32
-      TEST_LIBRARIES: YES
 
     - PYTHON: C:\Python34
       PYTHON_VERSION: 3.4
       PYTHON_ARCH: 32
-      TEST_LIBRARIES: NO
-
-    - PYTHON: C:\Python34
-      PYTHON_VERSION: 3.4
-      PYTHON_ARCH: 32
-      TEST_LIBRARIES: YES
 
     - PYTHON: C:\Python33
       PYTHON_VERSION: 3.3
       PYTHON_ARCH: 32
-      TEST_LIBRARIES: NO
-
-    - PYTHON: C:\Python33
-      PYTHON_VERSION: 3.3
-      PYTHON_ARCH: 32
-      TEST_LIBRARIES: YES
 
     - PYTHON: C:\Python27
       PYTHON_VERSION: 2.7
       PYTHON_ARCH: 32
-      TEST_LIBRARIES: NO
-
-    - PYTHON: C:\Python27
-      PYTHON_VERSION: 2.7
-      PYTHON_ARCH: 32
-      TEST_LIBRARIES: YES
-
 
 init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
@@ -136,17 +83,13 @@ install:
   # under control of '%CMD_IN_ENV%' (see above).
 
   # Upgrade to the latest pip.
-  - '%CMD_IN_ENV% python -m pip install -U pip setuptools wheel'
+  - 'python -m pip install -U pip setuptools wheel'
 
   # Install the PyInstaller test dependencies.
-  - '%CMD_IN_ENV% pip install -U --timeout 5 --retries 2
-        -r tests/requirements-tools.txt'
-  - 'if "%TEST_LIBRARIES%" == "YES" (
-        %CMD_IN_ENV% pip install -U --timeout 5 --retries 2
-             -r tests/requirements-libraries.txt
-    )'
-  # Install PyInstaller into virtualenv.
-  - '%CMD_IN_ENV% pip install -e .'
+  - 'pip install -U -r tests/requirements-tools.txt -r tests/requirements-libraries.txt'
+
+  # Install PyInstaller
+  - 'pip install -e .'
 
 build: none
 
@@ -154,11 +97,8 @@ test_script:
   # Run the tests appropriate for this entry in the test matrix. Skip tests
   # if we're just updating the cache.
   - 'if not "%APPVEYOR_SCHEDULED_BUILD%" == "True" (
-        if /i "%TEST_LIBRARIES%" == "YES" (
-          %CMD_IN_ENV% %PYTEST% %TESTS_LIBRARIES%
-        ) else (
-          %CMD_IN_ENV% %PYTEST% %TESTS_UNITTESTS%
-    ))'
+          %PYTEST%
+    )'
 
 on_finish:
   # Remove old or huge cache files to hopefully not exceed the 1GB cache limit.
