@@ -11,15 +11,27 @@ pyinstaller
 SYNOPSIS
 ==========
 
-``pyinstaller`` <options> SCRIPT
+``pyinstaller`` <options> SCRIPT...
+
+``pyinstaller`` <options> SPECFILE
+
 
 DESCRIPTION
 ============
 
-Automatically calls pyi-configure, pyi-makespec and pyi-build in one
-run. In most cases, running ``pyinstaller`` will be all you have to
-do.
+PyInstaller is a program that freezes (packages) Python programs into
+stand-alone executables, under Windows, Linux, Mac OS X, FreeBSD, Solaris and
+AIX. Its main advantages over similar tools are that PyInstaller works with
+Python 2.7 and 3.3—3.6, it builds smaller executables thanks to transparent
+compression, it is fully multi-platform, and use the OS support to load the
+dynamic libraries, thus ensuring full compatibility.
 
+You may either pass one or more file-names of Python scripts or a single
+`.spec`-file-name. In the first case, ``pyinstaller`` will generate a
+`.spec`-file (as ``pyi-makespec`` would do) and immediately process it.
+
+If you pass a `.spec`-file, this will be processed and most options given on
+the command-line will have no effect.
 Please see the PyInstaller Manual for more information.
 
 
