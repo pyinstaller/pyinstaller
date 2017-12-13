@@ -34,7 +34,7 @@ Example
   GitHub link issues and commits together, and with phrase like “fixes #1259”
   you can even close relevant issues automatically.
 
-* Syncing your fork with the PyInstaller upstream repository. There are two
+* Synchronize your fork with the PyInstaller upstream repository. There are two
   ways for this:
 
   1. Rebase you changes on the current development head (preferred, as it
@@ -45,7 +45,7 @@ Example
       git pull --rebase upstream develop
       git log --online --graph
 
-  2. Merging the current development head into your changes::
+  2. Merge the current development head into your changes::
 
       git remote add upstream https://github.com/pyinstaller/pyinstaller.git
       git fetch upstream develop
@@ -54,14 +54,15 @@ Example
       git log --online --graph
 
   For details see `syncing a fork at github
-  <https://help.github.com/articles/syncing-a-fork>`_
+  <https://help.github.com/articles/syncing-a-fork>`_.
 
 * Push your changes up to your fork::
 
     git push
 
 * Open the *Pull Requests* page at
-  https://github.com/yourname/pyinstaller/pulls and click “New pull request”.
+  https://github.com/YOUR_GITHUB_USERNAME/pyinstaller/pulls
+  and click “New pull request”.
   That’s it.
 
 
