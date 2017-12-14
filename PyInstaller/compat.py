@@ -169,6 +169,11 @@ base_prefix = getattr( sys, 'real_prefix',
 base_prefix = os.path.abspath(base_prefix)
 is_venv = is_virtualenv = base_prefix != os.path.abspath(sys.prefix)
 
+# Conda environments sometimes have different paths or apply patches to
+# packages that can affect how a hook or package should access resources.
+# Method for determining conda taken from:
+# https://stackoverflow.com/a/21318941/433202
+is_conda = 'conda' in sys.version or 'Continuum' in sys.version
 
 # In Python 3.4 module 'imp' is deprecated and there is another way how
 # to obtain magic value.
