@@ -72,6 +72,15 @@ jobs:
     - &lint
       stage: Lint
       python: 2.7
+      install:
+        # Update pip.
+        - python -m pip install -U pip setuptools wheel | cat
+
+        # Install dependencies for PyInstaller tests.
+        - pip install -U -r tests/requirements-tools.txt | cat
+
+        # Install PyInstaller.
+        - pip install -e . | cat
       script:
         - >
             if [ "$TRAVIS_PULL_REQUEST" != "false" ] ; then
