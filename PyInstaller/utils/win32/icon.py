@@ -169,8 +169,21 @@ def CopyIcons(dstpath, srcpath):
     else:
         logger.info("Updating icons from %s to %s", srcpath, dstpath)
 
+    try:
+        # Attempt to load the .ico or .exe containing the icon into memory
+        # using the same mechanism as if it were a DLL. If this fails for
+        # any reason (for example if the file does not exist or is not a
+        # .ico/.exe) then LoadLibraryEx returns a null handle and win32api
+        # raises a unique exception with a win error code and a string.
+        hsrc = win32api.LoadLibraryEx(srcpath, 0, LOAD_LIBRARY_AS_DATAFILE)
+    except win32api.error as W32E:
+        # We could continue with no icon (i.e. just return) however it seems
+        # best to terminate the build with a message.
+        raise SystemExit(
+            "Unable to load icon file {}\n    {} (Error code {})".format(
+                srcpath, W32E.strerror, W32E.winerror )
+                        )
     hdst = win32api.BeginUpdateResource(dstpath, 0)
-    hsrc = win32api.LoadLibraryEx(srcpath, 0, LOAD_LIBRARY_AS_DATAFILE)
     if index is None:
         grpname = win32api.EnumResourceNames(hsrc, RT_GROUP_ICON)[0]
     elif index >= 0:
