@@ -82,10 +82,19 @@ class GRPICONDIRENTRY(Structure):
                "wBitCount", "dwBytesInRes", "nID")
     _format_ = "bbbbhhih"
 
+# An IconFile instance is created for each .ico file given.
 class IconFile:
     def __init__(self, path):
         self.path = path
-        file = open(path, "rb")
+        try:
+            # The path is from the user parameter, don't trust it.
+            file = open(path, "rb")
+        except OSError as OSexception :
+            # The icon file can't be opened for some reason. Stop the
+            # program with an informative message.
+            raise SystemExit(
+                'Unable to open icon file {}'.format(path)
+            )
         self.entries = []
         self.images = []
         header = self.header = ICONDIRHEADER()
@@ -120,6 +129,8 @@ def CopyIcons_FromIco(dstpath, srcpath, id=1):
     hdst = win32api.BeginUpdateResource(dstpath, 0)
 
     iconid = 1
+    # Each step in the following enumerate() will instantiate an IconFile
+    # object, as a result of deferred execution of the map() above.
     for i, f in enumerate(icons):
         data = f.grp_icon_dir()
         data = data + f.grp_icondir_entries(iconid)
