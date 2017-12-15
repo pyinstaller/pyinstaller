@@ -29,9 +29,8 @@ is_py2 = sys.version_info[0] == 2
 is_py3 = sys.version_info[0] == 3
 # Distinguish specific code for various Python versions.
 is_py27 = sys.version_info >= (2, 7) and sys.version_info < (3, 0)
-# PyInstaller supports only Python 3.3+
+# PyInstaller supports only Python 3.4+
 # Variables 'is_pyXY' mean that Python X.Y and up is supported.
-is_py34 = sys.version_info >= (3, 4)
 is_py35 = sys.version_info >= (3, 5)
 is_py36 = sys.version_info >= (3, 6)
 is_py37 = sys.version_info >= (3, 7)
@@ -177,18 +176,18 @@ is_conda = 'conda' in sys.version or 'Continuum' in sys.version
 
 # In Python 3.4 module 'imp' is deprecated and there is another way how
 # to obtain magic value.
-if is_py34:
+if is_py3:
     import importlib.util
     BYTECODE_MAGIC = importlib.util.MAGIC_NUMBER
 else:
-    # This fallback should work with Python 2.7 and 3.3.
+    # This fallback should work with Python 2.7.
     import imp
     BYTECODE_MAGIC = imp.get_magic()
 
 
 # List of suffixes for Python C extension modules.
 try:
-    # In Python 3.3+ There is a list
+    # In Python 3.4+ There is a list
     from importlib.machinery import EXTENSION_SUFFIXES
 except ImportError:
     import imp
@@ -785,13 +784,11 @@ PY3_BASE_MODULES = {
     'weakref',
 }
 
-#FIXME: Reduce this pair of nested tests to "if sys.version_info >= (3, 4)".
-if sys.version_info[0] == 3:
-    if sys.version_info[1] >= 4:
-        PY3_BASE_MODULES.update({
-            '_bootlocale',
-            '_collections_abc',
-        })
+if sys.version_info >= (3, 4):
+    PY3_BASE_MODULES.update({
+        '_bootlocale',
+        '_collections_abc',
+    })
 
 # Object types of Pure Python modules in modulegraph dependency graph.
 # Pure Python modules have code object (attribute co_code).
@@ -877,28 +874,5 @@ def check_requirements():
     Fail hard if any requirement is not met.
     """
     # Fail hard if Python does not have minimum required version
-    if sys.version_info < (3, 3) and sys.version_info[:2] != (2, 7):
-        raise SystemExit('PyInstaller requires at least Python 2.7 or 3.3+.')
-
-
-if not is_py34:
-    class suppress(object):
-        """Context manager to suppress specified exceptions
-        After the exception is suppressed, execution proceeds with the next
-        statement following the with statement.
-             with suppress(FileNotFoundError):
-                 os.remove(somefile)
-             # Execution still resumes here if the file was already removed
-        """
-
-        def __init__(self, *exceptions):
-            self._exceptions = exceptions
-
-        def __enter__(self):
-            pass
-
-        def __exit__(self, exctype, excinst, exctb):
-            return (exctype is not None and
-                    issubclass(exctype, self._exceptions))
-else:
-    from contextlib import suppress  # noqa: F401
+    if sys.version_info < (3, 4) and sys.version_info[:2] != (2, 7):
+        raise SystemExit('PyInstaller requires at least Python 2.7 or 3.4+.')
