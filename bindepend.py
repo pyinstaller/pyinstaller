@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#-----------------------------------------------------------------------------
+#----------------------------------------------------------------------------- 
 # Copyright (c) 2013-2017, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
