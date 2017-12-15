@@ -6,6 +6,19 @@ new code, bug reports, fixes, comments and ideas. A brief list follows,
 please let us know if your name is omitted by accident:
 
 
+Contributions to PyInstaller 3.3.1
+----------------------------------
+
+* Hartmut Goebel - Core developer and release manager.
+* Bryan A. Jones - Core developer.
+* David Vierra - Core developer and encoding specialist.
+* xoviat - brave contributor
+
+* Dave Cortesi, David Hoese, John Daytona, Nejc Habjan, Addison Elliott,
+  Bharath Upadhya, Bill Dengler, Chris Norman, Miles Erickson, Nick Dimou,
+  Thomas Waldmann, David Weil, Placinta
+
+
 Contributions to PyInstaller 3.3
 ----------------------------------
 

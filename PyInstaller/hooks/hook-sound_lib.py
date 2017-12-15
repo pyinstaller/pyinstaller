@@ -11,6 +11,6 @@
 sound_lib: http://hg.q-continuum.net/sound_lib
 """
 
-from pyinstaller.utils.hooks import collect_dynamic_libs
+from PyInstaller.utils.hooks import collect_dynamic_libs
 
 binaries = collect_dynamic_libs('sound_lib')

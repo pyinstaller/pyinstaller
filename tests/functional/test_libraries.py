@@ -812,3 +812,13 @@ def test_h5py(pyi_builder):
     pyi_builder.test_source("""
         import h5py
         """)
+
+
+@importorskip('unidecode')
+def test_unidecode(pyi_builder):
+    pyi_builder.test_source("""
+        from unidecode import unidecode
+
+        # Unidecode should not skip non-ASCII chars if mappings for them exist.
+        assert unidecode(u"kožušček") == "kozuscek"
+        """)

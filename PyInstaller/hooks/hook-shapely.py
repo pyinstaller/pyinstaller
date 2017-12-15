@@ -18,12 +18,16 @@ hiddenimports = ['shapely.prepared']
 
 pkg_base, pkg_dir = get_package_paths('shapely')
 
+
+binaries = []
 if compat.is_win:
-    binaries = []
-    lib_dir = os.path.join(pkg_dir, 'DLLs')
-    binaries += [(os.path.join(lib_dir, f), '') for f in os.listdir(lib_dir)]
+    if compat.is_conda:
+        lib_dir = os.path.join(compat.base_prefix, 'Library', 'bin')
+    else:
+        lib_dir = os.path.join(pkg_dir, 'DLLs')
+    dll_files = ['geos_c.dll', 'geos.dll']
+    binaries += [(os.path.join(lib_dir, f), '.') for f in dll_files]
 elif compat.is_linux:
-    binaries = []
     lib_dir = os.path.join(pkg_dir, '.libs')
     dest_dir = os.path.join('shapely', '.libs')
 

@@ -10,7 +10,7 @@
 pycrypto==2.6.1; python_version <= '3.5' or sys_platform != 'win32'
 
 Django==1.8.18 # PyInstaller doesn't yet work with Django 1.9+
-babel==2.5.0
+babel==2.5.1
 boto==2.48.0
 boto3==1.4.7
 botocore==1.7.1
@@ -27,7 +27,7 @@ sphinx==1.6.3; python_version != '3.3'
 sphinx==1.4.9; python_version == '3.3' # pyup: ignore
 
 pyzmq==16.0.2
-zope.interface==4.4.2  # Required for test_namespace_package
+zope.interface==4.4.3  # Required for test_namespace_package
 
 # numpy 1.12 dropped support for Python 3.3
 numpy==1.13.1; python_version != '3.3'
@@ -38,7 +38,7 @@ numpy==1.11.3; python_version == '3.3' # pyup: ignore
 scipy==0.19.1; sys_platform != 'win32'
 
 # For Windows use a version we know binaries are available
-lxml==3.8.0; sys_platform != 'win32'
+lxml==4.0.0; sys_platform != 'win32'
 lxml==3.7.2; sys_platform == 'win32' and python_version >= '3.5' # pyup: ignore
 lxml==3.6.0; sys_platform == 'win32' and python_version <= '3.4' # pyup: ignore
 
@@ -47,7 +47,7 @@ openpyxl==2.4.8
 pycparser==2.18
 pytz==2017.2
 sqlalchemy==1.1.13
-twisted==17.5.0
+twisted==17.9.0
 zeep==2.4.0
 pyexcelerate==0.7.1
 Pillow==4.2.1
@@ -55,6 +55,7 @@ pycryptodomex==3.4.7
 future==0.16.0
 pyusb==1.0.0
 requests==2.15.1 # Newest version of requests that allows tests to pass
+Unidecode==0.4.21
 
 # Install wheels only on OS X and Win 32, no wheel for Py 3.6 yet.
 pyenchant==1.6.11; (sys_platform == 'darwin' or sys_platform == 'win32') and python_version <= '3.5'
@@ -66,7 +67,7 @@ pyqt5==5.9; python_version >= '3.5' and python_version <= '3.6'
 PySide==1.2.4; sys_platform == 'win32' and python_version <= '3.4'
 
 # interactive test
-ipython==6.1.0; python_version != '2.7'
+ipython==6.2.0; python_version != '2.7'
 ipython==5.4.1; python_version == '2.7' # pyup: ignore
 
 # dateutil.tz is a package in 2.5.0 and does not play nice with PyInstaller.

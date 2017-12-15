@@ -50,6 +50,7 @@ Contents:
    usage
    runtime-information
    spec-files
+   feature-notes
    when-things-go-wrong
    advanced-topics
    hooks
@@ -57,6 +58,7 @@ Contents:
    CHANGES
    CREDITS
    man-pages
+   development/index
 
 
 Indices and tables
