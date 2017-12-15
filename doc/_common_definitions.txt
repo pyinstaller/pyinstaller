@@ -1,6 +1,7 @@
 .. _PyInstaller: http://www.pyinstaller.org
 
 .. |Homepage| replace:: http://www.pyinstaller.org
+.. |Manual| replace:: https://pyinstaller.readthedocs.io/
 .. |PyInstaller| replace:: `PyInstaller`
 .. |PyInstallerVersion| replace:: PyInstaller |release|
 
