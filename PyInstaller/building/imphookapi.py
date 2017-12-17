@@ -19,7 +19,7 @@ instance, thus modifying which modules will be frozen into the executable.
 """
 
 from .datastruct import TOC
-from ..lib.modulegraph.modulegraph import RuntimeModule, RuntimePackage
+from ..lib.modulegraph.node import RuntimeModule, RuntimePackage
 
 
 class PreSafeImportModuleAPI(object):
