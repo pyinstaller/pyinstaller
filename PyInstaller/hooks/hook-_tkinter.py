@@ -219,9 +219,9 @@ def _collect_tcl_tk_files(hook_api):
         return []
 
     tcltree = Tree(
-        tcl_root, prefix='tcl', excludes=['demos', '*.lib', 'tclConfig.sh'])
+        tcl_root, prefix='tclResources', excludes=['demos', '*.lib', 'tclConfig.sh'])
     tktree = Tree(
-        tk_root, prefix='tk', excludes=['demos', '*.lib', 'tkConfig.sh'])
+        tk_root, prefix='tkResources', excludes=['demos', '*.lib', 'tkConfig.sh'])
 
     # If the current Tcl installation is a Teapot-distributed version of
     # ActiveTcl and the current platform is OS X, warn that this is bad.
