@@ -75,6 +75,8 @@ _SPEC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'specs')
 # Timeout for running the executable. If executable does not exit in this time
 # then it is interpreted as test failure.
 _EXE_TIMEOUT = 30  # In sec.
+# Number of retries we should attempt if the executable times out.
+_MAX_RETRIES = 2
 
 # Code
 # ====
@@ -355,17 +357,28 @@ class AppBuilder(object):
                 prog_cwd = prog_cwd.encode('mbcs')
 
         args = [prog_name] + args
-        # Run executable. stderr is redirected to stdout.
-        print('RUNNING: ', safe_repr(exe_path), ", args: ", safe_repr(args))
-
         # Using sys.stdout/sys.stderr for subprocess fixes printing messages in
         # Windows command prompt. Py.test is then able to collect stdout/sterr
         # messages and display them if a test fails.
+        for _ in range(_MAX_RETRIES):
+            retcode = self.__run_executable(args, exe_path, prog_env,
+                                            prog_cwd, runtime)
+            if retcode != 1:  # retcode == 1 means a timeout
+                break
+        return retcode
 
+
+    def __run_executable(self, args, exe_path, prog_env, prog_cwd, runtime):
         process = psutil.Popen(args, executable=exe_path,
                                stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE,
                                env=prog_env, cwd=prog_cwd)
+
+        def _msg(*text):
+            print('[' + str(process.pid) + '] ', *text)
+
+        # Run executable. stderr is redirected to stdout.
+        _msg('RUNNING: ', safe_repr(exe_path), ', args: ', safe_repr(args))
         # 'psutil' allows to use timeout in waiting for a subprocess.
         # If not timeout was specified then it is 'None' - no timeout, just waiting.
         # Runtime is useful mostly for interactive tests.
@@ -382,9 +395,7 @@ class AppBuilder(object):
             else:
                 # Exe is running and it is not interactive. Fail the test.
                 retcode = 1
-                print('TIMED OUT: ', safe_repr(exe_path), ", args: ",
-                      safe_repr(args))
-
+                _msg('TIMED OUT!')
             # Kill the subprocess and its child processes.
             for p in list(process.children(recursive=True)) + [process]:
                 with suppress(psutil.NoSuchProcess):
