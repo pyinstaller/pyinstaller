@@ -946,7 +946,6 @@ class _Visitor(ast.NodeVisitor):
                  function=self.in_def,
                  fromlist=False)}))
 
-
     def visit_Import(self, node):
         for nm in _ast_names(node.names):
             self._collect_import(nm, None, self._level)
@@ -1005,6 +1004,49 @@ class _Visitor(ast.NodeVisitor):
     visit_Call = visit_Expression
 
 
+class ModuleQueue(object):
+    """
+    This object removes the complexity needed for iterative behavior
+    out of modulegraph.
+
+    To understand what this does, assume the following state:
+
+    # register = []
+    # actions = [6, 7]
+
+    In the next iteration, modulegraph will consume the rightmost action
+    and then put deferred modules into the register:
+
+    # actions = [6]
+    # register = [4, 3, 2, 1, 0]
+
+    Again, in the next iteration modulegraph will consume the rightmost action.
+    However, we always append the register to the actions before yielding:
+
+    actions += register
+    # actions = [6, 4, 3, 2, 1, 0]
+
+    And again, in the next iteration, modulegraph will consume the rightmost
+    action, (0 in this case):
+
+    # action = 0
+
+    This emulates recursive behavior exactly, and is in fact slightly more
+    performant according to benchmarks than recursion itself.
+    """
+
+    def __init__(self):
+        self._actions = deque()
+        self._register = deque()
+        self.put = self._register.appendleft
+
+    def consume(self):
+        while self._actions or self._register:
+            self._actions.extend(self._register)
+            self._register.clear()
+
+            yield self._actions.pop()
+
 
 class ModuleGraph(ObjectGraph):
     """
@@ -1039,6 +1081,11 @@ class ModuleGraph(ObjectGraph):
         # Maintain own list of package path mappings in the scope of Modulegraph
         # object.
         self._package_path_map = _packagePathMap
+        self._module_queue = ModuleQueue()
+
+    def _load_deferred_modules(self):
+        for action in self._module_queue.consume():
+            self._load_module(*action)
 
     def set_setuptools_nspackages(self):
         # This is used when running in the test-suite
@@ -1352,20 +1399,29 @@ class ModuleGraph(ObjectGraph):
         m.code = co
         if self.replace_paths:
             m.code = self._replace_paths_in_code(m.code)
+
+        self._load_deferred_modules()
+
         return m
 
+    def import_hook(self, *args, **kwargs):
+
+        target_modules = self._import_hook_deferred(*args, **kwargs)
+        self._load_deferred_modules()
+
+        return target_modules
 
     #FIXME: For safety, the "source_module" parameter should default to the
     #root node of the current graph if unpassed. This parameter currently
     #defaults to None, thus disconnected modules imported in this manner (e.g.,
     #hidden imports imported by depend.analysis.initialize_modgraph()).
-    def import_hook(
-        self,
-        target_module_partname,
-        source_module=None,
-        target_attr_names=None,
-        level=DEFAULT_IMPORT_LEVEL,
-        edge_attr=None,
+    def _import_hook_deferred(
+            self,
+            target_module_partname,
+            source_module=None,
+            target_attr_names=None,
+            level=DEFAULT_IMPORT_LEVEL,
+            edge_attr=None,
     ):
         """
         Import the module with the passed name, all parent packages of this
@@ -1989,8 +2045,11 @@ class ModuleGraph(ObjectGraph):
                     self.msgout(3, "safe_import_module -> None (%r)" % exc)
                     return None
 
-                module = self._load_module(
-                    module_name, file_handle, pathname, metadata)
+                module = self._find_spec(module_name, file_handle, pathname,
+                                         metadata)
+
+                self._module_queue.put((module_name, module, pathname,
+                                        metadata))
             finally:
                 if file_handle is not None:
                     file_handle.close()
@@ -2015,12 +2074,9 @@ class ModuleGraph(ObjectGraph):
         self.msgout(3, "safe_import_module ->", module)
         return module
 
-
-    #FIXME: For clarity, rename method parameters to:
-    #    def _load_module(self, module_name, file_handle, pathname, imp_info):
-    def _load_module(self, fqname, fp, pathname, info):
+    def _find_spec(self, fqname, fp, pathname, info):
         suffix, mode, typ = info
-        self.msgin(2, "load_module", fqname, fp and "fp", pathname)
+        self.msgin(2, "find_spec", fqname, fp and "fp", pathname)
 
         if typ == imp.PKG_DIRECTORY:
             if isinstance(mode, (list, tuple)):
@@ -2028,8 +2084,9 @@ class ModuleGraph(ObjectGraph):
             else:
                 packagepath = []
 
-            m = self._load_package(fqname, pathname, packagepath)
-            self.msgout(2, "load_module ->", m)
+            m = self._load_package(
+                fqname, pathname, packagepath, use_find_spec=True)
+            self.msgout(2, "find_spec ->", m)
             return m
 
         if typ == imp.PY_SOURCE:
@@ -2041,7 +2098,6 @@ class ModuleGraph(ObjectGraph):
 
             try:
                 co = compile(contents, pathname, 'exec', ast.PyCF_ONLY_AST, True)
-                #co = compile(contents, pathname, 'exec', 0, True)
             except SyntaxError:
                 co = None
                 cls = InvalidSourceModule
@@ -2052,7 +2108,7 @@ class ModuleGraph(ObjectGraph):
 
         elif typ == imp.PY_COMPILED:
             if fp.read(4) != imp.get_magic():
-                self.msg(2, "load_module: InvalidCompiledModule", pathname)
+                self.msg(2, "find_spec: InvalidCompiledModule", pathname)
                 co = None
                 cls = InvalidCompiledModule
 
@@ -2082,19 +2138,30 @@ class ModuleGraph(ObjectGraph):
                     co = compile(co_ast, pathname, 'exec', 0, True)
                 else:
                     co_ast = None
-                self._scan_code(m, co, co_ast)
+
+                self._scan_code(m, co, co_ast, defer_imports=True)
 
                 if self.replace_paths:
                     co = self._replace_paths_in_code(co)
+
                 m.code = co
             except SyntaxError:
-                self.msg(1, "load_module: SyntaxError in ", pathname)
+                self.msg(1, "find_spec: SyntaxError in ", pathname)
                 cls = InvalidSourceModule
                 m = self.createNode(cls, fqname)
 
-        self.msgout(2, "load_module ->", m)
+        self.msgout(2, "find_spec ->", m)
         return m
 
+    # FIXME: For clarity, rename method parameters to:
+    #    def _load_module(self, module_name, file_handle, pathname, imp_info):
+    def _load_module(self, fqname, m, pathname, info):
+
+        self.msgin(2, "load_module", fqname, m, pathname)
+        self._process_imports(m)
+        self.msgout(2, "load_module ->", m)
+
+        return m
 
     def _safe_import_hook(
         self, target_module_partname, source_module, target_attr_names,
@@ -2219,9 +2286,12 @@ class ModuleGraph(ObjectGraph):
 
         # Attempt to import this target module in the customary way.
         try:
-            target_modules = self.import_hook(
-                target_module_partname, source_module,
-                target_attr_names=None, level=level, edge_attr=edge_attr)
+            target_modules = self._import_hook_deferred(
+                target_module_partname,
+                source_module,
+                target_attr_names=None,
+                level=level,
+                edge_attr=edge_attr)
         # Failing that, defer to custom module importers handling non-standard
         # import schemes (namely, SWIG).
         except ImportError as msg:
@@ -2274,7 +2344,7 @@ class ModuleGraph(ObjectGraph):
                              % (source_module, target_attr_names, level))
                     # Import this target SWIG C extension's package.
                     try:
-                        target_modules = self.import_hook(
+                        target_modules = self._import_hook_deferred(
                             target_module_partname, source_module,
                             target_attr_names=None,
                             level=level,
@@ -2413,8 +2483,9 @@ class ModuleGraph(ObjectGraph):
                         # length of this list, doing so would render this code
                         # dependent on import_hook() details subject to change.
                         # Instead, call findNode() to decide the truthiness.
-                        self.import_hook(
-                            target_module_partname, source_module,
+                        self._import_hook_deferred(
+                            target_module_partname,
+                            source_module,
                             target_attr_names=[target_submodule_partname],
                             level=level,
                             edge_attr=edge_attr)
@@ -2477,12 +2548,11 @@ class ModuleGraph(ObjectGraph):
         # Return the list of all target modules imported by this call.
         return target_modules
 
-
-    def _scan_code(
-        self,
-        module,
-        module_code_object,
-        module_code_object_ast=None):
+    def _scan_code(self,
+                   module,
+                   module_code_object,
+                   module_code_object_ast=None,
+                   defer_imports=False):
         """
         Parse and add all import statements from the passed code object of the
         passed source module to this graph, recursively.
@@ -2543,9 +2613,9 @@ class ModuleGraph(ObjectGraph):
             self._scan_bytecode(
                 module, module_code_object, is_scanning_imports=True)
 
-        # Add all imports parsed above to this graph.
-        self._process_imports(module)
-
+        if not defer_imports:
+            # Add all imports parsed above to this graph.
+            self._process_imports(module)
 
     def _scan_ast(self, module, module_code_object_ast):
         """
@@ -2747,16 +2817,16 @@ class ModuleGraph(ObjectGraph):
 
             # If this is a "from"-style star import, process this import.
             if have_star:
-                #FIXME: Sadly, the current approach to importing attributes
-                #from "from"-style star imports is... simplistic. This should
-                #be revised as follows. If this target module is:
+                # FIXME: Sadly, the current approach to importing attributes
+                # from "from"-style star imports is... simplistic. This should
+                # be revised as follows. If this target module is:
                 #
-                #* A package:
+                # * A package:
                 #  * Whose "__init__" submodule defines the "__all__" global
                 #    attribute, only attributes listed by this attribute should
                 #    be imported.
                 #  * Else, *NO* attributes should be imported.
-                #* A non-package:
+                # * A non-package:
                 #  * Defining the "__all__" global attribute, only attributes
                 #    listed by this attribute should be imported.
                 #  * Else, only public attributes whose names are *NOT*
@@ -2776,8 +2846,7 @@ class ModuleGraph(ObjectGraph):
         # For safety, prevent these imports from being reprocessed.
         source_module._deferred_imports = None
 
-
-    def _load_package(self, fqname, pathname, pkgpath):
+    def _load_package(self, fqname, pathname, pkgpath, use_find_spec=False):
         """
         Called only when an imp.PKG_DIRECTORY is found
         """
@@ -2813,7 +2882,10 @@ class ModuleGraph(ObjectGraph):
         else:
             try:
                 self.msg(2, "load __init__ for %s"%(m.packagepath,))
-                self._load_module(fqname, fp, buf, stuff)
+                if use_find_spec:
+                    self._find_spec(fqname, fp, buf, stuff)
+                else:
+                    self._load_module(fqname, fp, buf, stuff)
             finally:
                 if fp is not None:
                     fp.close()
