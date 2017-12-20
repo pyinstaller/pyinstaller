@@ -5,8 +5,8 @@ Run-time Information
 
 Your app should run in a bundle exactly as it does when run from source.
 However, you may want to learn at run-time whether the app is running from
-source or whether it is bundled. You can use the following code to check "are
-we bundled?"::
+source or whether it is bundled ("frozen"). You can use the following code to
+check "are we bundled?"::
 
     import sys
     if getattr(sys, 'frozen') and hasattr(sys, '_MEIPASS'):
