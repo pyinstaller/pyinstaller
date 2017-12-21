@@ -206,16 +206,8 @@ else:
 #    ensure that it can work on MSYS2 (which requires pywin32-ctypes)
 if is_win:
     try:
-        from PyInstaller.utils.win32 import winutils
-        try:
-            pywintypes = winutils.import_pywin32_module('pywintypes', _is_venv=is_venv)
-            win32api = winutils.import_pywin32_module('win32api', _is_venv=is_venv)
-        except ImportError:
-            try:
-                from win32ctypes.pywin32 import pywintypes
-                from win32ctypes.pywin32 import win32api
-            except ImportError:
-                raise
+        from win32ctypes.pywin32 import pywintypes  # noqa: F401
+        from win32ctypes.pywin32 import win32api
     except ImportError:
         # This environment variable is set by seutp.py
         # - It's not an error for pywin32 to not be installed at that point

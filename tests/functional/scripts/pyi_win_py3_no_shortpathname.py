@@ -11,11 +11,7 @@
 # bootloader are usable filenames.
 
 import sys, os
-
-try:
-    import win32api
-except ImportError:
-    from win32ctypes.pywin32 import win32api
+import win32api
 
 if sys.version_info[0] == 2:
     safe_repr = repr
