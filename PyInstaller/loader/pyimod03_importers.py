@@ -154,10 +154,9 @@ class FrozenPackageImporter(object):
     def __init__(self, importer, entry_name):
         temploadm = self.load_module
         for attrname in dir(importer):
-            try:
+            if attrname[0] != '_' :
                 setattr(self,attrname,getattr(importer,attrname))
-            except:
-                pass
+                
         #set back the loadmodule
         setattr(self, "load_module", temploadm)
         self._entry_name = entry_name

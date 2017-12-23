@@ -12,4 +12,4 @@ def _iter_frozenimport_modules(importer, prefix=''):
             yielded[modname] = 1
             yield prefix + modname, importer.is_package(fn)
 
-iter_importer_modules.register(eval("pyimod03_importers.FrozenImporter"), _iter_frozenimport_modules)
+iter_importer_modules.register(eval("pyimod03_importers.FrozenPackageImporter"), _iter_frozenimport_modules)

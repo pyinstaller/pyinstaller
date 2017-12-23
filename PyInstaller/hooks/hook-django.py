@@ -49,6 +49,7 @@ if root_dir:
             'django.template.defaulttags',
             'django.template.loader_tags',
             'django.template.context_processors',
+			'django.template.loaders',
     ]
     hiddenimports += collect_submodules('django.middleware')
     hiddenimports += collect_submodules('django.templatetags')
