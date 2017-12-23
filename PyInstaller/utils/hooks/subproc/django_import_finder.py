@@ -24,6 +24,7 @@ import os
 # and also reads the user settings from DJANGO_SETTINGS_MODULE.
 # https://stackoverflow.com/questions/24793351/django-appregistrynotready
 import django
+
 django.setup()
 
 # This allows to access all django settings even from the settings.py module.
@@ -31,11 +32,11 @@ from django.conf import settings
 
 from PyInstaller.utils.hooks import collect_submodules
 
-
 hiddenimports = list(settings.INSTALLED_APPS) + \
-                 list(settings.TEMPLATE_CONTEXT_PROCESSORS) + \
-                 list(settings.TEMPLATE_LOADERS) + \
-                 [settings.ROOT_URLCONF]
+                [settings.ROOT_URLCONF]
+"""                 list(settings.TEMPLATE_CONTEXT_PROCESSORS) + 
+                list(settings.TEMPLATE_LOADERS) + """
+                
 
 
 def _remove_class(class_name):
@@ -60,6 +61,7 @@ if hasattr(settings, 'MIDDLEWARE_CLASSES'):
     for cl in settings.MIDDLEWARE_CLASSES:
         cl = _remove_class(cl)
         hiddenimports.append(cl)
+        logger.info('added middlewareclass',cl)
 # Templates is a dict:
 if hasattr(settings, 'TEMPLATES'):
     for templ in settings.TEMPLATES:
@@ -84,9 +86,9 @@ def find_url_callbacks(urls_module):
         urlpatterns = urls_module.urlpatterns
         hid_list = [urls_module.__name__]
     for pattern in urlpatterns:
-        if isinstance(pattern, RegexURLPattern):
+        if isinstance(pattern, RegexPattern):
             hid_list.append(pattern.callback.__module__)
-        elif isinstance(pattern, RegexURLResolver):
+        elif isinstance(pattern, URLResolver):
             hid_list += find_url_callbacks(pattern.urlconf_module)
     return hid_list
 
@@ -100,7 +102,7 @@ for app in settings.INSTALLED_APPS:
     hiddenimports.append(app_ctx_proc_module)
 
 
-from django.core.urlresolvers import RegexURLPattern, RegexURLResolver
+from django.urls.resolvers import RegexPattern, URLResolver
 
 
 # Construct base module name - without 'settings' suffix.
