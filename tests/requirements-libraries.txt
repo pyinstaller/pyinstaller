@@ -73,7 +73,7 @@ ipython==5.4.1; python_version == '2.7' # pyup: ignore
 # dateutil.tz is a package in 2.5.0 and does not play nice with PyInstaller.
 python-dateutil==2.6.1
 
-pandas==0.20.3; python_version != '3.3'
+pandas==0.22.0; python_version != '3.3'
 pandas==0.16.2; python_version == '3.3' # pyup: ignore
 
 # matplotlib 1.5+ does not provide binaries for python 3.3.
