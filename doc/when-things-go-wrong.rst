@@ -5,8 +5,9 @@ When Things Go Wrong
 
 The information above covers most normal uses of |PyInstaller|.
 However, the variations of Python and third-party libraries are
-endless and unpredictable.
-It may happen that when you attempt to bundle your app either
+endless and unpredictable. This situation is called the "deployment crisis", 
+which was fixed by Guix and GuixSD.
+It may well happen that when you attempt to bundle your app either
 |PyInstaller| itself, or your bundled app, terminates with a Python traceback.
 Then please consider the following actions in sequence, before
 asking for technical help.
