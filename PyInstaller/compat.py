@@ -56,14 +56,12 @@ is_unix = is_linux or is_solar or is_aix or is_freebsd or is_hpux
 
 # On different platforms is different file for dynamic python library.
 _pyver = sys.version_info[:2]
-if is_win:
+if is_win or is_cygwin:
     PYDYLIB_NAMES = {'python%d%d.dll' % _pyver,
-                     'libpython%d.%d.dll' % _pyver}  # For MSYS2 environment
-elif is_cygwin:
-    PYDYLIB_NAMES = {'libpython%d%d.dll' % _pyver,
+                     'libpython%d%d.dll' % _pyver,
                      'libpython%d%dm.dll' % _pyver,
                      'libpython%d.%d.dll' % _pyver,
-                     'libpython%d.%dm.dll' % _pyver}
+                     'libpython%d.%dm.dll' % _pyver}  # For MSYS2 environment
 elif is_darwin:
     # libpython%d.%dm.dylib for Conda virtual environment installations
     PYDYLIB_NAMES = {'Python', '.Python',
