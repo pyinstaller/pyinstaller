@@ -23,7 +23,7 @@ markdown==2.6.9
 simplejson==3.11.1 # simplejson is used for text_c_extension
 
 # sphinx 1.5 requires Python 2.7 or >= 3.4
-sphinx==1.6.3; python_version != '3.3'
+sphinx==1.6.6; python_version != '3.3'
 sphinx==1.4.9; python_version == '3.3' # pyup: ignore
 
 pyzmq==16.0.2
