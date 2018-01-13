@@ -343,8 +343,31 @@ For example modify the spec file this way::
           exclude_binaries=...
           )
 
+One-File mode
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+If you are hoping to build a one file mode, the ``COLLECTION`` should be an empty tuple with its previous values absorbed by the ``EXE`` class. Your ``.exe`` file will still be in the dist folder with the name you specify here as the ``name``
+
+	  exe = EXE(pyz,
+              a.scripts,
+              a.binaries,
+              a.zipfiles,
+              a.datas,
+              exclude_binaries=False,
+              name='install',
+              icon='icon.ICO',
+              debug=False,
+              strip=False,
+              upx=True,
+              console=True )
+          coll = COLLECT()
+
+note that the ``exclude_binaries`` has been set to ``False``. The ``icon`` keyword has also been absorbed here.
+The ``upx`` is also set to ``true`` as is the default when building with a ``spec`` file, you should set it to ``False``,
+if you are all too uncomfortable with it.
+
 
 .. _spec file options for a mac os x bundle:
+
 
 Spec File Options for a Mac OS X Bundle
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
