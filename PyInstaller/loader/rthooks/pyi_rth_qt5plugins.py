@@ -15,10 +15,6 @@
 import os
 import sys
 
-d = "qt5_plugins"
-d = os.path.join(sys._MEIPASS, d)
-
-
 # We remove QT_PLUGIN_PATH variable, because we want Qt5 to load
 # plugins only from one path.
 if 'QT_PLUGIN_PATH' in os.environ:
@@ -48,5 +44,6 @@ try:
 except ImportError:
     from PySide2.QtCore import QCoreApplication
 
-# We set "qt5_plugins" as only one path for Qt5 plugins
+# Self-compiled versions of PyQt5 don't have this set correctly, while wheel versions do. Set this correctly regardless. See https://github.com/pyinstaller/pyinstaller/issues/3175.
+d = os.path.join(sys._MEIPASS, 'PyQt5', 'Qt', 'plugins')
 QCoreApplication.setLibraryPaths([os.path.abspath(d)])
