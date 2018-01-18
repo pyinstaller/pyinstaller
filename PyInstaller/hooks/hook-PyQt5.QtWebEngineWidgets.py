@@ -9,16 +9,11 @@
 
 import json
 import os
-from PyInstaller.utils.hooks import exec_statement, remove_prefix, get_module_file_attribute
+from PyInstaller.utils.hooks import add_qt5_dependencies, exec_statement, remove_prefix, get_module_file_attribute
 from PyInstaller.depend.bindepend import getImports
 import PyInstaller.compat as compat
 
-hiddenimports = ["sip",
-                 "PyQt5.QtCore",
-                 "PyQt5.QtGui",
-                 "PyQt5.QtNetwork",
-                 "PyQt5.QtWebChannel",
-                 "PyQt5.QtWebEngineCore",
+hiddenimports, binaries, datas = add_qt5_dependencies(__file__)
 
 # Query Qt for paths needed. See http://doc.qt.io/qt-5/qlibraryinfo.html.
 q_library_info = json.loads(exec_statement("""
@@ -34,7 +29,7 @@ q_library_info = json.loads(exec_statement("""
 """))
 
 # Include the webengine process.
-datas = [
+datas += [
     (os.path.join(q_library_info['LibraryExecutablesPath'], 'QtWebEngineProcess*'), os.path.join('PyQt5', 'Qt', remove_prefix(q_library_info['LibraryExecutablesPath'], q_library_info['PrefixPath'] + '/')))
 ]
 
@@ -52,7 +47,6 @@ else:
 
 # Add Linux-specific libraries.
 if compat.is_linux:
-    binaries = []
     # The automatic library detection fails for `NSS <https://packages.ubuntu.com/search?keywords=libnss3>`_, which is used by QtWebEngine.
     #
     # First, find the location of NSS.

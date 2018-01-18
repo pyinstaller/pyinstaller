@@ -6,21 +6,15 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
-
-hiddenimports = ['sip',
-                 'PyQt5.QtCore',
-                 'PyQt5.QtQml',
-                 'PyQt5.QtGui',
-                 'PyQt5.QtNetwork'
-                 ]
-
 from PyInstaller.utils.hooks import (
     qt5_qml_dir,
     qt5_qml_data,
     qt5_qml_plugins_binaries,
     qt5_qml_plugins_datas
 )
+from PyInstaller.utils.hooks import add_qt5_dependencies
+
+hiddenimports, binaries, datas = add_qt5_dependencies(__file__)
 
 # TODO: we should parse the Qml files to see what we need to import.
 dirs = ['Qt',
@@ -37,13 +31,12 @@ dirs = ['Qt',
 qmldir = qt5_qml_dir('PyQt5')
 
 # Add base qml directories
-datas = [qt5_qml_data(qmldir, dir) for dir in dirs]
+datas += [qt5_qml_data(qmldir, dir) for dir in dirs]
 
 # Add qmldir and *.qmltypes files
 for dir in dirs:
     datas.extend(qt5_qml_plugins_datas(qmldir, dir))
 
 # Add binaries
-binaries = []
 for dir in dirs:
     binaries.extend(qt5_qml_plugins_binaries(qmldir, dir))
