@@ -284,16 +284,13 @@ def test_PyQt5_QtWebKit(pyi_builder):
     pyi_builder.test_script('pyi_lib_PyQt5-QtWebKit.py')
 
 
-@pytest.mark.skipif(is_module_satisfies('Qt >= 5.6', get_module_attribute('PyQt5.QtCore', 'QT_VERSION_STR')),
-                    reason='QtWebKit is depreciated in Qt 5.6+')
 @importorskip('PyQt5')
 def test_PyQt5_uic(tmpdir, pyi_builder, data_dir):
     # Note that including the data_dir fixture copies files needed by this test.
     pyi_builder.test_script('pyi_lib_PyQt5-uic.py')
 
-@xfail(is_linux and is_py35, reason="Fails on linux >3.5")
-@xfail(is_darwin, reason="Fails on OSX")
-@xfail(is_win and is_py35 and not is_py36, reason="Fails on win == 3.6")
+
+@xfail(is_darwin, reason='Need help to debug.')
 @importorskip('PyQt5')
 def test_PyQt5_QWebEngine(pyi_builder):
     pyi_builder.test_source(

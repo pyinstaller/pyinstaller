@@ -14,8 +14,8 @@ import os
 # Third-party imports
 # -------------------
 # Instead of creating a custom .spec file: inform PyInstaller of the
-# hidden import of QtWebKit, which is performed inside of uic.loadUi.
-from PyQt5.QtWebKitWidgets import QWebView
+# hidden import of QtQuickWidgets, which is performed inside of uic.loadUi.
+import PyQt5.QtQuickWidgets
 # Other Qt imports used in the code below.
 from PyQt5.QtWidgets import QApplication, QDialog
 from PyQt5 import uic
