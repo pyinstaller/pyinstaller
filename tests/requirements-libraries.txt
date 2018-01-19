@@ -43,7 +43,7 @@ lxml==3.7.2; sys_platform == 'win32' and python_version >= '3.5' # pyup: ignore
 lxml==3.6.0; sys_platform == 'win32' and python_version <= '3.4' # pyup: ignore
 
 keyring==10.4.0
-openpyxl==2.4.8
+openpyxl==2.4.10
 pycparser==2.18
 pytz==2017.2
 sqlalchemy==1.1.13
