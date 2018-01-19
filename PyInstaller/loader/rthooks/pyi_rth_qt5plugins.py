@@ -15,8 +15,11 @@
 import os
 import sys
 
-d = "qt5_plugins"
-d = os.path.join(sys._MEIPASS, d)
+
+sub_dir = os.path.join('PyQt5', 'Qt', 'plugins')
+d = os.path.join(sys._MEIPASS, sub_dir)
+if not os.path.isfile(d):
+    d = os.path.join(os.path.dirname(sys.executable), 'PyQt5', 'Qt', 'plugins')
 
 
 # We remove QT_PLUGIN_PATH variable, because we want Qt5 to load

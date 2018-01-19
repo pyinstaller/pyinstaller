@@ -277,6 +277,24 @@ def test_PyQt4_uic(tmpdir, pyi_builder, data_dir):
     pyi_builder.test_script('pyi_lib_PyQt4-uic.py')
 
 
+@importorskip('PyQt5')
+def test_PyQt5_QtWidgets(pyi_builder):
+    pyi_builder.test_source(
+        """
+        from PyQt5 import Qt
+        from PyQt5 import QtCore
+        from PyQt5 import QtGui
+        from PyQt5 import QtWidgets
+
+        app = QtWidgets.QApplication([])        
+        label = QtWidgets.QLabel("Hello World from PyQt5", None)
+        label.setWindowTitle("Hello World from PyQt5")
+        label.resize(300, 300)
+        label.show()
+        """
+    )
+
+
 @pytest.mark.skipif(is_module_satisfies('Qt >= 5.6', get_module_attribute('PyQt5.QtCore', 'QT_VERSION_STR')),
                     reason='QtWebKit is depreciated in Qt 5.6+')
 @importorskip('PyQt5')
