@@ -58,19 +58,25 @@ PYQT_MODULES = [
     'QtXmlPatterns',
 ]
 
-qt_module_obj = __import__('PyQt5.Qt').__dict__['Qt']
+try:
+    qt_module_obj = __import__('PyQt5.Qt')
+except ImportError:
+    # If the PyQt5.Qt module wasn't bundled, skip this.
+    pass
+else:
+    # PyQt5.Qt was bundled. Fake its contents.
+    qt_module_dict = qt_module_obj.__dict__['Qt']
+    for module_name in PYQT_MODULES:
+        try:
+            # This is always the top-level 'PyQt5' module.
+            top_level_module_obj = __import__(PYQT_PACKAGE + '.' + module_name)
 
-for module_name in PYQT_MODULES:
-    try:
-        # This is always the top-level 'PyQt5' module.
-        top_level_module_obj = __import__(PYQT_PACKAGE + '.' + module_name)
+            # Grab the module we are interested in from the top-level module
+            module_obj = top_level_module_obj.__dict__[module_name]
 
-        # Grab the module we are interested in from the top-level module
-        module_obj = top_level_module_obj.__dict__[module_name]
-
-        # Merge symbols exported by the module with PyQt5.Qt
-        qt_module_obj.__dict__.update(module_obj.__dict__)
-    except ImportError:
-        # It is OK if some module is missing. E.g.: QtMacExtras is built only on
-        # OS X and QtWinExtras is built only on Windows.
-        pass
+            # Merge symbols exported by the module with PyQt5.Qt
+            qt_module_dict.__dict__.update(module_obj.__dict__)
+        except ImportError:
+            # It is OK if some module is missing. E.g.: QtMacExtras is built only on
+            # OS X and QtWinExtras is built only on Windows.
+            pass
