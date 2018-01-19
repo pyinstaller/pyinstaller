@@ -28,22 +28,22 @@ q_library_info = json.loads(exec_statement("""
     })))
 """))
 
-# Include the webengine process.
-datas += [
-    (os.path.join(q_library_info['LibraryExecutablesPath'], 'QtWebEngineProcess*'), os.path.join('PyQt5', 'Qt', remove_prefix(q_library_info['LibraryExecutablesPath'], q_library_info['PrefixPath'] + '/')))
-]
-
-# Include translations and resources.
+# Include the web engine process, translations, and resources.
 if compat.is_darwin:
     # This is based on the layout of the Mac wheel from PyPi.
-    datas.append((os.path.join(q_library_info['DataPath'], 'lib', 'QtWebEngineCore.framework', 'Resources'), 'PyQt5', 'Qt', 'lib', 'QtWebEngineCore.framework', 'Resources'))
+    datas += [
+        (os.path.join(q_library_info['DataPath'], 'lib', 'QtWebEngineCore.framework', 'Resources'), os.path.join('PyQt5', 'Qt', 'lib', 'QtWebEngineCore.framework', 'Resources')),
+        (os.path.join(q_library_info['DataPath'], 'lib', 'QtWebEngineCore.framework', 'Helpers', 'QtWebEngineProcess.app', 'Contents', 'MacOS', 'QtWebEngineProcess'), os.path.join('PyQt5', 'Qt', 'lib', 'QtWebEngineCore.framework', 'Helpers', 'QtWebEngineProcess.app', 'Contents', 'MacOS')),
+    ]
 else:
     datas += [
         # Gather translations needed by Chromium.
         (os.path.join(q_library_info['TranslationsPath'], 'qtwebengine_locales'), os.path.join('PyQt5', 'Qt', 'translations', 'qtwebengine_locales')),
         # Per the `docs <https://doc.qt.io/qt-5.10/qtwebengine-deploying.html#deploying-resources>`_, ``DataPath`` is the base directory for ``resources``.
-        ((os.path.join(q_library_info['DataPath'], 'resources'), os.path.join('PyQt5', 'Qt', 'resources')))
-    ]
+        (os.path.join(q_library_info['DataPath'], 'resources'), os.path.join('PyQt5', 'Qt', 'resources')),
+        # Include the webengine process. The ``LibraryExecutablesPath`` is only valid on Windows and Linux.
+        (os.path.join(q_library_info['LibraryExecutablesPath'], 'QtWebEngineProcess*'), os.path.join('PyQt5', 'Qt', remove_prefix(q_library_info['LibraryExecutablesPath'], q_library_info['PrefixPath'] + '/')))
+]
 
 # Add Linux-specific libraries.
 if compat.is_linux:
