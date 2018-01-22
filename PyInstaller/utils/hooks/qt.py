@@ -437,7 +437,12 @@ def add_qt5_dependencies(hook_name):
         path = QLibraryInfo.location(QLibraryInfo.TranslationsPath)
         print(str(path))
     """)
-    datas = [(os.path.join(translations_path, tb + '_*.qm'), os.path.join('PyQt5', 'Qt', 'translations')) for tb in translations_base]
+    # Not all PyQt5 installations include translations. See https://github.com/pyinstaller/pyinstaller/pull/3229#issuecomment-359479893.
+    if os.path.isdir(translations_path):
+        datas = [(os.path.join(translations_path, tb + '_*.qm'), os.path.join('PyQt5', 'Qt', 'translations')) for tb in translations_base]
+    else:
+        datas = []
+        logger.warning('Unable to find Qt5 translations at %s. Translations not packaged.', translations_path)
     # Change hiddenimports to a list.
     hiddenimports = list(hiddenimports)
 
