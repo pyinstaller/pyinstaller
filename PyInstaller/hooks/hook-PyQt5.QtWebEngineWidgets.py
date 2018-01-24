@@ -7,62 +7,46 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-import json
 import os
-from PyInstaller.utils.hooks import add_qt5_dependencies, exec_statement, \
-    remove_prefix, get_module_file_attribute
+from PyInstaller.utils.hooks import add_qt5_dependencies, \
+    get_module_file_attribute, qt5_library_info
 from PyInstaller.depend.bindepend import getImports
 import PyInstaller.compat as compat
 
 hiddenimports, binaries, datas = add_qt5_dependencies(__file__)
 
-# Query Qt for paths needed. See http://doc.qt.io/qt-5/qlibraryinfo.html.
-q_library_info = json.loads(exec_statement("""
-    import json
-    from PyQt5.QtCore import QLibraryInfo
-    path = QLibraryInfo.location(QLibraryInfo.LibraryExecutablesPath)
-    print(str(json.dumps({
-        'LibraryExecutablesPath':
-            QLibraryInfo.location(QLibraryInfo.LibraryExecutablesPath),
-        'TranslationsPath':
-            QLibraryInfo.location(QLibraryInfo.TranslationsPath),
-        'PrefixPath': QLibraryInfo.location(QLibraryInfo.PrefixPath),
-        'DataPath': QLibraryInfo.location(QLibraryInfo.DataPath),
-    })))
-"""))
-
 # Include the web engine process, translations, and resources.
 if compat.is_darwin:
     # This is based on the layout of the Mac wheel from PyPi.
+    data_path = qt5_library_info.location['DataPath']
+    rel_data_path = qt5_library_info.rel_location['DataPath']
+    resources = 'lib', 'QtWebEngineCore.framework', 'Resources'
+    web_engine_process = ('lib', 'QtWebEngineCore.framework', 'Helpers',
+                          'QtWebEngineProcess.app', 'Contents', 'MacOS')
     datas += [
-        (os.path.join(q_library_info['DataPath'], 'lib',
-                      'QtWebEngineCore.framework', 'Resources'),
-         os.path.join('PyQt5', 'Qt', 'lib', 'QtWebEngineCore.framework',
-                      'Resources')),
-        (os.path.join(q_library_info['DataPath'], 'lib',
-                      'QtWebEngineCore.framework', 'Helpers',
-                      'QtWebEngineProcess.app', 'Contents', 'MacOS',
-                      'QtWebEngineProcess'),
-         os.path.join('PyQt5', 'Qt', 'lib', 'QtWebEngineCore.framework',
-                      'Helpers', 'QtWebEngineProcess.app', 'Contents',
-                      'MacOS')),
+        (os.path.join(data_path, *resources),
+         os.path.join(rel_data_path, *resources)),
+        (os.path.join(data_path, *web_engine_process, 'QtWebEngineProcess'),
+         os.path.join(rel_data_path, *web_engine_process)),
     ]
 else:
+    locales = 'qtwebengine_locales'
+    resources = 'resources'
     datas += [
         # Gather translations needed by Chromium.
-        (os.path.join(q_library_info['TranslationsPath'],
-                      'qtwebengine_locales'),
-         os.path.join('PyQt5', 'Qt', 'translations', 'qtwebengine_locales')),
+        (os.path.join(qt5_library_info.location['TranslationsPath'],
+                      locales),
+         os.path.join(qt5_library_info.rel_location['TranslationsPath'],
+                      locales)),
         # Per the `docs <https://doc.qt.io/qt-5.10/qtwebengine-deploying.html#deploying-resources>`_,
         # ``DataPath`` is the base directory for ``resources``.
-        (os.path.join(q_library_info['DataPath'], 'resources'),
-         os.path.join('PyQt5', 'Qt', 'resources')),
+        (os.path.join(qt5_library_info.location['DataPath'], resources),
+         os.path.join(qt5_library_info.rel_location['DataPath'], resources)),
         # Include the webengine process. The ``LibraryExecutablesPath`` is only
         # valid on Windows and Linux.
-        (os.path.join(q_library_info['LibraryExecutablesPath'], 'QtWebEngineProcess*'),
-         os.path.join('PyQt5', 'Qt',
-                      remove_prefix(q_library_info['LibraryExecutablesPath'],
-                                    q_library_info['PrefixPath'] + '/')))
+        (os.path.join(qt5_library_info.location['LibraryExecutablesPath'],
+                      'QtWebEngineProcess*'),
+         qt5_library_info.rel_location['LibraryExecutablesPath'])
     ]
 
 # Add Linux-specific libraries.

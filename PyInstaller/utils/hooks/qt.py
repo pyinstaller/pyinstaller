@@ -8,14 +8,74 @@
 #-----------------------------------------------------------------------------
 import os
 import sys
+import json
 
-from ..hooks import eval_statement, exec_statement, get_homebrew_path, get_module_file_attribute
+from ..hooks import eval_statement, exec_statement, get_homebrew_path, \
+    get_module_file_attribute
 from PyInstaller.depend.bindepend import getImports, getfullnameof
 from ... import log as logging
-from ...compat import exec_command, is_py3, is_win, is_darwin, is_linux
+from ...compat import is_py3, is_win, is_darwin, is_linux
 from ...utils import misc
 
 logger = logging.getLogger(__name__)
+
+
+# This class uses introspection to determine the location of Qt5 files. This is
+# essential to deal with the many variants of the PyQt5 package, each of which
+# places files in a different location. In addition, each variant may not
+# contain all the Qt5 files (omitting translations, or QML, etc.).
+#
+# Therefore, this class provides all members of `QLibraryInfo
+# <http://doc.qt.io/qt-5/qlibraryinfo.html>`_, with a few additions
+# (``base_dir`` and ``rel_location``).
+class Qt5LibraryInfo:
+    def __init__(self, namespace='PyQt5'):
+        if namespace not in ['PyQt5', 'PySide2']:
+            raise Exception('Invalid namespace: {0}'.format(namespace))
+        self.namespace = namespace
+
+    # Initialize most of this class only when values are first requested from
+    # it.
+    def __getattr__(self, name):
+        if 'base_dir' not in self.__dict__:
+
+            # Provide the absolute path to the directory containing the PyQt5
+            # package.
+            self.base_dir = os.path.dirname(os.path.dirname(
+                get_module_file_attribute(self.namespace)))
+
+            # Get library path information from Qt. See QLibraryInfo_.
+            qli = json.loads(exec_statement("""
+                import json
+                from %s.QtCore import QLibraryInfo
+
+                paths = [x for x in dir(QLibraryInfo) if x.endswith('Path')]
+                location = {x: QLibraryInfo.location(getattr(QLibraryInfo, x))
+                            for x in paths}
+                print(str(json.dumps({
+                    'isDebugBuild': QLibraryInfo.isDebugBuild(),
+                    'version': QLibraryInfo.version().segments(),
+                    'location': location,
+                })))
+            """ % self.namespace))
+            for k, v in qli.items():
+                setattr(self, k, v)
+
+            # Provide locations relative to the ``base_dir``. Skip any empty
+            # (unset) locations.
+            self.rel_location = {
+                k: os.path.relpath(v, self.base_dir)
+                for k, v in self.location.items()
+                if v
+            }
+
+            return getattr(self, name)
+        else:
+            raise AttributeError
+
+
+# Provide an instance of this class, to avoid each hook constructing its own.
+qt5_library_info = Qt5LibraryInfo()
 
 
 def qt_plugins_dir(namespace):
@@ -28,14 +88,17 @@ def qt_plugins_dir(namespace):
     """
     if namespace not in ['PyQt4', 'PyQt5', 'PySide', 'PySide2']:
         raise Exception('Invalid namespace: {0}'.format(namespace))
-    paths = eval_statement("""
-        from {0}.QtCore import QCoreApplication;
-        app = QCoreApplication([]);
-        # For Python 2 print would give <PyQt4.QtCore.QStringList
-        # object at 0x....>", so we need to convert each element separately
-        str = getattr(__builtins__, 'unicode', str);  # for Python 2
-        print([str(p) for p in app.libraryPaths()])
-        """.format(namespace))
+    if namespace == 'PyQt5':
+        paths = [qt5_library_info.location['PluginsPath']]
+    else:
+        paths = eval_statement("""
+            from {0}.QtCore import QCoreApplication;
+            app = QCoreApplication([]);
+            # For Python 2 print would give <PyQt4.QtCore.QStringList
+            # object at 0x....>", so we need to convert each element separately
+            str = getattr(__builtins__, 'unicode', str);  # for Python 2
+            print([str(p) for p in app.libraryPaths()])
+            """.format(namespace))
     if not paths:
         raise Exception('Cannot find {0} plugin directories'.format(namespace))
     else:
@@ -87,7 +150,7 @@ def qt_plugins_binaries(plugin_type, namespace):
     if namespace in ['PyQt4', 'PySide']:
         plugin_dir = 'qt4_plugins'
     elif namespace == 'PyQt5':
-        plugin_dir = os.path.join('PyQt5', 'Qt', 'plugins')
+        plugin_dir = qt5_library_info.rel_location['PluginsPath']
     else:
         plugin_dir = 'qt5_plugins'
     dest_dir = os.path.join(plugin_dir, plugin_type)
@@ -180,82 +243,6 @@ def get_qmake_path(version=''):
     return None
 
 
-def qt5_qml_dir(namespace):
-    if namespace not in ['PyQt5', 'PySide2']:
-        raise Exception('Invalid namespace: {0}'.format(namespace))
-
-    if namespace == 'PyQt5':
-        import PyQt5
-        qmldir = os.path.join(PyQt5.__path__[0], 'Qt', 'qml')
-        if os.path.isdir(qmldir):
-            return qmldir
-
-    qmake = get_qmake_path('5')
-    if qmake is None:
-        qmldir = ''
-        logger.error('Could not find qmake version 5.x, make sure PATH is '
-                     'set correctly or try setting QT5DIR.')
-    else:
-        qmldir = exec_command(qmake, "-query", "QT_INSTALL_QML").strip()
-    if len(qmldir) == 0:
-        logger.error('Cannot find QT_INSTALL_QML directory, "qmake -query ' +
-                     'QT_INSTALL_QML" returned nothing')
-    elif not os.path.exists(qmldir):
-        logger.error("Directory QT_INSTALL_QML: %s doesn't exist" % qmldir)
-
-    # 'qmake -query' uses / as the path separator, even on Windows
-    qmldir = os.path.normpath(qmldir)
-    return qmldir
-
-
-def qt5_qml_data(qmldir, directory):
-    """
-    Return Qml library directory formatted for data.
-    """
-    return os.path.join(qmldir, directory), os.path.join('qml', directory)
-
-
-def qt5_qml_plugins_binaries(qmldir, directory):
-    """
-    Return list of dynamic libraries formatted for mod.binaries.
-    """
-    binaries = []
-
-    qt5_qml_plugin_dir = os.path.join(qmldir, directory)
-    files = misc.dlls_in_subdirs(qt5_qml_plugin_dir)
-
-    for f in files:
-        relpath = os.path.relpath(f, qmldir)
-        instdir, file = os.path.split(relpath)
-        instdir = os.path.join("qml", instdir)
-        logger.debug("qt5_qml_plugins_binaries installing %s in %s"
-                     % (f, instdir))
-        binaries.append((f, instdir))
-    return binaries
-
-
-def qt5_qml_plugins_datas(qmldir, directory):
-    """
-    Return list of data files for ``mod.binaries. (qmldir, *.qmltypes)``
-    """
-    datas = []
-
-    qt5_qml_plugin_dir = os.path.join(qmldir, directory)
-
-    files = []
-    for root, _dirs, _files in os.walk(qt5_qml_plugin_dir):
-        files.extend(misc.files_in_dir(root, ["qmldir", "*.qmltypes"]))
-
-    for f in files:
-        relpath = os.path.relpath(f, qmldir)
-        instdir, file = os.path.split(relpath)
-        instdir = os.path.join("qml", instdir)
-        logger.debug("qt5_qml_plugins_datas installing %s in %s"
-                     % (f, instdir))
-        datas.append((f, instdir))
-    return datas
-
-
 # This dictionary provides dynamics dependencies (plugins and translations) that
 # can't be discovered using ``getImports``. It was built by combining
 # information from:
@@ -338,7 +325,8 @@ def qt5_qml_plugins_datas(qmldir, directory):
 #       -   ``qtwebengine_resources_100p.pak``
 #       -   ``qtwebengine_resources_200p.pak``
 #
-# - Sources for the `Mac deployment tool`_ are less helpful. The `deployPlugins <https://code.woboq.org/qt5/qttools/src/macdeployqt/shared/shared.cpp.html#_Z13deployPluginsRK21ApplicationBundleInfoRK7QStringS2_14DeploymentInfob>`_
+# - Sources for the `Mac deployment tool`_ are less helpful. The `deployPlugins
+#   <https://code.woboq.org/qt5/qttools/src/macdeployqt/shared/shared.cpp.html#_Z13deployPluginsRK21ApplicationBundleInfoRK7QStringS2_14DeploymentInfob>`_
 #   function seems to:
 #
 #   -   Always include ``platforms/libqcocoa.dylib``.
@@ -418,8 +406,8 @@ _qt_dynamic_dependencies_dict = {
 
 
 # Find the Qt dependencies based on the hook name of a PyQt5 hook. Returns
-# (hiddenimports, binaries, datas). Typical usage: ``hiddenimports, binaries, datas =
-# add_qt5_dependencies(__file__)``.
+# (hiddenimports, binaries, datas). Typical usage: ``hiddenimports, binaries,
+# datas = add_qt5_dependencies(__file__)``.
 def add_qt5_dependencies(hook_name):
     # Accumulate all dependencies in a set to avoid duplicates.
     hiddenimports = set()
@@ -444,7 +432,8 @@ def add_qt5_dependencies(hook_name):
     while imports:
         imp = imports.pop()
 
-        # On Windows, find this library; other platforms already provide the full path.
+        # On Windows, find this library; other platforms already provide the
+        # full path.
         if is_win:
             imp = getfullnameof(imp)
 
@@ -489,22 +478,18 @@ def add_qt5_dependencies(hook_name):
     for plugin in plugins:
         more_binaries = qt_plugins_binaries(plugin, namespace='PyQt5')
         binaries.extend(more_binaries)
-    # Change translation_base to datas. First, determine the path to translations.
-    translations_path = exec_statement("""
-        from PyQt5.QtCore import QLibraryInfo
-        path = QLibraryInfo.location(QLibraryInfo.TranslationsPath)
-        print(str(path))
-    """)
-    # Not all PyQt5 installations include translations. See
+    # Change translation_base to datas. Note that not all PyQt5 installations
+    # include translations. See
     # https://github.com/pyinstaller/pyinstaller/pull/3229#issuecomment-359479893.
-    if os.path.isdir(translations_path):
-        datas = [(os.path.join(translations_path, tb + '_*.qm'),
-                  os.path.join('PyQt5', 'Qt', 'translations'))
+    tp = qt5_library_info.location['TranslationsPath']
+    if os.path.isdir(tp):
+        datas = [(os.path.join(tp, tb + '_*.qm'),
+                  os.path.join(qt5_library_info.rel_location['TranslationsPath']))
                  for tb in translations_base]
     else:
         datas = []
         logger.warning('Unable to find Qt5 translations at %s. Translations '
-                       'not packaged.', translations_path)
+                       'not packaged.', tp)
     # Change hiddenimports to a list.
     hiddenimports = list(hiddenimports)
 
@@ -516,6 +501,4 @@ def add_qt5_dependencies(hook_name):
 
 
 __all__ = ('qt_plugins_dir', 'qt_plugins_binaries', 'qt_menu_nib_dir',
-           'get_qmake_path', 'qt5_qml_dir', 'qt5_qml_data',
-           'qt5_qml_plugins_binaries', 'qt5_qml_plugins_datas',
-           'add_qt5_dependencies')
+           'get_qmake_path', 'add_qt5_dependencies', 'qt5_library_info')
