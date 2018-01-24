@@ -115,15 +115,18 @@ def qt_menu_nib_dir(namespace):
     str = getattr(__builtins__, 'unicode', str)  # for Python 2
     print(str(path))
     """.format(namespace))
-    anaconda_path = os.path.join(sys.exec_prefix, "python.app", "Contents", "Resources")
-    paths = [os.path.join(path, 'Resources'), os.path.join(path, 'QtGui.framework', 'Resources'), anaconda_path]
+    anaconda_path = os.path.join(sys.exec_prefix, "python.app", "Contents",
+                                 "Resources")
+    paths = [os.path.join(path, 'Resources'),
+             os.path.join(path, 'QtGui.framework', 'Resources'), anaconda_path]
 
     for location in paths:
         # Check directory existence
         path = os.path.join(location, 'qt_menu.nib')
         if os.path.exists(path):
             menu_dir = path
-            logger.debug('Found qt_menu.nib for {0} at {1}'.format(namespace, path))
+            logger.debug('Found qt_menu.nib for {0} at {1}'.format(namespace,
+                                                                   path))
             break
     if not menu_dir:
         raise Exception("""
@@ -135,7 +138,8 @@ def qt_menu_nib_dir(namespace):
 
 def get_qmake_path(version=''):
     """
-    Try to find the path to qmake with version given by the argument as a string.
+    Try to find the path to qmake with version given by the argument as a
+    string.
 
     :param version: qmake version
     """
@@ -251,44 +255,82 @@ def qt5_qml_plugins_datas(qmldir, directory):
         datas.append((f, instdir))
     return datas
 
-# This dictionary provides dynamics dependencies (plugins and translations) that can't be discovered using ``getImports``. It was built by combining information from:
+
+# This dictionary provides dynamics dependencies (plugins and translations) that
+# can't be discovered using ``getImports``. It was built by combining
+# information from:
 #
 # - Qt `deployment <http://doc.qt.io/qt-5/deployment.html>`_ docs. Specifically:
 #
-#   -   The `deploying Qt for Linux/X11 <http://doc.qt.io/qt-5/linux-deployment.html#qt-plugins>`_ page specifies including the Qt Platform Abstraction (QPA) plugin, ``libqxcb.so``. There's little other guidance provided.
-#   -   The `Qt for Windows - Deployment <http://doc.qt.io/qt-5/windows-deployment.html#qt-plugins>`_ page likewise specifies the ``qwindows.dll`` QPA, but little else.
-#   -   The `Qt for macOS - Deployment <http://doc.qt.io/qt-5/osx-deployment.html#qt-plugins>`_ page specifies the ``libqcocoa.dylib`` QPA, but little else. The `Mac deployment tool <http://doc.qt.io/qt-5/osx-deployment.html#the-mac-deployment-tool>`_ provides the following rules:
+#   -   The `deploying Qt for Linux/X11 <http://doc.qt.io/qt-5/linux-deployment.html#qt-plugins>`_
+#       page specifies including the Qt Platform Abstraction (QPA) plugin,
+#       ``libqxcb.so``. There's little other guidance provided.
+#   -   The `Qt for Windows - Deployment <http://doc.qt.io/qt-5/windows-deployment.html#qt-plugins>`_
+#       page likewise specifies the ``qwindows.dll`` QPA, but little else.
+#   -   The `Qt for macOS - Deployment <http://doc.qt.io/qt-5/osx-deployment.html#qt-plugins>`_
+#       page specifies the ``libqcocoa.dylib`` QPA, but little else. The
+#       `Mac deployment tool <http://doc.qt.io/qt-5/osx-deployment.html#the-mac-deployment-tool>`_
+#       provides the following rules:
 #
 #       -   The platform plugin is always deployed.
 #       -   The image format plugins are always deployed.
 #       -   The print support plugin is always deployed.
-#       -   SQL driver plugins are deployed if the application uses the Qt SQL module.
-#       -   Script plugins are deployed if the application uses the Qt Script module.
-#       -   The SVG icon plugin is deployed if the application uses the Qt SVG module.
+#       -   SQL driver plugins are deployed if the application uses the Qt SQL
+#           module.
+#       -   Script plugins are deployed if the application uses the Qt Script
+#           module.
+#       -   The SVG icon plugin is deployed if the application uses the Qt SVG
+#           module.
 #       -   The accessibility plugin is always deployed.
 #
-#   -   Per the `Deploying QML Applications <http://doc.qt.io/qt-5/qtquick-deployment.html>`_ page, QML-based applications need the ``qml/`` directory available. This is handled by ``hook-PyQt5.QtQuick.py``.
-#   -   Per the `Deploying Qt WebEngine Applications <https://doc.qt.io/qt-5.10/qtwebengine-deploying.html>`_ page, deployment may include:
+#   -   Per the `Deploying QML Applications <http://doc.qt.io/qt-5/qtquick-deployment.html>`_
+#       page, QML-based applications need the ``qml/`` directory available.
+#       This is handled by ``hook-PyQt5.QtQuick.py``.
+#   -   Per the `Deploying Qt WebEngine Applications <https://doc.qt.io/qt-5.10/qtwebengine-deploying.html>`_
+#       page, deployment may include:
 #
 #       -   Libraries (handled when PyInstaller following dependencies).
 #       -   QML imports (if Qt Quick integration is used).
-#       -   Qt WebEngine process, which should be located at ``QLibraryInfo::location(QLibraryInfo::LibraryExecutablesPath)`` for Windows and Linux, and in ``.app/Helpers/QtWebEngineProcess`` for Mac.
+#       -   Qt WebEngine process, which should be located at
+#           ``QLibraryInfo::location(QLibraryInfo::LibraryExecutablesPath)``
+#           for Windows and Linux, and in ``.app/Helpers/QtWebEngineProcess``
+#           for Mac.
 #       -   Resources: the files listed in deployWebEngineCore_.
-#       -   Translations: on macOS: ``.app/Content/Resources``; on Linux and Windows: ``qtwebengine_locales`` directory in the directory specified by ``QLibraryInfo::location(QLibraryInfo::TranslationsPath)``.
-#       -   Audio and video codecs: Probably covered if Qt5Multimedia is referenced?
+#       -   Translations: on macOS: ``.app/Content/Resources``; on Linux and
+#           Windows: ``qtwebengine_locales`` directory in the directory
+#           specified by ``QLibraryInfo::location(QLibraryInfo::TranslationsPath)``.
+#       -   Audio and video codecs: Probably covered if Qt5Multimedia is
+#           referenced?
 #
 #       This is handled by ``hook-PyQt5.QtWebEngineWidgets.py``.
 #
-#   -   Since `QAxContainer <http://doc.qt.io/qt-5/activeqt-index.html>`_ is a statically-linked library, it doesn't need any special handling.
+#   -   Since `QAxContainer <http://doc.qt.io/qt-5/activeqt-index.html>`_ is a
+#       statically-linked library, it doesn't need any special handling.
 #
-# - Sources for the `Windows Deployment Tool <http://doc.qt.io/qt-5/windows-deployment.html#the-windows-deployment-tool>`_ show more detail:
+# - Sources for the `Windows Deployment Tool <http://doc.qt.io/qt-5/windows-deployment.html#the-windows-deployment-tool>`_
+#   show more detail:
 #
-#   -   The `PluginModuleMapping struct <https://code.woboq.org/qt5/qttools/src/windeployqt/main.cpp.html#PluginModuleMapping>`_ and the following ``pluginModuleMappings`` global provide a mapping betwen a plugin directory name and an `enum of Qt plugin names <https://code.woboq.org/qt5/qttools/src/windeployqt/main.cpp.html#QtModule>`_.
-#   -   The `QtModuleEntry struct <https://code.woboq.org/qt5/qttools/src/windeployqt/main.cpp.html#QtModuleEntry>`_ and ``qtModuleEntries`` global connect this enum to the name of the Qt5 library it represents and to the translation files this library requires. (Ignore the ``option`` member -- it's just for command-line parsing.)
+#   -   The `PluginModuleMapping struct <https://code.woboq.org/qt5/qttools/src/windeployqt/main.cpp.html#PluginModuleMapping>`_
+#       and the following ``pluginModuleMappings`` global provide a mapping
+#       between a plugin directory name and an `enum of Qt plugin names
+#       <https://code.woboq.org/qt5/qttools/src/windeployqt/main.cpp.html#QtModule>`_.
+#   -   The `QtModuleEntry struct <https://code.woboq.org/qt5/qttools/src/windeployqt/main.cpp.html#QtModuleEntry>`_
+#       and ``qtModuleEntries`` global connect this enum to the name of the Qt5
+#       library it represents and to the translation files this library
+#       requires. (Ignore the ``option`` member -- it's just for command-line
+#       parsing.)
 #
-#   Manually combining these two provides a mapping of Qt library names to the translation and plugin(s) needed by the library. The process is: take the key of the dict below from ``QtModuleEntry.libraryName``, but make it lowercase (since Windows files will be normalized to lowercase). The ``QtModuleEntry.translation`` provides the ``translation_base``. Match the ``QtModuleEntry.module`` with ``PluginModuleMapping.module`` to find the ``PluginModuleMapping.directoryName`` for the required plugin(s).
+#   Manually combining these two provides a mapping of Qt library names to the
+#   translation and plugin(s) needed by the library. The process is: take the
+#   key of the dict below from ``QtModuleEntry.libraryName``, but make it
+#   lowercase (since Windows files will be normalized to lowercase). The
+#   ``QtModuleEntry.translation`` provides the ``translation_base``. Match the
+#   ``QtModuleEntry.module`` with ``PluginModuleMapping.module`` to find the
+#   ``PluginModuleMapping.directoryName`` for the required plugin(s).
 #
-#   -   The `deployWebEngineCore <https://code.woboq.org/qt5/qttools/src/windeployqt/main.cpp.html#_ZL19deployWebEngineCoreRK4QMapI7QStringS0_ERK7OptionsbPS0_>`_ function copies the following files from ``resources/``, and also copies the web engine process executable.
+#   -   The `deployWebEngineCore <https://code.woboq.org/qt5/qttools/src/windeployqt/main.cpp.html#_ZL19deployWebEngineCoreRK4QMapI7QStringS0_ERK7OptionsbPS0_>`_
+#       function copies the following files from ``resources/``, and also copies
+#       the web engine process executable.
 #
 #       -   ``icudtl.dat``
 #       -   ``qtwebengine_devtools_resources.pak``
@@ -296,21 +338,26 @@ def qt5_qml_plugins_datas(qmldir, directory):
 #       -   ``qtwebengine_resources_100p.pak``
 #       -   ``qtwebengine_resources_200p.pak``
 #
-# - Sources for the `Mac deployment tool`_ are less helpful. The `deployPlugins <https://code.woboq.org/qt5/qttools/src/macdeployqt/shared/shared.cpp.html#_Z13deployPluginsRK21ApplicationBundleInfoRK7QStringS2_14DeploymentInfob>`_ function seems to:
+# - Sources for the `Mac deployment tool`_ are less helpful. The `deployPlugins <https://code.woboq.org/qt5/qttools/src/macdeployqt/shared/shared.cpp.html#_Z13deployPluginsRK21ApplicationBundleInfoRK7QStringS2_14DeploymentInfob>`_
+#   function seems to:
 #
 #   -   Always include ``platforms/libqcocoa.dylib``.
 #   -   Always include ``printsupport/libcocoaprintersupport.dylib``
-#   -   Include ``bearer/`` if ``QtNetwork`` is included (and some other condition I didn't look up).
+#   -   Include ``bearer/`` if ``QtNetwork`` is included (and some other
+#       condition I didn't look up).
 #   -   Always include ``imageformats/``, except for ``qsvg``.
 #   -   Include ``imageformats/qsvg`` if ``QtSvg`` is included.
 #   -   Always include ``iconengines/``.
 #   -   Include ``sqldrivers/`` if ``QtSql`` is included.
-#   -   Include ``mediaservice/`` and ``audio/`` if ``QtMultimedia`` is included.
+#   -   Include ``mediaservice/`` and ``audio/`` if ``QtMultimedia`` is
+#       included.
 #
-#   The always includes will be handled by ``hook-PyQt5.py``; optional includes are already covered by the dict below.
+#   The always includes will be handled by ``hook-PyQt5.py``; optional includes
+#   are already covered by the dict below.
+#
 _qt_dynamic_dependencies_dict = {
     ## "lib_name":              (hiddenimports,                 translations_base,  zero or more plugins...)
-    "qt5bluetooth":             ("PyQt5.QtBluetooth",           None,               ),
+    "qt5bluetooth":             ("PyQt5.QtBluetooth",           None,               ),  # noqa: E241,E202
     "qt5concurrent":            (None,                          "qtbase",           ),
     "qt5core":                  ("PyQt5.QtCore",                "qtbase",           ),
     # This entry generated by hand -- it's not present in the Windows deployment tool sources.
@@ -370,14 +417,17 @@ _qt_dynamic_dependencies_dict = {
 }
 
 
-# Find the Qt dependencies based on the hook name of a PyQt5 hook. Returns (hiddenimports, binaries, datas). Typical usage: ``hiddenimports, binaries, datas = add_qt5_dependencies(__file__)``.
+# Find the Qt dependencies based on the hook name of a PyQt5 hook. Returns
+# (hiddenimports, binaries, datas). Typical usage: ``hiddenimports, binaries, datas =
+# add_qt5_dependencies(__file__)``.
 def add_qt5_dependencies(hook_name):
     # Accumulate all dependencies in a set to avoid duplicates.
     hiddenimports = set()
     translations_base = set()
     plugins = set()
 
-    # Find the module underlying this Qt hook: change ``/path/to/hook-PyQt5.blah.py`` to ``PyQt5.blah``.
+    # Find the module underlying this Qt hook: change
+    # ``/path/to/hook-PyQt5.blah.py`` to ``PyQt5.blah``.
     hook_name, hook_ext = os.path.splitext(os.path.basename(hook_name))
     assert hook_ext.startswith('.py')
     assert hook_name.startswith('hook-')
@@ -386,7 +436,8 @@ def add_qt5_dependencies(hook_name):
 
     # Look up the module returned by this import.
     module = get_module_file_attribute(hook_name)
-    logger.debug('add_qt5_dependencies: Examining {}, based on hook of {}.'.format(module, hook_name))
+    logger.debug('add_qt5_dependencies: Examining {}, based on hook of {}.'
+                 .format(module, hook_name))
 
     # Walk through all its imports.
     imports = set(getImports(module))
@@ -397,9 +448,12 @@ def add_qt5_dependencies(hook_name):
         if is_win:
             imp = getfullnameof(imp)
 
-        # Strip off the extension and ``lib`` prefix (Linux/Mac) to give the raw name. Lowercase (since Windows always normalized names to lowercase).
+        # Strip off the extension and ``lib`` prefix (Linux/Mac) to give the raw
+        # name. Lowercase (since Windows always normalized names to lowercase).
         lib_name = os.path.splitext(os.path.basename(imp))[0].lower()
-        # Linux libraries sometimes have a dotted version number -- ``libfoo.so.3``. It's now ''libfoo.so``, but the ``.so`` must also be removed.
+        # Linux libraries sometimes have a dotted version number --
+        # ``libfoo.so.3``. It's now ''libfoo.so``, but the ``.so`` must also be
+        # removed.
         if is_linux and os.path.splitext(lib_name)[1] == '.so':
             lib_name = os.path.splitext(lib_name)[0]
         if lib_name.startswith('lib'):
@@ -407,15 +461,19 @@ def add_qt5_dependencies(hook_name):
         # Mac: rename from ``qt`` to ``qt5`` to match names in Windows/Linux.
         if is_darwin and lib_name.startswith('qt'):
             lib_name = 'qt5' + lib_name[2:]
-        logger.debug('add_qt5_dependencies: raw lib {} -> parsed lib {}'.format(imp, lib_name))
+        logger.debug('add_qt5_dependencies: raw lib {} -> parsed lib {}'.
+                     format(imp, lib_name))
 
         # Follow only Qt dependencies.
         if lib_name in _qt_dynamic_dependencies_dict:
             # Follow these to find additional dependencies.
             logger.debug('add_qt5_dependencies: Import of {}.'.format(imp))
             imports.update(getImports(imp))
-            # Look up which plugins and translations are needed. Avoid Python 3-only syntax, since the Python 2.7 parser will raise an exception. Original statment was:
-            ## lib_name_hiddenimports, lib_name_translations_base, *lib_name_plugins = _qt_dynamic_dependencies_dict[lib_name]
+            # Look up which plugins and translations are needed. Avoid Python
+            # 3-only syntax, since the Python 2.7 parser will raise an
+            # exception. The original statment was:
+            ## (lib_name_hiddenimports, lib_name_translations_base,
+            ## *lib_name_plugins) = _qt_dynamic_dependencies_dict[lib_name]
             dd = _qt_dynamic_dependencies_dict[lib_name]
             lib_name_hiddenimports, lib_name_translations_base = dd[:2]
             lib_name_plugins = dd[2:]
@@ -437,12 +495,16 @@ def add_qt5_dependencies(hook_name):
         path = QLibraryInfo.location(QLibraryInfo.TranslationsPath)
         print(str(path))
     """)
-    # Not all PyQt5 installations include translations. See https://github.com/pyinstaller/pyinstaller/pull/3229#issuecomment-359479893.
+    # Not all PyQt5 installations include translations. See
+    # https://github.com/pyinstaller/pyinstaller/pull/3229#issuecomment-359479893.
     if os.path.isdir(translations_path):
-        datas = [(os.path.join(translations_path, tb + '_*.qm'), os.path.join('PyQt5', 'Qt', 'translations')) for tb in translations_base]
+        datas = [(os.path.join(translations_path, tb + '_*.qm'),
+                  os.path.join('PyQt5', 'Qt', 'translations'))
+                 for tb in translations_base]
     else:
         datas = []
-        logger.warning('Unable to find Qt5 translations at %s. Translations not packaged.', translations_path)
+        logger.warning('Unable to find Qt5 translations at %s. Translations '
+                       'not packaged.', translations_path)
     # Change hiddenimports to a list.
     hiddenimports = list(hiddenimports)
 
@@ -453,5 +515,7 @@ def add_qt5_dependencies(hook_name):
     return hiddenimports, binaries, datas
 
 
-__all__ = ('qt_plugins_dir', 'qt_plugins_binaries', 'qt_menu_nib_dir', 'get_qmake_path', 'qt5_qml_dir', 'qt5_qml_data',
-           'qt5_qml_plugins_binaries', 'qt5_qml_plugins_datas', 'add_qt5_dependencies')
+__all__ = ('qt_plugins_dir', 'qt_plugins_binaries', 'qt_menu_nib_dir',
+           'get_qmake_path', 'qt5_qml_dir', 'qt5_qml_data',
+           'qt5_qml_plugins_binaries', 'qt5_qml_plugins_datas',
+           'add_qt5_dependencies')

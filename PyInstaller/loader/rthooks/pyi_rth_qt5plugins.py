@@ -44,6 +44,8 @@ try:
 except ImportError:
     from PySide2.QtCore import QCoreApplication
 
-# Self-compiled versions of PyQt5 don't have this set correctly, while wheel versions do. Set this correctly regardless. See https://github.com/pyinstaller/pyinstaller/issues/3175.
+# Self-compiled versions of PyQt5 don't have this set correctly, while wheel
+# versions do. Set this correctly regardless. See
+# https://github.com/pyinstaller/pyinstaller/issues/3175.
 d = os.path.join(sys._MEIPASS, 'PyQt5', 'Qt', 'plugins')
 QCoreApplication.setLibraryPaths([os.path.abspath(d)])

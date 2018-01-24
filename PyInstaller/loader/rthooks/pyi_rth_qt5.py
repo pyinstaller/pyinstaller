@@ -77,6 +77,6 @@ else:
             # Merge symbols exported by the module with PyQt5.Qt
             qt_module_dict.__dict__.update(module_obj.__dict__)
         except ImportError:
-            # It is OK if some module is missing. E.g.: QtMacExtras is built only on
-            # OS X and QtWinExtras is built only on Windows.
+            # It is OK if some module is missing. E.g.: QtMacExtras is built
+            # only on OS X and QtWinExtras is built only on Windows.
             pass
