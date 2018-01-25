@@ -39,10 +39,12 @@ class Qt5LibraryInfo:
     def __getattr__(self, name):
         if 'base_dir' not in self.__dict__:
 
-            # Provide the absolute path to the directory containing the PyQt5
+            # Provide the absolute path to the PyQt5 directory.
+            self.lib_dir = os.path.dirname(
+                get_module_file_attribute(self.namespace))
+            # Provide the absolute path to the directory containing this
             # package.
-            self.base_dir = os.path.dirname(os.path.dirname(
-                get_module_file_attribute(self.namespace)))
+            self.base_dir = os.path.dirname(self.lib_dir)
 
             # Get library path information from Qt. See QLibraryInfo_.
             qli = json.loads(exec_statement("""
