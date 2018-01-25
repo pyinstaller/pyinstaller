@@ -7,76 +7,18 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-# PyQt5 exposes the PyQt5.Qt module which contains symbols from all other PyQt5
-# packages. PyQt5 uses Python's C API to import all modules and merge their
-# contents with PyQt5.Qt (see the generated sipQtcmodule.c file when compiling
-# PyQt5), but due to a bug in PyQt, it seems to skip all import-hooks machinery.
-#
-# Here, we replicate what PyQt does but using native Python code, which we know
-# won't bypass the import hooks mechanism described in PEP-302.
+import os
 
-PYQT_PACKAGE = 'PyQt5'
-
-# Since we don't know which modules were built into PyQt5 beforehand, this list
-# contains all possible modules we are interested to expose through PyQt5.Qt.
-PYQT_MODULES = [
-    'QAxContainer',
-    'QtBluetooth',
-    'QtCore',
-    'QtDBus',
-    'QtDesigner',
-    'QtGui',
-    'QtHelp',
-    'QtLocation',
-    'QtMacExtras',
-    'QtMultimedia',
-    'QtMultimediaWidgets',
-    'QtNetwork',
-    'QtNfc',
-    'QtOpenGL',
-    'QtPositioning',
-    'QtPrintSupport',
-    'QtQml',
-    'QtQuick',
-    'QtQuickWidgets',
-    'QtSensors',
-    'QtSerialPort',
-    'QtSql',
-    'QtSvg',
-    'QtTest',
-    'QtWebChannel',
-    'QtWebKit',
-    'QtWebKitWidgets',
-    'QtWebEngine',
-    'QtWebEngineCore',
-    'QtWebEngineWidgets',
-    'QtWebSockets',
-    'QtWidgets',
-    'QtWinExtras',
-    'QtX11Extras',
-    'QtXml',
-    'QtXmlPatterns',
-]
-
-try:
-    qt_module_obj = __import__('PyQt5.Qt')
-except ImportError:
-    # If the PyQt5.Qt module wasn't bundled, skip this.
-    pass
-else:
-    # PyQt5.Qt was bundled. Fake its contents.
-    qt_module_dict = qt_module_obj.__dict__['Qt']
-    for module_name in PYQT_MODULES:
-        try:
-            # This is always the top-level 'PyQt5' module.
-            top_level_module_obj = __import__(PYQT_PACKAGE + '.' + module_name)
-
-            # Grab the module we are interested in from the top-level module
-            module_obj = top_level_module_obj.__dict__[module_name]
-
-            # Merge symbols exported by the module with PyQt5.Qt
-            qt_module_dict.__dict__.update(module_obj.__dict__)
-        except ImportError:
-            # It is OK if some module is missing. E.g.: QtMacExtras is built
-            # only on OS X and QtWinExtras is built only on Windows.
-            pass
+# Qt's behavior is controlled by (literally) `hundreds of environment variables
+# <https://github.com/pyqt/python-qt5/wiki/Qt-Environment-Variable-Reference>`_,
+# any of which could cause a packaged program to misbehave in some odd way.
+# Sigh. Remove the most likely culprits.
+for e in ('QT_QPA_PLATFORM_PLUGIN_PATH', 'QT_PLUGIN_PATH', 'QML_IMPORT_PATH',
+          'QML2_IMPORT_PATH', 'QTWEBENGINEPROCESS_PATH'):
+    if e in os.environ:
+        # On some platforms (e.g. AIX) 'os.unsetenv()' is not available and then
+        # deleting the var from os.environ does not delete it from the
+        # environment. In those cases we cannot delete the variable but only set
+        # it to the empty string.
+        os.environ[e] = ''
+        del os.environ[e]
