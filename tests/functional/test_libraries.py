@@ -342,6 +342,12 @@ def test_PyQt5_QtQuick(pyi_builder):
         """)
 
 
+# Test that the ``PyQt5.Qt`` module works by importing something from it.
+@importorskip('PyQt5')
+def test_PyQt5_Qt(pyi_builder):
+    pyi_builder.test_source('from PyQt5.Qt import QLibraryInfo')
+
+
 @xfail(is_linux and is_py35, reason="Fails on linux >3.5")
 @xfail(is_darwin, reason="Fails on OSX")
 @xfail(is_win and is_py35 and not is_py36, reason="Fails on win == 3.6")
