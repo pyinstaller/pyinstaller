@@ -83,7 +83,7 @@ matplotlib==1.4.3; python_version == '3.3' # pyup: ignore
 #### Windows specific packages
 
 # pip-installable version of PyWin32.
-pypiwin32==220; python_version >= '3.6' and sys_platform == 'win32'
+pypiwin32==222; python_version >= '3.6' and sys_platform == 'win32'
 pypiwin32==219; python_version <= '3.5' and sys_platform == 'win32' # pyup: ignore
 
 # For parsing PE headers and get list of dependent DLLs.
