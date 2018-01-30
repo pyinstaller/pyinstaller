@@ -9,44 +9,45 @@
 
 import os
 from PyInstaller.utils.hooks import add_qt5_dependencies, \
-    get_module_file_attribute, qt5_library_info
+    remove_prefix, get_module_file_attribute, pyqt5_library_info
 from PyInstaller.depend.bindepend import getImports
 import PyInstaller.compat as compat
 
 hiddenimports, binaries, datas = add_qt5_dependencies(__file__)
 
 # Include the web engine process, translations, and resources.
+rel_data_path = 'PyQt5', 'Qt'
 if compat.is_darwin:
     # This is based on the layout of the Mac wheel from PyPi.
-    data_path = qt5_library_info.location['DataPath']
-    rel_data_path = qt5_library_info.rel_location['DataPath']
+    data_path = pyqt5_library_info.location['DataPath']
     resources = 'lib', 'QtWebEngineCore.framework', 'Resources'
     web_engine_process = ('lib', 'QtWebEngineCore.framework', 'Helpers',
                           'QtWebEngineProcess.app', 'Contents', 'MacOS')
     datas += [
         (os.path.join(data_path, *resources),
-         os.path.join(rel_data_path, *resources)),
+         os.path.join(*rel_data_path, *resources)),
         (os.path.join(data_path, *web_engine_process, 'QtWebEngineProcess'),
-         os.path.join(rel_data_path, *web_engine_process)),
+         os.path.join(*rel_data_path, *web_engine_process)),
     ]
 else:
     locales = 'qtwebengine_locales'
     resources = 'resources'
     datas += [
         # Gather translations needed by Chromium.
-        (os.path.join(qt5_library_info.location['TranslationsPath'],
+        (os.path.join(pyqt5_library_info.location['TranslationsPath'],
                       locales),
-         os.path.join(qt5_library_info.rel_location['TranslationsPath'],
-                      locales)),
+         os.path.join('PyQt5', 'Qt', 'translations', locales)),
         # Per the `docs <https://doc.qt.io/qt-5.10/qtwebengine-deploying.html#deploying-resources>`_,
         # ``DataPath`` is the base directory for ``resources``.
-        (os.path.join(qt5_library_info.location['DataPath'], resources),
-         os.path.join(qt5_library_info.rel_location['DataPath'], resources)),
+        (os.path.join(pyqt5_library_info.location['DataPath'], resources),
+         os.path.join(*rel_data_path, resources)),
         # Include the webengine process. The ``LibraryExecutablesPath`` is only
         # valid on Windows and Linux.
-        (os.path.join(qt5_library_info.location['LibraryExecutablesPath'],
+        (os.path.join(pyqt5_library_info.location['LibraryExecutablesPath'],
                       'QtWebEngineProcess*'),
-         qt5_library_info.rel_location['LibraryExecutablesPath'])
+         os.path.join(*rel_data_path,
+                      remove_prefix(pyqt5_library_info.location['LibraryExecutablesPath'],
+                                    pyqt5_library_info.location['PrefixPath'] + '/')))
     ]
 
 # Add Linux-specific libraries.

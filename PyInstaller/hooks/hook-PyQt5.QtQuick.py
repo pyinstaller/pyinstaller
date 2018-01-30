@@ -9,7 +9,7 @@
 import os
 
 from PyInstaller.utils import misc
-from PyInstaller.utils.hooks import qt5_library_info
+from PyInstaller.utils.hooks import pyqt5_library_info
 from PyInstaller.utils.hooks import add_qt5_dependencies
 from PyInstaller import log as logging
 
@@ -29,7 +29,8 @@ dirs = ['Qt',
         #'QtTest'
 ]
 
-qmldir = qt5_library_info.location['Qml2ImportsPath']
+qml_rel_dir = 'PyQt5', 'Qt', 'qml'
+qmldir = pyqt5_library_info.location['Qml2ImportsPath']
 # Per https://github.com/pyinstaller/pyinstaller/pull/3229#issuecomment-359735031,
 # not all PyQt5 installs have QML files. In this case, ``qmldir`` is empty.
 if not qmldir:
@@ -37,14 +38,14 @@ if not qmldir:
 else:
     for directory in dirs:
         # Add base qml directories.
+        this_qml_dir = os.path.join(qmldir, directory)
         datas += [
-            (os.path.join(qmldir, directory),
-             os.path.join(qt5_library_info.rel_location['Qml2ImportsPath'],
-                          directory)),
+            (this_qml_dir, os.path.join(*qml_rel_dir, directory)),
         ]
 
         # Add binaries.
         binaries += [
-            (f, os.path.dirname(os.path.relpath(f, qt5_library_info.base_dir)))
-            for f in misc.dlls_in_subdirs(os.path.join(qmldir, directory))
+            # Produce /path/to/Qt/Qml/path_to_qml_binary/qml_binary, PyQt5/Qt/Qml/path_to_qml_binary
+            (f, os.path.join(*qml_rel_dir, os.path.dirname(os.path.relpath(f, qmldir))))
+            for f in misc.dlls_in_subdirs(this_qml_dir)
         ]

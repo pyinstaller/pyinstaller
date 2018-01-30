@@ -26,10 +26,9 @@ logger = logging.getLogger(__name__)
 # contain all the Qt5 files (omitting translations, or QML, etc.).
 #
 # Therefore, this class provides all members of `QLibraryInfo
-# <http://doc.qt.io/qt-5/qlibraryinfo.html>`_, with a few additions
-# (``base_dir`` and ``rel_location``).
+# <http://doc.qt.io/qt-5/qlibraryinfo.html>`_.
 class Qt5LibraryInfo:
-    def __init__(self, namespace='PyQt5'):
+    def __init__(self, namespace):
         if namespace not in ['PyQt5', 'PySide2']:
             raise Exception('Invalid namespace: {0}'.format(namespace))
         self.namespace = namespace
@@ -37,15 +36,7 @@ class Qt5LibraryInfo:
     # Initialize most of this class only when values are first requested from
     # it.
     def __getattr__(self, name):
-        if 'base_dir' not in self.__dict__:
-
-            # Provide the absolute path to the PyQt5 directory.
-            self.lib_dir = os.path.dirname(
-                get_module_file_attribute(self.namespace))
-            # Provide the absolute path to the directory containing this
-            # package.
-            self.base_dir = os.path.dirname(self.lib_dir)
-
+        if 'version' not in self.__dict__:
             # Get library path information from Qt. See QLibraryInfo_.
             qli = json.loads(exec_statement("""
                 import json
@@ -63,21 +54,13 @@ class Qt5LibraryInfo:
             for k, v in qli.items():
                 setattr(self, k, v)
 
-            # Provide locations relative to the ``base_dir``. Skip any empty
-            # (unset) locations.
-            self.rel_location = {
-                k: os.path.relpath(v, self.base_dir)
-                for k, v in self.location.items()
-                if v
-            }
-
             return getattr(self, name)
         else:
             raise AttributeError
 
 
 # Provide an instance of this class, to avoid each hook constructing its own.
-qt5_library_info = Qt5LibraryInfo()
+pyqt5_library_info = Qt5LibraryInfo('PyQt5')
 
 
 def qt_plugins_dir(namespace):
@@ -91,7 +74,7 @@ def qt_plugins_dir(namespace):
     if namespace not in ['PyQt4', 'PyQt5', 'PySide', 'PySide2']:
         raise Exception('Invalid namespace: {0}'.format(namespace))
     if namespace == 'PyQt5':
-        paths = [qt5_library_info.location['PluginsPath']]
+        paths = [pyqt5_library_info.location['PluginsPath']]
     else:
         paths = eval_statement("""
             from {0}.QtCore import QCoreApplication;
@@ -152,7 +135,7 @@ def qt_plugins_binaries(plugin_type, namespace):
     if namespace in ['PyQt4', 'PySide']:
         plugin_dir = 'qt4_plugins'
     elif namespace == 'PyQt5':
-        plugin_dir = qt5_library_info.rel_location['PluginsPath']
+        plugin_dir = plugin_dir = os.path.join('PyQt5', 'Qt', 'plugins')
     else:
         plugin_dir = 'qt5_plugins'
     dest_dir = os.path.join(plugin_dir, plugin_type)
@@ -483,10 +466,10 @@ def add_qt5_dependencies(hook_name):
     # Change translation_base to datas. Note that not all PyQt5 installations
     # include translations. See
     # https://github.com/pyinstaller/pyinstaller/pull/3229#issuecomment-359479893.
-    tp = qt5_library_info.location['TranslationsPath']
+    tp = pyqt5_library_info.location['TranslationsPath']
     if os.path.isdir(tp):
         datas = [(os.path.join(tp, tb + '_*.qm'),
-                  os.path.join(qt5_library_info.rel_location['TranslationsPath']))
+                  os.path.join('PyQt5', 'Qt', 'translations'))
                  for tb in translations_base]
     else:
         datas = []
@@ -503,4 +486,4 @@ def add_qt5_dependencies(hook_name):
 
 
 __all__ = ('qt_plugins_dir', 'qt_plugins_binaries', 'qt_menu_nib_dir',
-           'get_qmake_path', 'add_qt5_dependencies', 'qt5_library_info')
+           'get_qmake_path', 'add_qt5_dependencies', 'pyqt5_library_info')
