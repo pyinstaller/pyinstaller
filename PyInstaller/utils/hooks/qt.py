@@ -20,13 +20,12 @@ from ...utils import misc
 logger = logging.getLogger(__name__)
 
 
+# Qt5LibraryInfo
+# --------------
 # This class uses introspection to determine the location of Qt5 files. This is
 # essential to deal with the many variants of the PyQt5 package, each of which
-# places files in a different location. In addition, each variant may not
-# contain all the Qt5 files (omitting translations, or QML, etc.).
-#
-# Therefore, this class provides all members of `QLibraryInfo
-# <http://doc.qt.io/qt-5/qlibraryinfo.html>`_.
+# places files in a different location. Therefore, this class provides all
+# members of `QLibraryInfo <http://doc.qt.io/qt-5/qlibraryinfo.html>`_.
 class Qt5LibraryInfo:
     def __init__(self, namespace):
         if namespace not in ['PyQt5', 'PySide2']:
