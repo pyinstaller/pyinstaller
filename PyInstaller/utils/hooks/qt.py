@@ -135,13 +135,11 @@ def qt_plugins_binaries(plugin_type, namespace):
     if namespace in ['PyQt4', 'PySide']:
         plugin_dir = 'qt4_plugins'
     elif namespace == 'PyQt5':
-        plugin_dir = plugin_dir = os.path.join('PyQt5', 'Qt', 'plugins')
+        plugin_dir = os.path.join('PyQt5', 'Qt', 'plugins')
     else:
         plugin_dir = 'qt5_plugins'
     dest_dir = os.path.join(plugin_dir, plugin_type)
-    binaries = [
-        (f, dest_dir)
-        for f in files]
+    binaries = [(f, dest_dir) for f in files]
     return binaries
 
 
@@ -228,6 +226,27 @@ def get_qmake_path(version=''):
     return None
 
 
+# Qt deployment approach
+# ----------------------
+# This is the core of PyInstaller's approach to Qt deployment. It's based on:
+#
+# - Discovering the location of Qt5 libraries by introspection, using
+#   Qt5LibraryInfo_. This provides compatibility with many variants of Qt5
+#   (conda, self-compiled, provided by a Linux distro, etc.) and many versions
+#   of Qt5, all of which vary in the location of Qt5 files.
+# - Placing all frozen PyQt5/Qt5 files in a standard subdirectory layout, which
+#   matches the layout of the PyQt5 wheel on PyPI. This is necessary to support
+#   Qt5 installs which are not in a subdirectory of the PyQt5 wrappers. See
+#   ``loader/rthooks/pyi_rth_qt5.py`` for the use of environment variables to
+#   establish this layout.
+# - Emitting warnings on missing QML and translation files which some
+#   installations don't have.
+# - Determining additional files needed for deployment by following the Qt
+#   deployment process using `_qt_dynamic_dependencies_dict`_ and
+#   add_qt5_dependencies_.
+#
+# _qt_dynamic_dependencies_dict
+# -----------------------------
 # This dictionary provides dynamics dependencies (plugins and translations) that
 # can't be discovered using ``getImports``. It was built by combining
 # information from:
@@ -390,10 +409,12 @@ _qt_dynamic_dependencies_dict = {
 }
 
 
+# add_qt5_dependencies
+# --------------------
 # Find the Qt dependencies based on the hook name of a PyQt5 hook. Returns
 # (hiddenimports, binaries, datas). Typical usage: ``hiddenimports, binaries,
 # datas = add_qt5_dependencies(__file__)``.
-def add_qt5_dependencies(hook_name):
+def add_qt5_dependencies(hook_file):
     # Accumulate all dependencies in a set to avoid duplicates.
     hiddenimports = set()
     translations_base = set()
@@ -401,16 +422,18 @@ def add_qt5_dependencies(hook_name):
 
     # Find the module underlying this Qt hook: change
     # ``/path/to/hook-PyQt5.blah.py`` to ``PyQt5.blah``.
-    hook_name, hook_ext = os.path.splitext(os.path.basename(hook_name))
+    hook_name, hook_ext = os.path.splitext(os.path.basename(hook_file))
     assert hook_ext.startswith('.py')
     assert hook_name.startswith('hook-')
-    hook_name = hook_name[5:]
-    assert hook_name.startswith('PyQt5')
+    module_name = hook_name[5:]
+    namespace = module_name.split('.')[0]
+    if namespace != 'PyQt5':
+        raise Exception('Invalid namespace: {0}'.format(namespace))
 
     # Look up the module returned by this import.
-    module = get_module_file_attribute(hook_name)
+    module = get_module_file_attribute(module_name)
     logger.debug('add_qt5_dependencies: Examining {}, based on hook of {}.'
-                 .format(module, hook_name))
+                 .format(module, hook_file))
 
     # Walk through all its imports.
     imports = set(getImports(module))
@@ -461,7 +484,7 @@ def add_qt5_dependencies(hook_name):
     # Changes plugins into binaries.
     binaries = []
     for plugin in plugins:
-        more_binaries = qt_plugins_binaries(plugin, namespace='PyQt5')
+        more_binaries = qt_plugins_binaries(plugin, namespace=namespace)
         binaries.extend(more_binaries)
     # Change translation_base to datas. Note that not all PyQt5 installations
     # include translations. See

@@ -29,13 +29,13 @@ dirs = ['Qt',
         #'QtTest'
 ]
 
-qml_rel_dir = 'PyQt5', 'Qt', 'qml'
 qmldir = pyqt5_library_info.location['Qml2ImportsPath']
 # Per https://github.com/pyinstaller/pyinstaller/pull/3229#issuecomment-359735031,
 # not all PyQt5 installs have QML files. In this case, ``qmldir`` is empty.
 if not qmldir:
     logger.warning('Unable to find Qt5 QML files. QML files not packaged.')
 else:
+    qml_rel_dir = 'PyQt5', 'Qt', 'qml'
     for directory in dirs:
         # Add base qml directories.
         this_qml_dir = os.path.join(qmldir, directory)
