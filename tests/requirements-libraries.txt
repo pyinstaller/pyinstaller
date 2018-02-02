@@ -10,7 +10,7 @@
 pycrypto==2.6.1; python_version <= '3.5' or sys_platform != 'win32'
 
 Django==1.8.18 # PyInstaller doesn't yet work with Django 1.9+
-babel==2.5.1
+babel==2.5.3
 boto==2.48.0
 boto3==1.4.7
 botocore==1.7.1
