@@ -26,7 +26,7 @@ simplejson==3.11.1 # simplejson is used for text_c_extension
 sphinx==1.6.6; python_version != '3.3'
 sphinx==1.4.9; python_version == '3.3' # pyup: ignore
 
-pyzmq==16.0.2
+pyzmq==16.0.4
 zope.interface==4.4.3  # Required for test_namespace_package
 
 # numpy 1.12 dropped support for Python 3.3
