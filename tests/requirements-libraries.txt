@@ -51,7 +51,7 @@ twisted==17.9.0
 zeep==2.4.0
 pyexcelerate==0.7.2
 Pillow==4.2.1
-pycryptodomex==3.4.7
+pycryptodomex==3.4.9
 future==0.16.0
 pyusb==1.0.2
 requests==2.15.1 # Newest version of requests that allows tests to pass
