@@ -49,7 +49,7 @@ pytz==2017.3
 sqlalchemy==1.1.13
 twisted==17.9.0
 zeep==2.4.0
-pyexcelerate==0.7.1
+pyexcelerate==0.7.2
 Pillow==4.2.1
 pycryptodomex==3.4.7
 future==0.16.0
