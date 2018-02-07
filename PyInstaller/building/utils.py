@@ -337,9 +337,19 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
     return cachedfile
 
 
+def get_md5(fnm):
+    hasher = hashlib.md5()
+    with open(fnm, 'rb') as fh:
+        while True:
+            data = fh.read(2048)    # 2048 each iteration
+            if not data:
+                break
+            hasher.update(data)
+    return hasher
+
+
 def cacheDigest(fnm, redirects):
-    data = open(fnm, "rb").read()
-    hasher = hashlib.md5(data)
+    hasher = get_md5(fnm)
     if redirects:
         redirects = str(redirects)
         if is_py3:
