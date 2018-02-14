@@ -147,7 +147,7 @@ class ArchiveReader(object):
             # We cannot use at this bootstrap stage importlib directly
             # but its frozen variant.
             import _frozen_importlib
-            if version_info[1] == 4:
+            if sys.version_info[1] == 4:
                 # Python 3.4
                 self.pymagic = _frozen_importlib.MAGIC_NUMBER
             else:
