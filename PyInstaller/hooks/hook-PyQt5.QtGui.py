@@ -21,6 +21,7 @@ binaries.extend(qt_plugins_binaries('imageformats', namespace='PyQt5'))
 binaries.extend(qt_plugins_binaries('inputmethods', namespace='PyQt5'))
 binaries.extend(qt_plugins_binaries('graphicssystems', namespace='PyQt5'))
 binaries.extend(qt_plugins_binaries('platforms', namespace='PyQt5'))
+binaries.extend(qt_plugins_binaries('styles', namespace='PyQt5'))
 
 if is_linux:
     binaries.extend(qt_plugins_binaries('platformthemes', namespace='PyQt5'))
