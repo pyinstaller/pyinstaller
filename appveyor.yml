@@ -28,10 +28,6 @@ environment:
       PYTHON_VERSION: 3.4
       PYTHON_ARCH: 32
 
-    - PYTHON: C:\Python33
-      PYTHON_VERSION: 3.3
-      PYTHON_ARCH: 32
-
     - PYTHON: C:\Python27
       PYTHON_VERSION: 2.7
       PYTHON_ARCH: 32

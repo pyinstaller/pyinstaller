@@ -25,11 +25,9 @@ REQUIREMENTS = [
     'macholib >= 1.8',
 ]
 
-# dis3 and xdis are used for our version of modulegraph
+# dis3 is used for our version of modulegraph
 if sys.version_info < (3,):
     REQUIREMENTS.append('dis3')
-elif sys.version_info < (3, 4):
-    REQUIREMENTS.append('xdis')
 
 # For Windows install PyWin32 if not already installed.
 if sys.platform.startswith('win'):
@@ -84,7 +82,6 @@ Programming Language :: Python
 Programming Language :: Python :: 2
 Programming Language :: Python :: 2.7
 Programming Language :: Python :: 3
-Programming Language :: Python :: 3.3
 Programming Language :: Python :: 3.4
 Programming Language :: Python :: 3.5
 Programming Language :: Python :: 3.6
@@ -158,6 +155,7 @@ class MyBDist_Egg(bdist_egg):
 
 setup(
     install_requires=REQUIREMENTS,
+    python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*',
 
     name='PyInstaller',
     version=version,
