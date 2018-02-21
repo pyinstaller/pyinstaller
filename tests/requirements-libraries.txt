@@ -22,7 +22,7 @@ simplejson==3.11.1 # simplejson is used for text_c_extension
 sphinx==1.6.3
 pyzmq==16.0.2
 zope.interface==4.4.3  # Required for test_namespace_package
-numpy==1.13.1
+numpy==1.14.1
 
 # SciPy currently provides no binary wheel for Windows and hence must be
 # isolated to non-Windows platforms. See also: scipy/scipy#5461
