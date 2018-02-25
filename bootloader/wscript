@@ -47,7 +47,7 @@ DESTOS_TO_SYSTEM = {
     'freebsd': 'FreeBSD',
     'win32': 'Windows',
     'darwin': 'Darwin',
-    'sunos': platform.system(), ## FIXME: inhibits cross-compile
+    'sunos': 'SunOS',
     'hpux': 'HP-UX',
     'aix': 'AIX',
     }
@@ -91,7 +91,7 @@ def assoc_programm(ctx, name):
     # Search other programs we need, based on the name of the compiler
     # (replace "gcc" or "clang" by the tool name)
     cc = ctx.env.CC[0]
-    prog = re.sub(r'(^|^.*-)(gcc|clang)(-.*|\.exe$|$)',
+    prog = re.sub(r'(^|^.*-)(gcc|clang|xlc|xlc_r)(-.*|\.exe$|$)',
                   r'\1' + name + r'\3',
                   os.path.basename(cc))
     prog = os.path.join(os.path.dirname(cc), prog)
@@ -100,7 +100,6 @@ def assoc_programm(ctx, name):
     exts = Utils.is_win32 and r'\.(exe|com|bat|cmd)$' or r'\.(sh|pl|py)$'
     prog = re.sub(exts, '', prog)
     return prog
-
 
 def options(ctx):
     ctx.load('compiler_c')
@@ -251,7 +250,7 @@ def detect_arch(ctx):
         # PyInstaller uses the result of platform.architecture() to determine
         # the bits and this is testing the pointer size (via module struct).
         # We do the same here.
-        arch = "%sbit" % (8 * check_sizeof_pointer(ctx))
+        arch, ignored = platform.architecture()
         ctx.msg('Platform', '%s-%s detected based on compiler' % (system, arch))
 
     # Pass return values as environment variables.
@@ -455,11 +454,20 @@ def configure(ctx):
             ctx.load('winres')
 
     if ctx.env.CC_NAME != 'msvc':
-        # This tool allows reducing the size of executables.
-        ctx.find_program([assoc_programm(ctx, 'strip')], var='STRIP')
-        ctx.load('strip', tooldir='tools')
-        # There is a strip flag for AIX environment
-        if ctx.env.DEST_OS == 'aix':
+        if ctx.env.DEST_OS != 'aix':
+            # This tool allows reducing the size of executables.
+            ctx.find_program([assoc_programm(ctx, 'strip')], var='STRIP')
+            ctx.load('strip', tooldir='tools')
+        else:
+            # In AIX, c compiler and 'strip' program are not in the same dir.
+            def guess_program(name):
+                # Compose program full path based on the system search path
+                return [os.path.join(d, name) for d in os.environ['PATH'].split(':')]
+
+            ctx.find_program(guess_program('strip'), var='STRIP')
+            ctx.load('strip', tooldir='tools')
+
+            # There is a strip flag for AIX environment
             if ctx.env.PYI_ARCH == '32bit':
                 ctx.env.append_value('STRIPFLAGS', '-X32')
             elif ctx.env.PYI_ARCH == '64bit':
@@ -552,6 +560,13 @@ def configure(ctx):
         #  dlopen("libpython2.7.a(libpython2.7.so)", RTLD_MEMBER)
         ctx.env.append_value('DEFINES', '_ALL_SOURCE')
 
+        # Make use of IBM's freeware build
+        ctx.env.append_value('CPPPATH', '/opt/freeware/include')
+        ctx.env.append_value('LIBPATH', '/opt/freeware/lib')
+        if ctx.env.PYI_ARCH == '64bit':
+            ctx.env.append_value('LIBPATH', '/opt/freeware/64/lib')
+            ctx.env.append_value('LIBPATH', '/opt/freeware/lib64')
+                 
         # On AIX using gcc the linker options for shared and static
         # libraries are slightly different from other platforms.
         ctx.env['SHLIB_MARKER'] = '-Wl,-bdynamic'
@@ -598,7 +613,12 @@ def configure(ctx):
         elif ctx.env.DEST_OS == 'hpux' and sysconfig.get_config_var('HAVE_PTHREAD_H'):
             ctx.check_cc(lib='pthread', mandatory=True)
         ctx.check_cc(lib='m', mandatory=True)
-        ctx.check_cc(lib='z', mandatory=True, uselib_store='Z')
+        if not ctx.env.DEST_OS == 'aix':
+            ctx.check_cc(lib='z', mandatory=True, uselib_store='Z')
+        else:
+            # zlib is not part of the AIX.  We have to statically link
+            # against it.
+            ctx.check_cc(stlib='z', mandatory=True, uselib_store='Z')
         # This uses Boehm GC to manage memory - it replaces malloc() / free()
         # functions. Some messages are printed if memory is not deallocated.
         if ctx.options.boehmgc:
@@ -710,7 +730,7 @@ def build(ctx):
     if machine():
         install_path += '-' + machine()
 
-    if not ctx.env.LIB_Z:
+    if not ctx.env.LIB_Z and not ctx.env.STLIB_Z:
         # If the operating system does not provide zlib, build our own. The
         # configure phase defines whether or not zlib is mandatory for a
         # platform.
@@ -743,13 +763,10 @@ def build(ctx):
         # Only the libs found will actually be used, so it's safe to list all
         # here. The decision if a lib is required for a specific platform is
         # made in the configure phase.
-        libs = ['DL', 'M', 'Z',  # 'z' - zlib, 'm' - math,
-                'THR'] # may be used on FreBSD
-        staticlibs = []
-        if ctx.env.DEST_OS == 'aix':
-            # link statically with zlib
-            libs.remove('Z')
-            staticlibs.append('Z')
+        libs = ['DL', 'M', 'Z']  # 'z' - zlib, 'm' - math,
+
+        if ctx.env.DEST_OS == 'freebsd' and sysconfig.get_config_var('HAVE_PTHREAD_H'):
+            libs.append('THR')
 
         if ctx.options.boehmgc:
             libs.append('GC')
@@ -759,7 +776,6 @@ def build(ctx):
             target=exe_name,
             includes='src',
             use=libs,
-            stlib=staticlibs,
             install_path=install_path,
             features=features)
 

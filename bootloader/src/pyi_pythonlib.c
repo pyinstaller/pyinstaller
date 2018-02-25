@@ -65,6 +65,8 @@ pyi_pylib_load(ARCHIVE_STATUS *status)
  * to make it look like this:
  *   libpython2.6.a(libpython2.6.so)
  */
+
+    len = 0;
 #ifdef AIX
     /*
      * Determine if shared lib is in libpython?.?.so or libpython?.?.a(libpython?.?.so) format
@@ -89,12 +91,11 @@ pyi_pylib_load(ARCHIVE_STATUS *status)
       strncpy(dllname, status->cookie.pylibname, 64);
     }
 #else
-    len = 0;
     strncpy(dllname, status->cookie.pylibname, 64);
 #endif
 
     if (len >= 64 || dllname[64-1] != '\0') {
-        FATALERROR("DLL name length exceeds buffer\n");
+        FATALERROR("DLL name '%s' length exceeds buffer\n", dllname);
         return -1;
     }
 
