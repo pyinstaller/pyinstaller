@@ -91,7 +91,7 @@ def create_py3_base_library(libzip_filename, graph):
                             _write_long(fc, timestamp)
                             _write_long(fc, size)
                             marshal.dump(mod.code, fc)
-                            # Use ZipInfo to set timestamp
+                            # Use a ZipInfo to set timestamp for deterministic build 
                             info = zipfile.ZipInfo(new_name)
                             zf.writestr(info, fc.getvalue())
 
