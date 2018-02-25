@@ -47,6 +47,7 @@ try:
 except (ValueError, usb.core.USBError) as exc:
     logger.warning("%s", exc)
 
+
 # if nothing found, try to use our custom mechanism
 if not binaries:
     # Try to resolve your libusb libraries in the following order:
