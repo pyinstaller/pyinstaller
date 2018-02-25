@@ -122,9 +122,7 @@ def applyRedirects(manifest, redirects):
     :return:
     :rtype:
     """
-
     redirecting = False
-
     for binding in redirects:
         for dep in manifest.dependentAssemblies:
             if match_binding_redirect(dep, binding):
@@ -132,7 +130,6 @@ def applyRedirects(manifest, redirects):
                             binding.name, dep.version, binding.newVersion)
                 dep.version = binding.newVersion
                 redirecting = True
-
     return redirecting
 
 def checkCache(fnm, strip=False, upx=False, dist_nm=None):
