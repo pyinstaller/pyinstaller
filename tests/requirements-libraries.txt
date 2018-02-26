@@ -72,7 +72,7 @@ matplotlib==2.0.2
 #### Windows specific packages
 
 # pip-installable version of PyWin32.
-pypiwin32==220; python_version >= '3.6' and sys_platform == 'win32'
+pypiwin32==223; python_version >= '3.6' and sys_platform == 'win32'
 pypiwin32==219; python_version <= '3.5' and sys_platform == 'win32' # pyup: ignore
 
 # For parsing PE headers and get list of dependent DLLs.
