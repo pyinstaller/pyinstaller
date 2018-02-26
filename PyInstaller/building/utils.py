@@ -338,8 +338,10 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
 
 
 def cacheDigest(fnm, redirects):
-    data = open(fnm, "rb").read()
-    hasher = hashlib.md5(data)
+    hasher = hashlib.md5()
+    with open(fnm, "rb") as f:
+        for chunk in iter(lambda: f.read(16 * 1024), b""):
+            hasher.update(chunk)
     if redirects:
         redirects = str(redirects)
         if is_py3:
