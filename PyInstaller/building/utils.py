@@ -122,12 +122,15 @@ def applyRedirects(manifest, redirects):
     :return:
     :rtype:
     """
+    redirecting = False
     for binding in redirects:
         for dep in manifest.dependentAssemblies:
             if match_binding_redirect(dep, binding):
                 logger.info("Redirecting %s version %s -> %s",
                             binding.name, dep.version, binding.newVersion)
                 dep.version = binding.newVersion
+                redirecting = True
+    return redirecting
 
 def checkCache(fnm, strip=False, upx=False, dist_nm=None):
     """
@@ -299,7 +302,8 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
                             logger.error("From file %s", cachedfile, exc_info=1)
                         else:
                             # optionally change manifest to private assembly
-                            if CONF.get('win_private_assemblies', False):
+                            private = CONF.get('win_private_assemblies', False)
+                            if private:
                                 if manifest.publicKeyToken:
                                     logger.info("Changing %s into a private assembly",
                                                 os.path.basename(fnm))
@@ -310,14 +314,15 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
                                     # Exclude common-controls which is not bundled
                                     if dep.name != "Microsoft.Windows.Common-Controls":
                                         dep.publicKeyToken = None
-                            applyRedirects(manifest, redirects)
-                            try:
-                                manifest.update_resources(os.path.abspath(cachedfile),
-                                                          [name],
-                                                          [language])
-                            except Exception as e:
-                                logger.error(os.path.abspath(cachedfile))
-                                raise
+                            redirecting = applyRedirects(manifest, redirects)
+                            if redirecting or private:
+                                try:
+                                    manifest.update_resources(os.path.abspath(cachedfile),
+                                                              [name],
+                                                              [language])
+                                except Exception as e:
+                                    logger.error(os.path.abspath(cachedfile))
+                                    raise
 
     if cmd:
         try:
