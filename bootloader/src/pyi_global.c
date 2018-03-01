@@ -9,7 +9,7 @@
  */
 
 /*
- * Glogal shared fuctions used in many bootloader files.
+ * Global shared fuctions used in many bootloader files.
  */
 
 /*

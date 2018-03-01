@@ -13,6 +13,7 @@ Various classes and functions to provide some backwards-compatibility
 with previous versions of Python from 2.7 onward.
 """
 
+from __future__ import print_function
 
 import io
 import os
@@ -28,9 +29,8 @@ is_py2 = sys.version_info[0] == 2
 is_py3 = sys.version_info[0] == 3
 # Distinguish specific code for various Python versions.
 is_py27 = sys.version_info >= (2, 7) and sys.version_info < (3, 0)
-# PyInstaller supports only Python 3.3+
+# PyInstaller supports only Python 3.4+
 # Variables 'is_pyXY' mean that Python X.Y and up is supported.
-is_py34 = sys.version_info >= (3, 4)
 is_py35 = sys.version_info >= (3, 5)
 is_py36 = sys.version_info >= (3, 6)
 is_py37 = sys.version_info >= (3, 7)
@@ -168,21 +168,26 @@ base_prefix = getattr( sys, 'real_prefix',
 base_prefix = os.path.abspath(base_prefix)
 is_venv = is_virtualenv = base_prefix != os.path.abspath(sys.prefix)
 
+# Conda environments sometimes have different paths or apply patches to
+# packages that can affect how a hook or package should access resources.
+# Method for determining conda taken from:
+# https://stackoverflow.com/a/21318941/433202
+is_conda = 'conda' in sys.version or 'Continuum' in sys.version
 
 # In Python 3.4 module 'imp' is deprecated and there is another way how
 # to obtain magic value.
-if is_py34:
+if is_py3:
     import importlib.util
     BYTECODE_MAGIC = importlib.util.MAGIC_NUMBER
 else:
-    # This fallback should work with Python 2.7 and 3.3.
+    # This fallback should work with Python 2.7.
     import imp
     BYTECODE_MAGIC = imp.get_magic()
 
 
 # List of suffixes for Python C extension modules.
 try:
-    # In Python 3.3+ There is a list
+    # In Python 3.4+ There is a list
     from importlib.machinery import EXTENSION_SUFFIXES
 except ImportError:
     import imp
@@ -265,6 +270,8 @@ def machine():
     mach = platform.machine()
     if mach.startswith('arm'):
         return 'arm'
+    elif mach.startswith('aarch'):
+        return 'aarch'
     else:
         # Assume x86/x86_64 machine.
         return None
@@ -365,13 +372,22 @@ def exec_command(*cmdargs, **kwargs):
     # Thus we need to convert that to proper encoding.
 
     if is_py3:
-        if encoding:
-            out = out.decode(encoding)
-        else:
-            # If no encoding is given, assume we're reading filenames from stdout
-            # only because it's the common case.
-            out = os.fsdecode(out)
-
+        try:
+            if encoding:
+                out = out.decode(encoding)
+            else:
+                # If no encoding is given, assume we're reading filenames from
+                # stdout only because it's the common case.
+                out = os.fsdecode(out)
+        except UnicodeDecodeError as e:
+            # The sub-process used a different encoding,
+            # provide more information to ease debugging.
+            print('--' * 20, file=sys.stderr)
+            print(str(e), file=sys.stderr)
+            print('These are the bytes around the offending byte:',
+                  file=sys.stderr)
+            print('--' * 20, file=sys.stderr)
+            raise
     return out
 
 
@@ -495,6 +511,7 @@ def exec_command_all(*cmdargs, **kwargs):
         Ignore this 3-element tuple `(exit_code, stdout, stderr)`. See the
         `exec_command()` function for discussion.
     """
+    encoding = kwargs.pop('encoding', None)
     proc = subprocess.Popen(cmdargs, bufsize=-1,  # Default OS buffer size.
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs)
     # Waits for subprocess to complete.
@@ -502,16 +519,24 @@ def exec_command_all(*cmdargs, **kwargs):
     # Python 3 returns stdout/stderr as a byte array NOT as string.
     # Thus we need to convert that to proper encoding.
     if is_py3:
-        encoding = kwargs.get('encoding')
-        if encoding:
-            out = out.decode(encoding)
-            err = err.decode(encoding)
-        else:
-            # If no encoding is given, assume we're reading filenames from stdout
-            # only because it's the common case.
-            out = os.fsdecode(out)
-            err = os.fsdecode(err)
-
+        try:
+            if encoding:
+                out = out.decode(encoding)
+                err = err.decode(encoding)
+            else:
+                # If no encoding is given, assume we're reading filenames from
+                # stdout only because it's the common case.
+                out = os.fsdecode(out)
+                err = os.fsdecode(err)
+        except UnicodeDecodeError as e:
+            # The sub-process used a different encoding,
+            # provide more information to ease debugging.
+            print('--' * 20, file=sys.stderr)
+            print(str(e), file=sys.stderr)
+            print('These are the bytes around the offending byte:',
+                  file=sys.stderr)
+            print('--' * 20, file=sys.stderr)
+            raise
 
     return proc.returncode, out, err
 
@@ -570,16 +595,6 @@ def exec_python_rc(*args, **kwargs):
     """
     cmdargs, kwargs = __wrap_python(args, kwargs)
     return exec_command_rc(*cmdargs, **kwargs)
-
-
-def exec_python_all(*args, **kwargs):
-    """
-    Wrap running python script in a subprocess.
-
-    Return tuple (exit_code, stdout, stderr) of the invoked command.
-    """
-    cmdargs, kwargs = __wrap_python(args, kwargs)
-    return exec_command_all(*cmdargs, **kwargs)
 
 
 ## Path handling.
@@ -769,13 +784,11 @@ PY3_BASE_MODULES = {
     'weakref',
 }
 
-#FIXME: Reduce this pair of nested tests to "if sys.version_info >= (3, 4)".
-if sys.version_info[0] == 3:
-    if sys.version_info[1] >= 4:
-        PY3_BASE_MODULES.update({
-            '_bootlocale',
-            '_collections_abc',
-        })
+if sys.version_info >= (3, 4):
+    PY3_BASE_MODULES.update({
+        '_bootlocale',
+        '_collections_abc',
+    })
 
 # Object types of Pure Python modules in modulegraph dependency graph.
 # Pure Python modules have code object (attribute co_code).
@@ -861,5 +874,28 @@ def check_requirements():
     Fail hard if any requirement is not met.
     """
     # Fail hard if Python does not have minimum required version
-    if sys.version_info < (3, 3) and sys.version_info[:2] != (2, 7):
-        raise SystemExit('PyInstaller requires at least Python 2.7 or 3.3+.')
+    if sys.version_info < (3, 4) and sys.version_info[:2] != (2, 7):
+        raise SystemExit('PyInstaller requires at least Python 2.7 or 3.4+.')
+
+
+if not is_py3:
+    class suppress(object):
+        """Context manager to suppress specified exceptions
+        After the exception is suppressed, execution proceeds with the next
+        statement following the with statement.
+             with suppress(FileNotFoundError):
+                 os.remove(somefile)
+             # Execution still resumes here if the file was already removed
+        """
+
+        def __init__(self, *exceptions):
+            self._exceptions = exceptions
+
+        def __enter__(self):
+            pass
+
+        def __exit__(self, exctype, excinst, exctb):
+            return (exctype is not None and
+                    issubclass(exctype, self._exceptions))
+else:
+    from contextlib import suppress  # noqa: F401

@@ -11,6 +11,6 @@
 Libaudioverse: https://github.com/libaudioverse/libaudioverse
 """
 
-from pyinstaller.utils.hooks import collect_dynamic_libs
+from PyInstaller.utils.hooks import collect_dynamic_libs
 
 binaries = collect_dynamic_libs('libaudioverse')

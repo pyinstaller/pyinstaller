@@ -284,6 +284,7 @@ Additionally, Python bytecode can be obfuscated with AES256 by specifying
 an encryption key on PyInstaller's command line. Please note that it is still
 very easy to extract the key and get back the original bytecode, but it
 should prevent most forms of "casual" tampering.
+See :ref:`encrypting python bytecode` for details.
 
 
 .. include:: _common_definitions.txt
