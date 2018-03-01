@@ -829,3 +829,9 @@ def test_pinyin(pyi_builder):
     pyi_builder.test_source("""
         import pinyin
         """)
+
+    
+@importorskip('uvloop')
+@skipif(is_win or not is_py35, reason='Windows, or py < 3.5 not supported')
+def test_uvloop(pyi_builder):
+    pyi_builder.test_source("import uvloop")
