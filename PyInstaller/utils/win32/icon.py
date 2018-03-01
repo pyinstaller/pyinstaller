@@ -89,7 +89,7 @@ class IconFile:
         try:
             # The path is from the user parameter, don't trust it.
             file = open(path, "rb")
-        except OSError as OSexception:
+        except OSError:
             # The icon file can't be opened for some reason. Stop the
             # program with an informative message.
             raise SystemExit(
