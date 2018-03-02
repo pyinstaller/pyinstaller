@@ -700,24 +700,22 @@ def test_pyexcelerate(pyi_builder):
 
 
 @importorskip('usb')
-@pytest.mark.skipif(not is_win, reason='Crashes Python on travis')
+@pytest.mark.skipif(is_linux, reason='libusb_exit segfaults on some linuxes')
 def test_usb(pyi_builder):
     # See if the usb package is supported on this platform.
     try:
         import usb
         # This will verify that the backend is present; if not, it will
         # skip this test.
-        usb.core.find(find_all = True)
-    except (ImportError, ValueError):
+        usb.core.find()
+    except (ImportError, usb.core.NoBackendError):
         pytest.skip('USB backnd not found.')
 
     pyi_builder.test_source(
         """
         import usb.core
-        # Detect usb devices.
-        devices = usb.core.find(find_all = True)
-        if not devices:
-            raise SystemExit('No USB device found.')
+        # NoBackendError fails the test if no backends are found.
+        usb.core.find()
         """)
 
 
