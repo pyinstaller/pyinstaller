@@ -13,7 +13,7 @@ import usb.core
 import usb.backend
 
 from PyInstaller.depend.utils import _resolveCtypesImports
-from PyInstaller.compat import is_cygwin
+from PyInstaller.compat import is_cygwin, getenv
 from PyInstaller.utils.hooks import logger
 
 
@@ -25,27 +25,31 @@ hiddenimports = ['glob']
 
 binaries=[]
 
+# loading usb.core.find in this script crashes Ubuntu 14.04LTS,
+# let users circumvent pyusb discovery with an environment variable.
+skip_pyusb_discovery = \
+    bool(getenv('PYINSTALLER_USB_HOOK_SKIP_PYUSB_DISCOVERY'))
+
 # first try to use pyusb library locator
-try:
-    # get the backend symbols before find
-    pyusb_backend_dir = set(dir(usb.backend))
+if not skip_pyusb_discovery:
+    try:
+        # get the backend symbols before find
+        pyusb_backend_dir = set(dir(usb.backend))
 
-    # perform find, which will load a usb library if found
-    usb.core.find()
+        # perform find, which will load a usb library if found
+        usb.core.find()
 
-    # get the backend symbols which have been added (loaded)
-    backends = set(dir(usb.backend)) - pyusb_backend_dir
+        # get the backend symbols which have been added (loaded)
+        backends = set(dir(usb.backend)) - pyusb_backend_dir
 
-    # for each of the loaded backends, see if they have a library
-    binaries = []
-    for usblib in [getattr(usb.backend, be)._lib for be in backends]:
-        if usblib is not None:
-            binaries = _resolveCtypesImports([os.path.basename(usblib._name)])
-            assert len(binaries[0]) == 3
-            binaries = [(binaries[0][1], '')]
+        # for each of the loaded backends, see if they have a library
+        binaries = []
+        for usblib in [getattr(usb.backend, be)._lib for be in backends]:
+            if usblib is not None:
+                binaries = [(usblib._name, '')]
 
-except (ValueError, usb.core.USBError) as exc:
-    logger.warning("%s", exc)
+    except (ValueError, usb.core.USBError) as exc:
+        logger.warning("%s", exc)
 
 
 # if nothing found, try to use our custom mechanism
