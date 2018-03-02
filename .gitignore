@@ -28,6 +28,9 @@ __pycache__/
 # PyCharm settings
 .idea
 
+# Spyder settings
+.spyproject
+
 # /tests/
 /tests/build*
 /tests/dist*
