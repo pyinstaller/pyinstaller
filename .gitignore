@@ -7,6 +7,8 @@ __pycache__/
 /*.egg
 /*.egg-info/
 /*.egg-link
+/.eggs/
+/.pytest_cache/
 
 # /
 /AES.pyd
