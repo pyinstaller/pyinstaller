@@ -9,6 +9,7 @@
 import os
 import sys
 import json
+import glob
 
 from ..hooks import eval_statement, exec_statement, get_homebrew_path, \
     get_module_file_attribute
@@ -489,18 +490,20 @@ def add_qt5_dependencies(hook_file):
     for plugin in plugins:
         more_binaries = qt_plugins_binaries(plugin, namespace=namespace)
         binaries.extend(more_binaries)
-    # Change translation_base to datas. Note that not all PyQt5 installations
-    # include translations. See
-    # https://github.com/pyinstaller/pyinstaller/pull/3229#issuecomment-359479893.
+    # Change translation_base to datas.
     tp = pyqt5_library_info.location['TranslationsPath']
-    if os.path.isdir(tp):
-        datas = [(os.path.join(tp, tb + '_*.qm'),
-                  os.path.join('PyQt5', 'Qt', 'translations'))
-                 for tb in translations_base]
-    else:
-        datas = []
-        logger.warning('Unable to find Qt5 translations at %s. Translations '
-                       'not packaged.', tp)
+    datas = []
+    for tb in translations_base:
+        src = os.path.join(tp, tb + '_*.qm')
+        # Not all PyQt5 installations include translations. See
+        # https://github.com/pyinstaller/pyinstaller/pull/3229#issuecomment-359479893
+        # and
+        # https://github.com/pyinstaller/pyinstaller/issues/2857#issuecomment-368744341.
+        if glob.glob(src):
+            datas.append( (src, os.path.join(namespace, 'Qt', 'translations')) )
+        else:
+            logger.warning('Unable to find Qt5 translations %s. These '
+                           'translations were not packaged.', src)
     # Change hiddenimports to a list.
     hiddenimports = list(hiddenimports)
 
