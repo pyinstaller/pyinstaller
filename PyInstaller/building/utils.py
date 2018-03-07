@@ -493,7 +493,7 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
 
         if not src_root_paths:
             msg = 'Unable to find "%s" when adding binary and data files.' % (
-                    src_root_path_or_glob)
+                src_root_path_or_glob)
             # on Debian/Ubuntu, missing pyconfig.h files can be fixed with
             # installing python-dev
             if src_root_path_or_glob.endswith("pyconfig.h"):
@@ -503,7 +503,7 @@ package, or unsuitable build parameters of Python installation.
 * On Debian/Ubuntu, you would need to install Python development packages
   * apt-get install python3-dev
   * apt-get install python-dev
-* If you're building Python by yourself, please rebuild your Python with 
+* If you're building Python by yourself, please rebuild your Python with
 `--enable-shared` (or, `--enable-framework` on Darwin)
 """
             raise SystemExit(msg)
