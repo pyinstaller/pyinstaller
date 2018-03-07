@@ -836,6 +836,7 @@ def test_pinyin(pyi_builder):
 def test_uvloop(pyi_builder):
     pyi_builder.test_source("import uvloop")
 
+
 @importorskip('web3')
 def test_web3(pyi_builder):
     pyi_builder.test_source("import web3")
