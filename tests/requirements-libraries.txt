@@ -83,3 +83,5 @@ h5py==2.7.0
 
 # uvloop requires python 3.5 or higher and does not currently support Windows.
 uvloop==0.8.1; python_version >= '3.5' and sys_platform != 'win32'
+
+web3==3.16.5
