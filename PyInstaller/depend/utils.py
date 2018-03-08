@@ -25,7 +25,7 @@ import zipfile
 from ..lib.modulegraph import util, modulegraph
 
 from .. import compat
-from ..compat import (is_darwin, is_unix, is_py2, is_freebsd,
+from ..compat import (is_darwin, is_unix, is_freebsd, is_py2, is_py37,
                       BYTECODE_MAGIC, PY3_BASE_MODULES,
                       exec_python_rc)
 from .dylib import include_library
@@ -87,9 +87,17 @@ def create_py3_base_library(libzip_filename, graph):
                         # This code is similar to py_compile.compile().
                         with io.BytesIO() as fc:
                             # Prepare all data in byte stream file-like object.
-                            fc.write(BYTECODE_MAGIC)
-                            _write_long(fc, timestamp)
-                            _write_long(fc, size)
+                            if not is_py37:
+                                # old format
+                                fc.write(BYTECODE_MAGIC)
+                                _write_long(fc, timestamp)
+                                _write_long(fc, size)
+                            else:
+                                # new format - still timestamp based
+                                fc.write(BYTECODE_MAGIC)
+                                _write_long(fc, 0) # flags
+                                _write_long(fc, timestamp)
+                                _write_long(fc, size)
                             marshal.dump(mod.code, fc)
                             # Use a ZipInfo to set timestamp for deterministic build 
                             info = zipfile.ZipInfo(new_name)
