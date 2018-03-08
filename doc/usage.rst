@@ -361,40 +361,40 @@ to reproduce the version text file.
 Building Mac OS X App Bundles
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you specify only ``--onefile`` under Mac OS X, the output
-in :file:`dist` is a UNIX executable
-:file:`myscript`.
-It can be executed from a Terminal command line.
-Standard input and output work as normal through the Terminal window.
+Under Mac OS X, |PyInstaller| always builds a UNIX executable in
+:file:`dist`.
+If you specify ``--onedir``, the output is a folder named :file:`myscript`
+containing supporting files and an executable named :file:`myscript`.
+If you specify ``--onefile``, the output is a single UNIX executable
+named :file:`myscript`.
+Either executable can be started from a Terminal command line.
+Standard input and output work as normal through that Terminal window.
 
-If you also specify ``--windowed``, the ``dist`` folder contains
-two outputs: the UNIX executable :file:`myscript`
-and also an OS X application named :file:`myscript.app`.
+If you specify ``--windowed`` with either option, the ``dist`` folder
+also contains an OS X application named :file:`myscript.app`.
 
 As you probably know, an application is a special type of folder.
-The one built by |PyInstaller| contains a folder always named :file:`Contents`.
-It contains:
+The one built by |PyInstaller| contains a folder always named
+:file:`Contents` which contains:
 
   + A folder :file:`Frameworks` which is empty.
-  + A folder :file:`MacOS` that contains a copy of the same
-    :file:`myscript` UNIX executable.
   + A folder :file:`Resources` that contains an icon file.
   + A file :file:`Info.plist` that describes the app.
+  + A folder :file:`MacOS` that contains the same contents as
+    the ``--onedir`` bundle.
 
-|PyInstaller| builds minimal versions of these elements.
+Use the ``icon=`` argument to specify a custom icon for the application.
+It will be copied into the :file:`Resources` folder.
+(When you do not specify an icon file, |PyInstaller| supplies a
+file :file:`icon-windowed.icns` with the |PyInstaller| logo.)
 
 Use the ``osx-bundle-identifier=`` argument to add a bundle identifier.
 This becomes the ``CFBundleIdentifier`` used in code-signing
 (see the `PyInstaller code signing recipe`_
 and for more detail, the `Apple code signing overview`_ technical note).
 
-Use the ``icon=`` argument to specify a custom icon for the application.
-(If you do not specify an icon file, |PyInstaller| supplies a
-file :file:`icon-windowed.icns` with the |PyInstaller| logo.)
-
-You can add items to the :file:`Info.plist` by editing the spec file;
+You can add other items to the :file:`Info.plist` by editing the spec file;
 see :ref:`Spec File Options for a Mac OS X Bundle` below.
-
 
 
 Platform-specific Notes
