@@ -434,9 +434,33 @@ pyi_pylib_start_python(ARCHIVE_STATUS *status)
         PI_Py_SetProgramName(progname_w);
     };
 
-    /* Set sys.path */
     VS("LOADER: Manipulating environment (sys.path, sys.prefix)\n");
 
+    /* Set sys.prefix and sys.exec_prefix using Py_SetPythonHome */
+    if (is_py2) {
+#ifdef _WIN32
+
+        if (!pyi_win32_utf8_to_mbs_sfn(pyhome, status->mainpath, PATH_MAX)) {
+            FATALERROR("Failed to convert pyhome to ANSI (invalid multibyte string)\n");
+            return -1;
+        }
+#else
+        strcpy(pyhome, status->mainpath);
+#endif
+        VS("LOADER: sys.prefix is %s\n", pyhome);
+        PI_Py2_SetPythonHome(pyhome);
+    }
+    else {
+        /* Decode using current locale */
+        if (!pyi_locale_char2wchar(pyhome_w, status->mainpath, PATH_MAX)) {
+            FATALERROR("Failed to convert pyhome to wchar_t\n");
+            return -1;
+        }
+        VS("LOADER: sys.prefix is %s\n", status->mainpath);
+        PI_Py_SetPythonHome(pyhome_w);
+    };
+
+    /* Set sys.path */
     if (is_py2) {
         /* sys.path = [mainpath] */
         strncpy(pypath, status->mainpath, strlen(status->mainpath));
@@ -473,30 +497,6 @@ pyi_pylib_start_python(ARCHIVE_STATUS *status)
         PI_Py_SetPath(pypath_w);
     }
     ;
-
-    /* Set sys.prefix and sys.exec_prefix using Py_SetPythonHome */
-    if (is_py2) {
-#ifdef _WIN32
-
-        if (!pyi_win32_utf8_to_mbs_sfn(pyhome, status->mainpath, PATH_MAX)) {
-            FATALERROR("Failed to convert pyhome to ANSI (invalid multibyte string)\n");
-            return -1;
-        }
-#else
-        strcpy(pyhome, status->mainpath);
-#endif
-        VS("LOADER: sys.prefix is %s\n", pyhome);
-        PI_Py2_SetPythonHome(pyhome);
-    }
-    else {
-        /* Decode using current locale */
-        if (!pyi_locale_char2wchar(pyhome_w, status->mainpath, PATH_MAX)) {
-            FATALERROR("Failed to convert pyhome to wchar_t\n");
-            return -1;
-        }
-        VS("LOADER: sys.prefix is %s\n", status->mainpath);
-        PI_Py_SetPythonHome(pyhome_w);
-    };
 
     /* Start python. */
     VS("LOADER: Setting runtime options\n");
