@@ -638,6 +638,11 @@ pyi_pylib_import_modules(ARCHIVE_STATUS *status)
                 co = PI_PyObject_CallFunction(loadfunc, "s#", modbuf + 8, ntohl(
                                                   ptoc->ulen) - 8);
             }
+            else if (pyvers >= 37) {
+                /* Python >= 3.7 the header: size was changed to 16 bytes. */
+                co = PI_PyObject_CallFunction(loadfunc, "y#", modbuf + 16,
+                                              ntohl(ptoc->ulen) - 16);
+            }
             else {
                 /* It looks like from python 3.3 the header */
                 /* size was changed to 12 bytes. */
