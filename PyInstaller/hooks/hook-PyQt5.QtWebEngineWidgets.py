@@ -9,7 +9,8 @@
 
 import os
 from PyInstaller.utils.hooks import add_qt5_dependencies, \
-    remove_prefix, get_module_file_attribute, pyqt5_library_info
+    remove_prefix, get_module_file_attribute, pyqt5_library_info, \
+    collect_system_data_files
 from PyInstaller.depend.bindepend import getImports
 import PyInstaller.compat as compat
 
@@ -21,14 +22,13 @@ if compat.is_darwin:
     # This is based on the layout of the Mac wheel from PyPi.
     data_path = pyqt5_library_info.location['DataPath']
     resources = 'lib', 'QtWebEngineCore.framework', 'Resources'
-    web_engine_process = ('lib', 'QtWebEngineCore.framework', 'Helpers',
-                          'QtWebEngineProcess.app', 'Contents', 'MacOS')
-    datas += [
-        (os.path.join(data_path, *resources),
-         os.path.join(*rel_data_path, *resources)),
-        (os.path.join(data_path, *web_engine_process, 'QtWebEngineProcess'),
-         os.path.join(*rel_data_path, *web_engine_process)),
-    ]
+    web_engine_process = ('lib', 'QtWebEngineCore.framework', 'Helpers')
+    datas += collect_system_data_files(
+        os.path.join(data_path, *resources),
+        os.path.join(rel_data_path, *resources), True)
+    datas += collect_system_data_files(
+        os.path.join(data_path, *web_engine_process),
+        os.path.join(rel_data_path, *web_engine_process), True)
 else:
     locales = 'qtwebengine_locales'
     resources = 'resources'
