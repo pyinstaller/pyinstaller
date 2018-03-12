@@ -6,6 +6,57 @@ new code, bug reports, fixes, comments and ideas. A brief list follows,
 please let us know if your name is omitted by accident:
 
 
+Contributions to PyInstaller 3.3.1
+----------------------------------
+
+* Hartmut Goebel - Core developer and release manager.
+* Bryan A. Jones - Core developer.
+* David Vierra - Core developer and encoding specialist.
+* xoviat - brave contributor
+
+* Dave Cortesi, David Hoese, John Daytona, Nejc Habjan, Addison Elliott,
+  Bharath Upadhya, Bill Dengler, Chris Norman, Miles Erickson, Nick Dimou,
+  Thomas Waldmann, David Weil, Placinta
+
+
+Contributions to PyInstaller 3.3
+----------------------------------
+
+Special Thanks xiovat for implementing Python3.6 support and to Jonathan
+Springer and xoviat for stabilizing the continuous integration tests.
+
+* Hartmut Goebel - Core developer and release manager.
+* Bryan A. Jones - Core developer.
+* David Vierra - Core developer and encoding specialist.
+* xoviat - brave programmer
+* Jonathan Springer
+* Vito Kortbeek
+* Dustin Spicuzza
+
+* Ben Hagen
+* Paavo
+* Brian Teague
+* Chris Norman
+* Jonathan Stewmon
+* Guillaume Thiolliere
+* Justin Harris
+* Kenneth Zhao
+* Paul Müller
+* giumas
+* y2kbugger
+* 肖寅东
+
+* Adam Clark, AndCycle, Andreas Schiefer, Arthur Silva, Aswa Paul, Bharath
+  Upadhya, Brian Teague, Charles Duffy, Chris Coutinho, Cody Scott, Czarek
+  Tomczak, Dang Mai, Daniel Hyams, David Hoese, Eelco van Vliet, Eric
+  Drechsel, Erik Bjäreholt, Hatem AlSum, Henry Senyondo, Jan Čapek, Jeremy T.
+  Hetzel, Jonathan Dan, Julie Marchant, Luke Lee, Marc Abramowitz, Matt
+  Wilkie, Matthew Einhorn, Michael Herrmann, Niklas Rosenstein, Philippe
+  Ombredanne, Piotr Radkowski, Ronald Oussoren, Ruslan Kuprieiev, Segev Finer,
+  Shengjing Zhu 朱晟菁, Steve, Steven Noonan, Tibor Csonka, Till Bey, Tobias
+  Gruetzmacher, 陳鵬宇 (float)
+
+
 Contributions to PyInstaller 3.2.1
 ----------------------------------
 

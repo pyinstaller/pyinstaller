@@ -31,6 +31,6 @@ or for building a Linux Standard Base (LSB) compliant bootloader::
 
   ./waf --lsb all
 
-For more details, esp. about building for other target-platforms,
-please read <http://pyinstaller.rtfd.io/en/latest/bootloader-building.html>
-(resp. the corresponsing file in the source: `../doc/bootloader-building.rst`).
+For more details, esp. about building for other target-platforms, please read
+<https://pyinstaller.readthedocs.io/en/latest/bootloader-building.html> (resp.
+the corresponsing file in the source: `../doc/bootloader-building.rst`).

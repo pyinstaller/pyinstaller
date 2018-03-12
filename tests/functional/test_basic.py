@@ -20,7 +20,7 @@ import pytest
 
 # Local imports
 # -------------
-from PyInstaller.compat import is_darwin, is_win, is_py2, is_py3, is_py34
+from PyInstaller.compat import is_darwin, is_win, is_py2
 from PyInstaller.utils.tests import importorskip, skipif_win, \
     skipif_winorosx, skipif_notwin, skipif_notosx, skipif_no_compiler, xfail
 
@@ -194,26 +194,6 @@ def test_module_attributes(tmpdir, pyi_builder):
 @xfail(is_darwin, reason='Issue #1895.')
 def test_module_reload(pyi_builder):
     pyi_builder.test_script('pyi_module_reload.py')
-
-
-# TODO move 'multiprocessig' tests into 'test_multiprocess.py.
-
-
-@skipif_win(reason="Issue #2116")
-@importorskip('multiprocessing')
-def test_multiprocess(pyi_builder):
-    pyi_builder.test_script('pyi_multiprocess.py')
-
-
-@xfail(is_darwin, reason="Pull Request #2505")
-@importorskip('multiprocessing')
-def test_multiprocess_forking(pyi_builder):
-    pyi_builder.test_script('pyi_multiprocess_forking.py')
-
-
-@importorskip('multiprocessing')
-def test_multiprocess_pool(pyi_builder):
-    pyi_builder.test_script('pyi_multiprocess_pool.py')
 
 
 # TODO test it on OS X.
@@ -423,7 +403,6 @@ def test_xmldom_module(pyi_builder):
         """)
 
 
-@xfail(is_py3 and not is_py34, reason='Known issue for Python 3.3, see #2377')
 def test_threading_module(pyi_builder):
     pyi_builder.test_source(
         """
@@ -572,3 +551,19 @@ def test_option_runtime_tmpdir(pyi_builder):
         print('test - done')
         """,
         ['--runtime-tmpdir=.']) # set runtime-tmpdir to current working dir
+
+
+@xfail(reason='Issue #3037 - all scripts share the same global vars')
+def test_several_scripts1(pyi_builder_spec):
+    """Verify each script has it's own global vars (original case, see issue
+    #2949).
+    """
+    pyi_builder_spec.test_spec('several-scripts1.spec')
+
+
+@xfail(reason='Issue #3037 - all scripts share the same global vars')
+def test_several_scripts2(pyi_builder_spec):
+    """
+    Verify each script has it's own global vars (basic test).
+    """
+    pyi_builder_spec.test_spec('several-scripts2.spec')

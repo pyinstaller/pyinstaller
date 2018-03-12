@@ -21,6 +21,8 @@ try:
 except AttributeError:
     StringTypes = [ type("") ]
 
+from ...compat import win32api
+
 import PyInstaller.log as logging
 logger = logging.getLogger(__name__)
 
@@ -80,10 +82,19 @@ class GRPICONDIRENTRY(Structure):
                "wBitCount", "dwBytesInRes", "nID")
     _format_ = "bbbbhhih"
 
+# An IconFile instance is created for each .ico file given.
 class IconFile:
     def __init__(self, path):
         self.path = path
-        file = open(path, "rb")
+        try:
+            # The path is from the user parameter, don't trust it.
+            file = open(path, "rb")
+        except OSError:
+            # The icon file can't be opened for some reason. Stop the
+            # program with an informative message.
+            raise SystemExit(
+                'Unable to open icon file {}'.format(path)
+            )
         self.entries = []
         self.images = []
         header = self.header = ICONDIRHEADER()
@@ -112,13 +123,14 @@ class IconFile:
 
 
 def CopyIcons_FromIco(dstpath, srcpath, id=1):
-    import win32api #, win32con
     icons = map(IconFile, srcpath)
     logger.info("Updating icons from %s to %s", srcpath, dstpath)
 
     hdst = win32api.BeginUpdateResource(dstpath, 0)
 
     iconid = 1
+    # Each step in the following enumerate() will instantiate an IconFile
+    # object, as a result of deferred execution of the map() above.
     for i, f in enumerate(icons):
         data = f.grp_icon_dir()
         data = data + f.grp_icondir_entries(iconid)
@@ -167,9 +179,22 @@ def CopyIcons(dstpath, srcpath):
         logger.info("Updating icons from %s, %d to %s", srcpath, index, dstpath)
     else:
         logger.info("Updating icons from %s to %s", srcpath, dstpath)
-    import win32api #, win32con
+
+    try:
+        # Attempt to load the .ico or .exe containing the icon into memory
+        # using the same mechanism as if it were a DLL. If this fails for
+        # any reason (for example if the file does not exist or is not a
+        # .ico/.exe) then LoadLibraryEx returns a null handle and win32api
+        # raises a unique exception with a win error code and a string.
+        hsrc = win32api.LoadLibraryEx(srcpath, 0, LOAD_LIBRARY_AS_DATAFILE)
+    except win32api.error as W32E:
+        # We could continue with no icon (i.e. just return) however it seems
+        # best to terminate the build with a message.
+        raise SystemExit(
+            "Unable to load icon file {}\n    {} (Error code {})".format(
+                srcpath, W32E.strerror, W32E.winerror)
+        )
     hdst = win32api.BeginUpdateResource(dstpath, 0)
-    hsrc = win32api.LoadLibraryEx(srcpath, 0, LOAD_LIBRARY_AS_DATAFILE)
     if index is None:
         grpname = win32api.EnumResourceNames(hsrc, RT_GROUP_ICON)[0]
     elif index >= 0:

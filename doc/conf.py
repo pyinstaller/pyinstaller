@@ -22,6 +22,8 @@ import shlex
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(1, os.path.abspath('..'))
+# Add path to your sphinx extensions
+sys.path.insert(3, os.path.abspath('./_extensions'))
 
 from PyInstaller import __version__
 import help2rst
@@ -45,7 +47,13 @@ for prog, outfile in (
         ):
     prog = os.path.abspath(os.path.join(os.path.dirname(__file__), prog))
     help2rst.to_file(prog, True, '-', outfile)
-del prog, outfile
+# Create a version with different labels to avoid warnings
+with open('man/_pyinstaller-options.tmp') as fh:
+    text = fh.read()
+text = text.replace('\n.. _pyinstaller ', '\n.. _options-group ')
+with open('_pyinstaller-options.tmp', 'w') as fh:
+    fh.write(text)
+del prog, outfile, fh, text
 
 # -- General configuration ------------------------------------------------
 
@@ -55,7 +63,8 @@ del prog, outfile
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.intersphinx']
+extensions = ['sphinx.ext.intersphinx',
+              'pyi_sphinx_roles']
 
 intersphinx_mapping = {
     'website': ('http://www.pyinstaller.org//', None),

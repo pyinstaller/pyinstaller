@@ -7,16 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
-# Bootloader unsets _MEIPASS2 for child processes to allow running
-# PyInstaller binaries inside pyinstaller binaries.
-# This is ok for mac or unix with fork() system call.
-# But on Windows we need to overcome missing fork() fuction for onefile
-# mode.
-#
-# See http://www.pyinstaller.org/wiki/Recipe/Multiprocessing
-
-
 import multiprocessing
 import sys
 
@@ -34,9 +24,7 @@ class SendeventProcess(multiprocessing.Process):
 
 
 if __name__ == '__main__':
-    # On Windows calling this function is necessary.
-    if sys.platform.startswith('win'):
-        multiprocessing.freeze_support()
+    multiprocessing.freeze_support()
     print('main begins')
     resultQueue = multiprocessing.Queue()
     sp = SendeventProcess(resultQueue)

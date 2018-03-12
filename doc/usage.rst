@@ -1,5 +1,6 @@
 .. _using pyinstaller:
 
+====================
 Using PyInstaller
 ====================
 
@@ -36,6 +37,15 @@ After you do this, you name the spec file to |PyInstaller| instead of the script
 
     ``pyinstaller myscript.spec``
 
+The :file:`myscript.spec` file contains most of the information
+provided by the options that were specified when
+:command:`pyinstaller` (or :command:`pyi-makespec`)
+was run with the script file as the argument.
+You typically do not need to specify any options when running
+:command:`pyinstaller` with the spec file.
+Only :ref:`a few command-line options <Using Spec Files>`
+have an effect when building from a spec file.
+
 You may give a path to the script or spec file, for example
 
     ``pyinstaller`` `options...` ``~/myproject/source/myscript.py``
@@ -51,7 +61,7 @@ Options
 General Options
 ------------------
 
-.. include:: man/_pyinstaller-options.tmp
+.. include:: _pyinstaller-options.tmp
 
 
 
@@ -88,6 +98,49 @@ Or in Windows, use the little-known BAT file line continuation::
         --icon=..\MLNMFLCN.ICO ^
         myscript.spec
 
+
+Running |PyInstaller| with Python optimizations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. Note::
+
+    When using this feature, you should be aware of how the Python bytecode
+    optimization mechanism works. When using ``-O``, ``__debug__`` is set
+    to ``False`` and ``assert`` statements are removed from the bytecode.
+    The ``-OO`` flag additionally removes docstrings.
+
+    Using this feature affects not only your main script, but *all* modules
+    included by |PyInstaller|. If your code (or any module imported by your
+    script) relies on these features, your program may break or have
+    unexpected behavior.
+
+|PyInstaller| can be run with Python optimization flags (``-O`` or ``-OO``)
+by executing it as a Python module, rather than using the ``pyinstaller``
+command::
+
+    # run with basic optimizations
+    python -O -m PyInstaller myscript.py
+
+    # also discard docstrings
+    python -OO -m PyInstaller myscript.py
+
+Or, by explicitly setting the ``PYTHONOPTIMIZE`` environment variable
+to a non-zero value::
+
+    # Unix
+    PYTHONOPTIMIZE=1 pyinstaller myscript.py
+
+    # Windows
+    set PYTHONOPTIMIZE=1 && pyinstaller myscript.py
+
+You can use any |PyInstaller| options that are otherwise available with
+the ``pyinstaller`` command. For example::
+
+    python -O -m PyInstaller --onefile myscript.py
+
+Alternatively, you can also use the path to pyinstaller::
+
+    python -O /path/to/pyinstaller myscript.py
 
 Using UPX
 ~~~~~~~~~~~~~~~~~~~
@@ -168,8 +221,8 @@ or a supported version that uses Qt4 and a development version that uses Qt5 --
 we recommend you use virtualenv_.
 With virtualenv you can maintain different combinations of Python
 and installed packages, and switch from one combination to another easily.
-(If you work only with Python 3.4 and later, the built-in script pyvenv_
-does the same job.)
+(If you work only with Python 3.4 and later, ``python3 -m venv``
+does the same job, see module venv_.)
 
 * Use virtualenv to create as many different development environments as you need,
   each with its unique combination of Python and installed packages.
@@ -184,6 +237,8 @@ Note that when using virtualenv, the path to the |PyInstaller| commands is:
 Under Windows, the pip-Win_ package installs virtualenv and makes it
 especially easy to set up different environments and switch between them.
 Under Linux and Mac OS, you switch environments at the command line.
+
+See :pep:`405` for more information about Python virtual environments.
 
 
 Supporting Multiple Operating Systems
@@ -226,30 +281,6 @@ as its cache location.
 It is said to be possible to cross-develop for Windows under Linux
 using the free Wine_ environment.
 Further details are needed, see `How to Contribute`_.
-
-Making Linux Apps Forward-Compatible
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Under Linux, |PyInstaller| does not bundle ``libc``
-(the C standard library, usually ``glibc``, the Gnu version) with the app.
-Instead, the app expects to link dynamically to the ``libc`` from the
-local OS where it runs.
-The interface between any app and ``libc`` is forward compatible to 
-newer releases, but it is not backward compatible to older releases.
-
-For this reason, if you bundle your app on the current version of Linux,
-it may fail to execute (typically with a runtime dynamic link error) if
-it is executed on an older version of Linux.
-
-The solution is to always build your app on the *oldest* version of 
-Linux you mean to support.
-It should continue to work with the ``libc`` found on newer versions.
-
-The Linux standard libraries such as ``glibc`` are distributed in 64-bit
-and 32-bit versions, and these are not compatible.
-As a result you cannot bundle your app on a 32-bit system and run it
-on a 64-bit installation, nor vice-versa.
-You must make a unique version of the app for each word-length supported.
 
 
 .. _capturing windows version data:
@@ -326,6 +357,7 @@ produce a Version resource in binary form.
 Or you can apply the ``unicode()`` function to the object
 to reproduce the version text file.
 
+
 Building Mac OS X App Bundles
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -363,8 +395,75 @@ file :file:`icon-windowed.icns` with the |PyInstaller| logo.)
 You can add items to the :file:`Info.plist` by editing the spec file;
 see :ref:`Spec File Options for a Mac OS X Bundle` below.
 
+
+
+Platform-specific Notes
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+GNU/Linux
+-------------------
+
+Making Linux Apps Forward-Compatible
+=====================================
+
+Under Linux, |PyInstaller| does not bundle ``libc``
+(the C standard library, usually ``glibc``, the Gnu version) with the app.
+Instead, the app expects to link dynamically to the ``libc`` from the
+local OS where it runs.
+The interface between any app and ``libc`` is forward compatible to
+newer releases, but it is not backward compatible to older releases.
+
+For this reason, if you bundle your app on the current version of Linux,
+it may fail to execute (typically with a runtime dynamic link error) if
+it is executed on an older version of Linux.
+
+The solution is to always build your app on the *oldest* version of
+Linux you mean to support.
+It should continue to work with the ``libc`` found on newer versions.
+
+The Linux standard libraries such as ``glibc`` are distributed in 64-bit
+and 32-bit versions, and these are not compatible.
+As a result you cannot bundle your app on a 32-bit system and run it
+on a 64-bit installation, nor vice-versa.
+You must make a unique version of the app for each word-length supported.
+
+.. _Platform-specific Notes - Windows:
+
+Windows
+---------------
+
+For **Python >= 3.5** targeting *Windows < 10*, the developer needs to take
+special care to include the Visual C++ run-time .dlls:
+Python 3.5 uses Visual Studio 2015 run-time, which has been renamed into
+`“Universal CRT“
+<https://blogs.msdn.microsoft.com/vcblog/2015/03/03/introducing-the-universal-crt/>`_
+and has become part of Windows 10.
+For Windows Vista through Windows 8.1 there are Windows Update packages,
+which may or may not be installed in the target-system.
+So you have the following options:
+
+1. Build on *Windows 7* which has been reported to work.
+
+2. Include one of the VCRedist packages (the redistributable package files)
+   into your application's installer. This is Microsoft's recommended way, see
+   “Distributing Software that uses the Universal CRT“ in the above-mentioned
+   link, numbers 2 and 3.
+
+3. Install the `Windows Software Development Kit (SDK) for Windows 10
+   <https://dev.windows.com/en-us/downloads/windows-10-sdk>`_ and expand the
+   `.spec`-file to include the required DLLs, see “Distributing Software that
+   uses the Universal CRT“ in the above-mentioned link, number 6.
+
+   If you think, |PyInstaller| should do this by itself, please :ref:`help
+   improving <how-to-contribute>` |PyInstaller|.
+
+
+
+Mac OS X
+-------------------
+
 Making Mac OS X apps Forward-Compatible
-----------------------------------------
+========================================
 
 In Mac OS X, components from one version of the OS are usually compatible
 with later versions, but they may not work with earlier versions.
@@ -381,8 +480,9 @@ and install |PyInstaller|, your source, and all its dependencies.
 Then build your app in that environment.
 It should be compatible with later versions of Mac OS X.
 
+
 Building 32-bit Apps in Mac OS X
-------------------------------------
+====================================
 
 Older versions of Mac OS X supported both 32-bit and 64-bit executables.
 PyInstaller builds an app using the the word-length of the Python used to execute it.
@@ -426,7 +526,7 @@ To make sure of running 32-bit in all cases, set the following environment varia
 
 
 Getting the Opened Document Names
-------------------------------------
+====================================
 
 .. Note::
 
@@ -455,6 +555,7 @@ OpenDocument is the only AppleEvent the |bootloader| handles.
 If you want to handle other events, or events that
 are delivered after the program has launched, you must
 set up the appropriate handlers.
+
 
 
 .. include:: _common_definitions.txt

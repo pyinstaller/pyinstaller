@@ -17,12 +17,12 @@ To do this,
 
 * Download and install Python, which is required for running `:command:waf`,
 * `git clone` or download the source (see the
-  :ref:`Download section in the manual <website:Downloads>`),
+  :ref:`Download section on the web-site <website:Downloads>`),
 * ``cd`` into the folder where you cloned or unpacked the source to,
 * ``cd bootloader``, and
 * make the bootloader with: ``python ./waf all``,
-* test the build by `running (parts of) the test-suite
-  <https://github.com/pyinstaller/pyinstaller/wiki/Running-the-test-suite>`_.
+* test the build by ref:`running (parts of) the test-suite
+  <running-the-test-suite>`.
 
 This will produce the |bootloader| executables for your current platform
 (of course, for Windows these files will have the ``.exe`` extension):
@@ -255,14 +255,14 @@ between three options:
    Instead it links against msvcrt.dll, which happens to exist
    on many Windows installations – but i not guaranteed to exist.
 
-3. Using cygwin and MinGW.
-
-   This will create executables for cygwin, not for 'plain' Windows.
-
-
 .. [#] This description seems to be technically incorrect. I ought to depend
        on the C++ run-time library. If you know details, please open an
        issue_.
+
+
+3. Using cygwin and MinGW.
+
+   This will create executables for cygwin, not for 'plain' Windows.
 
 
 In all cases you may want

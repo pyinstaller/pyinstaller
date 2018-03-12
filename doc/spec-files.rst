@@ -8,7 +8,7 @@ When you execute
     ``pyinstaller`` *options*.. ``myscript.py``
 
 the first thing |PyInstaller| does is to build a spec (specification) file
-file:`myscript.spec`.
+:file:`myscript.spec`.
 That file is stored in the ``--specpath=`` directory,
 by default the current directory.
 
@@ -61,6 +61,7 @@ Only the following command-line options have an effect when building from a spec
 * ``--ascii``
 * ``--clean``
 
+.. _spec-file operations:
 
 Spec File Operation
 ~~~~~~~~~~~~~~~~~~~~
@@ -162,7 +163,7 @@ you could modify the spec file as follows::
              )
 
 And the command line equivalent (see
-:ref:`pyinstaller What to bundle, where to search`
+:ref:`options-group What to bundle, where to search`
 for platform-specific details)::
 
 	pyinstaller --add-data 'src/README.txt:.' myscript.py
@@ -258,9 +259,13 @@ If it is actually characters, you must decode it::
 Adding Binary Files
 --------------------
 
+.. Note:: `Binary` files refers to DLLs, dynamic libraries, shared
+   object-files, and such, which |PyInstaller| is going to search for further
+   `binary` dependencies. Files like images and PDFs should go into the
+   ``datas``.
+
 You can add binary files to the bundle by using the ``--add-binary`` command option, 
 or by adding them as a list to the spec file.
-
 In the spec file, make a list of tuples that describe the files needed.
 Assign the list of tuples to the ``binaries=`` argument of Analysis.
 
@@ -283,7 +288,7 @@ You could add it to the bundle this way::
              ...
 
 Or via the command line (again, see
-:ref:`pyinstaller What to bundle, where to search`
+:ref:`options-group What to bundle, where to search`
 for platform-specific details)::
 
 	pyinstaller --add-binary '/usr/lib/libiodbc.2.dylib:.' myscript.py

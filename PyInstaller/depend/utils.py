@@ -25,7 +25,7 @@ import zipfile
 from ..lib.modulegraph import util, modulegraph
 
 from .. import compat
-from ..compat import (is_darwin, is_unix, is_py2, is_py34, is_freebsd,
+from ..compat import (is_darwin, is_unix, is_py2, is_freebsd,
                       BYTECODE_MAGIC, PY3_BASE_MODULES,
                       exec_python_rc)
 from .dylib import include_library
@@ -91,7 +91,9 @@ def create_py3_base_library(libzip_filename, graph):
                             _write_long(fc, timestamp)
                             _write_long(fc, size)
                             marshal.dump(mod.code, fc)
-                            zf.writestr(new_name, fc.getvalue())
+                            # Use a ZipInfo to set timestamp for deterministic build 
+                            info = zipfile.ZipInfo(new_name)
+                            zf.writestr(info, fc.getvalue())
 
     except Exception as e:
         logger.error('base_library.zip could not be created!')
@@ -119,8 +121,14 @@ def scan_code_for_ctypes(co):
             binaries.remove(binary)
         elif binary != os.path.basename(binary):
             # TODO make these warnings show up somewhere.
-            logger.warning(
-                "ignoring %s - ctypes imports only supported using bare filenames", binary)
+            try:
+                filename = co.co_filename
+            except:
+                filename = 'UNKNOWN'
+            logger.warning("Ignoring %s imported from %s - ctypes imports "
+                           "are only supported using bare filenames",
+                           binary, filename)
+            binaries.remove(binary)
 
     binaries = _resolveCtypesImports(binaries)
     return binaries

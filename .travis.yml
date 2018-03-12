@@ -24,13 +24,6 @@ jobs:
   include:
     # macOS is first to account for the delay in starting the build on macOS. This prevents the build from hanging on
     # macOS as the last job to finish in a stage.
-    - stage: Cache
-      os: osx
-      language: generic
-      python: 3.6
-      cache:
-        directories:
-          - $HOME/Library/Caches/pip
     - stage: Test - PyInstaller
       os: osx
       language: generic
@@ -57,9 +50,6 @@ jobs:
           - $HOME/Library/Caches/pip
       script: py.test -n 3 --maxfail 3 tests/functional/test_libraries.py tests/functional/test_hooks
 
-    - &cache
-      stage: Cache
-      python: 2.7
     - &test-pyinstaller
       stage: Test - PyInstaller
       python: 2.7
@@ -79,41 +69,47 @@ jobs:
       python: 2.7
       # Run tests and speed them up by sending them to multiple CPUs.
       script: py.test -n 3 --maxfail 3 tests/functional/test_libraries.py tests/functional/test_hooks
+    - &lint
+      stage: Lint
+      python: 2.7
+      install:
+        # Update pip.
+        - python -m pip install -U pip setuptools wheel | cat
 
-    - <<: *cache
-      python: 3.3
+        # Install dependencies for PyInstaller tests.
+        - pip install -U -r tests/requirements-tools.txt | cat
+
+        # Install PyInstaller.
+        - pip install -e . | cat
+      script:
+        - >
+            if [ "$TRAVIS_PULL_REQUEST" != "false" ] ; then
+                git fetch origin $TRAVIS_BRANCH:$TRAVIS_BRANCH --depth 1;
+                flake8-diff -v -v -v $TRAVIS_BRANCH;
+            fi
+
     - <<: *test-pyinstaller
-      python: 3.3
-    - <<: *test-libraries
-      python: 3.3
-
-    - <<: *cache
       python: 3.4
-    - <<: *test-pyinstaller
-      python: 3.4
     - <<: *test-libraries
       python: 3.4
 
-    - <<: *cache
-      python: 3.5
     - <<: *test-pyinstaller
       python: 3.5
     - <<: *test-libraries
       python: 3.5
 
-    - <<: *cache
-      python: 3.6
     - <<: *test-pyinstaller
       python: 3.6
     - <<: *test-libraries
+      python: 3.6
+    - <<: *lint
       python: 3.6
 
-    - <<: *cache
-      python: nightly
     - <<: *test-pyinstaller
       python: nightly
     - <<: *test-libraries
       python: nightly
+
   allow_failures:
       # Just tests how PyInstaller performs with upcoming Python 3.6
       - python: "nightly"
@@ -143,7 +139,7 @@ before_install:
   - >
       if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
           brew update;
-          brew install python3;
+          brew upgrade python || brew install python;
           python3 -m venv venv;
           source venv/bin/activate;
       fi

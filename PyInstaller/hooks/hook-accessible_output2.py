@@ -11,6 +11,6 @@
 accessible_output2: http://hg.q-continuum.net/accessible_output2
 """
 
-from pyinstaller.utils.hooks import collect_dynamic_libs
+from PyInstaller.utils.hooks import collect_dynamic_libs
 
 binaries = collect_dynamic_libs('accessible_output2')

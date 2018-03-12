@@ -1,4 +1,4 @@
-# -*- codig: utf-8 ; mode: python -*-
+# -*- coding: utf-8 ; mode: python -*-
 #-----------------------------------------------------------------------------
 # Copyright (c) 2005-2017, PyInstaller Development Team.
 #
