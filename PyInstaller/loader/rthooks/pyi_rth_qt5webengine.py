@@ -11,7 +11,7 @@ import os
 import sys
 
 if sys.platform == 'darwin':
-    os.environ['QTWEBENGINEPROCESS_PATH'] = os.path.join(
-        sys._MEIPASS, 'Contents', 'Resources', 'PyQt5', 'Qt', 'lib',
+    os.environ['QTWEBENGINEPROCESS_PATH'] = os.path.normpath(os.path.join(
+        sys._MEIPASS, '..', 'Resources', 'PyQt5', 'Qt', 'lib',
         'QtWebEngineCore.framework', 'Helpers'
-    )
+    ))
