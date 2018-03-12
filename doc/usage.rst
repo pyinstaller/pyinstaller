@@ -37,6 +37,15 @@ After you do this, you name the spec file to |PyInstaller| instead of the script
 
     ``pyinstaller myscript.spec``
 
+The :file:`myscript.spec` file contains most of the information
+provided by the options that were specified when
+:command:`pyinstaller` (or :command:`pyi-makespec`)
+was run with the script file as the argument.
+You typically do not need to specify any options when running
+:command:`pyinstaller` with the spec file.
+Only :ref:`a few command-line options <Using Spec Files>`
+have an effect when building from a spec file.
+
 You may give a path to the script or spec file, for example
 
     ``pyinstaller`` `options...` ``~/myproject/source/myscript.py``
@@ -89,6 +98,49 @@ Or in Windows, use the little-known BAT file line continuation::
         --icon=..\MLNMFLCN.ICO ^
         myscript.spec
 
+
+Running |PyInstaller| with Python optimizations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. Note::
+
+    When using this feature, you should be aware of how the Python bytecode
+    optimization mechanism works. When using ``-O``, ``__debug__`` is set
+    to ``False`` and ``assert`` statements are removed from the bytecode.
+    The ``-OO`` flag additionally removes docstrings.
+
+    Using this feature affects not only your main script, but *all* modules
+    included by |PyInstaller|. If your code (or any module imported by your
+    script) relies on these features, your program may break or have
+    unexpected behavior.
+
+|PyInstaller| can be run with Python optimization flags (``-O`` or ``-OO``)
+by executing it as a Python module, rather than using the ``pyinstaller``
+command::
+
+    # run with basic optimizations
+    python -O -m PyInstaller myscript.py
+
+    # also discard docstrings
+    python -OO -m PyInstaller myscript.py
+
+Or, by explicitly setting the ``PYTHONOPTIMIZE`` environment variable
+to a non-zero value::
+
+    # Unix
+    PYTHONOPTIMIZE=1 pyinstaller myscript.py
+
+    # Windows
+    set PYTHONOPTIMIZE=1 && pyinstaller myscript.py
+
+You can use any |PyInstaller| options that are otherwise available with
+the ``pyinstaller`` command. For example::
+
+    python -O -m PyInstaller --onefile myscript.py
+
+Alternatively, you can also use the path to pyinstaller::
+
+    python -O /path/to/pyinstaller myscript.py
 
 Using UPX
 ~~~~~~~~~~~~~~~~~~~

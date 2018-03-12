@@ -55,7 +55,7 @@ def issue(name, rawtext, text, lineno, inliner, options={}, content=[]):
         prb = inliner.problematic(rawtext, rawtext, msg)
         return [prb], [msg]
     options.setdefault('classes', []).append("issue")
-    url = "https://github.com/pyinstaller/pyinstaller/issue/%i" % num
+    url = "https://github.com/pyinstaller/pyinstaller/issues/%i" % num
     node = nodes.reference(rawtext, "#%i" % num, refuri=url, **options)
     return [node], []
 

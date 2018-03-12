@@ -13,7 +13,7 @@ Development Guide
    :maxdepth: 2
    :caption: Developer Documentation
 
-   guide
+   git
    coding-conventions
    testing
    commit-messages

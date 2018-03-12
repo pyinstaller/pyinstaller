@@ -1,3 +1,5 @@
+.. _branch model:
+
 |PyInstaller|'s Branch Model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -76,13 +76,15 @@ def machine():
 
     Machine name in bootloader is necessary only for non-x86 architecture.
     """
-    mach = None  # Assume x86/x86_64 machine.
-    # Different name for arm is necessary.
-    if platform.machine().startswith('arm'):
-        mach = 'arm'
-    elif platform.machine().startswith('aarch'):
-        mach = 'aarch'
-    return mach
+    # IMPORTANT: Keep this in line with PyInstaller.compat.machine()
+    mach = platform.machine()
+    if mach.startswith('arm'):
+        return 'arm'
+    elif mach.startswith('aarch'):
+        return 'aarch'
+    else:
+        # Assume x86/x86_64 machine.
+        return None
 
 
 def assoc_programm(ctx, name):
@@ -619,6 +621,10 @@ def configure(ctx):
             # Use Unicode entry point wmain/wWinMain and wchar_t WinAPI
             ctx.env.append_value('CFLAGS', '-DUNICODE')
             ctx.env.append_value('CFLAGS', '-D_UNICODE')
+            # set XP target as minimal target OS ver. when using Windows w/MSVC
+            # https://blogs.msdn.microsoft.com/vcblog/2012/10/08/windows-xp-targeting-with-c-in-visual-studio-2012/
+            ctx.env.append_value('LINKFLAGS', '/SUBSYSTEM:CONSOLE,%s' % (
+                '5.01' if ctx.env.PYI_ARCH == '32bit' else '5.02'))
         else:
             # Use Visual C++ compatible alignment
             ctx.env.append_value('CFLAGS', '-mms-bitfields')
@@ -645,11 +651,19 @@ def configure(ctx):
         ctx.setenv(name, baseenv)  # Inherit from `baseenv`.
         ctx.env.append_value('DEFINES', 'WINDOWED')
 
-        if ctx.env.DEST_OS == 'win32' and ctx.env.CC_NAME != 'msvc':
-            # For MinGW disable console window on Windows - MinGW option
-            # TODO Is it necessary to have -mwindows for C and LINK flags?
-            ctx.env.append_value('LINKFLAGS', '-mwindows')
-            ctx.env.append_value('CFLAGS', '-mwindows')
+        if ctx.env.DEST_OS == 'win32':
+            if ctx.env.CC_NAME != 'msvc':
+                # For MinGW disable console window on Windows - MinGW option
+                # TODO Is it necessary to have -mwindows for C and LINK flags?
+                ctx.env.append_value('LINKFLAGS', '-mwindows')
+                ctx.env.append_value('CFLAGS', '-mwindows')
+            else:
+                _link_flags = ctx.env._get_list_value_for_modification('LINKFLAGS')
+                _subsystem = [x for x in _link_flags if x.startswith('/SUBSYSTEM:')]
+                for parameter in _subsystem:
+                    _link_flags.remove(parameter)
+                ctx.env.append_value('LINKFLAGS', '/SUBSYSTEM:WINDOWS,%s' % (
+                    '5.01' if ctx.env.PYI_ARCH == '32bit' else '5.02'))
         elif ctx.env.DEST_OS == 'darwin':
             # To support catching AppleEvents and running as ordinary OSX GUI
             # app, we have to link against the Carbon framework.

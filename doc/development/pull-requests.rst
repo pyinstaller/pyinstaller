@@ -1,4 +1,4 @@
-.. _creating pull-request:
+.. _creating pull-requests:
 
 Creating Pull-Requests
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -21,29 +21,55 @@ Example
     git clone git@github.com:YOUR_GITHUB_USERNAME/pyinstaller.git
     cd pyinstaller
 
-* If you are going to implement a hook, start with creating a minimalistic
-  build-test (see below). You will need to test your hook anyway, so why not
-  use a build-test from the start?
+* Develop your changes (aka "hack")
 
-* Incorporate your changes into |PyInstaller|.
+  * Create a branch to work on (optional)::
 
-* Test your changes by running *all* build tests to ensure nothing else is
-  broken. Please test on as many platform as you can.
+      git checkout -b my-patch
 
-* You may reference relevant issues in commit messages (like #1259) to make
-  GitHub link issues and commits together, and with phrase like “fixes #1259”
-  you can even close relevant issues automatically.
+  * If you are going to implement a hook, start with creating a minimalistic
+    build-test (see below). You will need to test your hook anyway, so why not
+    use a build-test from the start?
+
+  * Incorporate your changes into |PyInstaller|.
+
+  * Test your changes by running *all* build tests to ensure nothing else is
+    broken. Please test on as many platform as you can.
+
+  * You may reference relevant issues in commit messages (like #1259) to make
+    GitHub link issues and commits together, and with phrase like “fixes #1259”
+    you can even close relevant issues automatically.
+
+* Synchronize your fork with the PyInstaller upstream repository. There are two
+  ways for this:
+
+  1. Rebase you changes on the current development head (preferred, as it
+     results in a straighter history and conflicts are easier to solve)::
+
+      git remote add upstream https://github.com/pyinstaller/pyinstaller.git
+      git checkout my-patch
+      git pull --rebase upstream develop
+      git log --online --graph
+
+  2. Merge the current development head into your changes::
+
+      git remote add upstream https://github.com/pyinstaller/pyinstaller.git
+      git fetch upstream develop
+      git checkout my-patch
+      git merge upstream/develop
+      git log --online --graph
+
+  For details see `syncing a fork at github
+  <https://help.github.com/articles/syncing-a-fork>`_.
 
 * Push your changes up to your fork::
 
     git push
 
 * Open the *Pull Requests* page at
-  https://github.com/yourname/pyinstaller/pulls and click “New pull request”.
+  https://github.com/YOUR_GITHUB_USERNAME/pyinstaller/pulls
+  and click “New pull request”.
   That’s it.
-
-* For syncing your fork with the PyInstaller upstream repository see `syncing
-  a fork at github <https://help.github.com/articles/syncing-a-fork>`_
 
 
 .. _updating pull-request:
