@@ -34,7 +34,7 @@ lxml==3.7.2; sys_platform == 'win32' and python_version >= '3.5' # pyup: ignore
 lxml==3.6.0; sys_platform == 'win32' and python_version <= '3.4' # pyup: ignore
 
 keyring==10.4.0
-openpyxl==2.4.8
+openpyxl==2.5.1
 pycparser==2.18
 pytz==2017.3
 sqlalchemy==1.1.13
@@ -43,7 +43,7 @@ zeep==2.4.0
 pyexcelerate==0.7.2
 Pillow==4.2.1
 pinyin==0.4.0
-pycryptodomex==3.4.7
+pycryptodomex==3.5.1
 future==0.16.0
 pyusb==1.0.2
 requests==2.15.1 # Newest version of requests that allows tests to pass
@@ -83,3 +83,5 @@ h5py==2.7.0
 
 # uvloop requires python 3.5 or higher and does not currently support Windows.
 uvloop==0.9.1; python_version >= '3.5' and sys_platform != 'win32'
+
+web3==3.16.5
