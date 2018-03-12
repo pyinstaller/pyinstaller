@@ -255,14 +255,14 @@ between three options:
    Instead it links against msvcrt.dll, which happens to exist
    on many Windows installations – but i not guaranteed to exist.
 
-3. Using cygwin and MinGW.
-
-   This will create executables for cygwin, not for 'plain' Windows.
-
-
 .. [#] This description seems to be technically incorrect. I ought to depend
        on the C++ run-time library. If you know details, please open an
        issue_.
+
+
+3. Using cygwin and MinGW.
+
+   This will create executables for cygwin, not for 'plain' Windows.
 
 
 In all cases you may want
