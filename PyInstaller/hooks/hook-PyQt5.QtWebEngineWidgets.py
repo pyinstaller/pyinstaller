@@ -28,7 +28,7 @@ if compat.is_darwin:
         os.path.join(*rel_data_path, *resources[:-1]), True)
     datas += collect_system_data_files(
         os.path.join(data_path, *web_engine_process),
-        os.path.join(*rel_data_path, *web_engine_process[-1]), True)
+        os.path.join(*rel_data_path, *web_engine_process[:-1]), True)
 else:
     locales = 'qtwebengine_locales'
     resources = 'resources'
