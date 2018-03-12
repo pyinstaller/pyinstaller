@@ -822,3 +822,21 @@ def test_unidecode(pyi_builder):
         # Unidecode should not skip non-ASCII chars if mappings for them exist.
         assert unidecode(u"kožušček") == "kozuscek"
         """)
+
+
+@importorskip('pinyin')
+def test_pinyin(pyi_builder):
+    pyi_builder.test_source("""
+        import pinyin
+        """)
+
+    
+@importorskip('uvloop')
+@skipif(is_win or not is_py35, reason='Windows, or py < 3.5 not supported')
+def test_uvloop(pyi_builder):
+    pyi_builder.test_source("import uvloop")
+
+
+@importorskip('web3')
+def test_web3(pyi_builder):
+    pyi_builder.test_source("import web3")

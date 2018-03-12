@@ -10,55 +10,47 @@
 pycrypto==2.6.1; python_version <= '3.5' or sys_platform != 'win32'
 
 Django==1.8.18 # PyInstaller doesn't yet work with Django 1.9+
-babel==2.5.1
+babel==2.5.3
 boto==2.48.0
-boto3==1.4.7
+boto3==1.5.22
 botocore==1.7.1
-
 gevent==1.2.2
-
 pygments==2.2.0
 pylint==1.7.2
-markdown==2.6.9
+markdown==2.6.11
 simplejson==3.11.1 # simplejson is used for text_c_extension
-
-# sphinx 1.5 requires Python 2.7 or >= 3.4
-sphinx==1.6.3; python_version != '3.3'
-sphinx==1.4.9; python_version == '3.3' # pyup: ignore
-
+sphinx==1.6.3
 pyzmq==16.0.2
 zope.interface==4.4.3  # Required for test_namespace_package
-
-# numpy 1.12 dropped support for Python 3.3
-numpy==1.13.1; python_version != '3.3'
-numpy==1.11.3; python_version == '3.3' # pyup: ignore
+numpy==1.13.1
 
 # SciPy currently provides no binary wheel for Windows and hence must be
 # isolated to non-Windows platforms. See also: scipy/scipy#5461
 scipy==0.19.1; sys_platform != 'win32'
 
 # For Windows use a version we know binaries are available
-lxml==4.0.0; sys_platform != 'win32'
+lxml==4.1.1; sys_platform != 'win32'
 lxml==3.7.2; sys_platform == 'win32' and python_version >= '3.5' # pyup: ignore
 lxml==3.6.0; sys_platform == 'win32' and python_version <= '3.4' # pyup: ignore
 
 keyring==10.4.0
-openpyxl==2.4.8
+openpyxl==2.5.1
 pycparser==2.18
-pytz==2017.2
+pytz==2017.3
 sqlalchemy==1.1.13
 twisted==17.9.0
 zeep==2.4.0
-pyexcelerate==0.7.1
+pyexcelerate==0.7.2
 Pillow==5.0.0
-pycryptodomex==3.4.7
+pinyin==0.4.0
+pycryptodomex==3.5.1
 future==0.16.0
-pyusb==1.0.0
+pyusb==1.0.2
 requests==2.15.1 # Newest version of requests that allows tests to pass
-Unidecode==0.4.21
+Unidecode==1.0.22
 
 # Install wheels only on OS X and Win 32, no wheel for Py 3.6 yet.
-pyenchant==1.6.11; (sys_platform == 'darwin' or sys_platform == 'win32') and python_version <= '3.5'
+pyenchant==2.0.0; (sys_platform == 'darwin' or sys_platform == 'win32') and python_version <= '3.5'
 
 # While PyQt5 itself is provided as wheels for Python 3.4, it requires
 # SIP>=4.19 which is not available for Python 3.4 yet.
@@ -67,18 +59,15 @@ pyqt5==5.9; python_version >= '3.5' and python_version <= '3.6'
 PySide==1.2.4; sys_platform == 'win32' and python_version <= '3.4'
 
 # interactive test
-ipython==6.2.0; python_version != '2.7'
+ipython==6.2.1; python_version != '2.7'
 ipython==5.4.1; python_version == '2.7' # pyup: ignore
 
 # dateutil.tz is a package in 2.5.0 and does not play nice with PyInstaller.
 python-dateutil==2.6.1
 
-pandas==0.20.3; python_version != '3.3'
-pandas==0.16.2; python_version == '3.3' # pyup: ignore
+pandas==0.20.3
 
-# matplotlib 1.5+ does not provide binaries for python 3.3.
-matplotlib==2.0.2; python_version == '2.7' or python_version >= '3.4'
-matplotlib==1.4.3; python_version == '3.3' # pyup: ignore
+matplotlib==2.0.2
 
 #### Windows specific packages
 
@@ -90,4 +79,9 @@ pypiwin32==219; python_version <= '3.5' and sys_platform == 'win32' # pyup: igno
 # ::TODO:: #1920 revert to using pypi version
 #pefile; sys_platform == 'win32'
 
-h5py==2.7.0; python_version != '3.3'
+h5py==2.7.0
+
+# uvloop requires python 3.5 or higher and does not currently support Windows.
+uvloop==0.9.1; python_version >= '3.5' and sys_platform != 'win32'
+
+web3==3.16.5
