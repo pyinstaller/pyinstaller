@@ -9,7 +9,7 @@
  */
 
 /*
- * Glogal shared declarations used in many bootloader files.
+ * Global shared declarations used in many bootloader files.
  */
 
 #ifndef PYI_GLOBAL_H
