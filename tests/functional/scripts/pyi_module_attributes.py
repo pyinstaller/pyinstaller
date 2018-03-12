@@ -55,9 +55,6 @@ def compare(test_name, expect, frozen):
     # Modules in Python 3 contain attr '__cached__' - add it to the frozen list.
     if sys.version_info[0] == 3 and '__cached__' not in frozen:
         frozen.append('__cached__')
-    # Modules in Python 3.3 contain attr '__initializing__'.
-    if sys.version_info[0:2] == (3, 3):
-        frozen.append('__initializing__')
     frozen.sort()
     frozen = str(frozen)
 
