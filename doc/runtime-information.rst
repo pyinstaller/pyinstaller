@@ -109,6 +109,7 @@ This environment variable is used to discover libraries, it is the library
 search path - on Linux and \*BSD `LD_LIBRARY_PATH` is used, on AIX it is
 `LIBPATH`.
 
+If it exists,
 PyInstaller saves the original value to `*_ORIG`, then modifies the search
 path so that the bundled libraries are found first by the bundled code.
 
@@ -124,11 +125,13 @@ with the system program.
 
     env = dict(os.environ)  # make a copy of the environment
     lp_key = 'LD_LIBRARY_PATH'  # for Linux and *BSD.
-    lp_orig = env.get(lp_key + '_ORIG')  # pyinstaller >= 20160820 has this
+    lp_orig = env.get(lp_key + '_ORIG')
     if lp_orig is not None:
         env[lp_key] = lp_orig  # restore the original, unmodified value
     else:
-        env.pop(lp_key, None)  # last resort: remove the env var
+        # This happens when LD_LIBRARY_PATH was not set.
+        # Remove the env var as a last resort:
+        env.pop(lp_key, None)
     p = Popen(system_cmd, ..., env=env)  # create the process
 
 

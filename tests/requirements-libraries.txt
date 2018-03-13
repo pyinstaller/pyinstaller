@@ -16,11 +16,11 @@ boto3==1.5.22
 botocore==1.7.1
 gevent==1.2.2
 pygments==2.2.0
-pylint==1.7.2
+pylint==1.8.2
 markdown==2.6.11
-simplejson==3.11.1 # simplejson is used for text_c_extension
+simplejson==3.13.2 # simplejson is used for text_c_extension
 sphinx==1.7.1
-pyzmq==16.0.2
+pyzmq==17.0.0
 zope.interface==4.4.3  # Required for test_namespace_package
 numpy==1.13.1
 
@@ -34,19 +34,20 @@ lxml==3.7.2; sys_platform == 'win32' and python_version >= '3.5' # pyup: ignore
 lxml==3.6.0; sys_platform == 'win32' and python_version <= '3.4' # pyup: ignore
 
 keyring==10.4.0
-openpyxl==2.4.8
+openpyxl==2.5.1
 pycparser==2.18
 pytz==2017.3
 sqlalchemy==1.1.13
 twisted==17.9.0
 zeep==2.4.0
 pyexcelerate==0.7.2
-Pillow==4.2.1
-pycryptodomex==3.4.7
+Pillow==5.0.0
+pinyin==0.4.0
+pycryptodomex==3.5.1
 future==0.16.0
 pyusb==1.0.2
 requests==2.15.1 # Newest version of requests that allows tests to pass
-Unidecode==0.4.21
+Unidecode==1.0.22
 
 # Install wheels only on OS X and Win 32, no wheel for Py 3.6 yet.
 pyenchant==2.0.0; (sys_platform == 'darwin' or sys_platform == 'win32') and python_version <= '3.5'
@@ -62,7 +63,7 @@ ipython==6.2.1; python_version != '2.7'
 ipython==5.4.1; python_version == '2.7' # pyup: ignore
 
 # dateutil.tz is a package in 2.5.0 and does not play nice with PyInstaller.
-python-dateutil==2.6.1
+python-dateutil==2.7.0
 
 pandas==0.20.3
 
@@ -71,11 +72,16 @@ matplotlib==2.0.2
 #### Windows specific packages
 
 # pip-installable version of PyWin32.
-pypiwin32==220; python_version >= '3.6' and sys_platform == 'win32'
+pypiwin32==223; python_version >= '3.6' and sys_platform == 'win32'
 pypiwin32==219; python_version <= '3.5' and sys_platform == 'win32' # pyup: ignore
 
 # For parsing PE headers and get list of dependent DLLs.
 # ::TODO:: #1920 revert to using pypi version
 #pefile; sys_platform == 'win32'
 
-h5py==2.7.0
+h5py==2.7.1
+
+# uvloop requires python 3.5 or higher and does not currently support Windows.
+uvloop==0.9.1; python_version >= '3.5' and sys_platform != 'win32'
+
+web3==3.16.5

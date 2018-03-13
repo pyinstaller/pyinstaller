@@ -122,12 +122,15 @@ def applyRedirects(manifest, redirects):
     :return:
     :rtype:
     """
+    redirecting = False
     for binding in redirects:
         for dep in manifest.dependentAssemblies:
             if match_binding_redirect(dep, binding):
                 logger.info("Redirecting %s version %s -> %s",
                             binding.name, dep.version, binding.newVersion)
                 dep.version = binding.newVersion
+                redirecting = True
+    return redirecting
 
 def checkCache(fnm, strip=False, upx=False, dist_nm=None):
     """
@@ -299,7 +302,8 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
                             logger.error("From file %s", cachedfile, exc_info=1)
                         else:
                             # optionally change manifest to private assembly
-                            if CONF.get('win_private_assemblies', False):
+                            private = CONF.get('win_private_assemblies', False)
+                            if private:
                                 if manifest.publicKeyToken:
                                     logger.info("Changing %s into a private assembly",
                                                 os.path.basename(fnm))
@@ -310,14 +314,15 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
                                     # Exclude common-controls which is not bundled
                                     if dep.name != "Microsoft.Windows.Common-Controls":
                                         dep.publicKeyToken = None
-                            applyRedirects(manifest, redirects)
-                            try:
-                                manifest.update_resources(os.path.abspath(cachedfile),
-                                                          [name],
-                                                          [language])
-                            except Exception as e:
-                                logger.error(os.path.abspath(cachedfile))
-                                raise
+                            redirecting = applyRedirects(manifest, redirects)
+                            if redirecting or private:
+                                try:
+                                    manifest.update_resources(os.path.abspath(cachedfile),
+                                                              [name],
+                                                              [language])
+                                except Exception as e:
+                                    logger.error(os.path.abspath(cachedfile))
+                                    raise
 
     if cmd:
         try:
@@ -338,8 +343,10 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
 
 
 def cacheDigest(fnm, redirects):
-    data = open(fnm, "rb").read()
-    hasher = hashlib.md5(data)
+    hasher = hashlib.md5()
+    with open(fnm, "rb") as f:
+        for chunk in iter(lambda: f.read(16 * 1024), b""):
+            hasher.update(chunk)
     if redirects:
         redirects = str(redirects)
         if is_py3:
@@ -485,9 +492,21 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
             src_root_paths = glob.glob(src_root_path_or_glob)
 
         if not src_root_paths:
-            raise SystemExit(
-                'Unable to find "%s" when adding binary and data files.' % (
-                src_root_path_or_glob))
+            msg = 'Unable to find "%s" when adding binary and data files.' % (
+                src_root_path_or_glob)
+            # on Debian/Ubuntu, missing pyconfig.h files can be fixed with
+            # installing python-dev
+            if src_root_path_or_glob.endswith("pyconfig.h"):
+                msg += """This would mean your Python installation doesn't
+come with proper library files. This usually happens by missing development
+package, or unsuitable build parameters of Python installation.
+* On Debian/Ubuntu, you would need to install Python development packages
+  * apt-get install python3-dev
+  * apt-get install python-dev
+* If you're building Python by yourself, please rebuild your Python with
+`--enable-shared` (or, `--enable-framework` on Darwin)
+"""
+            raise SystemExit(msg)
 
         for src_root_path in src_root_paths:
             if os.path.isfile(src_root_path):
