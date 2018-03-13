@@ -20,6 +20,11 @@ from PyInstaller.compat import (
 from PyInstaller.utils.hooks import (
     collect_glib_translations, get_gi_typelibs, get_gi_libdir, logger)
 
+loaders_path = os.path.join('gdk-pixbuf-2.0', '2.10.0', 'loaders')
+
+destpath = "lib/gdk-pixbuf-2.0/2.10.0/loaders"
+cachedest = "lib/gdk-pixbuf-2.0/2.10.0"
+
 # If the "gdk-pixbuf-query-loaders" command is not in the current ${PATH}, GDK
 # and thus GdkPixbuf is unavailable. Return with a non-fatal warning.
 gdk_pixbuf_query_loaders = None
@@ -50,31 +55,27 @@ else:
     # To add support for a new platform, add a new "elif" branch below with the
     # proper is_<platform>() test and glob for finding loaders on that platform.
     if is_win:
-        pattern = os.path.join(
-            libdir, 'gdk-pixbuf-2.0', '2.10.0', 'loaders', '*.dll')
-        pattern2 = os.path.join(
-            libdir, '..', 'lib', 'gdk-pixbuf-2.0', '2.10.0', 'loaders', '*.dll')
+        ext = "*.dll"
     elif is_darwin or is_linux:
-        pattern = os.path.join(
-            libdir, 'gdk-pixbuf-2.0', '2.10.0', 'loaders', '*.so')
-        pattern2 = os.path.join(
-            libdir, '..', 'lib', 'gdk-pixbuf-2.0', '2.10.0', 'loaders', '*.so')
+        ext = "*.so"
 
     # If loader detection is supported on this platform, bundle all detected
     # loaders and an updated loader cache.
-    if pattern:
+    if ext:
         loader_libs = []
 
         # Bundle all found loaders with this user application.
+        pattern = os.path.join(libdir, loaders_path, ext)
         for f in glob.glob(pattern):
-            binaries.append((f, 'lib/gdk-pixbuf-2.0/2.10.0/loaders'))
+            binaries.append((f, destpath))
             loader_libs.append(f)
 
         # Sometimes the loaders are stored in a different directory from
         # the library (msys2)
         if not loader_libs:
-            for f in glob.glob(pattern2):
-                binaries.append((f, 'lib/gdk-pixbuf-2.0/2.10.0/loaders'))
+            pattern = os.path.join(libdir, '..', 'lib', loaders_path, ext)
+            for f in glob.glob(pattern):
+                binaries.append((f, destpath))
                 loader_libs.append(f)
 
         # Filename of the loader cache to be written below.
@@ -115,7 +116,7 @@ else:
                 if line.startswith('#'):
                     continue
                 if line.startswith(prefix):
-                    line = '"@executable_path/lib/gdk-pixbuf-2.0/2.10.0' + line[plen:]
+                    line = '"@executable_path/' + cachedest + line[plen:]
                 cd.append(line)
 
             # Rejoin these lines in a manner preserving this object's "unicode"
@@ -133,7 +134,7 @@ else:
                 fp.write(subprocess.check_output(gdk_pixbuf_query_loaders))
 
         # Bundle this loader cache with this frozen application.
-        datas.append((cachefile, 'lib/gdk-pixbuf-2.0/2.10.0'))
+        datas.append((cachefile, cachedest))
     # Else, loader detection is unsupported on this platform.
     else:
         logger.warning('GdkPixbuf loader bundling unsupported on your platform.')
