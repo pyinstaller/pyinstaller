@@ -380,12 +380,12 @@ The one built by |PyInstaller| contains a folder always named
   + A folder :file:`Frameworks` which is empty.
   + A folder :file:`Resources` that contains an icon file.
   + A file :file:`Info.plist` that describes the app.
-  + A folder :file:`MacOS` that contains the same contents as
-    the ``--onedir`` bundle.
+  + A folder :file:`MacOS` that contains the the executable and 
+    supporting files, just as in the ``--onedir`` folder.
 
 Use the ``icon=`` argument to specify a custom icon for the application.
 It will be copied into the :file:`Resources` folder.
-(When you do not specify an icon file, |PyInstaller| supplies a
+(If you do not specify an icon file, |PyInstaller| supplies a
 file :file:`icon-windowed.icns` with the |PyInstaller| logo.)
 
 Use the ``osx-bundle-identifier=`` argument to add a bundle identifier.
