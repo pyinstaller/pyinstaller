@@ -23,6 +23,7 @@ REQUIREMENTS = [
     'setuptools',
     'pefile >= 2017.8.1',
     'macholib >= 1.8',
+    'altgraph',
 ]
 
 # dis3 is used for our version of modulegraph
