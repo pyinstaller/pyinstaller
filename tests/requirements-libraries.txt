@@ -41,7 +41,7 @@ sqlalchemy==1.1.13
 twisted==17.9.0
 zeep==2.4.0
 pyexcelerate==0.7.2
-Pillow==4.2.1
+Pillow==5.0.0
 pinyin==0.4.0
 pycryptodomex==3.5.1
 future==0.16.0
