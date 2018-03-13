@@ -772,6 +772,7 @@ PY3_BASE_MODULES = {
     'traceback',  # for startup errors
     'types',
     'weakref',
+    'warnings',
 }
 
 if sys.version_info >= (3, 4):
