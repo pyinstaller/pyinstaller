@@ -12,7 +12,8 @@ import os
 import tempfile
 import sys
 
-pixbuf_file = os.path.join(sys._MEIPASS, 'lib', 'gdk-pixbuf', 'loaders.cache')
+pixbuf_file = os.path.join(sys._MEIPASS, 'lib', 'gdk-pixbuf-2.0', '2.10.0',
+                           'loaders.cache')
 
 # If we're not on Windows we need to rewrite the cache
 # -> we rewrite on OSX to support --onefile mode
@@ -25,8 +26,8 @@ if os.path.exists(pixbuf_file) and sys.platform != 'win32':
     # we injected with the actual path
     fd, pixbuf_file = tempfile.mkstemp()
     with os.fdopen(fd, 'wb') as fp:
-        fp.write(contents.replace(b'@executable_path/lib',
-                                  os.path.join(sys._MEIPASS, 'lib').encode('utf-8')))
+        libpath = os.path.join(sys._MEIPASS, 'lib').encode('utf-8')
+        fp.write(contents.replace(b'@executable_path/lib', libpath))
 
     try:
         atexit.register(os.unlink, pixbuf_file)
