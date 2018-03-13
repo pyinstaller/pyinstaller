@@ -7,6 +7,8 @@ __pycache__/
 /*.egg
 /*.egg-info/
 /*.egg-link
+/.eggs/
+/.pytest_cache/
 
 # /
 /AES.pyd
@@ -25,6 +27,9 @@ __pycache__/
 
 # PyCharm settings
 .idea
+
+# Spyder settings
+.spyproject
 
 # /tests/
 /tests/build*

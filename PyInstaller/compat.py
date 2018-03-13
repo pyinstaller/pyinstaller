@@ -55,14 +55,12 @@ is_unix = is_linux or is_solar or is_aix or is_freebsd or is_hpux
 
 # On different platforms is different file for dynamic python library.
 _pyver = sys.version_info[:2]
-if is_win:
+if is_win or is_cygwin:
     PYDYLIB_NAMES = {'python%d%d.dll' % _pyver,
-                     'libpython%d.%d.dll' % _pyver}  # For MSYS2 environment
-elif is_cygwin:
-    PYDYLIB_NAMES = {'libpython%d%d.dll' % _pyver,
+                     'libpython%d%d.dll' % _pyver,
                      'libpython%d%dm.dll' % _pyver,
                      'libpython%d.%d.dll' % _pyver,
-                     'libpython%d.%dm.dll' % _pyver}
+                     'libpython%d.%dm.dll' % _pyver}  # For MSYS2 environment
 elif is_darwin:
     # libpython%d.%dm.dylib for Conda virtual environment installations
     PYDYLIB_NAMES = {'Python', '.Python',
@@ -208,16 +206,8 @@ else:
 #    ensure that it can work on MSYS2 (which requires pywin32-ctypes)
 if is_win:
     try:
-        from PyInstaller.utils.win32 import winutils
-        try:
-            pywintypes = winutils.import_pywin32_module('pywintypes', _is_venv=is_venv)
-            win32api = winutils.import_pywin32_module('win32api', _is_venv=is_venv)
-        except ImportError:
-            try:
-                from win32ctypes.pywin32 import pywintypes
-                from win32ctypes.pywin32 import win32api
-            except ImportError:
-                raise
+        from win32ctypes.pywin32 import pywintypes  # noqa: F401
+        from win32ctypes.pywin32 import win32api
     except ImportError:
         # This environment variable is set by seutp.py
         # - It's not an error for pywin32 to not be installed at that point
@@ -782,6 +772,7 @@ PY3_BASE_MODULES = {
     'traceback',  # for startup errors
     'types',
     'weakref',
+    'warnings',
 }
 
 if sys.version_info >= (3, 4):

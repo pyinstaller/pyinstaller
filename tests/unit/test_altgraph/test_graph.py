@@ -1,7 +1,7 @@
 import unittest
 
-from PyInstaller.lib.altgraph import GraphError
-from PyInstaller.lib.altgraph.Graph import Graph
+from altgraph import GraphError
+from altgraph.Graph import Graph
 
 class TestGraph (unittest.TestCase):
 

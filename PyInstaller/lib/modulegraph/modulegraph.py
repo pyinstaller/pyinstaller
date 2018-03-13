@@ -28,8 +28,8 @@ import re
 from collections import deque, namedtuple
 from struct import unpack
 
-from ..altgraph.ObjectGraph import ObjectGraph
-from ..altgraph import GraphError
+from altgraph.ObjectGraph import ObjectGraph
+from altgraph import GraphError
 
 from . import util
 from . import zipio
