@@ -16,7 +16,3 @@ import sys
 pyqt_path = os.path.join(sys._MEIPASS, 'PyQt5', 'Qt')
 os.environ['QT_PLUGIN_PATH'] = os.path.join(pyqt_path, 'plugins')
 os.environ['QML2_IMPORT_PATH'] = os.path.join(pyqt_path, 'qml')
-if sys.platform == 'darwin':
-    os.environ['QTWEBENGINEPROCESS_PATH'] = \
-        os.path.join(sys._MEIPASS, 'QtWebEngineProcess.app', 'Contents',
-                     'MacOS', 'QtWebEngineProcess')
