@@ -757,6 +757,7 @@ PY3_BASE_MODULES = {
     'collections',
     'copyreg',
     'encodings',
+    'enum',
     'functools',
     'io',
     'heapq',
