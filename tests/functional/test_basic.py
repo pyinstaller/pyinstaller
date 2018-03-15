@@ -282,7 +282,8 @@ def test_option_w_unset(pyi_builder):
         assert 'ignore' not in sys.warnoptions
         """)
 
-def test_option_w_ignore(pyi_builder, monkeypatch):
+
+def test_option_w_ignore(pyi_builder, monkeypatch, capsys):
     "Test to ensure that option W can be set."
 
     def MyEXE(*args, **kwargs):
@@ -300,6 +301,8 @@ def test_option_w_ignore(pyi_builder, monkeypatch):
         assert 'ignore' in sys.warnoptions
         """)
 
+    _, err = capsys.readouterr()
+    assert "'import warnings' failed" not in err
 
 @skipif_win
 def test_python_makefile(pyi_builder):
