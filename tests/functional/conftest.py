@@ -391,8 +391,12 @@ class AppBuilder(object):
                     p.kill()
             stdout, stderr = process.communicate()
 
-        sys.stdout.write(stdout)
-        sys.stderr.write(stderr)
+        if is_py2:
+            sys.stdout.write(stdout)
+            sys.stderr.write(stderr)
+        else:
+            sys.stdout.buffer.write(stdout)
+            sys.stderr.buffer.write(stderr)
 
         return retcode
 
