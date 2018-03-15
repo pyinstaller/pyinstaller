@@ -86,3 +86,6 @@ if is_module_satisfies('sphinx >= 1.6.1'):
 
 if is_module_satisfies('sphinx >= 1.6.2'):
     hiddenimports += ['sphinx.parsers']
+
+if is_module_satisfies('sphinx >= 1.7.1'):
+    hiddenimports += ['sphinx.util.compat']
