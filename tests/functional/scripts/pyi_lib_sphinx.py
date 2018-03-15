@@ -18,7 +18,7 @@ import os.path
 
 # Third-party imports
 # -------------------
-import sphinx
+import sphinx.cmd.build
 
 # Local imports
 # -------------
@@ -29,9 +29,7 @@ sphinx_path = os.path.join(get_data_dir(), 'sphinx')
 # Invoke Sphinx. See
 # http://sphinx-doc.org/invocation.html#invocation-of-sphinx-build for more
 # details of the options below.
-ret = sphinx.main([
-   # First param is name of program (anything is fine).
-   '',
+ret = sphinx.cmd.build.main([
    # Rebuild all files.
    '-a', '-E',
    # Produce html output.
