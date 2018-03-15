@@ -30,6 +30,7 @@ binary_module_names = [
     'Cryptodome.Util',
     'Cryptodome.Hash',
     'Cryptodome.Protocol',
+    'Cryptodome.Math',
 ]
 
 for module_name in binary_module_names:
