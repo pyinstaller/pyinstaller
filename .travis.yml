@@ -97,6 +97,11 @@ jobs:
       python: 3.6
 
     - <<: *test-pyinstaller
+      python: 3.7-dev
+    - <<: *test-libraries
+      python: 3.7-dev
+
+    - <<: *test-pyinstaller
       python: nightly
     - <<: *test-libraries
       python: nightly
@@ -104,6 +109,7 @@ jobs:
   allow_failures:
       # Just tests how PyInstaller performs with upcoming Python 3.6
       - python: "nightly"
+      - python: "3.7-dev"
 
 addons:
   # Python packages should be installed by "pip" via the "test/requirements-library.txt" specification.
