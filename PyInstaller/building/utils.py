@@ -656,7 +656,7 @@ def fake_pyc_timestamp(buf):
     assert buf[:4] == compat.BYTECODE_MAGIC, \
         "Expected pyc magic {}, got {}".format(compat.BYTECODE_MAGIC, buf[:4])
     start, end = 4, 8
-    if compat.py_37:
+    if is_py37:
         # see https://www.python.org/dev/peps/pep-0552/
         (flags,) = struct.unpack_from(">I", buf, 4)
         if flags & 1:
