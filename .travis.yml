@@ -15,6 +15,7 @@ dist: trusty
 cache:
   directories:
     - $HOME/.cache/pip
+    - $HOME/py37
 
 os:
   - linux
@@ -98,8 +99,48 @@ jobs:
 
     - <<: *test-pyinstaller
       python: 3.7-dev
+      # As of 2018-03-18 travis does not provide Python 3.7.0b2, only an alpha
+      # version is available. Thus we build 3.7.0b2 ourself, which also
+      # requires building OpenSSL 1.0.2 (or 1.1), which is not available, too.
+      before_install: &build-python-37
+        - >
+          echo "$TRAVIS_COMMIT_MESSAGE"
+          | grep -E  '\[(skip travis|travis skip)\]'
+          && echo "[skip travis] has been found, exiting."
+          && exit 0 || true
+        - |
+          if [ ! -d $HOME/py37/lib/libcrypto.a ] ; then
+            wget https://www.openssl.org/source/openssl-1.0.2k.tar.gz#6b3977c61f2aedf0f96367dcfb5c6e578cf37e7b8d913b4ecb6643c3cb88d8c0 ;
+            mkdir -p $HOME/py37-build ;
+            tar x -z -C $HOME/py37-build -f openssl-*.tar.gz ;
+            cd $HOME/py37-build/openssl-* ;
+            ./config --prefix=$HOME/py37 shared
+            make ;
+            make install ;
+            cd -
+          fi
+        - |
+          if [ ! -x $HOME/py37/bin/python3 ] ; then
+            export PKG_CONFIG_PATH="$HOME/py37/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}" ;
+            wget https://www.python.org/ftp/python/3.7.0/Python-3.7.0b2.tar.xz ;
+            mkdir -p $HOME/py37-build
+            tar x -J -C $HOME/py37-build -f Python-3.7.0b2.tar.xz ;
+            cd $HOME/py37-build/Python* ;
+            # Make libssl available when Python is testing whether _ssl
+            # was built correctly.
+            export LD_LIBRARY_PATH="$HOME/py37/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+            ./configure --enable-shared --prefix=$HOME/py37 ;
+            make ;
+            make install ;
+            cd - ;
+          fi
+        - export LD_LIBRARY_PATH="$HOME/py37/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+        - $HOME/py37/bin/python3 -m venv ~/virtualenv/python3.7
+        - source ~/virtualenv/python3.7/bin/activate
+
     - <<: *test-libraries
       python: 3.7-dev
+      before_install: *build-python-37
 
     - <<: *test-pyinstaller
       python: nightly
