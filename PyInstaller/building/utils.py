@@ -26,7 +26,7 @@ import struct
 from PyInstaller.config import CONF
 from .. import compat
 from ..compat import is_darwin, is_win, EXTENSION_SUFFIXES, \
-    FileNotFoundError, open_file, is_py3
+    FileNotFoundError, open_file, is_py3, py37
 from ..depend import dylib
 from ..depend.bindepend import match_binding_redirect
 from ..utils import misc
@@ -656,7 +656,7 @@ def fake_pyc_timestamp(buf):
     assert buf[:4] == compat.BYTECODE_MAGIC, \
         "Expected pyc magic {}, got {}".format(compat.BYTECODE_MAGIC, buf[:4])
     start, end = 4, 8
-    if False and compat.py_37:  # TODO py_37 Python 3.7
+    if compat.py_37:
         # see https://www.python.org/dev/peps/pep-0552/
         (flags,) = struct.unpack_from(">I", buf, 4)
         if flags & 1:
