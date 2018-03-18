@@ -51,6 +51,12 @@ jobs:
     - &test-libraries
       stage: Test - Libraries
       python: 2.7
+      before_script:
+        - |
+          # Run X Virtual Framebuffer to imitate a display
+          export DISPLAY=:99.0 ;
+          sh -e /etc/init.d/xvfb start ;
+          sleep 3 # give xvfb some time to start
       # Run tests and speed them up by sending them to multiple CPUs.
       script: py.test -n 3 --maxfail 3 tests/functional/test_libraries.py tests/functional/test_hooks
 
@@ -138,15 +144,6 @@ install:
 
   # Install PyInstaller.
   - pip install -e . | cat
-
-before_script:
-  - >
-      if [[ $TRAVIS_OS_NAME == 'linux' ]]; then
-          # Run X Virtual Framebuffer to imitate a display
-          export DISPLAY=:99.0;
-          sh -e /etc/init.d/xvfb start;
-          sleep 3 # give xvfb some time to start
-      fi
 
 
 script:
