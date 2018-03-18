@@ -126,11 +126,6 @@ before_install:
           source venv/bin/activate;
       fi
 
-  # Compile bootloader
-  - cd bootloader
-  - python waf distclean all
-  - cd ..
-
 install:
   # Update pip.
   - python -m pip install -U pip setuptools wheel | cat
@@ -141,6 +136,11 @@ install:
     if [[ $TRAVIS_BUILD_STAGE_NAME == 'Test - libraries' ]] ; then
         pip install -U -r tests/requirements-libraries.txt | cat
     fi
+
+  # Compile bootloader
+  - cd bootloader
+  - python waf distclean all
+  - cd ..
 
   # Install PyInstaller.
   - pip install -e . | cat
