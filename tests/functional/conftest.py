@@ -32,6 +32,15 @@ import shutil
 import py
 import psutil # Manages subprocess timeout.
 
+
+# Set a handler for the root-logger to inhibit 'basicConfig()' (called in
+# PyInstaller.log) is setting up a stream handler writing to stderr. This
+# avoids log messages to be written (and captured) twice: once on stderr and
+# once by pytests's caplog.
+import logging
+logging.getLogger().addHandler(logging.NullHandler())
+
+
 # Local imports
 # -------------
 # Expand sys.path with PyInstaller source.
