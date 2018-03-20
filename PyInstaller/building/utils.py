@@ -21,10 +21,12 @@ import platform
 import shutil
 import sys
 
+import struct
+
 from PyInstaller.config import CONF
 from .. import compat
 from ..compat import is_darwin, is_win, EXTENSION_SUFFIXES, \
-    FileNotFoundError, open_file, is_py3
+    FileNotFoundError, open_file, is_py3, is_py37
 from ..depend import dylib
 from ..depend.bindepend import match_binding_redirect
 from ..utils import misc
@@ -659,3 +661,31 @@ def strip_paths_in_code(co, new_filename=None):
                      co.co_varnames, new_filename, co.co_name,
                      co.co_firstlineno, co.co_lnotab,
                      co.co_freevars, co.co_cellvars)
+
+
+def fake_pyc_timestamp(buf):
+    """
+    Reset the timestamp from a .pyc-file header to a fixed value.
+
+    This enables deterministic builds without having to set pyinstaller
+    source metadata (mtime) since that changes the pyc-file contents.
+
+    _buf_ must at least contain the full pyc-file header.
+    """
+    assert buf[:4] == compat.BYTECODE_MAGIC, \
+        "Expected pyc magic {}, got {}".format(compat.BYTECODE_MAGIC, buf[:4])
+    start, end = 4, 8
+    if is_py37:
+        # see https://www.python.org/dev/peps/pep-0552/
+        (flags,) = struct.unpack_from(">I", buf, 4)
+        if flags & 1:
+            # We are in the future and hash-based pyc-files are used, so
+            # clear "check_source" flag, since there is no source
+            buf[4:8] = struct.pack(">I", flags ^ 2)
+            return buf
+        else:
+            # no hash-based pyc-file, timestamp is the next field
+            start, end = 8, 12
+
+    ts = b'pyi0'  # So people know where this comes from
+    return buf[:start] + ts + buf[end:]
