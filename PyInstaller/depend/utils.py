@@ -164,6 +164,7 @@ def __scan_code_instruction_for_ctypes(instructions):
         try:
             instruction = next(instructions)
             expected_ops = ('LOAD_GLOBAL', 'LOAD_NAME')
+            load_method = ('LOAD_ATTR', 'LOAD_METHOD')
 
             if not instruction or instruction.opname not in expected_ops:
                 continue
@@ -179,9 +180,8 @@ def __scan_code_instruction_for_ctypes(instructions):
                 #
                 # In this case "strip" the `ctypes` by advancing and expecting
                 # `LOAD_ATTR` next.
-                expected_ops = ('LOAD_ATTR',)
                 instruction = next(instructions)
-                if instruction.opname not in expected_ops:
+                if instruction.opname not in load_method:
                     continue
                 name = instruction.argval
 
@@ -207,7 +207,7 @@ def __scan_code_instruction_for_ctypes(instructions):
                 #     LOAD_ATTR     1 (LoadLibrary)
                 #     LOAD_CONST    1 ('library.so')
                 instruction = next(instructions)
-                if instruction.opname == 'LOAD_ATTR':
+                if instruction.opname in load_method:
                     if instruction.argval == "LoadLibrary":
                         # Second type, needs to fetch one more instruction
                         yield _libFromConst()
@@ -225,7 +225,7 @@ def __scan_code_instruction_for_ctypes(instructions):
                 #     LOAD_ATTR     1 (find_library)
                 #     LOAD_CONST    1 ('gs')
                 instruction = next(instructions)
-                if instruction.opname == 'LOAD_ATTR':
+                if instruction.opname in load_method:
                     if instruction.argval == "find_library":
                         libname = _libFromConst()
                         if libname:
