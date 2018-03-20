@@ -22,8 +22,9 @@ os:
 jobs:
   fast_finish: true
   include:
-    # macOS is first to account for the delay in starting the build on macOS. This prevents the build from hanging on
-    # macOS as the last job to finish in a stage.
+    # macOS is first to account for the delay in starting the build on macOS.
+    # This prevents the build from hanging on macOS as the last job to finish
+    # in a stage.
     - stage: Test - PyInstaller
       os: osx
       language: generic
@@ -31,16 +32,13 @@ jobs:
       cache:
         directories:
           - $HOME/Library/Caches/pip
-      install:
-        # Update pip.
-        - python -m pip install -U pip setuptools wheel | cat
+      script:
+        - >
+          py.test -n 3 --maxfail 3
+          tests/unit tests/functional
+          --ignore=tests/functional/test_libraries.py
+          --ignore=tests/functional/test_hooks
 
-        # Install dependencies for PyInstaller tests.
-        - pip install -U -r tests/requirements-tools.txt | cat
-
-        # Install PyInstaller.
-        - pip install -e . | cat
-      script: py.test -n 3 --maxfail 3 tests/unit tests/functional --ignore=tests/functional/test_libraries.py --ignore=tests/functional/test_hooks
     - stage: Test - Libraries
       os: osx
       language: generic
@@ -48,39 +46,41 @@ jobs:
       cache:
         directories:
           - $HOME/Library/Caches/pip
-      script: py.test -n 3 --maxfail 3 tests/functional/test_libraries.py tests/functional/test_hooks
+      script:
+        - >
+          py.test -n 3 --maxfail 3
+          tests/functional/test_libraries.py tests/functional/test_hooks
 
     - &test-pyinstaller
       stage: Test - PyInstaller
       python: 2.7
-      install:
-        # Update pip.
-        - python -m pip install -U pip setuptools wheel | cat
-
-        # Install dependencies for PyInstaller tests.
-        - pip install -U -r tests/requirements-tools.txt | cat
-
-        # Install PyInstaller.
-        - pip install -e . | cat
       # Run tests and speed them up by sending them to multiple CPUs.
-      script: py.test -n 3 --maxfail 3 tests/unit tests/functional --ignore=tests/functional/test_libraries.py --ignore=tests/functional/test_hooks
+      script:
+        - >
+          py.test -n 3 --maxfail 3
+          tests/unit tests/functional
+          --ignore=tests/functional/test_libraries.py
+          --ignore=tests/functional/test_hooks
+
     - &test-libraries
       stage: Test - Libraries
       python: 2.7
+      before_script:
+        - |
+          # Run X Virtual Framebuffer to imitate a display
+          export DISPLAY=:99.0 ;
+          sh -e /etc/init.d/xvfb start ;
+          sleep 3 # give xvfb some time to start
       # Run tests and speed them up by sending them to multiple CPUs.
-      script: py.test -n 3 --maxfail 3 tests/functional/test_libraries.py tests/functional/test_hooks
+      script:
+        - >
+          py.test -n 3 --maxfail 3
+          tests/functional/test_libraries.py
+          tests/functional/test_hooks
+
     - &lint
       stage: Lint
       python: 2.7
-      install:
-        # Update pip.
-        - python -m pip install -U pip setuptools wheel | cat
-
-        # Install dependencies for PyInstaller tests.
-        - pip install -U -r tests/requirements-tools.txt | cat
-
-        # Install PyInstaller.
-        - pip install -e . | cat
       script:
         - >
             if [ "$TRAVIS_PULL_REQUEST" != "false" ] ; then
@@ -144,29 +144,28 @@ before_install:
           source venv/bin/activate;
       fi
 
-  # Compile bootloader
-  - cd bootloader
-  - python waf distclean all
-  - cd ..
-
 install:
   # Update pip.
   - python -m pip install -U pip setuptools wheel | cat
 
   # Install dependencies for tests.
-  - pip install -U -r tests/requirements-tools.txt -r tests/requirements-libraries.txt | cat
+  - >
+    pip install -U
+    -r tests/requirements-tools.txt
+    -r tests/requirements-libraries.txt
+    | cat
+  - >
+    if [[ $TRAVIS_BUILD_STAGE_NAME == 'Test - libraries' ]] ; then
+        pip install -U -r tests/requirements-libraries.txt | cat
+    fi
+
+  # Compile bootloader
+  - cd bootloader
+  - /usr/bin/python waf distclean all
+  - cd ..
 
   # Install PyInstaller.
   - pip install -e . | cat
-
-before_script:
-  - >
-      if [[ $TRAVIS_OS_NAME == 'linux' ]]; then
-          # Run X Virtual Framebuffer to imitate a display
-          export DISPLAY=:99.0;
-          sh -e /etc/init.d/xvfb start;
-          sleep 3 # give xvfb some time to start
-      fi
 
 
 script:
