@@ -149,11 +149,7 @@ install:
   - python -m pip install -U pip setuptools wheel | cat
 
   # Install dependencies for tests.
-  - >
-    pip install -U
-    -r tests/requirements-tools.txt
-    -r tests/requirements-libraries.txt
-    | cat
+  - pip install -U -r tests/requirements-tools.txt | cat
   - >
     if [[ $TRAVIS_BUILD_STAGE_NAME == 'Test - libraries' ]] ; then
         pip install -U -r tests/requirements-libraries.txt | cat
