@@ -53,7 +53,6 @@ pyi_pylib_load(ARCHIVE_STATUS *status)
     dylib_t dll;
     char dllpath[PATH_MAX];
     char dllname[64];
-    int pyvers = ntohl(status->cookie.pyvers);
     char *p;
     int len;
 
@@ -133,7 +132,6 @@ pyi_pylib_attach(ARCHIVE_STATUS *status, int *loadedNew)
 #ifdef _WIN32
     HMODULE dll;
     char nm[PATH_MAX + 1];
-    int pyvers = ntohl(status->cookie.pyvers);
     int ret = 0;
     /* Get python's name */
     sprintf(nm, "python%02d.dll", pyvers);

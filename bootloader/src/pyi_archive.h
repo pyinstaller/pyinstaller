@@ -107,6 +107,7 @@ int pyi_arch_extract2fs(ARCHIVE_STATUS *status, TOC *ptoc);
  * Helpers for embedders
  */
 int pyi_arch_get_pyversion(ARCHIVE_STATUS *status);
+extern int pyvers;
 
 /**
  * The gory detail level
