@@ -32,7 +32,8 @@ jobs:
       cache:
         directories:
           - $HOME/Library/Caches/pip
-      script:
+      script: &script-test-pyinstaller
+        # Run tests and speed them up by sending them to multiple CPUs.
         - >
           py.test -n 3 --maxfail 3
           tests/unit tests/functional
@@ -46,7 +47,7 @@ jobs:
       cache:
         directories:
           - $HOME/Library/Caches/pip
-      script:
+      script: &script-test-libraries
         - >
           py.test -n 3 --maxfail 3
           tests/functional/test_libraries.py tests/functional/test_hooks
@@ -54,29 +55,19 @@ jobs:
     - &test-pyinstaller
       stage: Test - PyInstaller
       python: 2.7
-      # Run tests and speed them up by sending them to multiple CPUs.
-      script:
-        - >
-          py.test -n 3 --maxfail 3
-          tests/unit tests/functional
-          --ignore=tests/functional/test_libraries.py
-          --ignore=tests/functional/test_hooks
+      script: *script-test-pyinstaller
 
     - &test-libraries
       stage: Test - Libraries
       python: 2.7
-      before_script:
+      before_script: &start-xvfb
         - |
           # Run X Virtual Framebuffer to imitate a display
           export DISPLAY=:99.0 ;
           sh -e /etc/init.d/xvfb start ;
           sleep 3 # give xvfb some time to start
       # Run tests and speed them up by sending them to multiple CPUs.
-      script:
-        - >
-          py.test -n 3 --maxfail 3
-          tests/functional/test_libraries.py
-          tests/functional/test_hooks
+      script: *script-test-libraries
 
     - &lint
       stage: Lint
@@ -149,11 +140,7 @@ install:
   - python -m pip install -U pip setuptools wheel | cat
 
   # Install dependencies for tests.
-  - >
-    pip install -U
-    -r tests/requirements-tools.txt
-    -r tests/requirements-libraries.txt
-    | cat
+  - pip install -U -r tests/requirements-tools.txt | cat
   - >
     if [[ $TRAVIS_BUILD_STAGE_NAME == 'Test - libraries' ]] ; then
         pip install -U -r tests/requirements-libraries.txt | cat
