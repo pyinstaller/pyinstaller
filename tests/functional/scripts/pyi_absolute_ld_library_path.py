@@ -7,9 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
-# LD_LIBRARY_PATH set by bootloader should not contain ./
-
 import os
 import sys
 
@@ -34,3 +31,9 @@ print(('LD_LIBRARY_PATH  current: ' + libpath_from_env))
 
 if not libpath == libpath_from_env:
     raise SystemExit("Expected LD_LIBRARY_PATH doesn't match.")
+
+# LD_LIBRARY_PATH set by bootloader should ba an absolute path
+part1 = libpath_from_env.split(os.pathsep, 1)[0]
+print('First path element:', part1)
+if not os.path.isabs(part1):
+    raise SystemExit("LD_LIBRARY_PATH is not an absolute path.")
