@@ -46,7 +46,7 @@ def test_pyz_as_external_file(pyi_builder, monkeypatch):
         kwargs['append_pkg'] = False
         return EXE(*args, **kwargs)
 
-    # :todo: find a better way to not even run this test in ondir-mode
+    # :todo: find a better way to not even run this test in onefile-mode
     if pyi_builder._mode == 'onefile':
         pytest.skip('only --onedir')
 
