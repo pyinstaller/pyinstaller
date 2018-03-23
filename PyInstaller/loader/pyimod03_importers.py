@@ -67,7 +67,7 @@ else:
     def trace(msg, *a):
         pass
 
-# TODO Do we still need BuiltintImporter for Python 3 built-in modules?
+# Python 3 has it's own BuiltinImporter, we use this for Python2 only
 class BuiltinImporter(object):
     """
     PEP-302 wrapper of the built-in modules for sys.meta_path.
