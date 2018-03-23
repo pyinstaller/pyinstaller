@@ -418,9 +418,6 @@ class FrozenImporter(object):
     ### Optional Extensions to the PEP-302 Importer Protocol
 
     def is_package(self, fullname):
-        """
-        Return always False since built-in modules are never packages.
-        """
         if fullname in self.toc:
             try:
                 return self._pyz_archive.is_package(fullname)
