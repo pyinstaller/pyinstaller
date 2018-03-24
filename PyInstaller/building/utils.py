@@ -443,21 +443,14 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
     binaries_or_datas : list
         List of hook-style 2-tuples (e.g., the top-level `binaries` and `datas`
         attributes defined by hooks) whose:
-        * First element is either:
+        * The first element is either:
           * A glob matching only the absolute or relative paths of source
-            non-Python data files. The second element is then either:
-            * The relative path of the target directory into which these source
-              files will be recursively copied.
-            * The empty string, in which case these source files will be
-              recursively copied into the top-level target directory. (This is
-              usually _not_ what you want.)
+            non-Python data files.
           * The absolute or relative path of a source directory containing only
-            source non-Python data files. The second element is then either:
-            * The relative path of the target directory into which these source
-              files will be recursively copied.
-            * The empty string, in which case these source files will be
-              recursively copied into a new target subdirectory whose name is
-              this source directory's basename. (This is usually what you want.)
+            source non-Python data files.
+        * The second element ist he relative path of the target directory
+          into which these source files will be recursively copied.
+
         If the optional `workingdir` parameter is passed, source paths may be
         either absolute or relative; else, source paths _must_ be absolute.
     workingdir : str
@@ -477,6 +470,11 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
     toc_datas = set()
 
     for src_root_path_or_glob, trg_root_dir in binaries_or_datas:
+        if not trg_root_dir:
+            raise SystemExit("Empty DEST not allowed when adding binary "
+                             "and data files. "
+                             "Maybe you want to used %r.\nCaused by %r." %
+                             (os.curdir, src_root_path_or_glob))
         # Convert relative to absolute paths if required.
         if workingdir and not os.path.isabs(src_root_path_or_glob):
             src_root_path_or_glob = os.path.join(
@@ -517,11 +515,6 @@ package, or unsuitable build parameters of Python installation.
                         trg_root_dir, os.path.basename(src_root_path))),
                     os.path.normpath(src_root_path)))
             elif os.path.isdir(src_root_path):
-                # If no top-level target directory was passed, default this
-                # to the basename of the top-level source directory.
-                if not trg_root_dir:
-                    trg_root_dir = os.path.basename(src_root_path)
-
                 for src_dir, src_subdir_basenames, src_file_basenames in \
                     os.walk(src_root_path):
                     # Ensure the current source directory is a subdirectory
