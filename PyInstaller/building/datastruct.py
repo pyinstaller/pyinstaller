@@ -127,9 +127,8 @@ class Target(object):
         # toc objects
         self.invcnum = self.__class__.invcnum
         self.__class__.invcnum += 1
-        # TODO Think about renaming these file into e.g. `.c4che`
-        self.tocfilename = os.path.join(CONF['workpath'], 'out%02d-%s.toc' %
-                                        (self.invcnum, self.__class__.__name__))
+        self.tocfilename = os.path.join(CONF['workpath'], '%s-%02d.toc' %
+                                        (self.__class__.__name__, self.invcnum))
         self.tocbasename = os.path.basename(self.tocfilename)
         self.dependencies = TOC()
 

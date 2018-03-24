@@ -67,7 +67,7 @@ else:
     def trace(msg, *a):
         pass
 
-# TODO Do we still need BuiltintImporter for Python 3 built-in modules?
+# Python 3 has it's own BuiltinImporter, we use this for Python2 only
 class BuiltinImporter(object):
     """
     PEP-302 wrapper of the built-in modules for sys.meta_path.
@@ -418,9 +418,6 @@ class FrozenImporter(object):
     ### Optional Extensions to the PEP-302 Importer Protocol
 
     def is_package(self, fullname):
-        """
-        Return always False since built-in modules are never packages.
-        """
         if fullname in self.toc:
             try:
                 return self._pyz_archive.is_package(fullname)

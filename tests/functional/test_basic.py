@@ -46,7 +46,7 @@ def test_pyz_as_external_file(pyi_builder, monkeypatch):
         kwargs['append_pkg'] = False
         return EXE(*args, **kwargs)
 
-    # :todo: find a better way to not even run this test in ondir-mode
+    # :todo: find a better way to not even run this test in onefile-mode
     if pyi_builder._mode == 'onefile':
         pytest.skip('only --onedir')
 
@@ -282,7 +282,8 @@ def test_option_w_unset(pyi_builder):
         assert 'ignore' not in sys.warnoptions
         """)
 
-def test_option_w_ignore(pyi_builder, monkeypatch):
+
+def test_option_w_ignore(pyi_builder, monkeypatch, capsys):
     "Test to ensure that option W can be set."
 
     def MyEXE(*args, **kwargs):
@@ -300,6 +301,8 @@ def test_option_w_ignore(pyi_builder, monkeypatch):
         assert 'ignore' in sys.warnoptions
         """)
 
+    _, err = capsys.readouterr()
+    assert "'import warnings' failed" not in err
 
 @skipif_win
 def test_python_makefile(pyi_builder):

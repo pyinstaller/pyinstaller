@@ -575,22 +575,6 @@ def test_pkg_without_hook_for_pkg(pyi_builder, script_dir):
 
 @xfail(is_darwin, reason='Issue #1895.')
 def test_app_with_plugin(pyi_builder, data_dir, monkeypatch):
-
-    from PyInstaller.building.build_main import Analysis
-    class MyAnalysis(Analysis):
-        def __init__(self, *args, **kwargs):
-            kwargs['datas'] = datas
-            # Setting back is required to make `super()` within
-            # Analysis access the correct class. Do not use
-            # `monkeypatch.undo()` as this will undo *all*
-            # monkeypathes.
-            monkeypatch.setattr('PyInstaller.building.build_main.Analysis',
-                                Analysis)
-            super(MyAnalysis, self).__init__(*args, **kwargs)
-
-    monkeypatch.setattr('PyInstaller.building.build_main.Analysis', MyAnalysis)
-
-    # :fixme: When PyInstaller supports setting datas via the
-    # command-line, us this here instead of monkeypatching Analysis.
-    datas = [('data/*/static_plugin.py', '.')]
-    pyi_builder.test_script('pyi_app_with_plugin.py')
+    datas = os.pathsep.join(('data/*/static_plugin.py', os.curdir))
+    pyi_builder.test_script('pyi_app_with_plugin.py',
+                            pyi_args=['--add-data', datas])

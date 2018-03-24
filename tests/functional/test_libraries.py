@@ -10,6 +10,7 @@
 
 # Library imports
 # ---------------
+import py
 import pytest
 import os
 
@@ -23,7 +24,7 @@ from PyInstaller.utils.tests import importorskip, xfail, skipif
 
 # :todo: find a way to get this from `conftest` or such
 # Directory with testing modules used in some tests.
-_MODULES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modules')
+_MODULES_DIR = py.path.local(os.path.abspath(__file__)).dirpath('modules')
 
 @importorskip('boto')
 @pytest.mark.skipif(is_py3, reason='boto does not fully support Python 3')
@@ -135,74 +136,28 @@ def test_zmq(pyi_builder):
         """)
 
 def test_pkg_resource_res_string(pyi_builder, monkeypatch):
-
-    from PyInstaller.building.build_main import Analysis
-    class MyAnalysis(Analysis):
-        def __init__(self, *args, **kwargs):
-            kwargs['datas'] = datas
-            # Setting back is required to make `super()` within
-            # Analysis access the correct class. Do not use
-            # `monkeypatch.undo()` as this will undo *all*
-            # monkeypathes.
-            monkeypatch.setattr('PyInstaller.building.build_main.Analysis',
-                                Analysis)
-            super(MyAnalysis, self).__init__(*args, **kwargs)
-
-    monkeypatch.setattr('PyInstaller.building.build_main.Analysis', MyAnalysis)
-
     # Include some data files for testing pkg_resources module.
-    # :fixme: When PyInstaller supports setting datas via the
-    # command-line, us this here instead of monkeypatching Analysis.
-    datas = [(os.path.join(_MODULES_DIR, 'pkg3', 'sample-data.txt'), 'pkg3')]
-    pyi_builder.test_script('pkg_resource_res_string.py')
+    datas = os.pathsep.join((str(_MODULES_DIR.join('pkg3', 'sample-data.txt')),
+                             'pkg3'))
+    pyi_builder.test_script('pkg_resource_res_string.py',
+                            pyi_args=['--add-data', datas])
 
 
 def test_pkgutil_get_data(pyi_builder, monkeypatch):
-
-    from PyInstaller.building.build_main import Analysis
-    class MyAnalysis(Analysis):
-        def __init__(self, *args, **kwargs):
-            kwargs['datas'] = datas
-            # Setting back is required to make `super()` within
-            # Analysis access the correct class. Do not use
-            # `monkeypatch.undo()` as this will undo *all*
-            # monkeypathes.
-            monkeypatch.setattr('PyInstaller.building.build_main.Analysis',
-                                Analysis)
-            super(MyAnalysis, self).__init__(*args, **kwargs)
-
-    monkeypatch.setattr('PyInstaller.building.build_main.Analysis', MyAnalysis)
-
     # Include some data files for testing pkg_resources module.
-    # :fixme: When PyInstaller supports setting datas via the
-    # command-line, us this here instead of monkeypatching Analysis.
-    datas = [(os.path.join(_MODULES_DIR, 'pkg3', 'sample-data.txt'), 'pkg3')]
-    pyi_builder.test_script('pkgutil_get_data.py')
+    datas = os.pathsep.join((str(_MODULES_DIR.join('pkg3', 'sample-data.txt')),
+                             'pkg3'))
+    pyi_builder.test_script('pkgutil_get_data.py',
+                            pyi_args=['--add-data', datas])
 
 
 @xfail(reason='Our import mechanism returns the wrong loader-class for __main__.')
 def test_pkgutil_get_data__main__(pyi_builder, monkeypatch):
-
-    from PyInstaller.building.build_main import Analysis
-    class MyAnalysis(Analysis):
-        def __init__(self, *args, **kwargs):
-            kwargs['datas'] = datas
-            # Setting back is required to make `super()` within
-            # Analysis access the correct class. Do not use
-            # `monkeypatch.undo()` as this will undo *all*
-            # monkeypathes.
-            monkeypatch.setattr('PyInstaller.building.build_main.Analysis',
-                                Analysis)
-            super(MyAnalysis, self).__init__(*args, **kwargs)
-
-    monkeypatch.setattr('PyInstaller.building.build_main.Analysis', MyAnalysis)
-
     # Include some data files for testing pkg_resources module.
-    # :fixme: When PyInstaller supports setting datas via the
-    # command-line, us this here instead of monkeypatching Analysis.
-    datas = [(os.path.join(_MODULES_DIR, 'pkg3', 'sample-data.txt'), 'pkg3')]
-    pyi_builder.test_script('pkgutil_get_data__main__.py')
-
+    datas = os.pathsep.join((str(_MODULES_DIR.join('pkg3', 'sample-data.txt')),
+                             'pkg3'))
+    pyi_builder.test_script('pkgutil_get_data__main__.py',
+                            pyi_args=['--add-data', datas])
 
 
 @importorskip('sphinx')
@@ -528,26 +483,10 @@ def test_cryptodome(pyi_builder):
 @importorskip('requests')
 def test_requests(tmpdir, pyi_builder, data_dir, monkeypatch):
     # Note that including the data_dir fixture copies files needed by this test.
-
-    from PyInstaller.building.build_main import Analysis
-    class MyAnalysis(Analysis):
-        def __init__(self, *args, **kwargs):
-            kwargs['datas'] = datas
-            # Setting back is required to make `super()` within
-            # Analysis access the correct class. Do not use
-            # `monkeypatch.undo()` as this will undo *all*
-            # monkeypathes.
-            monkeypatch.setattr('PyInstaller.building.build_main.Analysis',
-                                Analysis)
-            super(MyAnalysis, self).__init__(*args, **kwargs)
-
-    monkeypatch.setattr('PyInstaller.building.build_main.Analysis', MyAnalysis)
-
     # Include the data files.
-    # :fixme: When PyInstaller supports setting datas via the
-    # command-line, us this here instead of monkeypatching Analysis.
-    datas = [(str(data_dir.join('*')), '.')]
-    pyi_builder.test_script('pyi_lib_requests.py')
+    datas = os.pathsep.join((str(data_dir.join('*')), os.curdir))
+    pyi_builder.test_script('pyi_lib_requests.py',
+                            pyi_args=['--add-data', datas])
 
 
 @importorskip('requests.packages.urllib3.packages.six')
