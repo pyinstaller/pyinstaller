@@ -820,11 +820,18 @@ def install():
             if hasattr(item, '__name__') and item.__name__ == 'WindowsRegistryFinder':
                 sys.meta_path.remove(item)
                 break
-        # _frozen_importlib.PathFinder is in Python 3 the last importer on sys.meta_path.
-        # This importer is also able handle Python C extensions. However, PyInstaller
-        # needs own importer to allow extension name 'module.submodle.so'.
-        # Add the pathfinder at the end of sys.meta_path.
-        pf_idx = 2  # PathFinder is the 3rd in sys.meta_path.
-        pf = sys.meta_path.pop(pf_idx)
-        sys.meta_path.append(pf)
+        # _frozen_importlib.PathFinder is also able to handle Python C
+        # extensions. However, PyInstaller needs its own importer since it
+        # uses extension names like 'module.submodle.so' (instead of paths).
+        # As of Python 3.7.0b2, there are several PathFinder instances (and
+        # duplicate ones) on sys.meta_path. This propobly is a bug, see
+        # https://bugs.python.org/issue33128. Thus we need to move all of them
+        # to the end, eliminating duplicates .
+        pathFinders = []
+        for item in reversed(sys.meta_path):
+            if getattr(item, '__name__', None) == 'PathFinder':
+                sys.meta_path.remove(item)
+                if not item in pathFinders:
+                    pathFinders.append(item)
+        sys.meta_path.extend(reversed(pathFinders))
         # TODO Do we need for Python 3 _frozen_importlib.FrozenImporter? Could it be also removed?
