@@ -670,7 +670,7 @@ def test_zeep(pyi_builder):
 
 
 @importorskip('PIL')
-@pytest.mark.xfail(reason="Fails with Pillow 3.0.0")
+#@pytest.mark.xfail(reason="Fails with Pillow 3.0.0")
 def test_pil_img_conversion(pyi_builder):
     datas = os.pathsep.join((str(_DATA_DIR.join('PIL_images')), '.'))
     pyi_builder.test_script(
