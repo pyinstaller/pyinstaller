@@ -167,7 +167,6 @@ def test_sphinx(tmpdir, pyi_builder, data_dir):
     pyi_builder.test_script('pyi_lib_sphinx.py')
 
 
-@xfail(is_py36, reason='Fails on python 3.6')
 @importorskip('pylint')
 def test_pylint(pyi_builder):
     pyi_builder.test_source(
