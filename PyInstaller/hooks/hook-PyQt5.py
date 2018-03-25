@@ -39,4 +39,4 @@ if is_darwin:
     # Version of the currently installed Qt 5.x shared library.
     qt_version = get_module_attribute('PyQt5.QtCore', 'QT_VERSION_STR')
     if is_module_satisfies('Qt < 5.4', qt_version):
-        datas = [(qt_menu_nib_dir('PyQt5'), '')]
+        datas = [(qt_menu_nib_dir('PyQt5'), 'qt_menu.nib')]

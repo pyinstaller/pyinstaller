@@ -27,7 +27,7 @@ binaries = []
 pkg_base, pkg_dir = get_package_paths('numpy.core')
 re_anylib = re.compile(r'\w+\.(?:dll|so|dylib)', re.IGNORECASE)
 dlls_pkg = [f for f in os.listdir(pkg_dir) if re_anylib.match(f)]
-binaries += [(os.path.join(pkg_dir, f), '') for f in dlls_pkg]
+binaries += [(os.path.join(pkg_dir, f), '.') for f in dlls_pkg]
 
 # look for MKL libraries in pythons lib directory
 # TODO: check numpy.__config__ if numpy is actually depending on MKL
@@ -42,4 +42,4 @@ if os.path.isdir(lib_dir):
     if dlls_mkl:
         logger = logging.getLogger(__name__)
         logger.info("MKL libraries found when importing numpy. Adding MKL to binaries")
-        binaries += [(os.path.join(lib_dir, f), '') for f in dlls_mkl]
+        binaries += [(os.path.join(lib_dir, f), '.') for f in dlls_mkl]

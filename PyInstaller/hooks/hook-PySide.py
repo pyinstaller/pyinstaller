@@ -27,5 +27,5 @@ if is_win:
 # app.
 if is_darwin:
     datas = [
-        (qt_menu_nib_dir('PySide'), ''),
+        (qt_menu_nib_dir('PySide'), 'qt_menu.nib'),
     ]
