@@ -95,7 +95,6 @@ def test_gevent(pyi_builder):
         """)
 
 
-@xfail(is_py36, reason='Fails on python 3.6')
 @importorskip('gevent')
 def test_gevent_monkey(pyi_builder):
     pyi_builder.test_source(
