@@ -629,7 +629,6 @@ def test_twisted(pyi_builder):
 
 
 @importorskip('pyexcelerate')
-@pytest.mark.xfail(reason='TODO - known to fail')
 def test_pyexcelerate(pyi_builder):
     pyi_builder.test_source(
         """
