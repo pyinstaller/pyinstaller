@@ -238,8 +238,6 @@ def test_PyQt5_QtWebKit(pyi_builder):
     pyi_builder.test_script('pyi_lib_PyQt5-QtWebKit.py')
 
 
-@pytest.mark.skipif(is_module_satisfies('Qt >= 5.6', get_module_attribute('PyQt5.QtCore', 'QT_VERSION_STR')),
-                    reason='QtWebKit is depreciated in Qt 5.6+')
 @importorskip('PyQt5')
 def test_PyQt5_uic(tmpdir, pyi_builder, data_dir):
     # Note that including the data_dir fixture copies files needed by this test.
@@ -297,6 +295,12 @@ def test_PyQt5_QtQuick(pyi_builder):
 
         sys.exit(app.exec_())
         """)
+
+
+# Test that the ``PyQt5.Qt`` module works by importing something from it.
+@importorskip('PyQt5')
+def test_PyQt5_Qt(pyi_builder):
+    pyi_builder.test_source('from PyQt5.Qt import QLibraryInfo')
 
 
 @xfail(is_linux and is_py35, reason="Fails on linux >3.5")
