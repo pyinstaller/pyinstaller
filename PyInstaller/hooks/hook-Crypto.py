@@ -24,7 +24,7 @@ import os
 import glob
 
 from PyInstaller.compat import EXTENSION_SUFFIXES
-from PyInstaller.utils.hooks import get_module_file_attribute
+from PyInstaller.utils.hooks import get_module_file_attribute, is_module_satisfies
 
 # Include the modules as binaries in a subfolder named like the package.
 # Cryptodome's loader expects to find them inside the package directory for
@@ -33,19 +33,20 @@ from PyInstaller.utils.hooks import get_module_file_attribute
 
 binaries = []
 binary_module_names = [
+    'Crypto.Math',      # First in the list
     'Crypto.Cipher',
     'Crypto.Util',
     'Crypto.Hash',
     'Crypto.Protocol',
-    'Crypto.Math',
 ]
 
-for module_name in binary_module_names:
-    try:
+try:
+    for module_name in binary_module_names:
         m_dir = os.path.dirname(get_module_file_attribute(module_name))
-    except ImportError:
-        continue
-    for ext in EXTENSION_SUFFIXES:
-        module_bin = glob.glob(os.path.join(m_dir, '_*%s' % ext))
-        for f in module_bin:
-            binaries.append((f, module_name.replace('.', '/')))
+        for ext in EXTENSION_SUFFIXES:
+            module_bin = glob.glob(os.path.join(m_dir, '_*%s' % ext))
+            for f in module_bin:
+                binaries.append((f, module_name.replace('.', '/')))
+except ImportError:
+    # Do nothing for PyCrypto (Crypto.Math does not exist there)
+    pass
