@@ -69,6 +69,7 @@ For a complete list, see `Supported Packages`_.
 
 Some Python scripts import modules in ways that |PyInstaller| cannot detect:
 for example, by using the ``__import__()`` function with variable data,
+using ``imp.find_module()``,
 or manipulating the ``sys.path`` value at run time.
 If your script requires files that |PyInstaller| does not know about,
 you must help it:
