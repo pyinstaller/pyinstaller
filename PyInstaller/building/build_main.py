@@ -693,7 +693,7 @@ def build(spec, distpath, workpath, clean_build):
     else:
         workpath = os.path.join(workpath, CONF['specnm'])
 
-    CONF['warnfile'] = os.path.join(workpath, 'warn%s.txt' % CONF['specnm'])
+    CONF['warnfile'] = os.path.join(workpath, 'warn-%s.txt' % CONF['specnm'])
     CONF['dot-file'] = os.path.join(workpath, 'graph-%s.dot' % CONF['specnm'])
     CONF['xref-file'] = os.path.join(workpath, 'xref-%s.html' % CONF['specnm'])
 
