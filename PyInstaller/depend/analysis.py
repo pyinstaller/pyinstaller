@@ -445,14 +445,11 @@ class PyiModuleGraph(ModuleGraph):
             return False
         return type(node).__name__ == 'BuiltinModule'
 
-    def importer_names(self, name):
-        """
-        List the names of all modules importing the module with the passed name.
+    def get_importers(self, name):
+        """List all modules importing the module with the passed name.
 
-        If this module has yet to be imported and hence added to the graph, this
-        method returns the empty list; else, this method returns a list
-        comprehension over the identifiers of all graph nodes having an outgoing
-        edge directed into the graph node for this module.
+        Returns a list of (identifier, DependencyIinfo)-tuples. If the names
+        module has not yet been imported, this method returns an empty list.
 
         Parameters
         ----------
@@ -462,14 +459,24 @@ class PyiModuleGraph(ModuleGraph):
         Returns
         ----------
         list
-            List of the fully-qualified names of all modules importing the
-            module with the passed fully-qualified name.
+            List of (fully-qualified names, DependencyIinfo)-tuples of all
+            modules importing the module with the passed fully-qualified name.
+
         """
+        def get_importer_edge_data(importer):
+            edge = self.graph.edge_by_node(importer, name)
+            # edge might be None in case an AliasModule was added.
+            if edge is not None:
+                return self.graph.edge_data(edge)
+
         node = self.findNode(name)
         if node is None : return []
-        _, iter_inc = self.get_edges(node)
-        return [importer.identifier for importer in iter_inc
-                if importer is not None]
+        _, importers = self.get_edges(node)
+        importers = (importer.identifier
+                     for importer in importers
+                     if importer is not None)
+        return [(importer, get_importer_edge_data(importer))
+                for importer in importers]
 
     # TODO create class from this function.
     def analyze_runtime_hooks(self, custom_runhooks):

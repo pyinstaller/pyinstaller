@@ -7,6 +7,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+from __future__ import print_function
 
 """
 Build packages using spec files.
@@ -54,6 +55,10 @@ rthooks = {}
 
 # place where the loader modules and initialization scripts live
 _init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
+
+IMPORT_TYPES = ['top-level', 'conditional', 'delayed', 'delayed, conditional',
+                'optional', 'conditional, optional', 'delayed, optional',
+                'delayed, conditional, optional']
 
 
 def _old_api_error(obj_name):
@@ -559,25 +564,25 @@ class Analysis(Target):
         Write warnings about missing modules. Get them from the graph
         and use the graph to figure out who tried to import them.
         """
-        # TODO: previously we could say whether an import was top-level,
-        # deferred (in a def'd function) or conditional (in an if stmt).
-        # That information is not available from ModuleGraph at this time.
-        # When that info is available change this code to write one line for
-        # each importer-name, with type of import for that importer
-        # "no module named foo conditional/deferred/toplevel importy by bar"
+        def dependency_description(name, depInfo):
+            if not depInfo or depInfo == 'direct':
+                imptype = 0
+            else:
+                imptype = (depInfo.conditional
+                           + 2 * depInfo.function
+                           + 4 * depInfo.tryexcept)
+            return '%s (%s)' % (name, IMPORT_TYPES[imptype])
+
         from ..config import CONF
         miss_toc = self.graph.make_missing_toc()
         if len(miss_toc) : # there are some missing modules
             wf = open(CONF['warnfile'], 'w')
-            for (n, p, status) in miss_toc :
-                importer_names = self.graph.importer_names(n)
-                wf.write( status
-                          + ' module named '
-                          + n
-                          + ' - imported by '
-                          + ', '.join(importer_names)
-                          + '\n'
-                          )
+            for (n, p, status) in miss_toc:
+                importers = self.graph.get_importers(n)
+                print(status, 'module named', n, '- imported by',
+                      ', '.join(dependency_description(name, data)
+                                for name, data in importers),
+                      file=wf)
             wf.close()
             logger.info("Warnings written to %s", CONF['warnfile'])
 
