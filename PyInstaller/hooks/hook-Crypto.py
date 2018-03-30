@@ -14,6 +14,13 @@ PyCryptodome is an almost drop-in replacement for the now unmaintained
 PyCrypto library. The two are mutually exclusive as they live under
 the same package ("Crypto").
 
+PyCryptodome distributes dynamic libraries and builds them as if they were
+Python C extensions (even though they are not extensions - as they can't be
+imported by Python). It might sound a bit weird, but this decision is rooted
+in PyPy and its partial and slow support for C extensions. However, this also
+invalidates several of the existing methods used by PyInstaller to decide the
+right files to pull in.
+
 Even though this hook is meant to help with PyCryptodome only, it will be
 triggered also when PyCrypto is installed, so it must be tested with both.
 
@@ -24,7 +31,7 @@ import os
 import glob
 
 from PyInstaller.compat import EXTENSION_SUFFIXES
-from PyInstaller.utils.hooks import get_module_file_attribute, is_module_satisfies
+from PyInstaller.utils.hooks import get_module_file_attribute
 
 # Include the modules as binaries in a subfolder named like the package.
 # Cryptodome's loader expects to find them inside the package directory for
@@ -46,7 +53,7 @@ try:
         for ext in EXTENSION_SUFFIXES:
             module_bin = glob.glob(os.path.join(m_dir, '_*%s' % ext))
             for f in module_bin:
-                binaries.append((f, module_name.replace('.', '/')))
+                binaries.append((f, module_name.replace('.', os.sep)))
 except ImportError:
     # Do nothing for PyCrypto (Crypto.Math does not exist there)
     pass
