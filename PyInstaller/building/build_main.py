@@ -60,6 +60,25 @@ IMPORT_TYPES = ['top-level', 'conditional', 'delayed', 'delayed, conditional',
                 'optional', 'conditional, optional', 'delayed, optional',
                 'delayed, conditional, optional']
 
+WARNFILE_HEADER = """\
+
+This file lists modules PyInstaller was not able to find. This does not
+necessarily mean this module is required for running you program. Python and
+Python 3rd-party packages include a lot of conditional or optional module. For
+example the module 'ntpath' only exists on Windows, whereas the module
+'posixpath' only exists on Posix systems.
+
+Types if import:
+* top-level: imported at the top-level - look at these first
+* conditional: imported within an if-statement
+* delayed: imported from within a function
+* optional: imported within a try-except-statement
+
+IMPORTANT: Do NOT post this list to the issue-tracker. Use it as a basis for
+           yourself tracking down the missing module. Thanks!
+
+"""
+
 
 def _old_api_error(obj_name):
     """
@@ -577,6 +596,7 @@ class Analysis(Target):
         miss_toc = self.graph.make_missing_toc()
         if len(miss_toc) : # there are some missing modules
             wf = open(CONF['warnfile'], 'w')
+            wf.write(WARNFILE_HEADER)
             for (n, p, status) in miss_toc:
                 importers = self.graph.get_importers(n)
                 print(status, 'module named', n, '- imported by',
