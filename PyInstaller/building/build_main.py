@@ -594,8 +594,7 @@ class Analysis(Target):
 
         from ..config import CONF
         miss_toc = self.graph.make_missing_toc()
-        if len(miss_toc) : # there are some missing modules
-            wf = open(CONF['warnfile'], 'w')
+        with open(CONF['warnfile'], 'w') as wf:
             wf.write(WARNFILE_HEADER)
             for (n, p, status) in miss_toc:
                 importers = self.graph.get_importers(n)
@@ -603,8 +602,7 @@ class Analysis(Target):
                       ', '.join(dependency_description(name, data)
                                 for name, data in importers),
                       file=wf)
-            wf.close()
-            logger.info("Warnings written to %s", CONF['warnfile'])
+        logger.info("Warnings written to %s", CONF['warnfile'])
 
     def _write_graph_debug(self):
         """Write a xref (in html) and with `--log-level DEBUG` a dot-drawing
