@@ -194,7 +194,8 @@ but the app fails with an import error,
 the problem is a hidden import; that is, an import that is not
 visible to the analysis phase.
 
-Hidden imports can occur when the code is using ``__import__``
+Hidden imports can occur when the code is using ``__import__``,
+``imp.find_module()``
 or perhaps ``exec`` or ``eval``.
 Hidden imports can also occur when an extension module uses the
 Python/C API to do an import.

@@ -30,5 +30,5 @@ hiddenimports = ['sip']
 # app.
 if is_darwin:
     datas = [
-        (qt_menu_nib_dir('PyQt4'), ''),
+        (qt_menu_nib_dir('PyQt4'), 'qt_menu.nib'),
     ]

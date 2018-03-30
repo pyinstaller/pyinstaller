@@ -76,4 +76,4 @@ if is_conda:
         proj4_lib = os.path.join(root_path, 'lib', 'libproj.so')
 
     if os.path.exists(proj4_lib):
-        binaries = [(proj4_lib, ""), ]
+        binaries = [(proj4_lib, ".")]

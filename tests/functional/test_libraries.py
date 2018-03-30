@@ -25,6 +25,7 @@ from PyInstaller.utils.tests import importorskip, xfail, skipif
 # :todo: find a way to get this from `conftest` or such
 # Directory with testing modules used in some tests.
 _MODULES_DIR = py.path.local(os.path.abspath(__file__)).dirpath('modules')
+_DATA_DIR = py.path.local(os.path.abspath(__file__)).dirpath('data')
 
 @importorskip('boto')
 @pytest.mark.skipif(is_py3, reason='boto does not fully support Python 3')
@@ -94,7 +95,6 @@ def test_gevent(pyi_builder):
         """)
 
 
-@xfail(is_py36, reason='Fails on python 3.6')
 @importorskip('gevent')
 def test_gevent_monkey(pyi_builder):
     pyi_builder.test_source(
@@ -166,7 +166,6 @@ def test_sphinx(tmpdir, pyi_builder, data_dir):
     pyi_builder.test_script('pyi_lib_sphinx.py')
 
 
-@xfail(is_py36, reason='Fails on python 3.6')
 @importorskip('pylint')
 def test_pylint(pyi_builder):
     pyi_builder.test_source(
@@ -407,7 +406,6 @@ def test_numpy(pyi_builder):
 
 
 @importorskip('openpyxl')
-@xfail(is_py36 and not is_win, reason='Issue #2363.')
 def test_openpyxl(pyi_builder):
     pyi_builder.test_source(
         """
@@ -628,7 +626,6 @@ def test_twisted(pyi_builder):
 
 
 @importorskip('pyexcelerate')
-@pytest.mark.xfail(reason='TODO - known to fail')
 def test_pyexcelerate(pyi_builder):
     pyi_builder.test_source(
         """
@@ -669,9 +666,15 @@ def test_zeep(pyi_builder):
 
 
 @importorskip('PIL')
-@pytest.mark.xfail(reason="Fails with Pillow 3.0.0")
-def test_pil_img_conversion(pyi_builder_spec):
-    pyi_builder_spec.test_spec('pyi_lib_PIL_img_conversion.spec')
+#@pytest.mark.xfail(reason="Fails with Pillow 3.0.0")
+def test_pil_img_conversion(pyi_builder):
+    datas = os.pathsep.join((str(_DATA_DIR.join('PIL_images')), '.'))
+    pyi_builder.test_script(
+        'pyi_lib_PIL_img_conversion.py',
+        pyi_args=['--add-data', datas,
+                  # Use console mode or else on Windows the VS() messageboxes
+                  # will stall pytest.
+                  '--console'])
 
 
 @xfail(is_darwin, reason='Issue #1895.')
