@@ -21,6 +21,7 @@ RT_ICON = 3
 RT_GROUP_ICON = 14
 LOAD_LIBRARY_AS_DATAFILE = 2
 
+import os.path
 import struct
 import types
 try:
@@ -29,6 +30,7 @@ except AttributeError:
     StringTypes = [ type("") ]
 
 from ...compat import win32api
+from ... import config
 
 import PyInstaller.log as logging
 logger = logging.getLogger(__name__)
@@ -93,9 +95,11 @@ class GRPICONDIRENTRY(Structure):
 class IconFile:
     def __init__(self, path):
         self.path = path
+        if not os.path.isabs(path):
+            self.path = os.path.join(config.CONF['specpath'], path)
         try:
             # The path is from the user parameter, don't trust it.
-            file = open(path, "rb")
+            file = open(self.path, "rb")
         except OSError:
             # The icon file can't be opened for some reason. Stop the
             # program with an informative message.
@@ -167,7 +171,6 @@ def CopyIcons(dstpath, srcpath):
     integer resource index in the .exe. In either case the path can be
     relative or absolute.
     '''
-    import os.path
 
     if type(srcpath) in StringTypes:
         # just a single string, make it a one-element list
