@@ -214,7 +214,9 @@ def CopyIcons(dstpath, srcpath):
         return CopyIcons_FromIco(dstpath, [srcpath])
 
     # Single source is not .ico, presumably it is .exe (and if not, some
-    # error will occur).
+    # error will occur). If relative, make it relative to the .spec file.
+    if not os.path.isabs(srcpath):
+        srcpath = os.path.join(config.CONF['specpath'], srcpath)
     if index is not None:
         logger.info("Updating icons from %s, %d to %s", srcpath, index, dstpath)
     else:
