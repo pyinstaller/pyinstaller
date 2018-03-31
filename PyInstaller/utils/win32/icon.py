@@ -141,7 +141,7 @@ def CopyIcons_FromIco(dstpath, srcpath, id=1):
     :param str srcpath: list of 1 or more .ico file paths
     '''
     icons = map(IconFile, srcpath)
-    logger.info("Updating icons from %s to %s", srcpath, dstpath)
+    logger.info("Copying icons from %s", srcpath)
 
     hdst = win32api.BeginUpdateResource(dstpath, 0)
 
@@ -218,9 +218,9 @@ def CopyIcons(dstpath, srcpath):
     if not os.path.isabs(srcpath):
         srcpath = os.path.join(config.CONF['specpath'], srcpath)
     if index is not None:
-        logger.info("Updating icons from %s, %d to %s", srcpath, index, dstpath)
+        logger.info("Copying icon from %s, %d", srcpath, index)
     else:
-        logger.info("Updating icons from %s to %s", srcpath, dstpath)
+        logger.info("Copying icons from %s", srcpath)
 
     try:
         # Attempt to load the .ico or .exe containing the icon into memory
