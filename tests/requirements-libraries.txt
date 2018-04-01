@@ -37,7 +37,7 @@ keyring==12.0.0
 openpyxl==2.5.1
 pycparser==2.18
 pytz==2018.3
-sqlalchemy==1.2.5
+sqlalchemy==1.2.6
 twisted==17.9.0
 zeep==2.4.0
 pyexcelerate==0.7.2
