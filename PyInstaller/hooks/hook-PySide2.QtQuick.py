@@ -24,11 +24,11 @@ def qt5_qml_dir():
                        'set correctly or try setting QT5DIR.')
     else:
         qmldir = exec_command(qmake, "-query", "QT_INSTALL_QML").strip()
-    if len(qmldir) == 0:
-        logger.error('Cannot find QT_INSTALL_QML directory, "qmake -query ' +
+    if qmldir:
+        logger.error('Cannot find QT_INSTALL_QML directory, "qmake -query '
                      'QT_INSTALL_QML" returned nothing')
     elif not os.path.exists(qmldir):
-        logger.error("Directory QT_INSTALL_QML: %s doesn't exist" % qmldir)
+        logger.error("Directory QT_INSTALL_QML: %s doesn't exist", qmldir)
 
     # 'qmake -query' uses / as the path separator, even on Windows
     qmldir = os.path.normpath(qmldir)
@@ -55,8 +55,8 @@ def qt5_qml_plugins_binaries(qmldir, directory):
         relpath = os.path.relpath(f, qmldir)
         instdir, file = os.path.split(relpath)
         instdir = os.path.join("qml", instdir)
-        logger.debug("qt5_qml_plugins_binaries installing %s in %s"
-                     % (f, instdir))
+        logger.debug("qt5_qml_plugins_binaries installing %s in %s",
+                     f, instdir)
         binaries.append((f, instdir))
     return binaries
 
@@ -77,8 +77,8 @@ def qt5_qml_plugins_datas(qmldir, directory):
         relpath = os.path.relpath(f, qmldir)
         instdir, file = os.path.split(relpath)
         instdir = os.path.join("qml", instdir)
-        logger.debug("qt5_qml_plugins_datas installing %s in %s"
-                     % (f, instdir))
+        logger.debug("qt5_qml_plugins_datas installing %s in %s",
+                     f, instdir)
         datas.append((f, instdir))
     return datas
 

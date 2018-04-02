@@ -244,7 +244,7 @@ def test_PyQt5_uic(tmpdir, pyi_builder, data_dir):
     pyi_builder.test_script('pyi_lib_PyQt5-uic.py')
 
 
-@xfail(is_darwin, reason='Need help to debug.')
+@xfail(is_darwin, reason='Please help debug this. See issue #3233.')
 @importorskip('PyQt5')
 def test_PyQt5_QWebEngine(pyi_builder):
     pyi_builder.test_source(
@@ -773,7 +773,7 @@ def test_pinyin(pyi_builder):
         import pinyin
         """)
 
-    
+
 @importorskip('uvloop')
 @skipif(is_win or not is_py35, reason='Windows, or py < 3.5 not supported')
 def test_uvloop(pyi_builder):

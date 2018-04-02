@@ -122,20 +122,19 @@ def qt_plugins_binaries(plugin_type, namespace):
 
     # Windows:
     #
-    # dlls_in_dir() grabs all files ending with ``*.dll``, ``*.so`` and ``*.dylib`` in a certain
-    # directory. On Windows this would grab debug copies of Qt plugins, which then
-    # causes PyInstaller to add a dependency on the Debug CRT *in addition* to the
-    # release CRT.
+    # dlls_in_dir() grabs all files ending with ``*.dll``, ``*.so`` and
+    # ``*.dylib`` in a certain directory. On Windows this would grab debug
+    # copies of Qt plugins, which then causes PyInstaller to add a dependency on
+    # the Debug CRT *in addition* to the release CRT.
     #
-    # Since on Windows debug copies of Qt4 plugins end with "d4.dll" and Qt5 plugins
-    # end with "d.dll" we filter them out of the list.
-    #
+    # Since on Windows debug copies of Qt4 plugins end with "d4.dll" and Qt5
+    # plugins end with "d.dll" we filter them out of the list.
     if is_win and (namespace in ['PyQt4', 'PySide']):
         files = [f for f in files if not f.endswith("d4.dll")]
     elif is_win and namespace in ['PyQt5', 'PySide2']:
         files = [f for f in files if not f.endswith("d.dll")]
 
-    logger.debug('Found plugin files {0} for plugin \'{1}\''.format(files, plugin_type))
+    logger.debug("Found plugin files %s for plugin '%s", files, plugin_type)
     if namespace in ['PyQt4', 'PySide']:
         plugin_dir = 'qt4_plugins'
     elif namespace == 'PyQt5':
@@ -175,8 +174,7 @@ def qt_menu_nib_dir(namespace):
         path = os.path.join(location, 'qt_menu.nib')
         if os.path.exists(path):
             menu_dir = path
-            logger.debug('Found qt_menu.nib for {0} at {1}'.format(namespace,
-                                                                   path))
+            logger.debug('Found qt_menu.nib for %s at %s', namespace, path)
             break
     if not menu_dir:
         raise Exception("""
@@ -221,12 +219,12 @@ def get_qmake_path(version=''):
                 # version string is probably just ASCII
                 versionstring = versionstring.decode('utf8')
             if versionstring.find(version) == 0:
-                logger.debug('Found qmake version "%s" at "%s".'
-                             % (versionstring, qmake))
+                logger.debug('Found qmake version "%s" at "%s".',
+                             versionstring, qmake)
                 return qmake
         except (OSError, subprocess.CalledProcessError):
             pass
-    logger.debug('Could not find qmake matching version "%s".' % version)
+    logger.debug('Could not find qmake matching version "%s".', version)
     return None
 
 
@@ -436,10 +434,11 @@ def add_qt5_dependencies(hook_file):
 
     # Look up the module returned by this import.
     module = get_module_file_attribute(module_name)
-    logger.debug('add_qt5_dependencies: Examining {}, based on hook of {}.'
-                 .format(module, hook_file))
+    logger.debug('add_qt5_dependencies: Examining %s, based on hook of %s.',
+                 module, hook_file)
 
-    # Walk through all its imports.
+    # Walk through all the static dependencies of a dynamically-linked library
+    # (``.so``/``.dll``/``.dylib``).
     imports = set(getImports(module))
     while imports:
         imp = imports.pop()
@@ -462,13 +461,13 @@ def add_qt5_dependencies(hook_file):
         # Mac: rename from ``qt`` to ``qt5`` to match names in Windows/Linux.
         if is_darwin and lib_name.startswith('qt'):
             lib_name = 'qt5' + lib_name[2:]
-        logger.debug('add_qt5_dependencies: raw lib {} -> parsed lib {}'.
-                     format(imp, lib_name))
+        logger.debug('add_qt5_dependencies: raw lib %s -> parsed lib %s',
+                     imp, lib_name)
 
         # Follow only Qt dependencies.
         if lib_name in _qt_dynamic_dependencies_dict:
             # Follow these to find additional dependencies.
-            logger.debug('add_qt5_dependencies: Import of {}.'.format(imp))
+            logger.debug('add_qt5_dependencies: Import of %s.', imp)
             imports.update(getImports(imp))
             # Look up which plugins and translations are needed. Avoid Python
             # 3-only syntax, since the Python 2.7 parser will raise an
@@ -485,7 +484,7 @@ def add_qt5_dependencies(hook_file):
             if lib_name_translations_base:
                 translations_base.update([lib_name_translations_base])
 
-    # Changes plugins into binaries.
+    # Change plugins into binaries.
     binaries = []
     for plugin in plugins:
         more_binaries = qt_plugins_binaries(plugin, namespace=namespace)
@@ -507,10 +506,11 @@ def add_qt5_dependencies(hook_file):
     # Change hiddenimports to a list.
     hiddenimports = list(hiddenimports)
 
-    logger.debug(('add_qt5_dependencies: imports from {}:\n'
-                  '  hiddenimports = {}\n'
-                  '  binaries = {}\n'
-                  '  datas = {}').format(hook_name, hiddenimports, binaries, datas))
+    logger.debug('add_qt5_dependencies: imports from %s:\n'
+                 '  hiddenimports = %s\n'
+                 '  binaries = %s\n'
+                 '  datas = %s',
+                 hook_name, hiddenimports, binaries, datas)
     return hiddenimports, binaries, datas
 
 
