@@ -419,6 +419,12 @@ class EXE(Target):
                 self.toc.append(("pyi-windows-manifest-filename " + manifest_filename,
                                  "", "OPTION"))
 
+            if self.versrsrc:
+                if not os.path.isabs(self.versrsrc):
+                    # relative version-info path is relative to spec file
+                    self.versrsrc = os.path.join(
+                        CONF['specpath'], self.versrsrc)
+
         self.pkg = PKG(self.toc, cdict=kwargs.get('cdict', None),
                        exclude_binaries=self.exclude_binaries,
                        strip_binaries=self.strip, upx_binaries=self.upx,
