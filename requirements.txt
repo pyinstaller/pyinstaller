@@ -1,0 +1,12 @@
+# This is the pip requirements file for running PyInstaller.
+# If you want to run the test you will also need to install what is
+# defined in tests/requirements-tools.txt and for extensive testing
+# also tests/requirements-libraries.txt.
+
+setuptools
+pefile
+macholib
+altgraph
+
+dis3; python_version < '3.0'
+pywin32-ctypes; sys_platform == 'win32'
