@@ -509,6 +509,7 @@ class EXE(Target):
         return bootloader_file
 
     def assemble(self):
+        from ..config import CONF
         logger.info("Building EXE from %s", self.tocbasename)
         trash = []
         if os.path.exists(self.name):
@@ -536,6 +537,8 @@ class EXE(Target):
                     except ValueError:
                         pass
                 resfile = res[0]
+                if not os.path.isabs(resfile):
+                    resfile = os.path.join(CONF['specpath'], resfile)
                 restype = resname = reslang = None
                 if len(res) > 1:
                     restype = res[1]
