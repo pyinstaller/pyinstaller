@@ -33,17 +33,17 @@ such as |PyInstaller| in each of them.
 (For more on the uses of virtualenv, see :ref:`Supporting Multiple Platforms` below.)
 
 When pip-Win is working, enter this command in its Command field
-and click Run:
+and click Run::
 
-  ``venv -c -i  pyi-env-name``
+    venv -c -i pyi-env-name
 
 This creates a new virtual environment rooted at ``C:\Python\pyi-env-name``
 and makes it the current environment.
 A new command shell
 window opens in which you can run commands within this environment.
-Enter the command
+Enter the command::
 
-  ``pip install PyInstaller``
+    pip install PyInstaller
 
 Once it is installed, to use |PyInstaller|,
 
@@ -92,9 +92,9 @@ Verifying the installation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 On all platforms, the command ``pyinstaller`` should now exist on the
-execution path. To verify this, enter the command
+execution path. To verify this, enter the command::
 
-  ``pyinstaller --version``
+    pyinstaller --version
 
 The result should resemble ``3.n`` for a released version,
 and ``3.n.dev0-xxxxxx`` for a development branch.
