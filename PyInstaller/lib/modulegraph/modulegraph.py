@@ -1509,7 +1509,8 @@ class ModuleGraph(ObjectGraph):
         # imported by this target module's pure-Python code. Since our import
         # scanner already detects such imports, these submodules need *NOT* be
         # reimported here.
-        if target_attr_names and isinstance(target_module, Package):
+        if target_attr_names and isinstance(target_module,
+                                            (Package, AliasNode)):
             for target_submodule in self._import_importable_package_submodules(
                 target_module, target_attr_names):
                 if target_submodule not in target_modules:
@@ -2452,7 +2453,8 @@ class ModuleGraph(ObjectGraph):
         # imported by this target module's pure-Python code. Since our import
         # scanner already detects these imports, these submodules need *NOT* be
         # reimported here. (Doing so would be harmless but inefficient.)
-        if target_attr_names and isinstance(target_module, Package):
+        if target_attr_names and isinstance(target_module,
+                                            (Package, AliasNode)):
             # For the name of each attribute imported from this target package
             # into this source module...
             for target_submodule_partname in target_attr_names:
