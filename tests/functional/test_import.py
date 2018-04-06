@@ -138,6 +138,19 @@ def test_import_submodule_global_unshadowed(pyi_builder):
         """)
 
 
+def test_import_submodule_from_aliased_pkg(pyi_builder, script_dir):
+    pyi_builder.test_source(
+        """
+        import sys
+        import pyi_testmod_submodule_from_aliased_pkg
+
+        sys.modules['alias_name'] = pyi_testmod_submodule_from_aliased_pkg
+
+        from alias_name import submodule
+        """,
+        ['--additional-hooks-dir=%s' % script_dir.join('pyi_hooks')])
+
+
 def test_module_with_coding_utf8(pyi_builder):
     # Module ``utf8_encoded_module`` simply has an ``coding`` header
     # and uses same German umlauts.
