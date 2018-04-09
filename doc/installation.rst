@@ -41,7 +41,7 @@ This creates a new virtual environment rooted at ``C:\Python\pyi-env-name``
 and makes it the current environment.
 A new command shell
 window opens in which you can run commands within this environment.
-Enter the command::
+Enter the command ::
 
     pip install PyInstaller
 
