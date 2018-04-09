@@ -13,7 +13,7 @@ the active Python interpreter! -- and puts them with
 your script in a single folder,
 or optionally in a single executable file.
 
-For the great majority of programs, this can be done with one short command::
+For the great majority of programs, this can be done with one short command, ::
 
     pyinstaller myscript.py
 
