@@ -18,7 +18,7 @@ For the great majority of programs, this can be done with one short command, ::
     pyinstaller myscript.py
 
 or with a few added options, for example a windowed application
-as a single-file executable::
+as a single-file executable, ::
 
     pyinstaller --onefile --windowed myscript.py
 
