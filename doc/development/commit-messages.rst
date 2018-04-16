@@ -135,51 +135,14 @@ Alternatively you may use :command:`git gui` :menuselection:`--> Edit -->
 Options ...` to set these values.
 
 
-How to write good commit messages
-=====================================
-
-The following is an excerpt from the `FreeBSD Committer's Guide
-<http://www.freebsd.org/doc/en_US.ISO8859-1/articles/committers-guide/article.html>`_
-and sums up quite nicely what we think:
-
-Good commit messages are important. They tell others why you did the changes
-you did, not just right here and now, but months or years from now when
-someone wonders why some seemingly illogical or inefficient piece of code
-snuck into your source file. It is also an invaluable aid to deciding which
-changes to merge from the -CURRENT branch to -STABLE and which not.
-
-* Commit messages should be clear, concise and provide a reasonable summary to
-  give an indication of what was changed and why.
-
-* Commit messages should provide enough information to enable a third party to
-  decide if the change is relevant to them and if they need to read the change
-  itself.
-
-* Avoid committing several unrelated changes in one go. It makes merging
-  difficult, and also makes it harder to determine which change is the culprit
-  if a bug crops up.
-
-* Avoid committing style or whitespace fixes and functionality fixes in one
-  go. It makes merging difficult, and also makes it harder to understand just
-  what functional changes were made. In the case of documentation files, it
-  can make the job of the translation teams more complicated, as it becomes
-  difficult for them to determine exactly what content changes need to be
-  translated.
-
-* Avoid committing changes to multiple files in one go with a generic, vague
-  message. Instead, commit each file (or small, related groups of files) with
-  tailored commit messages.
-
-* If you did several unrelated changes before committing, ``git gui`` makes
-  committing selected parts and even selected lines easy. Try the context menu
-  within the windows diff area.
-
-
 Further Reading
 =======================
 
 Further hints and tutorials about writing good commit messages can also be
 found at:
+
+* `FreeBSD Committer's Guide
+  <http://www.freebsd.org/doc/en_US.ISO8859-1/articles/committers-guide/article.html>`_
 
 * http://365git.tumblr.com/post/3308646748/writing-git-commit-messages
 
