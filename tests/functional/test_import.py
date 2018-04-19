@@ -551,10 +551,8 @@ def test_nspkg3_bbb_zzz(pyi_builder):
 
 
 def test_nspkg4_bar_foo(pyi_builder):
-    # Test inclusion of a namespace package in an zipped egg using
-    # pkgutil.extend_path
-    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg4-pkg', '{nspkg4_foo,nspkg4_bar}'))
-    print(pathex)
+    # Test inclusion of a namespace package using pkg_resources declare_namespace.
+    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg4-pkg', 'nspkg4_*'))
     pyi_builder.test_source(
         """
         import world.a
