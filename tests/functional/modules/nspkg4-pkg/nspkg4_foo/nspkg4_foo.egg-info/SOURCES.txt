@@ -1,0 +1,8 @@
+setup.py
+nspkg4_foo.egg-info/PKG-INFO
+nspkg4_foo.egg-info/SOURCES.txt
+nspkg4_foo.egg-info/dependency_links.txt
+nspkg4_foo.egg-info/namespace_packages.txt
+nspkg4_foo.egg-info/top_level.txt
+world/__init__.py
+world/f.py

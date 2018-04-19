@@ -537,6 +537,7 @@ def test_nspkg3_aaa(pyi_builder):
         pyi_args=['--paths', os.pathsep.join(pathex)],
     )
 
+
 def test_nspkg3_bbb_zzz(pyi_builder):
     # Test inclusion of a namespace package in an zipped egg using
     # pkgutil.extend_path
@@ -547,6 +548,21 @@ def test_nspkg3_bbb_zzz(pyi_builder):
         """,
         pyi_args=['--paths', os.pathsep.join(pathex)],
     )
+
+
+def test_nspkg4_bar_foo(pyi_builder):
+    # Test inclusion of a namespace package in an zipped egg using
+    # pkgutil.extend_path
+    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg4-pkg', '{nspkg4_foo,nspkg4_bar}'))
+    print(pathex)
+    pyi_builder.test_source(
+        """
+        import world.a
+        import world.b
+        """,
+        pyi_args=['--paths', os.pathsep.join(pathex)],
+    )
+
 
 @skipif(is_py2, reason="requires Python 3")
 def test_nspkg_pep420(pyi_builder):
