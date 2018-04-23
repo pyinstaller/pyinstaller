@@ -1072,7 +1072,9 @@ def create_manifest(filename, manifest, console, uac_admin=False, uac_uiaccess=F
     # only write a new manifest if it is different from the old
     need_new = not os.path.exists(filename)
     if not need_new:
-        with open(filename) as f:
+        # WARNING: Don't rely on the default encoding of "open" function.
+        # It can be not allowed one for XML. (2018-04-23, Python 3.6)
+        with open(filename, encoding="UTF-8") as f:
             old_xml = f.read()
         new_xml = manifest.toprettyxml().replace('\r','')
 
