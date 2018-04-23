@@ -63,20 +63,27 @@ char * GetWinErrorString(DWORD error_code) {
     if(error_code == 0) {
         error_code = GetLastError();
     }
-    FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, // dwFlags
-                   NULL,                       // lpSource
-                   error_code,                 // dwMessageID
-                   0,                          // dwLanguageID
-                   errorString,                // lpBuffer
-                   ERROR_STRING_MAX,           // nSize
-                   NULL                        // Arguments
-                   );
+    wchar_t local_buffer[ERROR_STRING_MAX / 3];
+    DWORD result;
+    char * result2;
+    result = FormatMessageW(
+        FORMAT_MESSAGE_FROM_SYSTEM, // dwFlags
+        NULL,                       // lpSource
+        error_code,                 // dwMessageID
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // dwLanguageID
+        local_buffer,               // lpBuffer
+        ERROR_STRING_MAX / 3,       // nSize
+        NULL                        // Arguments
+        );
 
-    if (NULL == errorString) {
+    if (!result) {
         return "FormatMessage failed.";
     }
+    result2 = pyi_win32_utils_to_utf8(errorString, local_buffer, ERROR_STRING_MAX);
+    if (!result2) {
+        return "pyi_win32_utils_to_utf8 failed.";
+    }
     return errorString;
-
 }
 
 int
