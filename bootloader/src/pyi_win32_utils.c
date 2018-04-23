@@ -60,19 +60,20 @@ static char errorString[ERROR_STRING_MAX];
  */
 
 char * GetWinErrorString(DWORD error_code) {
-    if(error_code == 0) {
-        error_code = GetLastError();
-    }
-    wchar_t local_buffer[ERROR_STRING_MAX / 3];
+    wchar_t local_buffer[ERROR_STRING_MAX];
     DWORD result;
     char * result2;
+    
+    if (error_code == 0) {
+        error_code = GetLastError();
+    }
     result = FormatMessageW(
         FORMAT_MESSAGE_FROM_SYSTEM, // dwFlags
         NULL,                       // lpSource
         error_code,                 // dwMessageID
         MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // dwLanguageID
         local_buffer,               // lpBuffer
-        ERROR_STRING_MAX / 3,       // nSize
+        ERROR_STRING_MAX,       // nSize
         NULL                        // Arguments
         );
 

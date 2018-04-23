@@ -310,7 +310,7 @@ void pyi_global_winerror(const char *funcname, const char *fmt, ...) {
     va_end(v);
     pyi_print_encoded_if_possible(utf8_formatted);
     
-    vsprintf(utf8_formatted, "%s: %s", funcname, GetWinErrorString(error_code));
+    sprintf(utf8_formatted, "%s: %s", funcname, GetWinErrorString(error_code));
     pyi_print_encoded_if_possible(utf8_formatted);
 }
 
