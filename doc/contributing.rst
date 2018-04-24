@@ -109,7 +109,9 @@ Sponsorship and  Project Grant
 Please consider sponsoring |PyInstaller| development, especially if your
 company benefits from this project.
 
-We welcome your patronage on Bountysource:
+We welcome your patronage on `Bountysource`__:
+
+  __ https://www.bountysource.com/teams/pyinstaller
 
 * Contribute a recurring amount to the team
 * Place a bounty on a specific feature
