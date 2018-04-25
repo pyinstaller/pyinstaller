@@ -492,7 +492,10 @@ def is_module_satisfies(requirements, version=None, version_attr='__version__'):
         version = get_module_attribute(module_name, version_attr)
 
     # Compare this version against the version parsed from these requirements.
-    return version in requirements_parsed
+    if version is '':
+        return False
+    else:
+        return version in requirements_parsed
 
 
 def is_package(module_name):
