@@ -46,7 +46,7 @@ pinyin==0.4.0
 pycryptodomex==3.6.1
 future==0.16.0
 pyusb==1.0.2
-requests==2.15.1 # Newest version of requests that allows tests to pass
+requests==2.18.4 # Newest version of requests that allows tests to pass
 Unidecode==1.0.22
 
 # Install wheels only on OS X and Win 32, no wheel for Py 3.6 yet.
