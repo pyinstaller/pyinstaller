@@ -19,7 +19,7 @@ pygments==2.2.0
 pylint==1.8.4
 markdown==2.6.11
 simplejson==3.14.0 # simplejson is used for text_c_extension
-sphinx==1.7.1
+sphinx==1.7.4
 pyzmq==17.0.0
 zope.interface==4.4.3  # Required for test_namespace_package
 numpy==1.14.2
