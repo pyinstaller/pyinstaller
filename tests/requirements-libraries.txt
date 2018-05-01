@@ -38,7 +38,7 @@ openpyxl==2.5.2
 pycparser==2.18
 pytz==2018.4
 sqlalchemy==1.2.7
-twisted==17.9.0
+twisted==18.4.0
 zeep==2.4.0
 pyexcelerate==0.7.2
 Pillow==5.0.0
