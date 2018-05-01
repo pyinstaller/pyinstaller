@@ -29,7 +29,7 @@ numpy==1.14.3
 scipy==1.0.1; sys_platform != 'win32'
 
 # For Windows use a version we know binaries are available
-lxml==4.1.1; sys_platform != 'win32'
+lxml==4.2.1; sys_platform != 'win32'
 lxml==3.7.2; sys_platform == 'win32' and python_version >= '3.5' # pyup: ignore
 lxml==3.6.0; sys_platform == 'win32' and python_version <= '3.4' # pyup: ignore
 
