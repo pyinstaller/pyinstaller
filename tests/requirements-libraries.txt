@@ -26,7 +26,7 @@ numpy==1.14.3
 
 # SciPy currently provides no binary wheel for Windows and hence must be
 # isolated to non-Windows platforms. See also: scipy/scipy#5461
-scipy==1.0.0; sys_platform != 'win32'
+scipy==1.0.1; sys_platform != 'win32'
 
 # For Windows use a version we know binaries are available
 lxml==4.1.1; sys_platform != 'win32'
