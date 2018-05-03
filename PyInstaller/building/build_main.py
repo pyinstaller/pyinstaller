@@ -7,6 +7,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+from __future__ import print_function
 
 """
 Build packages using spec files.
@@ -54,6 +55,29 @@ rthooks = {}
 
 # place where the loader modules and initialization scripts live
 _init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
+
+IMPORT_TYPES = ['top-level', 'conditional', 'delayed', 'delayed, conditional',
+                'optional', 'conditional, optional', 'delayed, optional',
+                'delayed, conditional, optional']
+
+WARNFILE_HEADER = """\
+
+This file lists modules PyInstaller was not able to find. This does not
+necessarily mean this module is required for running you program. Python and
+Python 3rd-party packages include a lot of conditional or optional module. For
+example the module 'ntpath' only exists on Windows, whereas the module
+'posixpath' only exists on Posix systems.
+
+Types if import:
+* top-level: imported at the top-level - look at these first
+* conditional: imported within an if-statement
+* delayed: imported from within a function
+* optional: imported within a try-except-statement
+
+IMPORTANT: Do NOT post this list to the issue-tracker. Use it as a basis for
+           yourself tracking down the missing module. Thanks!
+
+"""
 
 
 def _old_api_error(obj_name):
@@ -559,27 +583,26 @@ class Analysis(Target):
         Write warnings about missing modules. Get them from the graph
         and use the graph to figure out who tried to import them.
         """
-        # TODO: previously we could say whether an import was top-level,
-        # deferred (in a def'd function) or conditional (in an if stmt).
-        # That information is not available from ModuleGraph at this time.
-        # When that info is available change this code to write one line for
-        # each importer-name, with type of import for that importer
-        # "no module named foo conditional/deferred/toplevel importy by bar"
+        def dependency_description(name, depInfo):
+            if not depInfo or depInfo == 'direct':
+                imptype = 0
+            else:
+                imptype = (depInfo.conditional
+                           + 2 * depInfo.function
+                           + 4 * depInfo.tryexcept)
+            return '%s (%s)' % (name, IMPORT_TYPES[imptype])
+
         from ..config import CONF
         miss_toc = self.graph.make_missing_toc()
-        if len(miss_toc) : # there are some missing modules
-            wf = open(CONF['warnfile'], 'w')
-            for (n, p, status) in miss_toc :
-                importer_names = self.graph.importer_names(n)
-                wf.write( status
-                          + ' module named '
-                          + n
-                          + ' - imported by '
-                          + ', '.join(importer_names)
-                          + '\n'
-                          )
-            wf.close()
-            logger.info("Warnings written to %s", CONF['warnfile'])
+        with open(CONF['warnfile'], 'w') as wf:
+            wf.write(WARNFILE_HEADER)
+            for (n, p, status) in miss_toc:
+                importers = self.graph.get_importers(n)
+                print(status, 'module named', n, '- imported by',
+                      ', '.join(dependency_description(name, data)
+                                for name, data in importers),
+                      file=wf)
+        logger.info("Warnings written to %s", CONF['warnfile'])
 
     def _write_graph_debug(self):
         """Write a xref (in html) and with `--log-level DEBUG` a dot-drawing
@@ -670,7 +693,7 @@ def build(spec, distpath, workpath, clean_build):
     else:
         workpath = os.path.join(workpath, CONF['specnm'])
 
-    CONF['warnfile'] = os.path.join(workpath, 'warn%s.txt' % CONF['specnm'])
+    CONF['warnfile'] = os.path.join(workpath, 'warn-%s.txt' % CONF['specnm'])
     CONF['dot-file'] = os.path.join(workpath, 'graph-%s.dot' % CONF['specnm'])
     CONF['xref-file'] = os.path.join(workpath, 'xref-%s.html' % CONF['specnm'])
 

@@ -13,27 +13,25 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <widget class="QWebView" name="webView">
+  <widget class="QQuickWidget" name="quickWidget">
    <property name="geometry">
     <rect>
-     <x>10</x>
-     <y>30</y>
+     <x>60</x>
+     <y>40</y>
      <width>300</width>
      <height>200</height>
     </rect>
    </property>
-   <property name="url">
-    <url>
-     <string>about:blank</string>
-    </url>
+   <property name="resizeMode">
+    <enum>QQuickWidget::SizeRootObjectToView</enum>
    </property>
   </widget>
  </widget>
  <customwidgets>
   <customwidget>
-   <class>QWebView</class>
+   <class>QQuickWidget</class>
    <extends>QWidget</extends>
-   <header>QtWebKit/QWebView</header>
+   <header>QtQuickWidgets/QQuickWidget</header>
   </customwidget>
  </customwidgets>
  <resources/>

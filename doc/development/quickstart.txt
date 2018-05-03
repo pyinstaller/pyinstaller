@@ -15,19 +15,29 @@ Quick-start
 * Install required testing tools::
 
     pip install -r tests/requirements-tools.txt
-    
-* Commit often and in logical chunks. Try to make small patches, consistent
-  increments. :ref:`»» Detailed Commit Guideline <Guidelines for Commits>`
+
+* Commit as often as you’d like, but squash or otherwise
+  rewrite your commits into logical patches before asking
+  for code review. ``git rebase -i`` is your friend.
+  Read the :ref:`»» Detailed Commit Guideline <Guidelines for Commits>`
+  for more information.
+
+  Reformatting code without functional changes will generally not be accepted
+  (for rational see :issue:`2727`).
+
+* Write meaningful commit messages.
+
+  - The first line shall be a short sentence
+    that can stand alone as a short description of the change,
+    written in the present tense, and
+    prefixed with the :ref:`subsystem-name <commit message standard prefixes>`.
+
+  - The body of the commit message should explain or justify the change.
+    Read the :ref:`»» Detailed Commit Message Rules <commit messages>`
+    for more information.
 
 * Provide tests that cover your changes and try to run the tests locally
   first.
-
-* Reformatting code without functional changes will generally not be accepted
-  (for rational see :issue:`2727`).
-
-* Write meaningful commit messages in in the present tense, document what
-  you’re doing and why.
-  :ref:`»» Detailed Commit Message Rules <commit messages>`
 
 * Submit pull-requests against the ``develop`` branch.
 
@@ -35,47 +45,17 @@ Quick-start
   |PyInstaller/init.py|_
   (also mind updating to the current year).
 
-.. |PyInstaller/init.py| replace:: :file`:PyInstaller/__init__.py`
-.. _PyInstaller/init.py: https://github.com/pyinstaller/pyinstaller/blob/develop/PyInstaller/__init__.py
+  .. |PyInstaller/init.py| replace:: :file:`PyInstaller/__init__.py`
+  .. _PyInstaller/init.py: https://github.com/pyinstaller/pyinstaller/blob/develop/PyInstaller/__init__.py
 
+* In response to feedback, squash the new "fix up" commits
+  into the respective commit that is being fixed
+  with an interactive rebase (``git rebase -i``).
 
-.. _Guidelines for Commits:
+* :ref:`Push the new, rewritten branch <updating pull-request>`
+  with a ``git push --force``.
+  (Scary! But github doesn’t play nicely with a safer method.)
 
-Guidelines for Commits
-=============================
-
-* **Commit often and in logical chunks.**
-  A commit should be one (and just one) logical unit. It should be something
-  that someone might want to patch or revert in its entirety, and never
-  piecewise. If it could be useful in pieces, make separate commits.
-
-* **Write meaningful commit messages.**
-  Using atomic commits will result in short, clear, and concise commit messages.
-  Non-atomic commits make for awful run-on commit messages.
-
-* Try to make small patches (i.e. work in consistent increments).
-
-* Separate changes that affect functionality from those that just affect code
-  layout, indendation, whitespace, filenames etc. This means that when looking
-  at patches later, we don't have to wade through loads of non-functional
-  changes to get to the important parts of the patch.
-
-* Especially don't mix different types of change, and put a standard prefix
-  for each type of change to identify it in your commit message.
-
-* Restrict all whitespace changes to a specific type and document as such.
-
-* Restrict refactorings (that should not change functionality) to their own
-  commit (and document).
-
-* Restrict functionality changes (bug fix or new feature) to their own
-  changelists (and document).
-
-* If possible, commit often. This helps to avoid conflicts.
-
-* Only push when your tree passes validation: see TestingPatches.
-
-* Discuss anything you think might be controversial before pushing it.
 
 .. include:: ../_common_definitions.txt
 
