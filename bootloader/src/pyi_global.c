@@ -63,19 +63,18 @@ char *saved_locale;
 void
 show_message_box(
     const char *msg,
-    const wchar_t *caption,
-    const wchar_t *on_failed,
+    const char *caption,
     UINT uType)
 {
     wchar_t wmsg[MBTXTLEN];
-    wchar_t * result;
-    result = pyi_win32_utils_from_utf8(wmsg, msg, MBTXTLEN);
-    if (!result) {
-        MessageBoxW(NULL, on_failed, caption, MB_OK | uType);
+    wchar_t wcaption[MBTXTLEN] = L"";
+    if (!pyi_win32_utils_from_utf8(wmsg, msg, MBTXTLEN)) {
+        MessageBoxA(NULL, msg, caption, MB_OK | uType);
     }
     else {
-        MessageBoxW(NULL, wmsg, caption, MB_OK | uType);
-    }   
+        pyi_win32_utils_from_utf8(wcaption, caption, MBTXTLEN);
+        MessageBoxW(NULL, wmsg, wcaption, MB_OK | uType);
+    }
 }
 
 
@@ -89,12 +88,7 @@ mbfatalerror(const char *fmt, ...)
     vsnprintf(msg, MBTXTLEN, fmt, args);
     va_end(args);
 
-    show_message_box(
-        msg,
-        L"Fatal error detected",
-        L"pyi_win32_utils_from_utf8 failed during making fatal error message",
-        MB_ICONEXCLAMATION
-    );
+    show_message_box(msg, "Fatal error detected", MB_ICONEXCLAMATION);
 }
 
 void
@@ -107,12 +101,7 @@ mbothererror(const char *fmt, ...)
     vsnprintf(msg, MBTXTLEN, fmt, args);
     va_end(args);
 
-    show_message_box(
-        msg,
-        L"Error detected",
-        L"pyi_win32_utils_from_utf8 failed during making error message",
-        MB_ICONWARNING
-    );
+    show_message_box(msg, "Error detected", MB_ICONWARNING);
 }
 
     void mbfatal_winerror(const char * funcname, const char *fmt, ...)
@@ -142,12 +131,8 @@ mbothererror(const char *fmt, ...)
 
         msg[MBTXTLEN-1] = '\0';
 
-        show_message_box(
-            msg,
-            L"Fatal error detected",
-            L"pyi_win32_utils_from_utf8 failed during making fatal error message",
-            MB_ICONEXCLAMATION
-        );
+        show_message_box(msg, "Fatal error detected", MB_ICONEXCLAMATION);
+
     }
 
     void mbfatal_perror(const char * funcname, const char *fmt, ...)
@@ -176,12 +161,7 @@ mbothererror(const char *fmt, ...)
 
         msg[MBTXTLEN-1] = '\0';
 
-        show_message_box(
-            msg,
-            L"Fatal error detected",
-            L"pyi_win32_utils_from_utf8 failed during making fatal error message",
-            MB_ICONEXCLAMATION
-        );
+        show_message_box(msg, "Fatal error detected", MB_ICONEXCLAMATION);
     }
 #endif  /* _WIN32 and WINDOWED */
 
@@ -205,55 +185,50 @@ mbvs(const char *fmt, ...)
     /* msg[MBTXTLEN-1] = '\0'; */
     va_end(args);
 
-    show_message_box(
-        msg,
-        L"Tracing...",
-        L"pyi_win32_utils_from_utf8 failed during making fatal error message",
-        MB_ICONINFORMATION
-    );
+    show_message_box(msg, "Tracing...", MB_ICONINFORMATION);
 }
     #endif /* if defined(_WIN32) && defined(WINDOWED) */
 #endif /* ifdef LAUNCH_DEBUG */
 
-
 /* TODO improve following for windows. */
+#define VPRINTF_TO_STDERR_BUFSIZE (MBTXTLEN * 2)
+void vprintf_to_stderr(const char *fmt, ...) {
+    va_list v;
 #if defined(_WIN32)
-void pyi_print_encoded_if_possible(const char* utf8_msg)
-{
-    char mbcs_formatted[1024];
-    if (pyi_win32_utf8_to_mbs(mbcs_formatted, utf8_msg, 1024)) {
-		fprintf(stderr, mbcs_formatted);
-	}
-	else {
-		fprintf(stderr, utf8_msg);
-	}
-}
-#endif /* if defined(_WIN32) */
+    int count;
+    char utf8_buffer[VPRINTF_TO_STDERR_BUFSIZE];
+    char mbcs_buffer[VPRINTF_TO_STDERR_BUFSIZE];
 
+    va_start(v, fmt);
+    vsnprintf(utf8_buffer, VPRINTF_TO_STDERR_BUFSIZE, fmt, v);
+    va_end(v);
+    if (pyi_win32_utf8_to_mbs(mbcs_buffer,
+                              utf8_buffer,
+                              VPRINTF_TO_STDERR_BUFSIZE)) {
+        fprintf(stderr, mbcs_buffer);
+    }
+    else {
+        fprintf(stderr, utf8_buffer);
+    }
+#else
+    va_start(v, fmt);
+    vfprintf(stderr, fmt, v);
+    va_end(v);
+#endif /* if defined(_WIN32) */
+}
 
 /*
  * Wrap printing debug messages to console.
  */
 void
-pyi_global_printf(const char *fmt, ...)
-{
+pyi_global_printf(const char *fmt, ...) {
     va_list v;
 
     /* Sent 'LOADER text' messages to stderr. */
-#if defined(_WIN32)
-	char utf8_formatted[1024];
-
     fprintf(stderr, "[%d] ", getpid());
     va_start(v, fmt);
-	vsprintf(utf8_formatted, fmt, v);
+    vprintf_to_stderr(fmt, v);
     va_end(v);
-	pyi_print_encoded_if_possible(utf8_formatted);
-#else
-    fprintf(stderr, "[%d] ", getpid());
-    va_start(v, fmt);
-    vfprintf(stderr, fmt, v);
-    va_end(v);
-#endif
     /* For Gui apps on Mac OS X send debug messages also to syslog. */
     /* This allows to see bootloader debug messages in the Console.app log viewer. */
     /* https://en.wikipedia.org/wiki/Console_(OS_X) */
@@ -271,19 +246,13 @@ pyi_global_printf(const char *fmt, ...)
  */
 void pyi_global_perror(const char *funcname, const char *fmt, ...) {
     va_list v;
-#ifdef _WIN32
-	char utf8_formatted[1024];
+
     va_start(v, fmt);
-	vsprintf(utf8_formatted, fmt, v);
-    va_end(v);
-	pyi_print_encoded_if_possible(utf8_formatted);
-	perror(funcname);  // perror() writes to stderr
-#else
-    va_start(v, fmt);
+    vprintf_to_stderr(fmt, v);
     vfprintf(stderr, fmt, v);
     va_end(v);
+
     perror(funcname);  // perror() writes to stderr
-#endif
     #if defined(__APPLE__) && defined(WINDOWED) && defined(LAUNCH_DEBUG)
         va_start(v, fmt);
             vsyslog(LOG_NOTICE, fmt, v);
@@ -292,26 +261,19 @@ void pyi_global_perror(const char *funcname, const char *fmt, ...) {
     #endif
 }
 
-#ifdef _WIN32
-
 /*
  * Windows errors.
  *
  * Print a debug message followed by the name of the function that resulted in an error
  * and a textual description of the error, as returned by FormatMessage.
  */
+#ifdef _WIN32
 void pyi_global_winerror(const char *funcname, const char *fmt, ...) {
-    DWORD error_code = GetLastError();
     va_list v;
-    char utf8_formatted[1024];
 
     va_start(v, fmt);
-    vsprintf(utf8_formatted, fmt, v);
-    va_end(v);
-    pyi_print_encoded_if_possible(utf8_formatted);
-    
-    sprintf(utf8_formatted, "%s: %s", funcname, GetWinErrorString(error_code));
-    pyi_print_encoded_if_possible(utf8_formatted);
+    vprintf_to_stderr(fmt, v);
+    va_end(v);    
+    vprintf_to_stderr("%s: %s", funcname, GetWinErrorString(GetLastError()));
 }
-
 #endif
