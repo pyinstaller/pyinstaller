@@ -195,7 +195,6 @@ mbvs(const char *fmt, ...)
 void vprintf_to_stderr(const char *fmt, ...) {
     va_list v;
 #if defined(_WIN32)
-    int count;
     char utf8_buffer[VPRINTF_TO_STDERR_BUFSIZE];
     char mbcs_buffer[VPRINTF_TO_STDERR_BUFSIZE];
 
@@ -249,7 +248,6 @@ void pyi_global_perror(const char *funcname, const char *fmt, ...) {
 
     va_start(v, fmt);
     vprintf_to_stderr(fmt, v);
-    vfprintf(stderr, fmt, v);
     va_end(v);
 
     perror(funcname);  // perror() writes to stderr
@@ -273,7 +271,7 @@ void pyi_global_winerror(const char *funcname, const char *fmt, ...) {
 
     va_start(v, fmt);
     vprintf_to_stderr(fmt, v);
-    va_end(v);    
+    va_end(v);
     vprintf_to_stderr("%s: %s", funcname, GetWinErrorString(GetLastError()));
 }
 #endif
