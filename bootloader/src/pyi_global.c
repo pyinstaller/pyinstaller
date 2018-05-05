@@ -201,14 +201,21 @@ void vprintf_to_stderr(const char *fmt, va_list v) {
     if (pyi_win32_utf8_to_mbs(mbcs_buffer,
                               utf8_buffer,
                               VPRINTF_TO_STDERR_BUFSIZE)) {
-        fprintf(stderr, mbcs_buffer);
+        fprintf(stderr, "%s", mbcs_buffer);
     }
     else {
-        fprintf(stderr, utf8_buffer);
+        fprintf(stderr, "%s", utf8_buffer);
     }
 #else
     vfprintf(stderr, fmt, v);
 #endif /* if defined(_WIN32) */
+}
+
+void printf_to_stderr(const char* fmt, ...) {
+    va_list v;
+    va_start(v, fmt);
+    vprintf_to_stderr(fmt, v);
+    va_end(v);
 }
 
 /*
@@ -267,6 +274,6 @@ void pyi_global_winerror(const char *funcname, const char *fmt, ...) {
     va_start(v, fmt);
     vprintf_to_stderr(fmt, v);
     va_end(v);
-    vprintf_to_stderr("%s: %s", funcname, GetWinErrorString(GetLastError()));
+    printf_to_stderr("%s: %s", funcname, GetWinErrorString(GetLastError()));
 }
 #endif
