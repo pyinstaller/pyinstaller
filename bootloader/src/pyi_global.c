@@ -192,15 +192,12 @@ mbvs(const char *fmt, ...)
 
 /* TODO improve following for windows. */
 #define VPRINTF_TO_STDERR_BUFSIZE (MBTXTLEN * 2)
-void vprintf_to_stderr(const char *fmt, ...) {
-    va_list v;
+void vprintf_to_stderr(const char *fmt, va_list v) {
 #if defined(_WIN32)
     char utf8_buffer[VPRINTF_TO_STDERR_BUFSIZE];
     char mbcs_buffer[VPRINTF_TO_STDERR_BUFSIZE];
 
-    va_start(v, fmt);
     vsnprintf(utf8_buffer, VPRINTF_TO_STDERR_BUFSIZE, fmt, v);
-    va_end(v);
     if (pyi_win32_utf8_to_mbs(mbcs_buffer,
                               utf8_buffer,
                               VPRINTF_TO_STDERR_BUFSIZE)) {
@@ -210,9 +207,7 @@ void vprintf_to_stderr(const char *fmt, ...) {
         fprintf(stderr, utf8_buffer);
     }
 #else
-    va_start(v, fmt);
     vfprintf(stderr, fmt, v);
-    va_end(v);
 #endif /* if defined(_WIN32) */
 }
 
