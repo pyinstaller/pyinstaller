@@ -190,7 +190,6 @@ mbvs(const char *fmt, ...)
     #endif /* if defined(_WIN32) && defined(WINDOWED) */
 #endif /* ifdef LAUNCH_DEBUG */
 
-/* TODO improve following for windows. */
 #define VPRINTF_TO_STDERR_BUFSIZE (MBTXTLEN * 2)
 void vprintf_to_stderr(const char *fmt, va_list v) {
 #if defined(_WIN32)
