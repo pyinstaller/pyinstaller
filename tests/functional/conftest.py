@@ -59,6 +59,7 @@ from PyInstaller.utils.win32 import winutils
 if is_py2:
     import subprocess32
     psutil.subprocess = subprocess32
+    subprocess.TimeoutExpired = psutil.TimeoutExpired
 
 # Globals
 # =======
