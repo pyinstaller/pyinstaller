@@ -6,6 +6,20 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-from PyInstaller.utils.hooks import add_qt5_dependencies
+import os.path
+
+from PyInstaller.utils.hooks import pyqt5_library_info, add_qt5_dependencies
+from PyInstaller.compat import is_win
 
 hiddenimports, binaries, datas = add_qt5_dependencies(__file__)
+
+if is_win:
+    rel_data_path = ['PyQt5', 'Qt', 'bin']
+    binaries += [
+        (os.path.join(
+            pyqt5_library_info.location['BinariesPath'], 'libeay32.dll'),
+        os.path.join(*rel_data_path)),
+        (os.path.join(
+            pyqt5_library_info.location['BinariesPath'], 'ssleay32.dll'),
+         os.path.join(*rel_data_path))
+    ]
