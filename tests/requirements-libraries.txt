@@ -1,13 +1,4 @@
 # Libraries used for testing.
-#
-# Libraries listed below are unconditionally installed by
-# integration (CI) services, regardless of platform.
-
-
-# Url for downloading PyCrypto prebuilt Windows binaries:
-# http://www.voidspace.org.uk/python/pycrypto-2.6.1/
-# Required for crypto feature - encrypting bytecode.
-pycrypto==2.6.1; python_version <= '3.5' or sys_platform != 'win32'
 
 Django==1.8.18 # PyInstaller doesn't yet work with Django 1.9+
 babel==2.5.3
@@ -23,16 +14,8 @@ sphinx==1.7.1
 pyzmq==17.0.0
 zope.interface==4.4.3  # Required for test_namespace_package
 numpy==1.14.2
-
-# SciPy currently provides no binary wheel for Windows and hence must be
-# isolated to non-Windows platforms. See also: scipy/scipy#5461
-scipy==1.0.0; sys_platform != 'win32'
-
-# For Windows use a version we know binaries are available
-lxml==4.1.1; sys_platform != 'win32'
-lxml==3.7.2; sys_platform == 'win32' and python_version >= '3.5' # pyup: ignore
-lxml==3.6.0; sys_platform == 'win32' and python_version <= '3.4' # pyup: ignore
-
+scipy==1.0.0
+lxml==4.1.1
 keyring==11.0.0
 openpyxl==2.5.1
 pycparser==2.18
@@ -48,15 +31,25 @@ future==0.16.0
 pyusb==1.0.2
 requests==2.15.1 # Newest version of requests that allows tests to pass
 Unidecode==1.0.22
+h5py==2.7.1
+web3==3.16.5
+matplotlib==2.2.0
 
-# Install wheels only on OS X and Win 32, no wheel for Py 3.6 yet.
-pyenchant==2.0.0; (sys_platform == 'darwin' or sys_platform == 'win32') and python_version <= '3.5'
+# Url for downloading PyCrypto prebuilt Windows binaries:
+# http://www.voidspace.org.uk/python/pycrypto-2.6.1/
+# Required for crypto feature - encrypting bytecode.
+pycrypto==2.6.1; python_version <= '3.5' or sys_platform != 'win32'
+
+# Wheels are available only on OS X and Win 32. The only Windows 64-bit Python
+# tests run are for Python 3.6, so exclude that. There's no way to simply
+# exclude Windows 64 bit Python.
+pyenchant==2.0.0; sys_platform == 'darwin' or (sys_platform == 'win32' and python_version <= '3.5')
 
 # While PyQt5 itself is provided as wheels for Python 3.4, it requires
 # SIP>=4.19 which is not available for Python 3.4.
 pyqt5==5.9; python_version >= '3.5'
 
-# No wheel for python 3.5:
+# No wheel for python 3.5.
 PySide==1.2.4; sys_platform == 'win32' and python_version <= '3.4'
 
 # interactive test
@@ -68,9 +61,11 @@ python-dateutil==2.7.0
 
 pandas==0.22.0
 
-matplotlib==2.2.0
+# uvloop requires python 3.5 or higher and does not currently support Windows.
+uvloop==0.9.1; python_version >= '3.5' and sys_platform != 'win32'
 
-#### Windows specific packages
+
+#### Windows-specific packages
 
 # pip-installable version of PyWin32.
 pypiwin32==223; python_version >= '3.6' and sys_platform == 'win32'
@@ -79,10 +74,3 @@ pypiwin32==219; python_version <= '3.5' and sys_platform == 'win32' # pyup: igno
 # For parsing PE headers and get list of dependent DLLs.
 # ::TODO:: #1920 revert to using pypi version
 #pefile; sys_platform == 'win32'
-
-h5py==2.7.1
-
-# uvloop requires python 3.5 or higher and does not currently support Windows.
-uvloop==0.9.1; python_version >= '3.5' and sys_platform != 'win32'
-
-web3==3.16.5
