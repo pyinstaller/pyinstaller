@@ -22,10 +22,6 @@ from ... import log as logging
 
 logger = logging.getLogger(__name__)
 
-
-# All these extension represent Python modules or extension modules
-PY_EXECUTABLE_SUFFIXES = set(['.py', '.pyc', '.pyd', '.pyo', '.so'])
-
 # These extensions represent Python executables and should therefore be
 # ignored when collecting data files.
 # NOTE: .dylib files are not Python executable and should not be in this list.
