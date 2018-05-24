@@ -13,7 +13,6 @@ import pkg_resources
 import pkgutil
 import sys
 import textwrap
-import re
 
 from ...compat import base_prefix, exec_command_stdout, exec_python, \
     is_darwin, is_py2, is_py3, is_venv, string_types, open_file, \
