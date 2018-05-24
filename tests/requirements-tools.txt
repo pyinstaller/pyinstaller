@@ -1,7 +1,6 @@
 # Work-around for a bug in execnet 1.4.1
 execnet >= 1.5.0
 
-# For running tests
 # Testing framework.
 pytest >= 2.7.3
 
@@ -9,7 +8,7 @@ pytest-xdist     # Plugin allowing running tests in parallel.
 pytest-timeout   # Plugin to abort hanging tests.
 pytest-drop-dup-tests # allows specifying order without duplicates
 
-psutil <= 5.4.1 # Better subprocess alternative with implemented timeout.
+psutil  # Better subprocess alternative with implemented timeout.
 
 flake8-diff  # Check new flake8 violations on pull requests
 
