@@ -244,7 +244,8 @@ def test_PyQt5_uic(tmpdir, pyi_builder, data_dir):
     pyi_builder.test_script('pyi_lib_PyQt5-uic.py')
 
 
-@xfail(is_darwin, reason='Please help debug this. See issue #3233.')
+#@xfail(is_darwin, reason='Please help debug this. See issue #3233.')
+#@skipif_notosx
 @importorskip('PyQt5')
 def test_PyQt5_QWebEngine(pyi_builder):
     pyi_builder.test_source(
@@ -252,13 +253,19 @@ def test_PyQt5_QWebEngine(pyi_builder):
         from PyQt5.QtWidgets import QApplication
         from PyQt5.QtWebEngineWidgets import QWebEngineView
         from PyQt5.QtCore import QUrl
+        from threading import Timer
         app = QApplication( [] )
         view = QWebEngineView()
         view.load( QUrl( "http://www.pyinstaller.org" ) )
         view.show()
-        view.page().loadFinished.connect(lambda ok: app.quit())
+        # Delay before quitting to give the page a chance to render.
+        # If app.quit() is called on loadFinished the page isn't visible.
+        def delayedQuit():
+            r = Timer(2.0, app.quit)
+            r.start()
+        view.page().loadFinished.connect(delayedQuit)
         app.exec_()
-        """)
+        """, pyi_args=['--windowed', '--osx-bundle-identifier', 'org.qt-project.Qt.QtWebEngineCore'])
 
 
 @importorskip('PyQt5')
