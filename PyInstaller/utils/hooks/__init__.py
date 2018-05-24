@@ -16,7 +16,7 @@ import textwrap
 
 from ...compat import base_prefix, exec_command_stdout, exec_python, \
     is_darwin, is_py2, is_py3, is_venv, string_types, open_file, \
-    EXTENSION_SUFFIXES
+    EXTENSION_SUFFIXES, ALL_SUFFIXES
 from ... import HOMEPATH
 from ... import log as logging
 
@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 # These extensions represent Python executables and should therefore be
 # ignored when collecting data files.
 # NOTE: .dylib files are not Python executable and should not be in this list.
-PY_IGNORE_EXTENSIONS = set(['.py', '.pyc', '.pyd', '.pyo', '.so'])
+PY_IGNORE_EXTENSIONS = set(ALL_SUFFIXES)
 
 # Some hooks need to save some values. This is the dict that can be used for
 # that.
@@ -642,11 +642,10 @@ PY_DYLIB_PATTERNS = [
     '*.dll',
     '*.dylib',
     # Some packages contain dynamic libraries that ends with the same
-    # suffix as Python C extensions. E.g. zmq:  libzmq.pyd, libsodium.pyd.
-    # Those files usually starts with 'lib' prefix.
-    'lib*.pyd',
+    # suffix as Python C extensions. E.g. zmq:  libzmq.so, libsodium.so.
+    # Those files usually starts with a ``lib`` prefix.
     'lib*.so',
-]
+] + ['*' + x for x in EXTENSION_SUFFIXES]
 
 
 def collect_dynamic_libs(package, destdir=None):
