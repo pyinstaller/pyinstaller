@@ -281,11 +281,14 @@ class AppBuilder(object):
 
         If the test-case is called e.g. 'test_multipackage1', this is
         searching for each of 'test_multipackage1.exe' and
-        'multipackage1_?.exe' in both one-file- and one-dir-mode.
+        'test_multipackage1_?.exe' in both one-file- and one-dir-mode.
+
+        If a Mac OS X app bundle is found, the onefile executable is not
+        returned.
 
         :param name: Name of the executable to look for.
 
-        :return: List of executables
+        :return: List of executables.
         """
         exes = []
         onedir_pt = os.path.join(self._distdir, name, name)
@@ -298,16 +301,17 @@ class AppBuilder(object):
         # For Windows append .exe extension to patterns.
         if is_win:
             patterns = [pt + '.exe' for pt in patterns]
-        # For Mac OS X append pattern for .app bundles.
-        if is_darwin:
-            # e.g:  ./dist/name.app/Contents/MacOS/name
-            pt = os.path.join(self._distdir, name + '.app', 'Contents', 'MacOS', name)
-            patterns.append(pt)
         # Apply file patterns.
         for pattern in patterns:
             for prog in glob.glob(pattern):
                 if os.path.isfile(prog):
                     exes.append(prog)
+        # Replace any executable with a Mac OS X .app bundle if it exists.
+        if is_darwin:
+            # e.g:  ./dist/name.app/Contents/MacOS/name
+            pt = os.path.join(self._distdir, name + '.app', 'Contents', 'MacOS', name)
+            if os.path.isfile(pt):
+                exes = [pt]
         return exes
 
     def _run_executable(self, prog, args, run_from_path, runtime):
