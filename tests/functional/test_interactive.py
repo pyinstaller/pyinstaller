@@ -14,13 +14,16 @@ the executable for some time. Otherwise it is marked as fail.
 
 Note: All tests in this file should use the argument 'runtime'.
 """
+import pytest
 
 from PyInstaller.utils.tests import importorskip, xfail
+from PyInstaller.compat import is_win
 
 _RUNTIME = 10  # In seconds.
 
 
 @importorskip('IPython')
+@pytest.mark.skipif(is_win, reason='See issue #3535.')
 def test_ipython(pyi_builder):
     pyi_builder.test_source(
         """
@@ -34,4 +37,3 @@ def test_ipython(pyi_builder):
 def test_pyside(pyi_builder):
     pyi_builder.test_script('pyi_interact_pyside.py', #pyi_args=['--windowed'],
                             runtime=_RUNTIME)
-
