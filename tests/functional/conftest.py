@@ -255,12 +255,11 @@ class AppBuilder(object):
         them have to be run.
 
         :param args: CLI options to pass to the created executable.
-        :param runtime: Time in miliseconds how long to keep the executable running.
+        :param runtime: Time in seconds how long to keep the executable running.
 
         :return: Exit code of the executable.
         """
         __tracebackhide__ = True
-        # TODO implement runtime - kill the app (Ctrl+C) when time times out
         exes = self._find_executables(name)
         # Empty list means that PyInstaller probably failed to create any executable.
         assert exes != [], 'No executable file was found.'
