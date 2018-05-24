@@ -743,10 +743,11 @@ def test_pil_plugins(pyi_builder):
 
 @importorskip('pandas')
 def test_pandas_extension(pyi_builder):
-    # Tests that C extension 'pandas.lib' is properly bundled. Issue #1580.
+    # Tests that the C extension ``pandas._libs.lib`` is properly bundled. Issue #1580.
+    # See http://pandas.pydata.org/pandas-docs/stable/whatsnew.html#modules-privacy-has-changed.
     pyi_builder.test_source(
         """
-        from pandas.lib import is_float
+        from pandas._libs.lib import is_float
         assert is_float(1) == 0
         """)
 

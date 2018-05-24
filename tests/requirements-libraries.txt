@@ -59,7 +59,8 @@ ipython==5.4.1; python_version == '2.7' # pyup: ignore
 # dateutil.tz is a package in 2.5.0 and does not play nice with PyInstaller.
 python-dateutil==2.7.0
 
-pandas==0.22.0
+# Pandas doesn't support Python 3.4; see https://github.com/pandas-dev/pandas/issues/20697.
+pandas==0.23.0; python_version != '3.4'
 
 # uvloop requires python 3.5 or higher and does not currently support Windows.
 uvloop==0.9.1; python_version >= '3.5' and sys_platform != 'win32'

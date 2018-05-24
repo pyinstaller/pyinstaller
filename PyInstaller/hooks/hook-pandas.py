@@ -7,11 +7,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+from PyInstaller.utils.hooks import collect_submodules
 
-"""
-Fixes issue #2978 with pandas version 0.21
-(Pandas missing `pandas._libs.tslibs.timedeltas.so`)
-"""
-
-
-hiddenimports = ['pandas._libs.tslibs.timedeltas']
+# Pandas keeps Python extensions loaded with dynamic imports here.
+hiddenimports = collect_submodules('pandas._libs')
