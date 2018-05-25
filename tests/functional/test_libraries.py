@@ -123,7 +123,6 @@ def test_tkinter_FixTk(pyi_builder):
         import tkinter
     """)
 
-@xfail(is_win and is_py27, reason='Issue #2147')
 @importorskip('zmq')
 def test_zmq(pyi_builder):
     pyi_builder.test_source(

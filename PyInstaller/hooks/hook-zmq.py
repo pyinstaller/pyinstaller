@@ -12,18 +12,23 @@
 Hook for PyZMQ. Cython based Python bindings for messaging library ZeroMQ.
 http://www.zeromq.org/
 """
-from PyInstaller.utils.hooks import collect_dynamic_libs, collect_submodules
+from PyInstaller.utils.hooks import collect_submodules, get_module_file_attribute
+from PyInstaller.compat import is_py2, is_win
 
-hiddenimports = ['zmq.utils.garbage']
-hiddenimports.extend(collect_submodules('zmq.backend'))
+hiddenimports = ['zmq.utils.garbage'] + collect_submodules('zmq.backend')
 
 # If PyZMQ provides its own copy of libzmq and libsodium, add it to the
 # extension-modules TOC so zmq/__init__.py can load it at runtime.
 # PyZMQ is able to load 'libzmq' and 'libsodium' even from sys._MEIPASS.
 # So they could be with other .dlls.
-binaries = collect_dynamic_libs('zmq')
-
-# If PyZMQ pvorides its own copy of libzmq and libsodium, these libs look like
-# C extensions. Excluding these modules ensures that those dlls are not bundled
-# twice. Once as ./zmq.libzmq.pyd and once as ./zmq/libzmq.py.
-excludedimports = ['zmq.libzmq']
+try:
+    binaries = [(get_module_file_attribute('zmq.libzmq'),
+                 '.' if is_py2 and is_win else 'zmq')]
+except ImportError:
+    # Not all platforms provide their own copy of libzmq.
+    pass
+else:
+    # If PyZMQ pvorides its own copy of libzmq and libsodium, these libs look like
+    # C extensions. Excluding these modules ensures that those dlls are not bundled
+    # twice. Once as ./zmq.libzmq.pyd and once as ./zmq/libzmq.py.
+    excludedimports = ['zmq.libzmq']
