@@ -641,19 +641,16 @@ def is_module_or_submodule(name, mod_or_submod):
 PY_DYLIB_PATTERNS = [
     '*.dll',
     '*.dylib',
-    # Some packages contain dynamic libraries that ends with the same
-    # suffix as Python C extensions. E.g. zmq:  libzmq.so, libsodium.so.
-    # Those files usually starts with a ``lib`` prefix.
     'lib*.so',
-] + ['*' + x for x in EXTENSION_SUFFIXES]
+]
 
 
 def collect_dynamic_libs(package, destdir=None):
     """
     This routine produces a list of (source, dest) of dynamic library
     files which reside in package. Its results can be directly assigned to
-    ``binaries`` in a hook script; see, for example, hook-zmq.py. The
-    package parameter must be a string which names the package.
+    ``binaries`` in a hook script. The package parameter must be a string which
+    names the package.
 
     :param destdir: Relative path to ./dist/APPNAME where the libraries
                     should be put.
