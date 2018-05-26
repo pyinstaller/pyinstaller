@@ -13,6 +13,8 @@ ADD PyInstaller /src/PyInstaller
 ADD bootloader /src/bootloader
 ADD doc /src/doc
 
+RUN rm -rf /src/PyInstaller/bootloader/*
+
 WORKDIR /src/bootloader
 RUN python waf distclean all
 
