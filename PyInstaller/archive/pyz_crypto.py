@@ -61,4 +61,4 @@ class PyiBlockCipher(object):
         # The 'BlockAlgo' class is stateful, this factory method is used to
         # re-initialize the block cipher class with each call to encrypt() and
         # decrypt().
-        return self._aesmod.new(self.key, self._aesmod.MODE_CFB, iv)
+        return self._aesmod.new(self.key.encode(), self._aesmod.MODE_CFB, iv)
