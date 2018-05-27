@@ -381,7 +381,7 @@ also work in retina screen::
     app = BUNDLE(exe,
              name='myscript.app',
              icon=None,
-             bundle_identifier=None
+             bundle_identifier=None,
              info_plist={
              	'NSHighResolutionCapable': 'True'
              	},
