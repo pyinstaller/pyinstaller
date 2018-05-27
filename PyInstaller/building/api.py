@@ -678,7 +678,8 @@ class COLLECT(Target):
             if not os.path.exists(fnm) or not os.path.isfile(fnm) and is_path_to_egg(fnm):
                 # file is contained within python egg, it is added with the egg
                 continue
-            if os.pardir in os.path.normpath(inm).split(os.sep) or os.path.isabs(inm):
+            if os.pardir in os.path.normpath(inm).split(os.sep) \
+               or os.path.isabs(inm):
                 raise SystemExit('Security-Alert: try to store file outside '
                                  'of dist-directory. Aborting. %r' % inm)
             tofnm = os.path.join(self.name, inm)
