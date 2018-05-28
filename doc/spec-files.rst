@@ -383,36 +383,47 @@ also work in retina screen::
              icon=None,
              bundle_identifier=None
              info_plist={
-             	'NSHighResolutionCapable': 'True'
+             	'NSHighResolutionCapable': True
              	},
              )
 
-The ``info_plist=`` parameter only handles simple key:value pairs.
-It cannot handle nested XML arrays.
-For example, if you want to modify :file:`Info.plist` to tell Mac OS X
-what filetypes your app supports, you must add a 
+|PyInstaller| creates :file:`Info.plist` from the info_plist dict
+using the Python Standard Library module plistlib_.
+plistlib can handle nested python objects (which are translated to nested
+XML.)  The following python data types are translated to the proper
+:file:`Info.plist` types: strings, integers, floats, booleans, tuples, lists,
+dictionaries (but only with string keys), Data, bytes, bytesarray, and
+datetime.datetime objects.
+
+An example of a useful nested :file:`Info.plist` object is the
+``CFBundleDocumentTypes`` entry.  To modify :file:`Info.plist` to tell Mac OS X
+what filetypes your app supports, you would add a 
 ``CFBundleDocumentTypes`` entry to :file:`Info.plist`
 (see `Apple document types`_).
 The value of that keyword is a list of dicts,
-each containing up to five key:value pairs.
+each containing up to five key:value pairs.  This is represented in the
+info_plist argument by assigning to the key ``CFBundleDocumentTypes`` a value
+that is a python list containing python dicts.  A simple example with
+one file type::
 
-To add such a value to your app's :file:`Info.plist` you must edit the
-plist file separately after |PyInstaller| has created the app.
-However, when you re-run |PyInstaller|, your changes will be wiped out.
-One solution is to prepare a complete :file:`Info.plist` file and
-copy it into the app after creating it.
-
-Begin by building and testing the windowed app.
-When it works, copy the ``Info.plist`` prepared by |PyInstaller|.
-This includes the ``CFBundleExecutable`` value as well as the
-icon path and bundle identifier if you supplied them.
-Edit the ``Info.plist`` as necessary to add more items
-and save it separately.
-
-From that point on, to rebuild the app call |PyInstaller| in a shell script,
-and follow it with a statement such as::
-
-    cp -f Info.plist dist/myscript.app/Contents/Info.plist
+    app = BUNDLE(exe,
+             name='myscript.app',
+             icon=None,
+             bundle_identifier=None
+             info_plist={
+             	'NSHighResolutionCapable': True
+                'CFBundleDocumentTypes': [
+                    {
+                        'CFBundleTypeName': 'My File Format'
+                        'CFBundleTypeIconFile': 'MyFileIcon.icns'
+                        'LSItemContentTypes': [
+                            'com.example.myformat'
+                            ]
+                        'LSHandlerRank': 'Owner'
+                        }
+                    ]
+             	},
+             )
 
 Multipackage Bundles
 ~~~~~~~~~~~~~~~~~~~~~
