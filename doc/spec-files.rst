@@ -370,60 +370,44 @@ of ``Info.plist``.)
 
 |PyInstaller| creates a minimal :file:`Info.plist`.
 You can add or overwrite entries in the plist by passing an
-``info_plist=`` parameter to the BUNDLE call.
-The value of this argument is a Python dict.
-Each key and value in the dict becomes a key and value in the
-:file:`Info.plist` file.
-For example, when you use PyQt5,
-you can set ``NSHighResolutionCapable`` to ``True`` to let your app
-also work in retina screen::
-
-    app = BUNDLE(exe,
-             name='myscript.app',
-             icon=None,
-             bundle_identifier=None
-             info_plist={
-             	'NSHighResolutionCapable': True
-             	},
-             )
-
+``info_plist=`` parameter to the BUNDLE call.  Its argument should be a
+Python dict with keys and values to be included in the :file:`Info.plist`
+file.
 |PyInstaller| creates :file:`Info.plist` from the info_plist dict
 using the Python Standard Library module plistlib_.
 plistlib can handle nested python objects (which are translated to nested
-XML.)  The following python data types are translated to the proper
-:file:`Info.plist` types: strings, integers, floats, booleans, tuples, lists,
-dictionaries (but only with string keys), Data, bytes, bytesarray, and
-datetime.datetime objects.
-
-An example of a useful nested :file:`Info.plist` object is the
-``CFBundleDocumentTypes`` entry.  To modify :file:`Info.plist` to tell Mac OS X
-what filetypes your app supports, you would add a 
-``CFBundleDocumentTypes`` entry to :file:`Info.plist`
-(see `Apple document types`_).
-The value of that keyword is a list of dicts,
-each containing up to five key:value pairs.  This is represented in the
-info_plist argument by assigning to the key ``CFBundleDocumentTypes`` a value
-that is a python list containing python dicts.  A simple example with
-one file type::
+XML.)  Python data types are translated to the proper :file:`Info.plist`
+XML types.  Here's an example::
 
     app = BUNDLE(exe,
              name='myscript.app',
              icon=None,
-             bundle_identifier=None
+             bundle_identifier=None,
              info_plist={
-             	'NSHighResolutionCapable': True
+             	'NSHighResolutionCapable': True,
                 'CFBundleDocumentTypes': [
                     {
-                        'CFBundleTypeName': 'My File Format'
-                        'CFBundleTypeIconFile': 'MyFileIcon.icns'
-                        'LSItemContentTypes': [
-                            'com.example.myformat'
-                            ]
+                        'CFBundleTypeName': 'My File Format',
+                        'CFBundleTypeIconFile': 'MyFileIcon.icns',
+                        'LSItemContentTypes': ['com.example.myformat'],
                         'LSHandlerRank': 'Owner'
                         }
                     ]
              	},
              )
+
+For example, when you use PyQt5,
+you can set ``NSHighResolutionCapable`` to ``True`` to let your app
+also work in retina screen.
+
+Also in the above example is the key ``CFBundleDocumentTypes``.
+This entry in :file:`Info.plist` tells Mac OS X
+what filetypes your app supports.  (see `Apple document types`_).
+The value of that key in :file:`Info.plist` is a list of dicts,
+each containing up to five key:value pairs.  This is represented in the
+info_plist argument by assigning to the key ``CFBundleDocumentTypes`` a value
+that is a python list containing python dicts.
+
 
 Multipackage Bundles
 ~~~~~~~~~~~~~~~~~~~~~
