@@ -1,0 +1,3 @@
+tests/scripts/test-docker.sh
+*.pyc
+!tests/unit/test_modulegraph/testdata/syspath/mymodule2.pyc
