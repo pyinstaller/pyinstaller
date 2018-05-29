@@ -1,3 +1,13 @@
+# Debian-based container for running PyInstaller builds/tests
+#
+# This serves primarily to make it easier for e.g. macOS-based
+# developers to run the tests in a Linux environment *before*
+# opening a pull request. See test-docker.sh for usage.
+#
+# Note: this functionality is contributed and not maintained
+# by the PyInstaller maintainers. If you find it useful,
+# please consider contributing to its maintenance and improvement.
+
 FROM python:2.7
 
 RUN mkdir -p /src
