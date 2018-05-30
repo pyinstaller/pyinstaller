@@ -403,10 +403,6 @@ also work in retina screen.
 Also in the above example is the key ``CFBundleDocumentTypes``.
 This entry in :file:`Info.plist` tells Mac OS X
 what filetypes your app supports (see `Apple document types`_).
-The value of that key in :file:`Info.plist` is a list of dicts,
-each containing up to five key:value pairs.  This is represented in the
-info_plist argument by assigning to the key ``CFBundleDocumentTypes`` a value
-that is a python list containing python dicts.
 
 Multipackage Bundles
 ~~~~~~~~~~~~~~~~~~~~~
