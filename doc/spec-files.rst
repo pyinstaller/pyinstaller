@@ -376,7 +376,7 @@ file.
 |PyInstaller| creates :file:`Info.plist` from the info_plist dict
 using the Python Standard Library module plistlib_.
 plistlib can handle nested Python objects (which are translated to nested
-XML,) and translates Python data types to the proper :file:`Info.plist`
+XML), and translates Python data types to the proper :file:`Info.plist`
 XML types.  Here's an example::
 
     app = BUNDLE(exe,
