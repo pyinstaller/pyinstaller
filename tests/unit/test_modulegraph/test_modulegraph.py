@@ -1,5 +1,5 @@
 import unittest
-from PyInstaller.lib.modulegraph import modulegraph
+from PyInstaller.lib.modulegraph import modulegraph, node
 import pkg_resources
 import os
 import imp
@@ -496,31 +496,31 @@ class TestNode (unittest.TestCase):
                     message or "%r is not a subclass of %r"%(cls1, cls2))
 
     def test_subclasses(self):
-        self.assertIsSubclass(modulegraph.AliasNode, modulegraph.Node)
-        self.assertIsSubclass(modulegraph.Script, modulegraph.Node)
-        self.assertIsSubclass(modulegraph.BadModule, modulegraph.Node)
-        self.assertIsSubclass(modulegraph.ExcludedModule, modulegraph.BadModule)
-        self.assertIsSubclass(modulegraph.MissingModule, modulegraph.BadModule)
-        self.assertIsSubclass(modulegraph.BaseModule, modulegraph.Node)
-        self.assertIsSubclass(modulegraph.BuiltinModule, modulegraph.BaseModule)
-        self.assertIsSubclass(modulegraph.SourceModule, modulegraph.BaseModule)
-        self.assertIsSubclass(modulegraph.CompiledModule, modulegraph.BaseModule)
-        self.assertIsSubclass(modulegraph.Package, modulegraph.BaseModule)
-        self.assertIsSubclass(modulegraph.Extension, modulegraph.BaseModule)
+        self.assertIsSubclass(node.AliasNode, node.Node)
+        self.assertIsSubclass(node.Script, node.Node)
+        self.assertIsSubclass(node.BadModule, node.Node)
+        self.assertIsSubclass(node.ExcludedModule, node.BadModule)
+        self.assertIsSubclass(node.MissingModule, node.BadModule)
+        self.assertIsSubclass(node.BaseModule, node.Node)
+        self.assertIsSubclass(node.BuiltinModule, node.BaseModule)
+        self.assertIsSubclass(node.SourceModule, node.BaseModule)
+        self.assertIsSubclass(node.CompiledModule, node.BaseModule)
+        self.assertIsSubclass(node.Package, node.BaseModule)
+        self.assertIsSubclass(node.Extension, node.BaseModule)
 
         # These classes have no new functionality, check that no code
         # got added:
-        self.assertNoMethods(modulegraph.BadModule)
-        self.assertNoMethods(modulegraph.ExcludedModule)
-        self.assertNoMethods(modulegraph.MissingModule)
-        self.assertNoMethods(modulegraph.BuiltinModule)
-        self.assertNoMethods(modulegraph.SourceModule)
-        self.assertNoMethods(modulegraph.CompiledModule)
-        self.assertNoMethods(modulegraph.Package)
-        self.assertNoMethods(modulegraph.Extension)
+        self.assertNoMethods(node.BadModule)
+        self.assertNoMethods(node.ExcludedModule)
+        self.assertNoMethods(node.MissingModule)
+        self.assertNoMethods(node.BuiltinModule)
+        self.assertNoMethods(node.SourceModule)
+        self.assertNoMethods(node.CompiledModule)
+        self.assertNoMethods(node.Package)
+        self.assertNoMethods(node.Extension)
 
         # AliasNode is basicly a clone of an existing node
-        self.assertHasExactMethods(modulegraph.Script, '__init__', 'infoTuple')
+        self.assertHasExactMethods(node.Script, '__init__', 'infoTuple')
         n1 = modulegraph.Node('n1')
         n1.packagepath = ['a', 'b']
 
@@ -540,7 +540,7 @@ class TestNode (unittest.TestCase):
         self.assertEqual(v, ('a1', 'n1'))
 
         # Scripts have a filename
-        self.assertHasExactMethods(modulegraph.Script, '__init__', 'infoTuple')
+        self.assertHasExactMethods(node.Script, '__init__', 'infoTuple')
         s1 = modulegraph.Script('do_import')
         self.assertEqual(s1.graphident, 'do_import')
         self.assertEqual(s1.identifier, 'do_import')
@@ -550,14 +550,14 @@ class TestNode (unittest.TestCase):
         self.assertEqual(v, ('do_import',))
 
         # BaseModule adds some attributes and a custom infotuple
-        self.assertHasExactMethods(modulegraph.BaseModule, '__init__', 'infoTuple')
-        m1 = modulegraph.BaseModule('foo')
+        self.assertHasExactMethods(node.BaseModule, '__init__', 'infoTuple')
+        m1 = node.BaseModule('foo')
         self.assertEqual(m1.graphident, 'foo')
         self.assertEqual(m1.identifier, 'foo')
         self.assertEqual(m1.filename, None)
         self.assertEqual(m1.packagepath, None)
 
-        m1 = modulegraph.BaseModule('foo', 'bar',  ['a'])
+        m1 = node.BaseModule('foo', 'bar', ['a'])
         self.assertEqual(m1.graphident, 'foo')
         self.assertEqual(m1.identifier, 'foo')
         self.assertEqual(m1.filename, 'bar')
