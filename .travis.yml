@@ -99,8 +99,8 @@ jobs:
 
     - <<: *test-pyinstaller
       python: 3.7-dev
-      # As of 2018-05-03 travis does not provide Python 3.7.0b4, only an alpha
-      # version is available. Thus we build 3.7.0b4 ourself, which also
+      # As of 2018-05-31 travis does not provide Python 3.7.0b5, only an alpha
+      # version is available. Thus we build 3.7.0b5 ourself, which also
       # requires building OpenSSL 1.0.2 (or 1.1), which is not available, too.
       before_install: &build-python-37
         - >
@@ -122,9 +122,9 @@ jobs:
         - |
           if [ ! -x $HOME/py37/bin/python3 ] ; then
             export PKG_CONFIG_PATH="$HOME/py37/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}" ;
-            wget https://www.python.org/ftp/python/3.7.0/Python-3.7.0b4.tar.xz ;
+            wget https://www.python.org/ftp/python/3.7.0/Python-3.7.0b5.tar.xz ;
             mkdir -p $HOME/py37-build
-            tar x -J -C $HOME/py37-build -f Python-3.7.0b4.tar.xz ;
+            tar x -J -C $HOME/py37-build -f Python-3.7.0b5.tar.xz ;
             cd $HOME/py37-build/Python* ;
             # Make libssl available when Python is testing whether _ssl
             # was built correctly.
