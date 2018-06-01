@@ -32,7 +32,7 @@ pyusb==1.0.2
 requests==2.18.4 # Newest version of requests that allows tests to pass
 Unidecode==1.0.22
 h5py==2.7.1
-web3==3.16.5
+web3==4.2.1
 matplotlib==2.2.0
 
 # Url for downloading PyCrypto prebuilt Windows binaries:
