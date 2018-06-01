@@ -63,7 +63,7 @@ python-dateutil==2.7.3
 pandas==0.23.0; python_version != '3.4'
 
 # uvloop requires python 3.5 or higher and does not currently support Windows.
-uvloop==0.9.1; python_version >= '3.5' and sys_platform != 'win32'
+uvloop==0.10.0; python_version >= '3.5' and sys_platform != 'win32'
 
 
 #### Windows-specific packages
