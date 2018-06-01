@@ -14,7 +14,7 @@ sphinx==1.7.5
 pyzmq==17.0.0
 zope.interface==4.5.0  # Required for test_namespace_package
 numpy==1.14.3
-scipy==1.0.0
+scipy==1.1.0
 lxml==4.1.1
 keyring==11.0.0
 openpyxl==2.5.1
