@@ -19,7 +19,7 @@ lxml==4.2.1
 keyring==12.2.1
 openpyxl==2.5.2
 pycparser==2.18
-pytz==2018.3
+pytz==2018.4
 sqlalchemy==1.2.5
 twisted==17.9.0
 zeep==2.4.0
