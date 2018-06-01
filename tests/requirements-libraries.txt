@@ -16,7 +16,7 @@ zope.interface==4.5.0  # Required for test_namespace_package
 numpy==1.14.3
 scipy==1.1.0
 lxml==4.2.1
-keyring==11.0.0
+keyring==12.2.1
 openpyxl==2.5.1
 pycparser==2.18
 pytz==2018.3
