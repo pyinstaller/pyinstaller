@@ -105,8 +105,17 @@ def add_suffix_to_extensions(toc):
             # In some rare cases extension might already contain a suffix.
             # Skip it in this case.
             if os.path.splitext(inm)[1] not in EXTENSION_SUFFIXES:
-                # Use this file's existing extension.
-                inm = inm + os.path.splitext(fnm)[1]
+                # Determine the base name of the file.
+                if is_py3:
+                    base_name = os.path.basename(inm)
+                else:
+                    base_name = inm.rsplit('.')[-1]
+                assert '.' not in base_name
+                # Use this file's existing extension. For extensions such as
+                # ``libzmq.cp36-win_amd64.pyd``, we can't use
+                # ``os.path.splitext``, which would give only the ```.pyd`` part
+                # of the extension.
+                inm = inm + os.path.basename(fnm)[len(base_name):]
 
         elif typ == 'DEPENDENCY':
             # Use the suffix from the filename.
