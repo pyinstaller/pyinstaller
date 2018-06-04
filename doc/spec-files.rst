@@ -384,7 +384,8 @@ XML types.  Here's an example::
              icon=None,
              bundle_identifier=None,
              info_plist={
-             	'NSHighResolutionCapable': True,
+             	'NSPrincipleClass': 'NSApplication',
+                'NSAppleScriptEnabled': False,
                 'CFBundleDocumentTypes': [
                     {
                         'CFBundleTypeName': 'My File Format',
@@ -396,13 +397,12 @@ XML types.  Here's an example::
              	},
              )
 
-For example, when you use PyQt5,
-you can set ``NSHighResolutionCapable`` to ``True`` to let your app
-also work in retina screen.
-
-Also in the above example is the key ``CFBundleDocumentTypes``.
-This entry in :file:`Info.plist` tells Mac OS X
-what filetypes your app supports (see `Apple document types`_).
+In the above example, the key/value ``'NSPrincipleClass': 'NSApplication'`` is
+necessary to allow Mac OS X to render applications using retina resolution.
+The key ``'NSAppleScriptEnabled'`` is assigned the Python boolean
+``False``, which will be output to :file:`Info.plist` properly as ``<false/>``.
+Finally the key ``CFBundleDocumentTypes`` tells Mac OS X what filetypes your
+application supports (see `Apple document types`_).
 
 Multipackage Bundles
 ~~~~~~~~~~~~~~~~~~~~~
