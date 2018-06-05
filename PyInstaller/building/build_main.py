@@ -28,7 +28,7 @@ import sys
 from .. import HOMEPATH, DEFAULT_DISTPATH, DEFAULT_WORKPATH
 from .. import compat
 from .. import log as logging
-from ..utils.misc import absnormpath
+from ..utils.misc import absnormpath, compile_py_files
 from ..compat import is_py2, is_win, PYDYLIB_NAMES, VALID_MODULE_TYPES
 from ..depend import bindepend
 from ..depend.analysis import initialize_modgraph
@@ -139,7 +139,8 @@ class Analysis(Target):
 
     def __init__(self, scripts, pathex=None, binaries=None, datas=None,
                  hiddenimports=None, hookspath=None, excludes=None, runtime_hooks=None,
-                 cipher=None, win_no_prefer_redirects=False, win_private_assemblies=False):
+                 cipher=None, win_no_prefer_redirects=False, win_private_assemblies=False,
+                 noarchive=False):
         """
         scripts
                 A list of scripts specified as file names.
@@ -166,7 +167,9 @@ class Analysis(Target):
         win_private_assemblies
                 If True, changes all bundled Windows SxS Assemblies into Private
                 Assemblies to enforce assembly versions.
-
+        noarchive
+                If True, don't place source files in a archive, but keep them as
+                individual files.
         """
         super(Analysis, self).__init__()
         from ..config import CONF
@@ -233,6 +236,7 @@ class Analysis(Target):
         self.win_no_prefer_redirects = win_no_prefer_redirects
         self.win_private_assemblies = win_private_assemblies
         self._python_version = sys.version
+        self.noarchive = noarchive
 
         self.__postinit__()
 
@@ -572,6 +576,26 @@ class Analysis(Target):
             # Remove duplicate redirects
             self.binding_redirects[:] = list(set(self.binding_redirects))
             logger.info("Found binding redirects: \n%s", self.binding_redirects)
+
+        # Place Python source in data files for the noarchive case.
+        if self.noarchive:
+            # Create a new TOC of ``(dest path for .pyc, source for .py, type)``.
+            new_toc = TOC()
+            for name, path, typecode in self.pure:
+                assert typecode == 'PYMODULE'
+                # Transform a python module name into a file name.
+                name = name.replace('.', os.sep)
+                # Special case: modules have an implied filename to add.
+                if os.path.splitext(os.path.basename(path))[0] == '__init__':
+                    name += os.sep + '__init__'
+                # Append the extension for the compiled result.
+                name += '.py' + ('o' if sys.flags.optimize else 'c')
+                new_toc.append((name, path, typecode))
+            # Put the result of byte-compiling this TOC in datas. Mark all entries as data.
+            for name, path, typecode in compile_py_files(new_toc, CONF['workpath']):
+                self.datas.append((name, path, 'DATA'))
+            # Store no source in the archive.
+            self.pure = TOC()
 
         # Write warnings about missing modules.
         self._write_warnings()

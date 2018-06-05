@@ -418,12 +418,13 @@ class AppBuilder(object):
 
         Return True if build succeded False otherwise.
         """
-        default_args = ['--debug', '--noupx',
+        default_args = ['--debug=bootloader', '--noupx',
                 '--specpath', self._specdir,
                 '--distpath', self._distdir,
                 '--workpath', self._builddir,
-                '--path', _MODULES_DIR]
-        default_args.extend(['--debug', '--log-level=DEBUG'])
+                '--path', _MODULES_DIR,
+                '--log-level=DEBUG'
+                ]
 
         # Choose bundle mode.
         if self._mode == 'onedir':
