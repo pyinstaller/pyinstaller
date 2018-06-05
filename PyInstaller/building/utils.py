@@ -95,6 +95,13 @@ def add_suffix_to_extensions(toc):
     new_toc = TOC()
     for inm, fnm, typ in toc:
         if typ == 'EXTENSION':
+            if is_py3:
+                # Change the dotted name into a relative path. This places C
+                # extensions in the Python-standard location. This only works
+                # in Python 3; see comments above
+                # ``sys.meta_path.append(CExtensionImporter())`` in
+                # ``pyimod03_importers``.
+                inm = inm.replace('.', os.sep)
             # In some rare cases extension might already contain a suffix.
             # Skip it in this case.
             if os.path.splitext(inm)[1] not in EXTENSION_SUFFIXES:

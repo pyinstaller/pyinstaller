@@ -14,7 +14,7 @@ import ctypes, ctypes.util
 
 import pytest
 
-from PyInstaller.compat import is_darwin, is_py2, is_py35, is_win
+from PyInstaller.compat import is_darwin, is_py2, is_py3, is_py35, is_win
 from PyInstaller.utils.tests import skipif, importorskip, \
   skipif_notwin, skipif_no_compiler, xfail, has_compiler
 
@@ -174,6 +174,8 @@ def test_import_non_existing_raises_import_error(pyi_builder):
 
 # :todo: Use some package which is already installed for some other
 # reason instead of `simplejson` which is only used here.
+@skipif(is_py3, reason="Python 3 doesn't use the CExtensionImporter, so it "
+        "doesn't need testing.")
 @importorskip('simplejson')
 def test_c_extension(pyi_builder):
     pyi_builder.test_script('pyi_c_extension.py')

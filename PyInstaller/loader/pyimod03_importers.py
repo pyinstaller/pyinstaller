@@ -234,7 +234,8 @@ class FrozenImporter(object):
 
     def __call__(self, path):
         """
-        PEP-302 sys.path_hook processor.
+        PEP-302 sys.path_hook processor. is_py2: This is only needed for Python
+        2; see comments at `path_hook installation`_.
 
         sys.path_hook is a list of callables, which will be checked in
         sequence to determine if they can handle a given path item.
@@ -379,8 +380,6 @@ class FrozenImporter(object):
                 # In Python 3.4 was introduced module attribute __spec__ to
                 # consolidate all module attributes.
                 if sys.version_info[0:2] > (3, 3):
-                    # This is still needed as long as CExtensionImporter does
-                    # not implement PEP-451.
                     module.__spec__ = _frozen_importlib.ModuleSpec(
                         entry_name, self, is_package=is_pkg)
 
@@ -628,6 +627,7 @@ class FrozenImporter(object):
         exec(bytecode, module.__dict__)
 
 
+# is_py2: This is only needed for Python 2.
 class CExtensionImporter(object):
     """
     PEP-302 hook for sys.meta_path to load Python C extension modules.
@@ -803,15 +803,26 @@ def install():
     # other places.
     fimp = FrozenImporter()
     sys.meta_path.append(fimp)
-    # Add the FrozenImporter to `sys.path_hook`, too, since
-    # `pkgutil.get_loader()` does not use `sys.meta_path`. See issue
-    # #1689.
-    sys.path_hooks.append(fimp)
 
-    # Import hook for the C extension modules.
-    sys.meta_path.append(CExtensionImporter())
+    if sys.version_info[0] == 2:
+        # _`path_hook installation`: Add the FrozenImporter to `sys.path_hook`,
+        # too, since `pkgutil.get_loader()` does not use `sys.meta_path`. See
+        # issue #1689.
+        sys.path_hooks.append(fimp)
 
-    if sys.version_info[0] > 2:
+        # Import hook for renamed C extension modules. The path hook above means
+        # that the standard Python import system for C extensions will only work
+        # if those extensions are not in a submodule. In particular: A C
+        # extension such as ``foo.bar`` hasn't been loaded. ``sys.meta_path`` is
+        # checked, but provides no loader. ``sys.path_hooks`` is checked, and
+        # claims that it loads anything in ``foo``. Therefore, the default
+        # Python import mechanism will not be invoked, per `PEP 302
+        # <https://www.python.org/dev/peps/pep-0302/#id28>`_. This casues the
+        # import to fail, since the ``FrozenImporter`` class doesn't load C
+        # extensions.
+        sys.meta_path.append(CExtensionImporter())
+
+    else:
         # On Windows there is importer _frozen_importlib.WindowsRegistryFinder that
         # looks for Python modules in Windows registry. The frozen executable should
         # not look for anything in the Windows registry. Remove this importer from
