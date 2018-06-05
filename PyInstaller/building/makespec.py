@@ -19,7 +19,7 @@ from distutils.version import LooseVersion
 
 from .. import HOMEPATH, DEFAULT_SPECPATH
 from .. import log as logging
-from ..compat import expand_path, is_win, is_cygwin, is_darwin
+from ..compat import expand_path, is_darwin
 from .templates import onefiletmplt, onedirtmplt, cipher_absent_template, \
     cipher_init_template, bundleexetmplt, bundletmplt
 

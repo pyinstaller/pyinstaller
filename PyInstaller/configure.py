@@ -14,10 +14,7 @@ Configure PyInstaller for the current Python installation.
 
 import os
 
-import sys
-import time
-
-from . import  compat
+from . import compat
 from . import log as logging
 from .compat import is_win, is_darwin
 

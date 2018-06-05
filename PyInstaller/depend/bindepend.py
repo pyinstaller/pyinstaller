@@ -670,7 +670,7 @@ def _getImports_macholib(pth):
     # This seems to work in most cases.
     exec_path = os.path.abspath(os.path.dirname(pth))
 
- 
+
     for lib in seen:
 
         # Suppose that @rpath is not used for system libraries and

@@ -19,7 +19,6 @@ from __future__ import print_function
 import glob
 import struct
 import sys
-import os
 
 # A more complete list can be found at
 # https://stackoverflow.com/questions/1001404/

@@ -16,9 +16,7 @@ import os
 
 # Local imports
 # -------------
-import sys
-
-from PyInstaller.compat import is_win, is_py27, is_py3, is_py36, is_py35, is_darwin, is_linux
+from PyInstaller.compat import is_win, is_py3, is_py36, is_py35, is_darwin, is_linux
 from PyInstaller.utils.hooks import get_module_attribute, is_module_satisfies
 from PyInstaller.utils.tests import importorskip, xfail, skipif
 

@@ -22,8 +22,6 @@ import site
 import subprocess
 import sys
 
-from .log import logger
-
 # Distinguish code for different major Python version.
 is_py2 = sys.version_info[0] == 2
 is_py3 = sys.version_info[0] == 3

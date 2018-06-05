@@ -29,7 +29,8 @@ import marshal
 import zlib
 
 from PyInstaller.building.utils import get_code_object, strip_paths_in_code
-from .readers import PYZ_TYPE_MODULE, PYZ_TYPE_PKG, PYZ_TYPE_DATA
+from PyInstaller.loader.pyimod02_archive import PYZ_TYPE_MODULE, PYZ_TYPE_PKG, \
+    PYZ_TYPE_DATA
 from ..compat import BYTECODE_MAGIC, is_py2
 
 

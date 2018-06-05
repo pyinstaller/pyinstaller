@@ -13,7 +13,7 @@ import pytest
 import textwrap
 
 from PyInstaller.depend import utils
-from PyInstaller.compat import (is_unix, is_win, PYDYLIB_NAMES)
+from PyInstaller.compat import is_unix, is_win
 
 
 CTYPES_CLASSNAMES = (

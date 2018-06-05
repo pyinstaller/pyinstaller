@@ -24,7 +24,7 @@ import sys
 from PyInstaller.config import CONF
 from .. import compat
 from ..compat import is_darwin, is_win, EXTENSION_SUFFIXES, \
-    FileNotFoundError, open_file, is_py3
+    open_file, is_py3
 from ..depend import dylib
 from ..depend.bindepend import match_binding_redirect
 from ..utils import misc

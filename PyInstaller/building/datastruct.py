@@ -15,8 +15,6 @@ from PyInstaller.utils.misc import load_py_data_struct, save_py_data_struct
 from .. import log as logging
 from .utils import _check_guts_eq
 
-from collections import MutableSet
-
 logger = logging.getLogger(__name__)
 
 

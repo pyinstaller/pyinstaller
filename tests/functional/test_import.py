@@ -10,13 +10,14 @@
 
 import os
 import glob
-import ctypes, ctypes.util
+import ctypes
+import ctypes.util
 
 import pytest
 
 from PyInstaller.compat import is_darwin, is_py2, is_py3, is_py35, is_win
 from PyInstaller.utils.tests import skipif, importorskip, \
-  skipif_notwin, skipif_no_compiler, xfail, has_compiler
+    skipif_notwin, skipif_no_compiler, xfail, has_compiler
 
 # :todo: find a way to get this from `conftest` or such
 # Directory with testing modules used in some tests.
