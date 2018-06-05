@@ -134,8 +134,8 @@ try setting the correct path in the environment variable
 Getting Debug Messages
 ----------------------
 
-Giving the ``--debug`` option causes the bundled executable itself to
-write progress messages when it runs.
+The ``--debug`` option (and its :ref:`choices <pyinstaller how to generate>`) provides a
+signficiant amount of diagnostic inforation.
 This can be useful during development of a complex package,
 or when your app doesn't seem to be starting,
 or just to learn how the runtime works.
@@ -147,23 +147,6 @@ For a ``--windowed`` Mac OS app they are not displayed.
 
 Remember to bundle without ``--debug`` for your production version.
 Users would find the messages annoying.
-
-
-.. _getting python's verbose imports:
-
-Getting Python's Verbose Imports
---------------------------------
-
-You can also pass a ``-v`` (verbose imports) flag to the embedded Python interpreter
-(see :ref:`Giving Run-time Python Options` above).
-This can be extremely useful.
-It can be informative even with apps that are apparently working,
-to make sure that they are getting all imports from the bundle,
-and not leaking out to the local installed Python.
-
-Python verbose and warning messages always go to standard output
-and are not visible when the ``--windowed`` option is used.
-Remember to not use this in the distributed program.
 
 
 .. _helping pyinstaller find modules:
@@ -203,7 +186,7 @@ When this occurs, Analysis can detect nothing.
 There will be no warnings, only an ImportError at run-time.
 
 To find these hidden imports,
-build the app with the ``-v`` flag (:ref:`Getting Python's Verbose Imports` above)
+build the app with the ``--debug`` flag (see `Getting Debug Messages` above)
 and run it.
 
 Once you know what modules are needed, you add the needed modules
