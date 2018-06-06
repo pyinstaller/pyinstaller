@@ -34,6 +34,7 @@ Unidecode==1.0.22
 h5py==2.7.1
 web3==3.16.5
 matplotlib==2.2.0
+phonenumbers==8.9.7
 
 # Url for downloading PyCrypto prebuilt Windows binaries:
 # http://www.voidspace.org.uk/python/pycrypto-2.6.1/

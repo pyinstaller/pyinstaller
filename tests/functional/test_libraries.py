@@ -781,3 +781,15 @@ def test_uvloop(pyi_builder):
 @importorskip('web3')
 def test_web3(pyi_builder):
     pyi_builder.test_source("import web3")
+
+@importorskip('phonenumbers')
+def test_phonenumbers(pyi_builder):
+    pyi_builder.test_source("""
+        import phonenumbers
+        
+        number = '+17034820623'
+        parsed_number = phonenumbers.parse(number)
+
+        assert(parsed_number.country_code == 1)
+        assert(parsed_number.national_number == 7034820623)
+        """)
