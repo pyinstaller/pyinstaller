@@ -60,9 +60,9 @@ install:
   # Check that we have the expected version and architecture for Python
   - python --version
   - >-
-     %CMD_IN_ENV%
-     python -c "import sys,platform,struct;
-     print(sys.platform, platform.machine(), struct.calcsize('P') * 8, )"
+    %CMD_IN_ENV%
+    python -c "import sys,platform,struct;
+    print(sys.platform, platform.machine(), struct.calcsize('P') * 8, )"
 
   # Compile bootloader.
   - cd bootloader
@@ -92,9 +92,17 @@ build: none
 test_script:
   # Run the tests appropriate for this entry in the test matrix. Skip tests
   # if we're just updating the cache.
-  - 'if not "%APPVEYOR_SCHEDULED_BUILD%" == "True" (
-          %PYTEST%
-    )'
+  #
+  # On Windows, the ``noarchive`` test re-compiles all ``.pyc`` or ``.pyo``
+  # files. If run in parallel, one test will be trying to read a compiled file
+  # while the other is writing it, producing a ``PermissionError: [Errno 13]
+  # Permission denied`` exception. To avoid this, run these two tests in
+  # separate ``pytest`` invokations.
+  - >-
+    if not "%APPVEYOR_SCHEDULED_BUILD%" == "True" (
+    %PYTEST% -k "test_noarchive[onefile]" &&
+    %PYTEST% -k "not test_noarchive[onefile]"
+    )
 
 on_finish:
   # Remove old or huge cache files to hopefully not exceed the 1GB cache limit.
