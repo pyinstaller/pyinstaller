@@ -604,7 +604,6 @@ def test_sqlalchemy(pyi_builder):
 
 
 @importorskip('twisted')
-@pytest.mark.skipif(is_win, reason='Python 3 syntax error on Windows')
 def test_twisted(pyi_builder):
     pyi_builder.test_source(
         """
