@@ -33,6 +33,9 @@ environment:
       PYTHON_ARCH: 32
 
 init:
+  # Uncomment the line below to enable Remote Desktop access to the build worker
+  # VM. See https://www.appveyor.com/docs/how-to/rdp-to-build-worker/.
+  #- ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
   - "ECHO \"%APPVEYOR_SCHEDULED_BUILD%\""
   # If there is a newer build queued for the same PR, cancel this one.
@@ -123,3 +126,6 @@ on_finish:
         (Resolve-Path .\junit-results.xml)
       )
       $LastExitCode = 0
+  # Uncomment to pause the build until a special "lock" file on the VM desktop
+  # is deleted. See https://www.appveyor.com/docs/how-to/rdp-to-build-worker/.
+  #- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
