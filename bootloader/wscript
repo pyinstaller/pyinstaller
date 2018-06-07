@@ -400,8 +400,10 @@ def configure(ctx):
     # searched.
     if ctx.options.target_arch == '32bit':
         ctx.env['MSVC_TARGETS'] = ['x86']
+        ctx.env['MSVC_VERSIONS'] = ['msvc 15.0']
     elif ctx.options.target_arch == '64bit':
         ctx.env['MSVC_TARGETS'] = ['x64']
+        ctx.env['MSVC_VERSIONS'] = ['msvc 15.0']
 
     ### C compiler
     # Allow to use Clang if preferred.
