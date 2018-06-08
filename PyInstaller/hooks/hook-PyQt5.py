@@ -8,10 +8,12 @@
 #-----------------------------------------------------------------------------
 import os
 
-from PyInstaller.utils.hooks import collect_data_files
+from PyInstaller.utils.hooks import pyqt5_library_info, collect_system_data_files
 
 hiddenimports = ['sip']
 
-# Collect just the ``qt.conf`` file.
-datas = [x for x in collect_data_files('PyQt5', False, 'Qt')
-            if os.path.basename(x[0]) == 'qt.conf']
+# Collect the ``qt.conf`` file.
+datas = [x for x in
+         collect_system_data_files(pyqt5_library_info.location['PrefixPath'],
+                                   'PyQt5')
+         if os.path.basename(x[0]) == 'qt.conf']
