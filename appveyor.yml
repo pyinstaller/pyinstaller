@@ -7,6 +7,15 @@ branches:
   except:
     - /pyup\/.*/
 
+# Selecting this `image <https://www.appveyor.com/docs/build-environment/#choosing-image-for-your-builds>`_
+# causes Appveyor to run on `Windows Server 2016 <https://www.appveyor.com/docs/build-environment/#operating-system>`_
+# instead of Windows Server 2012. This allows ``test_PyQt5_Qt`` to succeed on
+# PyQt 5.10 and higher, since the updated Qt Bluetooth API (which any import to
+# ``PyQt5.Qt`` implicitly imports) isn't compatible with Windows Server 2012.
+# Specifically, running on Server 2012 causes the test to display an error in
+# `a dialog box <https://github.com/mindfulness-at-the-computer/mindfulness-at-the-computer/issues/234>`_.
+image: Visual Studio 2017
+
 environment:
   PYTEST: py.test -n3 --maxfail 5 --durations=10 --junitxml=junit-results.xml
   APPVEYOR_SAVE_CACHE_ON_ERROR: true
