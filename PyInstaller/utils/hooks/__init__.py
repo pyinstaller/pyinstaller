@@ -741,6 +741,10 @@ def collect_system_data_files(path, destdir=None, include_py_files=False):
     # Accept only strings as paths.
     if not isinstance(path, string_types):
         raise ValueError
+    # The call to ``remove_prefix`` below assumes a path separate of ``os.sep``,
+    # which may not be true on Windows; Windows allows Linux path separators in
+    # filenames. Fix this.
+    path = os.path.normpath(path)
 
     # Walk through all file in the given package, looking for data files.
     datas = []
