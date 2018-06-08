@@ -294,6 +294,16 @@ def test_PyQt5_QtQuick(pyi_builder):
 
 
 # Test that the ``PyQt5.Qt`` module works by importing something from it.
+#
+# The Qt Bluetooth API (which any import to ``PyQt5.Qt`` implicitly imports)
+# isn't compatible with Windows Server 2012 R2, the OS Appveyor runs.
+# Specifically, running on Server 2012 causes the test to display an error in
+# `a dialog box <https://github.com/mindfulness-at-the-computer/mindfulness-at-the-computer/issues/234>`_.
+# The alternative of using a newer Appveyor OS `fails <https://github.com/pyinstaller/pyinstaller/pull/3563>`_.
+# Therefore, skip this test on Appveyor by testing for one of its `environment
+# variables <https://www.appveyor.com/docs/environment-variables/>`_.
+@skipif(os.environ.get('APPVEYOR') == 'True',
+        reason='The Appveyor OS is incompatible with PyQt.Qt.')
 @importorskip('PyQt5')
 def test_PyQt5_Qt(pyi_builder):
     pyi_builder.test_source('from PyQt5.Qt import QLibraryInfo')
