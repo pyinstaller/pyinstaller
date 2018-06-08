@@ -38,7 +38,15 @@ class Qt5LibraryInfo:
     def __getattr__(self, name):
         if 'version' not in self.__dict__:
             # Get library path information from Qt. See QLibraryInfo_.
-            qli = json.loads(exec_statement("""
+            json_str = exec_statement("""
+                import sys
+
+                # exec_statement only captures stdout. If there are
+                # errors, capture them to stdout so they can be displayed to the
+                # user. Do this early, in case PyQt5 imports produce stderr
+                # output.
+                sys.stderr = sys.stdout
+
                 import json
                 from %s.QtCore import QLibraryInfo
 
@@ -54,7 +62,13 @@ class Qt5LibraryInfo:
                     'version': version,
                     'location': location,
                 })))
-            """ % self.namespace))
+            """ % self.namespace)
+            try:
+                qli = json.loads(json_str)
+            except Exception as e:
+                logger.warning('Cannot read QLibraryInfo output: raised %s when '
+                               'decoding:\n%s', str(e), json_str)
+                raise
             for k, v in qli.items():
                 setattr(self, k, v)
 
