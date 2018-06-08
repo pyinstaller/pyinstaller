@@ -272,8 +272,18 @@ def get_qmake_path(version=''):
 #   -   The `deploying Qt for Linux/X11 <http://doc.qt.io/qt-5/linux-deployment.html#qt-plugins>`_
 #       page specifies including the Qt Platform Abstraction (QPA) plugin,
 #       ``libqxcb.so``. There's little other guidance provided.
-#   -   The `Qt for Windows - Deployment <http://doc.qt.io/qt-5/windows-deployment.html#qt-plugins>`_
-#       page likewise specifies the ``qwindows.dll`` QPA, but little else.
+#   -   The `Qt for Windows - Deployment <http://doc.qt.io/qt-5/windows-deployment.html#creating-the-application-package>`_
+#       page likewise specifies the ``qwindows.dll`` QPA. This is found by the
+#       dependency walker, so it doesn't need to explicitly specified.
+#
+#       -   For dynamic OpenGL applications, the ``libEGL.dll``,
+#           ``libGLESv2.dll``, ``d3dcompiler_XX.dll`` (the XX is a version
+#           number), and ``opengl32sw.dll`` libraries are also needed.
+#       -   If Qt was configured to use ICU, the ``icudtXX.dll``,
+#           ``icuinXX.dll``, and ``icuucXX.dll`` libraries are needed.
+#
+#       These are included by ``hook-PyQt5.py``.
+#
 #   -   The `Qt for macOS - Deployment <http://doc.qt.io/qt-5/osx-deployment.html#qt-plugins>`_
 #       page specifies the ``libqcocoa.dylib`` QPA, but little else. The
 #       `Mac deployment tool <http://doc.qt.io/qt-5/osx-deployment.html#the-mac-deployment-tool>`_
