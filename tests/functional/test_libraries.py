@@ -243,19 +243,23 @@ def test_PyQt5_uic(tmpdir, pyi_builder, data_dir):
 
 @xfail(is_darwin, reason='Please help debug this. See issue #3233.')
 @importorskip('PyQt5')
-def test_PyQt5_QWebEngine(pyi_builder):
+def test_PyQt5_QWebEngine(pyi_builder, data_dir):
     pyi_builder.test_source(
         """
         from PyQt5.QtWidgets import QApplication
         from PyQt5.QtWebEngineWidgets import QWebEngineView
-        from PyQt5.QtCore import QUrl
-        app = QApplication( [] )
+        from PyQt5.QtCore import QUrl, QTimer
+        app = QApplication([])
         view = QWebEngineView()
-        view.load( QUrl( "http://www.pyinstaller.org" ) )
+        # Use a raw string to avoid accidental special characters in Windows filenames:
+        # ``c:\temp`` is `c<tab>emp`!
+        view.load(QUrl.fromLocalFile(r'{}'))
         view.show()
-        view.page().loadFinished.connect(lambda ok: app.quit())
+        view.page().loadFinished.connect(
+            # Display the web page for two seconds after it loads.
+            lambda ok: QTimer.singleShot(2000, app.quit))
         app.exec_()
-        """)
+        """.format(data_dir.join('test_web_page.html').strpath))
 
 
 @importorskip('PyQt5')
