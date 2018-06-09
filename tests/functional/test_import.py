@@ -208,10 +208,11 @@ def test_import_metapath1(pyi_builder, script_dir):
 
 
 @importorskip('PyQt5')
-def test_import_pyqt5_uic_port(monkeypatch, pyi_builder):
+def test_import_pyqt5_uic_port(script_dir, pyi_builder):
     extra_path = os.path.join(_MODULES_DIR, 'pyi_import_pyqt_uic_port')
     pyi_builder.test_script('pyi_import_pyqt5_uic_port.py',
-                            pyi_args=['--path', extra_path])
+        # Add the path to a fake PyQt5 package, used for this test.
+        pyi_args=['--path', extra_path])
 
 
 #--- ctypes ----
