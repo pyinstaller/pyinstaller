@@ -248,16 +248,17 @@ def test_PyQt5_uic(tmpdir, pyi_builder, data_dir):
     pyi_builder.test_script('pyi_lib_PyQt5-uic.py')
 
 
-@xfail(is_darwin, reason='Please help debug this. See issue #3233.')
 @pytest.mark.skipif(is_win and not is_64bits, reason="Qt 5.11+ for Windows "
     "only provides pre-compiled Qt WebEngine binaries for 64-bit processors.")
 @importorskip('PyQt5')
 def test_PyQt5_QWebEngine(pyi_builder, data_dir):
-    pyi_builder.test_source(
-        """
+    # Produce the source code to test by inserting the path to the HTML page to
+    # display.
+    source_to_test = """
         from PyQt5.QtWidgets import QApplication
         from PyQt5.QtWebEngineWidgets import QWebEngineView
         from PyQt5.QtCore import QUrl, QTimer
+
         app = QApplication([])
         view = QWebEngineView()
         # Use a raw string to avoid accidental special characters in Windows filenames:
@@ -265,10 +266,38 @@ def test_PyQt5_QWebEngine(pyi_builder, data_dir):
         view.load(QUrl.fromLocalFile(r'{}'))
         view.show()
         view.page().loadFinished.connect(
-            # Display the web page for two seconds after it loads.
-            lambda ok: QTimer.singleShot(2000, app.quit))
+            # Display the web page for one second after it loads.
+            lambda ok: QTimer.singleShot(1000, app.quit))
         app.exec_()
-        """.format(data_dir.join('test_web_page.html').strpath))
+        """.format(data_dir.join('test_web_page.html').strpath)
+
+    if is_darwin:
+        # This tests running the QWebEngine on OS X. To do so, the test must:
+        #
+        # 1. Run only a onedir build -- onefile builds don't work.
+        if pyi_builder._mode != 'onedir':
+            pytest.skip('The QWebEngine .app bundle only supports onedir mode.')
+
+        # 2. Only test the Mac .app bundle, by modifying the executes this fixture
+        #    runs.
+        _old_find_executables = pyi_builder._find_executables
+        # Create a replacement method that selects just the .app bundle.
+        def _replacement_find_executables(self, name):
+            path_to_onedir, path_to_app_bundle = _old_find_executables(name)
+            return [path_to_app_bundle]
+        # Use this in the fixture. See https://stackoverflow.com/a/28060251 and
+        # https://docs.python.org/3/howto/descriptor.html.
+        pyi_builder._find_executables = \
+            _replacement_find_executables.__get__(pyi_builder)
+
+        # 3. Run the test with specific command-line arguments.
+        pyi_builder.test_source(source_to_test,
+            pyi_args=[
+                '--windowed',
+                '--osx-bundle-identifier', 'org.qt-project.Qt.QtWebEngineCore'])
+    else:
+        # The Linux and Windows QWebEngine test needs no special handling.
+        pyi_builder.test_source(source_to_test)
 
 
 @PYQT5_NEED_OPENGL
