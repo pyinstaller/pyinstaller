@@ -509,17 +509,15 @@ def pyi_builder(tmpdir, monkeypatch, request, pyi_modgraph):
     # The value is same as the original value.
     monkeypatch.setattr('PyInstaller.config.CONF', {'pathex': []})
 
-    def del_temp_dir():
+    yield AppBuilder(tmp, request.param, pyi_modgraph)
+
+    if is_darwin or is_linux:
         if request.node.rep_setup.passed:
             if request.node.rep_call.passed:
                 if os.path.exists(tmp):
                     shutil.rmtree(tmp)
 
-    if is_darwin or is_linux:
-        request.addfinalizer(del_temp_dir)
-    return AppBuilder(tmp, request.param, pyi_modgraph)
-
-
+                    
 # Fixture for .spec based tests.
 # With .spec it does not make sense to differentiate onefile/onedir mode.
 @pytest.fixture
