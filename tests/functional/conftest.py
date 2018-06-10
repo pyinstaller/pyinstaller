@@ -54,6 +54,7 @@ from PyInstaller.compat import is_darwin, is_win, is_py2, safe_repr, \
     architecture, is_linux, suppress
 from PyInstaller.depend.analysis import initialize_modgraph
 from PyInstaller.utils.win32 import winutils
+from PyInstaller.utils.hooks.qt import pyqt5_library_info
 
 # Monkeypatch the psutil subprocess on Python 2
 if is_py2:
@@ -516,8 +517,13 @@ def pyi_builder(tmpdir, monkeypatch, request, pyi_modgraph):
             if request.node.rep_call.passed:
                 if os.path.exists(tmp):
                     shutil.rmtree(tmp)
+    # Clear any PyQt5 state.
+    try:
+        del pyqt5_library_info.version
+    except AttributeError:
+        pass
 
-                    
+
 # Fixture for .spec based tests.
 # With .spec it does not make sense to differentiate onefile/onedir mode.
 @pytest.fixture
