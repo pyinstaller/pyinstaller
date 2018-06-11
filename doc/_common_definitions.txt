@@ -43,6 +43,7 @@
 .. _PIL: http://www.pythonware.com/products/pil/
 .. _pip: http://www.pip-installer.org/
 .. _pip-Win: https://sites.google.com/site/pydatalog/python/pip-for-windows
+.. _plistlib: https://docs.python.org/3/library/plistlib.html
 .. _png2icns: http://icns.sourceforge.net/
 .. _PyCrypto: https://pypi.python.org/pypi/pycrypto/
 .. _PyInstaller.org: https://github.com/pyinstaller/pyinstaller/wiki/Community
