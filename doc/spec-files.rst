@@ -216,7 +216,7 @@ Using Data Files from a Module
 --------------------------------
 
 If the data files you are adding are contained within a Python module,
-you can retrieve them using ``pkgutils.get_data()``.
+you can retrieve them using ``pkgutil.get_data()``.
 
 For example, suppose that part of your application is a module named ``helpmod``.
 In the same folder as your script and its spec file you have this folder
