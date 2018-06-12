@@ -628,6 +628,7 @@ class COLLECT(Target):
         from ..config import CONF
         Target.__init__(self)
         self.strip_binaries = kws.get('strip', False)
+        self.console = True
 
         if CONF['hasUPX']:
             self.upx_binaries = kws.get('upx', False)
@@ -650,6 +651,7 @@ class COLLECT(Target):
             elif isinstance(arg, Target):
                 self.toc.append((os.path.basename(arg.name), arg.name, arg.typ))
                 if isinstance(arg, EXE):
+                    self.console = arg.console
                     for tocnm, fnm, typ in arg.toc:
                         if tocnm == os.path.basename(arg.name) + ".manifest":
                             self.toc.append((tocnm, fnm, typ))
