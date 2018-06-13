@@ -1,0 +1,1 @@
+Fixes PE-file corruption during version update.
