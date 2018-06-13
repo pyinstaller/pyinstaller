@@ -38,7 +38,7 @@ def test_multiprocess_pool(pyi_builder):
 @importorskip('multiprocessing')
 def test_multiprocess_spawn_semaphore(pyi_builder, capfd):
     pyi_builder.test_source("""
-        import sys 
+        import sys
 
         from multiprocessing import set_start_method, Process, Semaphore
         from multiprocessing import freeze_support
@@ -82,7 +82,7 @@ def test_multiprocess_spawn_semaphore(pyi_builder, capfd):
 @importorskip('multiprocessing')
 def test_multiprocess_fork_semaphore(pyi_builder, capfd):
     pyi_builder.test_source("""
-        import sys 
+        import sys
 
         from multiprocessing import set_start_method, Process, Semaphore
         from multiprocessing import freeze_support
@@ -128,7 +128,7 @@ def test_multiprocess_fork_semaphore(pyi_builder, capfd):
 @importorskip('multiprocessing')
 def test_multiprocess_forkserver_semaphore(pyi_builder, capfd):
     pyi_builder.test_source("""
-        import sys 
+        import sys
 
         from multiprocessing import set_start_method, Process, Semaphore
         from multiprocessing import freeze_support

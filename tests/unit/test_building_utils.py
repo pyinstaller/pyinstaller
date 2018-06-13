@@ -12,7 +12,6 @@ import pytest
 import os
 
 from PyInstaller.building import utils
-from PyInstaller.utils.tests import xfail
 
 def test_format_binaries_and_datas_not_found_raises_error(tmpdir):
     datas = [('non-existing.txt', '.')]

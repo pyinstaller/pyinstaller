@@ -7,8 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-import pytest
-import PyInstaller
 from PyInstaller.utils.cliutils import makespec
 
 def test_maskespec_basic(tmpdir, monkeypatch):

@@ -199,8 +199,7 @@ def UpdateResources(dstpath, data, type_, names=None, languages=None):
             for language in res[type_][name]:
                 logger.info("Updating resource type %s name %s language %s",
                             type_, name, language)
-                win32api.UpdateResource(hdst, type_, name,
-                                        data.encode('UTF-8'), language)
+                win32api.UpdateResource(hdst, type_, name, data, language)
     win32api.EndUpdateResource(hdst, 0)
 
 
@@ -242,7 +241,7 @@ def UpdateResourcesFromDict(dstpath, res, types=None, names=None,
                         if not languages or language in languages:
                             UpdateResources(dstpath,
                                             res[type_][name][language],
-                                            [type_], [name], [language])
+                                            type_, [name], [language])
 
 
 def UpdateResourcesFromResFile(dstpath, srcpath, types=None, names=None,

@@ -22,8 +22,6 @@ import site
 import subprocess
 import sys
 
-from .log import logger
-
 # Distinguish code for different major Python version.
 is_py2 = sys.version_info[0] == 2
 is_py3 = sys.version_info[0] == 3
@@ -186,9 +184,11 @@ else:
 # List of suffixes for Python C extension modules.
 try:
     # In Python 3.4+ There is a list
-    from importlib.machinery import EXTENSION_SUFFIXES
+    from importlib.machinery import EXTENSION_SUFFIXES, all_suffixes
+    ALL_SUFFIXES = all_suffixes()
 except ImportError:
     import imp
+    ALL_SUFFIXES = [f[0] for f in imp.get_suffixes()]
     EXTENSION_SUFFIXES = [f[0] for f in imp.get_suffixes()
                           if f[2] == imp.C_EXTENSION]
 

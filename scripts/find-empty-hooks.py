@@ -29,7 +29,6 @@ from __future__ import print_function
 import glob
 import os
 import sys
-import imp
 
 # Expand PYTHONPATH with PyInstaller package to support running without
 # installation.

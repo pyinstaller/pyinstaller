@@ -12,6 +12,7 @@
 Decorators for skipping PyInstaller tests when specific requirements are not met.
 """
 
+import os
 import sys
 import traceback
 import distutils.ccompiler
@@ -59,7 +60,7 @@ def _check_for_compiler():
     return has_compiler
 
 # A decorator to skip tests if a C compiler isn't detected.
-has_compiler = _check_for_compiler,()
+has_compiler = _check_for_compiler()
 skipif_no_compiler = skipif(not has_compiler, reason="Requires a C compiler")
 
 

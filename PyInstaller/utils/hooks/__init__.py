@@ -13,24 +13,19 @@ import pkg_resources
 import pkgutil
 import sys
 import textwrap
-import re
 
 from ...compat import base_prefix, exec_command_stdout, exec_python, \
     is_darwin, is_py2, is_py3, is_venv, string_types, open_file, \
-    EXTENSION_SUFFIXES
+    EXTENSION_SUFFIXES, ALL_SUFFIXES
 from ... import HOMEPATH
 from ... import log as logging
 
 logger = logging.getLogger(__name__)
 
-
-# All these extension represent Python modules or extension modules
-PY_EXECUTABLE_SUFFIXES = set(['.py', '.pyc', '.pyd', '.pyo', '.so'])
-
 # These extensions represent Python executables and should therefore be
 # ignored when collecting data files.
 # NOTE: .dylib files are not Python executable and should not be in this list.
-PY_IGNORE_EXTENSIONS = set(['.py', '.pyc', '.pyd', '.pyo', '.so'])
+PY_IGNORE_EXTENSIONS = set(ALL_SUFFIXES)
 
 # Some hooks need to save some values. This is the dict that can be used for
 # that.
@@ -646,10 +641,6 @@ def is_module_or_submodule(name, mod_or_submod):
 PY_DYLIB_PATTERNS = [
     '*.dll',
     '*.dylib',
-    # Some packages contain dynamic libraries that ends with the same
-    # suffix as Python C extensions. E.g. zmq:  libzmq.pyd, libsodium.pyd.
-    # Those files usually starts with 'lib' prefix.
-    'lib*.pyd',
     'lib*.so',
 ]
 
@@ -658,8 +649,8 @@ def collect_dynamic_libs(package, destdir=None):
     """
     This routine produces a list of (source, dest) of dynamic library
     files which reside in package. Its results can be directly assigned to
-    ``binaries`` in a hook script; see, for example, hook-zmq.py. The
-    package parameter must be a string which names the package.
+    ``binaries`` in a hook script. The package parameter must be a string which
+    names the package.
 
     :param destdir: Relative path to ./dist/APPNAME where the libraries
                     should be put.
@@ -750,6 +741,10 @@ def collect_system_data_files(path, destdir=None, include_py_files=False):
     # Accept only strings as paths.
     if not isinstance(path, string_types):
         raise ValueError
+    # The call to ``remove_prefix`` below assumes a path separate of ``os.sep``,
+    # which may not be true on Windows; Windows allows Linux path separators in
+    # filenames. Fix this.
+    path = os.path.normpath(path)
 
     # Walk through all file in the given package, looking for data files.
     datas = []

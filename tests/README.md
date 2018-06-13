@@ -21,7 +21,7 @@ installed:
 
 The easiest way to install these (and some useful pytest add-ons) is running
 ```
-pip install -U tests/requirements-tools.txt
+pip install -U -r tests/requirements-tools.txt
 ```
 
 Running the Tests

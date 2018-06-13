@@ -8,8 +8,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-import pytest
-
 # PEP-302 import hooks specification contain section 'Optional
 # Extensions to the Importer Protocol'
 #

@@ -7,12 +7,12 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-import codecs
 import os
+import plistlib
 import shutil
 from ..compat import is_darwin, FileExistsError
 from .api import EXE, COLLECT
-from .datastruct import Target, TOC, logger, _check_guts_eq
+from .datastruct import Target, TOC, logger
 from .utils import _check_path_overlap, _rmtree, add_suffix_to_extensions, checkCache
 
 
@@ -143,7 +143,7 @@ class BUNDLE(Target):
                            # side effect, the main application doesn't get one
                            # as well, but at startup time the loader will take
                            # care of transforming the process type.
-                           "LSBackgroundOnly": "0",
+                           "LSBackgroundOnly": False,
 
                            }
 
@@ -151,16 +151,14 @@ class BUNDLE(Target):
         if isinstance(self.info_plist, dict) and self.info_plist:
             info_plist_dict.update(self.info_plist)
 
-        info_plist = u"""<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>"""
-        for k, v in info_plist_dict.items():
-            info_plist += u"<key>%s</key>\n<string>%s</string>\n" % (k, v)
-        info_plist += u"""</dict>
-</plist>"""
-        with codecs.open(os.path.join(self.name, "Contents", "Info.plist"), "w", "utf-8") as f:
-            f.write(info_plist)
+        plist_filename = os.path.join(self.name, "Contents", "Info.plist")
+        try:
+            # python >= 3.4
+            with open(plist_filename, "wb") as plist_fh:
+                plistlib.dump(info_plist_dict, plist_fh)
+        except AttributeError:
+            # python 2.7
+            plistlib.writePlist(info_plist_dict, plist_filename)
 
         links = []
         toc = add_suffix_to_extensions(self.toc)

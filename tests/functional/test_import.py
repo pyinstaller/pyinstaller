@@ -10,13 +10,14 @@
 
 import os
 import glob
-import ctypes, ctypes.util
+import ctypes
+import ctypes.util
 
 import pytest
 
-from PyInstaller.compat import is_darwin, is_py2, is_py35, is_win
+from PyInstaller.compat import is_darwin, is_py2, is_py3, is_py35, is_win
 from PyInstaller.utils.tests import skipif, importorskip, \
-  skipif_notwin, skipif_no_compiler, xfail, has_compiler
+    skipif_notwin, skipif_no_compiler, xfail, has_compiler
 
 # :todo: find a way to get this from `conftest` or such
 # Directory with testing modules used in some tests.
@@ -174,6 +175,8 @@ def test_import_non_existing_raises_import_error(pyi_builder):
 
 # :todo: Use some package which is already installed for some other
 # reason instead of `simplejson` which is only used here.
+@skipif(is_py3, reason="Python 3 doesn't use the CExtensionImporter, so it "
+        "doesn't need testing.")
 @importorskip('simplejson')
 def test_c_extension(pyi_builder):
     pyi_builder.test_script('pyi_c_extension.py')
@@ -205,10 +208,11 @@ def test_import_metapath1(pyi_builder, script_dir):
 
 
 @importorskip('PyQt5')
-def test_import_pyqt5_uic_port(monkeypatch, pyi_builder):
+def test_import_pyqt5_uic_port(script_dir, pyi_builder):
     extra_path = os.path.join(_MODULES_DIR, 'pyi_import_pyqt_uic_port')
     pyi_builder.test_script('pyi_import_pyqt5_uic_port.py',
-                            pyi_args=['--path', extra_path])
+        # Add the path to a fake PyQt5 package, used for this test.
+        pyi_args=['--path', extra_path])
 
 
 #--- ctypes ----

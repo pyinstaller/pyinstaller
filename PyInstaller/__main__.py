@@ -15,7 +15,6 @@ Main command-line interface to PyInstaller.
 import os
 import argparse
 import platform
-import sys
 
 
 from . import __version__
@@ -25,6 +24,22 @@ from . import log as logging
 from .compat import check_requirements
 
 logger = logging.getLogger(__name__)
+
+
+# Taken from https://stackoverflow.com/a/22157136 to format args more flexibly:
+# any help text which beings with ``R|`` will have all newlines preserved; the
+# help text will be line wrapped. See
+# https://docs.python.org/3/library/argparse.html#formatter-class.
+#
+# This is used by the ``--debug`` option.
+class _SmartFormatter(argparse.HelpFormatter):
+
+    def _split_lines(self, text, width):
+        if text.startswith('R|'):
+            return argparse.RawTextHelpFormatter._split_lines(self, text[2:],
+                                                              width)
+        else:
+            return argparse.HelpFormatter._split_lines(self, text, width)
 
 
 def run_makespec(filenames, **opts):
@@ -57,13 +72,13 @@ def run(pyi_args=None, pyi_config=None):
     pyi_config   allows checking configuration once when running multiple tests
     """
     check_requirements()
-    
+
     import PyInstaller.building.makespec
     import PyInstaller.building.build_main
     import PyInstaller.log
 
     try:
-        parser = argparse.ArgumentParser()
+        parser = argparse.ArgumentParser(formatter_class=_SmartFormatter)
         __add_options(parser)
         PyInstaller.building.makespec.__add_options(parser)
         PyInstaller.building.build_main.__add_options(parser)
