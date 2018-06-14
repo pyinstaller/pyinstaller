@@ -324,7 +324,11 @@ def get_module_file_attribute(package):
         # Statement to return __file__ attribute of a package.
         __file__statement = """
             import %s as p
-            print(p.__file__)
+            try:
+                print(p.__file__)
+            except:
+                # If p lacks a file attribute, hide the exception.
+                pass
         """
         attr = exec_statement(__file__statement % package)
         if not attr.strip():
