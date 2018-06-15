@@ -917,9 +917,9 @@ def get_installer(module):
 
 
 # Walk through every package, determining which distribution it is in.
-def map_distribution_to_package():
-    logger.info('Determining a mapping of distributions to packages.')
-    dist_to_package = {}
+def map_distribution_to_packages():
+    logger.info('Determining a mapping of distributions to packages...')
+    dist_to_packages = {}
     for p in sys.path:
         # The path entry ``''`` refers to the current directory.
         if not p:
@@ -938,15 +938,17 @@ def map_distribution_to_package():
                     pass
                 else:
                     # I assume a distribution contains only one package.
-                    assert (dist.key not in dist_to_package or
-                            dist_to_package[dist.key] == ld)
-                    dist_to_package[dist.key] = ld
+                    if (dist.key in dist_to_packages):
+                        logger.info('X'*100)
+                        logger.info('Multiple packages %s in distribution %s',
+                                    [ld] + dist_to_packages[dist.key], dist.key)
+                    dist_to_packages.setdefault(dist.key, []).append(ld)
 
-    return dist_to_package
+    return dist_to_packages
 
 
 # Store this mapping as a global, since it is expensive to compute.
-DISTRIBUTION_TO_PACKAGE = map_distribution_to_package()
+DISTRIBUTION_TO_PACKAGES = map_distribution_to_packages()
 
 
 # Given a ``package_name`` as a string, this function returns a list of packages
@@ -956,9 +958,9 @@ def requirements_for_package(package_name):
     hiddenimports = []
 
     for requirement in pkg_resources.get_distribution(package_name).requires():
-        if requirement.key in DISTRIBUTION_TO_PACKAGE:
-            required_package = DISTRIBUTION_TO_PACKAGE[requirement.key]
-            hiddenimports.append(required_package)
+        if requirement.key in DISTRIBUTION_TO_PACKAGES:
+            required_packages = DISTRIBUTION_TO_PACKAGES[requirement.key]
+            hiddenimports.extend(required_packages)
         else:
             logger.warning('Unable to find package for requirement %s from '
                            'package %s.',
