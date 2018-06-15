@@ -22,16 +22,6 @@ from PyInstaller.compat import is_win
 _RUNTIME = 10  # In seconds.
 
 
-@importorskip('IPython')
-@pytest.mark.skipif(is_win, reason='See issue #3535.')
-def test_ipython(pyi_builder):
-    pyi_builder.test_source(
-        """
-        from IPython import embed
-        embed()
-        """, runtime=_RUNTIME)
-
-
 @xfail(reason='TODO - known to fail')
 @importorskip('PySide')
 def test_pyside(pyi_builder):
