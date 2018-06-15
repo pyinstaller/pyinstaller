@@ -29,12 +29,13 @@ from .. import HOMEPATH, DEFAULT_DISTPATH, DEFAULT_WORKPATH
 from .. import compat
 from .. import log as logging
 from ..utils.misc import absnormpath, compile_py_files
+from ..utils.hooks import is_package, get_module_file_attribute
 from ..compat import is_py2, is_win, PYDYLIB_NAMES, VALID_MODULE_TYPES
 from ..depend import bindepend
 from ..depend.analysis import initialize_modgraph
 from .api import PYZ, EXE, COLLECT, MERGE
 from .datastruct import TOC, Target, Tree, _check_guts_eq
-from .imphook import AdditionalFilesCache, ModuleHookCache
+from .imphook import AdditionalFilesCache, ModuleHookCache, ModuleHook
 from .osx import BUNDLE
 from .toc_conversion import DependencyProcessor
 from .utils import _check_guts_toc_mtime, format_binaries_and_datas
@@ -79,6 +80,12 @@ IMPORTANT: Do NOT post this list to the issue-tracker. Use it as a basis for
 
 """
 
+# The path to the Python standard library. Pick a stdlib module to
+# query.
+STDLIB_PATH = os.path.dirname(glob.__file__)
+
+# Don't include scripts, since they don't live in a package.
+VALID_MODULE_TYPES_BUT_SCRIPTS = VALID_MODULE_TYPES - set(['Script', 'AliasNode'])
 
 def _old_api_error(obj_name):
     """
@@ -463,6 +470,9 @@ class Analysis(Target):
         # hook scripts for imported modules.
         additional_files_cache = AdditionalFilesCache()
 
+        # A set of all packages to which a hook has been applied.
+        all_hooked_module_names = set()
+
         #FIXME: For orthogonality, move the following "while" loop into a new
         #PyiModuleGraph.post_graph_hooks() method. The "PyiModuleGraph" class
         #already handles all other hook types. Moreover, the graph node
@@ -470,52 +480,101 @@ class Analysis(Target):
         #best isolated into the "PyiModuleGraph" class itself.
 
         # For each imported module, run this module's post-graph hooks if any.
-        while True:
-            # Set of the names of all imported modules whose post-graph hooks
-            # are run by this iteration, preventing the next iteration from re-
-            # running these hooks. If still empty at the end of this iteration,
-            # no post-graph hooks were run; thus, this loop will be terminated.
-            hooked_module_names = set()
-
-            # For each remaining hookable module and corresponding hooks...
-            for module_name, module_hooks in module_hook_cache.items():
-                # Graph node for this module if imported or "None" otherwise.
-                module_node = self.graph.findNode(
-                    module_name, create_nspkg=False)
-
-                # If this module has not been imported, temporarily ignore it.
-                # This module is retained in the cache, as a subsequently run
-                # post-graph hook could import this module as a hidden import.
-                if module_node is None:
+        done = False
+        while not done:
+            done = True
+            modules_unhooked = set()
+            # Iterate through all modules referenced by the top script.
+            for module in self.graph.flatten(start=self.graph._top_script_node):
+                # Select only valid types that haven't been hooked yet.
+                module_type = type(module).__name__
+                module_name = module.identifier
+                if (module_type not in VALID_MODULE_TYPES_BUT_SCRIPTS or
+                    module_name in all_hooked_module_names):
                     continue
 
-                # If this module is unimportable, permanently ignore it.
-                if type(module_node).__name__ not in VALID_MODULE_TYPES:
-                    hooked_module_names.add(module_name)
+                if ' ' in module_name or "'" in module_name:
+                    logger.info('%s %s', module_name, module)
+                    assert False
+
+                # See if there's a hook for this module.
+                if module_name in module_hook_cache:
+                    # For each hook script for this module...
+                    for module_hook in module_hook_cache[module_name]:
+                        # We're not done yet -- we need another pass to apply
+                        # hooks to any imports produced by running this hook.
+                        done = False
+                        # Run this script's post-graph hook if any.
+                        module_hook.post_graph()
+
+                        # Cache all external dependencies listed by this script
+                        # after running this hook, which could add dependencies.
+                        additional_files_cache.add(
+                            module_name,
+                            module_hook.binaries,
+                            module_hook.datas)
+
+                    # Prevent this module's hooks from being run again.
+                    all_hooked_module_names.add(module_name)
+                else:
+                    modules_unhooked.add(module_name)
+
+            # Apply default hooks to anything not covered by standard hooks.
+            for module_name in modules_unhooked:
+                # Apply a default hook to the package this module is in.
+                #
+                # Transform ``package.module.submodule`` into ``package``.
+                candidate_package = module_name.split('.', 1)[0]
+                # Attempt to get the ``__file__`` attribute for this
+                # package.
+                try:
+                    file_attr = get_module_file_attribute(candidate_package)
+                except ImportError:
+                    # Namespace packages don't have a ``__file__``
+                    # attribute, which produces an ImportError. Assume that
+                    # any namespace package is not in the standard library.
+                    in_stdlib = False
+                else:
+                    # Transform ``/path/to/python/package/__init__.py`` to
+                    # ``/path/to/python/``, then check to see if that path
+                    # matches the Python standard library.
+                    in_stdlib = (os.path.dirname(
+                                 os.path.dirname(file_attr)) == STDLIB_PATH)
+                # See if a default hook should be applied to this package.
+                if (in_stdlib or
+                    candidate_package in all_hooked_module_names or
+                    not is_package(candidate_package)):
                     continue
 
-                # For each hook script for this module...
-                for module_hook in module_hooks:
-                    # Run this script's post-graph hook if any.
-                    module_hook.post_graph()
+                # We're not done yet -- we need another pass to apply hooks to
+                # any imports produced by running this hook.
+                done = False
+                # Even though the hook will act on the ``candidate_package``
+                # this module is in, only this module is guaranteed to be
+                # reachable from ``self._top_script_node``. Therefore, create a
+                # default ModuleHook for this module, not its containing
+                # ``candidate_package``.
+                module_hook = ModuleHook(
+                    module_graph=module_hook_cache.module_graph,
+                    module_name=module_name,
+                    hook_filename=os.path.join(get_importhooks_dir(),
+                                               'default-hook.py'),
+                    hook_module_name_prefix=module_hook_cache.
+                        _hook_module_name_prefix)
+                # Run it.
+                logger.info('Running default hook for package %s.',
+                            candidate_package)
+                module_hook.post_graph()
 
-                    # Cache all external dependencies listed by this script
-                    # after running this hook, which could add dependencies.
-                    additional_files_cache.add(
-                        module_name,
-                        module_hook.binaries,
-                        module_hook.datas)
+                # Cache all external dependencies listed by this script
+                # after running this hook, which could add dependencies.
+                additional_files_cache.add(
+                    module_name,
+                    module_hook.binaries,
+                    module_hook.datas)
 
-                # Prevent this module's hooks from being run again.
-                hooked_module_names.add(module_name)
-
-            # Prevent all post-graph hooks run above from being run again by the
-            # next iteration.
-            module_hook_cache.remove_modules(*hooked_module_names)
-
-            # If no post-graph hooks were run, terminate iteration.
-            if not hooked_module_names:
-                break
+                # Mark this unhooked package as now hooked.
+                all_hooked_module_names.add(candidate_package)
 
         # Update 'binaries' TOC and 'datas' TOC.
         deps_proc = DependencyProcessor(self.graph, additional_files_cache)
