@@ -319,6 +319,10 @@ def get_module_file_attribute(package):
     try:
         loader = pkgutil.find_loader(package)
         attr = loader.get_filename(package)
+        # The built-in ``datetime`` module returns ``None``. Mark this as
+        # an ``ImportError``.
+        if not attr:
+            raise ImportError
     # Second try to import module in a subprocess. Might raise ImportError.
     except (AttributeError, ImportError):
         # Statement to return __file__ attribute of a package.
