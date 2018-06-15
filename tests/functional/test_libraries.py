@@ -297,6 +297,15 @@ def test_PyQt5_QtQuick(pyi_builder):
         """)
 
 
+@importorskip('PyQt5')
+def test_PyQt5_SSL_support(pyi_builder):
+    pyi_builder.test_source(
+        """
+        from PyQt5.QtNetwork import QSslSocket
+        assert QSslSocket.supportsSsl()
+        """)
+
+
 # Test that the ``PyQt5.Qt`` module works by importing something from it.
 #
 # The Qt Bluetooth API (which any import to ``PyQt5.Qt`` implicitly imports)
@@ -799,7 +808,7 @@ def test_web3(pyi_builder):
 def test_phonenumbers(pyi_builder):
     pyi_builder.test_source("""
         import phonenumbers
-        
+
         number = '+17034820623'
         parsed_number = phonenumbers.parse(number)
 
