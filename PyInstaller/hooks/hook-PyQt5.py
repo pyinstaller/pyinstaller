@@ -34,13 +34,13 @@ def find_all_or_none(globs_to_include, num_files):
     # Since the PyQt5 wheels do not include d3dcompiler_4?.dll, libEGL.dll and
     # libGLESv2.dll will not be included for PyQt5 builds during CI.
     to_include = []
+    dst_dll_path = os.path.join('PyQt5', 'Qt', 'bin')
     for dll in globs_to_include:
         dll_path = os.path.join(pyqt5_library_info.location['BinariesPath'],
                                 dll)
         dll_file_paths = glob.glob(dll_path)
         for dll_file_path in dll_file_paths:
             file_name = os.path.basename(dll_file_path)
-            dst_dll_path = os.path.join('PyQt5', 'Qt', 'bin', file_name)
             to_include.append((dll_file_path, dst_dll_path))
     if len(to_include) == num_files:
         return to_include
