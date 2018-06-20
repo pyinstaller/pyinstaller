@@ -178,7 +178,7 @@ def __add_options(parser):
                    # then provide a default argument of all debug options enabled.
                    const=DEBUG_ALL_CHOICE,
                    # The options specified must come from this list.
-                   choices=[DEBUG_ALL_CHOICE] + DEBUG_ARGUMENT_CHOICES,
+                   choices=DEBUG_ALL_CHOICE + DEBUG_ARGUMENT_CHOICES,
                    # Append choice, rather than storing them (which would
                    # overwrite any previous selections).
                    action='append',
