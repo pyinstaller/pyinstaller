@@ -94,6 +94,9 @@ install:
   # Install PyInstaller
   - 'pip install -e .'
 
+  # Make sure the help options print.
+  - 'python -m pyinstaller -h'
+
 build: none
 
 test_script:

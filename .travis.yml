@@ -154,6 +154,9 @@ install:
   # Install PyInstaller.
   - pip install -e . | cat
 
+  # Make sure the help options print.
+  - python -m pyinstaller -h
+
 
 script:
   - true
