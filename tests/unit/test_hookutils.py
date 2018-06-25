@@ -15,7 +15,8 @@ from os.path import join
 
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules, \
   get_module_file_attribute, remove_prefix, remove_suffix, \
-  remove_file_extension, is_module_or_submodule
+  remove_file_extension, is_module_or_submodule, \
+  is_module_satisfies
 from PyInstaller.compat import exec_python
 
 
@@ -187,6 +188,9 @@ def test_is_module_or_submodule():
     assert not is_module_or_submodule('foo.bard', 'foo.bar')
     assert not is_module_or_submodule('foo', 'foo.bar')
 
+def test_is_module_satisfies_package_not_installed():
+    assert is_module_satisfies('pytest')
+    assert not is_module_satisfies('magnumopus-no-package-test-case') 
 
 
 _DATA_BASEPATH = join(TEST_MOD_PATH, TEST_MOD)
