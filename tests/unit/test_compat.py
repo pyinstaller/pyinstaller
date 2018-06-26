@@ -8,7 +8,7 @@
 #-----------------------------------------------------------------------------
 
 from PyInstaller.compat import is_py2
-from PyInstaller.utils.tests import xfail, skipif
+from PyInstaller.utils.tests import skipif
 
 import pytest
 

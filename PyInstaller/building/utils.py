@@ -24,7 +24,7 @@ import sys
 from PyInstaller.config import CONF
 from .. import compat
 from ..compat import is_darwin, is_win, EXTENSION_SUFFIXES, \
-    FileNotFoundError, open_file, is_py3
+    open_file, is_py3
 from ..depend import dylib
 from ..depend.bindepend import match_binding_redirect
 from ..utils import misc
@@ -95,11 +95,27 @@ def add_suffix_to_extensions(toc):
     new_toc = TOC()
     for inm, fnm, typ in toc:
         if typ == 'EXTENSION':
+            if is_py3:
+                # Change the dotted name into a relative path. This places C
+                # extensions in the Python-standard location. This only works
+                # in Python 3; see comments above
+                # ``sys.meta_path.append(CExtensionImporter())`` in
+                # ``pyimod03_importers``.
+                inm = inm.replace('.', os.sep)
             # In some rare cases extension might already contain a suffix.
             # Skip it in this case.
             if os.path.splitext(inm)[1] not in EXTENSION_SUFFIXES:
-                # Use this file's existing extension.
-                inm = inm + os.path.splitext(fnm)[1]
+                # Determine the base name of the file.
+                if is_py3:
+                    base_name = os.path.basename(inm)
+                else:
+                    base_name = inm.rsplit('.')[-1]
+                assert '.' not in base_name
+                # Use this file's existing extension. For extensions such as
+                # ``libzmq.cp36-win_amd64.pyd``, we can't use
+                # ``os.path.splitext``, which would give only the ```.pyd`` part
+                # of the extension.
+                inm = inm + os.path.basename(fnm)[len(base_name):]
 
         elif typ == 'DEPENDENCY':
             # Use the suffix from the filename.

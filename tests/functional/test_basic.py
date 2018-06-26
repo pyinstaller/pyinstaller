@@ -75,6 +75,13 @@ def test_celementtree(pyi_builder):
         print('OK')
         """)
 
+
+# Test a build with some complexity with the ``noarchive`` debug option.
+def test_noarchive(pyi_builder):
+    pyi_builder.test_source("from xml.etree.cElementTree import ElementTree",
+                            pyi_args=['--debug=noarchive'])
+
+
 @importorskip('codecs')
 def test_codecs(pyi_builder):
     pyi_builder.test_script('pyi_codecs.py')
@@ -531,7 +538,7 @@ def test_hook_collect_submodules(pyi_builder, script_dir):
 # Test that PyInstaller can handle a script with an arbitrary extension.
 def test_arbitrary_ext(pyi_builder):
     pyi_builder.test_script('pyi_arbitrary_ext.foo')
-    
+
 def test_option_runtime_tmpdir(pyi_builder):
     "Test to ensure that option `runtime_tmpdir` can be set and has effect."
 

@@ -19,6 +19,7 @@ binaries.extend(qt_plugins_binaries('imageformats', namespace='PySide2'))
 binaries.extend(qt_plugins_binaries('inputmethods', namespace='PySide2'))
 binaries.extend(qt_plugins_binaries('graphicssystems', namespace='PySide2'))
 binaries.extend(qt_plugins_binaries('platforms', namespace='PySide2'))
+binaries.extend(qt_plugins_binaries('styles', namespace='PySide2'))
 
 if is_linux:
     binaries.extend(qt_plugins_binaries('platformthemes', namespace='PySide2'))

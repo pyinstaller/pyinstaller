@@ -11,8 +11,6 @@
 import os
 import argparse
 
-import PyInstaller.log
-
 def run():
     parser = argparse.ArgumentParser()
     parser.add_argument('info_file', metavar='info-file',

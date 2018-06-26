@@ -20,6 +20,7 @@ instance, thus modifying which modules will be frozen into the executable.
 
 from .datastruct import TOC
 from ..lib.modulegraph.modulegraph import RuntimeModule, RuntimePackage
+from .utils import format_binaries_and_datas
 
 
 class PreSafeImportModuleAPI(object):
@@ -492,7 +493,7 @@ class PostGraphAPI(object):
         if isinstance(list_of_tuples, TOC):
             self._added_binaries.extend(i[:2] for i in list_of_tuples)
         else:
-            self._added_binaries.extend(list_of_tuples)
+            self._added_binaries.extend(format_binaries_and_datas(list_of_tuples))
 
     def add_datas(self, list_of_tuples):
         """
@@ -506,4 +507,4 @@ class PostGraphAPI(object):
         if isinstance(list_of_tuples, TOC):
             self._added_datas.extend(i[:2] for i in list_of_tuples)
         else:
-            self._added_datas.extend(list_of_tuples)
+            self._added_datas.extend(format_binaries_and_datas(list_of_tuples))

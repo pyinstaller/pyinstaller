@@ -33,6 +33,9 @@ environment:
       PYTHON_ARCH: 32
 
 init:
+  # Uncomment the line below to enable Remote Desktop access to the build worker
+  # VM. See https://www.appveyor.com/docs/how-to/rdp-to-build-worker/.
+  #- ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
   - "ECHO \"%APPVEYOR_SCHEDULED_BUILD%\""
   # If there is a newer build queued for the same PR, cancel this one.
@@ -44,6 +47,10 @@ init:
         https://ci.appveyor.com/api/projects/$env:APPVEYOR_ACCOUNT_NAME/$env:APPVEYOR_PROJECT_SLUG/history?recordsNumber=50).builds | `
         Where-Object pullRequestId -eq $env:APPVEYOR_PULL_REQUEST_NUMBER)[0].buildNumber) { `
           throw "There are newer queued builds for this pull request, failing early." }
+  # Free up some disk space; exceeding the limit of 90 GB results in a
+  # locked-out account. The Qt directory takes over 30 GB. Do this in the
+  # background.
+  - ps: 'Start-Process -FilePath "$env:comspec" -ArgumentList "/c rmdir tmp /s /q"'
 
 cache:
   # Cache downloaded pip packages and built wheels.
@@ -60,9 +67,9 @@ install:
   # Check that we have the expected version and architecture for Python
   - python --version
   - >-
-     %CMD_IN_ENV%
-     python -c "import sys,platform,struct;
-     print(sys.platform, platform.machine(), struct.calcsize('P') * 8, )"
+    %CMD_IN_ENV%
+    python -c "import sys,platform,struct;
+    print(sys.platform, platform.machine(), struct.calcsize('P') * 8, )"
 
   # Compile bootloader.
   - cd bootloader
@@ -87,14 +94,25 @@ install:
   # Install PyInstaller
   - 'pip install -e .'
 
+  # Make sure the help options print.
+  - 'python -m pyinstaller -h'
+
 build: none
 
 test_script:
   # Run the tests appropriate for this entry in the test matrix. Skip tests
   # if we're just updating the cache.
-  - 'if not "%APPVEYOR_SCHEDULED_BUILD%" == "True" (
-          %PYTEST%
-    )'
+  #
+  # On Windows, the ``noarchive`` test re-compiles all ``.pyc`` or ``.pyo``
+  # files. If run in parallel, one test will be trying to read a compiled file
+  # while the other is writing it, producing a ``PermissionError: [Errno 13]
+  # Permission denied`` exception. To avoid this, run these two tests in
+  # separate ``pytest`` invokations.
+  - >-
+    if not "%APPVEYOR_SCHEDULED_BUILD%" == "True" (
+    %PYTEST% -k "test_noarchive[onefile]" &&
+    %PYTEST% -k "not test_noarchive[onefile]"
+    )
 
 on_finish:
   # Remove old or huge cache files to hopefully not exceed the 1GB cache limit.
@@ -115,3 +133,6 @@ on_finish:
         (Resolve-Path .\junit-results.xml)
       )
       $LastExitCode = 0
+  # Uncomment to pause the build until a special "lock" file on the VM desktop
+  # is deleted. See https://www.appveyor.com/docs/how-to/rdp-to-build-worker/.
+  #- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))

@@ -13,17 +13,18 @@ import pkg_resources
 from ..depend.utils import get_path_to_egg
 from .datastruct import TOC, Tree
 from .. import log as logging
+from ..compat import ALL_SUFFIXES
 
 logger = logging.getLogger(__name__)
 
-
-# create a list of excludes suitable for Tree
-from ..utils.hooks import PY_IGNORE_EXTENSIONS, PY_EXECUTABLE_SUFFIXES
+# create a list of excludes suitable for Tree.
 PY_IGNORE_EXTENSIONS = set(
-    '*'+s for s in PY_IGNORE_EXTENSIONS | PY_EXECUTABLE_SUFFIXES)
-# Exclude EGG-INFO, too, as long as we do not have a way to hold several
-# in one archive
-PY_IGNORE_EXTENSIONS = PY_IGNORE_EXTENSIONS | set(['EGG-INFO'])
+    ['*' + x for x in ALL_SUFFIXES] +
+    # Exclude EGG-INFO, too, as long as we do not have a way to hold several
+    # in one archive
+    ['EGG-INFO']
+)
+
 
 class DependencyProcessor(object):
     """

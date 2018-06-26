@@ -91,7 +91,7 @@ def create_py3_base_library(libzip_filename, graph):
                             _write_long(fc, timestamp)
                             _write_long(fc, size)
                             marshal.dump(mod.code, fc)
-                            # Use a ZipInfo to set timestamp for deterministic build 
+                            # Use a ZipInfo to set timestamp for deterministic build
                             info = zipfile.ZipInfo(new_name)
                             zf.writestr(info, fc.getvalue())
 
@@ -368,7 +368,7 @@ def load_ldconfig_cache():
         # an informative line and might contain localized characters.
         # Example of first line with local cs_CZ.UTF-8:
         #$ /sbin/ldconfig -p
-        #V keši „/etc/ld.so.cache“ nalezeno knihoven: 2799
+        #V keši „/etc/ld.so.cache“ nalezeno knihoven: 2799
         #      libzvbi.so.0 (libc6,x86-64) => /lib64/libzvbi.so.0
         #      libzvbi-chains.so.0 (libc6,x86-64) => /lib64/libzvbi-chains.so.0
         text = compat.exec_command(ldconfig, '-p')

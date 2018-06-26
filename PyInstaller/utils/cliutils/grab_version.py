@@ -9,10 +9,7 @@
 
 
 import codecs
-import os
 import argparse
-
-import PyInstaller.log
 
 
 def run():

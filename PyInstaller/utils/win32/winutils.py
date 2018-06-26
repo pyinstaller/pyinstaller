@@ -100,7 +100,7 @@ def import_pywin32_module(module_name, _is_venv=None):
 
     try:
         module = __import__(
-            name=module_name, globals={}, locals={}, fromlist=[''])
+            module_name, globals={}, locals={}, fromlist=[''])
     except ImportError as exc:
         if str(exc).startswith('No system module'):
             # True if "sys.frozen" is currently set.

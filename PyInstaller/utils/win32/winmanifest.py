@@ -935,8 +935,9 @@ class Manifest(object):
 
     def update_resources(self, dstpath, names=None, languages=None):
         """ Update or add manifest resource in dll/exe file dstpath """
-        UpdateManifestResourcesFromXML(dstpath, self.toprettyxml(), names,
-                                       languages)
+        UpdateManifestResourcesFromXML(dstpath,
+                                       self.toprettyxml().encode("UTF-8"),
+                                       names, languages)
 
     def writeprettyxml(self, filename_or_file=None, indent="  ", newl=os.linesep,
                        encoding="UTF-8"):
