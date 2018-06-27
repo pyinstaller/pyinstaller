@@ -134,7 +134,7 @@ try setting the correct path in the environment variable
 Getting Debug Messages
 ----------------------
 
-The ``--debug`` option (and its :ref:`choices <pyinstaller how to generate>`) provides a
+The ``--debug=all`` option (and its :ref:`choices <pyinstaller how to generate>`) provides a
 signficiant amount of diagnostic inforation.
 This can be useful during development of a complex package,
 or when your app doesn't seem to be starting,
@@ -145,7 +145,7 @@ If the ``--windowed`` option is used when bundling a Windows app,
 they are displayed as MessageBoxes.
 For a ``--windowed`` Mac OS app they are not displayed.
 
-Remember to bundle without ``--debug`` for your production version.
+Remember to bundle without ``--debug=all`` for your production version.
 Users would find the messages annoying.
 
 
@@ -186,7 +186,7 @@ When this occurs, Analysis can detect nothing.
 There will be no warnings, only an ImportError at run-time.
 
 To find these hidden imports,
-build the app with the ``--debug`` flag (see `Getting Debug Messages` above)
+build the app with the ``--debug=all`` flag (see `Getting Debug Messages` above)
 and run it.
 
 Once you know what modules are needed, you add the needed modules
