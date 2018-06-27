@@ -15,7 +15,7 @@ from os.path import join
 
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules, \
     get_module_file_attribute, remove_prefix, remove_suffix, \
-    remove_file_extension, is_module_or_submodule \
+    remove_file_extension, is_module_or_submodule, \
     is_module_satisfies
 from PyInstaller.compat import exec_python, ALL_SUFFIXES
 
