@@ -73,31 +73,41 @@ if root_dir:
     # Include django data files - localizations, etc.
     datas = collect_data_files('django')
 
-    # Bundle django DB schema migration scripts as data files.
-    # They are necessary for some commands.
-    logger.info('Collecting Django migration scripts.')
-    migration_modules = [
-             'django.conf.app_template.migrations',
-             'django.contrib.admin.migrations',
-             'django.contrib.auth.migrations',
-             'django.contrib.contenttypes.migrations',
-             'django.contrib.flatpages.migrations',
-             'django.contrib.redirects.migrations',
-             'django.contrib.sessions.migrations',
-             'django.contrib.sites.migrations',
+    # Bundle (from a bunch of modules) the following extra stuff as data files:
+    # - django DB schema migration scripts (needed for migration commands)
+    # - templatetags (new in django 1.9, most of django.admin needs those)
+
+    extra_mods = [
+        'django',
+        'django.conf.app_template',
+        'django.contrib.admin',
+        'django.contrib.auth',
+        'django.contrib.contenttypes',
+        'django.contrib.flatpages',
+        'django.contrib.redirects',
+        'django.contrib.sessions',
+        'django.contrib.sites',
     ]
-    # Include migration scripts of Django-based apps too.
-    installed_apps = eval(get_module_attribute(package_name + '.settings', 'INSTALLED_APPS'))
-    migration_modules.extend(set(app + '.migrations' for app in installed_apps))
-    # Copy migration files.
-    for mod in migration_modules:
-        mod_name, bundle_name = mod.split('.', 1)
-        mod_dir = os.path.dirname(get_module_file_attribute(mod_name))
-        bundle_dir = bundle_name.replace('.', os.sep)
-        pattern = os.path.join(mod_dir, bundle_dir, '*.py')
-        files = glob.glob(pattern)
-        for f in files:
-            datas.append((f, os.path.join(mod_name, bundle_dir)))
+
+    for extra in ('migrations', 'templatetags'):
+        logger.info('Collecting Django %s files.' % extra)
+        extra_modules = [mod + '.' + extra for mod in extra_mods]
+
+        # Include extra files of Django-based apps too.
+        installed_apps = eval(
+            get_module_attribute(package_name + '.settings', 'INSTALLED_APPS'))
+        extra_modules.extend(
+            set(app + '.%s' % extra for app in installed_apps))
+
+        # Copy files.
+        for mod in extra_modules:
+            mod_name, bundle_name = mod.split('.', 1)
+            mod_dir = os.path.dirname(get_module_file_attribute(mod_name))
+            bundle_dir = bundle_name.replace('.', os.sep)
+            pattern = os.path.join(mod_dir, bundle_dir, '*.py')
+            files = glob.glob(pattern)
+            for f in files:
+                datas.append((f, os.path.join(mod_name, bundle_dir)))
 
     # Include data files from your Django project found in your django root package.
     datas += collect_data_files(package_name)
