@@ -219,9 +219,9 @@ def _collect_tcl_tk_files(hook_api):
         return []
 
     tcltree = Tree(
-        tcl_root, prefix='tcl', excludes=['demos', '*.lib', 'tclConfig.sh'])
+        tcl_root, prefix='tclResources', excludes=['demos', '*.lib', 'tclConfig.sh'])
     tktree = Tree(
-        tk_root, prefix='tk', excludes=['demos', '*.lib', 'tkConfig.sh'])
+        tk_root, prefix='tkResources', excludes=['demos', '*.lib', 'tkConfig.sh'])
 
     # If the current Tcl installation is a Teapot-distributed version of
     # ActiveTcl and the current platform is OS X, warn that this is bad.
@@ -229,6 +229,24 @@ def _collect_tcl_tk_files(hook_api):
         _warn_if_activetcl_or_teapot_installed(tcl_root, tcltree)
 
     return (tcltree + tktree)
+
+
+def _collect_tcl_tk_exe(hook_api):
+    """
+    Get a list of TOC-style 3-tuples describing all external Tcl/Tk executables files.
+
+    Returns
+    -------
+    Tree
+        Such list.
+    """
+
+    tcl_root, tk_root = _find_tcl_tk(hook_api)
+
+    tck_exe = ('Tcl',os.path.join(tcl_root,'..','..','Tcl'),'DATA')
+    tc_exe = ('Tk',os.path.join(tk_root,'..','..','Tk'),'DATA')
+
+    return (tck_exe, tc_exe)
 
 
 def hook(hook_api):
@@ -242,6 +260,10 @@ def hook(hook_api):
         # so we need to store it into `hook_api.datas` to prevent
         # `building.imphook.format_binaries_and_datas` from crashing
         # with "too many values to unpack".
-        hook_api.add_datas(_collect_tcl_tk_files(hook_api))
+        datas  = _collect_tcl_tk_files(hook_api)
+        if is_darwin:
+            datas += _collect_tcl_tk_exe(hook_api)
+        hook_api.add_datas(datas)
+
     else:
         logger.error("... skipping Tcl/Tk handling on unsupported platform %s", sys.platform)
