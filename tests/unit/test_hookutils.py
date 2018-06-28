@@ -188,9 +188,10 @@ def test_is_module_or_submodule():
     assert not is_module_or_submodule('foo.bard', 'foo.bar')
     assert not is_module_or_submodule('foo', 'foo.bar')
 
+
 def test_is_module_satisfies_package_not_installed():
     assert is_module_satisfies('pytest')
-    assert not is_module_satisfies('magnumopus-no-package-test-case') 
+    assert not is_module_satisfies('magnumopus-no-package-test-case')
 
 
 _DATA_BASEPATH = join(TEST_MOD_PATH, TEST_MOD)
