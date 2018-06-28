@@ -494,7 +494,7 @@ def is_module_satisfies(requirements, version=None, version_attr='__version__'):
         # Module does not exist in the system.
         return False
     else:
-        # Compare this version against the version parsed from these requirements.
+        # Compare this version against the one parsed from the requirements.
         return version in requirements_parsed
 
 
