@@ -357,7 +357,7 @@ def exec_command(*cmdargs, **kwargs):
     """
 
     encoding = kwargs.pop('encoding', None)
-    out = subprocess.Popen(cmdargs, stdout=subprocess.PIPE, **kwargs).communicate()[0]
+    out = subprocess.Popen(cmdargs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kwargs).communicate()[0]
     # Python 3 returns stdout/stderr as a byte array NOT as string.
     # Thus we need to convert that to proper encoding.
 
