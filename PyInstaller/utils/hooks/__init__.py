@@ -490,8 +490,12 @@ def is_module_satisfies(requirements, version=None, version_attr='__version__'):
         module_name = requirements_parsed.project_name
         version = get_module_attribute(module_name, version_attr)
 
-    # Compare this version against the version parsed from these requirements.
-    return version in requirements_parsed
+    if not version:
+        # Module does not exist in the system.
+        return False
+    else:
+        # Compare this version against the one parsed from the requirements.
+        return version in requirements_parsed
 
 
 def is_package(module_name):
