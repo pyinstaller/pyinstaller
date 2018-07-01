@@ -18,7 +18,7 @@ gevent==1.2.2 # pyup: ignore
 babel==2.6.0
 boto==2.48.0
 boto3==1.7.47
-botocore==1.10.33
+botocore==1.10.48
 pygments==2.2.0
 pylint==1.9.1
 markdown==2.6.11
