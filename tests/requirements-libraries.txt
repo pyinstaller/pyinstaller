@@ -32,7 +32,7 @@ lxml==4.2.3
 keyring==13.1.0
 openpyxl==2.5.4
 pycparser==2.18
-pytz==2018.4
+pytz==2018.5
 sqlalchemy==1.2.8
 twisted==18.4.0
 zeep==2.5.0
