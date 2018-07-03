@@ -62,7 +62,7 @@ pyenchant==2.0.0; sys_platform == 'darwin' or (sys_platform == 'win32' and pytho
 
 # While PyQt5 itself is provided as wheels for Python 3.4, it requires
 # SIP>=4.19 which is not available for Python 3.4.
-pyqt5==5.10.1; python_version >= '3.5'
+pyqt5==5.11.2; python_version >= '3.5'
 
 # No wheel for python 3.5.
 PySide==1.2.4; sys_platform == 'win32' and python_version <= '3.4'
