@@ -220,7 +220,9 @@ def os_listdir(path):
 
 def _code_to_file(co):
     """ Convert code object to a .pyc pseudo-file """
-    if sys.version_info >= (3, 4):
+    if sys.version_info >= (3, 7):
+        header = imp.get_magic() + (b'\0' * 12)
+    elif sys.version_info >= (3, 4):
         header = imp.get_magic() + (b'\0' * 8)
     else:
         header = imp.get_magic() + (b'\0' * 4)
@@ -2108,8 +2110,11 @@ class ModuleGraph(ObjectGraph):
                 co = None
                 cls = InvalidCompiledModule
             else:
-                fp.read(4)
-                if sys.version_info >= (3, 4):
+                if sys.version_info >= (3, 7):
+                    fp.read(12)
+                elif sys.version_info >= (3, 4):
+                    fp.read(8)
+                else:
                     fp.read(4)
                 try:
                     co = marshal.loads(fp.read())
