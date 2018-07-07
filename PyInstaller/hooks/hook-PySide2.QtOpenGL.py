@@ -7,6 +7,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+from PyInstaller.utils.hooks import qt_plugins_binaries
 from PyInstaller.compat import is_linux
 
 hiddenimports = ['PySide2.QtCore',
