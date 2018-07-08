@@ -112,11 +112,15 @@ jobs:
 
     - <<: *test-pyinstaller
       python: nightly
+      dist: xenial
+      sudo: true
     - <<: *test-libraries
       python: nightly
+      dist: xenial
+      sudo: true
 
   allow_failures:
-      # Just tests how PyInstaller performs with upcoming Python 3.6
+      # Just tests how PyInstaller performs with upcoming Python
       - python: "nightly"
 
 addons:
