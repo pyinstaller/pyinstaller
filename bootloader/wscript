@@ -518,7 +518,9 @@ def configure(ctx):
 
             # For security, enable the _FORTIFY_SOURCE macro detecting buffer
             # overflows in various string and memory manipulation functions.
-            if ctx.env.CC_NAME == 'gcc':
+            if ctx.options.debug:
+                ctx.env.append_value('CFLAGS', '-U_FORTIFY_SOURCE')
+            elif ctx.env.CC_NAME == 'gcc':
                 # Undefine this macro if already defined by default to avoid
                 # "macro redefinition" errors.
                 ctx.env.append_value('CFLAGS', '-U_FORTIFY_SOURCE')

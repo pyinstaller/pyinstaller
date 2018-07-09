@@ -28,7 +28,8 @@ from types import CodeType
 import marshal
 import zlib
 
-from PyInstaller.building.utils import get_code_object, strip_paths_in_code
+from PyInstaller.building.utils import get_code_object, strip_paths_in_code,\
+    fake_pyc_timestamp
 from PyInstaller.loader.pyimod02_archive import PYZ_TYPE_MODULE, PYZ_TYPE_PKG, \
     PYZ_TYPE_DATA
 from ..compat import BYTECODE_MAGIC, is_py2
@@ -394,10 +395,15 @@ class CArchiveWriter(ArchiveWriter):
                 self.lib.write(comprobj.compress(code_data))
             else:
                 assert fh
+                # We only want to change it for pyc files
+                modify_header = typcd in ('M', 'm', 's')
                 while 1:
                     buf = fh.read(16*1024)
                     if not buf:
                         break
+                    if modify_header:
+                        modify_header = False
+                        buf = fake_pyc_timestamp(buf)
                     self.lib.write(comprobj.compress(buf))
             self.lib.write(comprobj.flush())
 

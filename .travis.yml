@@ -15,6 +15,7 @@ dist: trusty
 cache:
   directories:
     - $HOME/.cache/pip
+    - $HOME/py37
 
 os:
   - linux
@@ -96,13 +97,30 @@ jobs:
     - <<: *lint
       python: 3.6
 
+    # Building Python > 3.7 requires OpenSSL 1.0.2 (or 1.1), which is
+    # available in xenial (16.04 LTS) only. As of 2018-07-08 xenial is only
+    # available as VM (sudo: true)
+
+    - <<: *test-pyinstaller
+      python: 3.7
+      dist: xenial
+      sudo: true
+    - <<: *test-libraries
+      python: 3.7
+      dist: xenial
+      sudo: true
+
     - <<: *test-pyinstaller
       python: nightly
+      dist: xenial
+      sudo: true
     - <<: *test-libraries
       python: nightly
+      dist: xenial
+      sudo: true
 
   allow_failures:
-      # Just tests how PyInstaller performs with upcoming Python 3.6
+      # Just tests how PyInstaller performs with upcoming Python
       - python: "nightly"
 
 addons:
