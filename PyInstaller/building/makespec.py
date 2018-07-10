@@ -284,11 +284,20 @@ def __add_options(parser):
                         "The ``_MEIxxxxxx``-folder will be created here. "
                         "Please use this option only if you know what you "
                         "are doing.")
+    g.add_argument("--bootloader-ignore-signals", action="store_true",
+                   default=False,
+                   help=("Tell the bootloader to ignore signals rather "
+                         "than forwarding them to the child process. "
+                         "Useful in situations where e.g. a supervisor "
+                         "process signals both the bootloader and child "
+                         "(e.g. via a process group) to avoid signalling "
+                         "the child twice."))
 
 
 def main(scripts, name=None, onefile=None,
          console=True, debug=None, strip=False, noupx=False,
          runtime_tmpdir=None, pathex=None, version_file=None, specpath=None,
+         bootloader_ignore_signals=False,
          datas=None, binaries=None, icon_file=None, manifest=None, resources=None, bundle_identifier=None,
          hiddenimports=None, hookspath=None, key=None, runtime_hooks=None,
          excludes=None, uac_admin=False, uac_uiaccess=False,
@@ -390,6 +399,7 @@ def main(scripts, name=None, onefile=None,
         'noarchive': 'noarchive' in debug,
         'options': [('v', None, 'OPTION')] if 'imports' in debug else [],
         'debug_bootloader': 'bootloader' in debug,
+        'bootloader_ignore_signals': bootloader_ignore_signals,
         'strip': strip,
         'upx': not noupx,
         'runtime_tmpdir': runtime_tmpdir,

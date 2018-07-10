@@ -44,6 +44,13 @@
     #include <sys/wait.h>
     #include <unistd.h>  /* rmdir, unlink, mkdtemp */
 #endif /* ifdef _WIN32 */
+#ifndef SIGCLD
+#define SIGCLD SIGCHLD /* not defined on OS X */
+#endif
+#ifndef sighandler_t
+typedef void (*sighandler_t)(int);
+#endif
+#include <errno.h>
 #include <stddef.h> /* ptrdiff_t */
 #include <stdio.h>  /* FILE */
 #include <stdlib.h>
@@ -669,7 +676,8 @@ pyi_utils_set_environment(const ARCHIVE_STATUS *status)
 }
 
 int
-pyi_utils_create_child(const char *thisfile, const int argc, char *const argv[])
+pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
+                       const int argc, char *const argv[])
 {
     SECURITY_ATTRIBUTES sa;
     STARTUPINFOW si;
@@ -850,20 +858,40 @@ set_systemd_env()
 pid_t child_pid = 0;
 
 static void
-_signal_handler(int signal)
+_ignoring_signal_handler(int signum)
 {
-    kill(child_pid, signal);
+    VS("LOADER: Ignoring signal %d\n", signum);
+}
+
+static void
+_signal_handler(int signum)
+{
+    VS("LOADER: Forwarding signal %d to child pid %d\n", signum, child_pid);
+    kill(child_pid, signum);
 }
 
 /* Start frozen application in a subprocess. The frozen application runs
  * in a subprocess.
  */
 int
-pyi_utils_create_child(const char *thisfile, const int argc, char *const argv[])
+pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
+                       const int argc, char *const argv[])
 {
     pid_t pid = 0;
     int rc = 0;
     int i;
+
+    /* cause nonzero return unless this is overwritten
+     * with a successful return code from wait() */
+    int wait_rc = -1;
+
+    /* As indicated in signal(7), signal numbers range from 1-31 (standard)
+     * and 32-64 (Linux real-time). */
+    const size_t num_signals = 65;
+
+    sighandler_t handler;
+    int ignore_signals;
+    int signum;
 
     argv_pyi = (char**)calloc(argc + 1, sizeof(char*));
     argc_pyi = 0;
@@ -887,6 +915,10 @@ pyi_utils_create_child(const char *thisfile, const int argc, char *const argv[])
     #endif
 
     pid = fork();
+    if (pid < 0) {
+        VS("LOADER: failed to fork child process: %s\n", strerror(errno));
+        goto cleanup;
+    }
 
     /* Child code. */
     if (pid == 0) {
@@ -895,39 +927,69 @@ pyi_utils_create_child(const char *thisfile, const int argc, char *const argv[])
             VS("WARNING: Application is started by systemd socket,"
                "but we can't set proper LISTEN_PID on it.\n");
         }
-        execvp(thisfile, argv_pyi);
-    }
-    /* Parent code. */
-    else {
-        child_pid = pid;
-
-        /* Redirect termination signals received by parent to child process. */
-        signal(SIGINT, &_signal_handler);
-        signal(SIGKILL, &_signal_handler);
-        signal(SIGTERM, &_signal_handler);
-    }
-
-    wait(&rc);
-
-    /* Parent code. */
-    if (child_pid != 0) {
-        /* When child process exited, reset signal handlers to default values. */
-        signal(SIGINT, SIG_DFL);
-        signal(SIGKILL, SIG_DFL);
-        signal(SIGTERM, SIG_DFL);
-
-        for (i = 0; i < argc_pyi; i++) {
-            free(argv_pyi[i]);
+        if (execvp(thisfile, argv_pyi) < 0) {
+            VS("Failed to exec: %s\n", strerror(errno));
+            goto cleanup;
         }
-        free(argv_pyi);
+        /* NOTREACHED */
+    }
+
+    /* From here to end-of-function is parent code (since the child exec'd).
+     * The exception is the `cleanup` block that frees argv_pyi; in the child,
+     * wait_rc is -1, so the child exit code checking is skipped. */
+
+    child_pid = pid;
+    ignore_signals = (pyi_arch_get_option(status, "pyi-bootloader-ignore-signals") != NULL);
+    handler = ignore_signals ? &_ignoring_signal_handler : &_signal_handler;
+
+    /* Redirect all signals received by parent to child process. */
+    if (ignore_signals) {
+        VS("LOADER: Ignoring all signals in parent\n");
+    } else {
+        VS("LOADER: Registering signal handlers\n");
+    }
+    for (signum = 0; signum < num_signals; ++signum) {
+        // don't mess with SIGCHLD/SIGCLD; it affects our ability
+        // to wait() for the child to exit
+        if (signum != SIGCHLD && signum != SIGCLD) {
+            signal(signum, handler);
+        }
+    }
+
+    wait_rc = wait(&rc);
+    if (wait_rc < 0) {
+        VS("LOADER: failed to wait for child process: %s\n", strerror(errno));
+    }
+
+    /* When child process exited, reset signal handlers to default values. */
+    VS("LOADER: Restoring signal handlers\n");
+    for (signum = 0; signum < num_signals; ++signum) {
+        signal(signum, SIG_DFL);
+    }
+
+  cleanup:
+    VS("LOADER: freeing args\n");
+    for (i = 0; i < argc_pyi; i++) {
+        free(argv_pyi[i]);
+    }
+    free(argv_pyi);
+
+    /* Either wait() failed, or we jumped to `cleanup` and
+     * didn't wait() at all. Either way, exit with error,
+     * because rc does not contain a valid process exit code. */
+    if (wait_rc < 0) {
+        VS("LOADER: exiting early\n");
+        return 1;
     }
 
     if (WIFEXITED(rc)) {
+        VS("LOADER: returning child exit status %d\n", WEXITSTATUS(rc));
         return WEXITSTATUS(rc);
     }
 
     /* Process ended abnormally */
     if (WIFSIGNALED(rc)) {
+        VS("LOADER: re-raising child signal %d\n", WTERMSIG(rc));
         /* Mimick the signal the child received */
         raise(WTERMSIG(rc));
     }
