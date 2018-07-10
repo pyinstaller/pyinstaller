@@ -18,6 +18,7 @@ NOTE: All global variables, classes and imported modules create API
 
 
 import glob
+import fnmatch
 import os
 import pprint
 import shutil
@@ -140,7 +141,7 @@ class Analysis(Target):
     def __init__(self, scripts, pathex=None, binaries=None, datas=None,
                  hiddenimports=None, hookspath=None, excludes=None, runtime_hooks=None,
                  cipher=None, win_no_prefer_redirects=False, win_private_assemblies=False,
-                 noarchive=False):
+                 noarchive=False, binary_exclude_globs=None):
         """
         scripts
                 A list of scripts specified as file names.
@@ -170,6 +171,12 @@ class Analysis(Target):
         noarchive
                 If True, don't place source files in a archive, but keep them as
                 individual files.
+        binary_exclude_globs
+                An optional list of globs that specify direct binary dependencies
+                to not include. Note that the dependencies of any remaining binary
+                dependencies will be expanded, and those may include binaries
+                excluded by this glob.
+
         """
         super(Analysis, self).__init__()
         from ..config import CONF
@@ -237,6 +244,7 @@ class Analysis(Target):
         self.win_private_assemblies = win_private_assemblies
         self._python_version = sys.version
         self.noarchive = noarchive
+        self.binary_exclude_globs = binary_exclude_globs
 
         self.__postinit__()
 
@@ -557,6 +565,22 @@ class Analysis(Target):
         # And get references to module code objects constructed by ModuleGraph
         # to avoid writing .pyc/pyo files to hdd.
         self.pure._code_cache = self.graph.get_code_objects()
+
+        # Allow users to filter the assembled binaries before expanding the
+        # binary dependencies
+        if self.binary_exclude_globs:
+            globs = self.binary_exclude_globs
+            for g in globs:
+                logger.debug("Binary exclude glob: %s", glob)
+
+            def _exclude_binary(b):
+                for g in globs:
+                    if fnmatch.fnmatch(b, g):
+                        logger.info("Excluding `%s` via `%s`", b, g)
+                        return True
+                return False
+
+            self.binaries = [b for b in self.binaries if not _exclude_binary(b[0])]
 
         # Add remaining binary dependencies - analyze Python C-extensions and what
         # DLLs they depend on.
