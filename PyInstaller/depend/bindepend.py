@@ -881,6 +881,14 @@ def get_python_library_path():
             if python_libname:
                 return python_libname
 
+        # Anaconda places the Python library in the lib directory, so we
+        # search this one as well.
+        prefix = os.path.join(compat.base_prefix, 'lib')
+        for name in PYDYLIB_NAMES:
+            full_path = os.path.join(prefix, name)
+            if os.path.exists(full_path):
+                return full_path
+
     elif is_darwin:
         # On MacPython, Analysis.assemble is able to find the libpython with
         # no additional help, asking for sys.executable dependencies.
