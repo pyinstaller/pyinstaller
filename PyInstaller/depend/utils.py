@@ -20,12 +20,14 @@ import io
 import marshal
 import os
 import re
+import struct
+import sys
 import zipfile
 
 from ..lib.modulegraph import util, modulegraph
 
 from .. import compat
-from ..compat import (is_darwin, is_unix, is_freebsd, is_py2, is_py37,
+from ..compat import (is_darwin, is_unix, is_freebsd, is_py2,
                       BYTECODE_MAGIC, PY3_BASE_MODULES,
                       exec_python_rc)
 from .dylib import include_library
@@ -41,17 +43,6 @@ def create_py3_base_library(libzip_filename, graph):
     modules is necessary to have on PYTHONPATH for initializing libpython3
     in order to run the frozen executable with Python 3.
     """
-    # TODO Replace this function with something better or something from standard Python library.
-    # Helper functions.
-    def _write_long(f, x):
-        """
-        Write a 32-bit int to a file in little-endian order.
-        """
-        f.write(bytes([x & 0xff,
-                       (x >> 8) & 0xff,
-                       (x >> 16) & 0xff,
-                       (x >> 24) & 0xff]))
-
     # Construct regular expression for matching modules that should be bundled
     # into base_library.zip.
     # Excluded are plain 'modules' or 'submodules.ANY_NAME'.
@@ -87,17 +78,11 @@ def create_py3_base_library(libzip_filename, graph):
                         # This code is similar to py_compile.compile().
                         with io.BytesIO() as fc:
                             # Prepare all data in byte stream file-like object.
-                            if not is_py37:
-                                # old format
-                                fc.write(BYTECODE_MAGIC)
-                                _write_long(fc, timestamp)
-                                _write_long(fc, size)
-                            else:
-                                # new format - still timestamp based
-                                fc.write(BYTECODE_MAGIC)
-                                _write_long(fc, 0) # flags
-                                _write_long(fc, timestamp)
-                                _write_long(fc, size)
+                            fc.write(BYTECODE_MAGIC)
+                            # Additional bitfield according to PEP552 - still timestamp based
+                            if sys.version_info[:2] >= (3, 7):
+                                fc.write(struct.pack('<I', 0))
+                            fc.write(struct.pack('<II', timestamp, size))
                             marshal.dump(mod.code, fc)
                             # Use a ZipInfo to set timestamp for deterministic build
                             info = zipfile.ZipInfo(new_name)
