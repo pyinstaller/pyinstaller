@@ -50,7 +50,7 @@ int pyvers = 0;
  * Return pointer to next toc entry.
  */
 TOC *
-pyi_arch_increment_toc_ptr(ARCHIVE_STATUS *status, TOC* ptoc)
+pyi_arch_increment_toc_ptr(const ARCHIVE_STATUS *status, const TOC* ptoc)
 {
     TOC *result = (TOC*)((char *)ptoc + ntohl(ptoc->structlen));
 
@@ -558,7 +558,7 @@ pyi_arch_status_free_memory(ARCHIVE_STATUS *archive_status)
  * for freeing it.
  */
 char *
-pyi_arch_get_option(ARCHIVE_STATUS * status, char * optname)
+pyi_arch_get_option(const ARCHIVE_STATUS * status, char * optname)
 {
     /* TODO: option-cache? */
     int optlen;
