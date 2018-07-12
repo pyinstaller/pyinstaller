@@ -61,19 +61,22 @@ char *saved_locale;
 
 #if defined(_WIN32) && defined(WINDOWED)
 void
-show_message_box(
-    const char *msg,
-    const char *caption,
-    UINT uType)
+show_message_box(const char *msg, const char *caption, UINT uType)
 {
     wchar_t wmsg[MBTXTLEN];
     wchar_t wcaption[MBTXTLEN] = L"";
-    if (!pyi_win32_utils_from_utf8(wmsg, msg, MBTXTLEN)) {
-        MessageBoxA(NULL, msg, caption, MB_OK | uType);
-    }
-    else {
+    if (pyi_win32_utils_from_utf8(wmsg, msg, MBTXTLEN)) {
+        /* converting the caption is expected to pass since the given caption
+         * is always written in US-ASCII and hard-coded, currently.
+         */
         pyi_win32_utils_from_utf8(wcaption, caption, MBTXTLEN);
         MessageBoxW(NULL, wmsg, wcaption, MB_OK | uType);
+    }
+    else {
+        /* The msg here is always shown as not human-readable string,
+         * but can be the hint what the real message is.
+         */
+        MessageBoxA(NULL, msg, caption, MB_OK | uType);
     }
 }
 
@@ -132,7 +135,6 @@ mbothererror(const char *fmt, ...)
         msg[MBTXTLEN-1] = '\0';
 
         show_message_box(msg, "Fatal error detected", MB_ICONEXCLAMATION);
-
     }
 
     void mbfatal_perror(const char * funcname, const char *fmt, ...)
@@ -221,7 +223,8 @@ void printf_to_stderr(const char* fmt, ...) {
  * Wrap printing debug messages to console.
  */
 void
-pyi_global_printf(const char *fmt, ...) {
+pyi_global_printf(const char *fmt, ...)
+{
     va_list v;
 
     /* Sent 'LOADER text' messages to stderr. */
@@ -250,8 +253,8 @@ void pyi_global_perror(const char *funcname, const char *fmt, ...) {
     va_start(v, fmt);
     vprintf_to_stderr(fmt, v);
     va_end(v);
-
     perror(funcname);  // perror() writes to stderr
+
     #if defined(__APPLE__) && defined(WINDOWED) && defined(LAUNCH_DEBUG)
         va_start(v, fmt);
             vsyslog(LOG_NOTICE, fmt, v);

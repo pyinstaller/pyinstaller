@@ -66,6 +66,12 @@ char * GetWinErrorString(DWORD error_code) {
     if (error_code == 0) {
         error_code = GetLastError();
     }
+    /* Note: Giving 0 to dwLanguageID means MAKELANGID(LANG_NEUTRAL,
+     * SUBLANG_NEUTRAL), but we should use SUBLANG_DEFAULT instead of
+     * SUBLANG_NEUTRAL. Please see the note written in 
+     * "Language Identifier Constants and Strings" on MSDN.
+     * https://docs.microsoft.com/en-us/windows/desktop/intl/language-identifier-constants-and-strings
+     */
     result = FormatMessageW(
         FORMAT_MESSAGE_FROM_SYSTEM, // dwFlags
         NULL,                       // lpSource
