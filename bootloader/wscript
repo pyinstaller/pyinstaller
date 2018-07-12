@@ -614,8 +614,22 @@ def configure(ctx):
     ### Functions
 
     # unsetenv not available on AIX, maybe others.
-    ctx.check_cc(function_name='unsetenv', header_name="stdlib.h", mandatory=False)
-    ctx.check_cc(function_name='mkdtemp', header_name="stdlib.h", mandatory=False)
+    ctx.check(fragment='''
+        #include <stdlib.h>
+        int main(int argc, char **argv) {
+            void (*p)();
+            (void)argc; (void)argv;
+            p=(void(*)())(unsetenv);
+            return !p;
+        }''', mandatory=False, define_name='HAVE_UNSETENV')
+    ctx.check(fragment='''
+        #include <stdlib.h>
+        int main(int argc, char **argv) {
+            void (*p)();
+            (void)argc; (void)argv;
+            p=(void(*)())(mkdtemp);
+            return !p;
+        }''', mandatory=False, define_name='HAVE_MKDTEMP')
 
     ### CFLAGS
 
