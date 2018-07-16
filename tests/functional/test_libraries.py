@@ -16,7 +16,8 @@ import os
 
 # Local imports
 # -------------
-from PyInstaller.compat import is_win, is_py3, is_py36, is_py35, is_darwin, is_linux
+from PyInstaller.compat import is_win, is_py3, is_py36, is_py35, is_darwin, \
+    is_linux, is_64bits
 from PyInstaller.utils.hooks import get_module_attribute, is_module_satisfies
 from PyInstaller.utils.tests import importorskip, xfail, skipif
 
@@ -242,6 +243,8 @@ def test_PyQt5_uic(tmpdir, pyi_builder, data_dir):
 
 
 @xfail(is_darwin, reason='Please help debug this. See issue #3233.')
+@pytest.mark.skipif(is_win and not is_64bits, reason="Qt 5.11+ for Windows "
+    "only provides pre-compiled Qt WebEngine binaries for 64-bit processors.")
 @importorskip('PyQt5')
 def test_PyQt5_QWebEngine(pyi_builder, data_dir):
     pyi_builder.test_source(
