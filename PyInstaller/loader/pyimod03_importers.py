@@ -142,7 +142,6 @@ class BuiltinImporter(object):
             # ImportError should be raised if module not found.
             raise ImportError('No module named ' + fullname)
 
-
 class FrozenPackageImporter(object):
     """
     Wrapper class for FrozenImporter that imports one specific fullname from
@@ -153,13 +152,19 @@ class FrozenPackageImporter(object):
     of searching module.__path__
     """
     def __init__(self, importer, entry_name):
+        temploadm = self.load_module
+        for attrname in dir(importer):
+            if attrname[0] != '_' :
+                setattr(self,attrname,getattr(importer,attrname))
+                
+        #set back the loadmodule
+        setattr(self, "load_module", temploadm)
         self._entry_name = entry_name
         self._importer = importer
-
+        
     def load_module(self, fullname):
         # Deprecated in Python 3.4, see PEP-451
         return self._importer.load_module(fullname, self._entry_name)
-
 
 class FrozenImporter(object):
     """
@@ -187,7 +192,6 @@ class FrozenImporter(object):
 
         FrozenImporter.install()
     """
-
     def __init__(self):
         """
         Load, unzip and initialize the Zip archive bundled with the executable.
@@ -272,7 +276,7 @@ class FrozenImporter(object):
 
         if fullname in self.toc:
             # Tell the import machinery to use self.load_module() to load the module.
-            module_loader = self
+            module_loader = FrozenPackageImporter(self, fullname)
             trace("import %s # PyInstaller PYZ", fullname)
         elif path is not None:
             # Try to handle module.__path__ modifications by the modules themselves

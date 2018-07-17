@@ -26,4 +26,5 @@
     'usb':        ['pyi_rth_usb.py'],
     'win32com':   ['pyi_rth_win32comgenpy.py'],
     'multiprocessing': ['pyi_rth_multiprocessing.py'],
+	'pkgutil' : ['pyi_rth_pkgutil.py'],
 }

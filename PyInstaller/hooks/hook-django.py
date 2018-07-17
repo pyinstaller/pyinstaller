@@ -49,6 +49,7 @@ if root_dir:
             'django.template.defaulttags',
             'django.template.loader_tags',
             'django.template.context_processors',
+			'django.template.loaders',
     ]
     hiddenimports += collect_submodules('django.middleware')
     hiddenimports += collect_submodules('django.templatetags')
@@ -90,6 +91,7 @@ if root_dir:
     installed_apps = eval(get_module_attribute(package_name + '.settings', 'INSTALLED_APPS'))
     migration_modules.extend(set(app + '.migrations' for app in installed_apps))
     # Copy migration files.
+    
     for mod in migration_modules:
         mod_name, bundle_name = mod.split('.', 1)
         mod_dir = os.path.dirname(get_module_file_attribute(mod_name))
@@ -98,10 +100,11 @@ if root_dir:
         files = glob.glob(pattern)
         for f in files:
             datas.append((f, os.path.join(mod_name, bundle_dir)))
-
+    for app in installed_apps:
+        datas += collect_data_files(app)
     # Include data files from your Django project found in your django root package.
     datas += collect_data_files(package_name)
-
+    
     # Include database file if using sqlite. The sqlite database is usually next to the manage.py script.
     root_dir_parent = os.path.dirname(root_dir)
     # TODO Add more patterns if necessary.
