@@ -8,7 +8,7 @@
 #-----------------------------------------------------------------------------
 
 
-# Tested with django 1.8.
+# Tested with django 2.0.
 
 
 import sys
@@ -31,7 +31,10 @@ if root_dir:
     settings_py_imports = django_dottedstring_imports(root_dir)
     # Include all submodules of all imports detected in mysite.settings.py.
     for submod in settings_py_imports:
+        # logger.debug('     -- django app: %s', submod)
         hiddenimports.append(submod)
+        hiddenimports.append(submod+'.apps')
+        # hiddenimports.append(submod+'.urls')
         hiddenimports += collect_submodules(submod)
     # Include main django modules - settings.py, urls.py, wsgi.py.
     # Without them the django server won't run.
@@ -49,12 +52,17 @@ if root_dir:
             'django.template.defaulttags',
             'django.template.loader_tags',
             'django.template.context_processors',
+            'django.views.defaults',
+            'django.templatetags',
     ]
+    hiddenimports += collect_submodules('django.template.loaders')
     hiddenimports += collect_submodules('django.middleware')
     hiddenimports += collect_submodules('django.templatetags')
+    hiddenimports += collect_submodules('django.contrib')
     # Other hidden imports to get Django example startproject working.
     hiddenimports += [
             'django.contrib.messages.storage.fallback',
+            'django.contrib.sessions.middleware',
     ]
     # Django hiddenimports from the standard Python library.
     if sys.version_info.major == 3:
@@ -73,6 +81,20 @@ if root_dir:
     # Include django data files - localizations, etc.
     datas = collect_data_files('django')
 
+
+    def collect_modules_files(modules):
+        datas = []
+        for mod in modules:
+            mod_name, bundle_name = mod.split('.', 1)
+            mod_dir = os.path.dirname(get_module_file_attribute(mod_name))
+            bundle_dir = bundle_name.replace('.', os.sep)
+            pattern = os.path.join(mod_dir, bundle_dir, '*.py')
+            files = glob.glob(pattern)
+            for f in files:
+                datas.append((f, os.path.join(mod_name, bundle_dir)))
+            # logger.info("Module '%s': found files: %s", mod, files)
+        return datas
+
     # Bundle django DB schema migration scripts as data files.
     # They are necessary for some commands.
     logger.info('Collecting Django migration scripts.')
@@ -90,14 +112,16 @@ if root_dir:
     installed_apps = eval(get_module_attribute(package_name + '.settings', 'INSTALLED_APPS'))
     migration_modules.extend(set(app + '.migrations' for app in installed_apps))
     # Copy migration files.
-    for mod in migration_modules:
-        mod_name, bundle_name = mod.split('.', 1)
-        mod_dir = os.path.dirname(get_module_file_attribute(mod_name))
-        bundle_dir = bundle_name.replace('.', os.sep)
-        pattern = os.path.join(mod_dir, bundle_dir, '*.py')
-        files = glob.glob(pattern)
-        for f in files:
-            datas.append((f, os.path.join(mod_name, bundle_dir)))
+    datas += collect_modules_files(migration_modules)
+
+    # Bundle django command scripts as data files.
+    # They are necessary get commands working.
+    logger.info('Collecting Django commands scripts.')
+    commands_modules = ['django.core.management.commands']
+    commands_modules.extend(set(app + '.management.commands' for app in installed_apps))
+    # Copy commands files.
+    datas += collect_modules_files(commands_modules)
+
 
     # Include data files from your Django project found in your django root package.
     datas += collect_data_files(package_name)
