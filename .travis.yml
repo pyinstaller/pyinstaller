@@ -166,7 +166,7 @@ install:
 
   # Compile bootloader
   - cd bootloader
-  - /usr/bin/python waf distclean all
+  - python waf distclean all
   - cd ..
 
   # Install PyInstaller.
