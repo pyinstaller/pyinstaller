@@ -396,6 +396,7 @@ def set_arch_flags(ctx):
 
 
 def configure(ctx):
+    ctx.msg('Python Version', sys.version.replace(os.linesep, ''))
     # For MSVC the target arch must already been set when the compiler is
     # searched.
     if ctx.options.target_arch == '32bit':
