@@ -174,7 +174,12 @@ class BUNDLE(Target):
                 todir = os.path.dirname(tofnm)
                 if not os.path.exists(todir):
                     os.makedirs(todir)
-                shutil.copy(fnm, tofnm)
+                if os.path.isdir(fnm):
+                    # beacuse shutil.copy2() is the default copy function
+                    # for shutil.copytree, this will also copy file metadata
+                    shutil.copytree(fnm, tofnm)
+                else:
+                    shutil.copy(fnm, tofnm)
 
         logger.info('moving BUNDLE data files to Resource directory')
 
@@ -190,7 +195,12 @@ class BUNDLE(Target):
                 todir = os.path.dirname(tofnm)
                 if not os.path.exists(todir):
                     os.makedirs(todir)
-                shutil.copy(fnm, tofnm)
+                if os.path.isdir(fnm):
+                    # beacuse shutil.copy2() is the default copy function
+                    # for shutil.copytree, this will also copy file metadata
+                    shutil.copytree(fnm, tofnm)
+                else:
+                    shutil.copy(fnm, tofnm)
                 base_path = os.path.split(inm)[0]
                 if base_path:
                     if not os.path.exists(os.path.join(bin_dir, inm)):
