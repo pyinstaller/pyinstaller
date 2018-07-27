@@ -8,6 +8,7 @@
 #-----------------------------------------------------------------------------
 
 import os
+import glob
 from PyInstaller.utils.hooks import add_qt5_dependencies, \
     remove_prefix, get_module_file_attribute, pyqt5_library_info, \
     collect_system_data_files
@@ -21,17 +22,16 @@ rel_data_path = ['PyQt5', 'Qt']
 if compat.is_darwin:
     # This is based on the layout of the Mac wheel from PyPi.
     data_path = pyqt5_library_info.location['DataPath']
-    resources = ['lib', 'QtWebEngineCore.framework', 'Resources']
-    web_engine_process = ['lib', 'QtWebEngineCore.framework', 'Helpers']
-    # When Python 3.4 goes EOL (see
-    # `PEP 448 <https://www.python.org/dev/peps/pep-0448/>`_, this is
-    # better written as ``os.path.join(*rel_data_path, *resources[:-1])``.
-    datas += collect_system_data_files(
-        os.path.join(data_path, *resources),
-        os.path.join(*(rel_data_path + resources[:-1])), True)
-    datas += collect_system_data_files(
-        os.path.join(data_path, *web_engine_process),
-        os.path.join(*(rel_data_path + web_engine_process[:-1])), True)
+    libraries = ['QtCore', 'QtWebEngineCore', 'QtQuick', 'QtQml', 'QtNetwork',
+                 'QtGui', 'QtWebChannel', 'QtPositioning']
+    for i in libraries:
+        datas += collect_system_data_files(
+            os.path.join(data_path, 'lib', i + '.framework'),
+            os.path.join(*(rel_data_path, ['lib'])), True)
+    datas += [(f, (os.path.basename(os.path.normpath(f))
+                   if os.path.isdir(f) else os.curdir)) for f
+                    in glob.glob(os.path.join(data_path, 'lib',
+                             'QtWebengineCore.framework', 'Resources', '*'))]
 else:
     locales = 'qtwebengine_locales'
     resources = 'resources'
