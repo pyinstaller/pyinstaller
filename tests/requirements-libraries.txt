@@ -7,10 +7,8 @@
 #
 # PyInstaller doesn't yet work with Django 1.9+.
 Django==1.8.18 # pyup: ignore
-web3==3.16.5 # pyup: ignore
 # Newest version of requests that allows tests to pass
 requests==2.15.1 # pyup: ignore
-gevent==1.2.2 # pyup: ignore
 
 # Working
 # -------
@@ -47,6 +45,8 @@ h5py==2.7.1
 matplotlib==2.2.2
 python-dateutil==2.7.3
 phonenumbers==8.9.7
+gevent==1.3.3
+web3==4.3.0
 
 # Special cases
 # -------------
@@ -72,10 +72,6 @@ pyqt5==5.11.2; (python_version >= '3.5' and sys.platform != 'win32') or (python_
 
 # No wheel for python 3.5.
 PySide==1.2.4; sys_platform == 'win32' and python_version <= '3.4'
-
-# interactive test
-ipython==6.4.0; python_version != '2.7'
-ipython==5.4.1; python_version == '2.7' # pyup: ignore
 
 # Pandas doesn't support Python 3.4; see https://github.com/pandas-dev/pandas/issues/20697.
 pandas==0.23.0; python_version != '3.4'

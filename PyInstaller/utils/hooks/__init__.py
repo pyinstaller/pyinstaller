@@ -319,6 +319,10 @@ def get_module_file_attribute(package):
     try:
         loader = pkgutil.find_loader(package)
         attr = loader.get_filename(package)
+        # The built-in ``datetime`` module returns ``None``. Mark this as
+        # an ``ImportError``.
+        if not attr:
+            raise ImportError
     # Second try to import module in a subprocess. Might raise ImportError.
     except (AttributeError, ImportError):
         # Statement to return __file__ attribute of a package.
@@ -918,6 +922,82 @@ def get_installer(module):
                 'Found installer: \'homebrew\' for module: \'{0}\' from package: \'{1}\''.format(module, package))
             return 'homebrew'
     return None
+
+
+# Walk through every package, determining which distribution it is in.
+def map_distribution_to_packages():
+    logger.info('Determining a mapping of distributions to packages...')
+    dist_to_packages = {}
+    for p in sys.path:
+        # The path entry ``''`` refers to the current directory.
+        if not p:
+            p = '.'
+        # Ignore any entries in ``sys.path`` that don't exist.
+        try:
+            lds = os.listdir(p)
+        except:
+            pass
+        else:
+            for ld in lds:
+                # Not all packages belong to a distribution. Skip these.
+                try:
+                    dist = pkg_resources.get_distribution(ld)
+                except:
+                    pass
+                else:
+                    # I assume a distribution contains only one package.
+                    if (dist.key in dist_to_packages):
+                        logger.info('X'*100)
+                        logger.info('Multiple packages %s in distribution %s',
+                                    [ld] + dist_to_packages[dist.key], dist.key)
+                    dist_to_packages.setdefault(dist.key, []).append(ld)
+
+    return dist_to_packages
+
+
+# Store this mapping as a global, since it is expensive to compute.
+DISTRIBUTION_TO_PACKAGES = map_distribution_to_packages()
+
+
+# Given a ``package_name`` as a string, this function returns a list of packages
+# needed to satisfy the requirements. This output can be assigned directly to
+# ``hiddenimports``.
+def requirements_for_package(package_name):
+    hiddenimports = []
+
+    for requirement in pkg_resources.get_distribution(package_name).requires():
+        if requirement.key in DISTRIBUTION_TO_PACKAGES:
+            required_packages = DISTRIBUTION_TO_PACKAGES[requirement.key]
+            hiddenimports.extend(required_packages)
+        else:
+            logger.warning('Unable to find package for requirement %s from '
+                           'package %s.',
+                           requirement.project_name, package_name)
+
+    return hiddenimports
+
+
+# Given a package name as a string, return a tuple of ``datas, binaries,
+# hiddenimports`` containing all data files, binaries, and modules in the given
+# package. The value of ``include_py_files`` is passed directly to
+# ``collect_data_files``.
+def collect_all(package_name, include_py_files=False):
+    datas = []
+    try:
+        datas += copy_metadata(package_name)
+    except Exception as e:
+        logger.warning('Unable to copy metadata for %s: %s', package_name, e)
+    datas += collect_data_files(package_name, include_py_files)
+    binaries = collect_dynamic_libs(package_name)
+    hiddenimports = collect_submodules(package_name)
+    try:
+        hiddenimports += requirements_for_package(package_name)
+    except Exception as e:
+        logger.warning('Unable to determine requirements for %s: %s',
+                       package_name, e)
+
+    return datas, binaries, hiddenimports
+
 
 # These imports need to be here due to these modules recursively importing this module.
 from .django import *
