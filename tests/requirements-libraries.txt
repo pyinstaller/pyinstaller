@@ -74,7 +74,7 @@ pyqt5==5.11.2; (python_version >= '3.5' and sys.platform != 'win32') or (python_
 PySide==1.2.4; sys_platform == 'win32' and python_version <= '3.4'
 
 # interactive test
-ipython==6.4.0; python_version != '2.7'
+ipython==6.5.0; python_version != '2.7'
 ipython==5.4.1; python_version == '2.7' # pyup: ignore
 
 # Pandas doesn't support Python 3.4; see https://github.com/pandas-dev/pandas/issues/20697.
