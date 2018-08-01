@@ -46,7 +46,7 @@ Unidecode==1.0.22
 h5py==2.8.0
 matplotlib==2.2.2
 python-dateutil==2.7.3
-phonenumbers==8.9.7
+phonenumbers==8.9.10
 
 # Special cases
 # -------------
