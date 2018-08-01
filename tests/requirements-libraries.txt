@@ -35,7 +35,7 @@ pycparser==2.18
 pytz==2018.5
 sqlalchemy==1.2.10
 twisted==18.7.0
-zeep==2.5.0
+zeep==3.1.0
 pyexcelerate==0.7.2
 Pillow==5.1.0
 pinyin==0.4.0
