@@ -95,7 +95,7 @@ def imp_walk(name):
     raise ImportError('No module named %s' % (name,))
 
 
-cookie_re = re.compile(b"coding[:=]\s*([-\w.]+)")
+cookie_re = re.compile(br"coding[:=]\s*([-\w.]+)")
 if sys.version_info[0] == 2:
     default_encoding = 'ascii'
 else:
