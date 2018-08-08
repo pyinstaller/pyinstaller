@@ -46,7 +46,7 @@ sys.path.insert(0, pyi_home)
 import PyInstaller
 from PyInstaller import compat, configure
 from PyInstaller import __main__ as pyi_main
-from PyInstaller.compat import is_py2, is_win, is_darwin, modname_tkinter
+from PyInstaller.compat import is_py2, is_win, is_darwin, modname_tkinter, read_mode
 from PyInstaller.utils import misc
 import PyInstaller.utils.hooks as hookutils
 from PyInstaller.utils.win32 import winutils
@@ -491,7 +491,7 @@ class BuildTestRunner(object):
                 return False, 'Executable for %s missing' % logfn
             fname_list = archive_viewer.get_archive_content(prog)
             fname_list = [fn for fn in fname_list]
-            pattern_list = eval(open(logfn, 'rU').read())
+            pattern_list = eval(open(logfn, read_mode).read())
             # Alphabetical order of patterns.
             pattern_list.sort()
             missing = []
