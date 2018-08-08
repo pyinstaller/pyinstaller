@@ -189,7 +189,7 @@ def _eval_str_tuple(value):
 def _path_from_importerror(exc, default):
     # This is a hack, but sadly enough the necessary information
     # isn't available otherwise.
-    m = re.match('^No module named (\S+)$', str(exc))
+    m = re.match(r'^No module named (\S+)$', str(exc))
     if m is not None:
         return m.group(1)
 
