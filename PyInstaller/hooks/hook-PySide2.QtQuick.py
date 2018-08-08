@@ -8,6 +8,7 @@
 #-----------------------------------------------------------------------------
 
 import os
+import subprocess
 
 from PyInstaller.utils import misc
 from PyInstaller.utils.hooks import get_qmake_path, exec_command
@@ -23,7 +24,7 @@ def qt5_qml_dir():
         logger.warning('Could not find qmake version 5.x, make sure PATH is '
                        'set correctly or try setting QT5DIR.')
     else:
-        qmldir = exec_command(qmake, "-query", "QT_INSTALL_QML").strip()
+        qmldir = subprocess.check_output("qmake -query QT_INSTALL_QML", shell=True).decode('utf-8').strip()
     if qmldir:
         logger.error('Cannot find QT_INSTALL_QML directory, "qmake -query '
                      'QT_INSTALL_QML" returned nothing')
