@@ -84,7 +84,8 @@ elif is_unix:
     # Python 3 .so library on Linux is: libpython3.2mu.so.1.0, libpython3.3m.so.1.0
     PYDYLIB_NAMES = {'libpython%d.%d.so.1.0' % _pyver,
                      'libpython%d.%dm.so.1.0' % _pyver,
-                     'libpython%d.%dmu.so.1.0' % _pyver}
+                     'libpython%d.%dmu.so.1.0' % _pyver,
+                     'libpython%d.%dm.so.rh-python%d%d-1.0' % (_pyver[0], _pyver[1], _pyver[0], _pyver[1])}
 else:
     raise SystemExit('Your platform is not yet supported. '
                      'Please define constant PYDYLIB_NAMES for your platform.')
