@@ -19,7 +19,8 @@ import sys
 import re
 import sysconfig
 from waflib.Configure import conf
-from waflib import Logs, Utils
+from waflib import Logs, Utils, Options
+from waflib.Build import BuildContext, InstallContext
 
 # The following two variables are used by the target "waf dist"
 VERSION = 'nodist'
@@ -47,10 +48,10 @@ DESTOS_TO_SYSTEM = {
     'freebsd': 'FreeBSD',
     'win32': 'Windows',
     'darwin': 'Darwin',
-    'sunos': platform.system(), ## FIXME: inhibits cross-compile
+    'sunos': platform.system(),  ## FIXME: inhibits cross-compile
     'hpux': 'HP-UX',
     'aix': 'AIX',
-    }
+}
 
 # Map from platform.system() to waf's DEST_OS
 SYSTEM_TO_BUILDOS = {
@@ -62,7 +63,7 @@ SYSTEM_TO_BUILDOS = {
     'SunOS': 'sunos',
     'HP-UX': 'hpux',
     'AIX': 'aix',
-    }
+}
 
 # waf's name of the system we are building on
 BUILD_OS = SYSTEM_TO_BUILDOS.get(platform.system(), platform.system())
@@ -219,7 +220,6 @@ def check_sizeof_pointer(ctx):
             return 0;
         }''' % (type, expected)
         return ctx.check_cc(fragment=fragment, execute=False, mandatory=False)
-
 
     ctx.start_msg("Checking size of pointer")
     for size in (4, 8):
@@ -405,6 +405,7 @@ def configure(ctx):
         ctx.env['MSVC_TARGETS'] = ['x64']
 
     ### C compiler
+
     # Allow to use Clang if preferred.
     if ctx.options.clang:
         ctx.load('clang')
@@ -579,7 +580,6 @@ def configure(ctx):
         os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.7'
 
     ### Libraries
-
     if ctx.env.DEST_OS == 'win32':
         if ctx.env.CC_NAME == 'msvc':
             ctx.check_libs_msvc('user32 comctl32 kernel32 ws2_32',
@@ -761,7 +761,7 @@ def build(ctx):
         # here. The decision if a lib is required for a specific platform is
         # made in the configure phase.
         libs = ['DL', 'M', 'Z',  # 'z' - zlib, 'm' - math,
-                'THR'] # may be used on FreBSD
+                'THR']  # may be used on FreBSD
         staticlibs = []
         if ctx.env.DEST_OS == 'aix':
             # link statically with zlib
@@ -781,7 +781,6 @@ def build(ctx):
             features=features)
 
 
-from waflib.Build import BuildContext
 class make_all(BuildContext):
     """
     Do build and install in one step.
@@ -789,7 +788,6 @@ class make_all(BuildContext):
     cmd = 'make_all'
 
     def execute_build(ctx):
-        from waflib import Options, Scripting
         Options.commands = ['build_debug', 'build_release']
         # On Windows and Mac OS X we also need console/windowed bootloaders.
         # On other platforms they make no sense.
@@ -800,6 +798,7 @@ class make_all(BuildContext):
         if ctx.env.DEST_OS in ('win32', 'darwin'):
             Options.commands += ['install_debugw', 'install_releasew']
 
+
 def all(ctx):
     """
     Do configure, build and install in one step.
@@ -807,18 +806,14 @@ def all(ctx):
     # `all` is run prior to `configure`, thus it does not get a build context.
     # Thus another command `make_all` is required which gets the build
     # context and can make decisions based on the outcome of `configure`.
-    from waflib import Options, Scripting
     Options.commands = ['distclean', 'configure', 'make_all']
 
 
 # Set up building several variants of bootloader.
-from waflib.Build import BuildContext, InstallContext
-
 for x in variants:
     class BootloaderContext(BuildContext):
         cmd = 'build' + '_' + x
         variant = x
-
 
     class BootloaderInstallContext(InstallContext):
         cmd = 'install' + '_' + x
