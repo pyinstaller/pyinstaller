@@ -53,7 +53,7 @@ def test_signal_handled(pyi_builder, signame, ignore):
         p = psutil.Process()
         eprint('[test_signal_handled_{signame}] process tree:')
         while p:
-            eprint('- {{}} ({{}})'.format(p.name(), p.pid))
+            eprint('-', p.name(), '(%s)' % p.pid)
             if p == p.parent():
                 break
             p = p.parent()
@@ -61,7 +61,7 @@ def test_signal_handled(pyi_builder, signame, ignore):
         signalled = False
 
         def handle(signum, *args):
-            eprint('handled signal {{}}'.format(signum))
+            eprint('handled signal', signum)
             global signalled
             signalled = True
 
@@ -91,15 +91,15 @@ def test_signal_handled(pyi_builder, signame, ignore):
         # sleep a bit to avoid exiting before the signal is delivered
         time.sleep(1)
 
-        eprint('ignore: {{}}'.format(ignore))
-        eprint('signalled: {{}}'.format(signalled))
+        eprint('ignore:' ignore)
+        eprint('signalled:', signalled)
         if ignore and signalled:
             raise Exception('signal {signame} not ignored')
         elif not ignore and not signalled:
             raise Exception('signal handler not called for {signame}')
 
         msg = 'ignored' if ignore else 'handled'
-        eprint('bootloader {{}} signal successfully.'.format(msg))
+        eprint('bootloader', msg, 'signal successfully.')
         """.format(signame=signame, app_name=app_name, ignore=ignore),
         app_name=app_name,
         runtime=5,
