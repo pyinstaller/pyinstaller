@@ -9,6 +9,7 @@ branches:
 
 environment:
   PYTEST: py.test -n3 --maxfail 5 --durations=10 --junitxml=junit-results.xml
+  # See https://www.appveyor.com/docs/build-cache/#saving-cache-for-failed-build.
   APPVEYOR_SAVE_CACHE_ON_ERROR: true
 
   matrix:
@@ -101,7 +102,7 @@ build: none
 
 test_script:
   # Run the tests appropriate for this entry in the test matrix. Skip tests
-  # if we're just updating the cache.
+  # if we're just updating the cache; see https://www.appveyor.com/docs/environment-variables/.
   #
   # On Windows, the ``noarchive`` test re-compiles all ``.pyc`` or ``.pyo``
   # files. If run in parallel, one test will be trying to read a compiled file
