@@ -16,9 +16,8 @@ import os
 
 # Local imports
 # -------------
-import sys
-
-from PyInstaller.compat import is_win, is_py27, is_py3, is_py36, is_py35, is_darwin, is_linux
+from PyInstaller.compat import is_win, is_py3, is_py36, is_py35, is_darwin, \
+    is_linux, is_64bits
 from PyInstaller.utils.hooks import get_module_attribute, is_module_satisfies
 from PyInstaller.utils.tests import importorskip, xfail, skipif
 
@@ -244,20 +243,26 @@ def test_PyQt5_uic(tmpdir, pyi_builder, data_dir):
 
 
 @xfail(is_darwin, reason='Please help debug this. See issue #3233.')
+@pytest.mark.skipif(is_win and not is_64bits, reason="Qt 5.11+ for Windows "
+    "only provides pre-compiled Qt WebEngine binaries for 64-bit processors.")
 @importorskip('PyQt5')
-def test_PyQt5_QWebEngine(pyi_builder):
+def test_PyQt5_QWebEngine(pyi_builder, data_dir):
     pyi_builder.test_source(
         """
         from PyQt5.QtWidgets import QApplication
         from PyQt5.QtWebEngineWidgets import QWebEngineView
-        from PyQt5.QtCore import QUrl
-        app = QApplication( [] )
+        from PyQt5.QtCore import QUrl, QTimer
+        app = QApplication([])
         view = QWebEngineView()
-        view.load( QUrl( "http://www.pyinstaller.org" ) )
+        # Use a raw string to avoid accidental special characters in Windows filenames:
+        # ``c:\temp`` is `c<tab>emp`!
+        view.load(QUrl.fromLocalFile(r'{}'))
         view.show()
-        view.page().loadFinished.connect(lambda ok: app.quit())
+        view.page().loadFinished.connect(
+            # Display the web page for two seconds after it loads.
+            lambda ok: QTimer.singleShot(2000, app.quit))
         app.exec_()
-        """)
+        """.format(data_dir.join('test_web_page.html').strpath))
 
 
 @importorskip('PyQt5')
@@ -295,7 +300,26 @@ def test_PyQt5_QtQuick(pyi_builder):
         """)
 
 
+@importorskip('PyQt5')
+def test_PyQt5_SSL_support(pyi_builder):
+    pyi_builder.test_source(
+        """
+        from PyQt5.QtNetwork import QSslSocket
+        assert QSslSocket.supportsSsl()
+        """)
+
+
 # Test that the ``PyQt5.Qt`` module works by importing something from it.
+#
+# The Qt Bluetooth API (which any import to ``PyQt5.Qt`` implicitly imports)
+# isn't compatible with Windows Server 2012 R2, the OS Appveyor runs.
+# Specifically, running on Server 2012 causes the test to display an error in
+# `a dialog box <https://github.com/mindfulness-at-the-computer/mindfulness-at-the-computer/issues/234>`_.
+# The alternative of using a newer Appveyor OS `fails <https://github.com/pyinstaller/pyinstaller/pull/3563>`_.
+# Therefore, skip this test on Appveyor by testing for one of its `environment
+# variables <https://www.appveyor.com/docs/environment-variables/>`_.
+@skipif(os.environ.get('APPVEYOR') == 'True',
+        reason='The Appveyor OS is incompatible with PyQt.Qt.')
 @importorskip('PyQt5')
 def test_PyQt5_Qt(pyi_builder):
     pyi_builder.test_source('from PyQt5.Qt import QLibraryInfo')
@@ -606,7 +630,6 @@ def test_sqlalchemy(pyi_builder):
 
 
 @importorskip('twisted')
-@pytest.mark.skipif(is_win, reason='Python 3 syntax error on Windows')
 def test_twisted(pyi_builder):
     pyi_builder.test_source(
         """
@@ -783,3 +806,15 @@ def test_uvloop(pyi_builder):
 @importorskip('web3')
 def test_web3(pyi_builder):
     pyi_builder.test_source("import web3")
+
+@importorskip('phonenumbers')
+def test_phonenumbers(pyi_builder):
+    pyi_builder.test_source("""
+        import phonenumbers
+
+        number = '+17034820623'
+        parsed_number = phonenumbers.parse(number)
+
+        assert(parsed_number.country_code == 1)
+        assert(parsed_number.national_number == 7034820623)
+        """)

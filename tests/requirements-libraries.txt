@@ -1,40 +1,55 @@
 # Libraries used for testing.
 
-Django==1.8.18 # PyInstaller doesn't yet work with Django 1.9+
-babel==2.5.3
+# Needs work
+# ----------
+# These packages, if updated, produce test failures. Work needs to be done on
+# these hooks.
+#
+# PyInstaller doesn't yet work with Django 1.9+.
+Django==1.8.18 # pyup: ignore
+web3==3.16.5 # pyup: ignore
+# Newest version of requests that allows tests to pass
+requests==2.15.1 # pyup: ignore
+gevent==1.2.2 # pyup: ignore
+
+# Working
+# -------
+# These packages work with no (known) issues.
+babel==2.6.0
 boto==2.48.0
-boto3==1.5.22
-botocore==1.7.1
-gevent==1.2.2
+boto3==1.7.33
+botocore==1.10.33
 pygments==2.2.0
-pylint==1.8.2
+pylint==1.9.1
 markdown==2.6.11
-simplejson==3.13.2 # simplejson is used for text_c_extension
+simplejson==3.15.0 # simplejson is used for text_c_extension
 sphinx==1.7.1
 pyzmq==17.0.0
-zope.interface==4.4.3  # Required for test_namespace_package
-numpy==1.14.2
-scipy==1.0.0
-lxml==4.1.1
-keyring==11.0.0
-openpyxl==2.5.1
+zope.interface==4.5.0  # Required for test_namespace_package
+numpy==1.14.3
+scipy==1.1.0
+lxml==4.2.1
+keyring==12.2.1
+openpyxl==2.5.3
 pycparser==2.18
-pytz==2018.3
-sqlalchemy==1.2.5
-twisted==17.9.0
-zeep==2.4.0
+pytz==2018.4
+sqlalchemy==1.2.8
+twisted==18.4.0
+zeep==2.5.0
 pyexcelerate==0.7.2
-Pillow==5.0.0
+Pillow==5.1.0
 pinyin==0.4.0
-pycryptodomex==3.5.1
+pycryptodomex==3.6.1
 future==0.16.0
 pyusb==1.0.2
-requests==2.15.1 # Newest version of requests that allows tests to pass
 Unidecode==1.0.22
 h5py==2.7.1
-web3==3.16.5
-matplotlib==2.2.0
+matplotlib==2.2.2
+python-dateutil==2.7.3
+phonenumbers==8.9.7
 
+# Special cases
+# -------------
 # Url for downloading PyCrypto prebuilt Windows binaries:
 # http://www.voidspace.org.uk/python/pycrypto-2.6.1/
 # Required for crypto feature - encrypting bytecode.
@@ -47,31 +62,30 @@ pyenchant==2.0.0; sys_platform == 'darwin' or (sys_platform == 'win32' and pytho
 
 # While PyQt5 itself is provided as wheels for Python 3.4, it requires
 # SIP>=4.19 which is not available for Python 3.4.
-pyqt5==5.9; python_version >= '3.5'
+#
+# For now, avoid PyQt5 5.11.2 on Windows Python 3.5, since this doesn't work
+# with Python 3.5.0 to 3.5.3, which is what Appveyor currently runs. The next
+# PyQt5 release should fix this. See
+# https://www.riverbankcomputing.com/pipermail/pyqt/2018-July/040512.html.
+pyqt5==5.10.1; python_version == '3.5' and sys_platform == 'win32'  # pyup: ignore
+pyqt5==5.11.2; (python_version >= '3.5' and sys.platform != 'win32') or (python_version >= '3.6')
 
 # No wheel for python 3.5.
 PySide==1.2.4; sys_platform == 'win32' and python_version <= '3.4'
 
 # interactive test
-ipython==6.2.1; python_version != '2.7'
+ipython==6.4.0; python_version != '2.7'
 ipython==5.4.1; python_version == '2.7' # pyup: ignore
-
-# dateutil.tz is a package in 2.5.0 and does not play nice with PyInstaller.
-python-dateutil==2.7.0
 
 # Pandas doesn't support Python 3.4; see https://github.com/pandas-dev/pandas/issues/20697.
 pandas==0.23.0; python_version != '3.4'
 
 # uvloop requires python 3.5 or higher and does not currently support Windows.
-uvloop==0.9.1; python_version >= '3.5' and sys_platform != 'win32'
+uvloop==0.10.0; python_version >= '3.5' and sys_platform != 'win32'
 
 
-#### Windows-specific packages
-
+# Windows-specific packages
+# -------------------------
 # pip-installable version of PyWin32.
 pypiwin32==223; python_version >= '3.6' and sys_platform == 'win32'
 pypiwin32==219; python_version <= '3.5' and sys_platform == 'win32' # pyup: ignore
-
-# For parsing PE headers and get list of dependent DLLs.
-# ::TODO:: #1920 revert to using pypi version
-#pefile; sys_platform == 'win32'

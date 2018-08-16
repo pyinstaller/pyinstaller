@@ -324,7 +324,11 @@ def get_module_file_attribute(package):
         # Statement to return __file__ attribute of a package.
         __file__statement = """
             import %s as p
-            print(p.__file__)
+            try:
+                print(p.__file__)
+            except:
+                # If p lacks a file attribute, hide the exception.
+                pass
         """
         attr = exec_statement(__file__statement % package)
         if not attr.strip():
@@ -486,8 +490,12 @@ def is_module_satisfies(requirements, version=None, version_attr='__version__'):
         module_name = requirements_parsed.project_name
         version = get_module_attribute(module_name, version_attr)
 
-    # Compare this version against the version parsed from these requirements.
-    return version in requirements_parsed
+    if not version:
+        # Module does not exist in the system.
+        return False
+    else:
+        # Compare this version against the one parsed from the requirements.
+        return version in requirements_parsed
 
 
 def is_package(module_name):
@@ -741,6 +749,10 @@ def collect_system_data_files(path, destdir=None, include_py_files=False):
     # Accept only strings as paths.
     if not isinstance(path, string_types):
         raise ValueError
+    # The call to ``remove_prefix`` below assumes a path separate of ``os.sep``,
+    # which may not be true on Windows; Windows allows Linux path separators in
+    # filenames. Fix this.
+    path = os.path.normpath(path)
 
     # Walk through all file in the given package, looking for data files.
     datas = []

@@ -8,9 +8,6 @@
 #-----------------------------------------------------------------------------
 
 
-import pytest
-import py.path
-
 from PyInstaller.depend import analysis
 from PyInstaller.building.build_main import Analysis
 

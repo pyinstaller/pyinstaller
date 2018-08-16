@@ -15,7 +15,6 @@ Main command-line interface to PyInstaller.
 import os
 import argparse
 import platform
-import sys
 
 
 from . import __version__
@@ -37,10 +36,12 @@ class _SmartFormatter(argparse.HelpFormatter):
 
     def _split_lines(self, text, width):
         if text.startswith('R|'):
-            return argparse.RawTextHelpFormatter._split_lines(self, text[2:],
-                                                              width)
+            # The underlying implementation of ``RawTextHelpFormatter._split_lines``
+            # invokes this; mimic it.
+            return text[2:].splitlines()
         else:
-            return argparse.HelpFormatter._split_lines(self, text, width)
+            # Invoke the usual formatter.
+            return super(_SmartFormatter, self)._split_lines(text, width)
 
 
 def run_makespec(filenames, **opts):

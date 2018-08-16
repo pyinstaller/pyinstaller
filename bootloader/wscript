@@ -396,6 +396,7 @@ def set_arch_flags(ctx):
 
 
 def configure(ctx):
+    ctx.msg('Python Version', sys.version.replace(os.linesep, ''))
     # For MSVC the target arch must already been set when the compiler is
     # searched.
     if ctx.options.target_arch == '32bit':
@@ -518,7 +519,9 @@ def configure(ctx):
 
             # For security, enable the _FORTIFY_SOURCE macro detecting buffer
             # overflows in various string and memory manipulation functions.
-            if ctx.env.CC_NAME == 'gcc':
+            if ctx.options.debug:
+                ctx.env.append_value('CFLAGS', '-U_FORTIFY_SOURCE')
+            elif ctx.env.CC_NAME == 'gcc':
                 # Undefine this macro if already defined by default to avoid
                 # "macro redefinition" errors.
                 ctx.env.append_value('CFLAGS', '-U_FORTIFY_SOURCE')
@@ -611,8 +614,22 @@ def configure(ctx):
     ### Functions
 
     # unsetenv not available on AIX, maybe others.
-    ctx.check_cc(function_name='unsetenv', header_name="stdlib.h", mandatory=False)
-    ctx.check_cc(function_name='mkdtemp', header_name="stdlib.h", mandatory=False)
+    ctx.check(fragment='''
+        #include <stdlib.h>
+        int main(int argc, char **argv) {
+            void (*p)();
+            (void)argc; (void)argv;
+            p=(void(*)())(unsetenv);
+            return !p;
+        }''', mandatory=False, define_name='HAVE_UNSETENV')
+    ctx.check(fragment='''
+        #include <stdlib.h>
+        int main(int argc, char **argv) {
+            void (*p)();
+            (void)argc; (void)argv;
+            p=(void(*)())(mkdtemp);
+            return !p;
+        }''', mandatory=False, define_name='HAVE_MKDTEMP')
 
     ### CFLAGS
 

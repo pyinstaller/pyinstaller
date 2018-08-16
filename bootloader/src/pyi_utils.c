@@ -956,7 +956,7 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
         }
     }
 
-    wait_rc = wait(&rc);
+    wait_rc = waitpid(child_pid, &rc, 0);
     if (wait_rc < 0) {
         VS("LOADER: failed to wait for child process: %s\n", strerror(errno));
     }

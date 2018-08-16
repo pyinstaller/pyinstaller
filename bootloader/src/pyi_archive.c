@@ -41,6 +41,8 @@
 #include "pyi_utils.h"
 #include "pyi_python.h"
 
+int pyvers = 0;
+
 /* Magic number to verify archive data are bundled correctly. */
 #define MAGIC "MEI\014\013\012\013\016"
 
@@ -414,6 +416,9 @@ pyi_arch_open(ARCHIVE_STATUS *status)
 
     /* Set the flag that Python library was not loaded yet. */
     status->is_pylib_loaded = false;
+
+    /* Set the the Python version used. */
+    pyvers = pyi_arch_get_pyversion(status);
 
     /* Read in in the table of contents */
     fseek(status->fp, status->pkgstart + ntohl(status->cookie.TOC), SEEK_SET);

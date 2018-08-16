@@ -12,7 +12,7 @@ import plistlib
 import shutil
 from ..compat import is_darwin, FileExistsError
 from .api import EXE, COLLECT
-from .datastruct import Target, TOC, logger, _check_guts_eq
+from .datastruct import Target, TOC, logger
 from .utils import _check_path_overlap, _rmtree, add_suffix_to_extensions, checkCache
 
 
@@ -46,6 +46,7 @@ class BUNDLE(Target):
         self.toc = TOC()
         self.strip = False
         self.upx = False
+        self.console = True
 
         # .app bundle identifier for Code Signing
         self.bundle_identifier = kws.get('bundle_identifier')
@@ -61,6 +62,7 @@ class BUNDLE(Target):
                 self.toc.extend(arg.dependencies)
                 self.strip = arg.strip
                 self.upx = arg.upx
+                self.console = arg.console
             elif isinstance(arg, TOC):
                 self.toc.extend(arg)
                 # TOC doesn't have a strip or upx attribute, so there is no way for us to
@@ -69,6 +71,7 @@ class BUNDLE(Target):
                 self.toc.extend(arg.toc)
                 self.strip = arg.strip_binaries
                 self.upx = arg.upx_binaries
+                self.console = arg.console
             else:
                 logger.info("unsupported entry %s", arg.__class__.__name__)
         # Now, find values for app filepath (name), app name (appname), and name
@@ -137,15 +140,12 @@ class BUNDLE(Target):
                            "CFBundlePackageType": "APPL",
                            "CFBundleShortVersionString": self.version,
 
-                           # Setting this to 1 will cause Mac OS X *not* to show
-                           # a dock icon for the PyInstaller process which
-                           # decompresses the real executable's contents. As a
-                           # side effect, the main application doesn't get one
-                           # as well, but at startup time the loader will take
-                           # care of transforming the process type.
-                           "LSBackgroundOnly": False,
-
                            }
+
+        # Setting EXE console=True implies LSBackgroundOnly=True.
+        # But it still can be overwrite by the user.
+        if self.console:
+            info_plist_dict['LSBackgroundOnly'] = True
 
         # Merge info_plist settings from spec file
         if isinstance(self.info_plist, dict) and self.info_plist:

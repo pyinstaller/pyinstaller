@@ -13,7 +13,6 @@ Utils for Mac OS X platform.
 """
 
 import os
-import sys
 
 from ..compat import base_prefix, exec_command
 from macholib.MachO import MachO

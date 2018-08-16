@@ -21,10 +21,12 @@ import platform
 import shutil
 import sys
 
+import struct
+
 from PyInstaller.config import CONF
 from .. import compat
 from ..compat import is_darwin, is_win, EXTENSION_SUFFIXES, \
-    FileNotFoundError, open_file, is_py3
+    open_file, is_py3, is_py37
 from ..depend import dylib
 from ..depend.bindepend import match_binding_redirect
 from ..utils import misc
@@ -95,11 +97,27 @@ def add_suffix_to_extensions(toc):
     new_toc = TOC()
     for inm, fnm, typ in toc:
         if typ == 'EXTENSION':
+            if is_py3:
+                # Change the dotted name into a relative path. This places C
+                # extensions in the Python-standard location. This only works
+                # in Python 3; see comments above
+                # ``sys.meta_path.append(CExtensionImporter())`` in
+                # ``pyimod03_importers``.
+                inm = inm.replace('.', os.sep)
             # In some rare cases extension might already contain a suffix.
             # Skip it in this case.
             if os.path.splitext(inm)[1] not in EXTENSION_SUFFIXES:
-                # Use this file's existing extension.
-                inm = inm + os.path.splitext(fnm)[1]
+                # Determine the base name of the file.
+                if is_py3:
+                    base_name = os.path.basename(inm)
+                else:
+                    base_name = inm.rsplit('.')[-1]
+                assert '.' not in base_name
+                # Use this file's existing extension. For extensions such as
+                # ``libzmq.cp36-win_amd64.pyd``, we can't use
+                # ``os.path.splitext``, which would give only the ```.pyd`` part
+                # of the extension.
+                inm = inm + os.path.basename(fnm)[len(base_name):]
 
         elif typ == 'DEPENDENCY':
             # Use the suffix from the filename.
@@ -652,3 +670,31 @@ def strip_paths_in_code(co, new_filename=None):
                      co.co_varnames, new_filename, co.co_name,
                      co.co_firstlineno, co.co_lnotab,
                      co.co_freevars, co.co_cellvars)
+
+
+def fake_pyc_timestamp(buf):
+    """
+    Reset the timestamp from a .pyc-file header to a fixed value.
+
+    This enables deterministic builds without having to set pyinstaller
+    source metadata (mtime) since that changes the pyc-file contents.
+
+    _buf_ must at least contain the full pyc-file header.
+    """
+    assert buf[:4] == compat.BYTECODE_MAGIC, \
+        "Expected pyc magic {}, got {}".format(compat.BYTECODE_MAGIC, buf[:4])
+    start, end = 4, 8
+    if is_py37:
+        # see https://www.python.org/dev/peps/pep-0552/
+        (flags,) = struct.unpack_from(">I", buf, 4)
+        if flags & 1:
+            # We are in the future and hash-based pyc-files are used, so
+            # clear "check_source" flag, since there is no source
+            buf[4:8] = struct.pack(">I", flags ^ 2)
+            return buf
+        else:
+            # no hash-based pyc-file, timestamp is the next field
+            start, end = 8, 12
+
+    ts = b'pyi0'  # So people know where this comes from
+    return buf[:start] + ts + buf[end:]

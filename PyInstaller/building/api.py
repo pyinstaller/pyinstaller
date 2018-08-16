@@ -20,16 +20,16 @@ import tempfile
 import pprint
 from operator import itemgetter
 
-from PyInstaller import is_win, is_darwin, is_linux, HOMEPATH, PLATFORM
+from PyInstaller import HOMEPATH, PLATFORM
 from PyInstaller.archive.writers import ZlibArchiveWriter, CArchiveWriter
 from PyInstaller.building.utils import _check_guts_toc, add_suffix_to_extensions, \
-    checkCache, _check_path_overlap, _rmtree, strip_paths_in_code, get_code_object, \
+    checkCache, strip_paths_in_code, get_code_object, \
     _make_clean_directory
-from PyInstaller.compat import is_cygwin, exec_command_all
+from PyInstaller.compat import is_win, is_darwin, is_linux, is_cygwin, exec_command_all
 from PyInstaller.depend import bindepend
 from PyInstaller.depend.analysis import get_bootstrap_modules
 from PyInstaller.depend.utils import is_path_to_egg
-from PyInstaller.building.datastruct import TOC, Target, logger, _check_guts_eq
+from PyInstaller.building.datastruct import TOC, Target, _check_guts_eq
 from PyInstaller.utils import misc
 from .. import log as logging
 
@@ -641,6 +641,7 @@ class COLLECT(Target):
         from ..config import CONF
         Target.__init__(self)
         self.strip_binaries = kws.get('strip', False)
+        self.console = True
 
         if CONF['hasUPX']:
             self.upx_binaries = kws.get('upx', False)
@@ -663,6 +664,7 @@ class COLLECT(Target):
             elif isinstance(arg, Target):
                 self.toc.append((os.path.basename(arg.name), arg.name, arg.typ))
                 if isinstance(arg, EXE):
+                    self.console = arg.console
                     for tocnm, fnm, typ in arg.toc:
                         if tocnm == os.path.basename(arg.name) + ".manifest":
                             self.toc.append((tocnm, fnm, typ))
@@ -691,7 +693,8 @@ class COLLECT(Target):
             if not os.path.exists(fnm) or not os.path.isfile(fnm) and is_path_to_egg(fnm):
                 # file is contained within python egg, it is added with the egg
                 continue
-            if os.pardir in os.path.normpath(inm) or os.path.isabs(inm):
+            if os.pardir in os.path.normpath(inm).split(os.sep) \
+               or os.path.isabs(inm):
                 raise SystemExit('Security-Alert: try to store file outside '
                                  'of dist-directory. Aborting. %r' % inm)
             tofnm = os.path.join(self.name, inm)

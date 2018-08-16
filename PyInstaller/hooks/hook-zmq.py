@@ -17,18 +17,23 @@ from PyInstaller.compat import is_py2, is_win
 
 hiddenimports = ['zmq.utils.garbage'] + collect_submodules('zmq.backend')
 
-# If PyZMQ provides its own copy of libzmq and libsodium, add it to the
-# extension-modules TOC so zmq/__init__.py can load it at runtime.
-# PyZMQ is able to load 'libzmq' and 'libsodium' even from sys._MEIPASS.
-# So they could be with other .dlls.
-try:
-    binaries = [(get_module_file_attribute('zmq.libzmq'),
-                 '.' if is_py2 and is_win else 'zmq')]
-except ImportError:
-    # Not all platforms provide their own copy of libzmq.
-    pass
-else:
-    # If PyZMQ pvorides its own copy of libzmq and libsodium, these libs look like
-    # C extensions. Excluding these modules ensures that those dlls are not bundled
-    # twice. Once as ./zmq.libzmq.pyd and once as ./zmq/libzmq.py.
-    excludedimports = ['zmq.libzmq']
+# Python 2 requires use of the ``CExtensionImporter`` in
+# ``pyimod03_importers.py``, rather than the standard Python import mechanism
+# used by Python 3. This break's PyZMQ's ability to find some of ts extension
+# module, requiring the following workaround.
+if is_py2:
+    # If PyZMQ provides its own copy of libzmq and libsodium, add it to the
+    # extension-modules TOC so zmq/__init__.py can load it at runtime.
+    # PyZMQ is able to load 'libzmq' and 'libsodium' even from sys._MEIPASS,
+    # like they could do with other .dlls.
+    try:
+        binaries = [(get_module_file_attribute('zmq.libzmq'),
+                     '.' if is_win else 'zmq')]
+    except ImportError:
+        # Not all platforms provide their own copy of libzmq.
+        pass
+    else:
+        # If PyZMQ pvorides its own copy of libzmq and libsodium, these libs look like
+        # C extensions. Excluding these modules ensures that those dlls are not bundled
+        # twice. Once as ./zmq.libzmq.pyd and once as ./zmq/libzmq.py.
+        excludedimports = ['zmq.libzmq']

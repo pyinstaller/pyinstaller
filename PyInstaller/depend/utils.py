@@ -25,7 +25,7 @@ import zipfile
 from ..lib.modulegraph import util, modulegraph
 
 from .. import compat
-from ..compat import (is_darwin, is_unix, is_py2, is_freebsd,
+from ..compat import (is_darwin, is_unix, is_freebsd, is_py2, is_py37,
                       BYTECODE_MAGIC, PY3_BASE_MODULES,
                       exec_python_rc)
 from .dylib import include_library
@@ -87,11 +87,19 @@ def create_py3_base_library(libzip_filename, graph):
                         # This code is similar to py_compile.compile().
                         with io.BytesIO() as fc:
                             # Prepare all data in byte stream file-like object.
-                            fc.write(BYTECODE_MAGIC)
-                            _write_long(fc, timestamp)
-                            _write_long(fc, size)
+                            if not is_py37:
+                                # old format
+                                fc.write(BYTECODE_MAGIC)
+                                _write_long(fc, timestamp)
+                                _write_long(fc, size)
+                            else:
+                                # new format - still timestamp based
+                                fc.write(BYTECODE_MAGIC)
+                                _write_long(fc, 0) # flags
+                                _write_long(fc, timestamp)
+                                _write_long(fc, size)
                             marshal.dump(mod.code, fc)
-                            # Use a ZipInfo to set timestamp for deterministic build 
+                            # Use a ZipInfo to set timestamp for deterministic build
                             info = zipfile.ZipInfo(new_name)
                             zf.writestr(info, fc.getvalue())
 
@@ -164,6 +172,7 @@ def __scan_code_instruction_for_ctypes(instructions):
         try:
             instruction = next(instructions)
             expected_ops = ('LOAD_GLOBAL', 'LOAD_NAME')
+            load_method = ('LOAD_ATTR', 'LOAD_METHOD')
 
             if not instruction or instruction.opname not in expected_ops:
                 continue
@@ -179,9 +188,8 @@ def __scan_code_instruction_for_ctypes(instructions):
                 #
                 # In this case "strip" the `ctypes` by advancing and expecting
                 # `LOAD_ATTR` next.
-                expected_ops = ('LOAD_ATTR',)
                 instruction = next(instructions)
-                if instruction.opname not in expected_ops:
+                if instruction.opname not in load_method:
                     continue
                 name = instruction.argval
 
@@ -207,7 +215,7 @@ def __scan_code_instruction_for_ctypes(instructions):
                 #     LOAD_ATTR     1 (LoadLibrary)
                 #     LOAD_CONST    1 ('library.so')
                 instruction = next(instructions)
-                if instruction.opname == 'LOAD_ATTR':
+                if instruction.opname in load_method:
                     if instruction.argval == "LoadLibrary":
                         # Second type, needs to fetch one more instruction
                         yield _libFromConst()
@@ -225,7 +233,7 @@ def __scan_code_instruction_for_ctypes(instructions):
                 #     LOAD_ATTR     1 (find_library)
                 #     LOAD_CONST    1 ('gs')
                 instruction = next(instructions)
-                if instruction.opname == 'LOAD_ATTR':
+                if instruction.opname in load_method:
                     if instruction.argval == "find_library":
                         libname = _libFromConst()
                         if libname:
@@ -368,7 +376,7 @@ def load_ldconfig_cache():
         # an informative line and might contain localized characters.
         # Example of first line with local cs_CZ.UTF-8:
         #$ /sbin/ldconfig -p
-        #V keši „/etc/ld.so.cache“ nalezeno knihoven: 2799
+        #V keši „/etc/ld.so.cache“ nalezeno knihoven: 2799
         #      libzvbi.so.0 (libc6,x86-64) => /lib64/libzvbi.so.0
         #      libzvbi-chains.so.0 (libc6,x86-64) => /lib64/libzvbi-chains.so.0
         text = compat.exec_command(ldconfig, '-p')
