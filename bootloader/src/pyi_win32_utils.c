@@ -68,7 +68,7 @@ char * GetWinErrorString(DWORD error_code) {
     }
     /* Note: Giving 0 to dwLanguageID means MAKELANGID(LANG_NEUTRAL,
      * SUBLANG_NEUTRAL), but we should use SUBLANG_DEFAULT instead of
-     * SUBLANG_NEUTRAL. Please see the note written in 
+     * SUBLANG_NEUTRAL. Please see the note written in
      * "Language Identifier Constants and Strings" on MSDN.
      * https://docs.microsoft.com/en-us/windows/desktop/intl/language-identifier-constants-and-strings
      */
