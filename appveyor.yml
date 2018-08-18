@@ -31,9 +31,18 @@ environment:
       PYTHON_VERSION: 3.4
       PYTHON_ARCH: 32
 
+      # The Python 2.7 tests exceed the 1 hour limit. Break them into two
+      # groups.
     - PYTHON: C:\Python27
       PYTHON_VERSION: 2.7
       PYTHON_ARCH: 32
+      PYTEST_CMD: '%PYTEST% tests/unit tests/functional -k "not tests/functional/test_libraries.py"'
+
+    - PYTHON: C:\Python27
+      PYTHON_VERSION: 2.7
+      PYTHON_ARCH: 32
+      PYTEST_CMD: '%PYTEST% -k "test_noarchive[onefile]" && %PYTEST% tests/functional/test_libraries.py -k "not test_noarchive[onefile]"'
+
 
 init:
   # Uncomment the line below to enable Remote Desktop access to the build worker
@@ -71,8 +80,7 @@ install:
 
   # Check that we have the expected version and architecture for Python
   - python --version
-  - >-
-    python -c "import sys,platform,struct;
+  - python -c "import sys,platform,struct;
     print(sys.platform, platform.machine(), struct.calcsize('P') * 8, )"
 
   # Compile bootloader.
@@ -109,11 +117,14 @@ test_script:
   # while the other is writing it, producing a ``PermissionError: [Errno 13]
   # Permission denied`` exception. To avoid this, run these two tests in
   # separate ``pytest`` invokations.
-  - >-
-    if not "%APPVEYOR_SCHEDULED_BUILD%" == "True" (
-    %PYTEST% -k "test_noarchive[onefile]" &&
-    %PYTEST% -k "not test_noarchive[onefile]"
-    )
+  #
+  # In the Appveyor environment, the ``&&`` must be quoted when inside a set
+  # statement.
+  - if not defined PYTEST_CMD
+      set PYTEST_CMD=%PYTEST% -k "test_noarchive[onefile]" ^&^&
+        %PYTEST% -k "not test_noarchive[onefile]"
+  - if not "%APPVEYOR_SCHEDULED_BUILD%" == "True" %PYTEST_CMD%
+
 
 on_finish:
   # Remove old or huge cache files to hopefully not exceed the 1GB cache limit.
