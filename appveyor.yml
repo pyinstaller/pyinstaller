@@ -80,8 +80,8 @@ install:
 
   # Check that we have the expected version and architecture for Python
   - python --version
-  - python -c "import sys,platform,struct;
-    print(sys.platform, platform.machine(), struct.calcsize('P') * 8, )"
+  - python -c "import sys, platform, struct;
+    print(sys.platform, platform.machine(), struct.calcsize('P')*8)"
 
   # Compile bootloader.
   - cd bootloader
