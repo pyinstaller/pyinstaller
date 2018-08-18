@@ -20,7 +20,7 @@ import pytest
 
 # Local imports
 # -------------
-from PyInstaller.compat import is_darwin, is_win, is_py2
+from PyInstaller.compat import is_darwin, is_win, is_py2, is_py37
 from PyInstaller.utils.tests import importorskip, skipif_win, \
     skipif_winorosx, skipif_notwin, skipif_notosx, skipif_no_compiler, xfail
 
@@ -347,11 +347,12 @@ def test_stderr_encoding(tmpdir, pyi_builder):
                 # In Python 2 on Mac OS X and Linux 'sys.stderr.encoding' is set to None.
                 # On Windows when running in non-interactive terminal it is None.
                 enc = 'None'
-        elif sys.stderr.isatty():
+        elif sys.stderr.isatty() or is_py37:
             enc = str(sys.stderr.encoding)
         else:
             # For non-interactive stderr use locale encoding - ANSI codepage.
-            # This fixes the test when running with py.test and capturing output.
+            # This fixes the test when running with py.test and capturing
+            # output on Python 3.6 and earlier.
             enc = locale.getpreferredencoding(False)
         f.write(enc)
     pyi_builder.test_script('pyi_stderr_encoding.py')
@@ -366,11 +367,12 @@ def test_stdout_encoding(tmpdir, pyi_builder):
                 # In Python 2 on Mac OS X and Linux 'sys.stdout.encoding' is set to None.
                 # On Windows when running in non-interactive terminal it is None.
                 enc = 'None'
-        elif sys.stdout.isatty():
+        elif sys.stdout.isatty() or is_py37:
             enc = str(sys.stdout.encoding)
         else:
             # For non-interactive stderr use locale encoding - ANSI codepage.
-            # This fixes the test when running with py.test and capturing output.
+            # This fixes the test when running with py.test and capturing
+            # output on Python 3.6 and earlier.
             enc = locale.getpreferredencoding(False)
         f.write(enc)
     pyi_builder.test_script('pyi_stdout_encoding.py')
