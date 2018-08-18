@@ -72,7 +72,6 @@ install:
   # Check that we have the expected version and architecture for Python
   - python --version
   - >-
-    %CMD_IN_ENV%
     python -c "import sys,platform,struct;
     print(sys.platform, platform.machine(), struct.calcsize('P') * 8, )"
 
@@ -84,11 +83,6 @@ install:
   - cd ..
 
   ### Install the PyInstaller dependencies.
-  # If some dependencies contain
-  # compiled extensions and are not provided as pre-built wheel packages, pip
-  # will build them from source using the MSVC compiler matching the target
-  # Python version and architecture. To achieve this, all commands are run
-  # under control of '%CMD_IN_ENV%' (see above).
 
   # Upgrade to the latest pip.
   - 'python -m pip install -U pip setuptools wheel'
