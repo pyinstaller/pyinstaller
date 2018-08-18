@@ -3,9 +3,11 @@
 
 clone_depth: 50
 
+
 branches:
   except:
     - /pyup\/.*/
+
 
 environment:
   PYTEST: py.test -n3 --maxfail 5 --durations=10 --junitxml=junit-results.xml
@@ -58,6 +60,7 @@ cache:
   - '%LOCALAPPDATA%\pip\Cache\http'
   - '%LOCALAPPDATA%\pip\Cache\wheels'
 
+
 install:
   - C:\cygwin\bin\du -hs "%LOCALAPPDATA%\pip\Cache"
   # Prepend newly installed Python to the PATH of this build (this cannot be
@@ -98,7 +101,9 @@ install:
   # Make sure the help options print.
   - 'python -m pyinstaller -h'
 
+
 build: none
+
 
 test_script:
   # Run the tests appropriate for this entry in the test matrix. Skip tests
