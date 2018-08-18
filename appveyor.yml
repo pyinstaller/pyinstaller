@@ -53,7 +53,8 @@ init:
   # Free up some disk space; exceeding the limit of 90 GB results in a
   # locked-out account. The Qt directory takes over 30 GB. Do this in the
   # background.
-  - ps: 'Start-Process -FilePath "$env:comspec" -ArgumentList "/c rmdir tmp /s /q"'
+  - ps: 'Start-Process -FilePath "$env:comspec" -ArgumentList "/c rmdir C:\Qt /s /q"'
+
 
 cache:
   # Cache downloaded pip packages and built wheels.
