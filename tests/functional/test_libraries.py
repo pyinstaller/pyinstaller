@@ -276,12 +276,14 @@ def test_PyQt5_QWebEngine(pyi_builder, data_dir):
         #
         # 1. Run only a onedir build -- onefile builds don't work.
         if pyi_builder._mode != 'onedir':
-            pytest.skip('The QWebEngine .app bundle only supports onedir mode.')
+            pytest.skip('The QWebEngine .app bundle ' +
+                        'only supports onedir mode.')
 
-        # 2. Only test the Mac .app bundle, by modifying the executes this fixture
-        #    runs.
+        # 2. Only test the Mac .app bundle, by modifying the executes this
+        #    fixture runs.
         _old_find_executables = pyi_builder._find_executables
         # Create a replacement method that selects just the .app bundle.
+
         def _replacement_find_executables(self, name):
             path_to_onedir, path_to_app_bundle = _old_find_executables(name)
             return [path_to_app_bundle]
@@ -292,9 +294,7 @@ def test_PyQt5_QWebEngine(pyi_builder, data_dir):
 
         # 3. Run the test with specific command-line arguments.
         pyi_builder.test_source(source_to_test,
-            pyi_args=[
-                '--windowed',
-                '--osx-bundle-identifier', 'org.qt-project.Qt.QtWebEngineCore'])
+                                pyi_args=['--windowed'])
     else:
         # The Linux and Windows QWebEngine test needs no special handling.
         pyi_builder.test_source(source_to_test)
