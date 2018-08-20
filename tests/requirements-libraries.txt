@@ -5,7 +5,8 @@
 # ----------
 # These packages, if updated, produce test failures. Work needs to be done on
 # these hooks.
-requests==2.15.1  # pyup: ignore
+#
+# None at this time.
 
 
 # Working
@@ -46,6 +47,7 @@ matplotlib==2.2.2
 python-dateutil==2.7.3
 phonenumbers==8.9.10
 gevent==1.3.6
+requests==2.19.1
 
 
 # Special cases

@@ -516,21 +516,6 @@ def test_requests(tmpdir, pyi_builder, data_dir, monkeypatch):
                             pyi_args=['--add-data', datas])
 
 
-@importorskip('requests.packages.urllib3.packages.six')
-def test_requests_urllib3_six(pyi_builder):
-    # Test for pre-safe-import requests.packages.urllib3.packages.six.moves.
-    pyi_builder.test_source(
-        """
-        import requests.packages.urllib3.connectionpool
-        import types
-        assert isinstance(requests.packages.urllib3.connectionpool.queue,
-                          types.ModuleType)
-        """,
-        # Need to exclude urllib3, otherwise requests.packages would
-        # fall back to this
-        pyi_args=['--exclude-module', 'urllib3'])
-
-
 @importorskip('urllib3.packages.six')
 def test_urllib3_six(pyi_builder):
     # Test for pre-safe-import urllib3.packages.six.moves.
