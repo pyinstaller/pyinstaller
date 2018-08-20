@@ -491,7 +491,7 @@ def test_pycrypto(pyi_builder):
         print('AES null encryption, block size', BLOCK_SIZE)
         # Just for testing functionality after all
         print('HEX', binascii.hexlify(
-            AES.new("\\0" * BLOCK_SIZE).encrypt("\\0" * BLOCK_SIZE)))
+            AES.new(b"\\0" * BLOCK_SIZE, AES.MODE_ECB).encrypt(b"\\0" * BLOCK_SIZE)))
         """)
 
 

@@ -1,6 +1,6 @@
-# Libraries used for testing.
-
-
+# Libraries used for testing
+# ==========================
+#
 # Needs work
 # ----------
 # These packages, if updated, produce test failures. Work needs to be done on
@@ -41,7 +41,8 @@ zeep==3.1.0
 pyexcelerate==0.7.3
 Pillow==5.2.0
 pinyin==0.4.0
-pycryptodomex==3.6.4
+pycryptodome==3.6.6
+pycryptodomex==3.6.6
 future==0.16.0
 pyusb==1.0.2
 Unidecode==1.0.22

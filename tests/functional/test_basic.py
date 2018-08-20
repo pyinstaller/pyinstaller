@@ -21,8 +21,9 @@ import pytest
 # Local imports
 # -------------
 from PyInstaller.compat import is_darwin, is_win, is_py2, is_py37
-from PyInstaller.utils.tests import importorskip, skipif_win, \
+from PyInstaller.utils.tests import importorskip, skipif, skipif_win, \
     skipif_winorosx, skipif_notwin, skipif_notosx, skipif_no_compiler, xfail
+from PyInstaller.utils.hooks import is_module_satisfies
 
 
 def test_run_from_path_environ(pyi_builder):
@@ -141,6 +142,9 @@ def test_email(pyi_builder):
         from email.mime.nonmultipart import MIMENonMultipart
         """)
 
+
+@skipif(is_module_satisfies('Crypto >= 3'), reason='Bytecode encryption is not '
+        'compatible with pycryptodome.')
 @importorskip('Crypto')
 def test_feature_crypto(pyi_builder):
     pyi_builder.test_source(
