@@ -88,11 +88,6 @@ uvloop==0.11.0; python_version >= '3.5' and sys_platform != 'win32'
 # As of 14-Aug-2018, twisted doesn't offer Python 3 wheels.
 twisted==18.7.0; python_version == '2.7'
 
-# Current pypiwin32 simply installs pywin32. Only an old pypiwin32 release has a
-# Python 3.4 wheel.
-pywin32==223; python_version != '3.4' and sys_platform == 'win32'
-pypiwin32==219; python_version == '3.4' and sys_platform == 'win32'  # pyup: ignore
-
 # Web3 supports Python 3.5 and up.
 web3==4.5.0; python_version >= '3.5'
 
