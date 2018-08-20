@@ -4,12 +4,17 @@ execnet >= 1.5.0
 # Testing framework.
 pytest >= 2.7.3
 
-pytest-xdist     # Plugin allowing running tests in parallel.
-pytest-timeout   # Plugin to abort hanging tests.
-pytest-drop-dup-tests # allows specifying order without duplicates
+# Plugin allowing running tests in parallel.
+pytest-xdist
+# Plugin to abort hanging tests.
+pytest-timeout
+# allows specifying order without duplicates
+pytest-drop-dup-tests
 
-psutil  # Better subprocess alternative with implemented timeout.
+# Better subprocess alternative with implemented timeout.
+psutil
 
-flake8-diff  # Check new flake8 violations on pull requests
+# Check new flake8 violations on pull requests
+flake8-diff
 
 subprocess32; python_version == '2.7'
