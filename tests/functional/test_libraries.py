@@ -810,6 +810,7 @@ def test_uvloop(pyi_builder):
 def test_web3(pyi_builder):
     pyi_builder.test_source("import web3")
 
+
 @importorskip('phonenumbers')
 def test_phonenumbers(pyi_builder):
     pyi_builder.test_source("""

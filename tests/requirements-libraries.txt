@@ -7,7 +7,6 @@
 # these hooks.
 #
 Django==1.8.18  # pyup: ignore
-web3==3.16.5  # pyup: ignore
 requests==2.15.1  # pyup: ignore
 # The gevent hook only supports an old version, which lacks wheels for
 # Python 3.7.
@@ -94,3 +93,6 @@ twisted==18.7.0; python_version == '2.7'
 # Python 3.4 wheel.
 pywin32==223; python_version != '3.4' and sys_platform == 'win32'
 pypiwin32==219; python_version == '3.4' and sys_platform == 'win32'  # pyup: ignore
+
+# Web3 supports Python 3.5 and up.
+web3==4.5.0; python_version >= '3.5'
