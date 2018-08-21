@@ -58,9 +58,9 @@ requests==2.19.1
 pycrypto==2.6.1; python_version <= '3.5' or sys_platform != 'win32'
 
 # Wheels are available only on OS X and Win 32. The only Windows 64-bit Python
-# tests run are for Python 3.6, so exclude that. There's no way to simply
+# tests run are for Python 3.7, so exclude that. There's no way to simply
 # exclude Windows 64 bit Python.
-pyenchant==2.0.0; sys_platform == 'darwin' or (sys_platform == 'win32' and python_version <= '3.5')
+pyenchant==2.0.0; sys_platform == 'darwin' or (sys_platform == 'win32' and python_version <= '3.6')
 
 # While PyQt5 itself is provided as wheels for Python 3.4, it requires
 # SIP>=4.19 which is not available for Python 3.4.
