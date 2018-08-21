@@ -5,8 +5,6 @@
 # ----------
 # These packages, if updated, produce test failures. Work needs to be done on
 # these hooks.
-#
-Django==1.8.18  # pyup: ignore
 requests==2.15.1  # pyup: ignore
 
 
@@ -95,3 +93,6 @@ pypiwin32==219; python_version == '3.4' and sys_platform == 'win32'  # pyup: ign
 
 # Web3 supports Python 3.5 and up.
 web3==4.5.0; python_version >= '3.5'
+
+# Django supports Python 3.5 and up.
+Django==2.1; python_version >= '3.5'
