@@ -172,14 +172,14 @@ Useful Items in ``PyInstaller.compat``
 A hook may import the following names from ``PyInstaller.compat``,
 for example::
 
-	from PyInstaller.compat import modname_tkinter, is_win
+   from PyInstaller.compat import modname_tkinter, is_win
 
 ``is_py2``:
    True when the active Python is version 2.7.
 ``is_py3``:
    True when the active Python is version 3.X.
-``is_py35``, ``is_py36``:
-   True when the current version of Python is at least 3.5 or 3.6 respectively.
+``is_py35``, ``is_py36``, ``is_py37``:
+   True when the current version of Python is at least 3.5, 3.6, or 3.7 respectively.
 
 ``is_win``:
    True in a Windows system.
@@ -259,7 +259,7 @@ You are welcome to read the ``PyInstaller.utils.hooks`` module
    Check that the named module (fully-qualified) exists and satisfies the
    given requirement. Example::
 
-	    if is_module_satisfies('sqlalchemy >= 0.6'):
+       if is_module_satisfies('sqlalchemy >= 0.6'):
 
    This function provides robust version checking based on the same low-level
    algorithm used by ``easy_install`` and ``pip``, and should always be
@@ -291,6 +291,26 @@ You are welcome to read the ``PyInstaller.utils.hooks`` module
    in ``Pyinstaller/utils/hooks/__init__.py``.
 
 
+``collect_all( 'package-name', include_py_files=False )``:
+
+   Given a package name as a string, this function returns a tuple of ``datas, binaries,
+   hiddenimports`` containing all data files, binaries, and modules in the given
+   package, including any modules specified in the requirements for the
+   distribution of this module. The value of ``include_py_files`` is passed
+   directly to ``collect_data_files``.
+
+   Typical use: ``datas, binaries, hiddenimports = collect_all('my_module_name')``.
+   For example, ``hook-gevent.py`` invokes ``collect_all``, which gathers:
+
+   * All data files, such as ``__greenlet_primitives.pxd``, ``__hub_local.pxd``,
+     and many, many more.
+   * All binaries, such as ``__greenlet_primitives.cp37-win_amd64.pyd`` (on a
+     Windows 64-bit install) and many, many more.
+   * All modules in ``gevent``, such as ``gevent.threadpool``,
+     ``gevent._semaphore``, and many, many more.
+   * All requirements. ``pip show gevent`` gives ``Requires: cffi, greenlet``.
+     Therefore, the ``cffi`` and ``greenlet`` modules are included.
+
 ``collect_submodules( 'package-name', pattern=None )``:
    Returns a list of strings that specify all the modules in a package,
    ready to be assigned to the ``hiddenimports`` global.
@@ -312,7 +332,7 @@ You are welcome to read the ``PyInstaller.utils.hooks`` module
    'foo.test'))`` excludes ``foo.test`` and ``foo.test.one`` but not
    ``foo.testifier``.
 
-``collect_data_files( 'module-name', subdir=None, include_py_files=False )``:
+``collect_data_files( 'module-name', include_py_files=False, subdir=None )``:
    Returns a list of (source, dest) tuples for all non-Python (i.e. data)
    files found in *module-name*, ready to be assigned to the ``datas`` global.
    *module-name* is the fully-qualified name of a module or
@@ -337,13 +357,13 @@ You are welcome to read the ``PyInstaller.utils.hooks`` module
    a dynamic lib: ``*.dll``, ``*.dylib``, ``lib*.pyd``, and ``lib*.so``.
    Example::
 
-		binaries = collect_dynamic_libs( 'enchant' )
+      binaries = collect_dynamic_libs( 'enchant' )
 
 ``get_module_file_attribute( 'module-name' )``:
    Return the absolute path to *module-name*, a fully-qualified module name.
    Example::
 
-       nacl_dir = os.path.dirname(get_module_file_attribute('nacl'))
+      nacl_dir = os.path.dirname(get_module_file_attribute('nacl'))
 
 ``get_package_paths( 'package-name' )``:
    Given the name of a package, return a tuple.
@@ -352,7 +372,7 @@ You are welcome to read the ``PyInstaller.utils.hooks`` module
    For example, if ``pkg.subpkg`` is stored in ``/abs/Python/lib``
    the result of::
 
-		get_package_paths( 'pkg.subpkg' )
+      get_package_paths( 'pkg.subpkg' )
 
    is the tuple, ``( '/abs/Python/lib', '/abs/Python/lib/pkg/subpkg' )``
 
@@ -412,14 +432,14 @@ which has the following immutable properties:
 ``__file__``:
    The absolute path of the module. If it is:
 
-        * A standard (rather than namespace) package, this is the absolute path
-          of this package's directory.
+      * A standard (rather than namespace) package, this is the absolute path
+        of this package's directory.
 
-        * A namespace (rather than standard) package, this is the abstract
-          placeholder ``-``.
+      * A namespace (rather than standard) package, this is the abstract
+        placeholder ``-``.
 
-        * A non-package module or C extension, this is the absolute path of the
-          corresponding file.
+      * A non-package module or C extension, this is the absolute path of the
+        corresponding file.
 
 ``__path__``:
    A list of the absolute paths of all directories comprising the module
@@ -545,7 +565,7 @@ The ``psim_api`` object also offers the following methods:
    This is useful to make the module known to |PyInstaller| and avoid misleading warnings.
    A typical use applies the name from the ``psim_api``::
 
-   	psim_api.add_runtime_module( psim_api.module_name )
+      psim_api.add_runtime_module( psim_api.module_name )
 
 ``add_alias_module( real_module_name, alias_module_name )``:
    ``real_module_name`` is the fully-qualifed name of an existing
