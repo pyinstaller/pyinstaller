@@ -19,15 +19,11 @@ from PyInstaller.compat import getsitepackages, is_darwin, is_win
 # version of Qt libraries when there is installed another application (e.g. QtCreator)
 if is_win:
     from PyInstaller.utils.win32.winutils import extend_system_path
-
-    extend_system_path([os.path.join(x, 'PySide2') for x in getsitepackages()])
-    extend_system_path([os.path.join(os.path.dirname(get_module_file_attribute('PySide2')),
-                                     'Qt', 'bin')])
+    extend_system_path([os.path.dirname(get_module_file_attribute('PySide2'))])
 
 # FIXME: this should not be needed
 hiddenimports = ['numpy.core.multiarray']
 
-# TODO: check if this is needed
 # Collect just the qt.conf file.
-datas = [x for x in collect_data_files('PySide2', False, os.path.join('Qt', 'bin')) if
-         x[0].endswith('qt.conf')]
+datas = [x for x in collect_data_files('PySide2', False) if
+         os.path.basename(x[0]) == 'qt.conf']

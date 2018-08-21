@@ -93,3 +93,6 @@ web3==4.5.0; python_version >= '3.5'
 
 # Django supports Python 3.5 and up.
 Django==2.1; python_version >= '3.5'
+
+# No wheel for python 3.4
+PySide2==5.11.1; python_version != '3.4'
