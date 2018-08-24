@@ -91,7 +91,7 @@ def test_signal_handled(pyi_builder, signame, ignore):
         # sleep a bit to avoid exiting before the signal is delivered
         time.sleep(1)
 
-        eprint('ignore:' ignore)
+        eprint('ignore:', ignore)
         eprint('signalled:', signalled)
         if ignore and signalled:
             raise Exception('signal {signame} not ignored')
