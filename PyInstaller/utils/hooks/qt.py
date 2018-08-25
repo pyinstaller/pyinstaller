@@ -79,6 +79,7 @@ class Qt5LibraryInfo:
 
 # Provide an instance of this class, to avoid each hook constructing its own.
 pyqt5_library_info = Qt5LibraryInfo('PyQt5')
+pyside2_library_info = Qt5LibraryInfo('PySide2')
 
 
 def qt_plugins_dir(namespace):
@@ -539,4 +540,5 @@ def add_qt5_dependencies(hook_file):
 
 
 __all__ = ('qt_plugins_dir', 'qt_plugins_binaries', 'qt_menu_nib_dir',
-           'get_qmake_path', 'add_qt5_dependencies', 'pyqt5_library_info')
+           'get_qmake_path', 'add_qt5_dependencies', 'pyqt5_library_info',
+           'pyside2_library_info')
