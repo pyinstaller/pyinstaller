@@ -108,7 +108,7 @@ applies them to the bundle being created.
     only when the hooked module is imported.
     Example::
 
-        hiddenimports = ['_gdbm', 'socket', 'h5py.defs'']
+        hiddenimports = ['_gdbm', 'socket', 'h5py.defs']
 
 ``excludedimports``
     A list of absolute module names that should
