@@ -7,7 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
 from PyInstaller.utils.hooks import get_package_paths
-datas = [(get_package_paths('torch')[1],"torch"),]
 
+datas = [(get_package_paths('torch')[1],"torch"),]
