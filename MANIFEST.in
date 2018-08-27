@@ -5,6 +5,7 @@ graft tests
 
 include *.rst
 include *.txt
+include *.toml
 include pyinstaller.py
 include pyinstaller-gui.py
 
