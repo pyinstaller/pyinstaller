@@ -1,17 +1,24 @@
 Changelog for PyInstaller
 =========================
 
+.. NOTE:
+
+   You should *NOT* be adding new change log entries to this file, this
+   file is managed by towncrier. You *may* edit previous change logs to
+   fix problems like typo corrections or such.
+
+   To add a new change log entry, please see
+   https://pyinstaller.readthedocs.io/en/latest/development/changelog-entries.html
+
 ..
    Define some Sphinx standard roles so they can be used in the README. This
    should not interfer with Sphinx.
 .. role:: ref
 .. role:: program
+.. role:: pep
+.. role:: issue
 
-
-3.4 (unreleased)
-----------------
-
-- Nothing changed yet.
+.. towncrier release notes start
 
 
 3.3.1 (2017-12-13)
