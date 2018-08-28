@@ -423,6 +423,9 @@ class CArchiveWriter(ArchiveWriter):
             if pathnm.find('.__init__.py') > -1:
                 typcd = 'M'
 
+        if fh:
+            fh.close()
+
         # Record the entry in the CTOC
         self.toc.add(where, dlen, ulen, flag, typcd, nm)
 

@@ -491,7 +491,8 @@ class BuildTestRunner(object):
                 return False, 'Executable for %s missing' % logfn
             fname_list = archive_viewer.get_archive_content(prog)
             fname_list = [fn for fn in fname_list]
-            pattern_list = eval(open(logfn, text_read_mode).read())
+            with open(logfn, text_read_mode) as fp:
+                pattern_list = eval(fp.read())
             # Alphabetical order of patterns.
             pattern_list.sort()
             missing = []
