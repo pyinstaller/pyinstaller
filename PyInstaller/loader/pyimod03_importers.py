@@ -760,10 +760,8 @@ class CExtensionImporter(object):
         module.__file__ (or pkg.__path__ items)
         """
         # Since __file__ attribute works properly just try to open and read it.
-        fp = open(path, 'rb')
-        content = fp.read()
-        fp.close()
-        return content
+        with open(path, 'rb') as fp:
+            return fp.read()
 
     def get_filename(self, fullname):
         """

@@ -112,9 +112,9 @@ class ArchiveWriter(object):
         ispkg = pynm == '__init__'
         assert ext in ('.pyc', '.pyo')
         self.toc.append((nm, (ispkg, self.lib.tell())))
-        f = open(entry[1], 'rb')
-        f.seek(8)  # skip magic and timestamp
-        self.lib.write(f.read())
+        with open(entry[1], 'rb') as f:
+            f.seek(8)  # skip magic and timestamp
+            self.lib.write(f.read())
 
     def save_trailer(self, tocpos):
         """
