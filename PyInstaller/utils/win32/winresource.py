@@ -212,9 +212,8 @@ def UpdateResourcesFromDataFile(dstpath, srcpath, type_, names=None,
     names = a list of resource names to update (None = all)
     languages = a list of resource languages to update (None = all)
     """
-    src = open(srcpath, "rb")
-    data = src.read()
-    src.close()
+    with open(srcpath, "rb") as src:
+        data = src.read()
     UpdateResources(dstpath, data, type_, names, languages)
 
 

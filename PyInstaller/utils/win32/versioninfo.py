@@ -577,9 +577,8 @@ def SetVersion(exenm, versionfile):
     if isinstance(versionfile, VSVersionInfo):
         vs = versionfile
     else:
-        fp = codecs.open(versionfile, text_read_mode, 'utf-8')
-        txt = fp.read()
-        fp.close()
+        with codecs.open(versionfile, text_read_mode, 'utf-8') as fp:
+            txt = fp.read()
         vs = eval(txt)
     hdst = win32api.BeginUpdateResource(exenm, 0)
     win32api.UpdateResource(hdst, pefile.RESOURCE_TYPE['RT_VERSION'], 1, vs.toRaw())

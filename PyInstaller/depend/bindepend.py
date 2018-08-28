@@ -319,9 +319,8 @@ def check_extract_from_egg(pth, todir=None):
                         dirname = os.path.dirname(pth)
                         if not os.path.isdir(dirname):
                             os.makedirs(dirname)
-                        f = open(pth, "wb")
-                        f.write(egg.read(member))
-                        f.close()
+                        with open(pth, "wb") as f:
+                            f.write(egg.read(member))
                     rv.append((pth, eggpth, member))
                 return rv
     return [(pth, None, None)]
@@ -343,9 +342,8 @@ def getAssemblies(pth):
     # check for manifest file
     manifestnm = pth + ".manifest"
     if os.path.isfile(manifestnm):
-        fd = open(manifestnm, "rb")
-        res = {RT_MANIFEST: {1: {0: fd.read()}}}
-        fd.close()
+        with open(manifestnm, "rb") as fd:
+            res = {RT_MANIFEST: {1: {0: fd.read()}}}
     else:
         # check the binary for embedded manifest
         try:

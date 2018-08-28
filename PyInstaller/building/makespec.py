@@ -437,17 +437,16 @@ def main(scripts, name=None, onefile=None,
 
     # Write down .spec file to filesystem.
     specfnm = os.path.join(specpath, name + '.spec')
-    specfile = open(specfnm, 'w')
-    if onefile:
-        specfile.write(onefiletmplt % d)
-        # For OSX create .app bundle.
-        if is_darwin and not console:
-            specfile.write(bundleexetmplt % d)
-    else:
-        specfile.write(onedirtmplt % d)
-        # For OSX create .app bundle.
-        if is_darwin and not console:
-            specfile.write(bundletmplt % d)
-    specfile.close()
+    with open(specfnm, 'w') as specfile:
+        if onefile:
+            specfile.write(onefiletmplt % d)
+            # For OSX create .app bundle.
+            if is_darwin and not console:
+                specfile.write(bundleexetmplt % d)
+        else:
+            specfile.write(onedirtmplt % d)
+            # For OSX create .app bundle.
+            if is_darwin and not console:
+                specfile.write(bundletmplt % d)
 
     return specfnm
