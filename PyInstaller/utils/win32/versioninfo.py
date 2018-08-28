@@ -12,7 +12,7 @@
 import codecs
 import struct
 
-from ...compat import is_py3, win32api
+from ...compat import is_py3, text_read_mode, win32api
 
 # ::TODO:: #1920 revert to using pypi version
 import pefile
@@ -577,7 +577,7 @@ def SetVersion(exenm, versionfile):
     if isinstance(versionfile, VSVersionInfo):
         vs = versionfile
     else:
-        fp = codecs.open(versionfile, 'rU', 'utf-8')
+        fp = codecs.open(versionfile, text_read_mode, 'utf-8')
         txt = fp.read()
         fp.close()
         vs = eval(txt)
