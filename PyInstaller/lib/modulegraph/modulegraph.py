@@ -1081,7 +1081,7 @@ class ModuleGraph(ObjectGraph):
 
                 for fn in ldir:
                     if fn.endswith('-nspkg.pth'):
-                        fp = open(os.path.join(entry, fn), 'rU')
+                        fp = open(os.path.join(entry, fn), _READ_MODE)
                         try:
                             for ln in fp:
                                 for pfx in _SETUPTOOLS_NAMESPACEPKG_PTHs:

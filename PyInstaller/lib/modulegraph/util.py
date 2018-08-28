@@ -13,7 +13,7 @@ try:
 except NameError:
     unicode = str
 
-from ._compat import StringIO, BytesIO, get_instructions
+from ._compat import StringIO, BytesIO, get_instructions, _READ_MODE
 
 
 def imp_find_module(name, path=None):
@@ -72,7 +72,7 @@ def imp_walk(name):
             if hasattr(res, 'load_module'):
                 if res.path.endswith('.py') or res.path.endswith('.pyw'):
                     fp = StringIO(res.get_source(namepart))
-                    res = (fp, res.path, ('.py', 'rU', imp.PY_SOURCE))
+                    res = (fp, res.path, ('.py', _READ_MODE, imp.PY_SOURCE))
                 elif res.path.endswith('.pyc') or res.path.endswith('.pyo'):
                     co  = res.get_code(namepart)
                     fp = BytesIO(imp.get_magic() + b'\0\0\0\0' + marshal.dumps(co))
