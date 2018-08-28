@@ -1081,8 +1081,7 @@ class ModuleGraph(ObjectGraph):
 
                 for fn in ldir:
                     if fn.endswith('-nspkg.pth'):
-                        fp = open(os.path.join(entry, fn), _READ_MODE)
-                        try:
+                        with open(os.path.join(entry, fn), _READ_MODE) as fp:
                             for ln in fp:
                                 for pfx in _SETUPTOOLS_NAMESPACEPKG_PTHs:
                                     if ln.startswith(pfx):
@@ -1104,8 +1103,6 @@ class ModuleGraph(ObjectGraph):
                                         else:
                                             pkgmap[identifier] = [subdir]
                                         break
-                        finally:
-                            fp.close()
 
         return pkgmap
 
