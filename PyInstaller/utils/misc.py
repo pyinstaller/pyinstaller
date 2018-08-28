@@ -19,7 +19,7 @@ import py_compile
 import sys
 
 from PyInstaller import log as logging
-from PyInstaller.compat import BYTECODE_MAGIC, is_py2
+from PyInstaller.compat import BYTECODE_MAGIC, is_py2, text_read_mode
 
 logger = logging.getLogger(__name__)
 
@@ -219,9 +219,9 @@ def load_py_data_struct(filename):
     """
     if is_py2:
         import codecs
-        f = codecs.open(filename, 'rU', encoding='utf-8')
+        f = codecs.open(filename, text_read_mode, encoding='utf-8')
     else:
-        f = open(filename, 'rU', encoding='utf-8')
+        f = open(filename, text_read_mode, encoding='utf-8')
     with f:
         # Binding redirects are stored as a named tuple, so bring the namedtuple
         # class into scope for parsing the TOC.

@@ -95,6 +95,7 @@ else:
 # module as io.open(). The Python 2 open() built-in is commonly regarded as
 # unsafe in regards to character encodings and hence inferior to io.open().
 open_file = open if is_py3 else io.open
+text_read_mode = 'r' if is_py3 else 'rU'
 
 # In Python 3 there is exception FileExistsError. But it is not available
 # in Python 2. For Python 2 fall back to OSError exception.
