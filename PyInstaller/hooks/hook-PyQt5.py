@@ -11,7 +11,12 @@ import os
 
 from PyInstaller.utils.hooks import pyqt5_library_info, collect_system_data_files
 
-hiddenimports = ['sip']
+hiddenimports = [
+    # PyQt5.10 and earlier uses sip in an separate package;
+    'sip',
+    # PyQt5.11 and later provides SIP in a private package. Support both.
+    'PyQt5.sip'
+]
 
 # Collect the ``qt.conf`` file.
 datas = [x for x in
@@ -40,7 +45,6 @@ def find_all_or_none(globs_to_include, num_files):
                                 dll)
         dll_file_paths = glob.glob(dll_path)
         for dll_file_path in dll_file_paths:
-            file_name = os.path.basename(dll_file_path)
             to_include.append((dll_file_path, dst_dll_path))
     if len(to_include) == num_files:
         return to_include

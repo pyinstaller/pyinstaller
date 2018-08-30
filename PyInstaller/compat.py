@@ -25,6 +25,8 @@ import sys
 # Distinguish code for different major Python version.
 is_py2 = sys.version_info[0] == 2
 is_py3 = sys.version_info[0] == 3
+# Copied from https://docs.python.org/3/library/platform.html#cross-platform.
+is_64bits = sys.maxsize > 2**32
 # Distinguish specific code for various Python versions.
 is_py27 = sys.version_info >= (2, 7) and sys.version_info < (3, 0)
 # PyInstaller supports only Python 3.4+

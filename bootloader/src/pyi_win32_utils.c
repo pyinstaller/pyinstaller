@@ -60,23 +60,38 @@ static char errorString[ERROR_STRING_MAX];
  */
 
 char * GetWinErrorString(DWORD error_code) {
-    if(error_code == 0) {
+    wchar_t local_buffer[ERROR_STRING_MAX];
+    DWORD result;
+
+    if (error_code == 0) {
         error_code = GetLastError();
     }
-    FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, // dwFlags
-                   NULL,                       // lpSource
-                   error_code,                 // dwMessageID
-                   0,                          // dwLanguageID
-                   errorString,                // lpBuffer
-                   ERROR_STRING_MAX,           // nSize
-                   NULL                        // Arguments
-                   );
+    /* Note: Giving 0 to dwLanguageID means MAKELANGID(LANG_NEUTRAL,
+     * SUBLANG_NEUTRAL), but we should use SUBLANG_DEFAULT instead of
+     * SUBLANG_NEUTRAL. Please see the note written in
+     * "Language Identifier Constants and Strings" on MSDN.
+     * https://docs.microsoft.com/en-us/windows/desktop/intl/language-identifier-constants-and-strings
+     */
+    result = FormatMessageW(
+        FORMAT_MESSAGE_FROM_SYSTEM, // dwFlags
+        NULL,                       // lpSource
+        error_code,                 // dwMessageID
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // dwLanguageID
+        local_buffer,               // lpBuffer
+        ERROR_STRING_MAX,           // nSize
+        NULL                        // Arguments
+        );
 
-    if (NULL == errorString) {
-        return "FormatMessage failed.";
+    if (!result) {
+        FATAL_WINERROR("FormatMessageW", "No error messages generated.\n");
+        return "PyInstaller: FormatMessageW failed.";
+    }
+    if (!pyi_win32_utils_to_utf8(errorString,
+                                 local_buffer,
+                                 ERROR_STRING_MAX)) {
+        return "PyInstaller: pyi_win32_utils_to_utf8 failed.";
     }
     return errorString;
-
 }
 
 int

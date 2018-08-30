@@ -16,7 +16,8 @@ import os
 
 # Local imports
 # -------------
-from PyInstaller.compat import is_win, is_py3, is_py36, is_py35, is_darwin, is_linux
+from PyInstaller.compat import is_win, is_py3, is_py35, is_py36, is_py37, \
+    is_darwin, is_linux, is_64bits
 from PyInstaller.utils.hooks import get_module_attribute, is_module_satisfies
 from PyInstaller.utils.tests import importorskip, xfail, skipif
 
@@ -242,6 +243,8 @@ def test_PyQt5_uic(tmpdir, pyi_builder, data_dir):
 
 
 @xfail(is_darwin, reason='Please help debug this. See issue #3233.')
+@pytest.mark.skipif(is_win and not is_64bits, reason="Qt 5.11+ for Windows "
+    "only provides pre-compiled Qt WebEngine binaries for 64-bit processors.")
 @importorskip('PyQt5')
 def test_PyQt5_QWebEngine(pyi_builder, data_dir):
     pyi_builder.test_source(
@@ -488,7 +491,7 @@ def test_pycrypto(pyi_builder):
         print('AES null encryption, block size', BLOCK_SIZE)
         # Just for testing functionality after all
         print('HEX', binascii.hexlify(
-            AES.new("\\0" * BLOCK_SIZE).encrypt("\\0" * BLOCK_SIZE)))
+            AES.new(b"\\0" * BLOCK_SIZE, AES.MODE_ECB).encrypt(b"\\0" * BLOCK_SIZE)))
         """)
 
 
@@ -501,6 +504,9 @@ def test_cryptodome(pyi_builder):
         """)
 
 
+@skipif(is_win and is_py37, reason='The call to ssl.wrap_socket produces '
+        '"ssl.SSLError: [SSL: EE_KEY_TOO_SMALL] ee key too small '
+        '(_ssl.c:3717)" on Windows Python 3.7.')
 @importorskip('requests')
 def test_requests(tmpdir, pyi_builder, data_dir, monkeypatch):
     # Note that including the data_dir fixture copies files needed by this test.
@@ -508,21 +514,6 @@ def test_requests(tmpdir, pyi_builder, data_dir, monkeypatch):
     datas = os.pathsep.join((str(data_dir.join('*')), os.curdir))
     pyi_builder.test_script('pyi_lib_requests.py',
                             pyi_args=['--add-data', datas])
-
-
-@importorskip('requests.packages.urllib3.packages.six')
-def test_requests_urllib3_six(pyi_builder):
-    # Test for pre-safe-import requests.packages.urllib3.packages.six.moves.
-    pyi_builder.test_source(
-        """
-        import requests.packages.urllib3.connectionpool
-        import types
-        assert isinstance(requests.packages.urllib3.connectionpool.queue,
-                          types.ModuleType)
-        """,
-        # Need to exclude urllib3, otherwise requests.packages would
-        # fall back to this
-        pyi_args=['--exclude-module', 'urllib3'])
 
 
 @importorskip('urllib3.packages.six')
@@ -803,6 +794,7 @@ def test_uvloop(pyi_builder):
 @importorskip('web3')
 def test_web3(pyi_builder):
     pyi_builder.test_source("import web3")
+
 
 @importorskip('phonenumbers')
 def test_phonenumbers(pyi_builder):

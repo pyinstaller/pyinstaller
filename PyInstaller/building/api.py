@@ -300,6 +300,13 @@ class EXE(Target):
         kwargs
             Possible keywork arguments:
 
+            bootloader_ignore_signals
+                Non-Windows only. If True, the bootloader process will ignore
+                all ignorable signals. If False (default), it will forward
+                all signals to the child process. Useful in situations where
+                e.g. a supervisor process signals both the bootloader and
+                child (e.g. via a process group) to avoid signalling the
+                child twice.
             console
                 On Windows or OSX governs whether to use the console executable
                 or the windowed executable. Always True on Linux/Unix (always
@@ -332,6 +339,8 @@ class EXE(Target):
 
         # Available options for EXE in .spec files.
         self.exclude_binaries = kwargs.get('exclude_binaries', False)
+        self.bootloader_ignore_signals = kwargs.get(
+            'bootloader_ignore_signals', False)
         self.console = kwargs.get('console', True)
         self.debug = kwargs.get('debug', False)
         self.name = kwargs.get('name', None)
@@ -390,6 +399,10 @@ class EXE(Target):
 
         if self.runtime_tmpdir is not None:
             self.toc.append(("pyi-runtime-tmpdir " + self.runtime_tmpdir, "", "OPTION"))
+
+        if self.bootloader_ignore_signals:
+            # no value; presence means "true"
+            self.toc.append(("pyi-bootloader-ignore-signals", "", "OPTION"))
 
         if is_win:
             filename = os.path.join(CONF['workpath'], CONF['specnm'] + ".exe.manifest")
@@ -628,6 +641,7 @@ class COLLECT(Target):
         from ..config import CONF
         Target.__init__(self)
         self.strip_binaries = kws.get('strip', False)
+        self.console = True
 
         if CONF['hasUPX']:
             self.upx_binaries = kws.get('upx', False)
@@ -650,6 +664,7 @@ class COLLECT(Target):
             elif isinstance(arg, Target):
                 self.toc.append((os.path.basename(arg.name), arg.name, arg.typ))
                 if isinstance(arg, EXE):
+                    self.console = arg.console
                     for tocnm, fnm, typ in arg.toc:
                         if tocnm == os.path.basename(arg.name) + ".manifest":
                             self.toc.append((tocnm, fnm, typ))
