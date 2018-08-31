@@ -21,6 +21,7 @@ exclude bootloader/.lock-waf*
 prune doc/source
 prune doc/_build
 recursive-exclude doc *.tmp
+include news/_template.rst
 prune news
 
 prune old
