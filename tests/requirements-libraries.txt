@@ -32,7 +32,7 @@ keyring==13.2.1
 openpyxl==2.5.6
 pycparser==2.18
 pytz==2018.5
-sqlalchemy==1.2.10
+sqlalchemy==1.2.11
 zeep==3.1.0
 pyexcelerate==0.7.3
 Pillow==5.2.0
