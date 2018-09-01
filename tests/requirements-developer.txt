@@ -1,3 +1,12 @@
+# This is the pip requirements file for developers and release managers. This
+# will install development tools and release helpers as well as the
+# requirements for running the PyInstaller base test-suite.
+#
+# Example (assuming current dir is PyInstaller's top-level source dir)::
+#
+#   python -m pip install -r tests/requirements-developer.txt
+#   python -m pip install -r tests/requirements-libraries.txt  # extensive
+
 # include PyInstaller's requirements and for base testing
 -r ../requirements.txt
 -r requirements-tools.txt

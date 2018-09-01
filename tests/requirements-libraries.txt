@@ -1,11 +1,20 @@
+# This is the pip requirements file for extensive
+# PyInstaller testing.
+#
+# Example (assuming current dir is PyInstaller's top-level source dir)::
+#
+#   python -m pip install -r tests/requirements-libraries.txt  # extensive
+
 # include requirements for base testing
 -r requirements-tools.txt
 
+#
 # Libraries used for testing
 # ==========================
 #
 # Needs work
 # ----------
+#
 # These packages, if updated, produce test failures. Work needs to be done on
 # these hooks.
 #
@@ -15,6 +24,7 @@
 # Working
 # -------
 # These packages work with no (known) issues.
+
 babel==2.6.0
 boto==2.49.0
 boto3==1.8.6
