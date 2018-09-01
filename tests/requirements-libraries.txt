@@ -1,3 +1,6 @@
+# include requirements for base testing
+-r requirements-tools.txt
+
 # Libraries used for testing
 # ==========================
 #

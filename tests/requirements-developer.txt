@@ -1,3 +1,7 @@
+# include PyInstaller's requirements and for base testing
+-r ../requirements.txt
+-r requirements-tools.txt
+
 ### Helpers for development
 
 ipython  # Better interactive Python shell.
