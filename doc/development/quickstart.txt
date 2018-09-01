@@ -40,6 +40,8 @@ Quick-start
   first.
 
 * Submit pull-requests against the ``develop`` branch.
+  Mind adding a :ref:`changelog entry <changelog entries>`
+  so our users can learn about your change!
 
 * For new files mind adding the copyright header, see
   |PyInstaller/init.py|_
@@ -50,9 +52,8 @@ Quick-start
 
 * In response to feedback, squash the new "fix up" commits
   into the respective commit that is being fixed
-  with an interactive rebase (``git rebase -i``).
-
-* :ref:`Push the new, rewritten branch <updating pull-request>`
+  with an interactive rebase (``git rebase -i``). 
+  :ref:`Push the new, rewritten branch <updating pull-request>`
   with a ``git push --force``.
   (Scary! But github doesn’t play nicely with a safer method.)
 

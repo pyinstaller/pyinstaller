@@ -19,6 +19,7 @@ Development Guide
    commit-messages
    documention
    pull-requests
+   changelog-entries
    venv
    branch-model
 
