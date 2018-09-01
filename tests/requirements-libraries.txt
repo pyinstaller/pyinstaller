@@ -89,7 +89,7 @@ uvloop==0.11.2; python_version >= '3.5' and sys_platform != 'win32'
 twisted==18.7.0; python_version == '2.7'
 
 # Web3 supports Python 3.5 and up.
-web3==4.5.0; python_version >= '3.5'
+web3==4.6.0; python_version >= '3.5'
 
 # Django supports Python 3.5 and up.
 Django==2.1; python_version >= '3.5'
