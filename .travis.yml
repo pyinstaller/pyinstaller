@@ -76,8 +76,8 @@ jobs:
       script:
         - >
             if [ "$TRAVIS_PULL_REQUEST" != "false" ] ; then
-                git fetch origin $TRAVIS_BRANCH:$TRAVIS_BRANCH --depth 1;
-                flake8-diff -v -v -v $TRAVIS_BRANCH;
+                git fetch origin $TRAVIS_BRANCH:$TRAVIS_BRANCH --depth 1 || travis_terminate 1;
+                flake8-diff -v -v -v $TRAVIS_BRANCH || travis_terminate 1;
             fi
 
     - <<: *test-pyinstaller
@@ -145,11 +145,13 @@ before_install:
       && exit 0 || true
 
   # Perform the manual steps on osx to install python3 and activate venv
+  # Per http://steven.casagrande.io/articles/travis-ci-and-if-statements/,
+  # ensure the build fails for statements in an ``if`` clause.
   - >
       if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
-          brew update;
-          brew upgrade python || brew install python;
-          python3 -m venv venv;
+          brew update || travis_terminate 1;
+          brew upgrade python || brew install python || travis_terminate 1;
+          python3 -m venv venv || travis_terminate 1;
           source venv/bin/activate;
       fi
 
@@ -161,7 +163,7 @@ install:
   - pip install --progress-bar=off -U -r tests/requirements-tools.txt
   - >
     if [[ $TRAVIS_BUILD_STAGE_NAME == 'Test - libraries' ]] ; then
-        pip install --progress-bar=off -U -r tests/requirements-libraries.txt
+        pip install --progress-bar=off -U -r tests/requirements-libraries.txt || travis_terminate 1
     fi
 
   # Compile bootloader
