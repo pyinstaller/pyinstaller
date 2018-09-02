@@ -40,6 +40,6 @@ datas = collect_data_files('astroid', True, 'brain')
 # everything in brain/ is dynamically imported, these are hidden imports. For
 # simplicity, include everything in astroid. Exclude all the test/ subpackage
 # contents and the test_util module.
-hiddenimports = collect_submodules('astroid',
+hiddenimports = ['six'] + collect_submodules('astroid',
   lambda name: (not is_module_or_submodule(name, 'astroid.tests')) and
                (not name == 'test_util'))
