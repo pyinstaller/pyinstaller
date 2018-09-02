@@ -17,7 +17,6 @@ boto==2.49.0
 boto3==1.8.6
 botocore==1.11.6
 pygments==2.2.0
-pylint==2.1.1
 markdown==2.6.11
 # simplejson is used for text_c_extension
 simplejson==3.16.0
@@ -62,6 +61,19 @@ pycrypto==2.6.1; python_version <= '3.5' or sys_platform != 'win32'
 # exclude Windows 64 bit Python.
 pyenchant==2.0.0; sys_platform == 'darwin' or (sys_platform == 'win32' and python_version <= '3.6')
 
+# No wheel for Python 3.5 or higher.
+PySide==1.2.4; sys_platform == 'win32' and python_version <= '3.4'
+
+# As of 14-Aug-2018, twisted doesn't offer Python 3 wheels.
+twisted==18.7.0; python_version == '2.7'
+
+
+# Python 3.5 and higher
+# ---------------------
+Django==2.1.1; python_version >= '3.5'
+pandas==0.23.4; python_version >= '3.5'
+web3==4.6.0; python_version >= '3.5'
+
 # While PyQt5 itself is provided as wheels for Python 3.4, it requires
 # SIP>=4.19 which is not available for Python 3.4.
 #
@@ -72,24 +84,14 @@ pyenchant==2.0.0; sys_platform == 'darwin' or (sys_platform == 'win32' and pytho
 pyqt5==5.10.1; python_version == '3.5' and sys_platform == 'win32'  # pyup: ignore
 pyqt5==5.11.2; (python_version >= '3.5' and sys.platform != 'win32') or (python_version >= '3.6')
 
-# No wheel for Python 3.5 or higher.
-PySide==1.2.4; sys_platform == 'win32' and python_version <= '3.4'
-
-# Wheels for Python 2.7 were dropped in version 6.
-ipython==6.5.0; python_version != '2.7'
-ipython==5.8.0; python_version == '2.7'  # pyup: ignore
-
-# Pandas supports Python 3.5 and higher.
-pandas==0.23.4; python_version >= '3.5'
-
-# uvloop requires python 3.5 or higher and does not currently support Windows.
+# uvloop does not currently support Windows.
 uvloop==0.11.2; python_version >= '3.5' and sys_platform != 'win32'
 
-# As of 14-Aug-2018, twisted doesn't offer Python 3 wheels.
-twisted==18.7.0; python_version == '2.7'
 
-# Web3 supports Python 3.5 and up.
-web3==4.6.0; python_version >= '3.5'
+# Python 3 only packages
+# ----------------------
+pylint==2.1.1; python_version != '2.7'
+pylint==1.9.3; python_version == '2.7'  # pyup: ignore
 
-# Django supports Python 3.5 and up.
-Django==2.1.1; python_version >= '3.5'
+ipython==6.5.0; python_version != '2.7'
+ipython==5.8.0; python_version == '2.7'  # pyup: ignore
