@@ -158,10 +158,10 @@ install:
   - python -m pip install -U pip setuptools wheel | cat
 
   # Install dependencies for tests.
-  - pip install -U -r tests/requirements-tools.txt | cat
+  - pip install --progress-bar=off -U -r tests/requirements-tools.txt
   - >
     if [[ $TRAVIS_BUILD_STAGE_NAME == 'Test - libraries' ]] ; then
-        pip install -U -r tests/requirements-libraries.txt | cat
+        pip install --progress-bar=off -U -r tests/requirements-libraries.txt
     fi
 
   # Compile bootloader
@@ -170,7 +170,7 @@ install:
   - cd ..
 
   # Install PyInstaller.
-  - pip install -e . | cat
+  - pip install --progress-bar=off -e .
 
   # Make sure the help options print.
   - python -m pyinstaller -h
