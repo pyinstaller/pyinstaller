@@ -149,6 +149,25 @@ Remember to bundle without ``--debug=all`` for your production version.
 Users would find the messages annoying.
 
 
+.. _getting python's verbose imports:
+
+Getting Python's Verbose Imports
+--------------------------------
+
+You can bild the app with the ``--debug=imports`` option
+(see `Getting Debug Messages` above),
+which will pass the ``-v`` (verbose imports) flag
+to the embedded Python interpreter.
+This can be extremely useful.
+It can be informative even with apps that are apparently working,
+to make sure that they are getting all imports from the bundle,
+and not leaking out to the local installed Python.
+
+Python verbose and warning messages always go to standard output
+and are not visible when the ``--windowed`` option is used.
+Remember to not use this for your production version.
+
+
 .. _helping pyinstaller find modules:
 
 Helping PyInstaller Find Modules
@@ -186,7 +205,8 @@ When this occurs, Analysis can detect nothing.
 There will be no warnings, only an ImportError at run-time.
 
 To find these hidden imports,
-build the app with the ``--debug=all`` flag (see `Getting Debug Messages` above)
+build the app with the ``--debug=imports`` flag
+(see :ref:`Getting Python's Verbose Imports` above)
 and run it.
 
 Once you know what modules are needed, you add the needed modules
