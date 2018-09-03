@@ -145,7 +145,7 @@ If the ``--windowed`` option is used when bundling a Windows app,
 they are displayed as MessageBoxes.
 For a ``--windowed`` Mac OS app they are not displayed.
 
-Remember to bundle without ``--debug=all`` for your production version.
+Remember to bundle without ``--debug`` for your production version.
 Users would find the messages annoying.
 
 
