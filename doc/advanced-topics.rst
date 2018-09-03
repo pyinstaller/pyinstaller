@@ -396,7 +396,7 @@ The archive can be navigated using these commands:
 O *name*
     Open the embedded archive *name* (will prompt if omitted).
     For example when looking in a one-file executable, you
-    can open the ``outPYZ.pyz`` archive inside it.
+    can open the ``PYZ-00.pyz`` archive inside it.
 
 U
     Go up one level (back to viewing the containing archive).

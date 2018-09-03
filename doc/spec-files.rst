@@ -585,7 +585,7 @@ Other globals contain information about the build environment:
 
 ``WARNFILE``
 	The full path to the warnings file in the build directory,
-	for example :file:`build/warnmyscript.txt`.
+	for example :file:`build/warn-myscript.txt`.
 
 
 .. include:: _common_definitions.txt

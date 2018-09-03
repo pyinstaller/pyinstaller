@@ -47,7 +47,7 @@ Build-time Messages
 When the ``Analysis`` step runs, it produces error and warning messages.
 These display after the command line if the ``--log-level`` option allows it.
 Analysis also puts messages in a warnings file
-named :file:`build/{name}/warn{name}.txt` in the
+named :file:`build/{name}/warn-{name}.txt` in the
 ``work-path=`` directory.
 
 Analysis creates a message when it detects an import
@@ -64,7 +64,7 @@ conditionally import modules for different platforms that may or may
 not be present.
 
 All "module not found" messages are written to the
-:file:`build/{name}/warn{name}.txt`` file.
+:file:`build/{name}/warn-{name}.txt` file.
 They are not displayed to standard output because there are many of them.
 Examine the warning file; often there will be dozens of modules not found,
 but their absence has no effect.
