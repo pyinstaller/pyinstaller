@@ -1,0 +1,1 @@
+Update hook for Cryptodome 3.4.8.

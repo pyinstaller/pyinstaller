@@ -1,0 +1,1 @@
+(Appveyor) Add documentation for Appveyor variables used to ``appveyor.yml``.

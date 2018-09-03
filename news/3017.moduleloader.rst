@@ -1,0 +1,1 @@
+Improved error message in case importing an extension module fails.

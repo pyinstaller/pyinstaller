@@ -1,0 +1,1 @@
+(Appveyor) Additional tests produce > 1 hour runs. Split each job into two jobs.

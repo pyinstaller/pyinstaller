@@ -1,0 +1,1 @@
+Update hook for sphinx 1.7.1.

@@ -1,0 +1,1 @@
+``--debug`` now allows more debugging to be activated more easily. This includes bootloader messages, Python's "verbose imports" and store collected Python files in the output directory instead of freezing. See ``pyinstaller –help`` for details.

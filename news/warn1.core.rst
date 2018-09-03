@@ -1,0 +1,1 @@
+Always write the `warn`-file.

@@ -1,0 +1,1 @@
+(OS X) Use the python standard library ``plistlib`` for generating the ``Info.plist`` file.

@@ -1,0 +1,1 @@
+Select correct file extension for C-extension file-names like ``libzmq.cp36-win_amd64.pyd``.

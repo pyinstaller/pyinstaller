@@ -1,0 +1,1 @@
+Fix hook PySide2 (style mismatch)

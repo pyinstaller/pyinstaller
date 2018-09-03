@@ -1,0 +1,1 @@
+(Travis) Start a X11 server for the "Test - Libraries" stage only.

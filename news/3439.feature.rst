@@ -1,0 +1,1 @@
+Improve support for PyQt5 applications. Many thanks to Bryan A. Jones for taking this struggle.

@@ -1,0 +1,1 @@
+(OS X) Fix: App icon appears in the dock, even if ``LSUIElement=True``.

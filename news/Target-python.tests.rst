@@ -1,0 +1,1 @@
+(Travis) Use target python interpreter to compile bootloader to check if the build tool can be used with that this Python version.

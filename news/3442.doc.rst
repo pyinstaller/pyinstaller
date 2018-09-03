@@ -1,0 +1,1 @@
+Fix typos, smaller errors and formatting errors in documentation.

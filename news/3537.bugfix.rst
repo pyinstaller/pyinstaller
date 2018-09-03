@@ -1,0 +1,1 @@
+Fix incompatibility with `pycryptodome` (replacement for the (apparently abandoned) `pycrypto` library when using encrypted PYZ-archives.

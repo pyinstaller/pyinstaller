@@ -1,0 +1,1 @@
+Add ``requirements_for_package`` and ``collect_all`` helper functions for hooks.

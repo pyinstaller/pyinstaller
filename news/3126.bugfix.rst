@@ -1,0 +1,1 @@
+(Windows) utils/win32: trap invalid ``--icon`` arguments and terminate with a message.

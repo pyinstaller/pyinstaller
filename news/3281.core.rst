@@ -1,0 +1,1 @@
+Read data for cache digest in chunks.

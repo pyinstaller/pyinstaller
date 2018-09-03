@@ -1,0 +1,1 @@
+(GNU/Linux) When building with ``--debug`` turn of FORTIFY_SOURCE to ease debugging.

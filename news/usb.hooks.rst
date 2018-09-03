@@ -1,0 +1,1 @@
+Clean up the USB hook logic.

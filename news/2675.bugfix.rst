@@ -1,0 +1,1 @@
+(Windows) Fix crash when trying to add resources to Windows executable using --resource option.

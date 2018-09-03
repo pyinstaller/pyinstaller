@@ -1,0 +1,1 @@
+Don't gather Python extensions in ``collect_dynamic_libc()``.

@@ -1,0 +1,1 @@
+(Appveyor) Appveyor tests run on 2 cores; therefore, run 2 jobs in parallel.

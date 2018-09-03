@@ -1,0 +1,1 @@
+Fix race condition caused by the bootloader parent process terminating before the child is finished. This might happen e.g. when the child process itself plays with ``switch_root``.

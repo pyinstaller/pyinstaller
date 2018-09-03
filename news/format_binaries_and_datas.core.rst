@@ -1,0 +1,1 @@
+Apply ``format_binaries_and_datas()`` (which converts hook-style tuples into `TOC`-style tuples) to binaries and datas added through the hook api.

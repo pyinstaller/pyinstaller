@@ -1,0 +1,1 @@
+Add module ``'enum`` to base_library.zip, required for module ``re`` in Python 3.6 (and ``re`` is required by ``warnings``).

@@ -1,0 +1,1 @@
+(OS X) Python standard library module ``plistlib`` is now used for generating the ``Info.plist`` file. This allows passing complex and nested data in ``info_plist``.

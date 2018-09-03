@@ -1,0 +1,1 @@
+Add a explanatory header to the warn-file, hopefully reducing the number of those posting the file to the issue tracker.

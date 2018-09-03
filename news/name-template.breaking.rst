@@ -1,0 +1,1 @@
+(minor) Change naming of intermediate build files and the `warn` file. This only effects 3rd-party tools (if any exists) relying on the names of these files.

@@ -1,0 +1,1 @@
+(Appveyor) Split Python 2.7 tests into two jobs to avoid the 1 hour limit.

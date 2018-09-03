@@ -1,0 +1,1 @@
+Hook helper function ``is_module_satisfies()`` returns ``False`` for packages not found.

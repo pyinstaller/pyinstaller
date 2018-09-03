@@ -1,0 +1,1 @@
+Run pyinstaller -h to verify it works.
