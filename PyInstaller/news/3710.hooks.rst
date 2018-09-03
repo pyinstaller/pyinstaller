@@ -1,0 +1,1 @@
+Add hook for lz4.
