@@ -7,7 +7,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 """
-    Hook for https://github.com/libtcod/python-tcod
+Hook for https://github.com/libtcod/python-tcod
 """
 from PyInstaller.utils.hooks import collect_dynamic_libs
 
