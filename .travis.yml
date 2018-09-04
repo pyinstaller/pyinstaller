@@ -15,6 +15,7 @@ dist: trusty
 cache:
   directories:
     - $HOME/.cache/pip
+    - $HOME/py37
 
 os:
   - linux
@@ -28,7 +29,7 @@ jobs:
     - stage: Test - PyInstaller
       os: osx
       language: generic
-      python: 3.6
+      python: 3.7
       cache:
         directories:
           - $HOME/Library/Caches/pip
@@ -43,7 +44,7 @@ jobs:
     - stage: Test - Libraries
       os: osx
       language: generic
-      python: 3.6
+      python: 3.7
       cache:
         directories:
           - $HOME/Library/Caches/pip
@@ -75,8 +76,8 @@ jobs:
       script:
         - >
             if [ "$TRAVIS_PULL_REQUEST" != "false" ] ; then
-                git fetch origin $TRAVIS_BRANCH:$TRAVIS_BRANCH --depth 1;
-                flake8-diff -v -v -v $TRAVIS_BRANCH;
+                git fetch origin $TRAVIS_BRANCH:$TRAVIS_BRANCH --depth 1 || travis_terminate 1;
+                flake8-diff -v -v -v $TRAVIS_BRANCH || travis_terminate 1;
             fi
 
     - <<: *test-pyinstaller
@@ -96,13 +97,30 @@ jobs:
     - <<: *lint
       python: 3.6
 
+    # Building Python > 3.7 requires OpenSSL 1.0.2 (or 1.1), which is
+    # available in xenial (16.04 LTS) only. As of 2018-07-08 xenial is only
+    # available as VM (sudo: true)
+
+    - <<: *test-pyinstaller
+      python: 3.7
+      dist: xenial
+      sudo: true
+    - <<: *test-libraries
+      python: 3.7
+      dist: xenial
+      sudo: true
+
     - <<: *test-pyinstaller
       python: nightly
+      dist: xenial
+      sudo: true
     - <<: *test-libraries
       python: nightly
+      dist: xenial
+      sudo: true
 
   allow_failures:
-      # Just tests how PyInstaller performs with upcoming Python 3.6
+      # Just tests how PyInstaller performs with upcoming Python
       - python: "nightly"
 
 addons:
@@ -127,11 +145,13 @@ before_install:
       && exit 0 || true
 
   # Perform the manual steps on osx to install python3 and activate venv
+  # Per http://steven.casagrande.io/articles/travis-ci-and-if-statements/,
+  # ensure the build fails for statements in an ``if`` clause.
   - >
       if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
-          brew update;
-          brew upgrade python || brew install python;
-          python3 -m venv venv;
+          brew update || travis_terminate 1;
+          brew upgrade python || brew install python || travis_terminate 1;
+          python3 -m venv venv || travis_terminate 1;
           source venv/bin/activate;
       fi
 
@@ -140,19 +160,22 @@ install:
   - python -m pip install -U pip setuptools wheel | cat
 
   # Install dependencies for tests.
-  - pip install -U -r tests/requirements-tools.txt | cat
+  - pip install --progress-bar=off -U -r tests/requirements-tools.txt
   - >
     if [[ $TRAVIS_BUILD_STAGE_NAME == 'Test - libraries' ]] ; then
-        pip install -U -r tests/requirements-libraries.txt | cat
+        pip install --progress-bar=off -U -r tests/requirements-libraries.txt || travis_terminate 1
     fi
 
   # Compile bootloader
   - cd bootloader
-  - /usr/bin/python waf distclean all
+  - python waf distclean all
   - cd ..
 
   # Install PyInstaller.
-  - pip install -e . | cat
+  - pip install --progress-bar=off -e .
+
+  # Make sure the help options print.
+  - python -m pyinstaller -h
 
 
 script:

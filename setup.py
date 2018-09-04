@@ -11,11 +11,12 @@
 from __future__ import print_function
 
 import codecs
-import sys, os
+import sys
+import os
 from setuptools import setup
 
-from PyInstaller import (__version__ as version, is_linux, is_win, is_cygwin,
-                         HOMEPATH, PLATFORM, compat)
+from PyInstaller import __version__ as version, HOMEPATH, PLATFORM
+from PyInstaller.compat import is_win, is_cygwin
 
 REQUIREMENTS = [
     'setuptools',
@@ -69,6 +70,7 @@ Programming Language :: Python :: 3
 Programming Language :: Python :: 3.4
 Programming Language :: Python :: 3.5
 Programming Language :: Python :: 3.6
+Programming Language :: Python :: 3.7
 Programming Language :: Python :: Implementation :: CPython
 Topic :: Software Development
 Topic :: Software Development :: Build Tools

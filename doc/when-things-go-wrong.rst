@@ -47,7 +47,7 @@ Build-time Messages
 When the ``Analysis`` step runs, it produces error and warning messages.
 These display after the command line if the ``--log-level`` option allows it.
 Analysis also puts messages in a warnings file
-named :file:`build/{name}/warn{name}.txt` in the
+named :file:`build/{name}/warn-{name}.txt` in the
 ``work-path=`` directory.
 
 Analysis creates a message when it detects an import
@@ -64,7 +64,7 @@ conditionally import modules for different platforms that may or may
 not be present.
 
 All "module not found" messages are written to the
-:file:`build/{name}/warn{name}.txt`` file.
+:file:`build/{name}/warn-{name}.txt` file.
 They are not displayed to standard output because there are many of them.
 Examine the warning file; often there will be dozens of modules not found,
 but their absence has no effect.
@@ -134,8 +134,8 @@ try setting the correct path in the environment variable
 Getting Debug Messages
 ----------------------
 
-Giving the ``--debug`` option causes the bundled executable itself to
-write progress messages when it runs.
+The ``--debug=all`` option (and its :ref:`choices <pyinstaller how to generate>`) provides a
+signficiant amount of diagnostic inforation.
 This can be useful during development of a complex package,
 or when your app doesn't seem to be starting,
 or just to learn how the runtime works.
@@ -154,8 +154,10 @@ Users would find the messages annoying.
 Getting Python's Verbose Imports
 --------------------------------
 
-You can also pass a ``-v`` (verbose imports) flag to the embedded Python interpreter
-(see :ref:`Giving Run-time Python Options` above).
+You can bild the app with the ``--debug=imports`` option
+(see `Getting Debug Messages` above),
+which will pass the ``-v`` (verbose imports) flag
+to the embedded Python interpreter.
 This can be extremely useful.
 It can be informative even with apps that are apparently working,
 to make sure that they are getting all imports from the bundle,
@@ -163,7 +165,7 @@ and not leaking out to the local installed Python.
 
 Python verbose and warning messages always go to standard output
 and are not visible when the ``--windowed`` option is used.
-Remember to not use this in the distributed program.
+Remember to not use this for your production version.
 
 
 .. _helping pyinstaller find modules:
@@ -203,7 +205,8 @@ When this occurs, Analysis can detect nothing.
 There will be no warnings, only an ImportError at run-time.
 
 To find these hidden imports,
-build the app with the ``-v`` flag (:ref:`Getting Python's Verbose Imports` above)
+build the app with the ``--debug=imports`` flag
+(see :ref:`Getting Python's Verbose Imports` above)
 and run it.
 
 Once you know what modules are needed, you add the needed modules

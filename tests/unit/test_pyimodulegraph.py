@@ -8,7 +8,6 @@
 #-----------------------------------------------------------------------------
 
 
-import pytest
 import types
 
 from PyInstaller import HOMEPATH

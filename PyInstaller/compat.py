@@ -22,11 +22,11 @@ import site
 import subprocess
 import sys
 
-from .log import logger
-
 # Distinguish code for different major Python version.
 is_py2 = sys.version_info[0] == 2
 is_py3 = sys.version_info[0] == 3
+# Copied from https://docs.python.org/3/library/platform.html#cross-platform.
+is_64bits = sys.maxsize > 2**32
 # Distinguish specific code for various Python versions.
 is_py27 = sys.version_info >= (2, 7) and sys.version_info < (3, 0)
 # PyInstaller supports only Python 3.4+
@@ -186,9 +186,11 @@ else:
 # List of suffixes for Python C extension modules.
 try:
     # In Python 3.4+ There is a list
-    from importlib.machinery import EXTENSION_SUFFIXES
+    from importlib.machinery import EXTENSION_SUFFIXES, all_suffixes
+    ALL_SUFFIXES = all_suffixes()
 except ImportError:
     import imp
+    ALL_SUFFIXES = [f[0] for f in imp.get_suffixes()]
     EXTENSION_SUFFIXES = [f[0] for f in imp.get_suffixes()
                           if f[2] == imp.C_EXTENSION]
 

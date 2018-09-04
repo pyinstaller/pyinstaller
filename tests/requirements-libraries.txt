@@ -1,87 +1,110 @@
-# Libraries used for testing.
+# This is the pip requirements file for extensive
+# PyInstaller testing.
 #
-# Libraries listed below are unconditionally installed by
-# integration (CI) services, regardless of platform.
+# Example (assuming current dir is PyInstaller's top-level source dir)::
+#
+#   python -m pip install -r tests/requirements-libraries.txt  # extensive
+
+# include requirements for base testing
+-r requirements-tools.txt
+
+#
+# Libraries used for testing
+# ==========================
+#
+# Needs work
+# ----------
+#
+# These packages, if updated, produce test failures. Work needs to be done on
+# these hooks.
+#
+# None at this time.
 
 
+# Working
+# -------
+# These packages work with no (known) issues.
+
+babel==2.6.0
+boto==2.49.0
+boto3==1.8.6
+botocore==1.11.6
+pygments==2.2.0
+markdown==2.6.11
+# simplejson is used for text_c_extension
+simplejson==3.16.0
+sphinx==1.7.8
+pyzmq==17.1.2
+# Required for test_namespace_package
+zope.interface==4.5.0
+numpy==1.15.1
+scipy==1.1.0
+lxml==4.2.4
+keyring==13.2.1
+openpyxl==2.5.6
+pycparser==2.18
+pytz==2018.5
+sqlalchemy==1.2.11
+zeep==3.1.0
+pyexcelerate==0.7.3
+Pillow==5.2.0
+pinyin==0.4.0
+pycryptodome==3.6.6
+pycryptodomex==3.6.6
+future==0.16.0
+pyusb==1.0.2
+Unidecode==1.0.22
+h5py==2.8.0
+matplotlib==2.2.3
+python-dateutil==2.7.3
+phonenumbers==8.9.12
+gevent==1.3.6
+requests==2.19.1
+
+
+# Special cases
+# -------------
 # Url for downloading PyCrypto prebuilt Windows binaries:
 # http://www.voidspace.org.uk/python/pycrypto-2.6.1/
 # Required for crypto feature - encrypting bytecode.
 pycrypto==2.6.1; python_version <= '3.5' or sys_platform != 'win32'
 
-Django==1.8.18 # PyInstaller doesn't yet work with Django 1.9+
-babel==2.5.3
-boto==2.48.0
-boto3==1.5.22
-botocore==1.7.1
-gevent==1.2.2
-pygments==2.2.0
-pylint==1.8.2
-markdown==2.6.11
-simplejson==3.13.2 # simplejson is used for text_c_extension
-sphinx==1.7.1
-pyzmq==17.0.0
-zope.interface==4.4.3  # Required for test_namespace_package
-numpy==1.14.2
+# Wheels are available only on OS X and Win 32. The only Windows 64-bit Python
+# tests run are for Python 3.7, so exclude that. There's no way to simply
+# exclude Windows 64 bit Python.
+pyenchant==2.0.0; sys_platform == 'darwin' or (sys_platform == 'win32' and python_version <= '3.6')
 
-# SciPy currently provides no binary wheel for Windows and hence must be
-# isolated to non-Windows platforms. See also: scipy/scipy#5461
-scipy==1.0.0; sys_platform != 'win32'
-
-# For Windows use a version we know binaries are available
-lxml==4.1.1; sys_platform != 'win32'
-lxml==3.7.2; sys_platform == 'win32' and python_version >= '3.5' # pyup: ignore
-lxml==3.6.0; sys_platform == 'win32' and python_version <= '3.4' # pyup: ignore
-
-keyring==11.0.0
-openpyxl==2.5.1
-pycparser==2.18
-pytz==2018.3
-sqlalchemy==1.2.5
-twisted==17.9.0
-zeep==2.4.0
-pyexcelerate==0.7.2
-Pillow==5.0.0
-pinyin==0.4.0
-pycryptodomex==3.5.1
-future==0.16.0
-pyusb==1.0.2
-requests==2.15.1 # Newest version of requests that allows tests to pass
-Unidecode==1.0.22
-
-# Install wheels only on OS X and Win 32, no wheel for Py 3.6 yet.
-pyenchant==2.0.0; (sys_platform == 'darwin' or sys_platform == 'win32') and python_version <= '3.5'
-
-# While PyQt5 itself is provided as wheels for Python 3.4, it requires
-# SIP>=4.19 which is not available for Python 3.4 yet.
-pyqt5==5.9; python_version >= '3.5' and python_version <= '3.6'
-# No wheel for python 3.5:
+# No wheel for Python 3.5 or higher.
 PySide==1.2.4; sys_platform == 'win32' and python_version <= '3.4'
 
-# interactive test
-ipython==6.2.1; python_version != '2.7'
-ipython==5.4.1; python_version == '2.7' # pyup: ignore
+# As of 14-Aug-2018, twisted doesn't offer Python 3 wheels.
+twisted==18.7.0; python_version == '2.7'
 
-# dateutil.tz is a package in 2.5.0 and does not play nice with PyInstaller.
-python-dateutil==2.7.0
 
-pandas==0.22.0
+# Python 3.5 and higher
+# ---------------------
+Django==2.1.1; python_version >= '3.5'
+pandas==0.23.4; python_version >= '3.5'
+web3==4.6.0; python_version >= '3.5'
 
-matplotlib==2.2.0
+# While PyQt5 itself is provided as wheels for Python 3.4, it requires
+# SIP>=4.19 which is not available for Python 3.4.
+#
+# For now, avoid PyQt5 5.11.2 on Windows Python 3.5, since this doesn't work
+# with Python 3.5.0 to 3.5.3, which is what Appveyor currently runs. The next
+# PyQt5 release should fix this. See
+# https://www.riverbankcomputing.com/pipermail/pyqt/2018-July/040512.html.
+pyqt5==5.10.1; python_version == '3.5' and sys_platform == 'win32'  # pyup: ignore
+pyqt5==5.11.2; (python_version >= '3.5' and sys.platform != 'win32') or (python_version >= '3.6')
 
-#### Windows specific packages
+# uvloop does not currently support Windows.
+uvloop==0.11.2; python_version >= '3.5' and sys_platform != 'win32'
 
-# pip-installable version of PyWin32.
-pypiwin32==223; python_version >= '3.6' and sys_platform == 'win32'
-pypiwin32==219; python_version <= '3.5' and sys_platform == 'win32' # pyup: ignore
 
-# For parsing PE headers and get list of dependent DLLs.
-# ::TODO:: #1920 revert to using pypi version
-#pefile; sys_platform == 'win32'
+# Python 3 only packages
+# ----------------------
+pylint==2.1.1; python_version != '2.7'
+pylint==1.9.3; python_version == '2.7'  # pyup: ignore
 
-h5py==2.7.1
-
-# uvloop requires python 3.5 or higher and does not currently support Windows.
-uvloop==0.9.1; python_version >= '3.5' and sys_platform != 'win32'
-
-web3==3.16.5
+ipython==6.5.0; python_version != '2.7'
+ipython==5.8.0; python_version == '2.7'  # pyup: ignore

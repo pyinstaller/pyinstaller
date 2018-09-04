@@ -54,11 +54,13 @@ from PyInstaller.compat import is_darwin, is_win, is_py2, safe_repr, \
     architecture, is_linux, suppress
 from PyInstaller.depend.analysis import initialize_modgraph
 from PyInstaller.utils.win32 import winutils
+from PyInstaller.utils.hooks.qt import pyqt5_library_info
 
 # Monkeypatch the psutil subprocess on Python 2
 if is_py2:
     import subprocess32
     psutil.subprocess = subprocess32
+    subprocess.TimeoutExpired = psutil.TimeoutExpired
 
 # Globals
 # =======
@@ -255,12 +257,11 @@ class AppBuilder(object):
         them have to be run.
 
         :param args: CLI options to pass to the created executable.
-        :param runtime: Time in miliseconds how long to keep the executable running.
+        :param runtime: Time in seconds how long to keep the executable running.
 
         :return: Exit code of the executable.
         """
         __tracebackhide__ = True
-        # TODO implement runtime - kill the app (Ctrl+C) when time times out
         exes = self._find_executables(name)
         # Empty list means that PyInstaller probably failed to create any executable.
         assert exes != [], 'No executable file was found.'
@@ -419,12 +420,13 @@ class AppBuilder(object):
 
         Return True if build succeded False otherwise.
         """
-        default_args = ['--debug', '--noupx',
+        default_args = ['--debug=bootloader', '--noupx',
                 '--specpath', self._specdir,
                 '--distpath', self._distdir,
                 '--workpath', self._builddir,
-                '--path', _MODULES_DIR]
-        default_args.extend(['--debug', '--log-level=DEBUG'])
+                '--path', _MODULES_DIR,
+                '--log-level=DEBUG'
+                ]
 
         # Choose bundle mode.
         if self._mode == 'onedir':
@@ -509,15 +511,18 @@ def pyi_builder(tmpdir, monkeypatch, request, pyi_modgraph):
     # The value is same as the original value.
     monkeypatch.setattr('PyInstaller.config.CONF', {'pathex': []})
 
-    def del_temp_dir():
+    yield AppBuilder(tmp, request.param, pyi_modgraph)
+
+    if is_darwin or is_linux:
         if request.node.rep_setup.passed:
             if request.node.rep_call.passed:
                 if os.path.exists(tmp):
                     shutil.rmtree(tmp)
-
-    if is_darwin or is_linux:
-        request.addfinalizer(del_temp_dir)
-    return AppBuilder(tmp, request.param, pyi_modgraph)
+    # Clear any PyQt5 state.
+    try:
+        del pyqt5_library_info.version
+    except AttributeError:
+        pass
 
 
 # Fixture for .spec based tests.

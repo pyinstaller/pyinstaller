@@ -38,7 +38,15 @@ class Qt5LibraryInfo:
     def __getattr__(self, name):
         if 'version' not in self.__dict__:
             # Get library path information from Qt. See QLibraryInfo_.
-            qli = json.loads(exec_statement("""
+            json_str = exec_statement("""
+                import sys
+
+                # exec_statement only captures stdout. If there are
+                # errors, capture them to stdout so they can be displayed to the
+                # user. Do this early, in case PyQt5 imports produce stderr
+                # output.
+                sys.stderr = sys.stdout
+
                 import json
                 from %s.QtCore import QLibraryInfo
 
@@ -54,7 +62,13 @@ class Qt5LibraryInfo:
                     'version': version,
                     'location': location,
                 })))
-            """ % self.namespace))
+            """ % self.namespace)
+            try:
+                qli = json.loads(json_str)
+            except Exception as e:
+                logger.warning('Cannot read QLibraryInfo output: raised %s when '
+                               'decoding:\n%s', str(e), json_str)
+                raise
             for k, v in qli.items():
                 setattr(self, k, v)
 
@@ -258,8 +272,18 @@ def get_qmake_path(version=''):
 #   -   The `deploying Qt for Linux/X11 <http://doc.qt.io/qt-5/linux-deployment.html#qt-plugins>`_
 #       page specifies including the Qt Platform Abstraction (QPA) plugin,
 #       ``libqxcb.so``. There's little other guidance provided.
-#   -   The `Qt for Windows - Deployment <http://doc.qt.io/qt-5/windows-deployment.html#qt-plugins>`_
-#       page likewise specifies the ``qwindows.dll`` QPA, but little else.
+#   -   The `Qt for Windows - Deployment <http://doc.qt.io/qt-5/windows-deployment.html#creating-the-application-package>`_
+#       page likewise specifies the ``qwindows.dll`` QPA. This is found by the
+#       dependency walker, so it doesn't need to explicitly specified.
+#
+#       -   For dynamic OpenGL applications, the ``libEGL.dll``,
+#           ``libGLESv2.dll``, ``d3dcompiler_XX.dll`` (the XX is a version
+#           number), and ``opengl32sw.dll`` libraries are also needed.
+#       -   If Qt was configured to use ICU, the ``icudtXX.dll``,
+#           ``icuinXX.dll``, and ``icuucXX.dll`` libraries are needed.
+#
+#       These are included by ``hook-PyQt5.py``.
+#
 #   -   The `Qt for macOS - Deployment <http://doc.qt.io/qt-5/osx-deployment.html#qt-plugins>`_
 #       page specifies the ``libqcocoa.dylib`` QPA, but little else. The
 #       `Mac deployment tool <http://doc.qt.io/qt-5/osx-deployment.html#the-mac-deployment-tool>`_

@@ -19,12 +19,18 @@ from distutils.version import LooseVersion
 
 from .. import HOMEPATH, DEFAULT_SPECPATH
 from .. import log as logging
-from ..compat import expand_path, is_win, is_cygwin, is_darwin
+from ..compat import expand_path, is_darwin
 from .templates import onefiletmplt, onedirtmplt, cipher_absent_template, \
     cipher_init_template, bundleexetmplt, bundletmplt
 
 logger = logging.getLogger(__name__)
 add_command_sep = os.pathsep
+
+# This list gives valid choices for the ``--debug`` command-line option, except
+# for the ``all`` choice.
+DEBUG_ARGUMENT_CHOICES = ['imports', 'bootloader', 'noarchive']
+# This is the ``all`` choice.
+DEBUG_ALL_CHOICE = ['all']
 
 
 def quote_win_filepath(path):
@@ -162,10 +168,47 @@ def __add_options(parser):
                    help='The key used to encrypt Python bytecode.')
 
     g = parser.add_argument_group('How to generate')
-    g.add_argument("-d", "--debug", action="store_true", default=False,
-                   help=("Tell the bootloader to issue progress messages "
-                         "while initializing and starting the bundled app. "
-                         "Used to diagnose problems with missing imports."))
+    g.add_argument("-d", "--debug",
+                   # If this option is not specified, then its default value is
+                   # an empty list (no debug options selected).
+                   default=[],
+                   # Allow the user to specify any number of arguments.
+                   nargs='?',
+                   # If zero arguments are specified (``--debug`` by itself),
+                   # then provide a default argument of all debug options enabled.
+                   const=DEBUG_ALL_CHOICE,
+                   # The options specified must come from this list.
+                   choices=DEBUG_ALL_CHOICE + DEBUG_ARGUMENT_CHOICES,
+                   # Append choice, rather than storing them (which would
+                   # overwrite any previous selections).
+                   action='append',
+                   # Allow newlines in the help text; see the
+                   # ``_SmartFormatter`` in ``__main__.py``.
+                   help=("R|Provide assistance with debugging a frozen\n"
+                         "application, by specifying one or more of the\n"
+                         "following choices.\n"
+                         "\n"
+                         "- all: All three of the below options; this is the\n"
+                         "  default choice, unless one of the choices below is\n"
+                         "  specified.\n"
+                         "\n"
+                         "- imports: specify the -v option to the underlying\n"
+                         "  Python interpreter, causing it to print a message\n"
+                         "  each time a module is initialized, showing the\n"
+                         "  place (filename or built-in module) from which it\n"
+                         "  is loaded. See\n"
+                         "  https://docs.python.org/3/using/cmdline.html#id4.\n"
+                         "\n"
+                         "- bootloader: tell the bootloader to issue progress\n"
+                         "  messages while initializing and starting the\n"
+                         "  bundled app. Used to diagnose problems with\n"
+                         "  missing imports.\n"
+                         "\n"
+                         "- noarchive: instead of storing all frozen Python\n"
+                         "  source files as an archive inside the resulting\n"
+                         "  executable, store them as files in the resulting\n"
+                         "  output directory.\n"
+                         "\n"))
     g.add_argument("-s", "--strip", action="store_true",
                    help="Apply a symbol-table strip to the executable and shared libs "
                         "(not recommended for Windows)")
@@ -250,11 +293,20 @@ def __add_options(parser):
                         "The ``_MEIxxxxxx``-folder will be created here. "
                         "Please use this option only if you know what you "
                         "are doing.")
+    g.add_argument("--bootloader-ignore-signals", action="store_true",
+                   default=False,
+                   help=("Tell the bootloader to ignore signals rather "
+                         "than forwarding them to the child process. "
+                         "Useful in situations where e.g. a supervisor "
+                         "process signals both the bootloader and child "
+                         "(e.g. via a process group) to avoid signalling "
+                         "the child twice."))
 
 
 def main(scripts, name=None, onefile=None,
-         console=True, debug=False, strip=False, noupx=False, runtime_tmpdir=None,
-         pathex=None, version_file=None, specpath=None,
+         console=True, debug=None, strip=False, noupx=False,
+         runtime_tmpdir=None, pathex=None, version_file=None, specpath=None,
+         bootloader_ignore_signals=False,
          datas=None, binaries=None, icon_file=None, manifest=None, resources=None, bundle_identifier=None,
          hiddenimports=None, hookspath=None, key=None, runtime_hooks=None,
          excludes=None, uac_admin=False, uac_uiaccess=False,
@@ -343,6 +395,13 @@ def main(scripts, name=None, onefile=None,
     else:
         cipher_init = cipher_absent_template
 
+    # Translate the default of ``debug=None`` to an empty list.
+    if debug is None:
+        debug = []
+    # Translate the ``all`` option.
+    if DEBUG_ALL_CHOICE in debug:
+        debug = DEBUG_ARGUMENT_CHOICES
+
     d = {
         'scripts': scripts,
         'pathex': pathex,
@@ -350,7 +409,10 @@ def main(scripts, name=None, onefile=None,
         'datas': datas,
         'hiddenimports': hiddenimports,
         'name': name,
-        'debug': debug,
+        'noarchive': 'noarchive' in debug,
+        'options': [('v', None, 'OPTION')] if 'imports' in debug else [],
+        'debug_bootloader': 'bootloader' in debug,
+        'bootloader_ignore_signals': bootloader_ignore_signals,
         'strip': strip,
         'upx': not noupx,
         'runtime_tmpdir': runtime_tmpdir,

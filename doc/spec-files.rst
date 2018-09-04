@@ -216,7 +216,7 @@ Using Data Files from a Module
 --------------------------------
 
 If the data files you are adding are contained within a Python module,
-you can retrieve them using ``pkgutils.get_data()``.
+you can retrieve them using ``pkgutil.get_data()``.
 
 For example, suppose that part of your application is a module named ``helpmod``.
 In the same folder as your script and its spec file you have this folder
@@ -370,49 +370,39 @@ of ``Info.plist``.)
 
 |PyInstaller| creates a minimal :file:`Info.plist`.
 You can add or overwrite entries in the plist by passing an
-``info_plist=`` parameter to the BUNDLE call.
-The value of this argument is a Python dict.
-Each key and value in the dict becomes a key and value in the
-:file:`Info.plist` file.
-For example, when you use PyQt5,
-you can set ``NSHighResolutionCapable`` to ``True`` to let your app
-also work in retina screen::
+``info_plist=`` parameter to the BUNDLE call.  Its argument should be a
+Python dict with keys and values to be included in the :file:`Info.plist`
+file.
+|PyInstaller| creates :file:`Info.plist` from the info_plist dict
+using the Python Standard Library module plistlib_.
+plistlib can handle nested Python objects (which are translated to nested
+XML), and translates Python data types to the proper :file:`Info.plist`
+XML types.  Here's an example::
 
     app = BUNDLE(exe,
              name='myscript.app',
              icon=None,
-             bundle_identifier=None
+             bundle_identifier=None,
              info_plist={
-             	'NSHighResolutionCapable': 'True'
+             	'NSPrincipleClass': 'NSApplication',
+                'NSAppleScriptEnabled': False,
+                'CFBundleDocumentTypes': [
+                    {
+                        'CFBundleTypeName': 'My File Format',
+                        'CFBundleTypeIconFile': 'MyFileIcon.icns',
+                        'LSItemContentTypes': ['com.example.myformat'],
+                        'LSHandlerRank': 'Owner'
+                        }
+                    ]
              	},
              )
 
-The ``info_plist=`` parameter only handles simple key:value pairs.
-It cannot handle nested XML arrays.
-For example, if you want to modify :file:`Info.plist` to tell Mac OS X
-what filetypes your app supports, you must add a 
-``CFBundleDocumentTypes`` entry to :file:`Info.plist`
-(see `Apple document types`_).
-The value of that keyword is a list of dicts,
-each containing up to five key:value pairs.
-
-To add such a value to your app's :file:`Info.plist` you must edit the
-plist file separately after |PyInstaller| has created the app.
-However, when you re-run |PyInstaller|, your changes will be wiped out.
-One solution is to prepare a complete :file:`Info.plist` file and
-copy it into the app after creating it.
-
-Begin by building and testing the windowed app.
-When it works, copy the ``Info.plist`` prepared by |PyInstaller|.
-This includes the ``CFBundleExecutable`` value as well as the
-icon path and bundle identifier if you supplied them.
-Edit the ``Info.plist`` as necessary to add more items
-and save it separately.
-
-From that point on, to rebuild the app call |PyInstaller| in a shell script,
-and follow it with a statement such as::
-
-    cp -f Info.plist dist/myscript.app/Contents/Info.plist
+In the above example, the key/value ``'NSPrincipleClass': 'NSApplication'`` is
+necessary to allow Mac OS X to render applications using retina resolution.
+The key ``'NSAppleScriptEnabled'`` is assigned the Python boolean
+``False``, which will be output to :file:`Info.plist` properly as ``<false/>``.
+Finally the key ``CFBundleDocumentTypes`` tells Mac OS X what filetypes your
+application supports (see `Apple document types`_).
 
 Multipackage Bundles
 ~~~~~~~~~~~~~~~~~~~~~
@@ -595,7 +585,7 @@ Other globals contain information about the build environment:
 
 ``WARNFILE``
 	The full path to the warnings file in the build directory,
-	for example :file:`build/warnmyscript.txt`.
+	for example :file:`build/warn-myscript.txt`.
 
 
 .. include:: _common_definitions.txt

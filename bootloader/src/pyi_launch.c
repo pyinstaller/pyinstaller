@@ -503,15 +503,7 @@ done:
 void
 pyi_launch_initialize(ARCHIVE_STATUS * status)
 {
-#if defined(__APPLE__) && defined(WINDOWED)
-    /*
-     * On OS X this ensures that the application is handled as GUI app.
-     * Call TransformProcessType() in the child process.
-     */
-    ProcessSerialNumber psn = { 0, kCurrentProcess };
-    OSStatus returnCode = TransformProcessType(&psn,
-                                               kProcessTransformToForegroundApplication);
-#elif defined(_WIN32)
+#if defined(_WIN32)
     char * manifest;
     manifest = pyi_arch_get_option(status, "pyi-windows-manifest-filename");
 
@@ -520,7 +512,7 @@ pyi_launch_initialize(ARCHIVE_STATUS * status)
         CreateActContext(manifest);
         free(manifest);
     }
-#endif /* if defined(__APPLE__) && defined(WINDOWED) */
+#endif /* if defined(_WIN32) */
 }
 
 /*

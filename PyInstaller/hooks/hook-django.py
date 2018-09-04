@@ -15,13 +15,15 @@ import sys
 import glob
 import os
 from PyInstaller import log as logging
-from PyInstaller.utils.hooks import django_find_root_dir, django_dottedstring_imports, \
-        collect_data_files, collect_submodules, get_module_file_attribute, get_module_attribute
+from PyInstaller.utils.hooks import (
+    django_find_root_dir, django_dottedstring_imports, collect_all,
+    collect_submodules, collect_data_files, get_module_file_attribute,
+    get_module_attribute)
 
 
 logger = logging.getLogger(__name__)
 
-hiddenimports = []
+datas, binaries, hiddenimports = collect_all('django')
 
 
 root_dir = django_find_root_dir()
@@ -43,19 +45,6 @@ if root_dir:
             package_name + '.urls',
             package_name + '.wsgi',
     ]
-    # Include some hidden modules that are not imported directly in django.
-    hiddenimports += [
-            'django.template.defaultfilters',
-            'django.template.defaulttags',
-            'django.template.loader_tags',
-            'django.template.context_processors',
-    ]
-    hiddenimports += collect_submodules('django.middleware')
-    hiddenimports += collect_submodules('django.templatetags')
-    # Other hidden imports to get Django example startproject working.
-    hiddenimports += [
-            'django.contrib.messages.storage.fallback',
-    ]
     # Django hiddenimports from the standard Python library.
     if sys.version_info.major == 3:
         # Python 3.x
@@ -69,9 +58,6 @@ if root_dir:
                 'Cookie',
                 'HTMLParser',
         ]
-
-    # Include django data files - localizations, etc.
-    datas = collect_data_files('django')
 
     # Bundle django DB schema migration scripts as data files.
     # They are necessary for some commands.

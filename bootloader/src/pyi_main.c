@@ -175,7 +175,7 @@ pyi_main(int argc, char * argv[])
         pyi_parent_to_background();
 
         /* Run user's code in a subprocess and pass command line arguments to it. */
-        rc = pyi_utils_create_child(executable, argc, argv);
+        rc = pyi_utils_create_child(executable, archive_status, argc, argv);
 
         VS("LOADER: Back to parent (RC: %d)\n", rc);
 

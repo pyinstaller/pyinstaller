@@ -14,9 +14,10 @@ import shutil
 from os.path import join
 
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules, \
-  get_module_file_attribute, remove_prefix, remove_suffix, \
-  remove_file_extension, is_module_or_submodule
-from PyInstaller.compat import exec_python
+    get_module_file_attribute, remove_prefix, remove_suffix, \
+    remove_file_extension, is_module_or_submodule, \
+    is_module_satisfies
+from PyInstaller.compat import exec_python, ALL_SUFFIXES
 
 
 class TestRemovePrefix(object):
@@ -188,6 +189,10 @@ def test_is_module_or_submodule():
     assert not is_module_or_submodule('foo', 'foo.bar')
 
 
+def test_is_module_satisfies_package_not_installed():
+    assert is_module_satisfies('pytest')
+    assert not is_module_satisfies('magnumopus-no-package-test-case')
+
 
 _DATA_BASEPATH = join(TEST_MOD_PATH, TEST_MOD)
 _DATA_PARAMS = [
@@ -196,6 +201,8 @@ _DATA_PARAMS = [
                 'nine.dat',
                 join('py_files_not_in_package', 'data', 'eleven.dat'),
                 join('py_files_not_in_package', 'ten.dat'),
+                'pyextension.pyd',
+                'pyextension.so',
                 join('subpkg', 'thirteen.txt'),
     )),
     (TEST_MOD + '.subpkg', (
@@ -235,8 +242,11 @@ def test_collect_data_module():
 def test_collect_data_no_extensions(data_lists):
     subfiles, src, dst = data_lists
     for item in ['pyextension.pyd', 'pyextension.so']:
-        item = join(_DATA_BASEPATH, item)
-        assert item not in src
+        # Only text valid extensions for the current platform.
+        if os.path.splitext(item)[1] in ALL_SUFFIXES:
+            item = join(_DATA_BASEPATH, item)
+            print(src)
+            assert item not in src
 
 
 # Make sure all data files are found.
@@ -244,8 +254,12 @@ def test_collect_data_all_included(data_lists):
     subfiles, src, dst = data_lists
     # Check the source and dest lists against the correct values in
     # subfiles.
-    src_compare = tuple([join(_DATA_BASEPATH, subpath) for subpath in subfiles])
-    dst_compare = [os.path.dirname(join(TEST_MOD, subpath)) for subpath in subfiles]
+    print(subfiles)
+    src_compare = tuple([join(_DATA_BASEPATH, subpath) for subpath in subfiles
+                         if os.path.splitext(subpath)[1] not in ALL_SUFFIXES])
+    dst_compare = [os.path.dirname(join(TEST_MOD, subpath))
+                   for subpath in subfiles
+                   if os.path.splitext(subpath)[1] not in ALL_SUFFIXES]
     dst_compare.sort()
     dst_compare = tuple(dst_compare)
     assert src == src_compare

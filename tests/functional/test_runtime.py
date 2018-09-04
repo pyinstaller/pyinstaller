@@ -8,10 +8,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-import sys
 import pytest
-
-from PyInstaller.utils.tests import skipif_notosx, xfail_py2
 
 
 def test_ctypes_cdll_unknown_dll(pyi_builder, capfd):
