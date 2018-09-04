@@ -236,6 +236,12 @@ def test_PyQt5_QtWebKit(pyi_builder):
     pyi_builder.test_script('pyi_lib_PyQt5-QtWebKit.py')
 
 
+PYQT5_NEED_OPENGL = pytest.mark.skipif(is_module_satisfies('PyQt5 <= 5.10.1'),
+    reason='PyQt5 v5.10.1 and older does not package ``opengl32sw.dll``, the '
+    'OpenGL software renderer, which this test requires.')
+
+
+@PYQT5_NEED_OPENGL
 @importorskip('PyQt5')
 def test_PyQt5_uic(tmpdir, pyi_builder, data_dir):
     # Note that including the data_dir fixture copies files needed by this test.
@@ -265,6 +271,7 @@ def test_PyQt5_QWebEngine(pyi_builder, data_dir):
         """.format(data_dir.join('test_web_page.html').strpath))
 
 
+@PYQT5_NEED_OPENGL
 @importorskip('PyQt5')
 def test_PyQt5_QtQuick(pyi_builder):
     pyi_builder.test_source(
