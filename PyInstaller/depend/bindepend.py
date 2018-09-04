@@ -68,7 +68,8 @@ def getfullnameof(mod, xtrapath=None):
 
     # TODO check if this 'numpy' workaround is still necessary!
     # Search sys.path first!
-    epath = sys.path + numpy_core_paths + winutils.get_system_path()
+    epath = (sys.path + numpy_core_paths + winutils.get_system_path() +
+             compat.getenv('PATH', '').split(os.pathsep))
     if xtrapath is not None:
         if type(xtrapath) == type(''):
             epath.insert(0, xtrapath)
