@@ -273,27 +273,28 @@ def test_PyQt5_QWebEngine(pyi_builder, data_dir):
 
 @PYQT5_NEED_OPENGL
 @importorskip('PyQt5')
-def test_PyQt5_QtQuick(pyi_builder):
+def test_PyQt5_QtQml(pyi_builder):
     pyi_builder.test_source(
         """
         import sys
-
-        # Not used. Only here to trigger the hook
-        import PyQt5.QtQuick
 
         from PyQt5.QtGui import QGuiApplication
         from PyQt5.QtQml import QQmlApplicationEngine
         from PyQt5.QtCore import QTimer, QUrl
 
-        app = QGuiApplication([])
+        # Select a style via the `command line <https://doc.qt.io/qt-5/qtquickcontrols2-styles.html#command-line-argument>`_,
+        # since currently PyQt5 doesn't `support https://riverbankcomputing.com/pipermail/pyqt/2018-March/040180.html>`_
+        # ``QQuickStyle``. Using this style with the QML below helps to verify
+        # that all QML files are packaged; see https://github.com/pyinstaller/pyinstaller/issues/3711.
+        app = QGuiApplication(sys.argv + ['-style', 'imagine'])
         engine = QQmlApplicationEngine()
         engine.loadData(b'''
-            import QtQuick 2.0
-            import QtQuick.Controls 2.0
+            import QtQuick 2.11
+            import QtQuick.Controls 2.4
 
             ApplicationWindow {
                 visible: true
-                color: "green"
+                ProgressBar {value: 0.6}
             }
             ''', QUrl())
 
@@ -303,7 +304,9 @@ def test_PyQt5_QtQuick(pyi_builder):
         # Exit Qt when the main loop becomes idle.
         QTimer.singleShot(0, app.exit)
 
-        sys.exit(app.exec_())
+        res = app.exec_()
+        del engine
+        sys.exit(res)
         """)
 
 
