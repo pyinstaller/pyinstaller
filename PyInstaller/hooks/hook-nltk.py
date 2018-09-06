@@ -1,5 +1,6 @@
+
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2018, PyInstaller Development Team.
+# Copyright (c) 2015-2018, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -7,11 +8,14 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-
+# hook for nltk
 import nltk
+from PyInstaller.utils.hooks import collect_data_files
 
-# loop through the nltk data path, then add them as the data directory
-datas = []
+# add datas for nltk
+datas = collect_data_files('nltk', False)
+
+# loop through the data directories and add them
 for p in nltk.data.path:
     datas.append((p, "nltk_data"))
 
