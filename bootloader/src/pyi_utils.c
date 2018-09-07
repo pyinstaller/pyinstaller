@@ -221,7 +221,7 @@ pyi_unsetenv(const char *variable)
     #if HAVE_UNSETENV
     rc = unsetenv(variable);
     #else /* HAVE_UNSETENV */
-    rc = setenv(variable, "");
+    rc = setenv(variable, "", true);
     #endif /* HAVE_UNSETENV */
 #endif     /* _WIN32 */
     return rc;
