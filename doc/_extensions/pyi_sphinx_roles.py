@@ -44,7 +44,10 @@ def commit(name, rawtext, text, lineno, inliner, options={}, content=[]):
 def issue(name, rawtext, text, lineno, inliner, options={}, content=[]):
     msg = None
     try:
-        # verify this is a hex string
+        # strip leading numner sign which e.g. towncrier adds
+        if text.startswith("#"):
+            text = text[1:]
+        # verify this is a number
         num = int(text)
         if num <= 0:
             raise ValueError
