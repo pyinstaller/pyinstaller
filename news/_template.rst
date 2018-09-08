@@ -1,7 +1,7 @@
 {% macro print_issue_numbers(issues) %}
 {% for issue in issues if issue.startswith('#') %}
 {% if loop.first %} ({% endif %}
-{{ issue }}{% if not(loop.last) %}, {% endif %}
+:issue:`{{ issue }}`{% if not(loop.last) %}, {% endif %}
 {% if loop.last %}){% endif %}
 {% endfor %}
 {% endmacro %}
