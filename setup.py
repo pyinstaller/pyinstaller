@@ -44,6 +44,7 @@ def read(filename):
     except NameError:
         return open(filename, 'r', encoding='utf-8').read()
 long_description = u'\n\n'.join([read('README.rst'),
+                                 read('doc/_dummy-roles.txt'),
                                  read('doc/CHANGES.rst')])
 if sys.version_info < (3,):
     long_description = long_description.encode('utf-8')

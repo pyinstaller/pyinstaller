@@ -10,14 +10,6 @@ Changelog for PyInstaller
    To add a new change log entry, please see
    https://pyinstaller.readthedocs.io/en/latest/development/changelog-entries.html
 
-..
-   Define some Sphinx standard roles so they can be used in the README. This
-   should not interfer with Sphinx.
-.. role:: ref
-.. role:: program
-.. role:: pep
-.. role:: issue
-
 .. towncrier release notes start
 
 
