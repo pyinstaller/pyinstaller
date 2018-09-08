@@ -47,6 +47,7 @@ long_description = u'\n\n'.join([read('README.rst'),
                                  read('doc/CHANGES.rst')])
 if sys.version_info < (3,):
     long_description = long_description.encode('utf-8')
+long_description = long_description.split("\nOlder Versions\n")[0].strip()
 
 
 CLASSIFIERS = """
