@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2017, PyInstaller Development Team.
+# Copyright (c) 2005-2018, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -28,8 +28,10 @@ from types import CodeType
 import marshal
 import zlib
 
-from PyInstaller.building.utils import get_code_object, strip_paths_in_code
-from .readers import PYZ_TYPE_MODULE, PYZ_TYPE_PKG, PYZ_TYPE_DATA
+from PyInstaller.building.utils import get_code_object, strip_paths_in_code,\
+    fake_pyc_timestamp
+from PyInstaller.loader.pyimod02_archive import PYZ_TYPE_MODULE, PYZ_TYPE_PKG, \
+    PYZ_TYPE_DATA
 from ..compat import BYTECODE_MAGIC, is_py2
 
 
@@ -110,9 +112,9 @@ class ArchiveWriter(object):
         ispkg = pynm == '__init__'
         assert ext in ('.pyc', '.pyo')
         self.toc.append((nm, (ispkg, self.lib.tell())))
-        f = open(entry[1], 'rb')
-        f.seek(8)  # skip magic and timestamp
-        self.lib.write(f.read())
+        with open(entry[1], 'rb') as f:
+            f.seek(8)  # skip magic and timestamp
+            self.lib.write(f.read())
 
     def save_trailer(self, tocpos):
         """
@@ -393,10 +395,15 @@ class CArchiveWriter(ArchiveWriter):
                 self.lib.write(comprobj.compress(code_data))
             else:
                 assert fh
+                # We only want to change it for pyc files
+                modify_header = typcd in ('M', 'm', 's')
                 while 1:
                     buf = fh.read(16*1024)
                     if not buf:
                         break
+                    if modify_header:
+                        modify_header = False
+                        buf = fake_pyc_timestamp(buf)
                     self.lib.write(comprobj.compress(buf))
             self.lib.write(comprobj.flush())
 
@@ -415,6 +422,9 @@ class CArchiveWriter(ArchiveWriter):
         if typcd == 'm':
             if pathnm.find('.__init__.py') > -1:
                 typcd = 'M'
+
+        if fh:
+            fh.close()
 
         # Record the entry in the CTOC
         self.toc.add(where, dlen, ulen, flag, typcd, nm)

@@ -1,16 +1,26 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2017, PyInstaller Development Team.
+# Copyright (c) 2013-2018, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
+import os.path
 
+from PyInstaller.utils.hooks import pyqt5_library_info, add_qt5_dependencies
+from PyInstaller.compat import is_win
 
-hiddenimports = ['sip', 'PyQt5.QtCore']
+hiddenimports, binaries, datas = add_qt5_dependencies(__file__)
 
-from PyInstaller.utils.hooks import qt_plugins_binaries
-
-# Network Bearer Management in qt 4.7+
-binaries = qt_plugins_binaries('bearer', namespace='PyQt5')
+# Add libraries needed for SSL. See issue #3520.
+if is_win:
+    rel_data_path = ['PyQt5', 'Qt', 'bin']
+    binaries += [
+        (os.path.join(pyqt5_library_info.location['BinariesPath'],
+                      'libeay32.dll'),
+         os.path.join(*rel_data_path)),
+        (os.path.join(pyqt5_library_info.location['BinariesPath'],
+                      'ssleay32.dll'),
+         os.path.join(*rel_data_path))
+    ]

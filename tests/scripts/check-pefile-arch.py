@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (c) 2017, PyInstaller Development Team.
+# Copyright (c) 2017-2018, PyInstaller Development Team.
 # Author: Hartmut Goebel
 #
 # Verify if a list of pe-files was the expected arch-bits.
@@ -19,7 +19,6 @@ from __future__ import print_function
 import glob
 import struct
 import sys
-import os
 
 # A more complete list can be found at
 # https://stackoverflow.com/questions/1001404/

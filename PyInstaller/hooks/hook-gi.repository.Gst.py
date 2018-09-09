@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2017, PyInstaller Development Team.
+# Copyright (c) 2005-2018, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -53,8 +53,6 @@ plugin_path = exec_statement(statement)
 
 # Use a pattern of libgst* since all GStreamer plugins that conform to GStreamer standards start with libgst
 # and we may have mixed plugin extensions, e.g., .so and .dylib.
-pattern = os.path.join(plugin_path, 'libgst*')
-
-binaries += [(f, os.path.join('gst_plugins')) for f in glob.glob(pattern)]
-
-
+for pattern in ['libgst*.dll', 'libgst*.dylib', 'libgst*.so']:
+    pattern = os.path.join(plugin_path, pattern)
+    binaries += [(f, os.path.join('gst_plugins')) for f in glob.glob(pattern)]

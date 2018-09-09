@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2017, PyInstaller Development Team.
+# Copyright (c) 2005-2018, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -11,57 +11,46 @@
 from __future__ import print_function
 
 import codecs
-import sys, os
+import sys
+import os
 from setuptools import setup
 
 # Hack required to allow compat to not fail when pypiwin32 isn't found
 os.environ["PYINSTALLER_NO_PYWIN32_FAILURE"] = "1"
-from PyInstaller import (__version__ as version, is_linux, is_win, is_cygwin,
-                         HOMEPATH, PLATFORM, compat)
+from PyInstaller import __version__ as version, HOMEPATH, PLATFORM
+from PyInstaller.compat import is_win, is_cygwin, is_py2
 
 REQUIREMENTS = [
     'setuptools',
     'pefile >= 2017.8.1',
     'macholib >= 1.8',
+    'altgraph',
 ]
 
-# dis3 and xdis are used for our version of modulegraph
+# dis3 is used for our version of modulegraph
 if sys.version_info < (3,):
     REQUIREMENTS.append('dis3')
-elif sys.version_info < (3, 4):
-    REQUIREMENTS.append('xdis')
 
 # For Windows install PyWin32 if not already installed.
 if sys.platform.startswith('win'):
-    # Windows support depends on pefile library.
-    # ::TODO:: #1920 require a specific version minimum
-    # REQUIREMENTS.append('pefile')
-    # ::TODO:: #1920 future is currently only needed for the included pefile,
-    # remove 'future' as requirement when pypi pefile is used
-    REQUIREMENTS.append('future')
-    try:
-        import pywintypes
-    except ImportError:
-        # try using pywin32-ctypes, as pypiwin32 doesn't compile for msys2
-        try:
-            import win32ctypes.pywin32.pywintypes
-        except ImportError:
-            # 'pypiwin32' is PyWin32 package made installable by 'pip install'
-            # command. Prefer it by default.
-            REQUIREMENTS.append('pypiwin32')
+    REQUIREMENTS.append('pywin32-ctypes')
 
 
 # Create long description from README.rst and doc/CHANGES.rst.
 # PYPI page will contain complete PyInstaller changelog.
 def read(filename):
-    try:
-        return unicode(codecs.open(filename, encoding='utf-8').read())
-    except NameError:
-        return open(filename, 'r', encoding='utf-8').read()
+    if is_py2:
+        with codecs.open(filename, encoding='utf-8') as fp:
+            return unicode(fp.read())
+    else:
+        with open(filename, 'r', encoding='utf-8') as fp:
+            return fp.read()
 long_description = u'\n\n'.join([read('README.rst'),
+                                 read('doc/_dummy-roles.txt'),
                                  read('doc/CHANGES.rst')])
 if sys.version_info < (3,):
     long_description = long_description.encode('utf-8')
+long_description = long_description.split("\nOlder Versions\n")[0].strip()
 
 
 CLASSIFIERS = """
@@ -84,10 +73,10 @@ Programming Language :: Python
 Programming Language :: Python :: 2
 Programming Language :: Python :: 2.7
 Programming Language :: Python :: 3
-Programming Language :: Python :: 3.3
 Programming Language :: Python :: 3.4
 Programming Language :: Python :: 3.5
 Programming Language :: Python :: 3.6
+Programming Language :: Python :: 3.7
 Programming Language :: Python :: Implementation :: CPython
 Topic :: Software Development
 Topic :: Software Development :: Build Tools
@@ -158,6 +147,7 @@ class MyBDist_Egg(bdist_egg):
 
 setup(
     install_requires=REQUIREMENTS,
+    python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*',
 
     name='PyInstaller',
     version=version,

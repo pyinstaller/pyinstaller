@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2017, PyInstaller Development Team.
+# Copyright (c) 2013-2018, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -19,7 +19,7 @@ from PyInstaller.utils.hooks import get_package_paths
 
 def collect_native_files(package, files):
     pkg_base, pkg_dir = get_package_paths(package)
-    return [(os.path.join(pkg_dir, file), '') for file in files]
+    return [(os.path.join(pkg_dir, file), '.') for file in files]
 
 if is_win:
     files = ['Bacon.dll', 

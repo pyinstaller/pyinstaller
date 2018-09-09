@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2017, PyInstaller Development Team.
+# Copyright (c) 2013-2018, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -45,7 +45,7 @@ if is_darwin:
     if installer != 'pip':
         # Note: Name of detected enchant library is 'libenchant.dylib'. However, it
         #       is just symlink to 'libenchant.1.dylib'.
-        binaries.append((libenchant, ''))
+        binaries.append((libenchant, '.'))
 
         # Collect enchant backends from Macports. Using same file structure as on Windows.
         backends = exec_statement("""

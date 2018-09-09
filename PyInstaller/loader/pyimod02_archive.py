@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2017, PyInstaller Development Team.
+# Copyright (c) 2005-2018, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -147,10 +147,7 @@ class ArchiveReader(object):
             # We cannot use at this bootstrap stage importlib directly
             # but its frozen variant.
             import _frozen_importlib
-            if sys.version_info[1] <= 3:
-                # Python 3.3
-                self.pymagic = _frozen_importlib._MAGIC_BYTES
-            elif sys.version_info[1] == 4:
+            if sys.version_info[1] == 4:
                 # Python 3.4
                 self.pymagic = _frozen_importlib.MAGIC_NUMBER
             else:
@@ -271,23 +268,33 @@ class Cipher(object):
 
         PyCrypto 2.4 and 2.6 uses different name of the AES extension.
         """
-        # Not-so-easy way: at bootstrap time we have to load the module from the
-        # temporary directory in a manner similar to pyi_importers.CExtensionImporter.
-        from pyimod03_importers import CExtensionImporter
-        importer = CExtensionImporter()
-        # NOTE: We _must_ call find_module first.
         # The _AES.so module exists only in PyCrypto 2.6 and later. Try to import
         # that first.
         modname = 'Crypto.Cipher._AES'
-        mod = importer.find_module(modname)
-        # Fallback to AES.so, which should be there in PyCrypto 2.4 and earlier.
-        if not mod:
-            modname = 'Crypto.Cipher.AES'
+
+        if sys.version_info[0] == 2:
+            # Not-so-easy way: at bootstrap time we have to load the module from the
+            # temporary directory in a manner similar to pyi_importers.CExtensionImporter.
+            from pyimod03_importers import CExtensionImporter
+            importer = CExtensionImporter()
+            # NOTE: We _must_ call find_module first.
             mod = importer.find_module(modname)
+            # Fallback to AES.so, which should be there in PyCrypto 2.4 and earlier.
             if not mod:
-                # Raise import error if none of the AES modules is found.
-                raise ImportError(modname)
-        mod = mod.load_module(modname)
+                modname = 'Crypto.Cipher.AES'
+                mod = importer.find_module(modname)
+                if not mod:
+                    # Raise import error if none of the AES modules is found.
+                    raise ImportError(modname)
+            mod = mod.load_module(modname)
+        else:
+            kwargs = dict(fromlist=['Crypto', 'Cipher'])
+            try:
+                mod = __import__(modname, **kwargs)
+            except ImportError:
+                modname = 'Crypto.Cipher.AES'
+                mod = __import__(modname, **kwargs)
+
         # Issue #1663: Remove the AES module from sys.modules list. Otherwise
         # it interferes with using 'Crypto.Cipher' module in users' code.
         if modname in sys.modules:

@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2017, PyInstaller Development Team.
+# Copyright (c) 2013-2018, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -26,12 +26,12 @@ if is_win:
     library = ctypes.util.find_library(pyruntime)
     datas = []
     if library:
-        datas = [(library, '')]
+        datas = [(library, '.')]
     else:
     	# find Python.Runtime.dll in pip-installed pythonnet package
     	for sitepack in getsitepackages():
     		library = join(sitepack, pyruntime + '.dll')
     		if exists(library):
-    			datas = [(library, '')]
+    			datas = [(library, '.')]
     	if not datas:
     		raise Exception(pyruntime + ' not found')

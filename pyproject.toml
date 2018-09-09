@@ -1,0 +1,68 @@
+[build-system]
+requires = ["setuptools", "wheel"]  # PEP 508 specifications.
+
+[tool.towncrier]
+	filename = "doc/CHANGES.rst"
+	directory = "news"
+	template = "news/_template.rst"
+	underlines = "-~^"
+	wrap = true
+	title_format = "{version} ({project_date})"
+
+	[[tool.towncrier.section]]
+		path = ""
+
+	[[tool.towncrier.type]]
+		directory = "feature"
+		name = "Features"
+		showcontent = true
+
+	[[tool.towncrier.type]]
+		directory = "bugfix"
+		name = "Bugfix"
+		showcontent = true
+
+	[[tool.towncrier.type]]
+		directory = "breaking"
+		name = "Incompatible Changes"
+		showcontent = true
+
+	[[tool.towncrier.type]]
+		directory = "hooks"
+		name = "Hooks"
+		showcontent = true
+
+	[[tool.towncrier.type]]
+		directory = "bootloader"
+		name = "Bootloader"
+		showcontent = true
+
+	[[tool.towncrier.type]]
+		directory = "moduleloader"
+		name = "Module Loader"
+		showcontent = true
+
+	[[tool.towncrier.type]]
+		directory = "doc"
+		name = "Documentation"
+		showcontent = true
+
+	[[tool.towncrier.type]]
+		directory = "process"
+		name = "Project & Process"
+		showcontent = true
+
+	[[tool.towncrier.type]]
+		directory = "core"
+		name = "PyInstaller Core"
+		showcontent = true
+
+	[[tool.towncrier.type]]
+		directory = "tests"
+		name = "Test-suite and Continuous Integration"
+		showcontent = true
+
+	[[tool.towncrier.type]]
+		directory = "build"
+		name = "Bootloader build"
+		showcontent = true

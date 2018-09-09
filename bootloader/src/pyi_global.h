@@ -1,6 +1,6 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2017, PyInstaller Development Team.
+ * Copyright (c) 2013-2018, PyInstaller Development Team.
  * Distributed under the terms of the GNU General Public License with exception
  * for distributing bootloader.
  *
@@ -9,7 +9,7 @@
  */
 
 /*
- * Glogal shared declarations used in many bootloader files.
+ * Global shared declarations used in many bootloader files.
  */
 
 #ifndef PYI_GLOBAL_H

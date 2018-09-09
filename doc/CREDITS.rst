@@ -6,6 +6,31 @@ new code, bug reports, fixes, comments and ideas. A brief list follows,
 please let us know if your name is omitted by accident:
 
 
+Contributions to PyInstaller 3.4
+----------------------------------
+
+* Hartmut Goebel - Core developer, maintainer and release manager.
+* Bryan A. Jones - Core developer and PyQt5-tamer.
+* David Vierra - Core developer and encoding specialist.
+* xoviat - brave contributor
+* Hugo vk - brave contributor
+
+* Mickaël Schoentgen, Charles Nicholson, Jonathan Springer, Benoît
+  Vinot, Brett Higgins, Dustin Spicuzza, Marco Nenciarini, Aaron
+  Hampton, Cody Scot, Dave Cortesi, Helder Eijs, Innokenty Lebedev,
+  Joshua Klein, Matthew Clapp, Misha Turnbull, ethframe, Amir
+  Ramezani, Arthur Silva, Blue, Craig MacEachern, Cédric RICARD,
+  Fredrik Ahlberg, Glenn Ramsey, Jack Mordaunt, Johann Bauer, Joseph
+  Heck, Kyle Stewart, Lev Maximov, Luo Shawn, Marco Nenciarini, Mario
+  Costa, Matt Reynolds, Matthieu Gautier, Michael Herrmann, Moritz
+  Kassner, Natanael Arndt, Nejc Habjan, Paweł Kowalik, Pedro de
+  Medeiros, Peter Conerly, Peter Würtz, Rémy Roy, Saurabh Yadav, Siva
+  Prasad, Steve Peak, Steven M. Vascellaro, Steven M. Vascellaro,
+  Suzumizaki-Kimitaka, ThomasV, Timothée Lecomte, Torsten Sommer,
+  Weliton Freitas, Zhen Zhang, dimitriepirghie, lneuhaus, s3goat,
+  satarsa,
+
+
 Contributions to PyInstaller 3.3.1
 ----------------------------------
 

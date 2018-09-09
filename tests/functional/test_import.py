@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2017, PyInstaller Development Team.
+# Copyright (c) 2005-2018, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -10,13 +10,14 @@
 
 import os
 import glob
-import ctypes, ctypes.util
+import ctypes
+import ctypes.util
 
 import pytest
 
-from PyInstaller.compat import is_darwin, is_py2, is_py35, is_win
+from PyInstaller.compat import is_darwin, is_py2, is_py3, is_py35, is_win
 from PyInstaller.utils.tests import skipif, importorskip, \
-  skipif_notwin, skipif_no_compiler, xfail, has_compiler
+    skipif_notwin, skipif_no_compiler, xfail, has_compiler
 
 # :todo: find a way to get this from `conftest` or such
 # Directory with testing modules used in some tests.
@@ -174,6 +175,8 @@ def test_import_non_existing_raises_import_error(pyi_builder):
 
 # :todo: Use some package which is already installed for some other
 # reason instead of `simplejson` which is only used here.
+@skipif(is_py3, reason="Python 3 doesn't use the CExtensionImporter, so it "
+        "doesn't need testing.")
 @importorskip('simplejson')
 def test_c_extension(pyi_builder):
     pyi_builder.test_script('pyi_c_extension.py')
@@ -204,10 +207,12 @@ def test_import_metapath1(pyi_builder, script_dir):
       ['--additional-hooks-dir='+script_dir.join('pyi_hooks').strpath])
 
 
-def test_import_pyqt5_uic_port(monkeypatch, pyi_builder):
+@importorskip('PyQt5')
+def test_import_pyqt5_uic_port(script_dir, pyi_builder):
     extra_path = os.path.join(_MODULES_DIR, 'pyi_import_pyqt_uic_port')
     pyi_builder.test_script('pyi_import_pyqt5_uic_port.py',
-                            pyi_args=['--path', extra_path])
+        # Add the path to a fake PyQt5 package, used for this test.
+        pyi_args=['--path', extra_path])
 
 
 #--- ctypes ----
@@ -547,7 +552,7 @@ def test_nspkg3_bbb_zzz(pyi_builder):
         pyi_args=['--paths', os.pathsep.join(pathex)],
     )
 
-@skipif(is_py2, reason="requires Python 3.3")
+@skipif(is_py2, reason="requires Python 3")
 def test_nspkg_pep420(pyi_builder):
     # Test inclusion of PEP 420 namespace packages.
     pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg-pep420', 'path*'))
@@ -575,22 +580,6 @@ def test_pkg_without_hook_for_pkg(pyi_builder, script_dir):
 
 @xfail(is_darwin, reason='Issue #1895.')
 def test_app_with_plugin(pyi_builder, data_dir, monkeypatch):
-
-    from PyInstaller.building.build_main import Analysis
-    class MyAnalysis(Analysis):
-        def __init__(self, *args, **kwargs):
-            kwargs['datas'] = datas
-            # Setting back is required to make `super()` within
-            # Analysis access the correct class. Do not use
-            # `monkeypatch.undo()` as this will undo *all*
-            # monkeypathes.
-            monkeypatch.setattr('PyInstaller.building.build_main.Analysis',
-                                Analysis)
-            super(MyAnalysis, self).__init__(*args, **kwargs)
-
-    monkeypatch.setattr('PyInstaller.building.build_main.Analysis', MyAnalysis)
-
-    # :fixme: When PyInstaller supports setting datas via the
-    # command-line, us this here instead of monkeypatching Analysis.
-    datas = [('data/*/static_plugin.py', '.')]
-    pyi_builder.test_script('pyi_app_with_plugin.py')
+    datas = os.pathsep.join(('data/*/static_plugin.py', os.curdir))
+    pyi_builder.test_script('pyi_app_with_plugin.py',
+                            pyi_args=['--add-data', datas])

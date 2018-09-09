@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2005-2017, PyInstaller Development Team.
+# Copyright (c) 2005-2018, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -86,7 +86,7 @@ def get_gi_typelibs(module, version):
                 path = findSystemLibrary(lib.strip())
                 if path:
                     logger.debug('Found shared library %s at %s', lib, path)
-                    binaries.append((path, ''))
+                    binaries.append((path, '.'))
 
         d = gir_library_path_fix(typelibs_data['typelib'])
         if d:

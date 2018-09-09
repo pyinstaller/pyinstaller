@@ -36,27 +36,23 @@ class TestModuleGraph (unittest.TestCase):
 
     def test_open(self):
         # 1. Regular file
-        fp = zipio.open(os.path.join(TESTDATA, 'test.txt'), 'r')
-        data = fp.read()
-        fp.close()
+        with zipio.open(os.path.join(TESTDATA, 'test.txt'), 'r') as fp:
+            data = fp.read()
         self.assertEqual(data, 'This is test.txt\n')
 
         if sys.version_info[0] == 3:
-            fp = zipio.open(os.path.join(TESTDATA, 'test.txt'), 'rb')
-            data = fp.read()
-            fp.close()
+            with zipio.open(os.path.join(TESTDATA, 'test.txt'), 'rb') as fp:
+                data = fp.read()
             self.assertEqual(data, b'This is test.txt\n')
 
         # 2. File inside zipfile
-        fp = zipio.open(os.path.join(TESTDATA, 'zipped.egg', 'test.txt'), 'r')
-        data = fp.read()
-        fp.close()
+        with zipio.open(os.path.join(TESTDATA, 'zipped.egg', 'test.txt'), 'r') as fp:
+            data = fp.read()
         self.assertEqual(data, 'Zipped up test.txt\n')
 
         if sys.version_info[0] == 3:
-            fp = zipio.open(os.path.join(TESTDATA, 'zipped.egg', 'test.txt'), 'rb')
-            data = fp.read()
-            fp.close()
+            with zipio.open(os.path.join(TESTDATA, 'zipped.egg', 'test.txt'), 'rb') as fp:
+                data = fp.read()
             self.assertEqual(data, b'Zipped up test.txt\n')
 
         # 3. EXC: Directory inside zipfile

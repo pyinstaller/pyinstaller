@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "PYI-MAKESPEC" "1" "2017-12-13" "3.3.1" "PyInstaller"
+.TH "PYI-MAKESPEC" "1" "2018-09-09" "3.4" "PyInstaller"
 .SH NAME
 pyi-makespec \- Create a spec file for your PyInstaller project
 .
@@ -34,7 +34,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .ad l
 \.SH SYNOPSIS
 .sp
-\fBpyi\-makespec\fP <options> SCRIPT [SCRIPT …]
+\fBpyi\-makespec\fP <options> SCRIPT [SCRIPT ...]
 .SH DESCRIPTION
 .sp
 The spec file is the description of what you want \fIPyInstaller\fP to do
@@ -87,7 +87,7 @@ current directory)
 .TP
 .BI \-n \ NAME\fP,\fB \ \-\-name \ NAME
 Name to assign to the bundled app and spec file
-(default: first script’s basename)
+(default: first script\(aqs basename)
 .UNINDENT
 .SS What to bundle, where to search
 .INDENT 0.0
@@ -106,7 +106,7 @@ option can be used multiple times.
 .TP
 .BI \-p \ DIR\fP,\fB \ \-\-paths \ DIR
 A path to search for imports (like using PYTHONPATH).
-Multiple paths are allowed, separated by ‘:’, or use
+Multiple paths are allowed, separated by \(aq:\(aq, or use
 this option multiple times
 .TP
 .BI \-\-hidden\-import \ MODULENAME\fP,\fB \ \-\-hiddenimport \ MODULENAME
@@ -135,10 +135,25 @@ The key used to encrypt Python bytecode.
 .SS How to generate
 .INDENT 0.0
 .TP
-.B \-d\fP,\fB  \-\-debug
-Tell the bootloader to issue progress messages while
-initializing and starting the bundled app. Used to
-diagnose problems with missing imports.
+.B \-d [{all,imports,bootloader,noarchive}], \-\-debug [{all,imports,bootloader,noarchive}]
+R|Provide assistance with debugging a frozen
+application, by specifying one or more of the
+following choices. \- all: All three of the below
+options; this is the default choice, unless one of the
+choices below is specified. \- imports: specify the \-v
+option to the underlying Python interpreter, causing
+it to print a message each time a module is
+initialized, showing the place (filename or built\-in
+module) from which it is loaded. See
+\fI\%https://docs.python.org/3/using/cmdline.html#id4\fP\&. \-
+bootloader: tell the bootloader to issue progress
+messages while initializing and starting the bundled
+app. Used to diagnose problems with missing imports. \-
+noarchive: instead of storing all frozen Python source
+files as an archive inside the resulting executable,
+store them as files in the resulting output directory.
+.UNINDENT
+.INDENT 0.0
 .TP
 .B \-s\fP,\fB  \-\-strip
 Apply a symbol\-table strip to the executable and
@@ -222,7 +237,7 @@ unique program name for code signing purposes. The
 usual form is a hierarchical name in reverse DNS
 notation. For example:
 com.mycompany.department.appname (default: first
-script’s basename)
+script\(aqs basename)
 .UNINDENT
 .SS Rarely used special options
 .INDENT 0.0
@@ -234,6 +249,13 @@ bootloader will ignore any temp\-folder location
 defined by the run\-time OS. The \fB_MEIxxxxxx\fP\-folder
 will be created here. Please use this option only if
 you know what you are doing.
+.TP
+.B \-\-bootloader\-ignore\-signals
+Tell the bootloader to ignore signals rather than
+forwarding them to the child process. Useful in
+situations where e.g. a supervisor process signals
+both the bootloader and child (e.g. via a process
+group) to avoid signalling the child twice.
 .UNINDENT
 .SH ENVIRONMENT VARIABLES
 .INDENT 0.0

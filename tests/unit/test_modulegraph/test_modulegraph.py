@@ -6,7 +6,7 @@ import imp
 import sys
 import shutil
 import warnings
-from PyInstaller.lib.altgraph import Graph
+from altgraph import Graph
 from PyInstaller.compat import is_win
 import textwrap
 import xml.etree.ElementTree as ET
@@ -467,6 +467,8 @@ class TestNode (unittest.TestCase):
         if '__dict__' in d:
             # New in Python 3.4
             del d['__dict__']
+        if '__slotnames__' in d:
+            del d['__slotnames__']
         self.assertEqual(d, {})
 
     def assertHasExactMethods(self, klass, *methods):

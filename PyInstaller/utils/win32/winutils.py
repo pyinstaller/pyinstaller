@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2017, PyInstaller Development Team.
+# Copyright (c) 2013-2018, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -39,7 +39,7 @@ def get_windows_dir():
 
 def get_system_path():
     """
-    Return the path that Windows will search for dlls.
+    Return the required Windows system paths.
     """
     # imported here to avoid circular import
     from ... import compat
@@ -51,7 +51,6 @@ def get_system_path():
     # transparently redirected to C:\Windows\syswow64 for 64bit applactions.
     # http://msdn.microsoft.com/en-us/library/aa384187(v=vs.85).aspx
     _bpath = [sys_dir, get_windows_dir()]
-    _bpath.extend(compat.getenv('PATH', '').split(os.pathsep))
     return _bpath
 
 
@@ -100,7 +99,7 @@ def import_pywin32_module(module_name, _is_venv=None):
 
     try:
         module = __import__(
-            name=module_name, globals={}, locals={}, fromlist=[''])
+            module_name, globals={}, locals={}, fromlist=[''])
     except ImportError as exc:
         if str(exc).startswith('No system module'):
             # True if "sys.frozen" is currently set.

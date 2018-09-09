@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2017, PyInstaller Development Team.
+# Copyright (c) 2013-2018, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -86,3 +86,6 @@ if is_module_satisfies('sphinx >= 1.6.1'):
 
 if is_module_satisfies('sphinx >= 1.6.2'):
     hiddenimports += ['sphinx.parsers']
+
+if is_module_satisfies('sphinx >= 1.7.1'):
+    hiddenimports += ['sphinx.util.compat']

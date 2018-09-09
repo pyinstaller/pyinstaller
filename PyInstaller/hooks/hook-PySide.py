@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2017, PyInstaller Development Team.
+# Copyright (c) 2013-2018, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -27,5 +27,5 @@ if is_win:
 # app.
 if is_darwin:
     datas = [
-        (qt_menu_nib_dir('PySide'), ''),
+        (qt_menu_nib_dir('PySide'), 'qt_menu.nib'),
     ]

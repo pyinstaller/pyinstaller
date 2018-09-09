@@ -41,8 +41,9 @@ A. First process: bootloader starts.
 
     2. Modify various environment variables:
 
-       - Linux: save original value of LD_LIBRARY_PATH into LD_LIBRARY_PATH_ORIG,
-         prepend our path to LD_LIBRARY_PATH.
+       - Linux: If set, save the original value of LD_LIBRARY_PATH
+         into LD_LIBRARY_PATH_ORIG.
+         Prepend our path to LD_LIBRARY_PATH.
 
        - AIX: same thing, but using LIBPATH and LIBPATH_ORIG.
 
@@ -395,7 +396,7 @@ The archive can be navigated using these commands:
 O *name*
     Open the embedded archive *name* (will prompt if omitted).
     For example when looking in a one-file executable, you
-    can open the ``outPYZ.pyz`` archive inside it.
+    can open the ``PYZ-00.pyz`` archive inside it.
 
 U
     Go up one level (back to viewing the containing archive).

@@ -21,7 +21,7 @@ installed:
 
 The easiest way to install these (and some useful pytest add-ons) is running
 ```
-pip install -U tests/requirements-tools.txt
+pip install -U -r tests/requirements-tools.txt
 ```
 
 Running the Tests
@@ -92,7 +92,7 @@ Packages only available for specific version or platforms should get an appropri
 marker](https://www.python.org/dev/peps/pep-0426/#environment-markers) like
 so:
 ```
-SomeProject ==5.4 ; python_version != '3.3'
+SomeProject ==5.4 ; python_version != '3.6'
 SomeProject       ; sys_platform == 'win32'
 ```
 

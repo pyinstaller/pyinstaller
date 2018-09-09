@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2017, PyInstaller Development Team.
+# Copyright (c) 2005-2018, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -61,4 +61,4 @@ class PyiBlockCipher(object):
         # The 'BlockAlgo' class is stateful, this factory method is used to
         # re-initialize the block cipher class with each call to encrypt() and
         # decrypt().
-        return self._aesmod.new(self.key, self._aesmod.MODE_CFB, iv)
+        return self._aesmod.new(self.key.encode(), self._aesmod.MODE_CFB, iv)

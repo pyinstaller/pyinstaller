@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2017, PyInstaller Development Team.
+# Copyright (c) 2005-2018, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -10,7 +10,6 @@
 # This contains tests for the class:``TOC``, see
 # https://pyinstaller.readthedocs.io/en/latest/advanced-topics.html#the-toc-and-tree-classes
 
-import pytest
 from PyInstaller.building.datastruct import TOC
 from PyInstaller.utils.tests import skipif_notwin
 
@@ -79,8 +78,8 @@ def test_insert_existing():
     toc.insert(1, ELEMS1[-1])
     expected = list(ELEMS1)
     assert toc == expected
-    
-    
+
+
 def test_insert_keep_filename():
     # name in TOC should be the same as the one added
     toc = TOC()
@@ -271,7 +270,7 @@ def test_append_other_case_mixed():
     toc.append(elem)
     expected = list(ELEMS1)
     assert toc == expected
-    
+
 
 @skipif_notwin
 def test_append_other_case_pymodule():

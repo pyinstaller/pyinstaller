@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2017, PyInstaller Development Team.
+# Copyright (c) 2013-2018, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -10,8 +10,6 @@
 
 import os
 import argparse
-
-import PyInstaller.log
 
 def run():
     parser = argparse.ArgumentParser()

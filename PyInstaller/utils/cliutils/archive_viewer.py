@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2017, PyInstaller Development Team.
+# Copyright (c) 2013-2018, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -94,7 +94,8 @@ def main(name, brief, debug, rec_debug, **unused_options):
             if not filename:
                 print(repr(data))
             else:
-                open(filename, 'wb').write(data)
+                with open(filename, 'wb') as fp:
+                    fp.write(data)
         elif cmd == 'Q':
             break
         else:
@@ -138,7 +139,8 @@ def get_archive(name):
         x, data = parent.extract(ndx)
         tempfilename = tempfile.mktemp()
         cleanup.append(tempfilename)
-        open(tempfilename, 'wb').write(data)
+        with open(tempfilename, 'wb') as fp:
+            fp.write(data)
         if typcd == 'z':
             return ZlibArchive(tempfilename)
         else:

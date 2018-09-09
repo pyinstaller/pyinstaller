@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2017, PyInstaller Development Team.
+# Copyright (c) 2005-2018, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -14,13 +14,13 @@ import os
 import sys
 
 from . import compat
-from .compat import is_darwin, is_win, is_cygwin, is_py2, is_linux
+from .compat import is_win, is_py2
 from .utils.git import get_repo_revision
 
 
 # Note: Keep this variable as plain string so it could be updated automatically
 #       when doing a release.
-__version__ = '3.3.1'
+__version__ = '3.4'
 
 
 # Absolute path of this package's directory. Save this early so all

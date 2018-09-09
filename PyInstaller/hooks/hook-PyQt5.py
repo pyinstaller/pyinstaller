@@ -1,42 +1,64 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2017, PyInstaller Development Team.
+# Copyright (c) 2005-2018, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
+import glob
 import os
 
-from PyInstaller.utils.hooks import (
-    get_module_attribute, is_module_satisfies, qt_menu_nib_dir, get_module_file_attribute,
-    collect_data_files)
-from PyInstaller.compat import getsitepackages, is_darwin, is_win
+from PyInstaller.utils.hooks import pyqt5_library_info, collect_system_data_files
+
+hiddenimports = [
+    # PyQt5.10 and earlier uses sip in an separate package;
+    'sip',
+    # PyQt5.11 and later provides SIP in a private package. Support both.
+    'PyQt5.sip'
+]
+
+# Collect the ``qt.conf`` file.
+datas = [x for x in
+         collect_system_data_files(pyqt5_library_info.location['PrefixPath'],
+                                   'PyQt5')
+         if os.path.basename(x[0]) == 'qt.conf']
 
 
-# On Windows system PATH has to be extended to point to the PyQt5 directory.
-# The PySide directory contains Qt dlls. We need to avoid including different
-# version of Qt libraries when there is installed another application (e.g. QtCreator)
-if is_win:
-    from PyInstaller.utils.win32.winutils import extend_system_path
-    extend_system_path([os.path.join(x, 'PyQt5') for x in getsitepackages()])
-    extend_system_path([os.path.join(os.path.dirname(get_module_file_attribute('PyQt5')),
-                                     'Qt', 'bin')])
+def find_all_or_none(globs_to_include, num_files):
+    """
+    globs_to_include is a list of file name globs
+    If the number of found files does not match num_files
+    then no files will be included.
+    """
+    # TODO: This function is required because CI is failing to include libEGL
+    # The error in AppVeyor is:
+    # [2312] LOADER: Running pyi_lib_PyQt5-uic.py
+    # Failed to load libEGL (Access is denied.)
+    # More info: https://github.com/pyinstaller/pyinstaller/pull/3568
+    # Since the PyQt5 wheels do not include d3dcompiler_4?.dll, libEGL.dll and
+    # libGLESv2.dll will not be included for PyQt5 builds during CI.
+    to_include = []
+    dst_dll_path = os.path.join('PyQt5', 'Qt', 'bin')
+    for dll in globs_to_include:
+        dll_path = os.path.join(pyqt5_library_info.location['BinariesPath'],
+                                dll)
+        dll_file_paths = glob.glob(dll_path)
+        for dll_file_path in dll_file_paths:
+            to_include.append((dll_file_path, dst_dll_path))
+    if len(to_include) == num_files:
+        return to_include
+    return []
 
 
-# In the new consolidated mode any PyQt depends on _qt
-hiddenimports = ['sip', 'PyQt5.Qt']
+binaries = []
+angle_files = ['libEGL.dll', 'libGLESv2.dll', 'd3dcompiler_??.dll']
+binaries += find_all_or_none(angle_files, 3)
 
-# Collect just the qt.conf file.
-datas = [x for x in collect_data_files('PyQt5', False, os.path.join('Qt', 'bin')) if
-         x[0].endswith('qt.conf')]
+opengl_software_renderer = ['opengl32sw.dll']
+binaries += find_all_or_none(opengl_software_renderer, 1)
 
-
-# For Qt<5.4 to work on Mac OS X it is necessary to include `qt_menu.nib`.
-# This directory contains some resource files necessary to run PyQt or PySide
-# app.
-if is_darwin:
-    # Version of the currently installed Qt 5.x shared library.
-    qt_version = get_module_attribute('PyQt5.QtCore', 'QT_VERSION_STR')
-    if is_module_satisfies('Qt < 5.4', qt_version):
-        datas = [(qt_menu_nib_dir('PyQt5'), '')]
+# Include ICU files, if they exist.
+# See the "Deployment approach" section in ``PyInstaller/utils/hooks/qt.py``.
+icu_files = ['icudt??.dll', 'icuin??.dll', 'icuuc??.dll']
+binaries += find_all_or_none(icu_files, 3)

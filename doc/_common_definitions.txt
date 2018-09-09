@@ -43,6 +43,7 @@
 .. _PIL: http://www.pythonware.com/products/pil/
 .. _pip: http://www.pip-installer.org/
 .. _pip-Win: https://sites.google.com/site/pydatalog/python/pip-for-windows
+.. _plistlib: https://docs.python.org/3/library/plistlib.html
 .. _png2icns: http://icns.sourceforge.net/
 .. _PyCrypto: https://pypi.python.org/pypi/pycrypto/
 .. _PyInstaller.org: https://github.com/pyinstaller/pyinstaller/wiki/Community
@@ -67,6 +68,7 @@
 .. _`Supported Packages`: https://github.com/pyinstaller/pyinstaller/wiki/Supported-Packages
 .. _TDM-GCC: http://tdm-gcc.tdragon.net/
 .. _TkInter: http://wiki.python.org/moin/TkInter
+.. _`towncrier`: https://pypi.org/project/towncrier/
 .. _UPX: http://upx.sourceforge.net/
 .. _venv: https://docs.python.org/3/library/venv.html
 .. _virtualenv:  https://virtualenv.pypa.io

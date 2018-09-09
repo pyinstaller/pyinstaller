@@ -1,6 +1,6 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2017, PyInstaller Development Team.
+ * Copyright (c) 2013-2018, PyInstaller Development Team.
  * Distributed under the terms of the GNU General Public License with exception
  * for distributing bootloader.
  *
@@ -41,6 +41,8 @@
 #include "pyi_utils.h"
 #include "pyi_python.h"
 
+int pyvers = 0;
+
 /* Magic number to verify archive data are bundled correctly. */
 #define MAGIC "MEI\014\013\012\013\016"
 
@@ -48,7 +50,7 @@
  * Return pointer to next toc entry.
  */
 TOC *
-pyi_arch_increment_toc_ptr(ARCHIVE_STATUS *status, TOC* ptoc)
+pyi_arch_increment_toc_ptr(const ARCHIVE_STATUS *status, const TOC* ptoc)
 {
     TOC *result = (TOC*)((char *)ptoc + ntohl(ptoc->structlen));
 
@@ -415,6 +417,9 @@ pyi_arch_open(ARCHIVE_STATUS *status)
     /* Set the flag that Python library was not loaded yet. */
     status->is_pylib_loaded = false;
 
+    /* Set the the Python version used. */
+    pyvers = pyi_arch_get_pyversion(status);
+
     /* Read in in the table of contents */
     fseek(status->fp, status->pkgstart + ntohl(status->cookie.TOC), SEEK_SET);
     status->tocbuff = (TOC *) malloc(ntohl(status->cookie.TOClen));
@@ -553,7 +558,7 @@ pyi_arch_status_free_memory(ARCHIVE_STATUS *archive_status)
  * for freeing it.
  */
 char *
-pyi_arch_get_option(ARCHIVE_STATUS * status, char * optname)
+pyi_arch_get_option(const ARCHIVE_STATUS * status, char * optname)
 {
     /* TODO: option-cache? */
     int optlen;

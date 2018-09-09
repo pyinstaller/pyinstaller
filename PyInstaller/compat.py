@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2017, PyInstaller Development Team.
+# Copyright (c) 2005-2018, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -22,16 +22,15 @@ import site
 import subprocess
 import sys
 
-from .log import logger
-
 # Distinguish code for different major Python version.
 is_py2 = sys.version_info[0] == 2
 is_py3 = sys.version_info[0] == 3
+# Copied from https://docs.python.org/3/library/platform.html#cross-platform.
+is_64bits = sys.maxsize > 2**32
 # Distinguish specific code for various Python versions.
 is_py27 = sys.version_info >= (2, 7) and sys.version_info < (3, 0)
-# PyInstaller supports only Python 3.3+
+# PyInstaller supports only Python 3.4+
 # Variables 'is_pyXY' mean that Python X.Y and up is supported.
-is_py34 = sys.version_info >= (3, 4)
 is_py35 = sys.version_info >= (3, 5)
 is_py36 = sys.version_info >= (3, 6)
 is_py37 = sys.version_info >= (3, 7)
@@ -56,14 +55,12 @@ is_unix = is_linux or is_solar or is_aix or is_freebsd or is_hpux
 
 # On different platforms is different file for dynamic python library.
 _pyver = sys.version_info[:2]
-if is_win:
+if is_win or is_cygwin:
     PYDYLIB_NAMES = {'python%d%d.dll' % _pyver,
-                     'libpython%d.%d.dll' % _pyver}  # For MSYS2 environment
-elif is_cygwin:
-    PYDYLIB_NAMES = {'libpython%d%d.dll' % _pyver,
+                     'libpython%d%d.dll' % _pyver,
                      'libpython%d%dm.dll' % _pyver,
                      'libpython%d.%d.dll' % _pyver,
-                     'libpython%d.%dm.dll' % _pyver}
+                     'libpython%d.%dm.dll' % _pyver}  # For MSYS2 environment
 elif is_darwin:
     # libpython%d.%dm.dylib for Conda virtual environment installations
     PYDYLIB_NAMES = {'Python', '.Python',
@@ -98,6 +95,7 @@ else:
 # module as io.open(). The Python 2 open() built-in is commonly regarded as
 # unsafe in regards to character encodings and hence inferior to io.open().
 open_file = open if is_py3 else io.open
+text_read_mode = 'r' if is_py3 else 'rU'
 
 # In Python 3 there is exception FileExistsError. But it is not available
 # in Python 2. For Python 2 fall back to OSError exception.
@@ -177,21 +175,23 @@ is_conda = 'conda' in sys.version or 'Continuum' in sys.version
 
 # In Python 3.4 module 'imp' is deprecated and there is another way how
 # to obtain magic value.
-if is_py34:
+if is_py3:
     import importlib.util
     BYTECODE_MAGIC = importlib.util.MAGIC_NUMBER
 else:
-    # This fallback should work with Python 2.7 and 3.3.
+    # This fallback should work with Python 2.7.
     import imp
     BYTECODE_MAGIC = imp.get_magic()
 
 
 # List of suffixes for Python C extension modules.
 try:
-    # In Python 3.3+ There is a list
-    from importlib.machinery import EXTENSION_SUFFIXES
+    # In Python 3.4+ There is a list
+    from importlib.machinery import EXTENSION_SUFFIXES, all_suffixes
+    ALL_SUFFIXES = all_suffixes()
 except ImportError:
     import imp
+    ALL_SUFFIXES = [f[0] for f in imp.get_suffixes()]
     EXTENSION_SUFFIXES = [f[0] for f in imp.get_suffixes()
                           if f[2] == imp.C_EXTENSION]
 
@@ -209,16 +209,8 @@ else:
 #    ensure that it can work on MSYS2 (which requires pywin32-ctypes)
 if is_win:
     try:
-        from PyInstaller.utils.win32 import winutils
-        try:
-            pywintypes = winutils.import_pywin32_module('pywintypes', _is_venv=is_venv)
-            win32api = winutils.import_pywin32_module('win32api', _is_venv=is_venv)
-        except ImportError:
-            try:
-                from win32ctypes.pywin32 import pywintypes
-                from win32ctypes.pywin32 import win32api
-            except ImportError:
-                raise
+        from win32ctypes.pywin32 import pywintypes  # noqa: F401
+        from win32ctypes.pywin32 import win32api
     except ImportError:
         # This environment variable is set by seutp.py
         # - It's not an error for pywin32 to not be installed at that point
@@ -768,6 +760,7 @@ PY3_BASE_MODULES = {
     'collections',
     'copyreg',
     'encodings',
+    'enum',
     'functools',
     'io',
     'heapq',
@@ -783,15 +776,14 @@ PY3_BASE_MODULES = {
     'traceback',  # for startup errors
     'types',
     'weakref',
+    'warnings',
 }
 
-#FIXME: Reduce this pair of nested tests to "if sys.version_info >= (3, 4)".
-if sys.version_info[0] == 3:
-    if sys.version_info[1] >= 4:
-        PY3_BASE_MODULES.update({
-            '_bootlocale',
-            '_collections_abc',
-        })
+if sys.version_info >= (3, 4):
+    PY3_BASE_MODULES.update({
+        '_bootlocale',
+        '_collections_abc',
+    })
 
 # Object types of Pure Python modules in modulegraph dependency graph.
 # Pure Python modules have code object (attribute co_code).
@@ -877,11 +869,11 @@ def check_requirements():
     Fail hard if any requirement is not met.
     """
     # Fail hard if Python does not have minimum required version
-    if sys.version_info < (3, 3) and sys.version_info[:2] != (2, 7):
-        raise SystemExit('PyInstaller requires at least Python 2.7 or 3.3+.')
+    if sys.version_info < (3, 4) and sys.version_info[:2] != (2, 7):
+        raise SystemExit('PyInstaller requires at least Python 2.7 or 3.4+.')
 
 
-if not is_py34:
+if not is_py3:
     class suppress(object):
         """Context manager to suppress specified exceptions
         After the exception is suppressed, execution proceeds with the next

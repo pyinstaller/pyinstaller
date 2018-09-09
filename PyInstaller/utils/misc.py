@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2017, PyInstaller Development Team.
+# Copyright (c) 2013-2018, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -19,7 +19,7 @@ import py_compile
 import sys
 
 from PyInstaller import log as logging
-from PyInstaller.compat import BYTECODE_MAGIC, is_py2
+from PyInstaller.compat import BYTECODE_MAGIC, is_py2, text_read_mode
 
 logger = logging.getLogger(__name__)
 
@@ -145,10 +145,10 @@ def compile_py_files(toc, workpath):
         # instead of just read(4)? Yes for many a .pyc file, it is all
         # in one sector so there's no difference in I/O but still it
         # seems inelegant to copy it all then subscript 4 bytes.
-        needs_compile = ( (mtime(src_fnm) > mtime(obj_fnm) )
-                          or
-                          (open(obj_fnm, 'rb').read()[:4] != BYTECODE_MAGIC)
-                        )
+        needs_compile = mtime(src_fnm) > mtime(obj_fnm)
+        if not needs_compile:
+            with open(obj_fnm, 'rb') as fh:
+                needs_compile = fh.read()[:4] != BYTECODE_MAGIC
         if needs_compile:
             try:
                 # TODO: there should be no need to repeat the compile,
@@ -179,9 +179,10 @@ def compile_py_files(toc, workpath):
 
                 obj_fnm = os.path.join(leading, mod_name + ext)
                 # TODO see above regarding read()[:4] versus read(4)
-                needs_compile = (mtime(src_fnm) > mtime(obj_fnm)
-                                 or
-                                 open(obj_fnm, 'rb').read()[:4] != BYTECODE_MAGIC)
+                needs_compile = mtime(src_fnm) > mtime(obj_fnm)
+                if not needs_compile:
+                    with open(obj_fnm, 'rb') as fh:
+                        needs_compile = fh.read()[:4] != BYTECODE_MAGIC
                 if needs_compile:
                     # TODO see above todo regarding using node.code
                     py_compile.compile(src_fnm, obj_fnm)
@@ -219,9 +220,9 @@ def load_py_data_struct(filename):
     """
     if is_py2:
         import codecs
-        f = codecs.open(filename, 'rU', encoding='utf-8')
+        f = codecs.open(filename, text_read_mode, encoding='utf-8')
     else:
-        f = open(filename, 'rU', encoding='utf-8')
+        f = open(filename, text_read_mode, encoding='utf-8')
     with f:
         # Binding redirects are stored as a named tuple, so bring the namedtuple
         # class into scope for parsing the TOC.

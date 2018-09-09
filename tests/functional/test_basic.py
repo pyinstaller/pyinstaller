@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2017, PyInstaller Development Team.
+# Copyright (c) 2005-2018, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -20,9 +20,10 @@ import pytest
 
 # Local imports
 # -------------
-from PyInstaller.compat import is_darwin, is_win, is_py2, is_py3, is_py34
-from PyInstaller.utils.tests import importorskip, skipif_win, \
+from PyInstaller.compat import is_darwin, is_win, is_py2, is_py37
+from PyInstaller.utils.tests import importorskip, skipif, skipif_win, \
     skipif_winorosx, skipif_notwin, skipif_notosx, skipif_no_compiler, xfail
+from PyInstaller.utils.hooks import is_module_satisfies
 
 
 def test_run_from_path_environ(pyi_builder):
@@ -46,11 +47,11 @@ def test_pyz_as_external_file(pyi_builder, monkeypatch):
         kwargs['append_pkg'] = False
         return EXE(*args, **kwargs)
 
-    # :todo: find a better way to not even run this test in ondir-mode
+    # :todo: find a better way to not even run this test in onefile-mode
     if pyi_builder._mode == 'onefile':
         pytest.skip('only --onedir')
 
-    import PyInstaller
+    import PyInstaller.building.build_main
     EXE = PyInstaller.building.build_main.EXE
     monkeypatch.setattr('PyInstaller.building.build_main.EXE', MyEXE)
 
@@ -74,6 +75,13 @@ def test_celementtree(pyi_builder):
         from xml.etree.cElementTree import ElementTree
         print('OK')
         """)
+
+
+# Test a build with some complexity with the ``noarchive`` debug option.
+def test_noarchive(pyi_builder):
+    pyi_builder.test_source("from xml.etree.cElementTree import ElementTree",
+                            pyi_args=['--debug=noarchive'])
+
 
 @importorskip('codecs')
 def test_codecs(pyi_builder):
@@ -134,6 +142,9 @@ def test_email(pyi_builder):
         from email.mime.nonmultipart import MIMENonMultipart
         """)
 
+
+@skipif(is_module_satisfies('Crypto >= 3'), reason='Bytecode encryption is not '
+        'compatible with pycryptodome.')
 @importorskip('Crypto')
 def test_feature_crypto(pyi_builder):
     pyi_builder.test_source(
@@ -262,7 +273,7 @@ def test_option_verbose(pyi_builder, monkeypatch):
         args.append([('v', None, 'OPTION')])
         return EXE(*args, **kwargs)
 
-    import PyInstaller
+    import PyInstaller.building.build_main
     EXE = PyInstaller.building.build_main.EXE
     monkeypatch.setattr('PyInstaller.building.build_main.EXE', MyEXE)
 
@@ -282,7 +293,8 @@ def test_option_w_unset(pyi_builder):
         assert 'ignore' not in sys.warnoptions
         """)
 
-def test_option_w_ignore(pyi_builder, monkeypatch):
+
+def test_option_w_ignore(pyi_builder, monkeypatch, capsys):
     "Test to ensure that option W can be set."
 
     def MyEXE(*args, **kwargs):
@@ -290,7 +302,7 @@ def test_option_w_ignore(pyi_builder, monkeypatch):
         args.append([('W ignore', '', 'OPTION')])
         return EXE(*args, **kwargs)
 
-    import PyInstaller
+    import PyInstaller.building.build_main
     EXE = PyInstaller.building.build_main.EXE
     monkeypatch.setattr('PyInstaller.building.build_main.EXE', MyEXE)
 
@@ -300,6 +312,8 @@ def test_option_w_ignore(pyi_builder, monkeypatch):
         assert 'ignore' in sys.warnoptions
         """)
 
+    _, err = capsys.readouterr()
+    assert "'import warnings' failed" not in err
 
 @skipif_win
 def test_python_makefile(pyi_builder):
@@ -337,11 +351,12 @@ def test_stderr_encoding(tmpdir, pyi_builder):
                 # In Python 2 on Mac OS X and Linux 'sys.stderr.encoding' is set to None.
                 # On Windows when running in non-interactive terminal it is None.
                 enc = 'None'
-        elif sys.stderr.isatty():
+        elif sys.stderr.isatty() or is_py37:
             enc = str(sys.stderr.encoding)
         else:
             # For non-interactive stderr use locale encoding - ANSI codepage.
-            # This fixes the test when running with py.test and capturing output.
+            # This fixes the test when running with py.test and capturing
+            # output on Python 3.6 and earlier.
             enc = locale.getpreferredencoding(False)
         f.write(enc)
     pyi_builder.test_script('pyi_stderr_encoding.py')
@@ -356,11 +371,12 @@ def test_stdout_encoding(tmpdir, pyi_builder):
                 # In Python 2 on Mac OS X and Linux 'sys.stdout.encoding' is set to None.
                 # On Windows when running in non-interactive terminal it is None.
                 enc = 'None'
-        elif sys.stdout.isatty():
+        elif sys.stdout.isatty() or is_py37:
             enc = str(sys.stdout.encoding)
         else:
             # For non-interactive stderr use locale encoding - ANSI codepage.
-            # This fixes the test when running with py.test and capturing output.
+            # This fixes the test when running with py.test and capturing
+            # output on Python 3.6 and earlier.
             enc = locale.getpreferredencoding(False)
         f.write(enc)
     pyi_builder.test_script('pyi_stdout_encoding.py')
@@ -403,7 +419,6 @@ def test_xmldom_module(pyi_builder):
         """)
 
 
-@xfail(is_py3 and not is_py34, reason='Known issue for Python 3.3, see #2377')
 def test_threading_module(pyi_builder):
     pyi_builder.test_source(
         """
@@ -529,7 +544,7 @@ def test_hook_collect_submodules(pyi_builder, script_dir):
 # Test that PyInstaller can handle a script with an arbitrary extension.
 def test_arbitrary_ext(pyi_builder):
     pyi_builder.test_script('pyi_arbitrary_ext.foo')
-    
+
 def test_option_runtime_tmpdir(pyi_builder):
     "Test to ensure that option `runtime_tmpdir` can be set and has effect."
 

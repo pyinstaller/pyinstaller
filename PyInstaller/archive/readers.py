@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2017, PyInstaller Development Team.
+# Copyright (c) 2013-2018, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -17,8 +17,7 @@ This CArchiveReader is used only by the archieve_viewer utility.
 import struct
 
 
-from PyInstaller.loader.pyimod02_archive import (
-    ArchiveReader, PYZ_TYPE_MODULE, PYZ_TYPE_PKG, PYZ_TYPE_DATA)
+from PyInstaller.loader.pyimod02_archive import ArchiveReader
 
 
 class NotAnArchiveError(Exception):
@@ -143,8 +142,8 @@ class CArchiveReader(ArchiveReader):
         else:
             self.lib.seek(0, 2)
         filelen = self.lib.tell()
-        
-        self.lib.seek(max(0, filelen-4096)) 
+
+        self.lib.seek(max(0, filelen-4096))
         searchpos = self.lib.tell()
         buf = self.lib.read(min(filelen, 4096))
         pos = buf.rfind(self.MAGIC)

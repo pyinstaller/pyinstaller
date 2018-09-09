@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2017, PyInstaller Development Team.
+# Copyright (c) 2013-2018, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -183,9 +183,8 @@ class File(_File):
         e.g. to update the hash if the file has changed.
 
         """
-        fd = open(self.filename, "rb")
-        buf = fd.read()
-        fd.close()
+        with open(self.filename, "rb") as fd:
+            buf = fd.read()
         if hashalg:
             self.hashalg = hashalg.upper()
         self.hash = getattr(hashlib, self.hashalg.lower())(buf).hexdigest()
@@ -935,8 +934,9 @@ class Manifest(object):
 
     def update_resources(self, dstpath, names=None, languages=None):
         """ Update or add manifest resource in dll/exe file dstpath """
-        UpdateManifestResourcesFromXML(dstpath, self.toprettyxml(), names,
-                                       languages)
+        UpdateManifestResourcesFromXML(dstpath,
+                                       self.toprettyxml().encode("UTF-8"),
+                                       names, languages)
 
     def writeprettyxml(self, filename_or_file=None, indent="  ", newl=os.linesep,
                        encoding="UTF-8"):
@@ -946,8 +946,8 @@ class Manifest(object):
         if isinstance(filename_or_file, string_types):
             filename_or_file = open(filename_or_file, "wb")
         xmlstr = self.toprettyxml(indent, newl, encoding)
-        filename_or_file.write(xmlstr.encode())
-        filename_or_file.close()
+        with filename_or_file:
+            filename_or_file.write(xmlstr.encode())
 
     def writexml(self, filename_or_file=None, indent="  ", newl=os.linesep,
                  encoding="UTF-8"):
@@ -957,8 +957,8 @@ class Manifest(object):
         if isinstance(filename_or_file, string_types):
             filename_or_file = open(filename_or_file, "wb")
         xmlstr = self.toxml(encoding)
-        filename_or_file.write(xmlstr.encode())
-        filename_or_file.close()
+        with filename_or_file:
+            filename_or_file.write(xmlstr.encode())
 
 
 def ManifestFromResFile(filename, names=None, languages=None):

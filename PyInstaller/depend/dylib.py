@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2017, PyInstaller Development Team.
+# Copyright (c) 2013-2018, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -311,12 +311,11 @@ def mac_set_relative_dylib_deps(libname, distname):
     # Write changes into file.
     # Write code is based on macholib example.
     try:
-        f = open(dll.filename, 'rb+')
-        for header in dll.headers:
-            f.seek(0)
-            dll.write(f)
-        f.seek(0, 2)
-        f.flush()
-        f.close()
+        with open(dll.filename, 'rb+') as f:
+            for header in dll.headers:
+                f.seek(0)
+                dll.write(f)
+            f.seek(0, 2)
+            f.flush()
     except Exception:
         pass

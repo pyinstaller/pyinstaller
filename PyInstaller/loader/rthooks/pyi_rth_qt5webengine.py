@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2015-2017, PyInstaller Development Team.
+# Copyright (c) 2015-2018, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -10,6 +10,9 @@
 import os
 import sys
 
+# See ``pyi_rth_qt5.py`: use a "standard" PyQt5 layout.
 if sys.platform == 'darwin':
-    d = os.path.join(sys._MEIPASS, 'QtWebEngineProcess.app', 'Contents', 'MacOS', 'QtWebEngineProcess')
-    os.environ['QTWEBENGINEPROCESS_PATH'] = d
+    os.environ['QTWEBENGINEPROCESS_PATH'] = os.path.normpath(os.path.join(
+        sys._MEIPASS, '..', 'Resources', 'PyQt5', 'Qt', 'lib',
+        'QtWebEngineCore.framework', 'Helpers'
+    ))

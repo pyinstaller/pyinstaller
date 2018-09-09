@@ -15,6 +15,7 @@ dist: trusty
 cache:
   directories:
     - $HOME/.cache/pip
+    - $HOME/py37
 
 os:
   - linux
@@ -22,102 +23,73 @@ os:
 jobs:
   fast_finish: true
   include:
-    # macOS is first to account for the delay in starting the build on macOS. This prevents the build from hanging on
-    # macOS as the last job to finish in a stage.
-    - stage: Cache
-      os: osx
-      language: generic
-      python: 3.6
-      cache:
-        directories:
-          - $HOME/Library/Caches/pip
+    # macOS is first to account for the delay in starting the build on macOS.
+    # This prevents the build from hanging on macOS as the last job to finish
+    # in a stage.
     - stage: Test - PyInstaller
       os: osx
       language: generic
-      python: 3.6
+      python: 3.7
       cache:
         directories:
           - $HOME/Library/Caches/pip
-      install:
-        # Update pip.
-        - python -m pip install -U pip setuptools wheel | cat
+      script: &script-test-pyinstaller
+        # Run tests and speed them up by sending them to multiple CPUs.
+        - >
+          py.test -n 3 --maxfail 3
+          tests/unit tests/functional
+          --ignore=tests/functional/test_libraries.py
+          --ignore=tests/functional/test_hooks
 
-        # Install dependencies for PyInstaller tests.
-        - pip install -U -r tests/requirements-tools.txt | cat
-
-        # Install PyInstaller.
-        - pip install -e . | cat
-      script: py.test -n 3 --maxfail 3 tests/unit tests/functional --ignore=tests/functional/test_libraries.py --ignore=tests/functional/test_hooks
     - stage: Test - Libraries
       os: osx
       language: generic
-      python: 3.6
+      python: 3.7
       cache:
         directories:
           - $HOME/Library/Caches/pip
-      script: py.test -n 3 --maxfail 3 tests/functional/test_libraries.py tests/functional/test_hooks
+      script: &script-test-libraries
+        - >
+          py.test -n 3 --maxfail 3
+          tests/functional/test_libraries.py tests/functional/test_hooks
 
-    - &cache
-      stage: Cache
-      python: 2.7
     - &test-pyinstaller
       stage: Test - PyInstaller
       python: 2.7
-      install:
-        # Update pip.
-        - python -m pip install -U pip setuptools wheel | cat
+      script: *script-test-pyinstaller
 
-        # Install dependencies for PyInstaller tests.
-        - pip install -U -r tests/requirements-tools.txt | cat
-
-        # Install PyInstaller.
-        - pip install -e . | cat
-      # Run tests and speed them up by sending them to multiple CPUs.
-      script: py.test -n 3 --maxfail 3 tests/unit tests/functional --ignore=tests/functional/test_libraries.py --ignore=tests/functional/test_hooks
     - &test-libraries
       stage: Test - Libraries
       python: 2.7
+      before_script: &start-xvfb
+        - |
+          # Run X Virtual Framebuffer to imitate a display
+          export DISPLAY=:99.0 ;
+          sh -e /etc/init.d/xvfb start ;
+          sleep 3 # give xvfb some time to start
       # Run tests and speed them up by sending them to multiple CPUs.
-      script: py.test -n 3 --maxfail 3 tests/functional/test_libraries.py tests/functional/test_hooks
+      script: *script-test-libraries
+
     - &lint
       stage: Lint
       python: 2.7
       script:
         - >
             if [ "$TRAVIS_PULL_REQUEST" != "false" ] ; then
-                git fetch origin $TRAVIS_BRANCH:$TRAVIS_BRANCH --depth 1;
-                flake8-diff -v -v -v $TRAVIS_BRANCH;
+                git fetch origin $TRAVIS_BRANCH:$TRAVIS_BRANCH --depth 1 || travis_terminate 1;
+                flake8-diff -v -v -v $TRAVIS_BRANCH || travis_terminate 1;
             fi
 
-    - <<: *cache
-      python: 3.3
-    - <<: *test-pyinstaller
-      python: 3.3
-    - <<: *test-libraries
-      python: 3.3
-    - <<: *lint
-      python: 3.3
-
-    - <<: *cache
-      python: 3.4
     - <<: *test-pyinstaller
       python: 3.4
     - <<: *test-libraries
       python: 3.4
-    - <<: *lint
-      python: 3.4
 
-    - <<: *cache
-      python: 3.5
     - <<: *test-pyinstaller
       python: 3.5
     - <<: *test-libraries
       python: 3.5
-    - <<: *lint
-      python: 3.5
 
-    - <<: *cache
-      python: 3.6
     - <<: *test-pyinstaller
       python: 3.6
     - <<: *test-libraries
@@ -125,17 +97,30 @@ jobs:
     - <<: *lint
       python: 3.6
 
-    - <<: *cache
-      python: nightly
+    # Building Python > 3.7 requires OpenSSL 1.0.2 (or 1.1), which is
+    # available in xenial (16.04 LTS) only. As of 2018-07-08 xenial is only
+    # available as VM (sudo: true)
+
+    - <<: *test-pyinstaller
+      python: 3.7
+      dist: xenial
+      sudo: true
+    - <<: *test-libraries
+      python: 3.7
+      dist: xenial
+      sudo: true
+
     - <<: *test-pyinstaller
       python: nightly
+      dist: xenial
+      sudo: true
     - <<: *test-libraries
       python: nightly
-    - <<: *lint
-      python: nightly
+      dist: xenial
+      sudo: true
 
   allow_failures:
-      # Just tests how PyInstaller performs with upcoming Python 3.6
+      # Just tests how PyInstaller performs with upcoming Python
       - python: "nightly"
 
 addons:
@@ -160,37 +145,37 @@ before_install:
       && exit 0 || true
 
   # Perform the manual steps on osx to install python3 and activate venv
+  # Per http://steven.casagrande.io/articles/travis-ci-and-if-statements/,
+  # ensure the build fails for statements in an ``if`` clause.
   - >
       if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
-          brew update;
-          brew install python3;
-          python3 -m venv venv;
+          brew update || travis_terminate 1;
+          brew upgrade python || brew install python || travis_terminate 1;
+          python3 -m venv venv || travis_terminate 1;
           source venv/bin/activate;
       fi
-
-  # Compile bootloader
-  - cd bootloader
-  - python waf distclean all
-  - cd ..
 
 install:
   # Update pip.
   - python -m pip install -U pip setuptools wheel | cat
 
   # Install dependencies for tests.
-  - pip install -U -r tests/requirements-tools.txt -r tests/requirements-libraries.txt | cat
+  - pip install --progress-bar=off -U -r tests/requirements-tools.txt
+  - >
+    if [[ $TRAVIS_BUILD_STAGE_NAME == 'Test - libraries' ]] ; then
+        pip install --progress-bar=off -U -r tests/requirements-libraries.txt || travis_terminate 1
+    fi
+
+  # Compile bootloader
+  - cd bootloader
+  - python waf distclean all
+  - cd ..
 
   # Install PyInstaller.
-  - pip install -e . | cat
+  - pip install --progress-bar=off -e .
 
-before_script:
-  - >
-      if [[ $TRAVIS_OS_NAME == 'linux' ]]; then
-          # Run X Virtual Framebuffer to imitate a display
-          export DISPLAY=:99.0;
-          sh -e /etc/init.d/xvfb start;
-          sleep 3 # give xvfb some time to start
-      fi
+  # Make sure the help options print.
+  - python -m pyinstaller -h
 
 
 script:

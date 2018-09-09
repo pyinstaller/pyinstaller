@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2017, PyInstaller Development Team.
+# Copyright (c) 2005-2018, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -14,10 +14,7 @@ Configure PyInstaller for the current Python installation.
 
 import os
 
-import sys
-import time
-
-from . import  compat
+from . import compat
 from . import log as logging
 from .compat import is_win, is_darwin
 

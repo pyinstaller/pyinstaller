@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2017, PyInstaller Development Team.
+# Copyright (c) 2013-2018, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -14,8 +14,8 @@ import os
 # Third-party imports
 # -------------------
 # Instead of creating a custom .spec file: inform PyInstaller of the
-# hidden import of QtWebKit, which is performed inside of uic.loadUi.
-from PyQt5.QtWebKitWidgets import QWebView
+# hidden import of QtQuickWidgets, which is performed inside of uic.loadUi.
+import PyQt5.QtQuickWidgets
 # Other Qt imports used in the code below.
 from PyQt5.QtWidgets import QApplication, QDialog
 from PyQt5 import uic

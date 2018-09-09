@@ -15,7 +15,6 @@
     'pkg_resources':  ['pyi_rth_pkgres.py'],
     'PyQt4':      ['pyi_rth_qt4plugins.py'],
     'PyQt5':      ['pyi_rth_qt5.py'],
-    'PyQt5.QtQuick':  ['pyi_rth_qml.py'],
     'PyQt5.QtWebEngineWidgets': ['pyi_rth_qt5webengine.py'],
     'PySide':      ['pyi_rth_qt4plugins.py'],
     'PySide2':      ['pyi_rth_qt5plugins.py'],
@@ -27,4 +26,5 @@
     'usb':        ['pyi_rth_usb.py'],
     'win32com':   ['pyi_rth_win32comgenpy.py'],
     'multiprocessing': ['pyi_rth_multiprocessing.py'],
+    'nltk': ['pyi_rth_nltk.py'],
 }

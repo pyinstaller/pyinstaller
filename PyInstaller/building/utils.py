@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2017, PyInstaller Development Team.
+# Copyright (c) 2005-2018, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -21,10 +21,12 @@ import platform
 import shutil
 import sys
 
+import struct
+
 from PyInstaller.config import CONF
 from .. import compat
 from ..compat import is_darwin, is_win, EXTENSION_SUFFIXES, \
-    FileNotFoundError, open_file, is_py3
+    open_file, is_py3, is_py37
 from ..depend import dylib
 from ..depend.bindepend import match_binding_redirect
 from ..utils import misc
@@ -95,11 +97,27 @@ def add_suffix_to_extensions(toc):
     new_toc = TOC()
     for inm, fnm, typ in toc:
         if typ == 'EXTENSION':
+            if is_py3:
+                # Change the dotted name into a relative path. This places C
+                # extensions in the Python-standard location. This only works
+                # in Python 3; see comments above
+                # ``sys.meta_path.append(CExtensionImporter())`` in
+                # ``pyimod03_importers``.
+                inm = inm.replace('.', os.sep)
             # In some rare cases extension might already contain a suffix.
             # Skip it in this case.
             if os.path.splitext(inm)[1] not in EXTENSION_SUFFIXES:
-                # Use this file's existing extension.
-                inm = inm + os.path.splitext(fnm)[1]
+                # Determine the base name of the file.
+                if is_py3:
+                    base_name = os.path.basename(inm)
+                else:
+                    base_name = inm.rsplit('.')[-1]
+                assert '.' not in base_name
+                # Use this file's existing extension. For extensions such as
+                # ``libzmq.cp36-win_amd64.pyd``, we can't use
+                # ``os.path.splitext``, which would give only the ```.pyd`` part
+                # of the extension.
+                inm = inm + os.path.basename(fnm)[len(base_name):]
 
         elif typ == 'DEPENDENCY':
             # Use the suffix from the filename.
@@ -122,12 +140,15 @@ def applyRedirects(manifest, redirects):
     :return:
     :rtype:
     """
+    redirecting = False
     for binding in redirects:
         for dep in manifest.dependentAssemblies:
             if match_binding_redirect(dep, binding):
                 logger.info("Redirecting %s version %s -> %s",
                             binding.name, dep.version, binding.newVersion)
                 dep.version = binding.newVersion
+                redirecting = True
+    return redirecting
 
 def checkCache(fnm, strip=False, upx=False, dist_nm=None):
     """
@@ -299,7 +320,8 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
                             logger.error("From file %s", cachedfile, exc_info=1)
                         else:
                             # optionally change manifest to private assembly
-                            if CONF.get('win_private_assemblies', False):
+                            private = CONF.get('win_private_assemblies', False)
+                            if private:
                                 if manifest.publicKeyToken:
                                     logger.info("Changing %s into a private assembly",
                                                 os.path.basename(fnm))
@@ -310,14 +332,15 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
                                     # Exclude common-controls which is not bundled
                                     if dep.name != "Microsoft.Windows.Common-Controls":
                                         dep.publicKeyToken = None
-                            applyRedirects(manifest, redirects)
-                            try:
-                                manifest.update_resources(os.path.abspath(cachedfile),
-                                                          [name],
-                                                          [language])
-                            except Exception as e:
-                                logger.error(os.path.abspath(cachedfile))
-                                raise
+                            redirecting = applyRedirects(manifest, redirects)
+                            if redirecting or private:
+                                try:
+                                    manifest.update_resources(os.path.abspath(cachedfile),
+                                                              [name],
+                                                              [language])
+                                except Exception as e:
+                                    logger.error(os.path.abspath(cachedfile))
+                                    raise
 
     if cmd:
         try:
@@ -338,8 +361,10 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
 
 
 def cacheDigest(fnm, redirects):
-    data = open(fnm, "rb").read()
-    hasher = hashlib.md5(data)
+    hasher = hashlib.md5()
+    with open(fnm, "rb") as f:
+        for chunk in iter(lambda: f.read(16 * 1024), b""):
+            hasher.update(chunk)
     if redirects:
         redirects = str(redirects)
         if is_py3:
@@ -436,21 +461,14 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
     binaries_or_datas : list
         List of hook-style 2-tuples (e.g., the top-level `binaries` and `datas`
         attributes defined by hooks) whose:
-        * First element is either:
+        * The first element is either:
           * A glob matching only the absolute or relative paths of source
-            non-Python data files. The second element is then either:
-            * The relative path of the target directory into which these source
-              files will be recursively copied.
-            * The empty string, in which case these source files will be
-              recursively copied into the top-level target directory. (This is
-              usually _not_ what you want.)
+            non-Python data files.
           * The absolute or relative path of a source directory containing only
-            source non-Python data files. The second element is then either:
-            * The relative path of the target directory into which these source
-              files will be recursively copied.
-            * The empty string, in which case these source files will be
-              recursively copied into a new target subdirectory whose name is
-              this source directory's basename. (This is usually what you want.)
+            source non-Python data files.
+        * The second element ist he relative path of the target directory
+          into which these source files will be recursively copied.
+
         If the optional `workingdir` parameter is passed, source paths may be
         either absolute or relative; else, source paths _must_ be absolute.
     workingdir : str
@@ -470,6 +488,11 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
     toc_datas = set()
 
     for src_root_path_or_glob, trg_root_dir in binaries_or_datas:
+        if not trg_root_dir:
+            raise SystemExit("Empty DEST not allowed when adding binary "
+                             "and data files. "
+                             "Maybe you want to used %r.\nCaused by %r." %
+                             (os.curdir, src_root_path_or_glob))
         # Convert relative to absolute paths if required.
         if workingdir and not os.path.isabs(src_root_path_or_glob):
             src_root_path_or_glob = os.path.join(
@@ -485,9 +508,21 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
             src_root_paths = glob.glob(src_root_path_or_glob)
 
         if not src_root_paths:
-            raise SystemExit(
-                'Unable to find "%s" when adding binary and data files.' % (
-                src_root_path_or_glob))
+            msg = 'Unable to find "%s" when adding binary and data files.' % (
+                src_root_path_or_glob)
+            # on Debian/Ubuntu, missing pyconfig.h files can be fixed with
+            # installing python-dev
+            if src_root_path_or_glob.endswith("pyconfig.h"):
+                msg += """This would mean your Python installation doesn't
+come with proper library files. This usually happens by missing development
+package, or unsuitable build parameters of Python installation.
+* On Debian/Ubuntu, you would need to install Python development packages
+  * apt-get install python3-dev
+  * apt-get install python-dev
+* If you're building Python by yourself, please rebuild your Python with
+`--enable-shared` (or, `--enable-framework` on Darwin)
+"""
+            raise SystemExit(msg)
 
         for src_root_path in src_root_paths:
             if os.path.isfile(src_root_path):
@@ -498,11 +533,6 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
                         trg_root_dir, os.path.basename(src_root_path))),
                     os.path.normpath(src_root_path)))
             elif os.path.isdir(src_root_path):
-                # If no top-level target directory was passed, default this
-                # to the basename of the top-level source directory.
-                if not trg_root_dir:
-                    trg_root_dir = os.path.basename(src_root_path)
-
                 for src_dir, src_subdir_basenames, src_file_basenames in \
                     os.walk(src_root_path):
                     # Ensure the current source directory is a subdirectory
@@ -640,3 +670,31 @@ def strip_paths_in_code(co, new_filename=None):
                      co.co_varnames, new_filename, co.co_name,
                      co.co_firstlineno, co.co_lnotab,
                      co.co_freevars, co.co_cellvars)
+
+
+def fake_pyc_timestamp(buf):
+    """
+    Reset the timestamp from a .pyc-file header to a fixed value.
+
+    This enables deterministic builds without having to set pyinstaller
+    source metadata (mtime) since that changes the pyc-file contents.
+
+    _buf_ must at least contain the full pyc-file header.
+    """
+    assert buf[:4] == compat.BYTECODE_MAGIC, \
+        "Expected pyc magic {}, got {}".format(compat.BYTECODE_MAGIC, buf[:4])
+    start, end = 4, 8
+    if is_py37:
+        # see https://www.python.org/dev/peps/pep-0552/
+        (flags,) = struct.unpack_from(">I", buf, 4)
+        if flags & 1:
+            # We are in the future and hash-based pyc-files are used, so
+            # clear "check_source" flag, since there is no source
+            buf[4:8] = struct.pack(">I", flags ^ 2)
+            return buf
+        else:
+            # no hash-based pyc-file, timestamp is the next field
+            start, end = 8, 12
+
+    ts = b'pyi0'  # So people know where this comes from
+    return buf[:start] + ts + buf[end:]

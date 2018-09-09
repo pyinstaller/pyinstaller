@@ -1,6 +1,6 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2017, PyInstaller Development Team.
+ * Copyright (c) 2013-2018, PyInstaller Development Team.
  * Distributed under the terms of the GNU General Public License with exception
  * for distributing bootloader.
  *
@@ -53,7 +53,6 @@ pyi_pylib_load(ARCHIVE_STATUS *status)
     dylib_t dll;
     char dllpath[PATH_MAX];
     char dllname[64];
-    int pyvers = ntohl(status->cookie.pyvers);
     char *p;
     int len;
 
@@ -133,7 +132,6 @@ pyi_pylib_attach(ARCHIVE_STATUS *status, int *loadedNew)
 #ifdef _WIN32
     HMODULE dll;
     char nm[PATH_MAX + 1];
-    int pyvers = ntohl(status->cookie.pyvers);
     int ret = 0;
     /* Get python's name */
     sprintf(nm, "python%02d.dll", pyvers);
@@ -434,9 +432,33 @@ pyi_pylib_start_python(ARCHIVE_STATUS *status)
         PI_Py_SetProgramName(progname_w);
     };
 
-    /* Set sys.path */
     VS("LOADER: Manipulating environment (sys.path, sys.prefix)\n");
 
+    /* Set sys.prefix and sys.exec_prefix using Py_SetPythonHome */
+    if (is_py2) {
+#ifdef _WIN32
+
+        if (!pyi_win32_utf8_to_mbs_sfn(pyhome, status->mainpath, PATH_MAX)) {
+            FATALERROR("Failed to convert pyhome to ANSI (invalid multibyte string)\n");
+            return -1;
+        }
+#else
+        strcpy(pyhome, status->mainpath);
+#endif
+        VS("LOADER: sys.prefix is %s\n", pyhome);
+        PI_Py2_SetPythonHome(pyhome);
+    }
+    else {
+        /* Decode using current locale */
+        if (!pyi_locale_char2wchar(pyhome_w, status->mainpath, PATH_MAX)) {
+            FATALERROR("Failed to convert pyhome to wchar_t\n");
+            return -1;
+        }
+        VS("LOADER: sys.prefix is %s\n", status->mainpath);
+        PI_Py_SetPythonHome(pyhome_w);
+    };
+
+    /* Set sys.path */
     if (is_py2) {
         /* sys.path = [mainpath] */
         strncpy(pypath, status->mainpath, strlen(status->mainpath));
@@ -473,30 +495,6 @@ pyi_pylib_start_python(ARCHIVE_STATUS *status)
         PI_Py_SetPath(pypath_w);
     }
     ;
-
-    /* Set sys.prefix and sys.exec_prefix using Py_SetPythonHome */
-    if (is_py2) {
-#ifdef _WIN32
-
-        if (!pyi_win32_utf8_to_mbs_sfn(pyhome, status->mainpath, PATH_MAX)) {
-            FATALERROR("Failed to convert pyhome to ANSI (invalid multibyte string)\n");
-            return -1;
-        }
-#else
-        strcpy(pyhome, status->mainpath);
-#endif
-        VS("LOADER: sys.prefix is %s\n", pyhome);
-        PI_Py2_SetPythonHome(pyhome);
-    }
-    else {
-        /* Decode using current locale */
-        if (!pyi_locale_char2wchar(pyhome_w, status->mainpath, PATH_MAX)) {
-            FATALERROR("Failed to convert pyhome to wchar_t\n");
-            return -1;
-        }
-        VS("LOADER: sys.prefix is %s\n", status->mainpath);
-        PI_Py_SetPythonHome(pyhome_w);
-    };
 
     /* Start python. */
     VS("LOADER: Setting runtime options\n");
@@ -639,6 +637,11 @@ pyi_pylib_import_modules(ARCHIVE_STATUS *status)
             if (is_py2) {
                 co = PI_PyObject_CallFunction(loadfunc, "s#", modbuf + 8, ntohl(
                                                   ptoc->ulen) - 8);
+            }
+            else if (pyvers >= 37) {
+                /* Python >= 3.7 the header: size was changed to 16 bytes. */
+                co = PI_PyObject_CallFunction(loadfunc, "y#", modbuf + 16,
+                                              ntohl(ptoc->ulen) - 16);
             }
             else {
                 /* It looks like from python 3.3 the header */
