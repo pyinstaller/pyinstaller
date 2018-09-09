@@ -130,5 +130,5 @@ or simply use it directly from the source (pyinstaller.py).
 
 
 .. _PyCrypto: https://www.dlitz.net/software/pycrypto/
-.. _`manual`: https://pyinstaller.readthedocs.io/en/v3.4/
+.. _`manual`: https://pyinstaller.readthedocs.io/en/latest/
 
