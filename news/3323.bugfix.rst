@@ -1,1 +1,0 @@
-(Windows) Only update resources when necessary to keep signature valid

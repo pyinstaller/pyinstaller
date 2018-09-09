@@ -1,1 +1,0 @@
-Fix the test for the “W” run-time Python option to verify module ``warnings`` can actually be imported.

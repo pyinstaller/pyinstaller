@@ -1,1 +1,0 @@
-``test_setuptools_nspkg`` no longer modifies source files.

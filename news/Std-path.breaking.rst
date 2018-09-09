@@ -1,1 +1,0 @@
-(minor) Use standard path, not dotted path, for C extensions (Python 3 only).

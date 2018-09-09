@@ -1,1 +1,0 @@
-Use `towncrier` to manage the change log entries.

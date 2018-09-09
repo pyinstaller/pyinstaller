@@ -1,1 +1,0 @@
-Use waitpid instead of wait to avoid the bootloder parent process gets signaled.

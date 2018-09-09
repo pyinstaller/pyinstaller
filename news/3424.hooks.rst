@@ -1,1 +1,0 @@
-Update hook hook-Crypto (support for PyCryptodome)

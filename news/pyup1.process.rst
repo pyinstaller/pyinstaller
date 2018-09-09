@@ -1,1 +1,0 @@
-Let `pyup` update package requirements for “Test – Libraries” every month only.

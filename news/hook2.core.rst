@@ -1,1 +1,0 @@
-Avoid printing a useless exceptions in the ``get_module_file_attribute`` helper function..

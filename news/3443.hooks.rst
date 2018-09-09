@@ -1,1 +1,0 @@
-Add hooks for Champlain and Clutter

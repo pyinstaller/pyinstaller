@@ -1,1 +1,0 @@
-Only update resources of cached files when necessary to keep signature valid.

@@ -1,1 +1,0 @@
-(Windows) Make import compatible with python.net, which uses an incompatible signature for ``__import__`.

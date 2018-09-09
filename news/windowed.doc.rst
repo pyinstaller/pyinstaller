@@ -1,1 +1,0 @@
-Make clear that ``--windowed`` is independent of ``--onedir``.

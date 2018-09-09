@@ -1,1 +1,0 @@
-Mention imports using imports ``imp.find_module()`` are not detected.

@@ -1,1 +1,0 @@
-(GNU/Linux) Fix hook usb: Resolve library name reported by usb.backend.

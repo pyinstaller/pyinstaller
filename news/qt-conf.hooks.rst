@@ -1,1 +1,0 @@
-(qt5) Improved method for finding qt.conf.

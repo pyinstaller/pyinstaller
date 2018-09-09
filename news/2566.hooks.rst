@@ -1,1 +1,0 @@
-Update hook for PyQt5

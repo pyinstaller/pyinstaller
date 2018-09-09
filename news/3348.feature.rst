@@ -1,1 +1,0 @@
-Hint users to install development package for missing `pyconfig.h`.

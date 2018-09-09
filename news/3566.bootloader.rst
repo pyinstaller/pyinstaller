@@ -1,1 +1,0 @@
-(OS X) Don't make the application a GUI app by default, even in `--windowed``-mode. Not enforcing this programmatically in the bootloader allows to control behavior using ``Info.plist`` options - which can by set in PyInstaller itself or in the `.spec`-file.

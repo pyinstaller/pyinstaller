@@ -1,1 +1,0 @@
-Update hook setuptools 39.0.

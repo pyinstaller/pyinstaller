@@ -1,1 +1,0 @@
-New command-line option ``--bootloader-ignore-signals`` to make the bootloader forward all signals to the bundle application.

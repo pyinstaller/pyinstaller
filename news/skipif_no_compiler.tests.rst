@@ -1,1 +1,0 @@
-Fix decorator ``skipif_no_compiler``.

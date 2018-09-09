@@ -1,1 +1,0 @@
-Avoid log messages to be written (and captured) twice.

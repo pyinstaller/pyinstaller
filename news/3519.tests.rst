@@ -1,1 +1,0 @@
-Add script and dockerfile for running tests in docker. (contributed, not maintained)

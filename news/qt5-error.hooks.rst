@@ -1,1 +1,0 @@
-(qt5) Improve error reporting when determining the PyQt5 library location.

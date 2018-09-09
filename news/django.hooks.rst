@@ -1,1 +1,0 @@
-Update hook for Django 2.1

@@ -1,1 +1,0 @@
-(Windows) Use UTF-8 when reading XML manifest file.

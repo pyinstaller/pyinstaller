@@ -1,1 +1,0 @@
-Reflect actual behavior regarding LD_LIBRARY_PATH.
