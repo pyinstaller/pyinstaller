@@ -57,8 +57,9 @@ __ http://www.sphinx-doc.org/en/stable/rest.html#inline-markup
 
 .. rst:role:: commit
 
-   Create a link to a commit, the text will be shortened to 8 digits
-   for readability. The idea being that the pyinstaller.readthedocs.io website will have weblinks into the corresponding github repo. Example: ``:commit:`a1b2c3d4e5f6a7b8c9``` will become
+   Refer to a commit, creating a web-link to the online git repository.
+   The commit-id will be shortened to 8 digits for readability. 
+   Example: ``:commit:`a1b2c3d4e5f6a7b8c9``` will become
    :commit:`a1b2c3d4e5f6a7b8c9`.
 
 .. rst:role:: issue
