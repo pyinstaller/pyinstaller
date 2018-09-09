@@ -1,1 +1,0 @@
-Fix wrong security alert if a filename contains ``..``.

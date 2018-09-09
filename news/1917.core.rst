@@ -1,1 +1,0 @@
-(OS X) In `console`-mode set ``LSBackgroundOnly=True`` in``Info.plist`` to hide the app-icon in the dock. This can still be overruled by passing ``info_plist`` in the `.spec`-file.

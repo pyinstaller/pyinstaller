@@ -1,1 +1,0 @@
-Hint users to install necessary development packages If in ``format_binaries_and_datas()`` the file not found is ``pyconfig.h``.

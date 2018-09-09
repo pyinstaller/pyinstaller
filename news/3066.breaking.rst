@@ -1,1 +1,0 @@
-(minor) The destination path for `--add-data` and `--add-binary` must no longer be empty, use ``.`` instead.

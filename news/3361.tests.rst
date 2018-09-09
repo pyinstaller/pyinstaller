@@ -1,1 +1,0 @@
-(Travis) Fix Python installation on OS X.

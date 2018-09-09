@@ -1,1 +1,0 @@
-Fix unicode errors when not capturing output by pytest.

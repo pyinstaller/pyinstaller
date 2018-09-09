@@ -1,1 +1,0 @@
-Fix and simplify search for libpython on windows, msys2, cygwin.

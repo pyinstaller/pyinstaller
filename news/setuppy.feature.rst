@@ -1,1 +1,0 @@
-In ``setup.py`` specify Python versions this distribution is compatible with.

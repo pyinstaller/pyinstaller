@@ -1,1 +1,0 @@
-Update hook for gevent 1.3

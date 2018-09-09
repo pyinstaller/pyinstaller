@@ -1,1 +1,0 @@
-(OS X) Revise section on ``info_plist`` for ``plistlib`` functionality and use an example more aligned with real world usage.

@@ -1,1 +1,0 @@
-(developers) Overhaul guidelines for commit and commit-messages.

@@ -1,1 +1,0 @@
-(Appveyor) Reduce disk usage.

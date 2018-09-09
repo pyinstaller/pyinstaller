@@ -1,1 +1,0 @@
-Forward all signals to the child process if option ``pyi-bootloader-ignore-signals`` to be set in the archive.
