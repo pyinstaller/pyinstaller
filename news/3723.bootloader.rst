@@ -1,0 +1,1 @@
+Fix ``setenv()`` call when HAVE_UNSETENV is not defined.
