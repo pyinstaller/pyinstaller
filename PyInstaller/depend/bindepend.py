@@ -21,7 +21,8 @@ import zipfile
 import collections
 
 from .. import compat
-from ..compat import (is_win, is_unix, is_aix, is_solar, is_cygwin, is_hpux,
+from ..compat import (is_win, is_win_10, is_unix,
+                      is_aix, is_solar, is_cygwin, is_hpux,
                       is_darwin, is_freebsd, is_venv, is_conda, base_prefix,
                       PYDYLIB_NAMES)
 from . import dylib, utils
@@ -536,7 +537,10 @@ def selectImports(pth, xtrapath=None):
                              lib, os.path.basename(pth), npth)
                 rv.append((lib, npth))
         else:
-            logger.warning("lib not found: %s dependency of %s", lib, pth)
+            # Don't spew out false warnings on win 10 and UCRT (see issue
+            # #1566).
+            if not (is_win_10 and lib.startswith("api-ms-win-crt")):
+                logger.warning("lib not found: %s dependency of %s", lib, pth)
 
     return rv
 
