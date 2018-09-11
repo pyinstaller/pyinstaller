@@ -1,0 +1,1 @@
+Use compat.open_file() instead of conditional codecs.open()

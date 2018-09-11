@@ -19,7 +19,7 @@ import py_compile
 import sys
 
 from PyInstaller import log as logging
-from PyInstaller.compat import BYTECODE_MAGIC, is_py2, text_read_mode
+from PyInstaller.compat import BYTECODE_MAGIC, is_py2, open_file, text_read_mode
 
 logger = logging.getLogger(__name__)
 
@@ -203,12 +203,7 @@ def save_py_data_struct(filename, data):
     dirname = os.path.dirname(filename)
     if not os.path.exists(dirname):
         os.makedirs(dirname)
-    if is_py2:
-        import codecs
-        f = codecs.open(filename, 'w', encoding='utf-8')
-    else:
-        f = open(filename, 'w', encoding='utf-8')
-    with f:
+    with open_file(filename, 'w', encoding='utf-8') as f:
         pprint.pprint(data, f)
 
 
@@ -218,12 +213,7 @@ def load_py_data_struct(filename):
     :param filename:
     :return:
     """
-    if is_py2:
-        import codecs
-        f = codecs.open(filename, text_read_mode, encoding='utf-8')
-    else:
-        f = open(filename, text_read_mode, encoding='utf-8')
-    with f:
+    with open_file(filename, text_read_mode, encoding='utf-8') as f:
         # Binding redirects are stored as a named tuple, so bring the namedtuple
         # class into scope for parsing the TOC.
         from ..depend.bindepend import BindingRedirect
