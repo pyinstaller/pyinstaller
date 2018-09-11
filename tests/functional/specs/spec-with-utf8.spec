@@ -1,4 +1,4 @@
-# -*- coding: utf-8 ; mode: python -*-
+# -*- mode: python -*-
 #-----------------------------------------------------------------------------
 # Copyright (c) 2005-2018, PyInstaller Development Team.
 #
@@ -10,7 +10,7 @@
 
 # spec-file containing some utf-8 umlauts
 # äöu Čapek
-"äöü Čapek"
+"äöü Čapek こん ツリー"
 
 app_name = "spec-with-utf8"
 

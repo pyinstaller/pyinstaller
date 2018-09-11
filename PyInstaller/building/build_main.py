@@ -29,7 +29,7 @@ from .. import HOMEPATH, DEFAULT_DISTPATH, DEFAULT_WORKPATH
 from .. import compat
 from .. import log as logging
 from ..utils.misc import absnormpath, compile_py_files
-from ..compat import is_py2, is_win, PYDYLIB_NAMES, VALID_MODULE_TYPES
+from ..compat import is_py2, is_win, open_file, PYDYLIB_NAMES, VALID_MODULE_TYPES
 from ..depend import bindepend
 from ..depend.analysis import initialize_modgraph
 from .api import PYZ, EXE, COLLECT, MERGE
@@ -618,7 +618,7 @@ class Analysis(Target):
 
         from ..config import CONF
         miss_toc = self.graph.make_missing_toc()
-        with open(CONF['warnfile'], 'w') as wf:
+        with open_file(CONF['warnfile'], 'w', encoding='utf-8') as wf:
             wf.write(WARNFILE_HEADER)
             for (n, p, status) in miss_toc:
                 importers = self.graph.get_importers(n)
@@ -779,7 +779,7 @@ def build(spec, distpath, workpath, clean_build):
     CONF['workpath'] = workpath
 
     # Executing the specfile.
-    with open(spec, 'r') as f:
+    with open_file(spec, encoding='utf-8') as f:
         text = f.read()
     exec(text, spec_namespace)
 
