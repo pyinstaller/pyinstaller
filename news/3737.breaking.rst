@@ -1,0 +1,1 @@
+Require an option for the ``--debug`` argument, rather than assuming a default of ``all``.
