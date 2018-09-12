@@ -71,6 +71,10 @@ def process(program, generate_headings, headings_character):
     help = help.strip('\n')
     # escape stars prior to other processing
     help = help.replace('*', r'\*')
+    # Change troublesome argparse text that the optparse-like docutils parser
+    # doesn't understand.
+    help = help.replace('{all,imports,bootloader,noarchive}',
+                        '<all,imports,bootloader,noarchive>')
     if generate_headings:
         program = os.path.splitext(os.path.basename(program))[0].lower()
         help = textwrap.dedent(help)

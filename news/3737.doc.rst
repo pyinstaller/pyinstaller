@@ -1,0 +1,1 @@
+Update the text produced by ``--help`` to state that the ``--debug`` argument requires an option. Correctly format this argument in the Sphinx build process.
