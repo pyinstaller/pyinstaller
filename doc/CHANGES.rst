@@ -30,12 +30,11 @@ Features
 * ``--debug`` now allows more debugging to be activated more easily. This
   includes bootloader messages, Python's "verbose imports" and store collected
   Python files in the output directory instead of freezing. See ``pyinstaller
-  –help`` for details. (:issue:`#3546`, :issue:`#3585`, :issue:`#3587`)
+  –-help`` for details. (:issue:`#3546`, :issue:`#3585`, :issue:`#3587`)
 * Hint users to install development package for missing `pyconfig.h`.
   (:issue:`#3348`)
-
 * In ``setup.py`` specify Python versions this distribution is compatible with.
-* Make base_library.zip reproducible: Set time-stamp of files. (:issue:`#2952`,
+* Make ``base_library.zip`` reproducible: Set time-stamp of files. (:issue:`#2952`,
   :issue:`#2990`)
 * New command-line option ``--bootloader-ignore-signals`` to make the
   bootloader forward all signals to the bundle application. (:issue:`#208`,
@@ -50,10 +49,10 @@ Bugfix
 
 * Add missing ``warnings`` module to ``base_library.zip``. (:issue:`#3397`,
   :issue:`#3400`)
-* Fix and simplify search for libpython on windows, msys2, cygwin.
+* Fix and simplify search for libpython on Windows, msys2, cygwin.
   (:issue:`#3167`, :issue:`#3168`)
-* Fix incompatibility with `pycryptodome` (replacement for the (apparently
-  abandoned) `pycrypto` library when using encrypted PYZ-archives.
+* Fix incompatibility with `pycryptodome` (a replacement for the apparently
+  abandoned `pycrypto` library) when using encrypted PYZ-archives.
   (:issue:`#3537`)
 * Fix race condition caused by the bootloader parent process terminating before
   the child is finished. This might happen e.g. when the child process itself
@@ -65,7 +64,7 @@ Bugfix
 * (OS X) Fix: App icon appears in the dock, even if ``LSUIElement=True``.
   (:issue:`#1917`, :issue:`#2075`, :issue:`#3566`)
 * (Windows) Fix crash when trying to add resources to Windows executable using
-  --resource option. (:issue:`#2675`, :issue:`#3423`)
+  the ``--resource`` option. (:issue:`#2675`, :issue:`#3423`)
 * (Windows) Only update resources when necessary to keep signature valid
   (:issue:`#3323`)
 * (Windows) Use UTF-8 when reading XML manifest file. (:issue:`#3476`)
@@ -76,7 +75,7 @@ Bugfix
 Incompatible Changes
 ~~~~~~~~~~~~~~~~~~~~
 
-* Drop support for Python 3.3 (:issue:`#3288`), Thanks to Hugo and xiovat.
+* Drop support for Python 3.3 (:issue:`#3288`), Thanks to Hugo and xoviat.
 * ``--debug`` now expects an (optional) argument. Thus using ``… --debug
   script.py`` will break. Use ``… script.py --debug`` or ``… --debug=all
   script.py`` instead. Also ``--debug=all`` (which is the default if no
@@ -87,7 +86,7 @@ Incompatible Changes
 * (minor) Change naming of intermediate build files and the `warn` file. This
   only effects 3rd-party tools (if any exists) relying on the names of these
   files.
-* (minor) The destination path for `--add-data` and `--add-binary` must no
+* (minor) The destination path for ``--add-data`` and ``--add-binary`` must no
   longer be empty, use ``.`` instead. (:issue:`#3066`)
 * (minor) Use standard path, not dotted path, for C extensions (Python 3 only).
 
@@ -107,32 +106,29 @@ Hooks
   (:issue:`#2859`), pytorch (:issue:`#3657`), scipy (:issue:`#2987`,
   :issue:`#3048`), uvloop (:issue:`#2898`), web3, eth_account,
   eth_keyfile (:issue:`#3365`, :issue:`#3373`).
-
 * Updated hooks for Cryptodome 3.4.8, Django 2.1, gevent 1.3.
   Crypto (support for PyCryptodome) (:issue:`#3424`),
   Gst and GdkPixbuf (to work on msys2, :issue:`#3257`, :issue:`#3387`),
   sphinx 1.7.1, setuptools 39.0.
-
 * Updated hooks for PyQt5 (:issue:`#1930`, :issue:`#1988`, :issue:`#2141`,
   :issue:`#2156`, :issue:`#2220`, :issue:`#2518`, :issue:`#2566`,
   :issue:`#2573`, :issue:`#2577`, :issue:`#2857`, :issue:`#2924`,
   :issue:`#2976`, :issue:`#3175`, :issue:`#3211`, :issue:`#3233`,
   :issue:`#3308`, :issue:`#3338`, :issue:`#3417`, :issue:`#3439`,
   :issue:`#3458`, :issue:`#3505`), among others:
-  - All QML is now loaded by QtQml.QQmlEngine.
+
+  - All QML is now loaded by ``QtQml.QQmlEngine``.
   - Improve error reporting when determining the PyQt5 library location.
-  - Improved method for finding qt.conf.
+  - Improved method for finding ``qt.conf``.
   - Include OpenGL fallback DLLs for PyQt5. (:issue:`#3568`).
   - Place PyQt5 DLLs in the correct location (:issue:`#3583`).
-
 * Fix hooks for cryptodome (:issue:`#3405`),
   PySide2 (style mismatch) (:issue:`#3374`, :issue:`#3578`)
-* Fix missing SSL libraries on Windows with PyQt5.QtNetwork. (:issue:`#3511`,
+* Fix missing SSL libraries on Windows with ``PyQt5.QtNetwork``. (:issue:`#3511`,
   :issue:`#3520`)
 * Fix zmq on Windows Python 2.7. (:issue:`#2147`)
 * (GNU/Linux) Fix hook usb: Resolve library name reported by usb.backend.
   (:issue:`#2633`, :issue:`#2831`, :issue:`#3269`)
-
 * Clean up the USB hook logic.
 
 
@@ -142,16 +138,16 @@ Bootloader
 * Forward all signals to the child process if option
   ``pyi-bootloader-ignore-signals`` to be set in the archive. (:issue:`#208`,
   :issue:`#3515`)
-* Use waitpid instead of wait to avoid the bootloder parent process gets
+* Use ``waitpid`` instead of ``wait`` to avoid the bootloder parent process gets
   signaled. (:issue:`#2966`)
 * (OS X) Don't make the application a GUI app by default, even in
-  `--windowed``-mode. Not enforcing this programmatically in the bootloader
+  ``--windowed`` mode. Not enforcing this programmatically in the bootloader
   allows to control behavior using ``Info.plist`` options - which can by set in
   PyInstaller itself or in the `.spec`-file. (:issue:`#1917`, :issue:`#2075`,
   :issue:`#3566`)
 * (Windows) Show respectivly print utf-8 debug messages ungarbled.
   (:issue:`#3477`)
-* Fix ``setenv()`` call when HAVE_UNSETENV is not defined. (:issue:`#3722`,
+* Fix ``setenv()`` call when ``HAVE_UNSETENV`` is not defined. (:issue:`#3722`,
   :issue:`#3723`)
 
 
@@ -170,7 +166,7 @@ Documentation
 * Make clear that ``--windowed`` is independent of ``--onedir``.
   (:issue:`#3383`)
 * Mention imports using imports ``imp.find_module()`` are not detected.
-* Reflect actual behavior regarding LD_LIBRARY_PATH. (:issue:`#3236`)
+* Reflect actual behavior regarding ``LD_LIBRARY_PATH``. (:issue:`#3236`)
 * (OS X) Revise section on ``info_plist`` for ``plistlib`` functionality and
   use an example more aligned with real world usage. (:issue:`#3532`,
   :issue:`#3540`, :issue:`#3541`)
@@ -192,31 +188,31 @@ Project & Process
 PyInstaller Core
 ~~~~~~~~~~~~~~~~
 
-* Add ``requirements_for_package`` and ``collect_all`` helper functions for
+* Add ``requirements_for_package()`` and ``collect_all()`` helper functions for
   hooks.
 * Add a explanatory header to the warn-file, hopefully reducing the number of
   those posting the file to the issue tracker.
-* Add module ``'enum`` to base_library.zip, required for module ``re`` in
+* Add module ``enum`` to base_library.zip, required for module ``re`` in
   Python 3.6 (and ``re`` is required by ``warnings``).
-* Always write the `warn`-file.
+* Always write the `warn` file.
 * Apply ``format_binaries_and_datas()`` (which converts hook-style tuples into
-  `TOC`-style tuples) to binaries and datas added through the hook api.
-* Avoid printing a useless exceptions in the ``get_module_file_attribute``
+  ``TOC``-style tuples) to binaries and datas added through the hook api.
+* Avoid printing a useless exceptions in the ``get_module_file_attribute()``
   helper function..
 * Don't gather Python extensions in ``collect_dynamic_libc()``.
 * Fix several ResourceWarnings and DeprecationWarnings (:issue:`#3677`)
-* Hint users to install necessary development packages If in
-  ``format_binaries_and_datas()`` the file not found is ``pyconfig.h``.
+* Hint users to install necessary development packages if, in
+  ``format_binaries_and_datas()``, the file not found is ``pyconfig.h``.
   (:issue:`#1539`, :issue:`#3348`)
 * Hook helper function ``is_module_satisfies()`` returns ``False`` for packages
   not found. (:issue:`#3428`, :issue:`#3481`)
 * Read data for cache digest in chunks. (:issue:`#3281`)
 * Select correct file extension for C-extension file-names like
   ``libzmq.cp36-win_amd64.pyd``.
-* State type of import (conditional, delayed, etc.) in the `warn`-file again.
+* State type of import (conditional, delayed, etc.) in the *warn* file again.
 * (modulegraph) Unbundle `altgraph` library, use from upstream.
   (:issue:`#3058`)
-* (OS X) In `console`-mode set ``LSBackgroundOnly=True`` in``Info.plist`` to
+* (OS X) In ``--console`` mode set ``LSBackgroundOnly=True`` in``Info.plist`` to
   hide the app-icon in the dock. This can still be overruled by passing
   ``info_plist`` in the `.spec`-file. (:issue:`#1917`, :issue:`#3566`)
 * (OS X) Use the python standard library ``plistlib`` for generating the
@@ -232,16 +228,15 @@ PyInstaller Core
 Test-suite and Continuous Integration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* Add script and dockerfile for running tests in docker. (contributed, not
+* Add script and dockerfile for running tests in docker. (Contributed, not
   maintained) (:issue:`#3519`)
 * Avoid log messages to be written (and captured) twice.
 * Fix decorator ``skipif_no_compiler``.
-* Fix the test for the “W” run-time Python option to verify module ``warnings``
+* Fix the test for the "W" run-time Python option to verify module *warnings*
   can actually be imported. (:issue:`#3402`, :issue:`#3406`)
 * Fix unicode errors when not capturing output by pytest.
-* Run pyinstaller -h to verify it works.
+* Run ``pyinstaller -h`` to verify it works.
 * ``test_setuptools_nspkg`` no longer modifies source files.
-
 * Appveyor:
 
   - Add documentation for Appveyor variables used to ``appveyor.yml``.
@@ -252,7 +247,6 @@ Test-suite and Continuous Integration
   - Reduce disk usage.
   - Split Python 2.7 tests into two jobs to avoid the 1 hour limit.
   - Update to use Windows Server 2016. (:issue:`#3563`)
-
 * Travis
 
   - Use build-stages.
@@ -279,27 +273,22 @@ Known Issues
 
 * Anaconda's PyQt5 packages are not supported
   because its ``QlibraryInfo`` implementation reports incorrect values.
-
 * All scripts frozen into the package, as well as all run-time hooks, share
   the same global variables. This issue exists since v3.2 but was discovered
   only lately, see :issue:`3037`. This may lead to leaking global variables
   from run-time hooks into the script and from one script to subsequent ones.
   It should have effects in rare cases only, though.
-
 * Data-files from wheels, unzipped eggs or not ad egg at all are not included
   automatically. This can be worked around using a hook-file, but may not
   suffice when using ``--onefile`` and something like `python-daemon`.
 
 * The multipackage (MERGE) feature (:issue:`1527`) is currently broken.
-
 * (OSX) Support for OpenDocument events (:issue:`1309`) is broken.
-
 * (Windows) With Python 2.7 the frozen application may not run if the
   user-name (more specifically ``%TEMPDIR%``) includes some Unicode
   characters. This does not happen with all Unicode characters, but only some
   and seems to be a windows bug. As a work-around please upgrade to Python 3
   (:issue:`2754`, :issue:`2767`).
-
 * (Windows) For Python >= 3.5 targeting *Windows < 10*, the developer needs to
   take special care to include the Visual C++ run-time .dlls. Please see the
   section :ref:`Platform-specific Notes <Platform-specific Notes - Windows>`
@@ -521,7 +510,7 @@ supported platforms.
 * Add "official" build-script.
 
 * (GNU/Linux) Make --no-lsb the default, add option --lsb.
-  
+
 * Largely overhauled Vagrantfile:
 
     - Make Darwin bootloaders build in OS X box (unused)
@@ -544,7 +533,7 @@ supported platforms.
 
 * (GNU/Linux) for 64-bit arm/aarch ignore the :program:`gcc` flag ``-m64``
   (#2801).
-  
+
 Module loader
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -635,7 +624,7 @@ Utilities
 * :program:`grab_version.py`: Display a friendly error message when utility
   fails (#859, #2792).
 
-    
+
 Test-suite and Continuous Integration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -715,7 +704,7 @@ Older Versions
    CHANGES-3
    CHANGES-2
    CHANGES-1
-             
+
 .. Emacs config:
  Local Variables:
  mode: rst
