@@ -1,0 +1,1 @@
+Use codecs.open() instead of io.open() for open_file()

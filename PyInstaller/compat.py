@@ -15,7 +15,7 @@ with previous versions of Python from 2.7 onward.
 
 from __future__ import print_function
 
-import io
+import codecs
 import os
 import platform
 import site
@@ -91,10 +91,10 @@ else:
 
 
 # Function with which to open files. In Python 3, this is the open() built-in;
-# in Python 2, this is the Python 3 open() built-in backported into the "io"
-# module as io.open(). The Python 2 open() built-in is commonly regarded as
-# unsafe in regards to character encodings and hence inferior to io.open().
-open_file = open if is_py3 else io.open
+# in Python 2, this is codecs.open(). The Python 2 open() built-in is commonly
+# regarded as unsafe in regards to character encodings and hence inferior to
+# codecs.open().
+open_file = open if is_py3 else codecs.open
 text_read_mode = 'r' if is_py3 else 'rU'
 
 # In Python 3 there is exception FileExistsError. But it is not available
