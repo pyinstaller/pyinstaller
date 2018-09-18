@@ -568,6 +568,8 @@ class EXE(Target):
                         logger.error("Error while updating resource %s %s in %s"
                                      " from data file %s",
                                      restype, resname, tmpnm, resfile, exc_info=1)
+            if is_win and self.manifest and not self.exclude_binaries:
+                self.manifest.update_resources(tmpnm, [1])
             trash.append(tmpnm)
             exe = tmpnm
 

@@ -1,0 +1,1 @@
+(Windows) Fix UAC in one-file mode by embedding the manifest.
