@@ -28,11 +28,8 @@ if compat.is_darwin:
         datas += collect_system_data_files(
             os.path.join(data_path, 'lib', i + '.framework'),
             os.path.join(*(rel_data_path + ['lib'])), True)
-    datas += [(f, (os.path.basename(os.path.normpath(f))
-                   if os.path.isdir(f) else os.curdir)) for f
-              in glob.glob(os.path.join(data_path, 'lib',
-                                        'QtWebengineCore.framework',
-                                        'Resources', '*'))]
+    datas += [(os.path.join(data_path, 'lib', 'QtWebengineCore.framework',
+                            'Resources'), os.curdir)]
 else:
     locales = 'qtwebengine_locales'
     resources = 'resources'
