@@ -250,7 +250,7 @@ class Analysis(Target):
         if datas:
             logger.info("Appending 'datas' from .spec")
             for name, pth in format_binaries_and_datas(datas, workingdir=spec_dir):
-                self.binaries.append((name, pth, 'DATA'))
+                self.datas.append((name, pth, 'DATA'))
 
     _GUTS = (# input parameters
             ('inputs', _check_guts_eq),  # parameter `scripts`
