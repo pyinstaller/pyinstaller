@@ -72,5 +72,6 @@ if compat.is_linux:
         if os.path.basename(imp).startswith('libnss3.so'):
             # Find the location of NSS: given a ``/path/to/libnss.so``,
             # add ``/path/to/nss/*.so`` to get the missing NSS libraries.
-            binaries.append((os.path.join(os.path.dirname(imp), 'nss', '*.so'),
-                             'nss'))
+            nss_subdir = os.path.join(os.path.dirname(imp), 'nss')
+            if os.path.exists(nss_subdir):
+                binaries.append((os.path.join(nss_subdir, '*.so'), 'nss'))
