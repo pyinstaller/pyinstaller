@@ -33,7 +33,7 @@ if sys.version_info < (3,):
 
 # For Windows install PyWin32 if not already installed.
 if sys.platform.startswith('win'):
-    REQUIREMENTS.append('pywin32-ctypes')
+    REQUIREMENTS.append('pywin32-ctypes >= 0.2.0')
 
 
 # Create long description from README.rst and doc/CHANGES.rst.
