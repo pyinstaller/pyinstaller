@@ -360,7 +360,13 @@ def exec_command(*cmdargs, **kwargs):
     """
 
     encoding = kwargs.pop('encoding', None)
-    out = subprocess.Popen(cmdargs, stdout=subprocess.PIPE, **kwargs).communicate()[0]
+    try:
+        out = subprocess.Popen(cmdargs, stdout=subprocess.PIPE, **kwargs).communicate()[0]
+    except OSError as e:
+        print('--' * 20, file=sys.stderr)
+        print("Error running '%s': (%s) " % (" ".join(cmdargs), str(e)), file=sys.stderr)
+        print('--' * 20, file=sys.stderr)
+        raise
     # Python 3 returns stdout/stderr as a byte array NOT as string.
     # Thus we need to convert that to proper encoding.
 
