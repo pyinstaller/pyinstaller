@@ -23,7 +23,7 @@ pytest-xdist==1.23.2
 # Plugin to abort hanging tests.
 pytest-timeout==1.3.2
 # allows specifying order without duplicates
-pytest-drop-dup-tests
+pytest-drop-dup-tests==0.1.0
 
 # Better subprocess alternative with implemented timeout.
 psutil
