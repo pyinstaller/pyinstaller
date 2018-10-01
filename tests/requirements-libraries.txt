@@ -44,7 +44,7 @@ keyring==15.1.0
 openpyxl==2.5.8
 pycparser==2.19
 pytz==2018.5
-sqlalchemy==1.2.11
+sqlalchemy==1.2.12
 zeep==3.1.0
 pyexcelerate==0.7.3
 Pillow==5.2.0
