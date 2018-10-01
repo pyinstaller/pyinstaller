@@ -83,7 +83,7 @@ twisted==18.7.0; python_version == '2.7'
 
 # Python 3.5 and higher
 # ---------------------
-Django==2.1.1; python_version >= '3.5'
+Django==2.1.2; python_version >= '3.5'
 pandas==0.23.4; python_version >= '3.5'
 web3==4.6.0; python_version >= '3.5'
 
