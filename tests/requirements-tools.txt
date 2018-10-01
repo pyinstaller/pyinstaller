@@ -26,7 +26,7 @@ pytest-timeout==1.3.2
 pytest-drop-dup-tests==0.1.0
 
 # Better subprocess alternative with implemented timeout.
-psutil
+psutil==5.4.7
 
 # Check new flake8 violations on pull requests
 flake8-diff
