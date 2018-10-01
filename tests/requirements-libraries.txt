@@ -85,7 +85,7 @@ twisted==18.7.0; python_version == '2.7'
 # ---------------------
 Django==2.1.2; python_version >= '3.5'
 pandas==0.23.4; python_version >= '3.5'
-web3==4.6.0; python_version >= '3.5'
+web3==4.7.2; python_version >= '3.5'
 
 # While PyQt5 itself is provided as wheels for Python 3.4, it requires
 # SIP>=4.19 which is not available for Python 3.4.
