@@ -106,5 +106,5 @@ uvloop==0.11.2; python_version >= '3.5' and sys_platform != 'win32'
 pylint==2.1.1; python_version != '2.7'
 pylint==1.9.3; python_version == '2.7'  # pyup: ignore
 
-ipython==6.5.0; python_version != '2.7'
+ipython==7.0.1; python_version != '2.7'
 ipython==5.8.0; python_version == '2.7'  # pyup: ignore
