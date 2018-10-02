@@ -46,7 +46,7 @@ sys.path.insert(0, pyi_home)
 import PyInstaller
 from PyInstaller import compat, configure
 from PyInstaller import __main__ as pyi_main
-from PyInstaller.compat import is_py2, is_win, is_darwin, modname_tkinter
+from PyInstaller.compat import is_py2, is_win, is_darwin, modname_tkinter, text_read_mode
 from PyInstaller.utils import misc
 import PyInstaller.utils.hooks as hookutils
 from PyInstaller.utils.win32 import winutils
@@ -197,10 +197,9 @@ class SkipChecker(object):
             for mod_name in self.MODULES[test_name]:
                 # STDOUT and STDERR are discarded (devnull) to hide
                 # import exceptions.
-                trash = open(os.devnull)
-                retcode = compat.exec_python_rc('-c', "import %s" % mod_name,
-                        stdout=trash, stderr=trash)
-                trash.close()
+                with open(os.devnull) as trash:
+                    retcode = compat.exec_python_rc('-c', "import %s" % mod_name,
+                                                    stdout=trash, stderr=trash)
                 if retcode != 0:
                     return mod_name
         return None
@@ -491,7 +490,8 @@ class BuildTestRunner(object):
                 return False, 'Executable for %s missing' % logfn
             fname_list = archive_viewer.get_archive_content(prog)
             fname_list = [fn for fn in fname_list]
-            pattern_list = eval(open(logfn, 'rU').read())
+            with open(logfn, text_read_mode) as fp:
+                pattern_list = eval(fp.read())
             # Alphabetical order of patterns.
             pattern_list.sort()
             missing = []

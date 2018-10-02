@@ -54,7 +54,8 @@ class NextID:
     def getNextID(self):
         global d
         d['highID'] = d['highID'] + 1
-        open(self.fnm, 'w').write(repr(d))
+        with open(self.fnm, 'w') as fp:
+            fp.write(repr(d))
         return '%(systemID)-0.5x%(highID)-0.7x' % d
 
 def RegisterNextID():

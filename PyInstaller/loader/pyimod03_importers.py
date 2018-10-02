@@ -680,8 +680,8 @@ class CExtensionImporter(object):
                         if filename in self._file_cache:
                             break
                     filename = pyi_os_path.os_path_join(SYS_PREFIX, filename)
-                    fp = open(filename, 'rb')
-                    module = imp.load_module(fullname, fp, filename, ext_tuple)
+                    with open(filename, 'rb') as fp:
+                        module = imp.load_module(fullname, fp, filename, ext_tuple)
                     # Set __file__ attribute.
                     if hasattr(module, '__setattr__'):
                         module.__file__ = filename
@@ -760,10 +760,8 @@ class CExtensionImporter(object):
         module.__file__ (or pkg.__path__ items)
         """
         # Since __file__ attribute works properly just try to open and read it.
-        fp = open(path, 'rb')
-        content = fp.read()
-        fp.close()
-        return content
+        with open(path, 'rb') as fp:
+            return fp.read()
 
     def get_filename(self, fullname):
         """

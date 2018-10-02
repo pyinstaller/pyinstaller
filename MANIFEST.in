@@ -5,6 +5,7 @@ graft tests
 
 include *.rst
 include *.txt
+include *.toml
 include pyinstaller.py
 include pyinstaller-gui.py
 
@@ -20,6 +21,8 @@ exclude bootloader/.lock-waf*
 prune doc/source
 prune doc/_build
 recursive-exclude doc *.tmp
+include news/_template.rst
+prune news
 
 prune old
 prune scripts

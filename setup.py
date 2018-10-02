@@ -16,7 +16,7 @@ import os
 from setuptools import setup
 
 from PyInstaller import __version__ as version, HOMEPATH, PLATFORM
-from PyInstaller.compat import is_win, is_cygwin
+from PyInstaller.compat import is_win, is_cygwin, is_py2
 
 REQUIREMENTS = [
     'setuptools',
@@ -31,20 +31,24 @@ if sys.version_info < (3,):
 
 # For Windows install PyWin32 if not already installed.
 if sys.platform.startswith('win'):
-    REQUIREMENTS.append('pywin32-ctypes')
+    REQUIREMENTS.append('pywin32-ctypes >= 0.2.0')
 
 
 # Create long description from README.rst and doc/CHANGES.rst.
 # PYPI page will contain complete PyInstaller changelog.
 def read(filename):
-    try:
-        return unicode(codecs.open(filename, encoding='utf-8').read())
-    except NameError:
-        return open(filename, 'r', encoding='utf-8').read()
+    if is_py2:
+        with codecs.open(filename, encoding='utf-8') as fp:
+            return unicode(fp.read())
+    else:
+        with open(filename, 'r', encoding='utf-8') as fp:
+            return fp.read()
 long_description = u'\n\n'.join([read('README.rst'),
+                                 read('doc/_dummy-roles.txt'),
                                  read('doc/CHANGES.rst')])
 if sys.version_info < (3,):
     long_description = long_description.encode('utf-8')
+long_description = long_description.split("\nOlder Versions\n")[0].strip()
 
 
 CLASSIFIERS = """

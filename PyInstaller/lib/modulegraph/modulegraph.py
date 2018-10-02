@@ -189,7 +189,7 @@ def _eval_str_tuple(value):
 def _path_from_importerror(exc, default):
     # This is a hack, but sadly enough the necessary information
     # isn't available otherwise.
-    m = re.match('^No module named (\S+)$', str(exc))
+    m = re.match(r'^No module named (\S+)$', str(exc))
     if m is not None:
         return m.group(1)
 
@@ -1081,8 +1081,7 @@ class ModuleGraph(ObjectGraph):
 
                 for fn in ldir:
                     if fn.endswith('-nspkg.pth'):
-                        fp = open(os.path.join(entry, fn), 'rU')
-                        try:
+                        with open(os.path.join(entry, fn), _READ_MODE) as fp:
                             for ln in fp:
                                 for pfx in _SETUPTOOLS_NAMESPACEPKG_PTHs:
                                     if ln.startswith(pfx):
@@ -1104,8 +1103,6 @@ class ModuleGraph(ObjectGraph):
                                         else:
                                             pkgmap[identifier] = [subdir]
                                         break
-                        finally:
-                            fp.close()
 
         return pkgmap
 

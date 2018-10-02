@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "PYINSTALLER" "1" "2017-12-13" "3.3.1" "PyInstaller"
+.TH "PYINSTALLER" "1" "2018-09-09" "3.4" "PyInstaller"
 .SH NAME
 pyinstaller \- Configure and build a PyInstaller project in one run
 .
@@ -34,7 +34,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .ad l
 \.SH SYNOPSIS
 .sp
-\fBpyinstaller\fP <options> SCRIPT…
+\fBpyinstaller\fP <options> SCRIPT...
 .sp
 \fBpyinstaller\fP <options> SPECFILE
 .SH DESCRIPTION
@@ -42,7 +42,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 PyInstaller is a program that freezes (packages) Python programs into
 stand\-alone executables, under Windows, Linux, Mac OS X, FreeBSD, Solaris and
 AIX. Its main advantages over similar tools are that PyInstaller works with
-Python 2.7 and 3.3—3.6, it builds smaller executables thanks to transparent
+Python 2.7 and 3.4—3.6, it builds smaller executables thanks to transparent
 compression, it is fully multi\-platform, and use the OS support to load the
 dynamic libraries, thus ensuring full compatibility.
 .sp
@@ -107,7 +107,7 @@ current directory)
 .TP
 .BI \-n \ NAME\fP,\fB \ \-\-name \ NAME
 Name to assign to the bundled app and spec file
-(default: first script’s basename)
+(default: first script\(aqs basename)
 .UNINDENT
 .SS What to bundle, where to search
 .INDENT 0.0
@@ -126,7 +126,7 @@ option can be used multiple times.
 .TP
 .BI \-p \ DIR\fP,\fB \ \-\-paths \ DIR
 A path to search for imports (like using PYTHONPATH).
-Multiple paths are allowed, separated by ‘:’, or use
+Multiple paths are allowed, separated by \(aq:\(aq, or use
 this option multiple times
 .TP
 .BI \-\-hidden\-import \ MODULENAME\fP,\fB \ \-\-hiddenimport \ MODULENAME
@@ -155,10 +155,35 @@ The key used to encrypt Python bytecode.
 .SS How to generate
 .INDENT 0.0
 .TP
-.B \-d\fP,\fB  \-\-debug
-Tell the bootloader to issue progress messages while
-initializing and starting the bundled app. Used to
-diagnose problems with missing imports.
+.B \-d [{all,imports,bootloader,noarchive}], \-\-debug [{all,imports,bootloader,noarchive}]
+Provide assistance with debugging a frozen
+application, by specifying one or more of the
+following choices.
+.INDENT 7.0
+.IP \(bu 2
+all: All three of the below options; this is the
+default choice, unless one of the choices below is
+specified.
+.IP \(bu 2
+imports: specify the \-v option to the underlying
+Python interpreter, causing it to print a message
+each time a module is initialized, showing the
+place (filename or built\-in module) from which it
+is loaded. See
+\fI\%https://docs.python.org/3/using/cmdline.html#id4\fP\&.
+.IP \(bu 2
+bootloader: tell the bootloader to issue progress
+messages while initializing and starting the
+bundled app. Used to diagnose problems with
+missing imports.
+.IP \(bu 2
+noarchive: instead of storing all frozen Python
+source files as an archive inside the resulting
+executable, store them as files in the resulting
+output directory.
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
 .TP
 .B \-s\fP,\fB  \-\-strip
 Apply a symbol\-table strip to the executable and
@@ -242,7 +267,7 @@ unique program name for code signing purposes. The
 usual form is a hierarchical name in reverse DNS
 notation. For example:
 com.mycompany.department.appname (default: first
-script’s basename)
+script\(aqs basename)
 .UNINDENT
 .SS Rarely used special options
 .INDENT 0.0
@@ -254,6 +279,13 @@ bootloader will ignore any temp\-folder location
 defined by the run\-time OS. The \fB_MEIxxxxxx\fP\-folder
 will be created here. Please use this option only if
 you know what you are doing.
+.TP
+.B \-\-bootloader\-ignore\-signals
+Tell the bootloader to ignore signals rather than
+forwarding them to the child process. Useful in
+situations where e.g. a supervisor process signals
+both the bootloader and child (e.g. via a process
+group) to avoid signalling the child twice.
 .UNINDENT
 .SH ENVIRONMENT VARIABLES
 .INDENT 0.0

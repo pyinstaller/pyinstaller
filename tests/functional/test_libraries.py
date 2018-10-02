@@ -236,22 +236,29 @@ def test_PyQt5_QtWebKit(pyi_builder):
     pyi_builder.test_script('pyi_lib_PyQt5-QtWebKit.py')
 
 
+PYQT5_NEED_OPENGL = pytest.mark.skipif(is_module_satisfies('PyQt5 <= 5.10.1'),
+    reason='PyQt5 v5.10.1 and older does not package ``opengl32sw.dll``, the '
+    'OpenGL software renderer, which this test requires.')
+
+
+@PYQT5_NEED_OPENGL
 @importorskip('PyQt5')
 def test_PyQt5_uic(tmpdir, pyi_builder, data_dir):
     # Note that including the data_dir fixture copies files needed by this test.
     pyi_builder.test_script('pyi_lib_PyQt5-uic.py')
 
 
-@xfail(is_darwin, reason='Please help debug this. See issue #3233.')
 @pytest.mark.skipif(is_win and not is_64bits, reason="Qt 5.11+ for Windows "
     "only provides pre-compiled Qt WebEngine binaries for 64-bit processors.")
 @importorskip('PyQt5')
 def test_PyQt5_QWebEngine(pyi_builder, data_dir):
-    pyi_builder.test_source(
-        """
+    # Produce the source code to test by inserting the path to the HTML page to
+    # display.
+    source_to_test = """
         from PyQt5.QtWidgets import QApplication
         from PyQt5.QtWebEngineWidgets import QWebEngineView
         from PyQt5.QtCore import QUrl, QTimer
+
         app = QApplication([])
         view = QWebEngineView()
         # Use a raw string to avoid accidental special characters in Windows filenames:
@@ -259,34 +266,64 @@ def test_PyQt5_QWebEngine(pyi_builder, data_dir):
         view.load(QUrl.fromLocalFile(r'{}'))
         view.show()
         view.page().loadFinished.connect(
-            # Display the web page for two seconds after it loads.
-            lambda ok: QTimer.singleShot(2000, app.quit))
+            # Display the web page for one second after it loads.
+            lambda ok: QTimer.singleShot(1000, app.quit))
         app.exec_()
-        """.format(data_dir.join('test_web_page.html').strpath))
+        """.format(data_dir.join('test_web_page.html').strpath)
+
+    if is_darwin:
+        # This tests running the QWebEngine on OS X. To do so, the test must:
+        #
+        # 1. Run only a onedir build -- onefile builds don't work.
+        if pyi_builder._mode != 'onedir':
+            pytest.skip('The QWebEngine .app bundle ' +
+                        'only supports onedir mode.')
+
+        # 2. Only test the Mac .app bundle, by modifying the executes this
+        #    fixture runs.
+        _old_find_executables = pyi_builder._find_executables
+        # Create a replacement method that selects just the .app bundle.
+
+        def _replacement_find_executables(self, name):
+            path_to_onedir, path_to_app_bundle = _old_find_executables(name)
+            return [path_to_app_bundle]
+        # Use this in the fixture. See https://stackoverflow.com/a/28060251 and
+        # https://docs.python.org/3/howto/descriptor.html.
+        pyi_builder._find_executables = \
+            _replacement_find_executables.__get__(pyi_builder)
+
+        # 3. Run the test with specific command-line arguments.
+        pyi_builder.test_source(source_to_test,
+                                pyi_args=['--windowed'])
+    else:
+        # The Linux and Windows QWebEngine test needs no special handling.
+        pyi_builder.test_source(source_to_test)
 
 
+@PYQT5_NEED_OPENGL
 @importorskip('PyQt5')
-def test_PyQt5_QtQuick(pyi_builder):
+def test_PyQt5_QtQml(pyi_builder):
     pyi_builder.test_source(
         """
         import sys
-
-        # Not used. Only here to trigger the hook
-        import PyQt5.QtQuick
 
         from PyQt5.QtGui import QGuiApplication
         from PyQt5.QtQml import QQmlApplicationEngine
         from PyQt5.QtCore import QTimer, QUrl
 
-        app = QGuiApplication([])
+        # Select a style via the `command line <https://doc.qt.io/qt-5/qtquickcontrols2-styles.html#command-line-argument>`_,
+        # since currently PyQt5 doesn't `support https://riverbankcomputing.com/pipermail/pyqt/2018-March/040180.html>`_
+        # ``QQuickStyle``. Using this style with the QML below helps to verify
+        # that all QML files are packaged; see https://github.com/pyinstaller/pyinstaller/issues/3711.
+        app = QGuiApplication(sys.argv + ['-style', 'imagine'])
         engine = QQmlApplicationEngine()
         engine.loadData(b'''
-            import QtQuick 2.0
-            import QtQuick.Controls 2.0
+            import QtQuick 2.11
+            import QtQuick.Controls 2.4
 
             ApplicationWindow {
                 visible: true
-                color: "green"
+                ProgressBar {value: 0.6}
             }
             ''', QUrl())
 
@@ -296,7 +333,9 @@ def test_PyQt5_QtQuick(pyi_builder):
         # Exit Qt when the main loop becomes idle.
         QTimer.singleShot(0, app.exit)
 
-        sys.exit(app.exec_())
+        res = app.exec_()
+        del engine
+        sys.exit(res)
         """)
 
 

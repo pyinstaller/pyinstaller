@@ -112,9 +112,9 @@ class ArchiveWriter(object):
         ispkg = pynm == '__init__'
         assert ext in ('.pyc', '.pyo')
         self.toc.append((nm, (ispkg, self.lib.tell())))
-        f = open(entry[1], 'rb')
-        f.seek(8)  # skip magic and timestamp
-        self.lib.write(f.read())
+        with open(entry[1], 'rb') as f:
+            f.seek(8)  # skip magic and timestamp
+            self.lib.write(f.read())
 
     def save_trailer(self, tocpos):
         """
@@ -422,6 +422,9 @@ class CArchiveWriter(ArchiveWriter):
         if typcd == 'm':
             if pathnm.find('.__init__.py') > -1:
                 typcd = 'M'
+
+        if fh:
+            fh.close()
 
         # Record the entry in the CTOC
         self.toc.add(where, dlen, ulen, flag, typcd, nm)

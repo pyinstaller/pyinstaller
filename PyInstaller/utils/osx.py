@@ -101,6 +101,5 @@ def fix_exe_for_code_signing(filename):
     linkedit.filesize = new_segsize
     linkedit.vmsize = new_segsize
     ## Write changes back.
-    fp = open(exe_data.filename, 'rb+')
-    exe_data.write(fp)
-    fp.close()
+    with open(exe_data.filename, 'rb+') as fp:
+        exe_data.write(fp)

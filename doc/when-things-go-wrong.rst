@@ -154,8 +154,8 @@ Users would find the messages annoying.
 Getting Python's Verbose Imports
 --------------------------------
 
-You can bild the app with the ``--debug=imports`` option
-(see `Getting Debug Messages` above),
+You can build the app with the ``--debug=imports`` option
+(see `Getting Debug Messages`_ above),
 which will pass the ``-v`` (verbose imports) flag
 to the embedded Python interpreter.
 This can be extremely useful.

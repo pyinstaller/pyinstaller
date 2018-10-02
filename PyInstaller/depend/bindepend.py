@@ -68,7 +68,8 @@ def getfullnameof(mod, xtrapath=None):
 
     # TODO check if this 'numpy' workaround is still necessary!
     # Search sys.path first!
-    epath = sys.path + numpy_core_paths + winutils.get_system_path()
+    epath = (sys.path + numpy_core_paths + winutils.get_system_path() +
+             compat.getenv('PATH', '').split(os.pathsep))
     if xtrapath is not None:
         if type(xtrapath) == type(''):
             epath.insert(0, xtrapath)
@@ -318,9 +319,8 @@ def check_extract_from_egg(pth, todir=None):
                         dirname = os.path.dirname(pth)
                         if not os.path.isdir(dirname):
                             os.makedirs(dirname)
-                        f = open(pth, "wb")
-                        f.write(egg.read(member))
-                        f.close()
+                        with open(pth, "wb") as f:
+                            f.write(egg.read(member))
                     rv.append((pth, eggpth, member))
                 return rv
     return [(pth, None, None)]
@@ -342,9 +342,8 @@ def getAssemblies(pth):
     # check for manifest file
     manifestnm = pth + ".manifest"
     if os.path.isfile(manifestnm):
-        fd = open(manifestnm, "rb")
-        res = {RT_MANIFEST: {1: {0: fd.read()}}}
-        fd.close()
+        with open(manifestnm, "rb") as fd:
+            res = {RT_MANIFEST: {1: {0: fd.read()}}}
     else:
         # check the binary for embedded manifest
         try:

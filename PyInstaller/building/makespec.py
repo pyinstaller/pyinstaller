@@ -172,11 +172,8 @@ def __add_options(parser):
                    # If this option is not specified, then its default value is
                    # an empty list (no debug options selected).
                    default=[],
-                   # Allow the user to specify any number of arguments.
-                   nargs='?',
-                   # If zero arguments are specified (``--debug`` by itself),
-                   # then provide a default argument of all debug options enabled.
-                   const=DEBUG_ALL_CHOICE,
+                   # Allow the user to specify one argument.
+                   nargs=1,
                    # The options specified must come from this list.
                    choices=DEBUG_ALL_CHOICE + DEBUG_ARGUMENT_CHOICES,
                    # Append choice, rather than storing them (which would
@@ -185,12 +182,10 @@ def __add_options(parser):
                    # Allow newlines in the help text; see the
                    # ``_SmartFormatter`` in ``__main__.py``.
                    help=("R|Provide assistance with debugging a frozen\n"
-                         "application, by specifying one or more of the\n"
-                         "following choices.\n"
+                         "application. This argument may be provided multiple\n"
+                         "times to select several of the following options.\n"
                          "\n"
-                         "- all: All three of the below options; this is the\n"
-                         "  default choice, unless one of the choices below is\n"
-                         "  specified.\n"
+                         "- all: All three of the following options.\n"
                          "\n"
                          "- imports: specify the -v option to the underlying\n"
                          "  Python interpreter, causing it to print a message\n"
@@ -437,17 +432,16 @@ def main(scripts, name=None, onefile=None,
 
     # Write down .spec file to filesystem.
     specfnm = os.path.join(specpath, name + '.spec')
-    specfile = open(specfnm, 'w')
-    if onefile:
-        specfile.write(onefiletmplt % d)
-        # For OSX create .app bundle.
-        if is_darwin and not console:
-            specfile.write(bundleexetmplt % d)
-    else:
-        specfile.write(onedirtmplt % d)
-        # For OSX create .app bundle.
-        if is_darwin and not console:
-            specfile.write(bundletmplt % d)
-    specfile.close()
+    with open(specfnm, 'w') as specfile:
+        if onefile:
+            specfile.write(onefiletmplt % d)
+            # For OSX create .app bundle.
+            if is_darwin and not console:
+                specfile.write(bundleexetmplt % d)
+        else:
+            specfile.write(onedirtmplt % d)
+            # For OSX create .app bundle.
+            if is_darwin and not console:
+                specfile.write(bundletmplt % d)
 
     return specfnm
