@@ -1,0 +1,3 @@
+Completely remove `pywin32` dependency, which has erratic releases and
+the version on pypi may no longer have future releases.
+Require `pywin32-ctypes` instead which is pure python.
