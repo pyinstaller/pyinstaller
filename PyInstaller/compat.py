@@ -204,7 +204,7 @@ else:
     modname_tkinter = 'tkinter'
 
 
-# On Windows we require pypiwin32 or pywin32-ctypes
+# On Windows we require pywin32-ctypes
 # -> all pyinstaller modules should use win32api from PyInstaller.compat to
 #    ensure that it can work on MSYS2 (which requires pywin32-ctypes)
 if is_win:
@@ -216,8 +216,8 @@ if is_win:
         # - It's not an error for pywin32 to not be installed at that point
         if not os.environ.get('PYINSTALLER_NO_PYWIN32_FAILURE'):
             raise SystemExit('PyInstaller cannot check for assembly dependencies.\n'
-                             'Please install PyWin32 or pywin32-ctypes.\n\n'
-                             'pip install pypiwin32\n')
+                             'Please install pywin32-ctypes.\n\n'
+                             'pip install pywin32-ctypes\n')
 
 
 def architecture():
