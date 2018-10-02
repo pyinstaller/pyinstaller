@@ -1,0 +1,2 @@
+Fix appending the content of ``datas`` in a `spec` files to ``binaries``
+instead of the internal ``datas``.
