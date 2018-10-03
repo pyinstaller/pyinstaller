@@ -28,7 +28,7 @@ if compat.is_darwin:
         datas += collect_system_data_files(
             os.path.join(data_path, 'lib', i + '.framework'),
             os.path.join(*(rel_data_path + ['lib'])), True)
-    datas += [(os.path.join(data_path, 'lib', 'QtWebengineCore.framework',
+    datas += [(os.path.join(data_path, 'lib', 'QtWebEngineCore.framework',
                             'Resources'), os.curdir)]
 else:
     locales = 'qtwebengine_locales'
