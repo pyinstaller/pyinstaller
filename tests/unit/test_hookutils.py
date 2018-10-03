@@ -16,7 +16,7 @@ from os.path import join
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules, \
     get_module_file_attribute, remove_prefix, remove_suffix, \
     remove_file_extension, is_module_or_submodule, \
-    is_module_satisfies
+    is_module_satisfies, get_module_attribute
 from PyInstaller.compat import exec_python, ALL_SUFFIXES
 
 
@@ -191,7 +191,8 @@ def test_is_module_or_submodule():
 
 def test_is_module_satisfies_package_not_installed():
     assert is_module_satisfies('pytest')
-    assert not is_module_satisfies('magnumopus-no-package-test-case')
+    with pytest.raises(ImportError):
+        is_module_satisfies('magnumopus-no-package-test-case')
 
 
 _DATA_BASEPATH = join(TEST_MOD_PATH, TEST_MOD)
@@ -270,3 +271,10 @@ def test_collect_data_all_included(data_lists):
 def test_get_module_file_attribute_non_exist_module():
     with pytest.raises(ImportError):
         get_module_file_attribute('pyinst_nonexisting_module_name')
+
+# An Import error must be thrown if a module cannot be imported with get_module_attribute.
+def test_get_module_attribute_no_module_import_error():
+    with pytest.raises(ImportError):
+        get_module_attribute('magnum-opus-non-existant-module','')
+    with pytest.raises(AttributeError):
+        get_module_attribute('json','')

@@ -287,8 +287,9 @@ def get_module_attribute(module_name, attr_name):
         import %s as m
         print(getattr(m, %r, %r))
     """ % (module_name, attr_name, attr_value_if_undefined))
-
-    if attr_value == attr_value_if_undefined:
+    if 'Error' in attr_value:
+        raise ImportError
+    elif attr_value == attr_value_if_undefined:
         raise AttributeError(
             'Module %r has no attribute %r' % (module_name, attr_name))
     else:
@@ -335,7 +336,7 @@ def get_module_file_attribute(package):
                 pass
         """
         attr = exec_statement(__file__statement % package)
-        if not attr.strip():
+        if 'Error' in attr.strip():
             raise ImportError
     return attr
 
@@ -492,8 +493,11 @@ def is_module_satisfies(requirements, version=None, version_attr='__version__'):
     # If no version was explicitly passed, query this module for it.
     if version is None:
         module_name = requirements_parsed.project_name
-        version = get_module_attribute(module_name, version_attr)
-
+        try:
+            version = get_module_attribute(module_name, version_attr)
+            print(version)
+        except ImportError:
+            raise
     if not version:
         # Module does not exist in the system.
         return False
