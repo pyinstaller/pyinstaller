@@ -194,6 +194,7 @@ def test_pygments(pyi_builder):
         print(highlight(code, PythonLexer(), HtmlFormatter()))
         """)
 
+
 @importorskip('markdown')
 def test_markdown(pyi_builder):
     # Markdown uses __import__ed extensions. Make sure these work by
@@ -201,7 +202,8 @@ def test_markdown(pyi_builder):
     pyi_builder.test_source(
         """
         import markdown
-        print(markdown.markdown('testing',  ['toc']))
+        print(markdown.markdown('testing',
+            extensions=['markdown.extensions.toc']))
         """)
 
 

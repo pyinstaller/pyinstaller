@@ -1,0 +1,1 @@
+Update the Markdown test to comply with `Markdown 3.0 changes <https://python-markdown.github.io/change_log/release-3.0/#positional-arguments-deprecated>`_ by using correct syntax for `extensions <https://python-markdown.github.io/reference/#extensions>`_.
