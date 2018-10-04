@@ -11,6 +11,8 @@
 Functional tests for PyGObject.
 """
 
+import pytest
+
 from PyInstaller.utils.tests import importorskip, parametrize
 
 # Names of all "gi.repository" packages provided by PyGObject  to be
@@ -23,8 +25,8 @@ gi_repository_names = [x[0] for x in gi_repositories]
 
 # Names of the same packages, decorated to be skipped if unimportable.
 gi_repositories_skipped_if_unimportable = [
-    importorskip('gi.repository.' + gi_repository_name)
-    ((gi_repository_name, gi_repository_version))
+    pytest.param(gi_repository_name, gi_repository_version,
+    marks=importorskip('gi.repository.' + gi_repository_name))
     for gi_repository_name, gi_repository_version in gi_repositories
 ]
 

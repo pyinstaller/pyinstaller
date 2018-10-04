@@ -332,10 +332,10 @@ for prefix in ('', 'ctypes.'):
         # Marking doesn't seem to chain here, so select just one skippping mark
         # instead of both.
         if not has_compiler:
-            params = skipif_no_compiler(params)
+            params = pytest.param(*params, marks=skipif_no_compiler(params))
         elif funcname in ("WinDLL", "OleDLL"):
             # WinDLL, OleDLL only work on windows.
-            params = skipif_notwin(params)
+            params = pytest.param(*params, marks=skipif_notwin(params))
         parameters.append(params)
 
 @pytest.mark.parametrize("funcname,test_id", parameters, ids=ids)

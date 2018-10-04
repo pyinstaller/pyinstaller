@@ -59,6 +59,7 @@ def _check_for_compiler():
     os.chdir(old_wd)
     return has_compiler
 
+
 # A decorator to skip tests if a C compiler isn't detected.
 has_compiler = _check_for_compiler()
 skipif_no_compiler = skipif(not has_compiler, reason="Requires a C compiler")
@@ -132,14 +133,4 @@ def importorskip(modname, minversion=None):
     # Else, this module is importable and optionally satisfies this minimum
     # version. Reduce this decoration to a noop.
     else:
-        return _noop
-
-
-def _noop(object):
-    """
-    Return the passed object unmodified.
-
-    This private function is intended to be used as the identity decorator.
-    """
-
-    return object
+        return pytest.mark.skipif(False, reason='')
