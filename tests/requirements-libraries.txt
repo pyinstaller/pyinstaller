@@ -86,16 +86,7 @@ twisted==18.7.0; python_version == '2.7'
 Django==2.1.2; python_version >= '3.5'
 pandas==0.23.4; python_version >= '3.5'
 web3==4.7.2; python_version >= '3.5'
-
-# While PyQt5 itself is provided as wheels for Python 3.4, it requires
-# SIP>=4.19 which is not available for Python 3.4.
-#
-# For now, avoid PyQt5 5.11.2 on Windows Python 3.5, since this doesn't work
-# with Python 3.5.0 to 3.5.3, which is what Appveyor currently runs. The next
-# PyQt5 release should fix this. See
-# https://www.riverbankcomputing.com/pipermail/pyqt/2018-July/040512.html.
-pyqt5==5.10.1; python_version == '3.5' and sys_platform == 'win32'  # pyup: ignore
-pyqt5==5.11.2; (python_version >= '3.5' and sys.platform != 'win32') or (python_version >= '3.6')
+pyqt5==5.11.3; python_version >= '3.5'
 
 # uvloop does not currently support Windows.
 uvloop==0.11.2; python_version >= '3.5' and sys_platform != 'win32'
