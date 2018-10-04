@@ -206,15 +206,18 @@ else:
 
 # On Windows we require pywin32-ctypes
 # -> all pyinstaller modules should use win32api from PyInstaller.compat to
-#    ensure that it can work on MSYS2
+#    ensure that it can work on MSYS2 (which requires pywin32-ctypes)
 if is_win:
     try:
         from win32ctypes.pywin32 import pywintypes  # noqa: F401
         from win32ctypes.pywin32 import win32api
     except ImportError:
-        raise SystemExit('PyInstaller cannot check for assembly dependencies.\n'
-                         'Please install pywin32-ctypes.\n\n'
-                         'pip install pywin32-ctypes\n')
+        # This environment variable is set by seutp.py
+        # - It's not an error for pywin32 to not be installed at that point
+        if not os.environ.get('PYINSTALLER_NO_PYWIN32_FAILURE'):
+            raise SystemExit('PyInstaller cannot check for assembly dependencies.\n'
+                             'Please install pywin32-ctypes.\n\n'
+                             'pip install pywin32-ctypes\n')
 
 
 def architecture():
