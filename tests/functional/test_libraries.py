@@ -252,6 +252,8 @@ def test_PyQt5_uic(tmpdir, pyi_builder, data_dir):
 
 @pytest.mark.skipif(is_win and not is_64bits, reason="Qt 5.11+ for Windows "
     "only provides pre-compiled Qt WebEngine binaries for 64-bit processors.")
+@pytest.mark.skipif(is_module_satisfies('PyQt5 == 5.11.3') and is_darwin,
+    reason='This version of the OS X wheel does not include QWebEngine.')
 @importorskip('PyQt5')
 def test_PyQt5_QWebEngine(pyi_builder, data_dir):
     # Produce the source code to test by inserting the path to the HTML page to
@@ -362,6 +364,8 @@ def test_PyQt5_SSL_support(pyi_builder):
 @skipif(os.environ.get('APPVEYOR') == 'True',
         reason='The Appveyor OS is incompatible with PyQt.Qt.')
 @importorskip('PyQt5')
+@pytest.mark.skipif(is_module_satisfies('PyQt5 == 5.11.3') and is_darwin,
+    reason='This version of the OS X wheel does not include QWebEngine.')
 def test_PyQt5_Qt(pyi_builder):
     pyi_builder.test_source('from PyQt5.Qt import QLibraryInfo')
 
