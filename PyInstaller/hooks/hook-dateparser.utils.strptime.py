@@ -8,13 +8,13 @@
 #-----------------------------------------------------------------------------
 
 # Hook for dateparser: https://pypi.org/project/dateparser/
-
 from PyInstaller.utils.hooks import exec_statement, collect_submodules
 
 strptime_data_file = exec_statement(
-"import inspect; import _strptime; print(inspect.getfile(_strptime))"
+    "import inspect; import _strptime; print(inspect.getfile(_strptime))"
 )
 
-datas = [ (strptime_data_file, "") ]
+datas = [(strptime_data_file, "")]
 
-hiddenimports = collect_submodules('dateparser')
+hiddenimports = collect_submodules('dateparser.data')
+print(hiddenimports)
