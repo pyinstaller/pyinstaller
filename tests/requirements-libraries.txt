@@ -83,10 +83,11 @@ twisted==18.7.0; python_version == '2.7'
 # Python 3.5 and higher
 # ---------------------
 Django==2.1.2; python_version >= '3.5'
+ipython==7.0.1; python_version>= '3.5'
 matplotlib==3.0.0; python_version >= '3.5'
 pandas==0.23.4; python_version >= '3.5'
-web3==4.7.2; python_version >= '3.5'
 pyqt5==5.11.3; python_version >= '3.5'
+web3==4.7.2; python_version >= '3.5'
 
 # uvloop does not currently support Windows.
 uvloop==0.11.2; python_version >= '3.5' and sys_platform != 'win32'
@@ -95,7 +96,3 @@ uvloop==0.11.2; python_version >= '3.5' and sys_platform != 'win32'
 # Python 3 only packages
 # ----------------------
 pylint==2.1.1; python_version != '2.7'
-pylint==1.9.3; python_version == '2.7'  # pyup: ignore
-
-ipython==7.0.1; python_version != '2.7'
-ipython==5.8.0; python_version == '2.7'  # pyup: ignore
