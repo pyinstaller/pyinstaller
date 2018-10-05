@@ -55,7 +55,6 @@ future==0.16.0
 pyusb==1.0.2
 Unidecode==1.0.22
 h5py==2.8.0
-matplotlib==3.0.0
 python-dateutil==2.7.3
 phonenumbers==8.9.14
 gevent==1.3.6
@@ -84,6 +83,7 @@ twisted==18.7.0; python_version == '2.7'
 # Python 3.5 and higher
 # ---------------------
 Django==2.1.2; python_version >= '3.5'
+matplotlib==3.0.0; python_version >= '3.5'
 pandas==0.23.4; python_version >= '3.5'
 web3==4.7.2; python_version >= '3.5'
 pyqt5==5.11.3; python_version >= '3.5'
