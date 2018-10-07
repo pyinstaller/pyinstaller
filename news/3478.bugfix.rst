@@ -1,0 +1,3 @@
+Fix encoding problem raised while reading XML manifest file which includes
+Non ASCII characters. Otherwise, Pyinstaller cannot build executable which
+runs ``<Named by non ASCII characters>.py`` at first.
