@@ -172,8 +172,10 @@ def __add_options(parser):
                    # If this option is not specified, then its default value is
                    # an empty list (no debug options selected).
                    default=[],
-                   # Allow the user to specify one argument.
-                   nargs=1,
+                   # Note that ``nargs`` is omitted. This produces a single item
+                   # not stored in a list, as opposed to list containing one
+                   # item, per `nargs <https://docs.python.org/3/library/argparse.html#nargs>`_.
+                   nargs=None,
                    # The options specified must come from this list.
                    choices=DEBUG_ALL_CHOICE + DEBUG_ARGUMENT_CHOICES,
                    # Append choice, rather than storing them (which would
@@ -394,7 +396,7 @@ def main(scripts, name=None, onefile=None,
     if debug is None:
         debug = []
     # Translate the ``all`` option.
-    if DEBUG_ALL_CHOICE in debug:
+    if DEBUG_ALL_CHOICE[0] in debug:
         debug = DEBUG_ARGUMENT_CHOICES
 
     d = {
