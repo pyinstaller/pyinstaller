@@ -168,6 +168,24 @@ and are not visible when the ``--windowed`` option is used.
 Remember to not use this for your production version.
 
 
+Figuring Out Why Your Windowed App Won't Start
+----------------------------------------------
+
+If you are using the ``--windowed`` option, 
+your bundled app may fail to start with an error message like: 
+``Failed to execute script my_gui``.
+
+In this case, you will want to get more verbose output to find out what is going on.
+
+For Mac OS, you can run your app on the command line, i.e. ``./dist/my_gui`` 
+in Terminal instead of clicking on ``my_gui.app``.  
+
+For Windows, you will need to re-bundle your app without the ``--windowed`` option.  
+Then you can run the resulting executable from the command line, i.e.: ``my_gui.exe``.
+
+This should give you the relevant error that is preventing your app 
+from initializing, and you can then move on to other debugging steps.
+
 .. _helping pyinstaller find modules:
 
 Helping PyInstaller Find Modules
