@@ -1,0 +1,1 @@
+Fix pre-safe-import-module hook for 'setuptools.extern.six'.

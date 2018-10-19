@@ -19,7 +19,11 @@ from PyInstaller.utils.hooks import eval_statement
 def pre_safe_import_module(api):
     real_to_six_module_name = eval_statement(
 '''
-import setuptools._vendor.six as six
+try:
+    import setuptools._vendor.six as six
+except ImportError:
+    import setuptools.extern.six as six
+
 print('{')
 
 for moved in six._moved_attributes:
