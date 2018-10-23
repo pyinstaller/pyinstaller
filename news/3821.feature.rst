@@ -1,0 +1,1 @@
+Allow the user to prevent binaries from being compressed with UPX, using `--exclude-upx`
