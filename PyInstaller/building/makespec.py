@@ -212,6 +212,10 @@ def __add_options(parser):
     g.add_argument("--noupx", action="store_true", default=False,
                    help="Do not use UPX even if it is available "
                         "(works differently between Windows and *nix)")
+    g.add_argument("--exclude-upx", dest="exclude_upx", metavar="<FILE>", action="append", default=[],
+                   help="Prevent a binary from being compressed using upx."
+                        "This is typically used if upx corrupts certain binaries during compression."
+                        "This option can be used multiple times.")
 
     g = parser.add_argument_group('Windows and Mac OS X specific options')
     g.add_argument("-c", "--console", "--nowindowed", dest="console",
@@ -301,7 +305,7 @@ def __add_options(parser):
 
 
 def main(scripts, name=None, onefile=None,
-         console=True, debug=None, strip=False, noupx=False,
+         console=True, debug=None, strip=False, noupx=False, exclude_upx=None,
          runtime_tmpdir=None, pathex=None, version_file=None, specpath=None,
          bootloader_ignore_signals=False,
          datas=None, binaries=None, icon_file=None, manifest=None, resources=None, bundle_identifier=None,
@@ -369,6 +373,8 @@ def main(scripts, name=None, onefile=None,
 
     hiddenimports = hiddenimports or []
 
+    exclude_upx = exclude_upx or []
+
     # If script paths are relative, make them relative to the directory containing .spec file.
     scripts = [make_path_spec_relative(x, specpath) for x in scripts]
     # With absolute paths replace prefix with variable HOMEPATH.
@@ -412,6 +418,7 @@ def main(scripts, name=None, onefile=None,
         'bootloader_ignore_signals': bootloader_ignore_signals,
         'strip': strip,
         'upx': not noupx,
+        'exclude_upx': exclude_upx,
         'runtime_tmpdir': runtime_tmpdir,
         'exe_options': exe_options,
         'cipher_init': cipher_init,
