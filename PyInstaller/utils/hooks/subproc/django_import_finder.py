@@ -63,13 +63,13 @@ if hasattr(settings, 'MIDDLEWARE_CLASSES'):
 # Templates is a dict:
 if hasattr(settings, 'TEMPLATES'):
     for templ in settings.TEMPLATES:
-        backend = _remove_class(templ['BACKEND'])
         # Include context_processors.
-        if hasattr(templ, 'OPTIONS'):
-            if hasattr(templ['OPTIONS'], 'context_processors'):
+        options = templ.get('OPTIONS')
+        if options:  # TODO add DIRS to datas
+            context_processors = options.get('context_processors')
+            if context_processors:
                 # Context processors are functions - strip last word.
-                mods = templ['OPTIONS']['context_processors']
-                mods = [_remove_class(x) for x in mods]
+                mods = [_remove_class(x) for x in context_processors]
                 hiddenimports += mods
 # Include database backends - it is a dict.
 for v in settings.DATABASES.values():
