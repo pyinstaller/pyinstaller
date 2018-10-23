@@ -27,17 +27,17 @@ import os
 import django
 django.setup()
 
-# This allows to access all django settings even from the settings.py module.
+from django.apps import apps
 from django.conf import settings
 
 from PyInstaller.utils.hooks import collect_submodules
 
 
-hiddenimports = list(settings.INSTALLED_APPS) + \
-                 list(settings.TEMPLATE_CONTEXT_PROCESSORS) + \
-                 list(settings.TEMPLATE_LOADERS) + \
-                 [settings.ROOT_URLCONF]
+installed_apps = [x.name for x in apps.get_app_configs()]
 
+hiddenimports = installed_apps + [
+    settings.ROOT_URLCONF
+]
 
 def _remove_class(class_name):
     return '.'.join(class_name.split('.')[0:-1])
@@ -93,7 +93,7 @@ def find_url_callbacks(urls_module):
 
 
 # Add templatetags and context processors for each installed app.
-for app in settings.INSTALLED_APPS:
+for app in installed_apps:
     app_templatetag_module = app + '.templatetags'
     app_ctx_proc_module = app + '.context_processors'
     hiddenimports.append(app_templatetag_module)
