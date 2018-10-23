@@ -16,6 +16,7 @@ NOTE: With newer version of Django this is most likely the part of PyInstaller
 
 Tested with Django 1.8.
 """
+DJANGO_SETTINGS_MODULE = 'DJANGO_SETTINGS_MODULE'
 
 
 import os
@@ -103,8 +104,8 @@ for app in settings.INSTALLED_APPS:
 from django.core.urlresolvers import RegexURLPattern, RegexURLResolver
 
 
-# Construct base module name - without 'settings' suffix.
-base_module_name = '.'.join(os.environ['DJANGO_SETTINGS_MODULE'].split('.')[0:-1])
+# Construct base module name - handle paths like comp.mysite.settings.local or mysite.settings
+base_module_name = os.environ[DJANGO_SETTINGS_MODULE].split('.settings')[0]
 base_module = __import__(base_module_name, {}, {}, ["urls"])
 urls = base_module.urls
 
