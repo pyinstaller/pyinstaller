@@ -351,6 +351,7 @@ class EXE(Target):
         self.manifest = kwargs.get('manifest', None)
         self.resources = kwargs.get('resources', [])
         self.strip = kwargs.get('strip', False)
+        self.exclude_upx = kwargs.get("exclude_upx", [])
         self.runtime_tmpdir = kwargs.get('runtime_tmpdir', None)
         # If ``append_pkg`` is false, the archive will not be appended
         # to the exe, but copied beside it.
@@ -362,7 +363,6 @@ class EXE(Target):
 
         if CONF['hasUPX']:
             self.upx = kwargs.get('upx', False)
-            self.exclude_upx = kwargs.get("exclude_upx", [])
         else:
             self.upx = False
 
@@ -645,11 +645,11 @@ class COLLECT(Target):
         from ..config import CONF
         Target.__init__(self)
         self.strip_binaries = kws.get('strip', False)
+        self.exclude_upx = kws.get("exclude_upx", [])
         self.console = True
 
         if CONF['hasUPX']:
             self.upx_binaries = kws.get('upx', False)
-            self.exclude_upx = kws.get("exclude_upx", [])
         else:
             self.upx_binaries = False
 
