@@ -20,10 +20,8 @@ DJANGO_SETTINGS_MODULE = 'DJANGO_SETTINGS_MODULE'
 
 
 import os
-
-# Calling django.setup() avoids the exception AppRegistryNotReady()
-# and also reads the user settings from DJANGO_SETTINGS_MODULE.
-# https://stackoverflow.com/questions/24793351/django-appregistrynotready
+if os.environ.get(DJANGO_SETTINGS_MODULE) is None:
+    raise Exception('Please ensure %s env var is set' % DJANGO_SETTINGS_MODULE)
 import django
 django.setup()
 
