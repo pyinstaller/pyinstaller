@@ -1016,11 +1016,12 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
 #if defined(__APPLE__) && defined(WINDOWED)
 
 static Boolean gQuit = false,
-               apple_event_is_open_doc = 0; /* flag set to indicate the current AppleEvent is an OpenDoc event */
+               apple_event_is_open_doc = false, /* flag set to indicate the current AppleEvent is an OpenDoc event (drag/drop) */
+               apple_event_is_open_uri = false; /* flag set to indicate the current AppleEvent is an OpenDoc event (URL open) */
 
 static pascal OSErr handle_open_doc_ae(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon handlerRefcon)
 {
-    if (apple_event_is_open_doc) {
+    if (apple_event_is_open_doc || apple_event_is_open_uri) {
         VS("LOADER [AppleEvent]: OpenDocument handler called.\n");
 
         if (!child_pid) {
@@ -1043,10 +1044,11 @@ static pascal OSErr handle_open_doc_ae(const AppleEvent *theAppleEvent, AppleEve
 
             for (index = 1; index <= count; index++)
             {
-                err = AEGetNthPtr(&docList, index, /*typeFileURL*/typeUTF8Text, &keywd, &returnedType, buf, sizeof(buf), &actualSize);
+                err = AEGetNthPtr(&docList, index, apple_event_is_open_doc ? typeFileURL : typeUTF8Text, &keywd, &returnedType, buf, sizeof(buf)-1, &actualSize);
                 if (err != noErr) {
                     VS("LOADER [AppleEvent ARGV_EMU]: err[%d] = %d\n",(int)index, (int)err);
                 } else {
+                    buf[actualSize] = 0; /* NUL terminate string */
                     VS("LOADER [AppleEvent ARGV_EMU]: arg[%d] = %s\n",(int)index, buf);
                     argv_pyi = (char**)realloc(argv_pyi,(argc_pyi+2)*sizeof(char*));
                     argv_pyi[argc_pyi++] = strdup(buf);
@@ -1121,9 +1123,10 @@ static OSStatus evt_handler_proc(EventHandlerCallRef href, EventRef eref, void *
     // Convert the event ref to the type AEProcessAppleEvent expects.
     ConvertEventRefToEventRecord(eref, &eventRecord);
     VS("LOADER [AppleEvent]: what=%hu message=%lx modifiers=%hu\n", eventRecord.what, eventRecord.message, eventRecord.modifiers);
-    apple_event_is_open_doc = eventRecord.what == kHighLevelEvent && eventRecord.message == 0x4755524c;
+    apple_event_is_open_uri = eventRecord.what == kHighLevelEvent && eventRecord.message == 0x4755524c;
+    apple_event_is_open_doc = eventRecord.what == kHighLevelEvent && eventRecord.message == 0x61657674;
     OSStatus err = AEProcessAppleEvent(&eventRecord);
-    apple_event_is_open_doc = 0;
+    apple_event_is_open_doc = apple_event_is_open_uri = false;
     if (err) VS("LOADER [AppleEvent]: Failed to forward event to handle_open_doc_ae!\n");
     if (release)
         ReleaseEvent(eref);
