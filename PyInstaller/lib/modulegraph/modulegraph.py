@@ -130,14 +130,19 @@ _packagePathMap = {}
 # The value is a list of such prefixes as the prefix varies with versions of
 # setuptools.
 _SETUPTOOLS_NAMESPACEPKG_PTHs=(
+    # setuptools 31.0.0
     ("import sys, types, os;has_mfs = sys.version_info > (3, 5);"
          "p = os.path.join(sys._getframe(1).f_locals['sitedir'], *('"),
+    # distribute 0.6.10
     ("import sys,types,os; p = os.path.join("
          "sys._getframe(1).f_locals['sitedir'], *('"),
+    # setuptools 0.6c9, distribute 0.6.12
     ("import sys,new,os; p = os.path.join(sys._getframe("
          "1).f_locals['sitedir'], *('"),
+    # setuptools 28.1.0
     ("import sys, types, os;p = os.path.join("
          "sys._getframe(1).f_locals['sitedir'], *('"),
+    # setuptools 28.7.0
     ("import sys, types, os;pep420 = sys.version_info > (3, 3);"
          "p = os.path.join(sys._getframe(1).f_locals['sitedir'], *('",)
 )
