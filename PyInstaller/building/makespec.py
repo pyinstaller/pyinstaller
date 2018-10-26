@@ -212,9 +212,11 @@ def __add_options(parser):
     g.add_argument("--noupx", action="store_true", default=False,
                    help="Do not use UPX even if it is available "
                         "(works differently between Windows and *nix)")
-    g.add_argument("--exclude-upx", dest="exclude_upx", metavar="<FILE>", action="append", default=[],
-                   help="Prevent a binary from being compressed using upx."
-                        "This is typically used if upx corrupts certain binaries during compression."
+    g.add_argument("--exclude-upx", dest="exclude_upx", metavar="FILE",
+                   action="append",
+                   help="Prevent a binary from being compressed when using "
+                        "upx. This is typically used if upx corrupts certain "
+                        "binaries during compression. "
                         "This option can be used multiple times.")
 
     g = parser.add_argument_group('Windows and Mac OS X specific options')
@@ -372,7 +374,6 @@ def main(scripts, name=None, onefile=None,
         exe_options = "%s, resources=%s" % (exe_options, repr(resources))
 
     hiddenimports = hiddenimports or []
-
     exclude_upx = exclude_upx or []
 
     # If script paths are relative, make them relative to the directory containing .spec file.

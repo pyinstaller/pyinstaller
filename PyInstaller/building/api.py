@@ -154,7 +154,7 @@ class PKG(Target):
                  'DEPENDENCY': 'd'}
 
     def __init__(self, toc, name=None, cdict=None, exclude_binaries=0,
-                 strip_binaries=False, upx_binaries=False, exclude_upx=[]):
+                 strip_binaries=False, upx_binaries=False, exclude_upx=None):
         """
         toc
                 A TOC (Table of Contents)
@@ -181,7 +181,7 @@ class PKG(Target):
         self.exclude_binaries = exclude_binaries
         self.strip_binaries = strip_binaries
         self.upx_binaries = upx_binaries
-        self.exclude_upx = exclude_upx
+        self.exclude_upx = exclude_upx or []
         # This dict tells PyInstaller what items embedded in the executable should
         # be compressed.
         if self.cdict is None:
@@ -255,9 +255,11 @@ class PKG(Target):
                     seenFnms[fnm] = inm
                     seenFnms_typ[fnm] = typ
 
-                    do_upx = os.path.basename(fnm) not in self.exclude_upx
+                    do_upx = (self.upx_binaries
+                              and (is_win or is_cygwin)
+                              and os.path.basename(fnm) not in self.exclude_upx)
                     fnm = checkCache(fnm, strip=self.strip_binaries,
-                                     upx=(self.upx_binaries and (is_win or is_cygwin) and do_upx),
+                                     upx=do_upx,
                                      dist_nm=inm)
 
                     mytoc.append((inm, fnm, self.cdict.get(typ, 0),
@@ -707,9 +709,11 @@ class COLLECT(Target):
             if not os.path.exists(todir):
                 os.makedirs(todir)
             if typ in ('EXTENSION', 'BINARY'):
-                do_upx = os.path.basename(fnm) not in self.exclude_upx
+                do_upx = (self.upx_binaries
+                          and (is_win or is_cygwin)
+                          and os.path.basename(fnm) not in self.exclude_upx)
                 fnm = checkCache(fnm, strip=self.strip_binaries,
-                                 upx=(self.upx_binaries and (is_win or is_cygwin) and do_upx),
+                                 upx=do_upx,
                                  dist_nm=inm)
             if typ != 'DEPENDENCY':
                 shutil.copy(fnm, tofnm)
