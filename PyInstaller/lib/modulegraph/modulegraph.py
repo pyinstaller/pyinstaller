@@ -144,7 +144,7 @@ _SETUPTOOLS_NAMESPACEPKG_PTHs=(
          "sys._getframe(1).f_locals['sitedir'], *('"),
     # setuptools 28.7.0
     ("import sys, types, os;pep420 = sys.version_info > (3, 3);"
-         "p = os.path.join(sys._getframe(1).f_locals['sitedir'], *('",)
+         "p = os.path.join(sys._getframe(1).f_locals['sitedir'], *('"),
 )
 
 
