@@ -1063,7 +1063,7 @@ static pascal OSErr handle_apple_event(const AppleEvent *theAppleEvent, AppleEve
                         if (url) {
                             CFStringRef path = CFURLCopyFileSystemPath(url, kCFURLPOSIXPathStyle);
                             if (path) {
-                                ok = CFStringGetFileSystemRepresentation(path, buf, sizeof(buf)-1);
+                                ok = CFStringGetFileSystemRepresentation(path, buf, sizeof(buf));
                                 CFRelease(path);
                             }
                             CFRelease(url);
@@ -1118,10 +1118,9 @@ static pascal OSErr handle_apple_event(const AppleEvent *theAppleEvent, AppleEve
             if (err != noErr) goto cleanup2;
 
             { /* <-- These curly braces aren't a typo. We are creating a nested scope here for below vars. */
-                char buf[1024*16];
-                memset(buf, 0, sizeof(buf));
-                DescType actualType=0;
-                Size actualSize=0;
+                char buf[1024*64]; /* 64 kb buffer should be enough for drag/drops */
+                DescType actualType = 0;
+                Size actualSize = 0;
                 VS("LOADER [AppleEvent EVT_FWD]: Getting param.\n");
                 err = AEGetParamPtr(theAppleEvent, keyDirectObject, typeWildCard, &actualType, buf, sizeof(buf), &actualSize);
                 if (err != noErr) goto cleanup1;
@@ -1156,8 +1155,8 @@ static OSStatus evt_handler_proc(EventHandlerCallRef href, EventRef eref, void *
        before being passed to AEProcessAppleEvent. */
     if (IsEventInQueue(GetMainEventQueue(), eref))
     {
-        // RemoveEventFromQueue will release the event, which will
-        //  destroy it if we don't retain it first.
+        /* RemoveEventFromQueue will release the event, which will
+           destroy it if we don't retain it first. */
         VS("LOADER [AppleEvent]: Event was in queue, will release.\n");
         RetainEvent(eref);
         release = true;
