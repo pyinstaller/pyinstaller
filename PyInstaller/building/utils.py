@@ -343,11 +343,9 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
                                     raise
 
     if cmd:
-        try:
-            logger.info("Executing - " + ' '.join(cmd))
-            compat.exec_command(*cmd)
-        except OSError as e:
-            raise SystemExit("Execution failed: %s" % e)
+        logger.info("Executing - " + ' '.join(cmd))
+        # terminates if execution fails
+        compat.exec_command(*cmd)
 
     # update cache index
     cache_index[basenm] = digest

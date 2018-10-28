@@ -68,10 +68,7 @@ def __exec_python_cmd(cmd, env=None):
         pp = os.pathsep.join([pp_env.get('PYTHONPATH'), pp])
     pp_env['PYTHONPATH'] = pp
 
-    try:
-        txt = exec_python(*cmd, env=pp_env)
-    except OSError as e:
-        raise SystemExit("Execution failed: %s" % e)
+    txt = exec_python(*cmd, env=pp_env)
     return txt.strip()
 
 

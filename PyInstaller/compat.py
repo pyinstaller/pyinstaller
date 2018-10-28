@@ -21,6 +21,7 @@ import platform
 import site
 import subprocess
 import sys
+import errno
 
 # Distinguish code for different major Python version.
 is_py2 = sys.version_info[0] == 2
@@ -349,6 +350,10 @@ def exec_command(*cmdargs, **kwargs):
         Optional keyword argument specifying the encoding with which to decode
         this command's standard output under Python 3. As this function's return
         value should be ignored, this argument should _never_ be passed.
+    __raise_ENOENT__ : boolean, optional
+        Optional keyword argument to simply raise the exception if the
+        executing the command fails since to the command is not found. This is
+        useful to checking id a command exists.
 
     All remaining keyword arguments are passed as is to the `subprocess.Popen()`
     constructor.
@@ -360,7 +365,18 @@ def exec_command(*cmdargs, **kwargs):
     """
 
     encoding = kwargs.pop('encoding', None)
-    out = subprocess.Popen(cmdargs, stdout=subprocess.PIPE, **kwargs).communicate()[0]
+    raise_ENOENT = kwargs.pop('__raise_ENOENT__', None)
+    try:
+        out = subprocess.Popen(
+            cmdargs, stdout=subprocess.PIPE, **kwargs).communicate()[0]
+    except OSError as e:
+        if raise_ENOENT and e.errno == errno.ENOENT:
+            raise
+        print('--' * 20, file=sys.stderr)
+        print("Error running '%s':" % " ".join(cmdargs), file=sys.stderr)
+        print(e, file=sys.stderr)
+        print('--' * 20, file=sys.stderr)
+        raise SystemExit("Error: Executing command failed!")
     # Python 3 returns stdout/stderr as a byte array NOT as string.
     # Thus we need to convert that to proper encoding.
 
