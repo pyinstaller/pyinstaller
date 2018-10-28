@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2017-2018, PyInstaller Development Team.
+# Copyright (c) 2018, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -8,13 +8,7 @@
 #-----------------------------------------------------------------------------
 
 # Hook for dateparser: https://pypi.org/project/dateparser/
-from PyInstaller.utils.hooks import exec_statement, collect_submodules
 
-strptime_data_file = exec_statement(
-    "import inspect; import _strptime; print(inspect.getfile(_strptime))"
-)
+from PyInstaller.utils.hooks import collect_submodules
 
-datas = [(strptime_data_file, "")]
-
-hiddenimports = collect_submodules('dateparser.data')
-print(hiddenimports)
+hiddenimports = ["_strptime"] + collect_submodules('dateparser.data')
