@@ -8,10 +8,9 @@
 #-----------------------------------------------------------------------------
 
 """
-    Gooey GUI carry some language and images for it's UI to function.
+Gooey GUI carries some language and images for it's UI to function.
 """
 
 from PyInstaller.utils.hooks import collect_data_files
 
 datas = collect_data_files('gooey')
-
