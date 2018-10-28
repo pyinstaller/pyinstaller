@@ -168,8 +168,8 @@ and are not visible when the ``--windowed`` option is used.
 Remember to not use this for your production version.
 
 
-Figuring Out Why Your Windowed App Won't Start
-----------------------------------------------
+Figuring Out Why Your GUI Application Won't Start
+---------------------------------------------------
 
 If you are using the ``--windowed`` option,
 your bundled application ay fail to start with an error message like
