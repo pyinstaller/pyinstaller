@@ -22,6 +22,7 @@ import site
 import subprocess
 import sys
 import errno
+from .exceptions import ExecCommandFailed
 
 # Distinguish code for different major Python version.
 is_py2 = sys.version_info[0] == 2
@@ -376,7 +377,7 @@ def exec_command(*cmdargs, **kwargs):
         print("Error running '%s':" % " ".join(cmdargs), file=sys.stderr)
         print(e, file=sys.stderr)
         print('--' * 20, file=sys.stderr)
-        raise SystemExit("Error: Executing command failed!")
+        raise ExecCommandFailed("Error: Executing command failed!")
     # Python 3 returns stdout/stderr as a byte array NOT as string.
     # Thus we need to convert that to proper encoding.
 

@@ -19,6 +19,7 @@ from ...compat import base_prefix, exec_command_stdout, exec_python, \
     EXTENSION_SUFFIXES, ALL_SUFFIXES
 from ... import HOMEPATH
 from ... import log as logging
+from ...exceptions import ExecCommandFailed
 
 logger = logging.getLogger(__name__)
 
@@ -911,7 +912,7 @@ def get_installer(module):
                 logger.debug(
                     'Found installer: \'macports\' for module: \'{0}\' from package: \'{1}\''.format(module, package))
                 return 'macports'
-        except OSError:
+        except ExecCommandFailed:
             pass
         real_path = os.path.realpath(file_name)
         if 'Cellar' in real_path:
