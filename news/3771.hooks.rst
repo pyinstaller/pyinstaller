@@ -1,1 +1,1 @@
-Hooks: Add hook for pywebview.
+Add hook for pywebview.
