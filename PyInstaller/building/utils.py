@@ -404,7 +404,7 @@ def _make_clean_directory(path):
     Create a clean directory from the given directory name
     """
     if _check_path_overlap(path):
-        if os.path.isdir(path):
+        if os.path.isdir(path) or os.path.isfile(path):
             try:
                 os.remove(path)
             except OSError:
