@@ -1,1 +1,1 @@
-Fixed crashing on changing from -F to -D on consecutive runs by handling directories in `_check_path_overlap()` in `PyInstaller/building/utils.py`
+Fix crash when changing from ``--onefile`` to ``--onedir`` on consecutive runs.
