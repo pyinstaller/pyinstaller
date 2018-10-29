@@ -706,7 +706,12 @@ class COLLECT(Target):
                                  upx=(self.upx_binaries and (is_win or is_cygwin)),
                                  dist_nm=inm)
             if typ != 'DEPENDENCY':
-                shutil.copy(fnm, tofnm)
+                if os.path.isdir(fnm):
+                    # beacuse shutil.copy2() is the default copy function
+                    # for shutil.copytree, this will also copy file metadata
+                    shutil.copytree(fnm, tofnm)
+                else:
+                    shutil.copy(fnm, tofnm)
                 try:
                     shutil.copystat(fnm, tofnm)
                 except OSError:
