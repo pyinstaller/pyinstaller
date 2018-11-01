@@ -49,7 +49,7 @@ zeep==3.1.0
 pyexcelerate==0.7.3
 Pillow==5.3.0
 pinyin==0.4.0
-pycryptodome==3.6.6
+pycryptodome==3.7.0
 pycryptodomex==3.6.6
 future==0.16.0
 pyusb==1.0.2
