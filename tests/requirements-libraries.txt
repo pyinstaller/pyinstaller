@@ -57,7 +57,7 @@ Unidecode==1.0.22
 h5py==2.8.0
 python-dateutil==2.7.5
 phonenumbers==8.9.16
-gevent==1.3.6
+gevent==1.3.7
 requests==2.19.1
 
 
