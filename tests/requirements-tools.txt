@@ -31,7 +31,7 @@ psutil==5.4.8
 # Check new flake8 violations on pull requests
 flake8-diff==0.2.2
 
-subprocess32; python_version == '2.7'
+subprocess32==3.5.3; python_version == '2.7'
 
 # Current pypiwin32 simply installs pywin32. Only an old pypiwin32 release has a
 # Python 3.4 wheel.
