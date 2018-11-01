@@ -40,7 +40,7 @@ exe = EXE(pyz,
           bootloader_ignore_signals=%(bootloader_ignore_signals)s,
           strip=%(strip)s,
           upx=%(upx)s,
-          exclude_upx=%(exclude_upx)s,
+          upx_exclude=%(upx_exclude)s,
           runtime_tmpdir=%(runtime_tmpdir)r,
           console=%(console)s %(exe_options)s)
 """
@@ -78,7 +78,7 @@ coll = COLLECT(exe,
                a.datas,
                strip=%(strip)s,
                upx=%(upx)s,
-               exclude_upx=%(exclude_upx)s,
+               upx_exclude=%(upx_exclude)s,
                name='%(name)s')
 """
 

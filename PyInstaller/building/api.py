@@ -154,7 +154,7 @@ class PKG(Target):
                  'DEPENDENCY': 'd'}
 
     def __init__(self, toc, name=None, cdict=None, exclude_binaries=0,
-                 strip_binaries=False, upx_binaries=False, exclude_upx=None):
+                 strip_binaries=False, upx_binaries=False, upx_exclude=None):
         """
         toc
                 A TOC (Table of Contents)
@@ -181,7 +181,7 @@ class PKG(Target):
         self.exclude_binaries = exclude_binaries
         self.strip_binaries = strip_binaries
         self.upx_binaries = upx_binaries
-        self.exclude_upx = exclude_upx or []
+        self.upx_exclude = upx_exclude or []
         # This dict tells PyInstaller what items embedded in the executable should
         # be compressed.
         if self.cdict is None:
@@ -257,7 +257,7 @@ class PKG(Target):
 
                     do_upx = (self.upx_binaries
                               and (is_win or is_cygwin)
-                              and os.path.basename(fnm) not in self.exclude_upx)
+                              and os.path.basename(fnm) not in self.upx_exclude)
                     fnm = checkCache(fnm, strip=self.strip_binaries,
                                      upx=do_upx,
                                      dist_nm=inm)
@@ -353,7 +353,7 @@ class EXE(Target):
         self.manifest = kwargs.get('manifest', None)
         self.resources = kwargs.get('resources', [])
         self.strip = kwargs.get('strip', False)
-        self.exclude_upx = kwargs.get("exclude_upx", [])
+        self.upx_exclude = kwargs.get("upx_exclude", [])
         self.runtime_tmpdir = kwargs.get('runtime_tmpdir', None)
         # If ``append_pkg`` is false, the archive will not be appended
         # to the exe, but copied beside it.
@@ -427,7 +427,7 @@ class EXE(Target):
         self.pkg = PKG(self.toc, cdict=kwargs.get('cdict', None),
                        exclude_binaries=self.exclude_binaries,
                        strip_binaries=self.strip, upx_binaries=self.upx,
-                       exclude_upx=self.exclude_upx
+                       upx_exclude=self.upx_exclude
                        )
         self.dependencies = self.pkg.dependencies
 
@@ -647,7 +647,7 @@ class COLLECT(Target):
         from ..config import CONF
         Target.__init__(self)
         self.strip_binaries = kws.get('strip', False)
-        self.exclude_upx = kws.get("exclude_upx", [])
+        self.upx_exclude = kws.get("upx_exclude", [])
         self.console = True
 
         if CONF['hasUPX']:
@@ -711,7 +711,7 @@ class COLLECT(Target):
             if typ in ('EXTENSION', 'BINARY'):
                 do_upx = (self.upx_binaries
                           and (is_win or is_cygwin)
-                          and os.path.basename(fnm) not in self.exclude_upx)
+                          and os.path.basename(fnm) not in self.upx_exclude)
                 fnm = checkCache(fnm, strip=self.strip_binaries,
                                  upx=do_upx,
                                  dist_nm=inm)

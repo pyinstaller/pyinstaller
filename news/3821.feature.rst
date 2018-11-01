@@ -1,1 +1,1 @@
-New command-line option ``--exclude-upx``, which allows the user to prevent binaries from being compressed with UPX.
+New command-line option ``--upx-exclude``, which allows the user to prevent binaries from being compressed with UPX.
