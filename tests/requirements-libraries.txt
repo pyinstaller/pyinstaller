@@ -77,7 +77,7 @@ pyenchant==2.0.0; sys_platform == 'darwin' or (sys_platform == 'win32' and pytho
 PySide==1.2.4; sys_platform == 'win32' and python_version <= '3.4'
 
 # As of 14-Aug-2018, twisted doesn't offer Python 3 wheels.
-twisted==18.7.0; python_version == '2.7'
+twisted==18.9.0; python_version == '2.7'
 
 
 # Python 3.5 and higher
