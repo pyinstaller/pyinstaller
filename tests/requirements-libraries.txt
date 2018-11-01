@@ -58,7 +58,7 @@ h5py==2.8.0
 python-dateutil==2.7.5
 phonenumbers==8.9.16
 gevent==1.3.7
-requests==2.19.1
+requests==2.20.0
 
 
 # Special cases
