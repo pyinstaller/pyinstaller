@@ -29,7 +29,7 @@ pytest-drop-dup-tests==0.1.0
 psutil==5.4.8
 
 # Check new flake8 violations on pull requests
-flake8-diff
+flake8-diff==0.2.2
 
 subprocess32; python_version == '2.7'
 
