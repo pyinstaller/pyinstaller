@@ -36,7 +36,7 @@ simplejson==3.16.0
 sphinx==1.8.1
 pyzmq==17.1.2
 # Required for test_namespace_package
-zope.interface==4.5.0
+zope.interface==4.6.0
 numpy==1.15.2
 scipy==1.1.0
 lxml==4.2.4
