@@ -26,7 +26,7 @@ import struct
 from PyInstaller.config import CONF
 from .. import compat
 from ..compat import is_darwin, is_win, EXTENSION_SUFFIXES, \
-    open_file, is_py3, is_py37
+    open_file, is_py3, is_py37, is_cygwin
 from ..depend import dylib
 from ..depend.bindepend import match_binding_redirect
 from ..utils import misc
@@ -150,7 +150,7 @@ def applyRedirects(manifest, redirects):
                 redirecting = True
     return redirecting
 
-def checkCache(fnm, strip=False, upx=False, dist_nm=None):
+def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None):
     """
     Cache prevents preprocessing binary files again and again.
 
@@ -175,10 +175,8 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
         strip = True
     else:
         strip = False
-    if upx:
-        upx = True
-    else:
-        upx = False
+    upx = (upx and (is_win or is_cygwin)
+           and os.path.normcase(os.path.basename(fnm)) not in upx_exclude)
 
     # Load cache index
     # Make cachedir per Python major/minor version.

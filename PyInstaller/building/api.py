@@ -203,6 +203,7 @@ class PKG(Target):
             ('exclude_binaries', _check_guts_eq),
             ('strip_binaries', _check_guts_eq),
             ('upx_binaries', _check_guts_eq),
+            ('upx_exclude', _check_guts_eq)
             # no calculated/analysed values
             )
 
@@ -255,11 +256,9 @@ class PKG(Target):
                     seenFnms[fnm] = inm
                     seenFnms_typ[fnm] = typ
 
-                    do_upx = (self.upx_binaries
-                              and (is_win or is_cygwin)
-                              and os.path.basename(fnm) not in self.upx_exclude)
                     fnm = checkCache(fnm, strip=self.strip_binaries,
-                                     upx=do_upx,
+                                     upx=(self.upx_binaries and (is_win or is_cygwin)),
+                                     upx_exclude=self.upx_exclude,
                                      dist_nm=inm)
 
                     mytoc.append((inm, fnm, self.cdict.get(typ, 0),
@@ -709,11 +708,9 @@ class COLLECT(Target):
             if not os.path.exists(todir):
                 os.makedirs(todir)
             if typ in ('EXTENSION', 'BINARY'):
-                do_upx = (self.upx_binaries
-                          and (is_win or is_cygwin)
-                          and os.path.basename(fnm) not in self.upx_exclude)
                 fnm = checkCache(fnm, strip=self.strip_binaries,
-                                 upx=do_upx,
+                                 upx=(self.upx_binaries and (is_win or is_cygwin)),
+                                 upx_exclude=self.upx_exclude,
                                  dist_nm=inm)
             if typ != 'DEPENDENCY':
                 shutil.copy(fnm, tofnm)
