@@ -8,11 +8,12 @@
 #-----------------------------------------------------------------------------
 
 """
-pysoundfile: https://github.com/bastibe/SoundFile
+pysoundfile:
+https://github.com/bastibe/SoundFile
 """
 
 import os
-from PyInstaller.utils.hooks import *
+from PyInstaller.utils.hooks import get_package_paths
 
 # get path of soundfile
 sfp = get_package_paths('soundfile')
