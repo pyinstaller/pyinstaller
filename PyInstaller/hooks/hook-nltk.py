@@ -7,6 +7,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+from os.path import exists
 
 # hook for nltk
 import nltk
@@ -17,7 +18,5 @@ datas = collect_data_files('nltk', False)
 
 # loop through the data directories and add them
 for p in nltk.data.path:
-    datas.append((p, "nltk_data"))
-
-# nltk.chunk.named_entity should be included
-hiddenimports = ["nltk.chunk.named_entity"]
+    if exists(p):
+        datas.append((p, "nltk_data"))
