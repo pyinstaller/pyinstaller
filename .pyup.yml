@@ -6,6 +6,8 @@ schedule: "every month"
 
 requirements:
   - tests/requirements-libraries.txt
+  - tests/requirements-tools.txt:
+      update: False
 
 pr_prefix: "Tests: Requirements:"
 label_prs: tests/ci/pyup

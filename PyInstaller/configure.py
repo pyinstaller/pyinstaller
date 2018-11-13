@@ -29,7 +29,8 @@ def test_UPX(config, upx_dir):
 
     hasUPX = 0
     try:
-        vers = compat.exec_command(cmd, '-V').strip().splitlines()
+        vers = compat.exec_command(
+            cmd, '-V', __raise_ENOENT__=True).strip().splitlines()
         if vers:
             v = vers[0].split()[1]
             hasUPX = tuple(map(int, v.split(".")))

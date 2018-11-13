@@ -168,6 +168,34 @@ and are not visible when the ``--windowed`` option is used.
 Remember to not use this for your production version.
 
 
+Figuring Out Why Your GUI Application Won't Start
+---------------------------------------------------
+
+If you are using the ``--windowed`` option,
+your bundled application ay fail to start with an error message like
+``Failed to execute script my_gui``.
+In this case, you will want to get more verbose output to find out
+what is going on.
+
+* For Mac OS, you can run your application on the command line,
+  i.e.``./dist/my_gui``
+  in `Terminal` instead of clicking on ``my_gui.app``.
+
+* For Windows, you will need to re-bundle your application without the
+  ``--windowed`` option.
+  Then you can run the resulting executable from the command line,
+  i.e.: ``my_gui.exe``.
+
+* For Unix and GNU/Linux there in no ``--windowed`` option.
+  Anyway, if a your GUI application fails,
+  you can run your application on the command line,
+  i.e. ``./dist/my_gui``.
+  
+This should give you the relevant error that is preventing your
+application from initializing, and you can then move on to other
+debugging steps.
+
+
 .. _helping pyinstaller find modules:
 
 Helping PyInstaller Find Modules

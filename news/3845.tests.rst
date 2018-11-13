@@ -1,0 +1,1 @@
+November update of packages used in testing. Prevent pyup from touching ``test/requirements-tools.txt``.

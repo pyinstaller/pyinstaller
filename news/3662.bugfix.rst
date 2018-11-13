@@ -1,0 +1,1 @@
+Fix crash when changing from ``--onefile`` to ``--onedir`` on consecutive runs.

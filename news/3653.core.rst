@@ -1,0 +1,1 @@
+Add support for folders in `COLLECT` and `BUNDLE`.

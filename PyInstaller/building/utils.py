@@ -343,11 +343,9 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
                                     raise
 
     if cmd:
-        try:
-            logger.info("Executing - " + ' '.join(cmd))
-            compat.exec_command(*cmd)
-        except OSError as e:
-            raise SystemExit("Execution failed: %s" % e)
+        logger.info("Executing - " + ' '.join(cmd))
+        # terminates if execution fails
+        compat.exec_command(*cmd)
 
     # update cache index
     cache_index[basenm] = digest
@@ -404,7 +402,7 @@ def _make_clean_directory(path):
     Create a clean directory from the given directory name
     """
     if _check_path_overlap(path):
-        if os.path.isdir(path):
+        if os.path.isdir(path) or os.path.isfile(path):
             try:
                 os.remove(path)
             except OSError:
