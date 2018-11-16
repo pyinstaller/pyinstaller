@@ -199,13 +199,15 @@ debugging steps.
 Operation not permitted error
 -----------------------------
 
-If you use the --onefile and it fails to run you program with error like:
-       ./dist/hello: error while loading shared libraries: libz.so.1: failed to map segment from shared object: Operation not permitted
+If you use the --onefile and it fails to run you program with error like
+
+**./hello: error while loading shared libraries: libz.so.1: failed to map segment from shared object: Operation not permitted**
 
 This can be caused by /tmp directory permissions (like filesystem is mounted with “noexec” flags).
 
-A simple way to solve this issue is to set, in the environment variable TMPDIR, a path to a directory in a filesystem mounted without “noexec” flags:
-       export TMPDIR=/var/tmp/
+A simple way to solve this issue is to set, in the environment variable TMPDIR, a path to a directory in a filesystem mounted without “noexec” flags
+
+**export TMPDIR=/var/tmp/**
 
 .. _helping pyinstaller find modules:
 
