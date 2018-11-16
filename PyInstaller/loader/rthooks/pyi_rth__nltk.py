@@ -12,5 +12,13 @@ import sys
 import os
 import nltk
 
+datas = []
+# loop through the data directories and add them
+for p in nltk.data.path: #environment variable of nltk
+	if(os.path.exists(p)):
+		datas.append((p, "nltk_data"))
+    
+nltk.data.path.clear()
+nltk.data.path = datas
 #add the path to nltk_data
 nltk.data.path.append(os.path.join(sys._MEIPASS, "nltk_data"))
