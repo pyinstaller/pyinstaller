@@ -175,6 +175,7 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None):
         strip = True
     else:
         strip = False
+    upx_exclude = upx_exclude or []
     upx = (upx and (is_win or is_cygwin)
            and os.path.normcase(os.path.basename(fnm)) not in upx_exclude)
 
