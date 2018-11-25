@@ -1,7 +1,4 @@
 # -*- encoding: utf-8 -*-
-
-__author__ = 'Suzumizaki-Kimitaka(鈴見咲 君高)'
-
 # -----------------------------------------------------------------------------
 # Copyright (c) 2005-2018, PyInstaller Development Team.
 #
@@ -10,6 +7,8 @@ __author__ = 'Suzumizaki-Kimitaka(鈴見咲 君高)'
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 # -----------------------------------------------------------------------------
+
+__author__ = 'Suzumizaki-Kimitaka(鈴見咲 君高)'
 
 from PyInstaller.utils.win32 import winmanifest
 from PyInstaller.utils.tests import skipif_notwin
