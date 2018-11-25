@@ -257,7 +257,7 @@ class PKG(Target):
                     seenFnms_typ[fnm] = typ
 
                     fnm = checkCache(fnm, strip=self.strip_binaries,
-                                     upx=(self.upx_binaries and (is_win or is_cygwin)),
+                                     upx=self.upx_binaries,
                                      upx_exclude=self.upx_exclude,
                                      dist_nm=inm)
 
@@ -709,7 +709,7 @@ class COLLECT(Target):
                 os.makedirs(todir)
             if typ in ('EXTENSION', 'BINARY'):
                 fnm = checkCache(fnm, strip=self.strip_binaries,
-                                 upx=(self.upx_binaries and (is_win or is_cygwin)),
+                                 upx=self.upx_binaries,
                                  upx_exclude=self.upx_exclude,
                                  dist_nm=inm)
             if typ != 'DEPENDENCY':
