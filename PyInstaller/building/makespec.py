@@ -217,6 +217,7 @@ def __add_options(parser):
                    help="Prevent a binary from being compressed when using "
                         "upx. This is typically used if upx corrupts certain "
                         "binaries during compression. "
+                        "FILE is the filename of the binary without path. "
                         "This option can be used multiple times.")
 
     g = parser.add_argument_group('Windows and Mac OS X specific options')
