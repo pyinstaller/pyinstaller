@@ -85,7 +85,7 @@ elif is_unix:
     PYDYLIB_NAMES = {'libpython%d.%d.so.1.0' % _pyver,
                      'libpython%d.%dm.so.1.0' % _pyver,
                      'libpython%d.%dmu.so.1.0' % _pyver,
-                     'libpython%d.%dm.so.rh-python%d%d-1.0' % (_pyver[0], _pyver[1], _pyver[0], _pyver[1])}
+                     'libpython%d.%dm.so.rh-python%d%d-1.0' % (_pyver * 2)}
 else:
     raise SystemExit('Your platform is not yet supported. '
                      'Please define constant PYDYLIB_NAMES for your platform.')
