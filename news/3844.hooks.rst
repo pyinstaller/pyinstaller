@@ -1,1 +1,1 @@
-added a hook for pysoundfile
+Add hook for pysoundfile.
