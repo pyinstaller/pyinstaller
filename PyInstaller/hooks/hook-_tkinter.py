@@ -11,7 +11,8 @@
 import os
 import sys
 
-from PyInstaller.compat import is_win, is_darwin, is_unix, is_venv, base_prefix
+from PyInstaller.compat import is_win, is_darwin, is_unix, is_venv, \
+    base_prefix, open_file, text_read_mode
 from PyInstaller.compat import modname_tkinter
 from PyInstaller.depend.bindepend import selectImports, getImports
 from PyInstaller.building.datastruct import Tree
@@ -77,7 +78,7 @@ def _warn_if_activetcl_or_teapot_installed(tcl_root, tcltree):
 
     mentions_activetcl = False
     mentions_teapot = False
-    with open(init_resource, 'r') as init_file:
+    with open_file(init_resource, text_read_mode, encoding='utf-8') as init_file:
         for line in init_file.readlines():
             line = line.strip().lower()
             if line.startswith('#'):

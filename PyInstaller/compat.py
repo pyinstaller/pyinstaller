@@ -100,6 +100,37 @@ else:
 open_file = open if is_py3 else io.open
 text_read_mode = 'r' if is_py3 else 'rU'
 
+
+# These are copied from ``six``.
+#
+# Type for representing (Unicode) textual data.
+text_type = unicode if is_py2 else str
+# Type for representing binary data.
+binary_type = str if is_py2 else bytes
+
+
+# Create a class which converts all writes to unicode first. For use with
+# ``print(*args, file=f)``, since in Python 2 this ``print`` will write str, not
+# unicode.
+class unicode_writer:
+
+    # Store the object to proxy.
+    def __init__(self, f):
+        self.f = f
+
+    # Insist that writes use the ``text_type``.
+    def write(self, _str):
+        self.f.write(text_type(_str))
+
+    def writelines(self, lines):
+        self.f.writelines([text_type(_str) for _str in lines])
+
+    # Proxy all other methods.
+    def __getattr__(self, name):
+        return getattr(self.f, name)
+
+
+
 # In Python 3 there is exception FileExistsError. But it is not available
 # in Python 2. For Python 2 fall back to OSError exception.
 if is_py2:

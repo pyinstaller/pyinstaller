@@ -10,6 +10,7 @@
 import re
 from PyInstaller.utils.hooks import (
     exec_statement, is_module_satisfies, logger)
+from PyInstaller.compat import open_file, text_read_mode
 from PyInstaller.lib.modulegraph.modulegraph import SourceModule
 
 # 'sqlalchemy.testing' causes bundling a lot of unnecessary modules.
@@ -59,7 +60,7 @@ def hook(hook_api):
         if isinstance(node, SourceModule) and \
                 node.identifier.startswith('sqlalchemy.'):
             known_imports.add(node.identifier)
-            with open(node.filename) as f:
+            with open_file(node.filename, text_read_mode, encoding='utf-8') as f:
                 for match in depend_regex.findall(f.read()):
                     hidden_imports_set.add(match)
 

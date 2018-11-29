@@ -29,7 +29,8 @@ from .. import HOMEPATH, DEFAULT_DISTPATH, DEFAULT_WORKPATH
 from .. import compat
 from .. import log as logging
 from ..utils.misc import absnormpath, compile_py_files
-from ..compat import is_py2, is_win, PYDYLIB_NAMES, VALID_MODULE_TYPES
+from ..compat import is_py2, is_win, PYDYLIB_NAMES, VALID_MODULE_TYPES, \
+    open_file, text_read_mode, text_type, unicode_writer
 from ..depend import bindepend
 from ..depend.analysis import initialize_modgraph
 from .api import PYZ, EXE, COLLECT, MERGE
@@ -219,8 +220,8 @@ class Analysis(Target):
             # Create a Python module which contains the decryption key which will
             # be used at runtime by pyi_crypto.PyiBlockCipher.
             pyi_crypto_key_path = os.path.join(CONF['workpath'], 'pyimod00_crypto_key.py')
-            with open(pyi_crypto_key_path, 'w') as f:
-                f.write('key = %r\n' % cipher.key)
+            with open_file(pyi_crypto_key_path, 'w', encoding='utf-8') as f:
+                f.write(text_type('key = %r\n' % cipher.key))
             logger.info('Adding dependencies on pyi_crypto.py module')
             self.hiddenimports.append(pyz_crypto.get_crypto_hiddenimports())
 
@@ -618,14 +619,15 @@ class Analysis(Target):
 
         from ..config import CONF
         miss_toc = self.graph.make_missing_toc()
-        with open(CONF['warnfile'], 'w') as wf:
-            wf.write(WARNFILE_HEADER)
+        with open_file(CONF['warnfile'], 'w', encoding='utf-8') as wf:
+            wf_unicode = unicode_writer(wf)
+            wf_unicode.write(WARNFILE_HEADER)
             for (n, p, status) in miss_toc:
                 importers = self.graph.get_importers(n)
                 print(status, 'module named', n, '- imported by',
                       ', '.join(dependency_description(name, data)
                                 for name, data in importers),
-                      file=wf)
+                      file=wf_unicode)
         logger.info("Warnings written to %s", CONF['warnfile'])
 
     def _write_graph_debug(self):
@@ -633,13 +635,13 @@ class Analysis(Target):
         of the graph.
         """
         from ..config import CONF
-        with open(CONF['xref-file'], 'w') as fh:
-            self.graph.create_xref(fh)
+        with open_file(CONF['xref-file'], 'w', encoding='utf-8') as fh:
+            self.graph.create_xref(unicode_writer(fh))
             logger.info("Graph cross-reference written to %s", CONF['xref-file'])
         if logger.getEffectiveLevel() > logging.DEBUG:
             return
-        with open(CONF['dot-file'], 'w') as fh:
-            self.graph.graphreport(fh)
+        with open_file(CONF['dot-file'], 'w', encoding='utf-8') as fh:
+            self.graph.graphreport(unicode_writer(fh))
             logger.info("Graph drawing written to %s", CONF['dot-file'])
 
 
@@ -778,10 +780,16 @@ def build(spec, distpath, workpath, clean_build):
     from ..config import CONF
     CONF['workpath'] = workpath
 
-    # Executing the specfile.
-    with open(spec, 'r') as f:
-        text = f.read()
-    exec(text, spec_namespace)
+    # Execute the specfile.
+    if is_py2:
+        # Deal with encoding annoyances in Python 2.
+        execfile(spec, spec_namespace)
+    else:
+        with open_file(spec, text_read_mode, encoding='utf-8') as f:
+            # Associate file names with the code object, to make tracebacks
+            # more informative.
+            code = compile(f.read(), spec, 'exec')
+            exec(code, spec_namespace)
 
 
 def __add_options(parser):
