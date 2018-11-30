@@ -10,7 +10,6 @@
 
 __author__ = 'Suzumizaki-Kimitaka(鈴見咲 君高)'
 
-from PyInstaller.utils.win32 import winmanifest
 from PyInstaller.utils.tests import skipif_notwin
 from PyInstaller import is_py2
 
@@ -50,6 +49,10 @@ def test_reading_manifest(tmpdir):
     XML manifest files are written with UTF-8 even localized Windows.
     We check here not to use local encoding against UTF-8 manifest file.
     """
+    # This import only works on Windows. Place it here, protected by the
+    # ``@skipif_notwin`` decorator.
+    from PyInstaller.utils.win32 import winmanifest
+
     # We create the XML file written with UTF-8 as Microsoft tools do.
     tmppath = tmpdir.join('manifest.xml')
     with tmppath.open('wt', ensure=True, encoding='utf-8') as write_handle:
