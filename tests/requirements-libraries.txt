@@ -95,4 +95,4 @@ uvloop==0.11.3; python_version >= '3.5' and sys_platform != 'win32'
 
 # Python 3 only packages
 # ----------------------
-pylint==2.1.1; python_version != '2.7'
+pylint==2.2.2; python_version != '2.7'
