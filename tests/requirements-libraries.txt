@@ -36,7 +36,7 @@ numpy==1.15.4
 scipy==1.1.0
 lxml==4.2.5
 keyring==17.0.0
-openpyxl==2.5.9
+openpyxl==2.5.12
 pycparser==2.19
 pytz==2018.7
 sqlalchemy==1.2.13
