@@ -45,7 +45,7 @@ pyexcelerate==0.7.3
 Pillow==5.3.0
 pinyin==0.4.0
 pycryptodome==3.7.2
-pycryptodomex==3.7.0
+pycryptodomex==3.7.2
 future==0.17.1
 pyusb==1.0.2
 Unidecode==1.0.22
