@@ -87,7 +87,7 @@ ipython==7.2.0; python_version>= '3.5'
 matplotlib==3.0.2; python_version >= '3.5'
 pandas==0.23.4; python_version >= '3.5'
 pyqt5==5.11.3; python_version >= '3.5'
-web3==4.8.1; python_version >= '3.5'
+web3==4.8.2; python_version >= '3.5'
 
 # uvloop does not currently support Windows.
 uvloop==0.11.3; python_version >= '3.5' and sys_platform != 'win32'
