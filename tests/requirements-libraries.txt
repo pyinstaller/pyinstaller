@@ -51,7 +51,7 @@ pyusb==1.0.2
 Unidecode==1.0.23
 h5py==2.8.0
 python-dateutil==2.7.5
-phonenumbers==8.9.16
+phonenumbers==8.10.1
 requests==2.20.0
 
 
