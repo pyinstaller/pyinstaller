@@ -109,7 +109,7 @@ text_type = unicode if is_py2 else str
 binary_type = str if is_py2 else bytes
 
 
-# Create a class which converts all writes to unicode first. For use with
+# This class converts all writes to unicode first. For use with
 # ``print(*args, file=f)``, since in Python 2 this ``print`` will write str, not
 # unicode.
 class unicode_writer:

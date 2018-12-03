@@ -30,7 +30,7 @@ from .. import compat
 from .. import log as logging
 from ..utils.misc import absnormpath, compile_py_files
 from ..compat import is_py2, is_win, PYDYLIB_NAMES, VALID_MODULE_TYPES, \
-    open_file, text_read_mode, text_type, unicode_writer
+    open_file, text_type, unicode_writer
 from ..depend import bindepend
 from ..depend.analysis import initialize_modgraph
 from .api import PYZ, EXE, COLLECT, MERGE
@@ -221,7 +221,8 @@ class Analysis(Target):
             # be used at runtime by pyi_crypto.PyiBlockCipher.
             pyi_crypto_key_path = os.path.join(CONF['workpath'], 'pyimod00_crypto_key.py')
             with open_file(pyi_crypto_key_path, 'w', encoding='utf-8') as f:
-                f.write(text_type('key = %r\n' % cipher.key))
+                f.write(text_type('# -*- coding: utf-8 -*-\n'
+                                  'key = %r\n' % cipher.key))
             logger.info('Adding dependencies on pyi_crypto.py module')
             self.hiddenimports.append(pyz_crypto.get_crypto_hiddenimports())
 
@@ -640,6 +641,7 @@ class Analysis(Target):
             logger.info("Graph cross-reference written to %s", CONF['xref-file'])
         if logger.getEffectiveLevel() > logging.DEBUG:
             return
+        # The `DOT language's <https://www.graphviz.org/doc/info/lang.html>`_ default character encoding (see the end of the linked page) is UTF-8.
         with open_file(CONF['dot-file'], 'w', encoding='utf-8') as fh:
             self.graph.graphreport(unicode_writer(fh))
             logger.info("Graph drawing written to %s", CONF['dot-file'])
@@ -780,17 +782,12 @@ def build(spec, distpath, workpath, clean_build):
     from ..config import CONF
     CONF['workpath'] = workpath
 
-    # Execute the specfile.
-    if is_py2:
-        # Deal with encoding annoyances in Python 2.
-        execfile(spec, spec_namespace)
-    else:
-        with open_file(spec, text_read_mode, encoding='utf-8') as f:
-            # Associate file names with the code object, to make tracebacks
-            # more informative.
-            code = compile(f.read(), spec, 'exec')
-            exec(code, spec_namespace)
-
+    # Execute the specfile. Read it as a binary file...
+    with open(spec, 'rU' if is_py2 else 'rb') as f:
+        # ... then let Python determine the encoding, since ``compile`` accepts
+        # byte strings.
+        code = compile(f.read(), spec, 'exec')
+    exec(code, spec_namespace)
 
 def __add_options(parser):
     parser.add_argument("--distpath", metavar="DIR",

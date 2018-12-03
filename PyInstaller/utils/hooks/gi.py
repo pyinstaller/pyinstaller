@@ -143,8 +143,10 @@ def gir_library_path_fix(path):
 
         with open_file(gir_file, text_read_mode, encoding='utf-8') as f:
             lines = f.readlines()
+        # GIR files are `XML encoded <https://developer.gnome.org/gi/stable/gi-gir-reference.html>`_,
+        # which means they are by definition encoded using UTF-8.
         with open_file(os.path.join(CONF['workpath'], gir_name), 'w',
-                  encoding='utf-8') as f:
+                       encoding='utf-8') as f:
             for line in lines:
                 if 'shared-library' in line:
                     split = re.split('(=)', line)
