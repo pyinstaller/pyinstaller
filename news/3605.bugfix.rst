@@ -1,0 +1,1 @@
+Explicitly specify an encoding of UTF-8 when opening *all* text files.

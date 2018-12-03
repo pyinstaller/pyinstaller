@@ -905,8 +905,10 @@ class ArchiveModule(BaseModule):
 
 # HTML templates for ModuleGraph generator
 header = """\
+<!DOCTYPE html>
 <html>
   <head>
+    <meta charset="UTF-8">
     <title>%(TITLE)s</title>
     <style>
       .node { padding: 0.5em 0 0.5em; border-top: thin grey dotted; }
@@ -3255,7 +3257,7 @@ class ModuleGraph(ObjectGraph):
                 return {'style': 'dotted'}
             return {}
 
-        yield 'digraph %s {\n' % (name,)
+        yield 'digraph %s {\ncharset="UTF-8";\n' % (name,)
         attr = dict(rankdir='LR', concentrate='true')
         cpatt = '%s="%s"'
         for item in attr.items():
