@@ -1,0 +1,1 @@
+Prevent hook-nltk from adding non-existing directories.
