@@ -8,13 +8,9 @@
 # include requirements for base testing
 -r requirements-tools.txt
 
-#
-# Libraries used for testing
-# ==========================
-#
+
 # Needs work
 # ----------
-#
 # These packages, if updated, produce test failures. Work needs to be done on
 # these hooks.
 #
@@ -24,41 +20,39 @@
 # Working
 # -------
 # These packages work with no (known) issues.
-
 babel==2.6.0
 boto==2.49.0
-boto3==1.9.14
-botocore==1.12.14
-pygments==2.2.0
+boto3==1.9.57
+botocore==1.12.57
+pygments==2.3.0
 markdown==3.0.1
 # simplejson is used for text_c_extension
 simplejson==3.16.0
-sphinx==1.8.1
+sphinx==1.8.2
 pyzmq==17.1.2
 # Required for test_namespace_package
-zope.interface==4.5.0
-numpy==1.15.2
+zope.interface==4.6.0
+numpy==1.15.4
 scipy==1.1.0
-lxml==4.2.4
-keyring==15.1.0
-openpyxl==2.5.8
+lxml==4.2.5
+keyring==17.0.0
+openpyxl==2.5.12
 pycparser==2.19
-pytz==2018.5
-sqlalchemy==1.2.12
+pytz==2018.7
+sqlalchemy==1.2.14
 zeep==3.1.0
 pyexcelerate==0.7.3
 Pillow==5.3.0
 pinyin==0.4.0
-pycryptodome==3.6.6
-pycryptodomex==3.6.6
-future==0.16.0
+pycryptodome==3.7.2
+pycryptodomex==3.7.2
+future==0.17.1
 pyusb==1.0.2
-Unidecode==1.0.22
+Unidecode==1.0.23
 h5py==2.8.0
-python-dateutil==2.7.3
-phonenumbers==8.9.14
-gevent==1.3.6
-requests==2.19.1
+python-dateutil==2.7.5
+phonenumbers==8.10.1
+requests==2.20.1
 
 
 # Special cases
@@ -77,22 +71,28 @@ pyenchant==2.0.0; sys_platform == 'darwin' or (sys_platform == 'win32' and pytho
 PySide==1.2.4; sys_platform == 'win32' and python_version <= '3.4'
 
 # As of 14-Aug-2018, twisted doesn't offer Python 3 wheels.
-twisted==18.7.0; python_version == '2.7'
+twisted==18.9.0; python_version == '2.7'
+
+# Current gevent doesn't provide Windows Python 3.7 x32 wheels. Since we can't
+# detect 32 vs. 64 bits, avoid Windows Python 3.7 altogether.
+gevent==1.3.7; python_version != '3.7' or sys_platform != 'win32'
+# Older gevent works on Windows Python 3.7 x32.
+gevent==1.3.6; python_version == '3.7' and sys_platform == 'win32'  # pyup: ignore
 
 
 # Python 3.5 and higher
 # ---------------------
-Django==2.1.2; python_version >= '3.5'
-ipython==7.0.1; python_version>= '3.5'
-matplotlib==3.0.0; python_version >= '3.5'
+Django==2.1.3; python_version >= '3.5'
+ipython==7.2.0; python_version>= '3.5'
+matplotlib==3.0.2; python_version >= '3.5'
 pandas==0.23.4; python_version >= '3.5'
 pyqt5==5.11.3; python_version >= '3.5'
-web3==4.7.2; python_version >= '3.5'
+web3==4.8.2; python_version >= '3.5'
 
 # uvloop does not currently support Windows.
-uvloop==0.11.2; python_version >= '3.5' and sys_platform != 'win32'
+uvloop==0.11.3; python_version >= '3.5' and sys_platform != 'win32'
 
 
 # Python 3 only packages
 # ----------------------
-pylint==2.1.1; python_version != '2.7'
+pylint==2.2.2; python_version != '2.7'

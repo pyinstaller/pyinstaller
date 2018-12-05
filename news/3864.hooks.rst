@@ -1,0 +1,1 @@
+Skip packaging PyQt5 QML files if the QML directory doesn't exist.

@@ -99,6 +99,28 @@ Or in Windows, use the little-known BAT file line continuation::
         myscript.spec
 
 
+Running |PyInstaller| from Python code
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you want to run |PyInstaller| from within Python code use the ``run``
+function of the ``__main__`` module and pass all command line arguments in as
+a list, e.g.
+
+.. code-block:: python
+
+    import PyInstaller.__main__
+
+    PyInstaller.__main__.run([
+        '--name=%s' % package_name,
+        '--onefile',
+        '--windowed',
+        '--add-binary=%s' % os.path.join('resource', 'path', '*.png'),
+        '--add-data=%s' % os.path.join('resource', 'path', '*.txt'),
+        '--icon=%s' % os.path.join('resource', 'path', 'icon.ico'),
+        os.path.join('my_package', '__main__.py'),
+    ])
+
+
 Running |PyInstaller| with Python optimizations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

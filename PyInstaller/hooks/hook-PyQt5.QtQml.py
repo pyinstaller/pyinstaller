@@ -18,8 +18,10 @@ hiddenimports, binaries, datas = add_qt5_dependencies(__file__)
 
 qmldir = pyqt5_library_info.location['Qml2ImportsPath']
 # Per https://github.com/pyinstaller/pyinstaller/pull/3229#issuecomment-359735031,
-# not all PyQt5 installs have QML files. In this case, ``qmldir`` is empty.
-if not qmldir:
+# not all PyQt5 installs have QML files. In this case, ``qmldir`` is empty. In
+# addition, the directory may not exist even if ``qmldir`` is not empty, per
+# https://github.com/pyinstaller/pyinstaller/issues/3864.
+if not os.path.exists(qmldir):
     logger.warning('Unable to find Qt5 QML files. QML files not packaged.')
 else:
     qml_rel_dir = ['PyQt5', 'Qt', 'qml']
