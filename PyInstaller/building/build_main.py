@@ -121,7 +121,7 @@ class Analysis(Target):
             The pure Python modules.
     binaries
             The extensionmodules and their dependencies. The secondary dependecies
-            are filtered. On Windows files from C:\Windows are excluded by default.
+            are filtered. On Windows files from C:\\Windows are excluded by default.
             On Linux/Unix only system libraries from /lib or /usr/lib are excluded.
     datas
             Data-file dependencies. These are data-file that are found to be needed
@@ -641,7 +641,8 @@ class Analysis(Target):
             logger.info("Graph cross-reference written to %s", CONF['xref-file'])
         if logger.getEffectiveLevel() > logging.DEBUG:
             return
-        # The `DOT language's <https://www.graphviz.org/doc/info/lang.html>`_ default character encoding (see the end of the linked page) is UTF-8.
+        # The `DOT language's <https://www.graphviz.org/doc/info/lang.html>`_
+        # default character encoding (see the end of the linked page) is UTF-8.
         with open_file(CONF['dot-file'], 'w', encoding='utf-8') as fh:
             self.graph.graphreport(unicode_writer(fh))
             logger.info("Graph drawing written to %s", CONF['dot-file'])
