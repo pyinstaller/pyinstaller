@@ -37,7 +37,8 @@ ENABLE_USER_SITE = False
 # functions, through the main() function when Python starts.
 # Issue #1699: Freezing pip requires 'site.USER_SITE' to be a 'str' not None.
 USER_SITE = ''
-USER_BASE = None
+# Freezing Jupyter Notebook requires 'site.USER_BASE' to be a 'str' not None.
+USER_BASE = ''
 
 
 # Package IPython depends on the following functionality from real site.py.
