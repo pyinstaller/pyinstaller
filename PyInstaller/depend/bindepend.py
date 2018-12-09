@@ -878,10 +878,7 @@ def get_python_library_path():
     if is_unix:
 
         # Search if it is an Anaconda distribution
-        if re.findall('/anaconda', sys.executable):
-
-            # Relative anaconda path to the lib
-            rel_lib_path = 'lib/libpython3.7m.so.1.0'
+        if re.findall('anaconda', sys.executable):
 
             # Split the path of the python executable
             # to determine what the full anaconda name is
@@ -895,11 +892,31 @@ def get_python_library_path():
             back_splits = splits[1].split('/')
             # Get the remaining characters of the anaconda name eg.(anaconda35)
             anaconda_name = 'anaconda' + back_splits[0]
-            # The absolute path to the lib
-            # it the preceding path then the anaconda name and the
-            # remaining charaters and the relative path to the library
-            abs_path = os.path.join(pre_path, anaconda_name, rel_lib_path)
-            return abs_path
+            # The anaconda path to the lib
+            # it is the preceding path to the anaconda name, the anaconda name,
+            # the remaining chars of the name and the relative path to the lib
+            anaconda_lib_path = os.path.join(pre_path, anaconda_name,
+                                             'lib')
+
+            # crawl the anaconda lib directory
+            # query each file or folder name to find a match
+            # that ends with a .so.1.0 eg. libpython3.7m.so.1.0
+            entries = os.listdir(anaconda_lib_path)
+
+            for entry in entries:
+                # The query finds a match which is limited to a file
+                # that is missing  a few charecters in between
+                # libpython and m.so.1.0
+                if re.findall('^libpython.*?m.so.1.0$', entry):
+                    # if a match is found
+                    # reconstruct the full path
+                    # eg. /root/anaconda4/lib/libpython3.8m.so.1.0
+                    abs_path = os.path.join(anaconda_lib_path, entry)
+                    # return the full path
+                    return abs_path
+
+                else:
+                    continue
 
         else:
             # It's not an Anaconda distribution
