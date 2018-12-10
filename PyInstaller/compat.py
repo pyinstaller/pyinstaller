@@ -38,6 +38,7 @@ is_py36 = sys.version_info >= (3, 6)
 is_py37 = sys.version_info >= (3, 7)
 
 is_win = sys.platform.startswith('win')
+is_win_10 = is_win and (platform.win32_ver()[0] == '10')
 is_cygwin = sys.platform == 'cygwin'
 is_darwin = sys.platform == 'darwin'  # Mac OS X
 
