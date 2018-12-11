@@ -53,6 +53,7 @@ python-dateutil==2.7.5
 phonenumbers==8.10.1
 requests==2.20.1
 pendulum==2.0.4
+pygame==1.9.4
 
 
 # Special cases

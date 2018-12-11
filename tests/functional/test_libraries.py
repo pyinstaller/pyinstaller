@@ -861,3 +861,19 @@ def test_pendulum(pyi_builder):
 
         print(pendulum.now().isoformat())
         """)
+
+
+@importorskip('pygame')
+def test_pygame(pyi_builder):
+    pyi_builder.test_source(
+        """
+        import os
+        os.environ["SDL_VIDEODRIVER"] = "dummy"
+        os.environ["SDL_AUDIODRIVER"] = "disk"
+        import pygame
+        pygame.init()
+        assert(pygame.font is not None)
+        assert(pygame.image is not None)
+        assert(pygame.mixer is not None)
+        pygame.display.set_mode((20, 20))
+        """)
