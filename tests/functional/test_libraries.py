@@ -806,6 +806,17 @@ def test_web3(pyi_builder):
     pyi_builder.test_source("import web3")
 
 
+@importorskip('pymunk')
+def test_pymunk(pyi_builder):
+    pyi_builder.test_source("""
+        import pymunk
+        space = pymunk.Space()
+        body = pymunk.Body(1, 2)
+        space.add(body, pymunk.Circle(body, 3))
+        space.step(0.1)
+        """)
+
+
 @importorskip('phonenumbers')
 def test_phonenumbers(pyi_builder):
     pyi_builder.test_source("""
