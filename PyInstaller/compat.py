@@ -86,7 +86,8 @@ elif is_unix:
     # Python 3 .so library on Linux is: libpython3.2mu.so.1.0, libpython3.3m.so.1.0
     PYDYLIB_NAMES = {'libpython%d.%d.so.1.0' % _pyver,
                      'libpython%d.%dm.so.1.0' % _pyver,
-                     'libpython%d.%dmu.so.1.0' % _pyver}
+                     'libpython%d.%dmu.so.1.0' % _pyver,
+                     'libpython%d.%dm.so' % _pyver}
 else:
     raise SystemExit('Your platform is not yet supported. '
                      'Please define constant PYDYLIB_NAMES for your platform.')
@@ -98,6 +99,37 @@ else:
 # unsafe in regards to character encodings and hence inferior to io.open().
 open_file = open if is_py3 else io.open
 text_read_mode = 'r' if is_py3 else 'rU'
+
+
+# These are copied from ``six``.
+#
+# Type for representing (Unicode) textual data.
+text_type = unicode if is_py2 else str
+# Type for representing binary data.
+binary_type = str if is_py2 else bytes
+
+
+# This class converts all writes to unicode first. For use with
+# ``print(*args, file=f)``, since in Python 2 this ``print`` will write str, not
+# unicode.
+class unicode_writer:
+
+    # Store the object to proxy.
+    def __init__(self, f):
+        self.f = f
+
+    # Insist that writes use the ``text_type``.
+    def write(self, _str):
+        self.f.write(text_type(_str))
+
+    def writelines(self, lines):
+        self.f.writelines([text_type(_str) for _str in lines])
+
+    # Proxy all other methods.
+    def __getattr__(self, name):
+        return getattr(self.f, name)
+
+
 
 # In Python 3 there is exception FileExistsError. But it is not available
 # in Python 2. For Python 2 fall back to OSError exception.

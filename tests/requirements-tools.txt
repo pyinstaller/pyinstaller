@@ -37,3 +37,5 @@ subprocess32; python_version == '2.7'
 # Python 3.4 wheel.
 pywin32; python_version != '3.4' and sys_platform == 'win32'
 pypiwin32==219; python_version == '3.4' and sys_platform == 'win32'
+
+lxml
