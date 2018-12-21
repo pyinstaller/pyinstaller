@@ -1,11 +1,11 @@
-# -----------------------------------------------------------------------------
+#-----------------------------------------------------------------------------
 # Copyright (c) 2013-2018, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
-# -----------------------------------------------------------------------------
+#-----------------------------------------------------------------------------
 
 """
 Find external dependencies of binary libraries.
@@ -156,7 +156,6 @@ def _extract_from_egg(toc):
 BindingRedirect = collections.namedtuple('BindingRedirect',
                                          'name language arch oldVersion newVersion publicKeyToken')
 
-
 def match_binding_redirect(manifest, redirect):
     return all([
         manifest.name == redirect.name,
@@ -167,7 +166,6 @@ def match_binding_redirect(manifest, redirect):
     ])
 
 _exe_machine_type = None
-
 
 def matchDLLArch(filename):
     """
@@ -196,7 +194,6 @@ def matchDLLArch(filename):
     match_arch = pe.FILE_HEADER.Machine == _exe_machine_type
     pe.close()
     return match_arch
-
 
 def Dependencies(lTOC, xtrapath=None, manifest=None, redirects=None):
     """
@@ -465,7 +462,7 @@ def getAssemblyFiles(pth, manifest=None, redirects=None):
                     seen.add(fn.upper())
                     rv.append((ftocnm, fn))
                 else:
-                    # logger.info("skipping %s part of assembly %s dependency of %s",
+                    #logger.info("skipping %s part of assembly %s dependency of %s",
                     #            ftocnm, assembly.name, pth)
                     pass
         else:
@@ -615,7 +612,7 @@ def _getImports_macholib(pth):
     rslt = set()
     seen = set()  # Libraries read from binary headers.
 
-    # Walk through mach binary headers.
+    ## Walk through mach binary headers.
 
     m = MachO(pth)
     for header in m.headers:
@@ -665,12 +662,13 @@ def _getImports_macholib(pth):
     # of the Python distribution, not alongside of the .so's in each module's subdirectory.
     run_paths.add(os.path.join(base_prefix, 'lib'))
 
-    # Try to find files in file system.
+    ## Try to find files in file system.
 
     # In cases with @loader_path or @executable_path
     # try to look in the same directory as the checked binary is.
     # This seems to work in most cases.
     exec_path = os.path.abspath(os.path.dirname(pth))
+
 
     for lib in seen:
 
@@ -878,25 +876,9 @@ def get_python_library_path():
     if is_unix:
 
         # Search if it is an Anaconda distribution
-        if re.findall('anaconda', sys.executable):
-
-            # Split the path of the python executable
-            # to determine what the full anaconda name is
-            # and what paths preceed it.
-            splits = sys.executable.split('/anaconda')
-
-            # The preceding path to the anaconda directory
-            pre_path = splits[0]
-
-            # Split the remainder to seperate any other paths
-            back_splits = splits[1].split('/')
-            # Get the remaining characters of the anaconda name eg.(anaconda35)
-            anaconda_name = 'anaconda' + back_splits[0]
-            # The anaconda path to the lib
-            # it is the preceding path to the anaconda name, the anaconda name,
-            # the remaining chars of the name and the relative path to the lib
-            anaconda_lib_path = os.path.join(pre_path, anaconda_name,
-                                             'lib')
+        if 'anaconda' in compat.base_prefix:
+            # The anaconda lib directory
+            anaconda_lib_path = os.path.join(compat.base_prefix, 'lib')
 
             # crawl the anaconda lib directory
             # query each file or folder name to find a match
@@ -910,7 +892,7 @@ def get_python_library_path():
                 if re.findall('^libpython.*?m.so.1.0$', entry):
                     # if a match is found
                     # reconstruct the full path
-                    # eg. /root/anaconda4/lib/libpython3.8m.so.1.0
+                    # eg. /root/anaconda4/lib/libpython3.7m.so.1.0
                     abs_path = os.path.join(anaconda_lib_path, entry)
                     # return the full path
                     return abs_path
@@ -951,7 +933,6 @@ def get_python_library_path():
 
     # Python library NOT found. Return just None.
     return None
-
 
 def findSystemLibrary(name):
     '''
