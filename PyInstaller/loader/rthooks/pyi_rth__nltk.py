@@ -18,7 +18,7 @@ for p in nltk.data.path:
     if(os.path.exists(p)):
         datas.append((p, "nltk_data"))
 
-nltk.data.path.clear()
+del nltk.data.path[:]
 nltk.data.path = datas
 #add the path to nltk_data
 nltk.data.path.append(os.path.join(sys._MEIPASS, "nltk_data"))
