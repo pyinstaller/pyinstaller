@@ -1,1 +1,2 @@
 Include anaconda path to libpython on Linux
+This fix basically exposes the anaconda path to the libpython library to pyinstaller
