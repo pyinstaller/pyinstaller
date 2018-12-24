@@ -21,4 +21,4 @@ for p in nltk.data.path:
 del nltk.data.path[:]
 nltk.data.path = datas
 #add the path to nltk_data
-nltk.data.path.append(os.path.join(sys._MEIPASS, "nltk_data"))
+nltk.data.path.append(os.path.join(os.path.dirname(sys.executable), "nltk_data"))
