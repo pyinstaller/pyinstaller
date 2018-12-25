@@ -852,3 +852,12 @@ def test_phonenumbers(pyi_builder):
         assert(parsed_number.country_code == 1)
         assert(parsed_number.national_number == 7034820623)
         """)
+
+
+@importorskip('pendulum')
+def test_pendulum(pyi_builder):
+    pyi_builder.test_source("""
+        import pendulum
+
+        print(pendulum.now().isoformat())
+        """)

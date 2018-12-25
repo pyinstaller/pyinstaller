@@ -1,0 +1,3 @@
+Fix encoding error raised when reading a XML manifest file which includes
+non-ASCII characters. This error inhibited building an executable which
+has non-ASCII characters in the filename.

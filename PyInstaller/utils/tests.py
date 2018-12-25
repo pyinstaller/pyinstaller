@@ -20,14 +20,16 @@ import distutils.ccompiler
 import pytest
 from _pytest.runner import Skipped
 
-from PyInstaller.compat import is_darwin, is_win, is_py2, is_py3
+from PyInstaller.compat import is_darwin, is_win, is_linux, is_py2, is_py3
 
 # Wrap some pytest decorators to be consistent in tests.
 parametrize = pytest.mark.parametrize
 skipif = pytest.mark.skipif
 skipif_notwin = skipif(not is_win, reason='requires Windows')
 skipif_notosx = skipif(not is_darwin, reason='requires Mac OS X')
+skipif_notlinux = skipif(not is_linux, reason='requires GNU/Linux')
 skipif_win = skipif(is_win, reason='does not run on Windows')
+skipif_linux = skipif(is_win, reason='does not run on GNU/Linux')
 skipif_winorosx = skipif(is_win or is_darwin, reason='does not run on Windows or Mac OS X')
 xfail = pytest.mark.xfail
 xfail_py2 = xfail(is_py2, reason='fails with Python 2.7')

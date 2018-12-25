@@ -12,7 +12,7 @@
 Templates to generate .spec files.
 """
 
-onefiletmplt = """# -*- mode: python -*-
+onefiletmplt = """# -*- mode: python ; coding: utf-8 -*-
 %(cipher_init)s
 
 a = Analysis(%(scripts)s,
@@ -44,7 +44,7 @@ exe = EXE(pyz,
           console=%(console)s %(exe_options)s)
 """
 
-onedirtmplt = """# -*- mode: python -*-
+onedirtmplt = """# -*- mode: python ; coding: utf-8 -*-
 %(cipher_init)s
 
 a = Analysis(%(scripts)s,
