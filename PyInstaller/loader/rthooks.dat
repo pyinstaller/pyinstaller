@@ -1,4 +1,5 @@
 {
+    'certifi':    ['pyi_rth_certifi.py'],
     'django':     ['pyi_rth_django.py'],
     'enchant':    ['pyi_rth_enchant.py'],
     'gi':         ['pyi_rth_gi.py'],
