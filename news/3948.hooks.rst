@@ -1,0 +1,1 @@
+Replace hook keyring.backends to keyring to collect metadata.
