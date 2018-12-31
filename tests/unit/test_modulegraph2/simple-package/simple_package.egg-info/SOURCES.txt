@@ -1,0 +1,14 @@
+MANIFEST.in
+extension.c
+setup.cfg
+setup.py
+toplevel.py
+package/__init__.py
+package/datafile.txt
+package/module.py
+package/my"data.txt
+package/other,data.dat
+simple_package.egg-info/PKG-INFO
+simple_package.egg-info/SOURCES.txt
+simple_package.egg-info/dependency_links.txt
+simple_package.egg-info/top_level.txt

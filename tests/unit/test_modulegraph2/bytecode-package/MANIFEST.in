@@ -1,0 +1,3 @@
+include *.txt MANIFEST.in *.py *.pyc
+include package *.pyc
+global-exclude .DS_Store

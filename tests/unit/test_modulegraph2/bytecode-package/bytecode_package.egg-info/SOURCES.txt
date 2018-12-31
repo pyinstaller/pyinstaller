@@ -1,0 +1,9 @@
+MANIFEST.in
+setup.cfg
+setup.py
+bytecode_package.egg-info/PKG-INFO
+bytecode_package.egg-info/SOURCES.txt
+bytecode_package.egg-info/dependency_links.txt
+bytecode_package.egg-info/top_level.txt
+package/__init__.pyc
+package/module.pyc

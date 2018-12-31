@@ -1,0 +1,5 @@
+include *.txt MANIFEST.in *.py
+graft package
+global-exclude .DS_Store
+global-exclude *.pyc
+global-exclude *.so
