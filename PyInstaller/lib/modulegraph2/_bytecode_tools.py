@@ -1,3 +1,6 @@
+"""
+Utilities for working with bytecode files
+"""
 import dis
 import types
 import collections
@@ -113,7 +116,7 @@ def _extract_single(code: types.CodeType, is_function_code: bool, is_class_code:
     return imports, globals_written, globals_read, func_codes, class_codes
 
 
-def _is_function_code(
+def _is_code_for_function(
     code: types.CodeType, parents: List[types.CodeType], func_codes: Set[types.CodeType]
 ):
     return code in func_codes or any(p in func_codes for p in parents)
@@ -130,13 +133,13 @@ def extract_bytecode_info(
     2) A set of global names written
     3) A set of global names read by
     """
+    # Note: This code is iterative to avoid exhausting the stack in
+    # patalogical code bases (in particular deeply nested functions)
     all_imports: List[ImportInfo] = []
     all_globals_written: Set[str] = set()
     all_globals_read: Set[str] = set()
     all_func_codes: Set[types.CodeType] = set()
     all_class_codes: Set[types.CodeType] = set()
-
-    # XXX: "current in all_func_codes" is not good enough, need to check recursively...
 
     for current, parents in _all_code_objects(code):
         (
@@ -147,7 +150,7 @@ def extract_bytecode_info(
             class_codes,
         ) = _extract_single(
             current,
-            _is_function_code(current, parents, all_func_codes),
+            _is_code_for_function(current, parents, all_func_codes),
             current in all_class_codes,
         )
         all_imports += imports

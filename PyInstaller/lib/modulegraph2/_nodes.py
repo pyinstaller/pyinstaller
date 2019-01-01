@@ -1,15 +1,18 @@
 import dataclasses
 import pathlib
-from typing import List
+from typing import Optional, List
+
+from ._packages import PyPIDistribution
 
 
 @dataclasses.dataclass
 class BaseNode:
     name: str
-    loader: object
+    loader: Optional[object]
+    distribution: Optional[PyPIDistribution]
 
     # 3th party attribubtes, not used by modulegraph
-    extension_attributes: dict = dataclasses.field(default_factory=dict, init=False)
+    extension_attributes: dict
 
     # XXX: For altgraph, to be removed...
     @property
