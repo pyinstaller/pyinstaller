@@ -22,7 +22,7 @@
 # These packages work with no (known) issues.
 babel==2.6.0
 boto==2.49.0
-boto3==1.9.57
+boto3==1.9.71
 botocore==1.12.57
 pygments==2.3.0
 markdown==3.0.1
