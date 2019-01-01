@@ -56,6 +56,7 @@ class QmlImports():
         self.spec_files = []
         self.spec_file = ''
         self.search_words = ['load', 'setSource']
+        self.image_search_words = ['source', 'icon.source']
         self.only_qml_imps_map = {"QtGraphicalEffects 1": "QtGraphicalEffects",
                                   "QtCanvas3D 1": "QtCanvas3D",
                                   "Qt": "Qt"}
@@ -241,24 +242,29 @@ class QmlImports():
         # import statements.
 
         with open(file, mode='r', encoding='utf-8') as fh:
-            data = fh.read()
+            for line in fh:
+                if re.findall('\s+[//]', line):
+                    # skip it's a comment line)
+                    continue
+                else:
+                    import_stats = re.findall('import .*?.*?.*?$', line)
+                    if import_stats:
+                        # since we are parsing this line by line
+                        # there will always be just one entry in import stats
+                        self._sanitize_imports(import_stats[0])
 
-        import_stats = re.findall('import .*?.*?.*? ?\\n', data)
-        self._sanitize_imports(import_stats)
-
-    def _sanitize_imports(self, imports):
+    def _sanitize_imports(self, stat):
 
         # Remove the (') apostrophies that comes
         # which are found in them
 
-        for line in imports:
-            if len(line) > 8:
-                first = line[7:-1]
-                if first not in self.raw_import_stats:
-                    self.raw_import_stats.append(first)
-            else:
-                # Unkwown import type
-                return False
+        if len(stat) > 8:
+            clean = stat[7:-1]
+            if clean not in self.raw_import_stats:
+                self.raw_import_stats.append(clean)
+        else:
+            # Unkwown import type
+            return False
 
     def _first_handle(self, folder, file):
 
