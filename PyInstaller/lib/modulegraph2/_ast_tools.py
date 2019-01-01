@@ -30,15 +30,17 @@ from typing import Iterator, Set, Tuple, Deque
 
 @dataclasses.dataclass(frozen=True)
 class ImportInfo:
-    import_module: str  # "import import_module" or "from imoprt_module imoprt ..."
-    import_level: int  # Number of dots that were before "import_module"
-    import_names: Set[
-        str
-    ]  # List of imported names for a "from ... import ..." statement
-    star_import: bool  # Is this a "from ... import *"?
-    is_in_function: bool  # Is this import in a function
-    is_in_conditional: bool  # Is this import in a conditional statement
-    is_in_tryexcept: bool  # is this import in a try-except statement
+    """
+    Information about an import statement found in the AST for a module or script
+    """
+
+    import_module: str
+    import_level: int
+    import_names: Set[str]
+    star_import: bool
+    is_in_function: bool
+    is_in_conditional: bool
+    is_in_tryexcept: bool
 
     @property
     def is_optional(self):
