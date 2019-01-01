@@ -34,7 +34,7 @@ pyzmq==17.1.2
 zope.interface==4.6.0
 numpy==1.15.4
 scipy==1.2.0
-keyring==17.0.0
+keyring==17.1.1
 openpyxl==2.5.12
 pycparser==2.19
 pytz==2018.7
