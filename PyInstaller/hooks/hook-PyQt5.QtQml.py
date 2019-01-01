@@ -52,6 +52,7 @@ class QmlImports():
         self.analysis_file = ''
         self.analysis_folder = ''
         self.main_qml = ''
+        self.current_qml_file = ''
         self.recently_added_paths = set(sys.path[-2:])
         self.spec_files = []
         self.spec_file = ''
@@ -166,7 +167,7 @@ class QmlImports():
         if os.path.exists(self.analysis_file):
             path_splits = os.path.split(self.analysis_file)
             # the folder the main py file is in
-            self.analysis_folder = path_splits[0]
+            self.analysis_folder = os.path.abspath(path_splits[0])
         else:
             return False
 
@@ -244,20 +245,27 @@ class QmlImports():
         with open(file, mode='r', encoding='utf-8') as fh:
             for line in fh:
                 if re.findall('\s+[//]', line):
-                    # skip it's a comment line)
+                    # skip it's a comment line
                     continue
                 else:
-                    import_stats = re.findall('import .*?.*?.*?$', line)
-                    if import_stats:
-                        # since we are parsing this line by line
-                        # there will always be just one entry in import stats
-                        self._sanitize_imports(import_stats[0])
+                    self.find_imports(line)
+                    # set the qml file to the current qml file
+                    # since the image path should be relative to
+                    # that file
+                    self.current_qml_file = file
+                    self.find_images(line)
+
+    def find_imports(self, statement):
+        import_stats = re.findall('import .*?.*?.*?$', statement)
+        if import_stats:
+            # since we are parsing this line by line
+            # there will always be just one entry in import stats
+            self._sanitize_imports(import_stats[0])
 
     def _sanitize_imports(self, stat):
 
         # Remove the (') apostrophies that comes
         # which are found in them
-
         if len(stat) > 8:
             clean = stat[7:-1]
             if clean not in self.raw_import_stats:
@@ -265,6 +273,65 @@ class QmlImports():
         else:
             # Unkwown import type
             return False
+
+    def find_images(self, statement):
+        for keyword in self.image_search_words:
+            img_query = re.findall('\s+'+keyword+': .*?.*?.*?$', statement)
+            if img_query:
+                # since we are parsing the qml
+                # line by line, there is only one entry
+                first_split = re.split(keyword+':\s?', img_query[0])
+                self._sanitize_image_string(first_split[1])
+
+    def _sanitize_image_string(self, statement):
+        if statement[0] == '"':
+            # maybe the user added a comment after the line
+            # the splits will take it away into the third index
+            splits = re.split('"', statement)
+            url = splits[1]
+        elif statement[0] == "'":
+            # maybe the user added a comment after the line
+            # the splits will take it away into the third index
+            splits = re.split("'", statement)
+            url = splits[1]
+        else:
+            # it is a variable
+            return
+
+        # find out if it is a relative url
+        # and not a qrc
+        if self.is_raw_img_str(url):
+            # get the relative folder to the qml file
+            # we are parsing
+            splits = os.path.split(self.current_qml_file)
+            current_folder = splits[0]
+            # Get the path to the image we want to add
+            full_path = os.path.join(current_folder, url)
+            # convert to abs path since os.path.join
+            # is a joke
+            abs_path = os.path.abspath(full_path)
+            final_splits = os.path.split(abs_path)
+            folder = final_splits[0]
+            final_file = final_splits[1]
+            # send it to be added to the datas file
+            self.append_to_data(folder, final_file)
+        else:
+            return False
+
+    def is_raw_img_str(self, string):
+        # Here we find out if the string is
+        # a relative string and not a full path or a varible
+        # or a qrc
+        if re.findall('qrc:', string):
+            # It is a qrc
+            return False
+        else:
+            # lets test if it is a relative path
+            if os.path.exists(string):
+                return False
+            else:
+                # it's a relative path
+                return True
 
     def _first_handle(self, folder, file):
 
@@ -385,7 +452,7 @@ class QmlImports():
         # remove the starting folder,
         # whatever we have is the nested path
         nest = folder.replace(self.analysis_folder, '')
-
+        print('*********\nnest: ', nest, '\n')
         # replace backslashes with forward slashes on windows
         # lets have a common ground to work with
         if nest != '':
