@@ -57,7 +57,7 @@ class QmlImports():
         self.spec_files = []
         self.spec_file = ''
         self.search_words = ['load', 'setSource']
-        self.image_search_words = ['source', 'icon.source']
+        self.image_search_words = ['png', 'jpeg', 'jpg', 'tiff', 'gif', 'ico']
         self.only_qml_imps_map = {"QtGraphicalEffects 1": "QtGraphicalEffects",
                                   "QtCanvas3D 1": "QtCanvas3D",
                                   "Qt": "Qt"}
@@ -273,12 +273,14 @@ class QmlImports():
 
     def find_images(self, statement):
         for keyword in self.image_search_words:
-            img_query = re.findall('\s+'+keyword+': .*?.*?.*?$', statement)
+            img_query = re.findall('["|\'].*?.*?.*?[.]'+keyword+'["|\']',
+                                   statement)
             if img_query:
                 # since we are parsing the qml
                 # line by line, there is only one entry
-                first_split = re.split(keyword+':\s?', img_query[0])
-                self._sanitize_image_string(first_split[1])
+                # first_split = re.split(keyword+':\s?', img_query[0])
+                print('Op-ed: ', img_query[0], '\n')
+                self._sanitize_image_string(img_query[0])
 
     def _sanitize_image_string(self, statement):
         if statement[0] == '"':
@@ -292,20 +294,9 @@ class QmlImports():
             splits = re.split("'", statement)
             url = splits[1]
         else:
-            # it is a variable
-            print('Incoming: ', statement)
-            if self.current_qml_file:
-                logger.info(statement)
-                print('length:', len(statement), '\n')
-                return
-            else:
-                # very unlikely but
-                # we don't have the qml file we are crawling
-                # in the class variable
-                return False
+            # Unkwown type
+            pass
 
-        # This place would not be reached if
-        # It is a variable
         # find out if it is a relative url
         # and not a qrc
         if self.is_raw_img_str(url):
