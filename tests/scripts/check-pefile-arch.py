@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (c) 2017-2018, PyInstaller Development Team.
+# Copyright (c) 2017-2019, PyInstaller Development Team.
 # Author: Hartmut Goebel
 #
 # Verify if a list of pe-files was the expected arch-bits.

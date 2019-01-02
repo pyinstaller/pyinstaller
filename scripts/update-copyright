@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #-----------------------------------------------------------------------------
-# Copyright (c) 2016-2018, PyInstaller Development Team.
+# Copyright (c) 2016-2019, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -18,7 +18,7 @@ Run this at the beginning of each new year.
 
 from __future__ import print_function
 
-__copyright__ = "Copyright (c) 2016-2018, PyInstaller Development Team."
+__copyright__ = "Copyright (c) 2016-2019, PyInstaller Development Team."
 __author__ = "Hartmut Goebel <h.goebel@crazy-compilers.com>"
 
 import os, sys, re
