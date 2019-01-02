@@ -94,7 +94,6 @@ class QmlImports():
             else:
                 pass
             self.reconstruct_qml_path()
-        logger.info(self.analysis_file + ' ' + self.analysis_folder)
 
     def find_spec(self):
 
@@ -162,8 +161,7 @@ class QmlImports():
         a_right = without_apos[1:-1]
 
         # the main python file
-        # replace backslashes for windows('\\\\\\\\')
-        self.analysis_file = a_right
+        self.analysis_file = os.path.abspath(a_right)
         if os.path.exists(self.analysis_file):
             path_splits = os.path.split(self.analysis_file)
             # the folder the main py file is in
@@ -230,7 +228,6 @@ class QmlImports():
         # to the application's folder
         # if it's not, we simply do nothing.
         # it can't be a full path.
-
         if os.path.exists(self.main_qml):
             return False
         else:
@@ -296,8 +293,19 @@ class QmlImports():
             url = splits[1]
         else:
             # it is a variable
-            return
+            print('Incoming: ', statement)
+            if self.current_qml_file:
+                logger.info(statement)
+                print('length:', len(statement), '\n')
+                return
+            else:
+                # very unlikely but
+                # we don't have the qml file we are crawling
+                # in the class variable
+                return False
 
+        # This place would not be reached if
+        # It is a variable
         # find out if it is a relative url
         # and not a qrc
         if self.is_raw_img_str(url):
@@ -308,7 +316,6 @@ class QmlImports():
             # Get the path to the image we want to add
             full_path = os.path.join(current_folder, url)
             # convert to abs path since os.path.join
-            # is a joke
             abs_path = os.path.abspath(full_path)
             final_splits = os.path.split(abs_path)
             folder = final_splits[0]
@@ -452,7 +459,6 @@ class QmlImports():
         # remove the starting folder,
         # whatever we have is the nested path
         nest = folder.replace(self.analysis_folder, '')
-        print('*********\nnest: ', nest, '\n')
         # replace backslashes with forward slashes on windows
         # lets have a common ground to work with
         if nest != '':
@@ -479,7 +485,6 @@ class QmlImports():
             o_folder = splits[0]
 
         group = (full_path, o_folder)
-        logger.info('Data being added: ' + str(group))
         self.datas.append(group)
 
         # include also the qmlc
