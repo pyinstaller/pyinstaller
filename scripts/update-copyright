@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #-----------------------------------------------------------------------------
-# Copyright (c) 2016-2018, PyInstaller Development Team.
+# Copyright (c) 2016-2019, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -18,7 +18,7 @@ Run this at the beginning of each new year.
 
 from __future__ import print_function
 
-__copyright__ = "Copyright (c) 2016-2018, PyInstaller Development Team."
+__copyright__ = "Copyright (c) 2016-2019, PyInstaller Development Team."
 __author__ = "Hartmut Goebel <h.goebel@crazy-compilers.com>"
 
 import os, sys, re
@@ -27,6 +27,7 @@ import time
 import fnmatch
 
 YEAR = str(time.localtime().tm_year)
+LAST_YEAR = str(time.localtime().tm_year-1)
 
 EXCLUDE = set(
     '''
@@ -53,6 +54,7 @@ EXCLUDE_GLOBS = '''
     bootloader/.waf-*
     doc/*.html
     doc/*.1
+    news/*.rst
     */EGG-INFO/*
     */*.egg-info/*
     '''.split()
@@ -63,6 +65,8 @@ EXCLUDE_DIRS = tuple(
     PyInstaller/lib/altgraph/
     PyInstaller/lib/macholib/
     PyInstaller/lib/ordlookup/
+    tests/unit/test_altgraph/
+    tests/unit/test_modulegraph/
     '''.split())
 
 
@@ -110,12 +114,10 @@ P2 = re.compile(r'(Copyright[: ].*) (2[0-9]{3})(,? PyInstaller Development Team)
 
 def transform(text):
     """Transform text or return None if no change."""
-    changed = False
-    text, n = P1.subn(r'\1-' + YEAR + r'\3', text)
-    changed = changed or bool(n)
-    text, n = P2.subn(r'\1 \2-' + YEAR + r'\3', text)
-    changed = changed or bool(n)
-    if changed:
+    orig_text = text
+    text = P1.sub(r'\1-' + YEAR + r'\3', text)
+    text = P2.sub(r'\1 \2-' + YEAR + r'\3', text)
+    if text != orig_text:
         return text
 
 def has_our_copyright(text):
@@ -156,5 +158,5 @@ print("""
 You may now run
   git diff develop # verify changes
   git add -u       # batch-commit all these chages
-  git grep 2016    # grep for remaining years
-""")
+  git grep %s    # grep for remaining years
+""" % LAST_YEAR)
