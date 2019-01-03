@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2019, PyInstaller Development Team.
+# Copyright (c) 2013-2018, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -202,7 +202,10 @@ class QmlImports():
 
         # Here we read the line to see if there is
         # a genuine qml filepath.
+<<<<<<< HEAD
+=======
 
+>>>>>>> 2272b0030893e2d4a9e003223bbae4c309a2e4bb
         if re.findall('(\+|,|\))', raw) or not re.findall('(\'|")', raw):
             # It is a variable
             pass
