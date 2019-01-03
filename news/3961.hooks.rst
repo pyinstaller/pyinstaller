@@ -1,0 +1,8 @@
+Add the qml files imported by Qml engine and all its imports
+
+This hook extracts the main qml file and all other qml files used in the application
+
+All other imports including Javascript files and folders are also added
+
+All image files with extensions .png, .jpg, .jpeg,
+.tiff, .gif, .ico in qml source code are added as well
