@@ -161,11 +161,11 @@ class QmlImports():
         a_right = without_apos[1:-1]
 
         # the main python file
-        self.analysis_file = os.path.abspath(a_right)
+        self.analysis_file = a_right
         if os.path.exists(self.analysis_file):
             path_splits = os.path.split(self.analysis_file)
             # the folder the main py file is in
-            self.analysis_folder = os.path.abspath(path_splits[0])
+            self.analysis_folder = path_splits[0]
         else:
             return False
 
