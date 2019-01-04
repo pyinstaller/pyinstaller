@@ -87,13 +87,14 @@ class QmlImports():
         # before the processes begin
         self.find_spec()
         if self.spec_file != '':
-            self.find_analysis_file()
-
-            if not self.read_analys_file():
-                return False
+            if self.find_analysis_file():
+                if not self.read_analys_file():
+                    return False
+                else:
+                    self.reconstruct_qml_path()
+                    return True
             else:
-                pass
-            self.reconstruct_qml_path()
+                return False
 
     def find_spec(self):
 
@@ -166,6 +167,7 @@ class QmlImports():
             path_splits = os.path.split(self.analysis_file)
             # the folder the main py file is in
             self.analysis_folder = path_splits[0]
+            return True
         else:
             return False
 
@@ -204,21 +206,21 @@ class QmlImports():
         # a genuine qml filepath.
         if re.findall('(\+|,|\))', raw) or not re.findall('(\'|")', raw):
             # It is a variable
-            pass
+            return False
 
         else:
             if re.findall('qrc:', raw):  # it is a qrc
                 return False
             else:
-                if raw[0] == '\\' and raw[-2] == '\\':
-                    self.main_qml = raw[2:-2]
-
-                elif raw[0] == '"':
+                if raw[0] == '"':
                     self.main_qml = raw.replace('"', '')
+                    return True
 
-                else:
+                elif raw[0] == "'":
                     self.main_qml = raw.replace("'", "")
-                return True
+                    return True
+                else:
+                    return False
 
     def reconstruct_qml_path(self):
 
@@ -233,12 +235,12 @@ class QmlImports():
             self.append_to_data(self.analysis_folder, self.main_qml)
             self._first_handle(self.analysis_folder, self.main_qml)
 
-    def _crawl_qml_file(self, file):
+    def _crawl_qml_file(self, c_file):
 
         # This is where we parse the qml file to look for
         # import statements.
 
-        with open(file, mode='r', encoding='utf-8') as fh:
+        with open(c_file, mode='r', encoding='utf-8') as fh:
             for line in fh:
                 if re.findall('\s+[//]', line):
                     # skip it's a comment line
@@ -248,7 +250,7 @@ class QmlImports():
                     # set the qml file to the current qml file
                     # since the image path should be relative to
                     # that file
-                    self.current_qml_file = file
+                    self.current_qml_file = c_file
                     self.find_images(line)
 
     def find_imports(self, statement):
@@ -278,7 +280,6 @@ class QmlImports():
                 # since we are parsing the qml
                 # line by line, there is only one entry
                 # first_split = re.split(keyword+':\s?', img_query[0])
-                print('Op-ed: ', img_query[0], '\n')
                 self._sanitize_image_string(img_query[0])
 
     def _sanitize_image_string(self, statement):
@@ -452,14 +453,7 @@ class QmlImports():
         # replace backslashes with forward slashes on windows
         # lets have a common ground to work with
         if nest != '':
-            if '\\' in nest:
-                second = nest.replace('\\', '/')
-            else:
-                second = nest
-            if second[0] == '/':
-                rem_folder = second[1:]
-            else:
-                rem_folder = second
+            rem_folder = '.' + nest
         else:
             rem_folder = ''
 
@@ -505,16 +499,18 @@ def hook(hook_api):
         pyqt_folder = os.path.split(hook_api.__file__)[0]
         imports = QmlImports()
         imports.pyqt_folder = pyqt_folder
-        imports.start()
-        h_imps, dts = imports.getValues()
+        if imports.start():
+            h_imps, dts = imports.getValues()
 
-        if h_imps != []:
-            # send the hidden import statements
-            # into the global variable
-            for each in h_imps:
-                hook_api.add_imports(each)
+            if h_imps != []:
+                # send the hidden import statements
+                # into the global variable
+                for each in h_imps:
+                    hook_api.add_imports(each)
 
-        if dts != []:
-            # send the QmlImports data variable
-            # into the main stream datas variable.
-            hook_api.add_datas(dts)
+            if dts != []:
+                # send the QmlImports data variable
+                # into the main stream datas variable.
+                hook_api.add_datas(dts)
+        else:
+            return
