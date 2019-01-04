@@ -202,10 +202,6 @@ class QmlImports():
 
         # Here we read the line to see if there is
         # a genuine qml filepath.
-<<<<<<< HEAD
-=======
-
->>>>>>> 2272b0030893e2d4a9e003223bbae4c309a2e4bb
         if re.findall('(\+|,|\))', raw) or not re.findall('(\'|")', raw):
             # It is a variable
             pass
