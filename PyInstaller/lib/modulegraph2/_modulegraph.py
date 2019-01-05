@@ -9,6 +9,8 @@ from ._objectgraph import ObjectGraph
 from ._nodes import BaseNode, Script
 from ._packages import PyPIDistribution
 
+from . import _bytecode_tools, _ast_tools
+
 
 def full_name(import_name: str, package: Optional[str]):
     """

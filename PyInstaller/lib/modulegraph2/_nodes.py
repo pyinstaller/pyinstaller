@@ -38,10 +38,13 @@ class Module(BaseNode):
     def uses_dunder_file(self):
         return '__file__' in self.globals_read
 
-class ExtensionModule(Module):
+class SourceModule(Module):
     pass
 
 class BytecodeModule(Module):
+    pass
+
+class ExtensionModule(Module):
     pass
 
 
@@ -57,16 +60,3 @@ class Package(BaseNode):
     init_module: BaseNode
     search_path: List[pathlib.Path]
     has_data_files: bool
-
-
-@dataclasses.dataclass
-class Extension(BaseNode):
-    path: pathlib.Path
-
-
-class InvalidModule(BaseNode):
-    pass
-
-
-class MissingModule(InvalidModule):
-    pass

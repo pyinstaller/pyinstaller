@@ -120,5 +120,5 @@ class TestPackageFinder(unittest.TestCase):
     def test_found_package(self):
         import pip
 
-        p = packages.distribution_for_file(os.path.abspath(wheel.__file__), sys.path)
+        p = packages.distribution_for_file(os.path.abspath(pip.__file__), sys.path)
         self.assertEqual(p.name, "pip")
