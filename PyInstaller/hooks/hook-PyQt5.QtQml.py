@@ -184,9 +184,8 @@ class QmlImports():
                 else:
                     # find line that contains a qml file
                     for search_query in self.search_words:
-                        hyp_file = re.findall('.' + search_query +
-                                              '[(].*?.*?.*?[)]',
-                                              str(line))
+                        query = '.' + search_query + '[(].*?.*?.*?[)]'
+                        hyp_file = re.findall(query, str(line))
 
                         if hyp_file:
                             # we will use the first file
