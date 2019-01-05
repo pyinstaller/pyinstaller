@@ -35,7 +35,7 @@ class TestAstExtractor(unittest.TestCase):
             """
         )
 
-        imports = list(ast_tools.extract_imports(ast))
+        imports = list(ast_tools.extract_ast_info(ast))
         self.assertEqual(len(imports), 13)
 
         for info in imports:
@@ -134,7 +134,7 @@ class TestAstExtractor(unittest.TestCase):
             """
         )
 
-        imports = list(ast_tools.extract_imports(ast))
+        imports = list(ast_tools.extract_ast_info(ast))
         self.assertEqual(len(imports), 3)
 
         for info in imports:
@@ -164,7 +164,7 @@ class TestAstExtractor(unittest.TestCase):
             """
         )
 
-        imports = list(ast_tools.extract_imports(ast))
+        imports = list(ast_tools.extract_ast_info(ast))
         self.assertEqual(len(imports), 3)
 
         for info in imports:
@@ -191,7 +191,7 @@ class TestAstExtractor(unittest.TestCase):
             """
         )
 
-        imports = list(ast_tools.extract_imports(ast))
+        imports = list(ast_tools.extract_ast_info(ast))
         self.assertEqual(len(imports), 3)
 
         for info in imports:
@@ -231,7 +231,7 @@ class TestAstExtractor(unittest.TestCase):
             """
         )
 
-        imports = list(ast_tools.extract_imports(ast))
+        imports = list(ast_tools.extract_ast_info(ast))
         self.assertEqual(len(imports), 5)
 
         for info in imports:
@@ -255,7 +255,7 @@ class TestAstExtractor(unittest.TestCase):
         list_value = list(range(400))
         source = f"l = {list_value}\nimport a"
         ast = make_ast(source)
-        imports = list(ast_tools.extract_imports(ast))
+        imports = list(ast_tools.extract_ast_info(ast))
         self.assertEqual(len(imports), 1)
 
         self.assertEqual(imports[0].import_module, "a")
@@ -342,7 +342,7 @@ class TestAstExtractor(unittest.TestCase):
                     import z
             """
         )
-        imports = list(ast_tools.extract_imports(ast))
+        imports = list(ast_tools.extract_ast_info(ast))
         imports.sort(key=lambda x: x.import_module)
 
         EXPECTED = {
@@ -386,7 +386,3 @@ class TestAstExtractor(unittest.TestCase):
                 self.assertEqual(info.is_in_conditional, in_if)
                 self.assertEqual(info.is_in_tryexcept, in_try)
                 self.assertEqual(info.is_optional, in_def or in_if or in_try)
-
-
-if __name__ == "__main__":
-    unittest.main()

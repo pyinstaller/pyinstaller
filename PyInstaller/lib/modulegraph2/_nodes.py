@@ -1,6 +1,6 @@
 import dataclasses
 import pathlib
-from typing import Optional, List
+from typing import Optional, List, Set
 
 from ._packages import PyPIDistribution
 
@@ -10,6 +10,7 @@ class BaseNode:
     name: str
     loader: Optional[object]
     distribution: Optional[PyPIDistribution]
+    filename: pathlib.Path
 
     # 3th party attribubtes, not used by modulegraph
     extension_attributes: dict
@@ -22,16 +23,26 @@ class BaseNode:
 
 @dataclasses.dataclass
 class Script(BaseNode):
-    path: pathlib.Path
-
+    pass
 
 @dataclasses.dataclass
 class Module(BaseNode):
-    path: pathlib.Path
-    global_names: set
+    globals_written: Set[str]
+    globals_read: Set[str]
 
-    uses_dunder_import: bool
-    uses_dunder_file: bool
+    @property
+    def uses_dunder_import(self):
+        return '__import__' in self.globals_read
+
+    @property
+    def uses_dunder_file(self):
+        return '__file__' in self.globals_read
+
+class ExtensionModule(Module):
+    pass
+
+class BytecodeModule(Module):
+    pass
 
 
 @dataclasses.dataclass
@@ -44,10 +55,7 @@ class NamespacePackage(BaseNode):
 @dataclasses.dataclass
 class Package(BaseNode):
     init_module: BaseNode
-    search_path: List[str]
-
-    uses_dunder_import: bool
-    uses_dunder_file: bool
+    search_path: List[pathlib.Path]
     has_data_files: bool
 
 

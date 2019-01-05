@@ -2,7 +2,7 @@ import unittest
 
 import modulegraph2
 
-PUBLIC_SYMBOLS = {"ObjectGraph", "PyPIDistribution"}
+PUBLIC_SYMBOLS = {"ObjectGraph", "PyPIDistribution", "SourceModule", "BytecodeModule", "Extension", "Package", "NamespacePackage"}
 
 PYTHON_SYMBOLS = {
     "__loader__",

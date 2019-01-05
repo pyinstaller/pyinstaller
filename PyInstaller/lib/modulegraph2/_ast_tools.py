@@ -69,7 +69,7 @@ def _create_importinfo(name, fromlist, level, in_def, in_if, in_tryexcept):
     )
 
 
-def extract_imports(node: ast.AST) -> Iterator[ImportInfo]:
+def extract_ast_info(node: ast.AST) -> Iterator[ImportInfo]:
     """
     Look for import statements in the AST and return information about them
     """

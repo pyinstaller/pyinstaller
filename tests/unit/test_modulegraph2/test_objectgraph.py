@@ -195,7 +195,3 @@ class TestObjectGraph(unittest.TestCase):
 
         graph.add_edge(n1, n2)
         self.assertEqual(set(graph.iter_graph()), {n1, n2, n3, n4, n5, n6, n7})
-
-
-if __name__ == "__main__":
-    main()

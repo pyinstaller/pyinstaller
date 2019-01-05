@@ -1,10 +1,13 @@
 """
 The actual graph
 """
+import os
 import sys
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union, TextIO
 
 from ._objectgraph import ObjectGraph
+from ._nodes import BaseNode, Script
+from ._packages import PyPIDistribution
 
 
 def full_name(import_name: str, package: Optional[str]):
@@ -65,26 +68,41 @@ class ModuleGraph(ObjectGraph):
     #   the dependency on altgraph will be removed once the
     #   basic functionality works
     #
-    #
+    # XXX: Detect if "from mod import name" access a submodule
+    #      or a global name.
     def __init__(self, *, path=None, debug=0):
         super().__init__(debug=debug)
         self._path = path if path is not None else sys.path
         self._post_processing = []
+        self._work_q: Deque[Callable, tuple] = collections.deque()
+
+        self.global_lazy_nodes: Dict[str, Optional[Alias]] ={ }
+        self.distribution_lazy_nodes: Dict[str, Dict[str, Optional[Alias]]] = {}
+
+    #
+    # Reporting:
+    #
+    def report(self, stream: TextIO = sys.stdout):
+        print(stream=stream)
+        print("%-15s %-25s %s" % ("Class", "Name", "File"), stream=stream)
+        print("%-15s %-25s %s" % ("-----", "----", "----"), stream=stream)
+        for m in sorted(self.iter_graph(), key=lambda n: n.identifier):
+            assert isinstance(m, BaseNode)
+            print("%-15s %-25s %s" % (type(m).__name__, m.identifier, m.filename or ""), stream=stream)
+
 
     #
     # Adding to the graph:
     #
 
-    def add_script(self, script_path):
-        # Create script node
-        # Scan script for imports and add those to the queue
-        ...
-
-        self._roots.add(...)
-        pass
+    def add_script(self, script_path: os.PathLike):
+        """ Add a script to the module graph and process imports """
+        self._roots.add(self._load_script(script_path))
+        self._run_q()
 
     def add_module(self, module_name):
-        self._roots.add(self._import_module(module_name))
+        self._roots.add(self._load_module(module_name))
+        self._run_q()
 
     #
     # Hooks
@@ -113,63 +131,90 @@ class ModuleGraph(ObjectGraph):
     # Internal: building the graph
     #
 
-    def _import_module(self, module_name, *, parent=None, edge_attributes=None):
-        # XXX:
-        # 1. Does module have reference to containing package (check modulegraph1)
-        # 2. Does "import package.module" add reference to "package" as well as "package.module"
-        #    -> Yes: both names are available in the importing module (ignoring "as")
-        #
-        # Locate module info
-        # - Split module_name into parent package & module
-        # - If parent is not None and not in graph:
-        #   - Add something to the queue to resolve parent and then
-        #     call this function again...
-        # - Use importlib.find_spec to find module info
-        # -
+    def _run_q(self):
+        while self._work_q:
+            func, args = self._work_q.popleft()
+            func(args)
 
-        # Create node
-        # Scan module for imports and add those to the queue
-        # Scan global code for assignments
-        parent_package = None
-        if parent is not None:
-            parent_package, _ = split_package(parent)
+    def _load_implies_for_distribution(self, distribution: PyPIDistribution):
+        """
+        Load distribution specific implies into the global implies table
+        """
+        if distribution.name in self.distribution_lazy_nodes:
+            lazy_nodes = self.distribution_lazy_nodes.pop(distribution.name)
+            self.lazy_nodes.update(lazy_nodes)
 
-        if module_name.startswith("."):
-            if parent is None or parent_package is None:
-                node = self.find_node(module_name)
-                assert isinstance(node, InvalidImport)
-                if node is None:
-                    node = InvalidImport(module_name)
-                    self._insert_node(node)
-                    self._add_edge(self.find_node(parent), node, edge_attributes)
+    def _implied_references(self, full_name: str) -> Optional[BaseNode]:
+        # XXX: This recurses...
+        assert self._find_node(full_name) is None
 
-        package_name, base_name = split_package(module_name)
-        package_node = None
-        if package_name is not None:
-            package_node = self.find_node(package_name)
-            if package_node is None:
-                package_node = self._import_module(
-                    package_name, parent=parent, edge_attributes=edge_attributes
-                )
+        if node.identifier in self.lazy_nodes:
+            implied = self.lazy_nodes.pop(node.identifier)
 
-            # XXX: only if _add_edge merges multiple edges!
-            if parent is not None:
-                self._add_edge(package_node, parent, edge_attributes=edge_attributes)
+            if implied is None:
+                node = ExcludedModule(full_name)
+                self.add_node(node)
+                return None
 
-        # XXX: More complicated code is needed due to self.path...
-        spec = importlib.util.find_spec(module_name, parent)
-        if spec is None:
-            # Not Found
-            pass
+            elif isinstance(implied, Alias):
+                node = AliasNode(full_name)
+                other = self._load_module(implied)
+                self.add_reference(node, other)
+                return node
 
-        node = self.find_node(spec.name)
-        if node is None:
-            node = _node_for_spec(spec)
+            else:
+                node = self._load_module(module_name)
+                for ref in implied:
+                    other = self._load_module(ref)
+                    self.add_reference(node, other)
 
-        self._insert_node(node)
-        if parent is not None:
-            self._add_edge(parent, node, edge_attributes)
+                return node
 
-        # XXX: Process node itself
-        # XXX: Star imports can be problematic...
-        # XXX: Can we recognize "from sys import path" as the harmless import of a global name (currently reported as MissingModule)?
+        else:
+            return None
+
+    def _load_module(self, module_name: str) -> BaseNode:
+        # module_name must be an absolute module name
+        node = self._find_node(module_name)
+        if node is not None:
+            return None
+
+        node = self._implied_references(full_name)
+        if node is not None:
+            return None
+
+        spec = importlib.util.find_spec(module_name)
+
+        node, imports = node_for_spec(module_name, spec)
+        self.add_node(node)
+
+        for info in imports:
+            self._work_q.append((self.process_import, node, info))
+
+        self._process_import_list(node, imports)
+        return node
+
+    def _process_imoprt_list(node, imports):
+        if imports:
+            self._work_q.append(self._run_post_processing, node)
+        else:
+            self._run_post_processing(node)
+
+    def _load_script(self, script_path: os.PathLike) -> Script:
+        node = Script(os.fspath(script_path)) # XXX
+        self.add_node(node)
+
+        with open(script_path, 'rb') as fp:
+            source_bytes = fp.read()
+
+        source_code = importlib.util.decode_source(source_bytes)
+        ast_node = compile(source_code, os.fspath(script_path), "exec", flags=ast.PyCF_ONLY_AST, dont_inherit=True)
+        imports = _ast_tools.extract_imports(ast_node)
+        for info in imports:
+            self._work_q.append((self.process_import, node, info))
+
+        self._process_import_list(node, imports)
+        return node
+
+    def _process_import(self, importing_module: Optional[BaseNode], import_info: Union[_bytecode_tools.ImportInfo, _ast_tools.ImportInfo]):
+        pass

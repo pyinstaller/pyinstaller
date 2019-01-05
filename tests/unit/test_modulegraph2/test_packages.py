@@ -115,20 +115,10 @@ class TestPackageBuilder(unittest.TestCase):
 
 class TestPackageFinder(unittest.TestCase):
     def test_not_found(self):
-        self.assertRaises(
-            FileNotFoundError,
-            packages.distribution_for_file,
-            os.path.abspath(__file__),
-            sys.path,
-        )
+        self.assertEqual(packages.distribution_for_file(os.path.abspath(__file__), sys.path), None)
 
     def test_found_package(self):
-        # XXX: This should not rely on the fact that a number of packages are installed by tox.
-        import wheel
+        import pip
 
         p = packages.distribution_for_file(os.path.abspath(wheel.__file__), sys.path)
-        self.assertEqual(p.name, "wheel")
-
-
-if __name__ == "__main__":
-    unittest.main()
+        self.assertEqual(p.name, "pip")

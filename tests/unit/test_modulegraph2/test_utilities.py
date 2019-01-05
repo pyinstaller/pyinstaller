@@ -47,7 +47,3 @@ class TestPrivateUtilities(unittest.TestCase):
         self.assertRaises(ValueError, full_name, ".toplevel", None)
         self.assertRaises(ValueError, full_name, "..toplevel", "package")
         self.assertRaises(ValueError, full_name, "...toplevel", "package.sub")
-
-
-if __name__ == "__main__":
-    unittest.main()

@@ -7,7 +7,7 @@ during a run of the script.
 import dataclasses
 from email.parser import BytesParser
 import os
-from typing import Iterable, Dict, List, Set
+from typing import Iterable, Dict, List, Set, Optional
 from importlib.machinery import EXTENSION_SUFFIXES
 
 
@@ -84,7 +84,7 @@ _cached_distributions: Dict[str, PyPIDistribution] = {}
 
 def distribution_for_file(
     filename: os.PathLike, path: Iterable[str]
-) -> PyPIDistribution:
+) -> Optional[PyPIDistribution]:
     """
     Find a distribution for a given file, for installed distributions.
 
@@ -111,4 +111,4 @@ def distribution_for_file(
         except os.error:
             continue
 
-    raise FileNotFoundError(filename)
+    return None
