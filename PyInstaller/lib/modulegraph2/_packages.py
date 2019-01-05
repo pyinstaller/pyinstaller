@@ -7,7 +7,7 @@ during a run of the script.
 import dataclasses
 from email.parser import BytesParser
 import os
-from typing import Iterable, Dict, List, Set, Optional
+from typing import Iterable, Dict, List, Set, Optional, Union
 from importlib.machinery import EXTENSION_SUFFIXES
 
 
@@ -22,7 +22,7 @@ class PyPIDistribution:
     files: Set[str]  # List of files in the distribution, as absolute paths
     import_names: Set[str]  # List of importable names in this distribution
 
-    def contains_file(self, filename: os.PathLike):
+    def contains_file(self, filename: Union[str, os.PathLike]):
         # XXX: Should this resolve symlinks?
         return os.fspath(filename) in self.files
 
@@ -83,7 +83,7 @@ _cached_distributions: Dict[str, PyPIDistribution] = {}
 
 
 def distribution_for_file(
-    filename: os.PathLike, path: Iterable[str]
+    filename: Union[str, os.PathLike], path: Iterable[str]
 ) -> Optional[PyPIDistribution]:
     """
     Find a distribution for a given file, for installed distributions.

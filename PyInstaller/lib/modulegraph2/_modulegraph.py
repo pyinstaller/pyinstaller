@@ -2,12 +2,17 @@
 The actual graph
 """
 import os
+import ast
 import sys
-from typing import Optional, Tuple, Union, TextIO
+import collections
+import importlib
+from typing import Optional, Tuple, Union, TextIO, Deque, Callable, Dict
 
 from ._objectgraph import ObjectGraph
 from ._nodes import BaseNode, Script
 from ._packages import PyPIDistribution
+from ._graphbuilder import node_for_spec
+from ._depinfo import Alias  # XXX
 
 from . import _bytecode_tools, _ast_tools
 
@@ -78,33 +83,39 @@ class ModuleGraph(ObjectGraph):
         self._post_processing = []
         self._work_q: Deque[Callable, tuple] = collections.deque()
 
-        self.global_lazy_nodes: Dict[str, Optional[Alias]] ={ }
+        self.global_lazy_nodes: Dict[str, Optional[Alias]] = {}
         self.distribution_lazy_nodes: Dict[str, Dict[str, Optional[Alias]]] = {}
 
     #
     # Reporting:
     #
     def report(self, stream: TextIO = sys.stdout):
-        print(stream=stream)
-        print("%-15s %-25s %s" % ("Class", "Name", "File"), stream=stream)
-        print("%-15s %-25s %s" % ("-----", "----", "----"), stream=stream)
+        print(file=stream)
+        print("%-15s %-25s %s" % ("Class", "Name", "File"), file=stream)
+        print("%-15s %-25s %s" % ("-----", "----", "----"), file=stream)
         for m in sorted(self.iter_graph(), key=lambda n: n.identifier):
             assert isinstance(m, BaseNode)
-            print("%-15s %-25s %s" % (type(m).__name__, m.identifier, m.filename or ""), stream=stream)
-
+            print(
+                "%-15s %-25s %s" % (type(m).__name__, m.identifier, m.filename or ""),
+                file=stream,
+            )
 
     #
     # Adding to the graph:
     #
 
-    def add_script(self, script_path: os.PathLike):
+    def add_script(self, script_path: os.PathLike) -> Script:
         """ Add a script to the module graph and process imports """
-        self._roots.add(self._load_script(script_path))
+        node = self._load_script(script_path)
+        self.add_root(node)
         self._run_q()
+        return node
 
-    def add_module(self, module_name):
-        self._roots.add(self._load_module(module_name))
+    def add_module(self, module_name: str) -> BaseNode:
+        node = self._load_module(module_name)
+        self.add_root(node)
         self._run_q()
+        return node
 
     #
     # Hooks
@@ -203,14 +214,20 @@ class ModuleGraph(ObjectGraph):
             self._run_post_processing(node)
 
     def _load_script(self, script_path: os.PathLike) -> Script:
-        node = Script(os.fspath(script_path)) # XXX
+        node = Script(os.fspath(script_path))  # XXX
         self.add_node(node)
 
-        with open(script_path, 'rb') as fp:
+        with open(script_path, "rb") as fp:
             source_bytes = fp.read()
 
         source_code = importlib.util.decode_source(source_bytes)
-        ast_node = compile(source_code, os.fspath(script_path), "exec", flags=ast.PyCF_ONLY_AST, dont_inherit=True)
+        ast_node = compile(
+            source_code,
+            os.fspath(script_path),
+            "exec",
+            flags=ast.PyCF_ONLY_AST,
+            dont_inherit=True,
+        )
         imports = _ast_tools.extract_imports(ast_node)
         for info in imports:
             self._work_q.append((self.process_import, node, info))
@@ -218,5 +235,9 @@ class ModuleGraph(ObjectGraph):
         self._process_import_list(node, imports)
         return node
 
-    def _process_import(self, importing_module: Optional[BaseNode], import_info: Union[_bytecode_tools.ImportInfo, _ast_tools.ImportInfo]):
+    def _process_import(
+        self,
+        importing_module: Optional[BaseNode],
+        import_info: Union[_bytecode_tools.ImportInfo, _ast_tools.ImportInfo],
+    ):
         pass

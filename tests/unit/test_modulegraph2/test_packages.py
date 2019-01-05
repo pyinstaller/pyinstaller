@@ -115,7 +115,9 @@ class TestPackageBuilder(unittest.TestCase):
 
 class TestPackageFinder(unittest.TestCase):
     def test_not_found(self):
-        self.assertEqual(packages.distribution_for_file(os.path.abspath(__file__), sys.path), None)
+        self.assertEqual(
+            packages.distribution_for_file(os.path.abspath(__file__), sys.path), None
+        )
 
     def test_found_package(self):
         import pip

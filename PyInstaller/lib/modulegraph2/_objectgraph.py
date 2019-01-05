@@ -9,7 +9,9 @@ from typing_extensions import Protocol
 
 
 class GraphNode(Protocol):
-    identifier: str
+    @property
+    def identifier(self) -> str:
+        ...
 
 
 class ObjectGraph:

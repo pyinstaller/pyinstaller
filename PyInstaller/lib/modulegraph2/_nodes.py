@@ -10,7 +10,7 @@ class BaseNode:
     name: str
     loader: Optional[object]
     distribution: Optional[PyPIDistribution]
-    filename: pathlib.Path
+    filename: Optional[pathlib.Path]
 
     # 3th party attribubtes, not used by modulegraph
     extension_attributes: dict
@@ -25,6 +25,7 @@ class BaseNode:
 class Script(BaseNode):
     pass
 
+
 @dataclasses.dataclass
 class Module(BaseNode):
     globals_written: Set[str]
@@ -32,17 +33,20 @@ class Module(BaseNode):
 
     @property
     def uses_dunder_import(self):
-        return '__import__' in self.globals_read
+        return "__import__" in self.globals_read
 
     @property
     def uses_dunder_file(self):
-        return '__file__' in self.globals_read
+        return "__file__" in self.globals_read
+
 
 class SourceModule(Module):
     pass
 
+
 class BytecodeModule(Module):
     pass
+
 
 class ExtensionModule(Module):
     pass
@@ -50,7 +54,7 @@ class ExtensionModule(Module):
 
 @dataclasses.dataclass
 class NamespacePackage(BaseNode):
-    search_path: List[str]
+    search_path: List[pathlib.Path]
 
     has_data_files: bool
 

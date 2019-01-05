@@ -12,7 +12,9 @@ def make_code(source):
 
 class TestByteCodeExtractor(unittest.TestCase):
     def test_verify(self):
-        self.fail("Manually verify that the tests are complete (regardless of test coverage)")
+        self.fail(
+            "Manually verify that the tests are complete (regardless of test coverage)"
+        )
 
     def test_basic(self):
         code = make_code(
