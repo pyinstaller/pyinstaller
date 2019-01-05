@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2018, PyInstaller Development Team.
+# Copyright (c) 2013-2019, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -178,13 +178,14 @@ class QmlImports():
 
         with open(self.analysis_file, mode='rb') as analys:
             for line in analys:
-                if re.findall('\s+[#]', str(line)):
+                if re.findall('[ ]+[#]', str(line)):
                     # skip it is a comment in the code
                     continue
                 else:
                     # find line that contains a qml file
                     for search_query in self.search_words:
-                        hyp_file = re.findall('.'+search_query+'\(.*?.*?.*?\)',
+                        hyp_file = re.findall('.' + search_query +
+                                              '[(].*?.*?.*?[)]',
                                               str(line))
 
                         if hyp_file:
@@ -204,7 +205,7 @@ class QmlImports():
 
         # Here we read the line to see if there is
         # a genuine qml filepath.
-        if re.findall('(\+|,|\))', raw) or not re.findall('(\'|")', raw):
+        if re.findall('([+]|,|[)])', raw) or not re.findall('(\'|")', raw):
             # It is a variable
             return False
 
@@ -242,7 +243,7 @@ class QmlImports():
 
         with open(c_file, mode='r', encoding='utf-8') as fh:
             for line in fh:
-                if re.findall('\s+[//]', line):
+                if re.findall('[ ]+[//]', line):
                     # skip it's a comment line
                     continue
                 else:
@@ -274,7 +275,7 @@ class QmlImports():
 
     def find_images(self, statement):
         for keyword in self.image_search_words:
-            img_query = re.findall('["|\'].*?.*?.*?[.]'+keyword+'["|\']',
+            img_query = re.findall('["|\'].*?.*?.*?[.]' + keyword + '["|\']',
                                    statement)
             if img_query:
                 # since we are parsing the qml
@@ -449,7 +450,9 @@ class QmlImports():
         # this is to check for nesting
         # remove the starting folder,
         # whatever we have is the nested path
-        nest = folder.replace(self.analysis_folder, '')
+        neut_analys_folder = os.path.abspath(self.analysis_folder)
+        neut_folder = os.path.abspath(folder)
+        nest = neut_folder.replace(neut_analys_folder, '')
         # replace backslashes with forward slashes on windows
         # lets have a common ground to work with
         if nest != '':
