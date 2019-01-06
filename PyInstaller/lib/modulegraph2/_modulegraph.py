@@ -71,15 +71,23 @@ class ModuleGraph(ObjectGraph[BaseNode]):
     #
     # XXX: Detect if "from mod import name" access a submodule
     #      or a global name.
+    _path: List[str]
+    _post_processing: List[Callable[['ModuleGraph', BaseNode], None]]
+    _work_q: Deque[Tuple[Callable, tuple]]
+    _global_lazy_nodes: Dict[str, Optional[Alias]]
+    _distribution_lazy_nodes: Dict[str, Dict[str, Optional[Alias]]]
+
     def __init__(self, *, path: List[str]=None):
         super().__init__()
         self._path = path if path is not None else sys.path
-        self._post_processing: List[Callable[[ModuleGraph, BaseNode], None]] = []
-        self._work_q: Deque[Tuple[Callable, tuple]] = collections.deque()
+        self._post_processing = []
+        self._work_q = collections.deque()
 
-        self._global_lazy_nodes: Dict[str, Optional[Alias]] = {}
-        self._distribution_lazy_nodes: Dict[str, Dict[str, Optional[Alias]]] = {}
+        self._global_lazy_nodes = {}
+        self._distribution_lazy_nodes = {}
 
+        # Reference to __main__ cannot be valid when multip scripts
+        # are added to the graph, just ignore this module for now.
         self._global_lazy_nodes["__main__"] = None
 
     #
@@ -131,7 +139,7 @@ class ModuleGraph(ObjectGraph[BaseNode]):
         for hook in self._post_processing:
             hook(self, node)
 
-    def add_post_processing_hook(self, hook: Callable[[ModuleGraph, BaseNode], None]) -> None:
+    def add_post_processing_hook(self, hook: Callable[['ModuleGraph', BaseNode], None]) -> None:
         """
         Run 'hook(self, node)' after *node* is fully processed.
         """
@@ -186,7 +194,7 @@ class ModuleGraph(ObjectGraph[BaseNode]):
 
     def _load_module(self, module_name: str) -> BaseNode:
         # module_name must be an absolute module name
-        print("load_module", module_name)
+        #print("load_module", module_name)
         node = self.find_node(module_name)
         assert node is None
 
@@ -301,7 +309,18 @@ class ModuleGraph(ObjectGraph[BaseNode]):
             try:
                 self.add_edge(importing_module, node)  # XXX: Edge info
             except ValueError as exc:
-                print(exc)
+                print(importing_module.name, import_info.import_module, exc)
+                # XXX: This should not be possible!
+
+            for nm in import_info.import_names:
+                subnode = self._find_or_load(full_name(nm, import_info.import_module))
+                if isinstance(nm, MissingModule):
+                    if nm in node.globals_written:
+                        # Name exists, but is not a module, don't add edge
+                        # to the "missing" node
+                        continue
+                self.add_edge(importing_module, subnode)
+
 
             # XXX: if this is a "from" import we need to do
             # more work, but only once "node" is fully
