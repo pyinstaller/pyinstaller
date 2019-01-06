@@ -11,7 +11,7 @@ from typing_extensions import Protocol
 class GraphNode(Protocol):
     @property
     def identifier(self) -> str:
-        ...
+        ...  # pragma: nocover
 
 
 class ObjectGraph:
