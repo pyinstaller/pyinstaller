@@ -81,7 +81,7 @@ class ModuleGraph(ObjectGraph):
         super().__init__(debug=debug)
         self._path = path if path is not None else sys.path
         self._post_processing = []
-        self._work_q: Deque[Callable, tuple] = collections.deque()
+        self._work_q: Deque[Tuple[Callable, tuple]] = collections.deque()
 
         self.global_lazy_nodes: Dict[str, Optional[Alias]] = {}
         self.distribution_lazy_nodes: Dict[str, Dict[str, Optional[Alias]]] = {}

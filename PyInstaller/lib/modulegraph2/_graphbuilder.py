@@ -22,9 +22,12 @@ from ._ast_tools import extract_ast_info
 
 def _contains_datafiles(directory: pathlib.Path):
     # This is a recursive algorithm, but should be safe...
-    for p in directory.parent.iterdir():
+    for p in directory.iterdir():
         if any(p.name.endswith(sfx) for sfx in importlib.machinery.all_suffixes()):
             # Python module is not a data file
+            continue
+
+        elif p.name in ("__pycache__", ".hg", ".svn", ".hg"):
             continue
 
         elif p.is_dir():
