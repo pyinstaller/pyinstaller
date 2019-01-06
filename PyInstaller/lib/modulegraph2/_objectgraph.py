@@ -4,7 +4,17 @@ A basic graph datastructure
 XXX: This is basically a reimplementation of altgraph.ObjectGraph and
 needs to be split of to a separate package.
 """
-from typing import Optional, Union, Iterator, Set, Dict, Tuple, Callable
+from typing import (
+    Optional,
+    Union,
+    Iterator,
+    Set,
+    Dict,
+    Tuple,
+    Callable,
+    TypeVar,
+    Generic,
+)
 from typing_extensions import Protocol
 
 
@@ -14,7 +24,10 @@ class GraphNode(Protocol):
         ...  # pragma: nocover
 
 
-class ObjectGraph:
+T = TypeVar("T", bound=GraphNode)
+
+
+class ObjectGraph(Generic[T]):
     """
     A basic graph datastructure where the nodes can be arbitrary objects
     with an attribute named "identifier". Edges between nodes can have
@@ -23,32 +36,32 @@ class ObjectGraph:
 
     def __init__(self):
         self._roots: Set[str] = set()
-        self._nodes: Dict[str, GraphNode] = dict()
+        self._nodes: Dict[str, T] = dict()
         self._edges: Dict[Tuple[str, str], object] = dict()
 
     def __repr__(self):
         return f"<{type(self).__name__} with {len(self._roots)} roots, {len(self._nodes)} nodes and {len(self._edges)} edges>"  # noqa:E501
 
-    def roots(self) -> Iterator[GraphNode]:
+    def roots(self) -> Iterator[T]:
         """
         Yield the roots of the graph
         """
         return (self._nodes[identifier] for identifier in self._roots)
 
-    def nodes(self) -> Iterator[GraphNode]:
+    def nodes(self) -> Iterator[T]:
         """
         Yield all nodes in an arbirary order
         """
         return iter(self._nodes.values())
 
-    def add_root(self, node: Union[str, GraphNode]):
+    def add_root(self, node: Union[str, T]):
         value = self.find_node(node)
         if value is None:
             raise KeyError("Adding non-existing {node!r} as root")
 
         self._roots.add(value.identifier)
 
-    def add_node(self, node: GraphNode):
+    def add_node(self, node: T):
         if node.identifier in self._nodes:
             raise ValueError(f"Already have node with name {node.identifier!r}")
 
@@ -56,8 +69,8 @@ class ObjectGraph:
 
     def add_edge(
         self,
-        source: GraphNode,
-        destination: GraphNode,
+        source: T,
+        destination: T,
         edge_attributes: object = None,
         merge_attributes: Optional[Callable[[object, object], object]] = None,
     ):
@@ -91,7 +104,7 @@ class ObjectGraph:
                     f"Edge between {from_node.identifier!r} and {to_node.identifier!r} already exists"  # noqa:E501
                 )
 
-    def find_node(self, node: Union[str, GraphNode]) -> Optional[GraphNode]:
+    def find_node(self, node: Union[str, T]) -> Optional[T]:
         """ Find *node* in the graph, return the graph node or None """
         # XXX: Should this raise KeyError instead of returning None?
         if isinstance(node, str):
@@ -102,12 +115,10 @@ class ObjectGraph:
             # not actually in the graph?
             return self._nodes.get(node.identifier)
 
-    def __contains__(self, node: Union[str, GraphNode]):
+    def __contains__(self, node: Union[str, T]):
         return self.find_node(node) is not None
 
-    def edge_data(
-        self, source: Union[str, GraphNode], destination: Union[str, GraphNode]
-    ) -> object:
+    def edge_data(self, source: Union[str, T], destination: Union[str, T]) -> object:
         """
         Return the data associated with the edge between *source* and *destination*.
 
@@ -127,9 +138,7 @@ class ObjectGraph:
                 f"There is no edge between {from_node.identifier} and {to_node.identifier}"  # noqa:E501
             ) from None
 
-    def outgoing(
-        self, source: Union[str, GraphNode]
-    ) -> Iterator[Tuple[object, GraphNode]]:
+    def outgoing(self, source: Union[str, T]) -> Iterator[Tuple[object, T]]:
         """
         Yield (edge, node) for all outgoing edges
         """
@@ -141,9 +150,7 @@ class ObjectGraph:
             if from_node == node.identifier:
                 yield self._edges[(from_node, to_node)], self._nodes[to_node]
 
-    def incoming(
-        self, destination: Union[str, GraphNode]
-    ) -> Iterator[Tuple[object, GraphNode]]:
+    def incoming(self, destination: Union[str, T]) -> Iterator[Tuple[object, T]]:
         """
         Yield (edge, node) for all incoming edges
         """
@@ -155,9 +162,7 @@ class ObjectGraph:
             if to_node == node.identifier:
                 yield self._edges[(from_node, to_node)], self._nodes[from_node]
 
-    def iter_graph(
-        self, *, node: Union[str, GraphNode] = None, _visited: Optional[set] = None
-    ):
+    def iter_graph(self, *, node: Union[str, T] = None, _visited: Optional[set] = None):
         """
         Yield all nodes in the graph reachable from *node*
         or any of the graph roots.
