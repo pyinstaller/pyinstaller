@@ -76,6 +76,11 @@ STDLIB_IMPLIES = {
     "dbm": ("dbm.gnu", "dbm.ndbm", "dbm.dumb"),
 }
 
-if sys.platform == "win32":
-    STDLIB_IMPLIES["signal"] = STDLIB_IMPLIES["signal"] + ("_socket",)
-    STDLIB_IMPLIES["ctypes"] = ("comtypes.server.inprocserver",)
+STDLIB_PLATFORM_IMPLIES = {
+    "win32": {
+        "signal": STDLIB_IMPLIES["signal"] + ("_socket",),
+        "ctypes": ("comtypes.server.inprocserver",),
+    }
+}
+
+STDLIB_IMPLIES.update(STDLIB_PLATFORM_IMPLIES.get(sys.platform, {}))
