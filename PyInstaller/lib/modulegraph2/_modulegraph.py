@@ -12,7 +12,7 @@ from ._objectgraph import ObjectGraph
 from ._nodes import BaseNode, Script
 from ._packages import PyPIDistribution
 from ._graphbuilder import node_for_spec
-from ._depinfo import Alias  # XXX
+from ._implies import Alias  # XXX
 
 from . import _bytecode_tools, _ast_tools
 
