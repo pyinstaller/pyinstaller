@@ -78,7 +78,7 @@ STDLIB_IMPLIES = {
 
 STDLIB_PLATFORM_IMPLIES = {
     "win32": {
-        "signal": STDLIB_IMPLIES["signal"] + ("_socket",),
+        "signal": ("_signal", "_socket"),
         "ctypes": ("comtypes.server.inprocserver",),
     }
 }

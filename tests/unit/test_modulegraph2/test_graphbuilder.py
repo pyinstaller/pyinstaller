@@ -14,12 +14,14 @@ except ImportError:
 
 from modulegraph2 import _graphbuilder as graphbuilder
 from modulegraph2 import (
-    SourceModule,
+    BuiltinModule,
     BytecodeModule,
     ExtensionModule,
-    Package,
+    FrozenModule,
     NamespacePackage,
+    Package,
     PyPIDistribution,
+    SourceModule,
 )
 
 NODEBUILDER_TREE = os.path.join(
@@ -46,10 +48,8 @@ class TestContainsData(unittest.TestCase):
         os.unlink(os.path.join(NODEBUILDER_TREE, "packages.zip"))
 
     def test_importlib(self):
-        self.assertTrue(
-            importlib.resources.is_resource("datapackage2.subdir", "data.txt")
-        )
-        self.assertTrue(importlib.resources.is_resource("zfdatapackage", "data.txt"))
+        self.assertTrue(resources.is_resource("datapackage2.subdir", "data.txt"))
+        self.assertTrue(resources.is_resource("zfdatapackage", "data.txt"))
 
     def test_graphbuilder(self):
         self.assertFalse(
@@ -164,7 +164,10 @@ class TestNodeBuilder(unittest.TestCase):
 
         import namespace_package
 
-        self.assertEqual(namespace_package.__file__, None)
+        if sys.version_info[:2] < (3, 7):
+            self.assertFalse(hasattr(namespace_package, "__file__"))
+        else:
+            self.assertEqual(namespace_package.__file__, None)
 
         import package
 
@@ -193,7 +196,42 @@ class TestNodeBuilder(unittest.TestCase):
 
         import zfnspackage
 
-        self.assertIs(zfnspackage.__file__, None)
+        if sys.version_info[:2] < (3, 7):
+            self.assertFalse(hasattr(zfnspackage, "__file__"))
+        else:
+            self.assertIs(zfnspackage.__file__, None)
+
+    def test_builtin_module(self):
+        spec = importlib.util.find_spec("sys")
+
+        node, imports = graphbuilder.node_for_spec(spec, sys.path)
+
+        self.assertIsInstance(node, BuiltinModule)
+        self.assertEqual(node.name, "sys")
+        self.assertEqual(node.identifier, "sys")
+
+        self.assertIsNot(node.loader, None)
+        self.assertIs(node.distribution, None)
+        self.assertIs(node.filename, None)
+
+        self.assertEqual(node.extension_attributes, {})
+        self.assertEqual(node.globals_written, set())
+        self.assertEqual(node.globals_read, set())
+
+    def test_frozen(self):
+        spec = importlib.util.find_spec("_frozen_importlib")
+
+        node, imports = graphbuilder.node_for_spec(spec, sys.path)
+
+        self.assertIsInstance(node, FrozenModule)
+        self.assertEqual(node.name, "_frozen_importlib")
+        self.assertEqual(node.identifier, "_frozen_importlib")
+
+        self.assertIsNot(node.loader, None)
+        self.assertIs(node.distribution, None)
+        self.assertIs(node.filename, None)
+
+        self.assertEqual(node.extension_attributes, {})
 
     def test_source_module(self):
         spec = importlib.util.find_spec("simple_source")

@@ -1,18 +1,22 @@
 """
 Tools for building the module graph
 """
+import sys
 import ast
 import pathlib
-from typing import Tuple, Iterable, List, Sequence
+from typing import Tuple, Iterable, List, Sequence, Type
 import importlib.machinery
 import importlib.abc
 import zipfile
+import zipimport
 from ._nodes import (
     BaseNode,
+    BuiltinModule,
     NamespacePackage,
     ExtensionModule,
     SourceModule,
     BytecodeModule,
+    FrozenModule,
     Package,
 )
 from ._packages import distribution_for_file
@@ -42,7 +46,7 @@ def _contains_datafiles(directory: pathlib.Path):
             else:
                 return True
 
-    except NotADirectoryError as exc:
+    except NotADirectoryError:
         names: List[str] = []
         while not directory.exists():
             names.insert(0, directory.name)
@@ -86,12 +90,13 @@ def node_for_spec(
     node: BaseNode
     imports: Sequence  # XXX
 
+    # XXX: spec.loader can be None in older python versions, but isn't on any
+    # recent version (which doesn't help with coverage.py reports)
     if spec.loader is None or (
         spec.origin is None
-        and isinstance(spec.loader, importlib.abc.InspectLoader)
-        and spec.loader.get_source(spec.name) == ""
+        and getattr(spec.loader, "get_source", lambda n: None)(spec.name) == ""
     ):
-        # Namespace package
+        # Implicit namespace package
         search_path = spec.submodule_search_locations
         assert search_path is not None
 
@@ -105,6 +110,18 @@ def node_for_spec(
             has_data_files=False,
         )
         return node, ()
+
+    elif spec.loader is importlib.machinery.BuiltinImporter:
+        node = BuiltinModule(
+            name=spec.name,
+            loader=spec.loader,
+            distribution=None,
+            extension_attributes={},
+            filename=None,
+            globals_read=set(),
+            globals_written=set(),
+        )
+        imports = ()
 
     elif isinstance(spec.loader, importlib.machinery.ExtensionFileLoader):
         node = ExtensionModule(
@@ -120,7 +137,13 @@ def node_for_spec(
         )
         imports = ()
 
-    elif isinstance(spec.loader, importlib.abc.InspectLoader):
+    elif (
+        isinstance(spec.loader, (importlib.abc.InspectLoader, zipimport.zipimporter))
+        or spec.loader == importlib.machinery.FrozenImporter
+    ):
+        # Zipimporter is mentioned explictly because it fails the type check for
+        # InspectLoader even though it implements the interface.
+        # Likewise for _frozen_importlib_external._NamespaceLoader
         source_code = spec.loader.get_source(spec.name)
         if source_code is not None:
             filename = spec.origin
@@ -141,7 +164,13 @@ def node_for_spec(
         assert code is not None
         bytecode_imports, names_written, names_read = extract_bytecode_info(code)
 
-        node_type = SourceModule if source_code is not None else BytecodeModule
+        node_type: Type[BaseNode]
+        if spec.loader == importlib.machinery.FrozenImporter:
+            node_type = FrozenModule
+        elif source_code is not None:
+            node_type = SourceModule
+        else:
+            node_type = BytecodeModule
 
         node = node_type(
             name=spec.name,

@@ -3,14 +3,18 @@ import unittest
 import modulegraph2
 
 PUBLIC_SYMBOLS = {
-    "ObjectGraph",
-    "PyPIDistribution",
-    "Module",
-    "SourceModule",
+    "BuiltinModule",
     "BytecodeModule",
     "ExtensionModule",
-    "Package",
+    "FrozenModule",
+    "Module",
+    "ModuleGraph",
     "NamespacePackage",
+    "ObjectGraph",
+    "Package",
+    "PyPIDistribution",
+    "Script",
+    "SourceModule",
 }
 
 PYTHON_SYMBOLS = {
