@@ -22,6 +22,7 @@ from ._ast_tools import extract_ast_info
 
 def _contains_datafiles(directory: pathlib.Path):
     # This is a recursive algorithm, but should be safe...
+    # XXX: Needs work to work with zipped libraries
     for p in directory.iterdir():
         if any(p.name.endswith(sfx) for sfx in importlib.machinery.all_suffixes()):
             # Python module is not a data file
