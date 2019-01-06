@@ -1,12 +1,12 @@
 """
 Tools for building the module graph
-
-XXX: How to avoid circular dependencies with type checking?
 """
 import ast
 import pathlib
 from typing import Tuple, Iterable, List, Sequence
 import importlib.machinery
+import importlib.abc
+import zipfile
 from ._nodes import (
     BaseNode,
     NamespacePackage,
@@ -21,21 +21,58 @@ from ._ast_tools import extract_ast_info
 
 
 def _contains_datafiles(directory: pathlib.Path):
-    # This is a recursive algorithm, but should be safe...
-    # XXX: Needs work to work with zipped libraries
-    for p in directory.iterdir():
-        if any(p.name.endswith(sfx) for sfx in importlib.machinery.all_suffixes()):
-            # Python module is not a data file
-            continue
+    """
+    Returns true iff *directory* is contains package data
 
-        elif p.name in ("__pycache__", ".hg", ".svn", ".hg"):
-            continue
+    This works both when *directory* is a path on a filesystem
+    and when *directory* points into a zipped directory.
+    """
+    try:
+        for p in directory.iterdir():
+            if any(p.name.endswith(sfx) for sfx in importlib.machinery.all_suffixes()):
+                # Python module is not a data file
+                continue
 
-        elif p.is_dir():
-            return _contains_datafiles(p)
+            elif p.name in ("__pycache__", ".hg", ".svn", ".hg"):
+                continue
 
-        else:
-            return True
+            elif p.is_dir():
+                return _contains_datafiles(p)
+
+            else:
+                return True
+
+    except NotADirectoryError as exc:
+        names: List[str] = []
+        while not directory.exists():
+            names.insert(0, directory.name)
+            directory = directory.parent
+
+        if not zipfile.is_zipfile(directory):
+            raise
+
+        path = "/".join(names) + "/"
+
+        with zipfile.ZipFile(directory) as zf:
+            for nm in zf.namelist():
+                if nm.startswith(path):
+                    if any(
+                        part in ("__pycache__", ".hg", ".svn", ".hg")
+                        for part in nm.split("/")
+                    ):
+                        continue
+
+                    elif any(
+                        nm.endswith(sfx) for sfx in importlib.machinery.all_suffixes()
+                    ):
+                        continue
+
+                    else:
+                        info = zf.getinfo(nm)
+                        if info.is_dir():
+                            continue
+
+                        return True
 
     return False
 
@@ -46,16 +83,15 @@ def node_for_spec(
     """
     Create the node for a ModuleSpec and locate related imports
     """
-    # XXX:
-    # - Sources not in filesystem (for example zipfile)
-    # - Packages
-    # - Setuptools namespace packages
     node: BaseNode
     imports: Sequence  # XXX
 
-    if spec.loader is None:
+    if spec.loader is None or (
+        spec.origin is None
+        and isinstance(spec.loader, importlib.abc.InspectLoader)
+        and spec.loader.get_source(spec.name) == ""
+    ):
         # Namespace package
-        # XXX: What about setuptools namespace packages
         search_path = spec.submodule_search_locations
         assert search_path is not None
 
@@ -71,7 +107,6 @@ def node_for_spec(
         return node, ()
 
     elif isinstance(spec.loader, importlib.machinery.ExtensionFileLoader):
-        # XXX: What about a package where __init__ is an extension
         node = ExtensionModule(
             name=spec.name,
             loader=spec.loader,
@@ -85,32 +120,12 @@ def node_for_spec(
         )
         imports = ()
 
-    elif isinstance(spec.loader, importlib.machinery.SourcelessFileLoader):
-        code = spec.loader.get_code(spec.name)
-        if code is not None:
-            imports, names_written, names_read = extract_bytecode_info(code)
-        else:
-            imports = ()
-            names_written = set()
-            names_read = set()
-
-        node = BytecodeModule(
-            name=spec.name,
-            loader=spec.loader,
-            distribution=distribution_for_file(spec.origin, path)
-            if spec.origin is not None
-            else None,
-            extension_attributes={},
-            filename=pathlib.Path(spec.origin) if spec.origin is not None else None,
-            globals_written=names_written,
-            globals_read=names_read,
-        )
-
-    elif isinstance(spec.loader, importlib.machinery.SourceFileLoader):
+    elif isinstance(spec.loader, importlib.abc.InspectLoader):
         source_code = spec.loader.get_source(spec.name)
         if source_code is not None:
             filename = spec.origin
             assert filename is not None
+
             ast_node = compile(
                 source_code,
                 filename,
@@ -123,14 +138,12 @@ def node_for_spec(
             ast_imports = iter(())
 
         code = spec.loader.get_code(spec.name)
-        if code is not None:
-            bytecode_imports, names_written, names_read = extract_bytecode_info(code)
-        else:
-            bytecode_imports = []
-            names_written = set()
-            names_read = set()
+        assert code is not None
+        bytecode_imports, names_written, names_read = extract_bytecode_info(code)
 
-        node = SourceModule(
+        node_type = SourceModule if source_code is not None else BytecodeModule
+
+        node = node_type(
             name=spec.name,
             loader=spec.loader,
             distribution=distribution_for_file(spec.origin, path)
@@ -145,7 +158,9 @@ def node_for_spec(
         imports = ast_imports if ast_imports else bytecode_imports
 
     else:
-        raise RuntimeError(f"Cannot determine node for {spec.name!r} {spec!r}")
+        raise RuntimeError(
+            f"Don't known how to handle {spec.loader!r} for {spec.name!r}"
+        )  # pragma: nocover
 
     if spec.loader.is_package(spec.name):
         node_file = node.filename

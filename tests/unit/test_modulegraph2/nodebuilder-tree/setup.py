@@ -27,6 +27,7 @@ class build_bytecode(Command):
                     dstpath = srcpath[4:] + "c"
                     py_compile.compile(srcpath, dstpath, dstpath[:-1], True)
 
+
 class build_zipfile(Command):
     description = "build zipfile with modules"
     user_options = []
@@ -52,6 +53,8 @@ class build_zipfile(Command):
                     srcpath = os.path.join(dirname, fn)
                     dstpath = srcpath[7:]
                     zf.write(srcpath, dstpath)
+
+
 setup(
     ext_modules=[extension1, extension2, extension3],
     cmdclass={"build_bytecode": build_bytecode, "build_zipfile": build_zipfile},

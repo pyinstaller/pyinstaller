@@ -30,8 +30,7 @@ NODEBUILDER_TREE = os.path.join(
 class TestContainsData(unittest.TestCase):
     def setUp(self):
         subprocess.check_call(
-            [sys.executable, "setup.py", "build_zipfile"],
-            cwd=NODEBUILDER_TREE,
+            [sys.executable, "setup.py", "build_zipfile"], cwd=NODEBUILDER_TREE
         )
 
         sys.path.insert(0, os.path.join(NODEBUILDER_TREE, "packages.zip"))
@@ -44,13 +43,13 @@ class TestContainsData(unittest.TestCase):
         assert sys.path[0] == os.path.join(NODEBUILDER_TREE, "packages.zip")
         del sys.path[0]
 
+        os.unlink(os.path.join(NODEBUILDER_TREE, "packages.zip"))
+
     def test_importlib(self):
         self.assertTrue(
             importlib.resources.is_resource("datapackage2.subdir", "data.txt")
         )
-        self.assertTrue(
-            importlib.resources.is_resource("zfdatapackage", "data.txt")
-        )
+        self.assertTrue(importlib.resources.is_resource("zfdatapackage", "data.txt"))
 
     def test_graphbuilder(self):
         self.assertFalse(
@@ -79,6 +78,16 @@ class TestContainsData(unittest.TestCase):
             )
         )
 
+    def test_invalid(self):
+        self.assertRaises(
+            os.error, graphbuilder._contains_datafiles, pathlib.Path("/no/such/file")
+        )
+        self.assertRaises(
+            os.error,
+            graphbuilder._contains_datafiles,
+            pathlib.Path(NODEBUILDER_TREE) / "extension1.c" / "package",
+        )
+
 
 class TestNodeBuilder(unittest.TestCase):
     @classmethod
@@ -97,7 +106,7 @@ class TestNodeBuilder(unittest.TestCase):
                     fn.endswith(sfx)
                     for sfx in importlib.machinery.BYTECODE_SUFFIXES
                     + importlib.machinery.EXTENSION_SUFFIXES
-                    + ['.zip']
+                    + [".zip"]
                 ):
                     os.unlink(os.path.join(dname, fn))
 
@@ -106,7 +115,13 @@ class TestNodeBuilder(unittest.TestCase):
         cls._remove_artefacts()
 
         subprocess.check_call(
-            [sys.executable, "setup.py", "build_ext", "build_bytecode", "build_zipfile"],
+            [
+                sys.executable,
+                "setup.py",
+                "build_ext",
+                "build_bytecode",
+                "build_zipfile",
+            ],
             cwd=NODEBUILDER_TREE,
         )
 
@@ -180,7 +195,6 @@ class TestNodeBuilder(unittest.TestCase):
 
         self.assertIs(zfnspackage.__file__, None)
 
-
     def test_source_module(self):
         spec = importlib.util.find_spec("simple_source")
 
@@ -193,8 +207,7 @@ class TestNodeBuilder(unittest.TestCase):
         self.assertIsNot(node.loader, None)
         self.assertIs(node.distribution, None)
         self.assertEqual(
-            node.filename,
-            pathlib.Path(NODEBUILDER_TREE) / "simple_source.py",
+            node.filename, pathlib.Path(NODEBUILDER_TREE) / "simple_source.py"
         )
 
         self.assertEqual(node.extension_attributes, {})
@@ -214,8 +227,7 @@ class TestNodeBuilder(unittest.TestCase):
         self.assertIsNot(node.loader, None)
         self.assertIs(node.distribution, None)
         self.assertEqual(
-            node.filename,
-            pathlib.Path(NODEBUILDER_TREE) / "bytecode_module.pyc",
+            node.filename, pathlib.Path(NODEBUILDER_TREE) / "bytecode_module.pyc"
         )
 
         self.assertEqual(node.extension_attributes, {})
@@ -257,8 +269,7 @@ class TestNodeBuilder(unittest.TestCase):
         self.assertEqual(node.identifier, "namespace_package")
 
         self.assertEqual(
-            node.search_path,
-            [pathlib.Path(NODEBUILDER_TREE) / "namespace_package"],
+            node.search_path, [pathlib.Path(NODEBUILDER_TREE) / "namespace_package"]
         )
         self.assertEqual(node.has_data_files, False)
 
@@ -272,9 +283,7 @@ class TestNodeBuilder(unittest.TestCase):
         self.assertEqual(node.name, "package")
         self.assertEqual(node.identifier, "package")
 
-        self.assertEqual(
-            node.search_path, [pathlib.Path(NODEBUILDER_TREE) / "package"]
-        )
+        self.assertEqual(node.search_path, [pathlib.Path(NODEBUILDER_TREE) / "package"])
         self.assertEqual(node.has_data_files, False)
 
         self.assertIsInstance(node.init_module, SourceModule)
@@ -290,8 +299,7 @@ class TestNodeBuilder(unittest.TestCase):
         self.assertEqual(node.identifier, "bytecode_package")
 
         self.assertEqual(
-            node.search_path,
-            [pathlib.Path(NODEBUILDER_TREE) / "bytecode_package"],
+            node.search_path, [pathlib.Path(NODEBUILDER_TREE) / "bytecode_package"]
         )
         self.assertEqual(node.has_data_files, True)
 
@@ -308,8 +316,7 @@ class TestNodeBuilder(unittest.TestCase):
         self.assertEqual(node.identifier, "ext_package")
 
         self.assertEqual(
-            node.search_path,
-            [pathlib.Path(NODEBUILDER_TREE) / "ext_package"],
+            node.search_path, [pathlib.Path(NODEBUILDER_TREE) / "ext_package"]
         )
         self.assertEqual(node.has_data_files, False)
 
@@ -335,13 +342,12 @@ class TestNodeBuilder(unittest.TestCase):
         self.assertIsNot(node.loader, None)
         self.assertIs(node.distribution, None)
         self.assertEqual(
-            node.filename,
-            pathlib.Path(NODEBUILDER_TREE) / "packages" / "zfmod.py",
+            node.filename, pathlib.Path(NODEBUILDER_TREE) / "packages.zip" / "zfmod.py"
         )
 
         self.assertEqual(node.extension_attributes, {})
-        self.assertEqual(node.globals_written, {"foo", "bar", "sys", "__doc__"})
-        self.assertEqual(node.globals_read, {"foo"})
+        self.assertEqual(node.globals_written, {"__doc__"})
+        self.assertEqual(node.globals_read, set())
 
     def test_zipfile_package(self):
         spec = importlib.util.find_spec("zfpackage")
@@ -353,7 +359,8 @@ class TestNodeBuilder(unittest.TestCase):
         self.assertEqual(node.identifier, "zfpackage")
 
         self.assertEqual(
-            node.search_path, [pathlib.Path(NODEBUILDER_TREE) / "packages" / "zfpackage"]
+            node.search_path,
+            [pathlib.Path(NODEBUILDER_TREE) / "packages.zip" / "zfpackage"],
         )
         self.assertEqual(node.has_data_files, False)
 
@@ -369,7 +376,8 @@ class TestNodeBuilder(unittest.TestCase):
         self.assertEqual(node.identifier, "zfdatapackage")
 
         self.assertEqual(
-            node.search_path, [pathlib.Path(NODEBUILDER_TREE) / "packages" / "zfdatapackage"]
+            node.search_path,
+            [pathlib.Path(NODEBUILDER_TREE) / "packages.zip" / "zfdatapackage"],
         )
         self.assertEqual(node.has_data_files, True)
 
@@ -386,6 +394,6 @@ class TestNodeBuilder(unittest.TestCase):
 
         self.assertEqual(
             node.search_path,
-            [pathlib.Path(NODEBUILDER_TREE) / "packages" / "zfnspackage"],
+            [pathlib.Path(NODEBUILDER_TREE) / "packages.zip" / "zfnspackage"],
         )
         self.assertEqual(node.has_data_files, False)
