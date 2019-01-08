@@ -11,7 +11,7 @@ All contributions,
 like community support, bug reports, bug fixes,
 documentation improvements, enhancements and ideas are welcome.
 
-|PyInstaller| is an open-source project that is created and
+|PyInstaller| is an free software project that is created and
 maintained by volunteers.
 It lives-and-dies based on the support it receives from others, and the fact
 that you're even considering contributing to |PyInstaller| is very
