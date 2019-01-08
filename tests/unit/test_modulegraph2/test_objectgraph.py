@@ -19,6 +19,7 @@ class TestObjectGraph(unittest.TestCase):
 
         self.assertEqual(list(graph.roots()), [])
         self.assertEqual(list(graph.nodes()), [])
+        self.assertEqual(list(graph.edges()), [])
         self.assertEqual(list(graph.iter_graph()), [])
 
         self.assertFalse("foo" in graph)
@@ -40,6 +41,7 @@ class TestObjectGraph(unittest.TestCase):
 
         self.assertEqual(set(graph.nodes()), {n1, n2, n3})
         self.assertEqual(set(graph.roots()), set())
+        self.assertEqual(list(graph.edges()), [])
 
         graph.add_root(n2)
         self.assertEqual(set(graph.roots()), {n2})
@@ -52,8 +54,10 @@ class TestObjectGraph(unittest.TestCase):
         self.assertEqual(set(graph.incoming(n1)), set())
 
         graph.add_edge(n1, n2, 42)
+
         self.assertEqual(set(graph.outgoing(n1)), {(42, n2)})
         self.assertEqual(set(graph.incoming(n1)), set())
+        self.assertEqual(set(graph.edges()), {(n1, n2, 42)})
 
         self.assertRaises(ValueError, graph.add_edge, n1, n2, 21)
 
@@ -64,6 +68,7 @@ class TestObjectGraph(unittest.TestCase):
 
         self.assertEqual(set(graph.outgoing(n1)), {(63, n2)})
         self.assertEqual(set(graph.incoming(n1)), set())
+        self.assertEqual(set(graph.edges()), {(n1, n2, 63)})
 
     def test_finding(self):
         graph = modulegraph2.ObjectGraph()

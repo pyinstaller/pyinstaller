@@ -3,6 +3,7 @@ Modulegraph
 """
 __version__ = "2.0a0"
 
+from ._depinfo import DependencyInfo
 from ._objectgraph import ObjectGraph
 from ._modulegraph import ModuleGraph
 from ._packages import PyPIDistribution
@@ -11,6 +12,7 @@ from ._nodes import (
     BytecodeModule,
     ExtensionModule,
     FrozenModule,
+    MissingModule,
     Module,
     NamespacePackage,
     Package,
@@ -21,8 +23,10 @@ from ._nodes import (
 __all__ = (
     "BuiltinModule",
     "BytecodeModule",
+    "DependencyInfo",
     "ExtensionModule",
     "FrozenModule",
+    "MissingModule",
     "Module",
     "ModuleGraph",
     "NamespacePackage",

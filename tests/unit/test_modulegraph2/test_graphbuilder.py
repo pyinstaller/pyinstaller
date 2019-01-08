@@ -47,6 +47,22 @@ class TestContainsData(unittest.TestCase):
 
         os.unlink(os.path.join(NODEBUILDER_TREE, "packages.zip"))
 
+    @classmethod
+    def tearDownClass(cls):
+        to_remove = []
+        for mod in sys.modules:
+            if (
+                hasattr(sys.modules[mod], "__file__")
+                and sys.modules[mod].__file__ is not None
+                and "nodebuilder-tree" in sys.modules[mod].__file__
+            ):
+                to_remove.append(mod)
+
+        for mod in to_remove:
+            del sys.modules[mod]
+
+        importlib.invalidate_caches()
+
     def test_importlib(self):
         self.assertTrue(resources.is_resource("datapackage2.subdir", "data.txt"))
         self.assertTrue(resources.is_resource("zfdatapackage", "data.txt"))
@@ -137,6 +153,20 @@ class TestNodeBuilder(unittest.TestCase):
 
         assert sys.path[0] == os.path.join(NODEBUILDER_TREE, "packages.zip")
         del sys.path[0]
+
+        to_remove = []
+        for mod in sys.modules:
+            if (
+                hasattr(sys.modules[mod], "__file__")
+                and sys.modules[mod].__file__ is not None
+                and "nodebuilder-tree" in sys.modules[mod].__file__
+            ):
+                to_remove.append(mod)
+
+        for mod in to_remove:
+            del sys.modules[mod]
+
+        importlib.invalidate_caches()
 
     def test_validate_structure(self):
         import simple_source
@@ -310,6 +340,22 @@ class TestNodeBuilder(unittest.TestCase):
             node.search_path, [pathlib.Path(NODEBUILDER_TREE) / "namespace_package"]
         )
         self.assertEqual(node.has_data_files, False)
+
+    def test_package_empty_init(self):
+        spec = importlib.util.find_spec("empty_init")
+
+        node, imports = graphbuilder.node_for_spec(spec, sys.path)
+
+        self.assertIsInstance(node, Package)
+        self.assertEqual(node.name, "empty_init")
+        self.assertEqual(node.identifier, "empty_init")
+
+        self.assertEqual(
+            node.search_path, [pathlib.Path(NODEBUILDER_TREE) / "empty_init"]
+        )
+        self.assertEqual(node.has_data_files, False)
+
+        self.assertIsInstance(node.init_module, SourceModule)
 
     def test_package_init_source(self):
         # Package with __init__.py

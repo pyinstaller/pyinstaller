@@ -29,6 +29,8 @@ class TestPrivateUtilities(unittest.TestCase):
         self.assertRaises(TypeError, split_package, None)
         self.assertRaises(TypeError, split_package, 42)
         self.assertRaises(TypeError, split_package, b"module")
+        self.assertRaises(ValueError, split_package, "module..package")
+        self.assertRaises(ValueError, split_package, "..")
 
     def test_full_name(self):
         self.check_results_equal(

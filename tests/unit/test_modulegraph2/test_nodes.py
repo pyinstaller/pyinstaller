@@ -125,6 +125,8 @@ class TestNodes(unittest.TestCase):
 
         def test_package(self):
             m = nodes.MissingModule("__import__")
+            m.globals_written.add("a")
+            m.globals_read.add("b")
 
             n = nodes.Package(
                 name="module",
@@ -145,3 +147,6 @@ class TestNodes(unittest.TestCase):
             self.assertIs(n.init_module, m)
             self.assertEqual(n.search_path, [])
             self.assertEqual(n.has_data_files, True)
+
+            self.assertEqual(n.globals_written, {"a"})
+            self.assertEqual(n.globals_read, {"b"})

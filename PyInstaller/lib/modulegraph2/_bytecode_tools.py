@@ -17,6 +17,10 @@ class ImportInfo:
 
     is_in_function: bool
 
+    @property
+    def is_optional(self):
+        return self.is_in_function
+
 
 def _all_code_objects(
     code: types.CodeType

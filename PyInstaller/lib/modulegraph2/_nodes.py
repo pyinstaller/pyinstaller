@@ -83,6 +83,14 @@ class Package(BaseNode):
     search_path: List[pathlib.Path]
     has_data_files: bool
 
+    @property
+    def globals_written(self):
+        return self.init_module.globals_written
+
+    @property
+    def globals_read(self):
+        return self.init_module.globals_read
+
 
 class ExcludedModule(BaseNode):
     def __init__(self, module_name):

@@ -14,6 +14,7 @@ from typing import (
     Callable,
     TypeVar,
     Generic,
+    Any,
 )
 from typing_extensions import Protocol
 
@@ -54,6 +55,12 @@ class ObjectGraph(Generic[T]):
         """
         return iter(self._nodes.values())
 
+    def edges(self) -> Iterator[Tuple[T, T, object]]:
+        for from_id, to_id in self._edges:
+            yield self._nodes[from_id], self._nodes[to_id], self._edges[
+                (from_id, to_id)
+            ]
+
     def add_root(self, node: Union[str, T]):
         value = self.find_node(node)
         if value is None:
@@ -72,7 +79,7 @@ class ObjectGraph(Generic[T]):
         source: T,
         destination: T,
         edge_attributes: object = None,
-        merge_attributes: Optional[Callable[[object, object], object]] = None,
+        merge_attributes: Optional[Callable[[Any, Any], Any]] = None,
     ):
         """
         Add a directed edge between *source* and *destination* with optional edge

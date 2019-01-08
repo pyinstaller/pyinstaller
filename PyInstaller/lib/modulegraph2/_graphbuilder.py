@@ -1,7 +1,6 @@
 """
 Tools for building the module graph
 """
-import sys
 import ast
 import pathlib
 from typing import Tuple, Iterable, List, Sequence, Type
@@ -92,11 +91,10 @@ def node_for_spec(
 
     # XXX: spec.loader can be None in older python versions, but isn't on any
     # recent version (which doesn't help with coverage.py reports)
-    if spec.loader is None or (
-        spec.origin is None
-        and getattr(spec.loader, "get_source", lambda n: None)(spec.name) == ""
-    ):
+    if spec.loader is None or type(spec.loader).__name__ == "_NamespaceLoader":
         # Implicit namespace package
+        # XXX: The test for the class name of the loader is needed because
+        # this is a private class in a private module... See Python issue #35673
         search_path = spec.submodule_search_locations
         assert search_path is not None
 

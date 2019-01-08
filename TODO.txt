@@ -1,13 +1,12 @@
 - Code currenty tries to add edges more than once, why? (ModuleGraph)
 - Support relative imports in ModuleGraph
-- Proper support for 'from' imports
+- Missing support for relative imports
 - A lot more ModuleGraph tests, that slowly add more
   functionality (to make it easier to debug issues and
   check that tests give the right test coverage)
 - See XXX throughout
 - Mypy annotations in _graphbuilder
 - Merge the two ImportInfo definitions
-- Missing support for relative imports
 - Always use the stdlib implies
 - Add mechanism to provide names exported by extensions,
   and use this for the extensions in the stdlib
@@ -18,7 +17,9 @@
 - Add support for setuptools style namespace packages
   (T.B.D. if this needs an extension hook)
 - Code currently doesn't work with search path != sys.path
-  (Alternate path is ignored)
+  (Alternate path is ignored, either fix or give up and
+  don't support alternate paths. Only support alternate path
+  when importlib does)
 - Add support for virtual environments (venv and virtualenv)
 - Add testcase with deep dependency graph
   (with artifial limitation of the recursion limit),
