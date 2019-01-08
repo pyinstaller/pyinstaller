@@ -81,7 +81,7 @@ class TestModuleGraphScripts(unittest.TestCase):
         mg.report()
 
 
-class TestModuleGraphModuleBasics(unittest.TestCase):
+class TestModuleGraphAbsoluteImports(unittest.TestCase):
     def setUp(self):
         sys.path.insert(0, os.fspath(INPUT_DIR))
 
@@ -424,3 +424,11 @@ class TestModuleGraphModuleBasics(unittest.TestCase):
     # Same with extra level of * imports between package and mod2
     #
 
+
+class TestModuleGraphRelativeImports(unittest.TestCase):
+    # Same as previous class, for relative imports
+    pass
+
+class TestModuleGraphHooks(unittest.TestCase):
+    # Test hooking mechanisms (to be determined)
+    pass
