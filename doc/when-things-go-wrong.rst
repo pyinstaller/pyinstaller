@@ -127,7 +127,7 @@ different in different operating systems, but ``/lib`` and ``/usr/lib``
 are checked in most systems.
 If you cannot put the python library there,
 try setting the correct path in the environment variable
-``LD_LIBRARY_PATH`` in Linux or
+``LD_LIBRARY_PATH`` in GNU/Linux or
 ``DYLD_LIBRARY_PATH`` in OS X.
 
 

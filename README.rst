@@ -21,9 +21,11 @@ Python interpreter! -- and puts them with your script in a single folder, or
 optionally in a single executable file.
 
 
-PyInstaller is tested against Windows, Mac OS X, and Linux. However, it is not
-a cross-compiler: to make a Windows app you run PyInstaller in Windows; to make
-a Linux app you run it in Linux, etc. PyInstaller has been used successfully
+PyInstaller is tested against Windows, Mac OS X, and GNU/Linux.
+However, it is not a cross-compiler:
+to make a Windows app you run PyInstaller in Windows; to make
+a GNU/Linux app you run it in GNU/Linux, etc.
+PyInstaller has been used successfully
 with AIX, Solaris, and FreeBSD, but is not tested against them.
 
 
@@ -63,7 +65,7 @@ Requirements and Tested Platforms
 
  - Windows XP or newer.
     
-- Linux (32bit/64bit)
+- GNU/Linux (32bit/64bit)
 
  - ldd: Console application to print the shared libraries required
    by each program or shared library. This typically can be found in
@@ -111,7 +113,7 @@ enhancements on these are welcome.
    linked Python libraries.
  - ldd
 
-- PowerPC Linux (Debian)
+- PowerPC GNU/Linux (Debian)
 
 
 Before using any contributed platform, you need to build the PyInstaller

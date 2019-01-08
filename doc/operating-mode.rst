@@ -97,7 +97,7 @@ This is covered under :ref:`Run-time Information`.
 
 |PyInstaller| does *not* include libraries that should exist in
 any installation of this OS.
-For example in Linux, it does not bundle any file
+For example in GNU/Linux, it does not bundle any file
 from :file:`/lib` or :file:`/usr/lib`, assuming
 these will be found in every system.
 
@@ -150,7 +150,7 @@ This is the heart of the ``myscript`` executable in the folder.
 
 The |PyInstaller| |bootloader| is a binary
 executable program for the active platform
-(Windows, Linux, Mac OS X, etc.).
+(Windows, GNU/Linux, Mac OS X, etc.).
 When the user launches your program, it is the |bootloader| that runs.
 The |bootloader| creates a temporary Python environment
 such that the Python interpreter will find all imported modules and
@@ -209,7 +209,7 @@ in the context of the temporary folder.
 When the bundled code terminates,
 the |bootloader| deletes the temporary folder.
 
-(In Linux and related systems, it is possible
+(In GNU/Linux and related systems, it is possible
 to mount the ``/tmp`` folder with a "no-execution" option.
 That option is not compatible with a |PyInstaller|
 one-file bundle. It needs to execute code out of :file:`/tmp`.)
@@ -254,7 +254,7 @@ Using a Console Window
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 By default the |bootloader| creates a command-line console
-(a terminal window in Linux and Mac OS, a command window in Windows).
+(a terminal window in GNU/Linux and Mac OS, a command window in Windows).
 It gives this window to the Python interpreter for its standard input and output.
 Your script's use of ``print`` and ``input()`` are directed here.
 Error messages from Python and default logging output

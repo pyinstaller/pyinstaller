@@ -88,7 +88,7 @@ provided by the Vagrantfile (see below).
 Building Linux Standard Base (LSB) compliant binaries (optional)
 -----------------------------------------------------------------
 
-By default, the bootloaders on Linux are ”normal“, non-LSB binaries, which
+By default, the bootloaders on GNU/Linux are ”normal“, non-LSB binaries, which
 should be fine for all GNU/Linux distributions.
 
 If for some reason you want to build Linux Standard Base (LSB) compliant
@@ -101,7 +101,7 @@ LSB version 4.0 is required for successfully building of |bootloader|. Please
 refer to ``python ./waf --help`` for further options related to LSB building.
 
 .. [#] Linux Standard Base (LSB) is a set of open standards that should
-       increase compatibility among Linux distributions. Unfortunately it is
+       increase compatibility among GNU/Linux distributions. Unfortunately it is
        not widely adopted and both Debian and Ubuntu dropped support for LSB
        in autumn 2015. Thus |PyInstaller| bootloader are no longer provided
        as LSB binary.
@@ -150,7 +150,7 @@ Cross offers, please refer to it's homepage.
 
 Side-note: For actually accessing the OS X disk image file (`.dmg`),
 `darling-dmg <https://github.com/darlinghq/darling-dmg>`_ is used. It allows
-mounting `.dmg` s under Linux via FUSE.
+mounting `.dmg` s under GNU/Linux via FUSE.
 
 For saving you reading OSXCross' documentation we prepared a virtual box
 description performing all required steps.
