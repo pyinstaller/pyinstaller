@@ -98,6 +98,7 @@ class ModuleGraph(ObjectGraph[BaseNode]):
     _global_lazy_nodes: Dict[str, Optional[Alias]]
     _distribution_lazy_nodes: Dict[str, Dict[str, Optional[Alias]]]
     _finished: Set[str]
+    _finished_callbacks: Dict[str, Tuple[Callable, tuple]]
 
     def __init__(self, *, path: List[str] = None):
         super().__init__()
@@ -109,6 +110,7 @@ class ModuleGraph(ObjectGraph[BaseNode]):
         self._distribution_lazy_nodes = {}
 
         self._finished = set()
+        self._finished_callbacks = {}
 
         # Reference to __main__ cannot be valid when multip scripts
         # are added to the graph, just ignore this module for now.
@@ -177,7 +179,10 @@ class ModuleGraph(ObjectGraph[BaseNode]):
             hook(self, node)
 
         self._finished.add(node.identifier)
-        # XXX
+
+        if node.identifier in self._finished_callbacks:
+            callable, args = self._finished_callbacks.pop(node.identifier)
+            callable(*args)
 
     def add_post_processing_hook(
         self, hook: Callable[["ModuleGraph", BaseNode], None]
@@ -385,22 +390,34 @@ class ModuleGraph(ObjectGraph[BaseNode]):
 
             if import_info.star_import:
                 # Star import
-                if isinstance(node, (Package, NamespacePackage)):
-                    # XXX: Should update importing_module.globals_written here,
-                    # but only when "node" is fully initialized (including anything
-                    # it "star imports" from)
-                    pass
+                if isinstance(node, Package):
+                    # Implicit namespace packages (node type NamespacePackage)
+                    # are ignored here, those don't have an __init__.py that
+                    # can set globals.
+                    #
+                    # This is not 100% correct though, importing sub modules
+                    # will update the package __dict__ and will affect the
+                    # names that 'from package import *' will import. That
+                    # effect is ignored by modulegraph though (and no sane code
+                    # should rely on that action-at-a-distance behaviour).
 
+                    if node.identifier in self._finished:
+                        importing_module.globals_written.update(node.globals_written)
 
-                # else:
-                #    Node is not a package, therefore "from node import *" cannot
-                #    refer to submodule.
+                    else:
+                        self._finished_callbacks[node.identifier] = (
+                            lambda: importing_module.globals_written.update(
+                                node.globals_written
+                            ),
+                            (),
+                        )
+                # Else:
+                #   Node is not a package, therefore "from node import *" cannot
+                #   refer to submodule.
 
-
-            # XXX: if this is a "from" import we need to do
-            # more work, but only once "node" is fully
-            # processed
-            ...
+            # XXX: This return statement is here to make coverage.py happy, otherwise
+            # it gets confused by the bytecode that CPython 3.7.2 generates.
+            return
 
         else:
             # Relative import

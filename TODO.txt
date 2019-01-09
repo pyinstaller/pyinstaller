@@ -32,3 +32,7 @@
 - Write documentation:
   - Update reference docs
   - Add examples
+- Write tests comparing output with older modulegraph
+  (graph structure and dependencies)
+- Integratie with py2app (experimental) to verify
+  behaviour

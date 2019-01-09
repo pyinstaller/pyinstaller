@@ -12,6 +12,7 @@ from modulegraph2 import (
     MissingModule,
     BuiltinModule,
     Package,
+    NamespacePackage,
     DependencyInfo,
 )
 
@@ -232,6 +233,43 @@ class TestModuleGraphAbsoluteImports(unittest.TestCase):
             mg, "missing_package", "missingpackage", "missingpackage.module"
         )
 
+    def test_missing_nestd_package(self):
+        mg = ModuleGraph()
+        mg.add_module("missing_nested_package")
+
+        self.assert_has_node(mg, "missing_nested_package", SourceModule)
+        self.assert_has_node(mg, "missingpackage", MissingModule)
+        self.assert_has_node(mg, "missingpackage.missingsubpackage", MissingModule)
+        self.assert_has_node(
+            mg, "missingpackage.missingsubpackage.module", MissingModule
+        )
+
+        self.assert_has_edge(
+            mg,
+            "missing_nested_package",
+            "missingpackage.missingsubpackage.module",
+            DependencyInfo(False, False),
+        )
+        self.assert_has_edge(
+            mg,
+            "missingpackage.missingsubpackage.module",
+            "missingpackage.missingsubpackage",
+            None,
+        )
+        self.assert_has_edge(
+            mg, "missingpackage.missingsubpackage", "missingpackage", None
+        )
+        self.assert_edge_count(mg, 3)
+
+        self.assert_has_roots(mg, "missing_nested_package")
+        self.assert_has_nodes(
+            mg,
+            "missing_nested_package",
+            "missingpackage",
+            "missingpackage.missingsubpackage",
+            "missingpackage.missingsubpackage.module",
+        )
+
     def test_package_import_one_level(self):
         mg = ModuleGraph()
         mg.add_module("package_import_single_level")
@@ -411,6 +449,155 @@ class TestModuleGraphAbsoluteImports(unittest.TestCase):
             "package.nosuchmodule",
         )
 
+    def test_from_sys_import_star(self):
+        mg = ModuleGraph()
+        mg.add_module("import_sys_star")
+
+        self.assert_has_node(mg, "import_sys_star", SourceModule)
+        self.assert_has_node(mg, "sys", BuiltinModule)
+
+        self.assert_has_edge(mg, "import_sys_star", "sys", DependencyInfo(False, False))
+        self.assert_edge_count(mg, 1)
+
+        self.assert_has_roots(mg, "import_sys_star")
+        self.assert_has_nodes(mg, "import_sys_star", "sys")
+
+    def test_package_import_star(self):
+        mg = ModuleGraph()
+        mg.add_module("from_package_import_star")
+
+        self.assert_has_node(mg, "from_package_import_star", SourceModule)
+        self.assert_has_node(mg, "star_package", Package)
+        self.assertEqual(
+            mg.find_node("from_package_import_star").globals_written,
+            mg.find_node("star_package").globals_written,
+        )
+
+        self.assert_has_edge(
+            mg, "from_package_import_star", "star_package", DependencyInfo(False, False)
+        )
+        self.assert_has_edge(
+            mg, "star_package", "star_package.submod", DependencyInfo(False, False)
+        )
+        self.assert_has_edge(mg, "star_package", "sys", DependencyInfo(False, False))
+        self.assert_has_edge(mg, "star_package.submod", "star_package", None)
+        self.assert_edge_count(mg, 4)
+
+        self.assert_has_roots(mg, "from_package_import_star")
+        self.assert_has_nodes(
+            mg, "from_package_import_star", "star_package", "star_package.submod", "sys"
+        )
+
+    def test_package_import_star2(self):
+        mg = ModuleGraph()
+        mg.add_module("from_package_import_star2")
+
+        self.assert_has_node(mg, "from_package_import_star2", SourceModule)
+        self.assert_has_node(mg, "star_package2", Package)
+        self.assertEqual(
+            mg.find_node("from_package_import_star2").globals_written,
+            mg.find_node("star_package2").globals_written,
+        )
+
+        self.assert_has_edge(
+            mg,
+            "from_package_import_star2",
+            "star_package2",
+            DependencyInfo(False, False),
+        )
+        self.assert_edge_count(mg, 1)
+
+        self.assert_has_roots(mg, "from_package_import_star2")
+        self.assert_has_nodes(mg, "from_package_import_star2", "star_package2")
+
+
+    def test_from_implicit_import_star(self):
+        mg = ModuleGraph()
+        mg.add_module("from_implicit_package_import_star")
+
+        self.assert_has_node(mg, "from_implicit_package_import_star", SourceModule)
+        self.assert_has_node(mg, "implicit", NamespacePackage)
+
+        self.assertEqual(mg.find_node("from_implicit_package_import_star").globals_written, set())
+
+        self.assert_has_edge(mg, "from_implicit_package_import_star", "implicit", DependencyInfo(False, False))
+        self.assert_edge_count(mg, 1)
+
+        self.assert_has_roots(mg, "from_implicit_package_import_star")
+        self.assert_has_nodes(mg, "from_implicit_package_import_star", "implicit")
+
+    def test_multi_level_star(self):
+        mg = ModuleGraph()
+        mg.add_module("multi_level_star_import")
+
+        self.assert_has_node(mg, "multi_level_star_import", SourceModule)
+        self.assert_has_node(mg, "pkg_a", Package)
+        self.assert_has_node(mg, "pkg_b", Package)
+        self.assert_has_node(mg, "pkg_c", Package)
+        self.assert_has_node(mg, "pkg_d", Package)
+
+        self.assert_has_edge(mg, "multi_level_star_import", "pkg_a", DependencyInfo(False, False))
+        self.assert_has_edge(mg, "pkg_a", "pkg_b", DependencyInfo(False, False))
+        self.assert_has_edge(mg, "pkg_b", "pkg_c", DependencyInfo(False, False))
+        self.assert_has_edge(mg, "pkg_c", "pkg_d", DependencyInfo(False, False))
+        self.assert_edge_count(mg, 4)
+
+        self.assertEqual(mg.find_node("pkg_d").globals_written, {"e"})
+        self.assertEqual(mg.find_node("pkg_c").globals_written, {"e"})
+        self.assertEqual(mg.find_node("pkg_b").globals_written, {"e"})
+        self.assertEqual(mg.find_node("pkg_a").globals_written, {"e"})
+        self.assertEqual(mg.find_node("from_implicit_package_import_star").globals_written, {"a"})
+
+        self.assert_has_roots(mg, "multi_level_star_import")
+        self.assert_has_nodes(mg, "multi_level_star_import", "pkg_a", "pkg_b", "pkg_c", "pkg_d")
+
+    def test_multi_level_star(self):
+        mg = ModuleGraph()
+        mg.add_module("multi_level_star_import2")
+
+        self.assert_has_node(mg, "multi_level_star_import2", SourceModule)
+        self.assert_has_node(mg, "pkg_a", Package)
+        self.assert_has_node(mg, "pkg_b", Package)
+        self.assert_has_node(mg, "pkg_c", Package)
+        self.assert_has_node(mg, "pkg_d", Package)
+
+        self.assert_has_edge(mg, "multi_level_star_import2", "pkg_a", DependencyInfo(False, False))
+        self.assert_has_edge(mg, "pkg_a", "pkg_b", DependencyInfo(False, False))
+        self.assert_has_edge(mg, "pkg_b", "pkg_c", DependencyInfo(False, False))
+        self.assert_has_edge(mg, "pkg_c", "pkg_d", DependencyInfo(False, False))
+        self.assert_edge_count(mg, 4)
+
+        self.assertEqual(mg.find_node("pkg_d").globals_written, {"e"})
+        self.assertEqual(mg.find_node("pkg_c").globals_written, {"e"})
+        self.assertEqual(mg.find_node("pkg_b").globals_written, {"e"})
+        self.assertEqual(mg.find_node("pkg_a").globals_written, {"e"})
+        self.assertEqual(mg.find_node("from_implicit_package_import_star2").globals_written, {"a"})
+
+        self.assert_has_roots(mg, "multi_level_star_import2")
+        self.assert_has_nodes(mg, "multi_level_star_import", "pkg_a", "pkg_b", "pkg_c", "pkg_d")
+
+    def test_multi_level_star_import_missing(self):
+        mg = ModuleGraph()
+        mg.add_module("multi_level_star_import_missing.")
+
+        self.assert_has_node(mg, "multi_level_star_import_missing.", SourceModule)
+        self.assert_has_node(mg, "pkg_c", Package)
+        self.assert_has_node(mg, "pkg_d", Package)
+        self.assert_has_node(mg, "pkg_c.f", MissingModule)
+
+        self.assert_has_edge(mg, "multi_level_star_import_missing.", "pkg_c", DependencyInfo(False, False))
+        self.assert_has_edge(mg, "multi_level_star_import_missing.", "pkg_c.f", DependencyInfo(False, True))
+        self.assert_has_edge(mg, "pkg_c", "pkg_d", DependencyInfo(False, False))
+        self.assert_has_edge(mg, "pkg_c.f", "pkg_c", DependencyInfo(False, False))
+        self.assert_edge_count(mg, 4)
+
+        self.assertEqual(mg.find_node("pkg_d").globals_written, {"e"})
+        self.assertEqual(mg.find_node("pkg_c").globals_written, {"e"})
+        self.assertEqual(mg.find_node("multi_level_star_import_missing.").globals_written, {"f"})
+
+        self.assert_has_roots(mg, "multi_level_star_import_missing.")
+        self.assert_has_nodes(mg, "multi_level_star_import_missing.", "pkg_c", "pkg_d", "pkg_c.f")
+
     # package/__init__.py: import sys
     # toplevel.py: from package import sys
     # -> This should add ref from toplevel top package, no missing node for "package.sys"
@@ -429,6 +616,12 @@ class TestModuleGraphRelativeImports(unittest.TestCase):
     # Same as previous class, for relative imports
     pass
 
+
 class TestModuleGraphHooks(unittest.TestCase):
     # Test hooking mechanisms (to be determined)
+    pass
+
+
+class TestModuleGraphQuerying(unittest.TestCase):
+    # primarily "distributions" method.
     pass
