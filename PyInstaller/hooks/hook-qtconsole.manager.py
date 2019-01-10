@@ -16,9 +16,12 @@ https://github.com/jupyter/jupyter/wiki/Jupyter-kernels
 
 I don't pretend to understand qtconsole, it is a little complex for me,
 but I do understand that the class signature of:
-QtKernelClientMixin(MetaQObjectHasTraits('NewBase', (HasTraits, SuperQObject), {}))
+QtKernelClientMixin(MetaQObjectHasTraits('NewBase',
+                                         (HasTraits, SuperQObject),
+                                         {}))
 is probably difficult for PyInstaller. The culprit may also be were this class
-is being used, in qtconsole.manager.QtKernelManager, as a calss attribute is has:
+is being used, in qtconsole.manager.QtKernelManager, as a class attribute is
+has:
 client_class = DottedObjectName('qtconsole.client.QtKernelClient')
 
 Script to freeze:
