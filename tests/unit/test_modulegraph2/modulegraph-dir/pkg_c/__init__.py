@@ -1,1 +1,1 @@
-from  pkg_d import *
+from pkg_d import *

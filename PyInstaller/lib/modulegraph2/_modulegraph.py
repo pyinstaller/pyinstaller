@@ -6,6 +6,8 @@ import ast
 import sys
 import collections
 import importlib
+import functools
+import operator
 from typing import (
     Optional,
     Tuple,
@@ -20,9 +22,11 @@ from typing import (
     Set,
 )
 
+from ._callback_list import CallbackList
 from ._objectgraph import ObjectGraph
 from ._nodes import (
     BaseNode,
+    Module,
     Script,
     AliasNode,
     ExcludedModule,
@@ -35,6 +39,7 @@ from ._graphbuilder import node_for_spec
 from ._implies import Alias  # XXX
 from ._ast_tools import extract_ast_info
 from ._depinfo import DependencyInfo, merged_depinfo
+from ._depproc import DependentProcessor
 
 from . import _ast_tools, _bytecode_tools
 
@@ -45,6 +50,7 @@ def full_name(import_name: str, package: Optional[str]):
     name, resolving relative imports if needed.
     """
     # XXX: Nicer exceptions (esp. second one)
+    # XXX: There is an importlib API for this!
     if import_name.startswith("."):
         if package is None:
             raise ValueError((import_name, package))
@@ -83,6 +89,9 @@ def split_package(name: str) -> Tuple[Optional[str], str]:
     return (package if package is not "" else None), name
 
 
+ProcessingCallback = Callable[["ModuleGraph", BaseNode], None]
+
+
 class ModuleGraph(ObjectGraph[BaseNode]):
     # Redesign of modulegraph.modulegraph.ModuleGraph
     # Gloal:
@@ -93,24 +102,26 @@ class ModuleGraph(ObjectGraph[BaseNode]):
     # XXX: Detect if "from mod import name" access a submodule
     #      or a global name.
     _path: List[str]
-    _post_processing: List[Callable[["ModuleGraph", BaseNode], None]]
+    _post_processing: CallbackList[ProcessingCallback]
     _work_q: Deque[Tuple[Callable, tuple]]
     _global_lazy_nodes: Dict[str, Optional[Alias]]
-    _distribution_lazy_nodes: Dict[str, Dict[str, Optional[Alias]]]
-    _finished: Set[str]
-    _finished_callbacks: Dict[str, Tuple[Callable, tuple]]
+
+    _depproc: DependentProcessor
 
     def __init__(self, *, path: List[str] = None):
+        # XXX: AFAIK importlib doesn't allow maintaning separate
+        # state, but more code inspection is needed. If it turns
+        # out there is no clean way to work with an alternate path
+        # the 'path' parameter will be removed (including any code
+        # related to it). Note that using an alternate path
+        # requires code changes anyway.
         super().__init__()
         self._path = path if path is not None else sys.path
-        self._post_processing = []
+        self._post_processing = CallbackList()
         self._work_q = collections.deque()
+        self._depproc = DependentProcessor()
 
         self._global_lazy_nodes = {}
-        self._distribution_lazy_nodes = {}
-
-        self._finished = set()
-        self._finished_callbacks = {}
 
         # Reference to __main__ cannot be valid when multip scripts
         # are added to the graph, just ignore this module for now.
@@ -129,10 +140,10 @@ class ModuleGraph(ObjectGraph[BaseNode]):
         """
         seen: Set[str] = set()
         for node in self.iter_graph() if reachable else self.nodes():
-            if isinstance(node, PyPIDistribution):
-                if node.identifier not in seen:
-                    seen.add(node.identifier)
-                    yield node
+            if isinstance(node.distribution, PyPIDistribution):
+                if node.distribution.identifier not in seen:
+                    seen.add(node.distribution.identifier)
+                    yield node.distribution
 
     #
     # Reporting:
@@ -141,7 +152,7 @@ class ModuleGraph(ObjectGraph[BaseNode]):
         print(file=stream)
         print("%-15s %-25s %s" % ("Class", "Name", "File"), file=stream)
         print("%-15s %-25s %s" % ("-----", "----", "----"), file=stream)
-        for m in sorted(self.iter_graph(), key=lambda n: n.identifier):
+        for m in sorted(self.iter_graph(), key=operator.attrgetter("identifier")):
             print(
                 "%-15s %-25s %s" % (type(m).__name__, m.identifier, m.filename or ""),
                 file=stream,
@@ -169,45 +180,54 @@ class ModuleGraph(ObjectGraph[BaseNode]):
     #
 
     def import_module(self, module: BaseNode, import_name: str) -> BaseNode:
-        # Explicitly add edge to the graph, for use by hooks
-        # parent, _ = split_package(self.find_node(module).identifier)
-        # return self._import_module(module, parent=parent)
-        ...
+        """
+        Import 'import_name' and add an edge from 'module' to 'import_name'
+
+        This is an API to be used by hooks. The graph is not fully updated
+        after calling this method.
+        """
+        node = self._load_module(import_name)
+        self.add_edge(module, node, None, merge_attributes=merged_depinfo)
+        return node
 
     def _run_post_processing(self, node: BaseNode) -> None:
-        for hook in self._post_processing:
-            hook(self, node)
+        self._post_processing(self, node)
+        self._depproc.dec_depcount(node)
 
-        self._finished.add(node.identifier)
+        # XXX: Need to redesign the finished state and callbacks:
+        # - A node is "finished" at this point unless it has 'star_import'
+        # - With star_import we need to wait for the the modules we
+        #   import from to be finished.
+        # - When this node is finished check all nodes reachable over
+        #   incoming edges to see if those are now finished.
+        # - This needs the following state:
+        #   a) Are all import statements processed (_process_import called)
+        #   b) List of unprocessed from (* or namelist) imports
+        #   { destination_node:  ipmorting_node, Optional[namelist] }
+        #   -> This likely doens't need full callback support.
+        # - State should be stored outside of the nodes itself to keep the
+        #   interface clean.
+        # - Should take care here to avoid deep recursion (use a work_q like
+        #   we do elsewhere)
 
-        if node.identifier in self._finished_callbacks:
-            callable, args = self._finished_callbacks.pop(node.identifier)
-            callable(*args)
-
-    def add_post_processing_hook(
-        self, hook: Callable[["ModuleGraph", BaseNode], None]
-    ) -> None:
+    def add_post_processing_hook(self, hook: ProcessingCallback) -> None:
         """
         Run 'hook(self, node)' after *node* is fully processed.
         """
-        self._post_processing.append(hook)
+        self._post_processing.add(hook)
 
     #
     # Internal: building the graph
     #
 
     def _run_q(self) -> None:
-        while self._work_q:
-            func, args = self._work_q.popleft()
-            func(*args)
+        while self._work_q or self._depproc.have_finished_work():
+            if self._work_q:
+                func, args = self._work_q.popleft()
+                func(*args)
 
-    # def _load_implies_for_distribution(self, distribution: PyPIDistribution):
-    #    """
-    #    Load distribution specific implies into the global implies table
-    #    """
-    #    if distribution.name in self._distribution_lazy_nodes:
-    #        lazy_nodes = self._distribution_lazy_nodes.pop(distribution.name)
-    #        self._global_lazy_nodes.update(lazy_nodes)
+            if self._depproc.have_finished_work():
+                self._depproc.process_finished_nodes()
 
     def _implied_references(self, full_name: str) -> Optional[BaseNode]:
         # XXX: This recurses...
@@ -241,13 +261,21 @@ class ModuleGraph(ObjectGraph[BaseNode]):
             return None
 
     def _load_module(self, module_name: str) -> BaseNode:
+        # XXX: This doesn't load parent packages, while a number
+        # of callers assume this will.
+
         # module_name must be an absolute module name
-        # print("load_module", module_name)
         node = self.find_node(module_name)
         assert node is None
 
-        spec = importlib.util.find_spec(module_name)
-        if spec is None:
+        try:
+            spec = importlib.util.find_spec(module_name)
+            if spec is None:
+                node = MissingModule(module_name)
+                self.add_node(node)
+                return node
+
+        except ImportError:
             node = MissingModule(module_name)
             self.add_node(node)
             return node
@@ -255,6 +283,9 @@ class ModuleGraph(ObjectGraph[BaseNode]):
         node, imports = node_for_spec(spec, self._path)
         if node.name != module_name:
             # Some kind of alias
+            # XXX: Need to determine when this can happen, to
+            # reproduce in a test. Code as added when building a
+            # graph with "real" data.
             alias_node = AliasNode(module_name, node.name)
             self.add_node(alias_node)
             if self.find_node(node) is None:
@@ -269,8 +300,12 @@ class ModuleGraph(ObjectGraph[BaseNode]):
         return node
 
     def _load_script(self, script_path: os.PathLike) -> Script:
-        node = Script(os.fspath(script_path))  # XXX
-        self.add_node(node)
+        # XXX: What should happen when "script_path" does not exist
+        # 1) Create a MissingScript node
+        # 2) Raise a nice exception (without updating the graph)
+        #
+        # We currently do (2) but I'm not sure if that's the right
+        # API.
 
         with open(script_path, "rb") as fp:
             source_bytes = fp.read()
@@ -285,22 +320,35 @@ class ModuleGraph(ObjectGraph[BaseNode]):
         )
         imports = extract_ast_info(ast_node)
 
+        node = Script(os.fspath(script_path))
+        self.add_node(node)
         self._process_import_list(node, imports)
         return node
 
-    def _process_import_list(self, node: BaseNode, imports: Iterable):
+    def _process_import_list(
+        self, node: BaseNode, imports: Iterable
+    ):  # XXX: MyPy annotation
+        """
+        Schedule processing of all *imports* and the finalizer when
+        that's done.
+        """
         have_imports = False
 
         for info in imports:
+            if info.import_names or info.star_import:
+                self._depproc.inc_depcount(node)
+
             self._work_q.append((self._process_import, (node, info)))
             have_imports = True
 
+        self._depproc.inc_depcount(node)
         if have_imports:
             self._work_q.append((self._run_post_processing, (node,)))
         else:
             self._run_post_processing(node)
 
     def _find_or_load(self, module_name: str) -> BaseNode:
+        # XXX: Name
         node = self.find_node(module_name)
         if node is None:
             node = self._implied_references(module_name)
@@ -364,61 +412,64 @@ class ModuleGraph(ObjectGraph[BaseNode]):
                 merge_attributes=merged_depinfo,
             )
 
+            if import_info.import_names or import_info.star_import:
+                self._depproc.wait_for(
+                    importing_module,
+                    node,
+                    functools.partial(
+                        _process_namelist, graph=self, import_info=import_info
+                    ),
+                )
+
+        else:
+            # Relative import
+
+            # XXX: Write me
+            ...
+
+        # Needed to keep coverage.py happy (python issue #...)
+        return
+
+
+def _process_namelist(
+    importing_module: Union[Module, Package],
+    imported_module: BaseNode,
+    graph: ModuleGraph,
+    import_info: Union[_bytecode_tools.ImportInfo, _ast_tools.ImportInfo],
+):
+    assert isinstance(importing_module, (Module, Package))
+    if import_info.star_import:
+        if isinstance(imported_module, (Package, Module)):
+            importing_module.globals_written.update(imported_module.globals_written)
+
+    else:
+        importing_module.globals_written.update(import_info.import_names)
+
+        if import_info.import_names and isinstance(
+            imported_module, (Package, NamespacePackage)
+        ):
             for nm in import_info.import_names:
-                if isinstance(node, (Package, NamespacePackage)):
-                    # XXX: Find a way to avoid creating a MissingModule name when it isn't
-                    # actually necessary (those currently end up as nodes that aren't
-                    # connected to the graph roots)
-                    subnode = self._find_or_load(f"{import_info.import_module}.{nm}")
-                    if isinstance(subnode, MissingModule):
-                        if nm in node.globals_written:
-                            # Name exists, but is not a module, don't add edge
-                            # to the "missing" node
-                            continue
-                    self.add_edge(subnode, node, merge_attributes=merged_depinfo)
-                    self.add_edge(
-                        importing_module,
-                        subnode,
-                        DependencyInfo(import_info.is_optional, True),
-                        merge_attributes=merged_depinfo,
-                    )
+                subnode = graph._find_or_load(f"{import_info.import_module}.{nm}")
+                # XXX: graph._find_or_load alternative that doesn't create MissingModule
+                if isinstance(subnode, MissingModule):
+                    if nm in imported_module.globals_written:
+                        # Name exists, but is not a module, don't add edge
+                        # to the "missing" node
+                        continue
+
+                graph.add_edge(
+                    subnode, imported_module, merge_attributes=merged_depinfo
+                )
+                graph.add_edge(
+                    importing_module,
+                    subnode,
+                    DependencyInfo(import_info.is_optional, True),
+                    merge_attributes=merged_depinfo,
+                )
                 # else:
                 #    Node is not a package, therefore "from node import a" cannot
                 #    refer to a submodule.
 
                 # XXX: Should this
 
-            if import_info.star_import:
-                # Star import
-                if isinstance(node, Package):
-                    # Implicit namespace packages (node type NamespacePackage)
-                    # are ignored here, those don't have an __init__.py that
-                    # can set globals.
-                    #
-                    # This is not 100% correct though, importing sub modules
-                    # will update the package __dict__ and will affect the
-                    # names that 'from package import *' will import. That
-                    # effect is ignored by modulegraph though (and no sane code
-                    # should rely on that action-at-a-distance behaviour).
-
-                    if node.identifier in self._finished:
-                        importing_module.globals_written.update(node.globals_written)
-
-                    else:
-                        self._finished_callbacks[node.identifier] = (
-                            lambda: importing_module.globals_written.update(
-                                node.globals_written
-                            ),
-                            (),
-                        )
-                # Else:
-                #   Node is not a package, therefore "from node import *" cannot
-                #   refer to submodule.
-
-            # XXX: This return statement is here to make coverage.py happy, otherwise
-            # it gets confused by the bytecode that CPython 3.7.2 generates.
-            return
-
-        else:
-            # Relative import
-            ...
+    graph._depproc.dec_depcount(importing_module)

@@ -3,7 +3,7 @@ Tools for building the module graph
 """
 import ast
 import pathlib
-from typing import Tuple, Iterable, List, Sequence, Type
+from typing import Tuple, Iterable, List, Sequence, Type, cast
 import importlib.machinery
 import importlib.abc
 import zipfile
@@ -139,10 +139,12 @@ def node_for_spec(
         isinstance(spec.loader, (importlib.abc.InspectLoader, zipimport.zipimporter))
         or spec.loader == importlib.machinery.FrozenImporter
     ):
+        importlib.abc.InspectLoader.register(zipimport.zipimporter)
         # Zipimporter is mentioned explictly because it fails the type check for
         # InspectLoader even though it implements the interface.
         # Likewise for _frozen_importlib_external._NamespaceLoader
-        source_code = spec.loader.get_source(spec.name)
+        loader = cast(importlib.abc.InspectLoader, spec.loader)
+        source_code = loader.get_source(spec.name)
         if source_code is not None:
             filename = spec.origin
             assert filename is not None
@@ -158,7 +160,7 @@ def node_for_spec(
         else:
             ast_imports = iter(())
 
-        code = spec.loader.get_code(spec.name)
+        code = loader.get_code(spec.name)
         assert code is not None
         bytecode_imports, names_written, names_read = extract_bytecode_info(code)
 
@@ -189,7 +191,9 @@ def node_for_spec(
             f"Don't known how to handle {spec.loader!r} for {spec.name!r}"
         )  # pragma: nocover
 
-    if spec.loader.is_package(spec.name):
+    loader = cast(importlib.abc.InspectLoader, spec.loader)
+
+    if loader.is_package(spec.name):
         node_file = node.filename
         assert node_file is not None
 

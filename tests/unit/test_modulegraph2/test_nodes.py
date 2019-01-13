@@ -104,49 +104,59 @@ class TestNodes(unittest.TestCase):
                 self.assertTrue(n.uses_dunder_import)
                 self.assertFalse(n.uses_dunder_file)
 
-        def test_namespace_package(self):
-            n = nodes.NamespacePackage(
-                name="module",
-                loader=loader,
-                distribution=None,
-                filename=None,
-                extension_attributes={},
-                search_path=[1, 2],
-                has_data_files=False,
-            )
+    def test_namespace_package(self):
+        n = nodes.NamespacePackage(
+            name="module",
+            loader=loader,
+            distribution=None,
+            filename=file_path,
+            extension_attributes={},
+            search_path=[1, 2],
+            has_data_files=False,
+        )
 
-            self.assertEqual(n.name, "module")
-            self.assertIs(n.loader, loader)
-            self.assertIs(n.distribution, None)
-            self.assertIs(n.filename, file_path)
-            self.assertEqual(n.extension_attributes, {})
-            self.assertEqual(n.search_path, [1, 2])
-            self.assertEqual(n.has_data_files, False)
+        self.assertEqual(n.name, "module")
+        self.assertIs(n.loader, loader)
+        self.assertIs(n.distribution, None)
+        self.assertIs(n.filename, file_path)
+        self.assertEqual(n.extension_attributes, {})
+        self.assertEqual(n.search_path, [1, 2])
+        self.assertEqual(n.has_data_files, False)
+        self.assertEqual(n.globals_written, frozenset())
+        self.assertEqual(n.globals_read, frozenset())
+        self.assertTrue(isinstance(n.globals_written, frozenset))
+        self.assertTrue(isinstance(n.globals_read, frozenset))
 
-        def test_package(self):
-            m = nodes.MissingModule("__import__")
-            m.globals_written.add("a")
-            m.globals_read.add("b")
+    def test_package(self):
+        m = nodes.SourceModule(
+            name="module",
+            loader=loader,
+            distribution=None,
+            filename=file_path,
+            extension_attributes={},
+            globals_written={"a"},
+            globals_read={"b"},
+        )
 
-            n = nodes.Package(
-                name="module",
-                loader=loader,
-                distribution=None,
-                filename=None,
-                extension_attributes={},
-                init_module=m,
-                search_path=[1, 2],
-                has_data_files=True,
-            )
+        n = nodes.Package(
+            name="module",
+            loader=loader,
+            distribution=None,
+            filename=file_path,
+            extension_attributes={},
+            init_module=m,
+            search_path=[1, 2],
+            has_data_files=True,
+        )
 
-            self.assertEqual(n.name, "module")
-            self.assertIs(n.loader, loader)
-            self.assertIs(n.distribution, None)
-            self.assertIs(n.filename, file_path)
-            self.assertEqual(n.extension_attributes, {})
-            self.assertIs(n.init_module, m)
-            self.assertEqual(n.search_path, [])
-            self.assertEqual(n.has_data_files, True)
+        self.assertEqual(n.name, "module")
+        self.assertIs(n.loader, loader)
+        self.assertIs(n.distribution, None)
+        self.assertIs(n.filename, file_path)
+        self.assertEqual(n.extension_attributes, {})
+        self.assertIs(n.init_module, m)
+        self.assertEqual(n.search_path, [1, 2])
+        self.assertEqual(n.has_data_files, True)
 
-            self.assertEqual(n.globals_written, {"a"})
-            self.assertEqual(n.globals_read, {"b"})
+        self.assertEqual(n.globals_written, {"a"})
+        self.assertEqual(n.globals_read, {"b"})

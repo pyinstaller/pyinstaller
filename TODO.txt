@@ -1,9 +1,4 @@
-- Code currenty tries to add edges more than once, why? (ModuleGraph)
 - Support relative imports in ModuleGraph
-- Missing support for relative imports
-- A lot more ModuleGraph tests, that slowly add more
-  functionality (to make it easier to debug issues and
-  check that tests give the right test coverage)
 - See XXX throughout
 - Mypy annotations in _graphbuilder
 - Merge the two ImportInfo definitions

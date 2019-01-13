@@ -4,6 +4,7 @@ import contextlib
 import sys
 import os
 import importlib
+from io import StringIO
 
 from modulegraph2 import (
     ModuleGraph,
@@ -14,7 +15,10 @@ from modulegraph2 import (
     Package,
     NamespacePackage,
     DependencyInfo,
+    PyPIDistribution,
 )
+
+from modulegraph2._packages import distribution_for_file
 
 INPUT_DIR = pathlib.Path(__file__).resolve().parent / "modulegraph-dir"
 
@@ -510,21 +514,29 @@ class TestModuleGraphAbsoluteImports(unittest.TestCase):
         self.assert_has_roots(mg, "from_package_import_star2")
         self.assert_has_nodes(mg, "from_package_import_star2", "star_package2")
 
-
     def test_from_implicit_import_star(self):
         mg = ModuleGraph()
         mg.add_module("from_implicit_package_import_star")
 
         self.assert_has_node(mg, "from_implicit_package_import_star", SourceModule)
-        self.assert_has_node(mg, "implicit", NamespacePackage)
+        self.assert_has_node(mg, "implicit_package", NamespacePackage)
 
-        self.assertEqual(mg.find_node("from_implicit_package_import_star").globals_written, set())
+        self.assertEqual(
+            mg.find_node("from_implicit_package_import_star").globals_written, set()
+        )
 
-        self.assert_has_edge(mg, "from_implicit_package_import_star", "implicit", DependencyInfo(False, False))
+        self.assert_has_edge(
+            mg,
+            "from_implicit_package_import_star",
+            "implicit_package",
+            DependencyInfo(False, False),
+        )
         self.assert_edge_count(mg, 1)
 
         self.assert_has_roots(mg, "from_implicit_package_import_star")
-        self.assert_has_nodes(mg, "from_implicit_package_import_star", "implicit")
+        self.assert_has_nodes(
+            mg, "from_implicit_package_import_star", "implicit_package"
+        )
 
     def test_multi_level_star(self):
         mg = ModuleGraph()
@@ -536,7 +548,9 @@ class TestModuleGraphAbsoluteImports(unittest.TestCase):
         self.assert_has_node(mg, "pkg_c", Package)
         self.assert_has_node(mg, "pkg_d", Package)
 
-        self.assert_has_edge(mg, "multi_level_star_import", "pkg_a", DependencyInfo(False, False))
+        self.assert_has_edge(
+            mg, "multi_level_star_import", "pkg_a", DependencyInfo(False, False)
+        )
         self.assert_has_edge(mg, "pkg_a", "pkg_b", DependencyInfo(False, False))
         self.assert_has_edge(mg, "pkg_b", "pkg_c", DependencyInfo(False, False))
         self.assert_has_edge(mg, "pkg_c", "pkg_d", DependencyInfo(False, False))
@@ -546,10 +560,14 @@ class TestModuleGraphAbsoluteImports(unittest.TestCase):
         self.assertEqual(mg.find_node("pkg_c").globals_written, {"e"})
         self.assertEqual(mg.find_node("pkg_b").globals_written, {"e"})
         self.assertEqual(mg.find_node("pkg_a").globals_written, {"e"})
-        self.assertEqual(mg.find_node("from_implicit_package_import_star").globals_written, {"a"})
+        self.assertEqual(
+            mg.find_node("from_implicit_package_import_star").globals_written, {"a"}
+        )
 
         self.assert_has_roots(mg, "multi_level_star_import")
-        self.assert_has_nodes(mg, "multi_level_star_import", "pkg_a", "pkg_b", "pkg_c", "pkg_d")
+        self.assert_has_nodes(
+            mg, "multi_level_star_import", "pkg_a", "pkg_b", "pkg_c", "pkg_d"
+        )
 
     def test_multi_level_star(self):
         mg = ModuleGraph()
@@ -561,7 +579,9 @@ class TestModuleGraphAbsoluteImports(unittest.TestCase):
         self.assert_has_node(mg, "pkg_c", Package)
         self.assert_has_node(mg, "pkg_d", Package)
 
-        self.assert_has_edge(mg, "multi_level_star_import2", "pkg_a", DependencyInfo(False, False))
+        self.assert_has_edge(
+            mg, "multi_level_star_import2", "pkg_a", DependencyInfo(False, False)
+        )
         self.assert_has_edge(mg, "pkg_a", "pkg_b", DependencyInfo(False, False))
         self.assert_has_edge(mg, "pkg_b", "pkg_c", DependencyInfo(False, False))
         self.assert_has_edge(mg, "pkg_c", "pkg_d", DependencyInfo(False, False))
@@ -571,32 +591,47 @@ class TestModuleGraphAbsoluteImports(unittest.TestCase):
         self.assertEqual(mg.find_node("pkg_c").globals_written, {"e"})
         self.assertEqual(mg.find_node("pkg_b").globals_written, {"e"})
         self.assertEqual(mg.find_node("pkg_a").globals_written, {"e"})
-        self.assertEqual(mg.find_node("from_implicit_package_import_star2").globals_written, {"a"})
+        self.assertEqual(
+            mg.find_node("multi_level_star_import2").globals_written, {"e"}
+        )
 
         self.assert_has_roots(mg, "multi_level_star_import2")
-        self.assert_has_nodes(mg, "multi_level_star_import", "pkg_a", "pkg_b", "pkg_c", "pkg_d")
+        self.assert_has_nodes(
+            mg, "multi_level_star_import2", "pkg_a", "pkg_b", "pkg_c", "pkg_d"
+        )
 
     def test_multi_level_star_import_missing(self):
         mg = ModuleGraph()
-        mg.add_module("multi_level_star_import_missing.")
+        mg.add_module("multi_level_star_import_missing")
 
-        self.assert_has_node(mg, "multi_level_star_import_missing.", SourceModule)
+        self.assert_has_node(mg, "multi_level_star_import_missing", SourceModule)
         self.assert_has_node(mg, "pkg_c", Package)
         self.assert_has_node(mg, "pkg_d", Package)
         self.assert_has_node(mg, "pkg_c.f", MissingModule)
 
-        self.assert_has_edge(mg, "multi_level_star_import_missing.", "pkg_c", DependencyInfo(False, False))
-        self.assert_has_edge(mg, "multi_level_star_import_missing.", "pkg_c.f", DependencyInfo(False, True))
+        self.assert_has_edge(
+            mg, "multi_level_star_import_missing", "pkg_c", DependencyInfo(False, False)
+        )
+        self.assert_has_edge(
+            mg,
+            "multi_level_star_import_missing",
+            "pkg_c.f",
+            DependencyInfo(False, True),
+        )
         self.assert_has_edge(mg, "pkg_c", "pkg_d", DependencyInfo(False, False))
-        self.assert_has_edge(mg, "pkg_c.f", "pkg_c", DependencyInfo(False, False))
+        self.assert_has_edge(mg, "pkg_c.f", "pkg_c", None)
         self.assert_edge_count(mg, 4)
 
         self.assertEqual(mg.find_node("pkg_d").globals_written, {"e"})
         self.assertEqual(mg.find_node("pkg_c").globals_written, {"e"})
-        self.assertEqual(mg.find_node("multi_level_star_import_missing.").globals_written, {"f"})
+        self.assertEqual(
+            mg.find_node("multi_level_star_import_missing").globals_written, {"f"}
+        )
 
-        self.assert_has_roots(mg, "multi_level_star_import_missing.")
-        self.assert_has_nodes(mg, "multi_level_star_import_missing.", "pkg_c", "pkg_d", "pkg_c.f")
+        self.assert_has_roots(mg, "multi_level_star_import_missing")
+        self.assert_has_nodes(
+            mg, "multi_level_star_import_missing", "pkg_c", "pkg_d", "pkg_c.f"
+        )
 
     # package/__init__.py: import sys
     # toplevel.py: from package import sys
@@ -619,9 +654,149 @@ class TestModuleGraphRelativeImports(unittest.TestCase):
 
 class TestModuleGraphHooks(unittest.TestCase):
     # Test hooking mechanisms (to be determined)
+    #
+    # Probably need callbacks:
+    # - Before creating a mssing node, callback returns Optional[BaseNode]
+    #   (What is the use case?)
+    #
+    # - After adding a new PyPIDistribution,
+    #   Use case: add implied data for this distribution in recipe
+    #
+    # - After a node is "finished"
+    #   Use case: Adjust graph for this node (py2app recipes)
+    #
+    # All of these are lists of callbacks that will all be called.
+    #
+    # Mechanism for updating _lazy_nodes:
+    # 1) def update_implies(self, new): self._lazy_nodes.update(new)
+    # 2) def exclude_module(self, name): ...
+    # 3) def add_module_alias(self, name): ...
     pass
 
 
+REPORT_HEADER = """
+Class           Name                      File
+-----           ----                      ----
+"""
+
+
 class TestModuleGraphQuerying(unittest.TestCase):
-    # primarily "distributions" method.
+    #
+    # Tests for APIs that query the graph (other than those inherited from ObjectGraph)
+    #
+
+    def test_distributions_empty(self):
+        mg = ModuleGraph()
+        self.assertEqual(set(mg.distributions()), set())
+
+        n1 = MissingModule("n1")
+        mg.add_node(n1)
+        mg.add_root(n1)
+
+        self.assertEqual(set(mg.distributions()), set())
+
+    def test_distributions_real(self):
+        import pip
+
+        mg = ModuleGraph()
+        node = MissingModule("nosuchmodule")
+        node.distribution = distribution_for_file(pip.__file__, sys.path)
+        self.assertIsNot(node.distribution, None)
+
+        mg.add_node(node)
+        result = list(mg.distributions())
+        self.assertEqual(len(result), 0)
+
+        result = list(mg.distributions(False))
+        self.assertEqual(len(result), 1)
+
+        self.assertIsInstance(result[0], PyPIDistribution)
+        self.assertEqual(result[0].name, "pip")
+
+        mg.add_root(node)
+        result = list(mg.distributions())
+
+        self.assertIsInstance(result[0], PyPIDistribution)
+        self.assertEqual(result[0].name, "pip")
+
+    def test_some_distributions(self):
+        def make_distribution(name):
+            return PyPIDistribution(name, name, "", set(), set())
+
+        mg = ModuleGraph()
+
+        n1 = MissingModule("n1")
+        n2 = MissingModule("n2")
+        n3 = MissingModule("n3")
+
+        n1.distribution = n2.distribution = n3.distribution = make_distribution("dist1")
+
+        mg.add_node(n1)
+        mg.add_node(n2)
+        mg.add_node(n3)
+
+        mg.add_root(n1)
+        mg.add_root(n2)
+        mg.add_root(n3)
+
+        result = list(mg.distributions())
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0].name, "dist1")
+
+        n4 = MissingModule("n4")
+        n4.distribution = make_distribution("dist2")
+
+        mg.add_node(n4)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0].name, "dist1")
+
+        mg.add_root(n4)
+
+        result = list(mg.distributions())
+        self.assertEqual(len(result), 2)
+        self.assertEqual({d.name for d in result}, {"dist1", "dist2"})
+
+    def test_report_empty(self):
+        mg = ModuleGraph()
+
+        fp = StringIO()
+
+        mg.report(fp)
+        self.assertEqual(fp.getvalue(), REPORT_HEADER)
+
+    def test_report_unreachable(self):
+        mg = ModuleGraph()
+
+        fp = StringIO()
+
+        mg.add_node(MissingModule("n1"))
+
+        mg.report(fp)
+        self.assertEqual(fp.getvalue(), REPORT_HEADER)
+
+    def test_report_one(self):
+        mg = ModuleGraph()
+
+        fp = StringIO()
+
+        n1 = MissingModule("n1")
+        n1.filename = "FILE"
+        mg.add_node(n1)
+        mg.add_root(n1)
+
+        mg.report(fp)
+        self.assertEqual(
+            fp.getvalue(),
+            REPORT_HEADER + "MissingModule   n1                        FILE\n",
+        )
+
+
+class TestModuleGraphTools(unittest.TestCase):
+    # Not sure yet if these need to be in modulegraph2, and if so
+    # where these need to end up
+
+    # 1) Utility that ensure that entire PyPIDistributions get inclded
+    #    (with correct updates of the graph)
+    #
+    # 2) Likewise for packages
     pass

@@ -76,6 +76,14 @@ class NamespacePackage(BaseNode):
 
     has_data_files: bool
 
+    @property
+    def globals_written(self):
+        return frozenset()
+
+    @property
+    def globals_read(self):
+        return frozenset()
+
 
 @dataclasses.dataclass
 class Package(BaseNode):

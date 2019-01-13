@@ -1,1 +1,1 @@
-from implicit import *
+from implicit_package import *
