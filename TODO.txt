@@ -1,8 +1,11 @@
 - Support relative imports in ModuleGraph
+  -> First add test cases
+  -> Then update the implementation
+
 - See XXX throughout
 - Mypy annotations in _graphbuilder
 - Merge the two ImportInfo definitions
-- Always use the stdlib implies
+- Always use the stdlib implies (modulegraph._implies)
 - Add mechanism to provide names exported by extensions,
   and use this for the extensions in the stdlib
 - Add mechanism the is called before creating
@@ -23,7 +26,15 @@
 - Write exporters:
   - dot file
   - HTML (using D3.js)
+
+  -> Both: actual exporter works on ObjectGraph level,
+     with hooks to customize node and edge L&F (text and attributes)
+  -> Try to use the same hooks in both
+  -> Also specific implementations for these hooks to use
+     with ModuleGraph
+
 - Check naming and adjust for readability
+- Split of objectgraph to seperate PyPI package
 - Write documentation:
   - Update reference docs
   - Add examples
@@ -36,3 +47,5 @@
 - try to add inteligence to deal with 'import ... as ...'
   (a "from b import c", b: "import d as c", d: "", this should
   add an edge from a to d)
+
+- Post to blog about this (with initial push to PyPI)

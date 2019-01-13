@@ -1,8 +1,5 @@
 """
 A basic graph datastructure
-
-XXX: This is basically a reimplementation of altgraph.ObjectGraph and
-needs to be split of to a separate package.
 """
 from typing import (
     Optional,
@@ -113,13 +110,10 @@ class ObjectGraph(Generic[T]):
 
     def find_node(self, node: Union[str, T]) -> Optional[T]:
         """ Find *node* in the graph, return the graph node or None """
-        # XXX: Should this raise KeyError instead of returning None?
         if isinstance(node, str):
             return self._nodes.get(node)
 
         else:
-            # XXX: Should this method raise an exception when node is
-            # not actually in the graph?
             return self._nodes.get(node.identifier)
 
     def __contains__(self, node: Union[str, T]):

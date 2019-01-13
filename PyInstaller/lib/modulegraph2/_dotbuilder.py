@@ -1,6 +1,5 @@
 """
-Support code for generating HTML
-output from a graph
+modulegraph._dotbuilder
 """
 from typing import TypeVar, Callable, Dict, Callable, Any, TextIO
 from ._objectgraph import ObjectGraph, T
@@ -12,14 +11,14 @@ from ._objectgraph import ObjectGraph, T
 # - Should reduce the need for a graphviz output
 
 
-def export_to_html(
+def export_to_dot(
     graph: ObjectGraph[T],
     format_node: Callable[[T], Dict],
     format_edge: Callable[[Any], Dict],
     fp: TextIO,
 ) -> None:
     """
-    Write an HTML version of the *graph* to *fp".
+    Write an dot (graphviz) version of the *graph* to *fp".
 
     The arguments "format_node" and "format_edge" specify
     callbacks to format nodes and edges that are generated.
