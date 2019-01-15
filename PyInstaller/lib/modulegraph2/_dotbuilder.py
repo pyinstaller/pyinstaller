@@ -1,7 +1,7 @@
 """
 modulegraph._dotbuilder
 """
-from typing import Callable, Dict, TextIO
+from typing import Callable, Dict, TextIO, Optional
 from ._objectgraph import ObjectGraph, NODE_TYPE, EDGE_TYPE
 
 # - Generic builder for ObjectGraph
@@ -12,10 +12,10 @@ from ._objectgraph import ObjectGraph, NODE_TYPE, EDGE_TYPE
 
 
 def export_to_dot(
+    file: TextIO,
     graph: ObjectGraph[NODE_TYPE, EDGE_TYPE],
-    format_node: Callable[[NODE_TYPE], Dict],
-    format_edge: Callable[[EDGE_TYPE], Dict],
-    fp: TextIO,
+    format_node: Optional[Callable[[NODE_TYPE], Dict]] = None,
+    format_edge: Optional[Callable[[EDGE_TYPE], Dict]] = None
 ) -> None:
     """
     Write an dot (graphviz) version of the *graph* to *fp".
@@ -26,4 +26,10 @@ def export_to_dot(
     These return dict with following keys (all optional):
     - ...
     """
-    pass
+    print("digraph modulegraph {", file=file)
+
+    for source in graph.iter_graph():
+        for edge, target in graph.outgoing(source):
+            print(f'    "{source.identifier}" [label="{source.identifier}"]', file=file)
+            print(f'    "{source.identifier}" -> "{target.identifier}"', file=file)
+    print("}", file=file)

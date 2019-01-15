@@ -2,7 +2,7 @@
 Support code for generating HTML
 output from a graph
 """
-from typing import Callable, Dict, TextIO
+from typing import Callable, Dict, TextIO, Optional
 from ._objectgraph import ObjectGraph, NODE_TYPE, EDGE_TYPE
 
 # - Generic builder for ObjectGraph
@@ -13,10 +13,10 @@ from ._objectgraph import ObjectGraph, NODE_TYPE, EDGE_TYPE
 
 
 def export_to_html(
+    file: TextIO,
     graph: ObjectGraph[NODE_TYPE, EDGE_TYPE],
-    format_node: Callable[[NODE_TYPE], Dict],
-    format_edge: Callable[[EDGE_TYPE], Dict],
-    fp: TextIO,
+    format_node: Optional[Callable[[NODE_TYPE], Dict]] = None,
+    format_edge: Optional[Callable[[EDGE_TYPE], Dict]] = None
 ) -> None:
     """
     Write an HTML version of the *graph* to *fp".

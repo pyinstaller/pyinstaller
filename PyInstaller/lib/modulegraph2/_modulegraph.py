@@ -130,7 +130,7 @@ class ModuleGraph(ObjectGraph[BaseNode, Set[DependencyInfo]]):
 
         # Reference to __main__ cannot be valid when multip scripts
         # are added to the graph, just ignore this module for now.
-        self._global_lazy_nodes["__main__"] = None
+        #self._global_lazy_nodes["__main__"] = None
 
     #
     # Querying
@@ -275,7 +275,7 @@ class ModuleGraph(ObjectGraph[BaseNode, Set[DependencyInfo]]):
 
         # module_name must be an absolute module name
         node = self.find_node(module_name)
-        assert node is None
+        assert node is None, module_name
 
         try:
             spec = importlib.util.find_spec(module_name)
