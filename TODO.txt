@@ -2,8 +2,8 @@
   -> First add test cases
   -> Then update the implementation
 
+- Detect "as" imports and use information in the graph
 - See XXX throughout
-- Merge the two ImportInfo definitions
 - Always use the stdlib implies (modulegraph._implies)
  (with option to disable)
 - Add mechanism to provide names exported by extensions,
