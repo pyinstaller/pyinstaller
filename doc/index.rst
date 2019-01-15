@@ -16,10 +16,10 @@ The user can run the packaged app without installing a Python interpreter or any
 and correctly bundles the major Python packages
 such as numpy, PyQt, Django, wxPython, and others.
 
-|PyInstaller| is tested against Windows, Mac OS X, and Linux.
+|PyInstaller| is tested against Windows, Mac OS X, and GNU/Linux.
 However, it is not a cross-compiler:
 to make a Windows app you run |PyInstaller| in Windows;
-to make a Linux app you run it in Linux, etc.
+to make a GNU/Linux app you run it in GNU/Linux, etc.
 |PyInstaller| has been used successfully with AIX, Solaris, and FreeBSD,
 but is not tested against them.
 

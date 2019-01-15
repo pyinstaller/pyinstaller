@@ -106,7 +106,7 @@ LD_LIBRARY_PATH / LIBPATH considerations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This environment variable is used to discover libraries, it is the library
-search path - on Linux and \*BSD `LD_LIBRARY_PATH` is used, on AIX it is
+search path - on GNU/Linux and \*BSD `LD_LIBRARY_PATH` is used, on AIX it is
 `LIBPATH`.
 
 If it exists,
@@ -124,7 +124,7 @@ with the system program.
 ::
 
     env = dict(os.environ)  # make a copy of the environment
-    lp_key = 'LD_LIBRARY_PATH'  # for Linux and *BSD.
+    lp_key = 'LD_LIBRARY_PATH'  # for GNU/Linux and *BSD.
     lp_orig = env.get(lp_key + '_ORIG')
     if lp_orig is not None:
         env[lp_key] = lp_orig  # restore the original, unmodified value

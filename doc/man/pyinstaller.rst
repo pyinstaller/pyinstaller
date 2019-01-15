@@ -20,7 +20,7 @@ DESCRIPTION
 ============
 
 PyInstaller is a program that freezes (packages) Python programs into
-stand-alone executables, under Windows, Linux, Mac OS X, FreeBSD, Solaris and
+stand-alone executables, under Windows, GNU/Linux, Mac OS X, FreeBSD, Solaris and
 AIX. Its main advantages over similar tools are that PyInstaller works with
 Python 2.7 and 3.4—3.6, it builds smaller executables thanks to transparent
 compression, it is fully multi-platform, and use the OS support to load the
