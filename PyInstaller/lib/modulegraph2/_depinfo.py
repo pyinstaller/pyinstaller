@@ -1,25 +1,18 @@
 import dataclasses
 from typing import Optional
 
+from ._importinfo import ImportInfo
+
 
 @dataclasses.dataclass(frozen=True)
 class DependencyInfo:
-    optional: bool
-    fromlist: bool
+    is_optional: bool
+    is_global: bool
+    in_fromlist: bool
+    imported_as: Optional[str]
 
 
-def merged_depinfo(
-    first: Optional[DependencyInfo], second: Optional[DependencyInfo]
-) -> Optional[DependencyInfo]:
-    if first is None:
-        if second is None:
-            return None
-
-        return DependencyInfo(False, second.fromlist)
-    elif second is None:
-        return DependencyInfo(False, first.fromlist)
-
-    conditional = first.optional and second.optional
-    fromlist = first.fromlist and second.fromlist
-
-    return DependencyInfo(conditional, fromlist)
+def from_importinfo(import_info: ImportInfo, in_fromlist: bool, name: Optional[str]):
+    return DependencyInfo(
+        import_info.is_optional, import_info.is_global, in_fromlist, name
+    )

@@ -4,22 +4,10 @@ Utilities for working with bytecode files
 import dis
 import types
 import collections
-import dataclasses
+
 from typing import Iterator, Deque, Set, List, Tuple, Dict
 
-
-@dataclasses.dataclass
-class ImportInfo:
-    import_module: str
-    import_level: int
-    import_names: Set[str]
-    star_import: bool
-
-    is_in_function: bool
-
-    @property
-    def is_optional(self):
-        return self.is_in_function
+from ._importinfo import ImportInfo, create_importinfo
 
 
 def _all_code_objects(
@@ -71,26 +59,14 @@ def _extract_single(code: types.CodeType, is_function_code: bool, is_class_code:
 
             import_module = code.co_names[name_offset]
 
-            import_names: Set[str] = set()
-
-            if fromlist is None:
-                have_star = False
-
-            else:
-                have_star = "*" in fromlist
-                import_names = set(fromlist) - {"*"}
-
             imports.append(
-                ImportInfo(
-                    import_module=import_module,
-                    import_level=level,
-                    import_names=import_names,
-                    star_import=have_star,
-                    is_in_function=is_function_code,
+                create_importinfo(
+                    import_module, fromlist, level, is_function_code, False, False
                 )
             )
             if not (is_function_code or is_class_code):
-                globals_written |= import_names
+                if fromlist is not None:
+                    globals_written |= set(fromlist) - {"*"}
 
         elif inst.opname in ("STORE_NAME", "STORE_NAME"):
             if is_class_code and inst.opname == "STORE_NAME":

@@ -116,7 +116,7 @@ class TestObjectGraph(unittest.TestCase):
 
         graph.add_edge(n1, n2, 1)
         graph.add_edge("n1", "n3", 2)
-        graph.add_edge("n2", n3)
+        graph.add_edge("n2", n3, None)
 
         self.assertRaises(KeyError, graph.add_edge, n1, n4, 3)
         self.assertRaises(KeyError, graph.add_edge, n4, n2, 4)
@@ -176,16 +176,16 @@ class TestObjectGraph(unittest.TestCase):
         graph.add_root(n1)
         graph.add_root(n2)
 
-        graph.add_edge(n1, n3)
-        graph.add_edge(n3, n1)
-        graph.add_edge(n3, n4)
-        graph.add_edge(n3, n5)
-        graph.add_edge(n5, n4)
-        graph.add_edge(n5, n1)
+        graph.add_edge(n1, n3, None)
+        graph.add_edge(n3, n1, None)
+        graph.add_edge(n3, n4, None)
+        graph.add_edge(n3, n5, None)
+        graph.add_edge(n5, n4, None)
+        graph.add_edge(n5, n1, None)
 
-        graph.add_edge(n2, n6)
-        graph.add_edge(n6, n7)
-        graph.add_edge(n7, n6)
+        graph.add_edge(n2, n6, None)
+        graph.add_edge(n6, n7, None)
+        graph.add_edge(n7, n6, None)
 
         self.assertEqual(list(graph.iter_graph(node=n2)), [n2, n6, n7])
         self.assertEqual(list(graph.iter_graph(node=n7)), [n7, n6])
@@ -198,5 +198,5 @@ class TestObjectGraph(unittest.TestCase):
 
         self.assertEqual(set(graph.iter_graph()), {n1, n2, n3, n4, n5, n6, n7})
 
-        graph.add_edge(n1, n2)
+        graph.add_edge(n1, n2, None)
         self.assertEqual(set(graph.iter_graph()), {n1, n2, n3, n4, n5, n6, n7})

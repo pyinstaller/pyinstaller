@@ -4,69 +4,9 @@ and extract information from it.
 """
 import ast
 import collections
-import dataclasses
-from typing import Iterator, Set, Tuple, Deque
+from typing import Iterator, Tuple, Deque
 
-
-# import os
-# import importlib.util
-# XXX: Not sure if this will be needed...
-# def ast_for_file(path: os.PathLike, module_source: Optional[str] = None) -> ast.AST:
-#    """
-#    Return the AST for the given module or script
-#    """
-#    if module_source is None:
-#        with open(path, "rb") as fp:
-#            module_bytes = fp.read()
-#
-#        module_source = importlib.util.decode_source(module_bytes)
-#
-#    ast = compile(
-#        module_source, os.fspath(path), "exec", flags=ast.PyCF_ONLY_AST,
-#        dont_inherit=True
-#    )
-#    return ast
-
-
-@dataclasses.dataclass(frozen=True)
-class ImportInfo:
-    """
-    Information about an import statement found in the AST for a module or script
-    """
-
-    import_module: str
-    import_level: int
-    import_names: Set[str]
-    star_import: bool
-    is_in_function: bool
-    is_in_conditional: bool
-    is_in_tryexcept: bool
-
-    @property
-    def is_optional(self):
-        return self.is_in_function or self.is_in_conditional or self.is_in_tryexcept
-
-
-def _create_importinfo(name, fromlist, level, in_def, in_if, in_tryexcept):
-
-    have_star = False
-    if fromlist is None:
-        import_names = set()
-    else:
-        import_names = set(fromlist)
-        if "*" in import_names:
-            import_names.remove("*")
-            have_star = True
-
-    return ImportInfo(
-        import_module=name,
-        import_level=level,
-        import_names=import_names,
-        star_import=have_star,
-        is_in_function=in_def,
-        is_in_conditional=in_if,
-        is_in_tryexcept=in_tryexcept,
-    )
+from ._importinfo import ImportInfo, create_importinfo
 
 
 def extract_ast_info(node: ast.AST) -> Iterator[ImportInfo]:
@@ -83,10 +23,10 @@ def extract_ast_info(node: ast.AST) -> Iterator[ImportInfo]:
 
         if isinstance(node, ast.Import):
             for nm in node.names:
-                yield _create_importinfo(nm.name, None, 0, in_def, in_if, in_tryexcept)
+                yield create_importinfo(nm.name, None, 0, in_def, in_if, in_tryexcept)
 
         elif isinstance(node, ast.ImportFrom):
-            yield _create_importinfo(
+            yield create_importinfo(
                 node.module or "",
                 {nm.name for nm in node.names},
                 node.level,

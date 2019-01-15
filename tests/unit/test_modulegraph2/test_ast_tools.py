@@ -43,6 +43,7 @@ class TestAstExtractor(unittest.TestCase):
             self.assertEqual(info.is_in_conditional, False)
             self.assertEqual(info.is_in_tryexcept, False)
             self.assertEqual(info.is_optional, False)
+            self.assertEqual(info.is_global, True)
 
         # import sys
         self.assertEqual(imports[0].import_module, "sys")
@@ -145,6 +146,7 @@ class TestAstExtractor(unittest.TestCase):
             self.assertEqual(info.is_in_conditional, False)
             self.assertEqual(info.is_in_tryexcept, False)
             self.assertEqual(info.is_optional, False)
+            self.assertEqual(info.is_global, True)
 
         self.assertEqual(imports[0].import_module, "a")
         self.assertEqual(imports[1].import_module, "b")
@@ -175,6 +177,7 @@ class TestAstExtractor(unittest.TestCase):
             self.assertEqual(info.is_in_conditional, False)
             self.assertEqual(info.is_in_tryexcept, False)
             self.assertEqual(info.is_optional, info.import_module != "c")
+            self.assertEqual(info.is_global, info.import_module == "c")
 
         self.assertEqual({n.import_module for n in imports}, {"a", "b", "c"})
 
@@ -202,6 +205,7 @@ class TestAstExtractor(unittest.TestCase):
             self.assertEqual(info.is_in_conditional, info.import_module != "c")
             self.assertEqual(info.is_in_tryexcept, False)
             self.assertEqual(info.is_optional, info.import_module != "c")
+            self.assertEqual(info.is_global, True)
 
         self.assertEqual({n.import_module for n in imports}, {"a", "b", "c"})
 
@@ -248,6 +252,7 @@ class TestAstExtractor(unittest.TestCase):
                     info.is_in_tryexcept, info.import_module not in {"c", "e"}
                 )
                 self.assertEqual(info.is_optional, info.import_module not in {"c", "e"})
+                self.assertEqual(info.is_global, True)
 
         self.assertEqual({n.import_module for n in imports}, {"a", "b", "c", "d", "e"})
 
@@ -386,3 +391,4 @@ class TestAstExtractor(unittest.TestCase):
                 self.assertEqual(info.is_in_conditional, in_if)
                 self.assertEqual(info.is_in_tryexcept, in_try)
                 self.assertEqual(info.is_optional, in_def or in_if or in_try)
+                self.assertEqual(info.is_global, not in_def)

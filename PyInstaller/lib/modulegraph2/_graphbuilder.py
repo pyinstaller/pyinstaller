@@ -3,7 +3,7 @@ Tools for building the module graph
 """
 import ast
 import pathlib
-from typing import Tuple, Iterable, List, Sequence, Type, cast
+from typing import Tuple, Iterable, List, Type, cast, Optional
 import importlib.machinery
 import importlib.abc
 import zipfile
@@ -21,6 +21,7 @@ from ._nodes import (
 from ._packages import distribution_for_file
 from ._bytecode_tools import extract_bytecode_info
 from ._ast_tools import extract_ast_info
+from ._importinfo import ImportInfo
 
 
 def _contains_datafiles(directory: pathlib.Path):
@@ -87,7 +88,7 @@ def node_for_spec(
     Create the node for a ModuleSpec and locate related imports
     """
     node: BaseNode
-    imports: Sequence  # XXX
+    imports: Iterable[ImportInfo]
 
     # XXX: spec.loader can be None in older python versions, but isn't on any
     # recent version (which doesn't help with coverage.py reports)
@@ -145,6 +146,9 @@ def node_for_spec(
         # Likewise for _frozen_importlib_external._NamespaceLoader
         loader = cast(importlib.abc.InspectLoader, spec.loader)
         source_code = loader.get_source(spec.name)
+
+        ast_imports: Optional[Iterable[ImportInfo]]
+
         if source_code is not None:
             filename = spec.origin
             assert filename is not None
@@ -158,7 +162,7 @@ def node_for_spec(
             )
             ast_imports = extract_ast_info(ast_node)
         else:
-            ast_imports = iter(())
+            ast_imports = None
 
         code = loader.get_code(spec.name)
         assert code is not None
@@ -184,7 +188,10 @@ def node_for_spec(
             globals_read=names_read,
         )
 
-        imports = ast_imports if ast_imports else bytecode_imports
+        if ast_imports is not None:
+            imports = ast_imports
+        else:
+            imports = bytecode_imports
 
     else:
         raise RuntimeError(

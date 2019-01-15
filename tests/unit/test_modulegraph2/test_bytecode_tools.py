@@ -122,3 +122,4 @@ class TestByteCodeExtractor(unittest.TestCase):
 
                 self.assertEqual(info.is_in_function, info.import_module.isupper())
                 self.assertEqual(info.is_optional, info.import_module.isupper())
+                self.assertEqual(info.is_global, info.import_module.islower())

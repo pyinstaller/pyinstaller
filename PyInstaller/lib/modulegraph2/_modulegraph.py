@@ -38,10 +38,9 @@ from ._packages import PyPIDistribution
 from ._graphbuilder import node_for_spec
 from ._implies import Alias  # XXX
 from ._ast_tools import extract_ast_info
-from ._depinfo import DependencyInfo, merged_depinfo
+from ._depinfo import DependencyInfo, from_importinfo
 from ._depproc import DependentProcessor
-
-from . import _ast_tools, _bytecode_tools
+from ._importinfo import ImportInfo
 
 
 def full_name(import_name: str, package: Optional[str]):
@@ -91,8 +90,10 @@ def split_package(name: str) -> Tuple[Optional[str], str]:
 
 ProcessingCallback = Callable[["ModuleGraph", BaseNode], None]
 
+DEFAULT_DEPENDENCY = DependencyInfo(False, True, False, None)
 
-class ModuleGraph(ObjectGraph[BaseNode]):
+
+class ModuleGraph(ObjectGraph[BaseNode, Set[DependencyInfo]]):
     # Redesign of modulegraph.modulegraph.ModuleGraph
     # Gloal:
     # - minimal, but complete interface
@@ -115,6 +116,10 @@ class ModuleGraph(ObjectGraph[BaseNode]):
         # the 'path' parameter will be removed (including any code
         # related to it). Note that using an alternate path
         # requires code changes anyway.
+        #
+        # XXX: Add init parameters to control if std. hooks are
+        # used (in particular the stdlib implies and support for
+        # virtual environments)
         super().__init__()
         self._path = path if path is not None else sys.path
         self._post_processing = CallbackList()
@@ -187,7 +192,7 @@ class ModuleGraph(ObjectGraph[BaseNode]):
         after calling this method.
         """
         node = self._load_module(import_name)
-        self.add_edge(module, node, None, merge_attributes=merged_depinfo)
+        self.add_edge(module, node, {DEFAULT_DEPENDENCY}, merge_attributes=operator.or_)
         return node
 
     def _run_post_processing(self, node: BaseNode) -> None:
@@ -245,7 +250,9 @@ class ModuleGraph(ObjectGraph[BaseNode]):
             elif isinstance(implied, Alias):
                 node = AliasNode(full_name, implied)
                 other = self._load_module(implied)
-                self.add_edge(node, other, merge_attributes=merged_depinfo)
+                self.add_edge(
+                    node, other, {DEFAULT_DEPENDENCY}, merge_attributes=operator.or_
+                )
                 return node
 
             else:
@@ -253,7 +260,9 @@ class ModuleGraph(ObjectGraph[BaseNode]):
                 node = self._load_module(full_name)
                 for ref in implied:
                     other = self._load_module(ref)
-                    self.add_edge(node, other, merge_attributes=merged_depinfo)
+                    self.add_edge(
+                        node, other, {DEFAULT_DEPENDENCY}, merge_attributes=operator.or_
+                    )
 
                 return node
 
@@ -291,7 +300,9 @@ class ModuleGraph(ObjectGraph[BaseNode]):
             if self.find_node(node) is None:
                 self.add_node(node)
                 self._process_import_list(node, imports)
-            self.add_edge(alias_node, node, merge_attributes=merged_depinfo)
+            self.add_edge(
+                alias_node, node, {DEFAULT_DEPENDENCY}, merge_attributes=operator.or_
+            )
             return alias_node
 
         self.add_node(node)
@@ -379,14 +390,12 @@ class ModuleGraph(ObjectGraph[BaseNode]):
             node = self._find_or_load(containing_package)
 
         if parent is not None:
-            self.add_edge(node, parent, merge_attributes=merged_depinfo)
+            self.add_edge(
+                node, parent, {DEFAULT_DEPENDENCY}, merge_attributes=operator.or_
+            )
         return node
 
-    def _process_import(
-        self,
-        importing_module: BaseNode,
-        import_info: Union[_bytecode_tools.ImportInfo, _ast_tools.ImportInfo],
-    ):
+    def _process_import(self, importing_module: BaseNode, import_info: ImportInfo):
         # print("_process_import", import_info.import_module)
         if import_info.import_level == 0:
             # Global import
@@ -401,15 +410,20 @@ class ModuleGraph(ObjectGraph[BaseNode]):
                     node = self._find_or_load(import_info.import_module)
 
                 if parent_node is not None:
-                    self.add_edge(node, parent_node, merge_attributes=merged_depinfo)
+                    self.add_edge(
+                        node,
+                        parent_node,
+                        {DEFAULT_DEPENDENCY},
+                        merge_attributes=operator.or_,
+                    )
 
             assert node is not None
 
             self.add_edge(
                 importing_module,
                 node,
-                DependencyInfo(import_info.is_optional, False),
-                merge_attributes=merged_depinfo,
+                {from_importinfo(import_info, False, None)},
+                merge_attributes=operator.or_,
             )
 
             if import_info.import_names or import_info.star_import:
@@ -435,7 +449,7 @@ def _process_namelist(
     importing_module: Union[Module, Package],
     imported_module: BaseNode,
     graph: ModuleGraph,
-    import_info: Union[_bytecode_tools.ImportInfo, _ast_tools.ImportInfo],
+    import_info: ImportInfo,
 ):
     assert isinstance(importing_module, (Module, Package))
     if import_info.star_import:
@@ -455,16 +469,34 @@ def _process_namelist(
                     if nm in imported_module.globals_written:
                         # Name exists, but is not a module, don't add edge
                         # to the "missing" node
+
+                        # Check if the imported name is actually some other imported
+                        # module.
+                        for ed_set, tgt in graph.outgoing(imported_module):
+                            # ed = cast(Optional[DependencyInfo], ed)
+                            if (
+                                any(nm == ed.imported_as for ed in ed_set)
+                                or tgt.identifier == nm
+                            ):
+                                graph.add_edge(
+                                    importing_module,
+                                    tgt,
+                                    {from_importinfo(import_info, True, None)},
+                                )
+                                break
                         continue
 
                 graph.add_edge(
-                    subnode, imported_module, merge_attributes=merged_depinfo
+                    subnode,
+                    imported_module,
+                    {DEFAULT_DEPENDENCY},
+                    merge_attributes=operator.or_,
                 )
                 graph.add_edge(
                     importing_module,
                     subnode,
-                    DependencyInfo(import_info.is_optional, True),
-                    merge_attributes=merged_depinfo,
+                    {from_importinfo(import_info, True, nm)},
+                    merge_attributes=operator.or_,
                 )
                 # else:
                 #    Node is not a package, therefore "from node import a" cannot

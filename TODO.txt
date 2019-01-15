@@ -3,9 +3,9 @@
   -> Then update the implementation
 
 - See XXX throughout
-- Mypy annotations in _graphbuilder
 - Merge the two ImportInfo definitions
 - Always use the stdlib implies (modulegraph._implies)
+ (with option to disable)
 - Add mechanism to provide names exported by extensions,
   and use this for the extensions in the stdlib
 - Add mechanism the is called before creating
@@ -44,8 +44,7 @@
   behaviour
 - modulegraph2/_modulegraph.py is too large, try to
   move more code to utilities in other modules.
-- try to add inteligence to deal with 'import ... as ...'
-  (a "from b import c", b: "import d as c", d: "", this should
-  add an edge from a to d)
+
+
 
 - Post to blog about this (with initial push to PyPI)

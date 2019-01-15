@@ -1,8 +1,8 @@
 """
 modulegraph._dotbuilder
 """
-from typing import TypeVar, Callable, Dict, Callable, Any, TextIO
-from ._objectgraph import ObjectGraph, T
+from typing import Callable, Dict, TextIO
+from ._objectgraph import ObjectGraph, NODE_TYPE, EDGE_TYPE
 
 # - Generic builder for ObjectGraph
 # - Using D3.js
@@ -12,9 +12,9 @@ from ._objectgraph import ObjectGraph, T
 
 
 def export_to_dot(
-    graph: ObjectGraph[T],
-    format_node: Callable[[T], Dict],
-    format_edge: Callable[[Any], Dict],
+    graph: ObjectGraph[NODE_TYPE, EDGE_TYPE],
+    format_node: Callable[[NODE_TYPE], Dict],
+    format_edge: Callable[[EDGE_TYPE], Dict],
     fp: TextIO,
 ) -> None:
     """
