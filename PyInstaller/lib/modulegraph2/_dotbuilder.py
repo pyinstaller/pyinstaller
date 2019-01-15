@@ -10,12 +10,21 @@ from ._objectgraph import ObjectGraph, NODE_TYPE, EDGE_TYPE
 # - Also tabular output?
 # - Should reduce the need for a graphviz output
 
+def format_attributes(value):
+    if not value:
+        return ''
+
+    else:
+        parts = []
+        for k in sorted(value):
+            parts.append(f"{k}={value[k]}")
+        return f" [{', '.join(parts)}]"
 
 def export_to_dot(
     file: TextIO,
     graph: ObjectGraph[NODE_TYPE, EDGE_TYPE],
     format_node: Optional[Callable[[NODE_TYPE], Dict]] = None,
-    format_edge: Optional[Callable[[EDGE_TYPE], Dict]] = None
+    format_edge: Optional[Callable[[NODE_TYPE, NODE_TYPE, EDGE_TYPE], Dict]] = None
 ) -> None:
     """
     Write an dot (graphviz) version of the *graph* to *fp".
@@ -29,6 +38,7 @@ def export_to_dot(
     print("digraph modulegraph {", file=file)
 
     for source in graph.iter_graph():
+        print(f'    "{source.identifier}"{format_attributes(format_node(source))}', file=file)
         for edge, target in graph.outgoing(source):
-            print(f'    "{source.identifier}" -> "{target.identifier}"', file=file)
+            print(f'    "{source.identifier}" -> "{target.identifier}"{format_attributes(format_edge(source, target, edge))}', file=file)
     print("}", file=file)

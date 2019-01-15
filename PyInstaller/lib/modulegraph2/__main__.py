@@ -13,7 +13,39 @@ from ._modulegraph import ModuleGraph
 from ._dotbuilder import export_to_dot
 import sys
 
+NODE_ATTR = {
+    'Script': { 'shape': 'note' },
+    'Package': { 'shape': 'folder' },
+    'SourceModule': { 'shape': 'rectangle' },
+    'BytecodeModule': { 'shape': 'rectangle' },
+    'ExtensionModule': { 'shape': 'parallelogram' },
+    'BuiltinModule': { 'shape': 'hexagon' },
+    'MissingModule': { 'shape': 'rectangle', 'color': 'red' },
+}
+
+
 mg = ModuleGraph()
 mg.add_script("demo.py")
 
-export_to_dot(sys.stdout, mg)
+def format_node(node):
+    results = {}
+    if node in mg.roots():
+        results["penwidth"] = 2
+
+    results.update(NODE_ATTR.get(type(node).__name__, {}))
+
+    return results
+
+def format_edge(source, target, edge):
+    results = {}
+
+    if all(e.is_optional for e in edge):
+        results["style"] = "dashed"
+
+    if source.identifier.startswith(target.identifier + '.'):
+        results["weight"] = 10
+        results["arrowhead"] = "none"
+
+    return results
+
+export_to_dot(sys.stdout, mg, format_node, format_edge)

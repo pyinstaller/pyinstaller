@@ -40,8 +40,8 @@ def _extract_single(code: types.CodeType, is_function_code: bool, is_class_code:
     for offset, inst in enumerate(instructions):
         if inst.opname == "IMPORT_NAME":
             # IMPORT_NAME pops two constants from the stack: fromlist and level
-            assert instructions[offset - 1].opname == "LOAD_CONST"
-            assert instructions[offset - 2].opname == "LOAD_CONST"
+            assert instructions[offset - 1].opname == "LOAD_CONST", instructions[offset - 1].opname
+            assert instructions[offset - 2].opname == "LOAD_CONST", instructions[offset - 2].opname
 
             from_offset = instructions[offset - 1].arg
             assert from_offset is not None
