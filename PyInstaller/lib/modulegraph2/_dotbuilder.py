@@ -30,6 +30,5 @@ def export_to_dot(
 
     for source in graph.iter_graph():
         for edge, target in graph.outgoing(source):
-            print(f'    "{source.identifier}" [label="{source.identifier}"]', file=file)
             print(f'    "{source.identifier}" -> "{target.identifier}"', file=file)
     print("}", file=file)
