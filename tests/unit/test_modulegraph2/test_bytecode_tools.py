@@ -35,6 +35,122 @@ class TestByteCodeExtractor(unittest.TestCase):
         self.assertEqual(imports[0].import_names, set())
         self.assertEqual(imports[0].is_in_function, False)
 
+    def test_basic_large(self):
+        # Test with a large number of names in the local scope before
+        # the imported module name, results in slightly different byte code
+        names = [f"a{i}" for i in range(1000)]
+        prefix = "\n".join(f"            {nm} = 1" for nm in names)
+        code = make_code(
+            prefix
+            + """\
+
+            import foo
+
+            b = __import__
+            c = __name__
+            a = b + 42
+            """
+        )
+
+        imports, names_written, names_read = bytecode_tools.extract_bytecode_info(code)
+
+        self.assertEqual(names_written, {"foo", "b", "c", "a"} | set(names))
+        self.assertEqual(names_read, {"__import__", "__name__", "b"})
+
+        self.assertEqual(len(imports), 1)
+
+        self.assertEqual(imports[0].import_module, "foo")
+        self.assertEqual(imports[0].import_level, 0)
+        self.assertEqual(imports[0].star_import, False)
+        self.assertEqual(imports[0].import_names, set())
+        self.assertEqual(imports[0].is_in_function, False)
+
+    def test_basic_large_relative(self):
+        # Test with a large number of names in the local scope before
+        # the imported module name, results in slightly different byte code
+        names = [f"a{i}" for i in range(1000)]
+        prefix = "\n".join(f"            {nm} = 1" for nm in names)
+        code = make_code(
+            prefix
+            + """\
+
+            from ..foo import bar
+
+            b = __import__
+            c = __name__
+            a = b + 42
+            """
+        )
+
+        imports, names_written, names_read = bytecode_tools.extract_bytecode_info(code)
+
+        self.assertEqual(names_written, {"bar", "b", "c", "a"} | set(names))
+        self.assertEqual(names_read, {"__import__", "__name__", "b"})
+
+        self.assertEqual(len(imports), 1)
+
+        self.assertEqual(imports[0].import_module, "foo")
+        self.assertEqual(imports[0].import_level, 2)
+        self.assertEqual(imports[0].star_import, False)
+        self.assertEqual(imports[0].import_names, {"bar"})
+        self.assertEqual(imports[0].is_in_function, False)
+
+    def test_import_in_class_large(self):
+        # Test with a large number of names in the local scope before
+        # the imported module name, results in slightly different byte code
+        names = [f"a{i}" for i in range(1000)]
+        prefix = "\n".join(f"            {nm} = 1" for nm in names)
+        code = make_code(
+            prefix
+            + """\
+
+            class C:
+                import foo
+
+            b = __import__
+            c = __name__
+            a = b + 42
+            """
+        )
+
+        imports, names_written, names_read = bytecode_tools.extract_bytecode_info(code)
+
+        self.assertEqual(len(imports), 1)
+
+        self.assertEqual(imports[0].import_module, "foo")
+        self.assertEqual(imports[0].import_level, 0)
+        self.assertEqual(imports[0].star_import, False)
+        self.assertEqual(imports[0].import_names, set())
+        self.assertEqual(imports[0].is_in_function, False)
+
+    def test_import_in_function_large(self):
+        # Test with a large number of names in the local scope before
+        # the imported module name, results in slightly different byte code
+        names = [f"a{i}" for i in range(1000)]
+        prefix = "\n".join(f"            {nm} = 1" for nm in names)
+        code = make_code(
+            prefix
+            + """\
+
+            def function():
+                import foo
+
+            b = __import__
+            c = __name__
+            a = b + 42
+            """
+        )
+
+        imports, names_written, names_read = bytecode_tools.extract_bytecode_info(code)
+
+        self.assertEqual(len(imports), 1)
+
+        self.assertEqual(imports[0].import_module, "foo")
+        self.assertEqual(imports[0].import_level, 0)
+        self.assertEqual(imports[0].star_import, False)
+        self.assertEqual(imports[0].import_names, set())
+        self.assertEqual(imports[0].is_in_function, True)
+
     def test_nested_imports(self):
         code = make_code(
             """\
