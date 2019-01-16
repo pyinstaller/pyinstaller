@@ -43,3 +43,7 @@ if os.path.isdir(lib_dir):
         logger = logging.getLogger(__name__)
         logger.info("MKL libraries found when importing numpy. Adding MKL to binaries")
         binaries += [(os.path.join(lib_dir, f), '.') for f in dlls_mkl]
+
+# https://github.com/pyinstaller/pyinstaller/issues/3982
+hiddenimports=['numpy.core._dtype_ctypes']
+
