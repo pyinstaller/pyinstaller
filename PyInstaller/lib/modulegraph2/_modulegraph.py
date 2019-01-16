@@ -33,6 +33,7 @@ from ._nodes import (
     MissingModule,
     Package,
     NamespacePackage,
+    InvalidRelativeImport,
 )
 from ._packages import PyPIDistribution
 from ._graphbuilder import node_for_spec
@@ -130,7 +131,7 @@ class ModuleGraph(ObjectGraph[BaseNode, Set[DependencyInfo]]):
 
         # Reference to __main__ cannot be valid when multip scripts
         # are added to the graph, just ignore this module for now.
-        #self._global_lazy_nodes["__main__"] = None
+        # self._global_lazy_nodes["__main__"] = None
 
     #
     # Querying
@@ -396,18 +397,22 @@ class ModuleGraph(ObjectGraph[BaseNode, Set[DependencyInfo]]):
         return node
 
     def _process_import(self, importing_module: BaseNode, import_info: ImportInfo):
+        node: Optional[BaseNode]
+
         # print("_process_import", import_info.import_module)
         if import_info.import_level == 0:
-            # Global import
-            node = self.find_node(import_info.import_module)
+            # Absolute import
+            absolute_name = import_info.import_module
+
+            node = self.find_node(absolute_name)
             if node is None:
-                parent_node = self._import_containing_package(import_info.import_module)
+                parent_node = self._import_containing_package(absolute_name)
                 if isinstance(parent_node, MissingModule):
-                    node = MissingModule(import_info.import_module)
+                    node = MissingModule(absolute_name)
                     self.add_node(node)
 
                 else:
-                    node = self._find_or_load(import_info.import_module)
+                    node = self._find_or_load(absolute_name)
 
                 if parent_node is not None:
                     self.add_edge(
@@ -436,12 +441,60 @@ class ModuleGraph(ObjectGraph[BaseNode, Set[DependencyInfo]]):
                 )
 
         else:
-            # Relative import
+            # Relative import, calculate the absolute name
+            bits = importing_module.identifier.rsplit(".", import_info.import_level)
+            if len(bits) < import_info.import_level + 1:
+                # Invalid relative import: points to outside of a top-level package
+                node = InvalidRelativeImport(
+                    ("." * import_info.import_level) + import_info.import_module
+                )
+                self.add_node(node)
+                self.add_edge(
+                    importing_module,
+                    node,
+                    {from_importinfo(import_info, False, None)},
+                    merge_attributes=operator.or_,
+                )
 
-            # XXX: Write me
-            ...
+                # Ignore the import_names and star_import attributes of import_info, that would
+                # just add more InvalidRelativeImport nodes.
+                return
 
-        # Needed to keep coverage.py happy (python issue #...)
+            prefix = f"{bits[0]}.{import_info.import_module}".rstrip(".")
+
+            for nm in import_info.import_names:
+                absolute_name = f"{prefix}.{nm}"
+
+                node = self.find_node(absolute_name)
+                if node is None:
+                    parent_node = self._import_containing_package(absolute_name)
+                    if isinstance(parent_node, MissingModule):
+                        node = MissingModule(absolute_name)
+                        self.add_node(node)
+
+                    else:
+                        node = self._find_or_load(absolute_name)
+
+                    if parent_node is not None:
+                        self.add_edge(
+                            node,
+                            parent_node,
+                            {DEFAULT_DEPENDENCY},
+                            merge_attributes=operator.or_,
+                        )
+
+                assert node is not None
+
+                self.add_edge(
+                    importing_module,
+                    node,
+                    {from_importinfo(import_info, False, None)},
+                    merge_attributes=operator.or_,
+                )
+
+        # See python issue #2506: The peephole optimizer confuses coverage.py
+        # w.r.t. coverage of the previous statement unless the return statement
+        # below is present.
         return
 
 

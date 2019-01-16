@@ -122,6 +122,17 @@ class MissingModule(BaseNode):
         )
 
 
+class InvalidRelativeImport(BaseNode):
+    def __init__(self, module_name):
+        return super().__init__(
+            name=module_name,
+            loader=None,
+            distribution=None,
+            filename=None,
+            extension_attributes={},
+        )
+
+
 @dataclasses.dataclass(init=False)
 class AliasNode(BaseNode):
     actual_module: BaseNode

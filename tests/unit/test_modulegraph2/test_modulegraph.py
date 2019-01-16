@@ -16,6 +16,7 @@ from modulegraph2 import (
     NamespacePackage,
     DependencyInfo,
     PyPIDistribution,
+    InvalidRelativeImport,
 )
 
 from modulegraph2._packages import distribution_for_file
@@ -929,6 +930,52 @@ class TestModuleGraphRelativeImports(unittest.TestCase):
     def assert_edge_count(self, mg, edge_count):
         self.assertEqual(len(list(mg.edges())), edge_count)
 
+    def test_relative_import_toplevel(self):
+        mg = ModuleGraph()
+        mg.add_module("toplevel_invalid_relative_import")
+
+        self.assert_has_node(mg, "toplevel_invalid_relative_import", SourceModule)
+        self.assert_has_node(mg, ".relative", InvalidRelativeImport)
+
+        self.assert_has_edge(
+            mg,
+            "toplevel_invalid_relative_import",
+            ".relative",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_edge_count(mg, 1)
+
+        self.assert_has_nodes(mg, "toplevel_invalid_relative_import", ".relative")
+
+    def test_relative_import_to_outside_package(self):
+        mg = ModuleGraph()
+        mg.add_module("package_invalid_relative_import")
+
+        self.assert_has_node(mg, "package_invalid_relative_import", SourceModule)
+        self.assert_has_node(mg, "invalid_relative_package", Package)
+        self.assert_has_node(mg, "..relative", InvalidRelativeImport)
+
+        self.assert_has_edge(
+            mg,
+            "package_invalid_relative_import",
+            "invalid_relative_package",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_has_edge(
+            mg,
+            "invalid_relative_package",
+            "..relative",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_edge_count(mg, 2)
+
+        self.assert_has_nodes(
+            mg,
+            "package_invalid_relative_import",
+            "invalid_relative_package",
+            "..relative",
+        )
+
     def test_no_imports(self):
         # This is the same test as TestModuleGraphAbsoluteImports.test_no_imports,
         # added to make it easier to very that the two sets are consistent.
@@ -943,7 +990,52 @@ class TestModuleGraphRelativeImports(unittest.TestCase):
         self.assert_has_nodes(mg, "no_imports")
 
     def test_global_import(self):
-        ...
+        mg = ModuleGraph()
+        mg.add_module("basic_relative_import")
+
+        self.assert_has_node(mg, "basic_relative_import", SourceModule)
+        self.assert_has_node(mg, "package", Package)
+        self.assert_has_node(mg, "package.relative", SourceModule)
+        self.assert_has_node(mg, "package.submod", SourceModule)
+        self.assert_has_node(mg, "no_imports", SourceModule)
+
+        self.assert_has_edge(
+            mg,
+            "basic_relative_import",
+            "package.relative",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_has_edge(
+            mg,
+            "package.relative",
+            "package",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_has_edge(
+            mg,
+            "package.relative",
+            "package.submod",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_has_edge(
+            mg, "package.submod", "package", {DependencyInfo(False, True, False, None)}
+        )
+        self.assert_has_edge(
+            mg,
+            "package.submod",
+            "no_imports",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_edge_count(mg, 5)
+
+        self.assert_has_nodes(
+            mg,
+            "basic_relative_import",
+            "package",
+            "package.relative",
+            "package.submod",
+            "no_imports",
+        )
 
     def test_circular_imports(self):
         ...

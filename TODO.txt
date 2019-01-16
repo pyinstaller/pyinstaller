@@ -3,6 +3,8 @@
   -> Then update the implementation
 
 - Detect "as" imports and use information in the graph
+- ObjectGraph should have multiple edges (same datastructure,
+  other interface). Gives cleaner code for modulegraph
 - See XXX throughout
 - Always use the stdlib implies (modulegraph._implies)
  (with option to disable)
@@ -32,6 +34,10 @@
   -> Try to use the same hooks in both
   -> Also specific implementations for these hooks to use
      with ModuleGraph
+  -> Add utility for "compressing" graph by creating a new graph
+     containing less information (for example, replacing nodes for
+     modules in a PyPI distribution by a single node for that
+     distribution while adjusting graph edges).  Not in place.
 
 - Check naming and adjust for readability
 - Split of objectgraph to seperate PyPI package
@@ -44,7 +50,8 @@
   behaviour
 - modulegraph2/_modulegraph.py is too large, try to
   move more code to utilities in other modules.
-
+- Handle "six" metapath importer (does not conform to one
+  of the ABCs used in modulegraph)
 
 
 - Post to blog about this (with initial push to PyPI)

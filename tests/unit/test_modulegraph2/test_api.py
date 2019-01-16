@@ -17,6 +17,7 @@ PUBLIC_SYMBOLS = {
     "PyPIDistribution",
     "Script",
     "SourceModule",
+    "InvalidRelativeImport",
 }
 
 PYTHON_SYMBOLS = {

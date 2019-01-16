@@ -18,6 +18,7 @@ from ._nodes import (
     Package,
     Script,
     SourceModule,
+    InvalidRelativeImport,
 )
 
 __all__ = (
@@ -35,4 +36,5 @@ __all__ = (
     "PyPIDistribution",
     "Script",
     "SourceModule",
+    "InvalidRelativeImport",
 )

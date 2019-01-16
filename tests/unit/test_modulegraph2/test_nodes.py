@@ -53,6 +53,15 @@ class TestNodes(unittest.TestCase):
         self.assertIs(n.distribution, None)
         self.assertEqual(n.extension_attributes, {})
 
+    def test_invalid_relative_import(self):
+        n = nodes.InvalidRelativeImport("imported_name")
+        self.assertEqual(n.name, "imported_name")
+
+        self.assertIs(n.loader, None)
+        self.assertIs(n.filename, None)
+        self.assertIs(n.distribution, None)
+        self.assertEqual(n.extension_attributes, {})
+
     def test_excluded_module(self):
         n = nodes.ExcludedModule("imported_name")
         self.assertEqual(n.name, "imported_name")

@@ -16,7 +16,7 @@ def export_to_html(
     file: TextIO,
     graph: ObjectGraph[NODE_TYPE, EDGE_TYPE],
     format_node: Optional[Callable[[NODE_TYPE], Dict]] = None,
-    format_edge: Optional[Callable[[EDGE_TYPE], Dict]] = None
+    format_edge: Optional[Callable[[EDGE_TYPE], Dict]] = None,
 ) -> None:
     """
     Write an HTML version of the *graph* to *fp".
