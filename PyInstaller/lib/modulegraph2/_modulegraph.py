@@ -445,10 +445,18 @@ class ModuleGraph(ObjectGraph[BaseNode, Set[DependencyInfo]]):
             bits = importing_module.identifier.rsplit(".", import_info.import_level)
             if len(bits) < import_info.import_level + 1:
                 # Invalid relative import: points to outside of a top-level package
-                node = InvalidRelativeImport(
-                    ("." * import_info.import_level) + import_info.import_module
-                )
-                self.add_node(node)
+                invalid_name = (
+                    "." * import_info.import_level
+                ) + import_info.import_module
+                node = self.find_node(invalid_name)
+                if node is None:
+                    node = InvalidRelativeImport(
+                        ("." * import_info.import_level) + import_info.import_module
+                    )
+                    self.add_node(node)
+                else:
+                    assert isinstance(node, InvalidRelativeImport)
+
                 self.add_edge(
                     importing_module,
                     node,
@@ -456,9 +464,14 @@ class ModuleGraph(ObjectGraph[BaseNode, Set[DependencyInfo]]):
                     merge_attributes=operator.or_,
                 )
 
-                # Ignore the import_names and star_import attributes of import_info, that would
-                # just add more InvalidRelativeImport nodes.
+                # Ignore the import_names and star_import attributes of import_info,
+                # that would just add more InvalidRelativeImport nodes.
                 return
+
+            # XXX: This needs more complex logic:
+            # - "from . import name" -> name must be a module
+            # - "from .module import name" -> just a global
+            # - "from .package import name" -> name could be a module
 
             prefix = f"{bits[0]}.{import_info.import_module}".rstrip(".")
 

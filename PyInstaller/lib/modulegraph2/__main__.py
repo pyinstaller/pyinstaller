@@ -20,6 +20,7 @@ XXX: Current code is a crude hack and needs to be split
 from ._modulegraph import ModuleGraph
 from ._dotbuilder import export_to_dot
 import sys
+import pathlib
 
 NODE_ATTR = {
     "Script": {"shape": "note"},
@@ -33,7 +34,7 @@ NODE_ATTR = {
 
 
 mg = ModuleGraph()
-mg.add_script("demo.py")
+mg.add_script(pathlib.Path("demo.py"))
 
 
 def format_node(node):
