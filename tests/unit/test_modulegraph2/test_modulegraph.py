@@ -500,7 +500,7 @@ class TestModuleGraphAbsoluteImports(unittest.TestCase):
             mg,
             "alias_toplevel",
             "package.frommod",
-            {DependencyInfo(False, True, True, "frommod")},
+            {DependencyInfo(False, True, True, None)},
         )
         self.assert_has_edge(
             mg, "package.frommod", "package", {DependencyInfo(False, True, False, None)}
@@ -509,7 +509,7 @@ class TestModuleGraphAbsoluteImports(unittest.TestCase):
             mg,
             "alias_toplevel",
             "package.nosuchmodule",
-            {DependencyInfo(False, True, True, "nosuchmodule")},
+            {DependencyInfo(False, True, True, None)},
         )
         self.assert_has_edge(
             mg,
@@ -730,7 +730,7 @@ class TestModuleGraphAbsoluteImports(unittest.TestCase):
             mg,
             "multi_level_star_import_missing",
             "pkg_c.f",
-            {DependencyInfo(False, True, True, "f")},
+            {DependencyInfo(False, True, True, None)},
         )
         self.assert_has_edge(
             mg, "pkg_c", "pkg_d", {DependencyInfo(False, True, False, None)}
@@ -976,19 +976,6 @@ class TestModuleGraphRelativeImports(unittest.TestCase):
             "..relative",
         )
 
-    def test_no_imports(self):
-        # This is the same test as TestModuleGraphAbsoluteImports.test_no_imports,
-        # added to make it easier to very that the two sets are consistent.
-        mg = ModuleGraph()
-        mg.add_module("no_imports")
-
-        self.assert_has_node(mg, "no_imports", SourceModule)
-
-        self.assert_edge_count(mg, 0)
-
-        self.assert_has_roots(mg, "no_imports")
-        self.assert_has_nodes(mg, "no_imports")
-
     def test_global_import(self):
         mg = ModuleGraph()
         mg.add_module("basic_relative_import")
@@ -1015,7 +1002,7 @@ class TestModuleGraphRelativeImports(unittest.TestCase):
             mg,
             "package.relative",
             "package.submod",
-            {DependencyInfo(False, True, False, None)},
+            {DependencyInfo(False, True, True, None)},
         )
         self.assert_has_edge(
             mg, "package.submod", "package", {DependencyInfo(False, True, False, None)}
@@ -1038,13 +1025,112 @@ class TestModuleGraphRelativeImports(unittest.TestCase):
         )
 
     def test_circular_imports(self):
-        ...
+        mg = ModuleGraph()
+        mg.add_module("circular_relative")
 
-    def test_missing_toplevel(self):
-        ...
+        self.assert_has_node(mg, "circular_relative", SourceModule)
+        self.assert_has_node(mg, "package.circular_a", SourceModule)
+        self.assert_has_node(mg, "package.circular_b", SourceModule)
+        self.assert_has_node(mg, "package.circular_c", SourceModule)
 
-    def test_missing_in_package(self):
-        ...
+        self.assert_has_edge(
+            mg,
+            "circular_relative",
+            "package.circular_a",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_has_edge(
+            mg,
+            "package.circular_a",
+            "package",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_has_edge(
+            mg,
+            "package.circular_b",
+            "package",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_has_edge(
+            mg,
+            "package.circular_c",
+            "package",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_has_edge(
+            mg,
+            "package.circular_a",
+            "package.circular_b",
+            {DependencyInfo(False, True, True, None)},
+        )
+        self.assert_has_edge(
+            mg,
+            "package.circular_b",
+            "package.circular_c",
+            {DependencyInfo(False, True, True, None)},
+        )
+        self.assert_has_edge(
+            mg,
+            "package.circular_c",
+            "package.circular_a",
+            {DependencyInfo(False, True, True, None)},
+        )
+
+        self.assert_edge_count(mg, 7)
+
+        self.assert_has_roots(mg, "circular_relative")
+        self.assert_has_nodes(
+            mg,
+            "circular_relative",
+            "package",
+            "package.circular_a",
+            "package.circular_b",
+            "package.circular_c",
+        )
+
+    def test_missing_relative(self):
+        mg = ModuleGraph()
+        mg.add_module("missing_relative")
+
+        self.assert_has_node(mg, "missing_relative", SourceModule)
+        self.assert_has_node(mg, "package", Package)
+        self.assert_has_node(mg, "package.missing_relative", SourceModule)
+        self.assert_has_node(mg, "package.nosuchmodule", MissingModule)
+
+        self.assert_has_edge(
+            mg,
+            "missing_relative",
+            "package.missing_relative",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_has_edge(
+            mg,
+            "package.missing_relative",
+            "package",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_has_edge(
+            mg,
+            "package.nosuchmodule",
+            "package",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_has_edge(
+            mg,
+            "package.missing_relative",
+            "package.nosuchmodule",
+            {DependencyInfo(False, True, True, None)},
+        )
+        self.assert_edge_count(mg, 4)
+
+        self.assert_has_roots(mg, "missing_relative")
+        self.assert_has_nodes(
+            mg,
+            "missing_relative",
+            "package",
+            "package.missing_relative",
+            "package.nosuchmodule",
+        )
 
     def test_missing_package(self):
         ...
@@ -1117,7 +1203,62 @@ class TestModuleGraphHooks(unittest.TestCase):
     # 1) def update_implies(self, new): self._lazy_nodes.update(new)
     # 2) def exclude_module(self, name): ...
     # 3) def add_module_alias(self, name): ...
-    pass
+    def setUp(self):
+        sys.path.insert(0, os.fspath(INPUT_DIR))
+
+    def tearDown(self):
+        assert sys.path[0] == os.fspath(INPUT_DIR)
+        del sys.path[0]
+
+    @classmethod
+    def tearDownClass(cls):
+        to_remove = []
+        for mod in sys.modules:
+            if (
+                hasattr(sys.modules[mod], "__file__")
+                and sys.modules[mod].__file__ is not None
+                and sys.modules[mod].__file__.startswith(os.fspath(INPUT_DIR))
+            ):
+                to_remove.append(mod)
+        for mod in to_remove:
+            del sys.modules[mod]
+
+        importlib.invalidate_caches()
+
+    def test_post_processing(self):
+        # This adds a number of other test modules to verify
+        # that the post processing hook is called when needed.
+        nodes_processed = set()
+
+        def hook(graph, node):
+            nodes_processed.add(node.identifier)
+
+        mg = ModuleGraph()
+        mg.add_post_processing_hook(hook)
+
+        mg.add_module("global_import")
+        mg.add_module("nosuchmodule")
+        mg.add_module("missing_in_package")
+        mg.add_module("missing_relative")
+        mg.add_module("toplevel_invalid_relative_import")
+        mg.add_script(INPUT_DIR / "trivial-script")
+        self.assertEqual(
+            nodes_processed,
+            {
+                "global_import",
+                "no_imports",
+                "nosuchmodule",
+                os.fspath(INPUT_DIR / "trivial-script"),
+                "missing_in_package",
+                "package",
+                "package.missingmodule",
+                "package.nosuchmodule",
+                "package.missing_relative",
+                "missing_relative",
+                "toplevel_invalid_relative_import",
+                ".relative",
+            },
+        )
 
 
 REPORT_HEADER = """

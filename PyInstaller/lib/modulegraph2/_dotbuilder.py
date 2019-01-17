@@ -48,7 +48,7 @@ def export_to_dot(
         )
         for edge, target in graph.outgoing(source):
             print(
-                f'    "{source.identifier}" -> "{target.identifier}"{format_attributes(format_edge, source, target, edge)}',
+                f'    "{source.identifier}" -> "{target.identifier}"{format_attributes(format_edge, source, target, edge)}',  # noqa: B950
                 file=file,
             )
     print("}", file=file)

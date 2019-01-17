@@ -283,11 +283,13 @@ class ModuleGraph(ObjectGraph[BaseNode, Set[DependencyInfo]]):
             if spec is None:
                 node = MissingModule(module_name)
                 self.add_node(node)
+                self._run_post_processing(node)
                 return node
 
         except ImportError:
             node = MissingModule(module_name)
             self.add_node(node)
+            self._run_post_processing(node)
             return node
 
         node, imports = node_for_spec(spec, self._path)
@@ -298,6 +300,7 @@ class ModuleGraph(ObjectGraph[BaseNode, Set[DependencyInfo]]):
             # graph with "real" data.
             alias_node = AliasNode(module_name, node.name)
             self.add_node(alias_node)
+            self._run_post_processing(alias_node)
             if self.find_node(node) is None:
                 self.add_node(node)
                 self._process_import_list(node, imports)
@@ -386,6 +389,7 @@ class ModuleGraph(ObjectGraph[BaseNode, Set[DependencyInfo]]):
         if isinstance(parent, MissingModule):
             node = MissingModule(containing_package)
             self.add_node(node)
+            self._run_post_processing(node)
 
         else:
             node = self._find_or_load(containing_package)
@@ -399,7 +403,6 @@ class ModuleGraph(ObjectGraph[BaseNode, Set[DependencyInfo]]):
     def _process_import(self, importing_module: BaseNode, import_info: ImportInfo):
         node: Optional[BaseNode]
 
-        # print("_process_import", import_info.import_module)
         if import_info.import_level == 0:
             # Absolute import
             absolute_name = import_info.import_module
@@ -410,6 +413,7 @@ class ModuleGraph(ObjectGraph[BaseNode, Set[DependencyInfo]]):
                 if isinstance(parent_node, MissingModule):
                     node = MissingModule(absolute_name)
                     self.add_node(node)
+                    self._run_post_processing(node)
 
                 else:
                     node = self._find_or_load(absolute_name)
@@ -454,6 +458,8 @@ class ModuleGraph(ObjectGraph[BaseNode, Set[DependencyInfo]]):
                         ("." * import_info.import_level) + import_info.import_module
                     )
                     self.add_node(node)
+                    self._run_post_processing(node)
+
                 else:
                     assert isinstance(node, InvalidRelativeImport)
 
@@ -468,42 +474,43 @@ class ModuleGraph(ObjectGraph[BaseNode, Set[DependencyInfo]]):
                 # that would just add more InvalidRelativeImport nodes.
                 return
 
-            # XXX: This needs more complex logic:
-            # - "from . import name" -> name must be a module
-            # - "from .module import name" -> just a global
-            # - "from .package import name" -> name could be a module
+            absolute_name = f"{bits[0]}.{import_info.import_module}".rstrip(".")
 
-            prefix = f"{bits[0]}.{import_info.import_module}".rstrip(".")
+            node = self.find_node(absolute_name)
+            if node is None:
+                parent_node = self._import_containing_package(absolute_name)
+                if isinstance(parent_node, MissingModule):
+                    node = MissingModule(absolute_name)
+                    self.add_node(node)
+                    self._run_post_processing(node)
 
-            for nm in import_info.import_names:
-                absolute_name = f"{prefix}.{nm}"
+                else:
+                    node = self._find_or_load(absolute_name)
 
-                node = self.find_node(absolute_name)
-                if node is None:
-                    parent_node = self._import_containing_package(absolute_name)
-                    if isinstance(parent_node, MissingModule):
-                        node = MissingModule(absolute_name)
-                        self.add_node(node)
+                if parent_node is not None:
+                    self.add_edge(
+                        node,
+                        parent_node,
+                        {DEFAULT_DEPENDENCY},
+                        merge_attributes=operator.or_,
+                    )
 
-                    else:
-                        node = self._find_or_load(absolute_name)
+            assert node is not None
 
-                    if parent_node is not None:
-                        self.add_edge(
-                            node,
-                            parent_node,
-                            {DEFAULT_DEPENDENCY},
-                            merge_attributes=operator.or_,
-                        )
+            self.add_edge(
+                importing_module,
+                node,
+                {from_importinfo(import_info, False, None)},
+                merge_attributes=operator.or_,
+            )
 
-                assert node is not None
-
-                self.add_edge(
-                    importing_module,
-                    node,
-                    {from_importinfo(import_info, False, None)},
-                    merge_attributes=operator.or_,
-                )
+            self._depproc.wait_for(
+                importing_module,
+                node,
+                functools.partial(
+                    _process_namelist, graph=self, import_info=import_info
+                ),
+            )
 
         # See python issue #2506: The peephole optimizer confuses coverage.py
         # w.r.t. coverage of the previous statement unless the return statement
@@ -529,7 +536,7 @@ def _process_namelist(
             imported_module, (Package, NamespacePackage)
         ):
             for nm in import_info.import_names:
-                subnode = graph._find_or_load(f"{import_info.import_module}.{nm}")
+                subnode = graph._find_or_load(f"{imported_module.identifier}.{nm}")
                 # XXX: graph._find_or_load alternative that doesn't create MissingModule
                 if isinstance(subnode, MissingModule):
                     if nm in imported_module.globals_written:
@@ -561,7 +568,7 @@ def _process_namelist(
                 graph.add_edge(
                     importing_module,
                     subnode,
-                    {from_importinfo(import_info, True, nm)},
+                    {from_importinfo(import_info, True, None)},
                     merge_attributes=operator.or_,
                 )
                 # else:
