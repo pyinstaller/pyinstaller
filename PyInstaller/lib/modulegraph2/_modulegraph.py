@@ -169,13 +169,22 @@ class ModuleGraph(ObjectGraph[BaseNode, Set[DependencyInfo]]):
     #
 
     def add_script(self, script_path: os.PathLike) -> Script:
-        """ Add a script to the module graph and process imports """
+        """
+        Add a script to the module graph and process imports
+
+        Raises OSError when the script cannot be opened.
+        """
         node = self._load_script(script_path)
         self.add_root(node)
         self._run_q()
         return node
 
     def add_module(self, module_name: str) -> BaseNode:
+        """
+        Add a module to the graph and process imports.
+
+        Will not raise an exception for non-existing modules.
+        """
         node = self._load_module(module_name)
         self.add_root(node)
         self._run_q()
@@ -218,7 +227,7 @@ class ModuleGraph(ObjectGraph[BaseNode, Set[DependencyInfo]]):
 
     def add_post_processing_hook(self, hook: ProcessingCallback) -> None:
         """
-        Run 'hook(self, node)' after *node* is fully processed.
+        Run 'hook(self, node)' when *node* is fully processed.
         """
         self._post_processing.add(hook)
 
@@ -227,6 +236,10 @@ class ModuleGraph(ObjectGraph[BaseNode, Set[DependencyInfo]]):
     #
 
     def _run_q(self) -> None:
+        """
+        Process all items in the delayed work queue, until there
+        is no more work.
+        """
         while self._work_q or self._depproc.have_finished_work():
             if self._work_q:
                 func, args = self._work_q.popleft()
@@ -315,13 +328,6 @@ class ModuleGraph(ObjectGraph[BaseNode, Set[DependencyInfo]]):
         return node
 
     def _load_script(self, script_path: os.PathLike) -> Script:
-        # XXX: What should happen when "script_path" does not exist
-        # 1) Create a MissingScript node
-        # 2) Raise a nice exception (without updating the graph)
-        #
-        # We currently do (2) but I'm not sure if that's the right
-        # API.
-
         with open(script_path, "rb") as fp:
             source_bytes = fp.read()
 

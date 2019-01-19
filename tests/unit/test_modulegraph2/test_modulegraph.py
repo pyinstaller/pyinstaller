@@ -270,7 +270,7 @@ class TestModuleGraphAbsoluteImports(unittest.TestCase):
             mg, "missing_package", "missingpackage", "missingpackage.module"
         )
 
-    def test_missing_nestd_package(self):
+    def test_missing_nested_package(self):
         mg = ModuleGraph()
         mg.add_module("missing_nested_package")
 
@@ -1135,7 +1135,7 @@ class TestModuleGraphRelativeImports(unittest.TestCase):
     def test_missing_package(self):
         ...
 
-    def test_missing_nestd_package(self):
+    def test_missing_nested_package(self):
         ...
 
     def test_package_import_one_level(self):

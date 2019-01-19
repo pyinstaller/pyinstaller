@@ -193,6 +193,20 @@ def node_for_spec(
         else:
             imports = bytecode_imports
 
+    # elif type(spec.loader).__name__ == "_SixMetaPathImporter":
+    #    # This is the loader from the six project, which does not quite
+    #    # conform to the importlib ABCs.
+    #    #
+    #    # This returns the node for the resolved import, not the actual import.
+    #    #
+    #    # XXX: This should return a node for the moved-to location (where possible),
+    #    # our callers will detect that the name of the node is different than
+    #    # the requested name and will create an alias node.
+    #    #
+    #    # XXX: should this be some kind of extension API, other custom
+    #    #      loaders can also be problematic.
+    #    raise RuntimeError("Handle six.moves")
+
     else:
         raise RuntimeError(
             f"Don't known how to handle {spec.loader!r} for {spec.name!r}"
