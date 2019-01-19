@@ -1,5 +1,6 @@
+from typing import Iterable, Optional, Set
+
 import dataclasses
-from typing import Set, Optional, Iterable
 
 
 @dataclasses.dataclass(frozen=True)

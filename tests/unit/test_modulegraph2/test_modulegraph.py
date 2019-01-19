@@ -947,6 +947,27 @@ class TestModuleGraphRelativeImports(unittest.TestCase):
 
         self.assert_has_nodes(mg, "toplevel_invalid_relative_import", ".relative")
 
+    def test_relative_import_toplevel_multiple(self):
+        mg = ModuleGraph()
+        mg.add_module("toplevel_invalid_relative_import_multiple")
+
+        self.assert_has_node(
+            mg, "toplevel_invalid_relative_import_multiple", SourceModule
+        )
+        self.assert_has_node(mg, ".relative", InvalidRelativeImport)
+
+        self.assert_has_edge(
+            mg,
+            "toplevel_invalid_relative_import_multiple",
+            ".relative",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_edge_count(mg, 1)
+
+        self.assert_has_nodes(
+            mg, "toplevel_invalid_relative_import_multiple", ".relative"
+        )
+
     def test_relative_import_to_outside_package(self):
         mg = ModuleGraph()
         mg.add_module("package_invalid_relative_import")
@@ -1133,10 +1154,111 @@ class TestModuleGraphRelativeImports(unittest.TestCase):
         )
 
     def test_missing_package(self):
-        ...
+        mg = ModuleGraph()
+        mg.add_module("missing_relative_package")
 
-    def test_missing_nested_package(self):
-        ...
+        self.assert_has_nodes(
+            mg,
+            "missing_relative_package",
+            "relative_package_with_missing",
+            "relative_package_with_missing.package",
+            "relative_package_with_missing.package.subpackage",
+        )
+
+        # The "from" imported names aren't in the graph because MG
+        # doesn't know if the MissingModules are packages. The current
+        # behaviour results in cleaner graphs.
+        #
+
+        self.assert_has_node(mg, "missing_relative_package", SourceModule)
+        self.assert_has_node(mg, "relative_package_with_missing", Package)
+        self.assert_has_node(mg, "relative_package_with_missing.package", MissingModule)
+        self.assert_has_node(
+            mg, "relative_package_with_missing.package.subpackage", MissingModule
+        )
+
+        self.assert_has_edge(
+            mg,
+            "missing_relative_package",
+            "relative_package_with_missing",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_has_edge(
+            mg,
+            "relative_package_with_missing",
+            "relative_package_with_missing.package",
+            {DependencyInfo(False, True, True, None)},
+        )
+        self.assert_has_edge(
+            mg,
+            "relative_package_with_missing",
+            "relative_package_with_missing.package.subpackage",
+            {DependencyInfo(False, True, True, None)},
+        )
+        self.assert_has_edge(
+            mg,
+            "relative_package_with_missing.package",
+            "relative_package_with_missing",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_has_edge(
+            mg,
+            "relative_package_with_missing.package.subpackage",
+            "relative_package_with_missing.package",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_edge_count(mg, 5)
+
+    def test_multiple_imports(self):
+        mg = ModuleGraph()
+        mg.add_module("multiple_relative_imports")
+
+        self.assert_has_nodes(
+            mg,
+            "multiple_relative_imports",
+            "package",
+            "package.mutiple_relative",
+            "package.submod",
+            "no_imports",
+        )
+
+        self.assert_has_node(mg, "multiple_relative_imports", SourceModule)
+        self.assert_has_node(mg, "package", Package)
+        self.assert_has_node(mg, "package.multiple_relative", SourceModule)
+        self.assert_has_node(mg, "package.submod", SourceModule)
+        self.assert_has_node(mg, "no_imports", SourceModule)
+
+        self.assert_has_edge(
+            mg,
+            "multiple_relative_imports",
+            "package.multiple_relative",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_has_edge(
+            mg,
+            "package.multiple_relative",
+            "package.submod",
+            {
+                DependencyInfo(False, True, False, None),
+                DependencyInfo(True, True, False, None),
+            },
+        )
+        self.assert_has_edge(
+            mg,
+            "package.multiple_relative",
+            "package",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_has_edge(
+            mg, "package.submod", "package", {DependencyInfo(False, True, False, None)}
+        )
+        self.assert_has_edge(
+            mg,
+            "package.submod",
+            "no_imports",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_edge_count(mg, 5)
 
     def test_package_import_one_level(self):
         ...
@@ -1196,6 +1318,9 @@ class TestModuleGraphHooks(unittest.TestCase):
     #
     # - After a node is "finished"
     #   Use case: Adjust graph for this node (py2app recipes)
+    #
+    # - Debugging?
+    #   It can be helpfull to log what the graph builder is doing
     #
     # All of these are lists of callbacks that will all be called.
     #

@@ -1,6 +1,7 @@
-from ._nodes import BaseNode
 import collections
-from typing import Tuple, List, Set, Callable, Dict
+from typing import Callable, Dict, List, Set, Tuple
+
+from ._nodes import BaseNode
 
 WaitForCallback = Callable[[BaseNode, BaseNode], None]
 

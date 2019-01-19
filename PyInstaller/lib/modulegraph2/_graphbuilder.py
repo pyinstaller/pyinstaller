@@ -2,26 +2,27 @@
 Tools for building the module graph
 """
 import ast
-import pathlib
-from typing import Tuple, Iterable, List, Type, cast, Optional
-import importlib.machinery
 import importlib.abc
+import importlib.machinery
+import pathlib
 import zipfile
 import zipimport
+from typing import Iterable, List, Optional, Tuple, Type, cast
+
+from ._ast_tools import extract_ast_info
+from ._bytecode_tools import extract_bytecode_info
+from ._importinfo import ImportInfo
 from ._nodes import (
     BaseNode,
     BuiltinModule,
-    NamespacePackage,
-    ExtensionModule,
-    SourceModule,
     BytecodeModule,
+    ExtensionModule,
     FrozenModule,
+    NamespacePackage,
     Package,
+    SourceModule,
 )
 from ._packages import distribution_for_file
-from ._bytecode_tools import extract_bytecode_info
-from ._ast_tools import extract_ast_info
-from ._importinfo import ImportInfo
 
 
 def _contains_datafiles(directory: pathlib.Path):

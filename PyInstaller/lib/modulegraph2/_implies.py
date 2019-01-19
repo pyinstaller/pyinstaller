@@ -7,8 +7,8 @@ NOTE:
 """
 
 
-import sys
 import os
+import sys
 
 
 class Alias(str):

@@ -12,6 +12,7 @@ from typing import (
     TypeVar,
     Union,
 )
+
 from typing_extensions import Protocol
 
 
@@ -36,8 +37,8 @@ class ObjectGraph(Generic[NODE_TYPE, EDGE_TYPE]):
 
     def __init__(self):
         self._roots: Set[str] = set()
-        self._nodes: Dict[str, NODE_TYPE] = dict()
-        self._edges: Dict[Tuple[str, str], EDGE_TYPE] = dict()
+        self._nodes: Dict[str, NODE_TYPE] = {}
+        self._edges: Dict[Tuple[str, str], EDGE_TYPE] = {}
 
     def __repr__(self):
         return f"<{type(self).__name__} with {len(self._roots)} roots, {len(self._nodes)} nodes and {len(self._edges)} edges>"  # noqa:E501

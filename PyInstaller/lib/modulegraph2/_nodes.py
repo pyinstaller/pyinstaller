@@ -1,8 +1,9 @@
-import dataclasses
-import pathlib
-import os
 import importlib.abc
-from typing import Optional, List, Set
+import os
+import pathlib
+from typing import List, Optional, Set
+
+import dataclasses
 
 from ._packages import PyPIDistribution
 

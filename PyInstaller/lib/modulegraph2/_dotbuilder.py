@@ -1,6 +1,7 @@
 """ modulegraph._dotbuilder """
-from typing import Callable, Dict, TextIO, Optional
-from ._objectgraph import ObjectGraph, NODE_TYPE, EDGE_TYPE
+from typing import Callable, Dict, Optional, TextIO
+
+from ._objectgraph import EDGE_TYPE, NODE_TYPE, ObjectGraph
 
 # - Generic builder for ObjectGraph
 # - Using D3.js

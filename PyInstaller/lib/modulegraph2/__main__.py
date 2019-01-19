@@ -17,10 +17,11 @@ Commandline interface
 XXX: Current code is a crude hack and needs to be split
      into packages.
 """
-from ._modulegraph import ModuleGraph
-from ._dotbuilder import export_to_dot
-import sys
 import pathlib
+import sys
+
+from ._dotbuilder import export_to_dot
+from ._modulegraph import ModuleGraph
 
 NODE_ATTR = {
     "Script": {"shape": "note"},

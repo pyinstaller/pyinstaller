@@ -4,7 +4,7 @@ and extract information from it.
 """
 import ast
 import collections
-from typing import Iterator, Tuple, Deque
+from typing import Deque, Iterator, Tuple
 
 from ._importinfo import ImportInfo, create_importinfo
 

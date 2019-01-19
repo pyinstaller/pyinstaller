@@ -1,11 +1,10 @@
 """
 Utilities for working with bytecode files
 """
+import collections
 import dis
 import types
-import collections
-
-from typing import Iterator, Deque, Set, List, Tuple, Dict
+from typing import Deque, Dict, Iterator, List, Set, Tuple
 
 from ._importinfo import ImportInfo, create_importinfo
 

@@ -1,47 +1,47 @@
 """
 The actual graph
 """
-import os
 import ast
-import sys
 import collections
-import importlib
 import functools
+import importlib
 import operator
+import os
+import sys
 from typing import (
-    Optional,
-    Tuple,
-    Union,
-    TextIO,
-    Deque,
     Callable,
+    Deque,
     Dict,
-    List,
     Iterable,
     Iterator,
+    List,
+    Optional,
     Set,
+    TextIO,
+    Tuple,
+    Union,
 )
 
-from ._callback_list import CallbackList
-from ._objectgraph import ObjectGraph
-from ._nodes import (
-    BaseNode,
-    Module,
-    Script,
-    AliasNode,
-    ExcludedModule,
-    MissingModule,
-    Package,
-    NamespacePackage,
-    InvalidRelativeImport,
-)
-from ._packages import PyPIDistribution
-from ._graphbuilder import node_for_spec
-from ._implies import Alias  # XXX
 from ._ast_tools import extract_ast_info
+from ._callback_list import CallbackList
 from ._depinfo import DependencyInfo, from_importinfo
 from ._depproc import DependentProcessor
+from ._graphbuilder import node_for_spec
+from ._implies import Alias  # XXX
 from ._importinfo import ImportInfo
+from ._nodes import (
+    AliasNode,
+    BaseNode,
+    ExcludedModule,
+    InvalidRelativeImport,
+    MissingModule,
+    Module,
+    NamespacePackage,
+    Package,
+    Script,
+)
+from ._objectgraph import ObjectGraph
+from ._packages import PyPIDistribution
 
 
 def full_name(import_name: str, package: Optional[str]):
@@ -467,7 +467,7 @@ class ModuleGraph(ObjectGraph[BaseNode, Set[DependencyInfo]]):
                     self._run_post_processing(node)
 
                 else:
-                    assert isinstance(node, InvalidRelativeImport)
+                    assert isinstance(node, InvalidRelativeImport)  # pragma: nocover
 
                 self.add_edge(
                     importing_module,

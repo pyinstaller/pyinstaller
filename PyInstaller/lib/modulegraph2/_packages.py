@@ -4,11 +4,12 @@ Support for PyPI packages
 Note: This assumes that the contents of distributions don't change
 during a run of the script.
 """
-import dataclasses
-from email.parser import BytesParser
 import os
-from typing import Iterable, Dict, List, Set, Optional, Union
+from email.parser import BytesParser
 from importlib.machinery import EXTENSION_SUFFIXES
+from typing import Dict, Iterable, List, Optional, Set, Union
+
+import dataclasses
 
 
 @dataclasses.dataclass(frozen=True)
