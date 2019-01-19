@@ -151,6 +151,39 @@ class TestByteCodeExtractor(unittest.TestCase):
         self.assertEqual(imports[0].import_names, set())
         self.assertEqual(imports[0].is_in_function, True)
 
+    def test_basic_larger(self):
+        code = make_code(
+            f"""\
+            from __future__ import print_function
+
+            VALUE = { { v: ((v,)*10,)*10 for v in range(1000) } }
+
+            if __name__ == "__main__":
+                import sys
+                import os
+            """
+        )
+        imports, names_written, names_read = bytecode_tools.extract_bytecode_info(code)
+        self.assertEqual(len(imports), 3)
+
+        self.assertEqual(imports[0].import_module, "__future__")
+        self.assertEqual(imports[0].import_level, 0)
+        self.assertEqual(imports[0].star_import, False)
+        self.assertEqual(imports[0].import_names, {"print_function"})
+        self.assertEqual(imports[0].is_in_function, False)
+
+        self.assertEqual(imports[1].import_module, "sys")
+        self.assertEqual(imports[1].import_level, 0)
+        self.assertEqual(imports[1].star_import, False)
+        self.assertEqual(imports[1].import_names, set())
+        self.assertEqual(imports[1].is_in_function, False)
+
+        self.assertEqual(imports[2].import_module, "os")
+        self.assertEqual(imports[2].import_level, 0)
+        self.assertEqual(imports[2].star_import, False)
+        self.assertEqual(imports[2].import_names, set())
+        self.assertEqual(imports[2].is_in_function, False)
+
     def test_nested_imports(self):
         code = make_code(
             """\

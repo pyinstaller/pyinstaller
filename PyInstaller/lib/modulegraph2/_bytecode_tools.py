@@ -45,6 +45,8 @@ def _extract_single(code: types.CodeType, is_function_code: bool, is_class_code:
                 from_inst_offset += 1
 
             level_inst_offset = from_inst_offset + 1
+            if instructions[offset - level_inst_offset].opname == "EXTENDED_ARG":
+                level_inst_offset += 1
 
             assert (
                 instructions[offset - from_inst_offset].opname == "LOAD_CONST"
