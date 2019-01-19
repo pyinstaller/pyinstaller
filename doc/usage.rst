@@ -418,6 +418,24 @@ and for more detail, the `Apple code signing overview`_ technical note).
 You can add other items to the :file:`Info.plist` by editing the spec file;
 see :ref:`Spec File Options for a Mac OS X Bundle` below.
 
+Code Signing Embedded Binaries
+-------------------
+
+You may also optionally specify that |PyInstaller| code sign all binaries which
+get embedded into your built application (such as the Python interpreter, its
+.so files, .dylib files for packages such as PyQt, etc). To enable code signing
+of embedded binaries, use the ``--osx-codesign-identity`` command-line option
+(or ``codesign_identity=`` kw arg). This facility requires the ``codesign``
+utility (which comes installed with a full install of Xcode) be present in your
+PATH.
+
+The identity argument must be a valid code signing identity installed on the
+system obtained via Apple's Developer program. Code signing identities are
+usually of the form: "Developer ID Application: YOUR NAME".
+
+Using this option will also cause |PyInstaller| to sign any generated ``.app``
+bundle with the same identity.
+
 
 Platform-specific Notes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~

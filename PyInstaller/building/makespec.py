@@ -280,6 +280,14 @@ def __add_options(parser):
                         'name for code signing purposes. The usual form is a hierarchical name '
                         'in reverse DNS notation. For example: com.mycompany.department.appname '
                         "(default: first script's basename)")
+    g.add_argument('--osx-codesign-identity', dest='codesign_identity',
+                   help='If this option is given, all binaries packaged in the'
+                        ' app, including the app bundle itself, will be code '
+                        'signed using the ``codesign`` utility provided by '
+                        'Xcode Developer Tools. Make sure the utility is in '
+                        'your PATH and that the identity specified is valid '
+                        'for code signing, '
+                        'e.g. \'Developer ID Application: Your Name\'')
 
     g = parser.add_argument_group('Rarely used special options')
     g.add_argument("--runtime-tmpdir", dest="runtime_tmpdir", metavar="PATH",

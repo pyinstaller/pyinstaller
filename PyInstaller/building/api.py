@@ -154,7 +154,8 @@ class PKG(Target):
                  'DEPENDENCY': 'd'}
 
     def __init__(self, toc, name=None, cdict=None, exclude_binaries=0,
-                 strip_binaries=False, upx_binaries=False):
+                 strip_binaries=False, upx_binaries=False,
+                 codesign_identity=None):
         """
         toc
                 A TOC (Table of Contents)
@@ -171,6 +172,9 @@ class PKG(Target):
         strip_binaries
                 If True, use 'strip' command to reduce the size of binary files.
         upx_binaries
+        codesign_identity
+                OSX Only: If specified, use the codesign utility to sign all
+                embedded binaries using this identity.
         """
         Target.__init__(self)
         self.toc = toc
@@ -181,6 +185,13 @@ class PKG(Target):
         self.exclude_binaries = exclude_binaries
         self.strip_binaries = strip_binaries
         self.upx_binaries = upx_binaries
+        if is_darwin:
+            from ..config import CONF
+            self.codesign_identity = (codesign_identity
+                                      if codesign_identity is not None
+                                      else CONF['codesign_identity'])
+        else:
+            self.codesign_identity = None
         # This dict tells PyInstaller what items embedded in the executable should
         # be compressed.
         if self.cdict is None:
@@ -202,6 +213,7 @@ class PKG(Target):
             ('exclude_binaries', _check_guts_eq),
             ('strip_binaries', _check_guts_eq),
             ('upx_binaries', _check_guts_eq),
+            ('codesign_identity', _check_guts_eq),
             # no calculated/analysed values
             )
 
@@ -256,7 +268,8 @@ class PKG(Target):
 
                     fnm = checkCache(fnm, strip=self.strip_binaries,
                                      upx=(self.upx_binaries and (is_win or is_cygwin)),
-                                     dist_nm=inm)
+                                     dist_nm=inm,
+                                     codesign_identity=self.codesign_identity)
 
                     mytoc.append((inm, fnm, self.cdict.get(typ, 0),
                                   self.xformdict.get(typ, 'b')))
@@ -307,6 +320,9 @@ class EXE(Target):
                 e.g. a supervisor process signals both the bootloader and
                 child (e.g. via a process group) to avoid signalling the
                 child twice.
+            codesign_identity
+                OSX Only: If specified, use the codesign utility to sign all
+                embedded binaries using this identity.
             console
                 On Windows or OSX governs whether to use the console executable
                 or the windowed executable. Always True on Linux/Unix (always
@@ -419,9 +435,19 @@ class EXE(Target):
                 self.toc.append(("pyi-windows-manifest-filename " + manifest_filename,
                                  "", "OPTION"))
 
+        if is_darwin:
+            csi = kwargs.get('codesign_identity', None)
+            self.codesign_identity = (csi
+                                      if csi is not None
+                                      else CONF['codesign_identity'])
+            del csi
+        else:
+            self.codesign_identity = None
+
         self.pkg = PKG(self.toc, cdict=kwargs.get('cdict', None),
                        exclude_binaries=self.exclude_binaries,
                        strip_binaries=self.strip, upx_binaries=self.upx,
+                       codesign_identity=self.codesign_identity,
                        )
         self.dependencies = self.pkg.dependencies
 
@@ -443,6 +469,7 @@ class EXE(Target):
             ('uac_uiaccess', _check_guts_eq),
             ('manifest', _check_guts_eq),
             ('append_pkg', _check_guts_eq),
+            ('codesign_identity', _check_guts_eq),
             # for the case the directory ius shared between platforms:
             ('pkgname', _check_guts_eq),
             ('toc', _check_guts_eq),
@@ -608,6 +635,10 @@ class EXE(Target):
             logger.info("Fixing EXE for code signing %s", self.name)
             import PyInstaller.utils.osx as osxutils
             osxutils.fix_exe_for_code_signing(self.name)
+            if self.codesign_identity:
+                logger.info("Code signing EXE %s with identity \"%s\"",
+                            self.name, self.codesign_identity)
+                osxutils.code_sign(self.name, self.codesign_identity)
 
         os.chmod(self.name, 0o755)
         # get mtime for storing into the guts
@@ -657,6 +688,15 @@ class COLLECT(Target):
         # then collected to this directory.
         self.name = os.path.join(CONF['distpath'], os.path.basename(self.name))
 
+        if is_darwin:
+            csi = kws.get('codesign_identity', None)
+            self.codesign_identity = (csi
+                                      if csi is not None
+                                      else CONF['codesign_identity'])
+            del csi
+        else:
+            self.codesign_identity = None
+
         self.toc = TOC()
         for arg in args:
             if isinstance(arg, TOC):
@@ -704,7 +744,8 @@ class COLLECT(Target):
             if typ in ('EXTENSION', 'BINARY'):
                 fnm = checkCache(fnm, strip=self.strip_binaries,
                                  upx=(self.upx_binaries and (is_win or is_cygwin)),
-                                 dist_nm=inm)
+                                 dist_nm=inm,
+                                 codesign_identity=self.codesign_identity)
             if typ != 'DEPENDENCY':
                 if os.path.isdir(fnm):
                     # beacuse shutil.copy2() is the default copy function

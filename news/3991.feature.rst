@@ -1,0 +1,2 @@
+Addition of embedded binary code signing capability for MacOS using the
+``--osx-codesign-identity`` command-line option.

@@ -840,5 +840,6 @@ def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
 
     CONF['ui_admin'] = kw.get('ui_admin', False)
     CONF['ui_access'] = kw.get('ui_uiaccess', False)
+    CONF['codesign_identity'] = kw.get('codesign_identity', None)
 
     build(specfile, kw.get('distpath'), kw.get('workpath'), kw.get('clean_build'))

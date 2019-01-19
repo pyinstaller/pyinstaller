@@ -14,6 +14,7 @@ from ..compat import is_darwin, FileExistsError
 from .api import EXE, COLLECT
 from .datastruct import Target, TOC, logger
 from .utils import _check_path_overlap, _rmtree, add_suffix_to_extensions, checkCache
+from ..utils import osx
 
 
 
@@ -55,6 +56,12 @@ class BUNDLE(Target):
             self.bundle_identifier = self.appname
 
         self.info_plist = kws.get('info_plist', None)
+
+        csi = kws.get('codesign_identity', None)
+        self.codesign_identity = (csi
+                                  if csi is not None
+                                  else CONF['codesign_identity'])
+        del csi
 
         for arg in args:
             if isinstance(arg, EXE):
@@ -166,7 +173,9 @@ class BUNDLE(Target):
             # Copy files from cache. This ensures that are used files with relative
             # paths to dynamic library dependencies (@executable_path)
             if typ in ('EXTENSION', 'BINARY'):
-                fnm = checkCache(fnm, strip=self.strip, upx=self.upx, dist_nm=inm)
+                fnm = checkCache(fnm, strip=self.strip, upx=self.upx,
+                                 dist_nm=inm,
+                                 codesign_identity=self.codesign_identity)
             if typ == 'DATA':  # add all data files to a list for symlinking later
                 links.append((inm, fnm))
             else:
@@ -227,3 +236,8 @@ class BUNDLE(Target):
                                os.path.join(bin_dir, inm))
             else:
                 shutil.copy(fnm, bin_dir)
+
+        if self.codesign_identity:
+            logger.info('Code signing BUNDLE with identity "{}"'
+                        .format(self.codesign_identity))
+            osx.code_sign(self.name, self.codesign_identity, deep=True)

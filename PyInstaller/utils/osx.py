@@ -14,7 +14,7 @@ Utils for Mac OS X platform.
 
 import os
 
-from ..compat import base_prefix, exec_command
+from ..compat import base_prefix, exec_command, exec_command_rc
 from macholib.MachO import MachO
 
 
@@ -103,3 +103,59 @@ def fix_exe_for_code_signing(filename):
     ## Write changes back.
     with open(exe_data.filename, 'rb+') as fp:
         exe_data.write(fp)
+
+
+def code_sign(binary, identity, deep=None, verbose=True):
+    """ Code sign binary (.so, .dylib, or .app) using identity.
+
+    Relies on the codesign utility which must be in PATH.
+
+    binary
+        (str) Full path to the binary or .app to be signed.
+    identity
+        (str) The code signing identity to use (as you would give to the
+              ``codesign -s`` option on the command-line).
+    deep
+        (bool) Specify whether to use the codesign --deep option. If not
+               specified, will auto-detect based on whether ``binary`` is a
+               directory (such as a .app or .framework) or a stand-alone file.
+    verbose
+        (bool) Specify whether codesign output should be verbose.
+    """
+    if deep is None and os.path.isdir(binary):
+        deep = True
+    deep = '--deep' if deep else ''
+    verbose = '-v' if verbose else ''
+
+    binary_dir = os.path.dirname(binary)
+    saved_cwd = None
+    try:
+        if binary_dir:
+            # switch to directory of the binary so codesign verbose messages
+            # don't include long path
+            _saved = os.getcwd()
+            os.chdir(binary_dir)
+            saved_cwd = _saved  # chdir success, save for `finally:` below
+            binary = os.path.basename(binary)
+        args = ["codesign", "-f", "-s", identity, binary]
+        fargpos = 1
+        if verbose:
+            args.insert(fargpos, verbose)
+            fargpos += 1
+        if deep:
+            args.insert(fargpos + 1, deep)
+
+        err_msg, result = '', None
+        try:
+            result = exec_command_rc(*args)
+        except OSError as e:
+            err_msg = " (Error was: " + repr(e) + ")"
+        if 0 != result:
+            raise SystemExit('Error: Failed to code sign binary {} using '
+                             'identity "{}". Please ensure that the '
+                             '``codesign`` utility is in your PATH and that '
+                             'the identity specified is valid for signing.{}'
+                             .format(binary, identity, err_msg))
+    finally:
+        if saved_cwd:
+            os.chdir(saved_cwd)

@@ -29,7 +29,7 @@ from ..compat import is_darwin, is_win, EXTENSION_SUFFIXES, \
     open_file, is_py3, is_py37
 from ..depend import dylib
 from ..depend.bindepend import match_binding_redirect
-from ..utils import misc
+from ..utils import misc, osx
 from ..utils.misc import load_py_data_struct, save_py_data_struct
 from .. import log as logging
 
@@ -150,7 +150,9 @@ def applyRedirects(manifest, redirects):
                 redirecting = True
     return redirecting
 
-def checkCache(fnm, strip=False, upx=False, dist_nm=None):
+
+def checkCache(fnm, strip=False, upx=False, dist_nm=None,
+               codesign_identity=None):
     """
     Cache prevents preprocessing binary files again and again.
 
@@ -215,7 +217,7 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
     # needs to be reprocessed. The redirects may change if the versions of dependent
     # manifests change due to system updates.
     redirects = CONF.get('binding_redirects', [])
-    digest = cacheDigest(fnm, redirects)
+    digest = cacheDigest(fnm, redirects, codesign_identity)
     cachedfile = os.path.join(cachedir, basenm)
     cmd = None
     if basenm in cache_index:
@@ -226,6 +228,10 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
             # starting with @executable_path
             if is_darwin:
                 dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
+                if codesign_identity:
+                    # must re-codesign unconditionally even on cache hit since
+                    # binary was possibly modified by relative_dylib call above
+                    osx.code_sign(cachedfile, codesign_identity)
             return cachedfile
 
 
@@ -251,7 +257,8 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
 
     if upx:
         if strip:
-            fnm = checkCache(fnm, strip=True, upx=False)
+            fnm = checkCache(fnm, strip=True, upx=False,
+                             codesign_identity=codesign_identity)
         bestopt = "--best"
         # FIXME: Linux builds of UPX do not seem to contain LZMA (they assert out)
         # A better configure-time check is due.
@@ -355,10 +362,13 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
     # starting with @executable_path
     if is_darwin:
         dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
+        if codesign_identity:
+            osx.code_sign(cachedfile, codesign_identity)
+
     return cachedfile
 
 
-def cacheDigest(fnm, redirects):
+def cacheDigest(fnm, redirects, codesign_identity):
     hasher = hashlib.md5()
     with open(fnm, "rb") as f:
         for chunk in iter(lambda: f.read(16 * 1024), b""):
@@ -368,6 +378,13 @@ def cacheDigest(fnm, redirects):
         if is_py3:
             redirects = redirects.encode('utf-8')
         hasher.update(redirects)
+    if codesign_identity:
+        # On Mac OS X, cache digest must take codesign settings into account
+        # as code signing modifies target binary.
+        codesign_identity = str(codesign_identity)
+        if is_py3:
+            codesign_identity = codesign_identity.encode('utf-8')
+        hasher.update(codesign_identity)
     digest = bytearray(hasher.digest())
     return digest
 
