@@ -21,8 +21,78 @@ from ._nodes import (
     NamespacePackage,
     Package,
     SourceModule,
+    MissingModule,
 )
 from ._packages import distribution_for_file
+
+SIX_MOVES_TO={
+    "filter": "builtins",
+    "input": "builtins",
+    "map": "builtins",
+    "range": "builtins",
+    "xrange": "builtins",
+    "zip": "builtins",
+    "builtins": "builtins",
+    "configparser": "configparser",
+    "copyreg": "copyreg",
+    "cPickle": "pickle",
+    "cStringIO": "io",
+    "dbm_gnu": "dbm.gnu",
+    "_dummy_thread": "_dummy_thread",
+    "email_mime_multipart": "email.mime.multipart",
+    "email_mime_nonmultipart": "email.mime.nonmultipart",
+    "email_mime_text": "email.mime.text",
+    "email_mime_base": "email.mime.base",
+    "filterfalse": "itertools",
+    "getcwd": "os",
+    "getcwdb": "os",
+    "http_cookiejar": "http.cookiejar",
+    "http_cookies": "http.cookies",
+    "html_entities": "html.entities",
+    "html_parser": "html.parser",
+    "http_client": "http.client",
+    "BaseHTTPServer": "http.server",
+    "CGIHTTPServer": "http.server",
+    "SimpleHTTPServer": "http.server",
+    "intern": "sys",
+    "queue": "queue",
+    "reduce": "functools",
+    "reload_module": "importlib",
+    "reprlib": "reprlib",
+    "shlex_quote": "shlex",
+    "socketserver": "socketserver",
+    "_thread": "_thread",
+    "tkinter": "tkinter",
+    "tkinter_dialog": "tkinter.dialog",
+    "tkinter_filedialog": "tkinter.FileDialog",
+    "tkinter_scrolledtext": "tkinter.scrolledtext",
+    "tkinter_simpledialog": "tkinter.simpledialog",
+    "tkinter_ttk": "tkinter.ttk",
+    "tkinter_tix": "tkinter.tix",
+    "tkinter_constants": "tkinter.constants",
+    "tkinter_dnd": "tkinter.dnd",
+    "tkinter_colorchooser": "tkinter.colorchooser",
+    "tkinter_commondialog": "tkinter.commondialog",
+    "tkinter_tkfiledialog": "tkinter.filedialog",
+    "tkinter_font": "tkinter.font",
+    "tkinter_messagebox": "tkinter.messagebox",
+    "tkinter_tksimpledialog": "tkinter.simpledialog",
+    "urllib": "urllib",
+    "urllib.parse": "urllib.parse",
+    "urllib.error": "urllib.error",
+    "urllib.request": "urllib.request",
+    "urllib.response": "urllib.response",
+    "urllib.robotparser": "urllib.robotparser",
+    "urllib_robotparser": "urllib.robotparser",
+    "UserDict": "collections.UserDict",
+    "UserList": "collections.UserList",
+    "UserString": "collections.UserString",
+    "winreg": "winreg",
+    "xmlrpc_client": "xmlrpc.client",
+    "xmlrpc_server": "xmlrpc.server",
+    "zip_longest": "itertools",
+}
+
 
 
 def _contains_datafiles(directory: pathlib.Path):
@@ -194,19 +264,41 @@ def node_for_spec(
         else:
             imports = bytecode_imports
 
-    # elif type(spec.loader).__name__ == "_SixMetaPathImporter":
-    #    # This is the loader from the six project, which does not quite
-    #    # conform to the importlib ABCs.
-    #    #
-    #    # This returns the node for the resolved import, not the actual import.
-    #    #
-    #    # XXX: This should return a node for the moved-to location (where possible),
-    #    # our callers will detect that the name of the node is different than
-    #    # the requested name and will create an alias node.
-    #    #
-    #    # XXX: should this be some kind of extension API, other custom
-    #    #      loaders can also be problematic.
-    #    raise RuntimeError("Handle six.moves")
+    elif type(spec.loader).__name__ == "_SixMetaPathImporter":
+        # This is the loader from the six project, which does not quite
+        # conform to the importlib ABCs.
+        #
+        # This returns the node for the resolved import, not the actual import.
+        #
+        # XXX: This should return a node for the moved-to location (where possible),
+        # our callers will detect that the name of the node is different than
+        # the requested name and will create an alias node.
+        #
+        # XXX: should this be some kind of extension API, other custom
+        #      loaders can also be problematic.
+
+        if spec.name.endswith(".moves"):
+            # six.moves itself
+            node = NamespacePackage(
+                name=spec.name,
+                loader=spec.loader,
+                distribution=None,
+                extension_attributes={},
+                filename=None,
+                search_path=[],
+                has_data_files=False,
+            )
+            return node, ()
+
+        else:
+            relative_name = spec.name[spec.name.find(".moves.") + 7:]
+            try:
+                actual_name = SIX_MOVES_TO[relative_name]
+            except KeyError:
+                return MissingModule(spec.name), ()
+
+            moved_spec = importlib.util.find_spec(actual_name)
+            return node_for_spec(moved_spec, path)
 
     else:
         raise RuntimeError(
@@ -235,3 +327,18 @@ def node_for_spec(
         return package, imports
 
     return node, imports
+
+
+def relative_package(importing_module: BaseNode, import_level: int):
+    assert import_level > 0
+
+    if isinstance(importing_module, (Package, NamespacePackage)):
+        import_level -= 1
+
+    bits = importing_module.name.rsplit(".", import_level)
+
+    if len(bits) < import_level + 1:
+        # Invalid relative import
+        return None
+
+    return bits[0]

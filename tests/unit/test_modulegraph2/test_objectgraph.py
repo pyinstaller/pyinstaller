@@ -55,20 +55,14 @@ class TestObjectGraph(unittest.TestCase):
 
         graph.add_edge(n1, n2, 42)
 
-        self.assertEqual(set(graph.outgoing(n1)), {(42, n2)})
+        self.assertEqual(list(graph.outgoing(n1)), [({42}, n2)])
         self.assertEqual(set(graph.incoming(n1)), set())
-        self.assertEqual(set(graph.edges()), {(n1, n2, 42)})
+        self.assertEqual(list(graph.edges()), [(n1, n2, {42})])
 
-        self.assertRaises(ValueError, graph.add_edge, n1, n2, 21)
+        graph.add_edge(n1, n2, 21)
 
-        self.assertEqual(set(graph.outgoing(n1)), {(42, n2)})
+        self.assertEqual(list(graph.outgoing(n1)), [({42, 21}, n2)])
         self.assertEqual(set(graph.incoming(n1)), set())
-
-        graph.add_edge(n1, n2, 21, lambda a, b: a + b)
-
-        self.assertEqual(set(graph.outgoing(n1)), {(63, n2)})
-        self.assertEqual(set(graph.incoming(n1)), set())
-        self.assertEqual(set(graph.edges()), {(n1, n2, 63)})
 
     def test_finding(self):
         graph = modulegraph2.ObjectGraph()
@@ -123,21 +117,21 @@ class TestObjectGraph(unittest.TestCase):
         self.assertRaises(KeyError, graph.add_edge, "n1", "n4", 3)
         self.assertRaises(KeyError, graph.add_edge, "n4", "n3", 5)
 
-        self.assertEqual(graph.edge_data(n1, n2), 1)
-        self.assertEqual(graph.edge_data(n1, n3), 2)
-        self.assertEqual(graph.edge_data(n2, n3), None)
+        self.assertEqual(graph.edge_data(n1, n2), {1})
+        self.assertEqual(graph.edge_data(n1, n3), {2})
+        self.assertEqual(graph.edge_data(n2, n3), {None})
 
-        self.assertEqual(graph.edge_data(n1, "n2"), 1)
-        self.assertEqual(graph.edge_data(n1, "n3"), 2)
-        self.assertEqual(graph.edge_data(n2, "n3"), None)
+        self.assertEqual(graph.edge_data(n1, "n2"), {1})
+        self.assertEqual(graph.edge_data(n1, "n3"), {2})
+        self.assertEqual(graph.edge_data(n2, "n3"), {None})
 
-        self.assertEqual(graph.edge_data("n1", n2), 1)
-        self.assertEqual(graph.edge_data("n1", n3), 2)
-        self.assertEqual(graph.edge_data("n2", n3), None)
+        self.assertEqual(graph.edge_data("n1", n2), {1})
+        self.assertEqual(graph.edge_data("n1", n3), {2})
+        self.assertEqual(graph.edge_data("n2", n3), {None})
 
-        self.assertEqual(graph.edge_data("n1", "n2"), 1)
-        self.assertEqual(graph.edge_data("n1", "n3"), 2)
-        self.assertEqual(graph.edge_data("n2", "n3"), None)
+        self.assertEqual(graph.edge_data("n1", "n2"), {1})
+        self.assertEqual(graph.edge_data("n1", "n3"), {2})
+        self.assertEqual(graph.edge_data("n2", "n3"), {None})
 
         self.assertRaises(KeyError, graph.edge_data, "n1", "n4")
         self.assertRaises(KeyError, graph.edge_data, n1, n4)
@@ -146,12 +140,12 @@ class TestObjectGraph(unittest.TestCase):
         self.assertRaises(KeyError, graph.edge_data, "n3", "n1")
         self.assertRaises(KeyError, graph.edge_data, n3, n1)
 
-        self.assertEqual(set(graph.outgoing(n1)), {(1, n2), (2, n3)})
-        self.assertEqual(set(graph.outgoing(n2)), {(None, n3)})
+        self.assertEqual(list(graph.outgoing(n1)), [({1}, n2), ({2}, n3)])
+        self.assertEqual(list(graph.outgoing(n2)), [({None}, n3)])
 
-        self.assertEqual(set(graph.incoming(n1)), set())
-        self.assertEqual(set(graph.incoming(n2)), {(1, n1)})
-        self.assertEqual(set(graph.incoming(n3)), {(2, n1), (None, n2)})
+        self.assertEqual(list(graph.incoming(n1)), [])
+        self.assertEqual(list(graph.incoming(n2)), [({1}, n1)])
+        self.assertEqual(list(graph.incoming(n3)), [({2}, n1), ({None}, n2)])
 
     def test_graph_iteration(self):
         graph = modulegraph2.ObjectGraph()
@@ -200,3 +194,35 @@ class TestObjectGraph(unittest.TestCase):
 
         graph.add_edge(n1, n2, None)
         self.assertEqual(set(graph.iter_graph()), {n1, n2, n3, n4, n5, n6, n7})
+
+    def test_edge_removal(self):
+        graph = modulegraph2.ObjectGraph()
+
+        n1 = Node("n1")
+        n2 = Node("n2")
+        n3 = Node("n3")
+        graph.add_node(n1)
+        graph.add_node(n2)
+        graph.add_node(n3)
+
+        graph.add_edge(n1, n2, 1)
+        graph.add_edge(n1, n2, 2)
+
+        graph.add_edge(n2, n3, 3)
+        graph.add_edge(n2, n3, 4)
+
+        self.assertRaises(KeyError, graph.remove_all_edges, n3, n1)
+        self.assertRaises(KeyError, graph.remove_edge, n3, n1, 1)
+        self.assertRaises(KeyError, graph.remove_edge, n1, n2, 4)
+        self.assertRaises(KeyError, graph.remove_edge, "n4", n2, 4)
+        self.assertRaises(KeyError, graph.remove_edge, "n1", "n4", 4)
+        self.assertRaises(KeyError, graph.remove_all_edges, "n4", n2)
+        self.assertRaises(KeyError, graph.remove_all_edges, "n1", "n4")
+
+        self.assertEqual(graph.edge_data(n1, n2), {1, 2})
+        graph.remove_edge(n1, n2, 1)
+        self.assertEqual(graph.edge_data(n1, n2), {2})
+
+        self.assertEqual(graph.edge_data(n2, n3), {3, 4})
+        graph.remove_all_edges(n2, n3)
+        self.assertRaises(KeyError, graph.edge_data, n2, n3)

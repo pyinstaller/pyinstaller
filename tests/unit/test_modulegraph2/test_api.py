@@ -3,9 +3,11 @@ import unittest
 import modulegraph2
 
 PUBLIC_SYMBOLS = {
+    "AliasNode",
     "DependencyInfo",
     "BuiltinModule",
     "BytecodeModule",
+    "ExcludedModule",
     "ExtensionModule",
     "FrozenModule",
     "MissingModule",

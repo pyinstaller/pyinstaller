@@ -22,6 +22,7 @@ from modulegraph2 import (
     Package,
     PyPIDistribution,
     SourceModule,
+    MissingModule,
 )
 
 NODEBUILDER_TREE = os.path.join(
@@ -481,3 +482,37 @@ class TestNodeBuilder(unittest.TestCase):
             [pathlib.Path(NODEBUILDER_TREE) / "packages.zip" / "zfnspackage"],
         )
         self.assertEqual(node.has_data_files, False)
+
+
+class TestRelativePackage(unittest.TestCase):
+    def test_relative_package_regular(self):
+        self.assertEqual(graphbuilder.relative_package(MissingModule("foo"), 2), None)
+        self.assertEqual(graphbuilder.relative_package(MissingModule("foo"), 1), None)
+
+        self.assertEqual(
+            graphbuilder.relative_package(MissingModule("foo.bar"), 1), "foo"
+        )
+        self.assertEqual(
+            graphbuilder.relative_package(MissingModule("foo.bar"), 2), None
+        )
+
+        self.assertEqual(
+            graphbuilder.relative_package(MissingModule("foo.bar.baz"), 1), "foo.bar"
+        )
+        self.assertEqual(
+            graphbuilder.relative_package(MissingModule("foo.bar.baz"), 2), "foo"
+        )
+
+    def test_relative_package_package(self):
+        p = Package("foo.bar", None, None, None, None, None, None, None)
+
+        self.assertEqual(graphbuilder.relative_package(p, 1), "foo.bar")
+        self.assertEqual(graphbuilder.relative_package(p, 2), "foo")
+        self.assertEqual(graphbuilder.relative_package(p, 3), None)
+
+    def test_relative_package_namespace_package(self):
+        p = NamespacePackage("foo.bar", None, None, None, None, None, None)
+
+        self.assertEqual(graphbuilder.relative_package(p, 1), "foo.bar")
+        self.assertEqual(graphbuilder.relative_package(p, 2), "foo")
+        self.assertEqual(graphbuilder.relative_package(p, 3), None)

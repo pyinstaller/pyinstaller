@@ -1,17 +1,7 @@
 """
 A basic graph datastructure
 """
-from typing import (
-    Callable,
-    Dict,
-    Generic,
-    Iterator,
-    Optional,
-    Set,
-    Tuple,
-    TypeVar,
-    Union,
-)
+from typing import Dict, Generic, Iterator, Optional, Set, Tuple, TypeVar, Union
 
 from typing_extensions import Protocol
 
@@ -38,7 +28,7 @@ class ObjectGraph(Generic[NODE_TYPE, EDGE_TYPE]):
     def __init__(self):
         self._roots: Set[str] = set()
         self._nodes: Dict[str, NODE_TYPE] = {}
-        self._edges: Dict[Tuple[str, str], EDGE_TYPE] = {}
+        self._edges: Dict[Tuple[str, str], Set[EDGE_TYPE]] = {}
 
     def __repr__(self):
         return f"<{type(self).__name__} with {len(self._roots)} roots, {len(self._nodes)} nodes and {len(self._edges)} edges>"  # noqa:E501
@@ -55,7 +45,7 @@ class ObjectGraph(Generic[NODE_TYPE, EDGE_TYPE]):
         """
         return iter(self._nodes.values())
 
-    def edges(self) -> Iterator[Tuple[NODE_TYPE, NODE_TYPE, EDGE_TYPE]]:
+    def edges(self) -> Iterator[Tuple[NODE_TYPE, NODE_TYPE, Set[EDGE_TYPE]]]:
         for from_id, to_id in self._edges:
             yield self._nodes[from_id], self._nodes[to_id], self._edges[
                 (from_id, to_id)
@@ -76,10 +66,9 @@ class ObjectGraph(Generic[NODE_TYPE, EDGE_TYPE]):
 
     def add_edge(
         self,
-        source: NODE_TYPE,
-        destination: NODE_TYPE,
+        source: Union[str, NODE_TYPE],
+        destination: Union[str, NODE_TYPE],
         edge_attributes: EDGE_TYPE,
-        merge_attributes: Optional[Callable[[EDGE_TYPE, EDGE_TYPE], EDGE_TYPE]] = None,
     ):
         """
         Add a directed edge between *source* and *destination* with optional edge
@@ -91,25 +80,60 @@ class ObjectGraph(Generic[NODE_TYPE, EDGE_TYPE]):
         from_node = self.find_node(source)
         to_node = self.find_node(destination)
         if from_node is None:
+            raise KeyError(f"Source {source!r} not found")
+        if to_node is None:
+            raise KeyError(f"Destination {destination!r} not found")
+
+        key = (from_node.identifier, to_node.identifier)
+        if key in self._edges:
+            self._edges[key].add(edge_attributes)
+
+        else:
+            self._edges[key] = {edge_attributes}
+
+    def remove_edge(
+        self,
+        source: Union[str, NODE_TYPE],
+        destination: Union[str, NODE_TYPE],
+        edge_attributes: EDGE_TYPE,
+    ) -> None:
+
+        from_node = self.find_node(source)
+        to_node = self.find_node(destination)
+        if from_node is None:
             raise KeyError("Source {source!r} not found")
         if to_node is None:
             raise KeyError("Destination {destination!r} not found")
 
         key = (from_node.identifier, to_node.identifier)
+
         try:
-            current_edge = self._edges[key]
+            self._edges[key].remove(edge_attributes)
 
         except KeyError:
-            self._edges[key] = edge_attributes
+            raise KeyError(
+                f"There is no edge between {from_node.identifier} and {to_node.identifier} with attributes {edge_attributes!r}"  # noqa:E501
+            ) from None
 
-        else:
-            if merge_attributes is not None:
-                self._edges[key] = merge_attributes(current_edge, edge_attributes)
+    def remove_all_edges(
+        self, source: Union[str, NODE_TYPE], destination: Union[str, NODE_TYPE]
+    ):
+        from_node = self.find_node(source)
+        to_node = self.find_node(destination)
+        if from_node is None:
+            raise KeyError("Source {source!r} not found")
+        if to_node is None:
+            raise KeyError("Destination {destination!r} not found")
 
-            else:
-                raise ValueError(
-                    f"Edge between {from_node.identifier!r} and {to_node.identifier!r} already exists"  # noqa:E501
-                )
+        key = (from_node.identifier, to_node.identifier)
+
+        try:
+            del self._edges[key]
+
+        except KeyError:
+            raise KeyError(
+                f"There is no edge between {from_node.identifier} and {to_node.identifier}"  # noqa:E501
+            ) from None
 
     def find_node(self, node: Union[str, NODE_TYPE]) -> Optional[NODE_TYPE]:
         """ Find *node* in the graph, return the graph node or None """
@@ -124,7 +148,7 @@ class ObjectGraph(Generic[NODE_TYPE, EDGE_TYPE]):
 
     def edge_data(
         self, source: Union[str, NODE_TYPE], destination: Union[str, NODE_TYPE]
-    ) -> EDGE_TYPE:
+    ) -> Set[EDGE_TYPE]:
         """
         Return the data associated with the edge between *source* and *destination*.
 
@@ -146,7 +170,7 @@ class ObjectGraph(Generic[NODE_TYPE, EDGE_TYPE]):
 
     def outgoing(
         self, source: Union[str, NODE_TYPE]
-    ) -> Iterator[Tuple[EDGE_TYPE, NODE_TYPE]]:
+    ) -> Iterator[Tuple[Set[EDGE_TYPE], NODE_TYPE]]:
         """
         Yield (edge, node) for all outgoing edges
         """
@@ -160,7 +184,7 @@ class ObjectGraph(Generic[NODE_TYPE, EDGE_TYPE]):
 
     def incoming(
         self, destination: Union[str, NODE_TYPE]
-    ) -> Iterator[Tuple[EDGE_TYPE, NODE_TYPE]]:
+    ) -> Iterator[Tuple[Set[EDGE_TYPE], NODE_TYPE]]:
         """
         Yield (edge, node) for all incoming edges
         """

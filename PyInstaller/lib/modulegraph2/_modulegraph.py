@@ -16,6 +16,7 @@ from typing import (
     Iterator,
     List,
     Optional,
+    Sequence,
     Set,
     TextIO,
     Tuple,
@@ -26,7 +27,7 @@ from ._ast_tools import extract_ast_info
 from ._callback_list import CallbackList
 from ._depinfo import DependencyInfo, from_importinfo
 from ._depproc import DependentProcessor
-from ._graphbuilder import node_for_spec
+from ._graphbuilder import node_for_spec, relative_package
 from ._implies import Alias  # XXX
 from ._importinfo import ImportInfo
 from ._nodes import (
@@ -91,10 +92,14 @@ def split_package(name: str) -> Tuple[Optional[str], str]:
 
 ProcessingCallback = Callable[["ModuleGraph", BaseNode], None]
 
+# XXX: These two types need to be in ._implies
+ImpliesValueType = Union[None, Sequence[Union[str, Alias]]]
+ImpliesItemType = Tuple[str, ImpliesValueType]
+
 DEFAULT_DEPENDENCY = DependencyInfo(False, True, False, None)
 
 
-class ModuleGraph(ObjectGraph[BaseNode, Set[DependencyInfo]]):
+class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
     # Redesign of modulegraph.modulegraph.ModuleGraph
     # Gloal:
     # - minimal, but complete interface
@@ -106,7 +111,7 @@ class ModuleGraph(ObjectGraph[BaseNode, Set[DependencyInfo]]):
     _path: List[str]
     _post_processing: CallbackList[ProcessingCallback]
     _work_q: Deque[Tuple[Callable, tuple]]
-    _global_lazy_nodes: Dict[str, Optional[Alias]]
+    _global_lazy_nodes: Dict[str, ImpliesValueType]
 
     _depproc: DependentProcessor
 
@@ -131,7 +136,7 @@ class ModuleGraph(ObjectGraph[BaseNode, Set[DependencyInfo]]):
 
         # Reference to __main__ cannot be valid when multip scripts
         # are added to the graph, just ignore this module for now.
-        # self._global_lazy_nodes["__main__"] = None
+        self._global_lazy_nodes["__main__"] = None
 
     #
     # Querying
@@ -202,34 +207,38 @@ class ModuleGraph(ObjectGraph[BaseNode, Set[DependencyInfo]]):
         after calling this method.
         """
         node = self._load_module(import_name)
-        self.add_edge(module, node, {DEFAULT_DEPENDENCY}, merge_attributes=operator.or_)
+        self.add_edge(module, node, DEFAULT_DEPENDENCY)
         return node
 
     def _run_post_processing(self, node: BaseNode) -> None:
         self._post_processing(self, node)
         self._depproc.dec_depcount(node)
 
-        # XXX: Need to redesign the finished state and callbacks:
-        # - A node is "finished" at this point unless it has 'star_import'
-        # - With star_import we need to wait for the the modules we
-        #   import from to be finished.
-        # - When this node is finished check all nodes reachable over
-        #   incoming edges to see if those are now finished.
-        # - This needs the following state:
-        #   a) Are all import statements processed (_process_import called)
-        #   b) List of unprocessed from (* or namelist) imports
-        #   { destination_node:  ipmorting_node, Optional[namelist] }
-        #   -> This likely doens't need full callback support.
-        # - State should be stored outside of the nodes itself to keep the
-        #   interface clean.
-        # - Should take care here to avoid deep recursion (use a work_q like
-        #   we do elsewhere)
-
     def add_post_processing_hook(self, hook: ProcessingCallback) -> None:
         """
         Run 'hook(self, node)' when *node* is fully processed.
         """
         self._post_processing.add(hook)
+
+    def add_excluded(self, excluded_names: Iterator[str]) -> None:
+        """
+        Exclude the names in "excludeded_names" from the graph
+        """
+        for nm in excluded_names:
+            self._global_lazy_nodes[nm] = None
+
+    def add_implies(self, implies: Iterable[ImpliesItemType]) -> None:
+        """
+        Add implied references for the graph.
+        """
+        for key, value in implies:
+            # Implies are logically distinct from excludes and excludes have
+            # precedence.
+            if (
+                key not in self._global_lazy_nodes
+                or self._global_lazy_nodes[key] is not None
+            ):
+                self._global_lazy_nodes[key] = value
 
     #
     # Internal: building the graph
@@ -259,14 +268,12 @@ class ModuleGraph(ObjectGraph[BaseNode, Set[DependencyInfo]]):
             if implied is None:
                 node = ExcludedModule(full_name)
                 self.add_node(node)
-                return None
+                return node
 
             elif isinstance(implied, Alias):
                 node = AliasNode(full_name, implied)
                 other = self._load_module(implied)
-                self.add_edge(
-                    node, other, {DEFAULT_DEPENDENCY}, merge_attributes=operator.or_
-                )
+                self.add_edge(node, other, DEFAULT_DEPENDENCY)
                 return node
 
             else:
@@ -274,9 +281,7 @@ class ModuleGraph(ObjectGraph[BaseNode, Set[DependencyInfo]]):
                 node = self._load_module(full_name)
                 for ref in implied:
                     other = self._load_module(ref)
-                    self.add_edge(
-                        node, other, {DEFAULT_DEPENDENCY}, merge_attributes=operator.or_
-                    )
+                    self.add_edge(node, other, DEFAULT_DEPENDENCY)
 
                 return node
 
@@ -306,20 +311,19 @@ class ModuleGraph(ObjectGraph[BaseNode, Set[DependencyInfo]]):
             return node
 
         node, imports = node_for_spec(spec, self._path)
+
         if node.name != module_name:
-            # Some kind of alias
-            # XXX: Need to determine when this can happen, to
-            # reproduce in a test. Code as added when building a
-            # graph with "real" data.
+            # Module is aliased in sys.modules. One example of
+            # this is "os.path", which is a virtual submodule
+            # that's an alias of one of the platforms specific
+            # path modules (such as posixpath)
             alias_node = AliasNode(module_name, node.name)
             self.add_node(alias_node)
             self._run_post_processing(alias_node)
             if self.find_node(node) is None:
                 self.add_node(node)
                 self._process_import_list(node, imports)
-            self.add_edge(
-                alias_node, node, {DEFAULT_DEPENDENCY}, merge_attributes=operator.or_
-            )
+            self.add_edge(alias_node, node, DEFAULT_DEPENDENCY)
             return alias_node
 
         self.add_node(node)
@@ -401,9 +405,7 @@ class ModuleGraph(ObjectGraph[BaseNode, Set[DependencyInfo]]):
             node = self._find_or_load(containing_package)
 
         if parent is not None:
-            self.add_edge(
-                node, parent, {DEFAULT_DEPENDENCY}, merge_attributes=operator.or_
-            )
+            self.add_edge(node, parent, DEFAULT_DEPENDENCY)
         return node
 
     def _process_import(self, importing_module: BaseNode, import_info: ImportInfo):
@@ -421,24 +423,21 @@ class ModuleGraph(ObjectGraph[BaseNode, Set[DependencyInfo]]):
                     self.add_node(node)
                     self._run_post_processing(node)
 
+                elif isinstance(parent_node, ExcludedModule):
+                    node = ExcludedModule(absolute_name)
+                    self.add_node(node)
+                    self._run_post_processing(node)
+
                 else:
                     node = self._find_or_load(absolute_name)
 
                 if parent_node is not None:
-                    self.add_edge(
-                        node,
-                        parent_node,
-                        {DEFAULT_DEPENDENCY},
-                        merge_attributes=operator.or_,
-                    )
+                    self.add_edge(node, parent_node, DEFAULT_DEPENDENCY)
 
             assert node is not None
 
             self.add_edge(
-                importing_module,
-                node,
-                {from_importinfo(import_info, False, None)},
-                merge_attributes=operator.or_,
+                importing_module, node, from_importinfo(import_info, False, None)
             )
 
             if import_info.import_names or import_info.star_import:
@@ -452,8 +451,10 @@ class ModuleGraph(ObjectGraph[BaseNode, Set[DependencyInfo]]):
 
         else:
             # Relative import, calculate the absolute name
-            bits = importing_module.identifier.rsplit(".", import_info.import_level)
-            if len(bits) < import_info.import_level + 1:
+            importing_package = relative_package(
+                importing_module, import_info.import_level
+            )
+            if importing_package is None:
                 # Invalid relative import: points to outside of a top-level package
                 invalid_name = (
                     "." * import_info.import_level
@@ -470,17 +471,19 @@ class ModuleGraph(ObjectGraph[BaseNode, Set[DependencyInfo]]):
                     assert isinstance(node, InvalidRelativeImport)  # pragma: nocover
 
                 self.add_edge(
-                    importing_module,
-                    node,
-                    {from_importinfo(import_info, False, None)},
-                    merge_attributes=operator.or_,
+                    importing_module, node, from_importinfo(import_info, False, None)
                 )
 
                 # Ignore the import_names and star_import attributes of import_info,
                 # that would just add more InvalidRelativeImport nodes.
                 return
 
-            absolute_name = f"{bits[0]}.{import_info.import_module}".rstrip(".")
+            if import_info.import_module:
+                absolute_name = f"{importing_package}.{import_info.import_module}"
+            else:
+                absolute_name = f"{importing_package}"
+
+            assert absolute_name and absolute_name[0] != "."
 
             node = self.find_node(absolute_name)
             if node is None:
@@ -493,21 +496,15 @@ class ModuleGraph(ObjectGraph[BaseNode, Set[DependencyInfo]]):
                 else:
                     node = self._find_or_load(absolute_name)
 
-                if parent_node is not None:
-                    self.add_edge(
-                        node,
-                        parent_node,
-                        {DEFAULT_DEPENDENCY},
-                        merge_attributes=operator.or_,
-                    )
+                # A relative import always refers to a name in package.
+                assert parent_node is not None
+
+                self.add_edge(node, parent_node, DEFAULT_DEPENDENCY)
 
             assert node is not None
 
             self.add_edge(
-                importing_module,
-                node,
-                {from_importinfo(import_info, False, None)},
-                merge_attributes=operator.or_,
+                importing_module, node, from_importinfo(import_info, False, None)
             )
 
             self._depproc.wait_for(
@@ -560,22 +557,14 @@ def _process_namelist(
                                 graph.add_edge(
                                     importing_module,
                                     tgt,
-                                    {from_importinfo(import_info, True, None)},
+                                    from_importinfo(import_info, True, None),
                                 )
                                 break
                         continue
 
+                graph.add_edge(subnode, imported_module, DEFAULT_DEPENDENCY)
                 graph.add_edge(
-                    subnode,
-                    imported_module,
-                    {DEFAULT_DEPENDENCY},
-                    merge_attributes=operator.or_,
-                )
-                graph.add_edge(
-                    importing_module,
-                    subnode,
-                    {from_importinfo(import_info, True, None)},
-                    merge_attributes=operator.or_,
+                    importing_module, subnode, from_importinfo(import_info, True, None)
                 )
                 # else:
                 #    Node is not a package, therefore "from node import a" cannot

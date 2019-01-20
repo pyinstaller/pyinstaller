@@ -8,8 +8,10 @@ from ._objectgraph import ObjectGraph
 from ._modulegraph import ModuleGraph
 from ._packages import PyPIDistribution
 from ._nodes import (
+    AliasNode,
     BuiltinModule,
     BytecodeModule,
+    ExcludedModule,
     ExtensionModule,
     FrozenModule,
     MissingModule,
@@ -22,9 +24,11 @@ from ._nodes import (
 )
 
 __all__ = (
+    "AliasNode",
     "BuiltinModule",
     "BytecodeModule",
     "DependencyInfo",
+    "ExcludedModule",
     "ExtensionModule",
     "FrozenModule",
     "MissingModule",

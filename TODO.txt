@@ -1,13 +1,4 @@
-- Finish test cases for relative imports
-  -> Basic test is present as well as implementation
-     The implementation is incomplete and needs work
-  -> Need a lot more tests
-  -> Check if code can be shared between absolute and
-     relative imports
-
 - Detect "as" imports and use information in the graph
-- ObjectGraph should have multiple edges (same datastructure,
-  other interface). Gives cleaner code for modulegraph
 - See XXX throughout
 - Always use the stdlib implies (modulegraph._implies)
  (with option to disable)
