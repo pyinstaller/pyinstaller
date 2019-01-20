@@ -489,6 +489,7 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
             if node is None:
                 parent_node = self._import_containing_package(absolute_name)
                 if isinstance(parent_node, MissingModule):
+                    print(f"Missing parent {absolute_name}")
                     node = MissingModule(absolute_name)
                     self.add_node(node)
                     self._run_post_processing(node)

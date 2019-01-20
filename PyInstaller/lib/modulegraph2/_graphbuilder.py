@@ -18,20 +18,16 @@ from ._nodes import (
     BytecodeModule,
     ExtensionModule,
     FrozenModule,
+    MissingModule,
     NamespacePackage,
     Package,
     SourceModule,
-    MissingModule,
 )
 from ._packages import distribution_for_file
 
-SIX_MOVES_TO={
-    "filter": "builtins",
-    "input": "builtins",
-    "map": "builtins",
-    "range": "builtins",
-    "xrange": "builtins",
-    "zip": "builtins",
+SIX_MOVES_GLOBALS = {"filter", "input", "map", "range", "xrange", "zip"}
+
+SIX_MOVES_TO = {
     "builtins": "builtins",
     "configparser": "configparser",
     "copyreg": "copyreg",
@@ -92,7 +88,6 @@ SIX_MOVES_TO={
     "xmlrpc_server": "xmlrpc.server",
     "zip_longest": "itertools",
 }
-
 
 
 def _contains_datafiles(directory: pathlib.Path):
@@ -279,7 +274,7 @@ def node_for_spec(
 
         if spec.name.endswith(".moves"):
             # six.moves itself
-            node = NamespacePackage(
+            node = Package(
                 name=spec.name,
                 loader=spec.loader,
                 distribution=None,
@@ -287,17 +282,37 @@ def node_for_spec(
                 filename=None,
                 search_path=[],
                 has_data_files=False,
+                init_module=FrozenModule(
+                    name=spec.name,
+                    loader=spec.loader,
+                    distribution=distribution_for_file(spec.origin, path)
+                    if spec.origin is not None
+                    else None,
+                    extension_attributes={},
+                    filename=None,
+                    globals_written=set(SIX_MOVES_GLOBALS),
+                    globals_read=set(),
+                ),
             )
             return node, ()
 
         else:
-            relative_name = spec.name[spec.name.find(".moves.") + 7:]
+            # NOTE: Disabling E203 is necessary due to a conflict between flake8 and
+            # black. The formatting from black appears to be more correct.
+
+            relative_name = spec.name[spec.name.find(".moves.") + 7 :]  # noqa: E203
             try:
                 actual_name = SIX_MOVES_TO[relative_name]
             except KeyError:
                 return MissingModule(spec.name), ()
 
             moved_spec = importlib.util.find_spec(actual_name)
+            if moved_spec is None:
+                # The moved-to name doesn't actually exist. This
+                # can happen on systems where parts of the stdlib
+                # are not present, such as some Linux distributions.
+                return MissingModule(actual_name), ()
+
             return node_for_spec(moved_spec, path)
 
     else:

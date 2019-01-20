@@ -6,7 +6,7 @@ __version__ = "2.0a0"
 from ._depinfo import DependencyInfo
 from ._objectgraph import ObjectGraph
 from ._modulegraph import ModuleGraph
-from ._packages import PyPIDistribution
+from ._packages import PyPIDistribution, all_distribitions
 from ._nodes import (
     AliasNode,
     BuiltinModule,
@@ -24,6 +24,7 @@ from ._nodes import (
 )
 
 __all__ = (
+    "all_distribitions",
     "AliasNode",
     "BuiltinModule",
     "BytecodeModule",

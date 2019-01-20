@@ -2,8 +2,6 @@
 - See XXX throughout
 - Always use the stdlib implies (modulegraph._implies)
  (with option to disable)
-- Add mechanism to provide names exported by extensions,
-  and use this for the extensions in the stdlib
 - Add mechanism the is called before creating
   a MissingModule node, and use this to implement
   support for SWIG (this should be a seperate module

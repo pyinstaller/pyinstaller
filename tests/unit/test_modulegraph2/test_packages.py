@@ -31,6 +31,14 @@ def build_and_install(source_path, destination_path):
 
 
 class TestPackageBuilder(unittest.TestCase):
+    def setUp(self):
+        self._cached_distributions = packages._cached_distributions.copy()
+        packages._cached_distributions.clear()
+
+    def tearDown(self):
+        packages._cached_distributions.clear()
+        packages._cached_distributions.update(self._cached_distributions)
+
     def test_basic_package(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             build_and_install(
@@ -124,3 +132,29 @@ class TestPackageFinder(unittest.TestCase):
 
         p = packages.distribution_for_file(os.path.abspath(pip.__file__), sys.path)
         self.assertEqual(p.name, "pip")
+
+
+class TestPackageLister(unittest.TestCase):
+    def setUp(self):
+        self._cached_distributions = packages._cached_distributions.copy()
+        packages._cached_distributions.clear()
+
+    def tearDown(self):
+        packages._cached_distributions.clear()
+        packages._cached_distributions.update(self._cached_distributions)
+
+    def test_all_distributions(self):
+        seen = set()
+        for dist in packages.all_distribitions(sys.path):
+            self.assertTrue(isinstance(dist, packages.PyPIDistribution))
+            seen.add(dist.name)
+
+        self.assertIn("pip", seen)
+        self.assertIn("wheel", seen)
+
+        seen2 = set()
+        for dist in packages.all_distribitions(sys.path):
+            self.assertTrue(isinstance(dist, packages.PyPIDistribution))
+            seen2.add(dist.name)
+
+        self.assertEqual(seen, seen2)

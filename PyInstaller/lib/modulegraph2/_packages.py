@@ -5,9 +5,10 @@ Note: This assumes that the contents of distributions don't change
 during a run of the script.
 """
 import os
+import sys
 from email.parser import BytesParser
 from importlib.machinery import EXTENSION_SUFFIXES
-from typing import Dict, Iterable, List, Optional, Set, Union
+from typing import Dict, Iterable, Iterator, List, Optional, Set, Union
 
 import dataclasses
 
@@ -113,3 +114,25 @@ def distribution_for_file(
             continue
 
     return None
+
+
+def all_distribitions(path: Iterable[str] = sys.path) -> Iterator[PyPIDistribution]:
+    for entry in path:
+        try:
+            for fname in os.listdir(entry):
+                if not fname.endswith(".dist-info"):
+                    continue
+
+                dist_name = os.path.join(entry, fname)
+
+                try:
+                    dist = _cached_distributions[dist_name]
+
+                except KeyError:
+                    dist = create_distribution(dist_name)
+                    _cached_distributions[dist_name] = dist
+
+                yield dist
+
+        except os.error:
+            continue
