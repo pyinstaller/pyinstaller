@@ -7,8 +7,6 @@ WaitForCallback = Callable[[BaseNode, BaseNode], None]
 
 
 class DependentProcessor:
-    """ XXX: Document me """
-
     def __init__(self):
         self._waiting: Dict[
             str, List[Tuple[BaseNode, BaseNode, WaitForCallback]]

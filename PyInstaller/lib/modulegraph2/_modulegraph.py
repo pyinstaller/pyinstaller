@@ -16,7 +16,6 @@ from typing import (
     Iterator,
     List,
     Optional,
-    Sequence,
     Set,
     TextIO,
     Tuple,
@@ -28,7 +27,7 @@ from ._callback_list import CallbackList
 from ._depinfo import DependencyInfo, from_importinfo
 from ._depproc import DependentProcessor
 from ._graphbuilder import node_for_spec, relative_package
-from ._implies import Alias  # XXX
+from ._implies import STDLIB_IMPLIES, Alias, ImpliesValueType
 from ._importinfo import ImportInfo
 from ._nodes import (
     AliasNode,
@@ -43,28 +42,6 @@ from ._nodes import (
 )
 from ._objectgraph import ObjectGraph
 from ._packages import PyPIDistribution
-
-
-def full_name(import_name: str, package: Optional[str]):
-    """
-    Return the fully qualified module name for an imported
-    name, resolving relative imports if needed.
-    """
-    # XXX: Nicer exceptions (esp. second one)
-    # XXX: There is an importlib API for this!
-    if import_name.startswith("."):
-        if package is None:
-            raise ValueError((import_name, package))
-
-        while import_name.startswith(".."):
-            package, _ = split_package(package)
-            if package is None:
-                raise ValueError((import_name, package))
-            import_name = import_name[1:]
-
-        return f"{package}{import_name}"
-
-    return import_name
 
 
 def split_package(name: str) -> Tuple[Optional[str], str]:
@@ -92,22 +69,10 @@ def split_package(name: str) -> Tuple[Optional[str], str]:
 
 ProcessingCallback = Callable[["ModuleGraph", BaseNode], None]
 
-# XXX: These two types need to be in ._implies
-ImpliesValueType = Union[None, Sequence[Union[str, Alias]]]
-ImpliesItemType = Tuple[str, ImpliesValueType]
-
 DEFAULT_DEPENDENCY = DependencyInfo(False, True, False, None)
 
 
 class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
-    # Redesign of modulegraph.modulegraph.ModuleGraph
-    # Gloal:
-    # - minimal, but complete interface
-    # - fully tested
-    # - Python 3 only, use importlib and modern features
-    #
-    # XXX: Detect if "from mod import name" access a submodule
-    #      or a global name.
     _path: List[str]
     _post_processing: CallbackList[ProcessingCallback]
     _work_q: Deque[Tuple[Callable, tuple]]
@@ -115,17 +80,7 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
 
     _depproc: DependentProcessor
 
-    def __init__(self, *, path: List[str] = None):
-        # XXX: AFAIK importlib doesn't allow maintaning separate
-        # state, but more code inspection is needed. If it turns
-        # out there is no clean way to work with an alternate path
-        # the 'path' parameter will be removed (including any code
-        # related to it). Note that using an alternate path
-        # requires code changes anyway.
-        #
-        # XXX: Add init parameters to control if std. hooks are
-        # used (in particular the stdlib implies and support for
-        # virtual environments)
+    def __init__(self, *, use_stdlib_implies: bool = True, path: List[str] = None):
         super().__init__()
         self._path = path if path is not None else sys.path
         self._post_processing = CallbackList()
@@ -137,6 +92,9 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
         # Reference to __main__ cannot be valid when multip scripts
         # are added to the graph, just ignore this module for now.
         self._global_lazy_nodes["__main__"] = None
+
+        if use_stdlib_implies:
+            self.add_implies(STDLIB_IMPLIES)
 
     #
     # Querying
@@ -220,18 +178,21 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
         """
         self._post_processing.add(hook)
 
-    def add_excluded(self, excluded_names: Iterator[str]) -> None:
+    def add_excludes(self, excluded_names: Iterator[str]) -> None:
         """
         Exclude the names in "excludeded_names" from the graph
         """
+        if isinstance(excluded_names, str):
+            raise TypeError(f"{excluded_names!r} is not a sequence of strings")
+
         for nm in excluded_names:
             self._global_lazy_nodes[nm] = None
 
-    def add_implies(self, implies: Iterable[ImpliesItemType]) -> None:
+    def add_implies(self, implies: Dict[str, ImpliesValueType]) -> None:
         """
         Add implied references for the graph.
         """
-        for key, value in implies:
+        for key, value in implies.items():
             # Implies are logically distinct from excludes and excludes have
             # precedence.
             if (
@@ -258,7 +219,6 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
                 self._depproc.process_finished_nodes()
 
     def _implied_references(self, full_name: str) -> Optional[BaseNode]:
-        # XXX: This recurses...
         assert self.find_node(full_name) is None
         node: BaseNode
 
@@ -272,6 +232,9 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
 
             elif isinstance(implied, Alias):
                 node = AliasNode(full_name, implied)
+                assert self.find_node(full_name) is None
+
+                self.add_node(node)
                 other = self._load_module(implied)
                 self.add_edge(node, other, DEFAULT_DEPENDENCY)
                 return node
@@ -351,8 +314,8 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
         return node
 
     def _process_import_list(
-        self, node: BaseNode, imports: Iterable
-    ):  # XXX: MyPy annotation
+        self, node: BaseNode, imports: Iterable[ImportInfo]
+    ) -> None:
         """
         Schedule processing of all *imports* and the finalizer when
         that's done.
@@ -373,7 +336,6 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
             self._run_post_processing(node)
 
     def _find_or_load(self, module_name: str) -> BaseNode:
-        # XXX: Name
         node = self.find_node(module_name)
         if node is None:
             node = self._implied_references(module_name)
@@ -489,7 +451,6 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
             if node is None:
                 parent_node = self._import_containing_package(absolute_name)
                 if isinstance(parent_node, MissingModule):
-                    print(f"Missing parent {absolute_name}")
                     node = MissingModule(absolute_name)
                     self.add_node(node)
                     self._run_post_processing(node)
@@ -570,7 +531,5 @@ def _process_namelist(
                 # else:
                 #    Node is not a package, therefore "from node import a" cannot
                 #    refer to a submodule.
-
-                # XXX: Should this
 
     graph._depproc.dec_depcount(importing_module)

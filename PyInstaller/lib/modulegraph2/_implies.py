@@ -9,13 +9,17 @@ NOTE:
 
 import os
 import sys
+from typing import Dict, Sequence, Union
 
 
 class Alias(str):
     pass
 
 
-STDLIB_IMPLIES = {
+ImpliesValueType = Union[None, Alias, Sequence[str]]
+
+
+STDLIB_IMPLIES: Dict[str, ImpliesValueType] = {
     #
     # C extensions
     #
@@ -76,7 +80,7 @@ STDLIB_IMPLIES = {
     "dbm": ("dbm.gnu", "dbm.ndbm", "dbm.dumb"),
 }
 
-STDLIB_PLATFORM_IMPLIES = {
+STDLIB_PLATFORM_IMPLIES: Dict[str, Dict[str, ImpliesValueType]] = {
     "win32": {
         "signal": ("_signal", "_socket"),
         "ctypes": ("comtypes.server.inprocserver",),

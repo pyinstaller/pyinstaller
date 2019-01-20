@@ -15,9 +15,10 @@ import dataclasses
 
 @dataclasses.dataclass(frozen=True)
 class PyPIDistribution:
-    # XXX: Is this all information we need?
-    # XXX: Expose entire metadata dictionary?
-    # XXX: Expose entrypoint information
+    """
+    Information about a python package distribution
+    """
+
     identifier: str  # "Random" identifier, not a valid python module name
     name: str  # Name of the distribution
     version: str  # Version of the distribution
@@ -25,7 +26,6 @@ class PyPIDistribution:
     import_names: Set[str]  # List of importable names in this distribution
 
     def contains_file(self, filename: Union[str, os.PathLike]):
-        # XXX: Should this resolve symlinks?
         return os.fspath(filename) in self.files
 
 
@@ -47,8 +47,13 @@ def create_distribution(distribution_file: str) -> PyPIDistribution:
         all_suffixes = [".py", ".pyc"] + EXTENSION_SUFFIXES
 
         for ln in record_fp:
-            # XXX: The record file should be a CSV file, but currently not always
-            # is. This should not be a problem with any sane package though.
+            # The RECORD file is a CSV file according to PEP 376, but
+            # the wheel spec is silent on this and the wheel tool
+            # creates files that aren't necessarily correct CSV files
+            # (See issue #280 at https://github.com/pypa/wheel)
+            #
+            # This code works for all filenames, except those containing
+            # line seperators.
             relpath = ln.rsplit(",", 2)[0]
 
             if relpath.startswith('"') and relpath.endswith('"'):
@@ -56,7 +61,6 @@ def create_distribution(distribution_file: str) -> PyPIDistribution:
                 relpath = relpath[1:-1].replace('""', '"')
 
             abspath = os.path.normpath(os.path.join(distribution_dir, relpath))
-            # XXX: Should this resolve symlinks?
             files.append(abspath)
 
             if "/__pycache__/" in relpath or relpath.startswith("__pycache__/"):

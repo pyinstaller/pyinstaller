@@ -17,6 +17,7 @@ Commandline interface
 XXX: Current code is a crude hack and needs to be split
      into packages.
 """
+import os
 import pathlib
 import sys
 
@@ -62,4 +63,26 @@ def format_edge(source, target, edge):
     return results
 
 
-export_to_dot(sys.stdout, mg, format_node, format_edge)
+def group_nodes(graph):
+    clusters = {}
+    for node in graph.iter_graph():
+        if node.distribution is not None:
+            dist = node.distribution.name
+            if dist not in clusters:
+                clusters[dist] = (dist, "tab", [])
+
+            clusters[dist][-1].append(node)
+
+        elif "." in node.identifier and node.filename is not None:
+            p = os.fspath(node.filename)
+            if "site-packages" not in p and p.startswith(sys.prefix):
+                dist = f"stdlib @ {node.name.split('.')[0]}"
+                if dist not in clusters:
+                    clusters[dist] = (dist, "tab", [])
+
+                clusters[dist][-1].append(node)
+
+    return list(clusters.values())
+
+
+export_to_dot(sys.stdout, mg, format_node, format_edge, group_nodes)

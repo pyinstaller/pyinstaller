@@ -4,6 +4,7 @@ import modulegraph2
 
 PUBLIC_SYMBOLS = {
     "all_distribitions",
+    "Alias",
     "AliasNode",
     "DependencyInfo",
     "BuiltinModule",

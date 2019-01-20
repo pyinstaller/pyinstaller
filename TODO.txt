@@ -1,7 +1,4 @@
 - Detect "as" imports and use information in the graph
-- See XXX throughout
-- Always use the stdlib implies (modulegraph._implies)
- (with option to disable)
 - Add mechanism the is called before creating
   a MissingModule node, and use this to implement
   support for SWIG (this should be a seperate module
@@ -42,8 +39,6 @@
   behaviour
 - modulegraph2/_modulegraph.py is too large, try to
   move more code to utilities in other modules.
-- Handle "six" metapath importer (does not conform to one
-  of the ABCs used in modulegraph)
 
 
 - Post to blog about this (with initial push to PyPI)

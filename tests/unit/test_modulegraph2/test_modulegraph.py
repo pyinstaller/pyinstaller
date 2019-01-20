@@ -7,6 +7,7 @@ import importlib
 from io import StringIO
 
 from modulegraph2 import (
+    Alias,
     AliasNode,
     BuiltinModule,
     DependencyInfo,
@@ -1596,7 +1597,7 @@ class TestModuleGraphHooks(unittest.TestCase):
 
     def test_excluded_module(self):
         mg = ModuleGraph()
-        mg.add_excluded(["global_import"])
+        mg.add_excludes(["global_import"])
 
         mg.add_module("excluded_import")
 
@@ -1610,9 +1611,11 @@ class TestModuleGraphHooks(unittest.TestCase):
         )
         self.assert_edge_count(mg, 1)
 
+        self.assertRaises(TypeError, mg.add_excludes, "some_name")
+
     def test_excluded_package(self):
         mg = ModuleGraph()
-        mg.add_excluded(["package"])
+        mg.add_excludes(["package"])
 
         mg.add_module("package_import_single_level")
 
@@ -1633,6 +1636,151 @@ class TestModuleGraphHooks(unittest.TestCase):
             mg, "package.submod", "package", {DependencyInfo(False, True, False, None)}
         )
         self.assert_edge_count(mg, 2)
+
+    def test_implied_imports(self):
+        mg = ModuleGraph()
+        mg.add_implies({"no_imports": ("sys", "gc"), "global_import": ("marshal",)})
+
+        mg.add_module("import_with_implies")
+
+        self.assert_has_nodes(
+            mg,
+            "import_with_implies",
+            "no_imports",
+            "global_import",
+            "sys",
+            "gc",
+            "marshal",
+        )
+        self.assert_has_roots(mg, "import_with_implies")
+
+        self.assert_has_edge(
+            mg,
+            "import_with_implies",
+            "no_imports",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_has_edge(
+            mg,
+            "import_with_implies",
+            "global_import",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_has_edge(
+            mg, "no_imports", "sys", {DependencyInfo(False, True, False, None)}
+        )
+        self.assert_has_edge(
+            mg, "no_imports", "gc", {DependencyInfo(False, True, False, None)}
+        )
+        self.assert_has_edge(
+            mg,
+            "global_import",
+            "no_imports",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_has_edge(
+            mg, "global_import", "marshal", {DependencyInfo(False, True, False, None)}
+        )
+        self.assert_edge_count(mg, 6)
+
+    def test_implies_vs_excludes(self):
+
+        mg = ModuleGraph()
+        mg.add_excludes(["no_imports"])
+        mg.add_implies({"no_imports": ("sys",)})
+
+        mg.add_module("global_import")
+        self.assert_has_node(mg, "no_imports", ExcludedModule)
+        self.assert_has_nodes(mg, "global_import", "no_imports")
+
+    def test_implies_vs_excludes2(self):
+
+        mg = ModuleGraph()
+        mg.add_implies({"no_imports": ("sys",)})
+        mg.add_excludes(["no_imports"])
+
+        mg.add_module("global_import")
+        self.assert_has_node(mg, "no_imports", ExcludedModule)
+        self.assert_has_nodes(mg, "global_import", "no_imports")
+
+    def test_implies_order(self):
+        mg = ModuleGraph()
+        mg.add_implies({"no_imports": ("sys",)})
+        mg.add_module("sys")
+        mg.add_module("global_import")
+
+        self.assert_has_nodes(mg, "global_import", "no_imports", "sys")
+        self.assert_has_node(mg, "no_imports", ExcludedModule)
+
+        self.assert_has_edge(
+            mg, "no_imports", "sys", {DependencyInfo(False, True, False, None)}
+        )
+
+    def test_alias(self):
+        mg = ModuleGraph()
+        mg.add_implies({"no_imports": Alias("marshal")})
+
+        mg.add_module("global_import")
+
+        self.assert_has_nodes(mg, "global_import", "no_imports", "marshal")
+        self.assert_has_node(mg, "no_imports", AliasNode)
+
+        self.assert_has_edge(
+            mg,
+            "global_import",
+            "no_imports",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_has_edge(
+            mg, "no_imports", "marshal", {DependencyInfo(False, True, False, None)}
+        )
+
+    def test_alias_order(self):
+        mg = ModuleGraph()
+        mg.add_implies({"no_imports": Alias("marshal")})
+
+        mg.add_module("marshal")
+        mg.add_module("global_import")
+
+        self.assert_has_nodes(mg, "global_import", "no_imports", "marshal")
+        self.assert_has_node(mg, "no_imports", AliasNode)
+
+        self.assert_has_edge(
+            mg,
+            "global_import",
+            "no_imports",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_has_edge(
+            mg, "no_imports", "marshal", {DependencyInfo(False, True, False, None)}
+        )
+
+    def test_import_module(self):
+        mg = ModuleGraph()
+
+        node = MissingModule("missing")
+        mg.add_node(node)
+        mg.add_root(node)
+
+        mg.import_module(node, "no_imports")
+
+        self.assert_has_edge(
+            mg, "missing", "no_imports", {DependencyInfo(False, True, False, None)}
+        )
+
+    def test_import_module_existing(self):
+        mg = ModuleGraph()
+
+        node = MissingModule("missing")
+        mg.add_node(node)
+        mg.add_root(node)
+        mg.add_module("no_imports")
+
+        mg.import_module(node, "no_imports")
+
+        self.assert_has_edge(
+            mg, "missing", "no_imports", {DependencyInfo(False, True, False, None)}
+        )
 
 
 REPORT_HEADER = """

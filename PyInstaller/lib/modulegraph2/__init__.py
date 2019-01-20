@@ -7,6 +7,7 @@ from ._depinfo import DependencyInfo
 from ._objectgraph import ObjectGraph
 from ._modulegraph import ModuleGraph
 from ._packages import PyPIDistribution, all_distribitions
+from ._implies import Alias
 from ._nodes import (
     AliasNode,
     BuiltinModule,
@@ -24,6 +25,7 @@ from ._nodes import (
 )
 
 __all__ = (
+    "Alias",
     "all_distribitions",
     "AliasNode",
     "BuiltinModule",

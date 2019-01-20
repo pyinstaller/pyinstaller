@@ -1,5 +1,5 @@
 """ modulegraph._dotbuilder """
-from typing import Callable, Dict, Optional, TextIO
+from typing import Callable, Dict, Iterator, Optional, Sequence, TextIO, Tuple
 
 from ._objectgraph import EDGE_TYPE, NODE_TYPE, ObjectGraph
 
@@ -30,6 +30,12 @@ def export_to_dot(
     graph: ObjectGraph[NODE_TYPE, EDGE_TYPE],
     format_node: Optional[Callable[[NODE_TYPE], Dict]] = None,
     format_edge: Optional[Callable[[NODE_TYPE, NODE_TYPE, EDGE_TYPE], Dict]] = None,
+    group_nodes: Optional[
+        Callable[
+            [ObjectGraph[NODE_TYPE, EDGE_TYPE]],
+            Iterator[Tuple[str, str, Sequence[NODE_TYPE]]],
+        ]
+    ] = None,
 ) -> None:
     """
     Write an dot (graphviz) version of the *graph* to *fp".
@@ -52,4 +58,16 @@ def export_to_dot(
                 f'    "{source.identifier}" -> "{target.identifier}"{format_attributes(format_edge, source, target, edge)}',  # noqa: B950
                 file=file,
             )
+
+    if group_nodes is not None:
+        for idx, (group_name, group_icon, group_items) in enumerate(group_nodes(graph)):
+            print(f"subgraph cluster_{idx} {{", file=file)
+            print(f'   label = "{group_name}"', file=file)
+            print(f"   shape = {group_icon}", file=file)
+            print("   style=filled; color=lightgray", file=file)
+            for node in group_items:
+                print(f'   "{node.identifier}"', file=file)
+
+            print("}", file=file)
+            print(file=file)
     print("}", file=file)

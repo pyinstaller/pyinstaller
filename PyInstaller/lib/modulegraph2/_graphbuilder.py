@@ -149,25 +149,28 @@ def _contains_datafiles(directory: pathlib.Path):
 
 def node_for_spec(
     spec: importlib.machinery.ModuleSpec, path: List[str]
-) -> Tuple[BaseNode, Iterable[object]]:
+) -> Tuple[BaseNode, Iterable[ImportInfo]]:
     """
     Create the node for a ModuleSpec and locate related imports
     """
     node: BaseNode
     imports: Iterable[ImportInfo]
 
-    # XXX: spec.loader can be None in older python versions, but isn't on any
-    # recent version (which doesn't help with coverage.py reports)
-    if spec.loader is None or type(spec.loader).__name__ == "_NamespaceLoader":
+    loader: Optional[importlib.abc.Loader] = cast(
+        Optional[importlib.abc.Loader], spec.loader
+    )
+
+    if loader is None or type(loader).__name__ == "_NamespaceLoader":
         # Implicit namespace package
-        # XXX: The test for the class name of the loader is needed because
-        # this is a private class in a private module... See Python issue #35673
+        #
+        # The test for the name of the class is needed because the loader
+        # for namespace packages is a private class, see python issue #35673.
         search_path = spec.submodule_search_locations
         assert search_path is not None
 
         node = NamespacePackage(
             name=spec.name,
-            loader=spec.loader,
+            loader=loader,
             distribution=None,
             extension_attributes={},
             filename=pathlib.Path(spec.origin) if spec.origin is not None else None,
@@ -176,10 +179,10 @@ def node_for_spec(
         )
         return node, ()
 
-    elif spec.loader is importlib.machinery.BuiltinImporter:
+    elif loader is importlib.machinery.BuiltinImporter:
         node = BuiltinModule(
             name=spec.name,
-            loader=spec.loader,
+            loader=loader,
             distribution=None,
             extension_attributes={},
             filename=None,
@@ -188,10 +191,10 @@ def node_for_spec(
         )
         imports = ()
 
-    elif isinstance(spec.loader, importlib.machinery.ExtensionFileLoader):
+    elif isinstance(loader, importlib.machinery.ExtensionFileLoader):
         node = ExtensionModule(
             name=spec.name,
-            loader=spec.loader,
+            loader=loader,
             distribution=distribution_for_file(spec.origin, path)
             if spec.origin is not None
             else None,
@@ -203,15 +206,15 @@ def node_for_spec(
         imports = ()
 
     elif (
-        isinstance(spec.loader, (importlib.abc.InspectLoader, zipimport.zipimporter))
-        or spec.loader == importlib.machinery.FrozenImporter
+        isinstance(loader, (importlib.abc.InspectLoader, zipimport.zipimporter))
+        or loader == importlib.machinery.FrozenImporter
     ):
         importlib.abc.InspectLoader.register(zipimport.zipimporter)
         # Zipimporter is mentioned explictly because it fails the type check for
         # InspectLoader even though it implements the interface.
         # Likewise for _frozen_importlib_external._NamespaceLoader
-        loader = cast(importlib.abc.InspectLoader, spec.loader)
-        source_code = loader.get_source(spec.name)
+        inspect_loader = cast(importlib.abc.InspectLoader, loader)
+        source_code = inspect_loader.get_source(spec.name)
 
         ast_imports: Optional[Iterable[ImportInfo]]
 
@@ -230,12 +233,12 @@ def node_for_spec(
         else:
             ast_imports = None
 
-        code = loader.get_code(spec.name)
+        code = inspect_loader.get_code(spec.name)
         assert code is not None
         bytecode_imports, names_written, names_read = extract_bytecode_info(code)
 
         node_type: Type[BaseNode]
-        if spec.loader == importlib.machinery.FrozenImporter:
+        if loader == importlib.machinery.FrozenImporter:
             node_type = FrozenModule
         elif source_code is not None:
             node_type = SourceModule
@@ -244,12 +247,14 @@ def node_for_spec(
 
         node = node_type(
             name=spec.name,
-            loader=spec.loader,
-            distribution=distribution_for_file(spec.origin, path)
-            if spec.origin is not None
-            else None,
+            loader=loader,
+            distribution=(
+                distribution_for_file(spec.origin, path)
+                if spec.origin is not None
+                else None
+            ),
             extension_attributes={},
-            filename=pathlib.Path(spec.origin) if spec.origin is not None else None,
+            filename=(pathlib.Path(spec.origin) if spec.origin is not None else None),
             globals_written=names_written,
             globals_read=names_read,
         )
@@ -259,24 +264,17 @@ def node_for_spec(
         else:
             imports = bytecode_imports
 
-    elif type(spec.loader).__name__ == "_SixMetaPathImporter":
+    elif type(loader).__name__ == "_SixMetaPathImporter":
         # This is the loader from the six project, which does not quite
         # conform to the importlib ABCs.
         #
         # This returns the node for the resolved import, not the actual import.
-        #
-        # XXX: This should return a node for the moved-to location (where possible),
-        # our callers will detect that the name of the node is different than
-        # the requested name and will create an alias node.
-        #
-        # XXX: should this be some kind of extension API, other custom
-        #      loaders can also be problematic.
 
         if spec.name.endswith(".moves"):
             # six.moves itself
             node = Package(
                 name=spec.name,
-                loader=spec.loader,
+                loader=loader,
                 distribution=None,
                 extension_attributes={},
                 filename=None,
@@ -284,7 +282,7 @@ def node_for_spec(
                 has_data_files=False,
                 init_module=FrozenModule(
                     name=spec.name,
-                    loader=spec.loader,
+                    loader=loader,
                     distribution=distribution_for_file(spec.origin, path)
                     if spec.origin is not None
                     else None,
@@ -317,10 +315,10 @@ def node_for_spec(
 
     else:
         raise RuntimeError(
-            f"Don't known how to handle {spec.loader!r} for {spec.name!r}"
+            f"Don't known how to handle {loader!r} for {spec.name!r}"
         )  # pragma: nocover
 
-    loader = cast(importlib.abc.InspectLoader, spec.loader)
+    loader = cast(importlib.abc.InspectLoader, loader)
 
     if loader.is_package(spec.name):
         node_file = node.filename

@@ -1,6 +1,5 @@
 import sys
-import modulegraph2._modulegraph
-#import pygments
+#import modulegraph2._modulegraph
+import pygments
+import tox
 
-if sys == 1:
-    import nosuchmodule

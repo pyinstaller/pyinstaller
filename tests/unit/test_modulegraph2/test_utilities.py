@@ -1,7 +1,7 @@
 import unittest
 
 import modulegraph2
-from modulegraph2._modulegraph import split_package, full_name
+from modulegraph2._modulegraph import split_package
 
 
 class TestPrivateUtilities(unittest.TestCase):
@@ -31,21 +31,3 @@ class TestPrivateUtilities(unittest.TestCase):
         self.assertRaises(TypeError, split_package, b"module")
         self.assertRaises(ValueError, split_package, "module..package")
         self.assertRaises(ValueError, split_package, "..")
-
-    def test_full_name(self):
-        self.check_results_equal(
-            full_name,
-            [
-                (("toplevel", None), ("toplevel")),
-                (("toplevel", "package"), ("toplevel")),
-                (("package.toplevel", None), ("package.toplevel")),
-                (("package.toplevel", "package"), ("package.toplevel")),
-                ((".toplevel", "package"), ("package.toplevel")),
-                (("..toplevel", "package.subpackage"), ("package.toplevel")),
-                (("..sub.toplevel", "package.subpackage"), ("package.sub.toplevel")),
-            ],
-        )
-
-        self.assertRaises(ValueError, full_name, ".toplevel", None)
-        self.assertRaises(ValueError, full_name, "..toplevel", "package")
-        self.assertRaises(ValueError, full_name, "...toplevel", "package.sub")
