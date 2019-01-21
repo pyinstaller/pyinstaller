@@ -858,3 +858,12 @@ def test_pendulum(pyi_builder):
 
         print(pendulum.now().isoformat())
         """)
+
+
+@importorskip('itk')
+def test_itk(pyi_builder):
+    pyi_builder.test_source("""
+        import itkConfig
+        itkConfig.LazyLoading=False
+        import itk
+        """)
