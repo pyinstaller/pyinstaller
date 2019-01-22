@@ -1,19 +1,22 @@
 - Detect "as" imports and use information in the graph
+  -> Is easy when the ast can be used, don't do this for
+     bytecode scanner.
+  -> This needs a number of tests as well (including test
+     for from imports:
+       - a: "from b import c", b: "import sys as c" [with correct link]
+       - a: "from b import c", b: "from sys import path as c" [no link to 'c']
+       - a: "from b import c", b: "from package import submod as c" [with correct link]
 - Add mechanism the is called before creating
   a MissingModule node, and use this to implement
   support for SWIG (this should be a seperate module
   that is unconditionally used)
+  -> Need implementation (and tests) for SWIG support
+     (this might need to importing node as well as the name
+      of the missing module...)
+
 - Add support for setuptools style namespace packages
   (T.B.D. if this needs an extension hook)
-- Code currently doesn't work with search path != sys.path
-  (Alternate path is ignored, either fix or give up and
-  don't support alternate paths. Only support alternate path
-  when importlib does)
 - Add support for virtual environments (venv and virtualenv)
-- Add testcase with deep dependency graph
-  (with artifial limitation of the recursion limit),
-  should not just be a deeply nested package, chain of
-  imports should do the trick)
 - Write exporters:
   - dot file
   - HTML (using D3.js)
@@ -28,17 +31,31 @@
      modules in a PyPI distribution by a single node for that
      distribution while adjusting graph edges).  Not in place.
 
-- Check naming and adjust for readability
-- Split of objectgraph to seperate PyPI package
+- Investigate if is is possible to use importlib with an alterate
+  path (and sys.modules!).
+
+  Otherwise provide usefull context manager(s):
+
+     with saved_import_state():
+         ...
+
+     Runs '...' then restores importlib/sys.path to the state
+     before the with block (and flush caches).
+
+
 - Write documentation:
   - Update reference docs
   - Add examples
-- Write tests comparing output with older modulegraph
-  (graph structure and dependencies)
+
 - Integratie with py2app (experimental) to verify
   behaviour
-- modulegraph2/_modulegraph.py is too large, try to
-  move more code to utilities in other modules.
 
+- pyobjc framework wrappers probably need work on both sides
+  to be handled properly (I expect the lazy loader to be
+  problematic)
+
+- Split of objectgraph to seperate PyPI package
+
+- Check naming and adjust for readability
 
 - Post to blog about this (with initial push to PyPI)

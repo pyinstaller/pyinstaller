@@ -14,7 +14,6 @@ from typing import (
     Dict,
     Iterable,
     Iterator,
-    List,
     Optional,
     Set,
     TextIO,
@@ -23,7 +22,7 @@ from typing import (
 )
 
 from ._ast_tools import extract_ast_info
-from ._callback_list import CallbackList
+from ._callback_list import CallbackList, FirstNotNone
 from ._depinfo import DependencyInfo, from_importinfo
 from ._depproc import DependentProcessor
 from ._graphbuilder import node_for_spec, relative_package
@@ -68,22 +67,23 @@ def split_package(name: str) -> Tuple[Optional[str], str]:
 
 
 ProcessingCallback = Callable[["ModuleGraph", BaseNode], None]
+MissingCallback = Callable[["ModuleGraph", str], Optional[BaseNode]]
 
 DEFAULT_DEPENDENCY = DependencyInfo(False, True, False, None)
 
 
 class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
-    _path: List[str]
     _post_processing: CallbackList[ProcessingCallback]
+    _missing_hook: FirstNotNone[MissingCallback]
     _work_q: Deque[Tuple[Callable, tuple]]
     _global_lazy_nodes: Dict[str, ImpliesValueType]
 
     _depproc: DependentProcessor
 
-    def __init__(self, *, use_stdlib_implies: bool = True, path: List[str] = None):
+    def __init__(self, *, use_stdlib_implies: bool = True):
         super().__init__()
-        self._path = path if path is not None else sys.path
         self._post_processing = CallbackList()
+        self._missing_hook = FirstNotNone()
         self._work_q = collections.deque()
         self._depproc = DependentProcessor()
 
@@ -117,14 +117,18 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
     #
     # Reporting:
     #
-    def report(self, stream: TextIO = sys.stdout) -> None:
-        print(file=stream)
-        print("%-15s %-25s %s" % ("Class", "Name", "File"), file=stream)
-        print("%-15s %-25s %s" % ("-----", "----", "----"), file=stream)
+    def report(self, file: TextIO = sys.stdout) -> None:
+        """
+        Print information about nodes reachable from the graph
+        roots to the given file.
+        """
+        print(file=file)
+        print("%-15s %-25s %s" % ("Class", "Name", "File"), file=file)
+        print("%-15s %-25s %s" % ("-----", "----", "----"), file=file)
         for m in sorted(self.iter_graph(), key=operator.attrgetter("identifier")):
             print(
                 "%-15s %-25s %s" % (type(m).__name__, m.identifier, m.filename or ""),
-                file=stream,
+                file=file,
             )
 
     #
@@ -137,6 +141,10 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
 
         Raises OSError when the script cannot be opened.
         """
+        node = self.find_node(os.fspath(script_path))
+        if node is not None:
+            raise ValueError("adding {script_path!r} multiple times")
+
         node = self._load_script(script_path)
         self.add_root(node)
         self._run_q()
@@ -148,7 +156,10 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
 
         Will not raise an exception for non-existing modules.
         """
-        node = self._load_module(module_name)
+        node = self.find_node(module_name)
+        if node is None:
+            node = self._find_or_load_module(module_name)
+
         self.add_root(node)
         self._run_q()
         return node
@@ -164,11 +175,16 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
         This is an API to be used by hooks. The graph is not fully updated
         after calling this method.
         """
-        node = self._load_module(import_name)
+        node = self.find_node(import_name)
+        if node is None:
+            node = self._find_or_load_module(import_name)
         self.add_edge(module, node, DEFAULT_DEPENDENCY)
         return node
 
     def _run_post_processing(self, node: BaseNode) -> None:
+        """
+        Run the post processing hooks for the node.
+        """
         self._post_processing(self, node)
         self._depproc.dec_depcount(node)
 
@@ -177,6 +193,31 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
         Run 'hook(self, node)' when *node* is fully processed.
         """
         self._post_processing.add(hook)
+
+    def add_missing_hook(self, hook: MissingCallback) -> None:
+        """
+        Run 'hook(self, module_name) -> node' before creating
+        a MissingModule node.
+
+        The result of the first registered hook that does
+        not return None is used.
+        """
+        self._missing_hook.add(hook)
+
+    def _create_missing_module(self, module_name: str):
+        """
+        Create a MissingModule node for 'module_name',
+        after checking if one of the missing hooks can
+        provide a node.
+        """
+        node = self._missing_hook(self, module_name)
+        if node is not None:
+            return node
+
+        node = MissingModule(module_name)
+        self.add_node(node)
+        self._run_post_processing(node)
+        return node
 
     def add_excludes(self, excluded_names: Iterator[str]) -> None:
         """
@@ -218,32 +259,34 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
             if self._depproc.have_finished_work():
                 self._depproc.process_finished_nodes()
 
-    def _implied_references(self, full_name: str) -> Optional[BaseNode]:
-        assert self.find_node(full_name) is None
+    def _implied_references(self, module_name: str) -> Optional[BaseNode]:
+        """
+        Process implied references and excludes for module_name
+        """
+        assert self.find_node(module_name) is None
         node: BaseNode
 
-        if full_name in self._global_lazy_nodes:
-            implied = self._global_lazy_nodes.pop(full_name)
+        if module_name in self._global_lazy_nodes:
+            implied = self._global_lazy_nodes.pop(module_name)
 
             if implied is None:
-                node = ExcludedModule(full_name)
+                node = ExcludedModule(module_name)
                 self.add_node(node)
                 return node
 
             elif isinstance(implied, Alias):
-                node = AliasNode(full_name, implied)
-                assert self.find_node(full_name) is None
+                node = AliasNode(module_name, implied)
+                assert self.find_node(module_name) is None
 
                 self.add_node(node)
-                other = self._load_module(implied)
+                other = self._find_or_load_module(implied)
                 self.add_edge(node, other, DEFAULT_DEPENDENCY)
                 return node
 
             else:
-                # XXX: _load_module does not load enclosing package!
-                node = self._load_module(full_name)
+                node = self._find_or_load_module(module_name)
                 for ref in implied:
-                    other = self._load_module(ref)
+                    other = self._find_or_load_module(ref)
                     self.add_edge(node, other, DEFAULT_DEPENDENCY)
 
                 return node
@@ -252,34 +295,58 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
             return None
 
     def _load_module(self, module_name: str) -> BaseNode:
-        # XXX: This doesn't load parent packages, while a number
-        # of callers assume this will.
+        """
+        Add a node for a specific module.
 
-        # module_name must be an absolute module name
-        node = self.find_node(module_name)
-        assert node is None, module_name
+        The module must not be part of the graph, and the
+        module_name must be an absolute name (not a relative
+        import.
+        """
+        node: BaseNode
+
+        assert not module_name.startswith(".")
+        assert self.find_node(module_name) is None
 
         try:
-            spec = importlib.util.find_spec(module_name)
+            try:
+                spec = importlib.util.find_spec(module_name)
+
+            except ValueError as exc:
+                assert "__spec__" in exc.args[0]
+
+                # See python issue #35791 and #35806. This is a
+                # workaround for dealing with module-like objects
+                # in sys.modules that cause problems with
+                # importlib.util.find_spec.
+                orig = sys.modules.pop(module_name)
+                try:
+                    spec = importlib.util.find_spec(module_name)
+                finally:
+                    assert module_name not in sys.modules
+                    sys.modules[module_name] = orig
+
             if spec is None:
-                node = MissingModule(module_name)
-                self.add_node(node)
-                self._run_post_processing(node)
+                node = self._create_missing_module(module_name)
                 return node
 
         except ImportError:
-            node = MissingModule(module_name)
-            self.add_node(node)
-            self._run_post_processing(node)
+            node = self._create_missing_module(module_name)
             return node
 
-        node, imports = node_for_spec(spec, self._path)
+        node, imports = node_for_spec(spec, sys.path)
 
         if node.name != module_name:
             # Module is aliased in sys.modules. One example of
             # this is "os.path", which is a virtual submodule
             # that's an alias of one of the platforms specific
             # path modules (such as posixpath)
+
+            containing_package, _ = split_package(node.name)
+            if containing_package is not None:
+                # Ensure that the aliased node links back to its package
+                parent_node = self._find_or_load_module(containing_package)
+                self.add_edge(node, parent_node, DEFAULT_DEPENDENCY)
+
             alias_node = AliasNode(module_name, node.name)
             self.add_node(alias_node)
             self._run_post_processing(alias_node)
@@ -290,11 +357,17 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
             return alias_node
 
         self.add_node(node)
+        imports = list(imports)
         self._process_import_list(node, imports)
 
         return node
 
     def _load_script(self, script_path: os.PathLike) -> Script:
+        """
+        Load a given script.
+        """
+        assert self.find_node(os.fspath(script_path)) is None
+
         with open(script_path, "rb") as fp:
             source_bytes = fp.read()
 
@@ -335,66 +408,53 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
         else:
             self._run_post_processing(node)
 
-    def _find_or_load(self, module_name: str) -> BaseNode:
+    def _find_or_load_module(
+        self, module_name: str, *, link_missing_to_parent: bool = True
+    ) -> BaseNode:
+        node: Optional[BaseNode] = None
+        parent_node: Optional[BaseNode]
+
         node = self.find_node(module_name)
+        if node is not None:
+            return node
+
+        containing_package, _ = split_package(module_name)
+        if containing_package is not None:
+            parent_node = self._find_or_load_module(containing_package)
+            if isinstance(parent_node, MissingModule):
+                node = self._create_missing_module(module_name)
+            elif isinstance(parent_node, ExcludedModule):
+                node = ExcludedModule(module_name)
+                self.add_node(node)
+                self._work_q.append((self._run_post_processing, (node,)))
+
+        else:
+            parent_node = None
+
         if node is None:
             node = self._implied_references(module_name)
-        if node is None:
-            node = self._load_module(module_name)
+            if node is None:
+                node = self._load_module(module_name)
 
         assert node is not None
 
+        if parent_node is not None and (
+            link_missing_to_parent or not isinstance(node, MissingModule)
+        ):
+            self.add_edge(node, parent_node, DEFAULT_DEPENDENCY)
+
         return node
 
-    def _import_containing_package(self, module_name: str) -> Optional[BaseNode]:
-        node: BaseNode
-
-        containing_package, _ = split_package(module_name)
-        if containing_package is None:
-            return None
-
-        parent = self.find_node(containing_package)
-        if parent is not None:
-            return parent
-
-        parent = self._import_containing_package(containing_package)
-        if isinstance(parent, MissingModule):
-            node = MissingModule(containing_package)
-            self.add_node(node)
-            self._run_post_processing(node)
-
-        else:
-            node = self._find_or_load(containing_package)
-
-        if parent is not None:
-            self.add_edge(node, parent, DEFAULT_DEPENDENCY)
-        return node
-
-    def _process_import(self, importing_module: BaseNode, import_info: ImportInfo):
+    def _process_import(
+        self, importing_module: BaseNode, import_info: ImportInfo
+    ) -> None:
         node: Optional[BaseNode]
 
         if import_info.import_level == 0:
             # Absolute import
             absolute_name = import_info.import_module
 
-            node = self.find_node(absolute_name)
-            if node is None:
-                parent_node = self._import_containing_package(absolute_name)
-                if isinstance(parent_node, MissingModule):
-                    node = MissingModule(absolute_name)
-                    self.add_node(node)
-                    self._run_post_processing(node)
-
-                elif isinstance(parent_node, ExcludedModule):
-                    node = ExcludedModule(absolute_name)
-                    self.add_node(node)
-                    self._run_post_processing(node)
-
-                else:
-                    node = self._find_or_load(absolute_name)
-
-                if parent_node is not None:
-                    self.add_edge(node, parent_node, DEFAULT_DEPENDENCY)
+            node = self._find_or_load_module(absolute_name)
 
             assert node is not None
 
@@ -447,21 +507,7 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
 
             assert absolute_name and absolute_name[0] != "."
 
-            node = self.find_node(absolute_name)
-            if node is None:
-                parent_node = self._import_containing_package(absolute_name)
-                if isinstance(parent_node, MissingModule):
-                    node = MissingModule(absolute_name)
-                    self.add_node(node)
-                    self._run_post_processing(node)
-
-                else:
-                    node = self._find_or_load(absolute_name)
-
-                # A relative import always refers to a name in package.
-                assert parent_node is not None
-
-                self.add_edge(node, parent_node, DEFAULT_DEPENDENCY)
+            node = self._find_or_load_module(absolute_name)
 
             assert node is not None
 
@@ -483,6 +529,7 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
         return
 
 
+# XXX: This should be a method
 def _process_namelist(
     importing_module: Union[Module, Package],
     imported_module: BaseNode,
@@ -498,11 +545,21 @@ def _process_namelist(
         importing_module.globals_written.update(import_info.import_names)
 
         if import_info.import_names and isinstance(
-            imported_module, (Package, NamespacePackage)
+            imported_module, (Package, NamespacePackage, AliasNode)
         ):
+            if isinstance(imported_module, AliasNode):
+                node = graph.find_node(imported_module.actual_module)
+                assert node is not None
+
+                imported_module = node
+                if not isinstance(imported_module, (Package, NamespacePackage)):
+                    graph._depproc.dec_depcount(importing_module)
+                    return
+
             for nm in import_info.import_names:
-                subnode = graph._find_or_load(f"{imported_module.identifier}.{nm}")
-                # XXX: graph._find_or_load alternative that doesn't create MissingModule
+                subnode = graph._find_or_load_module(
+                    f"{imported_module.identifier}.{nm}", link_missing_to_parent=False
+                )
                 if isinstance(subnode, MissingModule):
                     if nm in imported_module.globals_written:
                         # Name exists, but is not a module, don't add edge

@@ -86,3 +86,13 @@ def group_nodes(graph):
 
 
 export_to_dot(sys.stdout, mg, format_node, format_edge, group_nodes)
+
+# XXX: Add proper command-line interface
+# - Options for affecting sys.path
+# - Option for add_excludes
+# - Option for add_implies
+# - Option for disabling default implies
+# - Options for adding root nodes (add_module and add_script)
+# - Options for compressing the graph (replace packages/distributions by single nodes)
+# - Options for setting the output format (html, dot, 'report')
+# - Options for setting the output location (stdout or file)

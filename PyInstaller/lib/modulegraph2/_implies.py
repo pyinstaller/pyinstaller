@@ -46,16 +46,26 @@ STDLIB_IMPLIES: Dict[str, ImpliesValueType] = {
     "posix": ("resource",),
     "signal": ("_signal",),
     "time": ("_strptime",),
-    "zipimport": ("importlib.resources", "zlib"),
+    "zipimport": (
+        "importlib.resources",
+        "zlib",
+    ),  # XXX: Importlib.resources is new in 3.7
     #
     # Python module
     #
-    "os.path": Alias(os.path.__name__),
+    # typing.io is "just" a namespace created by "typing", not a
+    # real module.
+    "typing.io": Alias("typing"),
+    "typing.re": Alias("typing"),
+    # os.path is a virtual package
+    "os.path": Alias(os.path.__name__),  # XXX: Should not be necessary...
+    # sysconfig users __import__ to load platform specific data
     "sysconfig": "_sysconfigdata_{abi}_{platform}_{multiarch}".format(
         abi=sys.abiflags,
         platform=sys.platform,
         multiarch=getattr(sys.implementation, "_multiarch", ""),
     ),
+    # turtledemo uses __import__ to load the actual demos
     "turtledemo": (
         "turtledemo.colormixer",
         "turtledemo.nim",
@@ -77,6 +87,7 @@ STDLIB_IMPLIES: Dict[str, ImpliesValueType] = {
         "turtledemo.planet_and_moon",
         "turtledemo.two_canvases",
     ),
+    # Uses __import__
     "dbm": ("dbm.gnu", "dbm.ndbm", "dbm.dumb"),
 }
 

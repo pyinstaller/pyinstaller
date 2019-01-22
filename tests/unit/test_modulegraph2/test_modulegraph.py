@@ -72,6 +72,11 @@ class TestModuleGraphScripts(unittest.TestCase):
         graph_node, = mg.iter_graph(node=node)
         self.assertIs(graph_node, node)
 
+    def test_add_script_twice(self):
+        mg = ModuleGraph()
+        mg.add_script(INPUT_DIR / "trivial-script")
+        self.assertRaises(ValueError, mg.add_script, INPUT_DIR / "trivial-script")
+
     def no_test_stdlib_script(self):
         mg = ModuleGraph()
         mg.add_script(INPUT_DIR / "stdlib-script")
@@ -149,6 +154,33 @@ class TestModuleGraphAbsoluteImports(unittest.TestCase):
 
     def assert_edge_count(self, mg, edge_count):
         self.assertEqual(len(list(mg.edges())), edge_count)
+
+    def test_add_module_twice(self):
+        with self.subTest("adding root again"):
+            mg = ModuleGraph()
+            n1 = mg.add_module("no_imports")
+            n2 = mg.add_module("no_imports")
+
+            self.assertIs(n1, n2)
+            self.assert_has_roots(mg, "no_imports")
+
+        with self.subTest("adding loaded module"):
+            mg = ModuleGraph()
+            mg.add_module("global_import")
+            n1 = mg.find_node("no_imports")
+            n2 = mg.add_module("no_imports")
+
+            self.assertIs(n1, n2)
+            self.assert_has_roots(mg, "global_import", "no_imports")
+
+    def test_add_module_package(self):
+        mg = ModuleGraph()
+        mg.add_module("package.submod")
+        self.assert_has_node(mg, "package.submod", SourceModule)
+        self.assert_has_node(mg, "package", Package)
+        self.assert_has_edge(
+            mg, "package.submod", "package", {DependencyInfo(False, True, False, None)}
+        )
 
     def test_no_imports(self):
         mg = ModuleGraph()
@@ -907,6 +939,7 @@ class TestModuleGraphAbsoluteImports(unittest.TestCase):
 
         finally:
             del sys.modules["there_are_no_imports"]
+            del sys.modules["no_imports"]
 
     def test_alias_in_sys_modules2(self):
 
@@ -944,6 +977,48 @@ class TestModuleGraphAbsoluteImports(unittest.TestCase):
 
         finally:
             del sys.modules["there_are_no_imports"]
+            del sys.modules["no_imports"]
+
+    def test_package_without_spec(self):
+        # Usecase: fake packages in sys.modules might not
+        # have __spec__ and that confuses importlib.util.find_spec
+
+        import without_spec
+
+        mg = ModuleGraph()
+        mg.add_module("without_spec.submod")
+
+        self.assert_has_nodes(mg, "without_spec", "without_spec.submod")
+        self.assert_has_edge(
+            mg,
+            "without_spec.submod",
+            "without_spec",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_edge_count(mg, 1)
+
+    def test_module_without_spec(self):
+        # Usecase: fake packages in sys.modules might not
+        # have __spec__ and that confuses importlib.util.find_spec
+
+        import no_imports
+
+        try:
+            del no_imports.__spec__
+
+            mg = ModuleGraph()
+            mg.add_module("global_import")
+
+            self.assert_has_nodes(mg, "global_import", "no_imports")
+            self.assert_has_edge(
+                mg,
+                "global_import",
+                "no_imports",
+                {DependencyInfo(False, True, False, None)},
+            )
+            self.assert_edge_count(mg, 1)
+        finally:
+            del sys.modules["no_imports"]
 
 
 class TestModuleGraphRelativeImports(unittest.TestCase):
@@ -1637,6 +1712,25 @@ class TestModuleGraphHooks(unittest.TestCase):
         )
         self.assert_edge_count(mg, 2)
 
+    def test_implied_stdlib(self):
+
+        with self.subTest("using implies"):
+            mg = ModuleGraph()
+            mg.add_module("_curses")
+
+            self.assert_has_node(mg, "_curses")
+            self.assert_has_node(mg, "curses")
+            self.assert_has_edge(
+                mg, "_curses", "curses", {DependencyInfo(False, True, False, None)}
+            )
+
+        with self.subTest("without implies"):
+            mg = ModuleGraph(use_stdlib_implies=False)
+            mg.add_module("_curses")
+
+            self.assert_has_node(mg, "_curses")
+            self.assertIs(mg.find_node("curses"), None)
+
     def test_implied_imports(self):
         mg = ModuleGraph()
         mg.add_implies({"no_imports": ("sys", "gc"), "global_import": ("marshal",)})
@@ -1683,6 +1777,47 @@ class TestModuleGraphHooks(unittest.TestCase):
         )
         self.assert_edge_count(mg, 6)
 
+    def test_implies_to_package(self):
+        mg = ModuleGraph()
+        mg.add_implies({"no_imports": ("package.submod",)})
+
+        mg.add_module("global_import")
+
+        self.assert_has_edge(
+            mg,
+            "no_imports",
+            "package.submod",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_has_edge(
+            mg, "package.submod", "package", {DependencyInfo(False, True, False, None)}
+        )
+
+    def test_implies_vs_add_module(self):
+        mg = ModuleGraph()
+        mg.add_implies({"no_imports": ("marshal",)})
+
+        mg.add_module("no_imports")
+
+        self.assert_has_edge(
+            mg, "no_imports", "marshal", {DependencyInfo(False, True, False, None)}
+        )
+
+    def test_implies_vs_import_module(self):
+        mg = ModuleGraph()
+        mg.add_implies({"no_imports": ("marshal",)})
+
+        node = MissingModule("missing")
+        mg.add_node(node)
+        mg.add_root(node)
+
+        mg.import_module(node, "no_imports")
+        mg._run_q()  # XXX: Private API
+
+        self.assert_has_edge(
+            mg, "no_imports", "marshal", {DependencyInfo(False, True, False, None)}
+        )
+
     def test_implies_vs_excludes(self):
 
         mg = ModuleGraph()
@@ -1710,7 +1845,7 @@ class TestModuleGraphHooks(unittest.TestCase):
         mg.add_module("global_import")
 
         self.assert_has_nodes(mg, "global_import", "no_imports", "sys")
-        self.assert_has_node(mg, "no_imports", ExcludedModule)
+        self.assert_has_node(mg, "no_imports", SourceModule)
 
         self.assert_has_edge(
             mg, "no_imports", "sys", {DependencyInfo(False, True, False, None)}
@@ -1734,6 +1869,111 @@ class TestModuleGraphHooks(unittest.TestCase):
         self.assert_has_edge(
             mg, "no_imports", "marshal", {DependencyInfo(False, True, False, None)}
         )
+
+    def test_alias_to_package(self):
+        mg = ModuleGraph()
+        mg.add_implies({"no_imports": Alias("package.submod")})
+
+        mg.add_module("global_import")
+
+        self.assert_has_nodes(
+            mg, "global_import", "no_imports", "package", "package.submod"
+        )
+        self.assert_has_node(mg, "no_imports", AliasNode)
+
+        self.assert_has_edge(
+            mg,
+            "global_import",
+            "no_imports",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_has_edge(
+            mg,
+            "no_imports",
+            "package.submod",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_has_edge(
+            mg, "package.submod", "package", {DependencyInfo(False, True, False, None)}
+        )
+
+    def test_alias_to_package_import_from(self):
+        mg = ModuleGraph()
+        mg.add_implies({"the_package": Alias("package")})
+
+        mg.add_module("alias_to_package_import_from")
+
+        self.assert_has_node(mg, "the_package", AliasNode)
+        self.assert_has_node(mg, "package", Package)
+        self.assert_has_edge(
+            mg, "the_package", "package", {DependencyInfo(False, True, False, None)}
+        )
+
+        self.assert_has_nodes(
+            mg,
+            "alias_to_package_import_from",
+            "the_package",
+            "package",
+            "package.submod",
+            "no_imports",
+        )
+
+        self.assert_has_node(mg, "alias_to_package_import_from", SourceModule)
+        self.assert_has_node(mg, "the_package", AliasNode)
+        self.assert_has_node(mg, "package", Package)
+        self.assert_has_node(mg, "package.submod", SourceModule)
+        self.assert_has_node(mg, "no_imports", SourceModule)
+
+        self.assert_has_edge(
+            mg,
+            "alias_to_package_import_from",
+            "the_package",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_has_edge(
+            mg, "the_package", "package", {DependencyInfo(False, True, False, None)}
+        )
+        self.assert_has_edge(
+            mg,
+            "alias_to_package_import_from",
+            "package.submod",
+            {DependencyInfo(False, True, True, None)},
+        )
+        self.assert_has_edge(
+            mg, "package.submod", "package", {DependencyInfo(False, True, False, None)}
+        )
+        self.assert_has_edge(
+            mg,
+            "package.submod",
+            "no_imports",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_edge_count(mg, 5)
+
+    def test_alias_to_module_import_from(self):
+        mg = ModuleGraph()
+        mg.add_implies({"the_package": Alias("no_imports")})
+
+        mg.add_module("alias_to_module_import_from")
+
+        self.assert_has_nodes(
+            mg, "alias_to_module_import_from", "the_package", "no_imports"
+        )
+
+        self.assert_has_node(mg, "alias_to_module_import_from", SourceModule)
+        self.assert_has_node(mg, "the_package", AliasNode)
+        self.assert_has_node(mg, "no_imports", SourceModule)
+
+        self.assert_has_edge(
+            mg,
+            "alias_to_module_import_from",
+            "the_package",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_has_edge(
+            mg, "the_package", "no_imports", {DependencyInfo(False, True, False, None)}
+        )
+        self.assert_edge_count(mg, 2)
 
     def test_alias_order(self):
         mg = ModuleGraph()
@@ -1780,6 +2020,59 @@ class TestModuleGraphHooks(unittest.TestCase):
 
         self.assert_has_edge(
             mg, "missing", "no_imports", {DependencyInfo(False, True, False, None)}
+        )
+
+    def test_import_module_twice(self):
+        mg = ModuleGraph()
+
+        node = MissingModule("missing")
+        mg.add_node(node)
+        mg.add_root(node)
+
+        mg.import_module(node, "no_imports")
+        mg.import_module(node, "no_imports")
+
+        self.assert_has_edge(
+            mg, "missing", "no_imports", {DependencyInfo(False, True, False, None)}
+        )
+
+    def test_import_module_package(self):
+        mg = ModuleGraph()
+
+        node = MissingModule("missing")
+        mg.add_node(node)
+        mg.add_root(node)
+
+        mg.import_module(node, "package.submod")
+
+        self.assert_has_edge(
+            mg, "missing", "package.submod", {DependencyInfo(False, True, False, None)}
+        )
+        self.assert_has_edge(
+            mg, "package.submod", "package", {DependencyInfo(False, True, False, None)}
+        )
+
+    def test_using_missing_hook(self):
+
+        missing = set()
+
+        def missing_hook(graph, module_name):
+            missing.add(module_name)
+            node = InvalidRelativeImport(module_name)
+            graph.add_node(node)
+            return node
+
+        mg = ModuleGraph()
+        mg.add_missing_hook(missing_hook)
+
+        mg.add_module("missing")
+
+        self.assertEqual(missing, {"nosuchmodule"})
+
+        self.assert_has_node(mg, "missing", SourceModule)
+        self.assert_has_node(mg, "nosuchmodule", InvalidRelativeImport)
+        self.assert_has_edge(
+            mg, "missing", "nosuchmodule", {DependencyInfo(False, True, False, None)}
         )
 
 

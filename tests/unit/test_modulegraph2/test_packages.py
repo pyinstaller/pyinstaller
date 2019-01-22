@@ -26,7 +26,7 @@ def build_and_install(source_path, destination_path):
         raise RuntimeError("Wheel not build")
 
     subprocess.check_call(
-        [sys.executable, "-mpip", "install", "-t", destination_path, wheel_file]
+        [sys.executable, "-mpip", "-qqq", "install", "-t", destination_path, wheel_file]
     )
 
 

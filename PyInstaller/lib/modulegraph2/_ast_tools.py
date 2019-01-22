@@ -23,11 +23,13 @@ def extract_ast_info(node: ast.AST) -> Iterator[ImportInfo]:
 
         if isinstance(node, ast.Import):
             for nm in node.names:
+                # XXX: nm.asname contains the renamed module for "import name as alias"
                 yield create_importinfo(nm.name, None, 0, in_def, in_if, in_tryexcept)
 
         elif isinstance(node, ast.ImportFrom):
             yield create_importinfo(
                 node.module or "",
+                # XXX: nm.asname contains the renamed module for "import name as alias"
                 {nm.name for nm in node.names},
                 node.level,
                 in_def,
