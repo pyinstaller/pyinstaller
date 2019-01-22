@@ -470,9 +470,7 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
                 self._depproc.wait_for(
                     importing_module,
                     node,
-                    functools.partial(
-                        _process_namelist, graph=self, import_info=import_info
-                    ),
+                    functools.partial(self._process_namelist, import_info=import_info),
                 )
 
         else:
@@ -522,9 +520,7 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
             self._depproc.wait_for(
                 importing_module,
                 node,
-                functools.partial(
-                    _process_namelist, graph=self, import_info=import_info
-                ),
+                functools.partial(self._process_namelist, import_info=import_info),
             )
 
         # See python issue #2506: The peephole optimizer confuses coverage.py
@@ -532,82 +528,83 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
         # below is present.
         return
 
+    def _process_namelist(
+        self,
+        importing_module: Union[Module, Package],
+        imported_module: BaseNode,
+        import_info: ImportInfo,
+    ):
+        assert isinstance(importing_module, (Module, Package))
+        if import_info.star_import:
+            if isinstance(imported_module, (Package, Module)):
+                importing_module.globals_written.update(imported_module.globals_written)
 
-# XXX: This should be a method
-def _process_namelist(
-    importing_module: Union[Module, Package],
-    imported_module: BaseNode,
-    graph: ModuleGraph,
-    import_info: ImportInfo,
-):
-    assert isinstance(importing_module, (Module, Package))
-    if import_info.star_import:
-        if isinstance(imported_module, (Package, Module)):
-            importing_module.globals_written.update(imported_module.globals_written)
+        else:
+            importing_module.globals_written.update(import_info.import_names)
 
-    else:
-        importing_module.globals_written.update(import_info.import_names)
+            if import_info.import_names and isinstance(
+                imported_module, (Package, NamespacePackage, AliasNode)
+            ):
+                if isinstance(imported_module, AliasNode):
+                    node = self.find_node(imported_module.actual_module)
+                    assert node is not None
 
-        if import_info.import_names and isinstance(
-            imported_module, (Package, NamespacePackage, AliasNode)
-        ):
-            if isinstance(imported_module, AliasNode):
-                node = graph.find_node(imported_module.actual_module)
-                assert node is not None
+                    imported_module = node
+                    if not isinstance(imported_module, (Package, NamespacePackage)):
+                        self._depproc.dec_depcount(importing_module)
+                        return
 
-                imported_module = node
-                if not isinstance(imported_module, (Package, NamespacePackage)):
-                    graph._depproc.dec_depcount(importing_module)
-                    return
+                for nm in import_info.import_names:
+                    subnode = self._find_or_load_module(
+                        f"{imported_module.identifier}.{nm}",
+                        link_missing_to_parent=False,
+                    )
+                    if isinstance(subnode, MissingModule):
+                        if nm in imported_module.globals_written:
+                            # Name exists, but is not a module, don't add edge
+                            # to the "missing" node
 
-            for nm in import_info.import_names:
-                subnode = graph._find_or_load_module(
-                    f"{imported_module.identifier}.{nm}", link_missing_to_parent=False
-                )
-                if isinstance(subnode, MissingModule):
-                    if nm in imported_module.globals_written:
-                        # Name exists, but is not a module, don't add edge
-                        # to the "missing" node
-
-                        # Check if the imported name is actually some other imported
-                        # module.
-                        for ed_set, tgt in graph.outgoing(imported_module):
-                            # ed = cast(Optional[DependencyInfo], ed)
-                            if (
-                                any(nm == ed.imported_as for ed in ed_set)
-                                or tgt.identifier == nm
-                            ):
-                                graph.add_edge(
-                                    importing_module,
-                                    tgt,
-                                    from_importinfo(import_info, True, None),
-                                )
-                                break
-                        continue
-
-                    elif (
-                        isinstance(imported_module, Package)
-                        and imported_module.init_module.name == "@@SIX_MOVES@@"
-                    ):
-                        # six.moves is a virtual pseudo package that contains a
-                        # number of names, some # aliases for modules, some alias
-                        # for functions in other modules.
-                        # #This block handles # the latter, while the former are
-                        # handled by the graph builder.
-                        if nm in SIX_MOVES_TO:
-                            # function import
-                            dep_node = graph._find_or_load_module(SIX_MOVES_TO[nm])
-                            graph.add_edge(
-                                importing_module, dep_node, DEFAULT_DEPENDENCY
-                            )
+                            # Check if the imported name is actually some other imported
+                            # module.
+                            for ed_set, tgt in self.outgoing(imported_module):
+                                # ed = cast(Optional[DependencyInfo], ed)
+                                if (
+                                    any(nm == ed.imported_as for ed in ed_set)
+                                    or tgt.identifier == nm
+                                ):
+                                    self.add_edge(
+                                        importing_module,
+                                        tgt,
+                                        from_importinfo(import_info, True, None),
+                                    )
+                                    break
                             continue
 
-                graph.add_edge(subnode, imported_module, DEFAULT_DEPENDENCY)
-                graph.add_edge(
-                    importing_module, subnode, from_importinfo(import_info, True, None)
-                )
-                # else:
-                #    Node is not a package, therefore "from node import a" cannot
-                #    refer to a submodule.
+                        elif (
+                            isinstance(imported_module, Package)
+                            and imported_module.init_module.name == "@@SIX_MOVES@@"
+                        ):
+                            # six.moves is a virtual pseudo package that contains a
+                            # number of names, some # aliases for modules, some alias
+                            # for functions in other modules.
+                            # #This block handles # the latter, while the former are
+                            # handled by the graph builder.
+                            if nm in SIX_MOVES_TO:
+                                # function import
+                                dep_node = self._find_or_load_module(SIX_MOVES_TO[nm])
+                                self.add_edge(
+                                    importing_module, dep_node, DEFAULT_DEPENDENCY
+                                )
+                                continue
 
-    graph._depproc.dec_depcount(importing_module)
+                    self.add_edge(subnode, imported_module, DEFAULT_DEPENDENCY)
+                    self.add_edge(
+                        importing_module,
+                        subnode,
+                        from_importinfo(import_info, True, None),
+                    )
+                    # else:
+                    #    Node is not a package, therefore "from node import a" cannot
+                    #    refer to a submodule.
+
+        self._depproc.dec_depcount(importing_module)
