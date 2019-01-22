@@ -46,10 +46,7 @@ STDLIB_IMPLIES: Dict[str, ImpliesValueType] = {
     "posix": ("resource",),
     "signal": ("_signal",),
     "time": ("_strptime",),
-    "zipimport": (
-        "importlib.resources",
-        "zlib",
-    ),  # XXX: Importlib.resources is new in 3.7
+    "zipimport": ("importlib.resources", "zlib"),
     #
     # Python module
     #
@@ -58,7 +55,7 @@ STDLIB_IMPLIES: Dict[str, ImpliesValueType] = {
     "typing.io": Alias("typing"),
     "typing.re": Alias("typing"),
     # os.path is a virtual package
-    "os.path": Alias(os.path.__name__),  # XXX: Should not be necessary...
+    "os.path": Alias(os.path.__name__),
     # sysconfig users __import__ to load platform specific data
     "sysconfig": "_sysconfigdata_{abi}_{platform}_{multiarch}".format(
         abi=sys.abiflags,
@@ -99,3 +96,8 @@ STDLIB_PLATFORM_IMPLIES: Dict[str, Dict[str, ImpliesValueType]] = {
 }
 
 STDLIB_IMPLIES.update(STDLIB_PLATFORM_IMPLIES.get(sys.platform, {}))
+
+if sys.version_info[:2] < (3, 7):
+    # The earlier definition includes a module
+    # introduced in 3.7
+    STDLIB_IMPLIES["zipimport"] = ("zlib",)
