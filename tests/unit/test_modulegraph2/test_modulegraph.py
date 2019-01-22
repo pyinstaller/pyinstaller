@@ -988,14 +988,20 @@ class TestModuleGraphAbsoluteImports(unittest.TestCase):
         mg = ModuleGraph()
         mg.add_module("without_spec.submod")
 
-        self.assert_has_nodes(mg, "without_spec", "without_spec.submod")
+        self.assert_has_nodes(mg, "without_spec", "without_spec.submod", "no_imports")
         self.assert_has_edge(
             mg,
             "without_spec.submod",
             "without_spec",
             {DependencyInfo(False, True, False, None)},
         )
-        self.assert_edge_count(mg, 1)
+        self.assert_has_edge(
+            mg,
+            "without_spec.submod",
+            "no_imports",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_edge_count(mg, 2)
 
     def test_module_without_spec(self):
         # Usecase: fake packages in sys.modules might not

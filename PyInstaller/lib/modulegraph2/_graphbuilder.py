@@ -39,9 +39,6 @@ SIX_MOVES_TO = {
     "email_mime_nonmultipart": "email.mime.nonmultipart",
     "email_mime_text": "email.mime.text",
     "email_mime_base": "email.mime.base",
-    "filterfalse": "itertools",
-    "getcwd": "os",
-    "getcwdb": "os",
     "http_cookiejar": "http.cookiejar",
     "http_cookies": "http.cookies",
     "html_entities": "html.entities",
@@ -50,10 +47,7 @@ SIX_MOVES_TO = {
     "BaseHTTPServer": "http.server",
     "CGIHTTPServer": "http.server",
     "SimpleHTTPServer": "http.server",
-    "intern": "sys",
     "queue": "queue",
-    "reduce": "functools",
-    "reload_module": "importlib",
     "reprlib": "reprlib",
     "shlex_quote": "shlex",
     "socketserver": "socketserver",
@@ -86,6 +80,14 @@ SIX_MOVES_TO = {
     "winreg": "winreg",
     "xmlrpc_client": "xmlrpc.client",
     "xmlrpc_server": "xmlrpc.server",
+    # All these are function imports, and don't
+    # get found when using find_spec...
+    "filterfalse": "itertools",
+    "getcwd": "os",
+    "getcwdb": "os",
+    "intern": "sys",
+    "reduce": "functools",
+    "reload_module": "importlib",
     "zip_longest": "itertools",
 }
 
@@ -281,7 +283,7 @@ def node_for_spec(
                 search_path=[],
                 has_data_files=False,
                 init_module=FrozenModule(
-                    name=spec.name,
+                    name="@@SIX_MOVES@@",
                     loader=loader,
                     distribution=distribution_for_file(spec.origin, path)
                     if spec.origin is not None

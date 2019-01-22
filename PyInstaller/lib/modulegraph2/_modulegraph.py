@@ -25,7 +25,7 @@ from ._ast_tools import extract_ast_info
 from ._callback_list import CallbackList, FirstNotNone
 from ._depinfo import DependencyInfo, from_importinfo
 from ._depproc import DependentProcessor
-from ._graphbuilder import node_for_spec, relative_package
+from ._graphbuilder import SIX_MOVES_TO, node_for_spec, relative_package
 from ._implies import STDLIB_IMPLIES, Alias, ImpliesValueType
 from ._importinfo import ImportInfo
 from ._nodes import (
@@ -272,6 +272,7 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
             if implied is None:
                 node = ExcludedModule(module_name)
                 self.add_node(node)
+                self._depproc.finished(node)
                 return node
 
             elif isinstance(implied, Alias):
@@ -279,6 +280,8 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
                 assert self.find_node(module_name) is None
 
                 self.add_node(node)
+                self._depproc.finished(node)
+
                 other = self._find_or_load_module(implied)
                 self.add_edge(node, other, DEFAULT_DEPENDENCY)
                 return node
@@ -341,18 +344,19 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
             # that's an alias of one of the platforms specific
             # path modules (such as posixpath)
 
-            containing_package, _ = split_package(node.name)
-            if containing_package is not None:
-                # Ensure that the aliased node links back to its package
-                parent_node = self._find_or_load_module(containing_package)
-                self.add_edge(node, parent_node, DEFAULT_DEPENDENCY)
-
             alias_node = AliasNode(module_name, node.name)
             self.add_node(alias_node)
             self._run_post_processing(alias_node)
             if self.find_node(node) is None:
                 self.add_node(node)
                 self._process_import_list(node, imports)
+
+                containing_package, _ = split_package(node.name)
+                if containing_package is not None:
+                    # Ensure that the aliased node links back to its package
+                    parent_node = self._find_or_load_module(containing_package)
+                    self.add_edge(node, parent_node, DEFAULT_DEPENDENCY)
+
             self.add_edge(alias_node, node, DEFAULT_DEPENDENCY)
             return alias_node
 
@@ -580,6 +584,23 @@ def _process_namelist(
                                 )
                                 break
                         continue
+
+                    elif (
+                        isinstance(imported_module, Package)
+                        and imported_module.init_module.name == "@@SIX_MOVES@@"
+                    ):
+                        # six.moves is a virtual pseudo package that contains a
+                        # number of names, some # aliases for modules, some alias
+                        # for functions in other modules.
+                        # #This block handles # the latter, while the former are
+                        # handled by the graph builder.
+                        if nm in SIX_MOVES_TO:
+                            # function import
+                            dep_node = graph._find_or_load_module(SIX_MOVES_TO[nm])
+                            graph.add_edge(
+                                importing_module, dep_node, DEFAULT_DEPENDENCY
+                            )
+                            continue
 
                 graph.add_edge(subnode, imported_module, DEFAULT_DEPENDENCY)
                 graph.add_edge(

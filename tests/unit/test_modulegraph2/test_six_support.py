@@ -119,18 +119,17 @@ class TestSixSupport(unittest.TestCase):
         self.assert_has_node(mg, "six.moves", modulegraph2.Package)
         self.assert_has_node(mg, "six.moves.html_parser", modulegraph2.AliasNode)
         self.assert_has_node(mg, "six.moves.urllib.error", modulegraph2.AliasNode)
-        self.assert_has_node(mg, "six.moves.reduce", modulegraph2.AliasNode)
         self.assert_has_node(mg, "html", modulegraph2.Package)
-        self.assert_has_node(mg, "html.parser", modulegraph2.Package)
+        self.assert_has_node(mg, "html.parser", modulegraph2.SourceModule)
         self.assert_has_node(mg, "importlib", modulegraph2.Package)
         self.assert_has_node(mg, "functools", modulegraph2.SourceModule)
-        self.assert_has_node(mg, "urllib.error", modulegraph2.Package)
+        self.assert_has_node(mg, "urllib.error", modulegraph2.SourceModule)
 
         self.assert_has_edge(
             mg,
             "using_six",
             "six.moves",
-            {modulegraph2.DependencyInfo(False, True, True, None)},
+            {modulegraph2.DependencyInfo(False, True, False, None)},
         )
         self.assert_has_edge(
             mg,
@@ -142,13 +141,13 @@ class TestSixSupport(unittest.TestCase):
             mg,
             "using_six",
             "six.moves.urllib.error",
-            {modulegraph2.DependencyInfo(False, True, True, None)},
+            {modulegraph2.DependencyInfo(False, True, False, None)},
         )
         self.assert_has_edge(
             mg,
             "using_six",
-            "six.moves.reduce",
-            {modulegraph2.DependencyInfo(False, True, True, None)},
+            "functools",  # six.moves.reduce
+            {modulegraph2.DependencyInfo(False, True, False, None)},
         )
 
         self.assert_has_edge(
@@ -159,8 +158,8 @@ class TestSixSupport(unittest.TestCase):
         )
         self.assert_has_edge(
             mg,
-            "six.moves.reload_module",
-            "importlib",
+            "using_six",
+            "importlib",  # six.moves.reload_module
             {modulegraph2.DependencyInfo(False, True, False, None)},
         )
         self.assert_has_edge(
