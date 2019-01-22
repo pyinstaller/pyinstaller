@@ -399,6 +399,10 @@ def main(scripts, name=None, onefile=None,
     if DEBUG_ALL_CHOICE[0] in debug:
         debug = DEBUG_ARGUMENT_CHOICES
 
+    # If file extension of main script is '.pyw', force --windowed option.
+    if str(scripts[0]).strip("'").split('.')[-1] == 'pyw':
+        console = False
+
     d = {
         'scripts': scripts,
         'pathex': pathex,
