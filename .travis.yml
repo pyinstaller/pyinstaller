@@ -150,7 +150,7 @@ before_install:
 
 install:
   # Update pip.
-  - python -m pip install -U pip setuptools wheel | cat
+  - python -m pip install -U 'pip<19.0' setuptools wheel | cat
 
   # Install dependencies for tests.
   - pip install --progress-bar=off -U -r tests/requirements-tools.txt
