@@ -20,6 +20,8 @@ import re
 from PyInstaller.utils.hooks import get_package_paths
 from PyInstaller import log as logging 
 from PyInstaller import compat
+from pkg_resources import parse_version
+import numpy.version
 
 binaries = []
 
@@ -44,6 +46,8 @@ if os.path.isdir(lib_dir):
         logger.info("MKL libraries found when importing numpy. Adding MKL to binaries")
         binaries += [(os.path.join(lib_dir, f), '.') for f in dlls_mkl]
 
+
 # https://github.com/pyinstaller/pyinstaller/issues/3982
-hiddenimports=['numpy.core._dtype_ctypes']
+if parse_version(numpy.version.version) >= parse_version('1.16'):
+        hiddenimports=['numpy.core._dtype_ctypes']
 
