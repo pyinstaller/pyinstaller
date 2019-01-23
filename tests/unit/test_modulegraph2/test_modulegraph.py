@@ -2062,7 +2062,7 @@ class TestModuleGraphHooks(unittest.TestCase):
 
         missing = set()
 
-        def missing_hook(graph, module_name):
+        def missing_hook(graph, importing_module, module_name):
             missing.add(module_name)
             node = InvalidRelativeImport(module_name)
             graph.add_node(node)
@@ -2080,6 +2080,8 @@ class TestModuleGraphHooks(unittest.TestCase):
         self.assert_has_edge(
             mg, "missing", "nosuchmodule", {DependencyInfo(False, True, False, None)}
         )
+
+        # XXX: need to test for the correct "importing_module" as well (for various cases)
 
 
 REPORT_HEADER = """

@@ -88,39 +88,7 @@ def create_distribution(distribution_file: str) -> PyPIDistribution:
 _cached_distributions: Dict[str, PyPIDistribution] = {}
 
 
-def distribution_for_file(
-    filename: Union[str, os.PathLike], path: Iterable[str]
-) -> Optional[PyPIDistribution]:
-    """
-    Find a distribution for a given file, for installed distributions.
-
-    Raises FileNotFoundError when no distribution can be found
-    """
-    for entry in path:
-        try:
-            for fname in os.listdir(entry):
-                if not fname.endswith(".dist-info"):
-                    continue
-
-                dist_name = os.path.join(entry, fname)
-
-                try:
-                    dist = _cached_distributions[dist_name]
-
-                except KeyError:
-                    dist = create_distribution(dist_name)
-                    _cached_distributions[dist_name] = dist
-
-                if dist.contains_file(filename):
-                    return dist
-
-        except os.error:
-            continue
-
-    return None
-
-
-def all_distribitions(path: Iterable[str] = sys.path) -> Iterator[PyPIDistribution]:
+def all_distributions(path: Iterable[str] = sys.path) -> Iterator[PyPIDistribution]:
     for entry in path:
         try:
             for fname in os.listdir(entry):
@@ -140,3 +108,28 @@ def all_distribitions(path: Iterable[str] = sys.path) -> Iterator[PyPIDistributi
 
         except os.error:
             continue
+
+
+def distribution_for_file(
+    filename: Union[str, os.PathLike], path: Iterable[str]
+) -> Optional[PyPIDistribution]:
+    """
+    Find a distribution for a given file, for installed distributions.
+
+    Raises FileNotFoundError when no distribution can be found
+    """
+    for dist in all_distributions(path):
+        if dist.contains_file(filename):
+            return dist
+
+    return None
+
+
+def distribution_named(
+    name: str, path: Iterable[str] = sys.path
+) -> Optional[PyPIDistribution]:
+    for dist in all_distributions(path):
+        if dist.name == name:
+            return dist
+
+    return None

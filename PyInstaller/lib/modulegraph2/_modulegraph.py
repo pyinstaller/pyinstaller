@@ -67,7 +67,7 @@ def split_package(name: str) -> Tuple[Optional[str], str]:
 
 
 ProcessingCallback = Callable[["ModuleGraph", BaseNode], None]
-MissingCallback = Callable[["ModuleGraph", str], Optional[BaseNode]]
+MissingCallback = Callable[["ModuleGraph", Optional[BaseNode], str], Optional[BaseNode]]
 
 DEFAULT_DEPENDENCY = DependencyInfo(False, True, False, None)
 
@@ -158,7 +158,7 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
         """
         node = self.find_node(module_name)
         if node is None:
-            node = self._find_or_load_module(module_name)
+            node = self._find_or_load_module(None, module_name)
 
         self.add_root(node)
         self._run_q()
@@ -168,7 +168,7 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
     # Hooks
     #
 
-    def import_module(self, module: BaseNode, import_name: str) -> BaseNode:
+    def import_module(self, importing_module: BaseNode, import_name: str) -> BaseNode:
         """
         Import 'import_name' and add an edge from 'module' to 'import_name'
 
@@ -177,8 +177,8 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
         """
         node = self.find_node(import_name)
         if node is None:
-            node = self._find_or_load_module(import_name)
-        self.add_edge(module, node, DEFAULT_DEPENDENCY)
+            node = self._find_or_load_module(importing_module, import_name)
+        self.add_edge(importing_module, node, DEFAULT_DEPENDENCY)
         return node
 
     def _run_post_processing(self, node: BaseNode) -> None:
@@ -204,13 +204,15 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
         """
         self._missing_hook.add(hook)
 
-    def _create_missing_module(self, module_name: str):
+    def _create_missing_module(
+        self, importing_module: Optional[BaseNode], module_name: str
+    ):
         """
         Create a MissingModule node for 'module_name',
         after checking if one of the missing hooks can
         provide a node.
         """
-        node = self._missing_hook(self, module_name)
+        node = self._missing_hook(self, importing_module, module_name)
         if node is not None:
             return node
 
@@ -259,7 +261,9 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
             if self._depproc.have_finished_work():
                 self._depproc.process_finished_nodes()
 
-    def _implied_references(self, module_name: str) -> Optional[BaseNode]:
+    def _implied_references(
+        self, importing_module: Optional[BaseNode], module_name: str
+    ) -> Optional[BaseNode]:
         """
         Process implied references and excludes for module_name
         """
@@ -282,14 +286,14 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
                 self.add_node(node)
                 self._depproc.finished(node)
 
-                other = self._find_or_load_module(implied)
+                other = self._find_or_load_module(node, implied)
                 self.add_edge(node, other, DEFAULT_DEPENDENCY)
                 return node
 
             else:
-                node = self._find_or_load_module(module_name)
+                node = self._find_or_load_module(importing_module, module_name)
                 for ref in implied:
-                    other = self._find_or_load_module(ref)
+                    other = self._find_or_load_module(node, ref)
                     self.add_edge(node, other, DEFAULT_DEPENDENCY)
 
                 return node
@@ -297,7 +301,9 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
         else:
             return None
 
-    def _load_module(self, module_name: str) -> BaseNode:
+    def _load_module(
+        self, importing_module: Optional[BaseNode], module_name: str
+    ) -> BaseNode:
         """
         Add a node for a specific module.
 
@@ -329,11 +335,11 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
                     sys.modules[module_name] = orig
 
             if spec is None:
-                node = self._create_missing_module(module_name)
+                node = self._create_missing_module(importing_module, module_name)
                 return node
 
         except ImportError:
-            node = self._create_missing_module(module_name)
+            node = self._create_missing_module(importing_module, module_name)
             return node
 
         node, imports = node_for_spec(spec, sys.path)
@@ -354,7 +360,7 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
                 containing_package, _ = split_package(node.name)
                 if containing_package is not None:
                     # Ensure that the aliased node links back to its package
-                    parent_node = self._find_or_load_module(containing_package)
+                    parent_node = self._find_or_load_module(None, containing_package)
                     self.add_edge(node, parent_node, DEFAULT_DEPENDENCY)
 
             self.add_edge(alias_node, node, DEFAULT_DEPENDENCY)
@@ -413,7 +419,11 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
             self._run_post_processing(node)
 
     def _find_or_load_module(
-        self, module_name: str, *, link_missing_to_parent: bool = True
+        self,
+        importing_module: Optional[BaseNode],
+        module_name: str,
+        *,
+        link_missing_to_parent: bool = True,
     ) -> BaseNode:
         node: Optional[BaseNode] = None
         parent_node: Optional[BaseNode]
@@ -424,9 +434,11 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
 
         containing_package, _ = split_package(module_name)
         if containing_package is not None:
-            parent_node = self._find_or_load_module(containing_package)
+            parent_node = self._find_or_load_module(
+                importing_module, containing_package
+            )
             if isinstance(parent_node, MissingModule):
-                node = self._create_missing_module(module_name)
+                node = self._create_missing_module(importing_module, module_name)
             elif isinstance(parent_node, ExcludedModule):
                 node = ExcludedModule(module_name)
                 self.add_node(node)
@@ -436,9 +448,9 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
             parent_node = None
 
         if node is None:
-            node = self._implied_references(module_name)
+            node = self._implied_references(importing_module, module_name)
             if node is None:
-                node = self._load_module(module_name)
+                node = self._load_module(importing_module, module_name)
 
         assert node is not None
 
@@ -458,7 +470,7 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
             # Absolute import
             absolute_name = import_info.import_module
 
-            node = self._find_or_load_module(absolute_name)
+            node = self._find_or_load_module(importing_module, absolute_name)
 
             assert node is not None
 
@@ -509,7 +521,7 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
 
             assert absolute_name and absolute_name[0] != "."
 
-            node = self._find_or_load_module(absolute_name)
+            node = self._find_or_load_module(importing_module, absolute_name)
 
             assert node is not None
 
@@ -556,6 +568,7 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
 
                 for nm in import_info.import_names:
                     subnode = self._find_or_load_module(
+                        importing_module,
                         f"{imported_module.identifier}.{nm}",
                         link_missing_to_parent=False,
                     )
@@ -591,7 +604,9 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
                             # handled by the graph builder.
                             if nm in SIX_MOVES_TO:
                                 # function import
-                                dep_node = self._find_or_load_module(SIX_MOVES_TO[nm])
+                                dep_node = self._find_or_load_module(
+                                    importing_module, SIX_MOVES_TO[nm]
+                                )
                                 self.add_edge(
                                     importing_module, dep_node, DEFAULT_DEPENDENCY
                                 )

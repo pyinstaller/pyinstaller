@@ -145,7 +145,7 @@ class TestPackageLister(unittest.TestCase):
 
     def test_all_distributions(self):
         seen = set()
-        for dist in packages.all_distribitions(sys.path):
+        for dist in packages.all_distributions(sys.path):
             self.assertTrue(isinstance(dist, packages.PyPIDistribution))
             seen.add(dist.name)
 
@@ -153,8 +153,17 @@ class TestPackageLister(unittest.TestCase):
         self.assertIn("wheel", seen)
 
         seen2 = set()
-        for dist in packages.all_distribitions(sys.path):
+        for dist in packages.all_distributions(sys.path):
             self.assertTrue(isinstance(dist, packages.PyPIDistribution))
             seen2.add(dist.name)
 
         self.assertEqual(seen, seen2)
+
+    def test_distribution_named(self):
+        dist = packages.distribution_named("pip")
+        self.assertIsNot(dist, None)
+        self.assertTrue(isinstance(dist, packages.PyPIDistribution))
+        self.assertEqual(dist.name, "pip")
+
+        dist = packages.distribution_named("no-such-dist")
+        self.assertIs(dist, None)

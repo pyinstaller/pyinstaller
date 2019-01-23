@@ -3,7 +3,8 @@ import unittest
 import modulegraph2
 
 PUBLIC_SYMBOLS = {
-    "all_distribitions",
+    "all_distributions",
+    "distribution_named",
     "Alias",
     "AliasNode",
     "DependencyInfo",

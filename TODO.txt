@@ -13,6 +13,11 @@
   -> Need implementation (and tests) for SWIG support
      (this might need to importing node as well as the name
       of the missing module...)
+  -> SWIG code is present, but not hooked up and without
+     tests (need a minimal SWIG project for that, as well
+     as testcases that don't match SWIG for a number of
+     reasons)
+
 
 - Add support for setuptools style namespace packages
   (T.B.D. if this needs an extension hook)
@@ -42,6 +47,10 @@
      Runs '...' then restores importlib/sys.path to the state
      before the with block (and flush caches).
 
+- Add method "add_distribution(dist: Union[str, PyPIDistribution]) -> PyPIDistribution
+
+  This adds a node for the distribution, with links to all importable names
+  in that distribution. The distribution is added as a graph root.
 
 - Write documentation:
   - Update reference docs
