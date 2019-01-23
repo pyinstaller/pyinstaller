@@ -57,10 +57,12 @@ STDLIB_IMPLIES: Dict[str, ImpliesValueType] = {
     # os.path is a virtual package
     "os.path": Alias(os.path.__name__),
     # sysconfig users __import__ to load platform specific data
-    "sysconfig": "_sysconfigdata_{abi}_{platform}_{multiarch}".format(
-        abi=sys.abiflags,
-        platform=sys.platform,
-        multiarch=getattr(sys.implementation, "_multiarch", ""),
+    "sysconfig": (
+        "_sysconfigdata_{abi}_{platform}_{multiarch}".format(
+            abi=sys.abiflags,
+            platform=sys.platform,
+            multiarch=getattr(sys.implementation, "_multiarch", ""),
+        ),
     ),
     # turtledemo uses __import__ to load the actual demos
     "turtledemo": (

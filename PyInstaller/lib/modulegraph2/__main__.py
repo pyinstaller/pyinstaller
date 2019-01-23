@@ -22,6 +22,7 @@ import pathlib
 import sys
 
 from ._dotbuilder import export_to_dot
+from ._htmlbuilder import export_to_html
 from ._modulegraph import ModuleGraph
 
 NODE_ATTR = {
@@ -85,7 +86,8 @@ def group_nodes(graph):
     return list(clusters.values())
 
 
-export_to_dot(sys.stdout, mg, format_node, format_edge, group_nodes)
+# export_to_dot(sys.stdout, mg, format_node, format_edge, group_nodes)
+export_to_html(sys.stdout, mg)
 
 # XXX: Add proper command-line interface
 # - Options for affecting sys.path
