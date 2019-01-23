@@ -218,7 +218,9 @@ the |bootloader| deletes the temporary folder.
 (In GNU/Linux and related systems, it is possible
 to mount the ``/tmp`` folder with a "no-execution" option.
 That option is not compatible with a |PyInstaller|
-one-file bundle. It needs to execute code out of :file:`/tmp`.)
+one-file bundle. It needs to execute code out of :file:`/tmp`.
+If you know the target environment,
+``--runtime-tmpdir`` might be a workaround.)
 
 Because the program makes a temporary folder with a unique name,
 you can run multiple copies of the app;
