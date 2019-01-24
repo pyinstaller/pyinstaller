@@ -1,3 +1,7 @@
+- Test: circular import with 'from ... import *' and 'from ... import a'
+  (Both should result in a missing module node)
+- Add method to depproc to assert that there is no pending work
+  and use this in testing and/or run_q
 - Detect "as" imports and use information in the graph
   -> Is easy when the ast can be used, don't do this for
      bytecode scanner.
@@ -21,7 +25,13 @@
 
 - Add support for setuptools style namespace packages
   (T.B.D. if this needs an extension hook)
+  [This may not need work at all, importlib code works different
+  than the older code, and we may not need special code at all
+  other than peeking at the package search path]
+
 - Add support for virtual environments (venv and virtualenv)
+  [Tests for both, likely special support for virtualenv]
+
 - Write exporters:
   - dot file
   - HTML (using D3.js)
@@ -52,8 +62,11 @@
   This adds a node for the distribution, with links to all importable names
   in that distribution. The distribution is added as a graph root.
 
+  A problem with this is that PyPIDistribution is not a BaseNode, which
+  complicates mypy annotations (but probably not too much)
+
 - Write documentation:
-  - Update reference docs
+  - Write reference docs (look into generating these from docstrings)
   - Add examples
 
 - Integratie with py2app (experimental) to verify

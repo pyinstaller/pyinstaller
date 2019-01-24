@@ -2068,7 +2068,7 @@ class TestModuleGraphHooks(unittest.TestCase):
             graph.add_node(node)
             return node
 
-        mg = ModuleGraph()
+        mg = ModuleGraph(use_builtin_hooks=False)
         mg.add_missing_hook(missing_hook)
 
         mg.add_module("missing")

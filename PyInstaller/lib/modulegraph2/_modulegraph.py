@@ -28,6 +28,7 @@ from ._depproc import DependentProcessor
 from ._graphbuilder import SIX_MOVES_TO, node_for_spec, relative_package
 from ._implies import STDLIB_IMPLIES, Alias, ImpliesValueType
 from ._importinfo import ImportInfo
+from ._swig_support import swig_missing_hook
 from ._nodes import (
     AliasNode,
     BaseNode,
@@ -80,7 +81,7 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
 
     _depproc: DependentProcessor
 
-    def __init__(self, *, use_stdlib_implies: bool = True):
+    def __init__(self, *, use_stdlib_implies: bool = True, use_builtin_hooks: bool = True):
         super().__init__()
         self._post_processing = CallbackList()
         self._missing_hook = FirstNotNone()
@@ -95,6 +96,12 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
 
         if use_stdlib_implies:
             self.add_implies(STDLIB_IMPLIES)
+
+        if use_builtin_hooks:
+            # XXX: Disabled for now, only enable once the hook
+            # itself is tested with proper coverage.
+            #self.add_missing_hook(swig_missing_hook)
+            ...
 
     #
     # Querying
