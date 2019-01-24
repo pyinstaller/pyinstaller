@@ -414,11 +414,12 @@ class Analysis(Target):
         ### Hook cache.
         logger.info('Caching module hooks...')
 
-        # List of all directories containing hook scripts. Default hooks are
-        # listed before and hence take precedence over custom hooks.
-        module_hook_dirs = [get_importhooks_dir()]
+        # List of all directories containing hook scripts. Custom hooks are
+        # listed before and hence take precedence over default hooks.
+        module_hook_dirs = []
         if self.hookspath:
             module_hook_dirs.extend(self.hookspath)
+        module_hook_dirs.append(get_importhooks_dir())
 
         # Hook cache prepopulated with these lazy loadable hook scripts.
         module_hook_cache = ModuleHookCache(

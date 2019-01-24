@@ -109,6 +109,10 @@ class ModuleHookCache(UserDict):
             hook scripts to be cached.
         """
 
+        # If a hook was already processed (e.g. user has provided custom hook),
+        # it is bypassed
+        parsed_modules_hooks = set()
+
         for hook_dir in hook_dirs:
             # Canonicalize this directory's path and validate its existence.
             hook_dir = os.path.abspath(expand_path(hook_dir))
@@ -122,6 +126,11 @@ class ModuleHookCache(UserDict):
                 # Fully-qualified name of this hook's corresponding module,
                 # constructed by removing the "hook-" prefix and ".py" suffix.
                 module_name = os.path.basename(hook_filename)[5:-3]
+
+                if module_name in parsed_modules_hooks:
+                    continue
+                else:
+                    parsed_modules_hooks.add(module_name)
 
                 # Lazily loadable hook object.
                 module_hook = ModuleHook(
