@@ -92,7 +92,7 @@ from xml.dom import Node, minidom
 from xml.dom.minidom import Document, Element
 
 from PyInstaller import compat
-from PyInstaller.compat import architecture, string_types
+from PyInstaller.compat import string_types
 from PyInstaller import log as logging
 from PyInstaller.utils.win32 import winresource
 
@@ -1094,7 +1094,7 @@ def processor_architecture():
     'x86' - 32bit Windows
     'amd64' - 64bit Windows
     """
-    if architecture() == '32bit':
+    if compat.architecture == '32bit':
         return 'x86'
     else:
         return 'amd64'

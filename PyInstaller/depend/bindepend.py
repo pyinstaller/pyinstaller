@@ -780,8 +780,7 @@ def findLibrary(name):
         # Architecture independent locations.
         paths = ['/lib', '/usr/lib']
         # Architecture dependent locations.
-        arch = compat.architecture()
-        if arch == '32bit':
+        if compat.architecture == '32bit':
             paths.extend(['/lib32', '/usr/lib32', '/usr/lib/i386-linux-gnu'])
         else:
             paths.extend(['/lib64', '/usr/lib64', '/usr/lib/x86_64-linux-gnu'])
@@ -807,7 +806,7 @@ def findLibrary(name):
         if is_aix:
             paths.append('/opt/freeware/lib')
         elif is_hpux:
-            if arch == '32bit':
+            if compat.architecture == '32bit':
                 paths.append('/usr/local/lib/hpux32')
             else:
                 paths.append('/usr/local/lib/hpux64')

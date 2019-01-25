@@ -559,7 +559,7 @@ def compiled_dylib(tmpdir):
         if is_win:
             tmp_data_dir = tmp_data_dir.join('ctypes_dylib.dll')
             # For Mingw-x64 we must pass '-m32' to build 32-bit binaries
-            march = '-m32' if architecture() == '32bit' else '-m64'
+            march = '-m32' if architecture == '32bit' else '-m64'
             ret = subprocess.call('gcc -shared ' + march + ' ctypes_dylib.c -o ctypes_dylib.dll', shell=True)
             if ret != 0:
                 # Find path to cl.exe file.
@@ -572,7 +572,7 @@ def compiled_dylib(tmpdir):
         elif is_darwin:
             tmp_data_dir = tmp_data_dir.join('ctypes_dylib.dylib')
             # On Mac OS X we need to detect architecture - 32 bit or 64 bit.
-            arch = 'i386' if architecture() == '32bit' else 'x86_64'
+            arch = 'i386' if architecture == '32bit' else 'x86_64'
             cmd = ('gcc -arch ' + arch + ' -Wall -dynamiclib '
                 'ctypes_dylib.c -o ctypes_dylib.dylib -headerpad_max_install_names')
             ret = subprocess.call(cmd, shell=True)

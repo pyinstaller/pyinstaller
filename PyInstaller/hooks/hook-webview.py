@@ -16,10 +16,11 @@ import platform
 import ctypes
 from os.path import join, exists
 
+from PyInstaller import compat
 from PyInstaller.compat import is_win, getsitepackages
 
 if is_win:
-    if platform.architecture()[0] == '64bit':
+    if compat.architecture == '64bit':
         dll_name = 'WebBrowserInterop.x64.dll'
     else:
         dll_name = 'WebBrowserInterop.x86.dll'
