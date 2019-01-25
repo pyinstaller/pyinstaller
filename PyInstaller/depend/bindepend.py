@@ -22,7 +22,8 @@ import collections
 
 from .. import compat
 from ..compat import (is_win, is_unix, is_aix, is_solar, is_cygwin, is_hpux,
-                      is_darwin, is_freebsd, is_venv, base_prefix, PYDYLIB_NAMES)
+                      is_darwin, is_freebsd, is_venv, is_conda, base_prefix,
+                      PYDYLIB_NAMES)
 from . import dylib, utils
 
 from .. import log as logging
@@ -888,9 +889,17 @@ def get_python_library_path():
                 return filename
 
     # Python library NOT found. Resume searching using alternative methods.
-    # Applies only to non Windows platforms.
+    # Applies only to non Windows platforms and conda.
 
-    if is_unix:
+    if is_conda:
+        # Conda needs to be the first here since it overrules the operating
+        # system specific paths.
+        python_libname = _find_lib_in_libdirs(
+            os.path.join(compat.base_prefix, 'lib'))
+        if python_libname:
+            return python_libname
+
+    elif is_unix:
         for name in PYDYLIB_NAMES:
             python_libname = findLibrary(name)
             if python_libname:
@@ -908,11 +917,7 @@ def get_python_library_path():
         # and exec_prefix. That's why we can use just sys.prefix.
         # In virtualenv PyInstaller is not able to find Python library.
         # We need special care for this case.
-        # Anaconda places the python library in the lib directory, so
-        # we search this one as well.
-        python_libname = _find_lib_in_libdirs(
-            compat.base_prefix,
-            os.path.join(compat.base_prefix, 'lib'))
+        python_libname = _find_lib_in_libdirs(compat.base_prefix)
         if python_libname:
             return python_libname
 
