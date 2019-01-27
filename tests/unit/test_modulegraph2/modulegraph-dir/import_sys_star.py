@@ -1,1 +1,2 @@
-from sys import *
+if __name__ == "main":
+    from sys import *

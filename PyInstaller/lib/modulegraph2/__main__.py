@@ -1,37 +1,20 @@
 """
 Commandline interface
-
-- Generate graph from one or more modules/scripts
-- Export graph as:
-    - HTML
-    - dotfile
-    - table
-- Should be minimal wrapper around other functionality
-  to make testing easier.
-- It should be possible to condense the graph, for example
-  by collapsing (stdlib) packages and PyPI distributions
-- For dot export: find a usable layout algoritm and
-  make that the default (with option to override)
-- Need command-line arguments
-
-XXX: Current code is a crude hack and needs to be split
-     into packages.
 """
+import argparse
+import contextlib
+import enum
+import functools
+import importlib
 import os
 import pathlib
 import sys
-import argparse
-import enum
-import contextlib
-import importlib
-import functools
 from typing import List, TextIO
 
+from . import __version__
 from ._dotbuilder import export_to_dot
 from ._htmlbuilder import export_to_html
 from ._modulegraph import ModuleGraph
-from . import __version__
-
 
 # --- XXX: This block needs to be elsewhere
 
@@ -119,6 +102,7 @@ def saved_syspath():
         sys.path[:] = orig_path
         importlib.invalidate_caches()
 
+
 def parse_arguments(argv: List[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog=f"{sys.executable.rsplit('/')[-1]} -mmodulegraph2",
@@ -191,6 +175,7 @@ def parse_arguments(argv: List[str]) -> argparse.Namespace:
 
     return args
 
+
 def make_graph(args: argparse.Namespace) -> ModuleGraph:
     with saved_syspath():
         for p in args.path[::-1]:
@@ -205,22 +190,24 @@ def make_graph(args: argparse.Namespace) -> ModuleGraph:
         elif args.node_type == NodeType.SCRIPT:
             for name in args.name:
                 mg.add_script(name)
-        elif args.node_type == NodeType.DISTRIBUTION:
+        elif args.node_type == NodeType.DISTRIBUTION:  # pragma: nocover
             print("Not supported yet")
             raise SystemExit(2)
 
-        else: # pragma: nocover
+        else:  # pragma: nocover
             assert False, "Invalid NodeType"
 
-
         return mg
+
 
 def print_graph(fp: TextIO, output_format: OutputFormat, mg: ModuleGraph) -> None:
     if output_format == OutputFormat.HTML:
         export_to_html(fp, mg)
 
     elif output_format == OutputFormat.GRAPHVIZ:
-        export_to_dot(fp, mg, functools.partial(format_node, mg=mg), format_edge, group_nodes)
+        export_to_dot(
+            fp, mg, functools.partial(format_node, mg=mg), format_edge, group_nodes
+        )
 
     else:  # pragma: nocover
         assert False, "Invalid OutputFormat"
@@ -235,7 +222,7 @@ def format_graph(args: argparse.Namespace, mg: ModuleGraph) -> None:
                 print_graph(fp, args.output_format, mg)
 
         except OSError as exc:
-            print(exc)
+            print(exc, file=sys.stderr)
             raise SystemExit(1)
 
 
@@ -246,5 +233,5 @@ def main(argv: List[str]) -> None:
     format_graph(args, mg)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: nocover
     main(sys.argv[1:])

@@ -236,6 +236,74 @@ class TestModuleGraphAbsoluteImports(unittest.TestCase):
         self.assert_has_roots(mg, "circular_a")
         self.assert_has_nodes(mg, "circular_a", "circular_b", "circular_c")
 
+    def test_circular_from(self):
+        mg = ModuleGraph()
+        mg.add_module("circular_from_a")
+
+        self.assert_has_node(mg, "circular_from_a", SourceModule)
+        self.assert_has_node(mg, "circular_from_b", SourceModule)
+        self.assert_has_node(mg, "circular_from_c", SourceModule)
+
+        self.assert_has_edge(
+            mg,
+            "circular_from_a",
+            "circular_from_b",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_has_edge(
+            mg,
+            "circular_from_b",
+            "circular_from_c",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_has_edge(
+            mg,
+            "circular_from_c",
+            "circular_from_a",
+            {DependencyInfo(False, True, False, None)},
+        )
+
+        self.assert_edge_count(mg, 3)
+
+        self.assert_has_roots(mg, "circular_from_a")
+        self.assert_has_nodes(
+            mg, "circular_from_a", "circular_from_b", "circular_from_c"
+        )
+
+    def test_circular_from_star(self):
+        mg = ModuleGraph()
+        mg.add_module("circular_from_star_a")
+
+        self.assert_has_node(mg, "circular_from_star_a", SourceModule)
+        self.assert_has_node(mg, "circular_from_star_b", SourceModule)
+        self.assert_has_node(mg, "circular_from_star_c", SourceModule)
+
+        self.assert_has_edge(
+            mg,
+            "circular_from_star_a",
+            "circular_from_star_b",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_has_edge(
+            mg,
+            "circular_from_star_b",
+            "circular_from_star_c",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_has_edge(
+            mg,
+            "circular_from_star_c",
+            "circular_from_star_a",
+            {DependencyInfo(False, True, False, None)},
+        )
+
+        self.assert_edge_count(mg, 3)
+
+        self.assert_has_roots(mg, "circular_from_star_a")
+        self.assert_has_nodes(
+            mg, "circular_from_star_a", "circular_from_star_b", "circular_from_star_c"
+        )
+
     def test_missing_toplevel(self):
         mg = ModuleGraph()
         mg.add_module("missing")
@@ -574,7 +642,7 @@ class TestModuleGraphAbsoluteImports(unittest.TestCase):
         self.assert_has_node(mg, "sys", BuiltinModule)
 
         self.assert_has_edge(
-            mg, "import_sys_star", "sys", {DependencyInfo(False, True, False, None)}
+            mg, "import_sys_star", "sys", {DependencyInfo(True, True, False, None)}
         )
         self.assert_edge_count(mg, 1)
 

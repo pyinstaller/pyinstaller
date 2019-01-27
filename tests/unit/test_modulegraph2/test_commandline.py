@@ -1,4 +1,5 @@
 import unittest
+import unittest.mock
 import contextlib
 import io
 import os
@@ -6,10 +7,13 @@ import sys
 import io
 import argparse
 import pathlib
+import tempfile
+import shutil
 
 from modulegraph2 import __main__ as main
 
 import modulegraph2
+
 
 @contextlib.contextmanager
 def captured_output():
@@ -109,7 +113,8 @@ class TestArguments(unittest.TestCase):
 
         self.assertIn("positional arguments", stdout.getvalue())
 
-class TestPathSaver (unittest.TestCase):
+
+class TestPathSaver(unittest.TestCase):
     def setUp(self):
         self.orig_path = sys.path[:]
 
@@ -129,10 +134,14 @@ class TestPathSaver (unittest.TestCase):
 
         self.assertEqual(sys.path, self.orig_path)
 
+
 class TestPrinter(unittest.TestCase):
+    # XXX: This currently is nothing more than a smoke test,
+    # the output format is not validated in any way.
+
     def setUp(self):
         self.mg = modulegraph2.ModuleGraph()
-        self.mg.add_module('sys')
+        self.mg.add_module("sys")
 
     def test_html_graph(self):
         fp = io.StringIO()
@@ -150,14 +159,43 @@ class TestPrinter(unittest.TestCase):
         text = fp.getvalue()
         self.assertTrue(text.startswith("digraph modulegraph {"))
 
-class TestBuilder (unittest.TestCase):
+    def test_dot_graph_with_structure(self):
+        fp = io.StringIO()
 
+        self.mg.add_script(
+            pathlib.Path(__file__).resolve().parent
+            / "modulegraph-dir"
+            / "trivial-script"
+        )
+
+        with main.saved_syspath():
+            sys.path.insert(
+                0,
+                os.fspath(pathlib.Path(__file__).resolve().parent / "modulegraph-dir"),
+            )
+
+            self.mg.add_module("global_import")
+            self.mg.add_module("missing_in_package.py")
+            self.mg.add_module("import_sys_star.py")
+            self.mg.add_module("wheel")
+            self.mg.add_module("wheel.__main__")
+            self.mg.add_module("pip")
+
+        main.print_graph(fp, main.OutputFormat.GRAPHVIZ, self.mg)
+
+        text = fp.getvalue()
+        self.assertTrue(text.startswith("digraph modulegraph {"))
+
+
+class TestBuilder(unittest.TestCase):
     def test_graph_modules(self):
         args = argparse.Namespace()
         args.node_type = main.NodeType.MODULE
-        args.path = [os.fspath(pathlib.Path(__file__).resolve().parent / "modulegraph-dir")]
+        args.path = [
+            os.fspath(pathlib.Path(__file__).resolve().parent / "modulegraph-dir")
+        ]
         args.excludes = ["no_imports", "circular_c"]
-        args.name = ["global_import", "circular_a" ]
+        args.name = ["global_import", "circular_a"]
 
         mg = main.make_graph(args)
 
@@ -176,7 +214,9 @@ class TestBuilder (unittest.TestCase):
     def test_graph_no_modules(self):
         args = argparse.Namespace()
         args.node_type = main.NodeType.MODULE
-        args.path = [os.fspath(pathlib.Path(__file__).resolve().parent / "modulegraph-dir")]
+        args.path = [
+            os.fspath(pathlib.Path(__file__).resolve().parent / "modulegraph-dir")
+        ]
         args.excludes = ["no_imports"]
         args.name = []
 
@@ -187,9 +227,17 @@ class TestBuilder (unittest.TestCase):
     def test_graph_script(self):
         args = argparse.Namespace()
         args.node_type = main.NodeType.SCRIPT
-        args.path = [os.fspath(pathlib.Path(__file__).resolve().parent / "modulegraph-dir")]
+        args.path = [
+            os.fspath(pathlib.Path(__file__).resolve().parent / "modulegraph-dir")
+        ]
         args.excludes = []
-        args.name = [ os.fspath(pathlib.Path(__file__).resolve().parent / "modulegraph-dir" / "trivial-script") ]
+        args.name = [
+            os.fspath(
+                pathlib.Path(__file__).resolve().parent
+                / "modulegraph-dir"
+                / "trivial-script"
+            )
+        ]
 
         mg = main.make_graph(args)
         roots = list(mg.roots())
@@ -200,9 +248,17 @@ class TestBuilder (unittest.TestCase):
     def test_graph_scripts(self):
         args = argparse.Namespace()
         args.node_type = main.NodeType.SCRIPT
-        args.path = [os.fspath(pathlib.Path(__file__).resolve().parent / "modulegraph-dir")]
+        args.path = [
+            os.fspath(pathlib.Path(__file__).resolve().parent / "modulegraph-dir")
+        ]
         args.excludes = []
-        args.name = [ os.fspath(pathlib.Path(__file__).resolve().parent / "modulegraph-dir" / "trivial-script")] * 2
+        args.name = [
+            os.fspath(
+                pathlib.Path(__file__).resolve().parent
+                / "modulegraph-dir"
+                / "trivial-script"
+            )
+        ] * 2
 
         mg = main.make_graph(args)
         roots = list(mg.roots())
@@ -213,9 +269,11 @@ class TestBuilder (unittest.TestCase):
     def test_graph_scripts(self):
         args = argparse.Namespace()
         args.node_type = main.NodeType.SCRIPT
-        args.path = [os.fspath(pathlib.Path(__file__).resolve().parent / "modulegraph-dir")]
+        args.path = [
+            os.fspath(pathlib.Path(__file__).resolve().parent / "modulegraph-dir")
+        ]
         args.excludes = []
-        args.name = [ ]
+        args.name = []
 
         mg = main.make_graph(args)
         self.assertEqual(list(mg.nodes()), [])
@@ -226,7 +284,7 @@ class TestBuilder (unittest.TestCase):
         args.node_type = main.NodeType.DISTRIBUTION
         args.path = []
         args.excludes = []
-        args.name = [ "pip" ]
+        args.name = ["pip"]
 
         mg = main.make_graph(args)
         roots = list(mg.roots())
@@ -238,20 +296,85 @@ class TestBuilder (unittest.TestCase):
     def test_graph_no_distribution(self):
         args = argparse.Namespace()
         args.node_type = main.NodeType.DISTRIBUTION
-        args.path = [ ]
+        args.path = []
         args.excludes = []
-        args.name = [ ]
+        args.name = []
 
         mg = main.make_graph(args)
         self.assertEqual(list(mg.nodes()), [])
 
+
 class TestFormatGraph(unittest.TestCase):
-    def test_missing(self):
-        # Mock main.print_graph
-        self.fail()
+    @unittest.mock.patch("modulegraph2.__main__.print_graph", spec=True)
+    def test_format_to_stdout(self, print_graph):
+        args = argparse.Namespace()
+        args.output_file = None
+        args.output_format = main.OutputFormat.HTML
+
+        mg = modulegraph2.ModuleGraph()
+
+        rv = main.format_graph(args, mg)
+        self.assertIs(rv, None)
+
+        print_graph.assert_called_once_with(sys.stdout, args.output_format, mg)
+
+    @unittest.mock.patch("modulegraph2.__main__.print_graph", spec=True)
+    def test_format_to_file(self, print_graph):
+        td = tempfile.mkdtemp()
+
+        try:
+            args = argparse.Namespace()
+            args.output_file = os.path.join(td, "filename.dot")
+            args.output_format = main.OutputFormat.GRAPHVIZ
+
+            mg = modulegraph2.ModuleGraph()
+
+            rv = main.format_graph(args, mg)
+            self.assertIs(rv, None)
+
+            print_graph.assert_called_once()
+            self.assertTrue(
+                isinstance(print_graph.mock_calls[-1][1][0], io.TextIOWrapper)
+            )
+            self.assertEqual(print_graph.mock_calls[-1][1][0].name, args.output_file)
+
+            self.assertEqual(print_graph.mock_calls[-1][1][1], args.output_format)
+
+            self.assertIs(print_graph.mock_calls[-1][1][2], mg)
+
+        finally:
+            os.unlink(os.path.join(td, "filename.dot"))
+            os.rmdir(td)
+
+    def test_format_to_invalid_file(self):
+        with captured_output() as (stdout, stderr):
+            args = argparse.Namespace()
+            args.output_file = os.path.join("nosuchdir/filename.dot")
+            args.output_format = main.OutputFormat.GRAPHVIZ
+
+            mg = modulegraph2.ModuleGraph()
+
+            self.assertRaises(SystemExit, main.format_graph, args, mg)
+
+        self.assertIn("No such file or directory", stderr.getvalue())
+
 
 class TestMain(unittest.TestCase):
-    def test_missing(self):
-        # Just make sure the various functions are called in the right order
-        # Use mocks.
-        self.fail()
+    @unittest.mock.patch("modulegraph2.__main__.parse_arguments", spec=True)
+    @unittest.mock.patch("modulegraph2.__main__.make_graph", spec=True)
+    @unittest.mock.patch("modulegraph2.__main__.format_graph", spec=True)
+    def test_main_order(self, format_graph, make_graph, parse_arguments):
+        # This is way to specific and is not much better than code that
+        # ensures we can have 100% test coverage.
+        argv = unittest.mock.MagicMock()
+        parse_arguments.return_value = unittest.mock.MagicMock()
+        make_graph.return_value = unittest.mock.MagicMock()
+
+        result = main.main(argv)
+
+        self.assertIs(result, None)
+        parse_arguments.assert_called_once_with(argv)
+        make_graph.assert_called_once_with(parse_arguments.return_value)
+        format_graph.assert_called_once_with(
+            parse_arguments.return_value, make_graph.return_value
+        )
