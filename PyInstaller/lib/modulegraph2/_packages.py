@@ -16,20 +16,48 @@ import dataclasses
 @dataclasses.dataclass(frozen=True)
 class PyPIDistribution:
     """
-    Information about a python package distribution
+    Information about a package distribution
+
+    Attributes:
+      identifier:  Unique identifier fot the distribution for use with
+                   :class:`modulegraph2.ObjectGraph`
+
+      name: Name of the distribution (as it is found on PyPI)
+
+      files: Files that are part of this distribution
+
+      import_names: The importable names in this distribution (modules and packages)
     """
 
-    identifier: str  # "Random" identifier, not a valid python module name
-    name: str  # Name of the distribution
-    version: str  # Version of the distribution
-    files: Set[str]  # List of files in the distribution, as absolute paths
-    import_names: Set[str]  # List of importable names in this distribution
+    identifier: str
+    name: str
+    version: str
+    files: Set[str]
+    import_names: Set[str]
 
     def contains_file(self, filename: Union[str, os.PathLike]):
+        """
+        Check if a file is part of this distribution.
+
+        Args:
+           filename: The filename to look for
+
+        Returns:
+           True if *filename* is part of this distribution, otherwise False.
+        """
         return os.fspath(filename) in self.files
 
 
 def create_distribution(distribution_file: str) -> PyPIDistribution:
+    """
+    Create a distribution object for a given dist-info directory.
+
+    Args:
+      distribution_file: Filename for a dist-info directory
+
+    Returns
+      A :class:`PyPIDistribution` for *distribution_file*
+    """
     files: List[str] = []
     import_names: List[str] = []
 
@@ -88,7 +116,18 @@ def create_distribution(distribution_file: str) -> PyPIDistribution:
 _cached_distributions: Dict[str, PyPIDistribution] = {}
 
 
-def all_distributions(path: Iterable[str] = sys.path) -> Iterator[PyPIDistribution]:
+def all_distributions(
+    path: Optional[Iterable[str]] = None
+) -> Iterator[PyPIDistribution]:
+    """
+    Yield all distributions found on the search path.
+
+    Args:
+       path: Module search path (defaults to :data:`sys.path`).
+    """
+    if path is None:
+        path = sys.path
+
     for entry in path:
         try:
             for fname in os.listdir(entry):
@@ -111,12 +150,17 @@ def all_distributions(path: Iterable[str] = sys.path) -> Iterator[PyPIDistributi
 
 
 def distribution_for_file(
-    filename: Union[str, os.PathLike], path: Iterable[str]
+    filename: Union[str, os.PathLike], path: Optional[Iterable[str]]
 ) -> Optional[PyPIDistribution]:
     """
     Find a distribution for a given file, for installed distributions.
 
-    Raises FileNotFoundError when no distribution can be found
+    Args:
+      filename: Filename to look for
+      path: Module search path (defaults to :data:`sys.path`)
+
+    Returns:
+      The distribution that contains *filename*, or None
     """
     for dist in all_distributions(path):
         if dist.contains_file(filename):
@@ -126,8 +170,18 @@ def distribution_for_file(
 
 
 def distribution_named(
-    name: str, path: Iterable[str] = sys.path
+    name: str, path: Optional[Iterable[str]] = None
 ) -> Optional[PyPIDistribution]:
+    """
+    Find a named distribution on the search path.
+
+    Args:
+      name: Distribution name to look for.
+      path: Module search path (defaults to :data:`sys.path`)
+
+    Returns:
+      The distribution, or None
+    """
     for dist in all_distributions(path):
         if dist.name == name:
             return dist
