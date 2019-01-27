@@ -5,8 +5,9 @@ import importlib.util
 import sys
 from typing import Optional
 
+import modulegraph2
+
 from ._graphbuilder import node_for_spec
-from ._modulegraph import ModuleGraph
 from ._nodes import BaseNode, ExtensionModule, Package
 
 # SWIG uses an absolute import to find an extension
@@ -24,9 +25,11 @@ from ._nodes import BaseNode, ExtensionModule, Package
 
 
 def swig_missing_hook(
-    graph: ModuleGraph, importing_module: Optional[BaseNode], missing_name: str
+    graph: "modulegraph2.ModuleGraph",
+    importing_module: Optional[BaseNode],
+    missing_name: str,
 ) -> Optional[BaseNode]:
-    if importing_module is None or not isinstance(importing_module, Package):
+    if importing_module is None:
         return None
 
     if missing_name != "_" + importing_module.name.rpartition(".")[-1]:
@@ -38,12 +41,14 @@ def swig_missing_hook(
     # This may well be a SWIG extension, try to locate the extension
     # and if found add it as the global module it is (even if found at
     # a non-standard location)
-    spec = importlib.util.find_spec("." + missing_name, importing_module.name)
+    spec = importlib.util.find_spec("." + missing_name, importing_module.name.rpartition(".")[0])
     if spec is not None:
-        node = node_for_spec(spec, sys.path)
+        node, imports = node_for_spec(spec, sys.path)
         if not isinstance(node, ExtensionModule):
             # Not an extension after all.
             return None
+
+        assert imports == (), "Extension modules shouldn't have an import list"
 
         node.name = missing_name
         node.loader = None
