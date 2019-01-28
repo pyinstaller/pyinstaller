@@ -2,7 +2,6 @@
 The actual graph
 """
 import ast
-import collections
 import functools
 import importlib
 import operator

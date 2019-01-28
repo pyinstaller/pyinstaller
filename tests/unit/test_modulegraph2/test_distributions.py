@@ -5,9 +5,34 @@ import shutil
 import subprocess
 import sys
 import unittest
+import zipfile
 
 import modulegraph2._distributions as distributions
 import modulegraph2
+
+
+def rewrite_record(wheel_file):
+    zf = zipfile.ZipFile(wheel_file, "a")
+    if "simple_package-1.0.dist-info/RECORD" not in zf.namelist():
+        zf.close()
+        return
+
+    record = zf.read("simple_package-1.0.dist-info/RECORD")
+
+    new = []
+    for ln in record.splitlines():
+        fields = ln.rsplit(b",", 2)
+        if fields[0].startswith(b'"'):
+            continue
+
+        if b'"' in fields[0]:
+            fields[0] = fields[0].replace(b'"', b'""')
+        if b"," in fields[0] or b'"' in fields[0]:
+            fields[0] = b'"' + fields[0] + b'"'
+        new.append(b",".join(fields) + b"\n")
+    record = b"".join(new)
+    zf.writestr("simple_package-1.0.dist-info/RECORD", record)
+    zf.close()
 
 
 def build_and_install(source_path, destination_path):
@@ -24,6 +49,11 @@ def build_and_install(source_path, destination_path):
             break
     else:
         raise RuntimeError("Wheel not build")
+
+    # XXX: Wheel 0.32.3 generates a RECORD that is not a vallid CSV, and
+    # pip doesn't like that. Therefore rewrite the RECORD file in one of
+    # the test zipfiles.
+    rewrite_record(wheel_file)
 
     subprocess.check_call(
         [sys.executable, "-mpip", "-qqq", "install", "-t", destination_path, wheel_file]

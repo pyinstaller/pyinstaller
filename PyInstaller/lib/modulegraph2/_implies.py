@@ -9,7 +9,7 @@ NOTE:
 
 import os
 import sys
-from typing import Dict, Sequence, Union
+from typing import Dict, Sequence, Tuple, Union
 
 
 class Alias(str):
@@ -108,7 +108,9 @@ STDLIB_PLATFORM_IMPLIES: Dict[str, Dict[str, ImpliesValueType]] = {
 
 STDLIB_IMPLIES.update(STDLIB_PLATFORM_IMPLIES.get(sys.platform, {}))
 
-if sys.version_info[:2] < (3, 7):
-    # The earlier definition includes a module
-    # introduced in 3.7
-    STDLIB_IMPLIES["zipimport"] = ("zlib",)
+
+STDLIB_VERSION_IMPLIES: Dict[Tuple[int, int], Dict[str, ImpliesValueType]] = {
+    (3, 6): {"zipimport": ("zlib",)}
+}
+
+STDLIB_IMPLIES.update(STDLIB_VERSION_IMPLIES.get(sys.version_info[:2], {}))

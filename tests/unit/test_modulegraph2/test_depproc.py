@@ -5,16 +5,19 @@ from modulegraph2 import _nodes as nodes
 
 
 class TestDependentProcessor(unittest.TestCase):
-    def test_missing(self):
-        self.fail("Test repr and has_unfinished")
-
     def test_empty(self):
         node = nodes.MissingModule("nosuchmodule")
         proc = depproc.DependentProcessor()
         self.assertFalse(proc.have_finished_work())
+        self.assertEqual(repr(proc), "<DependentProcessor #finished_q=0 #waiting=0>")
+        self.assertFalse(proc.has_unfinished)
         proc.finished(node)
+        self.assertEqual(repr(proc), "<DependentProcessor #finished_q=1 #waiting=0>")
+        self.assertTrue(proc.has_unfinished)
         self.assertTrue(proc.have_finished_work())
         proc.process_finished_nodes()
+        self.assertEqual(repr(proc), "<DependentProcessor #finished_q=0 #waiting=0>")
+        self.assertFalse(proc.has_unfinished)
         self.assertFalse(proc.have_finished_work())
 
     def test_basic(self):
@@ -25,6 +28,8 @@ class TestDependentProcessor(unittest.TestCase):
 
         results = []
         proc.wait_for(node1, node2, lambda n1, n2: results.append((n1, n2)))
+        self.assertTrue(proc.has_unfinished)
+        self.assertEqual(repr(proc), "<DependentProcessor #finished_q=0 #waiting=1>")
         self.assertEqual(results, [])
         self.assertFalse(proc.have_finished_work())
 
