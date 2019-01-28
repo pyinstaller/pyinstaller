@@ -22,7 +22,7 @@ from modulegraph2 import (
     SourceModule,
 )
 
-from modulegraph2._packages import distribution_for_file
+from modulegraph2._distributions import distribution_for_file
 
 INPUT_DIR = pathlib.Path(__file__).resolve().parent / "modulegraph-dir"
 
@@ -1886,7 +1886,7 @@ class TestModuleGraphHooks(unittest.TestCase):
         mg.add_root(node)
 
         mg.import_module(node, "no_imports")
-        mg._run_q()  # XXX: Private API
+        mg._run_stack()  # XXX: Private API
 
         self.assert_has_edge(
             mg, "no_imports", "marshal", {DependencyInfo(False, True, False, None)}

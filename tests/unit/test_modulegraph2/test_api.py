@@ -3,26 +3,25 @@ import unittest
 import modulegraph2
 
 PUBLIC_SYMBOLS = {
-    "all_distributions",
-    "distribution_named",
     "Alias",
     "AliasNode",
-    "DependencyInfo",
     "BuiltinModule",
     "BytecodeModule",
+    "DependencyInfo",
     "ExcludedModule",
     "ExtensionModule",
     "FrozenModule",
+    "InvalidRelativeImport",
     "MissingModule",
     "Module",
     "ModuleGraph",
     "NamespacePackage",
-    "ObjectGraph",
     "Package",
     "PyPIDistribution",
     "Script",
     "SourceModule",
-    "InvalidRelativeImport",
+    "all_distributions",
+    "distribution_named",
 }
 
 PYTHON_SYMBOLS = {

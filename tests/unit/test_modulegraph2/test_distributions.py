@@ -6,7 +6,7 @@ import subprocess
 import sys
 import unittest
 
-import modulegraph2._packages as packages
+import modulegraph2._distributions as distributions
 import modulegraph2
 
 
@@ -32,12 +32,12 @@ def build_and_install(source_path, destination_path):
 
 class TestPackageBuilder(unittest.TestCase):
     def setUp(self):
-        self._cached_distributions = packages._cached_distributions.copy()
-        packages._cached_distributions.clear()
+        self._cached_distributions = distributions._cached_distributions.copy()
+        distributions._cached_distributions.clear()
 
     def tearDown(self):
-        packages._cached_distributions.clear()
-        packages._cached_distributions.update(self._cached_distributions)
+        distributions._cached_distributions.clear()
+        distributions._cached_distributions.update(self._cached_distributions)
 
     def test_basic_package(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -47,7 +47,7 @@ class TestPackageBuilder(unittest.TestCase):
 
             for fn in os.listdir(tmpdir):
                 if fn.startswith("simple_package") and fn.endswith(".dist-info"):
-                    info = packages.create_distribution(os.path.join(tmpdir, fn))
+                    info = distributions.create_distribution(os.path.join(tmpdir, fn))
                     break
             else:
                 self.fail("Cannot find simple-package installation")
@@ -91,7 +91,7 @@ class TestPackageBuilder(unittest.TestCase):
 
             for fn in os.listdir(tmpdir):
                 if fn.startswith("bytecode_package") and fn.endswith(".dist-info"):
-                    info = packages.create_distribution(os.path.join(tmpdir, fn))
+                    info = distributions.create_distribution(os.path.join(tmpdir, fn))
                     break
             else:
                 self.fail("Cannot find bytecode-package installation")
@@ -124,46 +124,47 @@ class TestPackageBuilder(unittest.TestCase):
 class TestPackageFinder(unittest.TestCase):
     def test_not_found(self):
         self.assertEqual(
-            packages.distribution_for_file(os.path.abspath(__file__), sys.path), None
+            distributions.distribution_for_file(os.path.abspath(__file__), sys.path),
+            None,
         )
 
     def test_found_package(self):
         import pip
 
-        p = packages.distribution_for_file(os.path.abspath(pip.__file__), sys.path)
+        p = distributions.distribution_for_file(os.path.abspath(pip.__file__), sys.path)
         self.assertEqual(p.name, "pip")
 
 
 class TestPackageLister(unittest.TestCase):
     def setUp(self):
-        self._cached_distributions = packages._cached_distributions.copy()
-        packages._cached_distributions.clear()
+        self._cached_distributions = distributions._cached_distributions.copy()
+        distributions._cached_distributions.clear()
 
     def tearDown(self):
-        packages._cached_distributions.clear()
-        packages._cached_distributions.update(self._cached_distributions)
+        distributions._cached_distributions.clear()
+        distributions._cached_distributions.update(self._cached_distributions)
 
     def test_all_distributions(self):
         seen = set()
-        for dist in packages.all_distributions(sys.path):
-            self.assertTrue(isinstance(dist, packages.PyPIDistribution))
+        for dist in distributions.all_distributions(sys.path):
+            self.assertTrue(isinstance(dist, distributions.PyPIDistribution))
             seen.add(dist.name)
 
         self.assertIn("pip", seen)
         self.assertIn("wheel", seen)
 
         seen2 = set()
-        for dist in packages.all_distributions(sys.path):
-            self.assertTrue(isinstance(dist, packages.PyPIDistribution))
+        for dist in distributions.all_distributions(sys.path):
+            self.assertTrue(isinstance(dist, distributions.PyPIDistribution))
             seen2.add(dist.name)
 
         self.assertEqual(seen, seen2)
 
     def test_distribution_named(self):
-        dist = packages.distribution_named("pip")
+        dist = distributions.distribution_named("pip")
         self.assertIsNot(dist, None)
-        self.assertTrue(isinstance(dist, packages.PyPIDistribution))
+        self.assertTrue(isinstance(dist, distributions.PyPIDistribution))
         self.assertEqual(dist.name, "pip")
 
-        dist = packages.distribution_named("no-such-dist")
+        dist = distributions.distribution_named("no-such-dist")
         self.assertIs(dist, None)

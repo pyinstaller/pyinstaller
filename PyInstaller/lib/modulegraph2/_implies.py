@@ -13,6 +13,15 @@ from typing import Dict, Sequence, Union
 
 
 class Alias(str):
+    """
+    Alias for a module name
+
+    Aliases are used in "implies" configuration to specify
+    that a module name is actually an alias for some other
+    name. An instance of this class is used to represent.
+    the name of the other module.
+    """
+
     pass
 
 

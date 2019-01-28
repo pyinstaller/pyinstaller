@@ -1,7 +1,7 @@
-- Test: circular import with 'from ... import *' and 'from ... import a'
-  (Both should result in a missing module node)
-- Add method to depproc to assert that there is no pending work
-  and use this in testing and/or run_q
+- Handling errors in package __init__.py, these currently cause problems
+  for the graph builder (and make it impossible to tweak behaviour using
+  recipes)
+
 - Detect "as" imports and use information in the graph
   -> Is easy when the ast can be used, don't do this for
      bytecode scanner.
@@ -10,18 +10,6 @@
        - a: "from b import c", b: "import sys as c" [with correct link]
        - a: "from b import c", b: "from sys import path as c" [no link to 'c']
        - a: "from b import c", b: "from package import submod as c" [with correct link]
-- Add mechanism the is called before creating
-  a MissingModule node, and use this to implement
-  support for SWIG (this should be a seperate module
-  that is unconditionally used)
-  -> Need implementation (and tests) for SWIG support
-     (this might need to importing node as well as the name
-      of the missing module...)
-  -> SWIG code is present, but not hooked up and without
-     tests (need a minimal SWIG project for that, as well
-     as testcases that don't match SWIG for a number of
-     reasons)
-
 
 - Add support for setuptools style namespace packages
   (T.B.D. if this needs an extension hook)
@@ -31,20 +19,6 @@
 
 - Add support for virtual environments (venv and virtualenv)
   [Tests for both, likely special support for virtualenv]
-
-- Write exporters:
-  - dot file
-  - HTML (using D3.js)
-
-  -> Both: actual exporter works on ObjectGraph level,
-     with hooks to customize node and edge L&F (text and attributes)
-  -> Try to use the same hooks in both
-  -> Also specific implementations for these hooks to use
-     with ModuleGraph
-  -> Add utility for "compressing" graph by creating a new graph
-     containing less information (for example, replacing nodes for
-     modules in a PyPI distribution by a single node for that
-     distribution while adjusting graph edges).  Not in place.
 
 - Investigate if is is possible to use importlib with an alterate
   path (and sys.modules!).
@@ -75,6 +49,9 @@
 - pyobjc framework wrappers probably need work on both sides
   to be handled properly (I expect the lazy loader to be
   problematic)
+
+- Move source code to 'src' subdir (to ensure testsuite tests what
+  gets installed instead of what happens to be in the source tree)
 
 - Split of objectgraph to seperate PyPI package
 

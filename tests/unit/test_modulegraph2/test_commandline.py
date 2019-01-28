@@ -14,6 +14,8 @@ from modulegraph2 import __main__ as main
 
 import modulegraph2
 
+from . import util
+
 
 @contextlib.contextmanager
 def captured_output():
@@ -122,13 +124,13 @@ class TestPathSaver(unittest.TestCase):
         sys.path[:] = self.orig_path
 
     def test_no_action(self):
-        with main.saved_syspath():
+        with main.saved_sys_path():
             pass
 
         self.assertEqual(sys.path, self.orig_path)
 
     def test_change_path(self):
-        with main.saved_syspath():
+        with main.saved_sys_path():
             sys.path.insert(0, "foo")
             sys.path.insert(0, "bar")
 
@@ -138,6 +140,12 @@ class TestPathSaver(unittest.TestCase):
 class TestPrinter(unittest.TestCase):
     # XXX: This currently is nothing more than a smoke test,
     # the output format is not validated in any way.
+
+    @classmethod
+    def tearDownClass(cls):
+        util.clear_sys_modules(
+            pathlib.Path(pathlib.Path(__file__).resolve().parent / "modulegraph-dir")
+        )
 
     def setUp(self):
         self.mg = modulegraph2.ModuleGraph()
@@ -168,7 +176,7 @@ class TestPrinter(unittest.TestCase):
             / "trivial-script"
         )
 
-        with main.saved_syspath():
+        with main.saved_sys_path():
             sys.path.insert(
                 0,
                 os.fspath(pathlib.Path(__file__).resolve().parent / "modulegraph-dir"),
@@ -188,6 +196,12 @@ class TestPrinter(unittest.TestCase):
 
 
 class TestBuilder(unittest.TestCase):
+    @classmethod
+    def tearDownClass(cls):
+        util.clear_sys_modules(
+            pathlib.Path(pathlib.Path(__file__).resolve().parent / "modulegraph-dir")
+        )
+
     def test_graph_modules(self):
         args = argparse.Namespace()
         args.node_type = main.NodeType.MODULE

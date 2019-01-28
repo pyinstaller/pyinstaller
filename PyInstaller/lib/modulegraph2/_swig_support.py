@@ -8,7 +8,7 @@ from typing import Optional
 import modulegraph2
 
 from ._graphbuilder import node_for_spec
-from ._nodes import BaseNode, ExtensionModule, Package
+from ._nodes import BaseNode, ExtensionModule, Module, Package
 
 # SWIG uses an absolute import to find an extension
 # module located in a package (basically a Python 2
@@ -29,7 +29,7 @@ def swig_missing_hook(
     importing_module: Optional[BaseNode],
     missing_name: str,
 ) -> Optional[BaseNode]:
-    if importing_module is None:
+    if importing_module is None or not isinstance(importing_module, (Module, Package)):
         return None
 
     if missing_name != "_" + importing_module.name.rpartition(".")[-1]:
@@ -41,7 +41,9 @@ def swig_missing_hook(
     # This may well be a SWIG extension, try to locate the extension
     # and if found add it as the global module it is (even if found at
     # a non-standard location)
-    spec = importlib.util.find_spec("." + missing_name, importing_module.name.rpartition(".")[0])
+    spec = importlib.util.find_spec(
+        "." + missing_name, importing_module.name.rpartition(".")[0]
+    )
     if spec is not None:
         node, imports = node_for_spec(spec, sys.path)
         if not isinstance(node, ExtensionModule):

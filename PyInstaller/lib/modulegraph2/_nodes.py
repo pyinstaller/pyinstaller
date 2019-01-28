@@ -5,7 +5,7 @@ from typing import List, Optional, Set
 
 import dataclasses
 
-from ._packages import PyPIDistribution
+from ._distributions import PyPIDistribution
 
 
 @dataclasses.dataclass
@@ -39,6 +39,10 @@ class Script(BaseNode):
 
 @dataclasses.dataclass
 class Module(BaseNode):
+    """
+    Information about a Module
+    """
+
     globals_written: Set[str]
     globals_read: Set[str]
 

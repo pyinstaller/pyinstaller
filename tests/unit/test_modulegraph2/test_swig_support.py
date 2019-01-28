@@ -9,7 +9,10 @@ import shutil
 
 import modulegraph2
 
+from . import util
+
 INPUT_DIR = pathlib.Path(__file__).resolve().parent / "swig-dir"
+
 
 @contextlib.contextmanager
 def prefixed_sys_path(dir_path):
@@ -26,13 +29,22 @@ class TestSWIGSupport(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         for subdir in INPUT_DIR.iterdir():
-            if not subdir.is_dir(): continue
+            if not subdir.is_dir():
+                continue
+
+            if not (subdir / "setup.py").exists():
+                continue
 
             if (subdir / "build").exists():
                 shutil.rmtree(subdir / "build")
             if (subdir / "dist").exists():
                 shutil.rmtree(subdir / "dist")
-            subprocess.check_call([sys.executable, "setup.py", "build_ext"], cwd=subdir, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            subprocess.check_call(
+                [sys.executable, "setup.py", "build_ext"],
+                cwd=subdir,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
 
     @classmethod
     def tearDownClass(cls):
@@ -50,12 +62,16 @@ class TestSWIGSupport(unittest.TestCase):
         importlib.invalidate_caches()
 
         for subdir in INPUT_DIR.iterdir():
-            if not subdir.is_dir(): continue
+            if not subdir.is_dir():
+                continue
 
             if (subdir / "build").exists():
                 shutil.rmtree(subdir / "build")
             if (subdir / "dist").exists():
                 shutil.rmtree(subdir / "dist")
+
+    def tearDown(self):
+        util.clear_sys_modules(INPUT_DIR)
 
     def assert_has_edge(self, mg, from_name, to_name, edge_data):
         self.assert_has_node(mg, from_name)
@@ -151,6 +167,49 @@ class TestSWIGSupport(unittest.TestCase):
         with prefixed_sys_path(INPUT_DIR / "package_submod"):
 
             mg = modulegraph2.ModuleGraph(use_builtin_hooks=False)
+            mg.add_module("using")
+
+            self.assert_has_node(mg, "using", modulegraph2.SourceModule)
+            self.assert_has_node(mg, "package", modulegraph2.Package)
+            self.assert_has_node(mg, "package.example", modulegraph2.SourceModule)
+
+            # Note that this is a toplevel module, not in the package:
+            self.assert_has_node(mg, "_example", modulegraph2.MissingModule)
+
+            self.assert_has_edge(mg, "package.example", "_example", None)
+
+    def test_missing_but_not_swig(self):
+        with prefixed_sys_path(INPUT_DIR / "not_swig"):
+
+            mg = modulegraph2.ModuleGraph()
+            mg.add_module("example")
+
+            self.assert_has_node(mg, "example", modulegraph2.SourceModule)
+
+            # Note that this is a toplevel module, not in the package:
+            self.assert_has_node(mg, "_example", modulegraph2.MissingModule)
+
+            self.assert_has_edge(mg, "example", "_example", None)
+
+    def test_package_extension_not_found(self):
+        with prefixed_sys_path(INPUT_DIR / "package_no_ext"):
+
+            mg = modulegraph2.ModuleGraph()
+            mg.add_module("using")
+
+            self.assert_has_node(mg, "using", modulegraph2.SourceModule)
+            self.assert_has_node(mg, "package", modulegraph2.Package)
+            self.assert_has_node(mg, "package.example", modulegraph2.SourceModule)
+
+            # Note that this is a toplevel module, not in the package:
+            self.assert_has_node(mg, "_example", modulegraph2.MissingModule)
+
+            self.assert_has_edge(mg, "package.example", "_example", None)
+
+    def test_package_extension_is_module(self):
+        with prefixed_sys_path(INPUT_DIR / "package_toplevel_module"):
+
+            mg = modulegraph2.ModuleGraph()
             mg.add_module("using")
 
             self.assert_has_node(mg, "using", modulegraph2.SourceModule)

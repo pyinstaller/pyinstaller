@@ -7,17 +7,20 @@ import enum
 import functools
 import importlib
 import os
-import pathlib
 import sys
-from typing import List, TextIO
+from typing import Dict, Iterator, List, Sequence, Set, TextIO, Tuple, Union
 
 from . import __version__
+from ._depinfo import DependencyInfo
 from ._dotbuilder import export_to_dot
 from ._htmlbuilder import export_to_html
 from ._modulegraph import ModuleGraph
+from ._nodes import BaseNode
 
 # --- XXX: This block needs to be elsewhere
 
+# Mapping from node class name to Graphviz attributes for the
+# node.
 NODE_ATTR = {
     "Script": {"shape": "note"},
     "Package": {"shape": "folder"},
@@ -29,8 +32,18 @@ NODE_ATTR = {
 }
 
 
-def format_node(node, mg):
-    results = {}
+def format_node(node: BaseNode, mg: ModuleGraph) -> Dict[str, Union[str, int]]:
+    """
+    Return a dict of Graphviz attributes for *node*
+
+    Args:
+       node: The node to format
+       mg: The graph containing the node
+
+    Returns:
+       Graphviz attributes for the node
+    """
+    results: Dict[str, Union[str, int]] = {}
     if node in mg.roots():
         results["penwidth"] = 2
         results["root"] = "true"
@@ -40,8 +53,21 @@ def format_node(node, mg):
     return results
 
 
-def format_edge(source, target, edge):
-    results = {}
+def format_edge(
+    source: BaseNode, target: BaseNode, edge: Set[DependencyInfo]
+) -> Dict[str, Union[str, int]]:
+    """
+    Return a dict of Graphviz attributes for an edge
+
+    Args:
+      source: Source node for the edge
+      target: Target node for the edge
+      edge: Set of edge attributes
+
+    Returns:
+       Graphviz attributes for the edge
+    """
+    results: Dict[str, Union[str, int]] = {}
 
     if all(e.is_optional for e in edge):
         results["style"] = "dashed"
@@ -53,8 +79,22 @@ def format_edge(source, target, edge):
     return results
 
 
-def group_nodes(graph):
-    clusters = {}
+def group_nodes(graph: ModuleGraph) -> Iterator[Tuple[str, str, Sequence[BaseNode]]]:
+    """
+    Detect groups of reachable nodes in the graph.
+
+    This function groups nodes in two ways:
+    - Group all nodes related to a particular distribution
+    - Group all nodes in the same stdlib package
+
+    Args:
+      graph: The dependency graph
+
+    Returns:
+      A list of ``(groupname, shape, nodes)`` for the
+      groupings.
+    """
+    clusters: Dict[str, Tuple[str, str, List[BaseNode]]] = {}
     for node in graph.iter_graph():
         if node.distribution is not None:
             dist = node.distribution.name
@@ -72,7 +112,7 @@ def group_nodes(graph):
 
                 clusters[dist][-1].append(node)
 
-    return list(clusters.values())
+    return iter(clusters.values())
 
 
 # ----
@@ -80,6 +120,11 @@ def group_nodes(graph):
 
 @enum.unique
 class NodeType(enum.Enum):
+    """
+    The types of nodes that can be added to
+    a dependency graph
+    """
+
     SCRIPT = enum.auto()
     MODULE = enum.auto()
     DISTRIBUTION = enum.auto()
@@ -87,12 +132,22 @@ class NodeType(enum.Enum):
 
 @enum.unique
 class OutputFormat(enum.Enum):
+    """
+    The file formats that can be used for
+    output.
+    """
+
     HTML = "html"
     GRAPHVIZ = "dot"
 
 
 @contextlib.contextmanager
-def saved_syspath():
+def saved_sys_path():
+    """
+    Contextmanager that will restore the value
+    of :data:`sys.path` when leaving the ``with``
+    block.
+    """
     orig_path = list(sys.path)
 
     try:
@@ -104,6 +159,30 @@ def saved_syspath():
 
 
 def parse_arguments(argv: List[str]) -> argparse.Namespace:
+    """
+    Parse command-line arguments for the module.
+
+    The result namespace contains the following attributes:
+
+      - **node_type (NodeType)**: The type of node that should be added.
+
+      - **output_format (OutputFormat)**: File type for outputting the graph.
+
+      - **excludes (List[str])**: List of modules to exclude from the graph.
+
+      - **path (List[str])**: Directories to add to :data:`sys.path`.
+
+      - **output_file** (Optional[str])**: Filename to output to.
+
+    Args:
+      argv: The script arguments, usually ``sys.argv[1:]``
+
+    Returns:
+      The parsed options.
+
+    Raises:
+      SystemExit: On usage errors or when the user has requested help
+    """
     parser = argparse.ArgumentParser(
         prog=f"{sys.executable.rsplit('/')[-1]} -mmodulegraph2",
         description=f"Graph builder from modulegraph2 {__version__}",
@@ -177,7 +256,16 @@ def parse_arguments(argv: List[str]) -> argparse.Namespace:
 
 
 def make_graph(args: argparse.Namespace) -> ModuleGraph:
-    with saved_syspath():
+    """
+    Build a dependency graph based on the command-line arguments.
+
+    Args:
+      args: The result of :func:`parse_arguments`.
+
+    Returns:
+      The generated graph
+    """
+    with saved_sys_path():
         for p in args.path[::-1]:
             sys.path.insert(0, p)
 
@@ -200,13 +288,23 @@ def make_graph(args: argparse.Namespace) -> ModuleGraph:
         return mg
 
 
-def print_graph(fp: TextIO, output_format: OutputFormat, mg: ModuleGraph) -> None:
+def print_graph(file: TextIO, output_format: OutputFormat, mg: ModuleGraph) -> None:
+    """
+    Output the graph in the given output format to a text stream.
+
+    Args:
+      file: The text stream to data should be written to
+
+      output_format: The format to use
+
+      mg: The graph to write
+    """
     if output_format == OutputFormat.HTML:
-        export_to_html(fp, mg)
+        export_to_html(file, mg)
 
     elif output_format == OutputFormat.GRAPHVIZ:
         export_to_dot(
-            fp, mg, functools.partial(format_node, mg=mg), format_edge, group_nodes
+            file, mg, functools.partial(format_node, mg=mg), format_edge, group_nodes
         )
 
     else:  # pragma: nocover
@@ -214,6 +312,14 @@ def print_graph(fp: TextIO, output_format: OutputFormat, mg: ModuleGraph) -> Non
 
 
 def format_graph(args: argparse.Namespace, mg: ModuleGraph) -> None:
+    """
+    Output the graph as specified in *args*.
+
+    Args:
+      args: Command-line arguments
+
+      mg: The graph to output.
+    """
     if args.output_file is None:
         print_graph(sys.stdout, args.output_format, mg)
     else:
@@ -227,6 +333,12 @@ def format_graph(args: argparse.Namespace, mg: ModuleGraph) -> None:
 
 
 def main(argv: List[str]) -> None:
+    """
+    Entry point for the module.
+
+    Args:
+      argv: Command-line arguments, should be ``sys.path[1:]``.
+    """
     args = parse_arguments(argv)
 
     mg = make_graph(args)

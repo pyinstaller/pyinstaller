@@ -1,7 +1,19 @@
 """ modulegraph._dotbuilder """
-from typing import Callable, Dict, Iterator, Optional, Sequence, TextIO, Tuple
+from typing import (
+    Callable,
+    Dict,
+    Iterator,
+    Optional,
+    Sequence,
+    Set,
+    TextIO,
+    Tuple,
+    Union,
+)
 
-from ._objectgraph import EDGE_TYPE, NODE_TYPE, ObjectGraph
+from objectgraph import EDGE_TYPE, NODE_TYPE  # , ObjectGraph
+
+from ._modulegraph import ModuleGraph
 
 # - Generic builder for ObjectGraph
 # - Using D3.js
@@ -27,14 +39,13 @@ def format_attributes(callable, *args):
 
 def export_to_dot(
     file: TextIO,
-    graph: ObjectGraph[NODE_TYPE, EDGE_TYPE],
-    format_node: Optional[Callable[[NODE_TYPE], Dict]] = None,
-    format_edge: Optional[Callable[[NODE_TYPE, NODE_TYPE, EDGE_TYPE], Dict]] = None,
+    graph: ModuleGraph,
+    format_node: Optional[Callable[[NODE_TYPE], Dict[str, Union[str, int]]]] = None,
+    format_edge: Optional[
+        Callable[[NODE_TYPE, NODE_TYPE, Set[EDGE_TYPE]], Dict[str, Union[str, int]]]
+    ] = None,
     group_nodes: Optional[
-        Callable[
-            [ObjectGraph[NODE_TYPE, EDGE_TYPE]],
-            Iterator[Tuple[str, str, Sequence[NODE_TYPE]]],
-        ]
+        Callable[[ModuleGraph], Iterator[Tuple[str, str, Sequence[NODE_TYPE]]]]
     ] = None,
 ) -> None:
     """

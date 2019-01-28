@@ -13,15 +13,13 @@ class DependentProcessor:
         ] = collections.defaultdict(list)
         self._finished: Set[str] = set()
         self._finished_q: List[str] = []
-        self._depcount: Dict[str, int] = collections.defaultdict(int)
 
-    def inc_depcount(self, node):
-        self._depcount[node.identifier] += 1
+    def __repr__(self):
+        return f"<DependentProcessor #finished_q={len(self._finished_q)} #waiting={len(self._waiting)}>"  # noqa: B950
 
-    def dec_depcount(self, node):
-        self._depcount[node.identifier] -= 1
-        if not self._depcount[node.identifier]:
-            self.finished(node)
+    @property
+    def has_unfinished(self):
+        return self._finished_q or self._waiting
 
     def wait_for(
         self, node: BaseNode, other: BaseNode, callback: WaitForCallback

@@ -10,10 +10,10 @@ import os
 import sys
 from typing import (
     Callable,
-    Deque,
     Dict,
     Iterable,
     Iterator,
+    List,
     Optional,
     Set,
     TextIO,
@@ -21,14 +21,16 @@ from typing import (
     Union,
 )
 
+from objectgraph import ObjectGraph
+
 from ._ast_tools import extract_ast_info
 from ._callback_list import CallbackList, FirstNotNone
 from ._depinfo import DependencyInfo, from_importinfo
 from ._depproc import DependentProcessor
+from ._distributions import PyPIDistribution
 from ._graphbuilder import SIX_MOVES_TO, node_for_spec, relative_package
 from ._implies import STDLIB_IMPLIES, Alias, ImpliesValueType
 from ._importinfo import ImportInfo
-from ._swig_support import swig_missing_hook
 from ._nodes import (
     AliasNode,
     BaseNode,
@@ -40,8 +42,7 @@ from ._nodes import (
     Package,
     Script,
 )
-from ._objectgraph import ObjectGraph
-from ._packages import PyPIDistribution
+from ._swig_support import swig_missing_hook
 
 
 def split_package(name: str) -> Tuple[Optional[str], str]:
@@ -76,16 +77,18 @@ DEFAULT_DEPENDENCY = DependencyInfo(False, True, False, None)
 class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
     _post_processing: CallbackList[ProcessingCallback]
     _missing_hook: FirstNotNone[MissingCallback]
-    _work_q: Deque[Tuple[Callable, tuple]]
+    _work_stack: List[Tuple[Callable, tuple]]
     _global_lazy_nodes: Dict[str, ImpliesValueType]
 
     _depproc: DependentProcessor
 
-    def __init__(self, *, use_stdlib_implies: bool = True, use_builtin_hooks: bool = True):
+    def __init__(
+        self, *, use_stdlib_implies: bool = True, use_builtin_hooks: bool = True
+    ):
         super().__init__()
         self._post_processing = CallbackList()
         self._missing_hook = FirstNotNone()
-        self._work_q = collections.deque()
+        self._work_stack = []
         self._depproc = DependentProcessor()
 
         self._global_lazy_nodes = {}
@@ -98,10 +101,7 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
             self.add_implies(STDLIB_IMPLIES)
 
         if use_builtin_hooks:
-            # XXX: Disabled for now, only enable once the hook
-            # itself is tested with proper coverage.
-            #self.add_missing_hook(swig_missing_hook)
-            ...
+            self.add_missing_hook(swig_missing_hook)
 
     #
     # Querying
@@ -154,7 +154,7 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
 
         node = self._load_script(script_path)
         self.add_root(node)
-        self._run_q()
+        self._run_stack()
         return node
 
     def add_module(self, module_name: str) -> BaseNode:
@@ -168,7 +168,7 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
             node = self._find_or_load_module(None, module_name)
 
         self.add_root(node)
-        self._run_q()
+        self._run_stack()
         return node
 
     #
@@ -192,8 +192,8 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
         """
         Run the post processing hooks for the node.
         """
+        self._depproc.finished(node)
         self._post_processing(self, node)
-        self._depproc.dec_depcount(node)
 
     def add_post_processing_hook(self, hook: ProcessingCallback) -> None:
         """
@@ -225,7 +225,7 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
 
         node = MissingModule(module_name)
         self.add_node(node)
-        self._run_post_processing(node)
+        self._process_import_list(node, ())
         return node
 
     def add_excludes(self, excluded_names: Iterator[str]) -> None:
@@ -255,18 +255,20 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
     # Internal: building the graph
     #
 
-    def _run_q(self) -> None:
+    def _run_stack(self) -> None:
         """
         Process all items in the delayed work queue, until there
         is no more work.
         """
-        while self._work_q or self._depproc.have_finished_work():
-            if self._work_q:
-                func, args = self._work_q.popleft()
-                func(*args)
-
+        while self._work_stack or self._depproc.have_finished_work():
             if self._depproc.have_finished_work():
                 self._depproc.process_finished_nodes()
+
+            if self._work_stack:
+                func, args = self._work_stack.pop()
+                func(*args)
+
+        assert not self._depproc.has_unfinished, repr(self._depproc)
 
     def _implied_references(
         self, importing_module: Optional[BaseNode], module_name: str
@@ -283,7 +285,7 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
             if implied is None:
                 node = ExcludedModule(module_name)
                 self.add_node(node)
-                self._depproc.finished(node)
+                self._process_import_list(node, ())
                 return node
 
             elif isinstance(implied, Alias):
@@ -291,7 +293,7 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
                 assert self.find_node(module_name) is None
 
                 self.add_node(node)
-                self._depproc.finished(node)
+                self._process_import_list(node, ())
 
                 other = self._find_or_load_module(node, implied)
                 self.add_edge(node, other, DEFAULT_DEPENDENCY)
@@ -359,7 +361,7 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
 
             alias_node = AliasNode(module_name, node.name)
             self.add_node(alias_node)
-            self._run_post_processing(alias_node)
+            self._process_import_list(alias_node, ())
             if self.find_node(node) is None:
                 self.add_node(node)
                 self._process_import_list(node, imports)
@@ -374,7 +376,6 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
             return alias_node
 
         self.add_node(node)
-        imports = list(imports)
         self._process_import_list(node, imports)
 
         return node
@@ -410,20 +411,10 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
         Schedule processing of all *imports* and the finalizer when
         that's done.
         """
-        have_imports = False
+        self._work_stack.append((self._run_post_processing, (node,)))
 
         for info in imports:
-            if info.import_names or info.star_import:
-                self._depproc.inc_depcount(node)
-
-            self._work_q.append((self._process_import, (node, info)))
-            have_imports = True
-
-        self._depproc.inc_depcount(node)
-        if have_imports:
-            self._work_q.append((self._run_post_processing, (node,)))
-        else:
-            self._run_post_processing(node)
+            self._work_stack.append((self._process_import, (node, info)))
 
     def _find_or_load_module(
         self,
@@ -449,7 +440,7 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
             elif isinstance(parent_node, ExcludedModule):
                 node = ExcludedModule(module_name)
                 self.add_node(node)
-                self._work_q.append((self._run_post_processing, (node,)))
+                self._process_import_list(node, ())
 
         else:
             parent_node = None
@@ -508,7 +499,7 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
                         ("." * import_info.import_level) + import_info.import_module
                     )
                     self.add_node(node)
-                    self._run_post_processing(node)
+                    self._process_import_list(node, ())
 
                 else:
                     assert isinstance(node, InvalidRelativeImport)  # pragma: nocover
@@ -570,7 +561,6 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
 
                     imported_module = node
                     if not isinstance(imported_module, (Package, NamespacePackage)):
-                        self._depproc.dec_depcount(importing_module)
                         return
 
                 for nm in import_info.import_names:
@@ -629,4 +619,4 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
                     #    Node is not a package, therefore "from node import a" cannot
                     #    refer to a submodule.
 
-        self._depproc.dec_depcount(importing_module)
+        return

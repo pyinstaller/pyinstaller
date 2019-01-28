@@ -11,6 +11,7 @@ from typing import Iterable, List, Optional, Tuple, Type, cast
 
 from ._ast_tools import extract_ast_info
 from ._bytecode_tools import extract_bytecode_info
+from ._distributions import distribution_for_file
 from ._importinfo import ImportInfo
 from ._nodes import (
     BaseNode,
@@ -23,7 +24,6 @@ from ._nodes import (
     Package,
     SourceModule,
 )
-from ._packages import distribution_for_file
 
 SIX_MOVES_GLOBALS = {"filter", "input", "map", "range", "xrange", "zip"}
 

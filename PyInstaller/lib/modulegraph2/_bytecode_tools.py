@@ -1,5 +1,7 @@
 """
-Utilities for working with bytecode files
+Tools for working with the bytecode for a module. This currently just
+defines a function for extracting information about import statements
+and the use of global names.
 """
 import collections
 import dis
@@ -12,7 +14,20 @@ from ._importinfo import ImportInfo, create_importinfo
 def _all_code_objects(
     code: types.CodeType
 ) -> Iterator[Tuple[types.CodeType, List[types.CodeType]]]:
-    """ Yield all code objects that can be recursively found in *code* """
+    """
+    Yield all code objects directly and indirectly referenced from
+    *code* (including *code* itself).
+
+    This could explicitly manages a work queue and does not recurse
+    to avoid exhausting the stack.
+
+    Args:
+      code: A code object
+
+    Returns:
+      An iterator that yields tuples *(child_code, parents)*, where *parents*
+      is a list all code objects in the reference chain from *code*.
+    """
     work_q: Deque[types.CodeType] = collections.deque()
     work_q.append(code)
 
@@ -38,7 +53,6 @@ def _extract_single(code: types.CodeType, is_function_code: bool, is_class_code:
 
     for offset, inst in enumerate(instructions):
         if inst.opname == "IMPORT_NAME":
-            # IMPORT_NAME pops two constants from the stack: fromlist and level
             from_inst_offset = 1
             if instructions[offset - from_inst_offset].opname == "EXTENDED_ARG":
                 from_inst_offset += 1

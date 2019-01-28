@@ -19,14 +19,15 @@ class PyPIDistribution:
     Information about a package distribution
 
     Attributes:
-      identifier:  Unique identifier fot the distribution for use with
+      identifier (str):  Unique identifier fot the distribution for use with
                    :class:`modulegraph2.ObjectGraph`
 
-      name: Name of the distribution (as it is found on PyPI)
+      name (str): Name of the distribution (as it is found on PyPI)
 
-      files: Files that are part of this distribution
+      files (Set[str]): Files that are part of this distribution
 
-      import_names: The importable names in this distribution (modules and packages)
+      import_names (Set[str]): The importable names in this distribution
+                   (modules and packages)
     """
 
     identifier: str
