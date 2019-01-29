@@ -69,7 +69,7 @@
 .. _TDM-GCC: http://tdm-gcc.tdragon.net/
 .. _TkInter: http://wiki.python.org/moin/TkInter
 .. _`towncrier`: https://pypi.org/project/towncrier/
-.. _UPX: http://upx.sourceforge.net/
+.. _UPX: https://upx.github.io/
 .. _venv: https://docs.python.org/3/library/venv.html
 .. _virtualenv:  https://virtualenv.pypa.io
 .. _`Visual Studio Express`: http://www.microsoft.com/express/
