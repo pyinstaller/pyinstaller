@@ -351,8 +351,12 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
                 node = self._create_missing_module(importing_module, module_name)
                 return node
 
-        except ModuleNotFoundError as exc:
-            if ("No module named" in str(exc)) and ("." in module_name):
+        except ImportError as exc:
+            if (
+                isinstance(exc, ModuleNotFoundError)
+                and ("No module named" in str(exc))
+                and ("." in module_name)
+            ):
                 # find_spec actually imports parent packages, which can
                 # cause problems when importing fails for some reason.
                 #
@@ -371,10 +375,6 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
             else:
                 node = self._create_missing_module(importing_module, module_name)
                 return node
-
-        except ImportError as exc:
-            node = self._create_missing_module(importing_module, module_name)
-            return node
 
         node, imports = node_for_spec(spec, sys.path)
 

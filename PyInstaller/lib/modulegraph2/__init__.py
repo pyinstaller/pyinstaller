@@ -35,6 +35,7 @@ __all__ = (
     "ExcludedModule",
     "ExtensionModule",
     "FrozenModule",
+    "InvalidModule",
     "InvalidRelativeImport",
     "MissingModule",
     "Module",
