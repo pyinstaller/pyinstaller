@@ -6,7 +6,7 @@ from ._nodes import BaseNode
 WaitForCallback = Callable[[BaseNode, BaseNode], None]
 
 
-class DependentProcessor:
+class DelayedCaller:
     def __init__(self):
         self._waiting: Dict[
             str, List[Tuple[BaseNode, BaseNode, WaitForCallback]]
@@ -15,7 +15,7 @@ class DependentProcessor:
         self._finished_q: List[str] = []
 
     def __repr__(self):
-        return f"<DependentProcessor #finished_q={len(self._finished_q)} #waiting={len(self._waiting)}>"  # noqa: B950
+        return f"<DelayedCaller #finished_q={len(self._finished_q)} #waiting={len(self._waiting)}>"  # noqa: B950
 
     @property
     def has_unfinished(self):

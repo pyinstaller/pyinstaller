@@ -7,6 +7,7 @@ import importlib
 import operator
 import os
 import sys
+from types import ModuleType
 from typing import (
     Callable,
     Dict,
@@ -18,14 +19,15 @@ from typing import (
     TextIO,
     Tuple,
     Union,
+    cast,
 )
 
 from objectgraph import ObjectGraph
 
 from ._ast_tools import extract_ast_info
 from ._callback_list import CallbackList, FirstNotNone
+from ._delayed_call import DelayedCaller
 from ._depinfo import DependencyInfo, from_importinfo
-from ._depproc import DependentProcessor
 from ._distributions import PyPIDistribution
 from ._graphbuilder import SIX_MOVES_TO, node_for_spec, relative_package
 from ._implies import STDLIB_IMPLIES, Alias, ImpliesValueType
@@ -84,7 +86,7 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
     _work_stack: List[Tuple[Callable, tuple]]
     _global_lazy_nodes: Dict[str, ImpliesValueType]
 
-    _depproc: DependentProcessor
+    _delayed: DelayedCaller
 
     def __init__(
         self, *, use_stdlib_implies: bool = True, use_builtin_hooks: bool = True
@@ -93,7 +95,7 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
         self._post_processing = CallbackList()
         self._missing_hook = FirstNotNone()
         self._work_stack = []
-        self._depproc = DependentProcessor()
+        self._delayed = DelayedCaller()
 
         self._global_lazy_nodes = {}
 
@@ -196,7 +198,7 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
         """
         Run the post processing hooks for the node.
         """
-        self._depproc.finished(node)
+        self._delayed.finished(node)
         self._post_processing(self, node)
 
     def add_post_processing_hook(self, hook: ProcessingCallback) -> None:
@@ -264,15 +266,15 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
         Process all items in the delayed work queue, until there
         is no more work.
         """
-        while self._work_stack or self._depproc.have_finished_work():
-            if self._depproc.have_finished_work():
-                self._depproc.process_finished_nodes()
+        while self._work_stack or self._delayed.have_finished_work():
+            if self._delayed.have_finished_work():
+                self._delayed.process_finished_nodes()
 
             if self._work_stack:
                 func, args = self._work_stack.pop()
                 func(*args)
 
-        assert not self._depproc.has_unfinished, repr(self._depproc)
+        assert not self._delayed.has_unfinished, repr(self._delayed)
 
     def _implied_references(
         self, importing_module: Optional[BaseNode], module_name: str
@@ -364,14 +366,22 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
                 #
                 # Try to work around this by inserting a fake module object
                 # in sys.modules and retrying.
+                #
+                # node_for_spec on a submodule is called only after
+                # successfully calling node_for_spec on the parent package,
+                # hence we know that find_spec will be successfull and
+                # will find a pacakge with an __init__.py.
                 parent = module_name.rpartition(".")[0]
                 assert parent not in sys.modules
 
                 spec = importlib.util.find_spec(parent)
+                assert spec is not None
+
                 path = spec.origin
+                assert path is not None
                 if path.endswith("__init__.py"):
                     path = os.path.dirname(path)
-                sys.modules[parent] = FakePackage([path])
+                sys.modules[parent] = cast(ModuleType, FakePackage([path]))
                 return self._load_module(importing_module, module_name)
 
             else:
@@ -504,7 +514,7 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
             )
 
             if import_info.import_names or import_info.star_import:
-                self._depproc.wait_for(
+                self._delayed.wait_for(
                     importing_module,
                     node,
                     functools.partial(self._process_namelist, import_info=import_info),
@@ -554,7 +564,7 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
                 importing_module, node, from_importinfo(import_info, False, None)
             )
 
-            self._depproc.wait_for(
+            self._delayed.wait_for(
                 importing_module,
                 node,
                 functools.partial(self._process_namelist, import_info=import_info),

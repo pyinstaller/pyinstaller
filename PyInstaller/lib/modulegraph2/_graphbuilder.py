@@ -21,6 +21,7 @@ from ._nodes import (
     FrozenModule,
     InvalidModule,
     MissingModule,
+    Module,
     NamespacePackage,
     Package,
     SourceModule,
@@ -220,7 +221,7 @@ def node_for_spec(
         source_code = inspect_loader.get_source(spec.name)
 
         ast_imports: Optional[Iterable[ImportInfo]]
-        node_type: Optional[Type[BaseNode]] = None
+        node_type: Optional[Type[Module]] = None
 
         if source_code is not None:
             filename = spec.origin
