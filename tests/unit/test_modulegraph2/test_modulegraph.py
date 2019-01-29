@@ -12,6 +12,7 @@ from modulegraph2 import (
     BuiltinModule,
     DependencyInfo,
     ExcludedModule,
+    InvalidModule,
     InvalidRelativeImport,
     MissingModule,
     ModuleGraph,
@@ -1093,6 +1094,55 @@ class TestModuleGraphAbsoluteImports(unittest.TestCase):
             self.assert_edge_count(mg, 1)
         finally:
             del sys.modules["no_imports"]
+
+    def test_package_init_missing_import(self):
+        mg = ModuleGraph()
+        mg.add_module("package_init_missing_import.submod")
+
+        self.assert_has_node(mg, "package_init_missing_import", Package)
+        self.assert_has_node(mg, "package_init_missing_import.submod", SourceModule)
+        self.assert_has_nodes(
+            mg,
+            "package_init_missing_import",
+            "package_init_missing_import.submod",
+            "nosuchmodule",
+            "nosuchmodule2",
+            "no_imports",
+        )
+        self.assert_has_node(mg, "nosuchmodule", MissingModule)
+
+        self.assert_has_edge(
+            mg,
+            "package_init_missing_import",
+            "nosuchmodule",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_has_edge(
+            mg,
+            "package_init_missing_import",
+            "nosuchmodule2",
+            {DependencyInfo(False, True, False, None)},
+        )
+
+    def test_invalid_module(self):
+        mg = ModuleGraph()
+        mg.add_module("invalid_module")
+
+        self.assert_has_node(mg, "invalid_module", InvalidModule)
+
+    def test_sys_path(self):
+        mg = ModuleGraph()
+        mg.add_module("import_sys_path")
+
+        self.assert_has_node(mg, "sys.path", MissingModule)
+
+    def test_invalid_package_init(self):
+        mg = ModuleGraph()
+        mg.add_module("invalid_package_init")
+
+        self.assert_has_node(mg, "invalid_package_init", Package)
+        node = mg.find_node("invalid_package_init")
+        self.assertTrue(isinstance(node.init_module, InvalidModule))
 
 
 class TestModuleGraphRelativeImports(unittest.TestCase):

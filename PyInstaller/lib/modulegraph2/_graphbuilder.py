@@ -19,6 +19,7 @@ from ._nodes import (
     BytecodeModule,
     ExtensionModule,
     FrozenModule,
+    InvalidModule,
     MissingModule,
     NamespacePackage,
     Package,
@@ -219,33 +220,46 @@ def node_for_spec(
         source_code = inspect_loader.get_source(spec.name)
 
         ast_imports: Optional[Iterable[ImportInfo]]
+        node_type: Optional[Type[BaseNode]] = None
 
         if source_code is not None:
             filename = spec.origin
             assert filename is not None
 
-            ast_node = compile(
-                source_code,
-                filename,
-                "exec",
-                flags=ast.PyCF_ONLY_AST,
-                dont_inherit=True,
-            )
-            ast_imports = extract_ast_info(ast_node)
+            try:
+                ast_node = compile(
+                    source_code,
+                    filename,
+                    "exec",
+                    flags=ast.PyCF_ONLY_AST,
+                    dont_inherit=True,
+                )
+            except SyntaxError:
+                node_type = InvalidModule
+                ast_imports = None
+
+            else:
+                ast_imports = extract_ast_info(ast_node)
         else:
             ast_imports = None
 
-        code = inspect_loader.get_code(spec.name)
-        assert code is not None
-        bytecode_imports, names_written, names_read = extract_bytecode_info(code)
+        try:
+            code = inspect_loader.get_code(spec.name)
+            assert code is not None
+            bytecode_imports, names_written, names_read = extract_bytecode_info(code)
+        except SyntaxError:
+            node_type = InvalidModule
+            bytecode_imports = []
+            names_written = set()
+            names_read = set()
 
-        node_type: Type[BaseNode]
-        if loader == importlib.machinery.FrozenImporter:
-            node_type = FrozenModule
-        elif source_code is not None:
-            node_type = SourceModule
-        else:
-            node_type = BytecodeModule
+        if node_type is None:
+            if loader == importlib.machinery.FrozenImporter:
+                node_type = FrozenModule
+            elif source_code is not None:
+                node_type = SourceModule
+            else:
+                node_type = BytecodeModule
 
         node = node_type(
             name=spec.name,

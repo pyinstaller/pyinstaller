@@ -75,6 +75,10 @@ class BuiltinModule(Module):
     pass
 
 
+class InvalidModule(Module):
+    pass
+
+
 @dataclasses.dataclass
 class NamespacePackage(BaseNode):
     search_path: List[pathlib.Path]

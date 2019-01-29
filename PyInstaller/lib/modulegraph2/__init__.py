@@ -23,6 +23,7 @@ from ._nodes import (
     Script,
     SourceModule,
     InvalidRelativeImport,
+    InvalidModule,
 )
 
 __all__ = (

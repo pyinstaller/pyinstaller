@@ -1,7 +1,3 @@
-- Handling errors in package __init__.py, these currently cause problems
-  for the graph builder (and make it impossible to tweak behaviour using
-  recipes)
-
 - Detect "as" imports and use information in the graph
   -> Is easy when the ast can be used, don't do this for
      bytecode scanner.
@@ -17,15 +13,19 @@
   than the older code, and we may not need special code at all
   other than peeking at the package search path]
 
+  -> Need tests
+
 - Add support for virtual environments (venv and virtualenv)
   [Tests for both, likely special support for virtualenv]
+
+  -> Need tests
 
 - Investigate if is is possible to use importlib with an alterate
   path (and sys.modules!).
 
   Otherwise provide usefull context manager(s):
 
-     with saved_import_state():
+     with saved_sys_path():
          ...
 
      Runs '...' then restores importlib/sys.path to the state
@@ -43,18 +43,4 @@
   - Write reference docs (look into generating these from docstrings)
   - Add examples
 
-- Integratie with py2app (experimental) to verify
-  behaviour
-
-- pyobjc framework wrappers probably need work on both sides
-  to be handled properly (I expect the lazy loader to be
-  problematic)
-
-- Move source code to 'src' subdir (to ensure testsuite tests what
-  gets installed instead of what happens to be in the source tree)
-
-- Split of objectgraph to seperate PyPI package
-
 - Check naming and adjust for readability
-
-- Post to blog about this (with initial push to PyPI)

@@ -73,6 +73,11 @@ MissingCallback = Callable[["ModuleGraph", Optional[BaseNode], str], Optional[Ba
 DEFAULT_DEPENDENCY = DependencyInfo(False, True, False, None)
 
 
+class FakePackage:
+    def __init__(self, path):
+        self.__path__ = path
+
+
 class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
     _post_processing: CallbackList[ProcessingCallback]
     _missing_hook: FirstNotNone[MissingCallback]
@@ -346,7 +351,28 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
                 node = self._create_missing_module(importing_module, module_name)
                 return node
 
-        except ImportError:
+        except ModuleNotFoundError as exc:
+            if ("No module named" in str(exc)) and ("." in module_name):
+                # find_spec actually imports parent packages, which can
+                # cause problems when importing fails for some reason.
+                #
+                # Try to work around this by inserting a fake module object
+                # in sys.modules and retrying.
+                parent = module_name.rpartition(".")[0]
+                assert parent not in sys.modules
+
+                spec = importlib.util.find_spec(parent)
+                path = spec.origin
+                if path.endswith("__init__.py"):
+                    path = os.path.dirname(path)
+                sys.modules[parent] = FakePackage([path])
+                return self._load_module(importing_module, module_name)
+
+            else:
+                node = self._create_missing_module(importing_module, module_name)
+                return node
+
+        except ImportError as exc:
             node = self._create_missing_module(importing_module, module_name)
             return node
 

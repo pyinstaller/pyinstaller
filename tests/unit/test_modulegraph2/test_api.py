@@ -11,6 +11,7 @@ PUBLIC_SYMBOLS = {
     "ExcludedModule",
     "ExtensionModule",
     "FrozenModule",
+    "InvalidModule",
     "InvalidRelativeImport",
     "MissingModule",
     "Module",
