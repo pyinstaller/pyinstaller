@@ -351,11 +351,13 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
                 node = self._create_missing_module(importing_module, module_name)
                 return node
 
-        except ImportError as exc:
-            if (
-                isinstance(exc, ModuleNotFoundError)
-                and ("No module named" in str(exc))
-                and ("." in module_name)
+        except (ImportError, SyntaxError) as exc:
+            if "." in module_name and (
+                (
+                    isinstance(exc, ModuleNotFoundError)
+                    and ("No module named" in str(exc))
+                )
+                or isinstance(exc, SyntaxError)
             ):
                 # find_spec actually imports parent packages, which can
                 # cause problems when importing fails for some reason.

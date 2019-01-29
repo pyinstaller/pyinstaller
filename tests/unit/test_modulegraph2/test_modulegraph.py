@@ -1144,6 +1144,23 @@ class TestModuleGraphAbsoluteImports(unittest.TestCase):
         node = mg.find_node("invalid_package_init")
         self.assertTrue(isinstance(node.init_module, InvalidModule))
 
+    def test_invalid_package_init_submod(self):
+        mg = ModuleGraph()
+        mg.add_module("invalid_package_init.submod")
+
+        self.assert_has_node(mg, "invalid_package_init", Package)
+        node = mg.find_node("invalid_package_init")
+        self.assertTrue(isinstance(node.init_module, InvalidModule))
+
+        self.assert_has_node(mg, "invalid_package_init.submod", SourceModule)
+
+        self.assert_has_edge(
+            mg,
+            "invalid_package_init.submod",
+            "invalid_package_init",
+            {DependencyInfo(False, True, False, None)},
+        )
+
 
 class TestModuleGraphRelativeImports(unittest.TestCase):
     # Same as previous class, for relative imports
