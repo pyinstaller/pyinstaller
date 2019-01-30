@@ -216,7 +216,9 @@ def __add_options(parser):
     g = parser.add_argument_group('Windows and Mac OS X specific options')
     g.add_argument("-c", "--console", "--nowindowed", dest="console",
                    action="store_true", default=True,
-                   help="Open a console window for standard i/o (default)")
+                   help="Open a console window for standard i/o (default). "
+                        "Caution: this option will be overwritten to use "
+                        "the --noconsole option if using a '*.pyw' file.")
     g.add_argument("-w", "--windowed", "--noconsole", dest="console",
                    action="store_false",
                    help="Windows and Mac OS X: do not provide a console window "
@@ -400,7 +402,8 @@ def main(scripts, name=None, onefile=None,
         debug = DEBUG_ARGUMENT_CHOICES
 
     # If file extension of main script is '.pyw', force --windowed option.
-    if str(scripts[0]).strip("'").split('.')[-1] == 'pyw':
+    # scripts[0] is a Path object.
+    if os.path.splitext(scripts[0].path)[-1] == '.pyw':
         console = False
 
     d = {
