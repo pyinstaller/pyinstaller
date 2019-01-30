@@ -29,6 +29,18 @@ def swig_missing_hook(
     importing_module: Optional[BaseNode],
     missing_name: str,
 ) -> Optional[BaseNode]:
+    """
+    Hook function to be used with
+    :meth:`ModuleGraph.add_missing_hook <modulegraph2.ModuleGraph.add_missing_hook>`.
+
+    This hook detects when a module in a package uses SWIG to load
+    an extension module in the same package using Python 2-style
+    implicit relative imports (that don't work in Python 3).
+
+    Adds this extension module as a global module to the graph, which
+    corresponds to the Python 3 semantics of the import statement used
+    in the code.
+    """
     if importing_module is None or not isinstance(importing_module, (Module, Package)):
         return None
 

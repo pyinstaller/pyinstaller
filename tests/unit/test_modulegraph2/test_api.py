@@ -5,6 +5,7 @@ import modulegraph2
 PUBLIC_SYMBOLS = {
     "Alias",
     "AliasNode",
+    "BaseNode",
     "BuiltinModule",
     "BytecodeModule",
     "DependencyInfo",
@@ -23,6 +24,7 @@ PUBLIC_SYMBOLS = {
     "SourceModule",
     "all_distributions",
     "distribution_named",
+    "saved_sys_path",
 }
 
 PYTHON_SYMBOLS = {

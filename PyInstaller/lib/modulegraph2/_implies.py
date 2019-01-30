@@ -1,9 +1,8 @@
 """
-Helpers for implied imports
+Definitions related to implied imports.
 
-NOTE:
-- This is based on manual inspection
-  of the stdlib sources...
+The implies in this file are based on manual
+inspection of the stdlib sources for CPython.
 """
 
 
@@ -25,9 +24,11 @@ class Alias(str):
     pass
 
 
+#: The type for the value in an implies dictionary.
 ImpliesValueType = Union[None, Alias, Sequence[str]]
 
 
+#: Implies dictionary for the standard library.
 STDLIB_IMPLIES: Dict[str, ImpliesValueType] = {
     #
     # C extensions
@@ -99,6 +100,7 @@ STDLIB_IMPLIES: Dict[str, ImpliesValueType] = {
     "dbm": ("dbm.gnu", "dbm.ndbm", "dbm.dumb"),
 }
 
+#: Updates to the base :data:`STDLIB_IMPLIES` for specific platforms.
 STDLIB_PLATFORM_IMPLIES: Dict[str, Dict[str, ImpliesValueType]] = {
     "win32": {
         "signal": ("_signal", "_socket"),
@@ -109,6 +111,7 @@ STDLIB_PLATFORM_IMPLIES: Dict[str, Dict[str, ImpliesValueType]] = {
 STDLIB_IMPLIES.update(STDLIB_PLATFORM_IMPLIES.get(sys.platform, {}))
 
 
+#: Updates to the base :data:`STDLIB_IMPLIES` for specific Python releases.
 STDLIB_VERSION_IMPLIES: Dict[Tuple[int, int], Dict[str, ImpliesValueType]] = {
     (3, 6): {"zipimport": ("zlib",)}
 }

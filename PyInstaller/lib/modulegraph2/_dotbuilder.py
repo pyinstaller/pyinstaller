@@ -1,4 +1,6 @@
-""" modulegraph._dotbuilder """
+"""
+Export functions for creating Graphviz files
+"""
 from typing import (
     Callable,
     Dict,
@@ -49,7 +51,7 @@ def export_to_dot(
     ] = None,
 ) -> None:
     """
-    Write an dot (graphviz) version of the *graph* to *fp".
+    Write an dot (graphviz) version of the *graph* to *fp*".
 
     The arguments "format_node" and "format_edge" specify
     callbacks to format nodes and edges that are generated.

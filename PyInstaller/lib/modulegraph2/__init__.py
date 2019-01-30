@@ -1,7 +1,12 @@
 """
-Modulegraph documentation goes here
+This package defines a class representing the
+dependency graph between a collection of python
+modules and scripts, as well as supporting functions
+and classes.
 
-bla bla
+The graph itself is an subclass of :class:`objectgraph.ObjectGraph`.
+
+This module provides annotation for use with `Mypy <https://mypy.readthedocs.io/en/latest/>`_.
 """
 __version__ = "2.0a0"
 
@@ -11,6 +16,7 @@ from ._distributions import PyPIDistribution, all_distributions, distribution_na
 from ._implies import Alias
 from ._nodes import (
     AliasNode,
+    BaseNode,
     BuiltinModule,
     BytecodeModule,
     ExcludedModule,
@@ -25,10 +31,12 @@ from ._nodes import (
     InvalidRelativeImport,
     InvalidModule,
 )
+from ._utilities import saved_sys_path
 
 __all__ = (
     "Alias",
     "AliasNode",
+    "BaseNode",
     "BuiltinModule",
     "BytecodeModule",
     "DependencyInfo",
@@ -47,4 +55,5 @@ __all__ = (
     "SourceModule",
     "all_distributions",
     "distribution_named",
+    "saved_sys_path",
 )

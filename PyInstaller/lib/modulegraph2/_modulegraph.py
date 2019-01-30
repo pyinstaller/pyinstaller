@@ -1,5 +1,5 @@
 """
-The actual graph
+This module contains the definition of the ModuleGraph class.
 """
 import ast
 import functools
@@ -76,16 +76,38 @@ DEFAULT_DEPENDENCY = DependencyInfo(False, True, False, None)
 
 
 class FakePackage:
-    def __init__(self, path):
+    """
+    Instances of these can be used to represent a fake
+    package in :data:`sys.modules`.
+
+    Used as a workaround to fetch information about modules
+    in packages when the package itself cannot be imported
+    for some reason (for example due to having a SyntaxError
+    in the module ``__init__.py`` file).
+    """
+    def __init__(self, path: List[str]):
+        """
+        Create a new instance.
+
+        Args:
+           path: The search path for sub modules
+        """
         self.__path__ = path
 
 
 class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
+    """
+    Class representing the dependency graph between a collection
+    of python modules and scripts.
+
+    The roots of the graph are those nodes that are added to the
+    graph using :meth:`add_script() <ModuleGraph.add_script>` and
+    :meth:`add_module() <ModuleGraph.add_module>`.
+    """
     _post_processing: CallbackList[ProcessingCallback]
     _missing_hook: FirstNotNone[MissingCallback]
     _work_stack: List[Tuple[Callable, tuple]]
     _global_lazy_nodes: Dict[str, ImpliesValueType]
-
     _delayed: DelayedCaller
 
     def __init__(

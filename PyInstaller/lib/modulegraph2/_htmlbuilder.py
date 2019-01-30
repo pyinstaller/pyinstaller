@@ -28,7 +28,7 @@ HTML_SUFFIX = textwrap.dedent(
 
 def export_to_html(file: TextIO, graph: ModuleGraph) -> None:
     """
-    Write an HTML version of the *graph* to *fp".
+    Write an HTML version of the *graph* to *fp*".
 
     The arguments "format_node" and "format_edge" specify
     callbacks to format nodes and edges that are generated.

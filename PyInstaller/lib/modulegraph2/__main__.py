@@ -16,6 +16,7 @@ from ._dotbuilder import export_to_dot
 from ._htmlbuilder import export_to_html
 from ._modulegraph import ModuleGraph
 from ._nodes import BaseNode
+from ._utilities import saved_sys_path
 
 # --- XXX: This block needs to be elsewhere
 
@@ -139,23 +140,6 @@ class OutputFormat(enum.Enum):
 
     HTML = "html"
     GRAPHVIZ = "dot"
-
-
-@contextlib.contextmanager
-def saved_sys_path():
-    """
-    Contextmanager that will restore the value
-    of :data:`sys.path` when leaving the ``with``
-    block.
-    """
-    orig_path = list(sys.path)
-
-    try:
-        yield
-
-    finally:
-        sys.path[:] = orig_path
-        importlib.invalidate_caches()
 
 
 def parse_arguments(argv: List[str]) -> argparse.Namespace:

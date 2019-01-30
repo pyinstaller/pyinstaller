@@ -116,27 +116,6 @@ class TestArguments(unittest.TestCase):
         self.assertIn("positional arguments", stdout.getvalue())
 
 
-class TestPathSaver(unittest.TestCase):
-    def setUp(self):
-        self.orig_path = sys.path[:]
-
-    def tearDown(self):
-        sys.path[:] = self.orig_path
-
-    def test_no_action(self):
-        with main.saved_sys_path():
-            pass
-
-        self.assertEqual(sys.path, self.orig_path)
-
-    def test_change_path(self):
-        with main.saved_sys_path():
-            sys.path.insert(0, "foo")
-            sys.path.insert(0, "bar")
-
-        self.assertEqual(sys.path, self.orig_path)
-
-
 class TestPrinter(unittest.TestCase):
     # XXX: This currently is nothing more than a smoke test,
     # the output format is not validated in any way.
