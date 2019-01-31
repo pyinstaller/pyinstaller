@@ -1,12 +1,3 @@
-- Try to get rid of delayed caller, should be possible:
-
-  - Remember length of work stack before calling _import_module
-  - Call import_module
-  - Insert call to process_names at 'length' (e.g. just before
-    everything added by import_module).
-  - This should ensure that process_names is called after the
-    recursion is done.
-
 - Detect "as" imports and use information in the graph
   -> Is easy when the ast can be used, don't do this for
      bytecode scanner.
