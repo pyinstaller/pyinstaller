@@ -2,7 +2,6 @@ import unittest
 import sys
 
 import modulegraph2
-from modulegraph2._modulegraph import split_package
 
 from modulegraph2 import _utilities as utilities
 
@@ -15,7 +14,7 @@ class TestPrivateUtilities(unittest.TestCase):
 
     def test_split_package(self):
         self.check_results_equal(
-            split_package,
+            utilities.split_package,
             [
                 (("toplevel",), (None, "toplevel")),
                 (("package.module",), ("package", "module")),
@@ -27,13 +26,13 @@ class TestPrivateUtilities(unittest.TestCase):
             ],
         )
 
-        self.assertRaises(ValueError, split_package, "")
+        self.assertRaises(ValueError, utilities.split_package, "")
 
-        self.assertRaises(TypeError, split_package, None)
-        self.assertRaises(TypeError, split_package, 42)
-        self.assertRaises(TypeError, split_package, b"module")
-        self.assertRaises(ValueError, split_package, "module..package")
-        self.assertRaises(ValueError, split_package, "..")
+        self.assertRaises(TypeError, utilities.split_package, None)
+        self.assertRaises(TypeError, utilities.split_package, 42)
+        self.assertRaises(TypeError, utilities.split_package, b"module")
+        self.assertRaises(ValueError, utilities.split_package, "module..package")
+        self.assertRaises(ValueError, utilities.split_package, "..")
 
 
 class TestPathSaver(unittest.TestCase):
@@ -55,3 +54,9 @@ class TestPathSaver(unittest.TestCase):
             sys.path.insert(0, "bar")
 
         self.assertEqual(sys.path, self.orig_path)
+
+
+class TestFakePackage(unittest.TestCase):
+    def test_construction(self):
+        m = utilities.FakePackage(["some", "path"])
+        self.assertEqual(m.__path__, ["some", "path"])

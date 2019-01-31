@@ -42,56 +42,12 @@ from ._nodes import (
     Script,
 )
 from ._swig_support import swig_missing_hook
-
-
-def split_package(name: str) -> Tuple[Optional[str], str]:
-    """
-    Return (package, name) given a fully qualified module name
-
-    package is ``None`` for toplevel modules
-    """
-    if not isinstance(name, str):
-        raise TypeError(f"Expected 'str', got instance of {type(name)!r}")
-    if not name:
-        raise ValueError(f"Invalid module name {name!r}")
-
-    name_abs = name.lstrip(".")
-    dots = len(name) - len(name_abs)
-    if not name_abs or ".." in name_abs:
-        raise ValueError(f"Invalid module name {name!r}")
-
-    package, _, name = name_abs.rpartition(".")
-    if dots:
-        package = ("." * dots) + package
-
-    return (package if package != "" else None), name
-
+from ._utilities import FakePackage, split_package
 
 ProcessingCallback = Callable[["ModuleGraph", BaseNode], None]
 MissingCallback = Callable[["ModuleGraph", Optional[BaseNode], str], Optional[BaseNode]]
 
 DEFAULT_DEPENDENCY = DependencyInfo(False, True, False, None)
-
-
-class FakePackage:
-    """
-    Instances of these can be used to represent a fake
-    package in :data:`sys.modules`.
-
-    Used as a workaround to fetch information about modules
-    in packages when the package itself cannot be imported
-    for some reason (for example due to having a SyntaxError
-    in the module ``__init__.py`` file).
-    """
-
-    def __init__(self, path: List[str]):
-        """
-        Create a new instance.
-
-        Args:
-           path: The search path for sub modules
-        """
-        self.__path__ = path
 
 
 class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
@@ -139,6 +95,10 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
         If reachable is True (default) this reports only on distributions
         used by nodes reachable from one of the graph roots, otherwise
         this reports on distributions used by any root.
+
+        Args:
+          reacable: IF true only report on nodes that are reachable from
+            a graph root, otherwise report on all nodes.
         """
         seen: Set[str] = set()
         for node in self.iter_graph() if reachable else self.nodes():
@@ -154,6 +114,9 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
         """
         Print information about nodes reachable from the graph
         roots to the given file.
+
+        Args:
+          file: Stream to write to
         """
         print(file=file)
         print("%-15s %-25s %s" % ("Class", "Name", "File"), file=file)
@@ -172,7 +135,16 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
         """
         Add a script to the module graph and process imports
 
-        Raises OSError when the script cannot be opened.
+        Args:
+           script_path: Filesystem path for the script to be added
+
+        Returns:
+           The script node for the just added script
+
+        Raises:
+           ValueError: If the script is already part of the graph
+
+           OSError: If the script cannot be opened.
         """
         node = self.find_node(os.fspath(script_path))
         if node is not None:
@@ -188,6 +160,9 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
         Add a module to the graph and process imports.
 
         Will not raise an exception for non-existing modules.
+
+        Args:
+           module_name: Name of the module to import.
         """
         node = self.find_node(module_name)
         if node is None:
@@ -213,12 +188,6 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
             node = self._find_or_load_module(importing_module, import_name)
         self.add_edge(importing_module, node, DEFAULT_DEPENDENCY)
         return node
-
-    def _run_post_processing(self, node: BaseNode) -> None:
-        """
-        Run the post processing hooks for the node.
-        """
-        self._post_processing(self, node)
 
     def add_post_processing_hook(self, hook: ProcessingCallback) -> None:
         """
@@ -475,7 +444,7 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
         Schedule processing of all *imports* and the finalizer when
         that's done.
         """
-        self._work_stack.append((self._run_post_processing, (node,)))
+        self._work_stack.append((self._post_processing, (self, node)))
 
         for info in imports:
             self._work_stack.append((self._process_import, (node, info)))
@@ -532,25 +501,6 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
             # Absolute import
             absolute_name = import_info.import_module
 
-            # Remember the current length of the work stack for
-            # later.
-            offset = len(self._work_stack)
-
-            node = self._find_or_load_module(importing_module, absolute_name)
-
-            assert node is not None
-
-            self.add_edge(
-                importing_module, node, from_importinfo(import_info, False, None)
-            )
-
-            # The call to _process_namelist should be made after all work
-            # scheduled in _find_or_load_module is done. To do this insert
-            # a call into the work stack instead of pushing it at the end.
-            self._work_stack.insert(
-                offset, (self._process_namelist, (importing_module, node, import_info))
-            )
-
         else:
             # Relative import, calculate the absolute name
             importing_package = relative_package(
@@ -587,27 +537,31 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
 
             assert absolute_name and absolute_name[0] != "."
 
-            offset = len(self._work_stack)
+        #
+        # Processing the name list for 'from ... import *namelist*` should
+        # be done after importing the module we load the names from. This
+        # means that function should be pushed on the work stack before
+        # pushing any work needed to load the module.
+        #
+        # We need the node for the module while processing the namelist though,
+        # therefore first resolve the module which may push some work on the
+        # stack, then insert the call to _process_namelist just before all
+        # work pushed by _find_or_load_module.
+        #
+        # This ensures that _process_namelist is called when all work pushed
+        # by _find_or_load_module is done.
+        #
+        offset = len(self._work_stack)
 
-            node = self._find_or_load_module(importing_module, absolute_name)
+        node = self._find_or_load_module(importing_module, absolute_name)
 
-            assert node is not None
+        assert node is not None
 
-            self.add_edge(
-                importing_module, node, from_importinfo(import_info, False, None)
-            )
+        self.add_edge(importing_module, node, from_importinfo(import_info, False, None))
 
-            # The call to _process_namelist should be made after all work
-            # scheduled in _find_or_load_module is done. To do this insert
-            # a call into the work stack instead of pushing it at the end.
-            self._work_stack.insert(
-                offset, (self._process_namelist, (importing_module, node, import_info))
-            )
-
-        # See python issue #2506: The peephole optimizer confuses coverage.py
-        # w.r.t. coverage of the previous statement unless the return statement
-        # below is present.
-        return
+        self._work_stack.insert(
+            offset, (self._process_namelist, (importing_module, node, import_info))
+        )
 
     def _process_namelist(
         self,
