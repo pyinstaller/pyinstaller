@@ -25,9 +25,6 @@ from ._modulegraph import ModuleGraph
 
 
 def format_attributes(callable, *args):
-    if callable is None:
-        return ""
-
     value = callable(*args)
     if not value:
         return ""
@@ -42,13 +39,13 @@ def format_attributes(callable, *args):
 def export_to_dot(
     file: TextIO,
     graph: ModuleGraph,
-    format_node: Optional[Callable[[NODE_TYPE], Dict[str, Union[str, int]]]] = None,
-    format_edge: Optional[
-        Callable[[NODE_TYPE, NODE_TYPE, Set[EDGE_TYPE]], Dict[str, Union[str, int]]]
-    ] = None,
-    group_nodes: Optional[
-        Callable[[ModuleGraph], Iterator[Tuple[str, str, Sequence[NODE_TYPE]]]]
-    ] = None,
+    format_node: Callable[[NODE_TYPE], Dict[str, Union[str, int]]],
+    format_edge: Callable[
+        [NODE_TYPE, NODE_TYPE, Set[EDGE_TYPE]], Dict[str, Union[str, int]]
+    ],
+    group_nodes: Callable[
+        [ModuleGraph], Iterator[Tuple[str, str, Sequence[NODE_TYPE]]]
+    ],
 ) -> None:
     """
     Write an dot (graphviz) version of the *graph* to *fp*".
@@ -72,15 +69,14 @@ def export_to_dot(
                 file=file,
             )
 
-    if group_nodes is not None:
-        for idx, (group_name, group_icon, group_items) in enumerate(group_nodes(graph)):
-            print(f"subgraph cluster_{idx} {{", file=file)
-            print(f'   label = "{group_name}"', file=file)
-            print(f"   shape = {group_icon}", file=file)
-            print("   style=filled; color=lightgray", file=file)
-            for node in group_items:
-                print(f'   "{node.identifier}"', file=file)
+    for idx, (group_name, group_icon, group_items) in enumerate(group_nodes(graph)):
+        print(f"subgraph cluster_{idx} {{", file=file)
+        print(f'   label = "{group_name}"', file=file)
+        print(f"   shape = {group_icon}", file=file)
+        print("   style=filled; color=lightgray", file=file)
+        for node in group_items:
+            print(f'   "{node.identifier}"', file=file)
 
-            print("}", file=file)
-            print(file=file)
+        print("}", file=file)
+        print(file=file)
     print("}", file=file)

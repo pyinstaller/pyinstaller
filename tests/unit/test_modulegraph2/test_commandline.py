@@ -128,7 +128,8 @@ class TestPrinter(unittest.TestCase):
 
     def setUp(self):
         self.mg = modulegraph2.ModuleGraph()
-        self.mg.add_module("sys")
+        self.mg.add_module("os")
+        self.mg.add_module("faulthandler")
 
     def test_html_graph(self):
         fp = io.StringIO()
