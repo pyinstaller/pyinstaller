@@ -217,14 +217,14 @@ def __add_options(parser):
     g.add_argument("-c", "--console", "--nowindowed", dest="console",
                    action="store_true", default=True,
                    help="Open a console window for standard i/o (default). "
-                        "Caution: this option will be overwritten to use "
-                        "the --noconsole option if using a '*.pyw' file.")
+                        "Caution: This option will have no effect if freezing a '.pyw' file.")
     g.add_argument("-w", "--windowed", "--noconsole", dest="console",
                    action="store_false",
                    help="Windows and Mac OS X: do not provide a console window "
                         "for standard i/o. "
                         "On Mac OS X this also triggers building an OS X .app bundle. "
-                        "This option is ignored in *NIX systems.")
+                        "This option is ignored in *NIX systems. This option will be set "
+                        "automatically if freezing a '.pyw' file.")
     g.add_argument("-i", "--icon", dest="icon_file",
                    metavar="<FILE.ico or FILE.exe,ID or FILE.icns>",
                    help="FILE.ico: apply that icon to a Windows executable. "
