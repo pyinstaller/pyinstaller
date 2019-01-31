@@ -2,10 +2,8 @@
 Commandline interface
 """
 import argparse
-import contextlib
 import enum
 import functools
-import importlib
 import os
 import sys
 from typing import Dict, Iterator, List, Sequence, Set, TextIO, Tuple, Union

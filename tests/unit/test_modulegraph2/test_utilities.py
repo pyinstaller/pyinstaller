@@ -1,4 +1,5 @@
 import unittest
+import sys
 
 import modulegraph2
 from modulegraph2._modulegraph import split_package

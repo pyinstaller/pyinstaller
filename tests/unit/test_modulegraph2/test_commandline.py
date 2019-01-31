@@ -162,8 +162,8 @@ class TestPrinter(unittest.TestCase):
             )
 
             self.mg.add_module("global_import")
-            self.mg.add_module("missing_in_package.py")
-            self.mg.add_module("import_sys_star.py")
+            self.mg.add_module("missing_in_package")
+            self.mg.add_module("import_sys_star")
             self.mg.add_module("wheel")
             self.mg.add_module("wheel.__main__")
             self.mg.add_module("pip")

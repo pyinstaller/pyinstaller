@@ -320,6 +320,13 @@ class TestModuleGraphAbsoluteImports(unittest.TestCase):
         self.assert_has_roots(mg, "missing")
         self.assert_has_nodes(mg, "missing", "nosuchmodule")
 
+    def test_wrong_import(self):
+        mg = ModuleGraph()
+        mg.add_module("missing_in_package.py")  # Whoops, forgot to strip ".py"
+
+        self.assert_has_node(mg, "missing_in_package", SourceModule)
+        self.assert_has_node(mg, "missing_in_package.py", MissingModule)
+
     def test_missing_in_package(self):
         mg = ModuleGraph()
         mg.add_module("missing_in_package")
@@ -1101,15 +1108,9 @@ class TestModuleGraphAbsoluteImports(unittest.TestCase):
 
         self.assert_has_node(mg, "package_init_missing_import", Package)
         self.assert_has_node(mg, "package_init_missing_import.submod", SourceModule)
-        self.assert_has_nodes(
-            mg,
-            "package_init_missing_import",
-            "package_init_missing_import.submod",
-            "nosuchmodule",
-            "nosuchmodule2",
-            "no_imports",
-        )
         self.assert_has_node(mg, "nosuchmodule", MissingModule)
+        self.assert_has_node(mg, "nosuchmodule2", MissingModule)
+        self.assert_has_node(mg, "no_imports", SourceModule)
 
         self.assert_has_edge(
             mg,

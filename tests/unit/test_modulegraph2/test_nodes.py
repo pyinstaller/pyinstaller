@@ -156,6 +156,7 @@ class TestNodes(unittest.TestCase):
             init_module=m,
             search_path=[1, 2],
             has_data_files=True,
+            namespace_type="bar",
         )
 
         self.assertEqual(n.name, "module")
@@ -166,6 +167,7 @@ class TestNodes(unittest.TestCase):
         self.assertIs(n.init_module, m)
         self.assertEqual(n.search_path, [1, 2])
         self.assertEqual(n.has_data_files, True)
+        self.assertEqual(n.namespace_type, "bar")
 
         self.assertEqual(n.globals_written, {"a"})
         self.assertEqual(n.globals_read, {"b"})

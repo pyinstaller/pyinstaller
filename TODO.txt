@@ -1,12 +1,11 @@
-- Add support for setuptools style namespace packages
-  (T.B.D. if this needs an extension hook)
-  [This may not need work at all, importlib code works different
-  than the older code, and we may not need special code at all
-  other than peeking at the package search path]
+- Try to get rid of delayed caller, should be possible:
 
-  Same for pkgutil style namespace packages
-
-  -> Tests added, needs fix to adjust detected package search path
+  - Remember length of work stack before calling _import_module
+  - Call import_module
+  - Insert call to process_names at 'length' (e.g. just before
+    everything added by import_module).
+  - This should ensure that process_names is called after the
+    recursion is done.
 
 - Detect "as" imports and use information in the graph
   -> Is easy when the ast can be used, don't do this for
@@ -36,5 +35,8 @@
 - Write documentation:
   - Write reference docs (look into generating these from docstrings)
   - Add examples
+
+- Test modules contain duplicated support code, moves that code
+  to testsuite.util (test support mix-in)
 
 - Check naming and adjust for readability

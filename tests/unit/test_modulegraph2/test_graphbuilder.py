@@ -504,7 +504,7 @@ class TestRelativePackage(unittest.TestCase):
         )
 
     def test_relative_package_package(self):
-        p = Package("foo.bar", None, None, None, None, None, None, None)
+        p = Package("foo.bar", None, None, None, None, None, None, None, None)
 
         self.assertEqual(graphbuilder.relative_package(p, 1), "foo.bar")
         self.assertEqual(graphbuilder.relative_package(p, 2), "foo")

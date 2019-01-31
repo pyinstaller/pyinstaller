@@ -66,7 +66,7 @@ def split_package(name: str) -> Tuple[Optional[str], str]:
     if dots:
         package = ("." * dots) + package
 
-    return (package if package is not "" else None), name
+    return (package if package != "" else None), name
 
 
 ProcessingCallback = Callable[["ModuleGraph", BaseNode], None]
@@ -85,6 +85,7 @@ class FakePackage:
     for some reason (for example due to having a SyntaxError
     in the module ``__init__.py`` file).
     """
+
     def __init__(self, path: List[str]):
         """
         Create a new instance.
@@ -104,6 +105,7 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
     graph using :meth:`add_script() <ModuleGraph.add_script>` and
     :meth:`add_module() <ModuleGraph.add_module>`.
     """
+
     _post_processing: CallbackList[ProcessingCallback]
     _missing_hook: FirstNotNone[MissingCallback]
     _work_stack: List[Tuple[Callable, tuple]]
@@ -398,13 +400,19 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
 
                 spec = importlib.util.find_spec(parent)
                 assert spec is not None
-
-                path = spec.origin
-                assert path is not None
-                if path.endswith("__init__.py"):
+                loader = spec.loader
+                assert isinstance(loader, importlib.abc.InspectLoader)
+                if loader.is_package(spec.name):
+                    path = spec.origin
+                    assert path is not None
+                    assert path.rpartition("/")[-1].startswith("__init__."), path
                     path = os.path.dirname(path)
-                sys.modules[parent] = cast(ModuleType, FakePackage([path]))
-                return self._load_module(importing_module, module_name)
+                    sys.modules[parent] = cast(ModuleType, FakePackage([path]))
+                    return self._load_module(importing_module, module_name)
+
+                else:
+                    node = self._create_missing_module(importing_module, module_name)
+                    return node
 
             else:
                 node = self._create_missing_module(importing_module, module_name)
@@ -435,6 +443,14 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
             return alias_node
 
         self.add_node(node)
+
+        if isinstance(node, Package):
+            # Hidden import in explicit namespace packages
+            if node.namespace_type in {"pkgutil", "pkg_resources"}:
+                nspkg = self._find_or_load_module(None, node.namespace_type)
+                assert nspkg is not None
+                self.add_edge(node, nspkg, DEFAULT_DEPENDENCY)
+
         self._process_import_list(node, imports)
 
         return node
@@ -636,7 +652,6 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
                             # Check if the imported name is actually some other imported
                             # module.
                             for ed_set, tgt in self.outgoing(imported_module):
-                                # ed = cast(Optional[DependencyInfo], ed)
                                 if (
                                     any(nm == ed.imported_as for ed in ed_set)
                                     or tgt.identifier == nm
@@ -674,8 +689,4 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
                         subnode,
                         from_importinfo(import_info, True, None),
                     )
-                    # else:
-                    #    Node is not a package, therefore "from node import a" cannot
-                    #    refer to a submodule.
-
         return

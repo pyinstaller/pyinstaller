@@ -159,6 +159,7 @@ def node_for_spec(
     """
     node: BaseNode
     imports: Iterable[ImportInfo]
+    source_code: Optional[str] = None
 
     loader: Optional[importlib.abc.Loader] = cast(
         Optional[importlib.abc.Loader], spec.loader
@@ -297,6 +298,7 @@ def node_for_spec(
                 filename=None,
                 search_path=[],
                 has_data_files=False,
+                namespace_type=None,
                 init_module=FrozenModule(
                     name="@@SIX_MOVES@@",
                     loader=loader,
@@ -343,6 +345,30 @@ def node_for_spec(
 
         node_file = node_file.parent
 
+        namespace_type = None
+        if (
+            source_code is not None
+            and "__import__" in node.globals_read
+            and any(nm in source_code for nm in ("pkg_resources", "pkgutil"))
+        ):
+            # This might be an explicit namespace package using
+            # setuptools or pkgutil. Import the package to fetch
+            # the correct submodule search path.
+            try:
+                m = importlib.import_module(node.name)
+            except ImportError:
+                pass
+            else:
+                spec.submodule_search_locations = getattr(m, "__path__", [])
+
+            if "pkg_resources" in source_code:
+                namespace_type = "pkg_resources"
+            else:
+                assert "pkgutil" in source_code
+                namespace_type = "pkgutil"
+
+        assert spec.submodule_search_locations is not None
+
         package = Package(
             name=node.name,
             loader=node.loader,
@@ -350,8 +376,9 @@ def node_for_spec(
             extension_attributes={},
             filename=node_file,
             init_module=node,
-            search_path=[node_file],
+            search_path=[pathlib.Path(loc) for loc in spec.submodule_search_locations],
             has_data_files=_contains_datafiles(node_file),
+            namespace_type=namespace_type,
         )
 
         return package, imports

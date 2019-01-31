@@ -6,7 +6,8 @@ and classes.
 
 The graph itself is an subclass of :class:`objectgraph.ObjectGraph`.
 
-This module provides annotation for use with `Mypy <https://mypy.readthedocs.io/en/latest/>`_.
+This module provides annotation for use with
+`Mypy <https://mypy.readthedocs.io/en/latest/>`_.
 """
 __version__ = "2.0a0"
 

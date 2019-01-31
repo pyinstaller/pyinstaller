@@ -203,11 +203,17 @@ class Package(BaseNode):
         True if this package contains data files
         (other than empty directories and python
         files).
+
+      namespace_type
+        None, "pkgutil" or "pkg_resources" for
+        regular packages, namespace packages using
+        pkgutil and namespace packages using pkg_resources.
     """
 
     init_module: BaseNode
     search_path: List[pathlib.Path]
     has_data_files: bool
+    namespace_type: Optional[str]
 
     @property
     def globals_written(self):
