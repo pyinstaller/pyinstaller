@@ -35,7 +35,7 @@ zope.interface==4.6.0
 numpy==1.16.1
 scipy==1.2.0
 keyring==17.1.1
-openpyxl==2.5.12
+openpyxl==2.5.14
 pycparser==2.19
 pytz==2018.7
 sqlalchemy==1.2.15
