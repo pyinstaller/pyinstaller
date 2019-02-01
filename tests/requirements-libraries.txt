@@ -90,7 +90,7 @@ pyqt5==5.11.3; python_version >= '3.5'
 web3==4.8.2; python_version >= '3.5'
 
 # uvloop does not currently support Windows.
-uvloop==0.11.3; python_version >= '3.5' and sys_platform != 'win32'
+uvloop==0.12.0; python_version >= '3.5' and sys_platform != 'win32'
 
 
 # Python 3 only packages
