@@ -32,7 +32,7 @@ sphinx==1.8.3
 pyzmq==17.1.2
 # Required for test_namespace_package
 zope.interface==4.6.0
-numpy==1.15.4
+numpy==1.16.1
 scipy==1.2.0
 keyring==17.1.1
 openpyxl==2.5.12
