@@ -22,6 +22,8 @@ PUBLIC_SYMBOLS = {
     "PyPIDistribution",
     "Script",
     "SourceModule",
+    "Virtual",
+    "VirtualNode",
     "all_distributions",
     "distribution_named",
     "saved_sys_path",

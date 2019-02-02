@@ -1,5 +1,10 @@
 """
 Support code for generating HTML output from a module graph
+
+.. note::
+    This module is fairly experimental at this point. At some time
+    a generic version of this module will be added to the objectgraph
+    package, with modulegraph2 specific functionality in this module.
 """
 import operator
 import textwrap

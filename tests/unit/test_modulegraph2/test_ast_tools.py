@@ -392,3 +392,53 @@ class TestAstExtractor(unittest.TestCase):
                 self.assertEqual(info.is_in_tryexcept, in_try)
                 self.assertEqual(info.is_optional, in_def or in_if or in_try)
                 self.assertEqual(info.is_global, not in_def)
+
+    def test_import_renames(self):
+        ast = make_ast(
+            """\
+            import a as A
+            import b as B, c as C
+
+            from d import e as E
+            from f import g as G, h as H
+
+            from .i import j as J
+
+            import n
+            from m import o
+            """
+        )
+
+        imports = list(ast_tools.extract_ast_info(ast))
+        self.assertEqual(len(imports), 8)
+
+        self.assertEqual(imports[0].import_module, "a")
+        self.assertEqual(imports[0].import_module.asname, "A")
+
+        self.assertEqual(imports[1].import_module, "b")
+        self.assertEqual(imports[1].import_module.asname, "B")
+        self.assertEqual(imports[2].import_module, "c")
+        self.assertEqual(imports[2].import_module.asname, "C")
+
+        self.assertEqual(imports[3].import_module, "d")
+        self.assertEqual(imports[3].import_module.asname, None)
+        self.assertEqual(imports[3].import_names, {"e"})
+        self.assertEqual(list(imports[3].import_names)[0].asname, "E")
+
+        self.assertEqual(imports[4].import_module, "f")
+        self.assertEqual(imports[4].import_module.asname, None)
+        self.assertEqual(imports[4].import_names, {"g", "h"})
+        self.assertTrue(all(n.upper() == n.asname for n in imports[4].import_names))
+
+        self.assertEqual(imports[5].import_module, "i")
+        self.assertEqual(imports[5].import_module.asname, None)
+        self.assertEqual(imports[5].import_names, {"j"})
+        self.assertEqual(list(imports[5].import_names)[0].asname, "J")
+
+        self.assertEqual(imports[6].import_module, "n")
+        self.assertEqual(imports[6].import_module.asname, None)
+
+        self.assertEqual(imports[7].import_module, "m")
+        self.assertEqual(imports[7].import_module.asname, None)
+        self.assertEqual(imports[7].import_names, {"o"})
+        self.assertEqual(list(imports[7].import_names)[0].asname, None)

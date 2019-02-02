@@ -1,5 +1,10 @@
 """
-Export functions for creating Graphviz files
+Export functions for creating Graphviz files.
+
+.. note::
+    This module is fairly experimental at this point. At some time
+    a generic version of this module will be added to the objectgraph
+    package, with modulegraph2 specific functionality in this module.
 """
 from typing import Callable, Dict, Iterator, Sequence, Set, TextIO, Tuple, Union
 
@@ -7,14 +12,11 @@ from objectgraph import EDGE_TYPE, NODE_TYPE  # , ObjectGraph
 
 from ._modulegraph import ModuleGraph
 
-# - Generic builder for ObjectGraph
-# - Using D3.js
-# - Enable using custom attributes for nodes and edges
-# - Also tabular output?
-# - Should reduce the need for a graphviz output
-
-
 def format_attributes(callable, *args):
+    """
+    Format the results of *callable* in the format expected
+    by Graphviz.
+    """
     value = callable(*args)
     if not value:
         return ""

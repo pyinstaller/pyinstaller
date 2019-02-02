@@ -472,7 +472,7 @@ class TestModuleGraphAbsoluteImports(unittest.TestCase):
             mg,
             "package_import_two_levels",
             "package.submod2",
-            {DependencyInfo(False, True, False, None)},
+            {DependencyInfo(False, True, False, "submod2")},
         )
         self.assert_has_edge(
             mg, "package.submod2", "package", {DependencyInfo(False, True, False, None)}
@@ -611,7 +611,13 @@ class TestModuleGraphAbsoluteImports(unittest.TestCase):
             {DependencyInfo(False, True, False, None)},
         )
         self.assert_has_edge(
-            mg, "alias_import", "no_imports", {DependencyInfo(False, True, False, None)}
+            mg, "alias_toplevel", "package", {DependencyInfo(False, True, False, None)}
+        )
+        self.assert_has_edge(
+            mg,
+            "alias_import",
+            "no_imports",
+            {DependencyInfo(False, True, False, "really")},
         )
         self.assert_has_edge(
             mg,
@@ -635,7 +641,7 @@ class TestModuleGraphAbsoluteImports(unittest.TestCase):
             {DependencyInfo(False, True, False, None)},
         )
 
-        self.assert_edge_count(mg, 7)
+        self.assert_edge_count(mg, 8)
 
         self.assert_has_roots(mg, "alias_toplevel")
         self.assert_has_nodes(
@@ -684,7 +690,7 @@ class TestModuleGraphAbsoluteImports(unittest.TestCase):
             mg,
             "star_package",
             "star_package.submod",
-            {DependencyInfo(False, True, False, None)},
+            {DependencyInfo(False, True, False, "submod")},
         )
         self.assert_has_edge(
             mg, "star_package", "sys", {DependencyInfo(False, True, False, None)}
@@ -890,7 +896,7 @@ class TestModuleGraphAbsoluteImports(unittest.TestCase):
             mg,
             "aliasing_package",
             "no_imports",
-            {DependencyInfo(False, True, False, None)},  # "Foo"
+            {DependencyInfo(False, True, False, "foo")},
         )
         self.assert_has_edge(
             mg,
@@ -898,14 +904,13 @@ class TestModuleGraphAbsoluteImports(unittest.TestCase):
             "sys",
             {DependencyInfo(False, True, True, None)},
         )
-        # self.assert_has_edge(
-        #    mg,
-        #    "imported_aliased_toplevel",
-        #    "no_imports",
-        #    {DependencyInfo(False, True, True, None)},
-        # )
-        # self.assert_edge_count(mg, 5)
-        self.assert_edge_count(mg, 4)
+        self.assert_has_edge(
+            mg,
+            "imported_aliased_toplevel",
+            "no_imports",
+            {DependencyInfo(False, True, True, None)},
+        )
+        self.assert_edge_count(mg, 5)
 
         self.assert_has_roots(mg, "imported_aliased_toplevel")
         self.assert_has_nodes(
@@ -1167,6 +1172,73 @@ class TestModuleGraphAbsoluteImports(unittest.TestCase):
             "invalid_package_init",
             {DependencyInfo(False, True, False, None)},
         )
+
+    def test_renamed_from(self):
+        mg = ModuleGraph()
+        mg.add_module("renamed_a")
+
+        self.assert_has_node(mg, "renamed_a", SourceModule)
+        self.assert_has_node(mg, "renamed_b", SourceModule)
+        self.assert_has_node(mg, "sys", BuiltinModule)
+        self.assert_has_node(mg, "package.submod", SourceModule)
+
+        self.assert_has_edge(
+            mg, "renamed_a", "renamed_b", {DependencyInfo(False, True, False, None)}
+        )
+        self.assert_has_edge(
+            mg, "renamed_b", "sys", {DependencyInfo(False, True, False, "c")}
+        )
+        self.assert_has_edge(
+            mg, "renamed_b", "package.submod", {DependencyInfo(False, True, True, "d")}
+        )
+        self.assert_has_edge(
+            mg, "renamed_a", "sys", {DependencyInfo(False, True, True, None)}
+        )
+        self.assert_has_edge(
+            mg, "renamed_a", "package.submod", {DependencyInfo(False, True, True, None)}
+        )
+
+    def test_renamed_attribute(self):
+        mg = ModuleGraph()
+        mg.add_module("renamed_attr")
+
+        self.assert_has_node(mg, "renamed_attr", SourceModule)
+        self.assert_has_node(mg, "renamed_package", Package)
+        self.assert_has_node(mg, "sys", BuiltinModule)
+
+        self.assert_has_edge(
+            mg,
+            "renamed_attr",
+            "renamed_package",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_has_edge(
+            mg, "renamed_package", "sys", {DependencyInfo(False, True, False, None)}
+        )
+
+        self.assert_edge_count(mg, 2)
+
+    def test_import_aliased_missing(self):
+        mg = ModuleGraph()
+        mg.add_implies({"aliased": Alias("nosuchmodule")})
+
+        mg.add_module("import_aliased_missing")
+
+        self.assert_has_node(mg, "import_aliased_missing", SourceModule)
+        self.assert_has_node(mg, "aliased", AliasNode)
+        self.assert_has_node(mg, "nosuchmodule", MissingModule)
+
+        self.assert_has_edge(
+            mg,
+            "import_aliased_missing",
+            "aliased",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_has_edge(
+            mg, "aliased", "nosuchmodule", {DependencyInfo(False, True, False, None)}
+        )
+
+        self.assert_edge_count(mg, 2)
 
 
 class TestModuleGraphRelativeImports(unittest.TestCase):
@@ -1545,7 +1617,7 @@ class TestModuleGraphRelativeImports(unittest.TestCase):
             "package.submod",
             {
                 DependencyInfo(False, True, True, None),
-                DependencyInfo(True, True, True, None),
+                DependencyInfo(True, True, True, "whole"),
             },
         )
         self.assert_has_edge(
@@ -1671,7 +1743,7 @@ class TestModuleGraphRelativeImports(unittest.TestCase):
             mg,
             "package.aliasing_relative",
             "package.submod",
-            {DependencyInfo(False, True, True, None)},
+            {DependencyInfo(False, True, True, "other")},
         )
         self.assert_has_edge(
             mg,
@@ -1700,6 +1772,75 @@ class TestModuleGraphRelativeImports(unittest.TestCase):
             "package.submod",
             "no_imports",
         )
+
+    def test_renamed_from(self):
+        mg = ModuleGraph()
+        mg.add_module("package.renamed_a")
+
+        self.assert_has_node(mg, "package.renamed_a", SourceModule)
+        self.assert_has_node(mg, "package.renamed_b", SourceModule)
+        self.assert_has_node(mg, "sys", BuiltinModule)
+        self.assert_has_node(mg, "package.submod", SourceModule)
+
+        self.assert_has_edge(
+            mg,
+            "package.renamed_a",
+            "package.renamed_b",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_has_edge(
+            mg, "package.renamed_b", "sys", {DependencyInfo(False, True, False, "c")}
+        )
+        self.assert_has_edge(
+            mg,
+            "package.renamed_b",
+            "package.submod",
+            {DependencyInfo(False, True, True, "d")},
+        )
+        self.assert_has_edge(
+            mg, "package.renamed_a", "sys", {DependencyInfo(False, True, True, None)}
+        )
+        self.assert_has_edge(
+            mg,
+            "package.renamed_a",
+            "package.submod",
+            {DependencyInfo(False, True, True, None)},
+        )
+
+    def test_renamed_attribute(self):
+        mg = ModuleGraph()
+        mg.add_module("package.renamed_attr")
+
+        self.assert_has_node(mg, "package.renamed_attr", SourceModule)
+        self.assert_has_node(mg, "package.renamed_package", Package)
+        self.assert_has_node(mg, "sys", BuiltinModule)
+
+        self.assert_has_edge(
+            mg,
+            "package.renamed_attr",
+            "package.renamed_package",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_has_edge(
+            mg,
+            "package.renamed_package",
+            "sys",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_has_edge(
+            mg,
+            "package.renamed_package",
+            "package",
+            {DependencyInfo(False, True, False, None)},
+        )
+        self.assert_has_edge(
+            mg,
+            "package.renamed_attr",
+            "package",
+            {DependencyInfo(False, True, False, None)},
+        )
+
+        self.assert_edge_count(mg, 4)
 
 
 class TestModuleGrapDistributions(unittest.TestCase):

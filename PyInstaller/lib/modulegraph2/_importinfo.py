@@ -1,6 +1,27 @@
-from typing import Iterable, Optional, Set
+from typing import Iterable, Optional, Set, Tuple
 
 import dataclasses
+
+
+class import_name(str):
+    """
+    Value representing an imported name. The string
+    value itself is the imported name, the *asname*
+    attribute contains a rename from an "as" clause.
+
+    Attributes:
+       asname: Renamed name from an "as" clause
+    """
+
+    __slots__ = ["asname"]
+
+    asname: Optional[str]
+
+    @classmethod
+    def from_tuple(cls, name_tuple: Tuple[str, Optional[str]]):
+        result = cls(name_tuple[0])
+        result.asname = name_tuple[1]
+        return result
 
 
 @dataclasses.dataclass(frozen=True)
@@ -36,9 +57,9 @@ class ImportInfo:
         ``except`` blocks of a try statement.
     """
 
-    import_module: str
+    import_module: import_name
     import_level: int
-    import_names: Set[str]
+    import_names: Set[import_name]
     star_import: bool
     is_in_function: bool
     is_in_conditional: bool
@@ -62,8 +83,8 @@ class ImportInfo:
 
 
 def create_importinfo(
-    name: str,
-    fromlist: Optional[Iterable[str]],
+    name: Tuple[str, Optional[str]],
+    fromlist: Optional[Iterable[Tuple[str, Optional[str]]]],
     level: int,
     in_def: bool,
     in_if: bool,
@@ -85,19 +106,19 @@ def create_importinfo(
     Returns:
       A newly created :class:`ImportInfo` instance.
     """
-    import_names: Set[str]
+    import_names: Set[import_name]
 
     have_star = False
     if fromlist is None:
         import_names = set()
     else:
-        import_names = set(fromlist)
+        import_names = {import_name.from_tuple(item) for item in fromlist}
         if "*" in import_names:
-            import_names.remove("*")
+            import_names.remove(import_name("*"))
             have_star = True
 
     return ImportInfo(
-        import_module=name,
+        import_module=import_name.from_tuple(name),
         import_level=level,
         import_names=import_names,
         star_import=have_star,

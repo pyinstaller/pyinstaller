@@ -8,6 +8,8 @@ class TestImplies(unittest.TestCase):
     def assert_valid_imply_value(self, entry):
         if isinstance(entry, implies.Alias):
             return
+        elif isinstance(entry, implies.Virtual):
+            return
         elif isinstance(entry, tuple):
             for e in entry:
                 if not isinstance(e, str):

@@ -19,6 +19,10 @@ if hasattr(sys, "real_prefix"):
 
     # Running inside of a virtualenv environment
     def adjust_path(path: str) -> str:
+        # Type annotation and comment are needed because Mypy
+        # doesn't understand the additional attributes
+        # introduced by virtualenv.
+        real_prefix: str = sys.real_prefix  # type: ignore
         norm_path = os.path.normpath(path)
 
         if not norm_path.startswith(virtual_lib):
@@ -38,7 +42,7 @@ if hasattr(sys, "real_prefix"):
 
         elif norm_path == os.path.join(virtual_lib, "site.py"):
             return os.path.join(
-                sys.real_prefix,
+                real_prefix,
                 "lib",
                 f"python{sys.version_info[0]}.{sys.version_info[1]}",
                 "site.py",
@@ -46,7 +50,7 @@ if hasattr(sys, "real_prefix"):
 
         elif norm_path == os.path.join(virtual_lib, "distutils"):
             return os.path.join(
-                sys.real_prefix,
+                real_prefix,
                 "lib",
                 f"python{sys.version_info[0]}.{sys.version_info[1]}",
                 "distutils",
@@ -54,7 +58,7 @@ if hasattr(sys, "real_prefix"):
 
         elif norm_path == os.path.join(virtual_lib, "distutils", "__init__.py"):
             return os.path.join(
-                sys.real_prefix,
+                real_prefix,
                 "lib",
                 f"python{sys.version_info[0]}.{sys.version_info[1]}",
                 "distutils",

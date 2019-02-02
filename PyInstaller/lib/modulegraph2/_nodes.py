@@ -278,6 +278,32 @@ class InvalidRelativeImport(BaseNode):
 
 
 @dataclasses.dataclass(init=False)
+class VirtualNode(BaseNode):
+    """
+    Node representing a virtual module, that is
+    added to :data:`sys.modules` by some other
+    module.
+
+    Attributes
+      providing_module
+        The module that creates this module in
+        :data:`sys.modules`.
+    """
+
+    providing_module: BaseNode
+
+    def __init__(self, module_name, providing_module):
+        super().__init__(
+            name=module_name,
+            loader=None,
+            distribution=None,
+            filename=None,
+            extension_attributes={},
+        )
+        self.providing_module = providing_module
+
+
+@dataclasses.dataclass(init=False)
 class AliasNode(BaseNode):
     """
     Node representing a module alias, that is an

@@ -6,7 +6,7 @@ and the use of global names.
 import collections
 import dis
 import types
-from typing import Deque, Dict, Iterator, List, Set, Tuple
+from typing import Deque, Dict, Iterator, List, Optional, Set, Tuple
 
 from ._importinfo import ImportInfo, create_importinfo
 
@@ -43,6 +43,18 @@ def _all_code_objects(
 
 
 def _extract_single(code: types.CodeType, is_function_code: bool, is_class_code: bool):
+    """
+    Extract import information from a single bytecode object (without recursing
+    into child objects).
+
+    Args:
+      code: The code object to process
+
+      is_function_code: True if this is a code object for a function or
+        anything in a function.
+
+      is_class_code: True if this is the code object for a class
+    """
     instructions = list(dis.get_instructions(code))
 
     imports: List[ImportInfo] = []
@@ -50,6 +62,7 @@ def _extract_single(code: types.CodeType, is_function_code: bool, is_class_code:
     globals_read: Set[str] = set()
     func_codes: Set[types.CodeType] = set()
     class_codes: Set[types.CodeType] = set()
+    fromvalues: Optional[List[Tuple[str, Optional[str]]]]
 
     for offset, inst in enumerate(instructions):
         if inst.opname == "IMPORT_NAME":
@@ -85,9 +98,19 @@ def _extract_single(code: types.CodeType, is_function_code: bool, is_class_code:
 
             import_module = code.co_names[name_offset]
 
+            if fromlist is not None:
+                fromvalues = [(nm, None) for nm in fromlist]
+            else:
+                fromvalues = None
+
             imports.append(
                 create_importinfo(
-                    import_module, fromlist, level, is_function_code, False, False
+                    (import_module, None),
+                    fromvalues,
+                    level,
+                    is_function_code,
+                    False,
+                    False,
                 )
             )
             if not (is_function_code or is_class_code):
@@ -125,6 +148,16 @@ def _extract_single(code: types.CodeType, is_function_code: bool, is_class_code:
 def _is_code_for_function(
     code: types.CodeType, parents: List[types.CodeType], func_codes: Set[types.CodeType]
 ):
+    """
+    Check if this is the code object for a function or inside a function
+
+    Args:
+      code: The code object to check
+
+      parents: List of parents for this code object
+
+      func_codes: Set of code objects that are directly for functions
+    """
     return code in func_codes or any(p in func_codes for p in parents)
 
 

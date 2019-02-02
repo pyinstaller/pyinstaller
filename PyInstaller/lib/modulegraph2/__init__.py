@@ -14,7 +14,7 @@ __version__ = "2.0a0"
 from ._depinfo import DependencyInfo
 from ._modulegraph import ModuleGraph
 from ._distributions import PyPIDistribution, all_distributions, distribution_named
-from ._implies import Alias
+from ._implies import Alias, Virtual
 from ._nodes import (
     AliasNode,
     BaseNode,
@@ -31,6 +31,7 @@ from ._nodes import (
     SourceModule,
     InvalidRelativeImport,
     InvalidModule,
+    VirtualNode,
 )
 from ._utilities import saved_sys_path
 
@@ -57,4 +58,6 @@ __all__ = (
     "all_distributions",
     "distribution_named",
     "saved_sys_path",
+    "Virtual",
+    "VirtualNode",
 )

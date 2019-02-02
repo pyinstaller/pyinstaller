@@ -4,6 +4,16 @@ T = TypeVar("T", bound=Callable)
 
 
 def as_T(function):
+    """
+    MyPy helper: cast *function* to type *T*.
+
+    This is used to give the *__call__* attribute
+    of :class:`CallbackList` and :class:`FirstNotNone`
+    the right type.
+
+    Args:
+      function: Function to cast to type *T*
+    """
     return cast(T, function)
 
 
@@ -58,18 +68,18 @@ class CallbackList(Generic[T]):
 
 
 class FirstNotNone(Generic[T]):
+    """
+    A sequence of callbacks that are called
+    in reverse order of insertion, and where
+    the first result is used.
+
+    The class is a generic type with the
+    type of the callback functions as the
+    type parameter.
+    """
     _callbacks: List[T]
 
     def __init__(self):
-        """
-        A sequence of callbacks that are called
-        in reverse order of insertion, and where
-        the first result is used.
-
-        The class is a generic type with the
-        type of the callback functions as the
-        type parameter.
-        """
         self._callbacks = []
 
     def add(self, function: T):

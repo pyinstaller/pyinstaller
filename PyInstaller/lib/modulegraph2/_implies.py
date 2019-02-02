@@ -21,11 +21,25 @@ class Alias(str):
     the name of the other module.
     """
 
-    pass
+    __slots__ = ()
+
+
+class Virtual(str):
+    """
+    Virtual package provided by a module
+
+    Virtuals are used in "implies" configuration to specify
+    that a module name is actually the name of a virtual
+    module provided by another module.  An instance of
+    this class is used to represent the name of the
+    other module.
+    """
+
+    __slots__ = ()
 
 
 #: The type for the value in an implies dictionary.
-ImpliesValueType = Union[None, Alias, Sequence[str]]
+ImpliesValueType = Union[None, Alias, Virtual, Sequence[str]]
 
 
 #: Implies dictionary for the standard library.
@@ -62,8 +76,8 @@ STDLIB_IMPLIES: Dict[str, ImpliesValueType] = {
     #
     # typing.io is "just" a namespace created by "typing", not a
     # real module.
-    "typing.io": Alias("typing"),
-    "typing.re": Alias("typing"),
+    "typing.io": Virtual("typing"),
+    "typing.re": Virtual("typing"),
     # os.path is a virtual package
     "os.path": Alias(os.path.__name__),
     # sysconfig users __import__ to load platform specific data

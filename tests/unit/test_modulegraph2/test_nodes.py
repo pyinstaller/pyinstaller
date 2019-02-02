@@ -44,6 +44,16 @@ class TestNodes(unittest.TestCase):
         self.assertIs(n.distribution, None)
         self.assertEqual(n.extension_attributes, {})
 
+    def test_virtual_node(self):
+        n = nodes.VirtualNode("imported_name", "providing_name")
+        self.assertEqual(n.name, "imported_name")
+        self.assertEqual(n.providing_module, "providing_name")
+
+        self.assertIs(n.loader, None)
+        self.assertIs(n.filename, None)
+        self.assertIs(n.distribution, None)
+        self.assertEqual(n.extension_attributes, {})
+
     def test_missing_module(self):
         n = nodes.MissingModule("imported_name")
         self.assertEqual(n.name, "imported_name")

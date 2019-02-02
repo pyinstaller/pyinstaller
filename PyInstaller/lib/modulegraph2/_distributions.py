@@ -1,5 +1,7 @@
 """
-Support for PyPI packages.
+This module contains functions and classes that are used
+to process information about package distributions (the
+stuff on PyPI).
 """
 import os
 import sys
@@ -25,6 +27,11 @@ class PyPIDistribution:
 
       import_names (Set[str]): The importable names in this distribution
                    (modules and packages)
+
+    .. note::
+
+       The information about distributions is fairly minimal at this point,
+       and will be enhanced as needed.
     """
 
     identifier: str
