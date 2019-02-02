@@ -21,5 +21,3 @@
 
 - Test modules contain duplicated support code, moves that code
   to testsuite.util (test support mix-in)
-
-- Licentie naar Apache2 ipv. MIT?
