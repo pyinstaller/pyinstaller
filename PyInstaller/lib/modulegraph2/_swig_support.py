@@ -2,9 +2,10 @@
 Support code that deals with SWIG.
 """
 import importlib.util
-import sys
 import os
-from typing import Optional
+import sys
+from typing import Optional, cast
+from types import ModuleType
 
 import modulegraph2
 
@@ -65,10 +66,8 @@ def swig_missing_hook(
         to_import = importing_module.name.rpartition(".")[0]
 
     try:
-        spec = importlib.util.find_spec(
-            "." + missing_name, to_import
-        )
-    except ImportError as exc:
+        spec = importlib.util.find_spec("." + missing_name, to_import)
+    except ImportError:
         # Loading the package may fail if there's and error. This
         # code assumes that's due to the invalid import by swig and
         # adjusts sys.modules for that before retrying.
@@ -78,11 +77,20 @@ def swig_missing_hook(
         # fake module might cause problems in the generic code dealing
         # with simular problems.
         sp = importlib.util.find_spec(to_import)
-        sys.modules[to_import] = FakePackage([sp.origin.rpartition(os.sep)[0]])
+        if sp is None: # pragma: nocover
+            # The package name cannot be found, this is probably
+            # not SWIG related
+            # XXX: Marked as nocover due to lack of reproducability
+            return None
 
-        spec = importlib.util.find_spec(
-            "." + missing_name, to_import
-        )
+        if sp.origin is None: # pragma: nocover
+            # Not SWIG related.
+            # XXX: Marked as nocover due to lack of reproducer
+            return None
+
+        sys.modules[to_import] = cast(ModuleType, FakePackage([sp.origin.rpartition(os.sep)[0]]))
+
+        spec = importlib.util.find_spec("." + missing_name, to_import)
 
         del sys.modules[to_import]
 
