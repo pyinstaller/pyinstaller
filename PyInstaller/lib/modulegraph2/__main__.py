@@ -16,7 +16,7 @@ from ._modulegraph import ModuleGraph
 from ._nodes import BaseNode
 from ._utilities import saved_sys_path
 
-# --- XXX: This block needs to be elsewhere
+# --- Helper code for the Graphviz builder
 
 # Mapping from node class name to Graphviz attributes for the
 # node.
@@ -95,6 +95,9 @@ def group_nodes(graph: ModuleGraph) -> Iterator[Tuple[str, str, Sequence[BaseNod
     """
     clusters: Dict[str, Tuple[str, str, List[BaseNode]]] = {}
     for node in graph.iter_graph():
+        if not isinstance(node, BaseNode):
+            continue
+
         if node.distribution is not None:
             dist = node.distribution.name
             if dist not in clusters:
@@ -260,9 +263,9 @@ def make_graph(args: argparse.Namespace) -> ModuleGraph:
         elif args.node_type == NodeType.SCRIPT:
             for name in args.name:
                 mg.add_script(name)
-        elif args.node_type == NodeType.DISTRIBUTION:  # pragma: nocover
-            print("Not supported yet")
-            raise SystemExit(2)
+        elif args.node_type == NodeType.DISTRIBUTION:
+            for name in args.name:
+                mg.add_distribution(name)
 
         else:  # pragma: nocover
             assert False, "Invalid NodeType"

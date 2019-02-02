@@ -4,7 +4,11 @@ import contextlib
 import sys
 import os
 import importlib
+import tempfile
 from io import StringIO
+
+from .test_distributions import build_and_install
+from . import util
 
 from modulegraph2 import (
     Alias,
@@ -12,6 +16,7 @@ from modulegraph2 import (
     BuiltinModule,
     DependencyInfo,
     ExcludedModule,
+    ExtensionModule,
     InvalidModule,
     InvalidRelativeImport,
     MissingModule,
@@ -21,6 +26,7 @@ from modulegraph2 import (
     PyPIDistribution,
     Script,
     SourceModule,
+    distribution_named,
 )
 
 from modulegraph2._distributions import distribution_for_file
@@ -1696,6 +1702,69 @@ class TestModuleGraphRelativeImports(unittest.TestCase):
         )
 
 
+class TestModuleGrapDistributions(unittest.TestCase):
+    def test_missing(self):
+        mg = ModuleGraph()
+
+        self.assertRaises(ValueError, mg.add_distribution, "nosuchdistribution")
+
+    def test_simple_named(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            try:
+                sys.path.insert(0, tmpdir)
+                build_and_install(
+                    os.path.join(os.path.dirname(__file__), "simple-package"), tmpdir
+                )
+
+                mg = ModuleGraph()
+                d = mg.add_distribution("simple-package")
+
+                self.assertTrue(isinstance(mg.find_node("toplevel"), SourceModule))
+                self.assertTrue(isinstance(mg.find_node("extension"), ExtensionModule))
+                self.assertTrue(isinstance(mg.find_node("package"), Package))
+                self.assertTrue(
+                    isinstance(mg.find_node("package.module"), SourceModule)
+                )
+                self.assertIs(mg.find_node("package.__init__"), None)
+
+                self.assertEqual(d.name, "simple-package")
+
+                d2 = mg.add_distribution("simple-package")
+                self.assertIs(d, d2)
+
+            finally:
+                del sys.path[0]
+                util.clear_sys_modules(tmpdir)
+
+    def test_simple_dist(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            try:
+                sys.path.insert(0, tmpdir)
+                build_and_install(
+                    os.path.join(os.path.dirname(__file__), "simple-package"), tmpdir
+                )
+
+                dist = distribution_named("simple-package")
+                self.assertIsNot(dist, None)
+
+                mg = ModuleGraph()
+                d = mg.add_distribution(dist)
+
+                self.assertTrue(isinstance(mg.find_node("toplevel"), SourceModule))
+                self.assertTrue(isinstance(mg.find_node("extension"), ExtensionModule))
+                self.assertTrue(isinstance(mg.find_node("package"), Package))
+                self.assertTrue(
+                    isinstance(mg.find_node("package.module"), SourceModule)
+                )
+                self.assertIs(mg.find_node("package.__init__"), None)
+
+                self.assertIs(d, dist)
+
+            finally:
+                util.clear_sys_modules(tmpdir)
+                del sys.path[0]
+
+
 class TestModuleGraphHooks(unittest.TestCase):
     # Test hooking mechanisms (to be determined)
     #
@@ -2302,6 +2371,33 @@ class TestModuleGraphQuerying(unittest.TestCase):
         self.assertEqual(len(result), 2)
         self.assertEqual({d.name for d in result}, {"dist1", "dist2"})
 
+    def test_distributions_in_graph(self):
+        def make_distribution(name):
+            return PyPIDistribution(name, name, "", set(), set())
+
+        mg = ModuleGraph()
+
+        n1 = MissingModule("n1")
+        n2 = MissingModule("n2")
+        n3 = MissingModule("n3")
+
+        n1.distribution = n2.distribution = n3.distribution = make_distribution("dist1")
+
+        mg.add_node(n1)
+        mg.add_node(n2)
+        mg.add_node(n3)
+        mg.add_root(n1)
+        mg.add_root(n2)
+        mg.add_root(n3)
+
+        dist2 = make_distribution("dist2")
+        mg.add_node(dist2)
+        mg.add_root(dist2)
+
+        result = list(mg.distributions())
+        self.assertEqual(len(result), 1)
+        self.assertEqual({d.name for d in result}, {"dist1"})
+
     def test_report_empty(self):
         mg = ModuleGraph()
 
@@ -2336,13 +2432,24 @@ class TestModuleGraphQuerying(unittest.TestCase):
             REPORT_HEADER + "MissingModule   n1                        FILE\n",
         )
 
+    def test_report_with_distribution(self):
+        mg = ModuleGraph()
 
-class TestModuleGraphTools(unittest.TestCase):
-    # Not sure yet if these need to be in modulegraph2, and if so
-    # where these need to end up
+        fp = StringIO()
 
-    # 1) Utility that ensure that entire PyPIDistributions get inclded
-    #    (with correct updates of the graph)
-    #
-    # 2) Likewise for packages
-    pass
+        n1 = MissingModule("n1")
+        n1.filename = "FILE"
+        mg.add_node(n1)
+
+        dist = distribution_named("pip")
+        self.assertIsNot(dist, None)
+
+        mg.add_node(dist)
+        mg.add_root(dist)
+        mg.add_edge(dist, n1, None)
+
+        mg.report(fp)
+        self.assertEqual(
+            fp.getvalue(),
+            REPORT_HEADER + "MissingModule   n1                        FILE\n",
+        )

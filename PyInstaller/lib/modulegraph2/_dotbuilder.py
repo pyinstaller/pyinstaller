@@ -1,17 +1,7 @@
 """
 Export functions for creating Graphviz files
 """
-from typing import (
-    Callable,
-    Dict,
-    Iterator,
-    Optional,
-    Sequence,
-    Set,
-    TextIO,
-    Tuple,
-    Union,
-)
+from typing import Callable, Dict, Iterator, Sequence, Set, TextIO, Tuple, Union
 
 from objectgraph import EDGE_TYPE, NODE_TYPE  # , ObjectGraph
 

@@ -1,8 +1,5 @@
 """
-Support for PyPI packages
-
-Note: This assumes that the contents of distributions don't change
-during a run of the script.
+Support for PyPI packages.
 """
 import os
 import sys

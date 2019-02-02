@@ -26,7 +26,7 @@ from objectgraph import ObjectGraph
 from ._ast_tools import extract_ast_info
 from ._callback_list import CallbackList, FirstNotNone
 from ._depinfo import DependencyInfo, from_importinfo
-from ._distributions import PyPIDistribution
+from ._distributions import PyPIDistribution, distribution_named
 from ._graphbuilder import SIX_MOVES_TO, node_for_spec, relative_package
 from ._implies import STDLIB_IMPLIES, Alias, ImpliesValueType
 from ._importinfo import ImportInfo
@@ -50,7 +50,7 @@ MissingCallback = Callable[["ModuleGraph", Optional[BaseNode], str], Optional[Ba
 DEFAULT_DEPENDENCY = DependencyInfo(False, True, False, None)
 
 
-class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
+class ModuleGraph(ObjectGraph[Union[BaseNode, PyPIDistribution], DependencyInfo]):
     """
     Class representing the dependency graph between a collection
     of python modules and scripts.
@@ -96,12 +96,18 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
         used by nodes reachable from one of the graph roots, otherwise
         this reports on distributions used by any root.
 
+        This will not report PyPIDistributions that are nodes in the graph,
+        unless they are also the *distribution* attribute of a node.
+
         Args:
           reacable: IF true only report on nodes that are reachable from
             a graph root, otherwise report on all nodes.
         """
         seen: Set[str] = set()
         for node in self.iter_graph() if reachable else self.nodes():
+            if isinstance(node, PyPIDistribution):
+                continue
+
             if isinstance(node.distribution, PyPIDistribution):
                 if node.distribution.identifier not in seen:
                     seen.add(node.distribution.identifier)
@@ -122,6 +128,8 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
         print("%-15s %-25s %s" % ("Class", "Name", "File"), file=file)
         print("%-15s %-25s %s" % ("-----", "----", "----"), file=file)
         for m in sorted(self.iter_graph(), key=operator.attrgetter("identifier")):
+            if isinstance(m, PyPIDistribution):
+                continue
             print(
                 "%-15s %-25s %s" % (type(m).__name__, m.identifier, m.filename or ""),
                 file=file,
@@ -146,7 +154,7 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
 
            OSError: If the script cannot be opened.
         """
-        node = self.find_node(os.fspath(script_path))
+        node = self._find_module(os.fspath(script_path))
         if node is not None:
             raise ValueError("adding {script_path!r} multiple times")
 
@@ -164,13 +172,46 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
         Args:
            module_name: Name of the module to import.
         """
-        node = self.find_node(module_name)
+        node = self._find_module(module_name)
         if node is None:
             node = self._find_or_load_module(None, module_name)
 
         self.add_root(node)
         self._run_stack()
         return node
+
+    def add_distribution(self, distribution: Union[PyPIDistribution, str]):
+        """
+        Add a package distribution to the graph, with references
+        to all importable names in that distribution
+
+        Args:
+          distribution: A distribution or distribution name
+
+        Returns
+          The node added to the graph
+        """
+        if isinstance(distribution, str):
+            tmp = distribution_named(distribution)
+            if tmp is None:
+                raise ValueError(f"Distribution {distribution} not found")
+
+            distribution = tmp
+
+        found = self.find_node(distribution.identifier)
+        if found is not None:
+            assert isinstance(found, PyPIDistribution)
+            return found
+
+        self.add_node(distribution)
+        self.add_root(distribution)
+
+        for module_name in distribution.import_names:
+            node = self._find_or_load_module(None, module_name)
+            self.add_edge(distribution, node, DEFAULT_DEPENDENCY)
+
+        self._run_stack()
+        return distribution
 
     #
     # Hooks
@@ -183,9 +224,10 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
         This is an API to be used by hooks. The graph is not fully updated
         after calling this method.
         """
-        node = self.find_node(import_name)
+        node = self._find_module(import_name)
         if node is None:
             node = self._find_or_load_module(importing_module, import_name)
+
         self.add_edge(importing_module, node, DEFAULT_DEPENDENCY)
         return node
 
@@ -449,6 +491,14 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
         for info in imports:
             self._work_stack.append((self._process_import, (node, info)))
 
+    def _find_module(self, module_name: Union[BaseNode, str]) -> Optional[BaseNode]:
+        node = self.find_node(module_name)
+        if node is not None:
+            assert isinstance(node, BaseNode)
+            return node
+
+        return None
+
     def _find_or_load_module(
         self,
         importing_module: Optional[BaseNode],
@@ -459,7 +509,7 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
         node: Optional[BaseNode] = None
         parent_node: Optional[BaseNode]
 
-        node = self.find_node(module_name)
+        node = self._find_module(module_name)
         if node is not None:
             return node
 
@@ -511,7 +561,7 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
                 invalid_name = (
                     "." * import_info.import_level
                 ) + import_info.import_module
-                node = self.find_node(invalid_name)
+                node = self._find_module(invalid_name)
                 if node is None:
                     node = InvalidRelativeImport(
                         ("." * import_info.import_level) + import_info.import_module
@@ -581,7 +631,7 @@ class ModuleGraph(ObjectGraph[BaseNode, DependencyInfo]):
                 imported_module, (Package, NamespacePackage, AliasNode)
             ):
                 if isinstance(imported_module, AliasNode):
-                    node = self.find_node(imported_module.actual_module)
+                    node = self._find_module(imported_module.actual_module)
                     assert node is not None
 
                     imported_module = node

@@ -130,6 +130,7 @@ class TestPrinter(unittest.TestCase):
         self.mg = modulegraph2.ModuleGraph()
         self.mg.add_module("os")
         self.mg.add_module("faulthandler")
+        self.mg.add_distribution("wheel")
 
     def test_html_graph(self):
         fp = io.StringIO()
@@ -272,13 +273,12 @@ class TestBuilder(unittest.TestCase):
         mg = main.make_graph(args)
         self.assertEqual(list(mg.nodes()), [])
 
-    @unittest.skip("Distribution support is not yet implemented")
     def test_graph_distribution(self):
         args = argparse.Namespace()
         args.node_type = main.NodeType.DISTRIBUTION
         args.path = []
         args.excludes = []
-        args.name = ["pip"]
+        args.name = ["wheel"]
 
         mg = main.make_graph(args)
         roots = list(mg.roots())
@@ -286,7 +286,6 @@ class TestBuilder(unittest.TestCase):
         self.assertEqual(len(roots), 1)
         self.assertTrue(isinstance(roots[0], modulegraph2.PyPIDistribution))
 
-    @unittest.skip("Distribution support is not yet implemented")
     def test_graph_no_distribution(self):
         args = argparse.Namespace()
         args.node_type = main.NodeType.DISTRIBUTION

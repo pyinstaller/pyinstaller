@@ -5,7 +5,7 @@ import operator
 import textwrap
 from typing import TextIO
 
-from . import ModuleGraph
+from . import BaseNode, ModuleGraph
 
 HTML_PREFIX = textwrap.dedent(
     """\
@@ -42,6 +42,9 @@ def export_to_html(file: TextIO, graph: ModuleGraph) -> None:
     reachable = {node.identifier for node in graph.iter_graph()}
 
     for node in sorted(graph.iter_graph(), key=operator.attrgetter("identifier")):
+        if not isinstance(node, BaseNode):
+            continue
+
         print(
             f'<a name="{node.identifier}"><h2>{type(node).__name__} {node.name}</h2></a>',  # noqa:E501
             file=file,
