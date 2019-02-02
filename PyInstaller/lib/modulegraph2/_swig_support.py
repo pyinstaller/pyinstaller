@@ -4,8 +4,8 @@ Support code that deals with SWIG.
 import importlib.util
 import os
 import sys
-from typing import Optional, cast
 from types import ModuleType
+from typing import Optional, cast
 
 import modulegraph2
 
