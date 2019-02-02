@@ -26,6 +26,7 @@ from ._nodes import (
     Package,
     SourceModule,
 )
+from ._virtualenv_support import adjust_path
 
 SIX_MOVES_GLOBALS = {"filter", "input", "map", "range", "xrange", "zip"}
 
@@ -178,7 +179,9 @@ def node_for_spec(
             loader=loader,
             distribution=None,
             extension_attributes={},
-            filename=pathlib.Path(spec.origin) if spec.origin is not None else None,
+            filename=pathlib.Path(adjust_path(spec.origin))
+            if spec.origin is not None
+            else None,
             search_path=[pathlib.Path(loc) for loc in search_path],
             has_data_files=False,
         )
@@ -204,7 +207,9 @@ def node_for_spec(
             if spec.origin is not None
             else None,
             extension_attributes={},
-            filename=pathlib.Path(spec.origin) if spec.origin is not None else None,
+            filename=pathlib.Path(adjust_path(spec.origin))
+            if spec.origin is not None
+            else None,
             globals_read=set(),
             globals_written=set(),
         )
@@ -218,6 +223,7 @@ def node_for_spec(
         # Zipimporter is mentioned explictly because it fails the type check for
         # InspectLoader even though it implements the interface.
         # Likewise for _frozen_importlib_external._NamespaceLoader
+
         inspect_loader = cast(importlib.abc.InspectLoader, loader)
         source_code = inspect_loader.get_source(spec.name)
 
@@ -272,7 +278,11 @@ def node_for_spec(
                 else None
             ),
             extension_attributes={},
-            filename=(pathlib.Path(spec.origin) if spec.origin is not None else None),
+            filename=(
+                pathlib.Path(adjust_path(spec.origin))
+                if spec.origin is not None
+                else None
+            ),
             globals_written=names_written,
             globals_read=names_read,
         )
@@ -376,7 +386,10 @@ def node_for_spec(
             extension_attributes={},
             filename=node_file,
             init_module=node,
-            search_path=[pathlib.Path(loc) for loc in spec.submodule_search_locations],
+            search_path=[
+                pathlib.Path(adjust_path(loc))
+                for loc in spec.submodule_search_locations
+            ],
             has_data_files=_contains_datafiles(node_file),
             namespace_type=namespace_type,
         )

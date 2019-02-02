@@ -4,7 +4,6 @@ Commandline interface
 import argparse
 import enum
 import functools
-import os
 import sys
 from typing import Dict, Iterator, List, Sequence, Set, TextIO, Tuple, Union
 
@@ -104,15 +103,6 @@ def group_nodes(graph: ModuleGraph) -> Iterator[Tuple[str, str, Sequence[BaseNod
                 clusters[dist] = (dist, "tab", [])
 
             clusters[dist][-1].append(node)
-
-        elif "." in node.identifier and node.filename is not None:
-            p = os.fspath(node.filename)
-            if "site-packages" not in p and p.startswith(sys.prefix):
-                dist = f"stdlib @ {node.name.split('.')[0]}"
-                if dist not in clusters:
-                    clusters[dist] = (dist, "tab", [])
-
-                clusters[dist][-1].append(node)
 
     return iter(clusters.values())
 

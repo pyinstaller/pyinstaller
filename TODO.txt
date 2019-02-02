@@ -7,14 +7,6 @@
        - a: "from b import c", b: "from package import submod as c" [with correct link]
        - Both with abs. and rel. imports
 
-- Add support for virtual environments (venv and virtualenv)
-  [Tests for both, likely special support for virtualenv]
-
-  -> Need tests (which need to use subprocesses), what can be tested?
-     Venv should work fine, for virtualenv need to check for special
-     files (os.py, distutils), verify that the dependencies are correct
-     (and reflect the files outside of the virtual environment)
-
 - Write documentation:
   - Document graph builder details
   - Add examples
