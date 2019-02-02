@@ -1,4 +1,6 @@
 """
+A module import dependency graph for Python projects.
+
 This package defines a class representing the
 dependency graph between a collection of python
 modules and scripts, as well as supporting functions
