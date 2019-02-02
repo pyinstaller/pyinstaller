@@ -48,18 +48,7 @@ class TestSWIGSupport(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        to_remove = []
-        for mod in sys.modules:
-            if (
-                hasattr(sys.modules[mod], "__file__")
-                and sys.modules[mod].__file__ is not None
-                and sys.modules[mod].__file__.startswith(os.fspath(INPUT_DIR))
-            ):
-                to_remove.append(mod)
-        for mod in to_remove:
-            del sys.modules[mod]
-
-        importlib.invalidate_caches()
+        util.clear_sys_modules(INPUT_DIR)
 
         for subdir in INPUT_DIR.iterdir():
             if not subdir.is_dir():
@@ -118,7 +107,6 @@ class TestSWIGSupport(unittest.TestCase):
 
             self.assert_has_edge(mg, "example", "_example", None)
 
-    @unittest.skip("Need to handle errors in __init__.py")
     def test_package_init(self):
         with prefixed_sys_path(INPUT_DIR / "package"):
 
@@ -133,7 +121,6 @@ class TestSWIGSupport(unittest.TestCase):
 
             self.assert_has_edge(mg, "example", "_example", None)
 
-    @unittest.skip("Need to handle errors in __init__.py")
     def test_package_init_without_hook(self):
         with prefixed_sys_path(INPUT_DIR / "package"):
 

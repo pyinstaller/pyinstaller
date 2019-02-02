@@ -3,12 +3,14 @@ Support code that deals with SWIG.
 """
 import importlib.util
 import sys
+import os
 from typing import Optional
 
 import modulegraph2
 
 from ._graphbuilder import node_for_spec
 from ._nodes import BaseNode, ExtensionModule, Module, Package
+from ._utilities import FakePackage
 
 # SWIG uses an absolute import to find an extension
 # module located in a package (basically a Python 2
@@ -53,9 +55,37 @@ def swig_missing_hook(
     # This may well be a SWIG extension, try to locate the extension
     # and if found add it as the global module it is (even if found at
     # a non-standard location)
-    spec = importlib.util.find_spec(
-        "." + missing_name, importing_module.name.rpartition(".")[0]
-    )
+    #
+    # If the importing_module is a package the relative import should
+    # be done relative to that package, otherwise use the parent
+    # package.
+    if isinstance(importing_module, Package):
+        to_import = importing_module.name
+    else:
+        to_import = importing_module.name.rpartition(".")[0]
+
+    try:
+        spec = importlib.util.find_spec(
+            "." + missing_name, to_import
+        )
+    except ImportError as exc:
+        # Loading the package may fail if there's and error. This
+        # code assumes that's due to the invalid import by swig and
+        # adjusts sys.modules for that before retrying.
+        #
+        # The fake entry in sys.modules is removed as soon as possible
+        # because the assumption is not generally true and leaving the
+        # fake module might cause problems in the generic code dealing
+        # with simular problems.
+        sp = importlib.util.find_spec(to_import)
+        sys.modules[to_import] = FakePackage([sp.origin.rpartition(os.sep)[0]])
+
+        spec = importlib.util.find_spec(
+            "." + missing_name, to_import
+        )
+
+        del sys.modules[to_import]
+
     if spec is not None:
         node, imports = node_for_spec(spec, sys.path)
         if not isinstance(node, ExtensionModule):

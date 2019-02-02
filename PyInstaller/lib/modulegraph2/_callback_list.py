@@ -77,6 +77,7 @@ class FirstNotNone(Generic[T]):
     type of the callback functions as the
     type parameter.
     """
+
     _callbacks: List[T]
 
     def __init__(self):

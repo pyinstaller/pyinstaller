@@ -25,12 +25,22 @@ from modulegraph2 import (
     MissingModule,
 )
 
+from . import util
+
 NODEBUILDER_TREE = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "nodebuilder-tree"
 )
 
 
 class TestContainsData(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        util.clear_sys_modules(NODEBUILDER_TREE)
+
+    @classmethod
+    def tearDownClass(cls):
+        util.clear_sys_modules(NODEBUILDER_TREE)
+
     def setUp(self):
         subprocess.check_call(
             [sys.executable, "setup.py", "build_zipfile"], cwd=NODEBUILDER_TREE
@@ -47,22 +57,6 @@ class TestContainsData(unittest.TestCase):
         del sys.path[0]
 
         os.unlink(os.path.join(NODEBUILDER_TREE, "packages.zip"))
-
-    @classmethod
-    def tearDownClass(cls):
-        to_remove = []
-        for mod in sys.modules:
-            if (
-                hasattr(sys.modules[mod], "__file__")
-                and sys.modules[mod].__file__ is not None
-                and "nodebuilder-tree" in sys.modules[mod].__file__
-            ):
-                to_remove.append(mod)
-
-        for mod in to_remove:
-            del sys.modules[mod]
-
-        importlib.invalidate_caches()
 
     def test_importlib(self):
         self.assertTrue(resources.is_resource("datapackage2.subdir", "data.txt"))
@@ -155,19 +149,7 @@ class TestNodeBuilder(unittest.TestCase):
         assert sys.path[0] == os.path.join(NODEBUILDER_TREE, "packages.zip")
         del sys.path[0]
 
-        to_remove = []
-        for mod in sys.modules:
-            if (
-                hasattr(sys.modules[mod], "__file__")
-                and sys.modules[mod].__file__ is not None
-                and "nodebuilder-tree" in sys.modules[mod].__file__
-            ):
-                to_remove.append(mod)
-
-        for mod in to_remove:
-            del sys.modules[mod]
-
-        importlib.invalidate_caches()
+        util.clear_sys_modules(NODEBUILDER_TREE)
 
     def test_validate_structure(self):
         import simple_source

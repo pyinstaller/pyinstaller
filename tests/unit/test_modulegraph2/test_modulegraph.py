@@ -30,41 +30,19 @@ from modulegraph2 import (
 )
 
 from modulegraph2._distributions import distribution_for_file
+from . import util
 
 INPUT_DIR = pathlib.Path(__file__).resolve().parent / "modulegraph-dir"
 
 
-class TestModuleGraphScripts(unittest.TestCase):
+class TestModuleGraphScripts(unittest.TestCase, util.TestMixin):
     @classmethod
     def setUpClass(cls):
-        for mod in sys.modules:
-            if not hasattr(sys.modules[mod], "__file__"):
-                continue
-            if sys.modules[mod].__file__ is None:
-                continue
+        util.clear_sys_modules(INPUT_DIR)
 
     @classmethod
     def tearDownClass(cls):
-        to_remove = []
-        for mod in sys.modules:
-            if (
-                hasattr(sys.modules[mod], "__file__")
-                and sys.modules[mod].__file__ is not None
-                and sys.modules[mod].__file__.startswith(os.fspath(INPUT_DIR))
-            ):
-                to_remove.append(mod)
-        for mod in to_remove:
-            del sys.modules[mod]
-
-        importlib.invalidate_caches()
-
-    def assertValidScriptNode(self, node, script_file):
-        self.assertIsInstance(node, Script)
-        self.assertEqual(node.name, str(script_file))
-        self.assertEqual(node.filename, script_file)
-        self.assertIs(node.distribution, None)
-        self.assertIs(node.loader, None)
-        self.assertEqual(node.extension_attributes, {})
+        util.clear_sys_modules(INPUT_DIR)
 
     def test_trivial_script(self):
         mg = ModuleGraph()
@@ -73,7 +51,7 @@ class TestModuleGraphScripts(unittest.TestCase):
         self.assertEqual(len(list(mg.roots())), 1)
         node, = mg.roots()
 
-        self.assertValidScriptNode(node, INPUT_DIR / "trivial-script")
+        self.assert_valid_script_node(node, INPUT_DIR / "trivial-script")
 
         self.assertEqual(len(list(mg.iter_graph(node=node))), 1)
         graph_node, = mg.iter_graph(node=node)
@@ -91,7 +69,7 @@ class TestModuleGraphScripts(unittest.TestCase):
         self.assertEqual(len(list(mg.roots())), 1)
         node, = mg.roots()
 
-        self.assertValidScriptNode(node, INPUT_DIR / "stdlib-script")
+        self.assert_valid_script_node(node, INPUT_DIR / "stdlib-script")
 
         node = mg.find_node("os")
         self.assertIsInstance(node, SourceModule)
@@ -102,65 +80,21 @@ class TestModuleGraphScripts(unittest.TestCase):
         mg.report()
 
 
-class TestModuleGraphAbsoluteImports(unittest.TestCase):
+class TestModuleGraphAbsoluteImports(unittest.TestCase, util.TestMixin):
+    @classmethod
+    def setUpClass(cls):
+        util.clear_sys_modules(INPUT_DIR)
+
+    @classmethod
+    def tearDownClass(cls):
+        util.clear_sys_modules(INPUT_DIR)
+
     def setUp(self):
         sys.path.insert(0, os.fspath(INPUT_DIR))
 
     def tearDown(self):
         assert sys.path[0] == os.fspath(INPUT_DIR)
         del sys.path[0]
-
-    @classmethod
-    def tearDownClass(cls):
-        to_remove = []
-        for mod in sys.modules:
-            if (
-                hasattr(sys.modules[mod], "__file__")
-                and sys.modules[mod].__file__ is not None
-                and sys.modules[mod].__file__.startswith(os.fspath(INPUT_DIR))
-            ):
-                to_remove.append(mod)
-        for mod in to_remove:
-            del sys.modules[mod]
-
-        importlib.invalidate_caches()
-
-    def assert_has_node(self, mg, node_name, node_class=None):
-        n = mg.find_node(node_name)
-        if n is None:
-            self.fail(f"Cannot find {node_name!r} in graph")
-
-        elif node_class is not None and not isinstance(n, node_class):
-            self.fail(
-                f"Node for {node_name!r} is not an instance of {node_class.__name__} but {type(n).__name__}"
-            )
-
-    def assert_has_edge(self, mg, from_name, to_name, edge_data):
-        self.assert_has_node(mg, from_name)
-        self.assert_has_node(mg, to_name)
-
-        try:
-            edge = mg.edge_data(from_name, to_name)
-
-        except KeyError:
-            pass
-        else:
-            self.assertEqual(len(edge), len(edge_data))
-            self.assertEqual(edge, edge_data)
-            return
-
-        self.fail(f"No edge between {from_name!r} and {to_name!r}")
-
-    def assert_has_roots(self, mg, *node_names):
-        roots = set(node_names)
-        self.assertEqual({n.identifier for n in mg.roots()}, roots)
-
-    def assert_has_nodes(self, mg, *node_names):
-        nodes = set(node_names)
-        self.assertEqual({n.identifier for n in mg.iter_graph()}, nodes)
-
-    def assert_edge_count(self, mg, edge_count):
-        self.assertEqual(len(list(mg.edges())), edge_count)
 
     def test_add_module_twice(self):
         with self.subTest("adding root again"):
@@ -217,8 +151,6 @@ class TestModuleGraphAbsoluteImports(unittest.TestCase):
 
         self.assert_has_roots(mg, "global_import")
         self.assert_has_nodes(mg, "global_import", "no_imports")
-
-        # XXX: Validate edge data
 
     def test_circular_imports(self):
         mg = ModuleGraph()
@@ -1241,65 +1173,22 @@ class TestModuleGraphAbsoluteImports(unittest.TestCase):
         self.assert_edge_count(mg, 2)
 
 
-class TestModuleGraphRelativeImports(unittest.TestCase):
+class TestModuleGraphRelativeImports(unittest.TestCase, util.TestMixin):
     # Same as previous class, for relative imports
+    @classmethod
+    def setUpClass(cls):
+        util.clear_sys_modules(INPUT_DIR)
+
+    @classmethod
+    def tearDownClass(cls):
+        util.clear_sys_modules(INPUT_DIR)
+
     def setUp(self):
         sys.path.insert(0, os.fspath(INPUT_DIR))
 
     def tearDown(self):
         assert sys.path[0] == os.fspath(INPUT_DIR)
         del sys.path[0]
-
-    @classmethod
-    def tearDownClass(cls):
-        to_remove = []
-        for mod in sys.modules:
-            if (
-                hasattr(sys.modules[mod], "__file__")
-                and sys.modules[mod].__file__ is not None
-                and sys.modules[mod].__file__.startswith(os.fspath(INPUT_DIR))
-            ):
-                to_remove.append(mod)
-        for mod in to_remove:
-            del sys.modules[mod]
-
-        importlib.invalidate_caches()
-
-    def assert_has_node(self, mg, node_name, node_class=None):
-        n = mg.find_node(node_name)
-        if n is None:
-            self.fail(f"Cannot find {node_name!r} in graph")
-
-        elif node_class is not None and not isinstance(n, node_class):
-            self.fail(
-                f"Node for {node_name!r} is not an instance of {node_class.__name__} but {type(n).__name__}"
-            )
-
-    def assert_has_edge(self, mg, from_name, to_name, edge_data):
-        self.assert_has_node(mg, from_name)
-        self.assert_has_node(mg, to_name)
-
-        try:
-            edge = mg.edge_data(from_name, to_name)
-
-        except KeyError:
-            pass
-        else:
-            self.assertEqual(edge, edge_data)
-            return
-
-        self.fail(f"No edge between {from_name!r} and {to_name!r}")
-
-    def assert_has_roots(self, mg, *node_names):
-        roots = set(node_names)
-        self.assertEqual({n.identifier for n in mg.roots()}, roots)
-
-    def assert_has_nodes(self, mg, *node_names):
-        nodes = set(node_names)
-        self.assertEqual({n.identifier for n in mg.iter_graph()}, nodes)
-
-    def assert_edge_count(self, mg, edge_count):
-        self.assertEqual(len(list(mg.edges())), edge_count)
 
     def test_relative_import_toplevel(self):
         mg = ModuleGraph()
@@ -1844,6 +1733,14 @@ class TestModuleGraphRelativeImports(unittest.TestCase):
 
 
 class TestModuleGrapDistributions(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        util.clear_sys_modules(INPUT_DIR)
+
+    @classmethod
+    def tearDownClass(cls):
+        util.clear_sys_modules(INPUT_DIR)
+
     def test_missing(self):
         mg = ModuleGraph()
 
@@ -1906,86 +1803,21 @@ class TestModuleGrapDistributions(unittest.TestCase):
                 del sys.path[0]
 
 
-class TestModuleGraphHooks(unittest.TestCase):
-    # Test hooking mechanisms (to be determined)
-    #
-    # Probably need callbacks:
-    # - Before creating a mssing node, callback returns Optional[BaseNode]
-    #   (What is the use case?)
-    #
-    # - After adding a new PyPIDistribution,
-    #   Use case: add implied data for this distribution in recipe
-    #
-    # - After a node is "finished"
-    #   Use case: Adjust graph for this node (py2app recipes)
-    #
-    # - Debugging?
-    #   It can be helpfull to log what the graph builder is doing
-    #
-    # All of these are lists of callbacks that will all be called.
-    #
-    # Mechanism for updating _lazy_nodes:
-    # 1) def update_implies(self, new): self._lazy_nodes.update(new)
-    # 2) def exclude_module(self, name): ...
-    # 3) def add_module_alias(self, name): ...
+class TestModuleGraphHooks(unittest.TestCase, util.TestMixin):
+    @classmethod
+    def setUpClass(cls):
+        util.clear_sys_modules(INPUT_DIR)
+
+    @classmethod
+    def tearDownClass(cls):
+        util.clear_sys_modules(INPUT_DIR)
+
     def setUp(self):
         sys.path.insert(0, os.fspath(INPUT_DIR))
 
     def tearDown(self):
         assert sys.path[0] == os.fspath(INPUT_DIR)
         del sys.path[0]
-
-    @classmethod
-    def tearDownClass(cls):
-        to_remove = []
-        for mod in sys.modules:
-            if (
-                hasattr(sys.modules[mod], "__file__")
-                and sys.modules[mod].__file__ is not None
-                and sys.modules[mod].__file__.startswith(os.fspath(INPUT_DIR))
-            ):
-                to_remove.append(mod)
-        for mod in to_remove:
-            del sys.modules[mod]
-
-        importlib.invalidate_caches()
-
-    def assert_has_node(self, mg, node_name, node_class=None):
-        n = mg.find_node(node_name)
-        if n is None:
-            self.fail(f"Cannot find {node_name!r} in graph")
-
-        elif node_class is not None and not isinstance(n, node_class):
-            self.fail(
-                f"Node for {node_name!r} is not an instance of {node_class.__name__} but {type(n).__name__}"
-            )
-
-    def assert_has_edge(self, mg, from_name, to_name, edge_data):
-        self.assert_has_node(mg, from_name)
-        self.assert_has_node(mg, to_name)
-
-        try:
-            edge = mg.edge_data(from_name, to_name)
-
-        except KeyError:
-            pass
-        else:
-            self.assertEqual(len(edge), len(edge_data))
-            self.assertEqual(edge, edge_data)
-            return
-
-        self.fail(f"No edge between {from_name!r} and {to_name!r}")
-
-    def assert_has_roots(self, mg, *node_names):
-        roots = set(node_names)
-        self.assertEqual({n.identifier for n in mg.roots()}, roots)
-
-    def assert_has_nodes(self, mg, *node_names):
-        nodes = set(node_names)
-        self.assertEqual({n.identifier for n in mg.iter_graph()}, nodes)
-
-    def assert_edge_count(self, mg, edge_count):
-        self.assertEqual(len(list(mg.edges())), edge_count)
 
     def test_post_processing(self):
         # This adds a number of other test modules to verify

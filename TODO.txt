@@ -1,6 +1,0 @@
-- Write documentation:
-  - Document graph builder details
-  - Add examples
-
-- Test modules contain duplicated support code, moves that code
-  to testsuite.util (test support mix-in)

@@ -12,6 +12,7 @@ from objectgraph import EDGE_TYPE, NODE_TYPE  # , ObjectGraph
 
 from ._modulegraph import ModuleGraph
 
+
 def format_attributes(callable, *args):
     """
     Format the results of *callable* in the format expected
