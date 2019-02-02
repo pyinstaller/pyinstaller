@@ -77,18 +77,19 @@ def swig_missing_hook(
         # fake module might cause problems in the generic code dealing
         # with simular problems.
         sp = importlib.util.find_spec(to_import)
-        if sp is None: # pragma: nocover
-            # The package name cannot be found, this is probably
-            # not SWIG related
-            # XXX: Marked as nocover due to lack of reproducability
-            return None
 
-        if sp.origin is None: # pragma: nocover
-            # Not SWIG related.
-            # XXX: Marked as nocover due to lack of reproducer
-            return None
+        # By this time it must be possible to locate the spec,
+        # as we were already passed as proper module node.
+        #
+        # The origin should be set as well, the ImportError shouldn't
+        # happen for implicit namespace packages (which don't have
+        # an __init__.py and no origin)
+        assert sp is not None
+        assert sp.origin is not None
 
-        sys.modules[to_import] = cast(ModuleType, FakePackage([sp.origin.rpartition(os.sep)[0]]))
+        sys.modules[to_import] = cast(
+            ModuleType, FakePackage([sp.origin.rpartition(os.sep)[0]])
+        )
 
         spec = importlib.util.find_spec("." + missing_name, to_import)
 
