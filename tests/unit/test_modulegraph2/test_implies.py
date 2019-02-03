@@ -33,4 +33,11 @@ class TestImplies(unittest.TestCase):
         for k, v in implies.STDLIB_IMPLIES.items():
             with self.subTest(k):
                 self.assertTrue(isinstance(k, str))
-                self.assert_valid_imply_value(v, check_spec=k != 'turtledemo')
+                # turtledemo validation fails on some CI systems to
+                # to incomplete installs.
+                # ctypes validation fails on Windows because the
+                # implied name does not actually exists (but is
+                # really present in the __init__.py for ctypes)
+                self.assert_valid_imply_value(
+                    v, check_spec=k not in ("turtledemo", "ctypes")
+                )

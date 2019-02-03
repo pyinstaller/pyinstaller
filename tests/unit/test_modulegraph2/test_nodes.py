@@ -26,9 +26,21 @@ class TestNodes(unittest.TestCase):
         self.assertEqual(n.extension_attributes, {})
 
     def test_script(self):
-        n = nodes.Script("myscript.py")
-        self.assertEqual(n.name, "myscript.py")
-        self.assertEqual(n.filename, pathlib.Path(os.path.abspath("myscript.py")))
+        # Use the full name of an existing script to avoid problems
+        # on Windows
+        n = nodes.Script(
+            pathlib.Path(__file__).parent / "modulegraph-dir" / "trivial-script"
+        )
+        self.assertEqual(
+            n.name,
+            os.fspath(
+                pathlib.Path(__file__).parent / "modulegraph-dir" / "trivial-script"
+            ),
+        )
+        self.assertEqual(
+            n.filename,
+            pathlib.Path(__file__).parent / "modulegraph-dir" / "trivial-script",
+        )
 
         self.assertIs(n.loader, None)
         self.assertIs(n.distribution, None)

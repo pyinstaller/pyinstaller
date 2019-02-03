@@ -479,7 +479,7 @@ class ModuleGraph(ObjectGraph[Union[BaseNode, PyPIDistribution], DependencyInfo]
                     # None.
                     spec = None
 
-                else: # pragma: nocover
+                else:  # pragma: nocover
                     raise
 
             if spec is None:
