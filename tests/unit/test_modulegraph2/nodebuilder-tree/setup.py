@@ -1,12 +1,23 @@
 import os
 import sys
 from setuptools import setup, Extension, Command
+from distutils.command import build_ext
 import py_compile
 import zipfile
 
 extension1 = Extension("extension", sources=["extension1.c"])
 extension2 = Extension("package.pkgext", sources=["pkgext.c"])
 extension3 = Extension("ext_package.__init__", sources=["init.c"])
+
+# See CPython issue #334800
+def get_export_symbols(self, ext):
+    parts = ext.name.split(".")
+    if parts[-1] == "__init__":
+        initfunc_name = "PyInit_" + parts[-2]
+    else:
+        initfunc_name = "PyInit_" + parts[-1]
+
+build_ext.build_ext.get_export_symbols = get_export_symbols
 
 
 class build_bytecode(Command):
