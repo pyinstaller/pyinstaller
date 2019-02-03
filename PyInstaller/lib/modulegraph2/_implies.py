@@ -83,7 +83,7 @@ STDLIB_IMPLIES: Dict[str, ImpliesValueType] = {
     # sysconfig users __import__ to load platform specific data
     "sysconfig": (
         "_sysconfigdata_{abi}_{platform}_{multiarch}".format(
-            abi=sys.abiflags,
+            abi=getattr(sys, "abiflags", ""),
             platform=sys.platform,
             multiarch=getattr(sys.implementation, "_multiarch", ""),
         ),
@@ -119,6 +119,7 @@ STDLIB_PLATFORM_IMPLIES: Dict[str, Dict[str, ImpliesValueType]] = {
     "win32": {
         "signal": ("_signal", "_socket"),
         "ctypes": ("comtypes.server.inprocserver",),
+        "sysconfig": (),
     }
 }
 
