@@ -117,7 +117,7 @@ def _contains_datafiles(directory: pathlib.Path):
             else:
                 return True
 
-    except NotADirectoryError:
+    except (NotADirectoryError, FileNotFoundError):
         names: List[str] = []
         while not directory.exists():
             names.insert(0, directory.name)
