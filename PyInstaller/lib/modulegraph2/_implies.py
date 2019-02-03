@@ -129,7 +129,30 @@ STDLIB_IMPLIES.update(STDLIB_PLATFORM_IMPLIES.get(sys.platform, {}))
 
 #: Updates to the base :data:`STDLIB_IMPLIES` for specific Python releases.
 STDLIB_VERSION_IMPLIES: Dict[Tuple[int, int], Dict[str, ImpliesValueType]] = {
-    (3, 6): {"zipimport": ("zlib",)}
+    (3, 6): {
+        "zipimport": ("zlib",),
+        "turtledemo": (
+            "turtledemo.chaos",
+            "turtledemo.fractalcurves",
+            "turtledemo.paint",
+            "turtledemo.round_dance",
+            "turtledemo.two_canvases",
+            "turtledemo.clock",
+            "turtledemo.lindenmayer",
+            "turtledemo.peace",
+            "turtledemo.sorting_animate",
+            "turtledemo.wikipedia",
+            "turtledemo.colormixer",
+            "turtledemo.minimal_hanoi",
+            "turtledemo.penrose",
+            "turtledemo.tree",
+            "turtledemo.yinyang",
+            "turtledemo.bytedesign",
+            "turtledemo.forest",
+            "turtledemo.nim",
+            "turtledemo.planet_and_moon",
+        ),
+    }
 }
 
 STDLIB_IMPLIES.update(STDLIB_VERSION_IMPLIES.get(sys.version_info[:2], {}))
