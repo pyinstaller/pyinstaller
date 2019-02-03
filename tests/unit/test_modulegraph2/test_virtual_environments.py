@@ -53,6 +53,10 @@ def create_virtualenv(environment_module, workdir, name):
     subprocess.check_call(
         [os.path.join(venv_dir, "bin", "pip"), "install", "-qqq", "objectgraph"]
     )
+    if sys.version_info[:2] < (3, 7):
+        subprocess.check_call(
+            [os.path.join(venv_dir, "bin", "pip"), "install", "-qqq", "dataclasses"]
+        )
 
     return venv_dir
 

@@ -471,6 +471,17 @@ class ModuleGraph(ObjectGraph[Union[BaseNode, PyPIDistribution], DependencyInfo]
                     assert module_name not in sys.modules
                     sys.modules[module_name] = orig
 
+            except AttributeError as exc:
+                if "has no attribute '__path__'" in exc.args[0]:
+                    # In Python 3.6 finding the spec dotted name
+                    # that refers to an attribute of a module will
+                    # result in an attribute error instead of returning
+                    # None.
+                    spec = None
+
+                else:
+                    raise
+
             if spec is None:
                 node = self._create_missing_module(importing_module, module_name)
                 return node
@@ -827,32 +838,32 @@ class ModuleGraph(ObjectGraph[Union[BaseNode, PyPIDistribution], DependencyInfo]
                         return
 
                 for nm in import_info.import_names:
+                    if nm in imported_module.globals_written:
+                        # Name exists as a global in the imported module,
+                        # it is either a global or an imported module.
+                        for ed_set, tgt in self.outgoing(imported_module):
+                            if (
+                                any(nm == ed.imported_as for ed in ed_set)
+                                or tgt.identifier == nm
+                            ):
+                                self.add_edge(
+                                    importing_module,
+                                    tgt,
+                                    from_importinfo(import_info, True, nm.asname),
+                                )
+                                break
+                        continue
+
+                    elif isinstance(imported_module, Module):
+                        continue
+
                     subnode = self._find_or_load_module(
                         importing_module,
                         f"{imported_module.identifier}.{nm}",
                         link_missing_to_parent=False,
                     )
                     if isinstance(subnode, MissingModule):
-                        if nm in imported_module.globals_written:
-                            # Name exists, but is not a module, don't add edge
-                            # to the "missing" node
-
-                            # Check if the imported name is actually some other imported
-                            # module.
-                            for ed_set, tgt in self.outgoing(imported_module):
-                                if (
-                                    any(nm == ed.imported_as for ed in ed_set)
-                                    or tgt.identifier == nm
-                                ):
-                                    self.add_edge(
-                                        importing_module,
-                                        tgt,
-                                        from_importinfo(import_info, True, nm.asname),
-                                    )
-                                    break
-                            continue
-
-                        elif (
+                        if (
                             isinstance(imported_module, Package)
                             and imported_module.init_module.name == "@@SIX_MOVES@@"
                         ):
