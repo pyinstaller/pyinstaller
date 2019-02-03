@@ -88,7 +88,7 @@ if hasattr(sys, "real_prefix"):
             )
 
         else:
-            print("@@ ADJUST @@", normpath, relpath, real_path)
+            print("@@ ADJUST @@", normpath, relpath, real_path, file=sys.stderr)
             return path
 
 
