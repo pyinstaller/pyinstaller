@@ -70,7 +70,7 @@ def create_virtualenv(environment_module, workdir, name):
 def run_scriptlet(venv_dir):
     output = subprocess.check_output(
         [
-            os.path.join(venv_dir, "bin", "python"),
+            os.path.join(venv_dir, BIN_DIR, "python"),
             "-c",
             "import modulegraph2; mg = modulegraph2.ModuleGraph(); mg.add_module('pip'); mg.add_module('distutils'); mg.add_module('distutils.command.bdist'); mg.report()",
         ]
