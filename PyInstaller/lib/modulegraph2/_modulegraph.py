@@ -479,7 +479,7 @@ class ModuleGraph(ObjectGraph[Union[BaseNode, PyPIDistribution], DependencyInfo]
                     # None.
                     spec = None
 
-                else:
+                else: # pragma: nocover
                     raise
 
             if spec is None:
@@ -855,6 +855,9 @@ class ModuleGraph(ObjectGraph[Union[BaseNode, PyPIDistribution], DependencyInfo]
                         continue
 
                     elif isinstance(imported_module, Module):
+                        # Only packages can have importable names that are sub
+                        # modules, therefore skip to the next name for "plain"
+                        # modules.
                         continue
 
                     subnode = self._find_or_load_module(
