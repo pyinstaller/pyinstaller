@@ -10,11 +10,16 @@ import os
 import sys
 
 if hasattr(sys, "real_prefix"):
-    virtual_lib = os.path.join(
-        os.path.normpath(sys.prefix),
-        "lib",
-        f"python{sys.version_info[0]}.{sys.version_info[1]}",
-    )
+    if sys.platform == "win32":  # pragma: nocover
+        virtual_lib = os.path.join(os.path.normpath(sys.prefix), "lib")
+
+    else:
+        virtual_lib = os.path.join(
+            os.path.normpath(sys.prefix),
+            "lib",
+            f"python{sys.version_info[0]}.{sys.version_info[1]}",
+        )
+
     site_packages = os.path.join(virtual_lib, "site-packages")
 
     def same_contents(path1: str, path2: str) -> bool:
@@ -57,7 +62,7 @@ if hasattr(sys, "real_prefix"):
             os.path.isfile(norm_path)
             and os.path.isfile(real_path)
             and same_contents(norm_path, real_path)
-        ):
+        ):  # pragma: nocover
             # On Windows virtualenv does not use symlinks, but
             # copies part of the stdlib into the virtual environment.
             return real_path
@@ -88,7 +93,6 @@ if hasattr(sys, "real_prefix"):
             )
 
         else:
-            print("@@ ADJUST @@", normpath, relpath, real_path, file=sys.stderr)
             return path
 
 
