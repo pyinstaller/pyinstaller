@@ -120,6 +120,7 @@ STDLIB_PLATFORM_IMPLIES: Dict[str, Dict[str, ImpliesValueType]] = {
         "signal": ("_signal", "_socket"),
         "ctypes": ("comtypes.server.inprocserver",),
         "sysconfig": (),
+        "posix": (),
     }
 }
 

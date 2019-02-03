@@ -503,7 +503,7 @@ class ModuleGraph(ObjectGraph[Union[BaseNode, PyPIDistribution], DependencyInfo]
                 if loader.is_package(spec.name):
                     path = spec.origin
                     assert path is not None
-                    assert path.rpartition("/")[-1].startswith("__init__."), path
+                    assert path.rpartition(os.sep)[-1].startswith("__init__."), path
                     path = os.path.dirname(path)
                     sys.modules[parent] = cast(ModuleType, FakePackage([path]))
                     return self._load_module(importing_module, module_name)

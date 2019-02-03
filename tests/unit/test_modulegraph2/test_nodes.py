@@ -5,7 +5,7 @@ import importlib.util
 import pathlib
 
 loader = importlib.util.find_spec("os").loader
-file_path = pathlib.Path(__file__)
+file_path = pathlib.Path(__file__).resolve()
 
 
 class TestNodes(unittest.TestCase):

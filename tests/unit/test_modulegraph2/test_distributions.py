@@ -93,21 +93,21 @@ class TestPackageBuilder(unittest.TestCase):
             expected = {
                 os.path.join(tmpdir, "extension" + EXTENSION_SUFFIXES[0]),
                 os.path.join(tmpdir, "toplevel.py"),
-                os.path.join(tmpdir, "__pycache__/toplevel" + PYC),
-                os.path.join(tmpdir, "package/__init__.py"),
-                os.path.join(tmpdir, "package/__pycache__/__init__" + PYC),
-                os.path.join(tmpdir, "package/module.py"),
-                os.path.join(tmpdir, "package/__pycache__/module" + PYC),
-                os.path.join(tmpdir, "package/datafile.txt"),
-                os.path.join(tmpdir, "package/other,data.dat"),
-                os.path.join(tmpdir, "simple_package-1.0.dist-info/RECORD"),
-                os.path.join(tmpdir, "simple_package-1.0.dist-info/INSTALLER"),
-                os.path.join(tmpdir, "simple_package-1.0.dist-info/WHEEL"),
-                os.path.join(tmpdir, "simple_package-1.0.dist-info/METADATA"),
-                os.path.join(tmpdir, "simple_package-1.0.dist-info/top_level.txt"),
+                os.path.join(tmpdir, "__pycache__", "toplevel" + PYC),
+                os.path.join(tmpdir, "package", "__init__.py"),
+                os.path.join(tmpdir, "package", "__pycache__", "__init__" + PYC),
+                os.path.join(tmpdir, "package", "module.py"),
+                os.path.join(tmpdir, "package", "__pycache__", "module" + PYC),
+                os.path.join(tmpdir, "package", "datafile.txt"),
+                os.path.join(tmpdir, "package", "other,data.dat"),
+                os.path.join(tmpdir, "simple_package-1.0.dist-info", "RECORD"),
+                os.path.join(tmpdir, "simple_package-1.0.dist-info", "INSTALLER"),
+                os.path.join(tmpdir, "simple_package-1.0.dist-info", "WHEEL"),
+                os.path.join(tmpdir, "simple_package-1.0.dist-info", "METADATA"),
+                os.path.join(tmpdir, "simple_package-1.0.dist-info", "top_level.txt"),
             }
             if sys.platform != "win32":
-                expected.add(os.path.join(tmpdir, 'package/my"data.txt'))
+                expected.add(os.path.join(tmpdir, "package", 'my"data.txt'))
             self.assertEqual(info.files, expected)
 
             self.assertTrue(info.contains_file(os.path.join(tmpdir, "toplevel.py")))
@@ -133,22 +133,22 @@ class TestPackageBuilder(unittest.TestCase):
             self.assertEqual(
                 info.files,
                 {
-                    os.path.join(tmpdir, "package/__init__.pyc"),
-                    os.path.join(tmpdir, "package/module.pyc"),
-                    os.path.join(tmpdir, "bytecode_package-1.0.dist-info/RECORD"),
-                    os.path.join(tmpdir, "bytecode_package-1.0.dist-info/INSTALLER"),
-                    os.path.join(tmpdir, "bytecode_package-1.0.dist-info/WHEEL"),
-                    os.path.join(tmpdir, "bytecode_package-1.0.dist-info/METADATA"),
+                    os.path.join(tmpdir, "package", "__init__.pyc"),
+                    os.path.join(tmpdir, "package", "module.pyc"),
+                    os.path.join(tmpdir, "bytecode_package-1.0.dist-info", "RECORD"),
+                    os.path.join(tmpdir, "bytecode_package-1.0.dist-info", "INSTALLER"),
+                    os.path.join(tmpdir, "bytecode_package-1.0.dist-info", "WHEEL"),
+                    os.path.join(tmpdir, "bytecode_package-1.0.dist-info", "METADATA"),
                     os.path.join(
-                        tmpdir, "bytecode_package-1.0.dist-info/top_level.txt"
+                        tmpdir, "bytecode_package-1.0.dist-info", "top_level.txt"
                     ),
                 },
             )
 
             self.assertTrue(
-                info.contains_file(os.path.join(tmpdir, "package/module.pyc"))
+                info.contains_file(os.path.join(tmpdir, "package", "module.pyc"))
             )
-            self.assertFalse(info.contains_file(os.path.join("package/module.pyc")))
+            self.assertFalse(info.contains_file(os.path.join("package", "module.pyc")))
 
 
 class TestPackageFinder(unittest.TestCase):
