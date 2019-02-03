@@ -3,7 +3,7 @@
 
 static PyModuleDef mod_def = {
 	PyModuleDef_HEAD_INIT,
-	"package.extmod",
+	"package.pkgext",
 	NULL,
 	0,
 	NULL,
@@ -13,7 +13,7 @@ static PyModuleDef mod_def = {
 	NULL
 };
 
-PyObject* PyInit_extmod(void)
+PyObject* PyInit_pkgext(void)
 {
 	return PyModule_Create(&mod_def);
 }
