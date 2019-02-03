@@ -13,7 +13,7 @@ static PyModuleDef mod_def = {
 	NULL
 };
 
-#ifdef WIN32
+#ifdef MS_WINDOWS
 PyObject* PyInit___init__(void)
 #else
 PyObject* PyInit_ext_package(void)

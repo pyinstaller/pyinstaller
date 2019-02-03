@@ -18,10 +18,9 @@ import tempfile
 import contextlib
 
 if sys.platform == "win32":
-    BIN_DIR="Scripts"
+    BIN_DIR = "Scripts"
 else:
-    BIN_DIR="bin"
-
+    BIN_DIR = "bin"
 
 
 @contextlib.contextmanager
@@ -57,11 +56,23 @@ def create_virtualenv(environment_module, workdir, name):
     venv_dir = os.path.join(workdir, name)
 
     subprocess.check_call(
-        [os.path.join(venv_dir, BIN_DIR, "python"), "-mpip", "install", "-qqq", "objectgraph"]
+        [
+            os.path.join(venv_dir, BIN_DIR, "python"),
+            "-mpip",
+            "install",
+            "-qqq",
+            "objectgraph",
+        ]
     )
     if sys.version_info[:2] < (3, 7):
         subprocess.check_call(
-            [os.path.join(venv_dir, BIN_DIR, "python"), "-mpip", "install", "-qqq", "dataclasses"]
+            [
+                os.path.join(venv_dir, BIN_DIR, "python"),
+                "-mpip",
+                "install",
+                "-qqq",
+                "dataclasses",
+            ]
         )
 
     return venv_dir

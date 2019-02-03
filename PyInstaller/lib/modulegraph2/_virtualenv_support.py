@@ -17,6 +17,15 @@ if hasattr(sys, "real_prefix"):
     )
     site_packages = os.path.join(virtual_lib, "site-packages")
 
+    def same_contents(path1: str, path2: str) -> bool:
+        with open(path1, "rb") as fp:
+            contents1 = fp.read()
+
+        with open(path2, "rb") as fp:
+            contents2 = fp.read()
+
+        return contents1 == contents2
+
     # Running inside of a virtualenv environment
     def adjust_path(path: str) -> str:
         # Type annotation and comment are needed because Mypy
@@ -31,6 +40,9 @@ if hasattr(sys, "real_prefix"):
         if norm_path.startswith(site_packages):
             return path
 
+        relpath = os.path.relpath(norm_path, sys.prefix)
+        real_path = os.path.join(real_prefix, relpath)
+
         if os.path.islink(norm_path):
             return os.readlink(norm_path)
 
@@ -39,6 +51,15 @@ if hasattr(sys, "real_prefix"):
             dirn = os.path.dirname(norm_path)
             dirn = os.readlink(dirn)
             return os.path.join(dirn, base)
+
+        elif (
+            os.path.isfile(norm_path)
+            and os.path.isfile(real_path)
+            and same_contents(norm_path, real_path)
+        ):
+            # On Windows virtualenv does not use symlinks, but
+            # copies part of the stdlib into the virtual environment.
+            return real_path
 
         elif norm_path == os.path.join(virtual_lib, "site.py"):
             return os.path.join(
