@@ -5,7 +5,7 @@ from modulegraph2 import _implies as implies
 
 
 class TestImplies(unittest.TestCase):
-    def assert_valid_imply_value(self, entry):
+    def assert_valid_imply_value(self, entry, check_spec):
         if isinstance(entry, implies.Alias):
             return
         elif isinstance(entry, implies.Virtual):
@@ -15,9 +15,10 @@ class TestImplies(unittest.TestCase):
                 if not isinstance(e, str):
                     self.fail(f"Value in {entry!r} is not a string")
 
-                spec = importlib.util.find_spec(e)
-                if spec is None:
-                    self.fail(f"{entry!r} is not a valid module or package")
+                if check_spec:
+                    spec = importlib.util.find_spec(e)
+                    if spec is None:
+                        self.fail(f"{entry!r} is not a valid module or package")
 
             return
         elif entry is None:
@@ -32,4 +33,4 @@ class TestImplies(unittest.TestCase):
         for k, v in implies.STDLIB_IMPLIES.items():
             with self.subTest(k):
                 self.assertTrue(isinstance(k, str))
-                self.assert_valid_imply_value(v)
+                self.assert_valid_imply_value(v, check_spec=k != 'turtledemo')
