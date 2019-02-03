@@ -11,11 +11,18 @@ import sys
 
 if hasattr(sys, "real_prefix"):
     if sys.platform == "win32":  # pragma: nocover
-        virtual_lib = os.path.join(os.path.normpath(sys.prefix), "lib")
+        virtual_lib = os.path.join(os.path.normpath(sys.real_prefix), "lib")
+        real_lib = os.path.join(os.path.normpath(sys.prefix), "lib")
+
 
     else:
         virtual_lib = os.path.join(
             os.path.normpath(sys.prefix),
+            "lib",
+            f"python{sys.version_info[0]}.{sys.version_info[1]}",
+        )
+        real_lib = os.path.join(
+            os.path.normpath(sys.real_prefix),
             "lib",
             f"python{sys.version_info[0]}.{sys.version_info[1]}",
         )
@@ -69,25 +76,19 @@ if hasattr(sys, "real_prefix"):
 
         elif norm_path == os.path.join(virtual_lib, "site.py"):
             return os.path.join(
-                real_prefix,
-                "lib",
-                f"python{sys.version_info[0]}.{sys.version_info[1]}",
+                real_lib,
                 "site.py",
             )
 
         elif norm_path == os.path.join(virtual_lib, "distutils"):
             return os.path.join(
-                real_prefix,
-                "lib",
-                f"python{sys.version_info[0]}.{sys.version_info[1]}",
+                real_lib,
                 "distutils",
             )
 
         elif norm_path == os.path.join(virtual_lib, "distutils", "__init__.py"):
             return os.path.join(
-                real_prefix,
-                "lib",
-                f"python{sys.version_info[0]}.{sys.version_info[1]}",
+                real_lib,
                 "distutils",
                 "__init__.py",
             )
