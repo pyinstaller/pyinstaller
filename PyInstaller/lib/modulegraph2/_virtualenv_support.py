@@ -32,6 +32,7 @@ if hasattr(sys, "real_prefix"):
         # doesn't understand the additional attributes
         # introduced by virtualenv.
         real_prefix: str = sys.real_prefix  # type: ignore
+        norm_prefix = os.path.normpath(sys.prefix)
         norm_path = os.path.normpath(path)
 
         if not norm_path.startswith(virtual_lib):
@@ -40,7 +41,7 @@ if hasattr(sys, "real_prefix"):
         if norm_path.startswith(site_packages):
             return path
 
-        relpath = os.path.relpath(norm_path, sys.prefix)
+        relpath = os.path.relpath(norm_path, norm_prefix)
         real_path = os.path.join(real_prefix, relpath)
 
         if os.path.islink(norm_path):
