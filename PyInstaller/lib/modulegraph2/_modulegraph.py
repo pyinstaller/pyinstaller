@@ -884,10 +884,6 @@ class ModuleGraph(ObjectGraph[Union[BaseNode, PyPIDistribution], DependencyInfo]
                                     importing_module, dep_node, DEFAULT_DEPENDENCY
                                 )
                                 continue
-                        elif isinstance(imported_module, Module):
-                            # Importing names from arbitrary modules should not result
-                            # in a MissingModule link
-                            continue
 
                     self.add_edge(subnode, imported_module, DEFAULT_DEPENDENCY)
                     self.add_edge(
