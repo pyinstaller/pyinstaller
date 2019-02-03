@@ -13,11 +13,7 @@ static PyModuleDef mod_def = {
 	NULL
 };
 
-#ifdef MS_WINDOWS
-PyObject* PyInit___init__(void)
-#else
 PyObject* PyInit_ext_package(void)
-#endif
 {
 	return PyModule_Create(&mod_def);
 }
