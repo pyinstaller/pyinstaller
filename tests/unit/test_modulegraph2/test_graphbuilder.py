@@ -151,69 +151,6 @@ class TestNodeBuilder(unittest.TestCase):
 
         util.clear_sys_modules(NODEBUILDER_TREE)
 
-    def test_validate_structure(self):
-        import simple_source
-
-        self.assertEqual(
-            simple_source.__file__, os.path.join(NODEBUILDER_TREE, "simple_source.py")
-        )
-
-        import bytecode_module
-
-        self.assertEqual(
-            bytecode_module.__file__,
-            os.path.join(NODEBUILDER_TREE, "bytecode_module.pyc"),
-        )
-
-        import extension
-
-        self.assertEqual(
-            extension.__file__,
-            os.path.join(
-                NODEBUILDER_TREE,
-                "extension" + importlib.machinery.EXTENSION_SUFFIXES[0],
-            ),
-        )
-
-        import namespace_package
-
-        if sys.version_info[:2] < (3, 7):
-            self.assertFalse(hasattr(namespace_package, "__file__"))
-        else:
-            self.assertEqual(namespace_package.__file__, None)
-
-        import package
-
-        self.assertEqual(os.path.basename(package.__file__), "__init__.py")
-
-        import bytecode_package
-
-        self.assertEqual(os.path.basename(bytecode_package.__file__), "__init__.pyc")
-
-        import ext_package
-
-        self.assertEqual(
-            os.path.basename(ext_package.__file__),
-            "__init__" + importlib.machinery.EXTENSION_SUFFIXES[0],
-        )
-
-        import zfmod
-
-        self.assertEqual(
-            zfmod.__file__, os.path.join(NODEBUILDER_TREE, "packages.zip", "zfmod.py")
-        )
-
-        import zfpackage
-
-        self.assertEqual(os.path.basename(zfpackage.__file__), "__init__.py")
-
-        import zfnspackage
-
-        if sys.version_info[:2] < (3, 7):
-            self.assertFalse(hasattr(zfnspackage, "__file__"))
-        else:
-            self.assertIs(zfnspackage.__file__, None)
-
     def test_builtin_module(self):
         spec = importlib.util.find_spec("sys")
 
