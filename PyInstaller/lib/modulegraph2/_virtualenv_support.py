@@ -88,6 +88,7 @@ if hasattr(sys, "real_prefix"):
             )
 
         else:
+            print("@@ ADJUST @@", normpath, relpath, real_path)
             return path
 
 
