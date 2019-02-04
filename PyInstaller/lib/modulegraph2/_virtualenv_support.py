@@ -10,9 +10,11 @@ import os
 import sys
 
 if hasattr(sys, "real_prefix"):
+    real_prefix: str = sys.real_prefix  # type: ignore
+
     if sys.platform == "win32":  # pragma: nocover
         virtual_lib = os.path.join(os.path.normpath(sys.prefix), "lib")
-        real_lib = os.path.join(os.path.normpath(sys.real_prefix), "lib")
+        real_lib = os.path.join(os.path.normpath(real_prefix), "lib")
 
     else:
         virtual_lib = os.path.join(
@@ -21,7 +23,7 @@ if hasattr(sys, "real_prefix"):
             f"python{sys.version_info[0]}.{sys.version_info[1]}",
         )
         real_lib = os.path.join(
-            os.path.normpath(sys.real_prefix),
+            os.path.normpath(real_prefix),
             "lib",
             f"python{sys.version_info[0]}.{sys.version_info[1]}",
         )
@@ -42,7 +44,6 @@ if hasattr(sys, "real_prefix"):
         # Type annotation and comment are needed because Mypy
         # doesn't understand the additional attributes
         # introduced by virtualenv.
-        real_prefix: str = sys.real_prefix  # type: ignore
         norm_prefix = os.path.normpath(sys.prefix)
         norm_path = os.path.normpath(path)
 
