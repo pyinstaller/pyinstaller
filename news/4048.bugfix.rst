@@ -1,0 +1,1 @@
+Query PyQt5 to determine if SSL is supported, only adding SSL DLLs if so. In addition, search the path for SSL DLLs, instead of looking in Qt's ``BinariesPath``.
