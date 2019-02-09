@@ -371,6 +371,10 @@ def main(scripts, name=None, onefile=None,
 
     hiddenimports = hiddenimports or []
 
+    # If file extension of main script is '.pyw', force --windowed option.
+    if os.path.splitext(scripts[0])[-1] == '.pyw':
+        console = False
+
     # If script paths are relative, make them relative to the directory containing .spec file.
     scripts = [make_path_spec_relative(x, specpath) for x in scripts]
     # With absolute paths replace prefix with variable HOMEPATH.
@@ -400,11 +404,6 @@ def main(scripts, name=None, onefile=None,
     # Translate the ``all`` option.
     if DEBUG_ALL_CHOICE[0] in debug:
         debug = DEBUG_ARGUMENT_CHOICES
-
-    # If file extension of main script is '.pyw', force --windowed option.
-    # scripts[0] is a Path object.
-    if os.path.splitext(scripts[0].path)[-1] == '.pyw':
-        console = False
 
     d = {
         'scripts': scripts,
