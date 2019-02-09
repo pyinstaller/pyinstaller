@@ -247,7 +247,7 @@ stored in the executable, and the bootloader will create the
     The temporary folder where the bundled app runs may not being readable
     after `setuid` is called. If your script needs to
     call `setuid`, it may be better to use one-folder mode
-    so as to have more control over the permissions on its files. 
+    so as to have more control over the permissions on its files.
 
 
 Using a Console Window
@@ -264,6 +264,10 @@ An option for Windows and Mac OS is to tell |PyInstaller| to not provide a conso
 The |bootloader| starts Python with no target for standard output or input.
 Do this when your script has a graphical interface for user input and can properly
 report its own diagnostics.
+
+As noted in section 16.1.2 of the CPython manual Appendix, a file extention of `.pyw`
+suppresses the console window that normally appears.  Likewise, a console window
+will not be provided when using a :file:`myscript.pyw` script with |PyInstaller|.
 
 
 Hiding the Source Code
