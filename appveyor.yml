@@ -125,7 +125,7 @@ install:
   ### Install the PyInstaller dependencies.
 
   # Upgrade to the latest pip.
-  - python -m pip install -U 'pip<19.0' setuptools wheel
+  - python -m pip install -U pip setuptools wheel
 
   # Install the PyInstaller test dependencies.
   - pip install -U -r tests/requirements-libraries.txt
