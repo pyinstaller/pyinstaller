@@ -109,6 +109,8 @@ jobs:
       python: 3.7
       dist: xenial
       sudo: true
+      services:
+        - xvfb
 
     - <<: *test-pyinstaller
       python: nightly
@@ -118,6 +120,8 @@ jobs:
       python: nightly
       dist: xenial
       sudo: true
+      services:
+        - xvfb
 
   allow_failures:
       # Just tests how PyInstaller performs with upcoming Python
