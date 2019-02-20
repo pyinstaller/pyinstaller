@@ -866,6 +866,14 @@ def get_python_library_path():
     Darwin custom builds could possibly also have non-framework style libraries,
     so this method also checks for that variant as well.
     """
+    def _find_lib_in_libdirs(*libdirs):
+        for libdir in libdirs:
+            for name in PYDYLIB_NAMES:
+                full_path = os.path.join(libdir, name)
+                if os.path.exists(full_path):
+                    return full_path
+        return None
+
     # Try to get Python library name from the Python executable. It assumes that Python
     # library is not statically linked.
     dlls = getImports(sys.executable)
@@ -902,12 +910,11 @@ def get_python_library_path():
         # We need special care for this case.
         # Anaconda places the python library in the lib directory, so
         # we search this one as well.
-        prefixes = [compat.base_prefix, os.path.join(compat.base_prefix, 'lib')]
-        for prefix in prefixes:
-            for name in PYDYLIB_NAMES:
-                full_path = os.path.join(prefix, name)
-                if os.path.exists(full_path):
-                    return full_path
+        python_libname = _find_lib_in_libdirs(
+            compat.base_prefix,
+            os.path.join(compat.base_prefix, 'lib'))
+        if python_libname:
+            return python_libname
 
     # Python library NOT found. Return just None.
     return None
