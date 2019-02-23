@@ -77,8 +77,8 @@ DEFAULT_DISTPATH = os.path.join(compat.getcwd(), 'dist')
 DEFAULT_WORKPATH = os.path.join(compat.getcwd(), 'build')
 
 
-PLATFORM = compat.system() + '-' + compat.architecture()
+PLATFORM = compat.system + '-' + compat.architecture
 # Include machine name in path to bootloader for some machines.
 # e.g. 'arm'
-if compat.machine():
-    PLATFORM += '-' + compat.machine()
+if compat.machine:
+    PLATFORM += '-' + compat.machine

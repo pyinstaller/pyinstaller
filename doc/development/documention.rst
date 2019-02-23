@@ -22,7 +22,7 @@ a new version at https://pyinstaller.readthedocs.io/en/latest/.
 For **small changes** (like typos) you may just fork |PyInstaller| on Github,
 edit the documentation online and create a pull-request.
 
-For anything else we ask you to clone the repository and verify you changes
+For anything else we ask you to clone the repository and verify your changes
 like this::
 
   pip install sphinx sphinx_rtd_theme

@@ -19,7 +19,9 @@ execnet >= 1.5.0
 pytest >= 2.7.3
 
 # Plugin allowing running tests in parallel.
-pytest-xdist
+pytest-xdist == 1.25.0; python_version == '2.7'
+pytest-xdist; python_version != '2.7'
+
 # Plugin to abort hanging tests.
 pytest-timeout
 # allows specifying order without duplicates

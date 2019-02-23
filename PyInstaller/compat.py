@@ -254,7 +254,7 @@ if is_win:
                              'pip install pywin32-ctypes\n')
 
 
-def architecture():
+def _architecture():
     """
     Returns the bit depth of the python interpreter's architecture as
     a string ('32bit' or '64bit'). Similar to platform.architecture(),
@@ -272,8 +272,10 @@ def architecture():
     else:
         return platform.architecture()[0]
 
+architecture = _architecture()
+del _architecture
 
-def system():
+def _system():
     # On some Windows installation (Python 2.4) platform.system() is
     # broken and incorrectly returns 'Microsoft' instead of 'Windows'.
     # http://mail.python.org/pipermail/patches/2007-June/022947.html
@@ -282,16 +284,18 @@ def system():
         return 'Windows'
     return syst
 
+system = _system()
+del _system
 
-def machine():
+def _machine():
     """
     Return machine suffix to use in directory name when looking
     for bootloader.
 
     PyInstaller is reported to work even on ARM architecture. For that
-    case functions system() and architecture() are not enough.
-    Path to bootloader has to be composed from system(), architecture()
-    and machine() like:
+    case `system` and `architecture` are not enough.
+    Path to bootloader has to be composed from `system`, `architecture`
+    and `machine` like:
         'Linux-32bit-arm'
     """
     mach = platform.machine()
@@ -302,6 +306,9 @@ def machine():
     else:
         # Assume x86/x86_64 machine.
         return None
+
+machine = _machine()
+del _machine
 
 
 # Set and get environment variables does not handle unicode strings correctly
@@ -592,7 +599,7 @@ def __wrap_python(args, kwargs):
     # It is necessary to run binaries with 'arch' command.
     if is_darwin:
         mapping = {'32bit': '-i386', '64bit': '-x86_64'}
-        py_prefix = ['arch', mapping[architecture()]]
+        py_prefix = ['arch', mapping[architecture]]
         # Since OS X 10.11 the environment variable DYLD_LIBRARY_PATH is no
         # more inherited by child processes, so we proactively propagate
         # the current value using the `-e` option of the `arch` command.

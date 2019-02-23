@@ -184,16 +184,22 @@ def matchDLLArch(filename):
         return True
 
     global _exe_machine_type
-    if _exe_machine_type is None:
-        exe_pe = pefile.PE(sys.executable, fast_load=True)
-        _exe_machine_type = exe_pe.FILE_HEADER.Machine
-        exe_pe.close()
+    try:
+        if _exe_machine_type is None:
+            pefilename = sys.executable  # for exception handling
+            exe_pe = pefile.PE(sys.executable, fast_load=True)
+            _exe_machine_type = exe_pe.FILE_HEADER.Machine
+            exe_pe.close()
 
-    pe = pefile.PE(filename, fast_load=True)
-
-    match_arch = pe.FILE_HEADER.Machine == _exe_machine_type
-    pe.close()
+        pefilename = filename  # for exception handling
+        pe = pefile.PE(filename, fast_load=True)
+        match_arch = pe.FILE_HEADER.Machine == _exe_machine_type
+        pe.close()
+    except pefile.PEFormatError as exc:
+        raise SystemExit('Can not get architecture from file: %s\n'
+                         '  Reason: %s' % (pefilename, exception))
     return match_arch
+
 
 def Dependencies(lTOC, xtrapath=None, manifest=None, redirects=None):
     """
@@ -724,8 +730,11 @@ def getImports(pth):
             # dependencies should already have been handled by
             # selectAssemblies in that case, so just warn, return an empty
             # list and continue.
-            logger.warning('Can not get binary dependencies for file: %s', pth,
-                           exc_info=1)
+            # For less specific errors also log the traceback.
+            logger.warning('Can not get binary dependencies for file: %s', pth)
+            logger.warning(
+                '  Reason: %s', exception,
+                exc_info=not isinstance(exception, pefile.PEFormatError))
             return []
     elif is_darwin:
         return _getImports_macholib(pth)
@@ -771,8 +780,7 @@ def findLibrary(name):
         # Architecture independent locations.
         paths = ['/lib', '/usr/lib']
         # Architecture dependent locations.
-        arch = compat.architecture()
-        if arch == '32bit':
+        if compat.architecture == '32bit':
             paths.extend(['/lib32', '/usr/lib32', '/usr/lib/i386-linux-gnu'])
         else:
             paths.extend(['/lib64', '/usr/lib64', '/usr/lib/x86_64-linux-gnu'])
@@ -798,7 +806,7 @@ def findLibrary(name):
         if is_aix:
             paths.append('/opt/freeware/lib')
         elif is_hpux:
-            if arch == '32bit':
+            if compat.architecture == '32bit':
                 paths.append('/usr/local/lib/hpux32')
             else:
                 paths.append('/usr/local/lib/hpux64')
