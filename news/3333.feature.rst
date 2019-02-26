@@ -1,0 +1,2 @@
+Add support for relative paths for icon-files, resource-files and
+version-resource-files.
