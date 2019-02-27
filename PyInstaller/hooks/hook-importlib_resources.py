@@ -1,26 +1,29 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2019, PyInstaller Development Team.
+# Copyright (c) 2019, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
+"""
+`importlib_resources` is a backport of the 3.7+ module `importlib.resources`
+"""
+
 import os
 from PyInstaller.compat import is_py2, is_py3, is_py37
 from PyInstaller.utils.hooks import get_module_file_attribute
-# importlib_resources is a backport of 3.7+ importlib.resources.
 
-# Include this version file, loaded to set __version__.
+# Include the version.txt file, used to set __version__
 res_loc = os.path.dirname(get_module_file_attribute('importlib_resources'))
-
 datas = [
     (os.path.join(res_loc, 'version.txt'), 'importlib_resources'),
 ]
 
 # Replicate the module's version checks to exclude unused modules.
 if is_py37:
-    # Stdlib now has the implmentation of this, so the backports aren't used.
+    # Stdlib now has the implmentation of this, so the backports
+    # aren't used at all
     excludedmodules = [
         'importlib_resources._py2',
         'importlib_resources._py3',
