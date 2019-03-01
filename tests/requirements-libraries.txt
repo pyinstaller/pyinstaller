@@ -75,7 +75,7 @@ twisted==18.9.0; python_version == '2.7'
 
 # Current gevent doesn't provide Windows Python 3.7 x32 wheels. Since we can't
 # detect 32 vs. 64 bits, avoid Windows Python 3.7 altogether.
-gevent==1.3.7; python_version != '3.7' or sys_platform != 'win32'
+gevent==1.4.0; python_version != '3.7' or sys_platform != 'win32'
 # Older gevent works on Windows Python 3.7 x32.
 gevent==1.3.6; python_version == '3.7' and sys_platform == 'win32'  # pyup: ignore
 
