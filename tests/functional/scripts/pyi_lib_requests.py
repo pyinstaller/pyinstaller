@@ -77,8 +77,7 @@ def main():
         assert False, "Could not bind server port: all ports in use."
 
     httpd.socket = ssl.wrap_socket(
-        httpd.socket, certfile=SERVER_CERT, server_side=True,
-        ssl_version=ssl.PROTOCOL_TLSv1,
+        httpd.socket, certfile=SERVER_CERT, server_side=True
     )
 
     def ssl_server():

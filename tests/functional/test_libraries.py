@@ -549,9 +549,6 @@ def test_cryptodome(pyi_builder):
         """)
 
 
-@skipif(is_win and is_py37, reason='The call to ssl.wrap_socket produces '
-        '"ssl.SSLError: [SSL: EE_KEY_TOO_SMALL] ee key too small '
-        '(_ssl.c:3717)" on Windows Python 3.7.')
 @importorskip('requests')
 def test_requests(tmpdir, pyi_builder, data_dir, monkeypatch):
     # Note that including the data_dir fixture copies files needed by this test.
