@@ -135,7 +135,7 @@ Getting Debug Messages
 ----------------------
 
 The ``--debug=all`` option (and its :ref:`choices <pyinstaller how to generate>`) provides a
-signficiant amount of diagnostic inforation.
+signficiant amount of diagnostic information.
 This can be useful during development of a complex package,
 or when your app doesn't seem to be starting,
 or just to learn how the runtime works.
