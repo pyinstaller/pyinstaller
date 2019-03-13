@@ -48,11 +48,11 @@ class Qt5LibraryInfo:
                 sys.stderr = sys.stdout
 
                 import json
-                from %s.QtCore import QLibraryInfo, QCoreApplication
+                from %s.QtCore import (QCoreApplication, QLibraryInfo)
 
                 # QLibraryInfo isn't always valid until a QCoreApplication is
                 # instantiated.
-                app = QCoreApplication([])
+                _ = QCoreApplication(sys.argv).instance().quit()
                 paths = [x for x in dir(QLibraryInfo) if x.endswith('Path')]
                 location = {x: QLibraryInfo.location(getattr(QLibraryInfo, x))
                             for x in paths}
