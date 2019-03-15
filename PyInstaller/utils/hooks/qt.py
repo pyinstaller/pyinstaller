@@ -52,7 +52,7 @@ class Qt5LibraryInfo:
 
                 # QLibraryInfo isn't always valid until a QCoreApplication is
                 # instantiated.
-                app = QCoreApplication([])
+                app = QCoreApplication(sys.argv)
                 paths = [x for x in dir(QLibraryInfo) if x.endswith('Path')]
                 location = {x: QLibraryInfo.location(getattr(QLibraryInfo, x))
                             for x in paths}

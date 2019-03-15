@@ -1,0 +1,1 @@
+Fix inputs to ``QCoreApplication`` constructor in ``Qt5LibraryInfo``. Now the core application's initialization and finalization in addition to system-wide and application-wide settings is safer.
