@@ -1,0 +1,1 @@
+Fix broken hook support for QML / QtQuick libraries within PySide2.
