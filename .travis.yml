@@ -1,14 +1,8 @@
 language: python
 
-# Use the new container-based Travis infrastructure.
-sudo: false
-
 branches:
   except:
     - /pyup\/.*/
-
-# Make sure we are on Ubuntu 14.04
-dist: trusty
 
 # Cache pip packages. Explicitly name the pip-cache directory since we
 # use a custom `install` step which annuls `cache: pip`.
@@ -19,6 +13,9 @@ cache:
 
 os:
   - linux
+
+services:
+  - xvfb
 
 jobs:
   fast_finish: true
@@ -61,12 +58,6 @@ jobs:
     - &test-libraries
       stage: Test - Libraries
       python: 2.7
-      before_script: &start-xvfb
-        - |
-          # Run X Virtual Framebuffer to imitate a display
-          export DISPLAY=:99.0 ;
-          sh -e /etc/init.d/xvfb start ;
-          sleep 3 # give xvfb some time to start
       # Run tests and speed them up by sending them to multiple CPUs.
       script: *script-test-libraries
 
@@ -98,30 +89,21 @@ jobs:
       python: 3.6
 
     # Building Python > 3.7 requires OpenSSL 1.0.2 (or 1.1), which is
-    # available in xenial (16.04 LTS) only. As of 2018-07-08 xenial is only
-    # available as VM (sudo: true)
+    # available in xenial (16.04 LTS) only.
 
     - <<: *test-pyinstaller
       python: 3.7
       dist: xenial
-      sudo: true
     - <<: *test-libraries
       python: 3.7
       dist: xenial
-      sudo: true
-      services:
-        - xvfb
 
     - <<: *test-pyinstaller
       python: nightly
       dist: xenial
-      sudo: true
     - <<: *test-libraries
       python: nightly
       dist: xenial
-      sudo: true
-      services:
-        - xvfb
 
   allow_failures:
       # Just tests how PyInstaller performs with upcoming Python
