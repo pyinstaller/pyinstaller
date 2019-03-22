@@ -309,8 +309,8 @@ def set_arch_flags(ctx):
                 ctx.env.append_value('LINKFLAGS', '-m32')
             else:
                 ctx.check_cc(ccflags='-m64', msg='Checking for flags -m64')
-                ctx.env.append_value('CFLAGS', '-m32')
-                ctx.env.append_value('LINKFLAGS', '-m32')
+                ctx.env.append_value('CFLAGS', '-m64')
+                ctx.env.append_value('LINKFLAGS', '-m64')
         else:
             # We use SUNWpro C compiler
             if ctx.env.PYI_ARCH == '32bit':
