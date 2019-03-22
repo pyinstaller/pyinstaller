@@ -282,12 +282,45 @@ def set_arch_flags(ctx):
     # AIX specific flags
     elif is_aix:
         if ctx.env.CC_NAME == 'gcc':
-            ctx.check_cc(ccflags='-maix32', msg='Checking for flags -maix32')
-            ctx.env.append_value('CFLAGS', '-maix32')
-            ctx.env.append_value('LINKFLAGS', '-maix32')
+            if ctx.env.PYI_ARCH == '32bit':
+                ctx.check_cc(ccflags='-maix32', msg='Checking for flags -maix32')
+                ctx.env.append_value('CFLAGS', '-maix32')
+                ctx.env.append_value('LINKFLAGS', '-maix32')
+            else:
+                ctx.check_cc(ccflags='-maix64', msg='Checking for flags -maix64')
+                ctx.env.append_value('CFLAGS', '-maix64')
+                ctx.env.append_value('LINKFLAGS', '-maix64')
         else:
-            # We use xlc compiler
-            pass
+            # We are using AIX/xlc compiler
+            if ctx.env.PYI_ARCH == '32bit':
+                ctx.check_cc(ccflags='-q32', msg='Checking for flags -q32')
+                ctx.env.append_value('CFLAGS', '-q32')
+                ctx.env.append_value('LINKFLAGS', '-q32')
+            else:
+                ctx.check_cc(ccflags='-q64', msg='Checking for flags -q64')
+                ctx.env.append_value('CFLAGS', '-q64')
+                ctx.env.append_value('LINKFLAGS', '-q64')
+
+    elif is_solar:
+        if ctx.env.CC_NAME == 'gcc':
+            if ctx.env.PYI_ARCH == '32bit':
+                ctx.check_cc(ccflags='-m32', msg='Checking for flags -m32')
+                ctx.env.append_value('CFLAGS', '-m32')
+                ctx.env.append_value('LINKFLAGS', '-m32')
+            else:
+                ctx.check_cc(ccflags='-m64', msg='Checking for flags -m64')
+                ctx.env.append_value('CFLAGS', '-m32')
+                ctx.env.append_value('LINKFLAGS', '-m32')
+        else:
+            # We use SUNWpro C compiler
+            if ctx.env.PYI_ARCH == '32bit':
+                ctx.check_cc(ccflags='-xarch=generic', msg='Checking for flags -xarch=generic')
+                ctx.env.append_value('CFLAGS', '-xarch=generic')
+                ctx.env.append_value('LINKFLAGS', '-xarch=generic')
+            else:
+                ctx.check_cc(ccflags='-xarch=v9', msg='Checking for flags -xarch=v9')
+                ctx.env.append_value('CFLAGS', '-xarch=v9')
+                ctx.env.append_value('LINKFLAGS', '-xarch=v9')
 
     elif is_hpux:
         if ctx.env.CC_NAME == 'gcc':
@@ -302,7 +335,6 @@ def set_arch_flags(ctx):
         else:
             # We use xlc compiler
             pass
-
 
     # Other compiler - not msvc.
     else:
@@ -384,11 +416,21 @@ def configure(ctx):
             # Include gcc debugging information for debugging in GDB.
             ctx.env.append_value('CFLAGS', '-g')
     else:
-        ctx.env.append_value('CFLAGS', '-O2')
+        if not is_solar:
+            ctx.env.append_value('CFLAGS', '-O2')
+        else:
+            # Solaris SUN CC doesn't support '-O2' flag
+            ctx.env.append_value('CFLAGS', '-O')
 
     if ctx.env.CC_NAME != 'msvc':
         # This tool allows reduce the size of executables.
         ctx.load('strip', tooldir='tools')
+        # There is a strip flag for AIX environment
+        if is_aix:
+            if ctx.env.PYI_ARCH == '32bit':
+                ctx.env.append_value('STRIPFLAGS', '-X32')
+            elif ctx.env.PYI_ARCH == '64bit':
+                ctx.env.append_value('STRIPFLAGS', '-X64')
 
     if ctx.env.CC_NAME == 'gcc':
         # !! These flags are gcc specific
@@ -410,10 +452,12 @@ def configure(ctx):
         #   http://man.he.net/man7/feature_test_macros
         #
         ## Without these definitions compiling might fail on OSX.
-        ctx.env.append_value('DEFINES', '_POSIX_C_SOURCE=200112L')
-        # SUS v2 (UNIX 98) definitions.
-        #   Mac OS X 10.5 is UNIX 03 compliant.
-        ctx.env.append_value('DEFINES', '_XOPEN_SOURCE=600')
+        if not is_solar:
+            # Solaris SUNW CC 5 is not POSIX complaint
+            ctx.env.append_value('DEFINES', '_POSIX_C_SOURCE=200112L')
+            # SUS v2 (UNIX 98) definitions.
+            #   Mac OS X 10.5 is UNIX 03 compliant.
+            ctx.env.append_value('DEFINES', '_XOPEN_SOURCE=600')
         ctx.env.append_value('DEFINES', '_REENTRANT')
 
         # mkdtemp() is available only if _BSD_SOURCE is defined.
@@ -639,6 +683,7 @@ def build(ctx):
         # Linux, Darwin (MacOSX), ...
         libs = ['DL', 'M', 'Z']  # 'z' - zlib, 'm' - math,
         staticlibs = []
+        features = 'strip'
         # Mac OS X and FreeBSD do not need libdl.
         if is_darwin or is_freebsd:
             libs = ['Z', 'M']
@@ -652,6 +697,7 @@ def build(ctx):
 
         if ctx.options.boehmgc:
             libs.append('GC')
+
         ctx.program(
             source=ctx.path.ant_glob('src/*.c'),
             target=exe_name,
@@ -660,7 +706,7 @@ def build(ctx):
             stlib=staticlibs,
             install_path=install_path,
             # Strip final executables to make them smaller.
-            features='strip',
+            features=features,
         )
 
 
