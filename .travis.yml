@@ -7,9 +7,6 @@ branches:
   except:
     - /pyup\/.*/
 
-# Make sure we are on Ubuntu 14.04
-dist: trusty
-
 # Cache pip packages. Explicitly name the pip-cache directory since we
 # use a custom `install` step which annuls `cache: pip`.
 cache:
