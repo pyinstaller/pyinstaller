@@ -49,7 +49,7 @@ future==0.17.1
 pyusb==1.0.2
 Unidecode==1.0.23
 h5py==2.9.0
-python-dateutil==2.7.5
+python-dateutil==2.8.0
 phonenumbers==8.10.2
 requests==2.21.0
 pendulum==2.0.4
