@@ -1,0 +1,1 @@
+Fix Appveyor failures of ``test_stderr_encoding()`` and ``test_stdout_encoding()`` on Windows Python 3.7 x64.
