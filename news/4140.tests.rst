@@ -1,0 +1,1 @@
+Run Travis tests under Xenial; remove the deprecated ``sudo: false`` tag.
