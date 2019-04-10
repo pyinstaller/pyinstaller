@@ -4,8 +4,12 @@ branches:
   except:
     - /pyup\/.*/
 
-# Make sure we are on Ubuntu 14.04
-dist: trusty
+# Make sure we are on Ubuntu 16.04. This fixes the following error, which
+# appears on Trusty (Ubuntu 14.04) when testing Linux Python 3.5 and 3.6 with
+# PyQt5 5.12: ``relocation error: /tmp/_MEIFdpiBr/libQt5DBus.so.5: symbol
+# dbus_message_get_allow_interactive_authorization, version LIBDBUS_1_3 not
+# defined in file libdbus-1.so.3 with link time reference``.
+dist: xenial
 
 # Cache pip packages. Explicitly name the pip-cache directory since we
 # use a custom `install` step which annuls `cache: pip`.
@@ -16,6 +20,10 @@ cache:
 
 os:
   - linux
+
+services:
+  # PyQt5 tests require a GUI. See https://docs.travis-ci.com/user/gui-and-headless-browsers/#using-services-xvfb.
+  - xvfb
 
 jobs:
   fast_finish: true
@@ -58,12 +66,6 @@ jobs:
     - &test-libraries
       stage: Test - Libraries
       python: 2.7
-      before_script: &start-xvfb
-        - |
-          # Run X Virtual Framebuffer to imitate a display
-          export DISPLAY=:99.0 ;
-          sh -e /etc/init.d/xvfb start ;
-          sleep 3 # give xvfb some time to start
       # Run tests and speed them up by sending them to multiple CPUs.
       script: *script-test-libraries
 
@@ -94,21 +96,13 @@ jobs:
 
     - <<: *test-pyinstaller
       python: 3.7
-      dist: xenial
     - <<: *test-libraries
       python: 3.7
-      dist: xenial
-      services:
-        - xvfb
 
     - <<: *test-pyinstaller
       python: nightly
-      dist: xenial
     - <<: *test-libraries
       python: nightly
-      dist: xenial
-      services:
-        - xvfb
 
   allow_failures:
       # Just tests how PyInstaller performs with upcoming Python
@@ -126,6 +120,9 @@ addons:
     # SciPy dependencies.
     - gfortran
     - libatlas-base-dev
+    # Per https://www.riverbankcomputing.com/pipermail/pyqt/2019-February/041363.html,
+    # PyQt5 5.12 needs a library not installed by default.
+    - libxkbcommon-x11-0
 
 before_install:
   # Perform the manual steps on osx to install python3 and activate venv
