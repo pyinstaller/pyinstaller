@@ -99,7 +99,8 @@ def get_implies():
 
         import xml.etree
         for _, module_name, is_package in pkgutil.iter_modules(xml.etree.__path__):
-            result["_elementtree"].append("xml.etree.%s" % (module_name,))
+            if not is_package:
+                result["_elementtree"].append("xml.etree.%s" % (module_name,))
 
     if sys.version_info[:2] >= (2, 6):
         result['future_builtins'] = ['itertools']
