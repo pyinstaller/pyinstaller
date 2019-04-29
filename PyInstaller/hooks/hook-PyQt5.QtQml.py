@@ -9,7 +9,7 @@
 import os
 
 from PyInstaller.utils import misc
-from PyInstaller.utils.hooks import pyqt5_library_info, add_qt5_dependencies
+from PyInstaller.utils.hooks.qt import pyqt5_library_info, add_qt5_dependencies
 from PyInstaller import log as logging
 
 logger = logging.getLogger(__name__)

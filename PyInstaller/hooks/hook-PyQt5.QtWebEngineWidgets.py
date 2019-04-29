@@ -8,9 +8,8 @@
 #-----------------------------------------------------------------------------
 
 import os
-import glob
-from PyInstaller.utils.hooks import add_qt5_dependencies, \
-    remove_prefix, get_module_file_attribute, pyqt5_library_info, \
+from PyInstaller.utils.hooks.qt import add_qt5_dependencies, pyqt5_library_info
+from PyInstaller.utils.hooks import remove_prefix, get_module_file_attribute, \
     collect_system_data_files
 from PyInstaller.depend.bindepend import getImports
 import PyInstaller.compat as compat

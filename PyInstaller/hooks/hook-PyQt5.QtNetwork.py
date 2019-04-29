@@ -8,7 +8,8 @@
 #-----------------------------------------------------------------------------
 import os.path
 
-from PyInstaller.utils.hooks import add_qt5_dependencies, eval_statement
+from PyInstaller.utils.hooks import eval_statement
+from PyInstaller.utils.hooks.qt import add_qt5_dependencies
 from PyInstaller.compat import is_win
 from PyInstaller.depend.bindepend import getfullnameof
 

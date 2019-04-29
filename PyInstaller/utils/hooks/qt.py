@@ -541,5 +541,52 @@ def add_qt5_dependencies(hook_file):
     return hiddenimports, binaries, datas
 
 
+def find_all_or_none(globs_to_include, num_files, qt_library_info):
+    """
+    globs_to_include is a list of file name globs
+    If the number of found files does not match num_files
+    then no files will be included.
+    """
+    # TODO: This function is required because CI is failing to include libEGL
+    # The error in AppVeyor is:
+    # [2312] LOADER: Running pyi_lib_PyQt5-uic.py
+    # Failed to load libEGL (Access is denied.)
+    # More info: https://github.com/pyinstaller/pyinstaller/pull/3568
+    # Since the PyQt5 wheels do not include d3dcompiler_4?.dll, libEGL.dll and
+    # libGLESv2.dll will not be included for PyQt5 builds during CI.
+    to_include = []
+    dst_dll_path = (
+        os.path.join('PyQt5', 'Qt', 'bin')
+        if qt_library_info.namespace == 'PyQt5'
+        else 'PySide2'
+    )
+    for dll in globs_to_include:
+        dll_path = os.path.join(qt_library_info.location['BinariesPath'],
+                                dll)
+        dll_file_paths = glob.glob(dll_path)
+        for dll_file_path in dll_file_paths:
+            to_include.append((dll_file_path, dst_dll_path))
+    if len(to_include) == num_files:
+        return to_include
+    return []
+
+
+# Gather required Qt binaries, but only if all binaries in a group exist.
+def get_qt_binaries(qt_library_info):
+    binaries = []
+    angle_files = ['libEGL.dll', 'libGLESv2.dll', 'd3dcompiler_??.dll']
+    binaries += find_all_or_none(angle_files, 3, qt_library_info)
+
+    opengl_software_renderer = ['opengl32sw.dll']
+    binaries += find_all_or_none(opengl_software_renderer, 1, qt_library_info)
+
+    # Include ICU files, if they exist.
+    # See the "Deployment approach" section in ``PyInstaller/utils/hooks/qt.py``.
+    icu_files = ['icudt??.dll', 'icuin??.dll', 'icuuc??.dll']
+    binaries += find_all_or_none(icu_files, 3, qt_library_info)
+
+    return binaries
+
+
 __all__ = ('qt_plugins_dir', 'qt_plugins_binaries', 'qt_menu_nib_dir',
-           'get_qmake_path', 'add_qt5_dependencies', 'pyqt5_library_info')
+           'get_qmake_path')
