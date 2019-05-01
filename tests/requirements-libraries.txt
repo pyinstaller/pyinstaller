@@ -31,7 +31,7 @@ simplejson==3.16.0
 pyzmq==18.0.1
 # Required for test_namespace_package
 zope.interface==4.6.0
-numpy==1.16.2
+numpy==1.16.3
 scipy==1.2.1
 openpyxl==2.6.2
 pycparser==2.19
