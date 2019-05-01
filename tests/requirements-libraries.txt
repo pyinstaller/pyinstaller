@@ -77,7 +77,7 @@ uvloop==0.12.2; python_version != '2.7' and sys_platform != 'win32'
 
 # Python 3 only
 # -------------
-Django==2.1.8; python_version != '2.7'
+Django==2.2.1; python_version != '2.7'
 gevent==1.4.0; python_version != '2.7'
 ipython==7.4.0; python_version != '2.7'
 keyring==19.0.1; python_version != '2.7'
