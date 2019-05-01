@@ -39,7 +39,7 @@ pytz==2019.1
 sqlalchemy==1.3.3
 zeep==3.3.1
 pyexcelerate==0.7.3
-Pillow==5.4.1
+Pillow==6.0.0
 pinyin==0.4.0
 pycryptodome==3.8.0
 pycryptodomex==3.8.0
