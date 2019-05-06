@@ -61,11 +61,6 @@ requests==2.21.0
 # until this is resolved.
 ##pendulum==2.0.4
 
-# Url for downloading PyCrypto prebuilt Windows binaries:
-# http://www.voidspace.org.uk/python/pycrypto-2.6.1/
-# Required for crypto feature - encrypting bytecode.
-pycrypto==2.6.1; python_version <= '3.5' or sys_platform != 'win32'
-
 # Wheels are available only on OS X and Win 32. The only Windows 64-bit Python
 # tests run are for Python 3.7, so exclude that. There's no way to simply
 # exclude Windows 64 bit Python.
