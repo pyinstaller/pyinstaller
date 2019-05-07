@@ -114,8 +114,8 @@ install:
 
   ### Install the PyInstaller dependencies.
 
-  # Update pip. Avoid v19.1 per https://github.com/pypa/pip/issues/6434.
-  - python -m pip install -U "pip<19.1" setuptools wheel
+  # Upgrade to the latest pip.
+  - python -m pip install -U pip setuptools wheel
 
   # Install the PyInstaller test dependencies.
   - pip install -U -r tests/requirements-libraries.txt
