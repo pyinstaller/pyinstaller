@@ -461,15 +461,15 @@ pyi_pylib_start_python(ARCHIVE_STATUS *status)
     /* Set sys.path */
     if (is_py2) {
         /* sys.path = [mainpath] */
-        strncpy(pypath, status->mainpath, strlen(status->mainpath));
+        memcpy(pypath, status->mainpath, strlen(status->mainpath));
     }
     else {
         /* sys.path = [base_library, mainpath] */
-        strncpy(pypath, status->mainpath, strlen(status->mainpath));
-        strncat(pypath, PYI_SEPSTR, strlen(PYI_SEPSTR));
-        strncat(pypath, "base_library.zip", strlen("base_library.zip"));
-        strncat(pypath, PYI_PATHSEPSTR, strlen(PYI_PATHSEPSTR));
-        strncat(pypath, status->mainpath, strlen(status->mainpath));
+        memcpy(pypath, status->mainpath, strlen(status->mainpath));
+        memcpy(pypath, PYI_SEPSTR, strlen(PYI_SEPSTR));
+        memcpy(pypath, "base_library.zip", strlen("base_library.zip"));
+        memcpy(pypath, PYI_PATHSEPSTR, strlen(PYI_PATHSEPSTR));
+        memcpy(pypath, status->mainpath, strlen(status->mainpath));
     };
 
     /*

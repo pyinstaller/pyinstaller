@@ -140,7 +140,8 @@ pyi_path_join(char *result, const char *path1, const char *path2)
         memset(result, 0, PATH_MAX);
     }
     /* Copy path1 to result without null terminator */
-    strncpy(result, path1, strlen(path1));
+    memcpy(result, path1, strlen(path1));
+    
     /* Append trailing slash if missing. */
     len = strlen(result);
 
@@ -153,6 +154,7 @@ pyi_path_join(char *result, const char *path1, const char *path2)
 
     if (path2[len - 1] == PYI_SEP) {
         /* Append path2 without slash. */
+        *(result + len) = '\0';
         strncat(result, path2, len - 2);
     }
     else {
