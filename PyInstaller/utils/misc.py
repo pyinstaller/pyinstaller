@@ -124,7 +124,12 @@ def compile_py_files(toc, workpath):
         if typ != 'PYMODULE':
             new_toc.append((nm, fnm, typ))
             continue
-
+        # suggested by Issue 4024 that filename is can be confused with 
+        # Namespace like google-cloud
+        # for issue 4209
+        if fnm in ('-', None):
+            continue
+            # case when fnm represents a NameSpace
         if fnm.endswith('.py') :
             # we are given a source path, determine the object path if any
             src_fnm = fnm
@@ -147,8 +152,14 @@ def compile_py_files(toc, workpath):
         # seems inelegant to copy it all then subscript 4 bytes.
         needs_compile = mtime(src_fnm) > mtime(obj_fnm)
         if not needs_compile:
-            with open(obj_fnm, 'rb') as fh:
-                needs_compile = fh.read()[:4] != BYTECODE_MAGIC
+              # for issue 4209
+            try:
+                with open(obj_fnm, 'rb') as fh:
+                    needs_compile = fh.read()[:4] != BYTECODE_MAGIC
+            except IOError:
+                # handdles uncaught exeption seen in issue 4209
+                logger.error("ERROR: cannot open %s", obj_fnm)
+                continue
         if needs_compile:
             try:
                 # TODO: there should be no need to repeat the compile,
@@ -181,8 +192,13 @@ def compile_py_files(toc, workpath):
                 # TODO see above regarding read()[:4] versus read(4)
                 needs_compile = mtime(src_fnm) > mtime(obj_fnm)
                 if not needs_compile:
-                    with open(obj_fnm, 'rb') as fh:
-                        needs_compile = fh.read()[:4] != BYTECODE_MAGIC
+                    try:
+                        with open(obj_fnm, 'rb') as fh:
+                            needs_compile = fh.read()[:4] != BYTECODE_MAGIC
+                    except IOError:
+                        # handdles uncaught exeption seen in issue 4209
+                        logger.error("ERROR: cannot read %s", obj_fnm)
+                        continue
                 if needs_compile:
                     # TODO see above todo regarding using node.code
                     py_compile.compile(src_fnm, obj_fnm)
