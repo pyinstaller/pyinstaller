@@ -219,19 +219,18 @@ def get_qmake_path(version=''):
         return os.path.join(os.environ['QT4DIR'], 'bin', 'qmake')
 
     # try the default $PATH
-    dirs = ['']
+    qmake_candidates = ['qmake']
 
     # try homebrew paths
     for formula in ('qt', 'qt5'):
         homebrewqtpath = get_homebrew_path(formula)
         if homebrewqtpath:
-            dirs.append(homebrewqtpath)
+            qmake_candidates.append(os.path.join(homebrewqtpath, 'bin', 'qmake'))
 
-    for directory in dirs:
+    for qmake in qmake_candidates:
         try:
-            qmake = os.path.join(directory, 'bin', 'qmake')
             versionstring = subprocess.check_output([qmake, '-query',
-                                                     'QT_VERSION']).strip()
+                                                     'QT_VERSION']).strip()      
             if is_py3:
                 # version string is probably just ASCII
                 versionstring = versionstring.decode('utf8')
