@@ -45,6 +45,7 @@ binary_module_names = [
     'Crypto.Util',
     'Crypto.Hash',
     'Crypto.Protocol',
+    'Crypto.PublicKey',
 ]
 
 try:
