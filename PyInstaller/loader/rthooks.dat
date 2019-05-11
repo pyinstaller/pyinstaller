@@ -18,7 +18,6 @@
     'PyQt5.QtWebEngineWidgets': ['pyi_rth_qt5webengine.py'],
     'PySide':      ['pyi_rth_qt4plugins.py'],
     'PySide2':      ['pyi_rth_pyside2.py'],
-    'PySide2.QtQuick':  ['pyi_rth_qml.py'],
     'PySide2.QtWebEngineWidgets': ['pyi_rth_qt5webengine.py'],
     '_tkinter':    ['pyi_rth__tkinter.py'],
     'traitlets':  ['pyi_rth_traitlets.py'],

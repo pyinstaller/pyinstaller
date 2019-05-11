@@ -6,8 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
+from PyInstaller.utils.hooks.qt import add_qt5_dependencies
 
-hiddenimports = ['PySide2.QtCore',
-                 'PySide2.QtGui',
-                 'PySide2.QtNetwork'
-                 ]
+hiddenimports, binaries, datas = add_qt5_dependencies(__file__)

@@ -6,14 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
+from PyInstaller.utils.hooks.qt import add_qt5_dependencies
 
-from PyInstaller.utils.hooks import qt_plugins_binaries
-
-
-# QtMultimedia tries to pull in QtNetwork
-hiddenimports = ['PySide2.QtNetwork']
-
-# QtMultimedia needs some plugins
-binaries = []
-binaries.extend(qt_plugins_binaries('audio', namespace='PySide2'))
-binaries.extend(qt_plugins_binaries('mediaservice', namespace='PySide2'))
+hiddenimports, binaries, datas = add_qt5_dependencies(__file__)

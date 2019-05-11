@@ -6,9 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
+from PyInstaller.utils.hooks.qt import add_qt5_dependencies
 
-from PyInstaller.utils.hooks import qt_plugins_binaries
-
-hiddenimports = ['PySide2.QtCore']
-
-binaries = qt_plugins_binaries('sqldrivers', namespace='PySide2')
+hiddenimports, binaries, datas = add_qt5_dependencies(__file__)

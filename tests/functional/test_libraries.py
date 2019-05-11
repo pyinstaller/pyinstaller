@@ -370,9 +370,7 @@ def test_PyQt5_Qt(pyi_builder):
     pyi_builder.test_source('from PyQt5.Qt import QLibraryInfo')
 
 
-@xfail(is_linux and is_py35, reason="Fails on linux >3.5")
-@xfail(is_darwin, reason="Fails on OSX")
-@xfail(is_win and is_py35 and not is_py36, reason="Fails on win == 3.6")
+@xfail(True, reason="Hook is old and needs updating.")
 @importorskip('PySide2')
 def test_PySide2_QWebEngine(pyi_builder):
     pyi_builder.test_source(
