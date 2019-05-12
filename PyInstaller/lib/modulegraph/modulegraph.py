@@ -89,6 +89,9 @@ _IMPORTABLE_FILETYPE_TO_METADATA = {
     filetype: (filetype, open_mode, imp_type)
     for filetype, open_mode, imp_type in imp.get_suffixes()
 }
+# Reverse sort by length so when comparing filenames the longest match first
+_IMPORTABLE_FILETYPE_EXTS = sorted(_IMPORTABLE_FILETYPE_TO_METADATA,
+                                   key=lambda p: len(p), reverse=True)
 """
 Dictionary mapping the filetypes of importable files to the 3-tuple of metadata
 describing such files returned by the `imp.get_suffixes()` function whose first
@@ -3091,8 +3094,16 @@ class ModuleGraph(ObjectGraph):
                 # Else, this is either a module or C extension.
                 else:
                     # In either case, this path must have a filetype.
-                    filetype = os.path.splitext(pathname)[1]
-                    if not filetype:
+                    # os.path.splitext won't work here since we sometimes need
+                    # to match more than just the file extension.
+                    filetype = [filetype
+                                for filetype in _IMPORTABLE_FILETYPE_EXTS
+                                if pathname.endswith(filetype)]
+                    if filetype:
+                        # at least one extension matched,
+                        # pick the first (longest) one
+                        filetype = filetype[0]
+                    else:
                         raise ImportError(
                             'Non-package module %r path %r has no filetype' % (module_name, pathname))
 
