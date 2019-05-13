@@ -105,16 +105,20 @@ including:
 * C extensions suffixed by the platform-specific shared library filetype (e.g.,
   `.so` under Linux, `.dll` under Windows).
 
-The keys of this dictionary are `.`-prefixed filetypes (e.g., `.py`, `.so');
+The keys of this dictionary are `.`-prefixed filetypes (e.g., `.py`, `.so`) or
+`-`-prefixed filetypes (e.g., `-cpython-37m.dll`[1]);
 the values of this dictionary are 3-tuples whose:
 
-1. First element is the same `.`-prefixed filetype.
+1. First element is the same `.` or `-` prefixed filetype.
 1. Second element is the mode to be passed to the `open()` built-in to open
    files of that filetype under the current platform and Python interpreter
    (e.g., `rU` for the `.py` filetype under Python 2, `r` for the same
    filetype under Python 3).
 1. Third element is a magic number specific to the `imp` module (e.g.,
    `imp.C_EXTENSION` for filetypes corresponding to C extensions).
+
+[1] For example of `-cpython-m37.dll` search on
+    https://packages.msys2.org/package/mingw-w64-x86_64-python3?repo=mingw64
 """
 
 
