@@ -23,6 +23,7 @@ void *pyi_path_normalize(char *result, const char *path);
 int pyi_path_fullpath(char *abs, size_t abs_size, const char *rel);
 /* TODO implement. */
 /* void *pyi_path_abspath(char *result, const char *path); */
+int pyi_path_exists(char *path);
 
 int pyi_path_executable(char *execfile, const char *appname);
 void pyi_path_homepath(char *homepath, const char *executable);

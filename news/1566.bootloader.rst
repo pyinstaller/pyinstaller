@@ -1,0 +1,4 @@
+(Windows) If bundled with the application, proactivley load ``ucrtbase.dll``
+before loading the Python library. This works around unresolved symbol errors
+when loading ``python35.dll`` (or later) on legacy Windows (7, 8, 8.1) systems
+with Universal CRT update is not installed.
