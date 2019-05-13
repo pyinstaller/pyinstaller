@@ -97,6 +97,22 @@ pyi_pylib_load(ARCHIVE_STATUS *status)
         return -1;
     }
 
+#ifdef _WIN32
+    /*
+     * If ucrtbase.dll exists in temppath, load it proactively before Python
+     * library loading to avoid Python library loading failure (unresolved
+     * symbol errors) on systems with Universal CRT update not installed.
+     */
+    if (status->has_temp_directory) {
+        char ucrtpath[PATH_MAX];
+        pyi_path_join(ucrtpath, status->temppath, "ucrtbase.dll");
+        if (pyi_path_exists(ucrtpath)) {
+            VS("LOADER: ucrtbase.dll is exists: %s\n", ucrtpath);
+            pyi_utils_dlopen(ucrtpath);
+        }
+    }
+#endif
+
     /*
      * Look for Python library in homepath or temppath.
      * It depends on the value of mainpath.
