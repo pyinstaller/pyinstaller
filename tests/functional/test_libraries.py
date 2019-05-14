@@ -535,6 +535,7 @@ def test_pycrypto(pyi_builder):
         # Just for testing functionality after all
         print('HEX', binascii.hexlify(
             AES.new(b"\\0" * BLOCK_SIZE, AES.MODE_ECB).encrypt(b"\\0" * BLOCK_SIZE)))
+        from Crypto.PublicKey import ECC
         """)
 
 
@@ -543,6 +544,7 @@ def test_cryptodome(pyi_builder):
     pyi_builder.test_source(
         """
         from Cryptodome import Cipher
+        from Cryptodome.PublicKey import ECC
         print('Cryptodome Cipher Module:', Cipher)
         """)
 
