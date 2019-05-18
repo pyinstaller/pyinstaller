@@ -307,8 +307,7 @@ def test_PyQt5_QWebEngine(pyi_builder, data_dir):
 @PYQT5_NEED_OPENGL
 @importorskip('PyQt5')
 def test_PyQt5_QtQml(pyi_builder):
-    pyi_builder.test_source(
-        """
+    source_to_test = """
         import sys
 
         from PyQt5.QtGui import QGuiApplication
@@ -340,7 +339,28 @@ def test_PyQt5_QtQml(pyi_builder):
         res = app.exec_()
         del engine
         sys.exit(res)
-        """)
+        """
+
+    if is_darwin:
+        # 1. Only test the Mac .app bundle, by modifying the executes this
+        #    fixture runs.
+        _old_find_executables = pyi_builder._find_executables
+        # Create a replacement method that selects just the .app bundle.
+
+        def _replacement_find_executables(self, name):
+            path_to_onedir, path_to_app_bundle = _old_find_executables(name)
+            return [path_to_app_bundle]
+        # Use this in the fixture. See https://stackoverflow.com/a/28060251 and
+        # https://docs.python.org/3/howto/descriptor.html.
+        pyi_builder._find_executables = \
+            _replacement_find_executables.__get__(pyi_builder)
+
+        # 2. Run the test with specific command-line arguments.
+        pyi_builder.test_source(source_to_test,
+                                pyi_args=['--windowed'])
+    else:
+        # The Linux and Windows test needs no special handling.
+        pyi_builder.test_source(source_to_test)
 
 
 @importorskip('PyQt5')
@@ -389,8 +409,7 @@ def test_PySide2_QWebEngine(pyi_builder):
 
 @importorskip('PySide2')
 def test_PySide2_QtQuick(pyi_builder):
-    pyi_builder.test_source(
-        """
+    source_to_test = """
         import sys
 
         # Not used. Only here to trigger the hook
@@ -419,7 +438,28 @@ def test_PySide2_QtQuick(pyi_builder):
         QTimer.singleShot(0, app.exit)
 
         sys.exit(app.exec_())
-        """)
+        """
+
+    if is_darwin:
+        # 1. Only test the Mac .app bundle, by modifying the executes this
+        #    fixture runs.
+        _old_find_executables = pyi_builder._find_executables
+        # Create a replacement method that selects just the .app bundle.
+
+        def _replacement_find_executables(self, name):
+            path_to_onedir, path_to_app_bundle = _old_find_executables(name)
+            return [path_to_app_bundle]
+        # Use this in the fixture. See https://stackoverflow.com/a/28060251 and
+        # https://docs.python.org/3/howto/descriptor.html.
+        pyi_builder._find_executables = \
+            _replacement_find_executables.__get__(pyi_builder)
+
+        # 2. Run the test with specific command-line arguments.
+        pyi_builder.test_source(source_to_test,
+                                pyi_args=['--windowed'])
+    else:
+        # The Linux and Windows test needs no special handling.
+        pyi_builder.test_source(source_to_test)
 
 
 @importorskip('zope.interface')
