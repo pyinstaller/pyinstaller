@@ -223,8 +223,11 @@ class Analysis(Target):
             with open_file(pyi_crypto_key_path, 'w', encoding='utf-8') as f:
                 f.write(text_type('# -*- coding: utf-8 -*-\n'
                                   'key = %r\n' % cipher.key))
+
             logger.info('Adding dependencies on pyi_crypto.py module')
-            self.hiddenimports.append(pyz_crypto.get_crypto_hiddenimports())
+            pyaes_path = os.path.join(CONF['workpath'], 'pyimod00_pyaes.py')
+            import pyaes.aes
+            shutil.copy(pyaes.aes.__file__, pyaes_path)
 
         self.excludes = excludes or []
         self.scripts = TOC()

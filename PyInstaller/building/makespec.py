@@ -375,18 +375,13 @@ def main(scripts, name=None, onefile=None,
     scripts = list(map(Path, scripts))
 
     if key:
-        # Tries to import PyCrypto since we need it for bytecode obfuscation. Also make sure its
-        # version is >= 2.4.
+        # Tries to import pyaes since we need it for bytecode obfuscation.
         try:
-            import Crypto
-            is_version_acceptable = LooseVersion(Crypto.__version__) >= LooseVersion('2.4')
-            if not is_version_acceptable:
-                logger.error('PyCrypto version must be >= 2.4, older versions are not supported.')
-                sys.exit(1)
+            import pyaes
         except ImportError:
-            logger.error('We need PyCrypto >= 2.4 to use byte-code obfuscation but we could not')
+            logger.error('We need pyaes to use byte-code obfuscation but we could not')
             logger.error('find it. You can install it with pip by running:')
-            logger.error('  pip install PyCrypto')
+            logger.error('  pip install pyaes')
             sys.exit(1)
         cipher_init = cipher_init_template % {'key': key}
     else:

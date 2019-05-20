@@ -92,6 +92,17 @@ class PYZ(Target):
             # Insert the key as the first module in the list. The key module contains
             # just variables and does not depend on other modules.
             self.dependencies.insert(0, key_file)
+            import copy
+            copy_file =  ('copy',
+                          copy.__file__,
+                          'PYMODULE')
+
+            pyaes_file = ('pyimod00_pyaes',
+                          os.path.join(CONF['workpath'], 'pyimod00_pyaes.pyc'),
+                          'PYMODULE')
+
+            self.dependencies.insert(2, copy_file)
+            self.dependencies.insert(3, pyaes_file)
         # Compile the top-level modules so that they end up in the CArchive and can be
         # imported by the bootstrap script.
         self.dependencies = misc.compile_py_files(self.dependencies, CONF['workpath'])
