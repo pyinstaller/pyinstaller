@@ -8,7 +8,6 @@
 #-----------------------------------------------------------------------------
 
 import os
-import pyaes
 
 BLOCK_SIZE = 16
 
@@ -17,6 +16,8 @@ class PyiBlockCipher(object):
     This class is used only to encrypt Python modules.
     """
     def __init__(self, key=None):
+        import pyaes
+        self._aes = pyaes
         assert type(key) is str
         if len(key) > BLOCK_SIZE:
             self.key = key[0:BLOCK_SIZE]
@@ -31,4 +32,4 @@ class PyiBlockCipher(object):
     def __create_cipher(self, iv):
         # The 'AESModeOfOperationCFB' class is stateful, this factory method is used to
         # re-initialize the block cipher class with each call to encrypt() and decrypt().
-        return pyaes.AESModeOfOperationCFB(self.key.encode(), iv=iv)
+        return self._aes.AESModeOfOperationCFB(self.key.encode(), iv=iv)
