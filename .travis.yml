@@ -131,14 +131,19 @@ addons:
     # PyQt5 5.12 needs a library not installed by default.
     - libxkbcommon-x11-0
 
+  # See https://docs.travis-ci.com/user/installing-dependencies/#installing-packages-on-macos.
+  # Update to Python 3.7 via homebrew.
+  homebrew:
+    packages:
+    - python
+    update: true
+
 before_install:
-  # Perform the manual steps on osx to install python3 and activate venv
+  # Activate a venv to ensure we're using the correct Python interpreter.
   # Per http://steven.casagrande.io/articles/travis-ci-and-if-statements/,
   # ensure the build fails for statements in an ``if`` clause.
   - >
       if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
-          brew update || travis_terminate 1;
-          brew upgrade python || brew install python || travis_terminate 1;
           python3 -m venv venv || travis_terminate 1;
           source venv/bin/activate;
       fi
