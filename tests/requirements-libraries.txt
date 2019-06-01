@@ -44,7 +44,7 @@ pytz==2019.1
 pyusb==1.0.2
 pyzmq==18.0.1
 requests==2.22.0
-scipy==1.2.1
+scipy==1.3.0
 # simplejson is used for text_c_extension
 simplejson==3.16.0
 # Required for test_namespace_package
