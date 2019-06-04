@@ -168,7 +168,7 @@ class BUNDLE(Target):
             # Copy files from cache. This ensures that are used files with relative
             # paths to dynamic library dependencies (@executable_path)
             if typ in ('EXTENSION', 'BINARY'):
-                fnm = checkCache(fnm, strip=self.strip, upx=self.upx, 
+                fnm = checkCache(fnm, strip=self.strip, upx=self.upx,
                                  upx_exclude=self.upx_exclude, dist_nm=inm)
             if typ == 'DATA':  # add all data files to a list for symlinking later
                 links.append((inm, fnm))
