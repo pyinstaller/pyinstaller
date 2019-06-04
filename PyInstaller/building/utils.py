@@ -150,6 +150,7 @@ def applyRedirects(manifest, redirects):
                 redirecting = True
     return redirecting
 
+
 def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None):
     """
     Cache prevents preprocessing binary files again and again.
@@ -176,8 +177,8 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None):
     else:
         strip = False
     upx_exclude = upx_exclude or []
-    upx = (upx and (is_win or is_cygwin)
-           and os.path.normcase(os.path.basename(fnm)) not in upx_exclude)
+    upx = (upx and (is_win or is_cygwin) and
+           os.path.normcase(os.path.basename(fnm)) not in upx_exclude)
 
     # Load cache index
     # Make cachedir per Python major/minor version.
