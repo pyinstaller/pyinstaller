@@ -23,6 +23,7 @@ import re
 import struct
 import zipfile
 
+from ..exceptions import ExecCommandFailed
 from ..lib.modulegraph import util, modulegraph
 
 from .. import compat
@@ -352,9 +353,8 @@ def load_ldconfig_cache():
         #     search directories: /lib:/usr/lib:/usr/lib/compat:...
         #     0:-lgeom.5 => /lib/libgeom.so.5
         #   184:-lpython2.7.1 => /usr/local/lib/libpython2.7.so.1
-        text = compat.exec_command(ldconfig, '-r')
-        text = text.strip().splitlines()[2:]
-        pattern = re.compile(r'^\s+\d+:-l(.+?)((\.\d+)+) => (\S+)')
+        ldconfig_arg = '-r'
+        splitlines_count = 2
         pattern = re.compile(r'^\s+\d+:-l(\S+)(\s.*)? => (\S+)')
     else:
         # Skip first line of the library list because it is just
@@ -364,9 +364,18 @@ def load_ldconfig_cache():
         #V keši „/etc/ld.so.cache“ nalezeno knihoven: 2799
         #      libzvbi.so.0 (libc6,x86-64) => /lib64/libzvbi.so.0
         #      libzvbi-chains.so.0 (libc6,x86-64) => /lib64/libzvbi-chains.so.0
-        text = compat.exec_command(ldconfig, '-p')
-        text = text.strip().splitlines()[1:]
+        ldconfig_arg = '-p'
+        splitlines_count = 1
         pattern = re.compile(r'^\s+(\S+)(\s.*)? => (\S+)')
+
+    try:
+        text = compat.exec_command(ldconfig, ldconfig_arg)
+    except ExecCommandFailed:
+        logger.warning("Failed to execute ldconfig. Disabling LD cache.")
+        LDCONFIG_CACHE = {}
+        return
+
+    text = text.strip().splitlines()[splitlines_count:]
 
     LDCONFIG_CACHE = {}
     for line in text:
