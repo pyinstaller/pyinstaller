@@ -384,7 +384,7 @@ XML types.  Here's an example::
              icon=None,
              bundle_identifier=None,
              info_plist={
-             	'NSPrincipleClass': 'NSApplication',
+             	'NSPrincipalClass': 'NSApplication',
                 'NSAppleScriptEnabled': False,
                 'CFBundleDocumentTypes': [
                     {
@@ -397,7 +397,7 @@ XML types.  Here's an example::
              	},
              )
 
-In the above example, the key/value ``'NSPrincipleClass': 'NSApplication'`` is
+In the above example, the key/value ``'NSPrincipalClass': 'NSApplication'`` is
 necessary to allow Mac OS X to render applications using retina resolution.
 The key ``'NSAppleScriptEnabled'`` is assigned the Python boolean
 ``False``, which will be output to :file:`Info.plist` properly as ``<false/>``.
