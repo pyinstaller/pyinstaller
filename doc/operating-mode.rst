@@ -265,9 +265,12 @@ The |bootloader| starts Python with no target for standard output or input.
 Do this when your script has a graphical interface for user input and can properly
 report its own diagnostics.
 
-As noted in section 16.1.2 of the CPython manual Appendix, a file extention of `.pyw`
-suppresses the console window that normally appears.  Likewise, a console window
-will not be provided when using a :file:`myscript.pyw` script with |PyInstaller|.
+As noted in the `CPython tutorial Appendix
+<https://docs.python.org/3/tutorial/appendix.html#executable-python-scripts>`__,
+for Windows a file extention of `.pyw` suppresses the console window
+that normally appears.
+Likewise, a console window will not be provided when using
+a :file:`myscript.pyw` script with |PyInstaller|.
 
 
 Hiding the Source Code

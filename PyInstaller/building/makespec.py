@@ -19,7 +19,7 @@ from distutils.version import LooseVersion
 
 from .. import HOMEPATH, DEFAULT_SPECPATH
 from .. import log as logging
-from ..compat import expand_path, is_darwin, open_file, text_type
+from ..compat import expand_path, is_darwin, is_win, open_file, text_type
 from .templates import onefiletmplt, onedirtmplt, cipher_absent_template, \
     cipher_init_template, bundleexetmplt, bundletmplt
 
@@ -217,14 +217,16 @@ def __add_options(parser):
     g.add_argument("-c", "--console", "--nowindowed", dest="console",
                    action="store_true", default=True,
                    help="Open a console window for standard i/o (default). "
-                        "Caution: This option will have no effect if freezing a '.pyw' file.")
+                        "On Windows this option will have no effect if the "
+                        "first script is a '.pyw' file.")
     g.add_argument("-w", "--windowed", "--noconsole", dest="console",
                    action="store_false",
                    help="Windows and Mac OS X: do not provide a console window "
                         "for standard i/o. "
                         "On Mac OS X this also triggers building an OS X .app bundle. "
-                        "This option is ignored in *NIX systems. This option will be set "
-                        "automatically if freezing a '.pyw' file.")
+                        "On Windows this option will be set if the first "
+                        "script is a '.pyw' file. "
+                        "This option is ignored in *NIX systems.")
     g.add_argument("-i", "--icon", dest="icon_file",
                    metavar="<FILE.ico or FILE.exe,ID or FILE.icns>",
                    help="FILE.ico: apply that icon to a Windows executable. "
@@ -371,8 +373,8 @@ def main(scripts, name=None, onefile=None,
 
     hiddenimports = hiddenimports or []
 
-    # If file extension of main script is '.pyw', force --windowed option.
-    if os.path.splitext(scripts[0])[-1] == '.pyw':
+    # If file extension of the first script is '.pyw', force --windowed option.
+    if is_win and os.path.splitext(scripts[0])[-1] == '.pyw':
         console = False
 
     # If script paths are relative, make them relative to the directory containing .spec file.
