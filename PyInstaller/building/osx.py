@@ -67,6 +67,7 @@ class BUNDLE(Target):
                 self.toc.extend(arg.dependencies)
                 self.strip = arg.strip
                 self.upx = arg.upx
+                self.upx_exclude = arg.upx_exclude
                 self.console = arg.console
             elif isinstance(arg, TOC):
                 self.toc.extend(arg)
@@ -76,6 +77,7 @@ class BUNDLE(Target):
                 self.toc.extend(arg.toc)
                 self.strip = arg.strip_binaries
                 self.upx = arg.upx_binaries
+                self.upx_exclude = arg.upx_exclude
                 self.console = arg.console
             else:
                 logger.info("unsupported entry %s", arg.__class__.__name__)
@@ -171,7 +173,8 @@ class BUNDLE(Target):
             # Copy files from cache. This ensures that are used files with relative
             # paths to dynamic library dependencies (@executable_path)
             if typ in ('EXTENSION', 'BINARY'):
-                fnm = checkCache(fnm, strip=self.strip, upx=self.upx, dist_nm=inm)
+                fnm = checkCache(fnm, strip=self.strip, upx=self.upx,
+                                 upx_exclude=self.upx_exclude, dist_nm=inm)
             if typ == 'DATA':  # add all data files to a list for symlinking later
                 links.append((inm, fnm))
             else:

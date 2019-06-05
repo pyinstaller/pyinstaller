@@ -212,6 +212,13 @@ def __add_options(parser):
     g.add_argument("--noupx", action="store_true", default=False,
                    help="Do not use UPX even if it is available "
                         "(works differently between Windows and *nix)")
+    g.add_argument("--upx-exclude", dest="upx_exclude", metavar="FILE",
+                   action="append",
+                   help="Prevent a binary from being compressed when using "
+                        "upx. This is typically used if upx corrupts certain "
+                        "binaries during compression. "
+                        "FILE is the filename of the binary without path. "
+                        "This option can be used multiple times.")
 
     g = parser.add_argument_group('Windows and Mac OS X specific options')
     g.add_argument("-c", "--console", "--nowindowed", dest="console",
@@ -305,7 +312,7 @@ def __add_options(parser):
 
 
 def main(scripts, name=None, onefile=None,
-         console=True, debug=None, strip=False, noupx=False,
+         console=True, debug=None, strip=False, noupx=False, upx_exclude=None,
          runtime_tmpdir=None, pathex=None, version_file=None, specpath=None,
          bootloader_ignore_signals=False,
          datas=None, binaries=None, icon_file=None, manifest=None, resources=None, bundle_identifier=None,
@@ -372,6 +379,7 @@ def main(scripts, name=None, onefile=None,
         exe_options = "%s, resources=%s" % (exe_options, repr(resources))
 
     hiddenimports = hiddenimports or []
+    upx_exclude = upx_exclude or []
 
     # If file extension of the first script is '.pyw', force --windowed option.
     if is_win and os.path.splitext(scripts[0])[-1] == '.pyw':
@@ -420,6 +428,7 @@ def main(scripts, name=None, onefile=None,
         'bootloader_ignore_signals': bootloader_ignore_signals,
         'strip': strip,
         'upx': not noupx,
+        'upx_exclude': upx_exclude,
         'runtime_tmpdir': runtime_tmpdir,
         'exe_options': exe_options,
         'cipher_init': cipher_init,
