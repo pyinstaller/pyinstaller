@@ -33,8 +33,7 @@ jobs:
     # in a stage.
     - stage: Test - PyInstaller
       os: osx
-      language: generic
-      python: 3.7
+      language: minimal
       cache:
         directories:
           - $HOME/Library/Caches/pip
@@ -55,8 +54,7 @@ jobs:
 
     - stage: Test - Libraries
       os: osx
-      language: generic
-      python: 3.7
+      language: minimal
       cache:
         directories:
           - $HOME/Library/Caches/pip
