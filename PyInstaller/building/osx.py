@@ -172,10 +172,12 @@ class BUNDLE(Target):
         for inm, fnm, typ in toc:
             # Copy files from cache. This ensures that are used files with relative
             # paths to dynamic library dependencies (@executable_path)
+            base_path = inm.split('/', 1)[0]
             if typ in ('EXTENSION', 'BINARY'):
                 fnm = checkCache(fnm, strip=self.strip, upx=self.upx,
                                  upx_exclude=self.upx_exclude, dist_nm=inm)
-            if typ == 'DATA':  # add all data files to a list for symlinking later
+            # Add most data files to a list for symlinking later.
+            if typ == 'DATA' and base_path not in ('base_library.zip', 'PySide2', 'PyQt5'):
                 links.append((inm, fnm))
             else:
                 tofnm = os.path.join(self.name, "Contents", "MacOS", inm)
@@ -198,40 +200,37 @@ class BUNDLE(Target):
         bin_dir = os.path.join(self.name, 'Contents', 'MacOS')
         res_dir = os.path.join(self.name, 'Contents', 'Resources')
         for inm, fnm in links:
-            if inm != 'base_library.zip':  # Don't symlink the base_library.zip for python 3
-                tofnm = os.path.join(res_dir, inm)
-                todir = os.path.dirname(tofnm)
-                if not os.path.exists(todir):
-                    os.makedirs(todir)
-                if os.path.isdir(fnm):
-                    # beacuse shutil.copy2() is the default copy function
-                    # for shutil.copytree, this will also copy file metadata
-                    shutil.copytree(fnm, tofnm)
-                else:
-                    shutil.copy(fnm, tofnm)
-                base_path = os.path.split(inm)[0]
-                if base_path:
-                    if not os.path.exists(os.path.join(bin_dir, inm)):
-                        path = ''
-                        for part in iter(base_path.split(os.path.sep)):
-                            # Build path from previous path and the next part of the base path
-                            path = os.path.join(path, part)
-                            try:
-                                relative_source_path = os.path.relpath(os.path.join(res_dir, path),
-                                                                       os.path.split(os.path.join(bin_dir, path))[0])
-                                dest_path = os.path.join(bin_dir, path)
-                                os.symlink(relative_source_path, dest_path)
-                                break
-                            except FileExistsError:
-                                pass
-                        if not os.path.exists(os.path.join(bin_dir, inm)):
-                            relative_source_path = os.path.relpath(os.path.join(res_dir, inm),
-                                                                   os.path.split(os.path.join(bin_dir, inm))[0])
-                            dest_path = os.path.join(bin_dir, inm)
-                            os.symlink(relative_source_path, dest_path)
-                else:  # If path is empty, e.g., a top level file, try to just symlink the file
-                    os.symlink(os.path.relpath(os.path.join(res_dir, inm),
-                                               os.path.split(os.path.join(bin_dir, inm))[0]),
-                               os.path.join(bin_dir, inm))
+            tofnm = os.path.join(res_dir, inm)
+            todir = os.path.dirname(tofnm)
+            if not os.path.exists(todir):
+                os.makedirs(todir)
+            if os.path.isdir(fnm):
+                # beacuse shutil.copy2() is the default copy function
+                # for shutil.copytree, this will also copy file metadata
+                shutil.copytree(fnm, tofnm)
             else:
-                shutil.copy(fnm, bin_dir)
+                shutil.copy(fnm, tofnm)
+            base_path = os.path.split(inm)[0]
+            if base_path:
+                if not os.path.exists(os.path.join(bin_dir, inm)):
+                    path = ''
+                    for part in iter(base_path.split(os.path.sep)):
+                        # Build path from previous path and the next part of the base path
+                        path = os.path.join(path, part)
+                        try:
+                            relative_source_path = os.path.relpath(os.path.join(res_dir, path),
+                                                                   os.path.split(os.path.join(bin_dir, path))[0])
+                            dest_path = os.path.join(bin_dir, path)
+                            os.symlink(relative_source_path, dest_path)
+                            break
+                        except FileExistsError:
+                            pass
+                    if not os.path.exists(os.path.join(bin_dir, inm)):
+                        relative_source_path = os.path.relpath(os.path.join(res_dir, inm),
+                                                               os.path.split(os.path.join(bin_dir, inm))[0])
+                        dest_path = os.path.join(bin_dir, inm)
+                        os.symlink(relative_source_path, dest_path)
+            else:  # If path is empty, e.g., a top level file, try to just symlink the file
+                os.symlink(os.path.relpath(os.path.join(res_dir, inm),
+                                           os.path.split(os.path.join(bin_dir, inm))[0]),
+                           os.path.join(bin_dir, inm))
