@@ -1,0 +1,2 @@
+Add hook for [eyed3.plugins](https://pypi.org/project/eyeD3/)
+Add hook for [magic](https://pypi.org/project/python-magic-bin)
