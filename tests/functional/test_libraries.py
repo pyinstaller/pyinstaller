@@ -242,6 +242,10 @@ PYQT5_NEED_OPENGL = pytest.mark.skipif(is_module_satisfies('PyQt5 <= 5.10.1'),
     reason='PyQt5 v5.10.1 and older does not package ``opengl32sw.dll``, the '
     'OpenGL software renderer, which this test requires.')
 
+# OS X bundles, produced by the ``--windowed`` flag, invoke a unique code path
+# that sometimes causes failures in Qt applications.
+USE_WINDOWED_KWARG = dict(pyi_args=['--windowed']) if is_darwin else {}
+
 
 @PYQT5_NEED_OPENGL
 @importorskip('PyQt5')
@@ -280,7 +284,7 @@ def test_PyQt5_QWebEngine(pyi_builder, data_dir):
         #
         # 1. Run only a onedir build -- onefile builds don't work.
         if pyi_builder._mode != 'onedir':
-            pytest.skip('The QWebEngine .app bundle ' +
+            pytest.skip('The QWebEngine .app bundle '
                         'only supports onedir mode.')
 
         # 2. Only test the Mac .app bundle, by modifying the executes this
@@ -296,12 +300,10 @@ def test_PyQt5_QWebEngine(pyi_builder, data_dir):
         pyi_builder._find_executables = \
             _replacement_find_executables.__get__(pyi_builder)
 
-        # 3. Run the test with specific command-line arguments.
-        pyi_builder.test_source(source_to_test,
-                                pyi_args=['--windowed'])
-    else:
-        # The Linux and Windows QWebEngine test needs no special handling.
-        pyi_builder.test_source(source_to_test)
+    # 3. Run the test with specific command-line arguments. Otherwise, OS X
+    # builds fail. Also use this for the Linux and Windows builds, since this is
+    # a common case.
+    pyi_builder.test_source(source_to_test, **USE_WINDOWED_KWARG)
 
 
 @PYQT5_NEED_OPENGL
@@ -340,7 +342,7 @@ def test_PyQt5_QtQml(pyi_builder):
         res = app.exec_()
         del engine
         sys.exit(res)
-        """)
+        """, **USE_WINDOWED_KWARG)
 
 
 @importorskip('PyQt5')
@@ -349,7 +351,7 @@ def test_PyQt5_SSL_support(pyi_builder):
         """
         from PyQt5.QtNetwork import QSslSocket
         assert QSslSocket.supportsSsl()
-        """)
+        """, **USE_WINDOWED_KWARG)
 
 
 # Test that the ``PyQt5.Qt`` module works by importing something from it.
@@ -367,7 +369,8 @@ def test_PyQt5_SSL_support(pyi_builder):
 @pytest.mark.skipif(is_module_satisfies('PyQt5 == 5.11.3') and is_darwin,
     reason='This version of the OS X wheel does not include QWebEngine.')
 def test_PyQt5_Qt(pyi_builder):
-    pyi_builder.test_source('from PyQt5.Qt import QLibraryInfo')
+    pyi_builder.test_source('from PyQt5.Qt import QLibraryInfo',
+                            **USE_WINDOWED_KWARG)
 
 
 @xfail(True, reason="Hook is old and needs updating.")
@@ -384,7 +387,7 @@ def test_PySide2_QWebEngine(pyi_builder):
         view.show()
         view.page().loadFinished.connect(lambda ok: app.quit())
         app.exec_()
-        """)
+        """, **USE_WINDOWED_KWARG)
 
 
 @importorskip('PySide2')
@@ -419,7 +422,7 @@ def test_PySide2_QtQuick(pyi_builder):
         QTimer.singleShot(0, app.exit)
 
         sys.exit(app.exec_())
-        """)
+        """, **USE_WINDOWED_KWARG)
 
 
 @importorskip('zope.interface')
