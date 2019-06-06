@@ -130,11 +130,12 @@ addons:
     - libxkbcommon-x11-0
 
   # See https://docs.travis-ci.com/user/installing-dependencies/#installing-packages-on-macos.
-  # Update to Python 3.7 via homebrew.
   homebrew:
     packages:
     - python
-    update: true
+    # Update to Python 3.7 via homebrew.
+    # Disabled, since this takes a HUGE amount of test time.
+    #update: true
 
 before_install:
   # Activate a venv to ensure we're using the correct Python interpreter.
