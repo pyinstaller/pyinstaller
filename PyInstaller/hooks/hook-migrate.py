@@ -10,8 +10,7 @@
 # Since v0.12.0 importing migrate requires metadata to resolve __version__
 # attribute
 
-from PyInstaller.utils.hooks import is_module_satisfies
+from PyInstaller.utils.hooks import copy_metadata, is_module_satisfies
 
 if is_module_satisfies('sqlalchemy-migrate >= 0.12.0'):
-    from PyInstaller.utils.hooks import copy_metadata
     datas = copy_metadata('sqlalchemy-migrate')
