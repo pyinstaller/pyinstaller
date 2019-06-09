@@ -49,32 +49,40 @@ class Qt5LibraryInfo:
                 sys.stderr = sys.stdout
 
                 import json
-                from %s.QtCore import QLibraryInfo, QCoreApplication
-
-                # QLibraryInfo isn't always valid until a QCoreApplication is
-                # instantiated.
-                app = QCoreApplication(sys.argv)
-                paths = [x for x in dir(QLibraryInfo) if x.endswith('Path')]
-                location = {x: QLibraryInfo.location(getattr(QLibraryInfo, x))
-                            for x in paths}
                 try:
-                    version = QLibraryInfo.version().segments()
-                except AttributeError:
-                    version = None
-                print(str(json.dumps({
-                    'isDebugBuild': QLibraryInfo.isDebugBuild(),
-                    'version': version,
-                    'location': location,
-                })))
+                    from %s.QtCore import QLibraryInfo, QCoreApplication
+                except:
+                    print('False')
+                else:
+                    # QLibraryInfo isn't always valid until a QCoreApplication is
+                    # instantiated.
+                    app = QCoreApplication(sys.argv)
+                    paths = [x for x in dir(QLibraryInfo) if x.endswith('Path')]
+                    location = {x: QLibraryInfo.location(getattr(QLibraryInfo, x))
+                                for x in paths}
+                    try:
+                        version = QLibraryInfo.version().segments()
+                    except AttributeError:
+                        version = []
+                    print(json.dumps({
+                        'isDebugBuild': QLibraryInfo.isDebugBuild(),
+                        'version': version,
+                        'location': location,
+                    }))
             """ % self.namespace)
             try:
                 qli = json.loads(json_str)
             except Exception as e:
                 logger.warning('Cannot read QLibraryInfo output: raised %s when '
                                'decoding:\n%s', str(e), json_str)
-                raise
-            for k, v in qli.items():
-                setattr(self, k, v)
+                qli = False
+
+            # If PyQt5/PySide2 can't be imported, record that.
+            if not qli:
+                self.version = None
+            else:
+                for k, v in qli.items():
+                    setattr(self, k, v)
 
             return getattr(self, name)
         else:
@@ -464,6 +472,11 @@ def add_qt5_dependencies(hook_file):
     if namespace not in ('PyQt5', 'PySide2'):
         raise Exception('Invalid namespace: {0}'.format(namespace))
     is_PyQt5 = namespace == 'PyQt5'
+
+    # Exit if the requested library can't be imported.
+    if ((is_PyQt5 and not pyqt5_library_info.version) or
+        (not is_PyQt5 and not pyside2_library_info.version)):
+        return [], [], []
 
     # Look up the module returned by this import.
     module = get_module_file_attribute(module_name)

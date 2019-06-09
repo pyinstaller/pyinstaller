@@ -1,0 +1,1 @@
+Avoid errors if PyQt5 or PySide2 is referenced by the modulegraph but isn't importable.
