@@ -1,0 +1,1 @@
+Add hook for [magic](https://pypi.org/project/python-magic-bin).
