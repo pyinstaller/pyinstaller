@@ -73,7 +73,11 @@ if root_dir:
              'django.contrib.sites.migrations',
     ]
     # Include migration scripts of Django-based apps too.
-    installed_apps = eval(get_module_attribute(package_name + '.settings', 'INSTALLED_APPS'))
+    django_settings_module = os.environ.get('DJANGO_SETTINGS_MODULE', None)
+    if django_settings_module is not None:
+        installed_apps = eval(get_module_attribute(django_settings_module, 'INSTALLED_APPS'))
+    else:
+        installed_apps = eval(get_module_attribute(package_name + '.settings', 'INSTALLED_APPS'))
     migration_modules.extend(set(app + '.migrations' for app in installed_apps))
     # Copy migration files.
     for mod in migration_modules:
