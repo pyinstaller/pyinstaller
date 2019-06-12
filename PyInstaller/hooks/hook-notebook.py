@@ -9,7 +9,7 @@
 
 import os
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules
-from jupyter_core.paths import ENV_JUPYTER_PATH, ENV_CONFIG_PATH
+from jupyter_core.paths import jupyter_config_path, jupyter_path
 
 # collect modules for handlers
 hiddenimports = collect_submodules('notebook', filter=lambda name: name.endswith('.handles'))
@@ -18,5 +18,5 @@ hiddenimports.append('notebook.services.shutdown')
 datas = collect_data_files('notebook')
 
 # Collect share and etc folder for pre-installed extensions
-datas += [(path, 'share/jupyter') for path in ENV_JUPYTER_PATH if os.path.exists(path)]
-datas += [(path, 'etc/jupyter') for path in ENV_CONFIG_PATH if os.path.exists(path)]
+datas += [(path, 'share/jupyter') for path in jupyter_config_path() if os.path.exists(path)]
+datas += [(path, 'etc/jupyter') for path in jupyter_path() if os.path.exists(path)]
