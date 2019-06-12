@@ -1,0 +1,1 @@
+Fixed hook for 'notebook' to only include existing directories in datas.
