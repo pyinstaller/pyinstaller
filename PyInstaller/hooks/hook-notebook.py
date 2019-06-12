@@ -7,6 +7,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 # -----------------------------------------------------------------------------
 
+import os
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 from jupyter_core.paths import ENV_JUPYTER_PATH, ENV_CONFIG_PATH
 
@@ -17,5 +18,5 @@ hiddenimports.append('notebook.services.shutdown')
 datas = collect_data_files('notebook')
 
 # Collect share and etc folder for pre-installed extensions
-datas += [(path, 'share/jupyter') for path in ENV_JUPYTER_PATH]
-datas += [(path, 'etc/jupyter') for path in ENV_CONFIG_PATH]
+datas += [(path, 'share/jupyter') for path in ENV_JUPYTER_PATH if os.path.exists(path)]
+datas += [(path, 'etc/jupyter') for path in ENV_CONFIG_PATH if os.path.exists(path)]
