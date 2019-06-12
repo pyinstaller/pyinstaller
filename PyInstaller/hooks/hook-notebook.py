@@ -18,5 +18,5 @@ hiddenimports.append('notebook.services.shutdown')
 datas = collect_data_files('notebook')
 
 # Collect share and etc folder for pre-installed extensions
-datas += [(path, 'share/jupyter') for path in jupyter_config_path() if os.path.exists(path)]
-datas += [(path, 'etc/jupyter') for path in jupyter_path() if os.path.exists(path)]
+datas += [(path, 'share/jupyter') for path in jupyter_path() if os.path.exists(path)]
+datas += [(path, 'etc/jupyter') for path in jupyter_config_path() if os.path.exists(path)]
