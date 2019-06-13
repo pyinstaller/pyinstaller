@@ -24,3 +24,8 @@ if is_win or is_darwin:
     excludedimports.append(modname_tkinter)
 
 datas = collect_data_files('IPython')
+
+# IPython imports extensions by changing to the extensions directory and using
+# importlib.import_module, so we need to copy over the extensions as if they
+# were data files.
+datas += collect_data_files('IPython.extensions', include_py_files=True)
