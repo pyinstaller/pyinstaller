@@ -1,0 +1,2 @@
+* Updated hook for 'notebook' to look in all Jupyter paths reported by jupyter_core
+* Fixed hook for 'notebook' to only include directories that actually exist in datas.
