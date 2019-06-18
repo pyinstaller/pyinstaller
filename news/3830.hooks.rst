@@ -1,0 +1,3 @@
+(OSX) When hook tkinter need to be loaded, this change fixes
+the inclusion of Tcl/Tk framework with python.org versions 
+coming bundled with its own.

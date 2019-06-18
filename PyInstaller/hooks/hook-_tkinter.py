@@ -184,7 +184,10 @@ def _find_tcl_tk(hook_api):
 
         # _tkinter depends on Tcl/Tk compiled as frameworks.
         path_to_tcl = bins[0][1]
-        if 'Library/Frameworks' in path_to_tcl:
+
+        # If we get a framework that is not the one bundled within
+        # Python (>=2.7.15 or >=3.6.5) handle the path modification
+        if 'Library/Frameworks' in path_to_tcl and 'Python' not in path_to_tcl:
             tcl_tk = _find_tcl_tk_darwin_frameworks(bins)
         # Tcl/Tk compiled as on Linux other Unixes.
         # For example this is the case of Tcl/Tk from macports.
