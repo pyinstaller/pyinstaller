@@ -84,7 +84,7 @@ void pyi_global_perror(const char *funcname, const char *fmt, ...);
 #endif
 /*
  * On Windows and with windowed mode (no console) show error messages
- * in message boxes. In windowed mode nothing might be written to console.
+ * in message boxes. In windowed mode nothing is written to console.
  */
 
 #if defined(_WIN32) && defined(WINDOWED)
