@@ -1,0 +1,2 @@
+On Windows applications built in Windowed mode have their Debug messages
+sent to any attached debugger or DebugView instead of message boxes.
