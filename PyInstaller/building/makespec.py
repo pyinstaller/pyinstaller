@@ -377,10 +377,11 @@ def main(scripts, name=None, onefile=None,
     if key:
         # Tries to import pyaes since we need it for bytecode obfuscation.
         try:
-            import pyaes
+            import pyaes  # noqa: F401
         except ImportError:
-            logger.error('We need pyaes to use byte-code obfuscation but we could not')
-            logger.error('find it. You can install it with pip by running:')
+            logger.error('We need pyaes to use byte-code obfuscation but ')
+            logger.error('we could not find it. ')
+            logger.error('You can install it with pip by running:')
             logger.error('  pip install pyaes')
             sys.exit(1)
         cipher_init = cipher_init_template % {'key': key}

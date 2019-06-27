@@ -93,9 +93,9 @@ class PYZ(Target):
             # just variables and does not depend on other modules.
             self.dependencies.insert(0, key_file)
             import copy
-            copy_file =  ('copy',
-                          copy.__file__,
-                          'PYMODULE')
+            copy_file = ('copy',
+                         copy.__file__,
+                         'PYMODULE')
 
             pyaes_file = ('pyimod00_pyaes',
                           os.path.join(CONF['workpath'], 'pyimod00_pyaes.pyc'),

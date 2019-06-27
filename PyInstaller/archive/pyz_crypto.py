@@ -30,6 +30,7 @@ class PyiBlockCipher(object):
         return iv + self.__create_cipher(iv).encrypt(data)
 
     def __create_cipher(self, iv):
-        # The 'AESModeOfOperationCFB' class is stateful, this factory method is used to
-        # re-initialize the block cipher class with each call to encrypt() and decrypt().
+        # The 'AESModeOfOperationCFB' class is stateful, this factory method
+        # is used to re-initialize the block cipher class with each call to
+        # encrypt() and decrypt().
         return self._aes.AESModeOfOperationCFB(self.key.encode(), iv=iv)
