@@ -262,9 +262,9 @@ class Cipher(object):
         assert len(self.key) == CRYPT_BLOCK_SIZE
 
     def __create_cipher(self, iv):
-        # The 'AESModeOfOperationCFB' class is stateful, this factory method is
-        # used to re-initialize the block cipher class with each call to encrypt()
-        # and decrypt().
+        # The 'AESModeOfOperationCFB' class is stateful, this factory method
+        # is used to re-initialize the block cipher class with each call to
+        # encrypt() and decrypt().
         return self._aes.AESModeOfOperationCFB(self.key.encode(), iv=iv)
 
     def decrypt(self, data):
