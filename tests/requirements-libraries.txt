@@ -50,7 +50,7 @@ requests==2.22.0
 simplejson==3.16.0
 # Required for test_namespace_package
 sqlalchemy==1.3.5
-Unidecode==1.0.23
+Unidecode==1.1.1
 zeep==3.3.1
 zope.interface==4.6.0
 
