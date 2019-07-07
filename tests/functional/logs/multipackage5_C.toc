@@ -1,0 +1,6 @@
+[
+    'getopt',
+    'multipackage5_C',
+    '.*multipackage5_B.multipackage5_B:.*ssl.*',
+    '(?i).*multipackage5_B.multipackage5_B:.*python.*',
+]
