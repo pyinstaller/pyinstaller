@@ -1,0 +1,2 @@
+Fix: When copying files, too much data was copied in most cases. This
+corrupted the file and inhibited using shared dependencies.

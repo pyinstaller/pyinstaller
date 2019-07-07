@@ -623,6 +623,7 @@ pyi_copy_file(const char *src, const char *dst, const char *filename)
     FILE *in = pyi_path_fopen(src, "rb");
     FILE *out = pyi_open_target(dst, filename);
     char buf[4096];
+    size_t read_count = 0;
     int error = 0;
 
     if (in == NULL || out == NULL) {
@@ -636,7 +637,8 @@ pyi_copy_file(const char *src, const char *dst, const char *filename)
     }
 
     while (!feof(in)) {
-        if (fread(buf, 4096, 1, in) == -1) {
+        read_count = fread(buf, 1, 4096, in);
+        if (read_count <= 0 ) {
             if (ferror(in)) {
                 clearerr(in);
                 error = -1;
@@ -644,7 +646,7 @@ pyi_copy_file(const char *src, const char *dst, const char *filename)
             }
         }
         else {
-            size_t rc = fwrite(buf, 4096, 1, out);
+            size_t rc = fwrite(buf, 1, read_count, out);
             if (rc <= 0 || ferror(out)) {
                 clearerr(out);
                 error = -1;
