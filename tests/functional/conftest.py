@@ -259,7 +259,8 @@ class AppBuilder(object):
         assert exes != [], 'No executable file was found.'
         for exe in exes:
             # Try to find .toc log file. .toc log file has the same basename as exe file.
-            toc_log = os.path.join(_LOGS_DIR, os.path.basename(exe) + '.toc')
+            toc_log = os.path.join(
+                _LOGS_DIR, os.path.splitext(os.path.basename(exe))[0] + '.toc')
             if os.path.exists(toc_log):
                 if not self._examine_executable(exe, toc_log):
                     pytest.fail('Matching .toc of %s failed.' % exe)
