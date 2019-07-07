@@ -13,23 +13,25 @@
 
 # TESTING MULTIPROCESS FEATURE: file A (onedir pack) depends on file B (onedir pack)
 # and file C (onefile pack)
+import os
+import sys
 
-
+SCRIPT_DIR = 'multipackage-scripts'
 __testname__ = 'test_multipackage5'
 __testdep__ = 'multipackage5_B'
 __testdep2__ = 'multipackage5_C'
 
-a = Analysis([__testname__ + '.py'],
+a = Analysis([os.path.join(SCRIPT_DIR, __testname__ + '.py')],
              pathex=['.'])
-b = Analysis([__testdep__ + '.py'],
+b = Analysis([os.path.join(SCRIPT_DIR, __testdep__ + '.py')],
              pathex=['.'])
-c = Analysis([__testdep2__ + '.py'],
+c = Analysis([os.path.join(SCRIPT_DIR, __testdep2__ + '.py')],
              pathex=['.'])
 
 
-MERGE((b, __testdep__, os.path.join(__testdep__, __testdep__ + '.exe')),
-      (c, __testdep2__, os.path.join(__testdep2__ + '.exe')),
-      (a, __testname__, os.path.join(__testname__, __testname__ + '.exe')))
+MERGE((b, __testdep__, os.path.join(__testdep__, __testdep__)),
+      (c, __testdep2__, os.path.join(__testdep2__)),
+      (a, __testname__, os.path.join(__testname__, __testname__)))
 
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
@@ -37,7 +39,7 @@ exe = EXE(pyz,
           a.dependencies,
           exclude_binaries=1,
           name=os.path.join('build', 'pyi.'+sys.platform, __testname__,
-                            __testname__ + '.exe'),
+                            __testname__),
           debug=True,
           strip=False,
           upx=True,
@@ -57,7 +59,7 @@ exeB = EXE(pyzB,
           b.dependencies,
           exclude_binaries=1,
           name=os.path.join('build', 'pyi.'+sys.platform, __testdep__,
-                            __testdep__ + '.exe'),
+                            __testdep__),
           debug=True,
           strip=False,
           upx=True,
@@ -78,7 +80,7 @@ exeC = EXE(pyzC,
           c.zipfiles,
           c.datas,
           c.dependencies,
-          name=os.path.join('dist', __testdep2__ + '.exe'),
+          name=os.path.join('dist', __testdep2__),
           debug=True,
           strip=False,
           upx=True,
