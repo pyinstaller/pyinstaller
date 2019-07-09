@@ -1,1 +1,0 @@
-(Windows\\Py3.7) Now able to locate pylib when VERSION.dll is listed in python.exe PE Header rather than pythonXY.dll

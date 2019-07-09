@@ -1,1 +1,0 @@
-Include dynamically-imported backends in the ``eth_hash`` package.

@@ -1,1 +1,0 @@
-Update the jsonschema hook for v3.0+.

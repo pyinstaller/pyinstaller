@@ -1,1 +1,0 @@
-Don't treat PyQt5 and PySide2 files as resources in an OS X windowed build. Doing so causes the resulting frozen app to fail under Qt 5.12.

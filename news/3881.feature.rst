@@ -1,1 +1,0 @@
-Add support for the RedHat Software Collections (SCL) Python 3.x.
