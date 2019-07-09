@@ -74,7 +74,7 @@ You will run the same command again and again as you develop
 your script.
 You can put the command in a shell script or batch file,
 using line continuations to make it readable.
-For example, in Linux::
+For example, in GNU/Linux::
 
     pyinstaller --noconfirm --log-level=WARN \
         --onefile --nowindow \
@@ -97,6 +97,28 @@ Or in Windows, use the little-known BAT file line continuation::
         --hidden-import=secret2 ^
         --icon=..\MLNMFLCN.ICO ^
         myscript.spec
+
+
+Running |PyInstaller| from Python code
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you want to run |PyInstaller| from within Python code use the ``run``
+function of the ``__main__`` module and pass all command line arguments in as
+a list, e.g.
+
+.. code-block:: python
+
+    import PyInstaller.__main__
+
+    PyInstaller.__main__.run([
+        '--name=%s' % package_name,
+        '--onefile',
+        '--windowed',
+        '--add-binary=%s' % os.path.join('resource', 'path', '*.png'),
+        '--add-data=%s' % os.path.join('resource', 'path', '*.txt'),
+        '--icon=%s' % os.path.join('resource', 'path', 'icon.ico'),
+        os.path.join('my_package', '__main__.py'),
+    ])
 
 
 Running |PyInstaller| with Python optimizations
@@ -236,7 +258,7 @@ Note that when using virtualenv, the path to the |PyInstaller| commands is:
 
 Under Windows, the pip-Win_ package installs virtualenv and makes it
 especially easy to set up different environments and switch between them.
-Under Linux and Mac OS, you switch environments at the command line.
+Under GNU/Linux and Mac OS, you switch environments at the command line.
 
 See :pep:`405` for more information about Python virtual environments.
 
@@ -260,7 +282,7 @@ Install a Dropbox client in each virtual machine, all linked to your Dropbox acc
 Keep a single copy of your script(s) in a Dropbox folder.
 Then on any virtual machine you can run |PyInstaller| thus::
 
-    cd ~/Dropbox/project_folder/src # Linux, Mac -- Windows similar
+    cd ~/Dropbox/project_folder/src # GNU/Linux, Mac -- Windows similar
     rm *.pyc # get rid of modules compiled by another Python
     pyinstaller --workpath=path-to-local-temp-folder  \
                 --distpath=path-to-local-dist-folder  \
@@ -272,13 +294,13 @@ but writes its work files and the bundled app in folders that
 are local to the virtual machine.
 
 If you share the same home directory on multiple platforms, for
-example Linux and OS X, you will need to set the PYINSTALLER_CONFIG_DIR
+example GNU/Linux and OS X, you will need to set the PYINSTALLER_CONFIG_DIR
 environment variable to different values on each platform otherwise
 PyInstaller may cache files for one platform and use them on the other
 platform, as by default it uses a subdirectory of your home directory
 as its cache location.
 
-It is said to be possible to cross-develop for Windows under Linux
+It is said to be possible to cross-develop for Windows under GNU/Linux
 using the free Wine_ environment.
 Further details are needed, see `How to Contribute`_.
 
@@ -403,25 +425,25 @@ Platform-specific Notes
 GNU/Linux
 -------------------
 
-Making Linux Apps Forward-Compatible
-=====================================
+Making GNU/Linux Apps Forward-Compatible
+==========================================
 
-Under Linux, |PyInstaller| does not bundle ``libc``
+Under GNU/Linux, |PyInstaller| does not bundle ``libc``
 (the C standard library, usually ``glibc``, the Gnu version) with the app.
 Instead, the app expects to link dynamically to the ``libc`` from the
 local OS where it runs.
 The interface between any app and ``libc`` is forward compatible to
 newer releases, but it is not backward compatible to older releases.
 
-For this reason, if you bundle your app on the current version of Linux,
+For this reason, if you bundle your app on the current version of GNU/Linux,
 it may fail to execute (typically with a runtime dynamic link error) if
-it is executed on an older version of Linux.
+it is executed on an older version of GNU/Linux.
 
 The solution is to always build your app on the *oldest* version of
-Linux you mean to support.
+GNU/Linux you mean to support.
 It should continue to work with the ``libc`` found on newer versions.
 
-The Linux standard libraries such as ``glibc`` are distributed in 64-bit
+The GNU/Linux standard libraries such as ``glibc`` are distributed in 64-bit
 and 32-bit versions, and these are not compatible.
 As a result you cannot bundle your app on a 32-bit system and run it
 on a 64-bit installation, nor vice-versa.

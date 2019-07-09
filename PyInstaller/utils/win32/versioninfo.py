@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2018, PyInstaller Development Team.
+# Copyright (c) 2013-2019, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -580,6 +580,23 @@ def SetVersion(exenm, versionfile):
         with codecs.open(versionfile, text_read_mode, 'utf-8') as fp:
             txt = fp.read()
         vs = eval(txt)
+
+    # Remember overlay
+    pe = pefile.PE(exenm, fast_load=True)
+    overlay_before = pe.get_overlay()
+    pe.close()
+
     hdst = win32api.BeginUpdateResource(exenm, 0)
     win32api.UpdateResource(hdst, pefile.RESOURCE_TYPE['RT_VERSION'], 1, vs.toRaw())
     win32api.EndUpdateResource (hdst, 0)
+
+    if overlay_before:
+        # Check if the overlay is still present
+        pe = pefile.PE(exenm, fast_load=True)
+        overlay_after = pe.get_overlay()
+        pe.close()
+
+        # If the update removed the overlay data, re-append it
+        if not overlay_after:
+            with open(exenm, 'ab') as exef:
+                exef.write(overlay_before)

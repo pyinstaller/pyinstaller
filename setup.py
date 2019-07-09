@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2018, PyInstaller Development Team.
+# Copyright (c) 2005-2019, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -22,8 +22,6 @@ from PyInstaller.compat import is_win, is_cygwin, is_py2
 
 REQUIREMENTS = [
     'setuptools',
-    'pefile >= 2017.8.1',
-    'macholib >= 1.8',
     'altgraph',
 ]
 
@@ -33,7 +31,11 @@ if sys.version_info < (3,):
 
 # For Windows install PyWin32 if not already installed.
 if sys.platform.startswith('win'):
-    REQUIREMENTS.append('pywin32-ctypes')
+    REQUIREMENTS += ['pywin32-ctypes >= 0.2.0',
+                     'pefile >= 2017.8.1']
+
+if sys.platform == 'darwin':
+    REQUIREMENTS.append('macholib >= 1.8')
 
 
 # Create long description from README.rst and doc/CHANGES.rst.

@@ -55,16 +55,6 @@ environment:
       PYTHON_ARCH: 32
       TEST_LIBRARIES_ONLY: False
 
-    - PYTHON: C:\Python34
-      PYTHON_VERSION: 3.4
-      PYTHON_ARCH: 32
-      TEST_LIBRARIES_ONLY: True
-
-    - PYTHON: C:\Python34
-      PYTHON_VERSION: 3.4
-      PYTHON_ARCH: 32
-      TEST_LIBRARIES_ONLY: False
-
     - PYTHON: C:\Python27
       PYTHON_VERSION: 2.7
       PYTHON_ARCH: 32
@@ -128,7 +118,7 @@ install:
   - python -m pip install -U pip setuptools wheel
 
   # Install the PyInstaller test dependencies.
-  - pip install -U -r tests/requirements-libraries.txt
+  - pip install -U -r tests/requirements-tools.txt -r tests/requirements-libraries.txt
 
   # Install PyInstaller
   - pip install -e .
@@ -155,7 +145,7 @@ test_script:
         -k "not test_noarchive[onefile]"
     ) else (
       set PYTEST_CMD=%PYTEST% tests/unit tests/functional
-        --ignore=tests/functional/test_libraries.py
+        --ignore tests/functional/test_libraries.py
     )
   # Run the tests appropriate for this entry in the test matrix. Skip tests
   # if we're just updating the cache; see https://www.appveyor.com/docs/environment-variables/.

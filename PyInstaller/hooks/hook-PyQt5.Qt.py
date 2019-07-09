@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2018, PyInstaller Development Team.
+# Copyright (c) 2013-2019, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -13,9 +13,12 @@ import os
 
 from PyInstaller.utils.hooks import get_module_file_attribute
 
-# Determine the name of all these modules by looking in the PyQt5 directory.
-hiddenimports = []
-for f in os.listdir(os.path.dirname(get_module_file_attribute('PyQt5'))):
-    root, ext = os.path.splitext(os.path.basename(f))
-    if root.startswith('Qt') and root != 'Qt':
-        hiddenimports.append('PyQt5.' + root)
+# Only do this if PyQt5 is found.
+mfi = get_module_file_attribute('PyQt5')
+if mfi:
+    # Determine the name of all these modules by looking in the PyQt5 directory.
+    hiddenimports = []
+    for f in os.listdir(os.path.dirname(mfi)):
+        root, ext = os.path.splitext(os.path.basename(f))
+        if root.startswith('Qt') and root != 'Qt':
+            hiddenimports.append('PyQt5.' + root)

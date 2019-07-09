@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2018, PyInstaller Development Team.
+# Copyright (c) 2005-2019, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -15,8 +15,9 @@ import os
 import subprocess
 
 from PyInstaller.config import CONF
+from PyInstaller import compat
 from PyInstaller.compat import (
-    architecture, exec_command_stdout, is_darwin, is_win, is_linux, open_file, which)
+    exec_command_stdout, is_darwin, is_win, is_linux, open_file, which)
 from PyInstaller.utils.hooks import (
     collect_glib_translations, get_gi_typelibs, get_gi_libdir, logger)
 
@@ -29,7 +30,7 @@ cachedest = "lib/gdk-pixbuf-2.0/2.10.0"
 # and thus GdkPixbuf is unavailable. Return with a non-fatal warning.
 gdk_pixbuf_query_loaders = None
 
-if architecture() == '64bit':
+if compat.architecture == '64bit':
     # CentOS/Fedora package as -64
     cmds = ['gdk-pixbuf-query-loaders-64', 'gdk-pixbuf-query-loaders']
 else:

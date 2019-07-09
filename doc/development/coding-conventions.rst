@@ -13,7 +13,7 @@ Please check your code with a style guide checker, e.g. flake8.
 Please abstain from reformatting existing code, even it it doesn't follow
 PEP 8. We will not accept reformatting changes since they make it harder to
 review the changes and to follow changes in the long run. For a complete
-rational please see :issue:`2727`.
+rationale please see :issue:`2727`.
 
 .. include:: ../_common_definitions.txt
 

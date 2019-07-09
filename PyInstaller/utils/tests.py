@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2018, PyInstaller Development Team.
+# Copyright (c) 2005-2019, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -20,14 +20,16 @@ import distutils.ccompiler
 import pytest
 from _pytest.runner import Skipped
 
-from PyInstaller.compat import is_darwin, is_win, is_py2, is_py3
+from PyInstaller.compat import is_darwin, is_win, is_linux, is_py2, is_py3
 
 # Wrap some pytest decorators to be consistent in tests.
 parametrize = pytest.mark.parametrize
 skipif = pytest.mark.skipif
 skipif_notwin = skipif(not is_win, reason='requires Windows')
 skipif_notosx = skipif(not is_darwin, reason='requires Mac OS X')
+skipif_notlinux = skipif(not is_linux, reason='requires GNU/Linux')
 skipif_win = skipif(is_win, reason='does not run on Windows')
+skipif_linux = skipif(is_win, reason='does not run on GNU/Linux')
 skipif_winorosx = skipif(is_win or is_darwin, reason='does not run on Windows or Mac OS X')
 xfail = pytest.mark.xfail
 xfail_py2 = xfail(is_py2, reason='fails with Python 2.7')
@@ -58,6 +60,7 @@ def _check_for_compiler():
         has_compiler = cc.has_function('clock', includes=['time.h'])
     os.chdir(old_wd)
     return has_compiler
+
 
 # A decorator to skip tests if a C compiler isn't detected.
 has_compiler = _check_for_compiler()
@@ -132,14 +135,4 @@ def importorskip(modname, minversion=None):
     # Else, this module is importable and optionally satisfies this minimum
     # version. Reduce this decoration to a noop.
     else:
-        return _noop
-
-
-def _noop(object):
-    """
-    Return the passed object unmodified.
-
-    This private function is intended to be used as the identity decorator.
-    """
-
-    return object
+        return pytest.mark.skipif(False, reason='')

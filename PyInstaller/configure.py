@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2018, PyInstaller Development Team.
+# Copyright (c) 2005-2019, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -29,7 +29,8 @@ def test_UPX(config, upx_dir):
 
     hasUPX = 0
     try:
-        vers = compat.exec_command(cmd, '-V').strip().splitlines()
+        vers = compat.exec_command(
+            cmd, '-V', __raise_ENOENT__=True).strip().splitlines()
         if vers:
             v = vers[0].split()[1]
             hasUPX = tuple(map(int, v.split(".")))

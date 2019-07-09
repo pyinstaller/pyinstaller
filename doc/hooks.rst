@@ -188,7 +188,7 @@ for example::
 ``is_darwin``:
    True in Mac OS X.
 ``is_linux``:
-   True in any Linux system (``sys.platform.startswith('linux')``).
+   True in any GNU/Linux system (``sys.platform.startswith('linux')``).
 ``is_solar``:
    True in Solaris.
 ``is_aix``:

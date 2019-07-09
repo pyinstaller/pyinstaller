@@ -9,7 +9,7 @@ import warnings
 from altgraph import Graph
 from PyInstaller.compat import is_win
 import textwrap
-import xml.etree.ElementTree as ET
+from lxml import etree
 import pickle
 
 try:
@@ -1079,7 +1079,12 @@ class TestModuleGraph (unittest.TestCase):
         graph.create_xref(out=fp)
 
         data = fp.getvalue()
-        r = ET.fromstring(data)
+        # Don't tolerate any HTML `parsing errors <https://lxml.de/parsing.html#parser-options>`_.
+        parser = etree.HTMLParser(recover=False)
+        tree = etree.parse(StringIO(data), parser)
+        assert tree is not None
+        # Verify no `errors <https://lxml.de/parsing.html#error-log>`_ occurred.
+        assert len(parser.error_log) == 0
 
     def test_itergraphreport(self):
         # XXX: This test is far from optimal, it just ensures

@@ -13,6 +13,7 @@ import sys
 import os
 import imp
 import warnings
+import pkgutil
 
 from . import modulegraph
 from .modulegraph import Alias, Script, Extension
@@ -22,9 +23,13 @@ __all__ = [
     'find_modules', 'parse_mf_results'
 ]
 
+_PLATFORM_MODULES = {'posix', 'nt', 'os2', 'mac', 'ce', 'riscos'}
+
+
 def get_implies():
     result = {
-        # imports done from builtin modules in C code (untrackable by modulegraph)
+        # imports done from builtin modules in C code
+        # (untrackable by modulegraph)
         "_curses":      ["curses"],
         "posix":        ["resource"],
         "gc":           ["time"],
@@ -46,7 +51,7 @@ def get_implies():
         "_ssl":         ["socket"],
 
         # Python 3.3:
-        "_elementtree": ["copy", "xml.etree.ElementPath" ],
+        "_elementtree": ["copy", "xml.etree.ElementPath"],
 
         # mactoolboxglue can do a bunch more of these
         # that are far harder to predict, these should be tracked
@@ -93,10 +98,9 @@ def get_implies():
         result["_elementtree"] = ["pyexpat"]
 
         import xml.etree
-        files = os.listdir(xml.etree.__path__[0])
-        for fn in files:
-            if fn.endswith('.py') and fn != "__init__.py":
-                result["_elementtree"].append("xml.etree.%s"%(fn[:-3],))
+        for _, module_name, is_package in pkgutil.iter_modules(xml.etree.__path__):
+            if not is_package:
+                result["_elementtree"].append("xml.etree.%s" % (module_name,))
 
     if sys.version_info[:2] >= (2, 6):
         result['future_builtins'] = ['itertools']
@@ -105,8 +109,8 @@ def get_implies():
     # ensure that the graph shows this.
     result['os.path'] = Alias(os.path.__name__)
 
-
     return result
+
 
 def parse_mf_results(mf):
     """
@@ -115,11 +119,6 @@ def parse_mf_results(mf):
 
     :param mf: a :class:`modulegraph.modulegraph.ModuleGraph` instance
     """
-    #for name, imports in get_hidden_imports().items():
-    #    if name in mf.modules.keys():
-    #        for mod in imports:
-    #            mf.import_hook(mod)
-
     # Retrieve modules from modulegraph
     py_files = []
     extensions = []
@@ -151,13 +150,6 @@ def plat_prepare(includes, packages, excludes):
     # used by Python itself
     includes.update(["warnings", "unicodedata", "weakref"])
 
-    #if os.uname()[0] != 'java':
-        # Jython specific imports in the stdlib:
-        #excludes.update([
-        #    'java.lang',
-        #    'org.python.core',
-        #])
-
     if not sys.platform.startswith('irix'):
         excludes.update([
             'AL',
@@ -165,7 +157,7 @@ def plat_prepare(includes, packages, excludes):
             'vms_lib',
         ])
 
-    if not sys.platform in ('mac', 'darwin'):
+    if sys.platform not in ('mac', 'darwin'):
         # XXX - this doesn't look nearly complete
         excludes.update([
             'Audio_mac',
@@ -176,14 +168,12 @@ def plat_prepare(includes, packages, excludes):
             'MacOS',
             'macfs',
             'macostools',
-            #'macpath',
             '_scproxy',
         ])
 
     if not sys.platform == 'win32':
         # only win32
         excludes.update([
-            #'ntpath',
             'nturl2path',
             'win32api',
             'win32con',
@@ -209,7 +199,6 @@ def plat_prepare(includes, packages, excludes):
     if not sys.platform == 'riscos':
         excludes.update([
              'riscosenviron',
-             #'riscospath',
              'rourl2path',
           ])
 
@@ -220,11 +209,10 @@ def plat_prepare(includes, packages, excludes):
 
     if not sys.platform == 'os2emx':
         excludes.update([
-            #'os2emxpath',
             '_emx_link',
         ])
 
-    excludes.update(set(['posix', 'nt', 'os2', 'mac', 'ce', 'riscos']) - set(sys.builtin_module_names))
+    excludes.update(_PLATFORM_MODULES - set(sys.builtin_module_names))
 
     # Carbon.Res depends on this, but the module hasn't been present
     # for a while...
@@ -241,7 +229,9 @@ def plat_prepare(includes, packages, excludes):
             'poll',
         ])
 
-def find_needed_modules(mf=None, scripts=(), includes=(), packages=(), warn=warnings.warn):
+
+def find_needed_modules(
+        mf=None, scripts=(), includes=(), packages=(), warn=warnings.warn):
     if mf is None:
         mf = modulegraph.ModuleGraph()
     # feed Modulefinder with everything, and return it.
@@ -256,7 +246,7 @@ def find_needed_modules(mf=None, scripts=(), includes=(), packages=(), warn=warn
             else:
                 mf.import_hook(mod)
         except ImportError:
-            warn("No module named %s"%(mod,))
+            warn("No module named %s" % (mod,))
 
     for f in packages:
         # If modulegraph has seen a reference to the package, then
@@ -292,32 +282,38 @@ def find_needed_modules(mf=None, scripts=(), includes=(), packages=(), warn=warn
                 # Exclude subtrees that aren't packages
                 dirnames[:] = []
 
-
     return mf
 
 #
 # resource constants
 #
+
+
 PY_SUFFIXES = ['.py', '.pyw', '.pyo', '.pyc']
 C_SUFFIXES = [
     _triple[0] for _triple in imp.get_suffixes()
     if _triple[2] == imp.C_EXTENSION
 ]
 
+
 #
 # side-effects
 #
+
 
 def _replacePackages():
     REPLACEPACKAGES = {
         '_xmlplus':     'xml',
     }
-    for k,v in REPLACEPACKAGES.items():
+    for k, v in REPLACEPACKAGES.items():
         modulegraph.replacePackage(k, v)
+
 
 _replacePackages()
 
-def find_modules(scripts=(), includes=(), packages=(), excludes=(), path=None, debug=0):
+
+def find_modules(
+        scripts=(), includes=(), packages=(), excludes=(), path=None, debug=0):
     """
     High-level interface, takes iterables for:
         scripts, includes, packages, excludes
@@ -325,8 +321,9 @@ def find_modules(scripts=(), includes=(), packages=(), excludes=(), path=None, d
     And returns a :class:`modulegraph.modulegraph.ModuleGraph` instance,
     python_files, and extensions
 
-    python_files is a list of pure python dependencies as modulegraph.Module objects,
-    extensions is a list of platform-specific C extension dependencies as modulegraph.Module objects
+    python_files is a list of pure python dependencies as modulegraph.Module
+    objects, extensions is a list of platform-specific C extension dependencies
+    as modulegraph.Module objects
     """
     scripts = set(scripts)
     includes = set(includes)
@@ -341,27 +338,3 @@ def find_modules(scripts=(), includes=(), packages=(), excludes=(), path=None, d
     )
     find_needed_modules(mf, scripts, includes, packages)
     return mf
-
-def test():
-    if '-g' in sys.argv[1:]:
-        sys.argv.remove('-g')
-        dograph = True
-    else:
-        dograph = False
-    if '-x' in sys.argv[1:]:
-        sys.argv.remove('-x')
-        doxref = True
-    else:
-        doxref= False
-
-    scripts = sys.argv[1:] or [__file__]
-    mf = find_modules(scripts=scripts)
-    if doxref:
-        mf.create_xref()
-    elif dograph:
-        mf.graphreport()
-    else:
-        mf.report()
-
-if __name__ == '__main__':
-    test()

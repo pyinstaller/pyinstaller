@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2018, PyInstaller Development Team.
+# Copyright (c) 2005-2019, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -19,7 +19,7 @@ from distutils.version import LooseVersion
 
 from .. import HOMEPATH, DEFAULT_SPECPATH
 from .. import log as logging
-from ..compat import expand_path, is_darwin
+from ..compat import expand_path, is_darwin, is_win, open_file, text_type
 from .templates import onefiletmplt, onedirtmplt, cipher_absent_template, \
     cipher_init_template, bundleexetmplt, bundletmplt
 
@@ -172,11 +172,10 @@ def __add_options(parser):
                    # If this option is not specified, then its default value is
                    # an empty list (no debug options selected).
                    default=[],
-                   # Allow the user to specify any number of arguments.
-                   nargs='?',
-                   # If zero arguments are specified (``--debug`` by itself),
-                   # then provide a default argument of all debug options enabled.
-                   const=DEBUG_ALL_CHOICE,
+                   # Note that ``nargs`` is omitted. This produces a single item
+                   # not stored in a list, as opposed to list containing one
+                   # item, per `nargs <https://docs.python.org/3/library/argparse.html#nargs>`_.
+                   nargs=None,
                    # The options specified must come from this list.
                    choices=DEBUG_ALL_CHOICE + DEBUG_ARGUMENT_CHOICES,
                    # Append choice, rather than storing them (which would
@@ -185,12 +184,10 @@ def __add_options(parser):
                    # Allow newlines in the help text; see the
                    # ``_SmartFormatter`` in ``__main__.py``.
                    help=("R|Provide assistance with debugging a frozen\n"
-                         "application, by specifying one or more of the\n"
-                         "following choices.\n"
+                         "application. This argument may be provided multiple\n"
+                         "times to select several of the following options.\n"
                          "\n"
-                         "- all: All three of the below options; this is the\n"
-                         "  default choice, unless one of the choices below is\n"
-                         "  specified.\n"
+                         "- all: All three of the following options.\n"
                          "\n"
                          "- imports: specify the -v option to the underlying\n"
                          "  Python interpreter, causing it to print a message\n"
@@ -215,16 +212,27 @@ def __add_options(parser):
     g.add_argument("--noupx", action="store_true", default=False,
                    help="Do not use UPX even if it is available "
                         "(works differently between Windows and *nix)")
+    g.add_argument("--upx-exclude", dest="upx_exclude", metavar="FILE",
+                   action="append",
+                   help="Prevent a binary from being compressed when using "
+                        "upx. This is typically used if upx corrupts certain "
+                        "binaries during compression. "
+                        "FILE is the filename of the binary without path. "
+                        "This option can be used multiple times.")
 
     g = parser.add_argument_group('Windows and Mac OS X specific options')
     g.add_argument("-c", "--console", "--nowindowed", dest="console",
                    action="store_true", default=True,
-                   help="Open a console window for standard i/o (default)")
+                   help="Open a console window for standard i/o (default). "
+                        "On Windows this option will have no effect if the "
+                        "first script is a '.pyw' file.")
     g.add_argument("-w", "--windowed", "--noconsole", dest="console",
                    action="store_false",
                    help="Windows and Mac OS X: do not provide a console window "
                         "for standard i/o. "
                         "On Mac OS X this also triggers building an OS X .app bundle. "
+                        "On Windows this option will be set if the first "
+                        "script is a '.pyw' file. "
                         "This option is ignored in *NIX systems.")
     g.add_argument("-i", "--icon", dest="icon_file",
                    metavar="<FILE.ico or FILE.exe,ID or FILE.icns>",
@@ -304,7 +312,7 @@ def __add_options(parser):
 
 
 def main(scripts, name=None, onefile=None,
-         console=True, debug=None, strip=False, noupx=False,
+         console=True, debug=None, strip=False, noupx=False, upx_exclude=None,
          runtime_tmpdir=None, pathex=None, version_file=None, specpath=None,
          bootloader_ignore_signals=False,
          datas=None, binaries=None, icon_file=None, manifest=None, resources=None, bundle_identifier=None,
@@ -371,6 +379,11 @@ def main(scripts, name=None, onefile=None,
         exe_options = "%s, resources=%s" % (exe_options, repr(resources))
 
     hiddenimports = hiddenimports or []
+    upx_exclude = upx_exclude or []
+
+    # If file extension of the first script is '.pyw', force --windowed option.
+    if is_win and os.path.splitext(scripts[0])[-1] == '.pyw':
+        console = False
 
     # If script paths are relative, make them relative to the directory containing .spec file.
     scripts = [make_path_spec_relative(x, specpath) for x in scripts]
@@ -399,7 +412,7 @@ def main(scripts, name=None, onefile=None,
     if debug is None:
         debug = []
     # Translate the ``all`` option.
-    if DEBUG_ALL_CHOICE in debug:
+    if DEBUG_ALL_CHOICE[0] in debug:
         debug = DEBUG_ARGUMENT_CHOICES
 
     d = {
@@ -415,6 +428,7 @@ def main(scripts, name=None, onefile=None,
         'bootloader_ignore_signals': bootloader_ignore_signals,
         'strip': strip,
         'upx': not noupx,
+        'upx_exclude': upx_exclude,
         'runtime_tmpdir': runtime_tmpdir,
         'exe_options': exe_options,
         'cipher_init': cipher_init,
@@ -437,16 +451,16 @@ def main(scripts, name=None, onefile=None,
 
     # Write down .spec file to filesystem.
     specfnm = os.path.join(specpath, name + '.spec')
-    with open(specfnm, 'w') as specfile:
+    with open_file(specfnm, 'w', encoding='utf-8') as specfile:
         if onefile:
-            specfile.write(onefiletmplt % d)
+            specfile.write(text_type(onefiletmplt % d))
             # For OSX create .app bundle.
             if is_darwin and not console:
-                specfile.write(bundleexetmplt % d)
+                specfile.write(text_type(bundleexetmplt % d))
         else:
-            specfile.write(onedirtmplt % d)
+            specfile.write(text_type(onedirtmplt % d))
             # For OSX create .app bundle.
             if is_darwin and not console:
-                specfile.write(bundletmplt % d)
+                specfile.write(text_type(bundletmplt % d))
 
     return specfnm

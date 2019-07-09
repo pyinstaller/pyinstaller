@@ -16,7 +16,7 @@ import re
 import sys
 import os
 
-__copyright__ = "Copyright (c) 2015-2018 PyInstaller Development Team, Copyright (c) 2015-2018 Hartmut Goebel"
+__copyright__ = "Copyright (c) 2015-2019 PyInstaller Development Team, Copyright (c) 2015-2019 Hartmut Goebel"
 __author__ = "Hartmut Goebel <h.goebel@crazy-compilers.com>"
 
 
@@ -71,6 +71,10 @@ def process(program, generate_headings, headings_character):
     help = help.strip('\n')
     # escape stars prior to other processing
     help = help.replace('*', r'\*')
+    # Change troublesome argparse text that the optparse-like docutils parser
+    # doesn't understand.
+    help = help.replace('{all,imports,bootloader,noarchive}',
+                        '<all,imports,bootloader,noarchive>')
     if generate_headings:
         program = os.path.splitext(os.path.basename(program))[0].lower()
         help = textwrap.dedent(help)

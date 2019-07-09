@@ -26,8 +26,8 @@ PyInstaller builds apps that are compatible with the Mac OS X release in
 which you run it, and following releases.
 It can build 32-bit binaries in Mac OS X releases that support them.
 
-Linux
-~~~~~~
+GNU/Linux
+~~~~~~~~~~
 
 |PyInstaller| requires the ``ldd`` terminal application to discover
 the shared libraries required by each program or shared library.

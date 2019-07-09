@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2018, PyInstaller Development Team.
+# Copyright (c) 2005-2019, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -20,7 +20,7 @@ from .utils.git import get_repo_revision
 
 # Note: Keep this variable as plain string so it could be updated automatically
 #       when doing a release.
-__version__ = '3.4'
+__version__ = '3.5'
 
 
 # Absolute path of this package's directory. Save this early so all
@@ -77,8 +77,8 @@ DEFAULT_DISTPATH = os.path.join(compat.getcwd(), 'dist')
 DEFAULT_WORKPATH = os.path.join(compat.getcwd(), 'build')
 
 
-PLATFORM = compat.system() + '-' + compat.architecture()
+PLATFORM = compat.system + '-' + compat.architecture
 # Include machine name in path to bootloader for some machines.
 # e.g. 'arm'
-if compat.machine():
-    PLATFORM += '-' + compat.machine()
+if compat.machine:
+    PLATFORM += '-' + compat.machine

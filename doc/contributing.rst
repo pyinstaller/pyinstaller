@@ -11,7 +11,7 @@ All contributions,
 like community support, bug reports, bug fixes,
 documentation improvements, enhancements and ideas are welcome.
 
-|PyInstaller| is an open-source project that is created and
+|PyInstaller| is an free software project that is created and
 maintained by volunteers.
 It lives-and-dies based on the support it receives from others, and the fact
 that you're even considering contributing to |PyInstaller| is very
@@ -66,10 +66,10 @@ Some ideas how you can help:
 * **Triage** |open issues,|_ which means: read the report; ask the issue
   requester to provide missing information and to try with the latest
   development version; ensure there is a *minimal* example; ensure the
-  issue-reporter followed all steps in :ref:`When things go wrong` and
-  :ref:`Make sure everything is packaged`. If you are able reproduce the
+  issue-reporter followed all steps in :ref:`When things go wrong`.
+  If you are able reproduce the
   problem and track down the bug, this would be a *great* help for the
-  core-developers.
+  core developers.
 
   .. |open issues,| replace:: **open issues,**
   .. _`open issues,`: https://github.com/pyinstaller/pyinstaller/issues?q=is%3Aopen

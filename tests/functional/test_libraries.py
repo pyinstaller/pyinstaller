@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2018, PyInstaller Development Team.
+# Copyright (c) 2005-2019, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -194,6 +194,7 @@ def test_pygments(pyi_builder):
         print(highlight(code, PythonLexer(), HtmlFormatter()))
         """)
 
+
 @importorskip('markdown')
 def test_markdown(pyi_builder):
     # Markdown uses __import__ed extensions. Make sure these work by
@@ -201,7 +202,8 @@ def test_markdown(pyi_builder):
     pyi_builder.test_source(
         """
         import markdown
-        print(markdown.markdown('testing',  ['toc']))
+        print(markdown.markdown('testing',
+            extensions=['markdown.extensions.toc']))
         """)
 
 
@@ -240,6 +242,10 @@ PYQT5_NEED_OPENGL = pytest.mark.skipif(is_module_satisfies('PyQt5 <= 5.10.1'),
     reason='PyQt5 v5.10.1 and older does not package ``opengl32sw.dll``, the '
     'OpenGL software renderer, which this test requires.')
 
+# OS X bundles, produced by the ``--windowed`` flag, invoke a unique code path
+# that sometimes causes failures in Qt applications.
+USE_WINDOWED_KWARG = dict(pyi_args=['--windowed']) if is_darwin else {}
+
 
 @PYQT5_NEED_OPENGL
 @importorskip('PyQt5')
@@ -248,27 +254,60 @@ def test_PyQt5_uic(tmpdir, pyi_builder, data_dir):
     pyi_builder.test_script('pyi_lib_PyQt5-uic.py')
 
 
-@xfail(is_darwin, reason='Please help debug this. See issue #3233.')
-@pytest.mark.skipif(is_win and not is_64bits, reason="Qt 5.11+ for Windows "
-    "only provides pre-compiled Qt WebEngine binaries for 64-bit processors.")
-@importorskip('PyQt5')
-def test_PyQt5_QWebEngine(pyi_builder, data_dir):
-    pyi_builder.test_source(
-        """
-        from PyQt5.QtWidgets import QApplication
-        from PyQt5.QtWebEngineWidgets import QWebEngineView
-        from PyQt5.QtCore import QUrl, QTimer
+# Produce the source code for QWebEngine tests by inserting the path of an HTML
+# page to display.
+def get_QWebEngine_html(qt_flavor, data_dir):
+    return """
+        from {0}.QtWidgets import QApplication
+        from {0}.QtWebEngineWidgets import QWebEngineView
+        from {0}.QtCore import QUrl, QTimer
+
         app = QApplication([])
         view = QWebEngineView()
-        # Use a raw string to avoid accidental special characters in Windows filenames:
-        # ``c:\temp`` is `c<tab>emp`!
-        view.load(QUrl.fromLocalFile(r'{}'))
+        view.load(QUrl.fromLocalFile({1}))
         view.show()
         view.page().loadFinished.connect(
-            # Display the web page for two seconds after it loads.
-            lambda ok: QTimer.singleShot(2000, app.quit))
+            # Display the web page for one second after it loads.
+            lambda ok: QTimer.singleShot(1000, app.quit))
         app.exec_()
-        """.format(data_dir.join('test_web_page.html').strpath))
+        """.format(qt_flavor,
+                   # Use repr to avoid accidental special characters in Windows
+                   # filenames: ``c:\temp`` is ``c<tab>emp``!
+                   repr(data_dir.join('test_web_page.html').strpath))
+
+
+@pytest.mark.skipif(is_win and not is_64bits, reason="Qt 5.11+ for Windows "
+    "only provides pre-compiled Qt WebEngine binaries for 64-bit processors.")
+@pytest.mark.skipif(is_module_satisfies('PyQt5 == 5.11.3') and is_darwin,
+    reason='This version of the OS X wheel does not include QWebEngine.')
+@importorskip('PyQt5')
+def test_PyQt5_QWebEngine(pyi_builder, data_dir):
+    if is_darwin:
+        # This tests running the QWebEngine on OS X. To do so, the test must:
+        #
+        # 1. Run only a onedir build -- onefile builds don't work.
+        if pyi_builder._mode != 'onedir':
+            pytest.skip('The QWebEngine .app bundle '
+                        'only supports onedir mode.')
+
+        # 2. Only test the Mac .app bundle, by modifying the executes this
+        #    fixture runs.
+        _old_find_executables = pyi_builder._find_executables
+        # Create a replacement method that selects just the .app bundle.
+
+        def _replacement_find_executables(self, name):
+            path_to_onedir, path_to_app_bundle = _old_find_executables(name)
+            return [path_to_app_bundle]
+        # Use this in the fixture. See https://stackoverflow.com/a/28060251 and
+        # https://docs.python.org/3/howto/descriptor.html.
+        pyi_builder._find_executables = \
+            _replacement_find_executables.__get__(pyi_builder)
+
+    # 3. Run the test with specific command-line arguments. Otherwise, OS X
+    # builds fail. Also use this for the Linux and Windows builds, since this is
+    # a common case.
+    pyi_builder.test_source(get_QWebEngine_html('PyQt5', data_dir),
+                            **USE_WINDOWED_KWARG)
 
 
 @PYQT5_NEED_OPENGL
@@ -307,7 +346,7 @@ def test_PyQt5_QtQml(pyi_builder):
         res = app.exec_()
         del engine
         sys.exit(res)
-        """)
+        """, **USE_WINDOWED_KWARG)
 
 
 @importorskip('PyQt5')
@@ -316,7 +355,7 @@ def test_PyQt5_SSL_support(pyi_builder):
         """
         from PyQt5.QtNetwork import QSslSocket
         assert QSslSocket.supportsSsl()
-        """)
+        """, **USE_WINDOWED_KWARG)
 
 
 # Test that the ``PyQt5.Qt`` module works by importing something from it.
@@ -331,27 +370,18 @@ def test_PyQt5_SSL_support(pyi_builder):
 @skipif(os.environ.get('APPVEYOR') == 'True',
         reason='The Appveyor OS is incompatible with PyQt.Qt.')
 @importorskip('PyQt5')
+@pytest.mark.skipif(is_module_satisfies('PyQt5 == 5.11.3') and is_darwin,
+    reason='This version of the OS X wheel does not include QWebEngine.')
 def test_PyQt5_Qt(pyi_builder):
-    pyi_builder.test_source('from PyQt5.Qt import QLibraryInfo')
+    pyi_builder.test_source('from PyQt5.Qt import QLibraryInfo',
+                            **USE_WINDOWED_KWARG)
 
 
-@xfail(is_linux and is_py35, reason="Fails on linux >3.5")
-@xfail(is_darwin, reason="Fails on OSX")
-@xfail(is_win and is_py35 and not is_py36, reason="Fails on win == 3.6")
+@xfail(True, reason="Hook is old and needs updating.")
 @importorskip('PySide2')
-def test_PySide2_QWebEngine(pyi_builder):
-    pyi_builder.test_source(
-        """
-        from PySide2.QtWidgets import QApplication
-        from PySide2.QtWebEngineWidgets import QWebEngineView
-        from PySide2.QtCore import QUrl
-        app = QApplication( [] )
-        view = QWebEngineView()
-        view.load( QUrl( "http://www.pyinstaller.org" ) )
-        view.show()
-        view.page().loadFinished.connect(lambda ok: app.quit())
-        app.exec_()
-        """)
+def test_PySide2_QWebEngine(pyi_builder, data_dir):
+    pyi_builder.test_source(get_QWebEngine_html('PySide2', data_dir),
+                            **USE_WINDOWED_KWARG)
 
 
 @importorskip('PySide2')
@@ -386,7 +416,7 @@ def test_PySide2_QtQuick(pyi_builder):
         QTimer.singleShot(0, app.exit)
 
         sys.exit(app.exec_())
-        """)
+        """, **USE_WINDOWED_KWARG)
 
 
 @importorskip('zope.interface')
@@ -502,6 +532,7 @@ def test_pycrypto(pyi_builder):
         # Just for testing functionality after all
         print('HEX', binascii.hexlify(
             AES.new(b"\\0" * BLOCK_SIZE, AES.MODE_ECB).encrypt(b"\\0" * BLOCK_SIZE)))
+        from Crypto.PublicKey import ECC
         """)
 
 
@@ -510,13 +541,11 @@ def test_cryptodome(pyi_builder):
     pyi_builder.test_source(
         """
         from Cryptodome import Cipher
+        from Cryptodome.PublicKey import ECC
         print('Cryptodome Cipher Module:', Cipher)
         """)
 
 
-@skipif(is_win and is_py37, reason='The call to ssl.wrap_socket produces '
-        '"ssl.SSLError: [SSL: EE_KEY_TOO_SMALL] ee key too small '
-        '(_ssl.c:3717)" on Windows Python 3.7.')
 @importorskip('requests')
 def test_requests(tmpdir, pyi_builder, data_dir, monkeypatch):
     # Note that including the data_dir fixture copies files needed by this test.
@@ -816,4 +845,13 @@ def test_phonenumbers(pyi_builder):
 
         assert(parsed_number.country_code == 1)
         assert(parsed_number.national_number == 7034820623)
+        """)
+
+
+@importorskip('pendulum')
+def test_pendulum(pyi_builder):
+    pyi_builder.test_source("""
+        import pendulum
+
+        print(pendulum.now().isoformat())
         """)

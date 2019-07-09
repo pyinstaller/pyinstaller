@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2018, PyInstaller Development Team.
+# Copyright (c) 2013-2019, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -7,13 +7,21 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+'''
+The code in this module supports the --icon parameter in Windows.
+(For --icon support under OSX see building/osx.py.)
 
-# TODO Do we still use this module? Could it be remmoved?
+The only entry point, called from api.py, is CopyIcons(), below.
+All the elaborate structure of classes that follows is used to
+support the operation of CopyIcons_FromIco(). None of these classes
+and globals are referenced outside this module.
+'''
 
 RT_ICON = 3
 RT_GROUP_ICON = 14
 LOAD_LIBRARY_AS_DATAFILE = 2
 
+import os.path
 import struct
 import types
 try:
@@ -22,6 +30,7 @@ except AttributeError:
     StringTypes = [ type("") ]
 
 from ...compat import win32api
+from ... import config
 
 import PyInstaller.log as logging
 logger = logging.getLogger(__name__)
@@ -86,9 +95,11 @@ class GRPICONDIRENTRY(Structure):
 class IconFile:
     def __init__(self, path):
         self.path = path
+        if not os.path.isabs(path):
+            self.path = os.path.join(config.CONF['specpath'], path)
         try:
             # The path is from the user parameter, don't trust it.
-            file = open(path, "rb")
+            file = open(self.path, "rb")
         except OSError:
             # The icon file can't be opened for some reason. Stop the
             # program with an informative message.
@@ -121,10 +132,16 @@ class IconFile:
             data = data + e.tostring()
         return data
 
-
 def CopyIcons_FromIco(dstpath, srcpath, id=1):
+    '''
+    Use the Win API UpdateResource facility to apply the icon
+    resource(s) to the .exe file.
+
+    :param str dstpath: absolute path of the .exe file being built.
+    :param str srcpath: list of 1 or more .ico file paths
+    '''
     icons = map(IconFile, srcpath)
-    logger.info("Updating icons from %s to %s", srcpath, dstpath)
+    logger.info("Copying icons from %s", srcpath)
 
     hdst = win32api.BeginUpdateResource(dstpath, 0)
 
@@ -144,41 +161,66 @@ def CopyIcons_FromIco(dstpath, srcpath, id=1):
     win32api.EndUpdateResource(hdst, 0)
 
 def CopyIcons(dstpath, srcpath):
-    import os.path
+    '''
+    Called from building/api.py to handle icons. If the input was by
+    --icon on the command line, srcpath is a single string. However it
+    is possible to modify the spec file adding icon=['foo.ico','bar.ico']
+    to the EXE() statement. In that case, srcpath is a list of strings.
+
+    The string format is either path-to-.ico or path-to-.exe,n for n an
+    integer resource index in the .exe. In either case the path can be
+    relative or absolute.
+    '''
 
     if type(srcpath) in StringTypes:
+        # just a single string, make it a one-element list
         srcpath = [ srcpath ]
 
     def splitter(s):
+        '''
+        Convert "pathname" to tuple ("pathname", None)
+        Convert "pathname,n" to tuple ("pathname", n)
+        '''
         try:
             srcpath, index = s.split(',')
             return srcpath.strip(), int(index)
         except ValueError:
             return s, None
 
+    # split all the items in the list into tuples as above.
     srcpath = list(map(splitter, srcpath))
-    logger.info("SRCPATH %s", srcpath)
 
     if len(srcpath) > 1:
-        # At the moment, we support multiple icons only from .ico files
+        # More than one icon source given. We currently handle multiple
+        # icons by calling CopyIcons_FromIco(), which only allows .ico.
+        # In principle we could accept a mix of .ico and .exe, but it
+        # would complicate things. If you need it submit a pull request.
+        #
+        # Note that a ",index" on a .ico is just ignored in the single
+        # or multiple case.
         srcs = []
         for s in srcpath:
             e = os.path.splitext(s[0])[1]
             if e.lower() != '.ico':
                 raise ValueError('Multiple icons supported only from .ico files')
-            if s[1] is not None:
-                raise ValueError('index not allowed for .ico files')
             srcs.append(s[0])
         return CopyIcons_FromIco(dstpath, srcs)
 
+    # Just one source given.
     srcpath,index = srcpath[0]
     srcext = os.path.splitext(srcpath)[1]
+    # Handle the simple case of foo.ico, ignoring any ,index.
     if srcext.lower() == '.ico':
         return CopyIcons_FromIco(dstpath, [srcpath])
+
+    # Single source is not .ico, presumably it is .exe (and if not, some
+    # error will occur). If relative, make it relative to the .spec file.
+    if not os.path.isabs(srcpath):
+        srcpath = os.path.join(config.CONF['specpath'], srcpath)
     if index is not None:
-        logger.info("Updating icons from %s, %d to %s", srcpath, index, dstpath)
+        logger.info("Copying icon from %s, %d", srcpath, index)
     else:
-        logger.info("Updating icons from %s to %s", srcpath, dstpath)
+        logger.info("Copying icons from %s", srcpath)
 
     try:
         # Attempt to load the .ico or .exe containing the icon into memory

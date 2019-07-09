@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2018, PyInstaller Development Team.
+# Copyright (c) 2005-2019, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -26,7 +26,7 @@ import struct
 from PyInstaller.config import CONF
 from .. import compat
 from ..compat import is_darwin, is_win, EXTENSION_SUFFIXES, \
-    open_file, is_py3, is_py37
+    open_file, is_py3, is_py37, is_cygwin
 from ..depend import dylib
 from ..depend.bindepend import match_binding_redirect
 from ..utils import misc
@@ -150,7 +150,8 @@ def applyRedirects(manifest, redirects):
                 redirecting = True
     return redirecting
 
-def checkCache(fnm, strip=False, upx=False, dist_nm=None):
+
+def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None):
     """
     Cache prevents preprocessing binary files again and again.
 
@@ -175,10 +176,9 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
         strip = True
     else:
         strip = False
-    if upx:
-        upx = True
-    else:
-        upx = False
+    upx_exclude = upx_exclude or []
+    upx = (upx and (is_win or is_cygwin) and
+           os.path.normcase(os.path.basename(fnm)) not in upx_exclude)
 
     # Load cache index
     # Make cachedir per Python major/minor version.
@@ -343,11 +343,9 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
                                     raise
 
     if cmd:
-        try:
-            logger.info("Executing - " + ' '.join(cmd))
-            compat.exec_command(*cmd)
-        except OSError as e:
-            raise SystemExit("Execution failed: %s" % e)
+        logger.info("Executing - " + ' '.join(cmd))
+        # terminates if execution fails
+        compat.exec_command(*cmd)
 
     # update cache index
     cache_index[basenm] = digest
@@ -404,7 +402,7 @@ def _make_clean_directory(path):
     Create a clean directory from the given directory name
     """
     if _check_path_overlap(path):
-        if os.path.isdir(path):
+        if os.path.isdir(path) or os.path.isfile(path):
             try:
                 os.remove(path)
             except OSError:
@@ -423,7 +421,7 @@ def _rmtree(path):
         choice = 'y'
     elif sys.stdout.isatty():
         choice = compat.stdin_input('WARNING: The output directory "%s" and ALL ITS '
-                           'CONTENTS will be REMOVED! Continue? (y/n)' % path)
+                           'CONTENTS will be REMOVED! Continue? (y/N)' % path)
     else:
         raise SystemExit('Error: The output directory "%s" is not empty. '
                          'Please remove all its contents or use the '

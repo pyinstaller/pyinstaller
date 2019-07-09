@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2018, PyInstaller Development Team.
+# Copyright (c) 2005-2019, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -21,6 +21,8 @@ import platform
 import site
 import subprocess
 import sys
+import errno
+from .exceptions import ExecCommandFailed
 
 # Distinguish code for different major Python version.
 is_py2 = sys.version_info[0] == 2
@@ -36,6 +38,7 @@ is_py36 = sys.version_info >= (3, 6)
 is_py37 = sys.version_info >= (3, 7)
 
 is_win = sys.platform.startswith('win')
+is_win_10 = is_win and (platform.win32_ver()[0] == '10')
 is_cygwin = sys.platform == 'cygwin'
 is_darwin = sys.platform == 'darwin'  # Mac OS X
 
@@ -84,7 +87,8 @@ elif is_unix:
     # Python 3 .so library on Linux is: libpython3.2mu.so.1.0, libpython3.3m.so.1.0
     PYDYLIB_NAMES = {'libpython%d.%d.so.1.0' % _pyver,
                      'libpython%d.%dm.so.1.0' % _pyver,
-                     'libpython%d.%dmu.so.1.0' % _pyver}
+                     'libpython%d.%dmu.so.1.0' % _pyver,
+                     'libpython%d.%dm.so' % _pyver}
 else:
     raise SystemExit('Your platform is not yet supported. '
                      'Please define constant PYDYLIB_NAMES for your platform.')
@@ -96,6 +100,37 @@ else:
 # unsafe in regards to character encodings and hence inferior to io.open().
 open_file = open if is_py3 else io.open
 text_read_mode = 'r' if is_py3 else 'rU'
+
+
+# These are copied from ``six``.
+#
+# Type for representing (Unicode) textual data.
+text_type = unicode if is_py2 else str
+# Type for representing binary data.
+binary_type = str if is_py2 else bytes
+
+
+# This class converts all writes to unicode first. For use with
+# ``print(*args, file=f)``, since in Python 2 this ``print`` will write str, not
+# unicode.
+class unicode_writer:
+
+    # Store the object to proxy.
+    def __init__(self, f):
+        self.f = f
+
+    # Insist that writes use the ``text_type``.
+    def write(self, _str):
+        self.f.write(text_type(_str))
+
+    def writelines(self, lines):
+        self.f.writelines([text_type(_str) for _str in lines])
+
+    # Proxy all other methods.
+    def __getattr__(self, name):
+        return getattr(self.f, name)
+
+
 
 # In Python 3 there is exception FileExistsError. But it is not available
 # in Python 2. For Python 2 fall back to OSError exception.
@@ -170,8 +205,8 @@ is_venv = is_virtualenv = base_prefix != os.path.abspath(sys.prefix)
 # Conda environments sometimes have different paths or apply patches to
 # packages that can affect how a hook or package should access resources.
 # Method for determining conda taken from:
-# https://stackoverflow.com/a/21318941/433202
-is_conda = 'conda' in sys.version or 'Continuum' in sys.version
+# https://stackoverflow.com/questions/47610844#47610844
+is_conda = os.path.isdir(os.path.join(base_prefix, 'conda-meta'))
 
 # In Python 3.4 module 'imp' is deprecated and there is another way how
 # to obtain magic value.
@@ -204,7 +239,7 @@ else:
     modname_tkinter = 'tkinter'
 
 
-# On Windows we require pypiwin32 or pywin32-ctypes
+# On Windows we require pywin32-ctypes
 # -> all pyinstaller modules should use win32api from PyInstaller.compat to
 #    ensure that it can work on MSYS2 (which requires pywin32-ctypes)
 if is_win:
@@ -216,11 +251,11 @@ if is_win:
         # - It's not an error for pywin32 to not be installed at that point
         if not os.environ.get('PYINSTALLER_NO_PYWIN32_FAILURE'):
             raise SystemExit('PyInstaller cannot check for assembly dependencies.\n'
-                             'Please install PyWin32 or pywin32-ctypes.\n\n'
-                             'pip install pypiwin32\n')
+                             'Please install pywin32-ctypes.\n\n'
+                             'pip install pywin32-ctypes\n')
 
 
-def architecture():
+def _architecture():
     """
     Returns the bit depth of the python interpreter's architecture as
     a string ('32bit' or '64bit'). Similar to platform.architecture(),
@@ -238,8 +273,10 @@ def architecture():
     else:
         return platform.architecture()[0]
 
+architecture = _architecture()
+del _architecture
 
-def system():
+def _system():
     # On some Windows installation (Python 2.4) platform.system() is
     # broken and incorrectly returns 'Microsoft' instead of 'Windows'.
     # http://mail.python.org/pipermail/patches/2007-June/022947.html
@@ -248,16 +285,18 @@ def system():
         return 'Windows'
     return syst
 
+system = _system()
+del _system
 
-def machine():
+def _machine():
     """
     Return machine suffix to use in directory name when looking
     for bootloader.
 
     PyInstaller is reported to work even on ARM architecture. For that
-    case functions system() and architecture() are not enough.
-    Path to bootloader has to be composed from system(), architecture()
-    and machine() like:
+    case `system` and `architecture` are not enough.
+    Path to bootloader has to be composed from `system`, `architecture`
+    and `machine` like:
         'Linux-32bit-arm'
     """
     mach = platform.machine()
@@ -268,6 +307,9 @@ def machine():
     else:
         # Assume x86/x86_64 machine.
         return None
+
+machine = _machine()
+del _machine
 
 
 # Set and get environment variables does not handle unicode strings correctly
@@ -349,6 +391,10 @@ def exec_command(*cmdargs, **kwargs):
         Optional keyword argument specifying the encoding with which to decode
         this command's standard output under Python 3. As this function's return
         value should be ignored, this argument should _never_ be passed.
+    __raise_ENOENT__ : boolean, optional
+        Optional keyword argument to simply raise the exception if the
+        executing the command fails since to the command is not found. This is
+        useful to checking id a command exists.
 
     All remaining keyword arguments are passed as is to the `subprocess.Popen()`
     constructor.
@@ -360,7 +406,18 @@ def exec_command(*cmdargs, **kwargs):
     """
 
     encoding = kwargs.pop('encoding', None)
-    out = subprocess.Popen(cmdargs, stdout=subprocess.PIPE, **kwargs).communicate()[0]
+    raise_ENOENT = kwargs.pop('__raise_ENOENT__', None)
+    try:
+        out = subprocess.Popen(
+            cmdargs, stdout=subprocess.PIPE, **kwargs).communicate()[0]
+    except OSError as e:
+        if raise_ENOENT and e.errno == errno.ENOENT:
+            raise
+        print('--' * 20, file=sys.stderr)
+        print("Error running '%s':" % " ".join(cmdargs), file=sys.stderr)
+        print(e, file=sys.stderr)
+        print('--' * 20, file=sys.stderr)
+        raise ExecCommandFailed("Error: Executing command failed!")
     # Python 3 returns stdout/stderr as a byte array NOT as string.
     # Thus we need to convert that to proper encoding.
 
@@ -543,7 +600,7 @@ def __wrap_python(args, kwargs):
     # It is necessary to run binaries with 'arch' command.
     if is_darwin:
         mapping = {'32bit': '-i386', '64bit': '-x86_64'}
-        py_prefix = ['arch', mapping[architecture()]]
+        py_prefix = ['arch', mapping[architecture]]
         # Since OS X 10.11 the environment variable DYLD_LIBRARY_PATH is no
         # more inherited by child processes, so we proactively propagate
         # the current value using the `-e` option of the `arch` command.

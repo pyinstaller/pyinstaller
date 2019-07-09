@@ -1,6 +1,3 @@
-[build-system]
-requires = ["setuptools", "wheel"]  # PEP 508 specifications.
-
 [tool.towncrier]
 	filename = "doc/CHANGES.rst"
 	directory = "news"

@@ -28,7 +28,7 @@ few simple rules:
   ``bootloader``,
   ``moduleloader``,
   ``doc``,
-  ``process`` (project infrastructure, development process, etc.=,
+  ``process`` (project infrastructure, development process, etc.),
   ``core``,
   ``build`` (the bootloader build process),
   and

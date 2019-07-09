@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2018, PyInstaller Development Team.
+# Copyright (c) 2005-2019, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -33,17 +33,21 @@ backend_rcParams_key_values = [
     ('Qt5Agg', 'PyQt5', 'backend.qt5', 'PyQt5'),
 ]
 
-# Same list, decorated to skip all backends whose packages are unimportable.
+# Same list, decorated to skip all backends whose packages are unimportable#.
 backend_rcParams_key_values_skipped_if_unimportable = [
-    importorskip(backend_rcParams_key_value[1])(backend_rcParams_key_value)
+    pytest.param(*backend_rcParams_key_value,
+                 marks=importorskip(backend_rcParams_key_value[1]))
     for backend_rcParams_key_value in backend_rcParams_key_values
 ]
+
+print(backend_rcParams_key_values_skipped_if_unimportable)
 
 # Names of all packages required by backends listed above.
 package_names = [
     backend_rcParams_key_value[1]
     for backend_rcParams_key_value in backend_rcParams_key_values
 ]
+
 
 # Test Matplotlib with access to only one backend at a time.
 @importorskip('matplotlib')

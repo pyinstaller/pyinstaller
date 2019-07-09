@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2018, PyInstaller Development Team.
+# Copyright (c) 2005-2019, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -19,9 +19,10 @@ zest.releaser allows customization by exposing some entry points. For details:
 https://zestreleaser.readthedocs.org/en/latest/entrypoints.html
 """
 
+from __future__ import print_function
 
 import os
-from ..compat import exec_command
+from ..compat import exec_command, getenv
 
 
 def sign_source_distribution(data):
@@ -29,11 +30,17 @@ def sign_source_distribution(data):
     Sign the tgz or zip archive that will be uploaded to PYPI.
     :param data:
     """
+    print()
     # zest.releaser does a clean checkout where it generates tgz/zip in 'dist'
     # directory and those files will be then uploaded to pypi.
     dist_dir = os.path.join(data['tagdir'], 'dist')
+    cmd = ['gpg', '--detach-sign', '--armor']
+    if getenv("PYINSTALLER_CODESIGNING_ID"):
+        print("Using gpg identity", getenv("PYINSTALLER_CODESIGNING_ID"),
+              "for signing.")
+        cmd.extend(['--local-user', getenv("PYINSTALLER_CODESIGNING_ID")])
     # Sign all files in 'dist' directory.
     for f in os.listdir(dist_dir):
         f = os.path.join(dist_dir, f)
-        print('\nSigning file %s' % f)
-        exec_command('gpg', '--detach-sign', '-a', f)
+        print('Signing file %s' % f)
+        exec_command(*cmd + [f])

@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2018, PyInstaller Development Team.
+# Copyright (c) 2005-2019, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -19,6 +19,7 @@ from ...compat import base_prefix, exec_command_stdout, exec_python, \
     EXTENSION_SUFFIXES, ALL_SUFFIXES
 from ... import HOMEPATH
 from ... import log as logging
+from ...exceptions import ExecCommandFailed
 
 logger = logging.getLogger(__name__)
 
@@ -68,10 +69,7 @@ def __exec_python_cmd(cmd, env=None):
         pp = os.pathsep.join([pp_env.get('PYTHONPATH'), pp])
     pp_env['PYTHONPATH'] = pp
 
-    try:
-        txt = exec_python(*cmd, env=pp_env)
-    except OSError as e:
-        raise SystemExit("Execution failed: %s" % e)
+    txt = exec_python(*cmd, env=pp_env)
     return txt.strip()
 
 
@@ -914,7 +912,7 @@ def get_installer(module):
                 logger.debug(
                     'Found installer: \'macports\' for module: \'{0}\' from package: \'{1}\''.format(module, package))
                 return 'macports'
-        except OSError:
+        except ExecCommandFailed:
             pass
         real_path = os.path.realpath(file_name)
         if 'Cellar' in real_path:

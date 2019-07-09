@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2005-2018, PyInstaller Development Team.
+# Copyright (c) 2005-2019, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -32,6 +32,7 @@ class Qt5LibraryInfo:
         if namespace not in ['PyQt5', 'PySide2']:
             raise Exception('Invalid namespace: {0}'.format(namespace))
         self.namespace = namespace
+        self.is_PyQt5 = namespace == 'PyQt5'
 
     # Initialize most of this class only when values are first requested from
     # it.
@@ -48,37 +49,49 @@ class Qt5LibraryInfo:
                 sys.stderr = sys.stdout
 
                 import json
-                from %s.QtCore import QLibraryInfo
-
-                paths = [x for x in dir(QLibraryInfo) if x.endswith('Path')]
-                location = {x: QLibraryInfo.location(getattr(QLibraryInfo, x))
-                            for x in paths}
                 try:
-                    version = QLibraryInfo.version().segments()
-                except AttributeError:
-                    version = None
-                print(str(json.dumps({
-                    'isDebugBuild': QLibraryInfo.isDebugBuild(),
-                    'version': version,
-                    'location': location,
-                })))
+                    from %s.QtCore import QLibraryInfo, QCoreApplication
+                except:
+                    print('False')
+                else:
+                    # QLibraryInfo isn't always valid until a QCoreApplication is
+                    # instantiated.
+                    app = QCoreApplication(sys.argv)
+                    paths = [x for x in dir(QLibraryInfo) if x.endswith('Path')]
+                    location = {x: QLibraryInfo.location(getattr(QLibraryInfo, x))
+                                for x in paths}
+                    try:
+                        version = QLibraryInfo.version().segments()
+                    except AttributeError:
+                        version = []
+                    print(json.dumps({
+                        'isDebugBuild': QLibraryInfo.isDebugBuild(),
+                        'version': version,
+                        'location': location,
+                    }))
             """ % self.namespace)
             try:
                 qli = json.loads(json_str)
             except Exception as e:
                 logger.warning('Cannot read QLibraryInfo output: raised %s when '
                                'decoding:\n%s', str(e), json_str)
-                raise
-            for k, v in qli.items():
-                setattr(self, k, v)
+                qli = False
+
+            # If PyQt5/PySide2 can't be imported, record that.
+            if not qli:
+                self.version = None
+            else:
+                for k, v in qli.items():
+                    setattr(self, k, v)
 
             return getattr(self, name)
         else:
             raise AttributeError
 
 
-# Provide an instance of this class, to avoid each hook constructing its own.
+# Provide single instances of this class to avoid each hook constructing its own.
 pyqt5_library_info = Qt5LibraryInfo('PyQt5')
+pyside2_library_info = Qt5LibraryInfo('PySide2')
 
 
 def qt_plugins_dir(namespace):
@@ -93,6 +106,8 @@ def qt_plugins_dir(namespace):
         raise Exception('Invalid namespace: {0}'.format(namespace))
     if namespace == 'PyQt5':
         paths = [pyqt5_library_info.location['PluginsPath']]
+    elif namespace == 'PySide2':
+        paths = [pyside2_library_info.location['PluginsPath']]
     else:
         paths = eval_statement("""
             from {0}.QtCore import QCoreApplication;
@@ -148,13 +163,13 @@ def qt_plugins_binaries(plugin_type, namespace):
     elif is_win and namespace in ['PyQt5', 'PySide2']:
         files = [f for f in files if not f.endswith("d.dll")]
 
-    logger.debug("Found plugin files %s for plugin '%s", files, plugin_type)
+    logger.debug("Found plugin files %s for plugin %s", files, plugin_type)
     if namespace in ['PyQt4', 'PySide']:
         plugin_dir = 'qt4_plugins'
     elif namespace == 'PyQt5':
         plugin_dir = os.path.join('PyQt5', 'Qt', 'plugins')
     else:
-        plugin_dir = 'qt5_plugins'
+        plugin_dir = os.path.join('PySide2', 'plugins')
     dest_dir = os.path.join(plugin_dir, plugin_type)
     binaries = [(f, dest_dir) for f in files]
     return binaries
@@ -370,68 +385,69 @@ def get_qmake_path(version=''):
 #   -   Include ``mediaservice/`` and ``audio/`` if ``QtMultimedia`` is
 #       included.
 #
-#   The always includes will be handled by ``hook-PyQt5.py``; optional includes
-#   are already covered by the dict below.
+#   The always includes will be handled by ``hook-PyQt5.py`` or
+#   ``hook-PySide2.py``; optional includes are already covered by the dict
+#   below.
 #
 _qt_dynamic_dependencies_dict = {
-    ## "lib_name":              (hiddenimports,                 translations_base,  zero or more plugins...)
-    "qt5bluetooth":             ("PyQt5.QtBluetooth",           None,               ),  # noqa: E241,E202
-    "qt5concurrent":            (None,                          "qtbase",           ),
-    "qt5core":                  ("PyQt5.QtCore",                "qtbase",           ),
+    ## "lib_name":              (.hiddenimports,           translations_base,  zero or more plugins...)
+    "qt5bluetooth":             (".QtBluetooth",           None,               ),  # noqa: E241,E202
+    "qt5concurrent":            (None,                     "qtbase",           ),
+    "qt5core":                  (".QtCore",                "qtbase",           ),
     # This entry generated by hand -- it's not present in the Windows deployment tool sources.
-    "qtdbus":                   ("PyQt5.QtDBus",                None,               ),
-    "qt5declarative":           (None,                          "qtquick1",         "qml1tooling"),
-    "qt5designer":              ("PyQt5.QtDesigner",            None,               ),
-    "qt5designercomponents":    (None,                          None,               ),
-    "enginio":                  (None,                          None,               ),
-    "qt5gamepad":               (None,                          None,               "gamepads"),
+    "qtdbus":                   (".QtDBus",                None,               ),
+    "qt5declarative":           (None,                     "qtquick1",         "qml1tooling"),
+    "qt5designer":              (".QtDesigner",            None,               ),
+    "qt5designercomponents":    (None,                     None,               ),
+    "enginio":                  (None,                     None,               ),
+    "qt5gamepad":               (None,                     None,               "gamepads"),
     # Note: The ``platformthemes`` plugin is for Linux only, and comes from earlier PyInstaller code in ``hook-PyQt5.QtGui.py``. The ``styles`` plugin comes from the suggestion at https://github.com/pyinstaller/pyinstaller/issues/2156.
-    "qt5gui":                   ("PyQt5.QtGui",                 "qtbase",           "accessible", "iconengines", "imageformats", "platforms", "platforminputcontexts", "platformthemes", "styles"),
-    "qt5help":                  ("PyQt5.QtHelp",                "qt_help",          ),
+    "qt5gui":                   (".QtGui",                 "qtbase",           "accessible", "iconengines", "imageformats", "platforms", "platforminputcontexts", "platformthemes", "styles"),
+    "qt5help":                  (".QtHelp",                "qt_help",          ),
     # This entry generated by hand -- it's not present in the Windows deployment tool sources.
-    "qt5macextras":             ("PyQt5.QtMacExtras",           None,               ),
-    "qt5multimedia":            ("PyQt5.QtMultimedia",          "qtmultimedia",     "audio", "mediaservice", "playlistformats"),
-    "qt5multimediawidgets":     ("PyQt5.QtMultimediaWidgets",   "qtmultimedia",     ),
-    "qt5multimediaquick_p":     (None,                          "qtmultimedia",     ),
-    "qt5network":               ("PyQt5.QtNetwork",             "qtbase",           "bearer"),
-    "qt5nfc":                   ("PyQt5.QtNfc",                 None,               ),
+    "qt5macextras":             (".QtMacExtras",           None,               ),
+    "qt5multimedia":            (".QtMultimedia",          "qtmultimedia",     "audio", "mediaservice", "playlistformats"),
+    "qt5multimediawidgets":     (".QtMultimediaWidgets",   "qtmultimedia",     ),
+    "qt5multimediaquick_p":     (None,                     "qtmultimedia",     ),
+    "qt5network":               (".QtNetwork",             "qtbase",           "bearer"),
+    "qt5nfc":                   (".QtNfc",                 None,               ),
     ##                                                                              These added manually for Linux.
-    "qt5opengl":                ("PyQt5.QtOpenGL",              None,               "xcbglintegrations", "egldeviceintegrations"),
-    "qt5positioning":           ("PyQt5.QtPositioning",         None,               "position"),
-    "qt5printsupport":          ("PyQt5.QtPrintSupport",        None,               "printsupport"),
-    "qt5qml":                   ("PyQt5.QtQml",                 "qtdeclarative",    ),
-    "qmltooling":               (None,                          None,               "qmltooling"),
+    "qt5opengl":                (".QtOpenGL",              None,               "xcbglintegrations", "egldeviceintegrations"),
+    "qt5positioning":           (".QtPositioning",         None,               "position"),
+    "qt5printsupport":          (".QtPrintSupport",        None,               "printsupport"),
+    "qt5qml":                   (".QtQml",                 "qtdeclarative",    ),
+    "qmltooling":               (None,                     None,               "qmltooling"),
     ##                                                                                                          These added manually for Linux.
-    "qt5quick":                 ("PyQt5.QtQuick",               "qtdeclarative",    "scenegraph", "qmltooling", "xcbglintegrations", "egldeviceintegrations"),
-    "qt5quickparticles":        (None,                          None,               ),
-    "qt5quickwidgets":          ("PyQt5.QtQuickWidgets",        None,               ),
-    "qt5script":                (None,                          "qtscript",         ),
-    "qt5scripttools":           (None,                          "qtscript",         ),
-    "qt5sensors":               ("PyQt5.QtSensors",             None,               "sensors", "sensorgestures"),
-    "qt5serialport":            ("PyQt5.QtSerialPort",          "qtserialport",     ),
-    "qt5sql":                   ("PyQt5.QtSql",                 "qtbase",           "sqldrivers"),
-    "qt5svg":                   ("PyQt5.QtSvg",                 None,               ),
-    "qt5test":                  ("PyQt5.QtTest",                "qtbase",           ),
-    "qt5webkit":                (None,                          None,               ),
-    "qt5webkitwidgets":         (None,                          None,               ),
-    "qt5websockets":            ("PyQt5.QtWebSockets",          None,               ),
-    "qt5widgets":               ("PyQt5.QtWidgets",             "qtbase",           ),
-    "qt5winextras":             ("PyQt5.QtWinExtras",           None,               ),
-    "qt5xml":                   ("PyQt5.QtXml",                 "qtbase",           ),
-    "qt5xmlpatterns":           ("PyQt5.QXmlPatterns",          "qtxmlpatterns",    ),
+    "qt5quick":                 (".QtQuick",               "qtdeclarative",    "scenegraph", "qmltooling", "xcbglintegrations", "egldeviceintegrations"),
+    "qt5quickparticles":        (None,                     None,               ),
+    "qt5quickwidgets":          (".QtQuickWidgets",        None,               ),
+    "qt5script":                (None,                     "qtscript",         ),
+    "qt5scripttools":           (None,                     "qtscript",         ),
+    "qt5sensors":               (".QtSensors",             None,               "sensors", "sensorgestures"),
+    "qt5serialport":            (".QtSerialPort",          "qtserialport",     ),
+    "qt5sql":                   (".QtSql",                 "qtbase",           "sqldrivers"),
+    "qt5svg":                   (".QtSvg",                 None,               ),
+    "qt5test":                  (".QtTest",                "qtbase",           ),
+    "qt5webkit":                (None,                     None,               ),
+    "qt5webkitwidgets":         (None,                     None,               ),
+    "qt5websockets":            (".QtWebSockets",          None,               ),
+    "qt5widgets":               (".QtWidgets",             "qtbase",           ),
+    "qt5winextras":             (".QtWinExtras",           None,               ),
+    "qt5xml":                   (".QtXml",                 "qtbase",           ),
+    "qt5xmlpatterns":           (".QXmlPatterns",          "qtxmlpatterns",    ),
     ##                                                                                             These added manually for Linux.
-    "qt5webenginecore":         ("PyQt5.QtWebEngineCore",       None,               "qtwebengine", "xcbglintegrations", "egldeviceintegrations"),
-    "qt5webengine":             ("PyQt5.QtWebEngine",           "qtwebengine",      "qtwebengine"),
-    "qt5webenginewidgets":      ("PyQt5.QtWebEngineWidgets",    None,               "qtwebengine"),
-    "qt53dcore":                (None,                          None,               ),
-    "qt53drender":              (None,                          None,               "sceneparsers", "renderplugins", "geometryloaders"),
-    "qt53dquick":               (None,                          None,               ),
-    "qt53dquickRender":         (None,                          None,               ),
-    "qt53dinput":               (None,                          None,               ),
-    "qt5location":              ("PyQt5.QtLocation",            None,               "geoservices"),
-    "qt5webchannel":            ("PyQt5.QtWebChannel",          None,               ),
-    "qt5texttospeech":          (None,                          None,               "texttospeech"),
-    "qt5serialbus":             (None,                          None,               "canbus"),
+    "qt5webenginecore":         (".QtWebEngineCore",       None,               "qtwebengine", "xcbglintegrations", "egldeviceintegrations"),
+    "qt5webengine":             (".QtWebEngine",           "qtwebengine",      "qtwebengine"),
+    "qt5webenginewidgets":      (".QtWebEngineWidgets",    None,               "qtwebengine"),
+    "qt53dcore":                (None,                     None,               ),
+    "qt53drender":              (None,                     None,               "sceneparsers", "renderplugins", "geometryloaders"),
+    "qt53dquick":               (None,                     None,               ),
+    "qt53dquickRender":         (None,                     None,               ),
+    "qt53dinput":               (None,                     None,               ),
+    "qt5location":              (".QtLocation",            None,               "geoservices"),
+    "qt5webchannel":            (".QtWebChannel",          None,               ),
+    "qt5texttospeech":          (None,                     None,               "texttospeech"),
+    "qt5serialbus":             (None,                     None,               "canbus"),
 }
 
 
@@ -453,8 +469,14 @@ def add_qt5_dependencies(hook_file):
     assert hook_name.startswith('hook-')
     module_name = hook_name[5:]
     namespace = module_name.split('.')[0]
-    if namespace != 'PyQt5':
+    if namespace not in ('PyQt5', 'PySide2'):
         raise Exception('Invalid namespace: {0}'.format(namespace))
+    is_PyQt5 = namespace == 'PyQt5'
+
+    # Exit if the requested library can't be imported.
+    if ((is_PyQt5 and not pyqt5_library_info.version) or
+        (not is_PyQt5 and not pyside2_library_info.version)):
+        return [], [], []
 
     # Look up the module returned by this import.
     module = get_module_file_attribute(module_name)
@@ -503,7 +525,7 @@ def add_qt5_dependencies(hook_file):
             lib_name_plugins = dd[2:]
             # Add them in.
             if lib_name_hiddenimports:
-                hiddenimports.update([lib_name_hiddenimports])
+                hiddenimports.update([namespace + lib_name_hiddenimports])
             plugins.update(lib_name_plugins)
             if lib_name_translations_base:
                 translations_base.update([lib_name_translations_base])
@@ -514,7 +536,10 @@ def add_qt5_dependencies(hook_file):
         more_binaries = qt_plugins_binaries(plugin, namespace=namespace)
         binaries.extend(more_binaries)
     # Change translation_base to datas.
-    tp = pyqt5_library_info.location['TranslationsPath']
+    tp = (
+        pyqt5_library_info.location['TranslationsPath'] if is_PyQt5
+        else pyside2_library_info.location['TranslationsPath']
+    )
     datas = []
     for tb in translations_base:
         src = os.path.join(tp, tb + '_*.qm')
@@ -523,7 +548,14 @@ def add_qt5_dependencies(hook_file):
         # and
         # https://github.com/pyinstaller/pyinstaller/issues/2857#issuecomment-368744341.
         if glob.glob(src):
-            datas.append( (src, os.path.join(namespace, 'Qt', 'translations')) )
+            datas.append((
+                src, os.path.join(
+                    # The PySide2 Windows wheels place translations in a
+                    # different location.
+                    namespace, 'Qt' if is_PyQt5 and not is_win else '',
+                    'translations'
+                )
+            ))
         else:
             logger.warning('Unable to find Qt5 translations %s. These '
                            'translations were not packaged.', src)
@@ -538,5 +570,55 @@ def add_qt5_dependencies(hook_file):
     return hiddenimports, binaries, datas
 
 
+def find_all_or_none(globs_to_include, num_files, qt_library_info):
+    """
+    globs_to_include is a list of file name globs
+    If the number of found files does not match num_files
+    then no files will be included.
+    """
+    # This function is required because CI is failing to include libEGL. The
+    # error in AppVeyor is::
+    #
+    #   [2312] LOADER: Running pyi_lib_PyQt5-uic.py
+    #   Failed to load libEGL (Access is denied.)
+    #   More info: https://github.com/pyinstaller/pyinstaller/pull/3568
+    #
+    # Since old PyQt5 wheels do not include d3dcompiler_4?.dll, libEGL.dll and
+    # libGLESv2.dll will not be included for PyQt5 builds during CI.
+    to_include = []
+    dst_dll_path = (
+        os.path.join('PyQt5', 'Qt', 'bin')
+        if qt_library_info.is_PyQt5
+        else 'PySide2'
+    )
+    for dll in globs_to_include:
+        dll_path = os.path.join(qt_library_info.location[
+            'BinariesPath' if qt_library_info.is_PyQt5 else 'PrefixPath'
+        ], dll)
+        dll_file_paths = glob.glob(dll_path)
+        for dll_file_path in dll_file_paths:
+            to_include.append((dll_file_path, dst_dll_path))
+    if len(to_include) == num_files:
+        return to_include
+    return []
+
+
+# Gather required Qt binaries, but only if all binaries in a group exist.
+def get_qt_binaries(qt_library_info):
+    binaries = []
+    angle_files = ['libEGL.dll', 'libGLESv2.dll', 'd3dcompiler_??.dll']
+    binaries += find_all_or_none(angle_files, 3, qt_library_info)
+
+    opengl_software_renderer = ['opengl32sw.dll']
+    binaries += find_all_or_none(opengl_software_renderer, 1, qt_library_info)
+
+    # Include ICU files, if they exist.
+    # See the "Deployment approach" section in ``PyInstaller/utils/hooks/qt.py``.
+    icu_files = ['icudt??.dll', 'icuin??.dll', 'icuuc??.dll']
+    binaries += find_all_or_none(icu_files, 3, qt_library_info)
+
+    return binaries
+
+
 __all__ = ('qt_plugins_dir', 'qt_plugins_binaries', 'qt_menu_nib_dir',
-           'get_qmake_path', 'add_qt5_dependencies', 'pyqt5_library_info')
+           'get_qmake_path')

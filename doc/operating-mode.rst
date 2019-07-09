@@ -97,7 +97,7 @@ This is covered under :ref:`Run-time Information`.
 
 |PyInstaller| does *not* include libraries that should exist in
 any installation of this OS.
-For example in Linux, it does not bundle any file
+For example in GNU/Linux, it does not bundle any file
 from :file:`/lib` or :file:`/usr/lib`, assuming
 these will be found in every system.
 
@@ -150,7 +150,7 @@ This is the heart of the ``myscript`` executable in the folder.
 
 The |PyInstaller| |bootloader| is a binary
 executable program for the active platform
-(Windows, Linux, Mac OS X, etc.).
+(Windows, GNU/Linux, Mac OS X, etc.).
 When the user launches your program, it is the |bootloader| that runs.
 The |bootloader| creates a temporary Python environment
 such that the Python interpreter will find all imported modules and
@@ -203,16 +203,24 @@ This can take a little time.
 That is why a one-file app is a little slower to start
 than a one-folder app.
 
+.. note::
+
+   |PyInstaller| currently does not preserve file attributes.
+   see :issue:`3926`.
+
+
 After creating the temporary folder, the |bootloader|
 proceeds exactly as for the one-folder bundle,
 in the context of the temporary folder.
 When the bundled code terminates,
 the |bootloader| deletes the temporary folder.
 
-(In Linux and related systems, it is possible
+(In GNU/Linux and related systems, it is possible
 to mount the ``/tmp`` folder with a "no-execution" option.
 That option is not compatible with a |PyInstaller|
-one-file bundle. It needs to execute code out of :file:`/tmp`.)
+one-file bundle. It needs to execute code out of :file:`/tmp`.
+If you know the target environment,
+``--runtime-tmpdir`` might be a workaround.)
 
 Because the program makes a temporary folder with a unique name,
 you can run multiple copies of the app;
@@ -247,14 +255,14 @@ stored in the executable, and the bootloader will create the
     The temporary folder where the bundled app runs may not being readable
     after `setuid` is called. If your script needs to
     call `setuid`, it may be better to use one-folder mode
-    so as to have more control over the permissions on its files. 
+    so as to have more control over the permissions on its files.
 
 
 Using a Console Window
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 By default the |bootloader| creates a command-line console
-(a terminal window in Linux and Mac OS, a command window in Windows).
+(a terminal window in GNU/Linux and Mac OS, a command window in Windows).
 It gives this window to the Python interpreter for its standard input and output.
 Your script's use of ``print`` and ``input()`` are directed here.
 Error messages from Python and default logging output
@@ -264,6 +272,13 @@ An option for Windows and Mac OS is to tell |PyInstaller| to not provide a conso
 The |bootloader| starts Python with no target for standard output or input.
 Do this when your script has a graphical interface for user input and can properly
 report its own diagnostics.
+
+As noted in the `CPython tutorial Appendix
+<https://docs.python.org/3/tutorial/appendix.html#executable-python-scripts>`__,
+for Windows a file extention of `.pyw` suppresses the console window
+that normally appears.
+Likewise, a console window will not be provided when using
+a :file:`myscript.pyw` script with |PyInstaller|.
 
 
 Hiding the Source Code

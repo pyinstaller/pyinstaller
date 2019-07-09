@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 # -----------------------------------------------------------------------------
-# Copyright (c) 2014-2018, PyInstaller Development Team.
+# Copyright (c) 2014-2019, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -516,7 +516,7 @@ def configure(ctx):
 
             # TODO What other platforms support _FORTIFY_SOURCE macro? OS X?
             # TODO OS X's CLang appears to support this macro as well. See:
-            # http://permalink.gmane.org/gmane.comp.compilers.clang.devel/2442
+            # https://marc.info/?l=cfe-dev&m=122032133830183
 
             # For security, enable the _FORTIFY_SOURCE macro detecting buffer
             # overflows in various string and memory manipulation functions.
