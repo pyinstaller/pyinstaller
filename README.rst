@@ -6,6 +6,13 @@ package. The user can run the packaged app without installing a Python
 interpreter or any modules.
 
 
+**Help keeping PyInstaller alive:**
+Maintaining PyInstaller is a huge amount of work.
+PyInstaller development can only continue
+if users and companies provide sustainable funding. See
+http://www.pyinstaller.org/funding.html for how to support PyInstaller.
+
+
 :Documentation: https://pyinstaller.readthedocs.io/
 :Website:       http://www.pyinstaller.org/
 :Code:          https://github.com/pyinstaller/pyinstaller
