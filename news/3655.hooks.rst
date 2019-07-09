@@ -1,1 +1,0 @@
-Update PySide2 hooks to follow PyQt5 approach.

@@ -1,1 +1,0 @@
-Add hook for `textdistance <https://pypi.org/project/textdistance/>`_.

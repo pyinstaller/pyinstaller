@@ -1,1 +1,0 @@
-Add hook for `aliyunsdkcore <https://pypi.org/project/aliyun-python-sdk-core/>`_.
