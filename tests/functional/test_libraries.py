@@ -16,7 +16,7 @@ import os
 
 # Local imports
 # -------------
-from PyInstaller.compat import is_win, is_py3, is_py35, is_py36, is_py37, \
+from PyInstaller.compat import is_win, is_py3, is_py36, is_py37, \
     is_darwin, is_linux, is_64bits
 from PyInstaller.utils.hooks import get_module_attribute, is_module_satisfies
 from PyInstaller.utils.tests import importorskip, xfail, skipif
@@ -825,7 +825,7 @@ def test_pinyin(pyi_builder):
 
 
 @importorskip('uvloop')
-@skipif(is_win or not is_py35, reason='Windows, or py < 3.5 not supported')
+@skipif(is_win or not is_py3, reason='Windows, or py < 3.5 not supported')
 def test_uvloop(pyi_builder):
     pyi_builder.test_source("import uvloop")
 
