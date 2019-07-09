@@ -30,7 +30,6 @@ SYS_PREFIXLEN = len(SYS_PREFIX)
 # In Python 3.3+ tne locking scheme has changed to per-module locks for the most part.
 # Global locking should not be required in Python 3.3+
 if sys.version_info[0:2] < (3, 3):
-    # TODO Implement this for Python 3.2 - 'imp' is not a built-in module anymore.
     import imp
     imp_lock = imp.acquire_lock
     imp_unlock = imp.release_lock
