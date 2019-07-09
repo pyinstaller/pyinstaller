@@ -32,4 +32,7 @@ chardet  # character encoding detector.
 readme   # Check PyPI description is valid reStructuredText
 zestreleaser.towncrier  # integrate towncrier into zest.releaser
 
+sphinx
+sphinx_rtd_theme
+
 -r requirements-tools.txt
