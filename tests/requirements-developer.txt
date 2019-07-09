@@ -24,7 +24,7 @@ twine         # For secure upload of tar.gz to PYPI.
 
 towncrier     # For creating the change-log file.
 
-zest.releaser>=6.13.1 # Makes releasing easier
+zest.releaser>=6.18  # Makes releasing easier
 # Addons for zest.releaser:
 check-manifest  # Checks MANIFEST.in
 pyroma   # Checks if package follows best practices of Python packaging.
