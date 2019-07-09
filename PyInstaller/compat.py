@@ -836,7 +836,7 @@ PY3_BASE_MODULES = {
     'warnings',
 }
 
-if sys.version_info >= (3, 4):
+if is_py3:
     PY3_BASE_MODULES.update({
         '_bootlocale',
         '_collections_abc',
