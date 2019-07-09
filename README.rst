@@ -130,6 +130,22 @@ Then install PyInstaller::
 or simply use it directly from the source (pyinstaller.py).
 
 
+Support
+---------------------
+
+See http://www.pyinstaller.org/support.html for how to find help as well as
+for commercial support.
+
+
+Funding
+---------------------
+
+Maintaining PyInstaller is a huge amount of work.
+PyInstaller development can only continue
+if users and companies provide sustainable funding. See
+http://www.pyinstaller.org/funding.html for how to support PyInstaller.
+
+
 
 .. _PyCrypto: https://www.dlitz.net/software/pycrypto/
 .. _`manual`: https://pyinstaller.readthedocs.io/en/latest/
