@@ -9,5 +9,5 @@
 
 from PyInstaller.utils.hooks import collect_submodules, collect_data_files
 
-hiddenimports = collect_submodules('pysnmp')
-datas = collect_data_files('pysnmp', include_py_files=True)
+hiddenimports = collect_submodules('pysnmp.smi.mibs')
+datas = collect_data_files('pysnmp.smi.mibs', include_py_files=True)
