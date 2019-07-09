@@ -15,7 +15,7 @@ import ctypes.util
 
 import pytest
 
-from PyInstaller.compat import is_darwin, is_py2, is_py3, is_py35, is_win
+from PyInstaller.compat import is_darwin, is_py2, is_py3, is_win
 from PyInstaller.utils.tests import skipif, importorskip, \
     skipif_notwin, skipif_no_compiler, xfail, has_compiler
 
@@ -218,8 +218,8 @@ def test_import_pyqt5_uic_port(script_dir, pyi_builder):
 #--- ctypes ----
 
 @skipif_no_compiler
-@skipif(is_py35 and is_win,
-        reason="MSVCR not directly loadable on py3.5, see https://bugs.python.org/issue23606")
+@skipif(is_py3 and is_win,
+        reason="MSVCR not directly loadable on py >= 3.5, see https://bugs.python.org/issue23606")
 def test_ctypes_CDLL_c(pyi_builder):
     # Make sure we are able to load the MSVCRXX.DLL resp. libc.so we are
     # currently bound. This is some of a no-brainer since the resp. dll/so
