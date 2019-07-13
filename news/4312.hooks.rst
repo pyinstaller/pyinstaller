@@ -1,0 +1,1 @@
+Hook for pywebview now correctly loads required libraries.
