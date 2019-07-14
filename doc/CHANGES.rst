@@ -12,6 +12,197 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+3.5 (2019-07-09)
+----------------
+
+Features
+~~~~~~~~
+
+* (Windows) Force ``--windowed`` option if first script is a ``.pyw`` file.
+  This might still be overwritten in the spec-file. (:issue:`#4001`)
+* Add support for relative paths for icon-files, resource-files and
+  version-resource-files. (:issue:`#3333`, :issue:`#3444`)
+* Add support for the RedHat Software Collections (SCL) Python 3.x.
+  (:issue:`#3536`, :issue:`#3881`)
+* Install platform-specific dependencies only on that platform.
+  (:issue:`#4166`, :issue:`#4173`)
+* New command-line option ``--upx-exclude``, which allows the user to prevent
+  binaries from being compressed with UPX. (:issue:`#3821`)
+
+
+Bugfix
+~~~~~~
+
+* (conda) Fix detection of conda/anaconda platform.
+* (GNU/Linux) Fix Anaconda Python library search. (:issue:`#3885`,
+  :issue:`#4015`)
+* (Windows) Fix UAC in one-file mode by embedding the manifest.
+  (:issue:`#1729`, :issue:`#3746`)
+* (Windows\\Py3.7) Now able to locate pylib when VERSION.dll is listed in
+  python.exe PE Header rather than pythonXY.dll (:issue:`#3942`,
+  :issue:`#3956`)
+* Avoid errors if PyQt5 or PySide2 is referenced by the modulegraph but isn't
+  importable. (:issue:`#3997`)
+* Correctly parse the ``--debug=import``, ``--debug=bootloader``, and
+  ``--debug=noarchive`` command-line options. (:issue:`#3808`)
+* Don't treat PyQt5 and PySide2 files as resources in an OS X windowed build.
+  Doing so causes the resulting frozen app to fail under Qt 5.12.
+  (:issue:`#4237`)
+* Explicitly specify an encoding of UTF-8 when opening *all* text files.
+  (:issue:`#3605`)
+* Fix appending the content of ``datas`` in a `spec` files to ``binaries``
+  instead of the internal ``datas``. (:issue:`#2326`, :issue:`#3694`)
+* Fix crash when changing from ``--onefile`` to ``--onedir`` on consecutive
+  runs. (:issue:`#3662`)
+* Fix discovery of Qt paths on Anaconda. (:issue:`#3740`)
+* Fix encoding error raised when reading a XML manifest file which includes
+  non-ASCII characters. This error inhibited building an executable which
+  has non-ASCII characters in the filename. (:issue:`#3478`)
+* Fix inputs to ``QCoreApplication`` constructor in ``Qt5LibraryInfo``. Now the
+  core application's initialization and finalization in addition to system-wide
+  and application-wide settings is safer. (:issue:`#4121`)
+* Fix installation with pip 19.0. (:issue:`#4003`)
+* Fixes PE-file corruption during version update. (:issue:`#3142`,
+  :issue:`#3572`)
+* In the fake ´site` module set `USER_BASE` to empty string instead of None
+  as Jupyter Notebook requires it to be a 'str'. (:issue:`#3945`)
+* Query PyQt5 to determine if SSL is supported, only adding SSL DLLs if so. In
+  addition, search the path for SSL DLLs, instead of looking in Qt's
+  ``BinariesPath``. (:issue:`#4048`)
+* Require ``pywin32-ctypes`` version 0.2.0, the minimum version which supports
+  Python 3.7. (:issue:`#3763`)
+* Use pkgutil instead of filesystem operations for interacting with the
+  modules. (:issue:`#4181`)
+
+
+Incompatible Changes
+~~~~~~~~~~~~~~~~~~~~
+
+* PyInstaller is no longer tested against Python 3.4, which is end-of-live.
+* Functions ``compat.architecture()``, ``compat.system()`` and
+  ``compat.machine()`` have been replace by variables of the same name. This
+  avoids evaluating the save several times.
+* Require an option for the ``--debug`` argument, rather than assuming a
+  default of ``all``. (:issue:`#3737`)
+
+
+Hooks
+~~~~~
+
+* Added hooks for
+  `aliyunsdkcore <https://pypi.org/project/aliyun-python-sdk-core/>`_ (:issue:`#4228`),
+  astropy (:issue:`#4274`),
+  `BTrees <https://pypi.org/project/BTrees/>`_ (:issue:`#4239`),
+  dateparser.utils.strptime (:issue:`#3790`),
+  `faker <https://faker.readthedocs.io>`_ (:issue:`#3989`, :issue:`#4133`),
+  gooey (:issue:`#3773`),
+  GtkSourceView (:issue:`#3893`),
+  imageio_ffmpeg (:issue:`#4051`),
+  importlib_metadata and importlib_resources (:issue:`#4095`),
+  jsonpath_rw_ext (:issue:`#3841`),
+  jupyterlab (:issue:`#3951`),
+  lz4 (:issue:`#3710`),
+  `magic <https://pypi.org/project/python-magic-bin>`_ (:issue:`#4267`),
+  nanite (:issue:`#3860`),
+  nbconvert (:issue:`#3947`),
+  nbdime (:issue:`#3949`),
+  nbformat (:issue:`#3946`),
+  notebook (:issue:`#3950`),
+  pendulum (:issue:`#3906`),
+  pysoundfile (:issue:`#3844`),
+  python-docx (:issue:`#2574`, :issue:`#3848`),
+  python-wavefile (:issue:`#3785`),
+  pytzdata (:issue:`#3906`),
+  `PyWavelets pywt <https://github.com/PyWavelets/pywt>`_ (:issue:`#4120`),
+  pywebview (:issue:`#3771`),
+  radicale (:issue:`#4109`),
+  rdflib (:issue:`#3708`),
+  resampy (:issue:`#3702`),
+  `sqlalchemy-migrate <https://github.com/openstack/sqlalchemy-migrate>`_ (:issue:`#4250`),
+  `textdistance <https://pypi.org/project/textdistance/>`_ (:issue:`#4239`),
+  tcod (:issue:`#3622`),
+  ttkthemes (:issue:`#4105`), and
+  `umap-learn <https://umap-learn.readthedocs.io/en/latest/>`_ (:issue:`#4165`).
+  
+* Add runtime hook for certifi. (:issue:`#3952`)
+* Updated hook for 'notebook' to look in all Jupyter paths reported by
+  jupyter_core. (:issue:`#4270`)
+* Fixed hook for 'notebook' to only include directories that actually exist.
+  (:issue:`#4270`)
+  
+* Fixed pre-safe-import-module hook for `setuptools.extern.six`. (:issue:`#3806`)
+* Fixed QtWebEngine hook on OS X. (:issue:`#3661`)
+* Fixed the QtWebEngine hook on distributions which don't have a NSS subdir
+  (such as Archlinux) (:issue:`#3758`)
+* Include dynamically-imported backends in the ``eth_hash`` package.
+  (:issue:`#3681`)
+* Install platform-specific dependencies only on that platform.
+  (:issue:`#4168`)
+* Skip packaging PyQt5 QML files if the QML directory doesn't exist.
+  (:issue:`#3864`)
+* Support ECC in PyCryptodome. (:issue:`#4212`, :issue:`#4229`)
+* Updated PySide2 hooks to follow PyQt5 approach. (:issue:`#3655`,
+  :issue:`#3689`, :issue:`#3724`, :issue:`#4040`, :issue:`#4103`,
+  :issue:`#4136`, :issue:`#4175`, :issue:`#4177`, :issue:`#4198`,
+  :issue:`#4206`)
+* Updated the jsonschema hook for v3.0+. (:issue:`#4100`)
+* Updated the Sphinx hook to correctly package Sphinx 1.8.
+
+
+Bootloader
+~~~~~~~~~~
+
+* Update bundled zlib library to 1.2.11 address vulnerabilities.
+  (:issue:`#3742`)
+
+
+Documentation
+~~~~~~~~~~~~~
+
+* Update the text produced by ``--help`` to state that the ``--debug`` argument
+  requires an option. Correctly format this argument in the Sphinx build
+  process. (:issue:`#3737`)
+
+
+Project & Process
+~~~~~~~~~~~~~~~~~
+
+* Remove the PEP-518 "build-system" table from ``pyproject.toml`` to fix
+  installation with pip 19.0.
+
+
+PyInstaller Core
+~~~~~~~~~~~~~~~~
+
+* Add support for folders in `COLLECT` and `BUNDLE`. (:issue:`#3653`)
+* Completely remove `pywin32` dependency, which has erratic releases and
+  the version on pypi may no longer have future releases.
+  Require `pywin32-ctypes` instead which is pure python. (:issue:`#3728`,
+  :issue:`#3729`)
+* modulegraph: Align with upstream version 0.17.
+* Now prints a more descriptive error when running a tool fails (instead of
+  dumping a trace-back). (:issue:`#3772`)
+* Suppress warnings about missing UCRT dependencies on Win 10. (:issue:`#1566`,
+  :issue:`#3736`)
+
+
+Test-suite and Continuous Integration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Fix Appveyor failures of ``test_stderr_encoding()`` and
+  ``test_stdout_encoding()`` on Windows Python 3.7 x64. (:issue:`#4144`)
+* November update of packages used in testing. Prevent pyup from touching
+  ``test/requirements-tools.txt``. (:issue:`#3845`)
+* Rewrite code to avoid a ``RemovedInPytest4Warning: Applying marks directly to
+  parameters is deprecated, please use pytest.param(..., marks=...) instead.``
+* Run Travis tests under Xenial; remove the deprecated ``sudo: false`` tag.
+  (:issue:`#4140`)
+* Update the Markdown test to comply with `Markdown 3.0 changes
+  <https://python-markdown.github.io/change_log/release-3.0/#positional-arguments-deprecated>`_
+  by using correct syntax for `extensions
+  <https://python-markdown.github.io/reference/#extensions>`_.
+
+
 3.4 (2018-09-09)
 ----------------
 

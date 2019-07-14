@@ -1,2 +1,0 @@
-Now prints a more descriptive error when running a tool fails (instead of
-dumping a trace-back).

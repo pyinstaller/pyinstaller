@@ -421,7 +421,7 @@ def _rmtree(path):
         choice = 'y'
     elif sys.stdout.isatty():
         choice = compat.stdin_input('WARNING: The output directory "%s" and ALL ITS '
-                           'CONTENTS will be REMOVED! Continue? (y/n)' % path)
+                           'CONTENTS will be REMOVED! Continue? (y/N)' % path)
     else:
         raise SystemExit('Error: The output directory "%s" is not empty. '
                          'Please remove all its contents or use the '
@@ -574,7 +574,7 @@ def _load_code(modname, filename):
     importer = pkgutil.get_importer(path_item)
     package, _, modname = modname.rpartition('.')
 
-    if sys.version_info >= (3, 3) and hasattr(importer, 'find_loader'):
+    if hasattr(importer, 'find_loader'):
         loader, portions = importer.find_loader(modname)
     else:
         loader = importer.find_module(modname)

@@ -1,1 +1,0 @@
-Fixed QtWebEngine hook on OS X.

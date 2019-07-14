@@ -1,2 +1,0 @@
-(win32) Force ``--windowed`` option if first script is a ``.pyw`` file.
-This might still be overwritten in the spec-file.

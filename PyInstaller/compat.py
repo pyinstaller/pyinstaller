@@ -31,8 +31,8 @@ is_py3 = sys.version_info[0] == 3
 is_64bits = sys.maxsize > 2**32
 # Distinguish specific code for various Python versions.
 is_py27 = sys.version_info >= (2, 7) and sys.version_info < (3, 0)
-# PyInstaller supports only Python 3.4+
 # Variables 'is_pyXY' mean that Python X.Y and up is supported.
+# Keep even unsupported versions here to keep 3rd-party hooks working.
 is_py35 = sys.version_info >= (3, 5)
 is_py36 = sys.version_info >= (3, 6)
 is_py37 = sys.version_info >= (3, 7)
@@ -221,7 +221,7 @@ else:
 
 # List of suffixes for Python C extension modules.
 try:
-    # In Python 3.4+ There is a list
+    # In Python 3.3+ there is a list
     from importlib.machinery import EXTENSION_SUFFIXES, all_suffixes
     ALL_SUFFIXES = all_suffixes()
 except ImportError:
@@ -836,7 +836,7 @@ PY3_BASE_MODULES = {
     'warnings',
 }
 
-if sys.version_info >= (3, 4):
+if is_py3:
     PY3_BASE_MODULES.update({
         '_bootlocale',
         '_collections_abc',
@@ -926,8 +926,8 @@ def check_requirements():
     Fail hard if any requirement is not met.
     """
     # Fail hard if Python does not have minimum required version
-    if sys.version_info < (3, 4) and sys.version_info[:2] != (2, 7):
-        raise SystemExit('PyInstaller requires at least Python 2.7 or 3.4+.')
+    if sys.version_info < (3, 5) and sys.version_info[:2] != (2, 7):
+        raise SystemExit('PyInstaller requires at least Python 2.7 or 3.5+.')
 
 
 if not is_py3:

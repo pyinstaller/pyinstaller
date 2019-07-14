@@ -1,2 +1,0 @@
-In the fake ´site` module set `USER_BASE` to empty string instead of None
-as Jupyter Notebook requires it to be a 'str'.
