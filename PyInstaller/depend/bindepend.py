@@ -81,11 +81,6 @@ def getfullnameof(mod, xtrapath=None):
         npth = os.path.join(p, mod)
         if os.path.exists(npth) and matchDLLArch(npth):
             return npth
-    # second try: lower case filename
-    for p in epath:
-        npth = os.path.join(p, mod.lower())
-        if os.path.exists(npth) and matchDLLArch(npth):
-            return npth
     return ''
 
 
