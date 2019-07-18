@@ -24,4 +24,4 @@ hiddenimports = [
     'pyexcel.plugins.sources.pydata.arraysource',
     'pyexcel.plugins.sources.pydata.records', 'pyexcel.plugins.sources.django',
     'pyexcel.plugins.sources.sqlalchemy', 'pyexcel.plugins.sources.querysets'
-    ]
+]
