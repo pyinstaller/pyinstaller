@@ -13,11 +13,18 @@ https://github.com/bastibe/SoundFile
 """
 
 import os
+import platform
 from PyInstaller.utils.hooks import get_package_paths
 
 # get path of soundfile
 sfp = get_package_paths('soundfile')
 
-# add the binaries
-bins = os.path.join(sfp[0], "_soundfile_data")
-binaries = [(bins, "_soundfile_data")]
+# add the packaged files on OSX and Windows, libsndfile is an external dependency on Linux
+path = None
+if platform.system() == 'Windows':
+    path = os.path.abspath(os.path.join(sfp[0], '_soundfile_data'))
+elif platform.system() == 'Darwin':
+    path = os.path.abspath(os.path.join(sfp[0], '_soundfile_data', 'libsndfile.dylib'))
+
+if path is not None and os.path.exists(path):
+    binaries = [(path, "_soundfile_data")]
