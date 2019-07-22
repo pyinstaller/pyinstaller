@@ -7,8 +7,9 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-# from stackoverflow.com/questions/55848884/google-cloud-firestore-doesnt-get-added-to-pyinstaller-build
+# from stackoverflow.com/questions/55848884/[continue on nextline]
+#google-cloud-firestore-doesnt-get-added-to-pyinstaller-build
 
-from PyInstaller.utils.hooks import copy_metadata, collect_data_files
+from PyInstaller.utils.hooks import collect_data_files
 
 datas = collect_data_files('grpc')
