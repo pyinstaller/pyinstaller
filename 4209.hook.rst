@@ -1,0 +1,7 @@
+add hook-firestore.py
+
+add hook-grpc.py
+
+add hook-firebase_admin.py
+
+The above hooks are need for 'google-cloud-firestore' platform. hook-grpc.py will also retrieve the needed certificate.
