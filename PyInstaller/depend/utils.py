@@ -72,12 +72,16 @@ def create_py3_base_library(libzip_filename, graph):
                         st = os.stat(mod.filename)
                         timestamp = int(st.st_mtime)
                         size = st.st_size & 0xFFFFFFFF
-                        # Name inside a zip archive.
+                        # Name inside the archive. The ZIP format
+                        # specification requires forward slashes as
+                        # directory separator.
                         # TODO use .pyo suffix if optimize flag is enabled.
                         if type(mod) is modulegraph.Package:
-                            new_name = mod.identifier.replace('.', os.sep) + os.sep + '__init__' + '.pyc'
+                            new_name = mod.identifier.replace('.', '/') \
+                                + '/__init__.pyc'
                         else:
-                            new_name = mod.identifier.replace('.', os.sep) + '.pyc'
+                            new_name = mod.identifier.replace('.', '/') \
+                                + '.pyc'
 
                         # Write code to a file.
                         # This code is similar to py_compile.compile().
