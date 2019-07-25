@@ -124,7 +124,8 @@ def compile_py_files(toc, workpath):
         if typ != 'PYMODULE':
             new_toc.append((nm, fnm, typ))
             continue
-        # suggested by Issue 4024 that filename is can be confused with 
+
+        # suggested by Issue 4024 that filename can be confused with
         # Namespace like google-cloud
         # for issue 4209
         if fnm in ('-', None):
@@ -152,12 +153,12 @@ def compile_py_files(toc, workpath):
         # seems inelegant to copy it all then subscript 4 bytes.
         needs_compile = mtime(src_fnm) > mtime(obj_fnm)
         if not needs_compile:
-              # for issue 4209
+            # for issue 4209 to capture the IO on missing filename.
             try:
                 with open(obj_fnm, 'rb') as fh:
                     needs_compile = fh.read()[:4] != BYTECODE_MAGIC
             except IOError:
-                # handdles uncaught exeption seen in issue 4209
+                # handles uncaught exeption seen in issue 4209
                 logger.error("ERROR: cannot open %s", obj_fnm)
                 continue
         if needs_compile:
