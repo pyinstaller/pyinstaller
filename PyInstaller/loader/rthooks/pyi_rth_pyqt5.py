@@ -15,3 +15,6 @@ import sys
 pyqt_path = os.path.join(sys._MEIPASS, 'PyQt5', 'Qt')
 os.environ['QT_PLUGIN_PATH'] = os.path.join(pyqt_path, 'plugins')
 os.environ['QML2_IMPORT_PATH'] = os.path.join(pyqt_path, 'qml')
+# This is required starting in PyQt5 5.12.3. See discussion in #4293.
+if 'PATH' in os.environ:
+    os.environ['PATH'] = sys._MEIPASS + os.pathsep + os.environ['PATH']
