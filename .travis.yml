@@ -146,6 +146,16 @@ before_install:
           python3 -m venv venv || travis_terminate 1;
           source venv/bin/activate;
       fi
+  # Install OpenSSL 1.1. This fixes dynamic linking problems when PyQt5.13 tries
+  # to link with OpenSSL 1.1 -- on Ubuntu 16 (xenial), the older OpenSSL
+  # produces errors like ``qt.network.ssl: QSslSocket: cannot resolve
+  # OPENSSL_init_ssl``.
+  - >
+      if [[ $TRAVIS_OS_NAME == 'linux' ]]; then
+          sudo add-apt-repository ppa:carsten-uppenbrink-net/openssl -y || travis_terminate 1;
+          sudo apt-get update -q || travis_terminate 1;
+          sudo apt install openssl -q || travis_terminate 1;
+      fi
 
 install:
   # Update pip.
