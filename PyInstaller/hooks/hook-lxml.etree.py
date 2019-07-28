@@ -8,4 +8,4 @@
 #-----------------------------------------------------------------------------
 
 
-hiddenimports = ['lxml._elementpath', 'gzip']
+hiddenimports = ['lxml._elementpath', 'gzip', 'contextlib']
