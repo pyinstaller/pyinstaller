@@ -492,7 +492,11 @@ def add_qt5_dependencies(hook_file):
         # On Windows, find this library; other platforms already provide the
         # full path.
         if is_win:
-            imp = getfullnameof(imp)
+            imp = getfullnameof(imp,
+                # First, look for Qt binaries in the local Qt install.
+                pyqt5_library_info.location['BinariesPath'] if is_PyQt5 else
+                pyside2_library_info.location['BinariesPath']
+            )
 
         # Strip off the extension and ``lib`` prefix (Linux/Mac) to give the raw
         # name. Lowercase (since Windows always normalized names to lowercase).
