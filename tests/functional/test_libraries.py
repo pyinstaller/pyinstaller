@@ -22,13 +22,14 @@ import py
 # -------------
 from PyInstaller.compat import is_win, is_py3, \
     is_darwin, is_linux, is_64bits, getenv, setenv
-from PyInstaller.utils.hooks import get_module_attribute, is_module_satisfies
+from PyInstaller.utils.hooks import is_module_satisfies
 from PyInstaller.utils.tests import importorskip, xfail, skipif
 
 # :todo: find a way to get this from `conftest` or such
 # Directory with testing modules used in some tests.
 _MODULES_DIR = py.path.local(os.path.abspath(__file__)).dirpath('modules')
 _DATA_DIR = py.path.local(os.path.abspath(__file__)).dirpath('data')
+
 
 @importorskip('boto')
 @pytest.mark.skipif(is_py3, reason='boto does not fully support Python 3')
@@ -233,13 +234,6 @@ def test_PyQt4_QtWebKit(pyi_builder):
 def test_PyQt4_uic(tmpdir, pyi_builder, data_dir):
     # Note that including the data_dir fixture copies files needed by this test.
     pyi_builder.test_script('pyi_lib_PyQt4-uic.py')
-
-
-@pytest.mark.skipif(is_module_satisfies('Qt >= 5.6', get_module_attribute('PyQt5.QtCore', 'QT_VERSION_STR')),
-                    reason='QtWebKit is depreciated in Qt 5.6+')
-@importorskip('PyQt5')
-def test_PyQt5_QtWebKit(pyi_builder):
-    pyi_builder.test_script('pyi_lib_PyQt5-QtWebKit.py')
 
 
 PYQT5_NEED_OPENGL = pytest.mark.skipif(is_module_satisfies('PyQt5 <= 5.10.1'),
