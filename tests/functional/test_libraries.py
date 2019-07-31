@@ -10,14 +10,18 @@
 
 # Library imports
 # ---------------
-import py
-import pytest
 import os
+from functools import wraps
+
+# Third-party imports
+# -------------------
+import pytest
+import py
 
 # Local imports
 # -------------
-from PyInstaller.compat import is_win, is_py3, is_py36, is_py37, \
-    is_darwin, is_linux, is_64bits
+from PyInstaller.compat import is_win, is_py3, \
+    is_darwin, is_linux, is_64bits, getenv, setenv
 from PyInstaller.utils.hooks import get_module_attribute, is_module_satisfies
 from PyInstaller.utils.tests import importorskip, xfail, skipif
 
@@ -247,6 +251,32 @@ PYQT5_NEED_OPENGL = pytest.mark.skipif(is_module_satisfies('PyQt5 <= 5.10.1'),
 USE_WINDOWED_KWARG = dict(pyi_args=['--windowed']) if is_darwin else {}
 
 
+# Define a decorator to remove paths with ``path_to_clean`` in them during a test so that PyQt5 tests pass. Only remove them in Windows, since Mac/Linux library don't rely on the path to find libraries.
+def path_clean(path_to_clean):
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            if is_win:
+                old_path = getenv('PATH', '')
+                new_path = os.pathsep.join(
+                    [x for x in os.environ['PATH'].split(os.pathsep)
+                     if path_to_clean not in x]
+                )
+                setenv('PATH', new_path)
+
+            try:
+                return f(*args, **kwargs)
+            finally:
+                if is_win:
+                    setenv('PATH', old_path)
+        return wrapper
+    return decorator
+
+
+pyqt5_path_clean = path_clean('PySide2')
+
+
+@pyqt5_path_clean
 @PYQT5_NEED_OPENGL
 @importorskip('PyQt5')
 def test_PyQt5_uic(tmpdir, pyi_builder, data_dir):
@@ -276,6 +306,7 @@ def get_QWebEngine_html(qt_flavor, data_dir):
                    repr(data_dir.join('test_web_page.html').strpath))
 
 
+@pyqt5_path_clean
 @pytest.mark.skipif(is_win and not is_64bits, reason="Qt 5.11+ for Windows "
     "only provides pre-compiled Qt WebEngine binaries for 64-bit processors.")
 @pytest.mark.skipif(is_module_satisfies('PyQt5 == 5.11.3') and is_darwin,
@@ -310,6 +341,7 @@ def test_PyQt5_QWebEngine(pyi_builder, data_dir):
                             **USE_WINDOWED_KWARG)
 
 
+@pyqt5_path_clean
 @PYQT5_NEED_OPENGL
 @importorskip('PyQt5')
 def test_PyQt5_QtQml(pyi_builder):
@@ -349,6 +381,7 @@ def test_PyQt5_QtQml(pyi_builder):
         """, **USE_WINDOWED_KWARG)
 
 
+@pyqt5_path_clean
 @importorskip('PyQt5')
 def test_PyQt5_SSL_support(pyi_builder):
     pyi_builder.test_source(
@@ -367,6 +400,7 @@ def test_PyQt5_SSL_support(pyi_builder):
 # The alternative of using a newer Appveyor OS `fails <https://github.com/pyinstaller/pyinstaller/pull/3563>`_.
 # Therefore, skip this test on Appveyor by testing for one of its `environment
 # variables <https://www.appveyor.com/docs/environment-variables/>`_.
+@pyqt5_path_clean
 @skipif(os.environ.get('APPVEYOR') == 'True',
         reason='The Appveyor OS is incompatible with PyQt.Qt.')
 @importorskip('PyQt5')

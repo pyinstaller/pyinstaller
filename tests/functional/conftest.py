@@ -54,7 +54,7 @@ from PyInstaller.compat import is_darwin, is_win, is_py2, safe_repr, \
     architecture, is_linux, suppress, text_read_mode
 from PyInstaller.depend.analysis import initialize_modgraph
 from PyInstaller.utils.win32 import winutils
-from PyInstaller.utils.hooks.qt import pyqt5_library_info
+from PyInstaller.utils.hooks.qt import pyqt5_library_info, pyside2_library_info
 
 # Monkeypatch the psutil subprocess on Python 2
 if is_py2:
@@ -521,6 +521,7 @@ def pyi_builder(tmpdir, monkeypatch, request, pyi_modgraph):
     # Clear any PyQt5 state.
     try:
         del pyqt5_library_info.version
+        del pyside2_library_info.version
     except AttributeError:
         pass
 
