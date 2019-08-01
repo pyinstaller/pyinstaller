@@ -11,7 +11,6 @@ import os.path
 from PyInstaller.utils.hooks import eval_statement
 from PyInstaller.utils.hooks.qt import add_qt5_dependencies, pyqt5_library_info
 from PyInstaller.compat import is_win
-from PyInstaller.depend.bindepend import getfullnameof
 
 # Ensure PyQt5 is importable before adding info depending on it.
 if pyqt5_library_info.version:
@@ -22,11 +21,10 @@ if pyqt5_library_info.version:
         from PyQt5.QtNetwork import QSslSocket
         print(QSslSocket.supportsSsl())""")):
 
-        rel_data_path = ['PyQt5', 'Qt', 'bin']
-        binaries += [
-            # Per http://doc.qt.io/qt-5/ssl.html#enabling-and-disabling-ssl-support,
-            # the SSL libraries are dynamically loaded, implying they exist in
-            # the system path. Include these.
-            (getfullnameof('libeay32.dll'), os.path.join(*rel_data_path)),
-            (getfullnameof('ssleay32.dll'), os.path.join(*rel_data_path)),
-        ]
+        binaries = []
+        for dll in ('libeay32.dll', 'ssleay32.dll', 'libssl-1_1-x64.dll',
+                    'libcrypto-1_1-x64.dllx'):
+            dll_path = os.path.join(pyqt5_library_info.location['BinariesPath'],
+                                    dll)
+            if os.path.exists(dll_path):
+                binaries.append((dll_path, '.'))
