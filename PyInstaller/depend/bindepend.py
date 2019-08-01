@@ -926,8 +926,18 @@ def get_python_library_path():
         if python_libname:
             return python_libname
 
-    # Python library NOT found. Return just None.
-    return None
+    # Python library NOT found. Provide helpful feedback.
+    msg = """Python library not found: %s
+    This would mean your Python installation doesn't come with proper library files.
+    This usually happens by missing development package, or unsuitable build parameters of Python installation.
+
+    * On Debian/Ubuntu, you would need to install Python development packages
+      * apt-get install python3-dev
+      * apt-get install python-dev
+    * If you're building Python by yourself, please rebuild your Python with `--enable-shared` (or, `--enable-framework` on Darwin)
+    """ % (", ".join(PYDYLIB_NAMES),)
+    raise IOError(msg)
+
 
 def findSystemLibrary(name):
     '''
