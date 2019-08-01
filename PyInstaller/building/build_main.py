@@ -647,7 +647,6 @@ class Analysis(Target):
             self.graph.graphreport(unicode_writer(fh))
             logger.info("Graph drawing written to %s", CONF['dot-file'])
 
-
     def _check_python_library(self, binaries):
         """
         Verify presence of the Python dynamic library in the binary dependencies.
