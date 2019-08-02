@@ -39,7 +39,8 @@ is_py37 = sys.version_info >= (3, 7)
 
 is_win = sys.platform.startswith('win')
 is_win_10 = is_win and (platform.win32_ver()[0] == '10')
-is_cygwin = sys.platform == 'cygwin'
+is_cygwin = sys.platform == 'cygwin' 
+is_msys = sys.platform == 'msys'  # msys/msys2 report same string
 is_darwin = sys.platform == 'darwin'  # Mac OS X
 
 # Unix platforms
@@ -58,7 +59,7 @@ is_unix = is_linux or is_solar or is_aix or is_freebsd or is_hpux
 
 # On different platforms is different file for dynamic python library.
 _pyver = sys.version_info[:2]
-if is_win or is_cygwin:
+if is_win or is_cygwin or is_msys:
     PYDYLIB_NAMES = {'python%d%d.dll' % _pyver,
                      'libpython%d%d.dll' % _pyver,
                      'libpython%d%dm.dll' % _pyver,
