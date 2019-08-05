@@ -527,7 +527,8 @@ class EXE(Target):
 
 
         if is_win and (self.icon or self.versrsrc or self.resources):
-            fd, tmpnm = tempfile.mkstemp()
+            fd, tmpnm = tempfile.mkstemp(prefix=os.path.basename(exe) + ".",
+                                         dir=CONF['workpath'])
             # need to close the file, otherwise copying resources will fail
             # with "the file [...] is being used by another process"
             os.close(fd)
