@@ -527,7 +527,10 @@ class EXE(Target):
 
 
         if is_win and (self.icon or self.versrsrc or self.resources):
-            tmpnm = tempfile.mktemp()
+            fd, tmpnm = tempfile.mkstemp()
+            # need to close the file, otherwise copying resources will fail
+            # with "the file [...] is being used by another process"
+            os.close(fd)
             self._copyfile(exe, tmpnm)
             os.chmod(tmpnm, 0o755)
             if self.icon:
