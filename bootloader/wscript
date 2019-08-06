@@ -247,12 +247,14 @@ def detect_arch(ctx):
     if ctx.options.target_arch:
         arch = ctx.options.target_arch
         ctx.msg('Platform', '%s-%s manually chosen' % (system, arch))
+        ctx.env.ARCH_FLAGS_REQUIRED = True
     else:
         # PyInstaller uses the result of platform.architecture() to determine
         # the bits and this is testing the pointer size (via module struct).
         # We do the same here.
         arch = "%sbit" % (8 * check_sizeof_pointer(ctx))
         ctx.msg('Platform', '%s-%s detected based on compiler' % (system, arch))
+        ctx.env.ARCH_FLAGS_REQUIRED = False
 
     # Pass return values as environment variables.
     ctx.env.PYI_ARCH = arch  # '32bit' or '64bit'
@@ -265,11 +267,11 @@ def set_arch_flags(ctx):
     Set properly architecture flag (32 or 64 bit) cflags for compiler
     and CPU target for compiler.
     """
-    def check_arch_cflag(cc32flag, cc64flag):
-        ccflag = cc32flag if ctx.env.PYI_ARCH == '32bit' else cc64flag
-        ctx.check_cc(cflags=ccflag)
-        ctx.env.append_value('CFLAGS', ccflag)
-        ctx.env.append_value('LINKFLAGS', ccflag)
+    def check_arch_cflag(cflag32, cflag64):
+        cflag = cflag32 if ctx.env.PYI_ARCH == '32bit' else cflag64
+        if ctx.check_cc(cflags=cflag, mandatory=ctx.env.ARCH_FLAGS_REQUIRED):
+            ctx.env.append_value('CFLAGS', cflag)
+            ctx.env.append_value('LINKFLAGS', cflag)
 
     if ctx.env.DEST_OS == 'win32' and ctx.env.CC_NAME == 'msvc':
         # Set msvc linkflags based on architecture.
@@ -336,9 +338,10 @@ def set_arch_flags(ctx):
         # or vice versa or with manually choosen --target-arch.
         # Option -m32/-m64 has to be passed to cflags and linkflages.
         elif ctx.env.PYI_ARCH == '32bit':
-            ctx.check_cc(cflags='-m32')
-            ctx.env.append_value('CFLAGS', '-m32')
-            ctx.env.append_value('LINKFLAGS', '-m32')
+            if ctx.check_cc(cflags='-m32',
+                            mandatory=ctx.env.ARCH_FLAGS_REQUIRED):
+                ctx.env.append_value('CFLAGS', '-m32')
+                ctx.env.append_value('LINKFLAGS', '-m32')
             # Set LARGE_ADDRESS_AWARE_FLAG to True.
             # On Windows this allows 32bit apps to use 4GB of memory and
             # not only 2GB.
@@ -347,9 +350,10 @@ def set_arch_flags(ctx):
             if ctx.env.DEST_OS == 'win32':
                 ctx.env.append_value('LINKFLAGS', '-Wl,--large-address-aware')
         elif ctx.env.PYI_ARCH == '64bit':
-            ctx.check_cc(cflags='-m64')
-            ctx.env.append_value('CFLAGS', '-m64')
-            ctx.env.append_value('LINKFLAGS', '-m64')
+            if ctx.check_cc(cflags='-m64',
+                            mandatory=ctx.env.ARCH_FLAGS_REQUIRED):
+                ctx.env.append_value('CFLAGS', '-m64')
+                ctx.env.append_value('LINKFLAGS', '-m64')
         else:
             ctx.fatal('Unrecognized target architecture: %s' % ctx.env.PYI_ARCH)
 
