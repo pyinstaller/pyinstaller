@@ -265,6 +265,12 @@ def set_arch_flags(ctx):
     Set properly architecture flag (32 or 64 bit) cflags for compiler
     and CPU target for compiler.
     """
+    def check_arch_cflag(cc32flag, cc64flag):
+        ccflag = cc32flag if ctx.env.PYI_ARCH == '32bit' else cc64flag
+        ctx.check_cc(cflags=ccflag)
+        ctx.env.append_value('CFLAGS', ccflag)
+        ctx.env.append_value('LINKFLAGS', ccflag)
+
     if ctx.env.DEST_OS == 'win32' and ctx.env.CC_NAME == 'msvc':
         # Set msvc linkflags based on architecture.
         if ctx.env.PYI_ARCH == '32bit':
@@ -297,56 +303,21 @@ def set_arch_flags(ctx):
     # AIX specific flags
     elif ctx.env.DEST_OS == 'aix':
         if ctx.env.CC_NAME == 'gcc':
-            if ctx.env.PYI_ARCH == '32bit':
-                ctx.check_cc(cflags='-maix32', msg='Checking for flags -maix32')
-                ctx.env.append_value('CFLAGS', '-maix32')
-                ctx.env.append_value('LINKFLAGS', '-maix32')
-            else:
-                ctx.check_cc(cflags='-maix64', msg='Checking for flags -maix64')
-                ctx.env.append_value('CFLAGS', '-maix64')
-                ctx.env.append_value('LINKFLAGS', '-maix64')
+            check_arch_cflag('-maix32', '-maix64')
         else:
             # We are using AIX/xlc compiler
-            if ctx.env.PYI_ARCH == '32bit':
-                ctx.check_cc(cflags='-q32', msg='Checking for flags -q32')
-                ctx.env.append_value('CFLAGS', '-q32')
-                ctx.env.append_value('LINKFLAGS', '-q32')
-            else:
-                ctx.check_cc(cflags='-q64', msg='Checking for flags -q64')
-                ctx.env.append_value('CFLAGS', '-q64')
-                ctx.env.append_value('LINKFLAGS', '-q64')
+            check_arch_cflag('-q32', '-q64')
 
     elif ctx.env.DEST_OS == 'sunos':
         if ctx.env.CC_NAME == 'gcc':
-            if ctx.env.PYI_ARCH == '32bit':
-                ctx.check_cc(cflags='-m32', msg='Checking for flags -m32')
-                ctx.env.append_value('CFLAGS', '-m32')
-                ctx.env.append_value('LINKFLAGS', '-m32')
-            else:
-                ctx.check_cc(cflags='-m64', msg='Checking for flags -m64')
-                ctx.env.append_value('CFLAGS', '-m64')
-                ctx.env.append_value('LINKFLAGS', '-m64')
+            check_arch_cflag('-m32', '-m64')
         else:
             # We use SUNWpro C compiler
-            if ctx.env.PYI_ARCH == '32bit':
-                ctx.check_cc(cflags='-xarch=generic', msg='Checking for flags -xarch=generic')
-                ctx.env.append_value('CFLAGS', '-xarch=generic')
-                ctx.env.append_value('LINKFLAGS', '-xarch=generic')
-            else:
-                ctx.check_cc(cflags='-xarch=v9', msg='Checking for flags -xarch=v9')
-                ctx.env.append_value('CFLAGS', '-xarch=v9')
-                ctx.env.append_value('LINKFLAGS', '-xarch=v9')
+            check_arch_cflag('-xarch=generic', '-xarch=v9')
 
     elif ctx.env.DEST_OS == 'hpux':
         if ctx.env.CC_NAME == 'gcc':
-            if ctx.env.PYI_ARCH == '32bit':
-                ctx.check_cc(cflags='-milp32', msg='Checking for flags -milp32')
-                ctx.env.append_value('CFLAGS', '-milp32')
-                ctx.env.append_value('LINKFLAGS', '-milp32')
-            else:
-                ctx.check_cc(cflags='-mlp64', msg='Checking for flags -mlp64')
-                ctx.env.append_value('CFLAGS', '-mlp64')
-                ctx.env.append_value('LINKFLAGS', '-mlp64')
+            check_arch_cflag('-milp32', '-mlp64')
         else:
             # We use xlc compiler
             pass
