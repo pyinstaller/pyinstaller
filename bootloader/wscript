@@ -336,7 +336,7 @@ def set_arch_flags(ctx):
         # or vice versa or with manually choosen --target-arch.
         # Option -m32/-m64 has to be passed to cflags and linkflages.
         elif ctx.env.PYI_ARCH == '32bit':
-            ctx.check_cc(cflags='-m32', msg='Checking for flags -m32')
+            ctx.check_cc(cflags='-m32')
             ctx.env.append_value('CFLAGS', '-m32')
             ctx.env.append_value('LINKFLAGS', '-m32')
             # Set LARGE_ADDRESS_AWARE_FLAG to True.
@@ -347,7 +347,7 @@ def set_arch_flags(ctx):
             if ctx.env.DEST_OS == 'win32':
                 ctx.env.append_value('LINKFLAGS', '-Wl,--large-address-aware')
         elif ctx.env.PYI_ARCH == '64bit':
-            ctx.check_cc(cflags='-m64', msg='Checking for flags -m64')
+            ctx.check_cc(cflags='-m64')
             ctx.env.append_value('CFLAGS', '-m64')
             ctx.env.append_value('LINKFLAGS', '-m64')
         else:
@@ -630,8 +630,7 @@ def configure(ctx):
     # On linux link only with needed libraries.
     # -Wl,--as-needed is on some platforms detected during configure but
     # fails during build. (Mac OS X, Solaris, AIX)
-    if ctx.env.DEST_OS == 'linux' and ctx.check_cc(cflags='-Wl,--as-needed',
-                                 msg='Checking for flags -Wl,--as-needed'):
+    if ctx.env.DEST_OS == 'linux' and ctx.check_cc(cflags='-Wl,--as-needed'):
         ctx.env.append_value('LINKFLAGS', '-Wl,--as-needed')
 
     def windowed(name, baseenv):
