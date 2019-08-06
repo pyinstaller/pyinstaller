@@ -330,10 +330,6 @@ def set_arch_flags(ctx):
             # The gcc has no '-m64' option under sw64 machine, but the
             # __x86_64__ macro needs to be defined
             conf.env.append_value('CCDEFINES', '__x86_64__')
-        elif ctx.env.DEST_OS == 'linux' and machine() in ('arm', 'aarch'):
-            # It was reported that flags '-m32' and '-m64' do not work with
-            # gcc on 32-bit arm Linux and 64-bit arm/aarch Linux.
-            pass
         # This ensures proper compilation with 64bit gcc and 32bit Python
         # or vice versa or with manually choosen --target-arch.
         # Option -m32/-m64 has to be passed to cflags and linkflages.
