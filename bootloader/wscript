@@ -328,18 +328,17 @@ def set_arch_flags(ctx):
             # The gcc has no '-m64' option under sw64 machine, but the
             # __x86_64__ macro needs to be defined
             conf.env.append_value('CCDEFINES', '__x86_64__')
+        elif ctx.env.DEST_OS == 'linux' and machine() in ('arm', 'aarch'):
+            # It was reported that flags '-m32' and '-m64' do not work with
+            # gcc on 32-bit arm Linux and 64-bit arm/aarch Linux.
+            pass
         # This ensures proper compilation with 64bit gcc and 32bit Python
         # or vice versa or with manually choosen --target-arch.
         # Option -m32/-m64 has to be passed to cflags and linkflages.
         elif ctx.env.PYI_ARCH == '32bit':
-            if machine() in ('arm', 'aarch') and ctx.env.DEST_OS == 'linux':
-                # It was reported that flag '-m32' does not work with gcc
-                # on 32-bit arm Linux. So skip the -m32 flag.
-                pass
-            else:
-                ctx.check_cc(cflags='-m32', msg='Checking for flags -m32')
-                ctx.env.append_value('CFLAGS', '-m32')
-                ctx.env.append_value('LINKFLAGS', '-m32')
+            ctx.check_cc(cflags='-m32', msg='Checking for flags -m32')
+            ctx.env.append_value('CFLAGS', '-m32')
+            ctx.env.append_value('LINKFLAGS', '-m32')
             # Set LARGE_ADDRESS_AWARE_FLAG to True.
             # On Windows this allows 32bit apps to use 4GB of memory and
             # not only 2GB.
@@ -348,13 +347,9 @@ def set_arch_flags(ctx):
             if ctx.env.DEST_OS == 'win32':
                 ctx.env.append_value('LINKFLAGS', '-Wl,--large-address-aware')
         elif ctx.env.PYI_ARCH == '64bit':
-            if machine() in ('arm', 'aarch') and ctx.env.DEST_OS == 'linux':
-                # flag '-m64' does not work with gcc on 64-bit arm/aarch Linux.
-                pass
-            else:
-                ctx.check_cc(cflags='-m64', msg='Checking for flags -m64')
-                ctx.env.append_value('CFLAGS', '-m64')
-                ctx.env.append_value('LINKFLAGS', '-m64')
+            ctx.check_cc(cflags='-m64', msg='Checking for flags -m64')
+            ctx.env.append_value('CFLAGS', '-m64')
+            ctx.env.append_value('LINKFLAGS', '-m64')
         else:
             ctx.fatal('Unrecognized target architecture: %s' % ctx.env.PYI_ARCH)
 
