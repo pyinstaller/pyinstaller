@@ -1,0 +1,1 @@
+Exclude imports for pkg_resources to fix bundling issue.
