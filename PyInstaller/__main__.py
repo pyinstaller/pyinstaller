@@ -21,7 +21,7 @@ from . import __version__
 from . import log as logging
 
 # note: don't import anything else until this function is run!
-from .compat import check_requirements
+from .compat import check_requirements, is_conda
 
 logger = logging.getLogger(__name__)
 
@@ -99,7 +99,8 @@ def run(pyi_args=None, pyi_config=None):
         # This helps identify PyInstaller, Python and platform version
         #  when users report issues.
         logger.info('PyInstaller: %s' % __version__)
-        logger.info('Python: %s' % platform.python_version())
+        logger.info('Python: %s%s', platform.python_version(),
+                    " (conda)" if is_conda else "")
         logger.info('Platform: %s' % platform.platform())
 
         # Skip creating .spec when .spec file is supplied
