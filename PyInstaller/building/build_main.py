@@ -65,7 +65,7 @@ WARNFILE_HEADER = """\
 
 This file lists modules PyInstaller was not able to find. This does not
 necessarily mean this module is required for running you program. Python and
-Python 3rd-party packages include a lot of conditional or optional module. For
+Python 3rd-party packages include a lot of conditional or optional modules. For
 example the module 'ntpath' only exists on Windows, whereas the module
 'posixpath' only exists on Posix systems.
 
