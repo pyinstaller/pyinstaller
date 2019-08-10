@@ -43,7 +43,7 @@ from .. import HOMEPATH, configure
 from .. import log as logging
 from ..log import INFO, DEBUG, TRACE
 from ..building.datastruct import TOC
-from ..building.imphook import HooksCache
+from ..building.imphook import ModuleHookCache
 from ..building.imphookapi import PreSafeImportModuleAPI, PreFindModulePathAPI
 from ..compat import importlib_load_source, is_py2, PY3_BASE_MODULES,\
         PURE_PYTHON_MODULE_TYPES, BINARY_MODULE_TYPES, VALID_MODULE_TYPES, \
@@ -71,11 +71,11 @@ class PyiModuleGraph(ModuleGraph):
 
     Attributes
     ----------
-    _hooks_pre_find_module_path : HooksCache
+    _hooks_pre_find_module_path : ModuleHookCache
         Dictionary mapping the fully-qualified names of all modules with
         pre-find module path hooks to the absolute paths of such hooks. See the
         the `_find_module_path()` method for details.
-    _hooks_pre_safe_import_module : HooksCache
+    _hooks_pre_safe_import_module : ModuleHookCache
         Dictionary mapping the fully-qualified names of all modules with
         pre-safe import module hooks to the absolute paths of such hooks. See
         the `_safe_import_module()` method for details.
@@ -175,17 +175,16 @@ class PyiModuleGraph(ModuleGraph):
 
         # Cache of such hooks.
         # logger.debug("Caching system %s hook dir %r" % (hook_type, system_hook_dir))
-        hooks_cache = HooksCache(system_hook_dir)
+        hook_dirs = [system_hook_dir]
         for user_hook_dir in self._user_hook_dirs:
             # Absolute path of the user-defined subdirectory of this hook type.
+            # If this directory exists, add it to the list to be cached.
             user_hook_type_dir = os.path.join(user_hook_dir, hook_type)
-
-            # If this directory exists, cache all hooks in this directory.
             if os.path.isdir(user_hook_type_dir):
                 # logger.debug("Caching user %s hook dir %r" % (hook_type, hooks_user_dir))
-                hooks_cache.add_custom_paths([user_hook_type_dir])
+                hook_dirs.append(user_hook_type_dir)
 
-        return hooks_cache
+        return ModuleHookCache(self, hook_dirs)
 
     def run_script(self, pathname, caller=None):
         """
@@ -240,11 +239,12 @@ class PyiModuleGraph(ModuleGraph):
         # If this module has pre-safe import module hooks, run these first.
         if module_name in self._hooks_pre_safe_import_module:
             # For the absolute path of each such hook...
-            for hook_file in self._hooks_pre_safe_import_module[module_name]:
+            for hook in self._hooks_pre_safe_import_module[module_name]:
                 # Dynamically import this hook as a fabricated module.
                 logger.info('Processing pre-safe import module hook   %s', module_name)
                 hook_module_name = 'PyInstaller_hooks_pre_safe_import_module_' + module_name.replace('.', '_')
-                hook_module = importlib_load_source(hook_module_name, hook_file)
+                hook_module = importlib_load_source(hook_module_name,
+                                                    hook.hook_filename)
 
                 # Object communicating changes made by this hook back to us.
                 hook_api = PreSafeImportModuleAPI(
@@ -286,11 +286,12 @@ class PyiModuleGraph(ModuleGraph):
         # If this module has pre-find module path hooks, run these first.
         if fullname in self._hooks_pre_find_module_path:
             # For the absolute path of each such hook...
-            for hook_file in self._hooks_pre_find_module_path[fullname]:
+            for hook in self._hooks_pre_find_module_path[fullname]:
                 # Dynamically import this hook as a fabricated module.
                 logger.info('Processing pre-find module path hook   %s', fullname)
                 hook_fullname = 'PyInstaller_hooks_pre_find_module_path_' + fullname.replace('.', '_')
-                hook_module = importlib_load_source(hook_fullname, hook_file)
+                hook_module = importlib_load_source(hook_fullname,
+                                                    hook.hook_filename)
 
                 # Object communicating changes made by this hook back to us.
                 hook_api = PreFindModulePathAPI(
