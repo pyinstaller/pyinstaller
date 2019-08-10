@@ -17,16 +17,14 @@ import os.path
 
 from .. import log as logging
 from ..compat import (
-    expand_path, importlib_load_source, FileNotFoundError, UserDict,)
+    expand_path, importlib_load_source, FileNotFoundError)
 from .imphookapi import PostGraphAPI
 from .utils import format_binaries_and_datas
 
 logger = logging.getLogger(__name__)
 
 
-# Note that the "UserDict" superclass is old-style under Python 2.7! Avoid
-# calling the super() method for this subclass.
-class ModuleHookCache(UserDict):
+class ModuleHookCache(dict):
     """
     Cache of lazily loadable hook script objects.
 
@@ -79,8 +77,7 @@ class ModuleHookCache(UserDict):
             `hook-{module_name}.py`, where `{module_name}` is the module hooked
             by that script) to be cached.
         """
-
-        UserDict.__init__(self)
+        super(ModuleHookCache, self).__init__()
 
         # To avoid circular references and hence increased memory consumption,
         # a weak rather than strong reference is stored to the passed graph.
