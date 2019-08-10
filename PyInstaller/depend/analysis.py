@@ -622,7 +622,7 @@ def get_bootstrap_modules():
     # Import 'struct' modules to get real paths to module file names.
     mod_struct = __import__('struct')
     # Basic modules necessary for the bootstrap process.
-    loader_mods = []
+    loader_mods = TOC()
     loaderpath = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
     # On some platforms (Windows, Debian/Ubuntu) '_struct' and zlib modules are
     # built-in modules (linked statically) and thus does not have attribute __file__.
@@ -640,6 +640,4 @@ def get_bootstrap_modules():
         ('pyimod03_importers',  os.path.join(loaderpath, 'pyimod03_importers.pyc'), 'PYMODULE'),
         ('pyiboot01_bootstrap', os.path.join(loaderpath, 'pyiboot01_bootstrap.py'), 'PYSOURCE'),
     ]
-    # TODO Why is here the call to TOC()?
-    toc = TOC(loader_mods)
-    return toc
+    return loader_mods
