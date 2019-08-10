@@ -35,7 +35,7 @@ from ..depend import bindepend
 from ..depend.analysis import initialize_modgraph
 from .api import PYZ, EXE, COLLECT, MERGE
 from .datastruct import TOC, Target, Tree, _check_guts_eq
-from .imphook import AdditionalFilesCache, ModuleHookCache
+from .imphook import AdditionalFilesCache
 from .osx import BUNDLE
 from .toc_conversion import DependencyProcessor
 from .utils import _check_guts_toc_mtime, format_binaries_and_datas
@@ -406,25 +406,6 @@ class Analysis(Target):
         if is_win:
             depmanifest.writeprettyxml()
 
-
-        #FIXME: For simplicity, move the following hook caching into a new
-        #PyiModuleGraph.cache_module_hooks() method and have the current
-        #"PyiModuleGraph" instance own the current "ModuleHookCache" instance.
-
-        ### Hook cache.
-        logger.info('Caching module hooks...')
-
-        # List of all directories containing hook scripts. Default hooks are
-        # listed before and hence take precedence over custom hooks.
-        module_hook_dirs = [get_importhooks_dir()]
-        if self.hookspath:
-            module_hook_dirs.extend(self.hookspath)
-
-        # Hook cache prepopulated with these lazy loadable hook scripts.
-        module_hook_cache = ModuleHookCache(
-            module_graph=self.graph, hook_dirs=module_hook_dirs)
-
-
         ### Module graph.
         #
         # Construct the module graph of import relationships between modules
@@ -480,7 +461,7 @@ class Analysis(Target):
             hooked_module_names = set()
 
             # For each remaining hookable module and corresponding hooks...
-            for module_name, module_hooks in module_hook_cache.items():
+            for module_name, module_hooks in self.graph._hooks.items():
                 # Graph node for this module if imported or "None" otherwise.
                 module_node = self.graph.findNode(
                     module_name, create_nspkg=False)
@@ -513,7 +494,7 @@ class Analysis(Target):
 
             # Prevent all post-graph hooks run above from being run again by the
             # next iteration.
-            module_hook_cache.remove_modules(*hooked_module_names)
+            self.graph._hooks.remove_modules(*hooked_module_names)
 
             # If no post-graph hooks were run, terminate iteration.
             if not hooked_module_names:

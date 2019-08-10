@@ -71,6 +71,10 @@ class PyiModuleGraph(ModuleGraph):
 
     Attributes
     ----------
+    _hooks : ModuleHookCache
+        Dictionary mapping the fully-qualified names of all modules with
+        normal (post-graph) hooks to the absolute paths of such hooks. See the
+        the `_find_module_path()` method for details.
     _hooks_pre_find_module_path : ModuleHookCache
         Dictionary mapping the fully-qualified names of all modules with
         pre-find module path hooks to the absolute paths of such hooks. See the
@@ -100,7 +104,8 @@ class PyiModuleGraph(ModuleGraph):
             user_hook_dirs if user_hook_dirs is not None else []
 
         # Hook-specific lookup tables, defined after defining "_user_hook_dirs".
-        logger.info('Initializing module graph hooks...')
+        logger.info('Caching module graph hooks...')
+        self._hooks = self._cache_hooks("")
         self._hooks_pre_safe_import_module = self._cache_hooks('pre_safe_import_module')
         self._hooks_pre_find_module_path = self._cache_hooks('pre_find_module_path')
         self._available_rthooks = load_py_data_struct(
