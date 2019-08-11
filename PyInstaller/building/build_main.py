@@ -35,7 +35,6 @@ from ..depend import bindepend
 from ..depend.analysis import initialize_modgraph
 from .api import PYZ, EXE, COLLECT, MERGE
 from .datastruct import TOC, Target, Tree, _check_guts_eq
-from .imphook import AdditionalFilesCache
 from .osx import BUNDLE
 from .toc_conversion import DependencyProcessor
 from .utils import _check_guts_toc_mtime, format_binaries_and_datas
@@ -435,10 +434,6 @@ class Analysis(Target):
         # 3. If no hook() functions were called, this loop is terminated.
         logger.info('Loading module hooks...')
 
-        # Cache of all external dependencies (e.g., binaries, datas) listed in
-        # hook scripts for imported modules.
-        additional_files_cache = AdditionalFilesCache()
-
         #FIXME: For orthogonality, move the following "while" loop into a new
         #PyiModuleGraph.post_graph_hooks() method. The "PyiModuleGraph" class
         #already handles all other hook types. Moreover, the graph node
@@ -477,7 +472,7 @@ class Analysis(Target):
 
                     # Cache all external dependencies listed by this script
                     # after running this hook, which could add dependencies.
-                    additional_files_cache.add(
+                    self.graph._additional_files_cache.add(
                         module_name,
                         module_hook.binaries,
                         module_hook.datas)
@@ -494,7 +489,8 @@ class Analysis(Target):
                 break
 
         # Update 'binaries' TOC and 'datas' TOC.
-        deps_proc = DependencyProcessor(self.graph, additional_files_cache)
+        deps_proc = DependencyProcessor(self.graph,
+                                        self.graph._additional_files_cache)
         self.binaries.extend(deps_proc.make_binaries_toc())
         self.datas.extend(deps_proc.make_datas_toc())
         self.zipped_data.extend(deps_proc.make_zipped_data_toc())

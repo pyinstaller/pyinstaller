@@ -43,7 +43,7 @@ from .. import HOMEPATH, configure
 from .. import log as logging
 from ..log import INFO, DEBUG, TRACE
 from ..building.datastruct import TOC
-from ..building.imphook import ModuleHookCache
+from ..building.imphook import AdditionalFilesCache, ModuleHookCache
 from ..building.imphookapi import PreSafeImportModuleAPI, PreFindModulePathAPI
 from ..compat import importlib_load_source, is_py2, PY3_BASE_MODULES,\
         PURE_PYTHON_MODULE_TYPES, BINARY_MODULE_TYPES, VALID_MODULE_TYPES, \
@@ -88,6 +88,9 @@ class PyiModuleGraph(ModuleGraph):
         hooks for the current application.
     _excludes : list
         List of module names to be excluded when searching for dependencies.
+    _additional_files_cache : AdditionalFilesCache
+        Cache of all external dependencies (e.g., binaries, datas) listed in
+        hook scripts for imported modules.
     """
 
     # Note: these levels are completely arbitrary and may be adjusted if needed.
@@ -105,6 +108,7 @@ class PyiModuleGraph(ModuleGraph):
         self._user_hook_dirs = user_hook_dirs
         self._excludes = excludes
 
+        self._additional_files_cache = AdditionalFilesCache()
         # Hook-specific lookup tables, defined after defining "_user_hook_dirs".
         logger.info('Caching module graph hooks...')
         self._hooks = self._cache_hooks("")
