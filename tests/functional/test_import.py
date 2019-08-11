@@ -144,6 +144,7 @@ def test_module_with_coding_utf8(pyi_builder):
 
 def test_hiddenimport(pyi_builder):
     # The script simply does nothing, not even print out a line.
+    # The check is done by comparing with logs/test_hiddenimport.toc
     pyi_builder.test_source('pass',
                             ['--hidden-import=a_hidden_import'])
 
