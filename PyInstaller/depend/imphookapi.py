@@ -18,9 +18,9 @@ modifications into appropriate operations on the current `PyiModuleGraph`
 instance, thus modifying which modules will be frozen into the executable.
 """
 
-from .datastruct import TOC
 from ..lib.modulegraph.modulegraph import RuntimeModule, RuntimePackage
-from .utils import format_binaries_and_datas
+from ..building.datastruct import TOC
+from ..building.utils import format_binaries_and_datas
 
 
 class PreSafeImportModuleAPI(object):

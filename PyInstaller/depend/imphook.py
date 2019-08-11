@@ -19,7 +19,7 @@ from .. import log as logging
 from ..compat import (
     expand_path, importlib_load_source, FileNotFoundError)
 from .imphookapi import PostGraphAPI
-from .utils import format_binaries_and_datas
+from ..building.utils import format_binaries_and_datas
 
 logger = logging.getLogger(__name__)
 

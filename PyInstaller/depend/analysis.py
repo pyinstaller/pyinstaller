@@ -43,8 +43,8 @@ from .. import HOMEPATH, configure
 from .. import log as logging
 from ..log import INFO, DEBUG, TRACE
 from ..building.datastruct import TOC
-from ..building.imphook import AdditionalFilesCache, ModuleHookCache
-from ..building.imphookapi import PreSafeImportModuleAPI, PreFindModulePathAPI
+from .imphook import AdditionalFilesCache, ModuleHookCache
+from .imphookapi import PreSafeImportModuleAPI, PreFindModulePathAPI
 from ..compat import importlib_load_source, is_py2, PY3_BASE_MODULES,\
         PURE_PYTHON_MODULE_TYPES, BINARY_MODULE_TYPES, VALID_MODULE_TYPES, \
         BAD_MODULE_TYPES, MODULE_TYPES_TO_TOC_DICT
