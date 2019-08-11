@@ -86,13 +86,15 @@ class PyiModuleGraph(ModuleGraph):
     _user_hook_dirs : list
         List of the absolute paths of all directories containing user-defined
         hooks for the current application.
+    _excludes : list
+        List of module names to be excluded when searching for dependencies.
     """
 
     # Note: these levels are completely arbitrary and may be adjusted if needed.
     LOG_LEVEL_MAPPING = {0: INFO, 1: DEBUG, 2: TRACE, 3: TRACE, 4: TRACE}
 
-    def __init__(self, pyi_homepath, user_hook_dirs=None, *args, **kwargs):
-        super(PyiModuleGraph, self).__init__(*args, **kwargs)
+    def __init__(self, pyi_homepath, user_hook_dirs=(), excludes=(), **kwargs):
+        super(PyiModuleGraph, self).__init__(excludes=excludes, **kwargs)
         # Homepath to the place where is PyInstaller located.
         self._homepath = pyi_homepath
         # modulegraph Node for the main python script that is analyzed
@@ -100,8 +102,8 @@ class PyiModuleGraph(ModuleGraph):
         self._top_script_node = None
 
         # Absolute paths of all user-defined hook directories.
-        self._user_hook_dirs = \
-            user_hook_dirs if user_hook_dirs is not None else []
+        self._user_hook_dirs = user_hook_dirs
+        self._excludes = excludes
 
         # Hook-specific lookup tables, defined after defining "_user_hook_dirs".
         logger.info('Caching module graph hooks...')
@@ -567,10 +569,12 @@ class PyiModuleGraph(ModuleGraph):
         return co_dict
 
 
+_cached_module_graph_ = None
+
 # TODO: A little odd. Couldn't we just push this functionality into the
 # PyiModuleGraph.__init__() constructor and then construct PyiModuleGraph
 # objects directly?
-def initialize_modgraph(excludes=(), user_hook_dirs=None):
+def initialize_modgraph(excludes=(), user_hook_dirs=()):
     """
     Create the module graph and, for Python 3, analyze dependencies for
     `base_library.zip` (which remain the same for every executable).
@@ -594,6 +598,25 @@ def initialize_modgraph(excludes=(), user_hook_dirs=None):
     PyiModuleGraph
         Module graph with core dependencies.
     """
+    # normalize parameters to ensure tuples and make camparism work
+    user_hook_dirs = user_hook_dirs or ()
+    excludes = excludes or ()
+
+    # If there is a graph cached with the same user_hook_dirs and the
+    # same excludes, reuse it. In this case, all dependencies will
+    # resolve the same and thus reusing already found dependencies is
+    # safe. If user_hook_dirs or excludes differ, dependencies may
+    # resolve differently and thus reusing the graph is unsafe.
+    # Primary use of this cache is to speed up the test-suite. Fixture
+    # `pyi_modgraph` calls this function with no user_hook_dirs and no
+    # excluded, creating a graph suitable for all standard tests.
+    global _cached_module_graph_
+    if (_cached_module_graph_ and
+        _cached_module_graph_._user_hook_dirs == user_hook_dirs and
+        _cached_module_graph_._excludes == excludes):
+        logger.info('Reusing cached module dependency graph...')
+        return _cached_module_graph_
+
     logger.info('Initializing module dependency graph...')
 
     # Construct the initial module graph by analyzing all import statements.
@@ -617,6 +640,12 @@ def initialize_modgraph(excludes=(), user_hook_dirs=None):
         # Initialize ModuleGraph.
         for m in required_mods:
             graph.import_hook(m)
+
+    if not _cached_module_graph_:
+        # Only cache the first graph, see above for explanation.
+        logger.info('Caching module dependency graph...')
+        _cached_module_graph_ = graph
+
     return graph
 
 

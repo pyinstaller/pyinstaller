@@ -138,13 +138,12 @@ def data_dir(
 
 class AppBuilder(object):
 
-    def __init__(self, tmpdir, bundle_mode, module_graph):
+    def __init__(self, tmpdir, bundle_mode):
         self._tmpdir = tmpdir
         self._mode = bundle_mode
         self._specdir = self._tmpdir
         self._distdir = os.path.join(self._tmpdir, 'dist')
         self._builddir = os.path.join(self._tmpdir, 'build')
-        self._modgraph = module_graph
 
 
     def test_spec(self, specfile, *args, **kwargs):
@@ -440,8 +439,6 @@ class AppBuilder(object):
         PYI_CONFIG = configure.get_config(upx_dir=None)
         # Override CACHEDIR for PyInstaller and put it into self.tmpdir
         PYI_CONFIG['cachedir'] = self._tmpdir
-        # Speed up tests by reusing copy of basic module graph object.
-        PYI_CONFIG['tests_modgraph'] = copy.deepcopy(self._modgraph)
 
         pyi_main.run(pyi_args, PYI_CONFIG)
         retcode = 0
@@ -492,7 +489,7 @@ def pyi_modgraph():
     # lead to TRACE messages been written out.
     import PyInstaller.log as logging
     logging.logger.setLevel(logging.DEBUG)
-    return initialize_modgraph()
+    initialize_modgraph()
 
 
 # Run by default test as onedir and onefile.
@@ -511,7 +508,7 @@ def pyi_builder(tmpdir, monkeypatch, request, pyi_modgraph):
     # The value is same as the original value.
     monkeypatch.setattr('PyInstaller.config.CONF', {'pathex': []})
 
-    yield AppBuilder(tmp, request.param, pyi_modgraph)
+    yield AppBuilder(tmp, request.param)
 
     if is_darwin or is_linux:
         if request.node.rep_setup.passed:
@@ -543,7 +540,7 @@ def pyi_builder_spec(tmpdir, monkeypatch, pyi_modgraph):
     # The value is same as the original value.
     monkeypatch.setattr('PyInstaller.config.CONF', {'pathex': []})
 
-    return AppBuilder(tmp, None, pyi_modgraph)
+    return AppBuilder(tmp, None)
 
 # Define a fixture which compiles the data/load_dll_using_ctypes/ctypes_dylib.c
 # program in the tmpdir, returning the tmpdir object.
