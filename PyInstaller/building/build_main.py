@@ -29,7 +29,7 @@ from .. import HOMEPATH, DEFAULT_DISTPATH, DEFAULT_WORKPATH
 from .. import compat
 from .. import log as logging
 from ..utils.misc import absnormpath, compile_py_files
-from ..compat import is_py2, is_win, PYDYLIB_NAMES, VALID_MODULE_TYPES, \
+from ..compat import is_py2, is_win, PYDYLIB_NAMES, \
     open_file, text_type, unicode_writer
 from ..depend import bindepend
 from ..depend.analysis import initialize_modgraph
@@ -417,76 +417,8 @@ class Analysis(Target):
             logger.info("Analyzing %s", script)
             priority_scripts.append(self.graph.run_script(script))
 
-
         ### Post-graph hooks.
-        #
-        # Run post-graph hooks for all modules imported by this user's
-        # application. For each iteration of the infinite "while" loop below:
-        #
-        # 1. All hook() functions defined in cached hooks for imported modules
-        #    are called. This may result in new modules being imported (e.g., as
-        #    hidden imports) that were ignored earlier in the current iteration:
-        #    if this is the case, all hook() functions defined in cached hooks
-        #    for these modules will be called by the next iteration.
-        # 2. All cached hooks whose hook() functions were called are removed
-        #    from this cache. If this cache is empty, no hook() functions will
-        #    be called by the next iteration and this loop will be terminated.
-        # 3. If no hook() functions were called, this loop is terminated.
-        logger.info('Loading module hooks...')
-
-        #FIXME: For orthogonality, move the following "while" loop into a new
-        #PyiModuleGraph.post_graph_hooks() method. The "PyiModuleGraph" class
-        #already handles all other hook types. Moreover, the graph node
-        #retrieval and type checking performed below are low-level operations
-        #best isolated into the "PyiModuleGraph" class itself.
-
-        # For each imported module, run this module's post-graph hooks if any.
-        while True:
-            # Set of the names of all imported modules whose post-graph hooks
-            # are run by this iteration, preventing the next iteration from re-
-            # running these hooks. If still empty at the end of this iteration,
-            # no post-graph hooks were run; thus, this loop will be terminated.
-            hooked_module_names = set()
-
-            # For each remaining hookable module and corresponding hooks...
-            for module_name, module_hooks in self.graph._hooks.items():
-                # Graph node for this module if imported or "None" otherwise.
-                module_node = self.graph.findNode(
-                    module_name, create_nspkg=False)
-
-                # If this module has not been imported, temporarily ignore it.
-                # This module is retained in the cache, as a subsequently run
-                # post-graph hook could import this module as a hidden import.
-                if module_node is None:
-                    continue
-
-                # If this module is unimportable, permanently ignore it.
-                if type(module_node).__name__ not in VALID_MODULE_TYPES:
-                    hooked_module_names.add(module_name)
-                    continue
-
-                # For each hook script for this module...
-                for module_hook in module_hooks:
-                    # Run this script's post-graph hook if any.
-                    module_hook.post_graph()
-
-                    # Cache all external dependencies listed by this script
-                    # after running this hook, which could add dependencies.
-                    self.graph._additional_files_cache.add(
-                        module_name,
-                        module_hook.binaries,
-                        module_hook.datas)
-
-                # Prevent this module's hooks from being run again.
-                hooked_module_names.add(module_name)
-
-            # Prevent all post-graph hooks run above from being run again by the
-            # next iteration.
-            self.graph._hooks.remove_modules(*hooked_module_names)
-
-            # If no post-graph hooks were run, terminate iteration.
-            if not hooked_module_names:
-                break
+        self.graph.process_post_graph_hooks()
 
         # Update 'binaries' TOC and 'datas' TOC.
         deps_proc = DependencyProcessor(self.graph,

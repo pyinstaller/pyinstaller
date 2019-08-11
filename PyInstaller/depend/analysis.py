@@ -232,6 +232,70 @@ class PyiModuleGraph(ModuleGraph):
                 caller = self._top_script_node
             return super(PyiModuleGraph, self).run_script(pathname, caller=caller)
 
+
+    def process_post_graph_hooks(self):
+        """
+        For each imported module, run this module's post-graph hooks if any.
+        """
+        # For each iteration of the infinite "while" loop below:
+        #
+        # 1. All hook() functions defined in cached hooks for imported modules
+        #    are called. This may result in new modules being imported (e.g., as
+        #    hidden imports) that were ignored earlier in the current iteration:
+        #    if this is the case, all hook() functions defined in cached hooks
+        #    for these modules will be called by the next iteration.
+        # 2. All cached hooks whose hook() functions were called are removed
+        #    from this cache. If this cache is empty, no hook() functions will
+        #    be called by the next iteration and this loop will be terminated.
+        # 3. If no hook() functions were called, this loop is terminated.
+        logger.info('Processing module hooks...')
+        while True:
+            # Set of the names of all imported modules whose post-graph hooks
+            # are run by this iteration, preventing the next iteration from re-
+            # running these hooks. If still empty at the end of this iteration,
+            # no post-graph hooks were run; thus, this loop will be terminated.
+            hooked_module_names = set()
+
+            # For each remaining hookable module and corresponding hooks...
+            for module_name, module_hooks in self._hooks.items():
+                # Graph node for this module if imported or "None" otherwise.
+                module_node = self.findNode(
+                    module_name, create_nspkg=False)
+
+                # If this module has not been imported, temporarily ignore it.
+                # This module is retained in the cache, as a subsequently run
+                # post-graph hook could import this module as a hidden import.
+                if module_node is None:
+                    continue
+
+                # If this module is unimportable, permanently ignore it.
+                if type(module_node).__name__ not in VALID_MODULE_TYPES:
+                    hooked_module_names.add(module_name)
+                    continue
+
+                # For each hook script for this module...
+                for module_hook in module_hooks:
+                    # Run this script's post-graph hook.
+                    module_hook.post_graph()
+
+                    # Cache all external dependencies listed by this script
+                    # after running this hook, which could add dependencies.
+                    self._additional_files_cache.add(
+                        module_name,
+                        module_hook.binaries,
+                        module_hook.datas)
+
+                # Prevent this module's hooks from being run again.
+                hooked_module_names.add(module_name)
+
+            # Prevent all post-graph hooks run above from being run again by the
+            # next iteration.
+            self._hooks.remove_modules(*hooked_module_names)
+
+            # If no post-graph hooks were run, terminate iteration.
+            if not hooked_module_names:
+                break
+
     def _safe_import_module(self, module_basename, module_name, parent_package):
         """
         Create a new graph node for the module with the passed name under the
