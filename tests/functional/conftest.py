@@ -49,6 +49,7 @@ sys.path.append(_ROOT_DIR)
 
 from PyInstaller import configure, config
 from PyInstaller import __main__ as pyi_main
+from PyInstaller.utils.tests import gen_sourcefile
 from PyInstaller.utils.cliutils import archive_viewer
 from PyInstaller.compat import is_darwin, is_win, is_py2, safe_repr, \
     architecture, is_linux, suppress, text_read_mode
@@ -181,24 +182,11 @@ class AppBuilder(object):
 
         """
         __tracebackhide__ = True
-        if is_py2:
-            if isinstance(source, str):
-                source = source.decode('UTF-8')
-        testname = inspect.stack()[1][3]
-        if 'test_id' in kwargs:
-            # For parametrized test append the test-id.
-            testname = testname + '__' + kwargs['test_id']
-            del kwargs['test_id']
-
-        # Periods are not allowed in Python module names.
-        testname = testname.replace('.', '_')
-
-        scriptfile = str(self._tmpdir.join(testname + '.py'))
-        source = textwrap.dedent(source)
-        with io.open(scriptfile, 'w', encoding='utf-8') as ofh:
-            print(u'# -*- coding: utf-8 -*-', file=ofh)
-            print(source, file=ofh)
-        return self.test_script(scriptfile, *args, **kwargs)
+        # For parametrized test append the test-id.
+        scriptfile = gen_sourcefile(self._tmpdir, source,
+                                    kwargs.setdefault('test_id'))
+        del kwargs['test_id']
+        return self.test_script(str(scriptfile), *args, **kwargs)
 
 
     def test_script(self, script, pyi_args=None, app_name=None,
