@@ -10,13 +10,18 @@ import os.path
 
 from PyInstaller.utils.hooks import collect_system_data_files
 from PyInstaller.utils.hooks.qt import pyside2_library_info, get_qt_binaries
+import PyInstaller.compat as compat
 
 hiddenimports = ['shiboken2']
 
 # Collect the ``qt.conf`` file.
+target_qt_conf_dir = 'PySide2'
+if compat.is_win:
+	target_qt_conf_dir = '.'
+
 datas = [x for x in
          collect_system_data_files(pyside2_library_info.location['PrefixPath'],
-                                   'PySide2')
+                                   target_qt_conf_dir)
          if os.path.basename(x[0]) == 'qt.conf']
 
 # Collect required Qt binaries.

@@ -405,7 +405,6 @@ def test_PyQt5_Qt(pyi_builder):
                             **USE_WINDOWED_KWARG)
 
 
-@xfail(True, reason="Hook is old and needs updating.")
 @importorskip('PySide2')
 def test_PySide2_QWebEngine(pyi_builder, data_dir):
     pyi_builder.test_source(get_QWebEngine_html('PySide2', data_dir),
