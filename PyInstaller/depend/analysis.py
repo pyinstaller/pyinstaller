@@ -600,18 +600,26 @@ class PyiModuleGraph(ModuleGraph):
         Add hidden imports that are either supplied as CLI option --hidden-import=MODULENAME
         or as dependencies from some PyInstaller features when enabled (e.g. crypto feature).
         """
+        assert self._top_script_node is not None
         # Analyze the script's hidden imports (named on the command line)
         for modnm in module_list:
-            logger.debug('Hidden import: %s' % modnm)
-            if self.findNode(modnm) is not None:
+            node = self.findNode(modnm)
+            if node is not None:
                 logger.debug('Hidden import %r already found', modnm)
-                continue
-            logger.info("Analyzing hidden import %r", modnm)
-            # ModuleGraph throws ImportError if import not found
-            try :
-                node = self.import_hook(modnm)
-            except ImportError:
-                logger.error("Hidden import %r not found", modnm)
+            else:
+                logger.info("Analyzing hidden import %r", modnm)
+                # ModuleGraph throws ImportError if import not found
+                try:
+                    nodes = self.import_hook(modnm)
+                    assert len(nodes) == 1
+                    node = nodes[0]
+                except ImportError:
+                    logger.error("Hidden import %r not found", modnm)
+                    continue
+            # Create references from the top script to the hidden import,
+            # even if found otherwise. Don't waste time checking whether it
+            # as actually added by this (test-) script.
+            self.createReference(self._top_script_node, node)
 
 
     def get_co_using_ctypes(self):
