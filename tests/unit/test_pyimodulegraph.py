@@ -106,3 +106,22 @@ def test_cached_graph_is_not_leaking_hidden_imports(fresh_pyi_modgraph, tmpdir):
     assert node is not None
     names = [n.identifier for n in mg.flatten(start=node)]
     assert "uuid" not in names
+
+
+def test_graph_collects_script_dependencies(fresh_pyi_modgraph, tmpdir):
+    mg = fresh_pyi_modgraph
+    # self-test 1: uuid is not included in the graph by default
+    src1 = gen_sourcefile(tmpdir, """print""", test_id="1")
+    node = mg.run_script(str(src1))
+    assert node is not None
+    assert not mg.findNode("uuid")  # self-test
+
+    # Add script importing uuid
+    src2 = gen_sourcefile(tmpdir, """import uuid""", test_id="2")
+    mg.run_script(str(src2))
+    assert mg.findNode("uuid")  # self-test
+
+    # The acutal test: uuid is (indirectly) linked to the first script
+    names = [n.identifier for n in mg.flatten(start=node)]
+    assert str(src2) in names
+    assert "uuid" in names
