@@ -358,10 +358,6 @@ class Analysis(Target):
         self.graph.path = self.pathex + self.graph.path
         self.graph.set_setuptools_nspackages()
 
-        # Analyze the script's hidden imports (named on the command line)
-        self.graph.add_hiddenimports(self.hiddenimports)
-
-
         logger.info("running Analysis %s", self.tocbasename)
         # Get paths to Python and, in Windows, the manifest.
         python = sys.executable
@@ -416,6 +412,9 @@ class Analysis(Target):
         for script in self.inputs:
             logger.info("Analyzing %s", script)
             priority_scripts.append(self.graph.run_script(script))
+
+        # Analyze the script's hidden imports (named on the command line)
+        self.graph.add_hiddenimports(self.hiddenimports)
 
         ### Post-graph hooks.
         self.graph.process_post_graph_hooks()
