@@ -114,6 +114,10 @@ class PyiModuleGraph(ModuleGraph):
             os.path.join(self._homepath, 'PyInstaller', 'loader', 'rthooks.dat')
         )
 
+    def _reset(self):
+        # Reset for another set up scripts.
+        self._top_script_node = None
+
     @staticmethod
     def _findCaller(*args, **kwargs):
         # Used to add an additional stack-frame above logger.findCaller.
@@ -615,6 +619,7 @@ def initialize_modgraph(excludes=(), user_hook_dirs=()):
         _cached_module_graph_._user_hook_dirs == user_hook_dirs and
         _cached_module_graph_._excludes == excludes):
         logger.info('Reusing cached module dependency graph...')
+        _cached_module_graph_._reset()
         return _cached_module_graph_
 
     logger.info('Initializing module dependency graph...')
