@@ -91,6 +91,9 @@ class PyiModuleGraph(ModuleGraph):
     _additional_files_cache : AdditionalFilesCache
         Cache of all external dependencies (e.g., binaries, datas) listed in
         hook scripts for imported modules.
+    _base_modules: list
+        Dependencies for `base_library.zip` (which remain the same for every
+        executable).
     """
 
     # Note: these levels are completely arbitrary and may be adjusted if needed.
@@ -117,6 +120,7 @@ class PyiModuleGraph(ModuleGraph):
         self._available_rthooks = load_py_data_struct(
             os.path.join(self._homepath, 'PyInstaller', 'loader', 'rthooks.dat')
         )
+        self._analyze_base_modules()
 
     def _reset(self):
         # Reset for another set up scripts.
@@ -201,6 +205,28 @@ class PyiModuleGraph(ModuleGraph):
 
         return ModuleHookCache(self, hook_dirs)
 
+
+    def _analyze_base_modules(self):
+        """
+        Analyze dependencies of the the modules in base_library.zip.
+        """
+        if is_py2:
+            self._base_modules = ()
+            return
+        logger.info('Analyzing base_library.zip ...')
+        required_mods = []
+        # Collect submodules from required modules in base_library.zip.
+        for m in PY3_BASE_MODULES:
+            if is_package(m):
+                required_mods += collect_submodules(m)
+            else:
+                required_mods.append(m)
+        # Initialize ModuleGraph.
+        self._base_modules = [mod
+            for req in required_mods
+            for mod in self.import_hook(req)]
+
+
     def run_script(self, pathname, caller=None):
         """
         Wrap the parent's 'run_script' method and create graph from the first
@@ -209,7 +235,6 @@ class PyiModuleGraph(ModuleGraph):
         of unrelated trees,
         """
         if self._top_script_node is None:
-            nodes_without_parent = [x for x in self.flatten()]
             # Remember the node for the first script.
             try:
                 self._top_script_node = super(PyiModuleGraph, self).run_script(pathname)
@@ -218,10 +243,8 @@ class PyiModuleGraph(ModuleGraph):
                 formatted_lines = traceback.format_exc().splitlines(True)
                 print(*formatted_lines[-4:], file=sys.stderr)
                 raise SystemExit(1)
-            # Create references from top_script to current modules in graph.
-            # These modules without parents are dependencies that are necessary
-            # for base_library.zip.
-            for node in nodes_without_parent:
+            # Create references from the top script to the base_modules in graph.
+            for node in self._base_modules:
                 self.createReference(self._top_script_node, node)
             # Return top-level script node.
             return self._top_script_node
@@ -651,13 +674,9 @@ class PyiModuleGraph(ModuleGraph):
 
 _cached_module_graph_ = None
 
-# TODO: A little odd. Couldn't we just push this functionality into the
-# PyiModuleGraph.__init__() constructor and then construct PyiModuleGraph
-# objects directly?
 def initialize_modgraph(excludes=(), user_hook_dirs=()):
     """
-    Create the module graph and, for Python 3, analyze dependencies for
-    `base_library.zip` (which remain the same for every executable).
+    Create the cached module graph.
 
     This function might appear weird but is necessary for speeding up
     test runtime because it allows caching basic ModuleGraph object that
@@ -708,19 +727,6 @@ def initialize_modgraph(excludes=(), user_hook_dirs=()):
         implies=get_implies(),
         user_hook_dirs=user_hook_dirs,
     )
-
-    if not is_py2:
-        logger.info('Analyzing base_library.zip ...')
-        required_mods = []
-        # Collect submodules from required modules in base_library.zip.
-        for m in PY3_BASE_MODULES:
-            if is_package(m):
-                required_mods += collect_submodules(m)
-            else:
-                required_mods.append(m)
-        # Initialize ModuleGraph.
-        for m in required_mods:
-            graph.import_hook(m)
 
     if not _cached_module_graph_:
         # Only cache the first graph, see above for explanation.
