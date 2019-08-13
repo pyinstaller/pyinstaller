@@ -19,22 +19,27 @@ the latter is intended for use _only_ from within venvs.
 
 import distutils
 import os
+import sys
 
 from PyInstaller.utils.hooks import logger
-
+from PyInstaller import compat
 
 def pre_find_module_path(api):
     # Absolute path of the system-wide "distutils" package when run from within
     # a venv or None otherwise.
 
-    # opcode is not a virtualenv module, so we can use it to find the stdlib
-    # Technique taken from virtualenv's "distutils" package detection at
-    # https://github.com/pypa/virtualenv/blob/0ab032ce1a/virtualenv_embedded/distutils-init.py#L5
-    import opcode
+    if not compat.is_venv:
+        return
 
-    system_module_path = os.path.normpath(os.path.dirname(opcode.__file__))
-    loaded_module_path = os.path.normpath(os.path.dirname(distutils.__file__))
-    if system_module_path != loaded_module_path:
-        # Find this package in its parent directory.
-        api.search_dirs = [system_module_path]
-        logger.info('distutils: retargeting to non-venv dir %r' % system_module_path)
+    # According to python docs, the system libraries should be in
+    # <sys.prefix>/lib/pythonX.Y, but this doesn't seem to be the
+    # case in windows...
+    if compat.is_win:
+        system_module_path = os.path.join(compat.base_prefix, 'Lib')
+    else:
+        system_module_path = os.path.join(compat.base_prefix, 'lib',
+            'python' + sys.version[:3])
+
+    api.search_dirs = [system_module_path]
+    logger.info('distutils: retargeting to non-venv dir %r',
+        system_module_path)
