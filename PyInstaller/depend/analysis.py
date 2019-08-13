@@ -110,9 +110,17 @@ class PyiModuleGraph(ModuleGraph):
         # Absolute paths of all user-defined hook directories.
         self._user_hook_dirs = user_hook_dirs
         self._excludes = excludes
+        self._reset()
+        self._analyze_base_modules()
 
+    def _reset(self):
+        # Reset for another set of scripts.
+        # This is primary required for running the test-suite.
+        self._top_script_node = None
         self._additional_files_cache = AdditionalFilesCache()
-        # Hook-specific lookup tables, defined after defining "_user_hook_dirs".
+        # Hook-specific lookup tables.
+        # These need to reset when reusing cached PyiModuleGraph to avoid
+        # hooks to refer to files or data from another test-run.
         logger.info('Caching module graph hooks...')
         self._hooks = self._cache_hooks("")
         self._hooks_pre_safe_import_module = self._cache_hooks('pre_safe_import_module')
@@ -120,11 +128,6 @@ class PyiModuleGraph(ModuleGraph):
         self._available_rthooks = load_py_data_struct(
             os.path.join(self._homepath, 'PyInstaller', 'loader', 'rthooks.dat')
         )
-        self._analyze_base_modules()
-
-    def _reset(self):
-        # Reset for another set up scripts.
-        self._top_script_node = None
 
     @staticmethod
     def _findCaller(*args, **kwargs):
