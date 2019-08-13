@@ -23,6 +23,9 @@ from ..building.utils import format_binaries_and_datas
 
 logger = logging.getLogger(__name__)
 
+# Safety check: Hook module names need to be unique. Duplicate names might
+# occur if the cached PyuModuleGraph has an issue.
+HOOKS_MODULE_NAMES = set()
 
 class ModuleHookCache(dict):
     """
@@ -278,6 +281,11 @@ class ModuleHook(object):
         # Name of the in-memory module fabricated to refer to this hook script.
         self.hook_module_name = (
             hook_module_name_prefix + self.module_name.replace('.', '_'))
+
+        # Safety check, see above
+        global HOOKS_MODULE_NAMES
+        assert self.hook_module_name not in HOOKS_MODULE_NAMES
+        HOOKS_MODULE_NAMES.add(self.hook_module_name)
 
         # Attributes subsequently defined by the _load_hook_module() method.
         self._hook_module = None
