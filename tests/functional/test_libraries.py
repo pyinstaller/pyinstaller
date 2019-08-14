@@ -407,6 +407,13 @@ def test_PyQt5_Qt(pyi_builder):
 
 @importorskip('PySide2')
 def test_PySide2_QWebEngine(pyi_builder, data_dir):
+    if is_darwin:
+        # This tests running the QWebEngine on OS X. To do so, the test must
+        # run only a onedir build -- onefile builds don't work.
+        if pyi_builder._mode != 'onedir':
+            pytest.skip('The QWebEngine .app bundle '
+                        'only supports onedir mode.')
+
     pyi_builder.test_source(get_QWebEngine_html('PySide2', data_dir),
                             **USE_WINDOWED_KWARG)
 

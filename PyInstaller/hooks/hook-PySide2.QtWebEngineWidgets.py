@@ -8,7 +8,6 @@
 # -----------------------------------------------------------------------------
 
 import os
-import sys
 from PyInstaller.utils.hooks.qt import add_qt5_dependencies, pyside2_library_info
 from PyInstaller.utils.hooks import remove_prefix, get_module_file_attribute, \
     collect_system_data_files
@@ -33,7 +32,7 @@ if pyside2_library_info.version:
     # Include the web engine process, translations, and resources.
     # According to https://bugreports.qt.io/browse/PYSIDE-642?focusedCommentId=461015&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-461015,
     # there's no subdir for windows
-    if sys.platform == 'win32':
+    if compat.is_win:
         rel_data_path = ['PySide2']
     else:
         rel_data_path = ['PySide2', 'Qt']
