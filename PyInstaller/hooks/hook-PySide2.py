@@ -15,9 +15,10 @@ import PyInstaller.compat as compat
 hiddenimports = ['shiboken2']
 
 # Collect the ``qt.conf`` file.
-target_qt_conf_dir = 'PySide2'
 if compat.is_win:
 	target_qt_conf_dir = '.'
+else:
+	target_qt_conf_dir = 'PySide2'
 
 datas = [x for x in
          collect_system_data_files(pyside2_library_info.location['PrefixPath'],

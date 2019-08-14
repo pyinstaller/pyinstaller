@@ -1,28 +1,30 @@
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Copyright (c) 2014-2019, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 import os
 import sys
-from pathlib import Path
 from PyInstaller.utils.hooks.qt import add_qt5_dependencies, pyside2_library_info
 from PyInstaller.utils.hooks import remove_prefix, get_module_file_attribute, \
     collect_system_data_files
 from PyInstaller.depend.bindepend import getImports
 import PyInstaller.compat as compat
 
+
 def get_relative_path_if_possible(actual, possible_prefix):
-    actual_path = Path(actual)
-    possible_prefix_path = Path(possible_prefix)
-    try:
-        return str(actual_path.relative_to(possible_prefix_path))
-    except:
+    actual_path = os.path.abspath(actual)
+    possible_prefix_path = os.path.abspath(possible_prefix)
+    possible_relative_path = os.path.relpath(actual_path, possible_prefix_path)
+    if possible_relative_path.startswith(os.pardir):
         return actual
+    else:
+        return possible_relative_path
+
 
 # Ensure PySide2 is importable before adding info depending on it.
 if pyside2_library_info.version:
@@ -31,7 +33,11 @@ if pyside2_library_info.version:
     # Include the web engine process, translations, and resources.
     # According to https://bugreports.qt.io/browse/PYSIDE-642?focusedCommentId=461015&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-461015,
     # there's no subdir for windows
-    rel_data_path = ['PySide2'] if sys.platform == 'win32' else ['PySide2', 'Qt']
+    if sys.platform == 'win32':
+        rel_data_path = ['PySide2']
+    else:
+        rel_data_path = ['PySide2', 'Qt']
+
     if compat.is_darwin:
         # This is based on the layout of the Mac wheel from PyPi.
         data_path = pyside2_library_info.location['DataPath']
@@ -65,8 +71,8 @@ if pyside2_library_info.version:
             (os.path.join(pyside2_library_info.location['LibraryExecutablesPath'],
                           'QtWebEngineProcess*'),
              os.path.join(*(rel_data_path +
-                          [get_relative_path_if_possible(pyside2_library_info.location['LibraryExecutablesPath'],
-                                        pyside2_library_info.location['PrefixPath'] + '/')])))
+                            [get_relative_path_if_possible(pyside2_library_info.location['LibraryExecutablesPath'],
+                                                           pyside2_library_info.location['PrefixPath'] + '/')])))
         ]
 
     # Add Linux-specific libraries.
