@@ -1,3 +1,4 @@
 [
+ 'a_hidden_import',
  'a_hidden_import.submodule',
 ]
