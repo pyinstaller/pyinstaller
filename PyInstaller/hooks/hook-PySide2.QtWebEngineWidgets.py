@@ -8,8 +8,9 @@
 # -----------------------------------------------------------------------------
 
 import os
-from PyInstaller.utils.hooks.qt import add_qt5_dependencies, pyside2_library_info
-from PyInstaller.utils.hooks import remove_prefix, get_module_file_attribute, \
+from PyInstaller.utils.hooks.qt import add_qt5_dependencies, \
+    pyside2_library_info
+from PyInstaller.utils.hooks import get_module_file_attribute, \
     collect_system_data_files
 from PyInstaller.depend.bindepend import getImports
 import PyInstaller.compat as compat
@@ -30,18 +31,20 @@ if pyside2_library_info.version:
     hiddenimports, binaries, datas = add_qt5_dependencies(__file__)
 
     # Include the web engine process, translations, and resources.
-    # According to https://bugreports.qt.io/browse/PYSIDE-642?focusedCommentId=461015&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-461015,
+    # According to https://bugreports.qt.io/browse/PYSIDE-642
     # there's no subdir for windows
     if compat.is_win:
         rel_data_path = ['PySide2']
     else:
         rel_data_path = ['PySide2', 'Qt']
 
+    pyside2_locations = pyside2_library_info.location
     if compat.is_darwin:
         # This is based on the layout of the Mac wheel from PyPi.
-        data_path = pyside2_library_info.location['DataPath']
-        libraries = ['QtCore', 'QtWebEngineCore', 'QtQuick', 'QtQml', 'QtNetwork',
-                     'QtGui', 'QtWebChannel', 'QtPositioning']
+        data_path = pyside2_locations['DataPath']
+        libraries = ['QtCore', 'QtWebEngineCore', 'QtQuick', 'QtQml',
+                     'QtNetwork', 'QtGui', 'QtWebChannel',
+                     'QtPositioning']
         for i in libraries:
             datas += collect_system_data_files(
                 os.path.join(data_path, 'lib', i + '.framework'),
@@ -53,38 +56,43 @@ if pyside2_library_info.version:
         resources = 'resources'
         datas += [
             # Gather translations needed by Chromium.
-            (os.path.join(pyside2_library_info.location['TranslationsPath'], locales),
-             os.path.join(*(rel_data_path + ['translations', locales]))),
-            # Per the `docs <https://doc.qt.io/qt-5.10/qtwebengine-deploying.html#deploying-resources>`_,
+            (os.path.join(pyside2_locations['TranslationsPath'],
+                          locales),
+             os.path.join(*(rel_data_path + ['translations',
+                                             locales]))),
+            # Per the `docs 
+            # <https://doc.qt.io/qt-5.10/qtwebengine-deploying.html#deploying-resources>`_,
             # ``DataPath`` is the base directory for ``resources``.
             #
-            # When Python 3.4 goes EOL (see `PEP 448`_, this is better written as
-            # ``os.path.join(*rel_data_path, resources)``.
-            (os.path.join(pyside2_library_info.location['DataPath'], resources),
+            # When Python 3.4 goes EOL (see `PEP 448`_, this is better written
+            # as ``os.path.join(*rel_data_path, resources)``.
+            (os.path.join(pyside2_locations['DataPath'], resources),
              os.path.join(*(rel_data_path + [resources]))),
-            # Include the webengine process. The ``LibraryExecutablesPath`` is only
-            # valid on Windows and Linux.
+            # Include the webengine process. The ``LibraryExecutablesPath``
+            # is only valid on Windows and Linux.
             #
             # Again, rewrite when Python 3.4 is EOL to
             # ``os.path.join(*rel_data_path, remove_prefix(...``.
-            (os.path.join(pyside2_library_info.location['LibraryExecutablesPath'],
+            (os.path.join(pyside2_locations['LibraryExecutablesPath'],
                           'QtWebEngineProcess*'),
              os.path.join(*(rel_data_path +
-                            [get_relative_path_if_possible(pyside2_library_info.location['LibraryExecutablesPath'],
-                                                           pyside2_library_info.location['PrefixPath'] + '/')])))
+                            [get_relative_path_if_possible(
+                                pyside2_locations['LibraryExecutablesPath'],
+                                pyside2_locations['PrefixPath'] + '/')])))
         ]
 
     # Add Linux-specific libraries.
     if compat.is_linux:
         # The automatic library detection fails for `NSS
-        # <https://packages.ubuntu.com/search?keywords=libnss3>`_, which is used by
-        # QtWebEngine. In some distributions, the ``libnss`` supporting libraries
-        # are stored in a subdirectory ``nss``. Since ``libnss`` is not statically
-        # linked to these, but dynamically loads them, we need to search for and add
-        # them.
+        # <https://packages.ubuntu.com/search?keywords=libnss3>`_, which is
+        # used by QtWebEngine. In some distributions, the ``libnss``
+        # supporting libraries are stored in a subdirectory ``nss``. Since
+        # ``libnss`` is not statically linked to these, but dynamically loads
+        # them, we need to search for and add them.
         #
         # First, get all libraries linked to ``PyQt5.QtWebEngineWidgets``.
-        for imp in getImports(get_module_file_attribute('PySide2.QtWebEngineWidgets')):
+        for imp in getImports(
+                get_module_file_attribute('PySide2.QtWebEngineWidgets')):
             # Look for ``libnss3.so``.
             if os.path.basename(imp).startswith('libnss3.so'):
                 # Find the location of NSS: given a ``/path/to/libnss.so``,
