@@ -60,7 +60,7 @@ if pyside2_library_info.version:
                           locales),
              os.path.join(*(rel_data_path + ['translations',
                                              locales]))),
-            # Per the `docs 
+            # Per the `docs
             # <https://doc.qt.io/qt-5.10/qtwebengine-deploying.html#deploying-resources>`_,
             # ``DataPath`` is the base directory for ``resources``.
             #
