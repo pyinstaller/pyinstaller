@@ -70,7 +70,7 @@ After |PyInstaller| creates a spec file,
 or opens a spec file when one is given instead of a script,
 the ``pyinstaller`` command executes the spec file as code.
 Your bundled application is created by the execution of the spec file.
-The following is an shortened example of a spec file for a minimal, one-folder app::
+The following is a shortened example of a spec file for a minimal, one-folder app::
 
 	block_cipher = None
 	a = Analysis(['minimal.py'],
@@ -190,8 +190,8 @@ The spec file is more readable if you create the list of added files
 in a separate statement::
 
     added_files = [
-             ( 'src/README.txt', '.' )
-             ( '/mygame/sfx/*.mp3', 'sfx' ),
+             ( 'src/README.txt', '.' ),
+             ( '/mygame/sfx/*.mp3', 'sfx' )
              ]
 	a = Analysis(...
              datas = added_files,
@@ -201,9 +201,9 @@ in a separate statement::
 You can also include the entire contents of a folder::
 
     added_files = [
-             ( 'src/README.txt', '.' )
+             ( 'src/README.txt', '.' ),
              ( '/mygame/data', 'data' ),
-             ( '/mygame/sfx/*.mp3', 'sfx' ),
+             ( '/mygame/sfx/*.mp3', 'sfx' )
              ]
 
 The folder :file:`/mygame/data` will be reproduced under the name
@@ -416,7 +416,7 @@ Multipackage Bundles
 Some products are made of several different apps,
 each of which might
 depend on a common set of third-party libraries, or share code in other ways.
-When packaging such an product it
+When packaging such a product it
 would be a pity to treat each app in isolation, bundling it with
 all its dependencies, because that means storing duplicate copies
 of code and libraries.
