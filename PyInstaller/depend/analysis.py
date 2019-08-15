@@ -39,6 +39,8 @@ import re
 import sys
 import traceback
 
+from copy import deepcopy
+
 from .. import HOMEPATH, configure
 from .. import log as logging
 from ..log import INFO, DEBUG, TRACE
@@ -108,26 +110,28 @@ class PyiModuleGraph(ModuleGraph):
         self._top_script_node = None
 
         # Absolute paths of all user-defined hook directories.
-        self._user_hook_dirs = user_hook_dirs
         self._excludes = excludes
-        self._reset()
+        self._reset(user_hook_dirs)
         self._analyze_base_modules()
+        self._available_rthooks = load_py_data_struct(
+            os.path.join(self._homepath,
+                         'PyInstaller', 'loader', 'rthooks.dat'))
 
-    def _reset(self):
-        # Reset for another set of scripts.
-        # This is primary required for running the test-suite.
+    def _reset(self, user_hook_dirs):
+        """
+        Reset for another set of scripts.
+        This is primary required for running the test-suite.
+        """
         self._top_script_node = None
         self._additional_files_cache = AdditionalFilesCache()
+        self._user_hook_dirs = user_hook_dirs
         # Hook-specific lookup tables.
         # These need to reset when reusing cached PyiModuleGraph to avoid
-        # hooks to refer to files or data from another test-run.
+        # hooks to refer to files or data from another test-case.
         logger.info('Caching module graph hooks...')
         self._hooks = self._cache_hooks("")
         self._hooks_pre_safe_import_module = self._cache_hooks('pre_safe_import_module')
         self._hooks_pre_find_module_path = self._cache_hooks('pre_find_module_path')
-        self._available_rthooks = load_py_data_struct(
-            os.path.join(self._homepath, 'PyInstaller', 'loader', 'rthooks.dat')
-        )
 
     @staticmethod
     def _findCaller(*args, **kwargs):
@@ -704,21 +708,18 @@ def initialize_modgraph(excludes=(), user_hook_dirs=()):
     user_hook_dirs = user_hook_dirs or ()
     excludes = excludes or ()
 
-    # If there is a graph cached with the same user_hook_dirs and the
-    # same excludes, reuse it. In this case, all dependencies will
-    # resolve the same and thus reusing already found dependencies is
-    # safe. If user_hook_dirs or excludes differ, dependencies may
-    # resolve differently and thus reusing the graph is unsafe.
-    # Primary use of this cache is to speed up the test-suite. Fixture
-    # `pyi_modgraph` calls this function with no user_hook_dirs and no
-    # excluded, creating a graph suitable for all standard tests.
+    # If there is a graph cached with the same same excludes, reuse it.
+    # See ``PyiModulegraph._reset()`` for why what is reset.
+    # This cache is uses primary to speed up the test-suite. Fixture
+    # `pyi_modgraph` calls this function with empty excludes, creating
+    # a graph suitable for the huge majority of tests.
     global _cached_module_graph_
     if (_cached_module_graph_ and
-        _cached_module_graph_._user_hook_dirs == user_hook_dirs and
         _cached_module_graph_._excludes == excludes):
         logger.info('Reusing cached module dependency graph...')
-        _cached_module_graph_._reset()
-        return _cached_module_graph_
+        graph = deepcopy(_cached_module_graph_)
+        graph._reset(user_hook_dirs)
+        return graph
 
     logger.info('Initializing module dependency graph...')
 
@@ -729,12 +730,18 @@ def initialize_modgraph(excludes=(), user_hook_dirs=()):
         # get_implies() are hidden imports known by modulgraph.
         implies=get_implies(),
         user_hook_dirs=user_hook_dirs,
-    )
+        )
 
     if not _cached_module_graph_:
         # Only cache the first graph, see above for explanation.
         logger.info('Caching module dependency graph...')
-        _cached_module_graph_ = graph
+        # cache a deep copy of the graph
+        _cached_module_graph_ = deepcopy(graph)
+        # Clear data which does not need to be copied from teh cached graph
+        # since it will be reset by ``PyiModulegraph._reset()`` anyway.
+        _cached_module_graph_._hooks = None
+        _cached_module_graph_._hooks_pre_safe_import_module = None
+        _cached_module_graph_._hooks_pre_find_module_path = None
 
     return graph
 
