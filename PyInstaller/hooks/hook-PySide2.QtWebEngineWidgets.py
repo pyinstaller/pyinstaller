@@ -75,10 +75,9 @@ if pyside2_library_info.version:
             # ``os.path.join(*rel_data_path, remove_prefix(...``.
             (os.path.join(pyside2_locations['LibraryExecutablesPath'],
                           'QtWebEngineProcess*'),
-             os.path.join(*(rel_data_path +
-                            [get_relative_path_if_possible(
-                                pyside2_locations['LibraryExecutablesPath'],
-                                pyside2_locations['PrefixPath'] + '/')])))
+             os.path.join(*(rel_data_path + [get_relative_path_if_possible(
+                            pyside2_locations['LibraryExecutablesPath'],
+                            pyside2_locations['PrefixPath'] + '/')])))
         ]
 
     # Add Linux-specific libraries.
