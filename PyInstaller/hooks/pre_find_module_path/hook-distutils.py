@@ -27,9 +27,9 @@ def pre_find_module_path(api):
     # Absolute path of the system-wide "distutils" package when run from within
     # a venv or None otherwise.
 
-    # opcode is not a virtualenv module, so we can use it to find the stdlib
+    # opcode is not a virtualenv module, so we can use it to find the stdlib.
     # Technique taken from virtualenv's "distutils" package detection at
-    # https://github.com/pypa/virtualenv/blob/0ab032ce1a/virtualenv_embedded/distutils-init.py#L5
+    # https://github.com/pypa/virtualenv/blob/16.3.0/virtualenv_embedded/distutils-init.py#L5
     import opcode
 
     system_module_path = os.path.normpath(os.path.dirname(opcode.__file__))
