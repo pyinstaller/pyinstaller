@@ -1,0 +1,1 @@
+Add hook for avro (serialization and RPC framework).
