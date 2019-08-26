@@ -35,9 +35,7 @@ flake8-diff
 
 subprocess32; python_version == '2.7'
 
-# Current pypiwin32 simply installs pywin32. Only an old pypiwin32 release has a
-# Python 3.4 wheel.
-pywin32; python_version != '3.4' and sys_platform == 'win32'
-pypiwin32==219; python_version == '3.4' and sys_platform == 'win32'
+# Current pypiwin32 simply installs pywin32.
+pywin32; sys_platform == 'win32'
 
 lxml

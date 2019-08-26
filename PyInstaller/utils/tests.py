@@ -12,10 +12,15 @@
 Decorators for skipping PyInstaller tests when specific requirements are not met.
 """
 
+from __future__ import print_function
+
 import os
 import sys
 import traceback
 import distutils.ccompiler
+import inspect
+import textwrap
+import shutil
 
 import pytest
 from _pytest.runner import Skipped
@@ -59,6 +64,8 @@ def _check_for_compiler():
         #   find the file specified.
         has_compiler = cc.has_function('clock', includes=['time.h'])
     os.chdir(old_wd)
+    # TODO: Find a way to remove the gerneated clockXXXX.c file, too
+    shutil.rmtree(tmp)
     return has_compiler
 
 
@@ -136,3 +143,42 @@ def importorskip(modname, minversion=None):
     # version. Reduce this decoration to a noop.
     else:
         return pytest.mark.skipif(False, reason='')
+
+
+def gen_sourcefile(tmpdir, source, test_id=None):
+    """
+    Generate a source file for testing.
+
+    The source will be written into a file named like the
+    test-function. This file will then be passed to `test_script`.
+    If you need other related file, e.g. as `.toc`-file for
+    testing the content, put it at at the normal place. Just mind
+    to take the basnename from the test-function's name.
+
+    :param script: Source code to create executable from. This
+                   will be saved into a temporary file which is
+                   then passed on to `test_script`.
+
+    :param test_id: Test-id for parametrized tests. If given, it
+                    will be appended to the script filename,
+                    separated by two underscores.
+
+    Ensure that the caller of `test_source` is in a UTF-8
+    encoded file with the correct '# -*- coding: utf-8 -*-' marker.
+    """
+    if is_py2:
+        if isinstance(source, str):
+            source = source.decode('UTF-8')
+    testname = inspect.stack()[1][3]
+    if test_id:
+        # For parametrized test append the test-id.
+        testname = testname + '__' + test_id
+
+    # Periods are not allowed in Python module names.
+    testname = testname.replace('.', '_')
+    scriptfile = tmpdir / testname + '.py'
+    source = textwrap.dedent(source)
+    with scriptfile.open('w', encoding='utf-8') as ofh:
+        print(u'# -*- coding: utf-8 -*-', file=ofh)
+        print(source, file=ofh)
+    return scriptfile

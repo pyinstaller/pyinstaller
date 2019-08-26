@@ -1,0 +1,2 @@
+Fixed hook for `pint <https://github.com/hgrecco/pint>`_
+to also copy metadata as required to retrieve the version at runtime.

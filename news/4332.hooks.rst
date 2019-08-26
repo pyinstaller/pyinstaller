@@ -1,0 +1,1 @@
+Update PyQt5 loader to support PyQt >=5.12.3.

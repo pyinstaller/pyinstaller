@@ -1,1 +1,0 @@
-Add hook for jsonpath_rw_ext.

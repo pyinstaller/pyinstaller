@@ -31,13 +31,14 @@ is_py3 = sys.version_info[0] == 3
 is_64bits = sys.maxsize > 2**32
 # Distinguish specific code for various Python versions.
 is_py27 = sys.version_info >= (2, 7) and sys.version_info < (3, 0)
-# PyInstaller supports only Python 3.4+
 # Variables 'is_pyXY' mean that Python X.Y and up is supported.
+# Keep even unsupported versions here to keep 3rd-party hooks working.
 is_py35 = sys.version_info >= (3, 5)
 is_py36 = sys.version_info >= (3, 6)
 is_py37 = sys.version_info >= (3, 7)
 
 is_win = sys.platform.startswith('win')
+is_win_10 = is_win and (platform.win32_ver()[0] == '10')
 is_cygwin = sys.platform == 'cygwin'
 is_darwin = sys.platform == 'darwin'  # Mac OS X
 
@@ -140,10 +141,8 @@ else:
 
 # Python 3 moved collections classes to more sensible packages.
 if is_py2:
-    from UserDict import UserDict
     from collections import Sequence, Set
 else:
-    from collections import UserDict
     from collections.abc import Sequence, Set
 
 # In Python 3 built-in function raw_input() was renamed to just 'input()'.
@@ -204,8 +203,8 @@ is_venv = is_virtualenv = base_prefix != os.path.abspath(sys.prefix)
 # Conda environments sometimes have different paths or apply patches to
 # packages that can affect how a hook or package should access resources.
 # Method for determining conda taken from:
-# https://stackoverflow.com/a/21318941/433202
-is_conda = 'conda' in sys.version or 'Continuum' in sys.version
+# https://stackoverflow.com/questions/47610844#47610844
+is_conda = os.path.isdir(os.path.join(base_prefix, 'conda-meta'))
 
 # In Python 3.4 module 'imp' is deprecated and there is another way how
 # to obtain magic value.
@@ -220,7 +219,7 @@ else:
 
 # List of suffixes for Python C extension modules.
 try:
-    # In Python 3.4+ There is a list
+    # In Python 3.3+ there is a list
     from importlib.machinery import EXTENSION_SUFFIXES, all_suffixes
     ALL_SUFFIXES = all_suffixes()
 except ImportError:
@@ -835,7 +834,7 @@ PY3_BASE_MODULES = {
     'warnings',
 }
 
-if sys.version_info >= (3, 4):
+if is_py3:
     PY3_BASE_MODULES.update({
         '_bootlocale',
         '_collections_abc',
@@ -925,8 +924,8 @@ def check_requirements():
     Fail hard if any requirement is not met.
     """
     # Fail hard if Python does not have minimum required version
-    if sys.version_info < (3, 4) and sys.version_info[:2] != (2, 7):
-        raise SystemExit('PyInstaller requires at least Python 2.7 or 3.4+.')
+    if sys.version_info < (3, 5) and sys.version_info[:2] != (2, 7):
+        raise SystemExit('PyInstaller requires at least Python 2.7 or 3.5+.')
 
 
 if not is_py3:

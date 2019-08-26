@@ -26,7 +26,7 @@ import struct
 from PyInstaller.config import CONF
 from .. import compat
 from ..compat import is_darwin, is_win, EXTENSION_SUFFIXES, \
-    open_file, is_py3, is_py37
+    open_file, is_py3, is_py37, is_cygwin
 from ..depend import dylib
 from ..depend.bindepend import match_binding_redirect
 from ..utils import misc
@@ -150,7 +150,8 @@ def applyRedirects(manifest, redirects):
                 redirecting = True
     return redirecting
 
-def checkCache(fnm, strip=False, upx=False, dist_nm=None):
+
+def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None):
     """
     Cache prevents preprocessing binary files again and again.
 
@@ -175,10 +176,9 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
         strip = True
     else:
         strip = False
-    if upx:
-        upx = True
-    else:
-        upx = False
+    upx_exclude = upx_exclude or []
+    upx = (upx and (is_win or is_cygwin) and
+           os.path.normcase(os.path.basename(fnm)) not in upx_exclude)
 
     # Load cache index
     # Make cachedir per Python major/minor version.
@@ -421,13 +421,15 @@ def _rmtree(path):
         choice = 'y'
     elif sys.stdout.isatty():
         choice = compat.stdin_input('WARNING: The output directory "%s" and ALL ITS '
-                           'CONTENTS will be REMOVED! Continue? (y/n)' % path)
+                           'CONTENTS will be REMOVED! Continue? (y/N)' % path)
     else:
         raise SystemExit('Error: The output directory "%s" is not empty. '
                          'Please remove all its contents or use the '
                          '-y option (remove output directory without '
                          'confirmation).' % path)
     if choice.strip().lower() == 'y':
+        print("On your own risk, you can use the option `--noconfirm` "
+              "to get rid of this question.")
         logger.info('Removing dir %s', path)
         shutil.rmtree(path)
     else:
@@ -574,7 +576,7 @@ def _load_code(modname, filename):
     importer = pkgutil.get_importer(path_item)
     package, _, modname = modname.rpartition('.')
 
-    if sys.version_info >= (3, 3) and hasattr(importer, 'find_loader'):
+    if hasattr(importer, 'find_loader'):
         loader, portions = importer.find_loader(modname)
     else:
         loader = importer.find_module(modname)

@@ -4,8 +4,8 @@
 # also tests/requirements-libraries.txt.
 
 setuptools
-pefile
-macholib
+pefile; sys_platform == 'win32'
+macholib; sys_platform == 'darwin'
 altgraph
 
 dis3; python_version < '3.0'

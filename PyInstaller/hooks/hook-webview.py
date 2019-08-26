@@ -7,32 +7,9 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+# hook for https://github.com/r0x0r/pywebview
 
-"""
-pywebview requires WebBrowserInterop dll on Windows
-"""
+from PyInstaller.utils.hooks import collect_data_files, collect_dynamic_libs
 
-import platform
-import ctypes
-from os.path import join, exists
-
-from PyInstaller import compat
-from PyInstaller.compat import is_win, getsitepackages
-
-if is_win:
-    if compat.architecture == '64bit':
-        dll_name = 'WebBrowserInterop.x64.dll'
-    else:
-        dll_name = 'WebBrowserInterop.x86.dll'
-
-    library = ctypes.util.find_library(dll_name)
-    datas = []
-    if library:
-        datas = [(library, '.')]
-    else:
-        for sitepack in getsitepackages():
-            library = join(sitepack, 'lib', dll_name)
-            if exists(library):
-                datas = [(library, '.')]
-        if not datas:
-            raise Exception(dll_name + ' not found')
+datas = collect_data_files('webview', 'lib')
+binaries = collect_dynamic_libs('webview')

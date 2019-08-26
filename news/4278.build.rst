@@ -1,0 +1,2 @@
+Fix checking for compiler flags in `configure` phase. The check for compiler
+flags actually did never work.

@@ -1,0 +1,3 @@
+(Windows) The temporary copy of bootloader used add resources, icons, etc.
+is not created in --workpath instead of in  %TEMP%. This fixes issues on
+systems where the anti-virus cleans %TEMP% immediatly.

@@ -1,0 +1,1 @@
+Fix hook for pywebview to collect all required libraries and data-files.
