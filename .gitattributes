@@ -18,3 +18,5 @@ runw_d	-text
 *.dll	-text
 
 /PyInstaller/utils/_gitrevision.py ident export-subst
+# Tests relay on fixed \n line end
+/tests/unit/test_modulegraph/testdata/test.txt text eol=lf

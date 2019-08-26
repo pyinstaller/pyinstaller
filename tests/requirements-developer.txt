@@ -22,14 +22,17 @@ pycmd  # Contains 'py.cleanup' that removes all .pyc files and similar.
 wheel>0.24.0  # For creating .whl packages
 twine         # For secure upload of tar.gz to PYPI.
 
-towncrier     # For creating the change-log file.
+towncrier>=19.2.0    # For creating the change-log file.
 
-zest.releaser>=6.13.1 # Makes releasing easier
+zest.releaser>=6.18  # Makes releasing easier
 # Addons for zest.releaser:
 check-manifest  # Checks MANIFEST.in
 pyroma   # Checks if package follows best practices of Python packaging.
 chardet  # character encoding detector.
 readme   # Check PyPI description is valid reStructuredText
 zestreleaser.towncrier  # integrate towncrier into zest.releaser
+
+sphinx
+sphinx_rtd_theme
 
 -r requirements-tools.txt

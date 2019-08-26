@@ -1,0 +1,1 @@
+Add hooks for pyexcel and its plugins io, ods, ods3, odsr, xls, xlsx, xlsxw.

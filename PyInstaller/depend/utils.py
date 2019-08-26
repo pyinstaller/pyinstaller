@@ -32,6 +32,12 @@ from ..compat import (is_darwin, is_unix, is_freebsd, is_py2, is_py37,
 from .dylib import include_library
 from .. import log as logging
 
+try:
+    # source_hash only exists in Python 3.7
+    from importlib.util import source_hash as importlib_source_hash
+except ImportError:
+    pass
+
 logger = logging.getLogger(__name__)
 
 
@@ -66,12 +72,16 @@ def create_py3_base_library(libzip_filename, graph):
                         st = os.stat(mod.filename)
                         timestamp = int(st.st_mtime)
                         size = st.st_size & 0xFFFFFFFF
-                        # Name inside a zip archive.
+                        # Name inside the archive. The ZIP format
+                        # specification requires forward slashes as
+                        # directory separator.
                         # TODO use .pyo suffix if optimize flag is enabled.
                         if type(mod) is modulegraph.Package:
-                            new_name = mod.identifier.replace('.', os.sep) + os.sep + '__init__' + '.pyc'
+                            new_name = mod.identifier.replace('.', '/') \
+                                + '/__init__.pyc'
                         else:
-                            new_name = mod.identifier.replace('.', os.sep) + '.pyc'
+                            new_name = mod.identifier.replace('.', '/') \
+                                + '.pyc'
 
                         # Write code to a file.
                         # This code is similar to py_compile.compile().
@@ -80,9 +90,14 @@ def create_py3_base_library(libzip_filename, graph):
                             fc.write(BYTECODE_MAGIC)
                             if is_py37:
                                 # Additional bitfield according to PEP 552
-                                # zero means timestamp based
-                                fc.write(struct.pack('<I', 0))
-                            fc.write(struct.pack('<II', timestamp, size))
+                                # 0b01 means hash based but don't check the hash
+                                fc.write(struct.pack('<I', 0b01))
+                                with open(mod.filename, 'rb') as fs:
+                                    source_bytes = fs.read()
+                                source_hash = importlib_source_hash(source_bytes)
+                                fc.write(source_hash)
+                            else:
+                                fc.write(struct.pack('<II', timestamp, size))
                             marshal.dump(mod.code, fc)
                             # Use a ZipInfo to set timestamp for deterministic build
                             info = zipfile.ZipInfo(new_name)

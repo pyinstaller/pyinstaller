@@ -19,7 +19,7 @@ from distutils.version import LooseVersion
 
 from .. import HOMEPATH, DEFAULT_SPECPATH
 from .. import log as logging
-from ..compat import expand_path, is_darwin, open_file, text_type
+from ..compat import expand_path, is_darwin, is_win, open_file, text_type
 from .templates import onefiletmplt, onedirtmplt, cipher_absent_template, \
     cipher_init_template, bundleexetmplt, bundletmplt
 
@@ -212,16 +212,27 @@ def __add_options(parser):
     g.add_argument("--noupx", action="store_true", default=False,
                    help="Do not use UPX even if it is available "
                         "(works differently between Windows and *nix)")
+    g.add_argument("--upx-exclude", dest="upx_exclude", metavar="FILE",
+                   action="append",
+                   help="Prevent a binary from being compressed when using "
+                        "upx. This is typically used if upx corrupts certain "
+                        "binaries during compression. "
+                        "FILE is the filename of the binary without path. "
+                        "This option can be used multiple times.")
 
     g = parser.add_argument_group('Windows and Mac OS X specific options')
     g.add_argument("-c", "--console", "--nowindowed", dest="console",
                    action="store_true", default=True,
-                   help="Open a console window for standard i/o (default)")
+                   help="Open a console window for standard i/o (default). "
+                        "On Windows this option will have no effect if the "
+                        "first script is a '.pyw' file.")
     g.add_argument("-w", "--windowed", "--noconsole", dest="console",
                    action="store_false",
                    help="Windows and Mac OS X: do not provide a console window "
                         "for standard i/o. "
                         "On Mac OS X this also triggers building an OS X .app bundle. "
+                        "On Windows this option will be set if the first "
+                        "script is a '.pyw' file. "
                         "This option is ignored in *NIX systems.")
     g.add_argument("-i", "--icon", dest="icon_file",
                    metavar="<FILE.ico or FILE.exe,ID or FILE.icns>",
@@ -301,7 +312,7 @@ def __add_options(parser):
 
 
 def main(scripts, name=None, onefile=None,
-         console=True, debug=None, strip=False, noupx=False,
+         console=True, debug=None, strip=False, noupx=False, upx_exclude=None,
          runtime_tmpdir=None, pathex=None, version_file=None, specpath=None,
          bootloader_ignore_signals=False,
          datas=None, binaries=None, icon_file=None, manifest=None, resources=None, bundle_identifier=None,
@@ -368,6 +379,11 @@ def main(scripts, name=None, onefile=None,
         exe_options = "%s, resources=%s" % (exe_options, repr(resources))
 
     hiddenimports = hiddenimports or []
+    upx_exclude = upx_exclude or []
+
+    # If file extension of the first script is '.pyw', force --windowed option.
+    if is_win and os.path.splitext(scripts[0])[-1] == '.pyw':
+        console = False
 
     # If script paths are relative, make them relative to the directory containing .spec file.
     scripts = [make_path_spec_relative(x, specpath) for x in scripts]
@@ -412,6 +428,7 @@ def main(scripts, name=None, onefile=None,
         'bootloader_ignore_signals': bootloader_ignore_signals,
         'strip': strip,
         'upx': not noupx,
+        'upx_exclude': upx_exclude,
         'runtime_tmpdir': runtime_tmpdir,
         'exe_options': exe_options,
         'cipher_init': cipher_init,

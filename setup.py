@@ -22,8 +22,6 @@ from PyInstaller.compat import is_win, is_cygwin, is_py2
 
 REQUIREMENTS = [
     'setuptools',
-    'pefile >= 2017.8.1',
-    'macholib >= 1.8',
     'altgraph',
 ]
 
@@ -33,7 +31,11 @@ if sys.version_info < (3,):
 
 # For Windows install PyWin32 if not already installed.
 if sys.platform.startswith('win'):
-    REQUIREMENTS.append('pywin32-ctypes >= 0.2.0')
+    REQUIREMENTS += ['pywin32-ctypes >= 0.2.0',
+                     'pefile >= 2017.8.1']
+
+if sys.platform == 'darwin':
+    REQUIREMENTS.append('macholib >= 1.8')
 
 
 # Create long description from README.rst and doc/CHANGES.rst.
@@ -73,7 +75,6 @@ Programming Language :: Python
 Programming Language :: Python :: 2
 Programming Language :: Python :: 2.7
 Programming Language :: Python :: 3
-Programming Language :: Python :: 3.4
 Programming Language :: Python :: 3.5
 Programming Language :: Python :: 3.6
 Programming Language :: Python :: 3.7
@@ -147,7 +148,7 @@ class MyBDist_Egg(bdist_egg):
 
 setup(
     install_requires=REQUIREMENTS,
-    python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*',
+    python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*',
 
     name='PyInstaller',
     version=version,

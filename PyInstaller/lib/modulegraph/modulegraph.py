@@ -1251,7 +1251,7 @@ class ModuleGraph(ObjectGraph):
             if not n.identifier.startswith(pkg.identifier + '.'):
                 continue
 
-            iter_out, iter_inc = n.get_edges()
+            iter_out, iter_inc = self.get_edges(n)
             for other in iter_out:
                 if other.identifier.startswith(pkg.identifier + '.'):
                     continue

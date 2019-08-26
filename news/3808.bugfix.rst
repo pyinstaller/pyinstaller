@@ -1,1 +1,0 @@
-Correctly parse the ``--debug=import``, ``--debug=bootloader``, and ``--debug=noarchive`` command-line options.

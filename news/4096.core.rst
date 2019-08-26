@@ -1,0 +1,1 @@
+Now uses hash based `.pyc` files as specified in :pep:`552` in `base_library.zip` when using Python 3.7

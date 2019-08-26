@@ -10,5 +10,6 @@
 # This is needed to bundle draft3.json and draft4.json files that come
 # with jsonschema module
 
-from PyInstaller.utils.hooks import collect_data_files
+from PyInstaller.utils.hooks import collect_data_files, copy_metadata
 datas = collect_data_files('jsonschema')
+datas += copy_metadata('jsonschema')

@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "PYI-MAKESPEC" "1" "2018-09-09" "3.4" "PyInstaller"
+.TH "PYI-MAKESPEC" "1" "2019-07-09" "3.5" "PyInstaller"
 .SH NAME
 pyi-makespec \- Create a spec file for your PyInstaller project
 .
@@ -135,16 +135,15 @@ The key used to encrypt Python bytecode.
 .SS How to generate
 .INDENT 0.0
 .TP
-.B \-d [{all,imports,bootloader,noarchive}], \-\-debug [{all,imports,bootloader,noarchive}]
+.BI \-d \ <all,imports,bootloader,noarchive>\fP,\fB \ \-\-debug \ <all,imports,bootloader,noarchive>
 R|Provide assistance with debugging a frozen
-application, by specifying one or more of the
-following choices. \- all: All three of the below
-options; this is the default choice, unless one of the
-choices below is specified. \- imports: specify the \-v
-option to the underlying Python interpreter, causing
-it to print a message each time a module is
-initialized, showing the place (filename or built\-in
-module) from which it is loaded. See
+application. This argument may be provided multiple
+times to select several of the following options. \-
+all: All three of the following options. \- imports:
+specify the \-v option to the underlying Python
+interpreter, causing it to print a message each time a
+module is initialized, showing the place (filename or
+built\-in module) from which it is loaded. See
 \fI\%https://docs.python.org/3/using/cmdline.html#id4\fP\&. \-
 bootloader: tell the bootloader to issue progress
 messages while initializing and starting the bundled
@@ -152,8 +151,6 @@ app. Used to diagnose problems with missing imports. \-
 noarchive: instead of storing all frozen Python source
 files as an archive inside the resulting executable,
 store them as files in the resulting output directory.
-.UNINDENT
-.INDENT 0.0
 .TP
 .B \-s\fP,\fB  \-\-strip
 Apply a symbol\-table strip to the executable and
@@ -162,18 +159,28 @@ shared libs (not recommended for Windows)
 .B \-\-noupx
 Do not use UPX even if it is available (works
 differently between Windows and *nix)
+.TP
+.BI \-\-upx\-exclude \ FILE
+Prevent a binary from being compressed when using upx.
+This is typically used if upx corrupts certain
+binaries during compression. FILE is the filename of
+the binary without path. This option can be used
+multiple times.
 .UNINDENT
 .SS Windows and Mac OS X specific options
 .INDENT 0.0
 .TP
 .B \-c\fP,\fB  \-\-console\fP,\fB  \-\-nowindowed
-Open a console window for standard i/o (default)
+Open a console window for standard i/o (default). On
+Windows this option will have no effect if the first
+script is a \(aq.pyw\(aq file.
 .TP
 .B \-w\fP,\fB  \-\-windowed\fP,\fB  \-\-noconsole
 Windows and Mac OS X: do not provide a console window
 for standard i/o. On Mac OS X this also triggers
-building an OS X .app bundle. This option is ignored
-in *NIX systems.
+building an OS X .app bundle. On Windows this option
+will be set if the first script is a \(aq.pyw\(aq file. This
+option is ignored in *NIX systems.
 .TP
 .BI \-i \ <FILE.ico or FILE.exe,ID or FILE.icns>\fP,\fB \ \-\-icon \ <FILE.ico or FILE.exe,ID or FILE.icns>
 FILE.ico: apply that icon to a Windows executable.

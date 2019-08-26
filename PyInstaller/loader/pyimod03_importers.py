@@ -30,7 +30,6 @@ SYS_PREFIXLEN = len(SYS_PREFIX)
 # In Python 3.3+ tne locking scheme has changed to per-module locks for the most part.
 # Global locking should not be required in Python 3.3+
 if sys.version_info[0:2] < (3, 3):
-    # TODO Implement this for Python 3.2 - 'imp' is not a built-in module anymore.
     import imp
     imp_lock = imp.acquire_lock
     imp_unlock = imp.release_lock
@@ -45,14 +44,9 @@ else:
     def imp_lock(): pass
     def imp_unlock(): pass
     import _frozen_importlib
-    if sys.version_info[1] <= 4:
-        # Python 3.3, 3.4
-        EXTENSION_SUFFIXES = _frozen_importlib.EXTENSION_SUFFIXES
-        EXTENSION_LOADER = _frozen_importlib.ExtensionFileLoader
-    else:
-        # Since Python 3.5+ some attributes were moved to '_bootstrap_external'.
-        EXTENSION_SUFFIXES = _frozen_importlib._bootstrap_external.EXTENSION_SUFFIXES
-        EXTENSION_LOADER = _frozen_importlib._bootstrap_external.ExtensionFileLoader
+    # Since Python 3.5+ some attributes were moved to '_bootstrap_external'.
+    EXTENSION_SUFFIXES = _frozen_importlib._bootstrap_external.EXTENSION_SUFFIXES
+    EXTENSION_LOADER = _frozen_importlib._bootstrap_external.ExtensionFileLoader
 
     # In Python 3 it is recommended to use class 'types.ModuleType' to create a new module.
     # However, 'types' module is not a built-in module. The 'types' module uses this trick

@@ -1,1 +1,0 @@
-Fix installation with pip 19.0.

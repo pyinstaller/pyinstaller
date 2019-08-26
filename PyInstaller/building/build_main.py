@@ -29,13 +29,12 @@ from .. import HOMEPATH, DEFAULT_DISTPATH, DEFAULT_WORKPATH
 from .. import compat
 from .. import log as logging
 from ..utils.misc import absnormpath, compile_py_files
-from ..compat import is_py2, is_win, PYDYLIB_NAMES, VALID_MODULE_TYPES, \
+from ..compat import is_py2, is_win, PYDYLIB_NAMES, \
     open_file, text_type, unicode_writer
 from ..depend import bindepend
 from ..depend.analysis import initialize_modgraph
 from .api import PYZ, EXE, COLLECT, MERGE
 from .datastruct import TOC, Target, Tree, _check_guts_eq
-from .imphook import AdditionalFilesCache, ModuleHookCache
 from .osx import BUNDLE
 from .toc_conversion import DependencyProcessor
 from .utils import _check_guts_toc_mtime, format_binaries_and_datas
@@ -65,7 +64,7 @@ WARNFILE_HEADER = """\
 
 This file lists modules PyInstaller was not able to find. This does not
 necessarily mean this module is required for running you program. Python and
-Python 3rd-party packages include a lot of conditional or optional module. For
+Python 3rd-party packages include a lot of conditional or optional modules. For
 example the module 'ntpath' only exists on Windows, whereas the module
 'posixpath' only exists on Posix systems.
 
@@ -336,17 +335,10 @@ class Analysis(Target):
         """
         from ..config import CONF
 
-        # Either instantiate a ModuleGraph object or for tests reuse
-        # dependency graph already created.
-        # Do not reuse dependency graph when option --exclude-module was used.
-        if 'tests_modgraph' in CONF and not self.excludes:
-            logger.info('Reusing basic module graph object.')
-            self.graph = CONF['tests_modgraph']
-        else:
-            for m in self.excludes:
-                logger.debug("Excluding module '%s'" % m)
-            self.graph = initialize_modgraph(
-                excludes=self.excludes, user_hook_dirs=self.hookspath)
+        for m in self.excludes:
+            logger.debug("Excluding module '%s'" % m)
+        self.graph = initialize_modgraph(
+            excludes=self.excludes, user_hook_dirs=self.hookspath)
 
         # TODO Find a better place where to put 'base_library.zip' and when to created it.
         # For Python 3 it is necessary to create file 'base_library.zip'
@@ -365,10 +357,6 @@ class Analysis(Target):
         # plus our loader, plus other paths from e.g. --path option).
         self.graph.path = self.pathex + self.graph.path
         self.graph.set_setuptools_nspackages()
-
-        # Analyze the script's hidden imports (named on the command line)
-        self.graph.add_hiddenimports(self.hiddenimports)
-
 
         logger.info("running Analysis %s", self.tocbasename)
         # Get paths to Python and, in Windows, the manifest.
@@ -406,25 +394,6 @@ class Analysis(Target):
         if is_win:
             depmanifest.writeprettyxml()
 
-
-        #FIXME: For simplicity, move the following hook caching into a new
-        #PyiModuleGraph.cache_module_hooks() method and have the current
-        #"PyiModuleGraph" instance own the current "ModuleHookCache" instance.
-
-        ### Hook cache.
-        logger.info('Caching module hooks...')
-
-        # List of all directories containing hook scripts. Default hooks are
-        # listed before and hence take precedence over custom hooks.
-        module_hook_dirs = [get_importhooks_dir()]
-        if self.hookspath:
-            module_hook_dirs.extend(self.hookspath)
-
-        # Hook cache prepopulated with these lazy loadable hook scripts.
-        module_hook_cache = ModuleHookCache(
-            module_graph=self.graph, hook_dirs=module_hook_dirs)
-
-
         ### Module graph.
         #
         # Construct the module graph of import relationships between modules
@@ -444,83 +413,15 @@ class Analysis(Target):
             logger.info("Analyzing %s", script)
             priority_scripts.append(self.graph.run_script(script))
 
+        # Analyze the script's hidden imports (named on the command line)
+        self.graph.add_hiddenimports(self.hiddenimports)
 
         ### Post-graph hooks.
-        #
-        # Run post-graph hooks for all modules imported by this user's
-        # application. For each iteration of the infinite "while" loop below:
-        #
-        # 1. All hook() functions defined in cached hooks for imported modules
-        #    are called. This may result in new modules being imported (e.g., as
-        #    hidden imports) that were ignored earlier in the current iteration:
-        #    if this is the case, all hook() functions defined in cached hooks
-        #    for these modules will be called by the next iteration.
-        # 2. All cached hooks whose hook() functions were called are removed
-        #    from this cache. If this cache is empty, no hook() functions will
-        #    be called by the next iteration and this loop will be terminated.
-        # 3. If no hook() functions were called, this loop is terminated.
-        logger.info('Loading module hooks...')
-
-        # Cache of all external dependencies (e.g., binaries, datas) listed in
-        # hook scripts for imported modules.
-        additional_files_cache = AdditionalFilesCache()
-
-        #FIXME: For orthogonality, move the following "while" loop into a new
-        #PyiModuleGraph.post_graph_hooks() method. The "PyiModuleGraph" class
-        #already handles all other hook types. Moreover, the graph node
-        #retrieval and type checking performed below are low-level operations
-        #best isolated into the "PyiModuleGraph" class itself.
-
-        # For each imported module, run this module's post-graph hooks if any.
-        while True:
-            # Set of the names of all imported modules whose post-graph hooks
-            # are run by this iteration, preventing the next iteration from re-
-            # running these hooks. If still empty at the end of this iteration,
-            # no post-graph hooks were run; thus, this loop will be terminated.
-            hooked_module_names = set()
-
-            # For each remaining hookable module and corresponding hooks...
-            for module_name, module_hooks in module_hook_cache.items():
-                # Graph node for this module if imported or "None" otherwise.
-                module_node = self.graph.findNode(
-                    module_name, create_nspkg=False)
-
-                # If this module has not been imported, temporarily ignore it.
-                # This module is retained in the cache, as a subsequently run
-                # post-graph hook could import this module as a hidden import.
-                if module_node is None:
-                    continue
-
-                # If this module is unimportable, permanently ignore it.
-                if type(module_node).__name__ not in VALID_MODULE_TYPES:
-                    hooked_module_names.add(module_name)
-                    continue
-
-                # For each hook script for this module...
-                for module_hook in module_hooks:
-                    # Run this script's post-graph hook if any.
-                    module_hook.post_graph()
-
-                    # Cache all external dependencies listed by this script
-                    # after running this hook, which could add dependencies.
-                    additional_files_cache.add(
-                        module_name,
-                        module_hook.binaries,
-                        module_hook.datas)
-
-                # Prevent this module's hooks from being run again.
-                hooked_module_names.add(module_name)
-
-            # Prevent all post-graph hooks run above from being run again by the
-            # next iteration.
-            module_hook_cache.remove_modules(*hooked_module_names)
-
-            # If no post-graph hooks were run, terminate iteration.
-            if not hooked_module_names:
-                break
+        self.graph.process_post_graph_hooks()
 
         # Update 'binaries' TOC and 'datas' TOC.
-        deps_proc = DependencyProcessor(self.graph, additional_files_cache)
+        deps_proc = DependencyProcessor(self.graph,
+                                        self.graph._additional_files_cache)
         self.binaries.extend(deps_proc.make_binaries_toc())
         self.datas.extend(deps_proc.make_datas_toc())
         self.zipped_data.extend(deps_proc.make_zipped_data_toc())
@@ -647,7 +548,6 @@ class Analysis(Target):
             self.graph.graphreport(unicode_writer(fh))
             logger.info("Graph drawing written to %s", CONF['dot-file'])
 
-
     def _check_python_library(self, binaries):
         """
         Verify presence of the Python dynamic library in the binary dependencies.
@@ -664,21 +564,9 @@ class Analysis(Target):
         # Python lib not in dependencies - try to find it.
         logger.info('Python library not in binary dependencies. Doing additional searching...')
         python_lib = bindepend.get_python_library_path()
-        if python_lib:
-            logger.debug('Adding Python library to binary dependencies')
-            binaries.append((os.path.basename(python_lib), python_lib, 'BINARY'))
-            logger.info('Using Python library %s', python_lib)
-        else:
-            msg = """Python library not found: %s
-This would mean your Python installation doesn't come with proper library files.
-This usually happens by missing development package, or unsuitable build parameters of Python installation.
-
-* On Debian/Ubuntu, you would need to install Python development packages
-  * apt-get install python3-dev
-  * apt-get install python-dev
-* If you're building Python by yourself, please rebuild your Python with `--enable-shared` (or, `--enable-framework` on Darwin)
-""" % (", ".join(PYDYLIB_NAMES),)
-            raise IOError(msg)
+        logger.debug('Adding Python library to binary dependencies')
+        binaries.append((os.path.basename(python_lib), python_lib, 'BINARY'))
+        logger.info('Using Python library %s', python_lib)
 
 
 class ExecutableBuilder(object):
