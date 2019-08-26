@@ -9,6 +9,7 @@
 import os
 import sys
 import re
+import glob
 
 from PyInstaller.utils import misc
 from PyInstaller.utils.hooks import pyqt5_library_info, add_qt5_dependencies
@@ -43,9 +44,23 @@ else:
 class QmlImports():
 
     """
+    Finds all Qml files used in the main project and parses those qml files
+    to include all imports including Javascript files and folders.
+
+    It finds the initial qml file by:
+        1. Reading the (.spec) file to find the main python file
+        2. Reading the main python file which is by now called the analysis
+        file, to find the qml files imported, using the
+        self.read_analysis_file().
+        3. The self.read_analysis_file() uses two search queries(load,
+        setSource) which are the only two used by QmlApplicationEngine class to
+        load qml files.
+        4. The call to self.is_raw_string() checks to see if the contents of 
+        the load() or setSource() is not a variable or even a qrc.
+
     """
 
-    def __init__(self):
+    def __init__(self, folder):
         self.hidden_imports = []
         self.datas = []
         self.raw_import_stats = []
@@ -77,7 +92,7 @@ class QmlImports():
                               'QtGamepad 1': 'PyQt5.QtGamepad',
                               'QtCharts 2': 'PyQt5.QtCharts',
                               'QtWebView 1': 'PyQt5.QtWebView'}
-        self.pyqt_folder = ''
+        self.pyqt_folder = folder
         self.nest = 0
 
     def start(self):
@@ -113,6 +128,7 @@ class QmlImports():
 
                 else:
                     continue
+
         if len(self.spec_files) > 1:
             self.spec_file = self.clarify_specs()
         else:
@@ -162,11 +178,14 @@ class QmlImports():
         a_right = without_apos[1:-1]
 
         # the main python file
-        self.analysis_file = a_right
+        if not os.path.isabs(a_right):
+            self.analysis_file = os.path.join(os.path.dirname(self.spec_file),
+                                              a_right)
+        else:
+            self.analysis_file = a_right
+
         if os.path.exists(self.analysis_file):
-            path_splits = os.path.split(self.analysis_file)
-            # the folder the main py file is in
-            self.analysis_folder = path_splits[0]
+            self.analysis_folder = os.path.dirname(self.analysis_file)
             return True
         else:
             return False
@@ -184,12 +203,18 @@ class QmlImports():
                 else:
                     # find line that contains a qml file
                     for search_query in self.search_words:
+                        # query should end up looking like: .load("anyQmlFile")
                         query = '.' + search_query + '[(].*?.*?.*?[)]'
                         hyp_file = re.findall(query, str(line))
 
                         if hyp_file:
-                            # we will use the first file
+                            # QmlEngine takes only one qml file
+                            # if comments are taken out then it's probably the,
+                            # only one, so the hyp_file is a list that contains
+                            # just one entry.
                             first = hyp_file[0].replace(search_query, '')
+                            # remove the dot(.) and the opening and closing
+                            # brackets
                             second = first[2:-1]
                             if self.is_raw_string(second):
                                 return True
@@ -229,11 +254,9 @@ class QmlImports():
         # to the application's folder
         # if it's not, we simply do nothing.
         # it can't be a full path.
-        if os.path.exists(self.main_qml):
-            return False
-        else:
+        if not os.path.isabs(self.main_qml):
             self.append_to_data(self.analysis_folder, self.main_qml)
-            self._first_handle(self.analysis_folder, self.main_qml)
+            self._start_process(self.analysis_folder, self.main_qml) # start
 
     def _crawl_qml_file(self, c_file):
 
@@ -242,7 +265,7 @@ class QmlImports():
 
         with open(c_file, mode='r', encoding='utf-8') as fh:
             for line in fh:
-                if re.findall('[ ]+[//]', line):
+                if re.match(r'\s*//', line):
                     # skip it's a comment line
                     continue
                 else:
@@ -258,48 +281,31 @@ class QmlImports():
         if import_stats:
             # since we are parsing this line by line
             # there will always be just one entry in import stats
-            self._sanitize_imports(import_stats[0])
 
-    def _sanitize_imports(self, stat):
+            if '"' in import_stats[0] or "'" in import_stats[0]:
+                # Remove the (') apostrophies that comes
+                # which are found in them
+                if len(import_stats[0]) > 8:
+                    stat = import_stats[0][7:-1]
+            else:
+                stat = import_stats[0]
 
-        # Remove the (') apostrophies that comes
-        # which are found in them
-        if len(stat) > 8:
-            clean = stat[7:-1]
-            if clean not in self.raw_import_stats:
-                self.raw_import_stats.append(clean)
-        else:
-            # Unkwown import type
-            return False
+            if stat not in self.raw_import_stats:
+                self.raw_import_stats.append(stat)
 
     def find_images(self, statement):
         for keyword in self.image_search_words:
-            img_query = re.findall('["|\'].*?.*?.*?[.]' + keyword + '["|\']',
-                                   statement)
-            if img_query:
-                # since we are parsing the qml
-                # line by line, there is only one entry
-                # first_split = re.split(keyword+':\s?', img_query[0])
-                self._sanitize_image_string(img_query[0])
+            stat = statement.replace("'", '"')
+            if '.' + keyword in stat:
+                img_query = stat.split('"', 2)[1]
+    
+                if img_query:
+                    self._sanitize_image_string(img_query)
 
-    def _sanitize_image_string(self, statement):
-        if statement[0] == '"':
-            # maybe the user added a comment after the line
-            # the splits will take it away into the third index
-            splits = re.split('"', statement)
-            url = splits[1]
-        elif statement[0] == "'":
-            # maybe the user added a comment after the line
-            # the splits will take it away into the third index
-            splits = re.split("'", statement)
-            url = splits[1]
-        else:
-            # Unkwown type
-            pass
-
+    def _sanitize_image_string(self, url):
         # find out if it is a relative url
         # and not a qrc
-        if self.is_raw_img_str(url):
+        if not url.startswith("qrc:") and not os.path.isabs(url):
             # get the relative folder to the qml file
             # we are parsing
             splits = os.path.split(self.current_qml_file)
@@ -307,49 +313,20 @@ class QmlImports():
             # Get the path to the image we want to add
             full_path = os.path.join(current_folder, url)
             # convert to abs path since os.path.join
-            abs_path = os.path.abspath(full_path)
-            final_splits = os.path.split(abs_path)
-            folder = final_splits[0]
-            final_file = final_splits[1]
+            folder, final_file = os.path.split(os.path.abspath(full_path))
             # send it to be added to the datas file
             self.append_to_data(folder, final_file)
         else:
             return False
 
-    def is_raw_img_str(self, string):
-        # Here we find out if the string is
-        # a relative string and not a full path or a varible
-        # or a qrc
-        if re.findall('qrc:', string):
-            # It is a qrc
-            return False
-        else:
-            # lets test if it is a relative path
-            if os.path.exists(string):
-                return False
-            else:
-                # it's a relative path
-                return True
-
-    def _first_handle(self, folder, file):
-
-        # This is to first parse the
-        # main qml file, that was first loaded seperately.
-
-        full_path = os.path.join(folder, file)
-        self._crawl_qml_file(full_path)
-        splits = os.path.split(full_path)
-        self._handle_imports(splits[0])
-
-    def _handle(self, folder, file):
+    def _start_process(self, folder, file):
 
         # This is to organise the processs
         # to allow re-usability
 
         full_path = os.path.join(folder, file)
         self._crawl_qml_file(full_path)
-        splits = os.path.split(full_path)
-        self._handle_imports(splits[0])
+        self._handle_imports(os.path.dirname(full_path))
 
     def _handle_imports(self, folder):
 
@@ -359,17 +336,17 @@ class QmlImports():
 
         for each in self.raw_import_stats:
 
+            # each may contiain "'myFunction.js'"
             entry = each.replace("'", '"')
-            if len(re.findall('.js"', entry)) > 0:
+            if '.js' in entry:
                 # js
-                first = entry.split('"')
-                js_file = first[1]
+                js_file = entry.split('"', 2)[1]
                 self.raw_import_stats.remove(each)
                 self.append_to_data(folder, js_file)
 
             elif entry[0] == '"':
-                # it is an imported folder
-                # just ignore it will be handled later
+                # This will oly match if it is an imported folder
+                # just ignore, it will be handled later
                 continue
 
             else:
@@ -377,12 +354,11 @@ class QmlImports():
                 self.raw_import_stats.remove(each)
                 self._sanitize_hidd_imps(each)
 
-        # This seperation is to ensure we are done with a folder
-        # before moving on to the next
-        # Problems can emerge if the folders are nested.
-        # This seperation prevents them
-
         for each in self.raw_import_stats:
+            # This seperation is to ensure we are done with a folder
+            # before moving on to the next
+            # Problems can emerge if the folders are nested.
+            # This seperation prevents them
 
             entry = each.replace("'", '"')
             if entry[0] == '"':
@@ -398,29 +374,22 @@ class QmlImports():
         # here is where we find the corresponding pyton statements
 
         # split the nos out and lets handle the real import
-        splits = raw_stat.split('.')
-        stat = splits[0]
+        stat = raw_stat.split('.', 1)[0]
 
         if stat not in self.only_qml_imps_map:
-            imp_stat = self.hidd_imps_map[stat]
-
-            if imp_stat not in self.hidden_imports:
+            if stat in self.hidd_imps_map:
+                imp_stat = self.hidd_imps_map[stat]
                 self.hidden_imports.append(imp_stat)
         else:
-            imp_stat = self.only_qml_imps_map[stat]
-            self._imported_qml(imp_stat)
-
-    def _imported_qml(self, module):
-
-        # Here is where we import the needed
-        # qml only imports
-        # that has no python import statement
-
-        relative_path = os.path.join('Qt', 'qml', module)
-        qml_folder = os.path.join(self.pyqt_folder, relative_path)
-        contents = qml_folder
-        group = (contents, os.path.join('PyQt5', relative_path))
-        self.datas.append(group)
+            # Here is where we import the needed
+            # qml only imports
+            # that has no python import statement
+            # regex is used to find module, so custom frameworks can be found
+            module = re.split('\s\d$', stat)[0]
+            relative_path = os.path.join('Qt', 'qml', module)
+            qml_folder = os.path.join(self.pyqt_folder, relative_path)
+            group = (qml_folder, os.path.join('PyQt5', relative_path))
+            self.datas.append(group)
 
     def _find_other_qml_files(self, folder):
 
@@ -430,13 +399,9 @@ class QmlImports():
         # Not recursively though.
         # There could be a better way of doing this.
 
-        contents = os.listdir(folder)
-        for entry in contents:
-            if entry[-4:] == '.qml':
-                self.append_to_data(folder, entry)
-                self._handle(folder, entry)
-            else:
-                continue
+        for entry in glob.glob(os.path.join(folder, '*.qml')):
+            self.append_to_data(folder, entry)
+            self._start_process(folder, entry)
 
     def append_to_data(self, folder, file):
 
@@ -449,18 +414,19 @@ class QmlImports():
         # this is to check for nesting
         # remove the starting folder,
         # whatever we have is the nested path
-        neut_analys_folder = os.path.abspath(self.analysis_folder)
-        neut_folder = os.path.abspath(folder)
-        nest = neut_folder.replace(neut_analys_folder, '')
-        # replace backslashes with forward slashes on windows
-        # lets have a common ground to work with
-        if nest != '':
-            rem_folder = '.' + nest
+        nest = os.path.relpath(os.path.abspath(folder),
+                               os.path.abspath(self.analysis_folder))
+
+        if nest != '.':
+            rem_folder = nest
         else:
+            # there is no trailing folder
             rem_folder = ''
 
+        # file may contain "images/icon.ico"
         splits = os.path.split(file)
 
+        # There is a trialing folder, set it as output folder
         if rem_folder != '':
             o_folder = rem_folder
 
@@ -468,15 +434,15 @@ class QmlImports():
             o_folder = '.'
 
         else:
+            # splits[0] may sometime contain "images"
             o_folder = splits[0]
 
         group = (full_path, o_folder)
         self.datas.append(group)
 
         # include also the qmlc
-        # when available, since
-        # since it speeds up the starting time.
-        qmlc_path = full_path.replace('qml', 'qmlc')
+        # when available, since it speeds up the starting time.
+        qmlc_path = full_path.replace('.qml', '.qmlc')
 
         if os.path.exists(qmlc_path):
             splits = os.path.split(file)
@@ -498,21 +464,15 @@ class QmlImports():
 def hook(hook_api):
 
         # Find the folder in which PyQt in located
-        pyqt_folder = os.path.split(hook_api.__file__)[0]
-        imports = QmlImports()
-        imports.pyqt_folder = pyqt_folder
+        pyqt_folder = os.path.dirname(hook_api.__file__)
+        imports = QmlImports(pyqt_folder)
         if imports.start():
             h_imps, dts = imports.getValues()
+            # send the hidden import statements
+            # into the global variable
+            for imp in h_imps:
+                hook_api.add_imports(imp)
 
-            if h_imps != []:
-                # send the hidden import statements
-                # into the global variable
-                for each in h_imps:
-                    hook_api.add_imports(each)
-
-            if dts != []:
-                # send the QmlImports data variable
-                # into the main stream datas variable.
-                hook_api.add_datas(dts)
-        else:
-            return
+            # send the QmlImports data variable
+            # into the main stream datas variable.
+            hook_api.add_datas(dts)
