@@ -1,0 +1,1 @@
+Add support for appending URL to program arguments when applications is launched from custom protocol handler on MacOS.
