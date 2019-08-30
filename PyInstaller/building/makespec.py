@@ -309,6 +309,14 @@ def __add_options(parser):
                          "process signals both the bootloader and child "
                          "(e.g. via a process group) to avoid signalling "
                          "the child twice."))
+    g.add_argument('--pyiboot01-preserved-envs',
+                   action='append', default=['VIRTUAL_ENV'],
+                   metavar="ENVVAR", dest='pyiboot01_preserved_envs',
+                   help='Environment variables that will be preserved in pyiboot01_bootstrap module, '
+                   'the preserved env var will be renamed with prefix `PYINSTALLER_PRESERVED_`.'
+                   'This option can be used multiple times. (default: VIRTUAL_ENV)')
+    g.add_argument('--pyiboot01-no-preserved-envs', action='store_true',
+                   help='Disable --pyiboot01-preserved-envs')
 
 
 def main(scripts, name=None, onefile=None,
@@ -319,6 +327,8 @@ def main(scripts, name=None, onefile=None,
          hiddenimports=None, hookspath=None, key=None, runtime_hooks=None,
          excludes=None, uac_admin=False, uac_uiaccess=False,
          win_no_prefer_redirects=False, win_private_assemblies=False,
+         pyiboot01_preserved_envs=None,
+         pyiboot01_no_preserved_envs=False,
          **kwargs):
     # If appname is not specified - use the basename of the main script as name.
     if name is None:
@@ -380,6 +390,8 @@ def main(scripts, name=None, onefile=None,
 
     hiddenimports = hiddenimports or []
     upx_exclude = upx_exclude or []
+    if pyiboot01_no_preserved_envs or pyiboot01_preserved_envs is None:
+        pyiboot01_preserved_envs = []
 
     # If file extension of the first script is '.pyw', force --windowed option.
     if is_win and os.path.splitext(scripts[0])[-1] == '.pyw':
@@ -447,6 +459,7 @@ def main(scripts, name=None, onefile=None,
         # Windows assembly searching options
         'win_no_prefer_redirects': win_no_prefer_redirects,
         'win_private_assemblies': win_private_assemblies,
+        'pyiboot01_preserved_envs': pyiboot01_preserved_envs,
     }
 
     # Write down .spec file to filesystem.

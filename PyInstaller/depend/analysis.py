@@ -746,7 +746,7 @@ def initialize_modgraph(excludes=(), user_hook_dirs=()):
     return graph
 
 
-def get_bootstrap_modules():
+def get_bootstrap_modules(workpath, pyiboot01_preserved_envs=None):
     """
     Get TOC with the bootstrapping modules and their dependencies.
     :return: TOC with modules
@@ -764,12 +764,38 @@ def get_bootstrap_modules():
         mod = __import__(mod_name)  # C extension.
         if hasattr(mod, '__file__'):
             loader_mods.append((mod_name, os.path.abspath(mod.__file__), 'EXTENSION'))
+
+    # modify a copy of pyiboot01_bootstrap by related arguments
+    pyiboot01_name = 'pyiboot01_bootstrap.py'
+    pyiboot01_preserved_envs = pyiboot01_preserved_envs or []
+    pyiboot01_source = os.path.join(loaderpath, pyiboot01_name)
+    pyiboot01_context = dict(
+        pyiboot01_preserved_envs=pyiboot01_preserved_envs,
+    )
+    logger.info('Building %s with %r', pyiboot01_name, pyiboot01_context)
+    with open(pyiboot01_source, 'r') as f:
+        pyiboot01_content = f.read()
+    pyiboot01_content = render_pyfile_template(pyiboot01_content, pyiboot01_context)
+    pyiboot01_built = os.path.join(workpath, pyiboot01_name)
+    with open(pyiboot01_built, 'w') as f:
+        f.write(pyiboot01_content)
+
     # NOTE:These modules should be kept simple without any complicated dependencies.
     loader_mods +=[
         ('struct', os.path.abspath(mod_struct.__file__), 'PYMODULE'),
         ('pyimod01_os_path', os.path.join(loaderpath, 'pyimod01_os_path.pyc'), 'PYMODULE'),
         ('pyimod02_archive',  os.path.join(loaderpath, 'pyimod02_archive.pyc'), 'PYMODULE'),
         ('pyimod03_importers',  os.path.join(loaderpath, 'pyimod03_importers.pyc'), 'PYMODULE'),
-        ('pyiboot01_bootstrap', os.path.join(loaderpath, 'pyiboot01_bootstrap.py'), 'PYSOURCE'),
+        ('pyiboot01_bootstrap', pyiboot01_built, 'PYSOURCE'),
     ]
     return loader_mods
+
+
+def render_pyfile_template(content, context):
+    """Render pyfile as template, template var format: '{{ var_name }}'
+    Note the single quotes are included and will be replaced together.
+    """
+    # type:(str, dict) -> str
+    for k, v in context.items():
+        content = re.sub(r"'\{\{ " + k + r" \}\}'", repr(v), content)
+    return content
