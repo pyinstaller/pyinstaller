@@ -1,0 +1,2 @@
+Add CLI options ``--pyiboot01-preserved-envs`` and ``--pyiboot01-no-preserved-envs``
+to control which environment variables will be preserved when bootstraping the app.
