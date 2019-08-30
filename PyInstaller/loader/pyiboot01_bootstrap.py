@@ -57,6 +57,8 @@ for env in PRESERVED_ENVS:
         os.environ[PRESERVED_ENV_PREFIX + env] = os.environ[env]
         os.environ[env] = ''
         del os.environ[env]
+del PRESERVED_ENVS
+del PRESERVED_ENV_PREFIX
 
 
 # Ensure sys.path contains absolute paths. Otherwise import of other python
