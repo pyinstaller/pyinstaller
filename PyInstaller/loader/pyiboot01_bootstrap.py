@@ -52,19 +52,18 @@ sys.base_exec_prefix = sys.exec_prefix
 # we should still keep the original data for those who relies on it essentially,
 # provide another way to access it when necessary.
 preserved_env_prefix = 'PYINSTALLER_PRESERVED_'  # could be used for other preserved env in the future
-env_virtual_env = 'VIRTUAL_ENV'
-preserved_env_virtual_env = preserved_env_prefix + env_virtual_env
+VIRTENV = 'VIRTUAL_ENV'
 
 # NOTE the best way to decide which environment variables to preserve is by
 # passing an option `--preserve-env` to pyinstaller or spec file, then store
 # the preserved ones in the bundle app, get them here to loop and handle,
 # this is intended to be implemented in this feature branch.
-if env_virtual_env in os.environ:
+if VIRTENV in os.environ:
     # On some platforms (e.g. AIX) 'os.unsetenv()' is not available and then
     # deleting the var from os.environ does not delete it from the environment.
-    os.environ[preserved_env_virtual_env] = os.environ[env_virtual_env]
-    os.environ[env_virtual_env] = ''
-    del os.environ[env_virtual_env]
+    os.environ[preserved_env_prefix + VIRTENV] = os.environ[VIRTENV]
+    os.environ[VIRTENV] = ''
+    del os.environ[VIRTENV]
 
 
 # Ensure sys.path contains absolute paths. Otherwise import of other python
