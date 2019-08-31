@@ -28,7 +28,7 @@ a = Analysis(%(scripts)s,
              cipher=block_cipher,
              noarchive=%(noarchive)s)
 pyz = PYZ(a.pure, a.zipped_data,
-             pyiboot01_preserved_envs=%(pyiboot01_preserved_envs)r,
+             disguised_envs=%(disguised_envs)r,
              cipher=block_cipher)
 exe = EXE(pyz,
           a.scripts,
@@ -62,7 +62,7 @@ a = Analysis(%(scripts)s,
              cipher=block_cipher,
              noarchive=%(noarchive)s)
 pyz = PYZ(a.pure, a.zipped_data,
-             pyiboot01_preserved_envs=%(pyiboot01_preserved_envs)r,
+             disguised_envs=%(disguised_envs)r,
              cipher=block_cipher)
 exe = EXE(pyz,
           a.scripts,

@@ -70,7 +70,7 @@ class PYZ(Target):
         Target.__init__(self)
         name = kwargs.get('name', None)
         cipher = kwargs.get('cipher', None)
-        pyiboot01_preserved_envs = kwargs.get('pyiboot01_preserved_envs', [])
+        disguised_envs = kwargs.get('disguised_envs', [])
         self.toc = TOC()
         # If available, use code objects directly from ModuleGraph to
         # speed up PyInstaller.
@@ -83,7 +83,7 @@ class PYZ(Target):
         if name is None:
             self.name = os.path.splitext(self.tocfilename)[0] + '.pyz'
         # PyInstaller bootstrapping modules.
-        self.dependencies = get_bootstrap_modules(CONF['workpath'], pyiboot01_preserved_envs=pyiboot01_preserved_envs)
+        self.dependencies = get_bootstrap_modules(CONF['workpath'], disguised_envs=disguised_envs)
         # Bundle the crypto key.
         self.cipher = cipher
         if cipher:

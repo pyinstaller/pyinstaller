@@ -746,7 +746,7 @@ def initialize_modgraph(excludes=(), user_hook_dirs=()):
     return graph
 
 
-def get_bootstrap_modules(workpath, pyiboot01_preserved_envs=None):
+def get_bootstrap_modules(workpath, disguised_envs=None):
     """
     Get TOC with the bootstrapping modules and their dependencies.
     :return: TOC with modules
@@ -767,10 +767,10 @@ def get_bootstrap_modules(workpath, pyiboot01_preserved_envs=None):
 
     # modify a copy of pyiboot01_bootstrap by related arguments
     pyiboot01_name = 'pyiboot01_bootstrap.py'
-    pyiboot01_preserved_envs = pyiboot01_preserved_envs or []
+    disguised_envs = disguised_envs or []
     pyiboot01_source = os.path.join(loaderpath, pyiboot01_name)
     pyiboot01_context = dict(
-        pyiboot01_preserved_envs=pyiboot01_preserved_envs,
+        disguised_envs=disguised_envs,
     )
     logger.info('Building %s with %r', pyiboot01_name, pyiboot01_context)
     with open(pyiboot01_source, 'r') as f:
