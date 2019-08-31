@@ -77,8 +77,12 @@ Running Python code requires several steps:
    because the general import mechanism is not yet available.
    It sets up the Python import mechanism to load modules
    only from archives embedded in the executable.
-   It also adds the attributes ``frozen``
-   and ``_MEIPASS`` to the ``sys`` built-in module.
+   It also:
+
+   a. Adds the attributes ``frozen``
+      and ``_MEIPASS`` to the ``sys`` built-in module.
+   b. Disguises specified environment variables
+      (see :ref:`Run-time Information`).
 
 2. Execute any run-time hooks: first those specified by the
    user, then any standard ones.
