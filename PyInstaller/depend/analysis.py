@@ -53,7 +53,7 @@ from ..compat import importlib_load_source, is_py2, PY3_BASE_MODULES,\
 from ..lib.modulegraph.find_modules import get_implies
 from ..lib.modulegraph.modulegraph import ModuleGraph
 from ..utils.hooks import collect_submodules, is_package
-from ..utils.misc import load_py_data_struct
+from ..utils.misc import load_py_data_struct, build_from_template_file
 
 logger = logging.getLogger(__name__)
 
@@ -765,20 +765,15 @@ def get_bootstrap_modules(workpath, disguised_envs=None):
         if hasattr(mod, '__file__'):
             loader_mods.append((mod_name, os.path.abspath(mod.__file__), 'EXTENSION'))
 
-    # modify a copy of pyiboot01_bootstrap by related arguments
+    # build pyiboot01_bootstrap with related arguments
     pyiboot01_name = 'pyiboot01_bootstrap.py'
-    disguised_envs = disguised_envs or []
-    pyiboot01_source = os.path.join(loaderpath, pyiboot01_name)
-    pyiboot01_context = dict(
-        disguised_envs=disguised_envs,
-    )
-    logger.info('Building %s with %r', pyiboot01_name, pyiboot01_context)
-    with open(pyiboot01_source, 'r') as f:
-        pyiboot01_content = f.read()
-    pyiboot01_content = render_pyfile_template(pyiboot01_content, pyiboot01_context)
     pyiboot01_built = os.path.join(workpath, pyiboot01_name)
-    with open(pyiboot01_built, 'w') as f:
-        f.write(pyiboot01_content)
+    build_from_template_file(
+        os.path.join(loaderpath, pyiboot01_name),
+        dict(
+            disguised_envs=disguised_envs or [],
+        ),
+        pyiboot01_built)
 
     # NOTE:These modules should be kept simple without any complicated dependencies.
     loader_mods +=[
@@ -789,13 +784,3 @@ def get_bootstrap_modules(workpath, disguised_envs=None):
         ('pyiboot01_bootstrap', pyiboot01_built, 'PYSOURCE'),
     ]
     return loader_mods
-
-
-def render_pyfile_template(content, context):
-    """Render pyfile as template, template var format: '{{ var_name }}'
-    Note the single quotes are included and will be replaced together.
-    """
-    # type:(str, dict) -> str
-    for k, v in context.items():
-        content = re.sub(r"'\{\{ " + k + r" \}\}'", repr(v), content)
-    return content
