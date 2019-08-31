@@ -581,3 +581,25 @@ def test_several_scripts2(pyi_builder_spec):
     Verify each script has it's own global vars (basic test).
     """
     pyi_builder_spec.test_spec('several-scripts2.spec')
+
+
+def test_disguise_envvar(monkeypatch, pyi_builder):
+    env_name0 = 'ENV_TO_DISGUISE_0'
+    env_value0 = 'foo'
+    env_name1 = 'ENV_TO_DISGUISE_1'
+    env_value1 = 'bar'
+    env_name2 = 'ENV_TO_DISGUISE_2'
+    env_value2 = 'rand0m v@lue!'
+    monkeypatch.setenv(env_name0, env_value0)
+    monkeypatch.setenv(env_name1, env_value1)
+    monkeypatch.setenv(env_name2, env_value2)
+
+    pyi_builder.test_source(
+        """
+        import os
+
+        assert not os.getenv('%s'), 'env 0 assert failed'
+        assert not os.getenv('%s'), 'env 1 assert failed'
+        assert os.getenv('%s') == '%s', 'env 2 assert failed'
+        """ % (env_name0, env_name1, env_name2, env_value2),
+        pyi_args=['--disguise-envvar', env_name0, '--disguise-envvar', env_name1])
