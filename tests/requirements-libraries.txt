@@ -69,7 +69,7 @@ PySide==1.2.4; sys_platform == 'win32' and python_version == '2.7'
 twisted==19.7.0; python_version == '2.7'
 
 # uvloop does not currently support Windows.
-uvloop==0.12.2; python_version != '2.7' and sys_platform != 'win32'
+uvloop==0.13.0; python_version != '2.7' and sys_platform != 'win32'
 
 # web3 current releases don't support Python 3.5.
 web3==5.0.2; python_version > '3.5'
