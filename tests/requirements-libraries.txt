@@ -37,7 +37,7 @@ phonenumbers==8.10.17
 Pillow==6.1.0
 pinyin==0.4.0
 pycparser==2.19
-pycryptodome==3.8.2
+pycryptodome==3.9.0
 pycryptodomex==3.8.2
 pyexcelerate==0.8.0
 pygments==2.4.2
