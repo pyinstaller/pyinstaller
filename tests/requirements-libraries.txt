@@ -66,7 +66,7 @@ pyenchant==2.0.0; sys_platform == 'darwin' or (sys_platform == 'win32' and pytho
 PySide==1.2.4; sys_platform == 'win32' and python_version == '2.7'
 
 # As of 14-Aug-2018, twisted doesn't offer Python 3 wheels.
-twisted==19.2.1; python_version == '2.7'
+twisted==19.7.0; python_version == '2.7'
 
 # uvloop does not currently support Windows.
 uvloop==0.12.2; python_version != '2.7' and sys_platform != 'win32'
