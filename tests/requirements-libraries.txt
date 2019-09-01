@@ -79,7 +79,7 @@ web3==5.0.2; python_version > '3.5'
 # -------------
 gevent==1.4.0; python_version != '2.7'
 ipython==7.8.0; python_version != '2.7'
-keyring==19.0.2; python_version != '2.7'
+keyring==19.1.0; python_version != '2.7'
 numpy==1.17.1; python_version != '2.7'
 pandas==0.25.0; python_version != '2.7'
 pylint==2.3.1; python_version != '2.7'
