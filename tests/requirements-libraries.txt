@@ -44,7 +44,7 @@ pygments==2.4.2
 python-dateutil==2.8.0
 pytz==2019.2
 pyusb==1.0.2
-pyzmq==18.0.2
+pyzmq==18.1.0
 requests==2.22.0
 # simplejson is used for text_c_extension
 simplejson==3.16.0
