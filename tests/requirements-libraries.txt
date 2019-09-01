@@ -33,7 +33,7 @@ h5py==2.9.0
 markdown==3.1.1
 openpyxl==2.6.3
 pendulum==2.0.5
-phonenumbers==8.10.15
+phonenumbers==8.10.17
 Pillow==6.1.0
 pinyin==0.4.0
 pycparser==2.19
