@@ -38,7 +38,7 @@ Pillow==6.1.0
 pinyin==0.4.0
 pycparser==2.19
 pycryptodome==3.9.0
-pycryptodomex==3.8.2
+pycryptodomex==3.9.0
 pyexcelerate==0.8.0
 pygments==2.4.2
 python-dateutil==2.8.0
