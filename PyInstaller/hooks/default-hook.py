@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2018, PyInstaller Development Team.
+# Copyright (c) 2013-2019, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
@@ -15,7 +15,7 @@ from PyInstaller.utils.hooks import collect_all
 def hook(hook_api):
     # Insert the package this hook is being applied to. The name gives the
     # module inside the package; use this to find the package.
-    package_name = hook_api.__name__.split('.', 1)[0]
+    package_name = hook_api.__name__
 
     datas, binaries, hiddenimports = collect_all(package_name)
     hook_api.add_datas(datas)

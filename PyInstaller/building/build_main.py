@@ -29,13 +29,14 @@ from .. import HOMEPATH, DEFAULT_DISTPATH, DEFAULT_WORKPATH
 from .. import compat
 from .. import log as logging
 from ..utils.misc import absnormpath, compile_py_files
+from ..compat import is_py2, is_win, PYDYLIB_NAMES, VALID_MODULE_TYPES, \
+    open_file, text_type, unicode_writer
 from ..utils.hooks import is_package, get_module_file_attribute
-from ..compat import is_py2, is_win, PYDYLIB_NAMES, VALID_MODULE_TYPES
 from ..depend import bindepend
 from ..depend.analysis import initialize_modgraph
 from .api import PYZ, EXE, COLLECT, MERGE
 from .datastruct import TOC, Target, Tree, _check_guts_eq
-from .imphook import AdditionalFilesCache, ModuleHookCache, ModuleHook
+from ..depend.imphook import ModuleHookCache, ModuleHook
 from .osx import BUNDLE
 from .toc_conversion import DependencyProcessor
 from .utils import _check_guts_toc_mtime, format_binaries_and_datas
@@ -401,6 +402,18 @@ class Analysis(Target):
         if is_win:
             depmanifest.writeprettyxml()
 
+        ### Hook cache.
+        logger.info('Caching module hooks...')
+
+        # List of all directories containing hook scripts. Default hooks are
+        # listed before and hence take precedence over custom hooks.
+        module_hook_dirs = [get_importhooks_dir()]
+        if self.hookspath:
+            module_hook_dirs.extend(self.hookspath)
+
+        module_hook_cache = ModuleHookCache(
+                module_graph=self.graph, hook_dirs=module_hook_dirs)
+
         ### Module graph.
         #
         # Construct the module graph of import relationships between modules
@@ -440,10 +453,6 @@ class Analysis(Target):
         # 3. If no hook() functions were called, this loop is terminated.
         logger.info('Loading module hooks...')
 
-        # Cache of all external dependencies (e.g., binaries, datas) listed in
-        # hook scripts for imported modules.
-        additional_files_cache = AdditionalFilesCache()
-
         # A set of all packages to which a hook has been applied.
         all_hooked_module_names = set()
 
@@ -458,10 +467,12 @@ class Analysis(Target):
         while not done:
             done = True
             modules_unhooked = set()
+            packages_unhooked_seen = set()
             # Iterate through all modules referenced by the top script.
             for module in self.graph.flatten(start=self.graph._top_script_node):
                 # Select only valid types that haven't been hooked yet.
                 module_type = type(module).__name__
+                logger.debug("Processing module: %s - type: %s", module, module_type)
                 module_name = module.identifier
                 if (module_type not in VALID_MODULE_TYPES_BUT_SCRIPTS or
                     module_name in all_hooked_module_names):
@@ -475,6 +486,8 @@ class Analysis(Target):
                 if module_name in module_hook_cache:
                     # For each hook script for this module...
                     for module_hook in module_hook_cache[module_name]:
+                        logger.debug("Found hook for module %s: %s", module_name,
+                                     module_hook)
                         # We're not done yet -- we need another pass to apply
                         # hooks to any imports produced by running this hook.
                         done = False
@@ -483,7 +496,7 @@ class Analysis(Target):
 
                         # Cache all external dependencies listed by this script
                         # after running this hook, which could add dependencies.
-                        additional_files_cache.add(
+                        self.graph._additional_files_cache.add(
                             module_name,
                             module_hook.binaries,
                             module_hook.datas)
@@ -491,29 +504,43 @@ class Analysis(Target):
                     # Prevent this module's hooks from being run again.
                     all_hooked_module_names.add(module_name)
                 else:
-                    modules_unhooked.add(module_name)
+                    logger.debug("Could not find hook for module: %s", module_name)
+                    modules_unhooked.add((module_name, module_type))
 
             # Apply default hooks to anything not covered by standard hooks.
-            for module_name in modules_unhooked:
+            for module_name, module_type in modules_unhooked:
                 # Apply a default hook to the package this module is in.
                 #
                 # Transform ``package.module.submodule`` into ``package``.
-                candidate_package = module_name.split('.', 1)[0]
+                if module_type == 'Package':
+                    candidate_package = module_name
+                else:
+                    candidate_package = module_name.split('.', 1)[0]
+
+                if candidate_package in packages_unhooked_seen:
+                    continue
+
                 # Attempt to get the ``__file__`` attribute for this
                 # package.
+                in_stdlib = False
                 try:
                     file_attr = get_module_file_attribute(candidate_package)
                 except ImportError:
                     # Namespace packages don't have a ``__file__``
                     # attribute, which produces an ImportError. Assume that
                     # any namespace package is not in the standard library.
-                    in_stdlib = False
+                    pass
                 else:
                     # Transform ``/path/to/python/package/__init__.py`` to
                     # ``/path/to/python/``, then check to see if that path
                     # matches the Python standard library.
-                    in_stdlib = (os.path.dirname(
-                                 os.path.dirname(file_attr)) == STDLIB_PATH)
+                    module_subdir = candidate_package.replace('.', os.path.sep)
+                    if os.path.join(STDLIB_PATH, module_subdir) == os.path.dirname(file_attr):
+                        in_stdlib = True
+
+                # Avoid processing this package again
+                packages_unhooked_seen.add(candidate_package)
+
                 # See if a default hook should be applied to this package.
                 if (in_stdlib or
                     candidate_package in all_hooked_module_names or
@@ -528,13 +555,13 @@ class Analysis(Target):
                 # reachable from ``self._top_script_node``. Therefore, create a
                 # default ModuleHook for this module, not its containing
                 # ``candidate_package``.
+
                 module_hook = ModuleHook(
                     module_graph=module_hook_cache.module_graph,
                     module_name=module_name,
                     hook_filename=os.path.join(get_importhooks_dir(),
                                                'default-hook.py'),
-                    hook_module_name_prefix=module_hook_cache.
-                        _hook_module_name_prefix)
+                    hook_module_name_prefix=module_hook_cache._hook_module_name_prefix)
                 # Run it.
                 logger.info('Running default hook for package %s.',
                             candidate_package)
@@ -542,7 +569,7 @@ class Analysis(Target):
 
                 # Cache all external dependencies listed by this script
                 # after running this hook, which could add dependencies.
-                additional_files_cache.add(
+                self.graph._additional_files_cache.add(
                     module_name,
                     module_hook.binaries,
                     module_hook.datas)
