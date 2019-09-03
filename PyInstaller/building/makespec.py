@@ -166,6 +166,10 @@ def __add_options(parser):
                    'This option can be used multiple times.')
     g.add_argument('--key', dest='key',
                    help='The key used to encrypt Python bytecode.')
+    g.add_argument('--use-default-hook', action='store_true', default=False,
+                   help='Apply the default hook for packages which have no '
+                        'other hooks available. The default hook will copy '
+                        'the entire package into the bundle. [EXPERIMENTAL]')
 
     g = parser.add_argument_group('How to generate')
     g.add_argument("-d", "--debug",
@@ -316,9 +320,10 @@ def main(scripts, name=None, onefile=None,
          runtime_tmpdir=None, pathex=None, version_file=None, specpath=None,
          bootloader_ignore_signals=False,
          datas=None, binaries=None, icon_file=None, manifest=None, resources=None, bundle_identifier=None,
-         hiddenimports=None, hookspath=None, key=None, runtime_hooks=None,
-         excludes=None, uac_admin=False, uac_uiaccess=False,
-         win_no_prefer_redirects=False, win_private_assemblies=False,
+         hiddenimports=None, hookspath=None, key=None, use_default_hook=False,
+         runtime_hooks=None, excludes=None, uac_admin=False,
+         uac_uiaccess=False, win_no_prefer_redirects=False,
+         win_private_assemblies=False,
          **kwargs):
     # If appname is not specified - use the basename of the main script as name.
     if name is None:
@@ -421,6 +426,7 @@ def main(scripts, name=None, onefile=None,
         'binaries': binaries,
         'datas': datas,
         'hiddenimports': hiddenimports,
+        'use_default_hook': use_default_hook,
         'name': name,
         'noarchive': 'noarchive' in debug,
         'options': [('v', None, 'OPTION')] if 'imports' in debug else [],

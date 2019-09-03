@@ -86,7 +86,7 @@ IMPORTANT: Do NOT post this list to the issue-tracker. Use it as a basis for
 STDLIB_PATH = os.path.dirname(glob.__file__)
 
 # Don't include scripts, since they don't live in a package.
-VALID_MODULE_TYPES_BUT_SCRIPTS = VALID_MODULE_TYPES - set(['Script', 'AliasNode'])
+VALID_MODULE_TYPES_BUT_SCRIPTS = VALID_MODULE_TYPES - {'Script', 'AliasNode'}
 
 def _old_api_error(obj_name):
     """
@@ -148,7 +148,7 @@ class Analysis(Target):
     def __init__(self, scripts, pathex=None, binaries=None, datas=None,
                  hiddenimports=None, hookspath=None, excludes=None, runtime_hooks=None,
                  cipher=None, win_no_prefer_redirects=False, win_private_assemblies=False,
-                 noarchive=False):
+                 noarchive=False, use_default_hook=False):
         """
         scripts
                 A list of scripts specified as file names.
@@ -246,6 +246,7 @@ class Analysis(Target):
         self.win_private_assemblies = win_private_assemblies
         self._python_version = sys.version
         self.noarchive = noarchive
+        self.use_default_hook = use_default_hook
 
         self.__postinit__()
 
@@ -402,7 +403,7 @@ class Analysis(Target):
         if is_win:
             depmanifest.writeprettyxml()
 
-        ### Hook cache.
+        # Hook cache.
         logger.info('Caching module hooks...')
 
         # List of all directories containing hook scripts. Default hooks are
@@ -412,7 +413,7 @@ class Analysis(Target):
             module_hook_dirs.extend(self.hookspath)
 
         module_hook_cache = ModuleHookCache(
-                module_graph=self.graph, hook_dirs=module_hook_dirs)
+            module_graph=self.graph, hook_dirs=module_hook_dirs)
 
         ### Module graph.
         #
@@ -438,144 +439,9 @@ class Analysis(Target):
 
         ### Post-graph hooks.
         self.graph.process_post_graph_hooks()
-        #
-        # Run post-graph hooks for all modules imported by this user's
-        # application. For each iteration of the infinite "while" loop below:
-        #
-        # 1. All hook() functions defined in cached hooks for imported modules
-        #    are called. This may result in new modules being imported (e.g., as
-        #    hidden imports) that were ignored earlier in the current iteration:
-        #    if this is the case, all hook() functions defined in cached hooks
-        #    for these modules will be called by the next iteration.
-        # 2. All cached hooks whose hook() functions were called are removed
-        #    from this cache. If this cache is empty, no hook() functions will
-        #    be called by the next iteration and this loop will be terminated.
-        # 3. If no hook() functions were called, this loop is terminated.
-        logger.info('Loading module hooks...')
 
-        # A set of all packages to which a hook has been applied.
-        all_hooked_module_names = set()
-
-        #FIXME: For orthogonality, move the following "while" loop into a new
-        #PyiModuleGraph.post_graph_hooks() method. The "PyiModuleGraph" class
-        #already handles all other hook types. Moreover, the graph node
-        #retrieval and type checking performed below are low-level operations
-        #best isolated into the "PyiModuleGraph" class itself.
-
-        # For each imported module, run this module's post-graph hooks if any.
-        done = False
-        while not done:
-            done = True
-            modules_unhooked = set()
-            packages_unhooked_seen = set()
-            # Iterate through all modules referenced by the top script.
-            for module in self.graph.flatten(start=self.graph._top_script_node):
-                # Select only valid types that haven't been hooked yet.
-                module_type = type(module).__name__
-                logger.debug("Processing module: %s - type: %s", module, module_type)
-                module_name = module.identifier
-                if (module_type not in VALID_MODULE_TYPES_BUT_SCRIPTS or
-                    module_name in all_hooked_module_names):
-                    continue
-
-                if ' ' in module_name or "'" in module_name:
-                    logger.info('%s %s', module_name, module)
-                    assert False
-
-                # See if there's a hook for this module.
-                if module_name in module_hook_cache:
-                    # For each hook script for this module...
-                    for module_hook in module_hook_cache[module_name]:
-                        logger.debug("Found hook for module %s: %s", module_name,
-                                     module_hook)
-                        # We're not done yet -- we need another pass to apply
-                        # hooks to any imports produced by running this hook.
-                        done = False
-                        # Run this script's post-graph hook if any.
-                        module_hook.post_graph()
-
-                        # Cache all external dependencies listed by this script
-                        # after running this hook, which could add dependencies.
-                        self.graph._additional_files_cache.add(
-                            module_name,
-                            module_hook.binaries,
-                            module_hook.datas)
-
-                    # Prevent this module's hooks from being run again.
-                    all_hooked_module_names.add(module_name)
-                else:
-                    logger.debug("Could not find hook for module: %s", module_name)
-                    modules_unhooked.add((module_name, module_type))
-
-            # Apply default hooks to anything not covered by standard hooks.
-            for module_name, module_type in modules_unhooked:
-                # Apply a default hook to the package this module is in.
-                #
-                # Transform ``package.module.submodule`` into ``package``.
-                if module_type == 'Package':
-                    candidate_package = module_name
-                else:
-                    candidate_package = module_name.split('.', 1)[0]
-
-                if candidate_package in packages_unhooked_seen:
-                    continue
-
-                # Attempt to get the ``__file__`` attribute for this
-                # package.
-                in_stdlib = False
-                try:
-                    file_attr = get_module_file_attribute(candidate_package)
-                except ImportError:
-                    # Namespace packages don't have a ``__file__``
-                    # attribute, which produces an ImportError. Assume that
-                    # any namespace package is not in the standard library.
-                    pass
-                else:
-                    # Transform ``/path/to/python/package/__init__.py`` to
-                    # ``/path/to/python/``, then check to see if that path
-                    # matches the Python standard library.
-                    module_subdir = candidate_package.replace('.', os.path.sep)
-                    if os.path.join(STDLIB_PATH, module_subdir) == os.path.dirname(file_attr):
-                        in_stdlib = True
-
-                # Avoid processing this package again
-                packages_unhooked_seen.add(candidate_package)
-
-                # See if a default hook should be applied to this package.
-                if (in_stdlib or
-                    candidate_package in all_hooked_module_names or
-                    not is_package(candidate_package)):
-                    continue
-
-                # We're not done yet -- we need another pass to apply hooks to
-                # any imports produced by running this hook.
-                done = False
-                # Even though the hook will act on the ``candidate_package``
-                # this module is in, only this module is guaranteed to be
-                # reachable from ``self._top_script_node``. Therefore, create a
-                # default ModuleHook for this module, not its containing
-                # ``candidate_package``.
-
-                module_hook = ModuleHook(
-                    module_graph=module_hook_cache.module_graph,
-                    module_name=module_name,
-                    hook_filename=os.path.join(get_importhooks_dir(),
-                                               'default-hook.py'),
-                    hook_module_name_prefix=module_hook_cache._hook_module_name_prefix)
-                # Run it.
-                logger.info('Running default hook for package %s.',
-                            candidate_package)
-                module_hook.post_graph()
-
-                # Cache all external dependencies listed by this script
-                # after running this hook, which could add dependencies.
-                self.graph._additional_files_cache.add(
-                    module_name,
-                    module_hook.binaries,
-                    module_hook.datas)
-
-                # Mark this unhooked package as now hooked.
-                all_hooked_module_names.add(candidate_package)
+        if self.use_default_hook:
+            self.collect_unhooked(module_hook_cache)
 
         # Update 'binaries' TOC and 'datas' TOC.
         deps_proc = DependencyProcessor(self.graph,
@@ -726,6 +592,148 @@ class Analysis(Target):
         binaries.append((os.path.basename(python_lib), python_lib, 'BINARY'))
         logger.info('Using Python library %s', python_lib)
 
+    def collect_unhooked(self, module_hook_cache):
+        # Run post-graph hooks for all modules imported by this user's
+        # application. For each iteration of the infinite "while" loop below:
+        #
+        # 1. All hook() functions defined in cached hooks for imported modules
+        #    are called. This may result in new modules being imported (e.g.,
+        #    as hidden imports) that were ignored earlier in the current
+        #    iteration: if this is the case, all hook() functions defined in
+        #    cached hooks for  these modules will be called by the next
+        #    iteration.
+        # 2. All cached hooks whose hook() functions were called are removed
+        #    from this cache. If this cache is empty, no hook() functions will
+        #    be called by the next iteration and this loop will be terminated.
+        # 3. If no hook() functions were called, this loop is terminated.
+        logger.info('Loading module hooks...')
+
+        #FIXME: For orthogonality, move the following "while" loop into a new
+        #PyiModuleGraph.post_graph_hooks() method. The "PyiModuleGraph" class
+        #already handles all other hook types. Moreover, the graph node
+        #retrieval and type checking performed below are low-level operations
+        #best isolated into the "PyiModuleGraph" class itself.
+
+        # A set of all packages to which a hook has been applied.
+        all_hooked_module_names = set()
+
+        done = False
+        while not done:
+            done = True
+            modules_unhooked = set()
+            packages_unhooked_seen = set()
+            # Iterate through all modules referenced by the top script.
+            for module in self.graph.flatten(
+                    start=self.graph._top_script_node):
+                # Select only valid types that haven't been hooked yet.
+                module_type = type(module).__name__
+                module_name = module.identifier
+                if (module_type not in VALID_MODULE_TYPES_BUT_SCRIPTS
+                        or module_name in all_hooked_module_names):
+                    continue
+
+                if ' ' in module_name or "'" in module_name:
+                    logger.info('%s %s', module_name, module)
+                    assert False
+
+                # See if there's a hook for this module.
+                if module_name in module_hook_cache:
+                    # For each hook script for this module...
+                    for module_hook in module_hook_cache[module_name]:
+                        logger.debug("Found hook for module %s: %s",
+                                     module_name, module_hook)
+                        # We're not done yet -- we need another pass to apply
+                        # hooks to any imports produced by running this hook.
+                        done = False
+                        # Run this script's post-graph hook if any.
+                        module_hook.post_graph()
+
+                        # Cache all external dependencies listed by this script
+                        # after running this hook, which could add
+                        # dependencies.
+                        self.graph._additional_files_cache.add(
+                            module_name,
+                            module_hook.binaries,
+                            module_hook.datas)
+
+                    # Prevent this module's hooks from being run again.
+                    all_hooked_module_names.add(module_name)
+                else:
+                    logger.debug("Could not find hook for module: %s",
+                                 module_name)
+                    modules_unhooked.add((module_name, module_type))
+
+            # Apply default hooks to anything not covered by standard hooks.
+            for module_name, module_type in modules_unhooked:
+                # Apply a default hook to the package this module is in.
+                #
+                # Transform ``package.module.submodule`` into ``package``.
+                if module_type == 'Package':
+                    candidate_package = module_name
+                else:
+                    candidate_package = module_name.split('.', 1)[0]
+
+                if candidate_package in packages_unhooked_seen:
+                    continue
+
+                # Attempt to get the ``__file__`` attribute for this
+                # package.
+                in_stdlib = False
+                try:
+                    file_attr = get_module_file_attribute(candidate_package)
+                except ImportError:
+                    # Namespace packages don't have a ``__file__``
+                    # attribute, which produces an ImportError. Assume that
+                    # any namespace package is not in the standard library.
+                    pass
+                else:
+                    # Transform ``/path/to/python/package/__init__.py`` to
+                    # ``/path/to/python/``, then check to see if that path
+                    # matches the Python standard library.
+                    module_subdir = candidate_package.replace('.', os.path.sep)
+                    if os.path.join(STDLIB_PATH, module_subdir) == \
+                            os.path.dirname(file_attr):
+                        in_stdlib = True
+
+                # Avoid processing this package again
+                packages_unhooked_seen.add(candidate_package)
+
+                # See if a default hook should be applied to this package.
+                if (in_stdlib
+                        or candidate_package in all_hooked_module_names
+                        or not is_package(candidate_package)):
+                    continue
+
+                # We're not done yet -- we need another pass to apply hooks to
+                # any imports produced by running this hook.
+                done = False
+                # Even though the hook will act on the ``candidate_package``
+                # this module is in, only this module is guaranteed to be
+                # reachable from ``self._top_script_node``. Therefore, create a
+                # default ModuleHook for this module, not its containing
+                # ``candidate_package``.
+
+                name_prefix = module_hook_cache._hook_module_name_prefix
+                module_hook = ModuleHook(
+                    module_graph=module_hook_cache.module_graph,
+                    module_name=module_name,
+                    hook_filename=os.path.join(get_importhooks_dir(),
+                                               'default-hook.py'),
+                    hook_module_name_prefix=name_prefix)
+                # Run it.
+                logger.info('Running default hook for package %s.',
+                            candidate_package)
+                module_hook.post_graph()
+
+                # Cache all external dependencies listed by this script
+                # after running this hook, which could add dependencies.
+                self.graph._additional_files_cache.add(
+                    module_name,
+                    module_hook.binaries,
+                    module_hook.datas)
+
+                # Mark this unhooked package as now hooked.
+                all_hooked_module_names.add(candidate_package)
 
 class ExecutableBuilder(object):
     """
