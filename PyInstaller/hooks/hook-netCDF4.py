@@ -8,5 +8,5 @@
 #-----------------------------------------------------------------------------
 
 
-# netCDF4 (tested with v.1.1.9) has some hidden imports
-hiddenimports = ['netCDF4.utils', 'netcdftime']
+# netCDF4 (tested with v.1.5.1.2) has some hidden imports
+hiddenimports = ['netCDF4.utils', 'netcdftime', 'cftime']
