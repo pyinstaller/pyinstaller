@@ -568,6 +568,26 @@ def test_nspkg_pep420(pyi_builder):
     )
 
 
+def test_nspkg_explicit(pyi_builder):
+    # Test inclusion of "explicit" (pkgutil.extend_path or
+    # pkg_resources_declare_namespace-style) namespace packages
+    # Note that mixing pkgutil-style explicit namespace packages with implicit
+    # namespace packages is valid, so we test that here as well. Implicit
+    # namespace pacakges are not supported under Python 3.3 though, so
+    # we skip that part of the test on older Python versions.
+    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg-explicit', 'path*'))
+    pyi_builder.test_source(
+        """
+        import package.sub1
+        import package.sub2
+        import package.subpackage.sub
+        import sys;
+        if sys.version_info[:2] > (3, 2):
+            import package.nspkg.mod
+        """,
+        pyi_args=['--paths', os.pathsep.join(pathex)],
+    )
+
 #--- hooks related stuff ---
 
 def test_pkg_without_hook_for_pkg(pyi_builder, script_dir):

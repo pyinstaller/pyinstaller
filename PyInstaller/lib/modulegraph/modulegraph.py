@@ -3037,6 +3037,7 @@ class ModuleGraph(ObjectGraph):
                 #
                 # If this importer defines the PEP 302-compliant find_loader()
                 # method, prefer that.
+                loader_namespace_dirs = None
                 if hasattr(importer, 'find_loader'):
                     loader, loader_namespace_dirs = importer.find_loader(
                         module_name)
@@ -3084,10 +3085,17 @@ class ModuleGraph(ObjectGraph):
                     self.msg(4, "_find_module_path path not found", pathname)
                     continue
 
+                if loader_namespace_dirs and _is_namespace_package(pathname):
+                    continue
+
                 # If this loader defines the PEP 302-compliant is_package()
-                # method returning True, this is a non-namespace package.
+                # method returning True, this might be a non-namespace package.
                 if hasattr(loader, 'is_package') and loader.is_package(module_name):
-                    metadata = ('', '', imp.PKG_DIRECTORY)
+                    if _is_namespace_package(pathname):
+                        namespace_dirs.append(os.path.dirname(pathname))
+                        continue
+                    else:
+                        metadata = ('', '', imp.PKG_DIRECTORY)
                 # Else, this is either a module or C extension.
                 else:
                     # In either case, this path must have a filetype.
@@ -3398,3 +3406,16 @@ class ModuleGraph(ObjectGraph):
                         co.co_varnames, new_filename, co.co_name,
                         co.co_firstlineno, co.co_lnotab,
                         co.co_freevars, co.co_cellvars)
+
+
+def _is_namespace_package(location):
+    try:
+        with open(location, "rb") as stream:
+            data = stream.read(4096)
+    except IOError:
+        pass
+    else:
+        extend_path = b"pkgutil" in data and b"extend_path" in data
+        declare_namespace = (b"pkg_resources" in data
+                             and b"declare_namespace(__name__)" in data)
+        return extend_path or declare_namespace
