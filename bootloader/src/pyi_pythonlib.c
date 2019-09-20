@@ -239,7 +239,7 @@ pyi_free_wargv(wchar_t ** wargv)
     wchar_t ** arg = wargv;
 
     while (arg[0]) {
-        free(arg[0]);
+        PI_PyMem_RawFree(arg[0]);
         arg++;
     }
     free(wargv);
