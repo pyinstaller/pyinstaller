@@ -1,0 +1,2 @@
+Fix freeing memory allocted by Python using ``free()`` instead of
+``PyMem_RawFree()``.

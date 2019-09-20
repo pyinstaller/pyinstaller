@@ -140,6 +140,7 @@ EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *));
  * On Python 3.0-3.4, this function was called _Py_char2wchar
  */
 EXTDECLPROC(wchar_t *, Py_DecodeLocale, (char *, size_t *));
+EXTDECLPROC(void, PyMem_RawFree, (void *));
 
 /* Used to add PYZ to sys.path */
 EXTDECLPROC(PyObject *, PySys_GetObject, (const char *));
