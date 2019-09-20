@@ -260,7 +260,13 @@ pyi_free_wargv(wchar_t ** wargv)
     wchar_t ** arg = wargv;
 
     while (arg[0]) {
+#ifdef _WIN32
+        // allocated using `malloc` in pyi_win32_wargv_from_utf8
         free(arg[0]);
+#else
+        // allocated using Py_DecodeLocale in pyi_wargv_from_argv
+        PI_PyMem_RawFree(arg[0]);
+#endif
         arg++;
     }
     free(wargv);
