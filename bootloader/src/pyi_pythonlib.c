@@ -379,7 +379,7 @@ pyi_locale_char2wchar(wchar_t * dst, char * src, size_t len)
         return NULL;
     }
     wcsncpy(dst, buffer, len);
-    free(buffer);
+    PI_PyMem_RawFree(buffer);
     return dst;
 #endif /* ifdef _WIN32 */
 }
