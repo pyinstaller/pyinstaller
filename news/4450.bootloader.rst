@@ -1,0 +1,3 @@
+(Linux) The bootloader now parses ELF headers to find the embedded Python
+payload. This makes the bootloader more robust towards ELF modifications,
+like prelink or staticx, which could previously break the binary.
