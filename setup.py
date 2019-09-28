@@ -24,6 +24,13 @@ REQUIREMENTS = [
     'setuptools',
     'altgraph',
 ]
+REQUIREMENTS_WINDOWS = [
+    'pywin32-ctypes >= 0.2.0',
+    'pefile >= 2017.8.1',
+]
+REQUIREMENTS_MAC = [
+    'macholib >= 1.8',
+]
 
 # dis3 is used for our version of modulegraph
 if sys.version_info < (3,):
@@ -31,11 +38,9 @@ if sys.version_info < (3,):
 
 # For Windows install PyWin32 if not already installed.
 if sys.platform.startswith('win'):
-    REQUIREMENTS += ['pywin32-ctypes >= 0.2.0',
-                     'pefile >= 2017.8.1']
-
-if sys.platform == 'darwin':
-    REQUIREMENTS.append('macholib >= 1.8')
+    REQUIREMENTS.extend(REQUIREMENTS_WINDOWS)
+elif sys.platform == 'darwin':
+    REQUIREMENTS.extend(REQUIREMENTS_MAC)
 
 
 # Create long description from README.rst and doc/CHANGES.rst.
@@ -148,6 +153,12 @@ class MyBDist_Egg(bdist_egg):
 
 setup(
     install_requires=REQUIREMENTS,
+    extras_require={
+        # Extras to explicitly install conditional platform-specific dependencies
+        'windows': REQUIREMENTS_WINDOWS,
+        'mac': REQUIREMENTS_MAC,
+        'all': REQUIREMENTS_WINDOWS + REQUIREMENTS_MAC,
+    },
     python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*',
 
     name='PyInstaller',
