@@ -145,7 +145,10 @@ class AppBuilder(object):
         self._specdir = str(tmpdir)
         self._distdir = str(tmpdir / 'dist')
         self._builddir = str(tmpdir /'build')
+        self._extra_args = []
 
+    def add_arg(self, arg):
+        self._extra_args.append(arg)
 
     def test_spec(self, specfile, *args, **kwargs):
         """
@@ -421,7 +424,7 @@ class AppBuilder(object):
             default_args.append('--onefile')
         # if self._mode is None then just the spec file was supplied.
 
-        pyi_args = [self.script] + default_args + args
+        pyi_args = [self.script] + default_args + args + self._extra_args
         # TODO fix return code in running PyInstaller programatically
         PYI_CONFIG = configure.get_config(upx_dir=None)
         # Override CACHEDIR for PyInstaller and put it into self.tmpdir
@@ -507,6 +510,7 @@ def pyi_builder(tmpdir, monkeypatch, request, pyi_modgraph):
         del pyside2_library_info.version
     except AttributeError:
         pass
+
 
 
 # Fixture for .spec based tests.
