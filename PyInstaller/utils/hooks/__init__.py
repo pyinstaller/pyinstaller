@@ -518,7 +518,13 @@ def is_package(module_name):
     else:
         if loader:
             # A package must have a __path__ attribute.
-            return loader.is_package(module_name)
+            try:
+                # Even though we have a loader at this point, the import can still
+                # fail in some cases. One such case is importlib._bootstrap which
+                # cannot be imported directly. Just return False in this case.
+                return loader.is_package(module_name)
+            except ImportError:
+                return False
         else:
             # In case of None - modules is probably not a package.
             return False
