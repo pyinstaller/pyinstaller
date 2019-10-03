@@ -1,0 +1,5 @@
+Port PyInstaller to Python 3.8: release strings allocated by `Py_DecodeLocale()
+<https://docs.python.org/dev/c-api/sys.html#c.Py_DecodeLocale>`__ using
+`PyMem_RawFree()
+<https://docs.python.org/dev/c-api/memory.html#c.PyMem_RawFree>`__ rather than
+``free()``.
