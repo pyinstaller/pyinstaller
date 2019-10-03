@@ -556,7 +556,7 @@ def add_qt5_dependencies(hook_file):
                 src, os.path.join(
                     # The PySide2 Windows wheels place translations in a
                     # different location.
-                    namespace, 'Qt' if is_PyQt5 and not is_win else '',
+                    namespace, '' if not is_PyQt5 and is_win else 'Qt',
                     'translations'
                 )
             ))
