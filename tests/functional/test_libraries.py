@@ -240,6 +240,10 @@ PYQT5_NEED_OPENGL = pytest.mark.skipif(is_module_satisfies('PyQt5 <= 5.10.1'),
     reason='PyQt5 v5.10.1 and older does not package ``opengl32sw.dll``, the '
     'OpenGL software renderer, which this test requires.')
 
+
+# Parametrize test to run the same basic code on both Python Qt libraries.
+QtPyLibs = pytest.mark.parametrize('QtPyLib', ['PyQt5', 'PySide2'])
+
 # OS X bundles, produced by the ``--windowed`` flag, invoke a unique code path
 # that sometimes causes failures in Qt applications.
 USE_WINDOWED_KWARG = dict(pyi_args=['--windowed']) if is_darwin else {}
@@ -403,6 +407,36 @@ def test_PyQt5_SSL_support(pyi_builder):
 def test_PyQt5_Qt(pyi_builder):
     pyi_builder.test_source('from PyQt5.Qt import QLibraryInfo',
                             **USE_WINDOWED_KWARG)
+
+
+@pyqt5_path_clean
+@importorskip('PyQt5')
+def test_Qt5_QTranslate(pyi_builder):
+    # TODO: Get this working with PySide2.
+    QtPyLib = 'PyQt5'
+    pyi_builder.test_source(
+        """
+        from {0}.QtWidgets import QApplication
+        from {0}.QtCore import (
+            QTranslator,
+            QLocale,
+            QLibraryInfo,
+        )
+
+        # Initialize Qt default translations
+        app = QApplication([])
+        translator = QTranslator()
+        locale = QLocale('de_DE')
+        translation_path = QLibraryInfo.location(QLibraryInfo.TranslationsPath)
+
+        print('Qt locale path: %s' % translation_path)
+
+        if translator.load(locale, "qtbase_", directory=translation_path):
+            print('Qt locale %s loaded.' % locale.name())
+        else:
+            print('Qt locale %s not found!' % locale.name())
+            assert False
+        """.format(QtPyLib))
 
 
 @xfail(True, reason="Hook is old and needs updating.")
