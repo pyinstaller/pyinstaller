@@ -403,8 +403,8 @@ def test_PyQt5_Qt(pyi_builder, monkeypatch):
                             **USE_WINDOWED_KWARG)
 
 
-def test_Qt5_QTranslate(pyi_builder, monkeypatch):
-    QtPyLib = 'PyQt5'
+@QtPyLibs
+def test_Qt5_QTranslate(pyi_builder, monkeypatch, QtPyLib):
     path_clean(monkeypatch, QtPyLib)
     pytest.importorskip(QtPyLib)
     pyi_builder.test_source(
