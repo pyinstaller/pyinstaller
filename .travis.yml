@@ -76,6 +76,22 @@ jobs:
           py.test -n 3 --maxfail 3 --durations 10
           tests/functional/test_libraries.py
 
+    - stage: Test - PyInstaller with default hook
+      os: osx
+      language: minimal
+      cache:
+        directories:
+          - $HOME/Library/Caches/pip
+      before_install: &before_install-osx
+        - python3 -m venv venv
+        - source venv/bin/activate
+      script: &script-test-pyinstaller-default-hook
+        - >
+          py.test -n 3 --maxfail 3 --durations 10
+          tests/unit tests/functional
+          --ignore tests/functional/test_libraries.py
+          --use-default-hook --skip-onefile
+
     - &test-pyinstaller
       stage: Test - PyInstaller
       python: 2.7
@@ -94,6 +110,11 @@ jobs:
         - sudo apt install openssl -q
       script: *script-test-libraries
 
+    - &test-pyinstaller-default-hook
+      stage: Test - PyInstaller with default hook
+      python: 2.7
+      script: *script-test-pyinstaller-default-hook
+
     - &lint
       stage: Lint
       python: 2.7
@@ -108,15 +129,21 @@ jobs:
       python: 3.5
     - <<: *test-libraries
       python: 3.5
+    - <<: *test-pyinstaller-default-hook
+      python: 3.5
 
     - <<: *test-pyinstaller
       python: 3.6
     - <<: *test-libraries
       python: 3.6
+    - <<: *test-pyinstaller-default-hook
+      python: 3.6
     - <<: *lint
       python: 3.6
 
     - <<: *test-pyinstaller
+      python: 3.7
+    - <<: *test-pyinstaller-default-hook
       python: 3.7
     - <<: *test-libraries
       python: 3.7

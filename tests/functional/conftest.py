@@ -139,13 +139,13 @@ def data_dir(
 
 class AppBuilder(object):
 
-    def __init__(self, tmpdir, bundle_mode):
+    def __init__(self, tmpdir, bundle_mode, extra_args=None):
         self._tmpdir = tmpdir
         self._mode = bundle_mode
         self._specdir = str(tmpdir)
         self._distdir = str(tmpdir / 'dist')
         self._builddir = str(tmpdir /'build')
-
+        self._extra_args = extra_args if extra_args is not None else []
 
     def test_spec(self, specfile, *args, **kwargs):
         """
@@ -421,7 +421,7 @@ class AppBuilder(object):
             default_args.append('--onefile')
         # if self._mode is None then just the spec file was supplied.
 
-        pyi_args = [self.script] + default_args + args
+        pyi_args = [self.script] + default_args + args + self._extra_args
         # TODO fix return code in running PyInstaller programatically
         PYI_CONFIG = configure.get_config(upx_dir=None)
         # Override CACHEDIR for PyInstaller and put it into self.tmpdir
@@ -479,9 +479,14 @@ def pyi_modgraph():
     initialize_modgraph()
 
 
+@pytest.fixture
+def use_default_hook(request):
+    return request.config.getoption("--use-default-hook")
+
+
 # Run by default test as onedir and onefile.
 @pytest.fixture(params=['onedir', 'onefile'])
-def pyi_builder(tmpdir, monkeypatch, request, pyi_modgraph):
+def pyi_builder(tmpdir, monkeypatch, request, pyi_modgraph, use_default_hook):
     # Save/restore environment variable PATH.
     monkeypatch.setenv('PATH', os.environ['PATH'], )
     # PyInstaller or a test case might manipulate 'sys.path'.
@@ -494,7 +499,11 @@ def pyi_builder(tmpdir, monkeypatch, request, pyi_modgraph):
     # The value is same as the original value.
     monkeypatch.setattr('PyInstaller.config.CONF', {'pathex': []})
 
-    yield AppBuilder(tmpdir, request.param)
+    extra_args = []
+    if use_default_hook == "--use-default-hook":
+        extra_args = ["--use-default-hook"]
+
+    yield AppBuilder(tmpdir, request.param, extra_args)
 
     if is_darwin or is_linux:
         if request.node.rep_setup.passed:
@@ -507,6 +516,7 @@ def pyi_builder(tmpdir, monkeypatch, request, pyi_modgraph):
         del pyside2_library_info.version
     except AttributeError:
         pass
+
 
 
 # Fixture for .spec based tests.
