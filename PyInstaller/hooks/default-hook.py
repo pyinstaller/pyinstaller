@@ -17,7 +17,8 @@ def hook(hook_api):
     # module inside the package; use this to find the package.
     package_name = hook_api.__name__
 
-    datas, binaries, hiddenimports = collect_all(package_name)
+    datas, binaries, hiddenimports = collect_all(package_name,
+                                                 include_py_files=False)
     hook_api.add_datas(datas)
     hook_api.add_binaries(binaries)
     hook_api.add_imports(*hiddenimports)
