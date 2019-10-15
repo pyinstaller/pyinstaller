@@ -1,0 +1,2 @@
+Add new argument `--use-default-hook` to collect the contents of package
+dependencies which don't have hooks.
