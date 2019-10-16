@@ -268,6 +268,14 @@ You can add binary files to the bundle by using the ``--add-binary`` command opt
 or by adding them as a list to the spec file.
 In the spec file, make a list of tuples that describe the files needed.
 Assign the list of tuples to the ``binaries=`` argument of Analysis.
+ 
+Adding binary files works in a similar way as adding data files. As described in 
+:ref:`Adding Binary Files`, each tuple should have two values:
+
+    * The first string specifies the file or files as they are in this system now.
+
+    * The second specifies the name of the *folder* to contain
+      the files at run-time.
 
 Normally |PyInstaller| learns about ``.so`` and ``.dll`` libraries by
 analyzing the imported modules.
@@ -293,8 +301,15 @@ for platform-specific details)::
 
 	pyinstaller --add-binary '/usr/lib/libiodbc.2.dylib:.' myscript.py
 
-As with data files, if you have multiple binary files to add,
-create the list in a separate statement and pass the list by name.
+If you wish to store ``libiodbc.2.dylib`` on a specific folder inside the bundle, 
+for example ``vendor``, then you could specify it, using the second element of the tuple::
+
+    a = Analysis(...
+             binaries=[ ( '/usr/lib/libiodbc.2.dylib', 'vendor' ) ],
+             ...
+
+As with data files, if you have multiple binary files to add, to improve 
+readability, create the list in a separate statement and pass the list by name.
 
 Advanced Methods of Adding Files
 ---------------------------------
