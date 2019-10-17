@@ -84,7 +84,7 @@ void pyi_global_perror(const char *funcname, const char *fmt, ...);
 #endif
 /*
  * On Windows and with windowed mode (no console) show error messages
- * in message boxes. In windowed mode nothing might be written to console.
+ * in message boxes. In windowed mode nothing is written to console.
  */
 
 #if defined(_WIN32) && defined(WINDOWED)
@@ -112,9 +112,11 @@ void mbothererror(const char *fmt, ...);
 
 #ifdef LAUNCH_DEBUG
     #if defined(_WIN32) && defined(WINDOWED)
+        /* Don't have console, resort to debugger output */
         #define VS mbvs
 void mbvs(const char *fmt, ...);
     #else
+        /* Have console, printf works */
         #define VS pyi_global_printf
     #endif
 #else
