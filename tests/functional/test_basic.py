@@ -43,20 +43,21 @@ def test_absolute_python_path(pyi_builder):
 @skipif_notlinux
 @skipif(not os.path.exists('/proc/self/status'),
         reason='/proc/self/status does not exist')
-@pytest.mark.parametrize("app_name", ["symlink", "very_long_name_in_symlink"])
-def test_symlink_basename_is_kept(pyi_builder_spec, app_name,
+@pytest.mark.parametrize("symlink_name",
+                         ["symlink", "very_long_name_in_symlink"])
+def test_symlink_basename_is_kept(pyi_builder_spec, symlink_name,
                                   tmpdir, SPEC_DIR, SCRIPT_DIR):
 
-    def patch(spec_name, app_name):
+    def patch(spec_name, symlink_name):
         content = SPEC_DIR.join(spec_name).read_text(encoding="utf-8")
-        content = content.replace("@APPNAME@", app_name)
+        content = content.replace("@SYMLINKNAME@", symlink_name)
         content = content.replace("@SCRIPTDIR@", str(SCRIPT_DIR))
         outspec = tmpdir.join(spec_name)
         outspec.write_text(content, encoding="utf-8", ensure=True)
         return outspec
 
-    specfile = patch("symlink_basename_is_kept.spec", app_name)
-    pyi_builder_spec.test_spec(str(specfile), app_name=app_name)
+    specfile = patch("symlink_basename_is_kept.spec", symlink_name)
+    pyi_builder_spec.test_spec(str(specfile), app_name=symlink_name)
 
 
 def test_pyz_as_external_file(pyi_builder, monkeypatch):
