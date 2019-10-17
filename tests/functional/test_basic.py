@@ -44,7 +44,9 @@ def test_absolute_python_path(pyi_builder):
 @skipif(not os.path.exists('/proc/self/status'),
         reason='/proc/self/status does not exist')
 @pytest.mark.parametrize("symlink_name",
-                         ["symlink", "very_long_name_in_symlink"])
+                         ["symlink",
+                          "very_long_name_in_symlink",
+                          "sub/dir/progam"])
 def test_symlink_basename_is_kept(pyi_builder_spec, symlink_name,
                                   tmpdir, SPEC_DIR, SCRIPT_DIR):
 

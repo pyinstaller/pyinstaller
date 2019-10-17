@@ -36,4 +36,12 @@ exe = EXE(pyz,
           debug=False, # the test is this .spec-file
           console=True)
 
-os.symlink(app_name, os.path.join(DISTPATH, symlink_name))
+dst = os.path.join(DISTPATH, symlink_name)
+src = app_name
+dirname = os.path.dirname(dst)
+if not os.path.exists(dirname):
+    os.makedirs(dirname)
+    # need to adjust the link src relative to the dst directory
+    src = os.path.relpath(src, os.path.dirname(symlink_name))
+print("creating symlink", src, dst)
+os.symlink(src, dst)
