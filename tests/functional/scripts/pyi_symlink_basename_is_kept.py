@@ -11,19 +11,24 @@
 import os
 import sys
 
+# To verify that the bootloader actually uses the unresolved symlink basename
+# when executing the second process, check what `Name:` entry in
+# '/proc/self/status' says. This value is truncated to 15 characters.
+#
+# This test is run twice: once with a short basename and once with a long
+# basename to detect if this 15 character limit is no longer true.
+
 with open('/proc/self/status', 'r') as fh:
     for line in fh.readlines():
         if line.startswith('Name:'):
             name_from_proc = line.split(":")[1].strip()
             break
 
-# PyInstaller bootloader assumes the `Name:` entry in '/proc/self/status' to
-# be truncated to 15 characters. Fail if this assumption is no longer true.
-
 name_from_argv = os.path.basename(sys.argv[0])
 # linux will truncate the name to 15 chars
 truncated_name_from_argv = name_from_argv[:15]
 
-print('ARGV:', repr(truncated_name_from_argv))
+print('ARGV:', repr(name_from_argv), "(complete)")
+print('ARGV:', repr(truncated_name_from_argv), "(truncated")
 print('PROC:', repr(name_from_proc))
 assert truncated_name_from_argv == name_from_proc
