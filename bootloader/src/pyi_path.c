@@ -331,7 +331,7 @@ pyi_path_executable(char *execfile, const char *appname)
                 return -1;
             }
         }
-        if (pyi_path_fullpath(execfile, PATH_MAX, buffer) == false) {
+        if (pyi_path_fullpath_keep_basename(execfile, buffer) == false) {
             VS("LOADER: Cannot get fullpath for %s\n", execfile);
             return -1;
         }
