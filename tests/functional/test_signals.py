@@ -29,9 +29,9 @@ signals = sorted([
 def test_signal_handled(pyi_builder, signame, ignore):
     # xfail tests for signals that the bootloader does NOT forward
     if signame in ['SIGKILL', 'SIGSTOP']:
-        pytest.xfail('{} cannot be caught'.format(signame))
+        pytest.skip('{} cannot be caught'.format(signame))
     elif signame in ['SIGCHLD', 'SIGCLD']:
-        pytest.xfail(
+        pytest.skip(
             'Messing with {} interferes with bootloader'.format(signame)
         )
 
