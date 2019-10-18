@@ -29,7 +29,7 @@ def test_osx_custom_protocol_handler(tmpdir, pyi_builder_spec):
     logfile_path = os.path.join(tmpdir, 'dist', 'args.log')
 
     # Generate new URL scheme to avoid collisions
-    custom_url_scheme = "pyi-test-{}".format(int(time.time()))
+    custom_url_scheme = "pyi-test-%i" % time.time()
     os.environ["PYI_CUSTOM_URL_SCHEME"] = custom_url_scheme
 
     pyi_builder_spec.test_spec('pyi_osx_custom_protocol_handler.spec')
@@ -45,6 +45,7 @@ def test_osx_custom_protocol_handler(tmpdir, pyi_builder_spec):
     subprocess.check_call(['open', url])
     # Wait for the program to finish
     time.sleep(2)
-    assert os.path.exists(logfile_path) == 1, 'Missing args logfile'
-    log_lines = open(logfile_path, 'r').readlines()
-    assert len(log_lines) > 0 and log_lines[-1] == url, 'Invalid arg appended'
+    assert os.path.exists(logfile_path), 'Missing args logfile'
+    with open(logfile_path, 'r') as fh:
+        log_lines = fh.readlines()
+    assert log_lines and log_lines[-1] == url, 'Invalid arg appended'
