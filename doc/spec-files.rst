@@ -308,8 +308,9 @@ for example ``vendor``, then you could specify it, using the second element of t
              binaries=[ ( '/usr/lib/libiodbc.2.dylib', 'vendor' ) ],
              ...
 
-As with data files, if you have multiple binary files to add, to improve 
-readability, create the list in a separate statement and pass the list by name.
+As with data files, if you have multiple binary files to add,
+to improve readability,
+create the list in a separate statement and pass the list by name.
 
 Advanced Methods of Adding Files
 ---------------------------------
