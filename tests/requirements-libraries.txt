@@ -26,7 +26,7 @@ matplotlib==3.0.3; python_version != '2.7'  # pyup: ignore
 # These packages work with no (known) issues.
 babel==2.7.0
 boto==2.49.0
-boto3==1.9.239
+boto3==1.10.7
 botocore==1.12.239
 future==0.17.1
 h5py==2.10.0
