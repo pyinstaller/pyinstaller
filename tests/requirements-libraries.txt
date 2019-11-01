@@ -80,7 +80,7 @@ ipython==7.9.0; python_version != '2.7'
 keyring==19.2.0; python_version != '2.7'
 numpy==1.17.3; python_version != '2.7'
 pandas==0.25.3; python_version != '2.7'
-pylint==2.4.2; python_version != '2.7'
+pylint==2.4.3; python_version != '2.7'
 # This does provide Mac and Linux wheels for Python 2.7. Given EOL coming soon,
 # don't bother testing them.
 PySide2==5.13.0; python_version != '2.7'
