@@ -424,7 +424,8 @@ class EXE(Target):
                                  "", "OPTION"))
 
             if self.versrsrc:
-                if not os.path.isabs(self.versrsrc):
+                if (not isinstance(self.versrsrc, versioninfo.VSVersionInfo)
+                        and not os.path.isabs(self.versrsrc)):
                     # relative version-info path is relative to spec file
                     self.versrsrc = os.path.join(
                         CONF['specpath'], self.versrsrc)
