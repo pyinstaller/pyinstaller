@@ -1,0 +1,1 @@
+Add hook for `django-babel <https://github.com/python-babel/django-babel>`_.
