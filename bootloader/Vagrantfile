@@ -347,6 +347,7 @@ Vagrant.configure(2) do |config|
       # Adjust CPU settings according to
       # https://github.com/geerlingguy/macos-virtualbox-vm
       v.customize ['modifyvm', :id, '--cpuidset',
+                   # Leaf       EAX        EBX         ECX         EDX
                    '00000001', '000306a9', '00020800', '80000201', '178bfbff']
       # This should make make the box less choppy (source: geerlingguy)
       #v.customize ["modifyvm", :id, '--audio', 'off']
