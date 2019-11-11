@@ -1,3 +1,2 @@
-changes to PyInstaller/utils/misc.py to trap the file not found error as seen in Issue 4209.
+ add a try block for file not found error as seen in Issue 4209.
 
-When attempting to find the distribution in pkg_resources,  "Google-Cloud" packages are not found because parsing the file name for the packages would have file name as None.   To trap this error a try block was added
