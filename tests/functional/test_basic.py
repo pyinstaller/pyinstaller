@@ -456,7 +456,7 @@ def test_argument(pyi_builder):
     pyi_builder.test_source(
         '''
         import sys
-        assert sys.argv[1] == "--argument", "sys.argv[1] was %s, expected %r" % (sys.argv[1], "--argument")
+        assert sys.argv[1] == "--argument", "sys.argv[1] was %r, expected %r" % (sys.argv[1], "--argument")
         ''',
         app_args=["--argument"])
 
