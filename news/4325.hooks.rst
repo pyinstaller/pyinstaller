@@ -1,0 +1,1 @@
+Fix pysoundfile hook to bundle files correctly on both OSX and Windows.
