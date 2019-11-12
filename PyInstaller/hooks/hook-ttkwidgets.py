@@ -29,7 +29,8 @@ Windows 7 (Python 3.5.4 system-wide).
 >>> tree.pack()
 >>> window.mainloop()
 """
-from PyInstaller.utils.hooks import collect_data_files
 
+
+from PyInstaller.utils.hooks import collect_data_files
 
 datas = collect_data_files("ttkwidgets")
