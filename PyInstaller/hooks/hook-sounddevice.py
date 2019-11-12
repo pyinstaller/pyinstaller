@@ -29,4 +29,5 @@ elif is_darwin:
     )
 
 if path is not None and os.path.exists(path):
-    binaries = [(path, os.path.join("_sounddevice_data", "portaudio-binaries"))]
+    binaries = [(path,
+                 os.path.join("_sounddevice_data", "portaudio-binaries"))]
