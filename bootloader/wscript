@@ -585,7 +585,9 @@ def configure(ctx):
 '''
     # OS support for these functions varies.
     for header, function_name in (('stdlib.h', 'unsetenv'),
-                                  ('stdlib.h', 'mkdtemp')):
+                                  ('stdlib.h', 'mkdtemp'),
+                                  ('string.h', 'strndup'),
+                                  ('string.h', 'strnlen')):
         ctx.check(
             fragment=SNIP_FUNCTION % (header, function_name),
             mandatory=False,
