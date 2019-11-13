@@ -573,7 +573,7 @@ def configure(ctx):
     # supported. This code is based on old waf source at
     # https://gitlab.com/ita1024/waf/commit/62fe305d04ed37b1be1a3327a74b2fee6c458634#255b2344e5268e6a34bedd2f8c4680798344fec7.
     SNIP_FUNCTION = '''
-    #include <stdlib.h>
+    #include <%s>
 
     int main(int argc, char **argv) {
         void (*p)();
@@ -584,9 +584,10 @@ def configure(ctx):
     }
 '''
     # OS support for these functions varies.
-    for function_name in ('unsetenv', 'mkdtemp'):
+    for header, function_name in (('stdlib.h', 'unsetenv'),
+                                  ('stdlib.h', 'mkdtemp')):
         ctx.check(
-            fragment=SNIP_FUNCTION % function_name,
+            fragment=SNIP_FUNCTION % (header, function_name),
             mandatory=False,
             define_name=ctx.have_define(function_name),
             msg='Checking for function %s' % function_name)
