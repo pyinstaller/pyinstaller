@@ -101,6 +101,32 @@ static int argc_pyi = 0;
 static void process_apple_events();
 #endif
 
+
+// some platforms do not provide strnlen
+#ifndef HAVE_STRNLEN
+size_t
+strnlen(const char *str, size_t n)
+{
+    const char *stop = (char *)memchr(str, '\0', n);
+    return stop ? stop - str : n;
+}
+#endif
+
+// some platforms do not provide strndup
+#ifndef HAVE_STRNDUP
+char *
+strndup(const char * str, size_t n)
+{
+    char *ret = NULL;
+    size_t len = strnlen(str, n);
+    ret = (char *)malloc(len + 1);
+    if (ret == NULL) return NULL;
+    ret[len] = '\0';
+    return (char *)memcpy(ret, str, len);
+}
+#endif
+
+
 char *
 pyi_strjoin(const char *first, const char *sep, const char *second){
     /* join first and second string, using sep as separator.

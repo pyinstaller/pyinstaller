@@ -841,7 +841,11 @@ def _get_so_name(filename):
     """
     # TODO verify that objdump works on other unixes and not Linux only.
     cmd = ["objdump", "-p", filename]
-    m = re.search(r'\s+SONAME\s+([^\s]+)', compat.exec_command(*cmd))
+    pattern = r'\s+SONAME\s+([^\s]+)'
+    if is_solar:
+        cmd = ["elfdump", "-d", filename]
+        pattern = r'\s+SONAME\s+[^\s]+\s+([^\s]+)'
+    m = re.search(pattern, compat.exec_command(*cmd))
     return m.group(1)
 
 
