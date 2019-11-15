@@ -1,3 +1,9 @@
+
+# Filter DeprecationWarnings until the code has been revised
+import warnings
+warnings.filterwarnings("ignore", "the imp module is deprecated in")
+warnings.filterwarnings("ignore", "imp_walk will be removed in a future")
+
 import os
 import imp
 import sys
