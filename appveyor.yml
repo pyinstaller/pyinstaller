@@ -18,63 +18,62 @@ environment:
     - PYTHON: C:\Python38-x64
       PYTHON_VERSION: 3.8
       PYTHON_ARCH: 64
-      TEST_LIBRARIES_ONLY: True
+      TEST_PART: Libraries
 
     - PYTHON: C:\Python38-x64
       PYTHON_VERSION: 3.8
       PYTHON_ARCH: 64
-      TEST_LIBRARIES_ONLY: False
+      TEST_PART: Base
 
     - PYTHON: C:\Python38
       PYTHON_VERSION: 3.8
       PYTHON_ARCH: 32
-      TEST_LIBRARIES_ONLY: True
+      TEST_PART: Libraries
 
     - PYTHON: C:\Python38
       PYTHON_VERSION: 3.8
       PYTHON_ARCH: 32
-      TEST_LIBRARIES_ONLY: False
+      TEST_PART: Base
 
     - PYTHON: C:\Python37-x64
       PYTHON_VERSION: 3.7
       PYTHON_ARCH: 64
-      TEST_LIBRARIES_ONLY: True
+      TEST_PART: Libraries
 
     - PYTHON: C:\Python37-x64
       PYTHON_VERSION: 3.7
       PYTHON_ARCH: 64
-      TEST_LIBRARIES_ONLY: False
+      TEST_PART: Base
 
     - PYTHON: C:\Python37
       PYTHON_VERSION: 3.7
       PYTHON_ARCH: 32
-      TEST_LIBRARIES_ONLY: True
+      TEST_PART: Libraries
 
     - PYTHON: C:\Python37
       PYTHON_VERSION: 3.7
       PYTHON_ARCH: 32
-      TEST_LIBRARIES_ONLY: False
+      TEST_PART: Base
 
     - PYTHON: C:\Python36
       PYTHON_VERSION: 3.6
       PYTHON_ARCH: 32
-      TEST_LIBRARIES_ONLY: True
+      TEST_PART: Libraries
 
     - PYTHON: C:\Python36
       PYTHON_VERSION: 3.6
       PYTHON_ARCH: 32
-      TEST_LIBRARIES_ONLY: False
+      TEST_PART: Base
 
     - PYTHON: C:\Python35
       PYTHON_VERSION: 3.5
       PYTHON_ARCH: 32
-      TEST_LIBRARIES_ONLY: True
+      TEST_PART: Libraries
 
     - PYTHON: C:\Python35
       PYTHON_VERSION: 3.5
       PYTHON_ARCH: 32
-      TEST_LIBRARIES_ONLY: False
-
+      TEST_PART: Base
 
 init:
   # Uncomment the line below to enable Remote Desktop access to the build worker
@@ -159,7 +158,7 @@ test_script:
   #
   # In the Appveyor environment, the ``&&`` must be quoted when inside a set
   # statement.
-  - if "%TEST_LIBRARIES_ONLY%" == "True" (
+  - if "%TEST_PART%" == "Libraries" (
       set PYTEST_CMD=%PYTEST% -k "test_noarchive[onefile]" ^&^&
         %PYTEST% tests/functional/test_libraries.py
         -k "not test_noarchive[onefile]" ^&^&
