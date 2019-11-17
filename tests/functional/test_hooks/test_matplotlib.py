@@ -17,22 +17,17 @@ import pytest
 from PyInstaller.utils.tests import importorskip
 
 
-# List of 4-tuples "(backend_name, package_name, rcParams_key, rcParams_value)",
+# List of 3-tuples "(backend_name, package_name, binding)",
 # where:
 #
 # * "backend_name" is the name of a Matplotlib backend to be tested below.
 # * "package_name" is the name of the external package required by this backend.
-# * "rcParams_key" is the name of a Matplotlib parameter to be set before testing
-#   this backend or "None" if no parameter is to be set.
-# * "rcParams_value" is the value to set that parameter to if "rcParams_key" is
-#   not "None" or ignored otherwise.
+# * "binding" is the binding to use (and to set environment-variable QT_API to).
 backend_rcParams_key_values = [
-    # PySide.
-    ('Qt4Agg', 'PySide', 'backend.qt4', 'PySide'),
-    # PyQt4.
-    ('Qt4Agg', 'PyQt4', 'backend.qt4', 'PyQt4'),
-    # PyQt5.
-    ('Qt5Agg', 'PyQt5', 'backend.qt5', 'PyQt5'),
+    ('Qt4Agg', 'PySide', 'pyside'),
+    ('Qt4Agg', 'PyQt4', 'pyqt4'),
+    ('Qt5Agg', 'PyQt5', 'pyqt5'),
+    ('Qt5Agg', 'PySide2', 'pyside2'),
 ]
 
 # Same list, decorated to skip all backends whose packages are unimportable#.
@@ -54,11 +49,11 @@ package_names = [
 # Test Matplotlib with access to only one backend at a time.
 @importorskip('matplotlib')
 @pytest.mark.parametrize(
-    'backend_name, package_name, rcParams_key, rcParams_value',
+    'backend_name, package_name, binding',
     backend_rcParams_key_values_skipped_if_unimportable,
     ids=package_names)
-def test_matplotlib(
-    pyi_builder, backend_name, package_name, rcParams_key, rcParams_value):
+def test_matplotlib(pyi_builder, monkeypatch,
+                    backend_name, package_name, binding):
     '''
     Test Matplotlib with the passed backend enabled, the passed backend package
     included with this frozen application, all other backend packages explicitly
@@ -85,18 +80,15 @@ def test_matplotlib(
 
     # Localize test parameters.
     backend_name = {backend_name!r}
-    rcParams_key = {rcParams_key!r}
-    rcParams_value = {rcParams_value!r}
+    binding = {binding!r}
 
     # Report these parameters.
-    print('Testing Matplotlib with:')
-    print('\tbackend:', repr(backend_name))
-    print('\trcParams:')
-    print('\t\tkey:', repr(rcParams_key))
-    print('\t\tvalue:', repr(rcParams_value))
+    print('Testing Matplotlib with backend', repr(backend_name),
+          'and binding ($QT_API)', repr(binding))
 
     # Configure Matplotlib *BEFORE* calling any Matplotlib functions.
-    matplotlib.rcParams[rcParams_key] = rcParams_value
+    matplotlib.rcParams['backend'] = backend_name
+    os.environ['QT_API'] = binding
 
     # Enable the desired backend *BEFORE* plotting with this backend.
     matplotlib.use(backend_name)
@@ -121,8 +113,7 @@ def test_matplotlib(
     from mpl_toolkits import axes_grid1
     """.format(
         backend_name=backend_name,
-        rcParams_key=rcParams_key,
-        rcParams_value=rcParams_value,
+        binding=binding,
     ))
 
     # Test this script.
