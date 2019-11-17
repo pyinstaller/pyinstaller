@@ -80,7 +80,7 @@ def test_matplotlib(
     ]
 
     # Script to be tested, enabling this Qt backend.
-    test_script = ('''
+    test_script = ("""
     import matplotlib, os, sys, tempfile
 
     # Localize test parameters.
@@ -89,12 +89,11 @@ def test_matplotlib(
     rcParams_value = {rcParams_value!r}
 
     # Report these parameters.
-    print('Testing Matplotlib with:\\n'
-        '\\tbackend: {{}}\\n'
-        '\\trcParams:\\n'
-        '\\t\\tkey: {{}}\\n'
-        '\\t\\tvalue: {{}}'.format(
-        backend_name, rcParams_key, rcParams_value))
+    print('Testing Matplotlib with:')
+    print('\tbackend:', repr(backend_name))
+    print('\trcParams:')
+    print('\t\tkey:', repr(rcParams_key))
+    print('\t\tvalue:', repr(rcParams_value))
 
     # Configure Matplotlib *BEFORE* calling any Matplotlib functions.
     matplotlib.rcParams[rcParams_key] = rcParams_value
@@ -103,23 +102,24 @@ def test_matplotlib(
     matplotlib.use(backend_name)
 
     # A runtime hook should force Matplotlib to create its configuration
-    # directory in a temporary directory rather than in "$HOME/.matplotlib".
+    # directory in a temporary directory rather than in $HOME/.matplotlib.
     configdir = os.environ['MPLCONFIGDIR']
-    print('MPLCONFIGDIR: %s' % configdir)
+    print('MPLCONFIGDIR:', repr(configdir))
     if not configdir.startswith(tempfile.gettempdir()):
         raise SystemExit('MPLCONFIGDIR not pointing to temp directory.')
 
     # Matplotlib's data directory should point to sys._MEIPASS.
+    # This is deprecated in matplotlib 3.1.0 and will be removed in 3.3.0
     datadir = os.environ['MATPLOTLIBDATA']
-    print('MATPLOTLIBDATA: %s' % datadir)
+    print('MATPLOTLIBDATA:', repr(datadir))
     if not datadir.startswith(sys._MEIPASS):
         raise SystemExit('MATPLOTLIBDATA not pointing to sys._MEIPASS.')
 
-    # Test access to the standard "mpl_toolkits" namespace package installed
+    # Test access to the standard 'mpl_toolkits' namespace package installed
     # with Matplotlib. Note that this import was reported to fail under
     # Matplotlib 1.3.0.
     from mpl_toolkits import axes_grid1
-    '''.format(
+    """.format(
         backend_name=backend_name,
         rcParams_key=rcParams_key,
         rcParams_value=rcParams_value,
