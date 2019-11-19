@@ -14,6 +14,14 @@ environment:
   # See https://www.appveyor.com/docs/build-cache/#saving-cache-for-failed-build.
   APPVEYOR_SAVE_CACHE_ON_ERROR: true
 
+  # Set this to one of "init", "pre-test", "post-test" or "end" to to enable
+  # Remote Desktop access to the build worker VM. This will pause the build
+  # until a special "lock" file on the VM desktop is deleted. 60 min time
+  # limit still applies, thus you might want to reduce the test cases to be
+  # processed. For details please refer to
+  # https://www.appveyor.com/docs/how-to/rdp-to-build-worker/.
+  ENABLE_RDP_ACCESS: false
+
   matrix:
     - PYTHON: C:\Python38-x64
       PYTHON_VERSION: 3.8
@@ -76,9 +84,6 @@ environment:
       TEST_PART: Base
 
 init:
-  # Uncomment the line below to enable Remote Desktop access to the build worker
-  # VM. See https://www.appveyor.com/docs/how-to/rdp-to-build-worker/.
-  #- ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
   - ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%
   - ECHO \"%APPVEYOR_SCHEDULED_BUILD%\"
   # If there is a newer build queued for the same PR, cancel this one.
@@ -86,6 +91,11 @@ init:
   # purpose but it is problematic because it tends to cancel builds pushed
   # directly to master instead of just PR builds (or the converse).
   # credits: JuliaLang developers.
+  - ps: |
+      if ($env:ENABLE_RDP_ACCESS -eq "init" ) {
+          $blockRdp = $true;
+          iex ((new-object net.webclient).DownloadString(
+          'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1')) }
   - ps: if ($env:APPVEYOR_PULL_REQUEST_NUMBER -and $env:APPVEYOR_BUILD_NUMBER -ne ((Invoke-RestMethod `
         https://ci.appveyor.com/api/projects/$env:APPVEYOR_ACCOUNT_NAME/$env:APPVEYOR_PROJECT_SLUG/history?recordsNumber=50).builds | `
         Where-Object pullRequestId -eq $env:APPVEYOR_PULL_REQUEST_NUMBER)[0].buildNumber) { `
@@ -168,10 +178,26 @@ test_script:
       set PYTEST_CMD=%PYTEST% tests/unit tests/functional
         --ignore tests/functional/test_libraries.py
     )
+  - ps: |
+      if ($env:ENABLE_RDP_ACCESS -eq "pre-test" ) {
+          $blockRdp = $true;
+          iex ((new-object net.webclient).DownloadString(
+          'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1')) }
   # Run the tests appropriate for this entry in the test matrix. Skip tests
   # if we're just updating the cache; see https://www.appveyor.com/docs/environment-variables/.
   - if not "%APPVEYOR_SCHEDULED_BUILD%" == "True" %PYTEST_CMD%
+  - ps: |
+      if ($env:ENABLE_RDP_ACCESS -eq "post-test" ) {
+          $blockRdp = $true;
+          iex ((new-object net.webclient).DownloadString(
+          'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1')) }
 
+on_failure:
+  - ps: |
+      if ($env:ENABLE_RDP_ACCESS -eq "end" ) {
+          $blockRdp = $true;
+          iex ((new-object net.webclient).DownloadString(
+          'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1')) }
 
 on_finish:
   # Remove old or huge cache files to hopefully not exceed the 1GB cache limit.
@@ -192,6 +218,8 @@ on_finish:
         (Resolve-Path .\junit-results.xml)
       )
       $LastExitCode = 0
-  # Uncomment to pause the build until a special "lock" file on the VM desktop
-  # is deleted. See https://www.appveyor.com/docs/how-to/rdp-to-build-worker/.
-  #- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+  - ps: |
+      if ($env:ENABLE_RDP_ACCESS -eq "post-test" ) {
+          $blockRdp = $true;
+          iex ((new-object net.webclient).DownloadString(
+          'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1')) }
