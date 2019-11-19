@@ -191,13 +191,21 @@ test_script:
           $blockRdp = $true;
           iex ((new-object net.webclient).DownloadString(
           'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1')) }
+  # create a dummy to make artifacs happy
+  - C:\cygwin\bin\touch test-output.tar.gz
 
 on_failure:
+  - C:\cygwin\bin\tar -czf test-output.tar.gz -C %TMP%\pytest-of-appveyor .
+  - echo You can find the tar-file at %APPVEYOR_BUILD_FOLDER%
   - ps: |
       if ($env:ENABLE_RDP_ACCESS -eq "end" ) {
           $blockRdp = $true;
           iex ((new-object net.webclient).DownloadString(
           'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1')) }
+
+artifacts:
+  - path: test-output.tar.gz
+    name: test-output.tar.gz
 
 on_finish:
   # Remove old or huge cache files to hopefully not exceed the 1GB cache limit.
