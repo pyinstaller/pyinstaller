@@ -46,6 +46,7 @@ variants = {
 DESTOS_TO_SYSTEM = {
     'linux': 'Linux',
     'freebsd': 'FreeBSD',
+    'openbsd': 'OpenBSD',
     'win32': 'Windows',
     'darwin': 'Darwin',
     'sunos': platform.system(),  ## FIXME: inhibits cross-compile
@@ -548,7 +549,7 @@ def configure(ctx):
     else:
         # Mac OS X and FreeBSD do not need libdl.
         # https://stackoverflow.com/questions/20169660/where-is-libdl-so-on-mac-os-x
-        if ctx.env.DEST_OS not in ('darwin', 'freebsd'):
+        if ctx.env.DEST_OS not in ('darwin', 'freebsd', 'openbsd'):
             ctx.check_cc(lib='dl', mandatory=True)
         if ctx.env.DEST_OS == 'freebsd' and sysconfig.get_config_var('HAVE_PTHREAD_H'):
             # On FreeBSD if python has threads: libthr needs to be loaded in
