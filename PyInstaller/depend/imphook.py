@@ -17,16 +17,17 @@ import os.path
 
 from .. import log as logging
 from ..compat import (
-    expand_path, importlib_load_source, FileNotFoundError, UserDict,)
+    expand_path, importlib_load_source, FileNotFoundError)
 from .imphookapi import PostGraphAPI
-from .utils import format_binaries_and_datas
+from ..building.utils import format_binaries_and_datas
 
 logger = logging.getLogger(__name__)
 
+# Safety check: Hook module names need to be unique. Duplicate names might
+# occur if the cached PyuModuleGraph has an issue.
+HOOKS_MODULE_NAMES = set()
 
-# Note that the "UserDict" superclass is old-style under Python 2.7! Avoid
-# calling the super() method for this subclass.
-class ModuleHookCache(UserDict):
+class ModuleHookCache(dict):
     """
     Cache of lazily loadable hook script objects.
 
@@ -79,8 +80,7 @@ class ModuleHookCache(UserDict):
             `hook-{module_name}.py`, where `{module_name}` is the module hooked
             by that script) to be cached.
         """
-
-        UserDict.__init__(self)
+        super(ModuleHookCache, self).__init__()
 
         # To avoid circular references and hence increased memory consumption,
         # a weak rather than strong reference is stored to the passed graph.
@@ -281,6 +281,11 @@ class ModuleHook(object):
         # Name of the in-memory module fabricated to refer to this hook script.
         self.hook_module_name = (
             hook_module_name_prefix + self.module_name.replace('.', '_'))
+
+        # Safety check, see above
+        global HOOKS_MODULE_NAMES
+        assert self.hook_module_name not in HOOKS_MODULE_NAMES
+        HOOKS_MODULE_NAMES.add(self.hook_module_name)
 
         # Attributes subsequently defined by the _load_hook_module() method.
         self._hook_module = None
@@ -554,116 +559,6 @@ class ModuleHook(object):
                         "  Removing import of %s from module %s", dest, src)
 
 
-#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#FIXME: This class has been obsoleted by "ModuleHookCache" and will be removed.
-#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-class HooksCache(dict):
-    """
-    Dictionary mapping from the fully-qualified names of each module hooked by
-    at least one hook script to lists of the absolute paths of these scripts.
-
-    This `dict` subclass caches the list of all hooks applicable to each module,
-    permitting Pythonic mapping, iteration, addition, and removal of such hooks.
-    Each dictionary key is a fully-qualified module name. Each dictionary value
-    is a list of the absolute paths of all hook scripts specific to that module,
-    including both official PyInstaller hooks and unofficial user-defined hooks.
-
-    See Also
-    ----------
-    `_load_file_list()`
-        For details on hook priority.
-    """
-    def __init__(self, hooks_dir):
-        """
-        Initialize this dictionary.
-
-        Parameters
-        ----------
-        hook_dir : str
-            Absolute or relative path of the directory containing hooks with
-            which to populate this cache. By default, this is the absolute path
-            of the `PyInstaller/hooks` directory containing official hooks.
-        """
-        super(dict, self).__init__()
-        self._load_file_list(hooks_dir)
-
-    def _load_file_list(self, hooks_dir):
-        """
-        Cache all hooks in the passed directory.
-
-        **Order of caching is significant** with respect to hooks for the same
-        module, as the values of this dictionary are ordered lists. Hooks for
-        the same module will be run in the order in which they are cached.
-        Previously cached hooks are always preserved (rather than overidden).
-
-        Specifically, any hook in the passed directory having the same module
-        name as that of a previously cached hook will be appended to the list of
-        hooks for that module name. By default, official hooks are cached
-        _before_ user-defined hooks. For modules with both official and
-        user-defined hooks, this implies that the former take priority over and
-        will be run _before_ the latter.
-
-        Parameters
-        ----------
-        hooks_dir : str
-            Absolute or relative path of the directory containing additional
-            hooks to be cached. For convenience, tilde and variable expansion
-            will be applied to this path (e.g., a leading `~` will be replaced
-            by the absolute path of the corresponding home directory).
-        """
-        # Perform tilde and variable expansion and validate the result.
-        hooks_dir = expand_path(hooks_dir)
-        if not os.path.isdir(hooks_dir):
-            logger.error('Hook directory %r not found',
-                         os.path.abspath(hooks_dir))
-            return
-
-        # For each hook in the passed directory...
-        hook_files = glob.glob(os.path.join(hooks_dir, 'hook-*.py'))
-        for hook_file in hook_files:
-            # Absolute path of this hook's script.
-            hook_file = os.path.abspath(hook_file)
-
-            # Fully-qualified name of this hook's corresponding module,
-            # constructed by removing the "hook-" prefix and ".py" suffix.
-            module_name = os.path.basename(hook_file)[5:-3]
-
-            # If this module already has cached hooks, append this hook's path
-            # to the existing list of such paths.
-            if module_name in self:
-                self[module_name].append(hook_file)
-            # Else, default to a new list containing only this hook's path.
-            else:
-                self[module_name] = [hook_file]
-
-    def add_custom_paths(self, hooks_dirs):
-        """
-        Cache all hooks in the list of passed directories.
-
-        Parameters
-        ----------
-        hooks_dirs : list
-            List of the absolute or relative paths of all directories containing
-            additional hooks to be cached.
-        """
-        for hooks_dir in hooks_dirs:
-            self._load_file_list(hooks_dir)
-
-    def remove(self, module_names):
-        """
-        Remove all key-value pairs whose key is a fully-qualified module name in
-        the passed list from this dictionary.
-
-        Parameters
-        ----------
-        module_names : list
-            List of all fully-qualified module names to be removed.
-        """
-        for module_name in set(module_names):  # Eliminate duplicate entries.
-            if module_name in self:
-                del self[module_name]
-
-
 class AdditionalFilesCache(object):
     """
     Cache for storing what binaries and datas were pushed by what modules
@@ -691,153 +586,3 @@ class AdditionalFilesCache(object):
         Return list of datas for given module name.
         """
         return self._datas[modname]
-
-
-#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#FIXME: This class has been obsoleted by "ModuleHook" and will be removed.
-#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-class ImportHook(object):
-    """
-    Class encapsulating processing of hook attributes like hiddenimports, etc.
-    """
-    def __init__(self, modname, hook_filename):
-        """
-        :param hook_filename: File name where to load hook from.
-        """
-        logger.info('Processing hook   %s' % os.path.basename(hook_filename))
-        self._name = modname
-        self._filename = hook_filename
-        # _module represents the code of 'hook-modname.py'
-        # Load hook from file and parse and interpret it's content.
-        hook_modname = 'PyInstaller_hooks_' + modname.replace('.', '_')
-        self._module = importlib_load_source(hook_modname, self._filename)
-        # Public import hook attributes for further processing.
-        self.binaries = set()
-        self.datas = set()
-
-    # Internal methods for processing.
-
-    def _process_hook_function(self, mod_graph):
-        """
-        Call the hook function hook(mod).
-        Function hook(mod) has to be called first because this function
-        could update other attributes - datas, hiddenimports, etc.
-        """
-        # Process a `hook(hook_api)` function.
-        hook_api = PostGraphAPI(self._name, mod_graph)
-        self._module.hook(hook_api)
-
-        self.datas.update(set(hook_api._added_datas))
-        self.binaries.update(set(hook_api._added_binaries))
-        for item in hook_api._added_imports:
-            self._process_one_hiddenimport(item, mod_graph)
-        for item in hook_api._deleted_imports:
-            # Remove the graph link between the hooked module and item.
-            # This removes the 'item' node from the graph if no other
-            # links go to it (no other modules import it)
-            mod_graph.removeReference(hook_api.node, item)
-
-    def _process_hiddenimports(self, mod_graph):
-        """
-        'hiddenimports' is a list of Python module names that PyInstaller
-        is not able detect.
-        """
-        # push hidden imports into the graph, as if imported from self._name
-        for item in self._module.hiddenimports:
-            self._process_one_hiddenimport(item, mod_graph)
-
-    def _process_one_hiddenimport(self, item, mod_graph):
-        try:
-            # Do not try to first find out if a module by that name already exist.
-            # Rely on modulegraph to handle that properly.
-            # Do not automatically create namespace packages if they do not exist.
-            caller = mod_graph.findNode(self._name, create_nspkg=False)
-            mod_graph.import_hook(item, caller=caller)
-        except ImportError:
-            # Print warning if a module from hiddenimport could not be found.
-            # modulegraph raises ImporError when a module is not found.
-            # Import hook with non-existing hiddenimport is probably a stale hook
-            # that was not updated for a long time.
-            logger.warning("Hidden import '%s' not found (probably old hook)",
-                           item)
-
-    def _process_excludedimports(self, mod_graph):
-        """
-        'excludedimports' is a list of Python module names that PyInstaller
-        should not detect as dependency of this module name.
-
-        So remove all import-edges from the current module (and it's
-        submodules) to the given `excludedimports` (end their submodules).
-        """
-
-        def find_all_package_nodes(name):
-            mods = [name]
-            name += '.'
-            for subnode in mod_graph.nodes():
-                if subnode.identifier.startswith(name):
-                    mods.append(subnode.identifier)
-            return mods
-
-        # Collect all submodules of this module.
-        hooked_mods = find_all_package_nodes(self._name)
-
-        # Collect all dependencies and their submodules
-        # TODO: Optimize this by using a pattern and walking the graph
-        # only once.
-        for item in set(self._module.excludedimports):
-            excluded_node = mod_graph.findNode(item, create_nspkg=False)
-            if excluded_node is None:
-                logger.info("Import to be excluded not found: %r", item)
-                continue
-            logger.info("Excluding import %r", item)
-            imports_to_remove = set(find_all_package_nodes(item))
-
-            # Remove references between module nodes, as though they would
-            # not be imported from 'name'.
-            # Note: Doing this in a nested loop is less efficient than
-            # collecting all import to remove first, but log messages
-            # are easier to understand since related to the "Excluding ..."
-            # message above.
-            for src in hooked_mods:
-                # modules, this `src` does import
-                references = set(n.identifier for n in mod_graph.getReferences(src))
-                # Remove all of these imports which are also in `imports_to_remove`
-                for dest in imports_to_remove & references:
-                    mod_graph.removeReference(src, dest)
-                    logger.warning("  From %s removing import %s", src, dest)
-
-
-    def _process_datas(self, mod_graph):
-        """
-        'datas' is a list of globs of files or
-        directories to bundle as datafiles. For each
-        glob, a destination directory is specified.
-        """
-        # Find all files and interpret glob statements.
-        self.datas.update(set(format_binaries_and_datas(self._module.datas)))
-
-    def _process_binaries(self, mod_graph):
-        """
-        'binaries' is a list of files to bundle as binaries.
-        Binaries are special that PyInstaller will check if they
-        might depend on other dlls (dynamic libraries).
-        """
-        self.binaries.update(set(format_binaries_and_datas(self._module.binaries)))
-
-    # Public methods
-
-    def update_dependencies(self, mod_graph):
-        """
-        Update module dependency graph with import hook attributes (hiddenimports, etc.)
-        :param mod_graph: PyiModuleGraph object to be updated.
-        """
-        if hasattr(self._module, 'hook'):
-            self._process_hook_function(mod_graph)
-        if hasattr(self._module, 'hiddenimports'):
-            self._process_hiddenimports(mod_graph)
-        if hasattr(self._module, 'excludedimports'):
-            self._process_excludedimports(mod_graph)
-        if hasattr(self._module, 'datas'):
-            self._process_datas(mod_graph)
-        if hasattr(self._module, 'binaries'):
-            self._process_binaries(mod_graph)

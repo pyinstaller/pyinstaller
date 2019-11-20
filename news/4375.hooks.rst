@@ -1,0 +1,2 @@
+Hook for pywebview now collects data files and dynamic libraries only for the correct OS (Windows).
+Hook for pywebview now bundles only the required 'lib' subdirectory.

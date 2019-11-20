@@ -87,8 +87,8 @@ itself.
 |PyInstaller| is maintained since 2005 and we often need to
 comprehend years later why a certain change has been implemented as it is.
 What seemed to be obvious when the change was applied may be just obscure
-years later. The original contributor may be out if reach, while another
-developer needs get comprehend the reasons, side-effects and decisions the
+years later. The original contributor may be out of reach, while another
+developer needs to comprehend the reasons, side-effects and decisions the
 original author considered.
 
 We learned that commit messages are important to comprehend changes and

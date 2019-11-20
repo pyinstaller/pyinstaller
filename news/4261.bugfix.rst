@@ -1,0 +1,1 @@
+Do not fail the build when ``ldconfig`` is missing/inoperable.

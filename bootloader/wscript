@@ -422,17 +422,6 @@ def configure(ctx):
             ctx.find_program([assoc_programm(ctx, 'windres')], var='WINRC')
             ctx.load('winres')
 
-    if ctx.env.CC_NAME != 'msvc':
-        # This tool allows reducing the size of executables.
-        ctx.find_program([assoc_programm(ctx, 'strip')], var='STRIP')
-        ctx.load('strip', tooldir='tools')
-        # There is a strip flag for AIX environment
-        if ctx.env.DEST_OS == 'aix':
-            if ctx.env.PYI_ARCH == '32bit':
-                ctx.env.append_value('STRIPFLAGS', '-X32')
-            elif ctx.env.PYI_ARCH == '64bit':
-                ctx.env.append_value('STRIPFLAGS', '-X64')
-
     ### C Compiler optimizations.
     # TODO Set proper optimization flags for MSVC (Visual Studio).
 
@@ -584,7 +573,7 @@ def configure(ctx):
     # supported. This code is based on old waf source at
     # https://gitlab.com/ita1024/waf/commit/62fe305d04ed37b1be1a3327a74b2fee6c458634#255b2344e5268e6a34bedd2f8c4680798344fec7.
     SNIP_FUNCTION = '''
-    #include <stdlib.h>
+    #include <%s>
 
     int main(int argc, char **argv) {
         void (*p)();
@@ -595,9 +584,12 @@ def configure(ctx):
     }
 '''
     # OS support for these functions varies.
-    for function_name in ('unsetenv', 'mkdtemp'):
+    for header, function_name in (('stdlib.h', 'unsetenv'),
+                                  ('stdlib.h', 'mkdtemp'),
+                                  ('string.h', 'strndup'),
+                                  ('string.h', 'strnlen')):
         ctx.check(
-            fragment=SNIP_FUNCTION % function_name,
+            fragment=SNIP_FUNCTION % (header, function_name),
             mandatory=False,
             define_name=ctx.have_define(function_name),
             msg='Checking for function %s' % function_name)
@@ -632,6 +624,17 @@ def configure(ctx):
     # fails during build. (Mac OS X, Solaris, AIX)
     if ctx.env.DEST_OS == 'linux' and ctx.check_cc(cflags='-Wl,--as-needed'):
         ctx.env.append_value('LINKFLAGS', '-Wl,--as-needed')
+
+    if ctx.env.CC_NAME != 'msvc':
+        # This tool allows reducing the size of executables.
+        ctx.find_program([assoc_programm(ctx, 'strip')], var='STRIP')
+        ctx.load('strip', tooldir='tools')
+        # There is a strip flag for AIX environment
+        if ctx.env.DEST_OS == 'aix':
+            if ctx.env.PYI_ARCH == '32bit':
+                ctx.env.append_value('STRIPFLAGS', '-X32')
+            elif ctx.env.PYI_ARCH == '64bit':
+                ctx.env.append_value('STRIPFLAGS', '-X64')
 
     def windowed(name, baseenv):
         """Setup windowed environment based on `baseenv`."""

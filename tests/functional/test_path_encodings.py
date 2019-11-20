@@ -37,7 +37,7 @@ def test_linux_non_unicode_path(pyi_builder, monkeypatch):
     pyi_builder._distdir = os.path.join(distdir, unicode_filename)
     os.makedirs(pyi_builder._distdir)
 
-    tmpdir = os.path.join(pyi_builder._tmpdir, unicode_filename + "_TMP")
+    tmpdir = os.path.join(str(pyi_builder._tmpdir), unicode_filename + "_TMP")
 
     # On py2, os.environ only accepts str
     if is_py2:
@@ -58,7 +58,7 @@ def test_osx_linux_unicode_path(pyi_builder, monkeypatch):
     pyi_builder._distdir = os.path.join(distdir, unicode_filename)
     os.makedirs(pyi_builder._distdir)
 
-    tmpdir = os.path.join(pyi_builder._tmpdir, unicode_filename + "_TMP")
+    tmpdir = os.path.join(str(pyi_builder._tmpdir), unicode_filename + "_TMP")
 
     # On py2, os.environ only accepts str
     if is_py2:
@@ -81,7 +81,7 @@ def test_win_codepage_path(pyi_builder, monkeypatch):
     pyi_builder._distdir = os.path.join(distdir, cp_filename)
     os.makedirs(pyi_builder._distdir)
 
-    tmpdir = os.path.join(pyi_builder._tmpdir, cp_filename + "_TMP")
+    tmpdir = os.path.join(str(pyi_builder._tmpdir), cp_filename + "_TMP")
 
     # On py2, os.environ only accepts str
     if is_py2:
@@ -117,7 +117,7 @@ def test_win_codepage_path_disabled_shortfilename(pyi_builder, monkeypatch):
     if(subprocess.call(['fsutil', '8dot3name', 'strip', fsutil_distdir])):
         pytest.xfail("Administrator privileges required to strip ShortFileName.")
 
-    tmpdir = os.path.join(pyi_builder._tmpdir, cp_filename + "_TMP")
+    tmpdir = os.path.join(str(pyi_builder._tmpdir), cp_filename + "_TMP")
 
     # On py2, os.environ only accepts str
     if is_py2:
@@ -159,7 +159,7 @@ def test_win_non_codepage_path(pyi_builder, monkeypatch):
     os.makedirs(pyi_builder._distdir)
 
     # Note: It is also impossible to pass non-ANSI filenames through environ on Python 2.
-    tmpdir = os.path.join(pyi_builder._tmpdir, non_cp_filename + "_TMP")
+    tmpdir = os.path.join(str(pyi_builder._tmpdir), non_cp_filename + "_TMP")
 
     monkeypatch.setenv('TMPDIR', tmpdir)
     monkeypatch.setenv('TMP', tmpdir)

@@ -657,8 +657,10 @@ def strip_paths_in_code(co, new_filename=None):
         for const_co in co.co_consts
     )
 
-    # co_kwonlyargcount added in some version of Python 3
-    if hasattr(co, 'co_kwonlyargcount'):
+    if hasattr(co, 'replace'): # is_py38
+        return co.replace(co_consts=consts, co_filename=new_filename)
+    elif hasattr(co, 'co_kwonlyargcount'):
+        # co_kwonlyargcount was added in some version of Python 3
         return code_func(co.co_argcount, co.co_kwonlyargcount, co.co_nlocals, co.co_stacksize,
                      co.co_flags, co.co_code, consts, co.co_names,
                      co.co_varnames, new_filename, co.co_name,
