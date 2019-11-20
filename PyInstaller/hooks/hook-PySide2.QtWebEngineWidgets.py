@@ -1,11 +1,11 @@
-# -----------------------------------------------------------------------------
+#-----------------------------------------------------------------------------
 # Copyright (c) 2014-2019, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License with exception
 # for distributing bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
-# -----------------------------------------------------------------------------
+#-----------------------------------------------------------------------------
 
 import os
 from PyInstaller.utils.hooks.qt import add_qt5_dependencies, \
@@ -17,9 +17,7 @@ import PyInstaller.compat as compat
 
 
 def get_relative_path_if_possible(actual, possible_prefix):
-    actual_path = os.path.abspath(actual)
-    possible_prefix_path = os.path.abspath(possible_prefix)
-    possible_relative_path = os.path.relpath(actual_path, possible_prefix_path)
+    possible_relative_path = os.path.relpath(actual, possible_prefix)
     if possible_relative_path.startswith(os.pardir):
         return actual
     else:

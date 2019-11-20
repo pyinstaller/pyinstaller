@@ -6,24 +6,24 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-import os.path
+from os import path, curdir
 
 from PyInstaller.utils.hooks import collect_system_data_files
 from PyInstaller.utils.hooks.qt import pyside2_library_info, get_qt_binaries
-import PyInstaller.compat as compat
+from PyInstaller.compat import is_win
 
 hiddenimports = ['shiboken2']
 
 # Collect the ``qt.conf`` file.
-if compat.is_win:
-    target_qt_conf_dir = '.'
+if is_win:
+    target_qt_conf_dir = curdir
 else:
     target_qt_conf_dir = 'PySide2'
 
 datas = [x for x in
          collect_system_data_files(pyside2_library_info.location['PrefixPath'],
                                    target_qt_conf_dir)
-         if os.path.basename(x[0]) == 'qt.conf']
+         if path.basename(x[0]) == 'qt.conf']
 
 # Collect required Qt binaries.
 binaries = get_qt_binaries(pyside2_library_info)
