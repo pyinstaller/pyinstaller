@@ -27,9 +27,8 @@ from ..exceptions import ExecCommandFailed
 from ..lib.modulegraph import util, modulegraph
 
 from .. import compat
-from ..compat import (is_darwin, is_unix, is_freebsd, is_py2, is_py37,
-                      BYTECODE_MAGIC, PY3_BASE_MODULES,
-                      exec_python_rc)
+from ..compat import (is_darwin, is_unix, is_freebsd, is_openbsd, is_py37,
+                      BYTECODE_MAGIC, PY3_BASE_MODULES)
 from .dylib import include_library
 from .. import log as logging
 
@@ -361,7 +360,7 @@ def load_ldconfig_cache():
             LDCONFIG_CACHE = {}
             return
 
-    if is_freebsd:
+    if is_freebsd or is_openbsd:
         # This has a quite different format than other Unixes
         # [vagrant@freebsd-10 ~]$ ldconfig -r
         # /var/run/ld-elf.so.hints:
@@ -397,7 +396,7 @@ def load_ldconfig_cache():
         # :fixme: this assumes libary names do not contain whitespace
         m = pattern.match(line)
         path = m.groups()[-1]
-        if is_freebsd:
+        if is_freebsd or is_openbsd:
             # Insert `.so` at the end of the lib's basename. soname
             # and filename may have (different) trailing versions. We
             # assume the `.so` in the filename to mark the end of the
