@@ -435,7 +435,7 @@ def test_Qt5_QTranslate(pyi_builder, monkeypatch, QtPyLib):
 @importorskip('PySide2')
 def test_PySide2_QWebEngine(pyi_builder, data_dir):
     if is_darwin:
-        # QWebEngine on OS X only work with a onedir build -- onefile builds 
+        # QWebEngine on OS X only work with a onedir build -- onefile builds
         # don't work. Skip the test execution for onefile builds.
         if pyi_builder._mode != 'onedir':
             pytest.skip('The QWebEngine .app bundle '
