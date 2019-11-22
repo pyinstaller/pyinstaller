@@ -27,7 +27,7 @@ def get_relative_path_if_possible(actual, possible_prefix):
 
 def prefix_with_path(prefix_path, *paths):
     if version_info > (3, 4):
-        return os.path.join(*prefix_path, *paths)
+        return os.path.join(*prefix_path, *paths)  # noqa: E999
     else:
         return os.path.join(*(prefix_path + list(paths)))
 
