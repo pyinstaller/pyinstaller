@@ -1,3 +1,1 @@
-Add hook for enzyme_
-
-.. _enzyme: https://pypi.org/project/enzyme/
+Add hook for `enzyme <https://pypi.org/project/enzyme/>`_.
