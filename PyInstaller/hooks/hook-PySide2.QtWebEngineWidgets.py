@@ -7,7 +7,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
-from sys import version_info
 import os
 from PyInstaller.utils.hooks.qt import add_qt5_dependencies, \
     pyside2_library_info
@@ -26,10 +25,10 @@ def get_relative_path_if_possible(actual, possible_prefix):
 
 
 def prefix_with_path(prefix_path, *paths):
-    if version_info > (3, 4):
-        return os.path.join(*prefix_path, *paths)  # noqa: E999
-    else:
+    if compat.is_py2:
         return os.path.join(*(prefix_path + list(paths)))
+    else:
+        return os.path.join(*prefix_path, *paths)  # noqa: E999
 
 
 # Ensure PySide2 is importable before adding info depending on it.
