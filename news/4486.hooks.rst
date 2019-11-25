@@ -1,0 +1,1 @@
+(GNU/Linux) Make hook for GdkPixbuf compatible with Ubuntu and Debian.
