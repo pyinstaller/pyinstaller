@@ -1,0 +1,1 @@
+Fixed loading of IPython extensions.
