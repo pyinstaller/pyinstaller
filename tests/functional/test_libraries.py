@@ -432,9 +432,15 @@ def test_Qt5_QTranslate(pyi_builder, monkeypatch, QtPyLib):
         """.format(QtPyLib))
 
 
-@xfail(True, reason="Hook is old and needs updating.")
 @importorskip('PySide2')
 def test_PySide2_QWebEngine(pyi_builder, data_dir):
+    if is_darwin:
+        # QWebEngine on OS X only works with a onedir build -- onefile builds
+        # don't work. Skip the test execution for onefile builds.
+        if pyi_builder._mode != 'onedir':
+            pytest.skip('The QWebEngine .app bundle '
+                        'only supports onedir mode.')
+
     pyi_builder.test_source(get_QWebEngine_html('PySide2', data_dir),
                             **USE_WINDOWED_KWARG)
 
