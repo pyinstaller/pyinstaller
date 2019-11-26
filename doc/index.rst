@@ -20,7 +20,8 @@ such as numpy, PyQt, Django, wxPython, and others.
 However, it is not a cross-compiler:
 to make a Windows app you run |PyInstaller| in Windows;
 to make a GNU/Linux app you run it in GNU/Linux, etc.
-|PyInstaller| has been used successfully with AIX, Solaris, and FreeBSD,
+|PyInstaller| has been used successfully with
+AIX, Solaris, FreeBSD and OpenBSD
 but is not tested against them.
 
 
