@@ -22,7 +22,7 @@ to make a Windows app you run |PyInstaller| in Windows;
 to make a GNU/Linux app you run it in GNU/Linux, etc.
 |PyInstaller| has been used successfully with
 AIX, Solaris, FreeBSD and OpenBSD
-but is not tested against them.
+but testing against them is not part of our continuous integration tests.
 
 
 What's New This Release
