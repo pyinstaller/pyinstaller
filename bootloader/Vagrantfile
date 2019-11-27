@@ -115,6 +115,8 @@ end
 def packages_darwin
   return <<-EOF
     ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+    export HOMEBREW_NO_ANALYTICS=1
+    brew analytics off
     brew update
     brew upgrade --all
     brew install pkg-config
