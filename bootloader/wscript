@@ -456,16 +456,10 @@ def configure(ctx):
             ctx.find_program([assoc_programm(ctx, 'windres')], var='WINRC')
             ctx.load('winres')
 
-    if ctx.env.CC_NAME != 'msvc':
+    if ctx.env.CC_NAME != 'msvc' and ctx.env.DEST_OS != 'aix':
         # This tool allows reducing the size of executables.
         ctx.find_program([assoc_programm(ctx, 'strip')], var='STRIP')
         ctx.load('strip', tooldir='tools')
-        # There is a strip flag for AIX environment
-        if ctx.env.DEST_OS == 'aix':
-            if ctx.env.PYI_ARCH == '32bit':
-                ctx.env.append_value('STRIPFLAGS', '-X32')
-            elif ctx.env.PYI_ARCH == '64bit':
-                ctx.env.append_value('STRIPFLAGS', '-X64')
 
     ### C Compiler optimizations.
     # TODO Set proper optimization flags for MSVC (Visual Studio).
