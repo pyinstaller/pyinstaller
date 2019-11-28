@@ -771,7 +771,7 @@ def build(ctx):
         if ctx.env.DEST_OS == 'aix':
             # link statically with zlib
             libs.remove('Z')
-            staticlibs.append('Z')
+            staticlibs.append('z')
 
         if ctx.options.boehmgc:
             libs.append('GC')
