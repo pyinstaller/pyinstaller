@@ -141,10 +141,8 @@ _get_archive(ARCHIVE_STATUS *archive_pool[], const char *path)
         VS("LOADER: Checking next archive in the list...\n");
     }
 
-    archive = (ARCHIVE_STATUS *) malloc(sizeof(ARCHIVE_STATUS));
-
+    archive = pyi_arch_status_new();
     if (archive == NULL) {
-        FATAL_PERROR("malloc", "Error allocating memory for status\n");
         return NULL;
     }
 
