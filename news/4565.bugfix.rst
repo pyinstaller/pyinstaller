@@ -1,0 +1,1 @@
+Ensure the package will be installed successfully even if the user isn't running setup.py on the package folder
