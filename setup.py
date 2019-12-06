@@ -15,6 +15,9 @@ import sys
 import os
 from setuptools import setup
 
+# Ensure the package will be installed successfully even if the user isn't running setup.py on the package folder
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
 # Hack required to allow compat to not fail when pypiwin32 isn't found
 os.environ["PYINSTALLER_NO_PYWIN32_FAILURE"] = "1"
 from PyInstaller import __version__ as version, HOMEPATH, PLATFORM
