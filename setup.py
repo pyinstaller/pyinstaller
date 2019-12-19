@@ -27,10 +27,6 @@ REQUIREMENTS = [
     'altgraph',
 ]
 
-# dis3 is used for our version of modulegraph
-if sys.version_info < (3,):
-    REQUIREMENTS.append('dis3')
-
 # For Windows install PyWin32 if not already installed.
 if sys.platform.startswith('win'):
     REQUIREMENTS += ['pywin32-ctypes >= 0.2.0',
