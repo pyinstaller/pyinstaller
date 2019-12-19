@@ -14,7 +14,7 @@
 import codecs
 import struct
 
-from ...compat import is_py3, text_read_mode, win32api
+from ...compat import text_read_mode, win32api
 
 # ::TODO:: #1920 revert to using pypi version
 import pefile
@@ -100,24 +100,11 @@ def pefile_read_version(filename):
 LOAD_LIBRARY_AS_DATAFILE = 2
 
 
-if is_py3:
-    def getRaw(text):
-        """
-        Encodes text as UTF-16LE (Microsoft 'Unicode') for use in structs.
-        `bytes` is not allowed on Python 3.
-        """
-        return text.encode('UTF-16LE')
-else:
-    def getRaw(text):
-        """
-        Encodes text as UTF-16LE (Microsoft 'Unicode') for use in structs.
-        `unicode` is encoded to UTF-16LE, and `str` is first decoded from
-        `mbcs` before being re-encoded.
-        """
-        if isinstance(text, str):
-            text = text.decode('mbcs', errors='replace')
-
-        return text.encode('UTF-16LE')
+def getRaw(text):
+    """
+    Encodes text as UTF-16LE (Microsoft 'Unicode') for use in structs.
+    """
+    return text.encode('UTF-16LE')
 
 
 def decode(pathnm):

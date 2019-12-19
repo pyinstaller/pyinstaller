@@ -742,12 +742,8 @@ class Manifest(object):
         try:
             domtree = minidom.parse(filename_or_file)
         except xml.parsers.expat.ExpatError as e:
-            args = [e.args[0]]
-            # TODO Keep this for Python 2 - filename might be unicode and should be then converted to str.
-            # if isinstance(filename, unicode):
-                # filename = filename.encode(sys.getdefaultencoding(), "replace")
-            args.insert(0, '\n  File "%s"\n   ' % filename)
-            raise ManifestXMLParseError(" ".join([str(arg) for arg in args]))
+            args = ['\n  File "%r"\n   ' % filename, str(e.args[0])]
+            raise ManifestXMLParseError(" ".join(args))
         if initialize:
             self.__init__()
         self.filename = filename
@@ -909,10 +905,7 @@ class Manifest(object):
         # version-encoding-standalone (standalone being optional), otherwise
         # if it is embedded in an exe the exe will fail to launch!
         # ('application configuration incorrect')
-        if sys.version_info >= (2,3):
-            xmlstr = domtree.toprettyxml(indent, newl, encoding)
-        else:
-            xmlstr = domtree.toprettyxml(indent, newl)
+        xmlstr = domtree.toprettyxml(indent, newl, encoding)
         xmlstr = xmlstr.decode(encoding).strip(os.linesep).replace(
                 '<?xml version="1.0" encoding="%s"?>' % encoding,
                 '<?xml version="1.0" encoding="%s" standalone="yes"?>' %

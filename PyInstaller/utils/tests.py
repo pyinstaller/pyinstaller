@@ -27,7 +27,7 @@ import shutil
 import pytest
 from _pytest.runner import Skipped
 
-from PyInstaller.compat import is_darwin, is_win, is_linux, is_py2, is_py3
+from PyInstaller.compat import is_darwin, is_win, is_linux
 
 # Wrap some pytest decorators to be consistent in tests.
 parametrize = pytest.mark.parametrize
@@ -166,9 +166,6 @@ def gen_sourcefile(tmpdir, source, test_id=None):
     Ensure that the caller of `test_source` is in a UTF-8
     encoded file with the correct '# -*- coding: utf-8 -*-' marker.
     """
-    if is_py2:
-        if isinstance(source, str):
-            source = source.decode('UTF-8')
     testname = inspect.stack()[1][3]
     if test_id:
         # For parametrized test append the test-id.

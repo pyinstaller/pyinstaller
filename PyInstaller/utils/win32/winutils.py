@@ -163,8 +163,7 @@ def convert_dll_name_to_str(dll_name):
     :return:
     """
     # imported here to avoid circular import
-    from ...compat import is_py3
-    if is_py3 and isinstance(dll_name, bytes):
+    if isinstance(dll_name, bytes):
         return str(dll_name, encoding='UTF-8')
     else:
         return dll_name
