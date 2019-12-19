@@ -27,10 +27,7 @@ def get_relative_path_if_possible(actual, possible_prefix):
 
 
 def prefix_with_path(prefix_path, *paths):
-    if compat.is_py2:
-        return os.path.join(*(prefix_path + list(paths)))
-    else:
-        return os.path.join(*prefix_path, *paths)  # noqa: E999
+    return os.path.join(*prefix_path, *paths)  # noqa: E999
 
 
 # Ensure PySide2 is importable before adding info depending on it.

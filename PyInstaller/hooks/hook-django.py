@@ -48,18 +48,10 @@ if root_dir:
             package_name + '.wsgi',
     ]
     # Django hiddenimports from the standard Python library.
-    if sys.version_info.major == 3:
-        # Python 3.x
-        hiddenimports += [
-                'http.cookies',
-                'html.parser',
-        ]
-    else:
-        # Python 2.x
-        hiddenimports += [
-                'Cookie',
-                'HTMLParser',
-        ]
+    hiddenimports += [
+        'http.cookies',
+        'html.parser',
+    ]
 
     # Bundle django DB schema migration scripts as data files.
     # They are necessary for some commands.

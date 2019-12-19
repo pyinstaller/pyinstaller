@@ -118,10 +118,6 @@ if libdir:
                 # this command (i.e., enable the "universal_newlines" option).
                 # Note that:
                 #
-                # * Under Python 2.7, "cachedata" will be a decoded "unicode"
-                # object. * Under Python 3.x, "cachedata" will be a decoded
-                # "str" object.
-                #
                 # On Fedora, the default loaders cache is /usr/lib64, but the
                 # libdir is actually /lib64. To get around this, we pass the
                 # path to the loader command, and it will create a cache with
@@ -141,8 +137,6 @@ if libdir:
                         line = '"@executable_path/' + cachedest + line[plen:]
                     cd.append(line)
 
-                # Rejoin these lines in a manner preserving this object's
-                # "unicode" type under Python 2.
                 cachedata = u'\n'.join(cd)
 
                 # Write the updated loader cache to this file.

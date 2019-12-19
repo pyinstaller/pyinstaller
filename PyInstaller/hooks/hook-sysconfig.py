@@ -22,11 +22,7 @@ from PyInstaller.utils.hooks import relpath_to_config_or_make
 from PyInstaller.compat import is_win
 
 _CONFIG_H = sysconfig.get_config_h_filename()
-if hasattr(sysconfig, 'get_makefile_filename'):
-    # sysconfig.get_makefile_filename is missing in Python < 2.7.9
-    _MAKEFILE = sysconfig.get_makefile_filename()
-else:
-    _MAKEFILE = sysconfig._get_makefile_filename()
+_MAKEFILE = sysconfig.get_makefile_filename()
 
 
 datas = [(_CONFIG_H, relpath_to_config_or_make(_CONFIG_H))]
