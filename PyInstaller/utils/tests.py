@@ -39,8 +39,6 @@ skipif_win = skipif(is_win, reason='does not run on Windows')
 skipif_linux = skipif(is_win, reason='does not run on GNU/Linux')
 skipif_winorosx = skipif(is_win or is_darwin, reason='does not run on Windows or Mac OS X')
 xfail = pytest.mark.xfail
-xfail_py2 = xfail(is_py2, reason='fails with Python 2.7')
-xfail_py3 = xfail(is_py3, reason='fails with Python 3')
 
 def _check_for_compiler():
     import tempfile, sys
