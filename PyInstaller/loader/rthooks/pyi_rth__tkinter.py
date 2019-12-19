@@ -13,16 +13,6 @@
 import os
 import sys
 
-
-try:
-    FileNotFoundError
-except NameError:
-    # FileNotFoundError is new in Python 3.0
-    # NB: Aliasing IOError is not a full emulation of FileNotFoundError,
-    # but far enough for this usecase, where the whole frozen program
-    # terminates when this exception occurs.
-    FileNotFoundError = IOError
-
 tcldir = os.path.join(sys._MEIPASS, 'tcl')
 tkdir = os.path.join(sys._MEIPASS, 'tk')
 
