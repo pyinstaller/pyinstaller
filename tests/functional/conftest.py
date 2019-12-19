@@ -53,17 +53,12 @@ from PyInstaller import configure, config
 from PyInstaller import __main__ as pyi_main
 from PyInstaller.utils.tests import gen_sourcefile
 from PyInstaller.utils.cliutils import archive_viewer
-from PyInstaller.compat import is_darwin, is_win, is_py2, safe_repr, \
+from PyInstaller.compat import is_darwin, is_win, safe_repr, \
     architecture, is_linux, suppress, text_read_mode
 from PyInstaller.depend.analysis import initialize_modgraph
 from PyInstaller.utils.win32 import winutils
 from PyInstaller.utils.hooks.qt import pyqt5_library_info, pyside2_library_info
 
-# Monkeypatch the psutil subprocess on Python 2
-if is_py2:
-    import subprocess32
-    psutil.subprocess = subprocess32
-    subprocess.TimeoutExpired = psutil.TimeoutExpired
 
 # Globals
 # =======
@@ -340,22 +335,6 @@ class AppBuilder(object):
             # The executable will be called with argv[0] as relative not absolute path.
             prog_name = os.path.join(os.curdir, os.path.basename(prog))
 
-        # Workaround to enable win_codepage_test
-        # If _distdir is 'bytes', PyI build fails with ASCII decode error
-        # when it joins the 'bytes' _distdir with the 'unicode' filenames from bindep and
-        # winmanifest.
-        #
-        # PyI succeeds with _distdir as 'unicode', but subprocess
-        # fails with ASCII encode error. subprocess succeeds if progname is
-        # mbcs-encoded 'bytes'
-        if is_win and is_py2:
-            if isinstance(exe_path, unicode):
-                exe_path = exe_path.encode('mbcs')
-            if isinstance(prog_name, unicode):
-                prog_name = prog_name.encode('mbcs')
-            if isinstance(prog_cwd, unicode):
-                prog_cwd = prog_cwd.encode('mbcs')
-
         args = [prog_name] + args
         # Using sys.stdout/sys.stderr for subprocess fixes printing messages in
         # Windows command prompt. Py.test is then able to collect stdout/sterr
@@ -402,12 +381,8 @@ class AppBuilder(object):
                     p.kill()
             stdout, stderr = process.communicate()
 
-        if is_py2:
-            sys.stdout.write(stdout)
-            sys.stderr.write(stderr)
-        else:
-            sys.stdout.buffer.write(stdout)
-            sys.stderr.buffer.write(stderr)
+        sys.stdout.buffer.write(stdout)
+        sys.stderr.buffer.write(stderr)
 
         return retcode
 

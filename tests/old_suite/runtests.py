@@ -48,7 +48,7 @@ sys.path.insert(0, pyi_home)
 import PyInstaller
 from PyInstaller import compat, configure
 from PyInstaller import __main__ as pyi_main
-from PyInstaller.compat import is_py2, is_win, is_darwin, modname_tkinter, text_read_mode
+from PyInstaller.compat import is_win, is_darwin, modname_tkinter, text_read_mode
 from PyInstaller.utils import misc
 import PyInstaller.utils.hooks as hookutils
 from PyInstaller.utils.win32 import winutils

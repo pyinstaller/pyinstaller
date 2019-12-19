@@ -14,22 +14,17 @@
 
 import sys, os
 
-if sys.version_info[0] == 2:
-    safe_repr = repr
-else:
-    safe_repr = ascii
-
-print("sys.executable: %s" % safe_repr(sys.executable))
+print("sys.executable:", ascii(sys.executable))
 
 if not os.path.exists(sys.executable):
     raise SystemExit("sys.executable does not exist.")
 
-print("sys.argv[0]: %s" % safe_repr(sys.argv[0]))
+print("sys.argv[0]:", ascii(sys.argv[0]))
 
 if not os.path.exists(sys.argv[0]):
     raise SystemExit("sys.argv[0] does not exist.")
 
-print("sys._MEIPASS: %s" % safe_repr(sys._MEIPASS))
+print("sys._MEIPASS:", ascii(sys._MEIPASS))
 
 if not os.path.exists(sys._MEIPASS):
     raise SystemExit("sys._MEIPASS does not exist.")

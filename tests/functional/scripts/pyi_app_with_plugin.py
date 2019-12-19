@@ -62,8 +62,6 @@ for f in (plugin_filename, plugin_filename + 'c'):
     except OSError:
         pass
 
-
-# Statement 'try except finally' is available since Python 2.5+.
 if is_error:
     # Raise exeption.
     raise SystemExit('Failed to import the dynamic plugin.')

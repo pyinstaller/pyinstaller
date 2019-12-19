@@ -17,7 +17,7 @@ import ctypes.util
 
 import pytest
 
-from PyInstaller.compat import is_darwin, is_py2, is_py3, is_win
+from PyInstaller.compat import is_darwin, is_win
 from PyInstaller.utils.tests import skipif, importorskip, \
     skipif_notwin, skipif_no_compiler, xfail, has_compiler
 
@@ -176,14 +176,6 @@ def test_import_non_existing_raises_import_error(pyi_builder):
             raise RuntimeError("ImportError not raised")
         """)
 
-# :todo: Use some package which is already installed for some other
-# reason instead of `simplejson` which is only used here.
-@skipif(is_py3, reason="Python 3 doesn't use the CExtensionImporter, so it "
-        "doesn't need testing.")
-@importorskip('simplejson')
-def test_c_extension(pyi_builder):
-    pyi_builder.test_script('pyi_c_extension.py')
-
 
 # Verify that __path__ is respected for imports from the filesystem:
 #
@@ -219,20 +211,6 @@ def test_import_pyqt5_uic_port(script_dir, pyi_builder):
 
 
 #--- ctypes ----
-
-@skipif_no_compiler
-@skipif(is_py3 and is_win,
-        reason="MSVCR not directly loadable on py >= 3.5, see https://bugs.python.org/issue23606")
-def test_ctypes_CDLL_c(pyi_builder):
-    # Make sure we are able to load the MSVCRXX.DLL resp. libc.so we are
-    # currently bound. This is some of a no-brainer since the resp. dll/so
-    # is collected anyway.
-    pyi_builder.test_source(
-        """
-        import ctypes, ctypes.util
-        lib = ctypes.CDLL(ctypes.util.find_library('c'))
-        assert lib is not None
-        """)
 
 @skipif_no_compiler
 @skipif(is_win, reason="CDLL(None) seams to be not valid on Windows")
@@ -555,7 +533,6 @@ def test_nspkg3_bbb_zzz(pyi_builder):
         pyi_args=['--paths', os.pathsep.join(pathex)],
     )
 
-@skipif(is_py2, reason="requires Python 3")
 def test_nspkg_pep420(pyi_builder):
     # Test inclusion of PEP 420 namespace packages.
     pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg-pep420', 'path*'))
