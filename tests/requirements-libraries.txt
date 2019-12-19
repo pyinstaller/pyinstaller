@@ -16,9 +16,9 @@
 # `# pyup: ignore <https://pyup.io/docs/bot/filter/>`_ comment.
 #
 # - v. 2.2 and above fails.
-Django==2.1.8; python_version != '2.7'  # pyup: ignore
+Django==2.1.8  # pyup: ignore
 # - v 3.1.0 fails.
-matplotlib==3.0.3; python_version != '2.7'  # pyup: ignore
+matplotlib==3.0.3  # pyup: ignore
 
 
 # Working
@@ -63,29 +63,21 @@ openpyxl==3.0.0; python_version > '3.5'
 # exclude Windows 64 bit Python.
 pyenchant==2.0.0; sys_platform == 'darwin' or (sys_platform == 'win32' and python_version <= '3.6')
 
-# No wheel for Python 3.5 or higher.
-PySide==1.2.4; sys_platform == 'win32' and python_version == '2.7'
-
 # uvloop does not currently support Windows.
-uvloop==0.13.0; python_version != '2.7' and sys_platform != 'win32'
+uvloop==0.13.0; sys_platform != 'win32'
 
 # web3 current releases don't support Python 3.5.
 web3==5.2.2; python_version > '3.5'
 
-
-# Python 3 only
-# -------------
-gevent==1.4.0; python_version != '2.7'
-ipython==7.9.0; python_version != '2.7'
-keyring==19.2.0; python_version != '2.7'
-numpy==1.17.3; python_version != '2.7'
-pandas==0.25.3; python_version != '2.7'
-pylint==2.4.3; python_version != '2.7'
-# This does provide Mac and Linux wheels for Python 2.7. Given EOL coming soon,
-# don't bother testing them.
-PySide2==5.13.0; python_version != '2.7'
-pyqt5==5.13.2; python_version != '2.7'
-pyqtwebengine==5.12.1; python_version != '2.7'
-scipy==1.3.1; python_version != '2.7'
-sphinx==2.2.1; python_version != '2.7'
+gevent==1.4.0
+ipython==7.9.0
+keyring==19.2.0
+numpy==1.17.3
+pandas==0.25.3
+pylint==2.4.3
+PySide2==5.13.0
+pyqt5==5.13.2
+pyqtwebengine==5.12.1
+scipy==1.3.1
+sphinx==2.2.1
 twisted==19.7.0; python_version == '2.7'
