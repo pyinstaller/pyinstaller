@@ -62,12 +62,7 @@ if VIRTENV in os.environ:
 # application.
 python_path = []
 for pth in sys.path:
-    if not os.path.isabs(pth):
-        # careful about using abspath with non-unicode path,
-        # it breaks multibyte character that contain slash under win32/Python 2
-        # TODO: Revert when dropping suport for is_py2.
-        pth = os.path.abspath(pth)
-    python_path.append(pth)
+    python_path.append(os.path.abspath(pth))
     sys.path = python_path
 
 
