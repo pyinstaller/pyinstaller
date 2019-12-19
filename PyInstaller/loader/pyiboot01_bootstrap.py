@@ -41,7 +41,6 @@ sys.exec_prefix = sys.prefix
 
 
 # Python 3.3+ defines also sys.base_prefix. Let's set them too.
-# TODO Do these variables does not hurt on Python 3.2 and 2.7?
 sys.base_prefix = sys.prefix
 sys.base_exec_prefix = sys.exec_prefix
 
@@ -90,11 +89,10 @@ class NullWriter:
         return False
 
 
-# In Python 3 sys.stdout/err is None in GUI mode on Windows.
-# In Python 2 we need to check .fileno().
-if sys.stdout is None or sys.stdout.fileno() < 0:
+# sys.stdout/err is None in GUI mode on Windows.
+if sys.stdout is None:
     sys.stdout = NullWriter()
-if sys.stderr is None or sys.stderr.fileno() < 0:
+if sys.stderr is None:
     sys.stderr = NullWriter()
 
 
