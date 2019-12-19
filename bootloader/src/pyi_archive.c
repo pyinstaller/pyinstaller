@@ -97,12 +97,10 @@ pyi_arch_close_fp(ARCHIVE_STATUS *status)
 static unsigned char *
 decompress(unsigned char * buff, TOC *ptoc)
 {
-    const char *ver;
     unsigned char *out;
     z_stream zstream;
     int rc;
 
-    ver = (zlibVersion)();
     out = (unsigned char *)malloc(ntohl(ptoc->ulen));
 
     if (out == NULL) {
