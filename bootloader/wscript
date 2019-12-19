@@ -447,15 +447,15 @@ def configure(ctx):
 
     if ctx.env.CC_NAME == 'gcc':
         # !! These flags are gcc specific
-
-        # Make sure we don't use declarations after statement. It breaks
-        # MSVC (Visual Studio).
-        ctx.env.append_value('CFLAGS', '-Wdeclaration-after-statement')
-
-        # Require function declarations to avoid data type length mismatches
-        # Implicit return value is 'int' which is only 32 bits on Windows.
-        ctx.env.append_value('CFLAGS', '-Wimplicit-function-declaration')
-        ctx.env.append_value('CFLAGS', '-Werror')
+        # Turn on all warnings to improve code quality and avoid
+        # errors. Unused variables and unused functions are still
+        # accepted to avoid even more conditional code.
+        # If you are ever tempted to change this, review the commit
+        # history of this place first.
+        ctx.env.append_value('CFLAGS', ['-Wall',
+                                        '-Werror',
+                                        '-Wno-error=unused-variable',
+                                        '-Wno-error=unused-function'])
 
     ### Defines, Includes
 
