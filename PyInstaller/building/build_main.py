@@ -31,7 +31,7 @@ from .. import HOMEPATH, DEFAULT_DISTPATH, DEFAULT_WORKPATH
 from .. import compat
 from .. import log as logging
 from ..utils.misc import absnormpath, compile_py_files
-from ..compat import is_py2, is_win, PYDYLIB_NAMES, \
+from ..compat import is_win, PYDYLIB_NAMES, \
     open_file, text_type, unicode_writer
 from ..depend import bindepend
 from ..depend.analysis import initialize_modgraph
@@ -347,12 +347,11 @@ class Analysis(Target):
         # containing core Python modules. In Python 3 some built-in modules
         # are written in pure Python. base_library.zip is a way how to have
         # those modules as "built-in".
-        if not is_py2:
-            libzip_filename = os.path.join(CONF['workpath'], 'base_library.zip')
-            create_py3_base_library(libzip_filename, graph=self.graph)
-            # Bundle base_library.zip as data file.
-            # Data format of TOC item:   ('relative_path_in_dist_dir', 'absolute_path_on_disk', 'DATA')
-            self.datas.append((os.path.basename(libzip_filename), libzip_filename, 'DATA'))
+        libzip_filename = os.path.join(CONF['workpath'], 'base_library.zip')
+        create_py3_base_library(libzip_filename, graph=self.graph)
+        # Bundle base_library.zip as data file.
+        # Data format of TOC item:   ('relative_path_in_dist_dir', 'absolute_path_on_disk', 'DATA')
+        self.datas.append((os.path.basename(libzip_filename), libzip_filename, 'DATA'))
 
         # Expand sys.path of module graph.
         # The attribute is the set of paths to use for imports: sys.path,
@@ -674,7 +673,7 @@ def build(spec, distpath, workpath, clean_build):
     CONF['workpath'] = workpath
 
     # Execute the specfile. Read it as a binary file...
-    with open(spec, 'rU' if is_py2 else 'rb') as f:
+    with open(spec, 'rb') as f:
         # ... then let Python determine the encoding, since ``compile`` accepts
         # byte strings.
         code = compile(f.read(), spec, 'exec')
