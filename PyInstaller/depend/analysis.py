@@ -49,7 +49,7 @@ from ..log import INFO, DEBUG, TRACE
 from ..building.datastruct import TOC
 from .imphook import AdditionalFilesCache, ModuleHookCache
 from .imphookapi import PreSafeImportModuleAPI, PreFindModulePathAPI
-from ..compat import importlib_load_source, is_py2, PY3_BASE_MODULES,\
+from ..compat import importlib_load_source, PY3_BASE_MODULES,\
         PURE_PYTHON_MODULE_TYPES, BINARY_MODULE_TYPES, VALID_MODULE_TYPES, \
         BAD_MODULE_TYPES, MODULE_TYPES_TO_TOC_DICT
 from ..lib.modulegraph.find_modules import get_implies
@@ -162,21 +162,12 @@ class PyiModuleGraph(ModuleGraph):
 
         msg = "%s %s" % (s, ' '.join(map(repr, args)))
 
-        if is_py2:
-            # Python 2 does not have 'sinfo'
-            try:
-                fn, lno, func = self._findCaller()
-            except ValueError:  # pragma: no cover
-                fn, lno, func = "(unknown file)", 0, "(unknown function)"
-            record = logger.makeRecord(
-                logger.name, level, fn, lno, msg, [], None, func, None)
-        else:
-            try:
-                fn, lno, func, sinfo = self._findCaller()
-            except ValueError:  # pragma: no cover
-                fn, lno, func, sinfo = "(unknown file)", 0, "(unknown function)", None
-            record = logger.makeRecord(
-                logger.name, level, fn, lno, msg, [], None, func, None, sinfo)
+        try:
+            fn, lno, func, sinfo = self._findCaller()
+        except ValueError:  # pragma: no cover
+            fn, lno, func, sinfo = "(unknown file)", 0, "(unknown function)", None
+        record = logger.makeRecord(
+            logger.name, level, fn, lno, msg, [], None, func, None, sinfo)
 
         logger.handle(record)
 
@@ -219,9 +210,6 @@ class PyiModuleGraph(ModuleGraph):
         """
         Analyze dependencies of the the modules in base_library.zip.
         """
-        if is_py2:
-            self._base_modules = ()
-            return
         logger.info('Analyzing base_library.zip ...')
         required_mods = []
         # Collect submodules from required modules in base_library.zip.
@@ -477,7 +465,7 @@ class PyiModuleGraph(ModuleGraph):
             # "NoneType", for the curious.) Remove this, please.
 
             # Skip modules that are in base_library.zip.
-            if not is_py2 and module_filter.match(node.identifier):
+            if module_filter.match(node.identifier):
                 continue
 
             # get node type e.g. Script
