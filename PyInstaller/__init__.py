@@ -16,7 +16,6 @@ import os
 import sys
 
 from . import compat
-from .compat import is_win, is_py2
 from .utils.git import get_repo_revision
 
 
@@ -31,18 +30,6 @@ __version__ = '4.0.dev0'
 PACKAGEPATH = os.path.abspath(os.path.dirname(__file__))
 
 HOMEPATH = os.path.dirname(PACKAGEPATH)
-if is_win and is_py2:
-    # This ensures for Python 2 that PyInstaller will work on Windows
-    # with paths containing foreign characters.
-    try:
-        unicode(HOMEPATH)
-    except UnicodeDecodeError:
-        # Do conversion to ShortPathName really only in case HOMEPATH is not
-        # ascii only - conversion to unicode type cause this unicode error.
-        try:
-            HOMEPATH = compat.win32api.GetShortPathName(HOMEPATH)
-        except ImportError:
-            pass
 
 
 # Update __version__ as necessary.
