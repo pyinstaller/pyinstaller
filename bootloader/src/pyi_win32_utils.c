@@ -198,46 +198,6 @@ pyi_win32_wcs_to_mbs(const wchar_t *wstr)
     return str;
 }
 
-/* Convert a wide string to an ANSI string, also attempting to get the MS-DOS
- *  ShortFileName if the string is a filename. ShortFileName allows Python 2.7 to
- *  accept filenames which cannot encode in the current ANSI codepage.
- *
- *  Returns a newly allocated buffer containing the ANSI characters terminated by a null
- *  character. The caller is responsible for freeing this buffer with free().
- *
- *  Returns NULL and logs error reason if encoding fails.
- */
-
-char *
-pyi_win32_wcs_to_mbs_sfn(const wchar_t *wstr)
-{
-    DWORD wsfnlen;
-    wchar_t * wstr_sfn = NULL;
-    char * str = NULL;
-    DWORD ret;
-
-    wsfnlen = GetShortPathNameW(wstr, NULL, 0);
-
-    if (wsfnlen) {
-        wstr_sfn = (wchar_t *)calloc(wsfnlen + 1, sizeof(wchar_t));
-        ret = GetShortPathNameW(wstr, wstr_sfn, wsfnlen);
-
-        if (ret) {
-            str = pyi_win32_wcs_to_mbs(wstr_sfn);
-        }
-        free(wstr_sfn);
-    }
-
-    if (!str) {
-        VS("Failed to get short path name for filename. GetShortPathNameW: \n%s\n",
-           GetWinErrorString(0)
-           );
-        str = pyi_win32_wcs_to_mbs(wstr);
-    }
-    return str;
-}
-
-
 /* We shouldn't need to convert ANSI to wchar_t since everything is provided as wchar_t */
 
 /* The following are used to convert the UTF-16 strings provided by Windows
