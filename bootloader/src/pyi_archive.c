@@ -562,7 +562,7 @@ char *
 pyi_arch_get_option(const ARCHIVE_STATUS * status, char * optname)
 {
     /* TODO: option-cache? */
-    int optlen;
+    size_t optlen;
     TOC *ptoc = status->tocbuff;
 
     optlen = strlen(optname);

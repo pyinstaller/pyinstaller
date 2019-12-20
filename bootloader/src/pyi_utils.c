@@ -138,7 +138,7 @@ pyi_strjoin(const char *first, const char *sep, const char *second){
      * returns a null-terminated string which the caller is responsible
      * for freeing. Returns NULL if memory could not be allocated.
      */
-    int first_len, sep_len, second_len;
+    size_t first_len, sep_len, second_len;
     char *result;
     first_len = first ? strlen(first) : 0;
     sep_len = sep ? strlen(sep) : 0;
@@ -644,7 +644,7 @@ pyi_copy_file(const char *src, const char *dst, const char *filename)
             }
         }
         else {
-            int rc = fwrite(buf, 4096, 1, out);
+            size_t rc = fwrite(buf, 4096, 1, out);
             if (rc <= 0 || ferror(out)) {
                 clearerr(out);
                 error = -1;
