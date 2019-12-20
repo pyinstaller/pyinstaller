@@ -247,7 +247,7 @@ its contents using the standard library function ``pkgutil.get_data()``::
 	import pkgutil
 	help_bin = pkgutil.get_data( 'helpmod', 'help_data.txt' )
 
-In Python 3, this returns the contents of the :file:`help_data.txt`
+This returns the contents of the :file:`help_data.txt`
 file as a binary string.
 If it is actually characters, you must decode it::
 

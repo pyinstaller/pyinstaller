@@ -238,7 +238,7 @@ Supporting Multiple Python Environments
 
 When you need to bundle your application within one OS
 but for different versions of Python and support libraries -- for example,
-a Python 3 version and a Python 2.7 version;
+a Python 3.6 version and a Python 3.7 version;
 or a supported version that uses Qt4 and a development version that uses Qt5 --
 we recommend you use venv_.
 With `venv` you can maintain different combinations of Python

@@ -205,7 +205,7 @@ for example::
    whether the installation is native or a virtual environment.
 
 ``modname_tkinter``:
-   String, ``Tkinter`` in Python 2.7 but ``tkinter`` in Python 3.
+   String ``tkinter`` (this module was named differently in Python 2).
    To prevent an unnecessary import of Tkinter, write::
 
       from PyInstaller.compat import modname_tkinter
