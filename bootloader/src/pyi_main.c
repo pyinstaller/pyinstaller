@@ -49,8 +49,6 @@ pyi_main(int argc, char * argv[])
     char *extractionpath = NULL;
     wchar_t * dllpath_w;
 
-    int i = 0;
-
 #ifdef _MSC_VER
     /* Visual C runtime incorrectly buffers stderr */
     setbuf(stderr, (char *)NULL);
