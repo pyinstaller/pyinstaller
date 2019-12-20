@@ -235,8 +235,8 @@ end
 def build_bootloader_on_windows(boxname)
   return <<-EOF
     cd c:/vagrant/bootloader
-    c:/python27/python.exe ./waf all --target-arch=64bit
-    c:/python27/python.exe ./waf all --target-arch=32bit
+    py -3 ./waf all --target-arch=64bit
+    py -3 ./waf all --target-arch=32bit
   EOF
 end
 
@@ -426,7 +426,7 @@ Vagrant.configure(2) do |config|
         :inline => packages_chocolatey()
       b.vm.provision "install packages",
         :type => :shell, :privileged => false, :keep_color => true,
-        :inline => choco_install("python2 vcbuildtools")
+        :inline => choco_install("python3 vcbuildtools")
       b.vm.provision "build bootloader",
         :type => :shell, :privileged => false, :keep_color => true,
         :inline => build_bootloader_on_windows("windows10")
