@@ -18,7 +18,7 @@
 
 #ifdef _WIN32
     #include <windows.h>
-    #include <direct.h>  /* _mkdir, _rmdir */
+    #include <direct.h>  /* _rmdir */
     #include <io.h>      /* _finddata_t */
     #include <process.h> /* getpid */
     #include <signal.h>  /* signal */
@@ -292,7 +292,7 @@ pyi_get_temp_path(char *buffer, char *runtime_tmpdir)
         /* TODO use race-free fuction - if any exists? */
         wchar_ret = _wtempnam(wchar_buffer, prefix);
 
-        if (_wmkdir(wchar_ret) == 0) {
+        if (pyi_win32_mkdir(wchar_ret) == 0) {
             pyi_win32_utils_to_utf8(buffer, wchar_ret, PATH_MAX);
             free(wchar_ret);
             if (runtime_tmpdir != NULL) {
@@ -584,7 +584,7 @@ pyi_open_target(const char *path, const char* name_)
         pyi_win32_utils_from_utf8(wchar_buffer, fnm, PATH_MAX);
 
         if (_wstat(wchar_buffer, &sbuf) < 0) {
-            _wmkdir(wchar_buffer);
+            pyi_win32_mkdir(wchar_buffer);
         }
 #else
 

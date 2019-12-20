@@ -36,6 +36,8 @@ char ** pyi_win32_argv_mbcs_from_utf8_ex(int argc, char **wargv, int sfn);
 char ** pyi_win32_argv_mbcs_from_utf8(int argc, char **wargv);
 char ** pyi_win32_argv_mbcs_from_utf8_sfn(int argc, char **wargv);
 
+int pyi_win32_mkdir(const wchar_t *path);
+
 #endif /* ifdef _WIN32 */
 
 #endif  /* UTILS_H */
