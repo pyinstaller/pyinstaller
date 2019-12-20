@@ -174,10 +174,6 @@ for example::
 
    from PyInstaller.compat import modname_tkinter, is_win
 
-``is_py2``:
-   True when the active Python is version 2.7.
-``is_py3``:
-   True when the active Python is version 3.X.
 ``is_py35``, ``is_py36``, ``is_py37``:
    True when the current version of Python is at least 3.5, 3.6, or 3.7 respectively.
 
