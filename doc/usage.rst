@@ -511,6 +511,12 @@ It should be compatible with later versions of Mac OS X.
 Building 32-bit Apps in Mac OS X
 ====================================
 
+.. note:: This section still refers to Python 2.7 provided by Apple.
+          It might not be valid for Python 3 installed
+          from `MacPorts`_ or `Homebrew`_.
+
+          Please contribute to keep this section up-to-date.
+
 Older versions of Mac OS X supported both 32-bit and 64-bit executables.
 PyInstaller builds an app using the the word-length of the Python used to execute it.
 That will typically be a 64-bit version of Python,
