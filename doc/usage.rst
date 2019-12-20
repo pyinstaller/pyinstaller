@@ -240,27 +240,29 @@ When you need to bundle your application within one OS
 but for different versions of Python and support libraries -- for example,
 a Python 3 version and a Python 2.7 version;
 or a supported version that uses Qt4 and a development version that uses Qt5 --
-we recommend you use virtualenv_.
-With virtualenv you can maintain different combinations of Python
+we recommend you use venv_.
+With `venv` you can maintain different combinations of Python
 and installed packages, and switch from one combination to another easily.
-(If you work only with Python 3.4 and later, ``python3 -m venv``
-does the same job, see module venv_.)
+These are called `virtual nvironments` or `venvs` in short.
 
-* Use virtualenv to create as many different development environments as you need,
+* Use `venv` to create as many different development environments as you need,
   each with its unique combination of Python and installed packages.
-* Install |PyInstaller| in each environment.
-* Use |PyInstaller| to build your application in each environment.
+* Install |PyInstaller| in each virtual environment.
+* Use |PyInstaller| to build your application in each virtual environment.
 
-Note that when using virtualenv, the path to the |PyInstaller| commands is:
+Note that when using `venv`, the path to the |PyInstaller| commands is:
 
 * Windows: ENV_ROOT\\Scripts
 * Others:  ENV_ROOT/bin
 
-Under Windows, the pip-Win_ package installs virtualenv and makes it
+Under Windows, the pip-Win_ package makes it
 especially easy to set up different environments and switch between them.
 Under GNU/Linux and Mac OS, you switch environments at the command line.
 
-See :pep:`405` for more information about Python virtual environments.
+See :pep:`405`
+and the official `Python Tutorial on Virtual Environments and Packages
+<https://docs.python.org/3/tutorial/venv.html>`_
+for more information about Python virtual environments.
 
 
 Supporting Multiple Operating Systems
