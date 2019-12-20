@@ -68,7 +68,6 @@ DECLPROC(PyModule_GetDict);
 DECLPROC(PyObject_CallFunction);
 DECLPROC(PyObject_SetAttrString);
 DECLPROC(PyRun_SimpleString);
-DECLPROC(PyString_FromString);
 DECLPROC(PySys_AddWarnOption);
 DECLPROC(PySys_SetArgvEx);
 DECLPROC(PySys_GetObject);
@@ -77,7 +76,6 @@ DECLPROC(PySys_SetPath);
 DECLPROC(PyUnicode_FromString);
 
 DECLPROC(Py_DecodeLocale);
-DECLPROC(PyString_FromFormat);
 DECLPROC(PyUnicode_FromFormat);
 DECLPROC(PyUnicode_DecodeFSDefault);
 DECLPROC(PyUnicode_Decode);
@@ -133,11 +131,6 @@ pyi_python_map_names(HMODULE dll, int pyvers)
     GETPROC(dll, PyObject_SetAttrString);
     GETPROC(dll, PyRun_SimpleString);
 
-    if (pyvers < 30) {
-        GETPROC(dll, PyString_FromString);
-        GETPROC(dll, PyString_FromFormat);
-    }
-    ;
     GETPROC(dll, PySys_AddWarnOption);
     GETPROC(dll, PySys_SetArgvEx);
     GETPROC(dll, PySys_GetObject);
