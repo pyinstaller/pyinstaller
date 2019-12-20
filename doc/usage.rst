@@ -277,19 +277,22 @@ You set up a virtual machine for each "guest" OS.
 In it you install
 Python, the support packages your application needs, and PyInstaller.
 
-The Dropbox_ system is useful with virtual machines.
-Install a Dropbox client in each virtual machine, all linked to your Dropbox account.
-Keep a single copy of your script(s) in a Dropbox folder.
+A `File Sync & Share`__ system like NextCloud_ is useful with virtual machines.
+Install the synchronization client in each virtual machine,
+all linked to your synchronization account.
+Keep a single copy of your script(s) in a synchronized folder.
 Then on any virtual machine you can run |PyInstaller| thus::
 
-    cd ~/Dropbox/project_folder/src # GNU/Linux, Mac -- Windows similar
+    cd ~/NextCloud/project_folder/src # GNU/Linux, Mac -- Windows similar
     rm *.pyc # get rid of modules compiled by another Python
     pyinstaller --workpath=path-to-local-temp-folder  \
                 --distpath=path-to-local-dist-folder  \
                 ...other options as required...       \
                 ./myscript.py
 
-|PyInstaller| reads scripts from the common Dropbox folder,
+__ https://en.wikipedia.org/wiki/Enterprise_file_synchronization_and_sharing
+
+|PyInstaller| reads scripts from the common synchronized folder,
 but writes its work files and the bundled app in folders that
 are local to the virtual machine.
 

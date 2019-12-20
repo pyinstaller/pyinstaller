@@ -17,7 +17,6 @@
 .. _Cython: http://www.cython.org/
 .. _Django: https://www.djangoproject.com/
 .. _dnspython: http://www.dnspython.org/
-.. _Dropbox: https://www.dropbox.com/home
 .. _`easy_install`: http://peak.telecommunity.com/DevCenter/EasyInstall
 .. _`Microsoft COM`: http://www.microsoft.com/com/default.mspx
 .. _`GPL License`: https://raw.github.com/pyinstaller/pyinstaller/develop/COPYING.txt
@@ -38,6 +37,7 @@
 .. _MinGW-w64: http://mingw-w64.sourceforge.net/
 .. _Modulefinder: http://docs.python.org/2.7/library/modulefinder.html
 .. _netpbm package: http://netpbm.sourceforge.net/
+.. _NextCloud: https://nextcloud.org
 .. _Parallels: http://www.parallels.com
 .. _pefile: https://pypi.python.org/pypi/pefile/
 .. _PIL: http://www.pythonware.com/products/pil/
