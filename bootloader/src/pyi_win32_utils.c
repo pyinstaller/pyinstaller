@@ -237,51 +237,6 @@ pyi_win32_wcs_to_mbs_sfn(const wchar_t *wstr)
     return str;
 }
 
-/* Convert a UTF-8 string to an ANSI string, also attempting to get the MS-DOS
- *  ShortFileName if the string is a filename. ShortFileName allows Python 2.7 to
- *  accept filenames which cannot encode in the current ANSI codepage.
- *
- *  Preserves the filename's original basename, since the bootloader code depends on
- *  the unmodified basename. Assumes that the basename can be encoded using the current
- *  ANSI codepage.
- *
- *  This is a workaround for <https://github.com/pyinstaller/pyinstaller/issues/298>.
- *
- *  Copies the converted string to `dest`, which must be a buffer
- *  of at least PATH_MAX characters. Returns 'dest' if successful.
- *
- *  Returns NULL and logs error reason if encoding fails.
- */
-char *
-pyi_win32_utf8_to_mbs_sfn_keep_basename(char * dest, const char * src)
-{
-    char * mbs_buffer;
-    char * mbs_sfn_buffer;
-    char basename[PATH_MAX];
-    char dirname[PATH_MAX];
-
-    /* Convert path to mbs*/
-    mbs_buffer = pyi_win32_utf8_to_mbs(NULL, src, 0);
-
-    if (NULL == mbs_buffer) {
-        return NULL;
-    }
-
-    /* Convert path again to mbs, this time with SFN */
-    mbs_sfn_buffer = pyi_win32_utf8_to_mbs_sfn(NULL, src, 0);
-
-    if (NULL == mbs_sfn_buffer) {
-        free(mbs_buffer);
-        return NULL;
-    }
-
-    pyi_path_basename(basename, mbs_buffer);
-    pyi_path_dirname(dirname, mbs_sfn_buffer);
-    pyi_path_join(dest, dirname, basename);
-    free(mbs_buffer);
-    free(mbs_sfn_buffer);
-    return dest;
-}
 
 /* We shouldn't need to convert ANSI to wchar_t since everything is provided as wchar_t */
 
