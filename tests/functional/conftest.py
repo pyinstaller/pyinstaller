@@ -58,18 +58,9 @@ from PyInstaller.utils.win32 import winutils
 from PyInstaller.utils.hooks.qt import pyqt5_library_info, pyside2_library_info
 
 
+
 # Globals
 # =======
-# Directory with Python scripts for functional tests. E.g. main scripts, etc.
-_SCRIPT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'scripts')
-# Directory with testing modules used in some tests.
-_MODULES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modules')
-# Directory with .toc log files.
-_LOGS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logs')
-# Directory storing test-specific data.
-_DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
-# Directory with .spec files used in some tests.
-_SPEC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'specs')
 # Timeout for running the executable. If executable does not exit in this time
 # then it is interpreted as test failure.
 _EXE_TIMEOUT = 30  # In sec.
@@ -82,15 +73,15 @@ _MAX_RETRIES = 2
 # --------
 
 @pytest.fixture
-def SPEC_DIR():
+def SPEC_DIR(request):
     """Return the directory where the test spec-files reside"""
-    return py.path.local(_SPEC_DIR)
+    return py.path.local(_get_spec_dir(request))
 
 
 @pytest.fixture
-def SCRIPT_DIR():
+def SCRIPT_DIR(request):
     """Return the directory where the test scripts reside"""
-    return py.path.local(_SCRIPT_DIR)
+    return py.path.local(_get_script_dir(request))
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
@@ -105,20 +96,54 @@ def pytest_runtest_makereport(item, call):
     setattr(item, "rep_" + rep.when, rep)
 
 
+# Return the base directory which contains the current test module.
+def _get_base_dir(request):
+    return os.path.dirname(os.path.abspath(request.fspath.strpath))
+
+
+# Directory with Python scripts for functional tests. E.g. main scripts, etc.
+def _get_script_dir(request):
+    return os.path.join(_get_base_dir(request), 'scripts')
+
+
+# Directory with testing modules used in some tests.
+def _get_modules_dir(request):
+    return os.path.join(_get_base_dir(request), 'modules')
+
+
+# Directory with .toc log files.
+def _get_logs_dir(request):
+    return os.path.join(_get_base_dir(request), 'logs')
+
+
+# Return the directory where data for tests is located.
+def _get_data_dir(request):
+    return os.path.join(_get_base_dir(request), 'data')
+
+
+# Directory with .spec files used in some tests.
+def _get_spec_dir(request):
+    return os.path.join(_get_base_dir(request), 'specs')
+
+
 @pytest.fixture
-def script_dir():
-    return py.path.local(_SCRIPT_DIR)
+def script_dir(request):
+    return py.path.local(_get_script_dir(request))
+
 
 # A helper function to copy from data/dir to tmpdir/data.
 def _data_dir_copy(
-  # The name of the subdirectory located in data/name to copy.
-  subdir_name,
-  # The tmpdir object for this test. See
-  # https://pytest.org/latest/tmpdir.html.
-  tmpdir):
+    # The pytest request object.
+    request,
+    # The name of the subdirectory located in data/name to copy.
+    subdir_name,
+    # The tmpdir object for this test. See
+    # https://pytest.org/latest/tmpdir.html.
+    tmpdir
+):
 
     # Form the source and tmp paths.
-    source_data_dir = py.path.local(_DATA_DIR).join(subdir_name)
+    source_data_dir = py.path.local(_get_data_dir(request)).join(subdir_name)
     tmp_data_dir = tmpdir.join('data', subdir_name)
     # Copy the data.
     shutil.copytree(source_data_dir.strpath, tmp_data_dir.strpath)
@@ -141,12 +166,13 @@ def data_dir(
     # Strip the leading 'test_' from the test's name.
     name = request.function.__name__[5:]
     # Copy to tmpdir and return the path.
-    return _data_dir_copy(name, tmpdir)
+    return _data_dir_copy(request, name, tmpdir)
 
 class AppBuilder(object):
 
-    def __init__(self, tmpdir, bundle_mode):
+    def __init__(self, tmpdir, request, bundle_mode):
         self._tmpdir = tmpdir
+        self._request = request
         self._mode = bundle_mode
         self._specdir = str(tmpdir)
         self._distdir = str(tmpdir / 'dist')
@@ -158,7 +184,7 @@ class AppBuilder(object):
         Test a Python script that is referenced in the supplied .spec file.
         """
         __tracebackhide__ = True
-        specfile = os.path.join(_SPEC_DIR, specfile)
+        specfile = os.path.join(_get_spec_dir(self._request), specfile)
         # 'test_script' should handle .spec properly as script.
         return self.test_script(specfile, *args, **kwargs)
 
@@ -228,7 +254,7 @@ class AppBuilder(object):
 
         # Relative path means that a script from _script_dir is referenced.
         if not os.path.isabs(script):
-            script = os.path.join(_SCRIPT_DIR, script)
+            script = os.path.join(_get_script_dir(self._request), script)
         self.script = script
         assert os.path.exists(self.script), 'Script %s not found.' % script
 
@@ -260,7 +286,8 @@ class AppBuilder(object):
         for exe in exes:
             # Try to find .toc log file. .toc log file has the same basename as exe file.
             toc_log = os.path.join(
-                _LOGS_DIR, os.path.splitext(os.path.basename(exe))[0] + '.toc')
+                _get_logs_dir(self._request),
+                os.path.splitext(os.path.basename(exe))[0] + '.toc')
             if os.path.exists(toc_log):
                 if not self._examine_executable(exe, toc_log):
                     pytest.fail('Matching .toc of %s failed.' % exe)
@@ -397,7 +424,7 @@ class AppBuilder(object):
                 '--specpath', self._specdir,
                 '--distpath', self._distdir,
                 '--workpath', self._builddir,
-                '--path', _MODULES_DIR,
+                '--path', _get_modules_dir(self._request),
                 '--log-level=DEBUG'
                 ]
 
@@ -481,7 +508,7 @@ def pyi_builder(tmpdir, monkeypatch, request, pyi_modgraph):
     # The value is same as the original value.
     monkeypatch.setattr('PyInstaller.config.CONF', {'pathex': []})
 
-    yield AppBuilder(tmpdir, request.param)
+    yield AppBuilder(tmpdir, request, request.param)
 
     if is_darwin or is_linux:
         if request.node.rep_setup.passed:
@@ -499,7 +526,7 @@ def pyi_builder(tmpdir, monkeypatch, request, pyi_modgraph):
 # Fixture for .spec based tests.
 # With .spec it does not make sense to differentiate onefile/onedir mode.
 @pytest.fixture
-def pyi_builder_spec(tmpdir, monkeypatch, pyi_modgraph):
+def pyi_builder_spec(tmpdir, request, monkeypatch, pyi_modgraph):
     # Save/restore environment variable PATH.
     monkeypatch.setenv('PATH', os.environ['PATH'], )
     # Set current working directory to
@@ -512,13 +539,13 @@ def pyi_builder_spec(tmpdir, monkeypatch, pyi_modgraph):
     # The value is same as the original value.
     monkeypatch.setattr('PyInstaller.config.CONF', {'pathex': []})
 
-    return AppBuilder(tmpdir, None)
+    return AppBuilder(tmpdir, request, None)
 
 # Define a fixture which compiles the data/load_dll_using_ctypes/ctypes_dylib.c
 # program in the tmpdir, returning the tmpdir object.
 @pytest.fixture()
-def compiled_dylib(tmpdir):
-    tmp_data_dir = _data_dir_copy('ctypes_dylib', tmpdir)
+def compiled_dylib(tmpdir, request):
+    tmp_data_dir = _data_dir_copy(request, 'ctypes_dylib', tmpdir)
 
     # Compile the ctypes_dylib in the tmpdir: Make tmpdir/data the CWD. Don't
     # use monkeypatch.chdir to change, then monkeypatch.undo() to restore the
