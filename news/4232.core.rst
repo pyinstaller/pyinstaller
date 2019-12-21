@@ -1,0 +1,1 @@
+Provide setuptools entrypoints to support testing in other packages.
