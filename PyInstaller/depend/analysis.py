@@ -38,9 +38,12 @@ import os
 import re
 import sys
 import traceback
+import ast
 
 from copy import deepcopy
+from collections import defaultdict
 
+from .. import compat
 from .. import HOMEPATH, configure
 from .. import log as logging
 from ..log import INFO, DEBUG, TRACE
@@ -53,7 +56,7 @@ from ..compat import importlib_load_source, PY3_BASE_MODULES,\
 from ..lib.modulegraph.find_modules import get_implies
 from ..lib.modulegraph.modulegraph import ModuleGraph
 from ..utils.hooks import collect_submodules, is_package
-from ..utils.misc import load_py_data_struct
+
 
 logger = logging.getLogger(__name__)
 
@@ -113,9 +116,6 @@ class PyiModuleGraph(ModuleGraph):
         self._excludes = excludes
         self._reset(user_hook_dirs)
         self._analyze_base_modules()
-        self._available_rthooks = load_py_data_struct(
-            os.path.join(self._homepath,
-                         'PyInstaller', 'loader', 'rthooks.dat'))
 
     def _reset(self, user_hook_dirs):
         """
@@ -132,6 +132,68 @@ class PyiModuleGraph(ModuleGraph):
         self._hooks = self._cache_hooks("")
         self._hooks_pre_safe_import_module = self._cache_hooks('pre_safe_import_module')
         self._hooks_pre_find_module_path = self._cache_hooks('pre_find_module_path')
+
+        # Search for run-time hooks in all hook directories.
+        self._available_rthooks = defaultdict(list)
+        for uhd in self._user_hook_dirs:
+            uhd_path = os.path.abspath(os.path.join(uhd, 'rthooks.dat'))
+            try:
+                with compat.open_file(uhd_path, compat.text_read_mode,
+                                      encoding='utf-8') as f:
+                    rthooks = ast.literal_eval(f.read())
+            except FileNotFoundError:
+                # Ignore if this hook path doesn't have run-time hooks.
+                continue
+            except Exception as e:
+                logger.error('Unable to read run-time hooks from %r: %s' %
+                             (uhd_path, e))
+                continue
+
+            self._merge_rthooks(rthooks, uhd, uhd_path)
+
+        # Convert back to a standard dict.
+        self._available_rthooks = dict(self._available_rthooks)
+
+    def _merge_rthooks(self, rthooks, uhd, uhd_path):
+        """The expected data structure for a run-time hook file is a Python
+        dictionary of type ``Dict[str, List[str]]`` where the dictionary
+        keys are module names the the sequence strings are Python file names.
+
+        Check then merge this data structure, updating the file names to be
+        absolute.
+        """
+        # Check that the root element is a dict.
+        assert isinstance(rthooks, dict), (
+            'The root element in %s must be a dict.' % uhd_path)
+        for module_name, python_file_name_list in rthooks.items():
+            # Ensure the key is a string.
+            assert isinstance(module_name, compat.text_type), (
+                '%s must be a dict whose keys are strings; %s '
+                'is not a string.' % (uhd_path, module_name))
+            # Ensure the value is a list.
+            assert isinstance(python_file_name_list, list), (
+                'The value of %s key %s must be a list.' %
+                (uhd_path, module_name))
+            if module_name in self._available_rthooks:
+                logger.warning("Several run-time hooks defined for module %r."
+                               "Please take care they do not conflict.",
+                               module_name)
+            # Merge this with existing run-time hooks.
+            for python_file_name in python_file_name_list:
+                # Ensure each item in the list is a string.
+                assert isinstance(python_file_name, compat.text_type), (
+                    '%s key %s, item %r must be a string.' %
+                    (uhd_path, module_name, python_file_name))
+                # Transform it into an absolute path.
+                abs_path = os.path.join(uhd, 'rthooks', python_file_name)
+                # Make sure this file exists.
+                assert os.path.exists(abs_path), (
+                    'In %s, key %s, the file %r expected to be located at '
+                    '%r does not exist.' %
+                    (uhd_path, module_name, python_file_name, abs_path))
+                # Merge it.
+                self._available_rthooks[module_name].append(abs_path)
+
 
     @staticmethod
     def _findCaller(*args, **kwargs):
@@ -606,10 +668,9 @@ class PyiModuleGraph(ModuleGraph):
             # Look if there is any run-time hook for given module.
             if mod_name in self._available_rthooks:
                 # There could be several run-time hooks for a module.
-                for hook in self._available_rthooks[mod_name]:
-                    logger.info("Including run-time hook %r", hook)
-                    path = os.path.join(self._homepath, 'PyInstaller', 'loader', 'rthooks', hook)
-                    rthooks_nodes.append(self.run_script(path))
+                for abs_path in self._available_rthooks[mod_name]:
+                    logger.info("Including run-time hook %r", abs_path)
+                    rthooks_nodes.append(self.run_script(abs_path))
 
         return rthooks_nodes
 

@@ -23,6 +23,8 @@ import pprint
 import shutil
 import sys
 
+import pkg_resources
+
 
 # Relative imports to PyInstaller modules.
 from .. import HOMEPATH, DEFAULT_DISTPATH, DEFAULT_WORKPATH
@@ -207,6 +209,11 @@ class Analysis(Target):
         # Include modules detected when parsing options, like 'codecs' and encodings.
         self.hiddenimports.extend(CONF['hiddenimports'])
 
+        # Add hook directories from PyInstaller entry points.
+        hookspath = hookspath or []
+        for entry_point in pkg_resources.iter_entry_points(
+                'pyinstaller40', 'hook-dirs'):
+            hookspath += list(entry_point.load()())
         self.hookspath = hookspath
 
         # Custom runtime hook files that should be included and started before
