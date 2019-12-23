@@ -1,0 +1,1 @@
+Fix GCC warnings for strncpy and strncat in bootloader.
