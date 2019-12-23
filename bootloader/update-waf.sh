@@ -9,7 +9,7 @@
 #
 # Helper-script for updating waf
 
-VERSION=2.0.18
+VERSION=2.0.19
 ARCHNAME=waf-$VERSION.tar.bz2
 URL=https://waf.io/$ARCHNAME
 
