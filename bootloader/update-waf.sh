@@ -23,7 +23,7 @@ TOOLS=--tools=cfg_cross_gnu
 #CORETOOLS=--coretools=$c_tools,$c_compilers
 
 KEYID=49B4C67C05277AAA
-KEYURL=https://raw.githubusercontent.com/waf-project/waf/master/utils/pubkey.asc
+KEYURL=https://gitlab.com/ita1024/waf/raw/master/utils/pubkey.asc
 
 
 # remember where we come from
