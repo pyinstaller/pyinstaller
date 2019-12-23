@@ -414,11 +414,11 @@ pyi_pylib_start_python(ARCHIVE_STATUS *status)
 
     /* Set sys.path */
     /* sys.path = [base_library, mainpath] */
-    strncpy(pypath, status->mainpath, strlen(status->mainpath));
-    strncat(pypath, PYI_SEPSTR, strlen(PYI_SEPSTR));
-    strncat(pypath, "base_library.zip", strlen("base_library.zip"));
-    strncat(pypath, PYI_PATHSEPSTR, strlen(PYI_PATHSEPSTR));
-    strncat(pypath, status->mainpath, strlen(status->mainpath));
+    strncpy(pypath, status->mainpath, PATH_MAX);
+    strncat(pypath, PYI_SEPSTR, PATH_MAX);
+    strncat(pypath, "base_library.zip", PATH_MAX);
+    strncat(pypath, PYI_PATHSEPSTR, PATH_MAX);
+    strncat(pypath, status->mainpath, PATH_MAX);
 
     /*
      * E must set sys.path to have base_library.zip before

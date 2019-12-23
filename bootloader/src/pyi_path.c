@@ -54,7 +54,7 @@ pyi_path_dirname(char *result, const char *path)
     char *match = NULL;
 
     /* Copy path to result and then just write '\0' to the place with path separator. */
-    strncpy(result, path, strlen(path) + 1);
+    strncpy(result, path, PATH_MAX);
     /* Remove separator from the end. */
     len = strlen(result);
 
@@ -127,7 +127,7 @@ pyi_path_join(char *result, const char *path1, const char *path2)
     size_t len = 0;
     memset(result, 0, PATH_MAX);
     /* Copy path1 to result without null terminator */
-    strncpy(result, path1, strlen(path1));
+    strcpy(result, path1);
     /* Append trailing slash if missing. */
     len = strlen(result);
 
@@ -140,7 +140,8 @@ pyi_path_join(char *result, const char *path1, const char *path2)
 
     if (path2[len - 1] == PYI_SEP) {
         /* Append path2 without slash. */
-        strncat(result, path2, len - 2);
+        strcat(result, path2);
+        result[strlen(result) - 1] = PYI_NULLCHAR;
     }
     else {
         /* path2 does not end with slash. */
