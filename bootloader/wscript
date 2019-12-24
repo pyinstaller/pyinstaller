@@ -360,6 +360,9 @@ def set_arch_flags(ctx):
             ctx.env.WINRCFLAGS = ['--target=pe-i386']
         else:
             ctx.env.WINRCFLAGS = ['--target=pe-x86-64']
+        # Since WINRC config changed above, must set other options as well
+        ctx.env.WINRC_TGT_F = '-o'
+        ctx.env.WINRC_SRC_F = '-i'
 
 
 def configure(ctx):
