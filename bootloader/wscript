@@ -769,7 +769,7 @@ def build(ctx):
                 'THR']  # may be used on FreBSD
         staticlibs = []
         if ctx.env.DEST_OS == 'aix':
-            # link statically with zlib
+            # link statically with zlib, case sensitive
             libs.remove('Z')
             staticlibs.append('z')
 
