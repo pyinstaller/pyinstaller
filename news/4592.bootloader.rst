@@ -1,0 +1,1 @@
+In debug and windowed mode, print traceback to help debug pyiboot01_bootstrap errors.
