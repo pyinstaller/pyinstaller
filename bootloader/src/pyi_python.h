@@ -123,6 +123,7 @@ EXTDECLPROC(PyObject *, Py_BuildValue, (char *, ...));
 /* Create a Unicode object from the char buffer. The bytes will be interpreted as being UTF-8 encoded. */
 EXTDECLPROC(PyObject *, PyUnicode_FromString, (const char *));
 EXTDECLPROC(PyObject *, PyObject_CallFunction, (PyObject *, char *, ...));
+EXTDECLPROC(PyObject *, PyObject_CallFunctionObjArgs, (PyObject *, ...));
 EXTDECLPROC(PyObject *, PyModule_GetDict, (PyObject *));
 EXTDECLPROC(PyObject *, PyDict_GetItemString, (PyObject *, char *));
 EXTDECLPROC(void, PyErr_Clear, (void) );
@@ -150,6 +151,12 @@ EXTDECLPROC(PyObject *, PyUnicode_Decode,
 /* Used to load and execute marshalled code objects */
 EXTDECLPROC(PyObject *, PyEval_EvalCode, (PyObject *, PyObject *, PyObject *));
 EXTDECLPROC(PyObject *, PyMarshal_ReadObjectFromString, (const char *, size_t));  /* Py_ssize_t */
+
+/* Used to get traceback information while launching run scripts */
+EXTDECLPROC(void, PyErr_Fetch, (PyObject **, PyObject **, PyObject **));
+EXTDECLPROC(PyObject *, PyObject_Str, (PyObject *));
+EXTDECLPROC(PyObject *, PyObject_GetAttrString, (PyObject *, const char *));
+EXTDECLPROC(const char *, PyUnicode_AsUTF8, (PyObject *));
 
 /*
  * Macros for reference counting through exported functions
