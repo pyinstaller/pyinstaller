@@ -721,6 +721,11 @@ class COLLECT(Target):
             todir = os.path.dirname(tofnm)
             if not os.path.exists(todir):
                 os.makedirs(todir)
+            elif not os.path.isdir(todir):
+                raise SystemExit(
+                    "Pyinstaller needs to make a directory, but there "
+                    "already is a file at that path. "
+                    "The file at issue is {!r}".format(todir))
             if typ in ('EXTENSION', 'BINARY'):
                 fnm = checkCache(fnm, strip=self.strip_binaries,
                                  upx=self.upx_binaries,
