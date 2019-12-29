@@ -21,8 +21,13 @@ from PyInstaller.utils.hooks import get_module_file_attribute
 binaries = []
 
 # package the DLL bundle that official numpy wheels for Windows ship
+# The DLL bundle will either be in extra-dll on windows proper
+# and in .libs if installed on a virtualenv created from MinGW (Git-Bash
+# for example)
 if is_win:
-    dll_glob = os.path.join(os.path.dirname(
-        get_module_file_attribute('numpy')), 'extra-dll', "*.dll")
-    if glob.glob(dll_glob):
-        binaries.append((dll_glob, "."))
+    extra_dll_locations = ['extra-dll', '.libs']
+    for location in extra_dll_locations:
+        dll_glob = os.path.join(os.path.dirname(
+            get_module_file_attribute('numpy')), location, "*.dll")
+        if glob.glob(dll_glob):
+            binaries.append((dll_glob, "."))
