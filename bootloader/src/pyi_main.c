@@ -36,6 +36,7 @@
 #include "pyi_pythonlib.h"
 #include "pyi_launch.h"
 #include "pyi_win32_utils.h"
+#include "pyi_splash.h"
 
 int
 pyi_main(int argc, char * argv[])
@@ -48,6 +49,9 @@ pyi_main(int argc, char * argv[])
     int rc = 0;
     char *extractionpath = NULL;
     wchar_t * dllpath_w;
+
+    /* splash contains information for the splash screen */
+    SPLASH *splash = NULL;
 
 #ifdef _MSC_VER
     /* Visual C runtime incorrectly buffers stderr */
@@ -123,6 +127,31 @@ pyi_main(int argc, char * argv[])
         free(dllpath_w);
     }
 #endif /* ifdef _WIN32 */
+
+    /* Extract the splash screen resources from the archive. If data is present and
+     * this process is either the main/parent process of the application, then the IPC
+     * Server can be started and the splash screen opened. The Splash screen is controlled
+     * from Python through this IPC connection, so the IPC Server is receiving commands.
+     *
+     * The environment variable '_PYIBoot_SPLASH' stores the name with which the Python
+     * interpreter can connect to the IPC server. This environment variable is deleted as
+     * the python module pyi_splash is started/imported.
+     */
+    splash = pyi_splash_get(archive_status);
+
+    if (splash != NULL && pyi_getenv("_PYIBoot_SPLASH") == NULL) {
+        /* Try to start the IPC server */
+        char *pipe_name = pyi_splash_setup_ipc();
+
+        if (pipe_name != NULL) {
+            pyi_setenv("_PYIBoot_SPLASH", pipe_name);
+            free(pipe_name);
+
+            VS("SPLASH: Launching Splash screen\n");
+            pyi_splash_launch(splash);
+        }
+
+    }
 
     if (extractionpath) {
         VS("LOADER: Already in the child - running user's code.\n");
