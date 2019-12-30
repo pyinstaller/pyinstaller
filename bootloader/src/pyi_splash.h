@@ -35,6 +35,11 @@ typedef struct _splash {
      * Specifies the rectangle in which the text is displayed. If the text
      * does not fit into the rectangle it will be clipped.
      * In addition the color of the text is passed
+     *
+     * On Windows:
+     *    Although Windows only supports font names of up to 31 characters,
+     *    the field for it is 64 characters so that future support
+     *    on other platforms is not that limited.
      */
     struct {
         int left;
@@ -50,6 +55,13 @@ typedef struct _splash {
      * Information about the image data. This section will be the largest.
      * The format of the color values in the field 'bitmap' depends on the
      * platform-specific implementation.
+     *
+     * On Windows:
+     *    - This structure is freed at runtime quite early, because
+     *      all necessary information is copied into a runtime state struct.
+     *    - At 32bit the RGB entries have to be pre-multiplied.
+     *    - The bitmap data will be copied into a buffer managed by Windows
+     *      itself at runtime.
      */
     int  img_datalen;
     int  img_width;
