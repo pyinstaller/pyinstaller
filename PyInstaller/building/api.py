@@ -153,7 +153,8 @@ class PKG(Target):
                  'BINARY': 'b',
                  'ZIPFILE': 'Z',
                  'EXECUTABLE': 'b',
-                 'DEPENDENCY': 'd'}
+                 'DEPENDENCY': 'd',
+                 'SPLASH': 'l'}
 
     def __init__(self, toc, name=None, cdict=None, exclude_binaries=0,
                  strip_binaries=False, upx_binaries=False, upx_exclude=None):
@@ -193,6 +194,7 @@ class PKG(Target):
                           'EXECUTABLE': COMPRESSED,
                           'PYSOURCE': COMPRESSED,
                           'PYMODULE': COMPRESSED,
+                          'SPLASH': COMPRESSED,
                           # Do not compress PYZ as a whole. Single modules are
                           # compressed when creating PYZ archive.
                           'PYZ': UNCOMPRESSED}

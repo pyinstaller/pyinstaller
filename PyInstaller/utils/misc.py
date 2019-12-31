@@ -20,6 +20,7 @@ import pprint
 import py_compile
 import struct
 import sys
+import itertools
 
 from PyInstaller import log as logging
 from PyInstaller.compat import BYTECODE_MAGIC, text_read_mode
@@ -244,6 +245,15 @@ def module_parent_packages(full_modname):
         prefix += '.' + pkg if prefix else pkg
         parents.append(prefix)
     return parents
+
+
+def grouper(iterable, n, fill_value=None):
+    """
+    Groups individual elements together in an iterable and returns
+    them in chunks. If there are too few elements, fill_value is used.
+    """
+    args = [iter(iterable)] * n
+    return itertools.zip_longest(*args, fillvalue=fill_value)
 
 
 class Structure:

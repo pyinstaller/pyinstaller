@@ -420,6 +420,68 @@ The key ``'NSAppleScriptEnabled'`` is assigned the Python boolean
 Finally the key ``CFBundleDocumentTypes`` tells Mac OS X what filetypes your
 application supports (see `Apple document types`_).
 
+
+.. _splash screen target:
+
+The Splash Target
+~~~~~~~~~~~~~~~~~~~
+
+For a splash screen to be displayed by the bootloader, the Splash target must be called
+at build time. This class can be added when the spec file is created with the command-line
+option ``--splash IMAGE_FILE``. By default, the option to display the optional text is disabled
+(the text area has a size of 0x0 pixels). For more information about the splash screen,
+see :ref:`splash screen` section.
+The Splash target looks like this, which is then passed to EXE::
+
+    splash = Splash('sample_24bit.bmp',
+                    text_rect=(10, 221, 490, 271),
+                    text_color=0xFFFFFF,
+                    text_size=15,
+                    text_font="DejaVu Sans Mono")
+
+    exe = EXE(pyz,
+              a.scripts,
+              splash,      # <--
+              ...)
+
+The first argument to Splash must be a path-like object (e.g. :file:`sample_24bit.bmp`)
+to the image to be used, which should be displayed during the boot process.
+The ``text_rect=`` parameter to Splash specifies a rectangle in which the (optional) text
+should be displayed. The text rectangle is a tuple of 4 positive integers, which defines
+the upper left and lower right corner of the image in pixel coordinates. The origin is
+located in the upper left corner.
+The parameter ``text_color`` specifies the color of the text in RGB format
+(i.e. ``0xRRGGBB``). The RR, GG and BB correspond to hexadecimal values. The splash target
+is passed as an argument to EXE. ``text_size`` and ``text_font`` specify the font size or style.
+``text_size`` is measured in pt (points) and is scaled to the appropriate size at runtime. The
+font specified by ``text_font`` **must be installed** on the user system, otherwise the splash
+screen uses the default font of the system. So you should make sure that either a pre-installed/
+widely used font is selected or the text to be displayed is reasonably understandable in all fonts.
+
+.. _splash supported image formats:
+
+Supported Image Formats
+------------------------
+The following image file formats are supported. Other formats may be added
+in future releases.
+
+* Non-Transparent images:
+
+  - **Windows Bitmap 24bit (.bmp)** So bitmaps with a color depth of 24bit per pixel.
+    Additional bitmap header data is ignored. The bitmap/file must not be compressed
+    (`biCompression` flag in the bitmap header must be set to `BI_RGB`) and it must contain
+    **RGB** values (i.e. there must not be any color palette entries in the bitmap). This is
+    the case for regular 24bit bitmap files.
+
+* Transparent images:
+
+  - **Windows Bitmap 32bit (.bmp)** So bitmaps with a color depth of 32bit per pixel.
+    Additional bitmap header data is ignored. The bitmap/file must not be compressed
+    (`biCompression` flag in the bitmap header must be set to `BI_BITFIELDS`) and it must
+    contain **ARGB** (`A8R8G8B8`) values (i.e. there must be no color palette entries in
+    the bitmap). This is the case with regular 32bit bitmap files.
+
+
 Multipackage Bundles
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -568,7 +630,7 @@ Globals Available to the Spec File
 While a spec file is executing it has access to a limited set of global names.
 These names include the classes defined by |PyInstaller|:
 ``Analysis``, ``BUNDLE``, ``COLLECT``, ``EXE``, ``MERGE``,
-``PYZ``, ``TOC`` and ``Tree``,
+``PYZ``, ``TOC``, ``Tree`` and ``Splash``,
 which are discussed in the preceding sections.
 
 Other globals contain information about the build environment:

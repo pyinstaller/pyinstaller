@@ -1,0 +1,4 @@
+Add a splash screen that displays a background image and text:
+The splash screen can be controlled from within Python using the ``pyi_splash`` module.
+A splash screen can be added using the ``--splash IMAGE_FILE`` option.
+This feature is currently **only** supported on the Windows operating system.

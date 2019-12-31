@@ -34,6 +34,7 @@ from ..depend import bindepend
 from ..depend.analysis import initialize_modgraph
 from .api import PYZ, EXE, COLLECT, MERGE
 from .datastruct import TOC, Target, Tree, _check_guts_eq
+from .splash import Splash
 from .osx import BUNDLE
 from .toc_conversion import DependencyProcessor
 from .utils import _check_guts_toc_mtime, format_binaries_and_datas
@@ -655,6 +656,7 @@ def build(spec, distpath, workpath, clean_build):
         'MERGE': MERGE,
         'PYZ': PYZ,
         'Tree': Tree,
+        'Splash': Splash,
         # Old classes for .spec - raise Exception for user.
         'TkPKG': TkPKG,
         'TkTree': TkTree,

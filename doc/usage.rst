@@ -229,7 +229,8 @@ was started successfully or not.
 The bootloader is able to display an one-image-style (i.e. only an image) splash
 screen, which is displayed before the actual extraction process starts.
 The splash screen supports non-transparent and transparent images as background
-image, so non-rectangular splash screens can also be displayed.
+image, so non-rectangular splash screens can also be displayed. Please
+see :ref:`splash supported image formats` for more details.
 
 As an additional feature, text can be displayed on the splash screen. This
 can be changed/updated from within Python. This offers the possibility to
@@ -240,6 +241,10 @@ initialized the splash screen can be closed. Optionally, the font, color and
 size of the text can be set. However, the font must be installed on the user
 system, as it is not bundled. If the font is not available, the default font
 of the user system is used (in Windows usually 'Segeo UI').
+
+A splash screen can be added to with the command-line option ``--spash IMAGE_FILE``,
+which inserts a Splash target into the spec file, which is described in the
+:ref:`splash screen target` section
 
 
 The ``pyi_splash`` Module

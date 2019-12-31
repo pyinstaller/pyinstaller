@@ -1,0 +1,2 @@
+Add a general splash screen API.
+(Windows) Implement a splash screen for the Windows operating system.

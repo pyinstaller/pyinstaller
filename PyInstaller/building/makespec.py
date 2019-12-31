@@ -23,7 +23,7 @@ from .. import HOMEPATH, DEFAULT_SPECPATH
 from .. import log as logging
 from ..compat import expand_path, is_darwin, is_win, open_file
 from .templates import onefiletmplt, onedirtmplt, cipher_absent_template, \
-    cipher_init_template, bundleexetmplt, bundletmplt
+    cipher_init_template, bundleexetmplt, bundletmplt, splashtmpl
 
 logger = logging.getLogger(__name__)
 add_command_sep = os.pathsep
@@ -270,6 +270,14 @@ def __add_options(parser):
     g.add_argument('--uac-uiaccess', dest='uac_uiaccess', action="store_true", default=False,
                    help='Using this option allows an elevated application to '
                         'work with Remote Desktop.')
+    g.add_argument('--splash',
+                   dest='splash', metavar="IMAGE_FILE",
+                   help=("(EXPERIMENTAL) Add an iOS-style splash screen with "
+                         "the image IMAGE_FILE. Possible image files are "
+                         "either 24bit or 32 bit *.bmp files. "
+                         "This feature is currently only supported on "
+                         "Windows, but will eventually be ported to other "
+                         "platforms."))
 
     g = parser.add_argument_group('Windows Side-by-side Assembly searching options (advanced)')
     g.add_argument("--win-private-assemblies", dest="win_private_assemblies",
@@ -321,7 +329,7 @@ def main(scripts, name=None, onefile=None,
          hiddenimports=None, hookspath=None, key=None, runtime_hooks=None,
          excludes=None, uac_admin=False, uac_uiaccess=False,
          win_no_prefer_redirects=False, win_private_assemblies=False,
-         **kwargs):
+         splash=None, **kwargs):
     # If appname is not specified - use the basename of the main script as name.
     if name is None:
         name = os.path.splitext(os.path.basename(scripts[0]))[0]
@@ -417,6 +425,14 @@ def main(scripts, name=None, onefile=None,
     if DEBUG_ALL_CHOICE[0] in debug:
         debug = DEBUG_ARGUMENT_CHOICES
 
+    if splash:
+        # Add a splash target
+        splash_init = splashtmpl % {'splash_image': splash}
+        splash_name = '\n          splash,'
+    else:
+        splash_init = ''
+        splash_name = ''
+
     d = {
         'scripts': scripts,
         'pathex': pathex,
@@ -449,6 +465,8 @@ def main(scripts, name=None, onefile=None,
         # Windows assembly searching options
         'win_no_prefer_redirects': win_no_prefer_redirects,
         'win_private_assemblies': win_private_assemblies,
+        'splash_init': splash_init,
+        'splash_name': splash_name,
     }
 
     # Write down .spec file to filesystem.

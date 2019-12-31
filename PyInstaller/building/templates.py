@@ -16,7 +16,7 @@ Templates to generate .spec files.
 
 onefiletmplt = """# -*- mode: python ; coding: utf-8 -*-
 %(cipher_init)s
-
+%(splash_init)s
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s,
              binaries=%(binaries)s,
@@ -35,7 +35,7 @@ exe = EXE(pyz,
           a.scripts,
           a.binaries,
           a.zipfiles,
-          a.datas,
+          a.datas, %(splash_name)s
           %(options)s,
           name='%(name)s',
           debug=%(debug_bootloader)s,
@@ -49,7 +49,7 @@ exe = EXE(pyz,
 
 onedirtmplt = """# -*- mode: python ; coding: utf-8 -*-
 %(cipher_init)s
-
+%(splash_init)s
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s,
              binaries=%(binaries)s,
@@ -65,7 +65,7 @@ a = Analysis(%(scripts)s,
 pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
 exe = EXE(pyz,
-          a.scripts,
+          a.scripts, %(splash_name)s
           %(options)s,
           exclude_binaries=True,
           name='%(name)s',
@@ -102,4 +102,9 @@ bundletmplt = """app = BUNDLE(coll,
              name='%(name)s.app',
              icon=%(icon)s,
              bundle_identifier=%(bundle_identifier)s)
+"""
+
+splashtmpl = """splash = Splash('%(splash_image)s',
+                text_rect=(0, 0, 0, 0),
+                text_color=0xFFFFFF)
 """
