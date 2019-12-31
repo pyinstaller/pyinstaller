@@ -210,6 +210,62 @@ encrypt each file of Python byte-code before it is stored in
 the archive inside the executable file.
 
 
+.. _splash screen:
+
+Splash screen
+~~~~~~~~~~~~~~~
+
+.. Note::
+    This feature is currently only supported on Windows. Other operating
+    systems will eventually be supported in future releases. Please
+    follow `PyInstaller Issue #4354`_ for more information.
+
+Some applications may require a splash screen as soon as the application
+(bootloader) has been started, because especially in onefile mode large
+applications may have long extraction/startup times, while the bootloader
+prepares everything, where the user cannot judge whether the application
+was started successfully or not.
+
+The bootloader is able to display an one-image-style (i.e. only an image) splash
+screen, which is displayed before the actual extraction process starts.
+The splash screen supports non-transparent and transparent images as background
+image, so non-rectangular splash screens can also be displayed.
+
+As an additional feature, text can be displayed on the splash screen. This
+can be changed/updated from within Python. This offers the possibility to
+display the splash screen during longer startup processes of a Python program
+(e.g. waiting for a network response or loading large files into memory). You
+can also start a GUI behind the splash screen, and only after it is completely
+initialized the splash screen can be closed. Optionally, the font, color and
+size of the text can be set. However, the font must be installed on the user
+system, as it is not bundled. If the font is not available, the default font
+of the user system is used (in Windows usually 'Segeo UI').
+
+
+The ``pyi_splash`` Module
+--------------------------
+
+The splash screen is controlled from within Python by the pyi_splash module, which can
+be imported at runtime. This module **cannot** be installed by a package manager
+because it is part of PyInstaller and is included as needed.
+This module must be imported within the Python program. The usage is as follows::
+
+    import pyi_splash
+
+    # Update the text on the splash screen
+    pyi_splash.update_text("PyInstaller is a great software!")
+    pyi_splash.update_text("Second time's a charm!")
+
+    # Close the splash screen. It does not matter when the call
+    # to this function is made, the splash screen remains open until
+    # this function is called or the Python program is terminated.
+    pyi_splash.close()
+
+Of course the import should be in a ``try ... except`` block, in case the program is
+used externally as a normal Python script, without a bootloader.
+For a detailed description see :ref:`pyi_splash Module`.
+
+
 .. _defining the extraction location:
 
 Defining the Extraction Location

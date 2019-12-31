@@ -140,6 +140,86 @@ in a bundled app:
 5. If the module was not found then
    raise ``ImportError``.
 
+.. _pyi_splash Module:
+
+``pyi_splash`` Module (Detailed)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This module connects to the bootloader to send messages to the splash screen.
+
+It is intended to act as a RPC interface for the functions provided by the
+bootloader, such as displaying text or closing. This makes the users python
+program independent of how the communication with the bootloader is
+implemented, since a consistent API is provided.
+
+To connect to the bootloader, it connects to a named pipe whose name is passed
+through the environment variable ``_PYIBoot_SPLASH``. The bootloader creates a
+**unidirectional** pipe and keeps the read end so that it can receive messages.
+Since the os-module, which is needed to request the environment variable,
+is not available at boot time, the module does not establish the connection
+until initialization.
+
+The protocol by which the Python interpreter communicates with the bootloader
+is implemented in this module, the protocol is described in the
+:py:func:`pyi_splash._write_to_pipe` function.
+
+This module does not support reloads while the splash screen is displayed, i.e.
+it cannot be reloaded (such as by importlib.reload), because the splash
+screen closes automatically when the connection to this instance of the
+module is lost.
+
+.. py:currentmodule:: pyi_splash
+
+.. py:function:: is_alive()
+
+    Indicates whether the module can be used.
+
+    Returns ``False`` if the module is either not initialized or was disabled
+    by closing the splash screen. Otherwise, the module should be usable.
+
+.. py:function:: update_text(msg)
+
+   Updates the text on the splash screen window.
+
+   :param str msg: the text to be displayed.
+   :raises ConnectionError: If the OS fails to write to the pipe
+
+.. py:function:: close()
+
+    Closes the splash screen window.
+
+    This will close the splash screen and renders this module unusable.
+    After this function is called, no connection can be opened to the splash
+    screen again and all functions of this module become unusable.
+
+    :raises ConnectionError: if the function is unable to send the close
+                              message to the splash screen.
+
+.. py:function:: _write_to_pipe(_type[, _msg])
+
+    Write data to the pipe.
+
+    The bootloader will receive and process the data. Every message through
+    the pipe starts with the following C-Struct header:
+
+    .. code-block:: c
+
+        typedef struct _ipc_message_head {
+               char event_type;
+               int text_length;
+        } IPC_MESSAGE_HEAD;
+
+    Followed by additional data as byte array.
+    The field ``text_length`` specifies the size in bytes of the body of text
+    following the header.
+
+    .. note::
+
+        The header has the same endianness and alignment as the host system.
+
+    :param char _type: event type
+    :param char* _msg: custom event data
+    :raises ValueError or IOError: If the OS fails to write to the pipe
 
 .. _the toc and tree classes:
 

@@ -54,6 +54,7 @@
 .. _`PyInstaller Email List`: https://groups.google.com/forum/#!forum/pyinstaller
 .. _`PyInstaller Issue #1309`: https://github.com/pyinstaller/pyinstaller/issues/1309
 .. _`PyInstaller Issue #1527`: https://github.com/pyinstaller/pyinstaller/issues/1527
+.. _`PyInstaller Issue #4354`: https://github.com/pyinstaller/pyinstaller/issues/4354
 .. _`PyInstaller Recipes`: https://github.com/pyinstaller/pyinstaller/wiki/Recipes
 .. _pypi: https://pypi.python.org/pypi/PyInstaller/
 .. _pypiwin32: https://pypi.python.org/pypi/pypiwin32/219
