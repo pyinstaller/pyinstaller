@@ -18,6 +18,7 @@ import glob
 import os
 import pprint
 import py_compile
+import struct
 import sys
 
 from PyInstaller import log as logging
@@ -243,3 +244,49 @@ def module_parent_packages(full_modname):
         prefix += '.' + pkg if prefix else pkg
         parents.append(prefix)
     return parents
+
+
+class Structure:
+    """
+    This class can be used as a base class for any C structure. By building on
+    the Python module struct, different endianness and alignments can be used,
+    which is an advantage over the ctypes library.
+
+    Moved from /utils/win32/icon, because it should be usable globally.
+    """
+    def __init__(self):
+        size = self._sizeInBytes = struct.calcsize(self._format_)
+        self._fields_ = list(struct.unpack(self._format_, b'\000' * size))
+        indexes = self._indexes_ = {}
+        for i, nm in enumerate(self._names_):
+            indexes[nm] = i
+
+    def dump(self):
+        logger.info("DUMP of %s", self)
+        for name in self._names_:
+            if not name.startswith('_'):
+                logger.info("%20s = %s", name, getattr(self, name))
+        logger.info("")
+
+    def __getattr__(self, name):
+        if name in self._names_:
+            index = self._indexes_[name]
+            return self._fields_[index]
+        try:
+            return self.__dict__[name]
+        except KeyError:
+            raise AttributeError(name)
+
+    def __setattr__(self, name, value):
+        if name in self._names_:
+            index = self._indexes_[name]
+            self._fields_[index] = value
+        else:
+            self.__dict__[name] = value
+
+    def tostring(self):
+        return struct.pack(self._format_, *self._fields_)
+
+    def fromfile(self, file):
+        data = file.read(self._sizeInBytes)
+        self._fields_ = list(struct.unpack(self._format_, data))

@@ -24,56 +24,19 @@ RT_GROUP_ICON = 14
 LOAD_LIBRARY_AS_DATAFILE = 2
 
 import os.path
-import struct
 import types
 try:
     StringTypes = types.StringTypes
 except AttributeError:
     StringTypes = [ type("") ]
 
+from ..misc import Structure  # noqa: E402
 from ...compat import win32api
 from ... import config
 
 import PyInstaller.log as logging
 logger = logging.getLogger(__name__)
 
-class Structure:
-    def __init__(self):
-        size = self._sizeInBytes = struct.calcsize(self._format_)
-        self._fields_ = list(struct.unpack(self._format_, b'\000' * size))
-        indexes = self._indexes_ = {}
-        for i, nm in enumerate(self._names_):
-            indexes[nm] = i
-
-    def dump(self):
-        logger.info("DUMP of %s", self)
-        for name in self._names_:
-            if not name.startswith('_'):
-                logger.info("%20s = %s", name, getattr(self, name))
-        logger.info("")
-
-    def __getattr__(self, name):
-        if name in self._names_:
-            index = self._indexes_[name]
-            return self._fields_[index]
-        try:
-            return self.__dict__[name]
-        except KeyError:
-            raise AttributeError(name)
-
-    def __setattr__(self, name, value):
-        if name in self._names_:
-            index = self._indexes_[name]
-            self._fields_[index] = value
-        else:
-            self.__dict__[name] = value
-
-    def tostring(self):
-        return struct.pack(self._format_, *self._fields_)
-
-    def fromfile(self, file):
-        data = file.read(self._sizeInBytes)
-        self._fields_ = list(struct.unpack(self._format_, data))
 
 class ICONDIRHEADER(Structure):
     _names_ = "idReserved", "idType", "idCount"
