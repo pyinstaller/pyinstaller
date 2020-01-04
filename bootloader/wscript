@@ -134,6 +134,13 @@ def options(ctx):
                         'and 64bit Python.',
                    default=None,
                    dest='target_arch')
+    ctx.add_option('--show-warnings', action='store_true',
+                   help='Make gcc print out the warnings we consider as '
+                        'being non-fatal. All other warinings are still '
+                        'treated as errors. Mind deleting the `build` '
+                        'directory first to ensure all files are actually '
+                        'recompiled.',
+                   dest='show_warnings')
 
     grp = ctx.add_option_group('Linux Standard Base (LSB) compliance',
                                'These options have effect only on Linux.')
@@ -456,6 +463,9 @@ def configure(ctx):
                                         '-Werror',
                                         '-Wno-error=unused-variable',
                                         '-Wno-error=unused-function'])
+        if not ctx.options.show_warnings:
+            ctx.env.append_value('CFLAGS', ['-Wno-unused-variable',
+                                            '-Wno-unused-function'])
 
     ### Defines, Includes
 
