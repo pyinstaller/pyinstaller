@@ -27,7 +27,7 @@ KEYURL=https://gitlab.com/ita1024/waf/raw/master/utils/pubkey.asc
 
 
 # remember where we come from
-BASEDIR=$(pwd $(basename "$0"))
+BASEDIR=$(realpath $(dirname "$0"))
 
 function cleanup () {
     cd "$BASEDIR"
