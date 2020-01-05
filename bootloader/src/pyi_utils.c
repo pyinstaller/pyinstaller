@@ -1081,14 +1081,39 @@ static pascal OSErr handle_open_doc_ae(const AppleEvent *theAppleEvent, AppleEve
 }
 
 
+/*
+ * On Mac OS X this converts ULR from kAEGetURL events into sys.argv.
+ */
+static pascal OSErr handle_get_url_ae(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon handlerRefcon)
+{
+    DescType typeCode;
+    char urlBuffer[2048];
+    Size actualSize;
+    VS("LOADER [ARGV_EMU]: OpenURL handler called.\n");
+
+    OSErr err = AEGetParamPtr(theAppleEvent, keyDirectObject, typeChar, &typeCode, &urlBuffer, sizeof(urlBuffer), &actualSize);
+    if (err != noErr) return err;
+
+    argv_pyi = (char**)realloc(argv_pyi,(argc_pyi+2)*sizeof(char*));
+    argv_pyi[argc_pyi++] = strndup(urlBuffer, actualSize);
+    argv_pyi[argc_pyi] = NULL;
+
+    VS("LOADER [ARGV_EMU]: argv entry appended.\n");
+
+    return (err);
+}
+
+
 static void process_apple_events()
 {
-    OSStatus handler_install_status;
+    OSStatus handler_doc_install_status;
+    OSStatus handler_url_install_status;
     OSStatus handler_remove_status;
     OSStatus rcv_status;
     OSStatus pcs_status;
     EventTypeSpec event_types[1];  /*  List of event types to handle. */
     AEEventHandlerUPP handler_open_doc;
+    AEEventHandlerUPP handler_get_url;
     EventHandlerRef handler_ref; /* Reference for later removing the event handler. */
     EventRef event_ref;          /* Event that caused ReceiveNextEvent to return. */
     OSType ev_class;
@@ -1103,10 +1128,13 @@ static void process_apple_events()
     /* Carbon Event Manager requires us to convert the function pointer to type EventHandlerUPP. */
     /* https://developer.apple.com/legacy/library/documentation/Carbon/Conceptual/Carbon_Event_Manager/Tasks/CarbonEventsTasks.html */
     handler_open_doc = NewAEEventHandlerUPP(handle_open_doc_ae);
+    handler_get_url = NewAEEventHandlerUPP(handle_get_url_ae);
 
-    handler_install_status = AEInstallEventHandler(kCoreEventClass, kAEOpenDocuments, handler_open_doc, 0, false);
+    handler_doc_install_status = AEInstallEventHandler(kCoreEventClass, kAEOpenDocuments, handler_open_doc, 0, false);
+    handler_url_install_status = AEInstallEventHandler(kInternetEventClass, kAEGetURL, handler_get_url, 0, false);
 
-    if (handler_install_status == noErr) {
+
+    if (handler_doc_install_status == noErr && handler_url_install_status == noErr) {
 
         VS("LOADER [ARGV_EMU]: AppleEvent - installed handler.\n");
 
@@ -1146,6 +1174,7 @@ static void process_apple_events()
     /* Remove handler_ref reference when we are done with EventHandlerUPP. */
     /* Carbon Event Manager does not do this automatically. */
     DisposeEventHandlerUPP(handler_open_doc)
+    DisposeEventHandlerUPP(handler_get_url)
 }
 #endif /* if defined(__APPLE__) && defined(WINDOWED) */
 

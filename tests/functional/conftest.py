@@ -86,6 +86,17 @@ _MAX_RETRIES = 2
 # Fixtures
 # --------
 
+@pytest.fixture
+def SPEC_DIR():
+    """Return the directory where the test spec-files reside"""
+    return py.path.local(_SPEC_DIR)
+
+
+@pytest.fixture
+def SCRIPT_DIR():
+    """Return the directory where the test scripts reside"""
+    return py.path.local(_SCRIPT_DIR)
+
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
 def pytest_runtest_makereport(item, call):
