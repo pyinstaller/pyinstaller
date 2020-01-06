@@ -275,12 +275,14 @@ def node_for_spec(
             distribution=(
                 distribution_for_file(spec.origin, path)
                 if spec.origin is not None
+                and loader != importlib.machinery.FrozenImporter
                 else None
             ),
             extension_attributes={},
             filename=(
                 pathlib.Path(adjust_path(spec.origin))
                 if spec.origin is not None
+                and loader != importlib.machinery.FrozenImporter
                 else None
             ),
             globals_written=names_written,

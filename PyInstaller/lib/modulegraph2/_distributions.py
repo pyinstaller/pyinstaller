@@ -3,13 +3,12 @@ This module contains functions and classes that are used
 to process information about package distributions (the
 stuff on PyPI).
 """
+import dataclasses
 import os
 import sys
 from email.parser import BytesParser
 from importlib.machinery import EXTENSION_SUFFIXES
 from typing import Dict, Iterable, Iterator, List, Optional, Set, Union
-
-import dataclasses
 
 
 @dataclasses.dataclass(frozen=True)
@@ -122,7 +121,7 @@ _cached_distributions: Dict[str, PyPIDistribution] = {}
 
 
 def all_distributions(
-    path: Optional[Iterable[str]] = None
+    path: Optional[Iterable[str]] = None,
 ) -> Iterator[PyPIDistribution]:
     """
     Yield all distributions found on the search path.

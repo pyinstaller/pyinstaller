@@ -1,9 +1,8 @@
+import dataclasses
 import importlib.abc
 import os
 import pathlib
 from typing import List, Optional, Set
-
-import dataclasses
 
 from ._distributions import PyPIDistribution
 

@@ -49,12 +49,12 @@ class TestModuleGraphScripts(unittest.TestCase, util.TestMixin):
         mg.add_script(INPUT_DIR / "trivial-script")
 
         self.assertEqual(len(list(mg.roots())), 1)
-        node, = mg.roots()
+        (node,) = mg.roots()
 
         self.assert_valid_script_node(node, INPUT_DIR / "trivial-script")
 
         self.assertEqual(len(list(mg.iter_graph(node=node))), 1)
-        graph_node, = mg.iter_graph(node=node)
+        (graph_node,) = mg.iter_graph(node=node)
         self.assertIs(graph_node, node)
 
     def test_add_script_twice(self):
@@ -67,7 +67,7 @@ class TestModuleGraphScripts(unittest.TestCase, util.TestMixin):
         mg.add_script(INPUT_DIR / "stdlib-script")
 
         self.assertEqual(len(list(mg.roots())), 1)
-        node, = mg.roots()
+        (node,) = mg.roots()
 
         self.assert_valid_script_node(node, INPUT_DIR / "stdlib-script")
 

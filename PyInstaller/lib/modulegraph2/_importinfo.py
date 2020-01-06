@@ -1,6 +1,5 @@
-from typing import Iterable, Optional, Set, Tuple
-
 import dataclasses
+from typing import Iterable, Optional, Set, Tuple
 
 
 class import_name(str):

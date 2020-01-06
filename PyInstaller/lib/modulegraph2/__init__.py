@@ -11,12 +11,12 @@ The graph itself is an subclass of :class:`objectgraph.ObjectGraph`.
 This module provides annotation for use with
 `Mypy <https://mypy.readthedocs.io/en/latest/>`_.
 """
-__version__ = "2.0a2"
+__version__ = "2.0"
 
 from ._depinfo import DependencyInfo
-from ._modulegraph import ModuleGraph
 from ._distributions import PyPIDistribution, all_distributions, distribution_named
 from ._implies import Alias, Virtual
+from ._modulegraph import ModuleGraph
 from ._nodes import (
     AliasNode,
     BaseNode,
@@ -25,14 +25,14 @@ from ._nodes import (
     ExcludedModule,
     ExtensionModule,
     FrozenModule,
+    InvalidModule,
+    InvalidRelativeImport,
     MissingModule,
     Module,
     NamespacePackage,
     Package,
     Script,
     SourceModule,
-    InvalidRelativeImport,
-    InvalidModule,
     VirtualNode,
 )
 from ._utilities import saved_sys_path

@@ -12,7 +12,7 @@ from ._importinfo import ImportInfo, create_importinfo
 
 
 def _all_code_objects(
-    code: types.CodeType
+    code: types.CodeType,
 ) -> Iterator[Tuple[types.CodeType, List[types.CodeType]]]:
     """
     Yield all code objects directly and indirectly referenced from
@@ -162,7 +162,7 @@ def _is_code_for_function(
 
 
 def extract_bytecode_info(
-    code: types.CodeType
+    code: types.CodeType,
 ) -> Tuple[List[ImportInfo], Set[str], Set[str]]:
     """
     Extract interesting information from the code object for a module or script

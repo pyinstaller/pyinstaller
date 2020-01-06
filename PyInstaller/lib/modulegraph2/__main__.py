@@ -258,7 +258,7 @@ def make_graph(args: argparse.Namespace) -> ModuleGraph:
                 mg.add_distribution(name)
 
         else:  # pragma: nocover
-            assert False, "Invalid NodeType"
+            raise AssertionError("Invalid NodeType")
 
         return mg
 
@@ -283,7 +283,7 @@ def print_graph(file: TextIO, output_format: OutputFormat, mg: ModuleGraph) -> N
         )
 
     else:  # pragma: nocover
-        assert False, "Invalid OutputFormat"
+        raise AssertionError("Invalid OutputFormat")
 
 
 def format_graph(args: argparse.Namespace, mg: ModuleGraph) -> None:
