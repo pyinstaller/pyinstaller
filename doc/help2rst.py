@@ -16,7 +16,7 @@ import re
 import sys
 import os
 
-__copyright__ = "Copyright (c) 2015-2019 PyInstaller Development Team, Copyright (c) 2015-2019 Hartmut Goebel"
+__copyright__ = "Copyright (c) 2015-2020 PyInstaller Development Team, Copyright (c) 2015-2019 Hartmut Goebel"
 __author__ = "Hartmut Goebel <h.goebel@crazy-compilers.com>"
 
 
