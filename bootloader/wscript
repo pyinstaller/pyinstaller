@@ -343,23 +343,15 @@ def set_arch_flags(ctx):
         # This ensures proper compilation with 64bit gcc and 32bit Python
         # or vice versa or with manually choosen --target-arch.
         # Option -m32/-m64 has to be passed to cflags and linkflages.
-        elif ctx.env.PYI_ARCH == '32bit':
-            if ctx.check_cc(cflags='-m32',
-                            mandatory=ctx.env.ARCH_FLAGS_REQUIRED):
-                ctx.env.append_value('CFLAGS', '-m32')
-                ctx.env.append_value('LINKFLAGS', '-m32')
+        else:
+            check_arch_cflag('-m32', '-m64')
+        if ctx.env.PYI_ARCH == '32bit' and ctx.env.DEST_OS == 'win32':
             # Set LARGE_ADDRESS_AWARE_FLAG to True.
             # On Windows this allows 32bit apps to use 4GB of memory and
             # not only 2GB.
             # TODO verify if this option being as default might cause any side
             # effects.
-            if ctx.env.DEST_OS == 'win32':
-                ctx.env.append_value('LINKFLAGS', '-Wl,--large-address-aware')
-        elif ctx.env.PYI_ARCH == '64bit':
-            if ctx.check_cc(cflags='-m64',
-                            mandatory=ctx.env.ARCH_FLAGS_REQUIRED):
-                ctx.env.append_value('CFLAGS', '-m64')
-                ctx.env.append_value('LINKFLAGS', '-m64')
+            ctx.env.append_value('LINKFLAGS', '-Wl,--large-address-aware')
 
     # We need to pass architecture switch to the 'windres' tool.
     if ctx.env.DEST_OS == 'win32' and ctx.env.CC_NAME != 'msvc':
