@@ -31,7 +31,11 @@ EXCLUDE = set(
     '''
     .gitattributes
     .gitignore
+    .dockerignore
+    .pylintrc
     MANIFEST.in
+    bootloader/uncrustify.cfg
+    bootloader/src/msvc_stdint.h
     bootloader/waf
     bootloader/windows/run.rc
     bootloader/windows/runw.rc
@@ -46,23 +50,35 @@ EXCLUDE = set(
     tests/old_suite/basic/test_pkg_structures-version.txt
     tests/scripts/eggs4testing/unzipped_egg/data/datafile.txt
     tests/scripts/eggs4testing/zipped_egg/data/datafile.txt
+    tests/functional/data/requests/openssl.conf
+    tests/functional/data/requests/server.pem
     '''.split())
 
 EXCLUDE_GLOBS = '''
     bootloader/.waf-*
-    doc/*.html
+    bootloader/.waf3-*
+    bootloader/waf-*
+    bootloader/waf3-*
     doc/*.1
+    doc/*.rst
+    doc/*/*.rst
     news/*.rst
     */EGG-INFO/*
     */*.egg-info/*
+    *.egg
+    *.yml
+    *.svg
+    tests/functional/logs/*.toc
+    tests/functional/modules/nspkg*-pkg/*
+    tests/old_suite/multipackage/*.toc
+    .github/ISSUE_TEMPLATE/*.md
+    .github/CONTRIBUTING.md
+    .github/SECURITY.md
     '''.split()
 
 EXCLUDE_DIRS = tuple(
     '''
     bootloader/zlib/
-    PyInstaller/lib/altgraph/
-    PyInstaller/lib/macholib/
-    PyInstaller/lib/ordlookup/
     tests/unit/test_altgraph/
     tests/unit/test_modulegraph/
     '''.split())
@@ -86,7 +102,7 @@ def get_file_list():
         assert len(entry) == 3, entry
         assert entry[1] == b"text", entry
         path, dummy, typ = entry
-        assert typ in (b'auto', b'unset'), entry
+        assert typ in (b'auto', b'unset', b'set'), entry
         if typ == b'unset':
             # binary file
             continue
@@ -118,6 +134,30 @@ def transform(text):
     if text != orig_text:
         return text
 
+OLD_HEADER = """\
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
+#
+# The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
+""".strip()
+NEW_HEADER = """\
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
+#
+# The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
+""".strip()
+
+def replace_header_content(text):
+    """Transform text or return None if no change."""
+    orig_text = text
+    text = text.replace(OLD_HEADER, NEW_HEADER)
+    if text != orig_text:
+        return text
+
 def has_our_copyright(text):
     if len(text) <= 30:
         # ignore short files
@@ -136,7 +176,9 @@ for filename in files:
         except UnicodeDecodeError as e:
             raise SystemExit("%s in file %r" % (e, filename))
     newtext = transform(text)
+    #newtext = replace_header_content(text)
     if newtext:
+        pass
         with open(filename, 'w') as f:
             f.write(newtext)
     elif ignore(filename):
@@ -149,6 +191,8 @@ for filename in files:
         text = text.lower()
         if 'copyright' in text and not YEAR in text:
             print('unchanged:', filename)
+        elif 'copyright' in text and not "spdx-license-identifier" in text:
+            print('SPDX-License-Identifier missing:', filename)
 
 if missing_copyright:
     print('File missing our copyright:')
