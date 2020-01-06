@@ -8,6 +8,8 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 # -----------------------------------------------------------------------------
 
+cd $(dirname "$0")
+
 if [ ! -r "_sdks/osx/osxcross.tar.xz" ] ; then
 	echo "Building the OS X SDK and cctools"
 	vagrant up --no-provision build-osxcross
