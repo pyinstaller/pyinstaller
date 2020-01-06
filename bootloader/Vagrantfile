@@ -41,7 +41,7 @@ def packages_debianoid
     apt-get -y -o Dpkg::Options::="--force-confdef" \
                -o Dpkg::Options::="--force-confold" upgrade
     apt-get install -y python python-dev python-setuptools \
-                       gcc libz-dev libc6-dev-i386 zlib1g-dev:i386 \
+                       gcc libz-dev libz-dev:i386 \
                        gcc-mingw-w64 clang
   EOF
 end
