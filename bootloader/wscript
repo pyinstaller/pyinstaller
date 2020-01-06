@@ -263,6 +263,8 @@ def detect_arch(ctx):
         arch = "%sbit" % (8 * check_sizeof_pointer(ctx))
         ctx.msg('Platform', '%s-%s detected based on compiler' % (system, arch))
         ctx.env.ARCH_FLAGS_REQUIRED = False
+    if not arch in ('32bit','64bit'):
+        ctx.fatal('Unrecognized target architecture: %s' % arch)
 
     # Pass return values as environment variables.
     ctx.env.PYI_ARCH = arch  # '32bit' or '64bit'
@@ -358,8 +360,6 @@ def set_arch_flags(ctx):
                             mandatory=ctx.env.ARCH_FLAGS_REQUIRED):
                 ctx.env.append_value('CFLAGS', '-m64')
                 ctx.env.append_value('LINKFLAGS', '-m64')
-        else:
-            ctx.fatal('Unrecognized target architecture: %s' % ctx.env.PYI_ARCH)
 
     # We need to pass architecture switch to the 'windres' tool.
     if ctx.env.DEST_OS == 'win32' and ctx.env.CC_NAME != 'msvc':
