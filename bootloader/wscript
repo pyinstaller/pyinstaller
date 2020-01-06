@@ -279,8 +279,12 @@ def set_arch_flags(ctx):
     """
     def check_arch_cflag(cflag32, cflag64):
         cflag = cflag32 if ctx.env.PYI_ARCH == '32bit' else cflag64
-        if ctx.check_cc(cflags=cflag, mandatory=ctx.env.ARCH_FLAGS_REQUIRED):
+        if ctx.check_cc(cflags=cflag,
+                        features='c', # only compile, don't link
+                        mandatory=ctx.env.ARCH_FLAGS_REQUIRED):
             ctx.env.append_value('CFLAGS', cflag)
+        if ctx.check_cc(linkflags=cflag,
+                        mandatory=ctx.env.ARCH_FLAGS_REQUIRED):
             ctx.env.append_value('LINKFLAGS', cflag)
 
     if ctx.env.DEST_OS == 'win32' and ctx.env.CC_NAME == 'msvc':
