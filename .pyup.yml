@@ -10,6 +10,6 @@ requirements:
       update: False
 
 pr_prefix: "Tests: Requirements:"
-label_prs: tests/ci/pyup
+label_prs: "area:tests/ci/pyup"
 
 branch_prefix: pyup/
