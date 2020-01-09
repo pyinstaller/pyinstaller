@@ -1,2 +1,0 @@
-(POSIX) For one-file binaries, if the program is started via a symlink, the
-second process now keeps the basename of the symlink.

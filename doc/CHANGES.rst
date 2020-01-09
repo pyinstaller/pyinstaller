@@ -12,6 +12,147 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+3.6 (2020-01-09)
+--------------------------
+
+**Important:** This is the last release of PyInstaller supporting Python 2.7.
+Python 2 is end-of-life, many packages are about to `drop support for Python
+2.7 <https://python3statement.org/>`_ - or already did it.
+
+Security
+~~~~~~~~
+
+* [SECURITY] (Win32) Fix CVE-2019-16784: Local Privilege Escalation caused by
+  insecure directory permissions of sys._MEIPATH. This security fix effects all
+  Windows software frozen by PyInstaller in "onefile" mode.
+  While PyInstaller itself was not vulnerable, all Windows software frozen
+  by PyInstaller in "onefile" mode is vulnerable.
+
+  If you are using PyInstaller to freeze Windows software using "onefile"
+  mode, you should upgrade PyInstaller and rebuild your software.
+
+
+Features
+~~~~~~~~
+
+* (Windows): Applications built in windowed mode have their debug messages
+  sent to any attached debugger or DebugView instead of message boxes.
+  (:issue:`#4288`)
+* Better error message when file exists at path we want to be dir.
+  (:issue:`#4591`)
+
+
+Bugfix
+~~~~~~
+
+* (Windows) Allow usage of `VSVersionInfo` as version argument to EXE again.
+  (:issue:`#4381`, :issue:`#4539`)
+* (Windows) Fix MSYS2 dll's are not found by modulegraph. (:issue:`#4125`,
+  :issue:`#4417`)
+* (Windows) The temporary copy of bootloader used add resources, icons, etc.
+  is not created in --workpath instead of in  %TEMP%. This fixes issues on
+  systems where the anti-virus cleans %TEMP% immediatly. (:issue:`#3869`)
+* Do not fail the build when ``ldconfig`` is missing/inoperable.
+  (:issue:`#4261`)
+* Fixed loading of IPython extensions. (:issue:`#4271`)
+* Fixed pre-find-module-path hook for `distutils` to be compatible with
+  `virtualenv >= 16.3`. (:issue:`#4064`, :issue:`#4372`)
+* Improve error reporting when the Python library can't be found.
+  (:issue:`#4162`)
+
+
+Hooks
+~~~~~
+
+* Add hook for
+  avro (serialization and RPC framework) (:issue:`#4388`),
+  `django-babel <https://github.com/python-babel/django-babel>`_ (:issue:`#4516`),
+  `enzyme <https://pypi.org/project/enzyme/>`_ (:issue:`#4338`),
+  google.api (resp. google.api.core) (:issue:`#3251`),
+  google.cloud.bigquery (:issue:`#4083`, :issue:`#4084`),
+  google.cloud.pubsub (:issue:`#4446`),
+  google.cloud.speech (:issue:`#3888`),
+  nnpy (:issue:`#4483`),
+  passlib (:issue:`#4520`),
+  `pyarrow <https://pypi.org/project/pyarrow/>`_ (:issue:`#3720`, :issue:`#4517`),
+  pyexcel and its plugins io, ods, ods3, odsr, xls, xlsx, xlsxw (:issue:`#4305`),
+  pysnmp (:issue:`#4287`),
+  scrapy (:issue:`#4514`),
+  skimage.io (:issue:`#3934`),
+  sklearn.mixture (:issue:`#4612`),
+  sounddevice on macOS and Windows (:issue:`#4498`),
+  text-unidecode (:issue:`#4327`, :issue:`#4530`),
+  the google-cloud-kms client library (:issue:`#4408`),
+  ttkwidgets (:issue:`#4484`), and
+  webrtcvad (:issue:`#4490`).
+* Correct the location of Qt translation files. (:issue:`#4429`)
+* Exclude imports for pkg_resources to fix bundling issue. (:issue:`#4263`,
+  :issue:`#4360`)
+* Fix hook for pywebview to collect all required libraries and data-files.
+  (:issue:`#4312`)
+* Fix hook numpy and hook scipy to account for differences in location of extra
+  dlls on Windows. (:issue:`#4593`)
+* Fix pysoundfile hook to bundle files correctly on both OSX and Windows.
+  (:issue:`#4325`)
+* Fixed hook for `pint <https://github.com/hgrecco/pint>`_
+  to also copy metadata as required to retrieve the version at runtime.
+  (:issue:`#4280`)
+* Fixed PySide2.QtNetwork hook by mirroring PyQt5 approach. (:issue:`#4467`,
+  :issue:`#4468`)
+* Hook for pywebview now collects data files and dynamic libraries only for the
+  correct OS (Windows).
+  Hook for pywebview now bundles only the required 'lib' subdirectory.
+  (:issue:`#4375`)
+* Update hooks related to PySide2.QtWebEngineWidgets, ensure the relevant
+  supporting files required for a QtWebEngineView are copied into the
+  distribution. (:issue:`#4377`)
+* Update PyQt5 loader to support PyQt >=5.12.3. (:issue:`#4293`,
+  :issue:`#4332`)
+* Update PyQt5 to package 64-bit SSL support DLLs. (:issue:`#4321`)
+* Update PyQt5 to place OpenGL DLLs correctly for PyQt >= 5.12.3.
+  (:issue:`#4322`)
+* (GNU/Linux) Make hook for GdkPixbuf compatible with Ubuntu and Debian
+  (:issue:`#4486`).
+
+
+Bootloader
+~~~~~~~~~~
+
+* (OSX): Added support for appending URL to program arguments when applications
+  is launched from custom protocol handler. (:issue:`#4397`, :issue:`#4399`)
+* (POSIX) For one-file binaries, if the program is started via a symlink, the
+  second process now keeps the basename of the symlink. (:issue:`#3823`,
+  :issue:`#3829`)
+* (Windows) If bundled with the application, proactivley load ``ucrtbase.dll``
+  before loading the Python library. This works around unresolved symbol errors
+  when loading ``python35.dll`` (or later) on legacy Windows (7, 8, 8.1)
+  systems
+  with Universal CRT update is not installed. (:issue:`#1566`, :issue:`#2170`,
+  :issue:`#4230`)
+* Add our own implementation for ``strndup`` and ``strnlen`` to be used on
+  pattforms one of these is missing.
+
+
+PyInstaller Core
+~~~~~~~~~~~~~~~~
+
+* Now uses hash based `.pyc` files as specified in :pep:`552` in
+  `base_library.zip` when using Python 3.7 (:issue:`#4096`)
+
+
+Bootloader build
+~~~~~~~~~~~~~~~~
+
+* (MinGW-w64) Fix .rc.o file not found error. (:issue:`#4501`, :issue:`#4586`)
+* Add a check whether ``strndup`` and ``strnlen`` are available.
+* Added OpenBSD support. (:issue:`#4545`)
+* Fix build on Solaris 10.
+* Fix checking for compiler flags in `configure` phase. The check for compiler
+  flags actually did never work. (:issue:`#4278`)
+* Update url for public key in update-waf script. (:issue:`#4584`)
+* Update waf to version 2.0.19.
+
+
 3.5 (2019-07-09)
 ----------------
 

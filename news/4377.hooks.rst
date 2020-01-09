@@ -1,3 +1,0 @@
-Update hooks related to PySide2.QtWebEngineWidgets, ensure the relevant
-supporting files required for a QtWebEngineView are copied into the
-distribution.

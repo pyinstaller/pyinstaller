@@ -1,6 +1,0 @@
-Port PyInstaller to Python 3.8: use the new ``CodeType.replace()`` method if
-available. The ``CodeType`` constructor has new mandatory parameters in Python
-3.8: see `PEP 570: Positional-Only Parameters
-<https://www.python.org/dev/peps/pep-0570/>`_. Using ``CodeType.replace()``,
-PyInstaller doesn't have to be updated anymore when ``CodeType`` constructor
-changes.

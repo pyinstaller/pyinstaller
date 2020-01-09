@@ -1,1 +1,0 @@
-Add hook for google.api (resp. google.api.core).

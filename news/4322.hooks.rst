@@ -1,1 +1,0 @@
-Update PyQt5 to place OpenGL DLLs correctly for PyQt >= 5.12.3.

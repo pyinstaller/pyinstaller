@@ -1,1 +1,0 @@
-(Windows) Allow usage of `VSVersionInfo` as version argument to EXE again.
