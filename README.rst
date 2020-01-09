@@ -156,5 +156,5 @@ http://www.pyinstaller.org/funding.html for how to support PyInstaller.
 
 
 .. _PyCrypto: https://www.dlitz.net/software/pycrypto/
-.. _`manual`: https://pyinstaller.readthedocs.io/en/v3.6/
+.. _`manual`: https://pyinstaller.readthedocs.io/en/latest/
 
