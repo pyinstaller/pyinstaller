@@ -4,6 +4,7 @@
 	template = "news/_template.rst"
 	underlines = "-~^"
 	wrap = true
+	package = "PyInstaller"
 	title_format = "{version} ({project_date})"
 
 	[[tool.towncrier.section]]
