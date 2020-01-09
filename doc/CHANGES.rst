@@ -12,6 +12,12 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+4.0 (unreleased)
+----------------
+
+- Nothing changed yet.
+
+
 3.6 (2020-01-09)
 --------------------------
 
