@@ -1,1 +1,0 @@
-Fixed PySide2.QtNetwork hook by mirroring PyQt5 approach.

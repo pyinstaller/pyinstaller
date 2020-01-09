@@ -1,2 +1,0 @@
-Fix hook numpy and hook scipy to account for differences in location of extra
-dlls on Windows.

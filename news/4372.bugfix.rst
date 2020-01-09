@@ -1,2 +1,0 @@
-Fixed pre-find-module-path hook for `distutils` to be compatible with
-`virtualenv >= 16.3`.

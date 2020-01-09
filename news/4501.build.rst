@@ -1,1 +1,0 @@
-(MinGW-w64) Fix .rc.o file not found error.
