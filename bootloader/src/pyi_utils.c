@@ -1,10 +1,13 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2019, PyInstaller Development Team.
- * Distributed under the terms of the GNU General Public License with exception
- * for distributing bootloader.
+ * Copyright (c) 2013-2020, PyInstaller Development Team.
+ *
+ * Distributed under the terms of the GNU General Public License (version 2
+ * or later) with exception for distributing the bootloader.
  *
  * The full license is in the file COPYING.txt, distributed with this software.
+ *
+ * SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
  * ****************************************************************************
  */
 
@@ -18,7 +21,7 @@
 
 #ifdef _WIN32
     #include <windows.h>
-    #include <direct.h>  /* _mkdir, _rmdir */
+    #include <direct.h>  /* _rmdir */
     #include <io.h>      /* _finddata_t */
     #include <process.h> /* getpid */
     #include <signal.h>  /* signal */
@@ -100,6 +103,32 @@ static int argc_pyi = 0;
 #if defined(__APPLE__) && defined(WINDOWED)
 static void process_apple_events();
 #endif
+
+
+// some platforms do not provide strnlen
+#ifndef HAVE_STRNLEN
+size_t
+strnlen(const char *str, size_t n)
+{
+    const char *stop = (char *)memchr(str, '\0', n);
+    return stop ? stop - str : n;
+}
+#endif
+
+// some platforms do not provide strndup
+#ifndef HAVE_STRNDUP
+char *
+strndup(const char * str, size_t n)
+{
+    char *ret = NULL;
+    size_t len = strnlen(str, n);
+    ret = (char *)malloc(len + 1);
+    if (ret == NULL) return NULL;
+    ret[len] = '\0';
+    return (char *)memcpy(ret, str, len);
+}
+#endif
+
 
 char *
 pyi_strjoin(const char *first, const char *sep, const char *second){
@@ -266,7 +295,7 @@ pyi_get_temp_path(char *buffer, char *runtime_tmpdir)
         /* TODO use race-free fuction - if any exists? */
         wchar_ret = _wtempnam(wchar_buffer, prefix);
 
-        if (_wmkdir(wchar_ret) == 0) {
+        if (pyi_win32_mkdir(wchar_ret) == 0) {
             pyi_win32_utils_to_utf8(buffer, wchar_ret, PATH_MAX);
             free(wchar_ret);
             if (runtime_tmpdir != NULL) {
@@ -558,7 +587,7 @@ pyi_open_target(const char *path, const char* name_)
         pyi_win32_utils_from_utf8(wchar_buffer, fnm, PATH_MAX);
 
         if (_wstat(wchar_buffer, &sbuf) < 0) {
-            _wmkdir(wchar_buffer);
+            pyi_win32_mkdir(wchar_buffer);
         }
 #else
 
@@ -1055,14 +1084,39 @@ static pascal OSErr handle_open_doc_ae(const AppleEvent *theAppleEvent, AppleEve
 }
 
 
+/*
+ * On Mac OS X this converts ULR from kAEGetURL events into sys.argv.
+ */
+static pascal OSErr handle_get_url_ae(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon handlerRefcon)
+{
+    DescType typeCode;
+    char urlBuffer[2048];
+    Size actualSize;
+    VS("LOADER [ARGV_EMU]: OpenURL handler called.\n");
+
+    OSErr err = AEGetParamPtr(theAppleEvent, keyDirectObject, typeChar, &typeCode, &urlBuffer, sizeof(urlBuffer), &actualSize);
+    if (err != noErr) return err;
+
+    argv_pyi = (char**)realloc(argv_pyi,(argc_pyi+2)*sizeof(char*));
+    argv_pyi[argc_pyi++] = strndup(urlBuffer, actualSize);
+    argv_pyi[argc_pyi] = NULL;
+
+    VS("LOADER [ARGV_EMU]: argv entry appended.\n");
+
+    return (err);
+}
+
+
 static void process_apple_events()
 {
-    OSStatus handler_install_status;
+    OSStatus handler_doc_install_status;
+    OSStatus handler_url_install_status;
     OSStatus handler_remove_status;
     OSStatus rcv_status;
     OSStatus pcs_status;
     EventTypeSpec event_types[1];  /*  List of event types to handle. */
     AEEventHandlerUPP handler_open_doc;
+    AEEventHandlerUPP handler_get_url;
     EventHandlerRef handler_ref; /* Reference for later removing the event handler. */
     EventRef event_ref;          /* Event that caused ReceiveNextEvent to return. */
     OSType ev_class;
@@ -1077,10 +1131,13 @@ static void process_apple_events()
     /* Carbon Event Manager requires us to convert the function pointer to type EventHandlerUPP. */
     /* https://developer.apple.com/legacy/library/documentation/Carbon/Conceptual/Carbon_Event_Manager/Tasks/CarbonEventsTasks.html */
     handler_open_doc = NewAEEventHandlerUPP(handle_open_doc_ae);
+    handler_get_url = NewAEEventHandlerUPP(handle_get_url_ae);
 
-    handler_install_status = AEInstallEventHandler(kCoreEventClass, kAEOpenDocuments, handler_open_doc, 0, false);
+    handler_doc_install_status = AEInstallEventHandler(kCoreEventClass, kAEOpenDocuments, handler_open_doc, 0, false);
+    handler_url_install_status = AEInstallEventHandler(kInternetEventClass, kAEGetURL, handler_get_url, 0, false);
 
-    if (handler_install_status == noErr) {
+
+    if (handler_doc_install_status == noErr && handler_url_install_status == noErr) {
 
         VS("LOADER [ARGV_EMU]: AppleEvent - installed handler.\n");
 
@@ -1120,6 +1177,7 @@ static void process_apple_events()
     /* Remove handler_ref reference when we are done with EventHandlerUPP. */
     /* Carbon Event Manager does not do this automatically. */
     DisposeEventHandlerUPP(handler_open_doc)
+    DisposeEventHandlerUPP(handler_get_url)
 }
 #endif /* if defined(__APPLE__) && defined(WINDOWED) */
 

@@ -472,7 +472,7 @@ So you have the following options:
    link, numbers 2 and 3.
 
 3. Install the `Windows Software Development Kit (SDK) for Windows 10
-   <https://dev.windows.com/en-us/downloads/windows-10-sdk>`_ and expand the
+   <https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk>`_ and expand the
    `.spec`-file to include the required DLLs, see “Distributing Software that
    uses the Universal CRT“ in the above-mentioned link, number 6.
 

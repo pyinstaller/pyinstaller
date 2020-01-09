@@ -1,11 +1,13 @@
-#-----------------------------------------------------------------------------
-# Copyright (c) 2005-2019, PyInstaller Development Team.
+# -----------------------------------------------------------------------------
+# Copyright (c) 2005-2020, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
-#-----------------------------------------------------------------------------
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
+# -----------------------------------------------------------------------------
 
 """
 `distutils`-specific pre-find module path hook.
@@ -26,8 +28,16 @@ from PyInstaller.utils.hooks import logger
 def pre_find_module_path(api):
     # Absolute path of the system-wide "distutils" package when run from within
     # a venv or None otherwise.
-    distutils_dir = getattr(distutils, 'distutils_path', None)
-    if distutils_dir is not None:
+
+    # opcode is not a virtualenv module, so we can use it to find the stdlib.
+    # Technique taken from virtualenv's "distutils" package detection at
+    # https://github.com/pypa/virtualenv/blob/16.3.0/virtualenv_embedded/distutils-init.py#L5
+    import opcode
+
+    system_module_path = os.path.normpath(os.path.dirname(opcode.__file__))
+    loaded_module_path = os.path.normpath(os.path.dirname(distutils.__file__))
+    if system_module_path != loaded_module_path:
         # Find this package in its parent directory.
-        api.search_dirs = [os.path.dirname(distutils_dir)]
-        logger.info('distutils: retargeting to non-venv dir %r' % distutils_dir)
+        api.search_dirs = [system_module_path]
+        logger.info('distutils: retargeting to non-venv dir %r',
+                    system_module_path)

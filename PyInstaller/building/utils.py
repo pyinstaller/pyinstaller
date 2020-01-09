@@ -1,10 +1,12 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2019, PyInstaller Development Team.
+# Copyright (c) 2005-2020, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 
@@ -428,6 +430,8 @@ def _rmtree(path):
                          '-y option (remove output directory without '
                          'confirmation).' % path)
     if choice.strip().lower() == 'y':
+        print("On your own risk, you can use the option `--noconfirm` "
+              "to get rid of this question.")
         logger.info('Removing dir %s', path)
         shutil.rmtree(path)
     else:
@@ -574,7 +578,7 @@ def _load_code(modname, filename):
     importer = pkgutil.get_importer(path_item)
     package, _, modname = modname.rpartition('.')
 
-    if sys.version_info >= (3, 3) and hasattr(importer, 'find_loader'):
+    if hasattr(importer, 'find_loader'):
         loader, portions = importer.find_loader(modname)
     else:
         loader = importer.find_module(modname)
@@ -655,8 +659,10 @@ def strip_paths_in_code(co, new_filename=None):
         for const_co in co.co_consts
     )
 
-    # co_kwonlyargcount added in some version of Python 3
-    if hasattr(co, 'co_kwonlyargcount'):
+    if hasattr(co, 'replace'): # is_py38
+        return co.replace(co_consts=consts, co_filename=new_filename)
+    elif hasattr(co, 'co_kwonlyargcount'):
+        # co_kwonlyargcount was added in some version of Python 3
         return code_func(co.co_argcount, co.co_kwonlyargcount, co.co_nlocals, co.co_stacksize,
                      co.co_flags, co.co_code, consts, co.co_names,
                      co.co_varnames, new_filename, co.co_name,

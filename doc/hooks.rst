@@ -195,6 +195,8 @@ for example::
    True in AIX.
 ``is_freebsd``:
    True in FreeBSD.
+``is_openbsd``:
+   True in OpenBSD.
 
 ``is_venv``:
    True in any virtual environment (either virtualenv or venv).

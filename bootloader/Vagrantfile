@@ -3,13 +3,16 @@
 #
 # Automated rebuild of bootloader on misc. platforms
 #
-# Copyright (C) 2016-2019 PyInstaller Development Team
+# Copyright (C) 2016-2020 PyInstaller Development Team
 #
 # Based on a Vagrantfile by Thomas Waldmann. Thanks!
 # Copyright (C) 2015 The Borg Collective http://borgbackup.readthedocs.org/
 
 
 Vagrant.require_version ">= 1.9.5" # Enabling shared folders for winssh
+
+# half-official Debian 8, incl. vboxfs kernel module for shared folders
+DEBIAN = "debian/contrib-jessie64"
 
 if not (Dir.exist?('./src') and File.exist?('./wscript'))
    abort("vagrant must be called from within the 'bootloader' directory")
@@ -38,7 +41,7 @@ def packages_debianoid
     apt-get -y -o Dpkg::Options::="--force-confdef" \
                -o Dpkg::Options::="--force-confold" upgrade
     apt-get install -y python python-dev python-setuptools \
-                       gcc libz-dev libc6-dev-i386 zlib1g-dev:i386 \
+                       gcc libz-dev libz-dev:i386 \
                        gcc-mingw-w64 clang
   EOF
 end
@@ -115,6 +118,8 @@ end
 def packages_darwin
   return <<-EOF
     ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+    export HOMEBREW_NO_ANALYTICS=1
+    brew analytics off
     brew update
     brew upgrade --all
     brew install pkg-config
@@ -276,10 +281,8 @@ Vagrant.configure(2) do |config|
   end
 
   #--- Linux 64 bit, using Debian 8 from boxcutter ---
-  # using images from boxcutter since they already include support for
-  # shared folders
   config.vm.define "linux64" do |b|
-    b.vm.box = "boxcutter/debian8"
+    b.vm.box = DEBIAN
     b.vm.provider :virtualbox do |v|
       v.memory = 768
     end
@@ -306,7 +309,7 @@ Vagrant.configure(2) do |config|
 
   #--- Build the Darwin SDK and tools ---
   config.vm.define "build-osxcross" do |b|
-    b.vm.box = "boxcutter/debian8"
+    b.vm.box = DEBIAN
     b.vm.provider :virtualbox do |v|
       v.memory = 768
     end
@@ -347,6 +350,7 @@ Vagrant.configure(2) do |config|
       # Adjust CPU settings according to
       # https://github.com/geerlingguy/macos-virtualbox-vm
       v.customize ['modifyvm', :id, '--cpuidset',
+                   # Leaf       EAX        EBX         ECX         EDX
                    '00000001', '000306a9', '00020800', '80000201', '178bfbff']
       # This should make make the box less choppy (source: geerlingguy)
       #v.customize ["modifyvm", :id, '--audio', 'off']

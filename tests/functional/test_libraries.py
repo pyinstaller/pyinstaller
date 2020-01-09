@@ -1,30 +1,36 @@
 # -*- coding: utf-8 -*-
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2019, PyInstaller Development Team.
+# Copyright (c) 2005-2020, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 # Library imports
 # ---------------
-import py
-import pytest
 import os
+
+# Third-party imports
+# -------------------
+import pytest
+import py
 
 # Local imports
 # -------------
-from PyInstaller.compat import is_win, is_py3, is_py35, is_py36, is_py37, \
+from PyInstaller.compat import is_win, is_py3, \
     is_darwin, is_linux, is_64bits
-from PyInstaller.utils.hooks import get_module_attribute, is_module_satisfies
+from PyInstaller.utils.hooks import is_module_satisfies
 from PyInstaller.utils.tests import importorskip, xfail, skipif
 
 # :todo: find a way to get this from `conftest` or such
 # Directory with testing modules used in some tests.
 _MODULES_DIR = py.path.local(os.path.abspath(__file__)).dirpath('modules')
 _DATA_DIR = py.path.local(os.path.abspath(__file__)).dirpath('data')
+
 
 @importorskip('boto')
 @pytest.mark.skipif(is_py3, reason='boto does not fully support Python 3')
@@ -231,25 +237,35 @@ def test_PyQt4_uic(tmpdir, pyi_builder, data_dir):
     pyi_builder.test_script('pyi_lib_PyQt4-uic.py')
 
 
-@pytest.mark.skipif(is_module_satisfies('Qt >= 5.6', get_module_attribute('PyQt5.QtCore', 'QT_VERSION_STR')),
-                    reason='QtWebKit is depreciated in Qt 5.6+')
-@importorskip('PyQt5')
-def test_PyQt5_QtWebKit(pyi_builder):
-    pyi_builder.test_script('pyi_lib_PyQt5-QtWebKit.py')
-
-
 PYQT5_NEED_OPENGL = pytest.mark.skipif(is_module_satisfies('PyQt5 <= 5.10.1'),
     reason='PyQt5 v5.10.1 and older does not package ``opengl32sw.dll``, the '
     'OpenGL software renderer, which this test requires.')
+
+
+# Parametrize test to run the same basic code on both Python Qt libraries.
+QtPyLibs = pytest.mark.parametrize('QtPyLib', ['PyQt5', 'PySide2'])
 
 # OS X bundles, produced by the ``--windowed`` flag, invoke a unique code path
 # that sometimes causes failures in Qt applications.
 USE_WINDOWED_KWARG = dict(pyi_args=['--windowed']) if is_darwin else {}
 
 
+# Define a function to remove paths with ``path_to_clean`` in them during a test so that PyQt5/PySide2 tests pass. Only remove them in Windows, since Mac/Linux Qt libraries don't rely on the path to find libraries.
+def path_clean(monkeypatch, path_to_clean):
+    if is_win:
+        # Eliminate the other library from the path.
+        path_to_clean = dict(PyQt5='PySide2', PySide2='PyQt5')[path_to_clean]
+        new_path = os.pathsep.join(
+            [x for x in os.environ['PATH'].split(os.pathsep)
+             if path_to_clean not in x]
+        )
+        monkeypatch.setenv('PATH', new_path)
+
+
 @PYQT5_NEED_OPENGL
 @importorskip('PyQt5')
-def test_PyQt5_uic(tmpdir, pyi_builder, data_dir):
+def test_PyQt5_uic(tmpdir, pyi_builder, data_dir, monkeypatch):
+    path_clean(monkeypatch, 'PyQt5')
     # Note that including the data_dir fixture copies files needed by this test.
     pyi_builder.test_script('pyi_lib_PyQt5-uic.py')
 
@@ -281,7 +297,8 @@ def get_QWebEngine_html(qt_flavor, data_dir):
 @pytest.mark.skipif(is_module_satisfies('PyQt5 == 5.11.3') and is_darwin,
     reason='This version of the OS X wheel does not include QWebEngine.')
 @importorskip('PyQt5')
-def test_PyQt5_QWebEngine(pyi_builder, data_dir):
+def test_PyQt5_QWebEngine(pyi_builder, data_dir, monkeypatch):
+    path_clean(monkeypatch, 'PyQt5')
     if is_darwin:
         # This tests running the QWebEngine on OS X. To do so, the test must:
         #
@@ -311,15 +328,18 @@ def test_PyQt5_QWebEngine(pyi_builder, data_dir):
 
 
 @PYQT5_NEED_OPENGL
-@importorskip('PyQt5')
-def test_PyQt5_QtQml(pyi_builder):
+@QtPyLibs
+def test_Qt5_QtQml(pyi_builder, QtPyLib, monkeypatch):
+    path_clean(monkeypatch, QtPyLib)
+    pytest.importorskip(QtPyLib)
+
     pyi_builder.test_source(
         """
         import sys
 
-        from PyQt5.QtGui import QGuiApplication
-        from PyQt5.QtQml import QQmlApplicationEngine
-        from PyQt5.QtCore import QTimer, QUrl
+        from {0}.QtGui import QGuiApplication
+        from {0}.QtQml import QQmlApplicationEngine
+        from {0}.QtCore import QTimer, QUrl
 
         # Select a style via the `command line <https://doc.qt.io/qt-5/qtquickcontrols2-styles.html#command-line-argument>`_,
         # since currently PyQt5 doesn't `support https://riverbankcomputing.com/pipermail/pyqt/2018-March/040180.html>`_
@@ -331,10 +351,10 @@ def test_PyQt5_QtQml(pyi_builder):
             import QtQuick 2.11
             import QtQuick.Controls 2.4
 
-            ApplicationWindow {
+            ApplicationWindow {{
                 visible: true
-                ProgressBar {value: 0.6}
-            }
+                ProgressBar {{value: 0.6}}
+            }}
             ''', QUrl())
 
         if not engine.rootObjects():
@@ -346,11 +366,18 @@ def test_PyQt5_QtQml(pyi_builder):
         res = app.exec_()
         del engine
         sys.exit(res)
-        """, **USE_WINDOWED_KWARG)
+        """.format(QtPyLib), **USE_WINDOWED_KWARG)
 
 
-@importorskip('PyQt5')
-def test_PyQt5_SSL_support(pyi_builder):
+@pytest.mark.parametrize('QtPyLib', [
+    'PyQt5',
+    pytest.param('PySide2',
+                 marks=xfail(is_win, reason='PySide2 SSL hook needs updating.'))
+])
+def test_Qt5_SSL_support(pyi_builder, monkeypatch, QtPyLib):
+    path_clean(monkeypatch, QtPyLib)
+    pytest.importorskip(QtPyLib)
+
     pyi_builder.test_source(
         """
         from PyQt5.QtNetwork import QSslSocket
@@ -372,51 +399,52 @@ def test_PyQt5_SSL_support(pyi_builder):
 @importorskip('PyQt5')
 @pytest.mark.skipif(is_module_satisfies('PyQt5 == 5.11.3') and is_darwin,
     reason='This version of the OS X wheel does not include QWebEngine.')
-def test_PyQt5_Qt(pyi_builder):
+def test_PyQt5_Qt(pyi_builder, monkeypatch):
+    path_clean(monkeypatch, 'PyQt5')
     pyi_builder.test_source('from PyQt5.Qt import QLibraryInfo',
                             **USE_WINDOWED_KWARG)
 
 
-@xfail(True, reason="Hook is old and needs updating.")
-@importorskip('PySide2')
-def test_PySide2_QWebEngine(pyi_builder, data_dir):
-    pyi_builder.test_source(get_QWebEngine_html('PySide2', data_dir),
-                            **USE_WINDOWED_KWARG)
-
-
-@importorskip('PySide2')
-def test_PySide2_QtQuick(pyi_builder):
+@QtPyLibs
+def test_Qt5_QTranslate(pyi_builder, monkeypatch, QtPyLib):
+    path_clean(monkeypatch, QtPyLib)
+    pytest.importorskip(QtPyLib)
     pyi_builder.test_source(
         """
-        import sys
+        from {0}.QtWidgets import QApplication
+        from {0}.QtCore import (
+            QTranslator,
+            QLocale,
+            QLibraryInfo,
+        )
 
-        # Not used. Only here to trigger the hook
-        import PySide2.QtQuick
+        # Initialize Qt default translations
+        app = QApplication([])
+        translator = QTranslator()
+        locale = QLocale('de_DE')
+        translation_path = QLibraryInfo.location(QLibraryInfo.TranslationsPath)
 
-        from PySide2.QtGui import QGuiApplication
-        from PySide2.QtQml import QQmlApplicationEngine
-        from PySide2.QtCore import QTimer, QUrl
+        print('Qt locale path: %s' % translation_path)
 
-        app = QGuiApplication([])
-        engine = QQmlApplicationEngine()
-        engine.loadData(b'''
-            import QtQuick 2.0
-            import QtQuick.Controls 2.0
+        if translator.load(locale, "qtbase_", directory=translation_path):
+            print('Qt locale %s loaded.' % locale.name())
+        else:
+            print('Qt locale %s not found!' % locale.name())
+            assert False
+        """.format(QtPyLib))
 
-            ApplicationWindow {
-                visible: true
-                color: "green"
-            }
-            ''', QUrl())
 
-        if not engine.rootObjects():
-            sys.exit(-1)
+@importorskip('PySide2')
+def test_PySide2_QWebEngine(pyi_builder, data_dir):
+    if is_darwin:
+        # QWebEngine on OS X only works with a onedir build -- onefile builds
+        # don't work. Skip the test execution for onefile builds.
+        if pyi_builder._mode != 'onedir':
+            pytest.skip('The QWebEngine .app bundle '
+                        'only supports onedir mode.')
 
-        # Exit Qt when the main loop becomes idle.
-        QTimer.singleShot(0, app.exit)
-
-        sys.exit(app.exec_())
-        """, **USE_WINDOWED_KWARG)
+    pyi_builder.test_source(get_QWebEngine_html('PySide2', data_dir),
+                            **USE_WINDOWED_KWARG)
 
 
 @importorskip('zope.interface')
@@ -825,7 +853,7 @@ def test_pinyin(pyi_builder):
 
 
 @importorskip('uvloop')
-@skipif(is_win or not is_py35, reason='Windows, or py < 3.5 not supported')
+@skipif(is_win or not is_py3, reason='Windows, or py < 3.5 not supported')
 def test_uvloop(pyi_builder):
     pyi_builder.test_source("import uvloop")
 

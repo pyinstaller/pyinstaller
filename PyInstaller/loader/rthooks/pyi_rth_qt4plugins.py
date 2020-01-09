@@ -1,10 +1,12 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2019, PyInstaller Development Team.
+# Copyright (c) 2013-2020, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 
@@ -19,7 +21,7 @@ d = "qt4_plugins"
 d = os.path.join(sys._MEIPASS, d)
 
 
-# We remove QT_PLUGIN_PATH variable, beasuse we want Qt4 to load
+# We remove QT_PLUGIN_PATH variable, because we want Qt4 to load
 # plugins only from one path.
 if 'QT_PLUGIN_PATH' in os.environ:
     # On some platforms (e.g. AIX) 'os.unsetenv()' is not available and then

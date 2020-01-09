@@ -1,38 +1,19 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2018-2019, PyInstaller Development Team.
+# Copyright (c) 2018-2020, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
+# hook for https://github.com/r0x0r/pywebview
 
-"""
-pywebview requires WebBrowserInterop dll on Windows
-"""
-
-import platform
-import ctypes
-from os.path import join, exists
-
-from PyInstaller import compat
-from PyInstaller.compat import is_win, getsitepackages
+from PyInstaller.utils.hooks import collect_data_files, collect_dynamic_libs
+from PyInstaller.compat import is_win
 
 if is_win:
-    if compat.architecture == '64bit':
-        dll_name = 'WebBrowserInterop.x64.dll'
-    else:
-        dll_name = 'WebBrowserInterop.x86.dll'
-
-    library = ctypes.util.find_library(dll_name)
-    datas = []
-    if library:
-        datas = [(library, '.')]
-    else:
-        for sitepack in getsitepackages():
-            library = join(sitepack, 'lib', dll_name)
-            if exists(library):
-                datas = [(library, '.')]
-        if not datas:
-            raise Exception(dll_name + ' not found')
+    datas = collect_data_files('webview', subdir='lib')
+    binaries = collect_dynamic_libs('webview')

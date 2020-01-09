@@ -1,10 +1,13 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2019, PyInstaller Development Team.
- * Distributed under the terms of the GNU General Public License with exception
- * for distributing bootloader.
+ * Copyright (c) 2013-2020, PyInstaller Development Team.
+ *
+ * Distributed under the terms of the GNU General Public License (version 2
+ * or later) with exception for distributing the bootloader.
  *
  * The full license is in the file COPYING.txt, distributed with this software.
+ *
+ * SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
  * ****************************************************************************
  */
 
@@ -169,6 +172,27 @@ pyi_path_normalize(char *result, const char *path)
 {
 }
 
+
+#if !defined(_WIN32) && !defined(__APPLE__)
+/*
+ * Return full path to a file's directory, but keeps the basename.
+ * This is required to pass the correct basename to execvp().
+ */
+int
+pyi_path_fullpath_keep_basename(char *abs, const char *rel)
+{
+    char dirname[PATH_MAX];
+    char full_dirname[PATH_MAX];
+    char basename[PATH_MAX];
+    pyi_path_basename(basename, rel);
+    pyi_path_dirname(dirname, rel);
+    if (realpath(dirname, full_dirname) == NULL) {
+        return false;
+    }
+    return (pyi_path_join(abs, full_dirname, basename) == NULL);
+}
+#endif
+
 /*
  * Return full path to a file. Wraps platform specific function.
  */
@@ -288,52 +312,31 @@ pyi_path_executable(char *execfile, const char *appname)
     }
 
 #else /* ifdef _WIN32 */
-    result = -1;
-    /* On Linux, FreeBSD, and Solaris, we try these /proc paths first
-     */
-    #if defined(__linux__)
-    result = readlink("/proc/self/exe", execfile, PATH_MAX);  /* Linux */
-    #elif defined(__FreeBSD__)
-    result = readlink("/proc/curproc/file", execfile, PATH_MAX);  /* FreeBSD */
-    #elif defined(__sun)
-    result = readlink("/proc/self/path/a.out", execfile, PATH_MAX);  /* Solaris */
-    #endif
-
-    if (-1 != result) {
-        /* execfile is not yet zero-terminated. result is the byte count. */
-        *(execfile + result) = '\0';
+    if (appname[0] == PYI_SEP || strchr(appname, PYI_SEP)) {
+        /* Absolute or relative path: Canonicalize directory path,
+         * but keep original basename.
+         */
+        if (pyi_path_fullpath_keep_basename(execfile, appname) == false) {
+            VS("LOADER: Cannot get fullpath for %s\n", execfile);
+            return -1;
+        }
     }
     else {
-        /* No /proc path found or provided
+        /* No absolute or relative path, just program name: search $PATH.
          */
-        if (appname[0] == PYI_SEP || strchr(appname, PYI_SEP)) {
-            /* Absolute or relative path.
-             * Convert to absolute and resolve symlinks.
-             */
-            if (pyi_path_fullpath(execfile, PATH_MAX, appname) == false) {
-                VS("LOADER: Cannot get fullpath for %s\n", execfile);
+        result = pyi_search_path(buffer, appname);
+        if (-1 == result) {
+            /* Searching $PATH failed, user is crazy. */
+            VS("LOADER: Searching $PATH failed for %s", appname);
+            strncpy(buffer, appname, PATH_MAX);
+            if (buffer[PATH_MAX-1] != '\0') {
+                VS("LOADER: Appname too large %s\n", appname);
                 return -1;
             }
         }
-        else {
-            /* Not absolute or relative path, just program name. Search $PATH
-             */
-            result = pyi_search_path(buffer, appname);
-
-            if (-1 == result) {
-                /* Searching $PATH failed, user is crazy. */
-                VS("LOADER: Searching $PATH failed for %s", appname);
-                strncpy(buffer, appname, PATH_MAX);
-                if (buffer[PATH_MAX-1] != '\0') {
-                    VS("LOADER: Appname too large %s\n", appname);
-                    return -1;
-                }
-            }
-
-            if (pyi_path_fullpath(execfile, PATH_MAX, buffer) == false) {
-                VS("LOADER: Cannot get fullpath for %s\n", execfile);
-                return -1;
-            }
+        if (pyi_path_fullpath_keep_basename(execfile, buffer) == false) {
+            VS("LOADER: Cannot get fullpath for %s\n", execfile);
+            return -1;
         }
     }
 #endif /* ifdef _WIN32 */

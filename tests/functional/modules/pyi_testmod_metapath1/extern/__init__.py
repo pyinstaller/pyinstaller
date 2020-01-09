@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2019 PyInstaller Development Team.
+# Copyright (C) 2017-2020 PyInstaller Development Team.
 # Copyright (C) 2016 Jason R Coombs <jaraco@jaraco.com>
 #
 # This file includes an almost complete copy of

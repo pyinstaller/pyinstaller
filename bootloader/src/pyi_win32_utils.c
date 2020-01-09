@@ -1,10 +1,13 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2019, PyInstaller Development Team.
- * Distributed under the terms of the GNU General Public License with exception
- * for distributing bootloader.
+ * Copyright (c) 2013-2020, PyInstaller Development Team.
+ *
+ * Distributed under the terms of the GNU General Public License (version 2
+ * or later) with exception for distributing the bootloader.
  *
  * The full license is in the file COPYING.txt, distributed with this software.
+ *
+ * SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
  * ****************************************************************************
  */
 
@@ -30,6 +33,7 @@
 #include <stdio.h>    /* _fileno */
 #include <io.h>       /* _get_osfhandle */
 #include <signal.h>   /* signal */
+#include <sddl.h>     /* ConvertStringSecurityDescriptorToSecurityDescriptorW */
 
 /* PyInstaller headers. */
 #include "msvc_stdint.h" /* int32_t */
@@ -569,6 +573,41 @@ char **
 pyi_win32_argv_mbcs_from_utf8_sfn(int argc, char **argv)
 {
     return pyi_win32_argv_mbcs_from_utf8_ex(argc, argv, 1);
+}
+
+/* Create a directory at path with restricted permissions.
+ *  The directory owner will be the only one with permissions on the created
+ *  dir. Calling this function is equivalent to callin chmod(path, 0700) on
+ *  Posix.
+ *  Returns 0 on success, -1 on error.
+ */
+int
+pyi_win32_mkdir(const wchar_t *path)
+{
+    wchar_t stringSecurityDesc[] = // ACE String :
+        L"D:" // DACL (D) :
+        L"(A;" // Authorize (A)
+        L";FA;" // FILE_ALL_ACCESS (FA)
+        L";;S-1-3-4)"; // For the current directory owner (SID: S-1-3-4)
+        // no other permissions are granted
+
+    SECURITY_ATTRIBUTES securityAttr;
+    PSECURITY_DESCRIPTOR *lpSecurityDesc;
+    securityAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
+    securityAttr.bInheritHandle = FALSE;
+    lpSecurityDesc = &securityAttr.lpSecurityDescriptor;
+
+    if (!ConvertStringSecurityDescriptorToSecurityDescriptorW(
+             stringSecurityDesc,
+             SDDL_REVISION_1,
+             lpSecurityDesc,
+             NULL)) {
+        return -1;
+    }
+    if (!CreateDirectoryW(path, &securityAttr)) {
+        return -1;
+    };
+    return 0;
 }
 
 #endif  /* _WIN32 */

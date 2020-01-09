@@ -1,10 +1,13 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2019, PyInstaller Development Team.
- * Distributed under the terms of the GNU General Public License with exception
- * for distributing bootloader.
+ * Copyright (c) 2013-2020, PyInstaller Development Team.
+ *
+ * Distributed under the terms of the GNU General Public License (version 2
+ * or later) with exception for distributing the bootloader.
  *
  * The full license is in the file COPYING.txt, distributed with this software.
+ *
+ * SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
  * ****************************************************************************
  */
 
@@ -35,6 +38,8 @@ char * pyi_win32_utf8_to_mbs_sfn_keep_basename(char * dest, const char * src);
 char ** pyi_win32_argv_mbcs_from_utf8_ex(int argc, char **wargv, int sfn);
 char ** pyi_win32_argv_mbcs_from_utf8(int argc, char **wargv);
 char ** pyi_win32_argv_mbcs_from_utf8_sfn(int argc, char **wargv);
+
+int pyi_win32_mkdir(const wchar_t *path);
 
 #endif /* ifdef _WIN32 */
 

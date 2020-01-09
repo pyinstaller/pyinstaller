@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2019, PyInstaller Development Team.
+# Copyright (c) 2005-2020, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 # Library imports
@@ -22,7 +24,8 @@ import pytest
 # -------------
 from PyInstaller.compat import is_darwin, is_win, is_py2, is_py37
 from PyInstaller.utils.tests import importorskip, skipif, skipif_win, \
-    skipif_winorosx, skipif_notwin, skipif_notosx, skipif_no_compiler, xfail
+    skipif_winorosx, skipif_notwin, skipif_notosx, skipif_no_compiler, \
+    skipif_notlinux, xfail
 from PyInstaller.utils.hooks import is_module_satisfies
 
 
@@ -37,6 +40,28 @@ def test_absolute_ld_library_path(pyi_builder):
 
 def test_absolute_python_path(pyi_builder):
     pyi_builder.test_script('pyi_absolute_python_path.py')
+
+
+@skipif_notlinux
+@skipif(not os.path.exists('/proc/self/status'),
+        reason='/proc/self/status does not exist')
+@pytest.mark.parametrize("symlink_name",
+                         ["symlink",
+                          "very_long_name_in_symlink",
+                          "sub/dir/progam"])
+def test_symlink_basename_is_kept(pyi_builder_spec, symlink_name,
+                                  tmpdir, SPEC_DIR, SCRIPT_DIR):
+
+    def patch(spec_name, symlink_name):
+        content = SPEC_DIR.join(spec_name).read_text(encoding="utf-8")
+        content = content.replace("@SYMLINKNAME@", symlink_name)
+        content = content.replace("@SCRIPTDIR@", str(SCRIPT_DIR))
+        outspec = tmpdir.join(spec_name)
+        outspec.write_text(content, encoding="utf-8", ensure=True)
+        return outspec
+
+    specfile = patch("symlink_basename_is_kept.spec", symlink_name)
+    pyi_builder_spec.test_spec(str(specfile), app_name=symlink_name)
 
 
 def test_pyz_as_external_file(pyi_builder, monkeypatch):

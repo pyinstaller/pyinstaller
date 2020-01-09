@@ -1,10 +1,12 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2019, PyInstaller Development Team.
+# Copyright (c) 2013-2020, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 
@@ -17,6 +19,7 @@ from __future__ import print_function
 import argparse
 import os
 import pprint
+import sys
 import tempfile
 import zlib
 
@@ -34,7 +37,7 @@ def main(name, brief, debug, rec_debug, **unused_options):
     global stack
 
     if not os.path.isfile(name):
-        print(name, "is an invalid file name!")
+        print(name, "is an invalid file name!", file=sys.stderr)
         return 1
 
     arch = get_archive(name)
@@ -50,7 +53,7 @@ def main(name, brief, debug, rec_debug, **unused_options):
             toks = stdin_input('? ').split(None, 1)
         except EOFError:
             # Ctrl-D
-            print()  # Clear line.
+            print(file=sys.stderr)  # Clear line.
             break
         if not toks:
             usage()
@@ -75,10 +78,10 @@ def main(name, brief, debug, rec_debug, **unused_options):
             try:
                 arch = get_archive(arg)
             except NotAnArchiveError as e:
-                print(e)
+                print(e, file=sys.stderr)
                 continue
             if arch is None:
-                print(arg, "not found")
+                print(arg, "not found", file=sys.stderr)
                 continue
             stack.append((arg, arch))
             show(arg, arch)
@@ -88,7 +91,7 @@ def main(name, brief, debug, rec_debug, **unused_options):
             arg = arg.strip()
             data = get_data(arg, arch)
             if data is None:
-                print("Not found")
+                print("Not found", file=sys.stderr)
                 continue
             filename = stdin_input('to filename? ')
             if not filename:
@@ -112,15 +115,15 @@ def do_cleanup():
         try:
             os.remove(filename)
         except Exception as e:
-            print("couldn't delete", filename, e.args)
+            print("couldn't delete", filename, e.args, file=sys.stderr)
     cleanup = []
 
 
 def usage():
-    print("U: go Up one level")
-    print("O <name>: open embedded archive name")
-    print("X <name>: extract name")
-    print("Q: quit")
+    print("U: go Up one level", file=sys.stderr)
+    print("O <name>: open embedded archive name", file=sys.stderr)
+    print("X <name>: extract name", file=sys.stderr)
+    print("Q: quit", file=sys.stderr)
 
 
 def get_archive(name):
@@ -229,7 +232,8 @@ class ZlibArchive(pyimod02_archive.ZlibArchiveReader):
             raise RuntimeError("%s is not a valid %s archive file"
                                % (self.path, self.__class__.__name__))
         if self.lib.read(len(self.pymagic)) != self.pymagic:
-            print("Warning: pyz is from a different Python version")
+            print("Warning: pyz is from a different Python version",
+                  file=sys.stderr)
         self.lib.read(4)
 
 

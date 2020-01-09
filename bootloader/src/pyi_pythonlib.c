@@ -1,10 +1,13 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2019, PyInstaller Development Team.
- * Distributed under the terms of the GNU General Public License with exception
- * for distributing bootloader.
+ * Copyright (c) 2013-2020, PyInstaller Development Team.
+ *
+ * Distributed under the terms of the GNU General Public License (version 2
+ * or later) with exception for distributing the bootloader.
  *
  * The full license is in the file COPYING.txt, distributed with this software.
+ *
+ * SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
  * ****************************************************************************
  */
 
@@ -96,6 +99,22 @@ pyi_pylib_load(ARCHIVE_STATUS *status)
         FATALERROR("DLL name length exceeds buffer\n");
         return -1;
     }
+
+#ifdef _WIN32
+    /*
+     * If ucrtbase.dll exists in temppath, load it proactively before Python
+     * library loading to avoid Python library loading failure (unresolved
+     * symbol errors) on systems with Universal CRT update not installed.
+     */
+    if (status->has_temp_directory) {
+        char ucrtpath[PATH_MAX];
+        pyi_path_join(ucrtpath, status->temppath, "ucrtbase.dll");
+        if (pyi_path_exists(ucrtpath)) {
+            VS("LOADER: ucrtbase.dll is exists: %s\n", ucrtpath);
+            pyi_utils_dlopen(ucrtpath);
+        }
+    }
+#endif
 
     /*
      * Look for Python library in homepath or temppath.

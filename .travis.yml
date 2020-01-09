@@ -37,6 +37,15 @@ jobs:
       cache:
         directories:
           - $HOME/Library/Caches/pip
+      # Define the ``before_install-osx`` `node anchor
+      # <https://yaml.org/spec/1.2/spec.html#id2785586>`_, so the contents of
+      # the ``script`` node can be re-used.
+      before_install: &before_install-osx
+        # Activate a venv to ensure we're using the correct Python interpreter.
+        # Per http://steven.casagrande.io/articles/travis-ci-and-if-statements/,
+        # ensure the build fails for statements in an ``if`` clause.
+        - python3 -m venv venv
+        - source venv/bin/activate
       script: &script-test-pyinstaller
         # -n 3
         #   Run tests and speed them up by sending them to multiple CPUs.
@@ -58,6 +67,10 @@ jobs:
       cache:
         directories:
           - $HOME/Library/Caches/pip
+      # Insert the earlier defined ``before_install-osx`` node anchor contents
+      # by referencing it with an `alias node
+      # <https://yaml.org/spec/1.2/spec.html#id2786196>`_.
+      before_install: *before_install-osx
       script: &script-test-libraries
         - >
           py.test -n 3 --maxfail 3 --durations 10
@@ -71,7 +84,14 @@ jobs:
     - &test-libraries
       stage: Test - Libraries
       python: 2.7
-      # Run tests and speed them up by sending them to multiple CPUs.
+      before_install:
+        # Install OpenSSL 1.1. This fixes dynamic linking problems when PyQt5.13 tries
+        # to link with OpenSSL 1.1 -- on Ubuntu 16 (xenial), the older OpenSSL
+        # produces errors like ``qt.network.ssl: QSslSocket: cannot resolve
+        # OPENSSL_init_ssl``.
+        - sudo add-apt-repository ppa:carsten-uppenbrink-net/openssl -y
+        - sudo apt-get update -q
+        - sudo apt install openssl -q
       script: *script-test-libraries
 
     - &lint
@@ -80,8 +100,8 @@ jobs:
       script:
         - >
             if [ "$TRAVIS_PULL_REQUEST" != "false" ] ; then
-                git fetch origin $TRAVIS_BRANCH:$TRAVIS_BRANCH --depth 1 || travis_terminate 1;
-                flake8-diff -v -v -v $TRAVIS_BRANCH || travis_terminate 1;
+              git fetch origin $TRAVIS_BRANCH:$TRAVIS_BRANCH --depth 1 || travis_terminate 1;
+              flake8-diff -v -v -v $TRAVIS_BRANCH || travis_terminate 1;
             fi
 
     - <<: *test-pyinstaller
@@ -95,9 +115,6 @@ jobs:
       python: 3.6
     - <<: *lint
       python: 3.6
-
-    # Building Python > 3.7 requires OpenSSL 1.0.2 (or 1.1), which is
-    # available in xenial (16.04 LTS) only.
 
     - <<: *test-pyinstaller
       python: 3.7
@@ -137,16 +154,6 @@ addons:
     # Disabled, since this takes a HUGE amount of test time.
     #update: true
 
-before_install:
-  # Activate a venv to ensure we're using the correct Python interpreter.
-  # Per http://steven.casagrande.io/articles/travis-ci-and-if-statements/,
-  # ensure the build fails for statements in an ``if`` clause.
-  - >
-      if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
-          python3 -m venv venv || travis_terminate 1;
-          source venv/bin/activate;
-      fi
-
 install:
   # Update pip.
   - python -m pip install -U pip setuptools wheel | cat
@@ -172,7 +179,7 @@ script:
 notifications:
     irc:
         channels:
-            - "irc.freenode.org#pyinstaller"
+          - "irc.freenode.org#pyinstaller"
         use_notice: true
         # skip_join: true would require +n mode *not to be set on #pyinstaller
         skip_join: false

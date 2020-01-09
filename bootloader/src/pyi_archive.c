@@ -1,10 +1,13 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2019, PyInstaller Development Team.
- * Distributed under the terms of the GNU General Public License with exception
- * for distributing bootloader.
+ * Copyright (c) 2013-2020, PyInstaller Development Team.
+ *
+ * Distributed under the terms of the GNU General Public License (version 2
+ * or later) with exception for distributing the bootloader.
  *
  * The full license is in the file COPYING.txt, distributed with this software.
+ *
+ * SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
  * ****************************************************************************
  */
 
@@ -97,12 +100,10 @@ pyi_arch_close_fp(ARCHIVE_STATUS *status)
 static unsigned char *
 decompress(unsigned char * buff, TOC *ptoc)
 {
-    const char *ver;
     unsigned char *out;
     z_stream zstream;
     int rc;
 
-    ver = (zlibVersion)();
     out = (unsigned char *)malloc(ntohl(ptoc->ulen));
 
     if (out == NULL) {

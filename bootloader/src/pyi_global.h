@@ -1,10 +1,13 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2019, PyInstaller Development Team.
- * Distributed under the terms of the GNU General Public License with exception
- * for distributing bootloader.
+ * Copyright (c) 2013-2020, PyInstaller Development Team.
+ *
+ * Distributed under the terms of the GNU General Public License (version 2
+ * or later) with exception for distributing the bootloader.
  *
  * The full license is in the file COPYING.txt, distributed with this software.
+ *
+ * SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
  * ****************************************************************************
  */
 
@@ -84,7 +87,7 @@ void pyi_global_perror(const char *funcname, const char *fmt, ...);
 #endif
 /*
  * On Windows and with windowed mode (no console) show error messages
- * in message boxes. In windowed mode nothing might be written to console.
+ * in message boxes. In windowed mode nothing is written to console.
  */
 
 #if defined(_WIN32) && defined(WINDOWED)
@@ -112,9 +115,11 @@ void mbothererror(const char *fmt, ...);
 
 #ifdef LAUNCH_DEBUG
     #if defined(_WIN32) && defined(WINDOWED)
+        /* Don't have console, resort to debugger output */
         #define VS mbvs
 void mbvs(const char *fmt, ...);
     #else
+        /* Have console, printf works */
         #define VS pyi_global_printf
     #endif
 #else

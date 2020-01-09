@@ -1,15 +1,17 @@
 # -----------------------------------------------------------------------------
-# Copyright (c) 2014-2019, PyInstaller Development Team.
+# Copyright (c) 2014-2020, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 # -----------------------------------------------------------------------------
 #
 # Helper-script for updating waf
 
-VERSION=2.0.9
+VERSION=2.0.19
 ARCHNAME=waf-$VERSION.tar.bz2
 URL=https://waf.io/$ARCHNAME
 
@@ -23,11 +25,11 @@ TOOLS=--tools=cfg_cross_gnu
 #CORETOOLS=--coretools=$c_tools,$c_compilers
 
 KEYID=49B4C67C05277AAA
-KEYURL=https://raw.githubusercontent.com/waf-project/waf/master/utils/pubkey.asc
+KEYURL=https://gitlab.com/ita1024/waf/raw/master/utils/pubkey.asc
 
 
 # remember where we come from
-BASEDIR=$(pwd $(basename "$0"))
+BASEDIR=$(realpath $(dirname "$0"))
 
 function cleanup () {
     cd "$BASEDIR"

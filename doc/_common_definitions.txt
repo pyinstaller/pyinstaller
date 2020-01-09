@@ -24,7 +24,7 @@
 .. _FAQ: https://github.com/pyinstaller/pyinstaller/wiki/FAQ
 .. _Git: http://git-scm.com/downloads
 .. _GraphicConverter: http://www.lemkesoft.de/en/products/graphic-converter/
-.. _GraphViz: http://graphviz.org/Home.php
+.. _GraphViz: https://graphviz.org/
 .. _Homebrew: http://brew.sh/
 .. _`How to Contribute`: https://github.com/pyinstaller/pyinstaller/wiki/How-to-Contribute
 .. _`How to Report Bugs`: https://github.com/pyinstaller/pyinstaller/wiki/How-to-Report-Bugs
