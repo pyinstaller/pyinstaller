@@ -425,12 +425,12 @@ pyi_win32_utils_from_utf8(wchar_t *wstr, const char *str, size_t wlen)
     return output;
 }
 
-/* Convenience function to convert UTF-8 to ANSI optionally with SFN.
- * Calls pyi_win32_utils_from_utf8 followed by pyi_win32_wcs_to_mbs_sfn
+/* Convert an UTF-8 string to an ANSI string.
+ *
+ *  Returns NULL if encoding fails.
  */
-
 char *
-pyi_win32_utf8_to_mbs_ex(char * dst, const char * src, size_t max, int sfn)
+pyi_win32_utf8_to_mbs(char * dst, const char * src, size_t max)
 {
     wchar_t * wsrc;
     char * mbs;
@@ -441,12 +441,7 @@ pyi_win32_utf8_to_mbs_ex(char * dst, const char * src, size_t max, int sfn)
         return NULL;
     }
 
-    if (sfn) {
-        mbs = pyi_win32_wcs_to_mbs_sfn(wsrc);
-    }
-    else {
-        mbs = pyi_win32_wcs_to_mbs(wsrc);
-    }
+    mbs = pyi_win32_wcs_to_mbs(wsrc);
 
     free(wsrc);
 
@@ -462,18 +457,6 @@ pyi_win32_utf8_to_mbs_ex(char * dst, const char * src, size_t max, int sfn)
     else {
         return mbs;
     }
-}
-
-char *
-pyi_win32_utf8_to_mbs(char * dst, const char * src, size_t max)
-{
-    return pyi_win32_utf8_to_mbs_ex(dst, src, max, 0);
-}
-
-char *
-pyi_win32_utf8_to_mbs_sfn(char * dst, const char * src, size_t max)
-{
-    return pyi_win32_utf8_to_mbs_ex(dst, src, max, 1);
 }
 
 /* Create a directory at path with restricted permissions.

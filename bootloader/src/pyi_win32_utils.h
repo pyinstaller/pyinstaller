@@ -29,9 +29,7 @@ wchar_t ** pyi_win32_wargv_from_utf8(int argc, char **argv);
 char * pyi_win32_utils_to_utf8(char *buffer, const wchar_t *str, size_t n);
 wchar_t * pyi_win32_utils_from_utf8(wchar_t *buffer, const char *ostr, size_t n);
 
-char * pyi_win32_utf8_to_mbs_ex(char * dst, const char * src, size_t max, int sfn);
 char * pyi_win32_utf8_to_mbs(char * dst, const char * src, size_t max);
-char * pyi_win32_utf8_to_mbs_sfn(char * dst, const char * src, size_t max);
 
 int pyi_win32_mkdir(const wchar_t *path);
 
