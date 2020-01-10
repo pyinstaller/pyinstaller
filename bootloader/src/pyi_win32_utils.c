@@ -475,60 +475,6 @@ pyi_win32_utf8_to_mbs_sfn(char * dst, const char * src, size_t max)
 {
     return pyi_win32_utf8_to_mbs_ex(dst, src, max, 1);
 }
-/* Convenience function to convert UTF-8 argv to ANSI characters for Py2Sys_SetArgv
- *  Optionally use ShortFileNames to improve compatibility on Python 2.
- *
- *  Returns a newly allocated array of pointers to newly allocated buffers containing
- *  ANSI characters. The caller is responsible for freeing both the array and the buffers
- *  using free()
- *
- *  Returns NULL and logs the error reason if an error occurs.
- */
-
-char **
-pyi_win32_argv_mbcs_from_utf8_ex(int argc, char **argv, int sfn)
-{
-    int i, j;
-    char ** argv_mbcs;
-
-    argv_mbcs = (char **)calloc(argc + 1, sizeof(char *));
-
-    for (i = 0; i < argc; i++) {
-        argv_mbcs[i] = pyi_win32_utf8_to_mbs_ex(NULL, argv[i], 0, sfn);
-
-        if (NULL == argv_mbcs[i]) {
-            goto err;
-        }
-    }
-    argv_mbcs[argc] = NULL;
-
-    return argv_mbcs;
-err:
-
-    for (j = 0; j <= i; j++) {
-        free(argv_mbcs[j]);
-    }
-    free(argv_mbcs);
-    return NULL;
-}
-
-/* Convert elements of __wargv to ANSI characters.
- *  See pyi_win32_argv_mbcs_from_utf8_ex
- */
-char **
-pyi_win32_argv_mbcs_from_utf8(int argc, char **argv)
-{
-    return pyi_win32_argv_mbcs_from_utf8_ex(argc, argv, 0);
-}
-
-/* Convert elements of __wargv to ANSI encoded MS-DOS ShortFileNames.
- *  See pyi_win32_argv_mbcs_from_utf8_ex
- */
-char **
-pyi_win32_argv_mbcs_from_utf8_sfn(int argc, char **argv)
-{
-    return pyi_win32_argv_mbcs_from_utf8_ex(argc, argv, 1);
-}
 
 /* Create a directory at path with restricted permissions.
  *  The directory owner will be the only one with permissions on the created

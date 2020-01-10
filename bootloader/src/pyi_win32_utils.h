@@ -33,11 +33,6 @@ char * pyi_win32_utf8_to_mbs_ex(char * dst, const char * src, size_t max, int sf
 char * pyi_win32_utf8_to_mbs(char * dst, const char * src, size_t max);
 char * pyi_win32_utf8_to_mbs_sfn(char * dst, const char * src, size_t max);
 
-
-char ** pyi_win32_argv_mbcs_from_utf8_ex(int argc, char **wargv, int sfn);
-char ** pyi_win32_argv_mbcs_from_utf8(int argc, char **wargv);
-char ** pyi_win32_argv_mbcs_from_utf8_sfn(int argc, char **wargv);
-
 int pyi_win32_mkdir(const wchar_t *path);
 
 #endif /* ifdef _WIN32 */
