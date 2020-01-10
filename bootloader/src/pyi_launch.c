@@ -366,25 +366,20 @@ int
 pyi_launch_run_scripts(ARCHIVE_STATUS *status)
 {
     unsigned char *data;
-    char buf[PATH_MAX];
-    size_t namelen;
     TOC * ptoc = status->tocbuff;
-    PyObject *__main__;
-    PyObject *__file__;
-    PyObject *main_dict;
-    PyObject *code, *retval;
+    PyObject *__main__name;
+    PyObject *sys_modules;
+    PyObject *code, *module;
 
-    __main__ = PI_PyImport_AddModule("__main__");
-
-    if (!__main__) {
-        FATALERROR("Could not get __main__ module.");
-        return -1;
+    sys_modules = PI_PyImport_GetModuleDict(); /* borrowed reference */
+    if (is_py2) {
+        __main__name = PI_PyString_FromString("__main__");
     }
-
-    main_dict = PI_PyModule_GetDict(__main__);
-
-    if (!main_dict) {
-        FATALERROR("Could not get __main__ module's dict.");
+    else {
+        __main__name = PI_PyUnicode_FromString("__main__");
+    }
+    if (__main__name == NULL) {
+        FATALERROR("Could not get object for string '__main__'.");
         return -1;
     }
 
@@ -393,53 +388,48 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
         if (ptoc->typcd == ARCHIVE_ITEM_PYSOURCE) {
             /* Get data out of the archive.  */
             data = pyi_arch_extract(status, ptoc);
-            /* Set the __file__ attribute within the __main__ module,
-             *  for full compatibility with normal execution. */
-            namelen = strnlen(ptoc->name, PATH_MAX);
-            if (namelen >= PATH_MAX-strlen(".py")-1) {
-                FATALERROR("Name exceeds PATH_MAX\n");
-                return -1;
-            }
-
-            strcpy(buf, ptoc->name);
-            strcat(buf, ".py");
-            VS("LOADER: Running %s\n", buf);
-
-            if (is_py2) {
-                __file__ = PI_PyString_FromString(buf);
-            }
-            else {
-                __file__ = PI_PyUnicode_FromString(buf);
-            };
-            PI_PyObject_SetAttrString(__main__, "__file__", __file__);
-            Py_DECREF(__file__);
+            VS("LOADER: Running %s.py\n", ptoc->name);
 
             /* Unmarshall code object */
             code = PI_PyMarshal_ReadObjectFromString((const char *) data, ntohl(ptoc->ulen));
-
             if (!code) {
                 FATALERROR("Failed to unmarshal code object for %s\n", ptoc->name);
                 PI_PyErr_Print();
                 return -1;
             }
-            /* Run it */
-            retval = PI_PyEval_EvalCode(code, main_dict, main_dict);
+
+            /* Run the code */
+            /* For full compatibility with normal execution, the __file__
+             * attribute within the __main__ module needs to be set.
+             * PyImport_ExecCodeModule() will set it based on
+             * code.co_filename. PyInstaller takes care that co_filename is
+             * correct. */
+            module = PI_PyImport_ExecCodeModule("__main__", code);
 
             /* If retval is NULL, an error occured. Otherwise, it is a Python object.
              * (Since we evaluate module-level code, which is not allowed to return an
              * object, the Python object returned is always None.) */
-            if (!retval) {
+            if (!module) {
                 PI_PyErr_Print();
                 /* If the error was SystemExit, PyErr_Print calls exit() without
                  * returning. So don't print "Failed to execute" on SystemExit. */
                 FATALERROR("Failed to execute script %s\n", ptoc->name);
                 return -1;
             }
+            Py_DECREF(module);
+
             free(data);
+
+            /* remove '__main__' from sys.modules */
+            if (PI_PyObject_DelItem(sys_modules, __main__name) != 0) {
+                FATALERROR("Failed to remove '__main__' from sys.modules\n");
+                return -1;
+            }
         }
 
         ptoc = pyi_arch_increment_toc_ptr(status, ptoc);
     }
+    Py_DECREF(__main__name);
     return 0;
 }
 

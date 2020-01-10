@@ -16,6 +16,7 @@
 
 import copy
 import os
+import sys
 import subprocess
 import xml.etree.ElementTree as ET
 import xml.etree.cElementTree as cET

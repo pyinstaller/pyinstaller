@@ -375,7 +375,7 @@ class CArchiveWriter(ArchiveWriter):
                 # the object so it can be unmarshalled by the bootloader.
 
                 code = get_code_object(nm, pathnm)
-                code = strip_paths_in_code(code)
+                code = strip_paths_in_code(code, os.path.basename(pathnm))
 
                 code_data = marshal.dumps(code)
                 ulen = len(code_data)

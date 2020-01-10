@@ -9,6 +9,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
+# Filename nust not contain a directory
 if __file__ != 'pyi_filename.py':
    raise ValueError(__file__)

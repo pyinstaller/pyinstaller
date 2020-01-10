@@ -1,21 +1,19 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2017, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License (version 2
-# or later) with exception for distributing the bootloader.
+# Distributed under the terms of the GNU General Public License with exception
+# for distributing bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
-#
-# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# Verify each script has it's own global vars (original case, see issue
-# #2949).
+# Verify each __name__ == '__main_' in all scripts
 
-app_name = "several-scripts1"
+app_name = "several-scripts3"
 
-a = Analysis(['several-scripts/rt-hook-script.py',
-              'several-scripts/main-script1.py'])
+a = Analysis(['several-scripts/check___name__.py',
+              'several-scripts/check___name__.py',
+              'several-scripts/check___name__.py'])
 pyz = PYZ(a.pure, a.zipped_data)
 exe = EXE(pyz,
           a.scripts,

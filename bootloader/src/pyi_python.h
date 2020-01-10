@@ -111,11 +111,13 @@ EXTDECLPROC(void, PySys_SetPath, (wchar_t *));
 EXTDECLPROC(int, PySys_SetArgvEx, (int, wchar_t **, int));
 EXTDECLPROC(int, PyRun_SimpleString, (char *));  /* Py3: UTF-8 encoded string */
 
+EXTDECLPROC(PyObject *, PyImport_GetModuleDict, (void)); /* get sys.modules */
 /* In Python 3 for these the first argument has to be a UTF-8 encoded string: */
 EXTDECLPROC(PyObject *, PyImport_ExecCodeModule, (char *, PyObject *));
 EXTDECLPROC(PyObject *, PyImport_ImportModule, (char *));
 EXTDECLPROC(PyObject *, PyImport_AddModule, (char *));
 
+EXTDECLPROC(int, PyObject_DelItem, (PyObject *, PyObject *));
 EXTDECLPROC(int, PyObject_SetAttrString, (PyObject *, char *, PyObject *));
 EXTDECLPROC(PyObject *, PyList_New, (int));
 EXTDECLPROC(int, PyList_Append, (PyObject *, PyObject *));

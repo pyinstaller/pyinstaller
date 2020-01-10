@@ -232,6 +232,14 @@ def test_module_reload(pyi_builder):
     pyi_builder.test_script('pyi_module_reload.py')
 
 
+def test_ctypes_hooks_are_in_place(pyi_builder):
+    pyi_builder.test_source(
+        """
+        import ctypes
+        assert ctypes.CDLL.__name__ == 'PyInstallerCDLL', ctypes.CDLL
+        """)
+
+
 # TODO test it on OS X.
 @skipif_no_compiler
 def test_load_dll_using_ctypes(monkeypatch, pyi_builder, compiled_dylib):
@@ -606,3 +614,15 @@ def test_several_scripts2(pyi_builder_spec):
     Verify each script has it's own global vars (basic test).
     """
     pyi_builder_spec.test_spec('several-scripts2.spec')
+
+
+def test_main_exists(pyi_builder):
+    pyi_builder.test_source("import sys ; sys.modules['__main__']")
+
+
+def test_name_is_main(pyi_builder):
+    pyi_builder.test_source("assert __name__ == '__main__'")
+
+
+def test_name_is_main_in_all_scripts(pyi_builder_spec):
+    pyi_builder_spec.test_spec('several-scripts3.spec')
