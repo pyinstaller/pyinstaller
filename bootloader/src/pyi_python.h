@@ -26,7 +26,6 @@
     #include <windows.h>  /* HMODULE */
 #endif
 #include <wchar.h>
-#include "pyi_python27_compat.h"
 
 /*
  * These macros used to define variables to hold dynamically accessed entry

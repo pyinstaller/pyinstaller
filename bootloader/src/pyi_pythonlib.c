@@ -59,9 +59,6 @@ pyi_pylib_load(ARCHIVE_STATUS *status)
     char *p;
     int len;
 
-    /* Are we going to load the Python 2.x library? */
-    is_py2 = (pyvers / 10) == 2;
-
 /*
  * On AIX Append the shared object member to the library path
  * to make it look like this:
@@ -215,11 +212,6 @@ pyi_pylib_set_runtime_opts(ARCHIVE_STATUS *status)
                 unbuffered = 1;
                 break;
             case 'W':
-
-                if (is_py2) {
-                    PI_Py2Sys_AddWarnOption(&ptoc->name[2]);
-                }
-                else {
                     /* TODO: what encoding is ptoc->name? May not be important */
                     /* as all known Wflags are ASCII. */
                     if ((size_t)-1 == mbstowcs(wchar_tmp, &ptoc->name[2], PATH_MAX)) {
@@ -228,7 +220,6 @@ pyi_pylib_set_runtime_opts(ARCHIVE_STATUS *status)
                         return -1;
                     }
                     PI_PySys_AddWarnOption(wchar_tmp);
-                };
                 break;
             case 'O':
                 *PI_Py_OptimizeFlag = 1;
@@ -324,36 +315,11 @@ pyi_wargv_from_argv(int argc, char ** argv)
 static int
 pyi_pylib_set_sys_argv(ARCHIVE_STATUS *status)
 {
-    char ** mbcs_argv;
     wchar_t ** wargv;
 
     VS("LOADER: Setting sys.argv\n");
 
     /* last parameter '0' to PySys_SetArgv means do not update sys.path. */
-    if (is_py2) {
-#ifdef _WIN32
-        /*
-         * status->argv is UTF-8, convert to ANSI without SFN
-         * TODO: pyi-option to enable SFNs for argv?
-         */
-        mbcs_argv = pyi_win32_argv_mbcs_from_utf8(status->argc, status->argv);
-
-        if (mbcs_argv) {
-            PI_Py2Sys_SetArgvEx(status->argc, mbcs_argv, 0);
-            free(mbcs_argv);
-        }
-        else {
-            FATALERROR("Failed to convert argv to mbcs\n");
-            return -1;
-        }
-#else   /* _WIN32 */
-       /* For Python2, status->argv must be "char **". In Python 2.7's */
-       /* `main.c`, argv is used without any other handling, so do we. */
-        PI_Py2Sys_SetArgvEx(status->argc, status->argv, 0);
-#endif /* ifdef _WIN32 */
-
-    }
-    else {
 #ifdef _WIN32
         /* Convert UTF-8 argv back to wargv */
         wargv = pyi_win32_wargv_from_utf8(status->argc, status->argv);
@@ -370,7 +336,6 @@ pyi_pylib_set_sys_argv(ARCHIVE_STATUS *status)
             FATALERROR("Failed to convert argv to wchar_t\n");
             return -1;
         }
-    };
     return 0;
 }
 
@@ -418,30 +383,12 @@ pyi_pylib_start_python(ARCHIVE_STATUS *status)
      *
      * NOTE: Statics are zero-initialized. */
     static char pypath[2 * PATH_MAX + 14];
-    static char pypath_sfn[2 * PATH_MAX + 14];
-    static char pyhome[PATH_MAX + 1];
-    static char progname[PATH_MAX + 1];
 
     /* Wide string forms of the above, for Python 3. */
     static wchar_t pypath_w[PATH_MAX + 1];
     static wchar_t pyhome_w[PATH_MAX + 1];
     static wchar_t progname_w[PATH_MAX + 1];
 
-    if (is_py2) {
-#ifdef _WIN32
-
-        /* Use ShortFileName - affects sys.executable */
-        if (!pyi_win32_utf8_to_mbs_sfn(progname, status->archivename, PATH_MAX)) {
-            FATALERROR("Failed to convert progname to wchar_t\n");
-            return -1;
-        }
-#else
-        /* Use system-provided filename. No encoding. */
-        strncpy(progname, status->archivename, PATH_MAX);
-#endif
-        PI_Py2_SetProgramName(progname);
-    }
-    else {
         /* Decode using current locale */
         if (!pyi_locale_char2wchar(progname_w, status->archivename, PATH_MAX)) {
             FATALERROR("Failed to convert progname to wchar_t\n");
@@ -449,25 +396,10 @@ pyi_pylib_start_python(ARCHIVE_STATUS *status)
         }
         /* In Python 3 Py_SetProgramName() should be called before Py_SetPath(). */
         PI_Py_SetProgramName(progname_w);
-    };
 
     VS("LOADER: Manipulating environment (sys.path, sys.prefix)\n");
 
     /* Set sys.prefix and sys.exec_prefix using Py_SetPythonHome */
-    if (is_py2) {
-#ifdef _WIN32
-
-        if (!pyi_win32_utf8_to_mbs_sfn(pyhome, status->mainpath, PATH_MAX)) {
-            FATALERROR("Failed to convert pyhome to ANSI (invalid multibyte string)\n");
-            return -1;
-        }
-#else
-        strcpy(pyhome, status->mainpath);
-#endif
-        VS("LOADER: sys.prefix is %s\n", pyhome);
-        PI_Py2_SetPythonHome(pyhome);
-    }
-    else {
         /* Decode using current locale */
         if (!pyi_locale_char2wchar(pyhome_w, status->mainpath, PATH_MAX)) {
             FATALERROR("Failed to convert pyhome to wchar_t\n");
@@ -475,27 +407,19 @@ pyi_pylib_start_python(ARCHIVE_STATUS *status)
         }
         VS("LOADER: sys.prefix is %s\n", status->mainpath);
         PI_Py_SetPythonHome(pyhome_w);
-    };
 
     /* Set sys.path */
-    if (is_py2) {
-        /* sys.path = [mainpath] */
-        strncpy(pypath, status->mainpath, strlen(status->mainpath));
-    }
-    else {
         /* sys.path = [base_library, mainpath] */
         strncpy(pypath, status->mainpath, strlen(status->mainpath));
         strncat(pypath, PYI_SEPSTR, strlen(PYI_SEPSTR));
         strncat(pypath, "base_library.zip", strlen("base_library.zip"));
         strncat(pypath, PYI_PATHSEPSTR, strlen(PYI_PATHSEPSTR));
         strncat(pypath, status->mainpath, strlen(status->mainpath));
-    };
 
     /*
      * On Python 3, we must set sys.path to have base_library.zip before
      * calling Py_Initialize as it needs `encodings` and other modules.
      */
-    if (!is_py2) {
         /* Decode using current locale */
         if (!pyi_locale_char2wchar(pypath_w, pypath, PATH_MAX)) {
             FATALERROR("Failed to convert pypath to wchar_t\n");
@@ -512,8 +436,6 @@ pyi_pylib_start_python(ARCHIVE_STATUS *status)
         PI_Py_GetPath();
 #endif
         PI_Py_SetPath(pypath_w);
-    }
-    ;
 
     /* Start python. */
     VS("LOADER: Setting runtime options\n");
@@ -548,21 +470,7 @@ pyi_pylib_start_python(ARCHIVE_STATUS *status)
      */
     VS("LOADER: Overriding Python's sys.path\n");
     VS("LOADER: Post-init sys.path is %s\n", pypath);
-
-    if (is_py2) {
-#ifdef _WIN32
-
-        if (!pyi_win32_utf8_to_mbs_sfn(pypath_sfn, pypath, PATH_MAX)) {
-            FATALERROR("Failed to convert pypath to ANSI (invalid multibyte string)\n");
-        }
-        PI_Py2Sys_SetPath(pypath_sfn);
-#else
-        PI_Py2Sys_SetPath(pypath);
-#endif
-    }
-    else {
         PI_PySys_SetPath(pypath_w);
-    };
 
     /* Setting sys.argv should be after Py_Initialize() call. */
     if (pyi_pylib_set_sys_argv(status)) {
@@ -591,26 +499,10 @@ pyi_pylib_import_modules(ARCHIVE_STATUS *status)
     PyObject *co;
     PyObject *mod;
     PyObject *meipass_obj;
-    char * meipass_ansi;
 
     VS("LOADER: setting sys._MEIPASS\n");
 
     /* TODO extract function pyi_char_to_pyobject */
-    if (is_py2) {
-#ifdef _WIN32
-        meipass_ansi = pyi_win32_utf8_to_mbs_sfn(NULL, status->mainpath, 0);
-
-        if (!meipass_ansi) {
-            FATALERROR("Failed to encode _MEIPASS as ANSI.\n");
-            return -1;
-        }
-        meipass_obj = PI_PyString_FromString(meipass_ansi);
-        free(meipass_ansi);
-#else
-        meipass_obj = PI_PyString_FromString(status->mainpath);
-#endif
-    }
-    else {
 #ifdef _WIN32
         meipass_obj = PI_PyUnicode_Decode(status->mainpath,
                                           strlen(status->mainpath),
@@ -619,7 +511,6 @@ pyi_pylib_import_modules(ARCHIVE_STATUS *status)
 #else
         meipass_obj = PI_PyUnicode_DecodeFSDefault(status->mainpath);
 #endif
-    }
 
     if (!meipass_obj) {
         FATALERROR("Failed to get _MEIPASS as PyObject.\n");
@@ -653,11 +544,7 @@ pyi_pylib_import_modules(ARCHIVE_STATUS *status)
             /* .pyc/.pyo files have 8 bytes header. Skip it and load marshalled
              * data form the right point.
              */
-            if (is_py2) {
-                co = PI_PyObject_CallFunction(loadfunc, "s#", modbuf + 8, ntohl(
-                                                  ptoc->ulen) - 8);
-            }
-            else if (pyvers >= 37) {
+            if (pyvers >= 37) {
                 /* Python >= 3.7 the header: size was changed to 16 bytes. */
                 co = PI_PyObject_CallFunction(loadfunc, "y#", modbuf + 16,
                                               ntohl(ptoc->ulen) - 16);
@@ -716,44 +603,10 @@ pyi_pylib_install_zlib(ARCHIVE_STATUS *status, TOC *ptoc)
     int rc = 0;
     int zlibpos = status->pkgstart + ntohl(ptoc->pos);
     PyObject * sys_path, *zlib_entry, *archivename_obj;
-    char *archivename;
 
     /* Note that sys.path contains PyString on py2, and PyUnicode on py3. Ensure
      * that filenames are encoded or decoded correctly.
      */
-    if (is_py2) {
-#ifdef _WIN32
-        /* Must be MBCS encoded. Use SFN if possible.
-         *
-         * We could instead pass the UTF-8 encoded form and modify FrozenImporter to
-         * decode it on Windows, but this breaks the convention that `sys.path`
-         * entries on Windows are MBCS encoded, and may interfere with any code
-         * that inspects `sys.path`
-         *
-         * We could also pass the zlib path through a channel other than `sys.path`
-         * to sidestep that requirement, but there's not much benefit as this only
-         * improves non-codepage/non-SFN compatibility for the zlib and not any other
-         * importable modules.
-         */
-
-        archivename = pyi_win32_utf8_to_mbs_sfn(NULL, status->archivename, 0);
-
-        if (NULL == archivename) {
-            FATALERROR("Failed to convert %s to ShortFileName\n", status->archivename);
-            return -1;
-        }
-#else
-        /* Use system-provided path. No encoding required. */
-        archivename = status->archivename;
-#endif
-        zlib_entry = PI_PyString_FromFormat("%s?%d", archivename, zlibpos);
-
-        if (archivename != status->archivename) {
-            free(archivename);
-        }
-
-    }
-    else {
 #ifdef _WIN32
         /* Decode UTF-8 to PyUnicode */
         archivename_obj = PI_PyUnicode_Decode(status->archivename,
@@ -768,7 +621,6 @@ pyi_pylib_install_zlib(ARCHIVE_STATUS *status, TOC *ptoc)
 #endif
         zlib_entry = PI_PyUnicode_FromFormat("%U?%d", archivename_obj, zlibpos);
         PI_Py_DecRef(archivename_obj);
-    }
 
     sys_path = PI_PySys_GetObject("path");
 

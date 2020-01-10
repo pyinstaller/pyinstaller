@@ -404,13 +404,7 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
             strcpy(buf, ptoc->name);
             strcat(buf, ".py");
             VS("LOADER: Running %s\n", buf);
-
-            if (is_py2) {
-                __file__ = PI_PyString_FromString(buf);
-            }
-            else {
-                __file__ = PI_PyUnicode_FromString(buf);
-            };
+            __file__ = PI_PyUnicode_FromString(buf);
             PI_PyObject_SetAttrString(__main__, "__file__", __file__);
             Py_DECREF(__file__);
 
