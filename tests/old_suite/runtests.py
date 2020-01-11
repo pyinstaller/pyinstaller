@@ -75,7 +75,6 @@ class SkipChecker(object):
             'import/test_onefile_pkgutil.get_data__main__': False,
             'interactive/test_onefile_win32_uac_admin': is_win,
             'libraries/test_enchant': is_win,
-            'import/test_nspkg-pep420': sys.version_info >= (3, 4),
             }
 
         # Test-cases failing for a known reason and the reason
