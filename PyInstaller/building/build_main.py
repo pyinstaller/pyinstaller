@@ -31,8 +31,7 @@ from .. import HOMEPATH, DEFAULT_DISTPATH, DEFAULT_WORKPATH
 from .. import compat
 from .. import log as logging
 from ..utils.misc import absnormpath, compile_py_files
-from ..compat import is_win, PYDYLIB_NAMES, \
-    open_file, unicode_writer
+from ..compat import is_win, PYDYLIB_NAMES, open_file
 from ..depend import bindepend
 from ..depend.analysis import initialize_modgraph
 from .api import PYZ, EXE, COLLECT, MERGE
@@ -523,14 +522,13 @@ class Analysis(Target):
         from ..config import CONF
         miss_toc = self.graph.make_missing_toc()
         with open_file(CONF['warnfile'], 'w', encoding='utf-8') as wf:
-            wf_unicode = unicode_writer(wf)
-            wf_unicode.write(WARNFILE_HEADER)
+            wf.write(WARNFILE_HEADER)
             for (n, p, status) in miss_toc:
                 importers = self.graph.get_importers(n)
                 print(status, 'module named', n, '- imported by',
                       ', '.join(dependency_description(name, data)
                                 for name, data in importers),
-                      file=wf_unicode)
+                      file=wf)
         logger.info("Warnings written to %s", CONF['warnfile'])
 
     def _write_graph_debug(self):
@@ -539,14 +537,14 @@ class Analysis(Target):
         """
         from ..config import CONF
         with open_file(CONF['xref-file'], 'w', encoding='utf-8') as fh:
-            self.graph.create_xref(unicode_writer(fh))
+            self.graph.create_xref(fh)
             logger.info("Graph cross-reference written to %s", CONF['xref-file'])
         if logger.getEffectiveLevel() > logging.DEBUG:
             return
         # The `DOT language's <https://www.graphviz.org/doc/info/lang.html>`_
         # default character encoding (see the end of the linked page) is UTF-8.
         with open_file(CONF['dot-file'], 'w', encoding='utf-8') as fh:
-            self.graph.graphreport(unicode_writer(fh))
+            self.graph.graphreport(fh)
             logger.info("Graph drawing written to %s", CONF['dot-file'])
 
     def _check_python_library(self, binaries):

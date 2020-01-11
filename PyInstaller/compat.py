@@ -101,27 +101,6 @@ else:
 open_file = open
 text_read_mode = 'r'
 
-# This class converts all writes to unicode first. For use with
-# ``print(*args, file=f)``, since in Python 2 this ``print`` will write str, not
-# unicode.
-class unicode_writer:
-
-    # Store the object to proxy.
-    def __init__(self, f):
-        self.f = f
-
-    # Insist that writes use the ``text_type``.
-    def write(self, _str):
-        self.f.write(text_type(_str))
-
-    def writelines(self, lines):
-        self.f.writelines([text_type(_str) for _str in lines])
-
-    # Proxy all other methods.
-    def __getattr__(self, name):
-        return getattr(self.f, name)
-
-
 # Python 3 moved collections classes to more sensible packages.
 from collections.abc import Sequence, Set
 
