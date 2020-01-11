@@ -99,9 +99,6 @@ else:
 open_file = open
 text_read_mode = 'r'
 
-# Python 3 moved collections classes to more sensible packages.
-from collections.abc import Sequence, Set
-
 # In Python 3 built-in function raw_input() was renamed to just 'input()'.
 stdin_input = input
 
@@ -601,12 +598,6 @@ else:
         else:
             # TODO Implement for Python 2.6 on other platforms.
             raise NotImplementedError()
-
-
-# Function to reload a module - used to reload module 'PyInstaller.config' for tests.
-# imp module is deprecated since Python 3.4.
-from importlib import reload as module_reload
-
 
 # Wrapper to load a module from a Python source file.
 # This function loads import hooks when processing them.
