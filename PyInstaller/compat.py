@@ -597,16 +597,6 @@ def exec_python_rc(*args, **kwargs):
 
 ## Path handling.
 
-def getcwd():
-    """
-    Wrap os.getcwd()
-
-    For Python 2 on Windows this used to return ShortPathName (8.3 filename)
-    that contain only ascii characters.
-    """
-    return os.getcwd()
-
-
 def expand_path(path):
     """
     Replace initial tilde '~' in path with user's home directory and also

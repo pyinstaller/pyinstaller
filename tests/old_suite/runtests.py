@@ -289,7 +289,7 @@ class BuildTestRunner(object):
             if not os.path.exists(runtests_basedir):
                 os.makedirs(runtests_basedir)
         else:
-            runtests_basedir = compat.getcwd()
+            runtests_basedir = os.getcwd()
         self._specdir = runtests_basedir
         self._distdir = os.path.join(runtests_basedir, 'dist')
         self._builddir = os.path.join(runtests_basedir, 'build')
@@ -358,7 +358,7 @@ class BuildTestRunner(object):
             compat.setenv('PATH', os.pathsep.join(winutils.get_system_path()))
 
         self._plain_msg("RUNNING: " + prog)
-        old_wd = compat.getcwd()
+        old_wd = os.getcwd()
         os.chdir(os.path.dirname(prog))
         # Run executable.
         prog = os.path.join(os.curdir, os.path.basename(prog))
@@ -533,7 +533,7 @@ class GenericTestCase(unittest.TestCase):
         super(GenericTestCase, self).__init__(func_name)
 
         # For tests current working directory has to be changed temporaly.
-        self.curr_workdir = compat.getcwd()
+        self.curr_workdir = os.getcwd()
 
         # Whether to enable bytecode encryption for test executable
         self.with_crypto = with_crypto

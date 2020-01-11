@@ -58,12 +58,12 @@ else:
 ## Default values of paths where to put files created by PyInstaller.
 ## Mind option-help in build_main when changes these
 # Folder where to put created .spec file.
-DEFAULT_SPECPATH = compat.getcwd()
+DEFAULT_SPECPATH = os.getcwd()
 # Folder where to put created .spec file.
 # Where to put the final app.
-DEFAULT_DISTPATH = os.path.join(compat.getcwd(), 'dist')
+DEFAULT_DISTPATH = os.path.join(os.getcwd(), 'dist')
 # Where to put all the temporary work files, .log, .pyz and etc.
-DEFAULT_WORKPATH = os.path.join(compat.getcwd(), 'build')
+DEFAULT_WORKPATH = os.path.join(os.getcwd(), 'build')
 
 
 PLATFORM = compat.system + '-' + compat.architecture
