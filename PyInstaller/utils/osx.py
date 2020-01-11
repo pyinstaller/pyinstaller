@@ -15,8 +15,9 @@ Utils for Mac OS X platform.
 """
 
 import os
+import shutil
 
-from ..compat import base_prefix, exec_command
+from ..compat import base_prefix
 from macholib.MachO import MachO
 
 
@@ -50,7 +51,7 @@ def get_homebrew_prefix():
     """
     :return: Root path of the Homebrew environment.
     """
-    prefix = exec_command(['/bin/bash', '-c', 'which brew']).strip()
+    prefix = shutil.which('brew')
     # Conversion:  /usr/local/bin/brew -> /usr/local
     prefix = os.path.dirname(os.path.dirname(prefix))
     return prefix
@@ -60,8 +61,8 @@ def get_macports_prefix():
     """
     :return: Root path of the Macports environment.
     """
-    prefix = exec_command(['/bin/bash', '-c', 'which port']).strip()
-    # Conversion:  /usr/local/bin/brew -> /usr/local
+    prefix = shutil.which('port')
+    # Conversion:  /usr/local/bin/port -> /usr/local
     prefix = os.path.dirname(os.path.dirname(prefix))
     return prefix
 
