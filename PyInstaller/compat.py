@@ -101,14 +101,6 @@ else:
 open_file = open
 text_read_mode = 'r'
 
-# These are copied from ``six``.
-#
-# Type for representing (Unicode) textual data.
-text_type = str
-# Type for representing binary data.
-binary_type = bytes
-
-
 # This class converts all writes to unicode first. For use with
 # ``print(*args, file=f)``, since in Python 2 this ``print`` will write str, not
 # unicode.
@@ -128,7 +120,6 @@ class unicode_writer:
     # Proxy all other methods.
     def __getattr__(self, name):
         return getattr(self.f, name)
-
 
 
 # Python 3 moved collections classes to more sensible packages.

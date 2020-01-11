@@ -32,7 +32,7 @@ from .. import compat
 from .. import log as logging
 from ..utils.misc import absnormpath, compile_py_files
 from ..compat import is_win, PYDYLIB_NAMES, \
-    open_file, text_type, unicode_writer
+    open_file, unicode_writer
 from ..depend import bindepend
 from ..depend.analysis import initialize_modgraph
 from .api import PYZ, EXE, COLLECT, MERGE
@@ -222,8 +222,8 @@ class Analysis(Target):
             # be used at runtime by pyi_crypto.PyiBlockCipher.
             pyi_crypto_key_path = os.path.join(CONF['workpath'], 'pyimod00_crypto_key.py')
             with open_file(pyi_crypto_key_path, 'w', encoding='utf-8') as f:
-                f.write(text_type('# -*- coding: utf-8 -*-\n'
-                                  'key = %r\n' % cipher.key))
+                f.write('# -*- coding: utf-8 -*-\n'
+                        'key = %r\n' % cipher.key)
             logger.info('Adding dependencies on pyi_crypto.py module')
             self.hiddenimports.append(pyz_crypto.get_crypto_hiddenimports())
 

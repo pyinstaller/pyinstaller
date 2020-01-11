@@ -21,7 +21,7 @@ from distutils.version import LooseVersion
 
 from .. import HOMEPATH, DEFAULT_SPECPATH
 from .. import log as logging
-from ..compat import expand_path, is_darwin, is_win, open_file, text_type
+from ..compat import expand_path, is_darwin, is_win, open_file
 from .templates import onefiletmplt, onedirtmplt, cipher_absent_template, \
     cipher_init_template, bundleexetmplt, bundletmplt
 
@@ -455,14 +455,14 @@ def main(scripts, name=None, onefile=None,
     specfnm = os.path.join(specpath, name + '.spec')
     with open_file(specfnm, 'w', encoding='utf-8') as specfile:
         if onefile:
-            specfile.write(text_type(onefiletmplt % d))
+            specfile.write(onefiletmplt % d)
             # For OSX create .app bundle.
             if is_darwin and not console:
-                specfile.write(text_type(bundleexetmplt % d))
+                specfile.write(bundleexetmplt % d)
         else:
-            specfile.write(text_type(onedirtmplt % d))
+            specfile.write(onedirtmplt % d)
             # For OSX create .app bundle.
             if is_darwin and not console:
-                specfile.write(text_type(bundletmplt % d))
+                specfile.write(bundletmplt % d)
 
     return specfnm
