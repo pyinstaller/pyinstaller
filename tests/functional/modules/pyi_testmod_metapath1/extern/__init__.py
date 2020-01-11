@@ -3,7 +3,7 @@
 #
 # This file includes an almost complete copy of
 # pkg_resources/extern/__init__.py, taken from setuptools 28.6.1.
-# For PyInstaller the inly chane is to install a sub-class of VendorImporter.
+# For PyInstaller the only change is to install a sub-class of VendorImporter.
 #
 # setuptools is licensed under the MIT License (expat) license:
 #
