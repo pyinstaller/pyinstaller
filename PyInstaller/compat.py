@@ -101,7 +101,6 @@ else:
 open_file = open
 text_read_mode = 'r'
 
-
 # These are copied from ``six``.
 #
 # Type for representing (Unicode) textual data.
@@ -131,9 +130,6 @@ class unicode_writer:
         return getattr(self.f, name)
 
 
-
-# FileExistsError was new in in Python 3.
-from builtins import FileExistsError, FileNotFoundError
 
 # Python 3 moved collections classes to more sensible packages.
 from collections.abc import Sequence, Set

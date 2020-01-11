@@ -18,8 +18,7 @@ import glob, sys, weakref
 import os.path
 
 from .. import log as logging
-from ..compat import (
-    expand_path, importlib_load_source, FileNotFoundError)
+from ..compat import expand_path, importlib_load_source
 from .imphookapi import PostGraphAPI
 from ..building.utils import format_binaries_and_datas
 
