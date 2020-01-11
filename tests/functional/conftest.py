@@ -28,6 +28,7 @@ import inspect
 import textwrap
 import io
 import shutil
+from contextlib import suppress
 
 # Third-party imports
 # -------------------
@@ -54,7 +55,7 @@ from PyInstaller import __main__ as pyi_main
 from PyInstaller.utils.tests import gen_sourcefile
 from PyInstaller.utils.cliutils import archive_viewer
 from PyInstaller.compat import is_darwin, is_win, safe_repr, \
-    architecture, is_linux, suppress, text_read_mode
+    architecture, is_linux, text_read_mode
 from PyInstaller.depend.analysis import initialize_modgraph
 from PyInstaller.utils.win32 import winutils
 from PyInstaller.utils.hooks.qt import pyqt5_library_info, pyside2_library_info

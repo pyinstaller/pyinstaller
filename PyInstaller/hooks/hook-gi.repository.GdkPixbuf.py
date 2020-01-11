@@ -15,10 +15,11 @@ Import hook for PyGObject's "gi.repository.GdkPixbuf" package.
 import glob
 import os
 import subprocess
+from shutil import which
 
 from PyInstaller.config import CONF
 from PyInstaller.compat import (
-    exec_command_stdout, is_darwin, is_win, is_linux, open_file, which)
+    exec_command_stdout, is_darwin, is_win, is_linux, open_file)
 from PyInstaller.utils.hooks import (
     collect_glib_translations, get_gi_typelibs, get_gi_libdir, logger)
 

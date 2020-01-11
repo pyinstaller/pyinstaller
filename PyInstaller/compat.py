@@ -623,10 +623,6 @@ def expand_path(path):
     """
     return os.path.expandvars(os.path.expanduser(path))
 
-
-from shutil import which
-
-
 # Site-packages functions - use native function if available.
 if hasattr(site, 'getsitepackages'):
     getsitepackages = site.getsitepackages
@@ -786,6 +782,3 @@ def check_requirements():
                          'The last version supporting Python 2.7 was v3.6.')
     elif sys.version_info < (3, 5):
         raise SystemExit('PyInstaller requires at least Python 3.5 or newer.')
-
-
-from contextlib import suppress
