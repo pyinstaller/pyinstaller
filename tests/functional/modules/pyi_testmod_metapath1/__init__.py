@@ -9,8 +9,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-from __future__ import print_function
-
 from pyi_testmod_metapath1.extern import aaa   # __import__ below works
 #import pyi_testmod_metapath1.extern           # __import__ below works
 #import pyi_testmod_metapath1.extern.aaa       # __import__ below fails!

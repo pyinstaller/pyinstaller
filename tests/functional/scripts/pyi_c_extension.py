@@ -9,8 +9,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-from __future__ import print_function
-
 # In dist directory are Python C-extension file names like module.submodule.so
 # E.g.  ./simplejson/_speedups.so  ->  ./simplejson._speedups.so
 

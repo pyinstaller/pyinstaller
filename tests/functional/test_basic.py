@@ -425,7 +425,6 @@ def test_xmldom_module(pyi_builder):
 def test_threading_module(pyi_builder):
     pyi_builder.test_source(
         """
-        from __future__ import print_function
         import threading
         import sys
 

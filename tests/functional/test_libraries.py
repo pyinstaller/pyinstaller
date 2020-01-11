@@ -472,7 +472,6 @@ def test_lxml_isoschematron(pyi_builder):
 def test_numpy(pyi_builder):
     pyi_builder.test_source(
         """
-        from __future__ import print_function
         import numpy
         from numpy.core.numeric import dot
         print('dot(3, 4):', dot(3, 4))
@@ -532,7 +531,6 @@ def test_pycparser(pyi_builder):
 def test_pycrypto(pyi_builder):
     pyi_builder.test_source(
         """
-        from __future__ import print_function
         import binascii
         from Crypto.Cipher import AES
         BLOCK_SIZE = 16

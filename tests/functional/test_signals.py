@@ -43,7 +43,6 @@ def test_signal_handled(pyi_builder, signame, ignore):
 
     pyi_builder.test_source(
         """
-        from __future__ import print_function
         import psutil
         import signal
         import sys

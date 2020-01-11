@@ -21,8 +21,6 @@ zest.releaser allows customization by exposing some entry points. For details:
 https://zestreleaser.readthedocs.org/en/latest/entrypoints.html
 """
 
-from __future__ import print_function
-
 import os
 from ..compat import exec_command, getenv
 

@@ -13,8 +13,6 @@
 # a few modifications to allow execution on 32-bit platforms.
 # http://python-future.org/overview.html#code-examples
 
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 from builtins import (bytes, str, open, super, range,
                       zip, round, input, int, pow, object)
 

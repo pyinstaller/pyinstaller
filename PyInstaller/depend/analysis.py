@@ -34,8 +34,6 @@ Other added methods look up nodes by identifier and return facts
 about them, replacing what the old ImpTracker list could do.
 """
 
-from __future__ import print_function
-
 import os
 import re
 import sys

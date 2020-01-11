@@ -15,8 +15,6 @@ Various classes and functions to provide some backwards-compatibility
 with previous versions of Python onward.
 """
 
-from __future__ import print_function
-
 import io
 import os
 import platform

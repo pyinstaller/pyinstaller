@@ -9,8 +9,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-from __future__ import print_function
-
 """
 Build packages using spec files.
 

@@ -9,8 +9,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-from __future__ import print_function
-
 # sys.path  should contain absolute paths.
 # With relative paths frozen application will
 # fail to import modules when currect working
