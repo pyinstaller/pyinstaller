@@ -19,8 +19,7 @@ execnet >= 1.5.0
 pytest >= 2.7.3
 
 # Plugin allowing running tests in parallel.
-pytest-xdist == 1.25.0; python_version == '2.7'
-pytest-xdist; python_version != '2.7'
+pytest-xdist
 
 # Plugin to abort hanging tests.
 pytest-timeout
@@ -32,8 +31,6 @@ psutil
 
 # Check new flake8 violations on pull requests
 flake8-diff
-
-subprocess32; python_version == '2.7'
 
 # Current pypiwin32 simply installs pywin32.
 pywin32; sys_platform == 'win32'

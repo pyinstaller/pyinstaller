@@ -30,10 +30,7 @@ import marshal
 import struct
 import sys
 import zlib
-if sys.version_info[0] == 2:
-    import thread
-else:
-    import _thread as thread
+import _thread as thread
 
 
 # For decrypting Python modules.
@@ -142,15 +139,10 @@ class ArchiveReader(object):
 
         # In Python 3 module 'imp' is no longer built-in and we cannot use it.
         # There is for Python 3 another way how to obtain magic value.
-        if sys.version_info[0] == 2:
-            import imp
-            self.pymagic = imp.get_magic()
-        else:
-            # Python 3.5+
-            # We cannot use at this bootstrap stage importlib directly
-            # but its frozen variant.
-            import _frozen_importlib
-            self.pymagic = _frozen_importlib._bootstrap_external.MAGIC_NUMBER
+        # We cannot use at this bootstrap stage importlib directly
+        # but its frozen variant.
+        import _frozen_importlib
+        self.pymagic = _frozen_importlib._bootstrap_external.MAGIC_NUMBER
 
         if path is not None:
             self.lib = ArchiveFile(self.path, 'rb')
@@ -270,28 +262,12 @@ class Cipher(object):
         # that first.
         modname = 'Crypto.Cipher._AES'
 
-        if sys.version_info[0] == 2:
-            # Not-so-easy way: at bootstrap time we have to load the module from the
-            # temporary directory in a manner similar to pyi_importers.CExtensionImporter.
-            from pyimod03_importers import CExtensionImporter
-            importer = CExtensionImporter()
-            # NOTE: We _must_ call find_module first.
-            mod = importer.find_module(modname)
-            # Fallback to AES.so, which should be there in PyCrypto 2.4 and earlier.
-            if not mod:
-                modname = 'Crypto.Cipher.AES'
-                mod = importer.find_module(modname)
-                if not mod:
-                    # Raise import error if none of the AES modules is found.
-                    raise ImportError(modname)
-            mod = mod.load_module(modname)
-        else:
-            kwargs = dict(fromlist=['Crypto', 'Cipher'])
-            try:
-                mod = __import__(modname, **kwargs)
-            except ImportError:
-                modname = 'Crypto.Cipher.AES'
-                mod = __import__(modname, **kwargs)
+        kwargs = dict(fromlist=['Crypto', 'Cipher'])
+        try:
+            mod = __import__(modname, **kwargs)
+        except ImportError:
+            modname = 'Crypto.Cipher.AES'
+            mod = __import__(modname, **kwargs)
 
         # Issue #1663: Remove the AES module from sys.modules list. Otherwise
         # it interferes with using 'Crypto.Cipher' module in users' code.

@@ -68,7 +68,6 @@ DECLPROC(PyModule_GetDict);
 DECLPROC(PyObject_CallFunction);
 DECLPROC(PyObject_SetAttrString);
 DECLPROC(PyRun_SimpleString);
-DECLPROC(PyString_FromString);
 DECLPROC(PySys_AddWarnOption);
 DECLPROC(PySys_SetArgvEx);
 DECLPROC(PySys_GetObject);
@@ -77,7 +76,6 @@ DECLPROC(PySys_SetPath);
 DECLPROC(PyUnicode_FromString);
 
 DECLPROC(Py_DecodeLocale);
-DECLPROC(PyString_FromFormat);
 DECLPROC(PyUnicode_FromFormat);
 DECLPROC(PyUnicode_DecodeFSDefault);
 DECLPROC(PyUnicode_Decode);
@@ -108,12 +106,8 @@ pyi_python_map_names(HMODULE dll, int pyvers)
     GETPROC(dll, Py_IncRef);
     GETPROC(dll, Py_Initialize);
 
-    if (pyvers >= 30) {
-        /* new in Python 3 */
-        GETPROC(dll, Py_SetPath);
-        GETPROC(dll, Py_GetPath);
-    }
-    ;
+    GETPROC(dll, Py_SetPath);
+    GETPROC(dll, Py_GetPath);
     GETPROC(dll, Py_SetProgramName);
     GETPROC(dll, Py_SetPythonHome);
 
@@ -133,11 +127,6 @@ pyi_python_map_names(HMODULE dll, int pyvers)
     GETPROC(dll, PyObject_SetAttrString);
     GETPROC(dll, PyRun_SimpleString);
 
-    if (pyvers < 30) {
-        GETPROC(dll, PyString_FromString);
-        GETPROC(dll, PyString_FromFormat);
-    }
-    ;
     GETPROC(dll, PySys_AddWarnOption);
     GETPROC(dll, PySys_SetArgvEx);
     GETPROC(dll, PySys_GetObject);
@@ -146,30 +135,13 @@ pyi_python_map_names(HMODULE dll, int pyvers)
     GETPROC(dll, PyEval_EvalCode);
     GETPROC(dll, PyMarshal_ReadObjectFromString);
 
-    if (pyvers >= 30) {
-        /* new in Python 2.6, but not reliable available in all Linux distros */
-        GETPROC(dll, PyUnicode_FromString);
+    GETPROC(dll, PyUnicode_FromString);
 
-        /* _Py_char2wchar is new in Python 3, in Python 3.5 renamed to Py_DecodeLocale */
-        if (pyvers >= 35) {
-            GETPROC(dll, Py_DecodeLocale);
-        }
-        else {
-            GETPROC_RENAMED(dll, Py_DecodeLocale, _Py_char2wchar);
-        };
-    }
-    ;
+    GETPROC(dll, Py_DecodeLocale);
 
-    if (pyvers >= 30) {
-        /* only used on py3 */
-        GETPROC(dll, PyUnicode_FromFormat);
-        GETPROC(dll, PyUnicode_Decode);
-    }
-
-    if (pyvers >= 32) {
-        /* new in Python 3.2 */
-        GETPROC(dll, PyUnicode_DecodeFSDefault);
-    }
+    GETPROC(dll, PyUnicode_FromFormat);
+    GETPROC(dll, PyUnicode_Decode);
+    GETPROC(dll, PyUnicode_DecodeFSDefault);
 
     VS("LOADER: Loaded functions from Python library.\n");
 

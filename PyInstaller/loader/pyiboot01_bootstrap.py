@@ -41,7 +41,6 @@ sys.exec_prefix = sys.prefix
 
 
 # Python 3.3+ defines also sys.base_prefix. Let's set them too.
-# TODO Do these variables does not hurt on Python 3.2 and 2.7?
 sys.base_prefix = sys.prefix
 sys.base_exec_prefix = sys.exec_prefix
 
@@ -62,12 +61,7 @@ if VIRTENV in os.environ:
 # application.
 python_path = []
 for pth in sys.path:
-    if not os.path.isabs(pth):
-        # careful about using abspath with non-unicode path,
-        # it breaks multibyte character that contain slash under win32/Python 2
-        # TODO: Revert when dropping suport for is_py2.
-        pth = os.path.abspath(pth)
-    python_path.append(pth)
+    python_path.append(os.path.abspath(pth))
     sys.path = python_path
 
 
@@ -95,11 +89,10 @@ class NullWriter:
         return False
 
 
-# In Python 3 sys.stdout/err is None in GUI mode on Windows.
-# In Python 2 we need to check .fileno().
-if sys.stdout is None or sys.stdout.fileno() < 0:
+# sys.stdout/err is None in GUI mode on Windows.
+if sys.stdout is None:
     sys.stdout = NullWriter()
-if sys.stderr is None or sys.stderr.fileno() < 0:
+if sys.stderr is None:
     sys.stderr = NullWriter()
 
 

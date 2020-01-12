@@ -12,10 +12,8 @@
 
 """
 Various classes and functions to provide some backwards-compatibility
-with previous versions of Python from 2.7 onward.
+with previous versions of Python onward.
 """
-
-from __future__ import print_function
 
 import io
 import os
@@ -26,13 +24,10 @@ import sys
 import errno
 from .exceptions import ExecCommandFailed
 
-# Distinguish code for different major Python version.
-is_py2 = sys.version_info[0] == 2
-is_py3 = sys.version_info[0] == 3
 # Copied from https://docs.python.org/3/library/platform.html#cross-platform.
 is_64bits = sys.maxsize > 2**32
+
 # Distinguish specific code for various Python versions.
-is_py27 = sys.version_info >= (2, 7) and sys.version_info < (3, 0)
 # Variables 'is_pyXY' mean that Python X.Y and up is supported.
 # Keep even unsupported versions here to keep 3rd-party hooks working.
 is_py35 = sys.version_info >= (3, 5)
@@ -100,75 +95,19 @@ else:
                      'Please define constant PYDYLIB_NAMES for your platform.')
 
 
-# Function with which to open files. In Python 3, this is the open() built-in;
-# in Python 2, this is the Python 3 open() built-in backported into the "io"
-# module as io.open(). The Python 2 open() built-in is commonly regarded as
-# unsafe in regards to character encodings and hence inferior to io.open().
-open_file = open if is_py3 else io.open
-text_read_mode = 'r' if is_py3 else 'rU'
-
-
-# These are copied from ``six``.
-#
-# Type for representing (Unicode) textual data.
-text_type = unicode if is_py2 else str
-# Type for representing binary data.
-binary_type = str if is_py2 else bytes
-
-
-# This class converts all writes to unicode first. For use with
-# ``print(*args, file=f)``, since in Python 2 this ``print`` will write str, not
-# unicode.
-class unicode_writer:
-
-    # Store the object to proxy.
-    def __init__(self, f):
-        self.f = f
-
-    # Insist that writes use the ``text_type``.
-    def write(self, _str):
-        self.f.write(text_type(_str))
-
-    def writelines(self, lines):
-        self.f.writelines([text_type(_str) for _str in lines])
-
-    # Proxy all other methods.
-    def __getattr__(self, name):
-        return getattr(self.f, name)
-
-
-
-# In Python 3 there is exception FileExistsError. But it is not available
-# in Python 2. For Python 2 fall back to OSError exception.
-if is_py2:
-    FileExistsError = OSError
-else:
-    from builtins import FileExistsError
-
-# Python 3 moved collections classes to more sensible packages.
-if is_py2:
-    from collections import Sequence, Set
-else:
-    from collections.abc import Sequence, Set
+# Function with which to open files.
+open_file = open
+text_read_mode = 'r'
 
 # In Python 3 built-in function raw_input() was renamed to just 'input()'.
-try:
-    stdin_input = raw_input
-except NameError:
-    stdin_input = input
+stdin_input = input
 
 # Safe repr that always outputs ascii
-if is_py2:
-    safe_repr = repr
-else:
-    safe_repr = ascii
+safe_repr = ascii
 
 # String types to replace `isinstance(foo, str)`
 # Use `isinstance(foo, string_types)` instead.
-if is_py2:
-    string_types = basestring
-else:
-    string_types = str
+string_types = str
 
 # Correct extension ending: 'c' or 'o'
 if __debug__:
@@ -186,12 +125,13 @@ else:
 
 # In a virtual environment created by virtualenv (github.com/pypa/virtualenv)
 # there exists sys.real_prefix with the path to the base Python
-# installation from which the virtual environment was created. This is true regardless of
-# the version of Python used to execute the virtualenv command, 2.x or 3.x.
+# installation from which the virtual environment was created.
+# This is true regardless of
+# the version of Python used to execute the virtualenv command.
 #
 # In a virtual environment created by the venv module available in
-# the Python 3 standard lib, there exists sys.base_prefix with the path to
-# the base implementation. This does not exist in Python 2.x or in
+# the Python standard lib, there exists sys.base_prefix with the path to
+# the base implementation. This does not exist in
 # a virtual environment created by virtualenv.
 #
 # The following code creates compat.is_venv and is.virtualenv
@@ -214,33 +154,17 @@ is_conda = os.path.isdir(os.path.join(base_prefix, 'conda-meta'))
 
 # In Python 3.4 module 'imp' is deprecated and there is another way how
 # to obtain magic value.
-if is_py3:
-    import importlib.util
-    BYTECODE_MAGIC = importlib.util.MAGIC_NUMBER
-else:
-    # This fallback should work with Python 2.7.
-    import imp
-    BYTECODE_MAGIC = imp.get_magic()
+import importlib.util
+BYTECODE_MAGIC = importlib.util.MAGIC_NUMBER
 
 
 # List of suffixes for Python C extension modules.
-try:
-    # In Python 3.3+ there is a list
-    from importlib.machinery import EXTENSION_SUFFIXES, all_suffixes
-    ALL_SUFFIXES = all_suffixes()
-except ImportError:
-    import imp
-    ALL_SUFFIXES = [f[0] for f in imp.get_suffixes()]
-    EXTENSION_SUFFIXES = [f[0] for f in imp.get_suffixes()
-                          if f[2] == imp.C_EXTENSION]
+from importlib.machinery import EXTENSION_SUFFIXES, all_suffixes
+ALL_SUFFIXES = all_suffixes()
 
 
-# In Python 3 'Tkinter' has been made lowercase - 'tkinter'. Keep Python 2
-# compatibility.
-if is_py2:
-    modname_tkinter = 'Tkinter'
-else:
-    modname_tkinter = 'tkinter'
+# In Python 3 'Tkinter' has been made lowercase - 'tkinter'.
+modname_tkinter = 'tkinter'
 
 
 # On Windows we require pywin32-ctypes
@@ -422,26 +346,25 @@ def exec_command(*cmdargs, **kwargs):
         print(e, file=sys.stderr)
         print('--' * 20, file=sys.stderr)
         raise ExecCommandFailed("Error: Executing command failed!")
-    # Python 3 returns stdout/stderr as a byte array NOT as string.
-    # Thus we need to convert that to proper encoding.
 
-    if is_py3:
-        try:
-            if encoding:
-                out = out.decode(encoding)
-            else:
-                # If no encoding is given, assume we're reading filenames from
-                # stdout only because it's the common case.
-                out = os.fsdecode(out)
-        except UnicodeDecodeError as e:
-            # The sub-process used a different encoding,
-            # provide more information to ease debugging.
-            print('--' * 20, file=sys.stderr)
-            print(str(e), file=sys.stderr)
-            print('These are the bytes around the offending byte:',
-                  file=sys.stderr)
-            print('--' * 20, file=sys.stderr)
-            raise
+    # stdout/stderr are returned as a byte array NOT as string.
+    # Thus we need to convert that to proper encoding.
+    try:
+        if encoding:
+            out = out.decode(encoding)
+        else:
+            # If no encoding is given, assume we're reading filenames from
+            # stdout only because it's the common case.
+            out = os.fsdecode(out)
+    except UnicodeDecodeError as e:
+        # The sub-process used a different encoding,
+        # provide more information to ease debugging.
+        print('--' * 20, file=sys.stderr)
+        print(str(e), file=sys.stderr)
+        print('These are the bytes around the offending byte:',
+              file=sys.stderr)
+        print('--' * 20, file=sys.stderr)
+        raise
     return out
 
 
@@ -510,12 +433,9 @@ def exec_command_stdout(*command_args, **kwargs):
 
     Returns
     ----------
-    unicode or str
+    str
         Unicode string of this command's standard output decoded according to
-        the "encoding" keyword argument. This string's type depends on the
-        current Python version as follows:
-        * Under Python 2.7, this is a decoded `unicode` string.
-        * Under Python 3.x, this is a decoded `str` string.
+        the "encoding" keyword argument.
     """
 
     # Value of the passed "encoding" parameter, defaulting to None.
@@ -553,7 +473,7 @@ def exec_command_all(*cmdargs, **kwargs):
         1. Optional remaining elements are arguments to pass to this command.
     encoding : str, optional
         Optional keyword argument specifying the encoding with which to decode
-        this command's standard output under Python 3. As this function's return
+        this command's standard output. As this function's return
         value should be ignored, this argument should _never_ be passed.
 
     All remaining keyword arguments are passed as is to the `subprocess.Popen()`
@@ -570,27 +490,26 @@ def exec_command_all(*cmdargs, **kwargs):
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs)
     # Waits for subprocess to complete.
     out, err = proc.communicate()
-    # Python 3 returns stdout/stderr as a byte array NOT as string.
+    # stdout/stderr are returned as a byte array NOT as string.
     # Thus we need to convert that to proper encoding.
-    if is_py3:
-        try:
-            if encoding:
-                out = out.decode(encoding)
-                err = err.decode(encoding)
-            else:
-                # If no encoding is given, assume we're reading filenames from
-                # stdout only because it's the common case.
-                out = os.fsdecode(out)
-                err = os.fsdecode(err)
-        except UnicodeDecodeError as e:
-            # The sub-process used a different encoding,
-            # provide more information to ease debugging.
-            print('--' * 20, file=sys.stderr)
-            print(str(e), file=sys.stderr)
-            print('These are the bytes around the offending byte:',
-                  file=sys.stderr)
-            print('--' * 20, file=sys.stderr)
-            raise
+    try:
+        if encoding:
+            out = out.decode(encoding)
+            err = err.decode(encoding)
+        else:
+            # If no encoding is given, assume we're reading filenames from
+            # stdout only because it's the common case.
+            out = os.fsdecode(out)
+            err = os.fsdecode(err)
+    except UnicodeDecodeError as e:
+        # The sub-process used a different encoding,
+        # provide more information to ease debugging.
+        print('--' * 20, file=sys.stderr)
+        print(str(e), file=sys.stderr)
+        print('These are the bytes around the offending byte:',
+              file=sys.stderr)
+        print('--' * 20, file=sys.stderr)
+        raise
 
     return proc.returncode, out, err
 
@@ -622,11 +541,10 @@ def __wrap_python(args, kwargs):
     if env is None:
         env = dict(**os.environ)
 
-    if is_py3:
-        # Ensure python 3 subprocess writes 'str' as utf-8
-        env['PYTHONIOENCODING'] = 'UTF-8'
-        # ... and ensure we read output as utf-8
-        kwargs['encoding'] = 'UTF-8'
+    # Ensure python 3 subprocess writes 'str' as utf-8
+    env['PYTHONIOENCODING'] = 'UTF-8'
+    # ... and ensure we read output as utf-8
+    kwargs['encoding'] = 'UTF-8'
 
     return cmdargs, kwargs
 
@@ -653,30 +571,6 @@ def exec_python_rc(*args, **kwargs):
 
 ## Path handling.
 
-# The function os.getcwd() in Python 2 does not work with unicode paths on Windows.
-def getcwd():
-    """
-    Wrap os.getcwd()
-
-    On Windows return ShortPathName (8.3 filename) that contain only ascii
-    characters.
-    """
-    cwd = os.getcwd()
-    # os.getcwd works properly with Python 3 on Windows.
-    # We need this workaround only for Python 2 on Windows.
-    if is_win and is_py2:
-        try:
-            unicode(cwd)
-        except UnicodeDecodeError:
-            # Do conversion to ShortPathName really only in case 'cwd' is not
-            # ascii only - conversion to unicode type cause this unicode error.
-            try:
-                cwd = win32api.GetShortPathName(cwd)
-            except ImportError:
-                pass
-    return cwd
-
-
 def expand_path(path):
     """
     Replace initial tilde '~' in path with user's home directory and also
@@ -684,81 +578,10 @@ def expand_path(path):
     """
     return os.path.expandvars(os.path.expanduser(path))
 
-
-# Define the shutil.which() function, first introduced by Python 3.3.
-try:
-    from shutil import which
-# If undefined, this is Python 2.7. For compatibility, this function has been
-# backported without modification from the most recent stable version of
-# Python as of this writing: Python 3.5.1.
-except ImportError:
-    def which(cmd, mode=os.F_OK | os.X_OK, path=None):
-        """Given a command, mode, and a PATH string, return the path which
-        conforms to the given mode on the PATH, or None if there is no such
-        file.
-
-        `mode` defaults to os.F_OK | os.X_OK. `path` defaults to the result
-        of os.environ.get("PATH"), or can be overridden with a custom search
-        path.
-
-        """
-        # Check that a given file can be accessed with the correct mode.
-        # Additionally check that `file` is not a directory, as on Windows
-        # directories pass the os.access check.
-        def _access_check(fn, mode):
-            return (os.path.exists(fn) and os.access(fn, mode)
-                    and not os.path.isdir(fn))
-
-        # If we're given a path with a directory part, look it up directly rather
-        # than referring to PATH directories. This includes checking relative to the
-        # current directory, e.g. ./script
-        if os.path.dirname(cmd):
-            if _access_check(cmd, mode):
-                return cmd
-            return None
-
-        if path is None:
-            path = os.environ.get("PATH", os.defpath)
-        if not path:
-            return None
-        path = path.split(os.pathsep)
-
-        if sys.platform == "win32":
-            # The current directory takes precedence on Windows.
-            if not os.curdir in path:
-                path.insert(0, os.curdir)
-
-            # PATHEXT is necessary to check on Windows.
-            pathext = os.environ.get("PATHEXT", "").split(os.pathsep)
-            # See if the given file matches any of the expected path extensions.
-            # This will allow us to short circuit when given "python.exe".
-            # If it does match, only test that one, otherwise we have to try
-            # others.
-            if any(cmd.lower().endswith(ext.lower()) for ext in pathext):
-                files = [cmd]
-            else:
-                files = [cmd + ext for ext in pathext]
-        else:
-            # On other platforms you don't have things like PATHEXT to tell you
-            # what file suffixes are executable, so just pass on cmd as-is.
-            files = [cmd]
-
-        seen = set()
-        for dir in path:
-            normdir = os.path.normcase(dir)
-            if not normdir in seen:
-                seen.add(normdir)
-                for thefile in files:
-                    name = os.path.join(dir, thefile)
-                    if _access_check(name, mode):
-                        return name
-        return None
-
-
 # Site-packages functions - use native function if available.
 if hasattr(site, 'getsitepackages'):
     getsitepackages = site.getsitepackages
-# Backported For Python 2.6 and virtualenv.
+# Backported for virtualenv.
 # Module 'site' in virtualenv might not have this attribute.
 else:
     def getsitepackages():
@@ -776,36 +599,13 @@ else:
             # TODO Implement for Python 2.6 on other platforms.
             raise NotImplementedError()
 
-
-# Function to reload a module - used to reload module 'PyInstaller.config' for tests.
-# imp module is deprecated since Python 3.4.
-try:
-    from importlib import reload as module_reload
-except ImportError:
-    from imp import reload as module_reload
-
-
 # Wrapper to load a module from a Python source file.
 # This function loads import hooks when processing them.
-if is_py2:
-    import imp
-    importlib_load_source = imp.load_source
-else:
-    import importlib.machinery
-    def importlib_load_source(name, pathname):                # Import module from a file.
-        mod_loader = importlib.machinery.SourceFileLoader(name, pathname)
-        return mod_loader.load_module()
-
-
-try:
-    # new in Python 3
-    FileNotFoundError_ = FileNotFoundError
-except NameError:
-    class FileNotFoundError(OSError):
-        pass
-else:
-    FileNotFoundError = FileNotFoundError_
-    del FileNotFoundError_
+import importlib.machinery
+def importlib_load_source(name, pathname):
+    # Import module from a file.
+    mod_loader = importlib.machinery.SourceFileLoader(name, pathname)
+    return mod_loader.load_module()
 
 
 # Patterns of module names that should be bundled into the base_library.zip.
@@ -815,6 +615,8 @@ PY3_BASE_MODULES = {
     # These modules are direct or indirect dependencies of encodings.* modules.
     # encodings modules must be recursively included to set the I/O encoding during
     # python startup.
+    '_bootlocale',
+    '_collections_abc',
     '_weakrefset',
     'abc',
     'codecs',
@@ -839,12 +641,6 @@ PY3_BASE_MODULES = {
     'weakref',
     'warnings',
 }
-
-if is_py3:
-    PY3_BASE_MODULES.update({
-        '_bootlocale',
-        '_collections_abc',
-    })
 
 # Object types of Pure Python modules in modulegraph dependency graph.
 # Pure Python modules have code object (attribute co_code).
@@ -930,28 +726,8 @@ def check_requirements():
     Fail hard if any requirement is not met.
     """
     # Fail hard if Python does not have minimum required version
-    if sys.version_info < (3, 5) and sys.version_info[:2] != (2, 7):
-        raise SystemExit('PyInstaller requires at least Python 2.7 or 3.5+.')
-
-
-if not is_py3:
-    class suppress(object):
-        """Context manager to suppress specified exceptions
-        After the exception is suppressed, execution proceeds with the next
-        statement following the with statement.
-             with suppress(FileNotFoundError):
-                 os.remove(somefile)
-             # Execution still resumes here if the file was already removed
-        """
-
-        def __init__(self, *exceptions):
-            self._exceptions = exceptions
-
-        def __enter__(self):
-            pass
-
-        def __exit__(self, exctype, excinst, exctb):
-            return (exctype is not None and
-                    issubclass(exctype, self._exceptions))
-else:
-    from contextlib import suppress  # noqa: F401
+    if sys.version_info < (3,):
+        raise SystemExit('PyInstaller requires at least Python 3.5 or newer. '
+                         'The last version supporting Python 2.7 was v3.6.')
+    elif sys.version_info < (3, 5):
+        raise SystemExit('PyInstaller requires at least Python 3.5 or newer.')

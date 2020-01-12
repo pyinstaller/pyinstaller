@@ -13,7 +13,6 @@
 __author__ = 'Suzumizaki-Kimitaka(鈴見咲 君高)'
 
 from PyInstaller.utils.tests import skipif_notwin
-from PyInstaller import is_py2
 
 
 test_manifest_which_uses_non_ascii = \
@@ -58,11 +57,7 @@ def test_reading_manifest(tmpdir):
     # We create the XML file written with UTF-8 as Microsoft tools do.
     tmppath = tmpdir.join('manifest.xml')
     with tmppath.open('wt', ensure=True, encoding='utf-8') as write_handle:
-        if is_py2:
-            write_handle.write(unicode(test_manifest_which_uses_non_ascii,
-                                       'utf-8'))
-        else:
-            write_handle.write(test_manifest_which_uses_non_ascii)
+        write_handle.write(test_manifest_which_uses_non_ascii)
     # ... and check the following method always uses UTF-8.
     # It will read the file, reformat and overwrite it.
     winmanifest.create_manifest(str(tmppath), None, None)

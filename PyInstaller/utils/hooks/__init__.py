@@ -17,7 +17,7 @@ import sys
 import textwrap
 
 from ...compat import base_prefix, exec_command_stdout, exec_python, \
-    is_darwin, is_py2, is_py3, is_venv, string_types, open_file, \
+    is_darwin, is_venv, string_types, open_file, \
     EXTENSION_SUFFIXES, ALL_SUFFIXES
 from ... import HOMEPATH
 from ... import log as logging
@@ -57,13 +57,6 @@ def __exec_python_cmd(cmd, env=None):
     # Some functions use some PyInstaller code in subprocess so add
     # PyInstaller HOMEPATH to sys.path too.
     pp = os.pathsep.join(CONF['pathex'] + [HOMEPATH])
-
-    # On Python 2, `os.environ` may only contain bytes.
-    # Encode unicode filenames using FS encoding.
-    # TODO: `os.environ` wrapper that encodes automatically?
-    if is_py2:
-        if isinstance(pp, unicode):
-            pp = pp.encode(sys.getfilesystemencoding())
 
     # PYTHONPATH might be already defined in the 'env' argument or in
     # the original 'os.environ'. Prepend it.
@@ -182,9 +175,7 @@ def get_homebrew_path(formula=''):
     except subprocess.CalledProcessError:
         logger.debug('homebrew formula "%s" not installed' % formula)
     if path:
-        if is_py3:
-            path = path.decode('utf8')  # OS X filenames are UTF-8
-        return path
+        return path.decode('utf8')  # OS X filenames are UTF-8
     else:
         return None
 

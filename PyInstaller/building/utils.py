@@ -28,7 +28,7 @@ import struct
 from PyInstaller.config import CONF
 from .. import compat
 from ..compat import is_darwin, is_win, EXTENSION_SUFFIXES, \
-    open_file, is_py3, is_py37, is_cygwin
+    open_file, is_py37, is_cygwin
 from ..depend import dylib
 from ..depend.bindepend import match_binding_redirect
 from ..utils import misc
@@ -99,21 +99,14 @@ def add_suffix_to_extensions(toc):
     new_toc = TOC()
     for inm, fnm, typ in toc:
         if typ == 'EXTENSION':
-            if is_py3:
-                # Change the dotted name into a relative path. This places C
-                # extensions in the Python-standard location. This only works
-                # in Python 3; see comments above
-                # ``sys.meta_path.append(CExtensionImporter())`` in
-                # ``pyimod03_importers``.
-                inm = inm.replace('.', os.sep)
+            # Change the dotted name into a relative path. This places C
+            # extensions in the Python-standard location.
+            inm = inm.replace('.', os.sep)
             # In some rare cases extension might already contain a suffix.
             # Skip it in this case.
             if os.path.splitext(inm)[1] not in EXTENSION_SUFFIXES:
                 # Determine the base name of the file.
-                if is_py3:
-                    base_name = os.path.basename(inm)
-                else:
-                    base_name = inm.rsplit('.')[-1]
+                base_name = os.path.basename(inm)
                 assert '.' not in base_name
                 # Use this file's existing extension. For extensions such as
                 # ``libzmq.cp36-win_amd64.pyd``, we can't use
@@ -366,9 +359,7 @@ def cacheDigest(fnm, redirects):
         for chunk in iter(lambda: f.read(16 * 1024), b""):
             hasher.update(chunk)
     if redirects:
-        redirects = str(redirects)
-        if is_py3:
-            redirects = redirects.encode('utf-8')
+        redirects = str(redirects).encode('utf-8')
         hasher.update(redirects)
     digest = bytearray(hasher.digest())
     return digest

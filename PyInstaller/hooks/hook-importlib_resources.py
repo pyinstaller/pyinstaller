@@ -13,7 +13,7 @@
 """
 
 import os
-from PyInstaller.compat import is_py2, is_py3, is_py37
+from PyInstaller.compat import is_py37
 from PyInstaller.utils.hooks import get_module_file_attribute
 
 # Include the version.txt file, used to set __version__
@@ -30,7 +30,5 @@ if is_py37:
         'importlib_resources._py2',
         'importlib_resources._py3',
     ]
-elif is_py3:
+else:
     excludedmodules = ['importlib_resources._py2']
-elif is_py2:
-    excludedmodules = ['importlib_resources._py3']

@@ -15,7 +15,7 @@ This module contains various helper functions for git DVCS
 """
 
 import os
-from ..compat import exec_command, exec_command_rc, FileNotFoundError
+from ..compat import exec_command, exec_command_rc
 
 try:
     WindowsError

@@ -341,6 +341,9 @@ def getAssemblies(pth):
     Redistributable runtime libraries 9.0.
 
     Python 3.3+ is compiled with version 10.0 and does not use SxS assemblies.
+
+    FIXME: Can this be removed since we now only support Python 3.5+?
+    FIXME: IS there some test-case covering this?
     """
     if pth.lower().endswith(".manifest"):
         return []

@@ -26,7 +26,6 @@
     #include <windows.h>  /* HMODULE */
 #endif
 #include <wchar.h>
-#include "pyi_python27_compat.h"
 
 /*
  * These macros used to define variables to hold dynamically accessed entry
@@ -121,7 +120,6 @@ EXTDECLPROC(PyObject *, PyList_New, (int));
 EXTDECLPROC(int, PyList_Append, (PyObject *, PyObject *));
 /* Create a new value based on a format string similar to those accepted by the PyArg_Parse*() */
 EXTDECLPROC(PyObject *, Py_BuildValue, (char *, ...));
-EXTDECLPROC(PyObject *, PyString_FromString, (const char *));
 /* Create a Unicode object from the char buffer. The bytes will be interpreted as being UTF-8 encoded. */
 EXTDECLPROC(PyObject *, PyUnicode_FromString, (const char *));
 EXTDECLPROC(PyObject *, PyObject_CallFunction, (PyObject *, char *, ...));
@@ -144,7 +142,6 @@ EXTDECLPROC(wchar_t *, Py_DecodeLocale, (char *, size_t *));
 
 /* Used to add PYZ to sys.path */
 EXTDECLPROC(PyObject *, PySys_GetObject, (const char *));
-EXTDECLPROC(PyObject *, PyString_FromFormat, (const char *, ...));
 EXTDECLPROC(PyObject *, PyUnicode_FromFormat, (const char *, ...));
 EXTDECLPROC(PyObject *, PyUnicode_DecodeFSDefault, (const char *));
 EXTDECLPROC(PyObject *, PyUnicode_Decode,

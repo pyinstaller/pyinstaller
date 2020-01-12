@@ -10,9 +10,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-from __future__ import print_function
-
-import codecs
 import sys
 import os
 from setuptools import setup
@@ -20,16 +17,12 @@ from setuptools import setup
 # Hack required to allow compat to not fail when pypiwin32 isn't found
 os.environ["PYINSTALLER_NO_PYWIN32_FAILURE"] = "1"
 from PyInstaller import __version__ as version, HOMEPATH, PLATFORM
-from PyInstaller.compat import is_win, is_cygwin, is_py2
+from PyInstaller.compat import is_win, is_cygwin
 
 REQUIREMENTS = [
     'setuptools',
     'altgraph',
 ]
-
-# dis3 is used for our version of modulegraph
-if sys.version_info < (3,):
-    REQUIREMENTS.append('dis3')
 
 # For Windows install PyWin32 if not already installed.
 if sys.platform.startswith('win'):
@@ -43,12 +36,8 @@ if sys.platform == 'darwin':
 # Create long description from README.rst and doc/CHANGES.rst.
 # PYPI page will contain complete PyInstaller changelog.
 def read(filename):
-    if is_py2:
-        with codecs.open(filename, encoding='utf-8') as fp:
-            return unicode(fp.read())
-    else:
-        with open(filename, 'r', encoding='utf-8') as fp:
-            return fp.read()
+    with open(filename, 'r', encoding='utf-8') as fp:
+        return fp.read()
 long_description = u'\n\n'.join([read('README.rst'),
                                  read('doc/_dummy-roles.txt'),
                                  read('doc/CHANGES.rst')])
@@ -74,9 +63,8 @@ Operating System :: POSIX :: Linux
 Operating System :: POSIX :: SunOS/Solaris
 Programming Language :: C
 Programming Language :: Python
-Programming Language :: Python :: 2
-Programming Language :: Python :: 2.7
 Programming Language :: Python :: 3
+Programming Language :: Python :: 3 :: Only
 Programming Language :: Python :: 3.5
 Programming Language :: Python :: 3.6
 Programming Language :: Python :: 3.7
@@ -150,7 +138,7 @@ class MyBDist_Egg(bdist_egg):
 
 setup(
     install_requires=REQUIREMENTS,
-    python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*',
+    python_requires='>=3.5',
 
     name='PyInstaller',
     version=version,

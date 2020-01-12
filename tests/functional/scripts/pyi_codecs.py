@@ -10,10 +10,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
-# This import forces Python 2 to handle string as unicode - as with prefix 'u'.
-from __future__ import unicode_literals
-
 # Encode unicode string into utf8 and then back to unicode strings.
 # The original string and the result should be equal.
 
