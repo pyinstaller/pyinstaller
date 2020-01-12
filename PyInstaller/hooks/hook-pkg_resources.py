@@ -14,4 +14,9 @@ from PyInstaller.utils.hooks import collect_submodules
 # sys.meta_path based import magic to expose them as pkg_resources.extern.*
 hiddenimports = collect_submodules('pkg_resources._vendor')
 
+# pkg_resources v45.0 dropped support for Python 2 and added this
+# module printing a warning. We could save some bytes if we would
+# replace this by a fake module.
+hiddenimports.append('pkg_resources.py2_warn')
+
 excludedimports = ['__main__']
