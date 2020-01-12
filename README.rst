@@ -40,7 +40,7 @@ but is not tested against them as part of the continuous integration tests.
 Main Advantages
 ---------------
 
-- Works out-of-the-box with any Python version 2.7 / 3.5-3.7.
+- Works out-of-the-box with any Python version 3.5-3.7.
 - Fully multi-platform, and uses the OS support to load the dynamic libraries,
   thus ensuring full compatibility.
 - Correctly bundles the major Python packages such as numpy, PyQt4, PyQt5,
@@ -66,7 +66,7 @@ Requirements and Tested Platforms
 
 - Python: 
 
- - 2.7 or 3.5-3.7
+ - 3.5-3.7
  - PyCrypto_ 2.4+ (only if using bytecode encryption)
 
 - Windows (32bit/64bit):
