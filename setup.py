@@ -10,9 +10,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-from __future__ import print_function
-
-import codecs
 import sys
 import os
 from setuptools import setup
@@ -20,7 +17,7 @@ from setuptools import setup
 # Hack required to allow compat to not fail when pypiwin32 isn't found
 os.environ["PYINSTALLER_NO_PYWIN32_FAILURE"] = "1"
 from PyInstaller import __version__ as version, HOMEPATH, PLATFORM
-from PyInstaller.compat import is_win, is_cygwin, is_py2
+from PyInstaller.compat import is_win, is_cygwin
 
 REQUIREMENTS = [
     'setuptools',
@@ -39,12 +36,8 @@ if sys.platform == 'darwin':
 # Create long description from README.rst and doc/CHANGES.rst.
 # PYPI page will contain complete PyInstaller changelog.
 def read(filename):
-    if is_py2:
-        with codecs.open(filename, encoding='utf-8') as fp:
-            return unicode(fp.read())
-    else:
-        with open(filename, 'r', encoding='utf-8') as fp:
-            return fp.read()
+    with open(filename, 'r', encoding='utf-8') as fp:
+        return fp.read()
 long_description = u'\n\n'.join([read('README.rst'),
                                  read('doc/_dummy-roles.txt'),
                                  read('doc/CHANGES.rst')])
