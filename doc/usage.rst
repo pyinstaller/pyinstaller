@@ -111,13 +111,13 @@ a list, e.g.
     import PyInstaller.__main__
 
     PyInstaller.__main__.run([
+        os.path.join('my_package', '__main__.py'),
         '--name=%s' % package_name,
         '--onefile',
         '--windowed',
         '--add-binary=%s' % os.path.join('resource', 'path', '*.png'),
         '--add-data=%s' % os.path.join('resource', 'path', '*.txt'),
         '--icon=%s' % os.path.join('resource', 'path', 'icon.ico'),
-        os.path.join('my_package', '__main__.py'),
     ])
 
 
