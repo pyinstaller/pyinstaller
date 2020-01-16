@@ -508,6 +508,11 @@ def add_qt5_dependencies(hook_file):
         # Mac: rename from ``qt`` to ``qt5`` to match names in Windows/Linux.
         if is_darwin and lib_name.startswith('qt'):
             lib_name = 'qt5' + lib_name[2:]
+
+        # match libs with QT_LIBINFIX set to '_conda', i.e. conda-forge builds
+        if lib_name.endswith('_conda'):
+            lib_name = lib_name[:-6]
+
         logger.debug('add_qt5_dependencies: raw lib %s -> parsed lib %s',
                      imp, lib_name)
 
