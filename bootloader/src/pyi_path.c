@@ -125,20 +125,7 @@ char *
 pyi_path_join(char *result, const char *path1, const char *path2)
 {
     size_t len = 0;
-
-    if (NULL == result) {
-        len = strlen(path1) + strlen(path2) + 2;
-        result = malloc(len);
-
-        if (NULL == result) {
-            return NULL;
-        }
-
-        memset(result, 0, len);
-    }
-    else {
-        memset(result, 0, PATH_MAX);
-    }
+    memset(result, 0, PATH_MAX);
     /* Copy path1 to result without null terminator */
     strncpy(result, path1, strlen(path1));
     /* Append trailing slash if missing. */
