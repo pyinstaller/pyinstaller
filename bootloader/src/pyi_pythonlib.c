@@ -107,7 +107,7 @@ pyi_pylib_load(ARCHIVE_STATUS *status)
         char ucrtpath[PATH_MAX];
         pyi_path_join(ucrtpath, status->temppath, "ucrtbase.dll");
         if (pyi_path_exists(ucrtpath)) {
-            VS("LOADER: ucrtbase.dll is exists: %s\n", ucrtpath);
+            VS("LOADER: ucrtbase.dll found: %s\n", ucrtpath);
             pyi_utils_dlopen(ucrtpath);
         }
     }
