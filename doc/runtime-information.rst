@@ -9,7 +9,7 @@ source or whether it is bundled ("frozen"). You can use the following code to
 check "are we bundled?"::
 
     import sys
-    if getattr(sys, 'frozen') and hasattr(sys, '_MEIPASS'):
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
         print('running in a PyInstaller bundle')
     else:
         print('running in a normal Python process')
