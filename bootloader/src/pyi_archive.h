@@ -32,6 +32,7 @@
 /* Flags for the storage type. */
 #define ARCHIVE_FLAG_UNCOMPRESSED     0x0  /* data is uncompressed */
 #define ARCHIVE_FLAG_COMPRESSED       0x1  /* data is compressed */
+#define ARCHIVE_FLAG_SPLITTED         0x2  /* data is splitted into multiple files */
 
 /* TOC entry for a CArchive */
 typedef struct _toc {
@@ -109,6 +110,7 @@ TOC *pyi_arch_increment_toc_ptr(const ARCHIVE_STATUS *status, const TOC* ptoc);
 
 unsigned char *pyi_arch_extract(ARCHIVE_STATUS *status, TOC *ptoc);
 int pyi_arch_extract2fs(ARCHIVE_STATUS *status, TOC *ptoc);
+int pyi_arch_extractSplit2fs(ARCHIVE_STATUS *status, TOC *ptoc);
 
 /**
  * Helpers for embedders

@@ -199,6 +199,12 @@ pyi_arch_extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
         return -1;
     }
 
+    /* Splitfile feature
+     * This allows arbitrarily large files to be used inside the archive. */
+    if (ptoc->flag & ARCHIVE_FLAG_SPLITTED) {
+        return pyi_arch_extractSplit2fs(status, ptoc);
+    }
+
     out = pyi_open_target(status->temppath, ptoc->name);
     len = ntohl(ptoc->ulen);
 
@@ -220,6 +226,113 @@ pyi_arch_extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
     }
     free(data);
 
+    return 0;
+}
+
+/*
+ * Extract the attributes from the archive name. Return the length
+ * of the base name/file name.
+ *
+ * fnm, index and num_items are optional parameters.
+ */
+static size_t
+parse_splitfile_name(char *name, char *fnm, int *index, int *num_items)
+{
+    char *token;
+    size_t len;
+    int tmp1;
+    int tmp2;
+
+    /* Allow index and num_items being NULL */
+    if (index == NULL) {
+        index = &tmp1;
+    }
+    if (num_items == NULL) {
+        num_items = &tmp2;
+    }
+
+    /* Extract splitfile token from ptoc->name
+     * Separate the token from the end of the entry name so that the
+     * special character '_' can be used in the file name. */
+    token = strrchr(name, '_');
+    if (token == NULL) {
+        return -1;
+    }
+
+    /* Extract the index and total number of items from the token */
+    sscanf(token, "_%d|%d", index, num_items);
+    if (*index <= 0 || *num_items <= 0 || *index > *num_items) {
+        return -1;
+    }
+
+    /* Extract the basis filename from ptoc->name */
+    len = strlen(name) - strlen(token);
+    if (fnm != NULL) {
+        strncpy(fnm, name, len);
+        fnm[len] = '\0';
+    }
+
+    return len;
+}
+
+/*
+ * Extract a file divided into several entries from the archive
+ * and copy it to the file system.
+ */
+int
+pyi_arch_extractSplit2fs(ARCHIVE_STATUS *status, TOC *ptoc) {
+    FILE *out;
+    size_t result, len;
+    char fnm[PATH_MAX];
+    int index, num_items;
+    TOC *toc;
+    TOC **data_ptr;
+    int tmp;
+    unsigned char *data;
+
+    /* Extract information from ptoc->name */
+    len = parse_splitfile_name(ptoc->name, fnm, &index, &num_items);
+    if (len == 0) {
+        return -1;
+    }
+
+    /* Ignore all entries that are not the head of the file. */
+    if (index != 1) {
+        return 0;
+    }
+
+    /* Create a array of TOC pointers */
+    data_ptr = (TOC **) malloc(sizeof(TOC *) * num_items);
+
+    /* Scan through the archive finding the other entries
+     * and put them into order */
+    toc = status->tocbuff;
+    while (toc < status->tocend) {
+        if (strncmp(toc->name, fnm, len) == 0) {
+            parse_splitfile_name(toc->name, NULL, &index, NULL);
+            /* Filename indexes are 1-based */
+            data_ptr[index - 1] = toc;
+        }
+        toc = pyi_arch_increment_toc_ptr(status, toc);
+    }
+
+    /* Append the data in an ordered way */
+    out = pyi_open_target(status->temppath, fnm);
+    for (tmp = 0; tmp < num_items; tmp++) {
+        data = pyi_arch_extract(status, data_ptr[tmp]);
+        len = ntohl(data_ptr[tmp]->ulen);
+
+        result = fwrite(data, len, 1, out);
+        if ((1 != result) && (len > 0)) {
+            FATAL_PERROR("fwrite", "Failed to write all bytes for %s\n", ptoc->name);
+            return -1;
+        }
+
+        free(data);
+    }
+    fclose(out);
+
+    free(data_ptr);
     return 0;
 }
 

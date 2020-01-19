@@ -243,3 +243,18 @@ def module_parent_packages(full_modname):
         prefix += '.' + pkg if prefix else pkg
         parents.append(prefix)
     return parents
+
+
+def chunk_sizes(length, n):
+    """Yields the sizes of chunks of a length divided into n sections.
+
+    >>> chunk_sizes(10, 3)
+    [4, 3, 3]
+
+    If param length cannot be divided into n sections without remainder,
+    the first chunk is inflated.
+    """
+    size, rem = divmod(length, n)
+    for _ in range(n):
+        yield size + rem
+        rem = 0

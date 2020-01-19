@@ -833,6 +833,7 @@ class MERGE(object):
 #  better understanding
 UNCOMPRESSED = 0x0
 COMPRESSED = 0x1
+SPLITTED = 0x2
 
 _MISSING_BOOTLOADER_ERRORMSG = """
 Fatal error: PyInstaller does not include a pre-compiled bootloader for your

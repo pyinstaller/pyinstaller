@@ -547,6 +547,44 @@ def test_hook_collect_submodules(pyi_builder, script_dir):
 def test_arbitrary_ext(pyi_builder):
     pyi_builder.test_script('pyi_arbitrary_ext.foo')
 
+
+def test_arbitrary_file_size(monkeypatch, pyi_builder, tmpdir):
+    # Generate 100MiB large random file
+    # 1 MiB = 2**20 bytes = 1048576 bytes
+    arbitrary_size_file = tmpdir.join("pyi_arbitrary_size.bin")
+
+    with arbitrary_size_file.open("wb") as f:
+        random_bytes = os.urandom(1024)
+        for _ in range(102400):
+            f.write(random_bytes)
+        # Ensure the file is really 100 MiB
+        assert f.tell() == 100 * 2 ** 20
+        checksum = sum(random_bytes) * 102400
+
+    # To avoid generating a 1GB file, the maximum file limit is reduced
+    monkeypatch.setattr("PyInstaller.archive.writers.MAX_FILE_SIZE",
+                        70 * 2 ** 20)  # 70 MiB
+
+    pyi_builder.test_source(
+        """
+        import os
+        import sys
+        
+        checksum = 0
+        file_path = os.path.join(sys._MEIPASS, 'pyi_arbitrary_size.bin')
+        with open(file_path, 'rb') as file:
+            # Generate checksum of the file
+            for _ in range(102400):
+                checksum += sum(file.read(1024))
+        
+        # Check if the generated checksum matches the checksum 
+        # of the pytest original generated file
+        assert checksum == %d
+        """ % checksum,
+        ['--add-data', '%s%s%s' % (arbitrary_size_file, os.pathsep, '.')]
+    )
+
+
 def test_option_runtime_tmpdir(pyi_builder):
     "Test to ensure that option `runtime_tmpdir` can be set and has effect."
 

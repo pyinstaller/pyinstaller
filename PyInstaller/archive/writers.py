@@ -29,12 +29,20 @@ import struct
 from types import CodeType
 import marshal
 import zlib
+import math
 
 from PyInstaller.building.utils import get_code_object, strip_paths_in_code,\
     fake_pyc_timestamp
 from PyInstaller.loader.pyimod02_archive import PYZ_TYPE_MODULE, PYZ_TYPE_PKG, \
     PYZ_TYPE_DATA
 from ..compat import BYTECODE_MAGIC
+from ..utils.misc import chunk_sizes
+
+# Split files into 512 MiB chunks. This is below the maximum size of a single
+# file in the archive of 2 GB, but the bootloader allocates the size
+# of the file in memory for unpacking. Therefore 512 MiB is a reasonable
+# compromise.
+MAX_FILE_SIZE = 512 * 2 ** 20
 
 
 class ArchiveWriter(object):
@@ -375,9 +383,46 @@ class CArchiveWriter(ArchiveWriter):
 
                 code_data = marshal.dumps(code)
                 ulen = len(code_data)
+            elif flag & api.SPLITTED:
+                import mmap
+
+                (fnm, ulen, offset) = pathnm
+                # To avoid too many addresses being mapped to the file
+                # on 32-bit systems, calculate a suitable offset.
+                n, x = divmod(offset, mmap.ALLOCATIONGRANULARITY)
+                mmap_offset = n * mmap.ALLOCATIONGRANULARITY
+
+                file = open(fnm, 'rb')
+                fh = mmap.mmap(file.fileno(),
+                               x + ulen,
+                               access=mmap.ACCESS_READ,
+                               offset=mmap_offset)
+                fh.seek(x)
+                file.close()  # keeps the mmap instance open
             else:
                 fh = open(pathnm, 'rb')
                 ulen = os.fstat(fh.fileno()).st_size
+
+                if ulen > MAX_FILE_SIZE:
+                    # If the file is larger than MAX_FILE_SIZE,
+                    # it should be split into several archive files.
+                    # The bootloader merges files with the same basename and
+                    # the SPLITTED flag into one file during extraction.
+                    num_chunks = math.ceil(ulen / MAX_FILE_SIZE)
+                    offset = 0
+
+                    for i, size in enumerate(chunk_sizes(ulen, num_chunks)):
+                        # Divide the data into several TOC entries.
+                        self.add((
+                            nm + "_%d|%d" % (i + 1, num_chunks),
+                            (pathnm, size, offset),  # (file, size, offset)
+                            flag | api.SPLITTED,
+                            typcd
+                        ))
+                        offset += size
+
+                    fh.close()
+                    return
         except IOError:
             print("Cannot find ('%s', '%s', %s, '%s')" % (nm, pathnm, flag, typcd))
             raise
