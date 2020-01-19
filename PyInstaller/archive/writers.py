@@ -344,9 +344,9 @@ class CArchiveWriter(ArchiveWriter):
 
         ENTRY must have:
           entry[0] is name (under which it will be saved).
-          entry[1] is fullpathname of the file.
-          entry[2] is a flag for it's storage format (0==uncompressed,
-          1==compressed)
+          entry[1] is fullpathname of the file or a descriptor for
+          a splitted file
+          entry[2] is a flag for it's storage format.
           entry[3] is the entry's type code.
           Version 5:
             If the type code is 'o':
@@ -356,6 +356,7 @@ class CArchiveWriter(ArchiveWriter):
                   W arg (warning option arg)
                   s  (meaning do site.py processing.
         """
+        from ..building import api
         (nm, pathnm, flag, typcd) = entry[:4]
         # FIXME Could we make the version 5 the default one?
         # Version 5 - allow type 'o' = runtime option.
@@ -382,11 +383,11 @@ class CArchiveWriter(ArchiveWriter):
             raise
 
         where = self.lib.tell()
-        assert flag in range(3)
+        assert flag in range(255)
         if not fh and not code_data:
             # no need to write anything
             pass
-        elif flag == 1:
+        elif flag & api.COMPRESSED:
             comprobj = zlib.compressobj(self.LEVEL)
             if code_data is not None:
                 self.lib.write(comprobj.compress(code_data))

@@ -29,13 +29,17 @@
 #define ARCHIVE_ITEM_DATA             'x'  /* data */
 #define ARCHIVE_ITEM_RUNTIME_OPTION   'o'  /* runtime option */
 
+/* Flags for the storage type. */
+#define ARCHIVE_FLAG_UNCOMPRESSED     0x0  /* data is uncompressed */
+#define ARCHIVE_FLAG_COMPRESSED       0x1  /* data is compressed */
+
 /* TOC entry for a CArchive */
 typedef struct _toc {
     int  structlen;  /*len of this one - including full len of name */
     int  pos;        /* pos rel to start of concatenation */
     int  len;        /* len of the data (compressed) */
     int  ulen;       /* len of data (uncompressed) */
-    char cflag;      /* is it compressed (really a byte) */
+    char flag;       /* storage type flag */
     char typcd;      /* type code -'b' binary, 'z' zlib, 'm' module,
                       * 's' script (v3),'x' data, 'o' runtime option  */
     char name[1];    /* the name to save it as */

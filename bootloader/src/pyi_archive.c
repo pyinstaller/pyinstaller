@@ -168,7 +168,7 @@ pyi_arch_extract(ARCHIVE_STATUS *status, TOC *ptoc)
         return NULL;
     }
 
-    if (ptoc->cflag == '\1') {
+    if (ptoc->flag & ARCHIVE_FLAG_COMPRESSED) {
         tmp = decompress(data, ptoc);
         free(data);
         data = tmp;

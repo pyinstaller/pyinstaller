@@ -167,7 +167,7 @@ def show(name, arch):
         print(" Name: (ispkg, pos, len)")
         toc = arch.toc
     else:
-        print(" pos, length, uncompressed, iscompressed, type, name")
+        print(" pos, length, uncompressed, flag, type, name")
         toc = arch.toc.data
     pprint.pprint(toc)
 

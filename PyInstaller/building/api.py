@@ -826,8 +826,13 @@ class MERGE(object):
             return topath
 
 
-UNCOMPRESSED = 0
-COMPRESSED = 1
+# These parameters are flags (bit fields) that provide information about the
+# way the data is stored in the archive.
+# They can be combined using binary operators
+# TODO Use enum.IntFlag as of minimum supported version 3.6 for
+#  better understanding
+UNCOMPRESSED = 0x0
+COMPRESSED = 0x1
 
 _MISSING_BOOTLOADER_ERRORMSG = """
 Fatal error: PyInstaller does not include a pre-compiled bootloader for your
