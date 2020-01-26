@@ -103,6 +103,8 @@ jobs:
               git fetch origin $TRAVIS_BRANCH:$TRAVIS_BRANCH --depth 1 || travis_terminate 1;
               flake8-diff -v -v -v $TRAVIS_BRANCH || travis_terminate 1;
             fi
+        - python setup.py sdist bdist_wheel
+        - pip install -v .
 
     - <<: *test-pyinstaller
       python: 3.5
