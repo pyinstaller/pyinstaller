@@ -16,8 +16,7 @@ from setuptools import setup
 
 # Hack required to allow compat to not fail when pypiwin32 isn't found
 os.environ["PYINSTALLER_NO_PYWIN32_FAILURE"] = "1"
-from PyInstaller import HOMEPATH, PLATFORM
-from PyInstaller.compat import is_win, is_cygwin
+
 
 #-- plug-in building the bootloader
 
@@ -36,6 +35,8 @@ class build_bootloader(Command):
 
     def bootloader_exists(self):
         # Checks is the console, non-debug bootloader exists
+        from PyInstaller import HOMEPATH, PLATFORM
+        from PyInstaller.compat import is_win, is_cygwin
         exe = 'run'
         if is_win or is_cygwin:
             exe = 'run.exe'
@@ -44,6 +45,7 @@ class build_bootloader(Command):
 
     def compile_bootloader(self):
         import subprocess
+        from PyInstaller import HOMEPATH
 
         src_dir = os.path.join(HOMEPATH, 'bootloader')
         cmd = [sys.executable, './waf', 'configure', 'all']
