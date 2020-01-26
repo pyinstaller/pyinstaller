@@ -23,7 +23,6 @@ from PyInstaller.compat import is_win, is_cygwin
 
 from distutils.core import Command
 from distutils.command.build import build
-from setuptools.command.bdist_egg import bdist_egg
 
 
 class build_bootloader(Command):
@@ -69,17 +68,11 @@ class MyBuild(build):
         self.run_command('build_bootloader')
         build.run(self)
 
-class MyBDist_Egg(bdist_egg):
-    def run(self):
-        self.run_command('build_bootloader')
-        bdist_egg.run(self)
-
 #--
 
 setup(
     setup_requires = ["setuptools >= 39.2.0"],
     cmdclass = {'build_bootloader': build_bootloader,
                 'build': MyBuild,
-                'bdist_egg': MyBDist_Egg,
                 },
 )
