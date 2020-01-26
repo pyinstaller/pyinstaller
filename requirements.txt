@@ -3,9 +3,12 @@
 # defined in tests/requirements-tools.txt and for extensive testing
 # also tests/requirements-libraries.txt.
 
-setuptools
-pefile; sys_platform == 'win32'
-macholib; sys_platform == 'darwin'
-altgraph
+## IMPORTANT: Keep aligned with setup.cfg
 
+setuptools
+altgraph
+pefile; sys_platform == 'win32'
 pywin32-ctypes; sys_platform == 'win32'
+macholib; sys_platform == 'darwin'
+
+## IMPORTANT: Keep aligned with setup.cfg
