@@ -161,6 +161,9 @@ class Analysis(Target):
         runtime_hooks
                 An optional list of scripts to use as users' runtime hooks. Specified
                 as file names.
+        cipher
+                Add optional instance of the pyz_crypto.PyiBlockCipher class
+                (with a provided key).
         win_no_prefer_redirects
                 If True, prefers not to follow version redirects when searching for
                 Windows SxS Assemblies.
@@ -227,8 +230,7 @@ class Analysis(Target):
             with open_file(pyi_crypto_key_path, 'w', encoding='utf-8') as f:
                 f.write('# -*- coding: utf-8 -*-\n'
                         'key = %r\n' % cipher.key)
-            logger.info('Adding dependencies on pyi_crypto.py module')
-            self.hiddenimports.append(pyz_crypto.get_crypto_hiddenimports())
+            self.hiddenimports.append('tinyaes')
 
         self.excludes = excludes or []
         self.scripts = TOC()

@@ -67,7 +67,7 @@ Requirements and Tested Platforms
 - Python: 
 
  - 3.5-3.7
- - PyCrypto_ 2.4+ (only if using bytecode encryption)
+ - tinyaes_ 1.0+ (only if using bytecode encryption)
 
 - Windows (32bit/64bit):
 
@@ -159,6 +159,6 @@ http://www.pyinstaller.org/funding.html for how to support PyInstaller.
 
 
 
-.. _PyCrypto: https://www.dlitz.net/software/pycrypto/
+.. _tinyaes: https://github.com/naufraghi/tinyaes-py
 .. _`manual`: https://pyinstaller.readthedocs.io/en/latest/
 

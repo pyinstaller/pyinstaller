@@ -36,3 +36,6 @@ flake8-diff
 pywin32; sys_platform == 'win32'
 
 lxml
+
+# crypto support (`--key` option)
+tinyaes ~= 1.0
