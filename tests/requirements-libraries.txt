@@ -56,7 +56,7 @@ zope.interface==4.7.1
 
 # Special cases
 # -------------
-openpyxl==3.0.0; python_version > '3.5'
+openpyxl==3.0.3; python_version > '3.5'
 
 # Wheels are available only on OS X and Win 32. The only Windows 64-bit Python
 # tests run are for Python 3.7, so exclude that. There's no way to simply
