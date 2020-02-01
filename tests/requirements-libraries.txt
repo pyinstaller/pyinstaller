@@ -51,7 +51,7 @@ simplejson==3.17.0
 sqlalchemy==1.3.13
 Unidecode==1.1.1
 zeep==3.4.0
-zope.interface==4.6.0
+zope.interface==4.7.1
 
 
 # Special cases
