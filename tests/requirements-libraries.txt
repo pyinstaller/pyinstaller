@@ -64,7 +64,7 @@ openpyxl==3.0.3; python_version > '3.5'
 pyenchant==2.0.0; sys_platform == 'darwin' or (sys_platform == 'win32' and python_version <= '3.6')
 
 # uvloop does not currently support Windows.
-uvloop==0.13.0; sys_platform != 'win32'
+uvloop==0.14.0; sys_platform != 'win32'
 
 # web3 current releases don't support Python 3.5.
 web3==5.2.2; python_version > '3.5'
