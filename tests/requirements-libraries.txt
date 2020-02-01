@@ -40,7 +40,7 @@ pycryptodome==3.9.4
 pycryptodomex==3.9.4
 pyexcelerate==0.8.0
 pygments==2.5.2
-python-dateutil==2.8.0
+python-dateutil==2.8.1
 pytz==2019.3
 pyusb==1.0.2
 pyzmq==18.1.0
