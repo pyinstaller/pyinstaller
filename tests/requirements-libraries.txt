@@ -71,7 +71,7 @@ web3==5.4.0; python_version > '3.5'
 
 gevent==1.4.0
 ipython==7.12.0
-keyring==19.2.0
+keyring==21.1.0
 numpy==1.17.3
 pandas==0.25.3
 pylint==2.4.3
