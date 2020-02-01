@@ -67,7 +67,7 @@ pyenchant==2.0.0; sys_platform == 'darwin' or (sys_platform == 'win32' and pytho
 uvloop==0.14.0; sys_platform != 'win32'
 
 # web3 current releases don't support Python 3.5.
-web3==5.2.2; python_version > '3.5'
+web3==5.4.0; python_version > '3.5'
 
 gevent==1.4.0
 ipython==7.9.0
