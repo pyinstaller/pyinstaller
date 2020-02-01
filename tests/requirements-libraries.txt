@@ -27,7 +27,7 @@ matplotlib==3.0.3  # pyup: ignore
 babel==2.8.0
 boto==2.49.0
 boto3==1.11.9
-botocore==1.13.7
+botocore==1.14.9
 future==0.18.2
 h5py==2.10.0
 markdown==3.1.1
