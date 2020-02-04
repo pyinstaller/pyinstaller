@@ -25,8 +25,9 @@ if pyqt5_library_info.version:
     if compat.is_darwin:
         # This is based on the layout of the Mac wheel from PyPi.
         data_path = pyqt5_library_info.location['DataPath']
-        libraries = ['QtCore', 'QtWebEngineCore', 'QtQuick', 'QtQml', 'QtNetwork',
-                     'QtGui', 'QtWebChannel', 'QtPositioning']
+        libraries = ['QtCore', 'QtWebEngineCore', 'QtQuick', 'QtQml',
+                     'QtQmlModels', 'QtNetwork', 'QtGui', 'QtWebChannel',
+                     'QtPositioning']
         for i in libraries:
             datas += collect_system_data_files(
                 os.path.join(data_path, 'lib', i + '.framework'),
