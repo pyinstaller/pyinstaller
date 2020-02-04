@@ -46,8 +46,6 @@ pyexcelerate==0.8.0
 pygments==2.5.2
 pylint==2.4.4
 PySide2==5.13.0
-pyqt5==5.13.2
-pyqtwebengine==5.12.1
 python-dateutil==2.8.1
 pytz==2019.3
 pyusb==1.0.2
@@ -70,12 +68,12 @@ openpyxl==3.0.3; python_version > '3.5'
 web3==5.4.0; python_version > '3.5'
 
 # iPython 7.10.0 and higher dropped Python 3.5 support per https://ipython.readthedocs.io/en/stable/whatsnew/version7.html#stop-support-for-python-3-5-adopt-nep-29.
-ipython==7.12.0 ; python_version > '3.5'
-ipython==7.9.0 ; python_version == '3.5'
+ipython==7.12.0; python_version > '3.5'
+ipython==7.9.0; python_version == '3.5'
 
 # pandas 1.0.0 dropped Python 3.5 support.
-pandas==1.0.0 ; python_version > '3.5'
-pandas==0.25.3 ; python_version == '3.5'
+pandas==1.0.0; python_version > '3.5'
+pandas==0.25.3; python_version == '3.5'
 
 
 # Special cases
@@ -84,6 +82,14 @@ pandas==0.25.3 ; python_version == '3.5'
 # tests run are for Python 3.7, so exclude that. There's no way to simply
 # exclude Windows 64 bit Python.
 pyenchant==2.0.0; sys_platform == 'darwin' or (sys_platform == 'win32' and python_version <= '3.6')
+
+# Per https://www.riverbankcomputing.com/pipermail/pyqt/2020-February/042506.html, Windows PyQt5 5.14.0? and 5.14.1? aren't correctly packaged.
+pyqt5==5.13.2; sys_platform == 'win32'
+pyqt5==5.14.1; sys_platform != 'win32'
+# On Appveyor, newer versions fail with the error message
+# ``[1916:2732:0204/144922.809:ERROR:mf_helpers.cc(14)] Error in dxva_video_decode_accelerator_win.cc on line 513``
+pyqtwebengine==5.12.1; sys_platform == 'win32'
+pyqtwebengine==5.14.0; sys_platform != 'win32'
 
 # uvloop does not currently support Windows.
 uvloop==0.14.0; sys_platform != 'win32'
