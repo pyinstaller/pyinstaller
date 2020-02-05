@@ -8,7 +8,7 @@
 # include requirements for base testing
 -r requirements-tools.txt
 
-uvicorn==0.11.2
+uvicorn==0.11.2; python_version > '3.5'
 
 # Needs work
 # ----------
