@@ -9,7 +9,9 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
+from PyInstaller.utils.tests import importorskip
 
+@importorskip('uvicorn')
 def test_uvicorn(pyi_builder):
     """
     Check if uvicorn builds correctly.
