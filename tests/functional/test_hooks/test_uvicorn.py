@@ -11,6 +11,7 @@
 
 from PyInstaller.utils.tests import importorskip
 
+
 @importorskip('uvicorn')
 def test_uvicorn(pyi_builder):
     """
