@@ -67,7 +67,10 @@ def create_py3_base_library(libzip_filename, graph):
         # Class zipfile.PyZipFile is not suitable for PyInstaller needs.
         with zipfile.ZipFile(libzip_filename, mode='w') as zf:
             zf.debug = 3
-            for mod in graph.flatten():
+            # Sort the graph nodes by identifier to ensure repeatable builds
+            graph_nodes = list(graph.flatten())
+            graph_nodes.sort(key=lambda item: item.identifier)
+            for mod in graph_nodes:
                 if type(mod) in (modulegraph.SourceModule, modulegraph.Package):
                     # Bundling just required modules.
                     if module_filter.match(mod.identifier):
