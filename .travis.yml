@@ -57,7 +57,7 @@ jobs:
         #   Print the 10 longest tests; see
         #   https://docs.pytest.org/en/latest/usage.html#profiling-test-execution-duration
         - >
-          py.test -n 3 --maxfail 3 --durations 10
+          pytest -n 3 --maxfail 3 --durations 10
           tests/unit tests/functional
           --ignore tests/functional/test_libraries.py
 
@@ -73,7 +73,7 @@ jobs:
       before_install: *before_install-osx
       script: &script-test-libraries
         - >
-          py.test -n 3 --maxfail 3 --durations 10
+          pytest -n 3 --maxfail 3 --durations 10
           tests/functional/test_libraries.py
 
     - &test-pyinstaller
