@@ -44,7 +44,7 @@ from copy import deepcopy
 from collections import defaultdict
 
 from .. import compat
-from .. import HOMEPATH, configure
+from .. import HOMEPATH, PACKAGEPATH
 from .. import log as logging
 from ..log import INFO, DEBUG, TRACE
 from ..building.datastruct import TOC
@@ -124,7 +124,10 @@ class PyiModuleGraph(ModuleGraph):
         """
         self._top_script_node = None
         self._additional_files_cache = AdditionalFilesCache()
-        self._user_hook_dirs = user_hook_dirs
+        # Prepend PyInstaller hook dir to user hook dirs.
+        self._user_hook_dirs = (
+            [os.path.join(PACKAGEPATH, 'hooks')] + list(user_hook_dirs)
+        )
         # Hook-specific lookup tables.
         # These need to reset when reusing cached PyiModuleGraph to avoid
         # hooks to refer to files or data from another test-case.
@@ -167,7 +170,7 @@ class PyiModuleGraph(ModuleGraph):
             'The root element in %s must be a dict.' % uhd_path)
         for module_name, python_file_name_list in rthooks.items():
             # Ensure the key is a string.
-            assert isinstance(module_name, compat.text_type), (
+            assert isinstance(module_name, compat.string_types), (
                 '%s must be a dict whose keys are strings; %s '
                 'is not a string.' % (uhd_path, module_name))
             # Ensure the value is a list.
@@ -181,7 +184,7 @@ class PyiModuleGraph(ModuleGraph):
             # Merge this with existing run-time hooks.
             for python_file_name in python_file_name_list:
                 # Ensure each item in the list is a string.
-                assert isinstance(python_file_name, compat.text_type), (
+                assert isinstance(python_file_name, compat.string_types), (
                     '%s key %s, item %r must be a string.' %
                     (uhd_path, module_name, python_file_name))
                 # Transform it into an absolute path.
@@ -249,12 +252,9 @@ class PyiModuleGraph(ModuleGraph):
             subpackage of the `PyInstaller.hooks` package containing such hooks
             (e.g., `post_create_package` for post-create package hooks).
         """
-        # Absolute path of this type hook package's directory.
-        system_hook_dir = configure.get_importhooks_dir(hook_type)
-
-        # Cache of such hooks.
+        # Cache of this type of hooks.
         # logger.debug("Caching system %s hook dir %r" % (hook_type, system_hook_dir))
-        hook_dirs = [system_hook_dir]
+        hook_dirs = []
         for user_hook_dir in self._user_hook_dirs:
             # Absolute path of the user-defined subdirectory of this hook type.
             # If this directory exists, add it to the list to be cached.

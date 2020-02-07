@@ -42,7 +42,6 @@ from .utils import _check_guts_toc_mtime, format_binaries_and_datas
 from ..depend.utils import create_py3_base_library, scan_code_for_ctypes
 from ..archive import pyz_crypto
 from ..utils.misc import get_path_to_toplevel_modules, get_unicode_modules, mtime
-from ..configure import get_importhooks_dir
 
 if is_win:
     from ..utils.win32 import winmanifest
