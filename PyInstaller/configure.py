@@ -15,7 +15,6 @@ Configure PyInstaller for the current Python installation.
 """
 
 import os
-import warnings
 
 from . import compat
 from . import log as logging
@@ -85,24 +84,6 @@ def _get_pyinst_cache_dir():
                 os.makedirs(parent_dir)
             os.rename(old_cache_dir, cache_dir)
     return cache_dir
-
-
-# FIXME: Remove the "hook_type" parameter after unifying hook types.
-def get_official_hooks_dir(hook_type=None):
-    from . import PACKAGEPATH
-    if not hook_type:
-        return os.path.join(PACKAGEPATH, 'hooks')
-    else:
-        return os.path.join(PACKAGEPATH, 'hooks', hook_type)
-
-
-def get_importhooks_dir(hook_type=None):
-    warnings.warn(
-        'get_importhooks_dir is deprecated. '
-        'Please use get_official_hooks_dir instead.',
-        DeprecationWarning
-    )
-    return get_official_hooks_dir(hook_type)
 
 
 def get_config(upx_dir, **kw):
