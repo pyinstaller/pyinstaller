@@ -110,6 +110,10 @@ install:
   # Install the PyInstaller test dependencies.
   - pip install -U -r tests/requirements-tools.txt -r tests/requirements-libraries.txt
 
+  # Install PyInstaller Hook Sample, to ensure that tests declared in
+  # entry-points are discovered.
+  - pip install https://github.com/pyinstaller/hooksample/archive/v4.0rc1.zip
+
   # Install PyInstaller
   - pip install -e .
 
@@ -132,7 +136,8 @@ test_script:
   - if "%TEST_LIBRARIES_ONLY%" == "True" (
       set PYTEST_CMD=%PYTEST% -k "test_noarchive[onefile]" ^&^&
         %PYTEST% tests/functional/test_libraries.py
-        -k "not test_noarchive[onefile]"
+        -k "not test_noarchive[onefile]" ^&^&
+        python -m PyInstaller.utils.run_tests
     ) else (
       set PYTEST_CMD=%PYTEST% tests/unit tests/functional
         --ignore tests/functional/test_libraries.py

@@ -75,6 +75,11 @@ jobs:
         - >
           pytest -n 3 --maxfail 3 --durations 10
           tests/functional/test_libraries.py
+        # Specify a rootdir above the repo checkout, since the PyInstaller's
+        # ``setup.cfg`` will confuse test discovery, and pytest searches for
+        # config files from the root dir all the way to the top of the
+        # filesystem (see https://docs.pytest.org/en/latest/customize.html).
+        - python -m PyInstaller.utils.run_tests --rootdir=$HOME
 
     - &test-pyinstaller
       stage: Test - PyInstaller
@@ -158,6 +163,10 @@ install:
   # Install dependencies for tests.
   - pip install --progress-bar=off -U -r tests/requirements-tools.txt -r tests/requirements-libraries.txt
 
+  # Install PyInstaller Hook Sample, to ensure that tests declared in
+  # entry-points are discovered.
+  - pip install https://github.com/pyinstaller/hooksample/archive/v4.0rc1.zip
+
   # Compile bootloader
   - cd bootloader
   - python waf distclean all
@@ -168,7 +177,6 @@ install:
 
   # Make sure the help options print.
   - python -m pyinstaller -h
-
 
 script:
   - true
