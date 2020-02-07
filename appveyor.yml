@@ -10,7 +10,7 @@ branches:
 
 
 environment:
-  PYTEST: py.test -n2 --maxfail 5 --durations=10 --junitxml=junit-results.xml
+  PYTEST: pytest -n2 --maxfail 5 --durations=10 --junitxml=junit-results.xml
   # See https://www.appveyor.com/docs/build-cache/#saving-cache-for-failed-build.
   APPVEYOR_SAVE_CACHE_ON_ERROR: true
 
