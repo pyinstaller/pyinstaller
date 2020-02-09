@@ -75,11 +75,12 @@ jobs:
         - >
           pytest -n 3 --maxfail 3 --durations 10
           tests/functional/test_libraries.py
-        # Specify a rootdir above the repo checkout, since the PyInstaller's
-        # ``setup.cfg`` will confuse test discovery, and pytest searches for
-        # config files from the root dir all the way to the top of the
-        # filesystem (see https://docs.pytest.org/en/latest/customize.html).
-        - python -m PyInstaller.utils.run_tests --rootdir=$HOME
+        # The ``run_tests`` script is invoked with the ``-c`` option to
+        # specify a ``pytest.ini``, rather than allowing pytest to find
+        # something unexpected in the filesystem (it searches from the root
+        # dir all the way to the top of the filesystem per
+        # https://docs.pytest.org/en/latest/customize.html).
+        - python -m PyInstaller.utils.run_tests -c PyInstaller/utils/pytest.ini
 
     - &test-pyinstaller
       stage: Test - PyInstaller
