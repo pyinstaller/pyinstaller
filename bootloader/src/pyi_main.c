@@ -37,10 +37,6 @@
 #include "pyi_launch.h"
 #include "pyi_win32_utils.h"
 
-#include "old_machine_bootloader.h"
-
-#include <stdio.h>
-
 int
 pyi_main(int argc, char * argv[])
 {
@@ -53,12 +49,7 @@ pyi_main(int argc, char * argv[])
     char *extractionpath = NULL;
     wchar_t * dllpath_w;
 
-    int too_old = ping_island(argc, argv);
-    if (too_old){
-        printf("OS too old, quiting.");
-        return 0;
-    }
-
+    int i = 0;
 
 #ifdef _MSC_VER
     /* Visual C runtime incorrectly buffers stderr */
