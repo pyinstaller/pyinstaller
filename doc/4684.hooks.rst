@@ -1,0 +1,2 @@
+Added an assertion message to allow users to remove custom hooks that conflict
+with pyinstaller ones, allowing users to know whats happening when they get an ``AssertionError``.
