@@ -1,0 +1,1 @@
+Add hook for `Uvicorn <https://www.uvicorn.org/>`_ (`#4663 <https://github.com/pyinstaller/pyinstaller/issues/4663>`_) 
