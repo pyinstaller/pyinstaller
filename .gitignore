@@ -94,3 +94,6 @@ tests/old_suite/basic/test_pyz_as_external_file.exe.pkg
 # py.test cache folder
 .cache
 *.prof
+
+# Virtual Envs
+/venv
