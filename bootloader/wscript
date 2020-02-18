@@ -54,6 +54,7 @@ DESTOS_TO_SYSTEM = {
     'sunos': platform.system(),  ## FIXME: inhibits cross-compile
     'hpux': 'HP-UX',
     'aix': 'AIX',
+    'cygwin': platform.system(),
 }
 
 # Map from platform.system() to waf's DEST_OS
@@ -66,6 +67,7 @@ SYSTEM_TO_BUILDOS = {
     'SunOS': 'sunos',
     'HP-UX': 'hpux',
     'AIX': 'aix',
+    platform.system(): 'cygwin', 
 }
 
 # waf's name of the system we are building on
@@ -777,11 +779,11 @@ class make_all(BuildContext):
         Options.commands = ['build_debug', 'build_release']
         # On Windows and Mac OS X we also need console/windowed bootloaders.
         # On other platforms they make no sense.
-        if ctx.env.DEST_OS in ('win32', 'darwin'):
+        if ctx.env.DEST_OS in ('win32', 'darwin', 'cygwin'):
             Options.commands += ['build_debugw', 'build_releasew']
         # Install bootloaders.
         Options.commands += ['install_debug', 'install_release']
-        if ctx.env.DEST_OS in ('win32', 'darwin'):
+        if ctx.env.DEST_OS in ('win32', 'darwin', 'cygwin'):
             Options.commands += ['install_debugw', 'install_releasew']
 
 
