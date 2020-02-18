@@ -500,7 +500,7 @@ class EXE(Target):
         """
         # Having console/windowed bootolader makes sense only on Windows and
         # Mac OS X.
-        if is_win or is_darwin:
+        if is_win or is_darwin or is_cygwin:
             if not self.console:
                 exe = exe + 'w'
         # There are two types of bootloaders:

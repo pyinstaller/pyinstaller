@@ -505,7 +505,7 @@ def selectImports(pth, xtrapath=None):
     for lib in dlls:
         if lib.upper() in seen:
             continue
-        if not is_win and not is_cygwin:
+        if not is_win:
             # all other platforms
             npth = lib
             lib = os.path.basename(lib)
@@ -575,7 +575,14 @@ def _getImports_ldd(pth):
     else:
         lddPattern = re.compile(r"\s*(.*?)\s+=>\s+(.*?)\s+\(.*\)")
 
-    for line in compat.exec_command('ldd', pth).splitlines():
+    ldd_output = compat.exec_command('ldd', pth)
+    
+    # Fix shaky ldd output in cygwin
+    if is_cygwin:
+        while ( '???' in ldd_output ):
+            ldd_output = compat.exec_command('ldd', pth)
+
+    for line in ldd_output.splitlines():
         m = lddPattern.search(line)
         if m:
             if is_aix:
@@ -599,6 +606,10 @@ def _getImports_ldd(pth):
                 # linux-gate is a fake library which does not exist and
                 # should be ignored. See also:
                 # http://www.trilithium.com/johan/2005/08/linux-gate/
+                continue
+
+            if is_cygwin and lib.lower().find('/cygdrive/c/windows/system') == 0:
+                # exclude Windows system library
                 continue
 
             if os.path.exists(lib):
@@ -724,7 +735,7 @@ def getImports(pth):
     """
     Forwards to the correct getImports implementation for the platform.
     """
-    if is_win or is_cygwin:
+    if is_win:
         if pth.lower().endswith(".manifest"):
             return []
         try:

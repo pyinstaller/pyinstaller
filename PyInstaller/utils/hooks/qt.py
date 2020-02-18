@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 import os
+import re
 import sys
 import json
 import glob
@@ -17,7 +18,7 @@ from ..hooks import eval_statement, exec_statement, get_homebrew_path, \
     get_module_file_attribute
 from PyInstaller.depend.bindepend import getImports, getfullnameof
 from ... import log as logging
-from ...compat import is_win, is_darwin, is_linux
+from ...compat import is_win, is_darwin, is_linux, is_cygwin
 from ...utils import misc
 
 logger = logging.getLogger(__name__)
@@ -157,9 +158,10 @@ def qt_plugins_binaries(plugin_type, namespace):
     #
     # Since on Windows debug copies of Qt4 plugins end with "d4.dll" and Qt5
     # plugins end with "d.dll" we filter them out of the list.
-    if is_win and (namespace in ['PyQt4', 'PySide']):
+    if ( is_win or is_cygwin ) and (namespace in ['PyQt4', 'PySide']):
         files = [f for f in files if not f.endswith("d4.dll")]
-    elif is_win and namespace in ['PyQt5', 'PySide2']:
+    elif ( is_win or is_cygwin ) and namespace in ['PyQt5', 'PySide2']:
+        logger.debug("Found plugin files %s for plugin %s", files, plugin_type)
         files = [f for f in files if not f.endswith("d.dll")]
 
     logger.debug("Found plugin files %s for plugin %s", files, plugin_type)
@@ -425,8 +427,8 @@ _qt_dynamic_dependencies_dict = {
     "qt5sql":                   (".QtSql",                 "qtbase",           "sqldrivers"),
     "qt5svg":                   (".QtSvg",                 None,               ),
     "qt5test":                  (".QtTest",                "qtbase",           ),
-    "qt5webkit":                (None,                     None,               ),
-    "qt5webkitwidgets":         (None,                     None,               ),
+    "qt5webkit":                (".QtWebKit",              None,               ),
+    "qt5webkitwidgets":         (".QtWebKitWidgets",       None,               "qt5webkit"),
     "qt5websockets":            (".QtWebSockets",          None,               ),
     "qt5widgets":               (".QtWidgets",             "qtbase",           ),
     "qt5winextras":             (".QtWinExtras",           None,               ),
@@ -505,6 +507,13 @@ def add_qt5_dependencies(hook_file):
             lib_name = os.path.splitext(lib_name)[0]
         if lib_name.startswith('lib'):
             lib_name = lib_name[3:]
+        if is_cygwin:
+            if os.path.splitext(lib_name)[1] == '.dll':
+                lib_name = os.path.splitext(lib_name)[0]
+            if lib_name.startswith('cyg'):
+                lib_name = lib_name[3:]
+            if re.findall('-[0-9]', lib_name) != []:
+                lib_name = re.split('-[0-9]', lib_name)[0]
         # Mac: rename from ``qt`` to ``qt5`` to match names in Windows/Linux.
         if is_darwin and lib_name.startswith('qt'):
             lib_name = 'qt5' + lib_name[2:]
