@@ -43,6 +43,6 @@ def __process_options(parser, opts):
     try:
         level = getattr(logging, opts.loglevel.upper())
     except AttributeError:
-        parser.error('Unknown log level `%s`' % opts.loglevel)
+        parser.error('Unknown log level `{}`'.format(opts.loglevel))
     else:
         logger.setLevel(level)

@@ -45,12 +45,12 @@ def test_UPX(config, upx_dir):
             pass
         else:
             logger.info('An exception occured when testing for UPX:')
-            logger.info('  %r', e)
+            logger.info(' {0!r}'.format(e))
     if hasUPX:
         is_available = 'available'
     else:
         is_available = 'not available'
-    logger.info('UPX is %s.', is_available)
+    logger.info('UPX is {}.'.format(is_available))
     config['hasUPX'] = hasUPX
     config['upx_dir'] = upx_dir
 
