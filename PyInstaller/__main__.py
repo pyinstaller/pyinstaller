@@ -56,7 +56,7 @@ def run_makespec(filenames, **opts):
     import PyInstaller.building.makespec
 
     spec_file = PyInstaller.building.makespec.main(filenames, **opts)
-    logger.info('wrote %s' % spec_file)
+    logger.info('wrote {}'.format(spec_file))
     return spec_file
 
 
@@ -100,10 +100,9 @@ def run(pyi_args=None, pyi_config=None):
         # as the first line to stdout.
         # This helps identify PyInstaller, Python and platform version
         #  when users report issues.
-        logger.info('PyInstaller: %s' % __version__)
-        logger.info('Python: %s%s', platform.python_version(),
-                    " (conda)" if is_conda else "")
-        logger.info('Platform: %s' % platform.platform())
+        logger.info('PyInstaller: {}' % __version__)
+        logger.info('Python: {ver}{conda}'.format(ver=platform.python_version(), conda=' (conda)' if is_conda else ''))
+        logger.info('Platform: {}'.format(platform.platform()))
 
         # Skip creating .spec when .spec file is supplied
         if args.filenames[0].endswith('.spec'):

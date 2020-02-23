@@ -15,7 +15,6 @@ Various classes and functions to provide some backwards-compatibility
 with previous versions of Python onward.
 """
 
-import io
 import os
 import platform
 import site
@@ -57,39 +56,39 @@ is_unix = is_linux or is_solar or is_aix or is_freebsd or is_hpux or is_openbsd
 # On different platforms is different file for dynamic python library.
 _pyver = sys.version_info[:2]
 if is_win or is_cygwin:
-    PYDYLIB_NAMES = {'python%d%d.dll' % _pyver,
-                     'libpython%d%d.dll' % _pyver,
-                     'libpython%d%dm.dll' % _pyver,
-                     'libpython%d.%d.dll' % _pyver,
-                     'libpython%d.%dm.dll' % _pyver}  # For MSYS2 environment
+    PYDYLIB_NAMES = {'python{}{}.dll'.format(*_pyver),
+                     'libpython{}{}.dll'.format(*_pyver),
+                     'libpython{}{}m.dll'.format(*_pyver),
+                     'libpython{}.{}.dll'.format(*_pyver),
+                     'libpython{}.{}.dll'.format(*_pyver)}  # For MSYS2 environment
 elif is_darwin:
     # libpython%d.%dm.dylib for Conda virtual environment installations
     PYDYLIB_NAMES = {'Python', '.Python',
-                     'libpython%d.%d.dylib' % _pyver,
-                     'libpython%d.%dm.dylib' % _pyver}
+                     'libpython{}.{}.dylib'.format(*_pyver),
+                     'libpython{}.{}.dylib'.format(*_pyver)}
 elif is_aix:
     # Shared libs on AIX are archives with shared object members, thus the ".a" suffix.
     # However, python 2.7.11 built with XLC produces libpython?.?.so file, too.
-    PYDYLIB_NAMES = {'libpython%d.%d.a' % _pyver,
-                     'libpython%d.%d.so' % _pyver}
+    PYDYLIB_NAMES = {'libpython{}.{}.a'.format(*_pyver),
+                     'libpython{}.{}.so'.format(*_pyver)}
 elif is_freebsd:
-    PYDYLIB_NAMES = {'libpython%d.%d.so.1' % _pyver,
-                     'libpython%d.%dm.so.1' % _pyver,
-                     'libpython%d.%d.so.1.0' % _pyver,
-                     'libpython%d.%dm.so.1.0' % _pyver}
+    PYDYLIB_NAMES = {'libpython{}.{}.so.1' % _pyver,
+                     'libpython{}.{}m.so.1' % _pyver,
+                     'libpython{}.{}.so.1.0' % _pyver,
+                     'libpython{}.{}m.so.1.0' % _pyver}
 elif is_openbsd:
-    PYDYLIB_NAMES = {'libpython%d.%d.so.0.0' % _pyver,
-                     'libpython%d.%dm.so.0.0' % _pyver}
+    PYDYLIB_NAMES = {'libpython{}.{}.so.0.0' % _pyver,
+                     'libpython{}.{}m.so.0.0' % _pyver}
 elif is_hpux:
-    PYDYLIB_NAMES = {'libpython%d.%d.so' % _pyver}
+    PYDYLIB_NAMES = {'libpython{}.{}.so' % _pyver}
 elif is_unix:
     # Other *nix platforms.
     # Python 2 .so library on Linux is: libpython2.7.so.1.0
     # Python 3 .so library on Linux is: libpython3.2mu.so.1.0, libpython3.3m.so.1.0
-    PYDYLIB_NAMES = {'libpython%d.%d.so.1.0' % _pyver,
-                     'libpython%d.%dm.so.1.0' % _pyver,
-                     'libpython%d.%dmu.so.1.0' % _pyver,
-                     'libpython%d.%dm.so' % _pyver}
+    PYDYLIB_NAMES = {'libpython{}.{}.so.1.0' % _pyver,
+                     'libpython{}.{}m.so.1.0' % _pyver,
+                     'libpython{}.{}mu.so.1.0' % _pyver,
+                     'libpython{}.{}m.so' % _pyver}
 else:
     raise SystemExit('Your platform is not yet supported. '
                      'Please define constant PYDYLIB_NAMES for your platform.')
