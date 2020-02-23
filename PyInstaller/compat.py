@@ -528,7 +528,7 @@ def __wrap_python(args, kwargs):
         # the current value using the `-e` option of the `arch` command.
         if 'DYLD_LIBRARY_PATH' in os.environ:
             path = os.environ['DYLD_LIBRARY_PATH']
-            py_prefix += ['-e', 'DYLD_LIBRARY_PATH=%s' % path]
+            py_prefix += ['-e', 'DYLD_LIBRARY_PATH={}'.format(path)]
         cmdargs = py_prefix + cmdargs
 
     if _PYOPTS:
