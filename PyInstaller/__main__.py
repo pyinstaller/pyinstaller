@@ -100,7 +100,7 @@ def run(pyi_args=None, pyi_config=None):
         # as the first line to stdout.
         # This helps identify PyInstaller, Python and platform version
         #  when users report issues.
-        logger.info('PyInstaller: {}' % __version__)
+        logger.info('PyInstaller: {}'.format(__version__))
         logger.info('Python: {ver}{conda}'.format(ver=platform.python_version(), conda=' (conda)' if is_conda else ''))
         logger.info('Platform: {}'.format(platform.platform()))
 
