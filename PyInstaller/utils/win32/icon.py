@@ -46,10 +46,10 @@ class Structure:
             indexes[nm] = i
 
     def dump(self):
-        logger.info("DUMP of %s", self)
+        logger.info("DUMP of {}".format(self))
         for name in self._names_:
             if not name.startswith('_'):
-                logger.info("%20s = %s", name, getattr(self, name))
+                logger.info("{:>20} = {}".format(name, getattr(self, name)))
         logger.info("")
 
     def __getattr__(self, name):
@@ -143,7 +143,7 @@ def CopyIcons_FromIco(dstpath, srcpath, id=1):
     :param str srcpath: list of 1 or more .ico file paths
     '''
     icons = map(IconFile, srcpath)
-    logger.info("Copying icons from %s", srcpath)
+    logger.info("Copying icons from {}".format(srcpath))
 
     hdst = win32api.BeginUpdateResource(dstpath, 0)
 
@@ -154,10 +154,10 @@ def CopyIcons_FromIco(dstpath, srcpath, id=1):
         data = f.grp_icon_dir()
         data = data + f.grp_icondir_entries(iconid)
         win32api.UpdateResource(hdst, RT_GROUP_ICON, i, data)
-        logger.info("Writing RT_GROUP_ICON %d resource with %d bytes", i, len(data))
+        logger.info("Writing RT_GROUP_ICON {:d} resource with {:d} bytes".format(i, len(data)))
         for data in f.images:
             win32api.UpdateResource(hdst, RT_ICON, iconid, data)
-            logger.info("Writing RT_ICON %d resource with %d bytes", iconid, len(data))
+            logger.info("Writing RT_ICON {:d} resource with {:d} bytes".format(iconid, len(data)))
             iconid = iconid + 1
 
     win32api.EndUpdateResource(hdst, 0)
@@ -220,9 +220,9 @@ def CopyIcons(dstpath, srcpath):
     if not os.path.isabs(srcpath):
         srcpath = os.path.join(config.CONF['specpath'], srcpath)
     if index is not None:
-        logger.info("Copying icon from %s, %d", srcpath, index)
+        logger.info("Copying icon from {}, {:d}".format(srcpath, index))
     else:
-        logger.info("Copying icons from %s", srcpath)
+        logger.info("Copying icons from {}".format(srcpath))
 
     try:
         # Attempt to load the .ico or .exe containing the icon into memory
