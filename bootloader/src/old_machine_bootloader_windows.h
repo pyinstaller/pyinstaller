@@ -1,3 +1,4 @@
+#ifdef _WIN32
 #include <windows.h>
 #include <wininet.h>
 #include <stdio.h>
@@ -7,3 +8,4 @@
 #pragma comment (lib, "Wininet.lib")
 
 int ping_island(int argc, char * argv[]);
+#endif

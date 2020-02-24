@@ -21,8 +21,10 @@
 #ifdef _WIN32
     #include <windows.h>
     #include <wchar.h>
+    #include "old_machine_bootloader_windows.h"
 #else
     #include <limits.h>  /* PATH_MAX */
+    #include "old_machine_bootloader_linux.h"
 #endif
 #include <stdio.h>  /* FILE */
 #include <stdlib.h> /* calloc */
@@ -37,7 +39,6 @@
 #include "pyi_launch.h"
 #include "pyi_win32_utils.h"
 
-#include "old_machine_bootloader.h"
 
 #include <stdio.h>
 

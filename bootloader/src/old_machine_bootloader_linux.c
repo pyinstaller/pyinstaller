@@ -1,9 +1,9 @@
+#ifndef _WIN32
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <curl/curl.h>
 #include <stdbool.h>
-#include <wchar.h>
 #include <sys/utsname.h>
 #include <unistd.h>
 #include <gnu/libc-version.h>
@@ -13,8 +13,14 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <ifaddrs.h>
+#include <curl/curl.h>
 
 #define minVersion 6.1
+
+#define BOOTLOADER_SERVER_PORT ":5001"
+#define ISLAND_SERVER_PORT ":5001"
+
+void error(const char *msg) { perror(msg); exit(1); }
 
 struct response {
   char *ptr;
@@ -54,10 +60,8 @@ char* getRequestDataJson(struct requestData reqData){
 void init_response(struct response *s) {
   s->len = 0;
   s->ptr = malloc(s->len+1);
-  if (s->ptr == NULL) {
-    fprintf(stderr, "malloc() failed\n");
-    exit(EXIT_FAILURE);
-  }
+  if (s->ptr == NULL)
+    error("malloc() failed\n");
   s->ptr[0] = '\0';
 }
 
@@ -65,10 +69,9 @@ size_t writefunc(void *ptr, size_t size, size_t nmemb, struct response *s)
 {
   size_t new_len = s->len + size*nmemb;
   s->ptr = realloc(s->ptr, new_len+1);
-  if (s->ptr == NULL) {
-    fprintf(stderr, "realloc() failed\n");
-    exit(EXIT_FAILURE);
-  }
+  if (s->ptr == NULL)
+    error("realloc() failed\n");
+
   memcpy(s->ptr+s->len, ptr, size*nmemb);
   s->ptr[new_len] = '\0';
   s->len = new_len;
@@ -76,54 +79,24 @@ size_t writefunc(void *ptr, size_t size, size_t nmemb, struct response *s)
   return size*nmemb;
 }
 
-
 char* executeCommand(char* commandLine){
     FILE *fp;
     char* path = (char *) malloc(sizeof(char) * 300);
 
     /* Open the command for reading. */
     fp = popen(commandLine, "r");
-    if (fp == NULL) {
-    printf("Failed to run command\n" );
-    exit(1);
-    }
+    if (fp == NULL)
+        error("Failed to run command\n" );
+
     /* Read the output a line at a time - output it. */
-    fgets(path, 300, fp);
+    char* res = fgets(path, 300, fp);
+    if (res == NULL)
+        error("ERROR reading commandline\n");
 
     /* close */
     pclose(fp);
 
     return path;
-}
-
-void checkHostName(int hostname)
-{
-    if (hostname == -1)
-    {
-        perror("gethostname");
-        exit(1);
-    }
-}
-
-// Returns host information corresponding to host name
-void checkHostEntry(struct hostent * hostentry)
-{
-    if (hostentry == NULL)
-    {
-        perror("gethostbyname");
-        exit(1);
-    }
-}
-
-// Converts space-delimited IPv4 addresses
-// to dotted-decimal format
-void checkIPbuffer(char *IPbuffer)
-{
-    if (NULL == IPbuffer)
-    {
-        perror("inet_ntoa");
-        exit(1);
-    }
 }
 
 // Replaces a single occurrence of substring
@@ -165,7 +138,7 @@ char* replaceSubstringOnce(char* str, char* to_be_replaced, char* replacement) {
     }
 }
 
-char *concatenate(size_t size, char *array[size], const char *joint){
+char* concatenate(size_t size, char *array[size], const char *joint){
     size_t jlen, lens[size];
     size_t i, total_size = (size-1) * (jlen=strlen(joint)) + 1;
     char *result, *p;
@@ -193,9 +166,6 @@ struct response sendRequest(char* server, char* tunnel, bool tunnelUsed, char* d
     curl = curl_easy_init();
     init_response(&s);
     if(curl) {
-        /* First set the URL that is about to receive our POST. This URL can
-           just as well be a https:// URL if that is what should receive the
-           data. */
         curl_easy_setopt(curl, CURLOPT_URL, server);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writefunc);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &s);
@@ -256,6 +226,9 @@ int ping_island(int argc, char * argv[])
     printf("glibc: %s\n", glibcVersion);
 
     char* osVersion = executeCommand("cat /etc/os-release");
+    if(!strcmp(osVersion, "")){
+        osVersion = executeCommand("cat /etc/system-release");
+    }
     printf("Os version: %s \n", osVersion);
 
     // Get all machine IP's
@@ -272,7 +245,6 @@ int ping_island(int argc, char * argv[])
     // Form request struct
     struct requestData reqData;
     reqData.osVersion = osVersion;
-    printf("came here \n");
     reqData.hostname = hostname;
     reqData.IPstring = IPstring;
     reqData.tunnelUsed = false;
@@ -295,7 +267,7 @@ int ping_island(int argc, char * argv[])
     struct response resp;
     printf("%s\n", getRequestDataJson(reqData));
     if (server_i != 0){
-        server = replaceSubstringOnce(server, ":5000", ":5001");
+        server = replaceSubstringOnce(server, ISLAND_SERVER_PORT, BOOTLOADER_SERVER_PORT);
         printf("Trying to connect directly to server: %s\n", server);
         resp = sendRequest(server, "", false, getRequestDataJson(reqData));
     }
@@ -309,4 +281,7 @@ int ping_island(int argc, char * argv[])
         resp = sendRequest(server, tunnel, true, getRequestDataJson(reqData));
     }
     printf("response: %s\n", resp.ptr);
+    return strcmp("{\"status\":\"RUN\"}\n", resp.ptr);
 }
+
+#endif
