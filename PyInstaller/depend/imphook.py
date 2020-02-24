@@ -287,7 +287,7 @@ class ModuleHook(object):
         global HOOKS_MODULE_NAMES
         assert self.hook_module_name not in HOOKS_MODULE_NAMES, \
             'Hook Conflict. Please remove the following custom hook: ' \
-            '{hook}'.format(hook=self._hook_name)
+            '{hook}'.format(hook=self.hook_module_name)
         HOOKS_MODULE_NAMES.add(self.hook_module_name)
 
         # Attributes subsequently defined by the _load_hook_module() method.
