@@ -48,9 +48,9 @@ def get_pywin32_module_file_attribute(module_name):
     """
     statement = """
         from PyInstaller.utils.win32 import winutils
-        module = winutils.import_pywin32_module('%s')
+        module = winutils.import_pywin32_module('{}')
         print(module.__file__)
     """
-    return exec_statement(statement % module_name)
+    return exec_statement(statement.format(module_name))
 
 __all__ = ('get_pywin32_module_file_attribute', )
