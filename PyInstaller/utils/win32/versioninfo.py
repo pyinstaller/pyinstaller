@@ -302,8 +302,8 @@ class FixedFileInfo:
         fd = (self.fileDateMS, self.fileDateLS)
         tmp = [
             'FixedFileInfo(',
-            '# filevers and prodvers should be always a tuple with four items: '
-            '(1, 2, 3, 4)',
+            '# filevers and prodvers should be always a tuple with four items:'
+            ' (1, 2, 3, 4)',
             '# Set not needed items to zero 0.',
             'filevers={},'.format(fv),
             'prodvers={},'.format(pv),
