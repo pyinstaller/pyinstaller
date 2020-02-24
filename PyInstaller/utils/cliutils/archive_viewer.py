@@ -227,8 +227,8 @@ class ZlibArchive(pyimod02_archive.ZlibArchiveReader):
         """
         self.lib.seek(self.start)  # default - magic is at start of file.
         if self.lib.read(len(self.MAGIC)) != self.MAGIC:
-            raise RuntimeError("%s is not a valid %s archive file"
-                               % (self.path, self.__class__.__name__))
+            raise RuntimeError("{} is not a valid {} archive file"
+                               "".format(self.path, self.__class__.__name__))
         if self.lib.read(len(self.pymagic)) != self.pymagic:
             print("Warning: pyz is from a different Python version",
                   file=sys.stderr)
