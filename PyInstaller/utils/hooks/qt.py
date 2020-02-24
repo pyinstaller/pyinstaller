@@ -59,8 +59,8 @@ class Qt5LibraryInfo:
                     # QLibraryInfo isn't always valid until a QCoreApplication is
                     # instantiated.
                     app = QCoreApplication(sys.argv)
-                    paths = [x for x in dir(QLibraryInfo) if x.endswith('Path')]
-                    location ={{x:QLibraryInfo.location(getattr(QLibraryInfo,x))
+                    paths =[x for x in dir(QLibraryInfo) if x.endswith('Path')]
+                    location={{x:QLibraryInfo.location(getattr(QLibraryInfo,x))
                                 for x in paths}}
                     try:
                         version = QLibraryInfo.version().segments()
@@ -519,7 +519,7 @@ def add_qt5_dependencies(hook_file):
 
         logger.debug(
             'add_qt5_dependencies: raw lib {} -> parsed lib {}'
-                .format(imp, lib_name))
+            .format(imp, lib_name))
 
         # Follow only Qt dependencies.
         if lib_name in _qt_dynamic_dependencies_dict:

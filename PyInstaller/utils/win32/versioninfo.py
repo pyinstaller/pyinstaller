@@ -302,26 +302,28 @@ class FixedFileInfo:
         fd = (self.fileDateMS, self.fileDateLS)
         tmp = [
             'FixedFileInfo(',
-            '# filevers and prodvers should be always a tuple with four items: (1, 2, 3, 4)',
+            '# filevers and prodvers should be always a tuple with four items: '
+            '(1, 2, 3, 4)',
             '# Set not needed items to zero 0.',
-           'filevers={},'.format(fv),
-           'prodvers={},'.format(pv),
-           "# Contains a bitmask that specifies the valid bits 'flags'r",
-           'mask={},'.format(hex(self.fileFlagsMask)),
-           '# Contains a bitmask that specifies the Boolean attributes of the file.',
-           'flags={},'.format(hex(self.fileFlags)),
-           '# The operating system for which this file was designed.',
-           '# 0x4 - NT and there is no need to change it.',
-           'OS={},'.format(hex(self.fileOS)),
-           '# The general type of file.',
-           '# 0x1 - the file is an application.',
-           'fileType={},'.format(hex(self.fileType)),
-           '# The function of the file.',
-           '# 0x0 - the function is not defined for this fileType',
-           'subtype={},'.format(hex(self.fileSubtype)),
-           '# Creation date and time stamp.',
-           'date={}'.format(fd),
-           ')'
+            'filevers={},'.format(fv),
+            'prodvers={},'.format(pv),
+            "# Contains a bitmask that specifies the valid bits 'flags'r",
+            'mask={},'.format(hex(self.fileFlagsMask)),
+            '# Contains a bitmask that specifies the Boolean attributes of the'
+            ' file.',
+            'flags={},'.format(hex(self.fileFlags)),
+            '# The operating system for which this file was designed.',
+            '# 0x4 - NT and there is no need to change it.',
+            'OS={},'.format(hex(self.fileOS)),
+            '# The general type of file.',
+            '# 0x1 - the file is an application.',
+            'fileType={},'.format(hex(self.fileType)),
+            '# The function of the file.',
+            '# 0x0 - the function is not defined for this fileType',
+            'subtype={},'.format(hex(self.fileSubtype)),
+            '# Creation date and time stamp.',
+            'date={}'.format(fd),
+            ')'
         ]
         return ('\n' + indent + '  ').join(tmp)
 

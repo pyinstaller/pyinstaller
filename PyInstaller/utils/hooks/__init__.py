@@ -970,9 +970,9 @@ def requirements_for_package(package_name):
             required_packages = dist_to_packages[requirement.key]
             hiddenimports.extend(required_packages)
         else:
-            logger.warning('Unable to find package for requirement {} from '
-                           'package {}.'.format(
-                            requirement.project_name, package_name))
+            logger.warning(
+                'Unable to find package for requirement {} from package {}.'
+                .format(requirement.project_name, package_name))
 
     logger.info(
         'Packages required by {}:\n{}'.format(package_name, hiddenimports)
@@ -991,7 +991,8 @@ def collect_all(package_name, include_py_files=True):
     try:
         datas += copy_metadata(package_name)
     except Exception as e:
-        logger.warning('Unable to copy metadata for {}: {}'.format(package_name, e))
+        logger.warning(
+            'Unable to copy metadata for {}: {}'.format(package_name, e))
     datas += collect_data_files(package_name, include_py_files)
     binaries = collect_dynamic_libs(package_name)
     hiddenimports = collect_submodules(package_name)
