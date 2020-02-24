@@ -143,14 +143,10 @@ def compile_py_files(toc, workpath):
         # We need to perform a build ourselves if obj_fnm doesn't exist,
         # or if src_fnm is newer than obj_fnm, or if obj_fnm was created
         # by a different Python version.
-        # TODO: explain why this does read()[:4] (reading all the file)
-        # instead of just read(4)? Yes for many a .pyc file, it is all
-        # in one sector so there's no difference in I/O but still it
-        # seems inelegant to copy it all then subscript 4 bytes.
         needs_compile = mtime(src_fnm) > mtime(obj_fnm)
         if not needs_compile:
             with open(obj_fnm, 'rb') as fh:
-                needs_compile = fh.read()[:4] != BYTECODE_MAGIC
+                needs_compile = fh.read(4) != BYTECODE_MAGIC
         if needs_compile:
             try:
                 # TODO: there should be no need to repeat the compile,
@@ -180,15 +176,14 @@ def compile_py_files(toc, workpath):
                     os.makedirs(leading)
 
                 obj_fnm = os.path.join(leading, mod_name + ext)
-                # TODO see above regarding read()[:4] versus read(4)
                 needs_compile = mtime(src_fnm) > mtime(obj_fnm)
                 if not needs_compile:
                     with open(obj_fnm, 'rb') as fh:
-                        needs_compile = fh.read()[:4] != BYTECODE_MAGIC
+                        needs_compile = fh.read(4) != BYTECODE_MAGIC
                 if needs_compile:
                     # TODO see above todo regarding using node.code
                     py_compile.compile(src_fnm, obj_fnm)
-                    logger.debug("compiled %s", src_fnm)
+                    logger.debug("compiled {}".format(src_fnm))
         # if we get to here, obj_fnm is the path to the compiled module nm.py
         new_toc.append((nm, obj_fnm, typ))
 
