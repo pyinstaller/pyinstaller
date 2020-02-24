@@ -21,7 +21,7 @@ import pefile
 
 
 # TODO implement read/write version information with pefile library.
-# PE version info doc: http://msdn.microsoft.com/en-us/library/ms646981.aspx
+# PE version info doc: https://docs.microsoft.com/en-us/windows/win32/menurc/version-information
 def pefile_read_version(filename):
     """
     Return structure like:
@@ -29,25 +29,25 @@ def pefile_read_version(filename):
     {
         # Translation independent information.
         # VS_FIXEDFILEINFO - Contains version information about a file. This information is language and code page independent.
-        u'FileVersion':      (1, 2, 3, 4),
-        u'ProductVersion':   (9, 10, 11, 12),
+        'FileVersion':      (1, 2, 3, 4),
+        'ProductVersion':   (9, 10, 11, 12),
 
         # PE files might contain several translations of version information.
         # VS_VERSIONINFO - Depicts the organization of data in a file-version resource. It is the root structure that contains all other file-version information structures.
-        u'translations': {
+        'translations': {
             'lang_id1' : {
-                u'Comments':         u'日本語, Unicode 対応.',
-                u'CompanyName':      u'your company.',
-                u'FileDescription':  u'your file desc.',
-                u'FileVersion':      u'1, 2, 3, 4',
-                u'InternalName':     u'your internal name.',
-                u'LegalCopyright':   u'your legal copyright.',
-                u'LegalTrademarks':  u'your legal trademarks.',
-                u'OriginalFilename': u'your original filename.',
-                u'PrivateBuild':     u'5, 6, 7, 8',
-                u'ProductName':      u'your product name',
-                u'ProductVersion':   u'9, 10, 11, 12',
-                u'SpecialBuild':     u'13, 14, 15, 16',
+                'Comments':         '日本語, Unicode 対応.',
+                'CompanyName':      'your company.',
+                'FileDescription':  'your file desc.',
+                'FileVersion':      '1, 2, 3, 4',
+                'InternalName':     'your internal name.',
+                'LegalCopyright':   'your legal copyright.',
+                'LegalTrademarks':  'your legal trademarks.',
+                'OriginalFilename': 'your original filename.',
+                'PrivateBuild':     '5, 6, 7, 8',
+                'ProductName':      'your product name',
+                'ProductVersion':   '9, 10, 11, 12',
+                'SpecialBuild':     '13, 14, 15, 16',
             },
 
             'lang_id2' : {
@@ -154,7 +154,7 @@ class VSVersionInfo:
         while i < sublen:
             j = i
             i, (csublen, cvallen, ctyp, nm) = parseCommon(data, i)
-            if nm.strip() == u'StringFileInfo':
+            if nm.strip() == 'StringFileInfo':
                 sfi = StringFileInfo()
                 k = sfi.fromRaw(csublen, cvallen, nm, data, i, j+csublen)
                 self.kids.append(sfi)
@@ -169,7 +169,7 @@ class VSVersionInfo:
         return i
 
     def toRaw(self):
-        raw_name = getRaw(u'VS_VERSION_INFO')
+        raw_name = getRaw('VS_VERSION_INFO')
         rawffi = self.ffi.toRaw()
         vallen = len(rawffi)
         typ = 0
@@ -186,22 +186,22 @@ class VSVersionInfo:
         return (struct.pack('hhh', sublen, vallen, typ)
                 + raw_name + b'\000\000' + pad + rawffi + pad2 + tmp)
 
-    def __str__(self, indent=u''):
-        indent = indent + u'  '
-        tmp = [kid.__str__(indent+u'  ')
+    def __str__(self, indent=''):
+        indent = indent + '  '
+        tmp = [kid.__str__(indent+'  ')
                for kid in self.kids]
-        tmp = u', \n'.join(tmp)
-        return (u"""# UTF-8
+        tmp = ', \n'.join(tmp)
+        return (""""# UTF-8
 #
 # For more details about fixed file info 'ffi' see:
 # http://msdn.microsoft.com/en-us/library/ms646997.aspx
 VSVersionInfo(
-%sffi=%s,
-%skids=[
-%s
-%s]
+{}ffi={},
+{}kids=[
+{}
+{}]
 )
-""" % (indent, self.ffi.__str__(indent), indent, tmp, indent))
+""".format(indent, self.ffi.__str__(indent), indent, tmp, indent))
 
 
 def parseCommon(data, start=0):
@@ -293,35 +293,35 @@ class FixedFileInfo:
                              self.fileDateMS,
                              self.fileDateLS)
 
-    def __str__(self, indent=u''):
+    def __str__(self, indent=''):
         fv = (self.fileVersionMS >> 16, self.fileVersionMS & 0xffff,
               self.fileVersionLS >> 16, self.fileVersionLS & 0xFFFF)
         pv = (self.productVersionMS >> 16, self.productVersionMS & 0xffff,
               self.productVersionLS >> 16, self.productVersionLS & 0xFFFF)
         fd = (self.fileDateMS, self.fileDateLS)
-        tmp = [u'FixedFileInfo(',
-            u'# filevers and prodvers should be always a tuple with four items: (1, 2, 3, 4)',
-            u'# Set not needed items to zero 0.',
-            u'filevers=%s,' % (fv,),
-            u'prodvers=%s,' % (pv,),
-            u"# Contains a bitmask that specifies the valid bits 'flags'r",
-            u'mask=%s,' % hex(self.fileFlagsMask),
-            u'# Contains a bitmask that specifies the Boolean attributes of the file.',
-            u'flags=%s,' % hex(self.fileFlags),
-            u'# The operating system for which this file was designed.',
-            u'# 0x4 - NT and there is no need to change it.',
-            u'OS=%s,' % hex(self.fileOS),
-            u'# The general type of file.',
-            u'# 0x1 - the file is an application.',
-            u'fileType=%s,' % hex(self.fileType),
-            u'# The function of the file.',
-            u'# 0x0 - the function is not defined for this fileType',
-            u'subtype=%s,' % hex(self.fileSubtype),
-            u'# Creation date and time stamp.',
-            u'date=%s' % (fd,),
-            u')'
+        tmp = ['FixedFileInfo(',
+               '# filevers and prodvers should be always a tuple with four items: (1, 2, 3, 4)',
+               '# Set not needed items to zero 0.',
+               'filevers={},'.format(fv),
+               'prodvers={},'.format(pv),
+               "# Contains a bitmask that specifies the valid bits 'flags'r",
+               'mask={},'.format(hex(self.fileFlagsMask)),
+               '# Contains a bitmask that specifies the Boolean attributes of the file.',
+               'flags={},'.format(hex(self.fileFlags)),
+               '# The operating system for which this file was designed.',
+               '# 0x4 - NT and there is no need to change it.',
+               'OS={},'.format(hex(self.fileOS)),
+               '# The general type of file.',
+               '# 0x1 - the file is an application.',
+               'fileType={},'.format(hex(self.fileType)),
+               '# The function of the file.',
+               '# 0x0 - the function is not defined for this fileType',
+               'subtype={},'.format(hex(self.fileSubtype)),
+               '# Creation date and time stamp.',
+               'date={}'.format(fd),
+               ')'
         ]
-        return (u'\n'+indent+u'  ').join(tmp)
+        return ('\n'+indent+'  ').join(tmp)
 
 
 class StringFileInfo(object):
@@ -335,7 +335,7 @@ class StringFileInfo(object):
     StringTable Children[];   // list of zero or more String structures
     """
     def __init__(self, kids=None):
-        self.name = u'StringFileInfo'
+        self.name = 'StringFileInfo'
         self.kids = kids or []
 
     def fromRaw(self, sublen, vallen, name, data, i, limit):
@@ -360,13 +360,13 @@ class StringFileInfo(object):
         return (struct.pack('hhh', sublen, vallen, typ)
                 + raw_name + b'\000\000' + pad + tmp)
 
-    def __str__(self, indent=u''):
-        newindent = indent + u'  '
+    def __str__(self, indent=''):
+        newindent = indent + '  '
         tmp = [kid.__str__(newindent)
                for kid in self.kids]
-        tmp = u', \n'.join(tmp)
-        return (u'%sStringFileInfo(\n%s[\n%s\n%s])'
-                % (indent, newindent, tmp, newindent))
+        tmp = ', \n'.join(tmp)
+        return ('{}StringFileInfo(\n{}[\n{}\n{}])'
+                .format(indent, newindent, tmp, newindent))
 
 
 class StringTable:
@@ -378,7 +378,7 @@ class StringTable:
     String Children[];    // list of zero or more String structures.
     """
     def __init__(self, name=None, kids=None):
-        self.name = name or u''
+        self.name = name or ''
         self.kids = kids or []
 
     def fromRaw(self, data, i, limit):
@@ -408,11 +408,11 @@ class StringTable:
         return (struct.pack('hhh', sublen, vallen, typ)
                 + raw_name + b'\000\000' + tmp)
 
-    def __str__(self, indent=u''):
-        newindent = indent + u'  '
-        tmp = (u',\n%s' % newindent).join(str(kid) for kid in self.kids)
-        return (u"%sStringTable(\n%su'%s',\n%s[%s])"
-                % (indent, newindent, self.name, newindent, tmp))
+    def __str__(self, indent=''):
+        newindent = indent + '  '
+        tmp = (',\n{}'.format(newindent)).join(str(kid) for kid in self.kids)
+        return ("{}StringTable(\n{}'{}',\n{}[{}])"
+                .format(indent, newindent, self.name, newindent, tmp))
 
 
 class StringStruct:
@@ -425,8 +425,8 @@ class StringStruct:
     String Value[];
     """
     def __init__(self, name=None, val=None):
-        self.name = name or u''
-        self.val = val or u''
+        self.name = name or ''
+        self.val = val or ''
 
     def fromRaw(self, data, i, limit):
         i, (sublen, vallen, typ, self.name) = parseCommon(data, i)
@@ -452,7 +452,7 @@ class StringStruct:
         return abcd
 
     def __str__(self, indent=''):
-        return u"StringStruct(u'%s', u'%s')" % (self.name, self.val)
+        return "StringStruct('{}', '{}')".format(self.name, self.val)
 
 
 def parseCodePage(data, i, limit):
@@ -488,7 +488,7 @@ class VarFileInfo:
     def toRaw(self):
         self.vallen = 0
         self.wType = 1
-        self.name = u'VarFileInfo'
+        self.name = 'VarFileInfo'
         raw_name = getRaw(self.name)
         sublen = 6 + len(raw_name) + 2
         pad = b''
@@ -500,8 +500,8 @@ class VarFileInfo:
                 + raw_name + b'\000\000' + pad + tmp)
 
     def __str__(self, indent=''):
-        return (indent + "VarFileInfo([%s])" %
-                ', '.join(str(kid) for kid in self.kids))
+        return (indent + "VarFileInfo([{}])"
+                .format(', '.join(str(kid) for kid in self.kids)))
 
 
 class VarStruct:
@@ -517,7 +517,7 @@ class VarStruct:
                           // and code-page identifiers
     """
     def __init__(self, name=None, kids=None):
-        self.name = name or u''
+        self.name = name or ''
         self.kids = kids or []
 
     def fromRaw(self, data, i, limit):
@@ -542,8 +542,8 @@ class VarStruct:
         return (struct.pack('hhh', self.sublen, self.wValueLength, self.wType)
                 + raw_name + b'\000\000' + pad + tmp)
 
-    def __str__(self, indent=u''):
-        return u"VarStruct(u'%s', %r)" % (self.name, self.kids)
+    def __str__(self, indent=''):
+        return "VarStruct('{}', {!r})".format(self.name, self.kids)
 
 
 def SetVersion(exenm, versionfile):
