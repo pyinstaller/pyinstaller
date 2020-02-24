@@ -21,7 +21,8 @@ import pefile
 
 
 # TODO implement read/write version information with pefile library.
-# PE version info doc: https://docs.microsoft.com/en-us/windows/win32/menurc/version-information
+# PE version info doc:
+#   https://docs.microsoft.com/en-us/windows/win32/menurc/version-information
 def pefile_read_version(filename):
     """
     Return structure like:
@@ -188,7 +189,7 @@ class VSVersionInfo:
 
     def __str__(self, indent=''):
         indent = indent + '  '
-        tmp = [kid.__str__(indent+'  ')
+        tmp = [kid.__str__(indent + '  ')
                for kid in self.kids]
         tmp = ', \n'.join(tmp)
         return (""""# UTF-8
@@ -299,29 +300,30 @@ class FixedFileInfo:
         pv = (self.productVersionMS >> 16, self.productVersionMS & 0xffff,
               self.productVersionLS >> 16, self.productVersionLS & 0xFFFF)
         fd = (self.fileDateMS, self.fileDateLS)
-        tmp = ['FixedFileInfo(',
-               '# filevers and prodvers should be always a tuple with four items: (1, 2, 3, 4)',
-               '# Set not needed items to zero 0.',
-               'filevers={},'.format(fv),
-               'prodvers={},'.format(pv),
-               "# Contains a bitmask that specifies the valid bits 'flags'r",
-               'mask={},'.format(hex(self.fileFlagsMask)),
-               '# Contains a bitmask that specifies the Boolean attributes of the file.',
-               'flags={},'.format(hex(self.fileFlags)),
-               '# The operating system for which this file was designed.',
-               '# 0x4 - NT and there is no need to change it.',
-               'OS={},'.format(hex(self.fileOS)),
-               '# The general type of file.',
-               '# 0x1 - the file is an application.',
-               'fileType={},'.format(hex(self.fileType)),
-               '# The function of the file.',
-               '# 0x0 - the function is not defined for this fileType',
-               'subtype={},'.format(hex(self.fileSubtype)),
-               '# Creation date and time stamp.',
-               'date={}'.format(fd),
-               ')'
+        tmp = [
+            'FixedFileInfo(',
+            '# filevers and prodvers should be always a tuple with four items: (1, 2, 3, 4)',
+            '# Set not needed items to zero 0.',
+           'filevers={},'.format(fv),
+           'prodvers={},'.format(pv),
+           "# Contains a bitmask that specifies the valid bits 'flags'r",
+           'mask={},'.format(hex(self.fileFlagsMask)),
+           '# Contains a bitmask that specifies the Boolean attributes of the file.',
+           'flags={},'.format(hex(self.fileFlags)),
+           '# The operating system for which this file was designed.',
+           '# 0x4 - NT and there is no need to change it.',
+           'OS={},'.format(hex(self.fileOS)),
+           '# The general type of file.',
+           '# 0x1 - the file is an application.',
+           'fileType={},'.format(hex(self.fileType)),
+           '# The function of the file.',
+           '# 0x0 - the function is not defined for this fileType',
+           'subtype={},'.format(hex(self.fileSubtype)),
+           '# Creation date and time stamp.',
+           'date={}'.format(fd),
+           ')'
         ]
-        return ('\n'+indent+'  ').join(tmp)
+        return ('\n' + indent + '  ').join(tmp)
 
 
 class StringFileInfo(object):

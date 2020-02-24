@@ -154,10 +154,12 @@ def CopyIcons_FromIco(dstpath, srcpath, id=1):
         data = f.grp_icon_dir()
         data = data + f.grp_icondir_entries(iconid)
         win32api.UpdateResource(hdst, RT_GROUP_ICON, i, data)
-        logger.info("Writing RT_GROUP_ICON {:d} resource with {:d} bytes".format(i, len(data)))
+        logger.info("Writing RT_GROUP_ICON {:d} resource with {:d} bytes"
+                    .format(i, len(data)))
         for data in f.images:
             win32api.UpdateResource(hdst, RT_ICON, iconid, data)
-            logger.info("Writing RT_ICON {:d} resource with {:d} bytes".format(iconid, len(data)))
+            logger.info("Writing RT_ICON {:d} resource with {:d} bytes"
+                        .format(iconid, len(data)))
             iconid = iconid + 1
 
     win32api.EndUpdateResource(hdst, 0)

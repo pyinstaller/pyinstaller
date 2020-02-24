@@ -60,7 +60,7 @@ class Qt5LibraryInfo:
                     # instantiated.
                     app = QCoreApplication(sys.argv)
                     paths = [x for x in dir(QLibraryInfo) if x.endswith('Path')]
-                    location = {{x: QLibraryInfo.location(getattr(QLibraryInfo, x))
+                    location ={{x:QLibraryInfo.location(getattr(QLibraryInfo,x))
                                 for x in paths}}
                     try:
                         version = QLibraryInfo.version().segments()
@@ -75,8 +75,9 @@ class Qt5LibraryInfo:
             try:
                 qli = json.loads(json_str)
             except Exception as e:
-                logger.warning('Cannot read QLibraryInfo output: raised {} when '
-                               'decoding:\n{}'.format(str(e), json_str))
+                logger.warning(
+                    'Cannot read QLibraryInfo output: raised {} when '
+                    'decoding:\n{}'.format(str(e), json_str))
                 qli = False
 
             # If PyQt5/PySide2 can't be imported, record that.
@@ -162,7 +163,8 @@ def qt_plugins_binaries(plugin_type, namespace):
     elif is_win and namespace in ['PyQt5', 'PySide2']:
         files = [f for f in files if not f.endswith("d.dll")]
 
-    logger.debug("Found plugin files {} for plugin {}".format(files, plugin_type))
+    logger.debug(
+        "Found plugin files {} for plugin {}".format(files, plugin_type))
     if namespace in ['PyQt4', 'PySide']:
         plugin_dir = 'qt4_plugins'
     elif namespace == 'PyQt5':
@@ -201,7 +203,8 @@ def qt_menu_nib_dir(namespace):
         path = os.path.join(location, 'qt_menu.nib')
         if os.path.exists(path):
             menu_dir = path
-            logger.debug('Found qt_menu.nib for {} at {}'.format(namespace, path))
+            logger.debug(
+                'Found qt_menu.nib for {} at {}'.format(namespace, path))
             break
     if not menu_dir:
         raise Exception("""
@@ -514,7 +517,9 @@ def add_qt5_dependencies(hook_file):
         if lib_name.endswith('_conda'):
             lib_name = lib_name[:-6]
 
-        logger.debug('add_qt5_dependencies: raw lib {} -> parsed lib {}'.format(imp, lib_name))
+        logger.debug(
+            'add_qt5_dependencies: raw lib {} -> parsed lib {}'
+                .format(imp, lib_name))
 
         # Follow only Qt dependencies.
         if lib_name in _qt_dynamic_dependencies_dict:

@@ -86,7 +86,8 @@ def get_gi_typelibs(module, version):
             for lib in typelibs_data['sharedlib'].split(','):
                 path = findSystemLibrary(lib.strip())
                 if path:
-                    logger.debug('Found shared library {} at {}'.format(lib, path))
+                    logger.debug(
+                        'Found shared library {} at {}'.format(lib, path))
                     binaries.append((path, '.'))
 
         d = gir_library_path_fix(typelibs_data['typelib'])

@@ -281,7 +281,8 @@ def get_module_attribute(module_name, attr_name):
 
     if attr_value == attr_value_if_undefined:
         raise AttributeError(
-            'Module {mod!r} has no attribute {an!r}'.format(mod=module_name, an=attr_name))
+            'Module {mod!r} has no attribute {an!r}'
+            .format(mod=module_name, an=attr_name))
     else:
         return attr_value
 
@@ -562,7 +563,8 @@ def collect_submodules(package, filter=lambda name: True):
     logger.debug('Collecting submodules for {}'.format(package))
     # Skip a module which is not a package.
     if not is_package(package):
-        logger.debug('collect_submodules - Module {} is not a package.'.format(package))
+        logger.debug(
+            'collect_submodules - Module {} is not a package.'.format(package))
         return []
 
     # Determine the filesystem path to the specified package.
@@ -969,9 +971,12 @@ def requirements_for_package(package_name):
             hiddenimports.extend(required_packages)
         else:
             logger.warning('Unable to find package for requirement {} from '
-                           'package {}.'.format(requirement.project_name, package_name))
+                           'package {}.'.format(
+                            requirement.project_name, package_name))
 
-    logger.info('Packages required by {}:\n{}'.format(package_name, hiddenimports))
+    logger.info(
+        'Packages required by {}:\n{}'.format(package_name, hiddenimports)
+    )
     return hiddenimports
 
 

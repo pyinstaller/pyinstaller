@@ -143,17 +143,19 @@ class ArchiveWriter(object):
                               .format(module_name, type(module_name)))
                     if type(module_tuple) not in MARSHALLABLE_TYPES:
                         print('Module "{}" tuple "{}" ({}) unmarshallable.'
-                              .format(module_name, module_tuple, type(module_tuple)))
+                              .format(module_name, module_tuple,
+                                      type(module_tuple)))
                     elif type(module_tuple) == tuple:
                         for i in range(len(module_tuple)):
                             if type(module_tuple[i]) not in MARSHALLABLE_TYPES:
-                                print('Module "{}" tuple index {} item "{}" ('
-                                      '{}) unmarshallable.'.format(
-                                          module_name,
-                                          i,
-                                          module_tuple[i],
-                                          type(module_tuple[i])
-                                      )
+                                print(
+                                    'Module "{}" tuple index {} item "{}" ('
+                                    '{}) unmarshallable.'.format(
+                                        module_name,
+                                        i,
+                                        module_tuple[i],
+                                        type(module_tuple[i])
+                                    )
                                 )
 
             raise

@@ -60,7 +60,7 @@ if is_win or is_cygwin:
                      'libpython{}{}.dll'.format(*_pyver),
                      'libpython{}{}m.dll'.format(*_pyver),
                      'libpython{}.{}.dll'.format(*_pyver),
-                     'libpython{}.{}.dll'.format(*_pyver)}  # For MSYS2 environment
+                     'libpython{}.{}.dll'.format(*_pyver)}  # For MSYS2
 elif is_darwin:
     # libpython%d.%dm.dylib for Conda virtual environment installations
     PYDYLIB_NAMES = {'Python', '.Python',
