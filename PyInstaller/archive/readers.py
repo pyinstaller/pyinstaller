@@ -151,14 +151,16 @@ class CArchiveReader(ArchiveReader):
         pos = buf.rfind(self.MAGIC)
         if pos == -1:
             raise RuntimeError(
-                "{} is not a valid {} archive file".format(self.path, self.__class__.__name__)
+                "{} is not a valid {} archive file"
+                .format(self.path, self.__class__.__name__)
             )
         filelen = searchpos + pos + self._cookie_size
         (magic, totallen, tocpos, toclen, pyvers, pylib_name) = struct.unpack(
             self._cookie_format, buf[pos:pos+self._cookie_size])
         if magic != self.MAGIC:
             raise RuntimeError(
-                "{} is not a valid {} archive file".format(self.path, self.__class__.__name__)
+                "{} is not a valid {} archive file"
+                .format(self.path, self.__class__.__name__)
             )
 
         self.pkg_start = filelen - totallen

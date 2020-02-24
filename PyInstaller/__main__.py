@@ -101,7 +101,12 @@ def run(pyi_args=None, pyi_config=None):
         # This helps identify PyInstaller, Python and platform version
         #  when users report issues.
         logger.info('PyInstaller: {}'.format(__version__))
-        logger.info('Python: {ver}{conda}'.format(ver=platform.python_version(), conda=' (conda)' if is_conda else ''))
+        logger.info(
+            'Python: {ver}{conda}'.format(
+                ver=platform.python_version(),
+                conda=' (conda)' if is_conda else ''
+            )
+        )
         logger.info('Platform: {}'.format(platform.platform()))
 
         # Skip creating .spec when .spec file is supplied

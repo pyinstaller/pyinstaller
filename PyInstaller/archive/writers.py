@@ -139,13 +139,22 @@ class ArchiveWriter(object):
 
                 for module_name, module_tuple in self.toc.items():
                     if type(module_name) not in MARSHALLABLE_TYPES:
-                        print('Module name "{}" ({}) unmarshallable.'.format(module_name, type(module_name)))
+                        print('Module name "{}" ({}) unmarshallable.'
+                              .format(module_name, type(module_name)))
                     if type(module_tuple) not in MARSHALLABLE_TYPES:
-                        print('Module "{}" tuple "{}" ({}) unmarshallable.'.format(module_name, module_tuple, type(module_tuple)))
+                        print('Module "{}" tuple "{}" ({}) unmarshallable.'
+                              .format(module_name, module_tuple, type(module_tuple)))
                     elif type(module_tuple) == tuple:
                         for i in range(len(module_tuple)):
                             if type(module_tuple[i]) not in MARSHALLABLE_TYPES:
-                                print('Module "{}" tuple index {} item "{}" ({}) unmarshallable.'.format(module_name, i, module_tuple[i], type(module_tuple[i])))
+                                print('Module "{}" tuple index {} item "{}" ('
+                                      '{}) unmarshallable.'.format(
+                                          module_name,
+                                          i,
+                                          module_tuple[i],
+                                          type(module_tuple[i])
+                                      )
+                                )
 
             raise
 
@@ -378,7 +387,8 @@ class CArchiveWriter(ArchiveWriter):
                 fh = open(pathnm, 'rb')
                 ulen = os.fstat(fh.fileno()).st_size
         except IOError:
-            print("Cannot find ('{}', '{}', {}, '{}')".format(nm, pathnm, flag, typcd))
+            print("Cannot find ('{}', '{}', {}, '{}')"
+                  .format(nm, pathnm, flag, typcd))
             raise
 
         where = self.lib.tell()
