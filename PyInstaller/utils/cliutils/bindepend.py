@@ -19,7 +19,7 @@ import argparse
 
 
 import PyInstaller.depend.bindepend
-from PyInstaller import is_win
+from PyInstaller.compat import is_win
 import PyInstaller.log
 
 
