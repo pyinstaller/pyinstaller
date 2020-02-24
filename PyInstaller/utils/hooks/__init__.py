@@ -136,18 +136,18 @@ def get_pyextension_imports(modname):
         import distutils
         original_modlist = set(sys.modules.keys())
         # When importing this module - sys.modules gets updated.
-        import %(modname)s
+        import {modname}
         all_modlist = set(sys.modules.keys())
         diff = all_modlist - original_modlist
         # Module list contain original modname. We do not need it there.
-        diff.discard('%(modname)s')
+        diff.discard('{modname}')
         # Print module list to stdout.
         print(list(diff))
-    """ % {'modname': modname}
+    """.format(modname=modname)
     module_imports = eval_statement(statement)
 
     if not module_imports:
-        logger.error('Cannot find imports for module %s' % modname)
+        logger.error('Cannot find imports for module {}'.format(modname))
         return []  # Means no imports found or looking for imports failed.
     # module_imports = filter(lambda x: not x.startswith('distutils'), module_imports)
     return module_imports
@@ -164,16 +164,16 @@ def get_homebrew_path(formula=''):
     path = None
     if formula:
         brewcmd.append(formula)
-        dbgstr = 'homebrew formula "%s"' % formula
+        dbgstr = 'homebrew formula "{}"'.format(formula)
     else:
         dbgstr = 'homebrew prefix'
     try:
         path = subprocess.check_output(brewcmd).strip()
-        logger.debug('Found %s at "%s"' % (dbgstr, path))
+        logger.debug('Found {} at "{}"'.format(dbgstr, path))
     except OSError:
         logger.debug('Detected homebrew not installed')
     except subprocess.CalledProcessError:
-        logger.debug('homebrew formula "%s" not installed' % formula)
+        logger.debug('homebrew formula "{}" not installed'.format(formula))
     if path:
         return path.decode('utf8')  # OS X filenames are UTF-8
     else:
@@ -275,13 +275,13 @@ def get_module_attribute(module_name, attr_name):
     # with actual attribute values. That's the hope, anyway.
     attr_value_if_undefined = '!)ABadCafe@(D15ea5e#*DeadBeef$&Fee1Dead%^'
     attr_value = exec_statement("""
-        import %s as m
-        print(getattr(m, %r, %r))
-    """ % (module_name, attr_name, attr_value_if_undefined))
+        import {mod} as m
+        print(getattr(m, {an!r}, {av!r}))
+    """.format(mod=module_name, an=attr_name, av=attr_value_if_undefined))
 
     if attr_value == attr_value_if_undefined:
         raise AttributeError(
-            'Module %r has no attribute %r' % (module_name, attr_name))
+            'Module {mod!r} has no attribute {an!r}'.format(mod=module_name, an=attr_name))
     else:
         return attr_value
 
@@ -318,14 +318,14 @@ def get_module_file_attribute(package):
     except (AttributeError, ImportError):
         # Statement to return __file__ attribute of a package.
         __file__statement = """
-            import %s as p
+            import {} as p
             try:
                 print(p.__file__)
             except:
                 # If p lacks a file attribute, hide the exception.
                 pass
         """
-        attr = exec_statement(__file__statement % package)
+        attr = exec_statement(__file__statement.format(package))
         if not attr.strip():
             raise ImportError
     return attr
@@ -439,7 +439,7 @@ def is_module_satisfies(requirements, version=None, version_attr='__version__'):
     Examples
     ----------
         # Assume PIL 2.9.0, Sphinx 1.3.1, and SQLAlchemy 0.6 are all installed.
-        >>> from PyInstaller.util.hooks import is_module_satisfies
+        >>> from PyInstaller.utils.hooks import is_module_satisfies
         >>> is_module_satisfies('sphinx >= 1.3.1')
         True
         >>> is_module_satisfies('sqlalchemy != 0.6')
@@ -559,10 +559,10 @@ def collect_submodules(package, filter=lambda name: True):
     if not isinstance(package, string_types):
         raise ValueError
 
-    logger.debug('Collecting submodules for %s' % package)
+    logger.debug('Collecting submodules for {}'.format(package))
     # Skip a module which is not a package.
     if not is_package(package):
-        logger.debug('collect_submodules - Module %s is not a package.' % package)
+        logger.debug('collect_submodules - Module {} is not a package.'.format(package))
         return []
 
     # Determine the filesystem path to the specified package.
@@ -623,7 +623,7 @@ def collect_submodules(package, filter=lambda name: True):
         if filter(name):
             mods.add(name)
 
-    logger.debug("collect_submodules - Found submodules: %s", mods)
+    logger.debug("collect_submodules - Found submodules: {}".format(mods))
     return list(mods)
 
 
@@ -662,7 +662,7 @@ def collect_dynamic_libs(package, destdir=None):
     if not isinstance(package, string_types):
         raise ValueError
 
-    logger.debug('Collecting dynamic libraries for %s' % package)
+    logger.debug('Collecting dynamic libraries for {}'.format(package))
     pkg_base, pkg_dir = get_package_paths(package)
     # Walk through all file in the given package, looking for dynamic libraries.
     dylibs = []
@@ -680,7 +680,7 @@ def collect_dynamic_libs(package, destdir=None):
                 else:
                     # The directory hierarchy is preserved as in the original package.
                     dest = remove_prefix(dirpath, os.path.dirname(pkg_base) + os.sep)
-                logger.debug(' %s, %s' % (source, dest))
+                logger.debug(' {}, {}'.format(source, dest))
                 dylibs.append((source, dest))
     return dylibs
 
@@ -705,7 +705,7 @@ def collect_data_files(package, include_py_files=False, subdir=None):
     This function is used only for hook scripts, but not by the body of
     PyInstaller.
     """
-    logger.debug('Collecting data files for %s' % package)
+    logger.debug('Collecting data files for {}'.format(package))
 
     # Accept only strings as packages.
     if not isinstance(package, string_types):
@@ -728,7 +728,7 @@ def collect_data_files(package, include_py_files=False, subdir=None):
                                      os.path.dirname(pkg_base) + os.sep)
                 datas.append((source, dest))
 
-    logger.debug("collect_data_files - Found files: %s", datas)
+    logger.debug("collect_data_files - Found files: {}".format(datas))
     return datas
 
 
@@ -968,11 +968,10 @@ def requirements_for_package(package_name):
             required_packages = dist_to_packages[requirement.key]
             hiddenimports.extend(required_packages)
         else:
-            logger.warning('Unable to find package for requirement %s from '
-                           'package %s.',
-                           requirement.project_name, package_name)
+            logger.warning('Unable to find package for requirement {} from '
+                           'package {}.'.format(requirement.project_name, package_name))
 
-    logger.info('Packages required by %s:\n%s', package_name, hiddenimports)
+    logger.info('Packages required by {}:\n{}'.format(package_name, hiddenimports))
     return hiddenimports
 
 
@@ -987,15 +986,15 @@ def collect_all(package_name, include_py_files=True):
     try:
         datas += copy_metadata(package_name)
     except Exception as e:
-        logger.warning('Unable to copy metadata for %s: %s', package_name, e)
+        logger.warning('Unable to copy metadata for {}: {}'.format(package_name, e))
     datas += collect_data_files(package_name, include_py_files)
     binaries = collect_dynamic_libs(package_name)
     hiddenimports = collect_submodules(package_name)
     try:
         hiddenimports += requirements_for_package(package_name)
     except Exception as e:
-        logger.warning('Unable to determine requirements for %s: %s',
-                       package_name, e)
+        logger.warning('Unable to determine requirements for {}: {}'
+                       .format(package_name, e))
 
     return datas, binaries, hiddenimports
 
