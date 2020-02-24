@@ -33,18 +33,17 @@ def get_gi_libdir(module, version):
         gi.require_version("GIRepository", "2.0")
         from gi.repository import GIRepository
         repo = GIRepository.Repository.get_default()
-        module, version = (%r, %r)
+        module, version = ({0!r}, {1!s})
         repo.require(module, version,
                      GIRepository.RepositoryLoadFlags.IREPOSITORY_LOAD_FLAG_LAZY)
         print(repo.get_shared_library(module))
-    """
-    statement %= (module, version)
+    """.format(module, version)
     libs = exec_statement(statement).split(',')
     for lib in libs:
         path = findSystemLibrary(lib.strip())
         return os.path.normpath(os.path.dirname(path))
 
-    raise ValueError("Could not find libdir for %s-%s" % (module, version))
+    raise ValueError("Could not find libdir for {}-{}".format(module, version))
 
 
 def get_gi_typelibs(module, version):
@@ -64,17 +63,16 @@ def get_gi_typelibs(module, version):
         gi.require_version("GIRepository", "2.0")
         from gi.repository import GIRepository
         repo = GIRepository.Repository.get_default()
-        module, version = (%r, %r)
+        module, version = ({0!r}, {1!r})
         repo.require(module, version,
                      GIRepository.RepositoryLoadFlags.IREPOSITORY_LOAD_FLAG_LAZY)
         get_deps = getattr(repo, 'get_immediate_dependencies', None)
         if not get_deps:
             get_deps = repo.get_dependencies
-        print({'sharedlib': repo.get_shared_library(module),
+        print({{'sharedlib': repo.get_shared_library(module),
                'typelib': repo.get_typelib_path(module),
-               'deps': get_deps(module) or []})
-    """
-    statement %= (module, version)
+               'deps': get_deps(module) or []}})
+    """.format(module, version)
     typelibs_data = eval_statement(statement)
     if not typelibs_data:
         logger.error("gi repository 'GIRepository 2.0' not found. "
@@ -82,18 +80,18 @@ def get_gi_typelibs(module, version):
                      "lib64girepository-gir2.0 is installed.")
         # :todo: should we raise a SystemError here?
     else:
-        logger.debug("Adding files for %s %s", module, version)
+        logger.debug("Adding files for {} {}".format(module, version))
 
         if typelibs_data['sharedlib']:
             for lib in typelibs_data['sharedlib'].split(','):
                 path = findSystemLibrary(lib.strip())
                 if path:
-                    logger.debug('Found shared library %s at %s', lib, path)
+                    logger.debug('Found shared library {} at {}'.format(lib, path))
                     binaries.append((path, '.'))
 
         d = gir_library_path_fix(typelibs_data['typelib'])
         if d:
-            logger.debug('Found gir typelib at %s', d)
+            logger.debug('Found gir typelib at {}'.format(d))
             datas.append(d)
 
         hiddenimports += collect_submodules('gi.overrides',
@@ -102,7 +100,7 @@ def get_gi_typelibs(module, version):
         # Load dependencies recursively
         for dep in typelibs_data['deps']:
             m, _ = dep.rsplit('-', 1)
-            hiddenimports += ['gi.repository.%s' % m]
+            hiddenimports += ['gi.repository.{}'.format(m)]
 
     return binaries, datas, hiddenimports
 
@@ -133,14 +131,14 @@ def gir_library_path_fix(path):
         gir_file = os.path.join(gir_path, gir_name)
 
         if not os.path.exists(gir_path):
-            logger.error('Unable to find gir directory: %s.\n'
+            logger.error('Unable to find gir directory: {}.\n'
                          'Try installing your platforms gobject-introspection '
-                         'package.', gir_path)
+                         'package.'.format(gir_path))
             return None
         if not os.path.exists(gir_file):
-            logger.error('Unable to find gir file: %s.\n'
+            logger.error('Unable to find gir file: {}.\n'
                          'Try installing your platforms gobject-introspection '
-                         'package.', gir_file)
+                         'package.'.format(gir_file))
             return None
 
         with open_file(gir_file, text_read_mode, encoding='utf-8') as f:
