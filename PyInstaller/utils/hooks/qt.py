@@ -52,7 +52,7 @@ class Qt5LibraryInfo:
 
                 import json
                 try:
-                    from %s.QtCore import QLibraryInfo, QCoreApplication
+                    from {}.QtCore import QLibraryInfo, QCoreApplication
                 except:
                     print('False')
                 else:
@@ -60,23 +60,23 @@ class Qt5LibraryInfo:
                     # instantiated.
                     app = QCoreApplication(sys.argv)
                     paths = [x for x in dir(QLibraryInfo) if x.endswith('Path')]
-                    location = {x: QLibraryInfo.location(getattr(QLibraryInfo, x))
-                                for x in paths}
+                    location = {{x: QLibraryInfo.location(getattr(QLibraryInfo, x))
+                                for x in paths}}
                     try:
                         version = QLibraryInfo.version().segments()
                     except AttributeError:
                         version = []
-                    print(json.dumps({
+                    print(json.dumps({{
                         'isDebugBuild': QLibraryInfo.isDebugBuild(),
                         'version': version,
                         'location': location,
-                    }))
-            """ % self.namespace)
+                    }}))
+            """.format(self.namespace))
             try:
                 qli = json.loads(json_str)
             except Exception as e:
-                logger.warning('Cannot read QLibraryInfo output: raised %s when '
-                               'decoding:\n%s', str(e), json_str)
+                logger.warning('Cannot read QLibraryInfo output: raised {} when '
+                               'decoding:\n{}'.format(str(e), json_str))
                 qli = False
 
             # If PyQt5/PySide2 can't be imported, record that.
@@ -162,7 +162,7 @@ def qt_plugins_binaries(plugin_type, namespace):
     elif is_win and namespace in ['PyQt5', 'PySide2']:
         files = [f for f in files if not f.endswith("d.dll")]
 
-    logger.debug("Found plugin files %s for plugin %s", files, plugin_type)
+    logger.debug("Found plugin files {} for plugin {}".format(files, plugin_type))
     if namespace in ['PyQt4', 'PySide']:
         plugin_dir = 'qt4_plugins'
     elif namespace == 'PyQt5':
@@ -201,7 +201,7 @@ def qt_menu_nib_dir(namespace):
         path = os.path.join(location, 'qt_menu.nib')
         if os.path.exists(path):
             menu_dir = path
-            logger.debug('Found qt_menu.nib for %s at %s', namespace, path)
+            logger.debug('Found qt_menu.nib for {} at {}'.format(namespace, path))
             break
     if not menu_dir:
         raise Exception("""
@@ -245,12 +245,13 @@ def get_qmake_path(version=''):
             # version string is probably just ASCII
             versionstring = versionstring.decode('utf8')
             if versionstring.find(version) == 0:
-                logger.debug('Found qmake version "%s" at "%s".',
-                             versionstring, qmake)
+                logger.debug('Found qmake version "{}" at "{}".'
+                             .format(versionstring, qmake))
                 return qmake
         except (OSError, subprocess.CalledProcessError):
             pass
-    logger.debug('Could not find qmake matching version "%s".', version)
+    logger.debug('Could not find qmake matching version "{}".'
+                 .format(version))
     return None
 
 
@@ -477,8 +478,8 @@ def add_qt5_dependencies(hook_file):
 
     # Look up the module returned by this import.
     module = get_module_file_attribute(module_name)
-    logger.debug('add_qt5_dependencies: Examining %s, based on hook of %s.',
-                 module, hook_file)
+    logger.debug('add_qt5_dependencies: Examining {}, based on hook of {}.'
+                 .format(module, hook_file))
 
     # Walk through all the static dependencies of a dynamically-linked library
     # (``.so``/``.dll``/``.dylib``).
@@ -513,13 +514,12 @@ def add_qt5_dependencies(hook_file):
         if lib_name.endswith('_conda'):
             lib_name = lib_name[:-6]
 
-        logger.debug('add_qt5_dependencies: raw lib %s -> parsed lib %s',
-                     imp, lib_name)
+        logger.debug('add_qt5_dependencies: raw lib {} -> parsed lib {}'.format(imp, lib_name))
 
         # Follow only Qt dependencies.
         if lib_name in _qt_dynamic_dependencies_dict:
             # Follow these to find additional dependencies.
-            logger.debug('add_qt5_dependencies: Import of %s.', imp)
+            logger.debug('add_qt5_dependencies: Import of {}.'.format(imp))
             imports.update(getImports(imp))
             # Look up which plugins and translations are needed.
             dd = _qt_dynamic_dependencies_dict[lib_name]
@@ -559,16 +559,16 @@ def add_qt5_dependencies(hook_file):
                 )
             ))
         else:
-            logger.warning('Unable to find Qt5 translations %s. These '
-                           'translations were not packaged.', src)
+            logger.warning('Unable to find Qt5 translations {}. These '
+                           'translations were not packaged.'.format(src))
     # Change hiddenimports to a list.
     hiddenimports = list(hiddenimports)
 
-    logger.debug('add_qt5_dependencies: imports from %s:\n'
-                 '  hiddenimports = %s\n'
-                 '  binaries = %s\n'
-                 '  datas = %s',
-                 hook_name, hiddenimports, binaries, datas)
+    logger.debug('add_qt5_dependencies: imports from {}:\n'
+                 '  hiddenimports = {}\n'
+                 '  binaries = {}\n'
+                 '  datas = {}'
+                 .format(hook_name, hiddenimports, binaries, datas))
     return hiddenimports, binaries, datas
 
 
