@@ -199,8 +199,8 @@ def UpdateResources(dstpath, data, type_, names=None, languages=None):
     for type_ in res:
         for name in res[type_]:
             for language in res[type_][name]:
-                logger.info("Updating resource type %s name %s language %s",
-                            type_, name, language)
+                logger.info("Updating resource type {} name {} language {}"
+                            .format(type_, name, language))
                 win32api.UpdateResource(hdst, type_, name, data, language)
     win32api.EndUpdateResource(hdst, 0)
 
