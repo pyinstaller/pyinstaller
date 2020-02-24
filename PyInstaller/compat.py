@@ -72,23 +72,23 @@ elif is_aix:
     PYDYLIB_NAMES = {'libpython{}.{}.a'.format(*_pyver),
                      'libpython{}.{}.so'.format(*_pyver)}
 elif is_freebsd:
-    PYDYLIB_NAMES = {'libpython{}.{}.so.1' % _pyver,
-                     'libpython{}.{}m.so.1' % _pyver,
-                     'libpython{}.{}.so.1.0' % _pyver,
-                     'libpython{}.{}m.so.1.0' % _pyver}
+    PYDYLIB_NAMES = {'libpython{}.{}.so.1'.format(*_pyver),
+                     'libpython{}.{}m.so.1'.format(*_pyver),
+                     'libpython{}.{}.so.1.0'.format(*_pyver),
+                     'libpython{}.{}m.so.1.0'.format(*_pyver)}
 elif is_openbsd:
-    PYDYLIB_NAMES = {'libpython{}.{}.so.0.0' % _pyver,
-                     'libpython{}.{}m.so.0.0' % _pyver}
+    PYDYLIB_NAMES = {'libpython{}.{}.so.0.0'.format(*_pyver),
+                     'libpython{}.{}m.so.0.0'.format(*_pyver)}
 elif is_hpux:
-    PYDYLIB_NAMES = {'libpython{}.{}.so' % _pyver}
+    PYDYLIB_NAMES = {'libpython{}.{}.so'.format(*_pyver)}
 elif is_unix:
     # Other *nix platforms.
     # Python 2 .so library on Linux is: libpython2.7.so.1.0
     # Python 3 .so library on Linux is: libpython3.2mu.so.1.0, libpython3.3m.so.1.0
-    PYDYLIB_NAMES = {'libpython{}.{}.so.1.0' % _pyver,
-                     'libpython{}.{}m.so.1.0' % _pyver,
-                     'libpython{}.{}mu.so.1.0' % _pyver,
-                     'libpython{}.{}m.so' % _pyver}
+    PYDYLIB_NAMES = {'libpython{}.{}.so.1.0'.format(*_pyver),
+                     'libpython{}.{}m.so.1.0'.format(*_pyver),
+                     'libpython{}.{}mu.so.1.0'.format(*_pyver),
+                     'libpython{}.{}m.so'.format(*_pyver)}
 else:
     raise SystemExit('Your platform is not yet supported. '
                      'Please define constant PYDYLIB_NAMES for your platform.')
@@ -341,7 +341,7 @@ def exec_command(*cmdargs, **kwargs):
         if raise_ENOENT and e.errno == errno.ENOENT:
             raise
         print('--' * 20, file=sys.stderr)
-        print("Error running '%s':" % " ".join(cmdargs), file=sys.stderr)
+        print("Error running '{}':".format(" ".join(cmdargs)), file=sys.stderr)
         print(e, file=sys.stderr)
         print('--' * 20, file=sys.stderr)
         raise ExecCommandFailed("Error: Executing command failed!")

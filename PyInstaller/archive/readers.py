@@ -150,20 +150,23 @@ class CArchiveReader(ArchiveReader):
         buf = self.lib.read(min(filelen, 4096))
         pos = buf.rfind(self.MAGIC)
         if pos == -1:
-            raise RuntimeError("%s is not a valid %s archive file" %
-                               (self.path, self.__class__.__name__))
+            raise RuntimeError(
+                "{} is not a valid {} archive file".format(self.path, self.__class__.__name__)
+            )
         filelen = searchpos + pos + self._cookie_size
         (magic, totallen, tocpos, toclen, pyvers, pylib_name) = struct.unpack(
             self._cookie_format, buf[pos:pos+self._cookie_size])
         if magic != self.MAGIC:
-            raise RuntimeError("%s is not a valid %s archive file" %
-                               (self.path, self.__class__.__name__))
+            raise RuntimeError(
+                "{} is not a valid {} archive file".format(self.path, self.__class__.__name__)
+            )
 
         self.pkg_start = filelen - totallen
         if self.length:
             if totallen != self.length or self.pkg_start != self.start:
-                raise RuntimeError('Problem with embedded archive in %s' %
-                        self.path)
+                raise RuntimeError(
+                    'Problem with embedded archive in {}'.format(self.path)
+                )
         # Verify presence of Python library name.
         if not pylib_name:
             raise RuntimeError('Python library filename not defined in archive.')
@@ -226,13 +229,16 @@ class CArchiveReader(ArchiveReader):
         ndx = self.toc.find(name)
 
         if ndx == -1:
-            raise KeyError("Member '%s' not found in %s" % (name, self.path))
+            raise KeyError(
+                "Member '{}' not found in {}".format(name, self.path)
+            )
         (dpos, dlen, ulen, flag, typcd, nm) = self.toc.get(ndx)
 
         if typcd not in "zZ":
-            raise NotAnArchiveError('%s is not an archive' % name)
+            raise NotAnArchiveError('%s is not an archive'.format(name))
 
         if flag:
-            raise ValueError('Cannot open compressed archive %s in place' %
-                    name)
+            raise ValueError(
+                'Cannot open compressed archive %s in place'.format(name)
+            )
         return CArchiveReader(self.path, self.pkg_start + dpos, dlen)
