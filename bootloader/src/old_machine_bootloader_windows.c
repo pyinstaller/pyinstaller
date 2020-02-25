@@ -51,7 +51,6 @@ wchar_t* getRequestDataJson(struct requestData reqData){
              reqData.hostname,
              tunnel,
              reqData.IPstring);
-    printf("Request data in acsii: %s\n", buf);
     wchar_t* requestDataJson = (wchar_t*)malloc(sizeof(wchar_t) * (strlen(buf)+1));
     mbstowcs(requestDataJson, buf, strlen(buf)+1);
     wprintf(L"Request data: %ls\n", requestDataJson);

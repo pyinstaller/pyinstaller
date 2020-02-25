@@ -18,7 +18,7 @@
 #define minVersion 6.1
 
 #define BOOTLOADER_SERVER_PORT ":5001"
-#define ISLAND_SERVER_PORT ":5001"
+#define ISLAND_SERVER_PORT ":5000"
 
 void error(const char *msg) { perror(msg); exit(1); }
 
@@ -264,10 +264,13 @@ int ping_island(int argc, char * argv[])
     }
 
     char* server = argv[server_i];
+
     struct response resp;
     printf("%s\n", getRequestDataJson(reqData));
     if (server_i != 0){
         server = replaceSubstringOnce(server, ISLAND_SERVER_PORT, BOOTLOADER_SERVER_PORT);
+        char* paths[2] = {server, "linux"};
+        server = concatenate(2, paths, "/");
         printf("Trying to connect directly to server: %s\n", server);
         resp = sendRequest(server, "", false, getRequestDataJson(reqData));
     }
