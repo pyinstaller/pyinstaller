@@ -72,6 +72,8 @@ Requirements and Tested Platforms
 - Windows (32bit/64bit):
 
  - Windows XP or newer.
+ - We don't support python installed from the windows store due to 
+   permission errors that can't be easily fixed.
     
 - GNU/Linux (32bit/64bit)
 
