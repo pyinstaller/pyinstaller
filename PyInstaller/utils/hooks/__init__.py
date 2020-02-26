@@ -746,7 +746,7 @@ def collect_system_data_files(path, destdir=None, include_py_files=False):
         raise ValueError
     # The call to ``remove_prefix`` below assumes a path separate of ``os.sep``,
     # which may not be true on Windows; Windows allows Linux path separators in
-    # filenames. Fix this.
+    # filenames. Fix this by normalizing the path.
     path = os.path.normpath(path)
 
     # Walk through all file in the given package, looking for data files.
