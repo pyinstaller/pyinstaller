@@ -714,6 +714,13 @@ def collect_data_files(package, include_py_files=False, subdir=None):
     pkg_base, pkg_dir = get_package_paths(package)
     if subdir:
         pkg_dir = os.path.join(pkg_dir, subdir)
+    pkg_base = os.path.dirname(pkg_base)
+    # Ensure `pkg_base` ends with a single slash
+    # Subtle difference on Windows: In some cases `dirname` keeps the
+    # trailing slash, e.g. dirname("//aaa/bbb/"), see issue #4707.
+    if not pkg_base.endswith(os.sep):
+        pkg_base += os.sep
+
     # Walk through all file in the given package, looking for data files.
     datas = []
     for dirpath, dirnames, files in os.walk(pkg_dir):
@@ -724,8 +731,7 @@ def collect_data_files(package, include_py_files=False, subdir=None):
                 # (/abs/path/to/source/mod/submod/file.dat,
                 #  mod/submod)
                 source = os.path.join(dirpath, f)
-                dest = remove_prefix(dirpath,
-                                     os.path.dirname(pkg_base) + os.sep)
+                dest = remove_prefix(dirpath, pkg_base)
                 datas.append((source, dest))
 
     logger.debug("collect_data_files - Found files: %s", datas)
@@ -748,6 +754,12 @@ def collect_system_data_files(path, destdir=None, include_py_files=False):
     # which may not be true on Windows; Windows allows Linux path separators in
     # filenames. Fix this by normalizing the path.
     path = os.path.normpath(path)
+    path = os.path.dirname(path)
+    # Ensure `path` ends with a single slash
+    # Subtle difference on Windows: In some cases `dirname` keeps the
+    # trailing slash, e.g. dirname("//aaa/bbb/"), see issue #4707.
+    if not path.endswith(os.sep):
+        path += os.sep
 
     # Walk through all file in the given package, looking for data files.
     datas = []
@@ -759,8 +771,7 @@ def collect_system_data_files(path, destdir=None, include_py_files=False):
                 # (/abs/path/to/source/mod/submod/file.dat,
                 #  mod/submod/destdir)
                 source = os.path.join(dirpath, f)
-                dest = remove_prefix(dirpath,
-                                     os.path.dirname(path) + os.sep)
+                dest = remove_prefix(dirpath, path)
                 if destdir is not None:
                     dest = os.path.join(destdir, dest)
                 datas.append((source, dest))
