@@ -75,6 +75,15 @@ def test_enchant(pyi_builder):
     pyi_builder.test_script('pyi_lib_enchant.py')
 
 
+@importorskip('tensorflow')
+def test_tensorflow(pyi_builder):
+    pyi_builder.test_source(
+        """
+        from tensorflow import *
+        """
+    )
+
+
 @importorskip('gevent')
 def test_gevent(pyi_builder):
     pyi_builder.test_source(
