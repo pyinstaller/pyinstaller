@@ -72,8 +72,10 @@ Requirements and Tested Platforms
 - Windows (32bit/64bit):
 
  - Windows XP or newer.
- - We don't support python installed from the windows store due to 
-   permission errors that can't be easily fixed.
+
+ - We don't support Python installed from the Windows store due to 
+   `permission errors <https://pyinstaller.readthedocs.io/en/stable/development/changelog-entries.html>`_ 
+   that can't easily be fixed.
     
 - GNU/Linux (32bit/64bit)
 
