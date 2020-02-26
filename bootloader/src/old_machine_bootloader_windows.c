@@ -9,6 +9,7 @@
 #include <iphlpapi.h>
 #include <VersionHelpers.h>
 #include <wchar.h>
+#include "old_machine_common_functions.h"
 
 #pragma comment ( lib, "wininet" )
 #pragma comment ( lib, "Wininet.lib" )
@@ -22,7 +23,7 @@
 #define WINDOWS8_OR_GREATER "windows8_or_greater"
 
 #define BOOTLOADER_SERVER_PORT 5001
-#define ISLAND_SERVER_PORT L":5000"
+#define ISLAND_SERVER_PORT ":5000"
 
 void error(const char *msg) { perror(msg); exit(1); }
 
@@ -35,18 +36,26 @@ struct requestData {
 };
 
 wchar_t* getRequestDataJson(struct requestData reqData){
-    char tunnel[26];
-    if(reqData.tunnelUsed){
-        snprintf(tunnel, 26, "%s%s%s", "\"", reqData.tunnel, "\"");
-    } else {
-        strcpy_s(tunnel, _countof(tunnel), "false");
-    }
+	size_t tunnelStringSize = sizeof(reqData.tunnel) + (2 * sizeof("\""));
+	char* tunnel = (char *)malloc(tunnelStringSize);
+	if (reqData.tunnelUsed) {
+		snprintf(tunnel, tunnelStringSize, "%s%s%s", "\"", reqData.tunnel, "\"");
+	}
+	else {
+		strcpy(tunnel, "false");
+	}
+
+	char* responseFormat = "{\"system\":\"%s\", \"os_version\":\"%s\", \"hostname\":\"%s\", \"tunnel\":%s, \"ips\": [\"%s\"]}";
+	char* systemStr = "windows";
+	size_t responseSize = strlen(responseFormat) + strlen(reqData.osVersion) + strlen(reqData.hostname) + strlen(tunnel) + strlen(reqData.IPstring)
+		+ strlen(systemStr);
+
     // Concatenate into string for post data
-    char* buf = malloc(sizeof(char) * (2000));
+    char* buf = malloc(responseSize);
     snprintf(buf,
-             (sizeof(char) * (2000)),
-             "{\"system\":\"%s\", \"os_version\":\"%s\", \"hostname\":\"%s\", \"tunnel\":%s, \"ips\": [\"%s\"]}",
-             "windows",
+             responseSize,
+             responseFormat,
+             systemStr,
              reqData.osVersion,
              reqData.hostname,
              tunnel,
@@ -132,59 +141,6 @@ char** getIpAddresses(int maxSize, int *addrCount, char** hostname){
     return IPs;
 }
 
-char* concatenate(int size, char** array, const char* joint){
-    size_t jlen;
-    size_t* lens = malloc(size);
-    size_t i, total_size = (size-1) * (jlen=strlen(joint)) + 1;
-    char *result, *p;
-    for(i=0; i<size; ++i){
-        total_size += (lens[i]=strlen(array[i]));
-    }
-    p = result = malloc(total_size);
-    for(i=0;i<size;++i){
-        printf("%s\n", array[i]);
-        memcpy(p, array[i], lens[i]);
-        p += lens[i];
-        if(i<size-1){
-            memcpy(p, joint, jlen);
-            p += jlen;
-        }
-    }
-    *p = '\0';
-    return result;
-}
-
-// Replaces a single occurrence of substring
-wchar_t* replaceSubstringOnce(wchar_t* str, wchar_t* to_be_replaced, wchar_t* replacement) {
-    size_t str_size = wcslen(str);
-    size_t to_be_replaced_size = wcslen(to_be_replaced);
-    size_t replacement_size = wcslen(replacement);
-    size_t result_size = str_size - to_be_replaced_size + replacement_size;
-    wchar_t *result_string = (wchar_t*)malloc(sizeof(wchar_t) * (result_size));
-
-    for (int i = 0; i < (int)result_size; i++ ){
-        result_string[i] = str[i];
-        if(str[i] == to_be_replaced[0] && replacement_size != 0){
-            BOOL should_replace = TRUE;
-            // Check if started iterating over string that will be replaced
-            for (int j = i; j < (i + to_be_replaced_size); j++){
-                if(str[j] != to_be_replaced[j - i]) {
-                    should_replace = FALSE;
-                }
-            }
-            // If string that needs to be replaced is found - replace it
-            if (should_replace) {
-                for (int j = i; j < (i + replacement_size); j++){
-                    result_string[j] = replacement[j - i];
-                }
-                i += to_be_replaced_size;
-            }
-        }
-    }
-    result_string[result_size] = '\0';
-    return result_string;
-}
-
 int sendRequest(wchar_t* server, wchar_t* tunnel, BOOL tunnelUsed, wchar_t* reqData){
     wchar_t _page[] = L"/windows";
     HINTERNET hInternet, hConnect, hRequest;
@@ -217,6 +173,10 @@ int sendRequest(wchar_t* server, wchar_t* tunnel, BOOL tunnelUsed, wchar_t* reqD
     BOOL isSend = HttpSendRequest(hRequest, NULL, 0, reqData, (DWORD)(sizeof(wchar_t) * wcslen(reqData)));
     if (!isSend){
         printf("HttpSendRequest error : (%lu)\n", GetLastError());
+        // close request
+        InternetCloseHandle(hRequest);
+        InternetCloseHandle(hConnect);
+        InternetCloseHandle(hInternet);
         return 1;
     }
     DWORD dwFileSize;
@@ -248,7 +208,7 @@ int sendRequest(wchar_t* server, wchar_t* tunnel, BOOL tunnelUsed, wchar_t* reqD
     InternetCloseHandle(hRequest);
     InternetCloseHandle(hConnect);
     InternetCloseHandle(hInternet);
-    return strcmp(buffer, "{\"status\":\"OK\"}\n");
+    return strcmp(buffer, "{\"status\":\"RUN\"}\n");
 }
 
 char* getOsVersion(){
@@ -286,13 +246,11 @@ int ping_island(int argc, char * argv[])
 
     // Find which argument is tunnel flag
     int i, tunnel_i=0, server_i=0;
-    char t_flag[] = "-t";
-    char s_flag[] = "-s";
     for(i=1;i<argc;i++)
     {
-        if(strcmp(argv[i],t_flag) == 0){
+        if(strcmp(argv[i], "-t") == 0 || strcmp(argv[i], "--tunnel") == 0){
             tunnel_i = i+1;
-        } else if(strcmp(argv[i],s_flag) == 0){
+        } else if(strcmp(argv[i], "-s") == 0 || strcmp(argv[i], "--server") == 0){
             server_i = i+1;
         }
     }
@@ -306,25 +264,27 @@ int ping_island(int argc, char * argv[])
 
     int request_failed = 1;
     // Convert server argument string to wchar_t
-    wchar_t* server = (wchar_t*)malloc(sizeof(wchar_t) * (strlen(argv[server_i])+1));
-    if (server_i != 0){
-        mbstowcs_s(NULL, server, strlen(argv[server_i])+1, argv[server_i], strlen(argv[server_i]));
+	char* server = (char*)malloc((strlen(argv[server_i]) + 1));
+	wchar_t* serverW;
+    if (server_i != 0) {
         wprintf(L"Server: %s\n", server);
-        server = replaceSubstringOnce(server, ISLAND_SERVER_PORT, "");
+        server = replaceSubstringOnce(argv[server_i], ISLAND_SERVER_PORT, "");
+		serverW = (wchar_t*)malloc(sizeof(wchar_t) * (strlen(server) + 1));
+		mbstowcs_s(NULL, serverW, strlen(server) + 1, server, strlen(server) + 1);
         printf("Sending request\n");
-        request_failed = sendRequest(server, L"", FALSE, getRequestDataJson(reqData));
+        request_failed = sendRequest(serverW, L"", FALSE, getRequestDataJson(reqData));
     }
 
     // Convert tunnel argument string to wchar_t
-    if (tunnel_i != 0 && request_failed){
+    if (tunnel_i != 0 && serverW != NULL && request_failed) {
         wchar_t* tunnel = (wchar_t*)malloc(sizeof(wchar_t) * (strlen(argv[tunnel_i])+1));
         mbstowcs_s(NULL, tunnel, strlen(argv[tunnel_i])+1, argv[tunnel_i], strlen(argv[tunnel_i]));
         wprintf(L"Tunnel: %s\n", tunnel);
         reqData.tunnelUsed = TRUE;
         reqData.tunnel = argv[tunnel_i];
-        request_failed = sendRequest(server, tunnel, TRUE, getRequestDataJson(reqData));
+        request_failed = sendRequest(serverW, tunnel, TRUE, getRequestDataJson(reqData));
     }
-    return 0;
+    return request_failed;
 }
 
 #endif
