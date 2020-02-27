@@ -16,8 +16,6 @@
 #include <curl/curl.h>
 #include "old_machine_common_functions.h"
 
-#define minVersion 6.1
-
 #define BOOTLOADER_SERVER_PORT ":5001"
 #define ISLAND_SERVER_PORT ":5000"
 
@@ -27,44 +25,6 @@ struct response {
   char *ptr;
   size_t len;
 };
-
-struct requestData {
-    char* IPstring;
-    char* glibcVersion;
-    char* hostname;
-    char* osVersion;
-    bool tunnelUsed;
-    char* tunnel;
-};
-
-char* getRequestDataJson(struct requestData reqData){
-    size_t tunnelStringSize = sizeof(reqData.tunnel) + (2 * sizeof("\""));
-    char* tunnel = (char *) malloc(tunnelStringSize);
-    if(reqData.tunnelUsed){
-        snprintf(tunnel, tunnelStringSize, "%s%s%s", "\"", reqData.tunnel, "\"");
-    } else {
-        strcpy(tunnel, "false");
-    }
-
-    char* responseFormat = "{\"system\":\"%s\", \"os_version\":\"%s\", \"glibc_version\":\"%s\", \"hostname\":\"%s\", \"tunnel\":%s, \"ips\": [\"%s\"]}";
-    char* systemStr = "linux";
-    size_t responseSize = strlen(responseFormat) + strlen(reqData.osVersion) + strlen(reqData.glibcVersion)
-                          + strlen(reqData.hostname) + strlen(tunnel) + strlen(reqData.IPstring)
-                          + strlen(systemStr);
-
-    // Concatenate into string for post data
-    char* buf = malloc(responseSize);
-    snprintf(buf,
-             responseSize,
-             responseFormat,
-             systemStr,
-             reqData.osVersion,
-             reqData.glibcVersion,
-             reqData.hostname,
-             tunnel,
-             reqData.IPstring);
-    return buf;
-}
 
 void init_response(struct response *s) {
   s->len = 0;
@@ -90,7 +50,8 @@ size_t writefunc(void *ptr, size_t size, size_t nmemb, struct response *s)
 
 char* executeCommand(char* commandLine){
     FILE *fp;
-    char* path = (char *) malloc(sizeof(char) * 300);
+    const int maxOutputLength = 2400;
+    char* path = (char *) malloc(maxOutputLength);
 
     /* Open the command for reading. */
     fp = popen(commandLine, "r");
@@ -98,7 +59,7 @@ char* executeCommand(char* commandLine){
         error("Failed to run command\n" );
 
     /* Read the output a line at a time - output it. */
-    char* res = fgets(path, 300, fp);
+    char* res = fgets(path, maxOutputLength, fp);
     if (res == NULL)
         error("ERROR reading commandline\n");
 
@@ -108,7 +69,7 @@ char* executeCommand(char* commandLine){
     return path;
 }
 
-struct response sendRequest(char* server, char* tunnel, bool tunnelUsed, char* data){
+struct response sendRequest(char* server, char* tunnel, char* data){
     CURL *curl;
     CURLcode res;
     struct response s;
@@ -118,7 +79,7 @@ struct response sendRequest(char* server, char* tunnel, bool tunnelUsed, char* d
         curl_easy_setopt(curl, CURLOPT_URL, server);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writefunc);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &s);
-        if(tunnelUsed){
+        if(tunnel != NULL){
             curl_easy_setopt(curl, CURLOPT_PROXY, tunnel);
         }
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
@@ -140,7 +101,7 @@ struct response sendRequest(char* server, char* tunnel, bool tunnelUsed, char* d
 }
 
 char** getIpAddresses(int maxSize, int *addrCount){
-    char** IPs = malloc(maxSize * sizeof(char*));
+    char** IPs = NULL;
     int i = 0;
 
     struct ifaddrs * ifAddrStruct=NULL;
@@ -155,9 +116,10 @@ char** getIpAddresses(int maxSize, int *addrCount){
         if (ifa->ifa_addr->sa_family == AF_INET) { // check it is IP4
             // is a valid IP4 Address
             tmpAddrPtr=&((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
-            IPs[i] = malloc(INET_ADDRSTRLEN);
-            inet_ntop(AF_INET, tmpAddrPtr, IPs[i], INET_ADDRSTRLEN);
             i = i+1;
+            IPs = (char**)realloc(IPs, (i+1)*sizeof(*IPs));
+            IPs[i-1] = (char*)malloc(INET_ADDRSTRLEN);
+            inet_ntop(AF_INET, tmpAddrPtr, IPs[i-1], INET_ADDRSTRLEN);
         }
     }
     if (ifAddrStruct!=NULL) freeifaddrs(ifAddrStruct);
@@ -175,6 +137,7 @@ int ping_island(int argc, char * argv[])
     printf("glibc: %s\n", glibcVersion);
 
     char* osVersion = executeCommand("cat /etc/os-release");
+    // Some old distributions like centos6 on AWS has a different os info path
     if(!strcmp(osVersion, "")){
         osVersion = executeCommand("cat /etc/system-release");
     }
@@ -196,7 +159,7 @@ int ping_island(int argc, char * argv[])
     reqData.osVersion = osVersion;
     reqData.hostname = hostname;
     reqData.IPstring = IPstring;
-    reqData.tunnelUsed = false;
+    reqData.tunnel = NULL;
     reqData.glibcVersion = glibcVersion;
 
 
@@ -213,22 +176,25 @@ int ping_island(int argc, char * argv[])
     char* server = argv[server_i];
 
     struct response resp;
-    printf("%s\n", getRequestDataJson(reqData));
+    char* requestFormat = "{\"system\":\"%s\", \"os_version\":\"%s\", \"glibc_version\":\"%s\", \"hostname\":\"%s\", \"tunnel\":%s, \"ips\": [\"%s\"]}";
+    char* systemStr = "linux";
+    char* requestContents;
     if (server_i != 0){
         server = replaceSubstringOnce(server, ISLAND_SERVER_PORT, BOOTLOADER_SERVER_PORT);
         char* paths[2] = {server, "linux"};
         server = concatenate(2, paths, "/");
+        requestContents = getRequestDataJson(reqData, requestFormat, systemStr);
         printf("Trying to connect directly to server: %s\n", server);
-        resp = sendRequest(server, "", false, getRequestDataJson(reqData));
+        resp = sendRequest(server, NULL, requestContents);
     }
 
     // Convert tunnel argument string to wchar_t
     if (tunnel_i != 0 && !strcmp(resp.ptr, "FAILED")){
         char * tunnel = argv[tunnel_i];
         printf("Failed to connect directly to the server, using tunnel: %s\n", tunnel);
-        reqData.tunnelUsed = true;
         reqData.tunnel = tunnel;
-        resp = sendRequest(server, tunnel, true, getRequestDataJson(reqData));
+        requestContents = getRequestDataJson(reqData, requestFormat, systemStr);
+        resp = sendRequest(server, tunnel, requestContents);
     }
     printf("response: %s\n", resp.ptr);
     return strcmp("{\"status\":\"RUN\"}\n", resp.ptr);

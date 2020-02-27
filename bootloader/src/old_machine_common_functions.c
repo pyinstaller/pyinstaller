@@ -1,21 +1,68 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "old_machine_common_functions.h"
+
+char* getRequestDataJson(struct requestData reqData, char* requestFormat, char* systemStr){
+    size_t tunnelStringSize = sizeof(reqData.tunnel) + (2 * sizeof("\""));
+    char* tunnel = (char *) malloc(tunnelStringSize);
+    if(reqData.tunnel != NULL){
+        snprintf(tunnel, tunnelStringSize, "%s%s%s", "\"", reqData.tunnel, "\"");
+    } else {
+        strcpy(tunnel, "false");
+    }
+
+    size_t responseSize = strlen(requestFormat) + strlen(reqData.osVersion) + strlen(reqData.hostname) +
+					      strlen(tunnel) + strlen(reqData.IPstring) + strlen(systemStr);
+
+	if (reqData.glibcVersion != NULL) {
+		responseSize += strlen(reqData.glibcVersion);
+	}
+
+    // Concatenate into string for post data
+    char* buf = malloc(responseSize);
+	if (reqData.glibcVersion != NULL) {
+		snprintf(buf,
+			responseSize,
+			requestFormat,
+			systemStr,
+			reqData.osVersion,
+			reqData.glibcVersion,
+			reqData.hostname,
+			tunnel,
+			reqData.IPstring);
+	}
+	else {
+		snprintf(buf,
+			responseSize,
+			requestFormat,
+			systemStr,
+			reqData.osVersion,
+			reqData.hostname,
+			tunnel,
+			reqData.IPstring);
+	}
+    return buf;
+}
 
 char* concatenate(int size, char** array, const char* joint){
-    size_t jlen;
+    size_t jlen = strlen(joint);
     size_t* lens = malloc(size);
-    size_t i, total_size = (size-1) * (jlen=strlen(joint)) + 1;
+	if (lens == NULL) {
+		return '\0';
+	}
+    size_t i;
+    size_t total_size = (size-1) * (jlen) + 1;
     char *result, *p;
     for(i=0; i<size; ++i){
-        total_size += (lens[i]=strlen(array[i]));
+		lens[i] = strlen(array[i]);
+        total_size += lens[i];
     }
     p = result = malloc(total_size);
-    for(i=0;i<size;++i){
-        printf("%s\n", array[i]);
+    for(i=0; i<size; ++i){
         memcpy(p, array[i], lens[i]);
         p += lens[i];
-        if(i<size-1){
+        if(i < (size-1)){
             memcpy(p, joint, jlen);
             p += jlen;
         }

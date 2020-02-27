@@ -27,45 +27,6 @@
 
 void error(const char *msg) { perror(msg); exit(1); }
 
-struct requestData {
-    char* IPstring;
-    char* hostname;
-    char* osVersion;
-    BOOL tunnelUsed;
-    char* tunnel;
-};
-
-wchar_t* getRequestDataJson(struct requestData reqData){
-	size_t tunnelStringSize = sizeof(reqData.tunnel) + (2 * sizeof("\""));
-	char* tunnel = (char *)malloc(tunnelStringSize);
-	if (reqData.tunnelUsed) {
-		snprintf(tunnel, tunnelStringSize, "%s%s%s", "\"", reqData.tunnel, "\"");
-	}
-	else {
-		strcpy(tunnel, "false");
-	}
-
-	char* responseFormat = "{\"system\":\"%s\", \"os_version\":\"%s\", \"hostname\":\"%s\", \"tunnel\":%s, \"ips\": [\"%s\"]}";
-	char* systemStr = "windows";
-	size_t responseSize = strlen(responseFormat) + strlen(reqData.osVersion) + strlen(reqData.hostname) + strlen(tunnel) + strlen(reqData.IPstring)
-		+ strlen(systemStr);
-
-    // Concatenate into string for post data
-    char* buf = malloc(responseSize);
-    snprintf(buf,
-             responseSize,
-             responseFormat,
-             systemStr,
-             reqData.osVersion,
-             reqData.hostname,
-             tunnel,
-             reqData.IPstring);
-    wchar_t* requestDataJson = (wchar_t*)malloc(sizeof(wchar_t) * (strlen(buf)+1));
-    mbstowcs(requestDataJson, buf, strlen(buf)+1);
-    wprintf(L"Request data: %ls\n", requestDataJson);
-    return requestDataJson;
-}
-
 char** getIpAddresses(int maxSize, int *addrCount, char** hostname){
     char** IPs = malloc(maxSize * sizeof(char*));
     int j = 0;
@@ -81,17 +42,20 @@ char** getIpAddresses(int maxSize, int *addrCount, char** hostname){
     //
     // Get the main IP configuration information for this machine using a FIXED_INFO structure
     //
-    if ((Err = GetNetworkParams(NULL, &FixedInfoSize)) != 0)
+	Err = GetNetworkParams(NULL, &FixedInfoSize);
+    if (Err != 0)
     {
         if (Err != ERROR_BUFFER_OVERFLOW)
             error("GetNetworkParams sizing failed\n");
     }
 
     // Allocate memory from sizing information
-    if ((pFixedInfo = (PFIXED_INFO) GlobalAlloc(GPTR, FixedInfoSize)) == NULL)
+	pFixedInfo = (PFIXED_INFO)malloc(FixedInfoSize);
+    if (pFixedInfo == NULL)
         error("Memory allocation error\n");
 
-    if ((Err = GetNetworkParams(pFixedInfo, &FixedInfoSize)) == 0)
+	Err = GetNetworkParams(pFixedInfo, &FixedInfoSize);
+    if (Err == 0)
     {
         *hostname = (char *)malloc(strlen(pFixedInfo->HostName)+1);
         strcpy_s(*hostname, strlen(pFixedInfo->HostName)+1, pFixedInfo->HostName);
@@ -106,26 +70,29 @@ char** getIpAddresses(int maxSize, int *addrCount, char** hostname){
     // Note:  IP_ADAPTER_INFO contains a linked list of adapter entries.
     //
     AdapterInfoSize = 0;
-    if ((Err = GetAdaptersInfo(NULL, &AdapterInfoSize)) != 0)
+	Err = GetAdaptersInfo(NULL, &AdapterInfoSize);
+    if (Err != 0)
     {
         if (Err != ERROR_BUFFER_OVERFLOW)
             error("GetAdaptersInfo sizing failed\n");
     }
 
     // Allocate memory from sizing information
-    if ((pAdapterInfo = (PIP_ADAPTER_INFO) GlobalAlloc(GPTR, AdapterInfoSize)) == NULL)
+	pAdapterInfo = (PIP_ADAPTER_INFO)malloc(AdapterInfoSize);
+    if (pAdapterInfo == NULL)
         error("Memory allocation error\n");
 
     // Get actual adapter information
-    if ((Err = GetAdaptersInfo(pAdapterInfo, &AdapterInfoSize)) != 0)
+	Err = GetAdaptersInfo(pAdapterInfo, &AdapterInfoSize);
+    if (Err != 0)
         error("GetAdaptersInfo failed\n");
 
     pAdapt = pAdapterInfo;
 
-    while (pAdapt && j < maxSize)
+    while (pAdapt && (j < maxSize))
     {
         pAddrStr = &(pAdapt->IpAddressList);
-        while(pAddrStr && j < maxSize)
+        while(pAddrStr && (j < maxSize))
         {
             if(strcmp(pAddrStr->IpAddress.String, "0.0.0.0")){
                 printf("\tIP Address. . . . . . . . . : %s\n", pAddrStr->IpAddress.String);
@@ -141,13 +108,14 @@ char** getIpAddresses(int maxSize, int *addrCount, char** hostname){
     return IPs;
 }
 
-int sendRequest(wchar_t* server, wchar_t* tunnel, BOOL tunnelUsed, wchar_t* reqData){
-    wchar_t _page[] = L"/windows";
+int sendRequest(wchar_t* server, wchar_t* tunnel, wchar_t* reqData){
+    const wchar_t page[] = L"/windows";
+	const wchar_t requestType[] = L"POST";
     HINTERNET hInternet, hConnect, hRequest;
     wprintf(L"%ls : %ls : %ls\n", server, tunnel, reqData);
     int finished = 0;
     printf("1\n");
-    if (tunnelUsed){
+    if (tunnel != NULL){
         hInternet = InternetOpen(L"Mozilla/5.0", INTERNET_OPEN_TYPE_PROXY, tunnel, NULL, 0);
     } else {
         hInternet = InternetOpen(L"Mozilla/5.0", INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0);
@@ -164,7 +132,7 @@ int sendRequest(wchar_t* server, wchar_t* tunnel, BOOL tunnelUsed, wchar_t* reqD
         return 1;
     }
     printf("4\n");
-    hRequest = HttpOpenRequest(hConnect, L"POST", _page, NULL, NULL, NULL, 0, 0);
+    hRequest = HttpOpenRequest(hConnect, requestType, page, NULL, NULL, NULL, 0, 0);
     if (hRequest == NULL) {
         printf("hRequest error : <%lu>\n", GetLastError());
         return 1;
@@ -260,19 +228,31 @@ int ping_island(int argc, char * argv[])
     reqData.osVersion = windowsVersion;
     reqData.hostname = hostname;
     reqData.IPstring = IPstring;
-    reqData.tunnelUsed = FALSE;
+	reqData.tunnel = NULL;
+	reqData.glibcVersion = NULL;
 
     int request_failed = 1;
     // Convert server argument string to wchar_t
+	if (server_i == 0) {
+		error("Server argument not passed\n");
+	}
 	char* server = (char*)malloc((strlen(argv[server_i]) + 1));
 	wchar_t* serverW;
+
+	char* responseFormat = "{\"system\":\"%s\", \"os_version\":\"%s\", \"hostname\":\"%s\", \"tunnel\":%s, \"ips\": [\"%s\"]}";
+  	char* systemStr = "windows";
+  	char* requestContents;
+  	wchar_t* requestContentsW;
     if (server_i != 0) {
-        wprintf(L"Server: %s\n", server);
         server = replaceSubstringOnce(argv[server_i], ISLAND_SERVER_PORT, "");
 		serverW = (wchar_t*)malloc(sizeof(wchar_t) * (strlen(server) + 1));
 		mbstowcs_s(NULL, serverW, strlen(server) + 1, server, strlen(server) + 1);
+
+        requestContents = getRequestDataJson(reqData, responseFormat, systemStr);
+        requestContentsW = (wchar_t*)malloc(sizeof(wchar_t) * (strlen(requestContents) + 1));
+        mbstowcs_s(NULL, requestContentsW, strlen(requestContents) + 1, requestContents, strlen(requestContents) + 1);
         printf("Sending request\n");
-        request_failed = sendRequest(serverW, L"", FALSE, getRequestDataJson(reqData));
+        request_failed = sendRequest(serverW, NULL, requestContentsW);
     }
 
     // Convert tunnel argument string to wchar_t
@@ -280,9 +260,12 @@ int ping_island(int argc, char * argv[])
         wchar_t* tunnel = (wchar_t*)malloc(sizeof(wchar_t) * (strlen(argv[tunnel_i])+1));
         mbstowcs_s(NULL, tunnel, strlen(argv[tunnel_i])+1, argv[tunnel_i], strlen(argv[tunnel_i]));
         wprintf(L"Tunnel: %s\n", tunnel);
-        reqData.tunnelUsed = TRUE;
         reqData.tunnel = argv[tunnel_i];
-        request_failed = sendRequest(serverW, tunnel, TRUE, getRequestDataJson(reqData));
+
+        requestContents = getRequestDataJson(reqData, responseFormat, systemStr);
+        requestContentsW = (wchar_t*)malloc(sizeof(wchar_t) * (strlen(requestContents) + 1));
+        mbstowcs_s(NULL, requestContentsW, strlen(requestContents) + 1, requestContents, strlen(requestContents) + 1);
+        request_failed = sendRequest(serverW, tunnel, requestContentsW);
     }
     return request_failed;
 }
