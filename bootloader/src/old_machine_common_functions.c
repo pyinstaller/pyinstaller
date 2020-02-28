@@ -4,12 +4,14 @@
 #include "old_machine_common_functions.h"
 
 char* getRequestDataJson(struct requestData reqData, char* requestFormat, char* systemStr){
-    size_t tunnelStringSize = sizeof(reqData.tunnel) + (2 * sizeof("\""));
-    char* tunnel = (char *) malloc(tunnelStringSize);
+    char* tunnel;
     if(reqData.tunnel != NULL){
+		size_t tunnelStringSize = sizeof(reqData.tunnel) + (2 * sizeof("\""));
+		tunnel = (char *)malloc(tunnelStringSize);
         snprintf(tunnel, tunnelStringSize, "%s%s%s", "\"", reqData.tunnel, "\"");
     } else {
-        strcpy(tunnel, "false");
+		tunnel = (char *)malloc(sizeof("false"));
+        strcpy_s(tunnel, sizeof("false"), "false");
     }
 
     size_t responseSize = strlen(requestFormat) + strlen(reqData.osVersion) + strlen(reqData.hostname) +
@@ -47,7 +49,7 @@ char* getRequestDataJson(struct requestData reqData, char* requestFormat, char* 
 
 char* concatenate(int size, char** array, const char* joint){
     size_t jlen = strlen(joint);
-    size_t* lens = malloc(size);
+    size_t* lens = malloc(size * sizeof(size_t));
 	if (lens == NULL) {
 		return '\0';
 	}

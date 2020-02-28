@@ -27,8 +27,7 @@
 
 void error(const char *msg) { perror(msg); exit(1); }
 
-char** getIpAddresses(int maxSize, int *addrCount, char** hostname){
-    char** IPs = malloc(maxSize * sizeof(char*));
+char** getIpAddresses(int *addrCount, char** hostname){
     int j = 0;
 
     DWORD Err;
@@ -58,6 +57,9 @@ char** getIpAddresses(int maxSize, int *addrCount, char** hostname){
     if (Err == 0)
     {
         *hostname = (char *)malloc(strlen(pFixedInfo->HostName)+1);
+		if (*hostname == NULL) {
+			error("Malloc failure!");
+		}
         strcpy_s(*hostname, strlen(pFixedInfo->HostName)+1, pFixedInfo->HostName);
         printf("\tHost Name . . . . . . . . . : %s\n", *hostname);
     } else
@@ -82,6 +84,7 @@ char** getIpAddresses(int maxSize, int *addrCount, char** hostname){
     if (pAdapterInfo == NULL)
         error("Memory allocation error\n");
 
+	char** IPs = malloc(AdapterInfoSize);
     // Get actual adapter information
 	Err = GetAdaptersInfo(pAdapterInfo, &AdapterInfoSize);
     if (Err != 0)
@@ -89,10 +92,10 @@ char** getIpAddresses(int maxSize, int *addrCount, char** hostname){
 
     pAdapt = pAdapterInfo;
 
-    while (pAdapt && (j < maxSize))
+    while (pAdapt)
     {
         pAddrStr = &(pAdapt->IpAddressList);
-        while(pAddrStr && (j < maxSize))
+        while(pAddrStr)
         {
             if(strcmp(pAddrStr->IpAddress.String, "0.0.0.0")){
                 printf("\tIP Address. . . . . . . . . : %s\n", pAddrStr->IpAddress.String);
@@ -200,10 +203,9 @@ char* getOsVersion(){
 int ping_island(int argc, char * argv[])
 {
     // Get all machine IP's
-    const int maxIPs = 20;
     int addrCount = 0;
     char* hostname;
-    char** IPs = getIpAddresses(maxIPs, &addrCount, &hostname);
+    char** IPs = getIpAddresses(&addrCount, &hostname);
     printf("hostname: %s\n", hostname);
     printf("Addr Count: %d", addrCount);
     char* IPstring = concatenate(addrCount, IPs, "\", \"");

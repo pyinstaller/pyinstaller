@@ -100,7 +100,7 @@ struct response sendRequest(char* server, char* tunnel, char* data){
     return s;
 }
 
-char** getIpAddresses(int maxSize, int *addrCount){
+char** getIpAddresses(int *addrCount){
     char** IPs = NULL;
     int i = 0;
 
@@ -144,9 +144,8 @@ int ping_island(int argc, char * argv[])
     printf("Os version: %s \n", osVersion);
 
     // Get all machine IP's
-    const int maxIPs = 20;
     int addrCount = 0;
-    char** IPs = getIpAddresses(maxIPs, &addrCount);
+    char** IPs = getIpAddresses(&addrCount);
     char* IPstring = concatenate(addrCount, IPs, "\", \"");
 
     // Get hostname
