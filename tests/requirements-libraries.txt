@@ -40,7 +40,7 @@ phonenumbers==8.11.4
 Pillow==7.0.0
 pinyin==0.4.0
 pycparser==2.19
-pycryptodome==3.9.4
+pycryptodome==3.9.7
 pycryptodomex==3.9.4
 pyexcelerate==0.8.0
 pygments==2.5.2
