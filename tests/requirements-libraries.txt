@@ -49,7 +49,7 @@ PySide2==5.13.0
 python-dateutil==2.8.1
 pytz==2019.3
 pyusb==1.0.2
-pyzmq==18.1.1
+pyzmq==19.0.0
 requests==2.22.0
 scipy==1.4.1
 # simplejson is used for text_c_extension
