@@ -81,7 +81,7 @@ pandas==1.0.1; python_version == '3.5'
 # Wheels are available only on OS X and Win 32. The only Windows 64-bit Python
 # tests run are for Python 3.7, so exclude that. There's no way to simply
 # exclude Windows 64 bit Python.
-pyenchant==2.0.0; sys_platform == 'darwin' or (sys_platform == 'win32' and python_version <= '3.6')
+pyenchant==3.0.1; sys_platform == 'darwin' or (sys_platform == 'win32' and python_version <= '3.6')
 
 # Per https://www.riverbankcomputing.com/pipermail/pyqt/2020-February/042506.html, Windows PyQt5 5.14.0? and 5.14.1? aren't correctly packaged.
 pyqt5==5.13.2; sys_platform == 'win32'
