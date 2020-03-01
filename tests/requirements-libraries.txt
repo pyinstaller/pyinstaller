@@ -29,7 +29,7 @@ keyring==19.2.0  # pyup: ignore
 babel==2.8.0
 boto==2.49.0
 boto3==1.12.11
-botocore==1.14.9
+botocore==1.15.11
 future==0.18.2
 gevent==1.4.0
 h5py==2.10.0
