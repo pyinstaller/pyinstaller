@@ -74,7 +74,7 @@ Requirements and Tested Platforms
  - Windows XP or newer.
 
  - We don't support Python installed from the Windows store when not using virtual environments due to 
-   `permission errors <https://pyinstaller.readthedocs.io/en/stable/development/changelog-entries.html>`_ 
+   `permission errors <https://github.com/pyinstaller/pyinstaller/pull/4702>`_ 
    that can't easily be fixed.
     
 - GNU/Linux (32bit/64bit)
