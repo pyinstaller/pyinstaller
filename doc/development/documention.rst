@@ -8,7 +8,7 @@ Improving and Building the Documentation
 |PyInstaller|'s documentation is created using Sphinx_.
 Sphinx uses reStructuredText_ as its markup language, and many of its
 strengths come from the power and straightforwardness of reStructuredText and
-its parsing and translating suite, the Docutils_.
+its parsing and translating suite, Docutils_.
 
 .. _reStructuredText: http://docutils.sourceforge.net/rst.html
 .. _Sphinx: http://www.sphinx-doc.org/
@@ -31,12 +31,14 @@ like this::
   xdg-open _build/html/index.html
 
 
-Please watch out for any warning and error while building the documentation.
-In your browser check if the markup is
+Please watch out for any warnings and errors while building the documentation.
+In your browser check if the markup is valid
+prior to pushing your changes and creating the pull-request.
+Please also run::
 
-Prior to pushing your changes and creating the pull-request please run::
-
-  make clean html
+  make clean
+  ...
+  make html
 
 to verify once again everything is fine. Thank you!
 
