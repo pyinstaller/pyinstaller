@@ -884,11 +884,13 @@ def test_pendulum(pyi_builder):
         print(pendulum.now().isoformat())
         """)
 
+
 @importorskip('argon2')
 def test_argon2(pyi_builder):
     pyi_builder.test_source("""
         from argon2 import PasswordHasher
+
         ph = PasswordHasher()
         hash = ph.hash("s3kr3tp4ssw0rd")
         ph.verify(hash, "s3kr3tp4ssw0rd")
-    """)
+        """)
