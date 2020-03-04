@@ -17,7 +17,7 @@ Development Guide
    coding-conventions
    testing
    commit-messages
-   documention
+   documentation
    pull-requests
    changelog-entries
    venv
