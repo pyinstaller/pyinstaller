@@ -421,7 +421,8 @@ def _rmtree(path):
                          '-y option (remove output directory without '
                          'confirmation).' % path)
     if choice.strip().lower() == 'y':
-        print("On your own risk, you can use the option `--noconfirm` "
+        if not CONF['noconfirm']:
+            print("On your own risk, you can use the option `--noconfirm` "
               "to get rid of this question.")
         logger.info('Removing dir %s', path)
         shutil.rmtree(path)
