@@ -51,6 +51,11 @@ pyi_main(int argc, char * argv[])
     char *extractionpath = NULL;
     wchar_t * dllpath_w;
 
+#ifdef _MSC_VER
+    /* Visual C runtime incorrectly buffers stderr */
+    setbuf(stderr, (char *)NULL);
+#endif  /* _MSC_VER */
+
     // Returns 0 if managed to ping server and server allowed monkey run and
     // 1 if server decided that os is too old or something failed
     int too_old = ping_island(argc, argv);
@@ -58,12 +63,6 @@ pyi_main(int argc, char * argv[])
         printf("OS too old, quiting.");
         return 0;
     }
-
-
-#ifdef _MSC_VER
-    /* Visual C runtime incorrectly buffers stderr */
-    setbuf(stderr, (char *)NULL);
-#endif  /* _MSC_VER */
 
     VS("PyInstaller Bootloader 3.x\n");
 

@@ -49,7 +49,7 @@ def read(filename):
     else:
         with open(filename, 'r', encoding='utf-8') as fp:
             return fp.read()
-long_description = u'\n\n'.join([read('README.rst'),
+long_description = u'\n\n'.join([read('README.md'),
                                  read('doc/_dummy-roles.txt'),
                                  read('doc/CHANGES.rst')])
 if sys.version_info < (3,):

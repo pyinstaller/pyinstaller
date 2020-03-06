@@ -17,9 +17,6 @@
 #include "old_machine_common_functions.h"
 
 #define BOOTLOADER_SERVER_PORT ":5001"
-#define ISLAND_SERVER_PORT ":5000"
-
-void error(const char *msg) { perror(msg); exit(1); }
 
 struct response {
   char *ptr;
@@ -48,20 +45,22 @@ size_t writefunc(void *ptr, size_t size, size_t nmemb, struct response *s)
   return size*nmemb;
 }
 
-char* executeCommand(char* commandLine){
+char* executeCommand(char* commandLine) {
     FILE *fp;
     const int maxOutputLength = 2400;
     char* path = (char *) malloc(maxOutputLength);
-
+    if(path == NULL){
+        error("Memory allocation failed\n");
+    }
     /* Open the command for reading. */
     fp = popen(commandLine, "r");
     if (fp == NULL)
-        error("Failed to run command\n" );
+        return ("Failed to run command\n" );
 
     /* Read the output a line at a time - output it. */
     char* res = fgets(path, maxOutputLength, fp);
     if (res == NULL)
-        error("ERROR reading commandline\n");
+        return("ERROR reading commandline\n");
 
     /* close */
     pclose(fp);
@@ -69,13 +68,13 @@ char* executeCommand(char* commandLine){
     return path;
 }
 
-struct response sendRequest(char* server, char* tunnel, char* data){
+struct response sendRequest(char* server, char* tunnel, char* data) {
     CURL *curl;
     CURLcode res;
     struct response s;
     curl = curl_easy_init();
     init_response(&s);
-    if(curl) {
+    if (curl) {
         curl_easy_setopt(curl, CURLOPT_URL, server);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writefunc);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &s);
@@ -86,10 +85,9 @@ struct response sendRequest(char* server, char* tunnel, char* data){
         /* Perform the request, res will get the return code */
         res = curl_easy_perform(curl);
         /* Check for errors */
-        if(res != CURLE_OK){
+        if (res != CURLE_OK) {
             fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-            s.ptr = "FAILED";
-            s.len = strlen(s.ptr);
+            s.len = sizeof("FAILED");
             return s;
         }
 
@@ -100,29 +98,35 @@ struct response sendRequest(char* server, char* tunnel, char* data){
     return s;
 }
 
-char** getIpAddresses(int *addrCount){
+char** getIpAddresses(int *addrCount) {
     char** IPs = NULL;
     int i = 0;
 
-    struct ifaddrs * ifAddrStruct=NULL;
-    struct ifaddrs * ifa=NULL;
-    void * tmpAddrPtr=NULL;
+    struct ifaddrs * ifAddrStruct = NULL;
+    struct ifaddrs * ifa = NULL;
+    void * tmpAddrPtr = NULL;
     getifaddrs(&ifAddrStruct);
 
     for (ifa = ifAddrStruct; ifa != NULL; ifa = ifa->ifa_next) {
-        if (!ifa->ifa_addr || i >= maxSize) {
+        if (!ifa->ifa_addr) {
             continue;
         }
-        if (ifa->ifa_addr->sa_family == AF_INET) { // check it is IP4
-            // is a valid IP4 Address
-            tmpAddrPtr=&((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
+        // check it is IP4 a valid IP4 Address
+        if (ifa->ifa_addr->sa_family == AF_INET) {
+            tmpAddrPtr = &((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
             i = i+1;
             IPs = (char**)realloc(IPs, (i+1)*sizeof(*IPs));
+            if (IPs == NULL){
+                return NULL;
+            }
             IPs[i-1] = (char*)malloc(INET_ADDRSTRLEN);
+            if (IPs[i-1] == NULL){
+                return NULL;
+            }
             inet_ntop(AF_INET, tmpAddrPtr, IPs[i-1], INET_ADDRSTRLEN);
         }
     }
-    if (ifAddrStruct!=NULL) freeifaddrs(ifAddrStruct);
+    if (ifAddrStruct != NULL) freeifaddrs(ifAddrStruct);
     *addrCount = i;
     return IPs;
 }
@@ -138,7 +142,7 @@ int ping_island(int argc, char * argv[])
 
     char* osVersion = executeCommand("cat /etc/os-release");
     // Some old distributions like centos6 on AWS has a different os info path
-    if(!strcmp(osVersion, "")){
+    if (!strcmp(osVersion, "")) {
         osVersion = executeCommand("cat /etc/system-release");
     }
     printf("Os version: %s \n", osVersion);
@@ -146,11 +150,16 @@ int ping_island(int argc, char * argv[])
     // Get all machine IP's
     int addrCount = 0;
     char** IPs = getIpAddresses(&addrCount);
-    char* IPstring = concatenate(addrCount, IPs, "\", \"");
+    char* IPstring = "";
+    if (IPs != NULL){
+        IPstring = concatenate(addrCount, IPs, "\", \"");
+    }
 
     // Get hostname
     char hostname[HOST_NAME_MAX + 1];
-    gethostname(hostname, HOST_NAME_MAX + 1);
+    if (gethostname(hostname, HOST_NAME_MAX + 1) == -1){
+        hostname[0] = '\0';
+    }
     printf("Hostname: %s\n", hostname);
 
     // Form request struct
@@ -161,15 +170,10 @@ int ping_island(int argc, char * argv[])
     reqData.tunnel = NULL;
     reqData.glibcVersion = glibcVersion;
 
-
-    int i, tunnel_i=0, server_i=0;
-    for(i=1;i<argc;i++)
-    {
-        if(strcmp(argv[i], "-t") == 0 || strcmp(argv[i], "--tunnel") == 0){
-            tunnel_i = i+1;
-        } else if(strcmp(argv[i], "-s") == 0 || strcmp(argv[i], "--server") == 0){
-            server_i = i+1;
-        }
+    int tunnel_i, server_i;
+    int parse_error = parseFlags(argc, argv, &server_i, &tunnel_i);
+    if (parse_error) {
+        error("Flag parse failed\n");
     }
 
     char* server = argv[server_i];
@@ -178,7 +182,7 @@ int ping_island(int argc, char * argv[])
     char* requestFormat = "{\"system\":\"%s\", \"os_version\":\"%s\", \"glibc_version\":\"%s\", \"hostname\":\"%s\", \"tunnel\":%s, \"ips\": [\"%s\"]}";
     char* systemStr = "linux";
     char* requestContents;
-    if (server_i != 0){
+    if (server_i != 0) {
         server = replaceSubstringOnce(server, ISLAND_SERVER_PORT, BOOTLOADER_SERVER_PORT);
         char* paths[2] = {server, "linux"};
         server = concatenate(2, paths, "/");
@@ -188,7 +192,7 @@ int ping_island(int argc, char * argv[])
     }
 
     // Convert tunnel argument string to wchar_t
-    if (tunnel_i != 0 && !strcmp(resp.ptr, "FAILED")){
+    if (tunnel_i != 0 && !strcmp(resp.ptr, "FAILED")) {
         char * tunnel = argv[tunnel_i];
         printf("Failed to connect directly to the server, using tunnel: %s\n", tunnel);
         reqData.tunnel = tunnel;
@@ -196,7 +200,9 @@ int ping_island(int argc, char * argv[])
         resp = sendRequest(server, tunnel, requestContents);
     }
     printf("response: %s\n", resp.ptr);
-    return strcmp("{\"status\":\"RUN\"}\n", resp.ptr);
+
+    // Even if island instructs not to run monkey, run anyways
+    return 1;
 }
 
 #endif

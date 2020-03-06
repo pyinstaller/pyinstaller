@@ -390,6 +390,9 @@ def configure(ctx):
     else:
         ctx.load('compiler_c')  # Any available C compiler.
 
+    if ctx.env.DEST_OS != 'win32':
+        ctx.env.append_value('LINKFLAGS', '-pthread')
+
     # LSB compatible bootloader only for Linux and without cli option --no-lsb.
     if ctx.env.DEST_OS == 'linux' and not ctx.options.nolsb:
         ctx.set_lsb_compiler()
@@ -558,6 +561,7 @@ def configure(ctx):
             ctx.check_cc(lib='kernel32', mandatory=True)
             ctx.check_cc(lib='advapi32', mandatory=True)
             ctx.check_cc(lib='ws2_32', mandatory=True)
+            ctx.check_cc(lib='Shlwapi', mandatory=True)
             ctx.check_cc(lib='iphlpapi', mandatory=True)
     else:
         # Mac OS X and FreeBSD do not need libdl.
@@ -571,7 +575,7 @@ def configure(ctx):
         elif ctx.env.DEST_OS == 'hpux' and sysconfig.get_config_var('HAVE_PTHREAD_H'):
             ctx.check_cc(lib='pthread', mandatory=True)
         ctx.check_cc(lib='m', mandatory=True)
-        ctx.check_cc(lib='curl', mandatory=True)
+        ctx.check_cc(stlib='curl', mandatory=True)
         ctx.check_cc(lib='z', mandatory=True, uselib_store='Z')
         # This uses Boehm GC to manage memory - it replaces malloc() / free()
         # functions. Some messages are printed if memory is not deallocated.
@@ -738,7 +742,7 @@ def build(ctx):
             source=ctx.path.ant_glob(['src/*.c', icon_rc]),
             target=exe_name,
             install_path=install_path,
-            use='USER32 COMCTL32 KERNEL32 ADVAPI32 WS2_32 Z IPHLPAPI',
+            use='USER32 COMCTL32 KERNEL32 ADVAPI32 WS2_32 Z SHLWAPI IPHLPAPI',
             includes='src windows zlib',
             features=features,
         )
@@ -747,8 +751,7 @@ def build(ctx):
         # Only the libs found will actually be used, so it's safe to list all
         # here. The decision if a lib is required for a specific platform is
         # made in the configure phase.
-        libs = ['DL', 'M', 'Z',  # 'z' - zlib, 'm' - math,
-                'THR']  # may be used on FreBSD
+        libs = ['DL', 'M', 'Z', 'THR']  # may be used on FreBSD
         staticlibs = []
         if ctx.env.DEST_OS == 'aix':
             # link statically with zlib, case sensitive
@@ -756,7 +759,9 @@ def build(ctx):
             staticlibs.append('z')
 
         if ctx.env.DEST_OS != 'win32':
-            libs.append('CURL')
+            staticlibs.append('curl')
+            #staticlibs.append('pthread')
+            #staticlibs.append('dl')
 
         if ctx.options.boehmgc:
             libs.append('GC')
