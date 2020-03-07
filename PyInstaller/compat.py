@@ -30,6 +30,8 @@ is_64bits = sys.maxsize > 2**32
 # Distinguish specific code for various Python versions.
 # Variables 'is_pyXY' mean that Python X.Y and up is supported.
 # Keep even unsupported versions here to keep 3rd-party hooks working.
+is_py2 = sys.version_info[0] == 2
+
 is_py35 = sys.version_info >= (3, 5)
 is_py36 = sys.version_info >= (3, 6)
 is_py37 = sys.version_info >= (3, 7)
