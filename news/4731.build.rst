@@ -1,0 +1,1 @@
+(AIX) The argument -X32 or -X64 is not recognized by the AIX loader - so this code needs to be removed.
