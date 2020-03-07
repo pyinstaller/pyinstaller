@@ -191,7 +191,7 @@ def _architecture():
     """
     if is_darwin:
         # Darwin's platform.architecture() is buggy and always
-        # returns "64bit" event for the 32bit version of Python's
+        # returns "64bit" even for the 32bit version of Python's
         # universal binary. So we roll out our own (that works
         # on Darwin).
         if sys.maxsize > 2 ** 32:
