@@ -717,8 +717,6 @@ def check_requirements():
     Fail hard if any requirement is not met.
     """
     # Fail hard if Python does not have minimum required version
-    if sys.version_info < (3,):
+    if not is_py35:
         raise SystemExit('PyInstaller requires at least Python 3.5 or newer. '
                          'The last version supporting Python 2.7 was v3.6.')
-    elif sys.version_info < (3, 5):
-        raise SystemExit('PyInstaller requires at least Python 3.5 or newer.')
