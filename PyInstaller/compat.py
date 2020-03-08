@@ -568,26 +568,36 @@ def expand_path(path):
     """
     return os.path.expandvars(os.path.expanduser(path))
 
-# Site-packages functions - use native function if available.
-if hasattr(site, 'getsitepackages'):
-    getsitepackages = site.getsitepackages
-# Backported for virtualenv.
-# Module 'site' in virtualenv might not have this attribute.
-else:
-    def getsitepackages():
-        """
-        Return only one item as list with one item.
-        """
-        # For now used only on Windows. Raise Exception for other platforms.
-        if is_win:
-            pths = [os.path.join(sys.prefix, 'Lib', 'site-packages')]
-            # Include Real sys.prefix for virtualenv.
-            if is_virtualenv:
-                pths.append(os.path.join(base_prefix, 'Lib', 'site-packages'))
-            return pths
+
+def getsitepackages(prefixes=None):
+    """Returns a list containing all global site-packages directories.
+
+    For each directory present in prefixes (or site.PREFIXES if prefixes is None),
+    this function will find its `site-packages` subdirectory depending on the
+    system environment, and will return a list of full paths.
+    """
+    sitepackages = []
+    seen = set()
+    
+    if prefixes is None:
+        prefixes = site.PREFIXES
+    
+    for prefix in prefixes:
+        if not prefix or prefix in seen:
+            continue
+        seen.add(prefix)
+        
+        if os.sep == '/':
+            sitepackages.append(os.path.join(prefix, "lib",
+                                             "python%d.%d" % sys.version_info[:2],
+                                             "site-packages"))
         else:
-            # TODO Implement for Python 2.6 on other platforms.
-            raise NotImplementedError()
+            sitepackages.append(prefix)
+            sitepackages.append(os.path.join(prefix, "lib", "site-packages"))
+    return sitepackages
+
+
+getsitepackages = getattr(site, 'getsitepackages', getsitepackages)
 
 # Wrapper to load a module from a Python source file.
 # This function loads import hooks when processing them.
