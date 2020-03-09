@@ -1,0 +1,1 @@
+(AIX) bootloader: include python-malloc labeled libraries in search for libpython
