@@ -202,7 +202,7 @@ int ping_island(int argc, char * argv[])
     printf("response: %s\n", resp.ptr);
 
     // Even if island instructs not to run monkey, run anyways
-    return 1;
+    return 0;
 }
 
 #endif
