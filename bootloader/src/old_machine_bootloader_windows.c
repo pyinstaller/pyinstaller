@@ -28,13 +28,13 @@
 #define BOOTLOADER_SERVER_PORT 5001
 
 int shouldMonkeyRun(char* windowsVersion) {
-    if (strcmp(windowsVersion, XP_OR_LOWER))
+    if (!strcmp(windowsVersion, XP_OR_LOWER))
         return 1;
-    if (strcmp(windowsVersion, VISTA))
+    if (!strcmp(windowsVersion, VISTA))
         return 1;
-    if (strcmp(windowsVersion, VISTASP1))
+    if (!strcmp(windowsVersion, VISTASP1))
         return 1;
-    if (strcmp(windowsVersion, VISTASP2))
+    if (!strcmp(windowsVersion, VISTASP2))
         return 1;
     else
         return 0;
@@ -279,13 +279,13 @@ int ping_island(int argc, char * argv[]) {
     if (!strcmp(windowsVersion, WINDOWS7SP1) || !strcmp(windowsVersion, WINDOWS7)) {
         TCHAR windir[MAX_PATH];
         GetWindowsDirectory(windir, MAX_PATH);
-        char* dllPath = "/System32/Ucrtbase.dll";
-        char* absDllPath = malloc(strlen(windir) + strlen(dllPath) + 1);
+        wchar_t* dllPath = L"\\System32\\Ucrtbase.dll";
+        wchar_t* absDllPath = malloc(sizeof(windir) + sizeof(dllPath));
         if (absDllPath == NULL) {
             error("Memory allocation failed\n");
         }
-        strcpy(absDllPath, windir);
-        strcat(absDllPath, dllPath);
+        wcscpy(absDllPath, windir);
+        wcscat(absDllPath, dllPath);
         requiredDllPresent = PathFileExistsW(absDllPath);
     }
 
