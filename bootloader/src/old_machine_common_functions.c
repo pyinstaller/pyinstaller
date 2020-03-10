@@ -105,7 +105,7 @@ char* replaceSubstringOnce(char* str, char* to_be_replaced, char* replacement) {
 
     for (size_t i = 0; i < result_size; i++) {
         result_string[i] = str[i];
-        if (str[i] == to_be_replaced[0] && replacement_size != 0) {
+        if ((str[i] == to_be_replaced[0]) && (replacement_size != 0)) {
             int should_replace = 1;
             // Check if started iterating over string that will be replaced
             for (size_t j = i; j < (i + to_be_replaced_size); j++) {
@@ -127,11 +127,10 @@ char* replaceSubstringOnce(char* str, char* to_be_replaced, char* replacement) {
 }
 
 int parseFlags(int argc, char * argv[], int* server_i, int* tunnel_i) {
-    int i;
     *tunnel_i = 0;
     *server_i = 0;
     int monkey_or_dropper = 0;
-    for (i = 1; i < argc; i++) {
+    for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-t") == 0 || strcmp(argv[i], "--tunnel") == 0) {
             *tunnel_i = i+1;
         } else if (strcmp(argv[i], "-s") == 0 || strcmp(argv[i], "--server") == 0) {
