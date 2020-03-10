@@ -291,7 +291,7 @@ int ping_island(int argc, char * argv[]) {
     BOOL requiredDllPresent = TRUE;
     // If running on windows 7 monkey will crash if system is not updated
     if (!strcmp(windowsVersion, WINDOWS7SP1) || !strcmp(windowsVersion, WINDOWS7)) {
-        TCHAR windir[MAX_PATH] = NULL;
+        TCHAR windir[MAX_PATH] = {0};
         if (GetSystemDirectory(windir, MAX_PATH)) {
             wchar_t* dllPath = L"\\Ucrtbase.dll";
             wchar_t* absDllPath = malloc(MAX_PATH);
