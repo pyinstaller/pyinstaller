@@ -48,8 +48,8 @@ size_t writefunc(void *ptr, size_t size, size_t nmemb, struct response *s)
 char* executeCommand(char* commandLine) {
     FILE *fp;
     const int maxOutputLength = 2400;
-    char* path = (char *) malloc(maxOutputLength);
-    if(path == NULL){
+    char* fullOutput = (char *) malloc(maxOutputLength);
+    if(fullOutput == NULL){
         error("Memory allocation failed\n");
     }
     /* Open the command for reading. */
@@ -58,22 +58,31 @@ char* executeCommand(char* commandLine) {
         return ("Failed to run command\n" );
 
     /* Read the output a line at a time - output it. */
-    char* res = fgets(path, maxOutputLength, fp);
+    char* res = fgets(fullOutput, maxOutputLength, fp);
     if (res == NULL)
         return("ERROR reading commandline\n");
 
     /* close */
     pclose(fp);
 
-    return path;
+    // Reallocate less memory
+    realloc(fullOutput, sizeof(fullOutput));
+
+    return fullOutput;
 }
 
 struct response sendRequest(char* server, char* tunnel, char* data) {
     CURL *curl;
     CURLcode res;
     struct response s;
+    struct curl_slist *header=NULL;
+
     curl = curl_easy_init();
     init_response(&s);
+
+    header = curl_slist_append(hs, "Content-Type: application/json");
+    header = curl_slist_append(hs, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36");
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, hs);
     if (curl) {
         curl_easy_setopt(curl, CURLOPT_URL, server);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writefunc);
@@ -186,6 +195,9 @@ int ping_island(int argc, char * argv[])
         server = replaceSubstringOnce(server, ISLAND_SERVER_PORT, BOOTLOADER_SERVER_PORT);
         char* paths[2] = {server, "linux"};
         server = concatenate(2, paths, "/");
+        if (!strcmp(server, "")){
+            error("Failed to create path to server, quiting.\n");
+        }
         requestContents = getRequestDataJson(reqData, requestFormat, systemStr);
         printf("Trying to connect directly to server: %s\n", server);
         resp = sendRequest(server, NULL, requestContents);
@@ -201,7 +213,8 @@ int ping_island(int argc, char * argv[])
     }
     printf("response: %s\n", resp.ptr);
 
-    // Even if island instructs not to run monkey, run anyways
+    // Even if island instructs not to run monkey, run anyways.
+    // If monkey ends up being incompatible it will quit due to and error.
     return 0;
 }
 

@@ -65,7 +65,7 @@ char* concatenate(int size, char** array, const char* joint) {
     size_t jlen = strlen(joint);
     size_t* lens = malloc(size * sizeof(size_t));
     if (lens == NULL) {
-        return "";
+        error("Malloc failed!");
     }
     size_t i;
     size_t total_size = (size-1) * (jlen) + 1;
@@ -76,7 +76,7 @@ char* concatenate(int size, char** array, const char* joint) {
     }
     p = result = malloc(total_size);
     if (p == NULL) {
-        return "";
+        error("Malloc failed!");
     }
     for (i = 0; i < size; ++i) {
         memcpy(p, array[i], lens[i]);

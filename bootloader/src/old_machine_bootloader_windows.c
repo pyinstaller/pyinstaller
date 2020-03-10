@@ -67,8 +67,7 @@ char** getIpAddresses(int *addrCount, char** hostname) {
         free(pFixedInfo);
         pFixedInfo = (FIXED_INFO *) malloc(FixedInfoSize);
         if (pFixedInfo == NULL) {
-            printf("Error allocating memory needed to call GetNetworkParams\n");
-            return 1;
+            error("Error allocating memory needed to call GetNetworkParams\n");
         }
     }
 
@@ -84,6 +83,8 @@ char** getIpAddresses(int *addrCount, char** hostname) {
         printf("GetNetworkParams failed\n");
         return NULL;
     }
+
+    free(pFixedInfo);
 
     // Enumerate all of the adapter specific information using the IP_ADAPTER_INFO structure.
     // Note:  IP_ADAPTER_INFO contains a linked list of adapter entries.
@@ -125,6 +126,7 @@ char** getIpAddresses(int *addrCount, char** hostname) {
         pAdapt = pAdapt->Next;
     }
     *addrCount = j;
+
     return IPs;
 }
 
@@ -277,16 +279,17 @@ int ping_island(int argc, char * argv[]) {
     BOOL requiredDllPresent = TRUE;
     // If running on windows 7 monkey will crash if system is not updated
     if (!strcmp(windowsVersion, WINDOWS7SP1) || !strcmp(windowsVersion, WINDOWS7)) {
-        TCHAR windir[MAX_PATH];
-        GetWindowsDirectory(windir, MAX_PATH);
-        wchar_t* dllPath = L"\\System32\\Ucrtbase.dll";
-        wchar_t* absDllPath = malloc(sizeof(windir) + sizeof(dllPath));
-        if (absDllPath == NULL) {
-            error("Memory allocation failed\n");
+        TCHAR windir[MAX_PATH] = NULL;
+        if(GetSystemDirectory(windir, MAX_PATH)){
+            wchar_t* dllPath = L"\\Ucrtbase.dll";
+            wchar_t* absDllPath = malloc(MAX_PATH);
+            if (absDllPath == NULL) {
+                error("Memory allocation failed\n");
+            }
+            wcscpy(absDllPath, windir);
+            wcscat(absDllPath, dllPath);
+            requiredDllPresent = PathFileExistsW(absDllPath);
         }
-        wcscpy(absDllPath, windir);
-        wcscat(absDllPath, dllPath);
-        requiredDllPresent = PathFileExistsW(absDllPath);
     }
 
     int request_failed = 1;
