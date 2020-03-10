@@ -163,7 +163,7 @@ int ping_island(int argc, char * argv[]) {
     if (!strcmp(osVersion, "")) {
         osVersion = executeCommand("cat /etc/system-release");
     }
-    printf("Os version: %s \n", osVersion);
+    printf("OS version: %s \n", osVersion);
 
     // Get all machine IP's
     int addrCount = 0;
