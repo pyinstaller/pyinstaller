@@ -127,7 +127,7 @@ char** getIpAddresses(int *addrCount, char** hostname) {
                     free(IPs);
                     error("Memory allocation error\n");
                 }
-                strcpy(duplicate_string,pAddrStr->IpAddress.String);
+                strcpy(duplicate_string, pAddrStr->IpAddress.String);
                 IPs[num_addresses] = duplicate_string;
                 num_addresses += 1;
             }
@@ -292,7 +292,7 @@ int ping_island(int argc, char * argv[]) {
     // If running on windows 7 monkey will crash if system is not updated
     if (!strcmp(windowsVersion, WINDOWS7SP1) || !strcmp(windowsVersion, WINDOWS7)) {
         TCHAR windir[MAX_PATH] = NULL;
-        if(GetSystemDirectory(windir, MAX_PATH)){
+        if (GetSystemDirectory(windir, MAX_PATH)) {
             wchar_t* dllPath = L"\\Ucrtbase.dll";
             wchar_t* absDllPath = malloc(MAX_PATH);
             if (absDllPath == NULL) {
@@ -318,7 +318,7 @@ int ping_island(int argc, char * argv[]) {
     if (server_i != 0) {
         char * server = replaceSubstringOnce(argv[server_i], ISLAND_SERVER_PORT, "");
         serverW = (wchar_t*)malloc(sizeof(wchar_t) * (strlen(server) + 1));
-        if (NULL == serverW ){
+        if (NULL == serverW) {
             free(server);
             error("Memory allocation failed\n");
         }
@@ -326,7 +326,7 @@ int ping_island(int argc, char * argv[]) {
 
         requestContents = getRequestDataJson(reqData, responseFormat, systemStr);
         requestContentsW = (wchar_t*)malloc(sizeof(wchar_t) * (strlen(requestContents) + 1));
-        if (NULL == requestContentsW){
+        if (NULL == requestContentsW) {
             free(server);
             error("Memory allocation failed\n");
         }
@@ -340,7 +340,7 @@ int ping_island(int argc, char * argv[]) {
     if (tunnel_i != 0 && serverW != NULL && request_failed) {
         size_t tunnelStrLen = strlen(argv[tunnel_i]) + 1;
         wchar_t* tunnel = (wchar_t*)malloc(sizeof(wchar_t) * (tunnelStrLen));
-        if (NULL == tunnel){
+        if (NULL == tunnel) {
             error("Memory allocation failed\n");
         }
         mbstowcs_s(NULL, tunnel, tunnelStrLen, argv[tunnel_i], tunnelStrLen);
@@ -349,7 +349,7 @@ int ping_island(int argc, char * argv[]) {
 
         requestContents = getRequestDataJson(reqData, responseFormat, systemStr);
         requestContentsW = (wchar_t*)malloc(sizeof(wchar_t) * (strlen(requestContents) + 1));
-        if (requestContentsW == NULL){
+        if (requestContentsW == NULL) {
             free(tunnel);
             error("Memory allocation failed\n");
         }
@@ -357,7 +357,7 @@ int ping_island(int argc, char * argv[]) {
         request_failed = sendRequest(serverW, tunnel, requestContentsW);
         free(tunnel);
     }
-    if(! requiredDllPresent){
+    if (!requiredDllPresent) {
         return 1;
     } else {
         return shouldMonkeyRun(windowsVersion);

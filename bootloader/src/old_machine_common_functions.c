@@ -22,7 +22,7 @@ char* getRequestDataJson(struct requestData reqData, char* requestFormat, char* 
         if (NULL == tunnel) {
             error("Malloc failed!");
         }
-        strcpy(tunnel,"false");
+        strcpy(tunnel, "false");
     }
 
     size_t responseSize = strlen(requestFormat) + strlen(reqData.osVersion) + strlen(reqData.hostname) +
@@ -34,7 +34,7 @@ char* getRequestDataJson(struct requestData reqData, char* requestFormat, char* 
 
     // Concatenate into string for post data
     char* buf = calloc(responseSize, sizeof(char));
-    if ( NULL == buf) {
+    if (NULL == buf) {
         free(tunnel);
         error("Malloc failed!");
     }
@@ -99,7 +99,7 @@ char* replaceSubstringOnce(char* str, char* to_be_replaced, char* replacement) {
     size_t replacement_size = strlen(replacement);
     size_t result_size = str_size - to_be_replaced_size + replacement_size;
     char *result_string = (char*)malloc(sizeof(char) * (result_size));
-    if (result_string == NULL){
+    if (result_string == NULL) {
         error("Memory allocation failed\n");
     }
 
