@@ -83,7 +83,14 @@ struct response sendRequest(char* server, char* tunnel, char* data) {
     init_response(&s);
 
     header = curl_slist_append(header, "Content-Type: application/json");
-    header = curl_slist_append(header, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36");
+    char* user_agent_key = "User-Agent: ";
+    char* user_agent = malloc(strlen(USER_AGENT_HEADER_CONTENT) + strlen(user_agent_key) + 1);
+    if(user_agent == NULL) {
+        error("Malloc failed!");
+    }
+    strcpy(user_agent, user_agent_key);
+    strcat(user_agent, USER_AGENT_HEADER_CONTENT);
+    header = curl_slist_append(header, user_agent);
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header);
     if (curl) {
         curl_easy_setopt(curl, CURLOPT_URL, server);

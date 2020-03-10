@@ -136,15 +136,22 @@ int sendRequest(wchar_t* server, wchar_t* tunnel, wchar_t* reqData) {
     char* buffer = NULL;
     HINTERNET hInternet = NULL, hConnect = NULL, hRequest = NULL;
     wprintf(L"%ls : %ls : %ls\n", server, tunnel, reqData);
+
+    wchar_t* userAgent = (wchar_t*)malloc(sizeof(wchar_t) * (strlen(USER_AGENT_HEADER_CONTENT) + 1));
+    if (userAgent == NULL){
+        error("Memory allocation failed\n");
+    }
+    mbstowcs_s(NULL, userAgent, strlen(USER_AGENT_HEADER_CONTENT) + 1, USER_AGENT_HEADER_CONTENT, strlen(USER_AGENT_HEADER_CONTENT) + 1);
+
     int finished = 0;
     if (tunnel != NULL) {
-        hInternet = InternetOpen(L"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36",
+        hInternet = InternetOpen(userAgent,
                                  INTERNET_OPEN_TYPE_PROXY,
                                  tunnel,
                                  NULL,
                                  0);
     } else {
-        hInternet = InternetOpen(L"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36",
+        hInternet = InternetOpen(userAgent,
                                  INTERNET_OPEN_TYPE_DIRECT,
                                  NULL,
                                  NULL,
