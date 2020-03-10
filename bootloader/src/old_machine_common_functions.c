@@ -22,7 +22,7 @@ char* getRequestDataJson(struct requestData reqData, char* requestFormat, char* 
         if ( tunnel == NULL ) {
             error("Malloc failed!");
         }
-        tunnel = "false";
+        strcpy(tunnel,"false");
     }
 
     size_t responseSize = strlen(requestFormat) + strlen(reqData.osVersion) + strlen(reqData.hostname) +
@@ -35,6 +35,7 @@ char* getRequestDataJson(struct requestData reqData, char* requestFormat, char* 
     // Concatenate into string for post data
     char* buf = calloc(responseSize, sizeof(char));
     if ( buf == NULL ) {
+        free(tunnel);
         error("Malloc failed!");
     }
     if (reqData.glibcVersion != NULL) {
@@ -76,6 +77,7 @@ char* concatenate(int size, char** array, const char* joint) {
     }
     p = result = malloc(total_size);
     if (p == NULL) {
+        free(lens);
         error("Malloc failed!");
     }
     for (i = 0; i < size; ++i) {
