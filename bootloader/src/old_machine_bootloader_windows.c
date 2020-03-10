@@ -41,8 +41,8 @@ int shouldMonkeyRun(char* windowsVersion) {
 }
 
 char** getIpAddresses(int *addrCount, char** hostname) {
-    int j = 0;
-    *addrCount = j;
+    int num_addresses = 0;
+    *addrCount = num_addresses;
     *hostname = (char *)malloc(2);
     if (*hostname == NULL) {
         error("Malloc failure!");
@@ -75,11 +75,13 @@ char** getIpAddresses(int *addrCount, char** hostname) {
     if (Err == 0) {
         *hostname = (char *)malloc(strlen(pFixedInfo->HostName) + 1);
         if (*hostname == NULL) {
+            free(pFixedInfo);
             error("Malloc failure!");
         }
         strcpy_s(*hostname, strlen(pFixedInfo->HostName)+1, pFixedInfo->HostName);
         printf("\tHost Name . . . . . . . . . : %s\n", *hostname);
     } else {
+        free(pFixedInfo);
         printf("GetNetworkParams failed\n");
         return NULL;
     }
@@ -117,15 +119,15 @@ char** getIpAddresses(int *addrCount, char** hostname) {
         while (pAddrStr) {
             if (strcmp(pAddrStr->IpAddress.String, "0.0.0.0")) {
                 printf("\tIP Address. . . . . . . . . : %s\n", pAddrStr->IpAddress.String);
-                IPs[j] = pAddrStr->IpAddress.String;
-                j += 1;
+                IPs[num_addresses] = pAddrStr->IpAddress.String;
+                num_addresses += 1;
             }
             pAddrStr = pAddrStr->Next;
         }
 
         pAdapt = pAdapt->Next;
     }
-    *addrCount = j;
+    *addrCount = num_addresses;
 
     return IPs;
 }
