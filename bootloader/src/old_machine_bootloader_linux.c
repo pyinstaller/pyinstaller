@@ -71,9 +71,9 @@ char* executeCommand(char* commandLine) {
     pclose(fp);
 
     // Reallocate less memory
-    fullOutput = realloc(fullOutput, strlen(fullOutput));
+    fullOutput = realloc(fullOutput, strlen(fullOutput)+1);
     if (NULL == fullOutput) {
-        error("Memory allocation failed\n");
+        error("Realloc failed");
     }
 
     return fullOutput;
