@@ -41,10 +41,10 @@ int shouldMonkeyRun(char* windowsVersion) {
 }
 
 char** getIpAddresses(int *addrCount, char** hostname) {
-    int j = 0;
-    *addrCount = j;
+    int num_addresses = 0;
+    *addrCount = num_addresses;
     *hostname = (char *)malloc(2);
-    if (*hostname == NULL) {
+    if (NULL == *hostname) {
         error("Malloc failure!");
     }
     strcpy_s(*hostname, 1, "");
@@ -58,7 +58,7 @@ char** getIpAddresses(int *addrCount, char** hostname) {
     PIP_ADDR_STRING pAddrStr;
 
     pFixedInfo = (FIXED_INFO *) malloc(sizeof(FIXED_INFO));
-    if (pFixedInfo == NULL) {
+    if (NULL == pFixedInfo) {
         error("Memory allocation error\n");
     }
     FixedInfoSize = sizeof (FIXED_INFO);
@@ -66,7 +66,7 @@ char** getIpAddresses(int *addrCount, char** hostname) {
     if (GetNetworkParams(pFixedInfo, &FixedInfoSize) == ERROR_BUFFER_OVERFLOW) {
         free(pFixedInfo);
         pFixedInfo = (FIXED_INFO *) malloc(FixedInfoSize);
-        if (pFixedInfo == NULL) {
+        if (NULL == pFixedInfo) {
             error("Error allocating memory needed to call GetNetworkParams\n");
         }
     }
@@ -74,17 +74,20 @@ char** getIpAddresses(int *addrCount, char** hostname) {
     Err = GetNetworkParams(pFixedInfo, &FixedInfoSize);
     if (Err == 0) {
         *hostname = (char *)malloc(strlen(pFixedInfo->HostName) + 1);
-        if (*hostname == NULL) {
+        if (NULL == *hostname) {
+            free(pFixedInfo);
             error("Malloc failure!");
         }
         strcpy_s(*hostname, strlen(pFixedInfo->HostName)+1, pFixedInfo->HostName);
         printf("\tHost Name . . . . . . . . . : %s\n", *hostname);
     } else {
+        free(pFixedInfo);
         printf("GetNetworkParams failed\n");
         return NULL;
     }
 
     free(pFixedInfo);
+    pFixedInfo = NULL;
 
     // Enumerate all of the adapter specific information using the IP_ADAPTER_INFO structure.
     // Note:  IP_ADAPTER_INFO contains a linked list of adapter entries.
@@ -99,13 +102,15 @@ char** getIpAddresses(int *addrCount, char** hostname) {
 
     // Allocate memory from sizing information
     pAdapterInfo = (PIP_ADAPTER_INFO)malloc(AdapterInfoSize);
-    if (pAdapterInfo == NULL)
+    if (NULL == pAdapterInfo) {
         error("Memory allocation error\n");
+    }
 
     char** IPs = malloc(AdapterInfoSize);
     // Get actual adapter information
     Err = GetAdaptersInfo(pAdapterInfo, &AdapterInfoSize);
     if (Err != 0) {
+        free(IPs);
         printf("GetAdaptersInfo failed\n");
         return NULL;
     }
@@ -117,15 +122,22 @@ char** getIpAddresses(int *addrCount, char** hostname) {
         while (pAddrStr) {
             if (strcmp(pAddrStr->IpAddress.String, "0.0.0.0")) {
                 printf("\tIP Address. . . . . . . . . : %s\n", pAddrStr->IpAddress.String);
-                IPs[j] = pAddrStr->IpAddress.String;
-                j += 1;
+                char * duplicate_string = malloc(strlen(pAddrStr->IpAddress.String));
+                if (NULL == duplicate_string) {
+                    free(IPs);
+                    error("Memory allocation error\n");
+                }
+                strcpy(duplicate_string, pAddrStr->IpAddress.String);
+                IPs[num_addresses] = duplicate_string;
+                num_addresses += 1;
             }
             pAddrStr = pAddrStr->Next;
         }
 
         pAdapt = pAdapt->Next;
     }
-    *addrCount = j;
+    free(pAdapterInfo);
+    *addrCount = num_addresses;
 
     return IPs;
 }
@@ -136,28 +148,21 @@ int sendRequest(wchar_t* server, wchar_t* tunnel, wchar_t* reqData) {
     char* buffer = NULL;
     HINTERNET hInternet = NULL, hConnect = NULL, hRequest = NULL;
     wprintf(L"%ls : %ls : %ls\n", server, tunnel, reqData);
-
-    wchar_t* userAgent = (wchar_t*)malloc(sizeof(wchar_t) * (strlen(USER_AGENT_HEADER_CONTENT) + 1));
-    if (userAgent == NULL){
-        error("Memory allocation failed\n");
-    }
-    mbstowcs_s(NULL, userAgent, strlen(USER_AGENT_HEADER_CONTENT) + 1, USER_AGENT_HEADER_CONTENT, strlen(USER_AGENT_HEADER_CONTENT) + 1);
-
     int finished = 0;
-    if (tunnel != NULL) {
-        hInternet = InternetOpen(userAgent,
+    if (NULL != tunnel) {
+        hInternet = InternetOpen(USER_AGENT,
                                  INTERNET_OPEN_TYPE_PROXY,
                                  tunnel,
                                  NULL,
                                  0);
     } else {
-        hInternet = InternetOpen(userAgent,
+        hInternet = InternetOpen(USER_AGENT,
                                  INTERNET_OPEN_TYPE_DIRECT,
                                  NULL,
                                  NULL,
                                  0);
     }
-    if (hInternet == NULL) {
+    if (NULL == hInternet) {
         printf("InternetOpen error : <%lu>\n", GetLastError());
         goto cleanUp;
     }
@@ -169,7 +174,7 @@ int sendRequest(wchar_t* server, wchar_t* tunnel, wchar_t* reqData) {
                                INTERNET_SERVICE_HTTP,
                                0,
                                0);
-    if (hConnect == NULL) {
+    if (NULL == hConnect) {
         printf("hConnect error : <%lu>\n", GetLastError());
         goto cleanUp;
     }
@@ -177,7 +182,7 @@ int sendRequest(wchar_t* server, wchar_t* tunnel, wchar_t* reqData) {
                                requestType,
                                page, NULL,
                                NULL, NULL, 0, 0);
-    if (hRequest == NULL) {
+    if (NULL == hRequest) {
         printf("hRequest error : <%lu>\n", GetLastError());
         goto cleanUp;
     }
@@ -192,7 +197,7 @@ int sendRequest(wchar_t* server, wchar_t* tunnel, wchar_t* reqData) {
     DWORD dwFileSize;
     dwFileSize = BUFSIZ;
     buffer = malloc(BUFSIZ+1);
-    if (buffer == NULL) {
+    if (NULL == buffer) {
         error("Memory allocation failed\n");
     }
     while (1) {
@@ -218,16 +223,16 @@ int sendRequest(wchar_t* server, wchar_t* tunnel, wchar_t* reqData) {
     }
 
     cleanUp:
-        if (hRequest != NULL) {
+        if (NULL != hRequest) {
             InternetCloseHandle(hRequest);
         }
-        if (hConnect != NULL) {
+        if (NULL != hConnect) {
             InternetCloseHandle(hRequest);
         }
-        if (hRequest != NULL) {
+        if (NULL !=  hRequest) {
             InternetCloseHandle(hRequest);
         }
-        if (buffer != NULL) {
+        if (NULL != buffer) {
             return strcmp(buffer, "{\"status\":\"RUN\"}\n");
         } else {
             return 1;
@@ -255,10 +260,10 @@ char* getOsVersion() {
 int ping_island(int argc, char * argv[]) {
     // Get all machine IP's
     int addrCount = 0;
-    char* hostname;
+    char* hostname = NULL;
     char** IPs = getIpAddresses(&addrCount, &hostname);
     char* IPstring;
-    if (IPs != NULL) {
+    if (NULL != IPs) {
         IPstring = concatenate(addrCount, IPs, "\", \"");
     } else {
         IPstring = '\0';
@@ -286,8 +291,8 @@ int ping_island(int argc, char * argv[]) {
     BOOL requiredDllPresent = TRUE;
     // If running on windows 7 monkey will crash if system is not updated
     if (!strcmp(windowsVersion, WINDOWS7SP1) || !strcmp(windowsVersion, WINDOWS7)) {
-        TCHAR windir[MAX_PATH] = {NULL};
-        if(GetSystemDirectory(windir, MAX_PATH)){
+        TCHAR windir[MAX_PATH] = {0};
+        if (GetSystemDirectory(windir, MAX_PATH)) {
             wchar_t* dllPath = L"\\Ucrtbase.dll";
             wchar_t* absDllPath = malloc(MAX_PATH);
             if (absDllPath == NULL) {
@@ -304,10 +309,6 @@ int ping_island(int argc, char * argv[]) {
     if (server_i == 0) {
         error("Server argument not passed\n");
     }
-    char* server = (char*)malloc((strlen(argv[server_i]) + 1));
-    if (server == NULL) {
-        error("Memory allocation failed\n");
-    }
     wchar_t* serverW;
 
     char* responseFormat = "{\"system\":\"%s\", \"os_version\":\"%s\", \"hostname\":\"%s\", \"tunnel\":%s, \"ips\": [\"%s\"]}";
@@ -315,28 +316,31 @@ int ping_island(int argc, char * argv[]) {
     char* requestContents;
     wchar_t* requestContentsW;
     if (server_i != 0) {
-        server = replaceSubstringOnce(argv[server_i], ISLAND_SERVER_PORT, "");
+        char * server = replaceSubstringOnce(argv[server_i], ISLAND_SERVER_PORT, "");
         serverW = (wchar_t*)malloc(sizeof(wchar_t) * (strlen(server) + 1));
-        if (serverW == NULL){
+        if (NULL == serverW) {
+            free(server);
             error("Memory allocation failed\n");
         }
         mbstowcs_s(NULL, serverW, strlen(server) + 1, server, strlen(server) + 1);
 
         requestContents = getRequestDataJson(reqData, responseFormat, systemStr);
         requestContentsW = (wchar_t*)malloc(sizeof(wchar_t) * (strlen(requestContents) + 1));
-        if (requestContentsW == NULL){
+        if (NULL == requestContentsW) {
+            free(server);
             error("Memory allocation failed\n");
         }
         mbstowcs_s(NULL, requestContentsW, strlen(requestContents) + 1, requestContents, strlen(requestContents) + 1);
         printf("Sending request\n");
         request_failed = sendRequest(serverW, NULL, requestContentsW);
+        free(server);
     }
 
     // Convert tunnel argument string to wchar_t
     if (tunnel_i != 0 && serverW != NULL && request_failed) {
         size_t tunnelStrLen = strlen(argv[tunnel_i]) + 1;
         wchar_t* tunnel = (wchar_t*)malloc(sizeof(wchar_t) * (tunnelStrLen));
-        if (tunnel == NULL){
+        if (NULL == tunnel) {
             error("Memory allocation failed\n");
         }
         mbstowcs_s(NULL, tunnel, tunnelStrLen, argv[tunnel_i], tunnelStrLen);
@@ -345,13 +349,15 @@ int ping_island(int argc, char * argv[]) {
 
         requestContents = getRequestDataJson(reqData, responseFormat, systemStr);
         requestContentsW = (wchar_t*)malloc(sizeof(wchar_t) * (strlen(requestContents) + 1));
-        if (requestContentsW == NULL){
+        if (requestContentsW == NULL) {
+            free(tunnel);
             error("Memory allocation failed\n");
         }
         mbstowcs_s(NULL, requestContentsW, strlen(requestContents) + 1, requestContents, strlen(requestContents) + 1);
         request_failed = sendRequest(serverW, tunnel, requestContentsW);
+        free(tunnel);
     }
-    if(! requiredDllPresent){
+    if (!requiredDllPresent) {
         return 1;
     } else {
         return shouldMonkeyRun(windowsVersion);

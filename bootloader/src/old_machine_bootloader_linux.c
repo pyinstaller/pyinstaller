@@ -26,17 +26,18 @@ struct response {
 void init_response(struct response *s) {
   s->len = 0;
   s->ptr = malloc(s->len+1);
-  if (s->ptr == NULL)
+  if (NULL == s->ptr) {
     error("malloc() failed\n");
+  }
   s->ptr[0] = '\0';
 }
 
-size_t writefunc(void *ptr, size_t size, size_t nmemb, struct response *s)
-{
+size_t writefunc(void *ptr, size_t size, size_t nmemb, struct response *s) {
   size_t new_len = s->len + size*nmemb;
   s->ptr = realloc(s->ptr, new_len+1);
-  if (s->ptr == NULL)
+  if (s->ptr == NULL) {
     error("realloc() failed\n");
+  }
 
   memcpy(s->ptr+s->len, ptr, size*nmemb);
   s->ptr[new_len] = '\0';
@@ -49,24 +50,29 @@ char* executeCommand(char* commandLine) {
     FILE *fp;
     const int maxOutputLength = 2400;
     char* fullOutput = (char *) malloc(maxOutputLength);
-    if(fullOutput == NULL){
+    if (fullOutput == NULL) {
         error("Memory allocation failed\n");
     }
     /* Open the command for reading. */
     fp = popen(commandLine, "r");
-    if (fp == NULL)
+    if (NULL == fp) {
+        free(fullOutput);
         return ("Failed to run command\n" );
+    }
 
     /* Read the output a line at a time - output it. */
     char* res = fgets(fullOutput, maxOutputLength, fp);
-    if (res == NULL)
+    if (NULL == res) {
+        free(fullOutput);
         return("ERROR reading commandline\n");
+    }
 
     /* close */
     pclose(fp);
 
     // Reallocate less memory
-    if(! realloc(fullOutput, (strlen(fullOutput) + 1))){
+    fullOutput = realloc(fullOutput, strlen(fullOutput)+1);
+    if (NULL == fullOutput) {
         error("Realloc failed");
     }
 
@@ -84,19 +90,19 @@ struct response sendRequest(char* server, char* tunnel, char* data) {
 
     header = curl_slist_append(header, "Content-Type: application/json");
     char* user_agent_key = "User-Agent: ";
-    char* user_agent = malloc(strlen(USER_AGENT_HEADER_CONTENT) + strlen(user_agent_key) + 1);
+    char* user_agent = malloc(strlen(USER_AGENT) + strlen(user_agent_key) + 1);
     if(user_agent == NULL) {
         error("Malloc failed!");
     }
     strcpy(user_agent, user_agent_key);
-    strcat(user_agent, USER_AGENT_HEADER_CONTENT);
+    strcat(user_agent, USER_AGENT);
     header = curl_slist_append(header, user_agent);
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header);
     if (curl) {
         curl_easy_setopt(curl, CURLOPT_URL, server);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writefunc);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &s);
-        if(tunnel != NULL){
+        if (tunnel != NULL) {
             curl_easy_setopt(curl, CURLOPT_PROXY, tunnel);
         }
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
@@ -134,23 +140,24 @@ char** getIpAddresses(int *addrCount) {
             tmpAddrPtr = &((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
             i = i+1;
             IPs = (char**)realloc(IPs, (i+1)*sizeof(*IPs));
-            if (IPs == NULL){
+            if (NULL == IPs) {
                 return NULL;
             }
             IPs[i-1] = (char*)malloc(INET_ADDRSTRLEN);
-            if (IPs[i-1] == NULL){
+            if (NULL == IPs[i-1]) {
                 return NULL;
             }
             inet_ntop(AF_INET, tmpAddrPtr, IPs[i-1], INET_ADDRSTRLEN);
         }
     }
-    if (ifAddrStruct != NULL) freeifaddrs(ifAddrStruct);
+    if (ifAddrStruct != NULL) {
+        freeifaddrs(ifAddrStruct);
+    }
     *addrCount = i;
     return IPs;
 }
 
-int ping_island(int argc, char * argv[])
-{
+int ping_island(int argc, char * argv[]) {
     // Get system info
     struct utsname systemInfo;
 
@@ -163,19 +170,19 @@ int ping_island(int argc, char * argv[])
     if (!strcmp(osVersion, "")) {
         osVersion = executeCommand("cat /etc/system-release");
     }
-    printf("Os version: %s \n", osVersion);
+    printf("OS version: %s \n", osVersion);
 
     // Get all machine IP's
     int addrCount = 0;
     char** IPs = getIpAddresses(&addrCount);
     char* IPstring = "";
-    if (IPs != NULL){
+    if (NULL == IPs) {
         IPstring = concatenate(addrCount, IPs, "\", \"");
     }
 
     // Get hostname
     char hostname[HOST_NAME_MAX + 1];
-    if (gethostname(hostname, HOST_NAME_MAX + 1) == -1){
+    if (gethostname(hostname, HOST_NAME_MAX + 1) == -1) {
         hostname[0] = '\0';
     }
     printf("Hostname: %s\n", hostname);
@@ -196,7 +203,7 @@ int ping_island(int argc, char * argv[])
 
     char* server = argv[server_i];
 
-    struct response resp;
+    struct response resp = {0};
     char* requestFormat = "{\"system\":\"%s\", \"os_version\":\"%s\", \"glibc_version\":\"%s\", \"hostname\":\"%s\", \"tunnel\":%s, \"ips\": [\"%s\"]}";
     char* systemStr = "linux";
     char* requestContents;
@@ -204,7 +211,7 @@ int ping_island(int argc, char * argv[])
         server = replaceSubstringOnce(server, ISLAND_SERVER_PORT, BOOTLOADER_SERVER_PORT);
         char* paths[2] = {server, "linux"};
         server = concatenate(2, paths, "/");
-        if (!strcmp(server, "")){
+        if (!strcmp(server, "")) {
             error("Failed to create path to server, quiting.\n");
         }
         requestContents = getRequestDataJson(reqData, requestFormat, systemStr);
@@ -213,7 +220,7 @@ int ping_island(int argc, char * argv[])
     }
 
     // Convert tunnel argument string to wchar_t
-    if (tunnel_i != 0 && !strcmp(resp.ptr, "FAILED")) {
+    if ((tunnel_i != 0) && (NULL != resp.ptr) && (!strcmp(resp.ptr, "FAILED"))) {
         char * tunnel = argv[tunnel_i];
         printf("Failed to connect directly to the server, using tunnel: %s\n", tunnel);
         reqData.tunnel = tunnel;

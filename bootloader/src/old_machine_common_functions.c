@@ -13,16 +13,16 @@ char* getRequestDataJson(struct requestData reqData, char* requestFormat, char* 
     if (reqData.tunnel != NULL) {
         size_t tunnelStringSize = sizeof(reqData.tunnel) + (2 * sizeof("\""));
         tunnel = (char *)malloc(tunnelStringSize);
-        if ( tunnel == NULL ) {
+        if (NULL == tunnel) {
             error("Malloc failed!");
         }
         snprintf(tunnel, tunnelStringSize, "%s%s%s", "\"", reqData.tunnel, "\"");
     } else {
         tunnel = (char *)malloc(sizeof("false"));
-        if ( tunnel == NULL ) {
+        if (NULL == tunnel) {
             error("Malloc failed!");
         }
-        tunnel = "false";
+        strcpy(tunnel, "false");
     }
 
     size_t responseSize = strlen(requestFormat) + strlen(reqData.osVersion) + strlen(reqData.hostname) +
@@ -34,7 +34,8 @@ char* getRequestDataJson(struct requestData reqData, char* requestFormat, char* 
 
     // Concatenate into string for post data
     char* buf = calloc(responseSize, sizeof(char));
-    if ( buf == NULL ) {
+    if (NULL == buf) {
+        free(tunnel);
         error("Malloc failed!");
     }
     if (reqData.glibcVersion != NULL) {
@@ -64,7 +65,7 @@ char* getRequestDataJson(struct requestData reqData, char* requestFormat, char* 
 char* concatenate(int size, char** array, const char* joint) {
     size_t jlen = strlen(joint);
     size_t* lens = malloc(size * sizeof(size_t));
-    if (lens == NULL) {
+    if (NULL == lens) {
         error("Malloc failed!");
     }
     size_t i;
@@ -75,7 +76,8 @@ char* concatenate(int size, char** array, const char* joint) {
         total_size += lens[i];
     }
     p = result = malloc(total_size);
-    if (p == NULL) {
+    if (NULL == p) {
+        free(lens);
         error("Malloc failed!");
     }
     for (i = 0; i < size; ++i) {
@@ -97,13 +99,13 @@ char* replaceSubstringOnce(char* str, char* to_be_replaced, char* replacement) {
     size_t replacement_size = strlen(replacement);
     size_t result_size = str_size - to_be_replaced_size + replacement_size;
     char *result_string = (char*)malloc(sizeof(char) * (result_size));
-    if (result_string == NULL){
+    if (result_string == NULL) {
         error("Memory allocation failed\n");
     }
 
     for (size_t i = 0; i < result_size; i++) {
         result_string[i] = str[i];
-        if (str[i] == to_be_replaced[0] && replacement_size != 0) {
+        if ((str[i] == to_be_replaced[0]) && (replacement_size != 0)) {
             int should_replace = 1;
             // Check if started iterating over string that will be replaced
             for (size_t j = i; j < (i + to_be_replaced_size); j++) {
@@ -125,11 +127,10 @@ char* replaceSubstringOnce(char* str, char* to_be_replaced, char* replacement) {
 }
 
 int parseFlags(int argc, char * argv[], int* server_i, int* tunnel_i) {
-    int i;
     *tunnel_i = 0;
     *server_i = 0;
     int monkey_or_dropper = 0;
-    for (i = 1; i < argc; i++) {
+    for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-t") == 0 || strcmp(argv[i], "--tunnel") == 0) {
             *tunnel_i = i+1;
         } else if (strcmp(argv[i], "-s") == 0 || strcmp(argv[i], "--server") == 0) {
