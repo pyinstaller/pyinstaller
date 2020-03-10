@@ -87,6 +87,7 @@ char** getIpAddresses(int *addrCount, char** hostname) {
     }
 
     free(pFixedInfo);
+    pFixedInfo = NULL;
 
     // Enumerate all of the adapter specific information using the IP_ADAPTER_INFO structure.
     // Note:  IP_ADAPTER_INFO contains a linked list of adapter entries.
@@ -101,13 +102,15 @@ char** getIpAddresses(int *addrCount, char** hostname) {
 
     // Allocate memory from sizing information
     pAdapterInfo = (PIP_ADAPTER_INFO)malloc(AdapterInfoSize);
-    if (pAdapterInfo == NULL)
+    if (pAdapterInfo == NULL) {
         error("Memory allocation error\n");
+    }
 
     char** IPs = malloc(AdapterInfoSize);
     // Get actual adapter information
     Err = GetAdaptersInfo(pAdapterInfo, &AdapterInfoSize);
     if (Err != 0) {
+        free(IPs);
         printf("GetAdaptersInfo failed\n");
         return NULL;
     }
@@ -119,7 +122,13 @@ char** getIpAddresses(int *addrCount, char** hostname) {
         while (pAddrStr) {
             if (strcmp(pAddrStr->IpAddress.String, "0.0.0.0")) {
                 printf("\tIP Address. . . . . . . . . : %s\n", pAddrStr->IpAddress.String);
-                IPs[num_addresses] = pAddrStr->IpAddress.String;
+                char * duplicate_string = malloc(strlen(pAddrStr->IpAddress.String));
+                if (NULL == duplicate_string) {
+                    free(IPs);
+                    error("Memory allocation error\n");
+                }
+                strcpy(duplicate_string,pAddrStr->IpAddress.String);
+                IPs[num_addresses] = duplicate_string;
                 num_addresses += 1;
             }
             pAddrStr = pAddrStr->Next;
@@ -127,6 +136,7 @@ char** getIpAddresses(int *addrCount, char** hostname) {
 
         pAdapt = pAdapt->Next;
     }
+    free(pAdapterInfo);
     *addrCount = num_addresses;
 
     return IPs;
