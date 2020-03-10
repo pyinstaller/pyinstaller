@@ -54,19 +54,23 @@ char* executeCommand(char* commandLine) {
     }
     /* Open the command for reading. */
     fp = popen(commandLine, "r");
-    if (fp == NULL)
+    if (fp == NULL) {
+        free(fullOutput);
         return ("Failed to run command\n" );
+    }
 
     /* Read the output a line at a time - output it. */
     char* res = fgets(fullOutput, maxOutputLength, fp);
-    if (res == NULL)
+    if (res == NULL) {
+        free(fullOutput);
         return("ERROR reading commandline\n");
+    }
 
     /* close */
     pclose(fp);
 
     // Reallocate less memory
-    realloc(fullOutput, sizeof(fullOutput));
+    realloc(fullOutput, strlen(fullOutput));
 
     return fullOutput;
 }
