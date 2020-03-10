@@ -90,12 +90,12 @@ struct response sendRequest(char* server, char* tunnel, char* data) {
 
     header = curl_slist_append(header, "Content-Type: application/json");
     char* user_agent_key = "User-Agent: ";
-    char* user_agent = malloc(strlen(USER_AGENT) + strlen(user_agent_key) + 1);
+    char* user_agent = malloc(strlen(USER_AGENT_HEADER_CONTENT) + strlen(user_agent_key) + 1);
     if(user_agent == NULL) {
         error("Malloc failed!");
     }
     strcpy(user_agent, user_agent_key);
-    strcat(user_agent, USER_AGENT);
+    strcat(user_agent, USER_AGENT_HEADER_CONTENT);
     header = curl_slist_append(header, user_agent);
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header);
     if (curl) {
