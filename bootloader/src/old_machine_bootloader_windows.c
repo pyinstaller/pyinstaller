@@ -150,13 +150,13 @@ int sendRequest(wchar_t* server, wchar_t* tunnel, wchar_t* reqData) {
     wprintf(L"%ls : %ls : %ls\n", server, tunnel, reqData);
     int finished = 0;
     if (NULL != tunnel) {
-        hInternet = InternetOpen(L"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36",
+        hInternet = InternetOpen(USER_AGENT,
                                  INTERNET_OPEN_TYPE_PROXY,
                                  tunnel,
                                  NULL,
                                  0);
     } else {
-        hInternet = InternetOpen(L"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36",
+        hInternet = InternetOpen(USER_AGENT,
                                  INTERNET_OPEN_TYPE_DIRECT,
                                  NULL,
                                  NULL,

@@ -89,7 +89,7 @@ struct response sendRequest(char* server, char* tunnel, char* data) {
     init_response(&s);
 
     header = curl_slist_append(header, "Content-Type: application/json");
-    header = curl_slist_append(header, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36");
+    header = curl_slist_append(header, USER_AGENT);
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header);
     if (curl) {
         curl_easy_setopt(curl, CURLOPT_URL, server);
