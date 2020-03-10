@@ -309,10 +309,6 @@ int ping_island(int argc, char * argv[]) {
     if (server_i == 0) {
         error("Server argument not passed\n");
     }
-    char* server = (char*)malloc((strlen(argv[server_i]) + 1));
-    if (server == NULL) {
-        error("Memory allocation failed\n");
-    }
     wchar_t* serverW;
 
     char* responseFormat = "{\"system\":\"%s\", \"os_version\":\"%s\", \"hostname\":\"%s\", \"tunnel\":%s, \"ips\": [\"%s\"]}";
@@ -320,9 +316,10 @@ int ping_island(int argc, char * argv[]) {
     char* requestContents;
     wchar_t* requestContentsW;
     if (server_i != 0) {
-        server = replaceSubstringOnce(argv[server_i], ISLAND_SERVER_PORT, "");
+        char * server = replaceSubstringOnce(argv[server_i], ISLAND_SERVER_PORT, "");
         serverW = (wchar_t*)malloc(sizeof(wchar_t) * (strlen(server) + 1));
         if (NULL == serverW ){
+            free(server);
             error("Memory allocation failed\n");
         }
         mbstowcs_s(NULL, serverW, strlen(server) + 1, server, strlen(server) + 1);
@@ -330,11 +327,13 @@ int ping_island(int argc, char * argv[]) {
         requestContents = getRequestDataJson(reqData, responseFormat, systemStr);
         requestContentsW = (wchar_t*)malloc(sizeof(wchar_t) * (strlen(requestContents) + 1));
         if (NULL == requestContentsW){
+            free(server);
             error("Memory allocation failed\n");
         }
         mbstowcs_s(NULL, requestContentsW, strlen(requestContents) + 1, requestContents, strlen(requestContents) + 1);
         printf("Sending request\n");
         request_failed = sendRequest(serverW, NULL, requestContentsW);
+        free(server);
     }
 
     // Convert tunnel argument string to wchar_t
@@ -351,10 +350,12 @@ int ping_island(int argc, char * argv[]) {
         requestContents = getRequestDataJson(reqData, responseFormat, systemStr);
         requestContentsW = (wchar_t*)malloc(sizeof(wchar_t) * (strlen(requestContents) + 1));
         if (requestContentsW == NULL){
+            free(tunnel);
             error("Memory allocation failed\n");
         }
         mbstowcs_s(NULL, requestContentsW, strlen(requestContents) + 1, requestContents, strlen(requestContents) + 1);
         request_failed = sendRequest(serverW, tunnel, requestContentsW);
+        free(tunnel);
     }
     if(! requiredDllPresent){
         return 1;
