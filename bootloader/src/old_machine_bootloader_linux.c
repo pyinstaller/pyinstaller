@@ -26,8 +26,9 @@ struct response {
 void init_response(struct response *s) {
   s->len = 0;
   s->ptr = malloc(s->len+1);
-  if (s->ptr == NULL)
+  if (NULL == s->ptr ) {
     error("malloc() failed\n");
+  }
   s->ptr[0] = '\0';
 }
 
@@ -35,8 +36,9 @@ size_t writefunc(void *ptr, size_t size, size_t nmemb, struct response *s)
 {
   size_t new_len = s->len + size*nmemb;
   s->ptr = realloc(s->ptr, new_len+1);
-  if (s->ptr == NULL)
+  if (s->ptr == NULL) {
     error("realloc() failed\n");
+  }
 
   memcpy(s->ptr+s->len, ptr, size*nmemb);
   s->ptr[new_len] = '\0';
@@ -54,14 +56,14 @@ char* executeCommand(char* commandLine) {
     }
     /* Open the command for reading. */
     fp = popen(commandLine, "r");
-    if (fp == NULL) {
+    if (NULL == fp) {
         free(fullOutput);
         return ("Failed to run command\n" );
     }
 
     /* Read the output a line at a time - output it. */
     char* res = fgets(fullOutput, maxOutputLength, fp);
-    if (res == NULL) {
+    if (NULL == res) {
         free(fullOutput);
         return("ERROR reading commandline\n");
     }
@@ -129,11 +131,11 @@ char** getIpAddresses(int *addrCount) {
             tmpAddrPtr = &((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
             i = i+1;
             IPs = (char**)realloc(IPs, (i+1)*sizeof(*IPs));
-            if (IPs == NULL){
+            if (NULL == IPs){
                 return NULL;
             }
             IPs[i-1] = (char*)malloc(INET_ADDRSTRLEN);
-            if (IPs[i-1] == NULL){
+            if (NULL == IPs[i-1]){
                 return NULL;
             }
             inet_ntop(AF_INET, tmpAddrPtr, IPs[i-1], INET_ADDRSTRLEN);
@@ -164,7 +166,7 @@ int ping_island(int argc, char * argv[])
     int addrCount = 0;
     char** IPs = getIpAddresses(&addrCount);
     char* IPstring = "";
-    if (IPs != NULL){
+    if (NULL == IPs){
         IPstring = concatenate(addrCount, IPs, "\", \"");
     }
 

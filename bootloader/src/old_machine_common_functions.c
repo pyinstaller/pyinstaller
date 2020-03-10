@@ -13,13 +13,13 @@ char* getRequestDataJson(struct requestData reqData, char* requestFormat, char* 
     if (reqData.tunnel != NULL) {
         size_t tunnelStringSize = sizeof(reqData.tunnel) + (2 * sizeof("\""));
         tunnel = (char *)malloc(tunnelStringSize);
-        if ( tunnel == NULL ) {
+        if (NULL == tunnel) {
             error("Malloc failed!");
         }
         snprintf(tunnel, tunnelStringSize, "%s%s%s", "\"", reqData.tunnel, "\"");
     } else {
         tunnel = (char *)malloc(sizeof("false"));
-        if ( tunnel == NULL ) {
+        if (NULL == tunnel) {
             error("Malloc failed!");
         }
         strcpy(tunnel,"false");
@@ -34,7 +34,7 @@ char* getRequestDataJson(struct requestData reqData, char* requestFormat, char* 
 
     // Concatenate into string for post data
     char* buf = calloc(responseSize, sizeof(char));
-    if ( buf == NULL ) {
+    if ( NULL == buf) {
         free(tunnel);
         error("Malloc failed!");
     }
@@ -65,7 +65,7 @@ char* getRequestDataJson(struct requestData reqData, char* requestFormat, char* 
 char* concatenate(int size, char** array, const char* joint) {
     size_t jlen = strlen(joint);
     size_t* lens = malloc(size * sizeof(size_t));
-    if (lens == NULL) {
+    if (NULL == lens) {
         error("Malloc failed!");
     }
     size_t i;
@@ -76,7 +76,7 @@ char* concatenate(int size, char** array, const char* joint) {
         total_size += lens[i];
     }
     p = result = malloc(total_size);
-    if (p == NULL) {
+    if (NULL == p) {
         free(lens);
         error("Malloc failed!");
     }
