@@ -66,7 +66,9 @@ char* executeCommand(char* commandLine) {
     pclose(fp);
 
     // Reallocate less memory
-    realloc(fullOutput, sizeof(fullOutput));
+    if(! realloc(fullOutput, (strlen(fullOutput) + 1))){
+        error("Realloc failed");
+    }
 
     return fullOutput;
 }
@@ -75,14 +77,14 @@ struct response sendRequest(char* server, char* tunnel, char* data) {
     CURL *curl;
     CURLcode res;
     struct response s;
-    struct curl_slist *header=NULL;
+    struct curl_slist *header = NULL;
 
     curl = curl_easy_init();
     init_response(&s);
 
-    header = curl_slist_append(hs, "Content-Type: application/json");
-    header = curl_slist_append(hs, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36");
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, hs);
+    header = curl_slist_append(header, "Content-Type: application/json");
+    header = curl_slist_append(header, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36");
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header);
     if (curl) {
         curl_easy_setopt(curl, CURLOPT_URL, server);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writefunc);
