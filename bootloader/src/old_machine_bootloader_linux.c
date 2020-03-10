@@ -176,7 +176,7 @@ int ping_island(int argc, char * argv[]) {
     int addrCount = 0;
     char** IPs = getIpAddresses(&addrCount);
     char* IPstring = "";
-    if (NULL == IPs) {
+    if (NULL != IPs) {
         IPstring = concatenate(addrCount, IPs, "\", \"");
     }
 
