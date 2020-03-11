@@ -139,6 +139,7 @@ _unix_excludes = set([
     # to bundle it.
     r'libxcb\.so(\..*)?',
     r'libxcb-dri.*\.so(\..*)?',
+    r'libreadline\.so(\..*)?',
 ])
 
 _aix_excludes = set([
