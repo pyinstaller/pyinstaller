@@ -68,8 +68,9 @@ elif is_darwin:
                      'libpython%d.%d.dylib' % _pyver,
                      'libpython%d.%dm.dylib' % _pyver}
 elif is_aix:
-    # Shared libs on AIX may be archives with shared object members, thus the ".a" suffix.
-    # However, starting with python 2.7.11 libpython?.?.so files are also produced.
+    # Shared libs on AIX may be archives with shared object members,
+    # Hence the ".a" suffix. However, starting with python 2.7.11
+    # libpython?.?.so and Python3 libpython3.?m.so files are produced.
     PYDYLIB_NAMES = {'libpython%d.%d.a' % _pyver,
                      'libpython%d.%dm.a' % _pyver,
                      'libpython%d.%d.so' % _pyver,
