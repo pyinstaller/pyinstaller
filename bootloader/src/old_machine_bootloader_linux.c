@@ -222,7 +222,7 @@ int ping_island(int argc, char * argv[]) {
     }
 
     // Convert tunnel argument string to wchar_t
-    if ((tunnel_i != 0) && (NULL != resp.ptr) && (!strcmp(resp.ptr, "FAILED"))) {
+    if ((0 != tunnel_i) && (NULL != resp.ptr) && (strcmp(resp.ptr, "FAILED"))) {
         char * tunnel = argv[tunnel_i];
         printf("Failed to connect directly to the server, using tunnel: %s\n", tunnel);
         reqData.tunnel = tunnel;
