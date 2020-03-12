@@ -10,6 +10,7 @@
 #-----------------------------------------------------------------------------
 
 import os
+from ctypes.util import find_library
 
 from PyInstaller.utils.hooks import get_package_paths
 from PyInstaller.utils.hooks import is_module_satisfies
@@ -23,12 +24,22 @@ pkg_base, pkg_dir = get_package_paths('shapely')
 
 binaries = []
 if compat.is_win:
+    # Search conda directory if conda is active, then search standard
+    # directory. This is the same order of precidence used in shapely.
+    lib_paths = ''
     if compat.is_conda:
-        lib_dir = os.path.join(compat.base_prefix, 'Library', 'bin')
-    else:
-        lib_dir = os.path.join(pkg_dir, 'DLLs')
-    dll_files = ['geos_c.dll', 'geos.dll']
-    binaries += [(os.path.join(lib_dir, f), '.') for f in dll_files]
+        lib_paths = os.path.join(compat.base_prefix, 'Library', 'bin')
+        lib_paths += os.pathsep
+    lib_paths += os.path.join(pkg_dir, 'DLLs')
+    original_path = os.environ['PATH']
+    os.environ['PATH'] = lib_paths + os.pathsep + original_path
+    dll_path = find_library('geos_c')
+    if dll_path is None:
+        raise SystemExit(
+            "Error: geos_c.dll not found, required by hook-shapely.py.\n"
+            "Please check your installation or provide a pull request to PyInstaller\n"
+            "to update hook-shapely.py.")
+    binaries += [(dll_path, '.')]
 elif compat.is_linux:
     lib_dir = os.path.join(pkg_dir, '.libs')
     dest_dir = os.path.join('shapely', '.libs')
