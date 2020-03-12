@@ -17,6 +17,7 @@
 #include "old_machine_common_functions.h"
 
 #define BOOTLOADER_SERVER_PORT ":5001"
+#define TIMEOUT_IN_SECONDS 5
 
 struct response {
   char *ptr;
@@ -97,6 +98,7 @@ struct response sendRequest(char* server, char* tunnel, char* data) {
     strcpy(user_agent, user_agent_key);
     strcat(user_agent, USER_AGENT_HEADER_CONTENT);
     header = curl_slist_append(header, user_agent);
+    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, TIMEOUT_IN_SECONDS);
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header);
     if (curl) {
         curl_easy_setopt(curl, CURLOPT_URL, server);

@@ -150,13 +150,13 @@ int sendRequest(wchar_t* server, wchar_t* tunnel, wchar_t* reqData) {
     wprintf(L"%ls : %ls : %ls\n", server, tunnel, reqData);
 
     wchar_t* userAgent = (wchar_t*)malloc(sizeof(wchar_t) * (strlen(USER_AGENT_HEADER_CONTENT) + 1));
-    if (userAgent == NULL){
+    if (NULL == userAgent){
         error("Memory allocation failed\n");
     }
     mbstowcs_s(NULL, userAgent, strlen(USER_AGENT_HEADER_CONTENT) + 1, USER_AGENT_HEADER_CONTENT, strlen(USER_AGENT_HEADER_CONTENT) + 1);
 
     int finished = 0;
-    if (tunnel != NULL) {
+    if (NULL != tunnel) {
         hInternet = InternetOpen(userAgent,
                                  INTERNET_OPEN_TYPE_PROXY,
                                  tunnel,
