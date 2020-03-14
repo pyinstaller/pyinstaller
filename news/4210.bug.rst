@@ -1,1 +1,1 @@
-(AIX) Include python-malloc labeled libraries in search for libpython
+(AIX) Include python-malloc labeled libraries in search for libpython.
