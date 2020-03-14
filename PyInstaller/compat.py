@@ -67,10 +67,13 @@ elif is_darwin:
                      'libpython%d.%d.dylib' % _pyver,
                      'libpython%d.%dm.dylib' % _pyver}
 elif is_aix:
-    # Shared libs on AIX are archives with shared object members, thus the ".a" suffix.
-    # However, python 2.7.11 built with XLC produces libpython?.?.so file, too.
+    # Shared libs on AIX may be archives with shared object members,
+    # hence the ".a" suffix. However, starting with python 2.7.11
+    # libpython?.?.so and Python3 libpython?.?m.so files are produced.
     PYDYLIB_NAMES = {'libpython%d.%d.a' % _pyver,
-                     'libpython%d.%d.so' % _pyver}
+                     'libpython%d.%dm.a' % _pyver,
+                     'libpython%d.%d.so' % _pyver,
+                     'libpython%d.%dm.so' % _pyver}
 elif is_freebsd:
     PYDYLIB_NAMES = {'libpython%d.%d.so.1' % _pyver,
                      'libpython%d.%dm.so.1' % _pyver,
