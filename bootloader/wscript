@@ -544,7 +544,8 @@ def configure(ctx):
         # The following variable fixes 10.7 compatibility.
         # According to OS X doc this variable is equivalent to gcc option:
         #   -mmacosx-version-min=10.7
-        os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.7'
+        if not os.environ.get('MACOSX_DEPLOYMENT_TARGET'):
+            os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.7'
 
     ### Libraries
 
@@ -629,8 +630,12 @@ def configure(ctx):
             ctx.env.append_value('LINKFLAGS', '-municode')
 
     if ctx.env.DEST_OS == 'darwin':
-        ctx.env.append_value('CFLAGS', '-mmacosx-version-min=10.7')
-        ctx.env.append_value('LINKFLAGS', '-mmacosx-version-min=10.7')
+        if not any(x for x in ctx.env.CPPFLAGS + ctx.env.CFLAGS
+                   if x.startswith('-mmacosx-version-min=')):
+            ctx.env.append_value('CFLAGS', '-mmacosx-version-min=10.7')
+        if not any(x for x in ctx.env.LDFLAGS + ctx.env.LINKFLAGS
+                   if x.startswith('-mmacosx-version-min=')):
+            ctx.env.append_value('LINKFLAGS', '-mmacosx-version-min=10.7')
 
     # On linux link only with needed libraries.
     # -Wl,--as-needed is on some platforms detected during configure but

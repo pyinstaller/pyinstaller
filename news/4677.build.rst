@@ -1,0 +1,2 @@
+(OSX) Allow end users to override MACOSX_DEPLOYMENT_TARGET and mmacosx-version-min
+via environment variables and set 10.7 as the fallback value for both.
