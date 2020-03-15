@@ -121,6 +121,8 @@ Now you can build the bootloader as shown above.
 Alternatively you may want to use the `darwin64` build-guest
 provided by the Vagrantfile (see below).
 
+By default, the build script targets Mac OSX 10.7, which can be overridden by
+exporting the MACOSX_DEPLOYMENT_TARGET environment variable.
 
 .. _cross-building for mac os x:
 
