@@ -26,14 +26,17 @@ binaries = []
 if compat.is_win:
     # Search conda directory if conda is active, then search standard
     # directory. This is the same order of precidence used in shapely.
-    lib_paths = ''
+    standard_path = os.path.join(pkg_dir, 'DLLs')
+    lib_paths = [standard_path, os.environ['PATH']]
     if compat.is_conda:
-        lib_paths = os.path.join(compat.base_prefix, 'Library', 'bin')
-        lib_paths += os.pathsep
-    lib_paths += os.path.join(pkg_dir, 'DLLs')
+        conda_path = os.path.join(compat.base_prefix, 'Library', 'bin')
+        lib_paths.insert(0, conda_path)
     original_path = os.environ['PATH']
-    os.environ['PATH'] = lib_paths + os.pathsep + original_path
-    dll_path = find_library('geos_c')
+    try:
+        os.environ['PATH'] = os.pathsep.join(lib_paths)
+        dll_path = find_library('geos_c')
+    finally:
+        os.environ['PATH'] = original_path
     if dll_path is None:
         raise SystemExit(
             "Error: geos_c.dll not found, required by hook-shapely.py.\n"
