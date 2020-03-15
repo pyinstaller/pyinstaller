@@ -11,7 +11,13 @@
 
 """Uvicorn hook
 
+`Uvicorn <https://www.uvicorn.org/>`_ is a lightning-fast ASGI server.
+
 Due to dynamic imports (see: uvicorn.config) we need this hook.
+
+Note
+----
+This hook is tested with uvicorn version 0.11.2.
 """
 
 hiddenimports = [
