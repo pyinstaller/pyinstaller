@@ -45,14 +45,11 @@ def test_uvicorn(pyi_builder):
             })
 
         if __name__ == '__main__':
-            # TODO: is sys.exit needed?
-            #sys.exit(uvicorn.run(
             uvicorn.run(
                 "test_source:app",
                 host="127.0.0.1",
                 port=0,
                 log_level="info"
-            #))
             )
         """,
         pyi_args=['--hidden-import=test_source'],
