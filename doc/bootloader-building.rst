@@ -351,6 +351,65 @@ Use cygwin's ``setup.exe`` to install `python` and `mingw`.
 Now you can build the bootloader as shown above.
 
 
+Building for AIX
+===================
+
+* By default AIX builds 32-bit executables.
+* For 64-bit executables set the environment variable :envvar:`OBJECT_MODE`.
+
+If Python was built as a 64-bit executable
+then the AIX utilities that work with binary files
+(e.g., .o, and .a) may need the flag ``-X64``.
+Rather than provide this flag with every command,
+the preferred way to provide this setting
+is to use the environment variable :envvar:`OBJECT_MODE`.
+Depending on whether Python was build as a 32-bit or a 64-bit executable
+you may need to set or unset
+the environment variable :envvar:`OBJECT_MODE`.
+
+To determine the size the following command can be used::
+
+    $ python -c "import sys; print(sys.maxsize) <= 2**32"
+    True
+
+When the answer is ``True`` (as above) Python was build as a 32-bit
+executable.
+
+When working with a 32-bit Python executable proceed as follows::
+
+    unset OBJECT_MODE
+    ./waf configure all
+
+When working with a 64-bit Python executable proceed as follows::
+
+    export OBJECT_MODE=64
+    ./waf configure all
+
+.. note:: The correct setting of :envvar:`OBJECT_MODE` is also needed when you
+   use PyInstaller to package your application.
+
+To build the bootloader you will need a compiler compatible (identical)
+with the one used to build python.
+
+.. note:: Python compiled with a different version of gcc that you are using
+   might not be compatible enough.
+   GNU tools are not always binary compatible.
+
+If you do not know which compiler that was,
+this command can help you determine
+if the compiler was gcc or an IBM compiler::
+
+    python -c "import sysconfig; print(sysconfig.get_config_var('CC'))"
+
+If the compiler is gcc you may need additional RPMs installed
+to support the GNU run-time dependencies.
+
+When the IBM compiler is used no additional prerequisites are expected.
+The recommended value for :envvar:`CC` with the IBM compilers is
+`:command:xlc_r`.
+
+
+
 Vagrantfile Virtual Machines
 ================================
 
