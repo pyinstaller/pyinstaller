@@ -40,8 +40,8 @@ if compat.is_win:
     if dll_path is None:
         raise SystemExit(
             "Error: geos_c.dll not found, required by hook-shapely.py.\n"
-            "Please check your installation or provide a pull request to PyInstaller\n"
-            "to update hook-shapely.py.")
+            "Please check your installation or provide a pull request to "
+            "PyInstaller to update hook-shapely.py.")
     binaries += [(dll_path, '.')]
 elif compat.is_linux:
     lib_dir = os.path.join(pkg_dir, '.libs')
