@@ -35,6 +35,11 @@ def test_UPX(config, upx_dir):
             cmd, '-V', __raise_ENOENT__=True).strip().splitlines()
         if vers:
             v = vers[0].split()[1]
+            try:
+                # v = "3.96-git-d7ba31cab8ce"
+                v = v.split("-")[0]
+            except Exception:
+                pass
             hasUPX = tuple(map(int, v.split(".")))
             if is_win and hasUPX < (1, 92):
                 logger.error('UPX is too old! Python 2.4 under Windows requires UPX 1.92+')
