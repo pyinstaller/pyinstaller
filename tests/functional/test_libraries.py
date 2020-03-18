@@ -75,6 +75,15 @@ def test_enchant(pyi_builder):
     pyi_builder.test_script('pyi_lib_enchant.py')
 
 
+@importorskip('tensorflow')
+def test_tensorflow(pyi_builder):
+    pyi_builder.test_source(
+        """
+        from tensorflow import *
+        """
+    )
+
+
 @importorskip('gevent')
 def test_gevent(pyi_builder):
     pyi_builder.test_source(
@@ -856,4 +865,15 @@ def test_pendulum(pyi_builder):
         import pendulum
 
         print(pendulum.now().isoformat())
+        """)
+
+
+@importorskip('argon2')
+def test_argon2(pyi_builder):
+    pyi_builder.test_source("""
+        from argon2 import PasswordHasher
+
+        ph = PasswordHasher()
+        hash = ph.hash("s3kr3tp4ssw0rd")
+        ph.verify(hash, "s3kr3tp4ssw0rd")
         """)

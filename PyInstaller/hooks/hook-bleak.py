@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2020, PyInstaller Development Team.
+# Copyright (c) 2020, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -8,16 +8,11 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
+# hook for https://github.com/hbldh/bleak
 
+from PyInstaller.utils.hooks import collect_data_files, collect_dynamic_libs
+from PyInstaller.compat import is_win
 
-from PyInstaller.utils.hooks import collect_data_files
-
-# core/_templates/*
-# server/static/**/*
-# subcommands/*.py
-# bokeh/_sri.json
-
-datas = collect_data_files('bokeh.core') + \
-        collect_data_files('bokeh.server') + \
-        collect_data_files('bokeh.command.subcommands', include_py_files=True) + \
-        collect_data_files('bokeh')
+if is_win:
+    datas = collect_data_files('bleak', subdir=r'backends\dotnet')
+    binaries = collect_dynamic_libs('bleak')

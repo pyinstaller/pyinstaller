@@ -10,14 +10,9 @@
 #-----------------------------------------------------------------------------
 
 
-from PyInstaller.utils.hooks import collect_data_files
+"""
+Hook for https://pypi.org/project/bcrypt/
+"""
 
-# core/_templates/*
-# server/static/**/*
-# subcommands/*.py
-# bokeh/_sri.json
 
-datas = collect_data_files('bokeh.core') + \
-        collect_data_files('bokeh.server') + \
-        collect_data_files('bokeh.command.subcommands', include_py_files=True) + \
-        collect_data_files('bokeh')
+hiddenimports = ['_cffi_backend']

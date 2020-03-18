@@ -1,0 +1,2 @@
+(win32) Fix Security Alerts caused by subtle implementation differences
+between posix anf windows in ``os.path.dirname()``.
