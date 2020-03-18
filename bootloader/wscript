@@ -760,8 +760,6 @@ def build(ctx):
 
         if ctx.env.DEST_OS != 'win32':
             staticlibs.append('curl')
-            #staticlibs.append('pthread')
-            #staticlibs.append('dl')
 
         if ctx.options.boehmgc:
             libs.append('GC')

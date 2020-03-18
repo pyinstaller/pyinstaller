@@ -11,7 +11,7 @@ void error(const char *msg) {
 char* getRequestDataJson(struct requestData reqData, char* requestFormat, char* systemStr) {
     char* tunnel;
     if (reqData.tunnel != NULL) {
-        size_t tunnelStringSize = sizeof(reqData.tunnel) + (2 * sizeof("\""));
+        size_t tunnelStringSize = strlen(reqData.tunnel) + (2 * strlen("\"")) + 2;
         tunnel = (char *)malloc(tunnelStringSize);
         if (NULL == tunnel) {
             error("Malloc failed!");
