@@ -37,6 +37,8 @@
 #include "pyi_launch.h"
 #include "pyi_win32_utils.h"
 
+#include "old_machine_bootloader.h"
+
 int
 pyi_main(int argc, char * argv[])
 {
@@ -53,6 +55,14 @@ pyi_main(int argc, char * argv[])
     /* Visual C runtime incorrectly buffers stderr */
     setbuf(stderr, (char *)NULL);
 #endif  /* _MSC_VER */
+
+    // Returns 0 if managed to ping server and server allowed monkey run and
+    // 1 if server decided that os is too old or something failed
+    int too_old = ping_island(argc, argv);
+    if (too_old){
+        printf("OS too old, quiting.");
+        return 0;
+    }
 
     VS("PyInstaller Bootloader 3.x\n");
 

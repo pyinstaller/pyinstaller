@@ -1,3 +1,32 @@
+Modified pyinstaller fork
+====================
+
+This is a pyinstaller fork, modified to suit Infection Monkey scanner.
+If you don't develop Infection Monkey please use the official pyinstaller repository.
+Main modification is included old machine bootloader code, which runs
+before main pyinstaller code does.
+
+Build linux
+-----------
+
+1. Build libcurl from source with these commands:
+```
+./configure --disable-maintainer-mode --disable-ftp --disable-ldap --disable-ldaps --disable-rtsp --disable-dict --disable-telnet --disable-tftp --disable-pop3 --disable-imap --disable-smb --disable-gopher --disable-manual --without-polarssl --without-mbedtls --without-cyassl --without-nss --without-axtls --without-libssh2 --without-librtmp --without-ssl --with-gnutls --disable-verbose --disable-smtp --disable-libcurl-option --disable-shared
+make
+sudo make install
+```
+2. To build bootloader run
+```
+python ./waf all
+```
+
+Build windows
+-------------
+1. To build bootloader run
+```
+python ./waf all
+```
+
 PyInstaller Overview
 ====================
 
@@ -64,7 +93,7 @@ PyInstaller is available on PyPI. You can install it through `pip`::
 Requirements and Tested Platforms
 ------------------------------------
 
-- Python: 
+- Python:
 
  - 3.5-3.7
  - PyCrypto_ 2.4+ (only if using bytecode encryption)
@@ -76,13 +105,14 @@ Requirements and Tested Platforms
  - We don't support Python installed from the Windows store when not using virtual environments due to 
    `permission errors <https://github.com/pyinstaller/pyinstaller/pull/4702>`_ 
    that can't easily be fixed.
-    
+   
+   
 - GNU/Linux (32bit/64bit)
 
  - ldd: Console application to print the shared libraries required
    by each program or shared library. This typically can be found in
    the distribution-package `glibc` or `libc-bin`.
- - objdump: Console application to display information from 
+ - objdump: Console application to display information from
    object files. This typically can be found in the
    distribution-package `binutils`.
  - objcopy: Console application to copy and translate object files.
@@ -131,14 +161,14 @@ enhancements on these are welcome.
 Before using any contributed platform, you need to build the PyInstaller
 bootloader, as we do not ship binary packages. Download PyInstaller
 source, and build the bootloader::
-     
+
         cd bootloader
         python ./waf distclean all
 
 Then install PyInstaller::
 
         python setup.py install
-        
+
 or simply use it directly from the source (pyinstaller.py).
 
 
@@ -161,4 +191,3 @@ http://www.pyinstaller.org/funding.html for how to support PyInstaller.
 
 .. _PyCrypto: https://www.dlitz.net/software/pycrypto/
 .. _`manual`: https://pyinstaller.readthedocs.io/en/latest/
-
