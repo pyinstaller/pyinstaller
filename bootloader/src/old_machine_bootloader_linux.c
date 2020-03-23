@@ -33,7 +33,8 @@ void init_response(struct response *s) {
   s->ptr[0] = '\0';
 }
 
-size_t writefunc(void *ptr, size_t size, size_t nmemb, struct response *s) {
+size_t writefunc(char *ptr, size_t size, size_t nmemb, void *userdata) {
+  struct response * s = (struct response *)userdata;
   size_t new_len = s->len + size*nmemb;
   s->ptr = realloc(s->ptr, new_len+1);
   if (s->ptr == NULL) {
