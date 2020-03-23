@@ -877,3 +877,19 @@ def test_argon2(pyi_builder):
         hash = ph.hash("s3kr3tp4ssw0rd")
         ph.verify(hash, "s3kr3tp4ssw0rd")
         """)
+
+
+# https://github.com/coin-or/python-mip/issues/76
+@importorskip('mip')
+def test_mip(pyi_builder):
+    pyi_builder.test_source("""
+        from mip import *
+        m = Model(sense=MAXIMIZE, solver_name=CBC)
+        v1 = m.add_var(var_type=BINARY)
+        v2 = m.add_var(var_type=BINARY)
+        m.add_constr(v1 + v2 == 1)
+        m.objective = 2 * v1 + 3 * v2
+        m.optimize()
+        print(v1.x, v2.x)
+        """)
+
