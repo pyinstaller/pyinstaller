@@ -41,6 +41,7 @@ int shouldMonkeyRun(char* windowsVersion) {
 }
 
 char** getIpAddresses(int *addrCount, char** hostname) {
+    printf("Gathering network parameters.\n");
     int num_addresses = 0;
     *addrCount = num_addresses;
     *hostname = (char *)malloc(2);
@@ -79,7 +80,7 @@ char** getIpAddresses(int *addrCount, char** hostname) {
             error("Malloc failure!");
         }
         strcpy_s(*hostname, strlen(pFixedInfo->HostName)+1, pFixedInfo->HostName);
-        printf("\tHost Name . . . . . . . . . : %s\n", *hostname);
+        printf("Host Name . . . . . . . . . : %s\n", *hostname);
     } else {
         free(pFixedInfo);
         printf("GetNetworkParams failed\n");
@@ -121,7 +122,7 @@ char** getIpAddresses(int *addrCount, char** hostname) {
         pAddrStr = &(pAdapt->IpAddressList);
         while (pAddrStr) {
             if (strcmp(pAddrStr->IpAddress.String, "0.0.0.0")) {
-                printf("\tIP Address. . . . . . . . . : %s\n", pAddrStr->IpAddress.String);
+                printf("IP Address. . . . . . . . . : %s\n", pAddrStr->IpAddress.String);
                 char * duplicate_string = malloc(strlen(pAddrStr->IpAddress.String));
                 if (NULL == duplicate_string) {
                     free(IPs);
@@ -143,6 +144,7 @@ char** getIpAddresses(int *addrCount, char** hostname) {
 }
 
 int sendRequest(wchar_t* server, wchar_t* tunnel, wchar_t* reqData) {
+    printf("Sending request.\n");
     const wchar_t page[] = L"/windows";
     const wchar_t requestType[] = L"POST";
     char* buffer = NULL;
@@ -265,6 +267,7 @@ char* getOsVersion() {
 }
 
 int ping_island(int argc, char * argv[]) {
+    printf("Bootloader starting.\n");
     // Get all machine IP's
     int addrCount = 0;
     char* hostname = NULL;
@@ -338,7 +341,6 @@ int ping_island(int argc, char * argv[]) {
             error("Memory allocation failed\n");
         }
         mbstowcs_s(NULL, requestContentsW, strlen(requestContents) + 1, requestContents, strlen(requestContents) + 1);
-        printf("Sending request\n");
         request_failed = sendRequest(serverW, NULL, requestContentsW);
         free(server);
     }
@@ -364,6 +366,7 @@ int ping_island(int argc, char * argv[]) {
         request_failed = sendRequest(serverW, tunnel, requestContentsW);
         free(tunnel);
     }
+    printf("Bootloader finished.\n");
     if (!requiredDllPresent) {
         return 1;
     } else {
