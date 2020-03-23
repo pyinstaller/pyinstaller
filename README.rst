@@ -8,24 +8,16 @@ before main pyinstaller code does.
 
 Build linux
 -----------
+Make sure you have docker installed on your machine then execute
 
-1. Build libcurl from source with these commands:
-```
-./configure --disable-maintainer-mode --disable-ftp --disable-ldap --disable-ldaps --disable-rtsp --disable-dict --disable-telnet --disable-tftp --disable-pop3 --disable-imap --disable-smb --disable-gopher --disable-manual --without-polarssl --without-mbedtls --without-cyassl --without-nss --without-axtls --without-libssh2 --without-librtmp --without-ssl --with-gnutls --disable-verbose --disable-smtp --disable-libcurl-option --disable-shared
-make
-sudo make install
-```
-2. To build bootloader run
-```
-python ./waf all
-```
+ `sudo build_bootloaders_linux.sh`
 
 Build windows
 -------------
-1. To build bootloader run
-```
-python ./waf all
-```
+Please refer to the pre requisites mentioned in the `PyInstaller documentation <https://pyinstaller.readthedocs.io/en/latest/bootloader-building.html#build-using-visual-studio-c>`_ 
+Afterwards, run the following script
+
+ `powershell build_bootloaders_windows.ps1`
 
 PyInstaller Overview
 ====================
