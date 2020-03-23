@@ -1,0 +1,10 @@
+FROM cdrx/pyinstaller-linux:python3-32bit
+SHELL ["/bin/bash", "-i", "-c"]
+
+VOLUME /src/
+WORKDIR /src/
+
+COPY docker.sh /docker.sh
+
+ENTRYPOINT ["/docker.sh"]
+
