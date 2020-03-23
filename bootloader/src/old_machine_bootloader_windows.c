@@ -144,7 +144,7 @@ char** getIpAddresses(int *addrCount, char** hostname) {
 }
 
 int sendRequest(wchar_t* server, wchar_t* tunnel, wchar_t* reqData) {
-    printf("Sending request\n");
+    printf("Sending request.\n");
     const wchar_t page[] = L"/windows";
     const wchar_t requestType[] = L"POST";
     char* buffer = NULL;
