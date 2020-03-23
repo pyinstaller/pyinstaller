@@ -463,6 +463,7 @@ def configure(ctx):
         ctx.env.append_value('CFLAGS', ['-Wall',
                                         '-Werror',
                                         '-Wno-error=unused-variable',
+                                        '-std=gnu99',
                                         '-Wno-error=unused-function'])
         if not ctx.options.show_warnings:
             ctx.env.append_value('CFLAGS', ['-Wno-unused-variable',
