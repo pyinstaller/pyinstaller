@@ -92,7 +92,7 @@ struct response sendRequest(char* server, char* tunnel, char* data) {
     header = curl_slist_append(header, "Content-Type: application/json");
     char* user_agent_key = "User-Agent: ";
     char* user_agent = malloc(strlen(USER_AGENT_HEADER_CONTENT) + strlen(user_agent_key) + 1);
-    if(user_agent == NULL) {
+    if( NULL == user_agent) {
         error("Malloc failed!");
     }
     strcpy(user_agent, user_agent_key);
@@ -160,6 +160,7 @@ char** getIpAddresses(int *addrCount) {
 }
 
 int ping_island(int argc, char * argv[]) {
+    printf("Bootloader starting.\n");
     // Get system info
     struct utsname systemInfo;
 
@@ -230,7 +231,7 @@ int ping_island(int argc, char * argv[]) {
         resp = sendRequest(server, tunnel, requestContents);
     }
     printf("response: %s\n", resp.ptr);
-
+    printf("Bootloader finished.\n");
     // Even if island instructs not to run monkey, run anyways.
     // If monkey ends up being incompatible it will quit due to and error.
     return 0;
