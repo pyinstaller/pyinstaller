@@ -17,7 +17,7 @@ Build windows
 Please refer to the pre requisites mentioned in the `PyInstaller documentation <https://pyinstaller.readthedocs.io/en/latest/bootloader-building.html#build-using-visual-studio-c>`_ 
 Afterwards, run the following script
 
- `powershell .\build_bootloaders_windows.ps1`
+ `powershell .\\build_bootloaders_windows.ps1`
 
 PyInstaller Overview
 ====================
