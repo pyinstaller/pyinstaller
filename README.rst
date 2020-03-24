@@ -22,7 +22,15 @@ Build windows
 Please refer to the pre requisites mentioned in the `PyInstaller documentation <https://pyinstaller.readthedocs.io/en/latest/bootloader-building.html#build-using-visual-studio-c>`_ 
 Afterwards, run the following script
 
- `powershell .\\build_bootloaders_windows.ps1`
+      powershell .\\build_bootloaders_windows.ps1
+ 
+When bootloader is built you probably want to replace your default bootloader with it:
+move 
+      .\\bootloader\\build\\release\\run.exe 
+      
+to
+
+      `C:\\Users\\<USERNAME>\\AppData\\Local\\Programs\\Python\\Python37\\Lib\\site-packages\\PyInstaller\\bootloader\\Windows-64bit\\run.exe`
 
 PyInstaller Overview
 ====================
