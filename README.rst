@@ -10,10 +10,11 @@ Build linux
 -----------
 Make sure you have docker installed on your machine then execute
 
- `sudo ./build_bootloaders_linux.sh`
+      sudo ./build_bootloaders_linux.sh
  
- After bootloader is built you have to replace default pyinstaller bootloader with it if pyinstaller was already installed.
-`cp ./bootloader/build/release/run /home/<USERNAME>/.local/lib/python3.7/site-packages/PyInstaller/bootloader/Linux-64bit/run`
+After bootloader is built you have to replace default pyinstaller bootloader with it if pyinstaller was already installed.
+ 
+      cp ./bootloader/build/release/run /home/<USERNAME>/.local/lib/python3.7/site-packages/PyInstaller/bootloader/Linux-64bit/run
 
 
 Build windows
