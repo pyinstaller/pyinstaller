@@ -10,7 +10,7 @@ Build linux
 -----------
 Make sure you have docker installed on your machine then execute
 
- `sudo build_bootloaders_linux.sh`
+ `sudo ./build_bootloaders_linux.sh`
 
 Build windows
 -------------
