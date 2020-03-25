@@ -26,7 +26,9 @@ sfp = get_package_paths('soundfile')
 # an external dependency (libsndfile) is used on GNU/Linux
 path = None
 if is_win:
-    path = os.path.join(sfp[0], '_soundfile_data')
+    path = os.path.join(sfp[0], '_soundfile_data', 'libsndfile64bit.dll')
+    if not os.path.exists(path):
+        path = os.path.join(sfp[0], '_soundfile_data', 'libsndfile32bit.dll')
 elif is_darwin:
     path = os.path.join(sfp[0], '_soundfile_data', 'libsndfile.dylib')
 
