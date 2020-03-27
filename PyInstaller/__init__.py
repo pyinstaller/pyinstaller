@@ -26,7 +26,7 @@ __version__ = '4.0.dev0'
 
 # Absolute path of this package's directory. Save this early so all
 # submodules can use the absolute path. This is required e.g. if the
-# current directorey changes prior to loading the hooks.
+# current directory changes prior to loading the hooks.
 PACKAGEPATH = os.path.abspath(os.path.dirname(__file__))
 
 HOMEPATH = os.path.dirname(PACKAGEPATH)
