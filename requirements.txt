@@ -6,7 +6,7 @@
 ## IMPORTANT: Keep aligned with setup.cfg
 
 setuptools==46.1.3
-altgraph
+altgraph==0.17
 pefile; sys_platform == 'win32'
 pywin32-ctypes; sys_platform == 'win32'
 macholib; sys_platform == 'darwin'
