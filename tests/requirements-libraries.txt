@@ -65,7 +65,7 @@ zope.interface==5.0.2
 # Python 3.5 not supported / supported for older versions
 # -------------------------------------------------------
 openpyxl==3.0.3; python_version > '3.5'
-web3==5.6.0; python_version > '3.5'
+web3==5.7.0; python_version > '3.5'
 
 # iPython 7.10.0 and higher dropped Python 3.5 support per https://ipython.readthedocs.io/en/stable/whatsnew/version7.html#stop-support-for-python-3-5-adopt-nep-29.
 ipython==7.12.0; python_version > '3.5'
