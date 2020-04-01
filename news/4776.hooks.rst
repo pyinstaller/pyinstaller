@@ -1,0 +1,1 @@
+Add a hook for `lark-parser <https://github.com/lark-parser/lark>`_.
