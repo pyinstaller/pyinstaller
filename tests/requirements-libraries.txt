@@ -73,7 +73,7 @@ ipython==7.13.0; python_version == '3.5'
 
 # pandas 1.0.0 dropped Python 3.5 support.
 pandas==1.0.3; python_version > '3.5'
-pandas==0.25.3; python_version == '3.5'
+pandas==1.0.3; python_version == '3.5'
 
 
 # Special cases
