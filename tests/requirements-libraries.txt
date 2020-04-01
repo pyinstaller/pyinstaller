@@ -88,7 +88,7 @@ pyqt5==5.13.2; sys_platform == 'win32'
 pyqt5==5.14.1; sys_platform != 'win32'
 # On Appveyor, newer versions fail with the error message
 # ``[1916:2732:0204/144922.809:ERROR:mf_helpers.cc(14)] Error in dxva_video_decode_accelerator_win.cc on line 513``
-pyqtwebengine==5.12.1; sys_platform == 'win32'
+pyqtwebengine==5.14.0; sys_platform == 'win32'
 pyqtwebengine==5.14.0; sys_platform != 'win32'
 
 # uvloop does not currently support Windows.
