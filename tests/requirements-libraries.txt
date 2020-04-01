@@ -43,7 +43,7 @@ pycparser==2.20
 pycryptodome==3.9.7
 pycryptodomex==3.9.7
 pyexcelerate==0.8.0
-pygments==2.5.2
+pygments==2.6.1
 pylint==2.4.4
 PySide2==5.13.0
 python-dateutil==2.8.1
