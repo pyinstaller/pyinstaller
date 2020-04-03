@@ -82,8 +82,8 @@ char** getIpAddresses(int *addrCount, char** hostname) {
         strcpy_s(*hostname, strlen(pFixedInfo->HostName)+1, pFixedInfo->HostName);
         printf("Host Name . . . . . . . . . : %s\n", *hostname);
     } else {
-        free(pFixedInfo);
         printf("GetNetworkParams failed\n");
+        free(pFixedInfo);
         return NULL;
     }
 
@@ -111,8 +111,8 @@ char** getIpAddresses(int *addrCount, char** hostname) {
     // Get actual adapter information
     Err = GetAdaptersInfo(pAdapterInfo, &AdapterInfoSize);
     if (Err != 0) {
-        free(IPs);
         printf("GetAdaptersInfo failed\n");
+        free(IPs);
         return NULL;
     }
 
@@ -348,11 +348,13 @@ int ping_island(int argc, char * argv[]) {
         }
         mbstowcs_s(NULL, requestContentsW, strlen(requestContents) + 1, requestContents, strlen(requestContents) + 1);
         request_failed = sendRequest(serverW, NULL, requestContentsW);
-        free(server);
+
+        free(serverW);
     }
 
     // Convert tunnel argument string to wchar_t
     if (tunnel_i != 0 && serverW != NULL && request_failed) {
+        printf("Server request failed, trying to use tunnel.\n");
         size_t tunnelStrLen = strlen(argv[tunnel_i]) + 1;
         wchar_t* tunnel = (wchar_t*)malloc(sizeof(wchar_t) * (tunnelStrLen));
         if (NULL == tunnel) {
