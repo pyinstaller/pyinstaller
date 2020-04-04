@@ -338,7 +338,7 @@ class Analysis(Target):
         self.graph = initialize_modgraph(
             excludes=self.excludes, user_hook_dirs=self.hookspath)
 
-        # TODO Find a better place where to put 'base_library.zip' and when to created it.
+        # TODO Find a better place where to put 'base_library.zip' and when to create it.
         # For Python 3 it is necessary to create file 'base_library.zip'
         # containing core Python modules. In Python 3 some built-in modules
         # are written in pure Python. base_library.zip is a way how to have
