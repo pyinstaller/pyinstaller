@@ -133,7 +133,7 @@ bootloader, as we do not ship binary packages. Download PyInstaller
 source, and build the bootloader::
      
         cd bootloader
-        python ./waf distclean all
+        python ./waf all
 
 Then install PyInstaller::
 
