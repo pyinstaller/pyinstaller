@@ -69,11 +69,11 @@ web3==5.7.0; python_version > '3.5'
 
 # iPython 7.10.0 and higher dropped Python 3.5 support per https://ipython.readthedocs.io/en/stable/whatsnew/version7.html#stop-support-for-python-3-5-adopt-nep-29.
 ipython==7.13.0; python_version > '3.5'
-ipython==7.9.0; python_version == '3.5'
+ipython==7.9.0; python_version == '3.5'  # pyup: ignore
 
 # pandas 1.0.0 dropped Python 3.5 support.
 pandas==1.0.3; python_version > '3.5'
-pandas==0.25.3; python_version == '3.5'
+pandas==0.25.3; python_version == '3.5'  # pyup: ignore
 
 
 # Special cases
@@ -88,7 +88,7 @@ pyqt5==5.13.2; sys_platform == 'win32'
 pyqt5==5.14.1; sys_platform != 'win32'
 # On Appveyor, newer versions fail with the error message
 # ``[1916:2732:0204/144922.809:ERROR:mf_helpers.cc(14)] Error in dxva_video_decode_accelerator_win.cc on line 513``
-pyqtwebengine==5.12.1; sys_platform == 'win32'
+pyqtwebengine==5.12.1; sys_platform == 'win32'  # pyup: ignore
 pyqtwebengine==5.14.0; sys_platform != 'win32'
 
 # uvloop does not currently support Windows.
