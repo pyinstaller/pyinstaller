@@ -352,7 +352,7 @@ pyi_launch_extract_binaries(ARCHIVE_STATUS *archive_status)
      * of the main process - start with 2nd item.
      */
     for (index = 1; archive_pool[index] != NULL; index++) {
-        pyi_arch_status_free_memory(archive_pool[index]);
+        pyi_arch_status_free(archive_pool[index]);
     }
 
     return retcode;
