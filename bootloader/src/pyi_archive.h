@@ -122,7 +122,7 @@ int pyi_arch_open(ARCHIVE_STATUS *status);
 /*
  * Memory allocation wrappers.
  */
-void pyi_arch_status_free_memory(ARCHIVE_STATUS *status);
+void pyi_arch_status_free(ARCHIVE_STATUS *status);
 
 /*
  * Setup the paths and open the archive

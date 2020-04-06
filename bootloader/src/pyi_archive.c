@@ -443,7 +443,7 @@ pyi_arch_open(ARCHIVE_STATUS *status)
     }
 
     /* Close file handler
-     * if file not close here it will be close in pyi_arch_status_free_memory */
+     * if file not close here it will be close in pyi_arch_status_free */
     pyi_arch_close_fp(status);
     return 0;
 }
@@ -535,7 +535,7 @@ pyi_arch_get_pyversion(ARCHIVE_STATUS *status)
  * Free memory allocated for archive status.
  */
 void
-pyi_arch_status_free_memory(ARCHIVE_STATUS *archive_status)
+pyi_arch_status_free(ARCHIVE_STATUS *archive_status)
 {
     if (archive_status != NULL) {
         VS("LOADER: Freeing archive status for %s\n", archive_status->archivename);
