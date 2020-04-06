@@ -532,6 +532,19 @@ pyi_arch_get_pyversion(ARCHIVE_STATUS *status)
 }
 
 /*
+ * Allocate memory for archive status.
+ */
+ARCHIVE_STATUS *
+pyi_arch_status_new() {
+    ARCHIVE_STATUS *archive_status;
+    archive_status = (ARCHIVE_STATUS *) calloc(1, sizeof(ARCHIVE_STATUS));
+    if (archive_status == NULL) {
+        FATAL_PERROR("calloc", "Cannot allocate memory for ARCHIVE_STATUS\n");
+    }
+    return archive_status;
+}
+
+/*
  * Free memory allocated for archive status.
  */
 void

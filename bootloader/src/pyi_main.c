@@ -56,13 +56,9 @@ pyi_main(int argc, char * argv[])
 
     VS("PyInstaller Bootloader 3.x\n");
 
-    /* TODO create special function to allocate memory for archive status pyi_arch_status_alloc_memory(archive_status); */
-    archive_status = (ARCHIVE_STATUS *) calloc(1, sizeof(ARCHIVE_STATUS));
-
+    archive_status = pyi_arch_status_new(archive_status);
     if (archive_status == NULL) {
-        FATAL_PERROR("calloc", "Cannot allocate memory for ARCHIVE_STATUS\n");
         return -1;
-
     }
 
     pyi_path_executable(executable, argv[0]);

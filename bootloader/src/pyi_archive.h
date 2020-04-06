@@ -122,6 +122,7 @@ int pyi_arch_open(ARCHIVE_STATUS *status);
 /*
  * Memory allocation wrappers.
  */
+ARCHIVE_STATUS *pyi_arch_status_new();
 void pyi_arch_status_free(ARCHIVE_STATUS *status);
 
 /*
