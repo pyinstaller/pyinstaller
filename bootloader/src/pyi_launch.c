@@ -168,7 +168,7 @@ _get_archive(ARCHIVE_STATUS *archive_pool[], const char *path)
 
     if (pyi_arch_open(archive)) {
         FATAL_PERROR("malloc", "Error opening archive %s\n", path);
-        free(archive);
+        pyi_arch_status_free(archive);
         return NULL;
     }
 
@@ -266,7 +266,7 @@ _extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
 
         if (extractDependencyFromArchive(status, filename) == -1) {
             FATALERROR("Error extracting %s\n", filename);
-            free(status);
+            pyi_arch_status_free(status);
             return -1;
         }
     }
