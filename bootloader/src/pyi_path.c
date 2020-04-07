@@ -49,8 +49,7 @@
 void
 pyi_path_dirname(char *result, const char *path)
 {
-/* FIXME: This should be somthink like HAVE_DIRNAME */
-#ifdef _WIN32
+#ifndef HAVE_DIRNAME
     size_t len = 0;
     char *match = NULL;
 
@@ -73,7 +72,7 @@ pyi_path_dirname(char *result, const char *path)
         *result = PYI_CURDIR;
         result[1] = PYI_NULLCHAR;
     }
-#else /* ifdef _WIN32 */
+#else /* ifndef HAVE_DIRNAME */
       /* Use dirname() for other platforms. */
     char *dirpart = NULL;
     char tmp[PATH_MAX];
@@ -82,7 +81,7 @@ pyi_path_dirname(char *result, const char *path)
 
     dirpart = (char *) dirname((char *) tmp);  /* _XOPEN_SOURCE - no 'const'. */
     strcpy(result, dirpart);
-#endif /* ifdef _WIN32 */
+#endif /* ifndef HAVE_DIRNAME */
 }
 
 /*
@@ -92,8 +91,7 @@ pyi_path_dirname(char *result, const char *path)
 void
 pyi_path_basename(char *result, const char *path)
 {
-/* FIXME: This should be somthink like HAVE_BASENAME */
-#ifdef _WIN32
+#ifndef HAVE_BASENAME
     /* Search for the last directory separator in PATH.  */
     char *basename = strrchr (path, '\\');
 
@@ -108,7 +106,7 @@ pyi_path_basename(char *result, const char *path)
     char *base = NULL;
     base = (char *) basename((char *) path);  /* _XOPEN_SOURCE - no 'const'. */
     strcpy(result, base);
-#endif /* ifdef _WIN32 */
+#endif /* ifndef HAVE_BASENAME */
 }
 
 /*
