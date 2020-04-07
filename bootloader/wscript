@@ -600,6 +600,8 @@ def configure(ctx):
     # OS support for these functions varies.
     for header, function_name in (('stdlib.h', 'unsetenv'),
                                   ('stdlib.h', 'mkdtemp'),
+                                  ('libgen.h', 'dirname'),
+                                  ('libgen.h', 'basename'),
                                   ('string.h', 'strndup'),
                                   ('string.h', 'strnlen')):
         ctx.check(
