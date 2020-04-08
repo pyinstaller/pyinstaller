@@ -154,7 +154,7 @@ _get_archive(ARCHIVE_STATUS *archive_pool[], const char *path)
         || archive->homepath[PATH_MAX-1] != '\0'
         || archive->temppath[PATH_MAX-1] != '\0') {
         FATALERROR("Archive path exceeds PATH_MAX\n");
-        free(archive);
+        pyi_arch_status_free(archive);
         return NULL;
     }
 
