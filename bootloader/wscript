@@ -460,10 +460,14 @@ def configure(ctx):
         ctx.env.append_value('CFLAGS', ['-Wall',
                                         '-Werror',
                                         '-Wno-error=unused-variable',
-                                        '-Wno-error=unused-function'])
+                                        '-Wno-error=unused-function',
+                                        '-Wno-error=stringop-overflow',
+                                        '-Wno-error=stringop-truncation'])
         if not ctx.options.show_warnings:
             ctx.env.append_value('CFLAGS', ['-Wno-unused-variable',
-                                            '-Wno-unused-function'])
+                                            '-Wno-unused-function',
+                                            '-Wno-stringop-overflow',
+                                            '-Wno-stringop-truncation'])
 
     ### Defines, Includes
 
