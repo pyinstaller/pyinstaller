@@ -141,11 +141,10 @@ else:
 # compat.base_prefix with the path to the
 # base Python installation.
 
-base_prefix = getattr( sys, 'real_prefix',
-                       getattr( sys, 'base_prefix', sys.prefix )
-                        )
+base_prefix = os.path.abspath(
+    getattr(sys, 'real_prefix', getattr(sys, 'base_prefix', sys.prefix))
+)
 # Ensure `base_prefix` is not containing any relative parts.
-base_prefix = os.path.abspath(base_prefix)
 is_venv = is_virtualenv = base_prefix != os.path.abspath(sys.prefix)
 
 # Conda environments sometimes have different paths or apply patches to
