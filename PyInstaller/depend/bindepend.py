@@ -275,7 +275,7 @@ def pkg_resources_get_default_cache():
             return os.path.join(dirname, 'Python-Eggs')
     else:
         raise RuntimeError(
-            "Please set the PYTHON_EGG_CACHE enviroment variable"
+            "Please set the PYTHON_EGG_CACHE environment variable"
         )
 
 
