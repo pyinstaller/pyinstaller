@@ -205,17 +205,8 @@ def _architecture():  # TODO: Can we remove the crazy reassignment below and jus
 architecture = _architecture()
 del _architecture
 
-def _system():
-    # On some Windows installation (Python 2.4) platform.system() is
-    # broken and incorrectly returns 'Microsoft' instead of 'Windows'.
-    # http://mail.python.org/pipermail/patches/2007-June/022947.html
-    syst = platform.system()
-    if syst == 'Microsoft':
-        return 'Windows'
-    return syst
+system = platform.system()
 
-system = _system()
-del _system
 
 def _machine():  # TODO: Can we remove the crazy reassignment below and just call this "machine"?
     """
