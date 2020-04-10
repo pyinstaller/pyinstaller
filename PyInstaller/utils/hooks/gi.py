@@ -20,13 +20,6 @@ from ...depend.bindepend import findSystemLibrary
 logger = logging.getLogger(__name__)
 
 
-def get_typelibs(module, version):
-    """deprecated; only here for backwards compat.
-    """
-    logger.warning("get_typelibs is deprecated, use get_gi_typelibs instead")
-    return get_gi_typelibs(module, version)[1]
-
-
 def get_gi_libdir(module, version):
     statement = """
         import gi
