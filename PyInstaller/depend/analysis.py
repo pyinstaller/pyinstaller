@@ -353,7 +353,10 @@ class PyiModuleGraph(ModuleGraph):
 
                 # Run this hook, passed this object.
                 if not hasattr(hook_module, 'pre_safe_import_module'):
-                    raise NameError('pre_safe_import_module() function not defined by hook %r.' % hook_file)
+                    raise NameError(
+                        'pre_safe_import_module() function not defined by '
+                        'hook %r.' % hook_module
+                    )
                 hook_module.pre_safe_import_module(hook_api)
 
                 # Respect method call changes requested by this hook.
@@ -399,7 +402,10 @@ class PyiModuleGraph(ModuleGraph):
 
                 # Run this hook, passed this object.
                 if not hasattr(hook_module, 'pre_find_module_path'):
-                    raise NameError('pre_find_module_path() function not defined by hook %r.' % hook_file)
+                    raise NameError(
+                        'pre_find_module_path() function not defined by '
+                        'hook %r.' % hook_module
+                    )
                 hook_module.pre_find_module_path(hook_api)
 
                 # Respect method call changes requested by this hook.
