@@ -929,14 +929,14 @@ def _map_distribution_to_packages():
         # Ignore any entries in ``sys.path`` that don't exist.
         try:
             lds = os.listdir(p)
-        except:
+        except Exception:
             pass
         else:
             for ld in lds:
                 # Not all packages belong to a distribution. Skip these.
                 try:
                     dist = pkg_resources.get_distribution(ld)
-                except:
+                except Exception:
                     pass
                 else:
                     dist_to_packages.setdefault(dist.key, []).append(ld)
