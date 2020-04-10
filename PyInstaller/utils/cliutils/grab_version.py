@@ -35,7 +35,7 @@ def run():
             raise SystemExit("Error: VersionInfo resource not found in exe")
         with codecs.open(args.out_filename, 'w', 'utf-8') as fp:
             fp.write(u"%s" % (vs,))
-        print(('Version info written to: %s' % args.out_filename))
+        print('Version info written to: %s' % args.out_filename)
     except KeyboardInterrupt:
         raise SystemExit("Aborted by user request.")
 
