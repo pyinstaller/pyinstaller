@@ -25,7 +25,7 @@ def django_dottedstring_imports(django_root_dir):
     # Extend PYTHONPATH with parent dir of django_root_dir.
     pths.append(misc.get_path_to_toplevel_modules(django_root_dir))
     # Extend PYTHONPATH with django_root_dir.
-    # Many times Django users do not specify absolute imports in the settings module.
+    # Often, Django users do not specify absolute imports in the settings module.
     pths.append(django_root_dir)
 
     package_name = os.path.basename(django_root_dir) + '.settings'
