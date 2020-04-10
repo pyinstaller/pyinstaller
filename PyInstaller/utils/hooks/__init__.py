@@ -290,7 +290,7 @@ def get_module_file_attribute(package):
         # The built-in ``datetime`` module returns ``None``. Mark this as
         # an ``ImportError``.
         if not attr:
-            raise ImportError
+            raise ImportError('Unable to load module attributes')
     # Second try to import module in a subprocess. Might raise ImportError.
     except (AttributeError, ImportError):
         # Statement to return __file__ attribute of a package.
@@ -304,7 +304,7 @@ def get_module_file_attribute(package):
         """
         attr = exec_statement(__file__statement % package)
         if not attr.strip():
-            raise ImportError
+            raise ImportError('Unable to load module attribute')
     return attr
 
 
@@ -534,7 +534,7 @@ def collect_submodules(package, filter=lambda name: True):
     """
     # Accept only strings as packages.
     if not isinstance(package, string_types):
-        raise ValueError
+        raise TypeError('package must be a str')
 
     logger.debug('Collecting submodules for %s' % package)
     # Skip a module which is not a package.
@@ -637,7 +637,7 @@ def collect_dynamic_libs(package, destdir=None):
     """
     # Accept only strings as packages.
     if not isinstance(package, string_types):
-        raise ValueError
+        raise TypeError('package must be a str')
 
     logger.debug('Collecting dynamic libraries for %s' % package)
     pkg_base, pkg_dir = get_package_paths(package)
@@ -686,7 +686,7 @@ def collect_data_files(package, include_py_files=False, subdir=None):
 
     # Accept only strings as packages.
     if not isinstance(package, string_types):
-        raise ValueError
+        raise TypeError('package must be a str')
 
     pkg_base, pkg_dir = get_package_paths(package)
     if subdir:
@@ -726,7 +726,7 @@ def collect_system_data_files(path, destdir=None, include_py_files=False):
     """
     # Accept only strings as paths.
     if not isinstance(path, string_types):
-        raise ValueError
+        raise TypeError('path must be a str')
     # The call to ``remove_prefix`` below assumes a path separate of ``os.sep``,
     # which may not be true on Windows; Windows allows Linux path separators in
     # filenames. Fix this by normalizing the path.
