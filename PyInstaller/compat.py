@@ -15,7 +15,6 @@ Various classes and functions to provide some backwards-compatibility
 with previous versions of Python onward.
 """
 
-import io
 import os
 import platform
 import site
