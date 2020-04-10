@@ -274,7 +274,7 @@ class ModuleHook(object):
 
         # Note that the passed module graph is already a weak reference,
         # avoiding circular reference issues. See ModuleHookCache.__init__().
-        assert isinstance(module_graph, weakref.ProxyTypes)
+        assert isinstance(module_graph, weakref.ProxyTypes)  # TODO: Add a failure message
         self.module_graph = module_graph
         self.module_name = module_name
         self.hook_filename = hook_filename
