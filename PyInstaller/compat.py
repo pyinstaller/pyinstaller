@@ -184,7 +184,7 @@ if is_win:
                              'pip install pywin32-ctypes\n')
 
 
-def _architecture():
+def _architecture():  # TODO: Can we remove the crazy reassignment below and just call this "architecture"?
     """
     Returns the bit depth of the python interpreter's architecture as
     a string ('32bit' or '64bit'). Similar to platform.architecture(),
@@ -217,7 +217,7 @@ def _system():
 system = _system()
 del _system
 
-def _machine():
+def _machine():  # TODO: Can we remove the crazy reassignment below and just call this "machine"?
     """
     Return machine suffix to use in directory name when looking
     for bootloader.
