@@ -416,7 +416,7 @@ def is_module_satisfies(requirements, version=None, version_attr='__version__'):
     Examples
     ----------
         # Assume PIL 2.9.0, Sphinx 1.3.1, and SQLAlchemy 0.6 are all installed.
-        >>> from PyInstaller.util.hooks import is_module_satisfies
+        >>> from PyInstaller.utils.hooks import is_module_satisfies
         >>> is_module_satisfies('sphinx >= 1.3.1')
         True
         >>> is_module_satisfies('sqlalchemy != 0.6')
