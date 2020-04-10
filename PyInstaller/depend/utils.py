@@ -342,7 +342,7 @@ LDCONFIG_CACHE = None  # cache the output of `/sbin/ldconfig -p`
 def load_ldconfig_cache():
     """
     Create a cache of the `ldconfig`-output to call it only once.
-    It contains thousands of libraries and running it on every dynlib
+    It contains thousands of libraries and running it on every dylib
     is expensive.
     """
     global LDCONFIG_CACHE
