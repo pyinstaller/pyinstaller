@@ -180,29 +180,6 @@ def get_homebrew_path(formula=''):
         return None
 
 
-# TODO Move to "hooks/hook-OpenGL.py", the only place where this is called.
-def opengl_arrays_modules():
-    """
-    Return list of array modules for OpenGL module.
-
-    e.g. 'OpenGL.arrays.vbo'
-    """
-    statement = 'import OpenGL; print(OpenGL.__path__[0])'
-    opengl_mod_path = exec_statement(statement)
-    arrays_mod_path = os.path.join(opengl_mod_path, 'arrays')
-    files = glob.glob(arrays_mod_path + '/*.py')
-    modules = []
-
-    for f in files:
-        mod = os.path.splitext(os.path.basename(f))[0]
-        # Skip __init__ module.
-        if mod == '__init__':
-            continue
-        modules.append('OpenGL.arrays.' + mod)
-
-    return modules
-
-
 def remove_prefix(string, prefix):
     """
     This function removes the given prefix from a string, if the string does
