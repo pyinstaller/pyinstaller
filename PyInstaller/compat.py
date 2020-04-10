@@ -178,7 +178,7 @@ if is_win:
         from win32ctypes.pywin32 import pywintypes  # noqa: F401
         from win32ctypes.pywin32 import win32api
     except ImportError:
-        # This environment variable is set by seutp.py
+        # This environment variable is set by setup.py
         # - It's not an error for pywin32 to not be installed at that point
         if not os.environ.get('PYINSTALLER_NO_PYWIN32_FAILURE'):
             raise SystemExit('PyInstaller cannot check for assembly dependencies.\n'
