@@ -77,34 +77,20 @@ class PreSafeImportModuleAPI(object):
     def __init__(self, module_graph, module_basename, module_name,
                  parent_package):
         self._module_graph = module_graph
-        self._module_basename = module_basename
-        self._module_name = module_name
+        self.module_basename = module_basename
+        self.module_name = module_name
         self._parent_package = parent_package
 
 
     # Immutable properties. No corresponding setters are defined.
     @property
     def module_graph(self):
-        "Current module graph"
+        """Current module graph"""
         return self._module_graph
-
-    #FIXME: Remove this property and publicize the "_module_name" attribute to
-    #"module_name". This attribute is intended to be modifiable by hooks.
-    @property
-    def module_name(self):
-        "Fully-qualified name of this module (e.g., `email.mime.text`)."
-        return self._module_name
-
-    #FIXME: Remove this property and publicize the "_module_basename" attribute
-    #to "module_basename". This attribute is intended to be modifiable by hooks.
-    @property
-    def module_basename(self):
-        "Unqualified name of the module to be imported (e.g., `text`)."
-        return self._module_basename
 
     @property
     def parent_package(self):
-        "Parent Package of this node"
+        """Parent Package of this node"""
         return self._parent_package
 
 
