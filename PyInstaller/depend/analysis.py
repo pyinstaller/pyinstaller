@@ -188,7 +188,7 @@ class PyiModuleGraph(ModuleGraph):
             (e.g., `post_create_package` for post-create package hooks).
         """
         # Absolute path of this type hook package's directory.
-        system_hook_dir = configure.get_importhooks_dir(hook_type)
+        system_hook_dir = configure.get_official_hooks_dir(hook_type)
 
         # Cache of such hooks.
         # logger.debug("Caching system %s hook dir %r" % (hook_type, system_hook_dir))
