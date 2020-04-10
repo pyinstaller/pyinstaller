@@ -14,6 +14,11 @@ from ..hooks import eval_script
 from ...utils import misc
 
 
+__all__ = [
+    'django_dottedstring_imports', 'django_find_root_dir'
+]
+
+
 def django_dottedstring_imports(django_root_dir):
     """
     Get all the necessary Django modules specified in settings.py.
@@ -70,5 +75,3 @@ def django_find_root_dir():
                     break  # Find the first directory.
 
     return settings_dir
-
-__all__ = ('django_dottedstring_imports', 'django_find_root_dir')
