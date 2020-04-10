@@ -196,7 +196,7 @@ def matchDLLArch(filename):
         pe.close()
     except pefile.PEFormatError as exc:
         raise SystemExit('Can not get architecture from file: %s\n'
-                         '  Reason: %s' % (pefilename, exception))
+                         '  Reason: %s' % (pefilename, exc))
     return match_arch
 
 
