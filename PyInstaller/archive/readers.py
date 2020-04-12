@@ -91,7 +91,7 @@ class CArchiveReader(ArchiveReader):
 
     Easily handled from C or from Python.
     """
-    # MAGIC is usefull to verify that conversion of Python data types
+    # MAGIC is useful to verify that conversion of Python data types
     # to C structure and back works properly.
     MAGIC = b'MEI\014\013\012\013\016'
     HDRLEN = 0
@@ -188,7 +188,7 @@ class CArchiveReader(ArchiveReader):
         For non-Python resoures, ispkg is meaningless (and 0).
         Used by the import mechanism.
         """
-        if type(name) == type(''):
+        if isinstance(name, str):
             ndx = self.toc.find(name)
             if ndx == -1:
                 return None
