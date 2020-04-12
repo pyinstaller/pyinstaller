@@ -117,7 +117,7 @@ class TestCollectSubmodules(object):
     # An error should be thrown if a module, not a package, was passed.
     def test_collect_submod_module(self):
         # os is a module, not a package.
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             collect_submodules(__import__('os'))
 
     # The package name itself should be in the returned list.
@@ -236,7 +236,7 @@ def data_lists(monkeypatch, request):
 # An error should be thrown if a module, not a package, was passed.
 def test_collect_data_module():
     # 'os' is a module, not a package.
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         collect_data_files(__import__('os'))
 
 
