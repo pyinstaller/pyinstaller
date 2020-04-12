@@ -34,5 +34,3 @@ zestreleaser.towncrier  # integrate towncrier into zest.releaser
 
 sphinx
 sphinx_rtd_theme
-
--r requirements-tools.txt
