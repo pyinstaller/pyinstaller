@@ -53,7 +53,6 @@
 .. _PyInstaller\/hooks\/hook-win32com.py: http://www.pyinstaller.org/browser/trunk/PyInstaller/hooks/hook-win32com.py?rev=latest
 .. _`PyInstaller Email List`: https://groups.google.com/forum/#!forum/pyinstaller
 .. _`PyInstaller Issue #1309`: https://github.com/pyinstaller/pyinstaller/issues/1309
-.. _`PyInstaller Issue #1527`: https://github.com/pyinstaller/pyinstaller/issues/1527
 .. _`PyInstaller Recipes`: https://github.com/pyinstaller/pyinstaller/wiki/Recipes
 .. _pypi: https://pypi.python.org/pypi/PyInstaller/
 .. _pypiwin32: https://pypi.python.org/pypi/pypiwin32/219

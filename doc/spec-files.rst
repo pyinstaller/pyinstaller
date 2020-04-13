@@ -423,12 +423,6 @@ application supports (see `Apple document types`_).
 Multipackage Bundles
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. Note::
-	This feature is broken in the |PyInstaller| 3.0 release.
-	Do not attempt building multipackage bundles until the feature
-	is fixed. If this feature is important to you,
-	follow  and comment on `PyInstaller Issue #1527`_.
-
 Some products are made of several different apps,
 each of which might
 depend on a common set of third-party libraries, or share code in other ways.
