@@ -47,13 +47,19 @@ sys.base_exec_prefix = sys.exec_prefix
 
 # Some packages behaves differently when running inside virtual environment.
 # E.g. IPython tries to append path VIRTUAL_ENV to sys.path.
-# For the frozen app we want to prevent this behavior.
-VIRTENV = 'VIRTUAL_ENV'
-if VIRTENV in os.environ:
-    # On some platforms (e.g. AIX) 'os.unsetenv()' is not available and then
-    # deleting the var from os.environ does not delete it from the environment.
-    os.environ[VIRTENV] = ''
-    del os.environ[VIRTENV]
+# For the frozen app we want to prevent this behavior,
+# so we disguise these env vars but preserve original values with a special prefix.
+DISGUISED_ENVS = '{{ disguised_envs }}'
+DISGUISED_ENV_PREFIX = 'PYINSTALLER_DISGUISED_'
+for env in DISGUISED_ENVS:
+    if env in os.environ:
+        # On some platforms (e.g. AIX) 'os.unsetenv()' is not available and then
+        # deleting the var from os.environ does not delete it from the environment.
+        os.environ[DISGUISED_ENV_PREFIX + env] = os.environ[env]
+        os.environ[env] = ''
+        del os.environ[env]
+del DISGUISED_ENVS
+del DISGUISED_ENV_PREFIX
 
 
 # Ensure sys.path contains absolute paths. Otherwise import of other python

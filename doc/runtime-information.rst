@@ -20,6 +20,12 @@ attribute and stores the absolute path to the bundle folder in
 a one-file bundle, this is the path to the temporary folder created by the
 |bootloader| (see :ref:`How the One-File Program Works`).
 
+The |bootloader| also changes the environment
+according to command line option ``--disguise-envvar``
+(or ``disguised_envs`` parameter passed to ``PYZ`` in spec file),
+the disguised environment variables are renamed
+with prefix ``PYINSTALLER_DISGUISED_``.
+
 When your app is running, it may need to access data files in one of the
 following locations:
 

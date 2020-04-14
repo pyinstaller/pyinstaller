@@ -1,0 +1,2 @@
+Add CLI options ``--disguise-envvar``
+to control which environment variables will be disguised when starting the app.

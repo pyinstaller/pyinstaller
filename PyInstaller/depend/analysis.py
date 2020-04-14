@@ -53,7 +53,7 @@ from ..compat import importlib_load_source, PY3_BASE_MODULES,\
 from ..lib.modulegraph.find_modules import get_implies
 from ..lib.modulegraph.modulegraph import ModuleGraph
 from ..utils.hooks import collect_submodules, is_package
-from ..utils.misc import load_py_data_struct
+from ..utils.misc import load_py_data_struct, build_from_template_file
 
 logger = logging.getLogger(__name__)
 
@@ -734,7 +734,7 @@ def initialize_modgraph(excludes=(), user_hook_dirs=()):
     return graph
 
 
-def get_bootstrap_modules():
+def get_bootstrap_modules(workpath, disguised_envs=None):
     """
     Get TOC with the bootstrapping modules and their dependencies.
     :return: TOC with modules
@@ -752,12 +752,23 @@ def get_bootstrap_modules():
         mod = __import__(mod_name)  # C extension.
         if hasattr(mod, '__file__'):
             loader_mods.append((mod_name, os.path.abspath(mod.__file__), 'EXTENSION'))
+
+    # build pyiboot01_bootstrap with related arguments
+    pyiboot01_name = 'pyiboot01_bootstrap.py'
+    pyiboot01_built = os.path.join(workpath, pyiboot01_name)
+    build_from_template_file(
+        os.path.join(loaderpath, pyiboot01_name),
+        dict(
+            disguised_envs=disguised_envs or [],
+        ),
+        pyiboot01_built)
+
     # NOTE:These modules should be kept simple without any complicated dependencies.
     loader_mods +=[
         ('struct', os.path.abspath(mod_struct.__file__), 'PYMODULE'),
         ('pyimod01_os_path', os.path.join(loaderpath, 'pyimod01_os_path.pyc'), 'PYMODULE'),
         ('pyimod02_archive',  os.path.join(loaderpath, 'pyimod02_archive.pyc'), 'PYMODULE'),
         ('pyimod03_importers',  os.path.join(loaderpath, 'pyimod03_importers.pyc'), 'PYMODULE'),
-        ('pyiboot01_bootstrap', os.path.join(loaderpath, 'pyiboot01_bootstrap.py'), 'PYSOURCE'),
+        ('pyiboot01_bootstrap', pyiboot01_built, 'PYSOURCE'),
     ]
     return loader_mods

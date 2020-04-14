@@ -19,6 +19,7 @@ import os
 import pprint
 import py_compile
 import sys
+import re
 
 from PyInstaller import log as logging
 from PyInstaller.compat import BYTECODE_MAGIC, text_read_mode
@@ -243,3 +244,26 @@ def module_parent_packages(full_modname):
         prefix += '.' + pkg if prefix else pkg
         parents.append(prefix)
     return parents
+
+
+def build_from_template_file(template_path, context, output_path):
+    """Read template from template_path, render it with context,
+    and write the rendered content to output_path.
+
+    Template var format: '{{ var_name }}'
+    (Note the single quotes are included and will be replaced together.)
+    """
+    # type:(str, dict, str) -> None
+    logger.debug(
+        'Building from template start: template_path=%s context=%r output_path=%s',
+        template_path, context, output_path)
+
+    with open(template_path, 'r') as f:
+        content = f.read()
+
+    for k, v in context.items():
+        content = re.sub(re.escape("'{{ %s }}'" % k), repr(v), content)
+
+    with open(output_path, 'w') as f:
+        f.write(content)
+    logger.info('Building from template %s completed successfully', output_path)

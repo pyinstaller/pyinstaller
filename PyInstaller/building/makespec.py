@@ -311,6 +311,12 @@ def __add_options(parser):
                          "process signals both the bootloader and child "
                          "(e.g. via a process group) to avoid signalling "
                          "the child twice."))
+    g.add_argument('--disguise-envvar',
+                   action='append', default=[],
+                   metavar="ENVVAR", dest='disguised_envs',
+                   help='Environment variable that will be disguised when starting the application, '
+                   'the disguised env var will be renamed with prefix `PYINSTALLER_DISGUISED_`.'
+                   'This option can be used multiple times.')
 
 
 def main(scripts, name=None, onefile=None,
@@ -321,6 +327,7 @@ def main(scripts, name=None, onefile=None,
          hiddenimports=None, hookspath=None, key=None, runtime_hooks=None,
          excludes=None, uac_admin=False, uac_uiaccess=False,
          win_no_prefer_redirects=False, win_private_assemblies=False,
+         disguised_envs=None,
          **kwargs):
     # If appname is not specified - use the basename of the main script as name.
     if name is None:
@@ -382,6 +389,7 @@ def main(scripts, name=None, onefile=None,
 
     hiddenimports = hiddenimports or []
     upx_exclude = upx_exclude or []
+    disguised_envs = disguised_envs or []
 
     # If file extension of the first script is '.pyw', force --windowed option.
     if is_win and os.path.splitext(scripts[0])[-1] == '.pyw':
@@ -449,6 +457,7 @@ def main(scripts, name=None, onefile=None,
         # Windows assembly searching options
         'win_no_prefer_redirects': win_no_prefer_redirects,
         'win_private_assemblies': win_private_assemblies,
+        'disguised_envs': disguised_envs,
     }
 
     # Write down .spec file to filesystem.
