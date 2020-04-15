@@ -78,6 +78,11 @@ def add_data_or_binary(string):
 
 
 def make_variable_path(filename, conversions=path_conversions):
+    if not os.path.isabs(filename):
+        # os.path.commonpath can not compare relative and absolute
+        # paths, and if filename is not absolut, none of the
+        # paths in conversions will match anyway.
+        return None, filename
     for (from_path, to_name) in conversions:
         assert os.path.abspath(from_path) == from_path, (
             "path '%s' should already be absolute" % from_path)

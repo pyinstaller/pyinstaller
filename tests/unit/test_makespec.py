@@ -36,8 +36,15 @@ def test_Path_repr():
             "os.path.join(HOMEPATH,%r)" % os.path.join("aaa", "bbb", "ccc"))
 
 
+def test_Path_repr_relative():
+    p = makespec.Path("aaa", "bbb", "ccc.py")
+    assert p.path == os.path.join("aaa", "bbb", "ccc.py")
+    assert repr(p) == "%r" % os.path.join("aaa", "bbb", "ccc.py")
+
+
 def test_Path_regression():
     p = makespec.Path(makespec.HOMEPATH + "-aaa", "bbb", "ccc")
     assert p.path == os.path.join(makespec.HOMEPATH + "-aaa", "bbb", "ccc")
     assert (repr(p) ==
             repr(os.path.join(makespec.HOMEPATH + "-aaa", "bbb", "ccc")))
+
