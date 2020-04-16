@@ -10,7 +10,7 @@ branches:
 
 
 environment:
-  PYTEST: py.test -n2 --maxfail 5 --durations=10 --junitxml=junit-results.xml
+  PYTEST: pytest -n2 --maxfail 5 --durations=10 --junitxml=junit-results.xml
   # See https://www.appveyor.com/docs/build-cache/#saving-cache-for-failed-build.
   APPVEYOR_SAVE_CACHE_ON_ERROR: true
 
@@ -110,6 +110,10 @@ install:
   # Install the PyInstaller test dependencies.
   - pip install -U -r tests/requirements-tools.txt -r tests/requirements-libraries.txt
 
+  # Install PyInstaller Hook Sample, to ensure that tests declared in
+  # entry-points are discovered.
+  - pip install https://github.com/pyinstaller/hooksample/archive/v4.0rc1.zip
+
   # Install PyInstaller
   - pip install -e .
 
@@ -127,12 +131,18 @@ test_script:
   # Permission denied`` exception. To avoid this, run these two tests in
   # separate ``pytest`` invokations.
   #
+  # The ``run_tests`` script is invoked with the ``-c`` option to specify a
+  # ``pytest.ini``, rather than allowing pytest to find something unexpected
+  # in the filesystem (it searches from the root dir all the way to the top of
+  # the filesystem per https://docs.pytest.org/en/latest/customize.html).
+  #
   # In the Appveyor environment, the ``&&`` must be quoted when inside a set
   # statement.
   - if "%TEST_LIBRARIES_ONLY%" == "True" (
       set PYTEST_CMD=%PYTEST% -k "test_noarchive[onefile]" ^&^&
         %PYTEST% tests/functional/test_libraries.py
-        -k "not test_noarchive[onefile]"
+        -k "not test_noarchive[onefile]" ^&^&
+        python -m PyInstaller.utils.run_tests -c PyInstaller\utils\pytest.ini
     ) else (
       set PYTEST_CMD=%PYTEST% tests/unit tests/functional
         --ignore tests/functional/test_libraries.py

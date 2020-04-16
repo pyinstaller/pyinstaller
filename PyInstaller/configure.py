@@ -86,16 +86,6 @@ def _get_pyinst_cache_dir():
     return cache_dir
 
 
-#FIXME: Rename to get_official_hooks_dir().
-#FIXME: Remove the "hook_type" parameter after unifying hook types.
-def get_importhooks_dir(hook_type=None):
-    from . import PACKAGEPATH
-    if not hook_type:
-        return os.path.join(PACKAGEPATH, 'hooks')
-    else:
-        return os.path.join(PACKAGEPATH, 'hooks', hook_type)
-
-
 def get_config(upx_dir, **kw):
     config = {}
     test_UPX(config, upx_dir)

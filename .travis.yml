@@ -57,7 +57,7 @@ jobs:
         #   Print the 10 longest tests; see
         #   https://docs.pytest.org/en/latest/usage.html#profiling-test-execution-duration
         - >
-          py.test -n 3 --maxfail 3 --durations 10
+          pytest -n 3 --maxfail 3 --durations 10
           tests/unit tests/functional
           --ignore tests/functional/test_libraries.py
 
@@ -73,8 +73,14 @@ jobs:
       before_install: *before_install-osx
       script: &script-test-libraries
         - >
-          py.test -n 3 --maxfail 3 --durations 10
+          pytest -n 3 --maxfail 3 --durations 10
           tests/functional/test_libraries.py
+        # The ``run_tests`` script is invoked with the ``-c`` option to
+        # specify a ``pytest.ini``, rather than allowing pytest to find
+        # something unexpected in the filesystem (it searches from the root
+        # dir all the way to the top of the filesystem per
+        # https://docs.pytest.org/en/latest/customize.html).
+        - python -m PyInstaller.utils.run_tests -c PyInstaller/utils/pytest.ini
 
     - &test-pyinstaller
       stage: Test - PyInstaller
@@ -158,6 +164,10 @@ install:
   # Install dependencies for tests.
   - pip install --progress-bar=off -U -r tests/requirements-tools.txt -r tests/requirements-libraries.txt
 
+  # Install PyInstaller Hook Sample, to ensure that tests declared in
+  # entry-points are discovered.
+  - pip install https://github.com/pyinstaller/hooksample/archive/v4.0rc1.zip
+
   # Compile bootloader
   - cd bootloader
   - python waf distclean all
@@ -168,7 +178,6 @@ install:
 
   # Make sure the help options print.
   - python -m pyinstaller -h
-
 
 script:
   - true

@@ -3,6 +3,12 @@
 Understanding PyInstaller Hooks
 ==================================
 
+.. note::
+
+   We strongly encourage package developers
+   to provide hooks with their packages.
+   See section :ref:`provide hooks with package` for how easy this is.
+
 In summary, a "hook" file extends |PyInstaller| to adapt it to
 the special needs and methods used by a Python package.
 The word "hook" is used for two kinds of files.
@@ -68,7 +74,9 @@ the command could be simply::
     pyinstaller --additional-hooks-dir=. myscript.py
 
 If you write a hook for a module used by others,
-please send us the hook file so we can make it available.
+please ask the package developer to
+:ref:`include the hook with her/his package <provide hooks with package>`
+or send us the hook file so we can make it available.
 
 
 How a Hook Is Loaded
@@ -90,6 +98,68 @@ For example it could test ``sys.version`` and adjust its
 assignment to ``hiddenimports`` based on that.
 There are over 150 hooks in the |PyInstaller| installation.
 You are welcome to browse through them for examples.
+
+.. _provide hooks with package:
+
+Providing PyInstaller Hooks with your Package
+------------------------------------------------
+
+As a package developer you can provide hooks for PyInstaller
+within your package.
+This has the major benefit
+that you can easily adopt the hooks
+when your package changes.
+Thus your package's users don't need to wait until PyInstaller
+might catch up with these changes.
+
+
+You can tell PyInstaller about the additional hooks
+by defining some simple `setuptools entry-points
+<https://setuptools.readthedocs.io/en/latest/setuptools.html#dynamic-discovery-of-services-and-plugins>`_
+in your package.
+Therefor add entries like these to your :file:`setup.cfg`::
+
+  [options.entry_points]
+  pyinstaller40 =
+    hook-dirs = pyi_hooksample.__pyinstaller:get_hook_dirs
+    tests     = pyi_hooksample.__pyinstaller:get_PyInstaller_tests
+
+This defines two entry-points:
+
+:``pyinstaller40.hook-dirs`` for hook registration:
+
+   This entry point refers to a function
+   that will be invoked with no parameters.
+   It must return a sequence of strings,
+   each element of which provides an additional absolute path
+   to search for hooks.
+   This is equivalent to passing the ``--additional-hooks-dir``
+   command-line option to PyInstaller for each string in the sequence.
+
+   In this example, the function is ``get_hook_dirs() -> List[str]``.
+
+:``pyinstaller40.tests`` for test registration:
+
+   This entry point refers to a function
+   that will be invoked with no parameters.
+   It must return a sequence of strings,
+   each element of which provides an additional absolute path
+   to a directory tree or to a Python source file.
+   These paths are then passed to `pytest` for test discovery.
+   This allows both testing by this package and by PyInstaller.
+
+   In this project, the function is ``get_PyInstaller_tests() -> List[str]``.
+
+A sample project providing a guide for
+integrating PyInstaller hooks and tests into a package
+is available at
+https://github.com/pyinstaller/hooksample.
+This project demonstrates defining a library
+which includes PyInstaller hooks along with tests for those hooks
+and sample file for integration into CD/CI testing.
+Detailed documentation about this sample project
+is available at
+https://pyinstaller-sample-hook.readthedocs.io/en/latest/.
 
 
 Hook Global Variables

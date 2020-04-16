@@ -1,0 +1,1 @@
+Provide setuptools entrypoints to enable other packages to provide PyInstaller hooks specific to that package, along with tests for these hooks. See https://github.com/pyinstaller/hooksample for more information.
