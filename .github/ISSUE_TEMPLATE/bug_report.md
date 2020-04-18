@@ -41,7 +41,7 @@ pip install https://github.com/pyinstaller/pyinstaller/archive/develop.zip
 
 ### Make sure [everything is packaged correctly](https://github.com/pyinstaller/pyinstaller/wiki/How-to-Report-Bugs#make-sure-everything-is-packaged-correctly)
 
-  * [ ] start with celan installation
+  * [ ] start with clean installation
   * [ ] use the latest development version
   * [ ] Run your frozen program **from a command window (shell)** — instead of double-clicking on it
   * [ ] Package your program in **--onedir mode**
