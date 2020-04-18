@@ -590,6 +590,30 @@ are delivered after the program has launched, you must
 set up the appropriate handlers.
 
 
+AIX
+----------------------
+
+Depending on whether Python was build as a 32-bit or a 64-bit executable
+you may need to set or unset
+the environment variable :envvar:`OBJECT_MODE`.
+To determine the size the following command can be used::
+
+    $ python -c "import sys; print(sys.maxsize) <= 2**32"
+    True
+
+When the answer is ``True`` (as above) Python was build as a 32-bit
+executable.
+
+When working with a 32-bit Python executable proceed as follows::
+
+    $ unset OBJECT_MODE
+    $ pyinstaller <your arguments>
+
+When working with a 64-bit Python executable proceed as follows::
+
+    $ export OBJECT_MODE=64
+    $ pyinstaller <your arguments>
+
 
 .. include:: _common_definitions.txt
 
