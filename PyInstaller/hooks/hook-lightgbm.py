@@ -9,8 +9,9 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 # -----------------------------------------------------------------------------
 #
-# A fast, distributed, high performance gradient boosting (GBT, GBDT, GBRT, GBM or MART)
-# framework based on decision tree algorithms, used for ranking, classification and
+# A fast, distributed, high performance gradient boosting 
+# (GBT, GBDT, GBRT, GBM or MART) framework based on decision 
+# tree algorithms, used for ranking, classification and
 # many other machine learning tasks.
 #
 # https://github.com/microsoft/LightGBM
