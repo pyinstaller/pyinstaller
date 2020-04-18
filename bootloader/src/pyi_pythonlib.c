@@ -60,19 +60,21 @@ pyi_pylib_load(ARCHIVE_STATUS *status)
     int len;
 
 /*
- * On AIX Append the shared object member to the library path
- * to make it look like this:
- *   libpython2.6.a(libpython2.6.so)
+ * On AIX Append the name of shared object library path might be an archive.
+ * In that case, modify the name to make it look like:
+ *   libpython3.6.a(libpython3.6.so)
+ * Shared object names ending with .so may be used asis.
  */
 #ifdef AIX
     /*
-     * Determine if shared lib is in libpython?.?.so or libpython?.?.a(libpython?.?.so) format
+     * Determine if shared lib is in libpython?.?.so or
+     * libpython?.?.a(libpython?.?.so) format
      */
     if ((p = strrchr(status->cookie.pylibname, '.')) != NULL && strcmp(p, ".a") == 0) {
       /*
        * On AIX 'ar' archives are used for both static and shared object.
        * To load a shared object from a library, it should be loaded like this:
-       *   dlopen("libpython2.6.a(libpython2.6.so)", RTLD_MEMBER)
+       *   dlopen("libpythonX.Y.a(libpythonX.Y.so)", RTLD_MEMBER)
        */
       uint32_t pyvers_major;
       uint32_t pyvers_minor;
