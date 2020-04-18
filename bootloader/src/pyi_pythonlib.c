@@ -95,7 +95,8 @@ pyi_pylib_load(ARCHIVE_STATUS *status)
 #endif
 
     if (len >= 64 || dllname[64-1] != '\0') {
-        FATALERROR("DLL name length exceeds buffer\n");
+        FATALERROR("Reported length (%d) of DLL name (%s) length exceeds buffer[64] space\n",
+                   len, status->cookie.pylibname);
         return -1;
     }
 
