@@ -65,13 +65,18 @@ class PreSafeImportModuleAPI(object):
 
     module_graph : PyiModuleGraph
         Current module graph.
+    parent_package : Package
+        Graph node for the package providing this module _or_ `None` if this
+        module is a top-level module.
+
+    Attributes (Mutable)
+    -----------------------------
+    The following attributes are editable. 
+
     module_basename : str
         Unqualified name of the module to be imported (e.g., `text`).
     module_name : str
         Fully-qualified name of this module (e.g., `email.mime.text`).
-    parent_package : Package
-        Graph node for the package providing this module _or_ `None` if this
-        module is a top-level module.
     """
 
     def __init__(self, module_graph, module_basename, module_name,
@@ -196,7 +201,7 @@ class PreSafeImportModuleAPI(object):
             package's `__path__` attribute.
         """
 
-        self._module_graph.append_package_path(self._module_name, directory)
+        self._module_graph.append_package_path(self.module_name, directory)
 
 
 class PreFindModulePathAPI(object):
