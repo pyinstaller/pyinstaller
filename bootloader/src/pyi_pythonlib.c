@@ -14,6 +14,8 @@
 /*
  * Functions to load, initialize and launch Python.
  */
+/* size of buffer to store the name of the Python DLL library */
+#define DLLNAME_LEN (64)
 
 /* TODO: use safe string functions */
 #define _CRT_SECURE_NO_WARNINGS 1
@@ -55,9 +57,9 @@ pyi_pylib_load(ARCHIVE_STATUS *status)
 {
     dylib_t dll;
     char dllpath[PATH_MAX];
-    char dllname[64];
+    char dllname[DLLNAME_LEN];
     char *p;
-    int len;
+    size_t len;
 
 /*
  * On AIX Append the name of shared object library path might be an archive.
@@ -82,21 +84,20 @@ pyi_pylib_load(ARCHIVE_STATUS *status)
       pyvers_major = pyvers / 10;
       pyvers_minor = pyvers % 10;
 
-      len = snprintf(dllname, 64,
+      len = snprintf(dllname, DLLNAME_LEN,
               "libpython%01d.%01d.a(libpython%01d.%01d.so)",
               pyvers_major, pyvers_minor, pyvers_major, pyvers_minor);
     }
     else {
-      strncpy(dllname, status->cookie.pylibname, 64);
+      len = snprintf(dllname, DLLNAME_LEN, "%s", status->cookie.pylibname);
     }
 #else
-    len = 0;
-    strncpy(dllname, status->cookie.pylibname, 64);
+    len = snprintf(dllname, DLLNAME_LEN, "%s", status->cookie.pylibname);
 #endif
 
-    if (len >= 64 || dllname[64-1] != '\0') {
-        FATALERROR("Reported length (%d) of DLL name (%s) length exceeds buffer[64] space\n",
-                   len, status->cookie.pylibname);
+    if (len >= DLLNAME_LEN) {
+        FATALERROR("Reported length (%d) of DLL name (%s) length exceeds buffer[%d] space\n",
+                   len, status->cookie.pylibname, DLLNAME_LEN);
         return -1;
     }
 
