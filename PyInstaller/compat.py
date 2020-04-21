@@ -354,7 +354,12 @@ def exec_command(*cmdargs, **kwargs):
     # Thus we need to convert that to proper encoding.
     try:
         if encoding:
-            out = out.decode(encoding)
+            try:
+                # Try decoding with encoding
+                out = out.decode(encoding)
+            except UnicodeDecodeError:
+                # But fall back on using the system encoding
+                out = os.fsdecode(out)
         else:
             # If no encoding is given, assume we're reading filenames from
             # stdout only because it's the common case.
