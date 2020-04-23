@@ -184,52 +184,15 @@ if is_win:
                              'pip install pywin32-ctypes\n')
 
 
-def _architecture():  # TODO: Can we remove the crazy reassignment below and just call this "architecture"?
-    """
-    Returns the bit depth of the python interpreter's architecture as
-    a string ('32bit' or '64bit'). Similar to platform.architecture(),
-    but with fixes for universal binaries on MacOS.
-    """
-    if is_darwin:
-        # Darwin's platform.architecture() is buggy and always
-        # returns "64bit" event for the 32bit version of Python's
-        # universal binary. So we roll out our own (that works
-        # on Darwin).
-        if sys.maxsize > 2 ** 32:
-            return '64bit'
-        else:
-            return '32bit'
-    else:
-        return platform.architecture()[0]
-
-architecture = _architecture()
-del _architecture
+# macOS's platform.architecture() can be buggy, so we do this manually there.
+architecture = '64bit' if sys.maxsize > 2**32 and is_darwin else \
+    '32bit' if is_darwin else platform.architecture()[0]
 
 system = platform.system()
 
-
-def _machine():  # TODO: Can we remove the crazy reassignment below and just call this "machine"?
-    """
-    Return machine suffix to use in directory name when looking
-    for bootloader.
-
-    PyInstaller is reported to work even on ARM architecture. For that
-    case `system` and `architecture` are not enough.
-    Path to bootloader has to be composed from `system`, `architecture`
-    and `machine` like:
-        'Linux-32bit-arm'
-    """
-    mach = platform.machine()
-    if mach.startswith('arm'):
-        return 'arm'
-    elif mach.startswith('aarch'):
-        return 'aarch'
-    else:
-        # Assume x86/x86_64 machine.
-        return None
-
-machine = _machine()
-del _machine
+# Machine suffix for bootloader.
+machine = 'arm' if platform.machine().startswith('arm') else \
+    'aarch' if platform.machine().startswith('aarch') else None
 
 
 # Set and get environment variables does not handle unicode strings correctly
@@ -302,7 +265,7 @@ def exec_command(*cmdargs, **kwargs):
 
     Parameters
     ----------
-    cmdargs : list
+    cmdargs :
         Variadic list whose:
         1. Mandatory first element is the absolute path, relative path,
            or basename in the current `${PATH}` of the command to run.
