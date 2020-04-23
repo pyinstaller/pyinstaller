@@ -71,7 +71,7 @@ class PreSafeImportModuleAPI(object):
 
     Attributes (Mutable)
     -----------------------------
-    The following attributes are editable. 
+    The following attributes are editable.
 
     module_basename : str
         Unqualified name of the module to be imported (e.g., `text`).

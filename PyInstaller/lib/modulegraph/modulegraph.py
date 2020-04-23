@@ -31,8 +31,7 @@ from altgraph import GraphError
 
 from . import util
 from . import zipio
-from ._compat import BytesIO, StringIO, \
-     pathname2url, _READ_MODE
+from ._compat import BytesIO, StringIO, pathname2url, _READ_MODE
 
 
 BOM = codecs.BOM_UTF8.decode('utf-8')
