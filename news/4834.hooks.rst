@@ -1,0 +1,1 @@
+Add a hook for `soundcard <https://pypi.org/project/SoundCard/>`_.
