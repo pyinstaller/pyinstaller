@@ -21,6 +21,7 @@ import site
 import subprocess
 import sys
 import errno
+import importlib.machinery
 from .exceptions import ExecCommandFailed
 
 # Copied from https://docs.python.org/3/library/platform.html#cross-platform.
@@ -184,13 +185,18 @@ if is_win:
                              'pip install pywin32-ctypes\n')
 
 
-# macOS's platform.architecture() can be buggy, so we do this manually there.
+# macOS's platform.architecture() can be buggy, so we do this manually here.
+# Based off the python documentation:
+# https://docs.python.org/3/library/platform.html#platform.architecture
 architecture = '64bit' if sys.maxsize > 2**32 and is_darwin else \
     '32bit' if is_darwin else platform.architecture()[0]
 
 system = platform.system()
 
 # Machine suffix for bootloader.
+# PyInstaller is reported to work on ARM architecture, so for that
+# case we need an extra identifying specifier on the bootloader
+# name string, like: Linux-32bit-arm, over normal Linux-32bit
 machine = 'arm' if platform.machine().startswith('arm') else \
     'aarch' if platform.machine().startswith('aarch') else None
 
@@ -572,7 +578,8 @@ getsitepackages = getattr(site, 'getsitepackages', getsitepackages)
 
 # Wrapper to load a module from a Python source file.
 # This function loads import hooks when processing them.
-import importlib.machinery
+
+
 def importlib_load_source(name, pathname):
     # Import module from a file.
     mod_loader = importlib.machinery.SourceFileLoader(name, pathname)
