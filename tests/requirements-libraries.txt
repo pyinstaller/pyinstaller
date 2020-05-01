@@ -28,7 +28,7 @@ keyring==19.2.0  # pyup: ignore
 # These packages work with no (known) issues.
 babel==2.8.0
 boto==2.49.0
-boto3==1.12.33
+boto3==1.13.0
 botocore==1.15.33
 future==0.18.2
 gevent==1.4.0
