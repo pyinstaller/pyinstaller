@@ -34,7 +34,7 @@ future==0.18.2
 gevent==20.5.0
 h5py==2.10.0
 markdown==3.2.1
-numpy==1.18.2
+numpy==1.18.3
 pendulum==2.0.5
 phonenumbers==8.12.1
 Pillow==7.1.0
