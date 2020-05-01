@@ -42,7 +42,7 @@ pinyin==0.4.0
 pycparser==2.20
 pycryptodome==3.9.7
 pycryptodomex==3.9.7
-pyexcelerate==0.8.0
+pyexcelerate==0.9.0
 pygments==2.6.1
 pylint==2.4.4
 PySide2==5.13.0
