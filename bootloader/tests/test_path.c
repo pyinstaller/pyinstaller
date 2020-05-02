@@ -104,17 +104,61 @@ static void test_join(void **state) {
     assert_ptr_equal(r, &result);
     assert_string_equal(result, "lalala/mememe");
 
+    r = pyi_path_join((char *)result, "lalala", "mememe/");
+    assert_ptr_equal(r, &result);
+    assert_string_equal(result, "lalala/mememe");
+
     r = pyi_path_join((char *)result, "lal/ala/", "mem/eme/");
     assert_ptr_equal(r, &result);
     assert_string_equal(result, "lal/ala/mem/eme");
+
+    // First string empty is not handled
+    r = pyi_path_join((char *)result, "", "mememe");
+    assert_ptr_equal(r, &result);
+    assert_string_equal(result, "/mememe");
 
     memset(path1, 'a', PATH_MAX); path1[PATH_MAX-1] = '\0';
     memset(path2, 'b', PATH_MAX); path2[PATH_MAX-1] = '\0';
     assert_int_equal(strlen(path1), PATH_MAX-1);
     assert_int_equal(strlen(path2), PATH_MAX-1);
-    //r = pyi_path_join((char *)result, (char *)path1,  (char *)path2);
-    //assert_ptr_equal(r, &result);
-    //assert_string_equal(result, path1);
+    assert_ptr_equal(NULL, pyi_path_join(result, path1, path2));
+
+    // tests near max lenght of path1
+    assert_ptr_equal(NULL, pyi_path_join(result, path1, ""));
+    path1[PATH_MAX-2] = '\0';
+    assert_ptr_equal(NULL, pyi_path_join(result, path1, ""));
+    path1[PATH_MAX-3] = '\0';
+    assert_ptr_equal(r, pyi_path_join(result, path1, ""));
+    assert_int_equal(strlen(result), PATH_MAX-2); // -2 no trailing slash in path1
+    assert_ptr_equal(NULL, pyi_path_join(result, path1, "x"));
+    path1[PATH_MAX-4] = '\0';
+    assert_ptr_equal(r, pyi_path_join(result, path1, "x"));
+    assert_int_equal(strlen(result), PATH_MAX-2); // -2 no trailing slash in path1
+    assert_ptr_equal(NULL, pyi_path_join(result, path1, "xx"));
+
+    // tests near max lenght of path2
+    assert_ptr_equal(NULL, pyi_path_join(result, "", path2));
+    assert_ptr_equal(NULL, pyi_path_join(result, "x", path2));
+    path2[PATH_MAX-2] = '\0';
+    assert_ptr_equal(NULL, pyi_path_join(result, "", path2)); // stash takes space!
+    assert_ptr_equal(NULL, pyi_path_join(result, "x", path2));
+    path2[PATH_MAX-3] = '\0';
+    assert_ptr_equal(r, pyi_path_join(result, "", path2));
+    assert_ptr_equal(NULL, pyi_path_join(result, "x", path2));
+    path2[PATH_MAX-4] = '\0';
+    assert_ptr_equal(r, pyi_path_join(result, "", path2));
+    assert_ptr_equal(r, pyi_path_join(result, "x", path2));
+    // we don't count exaclty if slashes are contained
+    assert_int_equal(strlen(result), PATH_MAX-2);
+    assert_ptr_equal(NULL, pyi_path_join(result, "xx", path2));
+    path2[PATH_MAX-4] = '/';
+    assert_int_equal(path2[strlen(path2)], 0);
+    assert_int_equal(path2[strlen(path2)-1], '/');
+    assert_ptr_equal(r, pyi_path_join(result, "", path2));
+    // we don't count exaclty if slashes are contained
+    assert_int_equal(strlen(result), PATH_MAX-3);
+    assert_int_equal(result[strlen(result)-1], 'b'); // trailing slash removed
+    assert_ptr_equal(NULL, pyi_path_join(result, "x", path2));
 }
 
 
