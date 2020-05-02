@@ -36,6 +36,10 @@ def test_signal_handled(pyi_builder, signame, ignore):
         pytest.skip(
             'Messing with {} interferes with bootloader'.format(signame)
         )
+    elif signame == 'SIGTSTP':
+        pytest.xfail(
+            '{} is not caught to allow Ctrl-Z'.format(signame)
+        )
 
     verb = 'ignored' if ignore else 'handled'
     app_name = 'test_signal_{}_{}'.format(verb, signame)

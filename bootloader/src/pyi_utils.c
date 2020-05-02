@@ -982,7 +982,8 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
     for (signum = 0; signum < num_signals; ++signum) {
         // don't mess with SIGCHLD/SIGCLD; it affects our ability
         // to wait() for the child to exit
-        if (signum != SIGCHLD && signum != SIGCLD) {
+        // don't change SIGTSP handling to allow Ctrl-Z
+        if (signum != SIGCHLD && signum != SIGCLD && signum != SIGTSTP) {
             signal(signum, handler);
         }
     }
