@@ -129,28 +129,31 @@ pyi_path_basename(char *result, const char *path)
 char *
 pyi_path_join(char *result, const char *path1, const char *path2)
 {
-    size_t len = 0;
-    memset(result, 0, PATH_MAX);
-    /* Copy path1 to result without null terminator */
-    strcpy(result, path1);
-    /* Append trailing slash if missing. */
-    len = strlen(result);
-
-    if (result[len - 1] != PYI_SEP) {
-        result[len] = PYI_SEP;
-        result[len + 1] = PYI_NULLCHAR;
+    size_t len, len2;
+    /* Copy path1 to result */
+    len = snprintf(result, PATH_MAX, "%s", path1);
+    if (len >= PATH_MAX-1) {
+        return NULL;
     }
+    /* Append trailing slash if missing. */
+    if (result[len-1] != PYI_SEP) {
+        result[len++] = PYI_SEP;
+        result[len++] = PYI_NULLCHAR;
+    }
+    len = PATH_MAX - len;
+    len2 = strlen(path2);
+    if (len2 >= len) {
+        return NULL;
+    };
     /* Remove trailing slash from path2 if present. */
-    len = strlen(path2);
-
-    if (path2[len - 1] == PYI_SEP) {
+    if (path2[len2 - 1] == PYI_SEP) {
         /* Append path2 without slash. */
-        strcat(result, path2);
+        strncat(result, path2, len);
         result[strlen(result) - 1] = PYI_NULLCHAR;
     }
     else {
         /* path2 does not end with slash. */
-        strcat(result, path2);
+        strncat(result, path2, len);
     }
     return result;
 }
