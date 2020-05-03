@@ -12,6 +12,7 @@
 #include <sys/types.h>
 #include <stdarg.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "pyi_global.h"
 #include "pyi_path.h"
@@ -23,20 +24,32 @@
 static void test_dirname(void **state) {
     char result[PATH_MAX];
 
-    pyi_path_dirname(result, "/a1/bb/cc/dd");
+    assert_true(pyi_path_dirname(result, "/a1/bb/cc/dd"));
     assert_string_equal(result, "/a1/bb/cc");
 
-    pyi_path_dirname(result, "/a2/bb/cc/dd/");
+    assert_true(pyi_path_dirname(result, "/a2/bb/cc/dd/"));
     assert_string_equal(result, "/a2/bb/cc");
 
-    pyi_path_dirname(result, "d3d");
+    assert_true(pyi_path_dirname(result, "d3d"));
     assert_string_equal(result, PYI_CURDIRSTR);
 
-    pyi_path_dirname(result, "d5d/");
+    assert_true(pyi_path_dirname(result, "d5d/"));
     assert_string_equal(result, PYI_CURDIRSTR);
 
-    pyi_path_dirname(result, "");
+    assert_true(pyi_path_dirname(result, ""));
     assert_string_equal(result, PYI_CURDIRSTR);
+
+    char *path2 = (char *) malloc(PATH_MAX+10);
+    memset(path2, 'a', PATH_MAX+8);
+    // a few bytes more
+    path2[PATH_MAX+8] = '\0';
+    assert_false(pyi_path_dirname(result, path2));
+    // exact length
+    path2[PATH_MAX] = '\0';
+    assert_false(pyi_path_dirname(result, path2));
+    // one byte less
+    path2[PATH_MAX-1] = '\0';
+    assert_true(pyi_path_dirname(result, path2));
 }
 
 
