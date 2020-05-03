@@ -41,6 +41,7 @@
 #include <locale.h>  /* setlocale */
 
 /* PyInstaller headers. */
+#include "pyi_pythonlib.h"
 #include "pyi_global.h"
 #include "pyi_path.h"
 #include "pyi_archive.h"

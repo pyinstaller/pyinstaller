@@ -43,6 +43,7 @@
 #include <sys/stat.h> /* struct stat */
 
 /* PyInstaller headers. */
+#include "pyi_launch.h"
 #include "pyi_global.h"
 #include "pyi_path.h"
 #include "pyi_archive.h"

@@ -27,6 +27,7 @@
 #include <string.h> /* memset */
 
 /* PyInstaller headers. */
+#include "pyi_main.h"
 #include "pyi_global.h"  /* PATH_MAX */
 #include "pyi_path.h"
 #include "pyi_archive.h"
