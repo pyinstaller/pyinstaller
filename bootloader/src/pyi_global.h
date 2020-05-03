@@ -145,12 +145,14 @@ void mbvs(const char *fmt, ...);
  */
     #define PYI_SEPSTR     "\\"
     #define PYI_PATHSEPSTR ";"
+    #define PYI_CURDIRSTR  "."
 #else
     #define PYI_PATHSEP    ':'
     #define PYI_CURDIR     '.'
     #define PYI_SEP        '/'
     #define PYI_SEPSTR     "/"
     #define PYI_PATHSEPSTR ":"
+    #define PYI_CURDIRSTR  "."
 #endif
 
 /* Strings are usually terminated by this character. */
