@@ -205,40 +205,20 @@ pyi_path_exists(char * path)
 int
 pyi_search_path(char * result, const char * appname)
 {
-    char * path = pyi_getenv("PATH");
-    char dirname[PATH_MAX + 1];
-    char filename[PATH_MAX + 1];
+    char *path = pyi_getenv("PATH"); // returns a copy
+    char *dirname;
 
     if (NULL == path) {
         return -1;
     }
 
-    while (1) {
-        char *delim = strchr(path, PYI_PATHSEP);
-
-        if (delim) {
-            size_t len = delim - path;
-
-            if (len > PATH_MAX) {
-                len = PATH_MAX;
-            }
-            strncpy(dirname, path, len);
-            *(dirname + len) = '\0';
-        }
-        else {  /* last $PATH element */
-            strncpy(dirname, path, PATH_MAX);
-        }
-        pyi_path_join(filename, dirname, appname);
-
-        if (pyi_path_exists(filename)) {
-            strncpy(result, filename, PATH_MAX);
+    dirname = strtok(path, PYI_PATHSEPSTR);
+    while (dirname != NULL) {
+        pyi_path_join(result, dirname, appname);
+        if (pyi_path_exists(result)) {
             return 0;
         }
-
-        if (!delim) {
-            break;
-        }
-        path = delim + 1;
+        dirname = strtok(NULL, PYI_PATHSEPSTR);
     }
     return -1;
 }
