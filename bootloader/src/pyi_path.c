@@ -55,15 +55,15 @@ pyi_path_dirname(char *result, const char *path)
 
     /* Copy path to result and then just write '\0' to the place with path separator. */
     strncpy(result, path, PATH_MAX);
-    /* Remove separator from the end. */
-    len = strlen(result);
 
-    if (result[len] == PYI_SEP) {
+    /* Remove separator from the end. */
+    len = strlen(result)-1;
+    if (len >= 0 && result[len] == PYI_SEP) {
         result[len] = PYI_NULLCHAR;
     }
+
     /* Remove the rest of the string. */
     match = strrchr(result, PYI_SEP);
-
     if (match != NULL) {
         *match = PYI_NULLCHAR;
     }
