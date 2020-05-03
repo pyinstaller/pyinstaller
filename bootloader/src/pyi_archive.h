@@ -18,6 +18,9 @@
 #ifndef PYI_ARCHIVE_H
 #define PYI_ARCHIVE_H
 
+#include "pyi_global.h"
+#include <stdio.h>  /* FILE */
+
 /* Types of CArchive items. */
 #define ARCHIVE_ITEM_BINARY           'b'  /* binary */
 #define ARCHIVE_ITEM_DEPENDENCY       'd'  /* runtime option */

@@ -18,6 +18,8 @@
 #ifndef PYI_PATH_H
 #define PYI_PATH_H
 
+#include "pyi_global.h"
+
 /* Path manipulation. Result is added to the supplied buffer. */
 void *pyi_path_basename(char *result, const char *path);
 void *pyi_path_dirname(char *result, const char *path);
