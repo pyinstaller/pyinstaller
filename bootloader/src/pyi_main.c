@@ -126,8 +126,8 @@ pyi_main(int argc, char * argv[])
          *  we pass it through status variable
          */
         if (strcmp(homepath, extractionpath) != 0) {
-            strncpy(archive_status->temppath, extractionpath, PATH_MAX);
-            if (archive_status->temppath[PATH_MAX-1] != '\0') {
+            if (snprintf(archive_status->temppath, PATH_MAX,
+                         "%s", extractionpath) >= PATH_MAX) {
                 VS("LOADER: temppath exceeds PATH_MAX\n");
                 return -1;
             }

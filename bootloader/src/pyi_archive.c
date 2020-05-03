@@ -455,28 +455,23 @@ int
 pyi_arch_set_paths(ARCHIVE_STATUS *status, char const * archivePath,
                    char const * archiveName)
 {
-    size_t pathlen, namelen;
-
-    pathlen = strnlen(archivePath, PATH_MAX);
-    namelen = strnlen(archiveName, PATH_MAX);
-
-    if (pathlen+namelen+1 > PATH_MAX) {
-        return -1;
+    /* Set homepath to where the archive is */
+    if (snprintf(status->homepath, PATH_MAX, "%s", archivePath) >= PATH_MAX) {
+      return -1;
     }
 
     /* Get the archive Path */
-    strcpy(status->archivename, archivePath);
-    strcat(status->archivename, archiveName);
-
-    /* Set homepath to where the archive is */
-    strcpy(status->homepath, archivePath);
+    if (snprintf(status->archivename, PATH_MAX,
+                 "%s%s", archivePath, archiveName) >= PATH_MAX) {
+        return -1;
+    }
 
     /*
      * Initial value of mainpath is homepath. It might be overriden
      * by temppath if it is available.
      */
     status->has_temp_directory = false;
-    strcpy(status->mainpath, status->homepath);
+    strcpy(status->mainpath, status->homepath); // homepath fits into PATH_MAX
 
     return 0;
 }
