@@ -149,13 +149,6 @@ pyi_path_join(char *result, const char *path1, const char *path2)
     return result;
 }
 
-/* Normalize a pathname. Return result in new buffer. */
-/* TODO implement this function */
-void
-pyi_path_normalize(char *result, const char *path)
-{
-}
-
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 /*
