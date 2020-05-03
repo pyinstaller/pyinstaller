@@ -27,3 +27,4 @@ def build(ctx):
 
     if "LIB_CMOCKA" in ctx.env:
         test_program("path")
+        test_program("launch")
