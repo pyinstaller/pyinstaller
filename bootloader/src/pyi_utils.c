@@ -557,11 +557,8 @@ pyi_open_target(const char *path, const char* name_)
     char *dir;
     size_t len;
 
-    strncpy(fnm, path, PATH_MAX);
-    strncpy(name, name_, PATH_MAX);
-
-    /* Check if the path names could be copied */
-    if (fnm[PATH_MAX-1] != '\0' || name[PATH_MAX-1] != '\0') {
+    if (snprintf(fnm, PATH_MAX, "%s", path) >= PATH_MAX ||
+        snprintf(name, PATH_MAX, "%s", name_) >= PATH_MAX) {
         return NULL;
     }
 

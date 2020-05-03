@@ -414,11 +414,15 @@ pyi_pylib_start_python(ARCHIVE_STATUS *status)
 
     /* Set sys.path */
     /* sys.path = [base_library, mainpath] */
-    strncpy(pypath, status->mainpath, PATH_MAX);
-    strncat(pypath, PYI_SEPSTR, PATH_MAX);
-    strncat(pypath, "base_library.zip", PATH_MAX);
-    strncat(pypath, PYI_PATHSEPSTR, PATH_MAX);
-    strncat(pypath, status->mainpath, PATH_MAX);
+    if (snprintf(pypath, sizeof pypath, "%s%cbase_library.zip%c%s",
+                 status->mainpath, PYI_SEP, PYI_PATHSEP, status->mainpath)
+        >= sizeof pypath) {
+        // This should never happen, since mainpath is < PATH_MAX and pypath is
+        // huge enough
+        FATALERROR("sys.path (based on %s) exceeds buffer[%d] space\n",
+                   status->mainpath, sizeof pypath);
+        return -1;
+    }
 
     /*
      * E must set sys.path to have base_library.zip before
