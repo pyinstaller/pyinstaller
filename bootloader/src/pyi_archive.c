@@ -22,7 +22,6 @@
 /* TODO verify windows includes */
     #include <winsock.h>  /* ntohl */
 #else
-    #include <limits.h>  /* PATH_MAX - not available on windows. */
     #ifdef __FreeBSD__
 /* freebsd issue #188316 */
         #include <arpa/inet.h>  /* ntohl */

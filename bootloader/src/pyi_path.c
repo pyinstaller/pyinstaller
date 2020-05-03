@@ -29,7 +29,6 @@
     #include <mach-o/dyld.h> /* _NSGetExecutablePath() */
 #else
     #include <libgen.h>  /* basename() */
-    #include <limits.h>  /* PATH_MAX */
     #include <unistd.h>  /* unlink */
 #endif
 
