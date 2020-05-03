@@ -364,6 +364,4 @@ pyi_path_fopen(const char* filename, const char* mode)
     pyi_win32_utils_from_utf8(wmode, mode, 10);
     return _wfopen(wfilename, wmode);
 }
-#else
-    #define pyi_path_fopen(x, y)    fopen(x, y)
 #endif
