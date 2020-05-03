@@ -545,7 +545,10 @@ pyi_launch_initialize(ARCHIVE_STATUS * status)
 
     if (NULL != manifest) {
         char manifest_path[PATH_MAX];
-        pyi_path_join(manifest_path, status->mainpath, manifest);
+        if (pyi_path_join(manifest_path, status->mainpath, manifest) == NULL) {
+            FATALERROR("Path of manifest-file (%s) length exceeds "
+                       "buffer[%d] space\n", status->mainpath, PATH_MAX);
+        };
         CreateActContext(manifest_path);
     }
 #endif /* if defined(_WIN32) */

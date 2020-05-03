@@ -222,8 +222,8 @@ pyi_search_path(char * result, const char * appname)
 
     dirname = strtok(path, PYI_PATHSEPSTR);
     while (dirname != NULL) {
-        pyi_path_join(result, dirname, appname);
-        if (pyi_path_exists(result)) {
+        if ((pyi_path_join(result, dirname, appname) != NULL)
+            && pyi_path_exists(result)) {
             return 0;
         }
         dirname = strtok(NULL, PYI_PATHSEPSTR);

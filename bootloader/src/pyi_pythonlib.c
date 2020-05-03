@@ -109,7 +109,11 @@ pyi_pylib_load(ARCHIVE_STATUS *status)
      */
     if (status->has_temp_directory) {
         char ucrtpath[PATH_MAX];
-        pyi_path_join(ucrtpath, status->temppath, "ucrtbase.dll");
+        if (pyi_path_join(ucrtpath,
+                          status->temppath, "ucrtbase.dll") == NULL) {
+            FATALERROR("Path of ucrtbase.dll (%s) length exceeds "
+                       "buffer[%d] space\n", status->temppath, PATH_MAX);
+        };
         if (pyi_path_exists(ucrtpath)) {
             VS("LOADER: ucrtbase.dll found: %s\n", ucrtpath);
             pyi_utils_dlopen(ucrtpath);
@@ -121,7 +125,10 @@ pyi_pylib_load(ARCHIVE_STATUS *status)
      * Look for Python library in homepath or temppath.
      * It depends on the value of mainpath.
      */
-    pyi_path_join(dllpath, status->mainpath, dllname);
+    if (pyi_path_join(dllpath, status->mainpath, dllname) == NULL) {
+        FATALERROR("Path of DLL (%s) length exceeds buffer[%d] space\n",
+                   status->mainpath, PATH_MAX);
+    };
 
     VS("LOADER: Python library: %s\n", dllpath);
 
