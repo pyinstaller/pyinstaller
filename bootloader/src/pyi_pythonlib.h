@@ -18,6 +18,8 @@
 #ifndef PYI_PYTHONLIB_H
 #define PYI_PYTHONLIB_H
 
+#include "pyi_archive.h"
+
 int pyi_pylib_attach(ARCHIVE_STATUS *status, int *loadedNew);
 int pyi_pylib_load(ARCHIVE_STATUS *status);  /* note - pyi_pylib_attach will call this if not already loaded */
 int pyi_pylib_start_python(ARCHIVE_STATUS *status);
