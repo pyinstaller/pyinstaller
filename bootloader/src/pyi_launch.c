@@ -60,7 +60,7 @@
  * declarations are not necessary.
  */
 
-static int
+int
 checkFile(char *buf, const char *fmt, ...)
 {
     va_list args;
@@ -76,7 +76,7 @@ checkFile(char *buf, const char *fmt, ...)
 }
 
 /* Splits the item in the form path:filename */
-static int
+int
 splitName(char *path, char *filename, const char *item)
 {
     char *p;
