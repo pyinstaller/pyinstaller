@@ -46,7 +46,7 @@
  * Giving a fullpath, it will copy to the buffer a string
  * which contains the path without last component.
  */
-void
+bool
 pyi_path_dirname(char *result, const char *path)
 {
 #ifndef HAVE_DIRNAME
@@ -54,7 +54,9 @@ pyi_path_dirname(char *result, const char *path)
     char *match = NULL;
 
     /* Copy path to result and then just write '\0' to the place with path separator. */
-    strncpy(result, path, PATH_MAX);
+    if (snprintf(result, PATH_MAX, "%s", path) >= PATH_MAX) {
+        return false;
+    }
 
     /* Remove separator from the end. */
     len = strlen(result)-1;
@@ -77,18 +79,20 @@ pyi_path_dirname(char *result, const char *path)
     char *dirpart = NULL;
     char tmp[PATH_MAX];
     /* Copy path to 'tmp' because dirname() modifies the original string! */
-    strcpy(tmp, path);
-
+    if (snprintf(tmp, PATH_MAX, "%s", path) >= PATH_MAX) {
+        return false;
+    }
     dirpart = (char *) dirname((char *) tmp);  /* _XOPEN_SOURCE - no 'const'. */
-    strcpy(result, dirpart);
+    strncpy(result, dirpart, PATH_MAX);
 #endif /* ifndef HAVE_DIRNAME */
+    return true;
 }
 
 /*
  * Returns the last component of the path in filename. Return result
  * in new buffer.
  */
-void
+bool
 pyi_path_basename(char *result, const char *path)
 {
 #ifndef HAVE_BASENAME
@@ -107,6 +111,7 @@ pyi_path_basename(char *result, const char *path)
     base = (char *) basename((char *) path);  /* _XOPEN_SOURCE - no 'const'. */
     strcpy(result, base);
 #endif /* ifndef HAVE_BASENAME */
+    return true;
 }
 
 /*
