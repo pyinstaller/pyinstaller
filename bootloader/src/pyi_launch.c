@@ -33,7 +33,6 @@
         #include <netinet/in.h>  /* ntohl */
     #endif
     #include <langinfo.h> /* CODESET, nl_langinfo */
-    #include <limits.h>   /* PATH_MAX */
     #include <stdlib.h>   /* malloc */
 #endif
 #include <locale.h>  /* setlocale */

@@ -21,15 +21,13 @@
 #ifdef _WIN32
     #include <windows.h>
     #include <wchar.h>
-#else
-    #include <limits.h>  /* PATH_MAX */
 #endif
 #include <stdio.h>  /* FILE */
 #include <stdlib.h> /* calloc */
 #include <string.h> /* memset */
 
 /* PyInstaller headers. */
-#include "pyi_global.h"  /* PATH_MAX for win32 */
+#include "pyi_global.h"  /* PATH_MAX */
 #include "pyi_path.h"
 #include "pyi_archive.h"
 #include "pyi_utils.h"

@@ -42,7 +42,6 @@
     #else
         #include <dlfcn.h>
     #endif
-    #include <limits.h>  /* PATH_MAX */
     #include <signal.h>  /* kill, */
     #include <sys/wait.h>
     #include <unistd.h>  /* rmdir, unlink, mkdtemp */

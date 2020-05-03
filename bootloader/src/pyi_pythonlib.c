@@ -27,7 +27,6 @@
     #include <winsock.h> /* ntohl */
 #else
     #include <dlfcn.h>  /* dlerror */
-    #include <limits.h> /* PATH_MAX */
     #ifdef __FreeBSD__
 /* freebsd issue #188316 */
         #include <arpa/inet.h>  /* ntohl */

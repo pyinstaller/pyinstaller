@@ -73,7 +73,10 @@ typedef int bool;
     #endif
     #define PATH_MAX 4096  /* Default value on Linux. */
 #elif __APPLE__
+    #include <limits.h>
     #define PATH_MAX 1024  /* Recommended value for OSX. */
+#else
+    #include <limits.h>  /* PATH_MAX */
 #endif
 
 /*
