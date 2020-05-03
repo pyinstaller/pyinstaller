@@ -67,7 +67,9 @@ checkFile(char *buf, const char *fmt, ...)
     struct stat tmp;
 
     va_start(args, fmt);
-    vsnprintf(buf, PATH_MAX, fmt, args);
+    if (vsnprintf(buf, PATH_MAX, fmt, args) >= PATH_MAX) {
+        return -1;
+    };
     va_end(args);
 
     return stat(buf, &tmp);
