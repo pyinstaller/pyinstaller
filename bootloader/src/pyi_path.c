@@ -326,14 +326,15 @@ pyi_path_homepath(char *homepath, const char *thisfile)
  * archivefile - buffer where to put path the .pkg.
  * thisfile    - usually the executable's filename.
  */
-void
+bool
 pyi_path_archivefile(char *archivefile, const char *thisfile)
 {
-    strcpy(archivefile, thisfile);
 #ifdef _WIN32
+    strcpy(archivefile, thisfile);
     strcpy(archivefile + strlen(archivefile) - 3, "pkg");
+    return true;
 #else
-    strcat(archivefile, ".pkg");
+    return (snprintf(archivefile, PATH_MAX, "%s.pkg", thisfile) < PATH_MAX);
 #endif
 }
 

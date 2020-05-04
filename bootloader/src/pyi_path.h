@@ -31,7 +31,7 @@ int pyi_path_exists(char *path);
 
 bool pyi_path_executable(char *execfile, const char *appname);
 bool pyi_path_homepath(char *homepath, const char *executable);
-void pyi_path_archivefile(char *archivefile, const char *executable);
+bool pyi_path_archivefile(char *archivefile, const char *executable);
 
 #ifdef _WIN32
 FILE *pyi_path_fopen(const char *filename, const char *mode);
