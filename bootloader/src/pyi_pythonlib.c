@@ -58,7 +58,6 @@ pyi_pylib_load(ARCHIVE_STATUS *status)
     dylib_t dll;
     char dllpath[PATH_MAX];
     char dllname[DLLNAME_LEN];
-    char *p;
     size_t len;
 
 /*
@@ -72,6 +71,7 @@ pyi_pylib_load(ARCHIVE_STATUS *status)
      * Determine if shared lib is in libpython?.?.so or
      * libpython?.?.a(libpython?.?.so) format
      */
+    char *p;
     if ((p = strrchr(status->cookie.pylibname, '.')) != NULL && strcmp(p, ".a") == 0) {
       /*
        * On AIX 'ar' archives are used for both static and shared object.
