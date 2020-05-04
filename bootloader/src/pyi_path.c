@@ -310,12 +310,13 @@ pyi_path_executable(char *execfile, const char *appname)
 /*
  * Return absolute path to homepath. It is the directory containing executable.
  */
-void
+bool
 pyi_path_homepath(char *homepath, const char *thisfile)
 {
     /* Fill in here (directory of thisfile). */
-    pyi_path_dirname(homepath, thisfile);
+    bool rc = pyi_path_dirname(homepath, thisfile);
     VS("LOADER: homepath is %s\n", homepath);
+    return rc;
 }
 
 /*
