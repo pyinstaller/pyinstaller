@@ -175,7 +175,7 @@ pyi_path_fullpath_keep_basename(char *abs, const char *rel)
     if (realpath(dirname, full_dirname) == NULL) {
         return false;
     }
-    return (pyi_path_join(abs, full_dirname, basename) == NULL);
+    return (pyi_path_join(abs, full_dirname, basename) != NULL);
 }
 #endif
 
