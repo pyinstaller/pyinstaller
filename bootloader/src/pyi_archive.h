@@ -129,17 +129,9 @@ void pyi_arch_status_free(ARCHIVE_STATUS *status);
 /*
  * Setup the paths and open the archive
  *
- * @param archivePath  The path (with trailing backslash) to the archive.
+ * @param archivePath  The path including filename to the archive.
  *
- * @param archiveName  The file name of the archive, without a path.
- *
- * @param workpath     The path (with trailing backslash) to where
- *                     the binaries were extracted. If they have not
- *                     benn extracted yet, this is NULL. If they have,
- *                     this will either be archivePath, or a temp dir
- *                     where the user has write permissions.
- *
- * @return 0 on success, non-zero otherwise.
+ * @return true on success, false otherwise.
  */
 bool pyi_arch_setup(ARCHIVE_STATUS *status, char const * archivePath);
 
