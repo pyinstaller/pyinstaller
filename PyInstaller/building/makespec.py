@@ -86,7 +86,14 @@ def make_variable_path(filename, conversions=path_conversions):
     for (from_path, to_name) in conversions:
         assert os.path.abspath(from_path) == from_path, (
             "path '%s' should already be absolute" % from_path)
-        if os.path.commonpath([filename, from_path]) == from_path:
+        try:
+            common_path = os.path.commonpath([filename, from_path])
+        except ValueError:
+            # Per https://docs.python.org/3/library/os.path.html#os.path.commonpath,
+            # this raises ValueError in several cases which prevent computing
+            # a common path.
+            common_path = None
+        if common_path == from_path:
             rest = filename[len(from_path):]
             if rest.startswith(('\\', '/')):
                 rest = rest[1:]
