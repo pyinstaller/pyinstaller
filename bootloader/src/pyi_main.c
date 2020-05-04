@@ -86,8 +86,8 @@ pyi_main(int argc, char * argv[])
 
     VS("LOADER: _MEIPASS2 is %s\n", (extractionpath ? extractionpath : "NULL"));
 
-    if (pyi_arch_setup(archive_status, homepath, &executable[strlen(homepath)])) {
-        if (pyi_arch_setup(archive_status, homepath, &archivefile[strlen(homepath)])) {
+    if (! pyi_arch_setup(archive_status, homepath, &executable[strlen(homepath)])) {
+        if (! pyi_arch_setup(archive_status, homepath, &archivefile[strlen(homepath)])) {
             FATALERROR("Cannot open self %s or archive %s\n",
                        executable, archivefile);
             return -1;

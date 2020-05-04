@@ -477,12 +477,12 @@ pyi_arch_set_paths(ARCHIVE_STATUS *status, char const * archivePath,
 }
 
 /* Setup the archive with python modules. (this always needs to be done) */
-int
+bool
 pyi_arch_setup(ARCHIVE_STATUS *status, char const * archivePath, char const * archiveName)
 {
     /* Set up paths */
     if (pyi_arch_set_paths(status, archivePath, archiveName)) {
-        return -1;
+        return false;
     }
 
     /* Open the archive */
@@ -491,10 +491,9 @@ pyi_arch_setup(ARCHIVE_STATUS *status, char const * archivePath, char const * ar
         /* otherwise the open file-handle will be reused when */
         /* testing the next file. */
         pyi_arch_close_fp(status);
-        return -1;
+        return false;
     }
-    ;
-    return 0;
+    return true;
 }
 
 /*
