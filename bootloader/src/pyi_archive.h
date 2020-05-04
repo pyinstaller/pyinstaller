@@ -143,8 +143,7 @@ void pyi_arch_status_free(ARCHIVE_STATUS *status);
  *
  * @return 0 on success, non-zero otherwise.
  */
-bool pyi_arch_setup(ARCHIVE_STATUS *status, char const * archivePath,
-                   char const * archiveName);
+bool pyi_arch_setup(ARCHIVE_STATUS *status, char const * archivePath);
 
 TOC *getFirstTocEntry(ARCHIVE_STATUS *status);
 TOC *getNextTocEntry(ARCHIVE_STATUS *status, TOC *entry);
