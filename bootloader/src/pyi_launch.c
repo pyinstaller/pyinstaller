@@ -79,16 +79,20 @@ checkFile(char *buf, const char *fmt, ...)
 static int
 splitName(char *path, char *filename, const char *item)
 {
-    char name[PATH_MAX];
+    char *p;
 
     VS("LOADER: Splitting item into path and filename\n");
-    if (snprintf(name, PATH_MAX, "%s", item) >= PATH_MAX) {
+    // copy directly into destination buffer and manipulate there
+    if (snprintf(path, PATH_MAX, "%s", item) >= PATH_MAX) {
         return -1;
     }
-    // `name` fits into PATH_MAX, so will all substrings
-    strcpy(path, strtok(name, ":"));
-    strcpy(filename, strtok(NULL, ":"));
-
+    p = strchr(path, ':');
+    if (p == NULL) { // No colon in string
+        return -1;
+    };
+    p[0] ='\0'; // terminate path part
+    // `path` fits into PATH_MAX, so will all substrings
+    strcpy(filename, ++p);
     if (path[0] == 0 || filename[0] == 0) {
         return -1;
     }
