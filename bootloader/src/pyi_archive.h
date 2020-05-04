@@ -118,8 +118,6 @@ extern int pyvers;
 /**
  * The gory detail level
  */
-int pyi_arch_set_paths(ARCHIVE_STATUS *status, char const * archivePath,
-                       char const * archiveName);
 int pyi_arch_open(ARCHIVE_STATUS *status);
 
 /*
