@@ -210,25 +210,25 @@ pyi_path_exists(char * path)
 /* Search $PATH for the program named 'appname' and return its full path.
  * 'result' should be a buffer of at least PATH_MAX characters.
  */
-int
+bool
 pyi_search_path(char * result, const char * appname)
 {
     char *path = pyi_getenv("PATH"); // returns a copy
     char *dirname;
 
     if (NULL == path) {
-        return -1;
+        return false;
     }
 
     dirname = strtok(path, PYI_PATHSEPSTR);
     while (dirname != NULL) {
         if ((pyi_path_join(result, dirname, appname) != NULL)
             && pyi_path_exists(result)) {
-            return 0;
+            return true;
         }
         dirname = strtok(NULL, PYI_PATHSEPSTR);
     }
-    return -1;
+    return false;
 }
 
 /*
@@ -244,7 +244,6 @@ int
 pyi_path_executable(char *execfile, const char *appname)
 {
     char buffer[PATH_MAX];
-    size_t result = -1;
 
 #ifdef _WIN32
     wchar_t modulename_w[PATH_MAX];
@@ -290,8 +289,7 @@ pyi_path_executable(char *execfile, const char *appname)
     else {
         /* No absolute or relative path, just program name: search $PATH.
          */
-        result = pyi_search_path(buffer, appname);
-        if (-1 == result) {
+        if (! pyi_search_path(buffer, appname)) {
             /* Searching $PATH failed, user is crazy. */
             VS("LOADER: Searching $PATH failed for %s", appname);
             if (snprintf(buffer, PATH_MAX, "%s", "appname") >= PATH_MAX) {
