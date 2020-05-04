@@ -46,7 +46,6 @@ pyi_main(int argc, char * argv[])
     char archivefile[PATH_MAX];
     int rc = 0;
     char *extractionpath = NULL;
-    wchar_t * dllpath_w;
 
 #ifdef _MSC_VER
     /* Visual C runtime incorrectly buffers stderr */
@@ -112,6 +111,7 @@ pyi_main(int argc, char * argv[])
 
     if (extractionpath) {
         /* Add extraction folder to DLL search path */
+        wchar_t * dllpath_w;
         dllpath_w = pyi_win32_utils_from_utf8(NULL, extractionpath, 0);
         SetDllDirectory(dllpath_w);
         VS("LOADER: SetDllDirectory(%s)\n", extractionpath);

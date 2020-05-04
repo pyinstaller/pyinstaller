@@ -366,17 +366,12 @@ int
 pyi_launch_run_scripts(ARCHIVE_STATUS *status)
 {
     unsigned char *data;
-    const char *pvalue_cchar, *tb_cchar;
     char buf[PATH_MAX];
-    char *char_pvalue, *char_tb, *module_name;
     TOC * ptoc = status->tocbuff;
     PyObject *__main__;
     PyObject *__file__;
     PyObject *main_dict;
     PyObject *code, *retval;
-    PyObject *ptype, *pvalue, *pvalue_str;
-    PyObject *ptraceback, *tb, *tb_str;
-    PyObject *module, *func;
 
     __main__ = PI_PyImport_AddModule("__main__");
 
@@ -430,6 +425,12 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
                      * resp. NullWriter (see pyiboot01_bootstrap.py), thus
                      * PyErr_Print() below will not show any traceback. With
                      * debug, print the traceback to a message box. */
+
+                    const char *pvalue_cchar, *tb_cchar;
+                    char *char_pvalue, *char_tb, *module_name;
+                    PyObject *ptype, *pvalue, *pvalue_str;
+                    PyObject *ptraceback, *tb, *tb_str;
+                    PyObject *module, *func;
 
                     /* First get the value of the error */
                     PI_PyErr_Fetch(&ptype, &pvalue, &ptraceback);
