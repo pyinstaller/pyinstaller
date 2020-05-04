@@ -240,7 +240,7 @@ pyi_search_path(char * result, const char * appname)
  * execfile - buffer where to put path to executable.
  * appname - usually the item argv[0].
  */
-int
+bool
 pyi_path_executable(char *execfile, const char *appname)
 {
     char buffer[PATH_MAX];
@@ -252,12 +252,12 @@ pyi_path_executable(char *execfile, const char *appname)
      */
     if (!GetModuleFileNameW(NULL, modulename_w, PATH_MAX)) {
         FATAL_WINERROR("GetModuleFileNameW", "Failed to get executable path.");
-        return -1;
+        return false;
     }
 
     if (!pyi_win32_utils_to_utf8(execfile, modulename_w, PATH_MAX)) {
         FATALERROR("Failed to convert executable path to UTF-8.");
-        return -1;
+        return false;
     }
 
 #elif __APPLE__
@@ -268,12 +268,12 @@ pyi_path_executable(char *execfile, const char *appname)
      */
     if (_NSGetExecutablePath(buffer, &length) != 0) {
         FATALERROR("System error - unable to load!\n");
-        return -1;
+        return false;
     }
 
     if (pyi_path_fullpath(execfile, PATH_MAX, buffer) == false) {
         VS("LOADER: Cannot get fullpath for %s\n", execfile);
-        return -1;
+        return false;
     }
 
 #else /* ifdef _WIN32 */
@@ -283,7 +283,7 @@ pyi_path_executable(char *execfile, const char *appname)
          */
         if (pyi_path_fullpath_keep_basename(execfile, appname) == false) {
             VS("LOADER: Cannot get fullpath for %s\n", execfile);
-            return -1;
+            return false;
         }
     }
     else {
@@ -294,17 +294,17 @@ pyi_path_executable(char *execfile, const char *appname)
             VS("LOADER: Searching $PATH failed for %s", appname);
             if (snprintf(buffer, PATH_MAX, "%s", "appname") >= PATH_MAX) {
                 VS("LOADER: Appname too large %s\n", appname);
-                return -1;
+                return false;
             }
         }
         if (pyi_path_fullpath_keep_basename(execfile, buffer) == false) {
             VS("LOADER: Cannot get fullpath for %s\n", execfile);
-            return -1;
+            return false;
         }
     }
 #endif /* ifdef _WIN32 */
     VS("LOADER: executable is %s\n", execfile);
-    return 0;
+    return true;
 }
 
 /*

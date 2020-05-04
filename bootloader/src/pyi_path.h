@@ -29,7 +29,7 @@ int pyi_path_fullpath(char *abs, size_t abs_size, const char *rel);
 /* void *pyi_path_abspath(char *result, const char *path); */
 int pyi_path_exists(char *path);
 
-int pyi_path_executable(char *execfile, const char *appname);
+bool pyi_path_executable(char *execfile, const char *appname);
 void pyi_path_homepath(char *homepath, const char *executable);
 void pyi_path_archivefile(char *archivefile, const char *executable);
 
