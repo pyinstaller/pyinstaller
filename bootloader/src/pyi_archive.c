@@ -447,35 +447,6 @@ pyi_arch_open(ARCHIVE_STATUS *status)
     return 0;
 }
 
-/*
- * Set up paths required by rest of this module.
- * Sets f_archivename, f_homepath, f_mainpath
- */
-int
-pyi_arch_set_paths(ARCHIVE_STATUS *status, char const * archivePath,
-                   char const * archiveName)
-{
-    /* Set homepath to where the archive is */
-    if (snprintf(status->homepath, PATH_MAX, "%s", archivePath) >= PATH_MAX) {
-      return -1;
-    }
-
-    /* Get the archive Path */
-    if (snprintf(status->archivename, PATH_MAX,
-                 "%s%s", archivePath, archiveName) >= PATH_MAX) {
-        return -1;
-    }
-
-    /*
-     * Initial value of mainpath is homepath. It might be overriden
-     * by temppath if it is available.
-     */
-    status->has_temp_directory = false;
-    strcpy(status->mainpath, status->homepath); // homepath fits into PATH_MAX
-
-    return 0;
-}
-
 /* Setup the archive with python modules and the paths required by rest of
  * this module (this always needs to be done).
  * Sets f_archivename, f_homepath, f_mainpath
