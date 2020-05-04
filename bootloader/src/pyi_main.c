@@ -59,10 +59,11 @@ pyi_main(int argc, char * argv[])
     if (archive_status == NULL) {
         return -1;
     }
-
-    pyi_path_executable(executable, argv[0]);
-    pyi_path_archivefile(archivefile, executable);
-    pyi_path_homepath(homepath, executable);
+    if ((! pyi_path_executable(executable, argv[0])) ||
+        (! pyi_path_archivefile(archivefile, executable)) ||
+        (! pyi_path_homepath(homepath, executable))) {
+        return -1;
+    }
 
     /* For the curious:
      * On Windows, the UTF-8 form of MEIPASS2 is passed to pyi_setenv, which
