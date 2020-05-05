@@ -548,6 +548,7 @@ def getsitepackages(prefixes=None):
     this function will find its `site-packages` subdirectory depending on the
     system environment, and will return a list of full paths.
     """
+    # This implementation was copied from the ``site`` module, python 3.7.3.
     sitepackages = []
     seen = set()
 
