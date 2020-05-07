@@ -421,12 +421,16 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
                 FATALERROR("Failed to execute script %s\n", ptoc->name);
 
                 #if defined(WINDOWED) && defined(LAUNCH_DEBUG)
+                /* Visual C++ requires all variables to be declared before any
+                 * statements in a given block. The curly braces below create a
+                 * block to make this compiler happy. */
+                {
                     /* If running in windowed mode, sys.stderr will be None
                      * resp. NullWriter (see pyiboot01_bootstrap.py), thus
                      * PyErr_Print() below will not show any traceback. With
                      * debug, print the traceback to a message box. */
 
-                    const char *pvalue_cchar, *tb_cchar;
+                     const char *pvalue_cchar, *tb_cchar;
                     char *char_pvalue, *char_tb, *module_name;
                     PyObject *ptype, *pvalue, *pvalue_str;
                     PyObject *ptraceback, *tb, *tb_str;
@@ -460,6 +464,7 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
                     Py_DECREF(pvalue);
                     Py_DECREF(ptraceback);
                     Py_DECREF(module);
+                }
 
                 #else /* if defined(WINDOWED) and defined(LAUNCH_DEBUG) */
 
