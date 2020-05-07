@@ -243,8 +243,6 @@ pyi_search_path(char * result, const char * appname)
 bool
 pyi_path_executable(char *execfile, const char *appname)
 {
-    char buffer[PATH_MAX];
-
 #ifdef _WIN32
     wchar_t modulename_w[PATH_MAX];
 
@@ -261,6 +259,7 @@ pyi_path_executable(char *execfile, const char *appname)
     }
 
 #elif __APPLE__
+    char buffer[PATH_MAX];
     uint32_t length = sizeof(buffer);
 
     /* Mac OS X has special function to obtain path to executable.
@@ -277,6 +276,8 @@ pyi_path_executable(char *execfile, const char *appname)
     }
 
 #else /* ifdef _WIN32 */
+    char buffer[PATH_MAX];
+
     if (appname[0] == PYI_SEP || strchr(appname, PYI_SEP)) {
         /* Absolute or relative path: Canonicalize directory path,
          * but keep original basename.
