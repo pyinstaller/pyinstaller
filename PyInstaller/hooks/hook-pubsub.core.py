@@ -25,9 +25,3 @@ hiddenimports = collect_submodules('pubsub')
 # Thus they are invisible to ModuleGraph and must be included as data files
 
 pubsub_datas = collect_data_files('pubsub', include_py_files=True)
-
-
-def _match(dst):
-    return "kwargs" in dst or "arg1" in dst
-
-datas = [(src, dst) for src, dst in pubsub_datas if _match(dst)]
