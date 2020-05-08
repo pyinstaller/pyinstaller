@@ -430,7 +430,7 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
                      * PyErr_Print() below will not show any traceback. With
                      * debug, print the traceback to a message box. */
 
-                     const char *pvalue_cchar, *tb_cchar;
+                    const char *pvalue_cchar, *tb_cchar;
                     char *char_pvalue, *char_tb, *module_name;
                     PyObject *ptype, *pvalue, *pvalue_str;
                     PyObject *ptraceback, *tb, *tb_str;
