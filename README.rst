@@ -49,7 +49,7 @@ Main Advantages
   tricks to make external packages work are already integrated.)
 - Libraries like PyQt5, PyQt4, PySide, wxPython, matplotlib or Django are fully
   supported, without having to handle plugins or external data files manually.
-- Working code signing on OS X.
+- Works with code signing on OS X.
 - Bundles MS Visual C++ DLLs on Windows.
 
 
@@ -71,7 +71,7 @@ Requirements and Tested Platforms
 
 - Windows (32bit/64bit):
 
- - Windows XP or newer.
+ - PyInstaller should work on Windows 7 or newer, but we only officially support Windows 8+.
 
  - We don't support Python installed from the Windows store when not using virtual environments due to 
    `permission errors <https://github.com/pyinstaller/pyinstaller/pull/4702>`_ 
