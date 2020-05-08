@@ -209,8 +209,8 @@ applies them to the bundle being created.
    you can use helper functions from the ``PyInstaller.utils.hooks`` module
    (see below) to create this list, for example::
 
-      datas = collect_data_files('submodule1')
-      datas+= collect_data_files('submodule2')
+      datas  = collect_data_files('submodule1')
+      datas += collect_data_files('submodule2')
 
    In rare cases you may need to apply logic to locate
    particular files within the file system,
@@ -360,7 +360,6 @@ You are welcome to read the ``PyInstaller.utils.hooks`` module
 
 
 ``collect_all( 'package-name', include_py_files=False )``:
-
    Given a package name as a string, this function returns a tuple of ``datas, binaries,
    hiddenimports`` containing all data files, binaries, and modules in the given
    package, including any modules specified in the requirements for the
@@ -473,7 +472,7 @@ You are welcome to read the ``PyInstaller.utils.hooks`` module
    Return the path to the top-level Python package containing
    the Django files, or None if nothing can be found.
 
-``django_dottedstring_imports( 'django-root-dir' )``
+``django_dottedstring_imports( 'django-root-dir' )``:
    Return a list of all necessary Django modules specified in
    the Django settings.py file, such as the
    ``Django.settings.INSTALLED_APPS`` list and many others.
