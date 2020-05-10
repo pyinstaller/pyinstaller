@@ -33,6 +33,7 @@ final executable. This includes files in directories:
 
 ./bootloader/
 ./PyInstaller/loader
+./PyInstaller/hooks/rthooks
 
  
 About the PyInstaller Development Team
