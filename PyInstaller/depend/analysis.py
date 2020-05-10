@@ -124,7 +124,8 @@ class PyiModuleGraph(ModuleGraph):
         """
         self._top_script_node = None
         self._additional_files_cache = AdditionalFilesCache()
-        # Prepend PyInstaller hook dir to user hook dirs.
+        # Prepend PyInstaller hook dir hook directories from entry points and
+        # user hook dirs. Thus PyInstaller hook will have lowest priority.q
         self._user_hook_dirs = (
             [os.path.join(PACKAGEPATH, 'hooks')] + list(user_hook_dirs)
         )

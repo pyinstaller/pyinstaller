@@ -201,11 +201,14 @@ class Analysis(Target):
         self.hiddenimports.extend(CONF['hiddenimports'])
 
         # Add hook directories from PyInstaller entry points.
-        hookspath = hookspath or []
+        self.hookspath = []
         for entry_point in pkg_resources.iter_entry_points(
                 'pyinstaller40', 'hook-dirs'):
-            hookspath += list(entry_point.load()())
-        self.hookspath = hookspath
+            self.hookspath += list(entry_point.load()())
+        # Append directories in `hookspath` (`--additional-hooks-dir`) to
+        # take precedence over those from the entry points.
+        if hookspath:
+            self.hookspath.extend(hookspath)
 
         # Custom runtime hook files that should be included and started before
         # any existing PyInstaller runtime hooks.
