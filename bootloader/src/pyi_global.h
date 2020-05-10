@@ -81,6 +81,95 @@ typedef int bool;
 #endif
 
 /*
+ * These macros used to define variables to hold dynamically accessed entry
+ * points. These are declared 'extern' in the header, and defined fully later.
+ */
+#ifdef _WIN32
+
+    #define EXTDECLPROC(result, name, args) \
+    typedef result (__cdecl *__PROC__ ## name) args; \
+    extern __PROC__ ## name PI_ ## name;
+
+    #define EXTDECLVAR(vartyp, name) \
+    typedef vartyp __VAR__ ## name; \
+    extern __VAR__ ## name *PI_ ## name;
+
+#else
+
+    #define EXTDECLPROC(result, name, args) \
+    typedef result (*__PROC__ ## name) args; \
+    extern __PROC__ ## name PI_ ## name;
+
+    #define EXTDECLVAR(vartyp, name) \
+    typedef vartyp __VAR__ ## name; \
+    extern __VAR__ ## name *PI_ ## name;
+
+#endif  /* WIN32 */
+
+/* Macros to declare and get foreign entry points in the C file.
+ * Typedefs '__PROC__...' have been done above
+ *
+ * GETPROC_RENAMED is to support APIs functions that are simply renamed. We use
+ * the new name, and when loading an old Python lib, load the old symbol into the
+ * new name.
+ */
+#ifdef _WIN32
+
+    #define DECLPROC(name) \
+    __PROC__ ## name PI_ ## name = NULL;
+    #define GETPROCOPT(dll, name, sym) \
+    PI_ ## name = (__PROC__ ## name)GetProcAddress (dll, #sym)
+    #define GETPROC(dll, name) \
+    GETPROCOPT(dll, name, name); \
+    if (!PI_ ## name) { \
+        FATAL_WINERROR("GetProcAddress", "Failed to get address for " #name "\n"); \
+        return -1; \
+    }
+    #define GETPROC_RENAMED(dll, name, sym) \
+    GETPROCOPT(dll, name, sym); \
+    if (!PI_ ## name) { \
+        FATAL_WINERROR("GetProcAddress", "Failed to get address for " #sym "\n"); \
+        return -1; \
+    }
+    #define DECLVAR(name) \
+    __VAR__ ## name * PI_ ## name = NULL;
+    #define GETVAR(dll, name) \
+    PI_ ## name = (__VAR__ ## name *)GetProcAddress (dll, #name); \
+    if (!PI_ ## name) { \
+        FATAL_WINERROR("GetProcAddress", "Failed to get address for " #name "\n"); \
+        return -1; \
+    }
+
+#else  /* ifdef _WIN32 */
+
+    #define DECLPROC(name) \
+    __PROC__ ## name PI_ ## name = NULL;
+    #define GETPROCOPT(dll, name, sym) \
+    PI_ ## name = (__PROC__ ## name)dlsym (dll, #sym)
+    #define GETPROC(dll, name) \
+    GETPROCOPT(dll, name, name); \
+    if (!PI_ ## name) { \
+        FATALERROR ("Cannot dlsym for " #name "\n"); \
+        return -1; \
+    }
+    #define GETPROC_RENAMED(dll, name, sym) \
+    GETPROCOPT(dll, name, sym); \
+    if (!PI_ ## name) { \
+        FATALERROR ("Cannot dlsym for " #sym "\n"); \
+        return -1; \
+    }
+    #define DECLVAR(name) \
+    __VAR__ ## name * PI_ ## name = NULL;
+    #define GETVAR(dll, name) \
+    PI_ ## name = (__VAR__ ## name *)dlsym(dll, #name); \
+    if (!PI_ ## name) { \
+        FATALERROR ("Cannot dlsym for " #name "\n"); \
+        return -1; \
+    }
+
+#endif  /* WIN32 */
+
+/*
  * Debug and error macros.
  */
 
