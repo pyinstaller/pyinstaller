@@ -38,6 +38,7 @@ def _freeze_support():
             set(sys.argv[1:-2]) == set(_args_from_interpreter_flags()) and \
             sys.argv[-2] == '-c' and \
             (sys.argv[-1].startswith('from multiprocessing.semaphore_tracker import main') or \
+             sys.argv[-1].startswith('from multiprocessing.resource_tracker import main') or \
              sys.argv[-1].startswith('from multiprocessing.forkserver import main')):
         exec(sys.argv[-1])
         sys.exit()
@@ -64,6 +65,7 @@ if sys.platform.startswith('win'):
     import multiprocessing.popen_spawn_win32 as forking
 else:
     import multiprocessing.popen_fork as forking
+    import multiprocessing.popen_spawn_posix as spawning
 
 # Patch Popen to re-set _MEIPASS2 from sys._MEIPASS.
 class _Popen(forking.Popen):
@@ -86,3 +88,27 @@ class _Popen(forking.Popen):
                     os.putenv('_MEIPASS2', '')
 
 forking.Popen = _Popen
+
+# fix spawn as well
+# Patch Popen to re-set _MEIPASS2 from sys._MEIPASS.
+if not sys.platform.startswith('win'):
+    class _Spawning_Popen(spawning.Popen):
+        def __init__(self, *args, **kw):
+            if hasattr(sys, 'frozen'):
+                # We have to set original _MEIPASS2 value from sys._MEIPASS
+                # to get --onefile mode working.
+                os.putenv('_MEIPASS2', sys._MEIPASS)  # @UndefinedVariable
+            try:
+                super(_Spawning_Popen, self).__init__(*args, **kw)
+            finally:
+                if hasattr(sys, 'frozen'):
+                    # On some platforms (e.g. AIX) 'os.unsetenv()' is not
+                    # available. In those cases we cannot delete the variable
+                    # but only set it to the empty string. The bootloader
+                    # can handle this case.
+                    if hasattr(os, 'unsetenv'):
+                        os.unsetenv('_MEIPASS2')
+                    else:
+                        os.putenv('_MEIPASS2', '')
+
+    spawning.Popen = _Spawning_Popen
