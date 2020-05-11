@@ -124,10 +124,9 @@ class PyiModuleGraph(ModuleGraph):
         """
         self._top_script_node = None
         self._additional_files_cache = AdditionalFilesCache()
-        # Prepend PyInstaller hook dir hook directories from entry points and
-        # user hook dirs. Thus PyInstaller hook will have lowest priority.q
+        # Command line, Entry Point, and then builtin hook dirs.
         self._user_hook_dirs = (
-            [os.path.join(PACKAGEPATH, 'hooks')] + list(user_hook_dirs)
+            list(user_hook_dirs) + [os.path.join(PACKAGEPATH, 'hooks')]
         )
         # Hook-specific lookup tables.
         # These need to reset when reusing cached PyiModuleGraph to avoid
@@ -296,7 +295,7 @@ class PyiModuleGraph(ModuleGraph):
             # Remember the node for the first script.
             try:
                 self._top_script_node = super(PyiModuleGraph, self).run_script(pathname)
-            except SyntaxError:
+            except SyntaxError as e:
                 print("\nSyntax error in", pathname, file=sys.stderr)
                 formatted_lines = traceback.format_exc().splitlines(True)
                 print(*formatted_lines[-4:], file=sys.stderr)
