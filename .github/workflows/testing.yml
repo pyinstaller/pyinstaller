@@ -24,7 +24,7 @@ jobs:
     - name: Homebrew setup
       run: |
         brew update
-        brew install freetype
+        brew install freetype pkg-config
 
     - name: Install dependencies
       run: |
