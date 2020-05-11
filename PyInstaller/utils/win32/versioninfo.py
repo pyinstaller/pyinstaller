@@ -275,8 +275,8 @@ class FixedFileInfo:
          self.fileType,
          self.fileSubtype,
          self.fileDateMS,
-         self.fileDateLS) = struct.unpack('13L', data[i:i+52])
-        return i+52
+         self.fileDateLS) = struct.unpack('13L', data[i:i + 52])
+        return i + 52
 
     def toRaw(self):
         return struct.pack('13L', self.sig,
