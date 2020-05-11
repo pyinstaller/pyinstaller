@@ -1,0 +1,1 @@
+Change the hook collection order so that the hook-priority is command line, then entry-point, then PyInstaller builtins.
