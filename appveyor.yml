@@ -143,6 +143,7 @@ test_script:
         %PYTEST% tests/functional/test_libraries.py
         -k "not test_noarchive[onefile]" ^&^&
         python -m PyInstaller.utils.run_tests -c PyInstaller\utils\pytest.ini
+               --include_only=pyi_hooksample.
     ) else (
       set PYTEST_CMD=%PYTEST% tests/unit tests/functional
         --ignore tests/functional/test_libraries.py

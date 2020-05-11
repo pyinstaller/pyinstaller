@@ -80,7 +80,7 @@ jobs:
         # something unexpected in the filesystem (it searches from the root
         # dir all the way to the top of the filesystem per
         # https://docs.pytest.org/en/latest/customize.html).
-        - python -m PyInstaller.utils.run_tests -c PyInstaller/utils/pytest.ini
+        - python -m PyInstaller.utils.run_tests -c PyInstaller/utils/pytest.ini --include_only=pyi_hooksample.
 
     - &test-pyinstaller
       stage: Test - PyInstaller
