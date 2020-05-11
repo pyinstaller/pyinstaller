@@ -723,7 +723,6 @@ pyi_copy_file(const char *src, const char *dst, const char *filename)
     return error;
 }
 
-/* TODO use dlclose() when exiting. */
 /* Load the shared dynamic library (DLL) */
 dylib_t
 pyi_utils_dlopen(const char *dllpath)
@@ -752,6 +751,26 @@ pyi_utils_dlopen(const char *dllpath)
     return dlopen(dllpath, dlopenMode);
 #endif
 
+}
+
+/* TODO use pyi_utils_dlclose() when exiting. */
+/* Unlink/Close the shared library.
+ * Returns zero on success, a nonzero value on failure.
+ *
+ * Interesting fact: many debuggers link to attached libraries
+ * too, therefore calling dlclose from within the bootloader
+ * does **not** necessarily mean the library will be unloaded
+ * if a debugger is attached. */
+int
+pyi_utils_dlclose(dylib_t dll)
+{
+#ifdef _WIN32
+    /* FreeLibrary returns a nonzero value on success,
+     * invert it to provide a common return value */
+    return !FreeLibrary(dll);
+#else
+    return dlclose(dll);
+#endif
 }
 
 /* ////////////////////////////////////////////////////////////////// */
