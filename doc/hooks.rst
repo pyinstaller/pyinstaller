@@ -399,20 +399,39 @@ You are welcome to read the ``PyInstaller.utils.hooks`` module
    'foo.test'))`` excludes ``foo.test`` and ``foo.test.one`` but not
    ``foo.testifier``.
 
-``collect_data_files( 'module-name', include_py_files=False, subdir=None )``:
-   Returns a list of (source, dest) tuples for all non-Python (i.e. data)
-   files found in *module-name*, ready to be assigned to the ``datas`` global.
-   *module-name* is the fully-qualified name of a module or
-   package (but not a zipped "egg").
-   The function uses ``os.walk()`` to visit the module directory recursively.
-   ``subdir``, if given, restricts the search to a relative subdirectory.
+``collect_data_files( package, include_py_files=False, subdir=None, excludes=None, includes=None )``:
+    This routine produces a list of ``(source, dest)`` non-Python (i.e. data)
+    files which reside in ``package``. Its results can be directly assigned to
+    ``datas`` in a hook script; see, for example, ``hook-sphinx.py``.
+    Parameters:
 
-   Normally Python executable files (ending in ``.py``, ``.pyc``, etc.)
-   are not collected. Pass ``include_py_files=True`` to collect those
-   files as well.
-   (This can be used with routines such as those in ``pkgutil`` that
-   search a directory for Python executable files and load them as
-   extensions or plugins.)
+    -   The ``package`` parameter is a string which names the package.
+    -   By default, all Python executable files (those ending in ``.py``,
+        ``.pyc``, and so on) will NOT be collected; setting the
+        ``include_py_files`` argument to ``True`` collects these files as well.
+        This is typically used with Python routines (such as those in
+        ``pkgutil``) that search a given directory for Python executable files
+        then load them as extensions or plugins.
+    -   The ``subdir`` argument gives a subdirectory relative to ``package`` to
+        search, which is helpful when submodules are imported at run-time from a
+        directory lacking ``__init__.py``.
+    -   The ``excludes`` argument contains a sequence of strings or Paths. These
+        provide a list of `globs <https://docs.python.org/3/library/pathlib.html#pathlib.Path.glob>`_
+        to exclude from the collected data files; if a directory matches the
+        provided glob, all files it contains will be excluded as well. All
+        elements must be relative paths, which are relative to the provided
+        package's path (/ ``subdir`` if provided).
+
+        Therefore, ``*.txt`` will exclude only ``.txt`` files in ``package``\ 's
+        path, while ``**/*.txt`` will exclude all ``.txt`` files in
+        ``package``\ 's path and all its subdirectories. Likewise,
+        ``**/__pycache__`` will exclude all files contained in any subdirectory
+        named ``__pycache__``.
+    -   The ``includes`` function like ``excludes``, but only include matching
+        paths. ``excludes`` override ``includes``: a file or directory in both
+        lists will be excluded.
+
+    This function does not work on zipped Python eggs.
 
 ``collect_dynamic_libs( 'module-name' )``:
    Returns a list of (source, dest) tuples for all the dynamic libs

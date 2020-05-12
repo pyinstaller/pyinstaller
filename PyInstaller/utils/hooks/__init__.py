@@ -15,6 +15,7 @@ import pkg_resources
 import pkgutil
 import sys
 import textwrap
+from pathlib import Path
 
 from ...compat import base_prefix, exec_command_stdout, exec_python, \
     is_darwin, is_venv, string_types, open_file, \
@@ -662,20 +663,39 @@ def collect_dynamic_libs(package, destdir=None):
     return dylibs
 
 
-def collect_data_files(package, include_py_files=False, subdir=None):
-    """
-    This routine produces a list of (source, dest) non-Python (i.e. data)
-    files which reside in package. Its results can be directly assigned to
-    ``datas`` in a hook script; see, for example, hook-sphinx.py. The
-    package parameter must be a string which names the package.
-    By default, all Python executable files (those ending in .py, .pyc,
-    and so on) will NOT be collected; setting the include_py_files
-    argument to True collects these files as well. This is typically used
-    with Python routines (such as those in pkgutil) that search a given
-    directory for Python executable files then load them as extensions or
-    plugins. The optional subdir give a subdirectory relative to package to
-    search, which is helpful when submodules are imported at run-time from a
-    directory lacking __init__.py
+def collect_data_files(package, include_py_files=False, subdir=None,
+                       excludes=None, includes=None):
+    r"""
+    This routine produces a list of ``(source, dest)`` non-Python (i.e. data)
+    files which reside in ``package``. Its results can be directly assigned to
+    ``datas`` in a hook script; see, for example, ``hook-sphinx.py``.
+    Parameters:
+
+    -   The ``package`` parameter is a string which names the package.
+    -   By default, all Python executable files (those ending in ``.py``,
+        ``.pyc``, and so on) will NOT be collected; setting the
+        ``include_py_files`` argument to ``True`` collects these files as well.
+        This is typically used with Python routines (such as those in
+        ``pkgutil``) that search a given directory for Python executable files
+        then load them as extensions or plugins.
+    -   The ``subdir`` argument gives a subdirectory relative to ``package`` to
+        search, which is helpful when submodules are imported at run-time from a
+        directory lacking ``__init__.py``.
+    -   The ``excludes`` argument contains a sequence of strings or Paths. These
+        provide a list of `globs <https://docs.python.org/3/library/pathlib.html#pathlib.Path.glob>`_
+        to exclude from the collected data files; if a directory matches the
+        provided glob, all files it contains will be excluded as well. All
+        elements must be relative paths, which are relative to the provided
+        package's path (/ ``subdir`` if provided).
+
+        Therefore, ``*.txt`` will exclude only ``.txt`` files in ``package``\ 's
+        path, while ``**/*.txt`` will exclude all ``.txt`` files in
+        ``package``\ 's path and all its subdirectories. Likewise,
+        ``**/__pycache__`` will exclude all files contained in any subdirectory
+        named ``__pycache__``.
+    -   The ``includes`` function like ``excludes``, but only include matching
+        paths. ``excludes`` override ``includes``: a file or directory in both
+        lists will be excluded.
 
     This function does not work on zipped Python eggs.
 
@@ -688,6 +708,7 @@ def collect_data_files(package, include_py_files=False, subdir=None):
     if not isinstance(package, string_types):
         raise TypeError('package must be a str')
 
+    # Compute the root path for the provided patckage.
     pkg_base, pkg_dir = get_package_paths(package)
     if subdir:
         pkg_dir = os.path.join(pkg_dir, subdir)
@@ -698,18 +719,52 @@ def collect_data_files(package, include_py_files=False, subdir=None):
     if not pkg_base.endswith(os.sep):
         pkg_base += os.sep
 
-    # Walk through all file in the given package, looking for data files.
-    datas = []
-    for dirpath, dirnames, files in os.walk(pkg_dir):
-        for f in files:
-            extension = os.path.splitext(f)[1]
-            if include_py_files or (extension not in PY_IGNORE_EXTENSIONS):
-                # Produce the tuple
-                # (/abs/path/to/source/mod/submod/file.dat,
-                #  mod/submod)
-                source = os.path.join(dirpath, f)
-                dest = remove_prefix(dirpath, pkg_base)
-                datas.append((source, dest))
+    # Make sure the excludes are a list; this also makes a copy, so we don't
+    # modify the original.
+    excludes = list(excludes) if excludes else []
+    # These excludes may contain direcories which need to be searched.
+    excludes_len = len(excludes)
+    # Including py files means don't exclude them. This pattern will search any
+    # directories for containing files, so don't modify ``excludes_len``.
+    if not include_py_files:
+        excludes += ['**/*' + s for s in ALL_SUFFIXES]
+
+    # If not specified, include all files. Follow the same process as the
+    # excludes.
+    includes = list(includes) if includes else ["**/*"]
+    includes_len = len(includes)
+
+    # Determine what source files to use.
+    sources = set()
+
+    # A helper function to glob the in/ex "cludes", adding a wildcard to refer
+    # to all files under a subdirectory if a subdirectory is matched by the
+    # first ``clude_len`` patterns. Otherwise, it in/excludes the matched file.
+    # **This modifies** ``cludes``.
+    def clude_walker(
+        # A list of paths relative to ``pkg_dir`` to in/exclude.
+        cludes,
+        # The number of ``cludes`` for which matching directories should be
+        # searched for all files under them.
+        clude_len,
+        # True if the list is includes, False for excludes.
+        is_include
+    ):
+        for i, c in enumerate(cludes):
+            for g in Path(pkg_dir).glob(c):
+                if g.is_dir():
+                    # Only files are sources. Subdirectories are not.
+                    if i < clude_len:
+                        # In/exclude all files under a matching subdirectory.
+                        cludes.append(str((g / "**/*").relative_to(pkg_dir)))
+                else:
+                    # In/exclude a matching file.
+                    sources.add(g) if is_include else sources.discard(g)
+    clude_walker(includes, includes_len, True)
+    clude_walker(excludes, excludes_len, False)
+
+    # Tranform the sources into tuples for ``datas``.
+    datas = [(str(s), remove_prefix(str(s.parent), pkg_base)) for s in sources]
 
     logger.debug("collect_data_files - Found files: %s", datas)
     return datas
