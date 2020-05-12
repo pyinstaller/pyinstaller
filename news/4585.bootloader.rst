@@ -1,0 +1,4 @@
+* Rework bootloader from using strcpy/strncpy with "is this string
+  terminated"-check to use snprintf(); check succes at more places. (This
+  started from fixing GCC warnings for strncpy and strncat.)
+* Started a small test-suite for bootloader basic functions.

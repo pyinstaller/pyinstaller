@@ -46,7 +46,7 @@ the following code will get its path (in both the non-bundled and the bundled
 case)::
 
     from os import path
-    path_to_dat = path.join(path.dirname(__file__), 'file.dat')
+    path_to_dat = path.abspath(path.join(path.dirname(__file__), 'file.dat'))
 
 In the bundled main script itself the above might not work, as it is unclear
 where it resides in the package hierarchy. So in when trying to find data files
@@ -57,7 +57,13 @@ bundled and in the bundle folder if it is bundled::
     from os import path
     import sys
     bundle_dir = getattr(sys, '_MEIPASS', path.abspath(path.dirname(__file__)))
-    path_to_dat = path.join(bundle_dir, 'other-file.dat')
+    path_to_dat = path.abspath(path.join(bundle_dir, 'other-file.dat'))
+
+It is always best to use absolute paths, so
+``path.abspath(path.join(bundle_dir, 'other-file.dat'))`` is preferred over
+``path.join(bundle_dir, 'other-file.dat')``. Using absolute paths means that
+you're less likely to encounter errors that can occur when using relative
+paths.
 
 
 Using ``sys.executable`` and ``sys.argv[0]``

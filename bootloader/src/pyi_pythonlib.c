@@ -14,6 +14,8 @@
 /*
  * Functions to load, initialize and launch Python.
  */
+/* size of buffer to store the name of the Python DLL library */
+#define DLLNAME_LEN (64)
 
 /* TODO: use safe string functions */
 #define _CRT_SECURE_NO_WARNINGS 1
@@ -25,7 +27,6 @@
     #include <winsock.h> /* ntohl */
 #else
     #include <dlfcn.h>  /* dlerror */
-    #include <limits.h> /* PATH_MAX */
     #ifdef __FreeBSD__
 /* freebsd issue #188316 */
         #include <arpa/inet.h>  /* ntohl */
@@ -40,6 +41,7 @@
 #include <locale.h>  /* setlocale */
 
 /* PyInstaller headers. */
+#include "pyi_pythonlib.h"
 #include "pyi_global.h"
 #include "pyi_path.h"
 #include "pyi_archive.h"
@@ -55,24 +57,26 @@ pyi_pylib_load(ARCHIVE_STATUS *status)
 {
     dylib_t dll;
     char dllpath[PATH_MAX];
-    char dllname[64];
-    char *p;
-    int len;
+    char dllname[DLLNAME_LEN];
+    size_t len;
 
 /*
- * On AIX Append the shared object member to the library path
- * to make it look like this:
- *   libpython2.6.a(libpython2.6.so)
+ * On AIX Append the name of shared object library path might be an archive.
+ * In that case, modify the name to make it look like:
+ *   libpython3.6.a(libpython3.6.so)
+ * Shared object names ending with .so may be used asis.
  */
 #ifdef AIX
     /*
-     * Determine if shared lib is in libpython?.?.so or libpython?.?.a(libpython?.?.so) format
+     * Determine if shared lib is in libpython?.?.so or
+     * libpython?.?.a(libpython?.?.so) format
      */
+    char *p;
     if ((p = strrchr(status->cookie.pylibname, '.')) != NULL && strcmp(p, ".a") == 0) {
       /*
        * On AIX 'ar' archives are used for both static and shared object.
        * To load a shared object from a library, it should be loaded like this:
-       *   dlopen("libpython2.6.a(libpython2.6.so)", RTLD_MEMBER)
+       *   dlopen("libpythonX.Y.a(libpythonX.Y.so)", RTLD_MEMBER)
        */
       uint32_t pyvers_major;
       uint32_t pyvers_minor;
@@ -80,20 +84,20 @@ pyi_pylib_load(ARCHIVE_STATUS *status)
       pyvers_major = pyvers / 10;
       pyvers_minor = pyvers % 10;
 
-      len = snprintf(dllname, 64,
+      len = snprintf(dllname, DLLNAME_LEN,
               "libpython%01d.%01d.a(libpython%01d.%01d.so)",
               pyvers_major, pyvers_minor, pyvers_major, pyvers_minor);
     }
     else {
-      strncpy(dllname, status->cookie.pylibname, 64);
+      len = snprintf(dllname, DLLNAME_LEN, "%s", status->cookie.pylibname);
     }
 #else
-    len = 0;
-    strncpy(dllname, status->cookie.pylibname, 64);
+    len = snprintf(dllname, DLLNAME_LEN, "%s", status->cookie.pylibname);
 #endif
 
-    if (len >= 64 || dllname[64-1] != '\0') {
-        FATALERROR("DLL name length exceeds buffer\n");
+    if (len >= DLLNAME_LEN) {
+        FATALERROR("Reported length (%d) of DLL name (%s) length exceeds buffer[%d] space\n",
+                   len, status->cookie.pylibname, DLLNAME_LEN);
         return -1;
     }
 
@@ -105,7 +109,11 @@ pyi_pylib_load(ARCHIVE_STATUS *status)
      */
     if (status->has_temp_directory) {
         char ucrtpath[PATH_MAX];
-        pyi_path_join(ucrtpath, status->temppath, "ucrtbase.dll");
+        if (pyi_path_join(ucrtpath,
+                          status->temppath, "ucrtbase.dll") == NULL) {
+            FATALERROR("Path of ucrtbase.dll (%s) length exceeds "
+                       "buffer[%d] space\n", status->temppath, PATH_MAX);
+        };
         if (pyi_path_exists(ucrtpath)) {
             VS("LOADER: ucrtbase.dll found: %s\n", ucrtpath);
             pyi_utils_dlopen(ucrtpath);
@@ -117,7 +125,10 @@ pyi_pylib_load(ARCHIVE_STATUS *status)
      * Look for Python library in homepath or temppath.
      * It depends on the value of mainpath.
      */
-    pyi_path_join(dllpath, status->mainpath, dllname);
+    if (pyi_path_join(dllpath, status->mainpath, dllname) == NULL) {
+        FATALERROR("Path of DLL (%s) length exceeds buffer[%d] space\n",
+                   status->mainpath, PATH_MAX);
+    };
 
     VS("LOADER: Python library: %s\n", dllpath);
 
@@ -410,11 +421,15 @@ pyi_pylib_start_python(ARCHIVE_STATUS *status)
 
     /* Set sys.path */
     /* sys.path = [base_library, mainpath] */
-    strncpy(pypath, status->mainpath, strlen(status->mainpath));
-    strncat(pypath, PYI_SEPSTR, strlen(PYI_SEPSTR));
-    strncat(pypath, "base_library.zip", strlen("base_library.zip"));
-    strncat(pypath, PYI_PATHSEPSTR, strlen(PYI_PATHSEPSTR));
-    strncat(pypath, status->mainpath, strlen(status->mainpath));
+    if (snprintf(pypath, sizeof pypath, "%s%cbase_library.zip%c%s",
+                 status->mainpath, PYI_SEP, PYI_PATHSEP, status->mainpath)
+        >= sizeof pypath) {
+        // This should never happen, since mainpath is < PATH_MAX and pypath is
+        // huge enough
+        FATALERROR("sys.path (based on %s) exceeds buffer[%d] space\n",
+                   status->mainpath, sizeof pypath);
+        return -1;
+    }
 
     /*
      * E must set sys.path to have base_library.zip before

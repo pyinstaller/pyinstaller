@@ -178,6 +178,10 @@ pyi_win32_wcs_to_mbs(const wchar_t *wstr)
     }
 
     str = (char *)calloc(len + 1, sizeof(char));
+    if (str == NULL) {
+        FATAL_WINERROR("win32_wcs_to_mbs", "Out of memory.");
+        return NULL;
+    };
 
     ret = WideCharToMultiByte(CP_ACP,    /* CodePage */
                               0,         /* dwFlags */
@@ -213,6 +217,9 @@ pyi_win32_argv_to_utf8(int argc, wchar_t **wargv)
     char ** argv;
 
     argv = (char **)calloc(argc + 1, sizeof(char *));
+    if (argv == NULL) {
+        return NULL;
+    };
 
     for (i = 0; i < argc; i++) {
         argv[i] = pyi_win32_utils_to_utf8(NULL, wargv[i], 0);
@@ -244,6 +251,9 @@ pyi_win32_wargv_from_utf8(int argc, char **argv)
     wchar_t ** wargv;
 
     wargv = (wchar_t **)calloc(argc + 1, sizeof(wchar_t *));
+    if (wargv == NULL) {
+        return NULL;
+    };
 
     for (i = 0; i < argc; i++) {
         wargv[i] = pyi_win32_utils_from_utf8(NULL, argv[i], 0);
@@ -303,6 +313,10 @@ pyi_win32_utils_to_utf8(char *str, const wchar_t *wstr, size_t len)
         }
 
         output = (char *)calloc(len + 1, sizeof(char));
+        if (output == NULL) {
+            FATAL_WINERROR("win32_utils_to_utf8", "Out of memory.");
+            return NULL;
+        };
     }
     else {
         output = str;
@@ -363,6 +377,10 @@ pyi_win32_utils_from_utf8(wchar_t *wstr, const char *str, size_t wlen)
         }
 
         output = (wchar_t *)calloc(wlen + 1, sizeof(wchar_t));
+        if (output == NULL) {
+            FATAL_WINERROR("win32_utils_from_utf8", "Out of memory.");
+            return NULL;
+        };
     }
     else {
         output = wstr;

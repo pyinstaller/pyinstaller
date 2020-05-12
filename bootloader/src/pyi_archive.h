@@ -18,6 +18,9 @@
 #ifndef PYI_ARCHIVE_H
 #define PYI_ARCHIVE_H
 
+#include "pyi_global.h"
+#include <stdio.h>  /* FILE */
+
 /* Types of CArchive items. */
 #define ARCHIVE_ITEM_BINARY           'b'  /* binary */
 #define ARCHIVE_ITEM_DEPENDENCY       'd'  /* runtime option */
@@ -115,8 +118,6 @@ extern int pyvers;
 /**
  * The gory detail level
  */
-int pyi_arch_set_paths(ARCHIVE_STATUS *status, char const * archivePath,
-                       char const * archiveName);
 int pyi_arch_open(ARCHIVE_STATUS *status);
 
 /*
@@ -128,20 +129,11 @@ void pyi_arch_status_free(ARCHIVE_STATUS *status);
 /*
  * Setup the paths and open the archive
  *
- * @param archivePath  The path (with trailing backslash) to the archive.
+ * @param archivePath  The path including filename to the archive.
  *
- * @param archiveName  The file name of the archive, without a path.
- *
- * @param workpath     The path (with trailing backslash) to where
- *                     the binaries were extracted. If they have not
- *                     benn extracted yet, this is NULL. If they have,
- *                     this will either be archivePath, or a temp dir
- *                     where the user has write permissions.
- *
- * @return 0 on success, non-zero otherwise.
+ * @return true on success, false otherwise.
  */
-int pyi_arch_setup(ARCHIVE_STATUS *status, char const * archivePath,
-                   char const * archiveName);
+bool pyi_arch_setup(ARCHIVE_STATUS *status, char const * archivePath);
 
 TOC *getFirstTocEntry(ARCHIVE_STATUS *status);
 TOC *getNextTocEntry(ARCHIVE_STATUS *status, TOC *entry);

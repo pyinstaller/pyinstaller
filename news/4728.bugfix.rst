@@ -1,0 +1,1 @@
+* (AIX) Fix uninitialized variable.

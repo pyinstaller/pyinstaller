@@ -42,7 +42,6 @@
     #else
         #include <dlfcn.h>
     #endif
-    #include <limits.h>  /* PATH_MAX */
     #include <signal.h>  /* kill, */
     #include <sys/wait.h>
     #include <unistd.h>  /* rmdir, unlink, mkdtemp */
@@ -558,11 +557,8 @@ pyi_open_target(const char *path, const char* name_)
     char *dir;
     size_t len;
 
-    strncpy(fnm, path, PATH_MAX);
-    strncpy(name, name_, PATH_MAX);
-
-    /* Check if the path names could be copied */
-    if (fnm[PATH_MAX-1] != '\0' || name[PATH_MAX-1] != '\0') {
+    if (snprintf(fnm, PATH_MAX, "%s", path) >= PATH_MAX ||
+        snprintf(name, PATH_MAX, "%s", name_) >= PATH_MAX) {
         return NULL;
     }
 
@@ -982,7 +978,8 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
     for (signum = 0; signum < num_signals; ++signum) {
         // don't mess with SIGCHLD/SIGCLD; it affects our ability
         // to wait() for the child to exit
-        if (signum != SIGCHLD && signum != SIGCLD) {
+        // don't change SIGTSP handling to allow Ctrl-Z
+        if (signum != SIGCHLD && signum != SIGCLD && signum != SIGTSTP) {
             signal(signum, handler);
         }
     }
