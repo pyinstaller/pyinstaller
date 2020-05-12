@@ -36,6 +36,7 @@ from PyInstaller.depend import bindepend
 from PyInstaller.depend.analysis import initialize_modgraph
 from PyInstaller.building.api import PYZ, EXE, COLLECT, MERGE
 from PyInstaller.building.datastruct import TOC, Target, Tree, _check_guts_eq
+from PyInstaller.building.splash import Splash
 from PyInstaller.building.osx import BUNDLE
 from PyInstaller.building.toc_conversion import DependencyProcessor
 from PyInstaller.building.utils import \
@@ -666,6 +667,7 @@ def build(spec, distpath, workpath, clean_build):
         'MERGE': MERGE,
         'PYZ': PYZ,
         'Tree': Tree,
+        'Splash': Splash,
         # Python modules available for .spec.
         'os': os,
         'pyi_crypto': pyz_crypto,
