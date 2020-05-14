@@ -7,8 +7,6 @@ but uses a graph data structure and 2.3 features
 XXX: Verify all calls to _import_hook (and variants) to ensure that
 imports are done in the right way.
 """
-from __future__ import absolute_import, print_function
-
 #FIXME: To decrease the likelihood of ModuleGraph exceeding the recursion limit
 #and hence unpredictably raising fatal exceptions, increase the recursion
 #limit at PyInstaller startup (i.e., in the
@@ -19,7 +17,6 @@ import pkg_resources
 
 import ast
 import codecs
-import dis
 import imp
 import marshal
 import os
@@ -27,7 +24,6 @@ import pkgutil
 import sys
 import re
 from collections import deque, namedtuple
-from struct import unpack
 import warnings
 
 from altgraph.ObjectGraph import ObjectGraph
@@ -35,8 +31,7 @@ from altgraph import GraphError
 
 from . import util
 from . import zipio
-from ._compat import get_instructions, BytesIO, StringIO, \
-     pathname2url, _cOrd, _READ_MODE
+from ._compat import BytesIO, StringIO, pathname2url, _READ_MODE
 
 
 BOM = codecs.BOM_UTF8.decode('utf-8')

@@ -80,17 +80,6 @@ IMPORTANT: Do NOT post this list to the issue-tracker. Use it as a basis for
 """
 
 
-def _old_api_error(obj_name):
-    """
-    Cause PyInstall to exit when .spec file uses old api.
-    :param obj_name: Name of the old api that is no longer suppored.
-    """
-    raise SystemExit('%s has been removed in PyInstaller 2.0. '
-                     'Please update your spec-file. See '
-                     'http://www.pyinstaller.org/wiki/MigrateTo2.0 '
-                     'for details' % obj_name)
-
-
 # TODO find better place for function.
 def setupUPXFlags():
     f = compat.getenv("UPX", "")
@@ -129,13 +118,13 @@ class Analysis(Target):
     zipfiles
             The zipfiles dependencies (usually .egg files).
     """
-    _old_scripts = set((
+    _old_scripts = {
         absnormpath(os.path.join(HOMEPATH, "support", "_mountzlib.py")),
         absnormpath(os.path.join(HOMEPATH, "support", "useUnicode.py")),
         absnormpath(os.path.join(HOMEPATH, "support", "useTK.py")),
         absnormpath(os.path.join(HOMEPATH, "support", "unpackTK.py")),
-        absnormpath(os.path.join(HOMEPATH, "support", "removeTK.py")),
-        ))
+        absnormpath(os.path.join(HOMEPATH, "support", "removeTK.py"))
+    }
 
     def __init__(self, scripts, pathex=None, binaries=None, datas=None,
                  hiddenimports=None, hookspath=None, excludes=None, runtime_hooks=None,
@@ -585,16 +574,6 @@ def build(spec, distpath, workpath, clean_build):
     """
     from ..config import CONF
 
-    # For combatibility with Python < 2.7.9 we can not use `lambda`,
-    # but need to declare _old_api_error as beeing global, see issue #1408
-    def TkPKG(*args, **kwargs):
-        global _old_api_error
-        _old_api_error('TkPKG')
-
-    def TkTree(*args, **kwargs):
-        global _old_api_error
-        _old_api_error('TkTree')
-
     # Ensure starting tilde and environment variables get expanded in distpath / workpath.
     # '~/path/abc', '${env_var_name}/path/abc/def'
     distpath = compat.expand_path(distpath)
@@ -661,9 +640,6 @@ def build(spec, distpath, workpath, clean_build):
         'MERGE': MERGE,
         'PYZ': PYZ,
         'Tree': Tree,
-        # Old classes for .spec - raise Exception for user.
-        'TkPKG': TkPKG,
-        'TkTree': TkTree,
         # Python modules available for .spec.
         'os': os,
         'pyi_crypto': pyz_crypto,

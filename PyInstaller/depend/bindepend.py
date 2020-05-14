@@ -196,7 +196,7 @@ def matchDLLArch(filename):
         pe.close()
     except pefile.PEFormatError as exc:
         raise SystemExit('Can not get architecture from file: %s\n'
-                         '  Reason: %s' % (pefilename, exception))
+                         '  Reason: %s' % (pefilename, exc))
     return match_arch
 
 
@@ -275,7 +275,7 @@ def pkg_resources_get_default_cache():
             return os.path.join(dirname, 'Python-Eggs')
     else:
         raise RuntimeError(
-            "Please set the PYTHON_EGG_CACHE enviroment variable"
+            "Please set the PYTHON_EGG_CACHE environment variable"
         )
 
 

@@ -15,13 +15,13 @@ Various classes and functions to provide some backwards-compatibility
 with previous versions of Python onward.
 """
 
-import io
 import os
 import platform
 import site
 import subprocess
 import sys
 import errno
+import importlib.machinery
 from .exceptions import ExecCommandFailed
 
 # Copied from https://docs.python.org/3/library/platform.html#cross-platform.
@@ -142,11 +142,10 @@ else:
 # compat.base_prefix with the path to the
 # base Python installation.
 
-base_prefix = getattr( sys, 'real_prefix',
-                       getattr( sys, 'base_prefix', sys.prefix )
-                        )
+base_prefix = os.path.abspath(
+    getattr(sys, 'real_prefix', getattr(sys, 'base_prefix', sys.prefix))
+)
 # Ensure `base_prefix` is not containing any relative parts.
-base_prefix = os.path.abspath(base_prefix)
 is_venv = is_virtualenv = base_prefix != os.path.abspath(sys.prefix)
 
 # Conda environments sometimes have different paths or apply patches to
@@ -178,7 +177,7 @@ if is_win:
         from win32ctypes.pywin32 import pywintypes  # noqa: F401
         from win32ctypes.pywin32 import win32api
     except ImportError:
-        # This environment variable is set by seutp.py
+        # This environment variable is set by setup.py
         # - It's not an error for pywin32 to not be installed at that point
         if not os.environ.get('PYINSTALLER_NO_PYWIN32_FAILURE'):
             raise SystemExit('PyInstaller cannot check for assembly dependencies.\n'
@@ -186,61 +185,20 @@ if is_win:
                              'pip install pywin32-ctypes\n')
 
 
-def _architecture():
-    """
-    Returns the bit depth of the python interpreter's architecture as
-    a string ('32bit' or '64bit'). Similar to platform.architecture(),
-    but with fixes for universal binaries on MacOS.
-    """
-    if is_darwin:
-        # Darwin's platform.architecture() is buggy and always
-        # returns "64bit" event for the 32bit version of Python's
-        # universal binary. So we roll out our own (that works
-        # on Darwin).
-        if sys.maxsize > 2 ** 32:
-            return '64bit'
-        else:
-            return '32bit'
-    else:
-        return platform.architecture()[0]
+# macOS's platform.architecture() can be buggy, so we do this manually here.
+# Based off the python documentation:
+# https://docs.python.org/3/library/platform.html#platform.architecture
+architecture = '64bit' if sys.maxsize > 2**32 and is_darwin else \
+    '32bit' if is_darwin else platform.architecture()[0]
 
-architecture = _architecture()
-del _architecture
+system = platform.system()
 
-def _system():
-    # On some Windows installation (Python 2.4) platform.system() is
-    # broken and incorrectly returns 'Microsoft' instead of 'Windows'.
-    # http://mail.python.org/pipermail/patches/2007-June/022947.html
-    syst = platform.system()
-    if syst == 'Microsoft':
-        return 'Windows'
-    return syst
-
-system = _system()
-del _system
-
-def _machine():
-    """
-    Return machine suffix to use in directory name when looking
-    for bootloader.
-
-    PyInstaller is reported to work even on ARM architecture. For that
-    case `system` and `architecture` are not enough.
-    Path to bootloader has to be composed from `system`, `architecture`
-    and `machine` like:
-        'Linux-32bit-arm'
-    """
-    mach = platform.machine()
-    if mach.startswith('arm'):
-        return 'arm'
-    elif mach.startswith('aarch'):
-        return 'aarch'
-    else:
-        # Assume x86/x86_64 machine.
-        return None
-
-machine = _machine()
-del _machine
+# Machine suffix for bootloader.
+# PyInstaller is reported to work on ARM architecture, so for that
+# case we need an extra identifying specifier on the bootloader
+# name string, like: Linux-32bit-arm, over normal Linux-32bit
+machine = 'arm' if platform.machine().startswith('arm') else \
+    'aarch' if platform.machine().startswith('aarch') else None
 
 
 # Set and get environment variables does not handle unicode strings correctly
@@ -313,7 +271,7 @@ def exec_command(*cmdargs, **kwargs):
 
     Parameters
     ----------
-    cmdargs : list
+    cmdargs :
         Variadic list whose:
         1. Mandatory first element is the absolute path, relative path,
            or basename in the current `${PATH}` of the command to run.
@@ -581,30 +539,48 @@ def expand_path(path):
     """
     return os.path.expandvars(os.path.expanduser(path))
 
+
 # Site-packages functions - use native function if available.
-if hasattr(site, 'getsitepackages'):
-    getsitepackages = site.getsitepackages
+def getsitepackages(prefixes=None):
+    """Returns a list containing all global site-packages directories.
+
+    For each directory present in ``prefixes`` (or the global ``PREFIXES``),
+    this function will find its `site-packages` subdirectory depending on the
+    system environment, and will return a list of full paths.
+    """
+    # This implementation was copied from the ``site`` module, python 3.7.3.
+    sitepackages = []
+    seen = set()
+
+    if prefixes is None:
+        prefixes = [sys.prefix, sys.exec_prefix]
+
+    for prefix in prefixes:
+        if not prefix or prefix in seen:
+            continue
+        seen.add(prefix)
+
+        if os.sep == '/':
+            sitepackages.append(
+                os.path.join(
+                    prefix, "lib", "python%d.%d" % sys.version_info[:2],
+                    "site-packages"
+                )
+            )
+        else:
+            sitepackages.append(prefix)
+            sitepackages.append(os.path.join(prefix, "lib", "site-packages"))
+    return sitepackages
+
+
 # Backported for virtualenv.
 # Module 'site' in virtualenv might not have this attribute.
-else:
-    def getsitepackages():
-        """
-        Return only one item as list with one item.
-        """
-        # For now used only on Windows. Raise Exception for other platforms.
-        if is_win:
-            pths = [os.path.join(sys.prefix, 'Lib', 'site-packages')]
-            # Include Real sys.prefix for virtualenv.
-            if is_virtualenv:
-                pths.append(os.path.join(base_prefix, 'Lib', 'site-packages'))
-            return pths
-        else:
-            # TODO Implement for Python 2.6 on other platforms.
-            raise NotImplementedError()
+getsitepackages = getattr(site, 'getsitepackages', getsitepackages)
 
 # Wrapper to load a module from a Python source file.
 # This function loads import hooks when processing them.
-import importlib.machinery
+
+
 def importlib_load_source(name, pathname):
     # Import module from a file.
     mod_loader = importlib.machinery.SourceFileLoader(name, pathname)
@@ -729,8 +705,5 @@ def check_requirements():
     Fail hard if any requirement is not met.
     """
     # Fail hard if Python does not have minimum required version
-    if sys.version_info < (3,):
-        raise SystemExit('PyInstaller requires at least Python 3.5 or newer. '
-                         'The last version supporting Python 2.7 was v3.6.')
-    elif sys.version_info < (3, 5):
-        raise SystemExit('PyInstaller requires at least Python 3.5 or newer.')
+    if sys.version_info < (3, 5):
+        raise EnvironmentError('PyInstaller requires at Python 3.5 or newer.')

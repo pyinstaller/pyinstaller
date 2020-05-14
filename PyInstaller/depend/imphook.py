@@ -274,6 +274,7 @@ class ModuleHook(object):
 
         # Note that the passed module graph is already a weak reference,
         # avoiding circular reference issues. See ModuleHookCache.__init__().
+        # TODO: Add a failure message
         assert isinstance(module_graph, weakref.ProxyTypes)
         self.module_graph = module_graph
         self.module_name = module_name
@@ -295,7 +296,7 @@ class ModuleHook(object):
 
 
     def __getattr__(self, attr_name):
-        '''
+        """
         Get the magic attribute with the passed name (e.g., `datas`) from this
         lazily loaded hook script if any _or_ raise `AttributeError` otherwise.
 
@@ -313,7 +314,7 @@ class ModuleHook(object):
         See Also
         ----------
         Class docstring for supported magic attributes.
-        '''
+        """
 
         # If this is a magic attribute, initialize this attribute by lazy
         # loading this hook script and then return this attribute. To avoid
@@ -327,7 +328,7 @@ class ModuleHook(object):
 
 
     def __setattr__(self, attr_name, attr_value):
-        '''
+        """
         Set the attribute with the passed name to the passed value.
 
         If this is a magic attribute, this hook script will be lazily loaded
@@ -338,7 +339,7 @@ class ModuleHook(object):
         See Also
         ----------
         Class docstring for supported magic attributes.
-        '''
+        """
 
         # If this is a magic attribute, initialize this attribute by lazy
         # loading this hook script before overwriting this attribute.

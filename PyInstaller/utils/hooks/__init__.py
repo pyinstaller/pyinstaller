@@ -180,29 +180,6 @@ def get_homebrew_path(formula=''):
         return None
 
 
-# TODO Move to "hooks/hook-OpenGL.py", the only place where this is called.
-def opengl_arrays_modules():
-    """
-    Return list of array modules for OpenGL module.
-
-    e.g. 'OpenGL.arrays.vbo'
-    """
-    statement = 'import OpenGL; print(OpenGL.__path__[0])'
-    opengl_mod_path = exec_statement(statement)
-    arrays_mod_path = os.path.join(opengl_mod_path, 'arrays')
-    files = glob.glob(arrays_mod_path + '/*.py')
-    modules = []
-
-    for f in files:
-        mod = os.path.splitext(os.path.basename(f))[0]
-        # Skip __init__ module.
-        if mod == '__init__':
-            continue
-        modules.append('OpenGL.arrays.' + mod)
-
-    return modules
-
-
 def remove_prefix(string, prefix):
     """
     This function removes the given prefix from a string, if the string does
@@ -313,7 +290,7 @@ def get_module_file_attribute(package):
         # The built-in ``datetime`` module returns ``None``. Mark this as
         # an ``ImportError``.
         if not attr:
-            raise ImportError
+            raise ImportError('Unable to load module attributes')
     # Second try to import module in a subprocess. Might raise ImportError.
     except (AttributeError, ImportError):
         # Statement to return __file__ attribute of a package.
@@ -327,7 +304,7 @@ def get_module_file_attribute(package):
         """
         attr = exec_statement(__file__statement % package)
         if not attr.strip():
-            raise ImportError
+            raise ImportError('Unable to load module attribute')
     return attr
 
 
@@ -439,7 +416,7 @@ def is_module_satisfies(requirements, version=None, version_attr='__version__'):
     Examples
     ----------
         # Assume PIL 2.9.0, Sphinx 1.3.1, and SQLAlchemy 0.6 are all installed.
-        >>> from PyInstaller.util.hooks import is_module_satisfies
+        >>> from PyInstaller.utils.hooks import is_module_satisfies
         >>> is_module_satisfies('sphinx >= 1.3.1')
         True
         >>> is_module_satisfies('sqlalchemy != 0.6')
@@ -557,7 +534,7 @@ def collect_submodules(package, filter=lambda name: True):
     """
     # Accept only strings as packages.
     if not isinstance(package, string_types):
-        raise ValueError
+        raise TypeError('package must be a str')
 
     logger.debug('Collecting submodules for %s' % package)
     # Skip a module which is not a package.
@@ -660,7 +637,7 @@ def collect_dynamic_libs(package, destdir=None):
     """
     # Accept only strings as packages.
     if not isinstance(package, string_types):
-        raise ValueError
+        raise TypeError('package must be a str')
 
     logger.debug('Collecting dynamic libraries for %s' % package)
     pkg_base, pkg_dir = get_package_paths(package)
@@ -709,7 +686,7 @@ def collect_data_files(package, include_py_files=False, subdir=None):
 
     # Accept only strings as packages.
     if not isinstance(package, string_types):
-        raise ValueError
+        raise TypeError('package must be a str')
 
     pkg_base, pkg_dir = get_package_paths(package)
     if subdir:
@@ -749,7 +726,7 @@ def collect_system_data_files(path, destdir=None, include_py_files=False):
     """
     # Accept only strings as paths.
     if not isinstance(path, string_types):
-        raise ValueError
+        raise TypeError('path must be a str')
     # The call to ``remove_prefix`` below assumes a path separate of ``os.sep``,
     # which may not be true on Windows; Windows allows Linux path separators in
     # filenames. Fix this by normalizing the path.
@@ -952,14 +929,14 @@ def _map_distribution_to_packages():
         # Ignore any entries in ``sys.path`` that don't exist.
         try:
             lds = os.listdir(p)
-        except:
+        except Exception:
             pass
         else:
             for ld in lds:
                 # Not all packages belong to a distribution. Skip these.
                 try:
                     dist = pkg_resources.get_distribution(ld)
-                except:
+                except Exception:
                     pass
                 else:
                     dist_to_packages.setdefault(dist.key, []).append(ld)

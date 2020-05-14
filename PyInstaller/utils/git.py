@@ -20,7 +20,7 @@ from ..compat import exec_command, exec_command_rc
 try:
     WindowsError
 except NameError:
-    # No running on Windows
+    # Not running on Windows
     WindowsError = FileNotFoundError
 
 def get_repo_revision():

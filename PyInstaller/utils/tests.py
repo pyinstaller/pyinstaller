@@ -62,7 +62,7 @@ def _check_for_compiler():
         #   find the file specified.
         has_compiler = cc.has_function('clock', includes=['time.h'])
     os.chdir(old_wd)
-    # TODO: Find a way to remove the gerneated clockXXXX.c file, too
+    # TODO: Find a way to remove the generated clockXXXX.c file, too
     shutil.rmtree(tmp)
     return has_compiler
 

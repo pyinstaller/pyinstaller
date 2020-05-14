@@ -1,7 +1,7 @@
-from __future__ import absolute_import
 import unittest
 
-import os, shutil, sys
+import os
+import sys
 
 from PyInstaller.lib.modulegraph import find_modules
 from PyInstaller.lib.modulegraph import modulegraph

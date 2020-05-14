@@ -25,9 +25,6 @@ Proposed usage::
   find PyInstaller/hooks/ -size -2c -print -delete
 
 """
-
-from __future__ import print_function
-
 import glob
 import os
 import sys

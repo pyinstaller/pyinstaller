@@ -191,9 +191,9 @@ for filename in files:
         # Report all files which do not have a current copyright year
         # This is to find those files missing our copyright header.
         text = text.lower()
-        if 'copyright' in text and not YEAR in text:
+        if 'copyright' in text and YEAR not in text:
             print('unchanged:', filename)
-        elif 'copyright' in text and not "spdx-license-identifier" in text:
+        elif 'copyright' in text and "spdx-license-identifier" not in text:
             print('SPDX-License-Identifier missing:', filename)
 
 if missing_copyright:

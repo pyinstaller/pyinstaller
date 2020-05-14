@@ -20,11 +20,12 @@ from ...depend.bindepend import findSystemLibrary
 logger = logging.getLogger(__name__)
 
 
-def get_typelibs(module, version):
-    """deprecated; only here for backwards compat.
-    """
-    logger.warning("get_typelibs is deprecated, use get_gi_typelibs instead")
-    return get_gi_typelibs(module, version)[1]
+__all__ = [
+    'get_gi_libdir', 'get_gi_typelibs', 'gir_library_path_fix',
+    'get_glib_system_data_dirs', 'get_glib_sysconf_dirs',
+    'collect_glib_share_files', 'collect_glib_etc_files',
+    'collect_glib_translations'
+]
 
 
 def get_gi_libdir(module, version):
@@ -258,6 +259,3 @@ def collect_glib_translations(prog):
     namelen = len(names[0])
 
     return [(src, dst) for src, dst in _glib_translations if src[-namelen:] in names]
-
-__all__ = ('get_typelibs', 'get_gi_libdir', 'get_gi_typelibs', 'gir_library_path_fix', 'get_glib_system_data_dirs',
-           'get_glib_sysconf_dirs', 'collect_glib_share_files', 'collect_glib_etc_files', 'collect_glib_translations')
