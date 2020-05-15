@@ -25,10 +25,10 @@
 *****************************************************************/
 
 /*
- * Extract binaries in the archive
+ * Extract binaries from the archive
  *
- * @param workpath     (OUT) Where the binaries were extracted to. If
- *                      none extracted, is NULL.
+ * @param archive_status     The archive from which the binaries will
+ *                           be extracted.
  *
  * @return 0 on success, non-zero otherwise.
  */
