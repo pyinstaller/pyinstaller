@@ -155,8 +155,10 @@ pyi_main(int argc, char * argv[])
     splash_status = pyi_splash_status_new();
 
     if (!in_child && pyi_splash_setup(splash_status, archive_status, NULL) == 0) {
-        /* Splash resources found, start splash screen */
-        /* If in onefile mode extract the required binaries */
+        /*
+         * Splash resources found, start splash screen
+         * If in onefile mode extract the required binaries
+         */
         if ((!pyi_splash_extract(archive_status, splash_status)) &&
             (!pyi_splash_attach(splash_status))) {
             /* Everything was initialized, so it is safe to start
@@ -209,7 +211,7 @@ pyi_main(int argc, char * argv[])
     else {
 
         /* status->temppath is created if necessary. */
-        if (pyi_launch_extract_binaries(archive_status)) {
+        if (pyi_launch_extract_binaries(archive_status, splash_status)) {
             VS("LOADER: temppath is %s\n", archive_status->temppath);
             VS("LOADER: Error extracting binaries\n");
             return -1;

@@ -38,6 +38,7 @@
 #include "pyi_path.h"
 #include "pyi_archive.h"
 #include "pyi_utils.h"
+#include "pyi_splash.h"
 #include "pyi_python.h"
 #include "pyi_pythonlib.h"
 #include "pyi_win32_utils.h"  /* CreateActContext */
@@ -294,12 +295,18 @@ pyi_launch_need_to_extract_binaries(ARCHIVE_STATUS *archive_status)
  * 'Multipackage' feature includes dependencies. Dependencies are files in other
  * .exe files. Having files in other executables allows share binary files among
  * executables and thus reduce the final size of the executable.
+ *
+ * 'Splash screen' feature is supported by passing a SPLASH_STATUS to this
+ * function. The parameter may be NULL, if not the name of the TOC is displayed
+ * on the splash screen asynchronously.
  */
 int
-pyi_launch_extract_binaries(ARCHIVE_STATUS *archive_status)
+pyi_launch_extract_binaries(ARCHIVE_STATUS *archive_status, SPLASH_STATUS *splash_status)
 {
     int retcode = 0;
     ptrdiff_t index = 0;
+    /* We create this cache variable for faster execution time */
+    bool update_text = (splash_status != NULL);
 
     /*
      * archive_pool[0] is reserved for the main process, the others for dependencies.
@@ -318,6 +325,13 @@ pyi_launch_extract_binaries(ARCHIVE_STATUS *archive_status)
     while (ptoc < archive_status->tocend) {
         if (ptoc->typcd == ARCHIVE_ITEM_BINARY || ptoc->typcd == ARCHIVE_ITEM_DATA ||
             ptoc->typcd == ARCHIVE_ITEM_ZIPFILE) {
+            /* 'Splash screen' feature */
+            if (update_text) {
+                /* Update the text on the splash screen if one is available */
+                pyi_splash_update_prg(splash_status, ptoc);
+            }
+
+            /* Extract the file to the disk */
             if (pyi_arch_extract2fs(archive_status, ptoc)) {
                 retcode = -1;
                 break;  /* No need to extract other items in case of error. */
