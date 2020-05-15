@@ -318,7 +318,6 @@ def test_PyQt5_QWebEngine(pyi_builder, data_dir, monkeypatch):
 
 @PYQT5_NEED_OPENGL
 @QtPyLibs
-@skipif(is_darwin, reason='Issue #4860')
 def test_Qt5_QtQml(pyi_builder, QtPyLib, monkeypatch):
     path_clean(monkeypatch, QtPyLib)
     pytest.importorskip(QtPyLib)
