@@ -32,6 +32,7 @@
 #define ARCHIVE_ITEM_PYSOURCE         's'  /* Python script (v3) */
 #define ARCHIVE_ITEM_DATA             'x'  /* data */
 #define ARCHIVE_ITEM_RUNTIME_OPTION   'o'  /* runtime option */
+#define ARCHIVE_ITEM_SPLASH           'l'  /* splash resources */
 
 /* TOC entry for a CArchive */
 typedef struct _toc {
