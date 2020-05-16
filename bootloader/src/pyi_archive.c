@@ -658,3 +658,20 @@ pyi_arch_get_option(const ARCHIVE_STATUS * status, char * optname)
     }
     return NULL;
 }
+
+/*
+ * Find a TOC entry by its name and return it.
+ */
+TOC *
+pyi_arch_find_by_name(ARCHIVE_STATUS *status, const char *name)
+{
+    TOC *ptoc = status->tocbuff;
+
+    while (ptoc < status->tocend) {
+        if (strcmp(ptoc->name, name) == 0) {
+            return ptoc;
+        }
+        ptoc = pyi_arch_increment_toc_ptr(status, ptoc);
+    }
+    return NULL;
+}
