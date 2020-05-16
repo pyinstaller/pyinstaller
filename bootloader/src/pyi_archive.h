@@ -140,5 +140,6 @@ TOC *getFirstTocEntry(ARCHIVE_STATUS *status);
 TOC *getNextTocEntry(ARCHIVE_STATUS *status, TOC *entry);
 
 char * pyi_arch_get_option(const ARCHIVE_STATUS * status, char * optname);
+TOC *pyi_arch_find_by_name(ARCHIVE_STATUS *status, const char *name);
 
 #endif  /* PYI_ARCHIVE_H */
