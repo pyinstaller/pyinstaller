@@ -526,8 +526,8 @@ class EXE(Target):
         if not os.path.exists(exe):
             raise SystemExit(_MISSING_BOOTLOADER_ERRORMSG)
 
-
-        if is_win and (self.icon or self.versrsrc or self.resources):
+        if is_win and (self.icon or self.versrsrc or self.resources or
+                self.uac_admin or self.uac_uiaccess):
             fd, tmpnm = tempfile.mkstemp(prefix=os.path.basename(exe) + ".",
                                          dir=CONF['workpath'])
             # need to close the file, otherwise copying resources will fail
