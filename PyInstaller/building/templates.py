@@ -32,11 +32,12 @@ a = Analysis(%(scripts)s,
              noarchive=%(noarchive)s)
 pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
+%(splash_init)s
 exe = EXE(pyz,
           a.scripts,
           a.binaries,
           a.zipfiles,
-          a.datas,
+          a.datas, %(splash_target)s %(splash_binaries)s
           %(options)s,
           name='%(name)s',
           debug=%(debug_bootloader)s,
@@ -66,8 +67,9 @@ a = Analysis(%(scripts)s,
              noarchive=%(noarchive)s)
 pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
+%(splash_init)s
 exe = EXE(pyz,
-          a.scripts,
+          a.scripts, %(splash_target)s
           %(options)s,
           exclude_binaries=True,
           name='%(name)s',
@@ -79,7 +81,7 @@ exe = EXE(pyz,
 coll = COLLECT(exe,
                a.binaries,
                a.zipfiles,
-               a.datas,
+               a.datas, %(splash_binaries)s
                strip=%(strip)s,
                upx=%(upx)s,
                upx_exclude=%(upx_exclude)s,
@@ -104,4 +106,12 @@ bundletmplt = """app = BUNDLE(coll,
              name='%(name)s.app',
              icon=%(icon)s,
              bundle_identifier=%(bundle_identifier)s)
+"""
+
+splashtmpl = """splash = Splash(%(splash_image)r,
+                binaries=a.binaries,
+                datas=a.datas,
+                text_pos=None,
+                text_size=12,
+                minify_script=True)
 """

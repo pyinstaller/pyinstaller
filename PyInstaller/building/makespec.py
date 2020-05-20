@@ -22,7 +22,8 @@ from PyInstaller import HOMEPATH, DEFAULT_SPECPATH
 from PyInstaller import log as logging
 from PyInstaller.compat import expand_path, is_darwin, is_win
 from PyInstaller.building.templates import onefiletmplt, onedirtmplt, \
-    cipher_absent_template, cipher_init_template, bundleexetmplt, bundletmplt
+    cipher_absent_template, cipher_init_template, bundleexetmplt, \
+    bundletmplt, splashtmpl
 
 logger = logging.getLogger(__name__)
 add_command_sep = os.pathsep
@@ -296,6 +297,11 @@ def __add_options(parser):
                    'This option can be used multiple times.')
     g.add_argument('--key', dest='key',
                    help='The key used to encrypt Python bytecode.')
+    g.add_argument('--splash',
+                   dest='splash', metavar="IMAGE_FILE",
+                   help="(EXPERIMENTAL) Add an splash screen with the image"
+                        " IMAGE_FILE to the application. The splash screen"
+                        " can show progress updates while unpacking.")
 
     g = parser.add_argument_group('How to generate')
     g.add_argument("-d", "--debug",
@@ -453,7 +459,7 @@ def main(scripts, name=None, onefile=None,
          excludes=None, uac_admin=False, uac_uiaccess=False,
          win_no_prefer_redirects=False, win_private_assemblies=False,
          collect_submodules=None, collect_binaries=None, collect_data=None,
-         collect_all=None, copy_metadata=None, **kwargs):
+         collect_all=None, copy_metadata=None, splash=None, **kwargs):
     # If appname is not specified - use the basename of the main script as name.
     if name is None:
         name = os.path.splitext(os.path.basename(scripts[0]))[0]
@@ -551,6 +557,15 @@ def main(scripts, name=None, onefile=None,
         collect_submodules, collect_all, copy_metadata
     )
 
+    if splash:
+        splash_init = splashtmpl % {'splash_image': splash}
+        splash_binaries = ("\n"
+                           + " " * (10 if onefile else 15)  # noqa: W503
+                           + "splash.binaries,")  # noqa: W503
+        splash_target = "\n" + " " * 10 + "splash,"
+    else:
+        splash_init = splash_binaries = splash_target = ""
+
     d = {
         'scripts': scripts,
         'pathex': pathex,
@@ -584,6 +599,10 @@ def main(scripts, name=None, onefile=None,
         # Windows assembly searching options
         'win_no_prefer_redirects': win_no_prefer_redirects,
         'win_private_assemblies': win_private_assemblies,
+        # splash screen
+        'splash_init': splash_init,
+        'splash_target': splash_target,
+        'splash_binaries': splash_binaries,
     }
 
     # Write down .spec file to filesystem.
