@@ -1,0 +1,1 @@
+Fix ``importlib_resources`` hook for modern versions (after 1.1.0).
