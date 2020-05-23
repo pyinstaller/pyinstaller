@@ -69,6 +69,7 @@
 .. _`Supported Packages`: https://github.com/pyinstaller/pyinstaller/wiki/Supported-Packages
 .. _TDM-GCC: http://tdm-gcc.tdragon.net/
 .. _TkInter: http://wiki.python.org/moin/TkInter
+.. _`Tcl/Tk`: http://www.tcl.tk/
 .. _`towncrier`: https://pypi.org/project/towncrier/
 .. _UPX: https://upx.github.io/
 .. _venv: https://docs.python.org/3/library/venv.html
