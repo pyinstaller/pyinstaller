@@ -215,6 +215,50 @@ the archive inside the executable file.
 This feature uses the tinyaes_ module internally for the encryption.
 
 
+.. _splash screen:
+
+Splash Screen *(Experimental)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. Note::
+    The feature was only tested on Windows and Linux. On macOS it depends on the
+    installation of Python and Tcl/Tk, because the system installation of
+    Tcl/Tk is not bundled by PyInstaller. If PyInstaller is able to pack the
+    Tcl/Tk binaries, this feature *should* work on macOS too. Please follow
+    PyInstaller Issue :issue:`4354`.
+
+Some applications may require a splash screen as soon as the application
+(bootloader) has been started, because especially in onefile mode large
+applications may have long extraction/startup times, while the bootloader
+prepares everything, where the user cannot judge whether the application
+was started successfully or not.
+
+The bootloader is able to display a one-image (i.e. only an image) splash
+screen, which is displayed before the actual main extraction process starts.
+The splash screen supports non-transparent and hard-cut-transparent images as background
+image, so non-rectangular splash screens can also be displayed.
+
+This splash screen is based on `Tcl/Tk`_, which is the same library used by the Python
+module `tkinter`_. PyInstaller bundles the dynamic libraries of tcl and tk into the
+application at compile time. These are loaded into the bootloader at startup of the
+application after they have been extracted (if the program has been packaged as an
+onefile archive). Since the file sizes of the necessary dynamic libraries are very small,
+there is almost no delay between the start of the application and the splash screen.
+The compressed size of the files necessary for the splash screen is about *1.5 MB*.
+
+As an additional feature, text can optionally be displayed on the splash screen. This
+can be changed/updated from within Python. This offers the possibility to
+display the splash screen during longer startup procedures of a Python program
+(e.g. waiting for a network response or loading large files into memory). You
+can also start a GUI behind the splash screen, and only after it is completely
+initialized the splash screen can be closed. Optionally, the font, color and
+size of the text can be set. However, the font must be installed on the user
+system, as it is not bundled. If the font is not available, a fallback font is used.
+
+If the splash screen is configured to show text, it will automatically (as onefile archive)
+display the name of the file that is currently being unpacked, this acts as a progress bar.
+
+
 .. _defining the extraction location:
 
 Defining the Extraction Location
