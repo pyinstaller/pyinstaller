@@ -428,6 +428,76 @@ The key ``'NSAppleScriptEnabled'`` is assigned the Python boolean
 Finally the key ``CFBundleDocumentTypes`` tells Mac OS X what filetypes your
 application supports (see `Apple document types`_).
 
+
+.. _splash screen target:
+
+
+The :mod:`Splash` Target
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For a splash screen to be displayed by the bootloader, the :mod:`Splash` target must be called
+at build time. This class can be added when the spec file is created with the command-line
+option ``--splash IMAGE_FILE``. By default, the option to display the optional text is disabled
+(``text_pos=None``). For more information about the splash screen, see :ref:`splash screen`
+section. The :mod:`Splash` Target looks like this::
+
+   a = Analysis(...)
+
+   splash = Splash('image.png',
+                   binaries=a.binaries,
+                   datas=a.datas,
+                   text_pos=(10, 50),
+                   text_size=12,
+                   text_color='black')
+
+Splash bundles the required resources for the splash screen into a file,
+which will be included in the CArchive.
+
+A :mod:`Splash` has two outputs, one is itself and one is stored in
+``splash.binaries``. Both need to be passed on to other build targets in
+order to enable the splash screen.
+To use the splash screen in a **onefile** application, please follow this example::
+
+   a = Analysis(...)
+
+   splash = Splash(...)
+
+   # onefile
+   exe = EXE(pyz,
+             a.scripts,
+             splash,                   # <-- both, splash target
+             splash.binaries,          # <-- and splash binaries
+             ...)
+
+In order to use the splash screen in a **onedir** application, only a small change needs
+to be made. The ``splash.binaries`` attribute has to be moved into the ``COLLECT`` target,
+since the splash binaries do not need to be included into the executable::
+
+   a = Analysis(...)
+
+   splash = Splash(...)
+
+   # onedir
+   exe = EXE(pyz,
+             splash,                   # <-- splash target
+             a.scripts,
+             ...)
+   coll = COLLECT(exe,
+                  splash.binaries,     # <-- splash binaries
+                  ...)
+
+On Windows/macOS images with per-pixel transparency are supported. This allows
+non-rectengular splash screen images. On Windows the transparent borders of the image
+are hard-cuted, meaning that fading transparent values are not supported. There is
+no common implementation for non-rectengular windows on Linux, so images with per-
+pixel transparency is not supported.
+
+The splash target can be configured in various ways. The constructor of the :mod:`Splash`
+target is as follows:
+
+.. automethod:: PyInstaller.building.splash.Splash.__init__
+
+
 Multipackage Bundles
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -570,7 +640,7 @@ Globals Available to the Spec File
 While a spec file is executing it has access to a limited set of global names.
 These names include the classes defined by |PyInstaller|:
 ``Analysis``, ``BUNDLE``, ``COLLECT``, ``EXE``, ``MERGE``,
-``PYZ``, ``TOC`` and ``Tree``,
+``PYZ``, ``TOC``, ``Tree`` and ``Splash``,
 which are discussed in the preceding sections.
 
 Other globals contain information about the build environment:
