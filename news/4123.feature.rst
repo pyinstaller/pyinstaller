@@ -1,0 +1,1 @@
+Add --osx-info-plist command-line option.

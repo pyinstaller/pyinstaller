@@ -95,11 +95,13 @@ block_cipher = pyi_crypto.PyiBlockCipher(key=%(key)r)
 bundleexetmplt = """app = BUNDLE(exe,
              name='%(name)s.app',
              icon=%(icon)s,
-             bundle_identifier=%(bundle_identifier)s)
+             bundle_identifier=%(bundle_identifier)s,
+             info_plist=%(info_plist)r)
 """
 
 bundletmplt = """app = BUNDLE(coll,
              name='%(name)s.app',
              icon=%(icon)s,
-             bundle_identifier=%(bundle_identifier)s)
+             bundle_identifier=%(bundle_identifier)s,
+             info_plist=%(info_plist)r)
 """
