@@ -1,0 +1,1 @@
+Consider Python<version> as possible library binary path. Fixes issue where python is not found if Python3 is installed via brew on OSX
