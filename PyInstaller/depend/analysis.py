@@ -178,9 +178,13 @@ class PyiModuleGraph(ModuleGraph):
                 'The value of %s key %s must be a list.' %
                 (uhd_path, module_name))
             if module_name in self._available_rthooks:
-                logger.warning("Several run-time hooks defined for module %r."
-                               "Please take care they do not conflict.",
-                               module_name)
+                logger.warning(
+                    'Runtime hooks for %s have already been defined. Skipping '
+                    'the runtime hooks for %s that are defined in %s.',
+                    module_name, module_name, os.path.join(uhd, 'rthooks')
+                )
+                # Skip this module
+                continue
             # Merge this with existing run-time hooks.
             for python_file_name in python_file_name_list:
                 # Ensure each item in the list is a string.
