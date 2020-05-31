@@ -45,7 +45,7 @@
 .. _pip-Win: https://sites.google.com/site/pydatalog/python/pip-for-windows
 .. _plistlib: https://docs.python.org/3/library/plistlib.html
 .. _png2icns: http://icns.sourceforge.net/
-.. _PyCrypto: https://pypi.python.org/pypi/pycrypto/
+.. _tinyaes: https://github.com/naufraghi/tinyaes-py
 .. _PyInstaller.org: https://github.com/pyinstaller/pyinstaller/wiki/Community
 .. _`PyInstaller at GitHub`: https://github.com/pyinstaller/pyinstaller
 .. _`PyInstaller code signing recipe`: https://github.com/pyinstaller/pyinstaller/wiki/Recipe-OSX-Code-Signing

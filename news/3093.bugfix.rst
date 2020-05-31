@@ -1,0 +1,2 @@
+Update the base library to support encrypting Python bytecode (``--key``
+option) again. Many thanks to Matteo Bertini for finally fixing this.

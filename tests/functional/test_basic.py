@@ -26,7 +26,6 @@ from PyInstaller.compat import is_darwin, is_win, is_py37
 from PyInstaller.utils.tests import importorskip, skipif, skipif_win, \
     skipif_winorosx, skipif_notwin, skipif_notosx, skipif_no_compiler, \
     skipif_notlinux, xfail
-from PyInstaller.utils.hooks import is_module_satisfies
 
 
 def test_run_from_path_environ(pyi_builder):
@@ -162,17 +161,16 @@ def test_email(pyi_builder):
         """)
 
 
-@skipif(is_module_satisfies('Crypto >= 3'), reason='Bytecode encryption is not '
-        'compatible with pycryptodome.')
-@importorskip('Crypto')
+@importorskip('tinyaes')
 def test_feature_crypto(pyi_builder):
     pyi_builder.test_source(
         """
         from pyimod00_crypto_key import key
         from pyimod02_archive import CRYPT_BLOCK_SIZE
 
-        # Issue 1663: Crypto feature caused issues when using PyCrypto module.
-        import Crypto.Cipher.AES
+        # Test against issue #1663: importing a package in the bootstrap
+        # phase should not interfere with subsequent imports.
+        import tinyaes
 
         assert type(key) is str
         # The test runner uses 'test_key' as key.
