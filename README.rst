@@ -67,7 +67,8 @@ Requirements and Tested Platforms
 - Python: 
 
  - 3.5-3.7
- - tinyaes_ 1.0+ (only if using bytecode encryption)
+ - tinyaes_ 1.0+ (only if using bytecode encryption).
+   Instead of installing tinyaes, ``pip install pyinstaller[encryption]`` instead.
 
 - Windows (32bit/64bit):
 

@@ -203,11 +203,15 @@ To encrypt the Python bytecode modules stored in the bundle,
 pass the ``--key=``\ *key-string*  argument on
 the command line.
 
-For this to work, you must have the tinyaes_
-module installed.
+For this to work, you need to run::
+
+    pip install pyinstaller[encryption]
+
 The *key-string* is a string of 16 characters which is used to
 encrypt each file of Python byte-code before it is stored in
 the archive inside the executable file.
+
+This feature uses the tinyaes_ module internally for the encryption.
 
 
 .. _defining the extraction location:
