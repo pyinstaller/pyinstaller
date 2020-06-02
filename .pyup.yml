@@ -8,6 +8,8 @@ requirements:
   - tests/requirements-libraries.txt
   - tests/requirements-tools.txt:
       update: False
+  - requirements.txt:
+      update: False
 
 pr_prefix: "Tests: Requirements:"
 label_prs: "area:tests/ci/pyup"
