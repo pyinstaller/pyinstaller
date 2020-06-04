@@ -55,7 +55,10 @@ def hook(hook_api):
         return
 
     # this parser is very simplistic but seems to catch all cases as of V1.1
-    depend_regex = re.compile(r'@util.dependencies\([\'"](.*?)[\'"]\)')
+    if is_module_satisfies('sqlalchemy >= 1.4.0b'):
+        depend_regex = re.compile(r'@util.preload_module\([\'"](.*?)[\'"]\)')
+    else:
+        depend_regex = re.compile(r'@util.dependencies\([\'"](.*?)[\'"]\)')
 
     hidden_imports_set = set()
     known_imports = set()
