@@ -594,8 +594,10 @@ class AdditionalFilesCache(object):
         self._datas = {}
 
     def add(self, modname, binaries, datas):
-        self._binaries[modname] = binaries or []
-        self._datas[modname] = datas or []
+        self._binaries.setdefault(modname, binaries or set())
+        self._binaries[modname].update(binaries or set())
+        self._datas.setdefault(modname, datas or set())
+        self._datas[modname].update(datas or set())
 
     def __contains__(self, name):
         return name in self._binaries or name in self._datas
