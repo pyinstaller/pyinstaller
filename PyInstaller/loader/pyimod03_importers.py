@@ -298,8 +298,10 @@ class FrozenImporter(object):
             # next line will raise an execpion which will be catched just
             # below and raise the ImportError.
             return self._pyz_archive.extract(fullname)[1]
-        except:
-            raise ImportError('Loader FrozenImporter cannot handle module ' + fullname)
+        except Exception as e:
+            raise ImportError(
+                'Loader FrozenImporter cannot handle module ' + fullname
+            ) from e
 
     def get_source(self, fullname):
         """
