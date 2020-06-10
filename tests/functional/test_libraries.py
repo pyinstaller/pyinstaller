@@ -281,6 +281,7 @@ def get_QWebEngine_html(qt_flavor, data_dir):
                    repr(data_dir.join('test_web_page.html').strpath))
 
 
+@xfail(is_linux, reason='See issue #4666')
 @pytest.mark.skipif(is_win and not is_64bits, reason="Qt 5.11+ for Windows "
     "only provides pre-compiled Qt WebEngine binaries for 64-bit processors.")
 @pytest.mark.skipif(is_module_satisfies('PyQt5 == 5.11.3') and is_darwin,
