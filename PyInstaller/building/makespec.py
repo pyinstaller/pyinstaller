@@ -66,9 +66,11 @@ path_conversions = (
 def add_data_or_binary(string):
     try:
         src, dest = string.split(add_command_sep)
-    except ValueError:
+    except ValueError as e:
         # Split into SRC and DEST failed, wrong syntax
-        raise argparse.ArgumentError("Wrong syntax, should be SRC{}DEST".format(add_command_sep))
+        raise argparse.ArgumentError(
+            "Wrong syntax, should be SRC{}DEST".format(add_command_sep)
+        ) from e
     if not src or not dest:
         # Syntax was correct, but one or both of SRC and DEST was not given
         raise argparse.ArgumentError("You have to specify both SRC and DEST")

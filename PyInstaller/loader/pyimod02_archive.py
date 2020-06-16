@@ -325,6 +325,7 @@ class ZlibArchiveReader(ArchiveReader):
             obj = zlib.decompress(obj)
             if typ in (PYZ_TYPE_MODULE, PYZ_TYPE_PKG):
                 obj = marshal.loads(obj)
-        except EOFError:
-            raise ImportError("PYZ entry '%s' failed to unmarshal" % name)
+        except EOFError as e:
+            raise ImportError("PYZ entry '%s' failed to unmarshal" %
+                              name) from e
         return typ, obj

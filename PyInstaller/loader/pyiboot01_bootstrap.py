@@ -143,7 +143,7 @@ try:
             try:
                 super(PyInstallerCDLL, self).__init__(name, *args, **kwargs)
             except Exception as base_error:
-                raise PyInstallerImportError(name)
+                raise PyInstallerImportError(name) from base_error
 
     ctypes.CDLL = PyInstallerCDLL
     ctypes.cdll = LibraryLoader(PyInstallerCDLL)
@@ -154,7 +154,7 @@ try:
             try:
                 super(PyInstallerPyDLL, self).__init__(name, *args, **kwargs)
             except Exception as base_error:
-                raise PyInstallerImportError(name)
+                raise PyInstallerImportError(name) from base_error
 
     ctypes.PyDLL = PyInstallerPyDLL
     ctypes.pydll = LibraryLoader(PyInstallerPyDLL)
@@ -166,7 +166,7 @@ try:
                 try:
                     super(PyInstallerWinDLL, self).__init__(name, *args, **kwargs)
                 except Exception as base_error:
-                    raise PyInstallerImportError(name)
+                    raise PyInstallerImportError(name) from base_error
 
         ctypes.WinDLL = PyInstallerWinDLL
         ctypes.windll = LibraryLoader(PyInstallerWinDLL)
@@ -177,7 +177,7 @@ try:
                 try:
                     super(PyInstallerOleDLL, self).__init__(name, *args, **kwargs)
                 except Exception as base_error:
-                    raise PyInstallerImportError(name)
+                    raise PyInstallerImportError(name) from base_error
 
         ctypes.OleDLL = PyInstallerOleDLL
         ctypes.oledll = LibraryLoader(PyInstallerOleDLL)
