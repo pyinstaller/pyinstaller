@@ -1,1 +1,1 @@
-In debug and windowed mode on non-macOS platforms, print traceback to help debug pyiboot01_bootstrap errors.
+In debug and windowed mode, show the traceback in dialogs to help debug pyiboot01_bootstrap errors.

@@ -420,7 +420,7 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
             if (!retval) {
                 FATALERROR("Failed to execute script %s\n", ptoc->name);
 
-                #if defined(WINDOWED) && defined(LAUNCH_DEBUG) && !defined(__APPLE__)
+                #if defined(WINDOWED) && defined(LAUNCH_DEBUG)
                 /* Visual C++ requires all variables to be declared before any
                  * statements in a given block. The curly braces below create a
                  * block to make this compiler happy. */
@@ -466,11 +466,11 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
                     Py_DECREF(module);
                 }
 
-                #else /* if defined(WINDOWED) and defined(LAUNCH_DEBUG) and not defined(__APPLE__) */
+                #else /* if defined(WINDOWED) and defined(LAUNCH_DEBUG) */
 
                     PI_PyErr_Print();
 
-                #endif /* if defined(WINDOWED) and defined(LAUNCH_DEBUG) and not defined(__APPLE__) */
+                #endif /* if defined(WINDOWED) and defined(LAUNCH_DEBUG) */
 
                 return -1;
             }
