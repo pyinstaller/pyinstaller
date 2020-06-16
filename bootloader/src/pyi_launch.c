@@ -418,6 +418,11 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
              * (Since we evaluate module-level code, which is not allowed to return an
              * object, the Python object returned is always None.) */
             if (!retval) {
+                /* If the error was SystemExit, PyErr_Print calls exit() without
+                 * returning. This means we won't print "Failed to execute" on 
+                 * normal SystemExit's.
+                 */
+                PI_PyErr_Print();
                 FATALERROR("Failed to execute script %s\n", ptoc->name);
 
                 #if defined(WINDOWED) && defined(LAUNCH_DEBUG)
@@ -465,10 +470,6 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
                     Py_DECREF(ptraceback);
                     Py_DECREF(module);
                 }
-
-                #else /* if defined(WINDOWED) and defined(LAUNCH_DEBUG) */
-
-                    PI_PyErr_Print();
 
                 #endif /* if defined(WINDOWED) and defined(LAUNCH_DEBUG) */
 
