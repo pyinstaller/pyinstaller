@@ -630,8 +630,9 @@ def strip_paths_in_code(co, new_filename=None):
 
     # Paths to remove from filenames embedded in code objects
     replace_paths = sys.path + CONF['pathex']
-    # Make sure paths end with os.sep
-    replace_paths = [os.path.join(f, '') for f in replace_paths]
+    # Make sure paths end with os.sep and the longest paths are first
+    replace_paths = sorted((os.path.join(f, '') for f in replace_paths),
+                           key=len, reverse=True)
 
     if new_filename is None:
         original_filename = os.path.normpath(co.co_filename)

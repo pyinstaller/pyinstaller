@@ -1,0 +1,1 @@
+When stripping the leading parts of paths in compiled code objects, the longest possible import path will now be stripped.
