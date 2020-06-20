@@ -307,7 +307,9 @@ def exec_command(*cmdargs, **kwargs):
         print("Error running '%s':" % " ".join(cmdargs), file=sys.stderr)
         print(e, file=sys.stderr)
         print('--' * 20, file=sys.stderr)
-        raise ExecCommandFailed("Error: Executing command failed!")
+        new_exception = ExecCommandFailed("Error: Executing command failed!")
+        new_exception.__cause__ = e
+        raise new_exception
 
     # stdout/stderr are returned as a byte array NOT as string.
     # Thus we need to convert that to proper encoding.
