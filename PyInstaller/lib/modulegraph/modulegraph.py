@@ -3086,45 +3086,49 @@ class ModuleGraph(ObjectGraph):
                     self.msg(4, "_find_module_path path not found", pathname)
                     continue
 
-                # If this loader defines the PEP 302-compliant is_package()
-                # method returning True, this is a non-namespace package.
-                if hasattr(loader, 'is_package') and loader.is_package(module_name):
-                    metadata = ('', '', imp.PKG_DIRECTORY)
-                # Else, this is either a module or C extension.
-                else:
-                    # In either case, this path must have a filetype.
-                    # os.path.splitext won't work here since we sometimes need
-                    # to match more than just the file extension.
-                    filetype = [filetype
-                                for filetype in _IMPORTABLE_FILETYPE_EXTS
-                                if pathname.endswith(filetype)]
-                    if filetype:
-                        # at least one extension matched,
-                        # pick the first (longest) one
-                        filetype = filetype[0]
-                    else:
-                        raise ImportError(
-                            'Non-package module %r path %r has no filetype' % (module_name, pathname))
+                metadata = None
+                open_mode = None
+                imp_type = None
+
+                # Get metadata by a filetype in this path.
+                # os.path.splitext won't work here since we sometimes need
+                # to match more than just the file extension.
+                filetype = [filetype
+                            for filetype in _IMPORTABLE_FILETYPE_EXTS
+                            if pathname.endswith(filetype)]
+                if filetype:
+                    # at least one extension matched,
+                    # pick the first (longest) one
+                    filetype = filetype[0]
 
                     # 3-tuple of metadata specific to this filetype.
                     metadata = _IMPORTABLE_FILETYPE_TO_METADATA.get(
                         filetype, None)
+                    if metadata is not None:
+                        # See "_IMPORTABLE_FILETYPE_TO_METADATA" for details.
+                        open_mode = metadata[1]
+                        imp_type = metadata[2]
+
+                # If this is a C extension, leave this path unopened.
+                if imp_type == imp.C_EXTENSION:
+                    pass
+                # If this loader defines the PEP 302-compliant is_package()
+                # method returning True, this is a non-namespace package.
+                elif hasattr(loader, 'is_package') and loader.is_package(module_name):
+                    metadata = ('', '', imp.PKG_DIRECTORY)
+                # Else, this is either a module
+                else:
+                    # In either case, this path must have a filetype.
+                    if not filetype:
+                        raise ImportError(
+                            'Non-package module %r path %r has no filetype' % (module_name, pathname))
                     if metadata is None:
                         raise ImportError(
                             'Non-package module %r filetype %r unrecognized' % (pathname, filetype))
 
-                    # See "_IMPORTABLE_FILETYPE_TO_METADATA" for details.
-                    open_mode = metadata[1]
-                    imp_type = metadata[2]
-
-                    # If this is a C extension, leave this path unopened.
-                    if imp_type == imp.C_EXTENSION:
-                        pass
-                    # Else, this is a module.
-                    #
                     # If this loader defines the PEP 302-compliant get_source()
                     # method, open the returned string as a file-like buffer.
-                    elif imp_type == imp.PY_SOURCE and hasattr(loader, 'get_source'):
+                    if imp_type == imp.PY_SOURCE and hasattr(loader, 'get_source'):
                         file_handle = StringIO(loader.get_source(module_name))
                     # If this loader defines the PEP 302-compliant get_code()
                     # method, open the returned object as a file-like buffer.
