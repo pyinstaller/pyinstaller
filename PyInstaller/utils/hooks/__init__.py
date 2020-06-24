@@ -293,7 +293,7 @@ def get_module_file_attribute(package):
         if not attr:
             raise ImportError('Unable to load module attributes')
     # Second try to import module in a subprocess. Might raise ImportError.
-    except (AttributeError, ImportError):
+    except (AttributeError, ImportError) as e:
         # Statement to return __file__ attribute of a package.
         __file__statement = """
             import %s as p
@@ -305,7 +305,7 @@ def get_module_file_attribute(package):
         """
         attr = exec_statement(__file__statement % package)
         if not attr.strip():
-            raise ImportError('Unable to load module attribute')
+            raise ImportError('Unable to load module attribute') from e
     return attr
 
 

@@ -58,8 +58,8 @@ class Structure:
             return self._fields_[index]
         try:
             return self.__dict__[name]
-        except KeyError:
-            raise AttributeError(name)
+        except KeyError as e:
+            raise AttributeError(name) from e
 
     def __setattr__(self, name, value):
         if name in self._names_:
