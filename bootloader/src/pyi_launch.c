@@ -418,9 +418,14 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
              * (Since we evaluate module-level code, which is not allowed to return an
              * object, the Python object returned is always None.) */
             if (!retval) {
+                /* If the error was SystemExit, PyErr_Print calls exit() without
+                 * returning. This means we won't print "Failed to execute" on 
+                 * normal SystemExit's.
+                 */
+                PI_PyErr_Print();
                 FATALERROR("Failed to execute script %s\n", ptoc->name);
 
-                #if defined(WINDOWED) && defined(LAUNCH_DEBUG) && !defined(__APPLE__)
+                #if defined(WINDOWED) && defined(LAUNCH_DEBUG)
                 /* Visual C++ requires all variables to be declared before any
                  * statements in a given block. The curly braces below create a
                  * block to make this compiler happy. */
@@ -466,11 +471,7 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
                     Py_DECREF(module);
                 }
 
-                #else /* if defined(WINDOWED) and defined(LAUNCH_DEBUG) and not defined(__APPLE__) */
-
-                    PI_PyErr_Print();
-
-                #endif /* if defined(WINDOWED) and defined(LAUNCH_DEBUG) and not defined(__APPLE__) */
+                #endif /* if defined(WINDOWED) and defined(LAUNCH_DEBUG) */
 
                 return -1;
             }
