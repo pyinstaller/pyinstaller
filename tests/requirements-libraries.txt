@@ -28,51 +28,50 @@ keyring==19.2.0  # pyup: ignore
 # These packages work with no (known) issues.
 babel==2.8.0
 boto==2.49.0
-boto3==1.12.33
-botocore==1.15.33
+boto3==1.13.19
+botocore==1.16.19
 future==0.18.2
-gevent==1.4.0
+gevent==20.5.2
 h5py==2.10.0
-markdown==3.2.1
-numpy==1.18.2
-pendulum==2.0.5
-phonenumbers==8.12.1
-Pillow==7.1.0
+markdown==3.2.2
+numpy==1.18.4
+phonenumbers==8.12.4
+Pillow==7.1.2
 pinyin==0.4.0
 pycparser==2.20
 pycryptodome==3.9.7
 pycryptodomex==3.9.7
-pyexcelerate==0.8.0
+pyexcelerate==0.9.0
 pygments==2.6.1
-pylint==2.4.4
+pylint==2.5.2
 PySide2==5.13.0
 python-dateutil==2.8.1
-pytz==2019.3
+pytz==2020.1
 pyusb==1.0.2
-pyzmq==19.0.0
+pyzmq==19.0.1
 requests==2.23.0
 scipy==1.4.1
 # simplejson is used for text_c_extension
 simplejson==3.17.0
 sphinx==2.4.4
 # Required for test_namespace_package
-sqlalchemy==1.3.15
+sqlalchemy==1.3.17
 Unidecode==1.1.1
 zeep==3.4.0
-zope.interface==5.0.2
+zope.interface==5.1.0
 
 
 # Python 3.5 not supported / supported for older versions
 # -------------------------------------------------------
 openpyxl==3.0.3; python_version > '3.5'
-web3==5.7.0; python_version > '3.5'
+web3==5.10.0; python_version > '3.5'
 
 # iPython 7.10.0 and higher dropped Python 3.5 support per https://ipython.readthedocs.io/en/stable/whatsnew/version7.html#stop-support-for-python-3-5-adopt-nep-29.
 ipython==7.13.0; python_version > '3.5'
 ipython==7.9.0; python_version == '3.5'  # pyup: ignore
 
 # pandas 1.0.0 dropped Python 3.5 support.
-pandas==1.0.3; python_version > '3.5'
+pandas==1.0.4; python_version > '3.5'
 pandas==0.25.3; python_version == '3.5'  # pyup: ignore
 
 
@@ -81,7 +80,7 @@ pandas==0.25.3; python_version == '3.5'  # pyup: ignore
 # Wheels are available only on OS X and Win 32. The only Windows 64-bit Python
 # tests run are for Python 3.7, so exclude that. There's no way to simply
 # exclude Windows 64 bit Python.
-pyenchant==3.0.1; sys_platform == 'darwin' or (sys_platform == 'win32' and python_version <= '3.6')
+pyenchant==3.1.1; sys_platform == 'darwin' or (sys_platform == 'win32' and python_version <= '3.6')
 
 # Per https://www.riverbankcomputing.com/pipermail/pyqt/2020-February/042506.html, Windows PyQt5 5.14.0? and 5.14.1? aren't correctly packaged.
 pyqt5==5.13.2; sys_platform == 'win32'
