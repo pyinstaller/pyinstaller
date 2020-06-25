@@ -18,7 +18,7 @@ def test_binaries_and_datas():
         [('abc', 'def'), ('ghi', 'jkl')],
         ['testmodule1', 'testmodule2']
     ]
-    
+
     cache = AdditionalFilesCache()
     for modname in modnames:
         cache.add(

@@ -15,14 +15,14 @@ import atexit
 
 
 def test_hook_order(pyi_builder):
-    
+
     subprocess.run(
         [
             sys.executable, '-m', 'pip', 'install', '-e',
             os.path.join(os.path.dirname(__file__), 'hook_order_hooks')
-         ]
+        ]
     )
-    
+
     atexit.register(lambda: subprocess.run(
         [
             sys.executable, '-m', 'pip', 'uninstall', 'pyi_example_package',
@@ -31,7 +31,12 @@ def test_hook_order(pyi_builder):
     ))
 
     pyi_builder.test_source(
-        '''try: import pyi_example_package\nexcept: pass''',
+        '''
+        try:
+            import pyi_example_package
+        except:
+            pass
+        ''',
         pyi_args=[
             '--additional-hooks-dir={}'.format(
                 os.path.join(os.path.dirname(__file__), 'hook_order_hooks')

@@ -298,12 +298,13 @@ class PyiModuleGraph(ModuleGraph):
         if self._top_script_node is None:
             # Remember the node for the first script.
             try:
-                self._top_script_node = super(PyiModuleGraph, self).run_script(pathname)
-            except SyntaxError as e:
+                self._top_script_node = super(PyiModuleGraph, self).run_script(
+                    pathname)
+            except SyntaxError:
                 print("\nSyntax error in", pathname, file=sys.stderr)
                 formatted_lines = traceback.format_exc().splitlines(True)
                 print(*formatted_lines[-4:], file=sys.stderr)
-                raise SystemExit(1)
+                sys.exit(1)
             # Create references from the top script to the base_modules in graph.
             for node in self._base_modules:
                 self.createReference(self._top_script_node, node)
@@ -311,10 +312,11 @@ class PyiModuleGraph(ModuleGraph):
             return self._top_script_node
         else:
             if not caller:
-                # Defaults to as any additional script is called from the top-level
-                # script.
+                # Defaults to as any additional script is called from the
+                # top-level script.
                 caller = self._top_script_node
-            return super(PyiModuleGraph, self).run_script(pathname, caller=caller)
+            return super(PyiModuleGraph, self).run_script(
+                pathname, caller=caller)
 
 
     def process_post_graph_hooks(self):
