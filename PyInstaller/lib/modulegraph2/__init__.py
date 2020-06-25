@@ -11,7 +11,7 @@ The graph itself is an subclass of :class:`objectgraph.ObjectGraph`.
 This module provides annotation for use with
 `Mypy <https://mypy.readthedocs.io/en/latest/>`_.
 """
-__version__ = "2.0"
+__version__ = "2.0.1"
 
 from ._depinfo import DependencyInfo
 from ._distributions import PyPIDistribution, all_distributions, distribution_named
