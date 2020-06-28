@@ -1,7 +1,7 @@
 PyInstaller Overview
 ====================
 
-**New PyInstaller team members wanted! Email ``legorooj@protonmail.com`` if you're interested.**
+**New PyInstaller team members wanted! Email legorooj@protonmail.com if you're interested.**
 
 PyInstaller bundles a Python application and all its dependencies into a single
 package. The user can run the packaged app without installing a Python
