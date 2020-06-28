@@ -96,8 +96,10 @@ as attributes of the namespace.
 Thus a hook is a normal Python script and can use all normal Python facilities.
 For example it could test ``sys.version`` and adjust its
 assignment to ``hiddenimports`` based on that.
-There are over 150 hooks in the |PyInstaller| installation.
-You are welcome to browse through them for examples.
+There are many hooks in the |PyInstaller| installation,
+but a much larger collection can be found in the
+`community hooks package <https://github.com/pyinstaller/pyinstaller-hooks-contrib>`_.
+Please browse through them for examples.
 
 .. _provide hooks with package:
 
