@@ -124,10 +124,9 @@ class PyiModuleGraph(ModuleGraph):
         """
         self._top_script_node = None
         self._additional_files_cache = AdditionalFilesCache()
-        # Prepend PyInstaller hook dir hook directories from entry points and
-        # user hook dirs. Thus PyInstaller hook will have lowest priority.q
+        # Command line, Entry Point, and then builtin hook dirs.
         self._user_hook_dirs = (
-            [os.path.join(PACKAGEPATH, 'hooks')] + list(user_hook_dirs)
+            list(user_hook_dirs) + [os.path.join(PACKAGEPATH, 'hooks')]
         )
         # Hook-specific lookup tables.
         # These need to reset when reusing cached PyiModuleGraph to avoid
@@ -179,9 +178,13 @@ class PyiModuleGraph(ModuleGraph):
                 'The value of %s key %s must be a list.' %
                 (uhd_path, module_name))
             if module_name in self._available_rthooks:
-                logger.warning("Several run-time hooks defined for module %r."
-                               "Please take care they do not conflict.",
-                               module_name)
+                logger.warning(
+                    'Runtime hooks for %s have already been defined. Skipping '
+                    'the runtime hooks for %s that are defined in %s.',
+                    module_name, module_name, os.path.join(uhd, 'rthooks')
+                )
+                # Skip this module
+                continue
             # Merge this with existing run-time hooks.
             for python_file_name in python_file_name_list:
                 # Ensure each item in the list is a string.
@@ -295,12 +298,13 @@ class PyiModuleGraph(ModuleGraph):
         if self._top_script_node is None:
             # Remember the node for the first script.
             try:
-                self._top_script_node = super(PyiModuleGraph, self).run_script(pathname)
+                self._top_script_node = super(PyiModuleGraph, self).run_script(
+                    pathname)
             except SyntaxError:
                 print("\nSyntax error in", pathname, file=sys.stderr)
                 formatted_lines = traceback.format_exc().splitlines(True)
                 print(*formatted_lines[-4:], file=sys.stderr)
-                raise SystemExit(1)
+                sys.exit(1)
             # Create references from the top script to the base_modules in graph.
             for node in self._base_modules:
                 self.createReference(self._top_script_node, node)
@@ -308,10 +312,11 @@ class PyiModuleGraph(ModuleGraph):
             return self._top_script_node
         else:
             if not caller:
-                # Defaults to as any additional script is called from the top-level
-                # script.
+                # Defaults to as any additional script is called from the
+                # top-level script.
                 caller = self._top_script_node
-            return super(PyiModuleGraph, self).run_script(pathname, caller=caller)
+            return super(PyiModuleGraph, self).run_script(
+                pathname, caller=caller)
 
 
     def process_post_graph_hooks(self):

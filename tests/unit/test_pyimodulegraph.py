@@ -169,7 +169,7 @@ def test_collect_rthooks_3(tmpdir, monkeypatch):
     hd1 = _gen_pseudo_rthooks("h1", rh1, tmpdir)
     hd2 = _gen_pseudo_rthooks("h2", rh2, tmpdir)
     mg = FakePyiModuleGraph(HOMEPATH, user_hook_dirs=[str(hd1), str(hd2)])
-    assert len(mg._available_rthooks["test_pyimodulegraph_mymod1"]) == 3
+    assert len(mg._available_rthooks["test_pyimodulegraph_mymod1"]) == 1
 
 
 def test_collect_rthooks_fail_1(tmpdir, monkeypatch):
