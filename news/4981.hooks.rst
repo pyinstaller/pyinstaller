@@ -1,0 +1,1 @@
+Add hook for ``scipy.stats._stats`` (needed for scipy since 1.5.0).
