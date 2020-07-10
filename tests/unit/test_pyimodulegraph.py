@@ -10,15 +10,21 @@
 #-----------------------------------------------------------------------------
 
 
+import sys
 import types
 import pytest
 import itertools
 
 from PyInstaller import HOMEPATH
+from PyInstaller.compat import is_py38
 from PyInstaller.depend import analysis
 from PyInstaller.lib.modulegraph import modulegraph
 import PyInstaller.log as logging
 from PyInstaller.utils.tests import gen_sourcefile
+
+
+N_CTYPES = (2 if (sys.platform.startswith('win') or sys.platform == 'darwin')
+            else 1) if is_py38 else 0
 
 
 def test_get_co_using_ctypes(tmpdir):
@@ -28,7 +34,7 @@ def test_get_co_using_ctypes(tmpdir):
     mg = analysis.PyiModuleGraph(HOMEPATH, excludes=("platform",))
     mg.run_script(str(script))
     res = mg.get_co_using_ctypes()
-    assert len(res) == 1, res
+    assert len(res) == 1 + N_CTYPES, res
     assert isinstance(res[str(script)], types.CodeType), res
 
 
@@ -41,7 +47,7 @@ def test_get_co_using_ctypes_from_extension():
     struct = mg.createNode(modulegraph.Extension, '_struct', 'struct.so')
     mg.implyNodeReference(struct, 'ctypes') # simulate the hidden import
     res = mg.get_co_using_ctypes()
-    assert len(res) == 0
+    assert len(res) == N_CTYPES
 
 
 class FakePyiModuleGraph(analysis.PyiModuleGraph):
