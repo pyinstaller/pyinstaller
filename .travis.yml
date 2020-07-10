@@ -16,7 +16,7 @@ dist: xenial
 cache:
   directories:
     - $HOME/.cache/pip
-    - $HOME/py37
+    - $HOME/py38
 
 os:
   - linux
@@ -84,12 +84,12 @@ jobs:
 
     - &test-pyinstaller
       stage: Test - PyInstaller
-      python: 3.7
+      python: 3.8
       script: *script-test-pyinstaller
 
     - &test-libraries
       stage: Test - Libraries
-      python: 3.7
+      python: 3.8
       before_install:
         # Install OpenSSL 1.1. This fixes dynamic linking problems when PyQt5.13 tries
         # to link with OpenSSL 1.1 -- on Ubuntu 16 (xenial), the older OpenSSL
@@ -102,7 +102,7 @@ jobs:
 
     - &lint
       stage: Lint
-      python: 3.7
+      python: 3.8
       script:
         - >
             if [ "$TRAVIS_PULL_REQUEST" != "false" ] ; then
@@ -123,6 +123,13 @@ jobs:
       python: 3.6
     - <<: *lint
       python: 3.6
+
+    - <<: *test-pyinstaller
+      python: 3.7
+    - <<: *test-libraries
+      python: 3.7
+    - <<: *lint
+      python: 3.7
 
     - <<: *test-pyinstaller
       python: nightly

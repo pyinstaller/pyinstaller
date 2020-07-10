@@ -15,6 +15,26 @@ environment:
   APPVEYOR_SAVE_CACHE_ON_ERROR: true
 
   matrix:
+    - PYTHON: C:\Python38-x64
+      PYTHON_VERSION: 3.8
+      PYTHON_ARCH: 64
+      TEST_LIBRARIES_ONLY: True
+
+    - PYTHON: C:\Python38-x64
+      PYTHON_VERSION: 3.8
+      PYTHON_ARCH: 64
+      TEST_LIBRARIES_ONLY: False
+
+    - PYTHON: C:\Python38
+      PYTHON_VERSION: 3.8
+      PYTHON_ARCH: 32
+      TEST_LIBRARIES_ONLY: True
+
+    - PYTHON: C:\Python38
+      PYTHON_VERSION: 3.8
+      PYTHON_ARCH: 32
+      TEST_LIBRARIES_ONLY: False
+
     - PYTHON: C:\Python37-x64
       PYTHON_VERSION: 3.7
       PYTHON_ARCH: 64
