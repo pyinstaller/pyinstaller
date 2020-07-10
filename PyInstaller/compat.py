@@ -33,6 +33,7 @@ is_64bits = sys.maxsize > 2**32
 is_py35 = sys.version_info >= (3, 5)
 is_py36 = sys.version_info >= (3, 6)
 is_py37 = sys.version_info >= (3, 7)
+is_py38 = sys.version_info >= (3, 8)
 
 is_win = sys.platform.startswith('win')
 is_win_10 = is_win and (platform.win32_ver()[0] == '10')
