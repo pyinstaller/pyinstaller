@@ -14,6 +14,7 @@ Functional tests for Matplotlib.
 """
 
 import pytest
+from PyInstaller.compat import is_py38
 from PyInstaller.utils.tests import importorskip
 
 
@@ -23,9 +24,9 @@ from PyInstaller.utils.tests import importorskip
 # * "backend_name" is the name of a Matplotlib backend to be tested below.
 # * "package_name" is the name of the external package required by this backend.
 # * "rcParams_key" is the name of a Matplotlib parameter to be set before testing
-#   this backend or "None" if no parameter is to be set.
+#   this backend or "None" if no parameter is to be set. Ignored >= Py3.8.
 # * "rcParams_value" is the value to set that parameter to if "rcParams_key" is
-#   not "None" or ignored otherwise.
+#   not "None" or ignored otherwise. Ignored >= Py3.8
 backend_rcParams_key_values = [
     # PySide.
     ('Qt4Agg', 'PySide', 'backend.qt4', 'PySide'),
@@ -97,7 +98,10 @@ def test_matplotlib(
         backend_name, rcParams_key, rcParams_value))
 
     # Configure Matplotlib *BEFORE* calling any Matplotlib functions.
-    matplotlib.rcParams[rcParams_key] = rcParams_value
+    if {is_py38!r}:
+        import {package_name}
+    else:
+        matplotlib.rcParams[rcParams_key] = rcParams_value
 
     # Enable the desired backend *BEFORE* plotting with this backend.
     matplotlib.use(backend_name)
@@ -121,8 +125,10 @@ def test_matplotlib(
     from mpl_toolkits import axes_grid1
     '''.format(
         backend_name=backend_name,
+        package_name=package_name,
         rcParams_key=rcParams_key,
         rcParams_value=rcParams_value,
+        is_py38=is_py38
     ))
 
     # Test this script.
