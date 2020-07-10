@@ -250,8 +250,8 @@ for example::
 
    from PyInstaller.compat import modname_tkinter, is_win
 
-``is_py35``, ``is_py36``, ``is_py37``:
-   True when the current version of Python is at least 3.5, 3.6, or 3.7 respectively.
+``is_py35``, ``is_py36``, ``is_py37``, ``is_py38``:
+   True when the current version of Python is at least 3.5, 3.6, 3.7, or 3.8 respectively.
 
 ``is_win``:
    True in a Windows system.
