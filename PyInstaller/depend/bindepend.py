@@ -63,17 +63,23 @@ def getfullnameof(mod, xtrapath=None):
     # Contain some dlls in directory like C:\Python27\Lib\site-packages\numpy\core\
     from distutils.sysconfig import get_python_lib
     numpy_core_paths = [os.path.join(get_python_lib(), 'numpy', 'core')]
+    pywin32_paths = [os.path.join(get_python_lib(), 'pywin32_system32')]
     # In virtualenv numpy might be installed directly in real prefix path.
     # Then include this path too.
     if is_venv:
         numpy_core_paths.append(
             os.path.join(base_prefix, 'Lib', 'site-packages', 'numpy', 'core')
         )
+        pywin32_paths.append(
+            os.path.join(base_prefix, 'Lib', 'site-packages',
+                         'pywin32_system32')
+        )
 
     # TODO check if this 'numpy' workaround is still necessary!
     # Search sys.path first!
-    epath = (sys.path + numpy_core_paths + winutils.get_system_path() +
-             compat.getenv('PATH', '').split(os.pathsep))
+    epath = sys.path + numpy_core_paths + pywin32_paths \
+        + winutils.get_system_path() \
+        + compat.getenv('PATH', '').split(os.pathsep)
     if xtrapath is not None:
         if type(xtrapath) == type(''):
             epath.insert(0, xtrapath)
