@@ -38,6 +38,7 @@ seen = set()
 
 # Import windows specific stuff.
 if is_win:
+    from distutils.sysconfig import get_python_lib
     from ..utils.win32.winmanifest import RT_MANIFEST
     from ..utils.win32.winmanifest import GetManifestResources
     from ..utils.win32.winmanifest import Manifest
@@ -56,7 +57,17 @@ def getfullnameof(mod, xtrapath=None):
     Return the full path name of MOD.
     Will search the full Windows search path, as well as sys.path
     """
+    pywin32_paths = []
+    if is_win:
+        pywin32_paths = [os.path.join(get_python_lib(), 'pywin32_system32')]
+        if is_venv:
+            pywin32_paths.append(
+                os.path.join(base_prefix, 'Lib', 'site-packages',
+                             'pywin32_system32')
+            )
+
     epath = (sys.path +  # Search sys.path first!
+             pywin32_paths +
              winutils.get_system_path() +
              compat.getenv('PATH', '').split(os.pathsep))
     if xtrapath is not None:
