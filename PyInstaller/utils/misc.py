@@ -127,6 +127,10 @@ def compile_py_files(toc, workpath):
             new_toc.append((nm, fnm, typ))
             continue
 
+        if fnm in ('-', None):
+            # If fmn represents a namespace then skip
+            continue
+
         if fnm.endswith('.py') :
             # we are given a source path, determine the object path if any
             src_fnm = fnm
