@@ -1,0 +1,1 @@
+(Windows) When building with 32-bit python in onefile mode, set the ``requestedExecutionLevel`` manifest key every time and embed the manifest.

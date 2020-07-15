@@ -1061,6 +1061,8 @@ def create_manifest(filename, manifest, console, uac_admin=False, uac_uiaccess=F
             )
     if uac_admin:
         manifest.requestedExecutionLevel = 'requireAdministrator'
+    else:
+        manifest.requestedExecutionLevel = 'asInvoker'
     if uac_uiaccess:
         manifest.uiAccess = True
 
