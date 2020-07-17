@@ -1,0 +1,1 @@
+(Windows) GLib: bundle the spawn helper executables for `g_spawn*` API.
