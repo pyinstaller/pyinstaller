@@ -107,12 +107,13 @@ See https://github.com/pyinstaller/pyinstaller/issues/621 for more information.
             """ % init_resource)
 
 
-def _find_tcl_tk_darwin_frameworks(binaries):
+def _find_tcl_tk_darwin_system_frameworks(binaries):
     """
     Get an OS X-specific 2-tuple of the absolute paths of the top-level
     external data directories for both Tcl and Tk, respectively.
 
-    Under OS X, Tcl and Tk are installed as Frameworks requiring special care.
+    This function finds the OS X system installation of Tcl and Tk.
+    System OS X Tcl and Tk are installed as Frameworks requiring special care.
 
     Returns
     -------
@@ -186,10 +187,15 @@ def _find_tcl_tk(hook_api):
 
         # _tkinter depends on Tcl/Tk compiled as frameworks.
         path_to_tcl = bins[0][1]
-        if 'Library/Frameworks' in path_to_tcl:
-            tcl_tk = _find_tcl_tk_darwin_frameworks(bins)
+        # OS X system installation of Tcl/Tk.
+        # [/System]/Library/Frameworks/Tcl.framework/Resources/Scripts/Tcl
+        if 'Library/Frameworks/Tcl.framework' in path_to_tcl:
+            tcl_tk = _find_tcl_tk_darwin_system_frameworks(bins)
         # Tcl/Tk compiled as on Linux other Unixes.
-        # For example this is the case of Tcl/Tk from macports.
+        # This is the case of Tcl/Tk from macports and Tck/Tk built into
+        # python.org OS X python distributions.
+        # python.org built-in tcl/tk is located at
+        # /Library/Frameworks/Python.framework/Versions/3.x/lib/libtcl8.6.dylib
         else:
             tcl_tk = _find_tcl_tk_dir()
 
