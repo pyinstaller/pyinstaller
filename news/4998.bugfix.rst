@@ -1,0 +1,1 @@
+(Windows) PySide2.QtNetwork: search for SSL DLLs in `PrefixPath` in addition to `BinariesPath`.
