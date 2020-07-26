@@ -100,18 +100,6 @@ jobs:
         - sudo apt install openssl -q
       script: *script-test-libraries
 
-    - &lint
-      stage: Lint
-      python: 3.7
-      script:
-        - >
-            if [ "$TRAVIS_PULL_REQUEST" != "false" ] ; then
-              git fetch origin $TRAVIS_BRANCH:$TRAVIS_BRANCH --depth 1 || travis_terminate 1;
-              flake8-diff -v -v -v $TRAVIS_BRANCH || travis_terminate 1;
-            fi
-        - python setup.py sdist bdist_wheel
-        - pip install -v .
-
     - <<: *test-pyinstaller
       python: 3.5
     - <<: *test-libraries
@@ -120,8 +108,6 @@ jobs:
     - <<: *test-pyinstaller
       python: 3.6
     - <<: *test-libraries
-      python: 3.6
-    - <<: *lint
       python: 3.6
 
     - <<: *test-pyinstaller
