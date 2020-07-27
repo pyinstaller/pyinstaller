@@ -141,6 +141,68 @@ in a bundled app:
    raise ``ImportError``.
 
 
+.. _pyi_splash Module:
+
+:mod:`pyi_splash` Module (Detailed)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This module connects to the bootloader to send messages to the splash screen.
+
+It is intended to act as an RPC interface for the functions provided by the
+bootloader, such as displaying text or closing. This makes the users python
+program independent of how the communication with the bootloader is
+implemented, since a consistent API is provided.
+
+To connect to the bootloader, it connects to a local tcp server socket whose port
+is passed through the environment variable ``_PYIBoot_SPLASH``. The bootloader
+connects to the socket via the python module ``_socket``. Although this socket
+is bidirectional, the module is only configured to send data.
+Since the os-module, which is needed to request the environment variable,
+is not available at boot time, the module does not establish the connection
+until initialization.
+
+This module does not support reloads while the splash screen is displayed, i.e.
+it cannot be reloaded (such as by ``importlib.reload``), because the splash
+screen closes automatically when the connection to this instance of the
+module is lost.
+
+Functions
+---------
+
+.. py:module:: pyi_splash
+.. py:currentmodule:: pyi_splash
+
+.. Note::
+    Note that if the ``_PYIBoot_SPLASH`` environment variable does not exist or an
+    error occurs during the connection, the module will **not** raise an error, but simply
+    not initialize itself (i.e. ``pyi_splash.is_alive()`` will return ``False``). Before
+    sending commands to the splash screen, one should check if the module was initialized
+    correctly, otherwise a ``RuntimeError`` will be raised.
+
+.. py:function:: is_alive()
+
+    Indicates whether the module can be used.
+
+    Returns ``False`` if the module is either not initialized ot was disabled
+    by closing the splash screen. Otherwise, the module should be usable.
+
+.. py:function:: update_text(msg)
+
+    Updates the text on the splash screen window.
+
+    :param str msg: the text to be displayed
+    :raises ConnectionError: If the OS fails to write to the socket
+    :raises RuntimeError: If the module is not initialized
+
+.. py:function:: close()
+
+    Close the connection to the ipc tcp server socket
+
+    This will close the splash screen and renders this module unusable.
+    After this function is called, no connection can be opened to the splash
+    screen again and all functions if this module become unusable
+
+
 .. _the toc and tree classes:
 
 The TOC and Tree Classes
