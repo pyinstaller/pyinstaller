@@ -36,16 +36,19 @@
 #include "pyi_pythonlib.h"
 #include "pyi_launch.h"
 #include "pyi_win32_utils.h"
+#include "pyi_splash.h"
 
 int
 pyi_main(int argc, char * argv[])
 {
     /*  archive_status contain status information of the main process. */
     ARCHIVE_STATUS *archive_status = NULL;
+    SPLASH_STATUS *splash_status = NULL;
     char executable[PATH_MAX];
     char homepath[PATH_MAX];
     char archivefile[PATH_MAX];
     int rc = 0;
+    int in_child = 0;
     char *extractionpath = NULL;
 
 #ifdef _MSC_VER
@@ -76,6 +79,11 @@ pyi_main(int argc, char * argv[])
      */
 
     extractionpath = pyi_getenv("_MEIPASS2");
+
+    /* NOTE: record the in-child status here, because extractionpath
+     * might get overwritten later on (on Windows and macOS, single
+     * process is used for --onedir mode). */
+    in_child = (extractionpath != NULL);
 
     /* If the Python program we are about to run invokes another PyInstaller
      * one-file program as subprocess, this subprocess must not be fooled into
@@ -127,18 +135,48 @@ pyi_main(int argc, char * argv[])
 #endif
 
 
-
+#ifdef _WIN32
     if (extractionpath) {
-        
-        #ifdef _WIN32
         /* Add extraction folder to DLL search path */
         wchar_t * dllpath_w;
         dllpath_w = pyi_win32_utils_from_utf8(NULL, extractionpath, 0);
         SetDllDirectory(dllpath_w);
         VS("LOADER: SetDllDirectory(%s)\n", extractionpath);
         free(dllpath_w);
-        #endif
+    }
+#endif
 
+    /*
+     * Check for splash screen resources.
+     * For the splash screen function to work PyInstaller
+     * needs to bundle tcl/tk with the application. This library
+     * is the same as tkinter uses.
+     */
+    splash_status = pyi_splash_status_new();
+
+    if (!in_child && pyi_splash_setup(splash_status, archive_status, NULL) == 0) {
+        /* Splash resources found, start splash screen */
+        /* If in onefile mode extract the required binaries */
+        if ((!pyi_splash_extract(archive_status, splash_status)) &&
+            (!pyi_splash_attach(splash_status))) {
+            /* Everything was initialized, so it is safe to start
+             * the splash screen */
+            pyi_splash_start(splash_status, executable);
+        }
+        else {
+            /* Error attaching tcl/tk libraries.
+             * It may have happened that the libraries got (partly)
+             * loaded, so close them by finalizing the splash status */
+            pyi_splash_finalize(splash_status);
+            pyi_splash_status_free(&splash_status);
+        }
+    }
+    else {
+        /* No splash screen resources found */
+        pyi_splash_status_free(&splash_status);
+    }
+
+    if (extractionpath) {
         VS("LOADER: Already in the child - running user's code.\n");
 
         /*  If binaries were extracted to temppath,
@@ -163,6 +201,10 @@ pyi_main(int argc, char * argv[])
         rc = pyi_launch_execute(archive_status);
         pyi_launch_finalize(archive_status);
 
+        /* Clean up splash screen resources; required when in single-process
+         * execution mode, i.e. when using --onedir on Windows or macOS. */
+        pyi_splash_finalize(splash_status);
+        pyi_splash_status_free(&splash_status);
     }
     else {
 
@@ -206,6 +248,12 @@ pyi_main(int argc, char * argv[])
         VS("LOADER: Back to parent (RC: %d)\n", rc);
 
         VS("LOADER: Doing cleanup\n");
+
+        /* Finalize splash screen before temp directory gets wiped, since the splash
+         * screen might hold handles to shared libraries inside the temp dir. Those
+         * wouldn't be removed, leaving the temp folder behind. */
+        pyi_splash_finalize(splash_status);
+        pyi_splash_status_free(&splash_status);
 
         if (archive_status->has_temp_directory == true) {
             pyi_remove_temp_path(archive_status->temppath);
