@@ -224,6 +224,15 @@ def test_import_pyqt5_uic_port(script_dir, pyi_builder):
         pyi_args=['--path', extra_path])
 
 
+# Check whether modulegraph finds pyi_splash
+def test_import_pyi_splash(pyi_builder):
+    pyi_builder.test_source(
+        """
+        import pyi_splash
+        assert hasattr(pyi_splash, "_initialized")
+        """)
+
+
 #--- ctypes ----
 
 @skipif_no_compiler

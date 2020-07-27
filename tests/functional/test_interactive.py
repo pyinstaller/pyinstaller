@@ -19,7 +19,7 @@ Note: All tests in this file should use the argument 'runtime'.
 import pytest
 
 from PyInstaller.utils.tests import importorskip, xfail
-from PyInstaller.compat import is_win
+from PyInstaller.compat import is_win, is_darwin
 
 _RUNTIME = 10  # In seconds.
 
@@ -32,3 +32,23 @@ def test_ipython(pyi_builder):
         from IPython import embed
         embed()
         """, runtime=_RUNTIME)
+
+
+# Someone with a Mac needs to take a look into implementing this the right way
+# If Splash discovers standalone binaries on a Mac those will be bundled and
+# the test should succeed, if the system provided Tcl/Tk is used PyInstaller
+# does not find the standalone binaries
+@xfail(is_darwin, reason="MacOS uses system-wide Tcl/Tk, which"
+                         " is not necessarily bundled.")
+@pytest.mark.parametrize("mode", ['onedir', 'onefile'])
+def test_pyi_splash(pyi_builder_spec, capfd, monkeypatch, mode):
+    if mode == 'onefile':
+        monkeypatch.setenv('_TEST_SPLASH_ONEFILE', 'onefile')
+
+    pyi_builder_spec.test_spec('spec_with_splash.spec',
+                               runtime=_RUNTIME)
+
+    out, err = capfd.readouterr()
+    assert 'SPLASH: Splash screen started' in err, \
+        ("Cannot find log entry indicating start of splash screen in:\n{}"
+         .format(err))
