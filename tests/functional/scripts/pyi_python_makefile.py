@@ -24,7 +24,12 @@ files = [config_h]
 
 # On Windows Makefile does not exist.
 if not sys.platform.startswith('win'):
-    makefile = sysconfig.get_makefile_filename()
+    get_makefile_filename = getattr(
+        sysconfig,
+        'get_makefile_filename',
+        getattr(sysconfig, '_get_makefile_filename', lambda: None),
+    )
+    makefile = get_makefile_filename()
     print(('Makefile: ' + makefile))
     files.append(makefile)
 
