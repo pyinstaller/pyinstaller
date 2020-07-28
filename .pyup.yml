@@ -10,6 +10,7 @@ requirements:
       update: False
   - requirements.txt:
       update: False
+      pin: False
 
 pr_prefix: "Tests: Requirements:"
 label_prs: "area:tests/ci/pyup"
