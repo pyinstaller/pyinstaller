@@ -207,7 +207,7 @@ class AppBuilder(object):
                         will be appended to the script filename,
                         separated by two underscores.
 
-        All other arguments are passed streigth on to `test_script`.
+        All other arguments are passed straight on to `test_script`.
 
         Ensure that the caller of `test_source` is in a UTF-8
         encoded file with the correct '# -*- coding: utf-8 -*-' marker.
@@ -220,9 +220,9 @@ class AppBuilder(object):
         del kwargs['test_id']
         return self.test_script(str(scriptfile), *args, **kwargs)
 
-
     def test_script(self, script, pyi_args=None, app_name=None,
-                    app_args=None, runtime=None, run_from_path=False):
+                    app_args=None, runtime=None, run_from_path=False,
+                    **kwargs):
         """
         Main method to wrap all phases of testing a Python script.
 
@@ -264,10 +264,11 @@ class AppBuilder(object):
 
         marker('Build finshed, now running executable.')
         self._test_executables(app_name, args=app_args,
-                               runtime=runtime, run_from_path=run_from_path)
+                               runtime=runtime, run_from_path=run_from_path,
+                               **kwargs)
         marker('Running executable finished.')
 
-    def _test_executables(self, name, args, runtime, run_from_path):
+    def _test_executables(self, name, args, runtime, run_from_path, **kwargs):
         """
         Run created executable to make sure it works.
 
@@ -292,7 +293,7 @@ class AppBuilder(object):
                 if not self._examine_executable(exe, toc_log):
                     pytest.fail('Matching .toc of %s failed.' % exe)
             retcode = self._run_executable(exe, args, run_from_path, runtime)
-            if retcode != 0:
+            if retcode != kwargs.get('retcode', 0):
                 pytest.fail('Running exe %s failed with return-code %s.' %
                             (exe, retcode))
 
