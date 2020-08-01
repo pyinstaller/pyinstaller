@@ -1,0 +1,7 @@
+Fix hidden imports in pkg_resources_ and packaging_
+
+- Add yet more hidden imports to pkg_resources_ hook.
+- Mirror the pkg_resources_ hook for packaging_ which may or may not be duplicate of ``pkg_resources._vendor.packaging``.
+
+.. _pkg_resources: `pkg_resources <https://setuptools.readthedocs.io/en/latest/pkg_resources.html>`
+.. _packaging: `packaging <https://packaging.pypa.io/en/latest/>`
