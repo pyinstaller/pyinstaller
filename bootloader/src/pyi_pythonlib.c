@@ -202,7 +202,7 @@ pyi_pylib_set_runtime_opts(ARCHIVE_STATUS *status)
     *PI_Py_NoUserSiteDirectory = 1;
     /* This flag ensures PYTHONPATH and PYTHONHOME are ignored by Python. */
     *PI_Py_IgnoreEnvironmentFlag = 1;
-    /* Disalbe verbose imports by default. */
+    /* Disable verbose imports by default. */
     *PI_Py_VerboseFlag = 0;
 
     /* Override some runtime options by custom values from PKG archive.
@@ -689,6 +689,30 @@ pyi_pylib_finalize(ARCHIVE_STATUS *status)
      * loaded then calling this function might cause some segmentation faults.
      */
     if (status->is_pylib_loaded == true) {
+        #ifndef WINDOWED
+            /* 
+             * We need to manually flush the buffers because otherwise there can be errors.
+             * The native python interpreter flushes buffers before calling Py_Finalize,
+             * so we need to manually do the same. See isse #4908.
+             */
+
+            VS("LOADER: Manually flushing stdout and stderr\n");
+
+            /* sys.stdout.flush() */
+            PI_PyRun_SimpleString(
+                "import sys; sys.stdout.flush(); \
+                (sys.__stdout__.flush if sys.__stdout__ \
+                is not sys.stdout else (lambda: None))()");
+
+            /* sys.stderr.flush() */
+            PI_PyRun_SimpleString(
+                "import sys; sys.stderr.flush(); \
+                (sys.__stderr__.flush if sys.__stderr__ \
+                is not sys.stderr else (lambda: None))()");
+
+        #endif
+
+        /* Finalize the interpreter. This function call calls all of the atexit functions. */
         VS("LOADER: Cleaning up Python interpreter.\n");
         PI_Py_Finalize();
     }
