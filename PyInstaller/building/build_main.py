@@ -178,7 +178,7 @@ class Analysis(Target):
             # Normalize script path.
             script = os.path.normpath(script)
             if not os.path.exists(script):
-                raise ValueError("script '%s' not found" % script)
+                raise SystemExit("script '%s' not found" % script)
             self.inputs.append(script)
 
         # Django hook requires this variable to find the script manage.py.
@@ -656,10 +656,13 @@ def build(spec, distpath, workpath, clean_build):
     CONF['workpath'] = workpath
 
     # Execute the specfile. Read it as a binary file...
-    with open(spec, 'rb') as f:
-        # ... then let Python determine the encoding, since ``compile`` accepts
-        # byte strings.
-        code = compile(f.read(), spec, 'exec')
+    try:
+        with open(spec, 'rb') as f:
+            # ... then let Python determine the encoding, since ``compile`` accepts
+            # byte strings.
+            code = compile(f.read(), spec, 'exec')
+    except FileNotFoundError as e:
+        raise SystemExit('spec "{}" not found'.format(spec))
     exec(code, spec_namespace)
 
 def __add_options(parser):
