@@ -786,7 +786,6 @@ def collect_system_data_files(path, destdir=None, include_py_files=False):
     # which may not be true on Windows; Windows allows Linux path separators in
     # filenames. Fix this by normalizing the path.
     path = os.path.normpath(path)
-    path = os.path.dirname(path)
     # Ensure `path` ends with a single slash
     # Subtle difference on Windows: In some cases `dirname` keeps the
     # trailing slash, e.g. dirname("//aaa/bbb/"), see issue #4707.
