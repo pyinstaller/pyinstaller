@@ -12,8 +12,10 @@ import os
 import sys
 import subprocess
 import atexit
+from PyInstaller.utils.tests import skip
 
 
+@skip
 def test_hook_order(pyi_builder):
 
     subprocess.run(
