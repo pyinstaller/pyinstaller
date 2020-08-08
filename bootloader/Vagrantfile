@@ -202,13 +202,17 @@ end
 
 def windows_disable_updates()
   # TODO: Add more entries to really disable all auto-updates and reboots.
+  # Also disable Cortana
   return <<-EOF
     echo > no-updates.ps1 '
     $base = "HKLM:/Software/Policies/Microsoft/Windows/"
-    New-Item -Force -Path "$base/WindowsUpdate" | Out-Null
-    New-Item -Force -Path "$base/WindowsUpdate/AU" | Out-Null
+    New-Item -Force -Path  "$base/WindowsUpdate" | Out-Null
+    New-Item -Force -Path  "$base/WindowsUpdate/AU" | Out-Null
     New-ItemProperty -Path "$base/WindowsUpdate/AU" -Name "NoAutoUpdate" -Value 1 -PropertyType DWORD -Force | Out-Null
-    Get-ItemProperty "$base/WindowsUpdate/AU"
+    Get-ItemProperty       "$base/WindowsUpdate/AU"
+    New-Item -Force  -Path "$base/Windows Search" | Out-Null
+    New-ItemProperty -Path "$base/Windows Search" -Name "AllowCortana" -Value 0 -PropertyType DWORD -Force | Out-Null
+    Get-ItemProperty       "$base/Windows Search"
     ' ; powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./no-updates.ps1
   EOF
 end
