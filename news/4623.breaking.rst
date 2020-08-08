@@ -1,2 +1,0 @@
-Remove support for Python 2.7. The minimum required version is now Python
-3.5. The last version supporting Python 2.7 was PyInstaller 3.6.

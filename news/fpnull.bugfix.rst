@@ -1,1 +1,0 @@
-Ensure shared dependencies from onefile packages can be opened in the bootloader.

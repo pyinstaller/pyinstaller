@@ -1,1 +1,0 @@
-(Windows) cv2: bundle the `opencv_videoio_ffmpeg*.dll`, if available.

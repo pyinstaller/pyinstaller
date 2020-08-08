@@ -1,1 +1,0 @@
-Add QtQmlModels to included libraries for QtWebEngine on OS X.

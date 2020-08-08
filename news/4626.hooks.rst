@@ -1,1 +1,0 @@
-Add an AssertionError message so that users who get this error due to Hook conflicts can resolve it.

@@ -1,1 +1,0 @@
-Add hook for Bleak (Bluetooth Low Energy platform Agnostic Klient for Python)
