@@ -163,5 +163,5 @@ http://www.pyinstaller.org/funding.html for how to support PyInstaller.
 
 
 .. _tinyaes: https://github.com/naufraghi/tinyaes-py
-.. _`manual`: https://pyinstaller.readthedocs.io/en/latest/
+.. _`manual`: https://pyinstaller.readthedocs.io/en/v4.0/
 
