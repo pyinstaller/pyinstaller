@@ -18,9 +18,7 @@ http://www.pyinstaller.org/funding.html for how to support PyInstaller.
 :Documentation: https://pyinstaller.readthedocs.io/
 :Website:       http://www.pyinstaller.org/
 :Code:          https://github.com/pyinstaller/pyinstaller
-:Donate:        | https://www.bountysource.com/teams/pyinstaller
-                | Bitcoin: 1JUFjawzWDR7Tc8z9TKXstVFdjkDY9FbtK
-                | `more ways to donate … <http://www.pyinstaller.org/donate.html>`_
+:Donate, Fund:  http://www.pyinstaller.org/funding.html
 
 
 PyInstaller reads a Python script written by you. It analyzes your code
