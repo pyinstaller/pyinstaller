@@ -47,7 +47,7 @@ zope.interface==5.1.0
 # -------------------------------------------------------
 
 # iPython 7.10.0 and higher dropped Python 3.5 support per https://ipython.readthedocs.io/en/stable/whatsnew/version7.html#stop-support-for-python-3-5-adopt-nep-29.
-ipython==7.16.1; python_version > '3.5'
+ipython==7.17.0; python_version > '3.5'
 ipython==7.9.0; python_version == '3.5'  # pyup: ignore
 
 # pandas 1.0.0 dropped Python 3.5 support.
