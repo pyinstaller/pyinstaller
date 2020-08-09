@@ -24,14 +24,17 @@ Features
 
   Maintainers of Python packages requiring hooks are invited to use this new
   feature and provide up-to-date PyInstaller support along with their package.
-  This is quite easy, see our `sample project`__ for more information.
-  (:issue:`#4232`, :issue:`#4301`, :issue:`#4582`)
+  This is quite easy, see our `sample project`__ for more information
+  (:issue:`#4232`, :issue:`#4301`, :issue:`#4582`).
+  Many thanks to Bryan A. Jones for implementing the important parts.
 
   __ https://github.com/pyinstaller/hooksample
 
 * A new package `pyinstaller-hooks-contrib`__ provides monthly updated hooks
   now. This package is installed automatically when installing PyInstaller,
   but can be updated independently.
+  Many thanks to Legorooj for setting up the new package
+  and moving the hooks there.
 
   __ https://github.com/pyinstaller/pyinstaller-hooks-contrib
 
