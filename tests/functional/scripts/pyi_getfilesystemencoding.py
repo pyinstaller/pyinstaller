@@ -28,13 +28,7 @@ elif sys.platform.startswith('darwin'):
     encoding = 'utf-8'
 # On Linux and other unixes it should be usually 'utf-8'
 else:
-    # For Python 2 the bootloader sets encoding explicitly.
-    # It should be 'UTF-8'.
-    if sys.version_info[0] == 2:
-        encoding = 'UTF-8'
-    # Python 3 reports encoding 'utf-8'.
-    else:
-        encoding = 'utf-8'
+    encoding = 'utf-8'
 
 
 print('Encoding expected: ' + encoding)

@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "PYINSTALLER" "1" "2020-01-09" "3.6" "PyInstaller"
+.TH "PYINSTALLER" "1" "2020-08-09" "4.0" "PyInstaller"
 .SH NAME
 pyinstaller \- Configure and build a PyInstaller project in one run
 .
@@ -43,7 +43,7 @@ PyInstaller is a program that freezes (packages) Python programs into
 stand\-alone executables, under Windows, GNU/Linux, Mac OS X,
 FreeBSD, OpenBSD, Solaris and AIX.
 Its main advantages over similar tools are that PyInstaller works with
-Python 2.7 and 3.5—3.7, it builds smaller executables thanks to transparent
+Python 3.5—3.7, it builds smaller executables thanks to transparent
 compression, it is fully multi\-platform, and use the OS support to load the
 dynamic libraries, thus ensuring full compatibility.
 .sp
@@ -106,7 +106,7 @@ Create a one\-file bundled executable.
 Folder to store the generated spec file (default:
 current directory)
 .TP
-.BI \-n \ NAME\fP,\fB \ \-\-name \ NAME
+.BI \-n \ NAME\fR,\fB \ \-\-name \ NAME
 Name to assign to the bundled app and spec file
 (default: first script\(aqs basename)
 .UNINDENT
@@ -125,12 +125,12 @@ Additional binary files to be added to the executable.
 See the \fB\-\-add\-data\fP option for more details. This
 option can be used multiple times.
 .TP
-.BI \-p \ DIR\fP,\fB \ \-\-paths \ DIR
+.BI \-p \ DIR\fR,\fB \ \-\-paths \ DIR
 A path to search for imports (like using PYTHONPATH).
 Multiple paths are allowed, separated by \(aq:\(aq, or use
 this option multiple times
 .TP
-.BI \-\-hidden\-import \ MODULENAME\fP,\fB \ \-\-hiddenimport \ MODULENAME
+.BI \-\-hidden\-import \ MODULENAME\fR,\fB \ \-\-hiddenimport \ MODULENAME
 Name an import not visible in the code of the
 script(s). This option can be used multiple times.
 .TP
@@ -156,7 +156,7 @@ The key used to encrypt Python bytecode.
 .SS How to generate
 .INDENT 0.0
 .TP
-.BI \-d \ <all,imports,bootloader,noarchive>\fP,\fB \ \-\-debug \ <all,imports,bootloader,noarchive>
+.BI \-d \ <all,imports,bootloader,noarchive>\fR,\fB \ \-\-debug \ <all,imports,bootloader,noarchive>
 Provide assistance with debugging a frozen
 application. This argument may be provided multiple
 times to select several of the following options.
@@ -212,7 +212,7 @@ building an OS X .app bundle. On Windows this option
 will be set if the first script is a \(aq.pyw\(aq file. This
 option is ignored in *NIX systems.
 .TP
-.BI \-i \ <FILE.ico or FILE.exe,ID or FILE.icns>\fP,\fB \ \-\-icon \ <FILE.ico or FILE.exe,ID or FILE.icns>
+.BI \-i \ <FILE.ico or FILE.exe,ID or FILE.icns>\fR,\fB \ \-\-icon \ <FILE.ico or FILE.exe,ID or FILE.icns>
 FILE.ico: apply that icon to a Windows executable.
 FILE.exe,ID, extract the icon with ID from an exe.
 FILE.icns: apply the icon to the .app bundle on Mac OS
@@ -224,10 +224,10 @@ X
 .BI \-\-version\-file \ FILE
 add a version resource from FILE to the exe
 .TP
-.BI \-m \ <FILE or XML>\fP,\fB \ \-\-manifest \ <FILE or XML>
+.BI \-m \ <FILE or XML>\fR,\fB \ \-\-manifest \ <FILE or XML>
 add manifest FILE or XML to the exe
 .TP
-.BI \-r \ RESOURCE\fP,\fB \ \-\-resource \ RESOURCE
+.BI \-r \ RESOURCE\fR,\fB \ \-\-resource \ RESOURCE
 Add or update a resource to a Windows executable. The
 RESOURCE is one to four items,
 FILE[,TYPE[,NAME[,LANGUAGE]]]. FILE can be a data file

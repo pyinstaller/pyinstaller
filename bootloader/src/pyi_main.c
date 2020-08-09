@@ -21,15 +21,14 @@
 #ifdef _WIN32
     #include <windows.h>
     #include <wchar.h>
-#else
-    #include <limits.h>  /* PATH_MAX */
 #endif
 #include <stdio.h>  /* FILE */
 #include <stdlib.h> /* calloc */
 #include <string.h> /* memset */
 
 /* PyInstaller headers. */
-#include "pyi_global.h"  /* PATH_MAX for win32 */
+#include "pyi_main.h"
+#include "pyi_global.h"  /* PATH_MAX */
 #include "pyi_path.h"
 #include "pyi_archive.h"
 #include "pyi_utils.h"
@@ -47,9 +46,6 @@ pyi_main(int argc, char * argv[])
     char archivefile[PATH_MAX];
     int rc = 0;
     char *extractionpath = NULL;
-    wchar_t * dllpath_w;
-
-    int i = 0;
 
 #ifdef _MSC_VER
     /* Visual C runtime incorrectly buffers stderr */
@@ -58,18 +54,15 @@ pyi_main(int argc, char * argv[])
 
     VS("PyInstaller Bootloader 3.x\n");
 
-    /* TODO create special function to allocate memory for archive status pyi_arch_status_alloc_memory(archive_status); */
-    archive_status = (ARCHIVE_STATUS *) calloc(1, sizeof(ARCHIVE_STATUS));
-
+    archive_status = pyi_arch_status_new(archive_status);
     if (archive_status == NULL) {
-        FATAL_PERROR("calloc", "Cannot allocate memory for ARCHIVE_STATUS\n");
         return -1;
-
     }
-
-    pyi_path_executable(executable, argv[0]);
-    pyi_path_archivefile(archivefile, executable);
-    pyi_path_homepath(homepath, executable);
+    if ((! pyi_path_executable(executable, argv[0])) ||
+        (! pyi_path_archivefile(archivefile, executable)) ||
+        (! pyi_path_homepath(homepath, executable))) {
+        return -1;
+    }
 
     /* For the curious:
      * On Windows, the UTF-8 form of MEIPASS2 is passed to pyi_setenv, which
@@ -93,12 +86,11 @@ pyi_main(int argc, char * argv[])
 
     VS("LOADER: _MEIPASS2 is %s\n", (extractionpath ? extractionpath : "NULL"));
 
-    if (pyi_arch_setup(archive_status, homepath, &executable[strlen(homepath)])) {
-        if (pyi_arch_setup(archive_status, homepath, &archivefile[strlen(homepath)])) {
+    if ((! pyi_arch_setup(archive_status, executable)) &&
+        (! pyi_arch_setup(archive_status, archivefile))) {
             FATALERROR("Cannot open self %s or archive %s\n",
                        executable, archivefile);
             return -1;
-        }
     }
 
     /* These are used only in pyi_pylib_set_sys_argv, which converts to wchar_t */
@@ -119,6 +111,7 @@ pyi_main(int argc, char * argv[])
 
     if (extractionpath) {
         /* Add extraction folder to DLL search path */
+        wchar_t * dllpath_w;
         dllpath_w = pyi_win32_utils_from_utf8(NULL, extractionpath, 0);
         SetDllDirectory(dllpath_w);
         VS("LOADER: SetDllDirectory(%s)\n", extractionpath);
@@ -133,8 +126,8 @@ pyi_main(int argc, char * argv[])
          *  we pass it through status variable
          */
         if (strcmp(homepath, extractionpath) != 0) {
-            strncpy(archive_status->temppath, extractionpath, PATH_MAX);
-            if (archive_status->temppath[PATH_MAX-1] != '\0') {
+            if (snprintf(archive_status->temppath, PATH_MAX,
+                         "%s", extractionpath) >= PATH_MAX) {
                 VS("LOADER: temppath exceeds PATH_MAX\n");
                 return -1;
             }
@@ -187,7 +180,7 @@ pyi_main(int argc, char * argv[])
         if (archive_status->has_temp_directory == true) {
             pyi_remove_temp_path(archive_status->temppath);
         }
-        pyi_arch_status_free_memory(archive_status);
+        pyi_arch_status_free(archive_status);
 
     }
     return rc;

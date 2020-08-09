@@ -34,7 +34,7 @@ from PyInstaller.building.utils import get_code_object, strip_paths_in_code,\
     fake_pyc_timestamp
 from PyInstaller.loader.pyimod02_archive import PYZ_TYPE_MODULE, PYZ_TYPE_PKG, \
     PYZ_TYPE_DATA
-from ..compat import BYTECODE_MAGIC, is_py2
+from ..compat import BYTECODE_MAGIC
 
 
 class ArchiveWriter(object):
@@ -133,11 +133,10 @@ class ArchiveWriter(object):
             if str(exception) == 'unmarshallable object':
 
                 # List of all marshallable types.
-                MARSHALLABLE_TYPES = set((
-                    bool, int, float, complex, str, bytes, bytearray,
-                    tuple, list, set, frozenset, dict, CodeType))
-                if sys.version_info[0] == 2:
-                    MARSHALLABLE_TYPES.add(long)
+                MARSHALLABLE_TYPES = {
+                    bool, int, float, complex, str, bytes, bytearray, tuple,
+                    list, set, frozenset, dict, CodeType
+                }
 
                 for module_name, module_tuple in self.toc.items():
                     if type(module_name) not in MARSHALLABLE_TYPES:
@@ -250,9 +249,6 @@ class CTOC(object):
             # standard python modules only contain ascii-characters
             # (and standard shared libraries should have the same) and
             # thus the C-code still can handle this correctly.
-            if is_py2 and isinstance(nm, str):
-                nm = nm.decode(sys.getfilesystemencoding())
-
             nm = nm.encode('utf-8')
             nmlen = len(nm) + 1       # add 1 for a '\0'
             # align to 16 byte boundary so xplatform C can read
@@ -357,7 +353,7 @@ class CArchiveWriter(ArchiveWriter):
             If the type code is 'o':
               entry[0] is the runtime option
               eg: v  (meaning verbose imports)
-                  u  (menaing unbuffered)
+                  u  (meaning unbuffered)
                   W arg (warning option arg)
                   s  (meaning do site.py processing.
         """

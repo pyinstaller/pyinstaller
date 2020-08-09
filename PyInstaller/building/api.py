@@ -27,7 +27,8 @@ from PyInstaller.archive.writers import ZlibArchiveWriter, CArchiveWriter
 from PyInstaller.building.utils import _check_guts_toc, add_suffix_to_extensions, \
     checkCache, strip_paths_in_code, get_code_object, \
     _make_clean_directory
-from PyInstaller.compat import is_win, is_darwin, is_linux, is_cygwin, exec_command_all
+from PyInstaller.compat import is_win, is_darwin, is_linux, is_cygwin, \
+    exec_command_all, is_64bits
 from PyInstaller.depend import bindepend
 from PyInstaller.depend.analysis import get_bootstrap_modules
 from PyInstaller.depend.utils import is_path_to_egg
@@ -232,7 +233,7 @@ class PKG(Target):
                 # file is contained within python egg, it is added with the egg
                 continue
             if typ in ('BINARY', 'EXTENSION', 'DEPENDENCY'):
-                if not self.exclude_binaries:
+                if not self.exclude_binaries or typ == 'DEPENDENCY':
                     if typ == 'BINARY':
                         # Avoid importing the same binary extension twice. This might
                         # happen if they come from different sources (eg. once from
@@ -526,8 +527,8 @@ class EXE(Target):
         if not os.path.exists(exe):
             raise SystemExit(_MISSING_BOOTLOADER_ERRORMSG)
 
-
-        if is_win and (self.icon or self.versrsrc or self.resources):
+        if is_win and (self.icon or self.versrsrc or self.resources or
+                self.uac_admin or self.uac_uiaccess or not is_64bits):
             fd, tmpnm = tempfile.mkstemp(prefix=os.path.basename(exe) + ".",
                                          dir=CONF['workpath'])
             # need to close the file, otherwise copying resources will fail
@@ -790,7 +791,8 @@ class MERGE(object):
         Filter shared dependencies to be only in first executable.
         """
         for analysis, _, _ in args:
-            path = os.path.abspath(analysis.scripts[-1][1]).replace(self._common_prefix, "", 1)
+            path = os.path.normcase(os.path.abspath(analysis.scripts[-1][1]))
+            path = path.replace(self._common_prefix, "", 1)
             path = os.path.splitext(path)[0]
             if os.path.normcase(path) in self._id_to_path:
                 path = self._id_to_path[os.path.normcase(path)]
@@ -808,7 +810,10 @@ class MERGE(object):
                 else:
                     dep_path = self._get_relative_path(path, self._dependencies[tpl[1]])
                     logger.debug("Referencing %s to be a dependecy for %s, located in %s" % (tpl[1], path, dep_path))
-                    analysis.dependencies.append((":".join((dep_path, tpl[0])), tpl[1], "DEPENDENCY"))
+                    analysis.dependencies.append(
+                        (":".join((dep_path, os.path.basename(tpl[1]))),
+                         tpl[1],
+                         "DEPENDENCY"))
                     toc[i] = (None, None, None)
             # Clean the list
             toc[:] = [tpl for tpl in toc if tpl != (None, None, None)]

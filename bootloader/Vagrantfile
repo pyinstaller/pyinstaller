@@ -181,10 +181,11 @@ end
 
 def packages_chocolatey()
   return <<-EOF
-    echo > install-choco.ps1 '
-    "Install chocolatey"
-    iex ((New-Object System.Net.WebClient).DownloadString("https://chocolatey.org/install.ps1"))
-    ' ; powershell -NoProfile -ExecutionPolicy Bypass -File ./install-choco.ps1
+    powershell " \
+       Set-ExecutionPolicy Bypass -Scope Process -Force; \
+       [System.Net.ServicePointManager]::SecurityProtocol = \
+           [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; \
+       iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))"
   EOF
 end
 
@@ -201,13 +202,17 @@ end
 
 def windows_disable_updates()
   # TODO: Add more entries to really disable all auto-updates and reboots.
+  # Also disable Cortana
   return <<-EOF
     echo > no-updates.ps1 '
     $base = "HKLM:/Software/Policies/Microsoft/Windows/"
-    New-Item -Force -Path "$base/WindowsUpdate" | Out-Null
-    New-Item -Force -Path "$base/WindowsUpdate/AU" | Out-Null
+    New-Item -Force -Path  "$base/WindowsUpdate" | Out-Null
+    New-Item -Force -Path  "$base/WindowsUpdate/AU" | Out-Null
     New-ItemProperty -Path "$base/WindowsUpdate/AU" -Name "NoAutoUpdate" -Value 1 -PropertyType DWORD -Force | Out-Null
-    Get-ItemProperty "$base/WindowsUpdate/AU"
+    Get-ItemProperty       "$base/WindowsUpdate/AU"
+    New-Item -Force  -Path "$base/Windows Search" | Out-Null
+    New-ItemProperty -Path "$base/Windows Search" -Name "AllowCortana" -Value 0 -PropertyType DWORD -Force | Out-Null
+    Get-ItemProperty       "$base/Windows Search"
     ' ; powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./no-updates.ps1
   EOF
 end
@@ -235,8 +240,8 @@ end
 def build_bootloader_on_windows(boxname)
   return <<-EOF
     cd c:/vagrant/bootloader
-    c:/python27/python.exe ./waf all --target-arch=64bit
-    c:/python27/python.exe ./waf all --target-arch=32bit
+    py -3 ./waf all --target-arch=64bit
+    py -3 ./waf all --target-arch=32bit
   EOF
 end
 
@@ -426,7 +431,7 @@ Vagrant.configure(2) do |config|
         :inline => packages_chocolatey()
       b.vm.provision "install packages",
         :type => :shell, :privileged => false, :keep_color => true,
-        :inline => choco_install("python2 vcbuildtools")
+        :inline => choco_install("python3 vcbuildtools")
       b.vm.provision "build bootloader",
         :type => :shell, :privileged => false, :keep_color => true,
         :inline => build_bootloader_on_windows("windows10")

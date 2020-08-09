@@ -17,7 +17,7 @@ from ..hooks import eval_statement, exec_statement, get_homebrew_path, \
     get_module_file_attribute
 from PyInstaller.depend.bindepend import getImports, getfullnameof
 from ... import log as logging
-from ...compat import is_py3, is_win, is_darwin, is_linux
+from ...compat import is_win, is_darwin, is_linux
 from ...utils import misc
 
 logger = logging.getLogger(__name__)
@@ -114,10 +114,7 @@ def qt_plugins_dir(namespace):
         paths = eval_statement("""
             from {0}.QtCore import QCoreApplication;
             app = QCoreApplication([]);
-            # For Python 2 print would give <PyQt4.QtCore.QStringList
-            # object at 0x....>", so we need to convert each element separately
-            str = getattr(__builtins__, 'unicode', str);  # for Python 2
-            print([str(p) for p in app.libraryPaths()])
+            print(list(app.libraryPaths()))
             """.format(namespace))
     if not paths:
         raise Exception('Cannot find {0} plugin directories'.format(namespace))
@@ -192,8 +189,7 @@ def qt_menu_nib_dir(namespace):
     path = exec_statement("""
     from {0}.QtCore import QLibraryInfo
     path = QLibraryInfo.location(QLibraryInfo.LibrariesPath)
-    str = getattr(__builtins__, 'unicode', str)  # for Python 2
-    print(str(path))
+    print(path)
     """.format(namespace))
     anaconda_path = os.path.join(sys.exec_prefix, "python.app", "Contents",
                                  "Resources")
@@ -246,9 +242,8 @@ def get_qmake_path(version=''):
             qmake = os.path.join(directory, 'bin', 'qmake')
             versionstring = subprocess.check_output([qmake, '-query',
                                                      'QT_VERSION']).strip()
-            if is_py3:
-                # version string is probably just ASCII
-                versionstring = versionstring.decode('utf8')
+            # version string is probably just ASCII
+            versionstring = versionstring.decode('utf8')
             if versionstring.find(version) == 0:
                 logger.debug('Found qmake version "%s" at "%s".',
                              versionstring, qmake)
@@ -513,6 +508,11 @@ def add_qt5_dependencies(hook_file):
         # Mac: rename from ``qt`` to ``qt5`` to match names in Windows/Linux.
         if is_darwin and lib_name.startswith('qt'):
             lib_name = 'qt5' + lib_name[2:]
+
+        # match libs with QT_LIBINFIX set to '_conda', i.e. conda-forge builds
+        if lib_name.endswith('_conda'):
+            lib_name = lib_name[:-6]
+
         logger.debug('add_qt5_dependencies: raw lib %s -> parsed lib %s',
                      imp, lib_name)
 
@@ -521,11 +521,7 @@ def add_qt5_dependencies(hook_file):
             # Follow these to find additional dependencies.
             logger.debug('add_qt5_dependencies: Import of %s.', imp)
             imports.update(getImports(imp))
-            # Look up which plugins and translations are needed. Avoid Python
-            # 3-only syntax, since the Python 2.7 parser will raise an
-            # exception. The original statment was:
-            ## (lib_name_hiddenimports, lib_name_translations_base,
-            ## *lib_name_plugins) = _qt_dynamic_dependencies_dict[lib_name]
+            # Look up which plugins and translations are needed.
             dd = _qt_dynamic_dependencies_dict[lib_name]
             lib_name_hiddenimports, lib_name_translations_base = dd[:2]
             lib_name_plugins = dd[2:]

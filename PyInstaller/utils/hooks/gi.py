@@ -14,17 +14,18 @@ import re
 from ..hooks import collect_submodules, collect_system_data_files, eval_statement, exec_statement
 from ... import log as logging
 from ...compat import base_prefix, is_darwin, is_win, open_file, \
-    text_read_mode, text_type
+    text_read_mode
 from ...depend.bindepend import findSystemLibrary
 
 logger = logging.getLogger(__name__)
 
 
-def get_typelibs(module, version):
-    """deprecated; only here for backwards compat.
-    """
-    logger.warning("get_typelibs is deprecated, use get_gi_typelibs instead")
-    return get_gi_typelibs(module, version)[1]
+__all__ = [
+    'get_gi_libdir', 'get_gi_typelibs', 'gir_library_path_fix',
+    'get_glib_system_data_dirs', 'get_glib_sysconf_dirs',
+    'collect_glib_share_files', 'collect_glib_etc_files',
+    'collect_glib_translations'
+]
 
 
 def get_gi_libdir(module, version):
@@ -157,7 +158,7 @@ def gir_library_path_fix(path):
                         if 'lib' in item:
                             files[count] = '@loader_path/' + os.path.basename(item)
                     line = ''.join(split[0:2]) + ''.join(files)
-                f.write(text_type(line))
+                f.write(line)
 
         # g-ir-compiler expects a file so we cannot just pipe the fixed file to it.
         command = subprocess.Popen(('g-ir-compiler', os.path.join(CONF['workpath'], gir_name),
@@ -258,6 +259,3 @@ def collect_glib_translations(prog):
     namelen = len(names[0])
 
     return [(src, dst) for src, dst in _glib_translations if src[-namelen:] in names]
-
-__all__ = ('get_typelibs', 'get_gi_libdir', 'get_gi_typelibs', 'gir_library_path_fix', 'get_glib_system_data_dirs',
-           'get_glib_sysconf_dirs', 'collect_glib_share_files', 'collect_glib_etc_files', 'collect_glib_translations')

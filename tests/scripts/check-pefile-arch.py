@@ -22,8 +22,6 @@
 # used in the CI-tests prior to installing other packages. It does not use
 # `argparse` to reduce the overhead and be quick.
 
-from __future__ import print_function
-
 import glob
 import struct
 import sys

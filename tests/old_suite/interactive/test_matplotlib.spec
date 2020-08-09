@@ -13,7 +13,7 @@
 
 __testname__ = 'test_matplotlib'
 
-if sys.platform == 'win32' and sys.version_info[:2] >= (2, 6):
+if sys.platform == 'win32':
     manifest = '''<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
   <dependency>
     <dependentAssembly>

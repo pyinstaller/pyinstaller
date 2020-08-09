@@ -18,8 +18,7 @@ import glob, sys, weakref
 import os.path
 
 from .. import log as logging
-from ..compat import (
-    expand_path, importlib_load_source, FileNotFoundError)
+from ..compat import expand_path, importlib_load_source
 from .imphookapi import PostGraphAPI
 from ..building.utils import format_binaries_and_datas
 
@@ -124,6 +123,10 @@ class ModuleHookCache(dict):
                 # Fully-qualified name of this hook's corresponding module,
                 # constructed by removing the "hook-" prefix and ".py" suffix.
                 module_name = os.path.basename(hook_filename)[5:-3]
+                if module_name in self:
+                    logger.warning("Several hooks defined for module %r. "
+                                   "Please take care they do not conflict.",
+                                   module_name)
 
                 # Lazily loadable hook object.
                 module_hook = ModuleHook(
@@ -275,6 +278,7 @@ class ModuleHook(object):
 
         # Note that the passed module graph is already a weak reference,
         # avoiding circular reference issues. See ModuleHookCache.__init__().
+        # TODO: Add a failure message
         assert isinstance(module_graph, weakref.ProxyTypes)
         self.module_graph = module_graph
         self.module_name = module_name
@@ -286,15 +290,20 @@ class ModuleHook(object):
 
         # Safety check, see above
         global HOOKS_MODULE_NAMES
-        assert self.hook_module_name not in HOOKS_MODULE_NAMES
-        HOOKS_MODULE_NAMES.add(self.hook_module_name)
+        if self.hook_module_name in HOOKS_MODULE_NAMES:
+            # When self._shallow is true, this class never loads the hook and
+            # sets the attributes to empty values
+            self._shallow = True
+        else:
+            self._shallow = False
+            HOOKS_MODULE_NAMES.add(self.hook_module_name)
 
         # Attributes subsequently defined by the _load_hook_module() method.
         self._hook_module = None
 
 
     def __getattr__(self, attr_name):
-        '''
+        """
         Get the magic attribute with the passed name (e.g., `datas`) from this
         lazily loaded hook script if any _or_ raise `AttributeError` otherwise.
 
@@ -312,7 +321,7 @@ class ModuleHook(object):
         See Also
         ----------
         Class docstring for supported magic attributes.
-        '''
+        """
 
         # If this is a magic attribute, initialize this attribute by lazy
         # loading this hook script and then return this attribute. To avoid
@@ -326,7 +335,7 @@ class ModuleHook(object):
 
 
     def __setattr__(self, attr_name, attr_value):
-        '''
+        """
         Set the attribute with the passed name to the passed value.
 
         If this is a magic attribute, this hook script will be lazily loaded
@@ -337,7 +346,7 @@ class ModuleHook(object):
         See Also
         ----------
         Class docstring for supported magic attributes.
-        '''
+        """
 
         # If this is a magic attribute, initialize this attribute by lazy
         # loading this hook script before overwriting this attribute.
@@ -372,14 +381,28 @@ class ModuleHook(object):
         Class docstring for supported attributes.
         """
 
-        # If this hook script module has already been loaded, noop.
-        if self._hook_module is not None:
+        # If this hook script module has already been loaded,
+        # or we are _shallow, noop.
+        if self._hook_module is not None or self._shallow:
+            if self._shallow:
+                self._hook_module = True  # Not None
+                # Inform the user
+                logger.debug(
+                    'Skipping module hook %r from %r because a hook for %s has'
+                    ' already been loaded.',
+                    *os.path.split(self.hook_filename)[::-1], self.module_name
+                )
+                # Set the default attributes to empty instances of the type.
+                for attr_name, \
+                        (attr_type, _) in _MAGIC_MODULE_HOOK_ATTRS.items():
+                    super(ModuleHook, self).__setattr__(attr_name, attr_type())
             return
 
         # Load and execute the hook script. Even if mechanisms from the import
         # machinery are used, this does not import the hook as the module.
+        head, tail = os.path.split(self.hook_filename)
         logger.info(
-            'Loading module hook "%s"...', os.path.basename(self.hook_filename))
+            'Loading module hook %r from %r...', tail, head)
         self._hook_module = importlib_load_source(
             self.hook_module_name, self.hook_filename)
 
@@ -571,8 +594,11 @@ class AdditionalFilesCache(object):
         self._datas = {}
 
     def add(self, modname, binaries, datas):
-        self._binaries[modname] = binaries or []
-        self._datas[modname] = datas or []
+
+        self._binaries.setdefault(modname, [])
+        self._binaries[modname].extend(binaries or [])
+        self._datas.setdefault(modname, [])
+        self._datas[modname].extend(datas or [])
 
     def __contains__(self, name):
         return name in self._binaries or name in self._datas

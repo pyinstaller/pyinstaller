@@ -39,11 +39,12 @@ class MyDialog(QtGui.QDialog):
 
 def main():
     app = Qt.QApplication(sys.argv)
-    read_formats = ', '.join([unicode(format).lower() \
+    read_formats = ', '.join([str(format).lower() \
         for format in QtGui.QImageReader.supportedImageFormats()])
-    print(("Qt4 plugin paths: " + unicode(list(app.libraryPaths()))))
-    print(("Qt4 image read support: " + read_formats))
-    print(('Qt4 Libraries path: ' + unicode(QtCore.QLibraryInfo.location(QtCore.QLibraryInfo.LibrariesPath))))
+    print("Qt4 plugin paths:", list(app.libraryPaths()))
+    print("Qt4 image read support:",  read_formats)
+    print('Qt4 Libraries path:',
+          str(QtCore.QLibraryInfo.location(QtCore.QLibraryInfo.LibrariesPath)))
     ex = MyDialog()
     app.exec_()
 

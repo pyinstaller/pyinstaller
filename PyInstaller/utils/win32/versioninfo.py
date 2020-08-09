@@ -14,7 +14,7 @@
 import codecs
 import struct
 
-from ...compat import is_py3, text_read_mode, win32api
+from ...compat import text_read_mode, win32api
 
 # ::TODO:: #1920 revert to using pypi version
 import pefile
@@ -100,24 +100,11 @@ def pefile_read_version(filename):
 LOAD_LIBRARY_AS_DATAFILE = 2
 
 
-if is_py3:
-    def getRaw(text):
-        """
-        Encodes text as UTF-16LE (Microsoft 'Unicode') for use in structs.
-        `bytes` is not allowed on Python 3.
-        """
-        return text.encode('UTF-16LE')
-else:
-    def getRaw(text):
-        """
-        Encodes text as UTF-16LE (Microsoft 'Unicode') for use in structs.
-        `unicode` is encoded to UTF-16LE, and `str` is first decoded from
-        `mbcs` before being re-encoded.
-        """
-        if isinstance(text, str):
-            text = text.decode('mbcs', errors='replace')
-
-        return text.encode('UTF-16LE')
+def getRaw(text):
+    """
+    Encodes text as UTF-16LE (Microsoft 'Unicode') for use in structs.
+    """
+    return text.encode('UTF-16LE')
 
 
 def decode(pathnm):
@@ -137,19 +124,7 @@ def nextDWord(offset):
     """ Align `offset` to the next 4-byte boundary """
     return ((offset + 3) >> 2) << 2
 
-if is_py3:
-    def _py3_str_compat(cls):
-        """
-        On Python 3, the special method __str__ is equivalent to the Python 2
-        method __unicode__.
-        """
-        cls.__str__ = cls.__unicode__
-        return cls
-else:
-    def _py3_str_compat(cls):
-        return cls
 
-@_py3_str_compat
 class VSVersionInfo:
     """
     WORD  wLength;        // length of the VS_VERSION_INFO structure
@@ -211,9 +186,9 @@ class VSVersionInfo:
         return (struct.pack('hhh', sublen, vallen, typ)
                 + raw_name + b'\000\000' + pad + rawffi + pad2 + tmp)
 
-    def __unicode__(self, indent=u''):
+    def __str__(self, indent=u''):
         indent = indent + u'  '
-        tmp = [kid.__unicode__(indent+u'  ')
+        tmp = [kid.__str__(indent+u'  ')
                for kid in self.kids]
         tmp = u', \n'.join(tmp)
         return (u"""# UTF-8
@@ -226,7 +201,7 @@ VSVersionInfo(
 %s
 %s]
 )
-""" % (indent, self.ffi.__unicode__(indent), indent, tmp, indent))
+""" % (indent, self.ffi.__str__(indent), indent, tmp, indent))
 
 
 def parseCommon(data, start=0):
@@ -245,7 +220,7 @@ def parseUString(data, start, limit):
     i += 2
     return i, text
 
-@_py3_str_compat
+
 class FixedFileInfo:
     """
     DWORD dwSignature;        //Contains the value 0xFEEFO4BD
@@ -300,11 +275,11 @@ class FixedFileInfo:
          self.fileType,
          self.fileSubtype,
          self.fileDateMS,
-         self.fileDateLS) = struct.unpack('13l', data[i:i+52])
-        return i+52
+         self.fileDateLS) = struct.unpack('13L', data[i:i + 52])
+        return i + 52
 
     def toRaw(self):
-        return struct.pack('L12l', self.sig,
+        return struct.pack('13L', self.sig,
                              self.strucVersion,
                              self.fileVersionMS,
                              self.fileVersionLS,
@@ -318,7 +293,7 @@ class FixedFileInfo:
                              self.fileDateMS,
                              self.fileDateLS)
 
-    def __unicode__(self, indent=u''):
+    def __str__(self, indent=u''):
         fv = (self.fileVersionMS >> 16, self.fileVersionMS & 0xffff,
               self.fileVersionLS >> 16, self.fileVersionLS & 0xFFFF)
         pv = (self.productVersionMS >> 16, self.productVersionMS & 0xffff,
@@ -349,7 +324,6 @@ class FixedFileInfo:
         return (u'\n'+indent+u'  ').join(tmp)
 
 
-@_py3_str_compat
 class StringFileInfo(object):
     """
     WORD        wLength;      // length of the version resource
@@ -386,16 +360,15 @@ class StringFileInfo(object):
         return (struct.pack('hhh', sublen, vallen, typ)
                 + raw_name + b'\000\000' + pad + tmp)
 
-    def __unicode__(self, indent=u''):
+    def __str__(self, indent=u''):
         newindent = indent + u'  '
-        tmp = [kid.__unicode__(newindent)
+        tmp = [kid.__str__(newindent)
                for kid in self.kids]
         tmp = u', \n'.join(tmp)
         return (u'%sStringFileInfo(\n%s[\n%s\n%s])'
                 % (indent, newindent, tmp, newindent))
 
 
-@_py3_str_compat
 class StringTable:
     """
     WORD   wLength;
@@ -435,14 +408,13 @@ class StringTable:
         return (struct.pack('hhh', sublen, vallen, typ)
                 + raw_name + b'\000\000' + tmp)
 
-    def __unicode__(self, indent=u''):
+    def __str__(self, indent=u''):
         newindent = indent + u'  '
-        tmp = (u',\n%s' % newindent).join(u'%s' % (kid,) for kid in self.kids)
+        tmp = (u',\n%s' % newindent).join(str(kid) for kid in self.kids)
         return (u"%sStringTable(\n%su'%s',\n%s[%s])"
                 % (indent, newindent, self.name, newindent, tmp))
 
 
-@_py3_str_compat
 class StringStruct:
     """
     WORD   wLength;
@@ -479,7 +451,7 @@ class StringStruct:
                 + raw_val + b'\000\000')
         return abcd
 
-    def __unicode__(self, indent=''):
+    def __str__(self, indent=''):
         return u"StringStruct(u'%s', u'%s')" % (self.name, self.val)
 
 
@@ -488,7 +460,6 @@ def parseCodePage(data, i, limit):
     return i, (sublen, wValueLength, wType, nm)
 
 
-@_py3_str_compat
 class VarFileInfo:
     """
     WORD  wLength;        // length of the version resource
@@ -528,11 +499,11 @@ class VarFileInfo:
         return (struct.pack('hhh', self.sublen, self.vallen, self.wType)
                 + raw_name + b'\000\000' + pad + tmp)
 
-    def __unicode__(self, indent=''):
-        return "%sVarFileInfo([%s])" % (indent, ', '.join(u'%s' % (kid,) for kid in self.kids))
+    def __str__(self, indent=''):
+        return (indent + "VarFileInfo([%s])" %
+                ', '.join(str(kid) for kid in self.kids))
 
 
-@_py3_str_compat
 class VarStruct:
     """
     WORD  wLength;        // length of the version resource
@@ -571,7 +542,7 @@ class VarStruct:
         return (struct.pack('hhh', self.sublen, self.wValueLength, self.wType)
                 + raw_name + b'\000\000' + pad + tmp)
 
-    def __unicode__(self, indent=u''):
+    def __str__(self, indent=u''):
         return u"VarStruct(u'%s', %r)" % (self.name, self.kids)
 
 

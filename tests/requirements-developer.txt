@@ -29,10 +29,8 @@ zest.releaser>=6.18  # Makes releasing easier
 check-manifest  # Checks MANIFEST.in
 pyroma   # Checks if package follows best practices of Python packaging.
 chardet  # character encoding detector.
-readme   # Check PyPI description is valid reStructuredText
+readme-renderer   # Check PyPI description is valid reStructuredText
 zestreleaser.towncrier  # integrate towncrier into zest.releaser
 
 sphinx
 sphinx_rtd_theme
-
--r requirements-tools.txt

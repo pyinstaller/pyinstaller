@@ -19,7 +19,7 @@ from PyInstaller.utils.hooks import collect_data_files, collect_submodules, \
     get_module_file_attribute, remove_prefix, remove_suffix, \
     remove_file_extension, is_module_or_submodule, \
     is_module_satisfies
-from PyInstaller.compat import exec_python, ALL_SUFFIXES
+from PyInstaller.compat import exec_python, ALL_SUFFIXES, is_win
 
 
 class TestRemovePrefix(object):
@@ -117,7 +117,7 @@ class TestCollectSubmodules(object):
     # An error should be thrown if a module, not a package, was passed.
     def test_collect_submod_module(self):
         # os is a module, not a package.
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             collect_submodules(__import__('os'))
 
     # The package name itself should be in the returned list.
@@ -196,24 +196,77 @@ def test_is_module_satisfies_package_not_installed():
     assert not is_module_satisfies('magnumopus-no-package-test-case')
 
 
-_DATA_BASEPATH = join(TEST_MOD_PATH, TEST_MOD)
-_DATA_PARAMS = [
-    (TEST_MOD, ('dynamiclib.dll',
-                'dynamiclib.dylib',
-                'nine.dat',
-                join('py_files_not_in_package', 'data', 'eleven.dat'),
-                join('py_files_not_in_package', 'ten.dat'),
-                'pyextension.pyd',
-                'pyextension.so',
-                join('subpkg', 'thirteen.txt'),
-    )),
-    (TEST_MOD + '.subpkg', (
-                join('subpkg', 'thirteen.txt'),
-    ))
-]
+# An error should be thrown if a module, not a package, was passed.
+def test_collect_data_module():
+    # 'os' is a module, not a package.
+    with pytest.raises(TypeError):
+        collect_data_files(__import__('os'))
 
 
-@pytest.fixture(params=_DATA_PARAMS, ids=['package', 'subpackage'])
+# This fixtures runs ``collect_data_files`` through the test cases in
+# ``_DATA_PARAMS``.
+@pytest.fixture(
+    params=[
+        # This is used to invoke ``collect_data_files(*args, **kwargs)``, then
+        # provide the expected results to verify correctness. The order is:
+        ## args,     kwargs, expected_results_sequence
+        ([TEST_MOD], {},     ('dynamiclib.dll',
+                              'dynamiclib.dylib',
+                              'nine.dat',
+                              join('py_files_not_in_package', 'data', 'eleven.dat'),
+                              join('py_files_not_in_package', 'ten.dat'),
+                              # Not backwards! On Windows, ``.so`` files are
+                              # just data and vice versa.
+                              'pyextension.so' if is_win else 'pyextension.pyd',
+                              join('subpkg', 'thirteen.txt'),
+        )),
+        # Test collecting from a subpackage.
+        ([TEST_MOD + '.subpkg'], {}, (
+                    join('subpkg', 'thirteen.txt'),
+        )),
+        ([TEST_MOD], dict(include_py_files=True, excludes=['**/__pycache__']), (
+            '__init__.py',
+            'dynamiclib.dll',
+            'dynamiclib.dylib',
+            'nine.dat',
+            join('py_files_not_in_package', 'data', 'eleven.dat'),
+            join('py_files_not_in_package', 'one.py'),
+            join('py_files_not_in_package', 'sub_pkg', '__init__.py'),
+            join('py_files_not_in_package', 'sub_pkg', 'three.py'),
+            join('py_files_not_in_package', 'ten.dat'),
+            'pyextension.pyd',
+            'pyextension.so',
+            join('subpkg', '__init__.py'),
+            join('subpkg', 'thirteen.txt'),
+            join('subpkg', 'twelve.py'),
+            'two.py',
+        )),
+        ([TEST_MOD], dict(excludes=['py_files_not_in_package',
+                                    '**/__pycache__']), (
+            'dynamiclib.dll',
+            'dynamiclib.dylib',
+            'nine.dat',
+            'pyextension.so' if is_win else 'pyextension.pyd',
+            join('subpkg', 'thirteen.txt'),
+        )),
+        ([TEST_MOD], dict(includes=['**/*.dat', '**/*.txt']), (
+            'nine.dat',
+            join('py_files_not_in_package', 'data', 'eleven.dat'),
+            join('py_files_not_in_package', 'ten.dat'),
+            join('subpkg', 'thirteen.txt'),
+        )),
+        ([TEST_MOD], dict(includes=['*.dat']), (
+            'nine.dat',
+        )),
+        ([TEST_MOD], dict(subdir="py_files_not_in_package",
+                          excludes=['**/__pycache__']), (
+            join('py_files_not_in_package', 'data', 'eleven.dat'),
+            join('py_files_not_in_package', 'ten.dat'),
+        )),
+    ],
+    ids=['package', 'subpackage', 'package with py files', 'excludes',
+         '** includes', 'includes', 'subdir']
+)
 def data_lists(monkeypatch, request):
     def _sort(sequence):
         l = list(sequence)
@@ -223,45 +276,24 @@ def data_lists(monkeypatch, request):
     # could find this module - useful for subprocesses.
     monkeypatch.syspath_prepend(TEST_MOD_PATH)
     # Use the hookutils_test_files package for testing.
-    mod_name = request.param[0]
-    data = collect_data_files(mod_name)
+    args, kwargs, subfiles = request.param
+    data = collect_data_files(*args, **kwargs)
     # Break list of (source, dest) into source and dest lists.
-    subfiles = request.param[1]
     src = [item[0] for item in data]
     dst = [item[1] for item in data]
 
     return subfiles, _sort(src), _sort(dst)
 
 
-# An error should be thrown if a module, not a package, was passed.
-def test_collect_data_module():
-    # 'os' is a module, not a package.
-    with pytest.raises(ValueError):
-        collect_data_files(__import__('os'))
-
-
-# Make sure only data files are found.
-def test_collect_data_no_extensions(data_lists):
-    subfiles, src, dst = data_lists
-    for item in ['pyextension.pyd', 'pyextension.so']:
-        # Only text valid extensions for the current platform.
-        if os.path.splitext(item)[1] in ALL_SUFFIXES:
-            item = join(_DATA_BASEPATH, item)
-            print(src)
-            assert item not in src
-
-
-# Make sure all data files are found.
+# Make sure the correct files are found.
 def test_collect_data_all_included(data_lists):
     subfiles, src, dst = data_lists
     # Check the source and dest lists against the correct values in
     # subfiles.
-    print(subfiles)
-    src_compare = tuple([join(_DATA_BASEPATH, subpath) for subpath in subfiles
-                         if os.path.splitext(subpath)[1] not in ALL_SUFFIXES])
+    src_compare = tuple([join(TEST_MOD_PATH, TEST_MOD, subpath)
+                         for subpath in subfiles])
     dst_compare = [os.path.dirname(join(TEST_MOD, subpath))
-                   for subpath in subfiles
-                   if os.path.splitext(subpath)[1] not in ALL_SUFFIXES]
+                   for subpath in subfiles]
     dst_compare.sort()
     dst_compare = tuple(dst_compare)
     assert src == src_compare

@@ -17,7 +17,6 @@ Utility functions related to analyzing/bundling dependencies.
 
 import ctypes
 import ctypes.util
-import dis
 import io
 import marshal
 import os
@@ -67,7 +66,10 @@ def create_py3_base_library(libzip_filename, graph):
         # Class zipfile.PyZipFile is not suitable for PyInstaller needs.
         with zipfile.ZipFile(libzip_filename, mode='w') as zf:
             zf.debug = 3
-            for mod in graph.flatten():
+            # Sort the graph nodes by identifier to ensure repeatable builds
+            graph_nodes = list(graph.flatten())
+            graph_nodes.sort(key=lambda item: item.identifier)
+            for mod in graph_nodes:
                 if type(mod) in (modulegraph.SourceModule, modulegraph.Package):
                     # Bundling just required modules.
                     if module_filter.match(mod.identifier):
@@ -340,7 +342,7 @@ LDCONFIG_CACHE = None  # cache the output of `/sbin/ldconfig -p`
 def load_ldconfig_cache():
     """
     Create a cache of the `ldconfig`-output to call it only once.
-    It contains thousands of libraries and running it on every dynlib
+    It contains thousands of libraries and running it on every dylib
     is expensive.
     """
     global LDCONFIG_CACHE

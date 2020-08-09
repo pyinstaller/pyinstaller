@@ -17,6 +17,8 @@
 #ifndef PYI_LAUNCH_H
 #define PYI_LAUNCH_H
 
+#include "pyi_archive.h"
+
 /*****************************************************************
 * The following 4 entries are for applications which may need to
 * use to 2 steps to execute

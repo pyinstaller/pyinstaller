@@ -22,7 +22,6 @@
 /* TODO verify windows includes */
     #include <winsock.h>  /* ntohl */
 #else
-    #include <limits.h>  /* PATH_MAX - not available on windows. */
     #ifdef __FreeBSD__
 /* freebsd issue #188316 */
         #include <arpa/inet.h>  /* ntohl */
@@ -443,35 +442,28 @@ pyi_arch_open(ARCHIVE_STATUS *status)
     }
 
     /* Close file handler
-     * if file not close here it will be close in pyi_arch_status_free_memory */
+     * if file not close here it will be close in pyi_arch_status_free */
     pyi_arch_close_fp(status);
     return 0;
 }
 
-/*
- * Set up paths required by rest of this module.
+/* Setup the archive with python modules and the paths required by rest of
+ * this module (this always needs to be done).
  * Sets f_archivename, f_homepath, f_mainpath
  */
-int
-pyi_arch_set_paths(ARCHIVE_STATUS *status, char const * archivePath,
-                   char const * archiveName)
+bool
+pyi_arch_setup(ARCHIVE_STATUS *status, char const * archivePath)
 {
-    size_t pathlen, namelen;
-
-    pathlen = strnlen(archivePath, PATH_MAX);
-    namelen = strnlen(archiveName, PATH_MAX);
-
-    if (pathlen+namelen+1 > PATH_MAX) {
-        return -1;
+    /* Get the archive Path */
+    if (strlen(archivePath) >= PATH_MAX) {
+        // Should never come here, since `archivePath` was already processed
+        // by pyi_path_executable or pyi_path_archivefile.
+        return false;
     }
 
-    /* Get the archive Path */
     strcpy(status->archivename, archivePath);
-    strcat(status->archivename, archiveName);
-
     /* Set homepath to where the archive is */
-    strcpy(status->homepath, archivePath);
-
+    pyi_path_dirname(status->homepath, archivePath);
     /*
      * Initial value of mainpath is homepath. It might be overriden
      * by temppath if it is available.
@@ -479,28 +471,15 @@ pyi_arch_set_paths(ARCHIVE_STATUS *status, char const * archivePath,
     status->has_temp_directory = false;
     strcpy(status->mainpath, status->homepath);
 
-    return 0;
-}
-
-/* Setup the archive with python modules. (this always needs to be done) */
-int
-pyi_arch_setup(ARCHIVE_STATUS *status, char const * archivePath, char const * archiveName)
-{
-    /* Set up paths */
-    if (pyi_arch_set_paths(status, archivePath, archiveName)) {
-        return -1;
-    }
-
     /* Open the archive */
     if (pyi_arch_open(status)) {
         /* If this is not an archive, we MUST close the file, */
         /* otherwise the open file-handle will be reused when */
         /* testing the next file. */
         pyi_arch_close_fp(status);
-        return -1;
+        return false;
     }
-    ;
-    return 0;
+    return true;
 }
 
 /*
@@ -532,10 +511,23 @@ pyi_arch_get_pyversion(ARCHIVE_STATUS *status)
 }
 
 /*
+ * Allocate memory for archive status.
+ */
+ARCHIVE_STATUS *
+pyi_arch_status_new() {
+    ARCHIVE_STATUS *archive_status;
+    archive_status = (ARCHIVE_STATUS *) calloc(1, sizeof(ARCHIVE_STATUS));
+    if (archive_status == NULL) {
+        FATAL_PERROR("calloc", "Cannot allocate memory for ARCHIVE_STATUS\n");
+    }
+    return archive_status;
+}
+
+/*
  * Free memory allocated for archive status.
  */
 void
-pyi_arch_status_free_memory(ARCHIVE_STATUS *archive_status)
+pyi_arch_status_free(ARCHIVE_STATUS *archive_status)
 {
     if (archive_status != NULL) {
         VS("LOADER: Freeing archive status for %s\n", archive_status->archivename);
@@ -562,7 +554,7 @@ char *
 pyi_arch_get_option(const ARCHIVE_STATUS * status, char * optname)
 {
     /* TODO: option-cache? */
-    int optlen;
+    size_t optlen;
     TOC *ptoc = status->tocbuff;
 
     optlen = strlen(optname);

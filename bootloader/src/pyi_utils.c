@@ -42,7 +42,6 @@
     #else
         #include <dlfcn.h>
     #endif
-    #include <limits.h>  /* PATH_MAX */
     #include <signal.h>  /* kill, */
     #include <sys/wait.h>
     #include <unistd.h>  /* rmdir, unlink, mkdtemp */
@@ -138,7 +137,7 @@ pyi_strjoin(const char *first, const char *sep, const char *second){
      * returns a null-terminated string which the caller is responsible
      * for freeing. Returns NULL if memory could not be allocated.
      */
-    int first_len, sep_len, second_len;
+    size_t first_len, sep_len, second_len;
     char *result;
     first_len = first ? strlen(first) : 0;
     sep_len = sep ? strlen(sep) : 0;
@@ -558,11 +557,8 @@ pyi_open_target(const char *path, const char* name_)
     char *dir;
     size_t len;
 
-    strncpy(fnm, path, PATH_MAX);
-    strncpy(name, name_, PATH_MAX);
-
-    /* Check if the path names could be copied */
-    if (fnm[PATH_MAX-1] != '\0' || name[PATH_MAX-1] != '\0') {
+    if (snprintf(fnm, PATH_MAX, "%s", path) >= PATH_MAX ||
+        snprintf(name, PATH_MAX, "%s", name_) >= PATH_MAX) {
         return NULL;
     }
 
@@ -623,6 +619,7 @@ pyi_copy_file(const char *src, const char *dst, const char *filename)
     FILE *in = pyi_path_fopen(src, "rb");
     FILE *out = pyi_open_target(dst, filename);
     char buf[4096];
+    size_t read_count = 0;
     int error = 0;
 
     if (in == NULL || out == NULL) {
@@ -636,7 +633,8 @@ pyi_copy_file(const char *src, const char *dst, const char *filename)
     }
 
     while (!feof(in)) {
-        if (fread(buf, 4096, 1, in) == -1) {
+        read_count = fread(buf, 1, 4096, in);
+        if (read_count <= 0 ) {
             if (ferror(in)) {
                 clearerr(in);
                 error = -1;
@@ -644,7 +642,7 @@ pyi_copy_file(const char *src, const char *dst, const char *filename)
             }
         }
         else {
-            int rc = fwrite(buf, 4096, 1, out);
+            size_t rc = fwrite(buf, 1, read_count, out);
             if (rc <= 0 || ferror(out)) {
                 clearerr(out);
                 error = -1;
@@ -980,7 +978,8 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
     for (signum = 0; signum < num_signals; ++signum) {
         // don't mess with SIGCHLD/SIGCLD; it affects our ability
         // to wait() for the child to exit
-        if (signum != SIGCHLD && signum != SIGCLD) {
+        // don't change SIGTSP handling to allow Ctrl-Z
+        if (signum != SIGCHLD && signum != SIGCLD && signum != SIGTSTP) {
             signal(signum, handler);
         }
     }

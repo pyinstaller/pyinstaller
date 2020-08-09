@@ -17,6 +17,8 @@
 #ifndef __MKDTEMP__
 #define __MKDTEMP__
 
+#include <stddef.h>
+
 static char*
 mkdtemp(char *template)
 {

@@ -247,7 +247,7 @@ its contents using the standard library function ``pkgutil.get_data()``::
 	import pkgutil
 	help_bin = pkgutil.get_data( 'helpmod', 'help_data.txt' )
 
-In Python 3, this returns the contents of the :file:`help_data.txt`
+This returns the contents of the :file:`help_data.txt`
 file as a binary string.
 If it is actually characters, you must decode it::
 
@@ -422,12 +422,6 @@ application supports (see `Apple document types`_).
 
 Multipackage Bundles
 ~~~~~~~~~~~~~~~~~~~~~
-
-.. Note::
-	This feature is broken in the |PyInstaller| 3.0 release.
-	Do not attempt building multipackage bundles until the feature
-	is fixed. If this feature is important to you,
-	follow  and comment on `PyInstaller Issue #1527`_.
 
 Some products are made of several different apps,
 each of which might

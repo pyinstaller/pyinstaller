@@ -544,7 +544,8 @@ def configure(ctx):
         # The following variable fixes 10.7 compatibility.
         # According to OS X doc this variable is equivalent to gcc option:
         #   -mmacosx-version-min=10.7
-        os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.7'
+        if not os.environ.get('MACOSX_DEPLOYMENT_TARGET'):
+            os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.7'
 
     ### Libraries
 
@@ -580,6 +581,8 @@ def configure(ctx):
             ctx.env.append_value('DEFINES', 'GC_DEBUG')
             ctx.env.append_value('DEFINES', 'SAVE_CALL_CHAIN')
 
+    ctx.recurse("tests")
+
     ### Functions
 
     # The old ``function_name`` parameter to ``check_cc`` is no longer
@@ -599,6 +602,8 @@ def configure(ctx):
     # OS support for these functions varies.
     for header, function_name in (('stdlib.h', 'unsetenv'),
                                   ('stdlib.h', 'mkdtemp'),
+                                  ('libgen.h', 'dirname'),
+                                  ('libgen.h', 'basename'),
                                   ('string.h', 'strndup'),
                                   ('string.h', 'strnlen')):
         ctx.check(
@@ -629,8 +634,12 @@ def configure(ctx):
             ctx.env.append_value('LINKFLAGS', '-municode')
 
     if ctx.env.DEST_OS == 'darwin':
-        ctx.env.append_value('CFLAGS', '-mmacosx-version-min=10.7')
-        ctx.env.append_value('LINKFLAGS', '-mmacosx-version-min=10.7')
+        if not any(x for x in ctx.env.CPPFLAGS + ctx.env.CFLAGS
+                   if x.startswith('-mmacosx-version-min=')):
+            ctx.env.append_value('CFLAGS', '-mmacosx-version-min=10.7')
+        if not any(x for x in ctx.env.LDFLAGS + ctx.env.LINKFLAGS
+                   if x.startswith('-mmacosx-version-min=')):
+            ctx.env.append_value('LINKFLAGS', '-mmacosx-version-min=10.7')
 
     # On linux link only with needed libraries.
     # -Wl,--as-needed is on some platforms detected during configure but
@@ -642,12 +651,6 @@ def configure(ctx):
         # This tool allows reducing the size of executables.
         ctx.find_program([assoc_programm(ctx, 'strip')], var='STRIP')
         ctx.load('strip', tooldir='tools')
-        # There is a strip flag for AIX environment
-        if ctx.env.DEST_OS == 'aix':
-            if ctx.env.PYI_ARCH == '32bit':
-                ctx.env.append_value('STRIPFLAGS', '-X32')
-            elif ctx.env.PYI_ARCH == '64bit':
-                ctx.env.append_value('STRIPFLAGS', '-X64')
 
     def windowed(name, baseenv):
         """Setup windowed environment based on `baseenv`."""
@@ -698,7 +701,6 @@ def configure(ctx):
     ## setup windowed RELEASE environment
     windowed('releasew', release_env)
 
-
 # TODO Use 'strip' command to decrease the size of compiled bootloaders.
 def build(ctx):
     if not ctx.variant:
@@ -729,15 +731,21 @@ def build(ctx):
         # Do not strip bootloaders when using MSVC.
         features = ''
 
+    ctx.objects(source=ctx.path.ant_glob('src/*.c', excl="src/main.c"),
+                includes='src windows zlib',
+                target="OBJECTS")
+
+    ctx.env.link_with_dynlibs = []
+    ctx.env.link_with_staticlibs = []
     if ctx.env.DEST_OS == 'win32':
         # Use different RC file (icon) for console/windowed mode - remove '_d'
         icon_rc = 'windows/' + exe_name.replace('_d', '') + '.rc'
         # On Windows we need to link library zlib statically.
         ctx.program(
-            source=ctx.path.ant_glob(['src/*.c', icon_rc]),
+            source=['src/main.c', icon_rc],
             target=exe_name,
             install_path=install_path,
-            use='USER32 COMCTL32 KERNEL32 ADVAPI32 WS2_32 Z',
+            use='OBJECTS USER32 COMCTL32 KERNEL32 ADVAPI32 WS2_32 Z',
             includes='src windows zlib',
             features=features,
         )
@@ -757,14 +765,19 @@ def build(ctx):
         if ctx.options.boehmgc:
             libs.append('GC')
 
+        ctx.env.link_with_dynlibs = libs
+        ctx.env.link_with_staticlibs = staticlibs
+
         ctx.program(
-            source=ctx.path.ant_glob('src/*.c'),
+            source='src/main.c',
             target=exe_name,
             includes='src',
-            use=libs,
+            use=libs + ["OBJECTS"],
             stlib=staticlibs,
             install_path=install_path,
             features=features)
+
+    ctx.recurse("tests")
 
 
 class make_all(BuildContext):

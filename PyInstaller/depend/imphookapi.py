@@ -65,46 +65,37 @@ class PreSafeImportModuleAPI(object):
 
     module_graph : PyiModuleGraph
         Current module graph.
+    parent_package : Package
+        Graph node for the package providing this module _or_ `None` if this
+        module is a top-level module.
+
+    Attributes (Mutable)
+    -----------------------------
+    The following attributes are editable.
+
     module_basename : str
         Unqualified name of the module to be imported (e.g., `text`).
     module_name : str
         Fully-qualified name of this module (e.g., `email.mime.text`).
-    parent_package : Package
-        Graph node for the package providing this module _or_ `None` if this
-        module is a top-level module.
     """
 
     def __init__(self, module_graph, module_basename, module_name,
                  parent_package):
         self._module_graph = module_graph
-        self._module_basename = module_basename
-        self._module_name = module_name
+        self.module_basename = module_basename
+        self.module_name = module_name
         self._parent_package = parent_package
 
 
     # Immutable properties. No corresponding setters are defined.
     @property
     def module_graph(self):
-        "Current module graph"
+        """Current module graph"""
         return self._module_graph
-
-    #FIXME: Remove this property and publicize the "_module_name" attribute to
-    #"module_name". This attribute is intended to be modifiable by hooks.
-    @property
-    def module_name(self):
-        "Fully-qualified name of this module (e.g., `email.mime.text`)."
-        return self._module_name
-
-    #FIXME: Remove this property and publicize the "_module_basename" attribute
-    #to "module_basename". This attribute is intended to be modifiable by hooks.
-    @property
-    def module_basename(self):
-        "Unqualified name of the module to be imported (e.g., `text`)."
-        return self._module_basename
 
     @property
     def parent_package(self):
-        "Parent Package of this node"
+        """Parent Package of this node"""
         return self._parent_package
 
 
@@ -210,7 +201,7 @@ class PreSafeImportModuleAPI(object):
             package's `__path__` attribute.
         """
 
-        self._module_graph.append_package_path(self._module_name, directory)
+        self._module_graph.append_package_path(self.module_name, directory)
 
 
 class PreFindModulePathAPI(object):

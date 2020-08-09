@@ -17,7 +17,7 @@ are implicitly skipped under Python 3.
 """
 
 import pkg_resources
-from PyInstaller.utils.tests import importorskip, xfail_py3, xfail
+from PyInstaller.utils.tests import importorskip, xfail
 
 
 try:
@@ -31,7 +31,7 @@ except pkg_resources.DistributionNotFound:
     # all the tests below.
     wxPython_fail = False
 
-@xfail_py3
+@xfail
 @xfail(wxPython_fail, reason='Unsupported wxPython version')
 @importorskip('wx.lib.pubsub')
 def test_wx_lib_pubsub_protocol_default(pyi_builder):
@@ -40,7 +40,7 @@ def test_wx_lib_pubsub_protocol_default(pyi_builder):
     """
     pyi_builder.test_script('pyi_hooks/wx_lib_pubsub.py')
 
-@xfail_py3
+@xfail
 # This test will pass when test_import.test_import_respects_path passes, since
 # that test provides a simple example of what causes this wxPython version to
 # fail.
@@ -55,7 +55,7 @@ def test_wx_lib_pubsub_protocol_kwargs(pyi_builder):
     """
     pyi_builder.test_script('pyi_hooks/wx_lib_pubsub_setupkwargs.py')
 
-@xfail_py3
+@xfail
 @xfail(wxPython_fail, reason='Unsupported wxPython version')
 @importorskip('wx.lib.pubsub.core')
 def test_wx_lib_pubsub_protocol_arg1(pyi_builder):

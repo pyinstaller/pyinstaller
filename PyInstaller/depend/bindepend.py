@@ -196,7 +196,7 @@ def matchDLLArch(filename):
         pe.close()
     except pefile.PEFormatError as exc:
         raise SystemExit('Can not get architecture from file: %s\n'
-                         '  Reason: %s' % (pefilename, exception))
+                         '  Reason: %s' % (pefilename, exc))
     return match_arch
 
 
@@ -275,7 +275,7 @@ def pkg_resources_get_default_cache():
             return os.path.join(dirname, 'Python-Eggs')
     else:
         raise RuntimeError(
-            "Please set the PYTHON_EGG_CACHE enviroment variable"
+            "Please set the PYTHON_EGG_CACHE environment variable"
         )
 
 
@@ -341,6 +341,9 @@ def getAssemblies(pth):
     Redistributable runtime libraries 9.0.
 
     Python 3.3+ is compiled with version 10.0 and does not use SxS assemblies.
+
+    FIXME: Can this be removed since we now only support Python 3.5+?
+    FIXME: IS there some test-case covering this?
     """
     if pth.lower().endswith(".manifest"):
         return []

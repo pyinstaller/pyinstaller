@@ -33,12 +33,12 @@ import PyInstaller.log as logging
 logger = logging.getLogger(__name__)
 
 
-_BOOTLOADER_FNAMES = set(['run', 'run_d', 'runw', 'runw_d'])
+_BOOTLOADER_FNAMES = {'run', 'run_d', 'runw', 'runw_d'}
 
 
 # Ignoring some system libraries speeds up packaging process
-_excludes = set([
-    # Ignore annoying warnings with Windows system dlls.
+_excludes = {
+    # Ignore annoying warnings with Windows system DLLs.
     #
     # 'W: library kernel32.dll required via ctypes not found'
     # 'W: library coredll.dll required via ctypes not found'
@@ -63,7 +63,7 @@ _excludes = set([
     # Some modules tries to import the Python library.
     # e.g. pyreadline.console.console
     r'python\%s\%s',
-])
+}
 
 # Regex includes - overrides excludes.
 # Include list is used only to override specific libraries
@@ -71,7 +71,7 @@ _excludes = set([
 _includes = set()
 
 
-_win_includes = set([
+_win_includes = {
     # DLLs are from 'Microsoft Visual C++ 2010 Redistributable Package'.
     # http://msdn.microsoft.com/en-us/library/8kche8ah(v=vs.100).aspx
     #
@@ -80,7 +80,8 @@ _win_includes = set([
     #
     # Visual Studio C++ 2010 does not need Assembly manifests anymore and
     # uses C++ runtime libraries the old way - pointing to C:\Windows\System32.
-    # It is necessary to allow inclusion of these libraries from C:\Windows\System32.
+    # It is necessary to allow inclusion of these libraries from
+    # C:\Windows\System32.
     r'atl100\.dll',
     r'msvcr100\.dll',
     r'msvcp100\.dll',
@@ -98,19 +99,19 @@ _win_includes = set([
 
     # Allow pythonNN.dll, pythoncomNN.dll, pywintypesNN.dll
     r'py(?:thon(?:com(?:loader)?)?|wintypes)\d+\.dll',
-])
+}
 
-_win_excludes = set([
+_win_excludes = {
     # On Windows, only .dll files can be loaded.
     r'.*\.so',
     r'.*\.dylib',
 
     # MS assembly excludes
     r'Microsoft\.Windows\.Common-Controls',
-])
+}
 
 
-_unix_excludes = set([
+_unix_excludes = {
     r'libc\.so(\..*)?',
     r'libdl\.so(\..*)?',
     r'libm\.so(\..*)?',
@@ -139,9 +140,9 @@ _unix_excludes = set([
     # to bundle it.
     r'libxcb\.so(\..*)?',
     r'libxcb-dri.*\.so(\..*)?',
-])
+}
 
-_aix_excludes = set([
+_aix_excludes = {
     r'libbz2\.a',
     r'libc\.a',
     r'libC\.a',
@@ -152,7 +153,7 @@ _aix_excludes = set([
     r'librt\\.a',
     r'librtl\.a',
     r'libz\.a',
-])
+}
 
 
 if is_win:
@@ -220,7 +221,9 @@ elif is_win:
         def __init__(self, global_exclude_list):
             self._exclude_list = global_exclude_list
             # use normpath because msys2 uses / instead of \
-            self._windows_dir = os.path.normpath(winutils.get_windows_dir().lower())
+            self._windows_dir = os.path.normpath(
+                winutils.get_windows_dir().lower()
+            )
 
         def search(self, libname):
             libname = libname.lower()
@@ -301,7 +304,7 @@ def mac_set_relative_dylib_deps(libname, distname):
         """
         # Match non system dynamic libraries.
         if not util.in_system_path(pth):
-            # Use relative path to dependend dynamic libraries bases on
+            # Use relative path to dependent dynamic libraries based on the
             # location of the executable.
             return os.path.join('@loader_path', parent_dir,
                 os.path.basename(pth))

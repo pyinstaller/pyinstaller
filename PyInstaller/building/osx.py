@@ -12,7 +12,7 @@
 import os
 import plistlib
 import shutil
-from ..compat import is_darwin, FileExistsError
+from ..compat import is_darwin
 from .api import EXE, COLLECT
 from .datastruct import Target, TOC, logger
 from .utils import _check_path_overlap, _rmtree, add_suffix_to_extensions, checkCache
@@ -161,13 +161,8 @@ class BUNDLE(Target):
             info_plist_dict.update(self.info_plist)
 
         plist_filename = os.path.join(self.name, "Contents", "Info.plist")
-        try:
-            # python >= 3.4
-            with open(plist_filename, "wb") as plist_fh:
-                plistlib.dump(info_plist_dict, plist_fh)
-        except AttributeError:
-            # python 2.7
-            plistlib.writePlist(info_plist_dict, plist_filename)
+        with open(plist_filename, "wb") as plist_fh:
+            plistlib.dump(info_plist_dict, plist_fh)
 
         links = []
         toc = add_suffix_to_extensions(self.toc)

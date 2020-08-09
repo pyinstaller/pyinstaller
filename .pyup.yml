@@ -2,14 +2,18 @@ branch: develop
 
 search: False
 
-schedule: "every month"
+schedule: "every week on sunday"
 
 requirements:
   - tests/requirements-libraries.txt
   - tests/requirements-tools.txt:
       update: False
+  - requirements.txt:
+      update: False
+      pin: False
 
 pr_prefix: "Tests: Requirements:"
 label_prs: "area:tests/ci/pyup"
+assignees: Legorooj
 
 branch_prefix: pyup/

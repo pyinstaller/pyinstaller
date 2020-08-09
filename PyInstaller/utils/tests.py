@@ -14,8 +14,6 @@
 Decorators for skipping PyInstaller tests when specific requirements are not met.
 """
 
-from __future__ import print_function
-
 import os
 import sys
 import traceback
@@ -27,7 +25,7 @@ import shutil
 import pytest
 from _pytest.runner import Skipped
 
-from PyInstaller.compat import is_darwin, is_win, is_linux, is_py2, is_py3
+from PyInstaller.compat import is_darwin, is_win, is_linux
 
 # Wrap some pytest decorators to be consistent in tests.
 parametrize = pytest.mark.parametrize
@@ -39,8 +37,6 @@ skipif_win = skipif(is_win, reason='does not run on Windows')
 skipif_linux = skipif(is_win, reason='does not run on GNU/Linux')
 skipif_winorosx = skipif(is_win or is_darwin, reason='does not run on Windows or Mac OS X')
 xfail = pytest.mark.xfail
-xfail_py2 = xfail(is_py2, reason='fails with Python 2.7')
-xfail_py3 = xfail(is_py3, reason='fails with Python 3')
 
 def _check_for_compiler():
     import tempfile, sys
@@ -66,7 +62,7 @@ def _check_for_compiler():
         #   find the file specified.
         has_compiler = cc.has_function('clock', includes=['time.h'])
     os.chdir(old_wd)
-    # TODO: Find a way to remove the gerneated clockXXXX.c file, too
+    # TODO: Find a way to remove the generated clockXXXX.c file, too
     shutil.rmtree(tmp)
     return has_compiler
 
@@ -168,9 +164,6 @@ def gen_sourcefile(tmpdir, source, test_id=None):
     Ensure that the caller of `test_source` is in a UTF-8
     encoded file with the correct '# -*- coding: utf-8 -*-' marker.
     """
-    if is_py2:
-        if isinstance(source, str):
-            source = source.decode('UTF-8')
     testname = inspect.stack()[1][3]
     if test_id:
         # For parametrized test append the test-id.

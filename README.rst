@@ -1,6 +1,8 @@
 PyInstaller Overview
 ====================
 
+**New PyInstaller team members wanted! Email legorooj@protonmail.com if you're interested.**
+
 PyInstaller bundles a Python application and all its dependencies into a single
 package. The user can run the packaged app without installing a Python
 interpreter or any modules.
@@ -16,9 +18,7 @@ http://www.pyinstaller.org/funding.html for how to support PyInstaller.
 :Documentation: https://pyinstaller.readthedocs.io/
 :Website:       http://www.pyinstaller.org/
 :Code:          https://github.com/pyinstaller/pyinstaller
-:Donate:        | https://www.bountysource.com/teams/pyinstaller
-                | Bitcoin: 1JUFjawzWDR7Tc8z9TKXstVFdjkDY9FbtK
-                | `more ways to donate … <http://www.pyinstaller.org/donate.html>`_
+:Donate, Fund:  http://www.pyinstaller.org/funding.html
 
 
 PyInstaller reads a Python script written by you. It analyzes your code
@@ -40,7 +40,7 @@ but is not tested against them as part of the continuous integration tests.
 Main Advantages
 ---------------
 
-- Works out-of-the-box with any Python version 2.7 / 3.5-3.7.
+- Works out-of-the-box with any Python version 3.5-3.7.
 - Fully multi-platform, and uses the OS support to load the dynamic libraries,
   thus ensuring full compatibility.
 - Correctly bundles the major Python packages such as numpy, PyQt4, PyQt5,
@@ -49,7 +49,7 @@ Main Advantages
   tricks to make external packages work are already integrated.)
 - Libraries like PyQt5, PyQt4, PySide, wxPython, matplotlib or Django are fully
   supported, without having to handle plugins or external data files manually.
-- Working code signing on OS X.
+- Works with code signing on OS X.
 - Bundles MS Visual C++ DLLs on Windows.
 
 
@@ -66,12 +66,17 @@ Requirements and Tested Platforms
 
 - Python: 
 
- - 2.7 or 3.5-3.7
- - PyCrypto_ 2.4+ (only if using bytecode encryption)
+ - 3.5-3.7
+ - tinyaes_ 1.0+ (only if using bytecode encryption).
+   Instead of installing tinyaes, ``pip install pyinstaller[encryption]`` instead.
 
 - Windows (32bit/64bit):
 
- - Windows XP or newer.
+ - PyInstaller should work on Windows 7 or newer, but we only officially support Windows 8+.
+
+ - We don't support Python installed from the Windows store when not using virtual environments due to 
+   `permission errors <https://github.com/pyinstaller/pyinstaller/pull/4702>`_ 
+   that can't easily be fixed.
     
 - GNU/Linux (32bit/64bit)
 
@@ -129,7 +134,7 @@ bootloader, as we do not ship binary packages. Download PyInstaller
 source, and build the bootloader::
      
         cd bootloader
-        python ./waf distclean all
+        python ./waf all
 
 Then install PyInstaller::
 
@@ -154,7 +159,14 @@ if users and companies provide sustainable funding. See
 http://www.pyinstaller.org/funding.html for how to support PyInstaller.
 
 
+Changes in this Release
+-------------------------
 
-.. _PyCrypto: https://www.dlitz.net/software/pycrypto/
-.. _`manual`: https://pyinstaller.readthedocs.io/en/v3.6/
+You can find a detailed list of changes in this release
+in the `change log`_ section of the manual.
+
+
+.. _tinyaes: https://github.com/naufraghi/tinyaes-py
+.. _`manual`: https://pyinstaller.readthedocs.io/en/v4.0/
+.. _`change log`: https://pyinstaller.readthedocs.io/en/v4.0/CHANGES.html
 
