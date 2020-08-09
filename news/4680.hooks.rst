@@ -1,1 +1,0 @@
-Add hook for `xmldiff <https://github.com/Shoobx/xmldiff>`_

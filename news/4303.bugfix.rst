@@ -1,2 +1,0 @@
-Fix multipackaging. The `MERGE` class will now have the correct relative paths
-between shared dependencies which can correctly be opened by the bootloader.

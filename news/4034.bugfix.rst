@@ -1,1 +1,0 @@
-Fix ``FileNotFoundError`` showing up in ``utils/misc.py`` which occurs when a namespace was processed as an filename.

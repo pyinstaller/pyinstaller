@@ -1,1 +1,0 @@
-Do not print info about ``--noconfirm`` when option is already being used.

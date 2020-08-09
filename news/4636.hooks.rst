@@ -1,1 +1,0 @@
-Fix detecting Qt5 libraries and dependencies from conda-forge builds.

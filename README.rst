@@ -18,9 +18,7 @@ http://www.pyinstaller.org/funding.html for how to support PyInstaller.
 :Documentation: https://pyinstaller.readthedocs.io/
 :Website:       http://www.pyinstaller.org/
 :Code:          https://github.com/pyinstaller/pyinstaller
-:Donate:        | https://www.bountysource.com/teams/pyinstaller
-                | Bitcoin: 1JUFjawzWDR7Tc8z9TKXstVFdjkDY9FbtK
-                | `more ways to donate … <http://www.pyinstaller.org/donate.html>`_
+:Donate, Fund:  http://www.pyinstaller.org/funding.html
 
 
 PyInstaller reads a Python script written by you. It analyzes your code
@@ -161,7 +159,13 @@ if users and companies provide sustainable funding. See
 http://www.pyinstaller.org/funding.html for how to support PyInstaller.
 
 
+Changes in this Release
+-------------------------
+
+You can find a detailed list of changes in this release
+in the `change log`_ section of the manual.
+
 
 .. _tinyaes: https://github.com/naufraghi/tinyaes-py
 .. _`manual`: https://pyinstaller.readthedocs.io/en/latest/
-
+.. _`change log`: https://pyinstaller.readthedocs.io/en/latest/CHANGES.html
