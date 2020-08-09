@@ -161,7 +161,14 @@ if users and companies provide sustainable funding. See
 http://www.pyinstaller.org/funding.html for how to support PyInstaller.
 
 
+Changes in this Release
+-------------------------
+
+You can find a detailed list of changes in this release
+in the `change log`_ section of the manual.
+
 
 .. _tinyaes: https://github.com/naufraghi/tinyaes-py
 .. _`manual`: https://pyinstaller.readthedocs.io/en/v4.0/
+.. _`change log`: https://pyinstaller.readthedocs.io/en/v4.0/CHANGES.html
 
