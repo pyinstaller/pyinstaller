@@ -119,7 +119,27 @@ a list, e.g.
         '--icon=%s' % os.path.join('resource', 'path', 'icon.ico'),
         os.path.join('my_package', '__main__.py'),
     ])
+    
+If using a single file script or main function not packed in a package or namespace 
+the following namespace can be used as a skeleton in a python build file, named 
+mybuild.py or similar. Replace ``your_module_name_here.py`` and ``your_binary_name_here`` in 
+the script below.
 
+.. code-block:: python
+
+    import PyInstaller.__main__
+
+    my_build_config = [
+        'your_module_name_here.py',
+	'-n your_binary_name_here',
+	'--clean',
+	'--onefile',
+	]
+
+    PyInstaller.__main__.run(my_build_config)
+
+This will build your_module_name_here.py into a single binary file with the name
+your_binary_name_here and place this in the standard ``..\dist\`` folder. 
 
 Running |PyInstaller| with Python optimizations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
