@@ -36,4 +36,4 @@ jobs:
         run: pip install -q -U setuptools wheel towncrier
 
       - name: Run towncrier
-        run: towncrier --yes
+        run: towncrier --draft
