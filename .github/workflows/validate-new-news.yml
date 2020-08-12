@@ -30,7 +30,7 @@ jobs:
         run: |
           git diff --name-status origin/${{ github.base_ref }}
           git diff --name-status origin/${{ github.base_ref }}\
-          | python scripts/verify-news-fragments.py ${{github.event.number}}
+          | python scripts/verify-news-fragments.py
 
       - name: Install towncrier
         run: pip install -q -U setuptools wheel towncrier

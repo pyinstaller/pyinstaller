@@ -16,14 +16,6 @@ Verify that new news entries have valid filenames. Usage:
 
     git diff --name-status $COMMIT_ID | python verify-news-fragments.py
 
-If you have a Pull Request number then you can verify that new entries have
-the correct PR number in their filename:
-
-.. code-block:: bash
-
-    git diff --name-status origin/${{ github.base_ref }} \
-    | python verify-news-fragments.py $PR_NUMBER
-
 """
 
 import re
@@ -42,17 +34,11 @@ NEWS_PATTERN = re.compile(r"(\d+)\.(\w+)\.rst")
 NEWS_DIR = Path(__file__).absolute().parent.parent / "news"
 
 
-def validate_name(name, pr_num=None):
+def validate_name(name):
     """Check a filename/filepath matches the required format.
-    If **pr** is provided, also check that the filename has the
-    correct PR number.
 
-    Raises ValueError
     :param name: Name of news fragment file.
     :type: str, os.Pathlike
-
-    :param pr_num: Pull request number to validate.
-    :type pr_num: int, str, optional
 
     :raises: ``SystemExit`` if above checks don't pass.
     """
@@ -65,14 +51,10 @@ def validate_name(name, pr_num=None):
         sys.exit("'{}' of of invalid type '{}'. Valid types are:\n{}".format(
             name, match.group(2), CHANGE_TYPES))
 
-    if (pr_num is not None) and (int(pr_num) != int(match.group(1))):
-        sys.exit("'{}' has pull request number {} but the pull request "
-                 "is actually #{}.".format(name, match.group(1), pr_num))
-
     print(name, "is ok")
 
 
-def main(pr=None):
+def main():
     # Parse the output of `git diff --name-status COMMIT`
     lines = sys.stdin.readlines()
 
@@ -85,8 +67,8 @@ def main(pr=None):
 
         if action == "A" and filename.parts[0] == "news":
             if filename.suffix == ".rst":
-                validate_name(filename, pr)
+                validate_name(filename)
 
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) == 2 else None)
+    main()
