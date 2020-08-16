@@ -10,6 +10,6 @@ altgraph==0.17
 pyinstaller-hooks-contrib >= 2020.6
 pefile==2019.4.18; sys_platform == 'win32'
 pywin32-ctypes==0.2.0; sys_platform == 'win32'
-macholib; sys_platform == 'darwin'
+macholib==1.14; sys_platform == 'darwin'
 
 ## IMPORTANT: Keep aligned with setup.cfg
