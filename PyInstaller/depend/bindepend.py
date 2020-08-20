@@ -125,7 +125,8 @@ def _getImports_pe(pth):
                 # sym.forwarder is a bytes object. Convert it to a string.
                 forwarder = winutils.convert_dll_name_to_str(sym.forwarder)
                 # sym.forwarder is for example 'KERNEL32.EnterCriticalSection'
-                dlls.add(forwarder.split('.')[0] + ".dll")
+                dll  = forwarder.split('.')[0]
+                dlls.add(dll + ".dll")
 
     pe.close()
     return dlls
