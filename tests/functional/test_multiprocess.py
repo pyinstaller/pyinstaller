@@ -14,6 +14,7 @@
 # ---------------
 import os
 import sys
+import pytest
 
 # Local imports
 # -------------
@@ -22,21 +23,25 @@ from PyInstaller.utils.tests import importorskip, skipif
 
 
 @importorskip('multiprocessing')
+@pytest.mark.timeout(timeout=20)
 def test_multiprocess(pyi_builder):
     pyi_builder.test_script('pyi_multiprocess.py')
 
 
 @importorskip('multiprocessing')
+@pytest.mark.timeout(timeout=20)
 def test_multiprocess_forking(pyi_builder):
     pyi_builder.test_script('pyi_multiprocess_forking.py')
 
 
 @importorskip('multiprocessing')
+@pytest.mark.timeout(timeout=20)
 def test_multiprocess_pool(pyi_builder):
     pyi_builder.test_script('pyi_multiprocess_pool.py')
 
 
 @importorskip('multiprocessing')
+@pytest.mark.timeout(timeout=20)
 def test_multiprocess_spawn_semaphore(pyi_builder, capfd):
     pyi_builder.test_source("""
         import sys
@@ -80,6 +85,7 @@ def test_multiprocess_spawn_semaphore(pyi_builder, capfd):
 
 @skipif(is_win, reason='fork is not available on windows')
 @importorskip('multiprocessing')
+@pytest.mark.timeout(timeout=20)
 def test_multiprocess_fork_semaphore(pyi_builder, capfd):
     pyi_builder.test_source("""
         import sys
@@ -125,6 +131,7 @@ def test_multiprocess_fork_semaphore(pyi_builder, capfd):
 
 @skipif(is_win, reason='forkserver is not available on windows')
 @importorskip('multiprocessing')
+@pytest.mark.timeout(timeout=20)
 def test_multiprocess_forkserver_semaphore(pyi_builder, capfd):
     pyi_builder.test_source("""
         import sys
