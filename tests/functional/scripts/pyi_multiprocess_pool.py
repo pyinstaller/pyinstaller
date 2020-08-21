@@ -25,3 +25,6 @@ if __name__ == '__main__':
     print(res.get(timeout=1))          # prints "100"
     print('Print "[0, 1, 4,..., 81]"')
     print(pool.map(f, range(10)))
+    # this is old code, based on Python 2, not using Pool as a context, so we
+    # need to terminate the pool explicitly
+    pool.terminate()
