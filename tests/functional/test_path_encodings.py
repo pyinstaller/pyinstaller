@@ -128,3 +128,15 @@ def test_win_non_codepage_path(pyi_builder, monkeypatch):
 @skipif_notwin
 def test_win_py3_no_shortpathname(pyi_builder):
     pyi_builder.test_script('pyi_win_py3_no_shortpathname.py')
+
+
+@skipif_notwin
+def test_win_TEMP_has_shortpathname(pyi_builder, monkeypatch, tmp_path):
+    """Test if script if pass if $TMP holds a short path name"""
+    tmp = tmp_path / "longlongfilename" / "xxx"
+    tmp.mkdir(parents=True, exist_ok=True)
+    import win32api
+    tmp = win32api.GetShortPathName(str(tmp))
+    monkeypatch.setenv("TMP", tmp)
+    monkeypatch.setenv("TEMP", tmp)
+    pyi_builder.test_script('pyi_win_py3_no_shortpathname.py')
