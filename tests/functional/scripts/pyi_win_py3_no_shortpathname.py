@@ -39,5 +39,9 @@ print("sys._MEIPASS:", ascii(sys._MEIPASS))
 
 if not os.path.exists(sys._MEIPASS):
     raise SystemExit("sys._MEIPASS does not exist.")
-check_shortpathname(sys._MEIPASS)
+tmp = os.path.normcase(win32api.GetTempPath())
+if os.path.normcase(win32api.GetLongPathNameW(tmp)) == tmp:
+    # Test only if TempPath is not a short path. This might happen if e.g
+    # TMP=c:\users\runner~1\appdata\local\temp, since the username is too long
+    check_shortpathname(sys._MEIPASS)
 
