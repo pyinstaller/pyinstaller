@@ -20,6 +20,7 @@ test_cases = (
     (3, "onefile_depends_on_onedir"),
     (4, "onedir_depends_on_onedir"),
     (5, "onedir_and_onefile_depend_on_onedir"))
+    (6, "onedir_and_onefile_tkinter"))
 
 scripts = (
     '''
