@@ -94,6 +94,7 @@ install:
   - python --version
   - python -c "import sys, platform, struct;
     print(sys.platform, platform.machine(), struct.calcsize('P')*8)"
+  - tests\scripts\printShortLongCWD.cmd
 
   # Compile bootloader.
   - cd bootloader
