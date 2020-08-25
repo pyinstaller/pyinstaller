@@ -810,10 +810,11 @@ class MERGE(object):
                 else:
                     dep_path = self._get_relative_path(path, self._dependencies[tpl[1]])
                     logger.debug("Referencing %s to be a dependecy for %s, located in %s" % (tpl[1], path, dep_path))
-                    analysis.dependencies.append(
-                        (":".join((dep_path, os.path.basename(tpl[1]))),
-                         tpl[1],
-                         "DEPENDENCY"))
+                    if tpl[-1] == "DATA":
+                        p = ":".join((dep_path, tpl[0]))
+                    else:
+                        p = ":".join((dep_path, os.path.basename(tpl[1])))
+                    analysis.dependencies.append((p, tpl[1], "DEPENDENCY"))
                     toc[i] = (None, None, None)
             # Clean the list
             toc[:] = [tpl for tpl in toc if tpl != (None, None, None)]
