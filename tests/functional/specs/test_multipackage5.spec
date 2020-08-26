@@ -20,15 +20,17 @@ __testname__ = 'test_multipackage5'
 __testdep__ = 'multipackage5_B'
 __testdep2__ = 'multipackage5_C'
 
-names = [__testname__, __testdep__, __testdep2__]
+names = [__testdep__, __testdep2__, __testname__] # dependency first
+types = ["dir", "file", "dir"]
 
 analysis = [
     Analysis([os.path.join(SCRIPT_DIR, name + '.py')])
     for name in names]
 
-MERGE((analysis[1], names[1], os.path.join(__testdep__, __testdep__)),
-      (analysis[2], names[2], os.path.join(__testdep2__)),
-      (analysis[0], names[0], os.path.join(__testname__, __testname__)))
+# Analysis object, name, path of this artifact
+merges = [(a, name, (name if t == "file" else os.path.join(name, name)))
+          for a, name, t in zip(analysis, names, types)]
+MERGE(*merges)
 
 def onefile(name, analysis):
     pyz = PYZ(analysis.pure)
@@ -58,6 +60,9 @@ def onedir(name, analysis):
         analysis.datas,
         name=name)
 
-onedir(names[0], analysis[0])
-onedir(names[1], analysis[1])
-onefile(names[2], analysis[2])
+
+for a, name, t in zip(analysis, names, types):
+    if t == "file":
+        onefile(name, a)
+    else:
+        onedir(name, a)
