@@ -11,43 +11,50 @@
 #-----------------------------------------------------------------------------
 
 
-# MULTIPACKAGE FEATURE: file A (onefile pack) depends on file B (onefile pack).
+# MULTIPACKAGE FEATURE: onefile pack depends on onefile pack.
 import os
 
 SCRIPT_DIR = 'multipackage-scripts'
 __testname__ = 'test_multipackage1'
 __testdep__ = 'multipackage1_B'
 
-a = Analysis([os.path.join(SCRIPT_DIR, __testname__ + '.py')],
-             pathex=['.'])
-b = Analysis([os.path.join(SCRIPT_DIR, __testdep__ + '.py')],
-             pathex=['.'])
+names = [__testname__, __testdep__]
 
-MERGE((b, __testdep__, __testdep__), (a, __testname__, __testname__))
+analysis = [
+    Analysis([os.path.join(SCRIPT_DIR, name + '.py')])
+    for name in names]
 
-pyz = PYZ(a.pure)
-exe = EXE(pyz,
-          a.scripts,
-          a.binaries,
-          a.zipfiles,
-          a.datas,
-          a.dependencies,
-          name=os.path.join('dist', __testname__),
-          debug=True,
-          strip=False,
-          upx=False,
-          console=1 )
-                    
-pyzB = PYZ(b.pure)
-exeB = EXE(pyzB,
-          b.scripts,
-          b.binaries,
-          b.zipfiles,
-          b.datas,
-          b.dependencies,
-          name=os.path.join('dist', __testdep__),
-          debug=True,
-          strip=False,
-          upx=False,
-          console=1 )
+# Analysis object, name, path of this this artifact
+MERGE((analysis[1], names[1], names[1]),
+      (analysis[0], names[0], names[0]))
 
+def onefile(name, analysis):
+    pyz = PYZ(analysis.pure)
+    exe = EXE(pyz,
+              analysis.scripts,
+              analysis.binaries,
+              analysis.zipfiles,
+              analysis.datas,
+              analysis.dependencies,
+              name=name,
+              debug=True,
+              console=True)
+
+def onedir(name, analysis):
+    pyz = PYZ(analysis.pure, analysis.zipped_data)
+    exe = EXE(pyz,
+              analysis.scripts,
+              analysis.dependencies,
+              exclude_binaries=True,
+              name=name,
+              debug=True,
+              console=True)
+    coll = COLLECT(
+        exe,
+        analysis.binaries,
+        analysis.zipfiles,
+        analysis.datas,
+        name=name)
+
+onefile(names[0], analysis[0])
+onefile(names[1], analysis[1])

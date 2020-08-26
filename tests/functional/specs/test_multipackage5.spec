@@ -11,8 +11,7 @@
 #-----------------------------------------------------------------------------
 
 
-# MULTIPACKAGE FEATURE: file A (onedir pack) depends on file B (onedir pack)
-# and file C (onefile pack)
+# MULTIPACKAGE FEATURE: onedir pack depends on onedir pack and onefile pack
 import os
 import sys
 
@@ -21,67 +20,44 @@ __testname__ = 'test_multipackage5'
 __testdep__ = 'multipackage5_B'
 __testdep2__ = 'multipackage5_C'
 
-a = Analysis([os.path.join(SCRIPT_DIR, __testname__ + '.py')],
-             pathex=['.'])
-b = Analysis([os.path.join(SCRIPT_DIR, __testdep__ + '.py')],
-             pathex=['.'])
-c = Analysis([os.path.join(SCRIPT_DIR, __testdep2__ + '.py')],
-             pathex=['.'])
+names = [__testname__, __testdep__, __testdep2__]
 
+analysis = [
+    Analysis([os.path.join(SCRIPT_DIR, name + '.py')])
+    for name in names]
 
-MERGE((b, __testdep__, os.path.join(__testdep__, __testdep__)),
-      (c, __testdep2__, os.path.join(__testdep2__)),
-      (a, __testname__, os.path.join(__testname__, __testname__)))
+MERGE((analysis[1], names[1], os.path.join(__testdep__, __testdep__)),
+      (analysis[2], names[2], os.path.join(__testdep2__)),
+      (analysis[0], names[0], os.path.join(__testname__, __testname__)))
 
-pyz = PYZ(a.pure)
-exe = EXE(pyz,
-          a.scripts,
-          a.dependencies,
-          exclude_binaries=1,
-          name=os.path.join('build', 'pyi.'+sys.platform, __testname__,
-                            __testname__),
-          debug=True,
-          strip=False,
-          upx=True,
-          console=1 )
+def onefile(name, analysis):
+    pyz = PYZ(analysis.pure)
+    exe = EXE(pyz,
+              analysis.scripts,
+              analysis.binaries,
+              analysis.zipfiles,
+              analysis.datas,
+              analysis.dependencies,
+              name=name,
+              debug=True,
+              console=True)
 
-coll = COLLECT( exe,
-        a.binaries,
-        a.zipfiles,
-        a.datas,
-        strip=False,
-        upx=True,
-        name=os.path.join('dist', __testname__))
+def onedir(name, analysis):
+    pyz = PYZ(analysis.pure, analysis.zipped_data)
+    exe = EXE(pyz,
+              analysis.scripts,
+              analysis.dependencies,
+              exclude_binaries=True,
+              name=name,
+              debug=True,
+              console=True)
+    coll = COLLECT(
+        exe,
+        analysis.binaries,
+        analysis.zipfiles,
+        analysis.datas,
+        name=name)
 
-pyzB = PYZ(b.pure)
-exeB = EXE(pyzB,
-          b.scripts,
-          b.dependencies,
-          exclude_binaries=1,
-          name=os.path.join('build', 'pyi.'+sys.platform, __testdep__,
-                            __testdep__),
-          debug=True,
-          strip=False,
-          upx=True,
-          console=1 )
-
-coll = COLLECT( exeB,
-        b.binaries,
-        b.zipfiles,
-        b.datas,
-        strip=False,
-        upx=True,
-        name=os.path.join('dist', __testdep__))
-        
-pyzC = PYZ(c.pure)
-exeC = EXE(pyzC,
-          c.scripts,
-          c.binaries,
-          c.zipfiles,
-          c.datas,
-          c.dependencies,
-          name=os.path.join('dist', __testdep2__),
-          debug=True,
-          strip=False,
-          upx=True,
-          console=1 )
+onedir(names[0], analysis[0])
+onedir(names[1], analysis[1])
+onefile(names[2], analysis[2])
