@@ -16,9 +16,9 @@ import os
 import sys
 
 SCRIPT_DIR = 'multipackage-scripts'
-__testname__ = 'test_multipackage5'
-__testdep__ = 'multipackage5_B'
-__testdep2__ = 'multipackage5_C'
+__testname__ = 'test_multipackage'
+__testdep__ = 'multipackage_B'
+__testdep2__ = 'multipackage_C'
 
 names = [__testdep__, __testdep2__, __testname__] # dependency first
 types = ["dir", "file", "dir"]

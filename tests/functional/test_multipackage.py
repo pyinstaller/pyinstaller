@@ -30,4 +30,4 @@ import pytest
     )
 )
 def test_spec_with_multipackage(pyi_builder_spec, spec_file):
-    pyi_builder_spec.test_spec(spec_file)
+    pyi_builder_spec.test_spec(spec_file, app_name="test_multipackage")
