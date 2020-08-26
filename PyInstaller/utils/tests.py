@@ -143,7 +143,7 @@ def importorskip(modname, minversion=None):
         return pytest.mark.skipif(False, reason='')
 
 
-def gen_sourcefile(tmpdir, source, test_id=None):
+def gen_sourcefile(tmpdir, source, test_id=None, filename=None):
     """
     Generate a source file for testing.
 
@@ -161,6 +161,10 @@ def gen_sourcefile(tmpdir, source, test_id=None):
                     will be appended to the script filename,
                     separated by two underscores.
 
+    :param filename: Use this filename instead of a generated one.
+                     This is useful if a test-case generates more the
+                     one file.
+
     Ensure that the caller of `test_source` is in a UTF-8
     encoded file with the correct '# -*- coding: utf-8 -*-' marker.
     """
@@ -171,7 +175,7 @@ def gen_sourcefile(tmpdir, source, test_id=None):
 
     # Periods are not allowed in Python module names.
     testname = testname.replace('.', '_')
-    scriptfile = tmpdir / (testname + '.py')
+    scriptfile = tmpdir / (filename if filename else (testname + '.py'))
     source = textwrap.dedent(source)
     with scriptfile.open('w', encoding='utf-8') as ofh:
         print(u'# -*- coding: utf-8 -*-', file=ofh)
