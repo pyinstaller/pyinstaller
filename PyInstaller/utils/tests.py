@@ -171,7 +171,7 @@ def gen_sourcefile(tmpdir, source, test_id=None):
 
     # Periods are not allowed in Python module names.
     testname = testname.replace('.', '_')
-    scriptfile = tmpdir / testname + '.py'
+    scriptfile = tmpdir / (testname + '.py')
     source = textwrap.dedent(source)
     with scriptfile.open('w', encoding='utf-8') as ofh:
         print(u'# -*- coding: utf-8 -*-', file=ofh)
