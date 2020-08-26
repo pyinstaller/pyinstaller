@@ -11,7 +11,7 @@
 #-----------------------------------------------------------------------------
 
 
-# TESTING MULTIPROCESS FEATURE: file A (onedir pack) depends on file B (onefile pack).
+# MULTIPROCESS FEATURE: file A (onedir pack) depends on file B (onefile pack).
 import os
 import sys
 

@@ -11,7 +11,7 @@
 #-----------------------------------------------------------------------------
 
 
-# MULTIPROCESS FEATURE: file A (onefile pack) depends on file B (onefile pack).
+# MULTIPACKAGE FEATURE: file A (onefile pack) depends on file B (onefile pack).
 import os
 
 SCRIPT_DIR = 'multipackage-scripts'

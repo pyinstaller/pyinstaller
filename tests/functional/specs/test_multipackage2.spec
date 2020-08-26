@@ -11,7 +11,7 @@
 #-----------------------------------------------------------------------------
 
 
-# MULTIPROCESS FEATURE: file A (onefile pack) depends on file B (onedir pack)
+# MULTIPACKAGE FEATURE: file A (onefile pack) depends on file B (onedir pack)
 import os
 import sys
 
