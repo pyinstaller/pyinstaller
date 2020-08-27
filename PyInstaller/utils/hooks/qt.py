@@ -88,7 +88,7 @@ class Qt5LibraryInfo:
 
             return getattr(self, name)
         else:
-            raise AttributeError
+            raise AttributeError(name)
 
 
 # Provide single instances of this class to avoid each hook constructing its own.
