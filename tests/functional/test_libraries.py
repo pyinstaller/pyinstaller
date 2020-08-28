@@ -37,7 +37,10 @@ def test_gevent(pyi_builder):
         """
         import gevent
         gevent.spawn(lambda: x)
-        """)
+        """,
+        # reduce footprint of the test (and avoid issued introduced by one of
+        # these packages breaking)
+        excludes=["PySide2", "PyQt5", "PyQt4", "numpy", "scipy"])
 
 
 @importorskip('gevent')
@@ -46,7 +49,10 @@ def test_gevent_monkey(pyi_builder):
         """
         from gevent.monkey import patch_all
         patch_all()
-        """)
+        """,
+        # reduce footprint of the test (and avoid issued introduced by one of
+        # these packages breaking)
+        excludes=["PySide2", "PyQt5", "PyQt4", "numpy", "scipy"])
 
 
 @xfail(is_darwin, reason='Issue #1895.')
