@@ -29,11 +29,11 @@ To run the test-suite, please proceed as follows.
 
 3. To run a single test use e.g.::
 
-    py.test tests/unit -k test_collect_submod_all_included
+    pytest tests/unit -k test_collect_submod_all_included
 
 4. Run the test-suite::
 
-     py.test tests/unit tests/functional
+     pytest tests/unit tests/functional
 
    This only runs the tests for the core functionality and some packages from
    the Python standard library.
@@ -42,7 +42,7 @@ To run the test-suite, please proceed as follows.
    download the Python packages to be tested. For this please run::
 
      pip install -U -r tests/requirements-libraries.txt
-     py.test tests/unit tests/functional
+     pytest tests/unit tests/functional
 
 .. note:
 
