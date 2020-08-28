@@ -11,4 +11,6 @@
 
 from PyInstaller.utils.hooks import collect_all
 
+excludedimports = ["gevent.testing", "gevent.tests"]
+
 datas, binaries, hiddenimports = collect_all('gevent')
