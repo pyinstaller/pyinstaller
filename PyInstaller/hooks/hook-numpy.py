@@ -13,6 +13,11 @@ import glob
 from PyInstaller.compat import is_win
 from PyInstaller.utils.hooks import get_module_file_attribute
 
+# numpy.testing is unconditionally imported by numpy, thus we can not exclude
+# .testing (which would be preferred). Anyway, this only saves about 7
+# modules. See also https://github.com/numpy/numpy/issues/17183
+#excludedimports = ["numpy.testing"]
+
 # if we bundle the testing module, this will cause
 # `scipy` to be pulled in unintentionally but numpy imports
 # numpy.testing at the top level for historical reasons.
