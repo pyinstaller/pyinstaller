@@ -29,9 +29,10 @@ if pyqt5_library_info.version:
                      'QtQmlModels', 'QtNetwork', 'QtGui', 'QtWebChannel',
                      'QtPositioning']
         for i in libraries:
+            framework_dir = i + '.framework'
             datas += collect_system_data_files(
-                os.path.join(data_path, 'lib', i + '.framework'),
-                os.path.join(*(rel_data_path + ['lib'])), True)
+                os.path.join(data_path, 'lib', framework_dir),
+                os.path.join(*rel_data_path, 'lib', framework_dir), True)
         datas += [(os.path.join(data_path, 'lib', 'QtWebEngineCore.framework',
                                 'Resources'), os.curdir)]
     else:
