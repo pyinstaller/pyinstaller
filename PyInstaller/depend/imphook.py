@@ -17,6 +17,7 @@ Code related to processing of import hooks.
 import glob, sys, weakref
 import os.path
 
+from ..exceptions import ImportErrorWhenRunningHook
 from .. import log as logging
 from ..compat import expand_path, importlib_load_source
 from .imphookapi import PostGraphAPI
@@ -403,8 +404,14 @@ class ModuleHook(object):
         head, tail = os.path.split(self.hook_filename)
         logger.info(
             'Loading module hook %r from %r...', tail, head)
-        self._hook_module = importlib_load_source(
-            self.hook_module_name, self.hook_filename)
+        try:
+            self._hook_module = importlib_load_source(
+                self.hook_module_name, self.hook_filename)
+        except ImportError:
+            logger.debug(exc_info=True)
+            raise ImportErrorWhenRunningHook(
+                self.hook_module_name, self.hook_filename)
+
 
         # Copy hook script attributes into magic attributes exposed as instance
         # variables of the current "ModuleHook" instance.
@@ -460,7 +467,12 @@ class ModuleHook(object):
         # Call this hook() function.
         hook_api = PostGraphAPI(
             module_name=self.module_name, module_graph=self.module_graph)
-        self._hook_module.hook(hook_api)
+        try:
+            self._hook_module.hook(hook_api)
+        except ImportError:
+            logger.debug(exc_info=True)
+            raise ImportErrorWhenRunningHook(
+                self.hook_module_name, self.hook_filename)
 
         # Update all magic attributes modified by the prior call.
         self.datas.update(set(hook_api._added_datas))
