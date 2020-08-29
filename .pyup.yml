@@ -5,9 +5,12 @@ search: False
 schedule: "every week on sunday"
 
 requirements:
-  - tests/requirements-libraries.txt
+  - tests/requirements-libraries.txt:
+      update: True
+      pin: False
   - tests/requirements-tools.txt:
       update: False
+      pin: False
   - requirements.txt:
       update: False
       pin: False
