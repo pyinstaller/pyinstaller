@@ -6,7 +6,7 @@
 ## IMPORTANT: Keep aligned with setup.cfg
 
 setuptools==49.6.0
-altgraph
+altgraph==0.17
 pyinstaller-hooks-contrib >= 2020.6
 pefile; sys_platform == 'win32'
 pywin32-ctypes; sys_platform == 'win32'
