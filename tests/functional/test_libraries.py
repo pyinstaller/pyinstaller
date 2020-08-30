@@ -119,30 +119,6 @@ def test_pygments(pyi_builder):
         """)
 
 
-@importorskip('PyQt4')
-def test_PyQt4_QtWebKit(pyi_builder):
-    pyi_builder.test_source(
-        """
-        from PyQt4.QtGui import QApplication
-        from PyQt4.QtWebKit import QWebView
-        from PyQt4.QtCore import QTimer
-
-        app = QApplication([])
-        view = QWebView()
-        view.show()
-        # Exit Qt when the main loop becomes idle.
-        QTimer.singleShot(0, app.exit)
-        # Run the main loop, displaying the WebKit widget.
-        app.exec_()
-        """)
-
-
-@importorskip('PyQt4')
-def test_PyQt4_uic(tmpdir, pyi_builder, data_dir):
-    # Note that including the data_dir fixture copies files needed by this test
-    pyi_builder.test_script('pyi_lib_PyQt4-uic.py')
-
-
 PYQT5_NEED_OPENGL = pytest.mark.skipif(is_module_satisfies('PyQt5 <= 5.10.1'),
     reason='PyQt5 v5.10.1 and older does not package ``opengl32sw.dll``, the '
     'OpenGL software renderer, which this test requires.')
@@ -609,17 +585,6 @@ def test_pil_PyQt5(pyi_builder):
     # since it is imported elsewhere. Also see issue #1584.
     pyi_builder.test_source("""
     import PyQt5
-    import PIL
-    import PIL.ImageQt
-    """)
-
-@importorskip('PIL.ImageQt')
-@importorskip('PyQt4')
-def test_pil_PyQt4(pyi_builder):
-    # hook-PIL is excluding PyQt4, but is must still be included
-    # since it is imported elsewhere. Also see issue #1584.
-    pyi_builder.test_source("""
-    import PyQt4
     import PIL
     import PIL.ImageQt
     """)

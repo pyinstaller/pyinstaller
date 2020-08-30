@@ -37,8 +37,8 @@ def speed_pefile():
 
     with open(script, 'w') as f:
         f.write('''
-from PySide import QtCore
-from PySide import QtGui
+from PySide2 import QtCore
+from PySide2 import QtGui
 ''')
 
     CONF['workpath'] = workdir

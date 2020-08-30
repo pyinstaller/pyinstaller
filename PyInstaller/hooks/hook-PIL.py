@@ -20,4 +20,4 @@ from PyInstaller.compat import modname_tkinter
 # Assume that if people are really using tkinter in their application, they
 # will also import it directly and thus PyInstaller bundles the right GUI
 # library.
-excludedimports = [modname_tkinter, 'FixTk', 'PySide', 'PyQt4', 'PyQt5']
+excludedimports = [modname_tkinter, 'FixTk', 'PyQt5']
