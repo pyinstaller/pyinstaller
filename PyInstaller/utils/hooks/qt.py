@@ -39,7 +39,17 @@ class Qt5LibraryInfo:
     # Initialize most of this class only when values are first requested from
     # it.
     def __getattr__(self, name):
-        if 'version' not in self.__dict__:
+        if 'version' in self.__dict__:
+            # Initialization was already done, but requested attribute is not
+            # availiable.
+            raise AttributeError(name)
+        else:
+            # Ensure self.version exists, even if PyQt5/PySide2 can't be
+            # imported. Hooks and util functions use `if .version` to check
+            # whether PyQt5/PySide2 was imported and other attributes are
+            # expected to be available.  This also serves as a marker that
+            # initialization was already done.
+            self.version = None
             # Get library path information from Qt. See QLibraryInfo_.
             json_str = exec_statement("""
                 import sys
@@ -77,18 +87,12 @@ class Qt5LibraryInfo:
             except Exception as e:
                 logger.warning('Cannot read QLibraryInfo output: raised %s when '
                                'decoding:\n%s', str(e), json_str)
-                qli = False
+                qli = {}
 
-            # If PyQt5/PySide2 can't be imported, record that.
-            if not qli:
-                self.version = None
-            else:
-                for k, v in qli.items():
-                    setattr(self, k, v)
+            for k, v in qli.items():
+                setattr(self, k, v)
 
             return getattr(self, name)
-        else:
-            raise AttributeError
 
 
 # Provide single instances of this class to avoid each hook constructing its own.

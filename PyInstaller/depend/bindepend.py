@@ -38,6 +38,7 @@ seen = set()
 
 # Import windows specific stuff.
 if is_win:
+    from distutils.sysconfig import get_python_lib
     from ..utils.win32.winmanifest import RT_MANIFEST
     from ..utils.win32.winmanifest import GetManifestResources
     from ..utils.win32.winmanifest import Manifest
@@ -56,23 +57,18 @@ def getfullnameof(mod, xtrapath=None):
     Return the full path name of MOD.
     Will search the full Windows search path, as well as sys.path
     """
-    # TODO: Allow in import-hooks to specify additional paths where the PyInstaller
-    #       should look for other libraries.
-    #       Or allow to automatically look for dlls in directories where are .pyd files.
-    # SciPy/Numpy Windows builds from http://www.lfd.uci.edu/~gohlke/pythonlibs
-    # Contain some dlls in directory like C:\Python27\Lib\site-packages\numpy\core\
-    from distutils.sysconfig import get_python_lib
-    numpy_core_paths = [os.path.join(get_python_lib(), 'numpy', 'core')]
-    # In virtualenv numpy might be installed directly in real prefix path.
-    # Then include this path too.
-    if is_venv:
-        numpy_core_paths.append(
-            os.path.join(base_prefix, 'Lib', 'site-packages', 'numpy', 'core')
-        )
+    pywin32_paths = []
+    if is_win:
+        pywin32_paths = [os.path.join(get_python_lib(), 'pywin32_system32')]
+        if is_venv:
+            pywin32_paths.append(
+                os.path.join(base_prefix, 'Lib', 'site-packages',
+                             'pywin32_system32')
+            )
 
-    # TODO check if this 'numpy' workaround is still necessary!
-    # Search sys.path first!
-    epath = (sys.path + numpy_core_paths + winutils.get_system_path() +
+    epath = (sys.path +  # Search sys.path first!
+             pywin32_paths +
+             winutils.get_system_path() +
              compat.getenv('PATH', '').split(os.pathsep))
     if xtrapath is not None:
         if type(xtrapath) == type(''):
@@ -885,7 +881,8 @@ def get_python_library_path():
 
     # Try to get Python library name from the Python executable. It assumes that Python
     # library is not statically linked.
-    dlls = getImports(sys.executable)
+    executable = getattr(sys, '_base_executable', sys.executable)
+    dlls = getImports(executable)
     for filename in dlls:
         for name in PYDYLIB_NAMES:
             if os.path.basename(filename) == name:

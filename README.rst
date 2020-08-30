@@ -38,7 +38,7 @@ but is not tested against them as part of the continuous integration tests.
 Main Advantages
 ---------------
 
-- Works out-of-the-box with any Python version 3.5-3.7.
+- Works out-of-the-box with any Python version 3.5-3.8.
 - Fully multi-platform, and uses the OS support to load the dynamic libraries,
   thus ensuring full compatibility.
 - Correctly bundles the major Python packages such as numpy, PyQt4, PyQt5,

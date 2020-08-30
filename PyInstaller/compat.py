@@ -33,6 +33,7 @@ is_64bits = sys.maxsize > 2**32
 is_py35 = sys.version_info >= (3, 5)
 is_py36 = sys.version_info >= (3, 6)
 is_py37 = sys.version_info >= (3, 7)
+is_py38 = sys.version_info >= (3, 8)
 
 is_win = sys.platform.startswith('win')
 is_win_10 = is_win and (platform.win32_ver()[0] == '10')
@@ -53,8 +54,10 @@ is_hpux = sys.platform.startswith('hp-ux')
 # platform specific details for Mac in PyInstaller.
 is_unix = is_linux or is_solar or is_aix or is_freebsd or is_hpux or is_openbsd
 
-
 # On different platforms is different file for dynamic python library.
+# TODO: When removing support for is_py37, the "m" variants can be
+# removed, see
+# <https://docs.python.org/3/whatsnew/3.8.html#build-and-c-api-changes>
 _pyver = sys.version_info[:2]
 if is_win or is_cygwin:
     PYDYLIB_NAMES = {'python%d%d.dll' % _pyver,

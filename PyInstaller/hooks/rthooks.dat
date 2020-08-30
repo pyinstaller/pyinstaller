@@ -18,6 +18,7 @@
     'PySide2':      ['pyi_rth_pyside2.py'],
     'PySide2.QtWebEngineWidgets': ['pyi_rth_pyside2webengine.py'],
     '_tkinter':    ['pyi_rth__tkinter.py'],
+    'win32api':   ['pyi_rth_win32api.py'],
     'win32com':   ['pyi_rth_win32comgenpy.py'],
     'multiprocessing': ['pyi_rth_multiprocessing.py'],
 }

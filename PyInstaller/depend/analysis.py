@@ -717,14 +717,17 @@ class PyiModuleGraph(ModuleGraph):
 
     def get_co_using_ctypes(self):
         """
-        Find modules that imports Python module 'ctypes'.
+        Find modules that import Python module 'ctypes'.
 
-        Modules that imports 'ctypes' probably load a dll that might be required
-        for bundling with the executable. The usual way to load a DLL is using:
+        Modules that import 'ctypes' probably load a dll that might be
+        required for bundling with the executable. Thus these modules' code
+        needs then to be searched for patterns like these:
+
             ctypes.CDLL('libname')
             ctypes.cdll.LoadLibrary('libname')
 
-        :return: Code objects that might be scanned for module dependencies.
+        :return: Code objects importing `ctypes` and thus need to be scanned
+                 for module dependencies.
         """
         co_dict = {}
         pure_python_module_types = PURE_PYTHON_MODULE_TYPES | {'Script',}

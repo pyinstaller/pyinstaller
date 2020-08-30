@@ -111,6 +111,11 @@ jobs:
       python: 3.6
 
     - <<: *test-pyinstaller
+      python: 3.8
+    - <<: *test-libraries
+      python: 3.8
+
+    - <<: *test-pyinstaller
       python: nightly
     - <<: *test-libraries
       python: nightly

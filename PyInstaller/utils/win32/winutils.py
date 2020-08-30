@@ -19,9 +19,7 @@ __all__ = ['get_windows_dir']
 import os
 import sys
 
-# Do not import 'compat' globally to avoid circual import:
-# import_pywin32_module() is used by compat
-#from ... import compat
+from ... import compat
 
 import PyInstaller.log as logging
 logger = logging.getLogger(__name__)
@@ -70,7 +68,7 @@ def extend_system_path(paths):
     compat.setenv('PATH', new_PATH)
 
 
-def import_pywin32_module(module_name, _is_venv=None):
+def import_pywin32_module(module_name):
     """
     Import and return the PyWin32 module with the passed name.
 
@@ -86,11 +84,6 @@ def import_pywin32_module(module_name, _is_venv=None):
     ----------
     module_name : str
         Fully-qualified name of this module.
-    _is_venv: bool
-        Internal paramter used by compat.py, to prevent circular import. If None
-        (the default), compat is imported and comapt.is_venv ist used. If not
-        None, it is assumed to be called from compat and the value to be the same
-        as compat.is_venv.
 
     Returns
     ----------
@@ -116,17 +109,12 @@ def import_pywin32_module(module_name, _is_venv=None):
             # an ugly hack, but there is no other way.
             sys.frozen = '|_|GLYH@CK'
 
-            if _is_venv is None:  # not called from within compat
-                # imported here to avoid circular import
-                from ... import compat
-                _is_venv = compat.is_venv
             # If isolated to a venv, the preferred site.getsitepackages()
             # function is unreliable. Fallback to searching "sys.path" instead.
-            if _is_venv:
+            if compat.is_venv:
                 sys_paths = sys.path
             else:
-                import site
-                sys_paths = site.getsitepackages()
+                sys_paths = compat.getsitepackages()
 
             for sys_path in sys_paths:
                 # Absolute path of the directory containing PyWin32 DLLs.

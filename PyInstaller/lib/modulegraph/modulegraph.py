@@ -3394,7 +3394,10 @@ class ModuleGraph(ObjectGraph):
 
         code_func = type(co)
 
-        if hasattr(co, 'co_kwonlyargcount'):
+        if hasattr(co, 'replace'): # is_py38
+            return co.replace(co_consts=tuple(consts),
+                              co_filename=new_filename)
+        elif hasattr(co, 'co_kwonlyargcount'):
             return code_func(
                         co.co_argcount, co.co_kwonlyargcount, co.co_nlocals,
                         co.co_stacksize, co.co_flags, co.co_code,

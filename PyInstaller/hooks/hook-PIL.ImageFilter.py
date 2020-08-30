@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2015-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2020, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -9,8 +9,5 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-from PyInstaller.utils.hooks import collect_all
-
-excludedimports = ["gevent.testing", "gevent.tests"]
-
-datas, binaries, hiddenimports = collect_all('gevent')
+# Only used if installed, not mean to pull in numpy.
+excludedimports = ["numpy"]

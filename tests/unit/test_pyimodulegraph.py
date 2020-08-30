@@ -23,25 +23,29 @@ from PyInstaller.utils.tests import gen_sourcefile
 
 def test_get_co_using_ctypes(tmpdir):
     logging.logger.setLevel(logging.DEBUG)
+    mg = analysis.PyiModuleGraph(HOMEPATH, excludes=["xencodings"])
     script = tmpdir.join('script.py')
     script.write('import ctypes')
-    mg = analysis.PyiModuleGraph(HOMEPATH, excludes=("platform",))
-    mg.run_script(str(script))
+    script_filename = str(script)
+    mg.run_script(script_filename)
     res = mg.get_co_using_ctypes()
-    assert len(res) == 1, res
-    assert isinstance(res[str(script)], types.CodeType), res
+    # Script's code object must be in the results
+    assert script_filename in res
+    assert isinstance(res[script_filename], types.CodeType), res
 
 
 def test_get_co_using_ctypes_from_extension():
-    logging.logger.setLevel(logging.DEBUG)
     # If an extension module has an hidden import to ctypes (e.g. added by the
-    # hook), the extension moduel must nor show up in the result of
-    # get_co_using_ctypes(). See issue #2492 and test_regression::issue_2492.
-    mg = analysis.PyiModuleGraph(HOMEPATH, excludes=("platform",))
+    # hook), the extension module must not show up in the result of
+    # `get_co_using_ctypes()`, since it has no code-object to be analyzed.
+    # See issue #2492 and test_regression::issue_2492.
+    logging.logger.setLevel(logging.DEBUG)
+    mg = analysis.PyiModuleGraph(HOMEPATH, excludes=["xencodings"])
     struct = mg.createNode(modulegraph.Extension, '_struct', 'struct.so')
     mg.implyNodeReference(struct, 'ctypes') # simulate the hidden import
     res = mg.get_co_using_ctypes()
-    assert len(res) == 0
+    # _struct must not be in the results
+    assert '_struct' not in res
 
 
 class FakePyiModuleGraph(analysis.PyiModuleGraph):

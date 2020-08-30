@@ -9,8 +9,5 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-from PyInstaller.utils.hooks import collect_all
-
-excludedimports = ["gevent.testing", "gevent.tests"]
-
-datas, binaries, hiddenimports = collect_all('gevent')
+# Only imported if numpy is installed, not mean to pull in numpy.
+excludedimports = ["numpy"]
