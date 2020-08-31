@@ -79,6 +79,19 @@ You can run the following to install everything required:
 
 * For other Distributions please consult the distributions documentation.
 
+If your distribution doesn't already have it you will also have to
+install ``zlib-devel``.
+
+* On Debian- or Ubuntu-like systems::
+
+    sudo apt-get install zlib1g-dev
+
+* On Fedora, RedHat and derivates::
+
+    sudo yum install zlib-devel
+
+* For other Distributions again please consult the distribution's documentation.
+
 Now you can build the bootloader as shown above.
 
 Alternatively you may want to use the `linux64` build-guest
