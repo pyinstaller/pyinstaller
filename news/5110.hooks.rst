@@ -1,0 +1,2 @@
+Fix `collect_system_data_files` to scan the given input path instead of its parent.
+File paths returned by `collect_all_system_data` are now relative to the input path.
