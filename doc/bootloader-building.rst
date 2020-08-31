@@ -71,26 +71,14 @@ You can run the following to install everything required:
 
 * On Debian- or Ubuntu-like systems::
 
-    sudo apt-get install build-essential
+    sudo apt-get install build-essential zlib1g-dev
 
 * On Fedora, RedHat and derivates::
 
     sudo yum groupinstall "Development Tools"
-
-* For other Distributions please consult the distributions documentation.
-
-If your distribution doesn't already have it you will also have to
-install ``zlib-devel``.
-
-* On Debian- or Ubuntu-like systems::
-
-    sudo apt-get install zlib1g-dev
-
-* On Fedora, RedHat and derivates::
-
     sudo yum install zlib-devel
 
-* For other Distributions again please consult the distribution's documentation.
+* For other Distributions please consult the distributions documentation.
 
 Now you can build the bootloader as shown above.
 
