@@ -16,6 +16,7 @@ import sys
 import py_compile
 import textwrap
 import zipfile
+from importlib.machinery import EXTENSION_SUFFIXES
 
 import pytest
 
@@ -66,6 +67,35 @@ def test_package(tmpdir):
     node = _import_and_get_node(tmpdir, 'stuff')
     assert node.__class__ is modulegraph.Package
     assert node.filename in (str(pysrc), str(pysrc)+'c')
+    assert node.packagepath == [pysrc.dirname]
+
+
+#-- Extension modules
+
+@pytest.mark.xfail(reason="Recursion to deep, issue #4406")
+def test_package_init_is_extension_1(tmpdir):
+    # Regression: Recursion to deep
+    """package's __init__ module is an extension"""
+    (tmpdir / 'stuff').mkdir()
+    extsrc = tmpdir / 'stuff' / ('__init__' + EXTENSION_SUFFIXES[0])
+    extsrc .write_text('###', encoding="ascii")
+    node = _import_and_get_node(tmpdir, 'stuff')
+    assert node.__class__ is modulegraph.Package
+    assert node.packagepath == [pysrc.dirname]
+
+
+@pytest.mark.xfail(reason="Recursion to deep, issue #4406")
+def test_package_init_is_extension_2(tmpdir):
+    # Regression: Recursion to deep
+    """package's __init__ module is an extension and there also is a
+    __init__.py"""
+    (tmpdir / 'stuff').mkdir()
+    pysrc = tmpdir / 'stuff' / '__init__.py'
+    pysrc .write_text('###', encoding="ascii")
+    extsrc = tmpdir / 'stuff' / ('__init__' + EXTENSION_SUFFIXES[0])
+    extsrc .write_text('###', encoding="ascii")
+    node = _import_and_get_node(tmpdir, 'stuff')
+    assert node.__class__ is modulegraph.Package
     assert node.packagepath == [pysrc.dirname]
 
 
