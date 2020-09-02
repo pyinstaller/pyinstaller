@@ -1,0 +1,1 @@
+Add hook-gi.repository.HarfBuzz to fix Typelib error with Gtk apps.
