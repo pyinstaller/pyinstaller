@@ -16,6 +16,7 @@ import sys
 import py_compile
 import textwrap
 import zipfile
+from importlib.machinery import EXTENSION_SUFFIXES
 
 import pytest
 
@@ -67,6 +68,58 @@ def test_package(tmpdir):
     assert node.__class__ is modulegraph.Package
     assert node.filename in (str(pysrc), str(pysrc)+'c')
     assert node.packagepath == [pysrc.dirname]
+
+
+#-- Extension modules
+
+@pytest.mark.parametrize(
+    "num, modname, expected_nodetype", (
+        # package's __init__ module is an extension
+        (1, "myextpkg", modulegraph.Package),
+        # __init__.py beside the __init__ module being an extension
+        (2, "myextpkg", modulegraph.Package),
+        # Importing a module beside
+        (3, "myextpkg.other", modulegraph.Extension),
+        # sub-package's __init__ module is an extension
+        (4, "myextpkg.subpkg", modulegraph.Package),
+        # importing a module beside, but from a sub-package
+        (5, "myextpkg.subpkg.other", modulegraph.Extension),
+    ))
+def test_package_init_is_extension(tmpdir, num, modname, expected_nodetype):
+    # Regression: Recursion to deep
+
+    def wt(*args):
+        f = tmpdir.join(*args)
+        f.write_text('###', encoding="ascii")
+        return f
+
+    def create_package_files(test_case):
+        (tmpdir / 'myextpkg' / 'subpkg').ensure(dir=True)
+        m = wt('myextpkg', '__init__' + EXTENSION_SUFFIXES[0])
+        if test_case == 1: return m  # noqa: E701
+        wt('myextpkg', '__init__.py')
+        if test_case == 2: return m  # noqa: E701 return extension module anway
+        m = wt('myextpkg', 'other.py')
+        m = wt('myextpkg', 'other' + EXTENSION_SUFFIXES[0])
+        if test_case == 3: return m  # noqa: E701
+        m = wt('myextpkg', 'subpkg', '__init__.py')
+        m = wt('myextpkg', 'subpkg', '__init__' + EXTENSION_SUFFIXES[0])
+        if test_case == 4: return m  # noqa: E701
+        m = wt('myextpkg', 'subpkg', 'other.py')
+        m = wt('myextpkg', 'subpkg', 'other' + EXTENSION_SUFFIXES[0])
+        return m
+
+    module_file = create_package_files(num)
+    try:
+        node = _import_and_get_node(tmpdir, modname)
+    except RecursionError:
+        pytest.xfail(reason="solution to be implemented in the next commits")
+    assert node.__class__ is expected_nodetype
+    if expected_nodetype is modulegraph.Package:
+        assert node.packagepath == [module_file.dirname]
+    else:
+        assert node.packagepath is None  # not a package
+    assert node.filename == str(module_file)
 
 
 #-- Basic tests - these seem to be missing in the original modulegraph
