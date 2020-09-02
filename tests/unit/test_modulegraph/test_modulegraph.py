@@ -12,6 +12,9 @@ import textwrap
 from lxml import etree
 import pickle
 
+from importlib._bootstrap_external import SourceFileLoader, ExtensionFileLoader
+from zipimport import zipimporter
+
 try:
     bytes
 except NameError:
@@ -188,25 +191,21 @@ class TestFunctions (unittest.TestCase):
             modgraph = modulegraph.ModuleGraph()
             info = modgraph._find_module('mymodule', path=[path] + sys.path)
 
-            fp = info[0]
-            filename = info[1]
-            description = info[2]
-
-            self.assertTrue(hasattr(fp, 'read'))
+            filename, loader = info
 
             if path.endswith('.zip') or path.endswith('.egg'):
                 # Zip importers may precompile
                 if filename.endswith('.py'):
                     self.assertEqual(filename, os.path.join(path, 'mymodule.py'))
-                    self.assertEqual(description, ('.py', READ_MODE, imp.PY_SOURCE))
+                    self.assertIsInstance(loader, zipimporter)
 
                 else:
                     self.assertEqual(filename, os.path.join(path, 'mymodule.pyc'))
-                    self.assertEqual(description, ('.pyc', 'rb', imp.PY_COMPILED))
+                    self.assertIsInstance(loader, zipimporter)
 
             else:
                 self.assertEqual(filename, os.path.join(path, 'mymodule.py'))
-                self.assertEqual(description, ('.py', READ_MODE, imp.PY_SOURCE))
+                self.assertIsInstance(loader, SourceFileLoader)
 
             # Compiled plain module, no source
             if path.endswith('.zip') or path.endswith('.egg'):
@@ -215,15 +214,10 @@ class TestFunctions (unittest.TestCase):
             else:
                 info = modgraph._find_module('mymodule2', path=[path] + sys.path)
 
-                fp = info[0]
-                filename = info[1]
-                description = info[2]
+                filename, loader = info
 
-                self.assertTrue(hasattr(fp, 'read'))
                 self.assertEqual(filename, os.path.join(path, 'mymodule2.pyc'))
-                self.assertEqual(description, ('.pyc', 'rb', imp.PY_COMPILED))
 
-                fp.close()
 
             # Compiled plain module, with source
 #            info = modgraph._find_module('mymodule3', path=[path] + sys.path)
@@ -243,14 +237,12 @@ class TestFunctions (unittest.TestCase):
 
             # Package
             info = modgraph._find_module('mypkg', path=[path] + sys.path)
-            fp = info[0]
-            filename = info[1]
-            description = info[2]
 
-            self.assertEqual(fp, None)
+            filename, loader = info
+
             # FIXME: PyInstaller appends `__init__.py` to the pkg-directory
             #self.assertEqual(filename, os.path.join(path, 'mypkg'))
-            self.assertEqual(description, ('', '', imp.PKG_DIRECTORY))
+            self.assertTrue(loader.is_package("mypkg"))
 
             # Extension
             if path.endswith('.zip'):
@@ -276,9 +268,7 @@ class TestFunctions (unittest.TestCase):
                 pass
             else:
                 info = modgraph._find_module('myext', path=[path] + sys.path)
-                fp = info[0]
-                filename = info[1]
-                description = info[2]
+                filename, loader = info
 
                 if sys.platform == 'win32':
                     ext = '.pyd'
@@ -287,8 +277,7 @@ class TestFunctions (unittest.TestCase):
                     ext = '.so'
 
                 self.assertEqual(filename, os.path.join(path, 'myext' + ext))
-                self.assertEqual(description, (ext, 'rb', imp.C_EXTENSION))
-                self.assertEqual(fp, None)
+                self.assertIsInstance(loader, ExtensionFileLoader)
 
     def test_moduleInfoForPath(self):
         self.assertEqual(modulegraph.moduleInfoForPath("/somewhere/else/file.txt"), None)
@@ -879,7 +868,7 @@ class TestModuleGraph (unittest.TestCase):
             graph = modulegraph.ModuleGraph()
             m = graph._find_module('sys', None)
             self.assertEqual(record, [])
-            self.assertEqual(m, (None, None, ("", "", imp.C_BUILTIN)))
+            self.assertEqual(m, (None, modulegraph.BUILTIN_MODULE))
 
             xml = graph.import_hook("xml")[0]
             self.assertEqual(xml.identifier, 'xml')
@@ -892,19 +881,15 @@ class TestModuleGraph (unittest.TestCase):
                 ('shutil', graph.path),
             ])
             self.assertTrue(isinstance(m, tuple))
-            self.assertEqual(len(m), 3)
-            self.assertTrue(hasattr(m[0], 'read'))
-            self.assertIsInstance(m[0].read(), str)
+            self.assertEqual(len(m), 2)
             srcfn = shutil.__file__
             if srcfn.endswith('.pyc'):
                 srcfn = srcfn[:-1]
-            self.assertEqual(os.path.realpath(m[1]), os.path.realpath(srcfn))
-            self.assertEqual(m[2], ('.py', READ_MODE, imp.PY_SOURCE))
-            m[0].close()
+            self.assertEqual(os.path.realpath(m[0]), os.path.realpath(srcfn))
+            self.assertIsInstance(m[1], SourceFileLoader)
 
             m2 = graph._find_module('shutil', None)
             self.assertEqual(m[1:], m2[1:])
-            m2[0].close()
 
 
             record[:] = []
@@ -916,7 +901,6 @@ class TestModuleGraph (unittest.TestCase):
             self.assertEqual(record, [
                 ('sax', xml.packagepath),
             ])
-            if m[0] is not None: m[0].close()
 
         finally:
             pass

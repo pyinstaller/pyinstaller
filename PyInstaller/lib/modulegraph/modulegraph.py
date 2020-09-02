@@ -37,6 +37,19 @@ from ._compat import BytesIO, StringIO, pathname2url, _READ_MODE
 BOM = codecs.BOM_UTF8.decode('utf-8')
 
 
+class BUILTIN_MODULE:
+    def is_package(fqname):
+        return False
+
+
+class NAMESPACE_PACKAGE:
+    def __init__(self, namespace_dirs):
+        self.namespace_dirs = namespace_dirs
+
+    def is_package(self, fqname):
+        return True
+
+
 #FIXME: Leverage this rather than magic numbers below.
 ABSOLUTE_OR_RELATIVE_IMPORT_LEVEL = -1
 """
@@ -2024,9 +2037,6 @@ class ModuleGraph(ObjectGraph):
             # this module. This effectively defaults to "sys.path".
             search_dirs = None
 
-            # Open file handle providing the physical contents of this module.
-            file_handle = None
-
             # If this module has a parent package...
             if parent_module is not None:
                 # ...with a list of the absolute paths of all directories
@@ -2039,18 +2049,13 @@ class ModuleGraph(ObjectGraph):
                     return None
 
             try:
-                try:
-                    file_handle, pathname, metadata = self._find_module(
-                        module_partname, search_dirs, parent_module)
-                except ImportError as exc:
-                    self.msgout(3, "safe_import_module -> None (%r)" % exc)
-                    return None
+                pathname, loader = self._find_module(
+                    module_partname, search_dirs, parent_module)
+            except ImportError as exc:
+                self.msgout(3, "safe_import_module -> None (%r)" % exc)
+                return None
 
-                module = self._load_module(
-                    module_name, file_handle, pathname, metadata)
-            finally:
-                if file_handle is not None:
-                    file_handle.close()
+            module = self._load_module(module_name, pathname, loader)
 
         # If this is a submodule rather than top-level module...
         if parent_module is not None:
@@ -2072,75 +2077,78 @@ class ModuleGraph(ObjectGraph):
         self.msgout(3, "safe_import_module ->", module)
         return module
 
-
-    #FIXME: For clarity, rename method parameters to:
-    #    def _load_module(self, module_name, file_handle, pathname, imp_info):
-    def _load_module(self, fqname, fp, pathname, info):
-        suffix, mode, typ = info
-        self.msgin(2, "load_module", fqname, fp and "fp", pathname)
-
-        if typ == imp.PKG_DIRECTORY:
-            if isinstance(mode, (list, tuple)):
-                packagepath = mode
+    def _load_module(self, fqname, pathname, loader):
+        from importlib._bootstrap_external import ExtensionFileLoader
+        self.msgin(2, "load_module", fqname, pathname,
+                   loader.__class__.__name__)
+        partname = fqname.rpartition(".")[-1]
+        if loader.is_package(partname):
+            if isinstance(loader, NAMESPACE_PACKAGE):
+                pkgpath = loader.namespace_dirs[:]  # copy for safety
             else:
-                packagepath = []
+                pkgpath = []
 
-            m = self._load_package(fqname, pathname, packagepath)
-            self.msgout(2, "load_module ->", m)
-            return m
+            newname = _replacePackageMap.get(fqname)
+            if newname:
+                fqname = newname
+            ns_pkgpath = _namespace_package_path(
+                fqname, pkgpath or [], self.path)
 
-        if typ == imp.PY_SOURCE:
-            contents = fp.read()
-            if isinstance(contents, bytes):
-                contents += b'\n'
+            if ns_pkgpath or pkgpath:
+                # this is a namespace package
+                m = self.createNode(NamespacePackage, fqname)
+                m.filename = '-'
+                m.packagepath = ns_pkgpath
             else:
-                contents += '\n'
+                m = self.createNode(Package, fqname)
+                m.filename = pathname
+                # PEP-302-compliant loaders return the pathname of the
+                # `__init__`-file, not the packge directory.
+                assert os.path.basename(pathname).startswith('__init__.')
+                m.packagepath = [os.path.dirname(pathname)] + ns_pkgpath
 
-            try:
-                co = compile(contents, pathname, 'exec', ast.PyCF_ONLY_AST, True)
-                if sys.version_info[:2] == (3, 5):
-                    # In Python 3.5 some syntax problems with async
-                    # functions are only reported when compiling to bytecode
-                    compile(co, '-', 'exec', 0, True)
-            except SyntaxError:
-                co = None
-                cls = InvalidSourceModule
-                self.msg(2, "load_module: InvalidSourceModule", pathname)
+            # As per comment at top of file, simulate runtime packagepath
+            # additions
+            m.packagepath = m.packagepath + self._package_path_map.get(
+                fqname, [])
 
-            else:
-                cls = SourceModule
+            if isinstance(m, NamespacePackage):
+                return m
 
-        elif typ == imp.PY_COMPILED:
-            data = fp.read(4)
-            magic = imp.get_magic()
-            if data != magic:
-                self.msg(2, "load_module: InvalidCompiledModule, "
-                         "bad magic number", pathname, data, magic)
-                co = None
-                cls = InvalidCompiledModule
-            else:
-                if sys.version_info >= (3, 7):
-                    fp.read(12)
-                elif sys.version_info >= (3, 4):
-                    fp.read(8)
-                else:
-                    fp.read(4)
+        co = None
+        if loader is BUILTIN_MODULE:
+            cls = BuiltinModule
+        elif isinstance(loader, ExtensionFileLoader):
+            cls = Extension
+        else:
+            src = loader.get_source(partname)
+            if src is not None:
                 try:
-                    co = marshal.loads(fp.read())
-                    cls = CompiledModule
-                except Exception as exc:
+                    co = compile(src, pathname, 'exec', ast.PyCF_ONLY_AST,
+                                 True)
+                    cls = SourceModule
+                    if sys.version_info[:2] == (3, 5):
+                        # In Python 3.5 some syntax problems with async
+                        # functions are only reported when compiling to
+                        # bytecode
+                        compile(co, '-', 'exec', 0, True)
+                except SyntaxError:
+                    co = None
+                    cls = InvalidSourceModule
+                except Exception as exc:  # FIXME: more specific?
+                    cls = InvalidSourceModule
+                    self.msg(2, "load_module: InvalidSourceModule", pathname,
+                             exc)
+            else:
+                # no src available
+                try:
+                    co = loader.get_code(partname)
+                    cls = (CompiledModule if co is not None
+                           else InvalidCompiledModule)
+                except Exception as exc:  # FIXME: more specific?
                     self.msg(2, "load_module: InvalidCompiledModule, "
                              "Cannot load code", pathname, exc)
-                    co = None
                     cls = InvalidCompiledModule
-
-        elif typ == imp.C_BUILTIN:
-            cls = BuiltinModule
-            co = None
-
-        else:
-            cls = Extension
-            co = None
 
         m = self.createNode(cls, fqname)
         m.filename = pathname
@@ -2868,50 +2876,6 @@ class ModuleGraph(ObjectGraph):
         source_module._deferred_imports = None
 
 
-    def _load_package(self, fqname, pathname, pkgpath):
-        """
-        Called only when an imp.PKG_DIRECTORY is found
-        """
-        self.msgin(2, "load_package", fqname, pathname, pkgpath)
-        newname = _replacePackageMap.get(fqname)
-        if newname:
-            fqname = newname
-
-        ns_pkgpath = _namespace_package_path(fqname, pkgpath or [], self.path)
-        if ns_pkgpath or pkgpath:
-            # this is a namespace package
-            m = self.createNode(NamespacePackage, fqname)
-            m.filename = '-'
-            m.packagepath = ns_pkgpath
-        else:
-            m = self.createNode(Package, fqname)
-            m.filename = pathname
-            # PEP-302-compliant loaders return the pathname of the
-            # `__init__`-file, not the packge directory.
-            if os.path.basename(pathname).startswith('__init__.'):
-                pathname = os.path.dirname(pathname)
-            m.packagepath = [pathname] + ns_pkgpath
-
-        # As per comment at top of file, simulate runtime packagepath additions.
-        m.packagepath = m.packagepath + self._package_path_map.get(fqname, [])
-
-        try:
-            self.msg(2, "find __init__ for %s"%(m.packagepath,))
-            fp, buf, stuff = self._find_module("__init__", m.packagepath, parent=m)
-        except ImportError:
-            pass
-
-        else:
-            try:
-                self.msg(2, "load __init__ for %s"%(m.packagepath,))
-                self._load_module(fqname, fp, buf, stuff)
-            finally:
-                if fp is not None:
-                    fp.close()
-        self.msgout(2, "load_package ->", m)
-        return m
-
-
     def _find_module(self, name, path, parent=None):
         """
         3-tuple describing the physical location of the module with the passed
@@ -2934,7 +2898,7 @@ class ModuleGraph(ObjectGraph):
 
         Returns
         ----------
-        (file_handle, filename, metadata)
+        (filename, loader)
             See `modulegraph._find_module()` for details.
 
         Raises
@@ -2956,7 +2920,7 @@ class ModuleGraph(ObjectGraph):
 
         if path is None:
             if name in sys.builtin_module_names:
-                return (None, None, ("", "", imp.C_BUILTIN))
+                return (None, BUILTIN_MODULE)
 
             path = self.path
 
@@ -2990,16 +2954,12 @@ class ModuleGraph(ObjectGraph):
 
         Returns
         ----------
-        (file_handle, filename, metadata)
-            3-tuple describing the physical location of this module, where:
-            * `file_handle` is an open read-only file handle from which the
-              on-disk contents of this module may be read if this is a
-              pure-Python module or `None` otherwise (e.g., if this is a
-              package or C extension).
+        (filename, loader)
+            2-tuple describing the physical location of this module, where:
             * `filename` is the absolute path of this file.
-            * `metadata` is itself a 3-tuple `(filetype, open_mode, imp_type)`.
-              See the `_IMPORTABLE_FILETYPE_TO_METADATA` dictionary for
-              details.
+            * `loader` is the import loader.
+              In case of a namespace package, this is a NAMESPACE_PACKAGE
+              instance
 
         Raises
         ----------
@@ -3008,18 +2968,8 @@ class ModuleGraph(ObjectGraph):
         """
         self.msgin(4, "_find_module_path <-", fullname, search_dirs)
 
-        # TODO: Under:
-        #
-        # * Python 3.3, the following logic should be replaced by logic
-        #   leveraging only the "importlib" module.
-        # * Python 3.4, the following logic should be replaced by a call to
-        #   importlib.util.find_spec().
-
-        # Top-level 3-tuple to be returned.
+        # Top-level 2-tuple to be returned.
         path_data = None
-
-        # File handle to be returned.
-        file_handle = None
 
         # List of the absolute paths of all directories comprising the
         # namespace package to which this module belongs if any.
@@ -3058,9 +3008,6 @@ class ModuleGraph(ObjectGraph):
                     # self.msg(4, "_find_module_path loader not found", search_dir)
                     continue
 
-                # 3-tuple of metadata to be returned.
-                metadata = None
-
                 # Absolute path of this module. If this module resides in a
                 # compressed archive, this is the absolute path of this module
                 # after extracting this module from that archive and hence
@@ -3086,78 +3033,14 @@ class ModuleGraph(ObjectGraph):
                     self.msg(4, "_find_module_path path not found", pathname)
                     continue
 
-                # If this loader defines the PEP 302-compliant is_package()
-                # method returning True, this is a non-namespace package.
-                if hasattr(loader, 'is_package') and loader.is_package(module_name):
-                    metadata = ('', '', imp.PKG_DIRECTORY)
-                # Else, this is either a module or C extension.
-                else:
-                    # In either case, this path must have a filetype.
-                    # os.path.splitext won't work here since we sometimes need
-                    # to match more than just the file extension.
-                    filetype = [filetype
-                                for filetype in _IMPORTABLE_FILETYPE_EXTS
-                                if pathname.endswith(filetype)]
-                    if filetype:
-                        # at least one extension matched,
-                        # pick the first (longest) one
-                        filetype = filetype[0]
-                    else:
-                        raise ImportError(
-                            'Non-package module %r path %r has no filetype' % (module_name, pathname))
-
-                    # 3-tuple of metadata specific to this filetype.
-                    metadata = _IMPORTABLE_FILETYPE_TO_METADATA.get(
-                        filetype, None)
-                    if metadata is None:
-                        raise ImportError(
-                            'Non-package module %r filetype %r unrecognized' % (pathname, filetype))
-
-                    # See "_IMPORTABLE_FILETYPE_TO_METADATA" for details.
-                    open_mode = metadata[1]
-                    imp_type = metadata[2]
-
-                    # If this is a C extension, leave this path unopened.
-                    if imp_type == imp.C_EXTENSION:
-                        pass
-                    # Else, this is a module.
-                    #
-                    # If this loader defines the PEP 302-compliant get_source()
-                    # method, open the returned string as a file-like buffer.
-                    elif imp_type == imp.PY_SOURCE and hasattr(loader, 'get_source'):
-                        file_handle = StringIO(loader.get_source(module_name))
-                    # If this loader defines the PEP 302-compliant get_code()
-                    # method, open the returned object as a file-like buffer.
-                    elif imp_type == imp.PY_COMPILED and hasattr(loader, 'get_code'):
-                        try:
-                            code_object = loader.get_code(module_name)
-                            if code_object is None:
-                                file_handle = BytesIO(b'\0\0\0\0\0\0\0\0')
-                            else:
-                                file_handle = _code_to_file(code_object)
-                        except ImportError:
-                            # post-bone the ImportError until load_module
-                            file_handle = BytesIO(b'\0\0\0\0\0\0\0\0')
-                    # If this is an uncompiled file under Python 3, open this
-                    # file for encoding-aware text reading.
-                    elif imp_type == imp.PY_SOURCE and sys.version_info[0] == 3:
-                        with open(pathname, 'rb') as file_handle:
-                            encoding = util.guess_encoding(file_handle)
-                        file_handle = open(
-                            pathname, open_mode, encoding=encoding)
-                    # Else, this is either a compiled file or an uncompiled
-                    # file under Python 2. In either case, open this file.
-                    else:
-                        file_handle = open(pathname, open_mode)
-
                 # Return such metadata.
-                path_data = (file_handle, pathname, metadata)
+                path_data = (pathname, loader)
                 break
             # Else if this is a namespace package, return such metadata.
             else:
                 if namespace_dirs:
-                    path_data = (None, namespace_dirs[0], (
-                        '', namespace_dirs, imp.PKG_DIRECTORY))
+                    path_data = (namespace_dirs[0],
+                                 NAMESPACE_PACKAGE(namespace_dirs))
         except UnicodeDecodeError as exc:
             self.msgout(1, "_find_module_path -> unicode error", exc)
         # Ensure that exceptions are logged, as this function is typically

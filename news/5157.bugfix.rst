@@ -1,0 +1,2 @@
+Fix endless recursion if a package's ``__init__`` module is an extension
+module.

@@ -110,10 +110,7 @@ def test_package_init_is_extension(tmpdir, num, modname, expected_nodetype):
         return m
 
     module_file = create_package_files(num)
-    try:
-        node = _import_and_get_node(tmpdir, modname)
-    except RecursionError:
-        pytest.xfail(reason="solution to be implemented in the next commits")
+    node = _import_and_get_node(tmpdir, modname)
     assert node.__class__ is expected_nodetype
     if expected_nodetype is modulegraph.Package:
         assert node.packagepath == [module_file.dirname]
@@ -249,11 +246,11 @@ def test_import_order_1(tmpdir):
     # Ensure modulegraph processes modules in the same order as Python does.
 
     class MyModuleGraph(modulegraph.ModuleGraph):
-        def _load_module(self, fqname, fp, pathname, info):
+        def _load_module(self, fqname, pathname, loader):
             if not record or record[-1] != fqname:
                 record.append(fqname) # record non-consecutive entries
-            return super(MyModuleGraph, self)._load_module(fqname, fp,
-                                                           pathname, info)
+            return super(MyModuleGraph, self)._load_module(fqname,
+                                                           pathname, loader)
 
     record = []
 
@@ -292,11 +289,11 @@ def test_import_order_2(tmpdir):
     # Ensure modulegraph processes modules in the same order as Python does.
 
     class MyModuleGraph(modulegraph.ModuleGraph):
-        def _load_module(self, fqname, fp, pathname, info):
+        def _load_module(self, fqname, pathname, loader):
             if not record or record[-1] != fqname:
                 record.append(fqname) # record non-consecutive entries
-            return super(MyModuleGraph, self)._load_module(fqname, fp,
-                                                           pathname, info)
+            return super(MyModuleGraph, self)._load_module(fqname,
+                                                           pathname, loader)
 
     record = []
 
