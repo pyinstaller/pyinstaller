@@ -729,6 +729,10 @@ def collect_data_files(package, include_py_files=False, subdir=None,
     if not include_py_files:
         excludes += ['**/*' + s for s in ALL_SUFFIXES]
 
+    # Exclude .pyo files if include_py_files is False.
+    if not include_py_files and ".pyo" not in ALL_SUFFIXES:
+        excludes.append('**/*.pyo')
+
     # If not specified, include all files. Follow the same process as the
     # excludes.
     includes = list(includes) if includes else ["**/*"]
