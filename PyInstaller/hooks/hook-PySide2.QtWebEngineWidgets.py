@@ -47,7 +47,7 @@ if pyside2_library_info.version:
         # This is based on the layout of the Mac wheel from PyPi.
         data_path = pyside2_locations['DataPath']
         libraries = ['QtCore', 'QtWebEngineCore', 'QtQuick', 'QtQml',
-                     'QtNetwork', 'QtGui', 'QtWebChannel',
+                     'QtQmlModels', 'QtNetwork', 'QtGui', 'QtWebChannel',
                      'QtPositioning']
         for i in libraries:
             datas += collect_system_data_files(
