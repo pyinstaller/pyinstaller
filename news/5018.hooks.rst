@@ -1,0 +1,1 @@
+Update hook for ``sysconfig`` to be compatible with pyenv-virtualenv.
