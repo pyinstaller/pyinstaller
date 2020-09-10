@@ -248,7 +248,7 @@ or a supported version that uses Qt4 and a development version that uses Qt5 --
 we recommend you use venv_.
 With `venv` you can maintain different combinations of Python
 and installed packages, and switch from one combination to another easily.
-These are called `virtual nvironments` or `venvs` in short.
+These are called `virtual environments` or `venvs` in short.
 
 * Use `venv` to create as many different development environments as you need,
   each with its unique combination of Python and installed packages.
