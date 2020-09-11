@@ -27,6 +27,8 @@ For reference, the ModuleGraph node types and their contents:
  Package          basename         full path to __init__.py
         packagepath is ['path to package']
         globalnames is set of global names __init__.py defines
+ ExtensionPackage basename         full path to __init__.{so,dll}
+        packagepath is ['path to package']
 
 The main extension here over ModuleGraph is a method to extract nodes
 from the flattened graph and return them as a TOC, or added to a TOC.
