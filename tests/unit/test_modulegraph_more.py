@@ -75,13 +75,13 @@ def test_package(tmpdir):
 @pytest.mark.parametrize(
     "num, modname, expected_nodetype", (
         # package's __init__ module is an extension
-        (1, "myextpkg", modulegraph.Package),
+        (1, "myextpkg", modulegraph.ExtensionPackage),
         # __init__.py beside the __init__ module being an extension
-        (2, "myextpkg", modulegraph.Package),
+        (2, "myextpkg", modulegraph.ExtensionPackage),
         # Importing a module beside
         (3, "myextpkg.other", modulegraph.Extension),
         # sub-package's __init__ module is an extension
-        (4, "myextpkg.subpkg", modulegraph.Package),
+        (4, "myextpkg.subpkg", modulegraph.ExtensionPackage),
         # importing a module beside, but from a sub-package
         (5, "myextpkg.subpkg.other", modulegraph.Extension),
     ))
@@ -112,7 +112,7 @@ def test_package_init_is_extension(tmpdir, num, modname, expected_nodetype):
     module_file = create_package_files(num)
     node = _import_and_get_node(tmpdir, modname)
     assert node.__class__ is expected_nodetype
-    if expected_nodetype is modulegraph.Package:
+    if expected_nodetype is modulegraph.ExtensionPackage:
         assert node.packagepath == [module_file.dirname]
     else:
         assert node.packagepath is None  # not a package

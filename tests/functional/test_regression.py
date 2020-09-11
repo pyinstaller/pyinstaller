@@ -10,7 +10,6 @@
 #-----------------------------------------------------------------------------
 
 from importlib.machinery import EXTENSION_SUFFIXES
-import pytest
 
 from PyInstaller.depend import analysis, bindepend
 from PyInstaller.building.build_main import Analysis
@@ -80,7 +79,4 @@ def test_issue_5131(monkeypatch, tmpdir):
     script.write('import mypkg')
     a = Analysis([str(script)],
                  excludes=['encodings', 'pydoc', 'xml', 'distutils'])
-    try:
-        PYZ(a.pure, a.zipped_data)
-    except ValueError:
-        pytest.xfail(reason="solution to be implemented in the next commits")
+    PYZ(a.pure, a.zipped_data)
