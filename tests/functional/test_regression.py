@@ -9,9 +9,12 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
+from importlib.machinery import EXTENSION_SUFFIXES
+import pytest
 
-from PyInstaller.depend import analysis
+from PyInstaller.depend import analysis, bindepend
 from PyInstaller.building.build_main import Analysis
+from PyInstaller.building.api import PYZ
 
 def test_issue_2492(monkeypatch, tmpdir):
     # Crash if an extension module has an hidden import to ctypes (e.g. added
@@ -35,3 +38,49 @@ def test_issue_2492(monkeypatch, tmpdir):
     tmpdir.join('hook-_struct.py').write('hiddenimports = ["ctypes"]')
     a = Analysis([str(script)], hookspath=[str(tmpdir)],
                  excludes=['encodings', 'pydoc', 'xml', 'distutils'])
+
+
+def test_issue_5131(monkeypatch, tmpdir):
+    """
+    While fixing the endless recursion when the package's __init__ module is
+    an extension (see
+    tests/unit/test_modulegraph_more.py::package_init_is_extension_*), another
+    error occured: PyInstaller.building._utils._load_code() tried to complote
+    the source code for extension module - triggered by PYZ.assemble(), which
+    is collecting all source files - caused by this being marked as "PYMODULE"
+    in the TOC.
+    """
+
+    def getImports(*args, **kwargs):
+        # Our faked binary does not match the expected file-format for all
+        # platforms, thus the resp. code might crash. Simply ignore this.
+        try:
+            return orig_getImports(*args, **kwargs)
+        except:  # noqa
+            return []
+
+    monkeypatch.setattr('PyInstaller.config.CONF',
+                        {'workpath': str(tmpdir),
+                         'spec': str(tmpdir),
+                         'warnfile': str(tmpdir.join('warn.txt')),
+                         'dot-file': str(tmpdir.join('imports.dot')),
+                         'xref-file': str(tmpdir.join('imports.xref')),
+                         'hiddenimports': [],
+                         'specnm': 'issue_5131_script'})
+    # Speedup: avoid analyzing base_library.zip
+    monkeypatch.setattr(analysis, 'PY3_BASE_MODULES', [])
+
+    orig_getImports = bindepend.getImports
+    monkeypatch.setattr(bindepend, "getImports", getImports)
+
+    pkg = (tmpdir / 'mypkg').mkdir()
+    init = pkg / ('__init__' + EXTENSION_SUFFIXES[0])
+    init.write_binary(b'\0\0\0\0\0\0\0\0\0\0\0\0' * 20)
+    script = tmpdir.join('script.py')
+    script.write('import mypkg')
+    a = Analysis([str(script)],
+                 excludes=['encodings', 'pydoc', 'xml', 'distutils'])
+    try:
+        PYZ(a.pure, a.zipped_data)
+    except ValueError:
+        pytest.xfail(reason="solution to be implemented in the next commits")
