@@ -847,6 +847,14 @@ class Package(BaseModule):
     pass
 
 
+class ExtensionPackage(Extension, Package):
+    """
+    Graph node representing a package where the __init__ module is an extension
+    module.
+    """
+    pass
+
+
 class NamespacePackage(Package):
     """
     Graph node representing a namespace package.
@@ -2082,6 +2090,7 @@ class ModuleGraph(ObjectGraph):
         self.msgin(2, "load_module", fqname, pathname,
                    loader.__class__.__name__)
         partname = fqname.rpartition(".")[-1]
+
         if loader.is_package(partname):
             if isinstance(loader, NAMESPACE_PACKAGE):
                 pkgpath = loader.namespace_dirs[:]  # copy for safety
@@ -2100,7 +2109,10 @@ class ModuleGraph(ObjectGraph):
                 m.filename = '-'
                 m.packagepath = ns_pkgpath
             else:
-                m = self.createNode(Package, fqname)
+                if isinstance(loader, ExtensionFileLoader):
+                    m = self.createNode(ExtensionPackage, fqname)
+                else:
+                    m = self.createNode(Package, fqname)
                 m.filename = pathname
                 # PEP-302-compliant loaders return the pathname of the
                 # `__init__`-file, not the packge directory.
