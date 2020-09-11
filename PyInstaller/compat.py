@@ -652,6 +652,7 @@ SPECIAL_MODULE_TYPES = {
 # dependency graph.
 BINARY_MODULE_TYPES = {
     'Extension',
+    'ExtensionPackage',
 }
 # Object types of valid Python modules in modulegraph dependency graph.
 VALID_MODULE_TYPES = PURE_PYTHON_MODULE_TYPES | SPECIAL_MODULE_TYPES | BINARY_MODULE_TYPES
@@ -686,6 +687,7 @@ MODULE_TYPES_TO_TOC_DICT = {
     'ArchiveModule': 'PYMODULE',
     # Binary modules.
     'Extension': 'EXTENSION',
+    'ExtensionPackage': 'EXTENSION',
     # Special valid modules.
     'BuiltinModule': 'BUILTIN',
     'NamespacePackage': 'PYMODULE',
