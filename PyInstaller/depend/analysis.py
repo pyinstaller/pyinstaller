@@ -583,6 +583,13 @@ class PyiModuleGraph(ModuleGraph):
             # for Script nodes only, identifier is a whole path
             (name, ext) = os.path.splitext(node.filename)
             name = os.path.basename(name)
+        elif mg_type == 'ExtensionPackage':
+            # package with __init__ module being an extension module
+            # This needs to end up as e.g. 'mypkg/__init__.so'.
+            # Convert the packages name ('mypkg') into the module name
+            # ('mypkg.__init__') *here* to keep special cases away elsewhere
+            # (where the module name is converted to a filename).
+            name = node.identifier + ".__init__"
         else:
             name = node.identifier
         path = node.filename if node.filename is not None else ''
