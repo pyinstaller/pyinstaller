@@ -408,7 +408,7 @@ class ModuleHook(object):
             self._hook_module = importlib_load_source(
                 self.hook_module_name, self.hook_filename)
         except ImportError:
-            logger.debug(exc_info=True)
+            logger.debug("Hook failed with:", exc_info=True)
             raise ImportErrorWhenRunningHook(
                 self.hook_module_name, self.hook_filename)
 
@@ -470,7 +470,7 @@ class ModuleHook(object):
         try:
             self._hook_module.hook(hook_api)
         except ImportError:
-            logger.debug(exc_info=True)
+            logger.debug("Hook failed with:", exc_info=True)
             raise ImportErrorWhenRunningHook(
                 self.hook_module_name, self.hook_filename)
 
