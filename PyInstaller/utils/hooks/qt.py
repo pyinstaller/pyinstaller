@@ -104,11 +104,11 @@ def qt_plugins_dir(namespace):
     """
     Return list of paths searched for plugins.
 
-    :param namespace: Import namespace, i.e., PyQt4, PyQt5, PySide, or PySide2
+    :param namespace: Import namespace, i.e., PyQt5 or PySide2
 
     :return: Plugin directory paths
     """
-    if namespace not in ['PyQt4', 'PyQt5', 'PySide', 'PySide2']:
+    if namespace not in ['PyQt5', 'PySide2']:
         raise Exception('Invalid namespace: {0}'.format(namespace))
     if namespace == 'PyQt5':
         paths = [pyqt5_library_info.location['PluginsPath']]
@@ -141,11 +141,11 @@ def qt_plugins_binaries(plugin_type, namespace):
     Return list of dynamic libraries formatted for mod.binaries.
 
     :param plugin_type: Plugin to look for
-    :param namespace: Import namespace, i.e., PyQt4, PyQt5, PySide, or PySide2
+    :param namespace: Import namespace, i.e., PyQt5 or PySide2
 
     :return: Plugin directory path corresponding to the given plugin_type
     """
-    if namespace not in ['PyQt4', 'PyQt5', 'PySide', 'PySide2']:
+    if namespace not in ['PyQt5', 'PySide2']:
         raise Exception('Invalid namespace: {0}'.format(namespace))
     pdir = qt_plugins_dir(namespace=namespace)
     files = []
@@ -158,18 +158,11 @@ def qt_plugins_binaries(plugin_type, namespace):
     # ``*.dylib`` in a certain directory. On Windows this would grab debug
     # copies of Qt plugins, which then causes PyInstaller to add a dependency on
     # the Debug CRT *in addition* to the release CRT.
-    #
-    # Since on Windows debug copies of Qt4 plugins end with "d4.dll" and Qt5
-    # plugins end with "d.dll" we filter them out of the list.
-    if is_win and (namespace in ['PyQt4', 'PySide']):
-        files = [f for f in files if not f.endswith("d4.dll")]
-    elif is_win and namespace in ['PyQt5', 'PySide2']:
+    if is_win and namespace in ['PyQt5', 'PySide2']:
         files = [f for f in files if not f.endswith("d.dll")]
 
     logger.debug("Found plugin files %s for plugin %s", files, plugin_type)
-    if namespace in ['PyQt4', 'PySide']:
-        plugin_dir = 'qt4_plugins'
-    elif namespace == 'PyQt5':
+    if namespace == 'PyQt5':
         plugin_dir = os.path.join('PyQt5', 'Qt', 'plugins')
     else:
         plugin_dir = os.path.join('PySide2', 'plugins')
@@ -182,11 +175,11 @@ def qt_menu_nib_dir(namespace):
     """
     Return path to Qt resource dir qt_menu.nib on OSX only.
 
-    :param namespace: Import namespace, i.e., PyQt4, PyQt5,  PySide, or PySide2
+    :param namespace: Import namespace, i.e., PyQt5 or PySide2
 
     :return: Directory containing qt_menu.nib for specified namespace
     """
-    if namespace not in ['PyQt4', 'PyQt5', 'PySide', 'PySide2']:
+    if namespace not in ['PyQt5', 'PySide2']:
         raise Exception('Invalid namespace: {0}'.format(namespace))
     menu_dir = None
 

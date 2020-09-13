@@ -32,10 +32,3 @@ def test_ipython(pyi_builder):
         from IPython import embed
         embed()
         """, runtime=_RUNTIME)
-
-
-@xfail(reason='TODO - known to fail')
-@importorskip('PySide')
-def test_pyside(pyi_builder):
-    pyi_builder.test_script('pyi_interact_pyside.py', #pyi_args=['--windowed'],
-                            runtime=_RUNTIME)

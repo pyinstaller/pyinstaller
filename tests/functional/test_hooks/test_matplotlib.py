@@ -24,8 +24,6 @@ from PyInstaller.utils.tests import importorskip
 # * "package_name" is the name of the external package required by this backend.
 # * "binding" is the binding to use (and to set environment-variable QT_API to).
 backend_rcParams_key_values = [
-    ('Qt4Agg', 'PySide', 'pyside'),
-    ('Qt4Agg', 'PyQt4', 'pyqt4'),
     ('Qt5Agg', 'PyQt5', 'pyqt5'),
     ('Qt5Agg', 'PySide2', 'pyside2'),
 ]
@@ -64,7 +62,7 @@ def test_matplotlib(pyi_builder, monkeypatch,
 
     # PyInstaller options excluding all backend packages except the passed
     # backend package. This is especially critical for Qt backend packages
-    # (e.g., "PyQt4", "PySide"). On first importation, Matplotlib attempts to
+    # (e.g., "PyQt5", "PySide2"). On first importation, Matplotlib attempts to
     # import all available Qt packages. However, runtime PyInstaller hooks fail
     # when multiple Qt packages are frozen into the same application. For each
     # such package, all other Qt packages must be excluded.

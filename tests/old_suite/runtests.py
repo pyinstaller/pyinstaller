@@ -107,15 +107,12 @@ class SkipChecker(object):
             'basic/test_pkg_structures': ['pkg_resources'],
 
             'libraries/test_gst': ['gst'],
-            'libraries/test_twisted_qt4reactor': ['twisted', 'PyQt4', 'qt4reactor'],
             'libraries/test_wx': ['wx'],
 
             'interactive/test_ipython': ['IPython'],
             'interactive/test_keyring': ['keyring'],
             'interactive/test_matplotlib': ['matplotlib'],
             'interactive/test_pygame': ['pygame'],
-            'interactive/test_pyqt4_multiprocessing': ['multiprocessing', 'PyQt4'],
-            'interactive/test_qt4': ['PyQt4'],
             'interactive/test_qt5': ['PyQt5'],
             'interactive/test_tix': ['Tix'],
             'interactive/test_tkinter': [modname_tkinter],
