@@ -22,10 +22,7 @@ excludedimports = ['sqlalchemy.testing']
 # include most common database bindings
 # some database bindings are detected and include some
 # are not. We should explicitly include database backends.
-hiddenimports = ['pysqlite2', 'MySQLdb', 'psycopg2']
-
-# add sqlalchemy.ext.baked to hidden imports
-hiddenimports.append("sqlalchemy.ext.baked")
+hiddenimports = ['pysqlite2', 'MySQLdb', 'psycopg2', 'sqlalchemy.ext.baked']
 
 # In SQLAlchemy >= 0.6, the "sqlalchemy.dialects" package provides dialects.
 if is_module_satisfies('sqlalchemy >= 0.6'):
