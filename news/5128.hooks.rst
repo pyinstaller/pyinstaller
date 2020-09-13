@@ -1,1 +1,1 @@
-Updated a hook for sqlalchemy, by adding a hidden import.
+Update ``sqlalchemy`` hook to support v1.3.19 and later,  by adding ``pysqlite2``, ``MySQLdb`` and ``psycopg2`` as hidden imports.
