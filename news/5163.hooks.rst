@@ -1,0 +1,1 @@
+Add a hook for `flask_restx <https://flask-restx.readthedocs.io>`_.
