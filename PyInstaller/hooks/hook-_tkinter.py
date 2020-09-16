@@ -205,6 +205,34 @@ def _find_tcl_tk(hook_api):
     return tcl_tk
 
 
+def _collect_tcl_modules(tcl_root):
+    """
+    Get a list of TOC-style 3-tuples describing Tcl modules. The modules
+    directory is separate from the library/data one, and is located
+    at $tcl_root/../tclX, where X is the major Tcl version.
+
+    Returns
+    -------
+    Tree
+        Such list, if the modules directory exists.
+    """
+
+    # Obtain Tcl major version.
+    tcl_version = exec_statement(
+        'from %s import Tcl; print(Tcl().eval("info tclversion"))'
+        % modname_tkinter)
+    tcl_version = tcl_version.split('.')[0]
+
+    modules_dirname = 'tcl' + str(tcl_version)
+    modules_path = os.path.join(tcl_root, '..', modules_dirname)
+
+    if not os.path.isdir(modules_path):
+        logger.warn('Tcl modules directory %s does not exist.', modules_path)
+        return []
+
+    return Tree(modules_path, prefix=modules_dirname)
+
+
 def _collect_tcl_tk_files(hook_api):
     """
     Get a list of TOC-style 3-tuples describing all external Tcl/Tk data files.
@@ -240,7 +268,10 @@ def _collect_tcl_tk_files(hook_api):
     if is_darwin:
         _warn_if_activetcl_or_teapot_installed(tcl_root, tcltree)
 
-    return (tcltree + tktree)
+    # Collect Tcl modules
+    tclmodulestree = _collect_tcl_modules(tcl_root)
+
+    return (tcltree + tktree + tclmodulestree)
 
 
 def hook(hook_api):
