@@ -1,0 +1,1 @@
+Prevent a local directory with clashing name from shadowing a system library.
