@@ -1,1 +1,1 @@
-Update ``sqlalchemy`` hook to support v1.3.19 and later,  by adding ``pysqlite2``, ``MySQLdb`` and ``psycopg2`` as hidden imports.
+Update ``sqlalchemy`` hook to support v1.3.19 and later,  by adding ``sqlalchemy.ext.baked`` as a hidden import
