@@ -106,6 +106,7 @@ symbolic link::
 
 	#!/usr/bin/python3
 	import sys, os
+	from pathlb import Path, PurePath
 	frozen = 'not'
 	if getattr(sys, 'frozen', False):
 		# we are running in a bundle
@@ -119,6 +120,8 @@ symbolic link::
 	print( 'sys.argv[0] is', sys.argv[0] )
 	print( 'sys.executable is', sys.executable )
 	print( 'os.getcwd is', os.getcwd() )
+	print( 'os.path.dirname(os.path.abspath(__file__)) is ', os.path.dirname(os.path.abspath(__file__)))
+	print( 'PurePath(Path(__file__).absolute()).parent is ', PurePath(Path(__file__).absolute()).parent)
 
 
 
