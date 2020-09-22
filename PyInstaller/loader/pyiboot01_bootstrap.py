@@ -126,7 +126,7 @@ try:
     def _frozen_name(name):
         if name:
             frozen_name = os.path.join(sys._MEIPASS, os.path.basename(name))
-            if os.path.exists(frozen_name):
+            if os.path.exists(frozen_name) and not os.path.isdir(frozen_name):
                 name = frozen_name
         return name
 
