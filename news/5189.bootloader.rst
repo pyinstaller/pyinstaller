@@ -1,0 +1,1 @@
+(Windows) Use ``_wfullpath()`` instead of ``_fullpath()`` in ``pyi_path_fullpath`` to allow non-ASCII characters in the path.
