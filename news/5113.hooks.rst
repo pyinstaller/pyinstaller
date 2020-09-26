@@ -1,0 +1,1 @@
+Add `exclude_datas` to utils.hooks.collect_all() to allow caller to exclude datafiles.

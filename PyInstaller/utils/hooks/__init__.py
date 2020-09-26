@@ -1032,15 +1032,22 @@ def requirements_for_package(package_name):
 # ``collect_data_files``.
 #
 # Typical use: ``datas, binaries, hiddenimports = collect_all('my_module_name')``.
-def collect_all(package_name, include_py_files=True):
+def collect_all(
+        package_name, include_py_files=True, filter_submodules=None,
+        exclude_datas=None, include_datas=None):
     datas = []
     try:
         datas += copy_metadata(package_name)
     except Exception as e:
         logger.warning('Unable to copy metadata for %s: %s', package_name, e)
-    datas += collect_data_files(package_name, include_py_files)
+    datas += collect_data_files(package_name, include_py_files,
+                                excludes=exclude_datas, includes=include_datas)
     binaries = collect_dynamic_libs(package_name)
-    hiddenimports = collect_submodules(package_name)
+    if filter_submodules:
+        hiddenimports = collect_submodules(package_name,
+                                           filter=filter_submodules)
+    else:
+        hiddenimports = collect_submodules(package_name)
     try:
         hiddenimports += requirements_for_package(package_name)
     except Exception as e:
