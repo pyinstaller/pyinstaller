@@ -55,7 +55,7 @@ pandas==1.1.2; python_version > '3.5'
 pandas==0.25.3; python_version == '3.5'  # pyup: ignore
 
 # Numpy 1.19 dropped Python 3.5 support
-numpy==1.19.1; python_version > '3.5'
+numpy==1.19.2; python_version > '3.5'
 numpy<=1.19.0; python_version == '3.5'  # pyup: ignore
 
 # And so did SciPy
