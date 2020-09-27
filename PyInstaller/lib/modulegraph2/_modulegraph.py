@@ -816,7 +816,7 @@ class ModuleGraph(ObjectGraph[Union[BaseNode, PyPIDistribution], DependencyInfo]
 
           import_info: Information about the import
         """
-        assert isinstance(importing_module, (Module, Package))
+        assert isinstance(importing_module, (Module, Package, Script))
         if import_info.star_import:
             if isinstance(imported_module, (Package, Module)):
                 importing_module.globals_written.update(imported_module.globals_written)

@@ -57,6 +57,19 @@ class TestModuleGraphScripts(unittest.TestCase, util.TestMixin):
         (graph_node,) = mg.iter_graph(node=node)
         self.assertIs(graph_node, node)
 
+    def test_self_referential_script(self):
+        mg = ModuleGraph()
+        mg.add_script(INPUT_DIR / "self-referential-script.py")
+
+        self.assertEqual(len(list(mg.roots())), 1)
+        (node,) = mg.roots()
+
+        self.assert_valid_script_node(node, INPUT_DIR / "self-referential-script.py")
+
+        main = mg.find_node("__main__")
+        self.assertIsInstance(node, MissingModule)
+
+
     def test_add_script_twice(self):
         mg = ModuleGraph()
         mg.add_script(INPUT_DIR / "trivial-script")

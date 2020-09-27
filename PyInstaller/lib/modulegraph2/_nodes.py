@@ -49,25 +49,31 @@ class BaseNode:
         return self.name
 
 
+@dataclasses.dataclass
 class Script(BaseNode):
     """
-    Not representing a Python script.
+    Node representing a Python script.
 
     The name of the node is the string representation
     of the full filename of the script.
     """
 
+    globals_written: Set[str]
+    globals_read: Set[str]
+
     def __init__(self, filename: os.PathLike):
         name = os.fspath(filename)
         path = pathlib.Path(filename).resolve()
 
-        return super().__init__(
+        super().__init__(
             name=name,
             loader=None,
             distribution=None,
             filename=path,
             extension_attributes={},
         )
+        self.globals_read = set()
+        self.globals_written = set()
 
 
 @dataclasses.dataclass
