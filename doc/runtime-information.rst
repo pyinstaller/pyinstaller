@@ -73,10 +73,14 @@ Or, if you'd rather use pathlib_::
 
 It is always best to use absolute paths, so
 ``path.abspath(path.join(bundle_dir, 'other-file.dat'))`` is preferred over
-``path.join(bundle_dir, 'other-file.dat')``. Using absolute paths means that
-you're less likely to encounter errors that can occur when using relative
-paths.
+``path.join(bundle_dir, 'other-file.dat')``. Using relative paths can lead to
+confusing errors should you attempt to find the parent of the current working
+directory. You'll get the incorrect value ``''`` instead of the expected
+``'..'``::
 
+    >>> from os import path
+    >>> path.dirname(".")
+    ''
 
 Using ``sys.executable`` and ``sys.argv[0]``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
