@@ -59,6 +59,18 @@ bundled and in the bundle folder if it is bundled::
     bundle_dir = getattr(sys, '_MEIPASS', path.abspath(path.dirname(__file__)))
     path_to_dat = path.abspath(path.join(bundle_dir, 'other-file.dat'))
 
+Or, if you'd rather use pathlib_::
+
+    from pathlib import Path
+    import sys
+
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        bundle_dir = Path(sys._MEIPASS)
+    else:
+        bundle_dir = Path(__file__).parent
+
+    path_to_dat = bundle_dir.absolute() / "other-file.dat"
+
 It is always best to use absolute paths, so
 ``path.abspath(path.join(bundle_dir, 'other-file.dat'))`` is preferred over
 ``path.join(bundle_dir, 'other-file.dat')``. Using absolute paths means that

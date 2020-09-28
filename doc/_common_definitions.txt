@@ -39,6 +39,7 @@
 .. _netpbm package: http://netpbm.sourceforge.net/
 .. _NextCloud: https://nextcloud.org
 .. _Parallels: http://www.parallels.com
+.. _pathlib: https://docs.python.org/3/library/pathlib.html
 .. _pefile: https://pypi.python.org/pypi/pefile/
 .. _PIL: http://www.pythonware.com/products/pil/
 .. _pip: http://www.pip-installer.org/
