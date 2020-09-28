@@ -69,7 +69,7 @@ Or, if you'd rather use pathlib_::
     else:
         bundle_dir = Path(__file__).parent
 
-    path_to_dat = bundle_dir.absolute() / "other-file.dat"
+    path_to_dat = Path.cwd() / bundle_dir / "other-file.dat"
 
 It is always best to use absolute paths, so
 ``path.abspath(path.join(bundle_dir, 'other-file.dat'))`` is preferred over
@@ -81,6 +81,48 @@ directory. You'll get the incorrect value ``''`` instead of the expected
     >>> from os import path
     >>> path.dirname(".")
     ''
+
+Avoiding writing different PyInstaller-only behaviour
+-----------------------------------------------------
+
+As an alternative to the above, you can leave your Python code untouched if you
+modify the **dest** parameter in your uses of ``--add-data=source:dest`` to put
+your data-files where your code expects them to be. Assuming you normally use
+the following code in a file named ``my_script.py`` to locate a file
+``file.dat`` in the same folder::
+
+    from os import path
+    path_to_dat = path.abspath(path.join(path.dirname(__file__), 'file.dat'))
+
+Or the pathlib_ equivalent::
+
+    from pathlib import Path
+    path_to_dat = (Path.cwd() / __file__).with_name("file.dat")
+
+And ``my_script.py`` is **not** part of a package (not in a folder containing
+an ``__init_.py``), then ``__file__`` will be ``[app root]/my_script.pyc``
+meaning that if you put ``file.dat`` in the root of your package, using::
+
+    PyInstaller --add-data=/path/to/file.dat:.
+
+It'll be found correctly at runtime without changing ``my_script.py``.
+
+.. note:: Windows users should use ``;`` instead of ``:`` in the above line.
+
+If ``__file__`` is checked from inside a package or library (say
+``my_library.data``) then ``__file__`` will be
+``[app root]/my_library/data.pyc`` and ``--add-data`` should mirror that::
+
+    PyInstaller --add-data=/path/to/my_library/file.dat:./my_library
+
+However, in this case it is much easier to switch to :ref:`the spec file
+<Using Spec Files>` and use the :meth:`collect_data_files` helper function::
+
+    from PyInstaller.utils.hooks import collect_data_files
+
+    a = Analysis(...,
+                 datas=collect_data_files("my_library"),
+                 ...)
 
 Using ``sys.executable`` and ``sys.argv[0]``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
