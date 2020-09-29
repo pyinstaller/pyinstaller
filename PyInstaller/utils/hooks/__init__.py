@@ -19,7 +19,7 @@ from pathlib import Path
 
 from ...compat import base_prefix, exec_command_stdout, exec_python, \
     exec_python_rc, is_darwin, is_venv, string_types, open_file, \
-    EXTENSION_SUFFIXES, ALL_SUFFIXES
+    EXTENSION_SUFFIXES, ALL_SUFFIXES, is_conda, is_pure_conda
 from ... import HOMEPATH
 from ... import log as logging
 from ...exceptions import ExecCommandFailed
@@ -1129,6 +1129,17 @@ def collect_all(
                        package_name, e)
 
     return datas, binaries, hiddenimports
+
+
+if is_pure_conda:
+    from . import conda as conda_support  # noqa: F401
+elif is_conda:
+    from .conda import CONDA_META_DIR as _tmp
+    logger.warning(
+        "Assuming this isn't an Anaconda environment or an additional venv/"
+        "pipenv/... environment manager is being used on top because the "
+        "conda-meta folder %s doesn't exist.", _tmp)
+    del _tmp
 
 
 # These imports need to be here due to these modules recursively importing this module.
