@@ -233,7 +233,9 @@ class PKG(Target):
                 # file is contained within python egg, it is added with the egg
                 continue
             if typ in ('BINARY', 'EXTENSION', 'DEPENDENCY'):
-                if not self.exclude_binaries or typ == 'DEPENDENCY':
+                if self.exclude_binaries and typ == 'EXTENSION':
+                    self.dependencies.append((inm, fnm, typ))
+                elif not self.exclude_binaries or typ == 'DEPENDENCY':
                     if typ == 'BINARY':
                         # Avoid importing the same binary extension twice. This might
                         # happen if they come from different sources (eg. once from
