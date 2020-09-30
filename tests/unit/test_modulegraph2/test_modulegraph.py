@@ -69,6 +69,38 @@ class TestModuleGraphScripts(unittest.TestCase, util.TestMixin):
         main = mg.find_node("__main__")
         self.assertIsInstance(node, MissingModule)
 
+    def test_setuptools_script(self):
+        mg = ModuleGraph()
+        mg.add_script(INPUT_DIR / "setup.py")
+
+        node = mg.find_node("configparser")
+        self.assertIsInstance(node, (SourceModule, Package))
+
+        node = mg.find_node("setuptools._vendor.six.moves.configparser")
+        self.assertIsInstance(node, AliasNode)
+
+        node = mg.find_node("setuptools.extern.six.moves.configparser")
+        self.assertIsInstance(node, AliasNode)
+
+        self.assert_has_edge(
+            mg,
+            "setuptools.extern.six.moves.configparser",
+            "configparser",
+            {DependencyInfo(False, True, False, None)},
+        )
+
+        node = mg.find_node("setuptools._vendor.packaging")
+        self.assertIsInstance(node, Package)
+
+        node = mg.find_node("setuptools.extern.packaging")
+        self.assertIsInstance(node, AliasNode)
+
+        self.assert_has_edge(
+            mg,
+            "setuptools.extern.packaging",
+            "setuptools._vendor.packaging",
+            {DependencyInfo(False, True, False, None)},
+        )
 
     def test_add_script_twice(self):
         mg = ModuleGraph()

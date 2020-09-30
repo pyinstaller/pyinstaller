@@ -344,6 +344,38 @@ def node_for_spec(
 
             return node_for_spec(moved_spec, path)
 
+    elif (
+        type(loader).__name__ == "VendorImporter"
+        and type(loader).__module__ == "setuptools.extern"
+    ):
+        # Support for ``setuptools.extern.VendorLoader`` in setuptools.
+        # This loader loads names names in the ``setuptools.extern`` virtual
+        # package from ``setuptools._vendor`` or the system
+        # path, whichever is available.
+        #
+        # That logic is reproduced here.
+
+        root_name: str
+        vendor_pkg: str
+
+        assert hasattr(loader, "root_name")
+        assert hasattr(loader, "vendor_pkg")
+
+        root_name = loader.root_name  # type: ignore
+        vendor_pkg = loader.vendor_pkg  # type: ignore
+
+        relative_name = spec.name[len(root_name) + 1 :]  # noqa: E203
+
+        try:
+            moved_spec = importlib.util.find_spec(f"{vendor_pkg}.{relative_name}")
+        except ModuleNotFoundError:
+            moved_spec = importlib.util.find_spec(relative_name)
+
+        if moved_spec is None:
+            return MissingModule(actual_name), ()
+
+        return node_for_spec(moved_spec, path)
+
     else:
         raise RuntimeError(
             f"Don't known how to handle {loader!r} for {spec.name!r}"
