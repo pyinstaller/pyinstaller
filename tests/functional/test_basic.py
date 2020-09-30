@@ -402,8 +402,7 @@ def test_time_module_localized(pyi_builder, monkeypatch):
     # every function was using different locale:
     # time.ctime was using 'C'
     # time.strptime was using 'xx_YY' from the environment.
-    lang = 'cs_CZ' if is_darwin else 'cs_CZ.UTF-8'
-    monkeypatch.setenv('LC_ALL', lang)
+    monkeypatch.setenv('LC_ALL', 'cs_CZ.UTF-8')
     pyi_builder.test_source(
         """
         import time
