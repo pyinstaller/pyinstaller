@@ -22,7 +22,8 @@
 
 int checkFile(char *buf, const char *fmt, ...);
 
-static void test_checkFile(void **state) {
+static void test_checkFile(void **state)
+{
     char result[PATH_MAX];
 
     // TODO: use some mocks to determine stat() output
@@ -58,7 +59,8 @@ static void test_checkFile(void **state) {
 
 int splitName(char *path, char *filename, const char *item);
 
-static void test_splitName(void **state) {
+static void test_splitName(void **state) 
+{
     char path[PATH_MAX];
     char filename[PATH_MAX];
 
@@ -95,8 +97,10 @@ static void test_splitName(void **state) {
 }
 
 
-int main(void) {
-    const struct CMUnitTest tests[] = {
+int main(void) 
+{
+    const struct CMUnitTest tests[] = 
+    {
         cmocka_unit_test(test_checkFile),
         cmocka_unit_test(test_splitName),
     };
