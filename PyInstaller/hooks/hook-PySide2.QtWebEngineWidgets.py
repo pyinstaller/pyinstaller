@@ -10,6 +10,7 @@
 #-----------------------------------------------------------------------------
 
 import os
+import glob
 from PyInstaller.utils.hooks.qt import add_qt5_dependencies, \
     pyside2_library_info
 from PyInstaller.utils.hooks import get_module_file_attribute, \
@@ -94,6 +95,6 @@ if pyside2_library_info.version:
             if os.path.basename(imp).startswith('libnss3.so'):
                 # Find the location of NSS: given a ``/path/to/libnss.so``,
                 # add ``/path/to/nss/*.so`` to get the missing NSS libraries.
-                nss_subdir = os.path.join(os.path.dirname(imp), 'nss')
-                if os.path.exists(nss_subdir):
-                    binaries.append((os.path.join(nss_subdir, '*.so'), 'nss'))
+                nss_glob = os.path.join(os.path.dirname(imp), 'nss', '*.so')
+                if glob.glob(nss_glob):
+                    binaries.append((nss_glob, 'nss'))
