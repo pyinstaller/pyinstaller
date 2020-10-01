@@ -359,6 +359,8 @@ For example modify the spec file this way::
           exclude_binaries=...
           )
 
+.. Warning:: The ``u`` option does not work on Windows. See this `GitHub issue <https://github.com/pyinstaller/pyinstaller/issues/1441>`_ for more details.
+
 
 .. _spec file options for a mac os x bundle:
 
