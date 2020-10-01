@@ -51,9 +51,10 @@ if pyside2_library_info.version:
                      'QtQmlModels', 'QtNetwork', 'QtGui', 'QtWebChannel',
                      'QtPositioning']
         for i in libraries:
+            framework_dir = i + '.framework'
             datas += collect_system_data_files(
-                os.path.join(data_path, 'lib', i + '.framework'),
-                prefix_with_path(rel_data_path, 'lib'), True)
+                os.path.join(data_path, 'lib', framework_dir),
+                prefix_with_path(rel_data_path, 'lib', framework_dir), True)
         datas += [(os.path.join(data_path, 'lib', 'QtWebEngineCore.framework',
                                 'Resources'), os.curdir)]
     else:

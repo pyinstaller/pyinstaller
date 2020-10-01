@@ -21,13 +21,13 @@ if pyside2_library_info.version:
 
     # Collect the ``qt.conf`` file.
     if is_win:
-        target_qt_conf_dir = os.curdir
+        target_qt_conf_dir = ['PySide2']
     else:
-        target_qt_conf_dir = 'PySide2'
+        target_qt_conf_dir = ['PySide2', 'Qt']
 
     datas = [x for x in
              collect_system_data_files(pyside2_library_info.location['PrefixPath'],
-                                       target_qt_conf_dir)
+                                       os.path.join(*target_qt_conf_dir))
              if os.path.basename(x[0]) == 'qt.conf']
 
     # Collect required Qt binaries.
