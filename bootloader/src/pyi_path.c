@@ -186,8 +186,20 @@ int
 pyi_path_fullpath(char *abs, size_t abs_size, const char *rel)
 {
 #ifdef _WIN32
-    /* TODO use _wfullpath - wchar_t function. */
-    return _fullpath(abs, rel, abs_size) != NULL;
+    wchar_t wrel[PATH_MAX + 1];
+    wchar_t *wabs = NULL;
+
+    pyi_win32_utils_from_utf8(wrel, rel, PATH_MAX);
+
+    wabs = _wfullpath(NULL, wrel, PATH_MAX);
+    if (wabs == NULL) {
+        return 0;
+    }
+
+    char *ret = pyi_win32_utils_to_utf8(abs, wabs, abs_size);
+    free(wabs);
+
+    return ret != NULL;
 #else
     return realpath(rel, abs) != NULL;
 #endif
