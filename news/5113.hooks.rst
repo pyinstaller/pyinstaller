@@ -1,0 +1,1 @@
+Add ``exclude_datas``, ``include_datas``, and ``filter_submodules`` to ``collect_all()``. These arguments map to the ``excludes`` and ``includes`` arguments of ``collect_data_files``, and to the `filter` argument of ``collect_submodules``.

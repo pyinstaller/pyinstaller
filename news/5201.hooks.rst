@@ -1,0 +1,1 @@
+Modify hook for ``gevent`` to exclude test submodules.
