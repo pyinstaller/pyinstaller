@@ -432,6 +432,55 @@ pyi_win32_utf8_to_mbs(char * dst, const char * src, size_t max)
     }
 }
 
+
+/* Retrieve the SID of the current user.
+ *  Returns SID string on success, NULL on failure.
+ */
+static char *
+pyi_win32_get_user_sid()
+{
+    HANDLE process_token;
+    DWORD user_info_size, result;
+    PTOKEN_USER user_info;
+    wchar_t *wsid = NULL;
+    char *sid;
+
+    // Get access token for the calling process
+    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &process_token)) {
+        return NULL;
+    }
+
+    // Get buffer size and allocate buffer
+    if (!GetTokenInformation(process_token, TokenUser, NULL, 0, &user_info_size)) {
+        if (GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
+            CloseHandle(process_token);
+            return NULL;
+        }
+    }
+
+    user_info = (PTOKEN_USER)calloc(1, user_info_size);
+
+    // Get user information
+    if (!GetTokenInformation(process_token, TokenUser, user_info, user_info_size, &user_info_size)) {
+        free(user_info);
+        CloseHandle(process_token);
+        return NULL;
+    }
+
+    // Convert SID to string
+    ConvertSidToStringSidW(user_info->User.Sid, &wsid);
+
+    // Make a copy (and convert to multibyte)
+    sid = pyi_win32_utils_to_utf8(NULL, wsid, 0);
+
+    // Cleanup
+    free(user_info);
+    CloseHandle(process_token);
+    LocalFree(wsid);
+
+    return sid;
+}
+
 /* Create a directory at path with restricted permissions.
  *  The directory owner will be the only one with permissions on the created
  *  dir. Calling this function is equivalent to callin chmod(path, 0700) on
@@ -441,12 +490,21 @@ pyi_win32_utf8_to_mbs(char * dst, const char * src, size_t max)
 int
 pyi_win32_mkdir(const wchar_t *path)
 {
-    wchar_t stringSecurityDesc[] = // ACE String :
-        L"D:" // DACL (D) :
-        L"(A;" // Authorize (A)
-        L";FA;" // FILE_ALL_ACCESS (FA)
-        L";;S-1-3-4)"; // For the current directory owner (SID: S-1-3-4)
+    char *sid = pyi_win32_get_user_sid();
+    char stringSecurityDesc[PATH_MAX];
+
+    // ACE String :
+    snprintf(stringSecurityDesc, PATH_MAX,
+        "D:" // DACL (D) :
+        "(A;" // Authorize (A)
+        ";FA;" // FILE_ALL_ACCESS (FA)
+        ";;%s)", // For the current user (retrieved SID) or current directory owner (SID: S-1-3-4)
         // no other permissions are granted
+        sid ? sid : "S-1-3-4");
+
+    free(sid);
+
+    VS("LOADER: creating directory %S with security string: %s\n", path, stringSecurityDesc);
 
     SECURITY_ATTRIBUTES securityAttr;
     PSECURITY_DESCRIPTOR *lpSecurityDesc;
@@ -454,7 +512,7 @@ pyi_win32_mkdir(const wchar_t *path)
     securityAttr.bInheritHandle = FALSE;
     lpSecurityDesc = &securityAttr.lpSecurityDescriptor;
 
-    if (!ConvertStringSecurityDescriptorToSecurityDescriptorW(
+    if (!ConvertStringSecurityDescriptorToSecurityDescriptorA(
              stringSecurityDesc,
              SDDL_REVISION_1,
              lpSecurityDesc,
