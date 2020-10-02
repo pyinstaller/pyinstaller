@@ -16,7 +16,6 @@ import locale
 
 from PyInstaller.compat import is_win, is_darwin, is_unix, is_venv, \
     base_prefix, open_file, text_read_mode
-from PyInstaller.compat import modname_tkinter
 from PyInstaller.depend.bindepend import selectImports, getImports
 from PyInstaller.building.datastruct import Tree
 from PyInstaller.utils.hooks import exec_statement, logger
@@ -143,7 +142,7 @@ def _find_tcl_tk_dir():
     """
     # Python code to get path to TCL_LIBRARY.
     tcl_root = exec_statement(
-        'from %s import Tcl; print(Tcl().eval("info library"))' % modname_tkinter)
+        'from tkinter import Tcl; print(Tcl().eval("info library"))')
     tk_version = exec_statement(
         'from _tkinter import TK_VERSION; print(TK_VERSION)')
 
@@ -219,8 +218,7 @@ def _collect_tcl_modules(tcl_root):
 
     # Obtain Tcl major version.
     tcl_version = exec_statement(
-        'from %s import Tcl; print(Tcl().eval("info tclversion"))'
-        % modname_tkinter)
+        'from tkinter import Tcl; print(Tcl().eval("info tclversion"))')
     tcl_version = tcl_version.split('.')[0]
 
     modules_dirname = 'tcl' + str(tcl_version)
