@@ -172,24 +172,35 @@ def _find_tcl_tk(hook_api):
             # might depend on system Tcl/Tk frameworks and these are not
             # included in 'hook_api.binaries'.
             bins = getImports(hook_api.__file__)
-            # Reformat data structure from
-            #     set(['lib1', 'lib2', 'lib3'])
-            # to
-            #     [('Tcl', '/path/to/Tcl'), ('Tk', '/path/to/Tk')]
-            mapping = {}
-            for l in bins:
-                mapping[os.path.basename(l)] = l
-            bins = [
-                ('Tcl', mapping['Tcl']),
-                ('Tk', mapping['Tk']),
-            ]
+
+            if bins:
+                # Reformat data structure from
+                #     set(['lib1', 'lib2', 'lib3'])
+                # to
+                #     [('Tcl', '/path/to/Tcl'), ('Tk', '/path/to/Tk')]
+                mapping = {}
+                for l in bins:
+                    mapping[os.path.basename(l)] = l
+                bins = [
+                    ('Tcl', mapping['Tcl']),
+                    ('Tk', mapping['Tk']),
+                ]
+            else:
+                # Starting with macOS 11, system libraries are hidden.
+                # Until we adjust library discovery accordingly, bins
+                # will end up empty. But this implicitly indicates that
+                # the system framework is used, so return None, None
+                # to inform the caller.
+                return None, None
 
         # _tkinter depends on Tcl/Tk compiled as frameworks.
         path_to_tcl = bins[0][1]
         # OS X system installation of Tcl/Tk.
         # [/System]/Library/Frameworks/Tcl.framework/Resources/Scripts/Tcl
         if 'Library/Frameworks/Tcl.framework' in path_to_tcl:
-            tcl_tk = _find_tcl_tk_darwin_system_frameworks(bins)
+            #tcl_tk = _find_tcl_tk_darwin_system_frameworks(bins)
+            tcl_tk = None, None  # Do not gather system framework's data
+
         # Tcl/Tk compiled as on Linux other Unixes.
         # This is the case of Tcl/Tk from macports and Tck/Tk built into
         # python.org OS X python distributions.
@@ -244,6 +255,18 @@ def _collect_tcl_tk_files(hook_api):
     _handle_broken_tcl_tk()
 
     tcl_root, tk_root = _find_tcl_tk(hook_api)
+
+    # On macOS, we do not collect system libraries. Therefore, if system
+    # Tcl/Tk framework is used, it makes no sense to collect its data,
+    # either. In this case, _find_tcl_tk() will return None, None - either
+    # deliberately (we found the data paths, but ignore them) or not
+    # (starting with macOS 11, the data path cannot be found until shared
+    # library discovery is fixed).
+    if is_darwin and not tcl_root and not tk_root:
+        logger.info('Not collecting Tcl/Tk data - either python is using '
+                    'macOS\' system Tcl/Tk framework, or Tcl/Tk data '
+                    'directories could not be found.')
+        return []
 
     # TODO Shouldn't these be fatal exceptions?
     if not tcl_root:
