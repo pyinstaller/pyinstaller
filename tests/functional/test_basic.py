@@ -332,10 +332,6 @@ def test_option_w_ignore(pyi_builder, monkeypatch, capsys):
     assert "'import warnings' failed" not in err
 
 
-@pytest.mark.darwin
-@pytest.mark.linux
-def test_python_makefile(pyi_builder):
-    pyi_builder.test_script('pyi_python_makefile.py')
 
 
 def test_set_icon(pyi_builder, data_dir):
