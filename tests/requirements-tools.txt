@@ -38,3 +38,6 @@ lxml
 
 # crypto support (`--key` option)
 tinyaes ~= 1.0
+
+# Ability to retry a failed test
+flaky
