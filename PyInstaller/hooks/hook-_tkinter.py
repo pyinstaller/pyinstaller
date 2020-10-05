@@ -179,8 +179,8 @@ def _find_tcl_tk(hook_api):
                 # to
                 #     [('Tcl', '/path/to/Tcl'), ('Tk', '/path/to/Tk')]
                 mapping = {}
-                for l in bins:
-                    mapping[os.path.basename(l)] = l
+                for lib in bins:
+                    mapping[os.path.basename(lib)] = lib
                 bins = [
                     ('Tcl', mapping['Tcl']),
                     ('Tk', mapping['Tk']),
