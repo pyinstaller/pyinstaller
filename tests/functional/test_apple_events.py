@@ -26,6 +26,7 @@ from PyInstaller.utils.tests import skipif_notosx
 
 @skipif_notosx
 def test_osx_custom_protocol_handler(tmpdir, pyi_builder_spec):
+    tmpdir = str(tmpdir)  # Fix for Python 3.5
     app_path = os.path.join(tmpdir, 'dist',
                             'pyi_osx_custom_protocol_handler.app')
     logfile_path = os.path.join(tmpdir, 'dist', 'args.log')
