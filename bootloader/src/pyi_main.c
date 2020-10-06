@@ -26,6 +26,10 @@
 #include <stdlib.h> /* calloc */
 #include <string.h> /* memset */
 
+#if defined(__linux__)
+    #include <sys/prctl.h> /* prctl() */
+#endif
+
 /* PyInstaller headers. */
 #include "pyi_main.h"
 #include "pyi_global.h"  /* PATH_MAX */
@@ -92,6 +96,24 @@ pyi_main(int argc, char * argv[])
                        executable, archivefile);
             return -1;
     }
+
+#if defined(__linux__)
+
+    /* Set process name on linux. The environment variable is set by
+       parent launcher process. */
+    if (1) {
+        char *processname = pyi_getenv("_PYI_PROCNAME");
+        if (processname) {
+            VS("LOADER: restoring linux process name from _PYI_PROCNAME: %s\n", processname);
+            if (prctl(PR_SET_NAME, processname, 0, 0)) {
+                VS("LOADER: failed to set linux process name!\n");
+            }
+            free(processname);
+        }
+        pyi_unsetenv("_PYI_PROCNAME");
+    }
+
+#endif
 
     /* These are used only in pyi_pylib_set_sys_argv, which converts to wchar_t */
     archive_status->argc = argc;
@@ -162,6 +184,19 @@ pyi_main(int argc, char * argv[])
                    0 ? archive_status->temppath : homepath);
 
         VS("LOADER: set _MEIPASS2 to %s\n", pyi_getenv("_MEIPASS2"));
+
+#if defined(__linux__)
+
+        /* Pass the process name to child via environment variable. */
+        if (1) {
+            char processname[16]; /* 16 bytes as per prctl() man page */
+            if (!prctl(PR_GET_NAME, processname, 0, 0)) {
+                VS("LOADER: linux: storing process name into _PYI_PROCNAME: %s\n", processname);
+                pyi_setenv("_PYI_PROCNAME", processname);
+            }
+        }
+
+#endif
 
         if (pyi_utils_set_environment(archive_status) == -1) {
             return -1;
