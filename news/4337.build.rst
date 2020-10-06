@@ -1,0 +1,1 @@
+OSX: Use high resolution mode by default for GUI applications.
