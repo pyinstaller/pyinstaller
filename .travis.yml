@@ -36,6 +36,13 @@ jobs:
     - &test-pyinstaller
       stage: Test - PyInstaller
       python: 3.7
+      before_install:
+        # Download the appimagetool binary for AppImage-specific tests
+        - >
+            wget
+            https://github.com/AppImage/AppImageKit/releases/download/12/appimagetool-x86_64.AppImage
+            -O $HOME/appimagetool-x86_64.AppImage
+        - chmod a+x $HOME/appimagetool-x86_64.AppImage
       script:
         # -n 3
         #   Run tests and speed them up by sending them to multiple CPUs.
