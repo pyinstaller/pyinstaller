@@ -16,4 +16,6 @@ excludedimports = ["gevent.testing", "gevent.tests"]
 datas, binaries, hiddenimports = collect_all(
     'gevent',
     filter_submodules=lambda name: (
-        "gevent.testing" not in name or "gevent.tests" not in name))
+        "gevent.testing" not in name or "gevent.tests" not in name),
+    include_py_files=False,
+    exclude_datas=["**/tests"])
