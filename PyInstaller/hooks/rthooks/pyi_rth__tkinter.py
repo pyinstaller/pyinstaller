@@ -16,11 +16,18 @@ import sys
 tcldir = os.path.join(sys._MEIPASS, 'tcl')
 tkdir = os.path.join(sys._MEIPASS, 'tk')
 
-if not os.path.isdir(tcldir):
-    raise FileNotFoundError('Tcl data directory "%s" not found.' % (tcldir))
-if not os.path.isdir(tkdir):
-    raise FileNotFoundError('Tk data directory "%s" not found.' % (tkdir))
+# Notify "tkinter" of data directories.
+# On macOS, we do not collect data directories if system Tcl/Tk
+# framework is used. On other OSes, we always collect them, so their
+# absence is considered an error.
+is_darwin = sys.platform == 'darwin'
 
-# Notify "tkinter" of such directories.
-os.environ["TCL_LIBRARY"] = tcldir
-os.environ["TK_LIBRARY"] = tkdir
+if os.path.isdir(tcldir):
+    os.environ["TCL_LIBRARY"] = tcldir
+elif not is_darwin:
+    raise FileNotFoundError('Tcl data directory "%s" not found.' % (tcldir))
+
+if os.path.isdir(tkdir):
+    os.environ["TK_LIBRARY"] = tkdir
+elif not is_darwin:
+    raise FileNotFoundError('Tk data directory "%s" not found.' % (tkdir))
