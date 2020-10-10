@@ -133,8 +133,9 @@ _unix_excludes = {
     r'libnss_nisplus.*\.so(\..*)?',
     r'libresolv\.so(\..*)?',
     r'libutil\.so(\..*)?',
-    # libGL can reference some hw specific libraries (like nvidia libs).
-    r'libGL\..*',
+    # graphical interface libraries come with graphical stack (see libglvnd)
+    r'libE?(Open)?GLX?(ESv1_CM|ESv2)?(dispatch)?\.so(\..*)?',
+    r'libdrm\.so(\..*)?',
     # libxcb-dri changes ABI frequently (e.g.: between Ubuntu LTS releases) and
     # is usually installed as dependency of the graphics stack anyway. No need
     # to bundle it.
