@@ -21,36 +21,6 @@ from PyInstaller.building.datastruct import Tree
 from PyInstaller.utils.hooks import exec_statement, logger
 
 
-def _handle_broken_tcl_tk():
-    """
-    When freezing from a Windows venv, overwrite the values of the standard
-    `${TCL_LIBRARY}`, `${TK_LIBRARY}`, and `${TIX_LIBRARY}` environment
-    variables.
-
-    This is a workaround for broken Tcl/Tk detection in Windows virtual
-    environments. Older versions of `virtualenv` set such variables erroneously,
-    preventing PyInstaller from properly detecting Tcl/Tk. This issue has been
-    noted for `virtualenv` under Python 2.4 and Windows 7.
-
-    See Also
-    -------
-    https://github.com/pypa/virtualenv/issues/93
-    """
-    if is_win and is_venv:
-        basedir = os.path.join(base_prefix, 'tcl')
-        files = os.listdir(basedir)
-
-        # Detect Tcl/Tk paths.
-        for f in files:
-            abs_path = os.path.join(basedir, f)
-            if f.startswith('tcl') and os.path.isdir(abs_path):
-                os.environ['TCL_LIBRARY'] = abs_path
-            elif f.startswith('tk') and os.path.isdir(abs_path):
-                os.environ['TK_LIBRARY'] = abs_path
-            elif f.startswith('tix') and os.path.isdir(abs_path):
-                os.environ['TIX_LIBRARY'] = abs_path
-
-
 def _warn_if_activetcl_or_teapot_installed(tcl_root, tcltree):
     """
     If the current Tcl installation is a Teapot-distributed version of ActiveTcl
@@ -251,9 +221,6 @@ def _collect_tcl_tk_files(hook_api):
     Tree
         Such list.
     """
-    # Workaround for broken Tcl/Tk detection in virtualenv on Windows.
-    _handle_broken_tcl_tk()
-
     tcl_root, tk_root = _find_tcl_tk(hook_api)
 
     # On macOS, we do not collect system libraries. Therefore, if system
