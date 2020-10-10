@@ -151,10 +151,14 @@ class BUNDLE(Target):
 
                            }
 
-        # Setting EXE console=True implies LSBackgroundOnly=True.
-        # But it still can be overwrite by the user.
+        # Set some default values.
+        # But they still can be overwritten by the user.
         if self.console:
+            # Setting EXE console=True implies LSBackgroundOnly=True.
             info_plist_dict['LSBackgroundOnly'] = True
+        else:
+            # Let's use high resolution by default.
+            info_plist_dict['NSHighResolutionCapable'] = True
 
         # Merge info_plist settings from spec file
         if isinstance(self.info_plist, dict) and self.info_plist:
