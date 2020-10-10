@@ -1,0 +1,1 @@
+Gevent hook does not unnecessarily bundle HTML documentation, __pycache__ folders, tests nor generated .c and .h files
