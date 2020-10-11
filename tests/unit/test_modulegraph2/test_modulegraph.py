@@ -67,7 +67,7 @@ class TestModuleGraphScripts(unittest.TestCase, util.TestMixin):
         self.assert_valid_script_node(node, INPUT_DIR / "self-referential-script.py")
 
         main = mg.find_node("__main__")
-        self.assertIsInstance(node, MissingModule)
+        self.assertIsInstance(main, ExcludedModule)
 
     def test_setuptools_script(self):
         mg = ModuleGraph()
