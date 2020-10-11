@@ -81,7 +81,7 @@ class ModuleGraph(ObjectGraph[Union[BaseNode, PyPIDistribution], DependencyInfo]
 
         self._global_lazy_nodes = {}
 
-        # Reference to __main__ cannot be valid when multip scripts
+        # Reference to __main__ cannot be valid when multiple scripts
         # are added to the graph, just ignore this module for now.
         self._global_lazy_nodes["__main__"] = None
 
