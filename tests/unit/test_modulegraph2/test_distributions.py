@@ -105,6 +105,7 @@ class TestPackageBuilder(unittest.TestCase):
                 os.path.join(tmpdir, "simple_package-1.0.dist-info", "WHEEL"),
                 os.path.join(tmpdir, "simple_package-1.0.dist-info", "METADATA"),
                 os.path.join(tmpdir, "simple_package-1.0.dist-info", "top_level.txt"),
+                os.path.join(tmpdir, "simple_package-1.0.dist-info", "direct_url.json"),
             }
             if sys.platform != "win32":
                 expected.add(os.path.join(tmpdir, "package", 'my"data.txt'))
