@@ -140,6 +140,7 @@ class TestPackageBuilder(unittest.TestCase):
                     os.path.join(tmpdir, "bytecode_package-1.0.dist-info", "INSTALLER"),
                     os.path.join(tmpdir, "bytecode_package-1.0.dist-info", "WHEEL"),
                     os.path.join(tmpdir, "bytecode_package-1.0.dist-info", "METADATA"),
+                    os.path.join(tmpdir, "bytecode_package-1.0.dist-info", "direct_url.json"),
                     os.path.join(
                         tmpdir, "bytecode_package-1.0.dist-info", "top_level.txt"
                     ),
