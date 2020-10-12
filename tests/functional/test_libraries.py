@@ -362,7 +362,11 @@ def test_idlelib(pyi_builder):
 
 @importorskip('keyring')
 def test_keyring(pyi_builder):
-    pyi_builder.test_source("import keyring")
+    pyi_builder.test_source(
+        """
+        import keyring
+        keyring.get_password("test", "test")
+        """)
 
 
 @importorskip('numpy')
