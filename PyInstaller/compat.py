@@ -314,22 +314,13 @@ def exec_command(*cmdargs, **kwargs):
 
     # stdout/stderr are returned as a byte array NOT as string.
     # Thus we need to convert that to proper encoding.
-    try:
-        if encoding:
-            out = out.decode(encoding, errors='replace')
-        else:
-            # If no encoding is given, assume we're reading filenames from
-            # stdout only because it's the common case.
-            out = os.fsdecode(out)
-    except UnicodeDecodeError as e:
-        # The sub-process used a different encoding,
-        # provide more information to ease debugging.
-        print('--' * 20, file=sys.stderr)
-        print(str(e), file=sys.stderr)
-        print('These are the bytes around the offending byte:',
-              file=sys.stderr)
-        print('--' * 20, file=sys.stderr)
-        raise
+    if encoding:
+        out = out.decode(encoding, errors='replace')
+    else:
+        # If no encoding is given, assume we're reading filenames from
+        # stdout only because it's the common case.
+        out = os.fsdecode(out)
+
     return out
 
 
@@ -457,24 +448,14 @@ def exec_command_all(*cmdargs, **kwargs):
     out, err = proc.communicate()
     # stdout/stderr are returned as a byte array NOT as string.
     # Thus we need to convert that to proper encoding.
-    try:
-        if encoding:
-            out = out.decode(encoding, errors='replace')
-            err = err.decode(encoding, errors='replace')
-        else:
-            # If no encoding is given, assume we're reading filenames from
-            # stdout only because it's the common case.
-            out = os.fsdecode(out)
-            err = os.fsdecode(err)
-    except UnicodeDecodeError as e:
-        # The sub-process used a different encoding,
-        # provide more information to ease debugging.
-        print('--' * 20, file=sys.stderr)
-        print(str(e), file=sys.stderr)
-        print('These are the bytes around the offending byte:',
-              file=sys.stderr)
-        print('--' * 20, file=sys.stderr)
-        raise
+    if encoding:
+        out = out.decode(encoding, errors='replace')
+        err = err.decode(encoding, errors='replace')
+    else:
+        # If no encoding is given, assume we're reading filenames from
+        # stdout only because it's the common case.
+        out = os.fsdecode(out)
+        err = os.fsdecode(err)
 
     return proc.returncode, out, err
 
