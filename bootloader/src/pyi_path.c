@@ -293,7 +293,7 @@ pyi_path_executable(char *execfile, const char *appname)
         if (! pyi_search_path(buffer, appname)) {
             /* Searching $PATH failed, user is crazy. */
             VS("LOADER: Searching $PATH failed for %s", appname);
-            if (snprintf(buffer, PATH_MAX, "%s", "appname") >= PATH_MAX) {
+            if (snprintf(buffer, PATH_MAX, "%s", appname) >= PATH_MAX) {
                 VS("LOADER: Appname too large %s\n", appname);
                 return false;
             }
