@@ -179,6 +179,11 @@ class TestFunctions (unittest.TestCase):
         data.close()
 
     def test_find_module(self):
+
+        class MockNode:
+            def __init__(self, identifier):
+                self.identifier = identifier
+
         for path in ('syspath', 'syspath.zip', 'syspath.egg'):
             path = os.path.join(os.path.dirname(TESTDATA), path)
             if os.path.exists(os.path.join(path, 'mymodule.pyc')):
@@ -289,6 +294,38 @@ class TestFunctions (unittest.TestCase):
                 self.assertEqual(filename, os.path.join(path, 'myext' + ext))
                 self.assertEqual(description, (ext, 'rb', imp.C_EXTENSION))
                 self.assertEqual(fp, None)
+
+            # Module in Package
+            parent = MockNode('mypkg')
+            info = modgraph._find_module('__init__', path=[path, os.path.join(path, 'mypkg')] + sys.path, parent=parent)
+            fp = info[0]
+            filename = info[1]
+            description = info[2]
+
+            self.assertTrue(hasattr(fp, 'read'))
+            self.assertEqual(filename, os.path.join(path, 'mypkg', '__init__.py'))
+            self.assertEqual(description, ('.py', READ_MODE, imp.PY_SOURCE))
+
+            # Extension in Package
+            if path.endswith('.zip') or path.endswith('.egg'):
+                pass
+            else:
+                parent = MockNode('myextpkg')
+                info = modgraph._find_module('__init__', path=[path, os.path.join(path, 'myextpkg')] + sys.path, parent=parent)
+                fp = info[0]
+                filename = info[1]
+                description = info[2]
+
+                if sys.platform == 'win32':
+                    ext = '.pyd'
+                else:
+                    # This is a ly, but is good enough for now
+                    ext = '.so'
+
+                self.assertEqual(filename, os.path.join(path, 'myextpkg', '__init__' + ext))
+                self.assertEqual(description, (ext, 'rb', imp.C_EXTENSION))
+                self.assertEqual(fp, None)
+
 
     def test_moduleInfoForPath(self):
         self.assertEqual(modulegraph.moduleInfoForPath("/somewhere/else/file.txt"), None)
