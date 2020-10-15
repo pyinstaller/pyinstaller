@@ -513,6 +513,9 @@ pyi_remove_temp_path(const char *dir)
         dirnmlen++;
     }
     ds = opendir(dir);
+    if (!ds) {
+        return;
+    }
     finfo = readdir(ds);
 
     while (finfo) {
