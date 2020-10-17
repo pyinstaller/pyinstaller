@@ -547,7 +547,8 @@ def collect_submodules(package, filter=lambda name: True):
     pkg_base, pkg_dir = get_package_paths(package)
 
     # Walk the package. Since this performs imports, do it in a separate
-    # process.
+    # process. Because module import may result in exta output to stdout,
+    # we enclose the output module names with special prefix and suffix.
     names = exec_statement("""
         import sys
         import pkgutil
@@ -589,7 +590,7 @@ def collect_submodules(package, filter=lambda name: True):
                         #yield from walk_packages(path, name+'.', onerror)
 
         for module_loader, name, ispkg in walk_packages([{}], '{}.'):
-            print(name)
+            print('\\n$_pyi:' + name + '*')
         """.format(
                   # Use repr to escape Windows backslashes.
                   repr(pkg_dir), package))
@@ -598,6 +599,13 @@ def collect_submodules(package, filter=lambda name: True):
     mods = {package}
     # Filter through the returend submodules.
     for name in names.split():
+        # Filter out extra output during module imports by checking
+        # for the special prefix and suffix
+        if name.startswith("$_pyi:") and name.endswith("*"):
+            name = name[6:-1]
+        else:
+            continue
+
         if filter(name):
             mods.add(name)
 
