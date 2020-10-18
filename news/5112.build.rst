@@ -1,0 +1,1 @@
+OSX: Improve codesigning and notarization robustness.
