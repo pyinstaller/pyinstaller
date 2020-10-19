@@ -51,6 +51,10 @@ pyi_main(int argc, char * argv[])
     int rc = 0;
     char *extractionpath = NULL;
 
+#if defined(__linux__)
+    char *processname = NULL;
+#endif  /* defined(__linux__) */
+
 #ifdef _MSC_VER
     /* Visual C runtime incorrectly buffers stderr */
     setbuf(stderr, (char *)NULL);
@@ -101,19 +105,18 @@ pyi_main(int argc, char * argv[])
 
     /* Set process name on linux. The environment variable is set by
        parent launcher process. */
-    if (1) {
-        char *processname = pyi_getenv("_PYI_PROCNAME");
-        if (processname) {
-            VS("LOADER: restoring linux process name from _PYI_PROCNAME: %s\n", processname);
-            if (prctl(PR_SET_NAME, processname, 0, 0)) {
-                VS("LOADER: failed to set linux process name!\n");
-            }
-            free(processname);
+    processname = pyi_getenv("_PYI_PROCNAME");
+    if (processname) {
+        VS("LOADER: restoring linux process name from _PYI_PROCNAME: %s\n", processname);
+        if (prctl(PR_SET_NAME, processname, 0, 0)) {
+            FATALERROR("LOADER: failed to set linux process name!\n");
+            return -1;
         }
-        pyi_unsetenv("_PYI_PROCNAME");
+        free(processname);
     }
+    pyi_unsetenv("_PYI_PROCNAME");
 
-#endif
+#endif  /* defined(__linux__) */
 
     /* These are used only in pyi_pylib_set_sys_argv, which converts to wchar_t */
     archive_status->argc = argc;
@@ -168,6 +171,9 @@ pyi_main(int argc, char * argv[])
 
     }
     else {
+#if defined(__linux__)
+        char tmp_processname[16]; /* 16 bytes as per prctl() man page */
+#endif  /* defined(__linux__) */
 
         /* status->temppath is created if necessary. */
         if (pyi_launch_extract_binaries(archive_status)) {
@@ -188,15 +194,12 @@ pyi_main(int argc, char * argv[])
 #if defined(__linux__)
 
         /* Pass the process name to child via environment variable. */
-        if (1) {
-            char processname[16]; /* 16 bytes as per prctl() man page */
-            if (!prctl(PR_GET_NAME, processname, 0, 0)) {
-                VS("LOADER: linux: storing process name into _PYI_PROCNAME: %s\n", processname);
-                pyi_setenv("_PYI_PROCNAME", processname);
-            }
+        if (!prctl(PR_GET_NAME, tmp_processname, 0, 0)) {
+            VS("LOADER: linux: storing process name into _PYI_PROCNAME: %s\n", tmp_processname);
+            pyi_setenv("_PYI_PROCNAME", tmp_processname);
         }
 
-#endif
+#endif  /* defined(__linux__) */
 
         if (pyi_utils_set_environment(archive_status) == -1) {
             return -1;
