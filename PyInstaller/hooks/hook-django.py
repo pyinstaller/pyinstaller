@@ -10,7 +10,7 @@
 #-----------------------------------------------------------------------------
 
 
-# Tested with django 1.8.
+# Tested with django 2.2
 
 
 import sys
@@ -40,10 +40,12 @@ if root_dir:
     # Include main django modules - settings.py, urls.py, wsgi.py.
     # Without them the django server won't run.
     package_name = os.path.basename(root_dir)
+    default_settings_module = f'{package_name}.settings'
+    settings_module = os.environ.get('DJANGO_SETTINGS_MODULE', default_settings_module)
     hiddenimports += [
             # TODO Consider including 'mysite.settings.py' in source code as a data files.
             #      Since users might need to edit this file.
-            package_name + '.settings',
+            settings_module,
             package_name + '.urls',
             package_name + '.wsgi',
     ]
@@ -67,7 +69,7 @@ if root_dir:
              'django.contrib.sites.migrations',
     ]
     # Include migration scripts of Django-based apps too.
-    installed_apps = eval(get_module_attribute(package_name + '.settings', 'INSTALLED_APPS'))
+    installed_apps = eval(get_module_attribute(settings_module, 'INSTALLED_APPS'))
     migration_modules.extend(set(app + '.migrations' for app in installed_apps))
     # Copy migration files.
     for mod in migration_modules:
@@ -80,7 +82,8 @@ if root_dir:
             datas.append((f, os.path.join(mod_name, bundle_dir)))
 
     # Include data files from your Django project found in your django root package.
-    datas += collect_data_files(package_name)
+    # excludes files from the project dir itself (changed behavior of collect_data_files)
+    datas += collect_data_files(package_name, excludes=os.listdir())
 
     # Include database file if using sqlite. The sqlite database is usually next to the manage.py script.
     root_dir_parent = os.path.dirname(root_dir)
