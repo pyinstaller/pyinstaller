@@ -83,7 +83,9 @@ pyi_path_dirname(char *result, const char *path)
         return false;
     }
     dirpart = (char *) dirname((char *) tmp);  /* _XOPEN_SOURCE - no 'const'. */
-    strncpy(result, dirpart, PATH_MAX);
+    if (snprintf(result, PATH_MAX, "%s", dirpart) >= PATH_MAX) {
+        return false;
+    }
 #endif /* ifndef HAVE_DIRNAME */
     return true;
 }
