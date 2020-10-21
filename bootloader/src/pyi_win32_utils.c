@@ -434,49 +434,48 @@ pyi_win32_utf8_to_mbs(char * dst, const char * src, size_t max)
 
 
 /* Retrieve the SID of the current user.
- *  Returns SID string on success, NULL on failure.
+ *  Used in a compatibility work-around for wine, which at the time of writing
+ *  (version 5.0.2) does not properly support SID S-1-3-4 (directory owner),
+ *  and therefore user's actual SID must be used instead.
+ *
+ *  Returns SID string on success, NULL on failure. The returned string must
+ *  be freed using LocalFree().
  */
-static char *
-pyi_win32_get_user_sid()
+static wchar_t *
+_pyi_win32_get_user_sid()
 {
-    HANDLE process_token;
-    DWORD user_info_size, result;
-    PTOKEN_USER user_info;
-    wchar_t *wsid = NULL;
-    char *sid;
+    HANDLE process_token = INVALID_HANDLE_VALUE;
+    DWORD user_info_size = 0;
+    PTOKEN_USER user_info = NULL;
+    wchar_t *sid = NULL;
 
     // Get access token for the calling process
     if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &process_token)) {
-        return NULL;
+        goto cleanup;
     }
-
     // Get buffer size and allocate buffer
     if (!GetTokenInformation(process_token, TokenUser, NULL, 0, &user_info_size)) {
         if (GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
-            CloseHandle(process_token);
-            return NULL;
+            goto cleanup;
         }
     }
-
     user_info = (PTOKEN_USER)calloc(1, user_info_size);
-
+    if (!user_info) {
+        goto cleanup;
+    }
     // Get user information
     if (!GetTokenInformation(process_token, TokenUser, user_info, user_info_size, &user_info_size)) {
-        free(user_info);
-        CloseHandle(process_token);
-        return NULL;
+        goto cleanup;
     }
-
     // Convert SID to string
-    ConvertSidToStringSidW(user_info->User.Sid, &wsid);
-
-    // Make a copy (and convert to multibyte)
-    sid = pyi_win32_utils_to_utf8(NULL, wsid, 0);
+    ConvertSidToStringSidW(user_info->User.Sid, &sid);
 
     // Cleanup
+cleanup:
     free(user_info);
-    CloseHandle(process_token);
-    LocalFree(wsid);
+    if (process_token != INVALID_HANDLE_VALUE) {
+        CloseHandle(process_token);
+    }
 
     return sid;
 }
@@ -490,21 +489,20 @@ pyi_win32_get_user_sid()
 int
 pyi_win32_mkdir(const wchar_t *path)
 {
-    char *sid = pyi_win32_get_user_sid();
-    char stringSecurityDesc[PATH_MAX];
+    wchar_t *sid = NULL;
+    wchar_t stringSecurityDesc[PATH_MAX];
 
     // ACE String :
-    snprintf(stringSecurityDesc, PATH_MAX,
-        "D:" // DACL (D) :
-        "(A;" // Authorize (A)
-        ";FA;" // FILE_ALL_ACCESS (FA)
-        ";;%s)", // For the current user (retrieved SID) or current directory owner (SID: S-1-3-4)
+    sid = _pyi_win32_get_user_sid(); // Resolve user's SID for compatibility with wine
+    _snwprintf(stringSecurityDesc, PATH_MAX,
+        L"D:" // DACL (D) :
+        L"(A;" // Authorize (A)
+        L";FA;" // FILE_ALL_ACCESS (FA)
+        L";;%s)", // For the current user (retrieved SID) or current directory owner (SID: S-1-3-4)
         // no other permissions are granted
-        sid ? sid : "S-1-3-4");
-
-    free(sid);
-
-    VS("LOADER: creating directory %S with security string: %s\n", path, stringSecurityDesc);
+        sid ? sid : L"S-1-3-4");
+    LocalFree(sid); // Must be freed using LocalFree()
+    VS("LOADER: creating directory %S with security string: %S\n", path, stringSecurityDesc);
 
     SECURITY_ATTRIBUTES securityAttr;
     PSECURITY_DESCRIPTOR *lpSecurityDesc;
@@ -512,7 +510,7 @@ pyi_win32_mkdir(const wchar_t *path)
     securityAttr.bInheritHandle = FALSE;
     lpSecurityDesc = &securityAttr.lpSecurityDescriptor;
 
-    if (!ConvertStringSecurityDescriptorToSecurityDescriptorA(
+    if (!ConvertStringSecurityDescriptorToSecurityDescriptorW(
              stringSecurityDesc,
              SDDL_REVISION_1,
              lpSecurityDesc,
