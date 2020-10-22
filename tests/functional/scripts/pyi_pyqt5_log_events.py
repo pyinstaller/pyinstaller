@@ -15,6 +15,7 @@ import sys
 from PyQt5.QtCore import QObject, QEvent, QTimer
 from PyQt5.QtWidgets import QWidget, QApplication, qApp
 
+
 class EventHandler(QObject):
     logfile = None
 

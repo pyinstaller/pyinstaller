@@ -53,6 +53,7 @@ def test_osx_custom_protocol_handler(tmpdir, pyi_builder_spec):
         log_lines = fh.readlines()
     assert log_lines and log_lines[-1] == url, 'Invalid arg appended'
 
+
 @skipif_notosx
 @importorskip('PyQt5')
 def test_osx_event_forwarding(tmpdir, pyi_builder_spec):
