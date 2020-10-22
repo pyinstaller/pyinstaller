@@ -19,7 +19,8 @@ class EventHandler(QObject):
     logfile = None
 
     def eventFilter(self, obj, event):
-        """ This event filter just logs the URLs it receives as FileOpen events to self.logfile """
+        """ This event filter just logs the URLs it receives as FileOpen
+        events to self.logfile """
         assert self.logfile
         if event.type() == QEvent.FileOpen:
             try:
@@ -27,8 +28,8 @@ class EventHandler(QObject):
                     file.write(event.url().toString() + "\n")
                 return True
             except Exception as e:
-                print("Caught exception while attempting to write/open", self.logfile, "exception: " + repr(e),
-                      file=sys.stderr)
+                print("Caught exception while attempting to write/open",
+                      self.logfile, "exception: " + repr(e), file=sys.stderr)
             qApp.quit()  # Quit after receiving the event
         return False
 
@@ -38,8 +39,8 @@ class EventHandler(QObject):
             with open(self.logfile, 'wt') as file:
                 file.write("started\n")
         except Exception as e:
-            print("Caught exception while attempting to write/open", self.logfile, "exception: " + repr(e),
-                  file=sys.stderr)
+            print("Caught exception while attempting to write/open",
+                  self.logfile, "exception: " + repr(e), file=sys.stderr)
             qApp.quit()
 
 

@@ -75,12 +75,14 @@ def test_osx_event_forwarding(tmpdir, pyi_builder_spec):
     timeout = 10.0  # Give up after 10 seconds
     polltime = 0.25  # Poll events.log every 250ms
 
-    # Run using 'open', passing the timeout as an arg (side-effect: registers custom protocol handler)
+    # Run using 'open', passing the timeout as an arg (side-effect: registers
+    # custom protocol handler)
     subprocess.check_call(['open', app_path, '--args', str(timeout)])
 
     def wait_for_started():
         t0 = time.time()  # mark start time
-        # Poll logfile for app to be started (it writes "started" to the first log line)
+        # Poll logfile for app to be started (it writes "started" to the first
+        # log line)
         while True:
             elapsed = time.time() - t0
             if elapsed > timeout:
@@ -89,7 +91,8 @@ def test_osx_event_forwarding(tmpdir, pyi_builder_spec):
                 with open(logfile_path, 'r') as fh:
                     log_lines = fh.readlines()
                     if log_lines:
-                        assert log_lines[0].startswith('started'), "Unexpected line in log file"
+                        assert log_lines[0].startswith('started'), \
+                            "Unexpected line in log file"
                         return True  # it started ok, abort loop
             else:
                 # Try again later
@@ -98,19 +101,22 @@ def test_osx_event_forwarding(tmpdir, pyi_builder_spec):
     assert wait_for_started(), 'App start timed out'
 
     # At this point the app is running,
-    # Calling open again using the url should forward the Apple URL event to the already-running app.
+    # Calling open again using the url should forward the Apple URL event to
+    # the already-running app.
     url = custom_url_scheme + "://AnEvent"
     subprocess.check_call(['open', url])
 
     def wait_for_event_in_logfile():
         t0 = time.time()  # mark start time
-        # Wait for the program to finish -- poll for expected line to appear in events.log
+        # Wait for the program to finish -- poll for expected line to appear
+        # in events.log
         while True:
             assert os.path.exists(logfile_path), 'Missing events logfile'
             with open(logfile_path, 'rt') as fh:
                 log_lines = fh.readlines()
             if len(log_lines) >= 2:
-                assert log_lines[-1].strip() == url, 'Logged url does not match expected'
+                assert log_lines[-1].strip() == url, \
+                    'Logged url does not match expected'
                 return True
             else:
                 # Try again later
@@ -119,4 +125,5 @@ def test_osx_event_forwarding(tmpdir, pyi_builder_spec):
             if elapsed > timeout:
                 return False
 
-    assert wait_for_event_in_logfile(), 'URL event did not appear in log before timeout'
+    assert wait_for_event_in_logfile(), \
+        'URL event did not appear in log before timeout'
