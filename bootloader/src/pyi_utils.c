@@ -61,6 +61,10 @@ typedef void (*sighandler_t)(int);
 #include <wchar.h>    /* wchar_t */
 #if defined(__APPLE__) && defined(WINDOWED)
     #include <Carbon/Carbon.h>  /* AppleEventsT */
+    #include <ApplicationServices/ApplicationServices.h> /* GetProcessForPID, etc */
+    /* Not declared in modern headers but exists in Carbon libs since time immemorial
+     * See: https://applescriptlibrary.files.wordpress.com/2013/11/apple-events-programming-guide.pdf */
+    extern Boolean ConvertEventRefToEventRecord(EventRef inEvent, EventRecord *outEvent);
 #endif
 
 /*
@@ -100,7 +104,7 @@ static int argc_pyi = 0;
  * on the App icon in the OS X dock.
  */
 #if defined(__APPLE__) && defined(WINDOWED)
-static void process_apple_events();
+static void process_apple_events(Boolean);
 #endif
 
 
@@ -941,7 +945,7 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
     }
 
     #if defined(__APPLE__) && defined(WINDOWED)
-    process_apple_events();
+    process_apple_events(true /* short timeout (250 ms) */);
     #endif
 
     pid = fork();
@@ -987,7 +991,20 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
         }
     }
 
+    #if defined(__APPLE__) && defined(WINDOWED)
+    /* MacOS code -- forward events to child! */
+    do {
+        /* The below waitpid() call will run about once every second on Apple,
+         * waiting on the event queue most of that time. */
+        wait_rc = waitpid(child_pid, &rc, WNOHANG);
+        if (wait_rc == 0)
+            /* Child not ready yet -- process apple events with 1 second
+             * timeout, forwarding them to child. */
+            process_apple_events(false /* long timeout, 1 second */);
+    } while (!wait_rc);
+    #else
     wait_rc = waitpid(child_pid, &rc, 0);
+    #endif
     if (wait_rc < 0) {
         VS("LOADER: failed to wait for child process: %s\n", strerror(errno));
     }
@@ -1028,159 +1045,271 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
 }
 
 /*
- * On Mac OS X this converts files from kAEOpenDocuments events into sys.argv.
+ * On Mac OS X this converts events from kAEOpenDocuments and kAEGetURL into sys.argv.
+ * After startup, it also forwards kAEOpenDocuments and KAEGetURL events at runtime to the child process.
  */
 #if defined(__APPLE__) && defined(WINDOWED)
 
-static int gQuit = false;
-
-static pascal OSErr handle_open_doc_ae(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon handlerRefcon)
-{
-   AEDescList docList;
-   long index;
-   long count = 0;
-   int i;
-   char *myFileName;
-   Size actualSize;
-   DescType returnedType;
-   AEKeyword keywd;
-   FSRef theRef;
-
-   VS("LOADER [ARGV_EMU]: OpenDocument handler called.\n");
-
-   OSErr err = AEGetParamDesc(theAppleEvent, keyDirectObject, typeAEList, &docList);
-   if (err != noErr) return err;
-
-   err = AECountItems(&docList, &count);
-   if (err != noErr) return err;
-
-   for (index = 1; index <= count; index++)
-   {
-     err = AEGetNthPtr(&docList, index, typeFSRef, &keywd, &returnedType, &theRef, sizeof(theRef), &actualSize);
-
-     CFURLRef fullURLRef;
-     fullURLRef = CFURLCreateFromFSRef(NULL, &theRef);
-     CFStringRef cfString = CFURLCopyFileSystemPath(fullURLRef, kCFURLPOSIXPathStyle);
-     CFRelease(fullURLRef);
-     CFMutableStringRef cfMutableString = CFStringCreateMutableCopy(NULL, 0, cfString);
-     CFRelease(cfString);
-     CFStringNormalize(cfMutableString, kCFStringNormalizationFormC);
-     int len = CFStringGetLength(cfMutableString);
-     const int bufferSize = (len+1)*6;  // in theory up to six bytes per Unicode code point, for UTF-8.
-     char* buffer = (char*)malloc(bufferSize);
-     CFStringGetCString(cfMutableString, buffer, bufferSize, kCFStringEncodingUTF8);
-
-     argv_pyi = (char**)realloc(argv_pyi,(argc_pyi+2)*sizeof(char*));
-     argv_pyi[argc_pyi++] = strdup(buffer);
-     argv_pyi[argc_pyi] = NULL;
-
-     VS("LOADER [ARGV_EMU]: argv entry appended.");
-
-     free(buffer);
-   }
-
-  err = AEDisposeDesc(&docList);
-
-
-  return (err);
+/* Convert a FourCharCode into a string (useful for debug). Returned buffer is a static buffer, so subsequent calls
+ * may overwrite the same buffer. */
+static const char *CC2Str(FourCharCode code) {
+    /* support up to 3 calls on the same debug print line */
+    static char bufs[3][5];
+    static unsigned int bufsidx = 0;
+    char *buf = bufs[bufsidx++ % 3u];
+    snprintf(buf, 5, "%c%c%c%c", (code >> 24) & 0xFF, (code >> 16) & 0xFF, (code >> 8) & 0xFF, code & 0xFF);
+    /* buffer is guaranteed to be nul terminated here */
+    return buf;
 }
 
-
-/*
- * On Mac OS X this converts ULR from kAEGetURL events into sys.argv.
- */
-static pascal OSErr handle_get_url_ae(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon handlerRefcon)
+/* Handles apple events 'odoc' and 'GRUL', both before and after the child_pid is up, forwarding them to args if child
+ * not up yet, or otherwise forwarding them to the child if the child is started. Other event types are ignored. */
+static pascal OSErr handle_apple_event(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon handlerRefcon)
 {
-    DescType typeCode;
-    char urlBuffer[2048];
-    Size actualSize;
-    VS("LOADER [ARGV_EMU]: OpenURL handler called.\n");
+    const Boolean apple_event_is_open_doc = ((FourCharCode)handlerRefcon) == 'odoc',
+                  apple_event_is_open_uri = ((FourCharCode)handlerRefcon) == 'GURL';
 
-    OSErr err = AEGetParamPtr(theAppleEvent, keyDirectObject, typeChar, &typeCode, &urlBuffer, sizeof(urlBuffer), &actualSize);
-    if (err != noErr) return err;
+    if (apple_event_is_open_doc || apple_event_is_open_uri) {
+        const char * const descStr = apple_event_is_open_uri ? "GetURL" : "OpenDoc";
 
-    argv_pyi = (char**)realloc(argv_pyi,(argc_pyi+2)*sizeof(char*));
-    argv_pyi[argc_pyi++] = strndup(urlBuffer, actualSize);
-    argv_pyi[argc_pyi] = NULL;
+        VS("LOADER [AppleEvent]: %s handler called.\n",descStr);
 
-    VS("LOADER [ARGV_EMU]: argv entry appended.\n");
+        if (!child_pid) {
+            /* Child process is not up yet -- so we pick up kAEOpen and/or kAEGetURL events and append them to args. */
 
-    return (err);
+            AEDescList docList;
+            long index;
+            long count = 0;
+            Size actualSize;
+            DescType returnedType;
+            AEKeyword keywd;
+            char buf[4*1024]; /* 4 KiB buffer is enough for any path data */
+
+            VS("LOADER [AppleEvent ARGV_EMU]: Processing args for forward...\n");
+
+            OSErr err = AEGetParamDesc(theAppleEvent, keyDirectObject, typeAEList, &docList);
+            if (err != noErr) return err;
+
+            err = AECountItems(&docList, &count);
+            if (err != noErr) return err;
+
+            for (index = 1; index <= count; ++index) /* AppleEvent lists are 1-indexed (I guess because of Pascal?) */
+            {
+                err = AEGetNthPtr(&docList, index, apple_event_is_open_doc ? typeFileURL : typeUTF8Text, &keywd,
+                                  &returnedType, buf, sizeof(buf)-1, &actualSize);
+                if (err != noErr) {
+                    VS("LOADER [AppleEvent ARGV_EMU]: err[%d] = %d\n",(int)index-1, (int)err);
+                } else {
+                    buf[actualSize] = 0; /* force NUL-char termination. */
+                    if (apple_event_is_open_doc) {
+                        /* Now, convert file:/// style URLs to an actual filesystem path for argv emu. */
+                        Boolean ok = false;
+                        CFURLRef url = CFURLCreateWithBytes(NULL, (UInt8 *)buf, actualSize, kCFStringEncodingUTF8,
+                                                            NULL);
+                        if (url) {
+                            CFStringRef path = CFURLCopyFileSystemPath(url, kCFURLPOSIXPathStyle);
+                            if (path) {
+                                ok = CFStringGetFileSystemRepresentation(path, buf, sizeof(buf));
+                                CFRelease(path); /* free */
+                            }
+                            CFRelease(url); /* free */
+                            if (!ok) {
+                                VS("LOADER [AppleEvent ARGV_EMU]: "
+                                   "Failed to convert file:/// path to POSIX filesystem representation for arg %d!\n",
+                                   (int)index);
+                                continue;
+                            }
+                        }
+                    }
+                    /* Append URL to argv_pyi array, reallocating as necessary */
+                    VS("LOADER [AppleEvent ARGV_EMU]: arg[%d] = %s\n", (int)argc_pyi, buf);
+                    argv_pyi = (char **)realloc(argv_pyi, (argc_pyi + 2) * sizeof(char *));
+                    if (!argv_pyi) {
+                        /* Out of memory. Extremely unlikely but we should exit rather than SEGV. */
+                        VS("LOADER [AppleEvent ARGV_EMU]: exiting early, realloc failed: %s\n", strerror(errno));
+                        exit(1);
+                    }
+                    argv_pyi[argc_pyi++] = strdup(buf);
+                    argv_pyi[argc_pyi] = NULL;
+                    VS("LOADER [AppleEvent ARGV_EMU]: argv entry appended.\n");
+                }
+            }
+
+            err = AEDisposeDesc(&docList);
+
+            return err;
+
+        } else {
+            /* The child process exists.. so we forward events to it */
+
+            ProcessSerialNumber psn;
+            AppleEvent evtCopy;
+            AEAddressDesc target;
+            OSStatus err = noErr;
+            AEEventClass evtClass;
+            AEEventID evtID;
+
+            if (apple_event_is_open_uri) {
+                evtClass = kInternetEventClass;
+                evtID = kAEGetURL;
+            } else {
+                /* open doc */
+                evtClass = kCoreEventClass;
+                evtID = kAEOpenDocuments;
+            }
+
+            VS("LOADER [AppleEvent EVT_FWD]: Will forward %s event to child pid %ld...\n", descStr, (long)child_pid);
+
+            err = GetProcessForPID(child_pid, &psn);
+            if (err != noErr) return (OSErr)err;
+            VS("LOADER [AppleEvent EVT_FWD]: Creating target desc.\n");
+            /* re-target the event to our child process: creating a descriptor and event object for it */
+            err = AECreateDesc(typeProcessSerialNumber, &psn, sizeof(psn), &target);
+            if (err != noErr) return (OSErr)err;
+            VS("LOADER [AppleEvent EVT_FWD]: Creating dupe event.\n");
+            err = AECreateAppleEvent(evtClass, evtID, &target, kAutoGenerateReturnID, kAnyTransactionID, &evtCopy);
+            if (err != noErr) goto cleanup2;
+
+            { /* <-- These curly braces aren't a typo. We are creating a nested scope here for below vars. */
+                char buf[64*1024]; /* 64 KiB buffer should be enough for drag/drops */
+                DescType actualType = 0;
+                Size actualSize = 0;
+                VS("LOADER [AppleEvent EVT_FWD]: Getting param.\n");
+                err = AEGetParamPtr(theAppleEvent, keyDirectObject, typeWildCard, &actualType, buf, sizeof(buf),
+                                    &actualSize);
+                if (err != noErr) goto cleanup1;
+                VS("LOADER [AppleEvent EVT_FWD]: Got param type=%x (%s) size=%ld\n",
+                   actualType, CC2Str(actualType), (long)actualSize);
+                VS("LOADER [AppleEvent EVT_FWD]: Putting param.\n");
+                err = AEPutParamPtr(&evtCopy, keyDirectObject, actualType, buf, actualSize);
+                if (err != noErr) goto cleanup1;
+            }
+            VS("LOADER [AppleEvent EVT_FWD]: Sending message...\n");
+            err = AESendMessage(&evtCopy, NULL, kAENoReply, 60 /* 60 = about 1.0 seconds timeout */);
+            VS("LOADER [AppleEvent EVT_FWD]: Handler forwarded %s message to child pid %ld.\n",
+               descStr, (long)child_pid);
+
+        cleanup1:
+            AEDisposeDesc(&evtCopy); /* dispose apple event copy */
+        cleanup2:
+            AEDisposeDesc(&target);
+            if (err)
+                VS("LOADER [AppleEvent EVT_FWD]: OpenDocument handler got error %d\n", (int)err);
+            return (OSErr)err;
+        }
+    } else {
+        /* Not GetURL or OpenDoc, so just ignore */
+        VS("LOADER [AppleEvent]: Handler ignoring event.\n");
+    }
+    return noErr;
 }
 
+/* Function gets installed as the bootloader process-wide UPP event handler */
+static OSStatus evt_handler_proc(EventHandlerCallRef href, EventRef eref, void *data) {
+    VS("LOADER [AppleEvent]: App event handler proc called.\n");
+    Boolean release = false;
+    EventRecord eventRecord;
 
-static void process_apple_events()
+    /* Events of type kEventAppleEvent must be removed from the queue
+       before being passed to AEProcessAppleEvent. */
+    if (IsEventInQueue(GetMainEventQueue(), eref)) {
+        /* RemoveEventFromQueue will release the event, which will
+           destroy it if we don't retain it first. */
+        VS("LOADER [AppleEvent]: Event was in queue, will release.\n");
+        RetainEvent(eref);
+        release = true;
+        RemoveEventFromQueue(GetMainEventQueue(), eref);
+    }
+    /* Convert the event ref to the type AEProcessAppleEvent expects. */
+    ConvertEventRefToEventRecord(eref, &eventRecord);
+    VS("LOADER [AppleEvent]: what=%hu message=%lx (%s) modifiers=%hu\n",
+       eventRecord.what, eventRecord.message, CC2Str((FourCharCode)eventRecord.message), eventRecord.modifiers);
+    OSStatus err = AEProcessAppleEvent(&eventRecord);
+    if (err == errAEEventNotHandled)
+        VS("LOADER [AppleEvent]: Ignored event.\n");
+    else if (err != noErr)
+        VS("LOADER [AppleEvent]: Error processing event: %d\n", (int)err);
+    if (release)
+        ReleaseEvent(eref);
+    return noErr;
+}
+
+/* Apple event message pump */
+static void process_apple_events(Boolean short_timeout)
 {
-    OSStatus handler_doc_install_status;
-    OSStatus handler_url_install_status;
-    OSStatus handler_remove_status;
-    OSStatus rcv_status;
-    OSStatus pcs_status;
+    static EventHandlerUPP handler;
+    static AEEventHandlerUPP handler_ae;
+    static Boolean did_install = false;
+    static EventHandlerRef handler_ref;
     EventTypeSpec event_types[1];  /*  List of event types to handle. */
-    AEEventHandlerUPP handler_open_doc;
-    AEEventHandlerUPP handler_get_url;
-    EventHandlerRef handler_ref; /* Reference for later removing the event handler. */
-    EventRef event_ref;          /* Event that caused ReceiveNextEvent to return. */
-    OSType ev_class;
-    UInt32 ev_kind;
-    EventTimeout timeout = 1.0;  /* number of seconds */
-
-    VS("LOADER [ARGV_EMU]: AppleEvent - processing...\n");
-
     event_types[0].eventClass = kEventClassAppleEvent;
     event_types[0].eventKind = kEventAppleEvent;
 
-    /* Carbon Event Manager requires us to convert the function pointer to type EventHandlerUPP. */
-    /* https://developer.apple.com/legacy/library/documentation/Carbon/Conceptual/Carbon_Event_Manager/Tasks/CarbonEventsTasks.html */
-    handler_open_doc = NewAEEventHandlerUPP(handle_open_doc_ae);
-    handler_get_url = NewAEEventHandlerUPP(handle_get_url_ae);
+    VS("LOADER [AppleEvent]: Processing...\n");
 
-    handler_doc_install_status = AEInstallEventHandler(kCoreEventClass, kAEOpenDocuments, handler_open_doc, 0, false);
-    handler_url_install_status = AEInstallEventHandler(kInternetEventClass, kAEGetURL, handler_get_url, 0, false);
+    if (!did_install) {
+        OSStatus err;
+        handler = NewEventHandlerUPP(evt_handler_proc);
+        handler_ae = NewAEEventHandlerUPP(handle_apple_event);
+        err = AEInstallEventHandler(kCoreEventClass, kAEOpenDocuments, handler_ae, (SRefCon)'odoc', false);
+        if (err == noErr)
+            err = AEInstallEventHandler(kInternetEventClass, kAEGetURL, handler_ae, (SRefCon)'GURL', false);
+        if (err == noErr)
+            err = InstallApplicationEventHandler(handler, 1, event_types, NULL, &handler_ref);
 
+        if (err != noErr) {
+            /* App-wide handler failed. Uninstall everything. */
+            AERemoveEventHandler(kCoreEventClass, kAEOpenDocuments, handler_ae, false);
+            AERemoveEventHandler(kInternetEventClass, kAEGetURL, handler_ae, false);
+            DisposeEventHandlerUPP(handler);
+            DisposeAEEventHandlerUPP(handler_ae);
+            VS("LOADER [AppleEvent]: Disposed handlers.\n");
+        } else {
+            VS("LOADER [AppleEvent]: Installed handlers.\n");
+            did_install = true;
+        }
+    }
 
-    if (handler_doc_install_status == noErr && handler_url_install_status == noErr) {
+    if (did_install) {
+        /* Event pump: Process events for up to 1.0 (or 0.25) seconds (or until an error is encountered) */
+        const EventTimeout timeout = short_timeout ? 0.25 : 1.0; /* number of seconds */
+        for (;;) {
+            OSStatus status;
+            EventRef event_ref; /* Event that caused ReceiveNextEvent to return. */
 
-        VS("LOADER [ARGV_EMU]: AppleEvent - installed handler.\n");
+            VS("LOADER [AppleEvent]: Calling ReceiveNextEvent\n");
 
-        while(!gQuit) {
-           VS("LOADER [ARGV_EMU]: AppleEvent - calling ReceiveNextEvent\n");
-           rcv_status = ReceiveNextEvent(1, event_types, timeout, true, &event_ref);
+            status = ReceiveNextEvent(1, event_types, timeout, kEventRemoveFromQueue, &event_ref);
 
-           if (rcv_status == eventLoopTimedOutErr) {
-              VS("LOADER [ARGV_EMU]: ReceiveNextEvent timed out\n");
-              break;
-           }
-           else if (rcv_status != 0) {
-              VS("LOADER [ARGV_EMU]: ReceiveNextEvent fetching events failed");
-              break;
-           }
-           else
-           {
-              VS("LOADER [ARGV_EMU]: ReceiveNextEvent got an event");
+            if (status == eventLoopTimedOutErr) {
+                VS("LOADER [AppleEvent]: ReceiveNextEvent timed out\n");
+                break;
+            } else if (status != 0) {
+                VS("LOADER [AppleEvent]: ReceiveNextEvent fetching events failed\n");
+                break;
+            } else {
+                /* We actually pulled an event off the queue, so process it.
+                   We now 'own' the event_ref and must release it. */
+                VS("LOADER [AppleEvent]: ReceiveNextEvent got an EVENT\n");
 
-              pcs_status = AEProcessEvent(event_ref);
-              if (pcs_status != 0) {
-                 VS("LOADER [ARGV_EMU]: processing events failed");
-                 break;
-              }
-           }
+                VS("LOADER [AppleEvent]: Dispatching event...\n");
+                status = SendEventToEventTarget(event_ref, GetEventDispatcherTarget());
+
+                ReleaseEvent(event_ref);
+                event_ref = NULL;
+                if (status != 0) {
+                    VS("LOADER [AppleEvent]: processing events failed\n");
+                    break;
+                }
+            }
         }
 
-        VS("LOADER [ARGV_EMU]: Out of the event loop.");
+        VS("LOADER [AppleEvent]: Out of the event loop.\n");
 
-        handler_remove_status = RemoveEventHandler(handler_ref);
-
+    } else {
+        VS("LOADER [AppleEvent]: ERROR installing handler.\n");
     }
-    else {
-        VS("LOADER [ARGV_EMU]: AppleEvent - ERROR installing handler.\n");
-    }
-
-    /* Remove handler_ref reference when we are done with EventHandlerUPP. */
-    /* Carbon Event Manager does not do this automatically. */
-    DisposeEventHandlerUPP(handler_open_doc)
-    DisposeEventHandlerUPP(handler_get_url)
 }
 #endif /* if defined(__APPLE__) && defined(WINDOWED) */
 
-#endif  /* WIN32 */
+#endif /* WIN32 */
