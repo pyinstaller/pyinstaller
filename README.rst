@@ -90,7 +90,7 @@ Requirements and Tested Platforms
 
 - Mac OS X (64bit):
 
- - Mac OS X 10.7 (Lion) or newer.
+ - Mac OS X 10.13 (High Sierra) or newer.
 
 
 Usage
