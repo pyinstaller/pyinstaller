@@ -119,4 +119,4 @@ def test_osx_event_forwarding(tmpdir, pyi_builder_spec):
             if elapsed > timeout:
                 return False
 
-    assert wait_for_event_in_logfile(), 'Log to url timed out'
+    assert wait_for_event_in_logfile(), 'URL event did not appear in log before timeout'
