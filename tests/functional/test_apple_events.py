@@ -64,7 +64,7 @@ def test_osx_event_forwarding(tmpdir, pyi_builder_spec):
 
     if os.path.exists(logfile_path):
         os.remove(logfile_path)
-    os.path.exists(logfile_path), 'Events logfile still exists!'
+    assert not os.path.exists(logfile_path), 'Events logfile still exists!'
 
     # Generate new URL scheme to avoid collisions
     custom_url_scheme = "pyi-test-%i" % time.time()
