@@ -27,11 +27,11 @@ class EventHandler(QObject):
             try:
                 with open(self.logfile, 'at') as file:
                     file.write(event.url().toString() + "\n")
-                return True
             except Exception as e:
                 print("Caught exception while attempting to write/open",
                       self.logfile, "exception: " + repr(e), file=sys.stderr)
-            qApp.quit()  # Quit after receiving the event
+            qApp.quit()  # Tell app to quit after receiving the event
+            return True
         return False
 
     def log_started(self):
