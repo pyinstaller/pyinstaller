@@ -39,7 +39,7 @@ requests==2.24.0
 simplejson==3.17.2
 sphinx==2.4.4 # pyup: ignore
 # Required for test_namespace_package
-sqlalchemy==1.3.19
+sqlalchemy==1.3.20
 zope.interface==5.1.2
 
 
@@ -52,7 +52,7 @@ ipython==7.16.1; python_version == '3.6'  # pyup: ignore
 ipython==7.9.0; python_version == '3.5'  # pyup: ignore
 
 # pandas 1.0.0 dropped Python 3.5 support.
-pandas==1.1.2; python_version > '3.5'
+pandas==1.1.3; python_version > '3.5'
 pandas==0.25.3; python_version == '3.5'  # pyup: ignore
 
 # Numpy 1.19 dropped Python 3.5 support
@@ -60,7 +60,7 @@ numpy==1.19.2; python_version > '3.5'
 numpy<=1.19.0; python_version == '3.5'  # pyup: ignore
 
 # And so did SciPy
-scipy==1.5.2; python_version > '3.5'
+scipy==1.5.3; python_version > '3.5'
 scipy<=1.5.0; python_version == '3.5'  # pyup: ignore
 
 # Special cases
