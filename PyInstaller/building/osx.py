@@ -89,11 +89,6 @@ class BUNDLE(Target):
         for inm, name, typ in self.toc:
             if typ == "EXECUTABLE":
                 self.exename = name
-                if self.name is None:
-                    self.appname = "Mac%s" % (os.path.splitext(inm)[0],)
-                    self.name = os.path.join(CONF['specpath'], self.appname + ".app")
-                else:
-                    self.name = os.path.join(CONF['specpath'], self.name)
                 break
         self.__postinit__()
 
