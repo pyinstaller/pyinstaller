@@ -126,24 +126,45 @@ def test_osx_event_forwarding(tmpdir, pyi_builder_spec):
     # 1. Try the file extension -- this tests the AppleEvent rewrite of
     #    a "file://" event to a regular filesystem path.
 
-    # Create a file that is associated with this app
-    assoc_path = os.path.join(tmpdir, 'dist', 'AFile.' + custom_file_ext)
-    with open(assoc_path, 'wt') as fh:
-        fh.write("Something\n")
+    # Create 32 files that are associated with this app.
+    # This tests the robustness of the argv-emu by spamming it with
+    # lots of args and seeing what happens.
+    n_files = 32
+    assoc_files = []
+    for ii in range(n_files):
+        assoc_path = os.path.join(tmpdir, 'dist',
+                                  'AFile{}.{}'.format(ii, custom_file_ext))
+        with open(assoc_path, 'wt') as fh:
+            fh.write("File contents #{}\n".format(ii))
+        assoc_files.append(assoc_path)
 
-    # Open app again by "open"ing the associated file.
-    subprocess.check_call(['open', assoc_path])
+    # Open app again by "open"ing the associated files.
+    #
+    # These are sent as Apple Events to the app immediately after it starts,
+    # which the bootloader translates back into file paths at startup, passing
+    # them as argv to the subordinate app.
+    #
+    # The generator below produces odd numbered files as "file://" URLs, and
+    # even numbered are just file paths. They all should end up appended to
+    # sys.argv in the app as simple file paths.
+    subprocess.check_call(['open', *[('file://' if ii % 2 else '') + ff
+                                     for ii, ff in enumerate(assoc_files)]])
 
     args = wait_for_started()
     assert args is not None, 'App start timed out'
-    # Test the file path was received in argv via pre-startup translation of
-    # file:// AppleEvent -> argv filesystem path.
-    assert assoc_path in args, "File path was not received by app"
+    # Test that all the file paths were received in argv via pre-startup
+    # translation of file:// AppleEvent -> argv filesystem path.
+    assert assoc_files == args[1:], \
+        "An expected file path was not received by the app"
 
     # At this point the app is running.
     # 2. Call open again using the url associated with the app. This should
     #    forward the Apple URL event to the already-running app.
-    url = custom_url_scheme + "://lowecase_required/hello_world"
+    url = custom_url_scheme + "://lowecase_required/hello_world/"
+    # Test support for large URL data ~64KB.
+    # Note: We would have gone larger but 'open' itself seems to not
+    # consistently like data over a certain size.
+    url += 'x' * 64000  # Append 64 KB of data to URL to stress-test
     subprocess.check_call(['open', url])
 
     def wait_for_event_in_logfile():
@@ -167,3 +188,10 @@ def test_osx_event_forwarding(tmpdir, pyi_builder_spec):
 
     assert wait_for_event_in_logfile(), \
         'URL event did not appear in log before timeout'
+
+    # Delete all the temp files to be polite
+    for ff in assoc_files:
+        try:
+            os.remove(ff)
+        except OSError:
+            pass

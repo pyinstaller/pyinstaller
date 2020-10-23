@@ -1100,7 +1100,11 @@ static pascal OSErr handle_apple_event(const AppleEvent *theAppleEvent, AppleEve
             Size actualSize;
             DescType returnedType;
             AEKeyword keywd;
-            char buf[4*1024]; /* 4 KiB buffer is enough for any path data */
+            /* Note: In order to keep the below code sane, we will use a stack temporary buffer and we will assume
+             * a 64 KiB buffer is enough for each data item.  Since we are iterating over a potentially long list
+             * of URLs and/or files here, assuming each URL is < 64 KiB should be more than enough.
+             * Also note: MAX_PATH on MacOS is 1024 bytes. */
+            char buf[64*1024];
 
             VS("LOADER [AppleEvent ARGV_EMU]: Processing args for forward...\n");
 
@@ -1119,7 +1123,6 @@ static pascal OSErr handle_apple_event(const AppleEvent *theAppleEvent, AppleEve
                 } else if (actualSize > sizeof(buf)-1) {
                     VS("LOADER [AppleEvent ARGV_EMU]: err[%ld]: not enough space in buffer (%ld > %ld)\n",
                        index-1L, (long)actualSize, (long)(sizeof(buf)-1));
-                       // TODO: Fix this to use dynamic buffers
                 } else {
                     char *tmp_str = NULL, **tmp_argv = NULL;
 
