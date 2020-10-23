@@ -1005,13 +1005,14 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
     #if defined(__APPLE__) && defined(WINDOWED)
     /* MacOS code -- forward events to child! */
     do {
-        /* The below waitpid() call will run about once every second on Apple,
+        /* The below loop call will iterate about once every second on Apple,
          * waiting on the event queue most of that time. */
         wait_rc = waitpid(child_pid, &rc, WNOHANG);
-        if (wait_rc == 0)
-            /* Child not ready yet -- process apple events with 1 second
-             * timeout, forwarding them to child. */
+        if (wait_rc == 0) {
+            /* Child not done yet -- wait for and process AppleEvents with a
+             * 1 second timeout, forwarding file-open events to the child. */
             process_apple_events(false /* long timeout, 1 second */);
+        }
     } while (!wait_rc);
     #else
     wait_rc = waitpid(child_pid, &rc, 0);
