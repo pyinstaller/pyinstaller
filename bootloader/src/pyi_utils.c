@@ -1100,6 +1100,8 @@ static pascal OSErr handle_apple_event(const AppleEvent *theAppleEvent, AppleEve
                 if (err != noErr) {
                     VS("LOADER [AppleEvent ARGV_EMU]: err[%d] = %d\n",(int)index-1, (int)err);
                 } else {
+                    char *tmp_str = NULL, **tmp_argv = NULL;
+
                     buf[actualSize] = 0; /* force NUL-char termination. */
                     if (apple_event_is_open_doc) {
                         /* Now, convert file:/// style URLs to an actual filesystem path for argv emu. */
@@ -1123,13 +1125,19 @@ static pascal OSErr handle_apple_event(const AppleEvent *theAppleEvent, AppleEve
                     }
                     /* Append URL to argv_pyi array, reallocating as necessary */
                     VS("LOADER [AppleEvent ARGV_EMU]: arg[%d] = %s\n", (int)argc_pyi, buf);
-                    argv_pyi = (char **)realloc(argv_pyi, (argc_pyi + 2) * sizeof(char *));
-                    if (!argv_pyi) {
-                        /* Out of memory. Extremely unlikely but we should exit rather than SEGV. */
-                        VS("LOADER [AppleEvent ARGV_EMU]: exiting early, realloc failed: %s\n", strerror(errno));
-                        exit(1);
+                    tmp_str = strdup(buf);
+                    tmp_argv = (char **)realloc(argv_pyi, (argc_pyi + 2) * sizeof(char *));
+                    if (!tmp_argv || !tmp_str) {
+                        /* Out of memory. Extremely unlikely -- not clear what to do here.
+                         * Attempt to silently continue. */
+                        VS("LOADER [AppleEvent ARGV_EMU]: allocation for arg[%d] failed: %s\n",
+                           argc_pyi, strerror(errno));
+                        free(tmp_argv); /* free of NULL ok */
+                        free(tmp_str);
+                        continue;
                     }
-                    argv_pyi[argc_pyi++] = strdup(buf);
+                    argv_pyi = tmp_argv;
+                    argv_pyi[argc_pyi++] = tmp_str;
                     argv_pyi[argc_pyi] = NULL;
                     VS("LOADER [AppleEvent ARGV_EMU]: argv entry appended.\n");
                 }
