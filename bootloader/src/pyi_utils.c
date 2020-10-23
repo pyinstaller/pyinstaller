@@ -1074,16 +1074,17 @@ static const char *CC2Str(FourCharCode code) {
     return buf;
 }
 
-/* Handles apple events 'odoc' and 'GRUL', both before and after the child_pid is up, forwarding them to args if child
+/* Handles apple events 'odoc' and 'GURL', both before and after the child_pid is up, forwarding them to args if child
  * not up yet, or otherwise forwarding them to the child if the child is started. Other event types are ignored. */
 static pascal OSErr handle_apple_event(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon handlerRefcon)
 {
+    const FourCharCode evtCode = ((FourCharCode)handlerRefcon);
     /* Note: the single-quoted 'odoc' & 'GURL' below are not a typo. They are the way
      * the Apple API encodes UInt32 in a "programmer-friendly" manner using the ISO-C
      * multi-character constant language feature. These evaluate to UInt32, which is
      * what the "FourCharCode" type is typedef'd as. */
-    const Boolean apple_event_is_open_doc = ((FourCharCode)handlerRefcon) == 'odoc',
-                  apple_event_is_open_uri = ((FourCharCode)handlerRefcon) == 'GURL';
+    const Boolean apple_event_is_open_doc = evtCode == 'odoc',
+                  apple_event_is_open_uri = evtCode == 'GURL';
 
     if (apple_event_is_open_doc || apple_event_is_open_uri) {
         const char *const descStr = apple_event_is_open_uri ? "GetURL" : "OpenDoc";
@@ -1223,7 +1224,7 @@ static pascal OSErr handle_apple_event(const AppleEvent *theAppleEvent, AppleEve
         }
     } else {
         /* Not GetURL or OpenDoc, so just ignore */
-        VS("LOADER [AppleEvent]: Handler ignoring event.\n");
+        VS("LOADER [AppleEvent]: Handler ignoring event '%s'\n", CC2Str(evtCode));
     }
     return noErr;
 }
