@@ -1076,9 +1076,9 @@ static const char *CC2Str(FourCharCode code) {
 
 /* Handles apple events 'odoc' and 'GURL', both before and after the child_pid is up, forwarding them to args if child
  * not up yet, or otherwise forwarding them to the child if the child is started. Other event types are ignored. */
-static pascal OSErr handle_apple_event(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon handlerRefcon)
+static pascal OSErr handle_apple_event(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon handlerRefCon)
 {
-    const FourCharCode evtCode = ((FourCharCode)handlerRefcon);
+    const FourCharCode evtCode = (FourCharCode)handlerRefCon;
     /* Note: the single-quoted 'odoc' & 'GURL' below are not a typo. They are the way
      * the Apple API encodes UInt32 in a "programmer-friendly" manner using the ISO-C
      * multi-character constant language feature. These evaluate to UInt32, which is
