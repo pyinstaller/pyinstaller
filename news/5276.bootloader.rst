@@ -1,0 +1,1 @@
+(OSX) Apps now accept URL & drag'n drop events via Apple Event forwarding.
