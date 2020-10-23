@@ -27,7 +27,7 @@ Some of the recipes there include:
 
 * Bundling a typical Django app.
 
-* A use of a run-time hook to set the PyQt4 API level.
+* A use of a run-time hook to set the PyQt5 API level.
 
 * A workaround for a multiprocessing constraint under Windows.
 

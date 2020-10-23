@@ -813,7 +813,7 @@ pyi_utils_set_environment(const ARCHIVE_STATUS *status)
      * There were some issues with this approach. In some cases some
      * system libraries were trying to load incompatible libraries from
      * the dist directory. For instance this was experienced with macprots
-     * and PyQt4 applications.
+     * and PyQt applications.
      *
      * To tell the OS where to look for dynamic libraries we modify
      * .so/.dylib files to use relative paths to other dependend

@@ -41,11 +41,11 @@ Main Advantages
 - Works out-of-the-box with any Python version 3.5-3.8.
 - Fully multi-platform, and uses the OS support to load the dynamic libraries,
   thus ensuring full compatibility.
-- Correctly bundles the major Python packages such as numpy, PyQt4, PyQt5,
-  PySide, Django, wxPython, matplotlib and others out-of-the-box.
+- Correctly bundles the major Python packages such as numpy, PyQt5,
+  PySide2, Django, wxPython, matplotlib and others out-of-the-box.
 - Compatible with many 3rd-party packages out-of-the-box. (All the required
   tricks to make external packages work are already integrated.)
-- Libraries like PyQt5, PyQt4, PySide, wxPython, matplotlib or Django are fully
+- Libraries like PyQt5, PySide2, wxPython, matplotlib or Django are fully
   supported, without having to handle plugins or external data files manually.
 - Works with code signing on OS X.
 - Bundles MS Visual C++ DLLs on Windows.
