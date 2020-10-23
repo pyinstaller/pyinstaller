@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
+import json
 import os
 import sys
 
@@ -38,7 +39,8 @@ class EventHandler(QObject):
         assert self.logfile
         try:
             with open(self.logfile, 'wt') as file:
-                file.write("started\n")
+                file.write("started {}\n"
+                           .format(json.dumps({"argv": sys.argv})))
         except Exception as e:
             print("Caught exception while attempting to write/open",
                   self.logfile, "exception: " + repr(e), file=sys.stderr)
@@ -54,7 +56,7 @@ def main():
 
     logfile = os.path.join(basedir, 'events.log')
 
-    app = QApplication(sys.argv)
+    app = QApplication(list(sys.argv))  # Copy args to prevent qApp modifying
     dummy = QWidget()
     dummy.hide()
     app.setQuitOnLastWindowClosed(False)

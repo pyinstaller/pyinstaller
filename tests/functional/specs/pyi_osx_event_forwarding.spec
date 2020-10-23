@@ -14,6 +14,7 @@ import os
 
 app_name = 'pyi_osx_event_forwarding'
 custom_url_scheme = os.environ.get('PYI_CUSTOM_URL_SCHEME', 'pyi-test-app')
+custom_file_ext = os.environ.get('PYI_CUSTOM_FILE_EXT', 'pyi_test_ext')
 
 a = Analysis(['../scripts/pyi_pyqt5_log_events.py'])
 pyz = PYZ(a.pure, a.zipped_data)
@@ -30,11 +31,18 @@ exe = EXE(pyz,
           console=False )
 app = BUNDLE(exe,
              name=app_name + '.app',
-             # Register custom protocol handler
+             # Register custom protocol handler and custom file extension
              info_plist={
                 'CFBundleURLTypes': [{
-                    'CFBundleURLName': 'PYITestApp',
+                    'CFBundleURLName': 'PYITestApp' + custom_url_scheme,
                     'CFBundleTypeRole': 'Viewer',
-                    'CFBundleURLSchemes': [custom_url_scheme]
-                }]
+                    'CFBundleURLSchemes': [custom_url_scheme],
+                }],
+                'CFBundleDocumentTypes': [{
+                    'CFBundleTypeName': "PYITestApp_" + custom_file_ext,
+                    'CFBundleTypeExtensions': [
+                        custom_file_ext,
+                    ],
+                    'CFBundleTypeRole': "Viewer",
+                }],
              })
