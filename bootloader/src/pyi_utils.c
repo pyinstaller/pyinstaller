@@ -1082,7 +1082,7 @@ static pascal OSErr handle_apple_event(const AppleEvent *theAppleEvent, AppleEve
                   apple_event_is_open_uri = ((FourCharCode)handlerRefcon) == 'GURL';
 
     if (apple_event_is_open_doc || apple_event_is_open_uri) {
-        const char * const descStr = apple_event_is_open_uri ? "GetURL" : "OpenDoc";
+        const char *const descStr = apple_event_is_open_uri ? "GetURL" : "OpenDoc";
 
         VS("LOADER [AppleEvent]: %s handler called.\n",descStr);
 
@@ -1110,7 +1110,7 @@ static pascal OSErr handle_apple_event(const AppleEvent *theAppleEvent, AppleEve
                 err = AEGetNthPtr(&docList, index, apple_event_is_open_doc ? typeFileURL : typeUTF8Text, &keywd,
                                   &returnedType, buf, sizeof(buf)-1, &actualSize);
                 if (err != noErr) {
-                    VS("LOADER [AppleEvent ARGV_EMU]: err[%d] = %d\n",(int)index-1, (int)err);
+                    VS("LOADER [AppleEvent ARGV_EMU]: err[%ld] = %d\n", index-1L, (int)err);
                 } else {
                     char *tmp_str = NULL, **tmp_argv = NULL;
 
@@ -1129,8 +1129,8 @@ static pascal OSErr handle_apple_event(const AppleEvent *theAppleEvent, AppleEve
                             CFRelease(url); /* free */
                             if (!ok) {
                                 VS("LOADER [AppleEvent ARGV_EMU]: "
-                                   "Failed to convert file:/// path to POSIX filesystem representation for arg %d!\n",
-                                   (int)index);
+                                   "Failed to convert file:/// path to POSIX filesystem representation for arg %ld!\n",
+                                   index);
                                 continue;
                             }
                         }
