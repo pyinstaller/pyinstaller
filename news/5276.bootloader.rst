@@ -1,1 +1,1 @@
-(OSX) Apps now accept URL & drag'n drop events via Apple Event forwarding.
+(OSX) Added capability for already-running apps to accept URL & drag'n drop events via Apple Event forwarding
