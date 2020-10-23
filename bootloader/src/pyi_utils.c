@@ -1116,6 +1116,10 @@ static pascal OSErr handle_apple_event(const AppleEvent *theAppleEvent, AppleEve
                                   &returnedType, buf, sizeof(buf)-1, &actualSize);
                 if (err != noErr) {
                     VS("LOADER [AppleEvent ARGV_EMU]: err[%ld] = %d\n", index-1L, (int)err);
+                } else if (actualSize > sizeof(buf)-1) {
+                    VS("LOADER [AppleEvent ARGV_EMU]: err[%ld]: not enough space in buffer (%ld > %ld)\n",
+                       index-1L, (long)actualSize, (long)(sizeof(buf)-1));
+                       // TODO: Fix this to use dynamic buffers
                 } else {
                     char *tmp_str = NULL, **tmp_argv = NULL;
 
@@ -1173,6 +1177,7 @@ static pascal OSErr handle_apple_event(const AppleEvent *theAppleEvent, AppleEve
             OSStatus err = noErr;
             AEEventClass evtClass;
             AEEventID evtID;
+            char *buf = NULL; /* Dynamically allocated buffer based on size of data */
 
             if (apple_event_is_open_uri) {
                 evtClass = kInternetEventClass;
@@ -1196,15 +1201,33 @@ static pascal OSErr handle_apple_event(const AppleEvent *theAppleEvent, AppleEve
             if (err != noErr) goto cleanup2;
 
             { /* <-- These curly braces aren't a typo. We are creating a nested scope here for below vars. */
-                char buf[64*1024]; /* 64 KiB buffer should be enough for drag/drops */
+                DescType typeCode = typeWildCard;
+                Size bufSize = 0;
                 DescType actualType = 0;
                 Size actualSize = 0;
-                VS("LOADER [AppleEvent EVT_FWD]: Getting param.\n");
-                err = AEGetParamPtr(theAppleEvent, keyDirectObject, typeWildCard, &actualType, buf, sizeof(buf),
-                                    &actualSize);
+
+                err = AESizeOfParam(theAppleEvent, keyDirectObject, &typeCode, &bufSize);
                 if (err != noErr) goto cleanup1;
+                buf = malloc(bufSize);
+                if (!buf) {
+                    /* Failed to allocate buffer! */
+                    VS("LOADER [AppleEvent EVT_FWD]: Failed to allocate buffer of size %ld: %s\n",
+                       (long)bufSize, strerror(errno));
+                    goto cleanup1;
+                }
+                VS("LOADER [AppleEvent EVT_FWD]: Getting param.\n");
+                err = AEGetParamPtr(theAppleEvent, keyDirectObject, typeWildCard,
+                                    &actualType, buf, bufSize, &actualSize);
+                if (err != noErr) goto cleanup1;
+                if (actualSize > bufSize) {
+                    /* From reading the Apple API docs, this should never happen, but it pays
+                     * to program defensively here. */
+                    VS("LOADER [AppleEvent EVT_FWD]: Got param size=%ld > bufSize=%ld, error!\n",
+                       (long)actualSize, (long)bufSize);
+                    goto cleanup1;
+                }
                 VS("LOADER [AppleEvent EVT_FWD]: Got param type=%x (%s) size=%ld\n",
-                   actualType, CC2Str(actualType), (long)actualSize);
+                   (UInt32)actualType, CC2Str((FourCharCode)actualType), (long)actualSize);
                 VS("LOADER [AppleEvent EVT_FWD]: Putting param.\n");
                 err = AEPutParamPtr(&evtCopy, keyDirectObject, actualType, buf, actualSize);
                 if (err != noErr) goto cleanup1;
@@ -1215,6 +1238,7 @@ static pascal OSErr handle_apple_event(const AppleEvent *theAppleEvent, AppleEve
                descStr, (long)child_pid);
 
         cleanup1:
+            free(buf); /* free of possible NULL ptr ok */
             AEDisposeDesc(&evtCopy); /* dispose apple event copy */
         cleanup2:
             AEDisposeDesc(&target);
