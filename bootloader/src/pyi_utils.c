@@ -1078,7 +1078,7 @@ static const char *CC2Str(FourCharCode code) {
  * not up yet, or otherwise forwarding them to the child if the child is started. Other event types are ignored. */
 static pascal OSErr handle_apple_event(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon handlerRefcon)
 {
-    /* Note: the single-quoted 'odoc' & 'GRUL' below are not a typo. They are the way
+    /* Note: the single-quoted 'odoc' & 'GURL' below are not a typo. They are the way
      * the Apple API encodes UInt32 in a "programmer-friendly" manner using the ISO-C
      * multi-character constant language feature. These evaluate to UInt32, which is
      * what the "FourCharCode" type is typedef'd as. */
