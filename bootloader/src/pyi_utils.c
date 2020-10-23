@@ -1084,7 +1084,7 @@ static pascal OSErr handle_apple_event(const AppleEvent *theAppleEvent, AppleEve
     if (apple_event_is_open_doc || apple_event_is_open_uri) {
         const char *const descStr = apple_event_is_open_uri ? "GetURL" : "OpenDoc";
 
-        VS("LOADER [AppleEvent]: %s handler called.\n",descStr);
+        VS("LOADER [AppleEvent]: %s handler called.\n", descStr);
 
         if (!child_pid) {
             /* Child process is not up yet -- so we pick up kAEOpen and/or kAEGetURL events and append them to args. */
