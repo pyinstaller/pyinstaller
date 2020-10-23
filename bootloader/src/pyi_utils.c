@@ -1218,8 +1218,9 @@ static pascal OSErr handle_apple_event(const AppleEvent *theAppleEvent, AppleEve
             AEDisposeDesc(&evtCopy); /* dispose apple event copy */
         cleanup2:
             AEDisposeDesc(&target);
-            if (err)
+            if (err) {
                 VS("LOADER [AppleEvent EVT_FWD]: OpenDocument handler got error %d\n", (int)err);
+            }
             return (OSErr)err;
         }
     } else {
@@ -1250,12 +1251,14 @@ static OSStatus evt_handler_proc(EventHandlerCallRef href, EventRef eref, void *
     VS("LOADER [AppleEvent]: what=%hu message=%lx (%s) modifiers=%hu\n",
        eventRecord.what, eventRecord.message, CC2Str((FourCharCode)eventRecord.message), eventRecord.modifiers);
     OSStatus err = AEProcessAppleEvent(&eventRecord);
-    if (err == errAEEventNotHandled)
+    if (err == errAEEventNotHandled) {
         VS("LOADER [AppleEvent]: Ignored event.\n");
-    else if (err != noErr)
+    } else if (err != noErr) {
         VS("LOADER [AppleEvent]: Error processing event: %d\n", (int)err);
-    if (release)
+    }
+    if (release) {
         ReleaseEvent(eref);
+    }
     return noErr;
 }
 
@@ -1277,10 +1280,12 @@ static void process_apple_events(Boolean short_timeout)
         handler = NewEventHandlerUPP(evt_handler_proc);
         handler_ae = NewAEEventHandlerUPP(handle_apple_event);
         err = AEInstallEventHandler(kCoreEventClass, kAEOpenDocuments, handler_ae, (SRefCon)'odoc', false);
-        if (err == noErr)
+        if (err == noErr) {
             err = AEInstallEventHandler(kInternetEventClass, kAEGetURL, handler_ae, (SRefCon)'GURL', false);
-        if (err == noErr)
+        }
+        if (err == noErr) {
             err = InstallApplicationEventHandler(handler, 1, event_types, NULL, &handler_ref);
+        }
 
         if (err != noErr) {
             /* App-wide handler failed. Uninstall everything. */
