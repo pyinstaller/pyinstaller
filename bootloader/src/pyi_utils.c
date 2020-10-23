@@ -1011,7 +1011,7 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
         if (wait_rc == 0) {
             /* Child not done yet -- wait for and process AppleEvents with a
              * 1 second timeout, forwarding file-open events to the child. */
-            process_apple_events(false /* long timeout, 1 second */);
+            process_apple_events(false /* long timeout (1 sec) */);
         }
     } while (!wait_rc);
     #else
