@@ -929,6 +929,10 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
 
     argv_pyi = (char**)calloc(argc + 1, sizeof(char*));
     argc_pyi = 0;
+    if (!argv_pyi) {
+        VS("LOADER: failed to allocate argv_pyi: %s\n", strerror(errno));
+        goto cleanup;
+    }
 
     for (i = 0; i < argc; i++) {
     #if defined(__APPLE__) && defined(WINDOWED)
@@ -940,7 +944,14 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
         else
     #endif
         {
-            argv_pyi[argc_pyi++] = strdup(argv[i]);
+            char *const tmp = strdup(argv[i]);
+            if (!tmp) {
+                VS("LOADER: failed to strdup argv[%d]: %s\n", i, strerror(errno));
+                /* If we can't allocate basic amounts of memory at this critical point,
+                 * we should probably just give up. */
+                goto cleanup;
+            }
+            argv_pyi[argc_pyi++] = tmp;
         }
     }
 
