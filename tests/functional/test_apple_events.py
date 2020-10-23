@@ -89,7 +89,7 @@ def test_osx_event_forwarding(tmpdir, pyi_builder_spec):
             if elapsed > timeout:
                 return False
             if os.path.exists(logfile_path):
-                with open(logfile_path, 'r') as fh:
+                with open(logfile_path) as fh:
                     log_lines = fh.readlines()
                     if log_lines:
                         assert log_lines[0].startswith('started'), \
