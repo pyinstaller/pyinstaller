@@ -540,12 +540,11 @@ def configure(ctx):
 
 
     elif ctx.env.DEST_OS == 'darwin':
-        # OS X 10.7 might not understand some load commands.
-        # The following variable fixes 10.7 compatibility.
+        # macOS 10.13 is the oldest version supported by Apple.
         # According to OS X doc this variable is equivalent to gcc option:
-        #   -mmacosx-version-min=10.7
+        #   -mmacosx-version-min=10.13
         if not os.environ.get('MACOSX_DEPLOYMENT_TARGET'):
-            os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.7'
+            os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.13'
 
     ### Libraries
 
