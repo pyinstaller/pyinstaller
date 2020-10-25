@@ -561,7 +561,6 @@ class ModuleHook(object):
             if excluded_node is None:
                 logger.info("Import to be excluded not found: %r", item)
                 continue
-            logger.info("Excluding import %r", item)
             imports_to_remove = set(find_all_package_nodes(item))
 
             # Remove references between module nodes, as though they would
@@ -581,7 +580,7 @@ class ModuleHook(object):
                 for dest in imports_to_remove & references:
                     self.module_graph.removeReference(src, dest)
                     logger.info(
-                        "  Removing import of %s from module %s", dest, src)
+                        "Excluding import of %s from module %s", dest, src)
 
 
 class AdditionalFilesCache(object):
