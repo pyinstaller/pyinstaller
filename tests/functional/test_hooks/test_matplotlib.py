@@ -98,13 +98,6 @@ def test_matplotlib(pyi_builder, monkeypatch,
     if not configdir.startswith(tempfile.gettempdir()):
         raise SystemExit('MPLCONFIGDIR not pointing to temp directory.')
 
-    # Matplotlib's data directory should point to sys._MEIPASS.
-    # This is deprecated in matplotlib 3.1.0 and will be removed in 3.3.0
-    datadir = os.environ['MATPLOTLIBDATA']
-    print('MATPLOTLIBDATA:', repr(datadir))
-    if not datadir.startswith(sys._MEIPASS):
-        raise SystemExit('MATPLOTLIBDATA not pointing to sys._MEIPASS.')
-
     # Test access to the standard 'mpl_toolkits' namespace package installed
     # with Matplotlib. Note that this import was reported to fail under
     # Matplotlib 1.3.0.

@@ -1,0 +1,2 @@
+Remove runtime hook and fix regular hook for matplotlib's data to support ``matplotlib>=3.3.0``, fix deprecation warning on version 3.1<= & <3.3,
+and behave normally for versions <3.1.
