@@ -109,13 +109,7 @@ def test_matplotlib(
     if not configdir.startswith(tempfile.gettempdir()):
         raise SystemExit('MPLCONFIGDIR not pointing to temp directory.')
 
-    # Matplotlib's data directory should point to sys._MEIPASS.
-    datadir = os.environ['MATPLOTLIBDATA']
-    print('MATPLOTLIBDATA: %s' % datadir)
-    if not datadir.startswith(sys._MEIPASS):
-        raise SystemExit('MATPLOTLIBDATA not pointing to sys._MEIPASS.')
-
-    # Test access to the standard "mpl_toolkits" namespace package installed
+    # Test access to the standard 'mpl_toolkits' namespace package installed
     # with Matplotlib. Note that this import was reported to fail under
     # Matplotlib 1.3.0.
     from mpl_toolkits import axes_grid1

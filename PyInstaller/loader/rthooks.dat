@@ -11,7 +11,7 @@
     'gst':        ['pyi_rth_gstreamer.py'],
     'kivy':       ['pyi_rth_kivy.py'],
     'kivy.lib.gstplayer': ['pyi_rth_gstreamer.py'],
-    'matplotlib': ['pyi_rth_mplconfig.py', 'pyi_rth_mpldata.py'],
+    'matplotlib': ['pyi_rth_mplconfig.py'],
     'osgeo':      ['pyi_rth_osgeo.py'],
     'pkg_resources':  ['pyi_rth_pkgres.py'],
     'PyQt4':      ['pyi_rth_qt4plugins.py'],
