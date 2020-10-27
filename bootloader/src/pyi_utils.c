@@ -930,7 +930,7 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
     argv_pyi = (char**)calloc(argc + 1, sizeof(char*));
     argc_pyi = 0;
     if (!argv_pyi) {
-        VS("LOADER: failed to allocate argv_pyi: %s\n", strerror(errno));
+        FATALERROR("LOADER: failed to allocate argv_pyi: %s\n", strerror(errno));
         goto cleanup;
     }
 
@@ -946,7 +946,7 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
         {
             char *const tmp = strdup(argv[i]);
             if (!tmp) {
-                VS("LOADER: failed to strdup argv[%d]: %s\n", i, strerror(errno));
+                FATALERROR("LOADER: failed to strdup argv[%d]: %s\n", i, strerror(errno));
                 /* If we can't allocate basic amounts of memory at this critical point,
                  * we should probably just give up. */
                 goto cleanup;
@@ -1154,8 +1154,8 @@ static pascal OSErr handle_apple_event(const AppleEvent *theAppleEvent, AppleEve
                     if (!tmp_argv || !tmp_str) {
                         /* Out of memory. Extremely unlikely -- not clear what to do here.
                          * Attempt to silently continue. */
-                        VS("LOADER [AppleEvent ARGV_EMU]: allocation for arg[%d] failed: %s\n",
-                           argc_pyi, strerror(errno));
+                        OTHERERROR("LOADER [AppleEvent ARGV_EMU]: allocation for arg[%d] failed: %s\n",
+                                   argc_pyi, strerror(errno));
                         free(tmp_argv); /* free of NULL ok */
                         free(tmp_str);
                         continue;
@@ -1214,8 +1214,8 @@ static pascal OSErr handle_apple_event(const AppleEvent *theAppleEvent, AppleEve
                 buf = malloc(bufSize);
                 if (!buf) {
                     /* Failed to allocate buffer! */
-                    VS("LOADER [AppleEvent EVT_FWD]: Failed to allocate buffer of size %ld: %s\n",
-                       (long)bufSize, strerror(errno));
+                    OTHERERROR("LOADER [AppleEvent EVT_FWD]: Failed to allocate buffer of size %ld: %s\n",
+                               (long)bufSize, strerror(errno));
                     goto cleanup1;
                 }
                 VS("LOADER [AppleEvent EVT_FWD]: Getting param.\n");
@@ -1225,8 +1225,8 @@ static pascal OSErr handle_apple_event(const AppleEvent *theAppleEvent, AppleEve
                 if (actualSize > bufSize) {
                     /* From reading the Apple API docs, this should never happen, but it pays
                      * to program defensively here. */
-                    VS("LOADER [AppleEvent EVT_FWD]: Got param size=%ld > bufSize=%ld, error!\n",
-                       (long)actualSize, (long)bufSize);
+                    OTHERERROR("LOADER [AppleEvent EVT_FWD]: Got param size=%ld > bufSize=%ld, error!\n",
+                               (long)actualSize, (long)bufSize);
                     goto cleanup1;
                 }
                 VS("LOADER [AppleEvent EVT_FWD]: Got param type=%x (%s) size=%ld\n",
@@ -1246,7 +1246,7 @@ static pascal OSErr handle_apple_event(const AppleEvent *theAppleEvent, AppleEve
         cleanup2:
             AEDisposeDesc(&target);
             if (err) {
-                VS("LOADER [AppleEvent EVT_FWD]: OpenDocument handler got error %d\n", (int)err);
+                OTHERERROR("LOADER [AppleEvent EVT_FWD]: OpenDocument handler got error %d\n", (int)err);
             }
             return (OSErr)err;
         }
@@ -1364,7 +1364,13 @@ static void process_apple_events(Boolean short_timeout)
         VS("LOADER [AppleEvent]: Out of the event loop.\n");
 
     } else {
-        VS("LOADER [AppleEvent]: ERROR installing handler.\n");
+        static Boolean once = false;
+        if (!once) {
+            /* Log this only once since this is compiled-in even in non-debug mode and we
+             * want to avoid console spam, since process_apple_events may be called a lot. */
+            OTHERERROR("LOADER [AppleEvent]: ERROR installing handler.\n");
+            once = true;
+        }
     }
 }
 #endif /* if defined(__APPLE__) && defined(WINDOWED) */

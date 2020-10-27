@@ -16,7 +16,7 @@ app_name = 'pyi_osx_event_forwarding'
 custom_url_scheme = os.environ.get('PYI_CUSTOM_URL_SCHEME', 'pyi-test-app')
 custom_file_ext = os.environ.get('PYI_CUSTOM_FILE_EXT', 'pyi_test_ext')
 
-a = Analysis(['../scripts/pyi_pyqt5_log_events.py'])
+a = Analysis([os.path.join(os.path.dirname(SPECPATH), 'scripts/pyi_pyqt5_log_events.py')])
 pyz = PYZ(a.pure, a.zipped_data)
 exe = EXE(pyz,
           a.scripts,
