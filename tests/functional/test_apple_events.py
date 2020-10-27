@@ -20,12 +20,16 @@ import os
 import subprocess
 import time
 
+# Third-party imports
+# -------------------
+import pytest
+
 # Local imports
 # -------------
-from PyInstaller.utils.tests import importorskip, skipif_notosx
+from PyInstaller.utils.tests import importorskip
 
 
-@skipif_notosx
+@pytest.mark.darwin
 def test_osx_custom_protocol_handler(tmpdir, pyi_builder_spec):
     tmpdir = str(tmpdir)  # Fix for Python 3.5
     app_path = os.path.join(tmpdir, 'dist',
@@ -55,7 +59,7 @@ def test_osx_custom_protocol_handler(tmpdir, pyi_builder_spec):
     assert log_lines and log_lines[-1] == url, 'Invalid arg appended'
 
 
-@skipif_notosx
+@pytest.mark.darwin
 @importorskip('PyQt5')
 def test_osx_event_forwarding(tmpdir, pyi_builder_spec):
     tmpdir = str(tmpdir)  # Fix for Python 3.5

@@ -17,7 +17,6 @@ import signal
 # Third-party imports
 # -------------------
 import pytest
-from PyInstaller.utils.tests import skipif_win
 
 signals = sorted([
     key for key in dir(signal)
@@ -25,7 +24,8 @@ signals = sorted([
 ])
 
 
-@skipif_win
+@pytest.mark.darwin
+@pytest.mark.linux
 @pytest.mark.parametrize('signame', signals)
 @pytest.mark.parametrize('ignore', [True, False])
 def test_signal_handled(pyi_builder, signame, ignore):

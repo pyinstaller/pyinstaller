@@ -21,7 +21,7 @@ from importlib.machinery import EXTENSION_SUFFIXES
 import pytest
 
 from PyInstaller.lib.modulegraph import modulegraph
-from PyInstaller.utils.tests import xfail, skipif, skipif_win
+from PyInstaller.utils.tests import xfail
 
 def _import_and_get_node(tmpdir, module_name, path=None):
     script = tmpdir.join('script.py')
@@ -225,7 +225,9 @@ def test_nspackage_pep420(tmpdir):
 # :todo: test_namespace_setuptools
 # :todo: test_namespace_pkg_resources
 
-@skipif_win
+
+@pytest.mark.darwin
+@pytest.mark.linux
 def test_symlinks(tmpdir):
     base_dir = tmpdir.join('base').ensure(dir=True)
     p1_init = tmpdir.join('p1', '__init__.py').ensure()

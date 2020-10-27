@@ -23,7 +23,7 @@ import py
 # -------------
 from PyInstaller.compat import is_win, is_darwin, is_linux, is_64bits
 from PyInstaller.utils.hooks import is_module_satisfies
-from PyInstaller.utils.tests import importorskip, xfail, skipif, skipif_win
+from PyInstaller.utils.tests import importorskip, xfail, skipif
 
 # :todo: find a way to get this from `conftest` or such
 # Directory with testing modules used in some tests.

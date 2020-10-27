@@ -16,8 +16,6 @@ import subprocess
 
 import pytest
 
-from PyInstaller.utils.tests import skipif_win, skipif_winorosx, skipif_notwin
-
 
 def test_ascii_path(pyi_builder):
     distdir = pyi_builder._distdir
@@ -28,7 +26,7 @@ def test_ascii_path(pyi_builder):
     pyi_builder.test_script('pyi_path_encoding.py')
 
 
-@skipif_winorosx
+@pytest.mark.linux
 def test_linux_non_unicode_path(pyi_builder, monkeypatch):
     # If we set the locale to 'C', mbstowcs should be completely useless. This
     # test verifies that _Py_char2wchar will decode the "undecodable" bytes and
@@ -45,7 +43,9 @@ def test_linux_non_unicode_path(pyi_builder, monkeypatch):
 
     pyi_builder.test_script('pyi_path_encoding.py')
 
-@skipif_win
+
+@pytest.mark.darwin
+@pytest.mark.linux
 def test_osx_linux_unicode_path(pyi_builder, monkeypatch):
     # Mac and Linux should handle 'unicode' type filenames without problem.
     distdir = pyi_builder._distdir
@@ -60,7 +60,7 @@ def test_osx_linux_unicode_path(pyi_builder, monkeypatch):
     pyi_builder.test_script('pyi_path_encoding.py')
 
 
-@skipif_notwin
+@pytest.mark.win32
 def test_win_codepage_path(pyi_builder, monkeypatch):
     distdir = pyi_builder._distdir
     # Create some bytes and decode with the current codepage to get a filename that
@@ -77,7 +77,8 @@ def test_win_codepage_path(pyi_builder, monkeypatch):
 
     pyi_builder.test_script('pyi_path_encoding.py')
 
-@skipif_notwin
+
+@pytest.mark.win32
 def test_win_codepage_path_disabled_shortfilename(pyi_builder, monkeypatch):
     distdir = pyi_builder._distdir
     # Create some bytes and decode with the current codepage to get a filename that
@@ -105,7 +106,7 @@ def test_win_codepage_path_disabled_shortfilename(pyi_builder, monkeypatch):
     pyi_builder.test_script('pyi_path_encoding.py')
 
 
-@skipif_notwin
+@pytest.mark.win32
 def test_win_non_codepage_path(pyi_builder, monkeypatch):
     distdir = pyi_builder._distdir
     # Both eastern European and Japanese characters - no codepage should encode this.
@@ -125,12 +126,13 @@ def test_win_non_codepage_path(pyi_builder, monkeypatch):
 
     pyi_builder.test_script('pyi_path_encoding.py')
 
-@skipif_notwin
+
+@pytest.mark.win32
 def test_win_py3_no_shortpathname(pyi_builder):
     pyi_builder.test_script('pyi_win_py3_no_shortpathname.py')
 
 
-@skipif_notwin
+@pytest.mark.win32
 def test_win_TEMP_has_shortpathname(pyi_builder, monkeypatch, tmp_path):
     """Test if script if pass if $TMP holds a short path name"""
     tmp = tmp_path / "longlongfilename" / "xxx"
