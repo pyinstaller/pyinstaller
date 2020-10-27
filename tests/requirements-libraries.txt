@@ -29,7 +29,6 @@ keyring==19.2.0  # pyup: ignore
 babel==2.8.0
 future==0.18.2
 gevent==20.9.0
-Pillow==7.2.0
 pygments==2.7.1
 PySide2==5.14.0
 python-dateutil==2.8.1
@@ -62,6 +61,10 @@ numpy<=1.19.0; python_version == '3.5'  # pyup: ignore
 # And so did SciPy
 scipy==1.5.3; python_version > '3.5'
 scipy<=1.5.0; python_version == '3.5'  # pyup: ignore
+
+# Pillow 8.0 dropped support for python 3.5
+Pillow==8.0.0; python_version > '3.5'
+Pillow<8.0.0; python version == '3.5' # pyup: ignore
 
 # Special cases
 # -------------
