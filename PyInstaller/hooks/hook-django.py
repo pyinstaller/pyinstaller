@@ -82,8 +82,7 @@ if root_dir:
             datas.append((f, os.path.join(mod_name, bundle_dir)))
 
     # Include data files from your Django project found in your django root package.
-    # excludes files from the project dir itself (changed behavior of collect_data_files)
-    datas += collect_data_files(package_name, excludes=os.listdir())
+    datas += collect_data_files(package_name)
 
     # Include database file if using sqlite. The sqlite database is usually next to the manage.py script.
     root_dir_parent = os.path.dirname(root_dir)
