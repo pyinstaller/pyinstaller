@@ -1076,92 +1076,91 @@ static const char *CC2Str(FourCharCode code) {
 
 /* Generic event forwarder -- forwards an event to the child process. */
 static OSErr generic_forward_apple_event(const AppleEvent *const theAppleEvent, const AEEventClass eventClass,
-                                         const FourCharCode evtCode, const char *const descStr)
+                                         const AEEventID evtID, const char *const descStr)
 {
+    const FourCharCode evtCode = (FourCharCode)evtID;
     char *buf = NULL;
-    AppleEvent evtCopy;
+    AppleEvent childEvent;
     AEAddressDesc target;
     OSErr err;
-    ProcessSerialNumber psn;
     DescType typeCode = typeWildCard;
     Size bufSize = 0;
     DescType actualType = 0;
     Size actualSize = 0;
 
-    VS("LOADER [AppleEvent]: %s forwarder called.\n", descStr);
+    VS("LOADER [AppleEvent]: Forwarder called for \"%s\".\n", descStr);
     if (!child_pid) {
         /* Child not up yet -- there is no way to "forward" this before child started!. */
-         VS("LOADER [AppleEvent]: Ignoring spurious %s event (child_pid is 0)\n", descStr);
+         VS("LOADER [AppleEvent]: Child not up yet (child_pid is 0)\n");
          return errAEEventNotHandled;
     }
-    err = GetProcessForPID(child_pid, &psn);
-    if (err != noErr) {
-         OTHERERROR("LOADER [AppleEvent]: Failed to get psn for pid %d, maybe the child process just exited?\n",
-                    (int)child_pid);
-         return err;
-    }
     VS("LOADER [AppleEvent]: Forwarding '%s' event.\n", CC2Str(evtCode));
-    err = AECreateDesc(typeProcessSerialNumber, &psn, sizeof(psn), &target);
+    err = AECreateDesc(typeKernelProcessID, &child_pid, sizeof(child_pid), &target);
     if (err != noErr) {
         OTHERERROR("LOADER [AppleEvent]: Failed to create AEAddressDesc: %d\n", (int)err);
         goto out;
     }
     VS("LOADER [AppleEvent]: Created AEAddressDesc.\n");
-    err = AECreateAppleEvent(eventClass, (AEEventID)evtCode, &target, kAutoGenerateReturnID, kAnyTransactionID,
-                             &evtCopy);
+    err = AECreateAppleEvent(eventClass, evtID, &target, kAutoGenerateReturnID, kAnyTransactionID,
+                             &childEvent);
     if (err != noErr) {
         OTHERERROR("LOADER [AppleEvent]: Failed to create event copy: %d\n", (int)err);
         goto release_desc;
     }
-    VS("LOADER [AppleEvent]: Created event copy.\n");
+    VS("LOADER [AppleEvent]: Created AppleEvent instance for child processy.\n");
 
-    err = AESizeOfParam(theAppleEvent, keyDirectObject, &typeCode, &bufSize);
-    if (err != noErr) {
-        /* No params for this event */
-        VS("LOADER [AppleEvent]: Failed to get size of param (error=%d) -- event '%s' may lack params.\n",
-            (int)err, CC2Str(evtCode));
+
+    if (!theAppleEvent) {
+        VS("LOADER [AppleEvent]: New AppleEvent class: '%s' code: '%s'\n",
+           CC2Str((FourCharCode)eventClass), CC2Str((FourCharCode)evtID));
     } else {
-        /* This event has a param object, copy it. */
+        err = AESizeOfParam(theAppleEvent, keyDirectObject, &typeCode, &bufSize);
+        if (err != noErr) {
+            /* No params for this event */
+            VS("LOADER [AppleEvent]: Failed to get size of param (error=%d) -- event '%s' may lack params.\n",
+                (int)err, CC2Str(evtCode));
+        } else  {
+            /* This event has a param object, copy it. */
 
-        VS("LOADER [AppleEvent]: Got size of param: %ld\n", (long)bufSize);
-        buf = malloc(bufSize);
-        if (!buf) {
-            /* Failed to allocate buffer! */
-            OTHERERROR("LOADER [AppleEvent]: Failed to allocate buffer of size %ld: %s\n",
-                       (long)bufSize, strerror(errno));
-            goto release_evt;
-        }
-        VS("LOADER [AppleEvent]: Allocated buffer of size: %ld\n", (long)bufSize);
-        VS("LOADER [AppleEvent]: Getting param.\n");
-        err = AEGetParamPtr(theAppleEvent, keyDirectObject, typeWildCard,
-                            &actualType, buf, bufSize, &actualSize);
-        if (err != noErr) {
-            OTHERERROR("LOADER [AppleEvent]: Failed to get param data.\n");
-            goto release_evt;
-        }
-        if (actualSize > bufSize) {
-            /* From reading the Apple API docs, this should never happen, but it pays
-             * to program defensively here. */
-            OTHERERROR("LOADER [AppleEvent]: Got param size=%ld > bufSize=%ld, error!\n",
-                       (long)actualSize, (long)bufSize);
-            goto release_evt;
-        }
-        VS("LOADER [AppleEvent]: Got param type=%x (%s) size=%ld\n",
-           (UInt32)actualType, CC2Str((FourCharCode)actualType), (long)actualSize);
-        VS("LOADER [AppleEvent]: Putting param.\n");
-        err = AEPutParamPtr(&evtCopy, keyDirectObject, actualType, buf, actualSize);
-        if (err != noErr) {
-            OTHERERROR("LOADER [AppleEvent]: Failed to put param data.\n");
-            goto release_evt;
+            VS("LOADER [AppleEvent]: Got size of param: %ld\n", (long)bufSize);
+            buf = malloc(bufSize);
+            if (!buf) {
+                /* Failed to allocate buffer! */
+                OTHERERROR("LOADER [AppleEvent]: Failed to allocate buffer of size %ld: %s\n",
+                           (long)bufSize, strerror(errno));
+                goto release_evt;
+            }
+            VS("LOADER [AppleEvent]: Allocated buffer of size: %ld\n", (long)bufSize);
+            VS("LOADER [AppleEvent]: Getting param.\n");
+            err = AEGetParamPtr(theAppleEvent, keyDirectObject, typeWildCard,
+                                &actualType, buf, bufSize, &actualSize);
+            if (err != noErr) {
+                OTHERERROR("LOADER [AppleEvent]: Failed to get param data.\n");
+                goto release_evt;
+            }
+            if (actualSize > bufSize) {
+                /* From reading the Apple API docs, this should never happen, but it pays
+                 * to program defensively here. */
+                OTHERERROR("LOADER [AppleEvent]: Got param size=%ld > bufSize=%ld, error!\n",
+                           (long)actualSize, (long)bufSize);
+                goto release_evt;
+            }
+            VS("LOADER [AppleEvent]: Got param type=%x ('%s') size=%ld\n",
+               (UInt32)actualType, CC2Str((FourCharCode)actualType), (long)actualSize);
+            VS("LOADER [AppleEvent]: Putting param.\n");
+            err = AEPutParamPtr(&childEvent, keyDirectObject, actualType, buf, actualSize);
+            if (err != noErr) {
+                OTHERERROR("LOADER [AppleEvent]: Failed to put param data.\n");
+                goto release_evt;
+            }
         }
     }
-
-    VS("LOADER [AppleEvent EVT_FWD]: Sending message...\n");
-    err = AESendMessage(&evtCopy, NULL, kAENoReply, 60 /* 60 = about 1.0 seconds timeout */);
-    VS("LOADER [AppleEvent EVT_FWD]: Handler forwarded ReopenApp message to child pid %ld.\n", (long)child_pid);
+    VS("LOADER [AppleEvent]: Sending message...\n");
+    err = AESendMessage(&childEvent, NULL, kAENoReply, 60 /* 60 = about 1.0 seconds timeout */);
+    VS("LOADER [AppleEvent]: Handler sent \"%s\" message to child pid %ld.\n", descStr, (long)child_pid);
 release_evt:
     free(buf);
-    AEDisposeDesc(&evtCopy);
+    AEDisposeDesc(&childEvent);
 release_desc:
     AEDisposeDesc(&target);
 out:
@@ -1170,9 +1169,10 @@ out:
 
 /* Handles apple events 'odoc' and 'GURL', both before and after the child_pid is up, Copying them to argv if child
  * not up yet, or otherwise forwarding them to the child if the child is started. */
-static OSErr handle_odoc_GURL_events(const AppleEvent *theAppleEvent, const FourCharCode evtCode)
+static OSErr handle_odoc_GURL_events(const AppleEvent *theAppleEvent, const AEEventID evtID)
 {
-    const Boolean apple_event_is_open_doc = evtCode == 'odoc';
+    const FourCharCode evtCode = (FourCharCode)evtID;
+    const Boolean apple_event_is_open_doc = evtID == kAEOpenDocuments;
     const char *const descStr = apple_event_is_open_doc ? "OpenDoc" : "GetURL";
 
     VS("LOADER [AppleEvent]: %s handler called.\n", descStr);
@@ -1261,52 +1261,29 @@ static OSErr handle_odoc_GURL_events(const AppleEvent *theAppleEvent, const Four
     /* The child process exists.. so we forward events to it */
     return generic_forward_apple_event(theAppleEvent,
                                        apple_event_is_open_doc ? kCoreEventClass : kInternetEventClass,
-                                       apple_event_is_open_doc ? 'odoc' : 'GURL',
+                                       evtID,
                                        descStr);
 }
 
 /* This brings the child_pid's windows to the foreground when the user double-clicks the
  * app's icon again in the macOS UI. 'rapp' is accepted by us only when the child is
  * already running. */
-static OSErr handle_rapp_event(const AppleEvent *const theAppleEvent, const FourCharCode evtCode)
+static OSErr handle_rapp_event(const AppleEvent *const theAppleEvent, const AEEventID evtID)
 {
     OSErr err;
-    ProcessSerialNumber psn;
 
     VS("LOADER [AppleEvent]: ReopenApp handler called.\n");
 
-    /* First, forward the event to the child */
-    err = generic_forward_apple_event(theAppleEvent, kCoreEventClass, (AEEventClass)evtCode, "ReopenApp");
+    /* First, forward the 'rapp' event to the child */
+    err = generic_forward_apple_event(theAppleEvent, kCoreEventClass, evtID, "ReopenApp");
 
-    if (err == errAEEventNotHandled) {
-        /* child not up yet */
-        return err;
+    if (err == noErr) {
+        /* Next, create a new activate event. We never get this because we have no window,
+         * but if we did this would come next. So we synthesize an event that should come
+         * so that the child foregrounds properly. */
+        generic_forward_apple_event(NULL, kAEMiscStandards, kAEActivate, "Activate");
     }
 
-    /* Next, just to be sure, send it a "SetFrontProcess" to absolutely bring it to the foreground */
-    err = GetProcessForPID(child_pid, &psn);
-    if (err != noErr) {
-         OTHERERROR("LOADER [AppleEvent]: Failed to get psn for pid %d, maybe the child process just exited?\n",
-                    (int)child_pid);
-         return err;
-    }
-    VS("LOADER [AppleEvent]: Foregrounding child app and returning.\n");
-
-    /* SetFrontProcess() below is deprecated.  The below noisy #ifdef block basically
-     * disables the warning on clang. */
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#endif
-    /* This does more than just forwarding the rapp event, but most apps need this to
-     * become the foreground app. */
-    err = SetFrontProcess(&psn);
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
-
-    if (err != noErr)
-        OTHERERROR("LOADER [AppleEvent]: ERROR: SetFrontProcess returned: %d\n", (int)err);
     return err;
 }
 
@@ -1314,18 +1291,19 @@ static OSErr handle_rapp_event(const AppleEvent *const theAppleEvent, const Four
 static pascal OSErr handle_apple_event(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon handlerRefCon)
 {
     const FourCharCode evtCode = (FourCharCode)handlerRefCon;
-    (void) reply; /* unused */
-    VS("LOADER [AppleEvent]: %s called.\n", __FUNCTION__);
-    /* Note: the single-quoted 'odoc', 'GURL'  below are not a typo. They are the way
-     * the Apple API encodes UInt32 in a "programmer-friendly" manner using the ISO-C
-     * multi-character constant language feature. These evaluate to UInt32, which is
-     * what the "FourCharCode" type is typedef'd as. */
-    switch(evtCode) {
-    case 'odoc':
-    case 'GURL':
-        return handle_odoc_GURL_events(theAppleEvent, evtCode);
-    case 'rapp':
-        return handle_rapp_event(theAppleEvent, evtCode);
+    const AEEventID evtID = (AEEventID)handlerRefCon;
+    (void)reply; /* unused */
+
+    VS("LOADER [AppleEvent]: %s called with code '%s'.\n", __FUNCTION__, CC2Str(evtCode));
+
+    switch(evtID) {
+    case kAEOpenDocuments:
+    case kAEGetURL:
+        return handle_odoc_GURL_events(theAppleEvent, evtID);
+    case kAEReopenApplication:
+        return handle_rapp_event(theAppleEvent, evtID);
+    case kAEActivate:
+        return generic_forward_apple_event(theAppleEvent, kAEMiscStandards, evtID, "Activate");
     default:
         /* Not GetURL,OpenDoc, or ReopenApp -- this is not reached unless there is a programming error in the
          * code that sets up the handler(s). */
@@ -1353,7 +1331,7 @@ static OSStatus evt_handler_proc(EventHandlerCallRef href, EventRef eref, void *
     }
     /* Convert the event ref to the type AEProcessAppleEvent expects. */
     ConvertEventRefToEventRecord(eref, &eventRecord);
-    VS("LOADER [AppleEvent]: what=%hu message=%lx (%s) modifiers=%hu\n",
+    VS("LOADER [AppleEvent]: what=%hu message=%lx ('%s') modifiers=%hu\n",
        eventRecord.what, eventRecord.message, CC2Str((FourCharCode)eventRecord.message), eventRecord.modifiers);
     OSStatus err = AEProcessAppleEvent(&eventRecord);
     if (err == errAEEventNotHandled) {
@@ -1384,15 +1362,20 @@ static void process_apple_events(Boolean short_timeout)
         OSStatus err;
         handler = NewEventHandlerUPP(evt_handler_proc);
         handler_ae = NewAEEventHandlerUPP(handle_apple_event);
-        /* register odoc (open document) */
-        err = AEInstallEventHandler(kCoreEventClass, kAEOpenDocuments, handler_ae, (SRefCon)'odoc', false);
+        /* register 'odoc' (open document) */
+        err = AEInstallEventHandler(kCoreEventClass, kAEOpenDocuments, handler_ae, (SRefCon)kAEOpenDocuments, false);
         if (err == noErr) {
-            /* register GURL (open url) */
-            err = AEInstallEventHandler(kInternetEventClass, kAEGetURL, handler_ae, (SRefCon)'GURL', false);
+            /* register 'GURL' (open url) */
+            err = AEInstallEventHandler(kInternetEventClass, kAEGetURL, handler_ae, (SRefCon)kAEGetURL, false);
         }
         if (err == noErr) {
-            /* register rapp (re-open application e.g. re-activate window) */
-            err = AEInstallEventHandler(kCoreEventClass, kAEReopenApplication, handler_ae, (SRefCon)'rapp', false);
+            /* register 'rapp' (re-open application) */
+            err = AEInstallEventHandler(kCoreEventClass, kAEReopenApplication, handler_ae,
+                                        (SRefCon)kAEReopenApplication, false);
+        }
+        if (err == noErr) {
+            /* register 'actv' (activate) */
+            err = AEInstallEventHandler(kAEMiscStandards, kAEActivate, handler_ae, (SRefCon)kAEActivate, false);
         }
         if (err == noErr) {
             err = InstallApplicationEventHandler(handler, 1, event_types, NULL, &handler_ref);
@@ -1400,9 +1383,10 @@ static void process_apple_events(Boolean short_timeout)
 
         if (err != noErr) {
             /* App-wide handler failed. Uninstall everything. */
-            AERemoveEventHandler(kCoreEventClass, kAEOpenDocuments, handler_ae, false);
-            AERemoveEventHandler(kInternetEventClass, kAEGetURL, handler_ae, false);
+            AERemoveEventHandler(kAEMiscStandards, kAEActivate, handler_ae, false);
             AERemoveEventHandler(kCoreEventClass, kAEReopenApplication, handler_ae, false);
+            AERemoveEventHandler(kInternetEventClass, kAEGetURL, handler_ae, false);
+            AERemoveEventHandler(kCoreEventClass, kAEOpenDocuments, handler_ae, false);
             DisposeEventHandlerUPP(handler);
             DisposeAEEventHandlerUPP(handler_ae);
             VS("LOADER [AppleEvent]: Disposed handlers.\n");
