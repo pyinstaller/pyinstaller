@@ -83,7 +83,7 @@ def test_ctypes_util_find_library_as_default_argument():
     utils.scan_code_for_ctypes(co)
 
 
-@pytest.mark.skipif(not is_unix, reason="requires a Unix System")
+@pytest.mark.linux
 def test_ldconfig_cache():
     utils.load_ldconfig_cache()
     libpath = None

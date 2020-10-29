@@ -19,7 +19,7 @@ import pytest
 
 from PyInstaller.compat import is_darwin, is_win
 from PyInstaller.utils.tests import skipif, importorskip, \
-    skipif_notwin, skipif_no_compiler, xfail, has_compiler
+    skipif_no_compiler, xfail, has_compiler
 
 # :todo: find a way to get this from `conftest` or such
 # Directory with testing modules used in some tests.
@@ -316,7 +316,7 @@ for prefix in ('', 'ctypes.'):
             params = pytest.param(*params, marks=skipif_no_compiler(params))
         elif funcname in ("WinDLL", "OleDLL"):
             # WinDLL, OleDLL only work on windows.
-            params = pytest.param(*params, marks=skipif_notwin(params))
+            params = pytest.param(*params, marks=pytest.mark.win32)
         parameters.append(params)
 
 @pytest.mark.parametrize("funcname,test_id", parameters, ids=ids)

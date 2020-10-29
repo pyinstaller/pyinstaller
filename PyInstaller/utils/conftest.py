@@ -66,6 +66,9 @@ from PyInstaller.utils.hooks.qt import pyqt5_library_info, pyside2_library_info
 _EXE_TIMEOUT = 30  # In sec.
 # Number of retries we should attempt if the executable times out.
 _MAX_RETRIES = 2
+# All currently supported platforms
+SUPPORTED_OSES = {"darwin", "linux", "win32"}
+
 
 # Code
 # ====
@@ -82,6 +85,22 @@ def SPEC_DIR(request):
 def SCRIPT_DIR(request):
     """Return the directory where the test scripts reside"""
     return py.path.local(_get_script_dir(request))
+
+
+def pytest_runtest_setup(item):
+    """Markers to skip tests based on the current platform.
+    https://pytest.org/en/stable/example/markers.html#marking-platform-specific-tests-with-pytest
+
+    Available markers: see setup.cfg [tool:pytest] markers
+        - @pytest.mark.darwin (macOS)
+        - @pytest.mark.linux (GNU/Linux)
+        - @pytest.mark.win32 (Windows)
+    """
+    supported_platforms = SUPPORTED_OSES.intersection(
+        mark.name for mark in item.iter_markers())
+    plat = sys.platform
+    if supported_platforms and plat not in supported_platforms:
+        pytest.skip("only runs on %s" % plat)
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
