@@ -596,8 +596,8 @@ def test_pil_plugins(pyi_builder):
         """
         # Verify packaging of PIL.Image. Specifically, the hidden import of FixTk
         # importing tkinter is causing some problems.
-        from PIL.Image import fromstring
-        print(fromstring)
+        from PIL.Image import frombytes
+        print(frombytes)
 
         # PIL import hook should bundle all available PIL plugins. Verify that plugins
         # are bundled.
