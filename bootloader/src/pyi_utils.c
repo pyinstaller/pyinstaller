@@ -1076,185 +1076,243 @@ static const char *CC2Str(FourCharCode code) {
 
 /* Handles apple events 'odoc' and 'GURL', both before and after the child_pid is up, forwarding them to args if child
  * not up yet, or otherwise forwarding them to the child if the child is started. Other event types are ignored. */
+static OSErr handle_odoc_GURL_events(const AppleEvent *theAppleEvent, Boolean apple_event_is_open_doc)
+{
+    const char *const descStr = apple_event_is_open_doc ? "OpenDoc" : "GetURL";
+
+    VS("LOADER [AppleEvent]: %s handler called.\n", descStr);
+
+    if (!child_pid) {
+        /* Child process is not up yet -- so we pick up kAEOpen and/or kAEGetURL events and append them to args. */
+
+        AEDescList docList;
+        long index;
+        long count = 0;
+        Size actualSize;
+        DescType returnedType;
+        AEKeyword keywd;
+        /* Note: In order to keep the below code sane, we will use a stack temporary buffer and we will assume
+         * a 64 KiB buffer is enough for each data item.  Since we are iterating over a potentially long list
+         * of URLs and/or files here, assuming each URL is < 64 KiB should be more than enough.
+         * Also note: MAX_PATH on MacOS is 1024 bytes. */
+        char buf[64*1024];
+
+        VS("LOADER [AppleEvent ARGV_EMU]: Processing args for forward...\n");
+
+        OSErr err = AEGetParamDesc(theAppleEvent, keyDirectObject, typeAEList, &docList);
+        if (err != noErr) return err;
+
+        err = AECountItems(&docList, &count);
+        if (err != noErr) return err;
+
+        for (index = 1; index <= count; ++index) /* AppleEvent lists are 1-indexed (I guess because of Pascal?) */
+        {
+            err = AEGetNthPtr(&docList, index, apple_event_is_open_doc ? typeFileURL : typeUTF8Text, &keywd,
+                              &returnedType, buf, sizeof(buf)-1, &actualSize);
+            if (err != noErr) {
+                VS("LOADER [AppleEvent ARGV_EMU]: err[%ld] = %d\n", index-1L, (int)err);
+            } else if (actualSize > sizeof(buf)-1) {
+                VS("LOADER [AppleEvent ARGV_EMU]: err[%ld]: not enough space in buffer (%ld > %ld)\n",
+                   index-1L, (long)actualSize, (long)(sizeof(buf)-1));
+            } else {
+                char *tmp_str = NULL, **tmp_argv = NULL;
+
+                buf[actualSize] = 0; /* force NUL-char termination. */
+                if (apple_event_is_open_doc) {
+                    /* Now, convert file:/// style URLs to an actual filesystem path for argv emu. */
+                    Boolean ok = false;
+                    CFURLRef url = CFURLCreateWithBytes(NULL, (UInt8 *)buf, actualSize, kCFStringEncodingUTF8,
+                                                        NULL);
+                    if (url) {
+                        CFStringRef path = CFURLCopyFileSystemPath(url, kCFURLPOSIXPathStyle);
+                        if (path) {
+                            ok = CFStringGetFileSystemRepresentation(path, buf, sizeof(buf));
+                            CFRelease(path); /* free */
+                        }
+                        CFRelease(url); /* free */
+                        if (!ok) {
+                            VS("LOADER [AppleEvent ARGV_EMU]: "
+                               "Failed to convert file:/// path to POSIX filesystem representation for arg %ld!\n",
+                               index);
+                            continue;
+                        }
+                    }
+                }
+                /* Append URL to argv_pyi array, reallocating as necessary */
+                VS("LOADER [AppleEvent ARGV_EMU]: arg[%d] = %s\n", (int)argc_pyi, buf);
+                tmp_str = strdup(buf);
+                tmp_argv = (char **)realloc(argv_pyi, (argc_pyi + 2) * sizeof(char *));
+                if (!tmp_argv || !tmp_str) {
+                    /* Out of memory. Extremely unlikely -- not clear what to do here.
+                     * Attempt to silently continue. */
+                    OTHERERROR("LOADER [AppleEvent ARGV_EMU]: allocation for arg[%d] failed: %s\n",
+                               argc_pyi, strerror(errno));
+                    free(tmp_argv); /* free of NULL ok */
+                    free(tmp_str);
+                    continue;
+                }
+                argv_pyi = tmp_argv;
+                argv_pyi[argc_pyi++] = tmp_str;
+                argv_pyi[argc_pyi] = NULL;
+                VS("LOADER [AppleEvent ARGV_EMU]: argv entry appended.\n");
+            }
+        }
+
+        err = AEDisposeDesc(&docList);
+
+        return err;
+
+    } else {
+        /* The child process exists.. so we forward events to it */
+
+        ProcessSerialNumber psn;
+        AppleEvent evtCopy;
+        AEAddressDesc target;
+        OSStatus err = noErr;
+        AEEventClass evtClass;
+        AEEventID evtID;
+        char *buf = NULL; /* Dynamically allocated buffer based on size of data */
+
+        if (apple_event_is_open_doc) {
+            /* open doc */
+            evtClass = kCoreEventClass;
+            evtID = kAEOpenDocuments;
+        } else {
+            /* get URL */
+            evtClass = kInternetEventClass;
+            evtID = kAEGetURL;
+        }
+
+        VS("LOADER [AppleEvent EVT_FWD]: Will forward %s event to child pid %ld...\n", descStr, (long)child_pid);
+
+        err = GetProcessForPID(child_pid, &psn);
+        if (err != noErr) return (OSErr)err;
+        VS("LOADER [AppleEvent EVT_FWD]: Creating target desc.\n");
+        /* re-target the event to our child process: creating a descriptor and event object for it */
+        err = AECreateDesc(typeProcessSerialNumber, &psn, sizeof(psn), &target);
+        if (err != noErr) return (OSErr)err;
+        VS("LOADER [AppleEvent EVT_FWD]: Creating dupe event.\n");
+        err = AECreateAppleEvent(evtClass, evtID, &target, kAutoGenerateReturnID, kAnyTransactionID, &evtCopy);
+        if (err != noErr) goto cleanup2;
+
+        { /* <-- These curly braces aren't a typo. We are creating a nested scope here for below vars. */
+            DescType typeCode = typeWildCard;
+            Size bufSize = 0;
+            DescType actualType = 0;
+            Size actualSize = 0;
+
+            err = AESizeOfParam(theAppleEvent, keyDirectObject, &typeCode, &bufSize);
+            if (err != noErr) goto cleanup1;
+            buf = malloc(bufSize);
+            if (!buf) {
+                /* Failed to allocate buffer! */
+                OTHERERROR("LOADER [AppleEvent EVT_FWD]: Failed to allocate buffer of size %ld: %s\n",
+                           (long)bufSize, strerror(errno));
+                goto cleanup1;
+            }
+            VS("LOADER [AppleEvent EVT_FWD]: Allocated buffer of size: %ld\n", (long)bufSize);
+            VS("LOADER [AppleEvent EVT_FWD]: Getting param.\n");
+            err = AEGetParamPtr(theAppleEvent, keyDirectObject, typeWildCard,
+                                &actualType, buf, bufSize, &actualSize);
+            if (err != noErr) goto cleanup1;
+            if (actualSize > bufSize) {
+                /* From reading the Apple API docs, this should never happen, but it pays
+                 * to program defensively here. */
+                OTHERERROR("LOADER [AppleEvent EVT_FWD]: Got param size=%ld > bufSize=%ld, error!\n",
+                           (long)actualSize, (long)bufSize);
+                goto cleanup1;
+            }
+            VS("LOADER [AppleEvent EVT_FWD]: Got param type=%x (%s) size=%ld\n",
+               (UInt32)actualType, CC2Str((FourCharCode)actualType), (long)actualSize);
+            VS("LOADER [AppleEvent EVT_FWD]: Putting param.\n");
+            err = AEPutParamPtr(&evtCopy, keyDirectObject, actualType, buf, actualSize);
+            if (err != noErr) goto cleanup1;
+        }
+        VS("LOADER [AppleEvent EVT_FWD]: Sending message...\n");
+        err = AESendMessage(&evtCopy, NULL, kAENoReply, 60 /* 60 = about 1.0 seconds timeout */);
+        VS("LOADER [AppleEvent EVT_FWD]: Handler forwarded %s message to child pid %ld.\n",
+           descStr, (long)child_pid);
+
+    cleanup1:
+        free(buf); /* free of possible NULL ptr ok */
+        AEDisposeDesc(&evtCopy); /* dispose apple event copy */
+    cleanup2:
+        AEDisposeDesc(&target);
+        if (err)
+            OTHERERROR("LOADER [AppleEvent EVT_FWD]: %s handler got error %d\n", descStr, (int)err);
+        return (OSErr)err;
+    }
+    return noErr; /* not reached */
+}
+
+/* Handler for 'rapp' (reopen app) events. This brings the child_pid's windows
+ * to the foreground when the user double-clicks the app's icon again in the macOS UI.
+ * 'rapp' is sent to us only when the app is already running. */
+static OSErr handle_rapp_events(void)
+{
+    OSErr err;
+    ProcessSerialNumber psn;
+
+    VS("LOADER [AppleEvent]: ReopenApp handler called.\n");
+    if (!child_pid) {
+        /* Child not up yet -- there is no way to "forward" this before child started!
+         * It's safe to ignore this event now since the subordinate application will
+         * activate anyway after it started. */
+         VS("LOADER [AppleEvent]: Ignoring spurious ReopenApp event (child_pid is 0)\n");
+         return errAEEventNotHandled;
+    }
+    err = GetProcessForPID(child_pid, &psn);
+    if (err != noErr) {
+         OTHERERROR("LOADER [AppleEvent]: Failed to get psn for pid %d, maybe the child process just exited?\n",
+                    (int)child_pid);
+         return err;
+    }
+    VS("LOADER [AppleEvent]: Raising process and returning.\n");
+    /* SetFrontProcess() below is deprecated -- but it is the only way we have to do this.
+     * The below noisy #ifdef block basically disables the warning on clang. */
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
+    /* We cannot actually forward the 'rapp' message to a process by ProcessSerialNumber.
+     * We can only do it to a bundle-id.  Since the subordinate app has no real bundle-id,
+     * we must instead "simulate" the "rapp" message by doing this macOS call which sends
+     * the right combination of events to the subordinate app to get it to active and raise
+     * itself to the foreground. */
+    err = SetFrontProcess(&psn);
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+    if (err != noErr)
+        OTHERERROR("LOADER [AppleEvent]: ERROR: SetFrontProcess returned: %d\n", (int)err);
+    return (OSErr)err;
+}
+
+/* Top-level event handler -- dispatches 'odoc', 'GURL', or 'rapp' events to one of the two handler_*_events
+ * functions declared above. */
 static pascal OSErr handle_apple_event(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon handlerRefCon)
 {
     const FourCharCode evtCode = (FourCharCode)handlerRefCon;
-    /* Note: the single-quoted 'odoc' & 'GURL' below are not a typo. They are the way
+    (void) reply; /* unused */
+    VS("LOADER [AppleEvent]: %s called.\n", __FUNCTION__);
+    /* Note: the single-quoted 'odoc', 'GURL'  below are not a typo. They are the way
      * the Apple API encodes UInt32 in a "programmer-friendly" manner using the ISO-C
      * multi-character constant language feature. These evaluate to UInt32, which is
      * what the "FourCharCode" type is typedef'd as. */
-    const Boolean apple_event_is_open_doc = evtCode == 'odoc',
-                  apple_event_is_open_uri = evtCode == 'GURL';
-
-    if (apple_event_is_open_doc || apple_event_is_open_uri) {
-        const char *const descStr = apple_event_is_open_uri ? "GetURL" : "OpenDoc";
-
-        VS("LOADER [AppleEvent]: %s handler called.\n", descStr);
-
-        if (!child_pid) {
-            /* Child process is not up yet -- so we pick up kAEOpen and/or kAEGetURL events and append them to args. */
-
-            AEDescList docList;
-            long index;
-            long count = 0;
-            Size actualSize;
-            DescType returnedType;
-            AEKeyword keywd;
-            /* Note: In order to keep the below code sane, we will use a stack temporary buffer and we will assume
-             * a 64 KiB buffer is enough for each data item.  Since we are iterating over a potentially long list
-             * of URLs and/or files here, assuming each URL is < 64 KiB should be more than enough.
-             * Also note: MAX_PATH on MacOS is 1024 bytes. */
-            char buf[64*1024];
-
-            VS("LOADER [AppleEvent ARGV_EMU]: Processing args for forward...\n");
-
-            OSErr err = AEGetParamDesc(theAppleEvent, keyDirectObject, typeAEList, &docList);
-            if (err != noErr) return err;
-
-            err = AECountItems(&docList, &count);
-            if (err != noErr) return err;
-
-            for (index = 1; index <= count; ++index) /* AppleEvent lists are 1-indexed (I guess because of Pascal?) */
-            {
-                err = AEGetNthPtr(&docList, index, apple_event_is_open_doc ? typeFileURL : typeUTF8Text, &keywd,
-                                  &returnedType, buf, sizeof(buf)-1, &actualSize);
-                if (err != noErr) {
-                    VS("LOADER [AppleEvent ARGV_EMU]: err[%ld] = %d\n", index-1L, (int)err);
-                } else if (actualSize > sizeof(buf)-1) {
-                    VS("LOADER [AppleEvent ARGV_EMU]: err[%ld]: not enough space in buffer (%ld > %ld)\n",
-                       index-1L, (long)actualSize, (long)(sizeof(buf)-1));
-                } else {
-                    char *tmp_str = NULL, **tmp_argv = NULL;
-
-                    buf[actualSize] = 0; /* force NUL-char termination. */
-                    if (apple_event_is_open_doc) {
-                        /* Now, convert file:/// style URLs to an actual filesystem path for argv emu. */
-                        Boolean ok = false;
-                        CFURLRef url = CFURLCreateWithBytes(NULL, (UInt8 *)buf, actualSize, kCFStringEncodingUTF8,
-                                                            NULL);
-                        if (url) {
-                            CFStringRef path = CFURLCopyFileSystemPath(url, kCFURLPOSIXPathStyle);
-                            if (path) {
-                                ok = CFStringGetFileSystemRepresentation(path, buf, sizeof(buf));
-                                CFRelease(path); /* free */
-                            }
-                            CFRelease(url); /* free */
-                            if (!ok) {
-                                VS("LOADER [AppleEvent ARGV_EMU]: "
-                                   "Failed to convert file:/// path to POSIX filesystem representation for arg %ld!\n",
-                                   index);
-                                continue;
-                            }
-                        }
-                    }
-                    /* Append URL to argv_pyi array, reallocating as necessary */
-                    VS("LOADER [AppleEvent ARGV_EMU]: arg[%d] = %s\n", (int)argc_pyi, buf);
-                    tmp_str = strdup(buf);
-                    tmp_argv = (char **)realloc(argv_pyi, (argc_pyi + 2) * sizeof(char *));
-                    if (!tmp_argv || !tmp_str) {
-                        /* Out of memory. Extremely unlikely -- not clear what to do here.
-                         * Attempt to silently continue. */
-                        OTHERERROR("LOADER [AppleEvent ARGV_EMU]: allocation for arg[%d] failed: %s\n",
-                                   argc_pyi, strerror(errno));
-                        free(tmp_argv); /* free of NULL ok */
-                        free(tmp_str);
-                        continue;
-                    }
-                    argv_pyi = tmp_argv;
-                    argv_pyi[argc_pyi++] = tmp_str;
-                    argv_pyi[argc_pyi] = NULL;
-                    VS("LOADER [AppleEvent ARGV_EMU]: argv entry appended.\n");
-                }
-            }
-
-            err = AEDisposeDesc(&docList);
-
-            return err;
-
-        } else {
-            /* The child process exists.. so we forward events to it */
-
-            ProcessSerialNumber psn;
-            AppleEvent evtCopy;
-            AEAddressDesc target;
-            OSStatus err = noErr;
-            AEEventClass evtClass;
-            AEEventID evtID;
-            char *buf = NULL; /* Dynamically allocated buffer based on size of data */
-
-            if (apple_event_is_open_uri) {
-                evtClass = kInternetEventClass;
-                evtID = kAEGetURL;
-            } else {
-                /* open doc */
-                evtClass = kCoreEventClass;
-                evtID = kAEOpenDocuments;
-            }
-
-            VS("LOADER [AppleEvent EVT_FWD]: Will forward %s event to child pid %ld...\n", descStr, (long)child_pid);
-
-            err = GetProcessForPID(child_pid, &psn);
-            if (err != noErr) return (OSErr)err;
-            VS("LOADER [AppleEvent EVT_FWD]: Creating target desc.\n");
-            /* re-target the event to our child process: creating a descriptor and event object for it */
-            err = AECreateDesc(typeProcessSerialNumber, &psn, sizeof(psn), &target);
-            if (err != noErr) return (OSErr)err;
-            VS("LOADER [AppleEvent EVT_FWD]: Creating dupe event.\n");
-            err = AECreateAppleEvent(evtClass, evtID, &target, kAutoGenerateReturnID, kAnyTransactionID, &evtCopy);
-            if (err != noErr) goto cleanup2;
-
-            { /* <-- These curly braces aren't a typo. We are creating a nested scope here for below vars. */
-                DescType typeCode = typeWildCard;
-                Size bufSize = 0;
-                DescType actualType = 0;
-                Size actualSize = 0;
-
-                err = AESizeOfParam(theAppleEvent, keyDirectObject, &typeCode, &bufSize);
-                if (err != noErr) goto cleanup1;
-                buf = malloc(bufSize);
-                if (!buf) {
-                    /* Failed to allocate buffer! */
-                    OTHERERROR("LOADER [AppleEvent EVT_FWD]: Failed to allocate buffer of size %ld: %s\n",
-                               (long)bufSize, strerror(errno));
-                    goto cleanup1;
-                }
-                VS("LOADER [AppleEvent EVT_FWD]: Getting param.\n");
-                err = AEGetParamPtr(theAppleEvent, keyDirectObject, typeWildCard,
-                                    &actualType, buf, bufSize, &actualSize);
-                if (err != noErr) goto cleanup1;
-                if (actualSize > bufSize) {
-                    /* From reading the Apple API docs, this should never happen, but it pays
-                     * to program defensively here. */
-                    OTHERERROR("LOADER [AppleEvent EVT_FWD]: Got param size=%ld > bufSize=%ld, error!\n",
-                               (long)actualSize, (long)bufSize);
-                    goto cleanup1;
-                }
-                VS("LOADER [AppleEvent EVT_FWD]: Got param type=%x (%s) size=%ld\n",
-                   (UInt32)actualType, CC2Str((FourCharCode)actualType), (long)actualSize);
-                VS("LOADER [AppleEvent EVT_FWD]: Putting param.\n");
-                err = AEPutParamPtr(&evtCopy, keyDirectObject, actualType, buf, actualSize);
-                if (err != noErr) goto cleanup1;
-            }
-            VS("LOADER [AppleEvent EVT_FWD]: Sending message...\n");
-            err = AESendMessage(&evtCopy, NULL, kAENoReply, 60 /* 60 = about 1.0 seconds timeout */);
-            VS("LOADER [AppleEvent EVT_FWD]: Handler forwarded %s message to child pid %ld.\n",
-               descStr, (long)child_pid);
-
-        cleanup1:
-            free(buf); /* free of possible NULL ptr ok */
-            AEDisposeDesc(&evtCopy); /* dispose apple event copy */
-        cleanup2:
-            AEDisposeDesc(&target);
-            if (err) {
-                OTHERERROR("LOADER [AppleEvent EVT_FWD]: OpenDocument handler got error %d\n", (int)err);
-            }
-            return (OSErr)err;
-        }
-    } else {
-        /* Not GetURL or OpenDoc, so just ignore */
-        VS("LOADER [AppleEvent]: Handler ignoring event '%s'\n", CC2Str(evtCode));
+    switch(evtCode) {
+    case 'odoc':
+        return handle_odoc_GURL_events(theAppleEvent, true /* OpenDoc */);
+    case 'GURL':
+        return handle_odoc_GURL_events(theAppleEvent, false /* GetURL */);
+    case 'rapp':
+        return handle_rapp_events();
+    default:
+        /* Not GetURL,OpenDoc, or ReopenApp -- this is not reached unless there is a programming error in the
+         * code that sets up the handler(s). */
+        OTHERERROR("LOADER [AppleEvent]: %s called with unexpected event type '%s'!",
+                   __FUNCTION__, CC2Str(evtCode));
+        return errAEEventNotHandled;
     }
-    return noErr;
 }
 
 /* Function gets installed as the bootloader process-wide UPP event handler */
@@ -1306,9 +1364,15 @@ static void process_apple_events(Boolean short_timeout)
         OSStatus err;
         handler = NewEventHandlerUPP(evt_handler_proc);
         handler_ae = NewAEEventHandlerUPP(handle_apple_event);
+        /* register odoc (open document) */
         err = AEInstallEventHandler(kCoreEventClass, kAEOpenDocuments, handler_ae, (SRefCon)'odoc', false);
         if (err == noErr) {
+            /* register GURL (open url) */
             err = AEInstallEventHandler(kInternetEventClass, kAEGetURL, handler_ae, (SRefCon)'GURL', false);
+        }
+        if (err == noErr) {
+            /* register rapp (re-open application e.g. re-activate window) */
+            err = AEInstallEventHandler(kCoreEventClass, kAEReopenApplication, handler_ae, (SRefCon)'rapp', false);
         }
         if (err == noErr) {
             err = InstallApplicationEventHandler(handler, 1, event_types, NULL, &handler_ref);
@@ -1318,6 +1382,7 @@ static void process_apple_events(Boolean short_timeout)
             /* App-wide handler failed. Uninstall everything. */
             AERemoveEventHandler(kCoreEventClass, kAEOpenDocuments, handler_ae, false);
             AERemoveEventHandler(kInternetEventClass, kAEGetURL, handler_ae, false);
+            AERemoveEventHandler(kCoreEventClass, kAEReopenApplication, handler_ae, false);
             DisposeEventHandlerUPP(handler);
             DisposeAEEventHandlerUPP(handler_ae);
             VS("LOADER [AppleEvent]: Disposed handlers.\n");
