@@ -258,6 +258,55 @@ pyi_unsetenv(const char *variable)
 
 #ifdef _WIN32
 
+/* Resolve the runtime tmpdir path and build nested directories */
+wchar_t
+*pyi_build_temp_folder(char *runtime_tmpdir)
+{
+    wchar_t *wruntime_tmpdir;
+    wchar_t wruntime_tmpdir_expanded[PATH_MAX];
+    wchar_t *wruntime_tmpdir_abspath;
+    wchar_t *cursor;
+    wchar_t path_builder[PATH_MAX];
+    DWORD rc;
+    // Expand environment variables like %LOCALAPPDATA%
+    wruntime_tmpdir = pyi_win32_utils_from_utf8(NULL, runtime_tmpdir, 0);
+    if (!wruntime_tmpdir) {
+        FATALERROR("LOADER: Failed to convert runtime-tmpdir to a wide string.\n");
+        return NULL;
+    }
+    rc = ExpandEnvironmentStringsW(wruntime_tmpdir, wruntime_tmpdir_expanded,
+                                   PATH_MAX);
+    free(wruntime_tmpdir);
+    if (!rc) {
+        FATALERROR("LOADER: Failed to expand environment variables in the runtime-tmpdir.\n");
+        return NULL;
+    }
+    // Get the absolute path
+    wruntime_tmpdir_abspath = _wfullpath(NULL, wruntime_tmpdir_expanded,
+                                         PATH_MAX);
+    if (!wruntime_tmpdir_abspath) {
+        FATALERROR("LOADER: Failed to obtain the absolute path of the runtime-tmpdir.\n");
+        return NULL;
+    }
+    VS("LOADER: absolute runtime tmpdir is %ls\n", wruntime_tmpdir_abspath);
+    // Create the directory path if it does not yet already exist (e.g.
+    // %AppData%\NewFolder\NestedFolder)
+    ZeroMemory(path_builder, PATH_MAX * sizeof(wchar_t));
+    cursor = wcschr(wruntime_tmpdir_abspath, L'\\');
+    while(cursor != NULL) {
+        wcsncpy(path_builder, wruntime_tmpdir_abspath,
+                cursor - wruntime_tmpdir_abspath + 1);
+        CreateDirectoryW(path_builder, NULL);
+        // We expect ERROR_ALREADY_EXISTS, ERROR_ACCESS_DENIED (if try to
+        // create a drive when running as an admin), etc...
+        cursor = wcschr(++cursor, L'\\');
+    }
+    // May not have a string terminated with \, so run CreateDirectoryW one
+    // last time to handle that case
+    CreateDirectoryW(wruntime_tmpdir_abspath, NULL);
+    return wruntime_tmpdir_abspath;
+}
+
 /* TODO rename fuction and revisit */
 int
 pyi_get_temp_path(char *buffer, char *runtime_tmpdir)
@@ -267,7 +316,8 @@ pyi_get_temp_path(char *buffer, char *runtime_tmpdir)
     wchar_t prefix[16];
     wchar_t wchar_buffer[PATH_MAX];
     char *original_tmpdir;
-    char runtime_tmpdir_abspath[PATH_MAX + 1];
+    wchar_t *wruntime_tmpdir_abspath;
+    DWORD rc;
 
     if (runtime_tmpdir != NULL) {
       /*
@@ -278,8 +328,18 @@ pyi_get_temp_path(char *buffer, char *runtime_tmpdir)
       /*
        * Set TMP to runtime_tmpdir for _wtempnam() later
        */
-      pyi_path_fullpath(runtime_tmpdir_abspath, PATH_MAX, runtime_tmpdir);
-      pyi_setenv("TMP", runtime_tmpdir_abspath);
+      wruntime_tmpdir_abspath = pyi_build_temp_folder(runtime_tmpdir);
+      if (!wruntime_tmpdir_abspath) {
+          return 0;
+      }
+      // Store in the TMP environment variable
+      rc = _wputenv_s(L"TMP", wruntime_tmpdir_abspath);
+      free(wruntime_tmpdir_abspath);
+      if (rc) {
+          FATALERROR("LOADER: Failed to set the TMP environment variable.\n");
+          return 0;
+      }
+      VS("LOADER: Successfully resolved the specified runtime-tmpdir\n");
     }
 
     GetTempPathW(PATH_MAX, wchar_buffer);
