@@ -1167,6 +1167,18 @@ out:
     return err;
 }
 
+static Boolean realloc_checked(void **bufptr, Size size)
+{
+    void *tmp = realloc(*bufptr, size);
+    if (!tmp) {
+        OTHERERROR("LOADER [AppleEvents]: Failed to allocate a buffer of size %ld.\n", (long)size);
+        return false;
+    }
+    VS("LOADER [AppleEvents]: (re)allocated a buffer of size %ld\n", (long)size);
+    *bufptr = tmp;
+    return true;
+}
+
 /* Handles apple events 'odoc' and 'GURL', both before and after the child_pid is up, Copying them to argv if child
  * not up yet, or otherwise forwarding them to the child if the child is started. */
 static OSErr handle_odoc_GURL_events(const AppleEvent *theAppleEvent, const AEEventID evtID)
@@ -1186,11 +1198,7 @@ static OSErr handle_odoc_GURL_events(const AppleEvent *theAppleEvent, const AEEv
         Size actualSize;
         DescType returnedType;
         AEKeyword keywd;
-        /* Note: In order to keep the below code sane, we will use a stack temporary buffer and we will assume
-         * a 64 KiB buffer is enough for each data item.  Since we are iterating over a potentially long list
-         * of URLs and/or files here, assuming each URL is < 64 KiB should be more than enough.
-         * Also note: MAX_PATH on MacOS is 1024 bytes. */
-        char buf[64*1024];
+        char *buf = NULL; /* Dynamic buffer for URL/file path data -- gets realloc'd as we iterate */
 
         VS("LOADER [AppleEvent ARGV_EMU]: Processing args for forward...\n");
 
@@ -1202,26 +1210,44 @@ static OSErr handle_odoc_GURL_events(const AppleEvent *theAppleEvent, const AEEv
 
         for (index = 1; index <= count; ++index) /* AppleEvent lists are 1-indexed (I guess because of Pascal?) */
         {
+            Size bufSize = 0;
+            DescType typeCode = typeWildCard;
+
+            err = AESizeOfNthItem(&docList, index, &typeCode, &bufSize);
+            if (err != noErr) {
+                OTHERERROR("LOADER [AppleEvent ARGV_EMU]: Failed to get size of Nth item %ld, error: %d\n",
+                           index, (int)err);
+                continue;
+            }
+
+            if (!realloc_checked((void **)&buf, bufSize+1)) {
+                /* Not enough memory -- very unlikely but if so keep going */
+                OTHERERROR("LOADER [AppleEvent ARGV_EMU]: Not enough memory for Nth item %ld, skipping%d\n", index);
+                continue;
+            }
+
             err = AEGetNthPtr(&docList, index, apple_event_is_open_doc ? typeFileURL : typeUTF8Text, &keywd,
-                              &returnedType, buf, sizeof(buf)-1, &actualSize);
+                              &returnedType, buf, bufSize, &actualSize);
             if (err != noErr) {
                 VS("LOADER [AppleEvent ARGV_EMU]: err[%ld] = %d\n", index-1L, (int)err);
-            } else if (actualSize > sizeof(buf)-1) {
+            } else if (actualSize > bufSize) {
+                /* This should never happen but is here for thoroughness */
                 VS("LOADER [AppleEvent ARGV_EMU]: err[%ld]: not enough space in buffer (%ld > %ld)\n",
-                   index-1L, (long)actualSize, (long)(sizeof(buf)-1));
+                   index-1L, (long)actualSize, (long)bufSize);
             } else {
-                char *tmp_str = NULL, **tmp_argv = NULL;
+                /* Copied data to buf, now ensure data is a simple file path and then copy to argv_pyi[argc_pyi] */
+                char *tmp_str = NULL;
+                Boolean ok = false;
 
                 buf[actualSize] = 0; /* force NUL-char termination. */
                 if (apple_event_is_open_doc) {
                     /* Now, convert file:/// style URLs to an actual filesystem path for argv emu. */
-                    Boolean ok = false;
                     CFURLRef url = CFURLCreateWithBytes(NULL, (UInt8 *)buf, actualSize, kCFStringEncodingUTF8,
                                                         NULL);
                     if (url) {
                         CFStringRef path = CFURLCopyFileSystemPath(url, kCFURLPOSIXPathStyle);
                         if (path) {
-                            ok = CFStringGetFileSystemRepresentation(path, buf, sizeof(buf));
+                            ok = CFStringGetFileSystemRepresentation(path, buf, bufSize);
                             CFRelease(path); /* free */
                         }
                         CFRelease(url); /* free */
@@ -1236,22 +1262,22 @@ static OSErr handle_odoc_GURL_events(const AppleEvent *theAppleEvent, const AEEv
                 /* Append URL to argv_pyi array, reallocating as necessary */
                 VS("LOADER [AppleEvent ARGV_EMU]: arg[%d] = %s\n", (int)argc_pyi, buf);
                 tmp_str = strdup(buf);
-                tmp_argv = (char **)realloc(argv_pyi, (argc_pyi + 2) * sizeof(char *));
-                if (!tmp_argv || !tmp_str) {
+                ok = realloc_checked((void **)&argv_pyi, (argc_pyi + 2) * sizeof(char *));
+                if (!ok || !tmp_str) {
                     /* Out of memory. Extremely unlikely -- not clear what to do here.
                      * Attempt to silently continue. */
                     OTHERERROR("LOADER [AppleEvent ARGV_EMU]: allocation for arg[%d] failed: %s\n",
                                argc_pyi, strerror(errno));
-                    free(tmp_argv); /* free of NULL ok */
-                    free(tmp_str);
+                    free(tmp_str); /* free of possible NULL ok */
                     continue;
                 }
-                argv_pyi = tmp_argv;
                 argv_pyi[argc_pyi++] = tmp_str;
                 argv_pyi[argc_pyi] = NULL;
                 VS("LOADER [AppleEvent ARGV_EMU]: argv entry appended.\n");
             }
         }
+
+        free(buf); /* free of possible-NULL ok */
 
         err = AEDisposeDesc(&docList);
 
