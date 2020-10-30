@@ -1079,7 +1079,7 @@ static OSErr generic_forward_apple_event(const AppleEvent *const theAppleEvent, 
                                          const AEEventID evtID, const char *const descStr)
 {
     const FourCharCode evtCode = (FourCharCode)evtID;
-    char *buf = NULL;
+    char *buf = NULL; /* dynamic buffer to hold filename/URL data */
     AppleEvent childEvent;
     AEAddressDesc target;
     OSErr err;
@@ -1107,7 +1107,7 @@ static OSErr generic_forward_apple_event(const AppleEvent *const theAppleEvent, 
         OTHERERROR("LOADER [AppleEvent]: Failed to create event copy: %d\n", (int)err);
         goto release_desc;
     }
-    VS("LOADER [AppleEvent]: Created AppleEvent instance for child processy.\n");
+    VS("LOADER [AppleEvent]: Created AppleEvent instance for child process.\n");
 
 
     if (!theAppleEvent) {
