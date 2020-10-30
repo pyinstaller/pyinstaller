@@ -1112,6 +1112,9 @@ static OSErr generic_forward_apple_event(const AppleEvent *const theAppleEvent /
 
 
     if (!theAppleEvent) {
+        /* Calling code wants a new event created from scratch, we do so
+         * here and it will have 0 params. Assumption: caller knows that
+         * the event type in question normally has 0 params. */
         VS("LOADER [AppleEvent]: New AppleEvent class: '%s' code: '%s'\n",
            CC2Str((FourCharCode)eventClass), CC2Str((FourCharCode)evtID));
     } else {
