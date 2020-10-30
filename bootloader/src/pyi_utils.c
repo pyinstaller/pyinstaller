@@ -1317,7 +1317,7 @@ static OSErr handle_rapp_event(const AppleEvent *const theAppleEvent, const AEEv
     return err;
 }
 
-/* Top-level event handler -- dispatches 'odoc', 'GURL', or 'rapp' events. */
+/* Top-level event handler -- dispatches 'odoc', 'GURL', 'rapp', or 'actv' events. */
 static pascal OSErr handle_apple_event(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon handlerRefCon)
 {
     const FourCharCode evtCode = (FourCharCode)handlerRefCon;
