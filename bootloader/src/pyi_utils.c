@@ -1079,14 +1079,12 @@ static OSErr generic_forward_apple_event(const AppleEvent *const theAppleEvent, 
                                          const AEEventID evtID, const char *const descStr)
 {
     const FourCharCode evtCode = (FourCharCode)evtID;
-    char *buf = NULL; /* dynamic buffer to hold filename/URL data */
+    OSErr err;
     AppleEvent childEvent;
     AEAddressDesc target;
-    OSErr err;
-    DescType typeCode = typeWildCard;
-    Size bufSize = 0;
-    DescType actualType = 0;
-    Size actualSize = 0;
+    DescType actualType = 0, typeCode = typeWildCard;
+    char *buf = NULL; /* dynamic buffer to hold filename/URL data */
+    Size bufSize = 0, actualSize = 0;
 
     VS("LOADER [AppleEvent]: Forwarder called for \"%s\".\n", descStr);
     if (!child_pid) {
@@ -1193,13 +1191,14 @@ static OSErr handle_odoc_GURL_events(const AppleEvent *theAppleEvent, const AEEv
         /* Child process is not up yet -- so we pick up kAEOpen and/or kAEGetURL events and append them to argv. */
 
         AEDescList docList;
+        OSErr err;
         long index;
         long count = 0;
         char *buf = NULL; /* Dynamic buffer for URL/file path data -- gets realloc'd as we iterate */
 
         VS("LOADER [AppleEvent ARGV_EMU]: Processing args for forward...\n");
 
-        OSErr err = AEGetParamDesc(theAppleEvent, keyDirectObject, typeAEList, &docList);
+        err = AEGetParamDesc(theAppleEvent, keyDirectObject, typeAEList, &docList);
         if (err != noErr) return err;
 
         err = AECountItems(&docList, &count);
