@@ -1074,9 +1074,12 @@ static const char *CC2Str(FourCharCode code) {
     return buf;
 }
 
-/* Generic event forwarder -- forwards an event to the child process. */
-static OSErr generic_forward_apple_event(const AppleEvent *const theAppleEvent, const AEEventClass eventClass,
-                                         const AEEventID evtID, const char *const descStr)
+/* Generic event forwarder -- forwards an event destined for this process to the child process,
+ * copying its param object, if any. Parameter `theAppleEvent` may be NULL, in which case a new
+ * event is created with the specified class and id (containing 0 params / no param object). */
+static OSErr generic_forward_apple_event(const AppleEvent *const theAppleEvent /* NULL ok */,
+                                         const AEEventClass eventClass, const AEEventID evtID,
+                                         const char *const descStr)
 {
     const FourCharCode evtCode = (FourCharCode)evtID;
     OSErr err;
@@ -1308,10 +1311,12 @@ static OSErr handle_rapp_event(const AppleEvent *const theAppleEvent, const AEEv
     err = generic_forward_apple_event(theAppleEvent, kCoreEventClass, evtID, "ReopenApp");
 
     if (err == noErr) {
-        /* Next, create a new activate event. We never get this because we have no window,
-         * but if we did this would come next. So we synthesize an event that should come
-         * so that the child foregrounds properly. */
-        generic_forward_apple_event(NULL, kAEMiscStandards, kAEActivate, "Activate");
+        /* Next, create a new activate ('actv') event. We never receive this event because
+         * we have no window, but if we did this event would come next. So we synthesize an
+         * event that should normally come for a windowed app, so that the child process
+         * is brought to the foreground properly. */
+        generic_forward_apple_event(NULL /* create new event with 0 params */,
+                                    kAEMiscStandards, kAEActivate, "Activate");
     }
 
     return err;
