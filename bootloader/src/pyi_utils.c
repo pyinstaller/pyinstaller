@@ -1333,27 +1333,33 @@ static pascal OSErr handle_apple_event(const AppleEvent *theAppleEvent, AppleEve
     case kAEReopenApplication:
         return handle_rapp_event(theAppleEvent, evtID);
     case kAEActivate:
+        /* This is not normally reached since the bootloader process lacks a window, and it
+         * turns out macOS never sends this event to processes lacking a window. However,
+         * since the Apple API docs are very sparse, this has been left-in here just in case. */
         return generic_forward_apple_event(theAppleEvent, kAEMiscStandards, evtID, "Activate");
     default:
-        /* Not GetURL,OpenDoc, or ReopenApp -- this is not reached unless there is a programming error in the
-         * code that sets up the handler(s). */
+        /* Not 'GURL', 'odoc', 'rapp', or 'actv'  -- this is not reached unless there is a
+         * programming error in the code that sets up the handler(s) in process_apple_events. */
         OTHERERROR("LOADER [AppleEvent]: %s called with unexpected event type '%s'!",
                    __FUNCTION__, CC2Str(evtCode));
         return errAEEventNotHandled;
     }
 }
 
-/* Function gets installed as the bootloader process-wide UPP event handler */
+/* This function gets installed as the process-wide UPP event handler.
+ * It is responsible for dequeuing events and telling Carbon to forward
+ * them to our installed handlers. */
 static OSStatus evt_handler_proc(EventHandlerCallRef href, EventRef eref, void *data) {
     VS("LOADER [AppleEvent]: App event handler proc called.\n");
     Boolean release = false;
     EventRecord eventRecord;
+    OSStatus err;
 
     /* Events of type kEventAppleEvent must be removed from the queue
-       before being passed to AEProcessAppleEvent. */
+     * before being passed to AEProcessAppleEvent. */
     if (IsEventInQueue(GetMainEventQueue(), eref)) {
         /* RemoveEventFromQueue will release the event, which will
-           destroy it if we don't retain it first. */
+         * destroy it if we don't retain it first. */
         VS("LOADER [AppleEvent]: Event was in queue, will release.\n");
         RetainEvent(eref);
         release = true;
@@ -1363,7 +1369,9 @@ static OSStatus evt_handler_proc(EventHandlerCallRef href, EventRef eref, void *
     ConvertEventRefToEventRecord(eref, &eventRecord);
     VS("LOADER [AppleEvent]: what=%hu message=%lx ('%s') modifiers=%hu\n",
        eventRecord.what, eventRecord.message, CC2Str((FourCharCode)eventRecord.message), eventRecord.modifiers);
-    OSStatus err = AEProcessAppleEvent(&eventRecord);
+    /* This will end up calling one of the callback functions
+     * that we installed in process_apple_events() */
+    err = AEProcessAppleEvent(&eventRecord);
     if (err == errAEEventNotHandled) {
         VS("LOADER [AppleEvent]: Ignored event.\n");
     } else if (err != noErr) {
