@@ -1083,7 +1083,7 @@ static OSErr generic_forward_apple_event(const AppleEvent *const theAppleEvent, 
     AppleEvent childEvent;
     AEAddressDesc target;
     DescType actualType = 0, typeCode = typeWildCard;
-    char *buf = NULL; /* dynamic buffer to hold filename/URL data */
+    char *buf = NULL; /* dynamic buffer to hold copied event param data */
     Size bufSize = 0, actualSize = 0;
 
     VS("LOADER [AppleEvent]: Forwarder called for \"%s\".\n", descStr);
