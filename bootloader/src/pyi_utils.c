@@ -1195,9 +1195,6 @@ static OSErr handle_odoc_GURL_events(const AppleEvent *theAppleEvent, const AEEv
         AEDescList docList;
         long index;
         long count = 0;
-        Size actualSize;
-        DescType returnedType;
-        AEKeyword keywd;
         char *buf = NULL; /* Dynamic buffer for URL/file path data -- gets realloc'd as we iterate */
 
         VS("LOADER [AppleEvent ARGV_EMU]: Processing args for forward...\n");
@@ -1210,7 +1207,9 @@ static OSErr handle_odoc_GURL_events(const AppleEvent *theAppleEvent, const AEEv
 
         for (index = 1; index <= count; ++index) /* AppleEvent lists are 1-indexed (I guess because of Pascal?) */
         {
-            Size bufSize = 0;
+            DescType returnedType;
+            AEKeyword keywd;
+            Size actualSize = 0, bufSize = 0;
             DescType typeCode = typeWildCard;
 
             err = AESizeOfNthItem(&docList, index, &typeCode, &bufSize);
@@ -1237,17 +1236,23 @@ static OSErr handle_odoc_GURL_events(const AppleEvent *theAppleEvent, const AEEv
             } else {
                 /* Copied data to buf, now ensure data is a simple file path and then copy to argv_pyi[argc_pyi] */
                 char *tmp_str = NULL;
-                Boolean ok = false;
+                Boolean ok;
 
-                buf[actualSize] = 0; /* force NUL-char termination. */
+                buf[actualSize] = 0; /* Ensure NUL-char termination. */
                 if (apple_event_is_open_doc) {
                     /* Now, convert file:/// style URLs to an actual filesystem path for argv emu. */
                     CFURLRef url = CFURLCreateWithBytes(NULL, (UInt8 *)buf, actualSize, kCFStringEncodingUTF8,
                                                         NULL);
                     if (url) {
                         CFStringRef path = CFURLCopyFileSystemPath(url, kCFURLPOSIXPathStyle);
+                        ok = false;
                         if (path) {
-                            ok = CFStringGetFileSystemRepresentation(path, buf, bufSize);
+                            const Size newLen = (Size)CFStringGetMaximumSizeOfFileSystemRepresentation(path);
+                            if (realloc_checked((void **)&buf, newLen+1)) {
+                                bufSize = newLen;
+                                ok = CFStringGetFileSystemRepresentation(path, buf, bufSize);
+                                buf[bufSize] = 0; /* Ensure NUL termination */
+                            }
                             CFRelease(path); /* free */
                         }
                         CFRelease(url); /* free */
