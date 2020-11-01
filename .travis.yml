@@ -89,6 +89,11 @@ jobs:
       python: 3.8
 
     - <<: *test-pyinstaller
+      python: 3.9
+    - <<: *test-libraries
+      python: 3.9
+
+    - <<: *test-pyinstaller
       python: nightly
     - <<: *test-libraries
       python: nightly
@@ -109,9 +114,15 @@ addons:
     # SciPy dependencies.
     - gfortran
     - libatlas-base-dev
-    # Per https://www.riverbankcomputing.com/pipermail/pyqt/2019-February/041363.html,
-    # PyQt5 5.12 needs a library not installed by default.
+    # PyQt5 dependencies.
     - libxkbcommon-x11-0
+    - libxcb-icccm4
+    - libxcb-image0
+    - libxcb-keysyms1
+    - libxcb1
+    - libxcb-randr0
+    - libxcb-render-util0
+    - libxcb-xinerama0
 
 install:
   # Update pip.
