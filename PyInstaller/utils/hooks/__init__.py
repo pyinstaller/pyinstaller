@@ -79,7 +79,7 @@ def exec_statement(statement):
     return __exec_python_cmd(cmd)
 
 
-def exec_script(script_filename, env=None, *args):
+def exec_script(script_filename, *args, env=None):
     """
     Executes a Python script in an externally spawned interpreter, and
     returns anything that was emitted in the standard output as a
@@ -108,7 +108,7 @@ def eval_statement(statement):
     return eval(txt)
 
 
-def eval_script(scriptfilename, env=None, *args):
+def eval_script(scriptfilename, *args, env=None):
     txt = exec_script(scriptfilename, *args, env=env).strip()
     if not txt:
         # return an empty string which is "not true" but iterable
