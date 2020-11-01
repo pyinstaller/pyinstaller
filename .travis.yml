@@ -33,27 +33,27 @@ env:
 jobs:
   fast_finish: true
   include:
-    - &test-pyinstaller
-      stage: Test - PyInstaller
-      python: 3.7
-      script:
-        # -n 3
-        #   Run tests and speed them up by sending them to multiple CPUs.
-        #
-        # --maxfail 3
-        #   End tests after 3 failures.
-        #
-        # --durations 10
-        #   Print the 10 longest tests; see
-        #   https://docs.pytest.org/en/latest/usage.html#profiling-test-execution-duration
-        - >
-          pytest -n 3 --maxfail 3 --durations 10
-          tests/unit tests/functional
-          --ignore tests/functional/test_libraries.py
+    # - &test-pyinstaller
+    #   stage: Test - PyInstaller
+    #   python: 3.7
+    #   script:
+    #     # -n 3
+    #     #   Run tests and speed them up by sending them to multiple CPUs.
+    #     #
+    #     # --maxfail 3
+    #     #   End tests after 3 failures.
+    #     #
+    #     # --durations 10
+    #     #   Print the 10 longest tests; see
+    #     #   https://docs.pytest.org/en/latest/usage.html#profiling-test-execution-duration
+    #     - >
+    #       pytest -n 3 --maxfail 3 --durations 10
+    #       tests/unit tests/functional
+    #       --ignore tests/functional/test_libraries.py
 
     - &test-libraries
       stage: Test - Libraries
-      python: 3.7
+      python: 3.9
       before_install:
         # Install OpenSSL 1.1. This fixes dynamic linking problems when PyQt5.13 tries
         # to link with OpenSSL 1.1 -- on Ubuntu 16 (xenial), the older OpenSSL
@@ -73,25 +73,30 @@ jobs:
         # https://docs.pytest.org/en/latest/customize.html).
         - python -m PyInstaller.utils.run_tests -c PyInstaller/utils/pytest.ini --include_only=pyi_hooksample.
 
-    - <<: *test-pyinstaller
-      python: 3.5
-    - <<: *test-libraries
-      python: 3.5
+    # - <<: *test-pyinstaller
+    #   python: 3.5
+    # - <<: *test-libraries
+    #   python: 3.5
 
-    - <<: *test-pyinstaller
-      python: 3.6
-    - <<: *test-libraries
-      python: 3.6
+    # - <<: *test-pyinstaller
+    #   python: 3.6
+    # - <<: *test-libraries
+    #   python: 3.6
 
-    - <<: *test-pyinstaller
-      python: 3.8
-    - <<: *test-libraries
-      python: 3.8
+    # - <<: *test-pyinstaller
+    #   python: 3.8
+    # - <<: *test-libraries
+    #   python: 3.8
 
-    - <<: *test-pyinstaller
-      python: nightly
-    - <<: *test-libraries
-      python: nightly
+    # - <<: *test-pyinstaller
+    #   python: 3.9
+    # - <<: *test-libraries
+    #   python: 3.9
+
+    # - <<: *test-pyinstaller
+    #   python: nightly
+    # - <<: *test-libraries
+    #   python: nightly
 
   allow_failures:
       # Just tests how PyInstaller performs with upcoming Python
@@ -109,9 +114,12 @@ addons:
     # SciPy dependencies.
     - gfortran
     - libatlas-base-dev
-    # Per https://www.riverbankcomputing.com/pipermail/pyqt/2019-February/041363.html,
-    # PyQt5 5.12 needs a library not installed by default.
+    # PyQt5 dependencies.
     - libxkbcommon-x11-0
+    - libxcb-icccm4
+    - libxcb-image0
+    - libxcb-keysyms1
+    - libxcb1
 
 install:
   # Update pip.

@@ -23,6 +23,26 @@ environment:
   ENABLE_RDP_ACCESS: false
 
   matrix:
+    - PYTHON: C:\Python39-x64
+      PYTHON_VERSION: 3.9
+      PYTHON_ARCH: 64
+      TEST_PART: Libraries
+
+    - PYTHON: C:\Python39-x64
+      PYTHON_VERSION: 3.9
+      PYTHON_ARCH: 64
+      TEST_PART: Base
+
+    - PYTHON: C:\Python39
+      PYTHON_VERSION: 3.9
+      PYTHON_ARCH: 32
+      TEST_PART: Libraries
+
+    - PYTHON: C:\Python39
+      PYTHON_VERSION: 3.9
+      PYTHON_ARCH: 32
+      TEST_PART: Base
+
     - PYTHON: C:\Python38-x64
       PYTHON_VERSION: 3.8
       PYTHON_ARCH: 64
