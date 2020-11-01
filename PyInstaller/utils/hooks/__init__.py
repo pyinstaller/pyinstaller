@@ -251,6 +251,35 @@ def remove_file_extension(filename):
     return os.path.splitext(filename)[0]
 
 
+def can_import_module(module_name):
+    """
+    Check if the specified module can be imported.
+
+    Intended as a silent module availability check, as it does not print
+    ModuleNotFoundError traceback to stderr when the module is unavailable.
+
+    Parameters
+    ----------
+    module_name : str
+        Fully-qualified name of the module.
+
+    Returns
+    ----------
+    bool
+        Boolean indicating whether the module can be imported or not.
+    """
+
+    rc = exec_statement_rc("""
+        import sys
+        try:
+            import {0}
+        except ModuleNotFoundError:
+            sys.exit(1)
+        """.format(module_name)
+    )
+    return rc == 0
+
+
 # TODO: Replace most calls to exec_statement() with calls to this function.
 def get_module_attribute(module_name, attr_name):
     """
