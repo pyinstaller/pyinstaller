@@ -1059,6 +1059,8 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
 /*
  * On Mac OS X this converts events from kAEOpenDocuments and kAEGetURL into sys.argv.
  * After startup, it also forwards kAEOpenDocuments and KAEGetURL events at runtime to the child process.
+ *
+ * TODO: The below can be simplified considerably if re-written in Objective C (e.g. put into pyi_utils_osx.m).
  */
 #if defined(__APPLE__) && defined(WINDOWED)
 
