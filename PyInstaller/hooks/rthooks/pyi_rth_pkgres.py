@@ -171,9 +171,9 @@ class PyiFrozenProvider(pkg_resources.NullProvider):
         # ... as well as the actual one
         if path.is_dir():
             # Use os.listdir() to avoid having to convert Path objects
-            # to strings...
+            # to strings... Also make sure to de-duplicate the results
             path = str(path)  # not is_py36
-            content += os.listdir(path)
+            content = list(set(content + os.listdir(path)))
         return content
 
 
