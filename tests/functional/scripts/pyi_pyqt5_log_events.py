@@ -18,25 +18,32 @@ from PyQt5.QtWidgets import QWidget, QApplication, qApp
 
 
 class EventHandler(QObject):
-    logfile = None
+
+    def __init__(self, logfile, parent=None):
+        super().__init__(parent=parent)
+        assert isinstance(logfile, str) and logfile
+        self.logfile = logfile
+        self.activate_count = 0
 
     def eventFilter(self, obj, event):
         """ This event filter just logs the URLs it receives as FileOpen
         events to self.logfile """
-        assert self.logfile
-        if event.type() == QEvent.FileOpen:
-            try:
-                with open(self.logfile, 'at') as file:
-                    file.write(event.url().toString() + "\n")
-            except Exception as e:
-                print("Caught exception while attempting to write/open",
-                      self.logfile, "exception: " + repr(e), file=sys.stderr)
-            qApp.quit()  # Tell app to quit after receiving the event
-            return True
-        return False
+        try:
+            if event.type() == QEvent.FileOpen:
+                with open(self.logfile, 'a') as file:
+                    file.write("url {}\n".format(event.url().toString()))
+                    file.write("activate_count {}\n"
+                               .format(self.activate_count))
+                qApp.quit()  # Tell app to quit after receiving this event
+                return True
+            elif event.type() == QEvent.ApplicationActivate:
+                self.activate_count += 1
+        except Exception as e:
+            print("Caught exception in eventFilter exception: " + repr(e),
+                  file=sys.stderr)
+        return super().eventFilter(obj, event)
 
     def log_started(self):
-        assert self.logfile
         try:
             with open(self.logfile, 'wt') as file:
                 file.write("started {}\n"
@@ -58,14 +65,13 @@ def main():
 
     app = QApplication(list(sys.argv))  # Copy args to prevent qApp modifying
     dummy = QWidget()
-    dummy.hide()
+    dummy.showMinimized()
     app.setQuitOnLastWindowClosed(False)
-    eh = EventHandler()
-    eh.logfile = logfile
+    eh = EventHandler(logfile=logfile)
     app.installEventFilter(eh)
     # Log that we did start so the calling app knows
     QTimer.singleShot(0, eh.log_started)
-    timeout = 5000  # Default 5 seconds
+    timeout = 7000  # Default 7 seconds
     try:
         # Last arg is timeout (may be passed-in from test script)
         timeout = int(1000 * float(sys.argv[-1]))

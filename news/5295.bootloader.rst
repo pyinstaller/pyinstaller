@@ -1,0 +1,1 @@
+(OSX) Fix to reactivate running app on "reopen"

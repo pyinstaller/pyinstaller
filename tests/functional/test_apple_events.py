@@ -69,7 +69,7 @@ def test_osx_event_forwarding(tmpdir, pyi_builder_spec):
     logfile_path = os.path.join(tmpdir, 'dist', 'events.log')
 
     # Generate unique URL scheme & file ext to avoid collisions
-    unique_key = time.time()
+    unique_key = int(time.time())
     custom_url_scheme = "pyi-test-%i" % unique_key
     custom_file_ext = 'pyi_test_%i' % unique_key
     os.environ["PYI_CUSTOM_URL_SCHEME"] = custom_url_scheme
@@ -162,7 +162,23 @@ def test_osx_event_forwarding(tmpdir, pyi_builder_spec):
         "An expected file path was not received by the app"
 
     # At this point the app is running.
-    # 2. Call open again using the url associated with the app. This should
+
+    # This is a trick to make our app lose focus so that Qt forwards
+    # the "Activated" events properly to our event handler in
+    # pyi_pyqt5_log_events.py
+    subprocess.check_call(['osascript', "-e",
+                           'tell application "System Events" to activate'])
+    time.sleep(1.0)  # delay for above applescript
+
+    # The app is running now, in the background, and doesn't have focus
+
+    # 2. Call open passing the app path again -- this should activate the
+    #    already-running app and the activation_count should be 2 after it
+    #    exits.
+    subprocess.check_call(['open', app_path])
+    time.sleep(1.0)  # the activate event gets sent with a delay
+
+    # 3. Call open again using the url associated with the app. This should
     #    forward the Apple URL event to the already-running app.
     url = custom_url_scheme + "://lowecase_required/hello_world/"
     # Test support for large URL data ~64KB.
@@ -170,6 +186,7 @@ def test_osx_event_forwarding(tmpdir, pyi_builder_spec):
     # consistently like data over a certain size.
     url += 'x' * 64000  # Append 64 KB of data to URL to stress-test
     subprocess.check_call(['open', url])
+    activation_count = None
 
     def wait_for_event_in_logfile():
         t0 = time.time()  # mark start time
@@ -179,9 +196,17 @@ def test_osx_event_forwarding(tmpdir, pyi_builder_spec):
             assert os.path.exists(logfile_path), 'Missing events logfile'
             with open(logfile_path, 'rt') as fh:
                 log_lines = fh.readlines()
-            if len(log_lines) >= 2:
-                assert log_lines[-1].strip().lower() == url.lower(), \
+            if len(log_lines) >= 3:
+                url_line = log_lines[1]
+                activation_line = log_lines[2]
+                assert url_line.startswith("url ")
+                assert activation_line.startswith("activate_count ")
+                url_part = url_line.split(" ", 1)[-1]
+                assert url_part.strip().lower() == url.lower(), \
                     'Logged url does not match expected'
+                activation_part = activation_line.split(" ", 1)[-1]
+                nonlocal activation_count
+                activation_count = int(activation_part.strip())
                 return True
             else:
                 # Try again later
@@ -192,6 +217,9 @@ def test_osx_event_forwarding(tmpdir, pyi_builder_spec):
 
     assert wait_for_event_in_logfile(), \
         'URL event did not appear in log before timeout'
+
+    assert activation_count == 2, \
+        "App did not receive rapp (re-Open app) event properly"
 
     # Delete all the temp files to be polite
     for ff in assoc_files:
