@@ -92,32 +92,40 @@ class PyiFrozenProvider(pkg_resources.NullProvider):
         # package.
         self._pkg_path = pathlib.PurePath(module.__file__).parent
 
-        # Construct a path relative to _MEIPASS directory for searching
-        # the TOC
-        rel_pkg_path = self._pkg_path.relative_to(SYS_PREFIX)
+        # Defer initialization of PYZ-embedded resources tree to the
+        # first access
+        self._embedded_tree = None
 
-        # Reconstruct package name prefix (use package path to obtain
-        # correct prefix in case of a module)
-        pkg_name = '.'.join(rel_pkg_path.parts)
+    @property
+    def embedded_tree(self):
+        if self._embedded_tree is None:
+            # Construct a path relative to _MEIPASS directory for searching
+            # the TOC
+            rel_pkg_path = self._pkg_path.relative_to(SYS_PREFIX)
 
-        # Collect relevant entries from TOC. We are interested in either
-        # files that are located in the package/module's directory (data
-        # files) or in packages that are prefixed with package/module's
-        # name (to reconstruct subpackage directories)
-        data_files = []
-        package_dirs = []
-        for entry in self.loader.toc:
-            entry_path = pathlib.PurePath(entry)
-            if rel_pkg_path in entry_path.parents:
-                # Data file path
-                data_files.append(entry_path)
-            elif entry.startswith(pkg_name) and self.loader.is_package(entry):
-                # Package or subpackage; convert the name to directory path
-                package_dir = pathlib.PurePath(*entry.split('.'))
-                package_dirs.append(package_dir)
+            # Reconstruct package name prefix (use package path to obtain
+            # correct prefix in case of a module)
+            pkg_name = '.'.join(rel_pkg_path.parts)
 
-        # Reconstruct the filesystem
-        self.embedded_tree = _TocFilesystem(data_files, package_dirs)
+            # Collect relevant entries from TOC. We are interested in either
+            # files that are located in the package/module's directory (data
+            # files) or in packages that are prefixed with package/module's
+            # name (to reconstruct subpackage directories)
+            data_files = []
+            package_dirs = []
+            for entry in self.loader.toc:
+                entry_path = pathlib.PurePath(entry)
+                if rel_pkg_path in entry_path.parents:
+                    # Data file path
+                    data_files.append(entry_path)
+                elif entry.startswith(pkg_name) and self.loader.is_package(entry):
+                    # Package or subpackage; convert the name to directory path
+                    package_dir = pathlib.PurePath(*entry.split('.'))
+                    package_dirs.append(package_dir)
+
+            # Reconstruct the filesystem
+            self._embedded_tree = _TocFilesystem(data_files, package_dirs)
+        return self._embedded_tree
 
     def _normalize_path(self, path):
         # Avoid using Path.resolve(), because it resolves symlinks. This
