@@ -25,15 +25,30 @@ SYS_PREFIX = pathlib.PurePath(sys._MEIPASS)
 # import hooks like FrozenImporter is. It uses method __loader__.get_data() in
 # methods pkg_resources.resource_string() and pkg_resources.resource_stream()
 #
-# We subclass the NullProvider and implement _has(), _isdir(), and _listdir(),
-# which are needed for pkg_resources.resource_exists(), resource_isdir(),
-# and resource_listdir() to work. We cannot use the DefaultProvider,
-# because it provides filesystem-only implementations (and overrides _get()
-# with a filesystem-only one), whereas our provider needs to also support
-# embedded resources.
+# We provide PyiFrozenProvider, which subclasses the NullProvider and
+# implements _has(), _isdir(), and _listdir() methods, which are needed
+# for pkg_resources.resource_exists(), resource_isdir(), and resource_listdir()
+# to work. We cannot use the DefaultProvider, because it provides
+# filesystem-only implementations (and overrides _get() with a filesystem-only
+# one), whereas our provider needs to also support embedded resources.
+#
+# The PyiFrozenProvider allows querying/listing both PYZ-embedded and
+# on-filesystem resources in a frozen package. The results are typically
+# combined for both types of resources (e.g., when listing a directory
+# or checking whether a resource exists). When the order of precedence
+# matters, the PYZ-embedded resources take precedence over the on-filesystem
+# ones, to keep the behavior consistent with the actual file content
+# retrieval via _get() method (which in turn uses FrozenImporter's get_data()
+# method). For example, when checking whether a resource is a directory
+# via _isdir(), a PYZ-embedded file will take precedence over a potential
+# on-filesystem directory. Also, in contrast to unfrozen packages, the frozen
+# ones do not contain source .py files, which are therefore absent from
+# content listings.
 
 
 class _TocFilesystem:
+    """A prefix tree implementation for embedded filesystem reconstruction."""
+
     def __init__(self, toc_files, toc_dirs=[]):
         # Reconstruct the fileystem hierarchy by building a prefix tree from
         # the given file and directory paths
@@ -87,6 +102,8 @@ _toc_tree_cache = {}
 
 
 class PyiFrozenProvider(pkg_resources.NullProvider):
+    """Custom pkg_resourvces provider for FrozenImporter."""
+
     def __init__(self, module):
         super().__init__(module)
 
