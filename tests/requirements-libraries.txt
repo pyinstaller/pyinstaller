@@ -32,7 +32,7 @@ gevent==20.9.0
 pygments==2.7.2
 PySide2==5.14.0
 python-dateutil==2.8.1
-pytz==2020.1
+pytz==2020.4
 requests==2.24.0
 # simplejson is used for text_c_extension
 simplejson==3.17.2
