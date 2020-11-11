@@ -30,7 +30,9 @@ babel==2.8.0
 future==0.18.2
 gevent==20.9.0
 pygments==2.7.2
-PySide2==5.14.0
+pyside2==5.15.1
+pyqt5==5.15.1
+pyqtwebengine==5.15.1
 python-dateutil==2.8.1
 pytz==2020.4
 requests==2.24.0
@@ -65,14 +67,3 @@ scipy<=1.5.0; python_version == '3.5'  # pyup: ignore
 # Pillow 8.0 dropped support for python 3.5
 Pillow==8.0.1; python_version > '3.5'
 Pillow<8.0.0; python_version == '3.5' # pyup: ignore
-
-# Special cases
-# -------------
-
-# Per https://www.riverbankcomputing.com/pipermail/pyqt/2020-February/042506.html, Windows PyQt5 5.14.0? and 5.14.1? aren't correctly packaged.
-pyqt5==5.13.2; sys_platform == 'win32'
-pyqt5==5.14.1; sys_platform != 'win32'
-# On Appveyor, newer versions fail with the error message
-# ``[1916:2732:0204/144922.809:ERROR:mf_helpers.cc(14)] Error in dxva_video_decode_accelerator_win.cc on line 513``
-pyqtwebengine==5.12.1; sys_platform == 'win32'  # pyup: ignore
-pyqtwebengine==5.14.0; sys_platform != 'win32'  # pyup: ignore
