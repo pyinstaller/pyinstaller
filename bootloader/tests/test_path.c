@@ -13,6 +13,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "pyi_global.h"
 #include "pyi_path.h"
