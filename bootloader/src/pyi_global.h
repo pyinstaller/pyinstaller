@@ -163,10 +163,8 @@ void mbvs(const char *fmt, ...);
     #define getpid           _getpid
     #define mkdir            _mkdir
     #define rmdir            _rmdir
-    #define snprintf         _snprintf
     #define stat             _stat
     #define strdup           _strdup
-    #define vsnprintf        _vsnprintf
 /*
  * Mingw on Windows contains the following functions.
  * Redefine them only if they are not available.
