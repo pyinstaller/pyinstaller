@@ -433,7 +433,7 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
                      * debug, print the traceback to a message box. */
 
                     const char *pvalue_cchar, *tb_cchar;
-                    char *char_pvalue, *char_tb, *module_name;
+                    char *module_name;
                     PyObject *ptype, *pvalue, *pvalue_str;
                     PyObject *ptraceback, *tb, *tb_str;
                     PyObject *module, *func;
