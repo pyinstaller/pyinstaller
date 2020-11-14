@@ -21,6 +21,9 @@
 #ifdef _WIN32
     #include <windows.h>  /* GetModuleFileNameW */
     #include <wchar.h>
+    #ifdef __GNUC__
+        #include <libgen.h> /* basename(), dirname() */
+    #endif
 #elif __APPLE__
     #include <libgen.h>      /* basename(), dirname() */
     #include <mach-o/dyld.h> /* _NSGetExecutablePath() */
