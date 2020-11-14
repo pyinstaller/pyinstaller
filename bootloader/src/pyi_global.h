@@ -158,22 +158,6 @@ void mbvs(const char *fmt, ...);
 /* Strings are usually terminated by this character. */
 #define PYI_NULLCHAR       '\0'
 
-/* Rewrite ANSI/POSIX functions to Win32 equivalents. */
-#if defined(_WIN32) && defined(_MSC_VER)
-    #define getpid           _getpid
-    #define mkdir            _mkdir
-    #define rmdir            _rmdir
-    #define stat             _stat
-    #define strdup           _strdup
-/*
- * Mingw on Windows contains the following functions.
- * Redefine them only if they are not available.
- */
-    #ifndef fileno
-        #define fileno           _fileno
-    #endif
-#endif
-
 /* Saved LC_CTYPE locale */
 extern char *saved_locale;
 
