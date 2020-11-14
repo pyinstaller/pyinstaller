@@ -25,9 +25,6 @@
 /* #define STB_DEFINE  1/ * * / */
 /* #define STB_NO_REGISTRY 1 / * No need for Windows registry functions in stb.h. * / */
 
-/* TODO: use safe string functions */
-#define _CRT_SECURE_NO_WARNINGS 1
-
 #include <stdarg.h>  /* va_list, va_start(), va_end() */
 #include <stdio.h>
 

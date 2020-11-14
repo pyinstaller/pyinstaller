@@ -17,9 +17,6 @@
 /* size of buffer to store the name of the Python DLL library */
 #define DLLNAME_LEN (64)
 
-/* TODO: use safe string functions */
-#define _CRT_SECURE_NO_WARNINGS 1
-
 #ifdef _WIN32
     #include <windows.h> /* HMODULE */
     #include <fcntl.h>   /* O_BINARY */

@@ -15,9 +15,6 @@
  * Fuctions related to PyInstaller archive embedded in executable.
  */
 
-/* TODO: use safe string functions */
-#define _CRT_SECURE_NO_WARNINGS 1
-
 #ifdef _WIN32
 /* TODO verify windows includes */
     #include <winsock.h>  /* ntohl */

@@ -15,9 +15,6 @@
  * Launch a python module from an archive.
  */
 
-/* TODO: use safe string functions */
-#define _CRT_SECURE_NO_WARNINGS 1
-
 #if defined(__APPLE__) && defined(WINDOWED)
     #include <Carbon/Carbon.h>  /* TransformProcessType */
 #endif
