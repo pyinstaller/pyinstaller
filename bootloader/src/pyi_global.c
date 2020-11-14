@@ -110,7 +110,7 @@ mbothererror(const char *fmt, ...)
     void mbfatal_winerror(const char * funcname, const char *fmt, ...)
     {
         char msg[MBTXTLEN];
-        int size = 0;
+        size_t size = 0;
         DWORD error_code = GetLastError();
         va_list args;
 
@@ -140,7 +140,7 @@ mbothererror(const char *fmt, ...)
     void mbfatal_perror(const char * funcname, const char *fmt, ...)
     {
         char msg[MBTXTLEN];
-        int size = 0;
+        size_t size = 0;
         va_list args;
 
         va_start(args, fmt);
