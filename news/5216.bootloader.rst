@@ -1,0 +1,3 @@
+(Windows) Create temporary directories with user's SID instead of ``S-1-3-4``,
+to work around the lack of support for the latter in ``wine``.
+This enables ``onefile`` builds to run under ``wine`` again.
