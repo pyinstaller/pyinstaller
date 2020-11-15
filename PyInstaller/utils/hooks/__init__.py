@@ -41,9 +41,9 @@ PY_IGNORE_EXTENSIONS = set(ALL_SUFFIXES)
 hook_variables = {}
 
 
-def __exec_python_cmd(cmd, env=None, ret_stdout=True):
+def __exec_python_cmd(cmd, env=None, capture_stdout=True):
     """
-    Executes an externally spawned Python interpreter. If ret_stdout
+    Executes an externally spawned Python interpreter. If capture_stdout
     is set to True, returns anything that was emitted in the standard
     output as a single string. Otherwise, returns the exit code.
     """
@@ -65,17 +65,17 @@ def __exec_python_cmd(cmd, env=None, ret_stdout=True):
         pp = os.pathsep.join([pp_env.get('PYTHONPATH'), pp])
     pp_env['PYTHONPATH'] = pp
 
-    if ret_stdout:
+    if capture_stdout:
         txt = exec_python(*cmd, env=pp_env)
         return txt.strip()
     else:
         return exec_python_rc(*cmd, env=pp_env)
 
 
-def __exec_statement(statement, ret_stdout=True):
+def __exec_statement(statement, capture_stdout=True):
     statement = textwrap.dedent(statement)
     cmd = ['-c', statement]
-    return __exec_python_cmd(cmd, ret_stdout=ret_stdout)
+    return __exec_python_cmd(cmd, capture_stdout=capture_stdout)
 
 
 def exec_statement(statement):
@@ -83,7 +83,7 @@ def exec_statement(statement):
     Executes a Python statement in an externally spawned interpreter, and
     returns anything that was emitted in the standard output as a single string.
     """
-    return __exec_statement(statement, ret_stdout=True)
+    return __exec_statement(statement, capture_stdout=True)
 
 
 def exec_statement_rc(statement):
@@ -91,10 +91,19 @@ def exec_statement_rc(statement):
     Executes a Python statement in an externally spawned interpreter, and
     returns the exit code.
     """
-    return __exec_statement(statement, ret_stdout=False)
+    return __exec_statement(statement, capture_stdout=False)
 
 
-def __exec_script(script_filename, *args, env=None, ret_stdout=True):
+def __exec_script(script_filename, *args, env=None, capture_stdout=True):
+    """
+    Executes a Python script in an externally spawned interpreter. If
+    capture_stdout is set to True, returns anything that was emitted in
+    the standard output as a single string. Otherwise, returns the exit
+    code.
+
+    To prevent misuse, the script passed to utils.hooks.exec_script
+    must be located in the `PyInstaller/utils/hooks/subproc` directory.
+    """
     script_filename = os.path.basename(script_filename)
     script_filename = os.path.join(os.path.dirname(__file__), 'subproc', script_filename)
     if not os.path.exists(script_filename):
@@ -104,7 +113,7 @@ def __exec_script(script_filename, *args, env=None, ret_stdout=True):
 
     cmd = [script_filename]
     cmd.extend(args)
-    return __exec_python_cmd(cmd, env=env, ret_stdout=ret_stdout)
+    return __exec_python_cmd(cmd, env=env, capture_stdout=capture_stdout)
 
 
 def exec_script(script_filename, *args, env=None):
@@ -116,7 +125,7 @@ def exec_script(script_filename, *args, env=None):
     To prevent misuse, the script passed to utils.hooks.exec_script
     must be located in the `PyInstaller/utils/hooks/subproc` directory.
     """
-    return __exec_script(script_filename, *args, env=env, ret_stdout=True)
+    return __exec_script(script_filename, *args, env=env, capture_stdout=True)
 
 
 def exec_script_rc(script_filename, *args, env=None):
@@ -127,7 +136,7 @@ def exec_script_rc(script_filename, *args, env=None):
     To prevent misuse, the script passed to utils.hooks.exec_script
     must be located in the `PyInstaller/utils/hooks/subproc` directory.
     """
-    return __exec_script(script_filename, *args, env=env, ret_stdout=False)
+    return __exec_script(script_filename, *args, env=env, capture_stdout=False)
 
 
 def eval_statement(statement):
@@ -270,11 +279,10 @@ def can_import_module(module_name):
     """
 
     rc = exec_statement_rc("""
-        import sys
         try:
             import {0}
         except ModuleNotFoundError:
-            sys.exit(1)
+            raise SystemExit(1)
         """.format(module_name)
     )
     return rc == 0
