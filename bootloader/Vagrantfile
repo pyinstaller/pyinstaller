@@ -264,9 +264,9 @@ def build_bootloader_target_osx(boxname)
     fi
     PATH=~/osxcross/bin:$PATH
     echo $PATH
-    # TODO: Use CC=o32-clang and CC=o64-clang when possible, see
-    # <https://github.com/tpoechtrager/osxcross/issues/119>
-    python3 ./waf all CC=x86_64-apple-darwin15-clang
+    export LD_LIBRARY_PATH=~/osxcross/lib:$LD_LIBRARY_PATH
+    export MACOSX_DEPLOYMENT_TARGET=10.11
+    python3 ./waf all CC=x86_64-apple-darwin15-clang --clang
     #python3 ./waf all CC=i386-apple-darwin15-clang
   EOF
 end
