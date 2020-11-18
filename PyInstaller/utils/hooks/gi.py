@@ -216,7 +216,7 @@ def collect_glib_share_files(*path):
     if glib_data_dirs is None:
         return []
 
-    destdir = os.path.join('share', *path[:-1])
+    destdir = os.path.join('share', *path)
 
     # TODO: will this return too much?
     collected = []
@@ -233,7 +233,7 @@ def collect_glib_etc_files(*path):
     if glib_config_dirs is None:
         return []
 
-    destdir = os.path.join('etc', *path[:-1])
+    destdir = os.path.join('etc', *path)
 
     # TODO: will this return too much?
     collected = []

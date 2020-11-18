@@ -71,11 +71,12 @@ You can run the following to install everything required:
 
 * On Debian- or Ubuntu-like systems::
 
-    sudo apt-get install build-essential
+    sudo apt-get install build-essential zlib1g-dev
 
 * On Fedora, RedHat and derivates::
 
     sudo yum groupinstall "Development Tools"
+    sudo yum install zlib-devel
 
 * For other Distributions please consult the distributions documentation.
 

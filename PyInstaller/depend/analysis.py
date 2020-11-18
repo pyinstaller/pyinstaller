@@ -27,6 +27,8 @@ For reference, the ModuleGraph node types and their contents:
  Package          basename         full path to __init__.py
         packagepath is ['path to package']
         globalnames is set of global names __init__.py defines
+ ExtensionPackage basename         full path to __init__.{so,dll}
+        packagepath is ['path to package']
 
 The main extension here over ModuleGraph is a method to extract nodes
 from the flattened graph and return them as a TOC, or added to a TOC.
@@ -533,42 +535,14 @@ class PyiModuleGraph(ModuleGraph):
 
         result = existing_TOC or TOC()
         for node in self.flatten(start=self._top_script_node):
-            # TODO This is terrible. Everything in Python has a type. It's
-            # nonsensical to even speak of "nodes [that] are not typed." How
-            # would that even occur? After all, even "None" has a type! (It's
-            # "NoneType", for the curious.) Remove this, please.
-
             # Skip modules that are in base_library.zip.
             if module_filter.match(node.identifier):
                 continue
-
-            # get node type e.g. Script
-            mg_type = type(node).__name__
-            assert mg_type is not None
-
-            if typecode and not (mg_type in typecode):
-                # Type is not a to be selected one, skip this one
-                continue
-            # Extract the identifier and a path if any.
-            if mg_type == 'Script':
-                # for Script nodes only, identifier is a whole path
-                (name, ext) = os.path.splitext(node.filename)
-                name = os.path.basename(name)
-            else:
-                name = node.identifier
-            path = node.filename if node.filename is not None else ''
-            # Ensure name is really 'str'. Module graph might return
-            # object type 'modulegraph.Alias' which inherits fromm 'str'.
-            # But 'marshal.dumps()' function is able to marshal only 'str'.
-            # Otherwise on Windows PyInstaller might fail with message like:
-            #
-            #   ValueError: unmarshallable object
-            name = str(name)
-            # Translate to the corresponding TOC typecode.
-            toc_type = MODULE_TYPES_TO_TOC_DICT[mg_type]
-            # TOC.append the data. This checks for a pre-existing name
-            # and skips it if it exists.
-            result.append((name, path, toc_type))
+            entry = self._node_to_toc(node, typecode)
+            if entry is not None:
+                # TOC.append the data. This checks for a pre-existing name
+                # and skips it if it exists.
+                result.append(entry)
         return result
 
     def make_pure_toc(self):
@@ -590,6 +564,46 @@ class PyiModuleGraph(ModuleGraph):
         """
         return self._make_toc(BAD_MODULE_TYPES)
 
+    @staticmethod
+    def _node_to_toc(node, typecode=None):
+        # TODO This is terrible. Everything in Python has a type. It's
+        # nonsensical to even speak of "nodes [that] are not typed." How
+        # would that even occur? After all, even "None" has a type! (It's
+        # "NoneType", for the curious.) Remove this, please.
+
+        # get node type e.g. Script
+        mg_type = type(node).__name__
+        assert mg_type is not None
+
+        if typecode and not (mg_type in typecode):
+            # Type is not a to be selected one, skip this one
+            return None
+        # Extract the identifier and a path if any.
+        if mg_type == 'Script':
+            # for Script nodes only, identifier is a whole path
+            (name, ext) = os.path.splitext(node.filename)
+            name = os.path.basename(name)
+        elif mg_type == 'ExtensionPackage':
+            # package with __init__ module being an extension module
+            # This needs to end up as e.g. 'mypkg/__init__.so'.
+            # Convert the packages name ('mypkg') into the module name
+            # ('mypkg.__init__') *here* to keep special cases away elsewhere
+            # (where the module name is converted to a filename).
+            name = node.identifier + ".__init__"
+        else:
+            name = node.identifier
+        path = node.filename if node.filename is not None else ''
+        # Ensure name is really 'str'. Module graph might return
+        # object type 'modulegraph.Alias' which inherits fromm 'str'.
+        # But 'marshal.dumps()' function is able to marshal only 'str'.
+        # Otherwise on Windows PyInstaller might fail with message like:
+        #
+        #   ValueError: unmarshallable object
+        name = str(name)
+        # Translate to the corresponding TOC typecode.
+        toc_type = MODULE_TYPES_TO_TOC_DICT[mg_type]
+        return (name, path, toc_type)
+
     def nodes_to_toc(self, node_list, existing_TOC=None):
         """
         Given a list of nodes, create a TOC representing those nodes.
@@ -600,15 +614,7 @@ class PyiModuleGraph(ModuleGraph):
         """
         result = existing_TOC or TOC()
         for node in node_list:
-            mg_type = type(node).__name__
-            toc_type = MODULE_TYPES_TO_TOC_DICT[mg_type]
-            if mg_type == "Script" :
-                (name, ext) = os.path.splitext(node.filename)
-                name = os.path.basename(name)
-            else:
-                name = node.identifier
-            path = node.filename if node.filename is not None else ''
-            result.append( (name, path, toc_type) )
+            result.append(self._node_to_toc(node))
         return result
 
     # Return true if the named item is in the graph as a BuiltinModule node.
@@ -717,14 +723,17 @@ class PyiModuleGraph(ModuleGraph):
 
     def get_co_using_ctypes(self):
         """
-        Find modules that imports Python module 'ctypes'.
+        Find modules that import Python module 'ctypes'.
 
-        Modules that imports 'ctypes' probably load a dll that might be required
-        for bundling with the executable. The usual way to load a DLL is using:
+        Modules that import 'ctypes' probably load a dll that might be
+        required for bundling with the executable. Thus these modules' code
+        needs then to be searched for patterns like these:
+
             ctypes.CDLL('libname')
             ctypes.cdll.LoadLibrary('libname')
 
-        :return: Code objects that might be scanned for module dependencies.
+        :return: Code objects importing `ctypes` and thus need to be scanned
+                 for module dependencies.
         """
         co_dict = {}
         pure_python_module_types = PURE_PYTHON_MODULE_TYPES | {'Script',}

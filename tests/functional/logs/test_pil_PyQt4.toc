@@ -1,4 +1,0 @@
-[
-  'PIL.ImageQt',
-  'PyQt4',
-]

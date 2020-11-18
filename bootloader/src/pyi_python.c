@@ -80,6 +80,7 @@ DECLPROC(PySys_SetPath);
 DECLPROC(PyUnicode_FromString);
 
 DECLPROC(Py_DecodeLocale);
+DECLPROC(PyMem_RawFree);
 DECLPROC(PyUnicode_FromFormat);
 DECLPROC(PyUnicode_DecodeFSDefault);
 DECLPROC(PyUnicode_Decode);
@@ -148,6 +149,7 @@ pyi_python_map_names(HMODULE dll, int pyvers)
     GETPROC(dll, PyUnicode_FromString);
 
     GETPROC(dll, Py_DecodeLocale);
+    GETPROC(dll, PyMem_RawFree);
 
     GETPROC(dll, PyUnicode_FromFormat);
     GETPROC(dll, PyUnicode_Decode);

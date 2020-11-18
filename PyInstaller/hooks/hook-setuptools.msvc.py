@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2020, PyInstaller Development Team.
+# Copyright (c) 2015-2020, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -9,9 +9,5 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
-from PyInstaller.utils.hooks import qt_plugins_binaries
-
-# Network Bearer Management in Qt4 4.7+
-binaries = qt_plugins_binaries('bearer', namespace='PyQt4')
-hiddenimports = ['sip', 'PyQt4.QtCore']
+# Only imported if numpy is installed, not mean to pull in numpy.
+excludedimports = ["numpy"]

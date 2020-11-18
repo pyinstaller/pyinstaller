@@ -34,8 +34,9 @@ def django_dottedstring_imports(django_root_dir):
     # module.
     pths.append(django_root_dir)
 
-    package_name = os.path.basename(django_root_dir) + '.settings'
-    env = {'DJANGO_SETTINGS_MODULE': package_name,
+    default_settings_module = os.path.basename(django_root_dir) + '.settings'
+    settings_module = os.environ.get('DJANGO_SETTINGS_MODULE', default_settings_module)
+    env = {'DJANGO_SETTINGS_MODULE': settings_module,
            'PYTHONPATH': os.pathsep.join(pths)}
     ret = eval_script('django_import_finder.py', env=env)
 

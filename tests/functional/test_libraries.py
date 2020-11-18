@@ -23,7 +23,7 @@ import py
 # -------------
 from PyInstaller.compat import is_win, is_darwin, is_linux, is_64bits
 from PyInstaller.utils.hooks import is_module_satisfies
-from PyInstaller.utils.tests import importorskip, xfail, skipif, skipif_win
+from PyInstaller.utils.tests import importorskip, xfail, skipif
 
 # :todo: find a way to get this from `conftest` or such
 # Directory with testing modules used in some tests.
@@ -37,7 +37,10 @@ def test_gevent(pyi_builder):
         """
         import gevent
         gevent.spawn(lambda: x)
-        """)
+        """,
+        # reduce footprint of the test (and avoid issued introduced by one of
+        # these packages breaking)
+        excludes=["PySide2", "PyQt5", "numpy", "scipy"])
 
 
 @importorskip('gevent')
@@ -46,7 +49,10 @@ def test_gevent_monkey(pyi_builder):
         """
         from gevent.monkey import patch_all
         patch_all()
-        """)
+        """,
+        # reduce footprint of the test (and avoid issued introduced by one of
+        # these packages breaking)
+        excludes=["PySide2", "PyQt5", "numpy", "scipy"])
 
 
 @xfail(is_darwin, reason='Issue #1895.')
@@ -111,30 +117,6 @@ def test_pygments(pyi_builder):
         code = 'print "Hello World"'
         print(highlight(code, PythonLexer(), HtmlFormatter()))
         """)
-
-
-@importorskip('PyQt4')
-def test_PyQt4_QtWebKit(pyi_builder):
-    pyi_builder.test_source(
-        """
-        from PyQt4.QtGui import QApplication
-        from PyQt4.QtWebKit import QWebView
-        from PyQt4.QtCore import QTimer
-
-        app = QApplication([])
-        view = QWebView()
-        view.show()
-        # Exit Qt when the main loop becomes idle.
-        QTimer.singleShot(0, app.exit)
-        # Run the main loop, displaying the WebKit widget.
-        app.exec_()
-        """)
-
-
-@importorskip('PyQt4')
-def test_PyQt4_uic(tmpdir, pyi_builder, data_dir):
-    # Note that including the data_dir fixture copies files needed by this test
-    pyi_builder.test_script('pyi_lib_PyQt4-uic.py')
 
 
 PYQT5_NEED_OPENGL = pytest.mark.skipif(is_module_satisfies('PyQt5 <= 5.10.1'),
@@ -607,17 +589,6 @@ def test_pil_PyQt5(pyi_builder):
     import PIL.ImageQt
     """)
 
-@importorskip('PIL.ImageQt')
-@importorskip('PyQt4')
-def test_pil_PyQt4(pyi_builder):
-    # hook-PIL is excluding PyQt4, but is must still be included
-    # since it is imported elsewhere. Also see issue #1584.
-    pyi_builder.test_source("""
-    import PyQt4
-    import PIL
-    import PIL.ImageQt
-    """)
-
 
 @importorskip('PIL')
 def test_pil_plugins(pyi_builder):
@@ -625,8 +596,8 @@ def test_pil_plugins(pyi_builder):
         """
         # Verify packaging of PIL.Image. Specifically, the hidden import of FixTk
         # importing tkinter is causing some problems.
-        from PIL.Image import fromstring
-        print(fromstring)
+        from PIL.Image import frombytes
+        print(frombytes)
 
         # PIL import hook should bundle all available PIL plugins. Verify that plugins
         # are bundled.

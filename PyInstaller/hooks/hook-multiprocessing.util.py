@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2020, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -9,6 +9,9 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
+# In Python 3.8 mutliprocess.utils has _cleanup_tests() to cleanup
+# multiprocessing resources when multiprocessing tests completed. This
+# function import `tests` which is the complete Python test-suite, pulling in
+# many more dependencies, e.g. tkinter.
 
-hiddenimports = ['sip', 'PyQt4.QtCore']
-
+excludedimports = ['test']

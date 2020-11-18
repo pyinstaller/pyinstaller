@@ -359,6 +359,8 @@ For example modify the spec file this way::
           exclude_binaries=...
           )
 
+.. Warning:: The ``u`` option does not work on Windows. See this `GitHub issue <https://github.com/pyinstaller/pyinstaller/issues/1441>`_ for more details.
+
 
 .. _spec file options for a mac os x bundle:
 
@@ -547,7 +549,7 @@ the apps :file:`dist/bar/bar` and :file:`dist/zap/zap` will refer to
 the contents of :file:`dist/foo/` for shared dependencies.
 
 There are several multipackage examples in the 
-|PyInstaller| distribution folder under :file:`/tests/old_suite/multipackage`.
+|PyInstaller| distribution folder under :file:`tests/functional/specs`.
 
 Remember that a spec file is executable Python.
 You can use all the Python facilities (``for`` and ``with``

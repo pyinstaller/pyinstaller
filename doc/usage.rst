@@ -102,23 +102,24 @@ Or in Windows, use the little-known BAT file line continuation::
 Running |PyInstaller| from Python code
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you want to run |PyInstaller| from within Python code use the ``run``
-function of the ``__main__`` module and pass all command line arguments in as
-a list, e.g.
+If you want to run |PyInstaller| from Python code, you can use the ``run`` function
+defined in ``PyInstaller.__main__``. For instance, the following code:
 
 .. code-block:: python
 
     import PyInstaller.__main__
 
     PyInstaller.__main__.run([
-        '--name=%s' % package_name,
+        'my_script.py',
         '--onefile',
-        '--windowed',
-        '--add-binary=%s' % os.path.join('resource', 'path', '*.png'),
-        '--add-data=%s' % os.path.join('resource', 'path', '*.txt'),
-        '--icon=%s' % os.path.join('resource', 'path', 'icon.ico'),
-        os.path.join('my_package', '__main__.py'),
+        '--windowed'
     ])
+
+Is equivalent to:
+
+.. code-block:: shell
+
+    pyinstaller my_script.py --onefile --windowed
 
 
 Running |PyInstaller| with Python optimizations
@@ -247,7 +248,7 @@ or a supported version that uses Qt4 and a development version that uses Qt5 --
 we recommend you use venv_.
 With `venv` you can maintain different combinations of Python
 and installed packages, and switch from one combination to another easily.
-These are called `virtual nvironments` or `venvs` in short.
+These are called `virtual environments` or `venvs` in short.
 
 * Use `venv` to create as many different development environments as you need,
   each with its unique combination of Python and installed packages.
@@ -273,7 +274,7 @@ Supporting Multiple Operating Systems
 ---------------------------------------
 
 If you need to distribute your application for more than one OS,
-for example both Windows and Mac OS X, you must install |PyInstaller|
+for example both Windows and Mac OS X, you must install |PyInstaller|
 on each platform and bundle your app separately on each.
 
 You can do this from a single machine using virtualization.
@@ -389,7 +390,7 @@ Or you can apply the ``unicode()`` function to the object
 to reproduce the version text file.
 
 
-Building Mac OS X App Bundles
+Building Mac OS X App Bundles
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Under Mac OS X, |PyInstaller| always builds a UNIX executable in

@@ -133,8 +133,9 @@ _unix_excludes = {
     r'libnss_nisplus.*\.so(\..*)?',
     r'libresolv\.so(\..*)?',
     r'libutil\.so(\..*)?',
-    # libGL can reference some hw specific libraries (like nvidia libs).
-    r'libGL\..*',
+    # graphical interface libraries come with graphical stack (see libglvnd)
+    r'libE?(Open)?GLX?(ESv1_CM|ESv2)?(dispatch)?\.so(\..*)?',
+    r'libdrm\.so(\..*)?',
     # libxcb-dri changes ABI frequently (e.g.: between Ubuntu LTS releases) and
     # is usually installed as dependency of the graphics stack anyway. No need
     # to bundle it.
@@ -302,12 +303,27 @@ def mac_set_relative_dylib_deps(libname, distname):
         """
         For system libraries is still used absolute path. It is unchanged.
         """
-        # Match non system dynamic libraries.
-        if not util.in_system_path(pth):
-            # Use relative path to dependent dynamic libraries based on the
-            # location of the executable.
-            return os.path.join('@loader_path', parent_dir,
-                os.path.basename(pth))
+        # Leave system dynamic libraries unchanged
+        if util.in_system_path(pth):
+            return None
+
+        # The older python.org builds that use system Tcl/Tk framework
+        # have their _tkinter.cpython-*-darwin.so library linked against
+        # /Library/Frameworks/Tcl.framework/Versions/8.5/Tcl and
+        # /Library/Frameworks/Tk.framework/Versions/8.5/Tk, although the
+        # actual frameworks are located in /System/Library/Frameworks.
+        # Therefore, they slip through the above in_system_path() check,
+        # and we need to exempt them manually.
+        _exemptions = [
+            '/Library/Frameworks/Tcl.framework/',
+            '/Library/Frameworks/Tk.framework/'
+        ]
+        if any([x in pth for x in _exemptions]):
+            return None
+
+        # Use relative path to dependent dynamic libraries based on the
+        # location of the executable.
+        return os.path.join('@loader_path', parent_dir, os.path.basename(pth))
 
     # Rewrite mach headers with @loader_path.
     dll = MachO(libname)

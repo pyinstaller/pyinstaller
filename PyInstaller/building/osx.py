@@ -89,11 +89,6 @@ class BUNDLE(Target):
         for inm, name, typ in self.toc:
             if typ == "EXECUTABLE":
                 self.exename = name
-                if self.name is None:
-                    self.appname = "Mac%s" % (os.path.splitext(inm)[0],)
-                    self.name = os.path.join(CONF['specpath'], self.appname + ".app")
-                else:
-                    self.name = os.path.join(CONF['specpath'], self.name)
                 break
         self.__postinit__()
 
@@ -151,10 +146,14 @@ class BUNDLE(Target):
 
                            }
 
-        # Setting EXE console=True implies LSBackgroundOnly=True.
-        # But it still can be overwrite by the user.
+        # Set some default values.
+        # But they still can be overwritten by the user.
         if self.console:
+            # Setting EXE console=True implies LSBackgroundOnly=True.
             info_plist_dict['LSBackgroundOnly'] = True
+        else:
+            # Let's use high resolution by default.
+            info_plist_dict['NSHighResolutionCapable'] = True
 
         # Merge info_plist settings from spec file
         if isinstance(self.info_plist, dict) and self.info_plist:
@@ -174,7 +173,7 @@ class BUNDLE(Target):
                 fnm = checkCache(fnm, strip=self.strip, upx=self.upx,
                                  upx_exclude=self.upx_exclude, dist_nm=inm)
             # Add most data files to a list for symlinking later.
-            if typ == 'DATA' and base_path not in ('base_library.zip', 'PySide2', 'PyQt5'):
+            if typ == 'DATA' and base_path not in ('PySide2', 'PyQt5'):
                 links.append((inm, fnm))
             else:
                 tofnm = os.path.join(self.name, "Contents", "MacOS", inm)

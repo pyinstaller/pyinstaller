@@ -36,7 +36,7 @@ if pyside2_library_info.version:
         binaries = []
         for location in locations:
             for dll in ('libeay32.dll', 'ssleay32.dll', 'libssl-1_1-x64.dll',
-                        'libcrypto-1_1-x64.dllx'):
+                        'libcrypto-1_1-x64.dll'):
                 dll_path = os.path.join(location, dll)
                 if os.path.exists(dll_path):
                     binaries.append((dll_path, '.'))

@@ -22,7 +22,6 @@ multiprocessing
 # package-management.
 twisted
 PIL
-# PyQt4
 MySQL-python
 psycopg2
 # gst

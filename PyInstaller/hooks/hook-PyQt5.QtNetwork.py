@@ -25,7 +25,7 @@ if pyqt5_library_info.version:
 
         binaries = []
         for dll in ('libeay32.dll', 'ssleay32.dll', 'libssl-1_1-x64.dll',
-                    'libcrypto-1_1-x64.dllx'):
+                    'libcrypto-1_1-x64.dll'):
             dll_path = os.path.join(pyqt5_library_info.location['BinariesPath'],
                                     dll)
             if os.path.exists(dll_path):

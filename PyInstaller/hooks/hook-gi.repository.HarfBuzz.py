@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2020, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -8,7 +8,11 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
+"""
+Import hook for PyGObject https://wiki.gnome.org/PyGObject
+"""
+
+from PyInstaller.utils.hooks import get_gi_typelibs
 
 
-hiddenimports = ['sip', 'PyQt4.QtCore']
-
+binaries, datas, hiddenimports = get_gi_typelibs('HarfBuzz', '0.0')

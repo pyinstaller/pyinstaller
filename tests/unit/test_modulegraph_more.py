@@ -16,11 +16,12 @@ import sys
 import py_compile
 import textwrap
 import zipfile
+from importlib.machinery import EXTENSION_SUFFIXES
 
 import pytest
 
 from PyInstaller.lib.modulegraph import modulegraph
-from PyInstaller.utils.tests import xfail, skipif, skipif_win
+from PyInstaller.utils.tests import xfail
 
 def _import_and_get_node(tmpdir, module_name, path=None):
     script = tmpdir.join('script.py')
@@ -67,6 +68,55 @@ def test_package(tmpdir):
     assert node.__class__ is modulegraph.Package
     assert node.filename in (str(pysrc), str(pysrc)+'c')
     assert node.packagepath == [pysrc.dirname]
+
+
+#-- Extension modules
+
+@pytest.mark.parametrize(
+    "num, modname, expected_nodetype", (
+        # package's __init__ module is an extension
+        (1, "myextpkg", modulegraph.ExtensionPackage),
+        # __init__.py beside the __init__ module being an extension
+        (2, "myextpkg", modulegraph.ExtensionPackage),
+        # Importing a module beside
+        (3, "myextpkg.other", modulegraph.Extension),
+        # sub-package's __init__ module is an extension
+        (4, "myextpkg.subpkg", modulegraph.ExtensionPackage),
+        # importing a module beside, but from a sub-package
+        (5, "myextpkg.subpkg.other", modulegraph.Extension),
+    ))
+def test_package_init_is_extension(tmpdir, num, modname, expected_nodetype):
+    # Regression: Recursion to deep
+
+    def wt(*args):
+        f = tmpdir.join(*args)
+        f.write_text('###', encoding="ascii")
+        return f
+
+    def create_package_files(test_case):
+        (tmpdir / 'myextpkg' / 'subpkg').ensure(dir=True)
+        m = wt('myextpkg', '__init__' + EXTENSION_SUFFIXES[0])
+        if test_case == 1: return m  # noqa: E701
+        wt('myextpkg', '__init__.py')
+        if test_case == 2: return m  # noqa: E701 return extension module anway
+        m = wt('myextpkg', 'other.py')
+        m = wt('myextpkg', 'other' + EXTENSION_SUFFIXES[0])
+        if test_case == 3: return m  # noqa: E701
+        m = wt('myextpkg', 'subpkg', '__init__.py')
+        m = wt('myextpkg', 'subpkg', '__init__' + EXTENSION_SUFFIXES[0])
+        if test_case == 4: return m  # noqa: E701
+        m = wt('myextpkg', 'subpkg', 'other.py')
+        m = wt('myextpkg', 'subpkg', 'other' + EXTENSION_SUFFIXES[0])
+        return m
+
+    module_file = create_package_files(num)
+    node = _import_and_get_node(tmpdir, modname)
+    assert node.__class__ is expected_nodetype
+    if expected_nodetype is modulegraph.ExtensionPackage:
+        assert node.packagepath == [module_file.dirname]
+    else:
+        assert node.packagepath is None  # not a package
+    assert node.filename == str(module_file)
 
 
 #-- Basic tests - these seem to be missing in the original modulegraph
@@ -175,7 +225,9 @@ def test_nspackage_pep420(tmpdir):
 # :todo: test_namespace_setuptools
 # :todo: test_namespace_pkg_resources
 
-@skipif_win
+
+@pytest.mark.darwin
+@pytest.mark.linux
 def test_symlinks(tmpdir):
     base_dir = tmpdir.join('base').ensure(dir=True)
     p1_init = tmpdir.join('p1', '__init__.py').ensure()
@@ -196,11 +248,11 @@ def test_import_order_1(tmpdir):
     # Ensure modulegraph processes modules in the same order as Python does.
 
     class MyModuleGraph(modulegraph.ModuleGraph):
-        def _load_module(self, fqname, fp, pathname, info):
+        def _load_module(self, fqname, pathname, loader):
             if not record or record[-1] != fqname:
                 record.append(fqname) # record non-consecutive entries
-            return super(MyModuleGraph, self)._load_module(fqname, fp,
-                                                           pathname, info)
+            return super(MyModuleGraph, self)._load_module(fqname,
+                                                           pathname, loader)
 
     record = []
 
@@ -239,11 +291,11 @@ def test_import_order_2(tmpdir):
     # Ensure modulegraph processes modules in the same order as Python does.
 
     class MyModuleGraph(modulegraph.ModuleGraph):
-        def _load_module(self, fqname, fp, pathname, info):
+        def _load_module(self, fqname, pathname, loader):
             if not record or record[-1] != fqname:
                 record.append(fqname) # record non-consecutive entries
-            return super(MyModuleGraph, self)._load_module(fqname, fp,
-                                                           pathname, info)
+            return super(MyModuleGraph, self)._load_module(fqname,
+                                                           pathname, loader)
 
     record = []
 

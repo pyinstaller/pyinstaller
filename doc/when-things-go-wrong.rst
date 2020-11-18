@@ -27,7 +27,7 @@ Some of the recipes there include:
 
 * Bundling a typical Django app.
 
-* A use of a run-time hook to set the PyQt4 API level.
+* A use of a run-time hook to set the PyQt5 API level.
 
 * A workaround for a multiprocessing constraint under Windows.
 
@@ -178,7 +178,7 @@ Figuring Out Why Your GUI Application Won't Start
 ---------------------------------------------------
 
 If you are using the ``--windowed`` option,
-your bundled application ay fail to start with an error message like
+your bundled application may fail to start with an error message like
 ``Failed to execute script my_gui``.
 In this case, you will want to get more verbose output to find out
 what is going on.

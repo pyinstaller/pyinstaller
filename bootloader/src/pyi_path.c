@@ -83,7 +83,9 @@ pyi_path_dirname(char *result, const char *path)
         return false;
     }
     dirpart = (char *) dirname((char *) tmp);  /* _XOPEN_SOURCE - no 'const'. */
-    strncpy(result, dirpart, PATH_MAX);
+    if (snprintf(result, PATH_MAX, "%s", dirpart) >= PATH_MAX) {
+        return false;
+    }
 #endif /* ifndef HAVE_DIRNAME */
     return true;
 }
@@ -186,8 +188,20 @@ int
 pyi_path_fullpath(char *abs, size_t abs_size, const char *rel)
 {
 #ifdef _WIN32
-    /* TODO use _wfullpath - wchar_t function. */
-    return _fullpath(abs, rel, abs_size) != NULL;
+    wchar_t wrel[PATH_MAX + 1];
+    wchar_t *wabs = NULL;
+
+    pyi_win32_utils_from_utf8(wrel, rel, PATH_MAX);
+
+    wabs = _wfullpath(NULL, wrel, PATH_MAX);
+    if (wabs == NULL) {
+        return 0;
+    }
+
+    char *ret = pyi_win32_utils_to_utf8(abs, wabs, abs_size);
+    free(wabs);
+
+    return ret != NULL;
 #else
     return realpath(rel, abs) != NULL;
 #endif
@@ -293,7 +307,7 @@ pyi_path_executable(char *execfile, const char *appname)
         if (! pyi_search_path(buffer, appname)) {
             /* Searching $PATH failed, user is crazy. */
             VS("LOADER: Searching $PATH failed for %s", appname);
-            if (snprintf(buffer, PATH_MAX, "%s", "appname") >= PATH_MAX) {
+            if (snprintf(buffer, PATH_MAX, "%s", appname) >= PATH_MAX) {
                 VS("LOADER: Appname too large %s\n", appname);
                 return false;
             }

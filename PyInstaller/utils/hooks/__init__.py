@@ -79,7 +79,7 @@ def exec_statement(statement):
     return __exec_python_cmd(cmd)
 
 
-def exec_script(script_filename, env=None, *args):
+def exec_script(script_filename, *args, env=None):
     """
     Executes a Python script in an externally spawned interpreter, and
     returns anything that was emitted in the standard output as a
@@ -108,7 +108,7 @@ def eval_statement(statement):
     return eval(txt)
 
 
-def eval_script(scriptfilename, env=None, *args):
+def eval_script(scriptfilename, *args, env=None):
     txt = exec_script(scriptfilename, *args, env=env).strip()
     if not txt:
         # return an empty string which is "not true" but iterable
@@ -547,7 +547,8 @@ def collect_submodules(package, filter=lambda name: True):
     pkg_base, pkg_dir = get_package_paths(package)
 
     # Walk the package. Since this performs imports, do it in a separate
-    # process.
+    # process. Because module import may result in exta output to stdout,
+    # we enclose the output module names with special prefix and suffix.
     names = exec_statement("""
         import sys
         import pkgutil
@@ -589,7 +590,7 @@ def collect_submodules(package, filter=lambda name: True):
                         #yield from walk_packages(path, name+'.', onerror)
 
         for module_loader, name, ispkg in walk_packages([{}], '{}.'):
-            print(name)
+            print('\\n$_pyi:' + name + '*')
         """.format(
                   # Use repr to escape Windows backslashes.
                   repr(pkg_dir), package))
@@ -598,6 +599,13 @@ def collect_submodules(package, filter=lambda name: True):
     mods = {package}
     # Filter through the returend submodules.
     for name in names.split():
+        # Filter out extra output during module imports by checking
+        # for the special prefix and suffix
+        if name.startswith("$_pyi:") and name.endswith("*"):
+            name = name[6:-1]
+        else:
+            continue
+
         if filter(name):
             mods.add(name)
 
@@ -729,6 +737,10 @@ def collect_data_files(package, include_py_files=False, subdir=None,
     if not include_py_files:
         excludes += ['**/*' + s for s in ALL_SUFFIXES]
 
+    # Exclude .pyo files if include_py_files is False.
+    if not include_py_files and ".pyo" not in ALL_SUFFIXES:
+        excludes.append('**/*.pyo')
+
     # If not specified, include all files. Follow the same process as the
     # excludes.
     includes = list(includes) if includes else ["**/*"]
@@ -786,7 +798,6 @@ def collect_system_data_files(path, destdir=None, include_py_files=False):
     # which may not be true on Windows; Windows allows Linux path separators in
     # filenames. Fix this by normalizing the path.
     path = os.path.normpath(path)
-    path = os.path.dirname(path)
     # Ensure `path` ends with a single slash
     # Subtle difference on Windows: In some cases `dirname` keeps the
     # trailing slash, e.g. dirname("//aaa/bbb/"), see issue #4707.
@@ -826,6 +837,9 @@ def _find_prefix(filename):
         common = os.path.commonprefix([prefix, filename])
         if common == prefix:
             possible_prefixes.append(prefix)
+    if not possible_prefixes:
+        # no matching prefix, assume running from build directory
+        possible_prefixes = [os.path.dirname(filename)]
     possible_prefixes.sort(key=lambda p: len(p), reverse=True)
     return possible_prefixes[0]
 
@@ -1025,15 +1039,22 @@ def requirements_for_package(package_name):
 # ``collect_data_files``.
 #
 # Typical use: ``datas, binaries, hiddenimports = collect_all('my_module_name')``.
-def collect_all(package_name, include_py_files=True):
+def collect_all(
+        package_name, include_py_files=True, filter_submodules=None,
+        exclude_datas=None, include_datas=None):
     datas = []
     try:
         datas += copy_metadata(package_name)
     except Exception as e:
         logger.warning('Unable to copy metadata for %s: %s', package_name, e)
-    datas += collect_data_files(package_name, include_py_files)
+    datas += collect_data_files(package_name, include_py_files,
+                                excludes=exclude_datas, includes=include_datas)
     binaries = collect_dynamic_libs(package_name)
-    hiddenimports = collect_submodules(package_name)
+    if filter_submodules:
+        hiddenimports = collect_submodules(package_name,
+                                           filter=filter_submodules)
+    else:
+        hiddenimports = collect_submodules(package_name)
     try:
         hiddenimports += requirements_for_package(package_name)
     except Exception as e:

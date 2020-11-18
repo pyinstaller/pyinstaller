@@ -183,6 +183,24 @@ class TestCollectSubmodules(object):
         ml = collect_submodules(TEST_MOD)
         self.test_collect_submod_all_included(ml)
 
+    # Messages printed to stdout by modules during collect_submodules()
+    # should not affect the collected modules list.
+    def test_collect_submod_stdout_interference(self, monkeypatch):
+        TEST_MOD = 'foo'
+        TEST_MOD_PATH = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            'hookutils_files2'
+        )
+
+        monkeypatch.setattr('PyInstaller.config.CONF',
+                            {'pathex': [TEST_MOD_PATH]})
+        monkeypatch.syspath_prepend(TEST_MOD_PATH)
+
+        ml = collect_submodules(TEST_MOD)
+        ml = sorted(ml)
+
+        assert ml == ['foo', 'foo.bar']
+
 
 def test_is_module_or_submodule():
     assert is_module_or_submodule('foo.bar', 'foo.bar')

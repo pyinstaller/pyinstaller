@@ -12,7 +12,7 @@
 Vagrant.require_version ">= 1.9.5" # Enabling shared folders for winssh
 
 # half-official Debian 8, incl. vboxfs kernel module for shared folders
-DEBIAN = "debian/contrib-jessie64"
+DEBIAN = "debian/contrib-buster64"
 
 if not (Dir.exist?('./src') and File.exist?('./wscript'))
    abort("vagrant must be called from within the 'bootloader' directory")
@@ -40,8 +40,9 @@ def packages_debianoid
     export DEBIAN_FRONTEND=noninteractive
     apt-get -y -o Dpkg::Options::="--force-confdef" \
                -o Dpkg::Options::="--force-confold" upgrade
-    apt-get install -y python python-dev python-setuptools \
+    apt-get install -y python3 python3-dev python3-setuptools \
                        gcc libz-dev libz-dev:i386 \
+                       gcc-i686-linux-gnu \
                        gcc-mingw-w64 clang
   EOF
 end
@@ -155,7 +156,7 @@ def packages_cygwin(version)
     set CYGMIRROR=http://mirrors.kernel.org/sourceware/cygwin/
     set BASEPKGS=openssh,rsync
     set BUILDPKGS=p7zip
-    REM set BUILDPKGS=python3,python3-setuptools,python-devel,binutils,gcc-core
+    REM set BUILDPKGS=python3,python3-setuptools,python3-devel,binutils,gcc-core
     %CYGSETUP% -q -B -o -n -R %CYGBUILD% -L -D -s %CYGMIRROR% -P %BASEPKGS%,%BUILDPKGS%
     cd /d C:\\cygwin\\CygWin\\bin
     regtool set /HKLM/SYSTEM/CurrentControlSet/Services/OpenSSHd/ImagePath "C:\\cygwin\\CygWin\\bin\\cygrunsrv.exe"
@@ -232,8 +233,8 @@ def build_bootloader(boxname)
           break
        fi
     done
-    python ./waf all
-    python ./waf all --target-arch=32bit
+    python3 ./waf all
+    python3 ./waf all CC=i686-linux-gnu-gcc
   EOF
 end
 
@@ -248,8 +249,8 @@ end
 def build_bootloader_target_win32(boxname)
   return <<-EOF
     cd /vagrant/bootloader
-    python ./waf all CC=i686-w64-mingw32-gcc
-    python ./waf all CC=x86_64-w64-mingw32-gcc
+    py -3 ./waf all CC=i686-w64-mingw32-gcc
+    py -3 ./waf all CC=x86_64-w64-mingw32-gcc
   EOF
 end
 
@@ -263,10 +264,10 @@ def build_bootloader_target_osx(boxname)
     fi
     PATH=~/osxcross/bin:$PATH
     echo $PATH
-    # TODO: Use CC=o32-clang and CC=o64-clang when possible, see
-    # <https://github.com/tpoechtrager/osxcross/issues/119>
-    python ./waf all CC=x86_64-apple-darwin15-clang
-    #python ./waf all CC=i386-apple-darwin15-clang
+    export LD_LIBRARY_PATH=~/osxcross/lib:$LD_LIBRARY_PATH
+    export MACOSX_DEPLOYMENT_TARGET=10.11
+    python3 ./waf all CC=x86_64-apple-darwin15-clang --clang
+    #python3 ./waf all CC=i386-apple-darwin15-clang
   EOF
 end
 

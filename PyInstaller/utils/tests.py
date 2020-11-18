@@ -25,17 +25,11 @@ import shutil
 import pytest
 from _pytest.runner import Skipped
 
-from PyInstaller.compat import is_darwin, is_win, is_linux
+from PyInstaller.compat import is_win
 
 # Wrap some pytest decorators to be consistent in tests.
 parametrize = pytest.mark.parametrize
 skipif = pytest.mark.skipif
-skipif_notwin = skipif(not is_win, reason='requires Windows')
-skipif_notosx = skipif(not is_darwin, reason='requires Mac OS X')
-skipif_notlinux = skipif(not is_linux, reason='requires GNU/Linux')
-skipif_win = skipif(is_win, reason='does not run on Windows')
-skipif_linux = skipif(is_win, reason='does not run on GNU/Linux')
-skipif_winorosx = skipif(is_win or is_darwin, reason='does not run on Windows or Mac OS X')
 xfail = pytest.mark.xfail
 
 def _check_for_compiler():
@@ -171,7 +165,7 @@ def gen_sourcefile(tmpdir, source, test_id=None):
 
     # Periods are not allowed in Python module names.
     testname = testname.replace('.', '_')
-    scriptfile = tmpdir / testname + '.py'
+    scriptfile = tmpdir / (testname + '.py')
     source = textwrap.dedent(source)
     with scriptfile.open('w', encoding='utf-8') as ofh:
         print(u'# -*- coding: utf-8 -*-', file=ofh)

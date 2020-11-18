@@ -115,6 +115,9 @@ def run(pyi_args=None, pyi_config=None):
 
     except KeyboardInterrupt:
         raise SystemExit("Aborted by user request.")
+    except RecursionError:
+        from . import _recursion_to_deep_message
+        _recursion_to_deep_message.raise_with_msg()
 
 
 if __name__ == '__main__':

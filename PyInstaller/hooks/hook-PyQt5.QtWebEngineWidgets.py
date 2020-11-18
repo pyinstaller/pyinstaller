@@ -10,6 +10,7 @@
 #-----------------------------------------------------------------------------
 
 import os
+import glob
 from PyInstaller.utils.hooks.qt import add_qt5_dependencies, pyqt5_library_info
 from PyInstaller.utils.hooks import remove_prefix, get_module_file_attribute, \
     collect_system_data_files
@@ -29,9 +30,10 @@ if pyqt5_library_info.version:
                      'QtQmlModels', 'QtNetwork', 'QtGui', 'QtWebChannel',
                      'QtPositioning']
         for i in libraries:
+            framework_dir = i + '.framework'
             datas += collect_system_data_files(
-                os.path.join(data_path, 'lib', i + '.framework'),
-                os.path.join(*(rel_data_path + ['lib'])), True)
+                os.path.join(data_path, 'lib', framework_dir),
+                os.path.join(*rel_data_path, 'lib', framework_dir), True)
         datas += [(os.path.join(data_path, 'lib', 'QtWebEngineCore.framework',
                                 'Resources'), os.curdir)]
     else:
@@ -76,6 +78,6 @@ if pyqt5_library_info.version:
             if os.path.basename(imp).startswith('libnss3.so'):
                 # Find the location of NSS: given a ``/path/to/libnss.so``,
                 # add ``/path/to/nss/*.so`` to get the missing NSS libraries.
-                nss_subdir = os.path.join(os.path.dirname(imp), 'nss')
-                if os.path.exists(nss_subdir):
-                    binaries.append((os.path.join(nss_subdir, '*.so'), 'nss'))
+                nss_glob = os.path.join(os.path.dirname(imp), 'nss', '*.so')
+                if glob.glob(nss_glob):
+                    binaries.append((nss_glob, 'nss'))

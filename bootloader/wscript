@@ -86,6 +86,8 @@ def machine():
         return 'arm'
     elif mach.startswith('aarch'):
         return 'aarch'
+    elif mach.startswith('sw_64'):
+        return 'sw_64'
     else:
         # Assume x86/x86_64 machine.
         return None
@@ -345,7 +347,7 @@ def set_arch_flags(ctx):
         if machine() == 'sw_64':
             # The gcc has no '-m64' option under sw64 machine, but the
             # __x86_64__ macro needs to be defined
-            conf.env.append_value('CCDEFINES', '__x86_64__')
+            ctx.env.append_value('CCDEFINES', '__x86_64__')
         # This ensures proper compilation with 64bit gcc and 32bit Python
         # or vice versa or with manually choosen --target-arch.
         # Option -m32/-m64 has to be passed to cflags and linkflages.
@@ -540,12 +542,11 @@ def configure(ctx):
 
 
     elif ctx.env.DEST_OS == 'darwin':
-        # OS X 10.7 might not understand some load commands.
-        # The following variable fixes 10.7 compatibility.
+        # macOS 10.13 is the oldest version supported by Apple.
         # According to OS X doc this variable is equivalent to gcc option:
-        #   -mmacosx-version-min=10.7
+        #   -mmacosx-version-min=10.13
         if not os.environ.get('MACOSX_DEPLOYMENT_TARGET'):
-            os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.7'
+            os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.13'
 
     ### Libraries
 

@@ -1,13 +1,17 @@
 branch: develop
 
 search: False
+pin: False
 
 schedule: "every week on sunday"
 
 requirements:
-  - tests/requirements-libraries.txt
+  - tests/requirements-libraries.txt:
+      update: all
+      pin: False
   - tests/requirements-tools.txt:
       update: False
+      pin: False
   - requirements.txt:
       update: False
       pin: False

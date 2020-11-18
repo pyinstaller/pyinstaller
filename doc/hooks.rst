@@ -250,8 +250,8 @@ for example::
 
    from PyInstaller.compat import modname_tkinter, is_win
 
-``is_py35``, ``is_py36``, ``is_py37``:
-   True when the current version of Python is at least 3.5, 3.6, or 3.7 respectively.
+``is_py35``, ``is_py36``, ``is_py37``, ``is_py38``, ``is_py39``:
+   True when the current version of Python is at least 3.5, 3.6, 3.7, 3.8 or 3.9 respectively.
 
 ``is_win``:
    True in a Windows system.
@@ -299,7 +299,7 @@ Use a fully-qualified import statement, for example::
 The ``PyInstaller.utils.hooks`` functions listed here are generally useful
 and used in a number of existing hooks.
 There are several more functions besides these that serve the needs
-of specific hooks, such as hooks for PyQt4/5.
+of specific hooks, such as hooks for PyQt5.
 You are welcome to read the ``PyInstaller.utils.hooks`` module
 (and read the existing hooks that import from it) to get code and ideas.
 

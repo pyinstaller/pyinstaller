@@ -32,10 +32,12 @@ psutil
 # Check new flake8 violations on pull requests
 flake8
 
-# Current pypiwin32 simply installs pywin32.
 pywin32; sys_platform == 'win32'
 
 lxml
 
 # crypto support (`--key` option)
 tinyaes ~= 1.0
+
+# Ability to retry a failed test
+flaky

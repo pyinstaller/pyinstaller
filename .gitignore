@@ -11,6 +11,8 @@ __pycache__/
 /.eggs/
 /.pytest_cache/
 /pip-wheel-metadata/
+/.coverage
+/.tox
 
 # /
 /AES.pyd

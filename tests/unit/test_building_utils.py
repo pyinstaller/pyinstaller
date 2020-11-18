@@ -12,6 +12,7 @@
 
 import pytest
 import os
+from importlib.machinery import EXTENSION_SUFFIXES
 
 from PyInstaller.building import utils
 
@@ -78,3 +79,17 @@ def test_format_binaries_and_datas_with_bracket(tmpdir):
 
     res = utils.format_binaries_and_datas(datas, str(tmpdir))
     assert res == expected
+
+
+def test_add_to_suffix__extension():
+    toc = [
+        ('mypkg',
+         'lib38/site-packages/mypkg' + EXTENSION_SUFFIXES[0],
+         'EXTENSION'),
+    ]
+    toc = utils.add_suffix_to_extensions(toc)
+    assert toc == [
+        ('mypkg' + EXTENSION_SUFFIXES[0],
+         'lib38/site-packages/mypkg' + EXTENSION_SUFFIXES[0],
+         'EXTENSION'),
+    ]

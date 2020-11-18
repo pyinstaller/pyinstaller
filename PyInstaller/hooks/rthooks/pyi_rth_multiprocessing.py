@@ -34,11 +34,13 @@ def _freeze_support():
     # look for those flags and the import statement, then exec() the
     # code ourselves.
 
-    if len(sys.argv) >= 2 and \
-            set(sys.argv[1:-2]) == set(_args_from_interpreter_flags()) and \
-            sys.argv[-2] == '-c' and \
-            (sys.argv[-1].startswith('from multiprocessing.semaphore_tracker import main') or \
-             sys.argv[-1].startswith('from multiprocessing.forkserver import main')):
+    if (len(sys.argv) >= 2 and
+        sys.argv[-2] == '-c' and
+        sys.argv[-1].startswith(
+            ('from multiprocessing.semaphore_tracker import main',  # Py<3.8
+             'from multiprocessing.resource_tracker import main',  # Py>=3.8
+             'from multiprocessing.forkserver import main')) and
+        set(sys.argv[1:-2]) == set(_args_from_interpreter_flags())):
         exec(sys.argv[-1])
         sys.exit()
 
@@ -64,16 +66,19 @@ if sys.platform.startswith('win'):
     import multiprocessing.popen_spawn_win32 as forking
 else:
     import multiprocessing.popen_fork as forking
+    import multiprocessing.popen_spawn_posix as spawning
 
-# Patch Popen to re-set _MEIPASS2 from sys._MEIPASS.
-class _Popen(forking.Popen):
+
+
+# Mix-in to re-set _MEIPASS2 from sys._MEIPASS.
+class FrozenSupportMixIn():
     def __init__(self, *args, **kw):
         if hasattr(sys, 'frozen'):
             # We have to set original _MEIPASS2 value from sys._MEIPASS
             # to get --onefile mode working.
             os.putenv('_MEIPASS2', sys._MEIPASS)  # @UndefinedVariable
         try:
-            super(_Popen, self).__init__(*args, **kw)
+            super().__init__(*args, **kw)
         finally:
             if hasattr(sys, 'frozen'):
                 # On some platforms (e.g. AIX) 'os.unsetenv()' is not
@@ -85,4 +90,16 @@ class _Popen(forking.Popen):
                 else:
                     os.putenv('_MEIPASS2', '')
 
+
+# Patch forking.Popen to re-set _MEIPASS2 from sys._MEIPASS.
+class _Popen(FrozenSupportMixIn, forking.Popen):
+    pass
+
 forking.Popen = _Popen
+
+if not sys.platform.startswith('win'):
+    # Patch spawning.Popen to re-set _MEIPASS2 from sys._MEIPASS.
+    class _Spawning_Popen(FrozenSupportMixIn, spawning.Popen):
+        pass
+
+    spawning.Popen = _Spawning_Popen
