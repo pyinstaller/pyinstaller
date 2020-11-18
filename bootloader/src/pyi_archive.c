@@ -16,8 +16,20 @@
  */
 
 #ifdef _WIN32
-/* TODO verify windows includes */
-    #include <winsock.h>  /* ntohl */
+    #if BYTE_ORDER == LITTLE_ENDIAN
+        #if defined(_MSC_VER)
+            #include <stdlib.h>
+            #define pyi_be32toh(x) _byteswap_ulong(x)
+        #elif defined(__GNUC__) || defined(__clang__)
+            #define pyi_be32toh(x) __builtin_bswap32(x)
+        #else
+            #error Unsupported compiler
+        #endif
+    #elif BYTE_ORDER == BIG_ENDIAN
+        #define pyi_be32toh(x) (x)
+    #else
+        #error Unsupported byte order
+    #endif
 #else
     #ifdef __FreeBSD__
 /* freebsd issue #188316 */
@@ -25,6 +37,7 @@
     #else
         #include <netinet/in.h>  /* ntohl */
     #endif
+    #define pyi_be32toh(x) ntohl(x)
     #include <stdlib.h>   /* malloc */
     #include <string.h>   /* strncmp, strcpy, strcat */
     #include <sys/stat.h> /* fchmod */
@@ -266,10 +279,10 @@ pyi_arch_find_cookie(ARCHIVE_STATUS *status, int search_end)
             memcpy(&status->cookie, search_ptr, sizeof(COOKIE));
 
             /* Fix endianess of COOKIE fields */
-            status->cookie.len = ntohl(status->cookie.len);
-            status->cookie.TOC = ntohl(status->cookie.TOC);
-            status->cookie.TOClen = ntohl(status->cookie.TOClen);
-            status->cookie.pyvers = ntohl(status->cookie.pyvers);
+            status->cookie.len = pyi_be32toh(status->cookie.len);
+            status->cookie.TOC = pyi_be32toh(status->cookie.TOC);
+            status->cookie.TOClen = pyi_be32toh(status->cookie.TOClen);
+            status->cookie.pyvers = pyi_be32toh(status->cookie.pyvers);
 
             /* From the cookie, calculate the archive start */
             status->pkgstart = search_start + sizeof(COOKIE) + (search_ptr - buf) - status->cookie.len;
@@ -389,10 +402,10 @@ _pyi_arch_fix_toc_endianess(ARCHIVE_STATUS *status)
     TOC *ptoc = status->tocbuff;
     while (ptoc < status->tocend) {
         /* Fixup the current entry */
-        ptoc->structlen = ntohl(ptoc->structlen);
-        ptoc->pos = ntohl(ptoc->pos);
-        ptoc->len = ntohl(ptoc->len);
-        ptoc->ulen = ntohl(ptoc->ulen);
+        ptoc->structlen = pyi_be32toh(ptoc->structlen);
+        ptoc->pos = pyi_be32toh(ptoc->pos);
+        ptoc->len = pyi_be32toh(ptoc->len);
+        ptoc->ulen = pyi_be32toh(ptoc->ulen);
         /* Jump to next entry; with the current entry fixed up, we can
          * use pyi_arch_increment_toc_ptr() */
         ptoc = pyi_arch_increment_toc_ptr(status, ptoc);

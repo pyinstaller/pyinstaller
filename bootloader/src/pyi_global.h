@@ -51,6 +51,7 @@ typedef int bool;
 
 /* Type for dynamic library. */
 #ifdef _WIN32
+    #include <windows.h>  /* HINSTANCE */
     #define dylib_t   HINSTANCE
 #else
     #define dylib_t   void *
