@@ -1,3 +1,0 @@
-(OSX) Avoid collecting data from system Tcl/Tk framework in ``tkinter`` hook 
-as we do not collect their shared libraries, either.
-Affects only python versions that still use the system Tcl/Tk 8.5.

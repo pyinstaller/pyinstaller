@@ -1,1 +1,0 @@
-Fix sw_64 architecture support

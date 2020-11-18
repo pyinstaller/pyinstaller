@@ -1,1 +1,0 @@
-(OSX) Bump ``MACOSX_DEPLOYMENT_TARGET`` from 10.7 to 10.13.

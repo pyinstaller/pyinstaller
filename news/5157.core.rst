@@ -1,2 +1,0 @@
-Use module loaders to get module content instea of an quirky way semming from
-early Python 2.x times.

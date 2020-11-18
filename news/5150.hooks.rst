@@ -1,1 +1,0 @@
-(OSX) PySide2.QtWebEngineWidgets: add QtQmlModels to included libraries. 

@@ -1,1 +1,0 @@
-Remove support for deprecated PyQt4 and PySide

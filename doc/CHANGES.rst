@@ -12,6 +12,159 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+4.1 (2020-11-18)
+----------------
+
+Features
+~~~~~~~~
+
+* Add support for Python 3.9. (:issue:`#5289`)
+* Add support for Python 3.8. (:issue:`#4311`)
+
+
+Bugfix
+~~~~~~
+
+* Fix endless recursion if a package's ``__init__`` module is an extension
+  module. (:issue:`#5157`)
+* Remove duplicate logging messages (:issue:`#5277`)
+* Fix sw_64 architecture support (:issue:`#5296`)
+* (AIX) Include python-malloc labeled libraries in search for libpython.
+  (:issue:`#4210`)
+
+
+Hooks
+~~~~~
+
+* Add ``exclude_datas``, ``include_datas``, and ``filter_submodules`` to
+  ``collect_all()``. These arguments map to the ``excludes`` and ``includes``
+  arguments of ``collect_data_files``, and to the `filter` argument of
+  ``collect_submodules``. (:issue:`#5113`)
+* Add hook for difflib to not pull in doctests, which is only
+  required when run as main programm.
+* Add hook for distutils.util to not pull in lib2to3 unittests, which will be
+  rearly used in frozen packages.
+* Add hook for heapq to not pull in doctests, which is only
+  required when run as main programm.
+* Add hook for multiprocessing.util to not pull in python test-suite and thus
+  e.g. tkinter.
+* Add hook for numpy._pytesttester to not pull in pytest.
+* Add hook for pickle to not pull in doctests and argpargs, which are only
+  required when run as main programm.
+* Add hook for PIL.ImageFilter to not pull
+  numpy, which is an optional component.
+* Add hook for setuptools to not pull in numpy, which is only imported if
+  installed, not mean to be a dependency
+* Add hook for zope.interface to not pull in pytest unittests, which will be
+  rearly used in frozen packages.
+* Add hook-gi.repository.HarfBuzz to fix Typelib error with Gtk apps.
+  (:issue:`#5133`)
+* Enable overriding Django settings path by `DJANGO_SETTINGS_MODULE`
+  environment variable. (:issue:`#5267`)
+* Fix `collect_system_data_files` to scan the given input path instead of its
+  parent.
+  File paths returned by `collect_all_system_data` are now relative to the
+  input path. (:issue:`#5110`)
+* Fix argument order in ``exec_script()`` and ``eval_script()``.
+  (:issue:`#5300`)
+* Gevent hook does not unnecessarily bundle HTML documentation, __pycache__
+  folders, tests nor generated .c and .h files (:issue:`#4857`)
+* gevent: Do not pull in test-suite (still to be refined)
+* Modify hook for ``gevent`` to exclude test submodules. (:issue:`#5201`)
+* Prevent .pyo files from being collected by collect_data_files when
+  include_py_files is False. (:issue:`#5141`)
+* Prevent output to ``stdout`` during module imports from ending up in the
+  modules list collected by ``collect_submodules``. (:issue:`#5244`)
+* Remove runtime hook and fix regular hook for matplotlib's data to support
+  ``matplotlib>=3.3.0``, fix deprecation warning on version 3.1<= & <3.3,
+  and behave normally for versions <3.1. (:issue:`#5006`)
+* Remove support for deprecated PyQt4 and PySide (:issue:`#5118`,
+  :issue:`#5126`)
+* setuptools: Exclude outdated compat modules.
+* Update ``sqlalchemy`` hook to support v1.3.19 and later,  by adding
+  ``sqlalchemy.ext.baked`` as a hidden import (:issue:`#5128`)
+* Update ``tkinter`` hook to collect Tcl modules directory (``tcl8``) in
+  addition to Tcl/Tk data directories. (:issue:`#5175`)
+* (GNU/Linux) {PyQt5,PySide2}.QtWebEngineWidgets: fix search for extra NSS
+  libraries to prevent an error on systems where /lib64/nss/\*.so
+  comes up empty. (:issue:`#5149`)
+* (OSX) Avoid collecting data from system Tcl/Tk framework in ``tkinter`` hook
+  as we do not collect their shared libraries, either.
+  Affects only python versions that still use the system Tcl/Tk 8.5.
+  (:issue:`#5217`)
+* (OSX) Correctly locate the tcl/tk framework bundled with official
+  python.org python builds from v.3.6.5 on. (:issue:`#5013`)
+* (OSX) Fix the QTWEBENGINEPROCESS_PATH set in PyQt5.QtWebEngineWidgets rthook.
+  (:issue:`#5183`)
+* (OSX) PySide2.QtWebEngineWidgets: add QtQmlModels to included libraries.
+  (:issue:`#5150`)
+* (Windows) Remove the obsolete python2.4-era ``_handle_broken_tcl_tk``
+  work-around for old virtual environments from the ``tkinter`` hook.
+  (:issue:`#5222`)
+
+
+Bootloader
+~~~~~~~~~~
+
+* Fix freeing memory allocted by Python using ``free()`` instead of
+  ``PyMem_RawFree()``. (:issue:`#4441`)
+* (GNU/Linux) Avoid segfault when temp path is missing. (:issue:`#5255`)
+* (GNU/Linux) Replace a ``strncpy()`` call in ``pyi_path_dirname()`` with
+  ``snprintf()`` to ensure that the resulting string is always null-terminated.
+  (:issue:`#5212`)
+* (OSX) Added capability for already-running apps to accept URL & drag'n drop
+  events via Apple Event forwarding (:issue:`#5276`)
+* (OSX) Bump ``MACOSX_DEPLOYMENT_TARGET`` from 10.7 to 10.13. (:issue:`#4627`,
+  :issue:`#4886`)
+* (OSX) Fix to reactivate running app on "reopen" (:issue:`#5295`)
+* (Windows) Use ``_wfullpath()`` instead of ``_fullpath()`` in
+  ``pyi_path_fullpath`` to allow non-ASCII characters in the path.
+  (:issue:`#5189`)
+
+
+Documentation
+~~~~~~~~~~~~~
+
+* Add zlib to build the requirements in the Building the Bootlooder section of
+  the docs. (:issue:`#5130`)
+
+
+PyInstaller Core
+~~~~~~~~~~~~~~~~
+
+* Add informative message what do to if RecurrsionError occurs.
+  (:issue:`#4406`, :issue:`#5156`)
+* Prevent a local directory with clashing name from shadowing a system library.
+  (:issue:`#5182`)
+* Use module loaders to get module content instea of an quirky way semming from
+  early Python 2.x times. (:issue:`#5157`)
+* (OSX) Exempt the ``Tcl``/``Tk`` dynamic libraries in the system framework
+  from relative path overwrite. Fix missing ``Tcl``/``Tk`` dynlib on older
+  python.org builds that still make use of the system framework.
+  (:issue:`#5172`)
+
+
+Test-suite and Continuous Integration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Replace ``skipif_xxx`` for platform-specific tests by markers.
+  (:issue:`#1427`)
+* Test/CI: Test failures are automatically retried once. (:issue:`#5214`)
+
+
+Bootloader build
+~~~~~~~~~~~~~~~~
+
+* Fix AppImage builds that were broken since PyInstaller 3.6. (:issue:`#4693`)
+* Update build system to use Python 3.
+* OSX: Fixed the ineffectiveness of the ``--distpath`` argument for the
+  ``BUNDLE`` step. (:issue:`#4892`)
+* OSX: Improve codesigning and notarization robustness. (:issue:`#3550`,
+  :issue:`#5112`)
+* OSX: Use high resolution mode by default for GUI applications.
+  (:issue:`#4337`)
+
+
 4.0 (2020-08-08)
 ----------------
 

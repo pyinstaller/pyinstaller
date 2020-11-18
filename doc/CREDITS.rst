@@ -5,6 +5,23 @@ Thanks goes to all the kind PyInstaller contributors who have contributed
 new code, bug reports, fixes, comments and ideas. A brief list follows,
 please let us know if your name is omitted by accident:
 
+
+Contributions to PyInstaller 4.1
+----------------------------------
+
+* Hartmut Goebel - Core developer, maintainer and release manager.
+* Legorooj - Core developer.
+* Bryan A. Jones - Core developer and PyQt5-tamer.
+* Rok Mandeljc
+* Mickaël Schoentgen
+* Brénainn Woodsend
+
+* Aaron Althauser, Alex, Andrew Nelson, Benedikt Brückmann, Brénainn Woodsend,
+  Calin Culianu, Dan Yeaw, Ievgen Popovych, Loïc Messal, Łukasz Stolcman,
+  Matt, Mohamed, Petrus, Riz, Riz Syed, Santi Santichaivekin, Sid Gupta,
+  Victor Stinner, byehack, dcgloe, johnthagen, ozelikov,
+
+
 Contributions to PyInstaller 4.0
 ----------------------------------
 

@@ -1,1 +1,0 @@
-Add zlib to build the requirements in the Building the Bootlooder section of the docs.

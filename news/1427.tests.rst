@@ -1,1 +1,0 @@
-Replace ``skipif_xxx`` for platform-specific tests by markers.

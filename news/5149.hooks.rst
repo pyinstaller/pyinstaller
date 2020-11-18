@@ -1,2 +1,0 @@
-(GNU/Linux) {PyQt5,PySide2}.QtWebEngineWidgets: fix search for extra NSS libraries
-to prevent an error on systems where /lib64/nss/*.so comes up empty.

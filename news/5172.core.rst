@@ -1,2 +1,0 @@
-(OSX) Exempt the ``Tcl``/``Tk`` dynamic libraries in the system framework from relative path overwrite. 
-Fixes missing ``Tcl``/``Tk`` dynlib on older python.org builds that still make use of the system framework.

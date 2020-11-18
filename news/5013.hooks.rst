@@ -1,2 +1,0 @@
-(OSX) Correctly locate the tcl/tk framework bundled with official
-python.org python builds from v.3.6.5 on.
