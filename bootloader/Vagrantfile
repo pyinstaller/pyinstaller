@@ -12,7 +12,7 @@
 Vagrant.require_version ">= 1.9.5" # Enabling shared folders for winssh
 
 # half-official Debian 8, incl. vboxfs kernel module for shared folders
-DEBIAN = "debian/contrib-jessie64"
+DEBIAN = "debian/contrib-buster64"
 
 if not (Dir.exist?('./src') and File.exist?('./wscript'))
    abort("vagrant must be called from within the 'bootloader' directory")
