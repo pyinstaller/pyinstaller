@@ -1,1 +1,0 @@
-Prevent .pyo files from being collected by collect_data_files when include_py_files is False.

@@ -1,1 +1,0 @@
-Prevent output to ``stdout`` during module imports from ending up in the modules list collected by ``collect_submodules``.

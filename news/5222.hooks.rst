@@ -1,1 +1,0 @@
-(Windows) Remove the obsolete python2.4-era ``_handle_broken_tcl_tk`` work-around for old virtual environments from the ``tkinter`` hook.

@@ -1,1 +1,0 @@
-Update ``tkinter`` hook to collect Tcl modules directory (``tcl8``) in addition to Tcl/Tk data directories.

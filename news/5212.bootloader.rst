@@ -1,1 +1,0 @@
-(GNU/Linux) Replace a ``strncpy()`` call in ``pyi_path_dirname()`` with ``snprintf()`` to ensure that the resulting string is always null-terminated.

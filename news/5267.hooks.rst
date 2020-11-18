@@ -1,1 +1,0 @@
-Enable overriding Django settings path by `DJANGO_SETTINGS_MODULE` environment variable.
