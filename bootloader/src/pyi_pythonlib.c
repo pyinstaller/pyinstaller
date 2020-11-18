@@ -21,15 +21,8 @@
     #include <windows.h> /* HMODULE */
     #include <fcntl.h>   /* O_BINARY */
     #include <io.h>      /* _setmode */
-    #include <winsock.h> /* ntohl */
 #else
     #include <dlfcn.h>  /* dlerror */
-    #ifdef __FreeBSD__
-/* freebsd issue #188316 */
-        #include <arpa/inet.h>  /* ntohl */
-    #else
-        #include <netinet/in.h>  /* ntohl */
-    #endif
     #include <stdlib.h>  /* mbstowcs */
 #endif /* ifdef _WIN32 */
 #include <stddef.h>  /* ptrdiff_t */
@@ -565,14 +558,14 @@ pyi_pylib_import_modules(ARCHIVE_STATUS *status)
             if (pyvers >= 37) {
                 /* Python >= 3.7 the header: size was changed to 16 bytes. */
                 co = PI_PyObject_CallFunction(loadfunc, "y#", modbuf + 16,
-                                              ntohl(ptoc->ulen) - 16);
+                                              ptoc->ulen - 16);
             }
             else {
                 /* It looks like from python 3.3 the header */
                 /* size was changed to 12 bytes. */
                 co =
-                    PI_PyObject_CallFunction(loadfunc, "y#", modbuf + 12, ntohl(
-                                                 ptoc->ulen) - 12);
+                    PI_PyObject_CallFunction(loadfunc, "y#", modbuf + 12,
+                                                 ptoc->ulen - 12);
             };
 
             if (co != NULL) {
@@ -619,7 +612,7 @@ int
 pyi_pylib_install_zlib(ARCHIVE_STATUS *status, TOC *ptoc)
 {
     int rc = 0;
-    size_t zlibpos = status->pkgstart + ntohl(ptoc->pos);
+    size_t zlibpos = status->pkgstart + ptoc->pos;
     PyObject * sys_path, *zlib_entry, *archivename_obj;
 
     /* Note that sys.path contains PyUnicode on py3. Ensure

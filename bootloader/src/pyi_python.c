@@ -17,7 +17,6 @@
 
 #ifdef _WIN32
     #include <windows.h>  /* HMODULE */
-    #include <winsock.h>  /* ntohl */
 #else
     #include <dlfcn.h>  /* dlsym */
 #endif
