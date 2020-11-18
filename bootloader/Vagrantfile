@@ -40,7 +40,7 @@ def packages_debianoid
     export DEBIAN_FRONTEND=noninteractive
     apt-get -y -o Dpkg::Options::="--force-confdef" \
                -o Dpkg::Options::="--force-confold" upgrade
-    apt-get install -y python python-dev python-setuptools \
+    apt-get install -y python3 python3-dev python3-setuptools \
                        gcc libz-dev libz-dev:i386 \
                        gcc-mingw-w64 clang
   EOF
@@ -232,8 +232,8 @@ def build_bootloader(boxname)
           break
        fi
     done
-    python ./waf all
-    python ./waf all --target-arch=32bit
+    python3 ./waf all
+    python3 ./waf all --target-arch=32bit
   EOF
 end
 
@@ -265,8 +265,8 @@ def build_bootloader_target_osx(boxname)
     echo $PATH
     # TODO: Use CC=o32-clang and CC=o64-clang when possible, see
     # <https://github.com/tpoechtrager/osxcross/issues/119>
-    python ./waf all CC=x86_64-apple-darwin15-clang
-    #python ./waf all CC=i386-apple-darwin15-clang
+    python3 ./waf all CC=x86_64-apple-darwin15-clang
+    #python3 ./waf all CC=i386-apple-darwin15-clang
   EOF
 end
 
