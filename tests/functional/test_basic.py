@@ -489,6 +489,7 @@ def test_pywin32_comext(pyi_builder):
 
 
 @importorskip('win32ui')
+@xfail(reason="https://github.com/mhammond/pywin32/issues/1614")
 def test_pywin32_win32ui(pyi_builder):
     pyi_builder.test_source(
         """
