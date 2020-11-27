@@ -34,7 +34,7 @@ import io
 from PyInstaller.building.utils import get_code_object, strip_paths_in_code,\
     fake_pyc_timestamp
 from PyInstaller.loader.pyimod02_archive import PYZ_TYPE_MODULE, PYZ_TYPE_PKG, \
-    PYZ_TYPE_DATA
+    PYZ_TYPE_DATA, PYZ_TYPE_NSPKG
 from ..compat import BYTECODE_MAGIC, is_py37
 
 
@@ -196,7 +196,7 @@ class ZlibArchiveWriter(ArchiveWriter):
                 # This is a NamespacePackage, modulegraph marks them
                 # by using the filename '-'. (But wants to use None,
                 # so check for None, too, to be forward-compatible.)
-                typ = PYZ_TYPE_PKG
+                typ = PYZ_TYPE_NSPKG
             else:
                 base, ext = os.path.splitext(os.path.basename(path))
                 if base == '__init__':
