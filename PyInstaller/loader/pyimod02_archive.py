@@ -313,6 +313,12 @@ class ZlibArchiveReader(ArchiveReader):
             return None
         return typ in (PYZ_TYPE_PKG, PYZ_TYPE_NSPKG)
 
+    def is_pep420_namespace_package(self, name):
+        (typ, pos, length) = self.toc.get(name, (0, None, 0))
+        if pos is None:
+            return None
+        return typ == PYZ_TYPE_NSPKG
+
     def extract(self, name):
         (typ, pos, length) = self.toc.get(name, (0, None, 0))
         if pos is None:

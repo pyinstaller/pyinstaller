@@ -107,6 +107,18 @@ class FrozenImporter(object):
         # Raise import error.
         raise ImportError("Can't load frozen modules.")
 
+    # Private helper
+    def _is_pep420_namespace_package(self, fullname):
+        if fullname in self.toc:
+            try:
+                return self._pyz_archive.is_pep420_namespace_package(fullname)
+            except Exception as e:
+                raise ImportError(
+                    'Loader FrozenImporter cannot handle module ' + fullname
+                ) from e
+        else:
+            raise ImportError('Loader FrozenImporter cannot handle module ' + fullname)
+
     ### Optional Extensions to the PEP-302 Importer Protocol
 
     def is_package(self, fullname):
@@ -243,6 +255,14 @@ class FrozenImporter(object):
         if entry_name is None:
             trace("# %s not found in PYZ", fullname)
             return None
+
+        if self._is_pep420_namespace_package(entry_name):
+            # PEP-420 namespace package; as per PEP 451, we need to
+            # return a spec with "loader" set to None (a.k.a. not set)
+            spec = _frozen_importlib.ModuleSpec(
+                fullname, None,
+                is_package=True)
+            return spec
 
         # origin has to be the filename
         origin = self.get_filename(entry_name)
