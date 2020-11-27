@@ -262,6 +262,11 @@ class FrozenImporter(object):
             spec = _frozen_importlib.ModuleSpec(
                 fullname, None,
                 is_package=True)
+            # Set submodule_search_locations, which seems to fill the
+            # __path__ attribute.
+            spec.submodule_search_locations = [
+                pyi_os_path.os_path_dirname(self.get_filename(entry_name))
+            ]
             return spec
 
         # origin has to be the filename
