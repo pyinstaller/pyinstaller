@@ -35,7 +35,7 @@ pyqt5==5.15.1
 pyqtwebengine==5.15.1
 python-dateutil==2.8.1
 pytz==2020.4
-requests==2.24.0
+requests==2.25.0
 # simplejson is used for text_c_extension
 simplejson==3.17.2
 sphinx==2.4.4 # pyup: ignore
