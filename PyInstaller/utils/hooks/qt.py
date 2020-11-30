@@ -406,14 +406,12 @@ _qt_dynamic_dependencies_dict = {
     "qt5multimediaquick_p":     (None,                     "qtmultimedia",     ),
     "qt5network":               (".QtNetwork",             "qtbase",           "bearer"),
     "qt5nfc":                   (".QtNfc",                 None,               ),
-    ##                                                                              These added manually for Linux.
-    "qt5opengl":                (".QtOpenGL",              None,               "xcbglintegrations", "egldeviceintegrations"),
+    "qt5opengl":                (".QtOpenGL",              None,               ),
     "qt5positioning":           (".QtPositioning",         None,               "position"),
     "qt5printsupport":          (".QtPrintSupport",        None,               "printsupport"),
     "qt5qml":                   (".QtQml",                 "qtdeclarative",    ),
     "qmltooling":               (None,                     None,               "qmltooling"),
-    ##                                                                                                          These added manually for Linux.
-    "qt5quick":                 (".QtQuick",               "qtdeclarative",    "scenegraph", "qmltooling", "xcbglintegrations", "egldeviceintegrations"),
+    "qt5quick":                 (".QtQuick",               "qtdeclarative",    "scenegraph", "qmltooling"),
     "qt5quickparticles":        (None,                     None,               ),
     "qt5quickwidgets":          (".QtQuickWidgets",        None,               ),
     "qt5script":                (None,                     "qtscript",         ),
@@ -430,8 +428,7 @@ _qt_dynamic_dependencies_dict = {
     "qt5winextras":             (".QtWinExtras",           None,               ),
     "qt5xml":                   (".QtXml",                 "qtbase",           ),
     "qt5xmlpatterns":           (".QXmlPatterns",          "qtxmlpatterns",    ),
-    ##                                                                                             These added manually for Linux.
-    "qt5webenginecore":         (".QtWebEngineCore",       None,               "qtwebengine", "xcbglintegrations", "egldeviceintegrations"),
+    "qt5webenginecore":         (".QtWebEngineCore",       None,               "qtwebengine"),
     "qt5webengine":             (".QtWebEngine",           "qtwebengine",      "qtwebengine"),
     "qt5webenginewidgets":      (".QtWebEngineWidgets",    None,               "qtwebengine"),
     "qt53dcore":                (None,                     None,               ),
