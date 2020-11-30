@@ -46,13 +46,13 @@ def test_osx_custom_protocol_handler(tmpdir, pyi_builder_spec):
     subprocess.check_call(['open', app_path])
     # 'open' starts program in a different process
     #  so we need to wait for it to finish
-    time.sleep(2)
+    time.sleep(5)
 
     # Call custom protocol handler
     url = custom_url_scheme + "://url-args"
     subprocess.check_call(['open', url])
     # Wait for the program to finish
-    time.sleep(2)
+    time.sleep(5)
     assert os.path.exists(logfile_path), 'Missing args logfile'
     with open(logfile_path, 'r') as fh:
         log_lines = fh.readlines()
