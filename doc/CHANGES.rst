@@ -403,7 +403,7 @@ Bugfix
   :issue:`#4417`)
 * (Windows) The temporary copy of bootloader used add resources, icons, etc.
   is not created in --workpath instead of in  %TEMP%. This fixes issues on
-  systems where the anti-virus cleans %TEMP% immediatly. (:issue:`#3869`)
+  systems where the anti-virus cleans %TEMP% immediately. (:issue:`#3869`)
 * Do not fail the build when ``ldconfig`` is missing/inoperable.
   (:issue:`#4261`)
 * Fixed loading of IPython extensions. (:issue:`#4271`)
@@ -482,7 +482,7 @@ Bootloader
   with Universal CRT update is not installed. (:issue:`#1566`, :issue:`#2170`,
   :issue:`#4230`)
 * Add our own implementation for ``strndup`` and ``strnlen`` to be used on
-  pattforms one of these is missing.
+  platforms one of these is missing.
 
 
 PyInstaller Core
