@@ -25,9 +25,6 @@
 /* windows.h will use API for WinServer 2003 with SP1 and WinXP with SP2 */
 #define _WIN32_WINNT 0x0502
 
-/* TODO: use safe string functions */
-#define _CRT_SECURE_NO_WARNINGS 1
-
 #include <windows.h>
 #include <commctrl.h> /* InitCommonControls */
 #include <stdio.h>    /* _fileno */

@@ -17,9 +17,6 @@
 /* size of buffer to store the name of the Python DLL library */
 #define DLLNAME_LEN (64)
 
-/* TODO: use safe string functions */
-#define _CRT_SECURE_NO_WARNINGS 1
-
 #ifdef _WIN32
     #include <windows.h> /* HMODULE */
     #include <fcntl.h>   /* O_BINARY */
@@ -622,7 +619,7 @@ int
 pyi_pylib_install_zlib(ARCHIVE_STATUS *status, TOC *ptoc)
 {
     int rc = 0;
-    int zlibpos = status->pkgstart + ntohl(ptoc->pos);
+    size_t zlibpos = status->pkgstart + ntohl(ptoc->pos);
     PyObject * sys_path, *zlib_entry, *archivename_obj;
 
     /* Note that sys.path contains PyUnicode on py3. Ensure
@@ -640,7 +637,7 @@ pyi_pylib_install_zlib(ARCHIVE_STATUS *status, TOC *ptoc)
      */
     archivename_obj = PI_PyUnicode_DecodeFSDefault(status->archivename);
 #endif
-    zlib_entry = PI_PyUnicode_FromFormat("%U?%d", archivename_obj, zlibpos);
+    zlib_entry = PI_PyUnicode_FromFormat("%U?%zu", archivename_obj, zlibpos);
     PI_Py_DecRef(archivename_obj);
 
     sys_path = PI_PySys_GetObject("path");

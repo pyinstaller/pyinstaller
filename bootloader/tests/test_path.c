@@ -9,9 +9,6 @@
 // SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 // -----------------------------------------------------------------------------
 
-/* TODO: use safe string functions */
-#define _CRT_SECURE_NO_WARNINGS 1
-
 #include <sys/types.h>
 #include <stdarg.h>
 #include <string.h>

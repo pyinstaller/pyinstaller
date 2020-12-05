@@ -15,9 +15,6 @@
  * Launch a python module from an archive.
  */
 
-/* TODO: use safe string functions */
-#define _CRT_SECURE_NO_WARNINGS 1
-
 #if defined(__APPLE__) && defined(WINDOWED)
     #include <Carbon/Carbon.h>  /* TransformProcessType */
 #endif
@@ -436,7 +433,7 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
                      * debug, print the traceback to a message box. */
 
                     const char *pvalue_cchar, *tb_cchar;
-                    char *char_pvalue, *char_tb, *module_name;
+                    char *module_name;
                     PyObject *ptype, *pvalue, *pvalue_str;
                     PyObject *ptraceback, *tb, *tb_str;
                     PyObject *module, *func;

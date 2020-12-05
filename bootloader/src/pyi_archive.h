@@ -57,7 +57,7 @@ typedef struct _cookie {
 
 typedef struct _archive_status {
     FILE * fp;
-    int    pkgstart;
+    size_t pkgstart;
     TOC *  tocbuff;
     TOC *  tocend;
     COOKIE cookie;
