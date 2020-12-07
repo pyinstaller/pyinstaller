@@ -1,0 +1,1 @@
+Removed obsolete ``pygame`` hook.
