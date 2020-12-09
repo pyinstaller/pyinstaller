@@ -18,7 +18,7 @@ import textwrap
 from pathlib import Path
 
 from ...compat import base_prefix, exec_command_stdout, exec_python, \
-    is_darwin, is_venv, string_types, open_file, \
+    exec_python_rc, is_darwin, is_venv, string_types, open_file, \
     EXTENSION_SUFFIXES, ALL_SUFFIXES
 from ... import HOMEPATH
 from ... import log as logging
@@ -41,11 +41,11 @@ PY_IGNORE_EXTENSIONS = set(ALL_SUFFIXES)
 hook_variables = {}
 
 
-def __exec_python_cmd(cmd, env=None):
+def __exec_python_cmd(cmd, env=None, capture_stdout=True):
     """
-    Executes an externally spawned Python interpreter and returns
-    anything that was emitted in the standard output as a single
-    string.
+    Executes an externally spawned Python interpreter. If capture_stdout
+    is set to True, returns anything that was emitted in the standard
+    output as a single string. Otherwise, returns the exit code.
     """
     # 'PyInstaller.config' cannot be imported as other top-level modules.
     from ...config import CONF
@@ -65,8 +65,17 @@ def __exec_python_cmd(cmd, env=None):
         pp = os.pathsep.join([pp_env.get('PYTHONPATH'), pp])
     pp_env['PYTHONPATH'] = pp
 
-    txt = exec_python(*cmd, env=pp_env)
-    return txt.strip()
+    if capture_stdout:
+        txt = exec_python(*cmd, env=pp_env)
+        return txt.strip()
+    else:
+        return exec_python_rc(*cmd, env=pp_env)
+
+
+def __exec_statement(statement, capture_stdout=True):
+    statement = textwrap.dedent(statement)
+    cmd = ['-c', statement]
+    return __exec_python_cmd(cmd, capture_stdout=capture_stdout)
 
 
 def exec_statement(statement):
@@ -74,16 +83,23 @@ def exec_statement(statement):
     Executes a Python statement in an externally spawned interpreter, and
     returns anything that was emitted in the standard output as a single string.
     """
-    statement = textwrap.dedent(statement)
-    cmd = ['-c', statement]
-    return __exec_python_cmd(cmd)
+    return __exec_statement(statement, capture_stdout=True)
 
 
-def exec_script(script_filename, *args, env=None):
+def exec_statement_rc(statement):
     """
-    Executes a Python script in an externally spawned interpreter, and
-    returns anything that was emitted in the standard output as a
-    single string.
+    Executes a Python statement in an externally spawned interpreter, and
+    returns the exit code.
+    """
+    return __exec_statement(statement, capture_stdout=False)
+
+
+def __exec_script(script_filename, *args, env=None, capture_stdout=True):
+    """
+    Executes a Python script in an externally spawned interpreter. If
+    capture_stdout is set to True, returns anything that was emitted in
+    the standard output as a single string. Otherwise, returns the exit
+    code.
 
     To prevent misuse, the script passed to utils.hooks.exec_script
     must be located in the `PyInstaller/utils/hooks/subproc` directory.
@@ -97,7 +113,30 @@ def exec_script(script_filename, *args, env=None):
 
     cmd = [script_filename]
     cmd.extend(args)
-    return __exec_python_cmd(cmd, env=env)
+    return __exec_python_cmd(cmd, env=env, capture_stdout=capture_stdout)
+
+
+def exec_script(script_filename, *args, env=None):
+    """
+    Executes a Python script in an externally spawned interpreter, and
+    returns anything that was emitted in the standard output as a
+    single string.
+
+    To prevent misuse, the script passed to utils.hooks.exec_script
+    must be located in the `PyInstaller/utils/hooks/subproc` directory.
+    """
+    return __exec_script(script_filename, *args, env=env, capture_stdout=True)
+
+
+def exec_script_rc(script_filename, *args, env=None):
+    """
+    Executes a Python script in an externally spawned interpreter, and
+    returns the exit code.
+
+    To prevent misuse, the script passed to utils.hooks.exec_script
+    must be located in the `PyInstaller/utils/hooks/subproc` directory.
+    """
+    return __exec_script(script_filename, *args, env=env, capture_stdout=False)
 
 
 def eval_statement(statement):
@@ -219,6 +258,34 @@ def remove_file_extension(filename):
             return filename[0:filename.rfind(suff)]
     # Fallback to ordinary 'splitext'.
     return os.path.splitext(filename)[0]
+
+
+def can_import_module(module_name):
+    """
+    Check if the specified module can be imported.
+
+    Intended as a silent module availability check, as it does not print
+    ModuleNotFoundError traceback to stderr when the module is unavailable.
+
+    Parameters
+    ----------
+    module_name : str
+        Fully-qualified name of the module.
+
+    Returns
+    ----------
+    bool
+        Boolean indicating whether the module can be imported or not.
+    """
+
+    rc = exec_statement_rc("""
+        try:
+            import {0}
+        except ModuleNotFoundError:
+            raise SystemExit(1)
+        """.format(module_name)
+    )
+    return rc == 0
 
 
 # TODO: Replace most calls to exec_statement() with calls to this function.
