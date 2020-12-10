@@ -623,3 +623,12 @@ def test_pandas_extension(pyi_builder):
         assert is_float(1) == 0
         """)
 
+
+@importorskip('win32ctypes')
+@pytest.mark.skipif(not is_win,
+                    reason='pywin32-ctypes is supported only on Windows')
+@pytest.mark.parametrize('submodule', ['win32api', 'win32cred', 'pywintypes'])
+def test_pywin32ctypes(pyi_builder, submodule):
+    pyi_builder.test_source("""
+        from win32ctypes.pywin32 import {0}
+        """.format(submodule))
