@@ -29,12 +29,13 @@ import struct
 from types import CodeType
 import marshal
 import zlib
+import io
 
 from PyInstaller.building.utils import get_code_object, strip_paths_in_code,\
     fake_pyc_timestamp
 from PyInstaller.loader.pyimod02_archive import PYZ_TYPE_MODULE, PYZ_TYPE_PKG, \
     PYZ_TYPE_DATA
-from ..compat import BYTECODE_MAGIC
+from ..compat import BYTECODE_MAGIC, is_py37
 
 
 class ArchiveWriter(object):
@@ -375,6 +376,26 @@ class CArchiveWriter(ArchiveWriter):
 
                 code_data = marshal.dumps(code)
                 ulen = len(code_data)
+            elif typcd == 'm':
+                fh = open(pathnm, 'rb')
+                ulen = os.fstat(fh.fileno()).st_size
+                # Check if it is a PYC file
+                header = fh.read(4)
+                fh.seek(0)
+                if header == BYTECODE_MAGIC:
+                    # Read whole header and load code
+                    if is_py37:
+                        header = fh.read(16)
+                    else:
+                        header = fh.read(12)
+                    code = marshal.load(fh)
+                    # Strip paths from code, marshal back into module form.
+                    code = strip_paths_in_code(code)
+                    data = header + marshal.dumps(code)
+                    # Create file-like object for timestamp re-write
+                    # in the subsequent steps
+                    fh = io.BytesIO(data)
+                    ulen = len(data)
             else:
                 fh = open(pathnm, 'rb')
                 ulen = os.fstat(fh.fileno()).st_size
