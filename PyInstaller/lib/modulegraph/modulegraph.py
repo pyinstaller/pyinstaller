@@ -2092,7 +2092,8 @@ class ModuleGraph(ObjectGraph):
         partname = fqname.rpartition(".")[-1]
 
         if loader.is_package(partname):
-            if isinstance(loader, NAMESPACE_PACKAGE):
+            is_nspkg = isinstance(loader, NAMESPACE_PACKAGE)
+            if is_nspkg:
                 pkgpath = loader.namespace_dirs[:]  # copy for safety
             else:
                 pkgpath = []
@@ -2103,7 +2104,7 @@ class ModuleGraph(ObjectGraph):
             ns_pkgpath = _namespace_package_path(
                 fqname, pkgpath or [], self.path)
 
-            if (ns_pkgpath or pkgpath) and isinstance(loader, NAMESPACE_PACKAGE):
+            if (ns_pkgpath or pkgpath) and is_nspkg:
                 # this is a PEP-420 namespace package
                 m = self.createNode(NamespacePackage, fqname)
                 m.filename = '-'

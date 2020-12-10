@@ -117,7 +117,9 @@ class FrozenImporter(object):
                     'Loader FrozenImporter cannot handle module ' + fullname
                 ) from e
         else:
-            raise ImportError('Loader FrozenImporter cannot handle module ' + fullname)
+            raise ImportError(
+                'Loader FrozenImporter cannot handle module ' + fullname
+            )
 
     ### Optional Extensions to the PEP-302 Importer Protocol
 

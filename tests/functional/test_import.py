@@ -546,6 +546,7 @@ def test_nspkg_pep420(pyi_builder):
         pyi_args=['--paths', os.pathsep.join(pathex)],
     )
 
+
 def test_nspkg_attributes(pyi_builder):
     # Test that non-PEP-420 namespace packages (e.g., the ones using
     # pkg_resources.declare_namespace) have proper attributes:
@@ -573,6 +574,7 @@ def test_nspkg_attributes(pyi_builder):
         """,
         pyi_args=['--paths', os.pathsep.join(pathex)],
     )
+
 
 def test_nspkg_attributes_pep420(pyi_builder):
     # Test that PEP-420 namespace packages have proper attributes:
