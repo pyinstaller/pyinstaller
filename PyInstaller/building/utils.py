@@ -37,6 +37,7 @@ from .. import log as logging
 
 if is_win:
     from ..utils.win32 import winmanifest, winresource
+    from ..utils.win32.versioninfo import pefile_check_control_flow_guard
 
 logger = logging.getLogger(__name__)
 
@@ -247,16 +248,21 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None):
     if upx:
         if strip:
             fnm = checkCache(fnm, strip=True, upx=False)
-        bestopt = "--best"
-        # FIXME: Linux builds of UPX do not seem to contain LZMA (they assert out)
-        # A better configure-time check is due.
-        if CONF["hasUPX"] >= (3,) and os.name == "nt":
-            bestopt = "--lzma"
+        # We meed to avoid using UPX with Windows DLLs that have Control
+        # Flow Guard enabled, as it breaks them.
+        if is_win and pefile_check_control_flow_guard(fnm):
+            logger.info('Disabling UPX for %s due to CFG!', fnm)
+        else:
+            bestopt = "--best"
+            # FIXME: Linux builds of UPX do not seem to contain LZMA
+            # (they assert out). A better configure-time check is due.
+            if CONF["hasUPX"] >= (3,) and os.name == "nt":
+                bestopt = "--lzma"
 
-        upx_executable = "upx"
-        if CONF.get('upx_dir'):
-            upx_executable = os.path.join(CONF['upx_dir'], upx_executable)
-        cmd = [upx_executable, bestopt, "-q", cachedfile]
+            upx_executable = "upx"
+            if CONF.get('upx_dir'):
+                upx_executable = os.path.join(CONF['upx_dir'], upx_executable)
+            cmd = [upx_executable, bestopt, "-q", cachedfile]
     else:
         if strip:
             strip_options = []

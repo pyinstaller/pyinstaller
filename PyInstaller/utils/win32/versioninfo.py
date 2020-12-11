@@ -20,6 +20,30 @@ from ...compat import text_read_mode, win32api
 import pefile
 
 
+def pefile_check_control_flow_guard(filename):
+    """
+    Checks if the specified PE file has CFG (Control Flow Guard) enabled.
+
+    Parameters
+    ----------
+    filename : str
+        Path to the PE file to inspect.
+
+    Returns
+    ----------
+    bool
+        True if file is a PE file with CFG enabled. False if CFG is not
+        enabled or if file could not be processed using pefile library.
+    """
+    try:
+        pe = pefile.PE(filename)
+        # https://docs.microsoft.com/en-us/windows/win32/debug/pe-format
+        # IMAGE_DLLCHARACTERISTICS_GUARD_CF = 0x4000
+        return bool(pe.OPTIONAL_HEADER.DllCharacteristics & 0x4000)
+    except Exception:
+        return False
+
+
 # TODO implement read/write version information with pefile library.
 # PE version info doc: http://msdn.microsoft.com/en-us/library/ms646981.aspx
 def pefile_read_version(filename):
