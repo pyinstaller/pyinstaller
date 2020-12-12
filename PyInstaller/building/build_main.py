@@ -491,7 +491,11 @@ class Analysis(Target):
                 if os.path.splitext(os.path.basename(path))[0] == '__init__':
                     name += os.sep + '__init__'
                 # Append the extension for the compiled result.
-                name += '.py' + ('o' if sys.flags.optimize else 'c')
+                # In python 3.5 (PEP-488) .pyo files were replaced by
+                # .opt-1.pyc and .opt-2.pyc. However, it seems that for
+                # bytecode-only module distribution, we always need to
+                # use the .pyc extension.
+                name += '.pyc'
                 new_toc.append((name, path, typecode))
             # Put the result of byte-compiling this TOC in datas. Mark all entries as data.
             for name, path, typecode in compile_py_files(new_toc, CONF['workpath']):
