@@ -29,12 +29,13 @@ import struct
 from types import CodeType
 import marshal
 import zlib
+import io
 
 from PyInstaller.building.utils import get_code_object, strip_paths_in_code,\
     fake_pyc_timestamp
 from PyInstaller.loader.pyimod02_archive import PYZ_TYPE_MODULE, PYZ_TYPE_PKG, \
     PYZ_TYPE_DATA
-from ..compat import BYTECODE_MAGIC
+from ..compat import BYTECODE_MAGIC, is_py37
 
 
 class ArchiveWriter(object):
@@ -375,6 +376,37 @@ class CArchiveWriter(ArchiveWriter):
 
                 code_data = marshal.dumps(code)
                 ulen = len(code_data)
+            elif typcd == 'm':
+                fh = open(pathnm, 'rb')
+                ulen = os.fstat(fh.fileno()).st_size
+                # Check if it is a PYC file
+                header = fh.read(4)
+                fh.seek(0)
+                if header == BYTECODE_MAGIC:
+                    # Read whole header and load code.
+                    # According to PEP-552, in python versions prior to
+                    # 3.7, the PYC header consists of three 32-bit words
+                    # (magic, timestamp, and source file size).
+                    # From python 3.7 on, the PYC header was extended to
+                    # four 32-bit words (magic, flags, and, depending on
+                    # the flags, either timestamp and source file size,
+                    # or a 64-bit hash).
+                    if is_py37:
+                        header = fh.read(16)
+                    else:
+                        header = fh.read(12)
+                    code = marshal.load(fh)
+                    # Strip paths from code, marshal back into module form.
+                    # The header fields (timestamp, size, hash, etc.) are
+                    # all referring to the source file, so our modification
+                    # of the code object does not affect them, and we can
+                    # re-use the original header.
+                    code = strip_paths_in_code(code)
+                    data = header + marshal.dumps(code)
+                    # Create file-like object for timestamp re-write
+                    # in the subsequent steps
+                    fh = io.BytesIO(data)
+                    ulen = len(data)
             else:
                 fh = open(pathnm, 'rb')
                 ulen = os.fstat(fh.fileno()).st_size
