@@ -1,0 +1,1 @@
+Avoid using ``.pyo`` module file suffix (removed since PEP-488) in ``noarchive`` mode.
