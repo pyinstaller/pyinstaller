@@ -10,7 +10,10 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
+from PyInstaller.utils.tests import importorskip
 
+
+@importorskip('six.moves')
 def test_six_moves(pyi_builder):
     pyi_builder.test_source(
         """
@@ -18,8 +21,10 @@ def test_six_moves(pyi_builder):
         UserList
         """)
 
+
 # Run the same test a second time to trigger errors like
 #   Target module "six.moves.urllib" already imported as "AliasNode(…)"
 # caused by PyiModuleGraph being cached in a insufficient way.
+@importorskip('six.moves')
 def test_six_moves_2nd_run(pyi_builder):
     return test_six_moves(pyi_builder)
