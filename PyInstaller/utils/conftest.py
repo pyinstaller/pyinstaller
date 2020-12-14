@@ -100,7 +100,7 @@ def pytest_runtest_setup(item):
         mark.name for mark in item.iter_markers())
     plat = sys.platform
     if supported_platforms and plat not in supported_platforms:
-        pytest.skip("only runs on %s" % plat)
+        pytest.skip("does not run on %s" % plat)
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
