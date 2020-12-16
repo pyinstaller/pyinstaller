@@ -15,13 +15,14 @@ Templates to generate .spec files.
 """
 
 onefiletmplt = """# -*- mode: python ; coding: utf-8 -*-
+%(preamble)s
 %(cipher_init)s
 
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s,
              binaries=%(binaries)s,
              datas=%(datas)s,
-             hiddenimports=%(hiddenimports)r,
+             hiddenimports=%(hiddenimports)s,
              hookspath=%(hookspath)r,
              runtime_hooks=%(runtime_hooks)r,
              excludes=%(excludes)s,
@@ -48,13 +49,14 @@ exe = EXE(pyz,
 """
 
 onedirtmplt = """# -*- mode: python ; coding: utf-8 -*-
+%(preamble)s
 %(cipher_init)s
 
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s,
              binaries=%(binaries)s,
              datas=%(datas)s,
-             hiddenimports=%(hiddenimports)r,
+             hiddenimports=%(hiddenimports)s,
              hookspath=%(hookspath)r,
              runtime_hooks=%(runtime_hooks)r,
              excludes=%(excludes)s,
