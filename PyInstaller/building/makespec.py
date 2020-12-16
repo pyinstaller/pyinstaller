@@ -117,6 +117,100 @@ class Path:
         return "os.path.join(" + self.variable_prefix + "," + repr(self.filename_suffix) + ")"
 
 
+# An object used to construct extra preamble for the spec file, in order
+# to accomodate extra collect_*() calls from the command-line
+class Preamble:
+    def __init__(self, datas, binaries, hiddenimports, collect_data,
+                 collect_binaries, collect_submodules, collect_all,
+                 copy_metadata):
+        # Initialize with literal values - will be switched to preamble
+        # variable name later, if necessary
+        self.binaries = binaries or []
+        self.hiddenimports = hiddenimports or []
+        self.datas = datas or []
+        # Preamble content
+        self.content = []
+
+        # Import statements
+        if collect_data:
+            self._add_hookutil_import('collect_data_files')
+        if collect_binaries:
+            self._add_hookutil_import('collect_dynamic_libs')
+        if collect_submodules:
+            self._add_hookutil_import('collect_submodules')
+        if collect_all:
+            self._add_hookutil_import('collect_all')
+        if copy_metadata:
+            self._add_hookutil_import('copy_metadata')
+        if self.content:
+            self.content += ['']  # empty line to separate the section
+        # Variables
+        if collect_data or copy_metadata or collect_all:
+            self._add_var('datas', self.datas)
+            self.datas = 'datas'  # switch to variable
+        if collect_binaries or collect_all:
+            self._add_var('binaries', self.binaries)
+            self.binaries = 'binaries'  # switch to variable
+        if collect_submodules or collect_all:
+            self._add_var('hiddenimports', self.hiddenimports)
+            self.hiddenimports = 'hiddenimports'  # switch to variable
+        # Content - collect_data_files
+        for entry in collect_data:
+            self._add_collect_data(entry)
+        # Content - copy_metadata
+        for entry in copy_metadata:
+            self._add_copy_metadata(entry)
+        # Content - collect_binaries
+        for entry in collect_binaries:
+            self._add_collect_binaries(entry)
+        # Content - collect_submodules
+        for entry in collect_submodules:
+            self._add_collect_submodules(entry)
+        # Content - collect_all
+        for entry in collect_all:
+            self._add_collect_all(entry)
+        # Merge
+        if self.content and self.content[-1] != '':
+            self.content += ['']  # empty line
+        self.content = '\n'.join(self.content)
+
+    def _add_hookutil_import(self, name):
+        self.content += [
+            'from PyInstaller.utils.hooks import {0}'.format(name)
+        ]
+
+    def _add_var(self, name, initial_value):
+        self.content += [
+            '{0} = {1}'.format(name, initial_value)
+        ]
+
+    def _add_collect_data(self, name):
+        self.content += [
+            'datas += collect_data_files(\'{0}\')'.format(name)
+        ]
+
+    def _add_copy_metadata(self, name):
+        self.content += [
+            'datas += copy_metadata(\'{0}\')'.format(name)
+        ]
+
+    def _add_collect_binaries(self, name):
+        self.content += [
+            'binaries += collect_dynamic_libs(\'{0}\')'.format(name)
+        ]
+
+    def _add_collect_submodules(self, name):
+        self.content += [
+            'hiddenimports += collect_submodules(\'{0}\')'.format(name)
+        ]
+
+    def _add_collect_all(self, name):
+        self.content += [
+            'tmp_ret = collect_all(\'{0}\')'.format(name),
+            'datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]'  # noqa: E501
+        ]
+
+
 def __add_options(parser):
     """
     Add the `Makespec` options to a option-parser instance or a
@@ -161,6 +255,27 @@ def __add_options(parser):
                    action='append', default=[],
                    metavar="MODULENAME", dest='hiddenimports',
                    help='Name an import not visible in the code of the script(s). '
+                   'This option can be used multiple times.')
+    g.add_argument('--collect-submodules', action="append", default=[],
+                   metavar="MODULENAME", dest='collect_submodules',
+                   help='Collect all submodules from the specified package '
+                   'or module. This option can be used multiple times.')
+    g.add_argument('--collect-data', '--collect-datas', action="append",
+                   default=[], metavar="MODULENAME", dest='collect_data',
+                   help='Collect all data from the specified package or '
+                   ' module. This option can be used multiple times.')
+    g.add_argument('--collect-binaries', action="append", default=[],
+                   metavar="MODULENAME", dest='collect_binaries',
+                   help='Collect all binaries from the specified package or '
+                   ' module. This option can be used multiple times.')
+    g.add_argument('--collect-all', action="append", default=[],
+                   metavar="MODULENAME", dest='collect_all',
+                   help='Collect all submodules, data files, and binaries '
+                   'from the specified package or module. This option can '
+                   'be used multiple times.')
+    g.add_argument('--copy-metadata', action="append", default=[],
+                   metavar="PACKAGENAME", dest='copy_metadata',
+                   help='Copy metadata for the specified package. '
                    'This option can be used multiple times.')
     g.add_argument("--additional-hooks-dir", action="append", dest="hookspath",
                    default=[],
@@ -334,7 +449,8 @@ def main(scripts, name=None, onefile=None,
          hiddenimports=None, hookspath=None, key=None, runtime_hooks=None,
          excludes=None, uac_admin=False, uac_uiaccess=False,
          win_no_prefer_redirects=False, win_private_assemblies=False,
-         **kwargs):
+         collect_submodules=None, collect_binaries=None, collect_data=None,
+         collect_all=None, copy_metadata=None, **kwargs):
     # If appname is not specified - use the basename of the main script as name.
     if name is None:
         name = os.path.splitext(os.path.basename(scripts[0]))[0]
@@ -426,12 +542,19 @@ def main(scripts, name=None, onefile=None,
     if DEBUG_ALL_CHOICE[0] in debug:
         debug = DEBUG_ARGUMENT_CHOICES
 
+    # Create preamble (for collect_*() calls)
+    preamble = Preamble(
+        datas, binaries, hiddenimports, collect_data, collect_binaries,
+        collect_submodules, collect_all, copy_metadata
+    )
+
     d = {
         'scripts': scripts,
         'pathex': pathex,
-        'binaries': binaries,
-        'datas': datas,
-        'hiddenimports': hiddenimports,
+        'binaries': preamble.binaries,
+        'datas': preamble.datas,
+        'hiddenimports': preamble.hiddenimports,
+        'preamble': preamble.content,
         'name': name,
         'noarchive': 'noarchive' in debug,
         'options': [('v', None, 'OPTION')] if 'imports' in debug else [],
