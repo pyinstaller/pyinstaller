@@ -288,6 +288,14 @@ class FrozenImporter(object):
         # (e.g. zipimport), that information may be stored in
         # spec.loader_state.
         spec.has_location = True
+
+        # Set submodule_search_locations for packages. Seems to be
+        # required for importlib_resources from 3.2.0 - see issue #5395.
+        if is_pkg:
+            spec.submodule_search_locations = [
+                pyi_os_path.os_path_dirname(self.get_filename(entry_name))
+            ]
+
         return spec
 
     def create_module(self, spec):
