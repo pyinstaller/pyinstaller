@@ -962,9 +962,8 @@ def ManifestFromResFile(filename, names=None, languages=None):
     pth = []
     if res and res[RT_MANIFEST]:
         while isinstance(res, dict) and res.keys():
-            key = res.keys()[0]
+            key, res = next(iter(res.items()))
             pth.append(str(key))
-            res = res[key]
     if isinstance(res, dict):
         raise InvalidManifestError("No matching manifest resource found in '%s'" %
                                    filename)
