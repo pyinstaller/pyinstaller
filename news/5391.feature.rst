@@ -1,0 +1,3 @@
+Add new command-line options that map to collect functions from hookutils:
+``-collect-submodules``, ``--collect-data``, ``--collect-binaries``,
+``--collect-all``, and ``--copy-metadata``.
