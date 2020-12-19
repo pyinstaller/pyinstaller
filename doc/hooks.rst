@@ -123,7 +123,7 @@ You can tell PyInstaller about the additional hooks
 by defining some simple `setuptools entry-points
 <https://setuptools.readthedocs.io/en/latest/setuptools.html#dynamic-discovery-of-services-and-plugins>`_
 in your package.
-Therefor add entries like these to your :file:`setup.cfg`::
+Therefore add entries like these to your :file:`setup.cfg`::
 
   [options.entry_points]
   pyinstaller40 =
