@@ -444,7 +444,7 @@ class Node(object):
         self._deferred_imports = None
         self._global_attr_names = set()
         self._starimported_ignored_module_names = set()
-        self._submodule_basename_to_node = dict()
+        self._submodule_basename_to_node = {}
 
 
     def is_global_attr(self, attr_name):
