@@ -82,13 +82,13 @@ class VendorImporter:
                 return mod
             except ImportError:
                 pass
-        else:
-            raise ImportError(
-                "The '{target}' package is required; "
-                "normally this is bundled with this package so if you get "
-                "this warning, consult the packager of your "
-                "distribution.".format(**locals())
-            )
+            
+        raise ImportError(
+            "The '{target}' package is required; "
+            "normally this is bundled with this package so if you get "
+            "this warning, consult the packager of your "
+            "distribution.".format(**locals())
+        )
     def install(self):
         """
         Install this importer into sys.meta_path if not already present.

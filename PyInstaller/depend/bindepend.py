@@ -269,10 +269,10 @@ def pkg_resources_get_default_cache():
             if subdir:
                 dirname = os.path.join(dirname, subdir)
             return os.path.join(dirname, 'Python-Eggs')
-    else:
-        raise RuntimeError(
-            "Please set the PYTHON_EGG_CACHE environment variable"
-        )
+        
+    raise RuntimeError(
+        "Please set the PYTHON_EGG_CACHE environment variable"
+    )
 
 
 def check_extract_from_egg(pth, todir=None):
