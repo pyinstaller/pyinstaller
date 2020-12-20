@@ -907,7 +907,7 @@ def _find_prefix(filename):
     if not possible_prefixes:
         # no matching prefix, assume running from build directory
         possible_prefixes = [os.path.dirname(filename)]
-    possible_prefixes.sort(key=lambda p: len(p), reverse=True)
+    possible_prefixes.sort(key=len, reverse=True)
     return possible_prefixes[0]
 
 

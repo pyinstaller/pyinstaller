@@ -99,7 +99,7 @@ _IMPORTABLE_FILETYPE_TO_METADATA = {
 }
 # Reverse sort by length so when comparing filenames the longest match first
 _IMPORTABLE_FILETYPE_EXTS = sorted(_IMPORTABLE_FILETYPE_TO_METADATA,
-                                   key=lambda p: len(p), reverse=True)
+                                   key=len, reverse=True)
 """
 Dictionary mapping the filetypes of importable files to the 3-tuple of metadata
 describing such files returned by the `imp.get_suffixes()` function whose first
