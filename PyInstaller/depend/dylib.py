@@ -318,7 +318,7 @@ def mac_set_relative_dylib_deps(libname, distname):
             '/Library/Frameworks/Tcl.framework/',
             '/Library/Frameworks/Tk.framework/'
         ]
-        if any([x in pth for x in _exemptions]):
+        if any(x in pth for x in _exemptions):
             return None
 
         # Use relative path to dependent dynamic libraries based on the
