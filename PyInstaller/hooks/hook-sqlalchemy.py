@@ -73,7 +73,7 @@ def hook(hook_api):
                     hidden_imports_set.add(match)
 
     hidden_imports_set -= known_imports
-    if len(hidden_imports_set):
+    if hidden_imports_set:
         logger.info("  Found %d sqlalchemy hidden imports",
                     len(hidden_imports_set))
         hook_api.add_imports(*list(hidden_imports_set))

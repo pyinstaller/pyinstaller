@@ -304,7 +304,7 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None):
                 logger.error(os.path.abspath(cachedfile))
                 raise
         else:
-            if winmanifest.RT_MANIFEST in res and len(res[winmanifest.RT_MANIFEST]):
+            if winmanifest.RT_MANIFEST in res and res[winmanifest.RT_MANIFEST]:
                 for name in res[winmanifest.RT_MANIFEST]:
                     for language in res[winmanifest.RT_MANIFEST][name]:
                         try:

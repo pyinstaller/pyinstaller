@@ -359,7 +359,7 @@ def getAssemblies(pth):
                 return []
             raise
     rv = []
-    if RT_MANIFEST in res and len(res[RT_MANIFEST]):
+    if RT_MANIFEST in res and res[RT_MANIFEST]:
         for name in res[RT_MANIFEST]:
             for language in res[RT_MANIFEST][name]:
                 # check the manifest for dependent assemblies
@@ -427,7 +427,7 @@ def getAssemblyFiles(pth, manifest=None, redirects=None):
             # of the assembly is not installed, and the policy file is redirecting it
             # to a newer version. So, we collect the newer version instead.
             files = assembly.find_files(ignore_policies=False)
-            if len(files) and redirects is not None:
+            if files and redirects is not None:
                 # New version was found, old version was not. Add a redirect in the
                 # app configuration
                 old_version = assembly.version
