@@ -420,7 +420,7 @@ class BuildTestRunner(object):
             if not prog:
                 return False, 'Executable for %s missing' % logfn
             fname_list = archive_viewer.get_archive_content(prog)
-            fname_list = [fn for fn in fname_list]
+            fname_list = list(fname_list)
             with open(logfn, text_read_mode) as fp:
                 pattern_list = eval(fp.read())
             # Alphabetical order of patterns.

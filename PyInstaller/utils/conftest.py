@@ -474,7 +474,7 @@ class AppBuilder(object):
         """
         print('EXECUTING MATCHING:', toc_log)
         fname_list = archive_viewer.get_archive_content(exe)
-        fname_list = [fn for fn in fname_list]
+        fname_list = list(fname_list)
         with open(toc_log, text_read_mode) as f:
             pattern_list = eval(f.read())
         # Alphabetical order of patterns.
