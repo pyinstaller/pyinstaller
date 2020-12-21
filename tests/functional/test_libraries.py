@@ -361,8 +361,15 @@ def test_idlelib(pyi_builder):
 
 
 @importorskip('keyring')
+@skipif(is_linux, reason="SecretStorage backend on linux requires active "
+                         "D-BUS session and initialized keyring, and may "
+                         "need to unlock the keyring via UI prompt.")
 def test_keyring(pyi_builder):
-    pyi_builder.test_source("import keyring")
+    pyi_builder.test_source(
+        """
+        import keyring
+        keyring.get_password("test", "test")
+        """)
 
 
 @importorskip('numpy')
