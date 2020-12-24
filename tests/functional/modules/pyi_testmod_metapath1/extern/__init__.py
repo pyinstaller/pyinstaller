@@ -82,7 +82,7 @@ class VendorImporter:
                 return mod
             except ImportError:
                 pass
-            
+
         raise ImportError(
             "The '{target}' package is required; "
             "normally this is bundled with this package so if you get "
