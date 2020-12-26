@@ -407,7 +407,7 @@ def _make_clean_directory(path):
             except OSError:
                 _rmtree(path)
 
-        os.makedirs(path)
+        os.makedirs(path, exist_ok=True)
 
 
 def _rmtree(path):
