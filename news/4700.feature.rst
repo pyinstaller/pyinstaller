@@ -1,0 +1,3 @@
+(win32) PyInstaller's console or windowed icon is now added at freeze-time and
+no longer built into the bootloader. Also, using ``--icon=NONE`` allows to not
+apply any icon, thereby making the OS to show some defaultm icon.
