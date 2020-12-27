@@ -7,21 +7,24 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+import glob
+import json
 import os
 import sys
-import json
-import glob
 
-from ..hooks import eval_statement, exec_statement, get_homebrew_path, \
-    get_module_file_attribute
-from PyInstaller.depend.bindepend import getImports, getfullnameof
+from PyInstaller.depend.bindepend import getfullnameof, getImports
+
 from ... import log as logging
-from ...compat import is_win, is_darwin, is_linux
+from ...compat import is_darwin, is_linux, is_win
 from ...utils import misc
+from ..hooks import (eval_statement, exec_statement, get_homebrew_path,
+                     get_module_file_attribute)
 
 logger = logging.getLogger(__name__)
 
+
+Qt_Librairies = ['PyQt5', 'PySide2', 'PySide6']
 
 # Qt5LibraryInfo
 # --------------
@@ -29,9 +32,11 @@ logger = logging.getLogger(__name__)
 # essential to deal with the many variants of the PyQt5 package, each of which
 # places files in a different location. Therefore, this class provides all
 # members of `QLibraryInfo <http://doc.qt.io/qt-5/qlibraryinfo.html>`_.
+
+
 class Qt5LibraryInfo:
     def __init__(self, namespace):
-        if namespace not in ['PyQt5', 'PySide2']:
+        if namespace not in Qt_Librairies:
             raise Exception('Invalid namespace: {0}'.format(namespace))
         self.namespace = namespace
         self.is_PyQt5 = namespace == 'PyQt5'
@@ -44,9 +49,9 @@ class Qt5LibraryInfo:
             # availiable.
             raise AttributeError(name)
         else:
-            # Ensure self.version exists, even if PyQt5/PySide2 can't be
+            # Ensure self.version exists, even if PyQt5/PySide can't be
             # imported. Hooks and util functions use `if .version` to check
-            # whether PyQt5/PySide2 was imported and other attributes are
+            # whether PyQt5/PySide was imported and other attributes are
             # expected to be available.  This also serves as a marker that
             # initialization was already done.
             self.version = None
@@ -70,7 +75,7 @@ class Qt5LibraryInfo:
                     # instantiated.
                     app = QCoreApplication(sys.argv)
                     paths = [x for x in dir(QLibraryInfo) if x.endswith('Path')]
-                    location = {x: QLibraryInfo.location(getattr(QLibraryInfo, x))
+                    location = {x: QLibraryInfo.location(getattr(QLibraryInfo, x)) if x != 'LibraryPath' else QLibraryInfo.location(QLibraryInfo.LibraryPath())
                                 for x in paths}
                     try:
                         version = QLibraryInfo.version().segments()
@@ -98,22 +103,25 @@ class Qt5LibraryInfo:
 # Provide single instances of this class to avoid each hook constructing its own.
 pyqt5_library_info = Qt5LibraryInfo('PyQt5')
 pyside2_library_info = Qt5LibraryInfo('PySide2')
+pyside6_library_info = Qt5LibraryInfo('PySide6')
 
 
 def qt_plugins_dir(namespace):
     """
     Return list of paths searched for plugins.
 
-    :param namespace: Import namespace, i.e., PyQt5 or PySide2
+    :param namespace: Import namespace, i.e., PyQt5 or PySide2/6
 
     :return: Plugin directory paths
     """
-    if namespace not in ['PyQt5', 'PySide2']:
+    if namespace not in Qt_Librairies:
         raise Exception('Invalid namespace: {0}'.format(namespace))
     if namespace == 'PyQt5':
         paths = [pyqt5_library_info.location['PluginsPath']]
     elif namespace == 'PySide2':
         paths = [pyside2_library_info.location['PluginsPath']]
+    elif namespace == 'PySide6':
+        paths = [pyside6_library_info.location['PluginsPath']]
     else:
         paths = eval_statement("""
             from {0}.QtCore import QCoreApplication;
@@ -145,7 +153,7 @@ def qt_plugins_binaries(plugin_type, namespace):
 
     :return: Plugin directory path corresponding to the given plugin_type
     """
-    if namespace not in ['PyQt5', 'PySide2']:
+    if namespace not in Qt_Librairies:
         raise Exception('Invalid namespace: {0}'.format(namespace))
     pdir = qt_plugins_dir(namespace=namespace)
     files = []
@@ -158,14 +166,18 @@ def qt_plugins_binaries(plugin_type, namespace):
     # ``*.dylib`` in a certain directory. On Windows this would grab debug
     # copies of Qt plugins, which then causes PyInstaller to add a dependency on
     # the Debug CRT *in addition* to the release CRT.
-    if is_win and namespace in ['PyQt5', 'PySide2']:
+    if is_win and namespace in Qt_Librairies:
         files = [f for f in files if not f.endswith("d.dll")]
 
     logger.debug("Found plugin files %s for plugin %s", files, plugin_type)
     if namespace == 'PyQt5':
         plugin_dir = os.path.join('PyQt5', 'Qt', 'plugins')
-    else:
+    elif namespace == 'PySide2':
         plugin_dir = os.path.join('PySide2', 'plugins')
+    elif namespace == 'PySide6':
+        plugin_dir = os.path.join('PySide6', 'plugins')
+    else:
+        return []
     dest_dir = os.path.join(plugin_dir, plugin_type)
     binaries = [(f, dest_dir) for f in files]
     return binaries
@@ -175,19 +187,19 @@ def qt_menu_nib_dir(namespace):
     """
     Return path to Qt resource dir qt_menu.nib on OSX only.
 
-    :param namespace: Import namespace, i.e., PyQt5 or PySide2
+    :param namespace: Import namespace, i.e., PyQt5 or PySide2/6
 
     :return: Directory containing qt_menu.nib for specified namespace
     """
-    if namespace not in ['PyQt5', 'PySide2']:
+    if namespace not in Qt_Librairies:
         raise Exception('Invalid namespace: {0}'.format(namespace))
     menu_dir = None
 
     path = exec_statement("""
     from {0}.QtCore import QLibraryInfo
-    path = QLibraryInfo.location(QLibraryInfo.LibrariesPath)
+    path = QLibraryInfo.location(QLibraryInfo.LibrariesPath{1})
     print(path)
-    """.format(namespace))
+    """.format(namespace, '()' if namespace == 'PySide6' else ''))
     anaconda_path = os.path.join(sys.exec_prefix, "python.app", "Contents",
                                  "Resources")
     paths = [os.path.join(path, 'Resources'),
@@ -462,13 +474,16 @@ def add_qt5_dependencies(hook_file):
     assert hook_name.startswith('hook-')
     module_name = hook_name[5:]
     namespace = module_name.split('.')[0]
-    if namespace not in ('PyQt5', 'PySide2'):
+    if namespace not in Qt_Librairies:
         raise Exception('Invalid namespace: {0}'.format(namespace))
     is_PyQt5 = namespace == 'PyQt5'
+    is_PySide2 = namespace == 'PySide2'
+    is_PySide6 = namespace == 'PySide6'
 
     # Exit if the requested library can't be imported.
     if ((is_PyQt5 and not pyqt5_library_info.version) or
-        (not is_PyQt5 and not pyside2_library_info.version)):
+        (is_PySide2 and not pyside2_library_info.version) or
+            (is_PySide6 and not pyside6_library_info.version)):
         return [], [], []
 
     # Look up the module returned by this import.
@@ -485,11 +500,13 @@ def add_qt5_dependencies(hook_file):
         # On Windows, find this library; other platforms already provide the
         # full path.
         if is_win:
-            imp = getfullnameof(imp,
-                # First, look for Qt binaries in the local Qt install.
-                pyqt5_library_info.location['BinariesPath'] if is_PyQt5 else
-                pyside2_library_info.location['BinariesPath']
-            )
+            if is_PyQt5:
+                binaries_path = pyqt5_library_info.location['BinariesPath']
+            elif is_PySide2:
+                binaries_path = pyside2_library_info.location['BinariesPath']
+            elif is_PySide6:
+                binaries_path = pyside6_library_info.location['BinariesPath']
+            imp = getfullnameof(imp, binaries_path)
 
         # Strip off the extension and ``lib`` prefix (Linux/Mac) to give the raw
         # name. Lowercase (since Windows always normalized names to lowercase).
@@ -534,10 +551,12 @@ def add_qt5_dependencies(hook_file):
         more_binaries = qt_plugins_binaries(plugin, namespace=namespace)
         binaries.extend(more_binaries)
     # Change translation_base to datas.
-    tp = (
-        pyqt5_library_info.location['TranslationsPath'] if is_PyQt5
-        else pyside2_library_info.location['TranslationsPath']
-    )
+    if is_PyQt5:
+        tp = (pyqt5_library_info.location['TranslationsPath'])
+    elif is_PySide2:
+        tp = (pyside2_library_info.location['TranslationsPath'])
+    elif is_PySide6:
+        tp = (pyside6_library_info.location['TranslationsPath'])
     datas = []
     for tb in translations_base:
         src = os.path.join(tp, tb + '_*.qm')

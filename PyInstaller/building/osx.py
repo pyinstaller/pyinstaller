@@ -173,7 +173,7 @@ class BUNDLE(Target):
                 fnm = checkCache(fnm, strip=self.strip, upx=self.upx,
                                  upx_exclude=self.upx_exclude, dist_nm=inm)
             # Add most data files to a list for symlinking later.
-            if typ == 'DATA' and base_path not in ('PySide2', 'PyQt5'):
+            if typ == 'DATA' and base_path not in ('PySide2', 'PySide6', 'PyQt5'):
                 links.append((inm, fnm))
             else:
                 tofnm = os.path.join(self.name, "Contents", "MacOS", inm)
