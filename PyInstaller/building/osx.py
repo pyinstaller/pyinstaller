@@ -11,6 +11,7 @@
 
 import os
 import plistlib
+from pathlib import Path
 import shutil
 from ..compat import is_darwin
 from .api import EXE, COLLECT
@@ -230,3 +231,33 @@ class BUNDLE(Target):
                 os.symlink(os.path.relpath(os.path.join(res_dir, inm),
                                            os.path.split(os.path.join(bin_dir, inm))[0]),
                            os.path.join(bin_dir, inm))
+
+
+class OSX_APP_CONSOLE(BUNDLE):
+    """
+    This class allows generation of .app files which are
+    clickable on OSX. https://github.com/pyinstaller/pyinstaller/issues/5154
+    """
+    def assemble(self):
+        super(OSX_APP_CONSOLE, self).assemble()
+        # Make app bundle double-clickable
+        app_path = Path(self.name)
+
+        # read Info.plist
+        with open(app_path / 'Contents/Info.plist', 'rb') as f:
+            pl = plistlib.load(f)
+
+        # write Info.plist
+        with open(app_path / 'Contents/Info.plist', 'wb') as f:
+            pl['CFBundleExecutable'] = 'wrapper'
+            plistlib.dump(pl, f)
+
+        # write new wrapper script
+        shell_script = """#!/bin/bash
+        dir=$(dirname $0)
+        open -a Terminal \"file://${dir}/%s\"""" % self.appname
+        with open(app_path / 'Contents/MacOS/wrapper', 'w') as f:
+            f.write(shell_script)
+
+        # make it executable
+        (app_path / 'Contents/MacOS/wrapper').chmod(0o755)
