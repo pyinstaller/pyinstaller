@@ -36,7 +36,7 @@ from ..depend import bindepend
 from ..depend.analysis import initialize_modgraph
 from .api import PYZ, EXE, COLLECT, MERGE
 from .datastruct import TOC, Target, Tree, _check_guts_eq
-from .osx import BUNDLE
+from .osx import BUNDLE, OSX_APP_CONSOLE
 from .toc_conversion import DependencyProcessor
 from .utils import _check_guts_toc_mtime, format_binaries_and_datas
 from ..depend.utils import create_py3_base_library, scan_code_for_ctypes
@@ -641,6 +641,7 @@ def build(spec, distpath, workpath, clean_build):
         'TOC': TOC,
         'Analysis': Analysis,
         'BUNDLE': BUNDLE,
+        'OSX_APP_CONSOLE': OSX_APP_CONSOLE,
         'COLLECT': COLLECT,
         'EXE': EXE,
         'MERGE': MERGE,
