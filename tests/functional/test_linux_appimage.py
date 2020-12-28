@@ -21,12 +21,16 @@ import stat
 import subprocess
 import pytest
 
+from PyInstaller.compat import is_py36
+
 
 @pytest.mark.linux
 @pytest.mark.parametrize('arch', ['x86_64'])
 def test_appimage_loading(tmp_path, pyi_builder_spec, arch):
     # Skip the test if appimagetool is not found
     appimagetool = pathlib.Path.home() / ('appimagetool-%s.AppImage' % arch)
+    if not is_py36:
+        appimagetool = str(appimagetool)
     if not os.path.isfile(appimagetool):
         pytest.skip('%s not found' % appimagetool)
 
