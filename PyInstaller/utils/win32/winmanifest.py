@@ -896,6 +896,23 @@ class Manifest(object):
         cE.aChild(caE)
         docE.aChild(cE)
 
+        # Add application.windowsSettings section to enable longPathAware
+        # option (issue #5423).
+        if self.manifestType == "assembly":
+            aE = doc.cE("application")
+            aE.setAttribute("xmlns", "urn:schemas-microsoft-com:asm.v3")
+            wsE = doc.cE("windowsSettings")
+            lpaE = doc.cE("longPathAware")
+            lpaE.setAttribute(
+                "xmlns",
+                "http://schemas.microsoft.com/SMI/2016/WindowsSettings"
+            )
+            lpaT = doc.cT("true")
+            lpaE.aChild(lpaT)
+            wsE.aChild(lpaE)
+            aE.aChild(wsE)
+            docE.aChild(aE)
+
         return doc
 
     def toprettyxml(self, indent="  ", newl=os.linesep, encoding="UTF-8"):
