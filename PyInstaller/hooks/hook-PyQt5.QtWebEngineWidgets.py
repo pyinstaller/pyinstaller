@@ -18,7 +18,7 @@ from PyInstaller.depend.bindepend import getImports
 import PyInstaller.compat as compat
 
 # Ensure PyQt5 is importable before adding info depending on it.
-if pyqt5_library_info.version:
+if pyqt5_library_info.version is not None:
     hiddenimports, binaries, datas = add_qt5_dependencies(__file__)
 
     # Include the web engine process, translations, and resources.

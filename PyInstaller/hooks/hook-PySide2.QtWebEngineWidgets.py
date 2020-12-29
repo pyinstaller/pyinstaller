@@ -32,7 +32,7 @@ def prefix_with_path(prefix_path, *paths):
 
 
 # Ensure PySide2 is importable before adding info depending on it.
-if pyside2_library_info.version:
+if pyside2_library_info.version is not None:
     hiddenimports, binaries, datas = add_qt5_dependencies(__file__)
 
     # Include the web engine process, translations, and resources.

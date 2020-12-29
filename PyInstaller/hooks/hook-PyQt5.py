@@ -14,7 +14,7 @@ from PyInstaller.utils.hooks import collect_system_data_files
 from PyInstaller.utils.hooks.qt import pyqt5_library_info, get_qt_binaries
 
 # Ensure PyQt5 is importable before adding info depending on it.
-if pyqt5_library_info.version:
+if pyqt5_library_info.version is not None:
     hiddenimports = [
         # PyQt5.10 and earlier uses sip in an separate package;
         'sip',
