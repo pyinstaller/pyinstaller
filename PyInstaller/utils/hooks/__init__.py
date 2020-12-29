@@ -619,6 +619,7 @@ def collect_submodules(package, filter=lambda name: True):
     names = exec_statement("""
         import sys
         import pkgutil
+        import traceback
 
         # ``pkgutil.walk_packages`` doesn't walk subpackages of zipped files
         # per https://bugs.python.org/issue14209. This is a workaround.
@@ -643,7 +644,11 @@ def collect_submodules(package, filter=lambda name: True):
                         if onerror is not None:
                             onerror(name)
                         else:
-                            raise
+                            traceback.print_exc(file=sys.stderr)
+                            print(
+                                "collect_submodules: failed to import '{{}}'!"
+                                .format(name), file=sys.stderr
+                            )
                     else:
                         path = getattr(sys.modules[name], '__path__', None) or []
 
