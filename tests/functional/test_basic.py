@@ -332,6 +332,41 @@ def test_option_w_ignore(pyi_builder, monkeypatch, capsys):
     assert "'import warnings' failed" not in err
 
 
+@pytest.mark.parametrize("distutils", ["", "from distutils "])
+def test_python_makefile(pyi_builder, distutils):
+    """Tests hooks for ``sysconfig`` and its near-duplicate
+    ``distutils.sysconfig``. Raises an import error if we failed to collect the
+    special module that contains the details from pyconfig.h and the makefile.
+    """
+    # Ideally we'd test that the contents of `sysconfig.get_config_vars()` dict
+    # are the same frozen vs unfrozen but because some values are paths into
+    # a Python installation's guts, these will point into the frozen app when
+    # frozen and therefore noy match. Without some fiddly filtering away paths,
+    # this is impossible.
+
+    # As a compromise, test that the dictionary keys are the same to be sure
+    # that there is no conditional initialisation of get_config_vars(). i.e.
+    # get_config_vars() doesn't silently return an empty dictionary if it can't
+    # find the information it needs.
+    if distutils:
+        from distutils import sysconfig
+    else:
+        import sysconfig
+    unfrozen_keys = sorted(sysconfig.get_config_vars().keys())
+
+    pyi_builder.test_source("""
+    # The error is raised immediately on import.
+    {}import sysconfig
+
+    # But just in case, Python later opt for some lazy loading, force
+    # configuration retrieval:
+    from pprint import pprint
+    pprint(sysconfig.get_config_vars())
+
+    unfrozen_keys = {}
+    assert sorted(sysconfig.get_config_vars()) == unfrozen_keys
+
+    """.format(distutils, unfrozen_keys))
 
 
 def test_set_icon(pyi_builder, data_dir):
