@@ -1,0 +1,2 @@
+(Windows) Enable ``longPathAware`` option in built application's manifest in
+order to support long file paths on Windows 10 v.1607 and later.
