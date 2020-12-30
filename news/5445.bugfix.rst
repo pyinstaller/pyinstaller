@@ -1,0 +1,4 @@
+(Windows) Fix "toc is bad" error messages
+when passing a ``VSVersionInfo``
+as the ``version`` parameter to ``EXE()``
+in a ``.spec`` file.
