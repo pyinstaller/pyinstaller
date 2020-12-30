@@ -262,6 +262,7 @@ class Analysis(Target):
             ('custom_runtime_hooks', _check_guts_eq),
             ('win_no_prefer_redirects', _check_guts_eq),
             ('win_private_assemblies', _check_guts_eq),
+            ('noarchive', _check_guts_eq),
 
             #'cipher': no need to check as it is implied by an
             # additional hidden import
