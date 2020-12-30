@@ -1,0 +1,3 @@
+Limit the impact of a failed sub-package import on the result of 
+``collect_submodules()`` to ensure that modules from all other sub-packages
+are collected.
