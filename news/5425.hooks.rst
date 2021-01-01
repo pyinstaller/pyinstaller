@@ -1,0 +1,2 @@
+Fix the ``Qt5`` library availability check in ``PyQt5`` and ``PySide2`` hooks 
+to re-enable support for ``Qt5`` older than 5.8.
