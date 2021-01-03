@@ -94,16 +94,6 @@ environment:
       PYTHON_ARCH: 32
       TEST_PART: Base
 
-    - PYTHON: C:\Python35
-      PYTHON_VERSION: 3.5
-      PYTHON_ARCH: 32
-      TEST_PART: Libraries
-
-    - PYTHON: C:\Python35
-      PYTHON_VERSION: 3.5
-      PYTHON_ARCH: 32
-      TEST_PART: Base
-
 init:
   - ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%
   - ECHO \"%APPVEYOR_SCHEDULED_BUILD%\"

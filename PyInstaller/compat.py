@@ -713,5 +713,5 @@ def check_requirements():
     Fail hard if any requirement is not met.
     """
     # Fail hard if Python does not have minimum required version
-    if sys.version_info < (3, 5):
-        raise EnvironmentError('PyInstaller requires at Python 3.5 or newer.')
+    if sys.version_info < (3, 6):
+        raise EnvironmentError('PyInstaller requires at Python 3.6 or newer.')

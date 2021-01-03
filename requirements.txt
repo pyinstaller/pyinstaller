@@ -7,7 +7,7 @@
 
 setuptools<50.0.0   # 50.0.0 breaks a modulegraph regession test
 altgraph
-pyinstaller-hooks-contrib >= 2020.6
+pyinstaller-hooks-contrib >= 2020.11
 pefile; sys_platform == 'win32'
 pywin32-ctypes; sys_platform == 'win32'
 macholib; sys_platform == 'darwin'

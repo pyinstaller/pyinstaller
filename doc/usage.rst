@@ -464,9 +464,9 @@ You must make a unique version of the app for each word-length supported.
 Windows
 ---------------
 
-For **Python >= 3.5** targeting *Windows < 10*, the developer needs to take
+The developer needs to take
 special care to include the Visual C++ run-time .dlls:
-Python 3.5 uses Visual Studio 2015 run-time, which has been renamed into
+Python 3.5+ uses Visual Studio 2015 run-time, which has been renamed into
 `“Universal CRT“
 <https://blogs.msdn.microsoft.com/vcblog/2015/03/03/introducing-the-universal-crt/>`_
 and has become part of Windows 10.

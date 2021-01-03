@@ -31,7 +31,6 @@ from PyInstaller.utils.tests import importorskip
 
 @pytest.mark.darwin
 def test_osx_custom_protocol_handler(tmpdir, pyi_builder_spec):
-    tmpdir = str(tmpdir)  # Fix for Python 3.5
     app_path = os.path.join(tmpdir, 'dist',
                             'pyi_osx_custom_protocol_handler.app')
     logfile_path = os.path.join(tmpdir, 'dist', 'args.log')
@@ -62,7 +61,6 @@ def test_osx_custom_protocol_handler(tmpdir, pyi_builder_spec):
 @pytest.mark.darwin
 @importorskip('PyQt5')
 def test_osx_event_forwarding(tmpdir, pyi_builder_spec):
-    tmpdir = str(tmpdir)  # Fix for Python 3.5
     app_path = os.path.join(tmpdir, 'dist',
                             'pyi_osx_event_forwarding.app')
 
