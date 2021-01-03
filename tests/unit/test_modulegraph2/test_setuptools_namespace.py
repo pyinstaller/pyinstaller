@@ -1,12 +1,11 @@
-import unittest
+import os
 import pathlib
 import sys
-import os
+import unittest
 
 import modulegraph2
 
 from . import util
-
 
 INPUT_DIR = pathlib.Path(__file__).resolve().parent / "setuptools-dir"
 

@@ -1,26 +1,21 @@
-import unittest
-import unittest.mock
+import argparse
 import contextlib
 import io
 import os
-import sys
-import io
-import argparse
 import pathlib
+import sys
 import tempfile
-import shutil
-
-from modulegraph2 import __main__ as main
+import unittest
+import unittest.mock
 
 import modulegraph2
+from modulegraph2 import __main__ as main
 
 from . import util
 
 
 @contextlib.contextmanager
 def captured_output():
-    results = []
-
     _orig_stdout = sys.stdout
     _orig_stderr = sys.stderr
 
@@ -98,7 +93,7 @@ class TestArguments(unittest.TestCase):
             self.assertRaises(SystemExit, main.parse_arguments, ["-f", "noformat", "a"])
 
         self.assertIn(
-            "error: argument -f/--format: invalid choice: 'noformat' (choose from 'html', 'dot')",
+            "error: argument -f/--format: invalid choice: 'noformat' (choose from 'html', 'dot')",  # noqa: B950
             stderr.getvalue(),
         )
 
@@ -117,9 +112,6 @@ class TestArguments(unittest.TestCase):
 
 
 class TestPrinter(unittest.TestCase):
-    # XXX: This currently is nothing more than a smoke test,
-    # the output format is not validated in any way.
-
     @classmethod
     def tearDownClass(cls):
         util.clear_sys_modules(
@@ -255,13 +247,10 @@ class TestBuilder(unittest.TestCase):
             )
         ] * 2
 
-        mg = main.make_graph(args)
-        roots = list(mg.roots())
+        with self.assertRaises(ValueError):
+            main.make_graph(args)
 
-        self.assertEqual(len(roots), 1)
-        self.assertTrue(isinstance(roots[0], modulegraph2.Script))
-
-    def test_graph_scripts(self):
+    def test_graph_scripts2(self):
         args = argparse.Namespace()
         args.node_type = main.NodeType.SCRIPT
         args.path = [

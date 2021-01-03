@@ -1,14 +1,9 @@
-import unittest
-import pathlib
-import contextlib
-import sys
 import os
-import importlib
+import pathlib
+import sys
 import tempfile
+import unittest
 from io import StringIO
-
-from .test_distributions import build_and_install
-from . import util
 
 from modulegraph2 import (
     Alias,
@@ -24,13 +19,13 @@ from modulegraph2 import (
     NamespacePackage,
     Package,
     PyPIDistribution,
-    Script,
     SourceModule,
     distribution_named,
 )
-
 from modulegraph2._distributions import distribution_for_file
+
 from . import util
+from .test_distributions import build_and_install
 
 INPUT_DIR = pathlib.Path(__file__).resolve().parent / "modulegraph-dir"
 
@@ -76,11 +71,15 @@ class TestModuleGraphScripts(unittest.TestCase, util.TestMixin):
         node = mg.find_node("configparser")
         self.assertIsInstance(node, (SourceModule, Package))
 
-        node = mg.find_node("setuptools._vendor.six.moves.configparser")
-        self.assertIsInstance(node, AliasNode)
+        import setuptools
 
-        node = mg.find_node("setuptools.extern.six.moves.configparser")
-        self.assertIsInstance(node, AliasNode)
+        if int(setuptools.__version__.split(".")[0]) < 47:
+
+            node = mg.find_node("setuptools._vendor.six.moves.configparser")
+            self.assertIsInstance(node, AliasNode)
+
+            node = mg.find_node("setuptools.extern.six.moves.configparser")
+            self.assertIsInstance(node, AliasNode)
 
         self.assert_has_edge(
             mg,
@@ -771,7 +770,7 @@ class TestModuleGraphAbsoluteImports(unittest.TestCase, util.TestMixin):
             mg, "multi_level_star_import", "pkg_a", "pkg_b", "pkg_c", "pkg_d"
         )
 
-    def test_multi_level_star(self):
+    def test_multi_level_star2(self):
         mg = ModuleGraph()
         mg.add_module("multi_level_star_import2")
 
@@ -1047,7 +1046,7 @@ class TestModuleGraphAbsoluteImports(unittest.TestCase, util.TestMixin):
         # Usecase: fake packages in sys.modules might not
         # have __spec__ and that confuses importlib.util.find_spec
 
-        import without_spec
+        import without_spec  # noqa: F401
 
         mg = ModuleGraph()
         mg.add_module("without_spec.submod")
@@ -2041,7 +2040,7 @@ class TestModuleGraphHooks(unittest.TestCase, util.TestMixin):
         mg.add_root(node)
 
         mg.import_module(node, "no_imports")
-        mg._run_stack()  # XXX: Private API
+        mg._run_stack()
 
         self.assert_has_edge(
             mg, "no_imports", "marshal", {DependencyInfo(False, True, False, None)}
@@ -2304,7 +2303,8 @@ class TestModuleGraphHooks(unittest.TestCase, util.TestMixin):
             mg, "missing", "nosuchmodule", {DependencyInfo(False, True, False, None)}
         )
 
-        # XXX: need to test for the correct "importing_module" as well (for various cases)
+        # need to test for the correct "importing_module"
+        # as well (for various cases)
 
 
 REPORT_HEADER = """

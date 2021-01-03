@@ -1,10 +1,11 @@
-import unittest
-import os
-from modulegraph2 import _nodes as nodes
 import importlib.util
+import os
 import pathlib
+import unittest
 
-loader = importlib.util.find_spec("os").loader
+from modulegraph2 import _nodes as nodes
+
+loader = importlib.util.find_spec("os").loader  # type: ignore
 file_path = pathlib.Path(__file__).resolve()
 
 

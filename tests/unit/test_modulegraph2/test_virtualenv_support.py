@@ -1,10 +1,10 @@
-import unittest
-import sys
 import os
 import pathlib
+import sys
+import unittest
 
-from modulegraph2 import _virtualenv_support as virtualenv_support
 import modulegraph2
+from modulegraph2 import _virtualenv_support as virtualenv_support
 
 PYLIB_DIR = f"python{sys.version_info[0]}.{sys.version_info[1]}"
 

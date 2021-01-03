@@ -1,3 +1,9 @@
+import contextlib
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
 import unittest
 
 # - Create virtual environment (venv, virtualenv)
@@ -10,12 +16,6 @@ import unittest
 # - Expectation is that a lot of code can
 #   be shared between tests.
 
-import subprocess
-import shutil
-import sys
-import os
-import tempfile
-import contextlib
 
 if sys.platform == "win32":
     BIN_DIR = "Scripts"
@@ -83,7 +83,7 @@ def run_scriptlet(venv_dir):
         [
             os.path.join(venv_dir, BIN_DIR, "python"),
             "-c",
-            "import modulegraph2; mg = modulegraph2.ModuleGraph(); mg.add_module('pip'); mg.add_module('distutils'); mg.add_module('distutils.command.bdist'); mg.report()",
+            "import modulegraph2; mg = modulegraph2.ModuleGraph(); mg.add_module('pip'); mg.add_module('distutils'); mg.add_module('distutils.command.bdist'); mg.report()",  # noqa: B950
         ]
     )
     lines = output.decode("utf-8").splitlines()
@@ -103,7 +103,8 @@ class TestVirtualEnv(unittest.TestCase):
 
             for module_path in run_scriptlet(venv_dir):
                 with self.subTest(module_path):
-                    # Stdlib shoudl be outside the virtualenv, other modules should be inside
+                    # Stdlib shoudl be outside the virtualenv, other modules should
+                    # be inside
                     if "site-packages" in module_path:
                         self.assertTrue(
                             module_path.startswith(tmpdir),

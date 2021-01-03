@@ -1,11 +1,10 @@
-import unittest
-import pathlib
-import os
-import importlib.util
-import sys
 import contextlib
-import subprocess
+import os
+import pathlib
 import shutil
+import subprocess
+import sys
+import unittest
 
 import modulegraph2
 

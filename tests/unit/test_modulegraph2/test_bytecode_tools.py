@@ -1,8 +1,7 @@
-import ast
+import textwrap
 import unittest
 
 from modulegraph2 import _bytecode_tools as bytecode_tools
-import textwrap
 
 
 def make_code(source):

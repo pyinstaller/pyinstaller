@@ -1,10 +1,9 @@
-import unittest
 import os
 import pathlib
 import shutil
 import subprocess
 import sys
-import importlib
+import unittest
 
 import modulegraph2
 from modulegraph2 import _graphbuilder as graphbuilder

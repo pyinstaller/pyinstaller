@@ -1,29 +1,28 @@
-import unittest
-import shutil
+import importlib.machinery
 import os
 import pathlib
-import importlib.machinery
+import shutil
 import subprocess
 import sys
-import pathlib
+import unittest
 
 try:
     import importlib.resources as resources
 except ImportError:
-    import importlib_resources as resources
+    import importlib_resources as resources  # type: ignore
 
-from modulegraph2 import _graphbuilder as graphbuilder
 from modulegraph2 import (
     BuiltinModule,
     BytecodeModule,
     ExtensionModule,
     FrozenModule,
+    MissingModule,
     NamespacePackage,
     Package,
     PyPIDistribution,
     SourceModule,
-    MissingModule,
 )
+from modulegraph2 import _graphbuilder as graphbuilder
 
 from . import util
 

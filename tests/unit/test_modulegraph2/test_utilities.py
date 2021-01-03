@@ -1,7 +1,5 @@
-import unittest
 import sys
-
-import modulegraph2
+import unittest
 
 from modulegraph2 import _utilities as utilities
 

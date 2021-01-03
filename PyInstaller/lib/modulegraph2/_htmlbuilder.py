@@ -51,7 +51,7 @@ def export_to_html(file: TextIO, graph: ModuleGraph) -> None:
             continue
 
         print(
-            f'<a name="{node.identifier}"><h2>{type(node).__name__} {node.name}</h2></a>',  # noqa:E501
+            f'<a name="{node.identifier}"><h2>{type(node).__name__} {node.name}</h2></a>',  # noqa:E501, B950
             file=file,
         )
         outgoing = list(graph.outgoing(node))

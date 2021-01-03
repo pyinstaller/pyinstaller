@@ -1,14 +1,13 @@
-from importlib.machinery import EXTENSION_SUFFIXES
 import os
-import tempfile
 import shutil
 import subprocess
 import sys
+import tempfile
 import unittest
 import zipfile
+from importlib.machinery import EXTENSION_SUFFIXES
 
 import modulegraph2._distributions as distributions
-import modulegraph2
 
 
 def rewrite_record(wheel_file):
@@ -50,7 +49,7 @@ def build_and_install(source_path, destination_path):
     else:
         raise RuntimeError("Wheel not build")
 
-    # XXX: Wheel 0.32.3 generates a RECORD that is not a vallid CSV, and
+    # Wheel 0.32.3 generates a RECORD that is not a vallid CSV, and
     # pip doesn't like that. Therefore rewrite the RECORD file in one of
     # the test zipfiles.
     rewrite_record(wheel_file)
@@ -104,6 +103,7 @@ class TestPackageBuilder(unittest.TestCase):
                 os.path.join(tmpdir, "simple_package-1.0.dist-info", "INSTALLER"),
                 os.path.join(tmpdir, "simple_package-1.0.dist-info", "WHEEL"),
                 os.path.join(tmpdir, "simple_package-1.0.dist-info", "METADATA"),
+                os.path.join(tmpdir, "simple_package-1.0.dist-info", "REQUESTED"),
                 os.path.join(tmpdir, "simple_package-1.0.dist-info", "top_level.txt"),
                 os.path.join(tmpdir, "simple_package-1.0.dist-info", "direct_url.json"),
             }
@@ -140,6 +140,7 @@ class TestPackageBuilder(unittest.TestCase):
                     os.path.join(tmpdir, "bytecode_package-1.0.dist-info", "INSTALLER"),
                     os.path.join(tmpdir, "bytecode_package-1.0.dist-info", "WHEEL"),
                     os.path.join(tmpdir, "bytecode_package-1.0.dist-info", "METADATA"),
+                    os.path.join(tmpdir, "bytecode_package-1.0.dist-info", "REQUESTED"),
                     os.path.join(
                         tmpdir, "bytecode_package-1.0.dist-info", "direct_url.json"
                     ),

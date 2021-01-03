@@ -1,9 +1,9 @@
 """
 Testing utilities
 """
-import sys
-import os
 import importlib
+import os
+import sys
 
 from modulegraph2 import Script
 
@@ -39,7 +39,7 @@ class TestMixin:
 
         elif node_class is not None and not isinstance(n, node_class):
             self.fail(
-                f"Node for {node_name!r} is not an instance of {node_class.__name__} but {type(n).__name__}"
+                f"Node for {node_name!r} is not an instance of {node_class.__name__} but {type(n).__name__}"  # noqa: B950
             )
 
     def assert_has_edge(self, mg, from_name, to_name, edge_data):

@@ -164,7 +164,7 @@ class ModuleGraph(ObjectGraph[Union[BaseNode, PyPIDistribution], DependencyInfo]
         """
         node = self._find_module(os.fspath(script_path))
         if node is not None:
-            raise ValueError("adding {script_path!r} multiple times")
+            raise ValueError(f"adding {script_path!r} multiple times")
 
         node = self._load_script(script_path)
         self.add_root(node)

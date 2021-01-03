@@ -1,5 +1,5 @@
-import unittest
 import importlib.util
+import unittest
 
 from modulegraph2 import _implies as implies
 
