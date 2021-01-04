@@ -70,7 +70,7 @@ class Qt5LibraryInfo:
                     # QLibraryInfo isn't always valid until a QCoreApplication is
                     # instantiated.
                     app = QCoreApplication(sys.argv)
-                    # In PySide6, QLibraryInfo.LibrariesPath has been added
+                    # In PySide6, QLibraryInfo.LibraryPath has been added
                     # and it is a class, but it will point to the same location
                     # as PrefixPath & more so we can safely exclude it
                     paths = [x for x in dir(QLibraryInfo)
