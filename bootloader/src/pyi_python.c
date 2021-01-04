@@ -58,6 +58,7 @@ DECLPROC(PyErr_Clear);
 DECLPROC(PyErr_Occurred);
 DECLPROC(PyErr_Print);
 DECLPROC(PyErr_Fetch);
+DECLPROC(PyErr_Restore);
 
 DECLPROC(PyImport_AddModule);
 DECLPROC(PyImport_ExecCodeModule);
@@ -123,6 +124,7 @@ pyi_python_map_names(HMODULE dll, int pyvers)
     GETPROC(dll, PyErr_Occurred);
     GETPROC(dll, PyErr_Print);
     GETPROC(dll, PyErr_Fetch);
+    GETPROC(dll, PyErr_Restore);
     GETPROC(dll, PyImport_AddModule);
     GETPROC(dll, PyImport_ExecCodeModule);
     GETPROC(dll, PyImport_ImportModule);
