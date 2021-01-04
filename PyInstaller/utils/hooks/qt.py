@@ -7,7 +7,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
-# -----------------------------------------------------------------------------
+#-----------------------------------------------------------------------------
 import os
 import sys
 import json
@@ -70,12 +70,12 @@ class Qt5LibraryInfo:
                     # QLibraryInfo isn't always valid until a QCoreApplication is
                     # instantiated.
                     app = QCoreApplication(sys.argv)
-                    paths = [x for x in dir(QLibraryInfo) if x.endswith('Path')]
+                    # In PySide6, QLibraryInfo.LibrariesPath has been added
+                    # and it is a class, but it will point to the same location
+                    # as PrefixPath & more so we can safely exclude it
+                    paths = [x for x in dir(QLibraryInfo)
+                            if x.endswith('Path') and x != 'LibraryPath']
                     location = {x: QLibraryInfo.location(getattr(QLibraryInfo, x))
-                                    # In PySide6, QLibraryInfo.LibrariesPath
-                                    # has been added and it is a class
-                                    if x != 'LibraryPath' else
-                                    QLibraryInfo.location(QLibraryInfo.LibraryPath())
                                 for x in paths}
                     try:
                         version = QLibraryInfo.version().segments()
