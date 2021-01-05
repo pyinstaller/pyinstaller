@@ -4,12 +4,8 @@ branches:
   except:
     - /pyup\/.*/
 
-# Make sure we are on Ubuntu 16.04. This fixes the following error, which
-# appears on Trusty (Ubuntu 14.04) when testing Linux Python 3.5 and 3.6 with
-# PyQt5 5.12: ``relocation error: /tmp/_MEIFdpiBr/libQt5DBus.so.5: symbol
-# dbus_message_get_allow_interactive_authorization, version LIBDBUS_1_3 not
-# defined in file libdbus-1.so.3 with link time reference``.
-dist: xenial
+
+dist: bionic
 
 # Cache pip packages. Explicitly name the pip-cache directory since we
 # use a custom `install` step which annuls `cache: pip`.
