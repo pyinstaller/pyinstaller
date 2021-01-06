@@ -1,0 +1,5 @@
+(OSX) Automatically remove the signature from the collected copy of the
+``Python`` shared library, using ``codesign --remove-signature``. This
+accommodates both ``onedir`` and ``onefile`` builds with recent python
+versions for macOS, where invalidated signature on PyInstaller-collected
+copy of the ``Python`` library prevents the latter from being loaded.
