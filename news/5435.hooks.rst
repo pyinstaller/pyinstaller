@@ -1,0 +1,1 @@
+(macOS) Fix: Unable to code sign apps built with GTK

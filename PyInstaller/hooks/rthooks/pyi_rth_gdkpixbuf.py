@@ -14,8 +14,7 @@ import os
 import tempfile
 import sys
 
-pixbuf_file = os.path.join(sys._MEIPASS, 'lib', 'gdk-pixbuf-2.0', '2.10.0',
-                           'loaders.cache')
+pixbuf_file = os.path.join(sys._MEIPASS, 'lib', 'gdk-pixbuf', 'loaders.cache')
 
 # If we're not on Windows we need to rewrite the cache
 # -> we rewrite on OSX to support --onefile mode
