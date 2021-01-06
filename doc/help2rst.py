@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #-----------------------------------------------------------------------------
-# Copyright (c) 2015-2020, PyInstaller Development Team.
+# Copyright (c) 2015-2021, PyInstaller Development Team.
 # Copyright (c) 2015-2020, Hartmut Goebel.
 #
 # Distributed under the terms of the GNU General Public License (version 2
@@ -24,7 +24,7 @@ import re
 import sys
 import os
 
-__copyright__ = "Copyright (c) 2015-2020 PyInstaller Development Team, " \
+__copyright__ = "Copyright (c) 2015-2021 PyInstaller Development Team, " \
                 "Copyright (c) 2015-2020 Hartmut Goebel"
 __author__ = "Hartmut Goebel <h.goebel@crazy-compilers.com>"
 
