@@ -383,16 +383,14 @@ def mac_strip_signature(libname, distname):
         return
     # Run codesign --remove-signature libname
     try:
-        logger.debug("Attempting to remove signature from %s", libname)
+        logger.debug("Removing signature from %s", libname)
         result = exec_command_rc('codesign', '--remove-signature', libname)
     except Exception as e:
         logger.warning(
             "Failed to run 'codesign' to remove signature from %s: %r",
-            libname, e
-        )
+            libname, e)
         return
     if result != 0:
         logger.warning(
             "'codesign --remove-signature %s' returned non-zero status %d",
-            libname, result
-        )
+            libname, result)
