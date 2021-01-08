@@ -191,7 +191,12 @@ static void test_search_path(void **state) {
 }
 
 
-int main(void) {
+#if defined(_WIN32)
+int wmain(void)
+#else
+int main(void)
+#endif
+{
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_dirname),
         cmocka_unit_test(test_basename),

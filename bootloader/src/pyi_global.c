@@ -109,61 +109,29 @@ mbothererror(const char *fmt, ...)
 
     void mbfatal_winerror(const char * funcname, const char *fmt, ...)
     {
+        char fullmsg[MBTXTLEN];
         char msg[MBTXTLEN];
-        size_t size = 0;
         DWORD error_code = GetLastError();
         va_list args;
 
         va_start(args, fmt);
-            size = vsnprintf(msg, MBTXTLEN, fmt, args);
+            vsnprintf(msg, MBTXTLEN, fmt, args);
         va_end(args);
-
-        if(size < MBTXTLEN) {
-            strncpy(msg + size, funcname, MBTXTLEN - size - 1);
-            size += strlen(funcname);
-        }
-
-        if(size < MBTXTLEN) {
-            strncpy(msg + size, ": ", 2);
-            size += 2;
-        }
-
-        if(size < MBTXTLEN) {
-            strncpy(msg + size, GetWinErrorString(error_code), MBTXTLEN - size - 1);
-        }
-
-        msg[MBTXTLEN-1] = '\0';
-
-        show_message_box(msg, "Fatal error detected", MB_ICONEXCLAMATION);
+        snprintf(fullmsg, MBTXTLEN, "%s%s: %s", msg, funcname, GetWinErrorString(error_code));
+        show_message_box(fullmsg, "Fatal error detected", MB_ICONEXCLAMATION);
     }
 
     void mbfatal_perror(const char * funcname, const char *fmt, ...)
     {
+        char fullmsg[MBTXTLEN];
         char msg[MBTXTLEN];
-        size_t size = 0;
         va_list args;
 
         va_start(args, fmt);
-            size = vsnprintf(msg, MBTXTLEN, fmt, args);
+            vsnprintf(msg, MBTXTLEN, fmt, args);
         va_end(args);
-
-        if(size < MBTXTLEN) {
-            strncpy(msg + size, funcname, MBTXTLEN - size - 1);
-            size += strlen(funcname);
-        }
-
-        if(size < MBTXTLEN) {
-            strncpy(msg + size, ": ", 2);
-            size += 2;
-        }
-
-        if(size < MBTXTLEN) {
-            strncpy(msg + size, strerror(errno), MBTXTLEN - size - 1);
-        }
-
-        msg[MBTXTLEN-1] = '\0';
-
-        show_message_box(msg, "Fatal error detected", MB_ICONEXCLAMATION);
+        snprintf(fullmsg, MBTXTLEN, "%s%s: %s", msg, funcname, strerror(errno));
+        show_message_box(fullmsg, "Fatal error detected", MB_ICONEXCLAMATION);
     }
 #endif  /* _WIN32 and WINDOWED */
 

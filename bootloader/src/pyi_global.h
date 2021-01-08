@@ -126,7 +126,7 @@ void mbvs(const char *fmt, ...);
         #define VS pyi_global_printf
     #endif
 #else
-    #ifdef _WIN32
+    #if defined(_WIN32) && defined(_MSC_VER)
         #define VS
     #else
         #define VS(...)
