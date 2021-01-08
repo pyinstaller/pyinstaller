@@ -645,10 +645,8 @@ def collect_submodules(package, filter=lambda name: True):
                             onerror(name)
                         else:
                             traceback.print_exc(file=sys.stderr)
-                            print(
-                                "collect_submodules: failed to import '{{}}'!"
-                                .format(name), file=sys.stderr
-                            )
+                            print("collect_submodules: failed to import %r!" %
+                                  name, file=sys.stderr)
                     else:
                         path = getattr(sys.modules[name], '__path__', None) or []
 
