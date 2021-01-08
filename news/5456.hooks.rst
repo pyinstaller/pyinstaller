@@ -1,0 +1,1 @@
+Add hook for ``scipy.spatial.transform.rotation`` to fix compatibility with SciPy 1.6.0.
