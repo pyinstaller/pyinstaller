@@ -116,7 +116,7 @@ might catch up with these changes.
 If both PyInstaller and your package provide hooks for some module,
 your package's hooks take precedence,
 but can still be overridden by the command line option
-:option:`--additional-hooks-dir`.
+``--additional-hooks-dir``.
 
 
 You can tell PyInstaller about the additional hooks
