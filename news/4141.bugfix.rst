@@ -1,0 +1,6 @@
+Fix loading of plugin-type modules at run-time of the frozen application:
+If the plugin path is one character longer than sys._MEIPATH
+(e.g. "$PWD/p/plugin_1" and "$PWD/dist/main"),
+the plugin relative-imports a sub-module (of the plugin)
+and the frozen application contains a module of the same name,
+the frozen application module was imported.

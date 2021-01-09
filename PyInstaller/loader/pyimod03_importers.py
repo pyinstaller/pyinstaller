@@ -25,7 +25,7 @@ import _frozen_importlib
 import pyimod01_os_path as pyi_os_path
 from pyimod02_archive import ArchiveReadError, ZlibArchiveReader
 
-SYS_PREFIX = sys._MEIPASS
+SYS_PREFIX = sys._MEIPASS + pyi_os_path.os_sep
 SYS_PREFIXLEN = len(SYS_PREFIX)
 
 # In Python 3 it is recommended to use class 'types.ModuleType' to create a new module.
@@ -164,7 +164,9 @@ class FrozenImporter(object):
             modname = fullname.split('.')[-1]
 
             for p in path:
-                p = p[SYS_PREFIXLEN+1:]
+                if not p.startswith(SYS_PREFIX):
+                    continue
+                p = p[SYS_PREFIXLEN:]
                 parts = p.split(pyi_os_path.os_sep)
                 if not parts: continue
                 if not parts[0]:
@@ -342,8 +344,8 @@ class FrozenImporter(object):
         The 'path' argument is a path that can be constructed by munging
         module.__file__ (or pkg.__path__ items)
         """
-        assert path.startswith(SYS_PREFIX + pyi_os_path.os_sep)
-        fullname = path[SYS_PREFIXLEN+1:]
+        assert path.startswith(SYS_PREFIX)
+        fullname = path[SYS_PREFIXLEN:]
         if fullname in self.toc:
             # If the file is in the archive, return this
             return self._pyz_archive.extract(fullname)[1]
@@ -408,7 +410,9 @@ class FrozenImporter(object):
             modname = fullname.rsplit('.')[-1]
 
             for p in path:
-                p = p[SYS_PREFIXLEN+1:]
+                if not p.startswith(SYS_PREFIX):
+                    continue
+                p = p[SYS_PREFIXLEN:]
                 parts = p.split(pyi_os_path.os_sep)
                 if not parts: continue
                 if not parts[0]:

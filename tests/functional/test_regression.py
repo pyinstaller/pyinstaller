@@ -9,11 +9,16 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
+from pathlib import Path
 from importlib.machinery import EXTENSION_SUFFIXES
 
 from PyInstaller.depend import analysis, bindepend
 from PyInstaller.building.build_main import Analysis
 from PyInstaller.building.api import PYZ
+
+# :todo: find a way to get this from `conftest` or such
+# Directory with testing modules used in some tests.
+_MODULES_DIR = Path(__file__).absolute().parent / "modules"
 
 def test_issue_2492(monkeypatch, tmpdir):
     # Crash if an extension module has an hidden import to ctypes (e.g. added
@@ -80,3 +85,10 @@ def test_issue_5131(monkeypatch, tmpdir):
     a = Analysis([str(script)],
                  excludes=['encodings', 'pydoc', 'xml', 'distutils'])
     PYZ(a.pure, a.zipped_data)
+
+
+def test_issue_4141(pyi_builder):  #script_dir,
+    extra_path = _MODULES_DIR / 'pyi_issue_4141'
+    pyi_builder.test_script('pyi_issue_4141.py',
+                            app_name="main", run_from_path=True,
+                            pyi_args=['--path', str(extra_path)])
