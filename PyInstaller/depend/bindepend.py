@@ -616,6 +616,7 @@ def _getImports_macholib(pth):
     from macholib.MachO import MachO
     from macholib.mach_o import LC_RPATH
     from macholib.dyld import dyld_find
+    from macholib.util import in_system_path
     rslt = set()
     seen = set()  # Libraries read from binary headers.
 
@@ -711,7 +712,12 @@ def _getImports_macholib(pth):
                 lib = dyld_find(lib, executable_path=exec_path)
                 rslt.add(lib)
             except ValueError:
-                logger.error('Can not find path %s (needed by %s)', lib, pth)
+                # Starting with Big Sur, system libraries are hidden. And
+                # we do not collect system libraries on any macOS version
+                # anyway, so suppress the corresponding error messages.
+                if not in_system_path(lib):
+                    logger.error('Can not find path %s (needed by %s)',
+                                 lib, pth)
 
     return rslt
 
