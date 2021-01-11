@@ -219,9 +219,11 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None):
             os.remove(cachedfile)
         else:
             # On Mac OS X we need relative paths to dll dependencies
-            # starting with @executable_path
+            # starting with @executable_path. We may also need to strip
+            # (invalidated) signature from collected shared libraries.
             if is_darwin:
                 dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
+                dylib.mac_strip_signature(cachedfile, dist_nm)
             return cachedfile
 
 
@@ -353,9 +355,11 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None):
     save_py_data_struct(cacheindexfn, cache_index)
 
     # On Mac OS X we need relative paths to dll dependencies
-    # starting with @executable_path
+    # starting with @executable_path. We may also need to strip
+    # (invalidated) signature from collected shared libraries.
     if is_darwin:
         dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
+        dylib.mac_strip_signature(cachedfile, dist_nm)
     return cachedfile
 
 
