@@ -54,6 +54,7 @@ DESTOS_TO_SYSTEM = {
     'sunos': platform.system(),  ## FIXME: inhibits cross-compile
     'hpux': 'HP-UX',
     'aix': 'AIX',
+    'cygwin': platform.system(),
 }
 
 # Map from platform.system() to waf's DEST_OS
