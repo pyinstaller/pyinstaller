@@ -1,0 +1,38 @@
+name: Lint
+
+on:
+  pull_request:  # Trigger on PRs to develop
+    branches:
+      - develop
+
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        fetch-depth: 0
+    
+    - name: Get out of detached head state
+      run: |
+        git fetch origin ${{ github.base_ref }}
+        git fetch origin ${{ github.ref }}
+        git checkout FETCH_HEAD --
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8 
+
+    - name: Install dependencies
+      run: pip install -U flake8 wheel setuptools
+
+    - name: Run Lint
+      run: |
+        git diff -U0 origin/${{ github.base_ref }} -- | flake8 --diff -
+        
+    - name: Test Packaging
+      run: |
+        python setup.py sdist bdist_wheel
+        pip install -v .

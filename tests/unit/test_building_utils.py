@@ -1,15 +1,18 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2018, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 
 import pytest
 import os
+from importlib.machinery import EXTENSION_SUFFIXES
 
 from PyInstaller.building import utils
 
@@ -76,3 +79,17 @@ def test_format_binaries_and_datas_with_bracket(tmpdir):
 
     res = utils.format_binaries_and_datas(datas, str(tmpdir))
     assert res == expected
+
+
+def test_add_to_suffix__extension():
+    toc = [
+        ('mypkg',
+         'lib38/site-packages/mypkg' + EXTENSION_SUFFIXES[0],
+         'EXTENSION'),
+    ]
+    toc = utils.add_suffix_to_extensions(toc)
+    assert toc == [
+        ('mypkg' + EXTENSION_SUFFIXES[0],
+         'lib38/site-packages/mypkg' + EXTENSION_SUFFIXES[0],
+         'EXTENSION'),
+    ]

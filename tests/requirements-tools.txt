@@ -20,6 +20,7 @@ pytest >= 2.7.3
 
 # Plugin allowing running tests in parallel.
 pytest-xdist
+
 # Plugin to abort hanging tests.
 pytest-timeout
 # allows specifying order without duplicates
@@ -29,13 +30,14 @@ pytest-drop-dup-tests
 psutil
 
 # Check new flake8 violations on pull requests
-flake8-diff
+flake8
 
-subprocess32; python_version == '2.7'
-
-# Current pypiwin32 simply installs pywin32. Only an old pypiwin32 release has a
-# Python 3.4 wheel.
-pywin32; python_version != '3.4' and sys_platform == 'win32'
-pypiwin32==219; python_version == '3.4' and sys_platform == 'win32'
+pywin32; sys_platform == 'win32'
 
 lxml
+
+# crypto support (`--key` option)
+tinyaes ~= 1.0
+
+# Ability to retry a failed test
+flaky

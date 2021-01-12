@@ -1,1 +1,0 @@
-Fix discovery of Qt paths on Anaconda.

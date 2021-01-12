@@ -1,10 +1,12 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2018, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 
@@ -20,11 +22,7 @@ from PyInstaller.utils.hooks import relpath_to_config_or_make
 from PyInstaller.compat import is_win
 
 _CONFIG_H = sysconfig.get_config_h_filename()
-if hasattr(sysconfig, 'get_makefile_filename'):
-    # sysconfig.get_makefile_filename is missing in Python < 2.7.9
-    _MAKEFILE = sysconfig.get_makefile_filename()
-else:
-    _MAKEFILE = sysconfig._get_makefile_filename()
+_MAKEFILE = sysconfig.get_makefile_filename()
 
 
 datas = [(_CONFIG_H, relpath_to_config_or_make(_CONFIG_H))]

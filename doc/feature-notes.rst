@@ -105,7 +105,7 @@ requires:
 - The C-module must sit just beside the wrapper module (thus a relative import
   would work).
 
-Also some restrictions apply for Python 3, due to the way the SWIG wrapper is
+Also some restrictions apply, due to the way the SWIG wrapper is
 implemented:
 
 - The C-module will become a `global` module. As a consequence, you can not

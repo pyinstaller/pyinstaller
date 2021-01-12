@@ -1,33 +1,34 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2018, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 import os
+from PyInstaller.utils.hooks import collect_system_data_files
+from PyInstaller.utils.hooks.qt import pyside2_library_info, get_qt_binaries
+from PyInstaller.compat import is_win
 
-from PyInstaller.utils.hooks import (
-    get_module_attribute, is_module_satisfies, qt_menu_nib_dir, get_module_file_attribute,
-    collect_data_files)
-from PyInstaller.compat import getsitepackages, is_darwin, is_win
+# Only proceed if PySide2 can be imported.
+if pyside2_library_info.version is not None:
 
-# On Windows system PATH has to be extended to point to the PySide2 directory.
-# The PySide directory contains Qt dlls. We need to avoid including different
-# version of Qt libraries when there is installed another application (e.g. QtCreator)
-if is_win:
-    from PyInstaller.utils.win32.winutils import extend_system_path
+    hiddenimports = ['shiboken2']
 
-    extend_system_path([os.path.join(x, 'PySide2') for x in getsitepackages()])
-    extend_system_path([os.path.join(os.path.dirname(get_module_file_attribute('PySide2')),
-                                     'Qt', 'bin')])
+    # Collect the ``qt.conf`` file.
+    if is_win:
+        target_qt_conf_dir = ['PySide2']
+    else:
+        target_qt_conf_dir = ['PySide2', 'Qt']
 
-# FIXME: this should not be needed
-hiddenimports = ['numpy.core.multiarray']
+    datas = [x for x in
+             collect_system_data_files(pyside2_library_info.location['PrefixPath'],
+                                       os.path.join(*target_qt_conf_dir))
+             if os.path.basename(x[0]) == 'qt.conf']
 
-# TODO: check if this is needed
-# Collect just the qt.conf file.
-datas = [x for x in collect_data_files('PySide2', False, os.path.join('Qt', 'bin')) if
-         x[0].endswith('qt.conf')]
+    # Collect required Qt binaries.
+    binaries = get_qt_binaries(pyside2_library_info)

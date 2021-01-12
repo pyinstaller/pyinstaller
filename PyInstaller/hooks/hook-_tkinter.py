@@ -1,10 +1,12 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2018, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 
@@ -14,40 +16,9 @@ import locale
 
 from PyInstaller.compat import is_win, is_darwin, is_unix, is_venv, \
     base_prefix, open_file, text_read_mode
-from PyInstaller.compat import modname_tkinter
 from PyInstaller.depend.bindepend import selectImports, getImports
 from PyInstaller.building.datastruct import Tree
 from PyInstaller.utils.hooks import exec_statement, logger
-
-
-def _handle_broken_tcl_tk():
-    """
-    When freezing from a Windows venv, overwrite the values of the standard
-    `${TCL_LIBRARY}`, `${TK_LIBRARY}`, and `${TIX_LIBRARY}` environment
-    variables.
-
-    This is a workaround for broken Tcl/Tk detection in Windows virtual
-    environments. Older versions of `virtualenv` set such variables erroneously,
-    preventing PyInstaller from properly detecting Tcl/Tk. This issue has been
-    noted for `virtualenv` under Python 2.4 and Windows 7.
-
-    See Also
-    -------
-    https://github.com/pypa/virtualenv/issues/93
-    """
-    if is_win and is_venv:
-        basedir = os.path.join(base_prefix, 'tcl')
-        files = os.listdir(basedir)
-
-        # Detect Tcl/Tk paths.
-        for f in files:
-            abs_path = os.path.join(basedir, f)
-            if f.startswith('tcl') and os.path.isdir(abs_path):
-                os.environ['TCL_LIBRARY'] = abs_path
-            elif f.startswith('tk') and os.path.isdir(abs_path):
-                os.environ['TK_LIBRARY'] = abs_path
-            elif f.startswith('tix') and os.path.isdir(abs_path):
-                os.environ['TIX_LIBRARY'] = abs_path
 
 
 def _warn_if_activetcl_or_teapot_installed(tcl_root, tcltree):
@@ -105,12 +76,13 @@ See https://github.com/pyinstaller/pyinstaller/issues/621 for more information.
             """ % init_resource)
 
 
-def _find_tcl_tk_darwin_frameworks(binaries):
+def _find_tcl_tk_darwin_system_frameworks(binaries):
     """
     Get an OS X-specific 2-tuple of the absolute paths of the top-level
     external data directories for both Tcl and Tk, respectively.
 
-    Under OS X, Tcl and Tk are installed as Frameworks requiring special care.
+    This function finds the OS X system installation of Tcl and Tk.
+    System OS X Tcl and Tk are installed as Frameworks requiring special care.
 
     Returns
     -------
@@ -140,7 +112,7 @@ def _find_tcl_tk_dir():
     """
     # Python code to get path to TCL_LIBRARY.
     tcl_root = exec_statement(
-        'from %s import Tcl; print(Tcl().eval("info library"))' % modname_tkinter)
+        'from tkinter import Tcl; print(Tcl().eval("info library"))')
     tk_version = exec_statement(
         'from _tkinter import TK_VERSION; print(TK_VERSION)')
 
@@ -170,24 +142,40 @@ def _find_tcl_tk(hook_api):
             # might depend on system Tcl/Tk frameworks and these are not
             # included in 'hook_api.binaries'.
             bins = getImports(hook_api.__file__)
-            # Reformat data structure from
-            #     set(['lib1', 'lib2', 'lib3'])
-            # to
-            #     [('Tcl', '/path/to/Tcl'), ('Tk', '/path/to/Tk')]
-            mapping = {}
-            for l in bins:
-                mapping[os.path.basename(l)] = l
-            bins = [
-                ('Tcl', mapping['Tcl']),
-                ('Tk', mapping['Tk']),
-            ]
+
+            if bins:
+                # Reformat data structure from
+                #     set(['lib1', 'lib2', 'lib3'])
+                # to
+                #     [('Tcl', '/path/to/Tcl'), ('Tk', '/path/to/Tk')]
+                mapping = {}
+                for lib in bins:
+                    mapping[os.path.basename(lib)] = lib
+                bins = [
+                    ('Tcl', mapping['Tcl']),
+                    ('Tk', mapping['Tk']),
+                ]
+            else:
+                # Starting with macOS 11, system libraries are hidden.
+                # Until we adjust library discovery accordingly, bins
+                # will end up empty. But this implicitly indicates that
+                # the system framework is used, so return None, None
+                # to inform the caller.
+                return None, None
 
         # _tkinter depends on Tcl/Tk compiled as frameworks.
         path_to_tcl = bins[0][1]
-        if 'Library/Frameworks' in path_to_tcl:
-            tcl_tk = _find_tcl_tk_darwin_frameworks(bins)
+        # OS X system installation of Tcl/Tk.
+        # [/System]/Library/Frameworks/Tcl.framework/Resources/Scripts/Tcl
+        if 'Library/Frameworks/Tcl.framework' in path_to_tcl:
+            #tcl_tk = _find_tcl_tk_darwin_system_frameworks(bins)
+            tcl_tk = None, None  # Do not gather system framework's data
+
         # Tcl/Tk compiled as on Linux other Unixes.
-        # For example this is the case of Tcl/Tk from macports.
+        # This is the case of Tcl/Tk from macports and Tck/Tk built into
+        # python.org OS X python distributions.
+        # python.org built-in tcl/tk is located at
+        # /Library/Frameworks/Python.framework/Versions/3.x/lib/libtcl8.6.dylib
         else:
             tcl_tk = _find_tcl_tk_dir()
 
@@ -195,6 +183,33 @@ def _find_tcl_tk(hook_api):
         tcl_tk = _find_tcl_tk_dir()
 
     return tcl_tk
+
+
+def _collect_tcl_modules(tcl_root):
+    """
+    Get a list of TOC-style 3-tuples describing Tcl modules. The modules
+    directory is separate from the library/data one, and is located
+    at $tcl_root/../tclX, where X is the major Tcl version.
+
+    Returns
+    -------
+    Tree
+        Such list, if the modules directory exists.
+    """
+
+    # Obtain Tcl major version.
+    tcl_version = exec_statement(
+        'from tkinter import Tcl; print(Tcl().eval("info tclversion"))')
+    tcl_version = tcl_version.split('.')[0]
+
+    modules_dirname = 'tcl' + str(tcl_version)
+    modules_path = os.path.join(tcl_root, '..', modules_dirname)
+
+    if not os.path.isdir(modules_path):
+        logger.warn('Tcl modules directory %s does not exist.', modules_path)
+        return []
+
+    return Tree(modules_path, prefix=modules_dirname)
 
 
 def _collect_tcl_tk_files(hook_api):
@@ -206,10 +221,19 @@ def _collect_tcl_tk_files(hook_api):
     Tree
         Such list.
     """
-    # Workaround for broken Tcl/Tk detection in virtualenv on Windows.
-    _handle_broken_tcl_tk()
-
     tcl_root, tk_root = _find_tcl_tk(hook_api)
+
+    # On macOS, we do not collect system libraries. Therefore, if system
+    # Tcl/Tk framework is used, it makes no sense to collect its data,
+    # either. In this case, _find_tcl_tk() will return None, None - either
+    # deliberately (we found the data paths, but ignore them) or not
+    # (starting with macOS 11, the data path cannot be found until shared
+    # library discovery is fixed).
+    if is_darwin and not tcl_root and not tk_root:
+        logger.info('Not collecting Tcl/Tk data - either python is using '
+                    'macOS\' system Tcl/Tk framework, or Tcl/Tk data '
+                    'directories could not be found.')
+        return []
 
     # TODO Shouldn't these be fatal exceptions?
     if not tcl_root:
@@ -232,7 +256,10 @@ def _collect_tcl_tk_files(hook_api):
     if is_darwin:
         _warn_if_activetcl_or_teapot_installed(tcl_root, tcltree)
 
-    return (tcltree + tktree)
+    # Collect Tcl modules
+    tclmodulestree = _collect_tcl_modules(tcl_root)
+
+    return (tcltree + tktree + tclmodulestree)
 
 
 def hook(hook_api):

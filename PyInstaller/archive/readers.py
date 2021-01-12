@@ -1,10 +1,12 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2018, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 
@@ -89,7 +91,7 @@ class CArchiveReader(ArchiveReader):
 
     Easily handled from C or from Python.
     """
-    # MAGIC is usefull to verify that conversion of Python data types
+    # MAGIC is useful to verify that conversion of Python data types
     # to C structure and back works properly.
     MAGIC = b'MEI\014\013\012\013\016'
     HDRLEN = 0
@@ -186,7 +188,7 @@ class CArchiveReader(ArchiveReader):
         For non-Python resoures, ispkg is meaningless (and 0).
         Used by the import mechanism.
         """
-        if type(name) == type(''):
+        if isinstance(name, str):
             ndx = self.toc.find(name)
             if ndx == -1:
                 return None

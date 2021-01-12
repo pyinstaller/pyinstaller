@@ -96,10 +96,10 @@ SomeProject ==5.4 ; python_version != '3.6'
 SomeProject       ; sys_platform == 'win32'
 ```
 
-### Linux
+### GNU/Linux
 
 The top-level `.travis.yml` file configures the Travis-CI service to remotely
-test PyInstaller in an Ubuntu 12.04 (LTS) container, the most recent Linux
+test PyInstaller in an Ubuntu 12.04 (LTS) container, the most recent GNU/Linux
 distribution supported by Travis-CI.
 
 Non-Python dependencies installable through `apt-get` on Ubuntu 12.04 should be

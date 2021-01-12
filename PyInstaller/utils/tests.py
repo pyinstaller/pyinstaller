@@ -1,10 +1,12 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2018, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 
@@ -16,24 +18,19 @@ import os
 import sys
 import traceback
 import distutils.ccompiler
+import inspect
+import textwrap
+import shutil
 
 import pytest
 from _pytest.runner import Skipped
 
-from PyInstaller.compat import is_darwin, is_win, is_linux, is_py2, is_py3
+from PyInstaller.compat import is_win
 
 # Wrap some pytest decorators to be consistent in tests.
 parametrize = pytest.mark.parametrize
 skipif = pytest.mark.skipif
-skipif_notwin = skipif(not is_win, reason='requires Windows')
-skipif_notosx = skipif(not is_darwin, reason='requires Mac OS X')
-skipif_notlinux = skipif(not is_linux, reason='requires GNU/Linux')
-skipif_win = skipif(is_win, reason='does not run on Windows')
-skipif_linux = skipif(is_win, reason='does not run on GNU/Linux')
-skipif_winorosx = skipif(is_win or is_darwin, reason='does not run on Windows or Mac OS X')
 xfail = pytest.mark.xfail
-xfail_py2 = xfail(is_py2, reason='fails with Python 2.7')
-xfail_py3 = xfail(is_py3, reason='fails with Python 3')
 
 def _check_for_compiler():
     import tempfile, sys
@@ -59,6 +56,8 @@ def _check_for_compiler():
         #   find the file specified.
         has_compiler = cc.has_function('clock', includes=['time.h'])
     os.chdir(old_wd)
+    # TODO: Find a way to remove the generated clockXXXX.c file, too
+    shutil.rmtree(tmp)
     return has_compiler
 
 
@@ -136,3 +135,39 @@ def importorskip(modname, minversion=None):
     # version. Reduce this decoration to a noop.
     else:
         return pytest.mark.skipif(False, reason='')
+
+
+def gen_sourcefile(tmpdir, source, test_id=None):
+    """
+    Generate a source file for testing.
+
+    The source will be written into a file named like the
+    test-function. This file will then be passed to `test_script`.
+    If you need other related file, e.g. as `.toc`-file for
+    testing the content, put it at at the normal place. Just mind
+    to take the basnename from the test-function's name.
+
+    :param script: Source code to create executable from. This
+                   will be saved into a temporary file which is
+                   then passed on to `test_script`.
+
+    :param test_id: Test-id for parametrized tests. If given, it
+                    will be appended to the script filename,
+                    separated by two underscores.
+
+    Ensure that the caller of `test_source` is in a UTF-8
+    encoded file with the correct '# -*- coding: utf-8 -*-' marker.
+    """
+    testname = inspect.stack()[1][3]
+    if test_id:
+        # For parametrized test append the test-id.
+        testname = testname + '__' + test_id
+
+    # Periods are not allowed in Python module names.
+    testname = testname.replace('.', '_')
+    scriptfile = tmpdir / (testname + '.py')
+    source = textwrap.dedent(source)
+    with scriptfile.open('w', encoding='utf-8') as ofh:
+        print(u'# -*- coding: utf-8 -*-', file=ofh)
+        print(source, file=ofh)
+    return scriptfile

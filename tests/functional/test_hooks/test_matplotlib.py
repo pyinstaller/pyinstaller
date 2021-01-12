@@ -1,10 +1,12 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2018, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 """
@@ -15,22 +17,15 @@ import pytest
 from PyInstaller.utils.tests import importorskip
 
 
-# List of 4-tuples "(backend_name, package_name, rcParams_key, rcParams_value)",
+# List of 3-tuples "(backend_name, package_name, binding)",
 # where:
 #
 # * "backend_name" is the name of a Matplotlib backend to be tested below.
 # * "package_name" is the name of the external package required by this backend.
-# * "rcParams_key" is the name of a Matplotlib parameter to be set before testing
-#   this backend or "None" if no parameter is to be set.
-# * "rcParams_value" is the value to set that parameter to if "rcParams_key" is
-#   not "None" or ignored otherwise.
+# * "binding" is the binding to use (and to set environment-variable QT_API to).
 backend_rcParams_key_values = [
-    # PySide.
-    ('Qt4Agg', 'PySide', 'backend.qt4', 'PySide'),
-    # PyQt4.
-    ('Qt4Agg', 'PyQt4', 'backend.qt4', 'PyQt4'),
-    # PyQt5.
-    ('Qt5Agg', 'PyQt5', 'backend.qt5', 'PyQt5'),
+    ('Qt5Agg', 'PyQt5', 'pyqt5'),
+    ('Qt5Agg', 'PySide2', 'pyside2'),
 ]
 
 # Same list, decorated to skip all backends whose packages are unimportable#.
@@ -52,11 +47,11 @@ package_names = [
 # Test Matplotlib with access to only one backend at a time.
 @importorskip('matplotlib')
 @pytest.mark.parametrize(
-    'backend_name, package_name, rcParams_key, rcParams_value',
+    'backend_name, package_name, binding',
     backend_rcParams_key_values_skipped_if_unimportable,
     ids=package_names)
-def test_matplotlib(
-    pyi_builder, backend_name, package_name, rcParams_key, rcParams_value):
+def test_matplotlib(pyi_builder, monkeypatch,
+                    backend_name, package_name, binding):
     '''
     Test Matplotlib with the passed backend enabled, the passed backend package
     included with this frozen application, all other backend packages explicitly
@@ -67,7 +62,7 @@ def test_matplotlib(
 
     # PyInstaller options excluding all backend packages except the passed
     # backend package. This is especially critical for Qt backend packages
-    # (e.g., "PyQt4", "PySide"). On first importation, Matplotlib attempts to
+    # (e.g., "PyQt5", "PySide2"). On first importation, Matplotlib attempts to
     # import all available Qt packages. However, runtime PyInstaller hooks fail
     # when multiple Qt packages are frozen into the same application. For each
     # such package, all other Qt packages must be excluded.
@@ -78,49 +73,38 @@ def test_matplotlib(
     ]
 
     # Script to be tested, enabling this Qt backend.
-    test_script = ('''
+    test_script = ("""
     import matplotlib, os, sys, tempfile
 
     # Localize test parameters.
     backend_name = {backend_name!r}
-    rcParams_key = {rcParams_key!r}
-    rcParams_value = {rcParams_value!r}
+    binding = {binding!r}
 
     # Report these parameters.
-    print('Testing Matplotlib with:\\n'
-        '\\tbackend: {{}}\\n'
-        '\\trcParams:\\n'
-        '\\t\\tkey: {{}}\\n'
-        '\\t\\tvalue: {{}}'.format(
-        backend_name, rcParams_key, rcParams_value))
+    print('Testing Matplotlib with backend', repr(backend_name),
+          'and binding ($QT_API)', repr(binding))
 
     # Configure Matplotlib *BEFORE* calling any Matplotlib functions.
-    matplotlib.rcParams[rcParams_key] = rcParams_value
+    matplotlib.rcParams['backend'] = backend_name
+    os.environ['QT_API'] = binding
 
     # Enable the desired backend *BEFORE* plotting with this backend.
     matplotlib.use(backend_name)
 
     # A runtime hook should force Matplotlib to create its configuration
-    # directory in a temporary directory rather than in "$HOME/.matplotlib".
+    # directory in a temporary directory rather than in $HOME/.matplotlib.
     configdir = os.environ['MPLCONFIGDIR']
-    print('MPLCONFIGDIR: %s' % configdir)
+    print('MPLCONFIGDIR:', repr(configdir))
     if not configdir.startswith(tempfile.gettempdir()):
         raise SystemExit('MPLCONFIGDIR not pointing to temp directory.')
 
-    # Matplotlib's data directory should point to sys._MEIPASS.
-    datadir = os.environ['MATPLOTLIBDATA']
-    print('MATPLOTLIBDATA: %s' % datadir)
-    if not datadir.startswith(sys._MEIPASS):
-        raise SystemExit('MATPLOTLIBDATA not pointing to sys._MEIPASS.')
-
-    # Test access to the standard "mpl_toolkits" namespace package installed
+    # Test access to the standard 'mpl_toolkits' namespace package installed
     # with Matplotlib. Note that this import was reported to fail under
     # Matplotlib 1.3.0.
     from mpl_toolkits import axes_grid1
-    '''.format(
+    """.format(
         backend_name=backend_name,
-        rcParams_key=rcParams_key,
-        rcParams_value=rcParams_value,
+        binding=binding,
     ))
 
     # Test this script.

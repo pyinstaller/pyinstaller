@@ -3,10 +3,13 @@
 # defined in tests/requirements-tools.txt and for extensive testing
 # also tests/requirements-libraries.txt.
 
-setuptools
-pefile
-macholib
-altgraph
+## IMPORTANT: Keep aligned with setup.cfg
 
-dis3; python_version < '3.0'
+setuptools<50.0.0   # 50.0.0 breaks a modulegraph regession test
+altgraph
+pyinstaller-hooks-contrib >= 2020.6
+pefile; sys_platform == 'win32'
 pywin32-ctypes; sys_platform == 'win32'
+macholib; sys_platform == 'darwin'
+
+## IMPORTANT: Keep aligned with setup.cfg

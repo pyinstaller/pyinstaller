@@ -1,10 +1,12 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2018, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 """
@@ -17,47 +19,19 @@ PEP-302 and PEP-451 importers for frozen applications.
 ### List of built-in modules: sys.builtin_module_names
 
 
-
 import sys
-import pyimod01_os_path as pyi_os_path
+import _frozen_importlib
 
+import pyimod01_os_path as pyi_os_path
 from pyimod02_archive import ArchiveReadError, ZlibArchiveReader
 
-
-SYS_PREFIX = sys._MEIPASS
+SYS_PREFIX = sys._MEIPASS + pyi_os_path.os_sep
 SYS_PREFIXLEN = len(SYS_PREFIX)
 
-# In Python 3.3+ tne locking scheme has changed to per-module locks for the most part.
-# Global locking should not be required in Python 3.3+
-if sys.version_info[0:2] < (3, 3):
-    # TODO Implement this for Python 3.2 - 'imp' is not a built-in module anymore.
-    import imp
-    imp_lock = imp.acquire_lock
-    imp_unlock = imp.release_lock
-    # Find the platform specific extension suffixes.
-    # For Python 2 we need the info-tuples for loading
-    EXTENSION_SUFFIXES = dict((f[0], f) for f in imp.get_suffixes()
-                              if f[2] == imp.C_EXTENSION)
-    # Function to create a new module object from pyz archive.
-    imp_new_module = imp.new_module
-else:
-    # Dumb locking functions - do nothing.
-    def imp_lock(): pass
-    def imp_unlock(): pass
-    import _frozen_importlib
-    if sys.version_info[1] <= 4:
-        # Python 3.3, 3.4
-        EXTENSION_SUFFIXES = _frozen_importlib.EXTENSION_SUFFIXES
-        EXTENSION_LOADER = _frozen_importlib.ExtensionFileLoader
-    else:
-        # Since Python 3.5+ some attributes were moved to '_bootstrap_external'.
-        EXTENSION_SUFFIXES = _frozen_importlib._bootstrap_external.EXTENSION_SUFFIXES
-        EXTENSION_LOADER = _frozen_importlib._bootstrap_external.ExtensionFileLoader
-
-    # In Python 3 it is recommended to use class 'types.ModuleType' to create a new module.
-    # However, 'types' module is not a built-in module. The 'types' module uses this trick
-    # with using type() function:
-    imp_new_module = type(sys)
+# In Python 3 it is recommended to use class 'types.ModuleType' to create a new module.
+# However, 'types' module is not a built-in module. The 'types' module uses this trick
+# with using type() function:
+imp_new_module = type(sys)
 
 if sys.flags.verbose:
     def trace(msg, *a):
@@ -66,82 +40,6 @@ if sys.flags.verbose:
 else:
     def trace(msg, *a):
         pass
-
-# Python 3 has it's own BuiltinImporter, we use this for Python2 only
-class BuiltinImporter(object):
-    """
-    PEP-302 wrapper of the built-in modules for sys.meta_path.
-
-    This wrapper ensures that import machinery will not look for built-in
-    modules in the bundled ZIP archive.
-    """
-    def find_module(self, fullname, path=None):
-        # Deprecated in Python 3.4, see PEP-451
-        imp_lock()
-        module_loader = None  # None means - no module found by this importer.
-
-        # Look in the list of built-in modules.
-        if fullname in sys.builtin_module_names:
-            module_loader = self
-
-        imp_unlock()
-        return module_loader
-
-    def load_module(self, fullname, path=None):
-        # Deprecated in Python 3.4, see PEP-451
-        imp_lock()
-
-        try:
-            # PEP302 If there is an existing module object named 'fullname'
-            # in sys.modules, the loader must use that existing module.
-            module = sys.modules.get(fullname)
-            if module is None:
-                module = imp.init_builtin(fullname)
-
-        except Exception:
-            # Remove 'fullname' from sys.modules if it was appended there.
-            if fullname in sys.modules:
-                sys.modules.pop(fullname)
-            raise  # Raise the same exception again.
-
-        finally:
-            # Release the interpreter's import lock.
-            imp_unlock()
-
-        return module
-
-    ### Optional Extensions to the PEP-302 Importer Protocol
-
-    def is_package(self, fullname):
-        """
-        Return always False since built-in modules are never packages.
-        """
-        if fullname in sys.builtin_module_names:
-            return False
-        else:
-            # ImportError should be raised if module not found.
-            raise ImportError('No module named ' + fullname)
-
-    def get_code(self, fullname):
-        """
-        Return None for a built-in module.
-        """
-        if fullname in sys.builtin_module_names:
-            return None
-        else:
-            # ImportError should be raised if module not found.
-            raise ImportError('No module named ' + fullname)
-
-    def get_source(self, fullname):
-        """
-        Return None for a built-in module.
-        """
-        if fullname in sys.builtin_module_names:
-            return None
-        else:
-            # ImportError should be raised if module not found.
-            raise ImportError('No module named ' + fullname)
-
 
 class FrozenPackageImporter(object):
     """
@@ -198,10 +96,6 @@ class FrozenImporter(object):
         # It was needed only for FrozenImporter class. Wrong path from sys.path
         # Raises ArchiveReadError exception.
         for pyz_filepath in sys.path:
-            # We need to acquire the interpreter's import lock here
-            # because ZlibArchiveReader() seeks through and reads from the
-            # zip archive.
-            imp_lock()
             try:
                 # Unzip zip archive bundled with the executable.
                 self._pyz_archive = ZlibArchiveReader(pyz_filepath)
@@ -225,29 +119,23 @@ class FrozenImporter(object):
             except ArchiveReadError:
                 # Item from sys.path is not ZlibArchiveReader let's try next.
                 continue
-            finally:
-                imp_unlock()
         # sys.path does not contain filename of executable with bundled zip archive.
         # Raise import error.
         raise ImportError("Can't load frozen modules.")
 
-
-    def __call__(self, path):
-        """
-        PEP-302 sys.path_hook processor. is_py2: This is only needed for Python
-        2; see comments at `path_hook installation`_.
-
-        sys.path_hook is a list of callables, which will be checked in
-        sequence to determine if they can handle a given path item.
-        """
-
-        if path.startswith(SYS_PREFIX):
-            fullname = path[SYS_PREFIXLEN+1:].replace(pyi_os_path.os_sep, '.')
-            loader = self.find_module(fullname)
-            if loader is not None:
-                return loader
-        raise ImportError(path)
-
+    # Private helper
+    def _is_pep420_namespace_package(self, fullname):
+        if fullname in self.toc:
+            try:
+                return self._pyz_archive.is_pep420_namespace_package(fullname)
+            except Exception as e:
+                raise ImportError(
+                    'Loader FrozenImporter cannot handle module ' + fullname
+                ) from e
+        else:
+            raise ImportError(
+                'Loader FrozenImporter cannot handle module ' + fullname
+            )
 
     def find_module(self, fullname, path=None):
         # Deprecated in Python 3.4, see PEP-451
@@ -262,12 +150,6 @@ class FrozenImporter(object):
         If find_module() raises an exception, it will be propagated to the
         caller, aborting the import.
         """
-
-        # Acquire the interpreter's import lock for the current thread. This
-        # lock should be used by import hooks to ensure thread-safety when
-        # importing modules.
-
-        imp_lock()
         module_loader = None  # None means - no module found in this importer.
 
         if fullname in self.toc:
@@ -282,7 +164,9 @@ class FrozenImporter(object):
             modname = fullname.split('.')[-1]
 
             for p in path:
-                p = p[SYS_PREFIXLEN+1:]
+                if not p.startswith(SYS_PREFIX):
+                    continue
+                p = p[SYS_PREFIXLEN:]
                 parts = p.split(pyi_os_path.os_sep)
                 if not parts: continue
                 if not parts[0]:
@@ -295,7 +179,6 @@ class FrozenImporter(object):
                           entry_name, fullname, p)
                     break
         # Release the interpreter's import lock.
-        imp_unlock()
         if module_loader is None:
             trace("# %s not found in PYZ", fullname)
         return module_loader
@@ -314,7 +197,6 @@ class FrozenImporter(object):
         into sys.modules using `fullname` as its name
         """
         # Acquire the interpreter's import lock.
-        imp_lock()
         module = None
         if entry_name is None:
             entry_name = fullname
@@ -376,12 +258,11 @@ class FrozenImporter(object):
                 else:
                     module.__package__ = fullname.rsplit('.', 1)[0]
 
-                ### Set __spec__ for Python 3.4+
+                ### Set __spec__
                 # In Python 3.4 was introduced module attribute __spec__ to
                 # consolidate all module attributes.
-                if sys.version_info[0:2] > (3, 3):
-                    module.__spec__ = _frozen_importlib.ModuleSpec(
-                        entry_name, self, is_package=is_pkg)
+                module.__spec__ = _frozen_importlib.ModuleSpec(
+                    entry_name, self, is_package=is_pkg)
 
                 ### Add module object to sys.modules dictionary.
                 # Module object must be in sys.modules before the loader
@@ -406,10 +287,6 @@ class FrozenImporter(object):
 
             raise
 
-        finally:
-            # Release the interpreter's import lock.
-            imp_unlock()
-
 
         # Module returned only in case of no exception.
         return module
@@ -420,8 +297,10 @@ class FrozenImporter(object):
         if fullname in self.toc:
             try:
                 return self._pyz_archive.is_package(fullname)
-            except Exception:
-                raise ImportError('Loader FrozenImporter cannot handle module ' + fullname)
+            except Exception as e:
+                raise ImportError(
+                    'Loader FrozenImporter cannot handle module ' + fullname
+                ) from e
         else:
             raise ImportError('Loader FrozenImporter cannot handle module ' + fullname)
 
@@ -436,8 +315,10 @@ class FrozenImporter(object):
             # next line will raise an execpion which will be catched just
             # below and raise the ImportError.
             return self._pyz_archive.extract(fullname)[1]
-        except:
-            raise ImportError('Loader FrozenImporter cannot handle module ' + fullname)
+        except Exception as e:
+            raise ImportError(
+                'Loader FrozenImporter cannot handle module ' + fullname
+            ) from e
 
     def get_source(self, fullname):
         """
@@ -463,8 +344,8 @@ class FrozenImporter(object):
         The 'path' argument is a path that can be constructed by munging
         module.__file__ (or pkg.__path__ items)
         """
-        assert path.startswith(SYS_PREFIX + pyi_os_path.os_sep)
-        fullname = path[SYS_PREFIXLEN+1:]
+        assert path.startswith(SYS_PREFIX)
+        fullname = path[SYS_PREFIXLEN:]
         if fullname in self.toc:
             # If the file is in the archive, return this
             return self._pyz_archive.extract(fullname)[1]
@@ -529,7 +410,9 @@ class FrozenImporter(object):
             modname = fullname.rsplit('.')[-1]
 
             for p in path:
-                p = p[SYS_PREFIXLEN+1:]
+                if not p.startswith(SYS_PREFIX):
+                    continue
+                p = p[SYS_PREFIXLEN:]
                 parts = p.split(pyi_os_path.os_sep)
                 if not parts: continue
                 if not parts[0]:
@@ -546,6 +429,19 @@ class FrozenImporter(object):
         if entry_name is None:
             trace("# %s not found in PYZ", fullname)
             return None
+
+        if self._is_pep420_namespace_package(entry_name):
+            # PEP-420 namespace package; as per PEP 451, we need to
+            # return a spec with "loader" set to None (a.k.a. not set)
+            spec = _frozen_importlib.ModuleSpec(
+                fullname, None,
+                is_package=True)
+            # Set submodule_search_locations, which seems to fill the
+            # __path__ attribute.
+            spec.submodule_search_locations = [
+                pyi_os_path.os_path_dirname(self.get_filename(entry_name))
+            ]
+            return spec
 
         # origin has to be the filename
         origin = self.get_filename(entry_name)
@@ -564,6 +460,14 @@ class FrozenImporter(object):
         # (e.g. zipimport), that information may be stored in
         # spec.loader_state.
         spec.has_location = True
+
+        # Set submodule_search_locations for packages. Seems to be
+        # required for importlib_resources from 3.2.0 - see issue #5395.
+        if is_pkg:
+            spec.submodule_search_locations = [
+                pyi_os_path.os_path_dirname(self.get_filename(entry_name))
+            ]
+
         return spec
 
     def create_module(self, spec):
@@ -627,155 +531,6 @@ class FrozenImporter(object):
         exec(bytecode, module.__dict__)
 
 
-# is_py2: This is only needed for Python 2.
-class CExtensionImporter(object):
-    """
-    PEP-302 hook for sys.meta_path to load Python C extension modules.
-
-    C extension modules are present on the sys.prefix as filenames:
-
-        full.module.name.pyd
-        full.module.name.so
-        full.module.name.cpython-33m.so
-        full.module.name.abi3.so
-    """
-    def __init__(self):
-        # Cache directory content for faster module lookup without
-        # file system access.
-        files = pyi_os_path.os_listdir(SYS_PREFIX)
-        self._file_cache = set(files)
-
-    def find_module(self, fullname, path=None):
-        # Deprecated in Python 3.4, see PEP-451
-        imp_lock()
-        module_loader = None  # None means - no module found by this importer.
-
-        # Look in the file list of sys.prefix path (alias PYTHONHOME).
-        for ext in EXTENSION_SUFFIXES:
-            if fullname + ext in self._file_cache:
-                module_loader = self
-                break
-
-        imp_unlock()
-        return module_loader
-
-    def load_module(self, fullname, path=None):
-        # Deprecated in Python 3.4, see PEP-451
-        imp_lock()
-
-        module = None
-
-        try:
-            if sys.version_info[0] == 2:
-                # Python 2 implementation - TODO drop or improve it. 'imp' module is no longer built-in.
-                # PEP302 If there is an existing module object named 'fullname'
-                # in sys.modules, the loader must use that existing module.
-                module = sys.modules.get(fullname)
-
-                if module is None:
-                    # Need to search for the filename again, since to
-                    # be thread-safe we can't store it in find_module().
-                    for ext, ext_tuple in EXTENSION_SUFFIXES.iteritems():
-                        filename = fullname + ext
-                        if filename in self._file_cache:
-                            break
-                    filename = pyi_os_path.os_path_join(SYS_PREFIX, filename)
-                    with open(filename, 'rb') as fp:
-                        module = imp.load_module(fullname, fp, filename, ext_tuple)
-                    # Set __file__ attribute.
-                    if hasattr(module, '__setattr__'):
-                        module.__file__ = filename
-                    else:
-                        # Some modules (eg: Python for .NET) have no __setattr__
-                        # and dict entry have to be set.
-                        module.__dict__['__file__'] = filename
-            else:
-                # PEP302 If there is an existing module object named 'fullname'
-                # in sys.modules, the loader must use that existing module.
-                module = sys.modules.get(fullname)
-                if module is None:
-                    # Python 3 implementation.
-                    for ext in EXTENSION_SUFFIXES:
-                        filename = pyi_os_path.os_path_join(SYS_PREFIX, fullname + ext)
-                        # Test if a file exists.
-                        # Cannot use os.path.exists. Use workaround with function open().
-                        # No exception means that a file exists.
-                        try:
-                            with open(filename):
-                                pass
-                        except IOError:
-                            # Continue trying new suffix.
-                            continue
-                        # Load module.
-                        loader = EXTENSION_LOADER(fullname, filename)
-                        try:
-                            module = loader.load_module(fullname)
-                        except ImportError as e:
-                            raise ImportError('%s: %s' % (e, fullname))
-
-        except Exception:
-            # Remove 'fullname' from sys.modules if it was appended there.
-            if fullname in sys.modules:
-                sys.modules.pop(fullname)
-            raise  # Raise the same exception again.
-
-        finally:
-            # Release the interpreter's import lock.
-            imp_unlock()
-
-        return module
-
-    ### Optional Extensions to the PEP302 Importer Protocol
-
-    def is_package(self, fullname):
-        """
-        Return always False since C extension modules are never packages.
-        """
-        return False
-
-    def get_code(self, fullname):
-        """
-        Return None for a C extension module.
-        """
-        for ext in EXTENSION_SUFFIXES:
-            if fullname + ext in self._file_cache:
-                return None
-        # If module was not found then function still continues.
-        # ImportError should be raised if module not found.
-        raise ImportError('No module named ' + fullname)
-
-    def get_source(self, fullname):
-        """
-        Return None for a C extension module.
-        """
-        # Same implementation as function self.get_code().
-        return self.get_code(fullname)
-
-    def get_data(self, path):
-        """
-        This returns the data as a string, or raise IOError if the "file"
-        wasn't found. The data is always returned as if "binary" mode was used.
-
-        The 'path' argument is a path that can be constructed by munging
-        module.__file__ (or pkg.__path__ items)
-        """
-        # Since __file__ attribute works properly just try to open and read it.
-        with open(path, 'rb') as fp:
-            return fp.read()
-
-    def get_filename(self, fullname):
-        """
-        This method should return the value that __file__ would be set to
-        if the named module was loaded. If the module is not found, then
-        ImportError should be raised.
-        """
-        for ext in EXTENSION_SUFFIXES:
-            if fullname + ext in self._file_cache:
-                return pyi_os_path.os_path_join(SYS_PREFIX, fullname + ext)
-        # ImportError should be raised if module not found.
-        raise ImportError('No module named ' + fullname)
-
-
 def install():
     """
     Install FrozenImporter class and other classes into the import machinery.
@@ -792,55 +547,31 @@ def install():
     3. C extension modules
     4. Modules from sys.path
     """
-    # Python 3 already has _frozen_importlib.BuiltinImporter on sys.meta_path.
-    if sys.version_info[0] == 2:
-        # First look in the built-in modules and not bundled ZIP archive.
-        sys.meta_path.append(BuiltinImporter())
-
     # Ensure Python looks in the bundled zip archive for modules before any
     # other places.
     fimp = FrozenImporter()
     sys.meta_path.append(fimp)
 
-    if sys.version_info[0] == 2:
-        # _`path_hook installation`: Add the FrozenImporter to `sys.path_hook`,
-        # too, since `pkgutil.get_loader()` does not use `sys.meta_path`. See
-        # issue #1689.
-        sys.path_hooks.append(fimp)
-
-        # Import hook for renamed C extension modules. The path hook above means
-        # that the standard Python import system for C extensions will only work
-        # if those extensions are not in a submodule. In particular: A C
-        # extension such as ``foo.bar`` hasn't been loaded. ``sys.meta_path`` is
-        # checked, but provides no loader. ``sys.path_hooks`` is checked, and
-        # claims that it loads anything in ``foo``. Therefore, the default
-        # Python import mechanism will not be invoked, per `PEP 302
-        # <https://www.python.org/dev/peps/pep-0302/#id28>`_. This casues the
-        # import to fail, since the ``FrozenImporter`` class doesn't load C
-        # extensions.
-        sys.meta_path.append(CExtensionImporter())
-
-    else:
-        # On Windows there is importer _frozen_importlib.WindowsRegistryFinder that
-        # looks for Python modules in Windows registry. The frozen executable should
-        # not look for anything in the Windows registry. Remove this importer from
-        # sys.meta_path.
-        for item in sys.meta_path:
-            if hasattr(item, '__name__') and item.__name__ == 'WindowsRegistryFinder':
-                sys.meta_path.remove(item)
-                break
-        # _frozen_importlib.PathFinder is also able to handle Python C
-        # extensions. However, PyInstaller needs its own importer since it
-        # uses extension names like 'module.submodle.so' (instead of paths).
-        # As of Python 3.7.0b2, there are several PathFinder instances (and
-        # duplicate ones) on sys.meta_path. This propobly is a bug, see
-        # https://bugs.python.org/issue33128. Thus we need to move all of them
-        # to the end, eliminating duplicates .
-        pathFinders = []
-        for item in reversed(sys.meta_path):
-            if getattr(item, '__name__', None) == 'PathFinder':
-                sys.meta_path.remove(item)
-                if not item in pathFinders:
-                    pathFinders.append(item)
-        sys.meta_path.extend(reversed(pathFinders))
-        # TODO Do we need for Python 3 _frozen_importlib.FrozenImporter? Could it be also removed?
+    # On Windows there is importer _frozen_importlib.WindowsRegistryFinder that
+    # looks for Python modules in Windows registry. The frozen executable should
+    # not look for anything in the Windows registry. Remove this importer from
+    # sys.meta_path.
+    for item in sys.meta_path:
+        if hasattr(item, '__name__') and item.__name__ == 'WindowsRegistryFinder':
+            sys.meta_path.remove(item)
+            break
+    # _frozen_importlib.PathFinder is also able to handle Python C
+    # extensions. However, PyInstaller needs its own importer since it
+    # uses extension names like 'module.submodle.so' (instead of paths).
+    # As of Python 3.7.0b2, there are several PathFinder instances (and
+    # duplicate ones) on sys.meta_path. This propobly is a bug, see
+    # https://bugs.python.org/issue33128. Thus we need to move all of them
+    # to the end, eliminating duplicates .
+    pathFinders = []
+    for item in reversed(sys.meta_path):
+        if getattr(item, '__name__', None) == 'PathFinder':
+            sys.meta_path.remove(item)
+            if not item in pathFinders:
+                pathFinders.append(item)
+    sys.meta_path.extend(reversed(pathFinders))
+    # TODO Do we need for Python 3 _frozen_importlib.FrozenImporter? Could it be also removed?

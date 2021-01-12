@@ -1,0 +1,1 @@
+(Windows) Add a hook for ``win32ctypes.core``.

@@ -1,10 +1,12 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2018, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 
@@ -92,7 +94,7 @@ from xml.dom import Node, minidom
 from xml.dom.minidom import Document, Element
 
 from PyInstaller import compat
-from PyInstaller.compat import architecture, string_types
+from PyInstaller.compat import string_types
 from PyInstaller import log as logging
 from PyInstaller.utils.win32 import winresource
 
@@ -740,12 +742,8 @@ class Manifest(object):
         try:
             domtree = minidom.parse(filename_or_file)
         except xml.parsers.expat.ExpatError as e:
-            args = [e.args[0]]
-            # TODO Keep this for Python 2 - filename might be unicode and should be then converted to str.
-            # if isinstance(filename, unicode):
-                # filename = filename.encode(sys.getdefaultencoding(), "replace")
-            args.insert(0, '\n  File "%s"\n   ' % filename)
-            raise ManifestXMLParseError(" ".join([str(arg) for arg in args]))
+            args = ['\n  File "%r"\n   ' % filename, str(e.args[0])]
+            raise ManifestXMLParseError(" ".join(args)) from e
         if initialize:
             self.__init__()
         self.filename = filename
@@ -756,7 +754,7 @@ class Manifest(object):
         try:
             domtree = minidom.parseString(xmlstr)
         except xml.parsers.expat.ExpatError as e:
-            raise ManifestXMLParseError(e)
+            raise ManifestXMLParseError(e) from e
         self.load_dom(domtree, initialize)
 
     def same_id(self, manifest, skip_version_check=False):
@@ -898,6 +896,23 @@ class Manifest(object):
         cE.aChild(caE)
         docE.aChild(cE)
 
+        # Add application.windowsSettings section to enable longPathAware
+        # option (issue #5423).
+        if self.manifestType == "assembly":
+            aE = doc.cE("application")
+            aE.setAttribute("xmlns", "urn:schemas-microsoft-com:asm.v3")
+            wsE = doc.cE("windowsSettings")
+            lpaE = doc.cE("longPathAware")
+            lpaE.setAttribute(
+                "xmlns",
+                "http://schemas.microsoft.com/SMI/2016/WindowsSettings"
+            )
+            lpaT = doc.cT("true")
+            lpaE.aChild(lpaT)
+            wsE.aChild(lpaE)
+            aE.aChild(wsE)
+            docE.aChild(aE)
+
         return doc
 
     def toprettyxml(self, indent="  ", newl=os.linesep, encoding="UTF-8"):
@@ -907,10 +922,7 @@ class Manifest(object):
         # version-encoding-standalone (standalone being optional), otherwise
         # if it is embedded in an exe the exe will fail to launch!
         # ('application configuration incorrect')
-        if sys.version_info >= (2,3):
-            xmlstr = domtree.toprettyxml(indent, newl, encoding)
-        else:
-            xmlstr = domtree.toprettyxml(indent, newl)
+        xmlstr = domtree.toprettyxml(indent, newl, encoding)
         xmlstr = xmlstr.decode(encoding).strip(os.linesep).replace(
                 '<?xml version="1.0" encoding="%s"?>' % encoding,
                 '<?xml version="1.0" encoding="%s" standalone="yes"?>' %
@@ -967,9 +979,8 @@ def ManifestFromResFile(filename, names=None, languages=None):
     pth = []
     if res and res[RT_MANIFEST]:
         while isinstance(res, dict) and res.keys():
-            key = res.keys()[0]
+            key, res = next(iter(res.items()))
             pth.append(str(key))
-            res = res[key]
     if isinstance(res, dict):
         raise InvalidManifestError("No matching manifest resource found in '%s'" %
                                    filename)
@@ -1066,6 +1077,8 @@ def create_manifest(filename, manifest, console, uac_admin=False, uac_uiaccess=F
             )
     if uac_admin:
         manifest.requestedExecutionLevel = 'requireAdministrator'
+    else:
+        manifest.requestedExecutionLevel = 'asInvoker'
     if uac_uiaccess:
         manifest.uiAccess = True
 
@@ -1094,7 +1107,7 @@ def processor_architecture():
     'x86' - 32bit Windows
     'amd64' - 64bit Windows
     """
-    if architecture() == '32bit':
+    if compat.architecture == '32bit':
         return 'x86'
     else:
         return 'amd64'

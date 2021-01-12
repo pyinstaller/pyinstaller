@@ -12,87 +12,58 @@
 # Needs work
 # ----------
 # These packages, if updated, produce test failures. Work needs to be done on
-# these hooks.
+# these hooks. Any requirement in this list should be followed by the
+# `# pyup: ignore <https://pyup.io/docs/bot/filter/>`_ comment.
 #
-# None at this time.
+# - v. 2.2 and above fails.
+Django==2.1.8  # pyup: ignore
+matplotlib==3.0.3; python_version <= '3.5'  # pyup: ignore
+matplotlib==3.2.2; python_version >= '3.6'  # pyup: ignore
+# - v 21.1.0 fails; earlier versions not tested.
+keyring==19.2.0  # pyup: ignore
 
 
 # Working
 # -------
 # These packages work with no (known) issues.
-babel==2.6.0
-boto==2.49.0
-boto3==1.9.57
-botocore==1.12.57
-pygments==2.3.0
-markdown==3.0.1
+babel==2.9.0
+future==0.18.2
+gevent==20.9.0
+pygments==2.7.3
+pyside2==5.15.1
+pyqt5==5.15.1
+pyqtwebengine==5.15.1
+python-dateutil==2.8.1
+pytz==2020.4
+requests==2.25.1
 # simplejson is used for text_c_extension
-simplejson==3.16.0
-sphinx==1.8.2
-pyzmq==17.1.2
+simplejson==3.17.2
+sphinx==2.4.4 # pyup: ignore
 # Required for test_namespace_package
-zope.interface==4.6.0
-numpy==1.15.4
-scipy==1.1.0
-keyring==17.0.0
-openpyxl==2.5.12
-pycparser==2.19
-pytz==2018.7
-sqlalchemy==1.2.14
-zeep==3.1.0
-pyexcelerate==0.7.3
-Pillow==5.3.0
-pinyin==0.4.0
-pycryptodome==3.7.2
-pycryptodomex==3.7.2
-future==0.17.1
-pyusb==1.0.2
-Unidecode==1.0.23
-h5py==2.8.0
-python-dateutil==2.7.5
-phonenumbers==8.10.1
-requests==2.20.1
-pendulum==2.0.4
+sqlalchemy==1.3.22
+zope.interface==5.2.0
 
 
-# Special cases
-# -------------
-# Url for downloading PyCrypto prebuilt Windows binaries:
-# http://www.voidspace.org.uk/python/pycrypto-2.6.1/
-# Required for crypto feature - encrypting bytecode.
-pycrypto==2.6.1; python_version <= '3.5' or sys_platform != 'win32'
+# Python 3.5 not supported / supported for older versions
+# -------------------------------------------------------
 
-# Wheels are available only on OS X and Win 32. The only Windows 64-bit Python
-# tests run are for Python 3.7, so exclude that. There's no way to simply
-# exclude Windows 64 bit Python.
-pyenchant==2.0.0; sys_platform == 'darwin' or (sys_platform == 'win32' and python_version <= '3.6')
+# iPython 7.10.0 and higher dropped Python 3.5 support per https://ipython.readthedocs.io/en/stable/whatsnew/version7.html#stop-support-for-python-3-5-adopt-nep-29.
+ipython==7.19.0; python_version > '3.6'
+ipython==7.16.1; python_version == '3.6'  # pyup: ignore
+ipython==7.9.0; python_version == '3.5'  # pyup: ignore
 
-# No wheel for Python 3.5 or higher.
-PySide==1.2.4; sys_platform == 'win32' and python_version <= '3.4'
+# pandas 1.0.0 dropped Python 3.5 support.
+pandas==1.1.5; python_version > '3.5'
+pandas==0.25.3; python_version == '3.5'  # pyup: ignore
 
-# As of 14-Aug-2018, twisted doesn't offer Python 3 wheels.
-twisted==18.9.0; python_version == '2.7'
+# Numpy 1.19 dropped Python 3.5 support
+numpy==1.19.4; python_version > '3.5'
+numpy<=1.19.0; python_version == '3.5'  # pyup: ignore
 
-# Current gevent doesn't provide Windows Python 3.7 x32 wheels. Since we can't
-# detect 32 vs. 64 bits, avoid Windows Python 3.7 altogether.
-gevent==1.3.7; python_version != '3.7' or sys_platform != 'win32'
-# Older gevent works on Windows Python 3.7 x32.
-gevent==1.3.6; python_version == '3.7' and sys_platform == 'win32'  # pyup: ignore
+# And so did SciPy
+scipy==1.5.4; python_version > '3.5'
+scipy<=1.5.0; python_version == '3.5'  # pyup: ignore
 
-
-# Python 3.5 and higher
-# ---------------------
-Django==2.1.3; python_version >= '3.5'
-ipython==7.2.0; python_version>= '3.5'
-matplotlib==3.0.2; python_version >= '3.5'
-pandas==0.23.4; python_version >= '3.5'
-pyqt5==5.11.3; python_version >= '3.5'
-web3==4.8.2; python_version >= '3.5'
-
-# uvloop does not currently support Windows.
-uvloop==0.11.3; python_version >= '3.5' and sys_platform != 'win32'
-
-
-# Python 3 only packages
-# ----------------------
-pylint==2.2.2; python_version != '2.7'
+# Pillow 8.0 dropped support for python 3.5
+Pillow==8.0.1; python_version > '3.5'
+Pillow<8.0.0; python_version == '3.5' # pyup: ignore

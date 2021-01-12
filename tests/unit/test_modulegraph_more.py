@@ -1,10 +1,12 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2018, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 import ast
@@ -14,11 +16,12 @@ import sys
 import py_compile
 import textwrap
 import zipfile
+from importlib.machinery import EXTENSION_SUFFIXES
 
 import pytest
 
 from PyInstaller.lib.modulegraph import modulegraph
-from PyInstaller.utils.tests import xfail, skipif, skipif_win, is_py2, is_py3
+from PyInstaller.utils.tests import xfail
 
 def _import_and_get_node(tmpdir, module_name, path=None):
     script = tmpdir.join('script.py')
@@ -40,16 +43,6 @@ def test_invalid_sourcefile(tmpdir):
     tmpdir.join('invalid_source.py').write('invalid python-source code')
     node = _import_and_get_node(tmpdir, 'invalid_source')
     assert isinstance(node, modulegraph.InvalidSourceModule)
-
-
-@skipif(is_py3, reason='Python 3 does not look into the __pycache__')
-def test_compliedfile(tmpdir):
-    pysrc = tmpdir.join('compiled.py')
-    pysrc.write('###')
-    py_compile.compile(str(pysrc))
-    pysrc.remove()
-    node = _import_and_get_node(tmpdir, 'compiled')
-    assert isinstance(node, modulegraph.CompiledModule)
 
 
 def test_invalid_compiledfile(tmpdir):
@@ -77,16 +70,53 @@ def test_package(tmpdir):
     assert node.packagepath == [pysrc.dirname]
 
 
-@skipif(is_py3, reason='Python 3 does not look into the __pycache__')
-def test_compiled_package(tmpdir):
-    pysrc = tmpdir.join('stuff', '__init__.py').ensure()
-    pysrc.write('###')
-    py_compile.compile(str(pysrc))
-    pysrc.remove()
-    node = _import_and_get_node(tmpdir, 'stuff')
-    assert node.__class__ is modulegraph.Package
-    assert node.filename == str(pysrc) + 'c'
-    assert node.packagepath == [str(pysrc.dirname)]
+#-- Extension modules
+
+@pytest.mark.parametrize(
+    "num, modname, expected_nodetype", (
+        # package's __init__ module is an extension
+        (1, "myextpkg", modulegraph.ExtensionPackage),
+        # __init__.py beside the __init__ module being an extension
+        (2, "myextpkg", modulegraph.ExtensionPackage),
+        # Importing a module beside
+        (3, "myextpkg.other", modulegraph.Extension),
+        # sub-package's __init__ module is an extension
+        (4, "myextpkg.subpkg", modulegraph.ExtensionPackage),
+        # importing a module beside, but from a sub-package
+        (5, "myextpkg.subpkg.other", modulegraph.Extension),
+    ))
+def test_package_init_is_extension(tmpdir, num, modname, expected_nodetype):
+    # Regression: Recursion to deep
+
+    def wt(*args):
+        f = tmpdir.join(*args)
+        f.write_text('###', encoding="ascii")
+        return f
+
+    def create_package_files(test_case):
+        (tmpdir / 'myextpkg' / 'subpkg').ensure(dir=True)
+        m = wt('myextpkg', '__init__' + EXTENSION_SUFFIXES[0])
+        if test_case == 1: return m  # noqa: E701
+        wt('myextpkg', '__init__.py')
+        if test_case == 2: return m  # noqa: E701 return extension module anway
+        m = wt('myextpkg', 'other.py')
+        m = wt('myextpkg', 'other' + EXTENSION_SUFFIXES[0])
+        if test_case == 3: return m  # noqa: E701
+        m = wt('myextpkg', 'subpkg', '__init__.py')
+        m = wt('myextpkg', 'subpkg', '__init__' + EXTENSION_SUFFIXES[0])
+        if test_case == 4: return m  # noqa: E701
+        m = wt('myextpkg', 'subpkg', 'other.py')
+        m = wt('myextpkg', 'subpkg', 'other' + EXTENSION_SUFFIXES[0])
+        return m
+
+    module_file = create_package_files(num)
+    node = _import_and_get_node(tmpdir, modname)
+    assert node.__class__ is expected_nodetype
+    if expected_nodetype is modulegraph.ExtensionPackage:
+        assert node.packagepath == [module_file.dirname]
+    else:
+        assert node.packagepath is None  # not a package
+    assert node.filename == str(module_file)
 
 
 #-- Basic tests - these seem to be missing in the original modulegraph
@@ -141,19 +171,6 @@ def test_zipped_module_source_and_compiled(tmpdir):
     assert node.filename.startswith(os.path.join(zipfilename, 'stuff.py'))
 
 
-@skipif(is_py3, reason='Python 3 does not look into the __pycache__')
-def test_zipped_module_compiled(tmpdir):
-    pysrc = tmpdir.join('stuff.py')
-    pysrc.write('###', ensure=True)
-    py_compile.compile(str(pysrc))
-    pysrc.remove()
-    zipfilename = str(tmpdir.join('unstuff.zip'))
-    _zip_directory(zipfilename, tmpdir)
-    node = _import_and_get_node(tmpdir, 'stuff', path=[zipfilename])
-    assert node.__class__ is modulegraph.CompiledModule
-    assert node.filename.startswith(os.path.join(zipfilename, 'stuff.py'))
-
-
 #-- Tests with a package in a zip-file
 
 def _zip_package(filename, path):
@@ -182,22 +199,8 @@ def test_zipped_package_source_and_compiled(tmpdir):
     assert node.packagepath == [os.path.join(zipfilename, 'stuff')]
 
 
-@skipif(is_py3, reason='Python 3 does not look into the __pycache__')
-def test_zipped_package_compiled(tmpdir):
-    pysrc = tmpdir.join('stuff', '__init__.py')
-    pysrc.write('###', ensure=True)
-    py_compile.compile(str(pysrc))
-    pysrc.remove()
-    zipfilename = str(tmpdir.join('stuff.zip'))
-    _zip_package(zipfilename, tmpdir.join('stuff'))
-    node = _import_and_get_node(tmpdir, 'stuff', path=[zipfilename])
-    assert node.__class__ is modulegraph.Package
-    assert node.packagepath == [os.path.join(zipfilename, 'stuff')]
-
-
 #-- Namespace packages
 
-@skipif(is_py2, reason='Requires Python 3 or newer')
 def test_nspackage_pep420(tmpdir):
     p1 = tmpdir.join('p1')
     p2 = tmpdir.join('p2')
@@ -222,7 +225,9 @@ def test_nspackage_pep420(tmpdir):
 # :todo: test_namespace_setuptools
 # :todo: test_namespace_pkg_resources
 
-@skipif_win
+
+@pytest.mark.darwin
+@pytest.mark.linux
 def test_symlinks(tmpdir):
     base_dir = tmpdir.join('base').ensure(dir=True)
     p1_init = tmpdir.join('p1', '__init__.py').ensure()
@@ -243,11 +248,11 @@ def test_import_order_1(tmpdir):
     # Ensure modulegraph processes modules in the same order as Python does.
 
     class MyModuleGraph(modulegraph.ModuleGraph):
-        def _load_module(self, fqname, fp, pathname, info):
+        def _load_module(self, fqname, pathname, loader):
             if not record or record[-1] != fqname:
                 record.append(fqname) # record non-consecutive entries
-            return super(MyModuleGraph, self)._load_module(fqname, fp,
-                                                           pathname, info)
+            return super(MyModuleGraph, self)._load_module(fqname,
+                                                           pathname, loader)
 
     record = []
 
@@ -286,11 +291,11 @@ def test_import_order_2(tmpdir):
     # Ensure modulegraph processes modules in the same order as Python does.
 
     class MyModuleGraph(modulegraph.ModuleGraph):
-        def _load_module(self, fqname, fp, pathname, info):
+        def _load_module(self, fqname, pathname, loader):
             if not record or record[-1] != fqname:
                 record.append(fqname) # record non-consecutive entries
-            return super(MyModuleGraph, self)._load_module(fqname, fp,
-                                                           pathname, info)
+            return super(MyModuleGraph, self)._load_module(fqname,
+                                                           pathname, loader)
 
     record = []
 
@@ -407,18 +412,12 @@ def test_swig_import_simple_BUGGY(tmpdir):
     # whether the SWIG support works at all.
     assert isinstance(mg.findNode('pyi_test_osgeo._pyi_gdal'),
                       modulegraph.SourceModule)
-    if is_py2:
-        # In Python 2.7 the relative import works as expected.
-        assert mg.findNode('pyi_test_osgeo._pyi_gdal').identifier \
-            == 'pyi_test_osgeo._pyi_gdal'
-        assert mg.findNode('_pyi_gdal') is None
-    else:
-        # Due the the buggy implementation, the graphident is unchanged, but
-        # at least the identifier should have changed.
-        assert mg.findNode('pyi_test_osgeo._pyi_gdal').identifier \
-            == '_pyi_gdal'
-        # Due the the buggy implementation, this node does not exist.
-        assert mg.findNode('_pyi_gdal') is None
+    # Due the the buggy implementation, the graphident is unchanged, but
+    # at least the identifier should have changed.
+    assert mg.findNode('pyi_test_osgeo._pyi_gdal').identifier \
+        == '_pyi_gdal'
+    # Due the the buggy implementation, this node does not exist.
+    assert mg.findNode('_pyi_gdal') is None
     return mg  # for use in test_swig_import_simple_BUG
 
 
@@ -596,15 +595,10 @@ def test_swig_candidate_but_not_swig(tmpdir):
     mg.run_script(str(script))
     assert isinstance(mg.findNode('pkg'), modulegraph.Package)
     assert isinstance(mg.findNode('pkg.mymod'), modulegraph.SourceModule)
-    if is_py2:
-        # In Python 2 this is a relative import, global module should exist
-        assert isinstance(mg.findNode('pkg._mymod'), modulegraph.SourceModule)
-        assert mg.findNode('_mymod') is None
-    else:
-        assert mg.findNode('pkg._mymod') is None
-        # This is not a SWIG module, thus the SWIG import mechanism should not
-        # trigger.
-        assert isinstance(mg.findNode('_mymod'), modulegraph.MissingModule)
+    assert mg.findNode('pkg._mymod') is None
+    # This is not a SWIG module, thus the SWIG import mechanism should not
+    # trigger.
+    assert isinstance(mg.findNode('_mymod'), modulegraph.MissingModule)
 
 
 def test_swig_candidate_but_not_swig2(tmpdir):
@@ -627,11 +621,7 @@ def test_swig_candidate_but_not_swig2(tmpdir):
     assert isinstance(mg.findNode('pkg'), modulegraph.Package)
     assert isinstance(mg.findNode('pkg.mymod'), modulegraph.SourceModule)
     assert isinstance(mg.findNode('pkg._mymod'), modulegraph.SourceModule)
-    if is_py2:
-        # In Python 2 both are relative imports, global module should not exist
-        assert mg.findNode('_mymod') is None
-    else:
-        assert isinstance(mg.findNode('_mymod'), modulegraph.MissingModule)
+    assert isinstance(mg.findNode('_mymod'), modulegraph.MissingModule)
 
 
 def test_swig_candidate_but_not_swig_missing(tmpdir):
@@ -674,8 +664,4 @@ def test_swig_candidate_but_not_swig_missing2(tmpdir):
     assert isinstance(mg.findNode('pkg'), modulegraph.Package)
     assert isinstance(mg.findNode('pkg.mymod'), modulegraph.SourceModule)
     assert isinstance(mg.findNode('pkg._mymod'), modulegraph.MissingModule)
-    if is_py2:
-        # In Python 2 both are relative imports, global module should not exist
-        assert mg.findNode('_mymod') is None
-    else:
-        assert isinstance(mg.findNode('_mymod'), modulegraph.MissingModule)
+    assert isinstance(mg.findNode('_mymod'), modulegraph.MissingModule)

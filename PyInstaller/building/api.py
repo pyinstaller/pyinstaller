@@ -1,10 +1,12 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2018, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 
@@ -25,7 +27,8 @@ from PyInstaller.archive.writers import ZlibArchiveWriter, CArchiveWriter
 from PyInstaller.building.utils import _check_guts_toc, add_suffix_to_extensions, \
     checkCache, strip_paths_in_code, get_code_object, \
     _make_clean_directory
-from PyInstaller.compat import is_win, is_darwin, is_linux, is_cygwin, exec_command_all
+from PyInstaller.compat import is_win, is_darwin, is_linux, is_cygwin, \
+    exec_command_all, is_64bits
 from PyInstaller.depend import bindepend
 from PyInstaller.depend.analysis import get_bootstrap_modules
 from PyInstaller.depend.utils import is_path_to_egg
@@ -154,7 +157,7 @@ class PKG(Target):
                  'DEPENDENCY': 'd'}
 
     def __init__(self, toc, name=None, cdict=None, exclude_binaries=0,
-                 strip_binaries=False, upx_binaries=False):
+                 strip_binaries=False, upx_binaries=False, upx_exclude=None):
         """
         toc
                 A TOC (Table of Contents)
@@ -181,6 +184,7 @@ class PKG(Target):
         self.exclude_binaries = exclude_binaries
         self.strip_binaries = strip_binaries
         self.upx_binaries = upx_binaries
+        self.upx_exclude = upx_exclude or []
         # This dict tells PyInstaller what items embedded in the executable should
         # be compressed.
         if self.cdict is None:
@@ -202,6 +206,7 @@ class PKG(Target):
             ('exclude_binaries', _check_guts_eq),
             ('strip_binaries', _check_guts_eq),
             ('upx_binaries', _check_guts_eq),
+            ('upx_exclude', _check_guts_eq)
             # no calculated/analysed values
             )
 
@@ -228,9 +233,9 @@ class PKG(Target):
                 # file is contained within python egg, it is added with the egg
                 continue
             if typ in ('BINARY', 'EXTENSION', 'DEPENDENCY'):
-                if self.exclude_binaries and typ != 'DEPENDENCY':
+                if self.exclude_binaries and typ == 'EXTENSION':
                     self.dependencies.append((inm, fnm, typ))
-                else:
+                elif not self.exclude_binaries or typ == 'DEPENDENCY':
                     if typ == 'BINARY':
                         # Avoid importing the same binary extension twice. This might
                         # happen if they come from different sources (eg. once from
@@ -255,7 +260,8 @@ class PKG(Target):
                     seenFnms_typ[fnm] = typ
 
                     fnm = checkCache(fnm, strip=self.strip_binaries,
-                                     upx=(self.upx_binaries and (is_win or is_cygwin)),
+                                     upx=self.upx_binaries,
+                                     upx_exclude=self.upx_exclude,
                                      dist_nm=inm)
 
                     mytoc.append((inm, fnm, self.cdict.get(typ, 0),
@@ -322,6 +328,8 @@ class EXE(Target):
             icon
                 Windows or OSX only. icon='myicon.ico' to use an icon file or
                 icon='notepad.exe,0' to grab an icon resource.
+                Defaults to use PyInstaller's console or windowed icon.
+                icon=`NONE` to not add any icon.
             version
                 Windows only. version='myversion.txt'. Use grab_version.py to get
                 a version resource from an executable and then edit the output to
@@ -349,6 +357,7 @@ class EXE(Target):
         self.manifest = kwargs.get('manifest', None)
         self.resources = kwargs.get('resources', [])
         self.strip = kwargs.get('strip', False)
+        self.upx_exclude = kwargs.get("upx_exclude", [])
         self.runtime_tmpdir = kwargs.get('runtime_tmpdir', None)
         # If ``append_pkg`` is false, the archive will not be appended
         # to the exe, but copied beside it.
@@ -419,9 +428,17 @@ class EXE(Target):
                 self.toc.append(("pyi-windows-manifest-filename " + manifest_filename,
                                  "", "OPTION"))
 
+            if self.versrsrc:
+                if (not isinstance(self.versrsrc, versioninfo.VSVersionInfo)
+                    and not os.path.isabs(self.versrsrc)):
+                    # relative version-info path is relative to spec file
+                    self.versrsrc = os.path.join(
+                        CONF['specpath'], self.versrsrc)
+
         self.pkg = PKG(self.toc, cdict=kwargs.get('cdict', None),
                        exclude_binaries=self.exclude_binaries,
                        strip_binaries=self.strip, upx_binaries=self.upx,
+                       upx_exclude=self.upx_exclude
                        )
         self.dependencies = self.pkg.dependencies
 
@@ -503,6 +520,7 @@ class EXE(Target):
         return bootloader_file
 
     def assemble(self):
+        from ..config import CONF
         logger.info("Building EXE from %s", self.tocbasename)
         trash = []
         if os.path.exists(self.name):
@@ -513,12 +531,22 @@ class EXE(Target):
         if not os.path.exists(exe):
             raise SystemExit(_MISSING_BOOTLOADER_ERRORMSG)
 
-
-        if is_win and (self.icon or self.versrsrc or self.resources):
-            tmpnm = tempfile.mktemp()
+        if is_win and (self.icon != "NONE" or self.versrsrc or self.resources
+                       or self.uac_admin or self.uac_uiaccess or not is_64bits):
+            fd, tmpnm = tempfile.mkstemp(prefix=os.path.basename(exe) + ".",
+                                         dir=CONF['workpath'])
+            # need to close the file, otherwise copying resources will fail
+            # with "the file [...] is being used by another process"
+            os.close(fd)
             self._copyfile(exe, tmpnm)
             os.chmod(tmpnm, 0o755)
-            if self.icon:
+            if not self.icon:
+                # --icon not specified; use default from bootloader folder
+                self.icon = os.path.join(
+                    os.path.dirname(os.path.dirname(__file__)),
+                    'bootloader', 'images',
+                    'icon-console.ico' if self.console else 'icon-windowed.ico')
+            if self.icon != "NONE":
                 icon.CopyIcons(tmpnm, self.icon)
             if self.versrsrc:
                 versioninfo.SetVersion(tmpnm, self.versrsrc)
@@ -530,6 +558,8 @@ class EXE(Target):
                     except ValueError:
                         pass
                 resfile = res[0]
+                if not os.path.isabs(resfile):
+                    resfile = os.path.join(CONF['specpath'], resfile)
                 restype = resname = reslang = None
                 if len(res) > 1:
                     restype = res[1]
@@ -568,6 +598,8 @@ class EXE(Target):
                         logger.error("Error while updating resource %s %s in %s"
                                      " from data file %s",
                                      restype, resname, tmpnm, resfile, exc_info=1)
+            if is_win and self.manifest and not self.exclude_binaries:
+                self.manifest.update_resources(tmpnm, [1])
             trash.append(tmpnm)
             exe = tmpnm
 
@@ -641,6 +673,7 @@ class COLLECT(Target):
         from ..config import CONF
         Target.__init__(self)
         self.strip_binaries = kws.get('strip', False)
+        self.upx_exclude = kws.get("upx_exclude", [])
         self.console = True
 
         if CONF['hasUPX']:
@@ -701,9 +734,15 @@ class COLLECT(Target):
             todir = os.path.dirname(tofnm)
             if not os.path.exists(todir):
                 os.makedirs(todir)
+            elif not os.path.isdir(todir):
+                raise SystemExit(
+                    "Pyinstaller needs to make a directory, but there "
+                    "already is a file at that path. "
+                    "The file at issue is {!r}".format(todir))
             if typ in ('EXTENSION', 'BINARY'):
                 fnm = checkCache(fnm, strip=self.strip_binaries,
-                                 upx=(self.upx_binaries and (is_win or is_cygwin)),
+                                 upx=self.upx_binaries,
+                                 upx_exclude=self.upx_exclude,
                                  dist_nm=inm)
             if typ != 'DEPENDENCY':
                 if os.path.isdir(fnm):
@@ -762,7 +801,8 @@ class MERGE(object):
         Filter shared dependencies to be only in first executable.
         """
         for analysis, _, _ in args:
-            path = os.path.abspath(analysis.scripts[-1][1]).replace(self._common_prefix, "", 1)
+            path = os.path.normcase(os.path.abspath(analysis.scripts[-1][1]))
+            path = path.replace(self._common_prefix, "", 1)
             path = os.path.splitext(path)[0]
             if os.path.normcase(path) in self._id_to_path:
                 path = self._id_to_path[os.path.normcase(path)]
@@ -780,7 +820,10 @@ class MERGE(object):
                 else:
                     dep_path = self._get_relative_path(path, self._dependencies[tpl[1]])
                     logger.debug("Referencing %s to be a dependecy for %s, located in %s" % (tpl[1], path, dep_path))
-                    analysis.dependencies.append((":".join((dep_path, tpl[0])), tpl[1], "DEPENDENCY"))
+                    analysis.dependencies.append(
+                        (":".join((dep_path, os.path.basename(tpl[1]))),
+                         tpl[1],
+                         "DEPENDENCY"))
                     toc[i] = (None, None, None)
             # Clean the list
             toc[:] = [tpl for tpl in toc if tpl != (None, None, None)]

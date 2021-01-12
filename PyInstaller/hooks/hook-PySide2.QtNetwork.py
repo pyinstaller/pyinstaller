@@ -1,15 +1,42 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2018, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
+import os.path
 
-from PyInstaller.utils.hooks import qt_plugins_binaries
+from PyInstaller.utils.hooks import eval_statement
+from PyInstaller.utils.hooks.qt import add_qt5_dependencies, \
+    pyside2_library_info
+from PyInstaller.compat import is_win
 
-hiddenimports = ['PySide2.QtCore']
+# Only proceed if PySide2 can be imported.
+if pyside2_library_info.version is not None:
+    hiddenimports, binaries, datas = add_qt5_dependencies(__file__)
 
-# Network Bearer Management in qt 4.7+
-binaries = qt_plugins_binaries('bearer', namespace='PySide2')
+    # Add libraries needed for SSL if these are available. See issue #3520, #4048.
+    if (is_win and eval_statement("""
+        from PySide2.QtNetwork import QSslSocket
+        print(QSslSocket.supportsSsl())""")):
+
+        # PyPI version of PySide2 requires user to manually install SSL
+        # libraries into the PrefixPath. Other versions (e.g., the one
+        # provided by Conda) put the libraries into the BinariesPath.
+        # Accommodate both options by searching both locations...
+        locations = (
+            pyside2_library_info.location['BinariesPath'],
+            pyside2_library_info.location['PrefixPath']
+        )
+
+        binaries = []
+        for location in locations:
+            for dll in ('libeay32.dll', 'ssleay32.dll', 'libssl-1_1-x64.dll',
+                        'libcrypto-1_1-x64.dll'):
+                dll_path = os.path.join(location, dll)
+                if os.path.exists(dll_path):
+                    binaries.append((dll_path, '.'))

@@ -1,0 +1,2 @@
+(Windows) Fix building of bootloader's test suite under Windows with Visual Studio.
+This fixes build errors when ``cmocka`` is present in the build environment.

@@ -7,12 +7,11 @@ History
 
 Originally (loosely) based on code in py2exe's build_exe.py by Thomas Heller.
 """
-from __future__ import absolute_import
-
 import sys
 import os
 import imp
 import warnings
+import pkgutil
 
 from . import modulegraph
 from .modulegraph import Alias, Script, Extension
@@ -97,10 +96,9 @@ def get_implies():
         result["_elementtree"] = ["pyexpat"]
 
         import xml.etree
-        files = os.listdir(xml.etree.__path__[0])
-        for fn in files:
-            if fn.endswith('.py') and fn != "__init__.py":
-                result["_elementtree"].append("xml.etree.%s" % (fn[:-3],))
+        for _, module_name, is_package in pkgutil.iter_modules(xml.etree.__path__):
+            if not is_package:
+                result["_elementtree"].append("xml.etree.%s" % (module_name,))
 
     if sys.version_info[:2] >= (2, 6):
         result['future_builtins'] = ['itertools']

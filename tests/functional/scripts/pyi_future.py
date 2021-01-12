@@ -1,17 +1,17 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2018, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 # This test code is taken from the example code for the `future` library, with
 # a few modifications to allow execution on 32-bit platforms.
 # http://python-future.org/overview.html#code-examples
-
-from __future__ import absolute_import, division, print_function, unicode_literals
 
 from builtins import (bytes, str, open, super, range,
                       zip, round, input, int, pow, object)

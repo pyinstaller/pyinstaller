@@ -1,13 +1,13 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2015-2018, PyInstaller Development Team.
+# Copyright (c) 2015-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-from __future__ import print_function
 
 from pyi_testmod_metapath1.extern import aaa   # __import__ below works
 #import pyi_testmod_metapath1.extern           # __import__ below works

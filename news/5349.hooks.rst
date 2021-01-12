@@ -1,0 +1,1 @@
+(GNU/Linux) Collect ``xcbglintegrations`` and ``egldeviceintegrations`` plugins as part of ``Qt5Gui``.

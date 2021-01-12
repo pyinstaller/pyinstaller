@@ -1,0 +1,1 @@
+ Add hook-gi.repository.GtkosxApplication to fix TypeError with Gtk macOS apps.

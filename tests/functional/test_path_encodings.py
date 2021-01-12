@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2018, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 import os
@@ -13,9 +15,6 @@ import sys
 import subprocess
 
 import pytest
-
-from PyInstaller.compat import is_py2
-from PyInstaller.utils.tests import skipif_win, skipif_winorosx, skipif_notwin
 
 
 def test_ascii_path(pyi_builder):
@@ -27,7 +26,7 @@ def test_ascii_path(pyi_builder):
     pyi_builder.test_script('pyi_path_encoding.py')
 
 
-@skipif_winorosx
+@pytest.mark.linux
 def test_linux_non_unicode_path(pyi_builder, monkeypatch):
     # If we set the locale to 'C', mbstowcs should be completely useless. This
     # test verifies that _Py_char2wchar will decode the "undecodable" bytes and
@@ -37,20 +36,16 @@ def test_linux_non_unicode_path(pyi_builder, monkeypatch):
     pyi_builder._distdir = os.path.join(distdir, unicode_filename)
     os.makedirs(pyi_builder._distdir)
 
-    tmpdir = os.path.join(pyi_builder._tmpdir, unicode_filename + "_TMP")
-
-    # On py2, os.environ only accepts str
-    if is_py2:
-        tmpdir = tmpdir.encode(sys.getfilesystemencoding())
-
+    tmpdir = os.path.join(str(pyi_builder._tmpdir), unicode_filename + "_TMP")
     monkeypatch.setenv('LC_ALL', 'C')
-
     monkeypatch.setenv('TMPDIR', tmpdir)
     monkeypatch.setenv('TMP', tmpdir)
 
     pyi_builder.test_script('pyi_path_encoding.py')
 
-@skipif_win
+
+@pytest.mark.darwin
+@pytest.mark.linux
 def test_osx_linux_unicode_path(pyi_builder, monkeypatch):
     # Mac and Linux should handle 'unicode' type filenames without problem.
     distdir = pyi_builder._distdir
@@ -58,19 +53,14 @@ def test_osx_linux_unicode_path(pyi_builder, monkeypatch):
     pyi_builder._distdir = os.path.join(distdir, unicode_filename)
     os.makedirs(pyi_builder._distdir)
 
-    tmpdir = os.path.join(pyi_builder._tmpdir, unicode_filename + "_TMP")
-
-    # On py2, os.environ only accepts str
-    if is_py2:
-        tmpdir = tmpdir.encode(sys.getfilesystemencoding())
-
+    tmpdir = os.path.join(str(pyi_builder._tmpdir), unicode_filename + "_TMP")
     monkeypatch.setenv('TMPDIR', tmpdir)
     monkeypatch.setenv('TMP', tmpdir)
 
     pyi_builder.test_script('pyi_path_encoding.py')
 
 
-@skipif_notwin
+@pytest.mark.win32
 def test_win_codepage_path(pyi_builder, monkeypatch):
     distdir = pyi_builder._distdir
     # Create some bytes and decode with the current codepage to get a filename that
@@ -81,18 +71,14 @@ def test_win_codepage_path(pyi_builder, monkeypatch):
     pyi_builder._distdir = os.path.join(distdir, cp_filename)
     os.makedirs(pyi_builder._distdir)
 
-    tmpdir = os.path.join(pyi_builder._tmpdir, cp_filename + "_TMP")
-
-    # On py2, os.environ only accepts str
-    if is_py2:
-        tmpdir = tmpdir.encode(sys.getfilesystemencoding())
-
+    tmpdir = os.path.join(str(pyi_builder._tmpdir), cp_filename + "_TMP")
     monkeypatch.setenv('TMPDIR', tmpdir)
     monkeypatch.setenv('TMP', tmpdir)
 
     pyi_builder.test_script('pyi_path_encoding.py')
 
-@skipif_notwin
+
+@pytest.mark.win32
 def test_win_codepage_path_disabled_shortfilename(pyi_builder, monkeypatch):
     distdir = pyi_builder._distdir
     # Create some bytes and decode with the current codepage to get a filename that
@@ -107,22 +93,12 @@ def test_win_codepage_path_disabled_shortfilename(pyi_builder, monkeypatch):
     # Requires admin privileges, so `xfail` if we don't have them.
     # `8dot3name strip` only affects subfolders, so pass the folder containing
     # our codepage filename
-    if is_py2:
-        # Python 2 requires mbcs-encoded args to subprocess
-        fsutil_distdir = pyi_builder._distdir.encode('mbcs')
-    else:
-        # Python 3 accepts 'unicode' type.
-        fsutil_distdir = pyi_builder._distdir
+    fsutil_distdir = pyi_builder._distdir
 
     if(subprocess.call(['fsutil', '8dot3name', 'strip', fsutil_distdir])):
         pytest.xfail("Administrator privileges required to strip ShortFileName.")
 
-    tmpdir = os.path.join(pyi_builder._tmpdir, cp_filename + "_TMP")
-
-    # On py2, os.environ only accepts str
-    if is_py2:
-        tmpdir = tmpdir.encode(sys.getfilesystemencoding())
-
+    tmpdir = os.path.join(str(pyi_builder._tmpdir), cp_filename + "_TMP")
     monkeypatch.setenv('TMPDIR', tmpdir)
     monkeypatch.setenv('TMP', tmpdir)
 
@@ -130,43 +106,39 @@ def test_win_codepage_path_disabled_shortfilename(pyi_builder, monkeypatch):
     pyi_builder.test_script('pyi_path_encoding.py')
 
 
-@skipif_notwin
-@pytest.mark.xfail(is_py2, reason="Python 2's subprocess.Popen calls CreateProcessA "
-                           "which doesn't work with non-codepage paths")
+@pytest.mark.win32
 def test_win_non_codepage_path(pyi_builder, monkeypatch):
-    # This test is expected to fail on python 2 as it does not have a useful result:
-    # On py2 on Windows, subprocess.Popen calls CreateProcessA, which only accepts
-    # ANSI codepage-encoded filenames (or SFNs). Encoding non_cp_filename as an SFN
-    # will defeat the purpose of this test.
-    #
-    # To make this test give useful results, we need to use ctypes to call CreateProcessW
-    # and replicate most of what the subprocess module does with it (or insert our
-    # CreateProcessW into subprocess)
-    #
-    # To test what happens with a non-ANSI tempdir, we will also need to pass the TMP
-    # environ as wide chars.
-
     distdir = pyi_builder._distdir
     # Both eastern European and Japanese characters - no codepage should encode this.
     non_cp_filename = u'ěščřžýáíé日本語'
 
     # Codepage encoding would replace some of these chars with "???".
 
-    # On py3, distdir and filename are both str; nothing happens.
-    # On py2, distdir is decoded to unicode using ASCII - test fails if
-    # tempdir is non-ascii. Shouldn't happen, we're not testing the test system.
     pyi_builder._distdir = os.path.join(distdir, non_cp_filename)
     os.makedirs(pyi_builder._distdir)
 
-    # Note: It is also impossible to pass non-ANSI filenames through environ on Python 2.
-    tmpdir = os.path.join(pyi_builder._tmpdir, non_cp_filename + "_TMP")
+    tmpdir = os.path.join(str(pyi_builder._tmpdir), non_cp_filename + "_TMP")
 
+    # To test what happens with a non-ANSI tempdir, we will also need to pass
+    # the TMP environ as wide chars.
     monkeypatch.setenv('TMPDIR', tmpdir)
     monkeypatch.setenv('TMP', tmpdir)
 
     pyi_builder.test_script('pyi_path_encoding.py')
 
-@skipif_notwin
-@pytest.mark.skipif(is_py2, reason="Python 3 only.")
+
+@pytest.mark.win32
 def test_win_py3_no_shortpathname(pyi_builder):
+    pyi_builder.test_script('pyi_win_py3_no_shortpathname.py')
+
+
+@pytest.mark.win32
+def test_win_TEMP_has_shortpathname(pyi_builder, monkeypatch, tmp_path):
+    """Test if script if pass if $TMP holds a short path name"""
+    tmp = tmp_path / "longlongfilename" / "xxx"
+    tmp.mkdir(parents=True, exist_ok=True)
+    import win32api
+    tmp = win32api.GetShortPathName(str(tmp))
+    monkeypatch.setenv("TMP", tmp)
+    monkeypatch.setenv("TEMP", tmp)
     pyi_builder.test_script('pyi_win_py3_no_shortpathname.py')

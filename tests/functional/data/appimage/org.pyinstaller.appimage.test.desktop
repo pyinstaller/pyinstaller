@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=PyInstaller Appimage Test
+GenericName=PyInstaller Appimage Test
+Comment=Simple AppImage test for code frozen with PyInstaller.
+Exec=false
+Icon=apptest
+Type=Application
+StartupNotify=false
+Terminal=false
+Categories=Office;

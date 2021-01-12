@@ -1,10 +1,12 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2018, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 import re
@@ -20,7 +22,7 @@ excludedimports = ['sqlalchemy.testing']
 # include most common database bindings
 # some database bindings are detected and include some
 # are not. We should explicitly include database backends.
-hiddenimports = ['pysqlite2', 'MySQLdb', 'psycopg2']
+hiddenimports = ['pysqlite2', 'MySQLdb', 'psycopg2', 'sqlalchemy.ext.baked']
 
 # In SQLAlchemy >= 0.6, the "sqlalchemy.dialects" package provides dialects.
 if is_module_satisfies('sqlalchemy >= 0.6'):

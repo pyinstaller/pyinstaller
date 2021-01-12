@@ -1,20 +1,19 @@
 #! /usr/bin/env python
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2018, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 # This program will execute any file with name test*<digit>.py. If your test
 # need an aditional dependency name it test*<digit><letter>.py to be ignored
 # by this program but be recognizable by any one as a dependency of that
 # particular test.
-
-from __future__ import print_function
-
 
 import glob
 import optparse
@@ -46,7 +45,7 @@ sys.path.insert(0, pyi_home)
 import PyInstaller
 from PyInstaller import compat, configure
 from PyInstaller import __main__ as pyi_main
-from PyInstaller.compat import is_py2, is_win, is_darwin, modname_tkinter, text_read_mode
+from PyInstaller.compat import is_win, is_darwin, modname_tkinter, text_read_mode
 from PyInstaller.utils import misc
 import PyInstaller.utils.hooks as hookutils
 from PyInstaller.utils.win32 import winutils
@@ -73,7 +72,6 @@ class SkipChecker(object):
             'import/test_onefile_pkgutil.get_data__main__': False,
             'interactive/test_onefile_win32_uac_admin': is_win,
             'libraries/test_enchant': is_win,
-            'import/test_nspkg-pep420': sys.version_info >= (3, 4),
             }
 
         # Test-cases failing for a known reason and the reason
@@ -108,59 +106,13 @@ class SkipChecker(object):
             'basic/test_onefile_nestedlaunch1': ['ctypes'],
             'basic/test_pkg_structures': ['pkg_resources'],
 
-            'libraries/test_enchant': ['enchant'],
             'libraries/test_gst': ['gst'],
-            'libraries/test_idlelib': ['idlelib'], # some Linux distibs put this into a searate package
-            'libraries/test_Image': ['Image'], # PIL allows to use its submodules as top-level modules
-            'libraries/test_Image2': ['Image'], # PIL allows to use its submodules as top-level modules
-            'libraries/test_keyring': ['keyring'],
-            'libraries/test_markdown': ['markdown'],
-            'libraries/test_numpy': ['numpy'],
-            'libraries/test_onefile_matplotlib': ['matplotlib'],
-            'libraries/test_onefile_tkinter': [modname_tkinter],
-            'libraries/test_onefile_numpy': ['numpy'],
-            'libraries/test_PIL': ['PIL'],
-            'libraries/test_PIL2': ['PIL'],
-            'libraries/test_pycparser': ['pycparser'],
-            'libraries/test_pycrypto': ['Crypto'],
-            'libraries/test_pyexcelerate': ['pyexcelerate'],
-            'libraries/test_pylint': ['pylint'],
-            'libraries/test_pygments': ['pygments'],
-            'libraries/test_pyodbc': ['pyodbc'],
-            'libraries/test_pyttsx': ['pyttsx'],
-            'libraries/test_pytz': ['pytz'],
-            'libraries/test_PyQt4-QtWebKit': ['PyQt4'],
-            'libraries/test_PyQt4-uic': ['PyQt4'],
-            'libraries/test_requests': ['requests'],
-            'libraries/test_sysconfig': ['sysconfig'],
-            'libraries/test_scapy1': scapy_modules,
-            'libraries/test_scapy2': scapy_modules,
-            'libraries/test_scapy3': scapy_modules,
-            'libraries/test_scipy': ['numpy', 'scipy'],
-            'libraries/test_sqlite3': ['sqlite3'],
-            'libraries/test_sqlalchemy': ['sqlalchemy', 'MySQLdb', 'psycopg2'],
-            'libraries/test_twisted_qt4reactor': ['twisted', 'PyQt4', 'qt4reactor'],
-            'libraries/test_twisted_reactor': ['twisted'],
-            'libraries/test_usb': ['ctypes', 'usb'],
             'libraries/test_wx': ['wx'],
-            'libraries/test_wx_pubsub': ['wx'],
-            'libraries/test_wx_pubsub_arg1': ['wx'],
-            'libraries/test_wx_pubsub_kwargs': ['wx'],
-
-            # Require the c-extension module to be present, too
-            'import/test_c_extension': ['simplejson._speedups'],
-            'import/test_eggs1': ['pkg_resources'],
-            'import/test_eggs2': ['pkg_resources'],
-            'import/test_onefile_c_extension': ['simplejson._speedups'],
-            'import/test_onefile_zipimport': ['pkg_resources'],
-            'import/test_onefile_zipimport2': ['pkg_resources', 'setuptools'],
-            'import/test_pep302_import_protokol': ['sqlite3'],
 
             'interactive/test_ipython': ['IPython'],
+            'interactive/test_keyring': ['keyring'],
             'interactive/test_matplotlib': ['matplotlib'],
             'interactive/test_pygame': ['pygame'],
-            'interactive/test_pyqt4_multiprocessing': ['multiprocessing', 'PyQt4'],
-            'interactive/test_qt4': ['PyQt4'],
             'interactive/test_qt5': ['PyQt5'],
             'interactive/test_tix': ['Tix'],
             'interactive/test_tkinter': [modname_tkinter],
@@ -242,30 +194,9 @@ class SkipChecker(object):
 
 
 SPEC_FILE = set([
-    'import/test_onefile_pkg_resources',
-    'import/test_pkgutil-get_data',
-    'import/test_onefile_pkgutil-get_data',
-    'import/test_onefile_pkgutil-get_data__main__',
-    'basic/test_option_verbose',
-    'basic/test_option_wignore',
     'basic/test_pkg_structures',
-    'basic/test_pyz_as_external_file',
-    'basic/test_threading2',
-    'import/test_app_with_plugins',
-    'import/test_eggs1',
-    'import/test_eggs2',
-    'import/test_hiddenimport',
-    'import/test_nspkg1-bbb-zzz',
-    'import/test_nspkg1-empty',
-    'import/test_nspkg1',
-    'import/test_nspkg2',
-    'import/test_nspkg-pep420',
-    'import/test_hook_without_hook_for_package',
     'interactive/test_matplotlib',  # TODO .spec for this test contain win32 specific manifest code. Do we still need it?
     'interactive/test_onefile_win32_uac_admin',
-    'libraries/test_Image',
-    'libraries/test_PIL',
-    'libraries/test_requests',
     'multipackage/test_multipackage1',
     'multipackage/test_multipackage2',
     'multipackage/test_multipackage3',
@@ -287,7 +218,7 @@ class BuildTestRunner(object):
             if not os.path.exists(runtests_basedir):
                 os.makedirs(runtests_basedir)
         else:
-            runtests_basedir = compat.getcwd()
+            runtests_basedir = os.getcwd()
         self._specdir = runtests_basedir
         self._distdir = os.path.join(runtests_basedir, 'dist')
         self._builddir = os.path.join(runtests_basedir, 'build')
@@ -356,7 +287,7 @@ class BuildTestRunner(object):
             compat.setenv('PATH', os.pathsep.join(winutils.get_system_path()))
 
         self._plain_msg("RUNNING: " + prog)
-        old_wd = compat.getcwd()
+        old_wd = os.getcwd()
         os.chdir(os.path.dirname(prog))
         # Run executable.
         prog = os.path.join(os.curdir, os.path.basename(prog))
@@ -531,7 +462,7 @@ class GenericTestCase(unittest.TestCase):
         super(GenericTestCase, self).__init__(func_name)
 
         # For tests current working directory has to be changed temporaly.
-        self.curr_workdir = compat.getcwd()
+        self.curr_workdir = os.getcwd()
 
         # Whether to enable bytecode encryption for test executable
         self.with_crypto = with_crypto

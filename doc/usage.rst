@@ -74,7 +74,7 @@ You will run the same command again and again as you develop
 your script.
 You can put the command in a shell script or batch file,
 using line continuations to make it readable.
-For example, in Linux::
+For example, in GNU/Linux::
 
     pyinstaller --noconfirm --log-level=WARN \
         --onefile --nowindow \
@@ -102,23 +102,24 @@ Or in Windows, use the little-known BAT file line continuation::
 Running |PyInstaller| from Python code
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you want to run |PyInstaller| from within Python code use the ``run``
-function of the ``__main__`` module and pass all command line arguments in as
-a list, e.g.
+If you want to run |PyInstaller| from Python code, you can use the ``run`` function
+defined in ``PyInstaller.__main__``. For instance, the following code:
 
 .. code-block:: python
 
     import PyInstaller.__main__
 
     PyInstaller.__main__.run([
-        '--name=%s' % package_name,
+        'my_script.py',
         '--onefile',
-        '--windowed',
-        '--add-binary=%s' % os.path.join('resource', 'path', '*.png'),
-        '--add-data=%s' % os.path.join('resource', 'path', '*.txt'),
-        '--icon=%s' % os.path.join('resource', 'path', 'icon.ico'),
-        os.path.join('my_package', '__main__.py'),
+        '--windowed'
     ])
+
+Is equivalent to:
+
+.. code-block:: shell
+
+    pyinstaller my_script.py --onefile --windowed
 
 
 Running |PyInstaller| with Python optimizations
@@ -203,11 +204,15 @@ To encrypt the Python bytecode modules stored in the bundle,
 pass the ``--key=``\ *key-string*  argument on
 the command line.
 
-For this to work, you must have the PyCrypto_
-module installed.
+For this to work, you need to run::
+
+    pip install pyinstaller[encryption]
+
 The *key-string* is a string of 16 characters which is used to
 encrypt each file of Python byte-code before it is stored in
 the archive inside the executable file.
+
+This feature uses the tinyaes_ module internally for the encryption.
 
 
 .. _defining the extraction location:
@@ -238,36 +243,38 @@ Supporting Multiple Python Environments
 
 When you need to bundle your application within one OS
 but for different versions of Python and support libraries -- for example,
-a Python 3 version and a Python 2.7 version;
+a Python 3.6 version and a Python 3.7 version;
 or a supported version that uses Qt4 and a development version that uses Qt5 --
-we recommend you use virtualenv_.
-With virtualenv you can maintain different combinations of Python
+we recommend you use venv_.
+With `venv` you can maintain different combinations of Python
 and installed packages, and switch from one combination to another easily.
-(If you work only with Python 3.4 and later, ``python3 -m venv``
-does the same job, see module venv_.)
+These are called `virtual environments` or `venvs` in short.
 
-* Use virtualenv to create as many different development environments as you need,
+* Use `venv` to create as many different development environments as you need,
   each with its unique combination of Python and installed packages.
-* Install |PyInstaller| in each environment.
-* Use |PyInstaller| to build your application in each environment.
+* Install |PyInstaller| in each virtual environment.
+* Use |PyInstaller| to build your application in each virtual environment.
 
-Note that when using virtualenv, the path to the |PyInstaller| commands is:
+Note that when using `venv`, the path to the |PyInstaller| commands is:
 
 * Windows: ENV_ROOT\\Scripts
 * Others:  ENV_ROOT/bin
 
-Under Windows, the pip-Win_ package installs virtualenv and makes it
+Under Windows, the pip-Win_ package makes it
 especially easy to set up different environments and switch between them.
-Under Linux and Mac OS, you switch environments at the command line.
+Under GNU/Linux and Mac OS, you switch environments at the command line.
 
-See :pep:`405` for more information about Python virtual environments.
+See :pep:`405`
+and the official `Python Tutorial on Virtual Environments and Packages
+<https://docs.python.org/3/tutorial/venv.html>`_
+for more information about Python virtual environments.
 
 
 Supporting Multiple Operating Systems
 ---------------------------------------
 
 If you need to distribute your application for more than one OS,
-for example both Windows and Mac OS X, you must install |PyInstaller|
+for example both Windows and Mac OS X, you must install |PyInstaller|
 on each platform and bundle your app separately on each.
 
 You can do this from a single machine using virtualization.
@@ -277,30 +284,33 @@ You set up a virtual machine for each "guest" OS.
 In it you install
 Python, the support packages your application needs, and PyInstaller.
 
-The Dropbox_ system is useful with virtual machines.
-Install a Dropbox client in each virtual machine, all linked to your Dropbox account.
-Keep a single copy of your script(s) in a Dropbox folder.
+A `File Sync & Share`__ system like NextCloud_ is useful with virtual machines.
+Install the synchronization client in each virtual machine,
+all linked to your synchronization account.
+Keep a single copy of your script(s) in a synchronized folder.
 Then on any virtual machine you can run |PyInstaller| thus::
 
-    cd ~/Dropbox/project_folder/src # Linux, Mac -- Windows similar
+    cd ~/NextCloud/project_folder/src # GNU/Linux, Mac -- Windows similar
     rm *.pyc # get rid of modules compiled by another Python
     pyinstaller --workpath=path-to-local-temp-folder  \
                 --distpath=path-to-local-dist-folder  \
                 ...other options as required...       \
                 ./myscript.py
 
-|PyInstaller| reads scripts from the common Dropbox folder,
+__ https://en.wikipedia.org/wiki/Enterprise_file_synchronization_and_sharing
+
+|PyInstaller| reads scripts from the common synchronized folder,
 but writes its work files and the bundled app in folders that
 are local to the virtual machine.
 
 If you share the same home directory on multiple platforms, for
-example Linux and OS X, you will need to set the PYINSTALLER_CONFIG_DIR
+example GNU/Linux and OS X, you will need to set the PYINSTALLER_CONFIG_DIR
 environment variable to different values on each platform otherwise
 PyInstaller may cache files for one platform and use them on the other
 platform, as by default it uses a subdirectory of your home directory
 as its cache location.
 
-It is said to be possible to cross-develop for Windows under Linux
+It is said to be possible to cross-develop for Windows under GNU/Linux
 using the free Wine_ environment.
 Further details are needed, see `How to Contribute`_.
 
@@ -380,7 +390,7 @@ Or you can apply the ``unicode()`` function to the object
 to reproduce the version text file.
 
 
-Building Mac OS X App Bundles
+Building Mac OS X App Bundles
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Under Mac OS X, |PyInstaller| always builds a UNIX executable in
@@ -425,25 +435,25 @@ Platform-specific Notes
 GNU/Linux
 -------------------
 
-Making Linux Apps Forward-Compatible
-=====================================
+Making GNU/Linux Apps Forward-Compatible
+==========================================
 
-Under Linux, |PyInstaller| does not bundle ``libc``
+Under GNU/Linux, |PyInstaller| does not bundle ``libc``
 (the C standard library, usually ``glibc``, the Gnu version) with the app.
 Instead, the app expects to link dynamically to the ``libc`` from the
 local OS where it runs.
 The interface between any app and ``libc`` is forward compatible to
 newer releases, but it is not backward compatible to older releases.
 
-For this reason, if you bundle your app on the current version of Linux,
+For this reason, if you bundle your app on the current version of GNU/Linux,
 it may fail to execute (typically with a runtime dynamic link error) if
-it is executed on an older version of Linux.
+it is executed on an older version of GNU/Linux.
 
 The solution is to always build your app on the *oldest* version of
-Linux you mean to support.
+GNU/Linux you mean to support.
 It should continue to work with the ``libc`` found on newer versions.
 
-The Linux standard libraries such as ``glibc`` are distributed in 64-bit
+The GNU/Linux standard libraries such as ``glibc`` are distributed in 64-bit
 and 32-bit versions, and these are not compatible.
 As a result you cannot bundle your app on a 32-bit system and run it
 on a 64-bit installation, nor vice-versa.
@@ -472,7 +482,7 @@ So you have the following options:
    link, numbers 2 and 3.
 
 3. Install the `Windows Software Development Kit (SDK) for Windows 10
-   <https://dev.windows.com/en-us/downloads/windows-10-sdk>`_ and expand the
+   <https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk>`_ and expand the
    `.spec`-file to include the required DLLs, see “Distributing Software that
    uses the Universal CRT“ in the above-mentioned link, number 6.
 
@@ -505,6 +515,12 @@ It should be compatible with later versions of Mac OS X.
 
 Building 32-bit Apps in Mac OS X
 ====================================
+
+.. note:: This section still refers to Python 2.7 provided by Apple.
+          It might not be valid for Python 3 installed
+          from `MacPorts`_ or `Homebrew`_.
+
+          Please contribute to keep this section up-to-date.
 
 Older versions of Mac OS X supported both 32-bit and 64-bit executables.
 PyInstaller builds an app using the the word-length of the Python used to execute it.
@@ -578,6 +594,30 @@ If you want to handle other events, or events that
 are delivered after the program has launched, you must
 set up the appropriate handlers.
 
+
+AIX
+----------------------
+
+Depending on whether Python was build as a 32-bit or a 64-bit executable
+you may need to set or unset
+the environment variable :envvar:`OBJECT_MODE`.
+To determine the size the following command can be used::
+
+    $ python -c "import sys; print(sys.maxsize) <= 2**32"
+    True
+
+When the answer is ``True`` (as above) Python was build as a 32-bit
+executable.
+
+When working with a 32-bit Python executable proceed as follows::
+
+    $ unset OBJECT_MODE
+    $ pyinstaller <your arguments>
+
+When working with a 64-bit Python executable proceed as follows::
+
+    $ export OBJECT_MODE=64
+    $ pyinstaller <your arguments>
 
 
 .. include:: _common_definitions.txt

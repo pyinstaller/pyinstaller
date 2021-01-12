@@ -27,7 +27,7 @@ Some of the recipes there include:
 
 * Bundling a typical Django app.
 
-* A use of a run-time hook to set the PyQt4 API level.
+* A use of a run-time hook to set the PyQt5 API level.
 
 * A workaround for a multiprocessing constraint under Windows.
 
@@ -108,7 +108,7 @@ Build-Time Python Errors
 |PyInstaller| sometimes terminates by raising a Python exception.
 In most cases the reason is clear from the exception message,
 for example "Your system is not supported", or "Pyinstaller
-requires at least Python 2.7".
+requires at least Python 3.5".
 Others clearly indicate a bug that should be reported.
 
 One of these errors can be puzzling, however:
@@ -127,7 +127,7 @@ different in different operating systems, but ``/lib`` and ``/usr/lib``
 are checked in most systems.
 If you cannot put the python library there,
 try setting the correct path in the environment variable
-``LD_LIBRARY_PATH`` in Linux or
+``LD_LIBRARY_PATH`` in GNU/Linux or
 ``DYLD_LIBRARY_PATH`` in OS X.
 
 
@@ -135,18 +135,24 @@ Getting Debug Messages
 ----------------------
 
 The ``--debug=all`` option (and its :ref:`choices <pyinstaller how to generate>`) provides a
-signficiant amount of diagnostic inforation.
+signficiant amount of diagnostic information.
 This can be useful during development of a complex package,
 or when your app doesn't seem to be starting,
 or just to learn how the runtime works.
 
 Normally the debug progress messages go to standard output.
 If the ``--windowed`` option is used when bundling a Windows app,
-they are displayed as MessageBoxes.
+they are sent to any attached debugger. If you are not using a debugger
+(or don't have one), the DebugView_ the free (beer) tool can be used to
+display such messages. It has to be started before running the bundled
+application.
+
+.. _DebugView: https://docs.microsoft.com/en-us/sysinternals/downloads/debugview
+
 For a ``--windowed`` Mac OS app they are not displayed.
 
-Remember to bundle without ``--debug`` for your production version.
-Users would find the messages annoying.
+Consider bundling without ``--debug`` for your production version.
+Debugging messages require system calls and have an impact on performance.
 
 
 .. _getting python's verbose imports:
@@ -172,7 +178,7 @@ Figuring Out Why Your GUI Application Won't Start
 ---------------------------------------------------
 
 If you are using the ``--windowed`` option,
-your bundled application ay fail to start with an error message like
+your bundled application may fail to start with an error message like
 ``Failed to execute script my_gui``.
 In this case, you will want to get more verbose output to find out
 what is going on.

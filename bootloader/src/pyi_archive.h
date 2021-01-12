@@ -1,10 +1,13 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2018, PyInstaller Development Team.
- * Distributed under the terms of the GNU General Public License with exception
- * for distributing bootloader.
+ * Copyright (c) 2013-2021, PyInstaller Development Team.
+ *
+ * Distributed under the terms of the GNU General Public License (version 2
+ * or later) with exception for distributing the bootloader.
  *
  * The full license is in the file COPYING.txt, distributed with this software.
+ *
+ * SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
  * ****************************************************************************
  */
 
@@ -14,6 +17,9 @@
 
 #ifndef PYI_ARCHIVE_H
 #define PYI_ARCHIVE_H
+
+#include "pyi_global.h"
+#include <stdio.h>  /* FILE */
 
 /* Types of CArchive items. */
 #define ARCHIVE_ITEM_BINARY           'b'  /* binary */
@@ -51,7 +57,7 @@ typedef struct _cookie {
 
 typedef struct _archive_status {
     FILE * fp;
-    int    pkgstart;
+    size_t pkgstart;
     TOC *  tocbuff;
     TOC *  tocend;
     COOKIE cookie;
@@ -112,32 +118,22 @@ extern int pyvers;
 /**
  * The gory detail level
  */
-int pyi_arch_set_paths(ARCHIVE_STATUS *status, char const * archivePath,
-                       char const * archiveName);
 int pyi_arch_open(ARCHIVE_STATUS *status);
 
 /*
  * Memory allocation wrappers.
  */
-void pyi_arch_status_free_memory(ARCHIVE_STATUS *status);
+ARCHIVE_STATUS *pyi_arch_status_new();
+void pyi_arch_status_free(ARCHIVE_STATUS *status);
 
 /*
  * Setup the paths and open the archive
  *
- * @param archivePath  The path (with trailing backslash) to the archive.
+ * @param archivePath  The path including filename to the archive.
  *
- * @param archiveName  The file name of the archive, without a path.
- *
- * @param workpath     The path (with trailing backslash) to where
- *                     the binaries were extracted. If they have not
- *                     benn extracted yet, this is NULL. If they have,
- *                     this will either be archivePath, or a temp dir
- *                     where the user has write permissions.
- *
- * @return 0 on success, non-zero otherwise.
+ * @return true on success, false otherwise.
  */
-int pyi_arch_setup(ARCHIVE_STATUS *status, char const * archivePath,
-                   char const * archiveName);
+bool pyi_arch_setup(ARCHIVE_STATUS *status, char const * archivePath);
 
 TOC *getFirstTocEntry(ARCHIVE_STATUS *status);
 TOC *getNextTocEntry(ARCHIVE_STATUS *status, TOC *entry);

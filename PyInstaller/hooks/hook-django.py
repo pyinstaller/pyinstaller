@@ -1,14 +1,16 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2018, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 
-# Tested with django 1.8.
+# Tested with django 2.2
 
 
 import sys
@@ -38,26 +40,20 @@ if root_dir:
     # Include main django modules - settings.py, urls.py, wsgi.py.
     # Without them the django server won't run.
     package_name = os.path.basename(root_dir)
+    default_settings_module = f'{package_name}.settings'
+    settings_module = os.environ.get('DJANGO_SETTINGS_MODULE', default_settings_module)
     hiddenimports += [
             # TODO Consider including 'mysite.settings.py' in source code as a data files.
             #      Since users might need to edit this file.
-            package_name + '.settings',
+            settings_module,
             package_name + '.urls',
             package_name + '.wsgi',
     ]
     # Django hiddenimports from the standard Python library.
-    if sys.version_info.major == 3:
-        # Python 3.x
-        hiddenimports += [
-                'http.cookies',
-                'html.parser',
-        ]
-    else:
-        # Python 2.x
-        hiddenimports += [
-                'Cookie',
-                'HTMLParser',
-        ]
+    hiddenimports += [
+        'http.cookies',
+        'html.parser',
+    ]
 
     # Bundle django DB schema migration scripts as data files.
     # They are necessary for some commands.
@@ -73,7 +69,7 @@ if root_dir:
              'django.contrib.sites.migrations',
     ]
     # Include migration scripts of Django-based apps too.
-    installed_apps = eval(get_module_attribute(package_name + '.settings', 'INSTALLED_APPS'))
+    installed_apps = eval(get_module_attribute(settings_module, 'INSTALLED_APPS'))
     migration_modules.extend(set(app + '.migrations' for app in installed_apps))
     # Copy migration files.
     for mod in migration_modules:

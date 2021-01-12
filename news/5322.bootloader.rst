@@ -1,0 +1,2 @@
+(Windows) Fix compiler warnings produced by MinGW 10.2 in order to allow
+building the bootloader without having to suppress the warnings.

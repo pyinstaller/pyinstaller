@@ -1,10 +1,12 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2018, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 
@@ -19,7 +21,7 @@ import py_compile
 import sys
 
 from PyInstaller import log as logging
-from PyInstaller.compat import BYTECODE_MAGIC, is_py2, text_read_mode
+from PyInstaller.compat import BYTECODE_MAGIC, text_read_mode, is_win
 
 logger = logging.getLogger(__name__)
 
@@ -92,7 +94,7 @@ def get_path_to_toplevel_modules(filename):
 def mtime(fnm):
     try:
         # TODO: explain why this doesn't use os.path.getmtime() ?
-        #       - It is probably not used because it returns fload and not int.
+        #       - It is probably not used because it returns float and not int.
         return os.stat(fnm)[8]
     except:
         return 0
@@ -123,6 +125,10 @@ def compile_py_files(toc, workpath):
         # Keep unrelevant items unchanged.
         if typ != 'PYMODULE':
             new_toc.append((nm, fnm, typ))
+            continue
+
+        if fnm in ('-', None):
+            # If fmn represents a namespace then skip
             continue
 
         if fnm.endswith('.py') :
@@ -203,12 +209,7 @@ def save_py_data_struct(filename, data):
     dirname = os.path.dirname(filename)
     if not os.path.exists(dirname):
         os.makedirs(dirname)
-    if is_py2:
-        import codecs
-        f = codecs.open(filename, 'w', encoding='utf-8')
-    else:
-        f = open(filename, 'w', encoding='utf-8')
-    with f:
+    with open(filename, 'w', encoding='utf-8') as f:
         pprint.pprint(data, f)
 
 
@@ -218,15 +219,14 @@ def load_py_data_struct(filename):
     :param filename:
     :return:
     """
-    if is_py2:
-        import codecs
-        f = codecs.open(filename, text_read_mode, encoding='utf-8')
-    else:
-        f = open(filename, text_read_mode, encoding='utf-8')
-    with f:
+    with open(filename, text_read_mode, encoding='utf-8') as f:
         # Binding redirects are stored as a named tuple, so bring the namedtuple
         # class into scope for parsing the TOC.
         from ..depend.bindepend import BindingRedirect
+
+        if is_win:
+            # import versioninfo so that VSVersionInfo can parse correctly
+            from .win32 import versioninfo  # noqa: F401
 
         return eval(f.read())
 

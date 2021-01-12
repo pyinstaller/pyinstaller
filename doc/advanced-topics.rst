@@ -41,7 +41,7 @@ A. First process: bootloader starts.
 
     2. Modify various environment variables:
 
-       - Linux: If set, save the original value of LD_LIBRARY_PATH
+       - GNU/Linux: If set, save the original value of LD_LIBRARY_PATH
          into LD_LIBRARY_PATH_ORIG.
          Prepend our path to LD_LIBRARY_PATH.
 
@@ -364,7 +364,7 @@ There is also a type code associated with each member.
 The type codes are used by the self-extracting executables.
 If you're using a ``CArchive`` as a ``.zip`` file, you don't need to worry about the code.
 
-The ELF executable format (Windows, Linux and some others) allows arbitrary
+The ELF executable format (Windows, GNU/Linux and some others) allows arbitrary
 data to be concatenated to the end of the executable without disturbing its
 functionality. For this reason, a CArchive's Table of Contents is
 at the end of the archive. The executable can open itself as a binary
@@ -467,7 +467,7 @@ integer value before running |PyInstaller|.
 This forces Python to use the same random hash sequence until
 ``PYTHONHASHSEED`` is unset or set to ``'random'``.
 For example, execute |PyInstaller| in a script such as
-the following (for Linux and OS X)::
+the following (for GNU/Linux and OS X)::
 
     # set seed to a known repeatable integer value
     PYTHONHASHSEED=1

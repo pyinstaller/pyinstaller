@@ -1,18 +1,18 @@
 # -*- encoding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2005-2018, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 # -----------------------------------------------------------------------------
 
 __author__ = 'Suzumizaki-Kimitaka(鈴見咲 君高)'
 
-from PyInstaller.utils.tests import skipif_notwin
-from PyInstaller import is_py2
-
+import pytest
 
 test_manifest_which_uses_non_ascii = \
     r'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -40,7 +40,7 @@ test_manifest_which_uses_non_ascii = \
     '''
 
 
-@skipif_notwin
+@pytest.mark.win32
 def test_reading_manifest(tmpdir):
     """Check not using invalid encoding when reading XML manifest files
 
@@ -50,17 +50,13 @@ def test_reading_manifest(tmpdir):
     We check here not to use local encoding against UTF-8 manifest file.
     """
     # This import only works on Windows. Place it here, protected by the
-    # ``@skipif_notwin`` decorator.
+    # `@pytest.mark.win32`` decorator.
     from PyInstaller.utils.win32 import winmanifest
 
     # We create the XML file written with UTF-8 as Microsoft tools do.
     tmppath = tmpdir.join('manifest.xml')
     with tmppath.open('wt', ensure=True, encoding='utf-8') as write_handle:
-        if is_py2:
-            write_handle.write(unicode(test_manifest_which_uses_non_ascii,
-                                       'utf-8'))
-        else:
-            write_handle.write(test_manifest_which_uses_non_ascii)
+        write_handle.write(test_manifest_which_uses_non_ascii)
     # ... and check the following method always uses UTF-8.
     # It will read the file, reformat and overwrite it.
     winmanifest.create_manifest(str(tmppath), None, None)

@@ -1,10 +1,12 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2018, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 
@@ -27,12 +29,13 @@ import struct
 from types import CodeType
 import marshal
 import zlib
+import io
 
 from PyInstaller.building.utils import get_code_object, strip_paths_in_code,\
     fake_pyc_timestamp
 from PyInstaller.loader.pyimod02_archive import PYZ_TYPE_MODULE, PYZ_TYPE_PKG, \
-    PYZ_TYPE_DATA
-from ..compat import BYTECODE_MAGIC, is_py2
+    PYZ_TYPE_DATA, PYZ_TYPE_NSPKG
+from ..compat import BYTECODE_MAGIC, is_py37
 
 
 class ArchiveWriter(object):
@@ -131,11 +134,10 @@ class ArchiveWriter(object):
             if str(exception) == 'unmarshallable object':
 
                 # List of all marshallable types.
-                MARSHALLABLE_TYPES = set((
-                    bool, int, float, complex, str, bytes, bytearray,
-                    tuple, list, set, frozenset, dict, CodeType))
-                if sys.version_info[0] == 2:
-                    MARSHALLABLE_TYPES.add(long)
+                MARSHALLABLE_TYPES = {
+                    bool, int, float, complex, str, bytes, bytearray, tuple,
+                    list, set, frozenset, dict, CodeType
+                }
 
                 for module_name, module_tuple in self.toc.items():
                     if type(module_name) not in MARSHALLABLE_TYPES:
@@ -194,7 +196,7 @@ class ZlibArchiveWriter(ArchiveWriter):
                 # This is a NamespacePackage, modulegraph marks them
                 # by using the filename '-'. (But wants to use None,
                 # so check for None, too, to be forward-compatible.)
-                typ = PYZ_TYPE_PKG
+                typ = PYZ_TYPE_NSPKG
             else:
                 base, ext = os.path.splitext(os.path.basename(path))
                 if base == '__init__':
@@ -248,9 +250,6 @@ class CTOC(object):
             # standard python modules only contain ascii-characters
             # (and standard shared libraries should have the same) and
             # thus the C-code still can handle this correctly.
-            if is_py2 and isinstance(nm, str):
-                nm = nm.decode(sys.getfilesystemencoding())
-
             nm = nm.encode('utf-8')
             nmlen = len(nm) + 1       # add 1 for a '\0'
             # align to 16 byte boundary so xplatform C can read
@@ -355,7 +354,7 @@ class CArchiveWriter(ArchiveWriter):
             If the type code is 'o':
               entry[0] is the runtime option
               eg: v  (meaning verbose imports)
-                  u  (menaing unbuffered)
+                  u  (meaning unbuffered)
                   W arg (warning option arg)
                   s  (meaning do site.py processing.
         """
@@ -377,6 +376,37 @@ class CArchiveWriter(ArchiveWriter):
 
                 code_data = marshal.dumps(code)
                 ulen = len(code_data)
+            elif typcd == 'm':
+                fh = open(pathnm, 'rb')
+                ulen = os.fstat(fh.fileno()).st_size
+                # Check if it is a PYC file
+                header = fh.read(4)
+                fh.seek(0)
+                if header == BYTECODE_MAGIC:
+                    # Read whole header and load code.
+                    # According to PEP-552, in python versions prior to
+                    # 3.7, the PYC header consists of three 32-bit words
+                    # (magic, timestamp, and source file size).
+                    # From python 3.7 on, the PYC header was extended to
+                    # four 32-bit words (magic, flags, and, depending on
+                    # the flags, either timestamp and source file size,
+                    # or a 64-bit hash).
+                    if is_py37:
+                        header = fh.read(16)
+                    else:
+                        header = fh.read(12)
+                    code = marshal.load(fh)
+                    # Strip paths from code, marshal back into module form.
+                    # The header fields (timestamp, size, hash, etc.) are
+                    # all referring to the source file, so our modification
+                    # of the code object does not affect them, and we can
+                    # re-use the original header.
+                    code = strip_paths_in_code(code)
+                    data = header + marshal.dumps(code)
+                    # Create file-like object for timestamp re-write
+                    # in the subsequent steps
+                    fh = io.BytesIO(data)
+                    ulen = len(data)
             else:
                 fh = open(pathnm, 'rb')
                 ulen = os.fstat(fh.fileno()).st_size

@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "PYINSTALLER" "1" "2018-09-09" "3.4" "PyInstaller"
+.TH "PYINSTALLER" "1" "2020-11-18" "4.1" "PyInstaller"
 .SH NAME
 pyinstaller \- Configure and build a PyInstaller project in one run
 .
@@ -40,9 +40,10 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .SH DESCRIPTION
 .sp
 PyInstaller is a program that freezes (packages) Python programs into
-stand\-alone executables, under Windows, Linux, Mac OS X, FreeBSD, Solaris and
-AIX. Its main advantages over similar tools are that PyInstaller works with
-Python 2.7 and 3.4—3.6, it builds smaller executables thanks to transparent
+stand\-alone executables, under Windows, GNU/Linux, Mac OS X,
+FreeBSD, OpenBSD, Solaris and AIX.
+Its main advantages over similar tools are that PyInstaller works with
+Python 3.5—3.7, it builds smaller executables thanks to transparent
 compression, it is fully multi\-platform, and use the OS support to load the
 dynamic libraries, thus ensuring full compatibility.
 .sp
@@ -155,15 +156,13 @@ The key used to encrypt Python bytecode.
 .SS How to generate
 .INDENT 0.0
 .TP
-.B \-d [{all,imports,bootloader,noarchive}], \-\-debug [{all,imports,bootloader,noarchive}]
+.BI \-d \ <all,imports,bootloader,noarchive>\fP,\fB \ \-\-debug \ <all,imports,bootloader,noarchive>
 Provide assistance with debugging a frozen
-application, by specifying one or more of the
-following choices.
+application. This argument may be provided multiple
+times to select several of the following options.
 .INDENT 7.0
 .IP \(bu 2
-all: All three of the below options; this is the
-default choice, unless one of the choices below is
-specified.
+all: All three of the following options.
 .IP \(bu 2
 imports: specify the \-v option to the underlying
 Python interpreter, causing it to print a message
@@ -182,8 +181,6 @@ source files as an archive inside the resulting
 executable, store them as files in the resulting
 output directory.
 .UNINDENT
-.UNINDENT
-.INDENT 0.0
 .TP
 .B \-s\fP,\fB  \-\-strip
 Apply a symbol\-table strip to the executable and
@@ -192,18 +189,28 @@ shared libs (not recommended for Windows)
 .B \-\-noupx
 Do not use UPX even if it is available (works
 differently between Windows and *nix)
+.TP
+.BI \-\-upx\-exclude \ FILE
+Prevent a binary from being compressed when using upx.
+This is typically used if upx corrupts certain
+binaries during compression. FILE is the filename of
+the binary without path. This option can be used
+multiple times.
 .UNINDENT
 .SS Windows and Mac OS X specific options
 .INDENT 0.0
 .TP
 .B \-c\fP,\fB  \-\-console\fP,\fB  \-\-nowindowed
-Open a console window for standard i/o (default)
+Open a console window for standard i/o (default). On
+Windows this option will have no effect if the first
+script is a \(aq.pyw\(aq file.
 .TP
 .B \-w\fP,\fB  \-\-windowed\fP,\fB  \-\-noconsole
 Windows and Mac OS X: do not provide a console window
 for standard i/o. On Mac OS X this also triggers
-building an OS X .app bundle. This option is ignored
-in *NIX systems.
+building an OS X .app bundle. On Windows this option
+will be set if the first script is a \(aq.pyw\(aq file. This
+option is ignored in *NIX systems.
 .TP
 .BI \-i \ <FILE.ico or FILE.exe,ID or FILE.icns>\fP,\fB \ \-\-icon \ <FILE.ico or FILE.exe,ID or FILE.icns>
 FILE.ico: apply that icon to a Windows executable.

@@ -1,10 +1,12 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2018, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 
@@ -40,6 +42,7 @@ exe = EXE(pyz,
           bootloader_ignore_signals=%(bootloader_ignore_signals)s,
           strip=%(strip)s,
           upx=%(upx)s,
+          upx_exclude=%(upx_exclude)s,
           runtime_tmpdir=%(runtime_tmpdir)r,
           console=%(console)s %(exe_options)s)
 """
@@ -77,6 +80,7 @@ coll = COLLECT(exe,
                a.datas,
                strip=%(strip)s,
                upx=%(upx)s,
+               upx_exclude=%(upx_exclude)s,
                name='%(name)s')
 """
 

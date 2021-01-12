@@ -1,0 +1,1 @@
+Improve support for ``PEP-420`` namespace packages.

@@ -1,12 +1,10 @@
-[build-system]
-requires = ["setuptools", "wheel"]  # PEP 508 specifications.
-
 [tool.towncrier]
 	filename = "doc/CHANGES.rst"
 	directory = "news"
 	template = "news/_template.rst"
 	underlines = "-~^"
 	wrap = true
+	package = "PyInstaller"
 	title_format = "{version} ({project_date})"
 
 	[[tool.towncrier.section]]

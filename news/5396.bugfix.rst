@@ -1,0 +1,2 @@
+Ensure that spec for frozen packages has ``submodule_search_locations`` set
+in order to fix compatibility  with ``importlib_resources`` 3.2.0 and later.
