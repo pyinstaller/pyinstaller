@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -328,6 +328,8 @@ class EXE(Target):
             icon
                 Windows or OSX only. icon='myicon.ico' to use an icon file or
                 icon='notepad.exe,0' to grab an icon resource.
+                Defaults to use PyInstaller's console or windowed icon.
+                icon=`NONE` to not add any icon.
             version
                 Windows only. version='myversion.txt'. Use grab_version.py to get
                 a version resource from an executable and then edit the output to
@@ -529,8 +531,8 @@ class EXE(Target):
         if not os.path.exists(exe):
             raise SystemExit(_MISSING_BOOTLOADER_ERRORMSG)
 
-        if is_win and (self.icon or self.versrsrc or self.resources or
-                self.uac_admin or self.uac_uiaccess or not is_64bits):
+        if is_win and (self.icon != "NONE" or self.versrsrc or self.resources
+                       or self.uac_admin or self.uac_uiaccess or not is_64bits):
             fd, tmpnm = tempfile.mkstemp(prefix=os.path.basename(exe) + ".",
                                          dir=CONF['workpath'])
             # need to close the file, otherwise copying resources will fail
@@ -538,7 +540,13 @@ class EXE(Target):
             os.close(fd)
             self._copyfile(exe, tmpnm)
             os.chmod(tmpnm, 0o755)
-            if self.icon:
+            if not self.icon:
+                # --icon not specified; use default from bootloader folder
+                self.icon = os.path.join(
+                    os.path.dirname(os.path.dirname(__file__)),
+                    'bootloader', 'images',
+                    'icon-console.ico' if self.console else 'icon-windowed.ico')
+            if self.icon != "NONE":
                 icon.CopyIcons(tmpnm, self.icon)
             if self.versrsrc:
                 versioninfo.SetVersion(tmpnm, self.versrsrc)

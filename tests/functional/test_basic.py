@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -489,6 +489,7 @@ def test_pywin32_comext(pyi_builder):
 
 
 @importorskip('win32ui')
+@xfail(reason="https://github.com/mhammond/pywin32/issues/1614")
 def test_pywin32_win32ui(pyi_builder):
     pyi_builder.test_source(
         """

@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -25,7 +25,7 @@ import _frozen_importlib
 import pyimod01_os_path as pyi_os_path
 from pyimod02_archive import ArchiveReadError, ZlibArchiveReader
 
-SYS_PREFIX = sys._MEIPASS
+SYS_PREFIX = sys._MEIPASS + pyi_os_path.os_sep
 SYS_PREFIXLEN = len(SYS_PREFIX)
 
 # In Python 3 it is recommended to use class 'types.ModuleType' to create a new module.
@@ -123,6 +123,19 @@ class FrozenImporter(object):
         # Raise import error.
         raise ImportError("Can't load frozen modules.")
 
+    # Private helper
+    def _is_pep420_namespace_package(self, fullname):
+        if fullname in self.toc:
+            try:
+                return self._pyz_archive.is_pep420_namespace_package(fullname)
+            except Exception as e:
+                raise ImportError(
+                    'Loader FrozenImporter cannot handle module ' + fullname
+                ) from e
+        else:
+            raise ImportError(
+                'Loader FrozenImporter cannot handle module ' + fullname
+            )
 
     def find_module(self, fullname, path=None):
         # Deprecated in Python 3.4, see PEP-451
@@ -151,7 +164,9 @@ class FrozenImporter(object):
             modname = fullname.split('.')[-1]
 
             for p in path:
-                p = p[SYS_PREFIXLEN+1:]
+                if not p.startswith(SYS_PREFIX):
+                    continue
+                p = p[SYS_PREFIXLEN:]
                 parts = p.split(pyi_os_path.os_sep)
                 if not parts: continue
                 if not parts[0]:
@@ -329,8 +344,8 @@ class FrozenImporter(object):
         The 'path' argument is a path that can be constructed by munging
         module.__file__ (or pkg.__path__ items)
         """
-        assert path.startswith(SYS_PREFIX + pyi_os_path.os_sep)
-        fullname = path[SYS_PREFIXLEN+1:]
+        assert path.startswith(SYS_PREFIX)
+        fullname = path[SYS_PREFIXLEN:]
         if fullname in self.toc:
             # If the file is in the archive, return this
             return self._pyz_archive.extract(fullname)[1]
@@ -395,7 +410,9 @@ class FrozenImporter(object):
             modname = fullname.rsplit('.')[-1]
 
             for p in path:
-                p = p[SYS_PREFIXLEN+1:]
+                if not p.startswith(SYS_PREFIX):
+                    continue
+                p = p[SYS_PREFIXLEN:]
                 parts = p.split(pyi_os_path.os_sep)
                 if not parts: continue
                 if not parts[0]:
@@ -412,6 +429,19 @@ class FrozenImporter(object):
         if entry_name is None:
             trace("# %s not found in PYZ", fullname)
             return None
+
+        if self._is_pep420_namespace_package(entry_name):
+            # PEP-420 namespace package; as per PEP 451, we need to
+            # return a spec with "loader" set to None (a.k.a. not set)
+            spec = _frozen_importlib.ModuleSpec(
+                fullname, None,
+                is_package=True)
+            # Set submodule_search_locations, which seems to fill the
+            # __path__ attribute.
+            spec.submodule_search_locations = [
+                pyi_os_path.os_path_dirname(self.get_filename(entry_name))
+            ]
+            return spec
 
         # origin has to be the filename
         origin = self.get_filename(entry_name)
@@ -430,6 +460,14 @@ class FrozenImporter(object):
         # (e.g. zipimport), that information may be stored in
         # spec.loader_state.
         spec.has_location = True
+
+        # Set submodule_search_locations for packages. Seems to be
+        # required for importlib_resources from 3.2.0 - see issue #5395.
+        if is_pkg:
+            spec.submodule_search_locations = [
+                pyi_os_path.os_path_dirname(self.get_filename(entry_name))
+            ]
+
         return spec
 
     def create_module(self, spec):

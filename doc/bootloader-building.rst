@@ -46,7 +46,7 @@ then ask for technical help.
 Supported platforms are
 
 * GNU/Linux (using gcc)
-* Windows (using Visual C++ or MinGW's gcc)
+* Windows (using Visual C++ (VS2015 or later) or MinGW's gcc)
 * Mac OX X (using clang)
 
 Contributed platforms are
@@ -239,8 +239,7 @@ between three options:
    This is why the bootloaders delivered with PyInstaller are build using
    Visual Studio C++ compiler.
 
-   You can use any Visual Studio version that is convenient
-   (as long as it's supported by the waf build-tool).
+   Visual Studio 2015 or later is required.
 
 
 2. Using the `MinGW-w64`_ suite.

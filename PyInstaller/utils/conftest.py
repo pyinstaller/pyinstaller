@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -100,7 +100,7 @@ def pytest_runtest_setup(item):
         mark.name for mark in item.iter_markers())
     plat = sys.platform
     if supported_platforms and plat not in supported_platforms:
-        pytest.skip("only runs on %s" % plat)
+        pytest.skip("does not run on %s" % plat)
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)

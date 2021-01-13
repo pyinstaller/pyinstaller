@@ -116,14 +116,14 @@ might catch up with these changes.
 If both PyInstaller and your package provide hooks for some module,
 your package's hooks take precedence,
 but can still be overridden by the command line option
-:option:`--additional-hooks-dir`.
+``--additional-hooks-dir``.
 
 
 You can tell PyInstaller about the additional hooks
 by defining some simple `setuptools entry-points
 <https://setuptools.readthedocs.io/en/latest/setuptools.html#dynamic-discovery-of-services-and-plugins>`_
 in your package.
-Therefor add entries like these to your :file:`setup.cfg`::
+Therefore add entries like these to your :file:`setup.cfg`::
 
   [options.entry_points]
   pyinstaller40 =
@@ -502,6 +502,28 @@ You are welcome to read the ``PyInstaller.utils.hooks`` module
    the Django settings.py file, such as the
    ``Django.settings.INSTALLED_APPS`` list and many others.
 
+
+Support for Conda
+.................
+
+.. automodule:: PyInstaller.utils.hooks.conda
+
+.. autofunction:: PyInstaller.utils.hooks.conda.distribution
+
+.. autofunction:: PyInstaller.utils.hooks.conda.package_distribution
+
+.. autofunction:: PyInstaller.utils.hooks.conda.files
+
+.. autofunction:: PyInstaller.utils.hooks.conda.requires
+
+.. autoclass:: PyInstaller.utils.hooks.conda.Distribution
+
+.. autoclass:: PyInstaller.utils.hooks.conda.PackagePath
+    :members:
+
+.. autofunction:: PyInstaller.utils.hooks.conda.walk_dependency_tree
+
+.. autofunction:: PyInstaller.utils.hooks.conda.collect_dynamic_libs
 
 .. _the hook(hook_api) function:
 

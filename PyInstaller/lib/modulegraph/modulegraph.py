@@ -1509,7 +1509,8 @@ class ModuleGraph(ObjectGraph):
         # imported by this target module's pure-Python code. Since our import
         # scanner already detects such imports, these submodules need *NOT* be
         # reimported here.
-        if target_attr_names and isinstance(target_module, Package):
+        if target_attr_names and isinstance(target_module,
+                                            (Package, AliasNode)):
             for target_submodule in self._import_importable_package_submodules(
                 target_module, target_attr_names):
                 if target_submodule not in target_modules:
@@ -2092,7 +2093,8 @@ class ModuleGraph(ObjectGraph):
         partname = fqname.rpartition(".")[-1]
 
         if loader.is_package(partname):
-            if isinstance(loader, NAMESPACE_PACKAGE):
+            is_nspkg = isinstance(loader, NAMESPACE_PACKAGE)
+            if is_nspkg:
                 pkgpath = loader.namespace_dirs[:]  # copy for safety
             else:
                 pkgpath = []
@@ -2103,8 +2105,8 @@ class ModuleGraph(ObjectGraph):
             ns_pkgpath = _namespace_package_path(
                 fqname, pkgpath or [], self.path)
 
-            if ns_pkgpath or pkgpath:
-                # this is a namespace package
+            if (ns_pkgpath or pkgpath) and is_nspkg:
+                # this is a PEP-420 namespace package
                 m = self.createNode(NamespacePackage, fqname)
                 m.filename = '-'
                 m.packagepath = ns_pkgpath
@@ -2451,7 +2453,8 @@ class ModuleGraph(ObjectGraph):
         # imported by this target module's pure-Python code. Since our import
         # scanner already detects these imports, these submodules need *NOT* be
         # reimported here. (Doing so would be harmless but inefficient.)
-        if target_attr_names and isinstance(target_module, Package):
+        if target_attr_names and isinstance(target_module,
+                                            (Package, AliasNode)):
             # For the name of each attribute imported from this target package
             # into this source module...
             for target_submodule_partname in target_attr_names:

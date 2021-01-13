@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -136,6 +136,19 @@ def test_import_submodule_global_unshadowed(pyi_builder):
         from pyi_testmod_submodule_global_unshadowed import submodule
         assert type(submodule) == type(sys)
         """)
+
+
+def test_import_submodule_from_aliased_pkg(pyi_builder, script_dir):
+    pyi_builder.test_source(
+        """
+        import sys
+        import pyi_testmod_submodule_from_aliased_pkg
+
+        sys.modules['alias_name'] = pyi_testmod_submodule_from_aliased_pkg
+
+        from alias_name import submodule
+        """,
+        ['--additional-hooks-dir=%s' % script_dir.join('pyi_hooks')])
 
 
 def test_module_with_coding_utf8(pyi_builder):
@@ -546,6 +559,62 @@ def test_nspkg_pep420(pyi_builder):
         pyi_args=['--paths', os.pathsep.join(pathex)],
     )
 
+
+def test_nspkg_attributes(pyi_builder):
+    # Test that non-PEP-420 namespace packages (e.g., the ones using
+    # pkg_resources.declare_namespace) have proper attributes:
+    #  * __path__ attribute should contain at least one path
+    #  * __file__ attribute should point to an __init__ file within __path__
+    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg1-pkg', '*.egg'))
+    pyi_builder.test_source(
+        """
+        import os
+        import nspkg1
+
+        def validate_nspkg(pkg):
+            from sys import version_info
+            # Validate __path__
+            path = getattr(pkg, '__path__', None)
+            assert path is not None and len(path) >= 1, "invalid __path__"
+            # Validate __file__
+            file = pkg.__file__
+            assert os.path.dirname(file) in path, \
+                "dirname(__file__) does not point to __path__"
+            assert os.path.basename(file).startswith('__init__.'), \
+                "basename(__file__) does not start with __init__.!"
+
+        validate_nspkg(nspkg1)
+        """,
+        pyi_args=['--paths', os.pathsep.join(pathex)],
+    )
+
+
+def test_nspkg_attributes_pep420(pyi_builder):
+    # Test that PEP-420 namespace packages have proper attributes:
+    #  * __path__ should contain at least one path
+    #  * __file__ should be unset (python 3.6) or None (python 3.7 and later)
+    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg-pep420', 'path*'))
+    pyi_builder.test_source(
+        """
+        import package
+        import package.nspkg
+
+        def validate_nspkg_pep420(pkg):
+            from sys import version_info
+            # Validate __path__
+            path = getattr(pkg, '__path__', None)
+            assert path is not None and len(path) >= 1, "invalid __path__"
+            # Validate __file__
+            if version_info[0:2] < (3, 7):
+                assert not hasattr(pkg, '__file__'), "invalid __file__"
+            else:
+                assert getattr(pkg, '__file__') is None, "invalid __file__"
+
+        validate_nspkg_pep420(package)
+        validate_nspkg_pep420(package.nspkg)
+        """,
+        pyi_args=['--paths', os.pathsep.join(pathex)],
+    )
 
 #--- hooks related stuff ---
 

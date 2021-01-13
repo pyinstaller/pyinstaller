@@ -1,6 +1,7 @@
 # As config was originally based on an example by Olivier Grisel. Thanks!
 # https://github.com/ogrisel/python-appveyor-demo/blob/master/appveyor.yml
 
+image: Visual Studio 2019
 clone_depth: 50
 
 

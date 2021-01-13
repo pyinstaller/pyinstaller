@@ -3,7 +3,6 @@ setuptools
 docutils
 jinja2
 sphinx
-uuid
 pyusb
 pytz
 pyenchant

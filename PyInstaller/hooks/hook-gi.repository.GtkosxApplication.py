@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -8,12 +8,11 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-
 """
-Hook for pygame._view, required for develop releases between
-2011-02-08 and 2011-08-31, including prebuilt-pygame1.9.2a0
+Import hook for PyGObject https://wiki.gnome.org/PyGObject
 """
 
+from PyInstaller.utils.hooks import get_gi_typelibs
 
-hiddenimports = ['pygame._view']
+
+binaries, datas, hiddenimports = get_gi_typelibs('HarfBuzz', '0.0')

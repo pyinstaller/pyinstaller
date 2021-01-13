@@ -1,6 +1,6 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2020, PyInstaller Development Team.
+ * Copyright (c) 2013-2021, PyInstaller Development Team.
  *
  * Distributed under the terms of the GNU General Public License (version 2
  * or later) with exception for distributing the bootloader.
@@ -126,7 +126,7 @@ void mbvs(const char *fmt, ...);
         #define VS pyi_global_printf
     #endif
 #else
-    #ifdef _WIN32
+    #if defined(_WIN32) && defined(_MSC_VER)
         #define VS
     #else
         #define VS(...)
@@ -157,24 +157,6 @@ void mbvs(const char *fmt, ...);
 
 /* Strings are usually terminated by this character. */
 #define PYI_NULLCHAR       '\0'
-
-/* Rewrite ANSI/POSIX functions to Win32 equivalents. */
-#if defined(_WIN32) && defined(_MSC_VER)
-    #define getpid           _getpid
-    #define mkdir            _mkdir
-    #define rmdir            _rmdir
-    #define snprintf         _snprintf
-    #define stat             _stat
-    #define strdup           _strdup
-    #define vsnprintf        _vsnprintf
-/*
- * Mingw on Windows contains the following functions.
- * Redefine them only if they are not available.
- */
-    #ifndef fileno
-        #define fileno           _fileno
-    #endif
-#endif
 
 /* Saved LC_CTYPE locale */
 extern char *saved_locale;

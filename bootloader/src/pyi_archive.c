@@ -1,6 +1,6 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2020, PyInstaller Development Team.
+ * Copyright (c) 2013-2021, PyInstaller Development Team.
  *
  * Distributed under the terms of the GNU General Public License (version 2
  * or later) with exception for distributing the bootloader.
@@ -14,9 +14,6 @@
 /*
  * Fuctions related to PyInstaller archive embedded in executable.
  */
-
-/* TODO: use safe string functions */
-#define _CRT_SECURE_NO_WARNINGS 1
 
 #ifdef _WIN32
 /* TODO verify windows includes */
@@ -153,7 +150,7 @@ pyi_arch_extract(ARCHIVE_STATUS *status, TOC *ptoc)
         return NULL;
     }
 
-    fseek(status->fp, status->pkgstart + ntohl(ptoc->pos), SEEK_SET);
+    fseek(status->fp, (long)(status->pkgstart + ntohl(ptoc->pos)), SEEK_SET);
     data = (unsigned char *)malloc(ntohl(ptoc->len));
 
     if (data == NULL) {
@@ -421,7 +418,7 @@ pyi_arch_open(ARCHIVE_STATUS *status)
     pyvers = pyi_arch_get_pyversion(status);
 
     /* Read in in the table of contents */
-    fseek(status->fp, status->pkgstart + ntohl(status->cookie.TOC), SEEK_SET);
+    fseek(status->fp, (long)(status->pkgstart + ntohl(status->cookie.TOC)), SEEK_SET);
     status->tocbuff = (TOC *) malloc(ntohl(status->cookie.TOClen));
 
     if (status->tocbuff == NULL) {

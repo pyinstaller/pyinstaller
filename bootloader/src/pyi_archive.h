@@ -1,6 +1,6 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2020, PyInstaller Development Team.
+ * Copyright (c) 2013-2021, PyInstaller Development Team.
  *
  * Distributed under the terms of the GNU General Public License (version 2
  * or later) with exception for distributing the bootloader.
@@ -57,7 +57,7 @@ typedef struct _cookie {
 
 typedef struct _archive_status {
     FILE * fp;
-    int    pkgstart;
+    size_t pkgstart;
     TOC *  tocbuff;
     TOC *  tocend;
     COOKIE cookie;

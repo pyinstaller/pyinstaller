@@ -1,4 +1,4 @@
-# Copyright (c) 2010-2020, PyInstaller Development Team
+# Copyright (c) 2010-2021, PyInstaller Development Team
 # Copyright (c) 2005-2009, Giovanni Bajo
 # Based on previous work under copyright (c) 1999, 2002 McMillan Enterprises, Inc.
 #

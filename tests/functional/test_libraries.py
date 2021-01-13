@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -361,8 +361,15 @@ def test_idlelib(pyi_builder):
 
 
 @importorskip('keyring')
+@skipif(is_linux, reason="SecretStorage backend on linux requires active "
+                         "D-BUS session and initialized keyring, and may "
+                         "need to unlock the keyring via UI prompt.")
 def test_keyring(pyi_builder):
-    pyi_builder.test_source("import keyring")
+    pyi_builder.test_source(
+        """
+        import keyring
+        keyring.get_password("test", "test")
+        """)
 
 
 @importorskip('numpy')
@@ -623,3 +630,12 @@ def test_pandas_extension(pyi_builder):
         assert is_float(1) == 0
         """)
 
+
+@importorskip('win32ctypes')
+@pytest.mark.skipif(not is_win,
+                    reason='pywin32-ctypes is supported only on Windows')
+@pytest.mark.parametrize('submodule', ['win32api', 'win32cred', 'pywintypes'])
+def test_pywin32ctypes(pyi_builder, submodule):
+    pyi_builder.test_source("""
+        from win32ctypes.pywin32 import {0}
+        """.format(submodule))

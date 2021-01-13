@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -250,11 +250,14 @@ def __add_options(parser):
                         "script is a '.pyw' file. "
                         "This option is ignored in *NIX systems.")
     g.add_argument("-i", "--icon", dest="icon_file",
-                   metavar="<FILE.ico or FILE.exe,ID or FILE.icns>",
+                   metavar='<FILE.ico or FILE.exe,ID or FILE.icns or "NONE">',
                    help="FILE.ico: apply that icon to a Windows executable. "
                         "FILE.exe,ID, extract the icon with ID from an exe. "
                         "FILE.icns: apply the icon to the "
-                        ".app bundle on Mac OS X")
+                        ".app bundle on Mac OS X. "
+                        'Use "NONE" to not apply any icon, '
+                        "thereby making the OS to show some default "
+                        "(default: apply PyInstaller's icon)")
 
     g = parser.add_argument_group('Windows specific options')
     g.add_argument("--version-file",

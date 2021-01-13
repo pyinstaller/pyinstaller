@@ -1,6 +1,6 @@
 # -*- mode: python -*- vim: filetype=python
 # -----------------------------------------------------------------------------
-# Copyright (c) 2014-2020, PyInstaller Development Team.
+# Copyright (c) 2014-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -305,6 +305,10 @@ def set_arch_flags(ctx):
 
         # Enable 64bit porting warnings and other warnings too.
         ctx.env.append_value('CFLAGS', '/W3')
+        # Disable warnings about deprecated POSIX function names
+        ctx.env.append_value('CFLAGS', '/D_CRT_NONSTDC_NO_WARNINGS')
+        # Disable warnings about unsafe CRT functions
+        ctx.env.append_value('CFLAGS', '/D_CRT_SECURE_NO_WARNINGS')
         # We use SEH exceptions in winmain.c; make sure they are activated.
         ctx.env.append_value('CFLAGS', '/EHa')
 

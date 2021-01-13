@@ -11,12 +11,22 @@ on:
       - '**'
 
 jobs:
+  skip_ci:
+    runs-on: ubuntu-latest
+    outputs:
+      canSkip: ${{ steps.check.outputs.canSkip }}
+    steps:
+      - id: check
+        uses: Legorooj/skip-ci@main
+
   tests:
-    if: "!contains(github.event.commits[0].message, 'skip ci')"
+    needs: skip_ci
+    if: ${{ needs.skip_ci.outputs.canSkip != 'true' }}
     runs-on: macos-latest
     strategy:
       matrix:
         python-version: [3.5, 3.6, 3.7, 3.8, 3.9]
+      fail-fast: false
     steps:
       - uses: actions/checkout@v2
 

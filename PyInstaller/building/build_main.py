@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -262,6 +262,7 @@ class Analysis(Target):
             ('custom_runtime_hooks', _check_guts_eq),
             ('win_no_prefer_redirects', _check_guts_eq),
             ('win_private_assemblies', _check_guts_eq),
+            ('noarchive', _check_guts_eq),
 
             #'cipher': no need to check as it is implied by an
             # additional hidden import
@@ -491,7 +492,11 @@ class Analysis(Target):
                 if os.path.splitext(os.path.basename(path))[0] == '__init__':
                     name += os.sep + '__init__'
                 # Append the extension for the compiled result.
-                name += '.py' + ('o' if sys.flags.optimize else 'c')
+                # In python 3.5 (PEP-488) .pyo files were replaced by
+                # .opt-1.pyc and .opt-2.pyc. However, it seems that for
+                # bytecode-only module distribution, we always need to
+                # use the .pyc extension.
+                name += '.pyc'
                 new_toc.append((name, path, typecode))
             # Put the result of byte-compiling this TOC in datas. Mark all entries as data.
             for name, path, typecode in compile_py_files(new_toc, CONF['workpath']):

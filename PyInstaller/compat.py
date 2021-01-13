@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -158,6 +158,11 @@ is_venv = is_virtualenv = base_prefix != os.path.abspath(sys.prefix)
 # Method for determining conda taken from:
 # https://stackoverflow.com/questions/47610844#47610844
 is_conda = os.path.isdir(os.path.join(base_prefix, 'conda-meta'))
+
+# Similar to ``is_conda`` but is ``False`` using another ``venv``-like manager
+# on top. In this case, no packages encountered will be conda packages meaning
+# that the default non-conda behaviour is generally desired from PyInstaller.
+is_pure_conda = os.path.isdir(os.path.join(sys.prefix, 'conda-meta'))
 
 # In Python 3.4 module 'imp' is deprecated and there is another way how
 # to obtain magic value.
