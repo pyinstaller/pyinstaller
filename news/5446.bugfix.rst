@@ -1,3 +1,0 @@
-(Windows) The ``windowed``+``debug`` bootloader variant now properly
-displays the exception message and traceback information when the
-frozen script terminates due to uncaught exception.

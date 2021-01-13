@@ -1,1 +1,0 @@
-(GNU/Linux) Reintroduce executable resolution via ``readlink()`` on ``/proc/self/exe`` and preserve the process name using ``prctl()`` with ``PR_GET_NAME`` and ``PR_SET_NAME``.

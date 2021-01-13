@@ -1,1 +1,0 @@
-(Windows) Fix exception when trying to read a manifest from an exe or dll.

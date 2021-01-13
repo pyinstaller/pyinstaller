@@ -1,1 +1,0 @@
-Implement ``exec_statement_rc()`` and ``exec_script_rc()`` as exit-code returning counterparts of ``exec_statement()`` and ``exec_script()``. Implement ``can_import_module()`` helper for hooks that need to query module availability.

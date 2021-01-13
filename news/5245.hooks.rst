@@ -1,1 +1,0 @@
-Update ``keyring`` hook to collect metadata, which is required for backend discovery.
