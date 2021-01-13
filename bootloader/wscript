@@ -67,6 +67,7 @@ SYSTEM_TO_BUILDOS = {
     'SunOS': 'sunos',
     'HP-UX': 'hpux',
     'AIX': 'aix',
+    DESTOS_TO_SYSTEM['cygwin']: 'cygwin',
 }
 
 # waf's name of the system we are building on
