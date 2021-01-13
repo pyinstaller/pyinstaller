@@ -30,7 +30,7 @@ Features
   and
   no longer built into the bootloader. Also, using ``--icon=NONE`` allows to
   not
-  apply any icon, thereby making the OS to show some defaultm icon.
+  apply any icon, thereby making the OS to show some default icon.
   (:issue:`#4700`)
 * (Windows) Enable ``longPathAware`` option in built application's manifest in
   order to support long file paths on Windows 10 v.1607 and later.
@@ -56,7 +56,7 @@ Bugfix
 * (Windows) PyInstaller's default icon is no longer built into the bootloader,
   but
   added at freeze-time. Thus, when specifiying an icon, only that icon is
-  contained in the executable and displaied for a shortcut. (:issue:`#870`,
+  contained in the executable and displayed for a shortcut. (:issue:`#870`,
   :issue:`#2995`)
 * (Windows) Fix "toc is bad" error messages
   when passing a ``VSVersionInfo``
@@ -65,7 +65,7 @@ Bugfix
 * (Windows) Fix exception when trying to read a manifest from an exe or dll.
   (:issue:`#5403`)
 * (Windows) Fix the ``--runtime-tmpdir`` option by creating paths if they don't
-  exist and expanding environment variables (e.g. %LOCALAPPDATA%).
+  exist and expanding environment variables (e.g. ``%LOCALAPPDATA%``).
   (:issue:`#3301`, :issue:`#4579`, :issue:`#4720`)
 
 
