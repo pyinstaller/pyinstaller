@@ -1,3 +1,0 @@
-Strip absolute paths from ``.pyc`` modules collected in the CArchive (PKG).
-This enables build reproducibility without having to match the location of
-the build environment.

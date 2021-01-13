@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "PYINSTALLER" "1" "2020-11-18" "4.1" "PyInstaller"
+.TH "PYINSTALLER" "1" "2021-01-13" "4.2" "PyInstaller"
 .SH NAME
 pyinstaller \- Configure and build a PyInstaller project in one run
 .
@@ -212,11 +212,13 @@ building an OS X .app bundle. On Windows this option
 will be set if the first script is a \(aq.pyw\(aq file. This
 option is ignored in *NIX systems.
 .TP
-.BI \-i \ <FILE.ico or FILE.exe,ID or FILE.icns>\fP,\fB \ \-\-icon \ <FILE.ico or FILE.exe,ID or FILE.icns>
+.BI \-i \ <FILE.ico or FILE.exe,ID or FILE.icns or "NONE">\fP,\fB \ \-\-icon \ <FILE.ico or FILE.exe,ID or FILE.icns or "NONE">
 FILE.ico: apply that icon to a Windows executable.
 FILE.exe,ID, extract the icon with ID from an exe.
 FILE.icns: apply the icon to the .app bundle on Mac OS
-X
+X. Use "NONE" to not apply any icon, thereby making
+the OS to show some default (default: apply
+PyInstaller\(aqs icon)
 .UNINDENT
 .SS Windows specific options
 .INDENT 0.0

@@ -1,4 +1,0 @@
-(Windows) Fix a bug in path-handling code with paths exceeding ``PATH_MAX``,
-which is caused by use of ``_snprintf`` instead of ``snprintf`` when
-building with MSC. Requires Visual Studio 2015 or later.
-Clean up the MSC codepath to address other compiler warnings.

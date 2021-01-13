@@ -1,2 +1,0 @@
-(OSX) Fix the problem with ``Python`` shared library collected from
-recent python versions not being loaded due to invalidated signature.

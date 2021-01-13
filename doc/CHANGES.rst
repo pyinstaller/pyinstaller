@@ -12,6 +12,130 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+4.2 (2021-01-13)
+----------------
+
+Features
+~~~~~~~~
+
+* Add hooks utilities to find binary dependencies of Anaconda distributions.
+  (:issue:`#5213`)
+* (OSX) Automatically remove the signature from the collected copy of the
+  ``Python`` shared library, using ``codesign --remove-signature``. This
+  accommodates both ``onedir`` and ``onefile`` builds with recent python
+  versions for macOS, where invalidated signature on PyInstaller-collected
+  copy of the ``Python`` library prevents the latter from being loaded.
+  (:issue:`#5451`)
+* (Windows) PyInstaller's console or windowed icon is now added at freeze-time
+  and
+  no longer built into the bootloader. Also, using ``--icon=NONE`` allows to
+  not
+  apply any icon, thereby making the OS to show some defaultm icon.
+  (:issue:`#4700`)
+* (Windows) Enable ``longPathAware`` option in built application's manifest in
+  order to support long file paths on Windows 10 v.1607 and later.
+  (:issue:`#5424`)
+
+
+Bugfix
+~~~~~~
+
+* Fix loading of plugin-type modules at run-time of the frozen application:
+  If the plugin path is one character longer than sys._MEIPATH
+  (e.g. "$PWD/p/plugin_1" and "$PWD/dist/main"),
+  the plugin relative-imports a sub-module (of the plugin)
+  and the frozen application contains a module of the same name,
+  the frozen application module was imported. (:issue:`#4141`, :issue:`#4299`)
+* Ensure that spec for frozen packages has ``submodule_search_locations`` set
+  in order to fix compatibility  with ``importlib_resources`` 3.2.0 and later.
+  (:issue:`#5396`)
+* Fix: No rebuild if "noarchive" build-option changes. (:issue:`#5404`)
+* (OSX) Fix the problem with ``Python`` shared library collected from
+  recent python versions not being loaded due to invalidated signature.
+  (:issue:`#5062`, :issue:`#5272`, :issue:`#5434`)
+* (Windows) PyInstaller's default icon is no longer built into the bootloader,
+  but
+  added at freeze-time. Thus, when specifiying an icon, only that icon is
+  contained in the executable and displaied for a shortcut. (:issue:`#870`,
+  :issue:`#2995`)
+* (Windows) Fix "toc is bad" error messages
+  when passing a ``VSVersionInfo``
+  as the ``version`` parameter to ``EXE()``
+  in a ``.spec`` file. (:issue:`#5445`)
+* (Windows) Fix exception when trying to read a manifest from an exe or dll.
+  (:issue:`#5403`)
+* (Windows) Fix the ``--runtime-tmpdir`` option by creating paths if they don't
+  exist and expanding environment variables (e.g. %LOCALAPPDATA%).
+  (:issue:`#3301`, :issue:`#4579`, :issue:`#4720`)
+
+
+Hooks
+~~~~~
+
+* (GNU/Linux) Collect ``xcbglintegrations`` and ``egldeviceintegrations``
+  plugins as part of ``Qt5Gui``. (:issue:`#5349`)
+* (macOS) Fix: Unable to code sign apps built with GTK (:issue:`#5435`)
+* (Windows) Add a hook for ``win32ctypes.core``. (:issue:`#5250`)
+* Add hook for ``scipy.spatial.transform.rotation`` to fix compatibility with
+  SciPy 1.6.0. (:issue:`#5456`)
+* Add hook-gi.repository.GtkosxApplication to fix TypeError with Gtk macOS
+  apps. (:issue:`#5385`)
+* Add hooks utilities to find binary dependencies of Anaconda distributions.
+  (:issue:`#5213`)
+* Fix the ``Qt5`` library availability check in ``PyQt5`` and ``PySide2`` hooks
+  to re-enable support for ``Qt5`` older than 5.8. (:issue:`#5425`)
+* Implement ``exec_statement_rc()`` and ``exec_script_rc()`` as exit-code
+  returning counterparts of ``exec_statement()`` and ``exec_script()``.
+  Implement ``can_import_module()`` helper for hooks that need to query module
+  availability. (:issue:`#5301`)
+* Limit the impact of a failed sub-package import on the result of
+  ``collect_submodules()`` to ensure that modules from all other sub-packages
+  are collected. (:issue:`#5426`)
+* Removed obsolete ``pygame`` hook. (:issue:`#5362`)
+* Update ``keyring`` hook to collect metadata, which is required for backend
+  discovery. (:issue:`#5245`)
+
+
+Bootloader
+~~~~~~~~~~
+
+* (GNU/Linux) Reintroduce executable resolution via ``readlink()`` on
+  ``/proc/self/exe`` and preserve the process name using ``prctl()`` with
+  ``PR_GET_NAME`` and ``PR_SET_NAME``. (:issue:`#5232`)
+* (Windows) Create temporary directories with user's SID instead of
+  ``S-1-3-4``,
+  to work around the lack of support for the latter in ``wine``.
+  This enables ``onefile`` builds to run under ``wine`` again. (:issue:`#5216`)
+* (Windows) Fix a bug in path-handling code with paths exceeding ``PATH_MAX``,
+  which is caused by use of ``_snprintf`` instead of ``snprintf`` when
+  building with MSC. Requires Visual Studio 2015 or later.
+  Clean up the MSC codepath to address other compiler warnings.
+  (:issue:`#5320`)
+* (Windows) Fix building of bootloader's test suite under Windows with Visual
+  Studio.
+  This fixes build errors when ``cmocka`` is present in the build environment.
+  (:issue:`#5318`)
+* (Windows) Fix compiler warnings produced by MinGW 10.2 in order to allow
+  building the bootloader without having to suppress the warnings.
+  (:issue:`#5322`)
+* (Windows) Fix ``windowed+debug`` bootloader variant not properly
+  displaying the exception message and traceback information when the
+  frozen script terminates due to uncaught exception. (:issue:`#5446`)
+
+
+PyInstaller Core
+~~~~~~~~~~~~~~~~
+
+* (Windows) Avoid using UPX with DLLs that have control flow guard (CFG)
+  enabled. (:issue:`#5382`)
+* Avoid using ``.pyo`` module file suffix (removed since PEP-488) in
+  ``noarchive`` mode. (:issue:`#5383`)
+* Improve support for ``PEP-420`` namespace packages. (:issue:`#5354`)
+* Strip absolute paths from ``.pyc`` modules collected in the CArchive (PKG).
+  This enables build reproducibility without having to match the location of
+  the build environment. (:issue:`#5380`)
+
+
 4.1 (2020-11-18)
 ----------------
 

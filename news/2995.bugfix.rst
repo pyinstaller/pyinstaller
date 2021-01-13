@@ -1,3 +1,0 @@
-(win32) PyInstaller's default icon is no longer built into the bootloader, but
-added at freeze-time. Thus, when specifiying an icon, only that icon is
-contained in the executable and displaied for a shortcut.
