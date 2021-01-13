@@ -597,9 +597,10 @@ def _getImports_ldd(pth):
                 # http://www.trilithium.com/johan/2005/08/linux-gate/
                 continue
 
-            if is_cygwin and lib.lower().find('/cygdrive/c/windows/system') == 0:
+            if is_cygwin:
                 # exclude Windows system library
-                continue
+                if lib.lower().startswith('/cygdrive/c/windows/system'):
+                    continue
 
             if os.path.exists(lib):
                 # Add lib if it is not already found.
