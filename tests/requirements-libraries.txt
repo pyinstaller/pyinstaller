@@ -53,7 +53,7 @@ ipython==7.16.1; python_version == '3.6'  # pyup: ignore
 ipython==7.9.0; python_version == '3.5'  # pyup: ignore
 
 # pandas 1.0.0 dropped Python 3.5 support.
-pandas==1.1.5; python_version > '3.5'
+pandas==1.2.0; python_version > '3.5'
 pandas==0.25.3; python_version == '3.5'  # pyup: ignore
 
 # Numpy 1.19 dropped Python 3.5 support
