@@ -12,7 +12,11 @@
 Import hook for PyGObject https://wiki.gnome.org/PyGObject
 """
 
+from PyInstaller.compat import is_darwin
 from PyInstaller.utils.hooks import get_gi_typelibs
 
 
-binaries, datas, hiddenimports = get_gi_typelibs('HarfBuzz', '0.0')
+if is_darwin:
+    binaries, datas, hiddenimports = get_gi_typelibs(
+        'GtkosxApplication', '1.0'
+    )
