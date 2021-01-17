@@ -387,6 +387,9 @@ An :file:`Info.plist` file is an important part of a Mac OS X app bundle.
 of ``Info.plist``.)
 
 |PyInstaller| creates a minimal :file:`Info.plist`.
+The ``version`` option can be used to set the application version
+using the CFBundleShortVersionString Core Foundation Key.
+
 You can add or overwrite entries in the plist by passing an
 ``info_plist=`` parameter to the BUNDLE call.  Its argument should be a
 Python dict with keys and values to be included in the :file:`Info.plist`
@@ -401,6 +404,7 @@ XML types.  Here's an example::
              name='myscript.app',
              icon=None,
              bundle_identifier=None,
+             version='0.0.1',
              info_plist={
              	'NSPrincipalClass': 'NSApplication',
                 'NSAppleScriptEnabled': False,
