@@ -41,6 +41,11 @@ is_win_10 = is_win and (platform.win32_ver()[0] == '10')
 is_cygwin = sys.platform == 'cygwin'
 is_darwin = sys.platform == 'darwin'  # Mac OS X
 
+# On macOS 11 (Big Sur), platform.mac_ver() reports either 10.16 or 11.x,
+# depending on version of macOS for which the python interpreter was
+# compiled and the setting of SYSTEM_VERSION_COMPAT environment variable.
+is_macos_11 = is_darwin and platform.mac_ver()[0].startswith(('10.16', '11'))
+
 # Unix platforms
 is_linux = sys.platform.startswith('linux')
 is_solar = sys.platform.startswith('sun')  # Solaris
