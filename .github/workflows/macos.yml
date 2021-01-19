@@ -60,4 +60,4 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest -n 3 --maxfail 3 --durations 10 tests/unit tests/functional --ignore tests/functional/test_libraries.py
+          pytest -n 3 --maxfail 3 --durations 10 tests/unit tests/functional --ignore tests/functional/test_libraries.py --basetemp ~/pytest-temp
