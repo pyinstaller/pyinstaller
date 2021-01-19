@@ -1,0 +1,1 @@
+Doc: Add version spec file option for macOS Bundle.
