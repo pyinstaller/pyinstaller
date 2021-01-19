@@ -193,13 +193,31 @@ void printf_to_stderr(const char* fmt, ...) {
 void
 pyi_global_printf(const char *fmt, ...)
 {
-    va_list v;
+   #ifdef _WIN32
+	//Add The lock of process
+    HANDLE mutex;
+    mutex = OpenMutex(MUTEX_ALL_ACCESS, FALSE, "pyi_global_printf");
+    if (mutex == NULL)
+	{
+		mutex = CreateMutex(NULL, FALSE, "pyi_global_printf");
+	}
+    WaitForSingleObject(mutex, INFINITE);
+    #endif // _WIN32
+    
+    va_list v;    
 
     /* Sent 'LOADER text' messages to stderr. */
     fprintf(stderr, "[%d] ", getpid());
     va_start(v, fmt);
     vprintf_to_stderr(fmt, v);
     va_end(v);
+    
+    #ifdef _WIN32
+	//release the lock of process
+	ReleaseMutex(mutex);
+
+	#endif // _WIN32
+    
     /* For Gui apps on Mac OS X send debug messages also to syslog. */
     /* This allows to see bootloader debug messages in the Console.app log viewer. */
     /* https://en.wikipedia.org/wiki/Console_(OS_X) */
