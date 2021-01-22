@@ -30,6 +30,24 @@ def is_env?(name, value)
 end
 
 
+def packages_clang11_debianoid
+  # Building the universal2 (x86_64/arm64) bootloader for macOS does
+  # not seem to work with clang-7 that comes with Debian Buster. So
+  # we need to install a recent version from apt.llvm.org.
+  return <<-EOF
+    # avoid any prompts, from http://askubuntu.com/questions/146921
+    export DEBIAN_FRONTEND=noninteractive
+    # needed for apt-add-repository
+    apt-get install -y software-properties-common
+    # setup llvm repository and install clang-11
+    wget https://apt.llvm.org/llvm.sh
+    chmod +x llvm.sh
+    ./llvm.sh 11
+    # symlink /usr/bin/clang-11 to /usr/bin/clang
+    ln -s /usr/bin/clang-11 /usr/bin/clang
+  EOF
+end
+
 def packages_debianoid
   # This always also installs the software for cross-building for OS X and
   # Windows. Differentiating here is most probably not worth the effort.
@@ -43,7 +61,7 @@ def packages_debianoid
     apt-get install -y python3 python3-dev python3-setuptools \
                        gcc libz-dev libz-dev:i386 \
                        gcc-i686-linux-gnu \
-                       gcc-mingw-w64 clang
+                       gcc-mingw-w64
   EOF
 end
 
@@ -57,9 +75,9 @@ def packages_osxcross_debianoid
                -o Dpkg::Options::="--force-confold" upgrade
     # these are typically installed already on a GNU/Linux system
     apt-get install -y cmake make sed kmod
-    apt-get install -y git fuse clang
-    # requirements for darling-dmg (not listed in tools/get_dependencies.sh)
-    apt-get install -y libxml2-dev libicu-dev libssl-dev libbz2-dev libfuse-dev
+    apt-get install -y git
+    # requirements for osxcross SDK extraction script (not listed in tools/get_dependencies.sh)
+    apt-get install -y libxml2-dev libicu-dev libssl-dev libbz2-dev liblzma-dev
   EOF
 end
 
@@ -74,15 +92,13 @@ end
 
 def build_osxcross
   return <<-EOF
-    sudo modprobe fuse
     PATH=$PATH:/sbin:/usr/sbin
     SDK=/vagrant/bootloader/_sdks/osx
     cd ~vagrant/osxcross
     mkdir -p $SDK
-    # Build darling-dmg, mount the ``.dmg`` image file via fuse and extract
-    # the SDK into MacOSX*.tar.*
-    ./tools/gen_sdk_package_darling_dmg.sh $SDK/Xcode_7.3.1.dmg || exit 1
-    mv MacOSX*.tar.* tarballs/
+    # Extract the SDK from Xcode.xip into MacOSX*.tar.*
+    ./tools/gen_sdk_package_tools_dmg.sh $SDK/Xcode_tools.dmg || exit 1
+    mv MacOSX11*.tar.* tarballs/
     # Build the build-tools into directory `target/`
     UNATTENDED=1 ./build.sh
 
@@ -90,13 +106,13 @@ def build_osxcross
     echo "Minimizing the SDK to include only what is required for building"
     echo "PyInstaller"
     rm -rf libexec/as/{arm,ppc,ppc64} # platforms not supported by pyinstaller
-    rm -rf SDK/tools # darling-dmg, not used for building the bootloader
+    rm -rf SDK/tools # osxcross tools, not used for building the bootloader
     cd SDK/MacOSX*.sdk
     rm -rf usr/lib/{php,dtrace} usr/share usr/bin
     cd System/Library/
     mv Frameworks Frameworks.off
     mkdir Frameworks
-    mv Frameworks.off/{ApplicationServices,CoreGraphics,ImageIO,Carbon,CoreServices,IOKit,CFNetwork,CoreText,IOSurface,CoreFoundation,DiskArbitration,Security}.framework Frameworks
+    mv Frameworks.off/{ApplicationServices,CoreGraphics,ImageIO,Carbon,CoreServices,IOKit,CFNetwork,CoreText,IOSurface,CoreFoundation,DiskArbitration,Security,ColorSync}.framework Frameworks
     rm -rf Frameworks.off CoreServices Printers PrivateFrameworks
     cd ~vagrant/osxcross
 
@@ -266,8 +282,8 @@ def build_bootloader_target_osx(boxname)
     echo $PATH
     export LD_LIBRARY_PATH=~/osxcross/lib:$LD_LIBRARY_PATH
     export MACOSX_DEPLOYMENT_TARGET=10.11
-    python3 ./waf all CC=x86_64-apple-darwin15-clang --clang
-    #python3 ./waf all CC=i386-apple-darwin15-clang
+    export CC=$(basename -a ~/osxcross/bin/x86_64-*-clang)
+    python3 ./waf all --clang
   EOF
 end
 
@@ -299,6 +315,8 @@ Vagrant.configure(2) do |config|
         :type => :shell, :privileged => false, :keep_color => true,
         :inline => build_bootloader_target_win32("linux64")
     elsif is_env?("TARGET", "OSX")
+      # We need clang-11 to build universal2 bootloader.
+      b.vm.provision "packages clang11 debianoid", :type => :shell, :inline => packages_clang11_debianoid, :keep_color => true
       if (not File.exist?("_sdks/osx/osxcross.tar.xz"))
         abort("\nERROR: OS X cross SDK is missing. Please run once the "\
               "`build-osxcross` machine.\n\n")
@@ -319,13 +337,16 @@ Vagrant.configure(2) do |config|
     b.vm.provider :virtualbox do |v|
       v.memory = 768
     end
+    # NOTE: the osxcross scripts install clang-7, so there's no point in
+    # installing clang-11 here... (and the SDK builds just fine with
+    # clang-7).
     b.vm.provision "packages osxcross debianoid", :type => :shell,
         :inline => packages_osxcross_debianoid,
         :keep_color => true
     b.vm.provision "prepare osxcross debianoid", :type => :shell,
         :inline => prepare_osxcross_debianiod,
         :keep_color => true
-    # Reload for the case the kernel changed, thus fuse will be loaded
+    # Reload in case the kernel changed
     b.vm.provision :reload
     b.vm.provision "build osxcross", :type => :shell,
         :inline => build_osxcross,

@@ -1,0 +1,2 @@
+Update ``clang`` in ``linux64`` Vagrant VM to ``clang-11`` from
+``apt.llvm.org`` so it can build ``universal2`` macOS bootloader.
