@@ -113,9 +113,15 @@ Building for Mac OS X
 
 On Mac OS X please install Xcode_, Apple's suite of tools for developing
 software for Mac OS X.
-This will get you the `clang` compiler.
-Any version suitable for your platform should be fine.
-`Xcode` can be also installed from your Mac OS X Install DVD.
+Instead of installing the full `Xcode` package, you can also install
+and use `Command Line Tools for Xcode <https://developer.apple.com/download/more/>`_.
+Installing either will provide the `clang` compiler.
+
+By default, 64-bit bootloaders are built as `universal2` fat binaries
+that support both `x86_64` and `arm64` architectures, which requires a
+recent version of `Xcode` (12.2 or later). If you wish to use an older
+version of `Xcode`, you can build the single-arch thin bootloader by
+passing ``--no-universal2`` flag to the ``waf`` build command.
 
 Now you can build the bootloader as shown above.
 
