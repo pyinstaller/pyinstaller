@@ -153,42 +153,39 @@ Preparation: Get SDK and Build-tools
 .......................................
 
 For preparing the SDK and building the cctools, we use the very helpful
-scripts from the `OS X Cross <https://github.com/tpoechtrager/osxcross>`
-toolchain. If you re interested in the details, and what other features OS X
-Cross offers, please refer to it's homepage.
+scripts from the `OS X Cross <https://github.com/tpoechtrager/osxcross>`_
+toolchain. If you are interested in the details, and what other features OS X
+Cross offers, please refer to its homepage.
 
-Side-note: For actually accessing the OS X disk image file (`.dmg`),
-`darling-dmg <https://github.com/darlinghq/darling-dmg>`_ is used. It allows
-mounting `.dmg` s under GNU/Linux via FUSE.
-
-For saving you reading OSXCross' documentation we prepared a virtual box
-description performing all required steps.
+To save you reading the OSXCross' documentation, we prepared a virtual box
+definition that performs all required steps.
 If you are interested in the precise commands, please refer to
 ``packages_osxcross_debianoid``, ``prepare_osxcross_debianiod``, and
 ``build_osxcross`` in the Vagrantfile.
 
 Please proceed as follows:
 
-1. Download `XCode 7.3.x
-   <https://developer.apple.com/downloads/index.action?name=Xcode%207.3` and
-   save it to :file:`bootloader/sdks/osx/`. You will need to register an
-   `Apple ID`, for which you may use a disposable e-mail-address, to search
-   and download the files.
+1. Download `Command Line Tools for Xcode <https://developer.apple.com/download/more/>`_
+   12.2 or later. You will need an `Apple ID` to search and download the
+   files; if you do not have one already, you can register it for free.
 
    Please make sure that you are complying to the license of the respective
    package.
 
-2. Use the Vagrantfile to automatically build the SDK and tools::
+2. Save the downloaded `.dmg` file to
+   :file:`bootloader/_sdks/osx/Xcode_tools.dmg`.
+
+3. Use the Vagrantfile to automatically build the SDK and tools::
 
      vagrant up build-osxcross && vagrant halt build-osxcross
 
-   This should create the file :file:`bootloader/sdks/osx/osxcross.tar.xz`,
+   This should create the file :file:`bootloader/_sdks/osx/osxcross.tar.xz`,
    which will then be installed on the build-system.
 
    If for some reason this fails, try running ``vagrant provision
    build-osxcross``.
 
-3. This virtual machine is no longer used, you may now want to discard it
+4. This virtual machine is no longer used, you may now want to discard it
    using ``vagrant destroy build-osxcross``.
 
 
