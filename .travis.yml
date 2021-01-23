@@ -77,11 +77,6 @@ jobs:
         - python -m PyInstaller.utils.run_tests -c PyInstaller/utils/pytest.ini --include_only=pyi_hooksample.
 
     - <<: *test-pyinstaller
-      python: 3.5
-    - <<: *test-libraries
-      python: 3.5
-
-    - <<: *test-pyinstaller
       python: 3.6
     - <<: *test-libraries
       python: 3.6

@@ -21,25 +21,19 @@ import stat
 import subprocess
 import pytest
 
-from PyInstaller.compat import is_py36
-
 
 @pytest.mark.linux
 @pytest.mark.parametrize('arch', ['x86_64'])
 def test_appimage_loading(tmp_path, pyi_builder_spec, arch):
     # Skip the test if appimagetool is not found
     appimagetool = pathlib.Path.home() / ('appimagetool-%s.AppImage' % arch)
-    if not is_py36:
-        appimagetool = str(appimagetool)
-    if not os.path.isfile(appimagetool):
+    if appimagetool.is_file():
         pytest.skip('%s not found' % appimagetool)
 
     # Ensure appimagetool is executable
     if not os.access(appimagetool, os.X_OK):
-        st = os.stat(appimagetool)
-        os.chmod(appimagetool, st.st_mode | stat.S_IXUSR)
-
-    tmp_path = str(tmp_path)  # Fix for Python 3.5
+        st = appimagetool.stat()
+        appimagetool.chmod(st.st_mode | stat.S_IXUSR)
 
     app_name = 'apptest'
     app_path = os.path.join(tmp_path, '%s-%s.AppImage' % (app_name, arch))

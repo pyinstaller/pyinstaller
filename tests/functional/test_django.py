@@ -15,8 +15,7 @@ Functional tests for the Django content management system (CMS).
 
 import pytest
 
-from PyInstaller.utils.tests import importorskip, skipif
-from PyInstaller.compat import is_py36
+from PyInstaller.utils.tests import importorskip
 
 
 # In Django 2.1, ``django/contrib/auth/password_validation.py``, line 168, which
@@ -28,8 +27,6 @@ from PyInstaller.compat import is_py36
 # ``password_validation.pyc`` doesn't exist. Python 3.6 added the default
 # argument ``strict=False``, which ignores this exception. This file is in the
 # archive, but not the filesystem.
-@skipif(not is_py36,
-        reason='Call to resolve() raises an exception in Python 3.5.')
 @importorskip('django')
 # Django test might sometimes hang.
 @pytest.mark.timeout(timeout=7*60)
