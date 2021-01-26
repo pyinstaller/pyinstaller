@@ -345,6 +345,13 @@ class EXE(Target):
             uac_uiaccess
                 Windows only. Setting to True allows an elevated application to
                 work with Remote Desktop
+            target_arch
+                macOS only. Used to explicitly specify the target architecture;
+                either single-arch ('x86_64' or 'arm64') or 'universal2'. Used
+                in checks that the collected binaries contain the requires arch
+                slice(s) and/or to convert fat binaries into thin ones as
+                necessary. If not specified (default), a single-arch build
+                corresponding to running architecture is assumed.
         """
         from PyInstaller.config import CONF
         Target.__init__(self)
@@ -370,6 +377,16 @@ class EXE(Target):
         # On Windows allows the exe to request admin privileges.
         self.uac_admin = kwargs.get('uac_admin', False)
         self.uac_uiaccess = kwargs.get('uac_uiaccess', False)
+
+        # Target architecture (macOS only)
+        self.target_arch = kwargs.get('target_arch', None)
+        if is_darwin:
+            if self.target_arch is None:
+                import platform
+                self.target_arch = platform.machine()
+            logger.info("EXE target arch: %s", self.target_arch)
+        else:
+            self.target_arch = None  # explicitly disable
 
         if CONF['hasUPX']:
             self.upx = kwargs.get('upx', False)
@@ -464,6 +481,7 @@ class EXE(Target):
             ('uac_uiaccess', _check_guts_eq),
             ('manifest', _check_guts_eq),
             ('append_pkg', _check_guts_eq),
+            ('target_arch', _check_guts_eq),
             # for the case the directory ius shared between platforms:
             ('pkgname', _check_guts_eq),
             ('toc', _check_guts_eq),
@@ -627,19 +645,45 @@ class EXE(Target):
                 logger.debug(stderr)
             if retcode != 0:
                 raise SystemError("objcopy Failure: %s" % stderr)
-        else:
-            # Fall back to just append on end of file
-            logger.info("Appending archive to EXE %s", self.name)
-            with open(self.name, 'wb') as outf:
-                # write the bootloader data
-                with open(exe, 'rb') as infh:
-                    shutil.copyfileobj(infh, outf, length=64*1024)
-                # write the archive data
-                with open(self.pkg.name, 'rb') as infh:
-                    shutil.copyfileobj(infh, outf, length=64*1024)
-
-        if is_darwin:
+        elif is_darwin:
             import PyInstaller.utils.osx as osxutils
+
+            # Copy bootloader
+            logger.info("Copying bootloader exe to %s", self.name)
+            with open(self.name, 'wb') as outf:
+                with open(exe, 'rb') as inf:
+                    shutil.copyfileobj(inf, outf, length=64*1024)
+
+            # Convert bootloader to target arch
+            logger.info("Converting EXE to target arch (%s)", self.target_arch)
+            osxutils.binary_to_target_arch(self.name, self.target_arch)
+
+            # Strip signatures from all arch slices. Strictly speaking,
+            # we need to remove signature (if present) from the last
+            # slice, because we will be appending data to it. When
+            # building universal2 bootloaders natively on macOS, only
+            # arm64 slices have a (dummy) signature. However, when
+            # cross-compiling with osxcross, we seem to get dummy
+            # signatures on both x86_64 and arm64 slices. While the former
+            # should not have any impact, it does seem to cause issues
+            # with further binary signing using real identity. Therefore,
+            # we remove all signatures and re-sign the binary using
+            # dummy signature once the data is appended.
+            logger.info("Removing signature(s) from EXE")
+            retcode, stdout, stderr = exec_command_all(
+                'codesign', '--remove', '--all-architectures', self.name)
+            logger.debug("codesign returned %i", retcode)
+            if stdout:
+                logger.debug(stdout)
+            if stderr:
+                logger.debug(stderr)
+            if retcode != 0:
+                raise SystemError("codesign Failure: %s" % stderr)
+
+            # Append the data
+            with open(self.name, 'ab') as outf:
+                with open(self.pkg.name, 'rb') as inf:
+                    shutil.copyfileobj(inf, outf, length=64*1024)
 
             # If the version of macOS SDK used to build bootloader exceeds
             # that of macOS SDK used to built Python library (and, by
@@ -673,6 +717,32 @@ class EXE(Target):
             # Fix Mach-O header for codesigning on OS X.
             logger.info("Fixing EXE for code signing %s", self.name)
             osxutils.fix_exe_for_code_signing(self.name)
+
+            # Re-sign all arch slices with dummy signature. This can
+            # also serve as integrity check.
+            logger.info("Re-generating dummy signature(s) on EXE")
+            # "codesign -s - <file>" adds a dummy signature, same as
+            # clang does when compiling for arm64
+            retcode, stdout, stderr = exec_command_all(
+                'codesign', '--sign', '-', '--all-architectures', self.name)
+            logger.debug("codesign returned %i", retcode)
+            if stdout:
+                logger.debug(stdout)
+            if stderr:
+                logger.debug(stderr)
+            if retcode != 0:
+                raise SystemError("codesign Failure: %s" % stderr)
+        else:
+            # Fall back to just append on end of file
+            logger.info("Appending archive to EXE %s", self.name)
+            with open(self.name, 'wb') as outf:
+                # write the bootloader data
+                with open(exe, 'rb') as infh:
+                    shutil.copyfileobj(infh, outf, length=64*1024)
+                # write the archive data
+                with open(self.pkg.name, 'rb') as infh:
+                    shutil.copyfileobj(infh, outf, length=64*1024)
+
         if is_win:
             # Set checksum to appease antiviral software.
             from PyInstaller.utils.win32.winutils import set_exe_checksum
