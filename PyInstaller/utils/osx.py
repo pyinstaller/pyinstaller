@@ -17,10 +17,13 @@ Utils for Mac OS X platform.
 import os
 import shutil
 
-from PyInstaller.compat import base_prefix
+from PyInstaller.compat import base_prefix, exec_command_all
 from macholib.MachO import MachO
 from macholib.mach_o import LC_BUILD_VERSION, LC_VERSION_MIN_MACOSX, \
     LC_SEGMENT_64, LC_SYMTAB, LC_CODE_SIGNATURE
+
+import PyInstaller.log as logging
+logger = logging.getLogger(__name__)
 
 
 def is_homebrew_env():
@@ -232,3 +235,79 @@ def fix_exe_for_code_signing(filename):
             fat.to_fileobj(fp)
             for arch in archs:
                 arch.to_fileobj(fp)
+
+
+def _get_arch_string(header):
+    """
+    Converts cputype and cpusubtype from mach_o.mach_header_64 into
+    arch string comparible with lipo/codesign. The list of supported
+    architectures can be found in man(1) arch.
+    """
+    # NOTE: the constants below are taken from macholib.mach_o
+    cputype = header.cputype
+    cpusubtype = header.cpusubtype & 0x0FFFFFFF
+    if cputype == 0x01000000 | 7:
+        if cpusubtype == 8:
+            return 'x86_64h'  # 64-bit intel (haswell)
+        else:
+            return 'x86_64'  # 64-bit intel
+    elif cputype == 0x01000000 | 12:
+        if cpusubtype == 2:
+            return 'arm64e'
+        else:
+            return 'arm64'
+    elif cputype == 7:
+        return 'i386'  # 32-bit intel
+    assert False, 'Unhandled architecture!'
+
+
+def get_binary_architectures(filename):
+    """
+    Inspects the given binary and returns tuple (is_fat, archs),
+    where is_fat is boolean indicating fat/thin binary, and arch is
+    list of architectures with lipo/codesign compatible names.
+    """
+    executable = MachO(filename)
+    return bool(executable.fat), [_get_arch_string(hdr.header)
+                                  for hdr in executable.headers]
+
+
+def convert_binary_to_thin_arch(filename, thin_arch):
+    """
+    Convert the given fat binary into thin one with the specified
+    target architecture.
+    """
+    cmd_args = ['lipo', '-thin', thin_arch, filename, '-output', filename]
+    retcode, stdout, stderr = exec_command_all(*cmd_args)
+    if retcode != 0:
+        logger.warning("lipo command (%r) failed with error code %d!\n"
+                       "stdout: %r\n"
+                       "stderr: %r",
+                       cmd_args, retcode, stdout, stderr)
+        raise SystemError("lipo failure!")
+
+
+def binary_to_target_arch(filename, target_arch):
+    """
+    Check that the given binary contains required architecture slice(s)
+    and convert the fat binary into thin one, if necessary.
+    """
+    # Check the binary
+    is_fat, archs = get_binary_architectures(filename)
+    if is_fat:
+        if target_arch == 'universal2':
+            return  # Assume fat binary is universal2; nothing to do
+        else:
+            assert target_arch in archs, \
+                f"Binary {filename} does not contain slice for {target_arch}!"
+            # Convert to thin arch
+            logger.debug("Converting fat binary %s to thin binary (%s)",
+                         filename, target_arch)
+            convert_binary_to_thin_arch(filename, target_arch)
+    else:
+        assert target_arch != 'universal2', \
+            f"Binary {filename} is not a fat binary!"
+        assert target_arch in archs, \
+            f"Binary {filename} is incompatible with target arch " \
+            f"{target_arch} (has arch: {archs[0]})!"
+        return  # Nothing to do
