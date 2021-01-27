@@ -516,7 +516,10 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
                     }
                 #endif /* if defined(WINDOWED) and defined(LAUNCH_DEBUG) */
 
-                return -1;
+                /* Be consistent with python interpreter, which returns
+                 * 1 if it exits due to unhandled exception.
+                 */
+                return 1;
             }
             free(data);
         }
