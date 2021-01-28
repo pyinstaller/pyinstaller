@@ -55,9 +55,6 @@
 
 int pyvers = 0;
 
-/* Magic number to verify archive data are bundled correctly. */
-#define MAGIC "MEI\014\013\012\013\016"
-
 /*
  * Return pointer to next toc entry.
  */
@@ -233,164 +230,78 @@ pyi_arch_extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
 }
 
 /*
- * Look for the predefined string MAGIC in the embedded data before the given
- * search end position. If MAGIC is found, copies the entire COOKIE struct into
- * status->cookie, sets status->pkgstart to the location of the archive and returns 0.
- * Returns -1 on failure.
+ * Perform full back-to-front scan of the file to search for the
+ * MAGIC pattern of the embedded archive's COOKIE header.
  *
- * PyInstaller sets this cookie to a constant value. Bootloader
- * compares it with the expected value. If there is match then
- * bootloader knows where the data was embedded correctly.
- *
- * The search space uses the given sizes because on Windows and OS X, the code signing
- * will add padding between the end of the COOKIE and the beginning of the signature
- * to align the signature to a quadword or a page boundary respectively. On Linux,
- * we use objtool to insert the archive into the bootloader, and objtool will
- * move the ELF section headers so they follow the cookie, so we need to search backward
- * past the section headers to find the cookie.
+ * Returns offset within the file if MAGIC pattern is found, 0 otherwise.
  */
-#if defined(WIN32)
-#define SEARCH_SIZE (8 + sizeof(COOKIE))
-#else
-#define SEARCH_SIZE (4096 + sizeof(COOKIE))
-#endif
-
-static int
-pyi_arch_find_cookie(ARCHIVE_STATUS *status, int search_end)
+static size_t
+_pyi_find_cookie_offset(FILE *fp)
 {
-    int search_start = search_end - SEARCH_SIZE;
-    char buf[SEARCH_SIZE];
-    char * search_ptr = buf + SEARCH_SIZE - sizeof(COOKIE);
+    static const unsigned char MAGIC[] = { 'M', 'E', 'I', 014, 013, 012, 013, 016 };
+    static const int SEARCH_CHUNK_SIZE = 8192;
+    unsigned char *buffer = NULL;
+    size_t start_pos, end_pos;
+    size_t offset = 0;  /* return value */
 
-    if (fseek(status->fp, search_start, SEEK_SET)) {
-        return -1;
+    /* Allocate the read buffer */
+    buffer = malloc(SEARCH_CHUNK_SIZE);
+    if (!buffer) {
+        VS("LOADER: failed to allocate read buffer (%d bytes)!\n", SEARCH_CHUNK_SIZE);
+        goto cleanup;
     }
 
-    /* Read the entire search space */
-    if (fread(buf, SEARCH_SIZE, 1, status->fp) < 1) {
-        return -1;
+    /* Determine file size */
+    if (fseek(fp, 0, SEEK_END) < 0) {
+        VS("LOADER: failed to seek to the end of the file!\n");
+        goto cleanup;
+    }
+    end_pos = ftell(fp);
+
+    /* Sanity check */
+    if (end_pos < sizeof(MAGIC)) {
+        VS("LOADER: file is too short!\n");
+        goto cleanup;
     }
 
-    /* Search for MAGIC within search space */
+    /* Search the file back to front, in overlapping SEARCH_CHUNK_SIZE
+     * chunks. */
+    do {
+        size_t chunk_size;
+        start_pos = (end_pos >= SEARCH_CHUNK_SIZE) ? (end_pos - SEARCH_CHUNK_SIZE) : 0;
+        chunk_size = end_pos - start_pos;
 
-    while(search_ptr >= buf) {
-        if(0 == strncmp(MAGIC, search_ptr, strlen(MAGIC))) {
-            /* MAGIC found - Copy COOKIE to status->cookie */
-            memcpy(&status->cookie, search_ptr, sizeof(COOKIE));
-
-            /* Fix endianess of COOKIE fields */
-            status->cookie.len = pyi_be32toh(status->cookie.len);
-            status->cookie.TOC = pyi_be32toh(status->cookie.TOC);
-            status->cookie.TOClen = pyi_be32toh(status->cookie.TOClen);
-            status->cookie.pyvers = pyi_be32toh(status->cookie.pyvers);
-
-            /* From the cookie, calculate the archive start */
-            status->pkgstart = search_start + sizeof(COOKIE) + (search_ptr - buf) - status->cookie.len;
-
-            return 0;
-        }
-        search_ptr--;
-    }
-
-    return -1;
-}
-
-static int
-findDigitalSignature(ARCHIVE_STATUS * const status)
-{
-#ifdef _WIN32
-    /* There might be a digital signature attached. Let's see. */
-    char buf[2];
-    int offset = 0, signature_offset = 0;
-    fseek(status->fp, 0, SEEK_SET);
-    fread(buf, 1, 2, status->fp);
-
-    if (!(buf[0] == 'M' && buf[1] == 'Z')) {
-        return -1;
-    }
-    /* Skip MSDOS header */
-    fseek(status->fp, 60, SEEK_SET);
-    /* Read offset to PE header */
-    fread(&offset, 4, 1, status->fp);
-    fseek(status->fp, offset + 24, SEEK_SET);
-    fread(buf, 2, 1, status->fp);
-
-    if (buf[0] == 0x0b && buf[1] == 0x01) {
-        /* 32 bit binary */
-        signature_offset = 152;
-    }
-    else if (buf[0] == 0x0b && buf[1] == 0x02) {
-        /* 64 bit binary */
-        signature_offset = 168;
-    }
-    else {
-        /* Invalid magic value */
-        VS("LOADER: Could not find a valid magic value (was %x %x).\n",
-           (unsigned int) buf[0], (unsigned int) buf[1]);
-        return -1;
-    }
-
-    /* Jump to the fields that contain digital signature info */
-    fseek(status->fp, offset + signature_offset, SEEK_SET);
-    fread(&offset, 4, 1, status->fp);
-
-    if (offset == 0) {
-        return -1;
-    }
-    VS("LOADER: %s contains a digital signature\n", status->archivename);
-    return offset;
-#elif defined(__APPLE__)
-    /* We inspect the Mach-O header to find a code signature
-     *  https://developer.apple.com/library/mac/documentation/DeveloperTools/Conceptual/MachORuntime/
-     *  1) Determine the length of the header
-     *  2) Read the Mach-O Header to determine how many commands there are
-     *  3) Read through the commands and look for a code signature section (command #29)
-     *  4) If we find a one, return where it starts */
-
-    uint32_t magic_value;
-    uint32_t header_size;
-
-    uint32_t load_size;
-    uint32_t cmd;
-    uint32_t cmd_size;
-    uint32_t offset = -1;
-
-    /* The first 4 bytes determine the header length */
-    fseek(status->fp, 0, SEEK_SET);
-    fread(&magic_value, sizeof(uint32_t), 1, status->fp);
-
-    if (magic_value == 0xfeedface || magic_value == 0xcefaedfe) {
-        /* 32-bit, so the header size is 28 bytes. */
-        header_size = 28;
-    }
-    else {
-        /* 64-bit, so the header size is 32 bytes. */
-        header_size = 32;
-    }
-
-    /* Determine the total size of all load commands */
-    fseek(status->fp, 20, SEEK_SET);
-    fread(&load_size, sizeof(uint32_t), 1, status->fp);
-
-    fseek(status->fp, header_size, SEEK_SET);
-
-    while (ftell(status->fp) < (header_size + load_size)) {
-        fread(&cmd, sizeof(uint32_t), 1, status->fp);
-        fread(&cmd_size, sizeof(uint32_t), 1, status->fp);
-
-        if (cmd == 29) {
-            /* Code signatures are command 29.
-             *  Our archive ends right before the signature */
-            fread(&offset, sizeof(uint32_t), 1, status->fp);
-            VS("LOADER: %s contains a digital signature\n", status->archivename);
+        /* Is the remaining chunk large enough to hold the pattern? */
+        if (chunk_size < sizeof(MAGIC)) {
             break;
         }
-        fseek(status->fp, cmd_size - 8, SEEK_CUR);
-    }
+
+        /* Read the chunk */
+        if (fseek(fp, start_pos, SEEK_SET) < 0) {
+            VS("LOADER: failed to seek to the offset 0x%zX!\n", start_pos);
+            goto cleanup;
+        }
+        if (fread(buffer, 1, chunk_size, fp) != chunk_size) {
+            VS("LOADER: failed to read chunk (%zd bytes)!\n", chunk_size);
+            goto cleanup;
+        }
+
+        /* Scan the chunk */
+        for (size_t i = chunk_size - sizeof(MAGIC) + 1; i > 0; i--) {
+            if (memcmp(buffer + i - 1, MAGIC, sizeof(MAGIC)) == 0) {
+                offset = start_pos + i - 1;
+                goto cleanup;
+            }
+        }
+
+        /* Adjust search location for next chunk; ensure proper overlap */
+        end_pos = start_pos + sizeof(MAGIC) - 1;
+    } while (start_pos > 0);
+
+cleanup:
+    free(buffer);
+
     return offset;
-#else /* ifdef _WIN32 */
-    return -1;
-#endif /* ifdef _WIN32 */
 }
 
 /*
@@ -419,7 +330,7 @@ _pyi_arch_fix_toc_endianess(ARCHIVE_STATUS *status)
 int
 pyi_arch_open(ARCHIVE_STATUS *status)
 {
-    int search_end = 0;
+    size_t cookie_pos = 0;
     VS("LOADER: archivename is %s\n", status->archivename);
 
     /* Physically open the file */
@@ -428,26 +339,32 @@ pyi_arch_open(ARCHIVE_STATUS *status)
         return -1;
     }
 
-    /* Find out where to stop searching for the cookie. First try to find
-     * a digital signature added by a code signing tool.
-     */
-#if defined(WIN32) || defined(__APPLE__)
-    search_end = findDigitalSignature(status);
-#endif
-
-    /* Signature not found or not applicable for this platform. Stop searching
-     * at end of file.
-     */
-    if (search_end < 1) {
-        fseek(status->fp, 0, SEEK_END);
-        search_end = ftell(status->fp);
-    }
-
-    /* Load status->cookie */
-    if (-1 == pyi_arch_find_cookie(status, search_end)) {
-        VS("Loader: Cannot find cookie");
+    /* Search for the embedded archive's cookie */
+    cookie_pos = _pyi_find_cookie_offset(status->fp);
+    if (cookie_pos == 0) {
+        VS("LOADER: Cannot find cookie!\n");
         return -1;
     }
+    VS("LOADER: Cookie found at offset 0x%zX\n", cookie_pos);
+
+    /* Read the cookie */
+    if (fseek(status->fp, cookie_pos, SEEK_SET) < 0) {
+        FATAL_PERROR("fseek", "failed to seek to cookie position.");
+        return -1;
+    }
+    if (fread(&status->cookie, sizeof(COOKIE), 1, status->fp) < 1) {
+        FATAL_PERROR("fread", "failed to read cookie.");
+        return -1;
+    }
+    /* Fix endianess of COOKIE fields */
+    status->cookie.len = pyi_be32toh(status->cookie.len);
+    status->cookie.TOC = pyi_be32toh(status->cookie.TOC);
+    status->cookie.TOClen = pyi_be32toh(status->cookie.TOClen);
+    status->cookie.pyvers = pyi_be32toh(status->cookie.pyvers);
+
+    /* From the cookie position and declared archive size, calculate
+     * the archive start position */
+    status->pkgstart = cookie_pos + sizeof(COOKIE) - status->cookie.len;
 
     /* Set the flag that Python library was not loaded yet. */
     status->is_pylib_loaded = false;
