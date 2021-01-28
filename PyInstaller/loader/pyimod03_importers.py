@@ -33,7 +33,7 @@ SYS_PREFIXLEN = len(SYS_PREFIX)
 # with using type() function:
 imp_new_module = type(sys)
 
-if sys.flags.verbose:
+if sys.flags.verbose and sys.stderr:
     def trace(msg, *a):
         sys.stderr.write(msg % a)
         sys.stderr.write("\n")
