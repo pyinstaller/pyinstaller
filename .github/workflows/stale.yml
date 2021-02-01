@@ -17,7 +17,7 @@ jobs:
           stale-issue-message: |
             Hi!
             This issue has been left open with no activity for 15 days.
-            We get a lot of issues each dya so we currently close issues after 30 days of inactivity. It’s been at least 15 days since the last update here.
+            We get a lot of issues each day so we currently close issues after 30 days of inactivity. It’s been at least 15 days since the last update here.
             If we missed your issue, please reply to avoid closing it, If this issue have been fixed, You can close it
           close-issue-message: |
             Hi again!
