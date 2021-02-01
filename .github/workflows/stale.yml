@@ -1,0 +1,28 @@
+n:
+  schedule:
+    - cron: "0 15 * * 1-5"
+name: Stale Bot
+jobs:
+  build:
+    name: stale
+    runs-on: ubuntu-latest
+    steps:
+      - name: stale
+        id: stale
+        uses: actions/stale@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          days-before-stale: 15
+          days-before-close: 30
+          stale-issue-message: |
+            Hi!
+            This issue has been left open with no activity for 15 days.
+            We get a lot of issues each dya so we currently close issues after 30 days of inactivity. It’s been at least 15 days since the last update here.
+            If we missed your issue, please reply to avoid closing it, If this issue have been fixed, You can close it
+          close-issue-message: |
+            Hi again!
+            This issue have been closed due to no activity for a month or more, even after marking it as stale, 
+            If your issue still persists, You can open a new issue
+          exempt-issue-labels: |
+            feature, @high, pull-request-wanted, not-stale, pinned
+            
