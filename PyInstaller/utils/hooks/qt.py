@@ -21,6 +21,7 @@ from ...compat import is_win, is_darwin, is_linux
 from ...utils import misc
 
 logger = logging.getLogger(__name__)
+Qt_Libraries = ('PyQt5', 'PySide2')
 
 
 # QtLibraryInfo
@@ -31,7 +32,7 @@ logger = logging.getLogger(__name__)
 # members of `QLibraryInfo <http://doc.qt.io/qt-5/qlibraryinfo.html>`_.
 class QtLibraryInfo:
     def __init__(self, namespace):
-        if namespace not in ['PyQt5', 'PySide2']:
+        if namespace not in Qt_Libraries:
             raise Exception('Invalid namespace: {0}'.format(namespace))
         self.namespace = namespace
         self.is_PyQt = namespace.startswith('PyQt')
@@ -108,7 +109,7 @@ def qt_plugins_dir(namespace):
 
     :return: Plugin directory paths
     """
-    if namespace not in ['PyQt5', 'PySide2']:
+    if namespace not in Qt_Libraries:
         raise Exception('Invalid namespace: {0}'.format(namespace))
     if namespace == 'PyQt5':
         paths = [pyqt5_library_info.location['PluginsPath']]
@@ -145,7 +146,7 @@ def qt_plugins_binaries(plugin_type, namespace):
 
     :return: Plugin directory path corresponding to the given plugin_type
     """
-    if namespace not in ['PyQt5', 'PySide2']:
+    if namespace not in Qt_Libraries:
         raise Exception('Invalid namespace: {0}'.format(namespace))
     pdir = qt_plugins_dir(namespace=namespace)
     files = []
@@ -158,7 +159,7 @@ def qt_plugins_binaries(plugin_type, namespace):
     # ``*.dylib`` in a certain directory. On Windows this would grab debug
     # copies of Qt plugins, which then causes PyInstaller to add a dependency on
     # the Debug CRT *in addition* to the release CRT.
-    if is_win and namespace in ['PyQt5', 'PySide2']:
+    if is_win and namespace in Qt_Libraries:
         files = [f for f in files if not f.endswith("d.dll")]
 
     logger.debug("Found plugin files %s for plugin %s", files, plugin_type)
@@ -179,7 +180,7 @@ def qt_menu_nib_dir(namespace):
 
     :return: Directory containing qt_menu.nib for specified namespace
     """
-    if namespace not in ['PyQt5', 'PySide2']:
+    if namespace not in Qt_Libraries:
         raise Exception('Invalid namespace: {0}'.format(namespace))
     menu_dir = None
 
@@ -383,7 +384,7 @@ def get_qmake_path(version=''):
 #   ``hook-PySide2.py``; optional includes are already covered by the dict
 #   below.
 #
-_qt_dynamic_dependencies_dict = {
+_qt5_dynamic_dependencies_dict = {
     ## "lib_name":              (.hiddenimports,           translations_base,  zero or more plugins...)
     "qt5bluetooth":             (".QtBluetooth",           None,               ),  # noqa: E241,E202
     "qt5concurrent":            (None,                     "qtbase",           ),
@@ -462,7 +463,7 @@ def add_qt5_dependencies(hook_file):
     assert hook_name.startswith('hook-')
     module_name = hook_name[5:]
     namespace = module_name.split('.')[0]
-    if namespace not in ('PyQt5', 'PySide2'):
+    if namespace not in Qt_Libraries:
         raise Exception('Invalid namespace: {0}'.format(namespace))
     is_PyQt5 = namespace == 'PyQt5'
 
@@ -513,12 +514,12 @@ def add_qt5_dependencies(hook_file):
                      imp, lib_name)
 
         # Follow only Qt dependencies.
-        if lib_name in _qt_dynamic_dependencies_dict:
+        if lib_name in _qt5_dynamic_dependencies_dict:
             # Follow these to find additional dependencies.
             logger.debug('add_qt5_dependencies: Import of %s.', imp)
             imports.update(getImports(imp))
             # Look up which plugins and translations are needed.
-            dd = _qt_dynamic_dependencies_dict[lib_name]
+            dd = _qt5_dynamic_dependencies_dict[lib_name]
             lib_name_hiddenimports, lib_name_translations_base = dd[:2]
             lib_name_plugins = dd[2:]
             # Add them in.
