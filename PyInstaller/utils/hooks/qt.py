@@ -23,18 +23,18 @@ from ...utils import misc
 logger = logging.getLogger(__name__)
 
 
-# Qt5LibraryInfo
+# QtLibraryInfo
 # --------------
-# This class uses introspection to determine the location of Qt5 files. This is
-# essential to deal with the many variants of the PyQt5 package, each of which
+# This class uses introspection to determine the location of Qt files. This is
+# essential to deal with the many variants of the PyQt package, each of which
 # places files in a different location. Therefore, this class provides all
 # members of `QLibraryInfo <http://doc.qt.io/qt-5/qlibraryinfo.html>`_.
-class Qt5LibraryInfo:
+class QtLibraryInfo:
     def __init__(self, namespace):
         if namespace not in ['PyQt5', 'PySide2']:
             raise Exception('Invalid namespace: {0}'.format(namespace))
         self.namespace = namespace
-        self.is_PyQt5 = namespace == 'PyQt5'
+        self.is_PyQt = namespace.startswith('PyQt')
 
     # Initialize most of this class only when values are first requested from
     # it.
@@ -44,9 +44,9 @@ class Qt5LibraryInfo:
             # availiable.
             raise AttributeError(name)
         else:
-            # Ensure self.version exists, even if PyQt5/PySide2 can't be
+            # Ensure self.version exists, even if PyQt/PySide can't be
             # imported. Hooks and util functions use `if .version` to check
-            # whether PyQt5/PySide2 was imported and other attributes are
+            # whether PyQt/PySide was imported and other attributes are
             # expected to be available.  This also serves as a marker that
             # initialization was already done.
             self.version = None
@@ -56,7 +56,7 @@ class Qt5LibraryInfo:
 
                 # exec_statement only captures stdout. If there are
                 # errors, capture them to stdout so they can be displayed to the
-                # user. Do this early, in case PyQt5 imports produce stderr
+                # user. Do this early, in case PyQt imports produce stderr
                 # output.
                 sys.stderr = sys.stdout
 
@@ -96,8 +96,8 @@ class Qt5LibraryInfo:
 
 
 # Provide single instances of this class to avoid each hook constructing its own.
-pyqt5_library_info = Qt5LibraryInfo('PyQt5')
-pyside2_library_info = Qt5LibraryInfo('PySide2')
+pyqt5_library_info = QtLibraryInfo('PyQt5')
+pyside2_library_info = QtLibraryInfo('PySide2')
 
 
 def qt_plugins_dir(namespace):
@@ -587,7 +587,7 @@ def find_all_or_none(globs_to_include, num_files, qt_library_info):
     dst_dll_path = '.'
     for dll in globs_to_include:
         dll_path = os.path.join(qt_library_info.location[
-            'BinariesPath' if qt_library_info.is_PyQt5 else 'PrefixPath'
+            'BinariesPath' if qt_library_info.is_PyQt else 'PrefixPath'
         ], dll)
         dll_file_paths = glob.glob(dll_path)
         for dll_file_path in dll_file_paths:
