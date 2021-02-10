@@ -20,7 +20,7 @@ if pyqt6_library_info.version is not None:
 
     # Add libraries needed for SSL if these are available. See issue #3520, #4048.
     if (is_win and eval_statement("""
-        from PyQt5.QtNetwork import QSslSocket
+        from PyQt6.QtNetwork import QSslSocket
         print(QSslSocket.supportsSsl())""")):
 
         binaries = []
