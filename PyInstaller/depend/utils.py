@@ -399,6 +399,12 @@ def load_ldconfig_cache():
     for line in text:
         # :fixme: this assumes libary names do not contain whitespace
         m = pattern.match(line)
+
+        if not m:
+            logger.warning("ldconfig output line does not appear to contain a"
+                           "library path: '%s'", line)
+            continue
+
         path = m.groups()[-1]
         if is_freebsd or is_openbsd:
             # Insert `.so` at the end of the lib's basename. soname
