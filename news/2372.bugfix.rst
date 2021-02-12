@@ -1,0 +1,3 @@
+``CArchiveReader`` now performs full back-to-front file search for
+``MAGIC``, allowing ``pyi-archive_viewer`` to open binaries with extra
+appended data after embedded package (e.g., digital signature).
