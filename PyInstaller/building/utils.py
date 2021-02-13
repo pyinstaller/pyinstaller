@@ -37,6 +37,9 @@ from PyInstaller import log as logging
 if is_win:
     from PyInstaller.utils.win32 import winmanifest, winresource, versioninfo
 
+if is_darwin:
+    import PyInstaller.utils.osx as osxutils
+
 logger = logging.getLogger(__name__)
 
 
@@ -219,11 +222,13 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None):
             os.remove(cachedfile)
         else:
             # On Mac OS X we need relative paths to dll dependencies
-            # starting with @executable_path. We may also need to strip
-            # (invalidated) signature from collected shared libraries.
+            # starting with @executable_path. Modifying headers invalidates
+            # signatures, so remove any existing signature and then re-add
+            # it after paths are rewritten.
             if is_darwin:
+                osxutils.remove_signature_from_binary(cachedfile)
                 dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
-                dylib.mac_strip_signature(cachedfile, dist_nm)
+                osxutils.sign_binary(cachedfile)
             return cachedfile
 
 
@@ -355,11 +360,13 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None):
     misc.save_py_data_struct(cacheindexfn, cache_index)
 
     # On Mac OS X we need relative paths to dll dependencies
-    # starting with @executable_path. We may also need to strip
-    # (invalidated) signature from collected shared libraries.
+    # starting with @executable_path. Modifying headers invalidates
+    # signatures, so remove any existing signature and then re-add
+    # it after paths are rewritten.
     if is_darwin:
+        osxutils.remove_signature_from_binary(cachedfile)
         dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
-        dylib.mac_strip_signature(cachedfile, dist_nm)
+        osxutils.sign_binary(cachedfile)
     return cachedfile
 
 

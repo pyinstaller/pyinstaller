@@ -311,3 +311,39 @@ def binary_to_target_arch(filename, target_arch):
             f"Binary {filename} is incompatible with target arch " \
             f"{target_arch} (has arch: {archs[0]})!"
         return  # Nothing to do
+
+
+def remove_signature_from_binary(filename):
+    """
+    Remove the signature from all architecture slices of the given
+    binary file using the codesign utility.
+    """
+    logger.debug("Removing signature from file %r", filename)
+    cmd_args = ['codesign', '--remove', '--all-architectures', filename]
+    retcode, stdout, stderr = exec_command_all(*cmd_args)
+    if retcode != 0:
+        logger.warning("codesign command (%r) failed with error code %d!\n"
+                       "stdout: %r\n"
+                       "stderr: %r",
+                       cmd_args, retcode, stdout, stderr)
+        raise SystemError("codesign failure!")
+
+
+def sign_binary(filename, identity=None):
+    """
+    Sign the binary using codesign utility. If no identity is provided,
+    ad-hoc signing is performed.
+    """
+    if not identity:
+        identity = '-'  # ad-hoc signing
+
+    logger.debug("Signing file %r", filename)
+    cmd_args = ['codesign', '-s', identity, '--force', '--all-architectures',
+                filename]
+    retcode, stdout, stderr = exec_command_all(*cmd_args)
+    if retcode != 0:
+        logger.warning("codesign command (%r) failed with error code %d!\n"
+                       "stdout: %r\n"
+                       "stderr: %r",
+                       cmd_args, retcode, stdout, stderr)
+        raise SystemError("codesign failure!")

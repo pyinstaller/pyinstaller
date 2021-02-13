@@ -670,15 +670,7 @@ class EXE(Target):
             # we remove all signatures and re-sign the binary using
             # dummy signature once the data is appended.
             logger.info("Removing signature(s) from EXE")
-            retcode, stdout, stderr = exec_command_all(
-                'codesign', '--remove', '--all-architectures', self.name)
-            logger.debug("codesign returned %i", retcode)
-            if stdout:
-                logger.debug(stdout)
-            if stderr:
-                logger.debug(stderr)
-            if retcode != 0:
-                raise SystemError("codesign Failure: %s" % stderr)
+            osxutils.remove_signature_from_binary(self.name)
 
             # Append the data
             with open(self.name, 'ab') as outf:
@@ -718,20 +710,10 @@ class EXE(Target):
             logger.info("Fixing EXE for code signing %s", self.name)
             osxutils.fix_exe_for_code_signing(self.name)
 
-            # Re-sign all arch slices with dummy signature. This can
-            # also serve as integrity check.
-            logger.info("Re-generating dummy signature(s) on EXE")
-            # "codesign -s - <file>" adds a dummy signature, same as
-            # clang does when compiling for arm64
-            retcode, stdout, stderr = exec_command_all(
-                'codesign', '--sign', '-', '--all-architectures', self.name)
-            logger.debug("codesign returned %i", retcode)
-            if stdout:
-                logger.debug(stdout)
-            if stderr:
-                logger.debug(stderr)
-            if retcode != 0:
-                raise SystemError("codesign Failure: %s" % stderr)
+            # Re-sign the binary (either ad-hoc or using real identity,
+            # if provided)
+            logger.info("Re-signing the EXE")
+            osxutils.sign_binary(self.name)
         else:
             # Fall back to just append on end of file
             logger.info("Appending archive to EXE %s", self.name)
