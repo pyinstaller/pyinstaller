@@ -16,8 +16,20 @@
  */
 
 #ifdef _WIN32
-/* TODO verify windows includes */
-    #include <winsock.h>  /* ntohl */
+    #if BYTE_ORDER == LITTLE_ENDIAN
+        #if defined(_MSC_VER)
+            #include <stdlib.h>
+            #define pyi_be32toh(x) _byteswap_ulong(x)
+        #elif defined(__GNUC__) || defined(__clang__)
+            #define pyi_be32toh(x) __builtin_bswap32(x)
+        #else
+            #error Unsupported compiler
+        #endif
+    #elif BYTE_ORDER == BIG_ENDIAN
+        #define pyi_be32toh(x) (x)
+    #else
+        #error Unsupported byte order
+    #endif
 #else
     #ifdef __FreeBSD__
 /* freebsd issue #188316 */
@@ -25,6 +37,7 @@
     #else
         #include <netinet/in.h>  /* ntohl */
     #endif
+    #define pyi_be32toh(x) ntohl(x)
     #include <stdlib.h>   /* malloc */
     #include <string.h>   /* strncmp, strcpy, strcat */
     #include <sys/stat.h> /* fchmod */
@@ -51,7 +64,7 @@ int pyvers = 0;
 TOC *
 pyi_arch_increment_toc_ptr(const ARCHIVE_STATUS *status, const TOC* ptoc)
 {
-    TOC *result = (TOC*)((char *)ptoc + ntohl(ptoc->structlen));
+    TOC *result = (TOC*)((char *)ptoc + ptoc->structlen);
 
     if (result < status->tocbuff) {
         FATALERROR("Cannot read Table of Contents.\n");
@@ -100,7 +113,7 @@ decompress(unsigned char * buff, TOC *ptoc)
     z_stream zstream;
     int rc;
 
-    out = (unsigned char *)malloc(ntohl(ptoc->ulen));
+    out = (unsigned char *)malloc(ptoc->ulen);
 
     if (out == NULL) {
         OTHERERROR("Error allocating decompression buffer\n");
@@ -111,9 +124,9 @@ decompress(unsigned char * buff, TOC *ptoc)
     zstream.zfree = NULL;
     zstream.opaque = NULL;
     zstream.next_in = buff;
-    zstream.avail_in = ntohl(ptoc->len);
+    zstream.avail_in = ptoc->len;
     zstream.next_out = out;
-    zstream.avail_out = ntohl(ptoc->ulen);
+    zstream.avail_out = ptoc->ulen;
     rc = inflateInit(&zstream);
 
     if (rc >= 0) {
@@ -150,15 +163,15 @@ pyi_arch_extract(ARCHIVE_STATUS *status, TOC *ptoc)
         return NULL;
     }
 
-    fseek(status->fp, (long)(status->pkgstart + ntohl(ptoc->pos)), SEEK_SET);
-    data = (unsigned char *)malloc(ntohl(ptoc->len));
+    fseek(status->fp, (long)(status->pkgstart + ptoc->pos), SEEK_SET);
+    data = (unsigned char *)malloc(ptoc->len);
 
     if (data == NULL) {
         OTHERERROR("Could not allocate read buffer\n");
         return NULL;
     }
 
-    if (fread(data, ntohl(ptoc->len), 1, status->fp) < 1) {
+    if (fread(data, ptoc->len, 1, status->fp) < 1) {
         OTHERERROR("Could not read from file\n");
         free(data);
         return NULL;
@@ -196,7 +209,7 @@ pyi_arch_extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
     }
 
     out = pyi_open_target(status->temppath, ptoc->name);
-    len = ntohl(ptoc->ulen);
+    len = ptoc->ulen;
 
     if (out == NULL) {
         FATAL_PERROR("fopen", "%s could not be extracted!\n", ptoc->name);
@@ -265,8 +278,14 @@ pyi_arch_find_cookie(ARCHIVE_STATUS *status, int search_end)
             /* MAGIC found - Copy COOKIE to status->cookie */
             memcpy(&status->cookie, search_ptr, sizeof(COOKIE));
 
+            /* Fix endianess of COOKIE fields */
+            status->cookie.len = pyi_be32toh(status->cookie.len);
+            status->cookie.TOC = pyi_be32toh(status->cookie.TOC);
+            status->cookie.TOClen = pyi_be32toh(status->cookie.TOClen);
+            status->cookie.pyvers = pyi_be32toh(status->cookie.pyvers);
+
             /* From the cookie, calculate the archive start */
-            status->pkgstart = search_start + sizeof(COOKIE) + (search_ptr - buf) - ntohl(status->cookie.len);
+            status->pkgstart = search_start + sizeof(COOKIE) + (search_ptr - buf) - status->cookie.len;
 
             return 0;
         }
@@ -375,6 +394,25 @@ findDigitalSignature(ARCHIVE_STATUS * const status)
 }
 
 /*
+ * Fix the endianess of fields in the TOC entries.
+ */
+static void
+_pyi_arch_fix_toc_endianess(ARCHIVE_STATUS *status)
+{
+    TOC *ptoc = status->tocbuff;
+    while (ptoc < status->tocend) {
+        /* Fixup the current entry */
+        ptoc->structlen = pyi_be32toh(ptoc->structlen);
+        ptoc->pos = pyi_be32toh(ptoc->pos);
+        ptoc->len = pyi_be32toh(ptoc->len);
+        ptoc->ulen = pyi_be32toh(ptoc->ulen);
+        /* Jump to next entry; with the current entry fixed up, we can
+         * use pyi_arch_increment_toc_ptr() */
+        ptoc = pyi_arch_increment_toc_ptr(status, ptoc);
+    }
+}
+
+/*
  * Open the archive.
  * Sets f_archiveFile, f_pkgstart, f_tocbuff and f_cookie.
  */
@@ -418,25 +456,28 @@ pyi_arch_open(ARCHIVE_STATUS *status)
     pyvers = pyi_arch_get_pyversion(status);
 
     /* Read in in the table of contents */
-    fseek(status->fp, (long)(status->pkgstart + ntohl(status->cookie.TOC)), SEEK_SET);
-    status->tocbuff = (TOC *) malloc(ntohl(status->cookie.TOClen));
+    fseek(status->fp, (long)(status->pkgstart + status->cookie.TOC), SEEK_SET);
+    status->tocbuff = (TOC *) malloc(status->cookie.TOClen);
 
     if (status->tocbuff == NULL) {
         FATAL_PERROR("malloc", "Could not allocate buffer for TOC.");
         return -1;
     }
 
-    if (fread(status->tocbuff, ntohl(status->cookie.TOClen), 1, status->fp) < 1) {
+    if (fread(status->tocbuff, status->cookie.TOClen, 1, status->fp) < 1) {
         FATAL_PERROR("fread", "Could not read from file.");
         return -1;
     }
-    status->tocend = (TOC *) (((char *)status->tocbuff) + ntohl(status->cookie.TOClen));
+    status->tocend = (TOC *) (((char *)status->tocbuff) + status->cookie.TOClen);
 
     /* Check input file is still ok (should be). */
     if (ferror(status->fp)) {
         FATALERROR("Error on file\n.");
         return -1;
     }
+
+    /* Fix the endianess of the fields in the TOC entries */
+    _pyi_arch_fix_toc_endianess(status);
 
     /* Close file handler
      * if file not close here it will be close in pyi_arch_status_free */
@@ -490,7 +531,7 @@ getFirstTocEntry(ARCHIVE_STATUS *status)
 TOC *
 getNextTocEntry(ARCHIVE_STATUS *status, TOC *entry)
 {
-    TOC *rslt = (TOC*)((char *)entry + ntohl(entry->structlen));
+    TOC *rslt = (TOC*)((char *)entry + entry->structlen);
 
     if (rslt >= status->tocend) {
         return NULL;
@@ -504,7 +545,7 @@ getNextTocEntry(ARCHIVE_STATUS *status, TOC *entry)
 int
 pyi_arch_get_pyversion(ARCHIVE_STATUS *status)
 {
-    return ntohl(status->cookie.pyvers);
+    return status->cookie.pyvers;
 }
 
 /*

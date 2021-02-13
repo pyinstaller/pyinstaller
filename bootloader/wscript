@@ -556,14 +556,13 @@ def configure(ctx):
 
     if ctx.env.DEST_OS == 'win32':
         if ctx.env.CC_NAME == 'msvc':
-            ctx.check_libs_msvc('user32 comctl32 kernel32 advapi32 ws2_32',
+            ctx.check_libs_msvc('user32 comctl32 kernel32 advapi32',
                                 mandatory=True)
         else:
             ctx.check_cc(lib='user32', mandatory=True)
             ctx.check_cc(lib='comctl32', mandatory=True)
             ctx.check_cc(lib='kernel32', mandatory=True)
             ctx.check_cc(lib='advapi32', mandatory=True)
-            ctx.check_cc(lib='ws2_32', mandatory=True)
     else:
         # Mac OS X and FreeBSD do not need libdl.
         # https://stackoverflow.com/questions/20169660/where-is-libdl-so-on-mac-os-x
@@ -750,7 +749,7 @@ def build(ctx):
             source=['src/main.c', icon_rc],
             target=exe_name,
             install_path=install_path,
-            use='OBJECTS USER32 COMCTL32 KERNEL32 ADVAPI32 WS2_32 Z',
+            use='OBJECTS USER32 COMCTL32 KERNEL32 ADVAPI32 Z',
             includes='src windows zlib',
             features=features,
         )

@@ -17,10 +17,9 @@ def build(ctx):
 
     def test_program(name):
         if ctx.env.DEST_OS == 'win32':
-            # WS2_32: ntohl()
             # Z: inflate*()
             # ADVAPI32: ConvertStringSecurityDescriptorToSecurityDescriptorW()
-            extra_libs=['ADVAPI32', 'WS2_32', 'Z']
+            extra_libs=['ADVAPI32', 'Z']
         else:
             extra_libs=[]
         ctx.program(
