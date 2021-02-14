@@ -44,7 +44,7 @@ zope.interface==5.2.0
 pandas==1.2.2
 numpy==1.20.1
 scipy==1.6.0
-Pillow==8.0.1
+Pillow==8.1.0
 
 
 # Python versions not supported / supported for older package versions
