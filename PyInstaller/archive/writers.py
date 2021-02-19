@@ -35,7 +35,7 @@ from PyInstaller.building.utils import get_code_object, strip_paths_in_code,\
     fake_pyc_timestamp
 from PyInstaller.loader.pyimod02_archive import PYZ_TYPE_MODULE, PYZ_TYPE_PKG, \
     PYZ_TYPE_DATA, PYZ_TYPE_NSPKG
-from ..compat import BYTECODE_MAGIC, is_py37
+from ..compat import BYTECODE_MAGIC, is_py37, is_win
 
 
 class ArchiveWriter(object):
@@ -283,6 +283,10 @@ class CTOC(object):
         # slashes '\\' since on Windows the bootloader works only with back
         # slashes.
         nm = os.path.normpath(nm)
+        if is_win and os.path.sep == '/':
+            # When building under MSYS, the above path normalization
+            # uses Unix-style separators, so replace them manually.
+            nm = nm.replace(os.path.sep, '\\')
         self.data.append((dpos, dlen, ulen, flag, typcd, nm))
 
 
