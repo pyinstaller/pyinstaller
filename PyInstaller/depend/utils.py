@@ -49,6 +49,10 @@ def create_py3_base_library(libzip_filename, graph):
     modules is necessary to have on PYTHONPATH for initializing libpython3
     in order to run the frozen executable with Python 3.
     """
+    # Import strip_paths_in_code locally to avoid cyclic import between
+    # building.utils and depend.utils (this module); building.utils
+    # imports depend.bindepend, which in turn imports depend.utils.
+    from ..building.utils import strip_paths_in_code
     # Construct regular expression for matching modules that should be bundled
     # into base_library.zip.
     # Excluded are plain 'modules' or 'submodules.ANY_NAME'.
@@ -102,7 +106,8 @@ def create_py3_base_library(libzip_filename, graph):
                                 fc.write(source_hash)
                             else:
                                 fc.write(struct.pack('<II', timestamp, size))
-                            marshal.dump(mod.code, fc)
+                            code = strip_paths_in_code(mod.code)  # Strip paths
+                            marshal.dump(code, fc)
                             # Use a ZipInfo to set timestamp for deterministic build
                             info = zipfile.ZipInfo(new_name)
                             zf.writestr(info, fc.getvalue())
