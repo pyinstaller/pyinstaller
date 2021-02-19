@@ -13,7 +13,7 @@
 from PyInstaller.utils.hooks import exec_statement
 
 mpl_data_dir = exec_statement(
-    "import matplotlib; print(matplotlib._get_data_path())")
+    "import matplotlib; print(matplotlib.get_data_path())")
 
 datas = [
     (mpl_data_dir, "matplotlib/mpl-data"),
