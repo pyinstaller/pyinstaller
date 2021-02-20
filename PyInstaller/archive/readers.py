@@ -17,6 +17,7 @@ This CArchiveReader is used only by the archieve_viewer utility.
 # TODO clean up this module
 
 import struct
+import os
 
 
 from PyInstaller.loader.pyimod02_archive import ArchiveReader
@@ -142,19 +143,36 @@ class CArchiveReader(ArchiveReader):
         if self.length:
             self.lib.seek(self.start + self.length, 0)
         else:
-            self.lib.seek(0, 2)
-        filelen = self.lib.tell()
+            self.lib.seek(0, os.SEEK_END)
+        end_pos = self.lib.tell()
 
-        self.lib.seek(max(0, filelen-4096))
-        searchpos = self.lib.tell()
-        buf = self.lib.read(min(filelen, 4096))
-        pos = buf.rfind(self.MAGIC)
-        if pos == -1:
+        SEARCH_CHUNK_SIZE = 8192
+        magic_offset = -1
+        while end_pos >= len(self.MAGIC):
+            start_pos = max(end_pos - SEARCH_CHUNK_SIZE, 0)
+            chunk_size = end_pos - start_pos
+            # Is the remaining chunk large enough to hold the pattern?
+            if chunk_size < len(self.MAGIC):
+                break
+            # Read and scan the chunk
+            self.lib.seek(start_pos, os.SEEK_SET)
+            buf = self.lib.read(chunk_size)
+            pos = buf.rfind(self.MAGIC)
+            if pos != -1:
+                magic_offset = start_pos + pos
+                break
+            # Adjust search location for next chunk; ensure proper
+            # overlap
+            end_pos = start_pos + len(self.MAGIC) - 1
+        if magic_offset == -1:
             raise RuntimeError("%s is not a valid %s archive file" %
                                (self.path, self.__class__.__name__))
-        filelen = searchpos + pos + self._cookie_size
+        filelen = magic_offset + self._cookie_size
+        # Read the whole cookie
+        self.lib.seek(magic_offset, os.SEEK_SET)
+        buf = self.lib.read(self._cookie_size)
         (magic, totallen, tocpos, toclen, pyvers, pylib_name) = struct.unpack(
-            self._cookie_format, buf[pos:pos+self._cookie_size])
+            self._cookie_format, buf)
         if magic != self.MAGIC:
             raise RuntimeError("%s is not a valid %s archive file" %
                                (self.path, self.__class__.__name__))

@@ -1,0 +1,2 @@
+Fix a crash in ``pyi-archive_viewer`` when quitting the application or
+moving up a level.
