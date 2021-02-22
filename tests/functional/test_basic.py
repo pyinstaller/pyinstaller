@@ -585,3 +585,24 @@ def test_several_scripts2(pyi_builder_spec):
     Verify each script has it's own global vars (basic test).
     """
     pyi_builder_spec.test_spec('several-scripts2.spec')
+
+
+@pytest.mark.win32
+def test_pe_checksum(pyi_builder):
+    import ctypes
+    from ctypes import wintypes
+
+    pyi_builder.test_source("print('hello')")
+    exes = pyi_builder._find_executables('test_source')
+    assert exes
+    for exe in exes:
+        # Validate the PE checksum using the official Windows API for doing so.
+        # https://docs.microsoft.com/en-us/windows/win32/api/imagehlp/nf-imagehlp-mapfileandchecksumw
+        header_sum = wintypes.DWORD()
+        checksum = wintypes.DWORD()
+        assert ctypes.windll.imagehlp.MapFileAndCheckSumW(
+            ctypes.c_wchar_p(exe),
+            ctypes.byref(header_sum),
+            ctypes.byref(checksum)) == 0
+
+        assert header_sum.value == checksum.value

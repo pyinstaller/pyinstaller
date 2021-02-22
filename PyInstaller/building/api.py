@@ -640,6 +640,10 @@ class EXE(Target):
             logger.info("Fixing EXE for code signing %s", self.name)
             import PyInstaller.utils.osx as osxutils
             osxutils.fix_exe_for_code_signing(self.name)
+        if is_win:
+            # Set checksum to appease antiviral software.
+            from PyInstaller.utils.win32.winutils import set_exe_checksum
+            set_exe_checksum(self.name)
 
         os.chmod(self.name, 0o755)
         # get mtime for storing into the guts

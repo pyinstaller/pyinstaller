@@ -311,6 +311,8 @@ def set_arch_flags(ctx):
         ctx.env.append_value('CFLAGS', '/D_CRT_SECURE_NO_WARNINGS')
         # We use SEH exceptions in winmain.c; make sure they are activated.
         ctx.env.append_value('CFLAGS', '/EHa')
+        # Set the PE checksum on resulting binary
+        ctx.env.append_value('LINKFLAGS', '/RELEASE')
 
     # Ensure proper architecture flags on Mac OS X.
     elif ctx.env.DEST_OS == 'darwin':
