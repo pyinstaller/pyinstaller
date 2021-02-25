@@ -103,133 +103,264 @@ pyi_arch_close_fp(ARCHIVE_STATUS *status)
 }
 
 /*
- * Decompress data in buff, described by ptoc.
- * Return in malloc'ed buffer (needs to be freed)
+ * Helper for pyi_arch_extract/pyi_arch_extract2fs that extracts a
+ * compressed file from the archive, and writes it into the provided
+ * file handle or data buffer. Exactly one of out_fp or out_ptr needs
+ * to be valid.
  */
-static unsigned char *
-decompress(unsigned char * buff, TOC *ptoc)
+static int
+_pyi_arch_extract_compressed(ARCHIVE_STATUS *status, TOC *ptoc, FILE *out_fp, unsigned char *out_ptr)
 {
-    unsigned char *out;
+    const size_t CHUNK_SIZE = 8192;
+    unsigned char *buffer_in = NULL;
+    unsigned char *buffer_out = NULL;
+    size_t remaining_size;
     z_stream zstream;
-    int rc;
+    int rc = -1;
 
-    out = (unsigned char *)malloc(ptoc->ulen);
-
-    if (out == NULL) {
-        OTHERERROR("Error allocating decompression buffer\n");
-        return NULL;
-    }
-
-    zstream.zalloc = NULL;
-    zstream.zfree = NULL;
-    zstream.opaque = NULL;
-    zstream.next_in = buff;
-    zstream.avail_in = ptoc->len;
-    zstream.next_out = out;
-    zstream.avail_out = ptoc->ulen;
+    /* Allocate and initialize inflate state */
+    zstream.zalloc = Z_NULL;
+    zstream.zfree = Z_NULL;
+    zstream.opaque = Z_NULL;
+    zstream.avail_in = 0;
+    zstream.next_in = Z_NULL;
     rc = inflateInit(&zstream);
-
-    if (rc >= 0) {
-        rc = (inflate)(&zstream, Z_FINISH);
-
-        if (rc >= 0) {
-            rc = (inflateEnd)(&zstream);
-        }
-        else {
-            OTHERERROR("Error %d from inflate: %s\n", rc, zstream.msg);
-            return NULL;
-        }
-    }
-    else {
-        OTHERERROR("Error %d from inflateInit: %s\n", rc, zstream.msg);
-        return NULL;
+    if (rc != Z_OK) {
+        FATALERROR("Failed to extract %s: inflateInit() failed with return code %d!\n", ptoc->name, rc);
+        return -1;
     }
 
-    return out;
+    /* Allocate I/O buffers */
+    buffer_in = (unsigned char *)malloc(CHUNK_SIZE);
+    if (buffer_in == NULL) {
+        FATAL_PERROR("malloc", "Failed to extract %s: failed to allocate temporary input buffer!\n", ptoc->name);
+        goto cleanup;
+    }
+    buffer_out = (unsigned char *)malloc(CHUNK_SIZE);
+    if (buffer_out == NULL) {
+        FATAL_PERROR("malloc", "Failed to extract %s: failed to allocate temporary output buffer!\n", ptoc->name);
+        goto cleanup;
+    }
+
+    /* Decompress until deflate stream ends or end of file is reached */
+    remaining_size = ptoc->len;
+    do {
+        /* Read chunk to input buffer */
+        size_t chunk_size = (CHUNK_SIZE < remaining_size) ? CHUNK_SIZE : remaining_size;
+        if (fread(buffer_in, 1, chunk_size, status->fp) != chunk_size || ferror(status->fp)) {
+            rc = -1;
+            goto cleanup;
+        }
+        remaining_size -= chunk_size;
+
+        /* Run inflate() on input until output buffer is not full. */
+        zstream.avail_in = chunk_size;
+        zstream.next_in = buffer_in;
+        do {
+            size_t out_len;
+            zstream.avail_out = CHUNK_SIZE;
+            zstream.next_out = buffer_out;
+            rc = inflate(&zstream, Z_NO_FLUSH);
+            switch (rc) {
+                case Z_NEED_DICT:
+                    rc = Z_DATA_ERROR; /* and fall through */
+                case Z_DATA_ERROR:
+                case Z_MEM_ERROR:
+                case Z_STREAM_ERROR:
+                    goto decompress_end;
+            }
+            /* Copy the extracted data */
+            out_len = CHUNK_SIZE - zstream.avail_out;
+            if (out_fp) {
+                /* Write to output file */
+                if (fwrite(buffer_out, 1, out_len, out_fp) != out_len || ferror(out_fp)) {
+                    rc = Z_ERRNO;
+                    goto decompress_end;
+                }
+            } else if (out_ptr) {
+                /* Copy to output data buffer */
+                memcpy(out_ptr, buffer_out, out_len);
+                out_ptr += out_len;
+            }
+        } while (zstream.avail_out == 0);
+        /* Done when inflate() says it's done */
+    } while (rc != Z_STREAM_END && remaining_size > 0);
+
+decompress_end:
+    if (rc == Z_STREAM_END) {
+        rc = 0; /* Success */
+    } else {
+        FATALERROR("Failed to extract %s: decompression resulted in return code %d!\n", ptoc->name, rc);
+        rc = -1;
+    }
+
+cleanup:
+    inflateEnd(&zstream);
+    free(buffer_in);
+    free(buffer_out);
+
+    return rc;
 }
 
 /*
- * Extract an archive entry.
+ * Helper for pyi_arch_extract2fs that extracts an uncompressed file from
+ * the archive into the provided file handle.
+ */
+static int
+_pyi_arch_extract2fs_uncompressed(ARCHIVE_STATUS *status, TOC *ptoc, FILE *out)
+{
+    const size_t CHUNK_SIZE = 8192;
+    unsigned char *buffer;
+    size_t remaining_size;
+    int rc = 0;
+
+    /* Allocate temporary buffer for a single chunk */
+    buffer = (unsigned char *)malloc(CHUNK_SIZE);
+    if (buffer == NULL) {
+        FATAL_PERROR("malloc", "Failed to extract %s: failed to allocate temporary buffer!\n", ptoc->name);
+        return -1;
+    }
+
+    /* ... and copy it, chunk by chunk */
+    remaining_size = ptoc->ulen;
+    while (remaining_size > 0) {
+        size_t chunk_size = (CHUNK_SIZE < remaining_size) ? CHUNK_SIZE : remaining_size;
+        if (fread(buffer, chunk_size, 1, status->fp) < 1) {
+            FATAL_PERROR("fread", "Failed to extract %s: failed to read data chunk!\n", ptoc->name);
+            rc = -1;
+            break;
+        }
+        if (fwrite(buffer, chunk_size, 1, out) < 1) {
+            FATAL_PERROR("fwrite", "Failed to extract %s: failed to write data chunk!\n", ptoc->name);
+            rc = -1;
+            break;
+        }
+        remaining_size -= chunk_size;
+    }
+    free(buffer);
+    return rc;
+}
+
+/*
+ * Helper for pyi_arch_extract that extracts an uncompressed file from
+ * the archive into the provided (pre-allocated) buffer.
+ */
+static int
+_pyi_arch_extract_uncompressed(ARCHIVE_STATUS *status, TOC *ptoc, unsigned char *out)
+{
+    const size_t CHUNK_SIZE = 8192;
+    unsigned char *buffer;
+    size_t remaining_size;
+
+    /* Read the file into buffer, chunk by chunk */
+    buffer = out;
+    remaining_size = ptoc->ulen;
+    while (remaining_size > 0) {
+        size_t chunk_size = (CHUNK_SIZE < remaining_size) ? CHUNK_SIZE : remaining_size;
+        if (fread(buffer, chunk_size, 1, status->fp) < 1) {
+            FATAL_PERROR("fread", "Failed to extract %s: failed to read data chunk!\n", ptoc->name);
+            return -1;
+        }
+        remaining_size -= chunk_size;
+        buffer += chunk_size;
+    }
+    return 0;
+}
+
+/*
+ * Extract an archive entry into data buffer.
  * Returns pointer to the data (must be freed).
  */
 unsigned char *
 pyi_arch_extract(ARCHIVE_STATUS *status, TOC *ptoc)
 {
-    unsigned char *data;
-    unsigned char *tmp;
+    unsigned char *data = NULL;
+    int rc = 0;
 
+    /* Open archive (source) file... */
     if (pyi_arch_open_fp(status) != 0) {
-        OTHERERROR("Cannot open archive file\n");
+        FATALERROR("Failed to extract %s: failed to open archive file!\n", ptoc->name);
+        return NULL;
+    }
+    /* ... and seek to the beginning of entry's data */
+    if (fseek(status->fp, status->pkgstart + ptoc->pos, SEEK_SET) < 0) {
+        FATAL_PERROR("fseek", "Failed to extract %s: failed to seek to the entry's data!\n", ptoc->name);
         return NULL;
     }
 
-    fseek(status->fp, (long)(status->pkgstart + ptoc->pos), SEEK_SET);
-    data = (unsigned char *)malloc(ptoc->len);
-
+    /* Allocate the data buffer */
+    data = (unsigned char *)malloc(ptoc->ulen);
     if (data == NULL) {
-        OTHERERROR("Could not allocate read buffer\n");
-        return NULL;
+        FATAL_PERROR("malloc", "Failed to extract %s: failed to allocate data buffer (%u bytes)!\n", ptoc->name, ptoc->ulen);
+        goto cleanup;
     }
 
-    if (fread(data, ptoc->len, 1, status->fp) < 1) {
-        OTHERERROR("Could not read from file\n");
-        free(data);
-        return NULL;
-    }
-
+    /* Extract */
     if (ptoc->cflag == '\1') {
-        tmp = decompress(data, ptoc);
+        rc = _pyi_arch_extract_compressed(status, ptoc, NULL, data);
+    } else {
+        rc = _pyi_arch_extract_uncompressed(status, ptoc, data);
+    }
+    if (rc != 0) {
         free(data);
-        data = tmp;
-
-        if (data == NULL) {
-            OTHERERROR("Error decompressing %s\n", ptoc->name);
-            return NULL;
-        }
+        data = NULL;
     }
 
+cleanup:
     pyi_arch_close_fp(status);
+
     return data;
 }
 
 /*
- * Extract from the archive and copy to the filesystem.
+ * Extract an archive entry into file on the filesystem.
  * The path is relative to the directory the archive is in.
  */
 int
 pyi_arch_extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
 {
-    FILE *out;
-    size_t result, len;
-    unsigned char *data = pyi_arch_extract(status, ptoc);
+    FILE *out = NULL;
+    int rc = 0;
 
-    /* Create tmp dir _MEIPASSxxx. */
+    /* Ensure that tmp dir _MEIPASSxxx exists... */
     if (pyi_create_temp_path(status) == -1) {
         return -1;
     }
-
+    /* ... and open target file */
     out = pyi_open_target(status->temppath, ptoc->name);
-    len = ptoc->ulen;
-
     if (out == NULL) {
-        FATAL_PERROR("fopen", "%s could not be extracted!\n", ptoc->name);
+        FATAL_PERROR("fopen", "Failed to extract %s: failed to open target file!\n", ptoc->name);
         return -1;
     }
-    else {
-        result = fwrite(data, len, 1, out);
 
-        if ((1 != result) && (len > 0)) {
-            FATAL_PERROR("fwrite", "Failed to write all bytes for %s\n", ptoc->name);
-            return -1;
-        }
-#ifndef WIN32
-        fchmod(fileno(out), S_IRUSR | S_IWUSR | S_IXUSR);
-#endif
-        fclose(out);
+    /* Open archive (source) file... */
+    if (pyi_arch_open_fp(status) != 0) {
+        FATALERROR("Failed to extract %s: failed to open archive file!\n", ptoc->name);
+        rc = -1;
+        goto cleanup;
     }
-    free(data);
+    /* ... and seek to the beginning of entry's data */
+    if (fseek(status->fp, status->pkgstart + ptoc->pos, SEEK_SET) < 0) {
+        FATAL_PERROR("fseek", "Failed to extract %s: failed to seek to the entry's data!\n", ptoc->name);
+        rc = -1;
+        goto cleanup;
+    }
 
-    return 0;
+    /* Extract */
+    if (ptoc->cflag == '\1') {
+        rc = _pyi_arch_extract_compressed(status, ptoc, out, NULL);
+    } else {
+        rc = _pyi_arch_extract2fs_uncompressed(status, ptoc, out);
+    }
+#ifndef WIN32
+    fchmod(fileno(out), S_IRUSR | S_IWUSR | S_IXUSR);
+#endif
+
+cleanup:
+    pyi_arch_close_fp(status);
+    fclose(out);
+
+    return rc;
 }
 
 /*
