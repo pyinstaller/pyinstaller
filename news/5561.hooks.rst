@@ -1,0 +1,2 @@
+The ``collect_data_files()`` method now no longer requires .so files
+to have a lib prefix.

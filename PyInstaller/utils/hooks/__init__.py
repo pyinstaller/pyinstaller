@@ -700,7 +700,7 @@ def is_module_or_submodule(name, mod_or_submod):
 PY_DYLIB_PATTERNS = [
     '*.dll',
     '*.dylib',
-    'lib*.so',
+    '*.so',
 ]
 
 
