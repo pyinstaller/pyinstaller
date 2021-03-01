@@ -1,0 +1,2 @@
+The `unbuffered stdio` mode (the ``u`` option) now sets the ``Py_UnbufferedStdioFlag``
+flag to enable unbuffered stdio mode in Python library.

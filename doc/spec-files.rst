@@ -359,7 +359,9 @@ For example modify the spec file this way::
           exclude_binaries=...
           )
 
-.. Warning:: The ``u`` option does not work on Windows. See this `GitHub issue <https://github.com/pyinstaller/pyinstaller/issues/1441>`_ for more details.
+.. Note:: The unbuffered stdio mode (the ``u`` option) enables unbuffered
+   binary layer of ``stdout`` and ``stderr`` streams on all supported Python
+   versions. The unbuffered text layer requires Python 3.7 or later.
 
 
 .. _spec file options for a mac os x bundle:
