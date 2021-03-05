@@ -1,0 +1,2 @@
+Fix ``MERGE()`` to properly set references to nested resources with their
+full shared-package-relative path instead of just basename.
