@@ -823,8 +823,28 @@ class MERGE(object):
                 else:
                     dep_path = self._get_relative_path(path, self._dependencies[tpl[1]])
                     logger.debug("Referencing %s to be a dependecy for %s, located in %s" % (tpl[1], path, dep_path))
+                    # Determine the path relative to dep_path (i.e, within
+                    # the target directory) from the 'name' component
+                    # of the TOC tuple. If entry is EXTENSION, then the
+                    # relative path needs to be reconstructed from the
+                    # name components.
+                    if tpl[2] == 'EXTENSION':
+                        ext_components = tpl[0].split('.')[:-1]
+                        if ext_components:
+                            rel_path = os.path.join(*ext_components)
+                        else:
+                            rel_path = ''
+                    else:
+                        rel_path = os.path.dirname(tpl[0])
+                    # Take filename from 'path' (second component of
+                    # TOC tuple); this way, we don't need to worry about
+                    # suffix of extensions.
+                    filename = os.path.basename(tpl[1])
+                    # Construct the full file path relative to dep_path...
+                    filename = os.path.join(rel_path, filename)
+                    # ...and use it in new DEPENDENCY entry
                     analysis.dependencies.append(
-                        (":".join((dep_path, os.path.basename(tpl[1]))),
+                        (":".join((dep_path, filename)),
                          tpl[1],
                          "DEPENDENCY"))
                     toc[i] = (None, None, None)
