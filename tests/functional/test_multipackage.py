@@ -1,6 +1,9 @@
 import pytest
 
+from PyInstaller.utils.tests import importorskip
 
+
+@importorskip('psutil')  # Used as test for nested extension
 @pytest.mark.parametrize(
     "spec_file",
     (
