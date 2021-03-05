@@ -392,7 +392,7 @@ pyi_pylib_start_python(ARCHIVE_STATUS *status)
      * its contents nor free its memory.
      *
      * NOTE: Statics are zero-initialized. */
-    static char pypath[2 * PATH_MAX + 14];
+    static char pypath[3 * PATH_MAX + 32];
 
     /* Wide string forms of the above, for Python 3. */
     static wchar_t pypath_w[PATH_MAX + 1];
@@ -419,9 +419,13 @@ pyi_pylib_start_python(ARCHIVE_STATUS *status)
     PI_Py_SetPythonHome(pyhome_w);
 
     /* Set sys.path */
-    /* sys.path = [base_library, mainpath] */
-    if (snprintf(pypath, sizeof pypath, "%s%cbase_library.zip%c%s",
-                 status->mainpath, PYI_SEP, PYI_PATHSEP, status->mainpath)
+    /* sys.path = [mainpath/base_library.zip, mainpath/lib-dynload, mainpath] */
+    if (snprintf(pypath, sizeof pypath, "%s%c%s" "%c" "%s%c%s" "%c" "%s",
+                 status->mainpath, PYI_SEP, "base_library.zip",
+                 PYI_PATHSEP,
+                 status->mainpath, PYI_SEP, "lib-dynload",
+                 PYI_PATHSEP,
+                 status->mainpath)
         >= sizeof pypath) {
         // This should never happen, since mainpath is < PATH_MAX and pypath is
         // huge enough
