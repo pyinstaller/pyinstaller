@@ -840,7 +840,11 @@ class MERGE(object):
                     # relative path needs to be reconstructed from the
                     # name components.
                     if tpl[2] == 'EXTENSION':
-                        ext_components = tpl[0].split('.')[:-1]
+                        # Split on os.path.sep first, to handle additional
+                        # path prefix (e.g., lib-dynload)
+                        ext_components = tpl[0].split(os.path.sep)
+                        ext_components = ext_components[:-1] \
+                            + ext_components[-1].split('.')[:-1]
                         if ext_components:
                             rel_path = os.path.join(*ext_components)
                         else:

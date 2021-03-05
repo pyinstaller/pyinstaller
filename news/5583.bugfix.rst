@@ -1,0 +1,1 @@
+(OSX) Fix issues with ``pycryptodomex`` on macOS.

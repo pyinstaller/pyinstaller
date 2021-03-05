@@ -1,0 +1,5 @@
+Collect python extension modules that correspond to built-ins into
+``lib-dynload`` sub-directory instead of directly into bundle's root
+directory. This prevents them from shadowing shared libraries with the
+same basename that are located in a package and loaded via ``ctypes`` or
+``cffi``, and also declutters the bundle's root directory.
