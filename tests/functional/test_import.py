@@ -11,6 +11,7 @@
 #-----------------------------------------------------------------------------
 
 import os
+import sys
 import glob
 import ctypes
 import ctypes.util
@@ -369,6 +370,31 @@ def test_ctypes_in_func_gen(pyi_builder, monkeypatch, funcname,
     """)
     __monkeypatch_resolveCtypesImports(monkeypatch, compiled_dylib.dirname)
     pyi_builder.test_source(source % locals(), test_id=test_id)
+
+
+def test_ctypes_cdll_builtin_extension(pyi_builder):
+    # Take a built-in that is provided as an extension
+    builtin_ext = '_sha256'
+    if builtin_ext in sys.builtin_module_names:
+        # On Windows, built-ins do not seem to be extensions
+        pytest.skip(f"{builtin_ext} is a built-in module without extension.")
+
+    pyi_builder.test_source(
+        """
+        import ctypes
+        import importlib.machinery
+
+        # Try to load CDLL with all possible extension suffices; this
+        # should fail in all cases, as built-in extensions should not
+        # be in the ctypes' search path.
+        builtin_ext = '{0}'
+        for suffix in importlib.machinery.EXTENSION_SUFFIXES:
+            try:
+                lib = ctypes.CDLL(builtin_ext + suffix)
+            except OSError:
+                lib = None
+            assert lib is None, "Built-in extension picked up by ctypes.CDLL!"
+        """.format(builtin_ext))
 
 
 # TODO: Add test-cases for the prefabricated library loaders supporting
