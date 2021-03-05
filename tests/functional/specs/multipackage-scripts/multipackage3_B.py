@@ -9,10 +9,5 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
-# import a very simple and rarely used pure-python lib ...
-import getopt
-# ... and a module importing a shared lib
-import ssl
-
-print('Hello World!')
+import multipackage_test_pkg
+multipackage_test_pkg.test_function()

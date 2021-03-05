@@ -20,8 +20,10 @@ __testname__ = 'test_multipackage4'
 __testdep__ = 'multipackage4_B'
 
 a = Analysis([os.path.join(SCRIPT_DIR, __testname__ + '.py')],
+             hookspath=[os.path.join(SPECPATH, SCRIPT_DIR, 'extra-hooks')],
              pathex=['.'])
 b = Analysis([os.path.join(SCRIPT_DIR, __testdep__ + '.py')],
+             hookspath=[os.path.join(SPECPATH, SCRIPT_DIR, 'extra-hooks')],
              pathex=['.'])
 
 MERGE((b, __testdep__, os.path.join(__testdep__, __testdep__)),
