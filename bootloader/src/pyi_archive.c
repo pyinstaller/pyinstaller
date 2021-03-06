@@ -143,7 +143,7 @@ _pyi_arch_extract_compressed(ARCHIVE_STATUS *status, TOC *ptoc, FILE *out_fp, un
     remaining_size = ptoc->len;
     do {
         /* Read chunk to input buffer */
-        size_t chunk_size = (CHUNK_SIZE < remaining_size) ? CHUNK_SIZE : remaining_size;
+        size_t chunk_size = (CHUNK_SIZE < remaining_size) ? CHUNK_SIZE : (size_t)remaining_size;
         if (fread(buffer_in, 1, chunk_size, status->fp) != chunk_size || ferror(status->fp)) {
             rc = -1;
             goto cleanup;
@@ -151,11 +151,11 @@ _pyi_arch_extract_compressed(ARCHIVE_STATUS *status, TOC *ptoc, FILE *out_fp, un
         remaining_size -= chunk_size;
 
         /* Run inflate() on input until output buffer is not full. */
-        zstream.avail_in = chunk_size;
+        zstream.avail_in = (uInt)chunk_size;
         zstream.next_in = buffer_in;
         do {
             size_t out_len;
-            zstream.avail_out = CHUNK_SIZE;
+            zstream.avail_out = (uInt)CHUNK_SIZE;
             zstream.next_out = buffer_out;
             rc = inflate(&zstream, Z_NO_FLUSH);
             switch (rc) {
@@ -221,7 +221,7 @@ _pyi_arch_extract2fs_uncompressed(ARCHIVE_STATUS *status, TOC *ptoc, FILE *out)
     /* ... and copy it, chunk by chunk */
     remaining_size = ptoc->ulen;
     while (remaining_size > 0) {
-        size_t chunk_size = (CHUNK_SIZE < remaining_size) ? CHUNK_SIZE : remaining_size;
+        size_t chunk_size = (CHUNK_SIZE < remaining_size) ? CHUNK_SIZE : (size_t)remaining_size;
         if (fread(buffer, chunk_size, 1, status->fp) < 1) {
             FATAL_PERROR("fread", "Failed to extract %s: failed to read data chunk!\n", ptoc->name);
             rc = -1;
@@ -253,7 +253,7 @@ _pyi_arch_extract_uncompressed(ARCHIVE_STATUS *status, TOC *ptoc, unsigned char 
     buffer = out;
     remaining_size = ptoc->ulen;
     while (remaining_size > 0) {
-        size_t chunk_size = (CHUNK_SIZE < remaining_size) ? CHUNK_SIZE : remaining_size;
+        size_t chunk_size = (CHUNK_SIZE < remaining_size) ? CHUNK_SIZE : (size_t)remaining_size;
         if (fread(buffer, chunk_size, 1, status->fp) < 1) {
             FATAL_PERROR("fread", "Failed to extract %s: failed to read data chunk!\n", ptoc->name);
             return -1;
@@ -400,7 +400,7 @@ _pyi_find_cookie_offset(FILE *fp)
     do {
         size_t chunk_size;
         start_pos = (end_pos >= SEARCH_CHUNK_SIZE) ? (end_pos - SEARCH_CHUNK_SIZE) : 0;
-        chunk_size = end_pos - start_pos;
+        chunk_size = (size_t)(end_pos - start_pos);
 
         /* Is the remaining chunk large enough to hold the pattern? */
         if (chunk_size < sizeof(MAGIC)) {
