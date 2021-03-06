@@ -1,0 +1,2 @@
+Raise the maximum allowed size of ``CArchive`` (and consequently ``onefile``
+executables) from 2 GiB to 4 GiB.
