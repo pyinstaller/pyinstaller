@@ -33,7 +33,6 @@
 #include <sddl.h>     /* ConvertStringSecurityDescriptorToSecurityDescriptorW */
 
 /* PyInstaller headers. */
-#include "msvc_stdint.h" /* int32_t */
 #include "pyi_global.h"  /* PATH_MAX */
 #include "pyi_utils.h"
 #include "pyi_win32_utils.h"
