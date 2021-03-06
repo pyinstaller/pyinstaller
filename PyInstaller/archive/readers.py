@@ -33,7 +33,8 @@ class CTOCReader(object):
 
     When written to disk, it is easily read from C.
     """
-    ENTRYSTRUCT = '!iiiiBB'  # (structlen, dpos, dlen, ulen, flag, typcd) followed by name
+    # (structlen, dpos, dlen, ulen, flag, typcd) followed by name
+    ENTRYSTRUCT = '!iIIIBB'
     ENTRYLEN = struct.calcsize(ENTRYSTRUCT)
 
     def __init__(self):
@@ -104,14 +105,14 @@ class CArchiveReader(ArchiveReader):
     #
     #   typedef struct _cookie {
     #       char magic[8]; /* 'MEI\014\013\012\013\016' */
-    #       int  len;      /* len of entire package */
-    #       int  TOC;      /* pos (rel to start) of TableOfContents */
+    #       uint32_t len;  /* len of entire package */
+    #       uint32_t TOC;  /* pos (rel to start) of TableOfContents */
     #       int  TOClen;   /* length of TableOfContents */
     #       int  pyvers;   /* new in v4 */
     #       char pylibname[64];    /* Filename of Python dynamic library. */
     #   } COOKIE;
     #
-    _cookie_format = '!8siiii64s'
+    _cookie_format = '!8sIIii64s'
     _cookie_size = struct.calcsize(_cookie_format)
 
     def __init__(self, archive_path=None, start=0, length=0, pylib_name=''):
