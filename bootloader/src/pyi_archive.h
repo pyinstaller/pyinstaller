@@ -20,6 +20,7 @@
 
 #include "pyi_global.h"
 #include <stdio.h>  /* FILE */
+#include <inttypes.h>  /* uint64_t */
 
 /* Types of CArchive items. */
 #define ARCHIVE_ITEM_BINARY           'b'  /* binary */
@@ -57,7 +58,7 @@ typedef struct _cookie {
 
 typedef struct _archive_status {
     FILE * fp;
-    size_t pkgstart;
+    uint64_t pkgstart;
     TOC *  tocbuff;
     TOC *  tocend;
     COOKIE cookie;

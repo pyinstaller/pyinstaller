@@ -159,6 +159,15 @@ void mbvs(const char *fmt, ...);
 /* Strings are usually terminated by this character. */
 #define PYI_NULLCHAR       '\0'
 
+/* File seek and tell with large (64-bit) offsets */
+#if defined(_WIN32) && defined(_MSC_VER)
+    #define pyi_fseek _fseeki64
+    #define pyi_ftell _ftelli64
+#else
+    #define pyi_fseek fseeko
+    #define pyi_ftell ftello
+#endif
+
 /* Saved LC_CTYPE locale */
 extern char *saved_locale;
 

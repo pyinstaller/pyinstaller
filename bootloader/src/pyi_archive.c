@@ -111,7 +111,7 @@ _pyi_arch_extract_compressed(ARCHIVE_STATUS *status, TOC *ptoc, FILE *out_fp, un
     const size_t CHUNK_SIZE = 8192;
     unsigned char *buffer_in = NULL;
     unsigned char *buffer_out = NULL;
-    size_t remaining_size;
+    uint64_t remaining_size;
     z_stream zstream;
     int rc = -1;
 
@@ -208,7 +208,7 @@ _pyi_arch_extract2fs_uncompressed(ARCHIVE_STATUS *status, TOC *ptoc, FILE *out)
 {
     const size_t CHUNK_SIZE = 8192;
     unsigned char *buffer;
-    size_t remaining_size;
+    uint64_t remaining_size;
     int rc = 0;
 
     /* Allocate temporary buffer for a single chunk */
@@ -247,7 +247,7 @@ _pyi_arch_extract_uncompressed(ARCHIVE_STATUS *status, TOC *ptoc, unsigned char 
 {
     const size_t CHUNK_SIZE = 8192;
     unsigned char *buffer;
-    size_t remaining_size;
+    uint64_t remaining_size;
 
     /* Read the file into buffer, chunk by chunk */
     buffer = out;
@@ -280,7 +280,7 @@ pyi_arch_extract(ARCHIVE_STATUS *status, TOC *ptoc)
         return NULL;
     }
     /* ... and seek to the beginning of entry's data */
-    if (fseek(status->fp, status->pkgstart + ptoc->pos, SEEK_SET) < 0) {
+    if (pyi_fseek(status->fp, status->pkgstart + ptoc->pos, SEEK_SET) < 0) {
         FATAL_PERROR("fseek", "Failed to extract %s: failed to seek to the entry's data!\n", ptoc->name);
         return NULL;
     }
@@ -337,7 +337,7 @@ pyi_arch_extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
         goto cleanup;
     }
     /* ... and seek to the beginning of entry's data */
-    if (fseek(status->fp, status->pkgstart + ptoc->pos, SEEK_SET) < 0) {
+    if (pyi_fseek(status->fp, status->pkgstart + ptoc->pos, SEEK_SET) < 0) {
         FATAL_PERROR("fseek", "Failed to extract %s: failed to seek to the entry's data!\n", ptoc->name);
         rc = -1;
         goto cleanup;
@@ -366,14 +366,14 @@ cleanup:
  *
  * Returns offset within the file if MAGIC pattern is found, 0 otherwise.
  */
-static size_t
+static uint64_t
 _pyi_find_cookie_offset(FILE *fp)
 {
     static const unsigned char MAGIC[] = { 'M', 'E', 'I', 014, 013, 012, 013, 016 };
     static const int SEARCH_CHUNK_SIZE = 8192;
     unsigned char *buffer = NULL;
-    size_t start_pos, end_pos;
-    size_t offset = 0;  /* return value */
+    uint64_t start_pos, end_pos;
+    uint64_t offset = 0;  /* return value */
 
     /* Allocate the read buffer */
     buffer = malloc(SEARCH_CHUNK_SIZE);
@@ -383,11 +383,11 @@ _pyi_find_cookie_offset(FILE *fp)
     }
 
     /* Determine file size */
-    if (fseek(fp, 0, SEEK_END) < 0) {
+    if (pyi_fseek(fp, 0, SEEK_END) < 0) {
         VS("LOADER: failed to seek to the end of the file!\n");
         goto cleanup;
     }
-    end_pos = ftell(fp);
+    end_pos = pyi_ftell(fp);
 
     /* Sanity check */
     if (end_pos < sizeof(MAGIC)) {
@@ -408,8 +408,8 @@ _pyi_find_cookie_offset(FILE *fp)
         }
 
         /* Read the chunk */
-        if (fseek(fp, start_pos, SEEK_SET) < 0) {
-            VS("LOADER: failed to seek to the offset 0x%zX!\n", start_pos);
+        if (pyi_fseek(fp, start_pos, SEEK_SET) < 0) {
+            VS("LOADER: failed to seek to the offset 0x%" PRIX64 "!\n", start_pos);
             goto cleanup;
         }
         if (fread(buffer, 1, chunk_size, fp) != chunk_size) {
@@ -461,7 +461,7 @@ _pyi_arch_fix_toc_endianess(ARCHIVE_STATUS *status)
 int
 pyi_arch_open(ARCHIVE_STATUS *status)
 {
-    size_t cookie_pos = 0;
+    uint64_t cookie_pos = 0;
     VS("LOADER: archivename is %s\n", status->archivename);
 
     /* Physically open the file */
@@ -476,10 +476,10 @@ pyi_arch_open(ARCHIVE_STATUS *status)
         VS("LOADER: Cannot find cookie!\n");
         return -1;
     }
-    VS("LOADER: Cookie found at offset 0x%zX\n", cookie_pos);
+    VS("LOADER: Cookie found at offset 0x%" PRIX64 "\n", cookie_pos);
 
     /* Read the cookie */
-    if (fseek(status->fp, cookie_pos, SEEK_SET) < 0) {
+    if (pyi_fseek(status->fp, cookie_pos, SEEK_SET) < 0) {
         FATAL_PERROR("fseek", "failed to seek to cookie position.");
         return -1;
     }
@@ -504,7 +504,7 @@ pyi_arch_open(ARCHIVE_STATUS *status)
     pyvers = pyi_arch_get_pyversion(status);
 
     /* Read in in the table of contents */
-    fseek(status->fp, (long)(status->pkgstart + status->cookie.TOC), SEEK_SET);
+    pyi_fseek(status->fp, status->pkgstart + status->cookie.TOC, SEEK_SET);
     status->tocbuff = (TOC *) malloc(status->cookie.TOClen);
 
     if (status->tocbuff == NULL) {
