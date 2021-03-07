@@ -501,7 +501,7 @@ def selectImports(pth, xtrapath=None):
     for lib in dlls:
         if lib.upper() in seen:
             continue
-        if not is_win and not is_cygwin:
+        if not is_win:
             # all other platforms
             npth = lib
             lib = os.path.basename(lib)
@@ -596,6 +596,11 @@ def _getImports_ldd(pth):
                 # should be ignored. See also:
                 # http://www.trilithium.com/johan/2005/08/linux-gate/
                 continue
+
+            if is_cygwin:
+                # exclude Windows system library
+                if lib.lower().startswith('/cygdrive/c/windows/system'):
+                    continue
 
             if os.path.exists(lib):
                 # Add lib if it is not already found.
@@ -726,7 +731,7 @@ def getImports(pth):
     """
     Forwards to the correct getImports implementation for the platform.
     """
-    if is_win or is_cygwin:
+    if is_win:
         if pth.lower().endswith(".manifest"):
             return []
         try:

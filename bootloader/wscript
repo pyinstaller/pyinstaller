@@ -54,6 +54,7 @@ DESTOS_TO_SYSTEM = {
     'sunos': platform.system(),  ## FIXME: inhibits cross-compile
     'hpux': 'HP-UX',
     'aix': 'AIX',
+    'cygwin': platform.system(), ## FIXME: inhibits cross-compile
 }
 
 # Map from platform.system() to waf's DEST_OS
@@ -66,6 +67,7 @@ SYSTEM_TO_BUILDOS = {
     'SunOS': 'sunos',
     'HP-UX': 'hpux',
     'AIX': 'aix',
+    DESTOS_TO_SYSTEM['cygwin']: 'cygwin',
 }
 
 # waf's name of the system we are building on
