@@ -376,10 +376,10 @@ pyi_path_archivefile(char *archivefile, const char *thisfile)
 FILE*
 pyi_path_fopen(const char* filename, const char* mode)
 {
-    wchar_t wfilename[MAX_PATH];
+    wchar_t wfilename[PATH_MAX];
     wchar_t wmode[10];
 
-    pyi_win32_utils_from_utf8(wfilename, filename, MAX_PATH);
+    pyi_win32_utils_from_utf8(wfilename, filename, PATH_MAX);
     pyi_win32_utils_from_utf8(wmode, mode, 10);
     return _wfopen(wfilename, wmode);
 }
