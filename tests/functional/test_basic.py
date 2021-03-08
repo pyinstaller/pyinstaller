@@ -637,3 +637,42 @@ def test_pe_checksum(pyi_builder):
             ctypes.byref(checksum)) == 0
 
         assert header_sum.value == checksum.value
+
+
+def test_onefile_longpath(pyi_builder, tmpdir):
+    """
+    Verify that files with paths longer than 260 characters are correctly
+    extracted from the onefile build. See issue #5615."
+    """
+    # The test is relevant only for onefile builds
+    if pyi_builder._mode != 'onefile':
+        pytest.skip('The test is relevant only to onefile builds.')
+    # Create data file with secret
+    _SECRET = 'LongDataPath'
+    src_filename = tmpdir / 'data.txt'
+    with open(src_filename, 'w') as fp:
+        fp.write(_SECRET)
+    # Generate long target filename/path; eight equivalents of SHA256
+    # strings plus data.txt should push just the _MEIPASS-relative path
+    # beyond 260 characters...
+    dst_filename = os.path.join(
+        *[32*chr(c) for c in range(ord('A'), ord('A')+8)], 'data.txt')
+    assert len(dst_filename) >= 260
+    # Name for --add-data
+    if is_win:
+        add_data_name = src_filename + ';' + os.path.dirname(dst_filename)
+    else:
+        add_data_name = src_filename + ':' + os.path.dirname(dst_filename)
+
+    pyi_builder.test_source(
+        """
+        import sys
+        import os
+
+        data_file = os.path.join(sys._MEIPASS, r'{data_file}')
+        print("Reading secret from %r" % (data_file))
+        with open(data_file, 'r') as fp:
+            secret = fp.read()
+        assert secret == r'{secret}'
+        """.format(data_file=dst_filename, secret=_SECRET),
+        ['--add-data', str(add_data_name)])
