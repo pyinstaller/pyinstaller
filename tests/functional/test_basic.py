@@ -676,3 +676,39 @@ def test_onefile_longpath(pyi_builder, tmpdir):
         assert secret == r'{secret}'
         """.format(data_file=dst_filename, secret=_SECRET),
         ['--add-data', str(add_data_name)])
+
+
+@pytest.mark.win32
+@pytest.mark.parametrize("icon", ["icon_default", "icon_none", "icon_given"])
+def test_onefile_has_manifest(pyi_builder, icon):
+    """
+    Verify that onefile builds on Windows end up having manifest
+    embedded. See issue #5624.
+    """
+    from PyInstaller.utils.win32 import winmanifest
+    from PyInstaller import PACKAGEPATH
+
+    # The test is relevant only for onefile builds
+    if pyi_builder._mode != 'onefile':
+        pytest.skip('The test is relevant only to onefile builds.')
+    # Icon type
+    if icon == 'icon_default':
+        # Default; no --icon argument
+        extra_args = []
+    elif icon == 'icon_none':
+        # Disable icon completely; --icon NONE
+        extra_args = ['--icon', 'NONE']
+    elif icon == 'icon_given':
+        # Locate pyinstaller's default icon, and explicitly give it
+        # via --icon argument
+        icon_path = os.path.join(PACKAGEPATH, 'bootloader', 'images',
+                                 'icon-console.ico')
+        extra_args = ['--icon', icon_path]
+    # Build the executable...
+    pyi_builder.test_source("""print('Hello world!')""", extra_args)
+    # ... and ensure that it contains manifest
+    exes = pyi_builder._find_executables('test_source')
+    assert exes
+    for exe in exes:
+        res = winmanifest.GetManifestResources(exe)
+        assert res, "No manifest resources found!"
