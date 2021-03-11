@@ -531,8 +531,7 @@ class EXE(Target):
         if not os.path.exists(exe):
             raise SystemExit(_MISSING_BOOTLOADER_ERRORMSG)
 
-        if is_win and (self.icon != "NONE" or self.versrsrc or self.resources
-                       or self.uac_admin or self.uac_uiaccess or not is_64bits):
+        if is_win:
             fd, tmpnm = tempfile.mkstemp(prefix=os.path.basename(exe) + ".",
                                          dir=CONF['workpath'])
             # need to close the file, otherwise copying resources will fail
@@ -598,7 +597,7 @@ class EXE(Target):
                         logger.error("Error while updating resource %s %s in %s"
                                      " from data file %s",
                                      restype, resname, tmpnm, resfile, exc_info=1)
-            if is_win and self.manifest and not self.exclude_binaries:
+            if self.manifest and not self.exclude_binaries:
                 self.manifest.update_resources(tmpnm, [1])
             trash.append(tmpnm)
             exe = tmpnm
