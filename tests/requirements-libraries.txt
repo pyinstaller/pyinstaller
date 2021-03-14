@@ -43,7 +43,7 @@ zope.interface==5.2.0
 pandas==1.2.3
 numpy==1.20.1
 scipy==1.6.1
-Pillow==8.0.1
+Pillow==8.1.2
 matplotlib==3.3.4
 
 
