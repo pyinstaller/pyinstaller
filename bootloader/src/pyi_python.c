@@ -39,6 +39,7 @@ DECLVAR(Py_NoSiteFlag);
 DECLVAR(Py_NoUserSiteDirectory);
 DECLVAR(Py_OptimizeFlag);
 DECLVAR(Py_VerboseFlag);
+DECLVAR(Py_UnbufferedStdioFlag);
 
 /* functions with prefix `Py_` */
 DECLPROC(Py_BuildValue);
@@ -104,6 +105,7 @@ pyi_python_map_names(HMODULE dll, int pyvers)
     GETVAR(dll, Py_NoUserSiteDirectory);
     GETVAR(dll, Py_OptimizeFlag);
     GETVAR(dll, Py_VerboseFlag);
+    GETVAR(dll, Py_UnbufferedStdioFlag);
 
     /* functions with prefix `Py_` */
     GETPROC(dll, Py_BuildValue);

@@ -892,40 +892,6 @@ def collect_system_data_files(path, destdir=None, include_py_files=False):
     return datas
 
 
-def _find_prefix(filename):
-    """
-    In virtualenv, _CONFIG_H and _MAKEFILE may have same or different
-    prefixes, depending on the version of virtualenv.
-    Try to find the correct one, which is assumed to be the longest one.
-    """
-    if not is_venv:
-        return sys.prefix
-    filename = os.path.abspath(filename)
-    prefixes = [os.path.abspath(sys.prefix), base_prefix]
-    possible_prefixes = []
-    for prefix in prefixes:
-        common = os.path.commonprefix([prefix, filename])
-        if common == prefix:
-            possible_prefixes.append(prefix)
-    if not possible_prefixes:
-        # no matching prefix, assume running from build directory
-        possible_prefixes = [os.path.dirname(filename)]
-    possible_prefixes.sort(key=lambda p: len(p), reverse=True)
-    return possible_prefixes[0]
-
-
-def relpath_to_config_or_make(filename):
-    """
-    The following is refactored out of hook-sysconfig and hook-distutils,
-    both of which need to generate "datas" tuples for pyconfig.h and
-    Makefile, under the same conditions.
-    """
-
-    # Relative path in the dist directory.
-    prefix = _find_prefix(filename)
-    return os.path.relpath(os.path.dirname(filename), prefix)
-
-
 def copy_metadata(package_name):
     """
     This function returns a list to be assigned to the ``datas`` global

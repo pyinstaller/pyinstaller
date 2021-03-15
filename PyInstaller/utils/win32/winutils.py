@@ -155,3 +155,17 @@ def convert_dll_name_to_str(dll_name):
         return str(dll_name, encoding='UTF-8')
     else:
         return dll_name
+
+
+def set_exe_checksum(exe_path):
+    """Set executable's checksum in its metadata.
+
+    This optional checksum is supposed to protect the executable against
+    corruption but some anti-viral software have taken to flagging anything
+    without it set correctly as malware. See issue #5579.
+    """
+    import pefile
+    pe = pefile.PE(exe_path)
+    pe.OPTIONAL_HEADER.CheckSum = pe.generate_checksum()
+    pe.close()
+    pe.write(exe_path)

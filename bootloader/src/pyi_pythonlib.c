@@ -240,6 +240,9 @@ pyi_pylib_set_runtime_opts(ARCHIVE_STATUS *status)
         setbuf(stdin, (char *)NULL);
         setbuf(stdout, (char *)NULL);
         setbuf(stderr, (char *)NULL);
+
+        /* Enable unbuffered mode via Py_UnbufferedStdioFlag */
+        *PI_Py_UnbufferedStdioFlag = 1;
     }
     return 0;
 }

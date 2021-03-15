@@ -17,7 +17,6 @@
 #
 # - v. 2.2 and above fails.
 Django==2.1.8  # pyup: ignore
-matplotlib==3.2.2 # pyup: ignore
 # - v 21.1.0 fails; earlier versions not tested.
 keyring==19.2.0  # pyup: ignore
 
@@ -42,6 +41,7 @@ sphinx==2.4.4 # pyup: ignore
 sqlalchemy==1.3.23
 zope.interface==5.2.0
 Pillow==8.1.0
+matplotlib==3.3.4
 
 
 # Python versions not supported / supported for older package versions

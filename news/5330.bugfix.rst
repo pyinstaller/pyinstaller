@@ -1,0 +1,2 @@
+PyInstaller-frozen onefile programs are now compatible with ``staticx``
+even if the bootloader is built as position-independent executable (PIE).

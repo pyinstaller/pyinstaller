@@ -290,12 +290,12 @@ pyi_path_executable(char *execfile, const char *appname)
     }
 
 #else /* ifdef _WIN32 */
-    /* On Linux, FreeBSD, and Solaris, we try these /proc paths first
+    /* On Linux, Cygwin, FreeBSD, and Solaris, we try these /proc paths first
      */
     size_t name_len = -1;
 
-    #if defined(__linux__)
-    name_len = readlink("/proc/self/exe", execfile, PATH_MAX-1);  /* Linux */
+    #if defined(__linux__) || defined(__CYGWIN__)
+    name_len = readlink("/proc/self/exe", execfile, PATH_MAX-1);  /* Linux, Cygwin */
     #elif defined(__FreeBSD__)
     name_len = readlink("/proc/curproc/file", execfile, PATH_MAX-1);  /* FreeBSD */
     #elif defined(__sun)
@@ -376,10 +376,10 @@ pyi_path_archivefile(char *archivefile, const char *thisfile)
 FILE*
 pyi_path_fopen(const char* filename, const char* mode)
 {
-    wchar_t wfilename[MAX_PATH];
+    wchar_t wfilename[PATH_MAX];
     wchar_t wmode[10];
 
-    pyi_win32_utils_from_utf8(wfilename, filename, MAX_PATH);
+    pyi_win32_utils_from_utf8(wfilename, filename, PATH_MAX);
     pyi_win32_utils_from_utf8(wmode, mode, 10);
     return _wfopen(wfilename, wmode);
 }

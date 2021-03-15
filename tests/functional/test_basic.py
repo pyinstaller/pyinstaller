@@ -332,10 +332,41 @@ def test_option_w_ignore(pyi_builder, monkeypatch, capsys):
     assert "'import warnings' failed" not in err
 
 
-@pytest.mark.darwin
-@pytest.mark.linux
-def test_python_makefile(pyi_builder):
-    pyi_builder.test_script('pyi_python_makefile.py')
+@pytest.mark.parametrize("distutils", ["", "from distutils "])
+def test_python_makefile(pyi_builder, distutils):
+    """Tests hooks for ``sysconfig`` and its near-duplicate
+    ``distutils.sysconfig``. Raises an import error if we failed to collect the
+    special module that contains the details from pyconfig.h and the makefile.
+    """
+    # Ideally we'd test that the contents of `sysconfig.get_config_vars()` dict
+    # are the same frozen vs unfrozen but because some values are paths into
+    # a Python installation's guts, these will point into the frozen app when
+    # frozen and therefore noy match. Without some fiddly filtering away paths,
+    # this is impossible.
+
+    # As a compromise, test that the dictionary keys are the same to be sure
+    # that there is no conditional initialisation of get_config_vars(). i.e.
+    # get_config_vars() doesn't silently return an empty dictionary if it can't
+    # find the information it needs.
+    if distutils:
+        from distutils import sysconfig
+    else:
+        import sysconfig
+    unfrozen_keys = sorted(sysconfig.get_config_vars().keys())
+
+    pyi_builder.test_source("""
+    # The error is raised immediately on import.
+    {}import sysconfig
+
+    # But just in case, Python later opt for some lazy loading, force
+    # configuration retrieval:
+    from pprint import pprint
+    pprint(sysconfig.get_config_vars())
+
+    unfrozen_keys = {}
+    assert sorted(sysconfig.get_config_vars()) == unfrozen_keys
+
+    """.format(distutils, unfrozen_keys))
 
 
 def test_set_icon(pyi_builder, data_dir):
@@ -585,3 +616,99 @@ def test_several_scripts2(pyi_builder_spec):
     Verify each script has it's own global vars (basic test).
     """
     pyi_builder_spec.test_spec('several-scripts2.spec')
+
+
+@pytest.mark.win32
+def test_pe_checksum(pyi_builder):
+    import ctypes
+    from ctypes import wintypes
+
+    pyi_builder.test_source("print('hello')")
+    exes = pyi_builder._find_executables('test_source')
+    assert exes
+    for exe in exes:
+        # Validate the PE checksum using the official Windows API for doing so.
+        # https://docs.microsoft.com/en-us/windows/win32/api/imagehlp/nf-imagehlp-mapfileandchecksumw
+        header_sum = wintypes.DWORD()
+        checksum = wintypes.DWORD()
+        assert ctypes.windll.imagehlp.MapFileAndCheckSumW(
+            ctypes.c_wchar_p(exe),
+            ctypes.byref(header_sum),
+            ctypes.byref(checksum)) == 0
+
+        assert header_sum.value == checksum.value
+
+
+def test_onefile_longpath(pyi_builder, tmpdir):
+    """
+    Verify that files with paths longer than 260 characters are correctly
+    extracted from the onefile build. See issue #5615."
+    """
+    # The test is relevant only for onefile builds
+    if pyi_builder._mode != 'onefile':
+        pytest.skip('The test is relevant only to onefile builds.')
+    # Create data file with secret
+    _SECRET = 'LongDataPath'
+    src_filename = tmpdir / 'data.txt'
+    with open(src_filename, 'w') as fp:
+        fp.write(_SECRET)
+    # Generate long target filename/path; eight equivalents of SHA256
+    # strings plus data.txt should push just the _MEIPASS-relative path
+    # beyond 260 characters...
+    dst_filename = os.path.join(
+        *[32*chr(c) for c in range(ord('A'), ord('A')+8)], 'data.txt')
+    assert len(dst_filename) >= 260
+    # Name for --add-data
+    if is_win:
+        add_data_name = src_filename + ';' + os.path.dirname(dst_filename)
+    else:
+        add_data_name = src_filename + ':' + os.path.dirname(dst_filename)
+
+    pyi_builder.test_source(
+        """
+        import sys
+        import os
+
+        data_file = os.path.join(sys._MEIPASS, r'{data_file}')
+        print("Reading secret from %r" % (data_file))
+        with open(data_file, 'r') as fp:
+            secret = fp.read()
+        assert secret == r'{secret}'
+        """.format(data_file=dst_filename, secret=_SECRET),
+        ['--add-data', str(add_data_name)])
+
+
+@pytest.mark.win32
+@pytest.mark.parametrize("icon", ["icon_default", "icon_none", "icon_given"])
+def test_onefile_has_manifest(pyi_builder, icon):
+    """
+    Verify that onefile builds on Windows end up having manifest
+    embedded. See issue #5624.
+    """
+    from PyInstaller.utils.win32 import winmanifest
+    from PyInstaller import PACKAGEPATH
+
+    # The test is relevant only for onefile builds
+    if pyi_builder._mode != 'onefile':
+        pytest.skip('The test is relevant only to onefile builds.')
+    # Icon type
+    if icon == 'icon_default':
+        # Default; no --icon argument
+        extra_args = []
+    elif icon == 'icon_none':
+        # Disable icon completely; --icon NONE
+        extra_args = ['--icon', 'NONE']
+    elif icon == 'icon_given':
+        # Locate pyinstaller's default icon, and explicitly give it
+        # via --icon argument
+        icon_path = os.path.join(PACKAGEPATH, 'bootloader', 'images',
+                                 'icon-console.ico')
+        extra_args = ['--icon', icon_path]
+    # Build the executable...
+    pyi_builder.test_source("""print('Hello world!')""", extra_args)
+    # ... and ensure that it contains manifest
+    exes = pyi_builder._find_executables('test_source')
+    assert exes
+    for exe in exes:
+        res = winmanifest.GetManifestResources(exe)
+        assert res, "No manifest resources found!"

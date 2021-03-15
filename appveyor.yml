@@ -124,6 +124,12 @@ cache:
 
 
 install:
+  # Enable long paths (needs reboot)
+  - ps: Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' -Name 'LongPathsEnabled' -Value 1
+  - ps: Start-Sleep -s 10
+  - ps: Restart-Computer -Force
+  - ps: Start-Sleep -s 10
+
   - C:\cygwin\bin\du -hs "%LOCALAPPDATA%\pip\Cache"
   # Prepend newly installed Python to the PATH of this build (this cannot be
   # done from inside the powershell script as it would require to restart
