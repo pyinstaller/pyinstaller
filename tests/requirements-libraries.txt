@@ -50,16 +50,16 @@ matplotlib==3.3.4
 # iPython 7.17 dropped support for python 3.6
 # https://ipython.readthedocs.io/en/stable/whatsnew/version7.html#ipython-7-17
 ipython==7.20.0; python_version > '3.6'
-ipython==7.16.1; python_version < '3.6'  # pyup: ignore
+ipython==7.16.1; python_version <= '3.6'  # pyup: ignore
 
 # pandas also dropped support
 pandas==1.2.2; python_version > '3.6'
-pandas==1.5.4; python_version < '3.6'  # pyup: ignore
+pandas==1.1.5; python_version <= '3.6'  # pyup: ignore
 
 # so did numpy
 numpy==1.20.1; python_version > '3.6'
-numpy==1.19.4; python_version < '3.6'  # pyup: ignore
+numpy==1.19.4; python_version <= '3.6'  # pyup: ignore
 
 # scipy too
 scipy==1.6.1; python_version > '3.6'
-scipy==1.5.4; python_version < '3.6'  # pyup: ignore
+scipy==1.5.4; python_version <= '3.6'  # pyup: ignore
