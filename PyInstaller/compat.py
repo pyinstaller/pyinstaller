@@ -494,8 +494,15 @@ def __wrap_python(args, kwargs):
     # architecture as python executable.
     # It is necessary to run binaries with 'arch' command.
     if is_darwin:
-        mapping = {'32bit': '-i386', '64bit': '-x86_64'}
-        py_prefix = ['arch', mapping[architecture]]
+        if architecture == '64bit':
+            if machine == 'arm':
+                py_prefix = ['arch', '-arm64']  # Apple M1
+            else:
+                py_prefix = ['arch', '-x86_64']  # Intel
+        elif architecture == '32bit':
+            py_prefix = ['arch', '-i386']
+        else:
+            py_prefix = []
         # Since OS X 10.11 the environment variable DYLD_LIBRARY_PATH is no
         # more inherited by child processes, so we proactively propagate
         # the current value using the `-e` option of the `arch` command.
