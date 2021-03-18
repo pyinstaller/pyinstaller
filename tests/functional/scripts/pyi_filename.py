@@ -10,5 +10,8 @@
 #-----------------------------------------------------------------------------
 
 
-if __file__ != 'pyi_filename.py':
-   raise ValueError(__file__)
+import sys
+import os
+
+assert os.path.dirname(__file__) == sys._MEIPASS
+assert os.path.basename(__file__) == 'pyi_filename.py'
