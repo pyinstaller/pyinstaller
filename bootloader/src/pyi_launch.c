@@ -443,11 +443,11 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
             data = pyi_arch_extract(status, ptoc);
             /* Set the __file__ attribute within the __main__ module,
              *  for full compatibility with normal execution. */
-            if (snprintf(buf, PATH_MAX, "%s.py", ptoc->name) >= PATH_MAX) {
-                FATALERROR("Name exceeds PATH_MAX\n");
+            if (snprintf(buf, PATH_MAX, "%s%c%s.py", status->mainpath, PYI_SEP, ptoc->name) >= PATH_MAX) {
+                FATALERROR("Absolute path to script exceeds PATH_MAX\n");
                 return -1;
             }
-            VS("LOADER: Running %s\n", buf);
+            VS("LOADER: Running %s.py\n", ptoc->name);
             __file__ = PI_PyUnicode_FromString(buf);
             PI_PyObject_SetAttrString(__main__, "__file__", __file__);
             Py_DECREF(__file__);

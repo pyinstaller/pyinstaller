@@ -1,0 +1,2 @@
+Set the ``__file__`` attribute in the ``__main__`` module (entry-point
+script) to the absolute file name inside the ``_MEIPASS``.
