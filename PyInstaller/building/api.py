@@ -822,6 +822,17 @@ class MERGE(object):
                     self._dependencies[tpl[1]] = path
                 else:
                     dep_path = self._get_relative_path(path, self._dependencies[tpl[1]])
+                    # Ignore references that point to the origin package.
+                    # This can happen if the same resource is listed
+                    # multiple times in TOCs (e.g., once as binary and
+                    # once as data).
+                    if dep_path.endswith(path):
+                        logger.debug("Ignoring self-reference of %s for %s, "
+                                     "located in %s - duplicated TOC entry?",
+                                     tpl[1], path, dep_path)
+                        # Clear the entry as it is a duplicate.
+                        toc[i] = (None, None, None)
+                        continue
                     logger.debug("Referencing %s to be a dependecy for %s, located in %s" % (tpl[1], path, dep_path))
                     # Determine the path relative to dep_path (i.e, within
                     # the target directory) from the 'name' component
