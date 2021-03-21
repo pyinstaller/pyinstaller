@@ -32,7 +32,7 @@ pyside2==5.15.1
 pyqt5==5.15.1
 pyqtwebengine==5.15.1
 python-dateutil==2.8.1
-pytz==2020.4
+pytz==2021.1
 requests==2.25.1
 # simplejson is used for text_c_extension
 simplejson==3.17.2
