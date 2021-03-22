@@ -741,6 +741,11 @@ class PyiModuleGraph(ModuleGraph):
         if node:
             referers = self.getReferers(node)
             for r in referers:
+                # Under python 3.7 and earlier, if ctypes is added to
+                # hidden imports, one of referers ends up being None,
+                # causing #3825. Work around it.
+                if r is None:
+                    continue
                 r_ident =  r.identifier
                 # Ensure that modulegraph objects has attribute 'code'.
                 if type(r).__name__ in pure_python_module_types:
