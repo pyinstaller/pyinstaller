@@ -21,7 +21,7 @@ installed:
 
 The easiest way to install these (and some useful pytest add-ons) is running
 ```
-pip install -U tests/requirements-tools.txt
+pip install -U -r tests/requirements-tools.txt
 ```
 
 Running the Tests
@@ -92,14 +92,14 @@ Packages only available for specific version or platforms should get an appropri
 marker](https://www.python.org/dev/peps/pep-0426/#environment-markers) like
 so:
 ```
-SomeProject ==5.4 ; python_version != '3.3'
+SomeProject ==5.4 ; python_version != '3.6'
 SomeProject       ; sys_platform == 'win32'
 ```
 
-### Linux
+### GNU/Linux
 
 The top-level `.travis.yml` file configures the Travis-CI service to remotely
-test PyInstaller in an Ubuntu 12.04 (LTS) container, the most recent Linux
+test PyInstaller in an Ubuntu 12.04 (LTS) container, the most recent GNU/Linux
 distribution supported by Travis-CI.
 
 Non-Python dependencies installable through `apt-get` on Ubuntu 12.04 should be

@@ -1,22 +1,25 @@
 # -*- coding: utf-8 -*-
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2017, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 import os
 import glob
-import ctypes, ctypes.util
+import ctypes
+import ctypes.util
 
 import pytest
 
-from PyInstaller.compat import is_darwin, is_py2, is_py35, is_win
+from PyInstaller.compat import is_darwin, is_win
 from PyInstaller.utils.tests import skipif, importorskip, \
-  skipif_notwin, skipif_no_compiler, xfail, has_compiler
+    skipif_no_compiler, xfail, has_compiler
 
 # :todo: find a way to get this from `conftest` or such
 # Directory with testing modules used in some tests.
@@ -135,6 +138,19 @@ def test_import_submodule_global_unshadowed(pyi_builder):
         """)
 
 
+def test_import_submodule_from_aliased_pkg(pyi_builder, script_dir):
+    pyi_builder.test_source(
+        """
+        import sys
+        import pyi_testmod_submodule_from_aliased_pkg
+
+        sys.modules['alias_name'] = pyi_testmod_submodule_from_aliased_pkg
+
+        from alias_name import submodule
+        """,
+        ['--additional-hooks-dir=%s' % script_dir.join('pyi_hooks')])
+
+
 def test_module_with_coding_utf8(pyi_builder):
     # Module ``utf8_encoded_module`` simply has an ``coding`` header
     # and uses same German umlauts.
@@ -143,6 +159,7 @@ def test_module_with_coding_utf8(pyi_builder):
 
 def test_hiddenimport(pyi_builder):
     # The script simply does nothing, not even print out a line.
+    # The check is done by comparing with logs/test_hiddenimport.toc
     pyi_builder.test_source('pass',
                             ['--hidden-import=a_hidden_import'])
 
@@ -172,12 +189,6 @@ def test_import_non_existing_raises_import_error(pyi_builder):
             raise RuntimeError("ImportError not raised")
         """)
 
-# :todo: Use some package which is already installed for some other
-# reason instead of `simplejson` which is only used here.
-@importorskip('simplejson')
-def test_c_extension(pyi_builder):
-    pyi_builder.test_script('pyi_c_extension.py')
-
 
 # Verify that __path__ is respected for imports from the filesystem:
 #
@@ -204,27 +215,15 @@ def test_import_metapath1(pyi_builder, script_dir):
       ['--additional-hooks-dir='+script_dir.join('pyi_hooks').strpath])
 
 
-def test_import_pyqt5_uic_port(monkeypatch, pyi_builder):
+@importorskip('PyQt5')
+def test_import_pyqt5_uic_port(script_dir, pyi_builder):
     extra_path = os.path.join(_MODULES_DIR, 'pyi_import_pyqt_uic_port')
     pyi_builder.test_script('pyi_import_pyqt5_uic_port.py',
-                            pyi_args=['--path', extra_path])
+        # Add the path to a fake PyQt5 package, used for this test.
+        pyi_args=['--path', extra_path])
 
 
 #--- ctypes ----
-
-@skipif_no_compiler
-@skipif(is_py35 and is_win,
-        reason="MSVCR not directly loadable on py3.5, see https://bugs.python.org/issue23606")
-def test_ctypes_CDLL_c(pyi_builder):
-    # Make sure we are able to load the MSVCRXX.DLL resp. libc.so we are
-    # currently bound. This is some of a no-brainer since the resp. dll/so
-    # is collected anyway.
-    pyi_builder.test_source(
-        """
-        import ctypes, ctypes.util
-        lib = ctypes.CDLL(ctypes.util.find_library('c'))
-        assert lib is not None
-        """)
 
 @skipif_no_compiler
 @skipif(is_win, reason="CDLL(None) seams to be not valid on Windows")
@@ -327,10 +326,10 @@ for prefix in ('', 'ctypes.'):
         # Marking doesn't seem to chain here, so select just one skippping mark
         # instead of both.
         if not has_compiler:
-            params = skipif_no_compiler(params)
+            params = pytest.param(*params, marks=skipif_no_compiler(params))
         elif funcname in ("WinDLL", "OleDLL"):
             # WinDLL, OleDLL only work on windows.
-            params = skipif_notwin(params)
+            params = pytest.param(*params, marks=pytest.mark.win32)
         parameters.append(params)
 
 @pytest.mark.parametrize("funcname,test_id", parameters, ids=ids)
@@ -547,7 +546,6 @@ def test_nspkg3_bbb_zzz(pyi_builder):
         pyi_args=['--paths', os.pathsep.join(pathex)],
     )
 
-@skipif(is_py2, reason="requires Python 3.3")
 def test_nspkg_pep420(pyi_builder):
     # Test inclusion of PEP 420 namespace packages.
     pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg-pep420', 'path*'))
@@ -562,6 +560,62 @@ def test_nspkg_pep420(pyi_builder):
     )
 
 
+def test_nspkg_attributes(pyi_builder):
+    # Test that non-PEP-420 namespace packages (e.g., the ones using
+    # pkg_resources.declare_namespace) have proper attributes:
+    #  * __path__ attribute should contain at least one path
+    #  * __file__ attribute should point to an __init__ file within __path__
+    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg1-pkg', '*.egg'))
+    pyi_builder.test_source(
+        """
+        import os
+        import nspkg1
+
+        def validate_nspkg(pkg):
+            from sys import version_info
+            # Validate __path__
+            path = getattr(pkg, '__path__', None)
+            assert path is not None and len(path) >= 1, "invalid __path__"
+            # Validate __file__
+            file = pkg.__file__
+            assert os.path.dirname(file) in path, \
+                "dirname(__file__) does not point to __path__"
+            assert os.path.basename(file).startswith('__init__.'), \
+                "basename(__file__) does not start with __init__.!"
+
+        validate_nspkg(nspkg1)
+        """,
+        pyi_args=['--paths', os.pathsep.join(pathex)],
+    )
+
+
+def test_nspkg_attributes_pep420(pyi_builder):
+    # Test that PEP-420 namespace packages have proper attributes:
+    #  * __path__ should contain at least one path
+    #  * __file__ should be unset (python 3.6) or None (python 3.7 and later)
+    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg-pep420', 'path*'))
+    pyi_builder.test_source(
+        """
+        import package
+        import package.nspkg
+
+        def validate_nspkg_pep420(pkg):
+            from sys import version_info
+            # Validate __path__
+            path = getattr(pkg, '__path__', None)
+            assert path is not None and len(path) >= 1, "invalid __path__"
+            # Validate __file__
+            if version_info[0:2] < (3, 7):
+                assert not hasattr(pkg, '__file__'), "invalid __file__"
+            else:
+                assert getattr(pkg, '__file__') is None, "invalid __file__"
+
+        validate_nspkg_pep420(package)
+        validate_nspkg_pep420(package.nspkg)
+        """,
+        pyi_args=['--paths', os.pathsep.join(pathex)],
+    )
+
 #--- hooks related stuff ---
 
 def test_pkg_without_hook_for_pkg(pyi_builder, script_dir):
@@ -575,22 +629,6 @@ def test_pkg_without_hook_for_pkg(pyi_builder, script_dir):
 
 @xfail(is_darwin, reason='Issue #1895.')
 def test_app_with_plugin(pyi_builder, data_dir, monkeypatch):
-
-    from PyInstaller.building.build_main import Analysis
-    class MyAnalysis(Analysis):
-        def __init__(self, *args, **kwargs):
-            kwargs['datas'] = datas
-            # Setting back is required to make `super()` within
-            # Analysis access the correct class. Do not use
-            # `monkeypatch.undo()` as this will undo *all*
-            # monkeypathes.
-            monkeypatch.setattr('PyInstaller.building.build_main.Analysis',
-                                Analysis)
-            super(MyAnalysis, self).__init__(*args, **kwargs)
-
-    monkeypatch.setattr('PyInstaller.building.build_main.Analysis', MyAnalysis)
-
-    # :fixme: When PyInstaller supports setting datas via the
-    # command-line, us this here instead of monkeypatching Analysis.
-    datas = [('data/*/static_plugin.py', '.')]
-    pyi_builder.test_script('pyi_app_with_plugin.py')
+    datas = os.pathsep.join(('data/*/static_plugin.py', os.curdir))
+    pyi_builder.test_script('pyi_app_with_plugin.py',
+                            pyi_args=['--add-data', datas])

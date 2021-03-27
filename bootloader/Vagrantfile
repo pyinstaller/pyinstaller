@@ -3,13 +3,16 @@
 #
 # Automated rebuild of bootloader on misc. platforms
 #
-# Copyright (C) 2016-2017 PyInstaller Development Team
+# Copyright (C) 2016-2021 PyInstaller Development Team
 #
 # Based on a Vagrantfile by Thomas Waldmann. Thanks!
 # Copyright (C) 2015 The Borg Collective http://borgbackup.readthedocs.org/
 
 
 Vagrant.require_version ">= 1.9.5" # Enabling shared folders for winssh
+
+# half-official Debian 8, incl. vboxfs kernel module for shared folders
+DEBIAN = "debian/contrib-buster64"
 
 if not (Dir.exist?('./src') and File.exist?('./wscript'))
    abort("vagrant must be called from within the 'bootloader' directory")
@@ -37,8 +40,9 @@ def packages_debianoid
     export DEBIAN_FRONTEND=noninteractive
     apt-get -y -o Dpkg::Options::="--force-confdef" \
                -o Dpkg::Options::="--force-confold" upgrade
-    apt-get install -y python python-dev python-setuptools \
-                       gcc libz-dev libc6-dev-i386 zlib1g-dev:i386 \
+    apt-get install -y python3 python3-dev python3-setuptools \
+                       gcc libz-dev libz-dev:i386 \
+                       gcc-i686-linux-gnu \
                        gcc-mingw-w64 clang
   EOF
 end
@@ -115,6 +119,8 @@ end
 def packages_darwin
   return <<-EOF
     ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+    export HOMEBREW_NO_ANALYTICS=1
+    brew analytics off
     brew update
     brew upgrade --all
     brew install pkg-config
@@ -150,7 +156,7 @@ def packages_cygwin(version)
     set CYGMIRROR=http://mirrors.kernel.org/sourceware/cygwin/
     set BASEPKGS=openssh,rsync
     set BUILDPKGS=p7zip
-    REM set BUILDPKGS=python3,python3-setuptools,python-devel,binutils,gcc-core
+    REM set BUILDPKGS=python3,python3-setuptools,python3-devel,binutils,gcc-core
     %CYGSETUP% -q -B -o -n -R %CYGBUILD% -L -D -s %CYGMIRROR% -P %BASEPKGS%,%BUILDPKGS%
     cd /d C:\\cygwin\\CygWin\\bin
     regtool set /HKLM/SYSTEM/CurrentControlSet/Services/OpenSSHd/ImagePath "C:\\cygwin\\CygWin\\bin\\cygrunsrv.exe"
@@ -176,10 +182,11 @@ end
 
 def packages_chocolatey()
   return <<-EOF
-    echo > install-choco.ps1 '
-    "Install chocolatey"
-    iex ((New-Object System.Net.WebClient).DownloadString("https://chocolatey.org/install.ps1"))
-    ' ; powershell -NoProfile -ExecutionPolicy Bypass -File ./install-choco.ps1
+    powershell " \
+       Set-ExecutionPolicy Bypass -Scope Process -Force; \
+       [System.Net.ServicePointManager]::SecurityProtocol = \
+           [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; \
+       iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))"
   EOF
 end
 
@@ -196,13 +203,17 @@ end
 
 def windows_disable_updates()
   # TODO: Add more entries to really disable all auto-updates and reboots.
+  # Also disable Cortana
   return <<-EOF
     echo > no-updates.ps1 '
     $base = "HKLM:/Software/Policies/Microsoft/Windows/"
-    New-Item -Force -Path "$base/WindowsUpdate" | Out-Null
-    New-Item -Force -Path "$base/WindowsUpdate/AU" | Out-Null
+    New-Item -Force -Path  "$base/WindowsUpdate" | Out-Null
+    New-Item -Force -Path  "$base/WindowsUpdate/AU" | Out-Null
     New-ItemProperty -Path "$base/WindowsUpdate/AU" -Name "NoAutoUpdate" -Value 1 -PropertyType DWORD -Force | Out-Null
-    Get-ItemProperty "$base/WindowsUpdate/AU"
+    Get-ItemProperty       "$base/WindowsUpdate/AU"
+    New-Item -Force  -Path "$base/Windows Search" | Out-Null
+    New-ItemProperty -Path "$base/Windows Search" -Name "AllowCortana" -Value 0 -PropertyType DWORD -Force | Out-Null
+    Get-ItemProperty       "$base/Windows Search"
     ' ; powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./no-updates.ps1
   EOF
 end
@@ -222,24 +233,24 @@ def build_bootloader(boxname)
           break
        fi
     done
-    python ./waf all
-    python ./waf all --target-arch=32bit
+    python3 ./waf all
+    python3 ./waf all CC=i686-linux-gnu-gcc
   EOF
 end
 
 def build_bootloader_on_windows(boxname)
   return <<-EOF
     cd c:/vagrant/bootloader
-    c:/python27/python.exe ./waf all --target-arch=64bit
-    c:/python27/python.exe ./waf all --target-arch=32bit
+    py -3 ./waf all --target-arch=64bit
+    py -3 ./waf all --target-arch=32bit
   EOF
 end
 
 def build_bootloader_target_win32(boxname)
   return <<-EOF
     cd /vagrant/bootloader
-    python ./waf all CC=i686-w64-mingw32-gcc
-    python ./waf all CC=x86_64-w64-mingw32-gcc
+    py -3 ./waf all CC=i686-w64-mingw32-gcc
+    py -3 ./waf all CC=x86_64-w64-mingw32-gcc
   EOF
 end
 
@@ -253,10 +264,10 @@ def build_bootloader_target_osx(boxname)
     fi
     PATH=~/osxcross/bin:$PATH
     echo $PATH
-    # TODO: Use CC=o32-clang and CC=o64-clang when possible, see
-    # <https://github.com/tpoechtrager/osxcross/issues/119>
-    python ./waf all CC=x86_64-apple-darwin15-clang
-    #python ./waf all CC=i386-apple-darwin15-clang
+    export LD_LIBRARY_PATH=~/osxcross/lib:$LD_LIBRARY_PATH
+    export MACOSX_DEPLOYMENT_TARGET=10.11
+    python3 ./waf all CC=x86_64-apple-darwin15-clang --clang
+    #python3 ./waf all CC=i386-apple-darwin15-clang
   EOF
 end
 
@@ -276,10 +287,8 @@ Vagrant.configure(2) do |config|
   end
 
   #--- Linux 64 bit, using Debian 8 from boxcutter ---
-  # using images from boxcutter since they already include support for
-  # shared folders
   config.vm.define "linux64" do |b|
-    b.vm.box = "boxcutter/debian8"
+    b.vm.box = DEBIAN
     b.vm.provider :virtualbox do |v|
       v.memory = 768
     end
@@ -306,7 +315,7 @@ Vagrant.configure(2) do |config|
 
   #--- Build the Darwin SDK and tools ---
   config.vm.define "build-osxcross" do |b|
-    b.vm.box = "boxcutter/debian8"
+    b.vm.box = DEBIAN
     b.vm.provider :virtualbox do |v|
       v.memory = 768
     end
@@ -328,7 +337,7 @@ Vagrant.configure(2) do |config|
     b.vm.box = "jhcook/yosemite-clitools"
 
     # Guest additions are not available for OS X and thus no shared folders
-    config.vm.synced_folder "..", "/vagrant", :type => "rsync",
+    b.vm.synced_folder "..", "/vagrant", :type => "rsync",
       # Avoid rsyncing the huge SDKs not used here
       :rsync__args => ["--verbose", "--archive", "--delete", "-z",
                        "--include=bootloader", "--include=PyInstaller",
@@ -347,6 +356,7 @@ Vagrant.configure(2) do |config|
       # Adjust CPU settings according to
       # https://github.com/geerlingguy/macos-virtualbox-vm
       v.customize ['modifyvm', :id, '--cpuidset',
+                   # Leaf       EAX        EBX         ECX         EDX
                    '00000001', '000306a9', '00020800', '80000201', '178bfbff']
       # This should make make the box less choppy (source: geerlingguy)
       #v.customize ["modifyvm", :id, '--audio', 'off']
@@ -422,7 +432,7 @@ Vagrant.configure(2) do |config|
         :inline => packages_chocolatey()
       b.vm.provision "install packages",
         :type => :shell, :privileged => false, :keep_color => true,
-        :inline => choco_install("python2 vcbuildtools")
+        :inline => choco_install("python3 vcbuildtools")
       b.vm.provision "build bootloader",
         :type => :shell, :privileged => false, :keep_color => true,
         :inline => build_bootloader_on_windows("windows10")

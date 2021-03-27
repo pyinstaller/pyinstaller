@@ -33,17 +33,17 @@ such as |PyInstaller| in each of them.
 (For more on the uses of virtualenv, see :ref:`Supporting Multiple Platforms` below.)
 
 When pip-Win is working, enter this command in its Command field
-and click Run:
+and click Run::
 
-  ``venv -c -i  pyi-env-name``
+    venv -c -i pyi-env-name
 
 This creates a new virtual environment rooted at ``C:\Python\pyi-env-name``
 and makes it the current environment.
 A new command shell
 window opens in which you can run commands within this environment.
-Enter the command
+Enter the command ::
 
-  ``pip install PyInstaller``
+    pip install PyInstaller
 
 Once it is installed, to use |PyInstaller|,
 
@@ -57,15 +57,21 @@ Then you have a command shell window in which commands such as
 Installing in Mac OS X
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-|PyInstaller| works with the default Python 2.7 provided with current
-Mac OS X installations.
-However, if you plan to use a later version of Python,
-or if you use any of the major packages such as
-PyQt, Numpy, Matplotlib, Scipy, and the like, we strongly
+Mac OS X 10.8 comes with Python 2.7 pre-installed by Apple.
+However, Python 2.7 is end-of-life and no longer supported by |PyInstaller|,
+also
+major packages such as
+PyQt, Numpy, Matplotlib, Scipy, and the like,
+have dropped support for Python 2.7, too.
+Thus we strongly
 recommend that you install these using either `MacPorts`_ or `Homebrew`_.
 
 |PyInstaller| users report fewer problems when they use a package manager
 than when they attempt to install major packages individually.
+
+Alternatively you might install Python 3 following the
+`official guide <https://docs.python.org/3/using/mac.html>`_.
+
 
 Installing from the archive
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -80,7 +86,7 @@ Inside is a script named ``setup.py``.
 Execute ``python setup.py install``
 with administrator privilege to install or upgrade |PyInstaller|.
 
-For platforms other than Windows, Linux and Mac OS, you must first
+For platforms other than Windows, GNU/Linux and Mac OS, you must first
 build a |bootloader| program for your platform: see :ref:`Building the Bootloader`.
 After the |bootloader| has been created,
 use ``python setup.py install`` with administrator privileges
@@ -92,9 +98,9 @@ Verifying the installation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 On all platforms, the command ``pyinstaller`` should now exist on the
-execution path. To verify this, enter the command
+execution path. To verify this, enter the command::
 
-  ``pyinstaller --version``
+    pyinstaller --version
 
 The result should resemble ``3.n`` for a released version,
 and ``3.n.dev0-xxxxxx`` for a development branch.
@@ -105,7 +111,7 @@ the proper directory:
 * Windows: ``C:\PythonXY\Scripts`` where *XY* stands for the
   major and minor Python version number,
   for example ``C:\Python34\Scripts`` for Python 3.4)
-* Linux: ``/usr/bin/``
+* GNU/Linux: ``/usr/bin/``
 * OS X (using the default Apple-supplied Python) ``/usr/bin``
 * OS X (using Python installed by homebrew) ``/usr/local/bin``
 * OS X (using Python installed by macports) ``/opt/local/bin``

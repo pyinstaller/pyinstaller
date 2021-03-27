@@ -1,10 +1,12 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2017, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 
@@ -65,6 +67,8 @@ print('}')
     #   non-ignorable submodules from ignorable non-submodules (e.g., classes,
     #   variables), ModuleGraph first attempts to import these attributes as
     #   submodules. This is exactly what we want.
+    if isinstance(real_to_six_module_name, str):
+        raise SystemExit("pre-safe-import-module hook failed, needs fixing.")
     api.add_runtime_package(api.module_name)
     for real_module_name, six_module_name in real_to_six_module_name.items():
         api.add_alias_module(real_module_name, six_module_name)

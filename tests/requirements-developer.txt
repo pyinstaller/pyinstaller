@@ -1,3 +1,16 @@
+# This is the pip requirements file for developers and release managers. This
+# will install development tools and release helpers as well as the
+# requirements for running the PyInstaller base test-suite.
+#
+# Example (assuming current dir is PyInstaller's top-level source dir)::
+#
+#   python -m pip install -r tests/requirements-developer.txt
+#   python -m pip install -r tests/requirements-libraries.txt  # extensive
+
+# include PyInstaller's requirements and for base testing
+-r ../requirements.txt
+-r requirements-tools.txt
+
 ### Helpers for development
 
 ipython  # Better interactive Python shell.
@@ -9,11 +22,15 @@ pycmd  # Contains 'py.cleanup' that removes all .pyc files and similar.
 wheel>0.24.0  # For creating .whl packages
 twine         # For secure upload of tar.gz to PYPI.
 
-zest.releaser # Makes releasing easier
+towncrier>=19.2.0    # For creating the change-log file.
+
+zest.releaser>=6.18  # Makes releasing easier
 # Addons for zest.releaser:
 check-manifest  # Checks MANIFEST.in
 pyroma   # Checks if package follows best practices of Python packaging.
 chardet  # character encoding detector.
-readme   # Check PyPI description is valid reStructuredText
+readme-renderer   # Check PyPI description is valid reStructuredText
+zestreleaser.towncrier  # integrate towncrier into zest.releaser
 
--r requirements-tools.txt
+sphinx
+sphinx_rtd_theme

@@ -1,10 +1,12 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2017, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 
@@ -199,8 +201,7 @@ def UpdateResources(dstpath, data, type_, names=None, languages=None):
             for language in res[type_][name]:
                 logger.info("Updating resource type %s name %s language %s",
                             type_, name, language)
-                win32api.UpdateResource(hdst, type_, name,
-                                        data.encode('UTF-8'), language)
+                win32api.UpdateResource(hdst, type_, name, data, language)
     win32api.EndUpdateResource(hdst, 0)
 
 
@@ -213,9 +214,8 @@ def UpdateResourcesFromDataFile(dstpath, srcpath, type_, names=None,
     names = a list of resource names to update (None = all)
     languages = a list of resource languages to update (None = all)
     """
-    src = open(srcpath, "rb")
-    data = src.read()
-    src.close()
+    with open(srcpath, "rb") as src:
+        data = src.read()
     UpdateResources(dstpath, data, type_, names, languages)
 
 
@@ -242,7 +242,7 @@ def UpdateResourcesFromDict(dstpath, res, types=None, names=None,
                         if not languages or language in languages:
                             UpdateResources(dstpath,
                                             res[type_][name][language],
-                                            [type_], [name], [language])
+                                            type_, [name], [language])
 
 
 def UpdateResourcesFromResFile(dstpath, srcpath, types=None, names=None,

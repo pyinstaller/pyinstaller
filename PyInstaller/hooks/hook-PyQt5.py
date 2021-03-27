@@ -1,42 +1,32 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2017, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 import os
 
-from PyInstaller.utils.hooks import (
-    get_module_attribute, is_module_satisfies, qt_menu_nib_dir, get_module_file_attribute,
-    collect_data_files)
-from PyInstaller.compat import getsitepackages, is_darwin, is_win
+from PyInstaller.utils.hooks import collect_system_data_files
+from PyInstaller.utils.hooks.qt import pyqt5_library_info, get_qt_binaries
 
+# Ensure PyQt5 is importable before adding info depending on it.
+if pyqt5_library_info.version is not None:
+    hiddenimports = [
+        # PyQt5.10 and earlier uses sip in an separate package;
+        'sip',
+        # PyQt5.11 and later provides SIP in a private package. Support both.
+        'PyQt5.sip'
+    ]
 
-# On Windows system PATH has to be extended to point to the PyQt5 directory.
-# The PySide directory contains Qt dlls. We need to avoid including different
-# version of Qt libraries when there is installed another application (e.g. QtCreator)
-if is_win:
-    from PyInstaller.utils.win32.winutils import extend_system_path
-    extend_system_path([os.path.join(x, 'PyQt5') for x in getsitepackages()])
-    extend_system_path([os.path.join(os.path.dirname(get_module_file_attribute('PyQt5')),
-                                     'Qt', 'bin')])
+    # Collect the ``qt.conf`` file.
+    datas = [x for x in
+             collect_system_data_files(pyqt5_library_info.location['PrefixPath'],
+                                       os.path.join('PyQt5', 'Qt'))
+             if os.path.basename(x[0]) == 'qt.conf']
 
-
-# In the new consolidated mode any PyQt depends on _qt
-hiddenimports = ['sip', 'PyQt5.Qt']
-
-# Collect just the qt.conf file.
-datas = [x for x in collect_data_files('PyQt5', False, os.path.join('Qt', 'bin')) if
-         x[0].endswith('qt.conf')]
-
-
-# For Qt<5.4 to work on Mac OS X it is necessary to include `qt_menu.nib`.
-# This directory contains some resource files necessary to run PyQt or PySide
-# app.
-if is_darwin:
-    # Version of the currently installed Qt 5.x shared library.
-    qt_version = get_module_attribute('PyQt5.QtCore', 'QT_VERSION_STR')
-    if is_module_satisfies('Qt < 5.4', qt_version):
-        datas = [(qt_menu_nib_dir('PyQt5'), '')]
+    # Collect required Qt binaries.
+    binaries = get_qt_binaries(pyqt5_library_info)

@@ -11,15 +11,28 @@ pyinstaller
 SYNOPSIS
 ==========
 
-``pyinstaller`` <options> SCRIPT
+``pyinstaller`` <options> SCRIPT...
+
+``pyinstaller`` <options> SPECFILE
+
 
 DESCRIPTION
 ============
 
-Automatically calls pyi-configure, pyi-makespec and pyi-build in one
-run. In most cases, running ``pyinstaller`` will be all you have to
-do.
+PyInstaller is a program that freezes (packages) Python programs into
+stand-alone executables, under Windows, GNU/Linux, Mac OS X,
+FreeBSD, OpenBSD, Solaris and AIX.
+Its main advantages over similar tools are that PyInstaller works with
+Python 3.6-3.9, it builds smaller executables thanks to transparent
+compression, it is fully multi-platform, and use the OS support to load the
+dynamic libraries, thus ensuring full compatibility.
 
+You may either pass one or more file-names of Python scripts or a single
+`.spec`-file-name. In the first case, ``pyinstaller`` will generate a
+`.spec`-file (as ``pyi-makespec`` would do) and immediately process it.
+
+If you pass a `.spec`-file, this will be processed and most options given on
+the command-line will have no effect.
 Please see the PyInstaller Manual for more information.
 
 
@@ -31,20 +44,19 @@ OPTIONS
 ENVIRONMENT VARIABLES
 =====================
 
-====================== ========================================================
-PYINSTALLER_CONFIG_DIR This changes the directory where PyInstaller caches some
-                       files. The default location for this is operating system
-                       dependent, but is typically a subdirectory of the home
-                       directory.
-====================== ========================================================
+:PYINSTALLER_CONFIG_DIR:
+   This changes the directory where PyInstaller caches some files.
+   The default location for this is operating system dependent,
+   but is typically a subdirectory of the home directory.
+
 
 SEE ALSO
 =============
 
-``pyi-configure``\(1), ``pyi-makespec``\(1), ``pyi-build``\(1), The
-PyInstaller Manual, ``pyinstaller``\(1)
-
+``pyi-makespec``\(1),
+The PyInstaller Manual |Manual|,
 Project Homepage |Homepage|
+
 
 .. include:: ../_common_definitions.txt
 

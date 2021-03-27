@@ -1,10 +1,12 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2017, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 
@@ -14,8 +16,6 @@ from PyInstaller.utils import misc
 from PyInstaller.utils.misc import load_py_data_struct, save_py_data_struct
 from .. import log as logging
 from .utils import _check_guts_eq
-
-from collections import MutableSet
 
 logger = logging.getLogger(__name__)
 
@@ -127,9 +127,8 @@ class Target(object):
         # toc objects
         self.invcnum = self.__class__.invcnum
         self.__class__.invcnum += 1
-        # TODO Think about renaming these file into e.g. `.c4che`
-        self.tocfilename = os.path.join(CONF['workpath'], 'out%02d-%s.toc' %
-                                        (self.invcnum, self.__class__.__name__))
+        self.tocfilename = os.path.join(CONF['workpath'], '%s-%02d.toc' %
+                                        (self.__class__.__name__, self.invcnum))
         self.tocbasename = os.path.basename(self.tocfilename)
         self.dependencies = TOC()
 

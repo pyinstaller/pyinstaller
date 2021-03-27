@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "PYI-MAKESPEC" "1" "2017-09-21" "3.3" "PyInstaller"
+.TH "PYI-MAKESPEC" "1" "2021-01-13" "4.2" "PyInstaller"
 .SH NAME
 pyi-makespec \- Create a spec file for your PyInstaller project
 .
@@ -34,7 +34,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .ad l
 \.SH SYNOPSIS
 .sp
-\fBpyi\-makespec\fP <options> SCRIPT [SCRIPT …]
+\fBpyi\-makespec\fP <options> SCRIPT [SCRIPT ...]
 .SH DESCRIPTION
 .sp
 The spec file is the description of what you want \fIPyInstaller\fP to do
@@ -87,7 +87,7 @@ current directory)
 .TP
 .BI \-n \ NAME\fP,\fB \ \-\-name \ NAME
 Name to assign to the bundled app and spec file
-(default: first script’s basename)
+(default: first script\(aqs basename)
 .UNINDENT
 .SS What to bundle, where to search
 .INDENT 0.0
@@ -106,7 +106,7 @@ option can be used multiple times.
 .TP
 .BI \-p \ DIR\fP,\fB \ \-\-paths \ DIR
 A path to search for imports (like using PYTHONPATH).
-Multiple paths are allowed, separated by ‘:’, or use
+Multiple paths are allowed, separated by \(aq:\(aq, or use
 this option multiple times
 .TP
 .BI \-\-hidden\-import \ MODULENAME\fP,\fB \ \-\-hiddenimport \ MODULENAME
@@ -135,10 +135,22 @@ The key used to encrypt Python bytecode.
 .SS How to generate
 .INDENT 0.0
 .TP
-.B \-d\fP,\fB  \-\-debug
-Tell the bootloader to issue progress messages while
-initializing and starting the bundled app. Used to
-diagnose problems with missing imports.
+.BI \-d \ <all,imports,bootloader,noarchive>\fP,\fB \ \-\-debug \ <all,imports,bootloader,noarchive>
+R|Provide assistance with debugging a frozen
+application. This argument may be provided multiple
+times to select several of the following options. \-
+all: All three of the following options. \- imports:
+specify the \-v option to the underlying Python
+interpreter, causing it to print a message each time a
+module is initialized, showing the place (filename or
+built\-in module) from which it is loaded. See
+\fI\%https://docs.python.org/3/using/cmdline.html#id4\fP\&. \-
+bootloader: tell the bootloader to issue progress
+messages while initializing and starting the bundled
+app. Used to diagnose problems with missing imports. \-
+noarchive: instead of storing all frozen Python source
+files as an archive inside the resulting executable,
+store them as files in the resulting output directory.
 .TP
 .B \-s\fP,\fB  \-\-strip
 Apply a symbol\-table strip to the executable and
@@ -147,24 +159,36 @@ shared libs (not recommended for Windows)
 .B \-\-noupx
 Do not use UPX even if it is available (works
 differently between Windows and *nix)
+.TP
+.BI \-\-upx\-exclude \ FILE
+Prevent a binary from being compressed when using upx.
+This is typically used if upx corrupts certain
+binaries during compression. FILE is the filename of
+the binary without path. This option can be used
+multiple times.
 .UNINDENT
 .SS Windows and Mac OS X specific options
 .INDENT 0.0
 .TP
 .B \-c\fP,\fB  \-\-console\fP,\fB  \-\-nowindowed
-Open a console window for standard i/o (default)
+Open a console window for standard i/o (default). On
+Windows this option will have no effect if the first
+script is a \(aq.pyw\(aq file.
 .TP
 .B \-w\fP,\fB  \-\-windowed\fP,\fB  \-\-noconsole
 Windows and Mac OS X: do not provide a console window
 for standard i/o. On Mac OS X this also triggers
-building an OS X .app bundle. This option is ignored
-in *NIX systems.
+building an OS X .app bundle. On Windows this option
+will be set if the first script is a \(aq.pyw\(aq file. This
+option is ignored in *NIX systems.
 .TP
-.BI \-i \ <FILE.ico or FILE.exe,ID or FILE.icns>\fP,\fB \ \-\-icon \ <FILE.ico or FILE.exe,ID or FILE.icns>
+.BI \-i \ <FILE.ico or FILE.exe,ID or FILE.icns or "NONE">\fP,\fB \ \-\-icon \ <FILE.ico or FILE.exe,ID or FILE.icns or "NONE">
 FILE.ico: apply that icon to a Windows executable.
 FILE.exe,ID, extract the icon with ID from an exe.
 FILE.icns: apply the icon to the .app bundle on Mac OS
-X
+X. Use "NONE" to not apply any icon, thereby making
+the OS to show some default (default: apply
+PyInstaller\(aqs icon)
 .UNINDENT
 .SS Windows specific options
 .INDENT 0.0
@@ -222,7 +246,7 @@ unique program name for code signing purposes. The
 usual form is a hierarchical name in reverse DNS
 notation. For example:
 com.mycompany.department.appname (default: first
-script’s basename)
+script\(aqs basename)
 .UNINDENT
 .SS Rarely used special options
 .INDENT 0.0
@@ -234,26 +258,26 @@ bootloader will ignore any temp\-folder location
 defined by the run\-time OS. The \fB_MEIxxxxxx\fP\-folder
 will be created here. Please use this option only if
 you know what you are doing.
+.TP
+.B \-\-bootloader\-ignore\-signals
+Tell the bootloader to ignore signals rather than
+forwarding them to the child process. Useful in
+situations where e.g. a supervisor process signals
+both the bootloader and child (e.g. via a process
+group) to avoid signalling the child twice.
 .UNINDENT
 .SH ENVIRONMENT VARIABLES
-.TS
-center;
-|l|l|.
-_
-T{
-PYINSTALLER_CONFIG_DIR
-T}	T{
-This changes the directory where PyInstaller caches some
-files. The default location for this is operating system
-dependent, but is typically a subdirectory of the home
-directory.
-T}
-_
-.TE
+.INDENT 0.0
+.TP
+.B PYINSTALLER_CONFIG_DIR
+This changes the directory where PyInstaller caches some files.
+The default location for this is operating system dependent,
+but is typically a subdirectory of the home directory.
+.UNINDENT
 .SH SEE ALSO
 .sp
-\fBpyi\-build\fP(1), The PyInstaller Manual, \fBpyinstaller\fP(1)
-.sp
+\fBpyinstaller\fP(1),
+The PyInstaller Manual \fI\%https://pyinstaller.readthedocs.io/\fP,
 Project Homepage \fI\%http://www.pyinstaller.org\fP
 .SH AUTHOR
 Hartmut Goebel

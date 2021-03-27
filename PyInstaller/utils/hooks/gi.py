@@ -1,27 +1,31 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2005-2017, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 # ----------------------------------------------------------------------------
 import os
 import re
 
 from ..hooks import collect_submodules, collect_system_data_files, eval_statement, exec_statement
 from ... import log as logging
-from ...compat import base_prefix, is_darwin, is_win
+from ...compat import base_prefix, is_darwin, is_win, open_file, \
+    text_read_mode
 from ...depend.bindepend import findSystemLibrary
 
 logger = logging.getLogger(__name__)
 
 
-def get_typelibs(module, version):
-    """deprecated; only here for backwards compat.
-    """
-    logger.warning("get_typelibs is deprecated, use get_gi_typelibs instead")
-    return get_gi_typelibs(module, version)[1]
+__all__ = [
+    'get_gi_libdir', 'get_gi_typelibs', 'gir_library_path_fix',
+    'get_glib_system_data_dirs', 'get_glib_sysconf_dirs',
+    'collect_glib_share_files', 'collect_glib_etc_files',
+    'collect_glib_translations'
+]
 
 
 def get_gi_libdir(module, version):
@@ -86,7 +90,7 @@ def get_gi_typelibs(module, version):
                 path = findSystemLibrary(lib.strip())
                 if path:
                     logger.debug('Found shared library %s at %s', lib, path)
-                    binaries.append((path, ''))
+                    binaries.append((path, '.'))
 
         d = gir_library_path_fix(typelibs_data['typelib'])
         if d:
@@ -140,9 +144,12 @@ def gir_library_path_fix(path):
                          'package.', gir_file)
             return None
 
-        with open(gir_file, 'r') as f:
+        with open_file(gir_file, text_read_mode, encoding='utf-8') as f:
             lines = f.readlines()
-        with open(os.path.join(CONF['workpath'], gir_name), 'w') as f:
+        # GIR files are `XML encoded <https://developer.gnome.org/gi/stable/gi-gir-reference.html>`_,
+        # which means they are by definition encoded using UTF-8.
+        with open_file(os.path.join(CONF['workpath'], gir_name), 'w',
+                       encoding='utf-8') as f:
             for line in lines:
                 if 'shared-library' in line:
                     split = re.split('(=)', line)
@@ -209,7 +216,7 @@ def collect_glib_share_files(*path):
     if glib_data_dirs is None:
         return []
 
-    destdir = os.path.join('share', *path[:-1])
+    destdir = os.path.join('share', *path)
 
     # TODO: will this return too much?
     collected = []
@@ -226,7 +233,7 @@ def collect_glib_etc_files(*path):
     if glib_config_dirs is None:
         return []
 
-    destdir = os.path.join('etc', *path[:-1])
+    destdir = os.path.join('etc', *path)
 
     # TODO: will this return too much?
     collected = []
@@ -252,6 +259,3 @@ def collect_glib_translations(prog):
     namelen = len(names[0])
 
     return [(src, dst) for src, dst in _glib_translations if src[-namelen:] in names]
-
-__all__ = ('get_typelibs', 'get_gi_libdir', 'get_gi_typelibs', 'gir_library_path_fix', 'get_glib_system_data_dirs',
-           'get_glib_sysconf_dirs', 'collect_glib_share_files', 'collect_glib_etc_files', 'collect_glib_translations')

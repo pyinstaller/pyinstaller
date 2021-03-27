@@ -1,10 +1,12 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2017, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 
@@ -21,10 +23,12 @@ import platform
 import shutil
 import sys
 
+import struct
+
 from PyInstaller.config import CONF
 from .. import compat
 from ..compat import is_darwin, is_win, EXTENSION_SUFFIXES, \
-    FileNotFoundError, open_file, is_py3
+    open_file, is_py37, is_cygwin
 from ..depend import dylib
 from ..depend.bindepend import match_binding_redirect
 from ..utils import misc
@@ -33,6 +37,7 @@ from .. import log as logging
 
 if is_win:
     from ..utils.win32 import winmanifest, winresource
+    from ..utils.win32.versioninfo import pefile_check_control_flow_guard
 
 logger = logging.getLogger(__name__)
 
@@ -95,11 +100,20 @@ def add_suffix_to_extensions(toc):
     new_toc = TOC()
     for inm, fnm, typ in toc:
         if typ == 'EXTENSION':
+            # Change the dotted name into a relative path. This places C
+            # extensions in the Python-standard location.
+            inm = inm.replace('.', os.sep)
             # In some rare cases extension might already contain a suffix.
             # Skip it in this case.
             if os.path.splitext(inm)[1] not in EXTENSION_SUFFIXES:
-                # Use this file's existing extension.
-                inm = inm + os.path.splitext(fnm)[1]
+                # Determine the base name of the file.
+                base_name = os.path.basename(inm)
+                assert '.' not in base_name
+                # Use this file's existing extension. For extensions such as
+                # ``libzmq.cp36-win_amd64.pyd``, we can't use
+                # ``os.path.splitext``, which would give only the ```.pyd`` part
+                # of the extension.
+                inm = inm + os.path.basename(fnm)[len(base_name):]
 
         elif typ == 'DEPENDENCY':
             # Use the suffix from the filename.
@@ -122,14 +136,18 @@ def applyRedirects(manifest, redirects):
     :return:
     :rtype:
     """
+    redirecting = False
     for binding in redirects:
         for dep in manifest.dependentAssemblies:
             if match_binding_redirect(dep, binding):
                 logger.info("Redirecting %s version %s -> %s",
                             binding.name, dep.version, binding.newVersion)
                 dep.version = binding.newVersion
+                redirecting = True
+    return redirecting
 
-def checkCache(fnm, strip=False, upx=False, dist_nm=None):
+
+def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None):
     """
     Cache prevents preprocessing binary files again and again.
 
@@ -154,10 +172,9 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
         strip = True
     else:
         strip = False
-    if upx:
-        upx = True
-    else:
-        upx = False
+    upx_exclude = upx_exclude or []
+    upx = (upx and (is_win or is_cygwin) and
+           os.path.normcase(os.path.basename(fnm)) not in upx_exclude)
 
     # Load cache index
     # Make cachedir per Python major/minor version.
@@ -202,9 +219,11 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
             os.remove(cachedfile)
         else:
             # On Mac OS X we need relative paths to dll dependencies
-            # starting with @executable_path
+            # starting with @executable_path. We may also need to strip
+            # (invalidated) signature from collected shared libraries.
             if is_darwin:
                 dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
+                dylib.mac_strip_signature(cachedfile, dist_nm)
             return cachedfile
 
 
@@ -231,16 +250,21 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
     if upx:
         if strip:
             fnm = checkCache(fnm, strip=True, upx=False)
-        bestopt = "--best"
-        # FIXME: Linux builds of UPX do not seem to contain LZMA (they assert out)
-        # A better configure-time check is due.
-        if CONF["hasUPX"] >= (3,) and os.name == "nt":
-            bestopt = "--lzma"
+        # We meed to avoid using UPX with Windows DLLs that have Control
+        # Flow Guard enabled, as it breaks them.
+        if is_win and pefile_check_control_flow_guard(fnm):
+            logger.info('Disabling UPX for %s due to CFG!', fnm)
+        else:
+            bestopt = "--best"
+            # FIXME: Linux builds of UPX do not seem to contain LZMA
+            # (they assert out). A better configure-time check is due.
+            if CONF["hasUPX"] >= (3,) and os.name == "nt":
+                bestopt = "--lzma"
 
-        upx_executable = "upx"
-        if CONF.get('upx_dir'):
-            upx_executable = os.path.join(CONF['upx_dir'], upx_executable)
-        cmd = [upx_executable, bestopt, "-q", cachedfile]
+            upx_executable = "upx"
+            if CONF.get('upx_dir'):
+                upx_executable = os.path.join(CONF['upx_dir'], upx_executable)
+            cmd = [upx_executable, bestopt, "-q", cachedfile]
     else:
         if strip:
             strip_options = []
@@ -299,7 +323,8 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
                             logger.error("From file %s", cachedfile, exc_info=1)
                         else:
                             # optionally change manifest to private assembly
-                            if CONF.get('win_private_assemblies', False):
+                            private = CONF.get('win_private_assemblies', False)
+                            if private:
                                 if manifest.publicKeyToken:
                                     logger.info("Changing %s into a private assembly",
                                                 os.path.basename(fnm))
@@ -310,40 +335,41 @@ def checkCache(fnm, strip=False, upx=False, dist_nm=None):
                                     # Exclude common-controls which is not bundled
                                     if dep.name != "Microsoft.Windows.Common-Controls":
                                         dep.publicKeyToken = None
-                            applyRedirects(manifest, redirects)
-                            try:
-                                manifest.update_resources(os.path.abspath(cachedfile),
-                                                          [name],
-                                                          [language])
-                            except Exception as e:
-                                logger.error(os.path.abspath(cachedfile))
-                                raise
+                            redirecting = applyRedirects(manifest, redirects)
+                            if redirecting or private:
+                                try:
+                                    manifest.update_resources(os.path.abspath(cachedfile),
+                                                              [name],
+                                                              [language])
+                                except Exception as e:
+                                    logger.error(os.path.abspath(cachedfile))
+                                    raise
 
     if cmd:
-        try:
-            logger.info("Executing - " + ' '.join(cmd))
-            compat.exec_command(*cmd)
-        except OSError as e:
-            raise SystemExit("Execution failed: %s" % e)
+        logger.info("Executing - " + ' '.join(cmd))
+        # terminates if execution fails
+        compat.exec_command(*cmd)
 
     # update cache index
     cache_index[basenm] = digest
     save_py_data_struct(cacheindexfn, cache_index)
 
     # On Mac OS X we need relative paths to dll dependencies
-    # starting with @executable_path
+    # starting with @executable_path. We may also need to strip
+    # (invalidated) signature from collected shared libraries.
     if is_darwin:
         dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
+        dylib.mac_strip_signature(cachedfile, dist_nm)
     return cachedfile
 
 
 def cacheDigest(fnm, redirects):
-    data = open(fnm, "rb").read()
-    hasher = hashlib.md5(data)
+    hasher = hashlib.md5()
+    with open(fnm, "rb") as f:
+        for chunk in iter(lambda: f.read(16 * 1024), b""):
+            hasher.update(chunk)
     if redirects:
-        redirects = str(redirects)
-        if is_py3:
-            redirects = redirects.encode('utf-8')
+        redirects = str(redirects).encode('utf-8')
         hasher.update(redirects)
     digest = bytearray(hasher.digest())
     return digest
@@ -379,13 +405,13 @@ def _make_clean_directory(path):
     Create a clean directory from the given directory name
     """
     if _check_path_overlap(path):
-        if os.path.isdir(path):
+        if os.path.isdir(path) or os.path.isfile(path):
             try:
                 os.remove(path)
             except OSError:
                 _rmtree(path)
 
-        os.makedirs(path)
+        os.makedirs(path, exist_ok=True)
 
 
 def _rmtree(path):
@@ -398,13 +424,16 @@ def _rmtree(path):
         choice = 'y'
     elif sys.stdout.isatty():
         choice = compat.stdin_input('WARNING: The output directory "%s" and ALL ITS '
-                           'CONTENTS will be REMOVED! Continue? (y/n)' % path)
+                           'CONTENTS will be REMOVED! Continue? (y/N)' % path)
     else:
         raise SystemExit('Error: The output directory "%s" is not empty. '
                          'Please remove all its contents or use the '
                          '-y option (remove output directory without '
                          'confirmation).' % path)
     if choice.strip().lower() == 'y':
+        if not CONF['noconfirm']:
+            print("On your own risk, you can use the option `--noconfirm` "
+                  "to get rid of this question.")
         logger.info('Removing dir %s', path)
         shutil.rmtree(path)
     else:
@@ -436,21 +465,14 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
     binaries_or_datas : list
         List of hook-style 2-tuples (e.g., the top-level `binaries` and `datas`
         attributes defined by hooks) whose:
-        * First element is either:
+        * The first element is either:
           * A glob matching only the absolute or relative paths of source
-            non-Python data files. The second element is then either:
-            * The relative path of the target directory into which these source
-              files will be recursively copied.
-            * The empty string, in which case these source files will be
-              recursively copied into the top-level target directory. (This is
-              usually _not_ what you want.)
+            non-Python data files.
           * The absolute or relative path of a source directory containing only
-            source non-Python data files. The second element is then either:
-            * The relative path of the target directory into which these source
-              files will be recursively copied.
-            * The empty string, in which case these source files will be
-              recursively copied into a new target subdirectory whose name is
-              this source directory's basename. (This is usually what you want.)
+            source non-Python data files.
+        * The second element ist he relative path of the target directory
+          into which these source files will be recursively copied.
+
         If the optional `workingdir` parameter is passed, source paths may be
         either absolute or relative; else, source paths _must_ be absolute.
     workingdir : str
@@ -470,6 +492,11 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
     toc_datas = set()
 
     for src_root_path_or_glob, trg_root_dir in binaries_or_datas:
+        if not trg_root_dir:
+            raise SystemExit("Empty DEST not allowed when adding binary "
+                             "and data files. "
+                             "Maybe you want to used %r.\nCaused by %r." %
+                             (os.curdir, src_root_path_or_glob))
         # Convert relative to absolute paths if required.
         if workingdir and not os.path.isabs(src_root_path_or_glob):
             src_root_path_or_glob = os.path.join(
@@ -485,9 +512,21 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
             src_root_paths = glob.glob(src_root_path_or_glob)
 
         if not src_root_paths:
-            raise SystemExit(
-                'Unable to find "%s" when adding binary and data files.' % (
-                src_root_path_or_glob))
+            msg = 'Unable to find "%s" when adding binary and data files.' % (
+                src_root_path_or_glob)
+            # on Debian/Ubuntu, missing pyconfig.h files can be fixed with
+            # installing python-dev
+            if src_root_path_or_glob.endswith("pyconfig.h"):
+                msg += """This would mean your Python installation doesn't
+come with proper library files. This usually happens by missing development
+package, or unsuitable build parameters of Python installation.
+* On Debian/Ubuntu, you would need to install Python development packages
+  * apt-get install python3-dev
+  * apt-get install python-dev
+* If you're building Python by yourself, please rebuild your Python with
+`--enable-shared` (or, `--enable-framework` on Darwin)
+"""
+            raise SystemExit(msg)
 
         for src_root_path in src_root_paths:
             if os.path.isfile(src_root_path):
@@ -498,11 +537,6 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
                         trg_root_dir, os.path.basename(src_root_path))),
                     os.path.normpath(src_root_path)))
             elif os.path.isdir(src_root_path):
-                # If no top-level target directory was passed, default this
-                # to the basename of the top-level source directory.
-                if not trg_root_dir:
-                    trg_root_dir = os.path.basename(src_root_path)
-
                 for src_dir, src_subdir_basenames, src_file_basenames in \
                     os.walk(src_root_path):
                     # Ensure the current source directory is a subdirectory
@@ -546,7 +580,7 @@ def _load_code(modname, filename):
     importer = pkgutil.get_importer(path_item)
     package, _, modname = modname.rpartition('.')
 
-    if sys.version_info >= (3, 3) and hasattr(importer, 'find_loader'):
+    if hasattr(importer, 'find_loader'):
         loader, portions = importer.find_loader(modname)
     else:
         loader = importer.find_module(modname)
@@ -606,8 +640,9 @@ def strip_paths_in_code(co, new_filename=None):
 
     # Paths to remove from filenames embedded in code objects
     replace_paths = sys.path + CONF['pathex']
-    # Make sure paths end with os.sep
-    replace_paths = [os.path.join(f, '') for f in replace_paths]
+    # Make sure paths end with os.sep and the longest paths are first
+    replace_paths = sorted((os.path.join(f, '') for f in replace_paths),
+                           key=len, reverse=True)
 
     if new_filename is None:
         original_filename = os.path.normpath(co.co_filename)
@@ -627,8 +662,10 @@ def strip_paths_in_code(co, new_filename=None):
         for const_co in co.co_consts
     )
 
-    # co_kwonlyargcount added in some version of Python 3
-    if hasattr(co, 'co_kwonlyargcount'):
+    if hasattr(co, 'replace'): # is_py38
+        return co.replace(co_consts=consts, co_filename=new_filename)
+    elif hasattr(co, 'co_kwonlyargcount'):
+        # co_kwonlyargcount was added in some version of Python 3
         return code_func(co.co_argcount, co.co_kwonlyargcount, co.co_nlocals, co.co_stacksize,
                      co.co_flags, co.co_code, consts, co.co_names,
                      co.co_varnames, new_filename, co.co_name,
@@ -640,3 +677,31 @@ def strip_paths_in_code(co, new_filename=None):
                      co.co_varnames, new_filename, co.co_name,
                      co.co_firstlineno, co.co_lnotab,
                      co.co_freevars, co.co_cellvars)
+
+
+def fake_pyc_timestamp(buf):
+    """
+    Reset the timestamp from a .pyc-file header to a fixed value.
+
+    This enables deterministic builds without having to set pyinstaller
+    source metadata (mtime) since that changes the pyc-file contents.
+
+    _buf_ must at least contain the full pyc-file header.
+    """
+    assert buf[:4] == compat.BYTECODE_MAGIC, \
+        "Expected pyc magic {}, got {}".format(compat.BYTECODE_MAGIC, buf[:4])
+    start, end = 4, 8
+    if is_py37:
+        # see https://www.python.org/dev/peps/pep-0552/
+        (flags,) = struct.unpack_from(">I", buf, 4)
+        if flags & 1:
+            # We are in the future and hash-based pyc-files are used, so
+            # clear "check_source" flag, since there is no source
+            buf[4:8] = struct.pack(">I", flags ^ 2)
+            return buf
+        else:
+            # no hash-based pyc-file, timestamp is the next field
+            start, end = 8, 12
+
+    ts = b'pyi0'  # So people know where this comes from
+    return buf[:start] + ts + buf[end:]

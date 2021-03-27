@@ -1,18 +1,20 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2017, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 # This contains tests for the class:``TOC``, see
 # https://pyinstaller.readthedocs.io/en/latest/advanced-topics.html#the-toc-and-tree-classes
 
 import pytest
+
 from PyInstaller.building.datastruct import TOC
-from PyInstaller.utils.tests import skipif_notwin
 
 
 ELEMS1 = (
@@ -79,8 +81,8 @@ def test_insert_existing():
     toc.insert(1, ELEMS1[-1])
     expected = list(ELEMS1)
     assert toc == expected
-    
-    
+
+
 def test_insert_keep_filename():
     # name in TOC should be the same as the one added
     toc = TOC()
@@ -261,7 +263,7 @@ def test_rsub_non_existing():
 # The following tests verify that case-insensitive comparisons are used on Windows
 # and only for appropriate TOC entry types
 
-@skipif_notwin
+@pytest.mark.win32
 def test_append_other_case_mixed():
     # If a binary file is added with the same filename as an existing pymodule,
     # it should not be added.
@@ -271,9 +273,9 @@ def test_append_other_case_mixed():
     toc.append(elem)
     expected = list(ELEMS1)
     assert toc == expected
-    
 
-@skipif_notwin
+
+@pytest.mark.win32
 def test_append_other_case_pymodule():
     # python modules should not use C-I comparisons. Both 'encodings' and
     # 'EnCodIngs' should be added.
@@ -285,7 +287,7 @@ def test_append_other_case_pymodule():
     assert toc == expected
 
 
-@skipif_notwin
+@pytest.mark.win32
 def test_append_other_case_binary():
     # binary files should use C-I comparisons. 'LiBrEADlInE.so.6' should not be added.
     toc = TOC(ELEMS1)
@@ -294,7 +296,7 @@ def test_append_other_case_binary():
     assert toc == expected
 
 
-@skipif_notwin
+@pytest.mark.win32
 def test_insert_other_case_mixed():
     # If a binary file is added with the same filename as an existing pymodule,
     # it should not be added
@@ -306,7 +308,7 @@ def test_insert_other_case_mixed():
     assert toc == expected
 
 
-@skipif_notwin
+@pytest.mark.win32
 def test_insert_other_case_pymodule():
     # python modules should not use C-I comparisons. Both 'encodings' and
     # 'EnCodIngs' should be added.
@@ -318,7 +320,7 @@ def test_insert_other_case_pymodule():
     assert toc == expected
 
 
-@skipif_notwin
+@pytest.mark.win32
 def test_insert_other_case_binary():
     # binary files should use C-I comparisons. 'LiBrEADlInE.so.6' should not be added.
     toc = TOC(ELEMS1)

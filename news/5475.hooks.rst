@@ -1,0 +1,1 @@
+Hooks: Import correct typelib for GtkosxApplication.

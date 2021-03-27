@@ -1,9 +1,9 @@
-# Copyright (C) 2017 PyInstaller Development Team.
+# Copyright (C) 2017-2021 PyInstaller Development Team.
 # Copyright (C) 2016 Jason R Coombs <jaraco@jaraco.com>
 #
 # This file includes an almost complete copy of
 # pkg_resources/extern/__init__.py, taken from setuptools 28.6.1.
-# For PyInstaller the inly chane is to install a sub-class of VendorImporter.
+# For PyInstaller the only change is to install a sub-class of VendorImporter.
 #
 # setuptools is licensed under the MIT License (expat) license:
 #
@@ -24,6 +24,8 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
+#
+# SPDX-License-Identifier: MIT
 
 #--- Code of pkg_resources/extern/__init__.py starts here
 import sys

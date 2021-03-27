@@ -15,8 +15,7 @@ import sys as _sys
 import stat as _stat
 
 _DFLT_DIR_MODE = (
-      _stat.S_IFDIR
-    | _stat.S_IXOTH
+    _stat.S_IXOTH
     | _stat.S_IXGRP
     | _stat.S_IXUSR
     | _stat.S_IROTH
@@ -24,15 +23,14 @@ _DFLT_DIR_MODE = (
     | _stat.S_IRUSR)
 
 _DFLT_FILE_MODE = (
-      _stat.S_IFREG
-    | _stat.S_IROTH
+    _stat.S_IROTH
     | _stat.S_IRGRP
     | _stat.S_IRUSR)
 
 
 if _sys.version_info[0] == 2:
-    from  StringIO import StringIO as _BaseStringIO
-    from  StringIO import StringIO as _BaseBytesIO
+    from StringIO import StringIO as _BaseStringIO
+    from StringIO import StringIO as _BaseBytesIO
 
     class _StringIO (_BaseStringIO):
         def __enter__(self):
@@ -53,8 +51,6 @@ if _sys.version_info[0] == 2:
 else:
     from io import StringIO as _StringIO
     from io import BytesIO as _BytesIO
-
-
 
 
 def _locate(path):
@@ -84,7 +80,10 @@ def _locate(path):
         rest.reverse()
         return path, '/'.join(rest).strip('/')
 
+
 _open = open
+
+
 def open(path, mode='r'):
     if 'w' in mode or 'a' in mode:
         raise IOError(
@@ -124,6 +123,7 @@ def open(path, mode='r'):
                 data = data.decode('ascii')
 
             return _StringIO(data)
+
 
 def listdir(path):
     full_path = path
@@ -178,11 +178,12 @@ def listdir(path):
 
         return list(result)
 
+
 def isfile(path):
     full_path = path
     path, rest = _locate(path)
     if not rest:
-        ok =  _os.path.isfile(path)
+        ok = _os.path.isfile(path)
         if ok:
             try:
                 zf = _zipfile.ZipFile(path, 'r')
@@ -194,7 +195,7 @@ def isfile(path):
     zf = None
     try:
         zf = _zipfile.ZipFile(path, 'r')
-        info = zf.getinfo(rest)
+        zf.getinfo(rest)
         zf.close()
         return True
     except (KeyError, _zipfile.error):
@@ -203,7 +204,7 @@ def isfile(path):
 
         # Check if this is a directory
         try:
-            info = zf.getinfo(rest + '/')
+            zf.getinfo(rest + '/')
         except KeyError:
             pass
         else:
@@ -221,13 +222,11 @@ def isfile(path):
             "No such file or directory")
 
 
-
-
 def isdir(path):
     full_path = path
     path, rest = _locate(path)
     if not rest:
-        ok =  _os.path.isdir(path)
+        ok = _os.path.isdir(path)
         if not ok:
             try:
                 zf = _zipfile.ZipFile(path, 'r')
@@ -246,7 +245,7 @@ def isdir(path):
                 "No such file or directory")
 
         try:
-            info = zf.getinfo(rest)
+            zf.getinfo(rest)
         except KeyError:
             pass
         else:
@@ -255,7 +254,7 @@ def isdir(path):
 
         rest = rest + '/'
         try:
-            info = zf.getinfo(rest)
+            zf.getinfo(rest)
         except KeyError:
             pass
         else:
@@ -287,10 +286,8 @@ def islink(path):
             _errno.ENOENT, full_path,
             "No such file or directory")
     try:
-
-
         try:
-            info = zf.getinfo(rest)
+            zf.getinfo(rest)
         except KeyError:
             pass
         else:
@@ -299,7 +296,7 @@ def islink(path):
 
         rest += '/'
         try:
-            info = zf.getinfo(rest)
+            zf.getinfo(rest)
         except KeyError:
             pass
         else:
@@ -330,11 +327,12 @@ def readlink(path):
 
     return _os.readlink(path)
 
+
 def getmode(path):
     full_path = path
     path, rest = _locate(path)
     if not rest:
-        return _os.stat(path).st_mode
+        return _stat.S_IMODE(_os.stat(path).st_mode)
 
     zf = None
     try:
@@ -367,17 +365,14 @@ def getmode(path):
 
         # The mode is stored without file-type in external_attr.
         if (info.external_attr >> 16) != 0:
-            return _stat.S_IFREG | (info.external_attr >> 16)
+            return _stat.S_IMODE(info.external_attr >> 16)
         else:
             return _DFLT_FILE_MODE
 
-
-    except KeyError:
+    finally:
         if zf is not None:
             zf.close()
-        raise IOError(
-            _errno.ENOENT, full_path,
-            "No such file or directory")
+
 
 def getmtime(path):
     full_path = path
@@ -418,9 +413,6 @@ def getmtime(path):
 
         return _time.mktime(info.date_time + (0, 0, -1))
 
-    except KeyError:
+    finally:
         if zf is not None:
             zf.close()
-        raise IOError(
-            _errno.ENOENT, full_path,
-            "No such file or directory")

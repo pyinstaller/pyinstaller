@@ -1,15 +1,18 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2017, PyInstaller Development Team.
- * Distributed under the terms of the GNU General Public License with exception
- * for distributing bootloader.
+ * Copyright (c) 2013-2021, PyInstaller Development Team.
+ *
+ * Distributed under the terms of the GNU General Public License (version 2
+ * or later) with exception for distributing the bootloader.
  *
  * The full license is in the file COPYING.txt, distributed with this software.
+ *
+ * SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
  * ****************************************************************************
  */
 
 /*
- * Glogal shared declarations used in many bootloader files.
+ * Global shared declarations used in many bootloader files.
  */
 
 #ifndef PYI_GLOBAL_H
@@ -48,6 +51,7 @@ typedef int bool;
 
 /* Type for dynamic library. */
 #ifdef _WIN32
+    #include <windows.h>  /* HINSTANCE */
     #define dylib_t   HINSTANCE
 #else
     #define dylib_t   void *
@@ -70,7 +74,10 @@ typedef int bool;
     #endif
     #define PATH_MAX 4096  /* Default value on Linux. */
 #elif __APPLE__
+    #include <limits.h>
     #define PATH_MAX 1024  /* Recommended value for OSX. */
+#else
+    #include <limits.h>  /* PATH_MAX */
 #endif
 
 /*
@@ -84,7 +91,7 @@ void pyi_global_perror(const char *funcname, const char *fmt, ...);
 #endif
 /*
  * On Windows and with windowed mode (no console) show error messages
- * in message boxes. In windowed mode nothing might be written to console.
+ * in message boxes. In windowed mode nothing is written to console.
  */
 
 #if defined(_WIN32) && defined(WINDOWED)
@@ -112,13 +119,15 @@ void mbothererror(const char *fmt, ...);
 
 #ifdef LAUNCH_DEBUG
     #if defined(_WIN32) && defined(WINDOWED)
+        /* Don't have console, resort to debugger output */
         #define VS mbvs
 void mbvs(const char *fmt, ...);
     #else
+        /* Have console, printf works */
         #define VS pyi_global_printf
     #endif
 #else
-    #ifdef _WIN32
+    #if defined(_WIN32) && defined(_MSC_VER)
         #define VS
     #else
         #define VS(...)
@@ -137,33 +146,26 @@ void mbvs(const char *fmt, ...);
  */
     #define PYI_SEPSTR     "\\"
     #define PYI_PATHSEPSTR ";"
+    #define PYI_CURDIRSTR  "."
 #else
     #define PYI_PATHSEP    ':'
     #define PYI_CURDIR     '.'
     #define PYI_SEP        '/'
     #define PYI_SEPSTR     "/"
     #define PYI_PATHSEPSTR ":"
+    #define PYI_CURDIRSTR  "."
 #endif
 
 /* Strings are usually terminated by this character. */
 #define PYI_NULLCHAR       '\0'
 
-/* Rewrite ANSI/POSIX functions to Win32 equivalents. */
+/* File seek and tell with large (64-bit) offsets */
 #if defined(_WIN32) && defined(_MSC_VER)
-    #define getpid           _getpid
-    #define mkdir            _mkdir
-    #define rmdir            _rmdir
-    #define snprintf         _snprintf
-    #define stat             _stat
-    #define strdup           _strdup
-    #define vsnprintf        _vsnprintf
-/*
- * Mingw on Windows contains the following functions.
- * Redefine them only if they are not available.
- */
-    #ifndef fileno
-        #define fileno           _fileno
-    #endif
+    #define pyi_fseek _fseeki64
+    #define pyi_ftell _ftelli64
+#else
+    #define pyi_fseek fseeko
+    #define pyi_ftell ftello
 #endif
 
 /* Saved LC_CTYPE locale */

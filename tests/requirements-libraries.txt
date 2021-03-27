@@ -1,93 +1,65 @@
-# Libraries used for testing.
+# This is the pip requirements file for extensive
+# PyInstaller testing.
 #
-# Libraries listed below are unconditionally installed by
-# integration (CI) services, regardless of platform.
+# Example (assuming current dir is PyInstaller's top-level source dir)::
+#
+#   python -m pip install -r tests/requirements-libraries.txt  # extensive
+
+# include requirements for base testing
+-r requirements-tools.txt
 
 
-# Url for downloading PyCrypto prebuilt Windows binaries:
-# http://www.voidspace.org.uk/python/pycrypto-2.6.1/
-# Required for crypto feature - encrypting bytecode.
-pycrypto==2.6.1; python_version <= '3.5' or sys_platform != 'win32'
+# Needs work
+# ----------
+# These packages, if updated, produce test failures. Work needs to be done on
+# these hooks. Any requirement in this list should be followed by the
+# `# pyup: ignore <https://pyup.io/docs/bot/filter/>`_ comment.
+#
+# - v. 2.2 and above fails.
+Django==2.1.8  # pyup: ignore
+# - v 21.1.0 fails; earlier versions not tested.
+keyring==19.2.0  # pyup: ignore
 
-Django==1.8.18 # PyInstaller doesn't yet work with Django 1.9+
-babel==2.5.1
-boto==2.48.0
-boto3==1.4.7
-botocore==1.7.1
 
-gevent==1.2.2
+# Working
+# -------
+# These packages work with no (known) issues.
+babel==2.9.0
+future==0.18.2
+gevent==21.1.2
+pygments==2.8.0
+pyside2==5.15.1
+pyqt5==5.15.1
+pyqtwebengine==5.15.1
+python-dateutil==2.8.1
+pytz==2021.1
+requests==2.25.1
+# simplejson is used for text_c_extension
+simplejson==3.17.2
+sphinx==2.4.4 # pyup: ignore
+# Required for test_namespace_package
+sqlalchemy==1.3.23
+zope.interface==5.2.0
+Pillow==8.1.1
+matplotlib==3.3.4
 
-pygments==2.2.0
-pylint==1.7.2
-markdown==2.6.9
-simplejson==3.11.1 # simplejson is used for text_c_extension
 
-# sphinx 1.5 requires Python 2.7 or >= 3.4
-sphinx==1.6.3; python_version != '3.3'
-sphinx==1.4.9; python_version == '3.3' # pyup: ignore
+# Python versions not supported / supported for older package versions
+# -------------------------------------------------------
 
-pyzmq==16.0.2
-zope.interface==4.4.3  # Required for test_namespace_package
+# iPython 7.17 dropped support for python 3.6
+# https://ipython.readthedocs.io/en/stable/whatsnew/version7.html#ipython-7-17
+ipython==7.20.0; python_version > '3.6'
+ipython==7.16.1; python_version <= '3.6'  # pyup: ignore
 
-# numpy 1.12 dropped support for Python 3.3
-numpy==1.13.1; python_version != '3.3'
-numpy==1.11.3; python_version == '3.3' # pyup: ignore
+# pandas also dropped support
+pandas==1.2.2; python_version > '3.6'
+pandas==1.1.5; python_version <= '3.6'  # pyup: ignore
 
-# SciPy currently provides no binary wheel for Windows and hence must be
-# isolated to non-Windows platforms. See also: scipy/scipy#5461
-scipy==0.19.1; sys_platform != 'win32'
+# so did numpy
+numpy==1.20.1; python_version > '3.6'
+numpy==1.19.4; python_version <= '3.6'  # pyup: ignore
 
-# For Windows use a version we know binaries are available
-lxml==4.0.0; sys_platform != 'win32'
-lxml==3.7.2; sys_platform == 'win32' and python_version >= '3.5' # pyup: ignore
-lxml==3.6.0; sys_platform == 'win32' and python_version <= '3.4' # pyup: ignore
-
-keyring==10.4.0
-openpyxl==2.4.8
-pycparser==2.18
-pytz==2017.2
-sqlalchemy==1.1.13
-twisted==17.9.0
-zeep==2.4.0
-pyexcelerate==0.7.1
-Pillow==4.2.1
-pycryptodomex==3.4.7
-future==0.16.0
-pyusb==1.0.0
-requests==2.15.1 # Newest version of requests that allows tests to pass
-Unidecode==0.4.21
-
-# Install wheels only on OS X and Win 32, no wheel for Py 3.6 yet.
-pyenchant==1.6.11; (sys_platform == 'darwin' or sys_platform == 'win32') and python_version <= '3.5'
-
-# While PyQt5 itself is provided as wheels for Python 3.4, it requires
-# SIP>=4.19 which is not available for Python 3.4 yet.
-pyqt5==5.9; python_version >= '3.5' and python_version <= '3.6'
-# No wheel for python 3.5:
-PySide==1.2.4; sys_platform == 'win32' and python_version <= '3.4'
-
-# interactive test
-ipython==6.2.0; python_version != '2.7'
-ipython==5.4.1; python_version == '2.7' # pyup: ignore
-
-# dateutil.tz is a package in 2.5.0 and does not play nice with PyInstaller.
-python-dateutil==2.6.1
-
-pandas==0.20.3; python_version != '3.3'
-pandas==0.16.2; python_version == '3.3' # pyup: ignore
-
-# matplotlib 1.5+ does not provide binaries for python 3.3.
-matplotlib==2.0.2; python_version == '2.7' or python_version >= '3.4'
-matplotlib==1.4.3; python_version == '3.3' # pyup: ignore
-
-#### Windows specific packages
-
-# pip-installable version of PyWin32.
-pypiwin32==220; python_version >= '3.6' and sys_platform == 'win32'
-pypiwin32==219; python_version <= '3.5' and sys_platform == 'win32' # pyup: ignore
-
-# For parsing PE headers and get list of dependent DLLs.
-# ::TODO:: #1920 revert to using pypi version
-#pefile; sys_platform == 'win32'
-
-h5py==2.7.0; python_version != '3.3'
+# scipy too
+scipy==1.6.1; python_version > '3.6'
+scipy==1.5.4; python_version <= '3.6'  # pyup: ignore

@@ -2,6 +2,7 @@ from PyInstaller.lib.modulegraph import zipio
 import os
 import time
 import sys
+import stat
 
 if sys.version_info[:2] <= (2,6):
     import unittest2 as unittest
@@ -36,27 +37,23 @@ class TestModuleGraph (unittest.TestCase):
 
     def test_open(self):
         # 1. Regular file
-        fp = zipio.open(os.path.join(TESTDATA, 'test.txt'), 'r')
-        data = fp.read()
-        fp.close()
+        with zipio.open(os.path.join(TESTDATA, 'test.txt'), 'r') as fp:
+            data = fp.read()
         self.assertEqual(data, 'This is test.txt\n')
 
         if sys.version_info[0] == 3:
-            fp = zipio.open(os.path.join(TESTDATA, 'test.txt'), 'rb')
-            data = fp.read()
-            fp.close()
+            with zipio.open(os.path.join(TESTDATA, 'test.txt'), 'rb') as fp:
+                data = fp.read()
             self.assertEqual(data, b'This is test.txt\n')
 
         # 2. File inside zipfile
-        fp = zipio.open(os.path.join(TESTDATA, 'zipped.egg', 'test.txt'), 'r')
-        data = fp.read()
-        fp.close()
+        with zipio.open(os.path.join(TESTDATA, 'zipped.egg', 'test.txt'), 'r') as fp:
+            data = fp.read()
         self.assertEqual(data, 'Zipped up test.txt\n')
 
         if sys.version_info[0] == 3:
-            fp = zipio.open(os.path.join(TESTDATA, 'zipped.egg', 'test.txt'), 'rb')
-            data = fp.read()
-            fp.close()
+            with zipio.open(os.path.join(TESTDATA, 'zipped.egg', 'test.txt'), 'rb') as fp:
+                data = fp.read()
             self.assertEqual(data, b'Zipped up test.txt\n')
 
         # 3. EXC: Directory inside zipfile
@@ -166,6 +163,30 @@ class TestModuleGraph (unittest.TestCase):
         self.assertRaises(OSError, zipio.readlink, os.path.join(TESTDATA, 'zipped.egg', 'no-such-file'))
         self.assertRaises(OSError, zipio.readlink, os.path.join(TESTDATA, 'zipped.egg', 'subdir/no-such-file'))
 
+    def test_getmode(self):
+        fn = os.path.join(TESTDATA, 'test.txt')
+        self.assertEqual(stat.S_IMODE(os.stat(fn).st_mode), zipio.getmode(fn))
+
+        # XXX: Not too happy about this...
+        fn = os.path.join(TESTDATA, 'zipped.egg')
+        self.assertEqual(stat.S_IMODE(os.stat(fn).st_mode), zipio.getmode(fn))
+
+
+        fn = os.path.join(TESTDATA, 'zipped.egg/test.txt')
+        mode = zipio.getmode(fn)
+        self.assertEqual(mode, 0o644)
+
+        fn = os.path.join(TESTDATA, 'zipped.egg/subdir')
+        mode = zipio.getmode(fn)
+        self.assertEqual(mode, 0o755)
+
+        fn = os.path.join(TESTDATA, 'zipped.egg/subdir4')
+        self.assertEqual(zipio.getmode(fn), stat.S_IMODE(zipio._DFLT_DIR_MODE))
+
+        self.assertRaises(IOError, zipio.getmode, os.path.join(TESTDATA, 'no-file'))
+        self.assertRaises(IOError, zipio.getmode, os.path.join(TESTDATA, 'zipped.egg/no-file'))
+
+
     def test_getmtime(self):
         fn = os.path.join(TESTDATA, 'test.txt')
         self.assertEqual(os.path.getmtime(fn), zipio.getmtime(fn))
@@ -174,12 +195,12 @@ class TestModuleGraph (unittest.TestCase):
         self.assertEqual(os.path.getmtime(fn), zipio.getmtime(fn))
 
         fn = os.path.join(TESTDATA, 'zipped.egg/test.txt')
-        # FIXME On travis and appveyor this returns 1300197280.0 (1 hour off)
-        #self.assertIn(zipio.getmtime(fn), (1300193680.0, 1300222480.0))
+        mtime = zipio.getmtime(fn)
+        self.assertEqual(time.mktime((2011, 3, 15, 13, 54, 40, 0, 0, -1)), mtime)
 
         fn = os.path.join(TESTDATA, 'zipped.egg/subdir')
-        # FIXME On travis and appveyor this returns 1300197490. (1 hour off)
-        #self.assertIn(zipio.getmtime(fn), (1300193890.0, 1300222690.0))
+        mtime = zipio.getmtime(fn)
+        self.assertEqual(time.mktime((2011, 3, 15, 13, 58, 10, 0, 0, -1)), mtime)
 
         fn = os.path.join(TESTDATA, 'zipped.egg/subdir4')
         self.assertEqual(zipio.getmtime(fn), os.path.getmtime(os.path.join(TESTDATA, 'zipped.egg')))

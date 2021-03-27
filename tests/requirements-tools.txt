@@ -1,14 +1,43 @@
+# This is the pip requirements file for running the
+# PyInstaller test-suite.
+#
+# For extensive testing you will also need to install what is defined in
+# requirements-libraries.txt.
+#
+# Example (assuming current dir is PyInstaller's top-level source dir)::
+#
+#   python -m pip install -r tests/requirements-tools.txt
+#   python -m pip install -r tests/requirements-libraries.txt  # extensive
+
+# include PyInstaller's requirements
+-r ../requirements.txt
+
 # Work-around for a bug in execnet 1.4.1
-git+https://github.com/pytest-dev/execnet.git
+execnet >= 1.5.0
 
-# For running tests
-pytest >= 2.7.3  # Testing framework.
-pytest-xdist     # Plugin allowing running tests in parallel.
-pytest-timeout   # Plugin to abort hanging tests.
-pytest-catchlog  # Capture log output separately from stdout/stderr
-pytest-drop-dup-tests # allows specifying order without duplicates
+# Testing framework.
+pytest >= 2.7.3
 
-# psutil 5.3.0 caused intermittent issues with the AppVeyor tests
-psutil < 5.3.0 # Better subprocess alternative with implemented timeout.
+# Plugin allowing running tests in parallel.
+pytest-xdist
 
-flake8-diff  # Check new flake8 violations on pull requests
+# Plugin to abort hanging tests.
+pytest-timeout
+# allows specifying order without duplicates
+pytest-drop-dup-tests
+
+# Better subprocess alternative with implemented timeout.
+psutil
+
+# Check new flake8 violations on pull requests
+flake8
+
+pywin32; sys_platform == 'win32'
+
+lxml
+
+# crypto support (`--key` option)
+tinyaes ~= 1.0
+
+# Ability to retry a failed test
+flaky

@@ -1,18 +1,20 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2017, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-import codecs
 import os
+import plistlib
 import shutil
-from ..compat import is_darwin, FileExistsError
+from ..compat import is_darwin
 from .api import EXE, COLLECT
-from .datastruct import Target, TOC, logger, _check_guts_eq
+from .datastruct import Target, TOC, logger
 from .utils import _check_path_overlap, _rmtree, add_suffix_to_extensions, checkCache
 
 
@@ -25,13 +27,18 @@ class BUNDLE(Target):
         if not is_darwin:
             return
 
-        # .icns icon for app bundle.
-        # Use icon supplied by user or just use the default one from PyInstaller.
+        # get a path to a .icns icon for the app bundle.
         self.icon = kws.get('icon')
         if not self.icon:
+            # --icon not specified; use the default in the pyinstaller folder
             self.icon = os.path.join(os.path.dirname(os.path.dirname(__file__)),
                 'bootloader', 'images', 'icon-windowed.icns')
-        # Ensure icon path is absolute.
+        else:
+            # user gave an --icon=path. If it is relative, make it
+            # relative to the spec file location.
+            if not os.path.isabs(self.icon):
+                self.icon = os.path.join(CONF['specpath'], self.icon)
+        # ensure icon path is absolute
         self.icon = os.path.abspath(self.icon)
 
         Target.__init__(self)
@@ -46,6 +53,7 @@ class BUNDLE(Target):
         self.toc = TOC()
         self.strip = False
         self.upx = False
+        self.console = True
 
         # .app bundle identifier for Code Signing
         self.bundle_identifier = kws.get('bundle_identifier')
@@ -61,6 +69,8 @@ class BUNDLE(Target):
                 self.toc.extend(arg.dependencies)
                 self.strip = arg.strip
                 self.upx = arg.upx
+                self.upx_exclude = arg.upx_exclude
+                self.console = arg.console
             elif isinstance(arg, TOC):
                 self.toc.extend(arg)
                 # TOC doesn't have a strip or upx attribute, so there is no way for us to
@@ -69,6 +79,8 @@ class BUNDLE(Target):
                 self.toc.extend(arg.toc)
                 self.strip = arg.strip_binaries
                 self.upx = arg.upx_binaries
+                self.upx_exclude = arg.upx_exclude
+                self.console = arg.console
             else:
                 logger.info("unsupported entry %s", arg.__class__.__name__)
         # Now, find values for app filepath (name), app name (appname), and name
@@ -77,11 +89,6 @@ class BUNDLE(Target):
         for inm, name, typ in self.toc:
             if typ == "EXECUTABLE":
                 self.exename = name
-                if self.name is None:
-                    self.appname = "Mac%s" % (os.path.splitext(inm)[0],)
-                    self.name = os.path.join(CONF['specpath'], self.appname + ".app")
-                else:
-                    self.name = os.path.join(CONF['specpath'], self.name)
                 break
         self.__postinit__()
 
@@ -137,46 +144,48 @@ class BUNDLE(Target):
                            "CFBundlePackageType": "APPL",
                            "CFBundleShortVersionString": self.version,
 
-                           # Setting this to 1 will cause Mac OS X *not* to show
-                           # a dock icon for the PyInstaller process which
-                           # decompresses the real executable's contents. As a
-                           # side effect, the main application doesn't get one
-                           # as well, but at startup time the loader will take
-                           # care of transforming the process type.
-                           "LSBackgroundOnly": "0",
-
                            }
+
+        # Set some default values.
+        # But they still can be overwritten by the user.
+        if self.console:
+            # Setting EXE console=True implies LSBackgroundOnly=True.
+            info_plist_dict['LSBackgroundOnly'] = True
+        else:
+            # Let's use high resolution by default.
+            info_plist_dict['NSHighResolutionCapable'] = True
 
         # Merge info_plist settings from spec file
         if isinstance(self.info_plist, dict) and self.info_plist:
             info_plist_dict.update(self.info_plist)
 
-        info_plist = u"""<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>"""
-        for k, v in info_plist_dict.items():
-            info_plist += u"<key>%s</key>\n<string>%s</string>\n" % (k, v)
-        info_plist += u"""</dict>
-</plist>"""
-        with codecs.open(os.path.join(self.name, "Contents", "Info.plist"), "w", "utf-8") as f:
-            f.write(info_plist)
+        plist_filename = os.path.join(self.name, "Contents", "Info.plist")
+        with open(plist_filename, "wb") as plist_fh:
+            plistlib.dump(info_plist_dict, plist_fh)
 
         links = []
         toc = add_suffix_to_extensions(self.toc)
         for inm, fnm, typ in toc:
             # Copy files from cache. This ensures that are used files with relative
             # paths to dynamic library dependencies (@executable_path)
+            base_path = inm.split('/', 1)[0]
             if typ in ('EXTENSION', 'BINARY'):
-                fnm = checkCache(fnm, strip=self.strip, upx=self.upx, dist_nm=inm)
-            if typ == 'DATA':  # add all data files to a list for symlinking later
+                fnm = checkCache(fnm, strip=self.strip, upx=self.upx,
+                                 upx_exclude=self.upx_exclude, dist_nm=inm)
+            # Add most data files to a list for symlinking later.
+            if typ == 'DATA' and base_path not in ('PySide2', 'PyQt5'):
                 links.append((inm, fnm))
             else:
                 tofnm = os.path.join(self.name, "Contents", "MacOS", inm)
                 todir = os.path.dirname(tofnm)
                 if not os.path.exists(todir):
                     os.makedirs(todir)
-                shutil.copy(fnm, tofnm)
+                if os.path.isdir(fnm):
+                    # beacuse shutil.copy2() is the default copy function
+                    # for shutil.copytree, this will also copy file metadata
+                    shutil.copytree(fnm, tofnm)
+                else:
+                    shutil.copy(fnm, tofnm)
 
         logger.info('moving BUNDLE data files to Resource directory')
 
@@ -187,35 +196,37 @@ class BUNDLE(Target):
         bin_dir = os.path.join(self.name, 'Contents', 'MacOS')
         res_dir = os.path.join(self.name, 'Contents', 'Resources')
         for inm, fnm in links:
-            if inm != 'base_library.zip':  # Don't symlink the base_library.zip for python 3
-                tofnm = os.path.join(res_dir, inm)
-                todir = os.path.dirname(tofnm)
-                if not os.path.exists(todir):
-                    os.makedirs(todir)
-                shutil.copy(fnm, tofnm)
-                base_path = os.path.split(inm)[0]
-                if base_path:
-                    if not os.path.exists(os.path.join(bin_dir, inm)):
-                        path = ''
-                        for part in iter(base_path.split(os.path.sep)):
-                            # Build path from previous path and the next part of the base path
-                            path = os.path.join(path, part)
-                            try:
-                                relative_source_path = os.path.relpath(os.path.join(res_dir, path),
-                                                                       os.path.split(os.path.join(bin_dir, path))[0])
-                                dest_path = os.path.join(bin_dir, path)
-                                os.symlink(relative_source_path, dest_path)
-                                break
-                            except FileExistsError:
-                                pass
-                        if not os.path.exists(os.path.join(bin_dir, inm)):
-                            relative_source_path = os.path.relpath(os.path.join(res_dir, inm),
-                                                                   os.path.split(os.path.join(bin_dir, inm))[0])
-                            dest_path = os.path.join(bin_dir, inm)
-                            os.symlink(relative_source_path, dest_path)
-                else:  # If path is empty, e.g., a top level file, try to just symlink the file
-                    os.symlink(os.path.relpath(os.path.join(res_dir, inm),
-                                               os.path.split(os.path.join(bin_dir, inm))[0]),
-                               os.path.join(bin_dir, inm))
+            tofnm = os.path.join(res_dir, inm)
+            todir = os.path.dirname(tofnm)
+            if not os.path.exists(todir):
+                os.makedirs(todir)
+            if os.path.isdir(fnm):
+                # beacuse shutil.copy2() is the default copy function
+                # for shutil.copytree, this will also copy file metadata
+                shutil.copytree(fnm, tofnm)
             else:
-                shutil.copy(fnm, bin_dir)
+                shutil.copy(fnm, tofnm)
+            base_path = os.path.split(inm)[0]
+            if base_path:
+                if not os.path.exists(os.path.join(bin_dir, inm)):
+                    path = ''
+                    for part in iter(base_path.split(os.path.sep)):
+                        # Build path from previous path and the next part of the base path
+                        path = os.path.join(path, part)
+                        try:
+                            relative_source_path = os.path.relpath(os.path.join(res_dir, path),
+                                                                   os.path.split(os.path.join(bin_dir, path))[0])
+                            dest_path = os.path.join(bin_dir, path)
+                            os.symlink(relative_source_path, dest_path)
+                            break
+                        except FileExistsError:
+                            pass
+                    if not os.path.exists(os.path.join(bin_dir, inm)):
+                        relative_source_path = os.path.relpath(os.path.join(res_dir, inm),
+                                                               os.path.split(os.path.join(bin_dir, inm))[0])
+                        dest_path = os.path.join(bin_dir, inm)
+                        os.symlink(relative_source_path, dest_path)
+            else:  # If path is empty, e.g., a top level file, try to just symlink the file
+                os.symlink(os.path.relpath(os.path.join(res_dir, inm),
+                                           os.path.split(os.path.join(bin_dir, inm))[0]),
+                           os.path.join(bin_dir, inm))

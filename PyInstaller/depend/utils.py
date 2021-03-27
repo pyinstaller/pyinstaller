@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2017, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 
@@ -15,21 +17,27 @@ Utility functions related to analyzing/bundling dependencies.
 
 import ctypes
 import ctypes.util
-import dis
 import io
 import marshal
 import os
 import re
+import struct
 import zipfile
 
+from ..exceptions import ExecCommandFailed
 from ..lib.modulegraph import util, modulegraph
 
 from .. import compat
-from ..compat import (is_darwin, is_unix, is_py2, is_py34, is_freebsd,
-                      BYTECODE_MAGIC, PY3_BASE_MODULES,
-                      exec_python_rc)
+from ..compat import (is_darwin, is_unix, is_freebsd, is_openbsd, is_py37,
+                      BYTECODE_MAGIC, PY3_BASE_MODULES)
 from .dylib import include_library
 from .. import log as logging
+
+try:
+    # source_hash only exists in Python 3.7
+    from importlib.util import source_hash as importlib_source_hash
+except ImportError:
+    pass
 
 logger = logging.getLogger(__name__)
 
@@ -41,17 +49,10 @@ def create_py3_base_library(libzip_filename, graph):
     modules is necessary to have on PYTHONPATH for initializing libpython3
     in order to run the frozen executable with Python 3.
     """
-    # TODO Replace this function with something better or something from standard Python library.
-    # Helper functions.
-    def _write_long(f, x):
-        """
-        Write a 32-bit int to a file in little-endian order.
-        """
-        f.write(bytes([x & 0xff,
-                       (x >> 8) & 0xff,
-                       (x >> 16) & 0xff,
-                       (x >> 24) & 0xff]))
-
+    # Import strip_paths_in_code locally to avoid cyclic import between
+    # building.utils and depend.utils (this module); building.utils
+    # imports depend.bindepend, which in turn imports depend.utils.
+    from ..building.utils import strip_paths_in_code
     # Construct regular expression for matching modules that should be bundled
     # into base_library.zip.
     # Excluded are plain 'modules' or 'submodules.ANY_NAME'.
@@ -69,29 +70,47 @@ def create_py3_base_library(libzip_filename, graph):
         # Class zipfile.PyZipFile is not suitable for PyInstaller needs.
         with zipfile.ZipFile(libzip_filename, mode='w') as zf:
             zf.debug = 3
-            for mod in graph.flatten():
+            # Sort the graph nodes by identifier to ensure repeatable builds
+            graph_nodes = list(graph.flatten())
+            graph_nodes.sort(key=lambda item: item.identifier)
+            for mod in graph_nodes:
                 if type(mod) in (modulegraph.SourceModule, modulegraph.Package):
                     # Bundling just required modules.
                     if module_filter.match(mod.identifier):
                         st = os.stat(mod.filename)
                         timestamp = int(st.st_mtime)
                         size = st.st_size & 0xFFFFFFFF
-                        # Name inside a zip archive.
+                        # Name inside the archive. The ZIP format
+                        # specification requires forward slashes as
+                        # directory separator.
                         # TODO use .pyo suffix if optimize flag is enabled.
                         if type(mod) is modulegraph.Package:
-                            new_name = mod.identifier.replace('.', os.sep) + os.sep + '__init__' + '.pyc'
+                            new_name = mod.identifier.replace('.', '/') \
+                                + '/__init__.pyc'
                         else:
-                            new_name = mod.identifier.replace('.', os.sep) + '.pyc'
+                            new_name = mod.identifier.replace('.', '/') \
+                                + '.pyc'
 
                         # Write code to a file.
                         # This code is similar to py_compile.compile().
                         with io.BytesIO() as fc:
                             # Prepare all data in byte stream file-like object.
                             fc.write(BYTECODE_MAGIC)
-                            _write_long(fc, timestamp)
-                            _write_long(fc, size)
-                            marshal.dump(mod.code, fc)
-                            zf.writestr(new_name, fc.getvalue())
+                            if is_py37:
+                                # Additional bitfield according to PEP 552
+                                # 0b01 means hash based but don't check the hash
+                                fc.write(struct.pack('<I', 0b01))
+                                with open(mod.filename, 'rb') as fs:
+                                    source_bytes = fs.read()
+                                source_hash = importlib_source_hash(source_bytes)
+                                fc.write(source_hash)
+                            else:
+                                fc.write(struct.pack('<II', timestamp, size))
+                            code = strip_paths_in_code(mod.code)  # Strip paths
+                            marshal.dump(code, fc)
+                            # Use a ZipInfo to set timestamp for deterministic build
+                            info = zipfile.ZipInfo(new_name)
+                            zf.writestr(info, fc.getvalue())
 
     except Exception as e:
         logger.error('base_library.zip could not be created!')
@@ -162,6 +181,7 @@ def __scan_code_instruction_for_ctypes(instructions):
         try:
             instruction = next(instructions)
             expected_ops = ('LOAD_GLOBAL', 'LOAD_NAME')
+            load_method = ('LOAD_ATTR', 'LOAD_METHOD')
 
             if not instruction or instruction.opname not in expected_ops:
                 continue
@@ -177,9 +197,8 @@ def __scan_code_instruction_for_ctypes(instructions):
                 #
                 # In this case "strip" the `ctypes` by advancing and expecting
                 # `LOAD_ATTR` next.
-                expected_ops = ('LOAD_ATTR',)
                 instruction = next(instructions)
-                if instruction.opname not in expected_ops:
+                if instruction.opname not in load_method:
                     continue
                 name = instruction.argval
 
@@ -205,7 +224,7 @@ def __scan_code_instruction_for_ctypes(instructions):
                 #     LOAD_ATTR     1 (LoadLibrary)
                 #     LOAD_CONST    1 ('library.so')
                 instruction = next(instructions)
-                if instruction.opname == 'LOAD_ATTR':
+                if instruction.opname in load_method:
                     if instruction.argval == "LoadLibrary":
                         # Second type, needs to fetch one more instruction
                         yield _libFromConst()
@@ -223,7 +242,7 @@ def __scan_code_instruction_for_ctypes(instructions):
                 #     LOAD_ATTR     1 (find_library)
                 #     LOAD_CONST    1 ('gs')
                 instruction = next(instructions)
-                if instruction.opname == 'LOAD_ATTR':
+                if instruction.opname in load_method:
                     if instruction.argval == "find_library":
                         libname = _libFromConst()
                         if libname:
@@ -328,7 +347,7 @@ LDCONFIG_CACHE = None  # cache the output of `/sbin/ldconfig -p`
 def load_ldconfig_cache():
     """
     Create a cache of the `ldconfig`-output to call it only once.
-    It contains thousands of libraries and running it on every dynlib
+    It contains thousands of libraries and running it on every dylib
     is expensive.
     """
     global LDCONFIG_CACHE
@@ -350,35 +369,55 @@ def load_ldconfig_cache():
             LDCONFIG_CACHE = {}
             return
 
-    if is_freebsd:
+    if is_freebsd or is_openbsd:
         # This has a quite different format than other Unixes
         # [vagrant@freebsd-10 ~]$ ldconfig -r
         # /var/run/ld-elf.so.hints:
         #     search directories: /lib:/usr/lib:/usr/lib/compat:...
         #     0:-lgeom.5 => /lib/libgeom.so.5
         #   184:-lpython2.7.1 => /usr/local/lib/libpython2.7.so.1
-        text = compat.exec_command(ldconfig, '-r')
-        text = text.strip().splitlines()[2:]
-        pattern = re.compile(r'^\s+\d+:-l(.+?)((\.\d+)+) => (\S+)')
+        ldconfig_arg = '-r'
+        splitlines_count = 2
         pattern = re.compile(r'^\s+\d+:-l(\S+)(\s.*)? => (\S+)')
     else:
         # Skip first line of the library list because it is just
         # an informative line and might contain localized characters.
         # Example of first line with local cs_CZ.UTF-8:
         #$ /sbin/ldconfig -p
-        #V keši „/etc/ld.so.cache“ nalezeno knihoven: 2799
+        #V keši „/etc/ld.so.cache“ nalezeno knihoven: 2799
         #      libzvbi.so.0 (libc6,x86-64) => /lib64/libzvbi.so.0
         #      libzvbi-chains.so.0 (libc6,x86-64) => /lib64/libzvbi-chains.so.0
-        text = compat.exec_command(ldconfig, '-p')
-        text = text.strip().splitlines()[1:]
+        ldconfig_arg = '-p'
+        splitlines_count = 1
         pattern = re.compile(r'^\s+(\S+)(\s.*)? => (\S+)')
+
+    try:
+        text = compat.exec_command(ldconfig, ldconfig_arg)
+    except ExecCommandFailed:
+        logger.warning("Failed to execute ldconfig. Disabling LD cache.")
+        LDCONFIG_CACHE = {}
+        return
+
+    text = text.strip().splitlines()[splitlines_count:]
 
     LDCONFIG_CACHE = {}
     for line in text:
         # :fixme: this assumes libary names do not contain whitespace
         m = pattern.match(line)
+
+        # Sanitize away any abnormal lines of output.
+        if m is None:
+            # Warn about it then skip the rest of this iteration.
+            if re.search("Cache generated by:", line):
+                # See #5540. This particular line is harmless.
+                pass
+            else:
+                logger.warning(
+                    "Unrecognised line of output %r from ldconfig", line)
+            continue
+
         path = m.groups()[-1]
-        if is_freebsd:
+        if is_freebsd or is_openbsd:
             # Insert `.so` at the end of the lib's basename. soname
             # and filename may have (different) trailing versions. We
             # assume the `.so` in the filename to mark the end of the

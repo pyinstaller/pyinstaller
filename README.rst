@@ -6,44 +6,17 @@ package. The user can run the packaged app without installing a Python
 interpreter or any modules.
 
 
-.. image:: https://img.shields.io/travis/pyinstaller/pyinstaller/develop.svg?label=Linux
-   :target: https://travis-ci.org/pyinstaller/pyinstaller/
-   :alt: Travis CI test status (Linux)
-
-.. image:: https://img.shields.io/travis/pyinstaller/pyinstaller-osx-tests/master.svg?label=OS%20X
-   :target: https://travis-ci.org/pyinstaller/pyinstaller-osx-tests
-   :alt: Travis CI test status (OS X)
-
-.. image:: https://img.shields.io/appveyor/ci/matysek/pyinstaller/develop.svg?label=Windows
-   :target: https://ci.appveyor.com/project/matysek/pyinstaller/branch/develop
-   :alt: AppVeyor CI test status (Windows)
-
-.. image:: https://landscape.io/github/pyinstaller/pyinstaller/develop/landscape.svg?
-   :target: https://landscape.io/github/pyinstaller/pyinstaller/develop
-   :alt: Code health
-
-.. image:: https://img.shields.io/pypi/v/PyInstaller.svg
-   :target: https://pypi.python.org/pypi/PyInstaller
-
-.. image:: https://img.shields.io/badge/docs-latest-blue.svg
-   :target: https://pyinstaller.readthedocs.io/en/latest/
-   :alt: Manual
-
-.. image:: https://img.shields.io/badge/changes-latest-blue.svg
-   :target: https://pyinstaller.readthedocs.io/en/latest/CHANGES.html
-   :alt: Changelog
-
-.. image:: https://img.shields.io/badge/IRC-pyinstalller-blue.svg
-   :target: http://webchat.freenode.net/?channels=%23pyinstaller&uio=d4
-   :alt: IRC
+**Help keeping PyInstaller alive:**
+Maintaining PyInstaller is a huge amount of work.
+PyInstaller development can only continue
+if users and companies provide sustainable funding. See
+http://www.pyinstaller.org/funding.html for how to support PyInstaller.
 
 
 :Documentation: https://pyinstaller.readthedocs.io/
 :Website:       http://www.pyinstaller.org/
 :Code:          https://github.com/pyinstaller/pyinstaller
-:Donate:        | https://www.bountysource.com/teams/pyinstaller
-                | Bitcoin: 1JUFjawzWDR7Tc8z9TKXstVFdjkDY9FbtK
-                | `more ways to donate … <http://www.pyinstaller.org/donate.html>`_
+:Donate, Fund:  http://www.pyinstaller.org/funding.html
 
 
 PyInstaller reads a Python script written by you. It analyzes your code
@@ -53,25 +26,28 @@ Python interpreter! -- and puts them with your script in a single folder, or
 optionally in a single executable file.
 
 
-PyInstaller is tested against Windows, Mac OS X, and Linux. However, it is not
-a cross-compiler: to make a Windows app you run PyInstaller in Windows; to make
-a Linux app you run it in Linux, etc. PyInstaller has been used successfully
-with AIX, Solaris, and FreeBSD, but is not tested against them.
+PyInstaller is tested against Windows, Mac OS X, and GNU/Linux.
+However, it is not a cross-compiler:
+to make a Windows app you run PyInstaller in Windows; to make
+a GNU/Linux app you run it in GNU/Linux, etc.
+PyInstaller has been used successfully
+with AIX, Solaris, FreeBSD and OpenBSD,
+but is not tested against them as part of the continuous integration tests.
 
 
 Main Advantages
 ---------------
 
-- Works out-of-the-box with any Python version 2.7 / 3.3-3.6.
+- Works out-of-the-box with any Python version 3.6-3.9.
 - Fully multi-platform, and uses the OS support to load the dynamic libraries,
   thus ensuring full compatibility.
-- Correctly bundles the major Python packages such as numpy, PyQt4, PyQt5,
-  PySide, Django, wxPython, matplotlib and others out-of-the-box.
+- Correctly bundles the major Python packages such as numpy, PyQt5,
+  PySide2, Django, wxPython, matplotlib and others out-of-the-box.
 - Compatible with many 3rd-party packages out-of-the-box. (All the required
   tricks to make external packages work are already integrated.)
-- Libraries like PyQt5, PyQt4, PySide, wxPython, matplotlib or Django are fully
+- Libraries like PyQt5, PySide2, wxPython, matplotlib or Django are fully
   supported, without having to handle plugins or external data files manually.
-- Working code signing on OS X.
+- Works with code signing on OS X.
 - Bundles MS Visual C++ DLLs on Windows.
 
 
@@ -88,14 +64,19 @@ Requirements and Tested Platforms
 
 - Python: 
 
- - 2.7 or 3.3-3.5
- - PyCrypto_ 2.4+ (only if using bytecode encryption)
+ - 3.6-3.9
+ - tinyaes_ 1.0+ (only if using bytecode encryption).
+   Instead of installing tinyaes, ``pip install pyinstaller[encryption]`` instead.
 
 - Windows (32bit/64bit):
 
- - Windows XP or newer.
+ - PyInstaller should work on Windows 7 or newer, but we only officially support Windows 8+.
+
+ - We don't support Python installed from the Windows store when not using virtual environments due to 
+   `permission errors <https://github.com/pyinstaller/pyinstaller/pull/4702>`_ 
+   that can't easily be fixed.
     
-- Linux (32bit/64bit)
+- GNU/Linux (32bit/64bit)
 
  - ldd: Console application to print the shared libraries required
    by each program or shared library. This typically can be found in
@@ -109,7 +90,7 @@ Requirements and Tested Platforms
 
 - Mac OS X (64bit):
 
- - Mac OS X 10.7 (Lion) or newer.
+ - Mac OS X 10.13 (High Sierra) or newer.
 
 
 Usage
@@ -143,7 +124,7 @@ enhancements on these are welcome.
    linked Python libraries.
  - ldd
 
-- PowerPC Linux (Debian)
+- PowerPC GNU/Linux (Debian)
 
 
 Before using any contributed platform, you need to build the PyInstaller
@@ -151,7 +132,7 @@ bootloader, as we do not ship binary packages. Download PyInstaller
 source, and build the bootloader::
      
         cd bootloader
-        python ./waf distclean all
+        python ./waf all
 
 Then install PyInstaller::
 
@@ -160,7 +141,29 @@ Then install PyInstaller::
 or simply use it directly from the source (pyinstaller.py).
 
 
+Support
+---------------------
 
-.. _PyCrypto: https://www.dlitz.net/software/pycrypto/
+See http://www.pyinstaller.org/support.html for how to find help as well as
+for commercial support.
+
+
+Funding
+---------------------
+
+Maintaining PyInstaller is a huge amount of work.
+PyInstaller development can only continue
+if users and companies provide sustainable funding. See
+http://www.pyinstaller.org/funding.html for how to support PyInstaller.
+
+
+Changes in this Release
+-------------------------
+
+You can find a detailed list of changes in this release
+in the `change log`_ section of the manual.
+
+
+.. _tinyaes: https://github.com/naufraghi/tinyaes-py
 .. _`manual`: https://pyinstaller.readthedocs.io/en/latest/
-
+.. _`change log`: https://pyinstaller.readthedocs.io/en/latest/CHANGES.html

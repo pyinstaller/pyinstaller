@@ -1,10 +1,12 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2017, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 
@@ -22,9 +24,10 @@ from pyi_testmod_gettemp import gettemp
 
 _pyexe_file = gettemp("python_exe.build")
 
-_lines = open(_pyexe_file).readlines()
-_pyexe = _lines[0].strip()
-_env_path = _lines[2].strip()
+with open(_pyexe_file) as fp:
+    _lines = fp.readlines()
+    _pyexe = _lines[0].strip()
+    _env_path = _lines[2].strip()
 
 
 def exec_python(pycode):
@@ -47,17 +50,9 @@ def exec_python(pycode):
 
 
 def compare(test_name, expect, frozen):
-    # Modules in Python 2 do not have '__loader__' attribute but
-    # PyInstaller causes that __loader__ is in module attribues.
-    # Remove it for Python 2.
-    if sys.version_info[0] == 2 and '__loader__' in frozen:
-        frozen.remove('__loader__')
     # Modules in Python 3 contain attr '__cached__' - add it to the frozen list.
-    if sys.version_info[0] == 3 and '__cached__' not in frozen:
+    if '__cached__' not in frozen:
         frozen.append('__cached__')
-    # Modules in Python 3.3 contain attr '__initializing__'.
-    if sys.version_info[0:2] == (3, 3):
-        frozen.append('__initializing__')
     frozen.sort()
     frozen = str(frozen)
 

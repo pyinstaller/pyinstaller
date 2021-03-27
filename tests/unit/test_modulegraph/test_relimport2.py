@@ -26,8 +26,8 @@ class TestModuleGraphImport (unittest.TestCase):
         n = self.mf.findNode('mod1')
         self.assertIs(n, None)
 
-        n = self.mf.findNode('mod2')
-        self.assertIsInstance(n, modulegraph.MissingModule)
+        n = self.mf.findNode('.mod2.*')
+        self.assertIsInstance(n, modulegraph.InvalidRelativeImport)
 
     def test_subpkg_bad_import(self):
         self.mf.import_hook('pkg.sub')

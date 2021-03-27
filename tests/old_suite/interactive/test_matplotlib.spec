@@ -1,17 +1,19 @@
 # -*- mode: python -*-
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2017, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 
 __testname__ = 'test_matplotlib'
 
-if sys.platform == 'win32' and sys.version_info[:2] >= (2, 6):
+if sys.platform == 'win32':
     manifest = '''<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
   <dependency>
     <dependentAssembly>

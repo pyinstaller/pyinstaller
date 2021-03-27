@@ -1,10 +1,12 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2017, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 
@@ -20,16 +22,17 @@ import tempfile
 import pprint
 from operator import itemgetter
 
-from PyInstaller import is_win, is_darwin, is_linux, HOMEPATH, PLATFORM
+from PyInstaller import HOMEPATH, PLATFORM
 from PyInstaller.archive.writers import ZlibArchiveWriter, CArchiveWriter
 from PyInstaller.building.utils import _check_guts_toc, add_suffix_to_extensions, \
-    checkCache, _check_path_overlap, _rmtree, strip_paths_in_code, get_code_object, \
+    checkCache, strip_paths_in_code, get_code_object, \
     _make_clean_directory
-from PyInstaller.compat import is_cygwin, exec_command_all
+from PyInstaller.compat import is_win, is_darwin, is_linux, is_cygwin, \
+    exec_command_all, is_64bits
 from PyInstaller.depend import bindepend
 from PyInstaller.depend.analysis import get_bootstrap_modules
 from PyInstaller.depend.utils import is_path_to_egg
-from PyInstaller.building.datastruct import TOC, Target, logger, _check_guts_eq
+from PyInstaller.building.datastruct import TOC, Target, _check_guts_eq
 from PyInstaller.utils import misc
 from .. import log as logging
 
@@ -154,7 +157,7 @@ class PKG(Target):
                  'DEPENDENCY': 'd'}
 
     def __init__(self, toc, name=None, cdict=None, exclude_binaries=0,
-                 strip_binaries=False, upx_binaries=False):
+                 strip_binaries=False, upx_binaries=False, upx_exclude=None):
         """
         toc
                 A TOC (Table of Contents)
@@ -181,6 +184,7 @@ class PKG(Target):
         self.exclude_binaries = exclude_binaries
         self.strip_binaries = strip_binaries
         self.upx_binaries = upx_binaries
+        self.upx_exclude = upx_exclude or []
         # This dict tells PyInstaller what items embedded in the executable should
         # be compressed.
         if self.cdict is None:
@@ -202,6 +206,7 @@ class PKG(Target):
             ('exclude_binaries', _check_guts_eq),
             ('strip_binaries', _check_guts_eq),
             ('upx_binaries', _check_guts_eq),
+            ('upx_exclude', _check_guts_eq)
             # no calculated/analysed values
             )
 
@@ -228,9 +233,9 @@ class PKG(Target):
                 # file is contained within python egg, it is added with the egg
                 continue
             if typ in ('BINARY', 'EXTENSION', 'DEPENDENCY'):
-                if self.exclude_binaries and typ != 'DEPENDENCY':
+                if self.exclude_binaries and typ == 'EXTENSION':
                     self.dependencies.append((inm, fnm, typ))
-                else:
+                elif not self.exclude_binaries or typ == 'DEPENDENCY':
                     if typ == 'BINARY':
                         # Avoid importing the same binary extension twice. This might
                         # happen if they come from different sources (eg. once from
@@ -255,7 +260,8 @@ class PKG(Target):
                     seenFnms_typ[fnm] = typ
 
                     fnm = checkCache(fnm, strip=self.strip_binaries,
-                                     upx=(self.upx_binaries and (is_win or is_cygwin)),
+                                     upx=self.upx_binaries,
+                                     upx_exclude=self.upx_exclude,
                                      dist_nm=inm)
 
                     mytoc.append((inm, fnm, self.cdict.get(typ, 0),
@@ -300,6 +306,13 @@ class EXE(Target):
         kwargs
             Possible keywork arguments:
 
+            bootloader_ignore_signals
+                Non-Windows only. If True, the bootloader process will ignore
+                all ignorable signals. If False (default), it will forward
+                all signals to the child process. Useful in situations where
+                e.g. a supervisor process signals both the bootloader and
+                child (e.g. via a process group) to avoid signalling the
+                child twice.
             console
                 On Windows or OSX governs whether to use the console executable
                 or the windowed executable. Always True on Linux/Unix (always
@@ -315,6 +328,8 @@ class EXE(Target):
             icon
                 Windows or OSX only. icon='myicon.ico' to use an icon file or
                 icon='notepad.exe,0' to grab an icon resource.
+                Defaults to use PyInstaller's console or windowed icon.
+                icon=`NONE` to not add any icon.
             version
                 Windows only. version='myversion.txt'. Use grab_version.py to get
                 a version resource from an executable and then edit the output to
@@ -332,6 +347,8 @@ class EXE(Target):
 
         # Available options for EXE in .spec files.
         self.exclude_binaries = kwargs.get('exclude_binaries', False)
+        self.bootloader_ignore_signals = kwargs.get(
+            'bootloader_ignore_signals', False)
         self.console = kwargs.get('console', True)
         self.debug = kwargs.get('debug', False)
         self.name = kwargs.get('name', None)
@@ -340,6 +357,7 @@ class EXE(Target):
         self.manifest = kwargs.get('manifest', None)
         self.resources = kwargs.get('resources', [])
         self.strip = kwargs.get('strip', False)
+        self.upx_exclude = kwargs.get("upx_exclude", [])
         self.runtime_tmpdir = kwargs.get('runtime_tmpdir', None)
         # If ``append_pkg`` is false, the archive will not be appended
         # to the exe, but copied beside it.
@@ -391,6 +409,10 @@ class EXE(Target):
         if self.runtime_tmpdir is not None:
             self.toc.append(("pyi-runtime-tmpdir " + self.runtime_tmpdir, "", "OPTION"))
 
+        if self.bootloader_ignore_signals:
+            # no value; presence means "true"
+            self.toc.append(("pyi-bootloader-ignore-signals", "", "OPTION"))
+
         if is_win:
             filename = os.path.join(CONF['workpath'], CONF['specnm'] + ".exe.manifest")
             self.manifest = winmanifest.create_manifest(filename, self.manifest,
@@ -406,9 +428,17 @@ class EXE(Target):
                 self.toc.append(("pyi-windows-manifest-filename " + manifest_filename,
                                  "", "OPTION"))
 
+            if self.versrsrc:
+                if (not isinstance(self.versrsrc, versioninfo.VSVersionInfo)
+                    and not os.path.isabs(self.versrsrc)):
+                    # relative version-info path is relative to spec file
+                    self.versrsrc = os.path.join(
+                        CONF['specpath'], self.versrsrc)
+
         self.pkg = PKG(self.toc, cdict=kwargs.get('cdict', None),
                        exclude_binaries=self.exclude_binaries,
                        strip_binaries=self.strip, upx_binaries=self.upx,
+                       upx_exclude=self.upx_exclude
                        )
         self.dependencies = self.pkg.dependencies
 
@@ -490,6 +520,7 @@ class EXE(Target):
         return bootloader_file
 
     def assemble(self):
+        from ..config import CONF
         logger.info("Building EXE from %s", self.tocbasename)
         trash = []
         if os.path.exists(self.name):
@@ -500,12 +531,21 @@ class EXE(Target):
         if not os.path.exists(exe):
             raise SystemExit(_MISSING_BOOTLOADER_ERRORMSG)
 
-
-        if is_win and (self.icon or self.versrsrc or self.resources):
-            tmpnm = tempfile.mktemp()
+        if is_win:
+            fd, tmpnm = tempfile.mkstemp(prefix=os.path.basename(exe) + ".",
+                                         dir=CONF['workpath'])
+            # need to close the file, otherwise copying resources will fail
+            # with "the file [...] is being used by another process"
+            os.close(fd)
             self._copyfile(exe, tmpnm)
             os.chmod(tmpnm, 0o755)
-            if self.icon:
+            if not self.icon:
+                # --icon not specified; use default from bootloader folder
+                self.icon = os.path.join(
+                    os.path.dirname(os.path.dirname(__file__)),
+                    'bootloader', 'images',
+                    'icon-console.ico' if self.console else 'icon-windowed.ico')
+            if self.icon != "NONE":
                 icon.CopyIcons(tmpnm, self.icon)
             if self.versrsrc:
                 versioninfo.SetVersion(tmpnm, self.versrsrc)
@@ -517,6 +557,8 @@ class EXE(Target):
                     except ValueError:
                         pass
                 resfile = res[0]
+                if not os.path.isabs(resfile):
+                    resfile = os.path.join(CONF['specpath'], resfile)
                 restype = resname = reslang = None
                 if len(res) > 1:
                     restype = res[1]
@@ -555,6 +597,8 @@ class EXE(Target):
                         logger.error("Error while updating resource %s %s in %s"
                                      " from data file %s",
                                      restype, resname, tmpnm, resfile, exc_info=1)
+            if self.manifest and not self.exclude_binaries:
+                self.manifest.update_resources(tmpnm, [1])
             trash.append(tmpnm)
             exe = tmpnm
 
@@ -595,6 +639,10 @@ class EXE(Target):
             logger.info("Fixing EXE for code signing %s", self.name)
             import PyInstaller.utils.osx as osxutils
             osxutils.fix_exe_for_code_signing(self.name)
+        if is_win:
+            # Set checksum to appease antiviral software.
+            from PyInstaller.utils.win32.winutils import set_exe_checksum
+            set_exe_checksum(self.name)
 
         os.chmod(self.name, 0o755)
         # get mtime for storing into the guts
@@ -628,6 +676,8 @@ class COLLECT(Target):
         from ..config import CONF
         Target.__init__(self)
         self.strip_binaries = kws.get('strip', False)
+        self.upx_exclude = kws.get("upx_exclude", [])
+        self.console = True
 
         if CONF['hasUPX']:
             self.upx_binaries = kws.get('upx', False)
@@ -650,6 +700,7 @@ class COLLECT(Target):
             elif isinstance(arg, Target):
                 self.toc.append((os.path.basename(arg.name), arg.name, arg.typ))
                 if isinstance(arg, EXE):
+                    self.console = arg.console
                     for tocnm, fnm, typ in arg.toc:
                         if tocnm == os.path.basename(arg.name) + ".manifest":
                             self.toc.append((tocnm, fnm, typ))
@@ -678,19 +729,31 @@ class COLLECT(Target):
             if not os.path.exists(fnm) or not os.path.isfile(fnm) and is_path_to_egg(fnm):
                 # file is contained within python egg, it is added with the egg
                 continue
-            if os.pardir in os.path.normpath(inm) or os.path.isabs(inm):
+            if os.pardir in os.path.normpath(inm).split(os.sep) \
+               or os.path.isabs(inm):
                 raise SystemExit('Security-Alert: try to store file outside '
                                  'of dist-directory. Aborting. %r' % inm)
             tofnm = os.path.join(self.name, inm)
             todir = os.path.dirname(tofnm)
             if not os.path.exists(todir):
                 os.makedirs(todir)
+            elif not os.path.isdir(todir):
+                raise SystemExit(
+                    "Pyinstaller needs to make a directory, but there "
+                    "already is a file at that path. "
+                    "The file at issue is {!r}".format(todir))
             if typ in ('EXTENSION', 'BINARY'):
                 fnm = checkCache(fnm, strip=self.strip_binaries,
-                                 upx=(self.upx_binaries and (is_win or is_cygwin)),
+                                 upx=self.upx_binaries,
+                                 upx_exclude=self.upx_exclude,
                                  dist_nm=inm)
             if typ != 'DEPENDENCY':
-                shutil.copy(fnm, tofnm)
+                if os.path.isdir(fnm):
+                    # beacuse shutil.copy2() is the default copy function
+                    # for shutil.copytree, this will also copy file metadata
+                    shutil.copytree(fnm, tofnm)
+                else:
+                    shutil.copy(fnm, tofnm)
                 try:
                     shutil.copystat(fnm, tofnm)
                 except OSError:
@@ -741,7 +804,8 @@ class MERGE(object):
         Filter shared dependencies to be only in first executable.
         """
         for analysis, _, _ in args:
-            path = os.path.abspath(analysis.scripts[-1][1]).replace(self._common_prefix, "", 1)
+            path = os.path.normcase(os.path.abspath(analysis.scripts[-1][1]))
+            path = path.replace(self._common_prefix, "", 1)
             path = os.path.splitext(path)[0]
             if os.path.normcase(path) in self._id_to_path:
                 path = self._id_to_path[os.path.normcase(path)]
@@ -758,8 +822,42 @@ class MERGE(object):
                     self._dependencies[tpl[1]] = path
                 else:
                     dep_path = self._get_relative_path(path, self._dependencies[tpl[1]])
+                    # Ignore references that point to the origin package.
+                    # This can happen if the same resource is listed
+                    # multiple times in TOCs (e.g., once as binary and
+                    # once as data).
+                    if dep_path.endswith(path):
+                        logger.debug("Ignoring self-reference of %s for %s, "
+                                     "located in %s - duplicated TOC entry?",
+                                     tpl[1], path, dep_path)
+                        # Clear the entry as it is a duplicate.
+                        toc[i] = (None, None, None)
+                        continue
                     logger.debug("Referencing %s to be a dependecy for %s, located in %s" % (tpl[1], path, dep_path))
-                    analysis.dependencies.append((":".join((dep_path, tpl[0])), tpl[1], "DEPENDENCY"))
+                    # Determine the path relative to dep_path (i.e, within
+                    # the target directory) from the 'name' component
+                    # of the TOC tuple. If entry is EXTENSION, then the
+                    # relative path needs to be reconstructed from the
+                    # name components.
+                    if tpl[2] == 'EXTENSION':
+                        ext_components = tpl[0].split('.')[:-1]
+                        if ext_components:
+                            rel_path = os.path.join(*ext_components)
+                        else:
+                            rel_path = ''
+                    else:
+                        rel_path = os.path.dirname(tpl[0])
+                    # Take filename from 'path' (second component of
+                    # TOC tuple); this way, we don't need to worry about
+                    # suffix of extensions.
+                    filename = os.path.basename(tpl[1])
+                    # Construct the full file path relative to dep_path...
+                    filename = os.path.join(rel_path, filename)
+                    # ...and use it in new DEPENDENCY entry
+                    analysis.dependencies.append(
+                        (":".join((dep_path, filename)),
+                         tpl[1],
+                         "DEPENDENCY"))
                     toc[i] = (None, None, None)
             # Clean the list
             toc[:] = [tpl for tpl in toc if tpl != (None, None, None)]

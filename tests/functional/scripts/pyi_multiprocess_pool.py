@@ -1,10 +1,12 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2017, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 import multiprocessing
@@ -23,3 +25,6 @@ if __name__ == '__main__':
     print(res.get(timeout=1))          # prints "100"
     print('Print "[0, 1, 4,..., 81]"')
     print(pool.map(f, range(10)))
+    # this is old code, based on Python 2, not using Pool as a context, so we
+    # need to terminate the pool explicitly
+    pool.terminate()

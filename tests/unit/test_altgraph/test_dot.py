@@ -1,9 +1,9 @@
 import unittest
 import os
 
-from PyInstaller.lib.altgraph import Dot
-from PyInstaller.lib.altgraph import Graph
-from PyInstaller.lib.altgraph import GraphError
+from altgraph import Dot
+from altgraph import Graph
+from altgraph import GraphError
 
 
 class TestDot (unittest.TestCase):
@@ -271,10 +271,8 @@ class TestDot (unittest.TestCase):
         try:
             dot.save_dot(fn)
 
-            fp = open(fn, 'r')
-            data = fp.read()
-            fp.close()
-            self.assertEqual(data, ''.join(dot))
+            with open(fn, 'r') as fp:
+                self.assertEqual(fp.read(), ''.join(dot))
 
         finally:
             if os.path.exists(fn):

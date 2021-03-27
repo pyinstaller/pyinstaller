@@ -4,47 +4,125 @@ Run-time Information
 =====================
 
 Your app should run in a bundle exactly as it does when run from source.
-However, you may need to learn at run-time
-whether the app is running from source, or is "frozen" (bundled).
-For example, you might have
-data files that are normally found based on a module's ``__file__`` attribute.
-That will not work when the code is bundled.
+However, you may want to learn at run-time whether the app is running from
+source or whether it is bundled ("frozen"). You can use the following code to
+check "are we bundled?"::
 
-The |PyInstaller| |bootloader| adds the name ``frozen`` to the ``sys`` module.
-So the test for "are we bundled?" is::
+    import sys
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        print('running in a PyInstaller bundle')
+    else:
+        print('running in a normal Python process')
 
-	import sys
-	if getattr( sys, 'frozen', False ) :
-		# running in a bundle
-	else :
-		# running live
+When a bundled app starts up, the |bootloader| sets the ``sys.frozen``
+attribute and stores the absolute path to the bundle folder in
+``sys._MEIPASS``. For a one-folder bundle, this is the path to that folder. For
+a one-file bundle, this is the path to the temporary folder created by the
+|bootloader| (see :ref:`How the One-File Program Works`).
 
-When your app is running, it may need to access data files in any of
-three general locations:
+When your app is running, it may need to access data files in one of the
+following locations:
 
 * Files that were bundled with it (see :ref:`Adding Data Files`).
-
 * Files the user has placed with the app bundle, say in the same folder.
-
 * Files in the user's current working directory.
 
-The program has access to several path variables for these uses.
+The program has access to several variables for these uses.
 
 
-Using ``__file__`` and ``sys._MEIPASS``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Using ``__file__``
+~~~~~~~~~~~~~~~~~~
 
-When your program is not frozen, the standard Python
-variable ``__file__`` is the full path to the script now executing.
-When a bundled app starts up,
-the |bootloader| sets the ``sys.frozen`` attribute
-and stores the absolute path to the bundle folder in ``sys._MEIPASS``.
-For a one-folder bundle, this is the path to that folder, 
-wherever the user may have put it.
-For a one-file bundle, this is the path to the :file:`_MEI{xxxxxx}`
-temporary folder
-created by the |bootloader| (see :ref:`How the One-File Program Works`).
+When your program is not bundled, the Python variable ``__file__`` refers to
+the current path of the module it is contained in. When importing a module
+from a bundled script, the |PyInstaller| |bootloader| will set the module's
+``__file__`` attribute to the correct path relative to the bundle folder.
 
+For example, if you import ``mypackage.mymodule`` from a bundled script, then
+the ``__file__`` attribute of that module will be ``sys._MEIPASS +
+'mypackage/mymodule.pyc'``.  So if you have a data file at
+``mypackage/file.dat`` that you added to the bundle at ``mypackage/file.dat``,
+the following code will get its path (in both the non-bundled and the bundled
+case)::
+
+    from os import path
+    path_to_dat = path.abspath(path.join(path.dirname(__file__), 'file.dat'))
+
+In the bundled main script itself the above might not work, as it is unclear
+where it resides in the package hierarchy. So in when trying to find data files
+relative to the main script, ``sys._MEIPASS`` can be used. The following will
+get the path to a file ``other-file.dat`` next to the main script if not
+bundled and in the bundle folder if it is bundled::
+
+    from os import path
+    import sys
+    bundle_dir = getattr(sys, '_MEIPASS', path.abspath(path.dirname(__file__)))
+    path_to_dat = path.abspath(path.join(bundle_dir, 'other-file.dat'))
+
+Or, if you'd rather use pathlib_::
+
+    from pathlib import Path
+    import sys
+
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        bundle_dir = Path(sys._MEIPASS)
+    else:
+        bundle_dir = Path(__file__).parent
+
+    path_to_dat = Path.cwd() / bundle_dir / "other-file.dat"
+
+It is always best to use absolute paths, so
+``path.abspath(path.join(bundle_dir, 'other-file.dat'))`` is preferred over
+``path.join(bundle_dir, 'other-file.dat')``. Using relative paths can lead to
+confusing errors should you attempt to find the parent of the current working
+directory. You'll get the incorrect value ``''`` instead of the expected
+``'..'``::
+
+    >>> from os import path
+    >>> path.dirname(".")
+    ''
+
+Avoiding writing different PyInstaller-only behaviour
+-----------------------------------------------------
+
+As an alternative to the above, you can leave your Python code untouched if you
+modify the **dest** parameter in your uses of ``--add-data=source:dest`` to put
+your data-files where your code expects them to be. Assuming you normally use
+the following code in a file named ``my_script.py`` to locate a file
+``file.dat`` in the same folder::
+
+    from os import path
+    path_to_dat = path.abspath(path.join(path.dirname(__file__), 'file.dat'))
+
+Or the pathlib_ equivalent::
+
+    from pathlib import Path
+    path_to_dat = (Path.cwd() / __file__).with_name("file.dat")
+
+And ``my_script.py`` is **not** part of a package (not in a folder containing
+an ``__init_.py``), then ``__file__`` will be ``[app root]/my_script.pyc``
+meaning that if you put ``file.dat`` in the root of your package, using::
+
+    PyInstaller --add-data=/path/to/file.dat:.
+
+It'll be found correctly at runtime without changing ``my_script.py``.
+
+.. note:: Windows users should use ``;`` instead of ``:`` in the above line.
+
+If ``__file__`` is checked from inside a package or library (say
+``my_library.data``) then ``__file__`` will be
+``[app root]/my_library/data.pyc`` and ``--add-data`` should mirror that::
+
+    PyInstaller --add-data=/path/to/my_library/file.dat:./my_library
+
+However, in this case it is much easier to switch to :ref:`the spec file
+<Using Spec Files>` and use the :meth:`collect_data_files` helper function::
+
+    from PyInstaller.utils.hooks import collect_data_files
+
+    a = Analysis(...,
+                 datas=collect_data_files("my_library"),
+                 ...)
 
 Using ``sys.executable`` and ``sys.argv[0]``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -106,9 +184,10 @@ LD_LIBRARY_PATH / LIBPATH considerations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This environment variable is used to discover libraries, it is the library
-search path - on Linux and \*BSD `LD_LIBRARY_PATH` is used, on AIX it is
+search path - on GNU/Linux and \*BSD `LD_LIBRARY_PATH` is used, on AIX it is
 `LIBPATH`.
 
+If it exists,
 PyInstaller saves the original value to `*_ORIG`, then modifies the search
 path so that the bundled libraries are found first by the bundled code.
 
@@ -123,12 +202,14 @@ with the system program.
 ::
 
     env = dict(os.environ)  # make a copy of the environment
-    lp_key = 'LD_LIBRARY_PATH'  # for Linux and *BSD.
-    lp_orig = env.get(lp_key + '_ORIG')  # pyinstaller >= 20160820 has this
+    lp_key = 'LD_LIBRARY_PATH'  # for GNU/Linux and *BSD.
+    lp_orig = env.get(lp_key + '_ORIG')
     if lp_orig is not None:
         env[lp_key] = lp_orig  # restore the original, unmodified value
     else:
-        env.pop(lp_key, None)  # last resort: remove the env var
+        # This happens when LD_LIBRARY_PATH was not set.
+        # Remove the env var as a last resort:
+        env.pop(lp_key, None)
     p = Popen(system_cmd, ..., env=env)  # create the process
 
 

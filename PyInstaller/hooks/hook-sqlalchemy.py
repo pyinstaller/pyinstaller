@@ -1,16 +1,20 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2017, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 import re
 from PyInstaller.utils.hooks import (
     exec_statement, is_module_satisfies, logger)
+from PyInstaller.compat import open_file, text_read_mode
 from PyInstaller.lib.modulegraph.modulegraph import SourceModule
+from PyInstaller.lib.modulegraph.util import guess_encoding
 
 # 'sqlalchemy.testing' causes bundling a lot of unnecessary modules.
 excludedimports = ['sqlalchemy.testing']
@@ -18,7 +22,7 @@ excludedimports = ['sqlalchemy.testing']
 # include most common database bindings
 # some database bindings are detected and include some
 # are not. We should explicitly include database backends.
-hiddenimports = ['pysqlite2', 'MySQLdb', 'psycopg2']
+hiddenimports = ['pysqlite2', 'MySQLdb', 'psycopg2', 'sqlalchemy.ext.baked']
 
 # In SQLAlchemy >= 0.6, the "sqlalchemy.dialects" package provides dialects.
 if is_module_satisfies('sqlalchemy >= 0.6'):
@@ -59,7 +63,12 @@ def hook(hook_api):
         if isinstance(node, SourceModule) and \
                 node.identifier.startswith('sqlalchemy.'):
             known_imports.add(node.identifier)
-            with open(node.filename) as f:
+            # Determine the encoding of the source file.
+            with open_file(node.filename, 'rb') as f:
+                encoding = guess_encoding(f)
+            # Use that to open the file.
+            with open_file(node.filename, text_read_mode,
+                           encoding=encoding) as f:
                 for match in depend_regex.findall(f.read()):
                     hidden_imports_set.add(match)
 

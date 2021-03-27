@@ -1,0 +1,3 @@
+Linux: Fix binary dependency scanner to support `changes to ldconfig
+<https://sourceware.org/git/?p=glibc.git;a=commitdiff;h=dfb3f101c5ef23adf60d389058a2b33e23303d04>`_
+introduced in ``glibc`` 2.33.

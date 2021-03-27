@@ -1,12 +1,13 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2017, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
 
 """
 Build packages using spec files.
@@ -22,25 +23,25 @@ import pprint
 import shutil
 import sys
 
+import pkg_resources
+
 
 # Relative imports to PyInstaller modules.
 from .. import HOMEPATH, DEFAULT_DISTPATH, DEFAULT_WORKPATH
 from .. import compat
 from .. import log as logging
-from ..utils.misc import absnormpath
-from ..compat import is_py2, is_win, PYDYLIB_NAMES, VALID_MODULE_TYPES
+from ..utils.misc import absnormpath, compile_py_files
+from ..compat import is_win, PYDYLIB_NAMES, open_file
 from ..depend import bindepend
 from ..depend.analysis import initialize_modgraph
 from .api import PYZ, EXE, COLLECT, MERGE
 from .datastruct import TOC, Target, Tree, _check_guts_eq
-from .imphook import AdditionalFilesCache, ModuleHookCache
 from .osx import BUNDLE
 from .toc_conversion import DependencyProcessor
 from .utils import _check_guts_toc_mtime, format_binaries_and_datas
 from ..depend.utils import create_py3_base_library, scan_code_for_ctypes
 from ..archive import pyz_crypto
 from ..utils.misc import get_path_to_toplevel_modules, get_unicode_modules, mtime
-from ..configure import get_importhooks_dir
 
 if is_win:
     from ..utils.win32 import winmanifest
@@ -55,16 +56,28 @@ rthooks = {}
 # place where the loader modules and initialization scripts live
 _init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
 
+IMPORT_TYPES = ['top-level', 'conditional', 'delayed', 'delayed, conditional',
+                'optional', 'conditional, optional', 'delayed, optional',
+                'delayed, conditional, optional']
 
-def _old_api_error(obj_name):
-    """
-    Cause PyInstall to exit when .spec file uses old api.
-    :param obj_name: Name of the old api that is no longer suppored.
-    """
-    raise SystemExit('%s has been removed in PyInstaller 2.0. '
-                     'Please update your spec-file. See '
-                     'http://www.pyinstaller.org/wiki/MigrateTo2.0 '
-                     'for details' % obj_name)
+WARNFILE_HEADER = """\
+
+This file lists modules PyInstaller was not able to find. This does not
+necessarily mean this module is required for running you program. Python and
+Python 3rd-party packages include a lot of conditional or optional modules. For
+example the module 'ntpath' only exists on Windows, whereas the module
+'posixpath' only exists on Posix systems.
+
+Types if import:
+* top-level: imported at the top-level - look at these first
+* conditional: imported within an if-statement
+* delayed: imported from within a function
+* optional: imported within a try-except-statement
+
+IMPORTANT: Do NOT post this list to the issue-tracker. Use it as a basis for
+           yourself tracking down the missing module. Thanks!
+
+"""
 
 
 # TODO find better place for function.
@@ -96,7 +109,7 @@ class Analysis(Target):
             The pure Python modules.
     binaries
             The extensionmodules and their dependencies. The secondary dependecies
-            are filtered. On Windows files from C:\Windows are excluded by default.
+            are filtered. On Windows files from C:\\Windows are excluded by default.
             On Linux/Unix only system libraries from /lib or /usr/lib are excluded.
     datas
             Data-file dependencies. These are data-file that are found to be needed
@@ -105,17 +118,18 @@ class Analysis(Target):
     zipfiles
             The zipfiles dependencies (usually .egg files).
     """
-    _old_scripts = set((
+    _old_scripts = {
         absnormpath(os.path.join(HOMEPATH, "support", "_mountzlib.py")),
         absnormpath(os.path.join(HOMEPATH, "support", "useUnicode.py")),
         absnormpath(os.path.join(HOMEPATH, "support", "useTK.py")),
         absnormpath(os.path.join(HOMEPATH, "support", "unpackTK.py")),
-        absnormpath(os.path.join(HOMEPATH, "support", "removeTK.py")),
-        ))
+        absnormpath(os.path.join(HOMEPATH, "support", "removeTK.py"))
+    }
 
     def __init__(self, scripts, pathex=None, binaries=None, datas=None,
                  hiddenimports=None, hookspath=None, excludes=None, runtime_hooks=None,
-                 cipher=None, win_no_prefer_redirects=False, win_private_assemblies=False):
+                 cipher=None, win_no_prefer_redirects=False, win_private_assemblies=False,
+                 noarchive=False):
         """
         scripts
                 A list of scripts specified as file names.
@@ -136,13 +150,18 @@ class Analysis(Target):
         runtime_hooks
                 An optional list of scripts to use as users' runtime hooks. Specified
                 as file names.
+        cipher
+                Add optional instance of the pyz_crypto.PyiBlockCipher class
+                (with a provided key).
         win_no_prefer_redirects
                 If True, prefers not to follow version redirects when searching for
                 Windows SxS Assemblies.
         win_private_assemblies
                 If True, changes all bundled Windows SxS Assemblies into Private
                 Assemblies to enforce assembly versions.
-
+        noarchive
+                If True, don't place source files in a archive, but keep them as
+                individual files.
         """
         super(Analysis, self).__init__()
         from ..config import CONF
@@ -159,7 +178,7 @@ class Analysis(Target):
             # Normalize script path.
             script = os.path.normpath(script)
             if not os.path.exists(script):
-                raise ValueError("script '%s' not found" % script)
+                raise SystemExit("script '%s' not found" % script)
             self.inputs.append(script)
 
         # Django hook requires this variable to find the script manage.py.
@@ -181,7 +200,16 @@ class Analysis(Target):
         # Include modules detected when parsing options, like 'codecs' and encodings.
         self.hiddenimports.extend(CONF['hiddenimports'])
 
-        self.hookspath = hookspath
+        self.hookspath = []
+        # Append directories in `hookspath` (`--additional-hooks-dir`) to
+        # take precedence over those from the entry points.
+        if hookspath:
+            self.hookspath.extend(hookspath)
+
+        # Add hook directories from PyInstaller entry points.
+        for entry_point in pkg_resources.iter_entry_points(
+                'pyinstaller40', 'hook-dirs'):
+            self.hookspath += list(entry_point.load()())
 
         # Custom runtime hook files that should be included and started before
         # any existing PyInstaller runtime hooks.
@@ -192,10 +220,10 @@ class Analysis(Target):
             # Create a Python module which contains the decryption key which will
             # be used at runtime by pyi_crypto.PyiBlockCipher.
             pyi_crypto_key_path = os.path.join(CONF['workpath'], 'pyimod00_crypto_key.py')
-            with open(pyi_crypto_key_path, 'w') as f:
-                f.write('key = %r\n' % cipher.key)
-            logger.info('Adding dependencies on pyi_crypto.py module')
-            self.hiddenimports.append(pyz_crypto.get_crypto_hiddenimports())
+            with open_file(pyi_crypto_key_path, 'w', encoding='utf-8') as f:
+                f.write('# -*- coding: utf-8 -*-\n'
+                        'key = %r\n' % cipher.key)
+            self.hiddenimports.append('tinyaes')
 
         self.excludes = excludes or []
         self.scripts = TOC()
@@ -209,6 +237,7 @@ class Analysis(Target):
         self.win_no_prefer_redirects = win_no_prefer_redirects
         self.win_private_assemblies = win_private_assemblies
         self._python_version = sys.version
+        self.noarchive = noarchive
 
         self.__postinit__()
 
@@ -222,7 +251,7 @@ class Analysis(Target):
         if datas:
             logger.info("Appending 'datas' from .spec")
             for name, pth in format_binaries_and_datas(datas, workingdir=spec_dir):
-                self.binaries.append((name, pth, 'DATA'))
+                self.datas.append((name, pth, 'DATA'))
 
     _GUTS = (# input parameters
             ('inputs', _check_guts_eq),  # parameter `scripts`
@@ -233,6 +262,7 @@ class Analysis(Target):
             ('custom_runtime_hooks', _check_guts_eq),
             ('win_no_prefer_redirects', _check_guts_eq),
             ('win_private_assemblies', _check_guts_eq),
+            ('noarchive', _check_guts_eq),
 
             #'cipher': no need to check as it is implied by an
             # additional hidden import
@@ -306,39 +336,27 @@ class Analysis(Target):
         """
         from ..config import CONF
 
-        # Either instantiate a ModuleGraph object or for tests reuse
-        # dependency graph already created.
-        # Do not reuse dependency graph when option --exclude-module was used.
-        if 'tests_modgraph' in CONF and not self.excludes:
-            logger.info('Reusing basic module graph object.')
-            self.graph = CONF['tests_modgraph']
-        else:
-            for m in self.excludes:
-                logger.debug("Excluding module '%s'" % m)
-            self.graph = initialize_modgraph(
-                excludes=self.excludes, user_hook_dirs=self.hookspath)
+        for m in self.excludes:
+            logger.debug("Excluding module '%s'" % m)
+        self.graph = initialize_modgraph(
+            excludes=self.excludes, user_hook_dirs=self.hookspath)
 
         # TODO Find a better place where to put 'base_library.zip' and when to created it.
         # For Python 3 it is necessary to create file 'base_library.zip'
         # containing core Python modules. In Python 3 some built-in modules
         # are written in pure Python. base_library.zip is a way how to have
         # those modules as "built-in".
-        if not is_py2:
-            libzip_filename = os.path.join(CONF['workpath'], 'base_library.zip')
-            create_py3_base_library(libzip_filename, graph=self.graph)
-            # Bundle base_library.zip as data file.
-            # Data format of TOC item:   ('relative_path_in_dist_dir', 'absolute_path_on_disk', 'DATA')
-            self.datas.append((os.path.basename(libzip_filename), libzip_filename, 'DATA'))
+        libzip_filename = os.path.join(CONF['workpath'], 'base_library.zip')
+        create_py3_base_library(libzip_filename, graph=self.graph)
+        # Bundle base_library.zip as data file.
+        # Data format of TOC item:   ('relative_path_in_dist_dir', 'absolute_path_on_disk', 'DATA')
+        self.datas.append((os.path.basename(libzip_filename), libzip_filename, 'DATA'))
 
         # Expand sys.path of module graph.
         # The attribute is the set of paths to use for imports: sys.path,
         # plus our loader, plus other paths from e.g. --path option).
         self.graph.path = self.pathex + self.graph.path
         self.graph.set_setuptools_nspackages()
-
-        # Analyze the script's hidden imports (named on the command line)
-        self.graph.add_hiddenimports(self.hiddenimports)
-
 
         logger.info("running Analysis %s", self.tocbasename)
         # Get paths to Python and, in Windows, the manifest.
@@ -376,25 +394,6 @@ class Analysis(Target):
         if is_win:
             depmanifest.writeprettyxml()
 
-
-        #FIXME: For simplicity, move the following hook caching into a new
-        #PyiModuleGraph.cache_module_hooks() method and have the current
-        #"PyiModuleGraph" instance own the current "ModuleHookCache" instance.
-
-        ### Hook cache.
-        logger.info('Caching module hooks...')
-
-        # List of all directories containing hook scripts. Default hooks are
-        # listed before and hence take precedence over custom hooks.
-        module_hook_dirs = [get_importhooks_dir()]
-        if self.hookspath:
-            module_hook_dirs.extend(self.hookspath)
-
-        # Hook cache prepopulated with these lazy loadable hook scripts.
-        module_hook_cache = ModuleHookCache(
-            module_graph=self.graph, hook_dirs=module_hook_dirs)
-
-
         ### Module graph.
         #
         # Construct the module graph of import relationships between modules
@@ -414,83 +413,15 @@ class Analysis(Target):
             logger.info("Analyzing %s", script)
             priority_scripts.append(self.graph.run_script(script))
 
+        # Analyze the script's hidden imports (named on the command line)
+        self.graph.add_hiddenimports(self.hiddenimports)
 
         ### Post-graph hooks.
-        #
-        # Run post-graph hooks for all modules imported by this user's
-        # application. For each iteration of the infinite "while" loop below:
-        #
-        # 1. All hook() functions defined in cached hooks for imported modules
-        #    are called. This may result in new modules being imported (e.g., as
-        #    hidden imports) that were ignored earlier in the current iteration:
-        #    if this is the case, all hook() functions defined in cached hooks
-        #    for these modules will be called by the next iteration.
-        # 2. All cached hooks whose hook() functions were called are removed
-        #    from this cache. If this cache is empty, no hook() functions will
-        #    be called by the next iteration and this loop will be terminated.
-        # 3. If no hook() functions were called, this loop is terminated.
-        logger.info('Loading module hooks...')
-
-        # Cache of all external dependencies (e.g., binaries, datas) listed in
-        # hook scripts for imported modules.
-        additional_files_cache = AdditionalFilesCache()
-
-        #FIXME: For orthogonality, move the following "while" loop into a new
-        #PyiModuleGraph.post_graph_hooks() method. The "PyiModuleGraph" class
-        #already handles all other hook types. Moreover, the graph node
-        #retrieval and type checking performed below are low-level operations
-        #best isolated into the "PyiModuleGraph" class itself.
-
-        # For each imported module, run this module's post-graph hooks if any.
-        while True:
-            # Set of the names of all imported modules whose post-graph hooks
-            # are run by this iteration, preventing the next iteration from re-
-            # running these hooks. If still empty at the end of this iteration,
-            # no post-graph hooks were run; thus, this loop will be terminated.
-            hooked_module_names = set()
-
-            # For each remaining hookable module and corresponding hooks...
-            for module_name, module_hooks in module_hook_cache.items():
-                # Graph node for this module if imported or "None" otherwise.
-                module_node = self.graph.findNode(
-                    module_name, create_nspkg=False)
-
-                # If this module has not been imported, temporarily ignore it.
-                # This module is retained in the cache, as a subsequently run
-                # post-graph hook could import this module as a hidden import.
-                if module_node is None:
-                    continue
-
-                # If this module is unimportable, permanently ignore it.
-                if type(module_node).__name__ not in VALID_MODULE_TYPES:
-                    hooked_module_names.add(module_name)
-                    continue
-
-                # For each hook script for this module...
-                for module_hook in module_hooks:
-                    # Run this script's post-graph hook if any.
-                    module_hook.post_graph()
-
-                    # Cache all external dependencies listed by this script
-                    # after running this hook, which could add dependencies.
-                    additional_files_cache.add(
-                        module_name,
-                        module_hook.binaries,
-                        module_hook.datas)
-
-                # Prevent this module's hooks from being run again.
-                hooked_module_names.add(module_name)
-
-            # Prevent all post-graph hooks run above from being run again by the
-            # next iteration.
-            module_hook_cache.remove_modules(*hooked_module_names)
-
-            # If no post-graph hooks were run, terminate iteration.
-            if not hooked_module_names:
-                break
+        self.graph.process_post_graph_hooks()
 
         # Update 'binaries' TOC and 'datas' TOC.
-        deps_proc = DependencyProcessor(self.graph, additional_files_cache)
+        deps_proc = DependencyProcessor(self.graph,
+                                        self.graph._additional_files_cache)
         self.binaries.extend(deps_proc.make_binaries_toc())
         self.datas.extend(deps_proc.make_datas_toc())
         self.zipped_data.extend(deps_proc.make_zipped_data_toc())
@@ -549,6 +480,30 @@ class Analysis(Target):
             self.binding_redirects[:] = list(set(self.binding_redirects))
             logger.info("Found binding redirects: \n%s", self.binding_redirects)
 
+        # Place Python source in data files for the noarchive case.
+        if self.noarchive:
+            # Create a new TOC of ``(dest path for .pyc, source for .py, type)``.
+            new_toc = TOC()
+            for name, path, typecode in self.pure:
+                assert typecode == 'PYMODULE'
+                # Transform a python module name into a file name.
+                name = name.replace('.', os.sep)
+                # Special case: modules have an implied filename to add.
+                if os.path.splitext(os.path.basename(path))[0] == '__init__':
+                    name += os.sep + '__init__'
+                # Append the extension for the compiled result.
+                # In python 3.5 (PEP-488) .pyo files were replaced by
+                # .opt-1.pyc and .opt-2.pyc. However, it seems that for
+                # bytecode-only module distribution, we always need to
+                # use the .pyc extension.
+                name += '.pyc'
+                new_toc.append((name, path, typecode))
+            # Put the result of byte-compiling this TOC in datas. Mark all entries as data.
+            for name, path, typecode in compile_py_files(new_toc, CONF['workpath']):
+                self.datas.append((name, path, 'DATA'))
+            # Store no source in the archive.
+            self.pure = TOC()
+
         # Write warnings about missing modules.
         self._write_warnings()
         # Write debug information about hte graph
@@ -559,42 +514,42 @@ class Analysis(Target):
         Write warnings about missing modules. Get them from the graph
         and use the graph to figure out who tried to import them.
         """
-        # TODO: previously we could say whether an import was top-level,
-        # deferred (in a def'd function) or conditional (in an if stmt).
-        # That information is not available from ModuleGraph at this time.
-        # When that info is available change this code to write one line for
-        # each importer-name, with type of import for that importer
-        # "no module named foo conditional/deferred/toplevel importy by bar"
+        def dependency_description(name, depInfo):
+            if not depInfo or depInfo == 'direct':
+                imptype = 0
+            else:
+                imptype = (depInfo.conditional
+                           + 2 * depInfo.function
+                           + 4 * depInfo.tryexcept)
+            return '%s (%s)' % (name, IMPORT_TYPES[imptype])
+
         from ..config import CONF
         miss_toc = self.graph.make_missing_toc()
-        if len(miss_toc) : # there are some missing modules
-            wf = open(CONF['warnfile'], 'w')
-            for (n, p, status) in miss_toc :
-                importer_names = self.graph.importer_names(n)
-                wf.write( status
-                          + ' module named '
-                          + n
-                          + ' - imported by '
-                          + ', '.join(importer_names)
-                          + '\n'
-                          )
-            wf.close()
-            logger.info("Warnings written to %s", CONF['warnfile'])
+        with open_file(CONF['warnfile'], 'w', encoding='utf-8') as wf:
+            wf.write(WARNFILE_HEADER)
+            for (n, p, status) in miss_toc:
+                importers = self.graph.get_importers(n)
+                print(status, 'module named', n, '- imported by',
+                      ', '.join(dependency_description(name, data)
+                                for name, data in importers),
+                      file=wf)
+        logger.info("Warnings written to %s", CONF['warnfile'])
 
     def _write_graph_debug(self):
         """Write a xref (in html) and with `--log-level DEBUG` a dot-drawing
         of the graph.
         """
         from ..config import CONF
-        with open(CONF['xref-file'], 'w') as fh:
+        with open_file(CONF['xref-file'], 'w', encoding='utf-8') as fh:
             self.graph.create_xref(fh)
             logger.info("Graph cross-reference written to %s", CONF['xref-file'])
         if logger.getEffectiveLevel() > logging.DEBUG:
             return
-        with open(CONF['dot-file'], 'w') as fh:
+        # The `DOT language's <https://www.graphviz.org/doc/info/lang.html>`_
+        # default character encoding (see the end of the linked page) is UTF-8.
+        with open_file(CONF['dot-file'], 'w', encoding='utf-8') as fh:
             self.graph.graphreport(fh)
             logger.info("Graph drawing written to %s", CONF['dot-file'])
-
 
     def _check_python_library(self, binaries):
         """
@@ -612,21 +567,9 @@ class Analysis(Target):
         # Python lib not in dependencies - try to find it.
         logger.info('Python library not in binary dependencies. Doing additional searching...')
         python_lib = bindepend.get_python_library_path()
-        if python_lib:
-            logger.debug('Adding Python library to binary dependencies')
-            binaries.append((os.path.basename(python_lib), python_lib, 'BINARY'))
-            logger.info('Using Python library %s', python_lib)
-        else:
-            msg = """Python library not found: %s
-This would mean your Python installation doesn't come with proper library files.
-This usually happens by missing development package, or unsuitable build parameters of Python installation.
-
-* On Debian/Ubuntu, you would need to install Python development packages
-  * apt-get install python3-dev
-  * apt-get install python-dev
-* If you're building Python by yourself, please rebuild your Python with `--enable-shared` (or, `--enable-framework` on Darwin)
-""" % (", ".join(PYDYLIB_NAMES),)
-            raise IOError(msg)
+        logger.debug('Adding Python library to binary dependencies')
+        binaries.append((os.path.basename(python_lib), python_lib, 'BINARY'))
+        logger.info('Using Python library %s', python_lib)
 
 
 class ExecutableBuilder(object):
@@ -641,16 +584,6 @@ def build(spec, distpath, workpath, clean_build):
     Build the executable according to the created SPEC file.
     """
     from ..config import CONF
-
-    # For combatibility with Python < 2.7.9 we can not use `lambda`,
-    # but need to declare _old_api_error as beeing global, see issue #1408
-    def TkPKG(*args, **kwargs):
-        global _old_api_error
-        _old_api_error('TkPKG')
-
-    def TkTree(*args, **kwargs):
-        global _old_api_error
-        _old_api_error('TkTree')
 
     # Ensure starting tilde and environment variables get expanded in distpath / workpath.
     # '~/path/abc', '${env_var_name}/path/abc/def'
@@ -670,7 +603,7 @@ def build(spec, distpath, workpath, clean_build):
     else:
         workpath = os.path.join(workpath, CONF['specnm'])
 
-    CONF['warnfile'] = os.path.join(workpath, 'warn%s.txt' % CONF['specnm'])
+    CONF['warnfile'] = os.path.join(workpath, 'warn-%s.txt' % CONF['specnm'])
     CONF['dot-file'] = os.path.join(workpath, 'graph-%s.dot' % CONF['specnm'])
     CONF['xref-file'] = os.path.join(workpath, 'xref-%s.html' % CONF['specnm'])
 
@@ -718,9 +651,6 @@ def build(spec, distpath, workpath, clean_build):
         'MERGE': MERGE,
         'PYZ': PYZ,
         'Tree': Tree,
-        # Old classes for .spec - raise Exception for user.
-        'TkPKG': TkPKG,
-        'TkTree': TkTree,
         # Python modules available for .spec.
         'os': os,
         'pyi_crypto': pyz_crypto,
@@ -731,11 +661,15 @@ def build(spec, distpath, workpath, clean_build):
     from ..config import CONF
     CONF['workpath'] = workpath
 
-    # Executing the specfile.
-    with open(spec, 'r') as f:
-        text = f.read()
-    exec(text, spec_namespace)
-
+    # Execute the specfile. Read it as a binary file...
+    try:
+        with open(spec, 'rb') as f:
+            # ... then let Python determine the encoding, since ``compile`` accepts
+            # byte strings.
+            code = compile(f.read(), spec, 'exec')
+    except FileNotFoundError as e:
+        raise SystemExit('spec "{}" not found'.format(spec))
+    exec(code, spec_namespace)
 
 def __add_options(parser):
     parser.add_argument("--distpath", metavar="DIR",

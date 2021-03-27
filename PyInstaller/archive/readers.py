@@ -1,10 +1,12 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2017, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 
@@ -15,10 +17,10 @@ This CArchiveReader is used only by the archieve_viewer utility.
 # TODO clean up this module
 
 import struct
+import os
 
 
-from PyInstaller.loader.pyimod02_archive import (
-    ArchiveReader, PYZ_TYPE_MODULE, PYZ_TYPE_PKG, PYZ_TYPE_DATA)
+from PyInstaller.loader.pyimod02_archive import ArchiveReader
 
 
 class NotAnArchiveError(Exception):
@@ -31,7 +33,8 @@ class CTOCReader(object):
 
     When written to disk, it is easily read from C.
     """
-    ENTRYSTRUCT = '!iiiiBB'  # (structlen, dpos, dlen, ulen, flag, typcd) followed by name
+    # (structlen, dpos, dlen, ulen, flag, typcd) followed by name
+    ENTRYSTRUCT = '!iIIIBB'
     ENTRYLEN = struct.calcsize(ENTRYSTRUCT)
 
     def __init__(self):
@@ -90,7 +93,7 @@ class CArchiveReader(ArchiveReader):
 
     Easily handled from C or from Python.
     """
-    # MAGIC is usefull to verify that conversion of Python data types
+    # MAGIC is useful to verify that conversion of Python data types
     # to C structure and back works properly.
     MAGIC = b'MEI\014\013\012\013\016'
     HDRLEN = 0
@@ -102,14 +105,14 @@ class CArchiveReader(ArchiveReader):
     #
     #   typedef struct _cookie {
     #       char magic[8]; /* 'MEI\014\013\012\013\016' */
-    #       int  len;      /* len of entire package */
-    #       int  TOC;      /* pos (rel to start) of TableOfContents */
+    #       uint32_t len;  /* len of entire package */
+    #       uint32_t TOC;  /* pos (rel to start) of TableOfContents */
     #       int  TOClen;   /* length of TableOfContents */
     #       int  pyvers;   /* new in v4 */
     #       char pylibname[64];    /* Filename of Python dynamic library. */
     #   } COOKIE;
     #
-    _cookie_format = '!8siiii64s'
+    _cookie_format = '!8sIIii64s'
     _cookie_size = struct.calcsize(_cookie_format)
 
     def __init__(self, archive_path=None, start=0, length=0, pylib_name=''):
@@ -141,19 +144,36 @@ class CArchiveReader(ArchiveReader):
         if self.length:
             self.lib.seek(self.start + self.length, 0)
         else:
-            self.lib.seek(0, 2)
-        filelen = self.lib.tell()
-        
-        self.lib.seek(max(0, filelen-4096)) 
-        searchpos = self.lib.tell()
-        buf = self.lib.read(min(filelen, 4096))
-        pos = buf.rfind(self.MAGIC)
-        if pos == -1:
+            self.lib.seek(0, os.SEEK_END)
+        end_pos = self.lib.tell()
+
+        SEARCH_CHUNK_SIZE = 8192
+        magic_offset = -1
+        while end_pos >= len(self.MAGIC):
+            start_pos = max(end_pos - SEARCH_CHUNK_SIZE, 0)
+            chunk_size = end_pos - start_pos
+            # Is the remaining chunk large enough to hold the pattern?
+            if chunk_size < len(self.MAGIC):
+                break
+            # Read and scan the chunk
+            self.lib.seek(start_pos, os.SEEK_SET)
+            buf = self.lib.read(chunk_size)
+            pos = buf.rfind(self.MAGIC)
+            if pos != -1:
+                magic_offset = start_pos + pos
+                break
+            # Adjust search location for next chunk; ensure proper
+            # overlap
+            end_pos = start_pos + len(self.MAGIC) - 1
+        if magic_offset == -1:
             raise RuntimeError("%s is not a valid %s archive file" %
                                (self.path, self.__class__.__name__))
-        filelen = searchpos + pos + self._cookie_size
+        filelen = magic_offset + self._cookie_size
+        # Read the whole cookie
+        self.lib.seek(magic_offset, os.SEEK_SET)
+        buf = self.lib.read(self._cookie_size)
         (magic, totallen, tocpos, toclen, pyvers, pylib_name) = struct.unpack(
-            self._cookie_format, buf[pos:pos+self._cookie_size])
+            self._cookie_format, buf)
         if magic != self.MAGIC:
             raise RuntimeError("%s is not a valid %s archive file" %
                                (self.path, self.__class__.__name__))
@@ -187,7 +207,7 @@ class CArchiveReader(ArchiveReader):
         For non-Python resoures, ispkg is meaningless (and 0).
         Used by the import mechanism.
         """
-        if type(name) == type(''):
+        if isinstance(name, str):
             ndx = self.toc.find(name)
             if ndx == -1:
                 return None

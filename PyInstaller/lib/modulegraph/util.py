@@ -1,4 +1,8 @@
-from __future__ import absolute_import
+
+# Filter DeprecationWarnings until the code has been revised
+import warnings
+warnings.filterwarnings("ignore", "the imp module is deprecated in")
+warnings.filterwarnings("ignore", "imp_walk will be removed in a future")
 
 import os
 import imp
@@ -13,7 +17,7 @@ try:
 except NameError:
     unicode = str
 
-from ._compat import StringIO, BytesIO, get_instructions
+from ._compat import StringIO, BytesIO, get_instructions, _READ_MODE
 
 
 def imp_find_module(name, path=None):
@@ -31,6 +35,7 @@ def imp_find_module(name, path=None):
         path = [result[1]]
     return result
 
+
 def _check_importer_for_path(name, path_item):
     try:
         importer = sys.path_importer_cache[path_item]
@@ -45,7 +50,6 @@ def _check_importer_for_path(name, path_item):
             importer = None
         sys.path_importer_cache.setdefault(path_item, importer)
 
-
     if importer is None:
         try:
             return imp.find_module(name, [path_item])
@@ -53,13 +57,16 @@ def _check_importer_for_path(name, path_item):
             return None
     return importer.find_module(name)
 
+
 def imp_walk(name):
     """
     yields namepart, tuple_or_importer for each path item
 
     raise ImportError if a name can not be found.
     """
-    warnings.warn("imp_walk will be removed in a future version", DeprecationWarning)
+    warnings.warn(
+        "imp_walk will be removed in a future version",
+        DeprecationWarning)
 
     if name in sys.builtin_module_names:
         yield name, (None, None, ("", "", imp.C_BUILTIN))
@@ -72,14 +79,23 @@ def imp_walk(name):
             if hasattr(res, 'load_module'):
                 if res.path.endswith('.py') or res.path.endswith('.pyw'):
                     fp = StringIO(res.get_source(namepart))
-                    res = (fp, res.path, ('.py', 'rU', imp.PY_SOURCE))
+                    res = (fp, res.path, ('.py', _READ_MODE, imp.PY_SOURCE))
                 elif res.path.endswith('.pyc') or res.path.endswith('.pyo'):
-                    co  = res.get_code(namepart)
-                    fp = BytesIO(imp.get_magic() + b'\0\0\0\0' + marshal.dumps(co))
+                    co = res.get_code(namepart)
+                    fp = BytesIO(
+                        imp.get_magic() + b'\0\0\0\0' + marshal.dumps(co))
                     res = (fp, res.path, ('.pyc', 'rb', imp.PY_COMPILED))
 
                 else:
-                    res = (None, loader.path, (os.path.splitext(loader.path)[-1], 'rb', imp.C_EXTENSION))
+                    res = (
+                        None,
+                        res.path,
+                        (
+                            os.path.splitext(res.path)[-1],
+                            'rb',
+                            imp.C_EXTENSION
+                        )
+                    )
 
                 break
             elif isinstance(res, tuple):
@@ -95,11 +111,12 @@ def imp_walk(name):
     raise ImportError('No module named %s' % (name,))
 
 
-cookie_re = re.compile(b"coding[:=]\s*([-\w.]+)")
+cookie_re = re.compile(br"coding[:=]\s*([-\w.]+)")
 if sys.version_info[0] == 2:
     default_encoding = 'ascii'
 else:
     default_encoding = 'utf-8'
+
 
 def guess_encoding(fp):
 
@@ -111,6 +128,7 @@ def guess_encoding(fp):
             return m.group(1).decode('ascii')
 
     return default_encoding
+
 
 def iterate_instructions(code_object):
     """Delivers the byte-code instructions as a continuous stream.

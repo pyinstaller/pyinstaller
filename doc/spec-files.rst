@@ -8,7 +8,7 @@ When you execute
     ``pyinstaller`` *options*.. ``myscript.py``
 
 the first thing |PyInstaller| does is to build a spec (specification) file
-file:`myscript.spec`.
+:file:`myscript.spec`.
 That file is stored in the ``--specpath=`` directory,
 by default the current directory.
 
@@ -61,6 +61,7 @@ Only the following command-line options have an effect when building from a spec
 * ``--ascii``
 * ``--clean``
 
+.. _spec-file operations:
 
 Spec File Operation
 ~~~~~~~~~~~~~~~~~~~~
@@ -69,7 +70,7 @@ After |PyInstaller| creates a spec file,
 or opens a spec file when one is given instead of a script,
 the ``pyinstaller`` command executes the spec file as code.
 Your bundled application is created by the execution of the spec file.
-The following is an shortened example of a spec file for a minimal, one-folder app::
+The following is a shortened example of a spec file for a minimal, one-folder app::
 
 	block_cipher = None
 	a = Analysis(['minimal.py'],
@@ -189,8 +190,8 @@ The spec file is more readable if you create the list of added files
 in a separate statement::
 
     added_files = [
-             ( 'src/README.txt', '.' )
-             ( '/mygame/sfx/*.mp3', 'sfx' ),
+             ( 'src/README.txt', '.' ),
+             ( '/mygame/sfx/*.mp3', 'sfx' )
              ]
 	a = Analysis(...
              datas = added_files,
@@ -200,9 +201,9 @@ in a separate statement::
 You can also include the entire contents of a folder::
 
     added_files = [
-             ( 'src/README.txt', '.' )
+             ( 'src/README.txt', '.' ),
              ( '/mygame/data', 'data' ),
-             ( '/mygame/sfx/*.mp3', 'sfx' ),
+             ( '/mygame/sfx/*.mp3', 'sfx' )
              ]
 
 The folder :file:`/mygame/data` will be reproduced under the name
@@ -215,7 +216,7 @@ Using Data Files from a Module
 --------------------------------
 
 If the data files you are adding are contained within a Python module,
-you can retrieve them using ``pkgutils.get_data()``.
+you can retrieve them using ``pkgutil.get_data()``.
 
 For example, suppose that part of your application is a module named ``helpmod``.
 In the same folder as your script and its spec file you have this folder
@@ -246,7 +247,7 @@ its contents using the standard library function ``pkgutil.get_data()``::
 	import pkgutil
 	help_bin = pkgutil.get_data( 'helpmod', 'help_data.txt' )
 
-In Python 3, this returns the contents of the :file:`help_data.txt`
+This returns the contents of the :file:`help_data.txt`
 file as a binary string.
 If it is actually characters, you must decode it::
 
@@ -258,11 +259,23 @@ If it is actually characters, you must decode it::
 Adding Binary Files
 --------------------
 
+.. Note:: `Binary` files refers to DLLs, dynamic libraries, shared
+   object-files, and such, which |PyInstaller| is going to search for further
+   `binary` dependencies. Files like images and PDFs should go into the
+   ``datas``.
+
 You can add binary files to the bundle by using the ``--add-binary`` command option, 
 or by adding them as a list to the spec file.
-
 In the spec file, make a list of tuples that describe the files needed.
 Assign the list of tuples to the ``binaries=`` argument of Analysis.
+ 
+Adding binary files works in a similar way as adding data files. As described in 
+:ref:`Adding Binary Files`, each tuple should have two values:
+
+    * The first string specifies the file or files as they are in this system now.
+
+    * The second specifies the name of the *folder* to contain
+      the files at run-time.
 
 Normally |PyInstaller| learns about ``.so`` and ``.dll`` libraries by
 analyzing the imported modules.
@@ -288,7 +301,15 @@ for platform-specific details)::
 
 	pyinstaller --add-binary '/usr/lib/libiodbc.2.dylib:.' myscript.py
 
+If you wish to store ``libiodbc.2.dylib`` on a specific folder inside the bundle, 
+for example ``vendor``, then you could specify it, using the second element of the tuple::
+
+    a = Analysis(...
+             binaries=[ ( '/usr/lib/libiodbc.2.dylib', 'vendor' ) ],
+             ...
+
 As with data files, if you have multiple binary files to add,
+to improve readability,
 create the list in a separate statement and pass the list by name.
 
 Advanced Methods of Adding Files
@@ -338,6 +359,10 @@ For example modify the spec file this way::
           exclude_binaries=...
           )
 
+.. Note:: The unbuffered stdio mode (the ``u`` option) enables unbuffered
+   binary layer of ``stdout`` and ``stderr`` streams on all supported Python
+   versions. The unbuffered text layer requires Python 3.7 or later.
+
 
 .. _spec file options for a mac os x bundle:
 
@@ -364,64 +389,52 @@ An :file:`Info.plist` file is an important part of a Mac OS X app bundle.
 of ``Info.plist``.)
 
 |PyInstaller| creates a minimal :file:`Info.plist`.
+The ``version`` option can be used to set the application version
+using the CFBundleShortVersionString Core Foundation Key.
+
 You can add or overwrite entries in the plist by passing an
-``info_plist=`` parameter to the BUNDLE call.
-The value of this argument is a Python dict.
-Each key and value in the dict becomes a key and value in the
-:file:`Info.plist` file.
-For example, when you use PyQt5,
-you can set ``NSHighResolutionCapable`` to ``True`` to let your app
-also work in retina screen::
+``info_plist=`` parameter to the BUNDLE call.  Its argument should be a
+Python dict with keys and values to be included in the :file:`Info.plist`
+file.
+|PyInstaller| creates :file:`Info.plist` from the info_plist dict
+using the Python Standard Library module plistlib_.
+plistlib can handle nested Python objects (which are translated to nested
+XML), and translates Python data types to the proper :file:`Info.plist`
+XML types.  Here's an example::
 
     app = BUNDLE(exe,
              name='myscript.app',
              icon=None,
-             bundle_identifier=None
+             bundle_identifier=None,
+             version='0.0.1',
              info_plist={
-             	'NSHighResolutionCapable': 'True'
+             	'NSPrincipalClass': 'NSApplication',
+                'NSAppleScriptEnabled': False,
+                'CFBundleDocumentTypes': [
+                    {
+                        'CFBundleTypeName': 'My File Format',
+                        'CFBundleTypeIconFile': 'MyFileIcon.icns',
+                        'LSItemContentTypes': ['com.example.myformat'],
+                        'LSHandlerRank': 'Owner'
+                        }
+                    ]
              	},
              )
 
-The ``info_plist=`` parameter only handles simple key:value pairs.
-It cannot handle nested XML arrays.
-For example, if you want to modify :file:`Info.plist` to tell Mac OS X
-what filetypes your app supports, you must add a 
-``CFBundleDocumentTypes`` entry to :file:`Info.plist`
-(see `Apple document types`_).
-The value of that keyword is a list of dicts,
-each containing up to five key:value pairs.
-
-To add such a value to your app's :file:`Info.plist` you must edit the
-plist file separately after |PyInstaller| has created the app.
-However, when you re-run |PyInstaller|, your changes will be wiped out.
-One solution is to prepare a complete :file:`Info.plist` file and
-copy it into the app after creating it.
-
-Begin by building and testing the windowed app.
-When it works, copy the ``Info.plist`` prepared by |PyInstaller|.
-This includes the ``CFBundleExecutable`` value as well as the
-icon path and bundle identifier if you supplied them.
-Edit the ``Info.plist`` as necessary to add more items
-and save it separately.
-
-From that point on, to rebuild the app call |PyInstaller| in a shell script,
-and follow it with a statement such as::
-
-    cp -f Info.plist dist/myscript.app/Contents/Info.plist
+In the above example, the key/value ``'NSPrincipalClass': 'NSApplication'`` is
+necessary to allow Mac OS X to render applications using retina resolution.
+The key ``'NSAppleScriptEnabled'`` is assigned the Python boolean
+``False``, which will be output to :file:`Info.plist` properly as ``<false/>``.
+Finally the key ``CFBundleDocumentTypes`` tells Mac OS X what filetypes your
+application supports (see `Apple document types`_).
 
 Multipackage Bundles
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. Note::
-	This feature is broken in the |PyInstaller| 3.0 release.
-	Do not attempt building multipackage bundles until the feature
-	is fixed. If this feature is important to you,
-	follow  and comment on `PyInstaller Issue #1527`_.
-
 Some products are made of several different apps,
 each of which might
 depend on a common set of third-party libraries, or share code in other ways.
-When packaging such an product it
+When packaging such a product it
 would be a pity to treat each app in isolation, bundling it with
 all its dependencies, because that means storing duplicate copies
 of code and libraries.
@@ -542,7 +555,7 @@ the apps :file:`dist/bar/bar` and :file:`dist/zap/zap` will refer to
 the contents of :file:`dist/foo/` for shared dependencies.
 
 There are several multipackage examples in the 
-|PyInstaller| distribution folder under :file:`/tests/old_suite/multipackage`.
+|PyInstaller| distribution folder under :file:`tests/functional/specs`.
 
 Remember that a spec file is executable Python.
 You can use all the Python facilities (``for`` and ``with``
@@ -590,7 +603,7 @@ Other globals contain information about the build environment:
 
 ``WARNFILE``
 	The full path to the warnings file in the build directory,
-	for example :file:`build/warnmyscript.txt`.
+	for example :file:`build/warn-myscript.txt`.
 
 
 .. include:: _common_definitions.txt

@@ -1,0 +1,4 @@
+Add support for package content listing via ``pkg_resources``. The
+implementation enables querying/listing resources in a frozen package
+(both PYZ-embedded and on-filesystem, in that order of precedence) via
+``pkg_resources.resource_exists()``, ``resource_isdir()``, and ``resource_listdir()``.

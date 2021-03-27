@@ -1,10 +1,12 @@
 # -----------------------------------------------------------------------------
-# Copyright (c) 2014-2017, PyInstaller Development Team.
+# Copyright (c) 2014-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 # -----------------------------------------------------------------------------
 import socket
 
@@ -77,8 +79,7 @@ def main():
         assert False, "Could not bind server port: all ports in use."
 
     httpd.socket = ssl.wrap_socket(
-        httpd.socket, certfile=SERVER_CERT, server_side=True,
-        ssl_version=ssl.PROTOCOL_TLSv1,
+        httpd.socket, certfile=SERVER_CERT, server_side=True
     )
 
     def ssl_server():

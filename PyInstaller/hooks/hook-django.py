@@ -1,27 +1,31 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2017, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 
-# Tested with django 1.8.
+# Tested with django 2.2
 
 
 import sys
 import glob
 import os
 from PyInstaller import log as logging
-from PyInstaller.utils.hooks import django_find_root_dir, django_dottedstring_imports, \
-        collect_data_files, collect_submodules, get_module_file_attribute, get_module_attribute
+from PyInstaller.utils.hooks import (
+    django_find_root_dir, django_dottedstring_imports, collect_all,
+    collect_submodules, collect_data_files, get_module_file_attribute,
+    get_module_attribute)
 
 
 logger = logging.getLogger(__name__)
 
-hiddenimports = []
+datas, binaries, hiddenimports = collect_all('django')
 
 
 root_dir = django_find_root_dir()
@@ -36,42 +40,20 @@ if root_dir:
     # Include main django modules - settings.py, urls.py, wsgi.py.
     # Without them the django server won't run.
     package_name = os.path.basename(root_dir)
+    default_settings_module = f'{package_name}.settings'
+    settings_module = os.environ.get('DJANGO_SETTINGS_MODULE', default_settings_module)
     hiddenimports += [
             # TODO Consider including 'mysite.settings.py' in source code as a data files.
             #      Since users might need to edit this file.
-            package_name + '.settings',
+            settings_module,
             package_name + '.urls',
             package_name + '.wsgi',
     ]
-    # Include some hidden modules that are not imported directly in django.
-    hiddenimports += [
-            'django.template.defaultfilters',
-            'django.template.defaulttags',
-            'django.template.loader_tags',
-            'django.template.context_processors',
-    ]
-    hiddenimports += collect_submodules('django.middleware')
-    hiddenimports += collect_submodules('django.templatetags')
-    # Other hidden imports to get Django example startproject working.
-    hiddenimports += [
-            'django.contrib.messages.storage.fallback',
-    ]
     # Django hiddenimports from the standard Python library.
-    if sys.version_info.major == 3:
-        # Python 3.x
-        hiddenimports += [
-                'http.cookies',
-                'html.parser',
-        ]
-    else:
-        # Python 2.x
-        hiddenimports += [
-                'Cookie',
-                'HTMLParser',
-        ]
-
-    # Include django data files - localizations, etc.
-    datas = collect_data_files('django')
+    hiddenimports += [
+        'http.cookies',
+        'html.parser',
+    ]
 
     # Bundle django DB schema migration scripts as data files.
     # They are necessary for some commands.
@@ -87,7 +69,7 @@ if root_dir:
              'django.contrib.sites.migrations',
     ]
     # Include migration scripts of Django-based apps too.
-    installed_apps = eval(get_module_attribute(package_name + '.settings', 'INSTALLED_APPS'))
+    installed_apps = eval(get_module_attribute(settings_module, 'INSTALLED_APPS'))
     migration_modules.extend(set(app + '.migrations' for app in installed_apps))
     # Copy migration files.
     for mod in migration_modules:

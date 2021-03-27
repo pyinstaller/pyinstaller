@@ -1,7 +1,15 @@
 #!/usr/bin/env python
-#
-# Copyright (c) 2017, PyInstaller Development Team.
+#-----------------------------------------------------------------------------
+# Copyright (c) 2017-2021, PyInstaller Development Team.
 # Author: Hartmut Goebel
+#
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
+#
+# The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
+#-----------------------------------------------------------------------------
 #
 # Verify if a list of pe-files was the expected arch-bits.
 #
@@ -14,12 +22,9 @@
 # used in the CI-tests prior to installing other packages. It does not use
 # `argparse` to reduce the overhead and be quick.
 
-from __future__ import print_function
-
 import glob
 import struct
 import sys
-import os
 
 # A more complete list can be found at
 # https://stackoverflow.com/questions/1001404/

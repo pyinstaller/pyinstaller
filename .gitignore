@@ -6,7 +6,13 @@
 __pycache__/
 /*.egg
 /*.egg-info/
+*.egg-info/
 /*.egg-link
+/.eggs/
+/.pytest_cache/
+/pip-wheel-metadata/
+/.coverage
+/.tox
 
 # /
 /AES.pyd
@@ -25,6 +31,9 @@ __pycache__/
 
 # PyCharm settings
 .idea
+
+# Spyder settings
+.spyproject
 
 # /tests/
 /tests/build*
@@ -89,3 +98,15 @@ tests/old_suite/basic/test_pyz_as_external_file.exe.pkg
 # py.test cache folder
 .cache
 *.prof
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# VSCode projects
+*.code-workspace

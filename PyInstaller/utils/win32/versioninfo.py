@@ -1,21 +1,47 @@
 # -*- coding: utf-8 -*-
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2017, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 
 import codecs
 import struct
 
-from ...compat import is_py3, win32api
+from ...compat import text_read_mode, win32api
 
 # ::TODO:: #1920 revert to using pypi version
 import pefile
+
+
+def pefile_check_control_flow_guard(filename):
+    """
+    Checks if the specified PE file has CFG (Control Flow Guard) enabled.
+
+    Parameters
+    ----------
+    filename : str
+        Path to the PE file to inspect.
+
+    Returns
+    ----------
+    bool
+        True if file is a PE file with CFG enabled. False if CFG is not
+        enabled or if file could not be processed using pefile library.
+    """
+    try:
+        pe = pefile.PE(filename)
+        # https://docs.microsoft.com/en-us/windows/win32/debug/pe-format
+        # IMAGE_DLLCHARACTERISTICS_GUARD_CF = 0x4000
+        return bool(pe.OPTIONAL_HEADER.DllCharacteristics & 0x4000)
+    except Exception:
+        return False
 
 
 # TODO implement read/write version information with pefile library.
@@ -98,24 +124,11 @@ def pefile_read_version(filename):
 LOAD_LIBRARY_AS_DATAFILE = 2
 
 
-if is_py3:
-    def getRaw(text):
-        """
-        Encodes text as UTF-16LE (Microsoft 'Unicode') for use in structs.
-        `bytes` is not allowed on Python 3.
-        """
-        return text.encode('UTF-16LE')
-else:
-    def getRaw(text):
-        """
-        Encodes text as UTF-16LE (Microsoft 'Unicode') for use in structs.
-        `unicode` is encoded to UTF-16LE, and `str` is first decoded from
-        `mbcs` before being re-encoded.
-        """
-        if isinstance(text, str):
-            text = text.decode('mbcs', errors='replace')
-
-        return text.encode('UTF-16LE')
+def getRaw(text):
+    """
+    Encodes text as UTF-16LE (Microsoft 'Unicode') for use in structs.
+    """
+    return text.encode('UTF-16LE')
 
 
 def decode(pathnm):
@@ -135,19 +148,7 @@ def nextDWord(offset):
     """ Align `offset` to the next 4-byte boundary """
     return ((offset + 3) >> 2) << 2
 
-if is_py3:
-    def _py3_str_compat(cls):
-        """
-        On Python 3, the special method __str__ is equivalent to the Python 2
-        method __unicode__.
-        """
-        cls.__str__ = cls.__unicode__
-        return cls
-else:
-    def _py3_str_compat(cls):
-        return cls
 
-@_py3_str_compat
 class VSVersionInfo:
     """
     WORD  wLength;        // length of the VS_VERSION_INFO structure
@@ -209,9 +210,12 @@ class VSVersionInfo:
         return (struct.pack('hhh', sublen, vallen, typ)
                 + raw_name + b'\000\000' + pad + rawffi + pad2 + tmp)
 
-    def __unicode__(self, indent=u''):
+    def __eq__(self, other):
+        return self.toRaw() == other
+
+    def __str__(self, indent=u''):
         indent = indent + u'  '
-        tmp = [kid.__unicode__(indent+u'  ')
+        tmp = [kid.__str__(indent+u'  ')
                for kid in self.kids]
         tmp = u', \n'.join(tmp)
         return (u"""# UTF-8
@@ -224,7 +228,11 @@ VSVersionInfo(
 %s
 %s]
 )
-""" % (indent, self.ffi.__unicode__(indent), indent, tmp, indent))
+""" % (indent, self.ffi.__str__(indent), indent, tmp, indent))
+
+    def __repr__(self):
+        return ("versioninfo.VSVersionInfo(ffi=%r, kids=%r)" %
+                (self.ffi, self.kids))
 
 
 def parseCommon(data, start=0):
@@ -243,7 +251,7 @@ def parseUString(data, start, limit):
     i += 2
     return i, text
 
-@_py3_str_compat
+
 class FixedFileInfo:
     """
     DWORD dwSignature;        //Contains the value 0xFEEFO4BD
@@ -298,11 +306,11 @@ class FixedFileInfo:
          self.fileType,
          self.fileSubtype,
          self.fileDateMS,
-         self.fileDateLS) = struct.unpack('13l', data[i:i+52])
-        return i+52
+         self.fileDateLS) = struct.unpack('13L', data[i:i + 52])
+        return i + 52
 
     def toRaw(self):
-        return struct.pack('L12l', self.sig,
+        return struct.pack('13L', self.sig,
                              self.strucVersion,
                              self.fileVersionMS,
                              self.fileVersionLS,
@@ -316,7 +324,10 @@ class FixedFileInfo:
                              self.fileDateMS,
                              self.fileDateLS)
 
-    def __unicode__(self, indent=u''):
+    def __eq__(self, other):
+        return self.toRaw() == other
+
+    def __str__(self, indent=u''):
         fv = (self.fileVersionMS >> 16, self.fileVersionMS & 0xffff,
               self.fileVersionLS >> 16, self.fileVersionLS & 0xFFFF)
         pv = (self.productVersionMS >> 16, self.productVersionMS & 0xffff,
@@ -346,8 +357,20 @@ class FixedFileInfo:
         ]
         return (u'\n'+indent+u'  ').join(tmp)
 
+    def __repr__(self):
+        fv = (self.fileVersionMS >> 16, self.fileVersionMS & 0xffff,
+              self.fileVersionLS >> 16, self.fileVersionLS & 0xffff)
+        pv = (self.productVersionMS >> 16, self.productVersionMS & 0xffff,
+              self.productVersionLS >> 16, self.productVersionLS & 0xffff)
+        fd = (self.fileDateMS, self.fileDateLS)
+        return ('versioninfo.FixedFileInfo(filevers=%r, prodvers=%r, '
+                'mask=0x%x, flags=0x%x, OS=0x%x, '
+                'fileType=%r, subtype=0x%x, date=%r)' %
+                (fv, pv,
+                 self.fileFlagsMask, self.fileFlags, self.fileOS,
+                 self.fileType, self.fileSubtype, fd))
 
-@_py3_str_compat
+
 class StringFileInfo(object):
     """
     WORD        wLength;      // length of the version resource
@@ -384,16 +407,21 @@ class StringFileInfo(object):
         return (struct.pack('hhh', sublen, vallen, typ)
                 + raw_name + b'\000\000' + pad + tmp)
 
-    def __unicode__(self, indent=u''):
+    def __eq__(self, other):
+        return self.toRaw() == other
+
+    def __str__(self, indent=u''):
         newindent = indent + u'  '
-        tmp = [kid.__unicode__(newindent)
+        tmp = [kid.__str__(newindent)
                for kid in self.kids]
         tmp = u', \n'.join(tmp)
         return (u'%sStringFileInfo(\n%s[\n%s\n%s])'
                 % (indent, newindent, tmp, newindent))
 
+    def __repr__(self):
+        return 'versioninfo.StringFileInfo(%r)' % self.kids
 
-@_py3_str_compat
+
 class StringTable:
     """
     WORD   wLength;
@@ -433,14 +461,19 @@ class StringTable:
         return (struct.pack('hhh', sublen, vallen, typ)
                 + raw_name + b'\000\000' + tmp)
 
-    def __unicode__(self, indent=u''):
+    def __eq__(self, other):
+        return self.toRaw() == other
+
+    def __str__(self, indent=u''):
         newindent = indent + u'  '
-        tmp = (u',\n%s' % newindent).join(u'%s' % (kid,) for kid in self.kids)
+        tmp = (u',\n%s' % newindent).join(str(kid) for kid in self.kids)
         return (u"%sStringTable(\n%su'%s',\n%s[%s])"
                 % (indent, newindent, self.name, newindent, tmp))
 
+    def __repr__(self):
+        return 'versioninfo.StringTable(%r, %r)' % (self.name, self.kids)
 
-@_py3_str_compat
+
 class StringStruct:
     """
     WORD   wLength;
@@ -477,8 +510,14 @@ class StringStruct:
                 + raw_val + b'\000\000')
         return abcd
 
-    def __unicode__(self, indent=''):
+    def __eq__(self, other):
+        return self.toRaw() == other
+
+    def __str__(self, indent=''):
         return u"StringStruct(u'%s', u'%s')" % (self.name, self.val)
+
+    def __repr__(self):
+        return 'versioninfo.StringStruct(%r, %r)' % (self.name, self.val)
 
 
 def parseCodePage(data, i, limit):
@@ -486,7 +525,6 @@ def parseCodePage(data, i, limit):
     return i, (sublen, wValueLength, wType, nm)
 
 
-@_py3_str_compat
 class VarFileInfo:
     """
     WORD  wLength;        // length of the version resource
@@ -526,11 +564,17 @@ class VarFileInfo:
         return (struct.pack('hhh', self.sublen, self.vallen, self.wType)
                 + raw_name + b'\000\000' + pad + tmp)
 
-    def __unicode__(self, indent=''):
-        return "%sVarFileInfo([%s])" % (indent, ', '.join(u'%s' % (kid,) for kid in self.kids))
+    def __eq__(self, other):
+        return self.toRaw() == other
+
+    def __str__(self, indent=''):
+        return (indent + "VarFileInfo([%s])" %
+                ', '.join(str(kid) for kid in self.kids))
+
+    def __repr__(self):
+        return 'versioninfo.VarFileInfo(%r)' % self.kids
 
 
-@_py3_str_compat
 class VarStruct:
     """
     WORD  wLength;        // length of the version resource
@@ -569,18 +613,40 @@ class VarStruct:
         return (struct.pack('hhh', self.sublen, self.wValueLength, self.wType)
                 + raw_name + b'\000\000' + pad + tmp)
 
-    def __unicode__(self, indent=u''):
+    def __eq__(self, other):
+        return self.toRaw() == other
+
+    def __str__(self, indent=u''):
         return u"VarStruct(u'%s', %r)" % (self.name, self.kids)
+
+    def __repr__(self):
+        return 'versioninfo.VarStruct(%r, %r)' % (self.name, self.kids)
 
 
 def SetVersion(exenm, versionfile):
     if isinstance(versionfile, VSVersionInfo):
         vs = versionfile
     else:
-        fp = codecs.open(versionfile, 'rU', 'utf-8')
-        txt = fp.read()
-        fp.close()
+        with codecs.open(versionfile, text_read_mode, 'utf-8') as fp:
+            txt = fp.read()
         vs = eval(txt)
+
+    # Remember overlay
+    pe = pefile.PE(exenm, fast_load=True)
+    overlay_before = pe.get_overlay()
+    pe.close()
+
     hdst = win32api.BeginUpdateResource(exenm, 0)
     win32api.UpdateResource(hdst, pefile.RESOURCE_TYPE['RT_VERSION'], 1, vs.toRaw())
     win32api.EndUpdateResource (hdst, 0)
+
+    if overlay_before:
+        # Check if the overlay is still present
+        pe = pefile.PE(exenm, fast_load=True)
+        overlay_after = pe.get_overlay()
+        pe.close()
+
+        # If the update removed the overlay data, re-append it
+        if not overlay_after:
+            with open(exenm, 'ab') as exef:
+                exef.write(overlay_before)

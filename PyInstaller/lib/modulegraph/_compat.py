@@ -11,9 +11,6 @@ if sys.version_info[0] == 2:
     # File open mode for reading (univeral newlines)
     _READ_MODE = "rU"
 
-    def Bchr(value):
-        return chr(value)
-
 else:
     PY2 = False
 
@@ -22,12 +19,7 @@ else:
     _cOrd = int
     _READ_MODE = "r"
 
-    def Bchr(value):
-        return value
-
 if sys.version_info < (3,):
     from dis3 import get_instructions
-elif sys.version_info < (3, 4):
-    from xdis.std import get_instructions
 else:
     from dis import get_instructions

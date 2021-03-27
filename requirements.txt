@@ -1,0 +1,16 @@
+# This is the pip requirements file for running PyInstaller.
+# If you want to run the test you will also need to install what is
+# defined in tests/requirements-tools.txt and for extensive testing
+# also tests/requirements-libraries.txt.
+
+## IMPORTANT: Keep aligned with setup.cfg
+
+setuptools<50.0.0   # 50.0.0 breaks a modulegraph regession test
+altgraph
+pyinstaller-hooks-contrib >= 2020.11
+pefile; sys_platform == 'win32'
+pywin32-ctypes; sys_platform == 'win32'
+macholib; sys_platform == 'darwin'
+importlib-metadata ; python_version < '3.8'
+
+## IMPORTANT: Keep aligned with setup.cfg

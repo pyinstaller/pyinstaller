@@ -1,10 +1,13 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2017, PyInstaller Development Team.
- * Distributed under the terms of the GNU General Public License with exception
- * for distributing bootloader.
+ * Copyright (c) 2013-2021, PyInstaller Development Team.
+ *
+ * Distributed under the terms of the GNU General Public License (version 2
+ * or later) with exception for distributing the bootloader.
  *
  * The full license is in the file COPYING.txt, distributed with this software.
+ *
+ * SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
  * ****************************************************************************
  */
 
@@ -12,25 +15,14 @@
  * Launch a python module from an archive.
  */
 
-/* TODO: use safe string functions */
-#define _CRT_SECURE_NO_WARNINGS 1
-
 #if defined(__APPLE__) && defined(WINDOWED)
     #include <Carbon/Carbon.h>  /* TransformProcessType */
 #endif
 
 #ifdef _WIN32
     #include <windows.h>
-    #include <winsock.h>  /* ntohl */
 #else
-    #ifdef __FreeBSD__
-/* freebsd issue #188316 */
-        #include <arpa/inet.h>  /* ntohl */
-    #else
-        #include <netinet/in.h>  /* ntohl */
-    #endif
     #include <langinfo.h> /* CODESET, nl_langinfo */
-    #include <limits.h>   /* PATH_MAX */
     #include <stdlib.h>   /* malloc */
 #endif
 #include <locale.h>  /* setlocale */
@@ -41,6 +33,7 @@
 #include <sys/stat.h> /* struct stat */
 
 /* PyInstaller headers. */
+#include "pyi_launch.h"
 #include "pyi_global.h"
 #include "pyi_path.h"
 #include "pyi_archive.h"
@@ -57,35 +50,39 @@
  * declarations are not necessary.
  */
 
-static int
+int
 checkFile(char *buf, const char *fmt, ...)
 {
     va_list args;
     struct stat tmp;
 
     va_start(args, fmt);
-    vsnprintf(buf, PATH_MAX, fmt, args);
+    if (vsnprintf(buf, PATH_MAX, fmt, args) >= PATH_MAX) {
+        return -1;
+    };
     va_end(args);
 
     return stat(buf, &tmp);
 }
 
 /* Splits the item in the form path:filename */
-static int
+int
 splitName(char *path, char *filename, const char *item)
 {
-    char name[PATH_MAX + 1];
+    char *p;
 
     VS("LOADER: Splitting item into path and filename\n");
-    strncpy(name, item, PATH_MAX + 1);
-
-    if (name[PATH_MAX] != '\0') {
+    // copy directly into destination buffer and manipulate there
+    if (snprintf(path, PATH_MAX, "%s", item) >= PATH_MAX) {
         return -1;
     }
-
-    strcpy(path, strtok(name, ":"));
-    strcpy(filename, strtok(NULL, ":"));
-
+    p = strchr(path, ':');
+    if (p == NULL) { // No colon in string
+        return -1;
+    };
+    p[0] ='\0'; // terminate path part
+    // `path` fits into PATH_MAX, so will all substrings
+    strcpy(filename, ++p);
     if (path[0] == 0 || filename[0] == 0) {
         return -1;
     }
@@ -138,22 +135,18 @@ _get_archive(ARCHIVE_STATUS *archive_pool[], const char *path)
         VS("LOADER: Checking next archive in the list...\n");
     }
 
-    archive = (ARCHIVE_STATUS *) malloc(sizeof(ARCHIVE_STATUS));
-
+    archive = pyi_arch_status_new();
     if (archive == NULL) {
-        FATAL_PERROR("malloc", "Error allocating memory for status\n");
         return NULL;
     }
 
-    strncpy(archive->archivename, path, PATH_MAX);
-    strncpy(archive->homepath, archive_pool[SELF]->homepath, PATH_MAX);
-    strncpy(archive->temppath, archive_pool[SELF]->temppath, PATH_MAX);
-
-    if (archive->archivename[PATH_MAX-1] != '\0'
-        || archive->homepath[PATH_MAX-1] != '\0'
-        || archive->temppath[PATH_MAX-1] != '\0') {
+    if ((snprintf(archive->archivename, PATH_MAX, "%s", path) >= PATH_MAX) ||
+        (snprintf(archive->homepath, PATH_MAX, "%s",
+                  archive_pool[SELF]->homepath) >= PATH_MAX) ||
+        (snprintf(archive->temppath, PATH_MAX, "%s",
+                  archive_pool[SELF]->temppath) >= PATH_MAX)) {
         FATALERROR("Archive path exceeds PATH_MAX\n");
-        free(archive);
+        pyi_arch_status_free(archive);
         return NULL;
     }
 
@@ -165,7 +158,7 @@ _get_archive(ARCHIVE_STATUS *archive_pool[], const char *path)
 
     if (pyi_arch_open(archive)) {
         FATAL_PERROR("malloc", "Error opening archive %s\n", path);
-        free(archive);
+        pyi_arch_status_free(archive);
         return NULL;
     }
 
@@ -263,7 +256,7 @@ _extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
 
         if (extractDependencyFromArchive(status, filename) == -1) {
             FATALERROR("Error extracting %s\n", filename);
-            free(status);
+            pyi_arch_status_free(status);
             return -1;
         }
     }
@@ -349,10 +342,69 @@ pyi_launch_extract_binaries(ARCHIVE_STATUS *archive_status)
      * of the main process - start with 2nd item.
      */
     for (index = 1; archive_pool[index] != NULL; index++) {
-        pyi_arch_status_free_memory(archive_pool[index]);
+        pyi_arch_status_free(archive_pool[index]);
     }
 
     return retcode;
+}
+
+/*
+ * Extract python exception message (string representation) from pvalue
+ * part of the error indicator data returned by PyErr_Fetch().
+ * Returns a copy of message string or NULL. Must be freed by caller.
+ */
+static char *
+_pyi_extract_exception_message(PyObject *pvalue)
+{
+    PyObject *pvalue_str;
+    const char *pvalue_cchar;
+    char *retval = NULL;
+
+    pvalue_str = PI_PyObject_Str(pvalue);
+    pvalue_cchar = PI_PyUnicode_AsUTF8(pvalue_str);
+    if (pvalue_cchar) {
+        retval = strdup(pvalue_cchar);
+    }
+    Py_DECREF(pvalue_str);
+
+    return retval;
+}
+
+/*
+ * Extract python exception traceback from error indicator data
+ * returned by PyErr_Fetch().
+ * Returns a copy of traceback string or NULL. Must be freed by caller.
+ */
+static char *
+_pyi_extract_exception_traceback(PyObject *ptype, PyObject *pvalue,
+                                 PyObject *ptraceback)
+{
+    PyObject *module;
+    char *retval = NULL;
+
+    /* Attempt to get a full traceback, source lines will only
+     * be available with --noarchive option */
+    module = PI_PyImport_ImportModule("traceback");
+    if (module != NULL) {
+        PyObject *func = PI_PyObject_GetAttrString(module, "format_exception");
+        if (func) {
+            PyObject *tb, *tb_str;
+            const char *tb_cchar;
+            tb = PI_PyObject_CallFunctionObjArgs(func, ptype, pvalue,
+                                                 ptraceback, NULL);
+            tb_str = PI_PyObject_Str(tb);
+            tb_cchar = PI_PyUnicode_AsUTF8(tb_str);
+            if (tb_cchar) {
+                retval = strdup(tb_cchar);
+            }
+            Py_DECREF(tb);
+            Py_DECREF(tb_str);
+        }
+        Py_DECREF(func);
+    }
+    Py_DECREF(module);
+
+    return retval;
 }
 
 /*
@@ -364,7 +416,6 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
 {
     unsigned char *data;
     char buf[PATH_MAX];
-    size_t namelen;
     TOC * ptoc = status->tocbuff;
     PyObject *__main__;
     PyObject *__file__;
@@ -392,27 +443,17 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
             data = pyi_arch_extract(status, ptoc);
             /* Set the __file__ attribute within the __main__ module,
              *  for full compatibility with normal execution. */
-            namelen = strnlen(ptoc->name, PATH_MAX);
-            if (namelen >= PATH_MAX-strlen(".py")-1) {
+            if (snprintf(buf, PATH_MAX, "%s.py", ptoc->name) >= PATH_MAX) {
                 FATALERROR("Name exceeds PATH_MAX\n");
                 return -1;
             }
-
-            strcpy(buf, ptoc->name);
-            strcat(buf, ".py");
             VS("LOADER: Running %s\n", buf);
-
-            if (is_py2) {
-                __file__ = PI_PyString_FromString(buf);
-            }
-            else {
-                __file__ = PI_PyUnicode_FromString(buf);
-            };
+            __file__ = PI_PyUnicode_FromString(buf);
             PI_PyObject_SetAttrString(__main__, "__file__", __file__);
             Py_DECREF(__file__);
 
             /* Unmarshall code object */
-            code = PI_PyMarshal_ReadObjectFromString((const char *) data, ntohl(ptoc->ulen));
+            code = PI_PyMarshal_ReadObjectFromString((const char *) data, ptoc->ulen);
 
             if (!code) {
                 FATALERROR("Failed to unmarshal code object for %s\n", ptoc->name);
@@ -422,15 +463,56 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
             /* Run it */
             retval = PI_PyEval_EvalCode(code, main_dict, main_dict);
 
-            /* If retval is NULL, an error occured. Otherwise, it is a Python object.
+            /* If retval is NULL, an error occurred. Otherwise, it is a Python object.
              * (Since we evaluate module-level code, which is not allowed to return an
              * object, the Python object returned is always None.) */
             if (!retval) {
-                PI_PyErr_Print();
+                #if defined(WINDOWED) && defined(LAUNCH_DEBUG)
+                    /* In windowed mode, we will display error details in
+                     * dialogs. For that, we need to extract the error
+                     * indicator data before PyErr_Print() call below clears
+                     * it. But it seems that for PyErr_Print() to properly
+                     * exit on SystemExit(), we also need to restore the error
+                     * indicator via PyErr_Restore(). Therefore, we extract
+                     * deep copies of relevant strings, and release all
+                     * references to error indicator and its data.
+                     */
+                    PyObject *ptype, *pvalue, *ptraceback;
+                    char *msg_exc, *msg_tb;
+
+                    PI_PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+                    msg_exc = _pyi_extract_exception_message(pvalue);
+                    msg_tb = _pyi_extract_exception_traceback(ptype, pvalue,
+                                                              ptraceback);
+                    PI_PyErr_Restore(ptype, pvalue, ptraceback);
+                #endif
+
                 /* If the error was SystemExit, PyErr_Print calls exit() without
-                 * returning. So don't print "Failed to execute" on SystemExit. */
+                 * returning. This means we won't print "Failed to execute" on 
+                 * normal SystemExit's.
+                 */
+                PI_PyErr_Print();
                 FATALERROR("Failed to execute script %s\n", ptoc->name);
-                return -1;
+
+                #if defined(WINDOWED) && defined(LAUNCH_DEBUG)
+                    /* As console is unavailable in windowed mode, we display
+                     * error details (exception message and traceback) in
+                     * additional error dialogs (Windows only).
+                     */
+                    if (msg_exc) {
+                        FATALERROR("Error: %s\n", msg_exc);
+                        free(msg_exc);
+                    }
+                    if (msg_tb) {
+                        FATALERROR("Traceback: %s\n", msg_tb);
+                        free(msg_tb);
+                    }
+                #endif /* if defined(WINDOWED) and defined(LAUNCH_DEBUG) */
+
+                /* Be consistent with python interpreter, which returns
+                 * 1 if it exits due to unhandled exception.
+                 */
+                return 1;
             }
             free(data);
         }
@@ -503,24 +585,19 @@ done:
 void
 pyi_launch_initialize(ARCHIVE_STATUS * status)
 {
-#if defined(__APPLE__) && defined(WINDOWED)
-    /*
-     * On OS X this ensures that the application is handled as GUI app.
-     * Call TransformProcessType() in the child process.
-     */
-    ProcessSerialNumber psn = { 0, kCurrentProcess };
-    OSStatus returnCode = TransformProcessType(&psn,
-                                               kProcessTransformToForegroundApplication);
-#elif defined(_WIN32)
+#if defined(_WIN32)
     char * manifest;
     manifest = pyi_arch_get_option(status, "pyi-windows-manifest-filename");
 
     if (NULL != manifest) {
-        manifest = pyi_path_join(NULL, status->mainpath, manifest);
-        CreateActContext(manifest);
-        free(manifest);
+        char manifest_path[PATH_MAX];
+        if (pyi_path_join(manifest_path, status->mainpath, manifest) == NULL) {
+            FATALERROR("Path of manifest-file (%s) length exceeds "
+                       "buffer[%d] space\n", status->mainpath, PATH_MAX);
+        };
+        CreateActContext(manifest_path);
     }
-#endif /* if defined(__APPLE__) && defined(WINDOWED) */
+#endif /* if defined(_WIN32) */
 }
 
 /*

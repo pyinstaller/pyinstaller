@@ -1,7 +1,7 @@
 import unittest
 import sys
-from PyInstaller.lib.altgraph.ObjectGraph import ObjectGraph
-from PyInstaller.lib.altgraph.Graph import Graph
+from altgraph.ObjectGraph import ObjectGraph
+from altgraph.Graph import Graph
 
 try:
     from StringIO import StringIO

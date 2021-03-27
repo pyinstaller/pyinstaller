@@ -1,66 +1,58 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2017, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 """
 Functional tests for PyGObject.
 """
 
+import pytest
+
 from PyInstaller.utils.tests import importorskip, parametrize
 
-
-## For PyGObject >= 1.0
-
-# Test the usability of "gi.repository" packages provided by PyGObject >= 1.0.
-@importorskip('gi.repository.Gst')
-def test_gi_gst_binding(pyi_builder):
-    pyi_builder.test_source('''
-        import gi
-        gi.require_version('Gst', '1.0')
-        from gi.repository import Gst
-        Gst.init(None)
-        print(Gst)
-    ''')
-
-
-## For PyGObject >= 2.0
-
-# Names of all "gi.repository" packages provided by PyGObject >= 2.0 to be
+# Names of all "gi.repository" packages provided by PyGObject  to be
 # tested below, typically corresponding to those packages hooked by PyInstaller.
-gi2_repository_names = ['GLib', 'GModule', 'GObject', 'GdkPixbuf', 'Gio',]
+gi_repositories = [('Gst', '1.0'), ('GLib', '2.0'), ('GModule', '2.0'),
+                   ('GObject', '2.0'), ('GdkPixbuf', '2.0'), ('Gio', '2.0'),
+                   ('Clutter', '1.0'), ('GtkClutter', '1.0'),
+                   ('Champlain', '0.12'), ('GtkChamplain', '0.12')]
+gi_repository_names = [x[0] for x in gi_repositories]
 
 # Names of the same packages, decorated to be skipped if unimportable.
-gi2_repository_names_skipped_if_unimportable = [
-    importorskip('gi.repository.' + gi2_repository_name)(gi2_repository_name)
-    for gi2_repository_name in gi2_repository_names
+gi_repositories_skipped_if_unimportable = [
+    pytest.param(gi_repository_name, gi_repository_version,
+    marks=importorskip('gi.repository.' + gi_repository_name))
+    for gi_repository_name, gi_repository_version in gi_repositories
 ]
 
-# Test the usability of "gi.repository" packages provided by PyGObject >= 2.0.
-# For simplicity, these tests are parametrized as
-# "test_gi2_repository[{one_type}-{repository_name}]" (e.g.,
-# "test_gi2_repository[onedir-GdkPixbuf]").
+
+# Test the usability of "gi.repository" packages provided by PyGObject.
 @importorskip('gi.repository')
 @parametrize(
-    'repository_name',
-    gi2_repository_names_skipped_if_unimportable,
+    ('repository_name', 'version'),
+    gi_repositories_skipped_if_unimportable,
     # Ensure human-readable test parameter names.
-    ids=gi2_repository_names)
-def test_gi2_repository(pyi_builder, repository_name):
+    ids=gi_repository_names)
+def test_gi_repository(pyi_builder, repository_name, version):
     '''
     Test the importability of the `gi.repository` subpackage with the passed
-    name installed with PyGObject >= 2.0 (e.g., `GLib`, corresponding to the
-    `gi.repository.GLib` subpackage).
+    name installed with PyGObject (e.g., `GLib`, corresponding to the
+    `gi.repository.GLib` subpackage). Version '1.0' are for PyGObject >=1.0,
+    '2.0' for PyGObject >= 2.0 and some other libraries have strange version
+    (eg. Champlain)
     '''
 
     # Test the importability of this subpackage.
     pyi_builder.test_source('''
         import gi
-        gi.require_version('{repository_name}', '2.0')
+        gi.require_version('{repository_name}', '{version}')
         from gi.repository import {repository_name}
         print({repository_name})
-        '''.format(repository_name=repository_name))
+        '''.format(repository_name=repository_name, version=version))

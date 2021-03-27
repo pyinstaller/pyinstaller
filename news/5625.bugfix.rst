@@ -1,0 +1,2 @@
+(Windows) Fix ``onefile`` builds not having manifest embedded when icon is 
+disabled via ``--icon NONE``.

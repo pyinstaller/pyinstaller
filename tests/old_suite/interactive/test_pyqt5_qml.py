@@ -1,10 +1,12 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2017, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 
@@ -36,8 +38,7 @@ def main():
     # The app dir is in the default import path but we can't put the QtQuick
     # import lib dirs there because of a name clash (on OSX) with the QtQuick
     # dll.
-    print(("Qt5 Qml import paths: " \
-                + unicode(quickview.engine().importPathList())))
+    print("Qt5 Qml import paths:", list(quickview.engine().importPathList()))
     quickview.setSource(QtCore.QUrl('qrc:/hello.qml'))
     quickview.engine().quit.connect(app.quit)
     quickview.show()

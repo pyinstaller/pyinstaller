@@ -1,11 +1,13 @@
-#! /usr/bin/env python
+# -*- mode: python -*- vim: filetype=python
 # -----------------------------------------------------------------------------
-# Copyright (c) 2014-2017, PyInstaller Development Team.
+# Copyright (c) 2014-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 # -----------------------------------------------------------------------------
 
 
@@ -19,7 +21,8 @@ import sys
 import re
 import sysconfig
 from waflib.Configure import conf
-from waflib import Logs, Utils
+from waflib import Logs, Utils, Options
+from waflib.Build import BuildContext, InstallContext
 
 # The following two variables are used by the target "waf dist"
 VERSION = 'nodist'
@@ -45,12 +48,14 @@ variants = {
 DESTOS_TO_SYSTEM = {
     'linux': 'Linux',
     'freebsd': 'FreeBSD',
+    'openbsd': 'OpenBSD',
     'win32': 'Windows',
     'darwin': 'Darwin',
-    'sunos': platform.system(), ## FIXME: inhibits cross-compile
+    'sunos': platform.system(),  ## FIXME: inhibits cross-compile
     'hpux': 'HP-UX',
     'aix': 'AIX',
-    }
+    'cygwin': platform.system(), ## FIXME: inhibits cross-compile
+}
 
 # Map from platform.system() to waf's DEST_OS
 SYSTEM_TO_BUILDOS = {
@@ -62,7 +67,8 @@ SYSTEM_TO_BUILDOS = {
     'SunOS': 'sunos',
     'HP-UX': 'hpux',
     'AIX': 'aix',
-    }
+    DESTOS_TO_SYSTEM['cygwin']: 'cygwin',
+}
 
 # waf's name of the system we are building on
 BUILD_OS = SYSTEM_TO_BUILDOS.get(platform.system(), platform.system())
@@ -76,13 +82,17 @@ def machine():
 
     Machine name in bootloader is necessary only for non-x86 architecture.
     """
-    mach = None  # Assume x86/x86_64 machine.
-    # Different name for arm is necessary.
-    if platform.machine().startswith('arm'):
-        mach = 'arm'
-    elif platform.machine().startswith('aarch'):
-        mach = 'aarch'
-    return mach
+    # IMPORTANT: Keep this in line with PyInstaller.compat.machine()
+    mach = platform.machine()
+    if mach.startswith('arm'):
+        return 'arm'
+    elif mach.startswith('aarch'):
+        return 'aarch'
+    elif mach.startswith('sw_64'):
+        return 'sw_64'
+    else:
+        # Assume x86/x86_64 machine.
+        return None
 
 
 def assoc_programm(ctx, name):
@@ -130,6 +140,13 @@ def options(ctx):
                         'and 64bit Python.',
                    default=None,
                    dest='target_arch')
+    ctx.add_option('--show-warnings', action='store_true',
+                   help='Make gcc print out the warnings we consider as '
+                        'being non-fatal. All other warinings are still '
+                        'treated as errors. Mind deleting the `build` '
+                        'directory first to ensure all files are actually '
+                        'recompiled.',
+                   dest='show_warnings')
 
     grp = ctx.add_option_group('Linux Standard Base (LSB) compliance',
                                'These options have effect only on Linux.')
@@ -188,7 +205,7 @@ def set_lsb_compiler(ctx):
     ## check LSBCC flags
     # --lsb-besteffort - binary will work on platforms without LSB stuff
     # --lsb-besteffort - available in LSB build tools >= 4.0
-    ctx.check_cc(ccflags='--lsb-besteffort',
+    ctx.check_cc(cflags='--lsb-besteffort',
                  msg='Checking for LSB build tools >= 4.0',
                  errmsg='LSB >= 4.0 is required', mandatory=True)
     ctx.env.append_value('CFLAGS', '--lsb-besteffort')
@@ -218,7 +235,6 @@ def check_sizeof_pointer(ctx):
         }''' % (type, expected)
         return ctx.check_cc(fragment=fragment, execute=False, mandatory=False)
 
-
     ctx.start_msg("Checking size of pointer")
     for size in (4, 8):
         if check("void *", size):
@@ -245,12 +261,16 @@ def detect_arch(ctx):
     if ctx.options.target_arch:
         arch = ctx.options.target_arch
         ctx.msg('Platform', '%s-%s manually chosen' % (system, arch))
+        ctx.env.ARCH_FLAGS_REQUIRED = True
     else:
         # PyInstaller uses the result of platform.architecture() to determine
         # the bits and this is testing the pointer size (via module struct).
         # We do the same here.
         arch = "%sbit" % (8 * check_sizeof_pointer(ctx))
         ctx.msg('Platform', '%s-%s detected based on compiler' % (system, arch))
+        ctx.env.ARCH_FLAGS_REQUIRED = False
+    if not arch in ('32bit','64bit'):
+        ctx.fatal('Unrecognized target architecture: %s' % arch)
 
     # Pass return values as environment variables.
     ctx.env.PYI_ARCH = arch  # '32bit' or '64bit'
@@ -263,6 +283,16 @@ def set_arch_flags(ctx):
     Set properly architecture flag (32 or 64 bit) cflags for compiler
     and CPU target for compiler.
     """
+    def check_arch_cflag(cflag32, cflag64):
+        cflag = cflag32 if ctx.env.PYI_ARCH == '32bit' else cflag64
+        if ctx.check_cc(cflags=cflag,
+                        features='c', # only compile, don't link
+                        mandatory=ctx.env.ARCH_FLAGS_REQUIRED):
+            ctx.env.append_value('CFLAGS', cflag)
+        if ctx.check_cc(linkflags=cflag,
+                        mandatory=ctx.env.ARCH_FLAGS_REQUIRED):
+            ctx.env.append_value('LINKFLAGS', cflag)
+
     if ctx.env.DEST_OS == 'win32' and ctx.env.CC_NAME == 'msvc':
         # Set msvc linkflags based on architecture.
         if ctx.env.PYI_ARCH == '32bit':
@@ -277,8 +307,14 @@ def set_arch_flags(ctx):
 
         # Enable 64bit porting warnings and other warnings too.
         ctx.env.append_value('CFLAGS', '/W3')
+        # Disable warnings about deprecated POSIX function names
+        ctx.env.append_value('CFLAGS', '/D_CRT_NONSTDC_NO_WARNINGS')
+        # Disable warnings about unsafe CRT functions
+        ctx.env.append_value('CFLAGS', '/D_CRT_SECURE_NO_WARNINGS')
         # We use SEH exceptions in winmain.c; make sure they are activated.
         ctx.env.append_value('CFLAGS', '/EHa')
+        # Set the PE checksum on resulting binary
+        ctx.env.append_value('LINKFLAGS', '/RELEASE')
 
     # Ensure proper architecture flags on Mac OS X.
     elif ctx.env.DEST_OS == 'darwin':
@@ -295,56 +331,21 @@ def set_arch_flags(ctx):
     # AIX specific flags
     elif ctx.env.DEST_OS == 'aix':
         if ctx.env.CC_NAME == 'gcc':
-            if ctx.env.PYI_ARCH == '32bit':
-                ctx.check_cc(ccflags='-maix32', msg='Checking for flags -maix32')
-                ctx.env.append_value('CFLAGS', '-maix32')
-                ctx.env.append_value('LINKFLAGS', '-maix32')
-            else:
-                ctx.check_cc(ccflags='-maix64', msg='Checking for flags -maix64')
-                ctx.env.append_value('CFLAGS', '-maix64')
-                ctx.env.append_value('LINKFLAGS', '-maix64')
+            check_arch_cflag('-maix32', '-maix64')
         else:
             # We are using AIX/xlc compiler
-            if ctx.env.PYI_ARCH == '32bit':
-                ctx.check_cc(ccflags='-q32', msg='Checking for flags -q32')
-                ctx.env.append_value('CFLAGS', '-q32')
-                ctx.env.append_value('LINKFLAGS', '-q32')
-            else:
-                ctx.check_cc(ccflags='-q64', msg='Checking for flags -q64')
-                ctx.env.append_value('CFLAGS', '-q64')
-                ctx.env.append_value('LINKFLAGS', '-q64')
+            check_arch_cflag('-q32', '-q64')
 
     elif ctx.env.DEST_OS == 'sunos':
         if ctx.env.CC_NAME == 'gcc':
-            if ctx.env.PYI_ARCH == '32bit':
-                ctx.check_cc(ccflags='-m32', msg='Checking for flags -m32')
-                ctx.env.append_value('CFLAGS', '-m32')
-                ctx.env.append_value('LINKFLAGS', '-m32')
-            else:
-                ctx.check_cc(ccflags='-m64', msg='Checking for flags -m64')
-                ctx.env.append_value('CFLAGS', '-m64')
-                ctx.env.append_value('LINKFLAGS', '-m64')
+            check_arch_cflag('-m32', '-m64')
         else:
             # We use SUNWpro C compiler
-            if ctx.env.PYI_ARCH == '32bit':
-                ctx.check_cc(ccflags='-xarch=generic', msg='Checking for flags -xarch=generic')
-                ctx.env.append_value('CFLAGS', '-xarch=generic')
-                ctx.env.append_value('LINKFLAGS', '-xarch=generic')
-            else:
-                ctx.check_cc(ccflags='-xarch=v9', msg='Checking for flags -xarch=v9')
-                ctx.env.append_value('CFLAGS', '-xarch=v9')
-                ctx.env.append_value('LINKFLAGS', '-xarch=v9')
+            check_arch_cflag('-xarch=generic', '-xarch=v9')
 
     elif ctx.env.DEST_OS == 'hpux':
         if ctx.env.CC_NAME == 'gcc':
-            if ctx.env.PYI_ARCH == '32bit':
-                ctx.check_cc(ccflags='-milp32', msg='Checking for flags -milp32')
-                ctx.env.append_value('CFLAGS', '-milp32')
-                ctx.env.append_value('LINKFLAGS', '-milp32')
-            else:
-                ctx.check_cc(ccflags='-mlp64', msg='Checking for flags -mlp64')
-                ctx.env.append_value('CFLAGS', '-mlp64')
-                ctx.env.append_value('LINKFLAGS', '-mlp64')
+            check_arch_cflag('-milp32', '-mlp64')
         else:
             # We use xlc compiler
             pass
@@ -354,36 +355,19 @@ def set_arch_flags(ctx):
         if machine() == 'sw_64':
             # The gcc has no '-m64' option under sw64 machine, but the
             # __x86_64__ macro needs to be defined
-            conf.env.append_value('CCDEFINES', '__x86_64__')
+            ctx.env.append_value('CCDEFINES', '__x86_64__')
         # This ensures proper compilation with 64bit gcc and 32bit Python
         # or vice versa or with manually choosen --target-arch.
         # Option -m32/-m64 has to be passed to cflags and linkflages.
-        elif ctx.env.PYI_ARCH == '32bit':
-            if machine() in ('arm', 'aarch') and ctx.env.DEST_OS == 'linux':
-                # It was reported that flag '-m32' does not work with gcc
-                # on 32-bit arm Linux. So skip the -m32 flag.
-                pass
-            else:
-                ctx.check_cc(ccflags='-m32', msg='Checking for flags -m32')
-                ctx.env.append_value('CFLAGS', '-m32')
-                ctx.env.append_value('LINKFLAGS', '-m32')
+        else:
+            check_arch_cflag('-m32', '-m64')
+        if ctx.env.PYI_ARCH == '32bit' and ctx.env.DEST_OS == 'win32':
             # Set LARGE_ADDRESS_AWARE_FLAG to True.
             # On Windows this allows 32bit apps to use 4GB of memory and
             # not only 2GB.
             # TODO verify if this option being as default might cause any side
             # effects.
-            if ctx.env.DEST_OS == 'win32':
-                ctx.env.append_value('LINKFLAGS', '-Wl,--large-address-aware')
-        elif ctx.env.PYI_ARCH == '64bit':
-            if machine() in ('arm', 'aarch') and ctx.env.DEST_OS == 'linux':
-                # flag '-m64' does not work with gcc on 64-bit arm/aarch Linux.
-                pass
-            else:
-                ctx.check_cc(ccflags='-m64', msg='Checking for flags -m64')
-                ctx.env.append_value('CFLAGS', '-m64')
-                ctx.env.append_value('LINKFLAGS', '-m64')
-        else:
-            ctx.fatal('Unrecognized target architecture: %s' % ctx.env.PYI_ARCH)
+            ctx.env.append_value('LINKFLAGS', '-Wl,--large-address-aware')
 
     # We need to pass architecture switch to the 'windres' tool.
     if ctx.env.DEST_OS == 'win32' and ctx.env.CC_NAME != 'msvc':
@@ -391,9 +375,13 @@ def set_arch_flags(ctx):
             ctx.env.WINRCFLAGS = ['--target=pe-i386']
         else:
             ctx.env.WINRCFLAGS = ['--target=pe-x86-64']
+        # Since WINRC config changed above, must set other options as well
+        ctx.env.WINRC_TGT_F = '-o'
+        ctx.env.WINRC_SRC_F = '-i'
 
 
 def configure(ctx):
+    ctx.msg('Python Version', sys.version.replace(os.linesep, ''))
     # For MSVC the target arch must already been set when the compiler is
     # searched.
     if ctx.options.target_arch == '32bit':
@@ -402,6 +390,7 @@ def configure(ctx):
         ctx.env['MSVC_TARGETS'] = ['x64']
 
     ### C compiler
+
     # Allow to use Clang if preferred.
     if ctx.options.clang:
         ctx.load('clang')
@@ -452,17 +441,6 @@ def configure(ctx):
             ctx.find_program([assoc_programm(ctx, 'windres')], var='WINRC')
             ctx.load('winres')
 
-    if ctx.env.CC_NAME != 'msvc':
-        # This tool allows reducing the size of executables.
-        ctx.find_program([assoc_programm(ctx, 'strip')], var='STRIP')
-        ctx.load('strip', tooldir='tools')
-        # There is a strip flag for AIX environment
-        if ctx.env.DEST_OS == 'aix':
-            if ctx.env.PYI_ARCH == '32bit':
-                ctx.env.append_value('STRIPFLAGS', '-X32')
-            elif ctx.env.PYI_ARCH == '64bit':
-                ctx.env.append_value('STRIPFLAGS', '-X64')
-
     ### C Compiler optimizations.
     # TODO Set proper optimization flags for MSVC (Visual Studio).
 
@@ -484,15 +462,18 @@ def configure(ctx):
 
     if ctx.env.CC_NAME == 'gcc':
         # !! These flags are gcc specific
-
-        # Make sure we don't use declarations after statement. It breaks
-        # MSVC (Visual Studio).
-        ctx.env.append_value('CFLAGS', '-Wdeclaration-after-statement')
-
-        # Require function declarations to avoid data type length mismatches
-        # Implicit return value is 'int' which is only 32 bits on Windows.
-        ctx.env.append_value('CFLAGS', '-Wimplicit-function-declaration')
-        ctx.env.append_value('CFLAGS', '-Werror')
+        # Turn on all warnings to improve code quality and avoid
+        # errors. Unused variables and unused functions are still
+        # accepted to avoid even more conditional code.
+        # If you are ever tempted to change this, review the commit
+        # history of this place first.
+        ctx.env.append_value('CFLAGS', ['-Wall',
+                                        '-Werror',
+                                        '-Wno-error=unused-variable',
+                                        '-Wno-error=unused-function'])
+        if not ctx.options.show_warnings:
+            ctx.env.append_value('CFLAGS', ['-Wno-unused-variable',
+                                            '-Wno-unused-function'])
 
     ### Defines, Includes
 
@@ -512,11 +493,13 @@ def configure(ctx):
 
             # TODO What other platforms support _FORTIFY_SOURCE macro? OS X?
             # TODO OS X's CLang appears to support this macro as well. See:
-            # http://permalink.gmane.org/gmane.comp.compilers.clang.devel/2442
+            # https://marc.info/?l=cfe-dev&m=122032133830183
 
             # For security, enable the _FORTIFY_SOURCE macro detecting buffer
             # overflows in various string and memory manipulation functions.
-            if ctx.env.CC_NAME == 'gcc':
+            if ctx.options.debug:
+                ctx.env.append_value('CFLAGS', '-U_FORTIFY_SOURCE')
+            elif ctx.env.CC_NAME == 'gcc':
                 # Undefine this macro if already defined by default to avoid
                 # "macro redefinition" errors.
                 ctx.env.append_value('CFLAGS', '-U_FORTIFY_SOURCE')
@@ -567,27 +550,27 @@ def configure(ctx):
 
 
     elif ctx.env.DEST_OS == 'darwin':
-        # OS X 10.7 might not understand some load commands.
-        # The following variable fixes 10.7 compatibility.
+        # macOS 10.13 is the oldest version supported by Apple.
         # According to OS X doc this variable is equivalent to gcc option:
-        #   -mmacosx-version-min=10.7
-        os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.7'
+        #   -mmacosx-version-min=10.13
+        if not os.environ.get('MACOSX_DEPLOYMENT_TARGET'):
+            os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.13'
 
     ### Libraries
 
     if ctx.env.DEST_OS == 'win32':
         if ctx.env.CC_NAME == 'msvc':
-            ctx.check_libs_msvc('user32 comctl32 kernel32 ws2_32',
+            ctx.check_libs_msvc('user32 comctl32 kernel32 advapi32',
                                 mandatory=True)
         else:
             ctx.check_cc(lib='user32', mandatory=True)
             ctx.check_cc(lib='comctl32', mandatory=True)
             ctx.check_cc(lib='kernel32', mandatory=True)
-            ctx.check_cc(lib='ws2_32', mandatory=True)
+            ctx.check_cc(lib='advapi32', mandatory=True)
     else:
         # Mac OS X and FreeBSD do not need libdl.
         # https://stackoverflow.com/questions/20169660/where-is-libdl-so-on-mac-os-x
-        if ctx.env.DEST_OS not in ('darwin', 'freebsd'):
+        if ctx.env.DEST_OS not in ('darwin', 'freebsd', 'openbsd'):
             ctx.check_cc(lib='dl', mandatory=True)
             # libdl to be thread-safe requires libpthread!
             ctx.check_cc(lib='pthread', mandatory=True)
@@ -608,11 +591,36 @@ def configure(ctx):
             ctx.env.append_value('DEFINES', 'GC_DEBUG')
             ctx.env.append_value('DEFINES', 'SAVE_CALL_CHAIN')
 
+    ctx.recurse("tests")
+
     ### Functions
 
-    # unsetenv not available on AIX, maybe others.
-    ctx.check_cc(function_name='unsetenv', header_name="stdlib.h", mandatory=False)
-    ctx.check_cc(function_name='mkdtemp', header_name="stdlib.h", mandatory=False)
+    # The old ``function_name`` parameter to ``check_cc`` is no longer
+    # supported. This code is based on old waf source at
+    # https://gitlab.com/ita1024/waf/commit/62fe305d04ed37b1be1a3327a74b2fee6c458634#255b2344e5268e6a34bedd2f8c4680798344fec7.
+    SNIP_FUNCTION = '''
+    #include <%s>
+
+    int main(int argc, char **argv) {
+        void (*p)();
+
+        (void)argc; (void)argv;
+        p=(void(*)())(%s);
+        return !p;
+    }
+'''
+    # OS support for these functions varies.
+    for header, function_name in (('stdlib.h', 'unsetenv'),
+                                  ('stdlib.h', 'mkdtemp'),
+                                  ('libgen.h', 'dirname'),
+                                  ('libgen.h', 'basename'),
+                                  ('string.h', 'strndup'),
+                                  ('string.h', 'strnlen')):
+        ctx.check(
+            fragment=SNIP_FUNCTION % (header, function_name),
+            mandatory=False,
+            define_name=ctx.have_define(function_name),
+            msg='Checking for function %s' % function_name)
 
     ### CFLAGS
 
@@ -621,6 +629,10 @@ def configure(ctx):
             # Use Unicode entry point wmain/wWinMain and wchar_t WinAPI
             ctx.env.append_value('CFLAGS', '-DUNICODE')
             ctx.env.append_value('CFLAGS', '-D_UNICODE')
+            # set XP target as minimal target OS ver. when using Windows w/MSVC
+            # https://blogs.msdn.microsoft.com/vcblog/2012/10/08/windows-xp-targeting-with-c-in-visual-studio-2012/
+            ctx.env.append_value('LINKFLAGS', '/SUBSYSTEM:CONSOLE,%s' % (
+                '5.01' if ctx.env.PYI_ARCH == '32bit' else '5.02'))
         else:
             # Use Visual C++ compatible alignment
             ctx.env.append_value('CFLAGS', '-mms-bitfields')
@@ -632,26 +644,42 @@ def configure(ctx):
             ctx.env.append_value('LINKFLAGS', '-municode')
 
     if ctx.env.DEST_OS == 'darwin':
-        ctx.env.append_value('CFLAGS', '-mmacosx-version-min=10.7')
-        ctx.env.append_value('LINKFLAGS', '-mmacosx-version-min=10.7')
+        if not any(x for x in ctx.env.CPPFLAGS + ctx.env.CFLAGS
+                   if x.startswith('-mmacosx-version-min=')):
+            ctx.env.append_value('CFLAGS', '-mmacosx-version-min=10.7')
+        if not any(x for x in ctx.env.LDFLAGS + ctx.env.LINKFLAGS
+                   if x.startswith('-mmacosx-version-min=')):
+            ctx.env.append_value('LINKFLAGS', '-mmacosx-version-min=10.7')
 
     # On linux link only with needed libraries.
     # -Wl,--as-needed is on some platforms detected during configure but
     # fails during build. (Mac OS X, Solaris, AIX)
-    if ctx.env.DEST_OS == 'linux' and ctx.check_cc(ccflags='-Wl,--as-needed',
-                                 msg='Checking for flags -Wl,--as-needed'):
+    if ctx.env.DEST_OS == 'linux' and ctx.check_cc(cflags='-Wl,--as-needed'):
         ctx.env.append_value('LINKFLAGS', '-Wl,--as-needed')
+
+    if ctx.env.CC_NAME != 'msvc':
+        # This tool allows reducing the size of executables.
+        ctx.find_program([assoc_programm(ctx, 'strip')], var='STRIP')
+        ctx.load('strip', tooldir='tools')
 
     def windowed(name, baseenv):
         """Setup windowed environment based on `baseenv`."""
         ctx.setenv(name, baseenv)  # Inherit from `baseenv`.
         ctx.env.append_value('DEFINES', 'WINDOWED')
 
-        if ctx.env.DEST_OS == 'win32' and ctx.env.CC_NAME != 'msvc':
-            # For MinGW disable console window on Windows - MinGW option
-            # TODO Is it necessary to have -mwindows for C and LINK flags?
-            ctx.env.append_value('LINKFLAGS', '-mwindows')
-            ctx.env.append_value('CFLAGS', '-mwindows')
+        if ctx.env.DEST_OS == 'win32':
+            if ctx.env.CC_NAME != 'msvc':
+                # For MinGW disable console window on Windows - MinGW option
+                # TODO Is it necessary to have -mwindows for C and LINK flags?
+                ctx.env.append_value('LINKFLAGS', '-mwindows')
+                ctx.env.append_value('CFLAGS', '-mwindows')
+            else:
+                _link_flags = ctx.env._get_list_value_for_modification('LINKFLAGS')
+                _subsystem = [x for x in _link_flags if x.startswith('/SUBSYSTEM:')]
+                for parameter in _subsystem:
+                    _link_flags.remove(parameter)
+                ctx.env.append_value('LINKFLAGS', '/SUBSYSTEM:WINDOWS,%s' % (
+                    '5.01' if ctx.env.PYI_ARCH == '32bit' else '5.02'))
         elif ctx.env.DEST_OS == 'darwin':
             # To support catching AppleEvents and running as ordinary OSX GUI
             # app, we have to link against the Carbon framework.
@@ -683,7 +711,6 @@ def configure(ctx):
     ## setup windowed RELEASE environment
     windowed('releasew', release_env)
 
-
 # TODO Use 'strip' command to decrease the size of compiled bootloaders.
 def build(ctx):
     if not ctx.variant:
@@ -714,15 +741,21 @@ def build(ctx):
         # Do not strip bootloaders when using MSVC.
         features = ''
 
+    ctx.objects(source=ctx.path.ant_glob('src/*.c', excl="src/main.c"),
+                includes='src windows zlib',
+                target="OBJECTS")
+
+    ctx.env.link_with_dynlibs = []
+    ctx.env.link_with_staticlibs = []
     if ctx.env.DEST_OS == 'win32':
         # Use different RC file (icon) for console/windowed mode - remove '_d'
         icon_rc = 'windows/' + exe_name.replace('_d', '') + '.rc'
         # On Windows we need to link library zlib statically.
         ctx.program(
-            source=ctx.path.ant_glob(['src/*.c', icon_rc]),
+            source=['src/main.c', icon_rc],
             target=exe_name,
             install_path=install_path,
-            use='USER32 COMCTL32 KERNEL32 WS2_32 Z',
+            use='OBJECTS USER32 COMCTL32 KERNEL32 ADVAPI32 Z',
             includes='src windows zlib',
             features=features,
         )
@@ -736,24 +769,28 @@ def build(ctx):
                 'THR'] # may be used on FreBSD
         staticlibs = []
         if ctx.env.DEST_OS == 'aix':
-            # link statically with zlib
+            # link statically with zlib, case sensitive
             libs.remove('Z')
-            staticlibs.append('Z')
+            staticlibs.append('z')
 
         if ctx.options.boehmgc:
             libs.append('GC')
 
+        ctx.env.link_with_dynlibs = libs
+        ctx.env.link_with_staticlibs = staticlibs
+
         ctx.program(
-            source=ctx.path.ant_glob('src/*.c'),
+            source='src/main.c',
             target=exe_name,
             includes='src',
-            use=libs,
+            use=libs + ["OBJECTS"],
             stlib=staticlibs,
             install_path=install_path,
             features=features)
 
+    ctx.recurse("tests")
 
-from waflib.Build import BuildContext
+
 class make_all(BuildContext):
     """
     Do build and install in one step.
@@ -761,7 +798,6 @@ class make_all(BuildContext):
     cmd = 'make_all'
 
     def execute_build(ctx):
-        from waflib import Options, Scripting
         Options.commands = ['build_debug', 'build_release']
         # On Windows and Mac OS X we also need console/windowed bootloaders.
         # On other platforms they make no sense.
@@ -772,6 +808,7 @@ class make_all(BuildContext):
         if ctx.env.DEST_OS in ('win32', 'darwin'):
             Options.commands += ['install_debugw', 'install_releasew']
 
+
 def all(ctx):
     """
     Do configure, build and install in one step.
@@ -779,18 +816,14 @@ def all(ctx):
     # `all` is run prior to `configure`, thus it does not get a build context.
     # Thus another command `make_all` is required which gets the build
     # context and can make decisions based on the outcome of `configure`.
-    from waflib import Options, Scripting
     Options.commands = ['distclean', 'configure', 'make_all']
 
 
 # Set up building several variants of bootloader.
-from waflib.Build import BuildContext, InstallContext
-
 for x in variants:
     class BootloaderContext(BuildContext):
         cmd = 'build' + '_' + x
         variant = x
-
 
     class BootloaderInstallContext(InstallContext):
         cmd = 'install' + '_' + x

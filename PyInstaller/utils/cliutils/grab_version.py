@@ -1,18 +1,17 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2017, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 
 import codecs
-import os
 import argparse
-
-import PyInstaller.log
 
 
 def run():
@@ -34,10 +33,9 @@ def run():
         vs = PyInstaller.utils.win32.versioninfo.decode(args.exe_file)
         if not vs:
             raise SystemExit("Error: VersionInfo resource not found in exe")
-        fp = codecs.open(args.out_filename, 'w', 'utf-8')
-        fp.write(u"%s" % (vs,))
-        fp.close()
-        print(('Version info written to: %s' % args.out_filename))
+        with codecs.open(args.out_filename, 'w', 'utf-8') as fp:
+            fp.write(u"%s" % (vs,))
+        print('Version info written to: %s' % args.out_filename)
     except KeyboardInterrupt:
         raise SystemExit("Aborted by user request.")
 

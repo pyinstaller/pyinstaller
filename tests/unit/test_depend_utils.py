@@ -1,10 +1,12 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2017, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 
@@ -13,7 +15,7 @@ import pytest
 import textwrap
 
 from PyInstaller.depend import utils
-from PyInstaller.compat import (is_unix, is_win, PYDYLIB_NAMES)
+from PyInstaller.compat import is_unix, is_win
 
 
 CTYPES_CLASSNAMES = (
@@ -81,7 +83,7 @@ def test_ctypes_util_find_library_as_default_argument():
     utils.scan_code_for_ctypes(co)
 
 
-@pytest.mark.skipif(not is_unix, reason="requires a Unix System")
+@pytest.mark.linux
 def test_ldconfig_cache():
     utils.load_ldconfig_cache()
     libpath = None

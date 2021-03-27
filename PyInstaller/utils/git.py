@@ -1,10 +1,12 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2017, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 
@@ -13,12 +15,12 @@ This module contains various helper functions for git DVCS
 """
 
 import os
-from ..compat import exec_command, exec_command_rc, FileNotFoundError
+from ..compat import exec_command, exec_command_rc
 
 try:
     WindowsError
 except NameError:
-    # No running on Windows
+    # Not running on Windows
     WindowsError = FileNotFoundError
 
 def get_repo_revision():

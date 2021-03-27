@@ -1,10 +1,12 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2017, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 # With module 'pkg_resources' it should not matter if a file is stored
@@ -17,9 +19,9 @@ expected_data = 'This is data text for testing the packaging module data.'.encod
 # With frozen app the resources is available in directory
 # os.path.join(sys._MEIPASS, 'pkg3/sample-data.txt')
 data = res.resource_string(pkg3.__name__, 'sample-data.txt')
-if data:
-    data = data.strip()
+if not data:
+    raise SystemExit('Error: Could not read data with pkgutil.get_data().')
 
-if data != expected_data:
-    raise SystemExit('Error: Could not read data with pkg_resources module.')
+if data.strip() != expected_data:
+    raise SystemExit('Error: Read data is wrong: %r' % data)
 print('Okay: Resource data read.')

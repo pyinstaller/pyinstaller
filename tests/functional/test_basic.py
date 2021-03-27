@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2017, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License with exception
-# for distributing bootloader.
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
 # Library imports
@@ -20,22 +22,44 @@ import pytest
 
 # Local imports
 # -------------
-from PyInstaller.compat import is_darwin, is_win, is_py2, is_py3, is_py34
-from PyInstaller.utils.tests import importorskip, skipif_win, \
-    skipif_winorosx, skipif_notwin, skipif_notosx, skipif_no_compiler, xfail
+from PyInstaller.compat import is_darwin, is_win, is_py37
+from PyInstaller.utils.tests import importorskip, skipif, \
+    skipif_no_compiler, xfail
 
 
 def test_run_from_path_environ(pyi_builder):
     pyi_builder.test_script('pyi_absolute_python_path.py', run_from_path=True)
 
 
-@skipif_winorosx
+@pytest.mark.linux
 def test_absolute_ld_library_path(pyi_builder):
     pyi_builder.test_script('pyi_absolute_ld_library_path.py')
 
 
 def test_absolute_python_path(pyi_builder):
     pyi_builder.test_script('pyi_absolute_python_path.py')
+
+
+@pytest.mark.linux
+@skipif(not os.path.exists('/proc/self/status'),
+        reason='/proc/self/status does not exist')
+@pytest.mark.parametrize("symlink_name",
+                         ["symlink",
+                          "very_long_name_in_symlink",
+                          "sub/dir/progam"])
+def test_symlink_basename_is_kept(pyi_builder_spec, symlink_name,
+                                  tmpdir, SPEC_DIR, SCRIPT_DIR):
+
+    def patch(spec_name, symlink_name):
+        content = SPEC_DIR.join(spec_name).read_text(encoding="utf-8")
+        content = content.replace("@SYMLINKNAME@", symlink_name)
+        content = content.replace("@SCRIPTDIR@", str(SCRIPT_DIR))
+        outspec = tmpdir.join(spec_name)
+        outspec.write_text(content, encoding="utf-8", ensure=True)
+        return outspec
+
+    specfile = patch("symlink_basename_is_kept.spec", symlink_name)
+    pyi_builder_spec.test_spec(str(specfile), app_name=symlink_name)
 
 
 def test_pyz_as_external_file(pyi_builder, monkeypatch):
@@ -46,11 +70,11 @@ def test_pyz_as_external_file(pyi_builder, monkeypatch):
         kwargs['append_pkg'] = False
         return EXE(*args, **kwargs)
 
-    # :todo: find a better way to not even run this test in ondir-mode
+    # :todo: find a better way to not even run this test in onefile-mode
     if pyi_builder._mode == 'onefile':
         pytest.skip('only --onedir')
 
-    import PyInstaller
+    import PyInstaller.building.build_main
     EXE = PyInstaller.building.build_main.EXE
     monkeypatch.setattr('PyInstaller.building.build_main.EXE', MyEXE)
 
@@ -75,6 +99,13 @@ def test_celementtree(pyi_builder):
         print('OK')
         """)
 
+
+# Test a build with some complexity with the ``noarchive`` debug option.
+def test_noarchive(pyi_builder):
+    pyi_builder.test_source("from xml.etree.cElementTree import ElementTree",
+                            pyi_args=['--debug=noarchive'])
+
+
 @importorskip('codecs')
 def test_codecs(pyi_builder):
     pyi_builder.test_script('pyi_codecs.py')
@@ -92,11 +123,7 @@ def test_compiled_filenames(pyi_builder):
 def test_decoders_ascii(pyi_builder):
     pyi_builder.test_source(
         """
-        # This import forces Python 2 to handle string as unicode -
-        # as with prefix 'u'.
-        from __future__ import unicode_literals
-
-        # Convert type 'bytes' to type 'str' (Py3) or 'unicode' (Py2).
+        # Convert type 'bytes' to type 'str'.
         assert b'foo'.decode('ascii') == 'foo'
         """)
 
@@ -123,8 +150,6 @@ def test_dynamic_module(pyi_builder):
 
 
 def test_email(pyi_builder):
-    # Test import of new-style email module names.
-    # This should work on Python 2.5+
     pyi_builder.test_source(
         """
         from email import utils
@@ -134,15 +159,17 @@ def test_email(pyi_builder):
         from email.mime.nonmultipart import MIMENonMultipart
         """)
 
-@importorskip('Crypto')
+
+@importorskip('tinyaes')
 def test_feature_crypto(pyi_builder):
     pyi_builder.test_source(
         """
         from pyimod00_crypto_key import key
         from pyimod02_archive import CRYPT_BLOCK_SIZE
 
-        # Issue 1663: Crypto feature caused issues when using PyCrypto module.
-        import Crypto.Cipher.AES
+        # Test against issue #1663: importing a package in the bootstrap
+        # phase should not interfere with subsequent imports.
+        import tinyaes
 
         assert type(key) is str
         # The test runner uses 'test_key' as key.
@@ -262,7 +289,7 @@ def test_option_verbose(pyi_builder, monkeypatch):
         args.append([('v', None, 'OPTION')])
         return EXE(*args, **kwargs)
 
-    import PyInstaller
+    import PyInstaller.building.build_main
     EXE = PyInstaller.building.build_main.EXE
     monkeypatch.setattr('PyInstaller.building.build_main.EXE', MyEXE)
 
@@ -282,7 +309,8 @@ def test_option_w_unset(pyi_builder):
         assert 'ignore' not in sys.warnoptions
         """)
 
-def test_option_w_ignore(pyi_builder, monkeypatch):
+
+def test_option_w_ignore(pyi_builder, monkeypatch, capsys):
     "Test to ensure that option W can be set."
 
     def MyEXE(*args, **kwargs):
@@ -290,7 +318,7 @@ def test_option_w_ignore(pyi_builder, monkeypatch):
         args.append([('W ignore', '', 'OPTION')])
         return EXE(*args, **kwargs)
 
-    import PyInstaller
+    import PyInstaller.building.build_main
     EXE = PyInstaller.building.build_main.EXE
     monkeypatch.setattr('PyInstaller.building.build_main.EXE', MyEXE)
 
@@ -300,10 +328,45 @@ def test_option_w_ignore(pyi_builder, monkeypatch):
         assert 'ignore' in sys.warnoptions
         """)
 
+    _, err = capsys.readouterr()
+    assert "'import warnings' failed" not in err
 
-@skipif_win
-def test_python_makefile(pyi_builder):
-    pyi_builder.test_script('pyi_python_makefile.py')
+
+@pytest.mark.parametrize("distutils", ["", "from distutils "])
+def test_python_makefile(pyi_builder, distutils):
+    """Tests hooks for ``sysconfig`` and its near-duplicate
+    ``distutils.sysconfig``. Raises an import error if we failed to collect the
+    special module that contains the details from pyconfig.h and the makefile.
+    """
+    # Ideally we'd test that the contents of `sysconfig.get_config_vars()` dict
+    # are the same frozen vs unfrozen but because some values are paths into
+    # a Python installation's guts, these will point into the frozen app when
+    # frozen and therefore noy match. Without some fiddly filtering away paths,
+    # this is impossible.
+
+    # As a compromise, test that the dictionary keys are the same to be sure
+    # that there is no conditional initialisation of get_config_vars(). i.e.
+    # get_config_vars() doesn't silently return an empty dictionary if it can't
+    # find the information it needs.
+    if distutils:
+        from distutils import sysconfig
+    else:
+        import sysconfig
+    unfrozen_keys = sorted(sysconfig.get_config_vars().keys())
+
+    pyi_builder.test_source("""
+    # The error is raised immediately on import.
+    {}import sysconfig
+
+    # But just in case, Python later opt for some lazy loading, force
+    # configuration retrieval:
+    from pprint import pprint
+    pprint(sysconfig.get_config_vars())
+
+    unfrozen_keys = {}
+    assert sorted(sysconfig.get_config_vars()) == unfrozen_keys
+
+    """.format(distutils, unfrozen_keys))
 
 
 def test_set_icon(pyi_builder, data_dir):
@@ -330,14 +393,7 @@ def test_stderr_encoding(tmpdir, pyi_builder):
     #             OEM codepage. spawned subprocess has the same encoding. test passes.
     #
     with open(os.path.join(tmpdir.strpath, 'stderr_encoding.build'), 'w') as f:
-        if is_py2:
-            if sys.stderr.isatty() and is_win:
-                enc = str(sys.stderr.encoding)
-            else:
-                # In Python 2 on Mac OS X and Linux 'sys.stderr.encoding' is set to None.
-                # On Windows when running in non-interactive terminal it is None.
-                enc = 'None'
-        elif sys.stderr.isatty():
+        if sys.stderr.isatty():
             enc = str(sys.stderr.encoding)
         else:
             # For non-interactive stderr use locale encoding - ANSI codepage.
@@ -349,14 +405,7 @@ def test_stderr_encoding(tmpdir, pyi_builder):
 
 def test_stdout_encoding(tmpdir, pyi_builder):
     with open(os.path.join(tmpdir.strpath, 'stdout_encoding.build'), 'w') as f:
-        if is_py2:
-            if sys.stdout.isatty() and is_win:
-                enc = str(sys.stdout.encoding)
-            else:
-                # In Python 2 on Mac OS X and Linux 'sys.stdout.encoding' is set to None.
-                # On Windows when running in non-interactive terminal it is None.
-                enc = 'None'
-        elif sys.stdout.isatty():
+        if sys.stdout.isatty():
             enc = str(sys.stdout.encoding)
         else:
             # For non-interactive stderr use locale encoding - ANSI codepage.
@@ -378,15 +427,15 @@ def test_time_module(pyi_builder):
         """)
 
 
-@skipif_win
+@pytest.mark.darwin
+@pytest.mark.linux
 def test_time_module_localized(pyi_builder, monkeypatch):
     # This checks that functions 'time.ctime()' and 'time.strptime()'
     # use the same locale. There was an issue with bootloader where
     # every function was using different locale:
     # time.ctime was using 'C'
     # time.strptime was using 'xx_YY' from the environment.
-    lang = 'cs_CZ' if is_darwin else 'cs_CZ.UTF-8'
-    monkeypatch.setenv('LC_ALL', lang)
+    monkeypatch.setenv('LC_ALL', 'cs_CZ.UTF-8')
     pyi_builder.test_source(
         """
         import time
@@ -403,11 +452,9 @@ def test_xmldom_module(pyi_builder):
         """)
 
 
-@xfail(is_py3 and not is_py34, reason='Known issue for Python 3.3, see #2377')
 def test_threading_module(pyi_builder):
     pyi_builder.test_source(
         """
-        from __future__ import print_function
         import threading
         import sys
 
@@ -441,7 +488,7 @@ def test_argument(pyi_builder):
     pyi_builder.test_source(
         '''
         import sys
-        assert sys.argv[1] == "--argument", "sys.argv[1] was %s, expected %r" % (sys.argv[1], "--argument")
+        assert sys.argv[1] == "--argument", "sys.argv[1] was %r, expected %r" % (sys.argv[1], "--argument")
         ''',
         app_args=["--argument"])
 
@@ -473,6 +520,7 @@ def test_pywin32_comext(pyi_builder):
 
 
 @importorskip('win32ui')
+@xfail(reason="https://github.com/mhammond/pywin32/issues/1614")
 def test_pywin32_win32ui(pyi_builder):
     pyi_builder.test_source(
         """
@@ -485,7 +533,7 @@ def test_pywin32_win32ui(pyi_builder):
         """)
 
 
-@skipif_notwin
+@pytest.mark.win32
 def test_renamed_exe(pyi_builder):
     _old_find_executables = pyi_builder._find_executables
     def _find_executables(name):
@@ -504,9 +552,11 @@ def test_renamed_exe(pyi_builder):
 def test_spec_with_utf8(pyi_builder_spec):
     pyi_builder_spec.test_spec('spec-with-utf8.spec')
 
-@skipif_notosx
+
+@pytest.mark.darwin
 def test_osx_override_info_plist(pyi_builder_spec):
     pyi_builder_spec.test_spec('pyi_osx_override_info_plist.spec')
+
 
 def test_hook_collect_submodules(pyi_builder, script_dir):
     # This is designed to test the operation of
@@ -529,7 +579,7 @@ def test_hook_collect_submodules(pyi_builder, script_dir):
 # Test that PyInstaller can handle a script with an arbitrary extension.
 def test_arbitrary_ext(pyi_builder):
     pyi_builder.test_script('pyi_arbitrary_ext.foo')
-    
+
 def test_option_runtime_tmpdir(pyi_builder):
     "Test to ensure that option `runtime_tmpdir` can be set and has effect."
 
@@ -541,8 +591,6 @@ def test_option_runtime_tmpdir(pyi_builder):
         if sys.platform == 'win32':
             import win32api
         cwd = os.path.abspath(os.getcwd())
-        if sys.platform == 'win32' and sys.version_info < (3,):
-            cwd = win32api.GetShortPathName(cwd)
         runtime_tmpdir = os.path.abspath(sys._MEIPASS)
         # for onedir mode, runtime_tmpdir == cwd
         # for onefile mode, os.path.dirname(runtime_tmpdir) == cwd
@@ -552,3 +600,115 @@ def test_option_runtime_tmpdir(pyi_builder):
         print('test - done')
         """,
         ['--runtime-tmpdir=.']) # set runtime-tmpdir to current working dir
+
+
+@xfail(reason='Issue #3037 - all scripts share the same global vars')
+def test_several_scripts1(pyi_builder_spec):
+    """Verify each script has it's own global vars (original case, see issue
+    #2949).
+    """
+    pyi_builder_spec.test_spec('several-scripts1.spec')
+
+
+@xfail(reason='Issue #3037 - all scripts share the same global vars')
+def test_several_scripts2(pyi_builder_spec):
+    """
+    Verify each script has it's own global vars (basic test).
+    """
+    pyi_builder_spec.test_spec('several-scripts2.spec')
+
+
+@pytest.mark.win32
+def test_pe_checksum(pyi_builder):
+    import ctypes
+    from ctypes import wintypes
+
+    pyi_builder.test_source("print('hello')")
+    exes = pyi_builder._find_executables('test_source')
+    assert exes
+    for exe in exes:
+        # Validate the PE checksum using the official Windows API for doing so.
+        # https://docs.microsoft.com/en-us/windows/win32/api/imagehlp/nf-imagehlp-mapfileandchecksumw
+        header_sum = wintypes.DWORD()
+        checksum = wintypes.DWORD()
+        assert ctypes.windll.imagehlp.MapFileAndCheckSumW(
+            ctypes.c_wchar_p(exe),
+            ctypes.byref(header_sum),
+            ctypes.byref(checksum)) == 0
+
+        assert header_sum.value == checksum.value
+
+
+def test_onefile_longpath(pyi_builder, tmpdir):
+    """
+    Verify that files with paths longer than 260 characters are correctly
+    extracted from the onefile build. See issue #5615."
+    """
+    # The test is relevant only for onefile builds
+    if pyi_builder._mode != 'onefile':
+        pytest.skip('The test is relevant only to onefile builds.')
+    # Create data file with secret
+    _SECRET = 'LongDataPath'
+    src_filename = tmpdir / 'data.txt'
+    with open(src_filename, 'w') as fp:
+        fp.write(_SECRET)
+    # Generate long target filename/path; eight equivalents of SHA256
+    # strings plus data.txt should push just the _MEIPASS-relative path
+    # beyond 260 characters...
+    dst_filename = os.path.join(
+        *[32*chr(c) for c in range(ord('A'), ord('A')+8)], 'data.txt')
+    assert len(dst_filename) >= 260
+    # Name for --add-data
+    if is_win:
+        add_data_name = src_filename + ';' + os.path.dirname(dst_filename)
+    else:
+        add_data_name = src_filename + ':' + os.path.dirname(dst_filename)
+
+    pyi_builder.test_source(
+        """
+        import sys
+        import os
+
+        data_file = os.path.join(sys._MEIPASS, r'{data_file}')
+        print("Reading secret from %r" % (data_file))
+        with open(data_file, 'r') as fp:
+            secret = fp.read()
+        assert secret == r'{secret}'
+        """.format(data_file=dst_filename, secret=_SECRET),
+        ['--add-data', str(add_data_name)])
+
+
+@pytest.mark.win32
+@pytest.mark.parametrize("icon", ["icon_default", "icon_none", "icon_given"])
+def test_onefile_has_manifest(pyi_builder, icon):
+    """
+    Verify that onefile builds on Windows end up having manifest
+    embedded. See issue #5624.
+    """
+    from PyInstaller.utils.win32 import winmanifest
+    from PyInstaller import PACKAGEPATH
+
+    # The test is relevant only for onefile builds
+    if pyi_builder._mode != 'onefile':
+        pytest.skip('The test is relevant only to onefile builds.')
+    # Icon type
+    if icon == 'icon_default':
+        # Default; no --icon argument
+        extra_args = []
+    elif icon == 'icon_none':
+        # Disable icon completely; --icon NONE
+        extra_args = ['--icon', 'NONE']
+    elif icon == 'icon_given':
+        # Locate pyinstaller's default icon, and explicitly give it
+        # via --icon argument
+        icon_path = os.path.join(PACKAGEPATH, 'bootloader', 'images',
+                                 'icon-console.ico')
+        extra_args = ['--icon', icon_path]
+    # Build the executable...
+    pyi_builder.test_source("""print('Hello world!')""", extra_args)
+    # ... and ensure that it contains manifest
+    exes = pyi_builder._find_executables('test_source')
+    assert exes
+    for exe in exes:
+        res = winmanifest.GetManifestResources(exe)
+        assert res, "No manifest resources found!"
