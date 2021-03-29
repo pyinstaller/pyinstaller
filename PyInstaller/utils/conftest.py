@@ -445,7 +445,7 @@ class AppBuilder(object):
                 '--distpath', self._distdir,
                 '--workpath', self._builddir,
                 '--path', _get_modules_dir(self._request),
-                '--log-level=DEBUG'
+                        '--log-level=INFO',
                 ]
 
         # Choose bundle mode.
