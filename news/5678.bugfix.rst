@@ -1,0 +1,2 @@
+Fix installation issues stemming from unicode characters in
+file paths.
