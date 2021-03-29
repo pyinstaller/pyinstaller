@@ -50,7 +50,7 @@ jobs:
         #   Print the 10 longest tests; see
         #   https://docs.pytest.org/en/latest/usage.html#profiling-test-execution-duration
         - >
-          pytest -n 3 --maxfail 3 --durations 10
+          pytest -n 3 --maxfail 3 --durations 10 --force-flaky --no-flaky-report
           tests/unit tests/functional
           --ignore tests/functional/test_libraries.py
 
