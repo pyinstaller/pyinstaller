@@ -24,6 +24,9 @@ excludedimports = ['sqlalchemy.testing']
 # are not. We should explicitly include database backends.
 hiddenimports = ['pysqlite2', 'MySQLdb', 'psycopg2', 'sqlalchemy.ext.baked']
 
+if is_module_satisfies('sqlalchemy >= 1.4'):
+    hiddenimports.append("sqlalchemy.sql.default_comparator")
+
 # In SQLAlchemy >= 0.6, the "sqlalchemy.dialects" package provides dialects.
 if is_module_satisfies('sqlalchemy >= 0.6'):
     dialects = exec_statement("import sqlalchemy.dialects;print(sqlalchemy.dialects.__all__)")
