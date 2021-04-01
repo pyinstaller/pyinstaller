@@ -1,0 +1,2 @@
+Update the ``Run-time Information`` section to reflect the changes in
+behavior of ``__file__`` inside the ``__main__`` module.

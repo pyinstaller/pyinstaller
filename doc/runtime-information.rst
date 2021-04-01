@@ -48,47 +48,53 @@ case)::
     from os import path
     path_to_dat = path.abspath(path.join(path.dirname(__file__), 'file.dat'))
 
-In the bundled main script itself the above might not work, as it is unclear
-where it resides in the package hierarchy. So in when trying to find data files
-relative to the main script, ``sys._MEIPASS`` can be used. The following will
-get the path to a file ``other-file.dat`` next to the main script if not
-bundled and in the bundle folder if it is bundled::
+In the main script (the ``__main__`` module) itself, the ``__file__``
+variable contains path to the script file. In Python 3.8 and earlier,
+this path is either absolute or relative (depending on how the script
+was passed to the ``python`` interpreter), while in Python 3.9 and later,
+it is always an absolute path. In the bundled script, the |PyInstaller|
+|bootloader| always sets the ``__file__`` variable inside the ``__main__``
+module to the absolute path inside the bundle directory, as if the
+byte-compiled entry-point script existed there.
+
+For example, if your entry-point script is called ``program.py``, then
+the ``__file__`` attribute inside the bundled script will point to
+``sys._MEIPASS + 'program.py'``. Therefore, locating a data file relative
+to the main script can be either done directly using ``sys._MEIPASS`` or
+via the parent path of the ``__file__`` inside the main script.
+
+The following example will get the path to a file ``other-file.dat``
+located next to the main script if not bundled and inside the bundle folder
+if it is bundled::
 
     from os import path
-    import sys
-    bundle_dir = getattr(sys, '_MEIPASS', path.abspath(path.dirname(__file__)))
-    path_to_dat = path.abspath(path.join(bundle_dir, 'other-file.dat'))
+    bundle_dir = path.abspath(path.dirname(__file__))
+    path_to_dat = path.join(bundle_dir, 'other-file.dat')
 
 Or, if you'd rather use pathlib_::
 
     from pathlib import Path
-    import sys
-
-    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-        bundle_dir = Path(sys._MEIPASS)
-    else:
-        bundle_dir = Path(__file__).parent
-
+    bundle_dir = Path(__file__).parent
     path_to_dat = Path.cwd() / bundle_dir / "other-file.dat"
 
-It is always best to use absolute paths, so
-``path.abspath(path.join(bundle_dir, 'other-file.dat'))`` is preferred over
-``path.join(bundle_dir, 'other-file.dat')``. Using relative paths can lead to
-confusing errors should you attempt to find the parent of the current working
-directory. You'll get the incorrect value ``''`` instead of the expected
-``'..'``::
+.. versionchanged:: 5.0
 
-    >>> from os import path
-    >>> path.dirname(".")
-    ''
+    Formerly, the ``__file__`` attribute of the entry-point script
+    (the ``__main__`` module) was set to only its basename rather than
+    its full (absolute or relative) path within the bundle directory.
+    Therefore, |PyInstaller| documentation used to suggest ``sys._MEIPASS``
+    as means for locating resources relative to the bundled entry-point
+    script. Now, ``__file__`` is always set to the absolute full path,
+    and is the preferred way of locating such resources.
 
-Avoiding writing different PyInstaller-only behaviour
------------------------------------------------------
 
-As an alternative to the above, you can leave your Python code untouched if you
-modify the **dest** parameter in your uses of ``--add-data=source:dest`` to put
-your data-files where your code expects them to be. Assuming you normally use
-the following code in a file named ``my_script.py`` to locate a file
+Placing data files at expected locations inside the bundle
+----------------------------------------------------------
+
+To place the data-files where your code expects them to be (i.e., relative
+to the main script or bundle directory), you can use the **dest** parameter
+of the ``--add-data=source:dest`` command-line switches. Assuming you normally
+use the following code in a file named ``my_script.py`` to locate a file
 ``file.dat`` in the same folder::
 
     from os import path
@@ -105,7 +111,7 @@ meaning that if you put ``file.dat`` in the root of your package, using::
 
     PyInstaller --add-data=/path/to/file.dat:.
 
-It'll be found correctly at runtime without changing ``my_script.py``.
+It will be found correctly at runtime without changing ``my_script.py``.
 
 .. note:: Windows users should use ``;`` instead of ``:`` in the above line.
 
