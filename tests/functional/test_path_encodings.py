@@ -15,6 +15,8 @@ import subprocess
 
 import pytest
 
+from PyInstaller.utils.tests import importorskip
+
 
 def test_ascii_path(pyi_builder):
     distdir = pyi_builder._distdir
@@ -121,11 +123,13 @@ def test_win_non_codepage_path(pyi_builder, monkeypatch):
 
 
 @pytest.mark.win32
+@importorskip('win32api')
 def test_win_py3_no_shortpathname(pyi_builder):
     pyi_builder.test_script('pyi_win_py3_no_shortpathname.py')
 
 
 @pytest.mark.win32
+@importorskip('win32api')
 def test_win_TEMP_has_shortpathname(pyi_builder, monkeypatch, tmp_path):
     """
     Test if script if pass if $TMP holds a short path name.

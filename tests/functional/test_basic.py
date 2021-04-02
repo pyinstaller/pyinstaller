@@ -621,8 +621,7 @@ def test_option_runtime_tmpdir(pyi_builder):
         print('test - runtime_tmpdir - custom runtime temporary directory')
         import os
         import sys
-        if sys.platform == 'win32':
-            import win32api
+
         cwd = os.path.abspath(os.getcwd())
         runtime_tmpdir = os.path.abspath(sys._MEIPASS)
         # for onedir mode, runtime_tmpdir == cwd

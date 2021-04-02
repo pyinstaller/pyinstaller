@@ -443,7 +443,7 @@ class CArchiveWriter(ArchiveWriter):
 
         # now save teh cookie
         total_len = tocpos + toclen + self._cookie_size
-        pyvers = sys.version_info[0] * 10 + sys.version_info[1]
+        pyvers = sys.version_info[0] * 100 + sys.version_info[1]
         # Before saving cookie we need to convert it to corresponding C representation.
         cookie = struct.pack(
             self._cookie_format, self.MAGIC, total_len, tocpos, toclen, pyvers, self._pylib_name.encode('ascii')
