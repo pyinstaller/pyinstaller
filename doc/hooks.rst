@@ -253,10 +253,10 @@ for example::
 
    from PyInstaller.compat import base_prefix, is_win
 
-.. py:data:: is_py36, is_py37, is_py38, is_py39
+.. py:data:: is_py36, is_py37, is_py38, is_py39, is_py310
 
-    True when the current version of Python is at least 3.6, 3.7, 3.8 or 3.9
-    respectively.
+    True when the current version of Python is at least 3.6, 3.7, 3.8, 3.9,
+    or 3.10, respectively.
 
 .. py:data::  is_win
 
