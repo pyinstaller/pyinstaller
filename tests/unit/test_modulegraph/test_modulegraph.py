@@ -8,8 +8,8 @@ import shutil
 import warnings
 from altgraph import Graph
 from PyInstaller.compat import is_win
+from PyInstaller.utils.tests import importorskip
 import textwrap
-from lxml import etree
 import pickle
 
 from importlib._bootstrap_external import SourceFileLoader, ExtensionFileLoader
@@ -979,6 +979,7 @@ class TestModuleGraph (unittest.TestCase):
         self.assertIsInstance(e, int)
         self.assertEqual(graph.graph.edge_data(e), 'direct')
 
+    @importorskip('lxml')
     def test_create_xref(self):
         # XXX: This test is far from optimal, it just ensures
         # that all code is exercised to catch small bugs and
@@ -999,6 +1000,7 @@ class TestModuleGraph (unittest.TestCase):
 
         data = fp.getvalue()
         # Don't tolerate any HTML `parsing errors <https://lxml.de/parsing.html#parser-options>`_.
+        from lxml import etree
         parser = etree.HTMLParser(recover=False)
         tree = etree.parse(StringIO(data), parser)
         assert tree is not None

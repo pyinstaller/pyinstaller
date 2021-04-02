@@ -34,9 +34,10 @@ psutil
 # Check new flake8 violations on pull requests
 flake8
 
-pywin32; sys_platform == 'win32'
+# These are required by some of basic tests
+pywin32; sys_platform == 'win32' and python_version < '3.10'
 
-lxml
+lxml; sys_platform != 'win32' or python_version < '3.10'  # no wheels for 3.10, but we can build from sdist on non-Windows
 
 # crypto support (`--key` option)
 tinyaes ~= 1.0

@@ -99,9 +99,10 @@ _call_function_bytecode = bytecode_regex(
     ((?:(?:`EXTENDED_ARG`.)*
      `LOAD_CONST`.)*)
 
-    # Call the function. The parameter is the argument count (which may also be >256).
+    # Call the function. The parameter is the argument count (which may also be >256) if CALL_FUNCTION or CALL_METHOD
+    # are used. For CALL_FUNCTION_EX, the parameter are flags.
     ((?:`EXTENDED_ARG`.)*
-     (?:`CALL_FUNCTION`|`CALL_METHOD`).)
+     (?:`CALL_FUNCTION`|`CALL_METHOD`|`CALL_FUNCTION_EX`).)
 """
 )
 
@@ -169,7 +170,7 @@ def function_calls(code: CodeType) -> list:
     out = []
 
     for match in finditer(_call_function_bytecode, code.co_code):
-        function_root, methods, args, arg_count = match.groups()
+        function_root, methods, args, function_call = match.groups()
 
         # For foo():
         #   `function_root` contains 'foo' and `methods` is empty.
@@ -180,11 +181,22 @@ def function_calls(code: CodeType) -> list:
         function = ".".join([function_root] + methods)
 
         args = loads(args, code)
-        arg_count = extended_arguments(arg_count)
+        if function_call[0] == dis.opmap['CALL_FUNCTION_EX']:
+            flags = extended_arguments(function_call)
+            if flags != 0:
+                # Keyword arguments present. Unhandled at the moment.
+                continue
+            # In calls with const arguments, args contains a single
+            # tuple with all values.
+            if len(args) != 1 or not isinstance(args[0], tuple):
+                continue
+            args = list(args[0])
+        else:
+            arg_count = extended_arguments(function_call)
 
-        if arg_count != len(args):
-            # This happens if there are variable or keyword arguments. Bail out in either case.
-            continue
+            if arg_count != len(args):
+                # This happens if there are variable or keyword arguments. Bail out in either case.
+                continue
 
         out.append((function, args))
 

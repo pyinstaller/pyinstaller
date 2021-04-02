@@ -71,11 +71,11 @@ pyi_pylib_load(ARCHIVE_STATUS *status)
       uint32_t pyvers_major;
       uint32_t pyvers_minor;
 
-      pyvers_major = pyvers / 10;
-      pyvers_minor = pyvers % 10;
+      pyvers_major = pyvers / 100;
+      pyvers_minor = pyvers % 100;
 
       len = snprintf(dllname, DLLNAME_LEN,
-              "libpython%01d.%01d.a(libpython%01d.%01d.so)",
+              "libpython%d.%d.a(libpython%d.%d.so)",
               pyvers_major, pyvers_minor, pyvers_major, pyvers_minor);
     }
     else {
@@ -150,8 +150,9 @@ pyi_pylib_attach(ARCHIVE_STATUS *status, int *loadedNew)
     HMODULE dll;
     char nm[PATH_MAX + 1];
     int ret = 0;
+
     /* Get python's name */
-    sprintf(nm, "python%02d.dll", pyvers);
+    sprintf(nm, "python%d%d.dll", pyvers / 100, pyvers % 100);
 
     /* See if it's loaded */
     dll = GetModuleHandleA(nm);
@@ -259,7 +260,7 @@ pyi_pylib_set_pep540_utf8_mode()
     char *env_utf8 = NULL;
 
     /* Applicable only to Python 3.7 and later */
-    if (pyvers < 37) {
+    if (pyvers < 307) {
         return;
     }
 
@@ -623,7 +624,7 @@ pyi_pylib_import_modules(ARCHIVE_STATUS *status)
 
             /* Unmarshall code object for module; we need to skip
                the pyc header */
-            if (pyvers >= 37) {
+            if (pyvers >= 307) {
                 /* Python 3.7 changed header size to 16 bytes */
                 co = PI_PyMarshal_ReadObjectFromString((const char *) modbuf + 16, ptoc->ulen - 16);
             } else {

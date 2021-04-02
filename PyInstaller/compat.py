@@ -35,6 +35,7 @@ is_py36 = sys.version_info >= (3, 6)
 is_py37 = sys.version_info >= (3, 7)
 is_py38 = sys.version_info >= (3, 8)
 is_py39 = sys.version_info >= (3, 9)
+is_py310 = sys.version_info >= (3, 10)
 
 is_win = sys.platform.startswith('win')
 is_win_10 = is_win and (platform.win32_ver()[0] == '10')
@@ -612,7 +613,6 @@ def importlib_load_source(name, pathname):
 PY3_BASE_MODULES = {
     # These modules are direct or indirect dependencies of encodings.* modules. encodings modules must be recursively
     # included to set the I/O encoding during python startup.
-    '_bootlocale',
     '_collections_abc',
     '_weakrefset',
     'abc',
@@ -639,6 +639,9 @@ PY3_BASE_MODULES = {
     'weakref',
     'warnings',
 }
+
+if not is_py310:
+    PY3_BASE_MODULES.add('_bootlocale')
 
 # Object types of Pure Python modules in modulegraph dependency graph.
 # Pure Python modules have code object (attribute co_code).
