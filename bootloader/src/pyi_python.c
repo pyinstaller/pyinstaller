@@ -109,7 +109,7 @@ pyi_python_map_names(HMODULE dll, int pyvers)
     GETVAR(dll, Py_OptimizeFlag);
     GETVAR(dll, Py_VerboseFlag);
     GETVAR(dll, Py_UnbufferedStdioFlag);
-    if (pyvers >= 37) {
+    if (pyvers >= 307) {
         GETVAR(dll, Py_UTF8Mode);
     }
 
