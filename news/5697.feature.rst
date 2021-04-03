@@ -1,0 +1,3 @@
+Provide basic implementation for ``FrozenImporter.get_source()`` that
+allows reading source from ``.py`` files that are collected by hooks as
+data files.
