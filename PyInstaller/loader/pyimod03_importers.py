@@ -328,6 +328,15 @@ class FrozenImporter(object):
         Return None.
         """
         if fullname in self.toc:
+            # Try loading .py file from the filesystem
+            filename = pyi_os_path.os_path_join(
+                SYS_PREFIX,
+                fullname.replace('.', pyi_os_path.os_sep) + '.py')
+            try:
+                with open(filename, 'r') as fp:
+                    return fp.read()
+            except FileNotFoundError:
+                pass
             return None
         else:
             # ImportError should be raised if module not found.
