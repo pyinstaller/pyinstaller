@@ -32,12 +32,6 @@ jobs:
 
       - name: Install apt packages
         run: |
-          # Install OpenSSL 1.1. This fixes dynamic linking problems when PyQt5.13 tries
-          # to link with OpenSSL 1.1 -- on Ubuntu 16 (xenial), the older OpenSSL
-          # produces errors like ``qt.network.ssl: QSslSocket: cannot resolve
-          # OPENSSL_init_ssl``.
-          sudo add-apt-repository ppa:carsten-uppenbrink-net/openssl -y
-          sudo apt-get update -qq
           sudo apt-get install -qq libxml2-dev libxslt1-dev libespeak1 \ 
             gfortran libatlas-base-dev libxkbcommon-x11-0 libxcb-icccm4 \
             libxcb-image0 libxcb-keysyms1 libxcb1 libxcb-randr \
