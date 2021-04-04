@@ -64,5 +64,5 @@ scipy==1.6.2; python_version > '3.6'
 scipy==1.5.4; python_version <= '3.6'  # pyup: ignore
 
 # and matplotlib
-matplotlib==3.4.0; python_version > '3.6'
+matplotlib==3.4.1; python_version > '3.6'
 matplotlib==3.3.4; python_version <= '3.6'  # pyup: ignore
