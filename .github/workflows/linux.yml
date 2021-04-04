@@ -32,10 +32,10 @@ jobs:
 
       - name: Install apt packages
         run: |
-          sudo apt-get install -qq libxml2-dev libxslt1-dev libespeak1 \ 
-            gfortran libatlas-base-dev libxkbcommon-x11-0 libxcb-icccm4
-          # libxcb-image0 libxcb-keysyms1 libxcb1 libxcb-randr \
-          # libxcb-render-util0 libxcb openssl
+          sudo apt-get install -y libxml2-dev libxslt1-dev libespeak1 \ 
+            gfortran libatlas-base-dev libxkbcommon-x11-0 libxcb-icccm4 \
+            libxcb-image0 libxcb-keysyms1 libxcb1 libxcb-randr \
+            libxcb-render-util0 libxcb openssl
 
       - name: Download AppImage tool
         run: |
