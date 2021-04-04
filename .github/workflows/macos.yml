@@ -11,17 +11,7 @@ on:
       - '**'
 
 jobs:
-  skip_ci:
-    runs-on: ubuntu-latest
-    outputs:
-      canSkip: ${{ steps.check.outputs.canSkip }}
-    steps:
-      - id: check
-        uses: Legorooj/skip-ci@main
-
   tests:
-    needs: skip_ci
-    if: ${{ needs.skip_ci.outputs.canSkip != 'true' }}
     runs-on: macos-latest
     strategy:
       matrix:
