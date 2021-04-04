@@ -1,0 +1,87 @@
+name: Linux CI
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+## events but only for the master branch
+on:
+  push:
+    branches:
+      - 'develop'
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8, 3.9]
+      fail-fast: false
+    steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.8.0
+        with:
+          access_token: ${{ github.token }}
+
+      - uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install apt packages
+        run: |
+          # Install OpenSSL 1.1. This fixes dynamic linking problems when PyQt5.13 tries
+          # to link with OpenSSL 1.1 -- on Ubuntu 16 (xenial), the older OpenSSL
+          # produces errors like ``qt.network.ssl: QSslSocket: cannot resolve
+          # OPENSSL_init_ssl``.
+          sudo add-apt-repository ppa:carsten-uppenbrink-net/openssl -y
+          sudo apt-get update -qq
+          sudo apt-get install -qq libxml2-dev libxslt1-dev libespeak1 \ 
+            gfortran libatlas-base-dev libxkbcommon-x11-0 libxcb-icccm4 \
+            libxcb-image0 libxcb-keysyms1 libxcb1 libxcb-randr \
+            libxcb-render-util0 libxcb openssl
+
+      - name: Download AppImage tool
+        run: |
+          wget \
+            https://github.com/AppImage/AppImageKit/releases/download/12/appimagetool-x86_64.AppImage \
+            -O $HOME/appimagetool-x86_64.AppImage
+          chmod a+x $HOME/appimagetool-x86_64.AppImage
+
+      - name: Set up environment
+        run: |
+          # Update pip.
+          python -m pip install -U pip setuptools wheel
+
+          # Install dependencies for tests.
+          pip install --progress-bar=off -U -r tests/requirements-tools.txt -r tests/requirements-libraries.txt
+
+          # Install PyInstaller Hook Sample, to ensure that tests declared in
+          # entry-points are discovered.
+          pip install https://github.com/pyinstaller/hooksample/archive/v4.0rc1.zip
+
+          # Compile bootloader
+          cd bootloader
+          python waf distclean all
+          cd ..
+
+          # Install PyInstaller.
+          pip install --progress-bar=off -e .
+
+          # Make sure the help options print.
+          python -m pyinstaller -h
+
+      - name: Run tests
+        run: |
+          pytest -n 3 --maxfail 3 --durations 10 tests/unit tests/functional \
+            --force-flaky --no-flaky-report
+
+          # The ``run_tests`` script is invoked with the ``-c`` option to
+          # specify a ``pytest.ini``, rather than allowing pytest to find
+          # something unexpected in the filesystem (it searches from the root
+          # dir all the way to the top of the filesystem per
+          # https://docs.pytest.org/en/latest/customize.html).
+          python -m PyInstaller.utils.run_tests -c PyInstaller/utils/pytest.ini --include_only=pyi_hooksample.
+
