@@ -34,10 +34,11 @@ jobs:
         run: |
           sudo apt-get install -y libxml2-dev libxslt1-dev gfortran libatlas-base-dev
           sudo apt-get install -y libespeak1
+          sudo apt-get install -y libxcb-image0 libxcb-keysyms1
 
-#          sudo apt-get install -y libxml2-dev libxslt1-dev libespeak1 \ 
-#            gfortran libatlas-base-dev libxkbcommon-x11-0 libxcb-icccm4 \
-#            libxcb-image0 libxcb-keysyms1 libxcb1 libxcb-randr \
+#          sudo apt-get install -y  \ 
+#             libxkbcommon-x11-0 libxcb-icccm4 \
+#             libxcb1 libxcb-randr \
 #            libxcb-render-util0 libxcb openssl
 
       - name: Download AppImage tool
