@@ -32,9 +32,8 @@ jobs:
 
       - name: Install apt packages
         run: |
-          sudo apt-get install -y libxml2-dev
-          sudo apt-get install -y libxslt1-dev
-
+          sudo apt-get install -y libxml2-dev libxslt1-dev gfortran libatlas-base-dev
+          sudo apt-get install -y libespeak1
 
 #          sudo apt-get install -y libxml2-dev libxslt1-dev libespeak1 \ 
 #            gfortran libatlas-base-dev libxkbcommon-x11-0 libxcb-icccm4 \
