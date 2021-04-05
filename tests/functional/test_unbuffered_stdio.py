@@ -21,6 +21,9 @@ import pytest
 from PyInstaller.compat import is_py37, is_win
 
 
+@pytest.mark.skipif(os.environ.get('CI', 'false').lower() == 'true',
+                    reason="The test does not support CI (unexplained "
+                           "occasional errors).")
 @pytest.mark.parametrize('stream_mode', ['binary', 'text'])
 @pytest.mark.parametrize('output_stream', ['stdout', 'stderr'])
 def test_unbuffered_stdio(tmp_path, output_stream, stream_mode,
