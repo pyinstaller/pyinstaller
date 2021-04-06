@@ -97,7 +97,8 @@ jobs:
         if: matrix.os == 'macos-latest'
         uses: xoviat/actions-pytest@0.1-alpha1
         with:
-          args: -n 3 --maxfail 3 --durations 10 tests/unit tests/functional --ignore tests/functional/test_libraries.py \ 
+          args: > 
+            -n 3 --maxfail 3 --durations 10 tests/unit tests/functional --ignore tests/functional/test_libraries.py 
             --force-flaky --no-flaky-report
 
       - name: Run hooksample tests
