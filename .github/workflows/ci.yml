@@ -71,7 +71,7 @@ jobs:
 
           # Compile bootloader
           cd bootloader
-          python waf distclean all
+          python waf all
           cd ..
 
           # Install PyInstaller.
