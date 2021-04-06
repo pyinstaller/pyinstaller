@@ -88,13 +88,13 @@ jobs:
           echo "QT_DEBUG_PLUGINS=1" >> $GITHUB_ENV
 
       - name: Run tests
-        if: matrix.os != 'macos-latest'
+        if: ${{ !startsWith(matrix.os, 'macos') }}
         uses: xoviat/actions-pytest@0.1-alpha1
         with:
           args: -n 3 --maxfail 3 --durations 10 tests/unit tests/functional --force-flaky --no-flaky-report
 
       - name: Run tests
-        if: matrix.os == 'macos-latest'
+        if: startsWith(matrix.os, 'macos')
         uses: xoviat/actions-pytest@0.1-alpha1
         with:
           args: > 
