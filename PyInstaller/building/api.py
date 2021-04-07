@@ -102,7 +102,7 @@ class PYZ(Target):
         self.dependencies = misc.compile_py_files(self.dependencies, CONF['workpath'])
         self.__postinit__()
 
-    _GUTS: Any = (# input parameters
+    _GUTS: Any = (  # input parameters
             ('name', _check_guts_eq),
             ('toc', _check_guts_toc),  # todo: pyc=1
             # no calculated/analysed values
@@ -201,7 +201,7 @@ class PKG(Target):
                           'PYZ': UNCOMPRESSED}
         self.__postinit__()
 
-    _GUTS: Any = (# input parameters
+    _GUTS: Any = (  # input parameters
             ('name', _check_guts_eq),
             ('cdict', _check_guts_eq),
             ('toc', _check_guts_toc),  # list unchanged and no newer files
@@ -451,7 +451,7 @@ class EXE(Target):
 
         self.__postinit__()
 
-    _GUTS: Any = (# input parameters
+    _GUTS: Any = (  # input parameters
             ('name', _check_guts_eq),
             ('console', _check_guts_eq),
             ('debug', _check_guts_eq),

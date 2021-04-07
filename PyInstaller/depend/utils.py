@@ -35,7 +35,8 @@ from .. import log as logging
 
 try:
     # source_hash only exists in Python 3.7
-    from importlib.util import source_hash as importlib_source_hash  # type: ignore
+    from importlib.util import source_hash as \
+        importlib_source_hash  # type: ignore
 except ImportError:
     pass
 

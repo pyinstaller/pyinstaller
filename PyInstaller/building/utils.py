@@ -689,7 +689,9 @@ def fake_pyc_timestamp(buf):
     _buf_ must at least contain the full pyc-file header.
     """
     assert buf[:4] == compat.BYTECODE_MAGIC, \
-        "Expected pyc magic {}, got {}".format(compat.BYTECODE_MAGIC, buf[:4])  # type: ignore
+        "Expected pyc magic {}, got {}".format(
+            compat.BYTECODE_MAGIC, buf[:4],
+        )  # type: ignore
     start, end = 4, 8
     if is_py37:
         # see https://www.python.org/dev/peps/pep-0552/

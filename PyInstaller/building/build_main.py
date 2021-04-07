@@ -255,7 +255,7 @@ class Analysis(Target):
             for name, pth in format_binaries_and_datas(datas, workingdir=spec_dir):
                 self.datas.append((name, pth, 'DATA'))
 
-    _GUTS: Any = (# input parameters
+    _GUTS: Any = (  # input parameters
             ('inputs', _check_guts_eq),  # parameter `scripts`
             ('pathex', _check_guts_eq),
             ('hiddenimports', _check_guts_eq),

@@ -221,7 +221,7 @@ class Tree(Target, TOC):
             self.excludes = []
         self.__postinit__()
 
-    _GUTS: Any = (# input parameters
+    _GUTS: Any = (  # input parameters
             ('root', _check_guts_eq),
             ('prefix', _check_guts_eq),
             ('excludes', _check_guts_eq),

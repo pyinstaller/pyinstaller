@@ -51,7 +51,7 @@ workpath
 tests_modgraph  - cached PyiModuleGraph object to speed up tests
 """
 
-from typing import Dict, List
+from typing import Dict
 
 # NOTE: Do not import other PyInstaller modules here. Just define constants here.
 
