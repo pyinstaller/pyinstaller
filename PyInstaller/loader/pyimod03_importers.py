@@ -25,7 +25,7 @@ import _frozen_importlib
 import pyimod01_os_path as pyi_os_path
 from pyimod02_archive import ArchiveReadError, ZlibArchiveReader
 
-SYS_PREFIX = sys._MEIPASS + pyi_os_path.os_sep
+SYS_PREFIX = sys._MEIPASS + pyi_os_path.os_sep  # type: ignore
 SYS_PREFIXLEN = len(SYS_PREFIX)
 
 # In Python 3 it is recommended to use class 'types.ModuleType' to create a new module.

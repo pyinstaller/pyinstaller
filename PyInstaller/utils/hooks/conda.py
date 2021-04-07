@@ -48,7 +48,7 @@ from PyInstaller.log import logger
 if compat.is_py38:
     from importlib.metadata import PackagePath as _PackagePath
 else:
-    from importlib_metadata import PackagePath as _PackagePath
+    from importlib_metadata import PackagePath as _PackagePath  # type: ignore
 
 # Conda virtual environments each get their own copy of `conda-meta` so the
 # use of `sys.prefix` instead of `sys.base_prefix`, `sys.real_prefix` or
@@ -59,9 +59,9 @@ CONDA_META_DIR = CONDA_ROOT / "conda-meta"
 # Find all paths in `sys.path` that are inside Conda root.
 PYTHONPATH_PREFIXES = []
 for _path in sys.path:
-    _path = Path(_path)
+    _path = Path(_path)  # type: ignore
     try:
-        PYTHONPATH_PREFIXES.append(_path.relative_to(sys.prefix))
+        PYTHONPATH_PREFIXES.append(_path.relative_to(sys.prefix))  # type: ignore
     except ValueError:
         pass
 

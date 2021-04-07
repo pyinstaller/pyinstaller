@@ -16,7 +16,7 @@ from ..compat import is_darwin
 from .api import EXE, COLLECT
 from .datastruct import Target, TOC, logger
 from .utils import _check_path_overlap, _rmtree, add_suffix_to_extensions, checkCache
-
+from typing import Any
 
 
 class BUNDLE(Target):
@@ -92,7 +92,7 @@ class BUNDLE(Target):
                 break
         self.__postinit__()
 
-    _GUTS = (
+    _GUTS: Any = (
         # BUNDLE always builds, just want the toc to be written out
         ('toc', None),
     )

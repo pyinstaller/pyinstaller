@@ -12,6 +12,8 @@
 
 import os
 
+from typing import Any
+
 from PyInstaller.utils import misc
 from PyInstaller.utils.misc import load_py_data_struct, save_py_data_struct
 from .. import log as logging
@@ -160,7 +162,7 @@ class Target(object):
             self.assemble()
             self._save_guts()
 
-    _GUTS = []
+    _GUTS = []  # type: ignore
 
     def _check_guts(self, data, last_build):
         """
@@ -219,7 +221,7 @@ class Tree(Target, TOC):
             self.excludes = []
         self.__postinit__()
 
-    _GUTS = (# input parameters
+    _GUTS: Any = (# input parameters
             ('root', _check_guts_eq),
             ('prefix', _check_guts_eq),
             ('excludes', _check_guts_eq),

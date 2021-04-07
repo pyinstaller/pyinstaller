@@ -22,6 +22,8 @@ import tempfile
 import pprint
 from operator import itemgetter
 
+from typing import Any
+
 from PyInstaller import HOMEPATH, PLATFORM
 from PyInstaller.archive.writers import ZlibArchiveWriter, CArchiveWriter
 from PyInstaller.building.utils import _check_guts_toc, add_suffix_to_extensions, \
@@ -100,7 +102,7 @@ class PYZ(Target):
         self.dependencies = misc.compile_py_files(self.dependencies, CONF['workpath'])
         self.__postinit__()
 
-    _GUTS = (# input parameters
+    _GUTS: Any = (# input parameters
             ('name', _check_guts_eq),
             ('toc', _check_guts_toc),  # todo: pyc=1
             # no calculated/analysed values
@@ -199,7 +201,7 @@ class PKG(Target):
                           'PYZ': UNCOMPRESSED}
         self.__postinit__()
 
-    _GUTS = (# input parameters
+    _GUTS: Any = (# input parameters
             ('name', _check_guts_eq),
             ('cdict', _check_guts_eq),
             ('toc', _check_guts_toc),  # list unchanged and no newer files
@@ -449,7 +451,7 @@ class EXE(Target):
 
         self.__postinit__()
 
-    _GUTS = (# input parameters
+    _GUTS: Any = (# input parameters
             ('name', _check_guts_eq),
             ('console', _check_guts_eq),
             ('debug', _check_guts_eq),
@@ -711,7 +713,7 @@ class COLLECT(Target):
                 self.toc.extend(arg)
         self.__postinit__()
 
-    _GUTS = (
+    _GUTS: Any = (
         # COLLECT always builds, just want the toc to be written out
         ('toc', None),
     )

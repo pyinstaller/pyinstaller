@@ -29,14 +29,14 @@ import os
 
 # Let other python modules know that the code is running in frozen mode.
 if not hasattr(sys, 'frozen'):
-    sys.frozen = True
+    sys.frozen = True  # type: ignore
 
 # sys._MEIPASS is now set in the bootloader. Hooray.
 
 
 # Python 3 C-API function Py_SetPath() resets sys.prefix to empty string.
 # Python 2 was using PYTHONHOME for sys.prefix. Let's do the same for Python 3.
-sys.prefix = sys._MEIPASS
+sys.prefix = sys._MEIPASS  # type: ignore
 sys.exec_prefix = sys.prefix
 
 
@@ -145,8 +145,8 @@ try:
             except Exception as base_error:
                 raise PyInstallerImportError(name) from base_error
 
-    ctypes.CDLL = PyInstallerCDLL
-    ctypes.cdll = LibraryLoader(PyInstallerCDLL)
+    ctypes.CDLL = PyInstallerCDLL                 # type: ignore
+    ctypes.cdll = LibraryLoader(PyInstallerCDLL)  # type: ignore
 
     class PyInstallerPyDLL(ctypes.PyDLL):
         def __init__(self, name, *args, **kwargs):
@@ -156,8 +156,8 @@ try:
             except Exception as base_error:
                 raise PyInstallerImportError(name) from base_error
 
-    ctypes.PyDLL = PyInstallerPyDLL
-    ctypes.pydll = LibraryLoader(PyInstallerPyDLL)
+    ctypes.PyDLL = PyInstallerPyDLL                 # type: ignore
+    ctypes.pydll = LibraryLoader(PyInstallerPyDLL)  # type: ignore
 
     if sys.platform.startswith('win'):
         class PyInstallerWinDLL(ctypes.WinDLL):
@@ -168,8 +168,8 @@ try:
                 except Exception as base_error:
                     raise PyInstallerImportError(name) from base_error
 
-        ctypes.WinDLL = PyInstallerWinDLL
-        ctypes.windll = LibraryLoader(PyInstallerWinDLL)
+        ctypes.WinDLL = PyInstallerWinDLL                 # type: ignore
+        ctypes.windll = LibraryLoader(PyInstallerWinDLL)  # type: ignore
 
         class PyInstallerOleDLL(ctypes.OleDLL):
             def __init__(self, name,*args, **kwargs):
@@ -179,8 +179,8 @@ try:
                 except Exception as base_error:
                     raise PyInstallerImportError(name) from base_error
 
-        ctypes.OleDLL = PyInstallerOleDLL
-        ctypes.oledll = LibraryLoader(PyInstallerOleDLL)
+        ctypes.OleDLL = PyInstallerOleDLL                 # type: ignore
+        ctypes.oledll = LibraryLoader(PyInstallerOleDLL)  # type: ignore
 except ImportError:
     pass
 
@@ -201,7 +201,7 @@ if sys.platform.startswith('darwin'):
 
 # Make .eggs and zipfiles available at runtime
 d = "eggs"
-d = os.path.join(sys._MEIPASS, d)
+d = os.path.join(sys._MEIPASS, d)  # type: ignore
 # Test if the 'eggs' directory exists. This allows to
 # opportunistically including this script into the packaged exe, even
 # if no eggs as found when packaging the program. (Which may be a

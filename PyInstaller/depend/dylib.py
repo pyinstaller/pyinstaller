@@ -215,7 +215,7 @@ if is_darwin:
             else:
                 return util.in_system_path(libname)
 
-    exclude_list = MacExcludeList(exclude_list)
+    exclude_list = MacExcludeList(exclude_list)  # type: ignore
 
 elif is_win:
     class WinExcludeList(object):
@@ -238,7 +238,7 @@ elif is_win:
                 fn = os.path.normpath(os.path.realpath(libname).lower())
                 return fn.startswith(self._windows_dir)
 
-    exclude_list = WinExcludeList(exclude_list)
+    exclude_list = WinExcludeList(exclude_list)  # type: ignore
 
 
 def include_library(libname):

@@ -26,12 +26,16 @@ jobs:
         python-version: 3.8 
 
     - name: Install dependencies
-      run: pip install -U flake8 wheel setuptools
+      run: pip install -U flake8 wheel setuptools mypy
 
     - name: Run Lint
       run: |
         git diff -U0 origin/${{ github.base_ref }} -- | flake8 --diff -
-        
+
+    - name: Run Type Checking
+      run: |
+        mypy --ignore-missing-imports --exclude rthooks PyInstaller 
+
     - name: Test Packaging
       run: |
         python setup.py sdist bdist_wheel

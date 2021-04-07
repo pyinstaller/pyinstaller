@@ -27,4 +27,4 @@ from PyInstaller import compat
 # we can use the ``_get_sysconfigdata_name()`` from regular ``sysconfig``.
 import sysconfig
 if not compat.is_win and hasattr(sysconfig, '_get_sysconfigdata_name'):
-    hiddenimports = [sysconfig._get_sysconfigdata_name()]
+    hiddenimports = [sysconfig._get_sysconfigdata_name()]  # type: ignore

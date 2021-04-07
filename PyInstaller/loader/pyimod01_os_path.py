@@ -42,8 +42,8 @@ if 'posix' in _builtin_names:  # For Linux, Unix, Mac OS X
     os_sep = '/'
     _mindirlen = 1
 elif 'nt' in _builtin_names:  # For Windows
-    from nt import environ as os_environ
-    from nt import listdir as os_listdir
+    from nt import environ as os_environ  # type: ignore
+    from nt import listdir as os_listdir  # type: ignore
     os_sep = '\\'
     _mindirlen = 3
 else:

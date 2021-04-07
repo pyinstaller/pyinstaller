@@ -19,7 +19,7 @@ __all__ = ['getLogger', 'INFO', 'WARN', 'DEBUG', 'TRACE', 'ERROR', 'FATAL']
 import logging
 from logging import getLogger, INFO, WARN, DEBUG, ERROR, FATAL
 
-TRACE = logging.TRACE = DEBUG - 5
+TRACE = logging.TRACE = DEBUG - 5  # type: ignore
 logging.addLevelName(TRACE, 'TRACE')
 
 FORMAT = '%(relativeCreated)d %(levelname)s: %(message)s'

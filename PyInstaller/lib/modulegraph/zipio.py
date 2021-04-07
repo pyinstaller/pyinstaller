@@ -49,8 +49,8 @@ if _sys.version_info[0] == 2:
             return False
 
 else:
-    from io import StringIO as _StringIO
-    from io import BytesIO as _BytesIO
+    from io import StringIO as _StringIO  # type: ignore
+    from io import BytesIO as _BytesIO  # type: ignore
 
 
 def _locate(path):

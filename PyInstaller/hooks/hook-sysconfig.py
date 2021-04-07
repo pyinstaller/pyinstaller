@@ -20,4 +20,4 @@ if not is_win and hasattr(sysconfig, '_get_sysconfigdata_name'):
     # https://github.com/python/cpython/blob/3.6/Lib/sysconfig.py#L417
     # Note: Some versions of Anaconda backport this feature to before 3.6.
     # See issue #3105
-    hiddenimports = [sysconfig._get_sysconfigdata_name()]
+    hiddenimports = [sysconfig._get_sysconfigdata_name()]  # type: ignore

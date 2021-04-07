@@ -51,9 +51,11 @@ workpath
 tests_modgraph  - cached PyiModuleGraph object to speed up tests
 """
 
+from typing import Dict, List
+
 # NOTE: Do not import other PyInstaller modules here. Just define constants here.
 
-CONF = {
+CONF: Dict[str, str] = {
     # Unit tests require this key to exist.
-    'pathex': [],
+    'pathex': '',
 }

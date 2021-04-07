@@ -29,6 +29,8 @@ import warnings
 from altgraph.ObjectGraph import ObjectGraph
 from altgraph import GraphError
 
+from typing import List, Dict
+
 from . import util
 from . import zipio
 from ._compat import BytesIO, StringIO, pathname2url, _READ_MODE
@@ -137,7 +139,7 @@ the values of this dictionary are 3-tuples whose:
 # package, and it will be honored.
 #
 # Note this is a mapping is lists of paths.
-_packagePathMap = {}
+_packagePathMap: Dict[str, List[str]] = {}
 
 # Prefix used in magic .pth files used by setuptools to create namespace
 # packages without an __init__.py file.

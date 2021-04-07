@@ -38,7 +38,7 @@ PY_IGNORE_EXTENSIONS = set(ALL_SUFFIXES)
 #
 # For example the 'wx' module needs variable 'wxpubsub'. This tells PyInstaller
 # which protocol of the wx module should be bundled.
-hook_variables = {}
+hook_variables = {}  # type: ignore
 
 
 def __exec_python_cmd(cmd, env=None, capture_stdout=True):

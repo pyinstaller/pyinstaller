@@ -20,6 +20,8 @@ Fake 'site' makes PyInstaller to work with distutils and to work inside
 virtualenv environment.
 """
 
+from typing import List
+
 # Marker to be used in our test-suite.
 __pyinstaller__faked__site__module__ = True
 
@@ -27,7 +29,7 @@ __pyinstaller__faked__site__module__ = True
 
 
 # Prefixes for site-packages; add additional prefixes like /usr/local here
-PREFIXES = []
+PREFIXES: List[str] = []
 
 # Enable per user site-packages directory
 # set it to False to disable the feature or True to force the feature

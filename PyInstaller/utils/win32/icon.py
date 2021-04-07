@@ -27,7 +27,7 @@ import os.path
 import struct
 import types
 try:
-    StringTypes = types.StringTypes
+    StringTypes = types.StringTypes  # type: ignore
 except AttributeError:
     StringTypes = [ type("") ]
 

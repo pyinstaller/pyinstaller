@@ -21,13 +21,14 @@ import sys
 import tempfile
 import zlib
 
+from typing import List
 from PyInstaller.loader import pyimod02_archive
 from PyInstaller.archive.readers import CArchiveReader, NotAnArchiveError
 from PyInstaller.compat import stdin_input
 import PyInstaller.log
 
 stack = []
-cleanup = []
+cleanup: List[str] = []
 
 
 def main(name, brief, debug, rec_debug, **unused_options):

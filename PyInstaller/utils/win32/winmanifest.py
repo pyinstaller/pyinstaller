@@ -147,7 +147,7 @@ class _Dummy:
 if winresource:
     _File = winresource.File
 else:
-    _File = _Dummy
+    _File = _Dummy  # type: ignore
 
 
 class File(_File):

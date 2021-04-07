@@ -26,6 +26,8 @@ import sys
 import pkg_resources
 
 
+from typing import Any
+
 # Relative imports to PyInstaller modules.
 from .. import HOMEPATH, DEFAULT_DISTPATH, DEFAULT_WORKPATH
 from .. import compat
@@ -51,7 +53,7 @@ logger = logging.getLogger(__name__)
 STRINGTYPE = type('')
 TUPLETYPE = type((None,))
 
-rthooks = {}
+rthooks = {}  # type: ignore
 
 # place where the loader modules and initialization scripts live
 _init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
@@ -253,7 +255,7 @@ class Analysis(Target):
             for name, pth in format_binaries_and_datas(datas, workingdir=spec_dir):
                 self.datas.append((name, pth, 'DATA'))
 
-    _GUTS = (# input parameters
+    _GUTS: Any = (# input parameters
             ('inputs', _check_guts_eq),  # parameter `scripts`
             ('pathex', _check_guts_eq),
             ('hiddenimports', _check_guts_eq),
