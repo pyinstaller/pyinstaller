@@ -255,7 +255,7 @@ between three options:
    leaving this to the compiler.
    But Mingw-w64 doesn’t have a standard C library.
    Instead it links against msvcrt.dll, which happens to exist
-   on many Windows installations – but i not guaranteed to exist.
+   on many Windows installations – but is not guaranteed to exist.
 
 .. [#] This description seems to be technically incorrect. I ought to depend
        on the C++ run-time library. If you know details, please open an
