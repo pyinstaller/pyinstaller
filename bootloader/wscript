@@ -411,8 +411,8 @@ def configure(ctx):
         ctx.msg('System', 'Assuming cross-compilation for %s' %
                 DESTOS_TO_SYSTEM[ctx.env.DEST_OS])
 
-        if ctx.env.DEST_OS in ('freebsd', 'hpux', 'sunos'):
-            # For these FreeBSD and HP-UX we determine some settings from
+        if ctx.env.DEST_OS in ('hpux', 'sunos'):
+            # For SunOS and HP-UX we determine some settings from
             # Python's sysconfig. For cross-compiling somebody needs to
             # implement options to overwrite these values as they may be
             # wrong.
