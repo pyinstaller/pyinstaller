@@ -62,8 +62,8 @@ for _path in sys.path:
     _path = Path(_path)  # type: ignore
     try:
         PYTHONPATH_PREFIXES.append(
-            _path.relative_to(sys.prefix),
-        )  # type: ignore
+            _path.relative_to(sys.prefix),  # type: ignore
+        )
     except ValueError:
         pass
 
