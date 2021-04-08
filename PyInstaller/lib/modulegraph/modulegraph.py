@@ -1421,7 +1421,8 @@ class ModuleGraph(ObjectGraph):
         co = compile(co_ast, pathname, 'exec', 0, True)
         m = self.createNode(Script, pathname)
         self._updateReference(caller, m, None)
-        self._scan_code(m, co, co_ast)
+        n = self._scan_code(m, co, co_ast)
+        self._process_imports(n)
         m.code = co
         if self.replace_paths:
             m.code = self._replace_paths_in_code(m.code)
@@ -1495,7 +1496,28 @@ class ModuleGraph(ObjectGraph):
         source_package = self._determine_parent(source_module)
         target_package, target_module_partname = self._find_head_package(
             source_package, target_module_partname, level)
-        target_module = self._load_tail(target_package, target_module_partname)
+
+        self.msgin(4, "load_tail", target_package, target_module_partname)
+
+        submodule = target_package
+        while target_module_partname:
+            i = target_module_partname.find('.')
+            if i < 0:
+                i = len(target_module_partname)
+            head, target_module_partname = target_module_partname[
+                :i], target_module_partname[i+1:]
+            mname = "%s.%s" % (submodule.identifier, head)
+            submodule = self._safe_import_module(head, mname, submodule)
+
+            if submodule is None:
+                # FIXME: Why do we no longer return a MissingModule instance?
+                # result = self.createNode(MissingModule, mname)
+                self.msgout(4, "raise ImportError: No module named", mname)
+                raise ImportError("No module named " + repr(mname))
+
+        self.msgout(4, "load_tail ->", submodule)
+
+        target_module = submodule
         target_modules = [target_module]
 
         # If this is a "from"-style import *AND* this target module is
@@ -1681,50 +1703,6 @@ class ModuleGraph(ObjectGraph):
         raise ImportError("No module named " + target_package_name)
 
 
-    def _load_tail(self, package, submodule_name):
-        """
-        Import the submodule with the passed name and all parent packages of
-        this module from the previously imported parent package corresponding
-        to the passed graph node.
-
-        Parameters
-        ----------
-        package : Package
-            Graph node of the previously imported package containing this
-            submodule.
-        submodule_name : str
-            Name of the submodule to be imported in either qualified (e.g.,
-            `email.mime.base`) or unqualified (e.g., `base`) form.
-
-        Returns
-        ----------
-        Node
-            Graph node created for this submodule.
-
-        Raises
-        ----------
-        ImportError
-            If this submodule is unimportable.
-        """
-        self.msgin(4, "load_tail", package, submodule_name)
-
-        submodule = package
-        while submodule_name:
-            i = submodule_name.find('.')
-            if i < 0:
-                i = len(submodule_name)
-            head, submodule_name = submodule_name[:i], submodule_name[i+1:]
-            mname = "%s.%s" % (submodule.identifier, head)
-            submodule = self._safe_import_module(head, mname, submodule)
-
-            if submodule is None:
-                # FIXME: Why do we no longer return a MissingModule instance?
-                # result = self.createNode(MissingModule, mname)
-                self.msgout(4, "raise ImportError: No module named", mname)
-                raise ImportError("No module named " + repr(mname))
-
-        self.msgout(4, "load_tail ->", submodule)
-        return submodule
 
 
     #FIXME: Refactor from a generator yielding graph nodes into a non-generator
@@ -2064,7 +2042,26 @@ class ModuleGraph(ObjectGraph):
                 self.msgout(3, "safe_import_module -> None (%r)" % exc)
                 return None
 
-            module = self._load_module(module_name, pathname, loader)
+            (module, co) = self._load_module(module_name, pathname, loader)
+            if co is not None:
+                try:
+                    if isinstance(co, ast.AST):
+                        co_ast = co
+                        co = compile(co_ast, pathname, 'exec', 0, True)
+                    else:
+                        co_ast = None
+                    n = self._scan_code(module, co, co_ast)
+                    self._process_imports(n)
+
+                    if self.replace_paths:
+                        co = self._replace_paths_in_code(co)
+                    module.code = co
+                except SyntaxError:
+                    self.msg(
+                        1, "safe_import_module: SyntaxError in ", pathname,
+                    )
+                    cls = InvalidSourceModule
+                    module = self.createNode(cls, module_name)
 
         # If this is a submodule rather than top-level module...
         if parent_module is not None:
@@ -2127,7 +2124,7 @@ class ModuleGraph(ObjectGraph):
                 fqname, [])
 
             if isinstance(m, NamespacePackage):
-                return m
+                return (m, None)
 
         co = None
         if loader is BUILTIN_MODULE:
@@ -2166,26 +2163,9 @@ class ModuleGraph(ObjectGraph):
 
         m = self.createNode(cls, fqname)
         m.filename = pathname
-        if co is not None:
-            try:
-                if isinstance(co, ast.AST):
-                    co_ast = co
-                    co = compile(co_ast, pathname, 'exec', 0, True)
-                else:
-                    co_ast = None
-                self._scan_code(m, co, co_ast)
-
-                if self.replace_paths:
-                    co = self._replace_paths_in_code(co)
-                m.code = co
-            except SyntaxError:
-                self.msg(1, "load_module: SyntaxError in ", pathname)
-                cls = InvalidSourceModule
-                m = self.createNode(cls, fqname)
 
         self.msgout(2, "load_module ->", m)
-        return m
-
+        return (m, co)
 
     def _safe_import_hook(
         self, target_module_partname, source_module, target_attr_names,
@@ -2629,6 +2609,10 @@ class ModuleGraph(ObjectGraph):
             Optional abstract syntax tree (AST) of this module if any or `None`
             otherwise. Defaults to `None`, in which case the passed
             `module_code_object` is parsed instead.
+        Returns
+        ----------
+        module : Node
+            Graph node of the module to be parsed.
         """
 
         # For safety, guard against multiple scans of the same module by
@@ -2657,9 +2641,7 @@ class ModuleGraph(ObjectGraph):
             self._scan_bytecode(
                 module, module_code_object, is_scanning_imports=True)
 
-        # Add all imports parsed above to this graph.
-        self._process_imports(module)
-
+        return module
 
     def _scan_ast(self, module, module_code_object_ast):
         """
