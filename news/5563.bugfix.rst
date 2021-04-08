@@ -1,2 +1,0 @@
-Strip absolute paths from ``.pyc`` modules collected into ``base_library.zip``
-to enable reproducible builds that are invariant to Python install location.

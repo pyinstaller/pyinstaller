@@ -1,3 +1,0 @@
-Fix the return code if the frozen script fails due to unhandled exception.
-The return code 1 is used instead of -1, to keep the behavior consistent
-with that of the python interpreter.

@@ -1,1 +1,0 @@
-Enable cross compiling for FreeBSD from Linux.

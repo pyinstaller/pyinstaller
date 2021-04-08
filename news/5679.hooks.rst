@@ -1,1 +1,0 @@
-Update hook for ``sqlalchemy`` to support version 1.4.0 and above.

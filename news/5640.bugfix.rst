@@ -1,2 +1,0 @@
-(macOS) Fix ``Bad CPU type in executable`` error in helper-spawned python
-processes when running under ``arm64``-only flavor of Python on Apple M1.

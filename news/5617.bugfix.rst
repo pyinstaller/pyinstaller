@@ -1,2 +1,0 @@
-Fix ``onefile`` builds failing to extract files when the full target
-path exceeds 260 characters.

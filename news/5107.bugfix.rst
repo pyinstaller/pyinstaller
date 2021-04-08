@@ -1,3 +1,0 @@
-(OSX) Suppress missing library error messages for system libraries as
-those are never collected by PyInstaller and starting with Big Sur,
-they are hidden by the OS.

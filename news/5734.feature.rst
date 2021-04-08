@@ -1,2 +1,0 @@
-Add new hook utility :func:`~PyInstaller.utils.hooks.collect_entry_point` for
-collecting plugins defined through setuptools entry points.

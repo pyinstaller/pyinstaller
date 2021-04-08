@@ -1,2 +1,0 @@
-Perform file extraction from the embedded archive in a streaming manner
-in order to limit memory footprint when archive contains large files.
