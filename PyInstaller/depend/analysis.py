@@ -685,6 +685,11 @@ class PyiModuleGraph(ModuleGraph):
         # so far. Assuming that runtime hooks apply only to modules and packages.
         temp_toc = self._make_toc(VALID_MODULE_TYPES)
         for (mod_name, path, typecode) in temp_toc:
+            # Explicitly ignore PYSOURCE to prevent unfortunately-named
+            # entry-point scripts from spuriously triggering inclusion
+            # of run-time hook
+            if typecode == 'PYSOURCE':
+                continue
             # Look if there is any run-time hook for given module.
             if mod_name in self._available_rthooks:
                 # There could be several run-time hooks for a module.
