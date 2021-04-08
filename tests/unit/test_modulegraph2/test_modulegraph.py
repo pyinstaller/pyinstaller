@@ -22,7 +22,8 @@ from PyInstaller.lib.modulegraph2 import (
     SourceModule,
     distribution_named,
 )
-from modulegraph2._distributions import distribution_for_file
+from PyInstaller.lib.modulegraph2._distributions import distribution_for_file
+
 
 from . import util
 from .test_distributions import build_and_install
