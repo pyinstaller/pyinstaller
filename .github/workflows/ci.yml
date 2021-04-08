@@ -1,0 +1,112 @@
+name: CI
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+## events but only for the master branch
+on:
+  push:
+    branches:
+      - 'develop'
+  pull_request:
+    branches:
+      - '**'
+      - '!master'
+      - '!pyup/**'
+
+jobs:
+  tests:
+    runs-on: ${{ matrix.os }} 
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8, 3.9]
+        os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install apt packages
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          sudo apt-get install -qq \
+            libxml2-dev libxslt1-dev gfortran libatlas-base-dev \
+            libespeak1 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 \
+            libxkbcommon-x11-0 libxcb-icccm4 libxcb1 openssl \
+            libxcb-randr0-dev libxcb-xtest0-dev libxcb-xinerama0-dev \
+            libxcb-shape0-dev libxcb-xkb-dev xvfb
+
+      - name: Download AppImage tool
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          wget \
+            https://github.com/AppImage/AppImageKit/releases/download/12/appimagetool-x86_64.AppImage \
+            -O $HOME/appimagetool-x86_64.AppImage
+          chmod a+x $HOME/appimagetool-x86_64.AppImage
+
+      - name: Set cache dir
+        run: echo "pip_cache_dir=$(pip cache dir)" >> $GITHUB_ENV
+        shell: bash
+        
+      - name: Fetch cache
+        id: cache-target
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.pip_cache_dir }}
+          key: ${{ runner.os }}-${{ matrix.python-version }}
+
+      - name: Set up environment
+        run: |
+          # Update pip.
+          python -m pip install -U pip setuptools wheel
+
+          # Install dependencies for tests.
+          pip install --progress-bar=off -U -r tests/requirements-tools.txt -r tests/requirements-libraries.txt
+
+          # Install PyInstaller Hook Sample, to ensure that tests declared in
+          # entry-points are discovered.
+          pip install https://github.com/pyinstaller/hooksample/archive/v4.0rc1.zip
+
+          # Compile bootloader
+          cd bootloader
+          python waf all
+          cd ..
+
+          # Install PyInstaller.
+          pip install --progress-bar=off -e .
+
+          # Make sure the help options print.
+          python -m pyinstaller -h
+
+      - name: Start display server
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          Xvfb :99 &
+          echo "DISPLAY=:99" >> $GITHUB_ENV
+          echo "QT_DEBUG_PLUGINS=1" >> $GITHUB_ENV
+
+      - name: Run tests
+        if: ${{ !startsWith(matrix.os, 'macos') }}
+        uses: xoviat/actions-pytest@0.1-alpha1
+        with:
+          args: -n 3 --maxfail 3 --durations 10 tests/unit tests/functional --force-flaky --no-flaky-report
+
+      - name: Run tests
+        if: startsWith(matrix.os, 'macos')
+        uses: xoviat/actions-pytest@0.1-alpha1
+        with:
+          args: > 
+            -n 3 --maxfail 3 --durations 10 tests/unit tests/functional --ignore tests/functional/test_libraries.py 
+            --force-flaky --no-flaky-report
+
+      - name: Run hooksample tests
+        if: startsWith(matrix.os, 'macos')
+        run: |
+          # The ``run_tests`` script is invoked with the ``-c`` option to
+          # specify a ``pytest.ini``, rather than allowing pytest to find
+          # something unexpected in the filesystem (it searches from the root
+          # dir all the way to the top of the filesystem per
+          # https://docs.pytest.org/en/latest/customize.html).
+          python -m PyInstaller.utils.run_tests -c PyInstaller/utils/pytest.ini --include_only=pyi_hooksample.
