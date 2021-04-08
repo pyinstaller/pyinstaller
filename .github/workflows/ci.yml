@@ -64,11 +64,6 @@ jobs:
 
           # Install dependencies for tests.
           pip install --progress-bar=off -U -r tests/requirements-tools.txt -r tests/requirements-libraries.txt
-
-          # Install PyInstaller Hook Sample, to ensure that tests declared in
-          # entry-points are discovered.
-          pip install https://github.com/pyinstaller/hooksample/archive/v4.0rc1.zip
-
           # Compile bootloader
           cd bootloader
           python waf all
