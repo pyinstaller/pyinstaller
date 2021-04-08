@@ -8,8 +8,8 @@ import tempfile
 import unittest
 import unittest.mock
 
-import modulegraph2
-from modulegraph2 import __main__ as main
+import PyInstaller.lib.modulegraph2
+from PyInstaller.lib.modulegraph2 import __main__ as main
 
 from . import util
 

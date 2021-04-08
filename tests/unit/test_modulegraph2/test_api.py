@@ -1,6 +1,6 @@
 import unittest
 
-import modulegraph2
+import PyInstaller.lib.modulegraph2
 
 PUBLIC_SYMBOLS = {
     "Alias",

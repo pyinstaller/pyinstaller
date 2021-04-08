@@ -1,7 +1,7 @@
 import importlib.util
 import unittest
 
-from modulegraph2 import _implies as implies
+from PyInstaller.lib.modulegraph2 import _implies as implies
 
 
 class TestImplies(unittest.TestCase):

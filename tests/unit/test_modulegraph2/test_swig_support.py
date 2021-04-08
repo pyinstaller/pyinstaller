@@ -6,7 +6,7 @@ import subprocess
 import sys
 import unittest
 
-import modulegraph2
+import PyInstaller.lib.modulegraph2
 
 from . import util
 

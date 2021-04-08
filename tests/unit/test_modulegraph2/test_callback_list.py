@@ -1,6 +1,6 @@
 import unittest
 
-import modulegraph2._callback_list as callback_list
+import PyInstaller.lib.modulegraph2._callback_list as callback_list
 
 
 class TestCallbackList(unittest.TestCase):

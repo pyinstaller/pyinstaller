@@ -1,7 +1,7 @@
 import unittest
 
-from modulegraph2 import _depinfo as depinfo
-from modulegraph2 import _importinfo as importinfo
+from PyInstaller.lib.modulegraph2 import _depinfo as depinfo
+from PyInstaller.lib.modulegraph2 import _importinfo as importinfo
 
 
 class TestDepInfo(unittest.TestCase):

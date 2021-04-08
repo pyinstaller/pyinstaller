@@ -1,7 +1,7 @@
 import sys
 import unittest
 
-from modulegraph2 import _utilities as utilities
+from PyInstaller.lib.modulegraph2 import _utilities as utilities
 
 
 class TestPrivateUtilities(unittest.TestCase):

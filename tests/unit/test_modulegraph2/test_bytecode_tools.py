@@ -1,7 +1,7 @@
 import textwrap
 import unittest
 
-from modulegraph2 import _bytecode_tools as bytecode_tools
+from PyInstaller.lib.modulegraph2 import _bytecode_tools as bytecode_tools
 
 
 def make_code(source):

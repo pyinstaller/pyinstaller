@@ -11,7 +11,7 @@ try:
 except ImportError:
     import importlib_resources as resources  # type: ignore
 
-from modulegraph2 import (
+from PyInstaller.lib.modulegraph2 import (
     BuiltinModule,
     BytecodeModule,
     ExtensionModule,
@@ -22,7 +22,7 @@ from modulegraph2 import (
     PyPIDistribution,
     SourceModule,
 )
-from modulegraph2 import _graphbuilder as graphbuilder
+from PyInstaller.lib.modulegraph2 import _graphbuilder as graphbuilder
 
 from . import util
 

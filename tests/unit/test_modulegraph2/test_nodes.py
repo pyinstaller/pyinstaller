@@ -3,7 +3,7 @@ import os
 import pathlib
 import unittest
 
-from modulegraph2 import _nodes as nodes
+from PyInstaller.lib.modulegraph2 import _nodes as nodes
 
 loader = importlib.util.find_spec("os").loader  # type: ignore
 file_path = pathlib.Path(__file__).resolve()

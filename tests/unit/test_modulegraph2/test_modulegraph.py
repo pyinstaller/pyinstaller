@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from io import StringIO
 
-from modulegraph2 import (
+from PyInstaller.lib.modulegraph2 import (
     Alias,
     AliasNode,
     BuiltinModule,

@@ -7,7 +7,7 @@ import sys
 from types import ModuleType
 from typing import Optional, cast
 
-import modulegraph2
+import PyInstaller.lib.modulegraph2
 
 from ._graphbuilder import node_for_spec
 from ._nodes import BaseNode, ExtensionModule, Module, Package

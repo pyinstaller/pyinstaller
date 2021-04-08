@@ -7,7 +7,7 @@ import unittest
 import zipfile
 from importlib.machinery import EXTENSION_SUFFIXES
 
-import modulegraph2._distributions as distributions
+import PyInstaller.lib.modulegraph2._distributions as distributions
 
 
 def rewrite_record(wheel_file):

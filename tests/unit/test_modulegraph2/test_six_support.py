@@ -5,8 +5,8 @@ import subprocess
 import sys
 import unittest
 
-import modulegraph2
-from modulegraph2 import _graphbuilder as graphbuilder
+import PyInstaller.lib.modulegraph2
+from PyInstaller.lib.modulegraph2 import _graphbuilder as graphbuilder
 
 from . import util
 

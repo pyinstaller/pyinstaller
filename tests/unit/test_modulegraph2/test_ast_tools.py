@@ -2,7 +2,7 @@ import ast
 import textwrap
 import unittest
 
-from modulegraph2 import _ast_tools as ast_tools
+from PyInstaller.lib.modulegraph2 import _ast_tools as ast_tools
 
 
 def make_ast(source):

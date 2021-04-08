@@ -5,7 +5,7 @@ import importlib
 import os
 import sys
 
-from modulegraph2 import Script
+from PyInstaller.lib.modulegraph2 import Script
 
 
 def clear_sys_modules(test_path):

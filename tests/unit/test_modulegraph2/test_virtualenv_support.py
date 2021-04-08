@@ -3,8 +3,8 @@ import pathlib
 import sys
 import unittest
 
-import modulegraph2
-from modulegraph2 import _virtualenv_support as virtualenv_support
+import PyInstaller.lib.modulegraph2
+from PyInstaller.lib.modulegraph2 import _virtualenv_support as virtualenv_support
 
 PYLIB_DIR = f"python{sys.version_info[0]}.{sys.version_info[1]}"
 
