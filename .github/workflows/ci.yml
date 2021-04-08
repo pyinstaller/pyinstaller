@@ -102,7 +102,7 @@ jobs:
             --force-flaky --no-flaky-report
 
       - name: Run hooksample tests
-        if: matrix.os != 'macos-latest'
+        if: startsWith(matrix.os, 'macos')
         run: |
           # The ``run_tests`` script is invoked with the ``-c`` option to
           # specify a ``pytest.ini``, rather than allowing pytest to find
