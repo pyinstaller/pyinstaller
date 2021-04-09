@@ -150,7 +150,8 @@ def applyRedirects(manifest, redirects):
     return redirecting
 
 
-def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None):
+def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None,
+               target_arch=None):
     """
     Cache prevents preprocessing binary files again and again.
 
@@ -226,6 +227,7 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None):
             # signatures, so remove any existing signature and then re-add
             # it after paths are rewritten.
             if is_darwin:
+                osxutils.binary_to_target_arch(cachedfile, target_arch)
                 osxutils.remove_signature_from_binary(cachedfile)
                 dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
                 osxutils.sign_binary(cachedfile)
@@ -254,7 +256,8 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None):
 
     if upx:
         if strip:
-            fnm = checkCache(fnm, strip=True, upx=False)
+            fnm = checkCache(fnm, strip=True, upx=False,
+                             target_arch=target_arch)
         # We meed to avoid using UPX with Windows DLLs that have Control
         # Flow Guard enabled, as it breaks them.
         if is_win and versioninfo.pefile_check_control_flow_guard(fnm):
@@ -364,6 +367,7 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None):
     # signatures, so remove any existing signature and then re-add
     # it after paths are rewritten.
     if is_darwin:
+        osxutils.binary_to_target_arch(cachedfile, target_arch)
         osxutils.remove_signature_from_binary(cachedfile)
         dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
         osxutils.sign_binary(cachedfile)
