@@ -159,7 +159,8 @@ class PKG(Target):
                  'SPLASH': 'l'}
 
     def __init__(self, toc, name=None, cdict=None, exclude_binaries=0,
-                 strip_binaries=False, upx_binaries=False, upx_exclude=None):
+                 strip_binaries=False, upx_binaries=False, upx_exclude=None,
+                 target_arch=None):
         """
         toc
                 A TOC (Table of Contents)
@@ -187,6 +188,7 @@ class PKG(Target):
         self.strip_binaries = strip_binaries
         self.upx_binaries = upx_binaries
         self.upx_exclude = upx_exclude or []
+        self.target_arch = target_arch
         # This dict tells PyInstaller what items embedded in the executable should
         # be compressed.
         if self.cdict is None:
@@ -209,7 +211,8 @@ class PKG(Target):
             ('exclude_binaries', _check_guts_eq),
             ('strip_binaries', _check_guts_eq),
             ('upx_binaries', _check_guts_eq),
-            ('upx_exclude', _check_guts_eq)
+            ('upx_exclude', _check_guts_eq),
+            ('target_arch', _check_guts_eq)
             # no calculated/analysed values
             )
 
@@ -266,7 +269,8 @@ class PKG(Target):
                     fnm = checkCache(fnm, strip=self.strip_binaries,
                                      upx=self.upx_binaries,
                                      upx_exclude=self.upx_exclude,
-                                     dist_nm=inm)
+                                     dist_nm=inm,
+                                     target_arch=self.target_arch)
 
                     mytoc.append((inm, fnm, self.cdict.get(typ, 0),
                                   self.xformdict.get(typ, 'b')))
@@ -459,7 +463,8 @@ class EXE(Target):
         self.pkg = PKG(self.toc, cdict=kwargs.get('cdict', None),
                        exclude_binaries=self.exclude_binaries,
                        strip_binaries=self.strip, upx_binaries=self.upx,
-                       upx_exclude=self.upx_exclude
+                       upx_exclude=self.upx_exclude,
+                       target_arch=self.target_arch
                        )
         self.dependencies = self.pkg.dependencies
 
@@ -764,6 +769,7 @@ class COLLECT(Target):
         self.strip_binaries = kws.get('strip', False)
         self.upx_exclude = kws.get("upx_exclude", [])
         self.console = True
+        self.target_arch = None
 
         if CONF['hasUPX']:
             self.upx_binaries = kws.get('upx', False)
@@ -787,6 +793,7 @@ class COLLECT(Target):
                 self.toc.append((os.path.basename(arg.name), arg.name, arg.typ))
                 if isinstance(arg, EXE):
                     self.console = arg.console
+                    self.target_arch = arg.target_arch
                     for tocnm, fnm, typ in arg.toc:
                         if tocnm == os.path.basename(arg.name) + ".manifest":
                             self.toc.append((tocnm, fnm, typ))
@@ -833,7 +840,8 @@ class COLLECT(Target):
                 fnm = checkCache(fnm, strip=self.strip_binaries,
                                  upx=self.upx_binaries,
                                  upx_exclude=self.upx_exclude,
-                                 dist_nm=inm)
+                                 dist_nm=inm,
+                                 target_arch=self.target_arch)
             if typ != 'DEPENDENCY':
                 if os.path.isdir(fnm):
                     # beacuse shutil.copy2() is the default copy function
