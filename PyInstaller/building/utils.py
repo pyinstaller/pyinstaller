@@ -187,6 +187,8 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None,
     pyver = ('py%d%s') % (sys.version_info[0], sys.version_info[1])
     arch = platform.architecture()[0]
     cachedir = os.path.join(CONF['cachedir'], 'bincache%d%d_%s_%s' % (strip, upx, pyver, arch))
+    if target_arch:
+        cachedir = os.path.join(cachedir, target_arch)
     if not os.path.exists(cachedir):
         os.makedirs(cachedir)
     cacheindexfn = os.path.join(cachedir, "index.dat")
