@@ -444,6 +444,17 @@ def __add_options(parser):
                         'in reverse DNS notation. For example: com.mycompany.department.appname '
                         "(default: first script's basename)")
 
+    g.add_argument('--target-architecture', '--target-arch',
+                   dest='target_arch', metavar='ARCH', default=None,
+                   help="Target architecture (macOS only; valid values: "
+                        "x86_64, arm64, universal2). Enables switching "
+                        "between universal2 and single-arch version of "
+                        "frozen application (provided python installation "
+                        "supports the target architecture). If not target "
+                        "architecture is not specified, the current running "
+                        "architecture is targeted.")
+
+
     g = parser.add_argument_group('Rarely used special options')
     g.add_argument("--runtime-tmpdir", dest="runtime_tmpdir", metavar="PATH",
                    help="Where to extract libraries and support files in "
@@ -473,7 +484,7 @@ def main(scripts, name=None, onefile=None,
          win_no_prefer_redirects=False, win_private_assemblies=False,
          collect_submodules=None, collect_binaries=None, collect_data=None,
          collect_all=None, copy_metadata=None, splash=None,
-         recursive_copy_metadata=None, **kwargs):
+         recursive_copy_metadata=None, target_arch=None, **kwargs):
     # If appname is not specified - use the basename of the main script as name.
     if name is None:
         name = os.path.splitext(os.path.basename(scripts[0]))[0]
@@ -610,6 +621,8 @@ def main(scripts, name=None, onefile=None,
         'icon': icon_file,
         # .app bundle identifier. Only OSX uses this item.
         'bundle_identifier': bundle_identifier,
+        # Target architecture (macOS only)
+        'target_arch': target_arch,
         # Windows assembly searching options
         'win_no_prefer_redirects': win_no_prefer_redirects,
         'win_private_assemblies': win_private_assemblies,
