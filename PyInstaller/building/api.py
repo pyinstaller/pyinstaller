@@ -388,6 +388,9 @@ class EXE(Target):
             if self.target_arch is None:
                 import platform
                 self.target_arch = platform.machine()
+            else:
+                assert self.target_arch in {'x86_64', 'arm64', 'universal2'}, \
+                    f"Unsupported target arch: {self.target_arch}"
             logger.info("EXE target arch: %s", self.target_arch)
         else:
             self.target_arch = None  # explicitly disable
