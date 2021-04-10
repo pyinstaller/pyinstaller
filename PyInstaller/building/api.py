@@ -664,7 +664,8 @@ class EXE(Target):
 
             # Convert bootloader to target arch
             logger.info("Converting EXE to target arch (%s)", self.target_arch)
-            osxutils.binary_to_target_arch(self.name, self.target_arch)
+            osxutils.binary_to_target_arch(self.name, self.target_arch,
+                                           display_name='Bootloader EXE')
 
             # Strip signatures from all arch slices. Strictly speaking,
             # we need to remove signature (if present) from the last

@@ -287,11 +287,13 @@ def convert_binary_to_thin_arch(filename, thin_arch):
         raise SystemError("lipo failure!")
 
 
-def binary_to_target_arch(filename, target_arch):
+def binary_to_target_arch(filename, target_arch, display_name=None):
     """
     Check that the given binary contains required architecture slice(s)
     and convert the fat binary into thin one, if necessary.
     """
+    if not display_name:
+        display_name = filename  # Same as input file
     # Check the binary
     is_fat, archs = get_binary_architectures(filename)
     if is_fat:
@@ -299,16 +301,16 @@ def binary_to_target_arch(filename, target_arch):
             return  # Assume fat binary is universal2; nothing to do
         else:
             assert target_arch in archs, \
-                f"Binary {filename} does not contain slice for {target_arch}!"
+                f"{display_name} does not contain slice for {target_arch}!"
             # Convert to thin arch
-            logger.debug("Converting fat binary %s to thin binary (%s)",
-                         filename, target_arch)
+            logger.debug("Converting fat binary %s (%s) to thin binary (%s)",
+                         filename, display_name, target_arch)
             convert_binary_to_thin_arch(filename, target_arch)
     else:
         assert target_arch != 'universal2', \
-            f"Binary {filename} is not a fat binary!"
+            f"{display_name} is not a fat binary!"
         assert target_arch in archs, \
-            f"Binary {filename} is incompatible with target arch " \
+            f"{display_name} is incompatible with target arch " \
             f"{target_arch} (has arch: {archs[0]})!"
         return  # Nothing to do
 
