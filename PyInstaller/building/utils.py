@@ -151,7 +151,7 @@ def applyRedirects(manifest, redirects):
 
 
 def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None,
-               target_arch=None):
+               target_arch=None, codesign_identity=None):
     """
     Cache prevents preprocessing binary files again and again.
 
@@ -189,6 +189,14 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None,
     cachedir = os.path.join(CONF['cachedir'], 'bincache%d%d_%s_%s' % (strip, upx, pyver, arch))
     if target_arch:
         cachedir = os.path.join(cachedir, target_arch)
+    if is_darwin:
+        if codesign_identity:
+            # Compute hex digest of codesign identity string to prevent
+            # issues with invalid characters.
+            csi_hash = hashlib.sha256(codesign_identity.encode('utf-8'))
+            cachedir = os.path.join(cachedir, csi_hash.hexdigest())
+        else:
+            cachedir = os.path.join(cachedir, 'adhoc')  # ad-hoc signing
     if not os.path.exists(cachedir):
         os.makedirs(cachedir)
     cacheindexfn = os.path.join(cachedir, "index.dat")
@@ -233,7 +241,7 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None,
                                                display_name=fnm)
                 osxutils.remove_signature_from_binary(cachedfile)
                 dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
-                osxutils.sign_binary(cachedfile)
+                osxutils.sign_binary(cachedfile, codesign_identity)
             return cachedfile
 
 
@@ -260,7 +268,8 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None,
     if upx:
         if strip:
             fnm = checkCache(fnm, strip=True, upx=False,
-                             target_arch=target_arch)
+                             target_arch=target_arch,
+                             codesign_identity=codesign_identity)
         # We meed to avoid using UPX with Windows DLLs that have Control
         # Flow Guard enabled, as it breaks them.
         if is_win and versioninfo.pefile_check_control_flow_guard(fnm):
@@ -374,7 +383,7 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None,
                                        display_name=fnm)
         osxutils.remove_signature_from_binary(cachedfile)
         dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
-        osxutils.sign_binary(cachedfile)
+        osxutils.sign_binary(cachedfile, codesign_identity)
     return cachedfile
 
 

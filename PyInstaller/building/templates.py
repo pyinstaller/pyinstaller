@@ -48,7 +48,8 @@ exe = EXE(pyz,
           upx_exclude=%(upx_exclude)s,
           runtime_tmpdir=%(runtime_tmpdir)r,
           console=%(console)s,
-          target_arch=%(target_arch)r %(exe_options)s)
+          target_arch=%(target_arch)r,
+          codesign_identity=%(codesign_identity)r %(exe_options)s)
 """
 
 onedirtmplt = """# -*- mode: python ; coding: utf-8 -*-
@@ -81,7 +82,8 @@ exe = EXE(pyz,
           strip=%(strip)s,
           upx=%(upx)s,
           console=%(console)s,
-          target_arch=%(target_arch)r %(exe_options)s)
+          target_arch=%(target_arch)r,
+          codesign_identity=%(codesign_identity)r %(exe_options)s)
 coll = COLLECT(exe,
                a.binaries,
                a.zipfiles,

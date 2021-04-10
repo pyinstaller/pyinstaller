@@ -160,7 +160,7 @@ class PKG(Target):
 
     def __init__(self, toc, name=None, cdict=None, exclude_binaries=0,
                  strip_binaries=False, upx_binaries=False, upx_exclude=None,
-                 target_arch=None):
+                 target_arch=None, codesign_identity=None):
         """
         toc
                 A TOC (Table of Contents)
@@ -189,6 +189,7 @@ class PKG(Target):
         self.upx_binaries = upx_binaries
         self.upx_exclude = upx_exclude or []
         self.target_arch = target_arch
+        self.codesign_identity = codesign_identity
         # This dict tells PyInstaller what items embedded in the executable should
         # be compressed.
         if self.cdict is None:
@@ -212,7 +213,8 @@ class PKG(Target):
             ('strip_binaries', _check_guts_eq),
             ('upx_binaries', _check_guts_eq),
             ('upx_exclude', _check_guts_eq),
-            ('target_arch', _check_guts_eq)
+            ('target_arch', _check_guts_eq),
+            ('codesign_identity', _check_guts_eq),
             # no calculated/analysed values
             )
 
@@ -270,7 +272,8 @@ class PKG(Target):
                                      upx=self.upx_binaries,
                                      upx_exclude=self.upx_exclude,
                                      dist_nm=inm,
-                                     target_arch=self.target_arch)
+                                     target_arch=self.target_arch,
+                                     codesign_identity=self.codesign_identity)
 
                     mytoc.append((inm, fnm, self.cdict.get(typ, 0),
                                   self.xformdict.get(typ, 'b')))
@@ -356,6 +359,10 @@ class EXE(Target):
                 slice(s) and/or to convert fat binaries into thin ones as
                 necessary. If not specified (default), a single-arch build
                 corresponding to running architecture is assumed.
+            codesign_identity
+                macOS only. Use the provided identity to sign collected
+                binaries and the generated executable. If signing identity is
+                not provided, ad-hoc signing is performed.
         """
         from PyInstaller.config import CONF
         Target.__init__(self)
@@ -394,6 +401,13 @@ class EXE(Target):
             logger.info("EXE target arch: %s", self.target_arch)
         else:
             self.target_arch = None  # explicitly disable
+
+        # Code signing identity (macOS only)
+        self.codesign_identity = kwargs.get('codesign_identity', None)
+        if is_darwin:
+            logger.info("Code signing identity: %s", self.codesign_identity)
+        else:
+            self.codesign_identity = None  # explicitly disable
 
         if CONF['hasUPX']:
             self.upx = kwargs.get('upx', False)
@@ -467,7 +481,8 @@ class EXE(Target):
                        exclude_binaries=self.exclude_binaries,
                        strip_binaries=self.strip, upx_binaries=self.upx,
                        upx_exclude=self.upx_exclude,
-                       target_arch=self.target_arch
+                       target_arch=self.target_arch,
+                       codesign_identity=self.codesign_identity
                        )
         self.dependencies = self.pkg.dependencies
 
@@ -490,6 +505,7 @@ class EXE(Target):
             ('manifest', _check_guts_eq),
             ('append_pkg', _check_guts_eq),
             ('target_arch', _check_guts_eq),
+            ('codesign_identity', _check_guts_eq),
             # for the case the directory ius shared between platforms:
             ('pkgname', _check_guts_eq),
             ('toc', _check_guts_eq),
@@ -722,7 +738,7 @@ class EXE(Target):
             # Re-sign the binary (either ad-hoc or using real identity,
             # if provided)
             logger.info("Re-signing the EXE")
-            osxutils.sign_binary(self.name)
+            osxutils.sign_binary(self.name, self.codesign_identity)
         else:
             # Fall back to just append on end of file
             logger.info("Appending archive to EXE %s", self.name)
@@ -774,6 +790,7 @@ class COLLECT(Target):
         self.upx_exclude = kws.get("upx_exclude", [])
         self.console = True
         self.target_arch = None
+        self.codesign_identity = None
 
         if CONF['hasUPX']:
             self.upx_binaries = kws.get('upx', False)
@@ -798,6 +815,7 @@ class COLLECT(Target):
                 if isinstance(arg, EXE):
                     self.console = arg.console
                     self.target_arch = arg.target_arch
+                    self.codesign_identity = arg.codesign_identity
                     for tocnm, fnm, typ in arg.toc:
                         if tocnm == os.path.basename(arg.name) + ".manifest":
                             self.toc.append((tocnm, fnm, typ))
@@ -845,7 +863,8 @@ class COLLECT(Target):
                                  upx=self.upx_binaries,
                                  upx_exclude=self.upx_exclude,
                                  dist_nm=inm,
-                                 target_arch=self.target_arch)
+                                 target_arch=self.target_arch,
+                                 codesign_identity=self.codesign_identity)
             if typ != 'DEPENDENCY':
                 if os.path.isdir(fnm):
                     # beacuse shutil.copy2() is the default copy function
