@@ -232,16 +232,6 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None,
         if digest != cache_index[basenm]:
             os.remove(cachedfile)
         else:
-            # On Mac OS X we need relative paths to dll dependencies
-            # starting with @executable_path. Modifying headers invalidates
-            # signatures, so remove any existing signature and then re-add
-            # it after paths are rewritten.
-            if is_darwin:
-                osxutils.binary_to_target_arch(cachedfile, target_arch,
-                                               display_name=fnm)
-                osxutils.remove_signature_from_binary(cachedfile)
-                dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
-                osxutils.sign_binary(cachedfile, codesign_identity)
             return cachedfile
 
 
@@ -267,7 +257,7 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None,
 
     if upx:
         if strip:
-            fnm = checkCache(fnm, strip=True, upx=False,
+            fnm = checkCache(fnm, strip=True, upx=False, dist_nm=dist_nm,
                              target_arch=target_arch,
                              codesign_identity=codesign_identity)
         # We meed to avoid using UPX with Windows DLLs that have Control
