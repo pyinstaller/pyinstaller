@@ -454,6 +454,13 @@ def __add_options(parser):
                         "architecture is not specified, the current running "
                         "architecture is targeted.")
 
+    g.add_argument('--codesign-identity', dest='codesign_identity',
+                   metavar='IDENTITY', default=None,
+                   help="Code signing identity (macOS only). Use the provided "
+                        "identity to sign collected binaries and generated "
+                        "executable. If signing identity is not provided, "
+                        "ad-hoc signing is performed instead.")
+
 
     g = parser.add_argument_group('Rarely used special options')
     g.add_argument("--runtime-tmpdir", dest="runtime_tmpdir", metavar="PATH",
@@ -484,7 +491,8 @@ def main(scripts, name=None, onefile=None,
          win_no_prefer_redirects=False, win_private_assemblies=False,
          collect_submodules=None, collect_binaries=None, collect_data=None,
          collect_all=None, copy_metadata=None, splash=None,
-         recursive_copy_metadata=None, target_arch=None, **kwargs):
+         recursive_copy_metadata=None, target_arch=None,
+         codesign_identity=None, **kwargs):
     # If appname is not specified - use the basename of the main script as name.
     if name is None:
         name = os.path.splitext(os.path.basename(scripts[0]))[0]
@@ -623,6 +631,8 @@ def main(scripts, name=None, onefile=None,
         'bundle_identifier': bundle_identifier,
         # Target architecture (macOS only)
         'target_arch': target_arch,
+        # Code signing identity (macOS only)
+        'codesign_identity': codesign_identity,
         # Windows assembly searching options
         'win_no_prefer_redirects': win_no_prefer_redirects,
         'win_private_assemblies': win_private_assemblies,
