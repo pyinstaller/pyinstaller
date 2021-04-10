@@ -229,7 +229,8 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None,
             # signatures, so remove any existing signature and then re-add
             # it after paths are rewritten.
             if is_darwin:
-                osxutils.binary_to_target_arch(cachedfile, target_arch)
+                osxutils.binary_to_target_arch(cachedfile, target_arch,
+                                               display_name=fnm)
                 osxutils.remove_signature_from_binary(cachedfile)
                 dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
                 osxutils.sign_binary(cachedfile)
@@ -369,7 +370,8 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None,
     # signatures, so remove any existing signature and then re-add
     # it after paths are rewritten.
     if is_darwin:
-        osxutils.binary_to_target_arch(cachedfile, target_arch)
+        osxutils.binary_to_target_arch(cachedfile, target_arch,
+                                       display_name=fnm)
         osxutils.remove_signature_from_binary(cachedfile)
         dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
         osxutils.sign_binary(cachedfile)
