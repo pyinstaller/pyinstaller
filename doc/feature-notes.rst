@@ -135,6 +135,106 @@ So if you are using a Cython C object module, which imports Python modules,
 you will have to list these as ``--hidden-import``.
 
 
+macOS multi-arch support
+========================
+
+With the introduction of Apple Silicon M1, there are now several architecture
+options available for python:
+
+- single-arch ``x86_64`` with thin binaries: older `python.org` builds,
+  `Homebrew`_ python running natively on Intel Macs or under `rosetta2`
+  on M1 Macs
+- single-arch ``arm64`` with thin binaries: `Homebrew`_ python running
+  natively on M1 macs
+- multi-arch ``universal2`` with fat binaries (i.e., containing both
+  ``x86_64`` and ``arm64`` slices): recent ``universal2`` `python.org`
+  builds
+
+|PyInstaller| aims to support all possible combinations stemming from
+the above options:
+
+- single-arch application created using corresponding single-arch python
+- ``universal2`` application created using ``universal2`` python
+- single-arch application created using ``universal2`` python (i.e.,
+  reducing ``universal2`` fat binaries into either ``x86_64`` or ``arm64``
+  thin binaries)
+
+**By default, PyInstaller targets the current running architecture
+and produces a single-arch binary** (``x86_64`` when running on Intel Mac
+or under `rosetta2` on M1 Mac, or ``arm64`` when running on M1 Mac). The
+reason for that is that even with a ``universal2`` python environment,
+some packages may end up providing only single-arch binaries, making it
+impossible to create a functional ``universal2`` frozen application.
+
+The alternative options, such as creating a ``universal2`` version
+of frozen application, or creating a non-native single-arch version using
+``universal2`` environment, must therefore be explicitly enabled. This
+can be done either by specifying the target architecture in the ``.spec``
+file via the ``target_arch=`` argument to ``EXE()``, or on command-line
+via the ``--target-arch`` switch. Valid values are ``x86_64``, ``arm64``,
+and ``universal2``.
+
+
+Architecture validation during binary collection
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To prevent run-time issues caused by missing or mismatched architecture slices
+in binaries, the binary collection process performs strict architecture validation.
+It checks whether collected binary files contain required arch slice(s), and if
+not, the build process is aborted with an error message about the problematic
+binary.
+
+In such cases, creating frozen application for the selected target
+architecture will not be possible unless the problem of missing arch slices
+is manually addressed (for example, by downloading the wheel corresponding to
+the missing architecture, and stiching the offending binary files together
+using the ``lipo`` utility).
+
+
+Trimming fat binaries for single-arch targets
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When targeting a single architecture, the build process extracts the
+corresponding arch slice from any collected fat binaries, including the
+bootloader. This results in a completely thin build even when building
+in ``universal2`` python environment.
+
+
+macOS binary code signing
+=========================
+
+With Apple Silicon M1 architecture, macOS introduced mandatory code signing,
+even if ad-hoc (i.e., without actual code-signing identity). This means
+that ``arm64`` arch slices (but possibly also ``x86_64`` ones, especially
+in ``universal2`` binaries) in collected binaries always come with signature.
+
+The processing of binaries done by |PyInstaller| (e.g., library path
+rewriting in binaries' headers) invalidates their signatures. Therefore,
+the signatures need to be re-generated, otherwise the OS refuses to load
+a binary.
+
+**By default, PyInstaller ad-hoc (re)signs all collected binaries and
+the generated executable itself.** Instead of ad-hoc signing, it is also
+possible to use real code-signing identity. To do so, either specify your
+identity in the ``.spec`` file via ``codesign_identity=`` argument to
+``EXE()`` , or on command-line via the ``--codesign-identity`` switch.
+
+The above option implicitly allows user to ensure that all collected
+binaries in either ``onefile`` or ``onedir`` build are signed with their
+identity. This is useful because for ``onefile`` builds, signing of
+embedded binaries cannot be performed in a post-processing step.
+
+App bundles
+~~~~~~~~~~~
+
+While |PyInstaller| automatically signs collected binaries and the
+generated executable itself, it does *not* attempt to sign `.app bundles`.
+
+Signing `.app bundles` may require `additional steps
+<https://github.com/pyinstaller/pyinstaller/wiki/Recipe-OSX-Code-Signing-Qt>`_
+to address corner-case issues, and should therefore be performed manually.
+
+
 .. include:: _common_definitions.txt
 
 .. Emacs config:
