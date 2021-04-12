@@ -219,10 +219,23 @@ possible to use real code-signing identity. To do so, either specify your
 identity in the ``.spec`` file via ``codesign_identity=`` argument to
 ``EXE()`` , or on command-line via the ``--codesign-identity`` switch.
 
-The above option implicitly allows user to ensure that all collected
-binaries in either ``onefile`` or ``onedir`` build are signed with their
-identity. This is useful because for ``onefile`` builds, signing of
-embedded binaries cannot be performed in a post-processing step.
+Being able to provide codesign identity allows user to ensure that all
+collected binaries in either ``onefile`` or ``onedir`` build are signed
+with their identity. This is useful because for ``onefile`` builds,
+signing of embedded binaries cannot be performed in a post-processing step.
+
+.. note::
+   When codesign identity is specified, |PyInstaller| also turns on
+   *hardened runtime* by passing ``--options=runtime`` to the ``codesign``
+   command. This requires the codesign identity to be a valid Apple-issued
+   code signing certificate, and will not work with self-signed certificates.
+
+   Trying to use self-signed certificate as a codesign identity will result
+   in shared libraries failing to load, with the following reason reported:
+
+      `[libname]: code signature in ([libname]) not valid for use in process
+      using Library Validation: mapped file has no Team ID and is not a
+      platform binary (signed with custom identity or adhoc?)`
 
 App bundles
 ~~~~~~~~~~~
