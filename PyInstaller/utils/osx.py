@@ -336,12 +336,15 @@ def sign_binary(filename, identity=None):
     Sign the binary using codesign utility. If no identity is provided,
     ad-hoc signing is performed.
     """
+    extra_args = []
     if not identity:
         identity = '-'  # ad-hoc signing
+    else:
+        extra_args.append('--options=runtime')  # hardened runtime
 
     logger.debug("Signing file %r", filename)
     cmd_args = ['codesign', '-s', identity, '--force', '--all-architectures',
-                filename]
+                '--timestamp', *extra_args, filename]
     retcode, stdout, stderr = exec_command_all(*cmd_args)
     if retcode != 0:
         logger.warning("codesign command (%r) failed with error code %d!\n"
