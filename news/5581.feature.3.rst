@@ -1,0 +1,3 @@
+Add ``--osx-entitlements-file`` command-line switch that specifies optional
+entitlements file to be used during code signing of collected binaries
+(macOS only).

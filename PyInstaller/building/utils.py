@@ -151,7 +151,8 @@ def applyRedirects(manifest, redirects):
 
 
 def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None,
-               target_arch=None, codesign_identity=None):
+               target_arch=None, codesign_identity=None,
+               entitlements_file=None):
     """
     Cache prevents preprocessing binary files again and again.
 
@@ -190,6 +191,7 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None,
     if target_arch:
         cachedir = os.path.join(cachedir, target_arch)
     if is_darwin:
+        # Separate by codesign identity
         if codesign_identity:
             # Compute hex digest of codesign identity string to prevent
             # issues with invalid characters.
@@ -197,6 +199,14 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None,
             cachedir = os.path.join(cachedir, csi_hash.hexdigest())
         else:
             cachedir = os.path.join(cachedir, 'adhoc')  # ad-hoc signing
+        # Separate by entitlements
+        if entitlements_file:
+            # Compute hex digest of entitlements file contents
+            with open(entitlements_file, 'rb') as fp:
+                ef_hash = hashlib.sha256(fp.read())
+            cachedir = os.path.join(cachedir, ef_hash.hexdigest())
+        else:
+            cachedir = os.path.join(cachedir, 'no-entitlements')
     if not os.path.exists(cachedir):
         os.makedirs(cachedir)
     cacheindexfn = os.path.join(cachedir, "index.dat")
@@ -259,7 +269,8 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None,
         if strip:
             fnm = checkCache(fnm, strip=True, upx=False, dist_nm=dist_nm,
                              target_arch=target_arch,
-                             codesign_identity=codesign_identity)
+                             codesign_identity=codesign_identity,
+                             entitlements_file=entitlements_file)
         # We meed to avoid using UPX with Windows DLLs that have Control
         # Flow Guard enabled, as it breaks them.
         if is_win and versioninfo.pefile_check_control_flow_guard(fnm):
@@ -373,7 +384,7 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None,
                                        display_name=fnm)
         osxutils.remove_signature_from_binary(cachedfile)
         dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
-        osxutils.sign_binary(cachedfile, codesign_identity)
+        osxutils.sign_binary(cachedfile, codesign_identity, entitlements_file)
     return cachedfile
 
 

@@ -237,6 +237,11 @@ signing of embedded binaries cannot be performed in a post-processing step.
       using Library Validation: mapped file has no Team ID and is not a
       platform binary (signed with custom identity or adhoc?)`
 
+Furthermore, it is possible to specify entitlements file to be used
+when signing the collected binaries and the executable. This can be
+done in the ``.spec`` file via ``entitlements_file=`` argument to
+``EXE()``, or on command-line via the ``--osx-entitlements-file`` switch.
+
 App bundles
 ~~~~~~~~~~~
 

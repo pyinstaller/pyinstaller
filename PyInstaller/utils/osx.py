@@ -331,7 +331,7 @@ def remove_signature_from_binary(filename):
         raise SystemError("codesign failure!")
 
 
-def sign_binary(filename, identity=None):
+def sign_binary(filename, identity=None, entitlements_file=None):
     """
     Sign the binary using codesign utility. If no identity is provided,
     ad-hoc signing is performed.
@@ -341,6 +341,9 @@ def sign_binary(filename, identity=None):
         identity = '-'  # ad-hoc signing
     else:
         extra_args.append('--options=runtime')  # hardened runtime
+    if entitlements_file:
+        extra_args.append('--entitlements')
+        extra_args.append(entitlements_file)
 
     logger.debug("Signing file %r", filename)
     cmd_args = ['codesign', '-s', identity, '--force', '--all-architectures',
