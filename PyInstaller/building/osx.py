@@ -56,6 +56,7 @@ class BUNDLE(Target):
         self.console = True
         self.target_arch = None
         self.codesign_identity = None
+        self.entitlements_file = None
 
         # .app bundle identifier for Code Signing
         self.bundle_identifier = kws.get('bundle_identifier')
@@ -75,6 +76,7 @@ class BUNDLE(Target):
                 self.console = arg.console
                 self.target_arch = arg.target_arch
                 self.codesign_identity = arg.codesign_identity
+                self.entitlements_file = arg.entitlements_file
             elif isinstance(arg, TOC):
                 self.toc.extend(arg)
                 # TOC doesn't have a strip or upx attribute, so there is no way for us to
@@ -87,6 +89,7 @@ class BUNDLE(Target):
                 self.console = arg.console
                 self.target_arch = arg.target_arch
                 self.codesign_identity = arg.codesign_identity
+                self.entitlements_file = arg.entitlements_file
             else:
                 logger.info("unsupported entry %s", arg.__class__.__name__)
         # Now, find values for app filepath (name), app name (appname), and name
@@ -180,7 +183,8 @@ class BUNDLE(Target):
                 fnm = checkCache(fnm, strip=self.strip, upx=self.upx,
                                  upx_exclude=self.upx_exclude, dist_nm=inm,
                                  target_arch=self.target_arch,
-                                 codesign_identity=self.codesign_identity)
+                                 codesign_identity=self.codesign_identity,
+                                 entitlements_file=self.entitlements_file)
             # Add most data files to a list for symlinking later.
             if typ == 'DATA' and base_path not in ('PySide2', 'PyQt5'):
                 links.append((inm, fnm))

@@ -160,7 +160,8 @@ class PKG(Target):
 
     def __init__(self, toc, name=None, cdict=None, exclude_binaries=0,
                  strip_binaries=False, upx_binaries=False, upx_exclude=None,
-                 target_arch=None, codesign_identity=None):
+                 target_arch=None, codesign_identity=None,
+                 entitlements_file=None):
         """
         toc
                 A TOC (Table of Contents)
@@ -190,6 +191,7 @@ class PKG(Target):
         self.upx_exclude = upx_exclude or []
         self.target_arch = target_arch
         self.codesign_identity = codesign_identity
+        self.entitlements_file = entitlements_file
         # This dict tells PyInstaller what items embedded in the executable should
         # be compressed.
         if self.cdict is None:
@@ -215,6 +217,7 @@ class PKG(Target):
             ('upx_exclude', _check_guts_eq),
             ('target_arch', _check_guts_eq),
             ('codesign_identity', _check_guts_eq),
+            ('entitlements_file', _check_guts_eq),
             # no calculated/analysed values
             )
 
@@ -273,7 +276,8 @@ class PKG(Target):
                                      upx_exclude=self.upx_exclude,
                                      dist_nm=inm,
                                      target_arch=self.target_arch,
-                                     codesign_identity=self.codesign_identity)
+                                     codesign_identity=self.codesign_identity,
+                                     entitlements_file=self.entitlements_file)
 
                     mytoc.append((inm, fnm, self.cdict.get(typ, 0),
                                   self.xformdict.get(typ, 'b')))
@@ -363,6 +367,10 @@ class EXE(Target):
                 macOS only. Use the provided identity to sign collected
                 binaries and the generated executable. If signing identity is
                 not provided, ad-hoc signing is performed.
+            entitlements_file
+                macOS only. Optional path to entitlements file to use with
+                code signing of collected binaries (--entitlements option
+                to codesign utility).
         """
         from PyInstaller.config import CONF
         Target.__init__(self)
@@ -408,6 +416,8 @@ class EXE(Target):
             logger.info("Code signing identity: %s", self.codesign_identity)
         else:
             self.codesign_identity = None  # explicitly disable
+        # Code signing entitlements
+        self.entitlements_file = kwargs.get('entitlements_file', None)
 
         if CONF['hasUPX']:
             self.upx = kwargs.get('upx', False)
@@ -482,7 +492,8 @@ class EXE(Target):
                        strip_binaries=self.strip, upx_binaries=self.upx,
                        upx_exclude=self.upx_exclude,
                        target_arch=self.target_arch,
-                       codesign_identity=self.codesign_identity
+                       codesign_identity=self.codesign_identity,
+                       entitlements_file=self.entitlements_file
                        )
         self.dependencies = self.pkg.dependencies
 
@@ -506,6 +517,7 @@ class EXE(Target):
             ('append_pkg', _check_guts_eq),
             ('target_arch', _check_guts_eq),
             ('codesign_identity', _check_guts_eq),
+            ('entitlements_file', _check_guts_eq),
             # for the case the directory ius shared between platforms:
             ('pkgname', _check_guts_eq),
             ('toc', _check_guts_eq),
@@ -738,7 +750,8 @@ class EXE(Target):
             # Re-sign the binary (either ad-hoc or using real identity,
             # if provided)
             logger.info("Re-signing the EXE")
-            osxutils.sign_binary(self.name, self.codesign_identity)
+            osxutils.sign_binary(self.name, self.codesign_identity,
+                                 self.entitlements_file)
         else:
             # Fall back to just append on end of file
             logger.info("Appending archive to EXE %s", self.name)
@@ -791,6 +804,7 @@ class COLLECT(Target):
         self.console = True
         self.target_arch = None
         self.codesign_identity = None
+        self.entitlements_file = None
 
         if CONF['hasUPX']:
             self.upx_binaries = kws.get('upx', False)
@@ -816,6 +830,7 @@ class COLLECT(Target):
                     self.console = arg.console
                     self.target_arch = arg.target_arch
                     self.codesign_identity = arg.codesign_identity
+                    self.entitlements_file = arg.entitlements_file
                     for tocnm, fnm, typ in arg.toc:
                         if tocnm == os.path.basename(arg.name) + ".manifest":
                             self.toc.append((tocnm, fnm, typ))
@@ -864,7 +879,8 @@ class COLLECT(Target):
                                  upx_exclude=self.upx_exclude,
                                  dist_nm=inm,
                                  target_arch=self.target_arch,
-                                 codesign_identity=self.codesign_identity)
+                                 codesign_identity=self.codesign_identity,
+                                 entitlements_file=self.entitlements_file)
             if typ != 'DEPENDENCY':
                 if os.path.isdir(fnm):
                     # beacuse shutil.copy2() is the default copy function

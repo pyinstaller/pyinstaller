@@ -461,6 +461,11 @@ def __add_options(parser):
                         "executable. If signing identity is not provided, "
                         "ad-hoc signing is performed instead.")
 
+    g.add_argument('--osx-entitlements-file', dest='entitlements_file',
+                   metavar='FILENAME', default=None,
+                   help="Entitlements file to use when code-signing the "
+                        "collected binaries (macOS only).")
+
 
     g = parser.add_argument_group('Rarely used special options')
     g.add_argument("--runtime-tmpdir", dest="runtime_tmpdir", metavar="PATH",
@@ -492,7 +497,7 @@ def main(scripts, name=None, onefile=None,
          collect_submodules=None, collect_binaries=None, collect_data=None,
          collect_all=None, copy_metadata=None, splash=None,
          recursive_copy_metadata=None, target_arch=None,
-         codesign_identity=None, **kwargs):
+         codesign_identity=None, entitlements_file=None, **kwargs):
     # If appname is not specified - use the basename of the main script as name.
     if name is None:
         name = os.path.splitext(os.path.basename(scripts[0]))[0]
@@ -633,6 +638,8 @@ def main(scripts, name=None, onefile=None,
         'target_arch': target_arch,
         # Code signing identity (macOS only)
         'codesign_identity': codesign_identity,
+        # Entitlements file (macOS only)
+        'entitlements_file': entitlements_file,
         # Windows assembly searching options
         'win_no_prefer_redirects': win_no_prefer_redirects,
         'win_private_assemblies': win_private_assemblies,
