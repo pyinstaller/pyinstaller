@@ -65,6 +65,8 @@ del prog, outfile, fh, text
 # ones.
 extensions = ['sphinx.ext.intersphinx',
               'sphinx.ext.autodoc',
+              'sphinx.ext.napoleon',
+              'sphinx_autodoc_typehints',
               'pyi_sphinx_roles']
 
 intersphinx_mapping = {

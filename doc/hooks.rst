@@ -486,6 +486,7 @@ You are welcome to read the ``PyInstaller.utils.hooks`` module
    If *package-name* does not have metadata, an
    AssertionError exception is raised.
 
+.. autofunction:: PyInstaller.utils.hooks.collect_entry_point
 
 ``get_homebrew_path( formula='' )``:
    Return the homebrew path to the named formula, or to the
