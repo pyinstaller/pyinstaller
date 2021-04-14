@@ -16,6 +16,7 @@ import pkgutil
 import sys
 import textwrap
 from pathlib import Path
+from typing import Tuple
 
 from ...compat import base_prefix, exec_command_stdout, exec_python, \
     exec_python_rc, is_darwin, is_venv, string_types, open_file, \
@@ -1098,6 +1099,42 @@ def collect_all(
                        package_name, e)
 
     return datas, binaries, hiddenimports
+
+
+def collect_entry_point(name: str) -> Tuple[list, list]:
+    """Collect modules and metadata for all exporters of a given entry point.
+
+    Args:
+        name:
+            The name of the entry point. Check the documentation for the
+            library which uses the entry point to find out its name.
+    Returns:
+        A ``(datas, hiddenimports)`` pair which should be assigned to the
+        ``datas`` and ``hiddenimports`` globals respectively.
+
+    For libraries, such as ``pytest`` or ``keyring``, which rely on plugins to
+    extend their behaviour.
+
+    Examples:
+        Pytest uses an entry point called ``'pytest11'`` for its extensions.
+        To collect all those extensions use::
+
+            datas, hiddenimports = collect_entry_point("pytest11")
+
+        These values may be used in a hook or added to the ``datas`` and
+        ``hiddenimports`` arguments in the ``.spec`` file. See :ref:`using spec
+        files`.
+
+    .. versionadded:: 5.0
+
+    """
+    import pkg_resources
+    datas = []
+    imports = []
+    for dist in pkg_resources.iter_entry_points(name):
+        datas += copy_metadata(dist.dist.project_name)
+        imports.append(dist.module_name)
+    return datas, imports
 
 
 if is_pure_conda:
