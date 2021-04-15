@@ -74,7 +74,9 @@ def create_py3_base_library(libzip_filename, graph):
             graph_nodes = list(graph.flatten())
             graph_nodes.sort(key=lambda item: item.identifier)
             for mod in graph_nodes:
-                if type(mod) in (modulegraph.SourceModule, modulegraph.Package):
+                if type(mod) in (modulegraph.SourceModule,
+                                 modulegraph.Package,
+                                 modulegraph.CompiledModule):
                     # Bundling just required modules.
                     if module_filter.match(mod.identifier):
                         st = os.stat(mod.filename)
