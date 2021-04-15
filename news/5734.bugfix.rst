@@ -1,0 +1,2 @@
+Fix a build error triggered by scanning ``ctypes.CDLL('libc.so')`` on certain
+Linux C compiler combinations.
