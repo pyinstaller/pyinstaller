@@ -425,7 +425,8 @@ def __add_options(parser):
                         'in reverse DNS notation. For example: com.mycompany.department.appname '
                         "(default: first script's basename)")
     g.add_argument('--osx-app-console', dest='osx_app_console',
-                   action="store_true", help='The macOS .app bundles don\'t '
+                   action="store_true",
+                   help='The macOS .app bundles don\'t '
                         'seem to open terminal window by themselves when you '
                         'run them, e.g. by double clicking on them in Finder. '
                         'This option adds a launcher script that explicitly '
