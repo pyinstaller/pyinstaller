@@ -3,7 +3,7 @@
 ================================
  
 
-Copyright (c) 2010-2020, PyInstaller Development Team
+Copyright (c) 2010-2021, PyInstaller Development Team
 Copyright (c) 2005-2009, Giovanni Bajo
 Based on previous work under copyright (c) 2002 McMillan Enterprises, Inc.
 
@@ -82,7 +82,7 @@ to indicate the copyright and license terms:
 
 
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -96,7 +96,7 @@ to indicate the copyright and license terms:
 For run-time hooks, the following banner should be used:
 
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.

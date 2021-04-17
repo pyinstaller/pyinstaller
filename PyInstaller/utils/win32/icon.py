@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2020, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -31,7 +31,7 @@ try:
 except AttributeError:
     StringTypes = [ type("") ]
 
-from ...compat import win32api
+from ...compat import win32api, pywintypes
 from ... import config
 
 import PyInstaller.log as logging
@@ -231,7 +231,7 @@ def CopyIcons(dstpath, srcpath):
         # .ico/.exe) then LoadLibraryEx returns a null handle and win32api
         # raises a unique exception with a win error code and a string.
         hsrc = win32api.LoadLibraryEx(srcpath, 0, LOAD_LIBRARY_AS_DATAFILE)
-    except win32api.error as W32E:
+    except pywintypes.error as W32E:
         # We could continue with no icon (i.e. just return) however it seems
         # best to terminate the build with a message.
         raise SystemExit(

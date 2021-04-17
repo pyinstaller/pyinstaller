@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -27,7 +27,8 @@ import pytest
         ('import sys; sys.exit()', 0),
         ('raise SystemExit(1)', 1),
         ('import sys; sys.exit(2)', 2),
-        ('raise SystemExit("Message to get printed to the console.")', 1)
+        ('raise SystemExit("Message to get printed to the console.")', 1),
+        ('raise Exception("Unhandled exception.")', 1)  # See issue #5480
     ]
 )
 def test_systemexit_is_handled_correctly(src, retcode, pyi_builder):

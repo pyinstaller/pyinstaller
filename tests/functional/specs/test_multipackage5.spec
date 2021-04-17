@@ -1,6 +1,6 @@
 # -*- mode: python -*-
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2020, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -22,10 +22,13 @@ __testdep__ = 'multipackage5_B'
 __testdep2__ = 'multipackage5_C'
 
 a = Analysis([os.path.join(SCRIPT_DIR, __testname__ + '.py')],
+             hookspath=[os.path.join(SPECPATH, SCRIPT_DIR, 'extra-hooks')],
              pathex=['.'])
 b = Analysis([os.path.join(SCRIPT_DIR, __testdep__ + '.py')],
+             hookspath=[os.path.join(SPECPATH, SCRIPT_DIR, 'extra-hooks')],
              pathex=['.'])
 c = Analysis([os.path.join(SCRIPT_DIR, __testdep2__ + '.py')],
+             hookspath=[os.path.join(SPECPATH, SCRIPT_DIR, 'extra-hooks')],
              pathex=['.'])
 
 
@@ -72,7 +75,7 @@ coll = COLLECT( exeB,
         strip=False,
         upx=True,
         name=os.path.join('dist', __testdep__))
-        
+
 pyzC = PYZ(c.pure)
 exeC = EXE(pyzC,
           c.scripts,

@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2020, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -15,7 +15,7 @@ from PyInstaller.utils.hooks.qt import add_qt5_dependencies, pyqt5_library_info
 from PyInstaller.compat import is_win
 
 # Ensure PyQt5 is importable before adding info depending on it.
-if pyqt5_library_info.version:
+if pyqt5_library_info.version is not None:
     hiddenimports, binaries, datas = add_qt5_dependencies(__file__)
 
     # Add libraries needed for SSL if these are available. See issue #3520, #4048.

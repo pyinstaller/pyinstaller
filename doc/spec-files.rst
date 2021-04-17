@@ -359,7 +359,9 @@ For example modify the spec file this way::
           exclude_binaries=...
           )
 
-.. Warning:: The ``u`` option does not work on Windows. See this `GitHub issue <https://github.com/pyinstaller/pyinstaller/issues/1441>`_ for more details.
+.. Note:: The unbuffered stdio mode (the ``u`` option) enables unbuffered
+   binary layer of ``stdout`` and ``stderr`` streams on all supported Python
+   versions. The unbuffered text layer requires Python 3.7 or later.
 
 
 .. _spec file options for a mac os x bundle:
@@ -387,6 +389,9 @@ An :file:`Info.plist` file is an important part of a Mac OS X app bundle.
 of ``Info.plist``.)
 
 |PyInstaller| creates a minimal :file:`Info.plist`.
+The ``version`` option can be used to set the application version
+using the CFBundleShortVersionString Core Foundation Key.
+
 You can add or overwrite entries in the plist by passing an
 ``info_plist=`` parameter to the BUNDLE call.  Its argument should be a
 Python dict with keys and values to be included in the :file:`Info.plist`
@@ -401,6 +406,7 @@ XML types.  Here's an example::
              name='myscript.app',
              icon=None,
              bundle_identifier=None,
+             version='0.0.1',
              info_plist={
              	'NSPrincipalClass': 'NSApplication',
                 'NSAppleScriptEnabled': False,

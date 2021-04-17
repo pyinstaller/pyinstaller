@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -14,7 +14,7 @@ from PyInstaller.utils.hooks import collect_system_data_files
 from PyInstaller.utils.hooks.qt import pyqt5_library_info, get_qt_binaries
 
 # Ensure PyQt5 is importable before adding info depending on it.
-if pyqt5_library_info.version:
+if pyqt5_library_info.version is not None:
     hiddenimports = [
         # PyQt5.10 and earlier uses sip in an separate package;
         'sip',

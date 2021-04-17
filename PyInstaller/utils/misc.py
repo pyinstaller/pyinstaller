@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2020, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -21,7 +21,7 @@ import py_compile
 import sys
 
 from PyInstaller import log as logging
-from PyInstaller.compat import BYTECODE_MAGIC, text_read_mode
+from PyInstaller.compat import BYTECODE_MAGIC, text_read_mode, is_win
 
 logger = logging.getLogger(__name__)
 
@@ -223,6 +223,10 @@ def load_py_data_struct(filename):
         # Binding redirects are stored as a named tuple, so bring the namedtuple
         # class into scope for parsing the TOC.
         from ..depend.bindepend import BindingRedirect
+
+        if is_win:
+            # import versioninfo so that VSVersionInfo can parse correctly
+            from .win32 import versioninfo  # noqa: F401
 
         return eval(f.read())
 

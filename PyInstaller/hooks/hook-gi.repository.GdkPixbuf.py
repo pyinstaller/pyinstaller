@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -14,7 +14,6 @@ Import hook for PyGObject's "gi.repository.GdkPixbuf" package.
 
 import glob
 import os
-import subprocess
 from shutil import which
 
 from PyInstaller.config import CONF
@@ -25,8 +24,8 @@ from PyInstaller.utils.hooks import (
 
 loaders_path = os.path.join('gdk-pixbuf-2.0', '2.10.0', 'loaders')
 
-destpath = "lib/gdk-pixbuf-2.0/2.10.0/loaders"
-cachedest = "lib/gdk-pixbuf-2.0/2.10.0"
+destpath = "lib/gdk-pixbuf/loaders"
+cachedest = "lib/gdk-pixbuf"
 
 # If the "gdk-pixbuf-query-loaders" command is not in the current ${PATH}, or
 # is not in the GI lib path, GDK and thus GdkPixbuf is unavailable. Return with
@@ -102,7 +101,9 @@ if libdir:
             # Run the "gdk-pixbuf-query-loaders" command and capture its
             # standard output providing an updated loader cache; then write
             # this output to the loader cache bundled with this frozen
-            # application.
+            # application. On all platforms, we also move the package structure
+            # to point to lib/gdk-pixbuf instead of lib/gdk-pixbuf-2.0/2.10.0
+            # in order to make compatible for OSX application signing.
             #
             # On OSX we use @executable_path to specify a path relative to the
             # generated bundle. However, on non-Windows we need to rewrite the
@@ -113,43 +114,42 @@ if libdir:
             # @executable_path, since its significantly easier to find/replace
             # at runtime. :)
             #
-            # If we need to rewrite it...
-            if not is_win:
-                # To permit string munging, decode the encoded bytes output by
-                # this command (i.e., enable the "universal_newlines" option).
-                # Note that:
-                #
-                # On Fedora, the default loaders cache is /usr/lib64, but the
-                # libdir is actually /lib64. To get around this, we pass the
-                # path to the loader command, and it will create a cache with
-                # the right path.
-                cachedata = exec_command_stdout(gdk_pixbuf_query_loaders,
-                                                *loader_libs)
+            # To permit string munging, decode the encoded bytes output by
+            # this command (i.e., enable the "universal_newlines" option).
+            #
+            # On Fedora, the default loaders cache is /usr/lib64, but the
+            # libdir is actually /lib64. To get around this, we pass the
+            # path to the loader command, and it will create a cache with
+            # the right path.
+            #
+            # On Windows, the loaders lib directory is relative, starts with
+            # 'lib', and uses \\ as path separators (escaped \).
+            cachedata = exec_command_stdout(gdk_pixbuf_query_loaders,
+                                            *loader_libs)
 
-                cd = []
-                prefix = '"' + os.path.join(libdir, 'gdk-pixbuf-2.0', '2.10.0')
-                plen = len(prefix)
+            cd = []
+            prefix = '"' + os.path.join(libdir, 'gdk-pixbuf-2.0', '2.10.0')
+            plen = len(prefix)
 
-                # For each line in the updated loader cache...
-                for line in cachedata.splitlines():
-                    if line.startswith('#'):
-                        continue
-                    if line.startswith(prefix):
-                        line = '"@executable_path/' + cachedest + line[plen:]
-                    cd.append(line)
+            win_prefix = '"' + '\\\\'.join(['lib', 'gdk-pixbuf-2.0', '2.10.0'])
+            win_plen = len(win_prefix)
 
-                cachedata = u'\n'.join(cd)
+            # For each line in the updated loader cache...
+            for line in cachedata.splitlines():
+                if line.startswith('#'):
+                    continue
+                if line.startswith(prefix):
+                    line = '"@executable_path/' + cachedest + line[plen:]
+                elif line.startswith(win_prefix):
+                    line = '"' + cachedest.replace(
+                        '/', '\\\\') + line[win_plen:]
+                cd.append(line)
 
-                # Write the updated loader cache to this file.
-                with open_file(cachefile, 'w') as fp:
-                    fp.write(cachedata)
-            # Else, GdkPixbuf will do the right thing on Windows, so no changes
-            # to the loader cache are required. For efficiency and reliability,
-            # this command's encoded byte output is written as is without being
-            # decoded.
-            else:
-                with open_file(cachefile, 'wb') as fp:
-                    fp.write(subprocess.check_output(gdk_pixbuf_query_loaders))
+            cachedata = '\n'.join(cd)
+
+            # Write the updated loader cache to this file.
+            with open_file(cachefile, 'w') as fp:
+                fp.write(cachedata)
 
             # Bundle this loader cache with this frozen application.
             datas.append((cachefile, cachedest))

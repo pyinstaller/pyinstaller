@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2020, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -15,7 +15,7 @@ from PyInstaller.utils.hooks.qt import pyqt5_library_info, add_qt5_dependencies
 from PyInstaller import log as logging
 
 # Ensure PyQt5 is importable before adding info depending on it.
-if pyqt5_library_info.version:
+if pyqt5_library_info.version is not None:
     logger = logging.getLogger(__name__)
 
     hiddenimports, binaries, datas = add_qt5_dependencies(__file__)

@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2020, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -340,3 +340,57 @@ def mac_set_relative_dylib_deps(libname, distname):
             f.flush()
     except Exception:
         pass
+
+
+def mac_is_binary_signed(filename):
+    """
+    Check if the given macOS binary file is signed.
+    """
+    from macholib.MachO import MachO
+    from macholib import mach_o  # constants
+
+    # Open the file
+    try:
+        m = MachO(filename)
+    except Exception:
+        return False
+
+    # Walk over all headers and check if any contains LC_CODE_SIGNATURE
+    # load command
+    for header in m.headers:
+        for cmd in header.commands:
+            if cmd[0].cmd == mach_o.LC_CODE_SIGNATURE:
+                return True
+    return False
+
+
+def mac_strip_signature(libname, distname):
+    """
+    On macOS, strip away the signature from the binary file. As we may
+    not be collecting all components from a signed framework bundle, the
+    collection may invalidate the existing signature on a collected
+    shared library, which will prevent the latter from being loaded.
+    """
+    from ..compat import exec_command_rc
+
+    # For now, limit this only to Python shared library. Other shared
+    # library files from Python.framework bundle also seem to be signed,
+    # but their signature is not invalidated by partial collection like
+    # it is for Python library...
+    if os.path.basename(libname) != 'Python':
+        return
+    if not mac_is_binary_signed(libname):
+        return
+    # Run codesign --remove-signature libname
+    try:
+        logger.debug("Removing signature from %s", libname)
+        result = exec_command_rc('codesign', '--remove-signature', libname)
+    except Exception as e:
+        logger.warning(
+            "Failed to run 'codesign' to remove signature from %s: %r",
+            libname, e)
+        return
+    if result != 0:
+        logger.warning(
+            "'codesign --remove-signature %s' returned non-zero status %d",
+            libname, result)

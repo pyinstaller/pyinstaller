@@ -1,6 +1,6 @@
 # -*- mode: python -*-
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2020, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -19,8 +19,10 @@ __testname__ = 'test_multipackage1'
 __testdep__ = 'multipackage1_B'
 
 a = Analysis([os.path.join(SCRIPT_DIR, __testname__ + '.py')],
+             hookspath=[os.path.join(SPECPATH, SCRIPT_DIR, 'extra-hooks')],
              pathex=['.'])
 b = Analysis([os.path.join(SCRIPT_DIR, __testdep__ + '.py')],
+             hookspath=[os.path.join(SPECPATH, SCRIPT_DIR, 'extra-hooks')],
              pathex=['.'])
 
 MERGE((b, __testdep__, __testdep__), (a, __testname__, __testname__))
@@ -37,7 +39,7 @@ exe = EXE(pyz,
           strip=False,
           upx=False,
           console=1 )
-                    
+
 pyzB = PYZ(b.pure)
 exeB = EXE(pyzB,
           b.scripts,

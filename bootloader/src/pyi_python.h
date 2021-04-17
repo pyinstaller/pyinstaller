@@ -1,6 +1,6 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2020, PyInstaller Development Team.
+ * Copyright (c) 2013-2021, PyInstaller Development Team.
  *
  * Distributed under the terms of the GNU General Public License (version 2
  * or later) with exception for distributing the bootloader.
@@ -89,6 +89,7 @@ EXTDECLVAR(int, Py_VerboseFlag);
 EXTDECLVAR(int, Py_IgnoreEnvironmentFlag);
 EXTDECLVAR(int, Py_DontWriteBytecodeFlag);
 EXTDECLVAR(int, Py_NoUserSiteDirectory);
+EXTDECLVAR(int, Py_UnbufferedStdioFlag);
 
 /* This initializes the table of loaded modules (sys.modules), and creates the fundamental modules builtins, __main__ and sys. It also initializes the module search path (sys.path). It does not set sys.argv; */
 EXTDECLPROC(int, Py_Initialize, (void));
@@ -155,6 +156,7 @@ EXTDECLPROC(PyObject *, PyMarshal_ReadObjectFromString, (const char *, size_t));
 
 /* Used to get traceback information while launching run scripts */
 EXTDECLPROC(void, PyErr_Fetch, (PyObject **, PyObject **, PyObject **));
+EXTDECLPROC(void, PyErr_Restore, (PyObject *, PyObject *, PyObject *));
 EXTDECLPROC(PyObject *, PyObject_Str, (PyObject *));
 EXTDECLPROC(PyObject *, PyObject_GetAttrString, (PyObject *, const char *));
 EXTDECLPROC(const char *, PyUnicode_AsUTF8, (PyObject *));

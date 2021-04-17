@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -65,7 +65,7 @@ def _get_pyinst_cache_dir():
     if compat.getenv('PYINSTALLER_CONFIG_DIR'):
         cache_dir = compat.getenv('PYINSTALLER_CONFIG_DIR')
     elif is_win:
-        cache_dir = compat.getenv('APPDATA')
+        cache_dir = compat.getenv('LOCALAPPDATA')
         if not cache_dir:
             cache_dir = os.path.expanduser('~\\Application Data')
     elif is_darwin:

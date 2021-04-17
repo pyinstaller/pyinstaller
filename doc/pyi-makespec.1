@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "PYI-MAKESPEC" "1" "2020-11-18" "4.1" "PyInstaller"
+.TH "PYI-MAKESPEC" "1" "2021-04-17" "4.3" "PyInstaller"
 .SH NAME
 pyi-makespec \- Create a spec file for your PyInstaller project
 .
@@ -85,7 +85,7 @@ Create a one\-file bundled executable.
 Folder to store the generated spec file (default:
 current directory)
 .TP
-.BI \-n \ NAME\fP,\fB \ \-\-name \ NAME
+.BI \-n \ NAME\fR,\fB \ \-\-name \ NAME
 Name to assign to the bundled app and spec file
 (default: first script\(aqs basename)
 .UNINDENT
@@ -104,14 +104,35 @@ Additional binary files to be added to the executable.
 See the \fB\-\-add\-data\fP option for more details. This
 option can be used multiple times.
 .TP
-.BI \-p \ DIR\fP,\fB \ \-\-paths \ DIR
+.BI \-p \ DIR\fR,\fB \ \-\-paths \ DIR
 A path to search for imports (like using PYTHONPATH).
-Multiple paths are allowed, separated by \(aq:\(aq, or use
+Multiple paths are allowed, separated by \(aq;\(aq, or use
 this option multiple times
 .TP
-.BI \-\-hidden\-import \ MODULENAME\fP,\fB \ \-\-hiddenimport \ MODULENAME
+.BI \-\-hidden\-import \ MODULENAME\fR,\fB \ \-\-hiddenimport \ MODULENAME
 Name an import not visible in the code of the
 script(s). This option can be used multiple times.
+.TP
+.BI \-\-collect\-submodules \ MODULENAME
+Collect all submodules from the specified package or
+module. This option can be used multiple times.
+.TP
+.BI \-\-collect\-data \ MODULENAME\fR,\fB \ \-\-collect\-datas \ MODULENAME
+Collect all data from the specified package or module.
+This option can be used multiple times.
+.TP
+.BI \-\-collect\-binaries \ MODULENAME
+Collect all binaries from the specified package or
+module. This option can be used multiple times.
+.TP
+.BI \-\-collect\-all \ MODULENAME
+Collect all submodules, data files, and binaries from
+the specified package or module. This option can be
+used multiple times.
+.TP
+.BI \-\-copy\-metadata \ PACKAGENAME
+Copy metadata for the specified package. This option
+can be used multiple times.
 .TP
 .BI \-\-additional\-hooks\-dir \ HOOKSPATH
 An additional path to search for hooks. This option
@@ -135,7 +156,7 @@ The key used to encrypt Python bytecode.
 .SS How to generate
 .INDENT 0.0
 .TP
-.BI \-d \ <all,imports,bootloader,noarchive>\fP,\fB \ \-\-debug \ <all,imports,bootloader,noarchive>
+.BI \-d \ <all,imports,bootloader,noarchive>\fR,\fB \ \-\-debug \ <all,imports,bootloader,noarchive>
 R|Provide assistance with debugging a frozen
 application. This argument may be provided multiple
 times to select several of the following options. \-
@@ -182,11 +203,13 @@ building an OS X .app bundle. On Windows this option
 will be set if the first script is a \(aq.pyw\(aq file. This
 option is ignored in *NIX systems.
 .TP
-.BI \-i \ <FILE.ico or FILE.exe,ID or FILE.icns>\fP,\fB \ \-\-icon \ <FILE.ico or FILE.exe,ID or FILE.icns>
+.BI \-i \ <FILE.ico or FILE.exe,ID or FILE.icns or "NONE">\fR,\fB \ \-\-icon \ <FILE.ico or FILE.exe,ID or FILE.icns or "NONE">
 FILE.ico: apply that icon to a Windows executable.
 FILE.exe,ID, extract the icon with ID from an exe.
 FILE.icns: apply the icon to the .app bundle on Mac OS
-X
+X. Use "NONE" to not apply any icon, thereby making
+the OS to show some default (default: apply
+PyInstaller\(aqs icon)
 .UNINDENT
 .SS Windows specific options
 .INDENT 0.0
@@ -194,10 +217,10 @@ X
 .BI \-\-version\-file \ FILE
 add a version resource from FILE to the exe
 .TP
-.BI \-m \ <FILE or XML>\fP,\fB \ \-\-manifest \ <FILE or XML>
+.BI \-m \ <FILE or XML>\fR,\fB \ \-\-manifest \ <FILE or XML>
 add manifest FILE or XML to the exe
 .TP
-.BI \-r \ RESOURCE\fP,\fB \ \-\-resource \ RESOURCE
+.BI \-r \ RESOURCE\fR,\fB \ \-\-resource \ RESOURCE
 Add or update a resource to a Windows executable. The
 RESOURCE is one to four items,
 FILE[,TYPE[,NAME[,LANGUAGE]]]. FILE can be a data file

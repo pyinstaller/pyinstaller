@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #-----------------------------------------------------------------------------
-# Copyright (c) 2016-2020, PyInstaller Development Team.
+# Copyright (c) 2016-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -18,7 +18,7 @@ non-binary files tracked missing our copyright header.
 Run this at the beginning of each new year.
 """
 
-__copyright__ = "Copyright (c) 2016-2020, PyInstaller Development Team."
+__copyright__ = "Copyright (c) 2016-2021, PyInstaller Development Team."
 __author__ = "Hartmut Goebel <h.goebel@crazy-compilers.com>"
 
 import os, sys, re
@@ -98,7 +98,7 @@ def get_file_list():
 
     text = subprocess.check_output(
         'git ls-tree -rz --name-only --full-tree HEAD | '
-        'xargs -0 git check-attr text -z', shell=True)
+        'git check-attr text -z --stdin', shell=True)
     text = text.rstrip(b'\0') # strip trailing NULL-byte
     for entry in chunks(text.split(b'\0'), 3):
         assert len(entry) == 3, entry
@@ -172,7 +172,7 @@ missing_copyright = []
 files = get_file_list()
 
 for filename in files:
-    with open(filename, 'r') as f:
+    with open(filename, 'r', encoding='utf-8') as f:
         try:
             text = f.read()
         except UnicodeDecodeError as e:
@@ -181,7 +181,7 @@ for filename in files:
     #newtext = replace_header_content(text)
     if newtext:
         pass
-        with open(filename, 'w') as f:
+        with open(filename, 'w', encoding='utf-8') as f:
             f.write(newtext)
     elif ignore(filename):
         continue

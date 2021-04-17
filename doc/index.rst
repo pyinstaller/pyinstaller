@@ -12,7 +12,7 @@ PyInstaller Manual
 |PyInstaller| bundles a Python application and all its dependencies into
 a single package.
 The user can run the packaged app without installing a Python interpreter or any modules.
-|PyInstaller| supports Python 3.5 or newer,
+|PyInstaller| supports Python 3.6 or newer,
 and correctly bundles the major Python packages
 such as numpy, PyQt, Django, wxPython, and others.
 
@@ -45,7 +45,7 @@ __ https://github.com/pyinstaller/pyinstaller-hooks-contrib
 
 Finally, this version drops support for Python 2.7,
 which is end-of-life since January 2020..
-The minimum required version is now Python 3.5.
+The minimum required version is now Python 3.6.
 The last version supporting Python 2.7 was PyInstaller 3.6.
 
 

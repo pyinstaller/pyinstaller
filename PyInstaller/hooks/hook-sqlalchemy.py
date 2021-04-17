@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -23,6 +23,9 @@ excludedimports = ['sqlalchemy.testing']
 # some database bindings are detected and include some
 # are not. We should explicitly include database backends.
 hiddenimports = ['pysqlite2', 'MySQLdb', 'psycopg2', 'sqlalchemy.ext.baked']
+
+if is_module_satisfies('sqlalchemy >= 1.4'):
+    hiddenimports.append("sqlalchemy.sql.default_comparator")
 
 # In SQLAlchemy >= 0.6, the "sqlalchemy.dialects" package provides dialects.
 if is_module_satisfies('sqlalchemy >= 0.6'):

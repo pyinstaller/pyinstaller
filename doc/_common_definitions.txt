@@ -28,6 +28,7 @@
 .. _`How to Contribute`: https://github.com/pyinstaller/pyinstaller/wiki/How-to-Contribute
 .. _`How to Report Bugs`: https://github.com/pyinstaller/pyinstaller/wiki/How-to-Report-Bugs
 .. _ImageMagick: http://www.imagemagick.org/script/index.php
+.. _`importlib.metadata`: https://docs.python.org/3/library/importlib.metadata.html
 .. _imputil: http://docs.python.org/2.7/library/imputil.html
 .. _`Info Property List`: https://developer.apple.com/library/mac/#documentation/MacOSX/Conceptual/BPRuntimeConfig/Articles/ConfigFiles.html
 .. _MacPorts: https://www.macports.org/

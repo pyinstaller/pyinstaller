@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -29,12 +29,13 @@ import struct
 from types import CodeType
 import marshal
 import zlib
+import io
 
 from PyInstaller.building.utils import get_code_object, strip_paths_in_code,\
     fake_pyc_timestamp
 from PyInstaller.loader.pyimod02_archive import PYZ_TYPE_MODULE, PYZ_TYPE_PKG, \
-    PYZ_TYPE_DATA
-from ..compat import BYTECODE_MAGIC
+    PYZ_TYPE_DATA, PYZ_TYPE_NSPKG
+from ..compat import BYTECODE_MAGIC, is_py37, is_win
 
 
 class ArchiveWriter(object):
@@ -195,7 +196,7 @@ class ZlibArchiveWriter(ArchiveWriter):
                 # This is a NamespacePackage, modulegraph marks them
                 # by using the filename '-'. (But wants to use None,
                 # so check for None, too, to be forward-compatible.)
-                typ = PYZ_TYPE_PKG
+                typ = PYZ_TYPE_NSPKG
             else:
                 base, ext = os.path.splitext(os.path.basename(path))
                 if base == '__init__':
@@ -233,7 +234,8 @@ class CTOC(object):
 
     When written to disk, it is easily read from C.
     """
-    ENTRYSTRUCT = '!iiiiBB'  # (structlen, dpos, dlen, ulen, flag, typcd) followed by name
+    # (structlen, dpos, dlen, ulen, flag, typcd) followed by name
+    ENTRYSTRUCT = '!iIIIBB'
     ENTRYLEN = struct.calcsize(ENTRYSTRUCT)
 
     def __init__(self):
@@ -282,6 +284,10 @@ class CTOC(object):
         # slashes '\\' since on Windows the bootloader works only with back
         # slashes.
         nm = os.path.normpath(nm)
+        if is_win and os.path.sep == '/':
+            # When building under MSYS, the above path normalization
+            # uses Unix-style separators, so replace them manually.
+            nm = nm.replace(os.path.sep, '\\')
         self.data.append((dpos, dlen, ulen, flag, typcd, nm))
 
 
@@ -307,14 +313,14 @@ class CArchiveWriter(ArchiveWriter):
     #
     #   typedef struct _cookie {
     #       char magic[8]; /* 'MEI\014\013\012\013\016' */
-    #       int  len;      /* len of entire package */
-    #       int  TOC;      /* pos (rel to start) of TableOfContents */
+    #       uint32_t len;  /* len of entire package */
+    #       uint32_t TOC;  /* pos (rel to start) of TableOfContents */
     #       int  TOClen;   /* length of TableOfContents */
     #       int  pyvers;   /* new in v4 */
     #       char pylibname[64];    /* Filename of Python dynamic library. */
     #   } COOKIE;
     #
-    _cookie_format = '!8siiii64s'
+    _cookie_format = '!8sIIii64s'
     _cookie_size = struct.calcsize(_cookie_format)
 
     def __init__(self, archive_path, logical_toc, pylib_name):
@@ -375,6 +381,37 @@ class CArchiveWriter(ArchiveWriter):
 
                 code_data = marshal.dumps(code)
                 ulen = len(code_data)
+            elif typcd == 'm':
+                fh = open(pathnm, 'rb')
+                ulen = os.fstat(fh.fileno()).st_size
+                # Check if it is a PYC file
+                header = fh.read(4)
+                fh.seek(0)
+                if header == BYTECODE_MAGIC:
+                    # Read whole header and load code.
+                    # According to PEP-552, in python versions prior to
+                    # 3.7, the PYC header consists of three 32-bit words
+                    # (magic, timestamp, and source file size).
+                    # From python 3.7 on, the PYC header was extended to
+                    # four 32-bit words (magic, flags, and, depending on
+                    # the flags, either timestamp and source file size,
+                    # or a 64-bit hash).
+                    if is_py37:
+                        header = fh.read(16)
+                    else:
+                        header = fh.read(12)
+                    code = marshal.load(fh)
+                    # Strip paths from code, marshal back into module form.
+                    # The header fields (timestamp, size, hash, etc.) are
+                    # all referring to the source file, so our modification
+                    # of the code object does not affect them, and we can
+                    # re-use the original header.
+                    code = strip_paths_in_code(code)
+                    data = header + marshal.dumps(code)
+                    # Create file-like object for timestamp re-write
+                    # in the subsequent steps
+                    fh = io.BytesIO(data)
+                    ulen = len(data)
             else:
                 fh = open(pathnm, 'rb')
                 ulen = os.fstat(fh.fileno()).st_size

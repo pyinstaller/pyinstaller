@@ -1,6 +1,6 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2020, PyInstaller Development Team.
+ * Copyright (c) 2013-2021, PyInstaller Development Team.
  *
  * Distributed under the terms of the GNU General Public License (version 2
  * or later) with exception for distributing the bootloader.
@@ -20,6 +20,7 @@
 
 #include "pyi_global.h"
 #include <stdio.h>  /* FILE */
+#include <inttypes.h>  /* uint64_t */
 
 /* Types of CArchive items. */
 #define ARCHIVE_ITEM_BINARY           'b'  /* binary */
@@ -35,9 +36,9 @@
 /* TOC entry for a CArchive */
 typedef struct _toc {
     int  structlen;  /*len of this one - including full len of name */
-    int  pos;        /* pos rel to start of concatenation */
-    int  len;        /* len of the data (compressed) */
-    int  ulen;       /* len of data (uncompressed) */
+    uint32_t pos;    /* pos rel to start of concatenation */
+    uint32_t len;    /* len of the data (compressed) */
+    uint32_t ulen;   /* len of data (uncompressed) */
     char cflag;      /* is it compressed (really a byte) */
     char typcd;      /* type code -'b' binary, 'z' zlib, 'm' module,
                       * 's' script (v3),'x' data, 'o' runtime option  */
@@ -48,8 +49,8 @@ typedef struct _toc {
 /* The CArchive Cookie, from end of the archive. */
 typedef struct _cookie {
     char magic[8];      /* 'MEI\014\013\012\013\016' */
-    int  len;           /* len of entire package */
-    int  TOC;           /* pos (rel to start) of TableOfContents */
+    uint32_t len;       /* len of entire package */
+    uint32_t TOC;       /* pos (rel to start) of TableOfContents */
     int  TOClen;        /* length of TableOfContents */
     int  pyvers;        /* new in v4 */
     char pylibname[64]; /* Filename of Python dynamic library e.g. python2.7.dll. */
@@ -57,7 +58,7 @@ typedef struct _cookie {
 
 typedef struct _archive_status {
     FILE * fp;
-    int    pkgstart;
+    uint64_t pkgstart;
     TOC *  tocbuff;
     TOC *  tocend;
     COOKIE cookie;

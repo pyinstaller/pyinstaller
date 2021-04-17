@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #-----------------------------------------------------------------------------
-# Copyright (c) 2017-2020, PyInstaller Development Team.
+# Copyright (c) 2017-2021, PyInstaller Development Team.
 # Author: Hartmut Goebel
 #
 # Distributed under the terms of the GNU General Public License (version 2

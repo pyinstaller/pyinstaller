@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -328,6 +328,8 @@ class EXE(Target):
             icon
                 Windows or OSX only. icon='myicon.ico' to use an icon file or
                 icon='notepad.exe,0' to grab an icon resource.
+                Defaults to use PyInstaller's console or windowed icon.
+                icon=`NONE` to not add any icon.
             version
                 Windows only. version='myversion.txt'. Use grab_version.py to get
                 a version resource from an executable and then edit the output to
@@ -529,8 +531,7 @@ class EXE(Target):
         if not os.path.exists(exe):
             raise SystemExit(_MISSING_BOOTLOADER_ERRORMSG)
 
-        if is_win and (self.icon or self.versrsrc or self.resources or
-                self.uac_admin or self.uac_uiaccess or not is_64bits):
+        if is_win:
             fd, tmpnm = tempfile.mkstemp(prefix=os.path.basename(exe) + ".",
                                          dir=CONF['workpath'])
             # need to close the file, otherwise copying resources will fail
@@ -538,7 +539,13 @@ class EXE(Target):
             os.close(fd)
             self._copyfile(exe, tmpnm)
             os.chmod(tmpnm, 0o755)
-            if self.icon:
+            if not self.icon:
+                # --icon not specified; use default from bootloader folder
+                self.icon = os.path.join(
+                    os.path.dirname(os.path.dirname(__file__)),
+                    'bootloader', 'images',
+                    'icon-console.ico' if self.console else 'icon-windowed.ico')
+            if self.icon != "NONE":
                 icon.CopyIcons(tmpnm, self.icon)
             if self.versrsrc:
                 versioninfo.SetVersion(tmpnm, self.versrsrc)
@@ -590,7 +597,7 @@ class EXE(Target):
                         logger.error("Error while updating resource %s %s in %s"
                                      " from data file %s",
                                      restype, resname, tmpnm, resfile, exc_info=1)
-            if is_win and self.manifest and not self.exclude_binaries:
+            if self.manifest and not self.exclude_binaries:
                 self.manifest.update_resources(tmpnm, [1])
             trash.append(tmpnm)
             exe = tmpnm
@@ -632,6 +639,10 @@ class EXE(Target):
             logger.info("Fixing EXE for code signing %s", self.name)
             import PyInstaller.utils.osx as osxutils
             osxutils.fix_exe_for_code_signing(self.name)
+        if is_win:
+            # Set checksum to appease antiviral software.
+            from PyInstaller.utils.win32.winutils import set_exe_checksum
+            set_exe_checksum(self.name)
 
         os.chmod(self.name, 0o755)
         # get mtime for storing into the guts
@@ -811,9 +822,44 @@ class MERGE(object):
                     self._dependencies[tpl[1]] = path
                 else:
                     dep_path = self._get_relative_path(path, self._dependencies[tpl[1]])
+                    # Ignore references that point to the origin package.
+                    # This can happen if the same resource is listed
+                    # multiple times in TOCs (e.g., once as binary and
+                    # once as data).
+                    if dep_path.endswith(path):
+                        logger.debug("Ignoring self-reference of %s for %s, "
+                                     "located in %s - duplicated TOC entry?",
+                                     tpl[1], path, dep_path)
+                        # Clear the entry as it is a duplicate.
+                        toc[i] = (None, None, None)
+                        continue
                     logger.debug("Referencing %s to be a dependecy for %s, located in %s" % (tpl[1], path, dep_path))
+                    # Determine the path relative to dep_path (i.e, within
+                    # the target directory) from the 'name' component
+                    # of the TOC tuple. If entry is EXTENSION, then the
+                    # relative path needs to be reconstructed from the
+                    # name components.
+                    if tpl[2] == 'EXTENSION':
+                        # Split on os.path.sep first, to handle additional
+                        # path prefix (e.g., lib-dynload)
+                        ext_components = tpl[0].split(os.path.sep)
+                        ext_components = ext_components[:-1] \
+                            + ext_components[-1].split('.')[:-1]
+                        if ext_components:
+                            rel_path = os.path.join(*ext_components)
+                        else:
+                            rel_path = ''
+                    else:
+                        rel_path = os.path.dirname(tpl[0])
+                    # Take filename from 'path' (second component of
+                    # TOC tuple); this way, we don't need to worry about
+                    # suffix of extensions.
+                    filename = os.path.basename(tpl[1])
+                    # Construct the full file path relative to dep_path...
+                    filename = os.path.join(rel_path, filename)
+                    # ...and use it in new DEPENDENCY entry
                     analysis.dependencies.append(
-                        (":".join((dep_path, os.path.basename(tpl[1]))),
+                        (":".join((dep_path, filename)),
                          tpl[1],
                          "DEPENDENCY"))
                     toc[i] = (None, None, None)

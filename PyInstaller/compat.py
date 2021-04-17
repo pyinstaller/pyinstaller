@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -158,6 +158,11 @@ is_venv = is_virtualenv = base_prefix != os.path.abspath(sys.prefix)
 # Method for determining conda taken from:
 # https://stackoverflow.com/questions/47610844#47610844
 is_conda = os.path.isdir(os.path.join(base_prefix, 'conda-meta'))
+
+# Similar to ``is_conda`` but is ``False`` using another ``venv``-like manager
+# on top. In this case, no packages encountered will be conda packages meaning
+# that the default non-conda behaviour is generally desired from PyInstaller.
+is_pure_conda = os.path.isdir(os.path.join(sys.prefix, 'conda-meta'))
 
 # In Python 3.4 module 'imp' is deprecated and there is another way how
 # to obtain magic value.
@@ -489,8 +494,15 @@ def __wrap_python(args, kwargs):
     # architecture as python executable.
     # It is necessary to run binaries with 'arch' command.
     if is_darwin:
-        mapping = {'32bit': '-i386', '64bit': '-x86_64'}
-        py_prefix = ['arch', mapping[architecture]]
+        if architecture == '64bit':
+            if machine == 'arm':
+                py_prefix = ['arch', '-arm64']  # Apple M1
+            else:
+                py_prefix = ['arch', '-x86_64']  # Intel
+        elif architecture == '32bit':
+            py_prefix = ['arch', '-i386']
+        else:
+            py_prefix = []
         # Since OS X 10.11 the environment variable DYLD_LIBRARY_PATH is no
         # more inherited by child processes, so we proactively propagate
         # the current value using the `-e` option of the `arch` command.
@@ -713,5 +725,5 @@ def check_requirements():
     Fail hard if any requirement is not met.
     """
     # Fail hard if Python does not have minimum required version
-    if sys.version_info < (3, 5):
-        raise EnvironmentError('PyInstaller requires at Python 3.5 or newer.')
+    if sys.version_info < (3, 6):
+        raise EnvironmentError('PyInstaller requires at Python 3.6 or newer.')

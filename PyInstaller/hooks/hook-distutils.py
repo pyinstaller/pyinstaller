@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -17,19 +17,14 @@ the active Python interpreter, which the `distutils.sysconfig` module parses at
 runtime for platform-specific metadata.
 """
 
-# TODO Verify that bundling Makefile and pyconfig.h is still required for Python 3.
+from PyInstaller import compat
 
-import os
+# From Python 3.6 and later ``distutils.sysconfig`` takes on the same
+# behaviour as regular ``sysconfig`` of moving the config vars to a
+# module (see hook-sysconfig.py). It doesn't use a nice
+# `get module name` function like ``sysconfig`` does to help us
+# locate it but the module is the same file that ``sysconfig`` uses so
+# we can use the ``_get_sysconfigdata_name()`` from regular ``sysconfig``.
 import sysconfig
-
-from PyInstaller.utils.hooks import relpath_to_config_or_make
-
-_CONFIG_H = sysconfig.get_config_h_filename()
-_MAKEFILE = sysconfig.get_makefile_filename()
-
-# Data files in PyInstaller hook format.
-datas = [(_CONFIG_H, relpath_to_config_or_make(_CONFIG_H))]
-
-# The Makefile does not exist on all platforms, eg. on Windows
-if os.path.exists(_MAKEFILE):
-    datas.append((_MAKEFILE, relpath_to_config_or_make(_MAKEFILE)))
+if not compat.is_win and hasattr(sysconfig, '_get_sysconfigdata_name'):
+    hiddenimports = [sysconfig._get_sysconfigdata_name()]

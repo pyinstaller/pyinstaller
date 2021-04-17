@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -31,7 +31,6 @@ from PyInstaller.utils.tests import importorskip
 
 @pytest.mark.darwin
 def test_osx_custom_protocol_handler(tmpdir, pyi_builder_spec):
-    tmpdir = str(tmpdir)  # Fix for Python 3.5
     app_path = os.path.join(tmpdir, 'dist',
                             'pyi_osx_custom_protocol_handler.app')
     logfile_path = os.path.join(tmpdir, 'dist', 'args.log')
@@ -46,13 +45,13 @@ def test_osx_custom_protocol_handler(tmpdir, pyi_builder_spec):
     subprocess.check_call(['open', app_path])
     # 'open' starts program in a different process
     #  so we need to wait for it to finish
-    time.sleep(2)
+    time.sleep(5)
 
     # Call custom protocol handler
     url = custom_url_scheme + "://url-args"
     subprocess.check_call(['open', url])
     # Wait for the program to finish
-    time.sleep(2)
+    time.sleep(5)
     assert os.path.exists(logfile_path), 'Missing args logfile'
     with open(logfile_path, 'r') as fh:
         log_lines = fh.readlines()
@@ -62,7 +61,6 @@ def test_osx_custom_protocol_handler(tmpdir, pyi_builder_spec):
 @pytest.mark.darwin
 @importorskip('PyQt5')
 def test_osx_event_forwarding(tmpdir, pyi_builder_spec):
-    tmpdir = str(tmpdir)  # Fix for Python 3.5
     app_path = os.path.join(tmpdir, 'dist',
                             'pyi_osx_event_forwarding.app')
 
