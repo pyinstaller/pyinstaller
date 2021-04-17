@@ -424,6 +424,14 @@ def __add_options(parser):
                         'name for code signing purposes. The usual form is a hierarchical name '
                         'in reverse DNS notation. For example: com.mycompany.department.appname '
                         "(default: first script's basename)")
+    g.add_argument('--osx-app-console', dest='osx_app_console',
+                   action="store_true",
+                   help='The macOS .app bundles don\'t '
+                        'seem to open terminal window by themselves when you '
+                        'run them, e.g. by double clicking on them in Finder. '
+                        'This option adds a launcher script that explicitly '
+                        'opens a MacOS terminal and runs an executable in it. '
+                        'Use in conjunction with `--windowed` option')
 
     g = parser.add_argument_group('Rarely used special options')
     g.add_argument("--runtime-tmpdir", dest="runtime_tmpdir", metavar="PATH",
@@ -448,7 +456,8 @@ def main(scripts, name=None, onefile=None,
          console=True, debug=None, strip=False, noupx=False, upx_exclude=None,
          runtime_tmpdir=None, pathex=None, version_file=None, specpath=None,
          bootloader_ignore_signals=False,
-         datas=None, binaries=None, icon_file=None, manifest=None, resources=None, bundle_identifier=None,
+         datas=None, binaries=None, icon_file=None, manifest=None,
+         resources=None, bundle_identifier=None, osx_app_console=False,
          hiddenimports=None, hookspath=None, key=None, runtime_hooks=None,
          excludes=None, uac_admin=False, uac_uiaccess=False,
          win_no_prefer_redirects=False, win_private_assemblies=False,
@@ -500,6 +509,9 @@ def main(scripts, name=None, onefile=None,
     if bundle_identifier:
         # We need to encapsulate it into apostrofes.
         bundle_identifier = "'%s'" % bundle_identifier
+
+    if osx_app_console:
+        osx_app_console = True
 
     if manifest:
         if "<" in manifest:
@@ -581,6 +593,8 @@ def main(scripts, name=None, onefile=None,
         'icon': icon_file,
         # .app bundle identifier. Only OSX uses this item.
         'bundle_identifier': bundle_identifier,
+        # Allows .app CLI packages to work on OSX
+        'osx_app_console': osx_app_console,
         # Windows assembly searching options
         'win_no_prefer_redirects': win_no_prefer_redirects,
         'win_private_assemblies': win_private_assemblies,

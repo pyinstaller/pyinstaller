@@ -377,12 +377,14 @@ create the Mac OS X application bundle, or app folder::
     app = BUNDLE(exe,
              name='myscript.app',
              icon=None,
-             bundle_identifier=None)
+             bundle_identifier=None,
+             osx_app_console=False)
 
 The ``icon=`` argument to ``BUNDLE`` will have the path to an icon file
 that you specify using the ``--icon=`` option.
 The ``bundle_identifier`` will have the value you specify with the
-``--osx-bundle-identifier=`` option.
+``--osx-bundle-identifier=`` option. The ``osx_app_console`` will have the
+value you specify by ``--osx-app-console`` option.
 
 An :file:`Info.plist` file is an important part of a Mac OS X app bundle.
 (See the `Apple bundle overview`_ for a discussion of the contents
