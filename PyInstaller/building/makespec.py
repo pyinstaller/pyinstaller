@@ -428,7 +428,7 @@ def __add_options(parser):
                    help='The macOS .app bundles don\'t seem to open terminal window by themselves '
                         'when you run them, e.g. by double clicking on them in Finder. This option '
                         'adds a launcher script that explicitly opens a MacOS terminal and runs an '
-                        'executable in it.')
+                        'executable in it. Use in conjunction with `--windowed` option')
 
     g = parser.add_argument_group('Rarely used special options')
     g.add_argument("--runtime-tmpdir", dest="runtime_tmpdir", metavar="PATH",
