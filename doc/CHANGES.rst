@@ -29,7 +29,7 @@ Features
 * Windows: Set EXE checksums. Reduces false-positive detection from antiviral
   software. (:issue:`#5579`)
 * Add new command-line options that map to collect functions from hookutils:
-  ``-collect-submodules``, ``--collect-data``, ``--collect-binaries``,
+  ``--collect-submodules``, ``--collect-data``, ``--collect-binaries``,
   ``--collect-all``, and ``--copy-metadata``. (:issue:`#5391`)
 * Add new hook utility :func:`~PyInstaller.utils.hooks.collect_entry_point` for
   collecting plugins defined through setuptools entry points. (:issue:`#5734`)
@@ -76,7 +76,7 @@ Bugfix
   The return code 1 is used instead of -1, to keep the behavior consistent
   with that of the python interpreter. (:issue:`#5480`)
 * Linux: Fix binary dependency scanner to support `changes to ldconfig
-<https://sourceware.org/git/?p=glibc.git;a=commitdiff;h=dfb3f101c5ef23adf60d389058a2b33e23303d04>`_
+  <https://sourceware.org/git/?p=glibc.git;a=commitdiff;h=dfb3f101c5ef23adf60d389058a2b33e23303d04>`_
   introduced in ``glibc`` 2.33. (:issue:`#5540`)
 * Prevent ``MERGE`` (multipackage) from creating self-references for
   duplicated TOC entries. (:issue:`#5652`)
@@ -84,7 +84,7 @@ Bugfix
   even if the bootloader is built as position-independent executable (PIE).
   (:issue:`#5330`)
 * Remove dependence on a `private function
-<https://github.com/matplotlib/matplotlib/commit/e1352c71f07aee7eab004b73dd9bda2a260ab31b>`_
+  <https://github.com/matplotlib/matplotlib/commit/e1352c71f07aee7eab004b73dd9bda2a260ab31b>`_
   removed in ``matplotlib`` 3.4.0rc1. (:issue:`#5568`)
 * Strip absolute paths from ``.pyc`` modules collected into
   ``base_library.zip``
