@@ -1,0 +1,3 @@
+Add a Mac OS argument --osx-console-app which allows
+generated console .app files to be executed on
+double-click
