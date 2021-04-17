@@ -380,6 +380,18 @@ def test_set_icon(pyi_builder, data_dir):
     pyi_builder.test_source("print('Hello Python!')", pyi_args=args)
 
 
+def test_osx_app_console_option(pyi_builder, data_dir):
+    if is_darwin:
+        # On OS X icon is applied only for windowed mode.
+        args = ['--windowed', '--osx-app-console']
+    else:
+        pytest.skip('option --icon works only on Windows and Mac OS X')
+    pyi_builder.test_source("""
+        print('Hello Python!')
+        input()
+    """, pyi_args=args)
+
+
 def test_python_home(pyi_builder):
     pyi_builder.test_script('pyi_python_home.py')
 
