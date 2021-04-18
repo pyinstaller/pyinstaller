@@ -18,9 +18,6 @@ execnet >= 1.5.0
 # Testing framework.
 pytest >= 2.7.3
 
-# Plugin allowing running tests in parallel.
-pytest-xdist
-
 # Plugin to abort hanging tests.
 pytest-timeout
 # allows specifying order without duplicates
