@@ -86,14 +86,14 @@ jobs:
         if: ${{ !startsWith(matrix.os, 'macos') }}
         uses: xoviat/actions-pytest@0.1-alpha2
         with:
-          args: -n 3 --maxfail 3 --durations 10 tests/unit tests/functional --force-flaky --no-flaky-report
+          args: --maxfail 3 --durations 10 tests/unit tests/functional --force-flaky --no-flaky-report
 
       - name: Run tests
         if: startsWith(matrix.os, 'macos')
         uses: xoviat/actions-pytest@0.1-alpha2
         with:
-          args: > 
-            -n 3 --maxfail 3 --durations 10 tests/unit tests/functional --ignore tests/functional/test_libraries.py 
+          args: >
+            --maxfail 3 --durations 10 tests/unit tests/functional --ignore tests/functional/test_libraries.py
             --force-flaky --no-flaky-report
 
       - name: Run hooksample tests
