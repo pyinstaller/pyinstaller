@@ -369,7 +369,7 @@ the environment variable :envvar:`OBJECT_MODE`.
 
 To determine the size the following command can be used::
 
-    $ python -c "import sys; print(sys.maxsize) <= 2**32"
+    $ python -c "import sys; print(sys.maxsize <= 2**32)"
     True
 
 When the answer is ``True`` (as above) Python was build as a 32-bit
