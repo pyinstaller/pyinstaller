@@ -224,6 +224,18 @@ def CopyIcons(dstpath, srcpath):
     else:
         logger.info("Copying icons from %s", srcpath)
 
+    # Bail out quickly if the input is invalid. Letting images in the wrong
+    # format be passed to Window's API gives very cryptic error messages as
+    # it's generally unclear why PyInstaller would treat an image file as an
+    # executable.
+    if srcext != ".exe":
+        raise ValueError(
+            f"Received icon path '{srcpath}' which exists but is not in the "
+            f"correct format. On Windows, only '.ico' images or other "
+            f"'.exe' files may be used as icons. Please convert your "
+            f"'{srcext}' file to a '.ico' then try again."
+        )
+
     try:
         # Attempt to load the .ico or .exe containing the icon into memory
         # using the same mechanism as if it were a DLL. If this fails for
