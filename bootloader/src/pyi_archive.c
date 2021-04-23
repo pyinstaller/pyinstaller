@@ -361,6 +361,26 @@ cleanup:
 }
 
 /*
+ * Try matching 8 bytes from the given buffer against the archive's
+ * COOKIE MAGIC pattern, in a way that prevents storing the MAGIC
+ * pattern in a matchable form anywhere in the executable.
+ *
+ * Returns 1 if buf matches the MAGIC pattern, 0 otherwise.
+ */
+static int _pyi_match_magic(unsigned char *buf)
+{
+    /* MAGIC pattern (8 bytes): { 'M', 'E', 'I', 014, 013, 012, 013, 016 }
+       Stored in two parts and separated by unused data to prevent
+       direct matches on itself when scanning the executable. */
+    static const unsigned char MAGIC[] = {
+        'M', 'E', 'I', 014,  /* first part */
+        013, 016, 016, 017,
+        013, 012, 013, 016   /* second part */
+    };
+    return memcmp(buf, MAGIC, 4) == 0 && memcmp(buf+4, MAGIC+8, 4) == 0;
+}
+
+/*
  * Perform full back-to-front scan of the file to search for the
  * MAGIC pattern of the embedded archive's COOKIE header.
  *
@@ -369,7 +389,7 @@ cleanup:
 static uint64_t
 _pyi_find_cookie_offset(FILE *fp)
 {
-    static const unsigned char MAGIC[] = { 'M', 'E', 'I', 014, 013, 012, 013, 016 };
+    const size_t MAGIC_SIZE = 8;  /* 8-byte pattern */
     static const int SEARCH_CHUNK_SIZE = 8192;
     unsigned char *buffer = NULL;
     uint64_t start_pos, end_pos;
@@ -390,7 +410,7 @@ _pyi_find_cookie_offset(FILE *fp)
     end_pos = pyi_ftell(fp);
 
     /* Sanity check */
-    if (end_pos < sizeof(MAGIC)) {
+    if (end_pos < MAGIC_SIZE) {
         VS("LOADER: file is too short!\n");
         goto cleanup;
     }
@@ -403,7 +423,7 @@ _pyi_find_cookie_offset(FILE *fp)
         chunk_size = (size_t)(end_pos - start_pos);
 
         /* Is the remaining chunk large enough to hold the pattern? */
-        if (chunk_size < sizeof(MAGIC)) {
+        if (chunk_size < MAGIC_SIZE) {
             break;
         }
 
@@ -418,15 +438,15 @@ _pyi_find_cookie_offset(FILE *fp)
         }
 
         /* Scan the chunk */
-        for (size_t i = chunk_size - sizeof(MAGIC) + 1; i > 0; i--) {
-            if (memcmp(buffer + i - 1, MAGIC, sizeof(MAGIC)) == 0) {
+        for (size_t i = chunk_size - MAGIC_SIZE + 1; i > 0; i--) {
+            if (_pyi_match_magic(buffer + i - 1)) {
                 offset = start_pos + i - 1;
                 goto cleanup;
             }
         }
 
         /* Adjust search location for next chunk; ensure proper overlap */
-        end_pos = start_pos + sizeof(MAGIC) - 1;
+        end_pos = start_pos + MAGIC_SIZE - 1;
     } while (start_pos > 0);
 
 cleanup:
@@ -480,11 +500,11 @@ pyi_arch_open(ARCHIVE_STATUS *status)
 
     /* Read the cookie */
     if (pyi_fseek(status->fp, cookie_pos, SEEK_SET) < 0) {
-        FATAL_PERROR("fseek", "failed to seek to cookie position.");
+        FATAL_PERROR("fseek", "Failed to seek to cookie position!\n");
         return -1;
     }
     if (fread(&status->cookie, sizeof(COOKIE), 1, status->fp) < 1) {
-        FATAL_PERROR("fread", "failed to read cookie.");
+        FATAL_PERROR("fread", "Failed to read cookie!\n");
         return -1;
     }
     /* Fix endianess of COOKIE fields */
@@ -508,19 +528,19 @@ pyi_arch_open(ARCHIVE_STATUS *status)
     status->tocbuff = (TOC *) malloc(status->cookie.TOClen);
 
     if (status->tocbuff == NULL) {
-        FATAL_PERROR("malloc", "Could not allocate buffer for TOC.");
+        FATAL_PERROR("malloc", "Could not allocate buffer for TOC!\n");
         return -1;
     }
 
     if (fread(status->tocbuff, status->cookie.TOClen, 1, status->fp) < 1) {
-        FATAL_PERROR("fread", "Could not read from file.");
+        FATAL_PERROR("fread", "Could not read full TOC!\n");
         return -1;
     }
     status->tocend = (TOC *) (((char *)status->tocbuff) + status->cookie.TOClen);
 
     /* Check input file is still ok (should be). */
     if (ferror(status->fp)) {
-        FATALERROR("Error on file\n.");
+        FATALERROR("Error on file.\n");
         return -1;
     }
 
