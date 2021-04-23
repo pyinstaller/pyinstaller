@@ -19,14 +19,14 @@ execnet >= 1.5.0
 pytest >= 2.7.3
 
 # Plugin allowing running tests in parallel.
-pytest-xdist
+git+https://github.com/xoviat/pytest-xdist.git@crashitem
 
 # Plugin to abort hanging tests.
 git+https://github.com/xoviat/pytest-timeout.git@thread-exception
 # allows specifying order without duplicates
 pytest-drop-dup-tests
 # reruns failed flaky tests
-pytest-rerunfailures
+git+https://github.com/xoviat/pytest-rerunfailures.git@crashitem
 
 # Better subprocess alternative with implemented timeout.
 psutil
