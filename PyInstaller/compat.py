@@ -310,7 +310,7 @@ def exec_command(*cmdargs, **kwargs):
     raise_ENOENT = kwargs.pop('__raise_ENOENT__', None)
     try:
         out = subprocess.Popen(
-            cmdargs, stdout=subprocess.PIPE, **kwargs).communicate()[0]
+            cmdargs, stdout=subprocess.PIPE, **kwargs).communicate(timeout=60)[0]
     except OSError as e:
         if raise_ENOENT and e.errno == errno.ENOENT:
             raise
@@ -462,7 +462,7 @@ def exec_command_all(*cmdargs, **kwargs):
     proc = subprocess.Popen(cmdargs, bufsize=-1,  # Default OS buffer size.
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs)
     # Waits for subprocess to complete.
-    out, err = proc.communicate()
+    out, err = proc.communicate(timeout=60)
     # stdout/stderr are returned as a byte array NOT as string.
     # Thus we need to convert that to proper encoding.
     try:
