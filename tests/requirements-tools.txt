@@ -26,7 +26,7 @@ git+https://github.com/xoviat/pytest-timeout.git@thread-exception
 # allows specifying order without duplicates
 pytest-drop-dup-tests
 # reruns failed flaky tests
-git+https://github.com/xoviat/pytest-rerunfailures.git@crashitem
+git+https://github.com/xoviat/pytest-rerunfailures.git@crashitem-test
 
 # Better subprocess alternative with implemented timeout.
 psutil
