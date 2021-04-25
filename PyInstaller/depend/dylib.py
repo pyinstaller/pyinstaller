@@ -97,6 +97,14 @@ _win_includes = {
     r'ucrtbase\.dll',
     r'vcruntime140\.dll',
 
+    # Additional DLLs from VC 2015/2017/2019 runtime. Allow these to be
+    # collected to avoid missing-DLL errors when the target machine does
+    # not have the VC redistributable installed.
+    r'msvcp140\.dll',
+    r'msvcp140_1\.dll',
+    r'msvcp140_2\.dll',
+    r'vcruntime140_1\.dll',
+
     # Allow pythonNN.dll, pythoncomNN.dll, pywintypesNN.dll
     r'py(?:thon(?:com(?:loader)?)?|wintypes)\d+\.dll',
 }
