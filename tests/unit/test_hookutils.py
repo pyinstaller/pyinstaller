@@ -12,13 +12,14 @@
 
 import os
 import pytest
+import pathlib
 import shutil
 from os.path import join
 
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules, \
     get_module_file_attribute, remove_prefix, remove_suffix, \
     remove_file_extension, is_module_or_submodule, \
-    is_module_satisfies
+    is_module_satisfies, _copy_metadata_dest
 from PyInstaller.compat import exec_python, ALL_SUFFIXES, is_win
 
 
@@ -322,3 +323,35 @@ def test_collect_data_all_included(data_lists):
 def test_get_module_file_attribute_non_exist_module():
     with pytest.raises(ImportError):
         get_module_file_attribute('pyinst_nonexisting_module_name')
+
+
+@pytest.mark.parametrize("egg_path,name,target", [
+    # Something installed via `pip install -e .`.
+    ("editable/install/CodeChat.egg-info", "CodeChat", "CodeChat.egg-info"),
+    # An egg distribution - it's unlikely we'll ever see these now.
+    ("lib/site-packages/pypubsub-3.3.0-py2.7.egg/EGG-INFO",
+     "pypubsub", "pypubsub-3.3.0-py2.7.egg/EGG-INFO"),
+    # A classic wheel-installed distribution.
+    ("lib/site-packages/zest.releaser-6.2.dist-info",
+     "zest.releaser", "zest.releaser-6.2.dist-info"),
+    # Must be tolerant to case and -/_ mismatch.
+    ("/site-packages/importlib_metadata-4.0.1.dist-info",
+     "ImPorTlib-mEtADatA", "importlib_metadata-4.0.1.dist-info")
+])
+def test_copy_metadata_dest(egg_path, name, target):
+    """Test choosing dest path for copy_metadata() across distribution types.
+    """
+    # Convert posix style filenames to native paths. i.e. replace '/' with '\'
+    # on Windows.
+    egg_path = str(pathlib.Path(*pathlib.PurePosixPath(egg_path).parts))
+    target = str(pathlib.Path(*pathlib.PurePosixPath(target).parts))
+
+    assert _copy_metadata_dest(egg_path, name) == target
+
+
+def test_erroneous_distribution_type():
+    with pytest.raises(RuntimeError, match="Unknown .* type 'foo' from the "
+                                           "'bar' distribution"):
+        _copy_metadata_dest("foo", "bar")
+    with pytest.raises(RuntimeError, match=r"No .* distribution 'foo'\."):
+        _copy_metadata_dest(None, "foo")
