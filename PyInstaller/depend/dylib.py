@@ -104,6 +104,7 @@ _win_includes = {
     r'msvcp140_1\.dll',
     r'msvcp140_2\.dll',
     r'vcruntime140_1\.dll',
+    r'vcomp140\.dll',
 
     # Allow pythonNN.dll, pythoncomNN.dll, pywintypesNN.dll
     r'py(?:thon(?:com(?:loader)?)?|wintypes)\d+\.dll',
