@@ -1125,7 +1125,7 @@ def collect_entry_point(name: str) -> Tuple[list, list]:
         ``hiddenimports`` arguments in the ``.spec`` file. See :ref:`using spec
         files`.
 
-    .. versionadded:: 5.0
+    .. versionadded:: 4.3
 
     """
     import pkg_resources
