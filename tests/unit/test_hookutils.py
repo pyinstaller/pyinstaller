@@ -343,8 +343,8 @@ def test_copy_metadata_dest(egg_path, name, target):
     """
     # Convert posix style filenames to native paths. i.e. replace '/' with '\'
     # on Windows.
-    egg_path = str(pathlib.Path(*pathlib.PurePosixPath(egg_path).parts))
-    target = str(pathlib.Path(*pathlib.PurePosixPath(target).parts))
+    egg_path = str(pathlib.PurePath(egg_path))
+    target = str(pathlib.PurePath(target))
 
     assert _copy_metadata_dest(egg_path, name) == target
 
