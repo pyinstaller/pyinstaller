@@ -1,33 +1,4 @@
-graft bootloader
-graft doc
-graft PyInstaller
-graft tests
-
-include *.rst
-include *.txt
-include *.toml
-include pyinstaller.py
-include pyinstaller-gui.py
-
-prune bootloader/build
-prune bootloader/.waf-*
-prune bootloader/.waf3-*
-prune bootloader/waf-*
-prune bootloader/waf3-*
-prune bootloader/_sdks
-prune bootloader/.vagrant
-exclude bootloader/.lock-waf*
-
-prune doc/source
-prune doc/_build
-recursive-exclude doc *.tmp
-include news/_template.rst
-prune news
-
-prune old
-prune scripts
-prune tests/scripts
-prune .github
-
-exclude .* *.yml *~ .directory
-global-exclude *.py[co]
+recursive-include bootloader *.c *.h wscript waf strip.py
+recursive-exclude PyInstaller/bootloader *
+recursive-include PyInstaller/bootloader/images *
+include pyproject.toml
