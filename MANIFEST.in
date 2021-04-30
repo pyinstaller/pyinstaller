@@ -1,4 +1,4 @@
-recursive-include bootloader *.c *.h wscript waf
+recursive-include bootloader *.c *.h wscript waf strip.py
 recursive-exclude PyInstaller/bootloader *
 recursive-include PyInstaller/bootloader/images *
 include pyproject.toml
