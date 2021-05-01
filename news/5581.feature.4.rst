@@ -1,0 +1,2 @@
+(macOS) Implement signing of .app bundle (ad-hoc or with actual signing
+identity, if provided).

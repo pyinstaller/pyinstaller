@@ -12,11 +12,15 @@
 import os
 import plistlib
 import shutil
+
 from PyInstaller.compat import is_darwin
 from PyInstaller.building.api import EXE, COLLECT
 from PyInstaller.building.datastruct import Target, TOC, logger
 from PyInstaller.building.utils import _check_path_overlap, _rmtree, \
     add_suffix_to_extension, checkCache
+
+if is_darwin:
+    import PyInstaller.utils.osx as osxutils
 
 
 class BUNDLE(Target):
@@ -200,7 +204,7 @@ class BUNDLE(Target):
                 else:
                     shutil.copy(fnm, tofnm)
 
-        logger.info('moving BUNDLE data files to Resource directory')
+        logger.info('Moving BUNDLE data files to Resource directory')
 
         # Mac OS X Code Signing does not work when .app bundle contains
         # data files in dir ./Contents/MacOS.
@@ -243,3 +247,15 @@ class BUNDLE(Target):
                 os.symlink(os.path.relpath(os.path.join(res_dir, inm),
                                            os.path.split(os.path.join(bin_dir, inm))[0]),
                            os.path.join(bin_dir, inm))
+
+        # Sign the bundle
+        logger.info('Signing the BUNDLE...')
+        try:
+            osxutils.sign_binary(self.name, self.codesign_identity,
+                                 self.entitlements_file, deep=True)
+        except Exception as e:
+            logger.warning("Error while signing the bundle: %s", e)
+            logger.warning("You will need to sign the bundle manually!")
+
+        logger.info("Building BUNDLE %s completed successfully.",
+                    self.tocbasename)

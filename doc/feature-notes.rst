@@ -245,13 +245,17 @@ done in the ``.spec`` file via ``entitlements_file=`` argument to
 App bundles
 ~~~~~~~~~~~
 
-While |PyInstaller| automatically signs collected binaries and the
-generated executable itself, it does *not* attempt to sign `.app bundles`.
+|PyInstaller| also automatically attempts to sign `.app bundles`, either
+using ad-hoc identity or actual signing identity, if provided via
+``--codesign-identity`` switch. In addition to passing same options as
+when signing collected binaries (identity, hardened runtime, entitlement),
+deep signing is also enabled via by passing ``--deep`` option to the
+``codesign`` utility.
 
-Signing `.app bundles` may require `additional steps
-<https://github.com/pyinstaller/pyinstaller/wiki/Recipe-OSX-Code-Signing-Qt>`_
-to address corner-case issues, and should therefore be performed manually.
-
+Should the signing of the bundle fail for whatever reason, the error
+message from the ``codesign`` utility will be printed to the console,
+along with a warning that manual intervention and manual signing of the
+bundle are required.
 
 .. include:: _common_definitions.txt
 
