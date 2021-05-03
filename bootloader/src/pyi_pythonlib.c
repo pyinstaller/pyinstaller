@@ -581,7 +581,7 @@ pyi_pylib_import_modules(ARCHIVE_STATUS *status)
                 mod = PI_PyImport_ExecCodeModule(ptoc->name, co);
             }
             else {
-                /* TODO callfunctions might return NULL - find yout why and foor what modules. */
+                /* TODO callfunctions might return NULL - find out why and for what modules. */
                 VS("LOADER: callfunction returned NULL");
                 mod = NULL;
             }
