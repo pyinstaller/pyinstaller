@@ -14,6 +14,10 @@ Find external dependencies of binary libraries.
 """
 
 import ctypes.util
+import collections
+import functools
+import itertools
+import multiprocessing
 import os
 import re
 import sys
@@ -215,19 +219,65 @@ def Dependencies(lTOC, xtrapath=None, manifest=None, redirects=None):
     # directly with PyInstaller.
     lTOC = _extract_from_egg(lTOC)
 
-    for nm, pth, typ in lTOC:
-        if nm.upper() in seen:
-            continue
-        logger.debug("Analyzing %s", pth)
-        seen.add(nm.upper())
-        if is_win:
-            for ftocnm, fn in getAssemblyFiles(pth, manifest, redirects):
-                lTOC.append((ftocnm, fn, 'BINARY'))
-        for lib, npth in selectImports(pth, xtrapath):
-            if lib.upper() in seen or npth.upper() in seen:
+    # 4 processes may yield up to +40% speed on 2 CPUs
+    # 2 processes may yield up to +30% speed on 2 CPUs
+    processes = 2 * multiprocessing.cpu_count()
+    pool = multiprocessing.Pool(processes)
+
+    if is_win:
+        # Search for required assemblies and add them to the TOC
+        paths = set(os.path.normpath(os.path.normcase(path))
+                    for name, path, typ in lTOC)
+        assemblies = pool.map(
+            functools.partial(getAssemblyFiles, manifest=manifest,
+                              redirects=redirects),
+            paths)
+        # getAssemblyFiles returns a list of tuples, so assemblies is a
+        # list of list of tuples
+        for ftocnm, fn in itertools.chain(*assemblies):
+            lTOC.append((ftocnm, fn, 'BINARY'))
+
+    dataset = collections.deque(lTOC)
+    while True:
+        # Breakdown the data-set in chunks as big as the chosen number
+        # of processes instead of just feeding the whole data-set into
+        # process pool so that we can keep the "seen" cache in main
+        # process only.
+
+        # It's true that elements in two different chunks may find
+        # common dependencies and since processes don't share a common
+        # cache these same common dependencies will be inspected
+        # multiple times. But we accept this trade-off (at least for
+        # now) since implementing a common shared cache would bring in
+        # far more complexity.
+        chunk = []
+        while dataset and len(chunk) < processes:
+            name, path, typ = dataset.pop()
+            name = name.upper()
+            if name not in seen:
+                chunk.append(path)
+                seen.add(name)
+
+        if not chunk:
+            break  # From while True, no more data
+
+        imports = pool.map(
+            functools.partial(selectImports, xtrapath=xtrapath),
+            chunk)
+        # selectImports returns a list of pairs, so 'imports' is
+        # a list of lists of pairs
+        for lib, npath in itertools.chain(*imports):
+            npath = os.path.normpath(os.path.normcase(npath))
+            if lib in seen or npath in seen:
                 continue
-            seen.add(npth.upper())
-            lTOC.append((lib, npth, 'BINARY'))
+            seen.add(lib)
+            seen.add(npath)
+            # collect this new dependency and select its imports
+            lTOC.append((lib, npath, 'BINARY'))
+            dataset.append((lib, npath, 'BINARY'))
+
+    pool.close()
+    pool.join()
 
     return lTOC
 
@@ -397,6 +447,7 @@ def getAssemblyFiles(pth, manifest=None, redirects=None):
 
     Return a list of pairs (name, fullpath)
     """
+    logger.debug("Analyzing %s for assembly dependencies", pth)
     rv = []
     if manifest:
         _depNames = set(dep.name for dep in manifest.dependentAssemblies)
@@ -491,6 +542,7 @@ def selectImports(pth, xtrapath=None):
 
     Return a list of pairs (name, fullpath)
     """
+    logger.debug("Analyzing %s for binary dependencies", pth)
     rv = []
     if xtrapath is None:
         xtrapath = [os.path.dirname(pth)]

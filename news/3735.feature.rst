@@ -1,0 +1,1 @@
+Shortened the time required to build binary dependencies graph using multiple processes.
