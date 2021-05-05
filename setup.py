@@ -203,4 +203,6 @@ setup(
                 'bdist_wheels': bdist_wheels,
                 },
     packages=find_packages(include=["PyInstaller", "PyInstaller.*"]),
+    # build a binary wheel that includes bootloader executable
+    has_ext_modules=lambda: True,
 )
