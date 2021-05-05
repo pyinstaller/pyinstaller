@@ -203,4 +203,8 @@ setup(
                 'bdist_wheels': bdist_wheels,
                 },
     packages=find_packages(include=["PyInstaller", "PyInstaller.*"]),
+    # Include all bootloaders in wheels by default.
+    package_data = {
+        "PyInstaller": ["bootloader/*/*"],
+    },
 )
