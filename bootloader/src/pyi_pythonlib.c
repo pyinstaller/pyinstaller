@@ -511,9 +511,6 @@ pyi_pylib_start_python(ARCHIVE_STATUS *status)
 int
 pyi_pylib_import_modules(ARCHIVE_STATUS *status)
 {
-    PyObject *marshal;
-    PyObject *marshaldict;
-    PyObject *loadfunc;
     TOC *ptoc;
     PyObject *co;
     PyObject *mod;
@@ -540,14 +537,6 @@ pyi_pylib_import_modules(ARCHIVE_STATUS *status)
 
     VS("LOADER: importing modules from CArchive\n");
 
-    /* Get the Python function marshall.load
-     * Here we collect some reference to PyObject that we don't dereference
-     * Doesn't matter because the objects won't be going away anyway.
-     */
-    marshal = PI_PyImport_ImportModule("marshal");
-    marshaldict = PI_PyModule_GetDict(marshal);
-    loadfunc = PI_PyDict_GetItemString(marshaldict, "loads");
-
     /* Iterate through toc looking for module entries (type 'm')
      * this is normally just bootstrap stuff (archive and iu)
      */
@@ -560,35 +549,27 @@ pyi_pylib_import_modules(ARCHIVE_STATUS *status)
 
             VS("LOADER: extracted %s\n", ptoc->name);
 
-            /* .pyc/.pyo files have 8 bytes header. Skip it and load marshalled
-             * data form the right point.
-             */
+            /* Unmarshall code object for module; we need to skip
+               the pyc header */
             if (pyvers >= 37) {
-                /* Python >= 3.7 the header: size was changed to 16 bytes. */
-                co = PI_PyObject_CallFunction(loadfunc, "y#", modbuf + 16,
-                                              ptoc->ulen - 16);
+                /* Python 3.7 changed header size to 16 bytes */
+                co = PI_PyMarshal_ReadObjectFromString((const char *) modbuf + 16, ptoc->ulen - 16);
+            } else {
+                co = PI_PyMarshal_ReadObjectFromString((const char *) modbuf + 12, ptoc->ulen - 12);
             }
-            else {
-                /* It looks like from python 3.3 the header */
-                /* size was changed to 12 bytes. */
-                co =
-                    PI_PyObject_CallFunction(loadfunc, "y#", modbuf + 12,
-                                                 ptoc->ulen - 12);
-            };
 
             if (co != NULL) {
-                VS("LOADER: callfunction returned...\n");
+                VS("LOADER: running unmarshalled code object for %s...\n", ptoc->name);
                 mod = PI_PyImport_ExecCodeModule(ptoc->name, co);
             }
             else {
-                /* TODO callfunctions might return NULL - find out why and for what modules. */
-                VS("LOADER: callfunction returned NULL");
+                VS("LOADER: failed to unmarshall code object for %s!\n", ptoc->name);
                 mod = NULL;
             }
 
             /* Check for errors in loading */
             if (mod == NULL) {
-                FATALERROR("mod is NULL - %s", ptoc->name);
+                FATALERROR("Module object for %s is NULL!\n", ptoc->name);
             }
 
             if (PI_PyErr_Occurred()) {
