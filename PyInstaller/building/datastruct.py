@@ -42,7 +42,7 @@ def unique_name(entry):
 class TOC(list):
     # TODO Simplify the representation and use directly Modulegraph objects.
     """
-    TOC (Table of Contents) class is a list of tuples of the form (name, path, tytecode).
+    TOC (Table of Contents) class is a list of tuples of the form (name, path, typecode).
 
     typecode    name                   path                        description
     --------------------------------------------------------------------------------------
