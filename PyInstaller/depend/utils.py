@@ -74,7 +74,9 @@ def create_py3_base_library(libzip_filename, graph):
             graph_nodes = list(graph.flatten())
             graph_nodes.sort(key=lambda item: item.identifier)
             for mod in graph_nodes:
-                if type(mod) in (modulegraph.SourceModule, modulegraph.Package):
+                if type(mod) in (modulegraph.SourceModule,
+                                 modulegraph.Package,
+                                 modulegraph.CompiledModule):
                     # Bundling just required modules.
                     if module_filter.match(mod.identifier):
                         st = os.stat(mod.filename)
@@ -304,7 +306,13 @@ def _resolveCtypesImports(cbinaries):
     # local paths to library search paths, then replaces original values.
     old = _setPaths()
     for cbin in cbinaries:
-        cpath = find_library(os.path.splitext(cbin)[0])
+        try:
+            # There is an issue with find_library() where it can run into
+            # errors trying to locate the library. See #5734.
+            cpath = find_library(os.path.splitext(cbin)[0])
+        except FileNotFoundError:
+            # In these cases, find_library() should return None.
+            cpath = None
         if is_unix:
             # CAVEAT: find_library() is not the correct function. Ctype's
             # documentation says that it is meant to resolve only the filename

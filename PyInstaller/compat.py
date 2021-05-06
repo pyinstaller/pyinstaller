@@ -97,7 +97,8 @@ elif is_unix:
     PYDYLIB_NAMES = {'libpython%d.%d.so.1.0' % _pyver,
                      'libpython%d.%dm.so.1.0' % _pyver,
                      'libpython%d.%dmu.so.1.0' % _pyver,
-                     'libpython%d.%dm.so' % _pyver}
+                     'libpython%d.%dm.so' % _pyver,
+                     'libpython%d.%d.so' % _pyver}
 else:
     raise SystemExit('Your platform is not yet supported. '
                      'Please define constant PYDYLIB_NAMES for your platform.')
@@ -308,8 +309,8 @@ def exec_command(*cmdargs, **kwargs):
     encoding = kwargs.pop('encoding', None)
     raise_ENOENT = kwargs.pop('__raise_ENOENT__', None)
     try:
-        out = subprocess.Popen(
-            cmdargs, stdout=subprocess.PIPE, **kwargs).communicate()[0]
+        proc = subprocess.Popen(cmdargs, stdout=subprocess.PIPE, **kwargs)
+        out = proc.communicate(timeout=60)[0]
     except OSError as e:
         if raise_ENOENT and e.errno == errno.ENOENT:
             raise
@@ -318,6 +319,9 @@ def exec_command(*cmdargs, **kwargs):
         print(e, file=sys.stderr)
         print('--' * 20, file=sys.stderr)
         raise ExecCommandFailed("Error: Executing command failed!") from e
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        raise
 
     # stdout/stderr are returned as a byte array NOT as string.
     # Thus we need to convert that to proper encoding.
@@ -461,7 +465,11 @@ def exec_command_all(*cmdargs, **kwargs):
     proc = subprocess.Popen(cmdargs, bufsize=-1,  # Default OS buffer size.
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs)
     # Waits for subprocess to complete.
-    out, err = proc.communicate()
+    try:
+        out, err = proc.communicate(timeout=60)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        raise
     # stdout/stderr are returned as a byte array NOT as string.
     # Thus we need to convert that to proper encoding.
     try:

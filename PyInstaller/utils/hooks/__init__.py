@@ -16,6 +16,7 @@ import pkgutil
 import sys
 import textwrap
 from pathlib import Path
+from typing import Tuple
 
 from ...compat import base_prefix, exec_command_stdout, exec_python, \
     exec_python_rc, is_darwin, is_venv, string_types, open_file, \
@@ -893,7 +894,9 @@ def collect_system_data_files(path, destdir=None, include_py_files=False):
 
 
 def copy_metadata(package_name):
-    """
+    """Collect distribution metadata so that
+    ``pkg_resources.get_distribution()`` can find it.
+
     This function returns a list to be assigned to the ``datas`` global
     variable. This list instructs PyInstaller to copy the metadata for the
     given package to PyInstaller's data directory.
@@ -904,61 +907,96 @@ def copy_metadata(package_name):
         Specifies the name of the package for which metadata should be copied.
 
     Returns
-    ----------
+    -------
     list
         This should be assigned to ``datas``.
 
     Examples
-    ----------
+    --------
         >>> from PyInstaller.utils.hooks import copy_metadata
         >>> copy_metadata('sphinx')
         [('c:\\python27\\lib\\site-packages\\Sphinx-1.3.2.dist-info',
           'Sphinx-1.3.2.dist-info')]
+
+
+    Some packages rely on metadata files accessed through the
+    ``pkg_resources`` module. Normally |PyInstaller| does not include these
+    metadata files. If a package fails without them, you can use this
+    function in a hook file to easily add them to the bundle. The tuples in
+    the returned list have two strings. The first is the full pathname to a
+    folder in this system. The second is the folder name only. When these
+    tuples are added to ``datas``\\ , the folder will be bundled at the top
+    level.
+
+    .. versionchanged:: 4.3.1
+
+        Prevent ``dist-info`` metadata folders being renamed to ``egg-info``
+        which broke ``pkg_resources.require`` with *extras* (see
+        :issue:`#3033`).
+
     """
-
-    # Some notes: to look at the metadata locations for all installed
-    # packages::
-    #
-    #     for key, value in pkg_resources.working_set.by_key.iteritems():
-    #         print('{}: {}'.format(key, value.egg_info))
-    #
-    # Looking at this output, I see three general types of packages:
-    #
-    # 1. ``pypubsub: c:\python27\lib\site-packages\pypubsub-3.3.0-py2.7.egg\EGG-INFO``
-    # 2. ``codechat: c:\users\bjones\documents\documentation\CodeChat.egg-info``
-    # 3. ``zest.releaser: c:\python27\lib\site-packages\zest.releaser-6.2.dist-info``
-    # 4. ``pyserial: None``
-    #
-    # The first item shows that some metadata will be nested inside an egg. I
-    # assume we'll have to deal with zipped eggs, but I don't have any examples
-    # handy. The second and third items show different naming conventions for
-    # the metadata-containing directory. The fourth item shows a package with no
-    # metadata.
-    #
-    # So, in cases 1-3, copy the metadata directory. In case 4, emit an error
-    # -- there's no metadata to copy.
-    # See https://pythonhosted.org/setuptools/pkg_resources.html#getting-or-creating-distributions.
-    # Unfortunately, there's no documentation on the ``egg_info`` attribute; it
-    # was found through trial and error.
     dist = pkg_resources.get_distribution(package_name)
-    metadata_dir = dist.egg_info
-    # Determine a destination directory based on the standardized egg name for
-    # this distribution. This avoids some problems discussed in
-    # https://github.com/pyinstaller/pyinstaller/issues/1888.
-    dest_dir = '{}.egg-info'.format(dist.egg_name())
-    # Per https://github.com/pyinstaller/pyinstaller/issues/1888, ``egg_info``
-    # isn't always defined. Try a workaround based on a suggestion by
-    # @benoit-pierre in that issue.
-    if metadata_dir is None:
-        # We assume that this is an egg, so guess a name based on `egg_name()
-        # <https://pythonhosted.org/setuptools/pkg_resources.html#distribution-methods>`_.
-        metadata_dir = os.path.join(dist.location, dest_dir)
+    return [(dist.egg_info,
+             _copy_metadata_dest(dist.egg_info, dist.project_name))]
 
-    assert os.path.exists(metadata_dir)
-    logger.debug('Package {} metadata found in {} belongs in {}'.format(
-      package_name, metadata_dir, dest_dir))
 
-    return [(metadata_dir, dest_dir)]
+def _normalise_dist(name: str) -> str:
+    return name.lower().replace("_", "-")
+
+
+def _copy_metadata_dest(egg_path: str, project_name: str) -> str:
+    """Choose an appropriate destination path for a distribution's metadata.
+
+    Args:
+        egg_path:
+            The output of ``pkg_resources.get_distribution("xyz").egg_info``:
+            A full path to the source ``xyz-version.dist-info`` or
+            ``xyz-version.egg-info`` folder containing package metadata.
+        project_name:
+            The distribution name given
+    Returns:
+        The *dest* parameter: where in the bundle should this folder go.
+    Raises:
+        RuntimeError:
+            If **egg_path** is none. i.e. No metadata found.
+
+    """
+    if egg_path is None:
+        # According to older implementations of this function, packages may
+        # have no metadata. I have no idea when this can happen...
+        raise RuntimeError(
+            f"No metadata path found for distribution '{project_name}'.")
+
+    egg_path = Path(egg_path)
+    _project_name = _normalise_dist(project_name)
+
+    # There has been a fair amount of whack-a-mole fixing to this step.
+    # If new cases appear which this function can't handle, add them to the
+    # corresponding test:
+    #   tests/unit/test_hookutils.py::test_copy_metadata_dest()
+    # See there also for example input/outputs.
+
+    # The most obvious answer is that the metadata folder should have the same
+    # name in a PyInstaller build as it does normally::
+    if _normalise_dist(egg_path.name).startswith(_project_name):
+        # e.g. .../lib/site-packages/xyz-1.2.3.dist-info
+        return egg_path.name
+
+    # Using just the base-name breaks for an egg_path of the form:
+    #   '.../site-packages/xyz-version.win32.egg/EGG-INFO'
+    # because multiple collected metadata folders will be written to the same
+    # name 'EGG-INFO' and clobber each other (see #1888).
+    # In this case, the correct behaviour appears to be to use the last 2 parts
+    # of the path:
+    if len(egg_path.parts) >= 2:
+        if _normalise_dist(egg_path.parts[-2]).startswith(_project_name):
+            return os.path.join(*egg_path.parts[-2:])
+
+    # This is something unheard of.
+    raise RuntimeError(
+        f"Unknown metadata type '{egg_path}' from the '{project_name}' "
+        f"distribution. Please report this at "
+        f"https://github/pyinstaller/pyinstaller/issues.")
 
 
 def get_installer(module):
@@ -1098,6 +1136,42 @@ def collect_all(
                        package_name, e)
 
     return datas, binaries, hiddenimports
+
+
+def collect_entry_point(name: str) -> Tuple[list, list]:
+    """Collect modules and metadata for all exporters of a given entry point.
+
+    Args:
+        name:
+            The name of the entry point. Check the documentation for the
+            library which uses the entry point to find out its name.
+    Returns:
+        A ``(datas, hiddenimports)`` pair which should be assigned to the
+        ``datas`` and ``hiddenimports`` globals respectively.
+
+    For libraries, such as ``pytest`` or ``keyring``, which rely on plugins to
+    extend their behaviour.
+
+    Examples:
+        Pytest uses an entry point called ``'pytest11'`` for its extensions.
+        To collect all those extensions use::
+
+            datas, hiddenimports = collect_entry_point("pytest11")
+
+        These values may be used in a hook or added to the ``datas`` and
+        ``hiddenimports`` arguments in the ``.spec`` file. See :ref:`using spec
+        files`.
+
+    .. versionadded:: 4.3
+
+    """
+    import pkg_resources
+    datas = []
+    imports = []
+    for dist in pkg_resources.iter_entry_points(name):
+        datas += copy_metadata(dist.dist.project_name)
+        imports.append(dist.module_name)
+    return datas, imports
 
 
 if is_pure_conda:

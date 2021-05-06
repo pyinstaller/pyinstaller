@@ -1,3 +1,0 @@
-Remove dependence on a `private function
-<https://github.com/matplotlib/matplotlib/commit/e1352c71f07aee7eab004b73dd9bda2a260ab31b>`_
-removed in ``matplotlib`` 3.4.0rc1.

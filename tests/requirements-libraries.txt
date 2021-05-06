@@ -24,7 +24,7 @@ keyring==19.2.0  # pyup: ignore
 # Working
 # -------
 # These packages work with no (known) issues.
-babel==2.9.0
+babel==2.9.1
 future==0.18.2
 gevent==21.1.2
 pygments==2.8.1
@@ -38,8 +38,8 @@ requests==2.25.1
 simplejson==3.17.2
 sphinx==2.4.4 # pyup: ignore
 # Required for test_namespace_package
-sqlalchemy==1.4.5
-zope.interface==5.3.0
+sqlalchemy==1.4.12
+zope.interface==5.4.0
 Pillow==8.2.0
 
 
@@ -48,11 +48,11 @@ Pillow==8.2.0
 
 # iPython 7.17 dropped support for python 3.6
 # https://ipython.readthedocs.io/en/stable/whatsnew/version7.html#ipython-7-17
-ipython==7.22.0; python_version > '3.6'
+ipython==7.23.0; python_version > '3.6'
 ipython==7.16.1; python_version <= '3.6'  # pyup: ignore
 
 # pandas also dropped support
-pandas==1.2.3; python_version > '3.6'
+pandas==1.2.4; python_version > '3.6'
 pandas==1.1.5; python_version <= '3.6'  # pyup: ignore
 
 # so did numpy
@@ -60,9 +60,13 @@ numpy==1.20.2; python_version > '3.6'
 numpy==1.19.4; python_version <= '3.6'  # pyup: ignore
 
 # scipy too
-scipy==1.6.2; python_version > '3.6'
+scipy==1.6.3; python_version > '3.6'
 scipy==1.5.4; python_version <= '3.6'  # pyup: ignore
 
 # and matplotlib
 matplotlib==3.4.1; python_version > '3.6'
 matplotlib==3.3.4; python_version <= '3.6'  # pyup: ignore
+
+# Install PyInstaller Hook Sample, to ensure that tests declared in
+# entry-points are discovered.
+https://github.com/pyinstaller/hooksample/archive/v4.0rc1.zip  # pyup: ignore

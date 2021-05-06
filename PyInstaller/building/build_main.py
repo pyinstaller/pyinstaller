@@ -480,6 +480,18 @@ class Analysis(Target):
             self.binding_redirects[:] = list(set(self.binding_redirects))
             logger.info("Found binding redirects: \n%s", self.binding_redirects)
 
+        # Filter binaries to adjust path of extensions that come from
+        # python's lib-dynload directory. Prefix them with lib-dynload
+        # so that we'll collect them into subdirectory instead of
+        # directly into _MEIPASS
+        for idx, tpl in enumerate(self.binaries):
+            name, path, typecode = tpl
+            if typecode == 'EXTENSION' \
+               and not os.path.dirname(os.path.normpath(name)) \
+               and os.path.basename(os.path.dirname(path)) == 'lib-dynload':
+                name = os.path.join('lib-dynload', name)
+                self.binaries[idx] = (name, path, typecode)
+
         # Place Python source in data files for the noarchive case.
         if self.noarchive:
             # Create a new TOC of ``(dest path for .pyc, source for .py, type)``.

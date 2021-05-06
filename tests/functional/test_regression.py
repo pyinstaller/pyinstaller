@@ -92,3 +92,13 @@ def test_issue_4141(pyi_builder):  #script_dir,
     pyi_builder.test_script('pyi_issue_4141.py',
                             app_name="main", run_from_path=True,
                             pyi_args=['--path', str(extra_path)])
+
+
+def test_5734():
+    """
+    In a regression this will raise a:
+        FileNotFoundError: [Errno 2] No such file or directory: b'liblibc.a'
+    on some Linux/gcc combinations.
+    """
+    from PyInstaller.depend.utils import _resolveCtypesImports
+    _resolveCtypesImports(["libc"])

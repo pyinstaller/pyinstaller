@@ -1,2 +1,0 @@
-Fix extraction of nested files in ``onefile`` builds created in MSYS
-environments.

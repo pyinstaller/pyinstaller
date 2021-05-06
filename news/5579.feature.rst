@@ -1,1 +1,0 @@
-Windows: Set EXE checksums. Reduces false-positive detection from antiviral software.

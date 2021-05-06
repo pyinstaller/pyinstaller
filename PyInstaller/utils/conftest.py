@@ -63,7 +63,7 @@ from PyInstaller.utils.hooks.qt import pyqt5_library_info, pyside2_library_info
 # =======
 # Timeout for running the executable. If executable does not exit in this time
 # then it is interpreted as test failure.
-_EXE_TIMEOUT = 30  # In sec.
+_EXE_TIMEOUT = 60  # In sec.
 # Number of retries we should attempt if the executable times out.
 _MAX_RETRIES = 2
 # All currently supported platforms

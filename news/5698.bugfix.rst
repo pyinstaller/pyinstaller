@@ -1,1 +1,0 @@
-Improve performance and reduce stack usage of module scanning.

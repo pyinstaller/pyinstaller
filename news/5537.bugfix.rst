@@ -1,6 +1,0 @@
-(Windows) Change default cache directory to ``LOCALAPPDATA``
-(from the original ``APPDATA``).
-This is to make sure that cached data
-doesn't get synced with the roaming profile.
-For this and future versions ``AppData\Roaming\pyinstaller``
-might be safely deleted.

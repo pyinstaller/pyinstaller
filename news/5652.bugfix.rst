@@ -1,2 +1,0 @@
-Prevent ``MERGE`` (multipackage) from creating self-references for
-duplicated TOC entries.

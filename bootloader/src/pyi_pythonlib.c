@@ -392,10 +392,11 @@ pyi_pylib_start_python(ARCHIVE_STATUS *status)
      * its contents nor free its memory.
      *
      * NOTE: Statics are zero-initialized. */
-    static char pypath[2 * PATH_MAX + 14];
+    #define MAX_PYPATH_SIZE (3 * PATH_MAX + 32)
+    static char pypath[MAX_PYPATH_SIZE];
 
     /* Wide string forms of the above, for Python 3. */
-    static wchar_t pypath_w[PATH_MAX + 1];
+    static wchar_t pypath_w[MAX_PYPATH_SIZE];
     static wchar_t pyhome_w[PATH_MAX + 1];
     static wchar_t progname_w[PATH_MAX + 1];
 
@@ -419,23 +420,27 @@ pyi_pylib_start_python(ARCHIVE_STATUS *status)
     PI_Py_SetPythonHome(pyhome_w);
 
     /* Set sys.path */
-    /* sys.path = [base_library, mainpath] */
-    if (snprintf(pypath, sizeof pypath, "%s%cbase_library.zip%c%s",
-                 status->mainpath, PYI_SEP, PYI_PATHSEP, status->mainpath)
-        >= sizeof pypath) {
+    /* sys.path = [mainpath/base_library.zip, mainpath/lib-dynload, mainpath] */
+    if (snprintf(pypath, MAX_PYPATH_SIZE, "%s%c%s" "%c" "%s%c%s" "%c" "%s",
+                 status->mainpath, PYI_SEP, "base_library.zip",
+                 PYI_PATHSEP,
+                 status->mainpath, PYI_SEP, "lib-dynload",
+                 PYI_PATHSEP,
+                 status->mainpath)
+        >= MAX_PYPATH_SIZE) {
         // This should never happen, since mainpath is < PATH_MAX and pypath is
         // huge enough
         FATALERROR("sys.path (based on %s) exceeds buffer[%d] space\n",
-                   status->mainpath, sizeof pypath);
+                   status->mainpath, MAX_PYPATH_SIZE);
         return -1;
     }
 
     /*
-     * E must set sys.path to have base_library.zip before
+     * We must set sys.path to have base_library.zip before
      * calling Py_Initialize as it needs `encodings` and other modules.
      */
     /* Decode using current locale */
-    if (!pyi_locale_char2wchar(pypath_w, pypath, PATH_MAX)) {
+    if (!pyi_locale_char2wchar(pypath_w, pypath, MAX_PYPATH_SIZE)) {
         FATALERROR("Failed to convert pypath to wchar_t\n");
         return -1;
     }
@@ -576,7 +581,7 @@ pyi_pylib_import_modules(ARCHIVE_STATUS *status)
                 mod = PI_PyImport_ExecCodeModule(ptoc->name, co);
             }
             else {
-                /* TODO callfunctions might return NULL - find yout why and foor what modules. */
+                /* TODO callfunctions might return NULL - find out why and for what modules. */
                 VS("LOADER: callfunction returned NULL");
                 mod = NULL;
             }

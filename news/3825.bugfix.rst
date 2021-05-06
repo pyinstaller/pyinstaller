@@ -1,2 +1,0 @@
-Fix the build-time error under python 3.7 and earlier when ``ctypes``
-is manually added to ``hiddenimports``.

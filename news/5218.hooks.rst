@@ -1,1 +1,0 @@
-Update hook for ``distutils.sysconfig`` to be compatible with pyenv-virtualenv.

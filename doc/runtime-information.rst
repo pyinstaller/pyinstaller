@@ -77,7 +77,7 @@ Or, if you'd rather use pathlib_::
     bundle_dir = Path(__file__).parent
     path_to_dat = Path.cwd() / bundle_dir / "other-file.dat"
 
-.. versionchanged:: 5.0
+.. versionchanged:: 4.3
 
     Formerly, the ``__file__`` attribute of the entry-point script
     (the ``__main__`` module) was set to only its basename rather than

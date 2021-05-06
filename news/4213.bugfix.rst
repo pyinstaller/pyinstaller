@@ -1,4 +1,0 @@
-(Windows) Fix the frozen program crashing immediately with
-``Failed to execute script pyiboot01_bootstrap`` message when built in
-``noconsole`` mode and with import logging enabled (either via
-``--debug imports`` or ``--debug all`` command-line switch).

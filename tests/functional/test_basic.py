@@ -15,6 +15,7 @@
 import locale
 import os
 import sys
+import shutil
 
 # Third-party imports
 # -------------------
@@ -378,6 +379,28 @@ def test_set_icon(pyi_builder, data_dir):
     else:
         pytest.skip('option --icon works only on Windows and Mac OS X')
     pyi_builder.test_source("print('Hello Python!')", pyi_args=args)
+
+
+@pytest.mark.win32
+def test_invalid_icon(tmpdir, data_dir):
+    """Ensure a sane error message is given if the user provides a PNG or other
+    unsupported format of image."""
+    from PyInstaller import PLATFORM, HOMEPATH
+    from PyInstaller.utils.win32.icon import CopyIcons
+
+    icon = os.path.join(data_dir.strpath, 'pyi_icon.png')
+    bootloader_src = os.path.join(
+        HOMEPATH, 'PyInstaller', 'bootloader', PLATFORM, "run.exe")
+    exe = os.path.join(tmpdir, "run.exe")
+    shutil.copy(bootloader_src,  exe)
+    assert os.path.isfile(icon)
+    assert os.path.isfile(exe)
+
+    with pytest.raises(ValueError,
+                       match="path '.*pyi_icon.png' .* not in the correct "
+                             "format.*"
+                             "convert your '.png' file to a '.ico' .*"):
+        CopyIcons(exe, icon)
 
 
 def test_python_home(pyi_builder):

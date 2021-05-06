@@ -1,1 +1,0 @@
-Add support for Conda Forge's distribution of ``NumPy``. 

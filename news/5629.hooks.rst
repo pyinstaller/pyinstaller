@@ -1,2 +1,0 @@
-Prevent ``matplotlib`` hook from collecting current working directory when it 
-fails to determine the path to matplotlib's data directory.

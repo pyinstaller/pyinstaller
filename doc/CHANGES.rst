@@ -12,6 +12,147 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+4.3 (2021-04-16)
+----------------
+
+Features
+~~~~~~~~
+
+* Provide basic implementation for ``FrozenImporter.get_source()`` that
+  allows reading source from ``.py`` files that are collected by hooks as
+  data files. (:issue:`#5697`)
+* Raise the maximum allowed size of ``CArchive`` (and consequently ``onefile``
+  executables) from 2 GiB to 4 GiB. (:issue:`#3939`)
+* The `unbuffered stdio` mode (the ``u`` option) now sets the
+  ``Py_UnbufferedStdioFlag``
+  flag to enable unbuffered stdio mode in Python library. (:issue:`#1441`)
+* Windows: Set EXE checksums. Reduces false-positive detection from antiviral
+  software. (:issue:`#5579`)
+* Add new command-line options that map to collect functions from hookutils:
+  ``--collect-submodules``, ``--collect-data``, ``--collect-binaries``,
+  ``--collect-all``, and ``--copy-metadata``. (:issue:`#5391`)
+* Add new hook utility :func:`~PyInstaller.utils.hooks.collect_entry_point` for
+  collecting plugins defined through setuptools entry points. (:issue:`#5734`)
+
+
+Bugfix
+~~~~~~
+
+* (macOS) Fix ``Bad CPU type in executable`` error in helper-spawned python
+  processes when running under ``arm64``-only flavor of Python on Apple M1.
+  (:issue:`#5640`)
+* (OSX) Suppress missing library error messages for system libraries as
+  those are never collected by PyInstaller and starting with Big Sur,
+  they are hidden by the OS. (:issue:`#5107`)
+* (Windows) Change default cache directory to ``LOCALAPPDATA``
+  (from the original ``APPDATA``).
+  This is to make sure that cached data
+  doesn't get synced with the roaming profile.
+  For this and future versions ``AppData\Roaming\pyinstaller``
+  might be safely deleted. (:issue:`#5537`)
+* (Windows) Fix ``onefile`` builds not having manifest embedded when icon is
+  disabled via ``--icon NONE``. (:issue:`#5625`)
+* (Windows) Fix the frozen program crashing immediately with
+  ``Failed to execute script pyiboot01_bootstrap`` message when built in
+  ``noconsole`` mode and with import logging enabled (either via
+  ``--debug imports`` or ``--debug all`` command-line switch). (:issue:`#4213`)
+* ``CArchiveReader`` now performs full back-to-front file search for
+  ``MAGIC``, allowing ``pyi-archive_viewer`` to open binaries with extra
+  appended data after embedded package (e.g., digital signature).
+  (:issue:`#2372`)
+* Fix ``MERGE()`` to properly set references to nested resources with their
+  full shared-package-relative path instead of just basename. (:issue:`#5606`)
+* Fix ``onefile`` builds failing to extract files when the full target
+  path exceeds 260 characters. (:issue:`#5617`)
+* Fix a crash in ``pyi-archive_viewer`` when quitting the application or
+  moving up a level. (:issue:`#5554`)
+* Fix extraction of nested files in ``onefile`` builds created in MSYS
+  environments. (:issue:`#5569`)
+* Fix installation issues stemming from unicode characters in
+  file paths. (:issue:`#5678`)
+* Fix the build-time error under python 3.7 and earlier when ``ctypes``
+  is manually added to ``hiddenimports``. (:issue:`#3825`)
+* Fix the return code if the frozen script fails due to unhandled exception.
+  The return code 1 is used instead of -1, to keep the behavior consistent
+  with that of the python interpreter. (:issue:`#5480`)
+* Linux: Fix binary dependency scanner to support `changes to ldconfig
+  <https://sourceware.org/git/?p=glibc.git;a=commitdiff;h=dfb3f101c5ef23adf60d389058a2b33e23303d04>`_
+  introduced in ``glibc`` 2.33. (:issue:`#5540`)
+* Prevent ``MERGE`` (multipackage) from creating self-references for
+  duplicated TOC entries. (:issue:`#5652`)
+* PyInstaller-frozen onefile programs are now compatible with ``staticx``
+  even if the bootloader is built as position-independent executable (PIE).
+  (:issue:`#5330`)
+* Remove dependence on a `private function
+  <https://github.com/matplotlib/matplotlib/commit/e1352c71f07aee7eab004b73dd9bda2a260ab31b>`_
+  removed in ``matplotlib`` 3.4.0rc1. (:issue:`#5568`)
+* Strip absolute paths from ``.pyc`` modules collected into
+  ``base_library.zip``
+  to enable reproducible builds that are invariant to Python install location.
+  (:issue:`#5563`)
+* (OSX) Fix issues with ``pycryptodomex`` on macOS. (:issue:`#5583`)
+* Allow compiled modules to be collected into ``base_library.zip``.
+  (:issue:`#5730`)
+* Fix a build error triggered by scanning ``ctypes.CDLL('libc.so')`` on certain
+  Linux C compiler combinations. (:issue:`#5734`)
+* Improve performance and reduce stack usage of module scanning.
+  (:issue:`#5698`)
+
+
+Hooks
+~~~~~
+
+* Add support for Conda Forge's distribution of ``NumPy``. (:issue:`#5168`)
+* Add support for package content listing via ``pkg_resources``. The
+  implementation enables querying/listing resources in a frozen package
+  (both PYZ-embedded and on-filesystem, in that order of precedence) via
+  ``pkg_resources.resource_exists()``, ``resource_isdir()``, and
+  ``resource_listdir()``. (:issue:`#5284`)
+* Hooks: Import correct typelib for GtkosxApplication. (:issue:`#5475`)
+* Prevent ``matplotlib`` hook from collecting current working directory when it
+  fails to determine the path to matplotlib's data directory. (:issue:`#5629`)
+* Update ``pandas`` hook for compatibility with version 1.2.0 and later.
+  (:issue:`#5630`)
+* Update hook for ``distutils.sysconfig`` to be compatible with
+  pyenv-virtualenv. (:issue:`#5218`)
+* Update hook for ``sqlalchemy`` to support version 1.4.0 and above.
+  (:issue:`#5679`)
+* Update hook for ``sysconfig`` to be compatible with pyenv-virtualenv.
+  (:issue:`#5018`)
+
+
+Bootloader
+~~~~~~~~~~
+
+* Implement full back-to-front file search for the embedded archive.
+  (:issue:`#5511`)
+* Perform file extraction from the embedded archive in a streaming manner
+  in order to limit memory footprint when archive contains large files.
+  (:issue:`#5551`)
+* Set the ``__file__`` attribute in the ``__main__`` module (entry-point
+  script) to the absolute file name inside the ``_MEIPASS``. (:issue:`#5649`)
+* Enable cross compiling for FreeBSD from Linux. (:issue:`#5733`)
+
+
+Documentation
+~~~~~~~~~~~~~
+
+* Doc: Add version spec file option for macOS Bundle. (:issue:`#5476`)
+* Update the ``Run-time Information`` section to reflect the changes in
+  behavior of ``__file__`` inside the ``__main__`` module. (:issue:`#5649`)
+
+
+PyInstaller Core
+~~~~~~~~~~~~~~~~
+
+* Drop support for python 3.5; EOL since September 2020. (:issue:`#5439`)
+* Collect python extension modules that correspond to built-ins into
+  ``lib-dynload`` sub-directory instead of directly into bundle's root
+  directory. This prevents them from shadowing shared libraries with the
+  same basename that are located in a package and loaded via ``ctypes`` or
+  ``cffi``, and also declutters the bundle's root directory. (:issue:`#5604`)
+
+
 4.2 (2021-01-13)
 ----------------
 

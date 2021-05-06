@@ -9,7 +9,8 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-from PyInstaller.utils.hooks import collect_all
+from PyInstaller.utils.hooks import collect_all, copy_metadata
+from PyInstaller.compat import is_win
 
 excludedimports = ["gevent.testing", "gevent.tests"]
 
@@ -19,3 +20,12 @@ datas, binaries, hiddenimports = collect_all(
         "gevent.testing" not in name or "gevent.tests" not in name),
     include_py_files=False,
     exclude_datas=["**/tests"])
+
+datas += copy_metadata("zope.interface")
+datas += copy_metadata("greenlet")
+datas += copy_metadata("zope.event")
+datas += copy_metadata("setuptools")
+
+if is_win:
+    datas += copy_metadata("cffi")
+    datas += copy_metadata("pycparser")

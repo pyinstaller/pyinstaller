@@ -48,10 +48,6 @@ pyi_main(int argc, char * argv[])
     int rc = 0;
     char *extractionpath = NULL;
 
-#if defined(__linux__)
-    char *processname = NULL;
-#endif  /* defined(__linux__) */
-
 #ifdef _MSC_VER
     /* Visual C runtime incorrectly buffers stderr */
     setbuf(stderr, (char *)NULL);
@@ -99,6 +95,7 @@ pyi_main(int argc, char * argv[])
     }
 
 #if defined(__linux__)
+    char *processname = NULL;
 
     /* Set process name on linux. The environment variable is set by
        parent launcher process. */
@@ -129,19 +126,19 @@ pyi_main(int argc, char * argv[])
 
 #endif
 
-#ifdef _WIN32
+
 
     if (extractionpath) {
+        
+        #ifdef _WIN32
         /* Add extraction folder to DLL search path */
         wchar_t * dllpath_w;
         dllpath_w = pyi_win32_utils_from_utf8(NULL, extractionpath, 0);
         SetDllDirectory(dllpath_w);
         VS("LOADER: SetDllDirectory(%s)\n", extractionpath);
         free(dllpath_w);
-    }
-#endif /* ifdef _WIN32 */
+        #endif
 
-    if (extractionpath) {
         VS("LOADER: Already in the child - running user's code.\n");
 
         /*  If binaries were extracted to temppath,
@@ -168,9 +165,6 @@ pyi_main(int argc, char * argv[])
 
     }
     else {
-#if defined(__linux__)
-        char tmp_processname[16]; /* 16 bytes as per prctl() man page */
-#endif  /* defined(__linux__) */
 
         /* status->temppath is created if necessary. */
         if (pyi_launch_extract_binaries(archive_status)) {
@@ -189,6 +183,7 @@ pyi_main(int argc, char * argv[])
         VS("LOADER: set _MEIPASS2 to %s\n", pyi_getenv("_MEIPASS2"));
 
 #if defined(__linux__)
+        char tmp_processname[16]; /* 16 bytes as per prctl() man page */
 
         /* Pass the process name to child via environment variable. */
         if (!prctl(PR_GET_NAME, tmp_processname, 0, 0)) {
