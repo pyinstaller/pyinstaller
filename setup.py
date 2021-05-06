@@ -105,10 +105,16 @@ class Wheel(bdist_wheel):
                 f"https://pyinstaller.readthedocs.io/en/stable/"
                 f"bootloader-building.html for how to compile them.")
 
-        # And add the correct bootloaders as data files.
         self.distribution.package_data = {
-            "PyInstaller": [f"bootloader/{self.PYI_PLAT_NAME}/*",
-                            "bootloader/images/*"],
+            "PyInstaller": [
+                # And add the correct bootloaders as data files.
+                f"bootloader/{self.PYI_PLAT_NAME}/*",
+                "bootloader/images/*",
+                # These files need to be explictly included as well.
+                "fake-modules/site.py",
+                "hooks/rthooks.dat",
+                "lib/README.rst",
+            ],
         }
         super().finalize_options()
 
@@ -203,8 +209,14 @@ setup(
                 'bdist_wheels': bdist_wheels,
                 },
     packages=find_packages(include=["PyInstaller", "PyInstaller.*"]),
-    # Include all bootloaders in wheels by default.
     package_data = {
-        "PyInstaller": ["bootloader/*/*"],
+        "PyInstaller": [
+            # Include all bootloaders in wheels by default.
+            "bootloader/*/*",
+            # These files need to be explictly included as well.
+            "fake-modules/site.py",
+            "hooks/rthooks.dat",
+            "lib/README.rst",
+        ],
     },
 )
