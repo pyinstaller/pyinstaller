@@ -56,7 +56,8 @@ from ..compat import importlib_load_source, PY3_BASE_MODULES,\
         PURE_PYTHON_MODULE_TYPES, BINARY_MODULE_TYPES, VALID_MODULE_TYPES, \
         BAD_MODULE_TYPES, MODULE_TYPES_TO_TOC_DICT
 from ..lib.modulegraph.find_modules import get_implies
-from ..lib.modulegraph.modulegraph import ModuleGraph
+from ..lib.modulegraph2 import ModuleGraph
+from ..lib.modulegraph2._modulegraph import DEFAULT_DEPENDENCY
 from ..utils.hooks import collect_submodules, is_package
 
 
@@ -106,8 +107,10 @@ class PyiModuleGraph(ModuleGraph):
     # Note: these levels are completely arbitrary and may be adjusted if needed.
     LOG_LEVEL_MAPPING = {0: INFO, 1: DEBUG, 2: TRACE, 3: TRACE, 4: TRACE}
 
-    def __init__(self, pyi_homepath, user_hook_dirs=(), excludes=(), **kwargs):
-        super(PyiModuleGraph, self).__init__(excludes=excludes, **kwargs)
+    def __init__(self, pyi_homepath, user_hook_dirs=(), excludes=(), implies={}, **kwargs):
+        super(PyiModuleGraph, self).__init__(**kwargs)
+        self.add_excludes(excludes)
+        self.add_implies(implies)
         # Homepath to the place where is PyInstaller located.
         self._homepath = pyi_homepath
         # modulegraph Node for the main python script that is analyzed
@@ -300,7 +303,7 @@ class PyiModuleGraph(ModuleGraph):
         if self._top_script_node is None:
             # Remember the node for the first script.
             try:
-                self._top_script_node = super(PyiModuleGraph, self).run_script(
+                self._top_script_node = super(PyiModuleGraph, self).add_script(
                     pathname)
             except SyntaxError:
                 print("\nSyntax error in", pathname, file=sys.stderr)
@@ -309,7 +312,7 @@ class PyiModuleGraph(ModuleGraph):
                 sys.exit(1)
             # Create references from the top script to the base_modules in graph.
             for node in self._base_modules:
-                self.createReference(self._top_script_node, node)
+                self.add_edge(self._top_script_node, node, DEFAULT_DEPENDENCY)
             # Return top-level script node.
             return self._top_script_node
         else:
@@ -317,8 +320,8 @@ class PyiModuleGraph(ModuleGraph):
                 # Defaults to as any additional script is called from the
                 # top-level script.
                 caller = self._top_script_node
-            return super(PyiModuleGraph, self).run_script(
-                pathname, caller=caller)
+            return super(PyiModuleGraph, self).add_script(
+                pathname)
 
 
     def process_post_graph_hooks(self):
@@ -702,7 +705,7 @@ class PyiModuleGraph(ModuleGraph):
         assert self._top_script_node is not None
         # Analyze the script's hidden imports (named on the command line)
         for modnm in module_list:
-            node = self.findNode(modnm)
+            node = self.find_node(modnm)
             if node is not None:
                 logger.debug('Hidden import %r already found', modnm)
             else:
@@ -718,7 +721,7 @@ class PyiModuleGraph(ModuleGraph):
             # Create references from the top script to the hidden import,
             # even if found otherwise. Don't waste time checking whether it
             # as actually added by this (test-) script.
-            self.createReference(self._top_script_node, node)
+            self.add_edge(self._top_script_node, node, DEFAULT_DEPENDENCY)
 
 
     def get_co_using_ctypes(self):
