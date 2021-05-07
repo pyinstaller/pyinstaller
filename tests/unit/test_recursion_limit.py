@@ -54,7 +54,7 @@ def test_recursion_to_deep(large_import_chain):
     # Increase recursion limit to 5 times of the default. Given the
     # module import chain created above this still should fail.
     with pytest.raises(RecursionError):
-        mg.run_script(str(script))
+        mg.add_script(str(script))
 
 
 def test_RecursionError_prints_message(tmpdir, large_import_chain,

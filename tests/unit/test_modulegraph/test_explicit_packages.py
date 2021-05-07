@@ -24,10 +24,10 @@ class PackagesTestCase (unittest.TestCase):
                 packages=['pkg'],
                 debug=1)
 
-        node = mf.findNode('pkg')
+        node = mf.find_node('pkg')
         self.assertIsInstance(node, modulegraph.Package)
 
-        node = mf.findNode('pkg.sub3')
+        node = mf.find_node('pkg.sub3')
         self.assertIsInstance(node, modulegraph.SourceModule)
 
     def testIncludePackageWithExclude(self):
@@ -41,10 +41,10 @@ class PackagesTestCase (unittest.TestCase):
                 packages=['pkg'],
                 excludes=['pkg.sub3'])
 
-        node = mf.findNode('pkg')
+        node = mf.find_node('pkg')
         self.assertIsInstance(node, modulegraph.Package)
 
-        node = mf.findNode('pkg.sub3')
+        node = mf.find_node('pkg.sub3')
         self.assertIsInstance(node, modulegraph.ExcludedModule)
 
 if __name__ == '__main__':

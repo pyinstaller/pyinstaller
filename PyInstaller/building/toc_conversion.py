@@ -39,9 +39,9 @@ class DependencyProcessor(object):
         self._distributions = set()
         self.__seen_distribution_paths = set()
         # Include files that were found by hooks.
-        # graph.flatten() should include only those modules that are reachable
+        # graph.iter_graph() should include only those modules that are reachable
         # from top-level script.
-        for node in graph.flatten(start=graph._top_script_node):
+        for node in graph.iter_graph(start=graph._top_script_node):
             # Update 'binaries', 'datas'
             name = node.identifier
             if name in additional_files:

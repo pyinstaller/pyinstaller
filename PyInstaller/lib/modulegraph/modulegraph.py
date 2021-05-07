@@ -729,7 +729,7 @@ class Alias(str):
     aliased. Unlike the related `AliasNode` class, instances of this class are
     _not_ actual nodes and hence _not_ added to the graph; they only facilitate
     communication between the `ModuleGraph.alias_module()` and
-    `ModuleGraph.findNode()` methods.
+    `ModuleGraph.find_node()` methods.
     """
 
 
@@ -1098,7 +1098,7 @@ class ModuleGraph(ObjectGraph):
 
 
     def createNode(self, cls, name, *args, **kw):
-        m = self.findNode(name)
+        m = self.find_node(name)
 
         if m is None:
             #assert m is None, m
@@ -1227,24 +1227,26 @@ class ModuleGraph(ObjectGraph):
             for other in others:
                 self._updateReference(node, other, edge_data)
 
-    def getReferences(self, fromnode):
+    def outgoing(self, fromnode):
         """
         Yield all nodes that `fromnode` dependes on (that is,
         all modules that `fromnode` imports.
         """
 
-        node = self.findNode(fromnode)
+        node = self.find_node(fromnode)
         out_edges, _ = self.get_edges(node)
         return out_edges
 
-    def getReferers(self, tonode, collapse_missing_modules=True):
-        node = self.findNode(tonode)
+    getReferences = outgoing
+
+    def incoming(self, tonode, collapse_missing_modules=True):
+        node = self.find_node(tonode)
         _, in_edges = self.get_edges(node)
 
         if collapse_missing_modules:
             for n in in_edges:
                 if isinstance(n, MissingModule):
-                    for n in self.getReferers(n, False):
+                    for n in self.incoming(n, False):
                         yield n
 
                 else:
@@ -1254,10 +1256,12 @@ class ModuleGraph(ObjectGraph):
             for n in in_edges:
                 yield n
 
+    getReferers = incoming
+
     def hasEdge(self, fromnode, tonode):
         """ Return True iff there is an edge from 'fromnode' to 'tonode' """
-        fromnode = self.findNode(fromnode)
-        tonode = self.findNode(tonode)
+        fromnode = self.find_node(fromnode)
+        tonode = self.find_node(tonode)
 
         return self.graph.edge_by_node(fromnode, tonode) is not None
 
@@ -1268,7 +1272,7 @@ class ModuleGraph(ObjectGraph):
         corresponding to those submodules.
         """
 
-        pkg = self.findNode(packagenode)
+        pkg = self.find_node(packagenode)
 
         for n in self.nodes():
             if not n.identifier.startswith(pkg.identifier + '.'):
@@ -1302,20 +1306,22 @@ class ModuleGraph(ObjectGraph):
         try:
             ed = self.edgeData(fromnode, tonode)
         except (KeyError, GraphError):  # XXX: Why 'GraphError'
-            return self.createReference(fromnode, tonode, edge_data)
+            return self.add_edge(fromnode, tonode, edge_data)
 
         if not (isinstance(ed, DependencyInfo) and isinstance(edge_data, DependencyInfo)):
             self.updateEdgeData(fromnode, tonode, edge_data)
         else:
             self.updateEdgeData(fromnode, tonode, ed._merged(edge_data))
 
-    def createReference(self, fromnode, tonode, edge_data='direct'):
+    def add_edge(self, fromnode, tonode, edge_data='direct'):
         """
         Create a reference from fromnode to tonode
         """
         return super(ModuleGraph, self).createReference(fromnode, tonode, edge_data=edge_data)
 
-    def findNode(self, name, create_nspkg=True):
+    createReference = add_edge
+
+    def find_node(self, name, create_nspkg=True):
         """
         Graph node uniquely identified by the passed fully-qualified module
         name if this module has been added to the graph _or_ `None` otherwise.
@@ -1390,8 +1396,10 @@ class ModuleGraph(ObjectGraph):
 
         return None
 
+    findNode = find_node
+    iter_graph = ObjectGraph.flatten
 
-    def run_script(self, pathname, caller=None):
+    def add_script(self, pathname, caller=None):
         """
         Create a node by path (not module name).  It is expected to be a Python
         source file, and will be scanned for dependencies.
@@ -1399,7 +1407,7 @@ class ModuleGraph(ObjectGraph):
         self.msg(2, "run_script", pathname)
 
         pathname = os.path.realpath(pathname)
-        m = self.findNode(pathname)
+        m = self.find_node(pathname)
         if m is not None:
             return m
 
@@ -1561,12 +1569,12 @@ class ModuleGraph(ObjectGraph):
 
             elif '.' in pname:
                 pname = pname[:pname.rfind('.')]
-                parent = self.findNode(pname)
+                parent = self.find_node(pname)
 
             elif caller.packagepath:
                 # XXX: I have no idea why this line
                 # is necessary.
-                parent = self.findNode(pname)
+                parent = self.find_node(pname)
 
         self.msgout(4, "determine_parent ->", parent)
         return parent
@@ -1654,7 +1662,7 @@ class ModuleGraph(ObjectGraph):
                             target_module_partname, source_package, level))
 
                 p_fqdn = source_package.identifier.rsplit('.', 1)[0]
-                new_parent = self.findNode(p_fqdn)
+                new_parent = self.find_node(p_fqdn)
                 if new_parent is None:
                     #FIXME: Repetition detected. Exterminate. Exterminate.
                     self.msg(2, "Relative import outside of package")
@@ -1908,7 +1916,7 @@ class ModuleGraph(ObjectGraph):
 
         # If the target module has already been added to the graph as either a
         # non-alias or as a different alias, raise an exception.
-        trg_module = self.findNode(trg_module_name)
+        trg_module = self.find_node(trg_module_name)
         if trg_module is not None and not (
            isinstance(trg_module, AliasNode) and
            trg_module.identifier == src_module_name):
@@ -1940,7 +1948,7 @@ class ModuleGraph(ObjectGraph):
         self.msg(3, 'add_module', module)
 
         # If no node exists for this module, add such a node.
-        module_added = self.findNode(module.identifier)
+        module_added = self.find_node(module.identifier)
         if module_added is None:
             self.addNode(module)
         else:
@@ -1950,11 +1958,11 @@ class ModuleGraph(ObjectGraph):
         # its parent and add this module to its parent's namespace.
         parent_name, _, module_basename = module.identifier.rpartition('.')
         if parent_name:
-            parent = self.findNode(parent_name)
+            parent = self.find_node(parent_name)
             if parent is None:
                 self.msg(4, 'add_module parent not found:', parent_name)
             else:
-                self.createReference(module, parent)
+                self.add_edge(module, parent)
                 parent.add_submodule(module_basename, module)
 
 
@@ -2018,7 +2026,7 @@ class ModuleGraph(ObjectGraph):
         self.msgin(3, "safe_import_module", module_partname, module_name, parent_module)
 
         # If this module has *NOT* already been imported, do so.
-        module = self.findNode(module_name)
+        module = self.find_node(module_name)
         if module is None:
             # List of the absolute paths of all directories to be searched for
             # this module. This effectively defaults to "sys.path".
@@ -2471,7 +2479,7 @@ class ModuleGraph(ObjectGraph):
                     target_module.identifier + '.' + target_submodule_partname)
 
                 # Graph node of this submodule if previously imported or None.
-                target_submodule = self.findNode(target_submodule_name)
+                target_submodule = self.find_node(target_submodule_name)
 
                 # If this submodule has not been imported, do so as if this
                 # submodule were the only attribute listed by the "import"
@@ -2507,7 +2515,7 @@ class ModuleGraph(ObjectGraph):
 
                         # Graph node of this submodule imported by the prior
                         # call if importable or None otherwise.
-                        target_submodule = self.findNode(target_submodule_name)
+                        target_submodule = self.find_node(target_submodule_name)
 
                         # If this submodule does not exist, this *MUST* be an
                         # ignorable global attribute defined at the top level
@@ -2535,7 +2543,7 @@ class ModuleGraph(ObjectGraph):
                         if is_swig_import:
                             # If a graph node with this name already exists,
                             # avoid collisions by emitting an error instead.
-                            if self.findNode(target_submodule_partname):
+                            if self.find_node(target_submodule_partname):
                                 self.msg(
                                     2,
                                     'SWIG import error: %r basename %r '
@@ -2910,7 +2918,7 @@ class ModuleGraph(ObjectGraph):
         else:
             fullname = name
 
-        node = self.findNode(fullname)
+        node = self.find_node(fullname)
         if node is not None:
             self.msg(3, "find_module: already included?", node)
             raise ImportError(name)
@@ -3060,7 +3068,7 @@ class ModuleGraph(ObjectGraph):
             out = sys.stdout
         scripts = []
         mods = []
-        for mod in self.flatten():
+        for mod in self.iter_graph():
             name = os.path.basename(mod.identifier)
             if isinstance(mod, Script):
                 scripts.append((name, mod))
@@ -3252,7 +3260,7 @@ class ModuleGraph(ObjectGraph):
         print()
         print("%-15s %-25s %s" % ("Class", "Name", "File"))
         print("%-15s %-25s %s" % ("-----", "----", "----"))
-        for m in sorted(self.flatten(), key=lambda n: n.identifier):
+        for m in sorted(self.iter_graph(), key=lambda n: n.identifier):
             print("%-15s %-25s %s" % (type(m).__name__, m.identifier, m.filename or ""))
 
     def _replace_paths_in_code(self, co):

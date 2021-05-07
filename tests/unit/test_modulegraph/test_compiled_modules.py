@@ -29,31 +29,31 @@ class CompiledModuleTests(unittest.TestCase):
     def testCompiledModules(self):
         mf = modulegraph.ModuleGraph(path=[self.compiled_dir] + sys.path)
         #self.mf.debug = 999
-        mf.run_script(os.path.join(self.compiled_dir, 'script.py'))
+        mf.add_script(os.path.join(self.compiled_dir, 'script.py'))
 
-        o = mf.findNode('mod1')
+        o = mf.find_node('mod1')
         self.assertIsInstance(o, modulegraph.CompiledModule)
         self.assertEqual(o._global_attr_names, { 'mod2', 'mod3', 'foo' })
         self.assertEqual(o._starimported_ignored_module_names, set())
 
-        o = mf.findNode('mod2')
+        o = mf.find_node('mod2')
         self.assertIsInstance(o, modulegraph.CompiledModule)
         self.assertEqual(o._global_attr_names,
                          { 'mod1', 'sys', 'testme', 'bar' })
         self.assertEqual(o._starimported_ignored_module_names, set())
 
-        o = mf.findNode('mod3')
+        o = mf.find_node('mod3')
         self.assertIsInstance(o, modulegraph.CompiledModule)
         self.assertEqual(o._global_attr_names, { 'os', 'path'})
         self.assertEqual(o._starimported_ignored_module_names, set())
 
-        o = mf.findNode('mod4')
-        other = mf.findNode('zipfile')
+        o = mf.find_node('mod4')
+        other = mf.find_node('zipfile')
         self.assertIsInstance(o, modulegraph.CompiledModule)
         self.assertEqual(o._global_attr_names, other._global_attr_names)
         self.assertEqual(o._starimported_ignored_module_names, {'math'})
 
-        o = mf.findNode('mod5')
+        o = mf.find_node('mod5')
         self.assertIs(o, None)
 
 

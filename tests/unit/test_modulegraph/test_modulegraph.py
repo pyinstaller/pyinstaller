@@ -630,7 +630,7 @@ class TestModuleGraph (unittest.TestCase):
         self.assertEqual(record, [])
 
         graph.implyNodeReference(n2, "n3")
-        n3 = graph.findNode('n3')
+        n3 = graph.find_node('n3')
         outs, ins = map(list, graph.get_edges(n2))
         self.assertEqual(outs, [n3])
         self.assertEqual(ins, [n1])
@@ -649,11 +649,11 @@ class TestModuleGraph (unittest.TestCase):
 
         graph = modulegraph.ModuleGraph()
         master = graph.createNode(modulegraph.Node, 'root')
-        m = graph.run_script(script, master)
+        m = graph.add_script(script, master)
         self.assertEqual(list(graph.get_edges(master)[0])[0], m)
         self.assertEqual(set(graph.get_edges(m)[0]), set([
-            graph.findNode('sys'),
-            graph.findNode('os'),
+            graph.find_node('sys'),
+            graph.find_node('os'),
         ]))
 
     @expectedFailure
@@ -679,7 +679,7 @@ class TestModuleGraph (unittest.TestCase):
         self.assertIsInstance(node, modulegraph.Package)
         parent = graph._determine_parent(node)
         self.assertEqual(parent.identifier, node.identifier)
-        self.assertEqual(parent, graph.findNode(node.identifier))
+        self.assertEqual(parent, graph.find_node(node.identifier))
         self.assertTrue(isinstance(parent, modulegraph.Package))
 
         # XXX: Might be a usecase for some odd code in determine_parent...
@@ -688,11 +688,11 @@ class TestModuleGraph (unittest.TestCase):
         #m = graph._determine_parent(node)
         #self.assertTrue(m is parent)
 
-        m = graph.findNode('xml')
+        m = graph.find_node('xml')
         self.assertEqual(graph._determine_parent(m), m)
 
-        m = graph.findNode('xml.dom')
-        self.assertEqual(graph._determine_parent(m), graph.findNode('xml.dom'))
+        m = graph.find_node('xml.dom')
+        self.assertEqual(graph._determine_parent(m), graph.find_node('xml.dom'))
 
 
     @expectedFailure
@@ -875,7 +875,7 @@ class TestModuleGraph (unittest.TestCase):
             self.assertEqual(lines[1], 'Class           Name                      File')
             self.assertEqual(lines[2], '-----           ----                      ----')
             expected = []
-            for n in graph.flatten():
+            for n in graph.iter_graph():
                 if n.filename:
                     expected.append([type(n).__name__, n.identifier, n.filename])
                 else:
@@ -967,7 +967,7 @@ class TestModuleGraph (unittest.TestCase):
         graph.addNode(n1)
         graph.addNode(n2)
 
-        graph.createReference(n1, n2)
+        graph.add_edge(n1, n2)
         outs, ins = map(list, graph.get_edges(n1))
         self.assertEqual(outs, [n2])
         self.assertEqual(ins, [])
@@ -986,9 +986,9 @@ class TestModuleGraph (unittest.TestCase):
         # works....
         graph = modulegraph.ModuleGraph()
         if __file__.endswith('.py'):
-            graph.run_script(__file__)
+            graph.add_script(__file__)
         else:
-            graph.run_script(__file__[:-1])
+            graph.add_script(__file__[:-1])
 
         graph.import_hook('os')
         graph.import_hook('xml.etree')
@@ -1012,9 +1012,9 @@ class TestModuleGraph (unittest.TestCase):
         # works....
         graph = modulegraph.ModuleGraph()
         if __file__.endswith('.py'):
-            graph.run_script(__file__)
+            graph.add_script(__file__)
         else:
-            graph.run_script(__file__[:-1])
+            graph.add_script(__file__[:-1])
         graph.import_hook('os')
         graph.import_hook('xml.etree')
         graph.import_hook('unittest')

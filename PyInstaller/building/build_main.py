@@ -411,7 +411,7 @@ class Analysis(Target):
         # Save the graph nodes of each in sequence.
         for script in self.inputs:
             logger.info("Analyzing %s", script)
-            priority_scripts.append(self.graph.run_script(script))
+            priority_scripts.append(self.graph.add_script(script))
 
         # Analyze the script's hidden imports (named on the command line)
         self.graph.add_hiddenimports(self.hiddenimports)

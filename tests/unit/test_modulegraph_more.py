@@ -29,8 +29,8 @@ def _import_and_get_node(tmpdir, module_name, path=None):
     if path is None:
         path = [str(tmpdir)]
     mg = modulegraph.ModuleGraph(path)
-    mg.run_script(str(script))
-    return mg.findNode(module_name)
+    mg.add_script(str(script))
+    return mg.find_node(module_name)
 
 
 def test_sourcefile(tmpdir):
@@ -134,9 +134,9 @@ def test_relative_import_missing(tmpdir):
     script = tmpdir.join('script.py')
     script.write('import pkg.x.y.z')
     mg = modulegraph.ModuleGraph(path)
-    mg.run_script(str(script))
-    assert isinstance(mg.findNode('pkg.x.y.z'), modulegraph.SourceModule)
-    assert isinstance(mg.findNode('pkg.x.y.DoesNotExist'),
+    mg.add_script(str(script))
+    assert isinstance(mg.find_node('pkg.x.y.z'), modulegraph.SourceModule)
+    assert isinstance(mg.find_node('pkg.x.y.DoesNotExist'),
                       modulegraph.MissingModule)
 
 
@@ -211,14 +211,14 @@ def test_nspackage_pep420(tmpdir):
     script = tmpdir.join('script.py')
     script.write('import stuff.a, stuff.b')
     mg = modulegraph.ModuleGraph(path)
-    mg.run_script(str(script))
+    mg.add_script(str(script))
 
     mg.report()
 
-    assert isinstance(mg.findNode('stuff.a'), modulegraph.SourceModule)
-    assert isinstance(mg.findNode('stuff.b'), modulegraph.SourceModule)
+    assert isinstance(mg.find_node('stuff.a'), modulegraph.SourceModule)
+    assert isinstance(mg.find_node('stuff.b'), modulegraph.SourceModule)
 
-    node = mg.findNode('stuff')
+    node = mg.find_node('stuff')
     assert isinstance(node, modulegraph.NamespacePackage)
     assert node.packagepath == [os.path.join(p, 'stuff') for p in path]
 
@@ -276,7 +276,7 @@ def test_import_order_1(tmpdir):
     script = tmpdir.join('script.py')
     script.write('import a, b')
     mg = MyModuleGraph([str(tmpdir)])
-    mg.run_script(str(script))
+    mg.add_script(str(script))
 
     # This is the order Python imports these modules given that script.
     expected = ['a',
@@ -322,7 +322,7 @@ def test_import_order_2(tmpdir):
     script = tmpdir.join('script.py')
     script.write('import b.f.n.p')
     mg = MyModuleGraph([str(tmpdir)])
-    mg.run_script(str(script))
+    mg.add_script(str(script))
 
     # This is the order Python imports these modules given that script.
     expected = ['b', 'b.e',
@@ -396,10 +396,10 @@ def test_swig_import_simple_BUGGY(tmpdir):
     script = tmpdir.join('script.py')
     script.write('from pyi_test_osgeo import pyi_gdal')
     mg = modulegraph.ModuleGraph(path)
-    mg.run_script(str(script))
+    mg.add_script(str(script))
 
-    assert isinstance(mg.findNode('pyi_test_osgeo'), modulegraph.Package)
-    assert isinstance(mg.findNode('pyi_test_osgeo.pyi_gdal'),
+    assert isinstance(mg.find_node('pyi_test_osgeo'), modulegraph.Package)
+    assert isinstance(mg.find_node('pyi_test_osgeo.pyi_gdal'),
                       modulegraph.SourceModule)
     # The "C" module is frozen under its unqualified rather than qualified
     # name. See comment in modulegraph._safe_import_hook.
@@ -410,14 +410,14 @@ def test_swig_import_simple_BUGGY(tmpdir):
     # test_swig_import_simple for what it should be.
     # This is a separate test-case, not marked as xfail, so we can spot
     # whether the SWIG support works at all.
-    assert isinstance(mg.findNode('pyi_test_osgeo._pyi_gdal'),
+    assert isinstance(mg.find_node('pyi_test_osgeo._pyi_gdal'),
                       modulegraph.SourceModule)
     # Due the the buggy implementation, the graphident is unchanged, but
     # at least the identifier should have changed.
-    assert mg.findNode('pyi_test_osgeo._pyi_gdal').identifier \
+    assert mg.find_node('pyi_test_osgeo._pyi_gdal').identifier \
         == '_pyi_gdal'
     # Due the the buggy implementation, this node does not exist.
-    assert mg.findNode('_pyi_gdal') is None
+    assert mg.find_node('_pyi_gdal') is None
     return mg  # for use in test_swig_import_simple_BUG
 
 
@@ -429,8 +429,8 @@ def test_swig_import_simple(tmpdir):
     # what would be the expected behavior.
     # TODO: When modulegraph is fixed, merge the two test-cases and correct
     # test_swig_import_from_top_level and siblings.
-    assert mg.findNode('pyi_test_osgeo._pyi_gdal') is None
-    assert isinstance(mg.findNode('_pyi_gdal'), modulegraph.SourceModule)
+    assert mg.find_node('pyi_test_osgeo._pyi_gdal') is None
+    assert isinstance(mg.find_node('_pyi_gdal'), modulegraph.SourceModule)
 
 
 def test_swig_import_from_top_level(tmpdir):
@@ -466,20 +466,20 @@ def test_swig_import_from_top_level(tmpdir):
     script = tmpdir.join('script.py')
     script.write('from pyi_test_osgeo import pyi_gdal')
     mg = modulegraph.ModuleGraph(path)
-    mg.run_script(str(script))
+    mg.add_script(str(script))
 
-    assert isinstance(mg.findNode('pyi_test_osgeo'), modulegraph.Package)
-    assert isinstance(mg.findNode('pyi_test_osgeo.pyi_gdal'),
+    assert isinstance(mg.find_node('pyi_test_osgeo'), modulegraph.Package)
+    assert isinstance(mg.find_node('pyi_test_osgeo.pyi_gdal'),
                       modulegraph.SourceModule)
     # The "C" module is frozen under its unqualified rather than qualified
     # name. See comment in modulegraph._safe_import_hook.
     # Due the the buggy implementation (see test_swig_import_simple):
-    assert isinstance(mg.findNode('pyi_test_osgeo._pyi_gdal'),
+    assert isinstance(mg.find_node('pyi_test_osgeo._pyi_gdal'),
                       modulegraph.SourceModule)
-    assert mg.findNode('_pyi_gdal') is None
+    assert mg.find_node('_pyi_gdal') is None
     # This would be the correct implementation:
-    #assert mg.findNode('pyi_test_osgeo._pyi_gdal') is None
-    #assert isinstance(mg.findNode('_pyi_gdal'), modulegraph.SourceModule)
+    #assert mg.find_node('pyi_test_osgeo._pyi_gdal') is None
+    #assert isinstance(mg.find_node('_pyi_gdal'), modulegraph.SourceModule)
 
 
 def test_swig_import_from_top_level_missing(tmpdir):
@@ -496,18 +496,18 @@ def test_swig_import_from_top_level_missing(tmpdir):
     script = tmpdir.join('script.py')
     script.write('from pyi_test_osgeo import pyi_gdal')
     mg = modulegraph.ModuleGraph(path)
-    mg.run_script(str(script))
-    assert isinstance(mg.findNode('pyi_test_osgeo'),
+    mg.add_script(str(script))
+    assert isinstance(mg.find_node('pyi_test_osgeo'),
                       modulegraph.Package)
-    assert isinstance(mg.findNode('pyi_test_osgeo.pyi_gdal'),
+    assert isinstance(mg.find_node('pyi_test_osgeo.pyi_gdal'),
                       modulegraph.SourceModule)
     # BUG: Again, this is unecpected behaviour in modulegraph: While
     # MissingModule('_pyi_gdal') is (arguable) removed when trying to import
     # the SWIG C module, there is no MissingModule('pyi_test_osgeo.pyi_gdal')
     # added, but again MissingModule('_pyi_gdal'). I still need to understand
     # why.
-    assert mg.findNode('pyi_test_osgeo._pyi_gdal') is None
-    assert isinstance(mg.findNode('_pyi_gdal'), modulegraph.MissingModule)
+    assert mg.find_node('pyi_test_osgeo._pyi_gdal') is None
+    assert isinstance(mg.find_node('_pyi_gdal'), modulegraph.MissingModule)
 
 
 def test_swig_import_from_top_level_but_nested(tmpdir):
@@ -528,19 +528,19 @@ def test_swig_import_from_top_level_but_nested(tmpdir):
     script = tmpdir.join('script.py')
     script.write('from pyi_test_osgeo.x.y import pyi_gdal')
     mg = modulegraph.ModuleGraph(path)
-    mg.run_script(str(script))
+    mg.add_script(str(script))
 
-    assert isinstance(mg.findNode('pyi_test_osgeo.x.y.pyi_gdal'),
+    assert isinstance(mg.find_node('pyi_test_osgeo.x.y.pyi_gdal'),
                       modulegraph.SourceModule)
     # The "C" module is frozen under its unqualified rather than qualified
     # name. See comment in modulegraph._safe_import_hook.
     # Due the the buggy implementation (see test_swig_import_simple):
-    assert isinstance(mg.findNode('pyi_test_osgeo.x.y._pyi_gdal'),
+    assert isinstance(mg.find_node('pyi_test_osgeo.x.y._pyi_gdal'),
                       modulegraph.SourceModule)
-    assert mg.findNode('_pyi_gdal') is None
+    assert mg.find_node('_pyi_gdal') is None
     # This would be the correct implementation:
-    #assert mg.findNode('pyi_test_osgeo.x.y._pyi_gdal') is None
-    #assert isinstance(mg.findNode('_pyi_gdal'), modulegraph.SourceModule)
+    #assert mg.find_node('pyi_test_osgeo.x.y._pyi_gdal') is None
+    #assert isinstance(mg.find_node('_pyi_gdal'), modulegraph.SourceModule)
 
 
 def test_swig_top_level_but_no_swig_at_all(tmpdir):
@@ -556,9 +556,9 @@ def test_swig_top_level_but_no_swig_at_all(tmpdir):
     script = tmpdir.join('script.py')
     script.write('import pyi_dezimal')
     mg = modulegraph.ModuleGraph(path)
-    mg.run_script(str(script))
-    assert isinstance(mg.findNode('pyi_dezimal'), modulegraph.SourceModule)
-    assert isinstance(mg.findNode('_pyi_dezimal'), modulegraph.MissingModule)
+    mg.add_script(str(script))
+    assert isinstance(mg.find_node('pyi_dezimal'), modulegraph.SourceModule)
+    assert isinstance(mg.find_node('_pyi_dezimal'), modulegraph.MissingModule)
 
 
 def test_swig_top_level_but_no_swig_at_all_existing(tmpdir):
@@ -572,9 +572,9 @@ def test_swig_top_level_but_no_swig_at_all_existing(tmpdir):
     script = tmpdir.join('script.py')
     script.write('import pyi_dezimal')
     mg = modulegraph.ModuleGraph(path)
-    mg.run_script(str(script))
-    assert isinstance(mg.findNode('pyi_dezimal'), modulegraph.SourceModule)
-    assert isinstance(mg.findNode('_pyi_dezimal'), modulegraph.SourceModule)
+    mg.add_script(str(script))
+    assert isinstance(mg.find_node('pyi_dezimal'), modulegraph.SourceModule)
+    assert isinstance(mg.find_node('_pyi_dezimal'), modulegraph.SourceModule)
 
 
 def test_swig_candidate_but_not_swig(tmpdir):
@@ -592,13 +592,13 @@ def test_swig_candidate_but_not_swig(tmpdir):
     script = tmpdir.join('script.py')
     script.write('from pkg import XXX')
     mg = modulegraph.ModuleGraph(path)
-    mg.run_script(str(script))
-    assert isinstance(mg.findNode('pkg'), modulegraph.Package)
-    assert isinstance(mg.findNode('pkg.mymod'), modulegraph.SourceModule)
-    assert mg.findNode('pkg._mymod') is None
+    mg.add_script(str(script))
+    assert isinstance(mg.find_node('pkg'), modulegraph.Package)
+    assert isinstance(mg.find_node('pkg.mymod'), modulegraph.SourceModule)
+    assert mg.find_node('pkg._mymod') is None
     # This is not a SWIG module, thus the SWIG import mechanism should not
     # trigger.
-    assert isinstance(mg.findNode('_mymod'), modulegraph.MissingModule)
+    assert isinstance(mg.find_node('_mymod'), modulegraph.MissingModule)
 
 
 def test_swig_candidate_but_not_swig2(tmpdir):
@@ -617,11 +617,11 @@ def test_swig_candidate_but_not_swig2(tmpdir):
     script = tmpdir.join('script.py')
     script.write('from pkg import XXX')
     mg = modulegraph.ModuleGraph(path)
-    mg.run_script(str(script))
-    assert isinstance(mg.findNode('pkg'), modulegraph.Package)
-    assert isinstance(mg.findNode('pkg.mymod'), modulegraph.SourceModule)
-    assert isinstance(mg.findNode('pkg._mymod'), modulegraph.SourceModule)
-    assert isinstance(mg.findNode('_mymod'), modulegraph.MissingModule)
+    mg.add_script(str(script))
+    assert isinstance(mg.find_node('pkg'), modulegraph.Package)
+    assert isinstance(mg.find_node('pkg.mymod'), modulegraph.SourceModule)
+    assert isinstance(mg.find_node('pkg._mymod'), modulegraph.SourceModule)
+    assert isinstance(mg.find_node('_mymod'), modulegraph.MissingModule)
 
 
 def test_swig_candidate_but_not_swig_missing(tmpdir):
@@ -637,11 +637,11 @@ def test_swig_candidate_but_not_swig_missing(tmpdir):
     script = tmpdir.join('script.py')
     script.write('import pkg')
     mg = modulegraph.ModuleGraph(path)
-    mg.run_script(str(script))
-    assert isinstance(mg.findNode('pkg'), modulegraph.Package)
-    assert isinstance(mg.findNode('pkg.mymod'), modulegraph.SourceModule)
-    assert mg.findNode('pkg._mymod') is None
-    assert isinstance(mg.findNode('_mymod'), modulegraph.MissingModule)
+    mg.add_script(str(script))
+    assert isinstance(mg.find_node('pkg'), modulegraph.Package)
+    assert isinstance(mg.find_node('pkg.mymod'), modulegraph.SourceModule)
+    assert mg.find_node('pkg._mymod') is None
+    assert isinstance(mg.find_node('_mymod'), modulegraph.MissingModule)
 
 
 def test_swig_candidate_but_not_swig_missing2(tmpdir):
@@ -660,8 +660,8 @@ def test_swig_candidate_but_not_swig_missing2(tmpdir):
     script = tmpdir.join('script.py')
     script.write('import pkg')
     mg = modulegraph.ModuleGraph(path)
-    mg.run_script(str(script))
-    assert isinstance(mg.findNode('pkg'), modulegraph.Package)
-    assert isinstance(mg.findNode('pkg.mymod'), modulegraph.SourceModule)
-    assert isinstance(mg.findNode('pkg._mymod'), modulegraph.MissingModule)
-    assert isinstance(mg.findNode('_mymod'), modulegraph.MissingModule)
+    mg.add_script(str(script))
+    assert isinstance(mg.find_node('pkg'), modulegraph.Package)
+    assert isinstance(mg.find_node('pkg.mymod'), modulegraph.SourceModule)
+    assert isinstance(mg.find_node('pkg._mymod'), modulegraph.MissingModule)
+    assert isinstance(mg.find_node('_mymod'), modulegraph.MissingModule)
