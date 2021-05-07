@@ -354,7 +354,7 @@ class PostGraphAPI(object):
     def __init__(self, module_name, module_graph):
         # Mutable attributes.
         self.module_graph = module_graph
-        self.module = module_graph.findNode(module_name)
+        self.module = module_graph.find_node(module_name)
         assert self.module is not None  # should not occur
 
         # Immutable attributes.
@@ -448,7 +448,7 @@ class PostGraphAPI(object):
         """
         List of the graph nodes of all modules directly imported by this module.
         """
-        return self.module_graph.flatten(start=self.module)
+        return self.module_graph.iter_graph(start=self.module)
 
     def add_imports(self, *module_names):
         """

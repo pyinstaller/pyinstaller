@@ -121,7 +121,7 @@ def parse_mf_results(mf):
     py_files = []
     extensions = []
 
-    for item in mf.flatten():
+    for item in mf.iter_graph():
         # There may be __main__ modules (from mf.run_script), but
         # we don't need it in the zipfile we build.
         if item.identifier == "__main__":
@@ -235,7 +235,7 @@ def find_needed_modules(
     # feed Modulefinder with everything, and return it.
 
     for path in scripts:
-        mf.run_script(path)
+        mf.add_script(path)
 
     for mod in includes:
         try:
@@ -250,7 +250,7 @@ def find_needed_modules(
         # If modulegraph has seen a reference to the package, then
         # we prefer to believe that (imp_find_module doesn't seem to locate
         # sub-packages)
-        m = mf.findNode(f)
+        m = mf.find_node(f)
         if m is not None:
             path = m.packagepath[0]
         else:

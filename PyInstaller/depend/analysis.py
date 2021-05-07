@@ -290,7 +290,7 @@ class PyiModuleGraph(ModuleGraph):
             for mod in self.import_hook(req)]
 
 
-    def run_script(self, pathname, caller=None):
+    def add_script(self, pathname, caller=None):
         """
         Wrap the parent's 'run_script' method and create graph from the first
         script in the analysis, and save its node to use as the "caller" node
@@ -300,7 +300,7 @@ class PyiModuleGraph(ModuleGraph):
         if self._top_script_node is None:
             # Remember the node for the first script.
             try:
-                self._top_script_node = super(PyiModuleGraph, self).run_script(
+                self._top_script_node = super(PyiModuleGraph, self).add_script(
                     pathname)
             except SyntaxError:
                 print("\nSyntax error in", pathname, file=sys.stderr)
@@ -309,7 +309,7 @@ class PyiModuleGraph(ModuleGraph):
                 sys.exit(1)
             # Create references from the top script to the base_modules in graph.
             for node in self._base_modules:
-                self.createReference(self._top_script_node, node)
+                self.add_edge(self._top_script_node, node)
             # Return top-level script node.
             return self._top_script_node
         else:
@@ -317,7 +317,7 @@ class PyiModuleGraph(ModuleGraph):
                 # Defaults to as any additional script is called from the
                 # top-level script.
                 caller = self._top_script_node
-            return super(PyiModuleGraph, self).run_script(
+            return super(PyiModuleGraph, self).add_script(
                 pathname, caller=caller)
 
 
@@ -347,7 +347,7 @@ class PyiModuleGraph(ModuleGraph):
             # For each remaining hookable module and corresponding hooks...
             for module_name, module_hooks in self._hooks.items():
                 # Graph node for this module if imported or "None" otherwise.
-                module_node = self.findNode(
+                module_node = self.find_node(
                     module_name, create_nspkg=False)
 
                 # If this module has not been imported, temporarily ignore it.
@@ -499,7 +499,7 @@ class PyiModuleGraph(ModuleGraph):
         """
         code_dict = {}
         mod_types = PURE_PYTHON_MODULE_TYPES
-        for node in self.flatten(start=self._top_script_node):
+        for node in self.iter_graph(start=self._top_script_node):
             # TODO This is terrible. To allow subclassing, types should never be
             # directly compared. Use isinstance() instead, which is safer,
             # simpler, and accepts sets. Most other calls to type() in the
@@ -534,7 +534,7 @@ class PyiModuleGraph(ModuleGraph):
         module_filter = re.compile(regex_str)
 
         result = existing_TOC or TOC()
-        for node in self.flatten(start=self._top_script_node):
+        for node in self.iter_graph(start=self._top_script_node):
             # Skip modules that are in base_library.zip.
             if module_filter.match(node.identifier):
                 continue
@@ -620,7 +620,7 @@ class PyiModuleGraph(ModuleGraph):
     # Return true if the named item is in the graph as a BuiltinModule node.
     # The passed name is a basename.
     def is_a_builtin(self, name) :
-        node = self.findNode(name)
+        node = self.find_node(name)
         if node is None:
             return False
         return type(node).__name__ == 'BuiltinModule'
@@ -649,7 +649,7 @@ class PyiModuleGraph(ModuleGraph):
             if edge is not None:
                 return self.graph.edge_data(edge)
 
-        node = self.findNode(name)
+        node = self.find_node(name)
         if node is None : return []
         _, importers = self.get_edges(node)
         importers = (importer.identifier
@@ -678,7 +678,7 @@ class PyiModuleGraph(ModuleGraph):
                 hook_file = os.path.abspath(hook_file)
                 # Not using "try" here because the path is supposed to
                 # exist, if it does not, the raised error will explain.
-                rthooks_nodes.append(self.run_script(hook_file))
+                rthooks_nodes.append(self.add_script(hook_file))
 
         # Find runtime hooks that are implied by packages already imported.
         # Get a temporary TOC listing all the scripts and packages graphed
@@ -690,7 +690,7 @@ class PyiModuleGraph(ModuleGraph):
                 # There could be several run-time hooks for a module.
                 for abs_path in self._available_rthooks[mod_name]:
                     logger.info("Including run-time hook %r", abs_path)
-                    rthooks_nodes.append(self.run_script(abs_path))
+                    rthooks_nodes.append(self.add_script(abs_path))
 
         return rthooks_nodes
 
@@ -702,7 +702,7 @@ class PyiModuleGraph(ModuleGraph):
         assert self._top_script_node is not None
         # Analyze the script's hidden imports (named on the command line)
         for modnm in module_list:
-            node = self.findNode(modnm)
+            node = self.find_node(modnm)
             if node is not None:
                 logger.debug('Hidden import %r already found', modnm)
             else:
@@ -718,7 +718,7 @@ class PyiModuleGraph(ModuleGraph):
             # Create references from the top script to the hidden import,
             # even if found otherwise. Don't waste time checking whether it
             # as actually added by this (test-) script.
-            self.createReference(self._top_script_node, node)
+            self.add_edge(self._top_script_node, node)
 
 
     def get_co_using_ctypes(self):
@@ -737,9 +737,9 @@ class PyiModuleGraph(ModuleGraph):
         """
         co_dict = {}
         pure_python_module_types = PURE_PYTHON_MODULE_TYPES | {'Script',}
-        node = self.findNode('ctypes')
+        node = self.find_node('ctypes')
         if node:
-            referers = self.getReferers(node)
+            referers = self.incoming(node)
             for r in referers:
                 # Under python 3.7 and earlier, if ctypes is added to
                 # hidden imports, one of referers ends up being None,

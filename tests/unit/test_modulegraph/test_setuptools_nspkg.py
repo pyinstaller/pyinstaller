@@ -93,7 +93,7 @@ class TestModuleGraphImport(object):
     def testRootPkg(self, install_testpkg_modulegraph):
         install_testpkg_modulegraph.import_hook('nspkg')
 
-        node = install_testpkg_modulegraph.findNode('nspkg')
+        node = install_testpkg_modulegraph.find_node('nspkg')
         assert isinstance(node, modulegraph.NamespacePackage)
         assert node.identifier == 'nspkg'
         assert node.filename == '-'
@@ -101,18 +101,18 @@ class TestModuleGraphImport(object):
     def testRootPkgModule(self, install_testpkg_modulegraph):
         install_testpkg_modulegraph.import_hook('nspkg.module')
 
-        node = install_testpkg_modulegraph.findNode('nspkg.module')
+        node = install_testpkg_modulegraph.find_node('nspkg.module')
         assert isinstance(node, modulegraph.SourceModule)
         assert node.identifier == 'nspkg.module'
 
     def testSubRootPkgModule(self, install_testpkg_modulegraph):
         install_testpkg_modulegraph.import_hook('nspkg.nssubpkg.sub')
 
-        node = install_testpkg_modulegraph.findNode('nspkg.nssubpkg.sub')
+        node = install_testpkg_modulegraph.find_node('nspkg.nssubpkg.sub')
         assert isinstance(node, modulegraph.SourceModule)
         assert node.identifier == 'nspkg.nssubpkg.sub'
 
-        node = install_testpkg_modulegraph.findNode('nspkg')
+        node = install_testpkg_modulegraph.find_node('nspkg')
         assert isinstance(node, modulegraph.NamespacePackage)
 
 

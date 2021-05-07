@@ -33,7 +33,7 @@ class TestSWIGImportability(unittest.TestCase):
         # prior module. While this should technically be a C extension rather
         # than a module, reliably testing the latter in a cross-platform manner
         # is both non-trivial and gains us relatively little over this approach.
-        swig_c_extension = module_graph.findNode('pkg._sample')
+        swig_c_extension = module_graph.find_node('pkg._sample')
         self.assertIsInstance(swig_c_extension, modulegraph.SourceModule)
 
 if __name__ == "__main__":
