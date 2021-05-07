@@ -15,6 +15,9 @@ import sys
 # The path to Qt's components may not default to the wheel layout for
 # self-compiled PySide2 installations. Mandate the wheel layout. See
 # ``utils/hooks/qt.py`` for more details.
-pyqt_path = os.path.join(sys._MEIPASS, 'PySide2')
+if sys.platform.startswith('win'):
+    pyqt_path = os.path.join(sys._MEIPASS, 'PySide2')
+else:
+    pyqt_path = os.path.join(sys._MEIPASS, 'Qt', 'PySide2')
 os.environ['QT_PLUGIN_PATH'] = os.path.join(pyqt_path, 'plugins')
 os.environ['QML2_IMPORT_PATH'] = os.path.join(pyqt_path, 'qml')

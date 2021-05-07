@@ -28,15 +28,12 @@ if pyqt5_library_info.version is not None:
     if not os.path.exists(qmldir):
         logger.warning('Unable to find Qt5 QML files. QML files not packaged.')
     else:
-        qml_rel_dir = ['PyQt5', 'Qt', 'qml']
-        datas += [(qmldir, os.path.join(*qml_rel_dir))]
+        qml_rel_dir = os.path.join(pyqt5_library_info.qt_rel_dir, 'qml')
+        datas += [(qmldir, qml_rel_dir)]
         binaries += [
             # Produce ``/path/to/Qt/Qml/path_to_qml_binary/qml_binary,
-            # PyQt5/Qt/Qml/path_to_qml_binary``. When Python 3.4 goes EOL (see
-            # PEP 448), this is better written as
-            # ``os.path.join(*qml_rel_dir,
-            # os.path.dirname(os.path.relpath(f, qmldir))))``.
-            (f, os.path.join(*(qml_rel_dir +
-                               [os.path.dirname(os.path.relpath(f, qmldir))])))
+            # PyQt5/Qt/Qml/path_to_qml_binary``.
+            (f, os.path.join(qml_rel_dir,
+                             os.path.dirname(os.path.relpath(f, qmldir))))
             for f in misc.dlls_in_subdirs(qmldir)
         ]

@@ -34,6 +34,30 @@ class Qt5LibraryInfo:
             raise Exception('Invalid namespace: {0}'.format(namespace))
         self.namespace = namespace
         self.is_PyQt5 = namespace == 'PyQt5'
+        # Determine relative path where Qt libraries and data need to
+        # be collected in the frozen application. This varies between
+        # PyQt5/PySide2, their versions, and platforms.
+        # NOTE: it is tempting to consider deriving this path as simply the
+        # value of QLibraryInfo.PrefixPath, taken relative to the package's
+        # root directory. However, we also need to support non-wheel
+        # deployments (e.g., with Qt installed in custom path on Windows,
+        # or with Qt and PyQt5 installed on linux using native package
+        # manager), and in those, the Qt PrefixPath does not reflect
+        # the required relative target path for the frozen application.
+        if namespace == 'PyQt5':
+            # PyQt5 uses PyQt5/Qt on all platforms, or PyQt5/Qt5 from
+            # version 5.15.4 on
+            if hooks.is_module_satisfies("PyQt5 >= 5.15.4"):
+                self.qt_rel_dir = os.path.join('PyQt5', 'Qt5')
+            else:
+                self.qt_rel_dir = os.path.join('PyQt5', 'Qt')
+        else:
+            # PySide2 uses PySide2/Qt on linux and macOS, and PySide2
+            # on Windows
+            if compat.is_win:
+                self.qt_rel_dir = 'PySide2'
+            else:
+                self.qt_rel_dir = os.path.join('PySide2', 'Qt')
 
     # Initialize most of this class only when values are first requested from
     # it.
@@ -162,9 +186,9 @@ def qt_plugins_binaries(plugin_type, namespace):
 
     logger.debug("Found plugin files %s for plugin %s", files, plugin_type)
     if namespace == 'PyQt5':
-        plugin_dir = os.path.join('PyQt5', 'Qt', 'plugins')
+        plugin_dir = os.path.join(pyqt5_library_info.qt_rel_dir, 'plugins')
     else:
-        plugin_dir = os.path.join('PySide2', 'plugins')
+        plugin_dir = os.path.join(pyside2_library_info.qt_rel_dir, 'plugins')
     dest_dir = os.path.join(plugin_dir, plugin_type)
     binaries = [(f, dest_dir) for f in files]
     return binaries
@@ -537,6 +561,10 @@ def add_qt5_dependencies(hook_file):
         pyqt5_library_info.location['TranslationsPath'] if is_PyQt5
         else pyside2_library_info.location['TranslationsPath']
     )
+    qt_rel_dir = (
+        pyqt5_library_info.qt_rel_dir if is_PyQt5
+        else pyside2_library_info.qt_rel_dir
+    )
     datas = []
     for tb in translations_base:
         src = os.path.join(tp, tb + '_*.qm')
@@ -545,14 +573,7 @@ def add_qt5_dependencies(hook_file):
         # and
         # https://github.com/pyinstaller/pyinstaller/issues/2857#issuecomment-368744341.
         if glob.glob(src):
-            datas.append((
-                src, os.path.join(
-                    # The PySide2 Windows wheels place translations in a
-                    # different location.
-                    namespace, '' if not is_PyQt5 and compat.is_win else 'Qt',
-                    'translations'
-                )
-            ))
+            datas.append((src, os.path.join(qt_rel_dir, 'translations')))
         else:
             logger.warning('Unable to find Qt5 translations %s. These '
                            'translations were not packaged.', src)
