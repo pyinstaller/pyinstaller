@@ -28,9 +28,9 @@ babel==2.9.1
 future==0.18.2
 gevent==21.1.2
 pygments==2.9.0
-pyside2==5.15.1
-pyqt5==5.15.1
-pyqtwebengine==5.15.1
+pyside2==5.15.2
+pyqt5==5.15.4
+pyqtwebengine==5.15.4
 python-dateutil==2.8.1
 pytz==2021.1
 requests==2.25.1
