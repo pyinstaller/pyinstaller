@@ -504,7 +504,7 @@ class ModuleHook(object):
             try:
                 # Graph node for this module. Do not implicitly create namespace
                 # packages for non-existent packages.
-                caller = self.module_graph.findNode(
+                caller = self.module_graph.find_node(
                     self.module_name, create_nspkg=False)
 
                 # Manually import this hidden import from this module.
@@ -585,7 +585,7 @@ class ModuleHook(object):
                 # modules, this `src` does import
                 references = set(
                     node.identifier
-                    for node in self.module_graph.getReferences(src))
+                    for node in self.module_graph.outgoing(src))
 
                 # Remove all of these imports which are also in
                 # "imports_to_remove".

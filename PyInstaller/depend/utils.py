@@ -71,7 +71,7 @@ def create_py3_base_library(libzip_filename, graph):
         with zipfile.ZipFile(libzip_filename, mode='w') as zf:
             zf.debug = 3
             # Sort the graph nodes by identifier to ensure repeatable builds
-            graph_nodes = list(graph.flatten())
+            graph_nodes = list(graph.iter_graph())
             graph_nodes.sort(key=lambda item: item.identifier)
             for mod in graph_nodes:
                 if type(mod) in (modulegraph.SourceModule,

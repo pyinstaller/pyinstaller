@@ -97,7 +97,7 @@ if sys.version_info[:2] >= (3,3):
         def testRootPkg(self):
             self.mf.import_hook('package')
 
-            node = self.mf.findNode('package')
+            node = self.mf.find_node('package')
             self.assertIsInstance(node, modulegraph.NamespacePackage)
             self.assertEqual(node.identifier, 'package')
             self.assertEqual(node.filename, '-')
@@ -105,27 +105,27 @@ if sys.version_info[:2] >= (3,3):
         def testRootPkgModule(self):
             self.mf.import_hook('package.sub1')
 
-            node = self.mf.findNode('package.sub1')
+            node = self.mf.find_node('package.sub1')
             self.assertIsInstance(node, modulegraph.SourceModule)
             self.assertEqual(node.identifier, 'package.sub1')
 
             self.mf.import_hook('package.sub2')
-            node = self.mf.findNode('package.sub2')
+            node = self.mf.find_node('package.sub2')
             self.assertIsInstance(node, modulegraph.SourceModule)
             self.assertEqual(node.identifier, 'package.sub2')
 
         def testSubRootPkgModule(self):
             self.mf.import_hook('package.subpackage.sub')
 
-            node = self.mf.findNode('package.subpackage.sub')
+            node = self.mf.find_node('package.subpackage.sub')
             self.assertIsInstance(node, modulegraph.SourceModule)
             self.assertEqual(node.identifier, 'package.subpackage.sub')
 
-            node = self.mf.findNode('package')
+            node = self.mf.find_node('package')
             self.assertIsInstance(node, modulegraph.NamespacePackage)
 
             self.mf.import_hook('package.nspkg.mod')
-            node = self.mf.findNode('package.nspkg.mod')
+            node = self.mf.find_node('package.nspkg.mod')
             self.assertIsInstance(node, modulegraph.SourceModule)
             self.assertEqual(node.identifier, 'package.nspkg.mod')
 
@@ -204,16 +204,16 @@ else:
         def testRootPkg(self):
             self.assertRaises(ImportError, self.mf.import_hook, 'package')
 
-            node = self.mf.findNode('package')
+            node = self.mf.find_node('package')
             self.assertIs(node, None)
 
         def testRootPkgModule(self):
             self.assertRaises(ImportError, self.mf.import_hook, 'package.sub1')
 
-            node = self.mf.findNode('package.sub1')
+            node = self.mf.find_node('package.sub1')
             self.assertIs(node, None)
 
-            node = self.mf.findNode('package.sub2')
+            node = self.mf.find_node('package.sub2')
             self.assertIs(node, None)
 
 if __name__ == "__main__":

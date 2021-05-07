@@ -297,7 +297,7 @@ class PyiModuleGraph(ModuleGraph):
             for mod in self.import_hook(req)]
 
 
-    def run_script(self, pathname, caller=None):
+    def add_script(self, pathname, caller=None):
         """
         Wrap the parent's 'run_script' method and create graph from the first
         script in the analysis, and save its node to use as the "caller" node
@@ -627,7 +627,7 @@ class PyiModuleGraph(ModuleGraph):
     # Return true if the named item is in the graph as a BuiltinModule node.
     # The passed name is a basename.
     def is_a_builtin(self, name) :
-        node = self.findNode(name)
+        node = self.find_node(name)
         if node is None:
             return False
         return type(node).__name__ == 'BuiltinModule'
@@ -662,7 +662,7 @@ class PyiModuleGraph(ModuleGraph):
             if edge is not None:
                 return self.graph.edge_data(edge)
 
-        node = self.findNode(name)
+        node = self.find_node(name)
         if node is None : return []
         _, importers = self.get_edges(node)
         importers = (importer.identifier
@@ -691,7 +691,7 @@ class PyiModuleGraph(ModuleGraph):
                 hook_file = os.path.abspath(hook_file)
                 # Not using "try" here because the path is supposed to
                 # exist, if it does not, the raised error will explain.
-                rthooks_nodes.append(self.run_script(hook_file))
+                rthooks_nodes.append(self.add_script(hook_file))
 
         # Find runtime hooks that are implied by packages already imported.
         # Get a temporary TOC listing all the scripts and packages graphed
@@ -703,7 +703,7 @@ class PyiModuleGraph(ModuleGraph):
                 # There could be several run-time hooks for a module.
                 for abs_path in self._available_rthooks[mod_name]:
                     logger.info("Including run-time hook %r", abs_path)
-                    rthooks_nodes.append(self.run_script(abs_path))
+                    rthooks_nodes.append(self.add_script(abs_path))
 
         return rthooks_nodes
 
@@ -750,9 +750,9 @@ class PyiModuleGraph(ModuleGraph):
         """
         co_dict = {}
         pure_python_module_types = PURE_PYTHON_MODULE_TYPES | {'Script',}
-        node = self.findNode('ctypes')
+        node = self.find_node('ctypes')
         if node:
-            referers = self.getReferers(node)
+            referers = self.incoming(node)
             for r in referers:
                 # Under python 3.7 and earlier, if ctypes is added to
                 # hidden imports, one of referers ends up being None,
