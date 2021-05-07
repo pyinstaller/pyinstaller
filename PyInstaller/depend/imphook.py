@@ -569,7 +569,7 @@ class ModuleHook(object):
         # TODO: Optimize this by using a pattern and walking the graph
         # only once.
         for item in set(self.excludedimports):
-            excluded_node = self.module_graph.findNode(item, create_nspkg=False)
+            excluded_node = self.module_graph.find_node(item)
             if excluded_node is None:
                 logger.info("Import to be excluded not found: %r", item)
                 continue

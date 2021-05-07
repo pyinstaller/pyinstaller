@@ -116,11 +116,15 @@ class PyiModuleGraph(ModuleGraph):
         # modulegraph Node for the main python script that is analyzed
         # by PyInstaller.
         self._top_script_node = None
+        self.path = []
 
         # Absolute paths of all user-defined hook directories.
         self._excludes = excludes
         self._reset(user_hook_dirs)
         self._analyze_base_modules()
+
+    def set_setuptools_nspackages(self):
+        pass
 
     def _reset(self, user_hook_dirs):
         """
@@ -350,8 +354,8 @@ class PyiModuleGraph(ModuleGraph):
             # For each remaining hookable module and corresponding hooks...
             for module_name, module_hooks in self._hooks.items():
                 # Graph node for this module if imported or "None" otherwise.
-                module_node = self.findNode(
-                    module_name, create_nspkg=False)
+                module_node = self.find_node(
+                    module_name)
 
                 # If this module has not been imported, temporarily ignore it.
                 # This module is retained in the cache, as a subsequently run
@@ -502,7 +506,7 @@ class PyiModuleGraph(ModuleGraph):
         """
         code_dict = {}
         mod_types = PURE_PYTHON_MODULE_TYPES
-        for node in self.flatten(start=self._top_script_node):
+        for node in self.iter_graph(start=self._top_script_node):
             # TODO This is terrible. To allow subclassing, types should never be
             # directly compared. Use isinstance() instead, which is safer,
             # simpler, and accepts sets. Most other calls to type() in the
@@ -537,7 +541,7 @@ class PyiModuleGraph(ModuleGraph):
         module_filter = re.compile(regex_str)
 
         result = existing_TOC or TOC()
-        for node in self.flatten(start=self._top_script_node):
+        for node in self.iter_graph(start=self._top_script_node):
             # Skip modules that are in base_library.zip.
             if module_filter.match(node.identifier):
                 continue
@@ -627,6 +631,12 @@ class PyiModuleGraph(ModuleGraph):
         if node is None:
             return False
         return type(node).__name__ == 'BuiltinModule'
+
+    def flatten(self):
+        return self.iter_graph()
+
+    def import_hook(self, name):
+        return self.iter_graph(node=self.add_module(name))
 
     def get_importers(self, name):
         """List all modules importing the module with the passed name.
