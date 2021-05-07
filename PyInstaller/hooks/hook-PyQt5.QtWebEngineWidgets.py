@@ -22,7 +22,7 @@ if pyqt5_library_info.version is not None:
     hiddenimports, binaries, datas = add_qt5_dependencies(__file__)
 
     # Include the web engine process, translations, and resources.
-    rel_data_path = ['PyQt5', 'Qt']
+    rel_data_path = pyqt5_library_info.qt_rel_dir
     if compat.is_darwin:
         # This is based on the layout of the Mac wheel from PyPi.
         data_path = pyqt5_library_info.location['DataPath']
@@ -33,7 +33,7 @@ if pyqt5_library_info.version is not None:
             framework_dir = i + '.framework'
             datas += collect_system_data_files(
                 os.path.join(data_path, 'lib', framework_dir),
-                os.path.join(*rel_data_path, 'lib', framework_dir), True)
+                os.path.join(rel_data_path, 'lib', framework_dir), True)
         datas += [(os.path.join(data_path, 'lib', 'QtWebEngineCore.framework',
                                 'Resources'), os.curdir)]
     else:
@@ -43,24 +43,18 @@ if pyqt5_library_info.version is not None:
             # Gather translations needed by Chromium.
             (os.path.join(pyqt5_library_info.location['TranslationsPath'],
                           locales),
-             os.path.join('PyQt5', 'Qt', 'translations', locales)),
+             os.path.join(rel_data_path, 'translations', locales)),
             # Per the `docs <https://doc.qt.io/qt-5.10/qtwebengine-deploying.html#deploying-resources>`_,
             # ``DataPath`` is the base directory for ``resources``.
-            #
-            # When Python 3.4 goes EOL (see `PEP 448`_, this is better written as
-            # ``os.path.join(*rel_data_path, resources)``.
             (os.path.join(pyqt5_library_info.location['DataPath'], resources),
-             os.path.join(*(rel_data_path + [resources]))),
+             os.path.join(rel_data_path, resources)),
             # Include the webengine process. The ``LibraryExecutablesPath`` is only
             # valid on Windows and Linux.
-            #
-            # Again, rewrite when Python 3.4 is EOL to
-            # ``os.path.join(*rel_data_path, remove_prefix(...``.
             (os.path.join(pyqt5_library_info.location['LibraryExecutablesPath'],
                           'QtWebEngineProcess*'),
-             os.path.join(*(rel_data_path +
-                          [remove_prefix(pyqt5_library_info.location['LibraryExecutablesPath'],
-                                        pyqt5_library_info.location['PrefixPath'] + '/')])))
+             os.path.join(rel_data_path, remove_prefix(
+                pyqt5_library_info.location['LibraryExecutablesPath'],
+                pyqt5_library_info.location['PrefixPath'] + '/')))
         ]
 
     # Add Linux-specific libraries.

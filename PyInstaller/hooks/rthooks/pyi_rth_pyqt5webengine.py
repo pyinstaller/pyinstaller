@@ -14,8 +14,11 @@ import sys
 
 # See ``pyi_rth_qt5.py`: use a "standard" PyQt5 layout.
 if sys.platform == 'darwin':
+    # Try PyQt5 5.15.4-style path first...
+    pyqt_path = os.path.join(sys._MEIPASS, 'PyQt5', 'Qt5')
+    if not os.path.isdir(pyqt_path):
+        # ... and fall back to the older version
+        pyqt_path = os.path.join(sys._MEIPASS, 'PyQt5', 'Qt')
     os.environ['QTWEBENGINEPROCESS_PATH'] = os.path.normpath(os.path.join(
-        sys._MEIPASS, 'PyQt5', 'Qt', 'lib',
-        'QtWebEngineCore.framework', 'Helpers', 'QtWebEngineProcess.app',
-        'Contents', 'MacOS', 'QtWebEngineProcess'
-    ))
+        pyqt_path, 'lib', 'QtWebEngineCore.framework', 'Helpers',
+        'QtWebEngineProcess.app', 'Contents', 'MacOS', 'QtWebEngineProcess'))

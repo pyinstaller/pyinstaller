@@ -27,10 +27,6 @@ def get_relative_path_if_possible(actual, possible_prefix):
         return possible_relative_path
 
 
-def prefix_with_path(prefix_path, *paths):
-    return os.path.join(*prefix_path, *paths)  # noqa: E999
-
-
 # Ensure PySide2 is importable before adding info depending on it.
 if pyside2_library_info.version is not None:
     hiddenimports, binaries, datas = add_qt5_dependencies(__file__)
@@ -38,10 +34,7 @@ if pyside2_library_info.version is not None:
     # Include the web engine process, translations, and resources.
     # According to https://bugreports.qt.io/browse/PYSIDE-642
     # there's no subdir for windows
-    if compat.is_win:
-        rel_data_path = ['PySide2']
-    else:
-        rel_data_path = ['PySide2', 'Qt']
+    rel_data_path = pyside2_library_info.qt_rel_dir
 
     pyside2_locations = pyside2_library_info.location
     if compat.is_darwin:
@@ -54,7 +47,7 @@ if pyside2_library_info.version is not None:
             framework_dir = i + '.framework'
             datas += collect_system_data_files(
                 os.path.join(data_path, 'lib', framework_dir),
-                prefix_with_path(rel_data_path, 'lib', framework_dir), True)
+                os.path.join(rel_data_path, 'lib', framework_dir), True)
         datas += [(os.path.join(data_path, 'lib', 'QtWebEngineCore.framework',
                                 'Resources'), os.curdir)]
     else:
@@ -63,19 +56,19 @@ if pyside2_library_info.version is not None:
         datas += [
             # Gather translations needed by Chromium.
             (os.path.join(pyside2_locations['TranslationsPath'], locales),
-             prefix_with_path(rel_data_path, 'translations', locales)),
+             os.path.join(rel_data_path, 'translations', locales)),
             # Per the `docs
             # <https://doc.qt.io/qt-5.10/qtwebengine-deploying.html#deploying-resources>`_,
             # ``DataPath`` is the base directory for ``resources``.
             #
             (os.path.join(pyside2_locations['DataPath'], resources),
-             prefix_with_path(rel_data_path, resources)),
+             os.path.join(rel_data_path, resources)),
             # Include the webengine process. The ``LibraryExecutablesPath``
             # is only valid on Windows and Linux.
             #
             (os.path.join(pyside2_locations['LibraryExecutablesPath'],
                           'QtWebEngineProcess*'),
-             prefix_with_path(rel_data_path, get_relative_path_if_possible(
+             os.path.join(rel_data_path, get_relative_path_if_possible(
                  pyside2_locations['LibraryExecutablesPath'],
                  pyside2_locations['PrefixPath'] + '/')))
         ]

@@ -25,7 +25,7 @@ if pyqt5_library_info.version is not None:
     # Collect the ``qt.conf`` file.
     datas = [x for x in
              collect_system_data_files(pyqt5_library_info.location['PrefixPath'],
-                                       os.path.join('PyQt5', 'Qt'))
+                                       pyqt5_library_info.qt_rel_dir)
              if os.path.basename(x[0]) == 'qt.conf']
 
     # Collect required Qt binaries.
