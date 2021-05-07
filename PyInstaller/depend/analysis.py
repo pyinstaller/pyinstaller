@@ -506,7 +506,7 @@ class PyiModuleGraph(ModuleGraph):
         """
         code_dict = {}
         mod_types = PURE_PYTHON_MODULE_TYPES
-        for node in self.iter_graph(start=self._top_script_node):
+        for node in self.iter_graph(node=self._top_script_node):
             # TODO This is terrible. To allow subclassing, types should never be
             # directly compared. Use isinstance() instead, which is safer,
             # simpler, and accepts sets. Most other calls to type() in the
@@ -541,7 +541,7 @@ class PyiModuleGraph(ModuleGraph):
         module_filter = re.compile(regex_str)
 
         result = existing_TOC or TOC()
-        for node in self.iter_graph(start=self._top_script_node):
+        for node in self.iter_graph(node=self._top_script_node):
             # Skip modules that are in base_library.zip.
             if module_filter.match(node.identifier):
                 continue
@@ -635,8 +635,11 @@ class PyiModuleGraph(ModuleGraph):
     def flatten(self):
         return self.iter_graph()
 
-    def import_hook(self, name):
+    def import_hook(self, name, caller=None):
         return self.iter_graph(node=self.add_module(name))
+
+    def find_node(self, node, create_nspkg=False):
+        return super().find_node(node)
 
     def get_importers(self, name):
         """List all modules importing the module with the passed name.

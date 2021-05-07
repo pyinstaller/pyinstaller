@@ -41,7 +41,7 @@ class DependencyProcessor(object):
         # Include files that were found by hooks.
         # graph.iter_graph() should include only those modules that are reachable
         # from top-level script.
-        for node in graph.iter_graph(start=graph._top_script_node):
+        for node in graph.iter_graph(node=graph._top_script_node):
             # Update 'binaries', 'datas'
             name = node.identifier
             if name in additional_files:

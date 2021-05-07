@@ -62,7 +62,7 @@ def hook(hook_api):
 
     hidden_imports_set = set()
     known_imports = set()
-    for node in hook_api.module_graph.iter_graph(start=hook_api.module):
+    for node in hook_api.module_graph.iter_graph(node=hook_api.module):
         if isinstance(node, SourceModule) and \
                 node.identifier.startswith('sqlalchemy.'):
             known_imports.add(node.identifier)
