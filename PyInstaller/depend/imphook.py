@@ -486,7 +486,7 @@ class ModuleHook(object):
             # Remove the graph link between the hooked module and item.
             # This removes the 'item' node from the graph if no other
             # links go to it (no other modules import it)
-            self.module_graph.removeReference(
+            self.module_graph.remove_all_edges(
                 hook_api.node, deleted_module_name)
 
 
@@ -585,12 +585,12 @@ class ModuleHook(object):
                 # modules, this `src` does import
                 references = set(
                     node.identifier
-                    for node in self.module_graph.outgoing(src))
+                    for (_, node) in self.module_graph.outgoing(src))
 
                 # Remove all of these imports which are also in
                 # "imports_to_remove".
                 for dest in imports_to_remove & references:
-                    self.module_graph.removeReference(src, dest)
+                    self.module_graph.remove_all_edges(src, dest)
                     logger.debug(
                         "Excluding import of %s from module %s", dest, src)
 

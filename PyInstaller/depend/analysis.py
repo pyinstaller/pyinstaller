@@ -753,7 +753,7 @@ class PyiModuleGraph(ModuleGraph):
         node = self.find_node('ctypes')
         if node:
             referers = self.incoming(node)
-            for r in referers:
+            for (_, r) in referers:
                 # Under python 3.7 and earlier, if ctypes is added to
                 # hidden imports, one of referers ends up being None,
                 # causing #3825. Work around it.
