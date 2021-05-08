@@ -360,7 +360,7 @@ class Analysis(Target):
 
         logger.info("running Analysis %s", self.tocbasename)
         # Get paths to Python and, in Windows, the manifest.
-        python = sys.executable
+        python = compat.python_executable
         if not is_win:
             # Linux/MacOS: get a real, non-link path to the running Python executable.
             while os.path.islink(python):
