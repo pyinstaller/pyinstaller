@@ -165,6 +165,21 @@ is_conda = os.path.isdir(os.path.join(base_prefix, 'conda-meta'))
 # that the default non-conda behaviour is generally desired from PyInstaller.
 is_pure_conda = os.path.isdir(os.path.join(sys.prefix, 'conda-meta'))
 
+# Full path to python interpreter.
+python_executable = getattr(sys, '_base_executable', sys.executable)
+
+# Is this Python from Microsoft App Store (Windows only)?
+# Python from Microsoft App Store has executable pointing at empty shims.
+is_ms_app_store = is_win and os.path.getsize(python_executable) == 0
+
+if is_ms_app_store:
+    # Locate the actual executable inside base_prefix.
+    python_executable = os.path.join(
+        base_prefix, os.path.basename(python_executable))
+    if not os.path.exists(python_executable):
+        raise SystemExit('PyInstaller cannot locate real python executable '
+                         'belonging to Python from Microsoft App Store!')
+
 # In Python 3.4 module 'imp' is deprecated and there is another way how
 # to obtain magic value.
 import importlib.util

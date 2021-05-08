@@ -181,8 +181,8 @@ def matchDLLArch(filename):
     global _exe_machine_type
     try:
         if _exe_machine_type is None:
-            pefilename = sys.executable  # for exception handling
-            exe_pe = pefile.PE(sys.executable, fast_load=True)
+            pefilename = compat.python_executable  # for exception handling
+            exe_pe = pefile.PE(pefilename, fast_load=True)
             _exe_machine_type = exe_pe.FILE_HEADER.Machine
             exe_pe.close()
 
@@ -890,10 +890,18 @@ def get_python_library_path():
                     return full_path
         return None
 
+    # If this is Microsoft App Store Python, check the compat.base_path first.
+    # While compat.python_executable resolves to actual python.exe file, the
+    # latter contains relative library reference that does not get properly
+    # resolved by getfullnameof().
+    if compat.is_ms_app_store:
+        python_libname = _find_lib_in_libdirs(compat.base_prefix)
+        if python_libname:
+            return python_libname
+
     # Try to get Python library name from the Python executable. It assumes that Python
     # library is not statically linked.
-    executable = getattr(sys, '_base_executable', sys.executable)
-    dlls = getImports(executable)
+    dlls = getImports(compat.python_executable)
     for filename in dlls:
         for name in PYDYLIB_NAMES:
             if os.path.basename(filename) == name:
