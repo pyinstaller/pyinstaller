@@ -64,7 +64,7 @@ scipy==1.6.3; python_version > '3.6'
 scipy==1.5.4; python_version <= '3.6'  # pyup: ignore
 
 # and matplotlib
-matplotlib==3.4.1; python_version > '3.6'
+matplotlib==3.4.2; python_version > '3.6'
 matplotlib==3.3.4; python_version <= '3.6'  # pyup: ignore
 
 # Install PyInstaller Hook Sample, to ensure that tests declared in
