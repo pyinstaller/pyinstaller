@@ -75,29 +75,6 @@ See https://github.com/pyinstaller/pyinstaller/issues/621 for more information.
             """ % init_resource)
 
 
-def _find_tcl_tk_darwin_system_frameworks(binaries):
-    """
-    Get an OS X-specific 2-tuple of the absolute paths of the top-level
-    external data directories for both Tcl and Tk, respectively.
-
-    This function finds the OS X system installation of Tcl and Tk.
-    System OS X Tcl and Tk are installed as Frameworks requiring special care.
-
-    Returns
-    -------
-    list
-        2-tuple whose first element is the value of `${TCL_LIBRARY}` and whose
-        second element is the value of `${TK_LIBRARY}`.
-    """
-    tcl_root = tk_root = None
-    for nm, fnm in binaries:
-        if nm == 'Tcl':
-            tcl_root = os.path.join(os.path.dirname(fnm), 'Resources/Scripts')
-        elif nm == 'Tk':
-            tk_root =  os.path.join(os.path.dirname(fnm), 'Resources/Scripts')
-    return tcl_root, tk_root
-
-
 def _find_tcl_tk_dir():
     """
     Get a platform-agnostic 2-tuple of the absolute paths of the top-level
@@ -120,7 +97,7 @@ def _find_tcl_tk_dir():
     return tcl_root, tk_root
 
 
-def _find_tcl_tk(hook_api):
+def _find_tcl_tk(tkinter_ext_file):
     """
     Get a platform-specific 2-tuple of the absolute paths of the top-level
     external data directories for both Tcl and Tk, respectively.
@@ -131,17 +108,17 @@ def _find_tcl_tk(hook_api):
         2-tuple whose first element is the value of `${TCL_LIBRARY}` and whose
         second element is the value of `${TK_LIBRARY}`.
     """
-    bins = selectImports(hook_api.__file__)
-
     if is_darwin:
-        # _tkinter depends on system Tcl/Tk frameworks.
-        # For example this is the case of Python from homebrew.
+        # On macOS, _tkinter extension is linked either against the system
+        # Tcl/Tk framework (homebrew python, python3 from XCode tools)
+        # or against bundled Tcl/Tk library (recent python.org builds).
+        # PyInstaller does not bundle data from system frameworks (as
+        # it does not not collect shared libraries from them, either),
+        # so we need to determine what kind of Tcl/Tk we are dealing with.
+        bins = selectImports(tkinter_ext_file)
         if not bins:
-            # 'hook_api.binaries' can't be used because on Mac OS X _tkinter.so
-            # might depend on system Tcl/Tk frameworks and these are not
-            # included in 'hook_api.binaries'.
-            bins = getImports(hook_api.__file__)
-
+            # Try getting all imports
+            bins = getImports(tkinter_ext_file)
             if bins:
                 # Reformat data structure from
                 #     set(['lib1', 'lib2', 'lib3'])
@@ -155,33 +132,28 @@ def _find_tcl_tk(hook_api):
                     ('Tk', mapping['Tk']),
                 ]
             else:
-                # Starting with macOS 11, system libraries are hidden.
-                # Until we adjust library discovery accordingly, bins
-                # will end up empty. But this implicitly indicates that
-                # the system framework is used, so return None, None
-                # to inform the caller.
+                # Starting with macOS 11, system libraries are hidden
+                # (unless both Python and PyInstaller's bootloader are
+                # built against MacOS 11.x SDK). Therefore, bins may end up
+                # empty; but that implicitly indicates that the system
+                # framework is used, so return None, None to inform the caller.
                 return None, None
 
-        # _tkinter depends on Tcl/Tk compiled as frameworks.
-        path_to_tcl = bins[0][1]
-        # OS X system installation of Tcl/Tk.
+        # Check the path to Tcl dynamic library; for system framework, it is:
         # [/System]/Library/Frameworks/Tcl.framework/Resources/Scripts/Tcl
+        path_to_tcl = bins[0][1]
         if 'Library/Frameworks/Tcl.framework' in path_to_tcl:
-            #tcl_tk = _find_tcl_tk_darwin_system_frameworks(bins)
-            tcl_tk = None, None  # Do not gather system framework's data
+            return None, None  # Do not gather system framework's data
 
-        # Tcl/Tk compiled as on Linux other Unixes.
-        # This is the case of Tcl/Tk from macports and Tck/Tk built into
-        # python.org OS X python distributions.
-        # python.org built-in tcl/tk is located at
+        # Bundled copy of Tcl/Tk; in this case, the dynamic library is
         # /Library/Frameworks/Python.framework/Versions/3.x/lib/libtcl8.6.dylib
-        else:
-            tcl_tk = _find_tcl_tk_dir()
-
+        # and the data directories have standard layout that is handled
+        # by _find_tcl_tk_dir().
+        return _find_tcl_tk_dir()
     else:
-        tcl_tk = _find_tcl_tk_dir()
-
-    return tcl_tk
+        # On Windows and linux, data directories have standard layout
+        # that is handled by _find_tcl_tk_dir().
+        return _find_tcl_tk_dir()
 
 
 def _collect_tcl_modules(tcl_root):
@@ -211,7 +183,7 @@ def _collect_tcl_modules(tcl_root):
     return Tree(modules_path, prefix=modules_dirname)
 
 
-def _collect_tcl_tk_files(hook_api):
+def collect_tcl_tk_files(tkinter_ext_file):
     """
     Get a list of TOC-style 3-tuples describing all external Tcl/Tk data files.
 
@@ -220,7 +192,8 @@ def _collect_tcl_tk_files(hook_api):
     Tree
         Such list.
     """
-    tcl_root, tk_root = _find_tcl_tk(hook_api)
+    # Find Tcl and Tk data directory by analyzing the _tkinter extension.
+    tcl_root, tk_root = _find_tcl_tk(tkinter_ext_file)
 
     # On macOS, we do not collect system libraries. Therefore, if system
     # Tcl/Tk framework is used, it makes no sense to collect its data,
@@ -272,6 +245,6 @@ def hook(hook_api):
         # so we need to store it into `hook_api.datas` to prevent
         # `building.imphook.format_binaries_and_datas` from crashing
         # with "too many values to unpack".
-        hook_api.add_datas(_collect_tcl_tk_files(hook_api))
+        hook_api.add_datas(collect_tcl_tk_files(hook_api.__file__))
     else:
         logger.error("... skipping Tcl/Tk handling on unsupported platform %s", sys.platform)
