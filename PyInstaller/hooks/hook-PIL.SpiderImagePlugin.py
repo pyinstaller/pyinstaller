@@ -14,4 +14,4 @@
 # ImageTk (and thus brings the whole Tcl/Tk library in).
 # Assume that if people are really using tkinter in their application, they
 # will also import it directly.
-excludedimports = ['tkinter', 'FixTk']
+excludedimports = ['tkinter']
