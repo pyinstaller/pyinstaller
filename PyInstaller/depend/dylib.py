@@ -380,7 +380,7 @@ def mac_strip_signature(libname, distname):
     collection may invalidate the existing signature on a collected
     shared library, which will prevent the latter from being loaded.
     """
-    from ..compat import exec_command_rc
+    from PyInstaller.compat import exec_command_rc
 
     # For now, limit this only to Python shared library. Other shared
     # library files from Python.framework bundle also seem to be signed,

@@ -12,16 +12,16 @@
 import os
 import plistlib
 import shutil
-from ..compat import is_darwin
-from .api import EXE, COLLECT
-from .datastruct import Target, TOC, logger
-from .utils import _check_path_overlap, _rmtree, add_suffix_to_extensions, checkCache
-
+from PyInstaller.compat import is_darwin
+from PyInstaller.building.api import EXE, COLLECT
+from PyInstaller.building.datastruct import Target, TOC, logger
+from PyInstaller.building.utils import _check_path_overlap, _rmtree, \
+    add_suffix_to_extensions, checkCache
 
 
 class BUNDLE(Target):
     def __init__(self, *args, **kws):
-        from ..config import CONF
+        from PyInstaller.config import CONF
 
         # BUNDLE only has a sense under Mac OS X, it's a noop on other platforms
         if not is_darwin:

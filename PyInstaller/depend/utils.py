@@ -24,14 +24,12 @@ import re
 import struct
 import zipfile
 
-from ..exceptions import ExecCommandFailed
-from ..lib.modulegraph import util, modulegraph
+from PyInstaller.exceptions import ExecCommandFailed
+from PyInstaller.lib.modulegraph import util, modulegraph
 
-from .. import compat
-from ..compat import (is_darwin, is_unix, is_freebsd, is_openbsd, is_py37,
-                      BYTECODE_MAGIC, PY3_BASE_MODULES)
-from .dylib import include_library
-from .. import log as logging
+from PyInstaller import compat
+from PyInstaller.depend.dylib import include_library
+from PyInstaller import log as logging
 
 try:
     # source_hash only exists in Python 3.7
@@ -52,13 +50,13 @@ def create_py3_base_library(libzip_filename, graph):
     # Import strip_paths_in_code locally to avoid cyclic import between
     # building.utils and depend.utils (this module); building.utils
     # imports depend.bindepend, which in turn imports depend.utils.
-    from ..building.utils import strip_paths_in_code
+    from PyInstaller.building.utils import strip_paths_in_code
     # Construct regular expression for matching modules that should be bundled
     # into base_library.zip.
     # Excluded are plain 'modules' or 'submodules.ANY_NAME'.
     # The match has to be exact - start and end of string not substring.
-    regex_modules = '|'.join([r'(^%s$)' % x for x in PY3_BASE_MODULES])
-    regex_submod = '|'.join([r'(^%s\..*$)' % x for x in PY3_BASE_MODULES])
+    regex_modules = '|'.join([rf'(^{x}$)' for x in compat.PY3_BASE_MODULES])
+    regex_submod = '|'.join([rf'(^{x}\..*$)' for x in compat.PY3_BASE_MODULES])
     regex_str = regex_modules + '|' + regex_submod
     module_filter = re.compile(regex_str)
 
@@ -97,8 +95,8 @@ def create_py3_base_library(libzip_filename, graph):
                         # This code is similar to py_compile.compile().
                         with io.BytesIO() as fc:
                             # Prepare all data in byte stream file-like object.
-                            fc.write(BYTECODE_MAGIC)
-                            if is_py37:
+                            fc.write(compat.BYTECODE_MAGIC)
+                            if compat.is_py37:
                                 # Additional bitfield according to PEP 552
                                 # 0b01 means hash based but don't check the hash
                                 fc.write(struct.pack('<I', 0b01))
@@ -276,11 +274,11 @@ def _resolveCtypesImports(cbinaries):
 
     """
     from ctypes.util import find_library
-    from ..config import CONF
+    from PyInstaller.config import CONF
 
-    if is_unix:
+    if compat.is_unix:
         envvar = "LD_LIBRARY_PATH"
-    elif is_darwin:
+    elif compat.is_darwin:
         envvar = "DYLD_LIBRARY_PATH"
     else:
         envvar = "PATH"
@@ -313,7 +311,7 @@ def _resolveCtypesImports(cbinaries):
         except FileNotFoundError:
             # In these cases, find_library() should return None.
             cpath = None
-        if is_unix:
+        if compat.is_unix:
             # CAVEAT: find_library() is not the correct function. Ctype's
             # documentation says that it is meant to resolve only the filename
             # (as a *compiler* does) not the full path. Anyway, it works well
@@ -377,7 +375,7 @@ def load_ldconfig_cache():
             LDCONFIG_CACHE = {}
             return
 
-    if is_freebsd or is_openbsd:
+    if compat.is_freebsd or compat.is_openbsd:
         # This has a quite different format than other Unixes
         # [vagrant@freebsd-10 ~]$ ldconfig -r
         # /var/run/ld-elf.so.hints:
@@ -425,7 +423,7 @@ def load_ldconfig_cache():
             continue
 
         path = m.groups()[-1]
-        if is_freebsd or is_openbsd:
+        if compat.is_freebsd or compat.is_openbsd:
             # Insert `.so` at the end of the lib's basename. soname
             # and filename may have (different) trailing versions. We
             # assume the `.so` in the filename to mark the end of the

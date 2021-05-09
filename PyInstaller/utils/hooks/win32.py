@@ -8,12 +8,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 # ----------------------------------------------------------------------------
-from ..hooks import exec_statement
-
-# NOTE: This function requires PyInstaller to be on the default "sys.path" for
-# the called Python process. Running py.test changes the working dir to a temp
-# dir, so PyInstaller should be installed via either "setup.py install" or
-# "setup.py develop" before running py.test.
 
 
 def get_pywin32_module_file_attribute(module_name):
@@ -46,6 +40,7 @@ def get_pywin32_module_file_attribute(module_name):
     `PyInstaller.utils.win32.winutils.import_pywin32_module()`
         For further details.
     """
+    from PyInstaller.utils.hooks import exec_statement
     statement = """
         from PyInstaller.utils.win32 import winutils
         module = winutils.import_pywin32_module('%s')

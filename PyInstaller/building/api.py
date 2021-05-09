@@ -34,7 +34,7 @@ from PyInstaller.depend.analysis import get_bootstrap_modules
 from PyInstaller.depend.utils import is_path_to_egg
 from PyInstaller.building.datastruct import TOC, Target, _check_guts_eq
 from PyInstaller.utils import misc
-from .. import log as logging
+from PyInstaller import log as logging
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +69,7 @@ class PYZ(Target):
 
         """
 
-        from ..config import CONF
+        from PyInstaller.config import CONF
         Target.__init__(self)
         name = kwargs.get('name', None)
         cipher = kwargs.get('cipher', None)
@@ -342,7 +342,7 @@ class EXE(Target):
                 Windows only. Setting to True allows an elevated application to
                 work with Remote Desktop
         """
-        from ..config import CONF
+        from PyInstaller.config import CONF
         Target.__init__(self)
 
         # Available options for EXE in .spec files.
@@ -520,7 +520,7 @@ class EXE(Target):
         return bootloader_file
 
     def assemble(self):
-        from ..config import CONF
+        from PyInstaller.config import CONF
         logger.info("Building EXE from %s", self.tocbasename)
         trash = []
         if os.path.exists(self.name):
@@ -673,7 +673,7 @@ class COLLECT(Target):
                 name
                     The name of the directory to be built.
         """
-        from ..config import CONF
+        from PyInstaller.config import CONF
         Target.__init__(self)
         self.strip_binaries = kws.get('strip', False)
         self.upx_exclude = kws.get("upx_exclude", [])

@@ -11,11 +11,11 @@
 import os
 import re
 
-from ..hooks import collect_submodules, collect_system_data_files, eval_statement, exec_statement
-from ... import log as logging
-from ...compat import base_prefix, is_darwin, is_win, open_file, \
-    text_read_mode
-from ...depend.bindepend import findSystemLibrary
+from PyInstaller.utils.hooks import collect_submodules, \
+    collect_system_data_files, eval_statement, exec_statement
+from PyInstaller import log as logging
+from PyInstaller import compat
+from PyInstaller.depend.bindepend import findSystemLibrary
 
 logger = logging.getLogger(__name__)
 
@@ -111,17 +111,17 @@ def get_gi_typelibs(module, version):
 def gir_library_path_fix(path):
     import subprocess
     # 'PyInstaller.config' cannot be imported as other top-level modules.
-    from ...config import CONF
+    from PyInstaller.config import CONF
 
     path = os.path.abspath(path)
 
     # On OSX we need to recompile the GIR files to reference the loader path,
     # but this is not necessary on other platforms
-    if is_darwin:
+    if compat.is_darwin:
 
         # If using a virtualenv, the base prefix and the path of the typelib
         # have really nothing to do with each other, so try to detect that
-        common_path = os.path.commonprefix([base_prefix, path])
+        common_path = os.path.commonprefix([compat.base_prefix, path])
         if common_path == '/':
             logger.debug("virtualenv detected? fixing the gir path...")
             common_path = os.path.abspath(os.path.join(path, '..', '..', '..'))
@@ -144,12 +144,12 @@ def gir_library_path_fix(path):
                          'package.', gir_file)
             return None
 
-        with open_file(gir_file, text_read_mode, encoding='utf-8') as f:
+        with compat.open_file(gir_file, compat.text_read_mode, encoding='utf-8') as f:
             lines = f.readlines()
         # GIR files are `XML encoded <https://developer.gnome.org/gi/stable/gi-gir-reference.html>`_,
         # which means they are by definition encoded using UTF-8.
-        with open_file(os.path.join(CONF['workpath'], gir_name), 'w',
-                       encoding='utf-8') as f:
+        with compat.open_file(os.path.join(CONF['workpath'], gir_name), 'w',
+                              encoding='utf-8') as f:
             for line in lines:
                 if 'shared-library' in line:
                     split = re.split('(=)', line)
@@ -188,7 +188,7 @@ def get_glib_system_data_dirs():
 
 def get_glib_sysconf_dirs():
     """Try to return the sysconf directories, eg /etc."""
-    if is_win:
+    if compat.is_win:
         # On windows, if you look at gtkwin32.c, sysconfdir is actually
         # relative to the location of the GTK DLL. Since that's what
         # we're actually interested in (not the user path), we have to

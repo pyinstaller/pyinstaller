@@ -45,19 +45,20 @@ import ast
 from copy import deepcopy
 from collections import defaultdict
 
-from .. import compat
-from .. import HOMEPATH, PACKAGEPATH
-from .. import log as logging
-from ..log import INFO, DEBUG, TRACE
-from ..building.datastruct import TOC
-from .imphook import AdditionalFilesCache, ModuleHookCache
-from .imphookapi import PreSafeImportModuleAPI, PreFindModulePathAPI
-from ..compat import importlib_load_source, PY3_BASE_MODULES,\
-        PURE_PYTHON_MODULE_TYPES, BINARY_MODULE_TYPES, VALID_MODULE_TYPES, \
-        BAD_MODULE_TYPES, MODULE_TYPES_TO_TOC_DICT
-from ..lib.modulegraph.find_modules import get_implies
-from ..lib.modulegraph.modulegraph import ModuleGraph
-from ..utils.hooks import collect_submodules, is_package
+from PyInstaller import compat
+from PyInstaller import HOMEPATH, PACKAGEPATH
+from PyInstaller import log as logging
+from PyInstaller.log import INFO, DEBUG, TRACE
+from PyInstaller.building.datastruct import TOC
+from PyInstaller.depend.imphook import AdditionalFilesCache, ModuleHookCache
+from PyInstaller.depend.imphookapi import PreSafeImportModuleAPI,\
+    PreFindModulePathAPI
+from PyInstaller.compat import importlib_load_source, PY3_BASE_MODULES, \
+    PURE_PYTHON_MODULE_TYPES, BINARY_MODULE_TYPES, VALID_MODULE_TYPES, \
+    BAD_MODULE_TYPES, MODULE_TYPES_TO_TOC_DICT
+from PyInstaller.lib.modulegraph.find_modules import get_implies
+from PyInstaller.lib.modulegraph.modulegraph import ModuleGraph
+from PyInstaller.utils.hooks import collect_submodules, is_package
 
 
 logger = logging.getLogger(__name__)

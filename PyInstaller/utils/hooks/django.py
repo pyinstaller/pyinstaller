@@ -10,8 +10,8 @@
 # ----------------------------------------------------------------------------
 import os
 
-from ..hooks import eval_script
-from ...utils import misc
+from PyInstaller.utils.hooks import eval_script
+from PyInstaller.utils import misc
 
 
 __all__ = [
@@ -55,7 +55,7 @@ def django_find_root_dir():
     but usually one level up. We need to detect this special case too.
     """
     # 'PyInstaller.config' cannot be imported as other top-level modules.
-    from ...config import CONF
+    from PyInstaller.config import CONF
     # Get the directory with manage.py. Manage.py is supplied to PyInstaller as the
     # first main executable script.
     manage_py = CONF['main_script']

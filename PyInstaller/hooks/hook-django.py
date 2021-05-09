@@ -17,26 +17,24 @@ import sys
 import glob
 import os
 from PyInstaller import log as logging
-from PyInstaller.utils.hooks import (
-    django_find_root_dir, django_dottedstring_imports, collect_all,
-    collect_submodules, collect_data_files, get_module_file_attribute,
-    get_module_attribute)
+from PyInstaller.utils import hooks
+from PyInstaller.utils.hooks import django
 
 
 logger = logging.getLogger(__name__)
 
-datas, binaries, hiddenimports = collect_all('django')
+datas, binaries, hiddenimports = hooks.collect_all('django')
 
 
-root_dir = django_find_root_dir()
+root_dir = django.django_find_root_dir()
 if root_dir:
     logger.info('Django root directory %s', root_dir)
     # Include imports from the mysite.settings.py module.
-    settings_py_imports = django_dottedstring_imports(root_dir)
+    settings_py_imports = django.django_dottedstring_imports(root_dir)
     # Include all submodules of all imports detected in mysite.settings.py.
     for submod in settings_py_imports:
         hiddenimports.append(submod)
-        hiddenimports += collect_submodules(submod)
+        hiddenimports += hooks.collect_submodules(submod)
     # Include main django modules - settings.py, urls.py, wsgi.py.
     # Without them the django server won't run.
     package_name = os.path.basename(root_dir)
@@ -69,12 +67,13 @@ if root_dir:
              'django.contrib.sites.migrations',
     ]
     # Include migration scripts of Django-based apps too.
-    installed_apps = eval(get_module_attribute(settings_module, 'INSTALLED_APPS'))
+    installed_apps = eval(hooks.get_module_attribute(
+        settings_module, 'INSTALLED_APPS'))
     migration_modules.extend(set(app + '.migrations' for app in installed_apps))
     # Copy migration files.
     for mod in migration_modules:
         mod_name, bundle_name = mod.split('.', 1)
-        mod_dir = os.path.dirname(get_module_file_attribute(mod_name))
+        mod_dir = os.path.dirname(hooks.get_module_file_attribute(mod_name))
         bundle_dir = bundle_name.replace('.', os.sep)
         pattern = os.path.join(mod_dir, bundle_dir, '*.py')
         files = glob.glob(pattern)
@@ -82,7 +81,7 @@ if root_dir:
             datas.append((f, os.path.join(mod_name, bundle_dir)))
 
     # Include data files from your Django project found in your django root package.
-    datas += collect_data_files(package_name)
+    datas += hooks.collect_data_files(package_name)
 
     # Include database file if using sqlite. The sqlite database is usually next to the manage.py script.
     root_dir_parent = os.path.dirname(root_dir)

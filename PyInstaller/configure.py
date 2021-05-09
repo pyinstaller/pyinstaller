@@ -16,9 +16,9 @@ Configure PyInstaller for the current Python installation.
 
 import os
 
-from . import compat
-from . import log as logging
-from .compat import is_win, is_darwin
+from PyInstaller import compat
+from PyInstaller import log as logging
+from PyInstaller.compat import is_win, is_darwin
 
 logger = logging.getLogger(__name__)
 

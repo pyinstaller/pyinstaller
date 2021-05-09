@@ -15,7 +15,7 @@ import argparse
 import pytest
 import pkg_resources
 
-from .. import compat
+from PyInstaller import compat
 
 
 def paths_to_test(include_only=None):

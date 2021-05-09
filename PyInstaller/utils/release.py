@@ -22,7 +22,7 @@ https://zestreleaser.readthedocs.org/en/latest/entrypoints.html
 """
 
 import os
-from ..compat import exec_command, getenv
+from PyInstaller.compat import exec_command, getenv
 
 
 def sign_source_distribution(data):

@@ -19,23 +19,19 @@ support the operation of CopyIcons_FromIco(). None of these classes
 and globals are referenced outside this module.
 '''
 
+import os.path
+import struct
+
+from PyInstaller.compat import win32api, pywintypes
+from PyInstaller import config
+
+import PyInstaller.log as logging
+logger = logging.getLogger(__name__)
+
 RT_ICON = 3
 RT_GROUP_ICON = 14
 LOAD_LIBRARY_AS_DATAFILE = 2
 
-import os.path
-import struct
-import types
-try:
-    StringTypes = types.StringTypes
-except AttributeError:
-    StringTypes = [ type("") ]
-
-from ...compat import win32api, pywintypes
-from ... import config
-
-import PyInstaller.log as logging
-logger = logging.getLogger(__name__)
 
 class Structure:
     def __init__(self):
@@ -174,7 +170,7 @@ def CopyIcons(dstpath, srcpath):
     relative or absolute.
     '''
 
-    if type(srcpath) in StringTypes:
+    if isinstance(srcpath, str):
         # just a single string, make it a one-element list
         srcpath = [ srcpath ]
 

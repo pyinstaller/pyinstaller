@@ -18,11 +18,11 @@ import os
 import sys
 import argparse
 
-from .. import HOMEPATH, DEFAULT_SPECPATH
-from .. import log as logging
-from ..compat import expand_path, is_darwin, is_win, open_file
-from .templates import onefiletmplt, onedirtmplt, cipher_absent_template, \
-    cipher_init_template, bundleexetmplt, bundletmplt
+from PyInstaller import HOMEPATH, DEFAULT_SPECPATH
+from PyInstaller import log as logging
+from PyInstaller.compat import expand_path, is_darwin, is_win, open_file
+from PyInstaller.building.templates import onefiletmplt, onedirtmplt, \
+    cipher_absent_template, cipher_init_template, bundleexetmplt, bundletmplt
 
 logger = logging.getLogger(__name__)
 add_command_sep = os.pathsep

@@ -19,7 +19,7 @@ __all__ = ['get_windows_dir']
 import os
 import sys
 
-from ... import compat
+from PyInstaller import compat
 
 import PyInstaller.log as logging
 logger = logging.getLogger(__name__)
@@ -30,7 +30,7 @@ def get_windows_dir():
     Return the Windows directory e.g. C:\\Windows.
     """
     # imported here to avoid circular import
-    from ... import compat
+    from PyInstaller import compat
     windir = compat.win32api.GetWindowsDirectory()
     if not windir:
         raise SystemExit("Error: Can not determine your Windows directory")
@@ -42,7 +42,7 @@ def get_system_path():
     Return the required Windows system paths.
     """
     # imported here to avoid circular import
-    from ... import compat
+    from PyInstaller import compat
     _bpath = []
     sys_dir = compat.win32api.GetSystemDirectory()
     # Ensure C:\Windows\system32  and C:\Windows directories are
@@ -61,7 +61,7 @@ def extend_system_path(paths):
     Some hooks might extend PATH where PyInstaller should look for dlls.
     """
     # imported here to avoid circular import
-    from ... import compat
+    from PyInstaller import compat
     old_PATH = compat.getenv('PATH', '')
     paths.append(old_PATH)
     new_PATH = os.pathsep.join(paths)

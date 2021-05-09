@@ -35,7 +35,7 @@ from PyInstaller.building.utils import get_code_object, strip_paths_in_code,\
     fake_pyc_timestamp
 from PyInstaller.loader.pyimod02_archive import PYZ_TYPE_MODULE, PYZ_TYPE_PKG, \
     PYZ_TYPE_DATA, PYZ_TYPE_NSPKG
-from ..compat import BYTECODE_MAGIC, is_py37, is_win
+from PyInstaller.compat import BYTECODE_MAGIC, is_py37, is_win
 
 
 class ArchiveWriter(object):

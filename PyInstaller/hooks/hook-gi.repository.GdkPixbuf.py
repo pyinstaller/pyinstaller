@@ -19,7 +19,7 @@ from shutil import which
 from PyInstaller.config import CONF
 from PyInstaller.compat import (
     exec_command_stdout, is_darwin, is_win, is_linux, open_file)
-from PyInstaller.utils.hooks import (
+from PyInstaller.utils.hooks.gi import (
     collect_glib_translations, get_gi_typelibs, get_gi_libdir, logger)
 
 loaders_path = os.path.join('gdk-pixbuf-2.0', '2.10.0', 'loaders')

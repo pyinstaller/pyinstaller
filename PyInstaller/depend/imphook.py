@@ -17,11 +17,11 @@ Code related to processing of import hooks.
 import glob, sys, weakref
 import os.path
 
-from ..exceptions import ImportErrorWhenRunningHook
-from .. import log as logging
-from ..compat import expand_path, importlib_load_source
-from .imphookapi import PostGraphAPI
-from ..building.utils import format_binaries_and_datas
+from PyInstaller.exceptions import ImportErrorWhenRunningHook
+from PyInstaller import log as logging
+from PyInstaller.compat import expand_path, importlib_load_source
+from PyInstaller.depend.imphookapi import PostGraphAPI
+from PyInstaller.building.utils import format_binaries_and_datas
 
 logger = logging.getLogger(__name__)
 
