@@ -14,7 +14,7 @@
 import codecs
 import struct
 
-from PyInstaller.compat import text_read_mode, win32api
+from PyInstaller.compat import win32api
 
 # ::TODO:: #1920 revert to using pypi version
 import pefile
@@ -627,7 +627,7 @@ def SetVersion(exenm, versionfile):
     if isinstance(versionfile, VSVersionInfo):
         vs = versionfile
     else:
-        with codecs.open(versionfile, text_read_mode, 'utf-8') as fp:
+        with codecs.open(versionfile, 'r', 'utf-8') as fp:
             txt = fp.read()
         vs = eval(txt)
 

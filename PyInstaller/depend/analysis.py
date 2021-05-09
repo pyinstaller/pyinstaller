@@ -144,8 +144,7 @@ class PyiModuleGraph(ModuleGraph):
         for uhd in self._user_hook_dirs:
             uhd_path = os.path.abspath(os.path.join(uhd, 'rthooks.dat'))
             try:
-                with compat.open_file(uhd_path, compat.text_read_mode,
-                                      encoding='utf-8') as f:
+                with open(uhd_path, 'r', encoding='utf-8') as f:
                     rthooks = ast.literal_eval(f.read())
             except FileNotFoundError:
                 # Ignore if this hook path doesn't have run-time hooks.

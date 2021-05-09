@@ -31,7 +31,7 @@ from PyInstaller import HOMEPATH, DEFAULT_DISTPATH, DEFAULT_WORKPATH
 from PyInstaller import compat
 from PyInstaller import log as logging
 from PyInstaller.utils.misc import absnormpath, compile_py_files
-from PyInstaller.compat import is_win, PYDYLIB_NAMES, open_file
+from PyInstaller.compat import is_win, PYDYLIB_NAMES
 from PyInstaller.depend import bindepend
 from PyInstaller.depend.analysis import initialize_modgraph
 from PyInstaller.building.api import PYZ, EXE, COLLECT, MERGE
@@ -223,7 +223,7 @@ class Analysis(Target):
             # Create a Python module which contains the decryption key which will
             # be used at runtime by pyi_crypto.PyiBlockCipher.
             pyi_crypto_key_path = os.path.join(CONF['workpath'], 'pyimod00_crypto_key.py')
-            with open_file(pyi_crypto_key_path, 'w', encoding='utf-8') as f:
+            with open(pyi_crypto_key_path, 'w', encoding='utf-8') as f:
                 f.write('# -*- coding: utf-8 -*-\n'
                         'key = %r\n' % cipher.key)
             self.hiddenimports.append('tinyaes')
@@ -540,7 +540,7 @@ class Analysis(Target):
 
         from PyInstaller.config import CONF
         miss_toc = self.graph.make_missing_toc()
-        with open_file(CONF['warnfile'], 'w', encoding='utf-8') as wf:
+        with open(CONF['warnfile'], 'w', encoding='utf-8') as wf:
             wf.write(WARNFILE_HEADER)
             for (n, p, status) in miss_toc:
                 importers = self.graph.get_importers(n)
@@ -555,7 +555,7 @@ class Analysis(Target):
         of the graph.
         """
         from PyInstaller.config import CONF
-        with open_file(CONF['xref-file'], 'w', encoding='utf-8') as fh:
+        with open(CONF['xref-file'], 'w', encoding='utf-8') as fh:
             self.graph.create_xref(fh)
             logger.info("Graph cross-reference written to %s", CONF['xref-file'])
         if logger.getEffectiveLevel() > logging.DEBUG:

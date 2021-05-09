@@ -21,7 +21,7 @@ import py_compile
 import sys
 
 from PyInstaller import log as logging
-from PyInstaller.compat import BYTECODE_MAGIC, text_read_mode, is_win
+from PyInstaller.compat import BYTECODE_MAGIC, is_win
 
 logger = logging.getLogger(__name__)
 
@@ -219,7 +219,7 @@ def load_py_data_struct(filename):
     :param filename:
     :return:
     """
-    with open(filename, text_read_mode, encoding='utf-8') as f:
+    with open(filename, 'r', encoding='utf-8') as f:
         # Binding redirects are stored as a named tuple, so bring the namedtuple
         # class into scope for parsing the TOC.
         from PyInstaller.depend.bindepend import BindingRedirect  # noqa: F401
