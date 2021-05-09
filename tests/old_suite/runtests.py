@@ -27,7 +27,7 @@ import unittest
 import PyInstaller
 from PyInstaller import compat, configure
 from PyInstaller import __main__ as pyi_main
-from PyInstaller.compat import is_win, is_darwin, modname_tkinter
+from PyInstaller.compat import is_win, is_darwin
 from PyInstaller.utils import misc
 import PyInstaller.utils.hooks as hookutils
 from PyInstaller.utils.win32 import winutils
@@ -97,7 +97,7 @@ class SkipChecker(object):
             'interactive/test_pygame': ['pygame'],
             'interactive/test_qt5': ['PyQt5'],
             'interactive/test_tix': ['Tix'],
-            'interactive/test_tkinter': [modname_tkinter],
+            'interactive/test_tkinter': ['tkinter'],
             'interactive/test_wx': ['wx'],
             }
 

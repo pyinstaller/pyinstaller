@@ -192,6 +192,8 @@ ALL_SUFFIXES = all_suffixes()
 
 
 # In Python 3 'Tkinter' has been made lowercase - 'tkinter'.
+# TODO: remove once all references are gone from both pyinstaller and
+# pyinstaller-hooks-contrib!
 modname_tkinter = 'tkinter'
 
 

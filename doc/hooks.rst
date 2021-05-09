@@ -199,7 +199,7 @@ applies them to the bundle being created.
     Several hooks use this to prevent automatic inclusion of
     the ``tkinter`` module. Example::
 
-        excludedimports = [modname_tkinter]
+        excludedimports = ['tkinter']
 
 ``datas``
    A list of files to bundle with the app as data.
@@ -250,7 +250,7 @@ Useful Items in ``PyInstaller.compat``
 A hook may import the following names from ``PyInstaller.compat``,
 for example::
 
-   from PyInstaller.compat import modname_tkinter, is_win
+   from PyInstaller.compat import base_prefix, is_win
 
 ``is_py36``, ``is_py37``, ``is_py38``, ``is_py39``:
    True when the current version of Python is at least 3.6, 3.7, 3.8 or 3.9 respectively.
@@ -277,13 +277,6 @@ for example::
 ``base_prefix``:
    String, the correct path to the base Python installation,
    whether the installation is native or a virtual environment.
-
-``modname_tkinter``:
-   String ``tkinter`` (this module was named differently in Python 2).
-   To prevent an unnecessary import of Tkinter, write::
-
-      from PyInstaller.compat import modname_tkinter
-      excludedimports = [ modname_tkinter ]
 
 ``EXTENSION_SUFFIXES``:
    List of Python C-extension file suffixes. Used for finding all
