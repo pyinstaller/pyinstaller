@@ -9,11 +9,9 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-from PyInstaller.compat import modname_tkinter
-
 
 # PIL's SpiderImagePlugin features a tkPhotoImage() method which imports
 # ImageTk (and thus brings the whole Tcl/Tk library in).
 # Assume that if people are really using tkinter in their application, they
 # will also import it directly.
-excludedimports = [modname_tkinter, 'FixTk']
+excludedimports = ['tkinter', 'FixTk']

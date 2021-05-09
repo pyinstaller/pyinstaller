@@ -16,7 +16,7 @@ Note that the original unmaintained PIL has been obsoleted by the PIL-compatible
 fork Pillow, which retains the same Python package `PIL`.
 """
 
-from PyInstaller.compat import modname_tkinter, is_darwin
+from PyInstaller.compat import is_darwin
 from PyInstaller.utils.tests import importorskip, skip, xfail
 
 
@@ -24,7 +24,7 @@ from PyInstaller.utils.tests import importorskip, skip, xfail
 # marked as @xfail. If this test were marked as @xfail but succeeded, py.test
 # would record this test as an XPASS failure (i.e., an unexpected success).
 @importorskip('PIL')
-@importorskip(modname_tkinter)
+@importorskip('tkinter')
 @skip(reason='"excludedimports" support is non-deterministically broken.')
 def test_pil_no_tkinter(pyi_builder):
     """
@@ -40,8 +40,8 @@ def test_pil_no_tkinter(pyi_builder):
         # Tkinter. To prevent PyInstaller from parsing this import and thus
         # freezing this extension with this test, this import is dynamic.
         try:
-            __import__('{modname_tkinter}')
-            raise SystemExit('ERROR: Module {modname_tkinter} is bundled.')
+            __import__('tkinter')
+            raise SystemExit('ERROR: Module tkinter is bundled.')
         except ImportError:
             pass
 
@@ -51,11 +51,11 @@ def test_pil_no_tkinter(pyi_builder):
             raise SystemExit('ERROR: Module _tkinter is bundled.')
         except ImportError:
             pass
-        """.format(modname_tkinter=modname_tkinter))
+        """)
 
 
 @importorskip('PIL')
-@importorskip(modname_tkinter)
+@importorskip('tkinter')
 @xfail(is_darwin, reason='Issue #1895. Known to fail with macpython - python.org binary.')
 def test_pil_tkinter(pyi_builder):
     """
@@ -75,7 +75,7 @@ def test_pil_tkinter(pyi_builder):
         # requested by "PIL" package hooks. To ensure PyInstaller parses this
         # import and freezes this package with this test, this import is static.
         try:
-            import {modname_tkinter}
+            import tkinter
         except ImportError:
-            raise SystemExit('ERROR: Module {modname_tkinter} is NOT bundled.')
-        """.format(modname_tkinter=modname_tkinter))
+            raise SystemExit('ERROR: Module tkinter is NOT bundled.')
+        """)
