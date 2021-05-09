@@ -60,18 +60,6 @@ def test_tkinter(pyi_builder):
     pyi_builder.test_script('pyi_lib_tkinter.py')
 
 
-@xfail(is_darwin, reason='Issue #1895.')
-@importorskip('FixTk')
-def test_tkinter_FixTk(pyi_builder):
-    # check if Tkinter includes FixTk
-    # TODO: Python 3 contains module
-    #  'tkinter._fix' - does it need any special test or handling?
-    # TODO: How does the following code check if FixTk is included?
-    pyi_builder.test_source("""
-    import tkinter
-    """)
-
-
 def test_pkg_resource_res_string(pyi_builder, monkeypatch):
     # Include some data files for testing pkg_resources module.
     datas = os.pathsep.join((str(_MODULES_DIR.join('pkg3', 'sample-data.txt')),
@@ -574,17 +562,6 @@ def test_pil_img_conversion(pyi_builder):
                   '--console'])
 
 
-@xfail(is_darwin, reason='Issue #1895.')
-@importorskip('PIL')
-@importorskip('FixTk')
-def test_pil_FixTk(pyi_builder):
-    # hook-PIL is excluding FixTk, but is must still be included
-    # since it is imported elsewhere. Also see issue #1584.
-    pyi_builder.test_source("""
-    import tkinter
-    import FixTk, PIL
-    """)
-
 @importorskip('PIL.ImageQt')
 @importorskip('PyQt5')
 def test_pil_PyQt5(pyi_builder):
@@ -601,8 +578,7 @@ def test_pil_PyQt5(pyi_builder):
 def test_pil_plugins(pyi_builder):
     pyi_builder.test_source(
         """
-        # Verify packaging of PIL.Image. Specifically, the hidden import of FixTk
-        # importing tkinter is causing some problems.
+        # Verify packaging of PIL.Image.
         from PIL.Image import frombytes
         print(frombytes)
 
