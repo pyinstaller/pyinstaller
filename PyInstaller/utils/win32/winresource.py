@@ -18,7 +18,7 @@ winresource.py <dstpath> <srcpath>
 Updates or adds resources from file <srcpath> in file <dstpath>.
 """
 
-from ...compat import pywintypes, win32api
+from PyInstaller.compat import pywintypes, win32api
 
 import PyInstaller.log as logging
 logger = logging.getLogger(__name__)

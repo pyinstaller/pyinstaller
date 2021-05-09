@@ -22,7 +22,7 @@ import subprocess
 import sys
 import errno
 import importlib.machinery
-from .exceptions import ExecCommandFailed
+from PyInstaller.exceptions import ExecCommandFailed
 
 # Copied from https://docs.python.org/3/library/platform.html#cross-platform.
 is_64bits = sys.maxsize > 2**32

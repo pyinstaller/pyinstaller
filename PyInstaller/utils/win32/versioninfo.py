@@ -14,7 +14,7 @@
 import codecs
 import struct
 
-from ...compat import text_read_mode, win32api
+from PyInstaller.compat import text_read_mode, win32api
 
 # ::TODO:: #1920 revert to using pypi version
 import pefile

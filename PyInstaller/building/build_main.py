@@ -27,24 +27,27 @@ import pkg_resources
 
 
 # Relative imports to PyInstaller modules.
-from .. import HOMEPATH, DEFAULT_DISTPATH, DEFAULT_WORKPATH
-from .. import compat
-from .. import log as logging
-from ..utils.misc import absnormpath, compile_py_files
-from ..compat import is_win, PYDYLIB_NAMES, open_file
-from ..depend import bindepend
-from ..depend.analysis import initialize_modgraph
-from .api import PYZ, EXE, COLLECT, MERGE
-from .datastruct import TOC, Target, Tree, _check_guts_eq
-from .osx import BUNDLE
-from .toc_conversion import DependencyProcessor
-from .utils import _check_guts_toc_mtime, format_binaries_and_datas
-from ..depend.utils import create_py3_base_library, scan_code_for_ctypes
-from ..archive import pyz_crypto
-from ..utils.misc import get_path_to_toplevel_modules, get_unicode_modules, mtime
+from PyInstaller import HOMEPATH, DEFAULT_DISTPATH, DEFAULT_WORKPATH
+from PyInstaller import compat
+from PyInstaller import log as logging
+from PyInstaller.utils.misc import absnormpath, compile_py_files
+from PyInstaller.compat import is_win, PYDYLIB_NAMES, open_file
+from PyInstaller.depend import bindepend
+from PyInstaller.depend.analysis import initialize_modgraph
+from PyInstaller.building.api import PYZ, EXE, COLLECT, MERGE
+from PyInstaller.building.datastruct import TOC, Target, Tree, _check_guts_eq
+from PyInstaller.building.osx import BUNDLE
+from PyInstaller.building.toc_conversion import DependencyProcessor
+from PyInstaller.building.utils import \
+    _check_guts_toc_mtime, format_binaries_and_datas
+from PyInstaller.depend.utils import \
+    create_py3_base_library, scan_code_for_ctypes
+from PyInstaller.archive import pyz_crypto
+from PyInstaller.utils.misc import \
+    get_path_to_toplevel_modules, get_unicode_modules, mtime
 
 if is_win:
-    from ..utils.win32 import winmanifest
+    from PyInstaller.utils.win32 import winmanifest
 
 logger = logging.getLogger(__name__)
 
@@ -164,7 +167,7 @@ class Analysis(Target):
                 individual files.
         """
         super(Analysis, self).__init__()
-        from ..config import CONF
+        from PyInstaller.config import CONF
 
         self.inputs = []
         spec_dir = os.path.dirname(CONF['spec'])
@@ -325,7 +328,7 @@ class Analysis(Target):
         self.datas = TOC(data['datas'])
 
         # Store previously found binding redirects in CONF for later use by PKG/COLLECT
-        from ..config import CONF
+        from PyInstaller.config import CONF
         self.binding_redirects = CONF['binding_redirects'] = data['binding_redirects']
 
         return False
@@ -334,7 +337,7 @@ class Analysis(Target):
         """
         This method is the MAIN method for finding all necessary files to be bundled.
         """
-        from ..config import CONF
+        from PyInstaller.config import CONF
 
         for m in self.excludes:
             logger.debug("Excluding module '%s'" % m)
@@ -535,7 +538,7 @@ class Analysis(Target):
                            + 4 * depInfo.tryexcept)
             return '%s (%s)' % (name, IMPORT_TYPES[imptype])
 
-        from ..config import CONF
+        from PyInstaller.config import CONF
         miss_toc = self.graph.make_missing_toc()
         with open_file(CONF['warnfile'], 'w', encoding='utf-8') as wf:
             wf.write(WARNFILE_HEADER)
@@ -551,7 +554,7 @@ class Analysis(Target):
         """Write a xref (in html) and with `--log-level DEBUG` a dot-drawing
         of the graph.
         """
-        from ..config import CONF
+        from PyInstaller.config import CONF
         with open_file(CONF['xref-file'], 'w', encoding='utf-8') as fh:
             self.graph.create_xref(fh)
             logger.info("Graph cross-reference written to %s", CONF['xref-file'])
@@ -595,7 +598,7 @@ def build(spec, distpath, workpath, clean_build):
     """
     Build the executable according to the created SPEC file.
     """
-    from ..config import CONF
+    from PyInstaller.config import CONF
 
     # Ensure starting tilde and environment variables get expanded in distpath / workpath.
     # '~/path/abc', '${env_var_name}/path/abc/def'
@@ -670,7 +673,7 @@ def build(spec, distpath, workpath, clean_build):
 
     # Set up module PyInstaller.config for passing some arguments to 'exec'
     # function.
-    from ..config import CONF
+    from PyInstaller.config import CONF
     CONF['workpath'] = workpath
 
     # Execute the specfile. Read it as a binary file...
@@ -709,7 +712,7 @@ def __add_options(parser):
 
 def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
 
-    from ..config import CONF
+    from PyInstaller.config import CONF
     CONF['noconfirm'] = noconfirm
 
     # Some modules are included if they are detected at build-time or

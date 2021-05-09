@@ -18,19 +18,19 @@ import textwrap
 from pathlib import Path
 from typing import Tuple
 
-from ...compat import base_prefix, exec_command_stdout, exec_python, \
-    exec_python_rc, is_darwin, is_venv, string_types, open_file, \
-    EXTENSION_SUFFIXES, ALL_SUFFIXES, is_conda, is_pure_conda
-from ... import HOMEPATH
-from ... import log as logging
-from ...exceptions import ExecCommandFailed
+from PyInstaller import compat
+from PyInstaller import HOMEPATH
+from PyInstaller import log as logging
+from PyInstaller.exceptions import ExecCommandFailed
+from PyInstaller.utils.hooks.win32 import \
+    get_pywin32_module_file_attribute  # noqa: F401
 
 logger = logging.getLogger(__name__)
 
 # These extensions represent Python executables and should therefore be
 # ignored when collecting data files.
 # NOTE: .dylib files are not Python executable and should not be in this list.
-PY_IGNORE_EXTENSIONS = set(ALL_SUFFIXES)
+PY_IGNORE_EXTENSIONS = set(compat.ALL_SUFFIXES)
 
 # Some hooks need to save some values. This is the dict that can be used for
 # that.
@@ -49,7 +49,7 @@ def __exec_python_cmd(cmd, env=None, capture_stdout=True):
     output as a single string. Otherwise, returns the exit code.
     """
     # 'PyInstaller.config' cannot be imported as other top-level modules.
-    from ...config import CONF
+    from PyInstaller.config import CONF
     if env is None:
         env = {}
     # Update environment. Defaults to 'os.environ'
@@ -67,10 +67,10 @@ def __exec_python_cmd(cmd, env=None, capture_stdout=True):
     pp_env['PYTHONPATH'] = pp
 
     if capture_stdout:
-        txt = exec_python(*cmd, env=pp_env)
+        txt = compat.exec_python(*cmd, env=pp_env)
         return txt.strip()
     else:
-        return exec_python_rc(*cmd, env=pp_env)
+        return compat.exec_python_rc(*cmd, env=pp_env)
 
 
 def __exec_statement(statement, capture_stdout=True):
@@ -254,7 +254,7 @@ def remove_file_extension(filename):
 
     For Python C modules it removes even whole '.cpython-34m.so' etc.
     """
-    for suff in EXTENSION_SUFFIXES:
+    for suff in compat.EXTENSION_SUFFIXES:
         if filename.endswith(suff):
             return filename[0:filename.rfind(suff)]
     # Fallback to ordinary 'splitext'.
@@ -602,7 +602,7 @@ def collect_submodules(package, filter=lambda name: True):
     PyInstaller.
     """
     # Accept only strings as packages.
-    if not isinstance(package, string_types):
+    if not isinstance(package, compat.string_types):
         raise TypeError('package must be a str')
 
     logger.debug('Collecting submodules for %s' % package)
@@ -716,7 +716,7 @@ def collect_dynamic_libs(package, destdir=None):
                     should be put.
     """
     # Accept only strings as packages.
-    if not isinstance(package, string_types):
+    if not isinstance(package, compat.string_types):
         raise TypeError('package must be a str')
 
     logger.debug('Collecting dynamic libraries for %s' % package)
@@ -784,7 +784,7 @@ def collect_data_files(package, include_py_files=False, subdir=None,
     logger.debug('Collecting data files for %s' % package)
 
     # Accept only strings as packages.
-    if not isinstance(package, string_types):
+    if not isinstance(package, compat.string_types):
         raise TypeError('package must be a str')
 
     # Compute the root path for the provided patckage.
@@ -806,10 +806,10 @@ def collect_data_files(package, include_py_files=False, subdir=None,
     # Including py files means don't exclude them. This pattern will search any
     # directories for containing files, so don't modify ``excludes_len``.
     if not include_py_files:
-        excludes += ['**/*' + s for s in ALL_SUFFIXES]
+        excludes += ['**/*' + s for s in compat.ALL_SUFFIXES]
 
     # Exclude .pyo files if include_py_files is False.
-    if not include_py_files and ".pyo" not in ALL_SUFFIXES:
+    if not include_py_files and ".pyo" not in compat.ALL_SUFFIXES:
         excludes.append('**/*.pyo')
 
     # If not specified, include all files. Follow the same process as the
@@ -863,7 +863,7 @@ def collect_system_data_files(path, destdir=None, include_py_files=False):
     PyInstaller.
     """
     # Accept only strings as paths.
-    if not isinstance(path, string_types):
+    if not isinstance(path, compat.string_types):
         raise TypeError('path must be a str')
     # The call to ``remove_prefix`` below assumes a path separate of ``os.sep``,
     # which may not be true on Windows; Windows allows Linux path separators in
@@ -1029,9 +1029,9 @@ def get_installer(module):
                     'Found installer: \'{0}\' for module: \'{1}\' from package: \'{2}\''.format(installer, module,
                                                                                                 package))
                 return installer
-    if is_darwin:
+    if compat.is_darwin:
         try:
-            output = exec_command_stdout('port', 'provides', file_name)
+            output = compat.exec_command_stdout('port', 'provides', file_name)
             if 'is provided by' in output:
                 logger.debug(
                     'Found installer: \'macports\' for module: \'{0}\' from package: \'{1}\''.format(module, package))
@@ -1174,19 +1174,12 @@ def collect_entry_point(name: str) -> Tuple[list, list]:
     return datas, imports
 
 
-if is_pure_conda:
-    from . import conda as conda_support  # noqa: F401
-elif is_conda:
-    from .conda import CONDA_META_DIR as _tmp
+if compat.is_pure_conda:
+    from PyInstaller.utils.hooks import conda as conda_support  # noqa: F401
+elif compat.is_conda:
+    from PyInstaller.utils.hooks.conda import CONDA_META_DIR as _tmp
     logger.warning(
         "Assuming this isn't an Anaconda environment or an additional venv/"
         "pipenv/... environment manager is being used on top because the "
         "conda-meta folder %s doesn't exist.", _tmp)
     del _tmp
-
-
-# These imports need to be here due to these modules recursively importing this module.
-from .django import *
-from .gi import *
-from .qt import *
-from .win32 import *

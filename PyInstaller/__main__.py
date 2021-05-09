@@ -19,11 +19,11 @@ import argparse
 import platform
 
 
-from . import __version__
-from . import log as logging
+from PyInstaller import __version__
+from PyInstaller import log as logging
 
 # note: don't import anything else until this function is run!
-from .compat import check_requirements, is_conda
+from PyInstaller.compat import check_requirements, is_conda
 
 logger = logging.getLogger(__name__)
 
@@ -116,7 +116,7 @@ def run(pyi_args=None, pyi_config=None):
     except KeyboardInterrupt:
         raise SystemExit("Aborted by user request.")
     except RecursionError:
-        from . import _recursion_to_deep_message
+        from PyInstaller import _recursion_to_deep_message
         _recursion_to_deep_message.raise_with_msg()
 
 

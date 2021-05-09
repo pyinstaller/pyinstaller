@@ -12,10 +12,10 @@
 import os
 import zipfile
 import pkg_resources
-from ..depend.utils import get_path_to_egg
-from .datastruct import TOC, Tree
-from .. import log as logging
-from ..compat import ALL_SUFFIXES
+from PyInstaller.depend.utils import get_path_to_egg
+from PyInstaller.building.datastruct import TOC, Tree
+from PyInstaller import log as logging
+from PyInstaller.compat import ALL_SUFFIXES
 
 logger = logging.getLogger(__name__)
 
@@ -133,7 +133,7 @@ class DependencyProcessor(object):
     @staticmethod
     def __collect_data_files_from_zip(zipfilename):
         # 'PyInstaller.config' cannot be imported as other top-level modules.
-        from ..config import CONF
+        from PyInstaller.config import CONF
         workpath = os.path.join(CONF['workpath'], os.path.basename(zipfilename))
         try:
             os.makedirs(workpath)

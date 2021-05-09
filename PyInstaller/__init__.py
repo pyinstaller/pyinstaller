@@ -15,8 +15,8 @@ __all__ = ('HOMEPATH', 'PLATFORM', '__version__')
 import os
 import sys
 
-from . import compat
-from .utils.git import get_repo_revision
+from PyInstaller import compat
+from PyInstaller.utils.git import get_repo_revision
 
 
 # Note: Keep this variable as plain string so it could be updated automatically

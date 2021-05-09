@@ -17,7 +17,7 @@ Utils for Mac OS X platform.
 import os
 import shutil
 
-from ..compat import base_prefix
+from PyInstaller.compat import base_prefix
 from macholib.MachO import MachO
 
 

@@ -15,7 +15,7 @@ This module contains various helper functions for git DVCS
 """
 
 import os
-from ..compat import exec_command, exec_command_rc
+from PyInstaller.compat import exec_command, exec_command_rc
 
 try:
     WindowsError
@@ -29,7 +29,7 @@ def get_repo_revision():
     cwd = os.path.dirname(gitdir)
     if not path.exists(gitdir):
         try:
-            from ._gitrevision import rev
+            from PyInstaller.utils._gitrevision import rev
             if not rev.startswith('$'):
                 # the format specifier has been substituted
                 return '+' + rev

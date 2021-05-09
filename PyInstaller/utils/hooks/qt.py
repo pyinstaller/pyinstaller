@@ -13,12 +13,11 @@ import sys
 import json
 import glob
 
-from ..hooks import eval_statement, exec_statement, get_homebrew_path, \
-    get_module_file_attribute
+from PyInstaller.utils import hooks
 from PyInstaller.depend.bindepend import getImports, getfullnameof
-from ... import log as logging
-from ...compat import is_win, is_darwin, is_linux
-from ...utils import misc
+from PyInstaller import log as logging
+from PyInstaller import compat
+from PyInstaller.utils import misc
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +50,7 @@ class Qt5LibraryInfo:
             # initialization was already done.
             self.version = None
             # Get library path information from Qt. See QLibraryInfo_.
-            json_str = exec_statement("""
+            json_str = hooks.exec_statement("""
                 import sys
 
                 # exec_statement only captures stdout. If there are
@@ -115,7 +114,7 @@ def qt_plugins_dir(namespace):
     elif namespace == 'PySide2':
         paths = [pyside2_library_info.location['PluginsPath']]
     else:
-        paths = eval_statement("""
+        paths = hooks.eval_statement("""
             from {0}.QtCore import QCoreApplication;
             app = QCoreApplication([]);
             print(list(app.libraryPaths()))
@@ -158,7 +157,7 @@ def qt_plugins_binaries(plugin_type, namespace):
     # ``*.dylib`` in a certain directory. On Windows this would grab debug
     # copies of Qt plugins, which then causes PyInstaller to add a dependency on
     # the Debug CRT *in addition* to the release CRT.
-    if is_win and namespace in ['PyQt5', 'PySide2']:
+    if compat.is_win and namespace in ['PyQt5', 'PySide2']:
         files = [f for f in files if not f.endswith("d.dll")]
 
     logger.debug("Found plugin files %s for plugin %s", files, plugin_type)
@@ -183,7 +182,7 @@ def qt_menu_nib_dir(namespace):
         raise Exception('Invalid namespace: {0}'.format(namespace))
     menu_dir = None
 
-    path = exec_statement("""
+    path = hooks.exec_statement("""
     from {0}.QtCore import QLibraryInfo
     path = QLibraryInfo.location(QLibraryInfo.LibrariesPath)
     print(path)
@@ -230,7 +229,7 @@ def get_qmake_path(version=''):
 
     # try homebrew paths
     for formula in ('qt', 'qt5'):
-        homebrewqtpath = get_homebrew_path(formula)
+        homebrewqtpath = hooks.get_homebrew_path(formula)
         if homebrewqtpath:
             dirs.append(homebrewqtpath)
 
@@ -472,7 +471,7 @@ def add_qt5_dependencies(hook_file):
         return [], [], []
 
     # Look up the module returned by this import.
-    module = get_module_file_attribute(module_name)
+    module = hooks.get_module_file_attribute(module_name)
     logger.debug('add_qt5_dependencies: Examining %s, based on hook of %s.',
                  module, hook_file)
 
@@ -484,7 +483,7 @@ def add_qt5_dependencies(hook_file):
 
         # On Windows, find this library; other platforms already provide the
         # full path.
-        if is_win:
+        if compat.is_win:
             imp = getfullnameof(imp,
                 # First, look for Qt binaries in the local Qt install.
                 pyqt5_library_info.location['BinariesPath'] if is_PyQt5 else
@@ -497,12 +496,12 @@ def add_qt5_dependencies(hook_file):
         # Linux libraries sometimes have a dotted version number --
         # ``libfoo.so.3``. It's now ''libfoo.so``, but the ``.so`` must also be
         # removed.
-        if is_linux and os.path.splitext(lib_name)[1] == '.so':
+        if compat.is_linux and os.path.splitext(lib_name)[1] == '.so':
             lib_name = os.path.splitext(lib_name)[0]
         if lib_name.startswith('lib'):
             lib_name = lib_name[3:]
         # Mac: rename from ``qt`` to ``qt5`` to match names in Windows/Linux.
-        if is_darwin and lib_name.startswith('qt'):
+        if compat.is_darwin and lib_name.startswith('qt'):
             lib_name = 'qt5' + lib_name[2:]
 
         # match libs with QT_LIBINFIX set to '_conda', i.e. conda-forge builds
@@ -550,7 +549,7 @@ def add_qt5_dependencies(hook_file):
                 src, os.path.join(
                     # The PySide2 Windows wheels place translations in a
                     # different location.
-                    namespace, '' if not is_PyQt5 and is_win else 'Qt',
+                    namespace, '' if not is_PyQt5 and compat.is_win else 'Qt',
                     'translations'
                 )
             ))
