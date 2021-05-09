@@ -20,7 +20,7 @@ import argparse
 
 from PyInstaller import HOMEPATH, DEFAULT_SPECPATH
 from PyInstaller import log as logging
-from PyInstaller.compat import expand_path, is_darwin, is_win, open_file
+from PyInstaller.compat import expand_path, is_darwin, is_win
 from PyInstaller.building.templates import onefiletmplt, onedirtmplt, \
     cipher_absent_template, cipher_init_template, bundleexetmplt, bundletmplt
 
@@ -588,7 +588,7 @@ def main(scripts, name=None, onefile=None,
 
     # Write down .spec file to filesystem.
     specfnm = os.path.join(specpath, name + '.spec')
-    with open_file(specfnm, 'w', encoding='utf-8') as specfile:
+    with open(specfnm, 'w', encoding='utf-8') as specfile:
         if onefile:
             specfile.write(onefiletmplt % d)
             # For OSX create .app bundle.

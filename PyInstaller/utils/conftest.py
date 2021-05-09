@@ -52,7 +52,7 @@ from PyInstaller import __main__ as pyi_main
 from PyInstaller.utils.tests import gen_sourcefile
 from PyInstaller.utils.cliutils import archive_viewer
 from PyInstaller.compat import is_darwin, is_win, safe_repr, \
-    architecture, is_linux, text_read_mode
+    architecture, is_linux
 from PyInstaller.depend.analysis import initialize_modgraph
 from PyInstaller.utils.win32 import winutils
 from PyInstaller.utils.hooks.qt import pyqt5_library_info, pyside2_library_info
@@ -475,7 +475,7 @@ class AppBuilder(object):
         print('EXECUTING MATCHING:', toc_log)
         fname_list = archive_viewer.get_archive_content(exe)
         fname_list = [fn for fn in fname_list]
-        with open(toc_log, text_read_mode) as f:
+        with open(toc_log, 'r') as f:
             pattern_list = eval(f.read())
         # Alphabetical order of patterns.
         pattern_list.sort()

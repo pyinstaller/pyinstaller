@@ -144,12 +144,12 @@ def gir_library_path_fix(path):
                          'package.', gir_file)
             return None
 
-        with compat.open_file(gir_file, compat.text_read_mode, encoding='utf-8') as f:
+        with open(gir_file, 'r', encoding='utf-8') as f:
             lines = f.readlines()
         # GIR files are `XML encoded <https://developer.gnome.org/gi/stable/gi-gir-reference.html>`_,
         # which means they are by definition encoded using UTF-8.
-        with compat.open_file(os.path.join(CONF['workpath'], gir_name), 'w',
-                              encoding='utf-8') as f:
+        with open(os.path.join(CONF['workpath'], gir_name), 'w',
+                  encoding='utf-8') as f:
             for line in lines:
                 if 'shared-library' in line:
                     split = re.split('(=)', line)

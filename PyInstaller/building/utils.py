@@ -28,7 +28,7 @@ import struct
 from PyInstaller.config import CONF
 from PyInstaller import compat
 from PyInstaller.compat import is_darwin, is_win, EXTENSION_SUFFIXES, \
-    open_file, is_py37, is_cygwin
+    is_py37, is_cygwin
 from PyInstaller.depend import dylib
 from PyInstaller.depend.bindepend import match_binding_redirect
 from PyInstaller.utils import misc
@@ -600,7 +600,7 @@ def _load_code(modname, filename):
 
         # Open the source file in binary mode and allow the `compile()` call to
         # detect the source encoding.
-        with open_file(filename, 'rb') as f:
+        with open(filename, 'rb') as f:
             source = f.read()
         return compile(source, filename, 'exec')
 

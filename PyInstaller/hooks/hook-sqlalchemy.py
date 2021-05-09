@@ -12,7 +12,6 @@
 import re
 from PyInstaller.utils.hooks import (
     exec_statement, is_module_satisfies, logger)
-from PyInstaller.compat import open_file, text_read_mode
 from PyInstaller.lib.modulegraph.modulegraph import SourceModule
 from PyInstaller.lib.modulegraph.util import guess_encoding
 
@@ -67,11 +66,10 @@ def hook(hook_api):
                 node.identifier.startswith('sqlalchemy.'):
             known_imports.add(node.identifier)
             # Determine the encoding of the source file.
-            with open_file(node.filename, 'rb') as f:
+            with open(node.filename, 'rb') as f:
                 encoding = guess_encoding(f)
             # Use that to open the file.
-            with open_file(node.filename, text_read_mode,
-                           encoding=encoding) as f:
+            with open(node.filename, 'r', encoding=encoding) as f:
                 for match in depend_regex.findall(f.read()):
                     hidden_imports_set.add(match)
 

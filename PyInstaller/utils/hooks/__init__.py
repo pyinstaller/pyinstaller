@@ -1021,7 +1021,7 @@ def get_installer(module):
     # which should be the program that installed the module.
     installer_file = os.path.join(metadata_dir, 'INSTALLER')
     if os.path.isdir(metadata_dir) and os.path.exists(installer_file):
-        with open_file(installer_file, 'r') as installer_file_object:
+        with open(installer_file, 'r') as installer_file_object:
             lines = installer_file_object.readlines()
             if lines[0] != '':
                 installer = lines[0].rstrip('\r\n')

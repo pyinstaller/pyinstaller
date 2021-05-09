@@ -17,8 +17,7 @@ import os
 from shutil import which
 
 from PyInstaller.config import CONF
-from PyInstaller.compat import (
-    exec_command_stdout, is_darwin, is_win, is_linux, open_file)
+from PyInstaller.compat import exec_command_stdout, is_darwin, is_win, is_linux
 from PyInstaller.utils.hooks.gi import (
     collect_glib_translations, get_gi_typelibs, get_gi_libdir, logger)
 
@@ -148,7 +147,7 @@ if libdir:
             cachedata = '\n'.join(cd)
 
             # Write the updated loader cache to this file.
-            with open_file(cachefile, 'w') as fp:
+            with open(cachefile, 'w') as fp:
                 fp.write(cachedata)
 
             # Bundle this loader cache with this frozen application.
