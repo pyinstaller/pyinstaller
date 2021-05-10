@@ -1,0 +1,1 @@
+""" Module in namespace package """

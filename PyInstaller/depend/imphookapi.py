@@ -448,7 +448,7 @@ class PostGraphAPI(object):
         """
         List of the graph nodes of all modules directly imported by this module.
         """
-        return self.module_graph.iter_graph(start=self.module)
+        return self.module_graph.iter_graph(node=self.module)
 
     def add_imports(self, *module_names):
         """

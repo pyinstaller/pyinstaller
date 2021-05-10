@@ -56,7 +56,8 @@ from ..compat import importlib_load_source, PY3_BASE_MODULES,\
         PURE_PYTHON_MODULE_TYPES, BINARY_MODULE_TYPES, VALID_MODULE_TYPES, \
         BAD_MODULE_TYPES, MODULE_TYPES_TO_TOC_DICT
 from ..lib.modulegraph.find_modules import get_implies
-from ..lib.modulegraph.modulegraph import ModuleGraph
+from ..lib.modulegraph2 import ModuleGraph
+from ..lib.modulegraph2._modulegraph import DEFAULT_DEPENDENCY
 from ..utils.hooks import collect_submodules, is_package
 
 
@@ -106,18 +107,24 @@ class PyiModuleGraph(ModuleGraph):
     # Note: these levels are completely arbitrary and may be adjusted if needed.
     LOG_LEVEL_MAPPING = {0: INFO, 1: DEBUG, 2: TRACE, 3: TRACE, 4: TRACE}
 
-    def __init__(self, pyi_homepath, user_hook_dirs=(), excludes=(), **kwargs):
-        super(PyiModuleGraph, self).__init__(excludes=excludes, **kwargs)
+    def __init__(self, pyi_homepath, user_hook_dirs=(), excludes=(), implies={}, **kwargs):
+        super(PyiModuleGraph, self).__init__(**kwargs)
+        self.add_excludes(excludes)
+        self.add_implies(implies)
         # Homepath to the place where is PyInstaller located.
         self._homepath = pyi_homepath
         # modulegraph Node for the main python script that is analyzed
         # by PyInstaller.
         self._top_script_node = None
+        self.path = []
 
         # Absolute paths of all user-defined hook directories.
         self._excludes = excludes
         self._reset(user_hook_dirs)
         self._analyze_base_modules()
+
+    def set_setuptools_nspackages(self):
+        pass
 
     def _reset(self, user_hook_dirs):
         """
@@ -309,7 +316,7 @@ class PyiModuleGraph(ModuleGraph):
                 sys.exit(1)
             # Create references from the top script to the base_modules in graph.
             for node in self._base_modules:
-                self.add_edge(self._top_script_node, node)
+                self.add_edge(self._top_script_node, node, DEFAULT_DEPENDENCY)
             # Return top-level script node.
             return self._top_script_node
         else:
@@ -318,7 +325,7 @@ class PyiModuleGraph(ModuleGraph):
                 # top-level script.
                 caller = self._top_script_node
             return super(PyiModuleGraph, self).add_script(
-                pathname, caller=caller)
+                pathname)
 
 
     def process_post_graph_hooks(self):
@@ -348,7 +355,7 @@ class PyiModuleGraph(ModuleGraph):
             for module_name, module_hooks in self._hooks.items():
                 # Graph node for this module if imported or "None" otherwise.
                 module_node = self.find_node(
-                    module_name, create_nspkg=False)
+                    module_name)
 
                 # If this module has not been imported, temporarily ignore it.
                 # This module is retained in the cache, as a subsequently run
@@ -499,7 +506,7 @@ class PyiModuleGraph(ModuleGraph):
         """
         code_dict = {}
         mod_types = PURE_PYTHON_MODULE_TYPES
-        for node in self.iter_graph(start=self._top_script_node):
+        for node in self.iter_graph(node=self._top_script_node):
             # TODO This is terrible. To allow subclassing, types should never be
             # directly compared. Use isinstance() instead, which is safer,
             # simpler, and accepts sets. Most other calls to type() in the
@@ -534,7 +541,7 @@ class PyiModuleGraph(ModuleGraph):
         module_filter = re.compile(regex_str)
 
         result = existing_TOC or TOC()
-        for node in self.iter_graph(start=self._top_script_node):
+        for node in self.iter_graph(node=self._top_script_node):
             # Skip modules that are in base_library.zip.
             if module_filter.match(node.identifier):
                 continue
@@ -624,6 +631,15 @@ class PyiModuleGraph(ModuleGraph):
         if node is None:
             return False
         return type(node).__name__ == 'BuiltinModule'
+
+    def flatten(self):
+        return self.iter_graph()
+
+    def import_hook(self, name, caller=None):
+        return self.iter_graph(node=self.add_module(name))
+
+    def find_node(self, node, create_nspkg=False):
+        return super().find_node(node)
 
     def get_importers(self, name):
         """List all modules importing the module with the passed name.
@@ -718,7 +734,7 @@ class PyiModuleGraph(ModuleGraph):
             # Create references from the top script to the hidden import,
             # even if found otherwise. Don't waste time checking whether it
             # as actually added by this (test-) script.
-            self.add_edge(self._top_script_node, node)
+            self.add_edge(self._top_script_node, node, DEFAULT_DEPENDENCY)
 
 
     def get_co_using_ctypes(self):
@@ -740,7 +756,7 @@ class PyiModuleGraph(ModuleGraph):
         node = self.find_node('ctypes')
         if node:
             referers = self.incoming(node)
-            for r in referers:
+            for (_, r) in referers:
                 # Under python 3.7 and earlier, if ctypes is added to
                 # hidden imports, one of referers ends up being None,
                 # causing #3825. Work around it.

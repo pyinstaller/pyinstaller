@@ -44,6 +44,8 @@ __pycache__/
 /tests/python_exe.build
 /tests/report.xml
 
+/tests/unit/test_modulegraph2/**/*.pyd
+
 /tests/**/build/
 /tests/**/dist/
 
