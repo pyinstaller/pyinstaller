@@ -562,7 +562,7 @@ class Analysis(Target):
             return
         # The `DOT language's <https://www.graphviz.org/doc/info/lang.html>`_
         # default character encoding (see the end of the linked page) is UTF-8.
-        with open_file(CONF['dot-file'], 'w', encoding='utf-8') as fh:
+        with open(CONF['dot-file'], 'w', encoding='utf-8') as fh:
             self.graph.graphreport(fh)
             logger.info("Graph drawing written to %s", CONF['dot-file'])
 
