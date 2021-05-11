@@ -111,7 +111,7 @@ class Wheel(bdist_wheel):
                 f"bootloader/{self.PYI_PLAT_NAME}/*",
                 "bootloader/images/*",
                 # These files need to be explictly included as well.
-                "fake-modules/site.py",
+                "fake-modules/*.py",
                 "hooks/rthooks.dat",
                 "lib/README.rst",
             ],
@@ -214,7 +214,7 @@ setup(
             # Include all bootloaders in wheels by default.
             "bootloader/*/*",
             # These files need to be explictly included as well.
-            "fake-modules/site.py",
+            "fake-modules/*.py",
             "hooks/rthooks.dat",
             "lib/README.rst",
         ],
