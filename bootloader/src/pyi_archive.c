@@ -15,35 +15,11 @@
  * Fuctions related to PyInstaller archive embedded in executable.
  */
 
-#ifdef _WIN32
-    #if BYTE_ORDER == LITTLE_ENDIAN
-        #if defined(_MSC_VER)
-            #include <stdlib.h>
-            #define pyi_be32toh(x) _byteswap_ulong(x)
-        #elif defined(__GNUC__) || defined(__clang__)
-            #define pyi_be32toh(x) __builtin_bswap32(x)
-        #else
-            #error Unsupported compiler
-        #endif
-    #elif BYTE_ORDER == BIG_ENDIAN
-        #define pyi_be32toh(x) (x)
-    #else
-        #error Unsupported byte order
-    #endif
-#else
-    #ifdef __FreeBSD__
-/* freebsd issue #188316 */
-        #include <arpa/inet.h>  /* ntohl */
-    #else
-        #include <netinet/in.h>  /* ntohl */
-    #endif
-    #define pyi_be32toh(x) ntohl(x)
-    #include <stdlib.h>   /* malloc */
-    #include <string.h>   /* strncmp, strcpy, strcat */
-    #include <sys/stat.h> /* fchmod */
-#endif /* ifdef _WIN32 */
-#include <stddef.h>  /* ptrdiff_t */
 #include <stdio.h>
+#include <stddef.h>  /* ptrdiff_t */
+#include <stdlib.h>  /* malloc */
+#include <string.h>  /* strncmp, strcpy, strcat */
+#include <sys/stat.h>  /* fchmod */
 
 /* PyInstaller headers. */
 #include "zlib.h"
