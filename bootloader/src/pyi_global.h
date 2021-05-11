@@ -168,6 +168,35 @@ void mbvs(const char *fmt, ...);
     #define pyi_ftell ftello
 #endif
 
+/* Byte-order conversion macros */
+#ifdef _WIN32
+    /* On Windows, use compiler specific functions/macros to avoid
+     * using ntohl(), which requires linking against ws2 library. */
+    #if BYTE_ORDER == LITTLE_ENDIAN
+        #if defined(_MSC_VER)
+            #include <stdlib.h>  /* _byteswap_ulong */
+            #define pyi_be32toh(x) _byteswap_ulong(x)
+        #elif defined(__GNUC__) || defined(__clang__)
+            #define pyi_be32toh(x) __builtin_bswap32(x)
+        #else
+            #error Unsupported compiler
+        #endif
+    #elif BYTE_ORDER == BIG_ENDIAN
+        #define pyi_be32toh(x) (x)
+    #else
+        #error Unsupported byte order
+    #endif
+#else
+    /* On all non-Windows platforms, use ntohl() */
+    #ifdef __FreeBSD__
+        /* freebsd issue #188316 */
+        #include <arpa/inet.h>  /* ntohl */
+    #else
+        #include <netinet/in.h>  /* ntohl */
+    #endif
+    #define pyi_be32toh(x) ntohl(x)
+#endif /* ifdef _WIN32 */
+
 /* Saved LC_CTYPE locale */
 extern char *saved_locale;
 
