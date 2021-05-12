@@ -28,7 +28,7 @@ def test_get_co_using_ctypes(tmpdir):
     script.write('import ctypes')
     script_filename = str(script)
     mg.add_script(script_filename)
-    res = mg.get_co_using_ctypes()
+    res = mg.get_code_using("ctypes")
     # Script's code object must be in the results
     assert script_filename in res
     assert isinstance(res[script_filename], types.CodeType), res
@@ -43,7 +43,7 @@ def test_get_co_using_ctypes_from_extension():
     mg = analysis.PyiModuleGraph(HOMEPATH, excludes=["xencodings"])
     struct = mg.createNode(modulegraph.Extension, '_struct', 'struct.so')
     mg.implyNodeReference(struct, 'ctypes') # simulate the hidden import
-    res = mg.get_co_using_ctypes()
+    res = mg.get_code_using("ctypes")
     # _struct must not be in the results
     assert '_struct' not in res
 

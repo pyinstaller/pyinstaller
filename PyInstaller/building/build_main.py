@@ -435,7 +435,9 @@ class Analysis(Target):
         ### Look for dlls that are imported by Python 'ctypes' module.
         # First get code objects of all modules that import 'ctypes'.
         logger.info('Looking for ctypes DLLs')
-        ctypes_code_objs = self.graph.get_co_using_ctypes()  # dict like:  {'module1': code_obj, 'module2': code_obj}
+        # dict like:  {'module1': code_obj, 'module2': code_obj}
+        ctypes_code_objs = self.graph.get_code_using("ctypes")
+
         for name, co in ctypes_code_objs.items():
             # Get dlls that might be needed by ctypes.
             logger.debug('Scanning %s for shared libraries or dlls', name)
