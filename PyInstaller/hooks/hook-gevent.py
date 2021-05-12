@@ -10,7 +10,6 @@
 #-----------------------------------------------------------------------------
 
 from PyInstaller.utils.hooks import collect_all, copy_metadata
-from PyInstaller.compat import is_win
 
 excludedimports = ["gevent.testing", "gevent.tests"]
 
@@ -21,11 +20,6 @@ datas, binaries, hiddenimports = collect_all(
     include_py_files=False,
     exclude_datas=["**/tests"])
 
-datas += copy_metadata("zope.interface")
-datas += copy_metadata("greenlet")
-datas += copy_metadata("zope.event")
-datas += copy_metadata("setuptools")
-
-if is_win:
-    datas += copy_metadata("cffi")
-    datas += copy_metadata("pycparser")
+# Gevent uses ``pkg_resources.require("...")`` which means that all its
+# dependencies must also have their metadata.
+datas += copy_metadata('gevent', recursive=True)

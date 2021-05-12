@@ -119,11 +119,11 @@ class Path:
 
 
 # An object used to construct extra preamble for the spec file, in order
-# to accomodate extra collect_*() calls from the command-line
+# to accommodate extra collect_*() calls from the command-line
 class Preamble:
     def __init__(self, datas, binaries, hiddenimports, collect_data,
                  collect_binaries, collect_submodules, collect_all,
-                 copy_metadata):
+                 copy_metadata, recursive_copy_metadata):
         # Initialize with literal values - will be switched to preamble
         # variable name later, if necessary
         self.binaries = binaries or []
@@ -141,12 +141,13 @@ class Preamble:
             self._add_hookutil_import('collect_submodules')
         if collect_all:
             self._add_hookutil_import('collect_all')
-        if copy_metadata:
+        if copy_metadata or recursive_copy_metadata:
             self._add_hookutil_import('copy_metadata')
         if self.content:
             self.content += ['']  # empty line to separate the section
         # Variables
-        if collect_data or copy_metadata or collect_all:
+        if collect_data or copy_metadata or collect_all \
+                or recursive_copy_metadata:
             self._add_var('datas', self.datas)
             self.datas = 'datas'  # switch to variable
         if collect_binaries or collect_all:
@@ -161,6 +162,9 @@ class Preamble:
         # Content - copy_metadata
         for entry in copy_metadata:
             self._add_copy_metadata(entry)
+        # Content - copy_metadata(..., recursive=True)
+        for entry in recursive_copy_metadata:
+            self._add_recursive_copy_metadata(entry)
         # Content - collect_binaries
         for entry in collect_binaries:
             self._add_collect_binaries(entry)
@@ -193,6 +197,11 @@ class Preamble:
     def _add_copy_metadata(self, name):
         self.content += [
             'datas += copy_metadata(\'{0}\')'.format(name)
+        ]
+
+    def _add_recursive_copy_metadata(self, name):
+        self.content += [
+            'datas += copy_metadata(\'{0}\', recursive=True)'.format(name)
         ]
 
     def _add_collect_binaries(self, name):
@@ -278,6 +287,10 @@ def __add_options(parser):
                    metavar="PACKAGENAME", dest='copy_metadata',
                    help='Copy metadata for the specified package. '
                    'This option can be used multiple times.')
+    g.add_argument('--recursive-copy-metadata', action="append", default=[],
+                   metavar="PACKAGENAME", dest='recursive_copy_metadata',
+                   help='Copy metadata for the specified package and all its '
+                   'dependencies. This option can be used multiple times.')
     g.add_argument("--additional-hooks-dir", action="append", dest="hookspath",
                    default=[],
                    help="An additional path to search for hooks. "
@@ -459,7 +472,8 @@ def main(scripts, name=None, onefile=None,
          excludes=None, uac_admin=False, uac_uiaccess=False,
          win_no_prefer_redirects=False, win_private_assemblies=False,
          collect_submodules=None, collect_binaries=None, collect_data=None,
-         collect_all=None, copy_metadata=None, splash=None, **kwargs):
+         collect_all=None, copy_metadata=None, splash=None,
+         recursive_copy_metadata=None, **kwargs):
     # If appname is not specified - use the basename of the main script as name.
     if name is None:
         name = os.path.splitext(os.path.basename(scripts[0]))[0]
@@ -554,7 +568,7 @@ def main(scripts, name=None, onefile=None,
     # Create preamble (for collect_*() calls)
     preamble = Preamble(
         datas, binaries, hiddenimports, collect_data, collect_binaries,
-        collect_submodules, collect_all, copy_metadata
+        collect_submodules, collect_all, copy_metadata, recursive_copy_metadata
     )
 
     if splash:
