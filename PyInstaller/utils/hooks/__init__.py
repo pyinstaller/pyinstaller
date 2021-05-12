@@ -896,7 +896,7 @@ def collect_system_data_files(path, destdir=None, include_py_files=False):
     return datas
 
 
-def copy_metadata(package_name):
+def copy_metadata(package_name, recursive=False):
     """Collect distribution metadata so that
     ``pkg_resources.get_distribution()`` can find it.
 
@@ -908,6 +908,10 @@ def copy_metadata(package_name):
     ----------
     package_name : str
         Specifies the name of the package for which metadata should be copied.
+    recursive : bool
+        If true, collect metadata for the package's dependencies too.
+        This enables use of ``pkg_resources.require('package')`` inside an
+        application.
 
     Returns
     -------
@@ -937,10 +941,30 @@ def copy_metadata(package_name):
         which broke ``pkg_resources.require`` with *extras* (see
         :issue:`#3033`).
 
+    .. versionchanged:: 4.4.0
+
+        Add the **recursive** option.
+
     """
-    dist = pkg_resources.get_distribution(package_name)
-    return [(dist.egg_info,
-             _copy_metadata_dest(dist.egg_info, dist.project_name))]
+    from collections import deque
+
+    todo = deque([package_name])
+    done = set()
+    out = []
+
+    while todo:
+        package_name = todo.pop()
+        if package_name in done:
+            continue
+        dist = pkg_resources.get_distribution(package_name)
+        dest = _copy_metadata_dest(dist.egg_info, dist.project_name)
+        out.append((dist.egg_info, dest))
+        if not recursive:
+            return out
+        done.add(package_name)
+        todo.extend(i.project_name for i in dist.requires())
+
+    return out
 
 
 def _normalise_dist(name: str) -> str:
