@@ -720,39 +720,28 @@ class PyiModuleGraph(ModuleGraph):
             # as actually added by this (test-) script.
             self.add_edge(self._top_script_node, node)
 
-
-    def get_co_using_ctypes(self):
-        """
-        Find modules that import Python module 'ctypes'.
-
-        Modules that import 'ctypes' probably load a dll that might be
-        required for bundling with the executable. Thus these modules' code
-        needs then to be searched for patterns like these:
-
-            ctypes.CDLL('libname')
-            ctypes.cdll.LoadLibrary('libname')
-
-        :return: Code objects importing `ctypes` and thus need to be scanned
-                 for module dependencies.
-        """
+    def get_code_using(self, module: str) -> dict:
+        """Find modules that import a given **module**."""
         co_dict = {}
         pure_python_module_types = PURE_PYTHON_MODULE_TYPES | {'Script',}
-        node = self.find_node('ctypes')
+        node = self.find_node(module)
         if node:
-            referers = self.incoming(node)
-            for r in referers:
-                # Under python 3.7 and earlier, if ctypes is added to
-                # hidden imports, one of referers ends up being None,
+            referrers = self.incoming(node)
+            for r in referrers:
+                # Under python 3.7 and earlier, if `module` is added to
+                # hidden imports, one of referrers ends up being None,
                 # causing #3825. Work around it.
                 if r is None:
                     continue
-                r_ident =  r.identifier
-                # Ensure that modulegraph objects has attribute 'code'.
-                if type(r).__name__ in pure_python_module_types:
-                    if r_ident == 'ctypes' or r_ident.startswith('ctypes.'):
-                        # Skip modules of 'ctypes' package.
-                        continue
-                    co_dict[r.identifier] = r.code
+                # Ensure that modulegraph objects have 'code' attribute.
+                if type(r).__name__ not in pure_python_module_types:
+                    continue
+                identifier = r.identifier
+                if identifier == module or identifier.startswith(module + '.'):
+                    # Skip self references or references from `modules`'s
+                    # own submodules.
+                    continue
+                co_dict[r.identifier] = r.code
         return co_dict
 
 
