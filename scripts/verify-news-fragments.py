@@ -29,7 +29,7 @@ CHANGELOG_GUIDE = (
 CHANGE_TYPES = {'bootloader', 'break', 'bugfix', 'build', 'core', 'doc',
                 'feature', 'hooks', 'moduleloader', 'process', 'tests'}
 
-NEWS_PATTERN = re.compile(r"(\d+)\.(\w+)\.rst")
+NEWS_PATTERN = re.compile(r"(\d+)\.(\w+)\.(?:(\d+)\.)?rst")
 
 NEWS_DIR = Path(__file__).absolute().parent.parent / "news"
 
@@ -44,8 +44,11 @@ def validate_name(name):
     """
     match = NEWS_PATTERN.fullmatch(Path(name).name)
     if match is None:
-        sys.exit("'{}' does not match '(pr-number).(type).rst' changelog"
-                 "entries format. See:\n{}".format(name, CHANGELOG_GUIDE))
+        raise SystemExit(
+            f"'{name}' does not match the '(pr-number).(type).rst' or "
+            f"'(pr-number).(type).(enumeration).rst' changelog entries "
+            f"formats. See:\n{CHANGELOG_GUIDE}"
+        )
 
     if match.group(2) not in CHANGE_TYPES:
         sys.exit("'{}' of of invalid type '{}'. Valid types are:\n{}".format(
