@@ -1,0 +1,13 @@
+Collect distribution metadata automatically.
+This works by scanning collected Python files for uses of:
+
+* ``pkg_resources.get_distribution()``
+* ``pkg_resources.require()``
+* ``importlib.metadata.distribution()``
+* ``importlib.metadata.metadata()``
+* ``importlib.metadata.files()``
+* ``importlib.metadata.version()``
+
+In all cases, the metadata will only be collected if the distribution name is
+given as a plain string literal. Anything more complex will still require a
+hook containing :func:`PyInstaller.utils.hooks.copy_metadata`.

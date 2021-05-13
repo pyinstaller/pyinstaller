@@ -11,6 +11,7 @@ from PyInstaller import compat
 from PyInstaller.depend.bytecode import (
     function_calls,
     recursive_function_calls,
+    any_alias,
 )
 
 
@@ -172,3 +173,7 @@ def test_local_functions():
     assert all(map(operator.ne, code.co_names, code.co_varnames))
 
     assert function_calls(code) == [('zap.pop', []), ('foo.bar', [])]
+
+
+def test_any_alias():
+    assert tuple(any_alias("foo.bar.pop")) == ("foo.bar.pop", "bar.pop", "pop")

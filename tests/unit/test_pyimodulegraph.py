@@ -13,8 +13,9 @@
 import types
 import pytest
 import itertools
+from textwrap import dedent
 
-from PyInstaller import HOMEPATH
+from PyInstaller import HOMEPATH, compat
 from PyInstaller.depend import analysis
 from PyInstaller.lib.modulegraph import modulegraph
 import PyInstaller.log as logging
@@ -46,6 +47,32 @@ def test_get_co_using_ctypes_from_extension():
     res = mg.get_code_using("ctypes")
     # _struct must not be in the results
     assert '_struct' not in res
+
+
+def test_metadata_collection(tmpdir):
+    from PyInstaller.utils.hooks import copy_metadata
+
+    mg = analysis.PyiModuleGraph(HOMEPATH, excludes=["xencodings"])
+    script = tmpdir.join('script.py')
+
+    if compat.is_py38:
+        importlib_metadata = "importlib.metadata"
+    else:
+        importlib_metadata = "importlib_metadata"
+
+    script.write(dedent(f'''
+        from {importlib_metadata} import distribution, version
+        import {importlib_metadata}
+
+        distribution("setuptools")
+        {importlib_metadata}.version("altgraph")
+    '''))
+
+    mg.add_script(str(script))
+    metadata = mg.metadata_required()
+
+    assert copy_metadata("setuptools")[0] in metadata
+    assert copy_metadata("altgraph")[0] in metadata
 
 
 class FakePyiModuleGraph(analysis.PyiModuleGraph):
