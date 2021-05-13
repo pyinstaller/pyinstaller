@@ -444,6 +444,11 @@ class Analysis(Target):
             ctypes_binaries = scan_code_for_ctypes(co)
             self.binaries.extend(set(ctypes_binaries))
 
+        self.datas.extend(
+            (dest, source, "DATA") for (dest, source) in
+            format_binaries_and_datas(self.graph.metadata_required())
+        )
+
         # Analyze run-time hooks.
         # Run-time hooks has to be executed before user scripts. Add them
         # to the beginning of 'priority_scripts'.

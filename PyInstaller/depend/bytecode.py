@@ -191,3 +191,30 @@ def recursive_function_calls(code: CodeType) -> dict:
     """Scan a code object, recursing into function definitions and bodies of
     comprehension loops, for function calls on constant arguments."""
     return search_recursively(function_calls, code)
+
+
+def any_alias(full_name: str):
+    """List possible aliases of a fully qualified Python name.
+
+        >>> list(any_alias("foo.bar.wizz"))
+        ['foo.bar.wizz', 'bar.wizz', 'wizz']
+
+    This crudely allows us to capture uses of wizz() under any of
+    ::
+        import foo
+        foo.bar.wizz()
+    ::
+        from foo import bar
+        bar.wizz()
+    ::
+        from foo.bar import wizz
+        wizz()
+
+    However, it'll fail for any form of aliases and quite likely find false
+    matches.
+
+    """
+    parts = full_name.split('.')
+    while parts:
+        yield ".".join(parts)
+        parts = parts[1:]

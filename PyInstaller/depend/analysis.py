@@ -53,6 +53,7 @@ from PyInstaller.building.datastruct import TOC
 from PyInstaller.depend.imphook import AdditionalFilesCache, ModuleHookCache
 from PyInstaller.depend.imphookapi import PreSafeImportModuleAPI,\
     PreFindModulePathAPI
+from PyInstaller.depend import bytecode
 from PyInstaller.compat import importlib_load_source, PY3_BASE_MODULES, \
     PURE_PYTHON_MODULE_TYPES, BINARY_MODULE_TYPES, VALID_MODULE_TYPES, \
     BAD_MODULE_TYPES, MODULE_TYPES_TO_TOC_DICT
@@ -743,6 +744,89 @@ class PyiModuleGraph(ModuleGraph):
                     continue
                 co_dict[r.identifier] = r.code
         return co_dict
+
+    def metadata_required(self) -> set:
+        """Collect metadata for all packages that appear to need it."""
+
+        # List every function that we can think of which is known to need
+        # metadata.
+        out = set()
+
+        out |= self._metadata_from(
+            "pkg_resources",
+            ["get_distribution"],  # Requires metadata for one distribution.
+            ["require"],  # Requires metadata for all dependencies.
+        )
+
+        # importlib.metadata is often `import ... as`  aliased to
+        # importlib_metadata for compatibility with <py38.
+        # Assume both are valid.
+        for importlib_metadata in ["importlib.metadata", "importlib_metadata"]:
+            out |= self._metadata_from(
+                importlib_metadata,
+                ["metadata", "distribution", "version", "files", "requires"],
+                [],
+            )
+
+        return out
+
+    def _metadata_from(self, package, methods=(), recursive_methods=()) -> set:
+        """Collect metadata whose requirements are implied by given function
+        names.
+
+        Args:
+            package:
+                The module name that must be imported in a source file to
+                trigger the search.
+            methods:
+                Function names from **package** which take a distribution name
+                as an argument and imply that metadata is required for that
+                distribution.
+            recursive_methods:
+                Like **methods** but also implies that a distribution's
+                dependencies' metadata must be collected too.
+        Returns:
+            Required metadata in hook data ``(source, dest)`` format as
+            returned by :func:`PyInstaller.utils.hooks.copy_metadata()`.
+
+        Scan all source code to be included for usage of particular *key*
+        functions which imply that that code will require metadata for some
+        distribution (which may not be its own) at runtime.
+        In the case of a match, collect the required metadata.
+
+        """
+        from PyInstaller.utils.hooks import copy_metadata
+        from pkg_resources import DistributionNotFound
+
+        # Generate sets of possible function names to search for.
+        need_metadata = set()
+        need_recursive_metadata = set()
+        for method in methods:
+            need_metadata.update(bytecode.any_alias(package + "." + method))
+        for method in recursive_methods:
+            need_metadata.update(bytecode.any_alias(package + "." + method))
+
+        out = set()
+
+        for (name, code) in self.get_code_using(package).items():
+            for calls in bytecode.recursive_function_calls(code).values():
+                for (function_name, args) in calls:
+                    # Only consider function calls taking one argument.
+                    if len(args) != 1:
+                        continue
+                    package, = args
+                    try:
+                        if function_name in need_metadata:
+                            out.update(copy_metadata(package))
+                        elif function_name in need_recursive_metadata:
+                            out.update(copy_metadata(package, recursive=True))
+
+                    except DistributionNotFound:
+                        # Currently, we'll opt to silently skip over missing
+                        # metadata.
+                        continue
+
+        return out
 
 
 _cached_module_graph_ = None
