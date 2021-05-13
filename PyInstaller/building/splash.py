@@ -337,10 +337,14 @@ class Splash(Target):
                                            _w, _h))
                 return _image_data
             else:
-                # Should this be a ValueError?
-                logger.warning("The image dimensions exceed max_img_size,"
-                               " but the image cannot be resized. The image"
-                               " may be displayed too large.")
+                raise ValueError(
+                    "The splash image dimensions (w: %d, h: %d) exceed"
+                    " max_img_size (w: %d, h:%d), but the image cannot"
+                    " be resized due to missing PIL.Image! Either install"
+                    " the Pillow package, adjust the max_img_size, or use"
+                    " an image of compatible dimensions."
+                    % (_orig_size[0], _orig_size[1], self.max_img_size[0],
+                       self.max_img_size[1]))
 
         # Open image file
         image_file = open(self.image_file, 'rb')
@@ -372,8 +376,10 @@ class Splash(Target):
             logger.info("Converted image %s to PNG format" %
                         self.image_file)
         else:
-            raise ValueError("The image %s cannot be converted to a PNG "
-                             " file" % image_file)
+            raise ValueError("The image %s needs to be converted to a PNG"
+                             " file, but PIL.Image is not available! Either"
+                             " install the Pillow package, or use a PNG image"
+                             " for you splash screen." % self.image_file)
 
         image_file.close()
 
