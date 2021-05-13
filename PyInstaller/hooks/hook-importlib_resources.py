@@ -14,11 +14,12 @@
 
 import os
 from PyInstaller.utils.hooks import get_module_file_attribute, \
-    is_module_satisfies, copy_metadata
+    is_module_satisfies
 
 if is_module_satisfies("importlib_resources >= 1.2.0"):
-    # since 1.2.0 importlib.metadata is used
-    datas = copy_metadata('importlib_resources')
+    # since 1.2.0 importlib.metadata is used which PyInstaller knows how to
+    # handle.
+    pass
 else:
     # include the version.txt file, used to set __version__
     res_loc = os.path.dirname(get_module_file_attribute('importlib_resources'))
