@@ -956,12 +956,18 @@ cleanup:
     PI_Tcl_ConditionNotify(&start_cond);
     PI_Tcl_MutexUnlock(&start_mutex);
 
+    /* Must be done before exit_wait condition is notified, because
+     * we need to ensure that the main thread (which is waiting on it)
+     * doesn't unload the Tcl library before we're done with this
+     * Tcl_FinalizeThread() call.
+     */
+    PI_Tcl_FinalizeThread();
+
     /* We notify all conditions waiting for this thread to exit,
      * if there are any */
     PI_Tcl_MutexLock(&exit_mutex);
     PI_Tcl_ConditionNotify(&exit_wait);
     PI_Tcl_MutexUnlock(&exit_mutex);
 
-    PI_Tcl_FinalizeThread();
     TCL_THREAD_CREATE_RETURN;
 }
