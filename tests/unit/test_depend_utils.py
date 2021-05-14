@@ -17,7 +17,6 @@ import textwrap
 from PyInstaller.depend import utils
 from PyInstaller.compat import is_unix, is_win
 
-
 CTYPES_CLASSNAMES = (
     'CDLL',   'ctypes.CDLL',
     'WinDLL', 'ctypes.WinDLL',
@@ -25,47 +24,59 @@ CTYPES_CLASSNAMES = (
     'PyDLL',  'ctypes.PyDLL')
 
 
-def __scan_code_for_ctypes(code, monkeypatch):
+def __scan_code_for_ctypes(code, monkeypatch, extended_args):
     # _resolveCtypesImports would filter our some of our names
     monkeypatch.setattr(utils, '_resolveCtypesImports',
                         lambda cbinaries: cbinaries)
     code = textwrap.dedent(code)
+
+    if extended_args:
+        # Chuck in a load of preceding rubbish to test if the bytecode scanner
+        # can correctly handle the EXTENDED_ARGS opcode.
+        from test_bytecode import many_constants, many_globals
+        code = many_constants() + many_globals() + code
+
     co = compile(code, 'dummy', 'exec')
     #import pdb ; pdb.set_trace()
     return utils.scan_code_for_ctypes(co)
 
 
 @pytest.mark.parametrize('classname', CTYPES_CLASSNAMES)
-def test_ctypes_CDLL_call(monkeypatch, classname):
+@pytest.mark.parametrize('extended_args', [False, True])
+def test_ctypes_CDLL_call(monkeypatch, classname, extended_args):
     code = "%s('somelib.xxx')" % classname
-    res = __scan_code_for_ctypes(code, monkeypatch)
+    res = __scan_code_for_ctypes(code, monkeypatch, extended_args)
     assert res == set(['somelib.xxx'])
 
 
 @pytest.mark.parametrize('classname', CTYPES_CLASSNAMES)
-def test_ctypes_LibraryLoader(monkeypatch, classname):
+@pytest.mark.parametrize('extended_args', [False, True])
+def test_ctypes_LibraryLoader(monkeypatch, classname, extended_args):
     # This type of useage is only valif on Windows and the lib-name will
     # always get `.dll` appended.
     code = "%s.somelib" % classname.lower()
-    res = __scan_code_for_ctypes(code, monkeypatch)
+    res = __scan_code_for_ctypes(code, monkeypatch, extended_args)
     assert res == set(['somelib.dll'])
 
 
 @pytest.mark.parametrize('classname', CTYPES_CLASSNAMES)
-def test_ctypes_LibraryLoader_LoadLibrary(monkeypatch, classname):
+@pytest.mark.parametrize('extended_args', [False, True])
+def test_ctypes_LibraryLoader_LoadLibrary(monkeypatch, classname,
+                                          extended_args):
     code = "%s.LoadLibrary('somelib.xxx')" % classname.lower()
-    res = __scan_code_for_ctypes(code, monkeypatch)
+    res = __scan_code_for_ctypes(code, monkeypatch, extended_args)
     assert res == set(['somelib.xxx'])
 
 
-def test_ctypes_util_find_library(monkeypatch):
+@pytest.mark.parametrize('extended_args', [False, True])
+def test_ctypes_util_find_library(monkeypatch, extended_args):
     # for lind_library() we need a lib actually existing on the system
     if is_win:
         libname = "KERNEL32"
     else:
         libname = "c"
     code = "ctypes.util.find_library('%s')" % libname
-    res = __scan_code_for_ctypes(code, monkeypatch)
+    res = __scan_code_for_ctypes(code, monkeypatch, extended_args)
     assert res
 
 
