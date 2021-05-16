@@ -54,7 +54,7 @@ DESTOS_TO_SYSTEM = {
     'sunos': platform.system(),  ## FIXME: inhibits cross-compile
     'hpux': 'HP-UX',
     'aix': 'AIX',
-    'cygwin': platform.system(), ## FIXME: inhibits cross-compile
+    'cygwin': 'Cygwin',
 }
 
 # Map from platform.system() to waf's DEST_OS
@@ -67,11 +67,18 @@ SYSTEM_TO_BUILDOS = {
     'SunOS': 'sunos',
     'HP-UX': 'hpux',
     'AIX': 'aix',
-    DESTOS_TO_SYSTEM['cygwin']: 'cygwin',
+    'Cygwin': 'cygwin',
 }
 
 # waf's name of the system we are building on
-BUILD_OS = SYSTEM_TO_BUILDOS.get(platform.system(), platform.system())
+if sys.platform == 'cygwin':
+    # Cygwin needs special handling, because platform.system() contains
+    # identifiers such as MSYS_NT-10.0-19042 and CYGWIN_NT-10.0-19042 that
+    # do not fit PyInstaller's OS naming scheme, nor waf's DEST_OS, which is
+    # 'cygwin'.
+    BUILD_OS = SYSTEM_TO_BUILDOS.get('Cygwin')
+else:
+    BUILD_OS = SYSTEM_TO_BUILDOS.get(platform.system(), platform.system())
 
 is_cross = None
 
