@@ -219,7 +219,14 @@ if is_win:
 architecture = '64bit' if sys.maxsize > 2**32 and is_darwin else \
     '32bit' if is_darwin else platform.architecture()[0]
 
-system = platform.system()
+# Cygwin needs special handling, because platform.system() contains
+# identifiers such as MSYS_NT-10.0-19042 and CYGWIN_NT-10.0-19042 that
+# do not fit PyInstaller's OS naming scheme. Explicitly set `system` to
+# 'Cygwin'.
+if is_cygwin:
+    system = 'Cygwin'
+else:
+    system = platform.system()
 
 # Machine suffix for bootloader.
 # PyInstaller is reported to work on ARM architecture, so for that
