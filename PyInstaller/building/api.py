@@ -635,9 +635,39 @@ class EXE(Target):
                     shutil.copyfileobj(infh, outf, length=64*1024)
 
         if is_darwin:
+            import PyInstaller.utils.osx as osxutils
+
+            # If the version of macOS SDK used to build bootloader exceeds
+            # that of macOS SDK used to built Python library (and, by
+            # extension, bundled Tcl/Tk libraries), force the version
+            # declared by the frozen executable to match that of the Python
+            # library.
+            # Having macOS attempt to enable new features (based on SDK
+            # version) for frozen application has no benefit if the Python
+            # library does not support them as well.
+            # On the other hand, there seem to be UI issues in tkinter
+            # due to failed or partial enablement of dark mode (i.e., the
+            # bootloader executable being built against SDK 10.14 or later,
+            # which causes macOS to enable dark mode, and Tk libraries being
+            # built against an earlier SDK version that does not support the
+            # dark mode). With python.org Intel macOS installers, this
+            # manifests as black Tk windows and UI elements (see issue #5827),
+            # while in Anaconda python, it may result in white text on bright
+            # background.
+            pylib_version = osxutils.get_macos_sdk_version(
+                bindepend.get_python_library_path())
+            exe_version = osxutils.get_macos_sdk_version(self.name)
+            if pylib_version < exe_version:
+                logger.info(
+                    "Rewriting executable's macOS SDK version (%d.%d.%d) to "
+                    "match the SDK version of the Python library (%d.%d.%d) "
+                    "in order to avoid inconsistent behavior and potential UI "
+                    "issues in the frozen application.", *exe_version,
+                    *pylib_version)
+                osxutils.set_macos_sdk_version(self.name, *pylib_version)
+
             # Fix Mach-O header for codesigning on OS X.
             logger.info("Fixing EXE for code signing %s", self.name)
-            import PyInstaller.utils.osx as osxutils
             osxutils.fix_exe_for_code_signing(self.name)
         if is_win:
             # Set checksum to appease antiviral software.
