@@ -75,6 +75,7 @@ exe = EXE(pyz,
           bootloader_ignore_signals=%(bootloader_ignore_signals)s,
           strip=%(strip)s,
           upx=%(upx)s,
+          lib_subdir=%(lib_subdir)s,
           console=%(console)s %(exe_options)s)
 coll = COLLECT(exe,
                a.binaries,
@@ -83,6 +84,7 @@ coll = COLLECT(exe,
                strip=%(strip)s,
                upx=%(upx)s,
                upx_exclude=%(upx_exclude)s,
+               lib_subdir=%(lib_subdir)s,
                name='%(name)s')
 """
 

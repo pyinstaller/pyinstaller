@@ -760,10 +760,47 @@ pyi_utils_dlopen(const char *dllpath)
 
 #ifdef _WIN32
 
+static int
+set_dynamic_library_path(const char* path)
+{
+    int rc = 0;
+    char *env_var, *env_var_orig;
+    char *new_path, *orig_path;
+    /* Windows will search PATH for DLL */
+    env_var = "PATH";
+    env_var_orig = "PATH_ORIG";
+    orig_path = pyi_getenv(env_var);
+    if (orig_path) {
+        pyi_setenv(env_var_orig, orig_path);
+        VS("LOADER: %s=%s\n", env_var_orig, orig_path);
+    }
+    /* prepend our path to the original path, pyi_strjoin can deal with orig_path being NULL or empty string */
+    new_path = pyi_strjoin(path, ":", orig_path);
+    rc = pyi_setenv(env_var, new_path);
+    VS("LOADER: %s=%s\n", env_var, new_path);
+
+    free(new_path);
+    return rc;
+}
+
 int
 pyi_utils_set_environment(const ARCHIVE_STATUS *status)
 {
-    return 0;
+    int rc = 0;
+
+    char *sub_dir = pyi_arch_get_option(status, "pyi-lib-subdir");
+    if (sub_dir != NULL) {
+        char sub_dir_full[PATH_MAX];
+        char *extra_path;
+        pyi_path_join(sub_dir_full, status->homepath, sub_dir);
+        extra_path = pyi_strjoin(sub_dir_full, ":", status->homepath);
+        rc = set_dynamic_library_path(extra_path);
+        free(extra_path);
+    } else {
+        rc = set_dynamic_library_path(status->homepath);
+    }
+
+    return rc;
 }
 
 int
@@ -902,7 +939,18 @@ pyi_utils_set_environment(const ARCHIVE_STATUS *status)
     }
     /* Set library path to homepath. This is for default onedir mode.*/
     else {
-        rc = set_dynamic_library_path(status->homepath);
+
+        char *sub_dir = pyi_arch_get_option(status, "pyi-lib-subdir");
+        if (sub_dir != NULL) {
+            char sub_dir_full[PATH_MAX];
+            char *extra_path;
+            pyi_path_join(sub_dir_full, status->homepath, sub_dir);
+            extra_path = pyi_strjoin(sub_dir_full, ":", status->homepath);
+            rc = set_dynamic_library_path(extra_path);
+            free(extra_path);
+        } else {
+            rc = set_dynamic_library_path(status->homepath);
+        }
     }
     #endif /* ifdef __APPLE__ */
 
