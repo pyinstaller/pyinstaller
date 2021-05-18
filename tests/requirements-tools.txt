@@ -22,7 +22,7 @@ pytest >= 2.7.3
 pytest-xdist
 
 # Plugin to abort hanging tests.
-git+https://github.com/xoviat/pytest-timeout.git@thread-exception
+git+https://github.com/pytest-dev/pytest-timeout.git@1a35f94298c1260500907bd674b75cf59df0c949
 # allows specifying order without duplicates
 pytest-drop-dup-tests
 # reruns failed flaky tests
