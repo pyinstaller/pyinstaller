@@ -529,7 +529,10 @@ def is_module_satisfies(requirements, version=None, version_attr='__version__'):
     # If no version was explicitly passed, query this module for it.
     if version is None:
         module_name = requirements_parsed.project_name
-        version = get_module_attribute(module_name, version_attr)
+        if can_import_module(module_name):
+            version = get_module_attribute(module_name, version_attr)
+        else:
+            version = None
 
     if not version:
         # Module does not exist in the system.
