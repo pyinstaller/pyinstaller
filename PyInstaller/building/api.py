@@ -731,7 +731,7 @@ class COLLECT(Target):
         _make_clean_directory(self.name)
         logger.info("Building COLLECT %s", self.tocbasename)
         toc = add_suffix_to_extensions(self.toc)
-        libpython_pat = re.compile(r"libpython\d\.\d+\.so")
+        libpython_pat = re.compile(r"^libpython\d\.\d+")
 
         for inm, fnm, typ in toc:
             if not os.path.exists(fnm) or not os.path.isfile(fnm) and is_path_to_egg(fnm):
