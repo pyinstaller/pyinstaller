@@ -468,23 +468,6 @@ pyi_pylib_start_python(ARCHIVE_STATUS *status)
         return -1;
     }
 
-    char *sub_dir = pyi_arch_get_option(status, "pyi-lib-subdir");
-    if (sub_dir != NULL) {
-        char *tmp_path = strdup(pypath);
-        if (snprintf(pypath, MAX_PYPATH_SIZE, "%s" "%c" "%s%c%s",
-                     tmp_path,
-                     PYI_PATHSEP,
-                     status->mainpath, PYI_SEP, sub_dir
-                    )
-            >= MAX_PYPATH_SIZE) {
-            // This should never happen, since mainpath is < PATH_MAX and pypath is
-            // huge enough
-            FATALERROR("sys.path (based on %s) exceeds buffer[%d] space\n",
-                       status->mainpath, MAX_PYPATH_SIZE);
-            return -1;
-        }
-        free(tmp_path);
-    }
     /*
      * We must set sys.path to have base_library.zip before
      * calling Py_Initialize as it needs `encodings` and other modules.

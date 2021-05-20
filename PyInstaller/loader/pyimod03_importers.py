@@ -530,12 +530,23 @@ class FrozenImporter(object):
             # libraries. In one-file mode it points to the tmp directory where
             # bundled files are extracted at execution time.
             #
+            # parent.__path__ is used to find the submodule from the parent module
+            #
             # __path__ cannot be empty list because 'wx' module prepends
             # something to it. It cannot contain value 'sys.prefix' because
-            # 'xml.etree.cElementTree' fails otherwise.
+            # 'xml.etree.cElementTree' fails otherwise. It should points to
+            # 'sys.prefix/xml/etree' for module 'xml.etree'.
             #
             # Set __path__ to point to 'sys.prefix/package/subpackage'.
-            module.__path__ = [pyi_os_path.os_path_dirname(module.__file__)]
+            path = []
+            module_dir = pyi_os_path.os_path_dirname(module.__file__)
+            path.append(module_dir)
+            if "pyi-lib-subdir" in sys.pyi_runtime_options:
+                sub_path = sys.pyi_runtime_options["pyi-lib-subdir"]
+                sub_path = pyi_os_path.os_path_join(SYS_PREFIX, sub_path)
+                sub_path = pyi_os_path.os_path_join(sub_path, module_dir[SYS_PREFIXLEN:])
+                path.append(sub_path)
+            module.__path__ = path
 
         exec(bytecode, module.__dict__)
 
@@ -556,6 +567,14 @@ def install():
     3. C extension modules
     4. Modules from sys.path
     """
+
+    # Update sys.path before loading modules from disk.
+    if "pyi-lib-subdir" in sys.pyi_runtime_options:
+        sub_path = sys.pyi_runtime_options["pyi-lib-subdir"]
+        sub_path = pyi_os_path.os_path_join(SYS_PREFIX, sub_path)
+        sub_lib_dynload = pyi_os_path.os_path_join(sub_path, "lib-dynload")
+        sys.path += [sub_path, sub_lib_dynload]
+
     # Ensure Python looks in the bundled zip archive for modules before any
     # other places.
     fimp = FrozenImporter()

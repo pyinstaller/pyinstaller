@@ -747,7 +747,7 @@ class COLLECT(Target):
             # FIXME: python cannot find module if we move directory into lib_subdir?
             inm_dir = os.path.dirname(inm)
             if (typ in ('EXTENSION', 'BINARY') and self.lib_subdir and
-                    not libpython_pat.match(inm) and not inm_dir):
+                    not libpython_pat.match(inm)):
                 tofnm = os.path.join(self.name, self.lib_subdir, inm)
                 todir = os.path.dirname(tofnm)
 
