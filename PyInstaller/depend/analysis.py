@@ -847,6 +847,7 @@ def get_bootstrap_modules():
         ('pyimod01_os_path', os.path.join(loaderpath, 'pyimod01_os_path.pyc'), 'PYMODULE'),
         ('pyimod02_archive',  os.path.join(loaderpath, 'pyimod02_archive.pyc'), 'PYMODULE'),
         ('pyimod03_importers',  os.path.join(loaderpath, 'pyimod03_importers.pyc'), 'PYMODULE'),
+        ('pyimod04_ctypes',  os.path.join(loaderpath, 'pyimod04_ctypes.pyc'), 'PYMODULE'),  # noqa: E501
         ('pyiboot01_bootstrap', os.path.join(loaderpath, 'pyiboot01_bootstrap.py'), 'PYSOURCE'),
     ]
     return loader_mods
