@@ -98,6 +98,11 @@ def add_suffix_to_extensions(toc):
     new_toc = TOC()
     for inm, fnm, typ in toc:
         if typ == 'EXTENSION':
+            if fnm.endswith(inm):
+                # If inm completely fits into end of the fnm, it has
+                # already been processed
+                new_toc.append((inm, fnm, typ))
+                continue
             # Change the dotted name into a relative path. This places C
             # extensions in the Python-standard location.
             inm = inm.replace('.', os.sep)
