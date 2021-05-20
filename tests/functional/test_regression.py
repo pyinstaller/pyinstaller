@@ -102,3 +102,29 @@ def test_5734():
     """
     from PyInstaller.depend.utils import _resolveCtypesImports
     _resolveCtypesImports(["libc"])
+
+
+def test_5797(pyi_builder):
+    """
+    Ensure that user overriding os and/or sys (using them as variables)
+    in the global namespace does not affect PyInstaller's ctype hooks,
+    installed during bootstrap, which is scenario of the issue #5797.
+    """
+    pyi_builder.test_source(
+        """
+        import ctypes
+
+        # Overwrite sys and os in global namespace
+        sys = 'watever'
+        os = 'something'
+
+        # Use a ctypes.CDLL, which in turn calls _frozen_name()
+        # from PyInstaller's ctypes bootstrap hooks.
+        try:
+            ctypes.CDLL('nonexistent')
+        except Exception as e:
+            # We expect PyInstallerImportError to be raised
+            exception_name = type(e).__name__
+            assert exception_name == 'PyInstallerImportError', \
+                f"Unexpected execption type: {exception_name}"
+        """)
