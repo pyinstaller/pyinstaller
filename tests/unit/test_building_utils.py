@@ -116,6 +116,14 @@ def test_add_suffix_to_extension():
         fnm = str(pathlib.PurePath(case[2]))
         typ = case[3]
 
-        toc1 = [(inm1, fnm, typ)]
-        toc2 = utils.add_suffix_to_extensions(toc1)
-        assert toc2 == [(inm2, fnm, typ)]
+        toc = [(inm1, fnm, typ)]
+        toc_expected = [(inm2, fnm, typ)]
+
+        # Ensure that processing a TOC entry produces expected result.
+        toc2 = utils.add_suffix_to_extensions(toc)
+        assert toc2 == toc_expected
+
+        # Ensure that processing an already-processed TOC entry leaves
+        # it unchanged (i.e., does not mangle it)
+        toc3 = utils.add_suffix_to_extensions(toc2)
+        assert toc3 == toc2
