@@ -758,22 +758,20 @@ pyi_utils_dlopen(const char *dllpath)
 /* TODO better merging of the following platform specific functions. */
 /* ////////////////////////////////////////////////////////////////// */
 
-#ifdef _WIN32
-
 static int
-set_dynamic_library_path(const char* path)
+set_dynamic_library_path(const char* env_var, const char* path)
 {
     int rc = 0;
-    char *env_var, *env_var_orig;
+    char *env_var_orig;
     char *new_path, *orig_path;
-    /* Windows will search PATH for DLL */
-    env_var = "PATH";
-    env_var_orig = "PATH_ORIG";
+
     orig_path = pyi_getenv(env_var);
+    env_var_orig = pyi_strjoin(env_var, "_", "ORIG");
     if (orig_path) {
         pyi_setenv(env_var_orig, orig_path);
         VS("LOADER: %s=%s\n", env_var_orig, orig_path);
     }
+    free(env_var_orig);
     /* prepend our path to the original path, pyi_strjoin can deal with orig_path being NULL or empty string */
     new_path = pyi_strjoin(path, ":", orig_path);
     rc = pyi_setenv(env_var, new_path);
@@ -783,10 +781,13 @@ set_dynamic_library_path(const char* path)
     return rc;
 }
 
+#ifdef _WIN32
+
 int
 pyi_utils_set_environment(const ARCHIVE_STATUS *status)
 {
     int rc = 0;
+    char *env_var = "PATH";
 
     char *sub_dir = pyi_arch_get_option(status, "pyi-lib-subdir");
     if (sub_dir != NULL) {
@@ -794,10 +795,10 @@ pyi_utils_set_environment(const ARCHIVE_STATUS *status)
         char *extra_path;
         pyi_path_join(sub_dir_full, status->homepath, sub_dir);
         extra_path = pyi_strjoin(sub_dir_full, ":", status->homepath);
-        rc = set_dynamic_library_path(extra_path);
+        rc = set_dynamic_library_path(env_var, extra_path);
         free(extra_path);
     } else {
-        rc = set_dynamic_library_path(status->homepath);
+        rc = set_dynamic_library_path(env_var, status->homepath);
     }
 
     return rc;
@@ -864,46 +865,19 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
 
 #else /* ifdef _WIN32 */
 
-static int
-set_dynamic_library_path(const char* path)
-{
-    int rc = 0;
-    char *env_var, *env_var_orig;
-    char *new_path, *orig_path;
-
-    #ifdef AIX
-    /* LIBPATH is used to look up dynamic libraries on AIX. */
-    env_var = "LIBPATH";
-    env_var_orig = "LIBPATH_ORIG";
-    #else
-    /* LD_LIBRARY_PATH is used on other *nix platforms (except Darwin). */
-    env_var = "LD_LIBRARY_PATH";
-    env_var_orig = "LD_LIBRARY_PATH_ORIG";
-    #endif /* AIX */
-
-    /* keep original value in a new env var so the application can restore it
-     * before forking subprocesses. This is important so that e.g. a forked
-     * (system installed) ssh can find the matching (system installed) ssh
-     * related libraries - not the potentially different versions of same libs
-     * that we have bundled.
-     */
-    orig_path = pyi_getenv(env_var);
-    if (orig_path) {
-        pyi_setenv(env_var_orig, orig_path);
-        VS("LOADER: %s=%s\n", env_var_orig, orig_path);
-    }
-    /* prepend our path to the original path, pyi_strjoin can deal with orig_path being NULL or empty string */
-    new_path = pyi_strjoin(path, ":", orig_path);
-    rc = pyi_setenv(env_var, new_path);
-    VS("LOADER: %s=%s\n", env_var, new_path);
-    free(new_path);
-    return rc;
-}
-
 int
 pyi_utils_set_environment(const ARCHIVE_STATUS *status)
 {
     int rc = 0;
+    char *env_var;
+
+    #ifdef AIX
+    /* LIBPATH is used to look up dynamic libraries on AIX. */
+    env_var = "LIBPATH";
+    #else
+    /* LD_LIBRARY_PATH is used on other *nix platforms (except Darwin). */
+    env_var = "LD_LIBRARY_PATH";
+    #endif /* AIX */
 
     #ifdef __APPLE__
     /* On Mac OS X we do not use environment variables DYLD_LIBRARY_PATH
@@ -935,7 +909,7 @@ pyi_utils_set_environment(const ARCHIVE_STATUS *status)
 
     /* Set library path to temppath. This is only for onefile mode.*/
     if (status->temppath[0] != PYI_NULLCHAR) {
-        rc = set_dynamic_library_path(status->temppath);
+        rc = set_dynamic_library_path(env_var, status->temppath);
     }
     /* Set library path to homepath. This is for default onedir mode.*/
     else {
@@ -946,10 +920,10 @@ pyi_utils_set_environment(const ARCHIVE_STATUS *status)
             char *extra_path;
             pyi_path_join(sub_dir_full, status->homepath, sub_dir);
             extra_path = pyi_strjoin(sub_dir_full, ":", status->homepath);
-            rc = set_dynamic_library_path(extra_path);
+            rc = set_dynamic_library_path(env_var, extra_path);
             free(extra_path);
         } else {
-            rc = set_dynamic_library_path(status->homepath);
+            rc = set_dynamic_library_path(env_var, status->homepath);
         }
     }
     #endif /* ifdef __APPLE__ */
