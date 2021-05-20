@@ -1,0 +1,3 @@
+Prevent the use of ``sys`` or ``os`` as variables in the global namespace
+in frozen script from affecting the ``ctypes`` hooks thar are installed
+during bootstrap.
