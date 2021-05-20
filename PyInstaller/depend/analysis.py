@@ -840,7 +840,12 @@ def get_bootstrap_modules():
     for mod_name in ['_struct', 'zlib']:
         mod = __import__(mod_name)  # C extension.
         if hasattr(mod, '__file__'):
-            loader_mods.append((mod_name, os.path.abspath(mod.__file__), 'EXTENSION'))
+            mod_file = os.path.abspath(mod.__file__)
+            if os.path.basename(os.path.dirname(mod_file)) == 'lib-dynload':
+                # Divert extensions originating from python's lib-dynload
+                # directory, to match behavior of #5604.
+                mod_name = os.path.join('lib-dynload', mod_name)
+            loader_mods.append((mod_name, mod_file, 'EXTENSION'))
     # NOTE:These modules should be kept simple without any complicated dependencies.
     loader_mods +=[
         ('struct', os.path.abspath(mod_struct.__file__), 'PYMODULE'),
