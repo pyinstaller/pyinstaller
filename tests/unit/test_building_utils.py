@@ -12,6 +12,7 @@
 
 import pytest
 import os
+import pathlib
 from importlib.machinery import EXTENSION_SUFFIXES
 
 from PyInstaller.building import utils
@@ -81,15 +82,40 @@ def test_format_binaries_and_datas_with_bracket(tmpdir):
     assert res == expected
 
 
-def test_add_to_suffix__extension():
-    toc = [
+def test_add_suffix_to_extension():
+    SUFFIX = EXTENSION_SUFFIXES[0]
+    # Each test case is a tuple of four values:
+    #  * input inm
+    #  * output (expected) inm
+    #  * fnm
+    #  * typ
+    # where (inm, fnm, typ) is a TOC entry tuple
+    # All paths are in POSIX format (and are converted to OS-specific
+    # path during the test itself).
+    CASES = [
+        # Stand-alone extension module
         ('mypkg',
-         'lib38/site-packages/mypkg' + EXTENSION_SUFFIXES[0],
+         'mypkg' + SUFFIX,
+         'lib38/site-packages/mypkg' + SUFFIX,
+         'EXTENSION'),
+        # Extension module nested in a package
+        ('pkg.subpkg._extension',
+         'pkg/subpkg/_extension' + SUFFIX,
+         'lib38/site-packages/pkg/subpkg/_extension' + SUFFIX,
+         'EXTENSION'),
+        # Built-in extension originating from lib-dynload
+        ('lib-dynload/_extension',
+         'lib-dynload/_extension' + SUFFIX,
+         'lib38/lib-dynload/_extension' + SUFFIX,
          'EXTENSION'),
     ]
-    toc = utils.add_suffix_to_extensions(toc)
-    assert toc == [
-        ('mypkg' + EXTENSION_SUFFIXES[0],
-         'lib38/site-packages/mypkg' + EXTENSION_SUFFIXES[0],
-         'EXTENSION'),
-    ]
+
+    for case in CASES:
+        inm1 = str(pathlib.PurePath(case[0]))
+        inm2 = str(pathlib.PurePath(case[1]))
+        fnm = str(pathlib.PurePath(case[2]))
+        typ = case[3]
+
+        toc1 = [(inm1, fnm, typ)]
+        toc2 = utils.add_suffix_to_extensions(toc1)
+        assert toc2 == [(inm2, fnm, typ)]
