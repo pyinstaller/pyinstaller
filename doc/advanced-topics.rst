@@ -143,6 +143,12 @@ in a bundled app:
 Splash screen startup
 -------------------------------------
 
+.. Note::
+    This feature is incompatible with macOS. In the current design, the
+    splash screen operates in a secondary thread, which is disallowed by
+    the Tcl/Tk (or rather, the underlying GUI toolkit) on macOS.
+
+
 If a splash screen is bundled with the application the
 bootloaders startup procedure and threading model is a little
 more complex. The following describes the order of operation if

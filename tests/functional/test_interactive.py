@@ -34,12 +34,9 @@ def test_ipython(pyi_builder):
         """, runtime=_RUNTIME)
 
 
-# Someone with a Mac needs to take a look into implementing this the right way
-# If Splash discovers standalone binaries on a Mac those will be bundled and
-# the test should succeed, if the system provided Tcl/Tk is used PyInstaller
-# does not find the standalone binaries
-@xfail(is_darwin, reason="MacOS uses system-wide Tcl/Tk, which"
-                         " is not necessarily bundled.")
+# Splash screen is not supported on macOS due to incompatible design.
+@pytest.mark.skipif(is_darwin, reason="Splash screen is not supported "
+                                      "on macOS.")
 @pytest.mark.parametrize("mode", ['onedir', 'onefile'])
 def test_pyi_splash(pyi_builder_spec, capfd, monkeypatch, mode):
     if mode == 'onefile':
