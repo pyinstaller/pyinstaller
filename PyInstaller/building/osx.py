@@ -16,7 +16,7 @@ from PyInstaller.compat import is_darwin
 from PyInstaller.building.api import EXE, COLLECT
 from PyInstaller.building.datastruct import Target, TOC, logger
 from PyInstaller.building.utils import _check_path_overlap, _rmtree, \
-    add_suffix_to_extensions, checkCache
+    add_suffix_to_extension, checkCache
 
 
 class BUNDLE(Target):
@@ -164,8 +164,9 @@ class BUNDLE(Target):
             plistlib.dump(info_plist_dict, plist_fh)
 
         links = []
-        toc = add_suffix_to_extensions(self.toc)
-        for inm, fnm, typ in toc:
+        for inm, fnm, typ in self.toc:
+            # Adjust name for extensions, if applicable
+            inm, fnm, typ = add_suffix_to_extension(inm, fnm, typ)
             # Copy files from cache. This ensures that are used files with relative
             # paths to dynamic library dependencies (@executable_path)
             base_path = inm.split('/', 1)[0]
