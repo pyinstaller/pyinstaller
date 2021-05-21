@@ -20,12 +20,15 @@ GLib 2.42.2, PyGObject 3.14.0, and GObject Introspection 1.42 on Windows 7
 import os
 import glob
 
+from PyInstaller.utils.hooks import get_hook_config
 from PyInstaller.utils.hooks.gi import collect_glib_translations, \
     collect_glib_share_files, get_gi_typelibs, get_gi_libdir
 from PyInstaller.compat import is_win
 
 binaries, datas, hiddenimports = get_gi_typelibs('GLib', '2.0')
-datas += collect_glib_translations('glib20')
+
+lang_list = get_hook_config("languages")
+datas += collect_glib_translations('glib20', lang_list)
 datas += collect_glib_share_files('glib-2.0', 'schemas')
 
 # On Windows, glib needs a spawn helper for g_spawn* API

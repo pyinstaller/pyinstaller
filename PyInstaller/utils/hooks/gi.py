@@ -246,13 +246,19 @@ def collect_glib_etc_files(*path):
 _glib_translations = None
 
 
-def collect_glib_translations(prog):
+def collect_glib_translations(prog, lang_list=None):
     """
     Return a list of translations in the system locale directory whose names equal prog.mo.
     """
     global _glib_translations
     if _glib_translations is None:
-        _glib_translations = collect_glib_share_files('locale')
+        if lang_list is not None:
+            trans = []
+            for lang in lang_list:
+                trans += collect_glib_share_files(os.path.join("locale", lang))
+            _glib_translations = trans
+        else:
+            _glib_translations = collect_glib_share_files('locale')
 
     names = [os.sep + prog + '.mo',
              os.sep + prog + '.po']

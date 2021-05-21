@@ -24,7 +24,7 @@ GStreamer 1.4.5, gst-python 1.4.0, PyGObject 3.14.0, and GObject Introspection 1
 
 import glob
 import os
-from PyInstaller.utils.hooks import exec_statement
+from PyInstaller.utils.hooks import exec_statement, get_hook_config
 from PyInstaller.utils.hooks.gi import collect_glib_share_files, \
         collect_glib_translations, get_gi_typelibs
 
@@ -34,12 +34,13 @@ datas += collect_glib_share_files('gstreamer-1.0')
 
 hiddenimports += ["gi.repository.Gio"]
 
+lang_list = get_hook_config("languages")
 for prog in ['gst-plugins-bad-1.0',
              'gst-plugins-base-1.0',
              'gst-plugins-good-1.0',
              'gst-plugins-ugly-1.0',
              'gstreamer-1.0']:
-    datas += collect_glib_translations(prog)
+    datas += collect_glib_translations(prog, lang_list)
 
 statement = """
 import os

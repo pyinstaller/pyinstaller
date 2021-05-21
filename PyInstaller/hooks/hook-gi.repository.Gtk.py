@@ -17,15 +17,31 @@ import os.path
 import glob
 
 from PyInstaller.compat import is_win
+from PyInstaller.utils.hooks import get_hook_config
 from PyInstaller.utils.hooks.gi import collect_glib_share_files, \
         collect_glib_etc_files, collect_glib_translations, get_gi_typelibs
 
 binaries, datas, hiddenimports = get_gi_typelibs('Gtk', '3.0')
 
 datas += collect_glib_share_files('fontconfig')
-datas += collect_glib_share_files('icons')
-datas += collect_glib_share_files('themes')
-datas += collect_glib_translations('gtk30')
+
+icon_list = get_hook_config("icons")
+theme_list = get_hook_config("themes")
+lang_list = get_hook_config("languages")
+
+if icon_list is not None:
+    for icon in icon_list:
+        datas += collect_glib_share_files(os.path.join("icons", icon))
+else:
+    datas += collect_glib_share_files('icons')
+
+if theme_list is not None:
+    for theme in theme_list:
+        datas += collect_glib_share_files(os.path.join('themes', theme))
+else:
+    datas += collect_glib_share_files('themes')
+
+datas += collect_glib_translations('gtk30', lang_list)
 
 # these only seem to be required on Windows
 if is_win:
