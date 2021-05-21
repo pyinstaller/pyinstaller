@@ -20,7 +20,7 @@ GLib 2.42.2, PyGObject 3.14.0, and GObject Introspection 1.42 on Windows 7
 import os
 import glob
 
-from PyInstaller.utils.hooks import collect_glib_translations, \
+from PyInstaller.utils.hooks.gi import collect_glib_translations, \
     collect_glib_share_files, get_gi_typelibs, get_gi_libdir
 from PyInstaller.compat import is_win
 

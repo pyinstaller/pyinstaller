@@ -24,7 +24,9 @@ GStreamer 1.4.5, gst-python 1.4.0, PyGObject 3.14.0, and GObject Introspection 1
 
 import glob
 import os
-from PyInstaller.utils.hooks import collect_glib_share_files, collect_glib_translations, exec_statement, get_gi_typelibs
+from PyInstaller.utils.hooks import exec_statement
+from PyInstaller.utils.hooks.gi import collect_glib_share_files, \
+        collect_glib_translations, get_gi_typelibs
 
 binaries, datas, hiddenimports = get_gi_typelibs('Gst', '1.0')
 
