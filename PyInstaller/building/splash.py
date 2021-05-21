@@ -19,7 +19,7 @@ from PyInstaller.building.datastruct import Target, TOC
 from PyInstaller.building.utils import misc, _check_guts_eq, _check_guts_toc
 from PyInstaller import log as logging
 from PyInstaller.archive.writers import SplashWriter
-from PyInstaller.compat import is_cygwin, is_win
+from PyInstaller.compat import is_cygwin, is_win, is_darwin
 from PyInstaller.depend import bindepend
 from PyInstaller.utils.hooks import exec_statement
 from PyInstaller.utils.hooks.tcl_tk import TK_ROOTNAME, collect_tcl_tk_files
@@ -150,6 +150,12 @@ class Splash(Target):
         """
         from ..config import CONF
         Target.__init__(self)
+
+        # Splash screen is not supported on macOS. It operates in a
+        # secondary thread and macOS disallows UI operations in any
+        # thread other than main.
+        if is_darwin:
+            raise SystemExit("Splash screen is not supported on macOS.")
 
         # Make image path relative to .spec file
         if not os.path.isabs(image_file):

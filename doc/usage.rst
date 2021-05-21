@@ -221,11 +221,9 @@ Splash Screen *(Experimental)*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. Note::
-    The feature was only tested on Windows and Linux. On macOS it depends on the
-    installation of Python and Tcl/Tk, because the system installation of
-    Tcl/Tk is not bundled by PyInstaller. If PyInstaller is able to pack the
-    Tcl/Tk binaries, this feature *should* work on macOS too. Please follow
-    PyInstaller Issue :issue:`4354`.
+    This feature is incompatible with macOS. In the current design, the
+    splash screen operates in a secondary thread, which is disallowed by
+    the Tcl/Tk (or rather, the underlying GUI toolkit) on macOS.
 
 Some applications may require a splash screen as soon as the application
 (bootloader) has been started, because especially in onefile mode large
@@ -480,7 +478,7 @@ The one built by |PyInstaller| contains a folder always named
   + A folder :file:`Frameworks` which is empty.
   + A folder :file:`Resources` that contains an icon file.
   + A file :file:`Info.plist` that describes the app.
-  + A folder :file:`MacOS` that contains the the executable and 
+  + A folder :file:`MacOS` that contains the the executable and
     supporting files, just as in the ``--onedir`` folder.
 
 Use the ``icon=`` argument to specify a custom icon for the application.
