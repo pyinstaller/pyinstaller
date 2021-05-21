@@ -89,43 +89,40 @@ def _check_guts_toc(attr, old, toc, last_build, pyc=0):
 
 #---
 
-def add_suffix_to_extensions(toc):
+def add_suffix_to_extension(inm, fnm, typ):
     """
-    Returns a new TOC with proper library suffix for EXTENSION items.
+    Take a TOC entry (inm, fnm, typ) and adjust the inm for EXTENSION
+    or DEPENDENCY to include the full library suffix.
     """
-    # TODO: Fix this recursive import
-    from PyInstaller.building.datastruct import TOC
-    new_toc = TOC()
-    for inm, fnm, typ in toc:
-        if typ == 'EXTENSION':
-            if fnm.endswith(inm):
-                # If inm completely fits into end of the fnm, it has
-                # already been processed
-                new_toc.append((inm, fnm, typ))
-                continue
-            # Change the dotted name into a relative path. This places C
-            # extensions in the Python-standard location.
-            inm = inm.replace('.', os.sep)
-            # In some rare cases extension might already contain a suffix.
-            # Skip it in this case.
-            if os.path.splitext(inm)[1] not in EXTENSION_SUFFIXES:
-                # Determine the base name of the file.
-                base_name = os.path.basename(inm)
-                assert '.' not in base_name
-                # Use this file's existing extension. For extensions such as
-                # ``libzmq.cp36-win_amd64.pyd``, we can't use
-                # ``os.path.splitext``, which would give only the ```.pyd`` part
-                # of the extension.
-                inm = inm + os.path.basename(fnm)[len(base_name):]
+    if typ == 'EXTENSION':
+        if fnm.endswith(inm):
+            # If inm completely fits into end of the fnm, it has
+            # already been processed
+            return inm, fnm, typ
+        # Change the dotted name into a relative path. This places C
+        # extensions in the Python-standard location.
+        inm = inm.replace('.', os.sep)
+        # In some rare cases extension might already contain a suffix.
+        # Skip it in this case.
+        if os.path.splitext(inm)[1] not in EXTENSION_SUFFIXES:
+            # Determine the base name of the file.
+            base_name = os.path.basename(inm)
+            assert '.' not in base_name
+            # Use this file's existing extension. For extensions such as
+            # ``libzmq.cp36-win_amd64.pyd``, we can't use
+            # ``os.path.splitext``, which would give only the ```.pyd`` part
+            # of the extension.
+            inm = inm + os.path.basename(fnm)[len(base_name):]
 
-        elif typ == 'DEPENDENCY':
-            # Use the suffix from the filename.
-            # TODO Verify what extensions are by DEPENDENCIES.
-            binext = os.path.splitext(fnm)[1]
-            if not os.path.splitext(inm)[1] == binext:
-                inm = inm + binext
-        new_toc.append((inm, fnm, typ))
-    return new_toc
+    elif typ == 'DEPENDENCY':
+        # Use the suffix from the filename.
+        # TODO Verify what extensions are by DEPENDENCIES.
+        binext = os.path.splitext(fnm)[1]
+        if not os.path.splitext(inm)[1] == binext:
+            inm = inm + binext
+
+    return inm, fnm, typ
+
 
 def applyRedirects(manifest, redirects):
     """

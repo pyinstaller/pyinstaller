@@ -24,7 +24,8 @@ from operator import itemgetter
 
 from PyInstaller import HOMEPATH, PLATFORM
 from PyInstaller.archive.writers import ZlibArchiveWriter, CArchiveWriter
-from PyInstaller.building.utils import _check_guts_toc, add_suffix_to_extensions, \
+from PyInstaller.building.utils import _check_guts_toc, \
+    add_suffix_to_extension, \
     checkCache, strip_paths_in_code, get_code_object, \
     _make_clean_directory
 from PyInstaller.compat import is_win, is_darwin, is_linux, is_cygwin, \
@@ -225,10 +226,11 @@ class PKG(Target):
         seenInms = {}
         seenFnms = {}
         seenFnms_typ = {}
-        toc = add_suffix_to_extensions(self.toc)
         # 'inm'  - relative filename inside a CArchive
         # 'fnm'  - absolute filename as it is on the file system.
-        for inm, fnm, typ in toc:
+        for inm, fnm, typ in self.toc:
+            # Adjust name for extensions, if applicable
+            inm, fnm, typ = add_suffix_to_extension(inm, fnm, typ)
             # Ensure filename 'fnm' is not None or empty string. Otherwise
             # it will fail in case of 'typ' being type OPTION.
             if fnm and not os.path.isfile(fnm) and is_path_to_egg(fnm):
@@ -756,8 +758,9 @@ class COLLECT(Target):
     def assemble(self):
         _make_clean_directory(self.name)
         logger.info("Building COLLECT %s", self.tocbasename)
-        toc = add_suffix_to_extensions(self.toc)
-        for inm, fnm, typ in toc:
+        for inm, fnm, typ in self.toc:
+            # Adjust name for extensions, if applicable
+            inm, fnm, typ = add_suffix_to_extension(inm, fnm, typ)
             if not os.path.exists(fnm) or not os.path.isfile(fnm) and is_path_to_egg(fnm):
                 # file is contained within python egg, it is added with the egg
                 continue
