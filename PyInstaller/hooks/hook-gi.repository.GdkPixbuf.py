@@ -41,7 +41,6 @@ except ValueError:
     )
     libdir = None
 
-lang_list = get_hook_config("languages")
 if libdir:
 
     # Distributions either package gdk-pixbuf-query-loaders in the GI libs
@@ -67,7 +66,6 @@ if libdir:
     # Else, GDK is available. Let's do this.
     else:
         binaries, datas, hiddenimports = get_gi_typelibs('GdkPixbuf', '2.0')
-        datas += collect_glib_translations('gdk-pixbuf', lang_list)
 
         # To add support for a new platform, add a new "elif" branch below with
         # the proper is_<platform>() test and glob for finding loaders on that
@@ -159,3 +157,12 @@ if libdir:
             logger.warning(
                 'GdkPixbuf loader bundling unsupported on your platform.'
             )
+
+
+def hook(hook_api):
+    hook_datas = []
+    lang_list = get_hook_config(hook_api, "languages")
+
+    if libdir and gdk_pixbuf_query_loaders is not None:
+        hook_datas += collect_glib_translations('gdk-pixbuf', lang_list)
+    hook_api.add_datas(hook_datas)

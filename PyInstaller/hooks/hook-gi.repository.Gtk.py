@@ -25,23 +25,30 @@ binaries, datas, hiddenimports = get_gi_typelibs('Gtk', '3.0')
 
 datas += collect_glib_share_files('fontconfig')
 
-icon_list = get_hook_config("icons")
-theme_list = get_hook_config("themes")
-lang_list = get_hook_config("languages")
 
-if icon_list is not None:
-    for icon in icon_list:
-        datas += collect_glib_share_files(os.path.join("icons", icon))
-else:
-    datas += collect_glib_share_files('icons')
+def hook(hook_api):
+    hook_datas = []
 
-if theme_list is not None:
-    for theme in theme_list:
-        datas += collect_glib_share_files(os.path.join('themes', theme))
-else:
-    datas += collect_glib_share_files('themes')
+    icon_list = get_hook_config(hook_api, "icons")
+    theme_list = get_hook_config(hook_api, "themes")
+    lang_list = get_hook_config(hook_api, "languages")
 
-datas += collect_glib_translations('gtk30', lang_list)
+    if icon_list is not None:
+        for icon in icon_list:
+            hook_datas += collect_glib_share_files(os.path.join("icons", icon))
+    else:
+        hook_datas += collect_glib_share_files('icons')
+
+    if theme_list is not None:
+        for theme in theme_list:
+            hook_datas += collect_glib_share_files(
+                    os.path.join('themes', theme))
+    else:
+        hook_datas += collect_glib_share_files('themes')
+
+    hook_datas += collect_glib_translations('gtk30', lang_list)
+
+    hook_api.add_datas(hook_datas)
 
 # these only seem to be required on Windows
 if is_win:

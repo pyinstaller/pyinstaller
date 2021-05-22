@@ -34,13 +34,18 @@ datas += collect_glib_share_files('gstreamer-1.0')
 
 hiddenimports += ["gi.repository.Gio"]
 
-lang_list = get_hook_config("languages")
-for prog in ['gst-plugins-bad-1.0',
-             'gst-plugins-base-1.0',
-             'gst-plugins-good-1.0',
-             'gst-plugins-ugly-1.0',
-             'gstreamer-1.0']:
-    datas += collect_glib_translations(prog, lang_list)
+
+def hook(hook_api):
+    hook_datas = []
+    lang_list = get_hook_config(hook_api, "languages")
+
+    for prog in ['gst-plugins-bad-1.0',
+                 'gst-plugins-base-1.0',
+                 'gst-plugins-good-1.0',
+                 'gst-plugins-ugly-1.0',
+                 'gstreamer-1.0']:
+        hook_datas += collect_glib_translations(prog, lang_list)
+    hook_api.add_datas(hook_datas)
 
 statement = """
 import os

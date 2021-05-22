@@ -17,5 +17,10 @@ from PyInstaller.utils.hooks.gi import collect_glib_translations, \
 
 binaries, datas, hiddenimports = get_gi_typelibs('Atk', '1.0')
 
-lang_list = get_hook_config("languages")
-datas += collect_glib_translations('atk10', lang_list)
+
+def hook(hook_api):
+    hook_datas = []
+    lang_list = get_hook_config(hook_api, "languages")
+
+    hook_datas += collect_glib_translations('atk10', lang_list)
+    hook_api.add_datas(hook_datas)

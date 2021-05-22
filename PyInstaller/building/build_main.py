@@ -130,8 +130,9 @@ class Analysis(Target):
     }
 
     def __init__(self, scripts, pathex=None, binaries=None, datas=None,
-                 hiddenimports=None, hookspath=None, excludes=None, runtime_hooks=None,
-                 cipher=None, win_no_prefer_redirects=False, win_private_assemblies=False,
+                 hiddenimports=None, hookspath=None, hooksconfig=None,
+                 excludes=None, runtime_hooks=None, cipher=None,
+                 win_no_prefer_redirects=False, win_private_assemblies=False,
                  noarchive=False):
         """
         scripts
@@ -146,6 +147,9 @@ class Analysis(Target):
                 An optional list of additional (hidden) modules to include.
         hookspath
                 An optional list of additional paths to search for hooks.
+                (hook-modules).
+        hooksconfig
+                An optional dict of config settings for hooks.
                 (hook-modules).
         excludes
                 An optional list of module or package names (their Python names,
@@ -213,6 +217,10 @@ class Analysis(Target):
         for entry_point in pkg_resources.iter_entry_points(
                 'pyinstaller40', 'hook-dirs'):
             self.hookspath += list(entry_point.load()())
+
+        self.hooksconfig = {}
+        if hooksconfig:
+            self.hooksconfig.update(hooksconfig)
 
         # Custom runtime hook files that should be included and started before
         # any existing PyInstaller runtime hooks.

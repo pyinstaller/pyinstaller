@@ -27,8 +27,14 @@ from PyInstaller.compat import is_win
 
 binaries, datas, hiddenimports = get_gi_typelibs('GLib', '2.0')
 
-lang_list = get_hook_config("languages")
-datas += collect_glib_translations('glib20', lang_list)
+
+def hook(hook_api):
+    hook_datas = []
+    lang_list = get_hook_config(hook_api, "languages")
+
+    hook_datas += collect_glib_translations('glib20', lang_list)
+    hook_api.add_datas(hook_datas)
+
 datas += collect_glib_share_files('glib-2.0', 'schemas')
 
 # On Windows, glib needs a spawn helper for g_spawn* API
