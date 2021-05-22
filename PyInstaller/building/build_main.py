@@ -420,7 +420,7 @@ class Analysis(Target):
         self.graph.add_hiddenimports(self.hiddenimports)
 
         ### Post-graph hooks.
-        self.graph.process_post_graph_hooks()
+        self.graph.process_post_graph_hooks(self)
 
         # Update 'binaries' TOC and 'datas' TOC.
         deps_proc = DependencyProcessor(self.graph,

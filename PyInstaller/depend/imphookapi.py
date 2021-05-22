@@ -330,6 +330,8 @@ class PostGraphAPI(object):
     co : code
         Code object compiled from the contents of `__file__` (e.g., via the
         `compile()` builtin).
+    analysis: build_main.Analysis
+        The Analysis that load the hook.
 
     Attributes (Private)
     ----------
@@ -352,7 +354,7 @@ class PostGraphAPI(object):
         `binaries` hook attribute.
     """
 
-    def __init__(self, module_name, module_graph):
+    def __init__(self, module_name, module_graph, analysis):
         # Mutable attributes.
         self.module_graph = module_graph
         self.module = module_graph.find_node(module_name)
@@ -362,6 +364,7 @@ class PostGraphAPI(object):
         self.___name__ = module_name
         self.___file__ = self.module.filename
         self._co = self.module.code
+        self._analysis = analysis
 
         # To enforce immutability, convert this module's package path if any
         # into an immutable tuple.
@@ -410,6 +413,13 @@ class PostGraphAPI(object):
         `compile()` builtin).
         """
         return self._co
+
+    @property
+    def analysis(self):
+        """
+        build_main.Analysis that calls the hook
+        """
+        return self._analysis
 
     # Obsolete immutable properties provided to preserve backward compatibility.
     @property
