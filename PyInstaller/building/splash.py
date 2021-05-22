@@ -211,6 +211,15 @@ class Splash(Target):
         self.uses_tkinter = self._uses_tkinter(binaries)
         self.script = self.generate_script()
         self.tcl_lib, self.tk_lib = find_tcl_tk_shared_libs(self._tkinter_file)
+        if is_darwin:
+            # Outdated Tcl/Tk 8.5 system framework is not supported.
+            # Depending on macOS version, the library path will come
+            # up empty (hidden system libraries on Big Sur), or will
+            # be [/System]/Library/Frameworks/Tcl.framework/Tcl
+            if self.tcl_lib[1] is None or 'Library/Frameworks/Tcl.framework' \
+                                          in self.tcl_lib[1]:
+                raise SystemExit("The splash screen feature does not support"
+                                 " macOS system framework version of Tcl/Tk.")
         # Check if tcl/tk was found
         assert all(self.tcl_lib)
         assert all(self.tk_lib)
