@@ -30,7 +30,7 @@ binaries, datas, hiddenimports = get_gi_typelibs('GLib', '2.0')
 
 def hook(hook_api):
     hook_datas = []
-    lang_list = get_hook_config(hook_api, "languages")
+    lang_list = get_hook_config(hook_api, "gi", "languages")
 
     hook_datas += collect_glib_translations('glib20', lang_list)
     hook_api.add_datas(hook_datas)

@@ -37,7 +37,7 @@ hiddenimports += ["gi.repository.Gio"]
 
 def hook(hook_api):
     hook_datas = []
-    lang_list = get_hook_config(hook_api, "languages")
+    lang_list = get_hook_config(hook_api, "gi", "languages")
 
     for prog in ['gst-plugins-bad-1.0',
                  'gst-plugins-base-1.0',

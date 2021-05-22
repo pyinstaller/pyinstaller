@@ -1174,10 +1174,13 @@ def collect_entry_point(name: str) -> Tuple[list, list]:
     return datas, imports
 
 
-def get_hook_config(hook_api, key):
+def get_hook_config(hook_api, module_name, key):
     """
     Get user settings for hooks.
+
     Args:
+        module_name:
+            The module/package for which the key setting belong to.
         key:
             A key for the config.
     Returns:
@@ -1190,9 +1193,11 @@ def get_hook_config(hook_api, key):
         a = Analysis(["my-app.py"],
             ...
             hooksconfig = {
-                "icons": ["Adwaita"],
-                "themes": ["Adwaita"],
-                "languages": ["en_GB", "zh_CN"],
+                "gi": {
+                    "icons": ["Adwaita"],
+                    "themes": ["Adwaita"],
+                    "languages": ["en_GB", "zh_CN"],
+                },
             },
             ...
         )
@@ -1200,8 +1205,8 @@ def get_hook_config(hook_api, key):
     """
     config = hook_api.analysis.hooksconfig
     value = None
-    if config and key in config:
-        value = config[key]
+    if module_name in config and key in config[module_name]:
+        value = config[module_name][key]
     return value
 
 if compat.is_pure_conda:

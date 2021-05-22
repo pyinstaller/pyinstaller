@@ -161,7 +161,7 @@ if libdir:
 
 def hook(hook_api):
     hook_datas = []
-    lang_list = get_hook_config(hook_api, "languages")
+    lang_list = get_hook_config(hook_api, "gi", "languages")
 
     if libdir and gdk_pixbuf_query_loaders is not None:
         hook_datas += collect_glib_translations('gdk-pixbuf', lang_list)

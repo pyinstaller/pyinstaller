@@ -29,9 +29,9 @@ datas += collect_glib_share_files('fontconfig')
 def hook(hook_api):
     hook_datas = []
 
-    icon_list = get_hook_config(hook_api, "icons")
-    theme_list = get_hook_config(hook_api, "themes")
-    lang_list = get_hook_config(hook_api, "languages")
+    icon_list = get_hook_config(hook_api, "gi", "icons")
+    theme_list = get_hook_config(hook_api, "gi", "themes")
+    lang_list = get_hook_config(hook_api, "gi", "languages")
 
     if icon_list is not None:
         for icon in icon_list:
