@@ -105,6 +105,54 @@ def _find_tcl_tk_dir():
     return tcl_root, tk_root
 
 
+def find_tcl_tk_shared_libs(tkinter_ext_file):
+    """
+    Find Tcl and Tk shared libraries against which the
+    _tkinter module is linked.
+
+    Returns
+    -------
+    list
+        list containing two tuples, one for Tcl and one for Tk library,
+        where each tuple contains library name and its full path, i.e.,
+        [(tcl_lib, tcl_libpath), (tk_lib, tk_libpath)]. If a library is
+        not found, the corresponding tuple elements are set to None.
+    """
+    tcl_lib = None
+    tcl_libpath = None
+    tk_lib = None
+    tk_libpath = None
+
+    # Do not use bindepend.selectImports, as it ignores libraries seen
+    # during previous invocations.
+    _tkinter_imports = bindepend.getImports(tkinter_ext_file)
+
+    def _get_library_path(lib):
+        if not compat.is_win and not compat.is_cygwin:
+            # non-Windows systems return the path of the library
+            path = lib
+        else:
+            # We need to find the library
+            path = bindepend.getfullnameof(lib)
+        return path
+
+    for lib in _tkinter_imports:
+        # On some platforms, full path to the shared librars is returned.
+        # So check only basename to prevent false positive matches due
+        # to words tcl or tk being contained in the path.
+        lib_name = os.path.basename(lib)
+        lib_name_lower = lib_name.lower()  # lower-case for comparisons
+
+        if 'tcl' in lib_name_lower:
+            tcl_lib = lib_name
+            tcl_libpath = _get_library_path(lib)
+        elif 'tk' in lib_name_lower:
+            tk_lib = lib_name
+            tk_libpath = _get_library_path(lib)
+
+    return [(tcl_lib, tcl_libpath), (tk_lib, tk_libpath)]
+
+
 def _find_tcl_tk(tkinter_ext_file):
     """
     Get a platform-specific 2-tuple of the absolute paths of the top-level
@@ -123,33 +171,21 @@ def _find_tcl_tk(tkinter_ext_file):
         # PyInstaller does not bundle data from system frameworks (as
         # it does not not collect shared libraries from them, either),
         # so we need to determine what kind of Tcl/Tk we are dealing with.
-        bins = bindepend.selectImports(tkinter_ext_file)
-        if not bins:
-            # Try getting all imports
-            bins = bindepend.getImports(tkinter_ext_file)
-            if bins:
-                # Reformat data structure from
-                #     set(['lib1', 'lib2', 'lib3'])
-                # to
-                #     [('Tcl', '/path/to/Tcl'), ('Tk', '/path/to/Tk')]
-                mapping = {}
-                for lib in bins:
-                    mapping[os.path.basename(lib)] = lib
-                bins = [
-                    ('Tcl', mapping['Tcl']),
-                    ('Tk', mapping['Tk']),
-                ]
-            else:
-                # Starting with macOS 11, system libraries are hidden
-                # (unless both Python and PyInstaller's bootloader are
-                # built against MacOS 11.x SDK). Therefore, bins may end up
-                # empty; but that implicitly indicates that the system
-                # framework is used, so return None, None to inform the caller.
-                return None, None
+        libs = find_tcl_tk_shared_libs(tkinter_ext_file)
 
-        # Check the path to Tcl dynamic library; for system framework, it is:
-        # [/System]/Library/Frameworks/Tcl.framework/Resources/Scripts/Tcl
-        path_to_tcl = bins[0][1]
+        # Check the full path to the Tcl library
+        path_to_tcl = libs[0][1]
+
+        # Starting with macOS 11, system libraries are hidden (unless
+        # both Python and PyInstaller's bootloader are built against
+        # MacOS 11.x SDK). Therefore, libs may end up empty; but that
+        # implicitly indicates that the system framework is used, so
+        # return None, None to inform the caller.
+        if path_to_tcl is None:
+            return None, None
+
+        # Check if the path corresponds to the system framework, i.e.,
+        # [/System]/Library/Frameworks/Tcl.framework/Tcl
         if 'Library/Frameworks/Tcl.framework' in path_to_tcl:
             return None, None  # Do not gather system framework's data
 
