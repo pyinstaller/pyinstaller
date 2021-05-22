@@ -22,7 +22,8 @@ from PyInstaller.archive.writers import SplashWriter
 from PyInstaller.compat import is_cygwin, is_win, is_darwin
 from PyInstaller.depend import bindepend
 from PyInstaller.utils.hooks import exec_statement
-from PyInstaller.utils.hooks.tcl_tk import TK_ROOTNAME, collect_tcl_tk_files
+from PyInstaller.utils.hooks.tcl_tk import TK_ROOTNAME, \
+    collect_tcl_tk_files, find_tcl_tk_shared_libs
 
 try:
     from PIL import Image as PILImage
@@ -209,7 +210,7 @@ class Splash(Target):
         # Calculated / analysed values
         self.uses_tkinter = self._uses_tkinter(binaries)
         self.script = self.generate_script()
-        self.tcl_lib, self.tk_lib = self._get_dlls()
+        self.tcl_lib, self.tk_lib = find_tcl_tk_shared_libs(self._tkinter_file)
         # Check if tcl/tk was found
         assert all(self.tcl_lib)
         assert all(self.tk_lib)
@@ -397,51 +398,6 @@ class Splash(Target):
                            self.rundir,
                            image,
                            self.script)
-
-    def _get_dlls(self):
-        # MacOS X High Sierra (10.13.6) has Tcl/Tk pre-installed
-        # as a system framework (in /System/Library/Frameworks). This
-        # installation cannot be bundled by PyInstaller. Furthermore
-        # the system installation is outdated (Tcl/Tk 8.5) and therefore
-        # cannot be used with the splash screen.
-        # A custom python installation could contain a "bundleable" Tcl/Tk
-        # version, in this case this code should behave the same like on
-        # other platforms.
-
-        # do not use bindepend.selectImports, since it checks if
-        # it has already seen the library and returns in case it did
-        # an empty path
-        _tkinter_imports = bindepend.getImports(self._tkinter_file)
-
-        tcl_lib = ''
-        tcl_libpath = ''
-        tk_lib = ''
-        tk_libpath = ''
-        for lib in _tkinter_imports:
-            # on some platforms the path instead of the name of the library
-            # is returned. So only check the filename to prevent errors
-            # by the word 'tcl' or 'tk' in the path
-            lib_name = os.path.basename(lib)
-            # skip the files we don't care about
-            if not any(name in lib_name for name in ('tcl', 'tk')):
-                continue
-
-            if not is_win and not is_cygwin:
-                # non-Windows systems return the path of the library
-                path = lib
-            else:
-                # We need to find the library
-                path = bindepend.getfullnameof(lib)
-
-            if 'tcl' in lib_name:
-                tcl_lib = lib_name
-                tcl_libpath = path
-            elif 'tk' in lib_name:
-                tk_lib = lib_name
-                tk_libpath = path
-
-        return [(tcl_lib, tcl_libpath),
-                (tk_lib, tk_libpath)]
 
     def test_tk_version(self):
         tcl_version = float(self._tkinter_module.TCL_VERSION)
