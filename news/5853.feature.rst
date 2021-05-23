@@ -1,0 +1,19 @@
+Allow specify which icon set, themes and locales 
+to pack with Gtk applications.
+Pass a keyword arg ``hooksconfig`` to 
+Analysis.
+
+.. code-block:: python
+
+    a = Analysis(["my-gtk-app.py"],
+                 ...,
+                 hooksconfig={
+                     "gi": {
+                         "icons": ["Adwaita"],
+                         "themes": ["Adwaita"],
+                         "languages": ["en_GB", "zh_CN"]
+                     }
+                 },
+                 ...)
+
+
