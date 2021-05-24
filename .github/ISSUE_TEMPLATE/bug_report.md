@@ -18,15 +18,15 @@ Welcome to the PyInstaller issue tracker! Before creating an issue, please heed 
    maintainers to reproduce, the faster it'll be fixed.
 -->
 
-+++ ONLY TEXT +++ DO NOT POST IMAGES +++
+<!-- +++ ONLY TEXT +++ DO NOT POST IMAGES +++ -->
 
 ## Description of the issue
 
-## Context information (for bug reports)
+### Context information (for bug reports)
 
 * Output of `pyinstaller --version`: ```(paste here)```
-* Version of Python: e.g. 3.7
-* Platform: e.g GNU/Linux (distribution), Windows (language settings), OS X, conda, FreeBSD
+* Version of Python: <!-- e.g. 3.7 -->
+* Platform: <!-- e.g GNU/Linux (distribution), Windows (language settings), OS X, conda, FreeBSD -->
 * Did you also try this on another platform? Does it work there?
 
 
@@ -60,6 +60,7 @@ us reproducing and fixing a quite complex problem within approx 1 hour.
 ```
 
 ### Stacktrace / full error message
+
 
 ```
 (paste text here)
