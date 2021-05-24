@@ -1201,6 +1201,42 @@ def collect_entry_point(name: str) -> Tuple[list, list]:
     return datas, imports
 
 
+def get_hook_config(hook_api, module_name, key):
+    """
+    Get user settings for hooks.
+
+    Args:
+        module_name:
+            The module/package for which the key setting belong to.
+        key:
+            A key for the config.
+    Returns:
+        The value for the config. ``None`` if not set.
+
+    The ``get_hook_config`` function will lookup settings in the
+    ``Analysis.hooksconfig`` dict.
+
+    The hook settings can be added to ``.spec`` file in the form of::
+
+        a = Analysis(["my-app.py"],
+            ...
+            hooksconfig = {
+                "gi": {
+                    "icons": ["Adwaita"],
+                    "themes": ["Adwaita"],
+                    "languages": ["en_GB", "zh_CN"],
+                },
+            },
+            ...
+        )
+
+    """
+    config = hook_api.analysis.hooksconfig
+    value = None
+    if module_name in config and key in config[module_name]:
+        value = config[module_name][key]
+    return value
+
 if compat.is_pure_conda:
     from PyInstaller.utils.hooks import conda as conda_support  # noqa: F401
 elif compat.is_conda:

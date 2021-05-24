@@ -12,6 +12,6 @@
 Import hook for PyGObject's "gi.repository.Champlain" package.
 """
 
-from PyInstaller.utils.hooks import get_gi_typelibs
+from PyInstaller.utils.hooks.gi import get_gi_typelibs
 
 binaries, datas, hiddenimports = get_gi_typelibs('Champlain', '0.12')

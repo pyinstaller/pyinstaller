@@ -321,10 +321,15 @@ class PyiModuleGraph(ModuleGraph):
             return super(PyiModuleGraph, self).add_script(
                 pathname, caller=caller)
 
-
-    def process_post_graph_hooks(self):
+    def process_post_graph_hooks(self, analysis):
         """
         For each imported module, run this module's post-graph hooks if any.
+
+        Parameters
+        ----------
+        analysis: build_main.Analysis
+            The Analysis that calls the hooks
+
         """
         # For each iteration of the infinite "while" loop below:
         #
@@ -365,7 +370,7 @@ class PyiModuleGraph(ModuleGraph):
                 # For each hook script for this module...
                 for module_hook in module_hooks:
                     # Run this script's post-graph hook.
-                    module_hook.post_graph()
+                    module_hook.post_graph(analysis)
 
                     # Cache all external dependencies listed by this script
                     # after running this hook, which could add dependencies.

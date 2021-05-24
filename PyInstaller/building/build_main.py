@@ -131,8 +131,9 @@ class Analysis(Target):
     }
 
     def __init__(self, scripts, pathex=None, binaries=None, datas=None,
-                 hiddenimports=None, hookspath=None, excludes=None, runtime_hooks=None,
-                 cipher=None, win_no_prefer_redirects=False, win_private_assemblies=False,
+                 hiddenimports=None, hookspath=None, hooksconfig=None,
+                 excludes=None, runtime_hooks=None, cipher=None,
+                 win_no_prefer_redirects=False, win_private_assemblies=False,
                  noarchive=False):
         """
         scripts
@@ -147,6 +148,9 @@ class Analysis(Target):
                 An optional list of additional (hidden) modules to include.
         hookspath
                 An optional list of additional paths to search for hooks.
+                (hook-modules).
+        hooksconfig
+                An optional dict of config settings for hooks.
                 (hook-modules).
         excludes
                 An optional list of module or package names (their Python names,
@@ -215,6 +219,10 @@ class Analysis(Target):
                 'pyinstaller40', 'hook-dirs'):
             self.hookspath += list(entry_point.load()())
 
+        self.hooksconfig = {}
+        if hooksconfig:
+            self.hooksconfig.update(hooksconfig)
+
         # Custom runtime hook files that should be included and started before
         # any existing PyInstaller runtime hooks.
         self.custom_runtime_hooks = runtime_hooks or []
@@ -262,6 +270,7 @@ class Analysis(Target):
             ('pathex', _check_guts_eq),
             ('hiddenimports', _check_guts_eq),
             ('hookspath', _check_guts_eq),
+            ('hooksconfig', _check_guts_eq),
             ('excludes', _check_guts_eq),
             ('custom_runtime_hooks', _check_guts_eq),
             ('win_no_prefer_redirects', _check_guts_eq),
@@ -421,7 +430,7 @@ class Analysis(Target):
         self.graph.add_hiddenimports(self.hiddenimports)
 
         ### Post-graph hooks.
-        self.graph.process_post_graph_hooks()
+        self.graph.process_post_graph_hooks(self)
 
         # Update 'binaries' TOC and 'datas' TOC.
         deps_proc = DependencyProcessor(self.graph,

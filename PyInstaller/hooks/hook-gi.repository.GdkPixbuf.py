@@ -18,8 +18,9 @@ from shutil import which
 
 from PyInstaller.config import CONF
 from PyInstaller.compat import exec_command_stdout, is_darwin, is_win, is_linux
+from PyInstaller.utils.hooks import logger, get_hook_config
 from PyInstaller.utils.hooks.gi import (
-    collect_glib_translations, get_gi_typelibs, get_gi_libdir, logger)
+    collect_glib_translations, get_gi_typelibs, get_gi_libdir)
 
 loaders_path = os.path.join('gdk-pixbuf-2.0', '2.10.0', 'loaders')
 
@@ -65,7 +66,6 @@ if libdir:
     # Else, GDK is available. Let's do this.
     else:
         binaries, datas, hiddenimports = get_gi_typelibs('GdkPixbuf', '2.0')
-        datas += collect_glib_translations('gdk-pixbuf')
 
         # To add support for a new platform, add a new "elif" branch below with
         # the proper is_<platform>() test and glob for finding loaders on that
@@ -157,3 +157,12 @@ if libdir:
             logger.warning(
                 'GdkPixbuf loader bundling unsupported on your platform.'
             )
+
+
+def hook(hook_api):
+    hook_datas = []
+    lang_list = get_hook_config(hook_api, "gi", "languages")
+
+    if libdir and gdk_pixbuf_query_loaders is not None:
+        hook_datas += collect_glib_translations('gdk-pixbuf', lang_list)
+    hook_api.add_datas(hook_datas)

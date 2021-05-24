@@ -431,13 +431,17 @@ class ModuleHook(object):
             # Expose this attribute as an instance variable of the same name.
             setattr(self, attr_name, attr_value)
 
-
     ## Hooks
 
-    def post_graph(self):
+    def post_graph(self, analysis):
         """
         Call the **post-graph hook** (i.e., `hook()` function) defined by this
         hook script if any.
+
+        Parameters
+        ----------
+        analysis: build_main.Analysis
+            Analysis that calls the hook
 
         This method is intended to be called _after_ the module graph for this
         application is constructed.
@@ -448,16 +452,20 @@ class ModuleHook(object):
 
         # Call this hook script's hook() function, which modifies attributes
         # accessed by subsequent methods and hence must be called first.
-        self._process_hook_func()
+        self._process_hook_func(analysis)
 
         # Order is insignificant here.
         self._process_hidden_imports()
         self._process_excluded_imports()
 
-
-    def _process_hook_func(self):
+    def _process_hook_func(self, analysis):
         """
         Call this hook's `hook()` function if defined.
+
+        Parameters
+        ----------
+        analysis: build_main.Analysis
+            Analysis that calls the hook
         """
 
         # If this hook script defines no hook() function, noop.
@@ -466,7 +474,8 @@ class ModuleHook(object):
 
         # Call this hook() function.
         hook_api = PostGraphAPI(
-            module_name=self.module_name, module_graph=self.module_graph)
+            module_name=self.module_name, module_graph=self.module_graph,
+            analysis=analysis)
         try:
             self._hook_module.hook(hook_api)
         except ImportError:

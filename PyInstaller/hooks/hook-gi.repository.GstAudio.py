@@ -13,6 +13,6 @@ Import hook for Gst(GStreamer) http://gstreamer.freedesktop.org/ introspected th
 PyGobject https://wiki.gnome.org/PyGObject via the GObject Introspection middleware
 layer https://wiki.gnome.org/Projects/GObjectIntrospection
 """
-from PyInstaller.utils.hooks import get_gi_typelibs
+from PyInstaller.utils.hooks.gi import get_gi_typelibs
 
 binaries, datas, hiddenimports = get_gi_typelibs('GstAudio', '1.0')

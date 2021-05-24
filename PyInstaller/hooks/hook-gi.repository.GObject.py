@@ -17,7 +17,7 @@ Tested with GLib 2.44.1, PyGObject 3.16.2, and GObject Introspection 1.44.0 on M
 GLib 2.42.2, PyGObject 3.14.0, and GObject Introspection 1.42 on Windows 7
 """
 
-from PyInstaller.utils.hooks import get_gi_typelibs
+from PyInstaller.utils.hooks.gi import get_gi_typelibs
 
 binaries, datas, hiddenimports = get_gi_typelibs('GObject', '2.0')
 
