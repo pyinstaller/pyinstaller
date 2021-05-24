@@ -1,8 +1,10 @@
 * Add ``PostGraphAPI.analysis`` attribute.
   Hooks can access the ``Analysis`` object
   through the ``hook()`` function.
-* Hooks can access a ``Analysis.hooksconfig`` attribute
+
+* Hooks may access a ``Analysis.hooksconfig`` attribute
   assigned on ``Analysis`` construction.
-  
-  A helper function ``get_hook_config()``
+ 
+  A helper function :func:`~PyInstaller.utils.hooks.get_hook_config`
   was defined in ``utils.hooks`` to get the config.
+

@@ -540,6 +540,13 @@ which has the following immutable properties:
    if it is a package, or ``None``. Typically the list contains only the
    absolute path of the package's directory.
 
+``co``:
+    Code object compiled from the contents of ``__file__`` (e.g., via the
+    ``compile()`` builtin).
+
+``analysis``:
+    The ``Analysis`` object that loads the hook.
+
 The ``hook_api`` object also offers the following methods:
 
 ``add_imports( *names )``:
@@ -565,6 +572,11 @@ The ``hook()`` function can add, remove or change included files using the
 above methods of ``hook_api``.
 Or, it can simply set values in the four global variables, because
 these will be examined after ``hook()`` returns.
+
+Hooks may access the user parameters, given in the ``hooksconfig`` argument in
+the spec file, by calling :func:`get_hook_config()` inside a `hook()` function.
+
+.. autofunction:: PyInstaller.utils.hooks.get_hook_config
 
 The ``pre_find_module_path( pfmp_api )`` Method
 ------------------------------------------------
