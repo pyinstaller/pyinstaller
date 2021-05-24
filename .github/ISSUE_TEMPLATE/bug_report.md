@@ -2,7 +2,7 @@
 name: Bug report
 about: Report a bug encountered while freezing you program or runing your frozen program
 title: ''
-labels: needs-triage
+labels: triage
 assignees: ''
 ---
 
