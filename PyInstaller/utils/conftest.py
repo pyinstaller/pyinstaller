@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -52,7 +52,7 @@ from PyInstaller import __main__ as pyi_main
 from PyInstaller.utils.tests import gen_sourcefile
 from PyInstaller.utils.cliutils import archive_viewer
 from PyInstaller.compat import is_darwin, is_win, safe_repr, \
-    architecture, is_linux, text_read_mode
+    architecture, is_linux
 from PyInstaller.depend.analysis import initialize_modgraph
 from PyInstaller.utils.win32 import winutils
 from PyInstaller.utils.hooks.qt import pyqt5_library_info, pyside2_library_info
@@ -63,9 +63,12 @@ from PyInstaller.utils.hooks.qt import pyqt5_library_info, pyside2_library_info
 # =======
 # Timeout for running the executable. If executable does not exit in this time
 # then it is interpreted as test failure.
-_EXE_TIMEOUT = 30  # In sec.
+_EXE_TIMEOUT = 60  # In sec.
 # Number of retries we should attempt if the executable times out.
 _MAX_RETRIES = 2
+# All currently supported platforms
+SUPPORTED_OSES = {"darwin", "linux", "win32"}
+
 
 # Code
 # ====
@@ -82,6 +85,22 @@ def SPEC_DIR(request):
 def SCRIPT_DIR(request):
     """Return the directory where the test scripts reside"""
     return py.path.local(_get_script_dir(request))
+
+
+def pytest_runtest_setup(item):
+    """Markers to skip tests based on the current platform.
+    https://pytest.org/en/stable/example/markers.html#marking-platform-specific-tests-with-pytest
+
+    Available markers: see setup.cfg [tool:pytest] markers
+        - @pytest.mark.darwin (macOS)
+        - @pytest.mark.linux (GNU/Linux)
+        - @pytest.mark.win32 (Windows)
+    """
+    supported_platforms = SUPPORTED_OSES.intersection(
+        mark.name for mark in item.iter_markers())
+    plat = sys.platform
+    if supported_platforms and plat not in supported_platforms:
+        pytest.skip("does not run on %s" % plat)
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
@@ -426,7 +445,7 @@ class AppBuilder(object):
                 '--distpath', self._distdir,
                 '--workpath', self._builddir,
                 '--path', _get_modules_dir(self._request),
-                '--log-level=DEBUG'
+                        '--log-level=INFO',
                 ]
 
         # Choose bundle mode.
@@ -456,7 +475,7 @@ class AppBuilder(object):
         print('EXECUTING MATCHING:', toc_log)
         fname_list = archive_viewer.get_archive_content(exe)
         fname_list = [fn for fn in fname_list]
-        with open(toc_log, text_read_mode) as f:
+        with open(toc_log, 'r') as f:
             pattern_list = eval(f.read())
         # Alphabetical order of patterns.
         pattern_list.sort()

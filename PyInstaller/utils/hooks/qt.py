@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -13,12 +13,11 @@ import sys
 import json
 import glob
 
-from ..hooks import eval_statement, exec_statement, get_homebrew_path, \
-    get_module_file_attribute
+from PyInstaller.utils import hooks
 from PyInstaller.depend.bindepend import getImports, getfullnameof
-from ... import log as logging
-from ...compat import is_win, is_darwin, is_linux
-from ...utils import misc
+from PyInstaller import log as logging
+from PyInstaller import compat
+from PyInstaller.utils import misc
 
 logger = logging.getLogger(__name__)
 
@@ -35,13 +34,47 @@ class Qt5LibraryInfo:
             raise Exception('Invalid namespace: {0}'.format(namespace))
         self.namespace = namespace
         self.is_PyQt5 = namespace == 'PyQt5'
+        # Determine relative path where Qt libraries and data need to
+        # be collected in the frozen application. This varies between
+        # PyQt5/PySide2, their versions, and platforms.
+        # NOTE: it is tempting to consider deriving this path as simply the
+        # value of QLibraryInfo.PrefixPath, taken relative to the package's
+        # root directory. However, we also need to support non-wheel
+        # deployments (e.g., with Qt installed in custom path on Windows,
+        # or with Qt and PyQt5 installed on linux using native package
+        # manager), and in those, the Qt PrefixPath does not reflect
+        # the required relative target path for the frozen application.
+        if namespace == 'PyQt5':
+            # PyQt5 uses PyQt5/Qt on all platforms, or PyQt5/Qt5 from
+            # version 5.15.4 on
+            if hooks.is_module_satisfies("PyQt5 >= 5.15.4"):
+                self.qt_rel_dir = os.path.join('PyQt5', 'Qt5')
+            else:
+                self.qt_rel_dir = os.path.join('PyQt5', 'Qt')
+        else:
+            # PySide2 uses PySide2/Qt on linux and macOS, and PySide2
+            # on Windows
+            if compat.is_win:
+                self.qt_rel_dir = 'PySide2'
+            else:
+                self.qt_rel_dir = os.path.join('PySide2', 'Qt')
 
     # Initialize most of this class only when values are first requested from
     # it.
     def __getattr__(self, name):
-        if 'version' not in self.__dict__:
+        if 'version' in self.__dict__:
+            # Initialization was already done, but requested attribute is not
+            # availiable.
+            raise AttributeError(name)
+        else:
+            # Ensure self.version exists, even if PyQt5/PySide2 can't be
+            # imported. Hooks and util functions use `if .version` to check
+            # whether PyQt5/PySide2 was imported and other attributes are
+            # expected to be available.  This also serves as a marker that
+            # initialization was already done.
+            self.version = None
             # Get library path information from Qt. See QLibraryInfo_.
-            json_str = exec_statement("""
+            json_str = hooks.exec_statement("""
                 import sys
 
                 # exec_statement only captures stdout. If there are
@@ -77,18 +110,12 @@ class Qt5LibraryInfo:
             except Exception as e:
                 logger.warning('Cannot read QLibraryInfo output: raised %s when '
                                'decoding:\n%s', str(e), json_str)
-                qli = False
+                qli = {}
 
-            # If PyQt5/PySide2 can't be imported, record that.
-            if not qli:
-                self.version = None
-            else:
-                for k, v in qli.items():
-                    setattr(self, k, v)
+            for k, v in qli.items():
+                setattr(self, k, v)
 
             return getattr(self, name)
-        else:
-            raise AttributeError
 
 
 # Provide single instances of this class to avoid each hook constructing its own.
@@ -100,18 +127,18 @@ def qt_plugins_dir(namespace):
     """
     Return list of paths searched for plugins.
 
-    :param namespace: Import namespace, i.e., PyQt4, PyQt5, PySide, or PySide2
+    :param namespace: Import namespace, i.e., PyQt5 or PySide2
 
     :return: Plugin directory paths
     """
-    if namespace not in ['PyQt4', 'PyQt5', 'PySide', 'PySide2']:
+    if namespace not in ['PyQt5', 'PySide2']:
         raise Exception('Invalid namespace: {0}'.format(namespace))
     if namespace == 'PyQt5':
         paths = [pyqt5_library_info.location['PluginsPath']]
     elif namespace == 'PySide2':
         paths = [pyside2_library_info.location['PluginsPath']]
     else:
-        paths = eval_statement("""
+        paths = hooks.eval_statement("""
             from {0}.QtCore import QCoreApplication;
             app = QCoreApplication([]);
             print(list(app.libraryPaths()))
@@ -137,11 +164,11 @@ def qt_plugins_binaries(plugin_type, namespace):
     Return list of dynamic libraries formatted for mod.binaries.
 
     :param plugin_type: Plugin to look for
-    :param namespace: Import namespace, i.e., PyQt4, PyQt5, PySide, or PySide2
+    :param namespace: Import namespace, i.e., PyQt5 or PySide2
 
     :return: Plugin directory path corresponding to the given plugin_type
     """
-    if namespace not in ['PyQt4', 'PyQt5', 'PySide', 'PySide2']:
+    if namespace not in ['PyQt5', 'PySide2']:
         raise Exception('Invalid namespace: {0}'.format(namespace))
     pdir = qt_plugins_dir(namespace=namespace)
     files = []
@@ -154,21 +181,14 @@ def qt_plugins_binaries(plugin_type, namespace):
     # ``*.dylib`` in a certain directory. On Windows this would grab debug
     # copies of Qt plugins, which then causes PyInstaller to add a dependency on
     # the Debug CRT *in addition* to the release CRT.
-    #
-    # Since on Windows debug copies of Qt4 plugins end with "d4.dll" and Qt5
-    # plugins end with "d.dll" we filter them out of the list.
-    if is_win and (namespace in ['PyQt4', 'PySide']):
-        files = [f for f in files if not f.endswith("d4.dll")]
-    elif is_win and namespace in ['PyQt5', 'PySide2']:
+    if compat.is_win and namespace in ['PyQt5', 'PySide2']:
         files = [f for f in files if not f.endswith("d.dll")]
 
     logger.debug("Found plugin files %s for plugin %s", files, plugin_type)
-    if namespace in ['PyQt4', 'PySide']:
-        plugin_dir = 'qt4_plugins'
-    elif namespace == 'PyQt5':
-        plugin_dir = os.path.join('PyQt5', 'Qt', 'plugins')
+    if namespace == 'PyQt5':
+        plugin_dir = os.path.join(pyqt5_library_info.qt_rel_dir, 'plugins')
     else:
-        plugin_dir = os.path.join('PySide2', 'plugins')
+        plugin_dir = os.path.join(pyside2_library_info.qt_rel_dir, 'plugins')
     dest_dir = os.path.join(plugin_dir, plugin_type)
     binaries = [(f, dest_dir) for f in files]
     return binaries
@@ -178,15 +198,15 @@ def qt_menu_nib_dir(namespace):
     """
     Return path to Qt resource dir qt_menu.nib on OSX only.
 
-    :param namespace: Import namespace, i.e., PyQt4, PyQt5,  PySide, or PySide2
+    :param namespace: Import namespace, i.e., PyQt5 or PySide2
 
     :return: Directory containing qt_menu.nib for specified namespace
     """
-    if namespace not in ['PyQt4', 'PyQt5', 'PySide', 'PySide2']:
+    if namespace not in ['PyQt5', 'PySide2']:
         raise Exception('Invalid namespace: {0}'.format(namespace))
     menu_dir = None
 
-    path = exec_statement("""
+    path = hooks.exec_statement("""
     from {0}.QtCore import QLibraryInfo
     path = QLibraryInfo.location(QLibraryInfo.LibrariesPath)
     print(path)
@@ -233,7 +253,7 @@ def get_qmake_path(version=''):
 
     # try homebrew paths
     for formula in ('qt', 'qt5'):
-        homebrewqtpath = get_homebrew_path(formula)
+        homebrewqtpath = hooks.get_homebrew_path(formula)
         if homebrewqtpath:
             dirs.append(homebrewqtpath)
 
@@ -399,7 +419,9 @@ _qt_dynamic_dependencies_dict = {
     "enginio":                  (None,                     None,               ),
     "qt5gamepad":               (None,                     None,               "gamepads"),
     # Note: The ``platformthemes`` plugin is for Linux only, and comes from earlier PyInstaller code in ``hook-PyQt5.QtGui.py``. The ``styles`` plugin comes from the suggestion at https://github.com/pyinstaller/pyinstaller/issues/2156.
-    "qt5gui":                   (".QtGui",                 "qtbase",           "accessible", "iconengines", "imageformats", "platforms", "platforminputcontexts", "platformthemes", "styles"),
+    # ``xcbglintegrations`` and ``egldeviceintegrations`` were added manually
+    # for linux
+    "qt5gui":                   (".QtGui",                 "qtbase",           "accessible", "iconengines", "imageformats", "platforms", "platforminputcontexts", "platformthemes", "styles", "xcbglintegrations", "egldeviceintegrations"),  # noqa
     "qt5help":                  (".QtHelp",                "qt_help",          ),
     # This entry generated by hand -- it's not present in the Windows deployment tool sources.
     "qt5macextras":             (".QtMacExtras",           None,               ),
@@ -408,14 +430,12 @@ _qt_dynamic_dependencies_dict = {
     "qt5multimediaquick_p":     (None,                     "qtmultimedia",     ),
     "qt5network":               (".QtNetwork",             "qtbase",           "bearer"),
     "qt5nfc":                   (".QtNfc",                 None,               ),
-    ##                                                                              These added manually for Linux.
-    "qt5opengl":                (".QtOpenGL",              None,               "xcbglintegrations", "egldeviceintegrations"),
+    "qt5opengl":                (".QtOpenGL",              None,               ),  # noqa
     "qt5positioning":           (".QtPositioning",         None,               "position"),
     "qt5printsupport":          (".QtPrintSupport",        None,               "printsupport"),
     "qt5qml":                   (".QtQml",                 "qtdeclarative",    ),
     "qmltooling":               (None,                     None,               "qmltooling"),
-    ##                                                                                                          These added manually for Linux.
-    "qt5quick":                 (".QtQuick",               "qtdeclarative",    "scenegraph", "qmltooling", "xcbglintegrations", "egldeviceintegrations"),
+    "qt5quick":                 (".QtQuick",               "qtdeclarative",    "scenegraph", "qmltooling"),  # noqa
     "qt5quickparticles":        (None,                     None,               ),
     "qt5quickwidgets":          (".QtQuickWidgets",        None,               ),
     "qt5script":                (None,                     "qtscript",         ),
@@ -432,8 +452,7 @@ _qt_dynamic_dependencies_dict = {
     "qt5winextras":             (".QtWinExtras",           None,               ),
     "qt5xml":                   (".QtXml",                 "qtbase",           ),
     "qt5xmlpatterns":           (".QXmlPatterns",          "qtxmlpatterns",    ),
-    ##                                                                                             These added manually for Linux.
-    "qt5webenginecore":         (".QtWebEngineCore",       None,               "qtwebengine", "xcbglintegrations", "egldeviceintegrations"),
+    "qt5webenginecore":         (".QtWebEngineCore",       None,               "qtwebengine"),  # noqa
     "qt5webengine":             (".QtWebEngine",           "qtwebengine",      "qtwebengine"),
     "qt5webenginewidgets":      (".QtWebEngineWidgets",    None,               "qtwebengine"),
     "qt53dcore":                (None,                     None,               ),
@@ -476,7 +495,7 @@ def add_qt5_dependencies(hook_file):
         return [], [], []
 
     # Look up the module returned by this import.
-    module = get_module_file_attribute(module_name)
+    module = hooks.get_module_file_attribute(module_name)
     logger.debug('add_qt5_dependencies: Examining %s, based on hook of %s.',
                  module, hook_file)
 
@@ -488,7 +507,7 @@ def add_qt5_dependencies(hook_file):
 
         # On Windows, find this library; other platforms already provide the
         # full path.
-        if is_win:
+        if compat.is_win:
             imp = getfullnameof(imp,
                 # First, look for Qt binaries in the local Qt install.
                 pyqt5_library_info.location['BinariesPath'] if is_PyQt5 else
@@ -501,12 +520,12 @@ def add_qt5_dependencies(hook_file):
         # Linux libraries sometimes have a dotted version number --
         # ``libfoo.so.3``. It's now ''libfoo.so``, but the ``.so`` must also be
         # removed.
-        if is_linux and os.path.splitext(lib_name)[1] == '.so':
+        if compat.is_linux and os.path.splitext(lib_name)[1] == '.so':
             lib_name = os.path.splitext(lib_name)[0]
         if lib_name.startswith('lib'):
             lib_name = lib_name[3:]
         # Mac: rename from ``qt`` to ``qt5`` to match names in Windows/Linux.
-        if is_darwin and lib_name.startswith('qt'):
+        if compat.is_darwin and lib_name.startswith('qt'):
             lib_name = 'qt5' + lib_name[2:]
 
         # match libs with QT_LIBINFIX set to '_conda', i.e. conda-forge builds
@@ -542,6 +561,10 @@ def add_qt5_dependencies(hook_file):
         pyqt5_library_info.location['TranslationsPath'] if is_PyQt5
         else pyside2_library_info.location['TranslationsPath']
     )
+    qt_rel_dir = (
+        pyqt5_library_info.qt_rel_dir if is_PyQt5
+        else pyside2_library_info.qt_rel_dir
+    )
     datas = []
     for tb in translations_base:
         src = os.path.join(tp, tb + '_*.qm')
@@ -550,14 +573,7 @@ def add_qt5_dependencies(hook_file):
         # and
         # https://github.com/pyinstaller/pyinstaller/issues/2857#issuecomment-368744341.
         if glob.glob(src):
-            datas.append((
-                src, os.path.join(
-                    # The PySide2 Windows wheels place translations in a
-                    # different location.
-                    namespace, '' if not is_PyQt5 and is_win else 'Qt',
-                    'translations'
-                )
-            ))
+            datas.append((src, os.path.join(qt_rel_dir, 'translations')))
         else:
             logger.warning('Unable to find Qt5 translations %s. These '
                            'translations were not packaged.', src)

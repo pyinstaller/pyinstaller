@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -20,9 +20,10 @@ modifications into appropriate operations on the current `PyiModuleGraph`
 instance, thus modifying which modules will be frozen into the executable.
 """
 
-from ..lib.modulegraph.modulegraph import RuntimeModule, RuntimePackage
-from ..building.datastruct import TOC
-from ..building.utils import format_binaries_and_datas
+from PyInstaller.lib.modulegraph.modulegraph import RuntimeModule, \
+    RuntimePackage
+from PyInstaller.building.datastruct import TOC
+from PyInstaller.building.utils import format_binaries_and_datas
 
 
 class PreSafeImportModuleAPI(object):
@@ -354,7 +355,7 @@ class PostGraphAPI(object):
     def __init__(self, module_name, module_graph):
         # Mutable attributes.
         self.module_graph = module_graph
-        self.module = module_graph.findNode(module_name)
+        self.module = module_graph.find_node(module_name)
         assert self.module is not None  # should not occur
 
         # Immutable attributes.
@@ -448,7 +449,7 @@ class PostGraphAPI(object):
         """
         List of the graph nodes of all modules directly imported by this module.
         """
-        return self.module_graph.flatten(start=self.module)
+        return self.module_graph.iter_graph(start=self.module)
 
     def add_imports(self, *module_names):
         """

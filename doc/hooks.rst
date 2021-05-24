@@ -3,6 +3,8 @@
 Understanding PyInstaller Hooks
 ==================================
 
+.. py:currentmodule:: PyInstaller.utils.hooks
+
 .. note::
 
    We strongly encourage package developers
@@ -116,14 +118,14 @@ might catch up with these changes.
 If both PyInstaller and your package provide hooks for some module,
 your package's hooks take precedence,
 but can still be overridden by the command line option
-:option:`--additional-hooks-dir`.
+``--additional-hooks-dir``.
 
 
 You can tell PyInstaller about the additional hooks
 by defining some simple `setuptools entry-points
 <https://setuptools.readthedocs.io/en/latest/setuptools.html#dynamic-discovery-of-services-and-plugins>`_
 in your package.
-Therefor add entries like these to your :file:`setup.cfg`::
+Therefore add entries like these to your :file:`setup.cfg`::
 
   [options.entry_points]
   pyinstaller40 =
@@ -197,7 +199,7 @@ applies them to the bundle being created.
     Several hooks use this to prevent automatic inclusion of
     the ``tkinter`` module. Example::
 
-        excludedimports = [modname_tkinter]
+        excludedimports = ['tkinter']
 
 ``datas``
    A list of files to bundle with the app as data.
@@ -248,10 +250,10 @@ Useful Items in ``PyInstaller.compat``
 A hook may import the following names from ``PyInstaller.compat``,
 for example::
 
-   from PyInstaller.compat import modname_tkinter, is_win
+   from PyInstaller.compat import base_prefix, is_win
 
-``is_py35``, ``is_py36``, ``is_py37``:
-   True when the current version of Python is at least 3.5, 3.6, or 3.7 respectively.
+``is_py36``, ``is_py37``, ``is_py38``, ``is_py39``:
+   True when the current version of Python is at least 3.6, 3.7, 3.8 or 3.9 respectively.
 
 ``is_win``:
    True in a Windows system.
@@ -276,13 +278,6 @@ for example::
    String, the correct path to the base Python installation,
    whether the installation is native or a virtual environment.
 
-``modname_tkinter``:
-   String ``tkinter`` (this module was named differently in Python 2).
-   To prevent an unnecessary import of Tkinter, write::
-
-      from PyInstaller.compat import modname_tkinter
-      excludedimports = [ modname_tkinter ]
-
 ``EXTENSION_SUFFIXES``:
    List of Python C-extension file suffixes. Used for finding all
    binary dependencies in a folder; see file:`hook-cryptography.py`
@@ -299,7 +294,7 @@ Use a fully-qualified import statement, for example::
 The ``PyInstaller.utils.hooks`` functions listed here are generally useful
 and used in a number of existing hooks.
 There are several more functions besides these that serve the needs
-of specific hooks, such as hooks for PyQt4/5.
+of specific hooks, such as hooks for PyQt5.
 You are welcome to read the ``PyInstaller.utils.hooks`` module
 (and read the existing hooks that import from it) to get code and ideas.
 
@@ -468,24 +463,9 @@ You are welcome to read the ``PyInstaller.utils.hooks`` module
 
    is the tuple, ``( '/abs/Python/lib', '/abs/Python/lib/pkg/subpkg' )``
 
-``copy_metadata( 'package-name' )``:
-   Given the name of a package, return the name of its distribution
-   metadata folder as a list of tuples ready to be assigned
-   (or appended) to the ``datas`` global variable.
+.. autofunction:: copy_metadata
 
-   Some packages rely on metadata files accessed through the
-   ``pkg_resources`` module.
-   Normally |PyInstaller| does not include these metadata files.
-   If a package fails without them, you can use this
-   function in a hook file to easily add them to the bundle.
-   The tuples in the returned list have two strings.
-   The first is the full pathname to a folder in this system.
-   The second is the folder name only.
-   When these tuples are added to ``datas``\ ,
-   the folder will be bundled at the top level.
-   If *package-name* does not have metadata, an
-   AssertionError exception is raised.
-
+.. autofunction:: PyInstaller.utils.hooks.collect_entry_point
 
 ``get_homebrew_path( formula='' )``:
    Return the homebrew path to the named formula, or to the
@@ -502,6 +482,28 @@ You are welcome to read the ``PyInstaller.utils.hooks`` module
    the Django settings.py file, such as the
    ``Django.settings.INSTALLED_APPS`` list and many others.
 
+
+Support for Conda
+.................
+
+.. automodule:: PyInstaller.utils.hooks.conda
+
+.. autofunction:: PyInstaller.utils.hooks.conda.distribution
+
+.. autofunction:: PyInstaller.utils.hooks.conda.package_distribution
+
+.. autofunction:: PyInstaller.utils.hooks.conda.files
+
+.. autofunction:: PyInstaller.utils.hooks.conda.requires
+
+.. autoclass:: PyInstaller.utils.hooks.conda.Distribution
+
+.. autoclass:: PyInstaller.utils.hooks.conda.PackagePath
+    :members:
+
+.. autofunction:: PyInstaller.utils.hooks.conda.walk_dependency_tree
+
+.. autofunction:: PyInstaller.utils.hooks.conda.collect_dynamic_libs
 
 .. _the hook(hook_api) function:
 

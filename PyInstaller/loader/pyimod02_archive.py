@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -41,6 +41,7 @@ CRYPT_BLOCK_SIZE = 16
 PYZ_TYPE_MODULE = 0
 PYZ_TYPE_PKG = 1
 PYZ_TYPE_DATA = 2
+PYZ_TYPE_NSPKG = 3  # PEP-420 namespace package
 
 class FilePos(object):
     """
@@ -310,7 +311,13 @@ class ZlibArchiveReader(ArchiveReader):
         (typ, pos, length) = self.toc.get(name, (0, None, 0))
         if pos is None:
             return None
-        return typ == PYZ_TYPE_PKG
+        return typ in (PYZ_TYPE_PKG, PYZ_TYPE_NSPKG)
+
+    def is_pep420_namespace_package(self, name):
+        (typ, pos, length) = self.toc.get(name, (0, None, 0))
+        if pos is None:
+            return None
+        return typ == PYZ_TYPE_NSPKG
 
     def extract(self, name):
         (typ, pos, length) = self.toc.get(name, (0, None, 0))
@@ -323,7 +330,7 @@ class ZlibArchiveReader(ArchiveReader):
             if self.cipher:
                 obj = self.cipher.decrypt(obj)
             obj = zlib.decompress(obj)
-            if typ in (PYZ_TYPE_MODULE, PYZ_TYPE_PKG):
+            if typ in (PYZ_TYPE_MODULE, PYZ_TYPE_PKG, PYZ_TYPE_NSPKG):
                 obj = marshal.loads(obj)
         except EOFError as e:
             raise ImportError("PYZ entry '%s' failed to unmarshal" %

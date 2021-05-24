@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2020, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -24,28 +24,10 @@ import subprocess
 import sys
 import unittest
 
-# ignore some warnings which only confuse when running tests
-import warnings
-
-warnings.filterwarnings('ignore',
-    "Parent module '.*' not found while handling absolute import")
-
-
-# Expand PYTHONPATH with PyInstaller package to support running without
-# installation -- only if not running in a virtualenv.
-#if not (hasattr(sys, 'real_prefix') or sys.prefix != sys.base_prefix):
-pyi_home = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..')
-sys.path.insert(0, pyi_home)
-
-# Unbuffered sys.stdout, so we can follow stdout continuously when
-# running the test-cases, esp. the generated executables.
-#sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
-
-
 import PyInstaller
 from PyInstaller import compat, configure
 from PyInstaller import __main__ as pyi_main
-from PyInstaller.compat import is_win, is_darwin, modname_tkinter, text_read_mode
+from PyInstaller.compat import is_win, is_darwin
 from PyInstaller.utils import misc
 import PyInstaller.utils.hooks as hookutils
 from PyInstaller.utils.win32 import winutils
@@ -107,18 +89,15 @@ class SkipChecker(object):
             'basic/test_pkg_structures': ['pkg_resources'],
 
             'libraries/test_gst': ['gst'],
-            'libraries/test_twisted_qt4reactor': ['twisted', 'PyQt4', 'qt4reactor'],
             'libraries/test_wx': ['wx'],
 
             'interactive/test_ipython': ['IPython'],
             'interactive/test_keyring': ['keyring'],
             'interactive/test_matplotlib': ['matplotlib'],
             'interactive/test_pygame': ['pygame'],
-            'interactive/test_pyqt4_multiprocessing': ['multiprocessing', 'PyQt4'],
-            'interactive/test_qt4': ['PyQt4'],
             'interactive/test_qt5': ['PyQt5'],
             'interactive/test_tix': ['Tix'],
-            'interactive/test_tkinter': [modname_tkinter],
+            'interactive/test_tkinter': ['tkinter'],
             'interactive/test_wx': ['wx'],
             }
 
@@ -424,7 +403,7 @@ class BuildTestRunner(object):
                 return False, 'Executable for %s missing' % logfn
             fname_list = archive_viewer.get_archive_content(prog)
             fname_list = [fn for fn in fname_list]
-            with open(logfn, text_read_mode) as fp:
+            with open(logfn, 'r') as fp:
                 pattern_list = eval(fp.read())
             # Alphabetical order of patterns.
             pattern_list.sort()

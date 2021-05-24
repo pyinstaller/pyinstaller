@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -10,8 +10,8 @@
 # ----------------------------------------------------------------------------
 import os
 
-from ..hooks import eval_script
-from ...utils import misc
+from PyInstaller.utils.hooks import eval_script
+from PyInstaller.utils import misc
 
 
 __all__ = [
@@ -34,8 +34,9 @@ def django_dottedstring_imports(django_root_dir):
     # module.
     pths.append(django_root_dir)
 
-    package_name = os.path.basename(django_root_dir) + '.settings'
-    env = {'DJANGO_SETTINGS_MODULE': package_name,
+    default_settings_module = os.path.basename(django_root_dir) + '.settings'
+    settings_module = os.environ.get('DJANGO_SETTINGS_MODULE', default_settings_module)
+    env = {'DJANGO_SETTINGS_MODULE': settings_module,
            'PYTHONPATH': os.pathsep.join(pths)}
     ret = eval_script('django_import_finder.py', env=env)
 
@@ -54,7 +55,7 @@ def django_find_root_dir():
     but usually one level up. We need to detect this special case too.
     """
     # 'PyInstaller.config' cannot be imported as other top-level modules.
-    from ...config import CONF
+    from PyInstaller.config import CONF
     # Get the directory with manage.py. Manage.py is supplied to PyInstaller as the
     # first main executable script.
     manage_py = CONF['main_script']

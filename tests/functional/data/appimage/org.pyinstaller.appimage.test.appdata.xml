@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+	<id>org.pyinstaller.appimage.test</id>
+	<metadata_license>MIT</metadata_license>
+	<project_license>LGPL-2.1-only</project_license>
+	<name>PyInstaller Appimage Test</name>
+	<summary>Some summary</summary>
+	<description>
+		<p>Simple AppImage test for code frozen with PyInstaller.</p>
+	</description>
+	<launchable type="desktop-id">org.pyinstaller.appimage.test</launchable>
+	<url type="homepage">https://github.com/pyinstaller/pyinstaller</url>
+	<url type="bugtracker">https://github.com/pyinstaller/pyinstaller/issues</url>
+	<developer_name>PyInstaller</developer_name>
+	<update_contact>contact -- example dot org</update_contact>
+	<provides>
+		<binary>apptest</binary>
+	</provides>
+</component>

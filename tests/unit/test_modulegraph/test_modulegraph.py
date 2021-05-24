@@ -12,6 +12,9 @@ import textwrap
 from lxml import etree
 import pickle
 
+from importlib._bootstrap_external import SourceFileLoader, ExtensionFileLoader
+from zipimport import zipimporter
+
 try:
     bytes
 except NameError:
@@ -188,25 +191,21 @@ class TestFunctions (unittest.TestCase):
             modgraph = modulegraph.ModuleGraph()
             info = modgraph._find_module('mymodule', path=[path] + sys.path)
 
-            fp = info[0]
-            filename = info[1]
-            description = info[2]
-
-            self.assertTrue(hasattr(fp, 'read'))
+            filename, loader = info
 
             if path.endswith('.zip') or path.endswith('.egg'):
                 # Zip importers may precompile
                 if filename.endswith('.py'):
                     self.assertEqual(filename, os.path.join(path, 'mymodule.py'))
-                    self.assertEqual(description, ('.py', READ_MODE, imp.PY_SOURCE))
+                    self.assertIsInstance(loader, zipimporter)
 
                 else:
                     self.assertEqual(filename, os.path.join(path, 'mymodule.pyc'))
-                    self.assertEqual(description, ('.pyc', 'rb', imp.PY_COMPILED))
+                    self.assertIsInstance(loader, zipimporter)
 
             else:
                 self.assertEqual(filename, os.path.join(path, 'mymodule.py'))
-                self.assertEqual(description, ('.py', READ_MODE, imp.PY_SOURCE))
+                self.assertIsInstance(loader, SourceFileLoader)
 
             # Compiled plain module, no source
             if path.endswith('.zip') or path.endswith('.egg'):
@@ -215,15 +214,10 @@ class TestFunctions (unittest.TestCase):
             else:
                 info = modgraph._find_module('mymodule2', path=[path] + sys.path)
 
-                fp = info[0]
-                filename = info[1]
-                description = info[2]
+                filename, loader = info
 
-                self.assertTrue(hasattr(fp, 'read'))
                 self.assertEqual(filename, os.path.join(path, 'mymodule2.pyc'))
-                self.assertEqual(description, ('.pyc', 'rb', imp.PY_COMPILED))
 
-                fp.close()
 
             # Compiled plain module, with source
 #            info = modgraph._find_module('mymodule3', path=[path] + sys.path)
@@ -243,14 +237,12 @@ class TestFunctions (unittest.TestCase):
 
             # Package
             info = modgraph._find_module('mypkg', path=[path] + sys.path)
-            fp = info[0]
-            filename = info[1]
-            description = info[2]
 
-            self.assertEqual(fp, None)
+            filename, loader = info
+
             # FIXME: PyInstaller appends `__init__.py` to the pkg-directory
             #self.assertEqual(filename, os.path.join(path, 'mypkg'))
-            self.assertEqual(description, ('', '', imp.PKG_DIRECTORY))
+            self.assertTrue(loader.is_package("mypkg"))
 
             # Extension
             if path.endswith('.zip'):
@@ -276,9 +268,7 @@ class TestFunctions (unittest.TestCase):
                 pass
             else:
                 info = modgraph._find_module('myext', path=[path] + sys.path)
-                fp = info[0]
-                filename = info[1]
-                description = info[2]
+                filename, loader = info
 
                 if sys.platform == 'win32':
                     ext = '.pyd'
@@ -287,8 +277,7 @@ class TestFunctions (unittest.TestCase):
                     ext = '.so'
 
                 self.assertEqual(filename, os.path.join(path, 'myext' + ext))
-                self.assertEqual(description, (ext, 'rb', imp.C_EXTENSION))
-                self.assertEqual(fp, None)
+                self.assertIsInstance(loader, ExtensionFileLoader)
 
     def test_moduleInfoForPath(self):
         self.assertEqual(modulegraph.moduleInfoForPath("/somewhere/else/file.txt"), None)
@@ -641,7 +630,7 @@ class TestModuleGraph (unittest.TestCase):
         self.assertEqual(record, [])
 
         graph.implyNodeReference(n2, "n3")
-        n3 = graph.findNode('n3')
+        n3 = graph.find_node('n3')
         outs, ins = map(list, graph.get_edges(n2))
         self.assertEqual(outs, [n3])
         self.assertEqual(ins, [n1])
@@ -660,11 +649,11 @@ class TestModuleGraph (unittest.TestCase):
 
         graph = modulegraph.ModuleGraph()
         master = graph.createNode(modulegraph.Node, 'root')
-        m = graph.run_script(script, master)
+        m = graph.add_script(script, master)
         self.assertEqual(list(graph.get_edges(master)[0])[0], m)
         self.assertEqual(set(graph.get_edges(m)[0]), set([
-            graph.findNode('sys'),
-            graph.findNode('os'),
+            graph.find_node('sys'),
+            graph.find_node('os'),
         ]))
 
     @expectedFailure
@@ -690,7 +679,7 @@ class TestModuleGraph (unittest.TestCase):
         self.assertIsInstance(node, modulegraph.Package)
         parent = graph._determine_parent(node)
         self.assertEqual(parent.identifier, node.identifier)
-        self.assertEqual(parent, graph.findNode(node.identifier))
+        self.assertEqual(parent, graph.find_node(node.identifier))
         self.assertTrue(isinstance(parent, modulegraph.Package))
 
         # XXX: Might be a usecase for some odd code in determine_parent...
@@ -699,81 +688,16 @@ class TestModuleGraph (unittest.TestCase):
         #m = graph._determine_parent(node)
         #self.assertTrue(m is parent)
 
-        m = graph.findNode('xml')
+        m = graph.find_node('xml')
         self.assertEqual(graph._determine_parent(m), m)
 
-        m = graph.findNode('xml.dom')
-        self.assertEqual(graph._determine_parent(m), graph.findNode('xml.dom'))
+        m = graph.find_node('xml.dom')
+        self.assertEqual(graph._determine_parent(m), graph.find_node('xml.dom'))
 
 
     @expectedFailure
     def test_find_head_package(self):
         self.fail("find_head_package")
-
-    def test_load_tail(self):
-        # XXX: This test is dodgy!
-
-        class MockedModuleGraph(modulegraph.ModuleGraph):
-            def _safe_import_module(self, partname, fqname, parent):
-                record.append((partname, fqname, parent))
-                if partname == 'raises' or '.raises.' in fqname:
-                    # FIXME: original _load_tail returned a MissingModule if
-                    # _import_module did return None. PyInstaller changed this
-                    # in cae47e4f5b51a94ac3ceb5d093283ba0cc895589
-                    return self.createNode(modulegraph.MissingModule, fqname)
-                return modulegraph.Node(fqname)
-
-        graph = MockedModuleGraph()
-
-        record = []
-        root = modulegraph.Node('root')
-        m = graph._load_tail(root, '')
-        self.assertTrue(m is root)
-        self.assertEqual(record, [
-            ])
-
-        record = []
-        root = modulegraph.Node('root')
-        m = graph._load_tail(root, 'sub')
-        self.assertFalse(m is root)
-        self.assertEqual(record, [
-                ('sub', 'root.sub', root),
-            ])
-
-        record = []
-        root = modulegraph.Node('root')
-        m = graph._load_tail(root, 'sub.sub1')
-        self.assertFalse(m is root)
-        node = modulegraph.Node('root.sub')
-        self.assertEqual(record, [
-                ('sub', 'root.sub', root),
-                ('sub1', 'root.sub.sub1', node),
-            ])
-
-        record = []
-        root = modulegraph.Node('root')
-        m = graph._load_tail(root, 'sub.sub1.sub2')
-        self.assertFalse(m is root)
-        node = modulegraph.Node('root.sub')
-        node2 = modulegraph.Node('root.sub.sub1')
-        self.assertEqual(record, [
-                ('sub', 'root.sub', root),
-                ('sub1', 'root.sub.sub1', node),
-                ('sub2', 'root.sub.sub1.sub2', node2),
-            ])
-
-        n = graph._load_tail(root, 'raises')
-        self.assertIsInstance(n, modulegraph.MissingModule)
-        self.assertEqual(n.identifier, 'root.raises')
-
-        n = graph._load_tail(root, 'sub.raises')
-        self.assertIsInstance(n, modulegraph.MissingModule)
-        self.assertEqual(n.identifier, 'root.sub.raises')
-
-        n = graph._load_tail(root, 'sub.raises.sub')
-        self.assertIsInstance(n, modulegraph.MissingModule)
-        self.assertEqual(n.identifier, 'root.sub.raises.sub')
-
 
 
     @expectedFailure
@@ -879,7 +803,7 @@ class TestModuleGraph (unittest.TestCase):
             graph = modulegraph.ModuleGraph()
             m = graph._find_module('sys', None)
             self.assertEqual(record, [])
-            self.assertEqual(m, (None, None, ("", "", imp.C_BUILTIN)))
+            self.assertEqual(m, (None, modulegraph.BUILTIN_MODULE))
 
             xml = graph.import_hook("xml")[0]
             self.assertEqual(xml.identifier, 'xml')
@@ -892,19 +816,15 @@ class TestModuleGraph (unittest.TestCase):
                 ('shutil', graph.path),
             ])
             self.assertTrue(isinstance(m, tuple))
-            self.assertEqual(len(m), 3)
-            self.assertTrue(hasattr(m[0], 'read'))
-            self.assertIsInstance(m[0].read(), str)
+            self.assertEqual(len(m), 2)
             srcfn = shutil.__file__
             if srcfn.endswith('.pyc'):
                 srcfn = srcfn[:-1]
-            self.assertEqual(os.path.realpath(m[1]), os.path.realpath(srcfn))
-            self.assertEqual(m[2], ('.py', READ_MODE, imp.PY_SOURCE))
-            m[0].close()
+            self.assertEqual(os.path.realpath(m[0]), os.path.realpath(srcfn))
+            self.assertIsInstance(m[1], SourceFileLoader)
 
             m2 = graph._find_module('shutil', None)
             self.assertEqual(m[1:], m2[1:])
-            m2[0].close()
 
 
             record[:] = []
@@ -916,7 +836,6 @@ class TestModuleGraph (unittest.TestCase):
             self.assertEqual(record, [
                 ('sax', xml.packagepath),
             ])
-            if m[0] is not None: m[0].close()
 
         finally:
             pass
@@ -956,7 +875,7 @@ class TestModuleGraph (unittest.TestCase):
             self.assertEqual(lines[1], 'Class           Name                      File')
             self.assertEqual(lines[2], '-----           ----                      ----')
             expected = []
-            for n in graph.flatten():
+            for n in graph.iter_graph():
                 if n.filename:
                     expected.append([type(n).__name__, n.identifier, n.filename])
                 else:
@@ -1048,7 +967,7 @@ class TestModuleGraph (unittest.TestCase):
         graph.addNode(n1)
         graph.addNode(n2)
 
-        graph.createReference(n1, n2)
+        graph.add_edge(n1, n2)
         outs, ins = map(list, graph.get_edges(n1))
         self.assertEqual(outs, [n2])
         self.assertEqual(ins, [])
@@ -1067,9 +986,9 @@ class TestModuleGraph (unittest.TestCase):
         # works....
         graph = modulegraph.ModuleGraph()
         if __file__.endswith('.py'):
-            graph.run_script(__file__)
+            graph.add_script(__file__)
         else:
-            graph.run_script(__file__[:-1])
+            graph.add_script(__file__[:-1])
 
         graph.import_hook('os')
         graph.import_hook('xml.etree')
@@ -1093,9 +1012,9 @@ class TestModuleGraph (unittest.TestCase):
         # works....
         graph = modulegraph.ModuleGraph()
         if __file__.endswith('.py'):
-            graph.run_script(__file__)
+            graph.add_script(__file__)
         else:
-            graph.run_script(__file__[:-1])
+            graph.add_script(__file__[:-1])
         graph.import_hook('os')
         graph.import_hook('xml.etree')
         graph.import_hook('unittest')

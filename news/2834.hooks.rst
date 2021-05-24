@@ -1,1 +1,0 @@
-Fix shapely hook on Windows for non-conda shapely installations.

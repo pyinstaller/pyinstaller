@@ -1,0 +1,2 @@
+Windows: Provide a meaningful error message if given an icon in an unsupported
+Image format.

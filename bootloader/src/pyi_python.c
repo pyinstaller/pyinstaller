@@ -1,6 +1,6 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2020, PyInstaller Development Team.
+ * Copyright (c) 2013-2021, PyInstaller Development Team.
  *
  * Distributed under the terms of the GNU General Public License (version 2
  * or later) with exception for distributing the bootloader.
@@ -17,7 +17,6 @@
 
 #ifdef _WIN32
     #include <windows.h>  /* HMODULE */
-    #include <winsock.h>  /* ntohl */
 #else
     #include <dlfcn.h>  /* dlsym */
 #endif
@@ -40,6 +39,7 @@ DECLVAR(Py_NoSiteFlag);
 DECLVAR(Py_NoUserSiteDirectory);
 DECLVAR(Py_OptimizeFlag);
 DECLVAR(Py_VerboseFlag);
+DECLVAR(Py_UnbufferedStdioFlag);
 
 /* functions with prefix `Py_` */
 DECLPROC(Py_BuildValue);
@@ -58,6 +58,7 @@ DECLPROC(PyErr_Clear);
 DECLPROC(PyErr_Occurred);
 DECLPROC(PyErr_Print);
 DECLPROC(PyErr_Fetch);
+DECLPROC(PyErr_Restore);
 
 DECLPROC(PyImport_AddModule);
 DECLPROC(PyImport_ExecCodeModule);
@@ -80,6 +81,7 @@ DECLPROC(PySys_SetPath);
 DECLPROC(PyUnicode_FromString);
 
 DECLPROC(Py_DecodeLocale);
+DECLPROC(PyMem_RawFree);
 DECLPROC(PyUnicode_FromFormat);
 DECLPROC(PyUnicode_DecodeFSDefault);
 DECLPROC(PyUnicode_Decode);
@@ -103,6 +105,7 @@ pyi_python_map_names(HMODULE dll, int pyvers)
     GETVAR(dll, Py_NoUserSiteDirectory);
     GETVAR(dll, Py_OptimizeFlag);
     GETVAR(dll, Py_VerboseFlag);
+    GETVAR(dll, Py_UnbufferedStdioFlag);
 
     /* functions with prefix `Py_` */
     GETPROC(dll, Py_BuildValue);
@@ -122,6 +125,7 @@ pyi_python_map_names(HMODULE dll, int pyvers)
     GETPROC(dll, PyErr_Occurred);
     GETPROC(dll, PyErr_Print);
     GETPROC(dll, PyErr_Fetch);
+    GETPROC(dll, PyErr_Restore);
     GETPROC(dll, PyImport_AddModule);
     GETPROC(dll, PyImport_ExecCodeModule);
     GETPROC(dll, PyImport_ImportModule);
@@ -148,6 +152,7 @@ pyi_python_map_names(HMODULE dll, int pyvers)
     GETPROC(dll, PyUnicode_FromString);
 
     GETPROC(dll, Py_DecodeLocale);
+    GETPROC(dll, PyMem_RawFree);
 
     GETPROC(dll, PyUnicode_FromFormat);
     GETPROC(dll, PyUnicode_Decode);

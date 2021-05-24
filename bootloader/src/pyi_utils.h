@@ -1,6 +1,6 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2020, PyInstaller Development Team.
+ * Copyright (c) 2013-2021, PyInstaller Development Team.
  *
  * Distributed under the terms of the GNU General Public License (version 2
  * or later) with exception for distributing the bootloader.
@@ -48,6 +48,7 @@ int pyi_copy_file(const char *src, const char *dst, const char *filename);
 
 /* Other routines. */
 dylib_t pyi_utils_dlopen(const char *dllpath);
+int pyi_utils_dlclose(dylib_t dll);
 int pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS *status,
                            const int argc, char *const argv[]);
 int pyi_utils_set_environment(const ARCHIVE_STATUS *status);

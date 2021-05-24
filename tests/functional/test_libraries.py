@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -23,7 +23,7 @@ import py
 # -------------
 from PyInstaller.compat import is_win, is_darwin, is_linux, is_64bits
 from PyInstaller.utils.hooks import is_module_satisfies
-from PyInstaller.utils.tests import importorskip, xfail, skipif, skipif_win
+from PyInstaller.utils.tests import importorskip, xfail, skipif
 
 # :todo: find a way to get this from `conftest` or such
 # Directory with testing modules used in some tests.
@@ -37,7 +37,10 @@ def test_gevent(pyi_builder):
         """
         import gevent
         gevent.spawn(lambda: x)
-        """)
+        """,
+        # reduce footprint of the test (and avoid issued introduced by one of
+        # these packages breaking)
+        excludes=["PySide2", "PyQt5", "numpy", "scipy"])
 
 
 @importorskip('gevent')
@@ -46,24 +49,15 @@ def test_gevent_monkey(pyi_builder):
         """
         from gevent.monkey import patch_all
         patch_all()
-        """)
+        """,
+        # reduce footprint of the test (and avoid issued introduced by one of
+        # these packages breaking)
+        excludes=["PySide2", "PyQt5", "numpy", "scipy"])
 
 
 @xfail(is_darwin, reason='Issue #1895.')
 def test_tkinter(pyi_builder):
     pyi_builder.test_script('pyi_lib_tkinter.py')
-
-
-@xfail(is_darwin, reason='Issue #1895.')
-@importorskip('FixTk')
-def test_tkinter_FixTk(pyi_builder):
-    # check if Tkinter includes FixTk
-    # TODO: Python 3 contains module
-    #  'tkinter._fix' - does it need any special test or handling?
-    # TODO: How does the following code check if FixTk is included?
-    pyi_builder.test_source("""
-    import tkinter
-    """)
 
 
 def test_pkg_resource_res_string(pyi_builder, monkeypatch):
@@ -111,30 +105,6 @@ def test_pygments(pyi_builder):
         code = 'print "Hello World"'
         print(highlight(code, PythonLexer(), HtmlFormatter()))
         """)
-
-
-@importorskip('PyQt4')
-def test_PyQt4_QtWebKit(pyi_builder):
-    pyi_builder.test_source(
-        """
-        from PyQt4.QtGui import QApplication
-        from PyQt4.QtWebKit import QWebView
-        from PyQt4.QtCore import QTimer
-
-        app = QApplication([])
-        view = QWebView()
-        view.show()
-        # Exit Qt when the main loop becomes idle.
-        QTimer.singleShot(0, app.exit)
-        # Run the main loop, displaying the WebKit widget.
-        app.exec_()
-        """)
-
-
-@importorskip('PyQt4')
-def test_PyQt4_uic(tmpdir, pyi_builder, data_dir):
-    # Note that including the data_dir fixture copies files needed by this test
-    pyi_builder.test_script('pyi_lib_PyQt4-uic.py')
 
 
 PYQT5_NEED_OPENGL = pytest.mark.skipif(is_module_satisfies('PyQt5 <= 5.10.1'),
@@ -379,8 +349,15 @@ def test_idlelib(pyi_builder):
 
 
 @importorskip('keyring')
+@skipif(is_linux, reason="SecretStorage backend on linux requires active "
+                         "D-BUS session and initialized keyring, and may "
+                         "need to unlock the keyring via UI prompt.")
 def test_keyring(pyi_builder):
-    pyi_builder.test_source("import keyring")
+    pyi_builder.test_source(
+        """
+        import keyring
+        keyring.get_password("test", "test")
+        """)
 
 
 @importorskip('numpy')
@@ -585,17 +562,6 @@ def test_pil_img_conversion(pyi_builder):
                   '--console'])
 
 
-@xfail(is_darwin, reason='Issue #1895.')
-@importorskip('PIL')
-@importorskip('FixTk')
-def test_pil_FixTk(pyi_builder):
-    # hook-PIL is excluding FixTk, but is must still be included
-    # since it is imported elsewhere. Also see issue #1584.
-    pyi_builder.test_source("""
-    import tkinter
-    import FixTk, PIL
-    """)
-
 @importorskip('PIL.ImageQt')
 @importorskip('PyQt5')
 def test_pil_PyQt5(pyi_builder):
@@ -607,26 +573,14 @@ def test_pil_PyQt5(pyi_builder):
     import PIL.ImageQt
     """)
 
-@importorskip('PIL.ImageQt')
-@importorskip('PyQt4')
-def test_pil_PyQt4(pyi_builder):
-    # hook-PIL is excluding PyQt4, but is must still be included
-    # since it is imported elsewhere. Also see issue #1584.
-    pyi_builder.test_source("""
-    import PyQt4
-    import PIL
-    import PIL.ImageQt
-    """)
-
 
 @importorskip('PIL')
 def test_pil_plugins(pyi_builder):
     pyi_builder.test_source(
         """
-        # Verify packaging of PIL.Image. Specifically, the hidden import of FixTk
-        # importing tkinter is causing some problems.
-        from PIL.Image import fromstring
-        print(fromstring)
+        # Verify packaging of PIL.Image.
+        from PIL.Image import frombytes
+        print(frombytes)
 
         # PIL import hook should bundle all available PIL plugins. Verify that plugins
         # are bundled.
@@ -652,3 +606,12 @@ def test_pandas_extension(pyi_builder):
         assert is_float(1) == 0
         """)
 
+
+@importorskip('win32ctypes')
+@pytest.mark.skipif(not is_win,
+                    reason='pywin32-ctypes is supported only on Windows')
+@pytest.mark.parametrize('submodule', ['win32api', 'win32cred', 'pywintypes'])
+def test_pywin32ctypes(pyi_builder, submodule):
+    pyi_builder.test_source("""
+        from win32ctypes.pywin32 import {0}
+        """.format(submodule))

@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Report a bug encountered while freezing you program or runing your frozen program
+about: Report a bug encountered while freezing you program or running your frozen program
 title: ''
 labels: triage
 assignees: ''

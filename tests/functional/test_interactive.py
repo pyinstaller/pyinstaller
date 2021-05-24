@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -19,7 +19,7 @@ Note: All tests in this file should use the argument 'runtime'.
 import pytest
 
 from PyInstaller.utils.tests import importorskip, xfail
-from PyInstaller.compat import is_win
+from PyInstaller.compat import is_win, is_darwin
 
 _RUNTIME = 10  # In seconds.
 
@@ -34,8 +34,18 @@ def test_ipython(pyi_builder):
         """, runtime=_RUNTIME)
 
 
-@xfail(reason='TODO - known to fail')
-@importorskip('PySide')
-def test_pyside(pyi_builder):
-    pyi_builder.test_script('pyi_interact_pyside.py', #pyi_args=['--windowed'],
-                            runtime=_RUNTIME)
+# Splash screen is not supported on macOS due to incompatible design.
+@pytest.mark.skipif(is_darwin, reason="Splash screen is not supported "
+                                      "on macOS.")
+@pytest.mark.parametrize("mode", ['onedir', 'onefile'])
+def test_pyi_splash(pyi_builder_spec, capfd, monkeypatch, mode):
+    if mode == 'onefile':
+        monkeypatch.setenv('_TEST_SPLASH_ONEFILE', 'onefile')
+
+    pyi_builder_spec.test_spec('spec_with_splash.spec',
+                               runtime=_RUNTIME)
+
+    out, err = capfd.readouterr()
+    assert 'SPLASH: Splash screen started' in err, \
+        ("Cannot find log entry indicating start of splash screen in:\n{}"
+         .format(err))

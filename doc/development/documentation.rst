@@ -25,7 +25,7 @@ edit the documentation online and create a pull-request.
 For anything else we ask you to clone the repository and verify your changes
 like this::
 
-  pip install sphinx sphinx_rtd_theme
+  pip install sphinx sphinx_rtd_theme sphinx_autodoc_typehints
   cd doc
   make html
   xdg-open _build/html/index.html

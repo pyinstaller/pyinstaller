@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2014-2020, PyInstaller Development Team.
+# Copyright (c) 2014-2021, PyInstaller Development Team.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,7 +15,12 @@ import sys
 # The path to Qt's components may not default to the wheel layout for
 # self-compiled PyQt5 installations. Mandate the wheel layout. See
 # ``utils/hooks/qt.py`` for more details.
-pyqt_path = os.path.join(sys._MEIPASS, 'PyQt5', 'Qt')
+#
+# Try PyQt5 5.15.4-style path first...
+pyqt_path = os.path.join(sys._MEIPASS, 'PyQt5', 'Qt5')
+if not os.path.isdir(pyqt_path):
+    # ... and fall back to the older version
+    pyqt_path = os.path.join(sys._MEIPASS, 'PyQt5', 'Qt')
 os.environ['QT_PLUGIN_PATH'] = os.path.join(pyqt_path, 'plugins')
 os.environ['QML2_IMPORT_PATH'] = os.path.join(pyqt_path, 'qml')
 # This is required starting in PyQt5 5.12.3. See discussion in #4293.

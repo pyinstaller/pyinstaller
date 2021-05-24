@@ -1,8 +1,6 @@
 PyInstaller Overview
 ====================
 
-**New PyInstaller team members wanted! Email legorooj@protonmail.com if you're interested.**
-
 PyInstaller bundles a Python application and all its dependencies into a single
 package. The user can run the packaged app without installing a Python
 interpreter or any modules.
@@ -18,9 +16,7 @@ http://www.pyinstaller.org/funding.html for how to support PyInstaller.
 :Documentation: https://pyinstaller.readthedocs.io/
 :Website:       http://www.pyinstaller.org/
 :Code:          https://github.com/pyinstaller/pyinstaller
-:Donate:        | https://www.bountysource.com/teams/pyinstaller
-                | Bitcoin: 1JUFjawzWDR7Tc8z9TKXstVFdjkDY9FbtK
-                | `more ways to donate … <http://www.pyinstaller.org/donate.html>`_
+:Donate, Fund:  http://www.pyinstaller.org/funding.html
 
 
 PyInstaller reads a Python script written by you. It analyzes your code
@@ -42,14 +38,14 @@ but is not tested against them as part of the continuous integration tests.
 Main Advantages
 ---------------
 
-- Works out-of-the-box with any Python version 3.5-3.7.
+- Works out-of-the-box with any Python version 3.6-3.9.
 - Fully multi-platform, and uses the OS support to load the dynamic libraries,
   thus ensuring full compatibility.
-- Correctly bundles the major Python packages such as numpy, PyQt4, PyQt5,
-  PySide, Django, wxPython, matplotlib and others out-of-the-box.
+- Correctly bundles the major Python packages such as numpy, PyQt5,
+  PySide2, Django, wxPython, matplotlib and others out-of-the-box.
 - Compatible with many 3rd-party packages out-of-the-box. (All the required
   tricks to make external packages work are already integrated.)
-- Libraries like PyQt5, PyQt4, PySide, wxPython, matplotlib or Django are fully
+- Libraries like PyQt5, PySide2, wxPython, matplotlib or Django are fully
   supported, without having to handle plugins or external data files manually.
 - Works with code signing on OS X.
 - Bundles MS Visual C++ DLLs on Windows.
@@ -68,7 +64,7 @@ Requirements and Tested Platforms
 
 - Python: 
 
- - 3.5-3.7
+ - 3.6-3.9
  - tinyaes_ 1.0+ (only if using bytecode encryption).
    Instead of installing tinyaes, ``pip install pyinstaller[encryption]`` instead.
 
@@ -94,7 +90,7 @@ Requirements and Tested Platforms
 
 - Mac OS X (64bit):
 
- - Mac OS X 10.7 (Lion) or newer.
+ - Mac OS X 10.13 (High Sierra) or newer.
 
 
 Usage
@@ -161,7 +157,13 @@ if users and companies provide sustainable funding. See
 http://www.pyinstaller.org/funding.html for how to support PyInstaller.
 
 
+Changes in this Release
+-------------------------
+
+You can find a detailed list of changes in this release
+in the `change log`_ section of the manual.
+
 
 .. _tinyaes: https://github.com/naufraghi/tinyaes-py
 .. _`manual`: https://pyinstaller.readthedocs.io/en/latest/
-
+.. _`change log`: https://pyinstaller.readthedocs.io/en/latest/CHANGES.html

@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -22,7 +22,7 @@ import subprocess
 import sys
 import errno
 import importlib.machinery
-from .exceptions import ExecCommandFailed
+from PyInstaller.exceptions import ExecCommandFailed
 
 # Copied from https://docs.python.org/3/library/platform.html#cross-platform.
 is_64bits = sys.maxsize > 2**32
@@ -33,6 +33,8 @@ is_64bits = sys.maxsize > 2**32
 is_py35 = sys.version_info >= (3, 5)
 is_py36 = sys.version_info >= (3, 6)
 is_py37 = sys.version_info >= (3, 7)
+is_py38 = sys.version_info >= (3, 8)
+is_py39 = sys.version_info >= (3, 9)
 
 is_win = sys.platform.startswith('win')
 is_win_10 = is_win and (platform.win32_ver()[0] == '10')
@@ -53,8 +55,10 @@ is_hpux = sys.platform.startswith('hp-ux')
 # platform specific details for Mac in PyInstaller.
 is_unix = is_linux or is_solar or is_aix or is_freebsd or is_hpux or is_openbsd
 
-
 # On different platforms is different file for dynamic python library.
+# TODO: When removing support for is_py37, the "m" variants can be
+# removed, see
+# <https://docs.python.org/3/whatsnew/3.8.html#build-and-c-api-changes>
 _pyver = sys.version_info[:2]
 if is_win or is_cygwin:
     PYDYLIB_NAMES = {'python%d%d.dll' % _pyver,
@@ -93,7 +97,8 @@ elif is_unix:
     PYDYLIB_NAMES = {'libpython%d.%d.so.1.0' % _pyver,
                      'libpython%d.%dm.so.1.0' % _pyver,
                      'libpython%d.%dmu.so.1.0' % _pyver,
-                     'libpython%d.%dm.so' % _pyver}
+                     'libpython%d.%dm.so' % _pyver,
+                     'libpython%d.%d.so' % _pyver}
 else:
     raise SystemExit('Your platform is not yet supported. '
                      'Please define constant PYDYLIB_NAMES for your platform.')
@@ -155,6 +160,26 @@ is_venv = is_virtualenv = base_prefix != os.path.abspath(sys.prefix)
 # https://stackoverflow.com/questions/47610844#47610844
 is_conda = os.path.isdir(os.path.join(base_prefix, 'conda-meta'))
 
+# Similar to ``is_conda`` but is ``False`` using another ``venv``-like manager
+# on top. In this case, no packages encountered will be conda packages meaning
+# that the default non-conda behaviour is generally desired from PyInstaller.
+is_pure_conda = os.path.isdir(os.path.join(sys.prefix, 'conda-meta'))
+
+# Full path to python interpreter.
+python_executable = getattr(sys, '_base_executable', sys.executable)
+
+# Is this Python from Microsoft App Store (Windows only)?
+# Python from Microsoft App Store has executable pointing at empty shims.
+is_ms_app_store = is_win and os.path.getsize(python_executable) == 0
+
+if is_ms_app_store:
+    # Locate the actual executable inside base_prefix.
+    python_executable = os.path.join(
+        base_prefix, os.path.basename(python_executable))
+    if not os.path.exists(python_executable):
+        raise SystemExit('PyInstaller cannot locate real python executable '
+                         'belonging to Python from Microsoft App Store!')
+
 # In Python 3.4 module 'imp' is deprecated and there is another way how
 # to obtain magic value.
 import importlib.util
@@ -167,6 +192,8 @@ ALL_SUFFIXES = all_suffixes()
 
 
 # In Python 3 'Tkinter' has been made lowercase - 'tkinter'.
+# TODO: remove once all references are gone from both pyinstaller and
+# pyinstaller-hooks-contrib!
 modname_tkinter = 'tkinter'
 
 
@@ -192,14 +219,22 @@ if is_win:
 architecture = '64bit' if sys.maxsize > 2**32 and is_darwin else \
     '32bit' if is_darwin else platform.architecture()[0]
 
-system = platform.system()
+# Cygwin needs special handling, because platform.system() contains
+# identifiers such as MSYS_NT-10.0-19042 and CYGWIN_NT-10.0-19042 that
+# do not fit PyInstaller's OS naming scheme. Explicitly set `system` to
+# 'Cygwin'.
+if is_cygwin:
+    system = 'Cygwin'
+else:
+    system = platform.system()
 
 # Machine suffix for bootloader.
 # PyInstaller is reported to work on ARM architecture, so for that
 # case we need an extra identifying specifier on the bootloader
 # name string, like: Linux-32bit-arm, over normal Linux-32bit
 machine = 'arm' if platform.machine().startswith('arm') else \
-    'aarch' if platform.machine().startswith('aarch') else None
+    'aarch' if platform.machine().startswith('aarch') else \
+    'sw_64' if platform.machine().startswith('sw_64') else None
 
 
 # Set and get environment variables does not handle unicode strings correctly
@@ -298,8 +333,8 @@ def exec_command(*cmdargs, **kwargs):
     encoding = kwargs.pop('encoding', None)
     raise_ENOENT = kwargs.pop('__raise_ENOENT__', None)
     try:
-        out = subprocess.Popen(
-            cmdargs, stdout=subprocess.PIPE, **kwargs).communicate()[0]
+        proc = subprocess.Popen(cmdargs, stdout=subprocess.PIPE, **kwargs)
+        out = proc.communicate(timeout=60)[0]
     except OSError as e:
         if raise_ENOENT and e.errno == errno.ENOENT:
             raise
@@ -308,6 +343,9 @@ def exec_command(*cmdargs, **kwargs):
         print(e, file=sys.stderr)
         print('--' * 20, file=sys.stderr)
         raise ExecCommandFailed("Error: Executing command failed!") from e
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        raise
 
     # stdout/stderr are returned as a byte array NOT as string.
     # Thus we need to convert that to proper encoding.
@@ -451,7 +489,11 @@ def exec_command_all(*cmdargs, **kwargs):
     proc = subprocess.Popen(cmdargs, bufsize=-1,  # Default OS buffer size.
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs)
     # Waits for subprocess to complete.
-    out, err = proc.communicate()
+    try:
+        out, err = proc.communicate(timeout=60)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        raise
     # stdout/stderr are returned as a byte array NOT as string.
     # Thus we need to convert that to proper encoding.
     try:
@@ -484,8 +526,15 @@ def __wrap_python(args, kwargs):
     # architecture as python executable.
     # It is necessary to run binaries with 'arch' command.
     if is_darwin:
-        mapping = {'32bit': '-i386', '64bit': '-x86_64'}
-        py_prefix = ['arch', mapping[architecture]]
+        if architecture == '64bit':
+            if machine == 'arm':
+                py_prefix = ['arch', '-arm64']  # Apple M1
+            else:
+                py_prefix = ['arch', '-x86_64']  # Intel
+        elif architecture == '32bit':
+            py_prefix = ['arch', '-i386']
+        else:
+            py_prefix = []
         # Since OS X 10.11 the environment variable DYLD_LIBRARY_PATH is no
         # more inherited by child processes, so we proactively propagate
         # the current value using the `-e` option of the `arch` command.
@@ -649,6 +698,7 @@ SPECIAL_MODULE_TYPES = {
 # dependency graph.
 BINARY_MODULE_TYPES = {
     'Extension',
+    'ExtensionPackage',
 }
 # Object types of valid Python modules in modulegraph dependency graph.
 VALID_MODULE_TYPES = PURE_PYTHON_MODULE_TYPES | SPECIAL_MODULE_TYPES | BINARY_MODULE_TYPES
@@ -683,6 +733,7 @@ MODULE_TYPES_TO_TOC_DICT = {
     'ArchiveModule': 'PYMODULE',
     # Binary modules.
     'Extension': 'EXTENSION',
+    'ExtensionPackage': 'EXTENSION',
     # Special valid modules.
     'BuiltinModule': 'BUILTIN',
     'NamespacePackage': 'PYMODULE',
@@ -706,5 +757,5 @@ def check_requirements():
     Fail hard if any requirement is not met.
     """
     # Fail hard if Python does not have minimum required version
-    if sys.version_info < (3, 5):
-        raise EnvironmentError('PyInstaller requires at Python 3.5 or newer.')
+    if sys.version_info < (3, 6):
+        raise EnvironmentError('PyInstaller requires at Python 3.6 or newer.')

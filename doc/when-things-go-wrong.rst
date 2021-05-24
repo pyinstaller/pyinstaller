@@ -27,7 +27,7 @@ Some of the recipes there include:
 
 * Bundling a typical Django app.
 
-* A use of a run-time hook to set the PyQt4 API level.
+* A use of a run-time hook to set the PyQt5 API level.
 
 * A workaround for a multiprocessing constraint under Windows.
 
@@ -108,7 +108,7 @@ Build-Time Python Errors
 |PyInstaller| sometimes terminates by raising a Python exception.
 In most cases the reason is clear from the exception message,
 for example "Your system is not supported", or "Pyinstaller
-requires at least Python 3.5".
+requires at least Python 3.6".
 Others clearly indicate a bug that should be reported.
 
 One of these errors can be puzzling, however:
@@ -178,7 +178,7 @@ Figuring Out Why Your GUI Application Won't Start
 ---------------------------------------------------
 
 If you are using the ``--windowed`` option,
-your bundled application ay fail to start with an error message like
+your bundled application may fail to start with an error message like
 ``Failed to execute script my_gui``.
 In this case, you will want to get more verbose output to find out
 what is going on.

@@ -37,6 +37,19 @@ from ._compat import BytesIO, StringIO, pathname2url, _READ_MODE
 BOM = codecs.BOM_UTF8.decode('utf-8')
 
 
+class BUILTIN_MODULE:
+    def is_package(fqname):
+        return False
+
+
+class NAMESPACE_PACKAGE:
+    def __init__(self, namespace_dirs):
+        self.namespace_dirs = namespace_dirs
+
+    def is_package(self, fqname):
+        return True
+
+
 #FIXME: Leverage this rather than magic numbers below.
 ABSOLUTE_OR_RELATIVE_IMPORT_LEVEL = -1
 """
@@ -716,7 +729,7 @@ class Alias(str):
     aliased. Unlike the related `AliasNode` class, instances of this class are
     _not_ actual nodes and hence _not_ added to the graph; they only facilitate
     communication between the `ModuleGraph.alias_module()` and
-    `ModuleGraph.findNode()` methods.
+    `ModuleGraph.find_node()` methods.
     """
 
 
@@ -830,6 +843,14 @@ class Extension(BaseModule):
 class Package(BaseModule):
     """
     Graph node representing a non-namespace package.
+    """
+    pass
+
+
+class ExtensionPackage(Extension, Package):
+    """
+    Graph node representing a package where the __init__ module is an extension
+    module.
     """
     pass
 
@@ -1077,7 +1098,7 @@ class ModuleGraph(ObjectGraph):
 
 
     def createNode(self, cls, name, *args, **kw):
-        m = self.findNode(name)
+        m = self.find_node(name)
 
         if m is None:
             #assert m is None, m
@@ -1206,24 +1227,26 @@ class ModuleGraph(ObjectGraph):
             for other in others:
                 self._updateReference(node, other, edge_data)
 
-    def getReferences(self, fromnode):
+    def outgoing(self, fromnode):
         """
         Yield all nodes that `fromnode` dependes on (that is,
         all modules that `fromnode` imports.
         """
 
-        node = self.findNode(fromnode)
+        node = self.find_node(fromnode)
         out_edges, _ = self.get_edges(node)
         return out_edges
 
-    def getReferers(self, tonode, collapse_missing_modules=True):
-        node = self.findNode(tonode)
+    getReferences = outgoing
+
+    def incoming(self, tonode, collapse_missing_modules=True):
+        node = self.find_node(tonode)
         _, in_edges = self.get_edges(node)
 
         if collapse_missing_modules:
             for n in in_edges:
                 if isinstance(n, MissingModule):
-                    for n in self.getReferers(n, False):
+                    for n in self.incoming(n, False):
                         yield n
 
                 else:
@@ -1233,10 +1256,12 @@ class ModuleGraph(ObjectGraph):
             for n in in_edges:
                 yield n
 
+    getReferers = incoming
+
     def hasEdge(self, fromnode, tonode):
         """ Return True iff there is an edge from 'fromnode' to 'tonode' """
-        fromnode = self.findNode(fromnode)
-        tonode = self.findNode(tonode)
+        fromnode = self.find_node(fromnode)
+        tonode = self.find_node(tonode)
 
         return self.graph.edge_by_node(fromnode, tonode) is not None
 
@@ -1247,7 +1272,7 @@ class ModuleGraph(ObjectGraph):
         corresponding to those submodules.
         """
 
-        pkg = self.findNode(packagenode)
+        pkg = self.find_node(packagenode)
 
         for n in self.nodes():
             if not n.identifier.startswith(pkg.identifier + '.'):
@@ -1281,20 +1306,22 @@ class ModuleGraph(ObjectGraph):
         try:
             ed = self.edgeData(fromnode, tonode)
         except (KeyError, GraphError):  # XXX: Why 'GraphError'
-            return self.createReference(fromnode, tonode, edge_data)
+            return self.add_edge(fromnode, tonode, edge_data)
 
         if not (isinstance(ed, DependencyInfo) and isinstance(edge_data, DependencyInfo)):
             self.updateEdgeData(fromnode, tonode, edge_data)
         else:
             self.updateEdgeData(fromnode, tonode, ed._merged(edge_data))
 
-    def createReference(self, fromnode, tonode, edge_data='direct'):
+    def add_edge(self, fromnode, tonode, edge_data='direct'):
         """
         Create a reference from fromnode to tonode
         """
         return super(ModuleGraph, self).createReference(fromnode, tonode, edge_data=edge_data)
 
-    def findNode(self, name, create_nspkg=True):
+    createReference = add_edge
+
+    def find_node(self, name, create_nspkg=True):
         """
         Graph node uniquely identified by the passed fully-qualified module
         name if this module has been added to the graph _or_ `None` otherwise.
@@ -1369,8 +1396,10 @@ class ModuleGraph(ObjectGraph):
 
         return None
 
+    findNode = find_node
+    iter_graph = ObjectGraph.flatten
 
-    def run_script(self, pathname, caller=None):
+    def add_script(self, pathname, caller=None):
         """
         Create a node by path (not module name).  It is expected to be a Python
         source file, and will be scanned for dependencies.
@@ -1378,7 +1407,7 @@ class ModuleGraph(ObjectGraph):
         self.msg(2, "run_script", pathname)
 
         pathname = os.path.realpath(pathname)
-        m = self.findNode(pathname)
+        m = self.find_node(pathname)
         if m is not None:
             return m
 
@@ -1400,7 +1429,8 @@ class ModuleGraph(ObjectGraph):
         co = compile(co_ast, pathname, 'exec', 0, True)
         m = self.createNode(Script, pathname)
         self._updateReference(caller, m, None)
-        self._scan_code(m, co, co_ast)
+        n = self._scan_code(m, co, co_ast)
+        self._process_imports(n)
         m.code = co
         if self.replace_paths:
             m.code = self._replace_paths_in_code(m.code)
@@ -1474,7 +1504,28 @@ class ModuleGraph(ObjectGraph):
         source_package = self._determine_parent(source_module)
         target_package, target_module_partname = self._find_head_package(
             source_package, target_module_partname, level)
-        target_module = self._load_tail(target_package, target_module_partname)
+
+        self.msgin(4, "load_tail", target_package, target_module_partname)
+
+        submodule = target_package
+        while target_module_partname:
+            i = target_module_partname.find('.')
+            if i < 0:
+                i = len(target_module_partname)
+            head, target_module_partname = target_module_partname[
+                :i], target_module_partname[i+1:]
+            mname = "%s.%s" % (submodule.identifier, head)
+            submodule = self._safe_import_module(head, mname, submodule)
+
+            if submodule is None:
+                # FIXME: Why do we no longer return a MissingModule instance?
+                # result = self.createNode(MissingModule, mname)
+                self.msgout(4, "raise ImportError: No module named", mname)
+                raise ImportError("No module named " + repr(mname))
+
+        self.msgout(4, "load_tail ->", submodule)
+
+        target_module = submodule
         target_modules = [target_module]
 
         # If this is a "from"-style import *AND* this target module is
@@ -1488,7 +1539,8 @@ class ModuleGraph(ObjectGraph):
         # imported by this target module's pure-Python code. Since our import
         # scanner already detects such imports, these submodules need *NOT* be
         # reimported here.
-        if target_attr_names and isinstance(target_module, Package):
+        if target_attr_names and isinstance(target_module,
+                                            (Package, AliasNode)):
             for target_submodule in self._import_importable_package_submodules(
                 target_module, target_attr_names):
                 if target_submodule not in target_modules:
@@ -1517,12 +1569,12 @@ class ModuleGraph(ObjectGraph):
 
             elif '.' in pname:
                 pname = pname[:pname.rfind('.')]
-                parent = self.findNode(pname)
+                parent = self.find_node(pname)
 
             elif caller.packagepath:
                 # XXX: I have no idea why this line
                 # is necessary.
-                parent = self.findNode(pname)
+                parent = self.find_node(pname)
 
         self.msgout(4, "determine_parent ->", parent)
         return parent
@@ -1610,7 +1662,7 @@ class ModuleGraph(ObjectGraph):
                             target_module_partname, source_package, level))
 
                 p_fqdn = source_package.identifier.rsplit('.', 1)[0]
-                new_parent = self.findNode(p_fqdn)
+                new_parent = self.find_node(p_fqdn)
                 if new_parent is None:
                     #FIXME: Repetition detected. Exterminate. Exterminate.
                     self.msg(2, "Relative import outside of package")
@@ -1659,50 +1711,6 @@ class ModuleGraph(ObjectGraph):
         raise ImportError("No module named " + target_package_name)
 
 
-    def _load_tail(self, package, submodule_name):
-        """
-        Import the submodule with the passed name and all parent packages of
-        this module from the previously imported parent package corresponding
-        to the passed graph node.
-
-        Parameters
-        ----------
-        package : Package
-            Graph node of the previously imported package containing this
-            submodule.
-        submodule_name : str
-            Name of the submodule to be imported in either qualified (e.g.,
-            `email.mime.base`) or unqualified (e.g., `base`) form.
-
-        Returns
-        ----------
-        Node
-            Graph node created for this submodule.
-
-        Raises
-        ----------
-        ImportError
-            If this submodule is unimportable.
-        """
-        self.msgin(4, "load_tail", package, submodule_name)
-
-        submodule = package
-        while submodule_name:
-            i = submodule_name.find('.')
-            if i < 0:
-                i = len(submodule_name)
-            head, submodule_name = submodule_name[:i], submodule_name[i+1:]
-            mname = "%s.%s" % (submodule.identifier, head)
-            submodule = self._safe_import_module(head, mname, submodule)
-
-            if submodule is None:
-                # FIXME: Why do we no longer return a MissingModule instance?
-                # result = self.createNode(MissingModule, mname)
-                self.msgout(4, "raise ImportError: No module named", mname)
-                raise ImportError("No module named " + repr(mname))
-
-        self.msgout(4, "load_tail ->", submodule)
-        return submodule
 
 
     #FIXME: Refactor from a generator yielding graph nodes into a non-generator
@@ -1908,7 +1916,7 @@ class ModuleGraph(ObjectGraph):
 
         # If the target module has already been added to the graph as either a
         # non-alias or as a different alias, raise an exception.
-        trg_module = self.findNode(trg_module_name)
+        trg_module = self.find_node(trg_module_name)
         if trg_module is not None and not (
            isinstance(trg_module, AliasNode) and
            trg_module.identifier == src_module_name):
@@ -1940,7 +1948,7 @@ class ModuleGraph(ObjectGraph):
         self.msg(3, 'add_module', module)
 
         # If no node exists for this module, add such a node.
-        module_added = self.findNode(module.identifier)
+        module_added = self.find_node(module.identifier)
         if module_added is None:
             self.addNode(module)
         else:
@@ -1950,11 +1958,11 @@ class ModuleGraph(ObjectGraph):
         # its parent and add this module to its parent's namespace.
         parent_name, _, module_basename = module.identifier.rpartition('.')
         if parent_name:
-            parent = self.findNode(parent_name)
+            parent = self.find_node(parent_name)
             if parent is None:
                 self.msg(4, 'add_module parent not found:', parent_name)
             else:
-                self.createReference(module, parent)
+                self.add_edge(module, parent)
                 parent.add_submodule(module_basename, module)
 
 
@@ -2018,14 +2026,11 @@ class ModuleGraph(ObjectGraph):
         self.msgin(3, "safe_import_module", module_partname, module_name, parent_module)
 
         # If this module has *NOT* already been imported, do so.
-        module = self.findNode(module_name)
+        module = self.find_node(module_name)
         if module is None:
             # List of the absolute paths of all directories to be searched for
             # this module. This effectively defaults to "sys.path".
             search_dirs = None
-
-            # Open file handle providing the physical contents of this module.
-            file_handle = None
 
             # If this module has a parent package...
             if parent_module is not None:
@@ -2039,18 +2044,32 @@ class ModuleGraph(ObjectGraph):
                     return None
 
             try:
-                try:
-                    file_handle, pathname, metadata = self._find_module(
-                        module_partname, search_dirs, parent_module)
-                except ImportError as exc:
-                    self.msgout(3, "safe_import_module -> None (%r)" % exc)
-                    return None
+                pathname, loader = self._find_module(
+                    module_partname, search_dirs, parent_module)
+            except ImportError as exc:
+                self.msgout(3, "safe_import_module -> None (%r)" % exc)
+                return None
 
-                module = self._load_module(
-                    module_name, file_handle, pathname, metadata)
-            finally:
-                if file_handle is not None:
-                    file_handle.close()
+            (module, co) = self._load_module(module_name, pathname, loader)
+            if co is not None:
+                try:
+                    if isinstance(co, ast.AST):
+                        co_ast = co
+                        co = compile(co_ast, pathname, 'exec', 0, True)
+                    else:
+                        co_ast = None
+                    n = self._scan_code(module, co, co_ast)
+                    self._process_imports(n)
+
+                    if self.replace_paths:
+                        co = self._replace_paths_in_code(co)
+                    module.code = co
+                except SyntaxError:
+                    self.msg(
+                        1, "safe_import_module: SyntaxError in ", pathname,
+                    )
+                    cls = InvalidSourceModule
+                    module = self.createNode(cls, module_name)
 
         # If this is a submodule rather than top-level module...
         if parent_module is not None:
@@ -2072,98 +2091,89 @@ class ModuleGraph(ObjectGraph):
         self.msgout(3, "safe_import_module ->", module)
         return module
 
+    def _load_module(self, fqname, pathname, loader):
+        from importlib._bootstrap_external import ExtensionFileLoader
+        self.msgin(2, "load_module", fqname, pathname,
+                   loader.__class__.__name__)
+        partname = fqname.rpartition(".")[-1]
 
-    #FIXME: For clarity, rename method parameters to:
-    #    def _load_module(self, module_name, file_handle, pathname, imp_info):
-    def _load_module(self, fqname, fp, pathname, info):
-        suffix, mode, typ = info
-        self.msgin(2, "load_module", fqname, fp and "fp", pathname)
-
-        if typ == imp.PKG_DIRECTORY:
-            if isinstance(mode, (list, tuple)):
-                packagepath = mode
+        if loader.is_package(partname):
+            is_nspkg = isinstance(loader, NAMESPACE_PACKAGE)
+            if is_nspkg:
+                pkgpath = loader.namespace_dirs[:]  # copy for safety
             else:
-                packagepath = []
+                pkgpath = []
 
-            m = self._load_package(fqname, pathname, packagepath)
-            self.msgout(2, "load_module ->", m)
-            return m
+            newname = _replacePackageMap.get(fqname)
+            if newname:
+                fqname = newname
+            ns_pkgpath = _namespace_package_path(
+                fqname, pkgpath or [], self.path)
 
-        if typ == imp.PY_SOURCE:
-            contents = fp.read()
-            if isinstance(contents, bytes):
-                contents += b'\n'
+            if (ns_pkgpath or pkgpath) and is_nspkg:
+                # this is a PEP-420 namespace package
+                m = self.createNode(NamespacePackage, fqname)
+                m.filename = '-'
+                m.packagepath = ns_pkgpath
             else:
-                contents += '\n'
-
-            try:
-                co = compile(contents, pathname, 'exec', ast.PyCF_ONLY_AST, True)
-                if sys.version_info[:2] == (3, 5):
-                    # In Python 3.5 some syntax problems with async
-                    # functions are only reported when compiling to bytecode
-                    compile(co, '-', 'exec', 0, True)
-            except SyntaxError:
-                co = None
-                cls = InvalidSourceModule
-                self.msg(2, "load_module: InvalidSourceModule", pathname)
-
-            else:
-                cls = SourceModule
-
-        elif typ == imp.PY_COMPILED:
-            data = fp.read(4)
-            magic = imp.get_magic()
-            if data != magic:
-                self.msg(2, "load_module: InvalidCompiledModule, "
-                         "bad magic number", pathname, data, magic)
-                co = None
-                cls = InvalidCompiledModule
-            else:
-                if sys.version_info >= (3, 7):
-                    fp.read(12)
-                elif sys.version_info >= (3, 4):
-                    fp.read(8)
+                if isinstance(loader, ExtensionFileLoader):
+                    m = self.createNode(ExtensionPackage, fqname)
                 else:
-                    fp.read(4)
+                    m = self.createNode(Package, fqname)
+                m.filename = pathname
+                # PEP-302-compliant loaders return the pathname of the
+                # `__init__`-file, not the packge directory.
+                assert os.path.basename(pathname).startswith('__init__.')
+                m.packagepath = [os.path.dirname(pathname)] + ns_pkgpath
+
+            # As per comment at top of file, simulate runtime packagepath
+            # additions
+            m.packagepath = m.packagepath + self._package_path_map.get(
+                fqname, [])
+
+            if isinstance(m, NamespacePackage):
+                return (m, None)
+
+        co = None
+        if loader is BUILTIN_MODULE:
+            cls = BuiltinModule
+        elif isinstance(loader, ExtensionFileLoader):
+            cls = Extension
+        else:
+            src = loader.get_source(partname)
+            if src is not None:
                 try:
-                    co = marshal.loads(fp.read())
-                    cls = CompiledModule
-                except Exception as exc:
+                    co = compile(src, pathname, 'exec', ast.PyCF_ONLY_AST,
+                                 True)
+                    cls = SourceModule
+                    if sys.version_info[:2] == (3, 5):
+                        # In Python 3.5 some syntax problems with async
+                        # functions are only reported when compiling to
+                        # bytecode
+                        compile(co, '-', 'exec', 0, True)
+                except SyntaxError:
+                    co = None
+                    cls = InvalidSourceModule
+                except Exception as exc:  # FIXME: more specific?
+                    cls = InvalidSourceModule
+                    self.msg(2, "load_module: InvalidSourceModule", pathname,
+                             exc)
+            else:
+                # no src available
+                try:
+                    co = loader.get_code(partname)
+                    cls = (CompiledModule if co is not None
+                           else InvalidCompiledModule)
+                except Exception as exc:  # FIXME: more specific?
                     self.msg(2, "load_module: InvalidCompiledModule, "
                              "Cannot load code", pathname, exc)
-                    co = None
                     cls = InvalidCompiledModule
-
-        elif typ == imp.C_BUILTIN:
-            cls = BuiltinModule
-            co = None
-
-        else:
-            cls = Extension
-            co = None
 
         m = self.createNode(cls, fqname)
         m.filename = pathname
-        if co is not None:
-            try:
-                if isinstance(co, ast.AST):
-                    co_ast = co
-                    co = compile(co_ast, pathname, 'exec', 0, True)
-                else:
-                    co_ast = None
-                self._scan_code(m, co, co_ast)
-
-                if self.replace_paths:
-                    co = self._replace_paths_in_code(co)
-                m.code = co
-            except SyntaxError:
-                self.msg(1, "load_module: SyntaxError in ", pathname)
-                cls = InvalidSourceModule
-                m = self.createNode(cls, fqname)
 
         self.msgout(2, "load_module ->", m)
-        return m
-
+        return (m, co)
 
     def _safe_import_hook(
         self, target_module_partname, source_module, target_attr_names,
@@ -2431,7 +2441,8 @@ class ModuleGraph(ObjectGraph):
         # imported by this target module's pure-Python code. Since our import
         # scanner already detects these imports, these submodules need *NOT* be
         # reimported here. (Doing so would be harmless but inefficient.)
-        if target_attr_names and isinstance(target_module, Package):
+        if target_attr_names and isinstance(target_module,
+                                            (Package, AliasNode)):
             # For the name of each attribute imported from this target package
             # into this source module...
             for target_submodule_partname in target_attr_names:
@@ -2468,7 +2479,7 @@ class ModuleGraph(ObjectGraph):
                     target_module.identifier + '.' + target_submodule_partname)
 
                 # Graph node of this submodule if previously imported or None.
-                target_submodule = self.findNode(target_submodule_name)
+                target_submodule = self.find_node(target_submodule_name)
 
                 # If this submodule has not been imported, do so as if this
                 # submodule were the only attribute listed by the "import"
@@ -2504,7 +2515,7 @@ class ModuleGraph(ObjectGraph):
 
                         # Graph node of this submodule imported by the prior
                         # call if importable or None otherwise.
-                        target_submodule = self.findNode(target_submodule_name)
+                        target_submodule = self.find_node(target_submodule_name)
 
                         # If this submodule does not exist, this *MUST* be an
                         # ignorable global attribute defined at the top level
@@ -2532,7 +2543,7 @@ class ModuleGraph(ObjectGraph):
                         if is_swig_import:
                             # If a graph node with this name already exists,
                             # avoid collisions by emitting an error instead.
-                            if self.findNode(target_submodule_partname):
+                            if self.find_node(target_submodule_partname):
                                 self.msg(
                                     2,
                                     'SWIG import error: %r basename %r '
@@ -2606,6 +2617,10 @@ class ModuleGraph(ObjectGraph):
             Optional abstract syntax tree (AST) of this module if any or `None`
             otherwise. Defaults to `None`, in which case the passed
             `module_code_object` is parsed instead.
+        Returns
+        ----------
+        module : Node
+            Graph node of the module to be parsed.
         """
 
         # For safety, guard against multiple scans of the same module by
@@ -2634,9 +2649,7 @@ class ModuleGraph(ObjectGraph):
             self._scan_bytecode(
                 module, module_code_object, is_scanning_imports=True)
 
-        # Add all imports parsed above to this graph.
-        self._process_imports(module)
-
+        return module
 
     def _scan_ast(self, module, module_code_object_ast):
         """
@@ -2868,50 +2881,6 @@ class ModuleGraph(ObjectGraph):
         source_module._deferred_imports = None
 
 
-    def _load_package(self, fqname, pathname, pkgpath):
-        """
-        Called only when an imp.PKG_DIRECTORY is found
-        """
-        self.msgin(2, "load_package", fqname, pathname, pkgpath)
-        newname = _replacePackageMap.get(fqname)
-        if newname:
-            fqname = newname
-
-        ns_pkgpath = _namespace_package_path(fqname, pkgpath or [], self.path)
-        if ns_pkgpath or pkgpath:
-            # this is a namespace package
-            m = self.createNode(NamespacePackage, fqname)
-            m.filename = '-'
-            m.packagepath = ns_pkgpath
-        else:
-            m = self.createNode(Package, fqname)
-            m.filename = pathname
-            # PEP-302-compliant loaders return the pathname of the
-            # `__init__`-file, not the packge directory.
-            if os.path.basename(pathname).startswith('__init__.'):
-                pathname = os.path.dirname(pathname)
-            m.packagepath = [pathname] + ns_pkgpath
-
-        # As per comment at top of file, simulate runtime packagepath additions.
-        m.packagepath = m.packagepath + self._package_path_map.get(fqname, [])
-
-        try:
-            self.msg(2, "find __init__ for %s"%(m.packagepath,))
-            fp, buf, stuff = self._find_module("__init__", m.packagepath, parent=m)
-        except ImportError:
-            pass
-
-        else:
-            try:
-                self.msg(2, "load __init__ for %s"%(m.packagepath,))
-                self._load_module(fqname, fp, buf, stuff)
-            finally:
-                if fp is not None:
-                    fp.close()
-        self.msgout(2, "load_package ->", m)
-        return m
-
-
     def _find_module(self, name, path, parent=None):
         """
         3-tuple describing the physical location of the module with the passed
@@ -2934,7 +2903,7 @@ class ModuleGraph(ObjectGraph):
 
         Returns
         ----------
-        (file_handle, filename, metadata)
+        (filename, loader)
             See `modulegraph._find_module()` for details.
 
         Raises
@@ -2949,14 +2918,14 @@ class ModuleGraph(ObjectGraph):
         else:
             fullname = name
 
-        node = self.findNode(fullname)
+        node = self.find_node(fullname)
         if node is not None:
             self.msg(3, "find_module: already included?", node)
             raise ImportError(name)
 
         if path is None:
             if name in sys.builtin_module_names:
-                return (None, None, ("", "", imp.C_BUILTIN))
+                return (None, BUILTIN_MODULE)
 
             path = self.path
 
@@ -2990,16 +2959,12 @@ class ModuleGraph(ObjectGraph):
 
         Returns
         ----------
-        (file_handle, filename, metadata)
-            3-tuple describing the physical location of this module, where:
-            * `file_handle` is an open read-only file handle from which the
-              on-disk contents of this module may be read if this is a
-              pure-Python module or `None` otherwise (e.g., if this is a
-              package or C extension).
+        (filename, loader)
+            2-tuple describing the physical location of this module, where:
             * `filename` is the absolute path of this file.
-            * `metadata` is itself a 3-tuple `(filetype, open_mode, imp_type)`.
-              See the `_IMPORTABLE_FILETYPE_TO_METADATA` dictionary for
-              details.
+            * `loader` is the import loader.
+              In case of a namespace package, this is a NAMESPACE_PACKAGE
+              instance
 
         Raises
         ----------
@@ -3008,18 +2973,8 @@ class ModuleGraph(ObjectGraph):
         """
         self.msgin(4, "_find_module_path <-", fullname, search_dirs)
 
-        # TODO: Under:
-        #
-        # * Python 3.3, the following logic should be replaced by logic
-        #   leveraging only the "importlib" module.
-        # * Python 3.4, the following logic should be replaced by a call to
-        #   importlib.util.find_spec().
-
-        # Top-level 3-tuple to be returned.
+        # Top-level 2-tuple to be returned.
         path_data = None
-
-        # File handle to be returned.
-        file_handle = None
 
         # List of the absolute paths of all directories comprising the
         # namespace package to which this module belongs if any.
@@ -3058,9 +3013,6 @@ class ModuleGraph(ObjectGraph):
                     # self.msg(4, "_find_module_path loader not found", search_dir)
                     continue
 
-                # 3-tuple of metadata to be returned.
-                metadata = None
-
                 # Absolute path of this module. If this module resides in a
                 # compressed archive, this is the absolute path of this module
                 # after extracting this module from that archive and hence
@@ -3086,78 +3038,14 @@ class ModuleGraph(ObjectGraph):
                     self.msg(4, "_find_module_path path not found", pathname)
                     continue
 
-                # If this loader defines the PEP 302-compliant is_package()
-                # method returning True, this is a non-namespace package.
-                if hasattr(loader, 'is_package') and loader.is_package(module_name):
-                    metadata = ('', '', imp.PKG_DIRECTORY)
-                # Else, this is either a module or C extension.
-                else:
-                    # In either case, this path must have a filetype.
-                    # os.path.splitext won't work here since we sometimes need
-                    # to match more than just the file extension.
-                    filetype = [filetype
-                                for filetype in _IMPORTABLE_FILETYPE_EXTS
-                                if pathname.endswith(filetype)]
-                    if filetype:
-                        # at least one extension matched,
-                        # pick the first (longest) one
-                        filetype = filetype[0]
-                    else:
-                        raise ImportError(
-                            'Non-package module %r path %r has no filetype' % (module_name, pathname))
-
-                    # 3-tuple of metadata specific to this filetype.
-                    metadata = _IMPORTABLE_FILETYPE_TO_METADATA.get(
-                        filetype, None)
-                    if metadata is None:
-                        raise ImportError(
-                            'Non-package module %r filetype %r unrecognized' % (pathname, filetype))
-
-                    # See "_IMPORTABLE_FILETYPE_TO_METADATA" for details.
-                    open_mode = metadata[1]
-                    imp_type = metadata[2]
-
-                    # If this is a C extension, leave this path unopened.
-                    if imp_type == imp.C_EXTENSION:
-                        pass
-                    # Else, this is a module.
-                    #
-                    # If this loader defines the PEP 302-compliant get_source()
-                    # method, open the returned string as a file-like buffer.
-                    elif imp_type == imp.PY_SOURCE and hasattr(loader, 'get_source'):
-                        file_handle = StringIO(loader.get_source(module_name))
-                    # If this loader defines the PEP 302-compliant get_code()
-                    # method, open the returned object as a file-like buffer.
-                    elif imp_type == imp.PY_COMPILED and hasattr(loader, 'get_code'):
-                        try:
-                            code_object = loader.get_code(module_name)
-                            if code_object is None:
-                                file_handle = BytesIO(b'\0\0\0\0\0\0\0\0')
-                            else:
-                                file_handle = _code_to_file(code_object)
-                        except ImportError:
-                            # post-bone the ImportError until load_module
-                            file_handle = BytesIO(b'\0\0\0\0\0\0\0\0')
-                    # If this is an uncompiled file under Python 3, open this
-                    # file for encoding-aware text reading.
-                    elif imp_type == imp.PY_SOURCE and sys.version_info[0] == 3:
-                        with open(pathname, 'rb') as file_handle:
-                            encoding = util.guess_encoding(file_handle)
-                        file_handle = open(
-                            pathname, open_mode, encoding=encoding)
-                    # Else, this is either a compiled file or an uncompiled
-                    # file under Python 2. In either case, open this file.
-                    else:
-                        file_handle = open(pathname, open_mode)
-
                 # Return such metadata.
-                path_data = (file_handle, pathname, metadata)
+                path_data = (pathname, loader)
                 break
             # Else if this is a namespace package, return such metadata.
             else:
                 if namespace_dirs:
-                    path_data = (None, namespace_dirs[0], (
-                        '', namespace_dirs, imp.PKG_DIRECTORY))
+                    path_data = (namespace_dirs[0],
+                                 NAMESPACE_PACKAGE(namespace_dirs))
         except UnicodeDecodeError as exc:
             self.msgout(1, "_find_module_path -> unicode error", exc)
         # Ensure that exceptions are logged, as this function is typically
@@ -3180,7 +3068,7 @@ class ModuleGraph(ObjectGraph):
             out = sys.stdout
         scripts = []
         mods = []
-        for mod in self.flatten():
+        for mod in self.iter_graph():
             name = os.path.basename(mod.identifier)
             if isinstance(mod, Script):
                 scripts.append((name, mod))
@@ -3372,7 +3260,7 @@ class ModuleGraph(ObjectGraph):
         print()
         print("%-15s %-25s %s" % ("Class", "Name", "File"))
         print("%-15s %-25s %s" % ("-----", "----", "----"))
-        for m in sorted(self.flatten(), key=lambda n: n.identifier):
+        for m in sorted(self.iter_graph(), key=lambda n: n.identifier):
             print("%-15s %-25s %s" % (type(m).__name__, m.identifier, m.filename or ""))
 
     def _replace_paths_in_code(self, co):
@@ -3394,7 +3282,10 @@ class ModuleGraph(ObjectGraph):
 
         code_func = type(co)
 
-        if hasattr(co, 'co_kwonlyargcount'):
+        if hasattr(co, 'replace'): # is_py38
+            return co.replace(co_consts=tuple(consts),
+                              co_filename=new_filename)
+        elif hasattr(co, 'co_kwonlyargcount'):
             return code_func(
                         co.co_argcount, co.co_kwonlyargcount, co.co_nlocals,
                         co.co_stacksize, co.co_flags, co.co_code,

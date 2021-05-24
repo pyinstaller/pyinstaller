@@ -359,6 +359,10 @@ For example modify the spec file this way::
           exclude_binaries=...
           )
 
+.. Note:: The unbuffered stdio mode (the ``u`` option) enables unbuffered
+   binary layer of ``stdout`` and ``stderr`` streams on all supported Python
+   versions. The unbuffered text layer requires Python 3.7 or later.
+
 
 .. _spec file options for a mac os x bundle:
 
@@ -385,6 +389,9 @@ An :file:`Info.plist` file is an important part of a Mac OS X app bundle.
 of ``Info.plist``.)
 
 |PyInstaller| creates a minimal :file:`Info.plist`.
+The ``version`` option can be used to set the application version
+using the CFBundleShortVersionString Core Foundation Key.
+
 You can add or overwrite entries in the plist by passing an
 ``info_plist=`` parameter to the BUNDLE call.  Its argument should be a
 Python dict with keys and values to be included in the :file:`Info.plist`
@@ -399,6 +406,7 @@ XML types.  Here's an example::
              name='myscript.app',
              icon=None,
              bundle_identifier=None,
+             version='0.0.1',
              info_plist={
              	'NSPrincipalClass': 'NSApplication',
                 'NSAppleScriptEnabled': False,
@@ -419,6 +427,76 @@ The key ``'NSAppleScriptEnabled'`` is assigned the Python boolean
 ``False``, which will be output to :file:`Info.plist` properly as ``<false/>``.
 Finally the key ``CFBundleDocumentTypes`` tells Mac OS X what filetypes your
 application supports (see `Apple document types`_).
+
+
+.. _splash screen target:
+
+
+The :mod:`Splash` Target
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For a splash screen to be displayed by the bootloader, the :mod:`Splash` target must be called
+at build time. This class can be added when the spec file is created with the command-line
+option ``--splash IMAGE_FILE``. By default, the option to display the optional text is disabled
+(``text_pos=None``). For more information about the splash screen, see :ref:`splash screen`
+section. The :mod:`Splash` Target looks like this::
+
+   a = Analysis(...)
+
+   splash = Splash('image.png',
+                   binaries=a.binaries,
+                   datas=a.datas,
+                   text_pos=(10, 50),
+                   text_size=12,
+                   text_color='black')
+
+Splash bundles the required resources for the splash screen into a file,
+which will be included in the CArchive.
+
+A :mod:`Splash` has two outputs, one is itself and one is stored in
+``splash.binaries``. Both need to be passed on to other build targets in
+order to enable the splash screen.
+To use the splash screen in a **onefile** application, please follow this example::
+
+   a = Analysis(...)
+
+   splash = Splash(...)
+
+   # onefile
+   exe = EXE(pyz,
+             a.scripts,
+             splash,                   # <-- both, splash target
+             splash.binaries,          # <-- and splash binaries
+             ...)
+
+In order to use the splash screen in a **onedir** application, only a small change needs
+to be made. The ``splash.binaries`` attribute has to be moved into the ``COLLECT`` target,
+since the splash binaries do not need to be included into the executable::
+
+   a = Analysis(...)
+
+   splash = Splash(...)
+
+   # onedir
+   exe = EXE(pyz,
+             splash,                   # <-- splash target
+             a.scripts,
+             ...)
+   coll = COLLECT(exe,
+                  splash.binaries,     # <-- splash binaries
+                  ...)
+
+On Windows/macOS images with per-pixel transparency are supported. This allows
+non-rectengular splash screen images. On Windows the transparent borders of the image
+are hard-cuted, meaning that fading transparent values are not supported. There is
+no common implementation for non-rectengular windows on Linux, so images with per-
+pixel transparency is not supported.
+
+The splash target can be configured in various ways. The constructor of the :mod:`Splash`
+target is as follows:
+
+.. automethod:: PyInstaller.building.splash.Splash.__init__
+
 
 Multipackage Bundles
 ~~~~~~~~~~~~~~~~~~~~~
@@ -547,7 +625,7 @@ the apps :file:`dist/bar/bar` and :file:`dist/zap/zap` will refer to
 the contents of :file:`dist/foo/` for shared dependencies.
 
 There are several multipackage examples in the 
-|PyInstaller| distribution folder under :file:`/tests/old_suite/multipackage`.
+|PyInstaller| distribution folder under :file:`tests/functional/specs`.
 
 Remember that a spec file is executable Python.
 You can use all the Python facilities (``for`` and ``with``
@@ -562,7 +640,7 @@ Globals Available to the Spec File
 While a spec file is executing it has access to a limited set of global names.
 These names include the classes defined by |PyInstaller|:
 ``Analysis``, ``BUNDLE``, ``COLLECT``, ``EXE``, ``MERGE``,
-``PYZ``, ``TOC`` and ``Tree``,
+``PYZ``, ``TOC``, ``Tree`` and ``Splash``,
 which are discussed in the preceding sections.
 
 Other globals contain information about the build environment:

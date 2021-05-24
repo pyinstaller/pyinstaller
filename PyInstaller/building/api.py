@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -34,7 +34,7 @@ from PyInstaller.depend.analysis import get_bootstrap_modules
 from PyInstaller.depend.utils import is_path_to_egg
 from PyInstaller.building.datastruct import TOC, Target, _check_guts_eq
 from PyInstaller.utils import misc
-from .. import log as logging
+from PyInstaller import log as logging
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +69,7 @@ class PYZ(Target):
 
         """
 
-        from ..config import CONF
+        from PyInstaller.config import CONF
         Target.__init__(self)
         name = kwargs.get('name', None)
         cipher = kwargs.get('cipher', None)
@@ -154,7 +154,8 @@ class PKG(Target):
                  'BINARY': 'b',
                  'ZIPFILE': 'Z',
                  'EXECUTABLE': 'b',
-                 'DEPENDENCY': 'd'}
+                 'DEPENDENCY': 'd',
+                 'SPLASH': 'l'}
 
     def __init__(self, toc, name=None, cdict=None, exclude_binaries=0,
                  strip_binaries=False, upx_binaries=False, upx_exclude=None):
@@ -194,6 +195,7 @@ class PKG(Target):
                           'EXECUTABLE': COMPRESSED,
                           'PYSOURCE': COMPRESSED,
                           'PYMODULE': COMPRESSED,
+                          'SPLASH': COMPRESSED,
                           # Do not compress PYZ as a whole. Single modules are
                           # compressed when creating PYZ archive.
                           'PYZ': UNCOMPRESSED}
@@ -233,7 +235,9 @@ class PKG(Target):
                 # file is contained within python egg, it is added with the egg
                 continue
             if typ in ('BINARY', 'EXTENSION', 'DEPENDENCY'):
-                if not self.exclude_binaries or typ == 'DEPENDENCY':
+                if self.exclude_binaries and typ == 'EXTENSION':
+                    self.dependencies.append((inm, fnm, typ))
+                elif not self.exclude_binaries or typ == 'DEPENDENCY':
                     if typ == 'BINARY':
                         # Avoid importing the same binary extension twice. This might
                         # happen if they come from different sources (eg. once from
@@ -326,6 +330,8 @@ class EXE(Target):
             icon
                 Windows or OSX only. icon='myicon.ico' to use an icon file or
                 icon='notepad.exe,0' to grab an icon resource.
+                Defaults to use PyInstaller's console or windowed icon.
+                icon=`NONE` to not add any icon.
             version
                 Windows only. version='myversion.txt'. Use grab_version.py to get
                 a version resource from an executable and then edit the output to
@@ -338,7 +344,7 @@ class EXE(Target):
                 Windows only. Setting to True allows an elevated application to
                 work with Remote Desktop
         """
-        from ..config import CONF
+        from PyInstaller.config import CONF
         Target.__init__(self)
 
         # Available options for EXE in .spec files.
@@ -516,7 +522,7 @@ class EXE(Target):
         return bootloader_file
 
     def assemble(self):
-        from ..config import CONF
+        from PyInstaller.config import CONF
         logger.info("Building EXE from %s", self.tocbasename)
         trash = []
         if os.path.exists(self.name):
@@ -527,8 +533,7 @@ class EXE(Target):
         if not os.path.exists(exe):
             raise SystemExit(_MISSING_BOOTLOADER_ERRORMSG)
 
-        if is_win and (self.icon or self.versrsrc or self.resources or
-                self.uac_admin or self.uac_uiaccess or not is_64bits):
+        if is_win:
             fd, tmpnm = tempfile.mkstemp(prefix=os.path.basename(exe) + ".",
                                          dir=CONF['workpath'])
             # need to close the file, otherwise copying resources will fail
@@ -536,7 +541,13 @@ class EXE(Target):
             os.close(fd)
             self._copyfile(exe, tmpnm)
             os.chmod(tmpnm, 0o755)
-            if self.icon:
+            if not self.icon:
+                # --icon not specified; use default from bootloader folder
+                self.icon = os.path.join(
+                    os.path.dirname(os.path.dirname(__file__)),
+                    'bootloader', 'images',
+                    'icon-console.ico' if self.console else 'icon-windowed.ico')
+            if self.icon != "NONE":
                 icon.CopyIcons(tmpnm, self.icon)
             if self.versrsrc:
                 versioninfo.SetVersion(tmpnm, self.versrsrc)
@@ -588,7 +599,7 @@ class EXE(Target):
                         logger.error("Error while updating resource %s %s in %s"
                                      " from data file %s",
                                      restype, resname, tmpnm, resfile, exc_info=1)
-            if is_win and self.manifest and not self.exclude_binaries:
+            if self.manifest and not self.exclude_binaries:
                 self.manifest.update_resources(tmpnm, [1])
             trash.append(tmpnm)
             exe = tmpnm
@@ -626,10 +637,44 @@ class EXE(Target):
                     shutil.copyfileobj(infh, outf, length=64*1024)
 
         if is_darwin:
+            import PyInstaller.utils.osx as osxutils
+
+            # If the version of macOS SDK used to build bootloader exceeds
+            # that of macOS SDK used to built Python library (and, by
+            # extension, bundled Tcl/Tk libraries), force the version
+            # declared by the frozen executable to match that of the Python
+            # library.
+            # Having macOS attempt to enable new features (based on SDK
+            # version) for frozen application has no benefit if the Python
+            # library does not support them as well.
+            # On the other hand, there seem to be UI issues in tkinter
+            # due to failed or partial enablement of dark mode (i.e., the
+            # bootloader executable being built against SDK 10.14 or later,
+            # which causes macOS to enable dark mode, and Tk libraries being
+            # built against an earlier SDK version that does not support the
+            # dark mode). With python.org Intel macOS installers, this
+            # manifests as black Tk windows and UI elements (see issue #5827),
+            # while in Anaconda python, it may result in white text on bright
+            # background.
+            pylib_version = osxutils.get_macos_sdk_version(
+                bindepend.get_python_library_path())
+            exe_version = osxutils.get_macos_sdk_version(self.name)
+            if pylib_version < exe_version:
+                logger.info(
+                    "Rewriting executable's macOS SDK version (%d.%d.%d) to "
+                    "match the SDK version of the Python library (%d.%d.%d) "
+                    "in order to avoid inconsistent behavior and potential UI "
+                    "issues in the frozen application.", *exe_version,
+                    *pylib_version)
+                osxutils.set_macos_sdk_version(self.name, *pylib_version)
+
             # Fix Mach-O header for codesigning on OS X.
             logger.info("Fixing EXE for code signing %s", self.name)
-            import PyInstaller.utils.osx as osxutils
             osxutils.fix_exe_for_code_signing(self.name)
+        if is_win:
+            # Set checksum to appease antiviral software.
+            from PyInstaller.utils.win32.winutils import set_exe_checksum
+            set_exe_checksum(self.name)
 
         os.chmod(self.name, 0o755)
         # get mtime for storing into the guts
@@ -660,7 +705,7 @@ class COLLECT(Target):
                 name
                     The name of the directory to be built.
         """
-        from ..config import CONF
+        from PyInstaller.config import CONF
         Target.__init__(self)
         self.strip_binaries = kws.get('strip', False)
         self.upx_exclude = kws.get("upx_exclude", [])
@@ -809,9 +854,44 @@ class MERGE(object):
                     self._dependencies[tpl[1]] = path
                 else:
                     dep_path = self._get_relative_path(path, self._dependencies[tpl[1]])
+                    # Ignore references that point to the origin package.
+                    # This can happen if the same resource is listed
+                    # multiple times in TOCs (e.g., once as binary and
+                    # once as data).
+                    if dep_path.endswith(path):
+                        logger.debug("Ignoring self-reference of %s for %s, "
+                                     "located in %s - duplicated TOC entry?",
+                                     tpl[1], path, dep_path)
+                        # Clear the entry as it is a duplicate.
+                        toc[i] = (None, None, None)
+                        continue
                     logger.debug("Referencing %s to be a dependecy for %s, located in %s" % (tpl[1], path, dep_path))
+                    # Determine the path relative to dep_path (i.e, within
+                    # the target directory) from the 'name' component
+                    # of the TOC tuple. If entry is EXTENSION, then the
+                    # relative path needs to be reconstructed from the
+                    # name components.
+                    if tpl[2] == 'EXTENSION':
+                        # Split on os.path.sep first, to handle additional
+                        # path prefix (e.g., lib-dynload)
+                        ext_components = tpl[0].split(os.path.sep)
+                        ext_components = ext_components[:-1] \
+                            + ext_components[-1].split('.')[:-1]
+                        if ext_components:
+                            rel_path = os.path.join(*ext_components)
+                        else:
+                            rel_path = ''
+                    else:
+                        rel_path = os.path.dirname(tpl[0])
+                    # Take filename from 'path' (second component of
+                    # TOC tuple); this way, we don't need to worry about
+                    # suffix of extensions.
+                    filename = os.path.basename(tpl[1])
+                    # Construct the full file path relative to dep_path...
+                    filename = os.path.join(rel_path, filename)
+                    # ...and use it in new DEPENDENCY entry
                     analysis.dependencies.append(
-                        (":".join((dep_path, os.path.basename(tpl[1]))),
+                        (":".join((dep_path, filename)),
                          tpl[1],
                          "DEPENDENCY"))
                     toc[i] = (None, None, None)

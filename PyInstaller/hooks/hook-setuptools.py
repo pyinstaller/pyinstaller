@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2020, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -12,6 +12,8 @@
 
 from PyInstaller.compat import is_unix, is_darwin
 from PyInstaller.utils.hooks import collect_submodules
+
+excludedimports = ["setuptools.py27compat", "setuptools.py33compat"]
 
 hiddenimports = [
     # Test case import/test_zipimport2 fails during importing

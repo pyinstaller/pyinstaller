@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2020, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -97,6 +97,15 @@ _win_includes = {
     r'ucrtbase\.dll',
     r'vcruntime140\.dll',
 
+    # Additional DLLs from VC 2015/2017/2019 runtime. Allow these to be
+    # collected to avoid missing-DLL errors when the target machine does
+    # not have the VC redistributable installed.
+    r'msvcp140\.dll',
+    r'msvcp140_1\.dll',
+    r'msvcp140_2\.dll',
+    r'vcruntime140_1\.dll',
+    r'vcomp140\.dll',
+
     # Allow pythonNN.dll, pythoncomNN.dll, pywintypesNN.dll
     r'py(?:thon(?:com(?:loader)?)?|wintypes)\d+\.dll',
 }
@@ -133,8 +142,9 @@ _unix_excludes = {
     r'libnss_nisplus.*\.so(\..*)?',
     r'libresolv\.so(\..*)?',
     r'libutil\.so(\..*)?',
-    # libGL can reference some hw specific libraries (like nvidia libs).
-    r'libGL\..*',
+    # graphical interface libraries come with graphical stack (see libglvnd)
+    r'libE?(Open)?GLX?(ESv1_CM|ESv2)?(dispatch)?\.so(\..*)?',
+    r'libdrm\.so(\..*)?',
     # libxcb-dri changes ABI frequently (e.g.: between Ubuntu LTS releases) and
     # is usually installed as dependency of the graphics stack anyway. No need
     # to bundle it.
@@ -302,12 +312,27 @@ def mac_set_relative_dylib_deps(libname, distname):
         """
         For system libraries is still used absolute path. It is unchanged.
         """
-        # Match non system dynamic libraries.
-        if not util.in_system_path(pth):
-            # Use relative path to dependent dynamic libraries based on the
-            # location of the executable.
-            return os.path.join('@loader_path', parent_dir,
-                os.path.basename(pth))
+        # Leave system dynamic libraries unchanged
+        if util.in_system_path(pth):
+            return None
+
+        # The older python.org builds that use system Tcl/Tk framework
+        # have their _tkinter.cpython-*-darwin.so library linked against
+        # /Library/Frameworks/Tcl.framework/Versions/8.5/Tcl and
+        # /Library/Frameworks/Tk.framework/Versions/8.5/Tk, although the
+        # actual frameworks are located in /System/Library/Frameworks.
+        # Therefore, they slip through the above in_system_path() check,
+        # and we need to exempt them manually.
+        _exemptions = [
+            '/Library/Frameworks/Tcl.framework/',
+            '/Library/Frameworks/Tk.framework/'
+        ]
+        if any([x in pth for x in _exemptions]):
+            return None
+
+        # Use relative path to dependent dynamic libraries based on the
+        # location of the executable.
+        return os.path.join('@loader_path', parent_dir, os.path.basename(pth))
 
     # Rewrite mach headers with @loader_path.
     dll = MachO(libname)
@@ -324,3 +349,57 @@ def mac_set_relative_dylib_deps(libname, distname):
             f.flush()
     except Exception:
         pass
+
+
+def mac_is_binary_signed(filename):
+    """
+    Check if the given macOS binary file is signed.
+    """
+    from macholib.MachO import MachO
+    from macholib import mach_o  # constants
+
+    # Open the file
+    try:
+        m = MachO(filename)
+    except Exception:
+        return False
+
+    # Walk over all headers and check if any contains LC_CODE_SIGNATURE
+    # load command
+    for header in m.headers:
+        for cmd in header.commands:
+            if cmd[0].cmd == mach_o.LC_CODE_SIGNATURE:
+                return True
+    return False
+
+
+def mac_strip_signature(libname, distname):
+    """
+    On macOS, strip away the signature from the binary file. As we may
+    not be collecting all components from a signed framework bundle, the
+    collection may invalidate the existing signature on a collected
+    shared library, which will prevent the latter from being loaded.
+    """
+    from PyInstaller.compat import exec_command_rc
+
+    # For now, limit this only to Python shared library. Other shared
+    # library files from Python.framework bundle also seem to be signed,
+    # but their signature is not invalidated by partial collection like
+    # it is for Python library...
+    if os.path.basename(libname) != 'Python':
+        return
+    if not mac_is_binary_signed(libname):
+        return
+    # Run codesign --remove-signature libname
+    try:
+        logger.debug("Removing signature from %s", libname)
+        result = exec_command_rc('codesign', '--remove-signature', libname)
+    except Exception as e:
+        logger.warning(
+            "Failed to run 'codesign' to remove signature from %s: %r",
+            libname, e)
+        return
+    if result != 0:
+        logger.warning(
+            "'codesign --remove-signature %s' returned non-zero status %d",
+            libname, result)

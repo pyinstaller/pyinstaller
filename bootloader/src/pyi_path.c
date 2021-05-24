@@ -1,6 +1,6 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2020, PyInstaller Development Team.
+ * Copyright (c) 2013-2021, PyInstaller Development Team.
  *
  * Distributed under the terms of the GNU General Public License (version 2
  * or later) with exception for distributing the bootloader.
@@ -15,15 +15,15 @@
  * Path manipulation utilities.
  */
 
-/* TODO: use safe string functions */
-#define _CRT_SECURE_NO_WARNINGS 1
-
 #include <sys/types.h> /* struct stat, struct _stat */
 #include <sys/stat.h>  /* stat() */
 
 #ifdef _WIN32
     #include <windows.h>  /* GetModuleFileNameW */
     #include <wchar.h>
+    #ifdef __GNUC__
+        #include <libgen.h> /* basename(), dirname() */
+    #endif
 #elif __APPLE__
     #include <libgen.h>      /* basename(), dirname() */
     #include <mach-o/dyld.h> /* _NSGetExecutablePath() */
@@ -83,7 +83,9 @@ pyi_path_dirname(char *result, const char *path)
         return false;
     }
     dirpart = (char *) dirname((char *) tmp);  /* _XOPEN_SOURCE - no 'const'. */
-    strncpy(result, dirpart, PATH_MAX);
+    if (snprintf(result, PATH_MAX, "%s", dirpart) >= PATH_MAX) {
+        return false;
+    }
 #endif /* ifndef HAVE_DIRNAME */
     return true;
 }
@@ -186,8 +188,20 @@ int
 pyi_path_fullpath(char *abs, size_t abs_size, const char *rel)
 {
 #ifdef _WIN32
-    /* TODO use _wfullpath - wchar_t function. */
-    return _fullpath(abs, rel, abs_size) != NULL;
+    wchar_t wrel[PATH_MAX + 1];
+    wchar_t *wabs = NULL;
+
+    pyi_win32_utils_from_utf8(wrel, rel, PATH_MAX);
+
+    wabs = _wfullpath(NULL, wrel, PATH_MAX);
+    if (wabs == NULL) {
+        return 0;
+    }
+
+    char *ret = pyi_win32_utils_to_utf8(abs, wabs, abs_size);
+    free(wabs);
+
+    return ret != NULL;
 #else
     return realpath(rel, abs) != NULL;
 #endif
@@ -276,31 +290,47 @@ pyi_path_executable(char *execfile, const char *appname)
     }
 
 #else /* ifdef _WIN32 */
-    char buffer[PATH_MAX];
+    /* On Linux, Cygwin, FreeBSD, and Solaris, we try these /proc paths first
+     */
+    size_t name_len = -1;
 
-    if (appname[0] == PYI_SEP || strchr(appname, PYI_SEP)) {
-        /* Absolute or relative path: Canonicalize directory path,
-         * but keep original basename.
-         */
-        if (pyi_path_fullpath_keep_basename(execfile, appname) == false) {
-            VS("LOADER: Cannot get fullpath for %s\n", execfile);
-            return false;
-        }
-    }
-    else {
-        /* No absolute or relative path, just program name: search $PATH.
-         */
-        if (! pyi_search_path(buffer, appname)) {
-            /* Searching $PATH failed, user is crazy. */
-            VS("LOADER: Searching $PATH failed for %s", appname);
-            if (snprintf(buffer, PATH_MAX, "%s", "appname") >= PATH_MAX) {
-                VS("LOADER: Appname too large %s\n", appname);
+    #if defined(__linux__) || defined(__CYGWIN__)
+    name_len = readlink("/proc/self/exe", execfile, PATH_MAX-1);  /* Linux, Cygwin */
+    #elif defined(__FreeBSD__)
+    name_len = readlink("/proc/curproc/file", execfile, PATH_MAX-1);  /* FreeBSD */
+    #elif defined(__sun)
+    name_len = readlink("/proc/self/path/a.out", execfile, PATH_MAX-1);  /* Solaris */
+    #endif
+
+    if (name_len != -1) {
+        /* execfile is not yet zero-terminated. result is the byte count. */
+        *(execfile + name_len) = '\0';
+    } else {
+        if (strchr(appname, PYI_SEP)) {
+            /* Absolute or relative path: Canonicalize directory path,
+             * but keep original basename.
+             */
+            if (pyi_path_fullpath_keep_basename(execfile, appname) == false) {
+                VS("LOADER: Cannot get fullpath for %s\n", execfile);
                 return false;
             }
         }
-        if (pyi_path_fullpath_keep_basename(execfile, buffer) == false) {
-            VS("LOADER: Cannot get fullpath for %s\n", execfile);
-            return false;
+        else {
+            /* No absolute or relative path, just program name: search $PATH.
+             */
+            char buffer[PATH_MAX];
+            if (! pyi_search_path(buffer, appname)) {
+                /* Searching $PATH failed, user is crazy. */
+                VS("LOADER: Searching $PATH failed for %s", appname);
+                if (snprintf(buffer, PATH_MAX, "%s", appname) >= PATH_MAX) {
+                    VS("LOADER: Full path to application exceeds PATH_MAX: %s\n", appname);
+                    return false;
+                }
+            }
+            if (pyi_path_fullpath_keep_basename(execfile, buffer) == false) {
+                VS("LOADER: Cannot get fullpath for %s\n", execfile);
+                return false;
+            }
         }
     }
 #endif /* ifdef _WIN32 */
@@ -346,10 +376,10 @@ pyi_path_archivefile(char *archivefile, const char *thisfile)
 FILE*
 pyi_path_fopen(const char* filename, const char* mode)
 {
-    wchar_t wfilename[MAX_PATH];
+    wchar_t wfilename[PATH_MAX];
     wchar_t wmode[10];
 
-    pyi_win32_utils_from_utf8(wfilename, filename, MAX_PATH);
+    pyi_win32_utils_from_utf8(wfilename, filename, PATH_MAX);
     pyi_win32_utils_from_utf8(wmode, mode, 10);
     return _wfopen(wfilename, wmode);
 }

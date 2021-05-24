@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -12,8 +12,10 @@ import os
 import sys
 import subprocess
 import atexit
+from PyInstaller.utils.tests import skip
 
 
+@skip
 def test_hook_order(pyi_builder):
 
     subprocess.run(

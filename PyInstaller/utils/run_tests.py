@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -15,7 +15,7 @@ import argparse
 import pytest
 import pkg_resources
 
-from .. import compat
+from PyInstaller import compat
 
 
 def paths_to_test(include_only=None):

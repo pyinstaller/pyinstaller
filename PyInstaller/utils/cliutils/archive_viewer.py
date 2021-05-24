@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2020, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -65,7 +65,6 @@ def main(name, brief, debug, rec_debug, **unused_options):
         if cmd == 'U':
             if len(stack) > 1:
                 arch = stack[-1][1]
-                arch.lib.close()
                 del stack[-1]
             name, arch = stack[-1]
             show(name, arch)
@@ -106,8 +105,6 @@ def main(name, brief, debug, rec_debug, **unused_options):
 
 def do_cleanup():
     global stack, cleanup
-    for (name, arch) in stack:
-        arch.lib.close()
     stack = []
     for filename in cleanup:
         try:

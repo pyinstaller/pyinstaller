@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -23,3 +23,18 @@ def test_maskespec_basic(tmpdir, monkeypatch):
     assert spec.exists()
     text = spec.read_text('utf-8')
     assert 'Analysis' in text
+
+
+def test_makespec_splash(tmpdir, monkeypatch):
+    py = tmpdir.join('with_splash.py').ensure()
+    print()
+    print(py)
+    spec = tmpdir.join('with_splash.spec')
+    monkeypatch.setattr(
+        'sys.argv', ['foobar', '--splash', 'image.png', str(py)])
+    monkeypatch.setattr('PyInstaller.building.makespec.DEFAULT_SPECPATH',
+                        str(tmpdir))
+    makespec.run()
+    assert spec.exists()
+    text = spec.read_text('utf-8')
+    assert 'Splash' in text

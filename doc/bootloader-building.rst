@@ -46,7 +46,7 @@ then ask for technical help.
 Supported platforms are
 
 * GNU/Linux (using gcc)
-* Windows (using Visual C++ or MinGW's gcc)
+* Windows (using Visual C++ (VS2015 or later) or MinGW's gcc)
 * Mac OX X (using clang)
 
 Contributed platforms are
@@ -71,11 +71,12 @@ You can run the following to install everything required:
 
 * On Debian- or Ubuntu-like systems::
 
-    sudo apt-get install build-essential
+    sudo apt-get install build-essential zlib1g-dev
 
 * On Fedora, RedHat and derivates::
 
     sudo yum groupinstall "Development Tools"
+    sudo yum install zlib-devel
 
 * For other Distributions please consult the distributions documentation.
 
@@ -238,8 +239,7 @@ between three options:
    This is why the bootloaders delivered with PyInstaller are build using
    Visual Studio C++ compiler.
 
-   You can use any Visual Studio version that is convenient
-   (as long as it's supported by the waf build-tool).
+   Visual Studio 2015 or later is required.
 
 
 2. Using the `MinGW-w64`_ suite.
@@ -255,7 +255,7 @@ between three options:
    leaving this to the compiler.
    But Mingw-w64 doesn’t have a standard C library.
    Instead it links against msvcrt.dll, which happens to exist
-   on many Windows installations – but i not guaranteed to exist.
+   on many Windows installations – but is not guaranteed to exist.
 
 .. [#] This description seems to be technically incorrect. I ought to depend
        on the C++ run-time library. If you know details, please open an
@@ -369,7 +369,7 @@ the environment variable :envvar:`OBJECT_MODE`.
 
 To determine the size the following command can be used::
 
-    $ python -c "import sys; print(sys.maxsize) <= 2**32"
+    $ python -c "import sys; print(sys.maxsize <= 2**32)"
     True
 
 When the answer is ``True`` (as above) Python was build as a 32-bit
@@ -407,6 +407,41 @@ to support the GNU run-time dependencies.
 When the IBM compiler is used no additional prerequisites are expected.
 The recommended value for :envvar:`CC` with the IBM compilers is
 `:command:xlc_r`.
+
+
+Building for FreeBSD
+====================
+
+A FreeBSD bootloader may be built with clang using :ref:`the usual steps
+<building the bootloader>` on a FreeBSD machine.
+Beware, however that any executable compiled natively on FreeBSD will only run
+on equal or newer versions of FreeBSD.
+In order to support older versions of FreeBSD, you must compile the oldest OS
+version you wish to support.
+
+Alternatively, the FreeBSD bootloaders may be cross compiled from Linux using
+Docker and a `FreeBSD cross compiler image
+<https://github.com/bwoodsend/freebsd-cross-build>`_.
+This image is kept in sync with the oldest non end of life FreeBSD release so
+that anything compiled on it will work on all active FreeBSD versions.
+
+In a random directory:
+
+* Start the docker daemon (usually with ``systemctl start docker`` - possibly
+  requiring ``sudo`` if you haven't setup rootless docker).
+* Download the latest cross compiler ``.tar.xz`` image from `here
+  <https://github.com/bwoodsend/freebsd-cross-build/releases>`_.
+* Import the image: ``docker image load -i freebsd-cross-build.tar.xz``.
+  The cross compiler image is now saved under the name ``freebsd-cross-build``.
+  You may discard the ``.tar.xz`` file if you wish.
+
+Then from the root of this repository:
+
+* Run:
+
+  .. code-block:: bash
+
+    docker run -v $(pwd):/io -it freebsd-cross-build bash -c "cd /io/bootloader; ./waf all"
 
 
 

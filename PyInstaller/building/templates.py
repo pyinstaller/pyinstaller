@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -15,13 +15,14 @@ Templates to generate .spec files.
 """
 
 onefiletmplt = """# -*- mode: python ; coding: utf-8 -*-
+%(preamble)s
 %(cipher_init)s
 
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s,
              binaries=%(binaries)s,
              datas=%(datas)s,
-             hiddenimports=%(hiddenimports)r,
+             hiddenimports=%(hiddenimports)s,
              hookspath=%(hookspath)r,
              runtime_hooks=%(runtime_hooks)r,
              excludes=%(excludes)s,
@@ -31,11 +32,12 @@ a = Analysis(%(scripts)s,
              noarchive=%(noarchive)s)
 pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
+%(splash_init)s
 exe = EXE(pyz,
           a.scripts,
           a.binaries,
           a.zipfiles,
-          a.datas,
+          a.datas, %(splash_target)s %(splash_binaries)s
           %(options)s,
           name='%(name)s',
           debug=%(debug_bootloader)s,
@@ -48,13 +50,14 @@ exe = EXE(pyz,
 """
 
 onedirtmplt = """# -*- mode: python ; coding: utf-8 -*-
+%(preamble)s
 %(cipher_init)s
 
 a = Analysis(%(scripts)s,
              pathex=%(pathex)s,
              binaries=%(binaries)s,
              datas=%(datas)s,
-             hiddenimports=%(hiddenimports)r,
+             hiddenimports=%(hiddenimports)s,
              hookspath=%(hookspath)r,
              runtime_hooks=%(runtime_hooks)r,
              excludes=%(excludes)s,
@@ -64,8 +67,9 @@ a = Analysis(%(scripts)s,
              noarchive=%(noarchive)s)
 pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
+%(splash_init)s
 exe = EXE(pyz,
-          a.scripts,
+          a.scripts, %(splash_target)s
           %(options)s,
           exclude_binaries=True,
           name='%(name)s',
@@ -77,7 +81,7 @@ exe = EXE(pyz,
 coll = COLLECT(exe,
                a.binaries,
                a.zipfiles,
-               a.datas,
+               a.datas, %(splash_binaries)s
                strip=%(strip)s,
                upx=%(upx)s,
                upx_exclude=%(upx_exclude)s,
@@ -102,4 +106,12 @@ bundletmplt = """app = BUNDLE(coll,
              name='%(name)s.app',
              icon=%(icon)s,
              bundle_identifier=%(bundle_identifier)s)
+"""
+
+splashtmpl = """splash = Splash(%(splash_image)r,
+                binaries=a.binaries,
+                datas=a.datas,
+                text_pos=None,
+                text_size=12,
+                minify_script=True)
 """

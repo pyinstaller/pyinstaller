@@ -1,6 +1,0 @@
-To support tensorflow module forwarding logic, a new hook for tensorflow_core was added.
-https://github.com/pyinstaller/pyinstaller/issues/4400
-
-To resolve missing astor VERSION file in tensorflow import, a new hook for astor was created.
-This is also part of the fix for:
-https://github.com/pyinstaller/pyinstaller/issues/4400

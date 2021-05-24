@@ -1,6 +1,6 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2020, PyInstaller Development Team.
+ * Copyright (c) 2013-2021, PyInstaller Development Team.
  *
  * Distributed under the terms of the GNU General Public License (version 2
  * or later) with exception for distributing the bootloader.
@@ -17,22 +17,12 @@
 /* size of buffer to store the name of the Python DLL library */
 #define DLLNAME_LEN (64)
 
-/* TODO: use safe string functions */
-#define _CRT_SECURE_NO_WARNINGS 1
-
 #ifdef _WIN32
     #include <windows.h> /* HMODULE */
     #include <fcntl.h>   /* O_BINARY */
     #include <io.h>      /* _setmode */
-    #include <winsock.h> /* ntohl */
 #else
     #include <dlfcn.h>  /* dlerror */
-    #ifdef __FreeBSD__
-/* freebsd issue #188316 */
-        #include <arpa/inet.h>  /* ntohl */
-    #else
-        #include <netinet/in.h>  /* ntohl */
-    #endif
     #include <stdlib.h>  /* mbstowcs */
 #endif /* ifdef _WIN32 */
 #include <stddef.h>  /* ptrdiff_t */
@@ -250,6 +240,9 @@ pyi_pylib_set_runtime_opts(ARCHIVE_STATUS *status)
         setbuf(stdin, (char *)NULL);
         setbuf(stdout, (char *)NULL);
         setbuf(stderr, (char *)NULL);
+
+        /* Enable unbuffered mode via Py_UnbufferedStdioFlag */
+        *PI_Py_UnbufferedStdioFlag = 1;
     }
     return 0;
 }
@@ -260,7 +253,13 @@ pyi_free_wargv(wchar_t ** wargv)
     wchar_t ** arg = wargv;
 
     while (arg[0]) {
+#ifdef _WIN32
+        // allocated using `malloc` in pyi_win32_wargv_from_utf8
         free(arg[0]);
+#else
+        // allocated using Py_DecodeLocale in pyi_wargv_from_argv
+        PI_PyMem_RawFree(arg[0]);
+#endif
         arg++;
     }
     free(wargv);
@@ -374,7 +373,7 @@ pyi_locale_char2wchar(wchar_t * dst, char * src, size_t len)
         return NULL;
     }
     wcsncpy(dst, buffer, len);
-    free(buffer);
+    PI_PyMem_RawFree(buffer);
     return dst;
 #endif /* ifdef _WIN32 */
 }
@@ -393,10 +392,11 @@ pyi_pylib_start_python(ARCHIVE_STATUS *status)
      * its contents nor free its memory.
      *
      * NOTE: Statics are zero-initialized. */
-    static char pypath[2 * PATH_MAX + 14];
+    #define MAX_PYPATH_SIZE (3 * PATH_MAX + 32)
+    static char pypath[MAX_PYPATH_SIZE];
 
     /* Wide string forms of the above, for Python 3. */
-    static wchar_t pypath_w[PATH_MAX + 1];
+    static wchar_t pypath_w[MAX_PYPATH_SIZE];
     static wchar_t pyhome_w[PATH_MAX + 1];
     static wchar_t progname_w[PATH_MAX + 1];
 
@@ -420,23 +420,27 @@ pyi_pylib_start_python(ARCHIVE_STATUS *status)
     PI_Py_SetPythonHome(pyhome_w);
 
     /* Set sys.path */
-    /* sys.path = [base_library, mainpath] */
-    if (snprintf(pypath, sizeof pypath, "%s%cbase_library.zip%c%s",
-                 status->mainpath, PYI_SEP, PYI_PATHSEP, status->mainpath)
-        >= sizeof pypath) {
+    /* sys.path = [mainpath/base_library.zip, mainpath/lib-dynload, mainpath] */
+    if (snprintf(pypath, MAX_PYPATH_SIZE, "%s%c%s" "%c" "%s%c%s" "%c" "%s",
+                 status->mainpath, PYI_SEP, "base_library.zip",
+                 PYI_PATHSEP,
+                 status->mainpath, PYI_SEP, "lib-dynload",
+                 PYI_PATHSEP,
+                 status->mainpath)
+        >= MAX_PYPATH_SIZE) {
         // This should never happen, since mainpath is < PATH_MAX and pypath is
         // huge enough
         FATALERROR("sys.path (based on %s) exceeds buffer[%d] space\n",
-                   status->mainpath, sizeof pypath);
+                   status->mainpath, MAX_PYPATH_SIZE);
         return -1;
     }
 
     /*
-     * E must set sys.path to have base_library.zip before
+     * We must set sys.path to have base_library.zip before
      * calling Py_Initialize as it needs `encodings` and other modules.
      */
     /* Decode using current locale */
-    if (!pyi_locale_char2wchar(pypath_w, pypath, PATH_MAX)) {
+    if (!pyi_locale_char2wchar(pypath_w, pypath, MAX_PYPATH_SIZE)) {
         FATALERROR("Failed to convert pypath to wchar_t\n");
         return -1;
     }
@@ -562,14 +566,14 @@ pyi_pylib_import_modules(ARCHIVE_STATUS *status)
             if (pyvers >= 37) {
                 /* Python >= 3.7 the header: size was changed to 16 bytes. */
                 co = PI_PyObject_CallFunction(loadfunc, "y#", modbuf + 16,
-                                              ntohl(ptoc->ulen) - 16);
+                                              ptoc->ulen - 16);
             }
             else {
                 /* It looks like from python 3.3 the header */
                 /* size was changed to 12 bytes. */
                 co =
-                    PI_PyObject_CallFunction(loadfunc, "y#", modbuf + 12, ntohl(
-                                                 ptoc->ulen) - 12);
+                    PI_PyObject_CallFunction(loadfunc, "y#", modbuf + 12,
+                                                 ptoc->ulen - 12);
             };
 
             if (co != NULL) {
@@ -577,7 +581,7 @@ pyi_pylib_import_modules(ARCHIVE_STATUS *status)
                 mod = PI_PyImport_ExecCodeModule(ptoc->name, co);
             }
             else {
-                /* TODO callfunctions might return NULL - find yout why and foor what modules. */
+                /* TODO callfunctions might return NULL - find out why and for what modules. */
                 VS("LOADER: callfunction returned NULL");
                 mod = NULL;
             }
@@ -616,7 +620,7 @@ int
 pyi_pylib_install_zlib(ARCHIVE_STATUS *status, TOC *ptoc)
 {
     int rc = 0;
-    int zlibpos = status->pkgstart + ntohl(ptoc->pos);
+    uint64_t zlibpos = status->pkgstart + ptoc->pos;
     PyObject * sys_path, *zlib_entry, *archivename_obj;
 
     /* Note that sys.path contains PyUnicode on py3. Ensure
@@ -634,7 +638,7 @@ pyi_pylib_install_zlib(ARCHIVE_STATUS *status, TOC *ptoc)
      */
     archivename_obj = PI_PyUnicode_DecodeFSDefault(status->archivename);
 #endif
-    zlib_entry = PI_PyUnicode_FromFormat("%U?%d", archivename_obj, zlibpos);
+    zlib_entry = PI_PyUnicode_FromFormat("%U?%" PRIu64, archivename_obj, zlibpos);
     PI_Py_DecRef(archivename_obj);
 
     sys_path = PI_PySys_GetObject("path");

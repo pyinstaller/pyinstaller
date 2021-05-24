@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -26,17 +26,16 @@ import sys
 import struct
 
 from PyInstaller.config import CONF
-from .. import compat
-from ..compat import is_darwin, is_win, EXTENSION_SUFFIXES, \
-    open_file, is_py37, is_cygwin
-from ..depend import dylib
-from ..depend.bindepend import match_binding_redirect
-from ..utils import misc
-from ..utils.misc import load_py_data_struct, save_py_data_struct
-from .. import log as logging
+from PyInstaller import compat
+from PyInstaller.compat import is_darwin, is_win, EXTENSION_SUFFIXES, \
+    is_py37, is_cygwin
+from PyInstaller.depend import dylib
+from PyInstaller.depend.bindepend import match_binding_redirect
+from PyInstaller.utils import misc
+from PyInstaller import log as logging
 
 if is_win:
-    from ..utils.win32 import winmanifest, winresource
+    from PyInstaller.utils.win32 import winmanifest, winresource, versioninfo
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +94,7 @@ def add_suffix_to_extensions(toc):
     Returns a new TOC with proper library suffix for EXTENSION items.
     """
     # TODO: Fix this recursive import
-    from .datastruct import TOC
+    from PyInstaller.building.datastruct import TOC
     new_toc = TOC()
     for inm, fnm, typ in toc:
         if typ == 'EXTENSION':
@@ -154,7 +153,7 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None):
                to determine level of paths for @loader_path like
                '@loader_path/../../' for qt4 plugins.
     """
-    from ..config import CONF
+    from PyInstaller.config import CONF
     # On darwin a cache is required anyway to keep the libaries
     # with relative install names. Caching on darwin does not work
     # since we need to modify binary headers to use relative paths
@@ -187,7 +186,7 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None):
     cacheindexfn = os.path.join(cachedir, "index.dat")
     if os.path.exists(cacheindexfn):
         try:
-            cache_index = load_py_data_struct(cacheindexfn)
+            cache_index = misc.load_py_data_struct(cacheindexfn)
         except Exception as e:
             # tell the user they may want to fix their cache
             # .. however, don't delete it for them; if it keeps getting
@@ -218,9 +217,11 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None):
             os.remove(cachedfile)
         else:
             # On Mac OS X we need relative paths to dll dependencies
-            # starting with @executable_path
+            # starting with @executable_path. We may also need to strip
+            # (invalidated) signature from collected shared libraries.
             if is_darwin:
                 dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
+                dylib.mac_strip_signature(cachedfile, dist_nm)
             return cachedfile
 
 
@@ -247,16 +248,21 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None):
     if upx:
         if strip:
             fnm = checkCache(fnm, strip=True, upx=False)
-        bestopt = "--best"
-        # FIXME: Linux builds of UPX do not seem to contain LZMA (they assert out)
-        # A better configure-time check is due.
-        if CONF["hasUPX"] >= (3,) and os.name == "nt":
-            bestopt = "--lzma"
+        # We meed to avoid using UPX with Windows DLLs that have Control
+        # Flow Guard enabled, as it breaks them.
+        if is_win and versioninfo.pefile_check_control_flow_guard(fnm):
+            logger.info('Disabling UPX for %s due to CFG!', fnm)
+        else:
+            bestopt = "--best"
+            # FIXME: Linux builds of UPX do not seem to contain LZMA
+            # (they assert out). A better configure-time check is due.
+            if CONF["hasUPX"] >= (3,) and os.name == "nt":
+                bestopt = "--lzma"
 
-        upx_executable = "upx"
-        if CONF.get('upx_dir'):
-            upx_executable = os.path.join(CONF['upx_dir'], upx_executable)
-        cmd = [upx_executable, bestopt, "-q", cachedfile]
+            upx_executable = "upx"
+            if CONF.get('upx_dir'):
+                upx_executable = os.path.join(CONF['upx_dir'], upx_executable)
+            cmd = [upx_executable, bestopt, "-q", cachedfile]
     else:
         if strip:
             strip_options = []
@@ -344,12 +350,14 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None):
 
     # update cache index
     cache_index[basenm] = digest
-    save_py_data_struct(cacheindexfn, cache_index)
+    misc.save_py_data_struct(cacheindexfn, cache_index)
 
     # On Mac OS X we need relative paths to dll dependencies
-    # starting with @executable_path
+    # starting with @executable_path. We may also need to strip
+    # (invalidated) signature from collected shared libraries.
     if is_darwin:
         dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
+        dylib.mac_strip_signature(cachedfile, dist_nm)
     return cachedfile
 
 
@@ -373,7 +381,7 @@ def _check_path_overlap(path):
 
     Raise SystemExit if there is overlap, return True otherwise
     """
-    from ..config import CONF
+    from PyInstaller.config import CONF
     specerr = 0
     if CONF['workpath'].startswith(path):
         logger.error('Specfile error: The output path "%s" contains '
@@ -401,7 +409,7 @@ def _make_clean_directory(path):
             except OSError:
                 _rmtree(path)
 
-        os.makedirs(path)
+        os.makedirs(path, exist_ok=True)
 
 
 def _rmtree(path):
@@ -409,7 +417,7 @@ def _rmtree(path):
     Remove directory and all its contents, but only after user confirmation,
     or if the -y option is set
     """
-    from ..config import CONF
+    from PyInstaller.config import CONF
     if CONF['noconfirm']:
         choice = 'y'
     elif sys.stdout.isatty():
@@ -592,7 +600,7 @@ def _load_code(modname, filename):
 
         # Open the source file in binary mode and allow the `compile()` call to
         # detect the source encoding.
-        with open_file(filename, 'rb') as f:
+        with open(filename, 'rb') as f:
             source = f.read()
         return compile(source, filename, 'exec')
 

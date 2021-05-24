@@ -1,3 +1,9 @@
+
+# Filter DeprecationWarnings until the code has been revised
+import warnings
+warnings.filterwarnings("ignore", "the imp module is deprecated in")
+warnings.filterwarnings("ignore", "imp_walk will be removed in a future")
+
 import os
 import imp
 import sys
@@ -130,10 +136,7 @@ def iterate_instructions(code_object):
     Yields `dis.Instruction`. After each code-block (`co_code`), `None` is
     yielded to mark the end of the block and to interrupt the steam.
     """
-    # TODO: Implement "yield from" for python 3
-
-    for instruction in get_instructions(code_object):
-        yield instruction
+    yield from get_instructions(code_object)
 
     yield None
 
@@ -141,5 +144,4 @@ def iterate_instructions(code_object):
     # parse this constant in the same manner.
     for constant in code_object.co_consts:
         if inspect.iscode(constant):
-            for instruction in iterate_instructions(constant):
-                yield instruction
+            yield from iterate_instructions(constant)

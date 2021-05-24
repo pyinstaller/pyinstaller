@@ -1,6 +1,6 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2020, PyInstaller Development Team.
+ * Copyright (c) 2013-2021, PyInstaller Development Team.
  *
  * Distributed under the terms of the GNU General Public License (version 2
  * or later) with exception for distributing the bootloader.
@@ -15,9 +15,6 @@
  * Bootloader for a packed executable.
  */
 
-/* TODO: use safe string functions */
-#define _CRT_SECURE_NO_WARNINGS 1
-
 #ifdef _WIN32
     #include <windows.h>
     #include <wchar.h>
@@ -25,6 +22,10 @@
 #include <stdio.h>  /* FILE */
 #include <stdlib.h> /* calloc */
 #include <string.h> /* memset */
+
+#if defined(__linux__)
+    #include <sys/prctl.h> /* prctl() */
+#endif
 
 /* PyInstaller headers. */
 #include "pyi_main.h"
@@ -35,16 +36,19 @@
 #include "pyi_pythonlib.h"
 #include "pyi_launch.h"
 #include "pyi_win32_utils.h"
+#include "pyi_splash.h"
 
 int
 pyi_main(int argc, char * argv[])
 {
     /*  archive_status contain status information of the main process. */
     ARCHIVE_STATUS *archive_status = NULL;
+    SPLASH_STATUS *splash_status = NULL;
     char executable[PATH_MAX];
     char homepath[PATH_MAX];
     char archivefile[PATH_MAX];
     int rc = 0;
+    int in_child = 0;
     char *extractionpath = NULL;
 
 #ifdef _MSC_VER
@@ -76,6 +80,11 @@ pyi_main(int argc, char * argv[])
 
     extractionpath = pyi_getenv("_MEIPASS2");
 
+    /* NOTE: record the in-child status here, because extractionpath
+     * might get overwritten later on (on Windows and macOS, single
+     * process is used for --onedir mode). */
+    in_child = (extractionpath != NULL);
+
     /* If the Python program we are about to run invokes another PyInstaller
      * one-file program as subprocess, this subprocess must not be fooled into
      * thinking that it is already unpacked. Therefore, PyInstaller deletes
@@ -93,6 +102,24 @@ pyi_main(int argc, char * argv[])
             return -1;
     }
 
+#if defined(__linux__)
+    char *processname = NULL;
+
+    /* Set process name on linux. The environment variable is set by
+       parent launcher process. */
+    processname = pyi_getenv("_PYI_PROCNAME");
+    if (processname) {
+        VS("LOADER: restoring linux process name from _PYI_PROCNAME: %s\n", processname);
+        if (prctl(PR_SET_NAME, processname, 0, 0)) {
+            FATALERROR("LOADER: failed to set linux process name!\n");
+            return -1;
+        }
+        free(processname);
+    }
+    pyi_unsetenv("_PYI_PROCNAME");
+
+#endif  /* defined(__linux__) */
+
     /* These are used only in pyi_pylib_set_sys_argv, which converts to wchar_t */
     archive_status->argc = argc;
     archive_status->argv = argv;
@@ -107,8 +134,8 @@ pyi_main(int argc, char * argv[])
 
 #endif
 
-#ifdef _WIN32
 
+#ifdef _WIN32
     if (extractionpath) {
         /* Add extraction folder to DLL search path */
         wchar_t * dllpath_w;
@@ -117,7 +144,39 @@ pyi_main(int argc, char * argv[])
         VS("LOADER: SetDllDirectory(%s)\n", extractionpath);
         free(dllpath_w);
     }
-#endif /* ifdef _WIN32 */
+#endif
+
+    /*
+     * Check for splash screen resources.
+     * For the splash screen function to work PyInstaller
+     * needs to bundle tcl/tk with the application. This library
+     * is the same as tkinter uses.
+     */
+    splash_status = pyi_splash_status_new();
+
+    if (!in_child && pyi_splash_setup(splash_status, archive_status, NULL) == 0) {
+        /*
+         * Splash resources found, start splash screen
+         * If in onefile mode extract the required binaries
+         */
+        if ((!pyi_splash_extract(archive_status, splash_status)) &&
+            (!pyi_splash_attach(splash_status))) {
+            /* Everything was initialized, so it is safe to start
+             * the splash screen */
+            pyi_splash_start(splash_status, executable);
+        }
+        else {
+            /* Error attaching tcl/tk libraries.
+             * It may have happened that the libraries got (partly)
+             * loaded, so close them by finalizing the splash status */
+            pyi_splash_finalize(splash_status);
+            pyi_splash_status_free(&splash_status);
+        }
+    }
+    else {
+        /* No splash screen resources found */
+        pyi_splash_status_free(&splash_status);
+    }
 
     if (extractionpath) {
         VS("LOADER: Already in the child - running user's code.\n");
@@ -144,11 +203,15 @@ pyi_main(int argc, char * argv[])
         rc = pyi_launch_execute(archive_status);
         pyi_launch_finalize(archive_status);
 
+        /* Clean up splash screen resources; required when in single-process
+         * execution mode, i.e. when using --onedir on Windows or macOS. */
+        pyi_splash_finalize(splash_status);
+        pyi_splash_status_free(&splash_status);
     }
     else {
 
         /* status->temppath is created if necessary. */
-        if (pyi_launch_extract_binaries(archive_status)) {
+        if (pyi_launch_extract_binaries(archive_status, splash_status)) {
             VS("LOADER: temppath is %s\n", archive_status->temppath);
             VS("LOADER: Error extracting binaries\n");
             return -1;
@@ -163,6 +226,17 @@ pyi_main(int argc, char * argv[])
 
         VS("LOADER: set _MEIPASS2 to %s\n", pyi_getenv("_MEIPASS2"));
 
+#if defined(__linux__)
+        char tmp_processname[16]; /* 16 bytes as per prctl() man page */
+
+        /* Pass the process name to child via environment variable. */
+        if (!prctl(PR_GET_NAME, tmp_processname, 0, 0)) {
+            VS("LOADER: linux: storing process name into _PYI_PROCNAME: %s\n", tmp_processname);
+            pyi_setenv("_PYI_PROCNAME", tmp_processname);
+        }
+
+#endif  /* defined(__linux__) */
+
         if (pyi_utils_set_environment(archive_status) == -1) {
             return -1;
         }
@@ -176,6 +250,12 @@ pyi_main(int argc, char * argv[])
         VS("LOADER: Back to parent (RC: %d)\n", rc);
 
         VS("LOADER: Doing cleanup\n");
+
+        /* Finalize splash screen before temp directory gets wiped, since the splash
+         * screen might hold handles to shared libraries inside the temp dir. Those
+         * wouldn't be removed, leaving the temp folder behind. */
+        pyi_splash_finalize(splash_status);
+        pyi_splash_status_free(&splash_status);
 
         if (archive_status->has_temp_directory == true) {
             pyi_remove_temp_path(archive_status->temppath);

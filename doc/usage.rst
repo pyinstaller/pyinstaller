@@ -102,23 +102,24 @@ Or in Windows, use the little-known BAT file line continuation::
 Running |PyInstaller| from Python code
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you want to run |PyInstaller| from within Python code use the ``run``
-function of the ``__main__`` module and pass all command line arguments in as
-a list, e.g.
+If you want to run |PyInstaller| from Python code, you can use the ``run`` function
+defined in ``PyInstaller.__main__``. For instance, the following code:
 
 .. code-block:: python
 
     import PyInstaller.__main__
 
     PyInstaller.__main__.run([
-        '--name=%s' % package_name,
+        'my_script.py',
         '--onefile',
-        '--windowed',
-        '--add-binary=%s' % os.path.join('resource', 'path', '*.png'),
-        '--add-data=%s' % os.path.join('resource', 'path', '*.txt'),
-        '--icon=%s' % os.path.join('resource', 'path', 'icon.ico'),
-        os.path.join('my_package', '__main__.py'),
+        '--windowed'
     ])
+
+Is equivalent to:
+
+.. code-block:: shell
+
+    pyinstaller my_script.py --onefile --windowed
 
 
 Running |PyInstaller| with Python optimizations
@@ -214,6 +215,72 @@ the archive inside the executable file.
 This feature uses the tinyaes_ module internally for the encryption.
 
 
+.. _splash screen:
+
+Splash Screen *(Experimental)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. Note::
+    This feature is incompatible with macOS. In the current design, the
+    splash screen operates in a secondary thread, which is disallowed by
+    the Tcl/Tk (or rather, the underlying GUI toolkit) on macOS.
+
+Some applications may require a splash screen as soon as the application
+(bootloader) has been started, because especially in onefile mode large
+applications may have long extraction/startup times, while the bootloader
+prepares everything, where the user cannot judge whether the application
+was started successfully or not.
+
+The bootloader is able to display a one-image (i.e. only an image) splash
+screen, which is displayed before the actual main extraction process starts.
+The splash screen supports non-transparent and hard-cut-transparent images as background
+image, so non-rectangular splash screens can also be displayed.
+
+This splash screen is based on `Tcl/Tk`_, which is the same library used by the Python
+module `tkinter`_. PyInstaller bundles the dynamic libraries of tcl and tk into the
+application at compile time. These are loaded into the bootloader at startup of the
+application after they have been extracted (if the program has been packaged as an
+onefile archive). Since the file sizes of the necessary dynamic libraries are very small,
+there is almost no delay between the start of the application and the splash screen.
+The compressed size of the files necessary for the splash screen is about *1.5 MB*.
+
+As an additional feature, text can optionally be displayed on the splash screen. This
+can be changed/updated from within Python. This offers the possibility to
+display the splash screen during longer startup procedures of a Python program
+(e.g. waiting for a network response or loading large files into memory). You
+can also start a GUI behind the splash screen, and only after it is completely
+initialized the splash screen can be closed. Optionally, the font, color and
+size of the text can be set. However, the font must be installed on the user
+system, as it is not bundled. If the font is not available, a fallback font is used.
+
+If the splash screen is configured to show text, it will automatically (as onefile archive)
+display the name of the file that is currently being unpacked, this acts as a progress bar.
+
+
+The ``pyi_splash`` Module
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The splash screen is controlled from within Python by the :mod:`pyi_splash` module, which can
+be imported at runtime. This module **cannot** be installed by a package manager
+because it is part of PyInstaller and is included as needed.
+This module must be imported within the Python program. The usage is as follows::
+
+    import pyi_splash
+
+    # Update the text on the splash screen
+    pyi_splash.update_text("PyInstaller is a great software!")
+    pyi_splash.update_text("Second time's a charm!")
+
+    # Close the splash screen. It does not matter when the call
+    # to this function is made, the splash screen remains open until
+    # this function is called or the Python program is terminated.
+    pyi_splash.close()
+
+Of course the import should be in a ``try ... except`` block, in case the program is
+used externally as a normal Python script, without a bootloader.
+For a detailed description see :ref:`pyi_splash Module`.
+
+
 .. _defining the extraction location:
 
 Defining the Extraction Location
@@ -247,7 +314,7 @@ or a supported version that uses Qt4 and a development version that uses Qt5 --
 we recommend you use venv_.
 With `venv` you can maintain different combinations of Python
 and installed packages, and switch from one combination to another easily.
-These are called `virtual nvironments` or `venvs` in short.
+These are called `virtual environments` or `venvs` in short.
 
 * Use `venv` to create as many different development environments as you need,
   each with its unique combination of Python and installed packages.
@@ -273,7 +340,7 @@ Supporting Multiple Operating Systems
 ---------------------------------------
 
 If you need to distribute your application for more than one OS,
-for example both Windows and Mac OS X, you must install |PyInstaller|
+for example both Windows and Mac OS X, you must install |PyInstaller|
 on each platform and bundle your app separately on each.
 
 You can do this from a single machine using virtualization.
@@ -389,7 +456,7 @@ Or you can apply the ``unicode()`` function to the object
 to reproduce the version text file.
 
 
-Building Mac OS X App Bundles
+Building Mac OS X App Bundles
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Under Mac OS X, |PyInstaller| always builds a UNIX executable in
@@ -411,7 +478,7 @@ The one built by |PyInstaller| contains a folder always named
   + A folder :file:`Frameworks` which is empty.
   + A folder :file:`Resources` that contains an icon file.
   + A file :file:`Info.plist` that describes the app.
-  + A folder :file:`MacOS` that contains the the executable and 
+  + A folder :file:`MacOS` that contains the the executable and
     supporting files, just as in the ``--onedir`` folder.
 
 Use the ``icon=`` argument to specify a custom icon for the application.
@@ -463,9 +530,9 @@ You must make a unique version of the app for each word-length supported.
 Windows
 ---------------
 
-For **Python >= 3.5** targeting *Windows < 10*, the developer needs to take
+The developer needs to take
 special care to include the Visual C++ run-time .dlls:
-Python 3.5 uses Visual Studio 2015 run-time, which has been renamed into
+Python 3.5+ uses Visual Studio 2015 run-time, which has been renamed into
 `“Universal CRT“
 <https://blogs.msdn.microsoft.com/vcblog/2015/03/03/introducing-the-universal-crt/>`_
 and has become part of Windows 10.
@@ -602,7 +669,7 @@ you may need to set or unset
 the environment variable :envvar:`OBJECT_MODE`.
 To determine the size the following command can be used::
 
-    $ python -c "import sys; print(sys.maxsize) <= 2**32"
+    $ python -c "import sys; print(sys.maxsize <= 2**32)"
     True
 
 When the answer is ``True`` (as above) Python was build as a 32-bit

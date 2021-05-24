@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2020, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -896,6 +896,23 @@ class Manifest(object):
         cE.aChild(caE)
         docE.aChild(cE)
 
+        # Add application.windowsSettings section to enable longPathAware
+        # option (issue #5423).
+        if self.manifestType == "assembly":
+            aE = doc.cE("application")
+            aE.setAttribute("xmlns", "urn:schemas-microsoft-com:asm.v3")
+            wsE = doc.cE("windowsSettings")
+            lpaE = doc.cE("longPathAware")
+            lpaE.setAttribute(
+                "xmlns",
+                "http://schemas.microsoft.com/SMI/2016/WindowsSettings"
+            )
+            lpaT = doc.cT("true")
+            lpaE.aChild(lpaT)
+            wsE.aChild(lpaE)
+            aE.aChild(wsE)
+            docE.aChild(aE)
+
         return doc
 
     def toprettyxml(self, indent="  ", newl=os.linesep, encoding="UTF-8"):
@@ -962,9 +979,8 @@ def ManifestFromResFile(filename, names=None, languages=None):
     pth = []
     if res and res[RT_MANIFEST]:
         while isinstance(res, dict) and res.keys():
-            key = res.keys()[0]
+            key, res = next(iter(res.items()))
             pth.append(str(key))
-            res = res[key]
     if isinstance(res, dict):
         raise InvalidManifestError("No matching manifest resource found in '%s'" %
                                    filename)

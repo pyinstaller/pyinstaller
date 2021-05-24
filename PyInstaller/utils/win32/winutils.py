@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2020, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -19,9 +19,7 @@ __all__ = ['get_windows_dir']
 import os
 import sys
 
-# Do not import 'compat' globally to avoid circual import:
-# import_pywin32_module() is used by compat
-#from ... import compat
+from PyInstaller import compat
 
 import PyInstaller.log as logging
 logger = logging.getLogger(__name__)
@@ -32,7 +30,7 @@ def get_windows_dir():
     Return the Windows directory e.g. C:\\Windows.
     """
     # imported here to avoid circular import
-    from ... import compat
+    from PyInstaller import compat
     windir = compat.win32api.GetWindowsDirectory()
     if not windir:
         raise SystemExit("Error: Can not determine your Windows directory")
@@ -44,7 +42,7 @@ def get_system_path():
     Return the required Windows system paths.
     """
     # imported here to avoid circular import
-    from ... import compat
+    from PyInstaller import compat
     _bpath = []
     sys_dir = compat.win32api.GetSystemDirectory()
     # Ensure C:\Windows\system32  and C:\Windows directories are
@@ -63,14 +61,14 @@ def extend_system_path(paths):
     Some hooks might extend PATH where PyInstaller should look for dlls.
     """
     # imported here to avoid circular import
-    from ... import compat
+    from PyInstaller import compat
     old_PATH = compat.getenv('PATH', '')
     paths.append(old_PATH)
     new_PATH = os.pathsep.join(paths)
     compat.setenv('PATH', new_PATH)
 
 
-def import_pywin32_module(module_name, _is_venv=None):
+def import_pywin32_module(module_name):
     """
     Import and return the PyWin32 module with the passed name.
 
@@ -86,11 +84,6 @@ def import_pywin32_module(module_name, _is_venv=None):
     ----------
     module_name : str
         Fully-qualified name of this module.
-    _is_venv: bool
-        Internal paramter used by compat.py, to prevent circular import. If None
-        (the default), compat is imported and comapt.is_venv ist used. If not
-        None, it is assumed to be called from compat and the value to be the same
-        as compat.is_venv.
 
     Returns
     ----------
@@ -116,17 +109,12 @@ def import_pywin32_module(module_name, _is_venv=None):
             # an ugly hack, but there is no other way.
             sys.frozen = '|_|GLYH@CK'
 
-            if _is_venv is None:  # not called from within compat
-                # imported here to avoid circular import
-                from ... import compat
-                _is_venv = compat.is_venv
             # If isolated to a venv, the preferred site.getsitepackages()
             # function is unreliable. Fallback to searching "sys.path" instead.
-            if _is_venv:
+            if compat.is_venv:
                 sys_paths = sys.path
             else:
-                import site
-                sys_paths = site.getsitepackages()
+                sys_paths = compat.getsitepackages()
 
             for sys_path in sys_paths:
                 # Absolute path of the directory containing PyWin32 DLLs.
@@ -167,3 +155,17 @@ def convert_dll_name_to_str(dll_name):
         return str(dll_name, encoding='UTF-8')
     else:
         return dll_name
+
+
+def set_exe_checksum(exe_path):
+    """Set executable's checksum in its metadata.
+
+    This optional checksum is supposed to protect the executable against
+    corruption but some anti-viral software have taken to flagging anything
+    without it set correctly as malware. See issue #5579.
+    """
+    import pefile
+    pe = pefile.PE(exe_path)
+    pe.OPTIONAL_HEADER.CheckSum = pe.generate_checksum()
+    pe.close()
+    pe.write(exe_path)

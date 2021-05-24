@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -11,6 +11,7 @@
 #-----------------------------------------------------------------------------
 
 import os
+import sys
 import glob
 import ctypes
 import ctypes.util
@@ -19,7 +20,7 @@ import pytest
 
 from PyInstaller.compat import is_darwin, is_win
 from PyInstaller.utils.tests import skipif, importorskip, \
-    skipif_notwin, skipif_no_compiler, xfail, has_compiler
+    skipif_no_compiler, xfail, has_compiler
 
 # :todo: find a way to get this from `conftest` or such
 # Directory with testing modules used in some tests.
@@ -138,6 +139,19 @@ def test_import_submodule_global_unshadowed(pyi_builder):
         """)
 
 
+def test_import_submodule_from_aliased_pkg(pyi_builder, script_dir):
+    pyi_builder.test_source(
+        """
+        import sys
+        import pyi_testmod_submodule_from_aliased_pkg
+
+        sys.modules['alias_name'] = pyi_testmod_submodule_from_aliased_pkg
+
+        from alias_name import submodule
+        """,
+        ['--additional-hooks-dir=%s' % script_dir.join('pyi_hooks')])
+
+
 def test_module_with_coding_utf8(pyi_builder):
     # Module ``utf8_encoded_module`` simply has an ``coding`` header
     # and uses same German umlauts.
@@ -208,6 +222,15 @@ def test_import_pyqt5_uic_port(script_dir, pyi_builder):
     pyi_builder.test_script('pyi_import_pyqt5_uic_port.py',
         # Add the path to a fake PyQt5 package, used for this test.
         pyi_args=['--path', extra_path])
+
+
+# Check whether modulegraph finds pyi_splash
+def test_import_pyi_splash(pyi_builder):
+    pyi_builder.test_source(
+        """
+        import pyi_splash
+        assert hasattr(pyi_splash, "_initialized")
+        """)
 
 
 #--- ctypes ----
@@ -316,7 +339,7 @@ for prefix in ('', 'ctypes.'):
             params = pytest.param(*params, marks=skipif_no_compiler(params))
         elif funcname in ("WinDLL", "OleDLL"):
             # WinDLL, OleDLL only work on windows.
-            params = pytest.param(*params, marks=skipif_notwin(params))
+            params = pytest.param(*params, marks=pytest.mark.win32)
         parameters.append(params)
 
 @pytest.mark.parametrize("funcname,test_id", parameters, ids=ids)
@@ -356,6 +379,31 @@ def test_ctypes_in_func_gen(pyi_builder, monkeypatch, funcname,
     """)
     __monkeypatch_resolveCtypesImports(monkeypatch, compiled_dylib.dirname)
     pyi_builder.test_source(source % locals(), test_id=test_id)
+
+
+def test_ctypes_cdll_builtin_extension(pyi_builder):
+    # Take a built-in that is provided as an extension
+    builtin_ext = '_sha256'
+    if builtin_ext in sys.builtin_module_names:
+        # On Windows, built-ins do not seem to be extensions
+        pytest.skip(f"{builtin_ext} is a built-in module without extension.")
+
+    pyi_builder.test_source(
+        """
+        import ctypes
+        import importlib.machinery
+
+        # Try to load CDLL with all possible extension suffices; this
+        # should fail in all cases, as built-in extensions should not
+        # be in the ctypes' search path.
+        builtin_ext = '{0}'
+        for suffix in importlib.machinery.EXTENSION_SUFFIXES:
+            try:
+                lib = ctypes.CDLL(builtin_ext + suffix)
+            except OSError:
+                lib = None
+            assert lib is None, "Built-in extension picked up by ctypes.CDLL!"
+        """.format(builtin_ext))
 
 
 # TODO: Add test-cases for the prefabricated library loaders supporting
@@ -546,6 +594,62 @@ def test_nspkg_pep420(pyi_builder):
         pyi_args=['--paths', os.pathsep.join(pathex)],
     )
 
+
+def test_nspkg_attributes(pyi_builder):
+    # Test that non-PEP-420 namespace packages (e.g., the ones using
+    # pkg_resources.declare_namespace) have proper attributes:
+    #  * __path__ attribute should contain at least one path
+    #  * __file__ attribute should point to an __init__ file within __path__
+    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg1-pkg', '*.egg'))
+    pyi_builder.test_source(
+        """
+        import os
+        import nspkg1
+
+        def validate_nspkg(pkg):
+            from sys import version_info
+            # Validate __path__
+            path = getattr(pkg, '__path__', None)
+            assert path is not None and len(path) >= 1, "invalid __path__"
+            # Validate __file__
+            file = pkg.__file__
+            assert os.path.dirname(file) in path, \
+                "dirname(__file__) does not point to __path__"
+            assert os.path.basename(file).startswith('__init__.'), \
+                "basename(__file__) does not start with __init__.!"
+
+        validate_nspkg(nspkg1)
+        """,
+        pyi_args=['--paths', os.pathsep.join(pathex)],
+    )
+
+
+def test_nspkg_attributes_pep420(pyi_builder):
+    # Test that PEP-420 namespace packages have proper attributes:
+    #  * __path__ should contain at least one path
+    #  * __file__ should be unset (python 3.6) or None (python 3.7 and later)
+    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg-pep420', 'path*'))
+    pyi_builder.test_source(
+        """
+        import package
+        import package.nspkg
+
+        def validate_nspkg_pep420(pkg):
+            from sys import version_info
+            # Validate __path__
+            path = getattr(pkg, '__path__', None)
+            assert path is not None and len(path) >= 1, "invalid __path__"
+            # Validate __file__
+            if version_info[0:2] < (3, 7):
+                assert not hasattr(pkg, '__file__'), "invalid __file__"
+            else:
+                assert getattr(pkg, '__file__') is None, "invalid __file__"
+
+        validate_nspkg_pep420(package)
+        validate_nspkg_pep420(package.nspkg)
+        """,
+        pyi_args=['--paths', os.pathsep.join(pathex)],
+    )
 
 #--- hooks related stuff ---
 

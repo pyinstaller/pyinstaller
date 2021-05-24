@@ -1,0 +1,4 @@
+(macOS) Work around the ``tkinter`` UI issues due to problems with
+dark mode activation: black ``Tk`` window with macOS Intel installers
+from ``python.org``, or white text on bright background with Anaconda
+python.

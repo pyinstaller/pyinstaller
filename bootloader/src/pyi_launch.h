@@ -1,6 +1,6 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2020, PyInstaller Development Team.
+ * Copyright (c) 2013-2021, PyInstaller Development Team.
  *
  * Distributed under the terms of the GNU General Public License (version 2
  * or later) with exception for distributing the bootloader.
@@ -18,6 +18,7 @@
 #define PYI_LAUNCH_H
 
 #include "pyi_archive.h"
+#include "pyi_splash.h"
 
 /*****************************************************************
 * The following 4 entries are for applications which may need to
@@ -25,14 +26,19 @@
 *****************************************************************/
 
 /*
- * Extract binaries in the archive
+ * Extract binaries from the archive
  *
- * @param workpath     (OUT) Where the binaries were extracted to. If
- *                      none extracted, is NULL.
+ * @param archive_status     The archive from which the binaries will
+ *                           be extracted.
+ *
+ * @param splash_status      The splash screen status which describes
+ *                           on which progress updated to occur. May
+ *                           be NULL
  *
  * @return 0 on success, non-zero otherwise.
  */
-int pyi_launch_extract_binaries(ARCHIVE_STATUS *archive_status);
+int pyi_launch_extract_binaries(ARCHIVE_STATUS *archive_status,
+                                SPLASH_STATUS *splash_status);
 
 /*
  * Check if binaries need to be extracted. If not, this is probably a onedir

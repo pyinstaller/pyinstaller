@@ -17,8 +17,6 @@
 #
 # - v. 2.2 and above fails.
 Django==2.1.8  # pyup: ignore
-# - v 3.1.0 fails.
-matplotlib==3.0.3  # pyup: ignore
 # - v 21.1.0 fails; earlier versions not tested.
 keyring==19.2.0  # pyup: ignore
 
@@ -26,49 +24,49 @@ keyring==19.2.0  # pyup: ignore
 # Working
 # -------
 # These packages work with no (known) issues.
-babel==2.8.0
+babel==2.9.1
 future==0.18.2
-gevent==20.6.2
-Pillow==7.2.0
-pygments==2.6.1
-PySide2==5.13.0
+gevent==21.1.2
+pygments==2.9.0
+pyside2==5.15.2
+pyqt5==5.15.4
+pyqtwebengine==5.15.4
 python-dateutil==2.8.1
-pytz==2020.1
-requests==2.24.0
+pytz==2021.1
+requests==2.25.1
 # simplejson is used for text_c_extension
 simplejson==3.17.2
-sphinx==2.4.4
+sphinx==2.4.4 # pyup: ignore
 # Required for test_namespace_package
-sqlalchemy==1.3.18
-zope.interface==5.1.0
+sqlalchemy==1.4.15
+zope.interface==5.4.0
+Pillow==8.2.0
 
 
-# Python 3.5 not supported / supported for older versions
+# Python versions not supported / supported for older package versions
 # -------------------------------------------------------
 
-# iPython 7.10.0 and higher dropped Python 3.5 support per https://ipython.readthedocs.io/en/stable/whatsnew/version7.html#stop-support-for-python-3-5-adopt-nep-29.
-ipython==7.16.1; python_version > '3.5'
-ipython==7.9.0; python_version == '3.5'  # pyup: ignore
+# iPython 7.17 dropped support for python 3.6
+# https://ipython.readthedocs.io/en/stable/whatsnew/version7.html#ipython-7-17
+ipython==7.23.1; python_version > '3.6'
+ipython==7.16.1; python_version <= '3.6'  # pyup: ignore
 
-# pandas 1.0.0 dropped Python 3.5 support.
-pandas==1.1.0; python_version > '3.5'
-pandas==0.25.3; python_version == '3.5'  # pyup: ignore
+# pandas also dropped support
+pandas==1.2.4; python_version > '3.6'
+pandas==1.1.5; python_version <= '3.6'  # pyup: ignore
 
-# Numpy 1.19 dropped Python 3.5 support
-numpy==1.19.1; python_version > '3.5'
-numpy<=1.19.0; python_version == '3.5'  # pyup: ignore
+# so did numpy
+numpy==1.20.3; python_version > '3.6'
+numpy==1.19.4; python_version <= '3.6'  # pyup: ignore
 
-# And so did SciPy
-scipy==1.5.2; python_version > '3.5'
-scipy<=1.5.0; python_version == '3.5'  # pyup: ignore
+# scipy too
+scipy==1.6.3; python_version > '3.6'
+scipy==1.5.4; python_version <= '3.6'  # pyup: ignore
 
-# Special cases
-# -------------
+# and matplotlib
+matplotlib==3.4.2; python_version > '3.6'
+matplotlib==3.3.4; python_version <= '3.6'  # pyup: ignore
 
-# Per https://www.riverbankcomputing.com/pipermail/pyqt/2020-February/042506.html, Windows PyQt5 5.14.0? and 5.14.1? aren't correctly packaged.
-pyqt5==5.13.2; sys_platform == 'win32'
-pyqt5==5.14.1; sys_platform != 'win32'
-# On Appveyor, newer versions fail with the error message
-# ``[1916:2732:0204/144922.809:ERROR:mf_helpers.cc(14)] Error in dxva_video_decode_accelerator_win.cc on line 513``
-pyqtwebengine==5.12.1; sys_platform == 'win32'  # pyup: ignore
-pyqtwebengine==5.14.0; sys_platform != 'win32'  # pyup: ignore
+# Install PyInstaller Hook Sample, to ensure that tests declared in
+# entry-points are discovered.
+https://github.com/pyinstaller/hooksample/archive/v4.0rc1.zip  # pyup: ignore

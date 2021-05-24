@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2014-2020, PyInstaller Development Team.
+# Copyright (c) 2014-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -17,8 +17,9 @@ Utils for Mac OS X platform.
 import os
 import shutil
 
-from ..compat import base_prefix
+from PyInstaller.compat import base_prefix
 from macholib.MachO import MachO
+from macholib.mach_o import LC_BUILD_VERSION, LC_VERSION_MIN_MACOSX
 
 
 def is_homebrew_env():
@@ -65,6 +66,65 @@ def get_macports_prefix():
     # Conversion:  /usr/local/bin/port -> /usr/local
     prefix = os.path.dirname(os.path.dirname(prefix))
     return prefix
+
+
+def _find_version_cmd(header):
+    """
+    Helper that finds the version command in the given MachO header.
+    """
+    # The SDK version is stored in LC_BUILD_VERSION command (used when
+    # targeting the latest versions of macOS) or in older LC_VERSION_MIN_MACOSX
+    # command. Check for presence of either.
+    version_cmd = [cmd for cmd in header.commands
+                   if cmd[0].cmd in {LC_BUILD_VERSION, LC_VERSION_MIN_MACOSX}]
+    assert len(version_cmd) == 1, \
+        "Expected exactly one LC_BUILD_VERSION or " \
+        "LC_VERSION_MIN_MACOSX command!"
+    return version_cmd[0]
+
+
+def get_macos_sdk_version(filename):
+    """
+    Obtain the version of macOS SDK against which the given binary
+    was built.
+
+    NOTE: currently, version is retrieved only from the first arch
+    slice in the binary.
+
+    :return: (major, minor, revision) tuple
+    """
+    binary = MachO(filename)
+    header = binary.headers[0]
+    # Find version command using helper
+    version_cmd = _find_version_cmd(header)
+    # Parse SDK version number
+    major = (version_cmd[1].sdk & 0xFF0000) >> 16
+    minor = (version_cmd[1].sdk & 0xFF00) >> 8
+    revision = (version_cmd[1].sdk & 0xFF)
+    return major, minor, revision
+
+
+def set_macos_sdk_version(filename, major, minor, revision):
+    """
+    Overwrite the macOS SDK version declared in the given binary with
+    the specified version.
+
+    NOTE: currently, only version in the first arch slice is modified.
+    """
+    # Validate values
+    assert major >= 0 and major <= 255, "Invalid major version value!"
+    assert minor >= 0 and minor <= 255, "Invalid minor version value!"
+    assert revision >= 0 and revision <= 255, "Invalid revision value!"
+    # Open binary
+    binary = MachO(filename)
+    header = binary.headers[0]
+    # Find version command using helper
+    version_cmd = _find_version_cmd(header)
+    # Write new SDK version number
+    version_cmd[1].sdk = major << 16 | minor << 8 | revision
+    # Write changes back.
+    with open(binary.filename, 'rb+') as fp:
+        binary.write(fp)
 
 
 def fix_exe_for_code_signing(filename):

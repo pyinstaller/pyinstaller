@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -17,10 +17,11 @@ Code related to processing of import hooks.
 import glob, sys, weakref
 import os.path
 
-from .. import log as logging
-from ..compat import expand_path, importlib_load_source
-from .imphookapi import PostGraphAPI
-from ..building.utils import format_binaries_and_datas
+from PyInstaller.exceptions import ImportErrorWhenRunningHook
+from PyInstaller import log as logging
+from PyInstaller.compat import expand_path, importlib_load_source
+from PyInstaller.depend.imphookapi import PostGraphAPI
+from PyInstaller.building.utils import format_binaries_and_datas
 
 logger = logging.getLogger(__name__)
 
@@ -124,7 +125,7 @@ class ModuleHookCache(dict):
                 # constructed by removing the "hook-" prefix and ".py" suffix.
                 module_name = os.path.basename(hook_filename)[5:-3]
                 if module_name in self:
-                    logger.warning("Several hooks defined for module %r."
+                    logger.warning("Several hooks defined for module %r. "
                                    "Please take care they do not conflict.",
                                    module_name)
 
@@ -403,8 +404,14 @@ class ModuleHook(object):
         head, tail = os.path.split(self.hook_filename)
         logger.info(
             'Loading module hook %r from %r...', tail, head)
-        self._hook_module = importlib_load_source(
-            self.hook_module_name, self.hook_filename)
+        try:
+            self._hook_module = importlib_load_source(
+                self.hook_module_name, self.hook_filename)
+        except ImportError:
+            logger.debug("Hook failed with:", exc_info=True)
+            raise ImportErrorWhenRunningHook(
+                self.hook_module_name, self.hook_filename)
+
 
         # Copy hook script attributes into magic attributes exposed as instance
         # variables of the current "ModuleHook" instance.
@@ -460,7 +467,12 @@ class ModuleHook(object):
         # Call this hook() function.
         hook_api = PostGraphAPI(
             module_name=self.module_name, module_graph=self.module_graph)
-        self._hook_module.hook(hook_api)
+        try:
+            self._hook_module.hook(hook_api)
+        except ImportError:
+            logger.debug("Hook failed with:", exc_info=True)
+            raise ImportErrorWhenRunningHook(
+                self.hook_module_name, self.hook_filename)
 
         # Update all magic attributes modified by the prior call.
         self.datas.update(set(hook_api._added_datas))
@@ -492,7 +504,7 @@ class ModuleHook(object):
             try:
                 # Graph node for this module. Do not implicitly create namespace
                 # packages for non-existent packages.
-                caller = self.module_graph.findNode(
+                caller = self.module_graph.find_node(
                     self.module_name, create_nspkg=False)
 
                 # Manually import this hidden import from this module.
@@ -557,11 +569,10 @@ class ModuleHook(object):
         # TODO: Optimize this by using a pattern and walking the graph
         # only once.
         for item in set(self.excludedimports):
-            excluded_node = self.module_graph.findNode(item, create_nspkg=False)
+            excluded_node = self.module_graph.find_node(item, create_nspkg=False)
             if excluded_node is None:
                 logger.info("Import to be excluded not found: %r", item)
                 continue
-            logger.info("Excluding import %r", item)
             imports_to_remove = set(find_all_package_nodes(item))
 
             # Remove references between module nodes, as though they would
@@ -574,14 +585,14 @@ class ModuleHook(object):
                 # modules, this `src` does import
                 references = set(
                     node.identifier
-                    for node in self.module_graph.getReferences(src))
+                    for node in self.module_graph.outgoing(src))
 
                 # Remove all of these imports which are also in
                 # "imports_to_remove".
                 for dest in imports_to_remove & references:
                     self.module_graph.removeReference(src, dest)
-                    logger.info(
-                        "  Removing import of %s from module %s", dest, src)
+                    logger.debug(
+                        "Excluding import of %s from module %s", dest, src)
 
 
 class AdditionalFilesCache(object):

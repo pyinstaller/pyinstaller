@@ -64,3 +64,13 @@
 		directory = "build"
 		name = "Bootloader build"
 		showcontent = true
+
+[build-system]
+# Tells pip to install wheel before trying to install PyInstaller
+# from an sdist or from Github.
+# Installing without wheel uses legacy `python setup.py install`
+# which has issues with unicode paths.
+requires = [
+	"wheel",
+	"setuptools",
+]
