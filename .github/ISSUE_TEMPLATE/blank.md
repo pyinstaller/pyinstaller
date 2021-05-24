@@ -2,7 +2,7 @@
 name: Open a blank issue.
 about: ''
 title: ''
-labels: needs-triage
+labels: triage
 assignees: ''
 ---
 
