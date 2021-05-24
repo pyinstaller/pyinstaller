@@ -1189,7 +1189,8 @@ def get_hook_config(hook_api, module_name, key):
     The ``get_hook_config`` function will lookup settings in the
     ``Analysis.hooksconfig`` dict.
 
-    The hook settings can be added to ``.spec`` file in the form of:
+    The hook settings can be added to ``.spec`` file in the form of::
+
         a = Analysis(["my-app.py"],
             ...
             hooksconfig = {
