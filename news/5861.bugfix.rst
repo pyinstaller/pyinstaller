@@ -1,0 +1,1 @@
+(macOS) Fix segfaults when freezing an app with PyQt5 version 5.15.4

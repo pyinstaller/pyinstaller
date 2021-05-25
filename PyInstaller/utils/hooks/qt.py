@@ -499,6 +499,7 @@ def add_qt5_dependencies(hook_file):
     logger.debug('add_qt5_dependencies: Examining %s, based on hook of %s.',
                  module, hook_file)
 
+    datas = []
     # Walk through all the static dependencies of a dynamically-linked library
     # (``.so``/``.dll``/``.dylib``).
     imports = set(getImports(module))
@@ -527,6 +528,17 @@ def add_qt5_dependencies(hook_file):
         # Mac: rename from ``qt`` to ``qt5`` to match names in Windows/Linux.
         if compat.is_darwin and lib_name.startswith('qt'):
             lib_name = 'qt5' + lib_name[2:]
+        # Mac: Include each library's Info.plist if it exists.
+        if compat.is_darwin:
+            path_components = os.path.normpath(
+                os.path.abspath(imp)).split(os.path.sep)[:-3]
+            info_plist = os.path.join(
+                os.path.sep, *path_components, 'Resources', 'Info.plist')
+            if os.path.exists(info_plist):
+                datas.append((
+                    info_plist,
+                    os.path.join(namespace, *path_components[-3:],
+                                 'Resources')))
 
         # match libs with QT_LIBINFIX set to '_conda', i.e. conda-forge builds
         if lib_name.endswith('_conda'):
@@ -565,7 +577,6 @@ def add_qt5_dependencies(hook_file):
         pyqt5_library_info.qt_rel_dir if is_PyQt5
         else pyside2_library_info.qt_rel_dir
     )
-    datas = []
     for tb in translations_base:
         src = os.path.join(tp, tb + '_*.qm')
         # Not all PyQt5 installations include translations. See
