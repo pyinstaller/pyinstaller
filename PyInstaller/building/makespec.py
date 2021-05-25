@@ -368,6 +368,8 @@ def __add_options(parser):
                         "binaries during compression. "
                         "FILE is the filename of the binary without path. "
                         "This option can be used multiple times.")
+    g.add_argument("--lib-subdir", dest="lib_subdir",
+                   help="put library into a sub directory")
 
     g = parser.add_argument_group('Windows and Mac OS X specific options')
     g.add_argument("-c", "--console", "--nowindowed", dest="console",
@@ -464,7 +466,7 @@ def __add_options(parser):
 
 
 def main(scripts, name=None, onefile=None,
-         console=True, debug=None, strip=False, noupx=False, upx_exclude=None,
+         console=True, debug=None, strip=False, noupx=False, upx_exclude=None, lib_subdir=None,
          runtime_tmpdir=None, pathex=None, version_file=None, specpath=None,
          bootloader_ignore_signals=False,
          datas=None, binaries=None, icon_file=None, manifest=None, resources=None, bundle_identifier=None,
@@ -596,6 +598,7 @@ def main(scripts, name=None, onefile=None,
         'upx': not noupx,
         'upx_exclude': upx_exclude,
         'runtime_tmpdir': runtime_tmpdir,
+        'lib_subdir': '"%s"' % lib_subdir if lib_subdir else lib_subdir,
         'exe_options': exe_options,
         'cipher_init': cipher_init,
         # Directory with additional custom import hooks.

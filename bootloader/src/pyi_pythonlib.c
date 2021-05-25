@@ -247,6 +247,39 @@ pyi_pylib_set_runtime_opts(ARCHIVE_STATUS *status)
     return 0;
 }
 
+/*
+ * Save the runtime options to sys.pyi_runtime_options: Dict.
+ * A toc entry of type 'o' holds runtime options
+ * This has to be called after python is initialized to have memory initialized.
+ */
+static int
+pyi_pylib_save_runtime_opts(ARCHIVE_STATUS *status)
+{
+    int rc = 0;
+    char *attr_name = "pyi_runtime_options";
+    PyObject* options_obj = PI_PyDict_New();
+    TOC *ptoc = status->tocbuff;
+
+    PI_PySys_SetObject(attr_name, options_obj);
+
+    for (; ptoc < status->tocend; ptoc = pyi_arch_increment_toc_ptr(status, ptoc)) {
+        if (ptoc->typcd == ARCHIVE_ITEM_RUNTIME_OPTION) {
+            char *space = strstr(ptoc->name, " ");
+            char *key, *value;
+            if (NULL != space) {
+                key = strndup(ptoc->name, space - ptoc->name);
+                value = space + 1;
+            } else {
+                key = strdup(ptoc->name);
+                value = "";
+            }
+            PI_PyDict_SetItemString(options_obj, key, PI_PyUnicode_FromString(value));
+            free(key);
+        }
+    }
+    return 0;
+}
+
 void
 pyi_free_wargv(wchar_t ** wargv)
 {
@@ -480,6 +513,9 @@ pyi_pylib_start_python(ARCHIVE_STATUS *status)
 #if defined(_WIN32) && defined(LAUNCH_DEBUG)
     SetErrorMode(0);
 #endif
+
+    VS("LOADER: Saving runtime options\n");
+    pyi_pylib_save_runtime_opts(status);
 
     /*
      * Set sys.path list.
