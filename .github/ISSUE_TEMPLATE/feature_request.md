@@ -2,7 +2,7 @@
 name: Feature request
 about: Suggest an idea to improve PyInstaller
 title: ''
-labels: feature
+labels: feature, triage
 assignees: ''
 
 ---

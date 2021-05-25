@@ -1,0 +1,6 @@
+# https://docs.github.com/en/github/building-a-strong-community/configuring-issue-templates-for-your-repository#configuring-the-template-chooser
+blank_issues_allowed: false  # We have a blank template which assigns labels
+contact_links:
+  - name: Questions about using PyInstaller?
+    url: "https://github.com/pyinstaller/pyinstaller/discussions"
+    about: Please see our guide on how to ask questions
