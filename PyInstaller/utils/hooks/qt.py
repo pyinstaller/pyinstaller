@@ -508,7 +508,7 @@ def add_qt5_dependencies(hook_file):
     return hiddenimports, binaries, datas
 
 
-def find_all_or_none(globs_to_include, num_files, qt_library_info):
+def _find_all_or_none(globs_to_include, num_files, qt_library_info):
     """
     globs_to_include is a list of file name globs
     If the number of found files does not match num_files
@@ -541,14 +541,14 @@ def find_all_or_none(globs_to_include, num_files, qt_library_info):
 def get_qt_binaries(qt_library_info):
     binaries = []
     angle_files = ['libEGL.dll', 'libGLESv2.dll', 'd3dcompiler_??.dll']
-    binaries += find_all_or_none(angle_files, 3, qt_library_info)
+    binaries += _find_all_or_none(angle_files, 3, qt_library_info)
 
     opengl_software_renderer = ['opengl32sw.dll']
-    binaries += find_all_or_none(opengl_software_renderer, 1, qt_library_info)
+    binaries += _find_all_or_none(opengl_software_renderer, 1, qt_library_info)
 
     # Include ICU files, if they exist.
     # See the "Deployment approach" section in ``PyInstaller/utils/hooks/qt.py``.
     icu_files = ['icudt??.dll', 'icuin??.dll', 'icuuc??.dll']
-    binaries += find_all_or_none(icu_files, 3, qt_library_info)
+    binaries += _find_all_or_none(icu_files, 3, qt_library_info)
 
     return binaries
