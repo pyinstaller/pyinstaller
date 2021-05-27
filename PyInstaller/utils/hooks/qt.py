@@ -578,3 +578,35 @@ def get_qt_network_ssl_binaries(qt_library_info):
             if os.path.exists(dll_path):
                 binaries.append((dll_path, '.'))
     return binaries
+
+
+# Gather additional binaries and data for QtQml module.
+def get_qt_qml_files(qt_library_info):
+    # No-op if requested Qt-based package is not available
+    if qt_library_info.version is None:
+        return [], []
+
+    # Not all PyQt5/PySide2 installs have QML files. In this case,
+    # location['Qml2ImportsPath'] is empty. Furthermore, even if location
+    # path is provided, the directory itself may not exist.
+    #
+    # https://github.com/pyinstaller/pyinstaller/pull/3229#issuecomment-359735031
+    # https://github.com/pyinstaller/pyinstaller/issues/3864
+    qmldir = qt_library_info.location['Qml2ImportsPath']
+    if not qmldir or not os.path.exists(qmldir):
+        logger.warning('QML directory for %s, %r, does not exist. '
+                       'QML files not packaged.', qt_library_info.namespace,
+                       qmldir)
+        return [], []
+
+    qml_rel_dir = os.path.join(qt_library_info.qt_rel_dir, 'qml')
+    datas = [(qmldir, qml_rel_dir)]
+    binaries = [
+        # Produce ``/path/to/Qt/Qml/path_to_qml_binary/qml_binary,
+        # PyQt5/Qt/Qml/path_to_qml_binary``.
+        (f, os.path.join(qml_rel_dir,
+                         os.path.dirname(os.path.relpath(f, qmldir))))
+        for f in misc.dlls_in_subdirs(qmldir)
+    ]
+
+    return binaries, datas
