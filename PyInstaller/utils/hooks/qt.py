@@ -540,3 +540,41 @@ def get_qt_binaries(qt_library_info):
     binaries += _find_all_or_none(icu_files, 3, qt_library_info)
 
     return binaries
+
+
+# Gather additional shared libraries required for SSL support in QtNetwork,
+# if they are available. Applicable only to Windows. See issue #3520, #4048.
+def get_qt_network_ssl_binaries(qt_library_info):
+    # No-op if requested Qt-based package is not available
+    if qt_library_info.version is None:
+        return []
+
+    # Applicable only to Windows
+    if not compat.is_win:
+        return []
+
+    # Check if QtNetwork supports SSL
+    ssl_enabled = hooks.eval_statement("""
+        from {}.QtNetwork import QSslSocket
+        print(QSslSocket.supportsSsl())""".format(qt_library_info.namespace))
+    if not ssl_enabled:
+        return []
+
+    # PyPI version of PySide2 requires user to manually install SSL
+    # libraries into the PrefixPath. Other versions (e.g., the one
+    # provided by Conda) put the libraries into the BinariesPath.
+    # PyQt5 also uses BinariesPath.
+    # Accommodate both options by searching both locations...
+    locations = (
+        qt_library_info.location['BinariesPath'],
+        qt_library_info.location['PrefixPath']
+    )
+    dll_names = ('libeay32.dll', 'ssleay32.dll', 'libssl-1_1-x64.dll',
+                 'libcrypto-1_1-x64.dll')
+    binaries = []
+    for location in locations:
+        for dll in dll_names:
+            dll_path = os.path.join(location, dll)
+            if os.path.exists(dll_path):
+                binaries.append((dll_path, '.'))
+    return binaries
