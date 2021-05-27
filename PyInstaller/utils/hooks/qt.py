@@ -610,3 +610,16 @@ def get_qt_qml_files(qt_library_info):
     ]
 
     return binaries, datas
+
+
+# Collect the ``qt.conf`` file.
+def get_qt_conf_file(qt_library_info):
+    # No-op if requested Qt-based package is not available
+    if qt_library_info.version is None:
+        return []
+    # Find ``qt.conf`` in location['PrefixPath']
+    datas = [x for x in hooks.collect_system_data_files(
+             qt_library_info.location['PrefixPath'],
+             qt_library_info.qt_rel_dir)
+             if os.path.basename(x[0]) == 'qt.conf']
+    return datas
