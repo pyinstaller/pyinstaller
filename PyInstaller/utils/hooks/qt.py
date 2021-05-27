@@ -194,86 +194,6 @@ def qt_plugins_binaries(plugin_type, namespace):
     return binaries
 
 
-def qt_menu_nib_dir(namespace):
-    """
-    Return path to Qt resource dir qt_menu.nib on OSX only.
-
-    :param namespace: Import namespace, i.e., PyQt5 or PySide2
-
-    :return: Directory containing qt_menu.nib for specified namespace
-    """
-    if namespace not in ['PyQt5', 'PySide2']:
-        raise Exception('Invalid namespace: {0}'.format(namespace))
-    menu_dir = None
-
-    path = hooks.exec_statement("""
-    from {0}.QtCore import QLibraryInfo
-    path = QLibraryInfo.location(QLibraryInfo.LibrariesPath)
-    print(path)
-    """.format(namespace))
-    anaconda_path = os.path.join(sys.exec_prefix, "python.app", "Contents",
-                                 "Resources")
-    paths = [os.path.join(path, 'Resources'),
-             os.path.join(path, 'QtGui.framework', 'Resources'), anaconda_path]
-
-    for location in paths:
-        # Check directory existence
-        path = os.path.join(location, 'qt_menu.nib')
-        if os.path.exists(path):
-            menu_dir = path
-            logger.debug('Found qt_menu.nib for %s at %s', namespace, path)
-            break
-    if not menu_dir:
-        raise Exception("""
-            Cannot find qt_menu.nib for {0}
-            Path checked: {1}
-            """.format(namespace, ", ".join(paths)))
-    return menu_dir
-
-
-def get_qmake_path(version=''):
-    """
-    Try to find the path to qmake with version given by the argument as a
-    string.
-
-    :param version: qmake version
-    """
-    import subprocess
-
-    # Use QT[45]DIR if specified in the environment
-    if 'QT5DIR' in os.environ and version[0] == '5':
-        logger.debug('Using $QT5DIR/bin as qmake path')
-        return os.path.join(os.environ['QT5DIR'], 'bin', 'qmake')
-    if 'QT4DIR' in os.environ and version[0] == '4':
-        logger.debug('Using $QT4DIR/bin as qmake path')
-        return os.path.join(os.environ['QT4DIR'], 'bin', 'qmake')
-
-    # try the default $PATH
-    dirs = ['']
-
-    # try homebrew paths
-    for formula in ('qt', 'qt5'):
-        homebrewqtpath = hooks.get_homebrew_path(formula)
-        if homebrewqtpath:
-            dirs.append(homebrewqtpath)
-
-    for directory in dirs:
-        try:
-            qmake = os.path.join(directory, 'bin', 'qmake')
-            versionstring = subprocess.check_output([qmake, '-query',
-                                                     'QT_VERSION']).strip()
-            # version string is probably just ASCII
-            versionstring = versionstring.decode('utf8')
-            if versionstring.find(version) == 0:
-                logger.debug('Found qmake version "%s" at "%s".',
-                             versionstring, qmake)
-                return qmake
-        except (OSError, subprocess.CalledProcessError):
-            pass
-    logger.debug('Could not find qmake matching version "%s".', version)
-    return None
-
-
 # Qt deployment approach
 # ----------------------
 # This is the core of PyInstaller's approach to Qt deployment. It's based on:
@@ -634,5 +554,4 @@ def get_qt_binaries(qt_library_info):
     return binaries
 
 
-__all__ = ('qt_plugins_dir', 'qt_plugins_binaries', 'qt_menu_nib_dir',
-           'get_qmake_path')
+__all__ = ('qt_plugins_dir', 'qt_plugins_binaries')
