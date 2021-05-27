@@ -14,7 +14,7 @@ import json
 import glob
 
 from PyInstaller.utils import hooks
-from PyInstaller.depend.bindepend import getImports, getfullnameof
+from PyInstaller.depend import bindepend
 from PyInstaller import log as logging
 from PyInstaller import compat
 from PyInstaller.utils import misc
@@ -421,14 +421,14 @@ def add_qt5_dependencies(hook_file):
 
     # Walk through all the static dependencies of a dynamically-linked library
     # (``.so``/``.dll``/``.dylib``).
-    imports = set(getImports(module))
+    imports = set(bindepend.getImports(module))
     while imports:
         imp = imports.pop()
 
         # On Windows, find this library; other platforms already provide the
         # full path.
         if compat.is_win:
-            imp = getfullnameof(imp,
+            imp = bindepend.getfullnameof(imp,
                 # First, look for Qt binaries in the local Qt install.
                 pyqt5_library_info.location['BinariesPath'] if is_PyQt5 else
                 pyside2_library_info.location['BinariesPath']
@@ -459,7 +459,7 @@ def add_qt5_dependencies(hook_file):
         if lib_name in _qt_dynamic_dependencies_dict:
             # Follow these to find additional dependencies.
             logger.debug('add_qt5_dependencies: Import of %s.', imp)
-            imports.update(getImports(imp))
+            imports.update(bindepend.getImports(imp))
             # Look up which plugins and translations are needed.
             dd = _qt_dynamic_dependencies_dict[lib_name]
             lib_name_hiddenimports, lib_name_translations_base = dd[:2]
