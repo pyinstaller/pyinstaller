@@ -552,6 +552,3 @@ def get_qt_binaries(qt_library_info):
     binaries += find_all_or_none(icu_files, 3, qt_library_info)
 
     return binaries
-
-
-__all__ = ('qt_plugins_dir', 'qt_plugins_binaries')
