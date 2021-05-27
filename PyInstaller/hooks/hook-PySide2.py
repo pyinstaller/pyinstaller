@@ -8,20 +8,15 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-import os
-from PyInstaller.utils.hooks import collect_system_data_files
-from PyInstaller.utils.hooks.qt import pyside2_library_info, get_qt_binaries
+from PyInstaller.utils.hooks.qt import pyside2_library_info, \
+    get_qt_binaries, get_qt_conf_file
 
 # Only proceed if PySide2 can be imported.
 if pyside2_library_info.version is not None:
     hiddenimports = ['shiboken2']
 
     # Collect the ``qt.conf`` file.
-    datas = [x for x in
-             collect_system_data_files(pyside2_library_info.location['PrefixPath'],
-                                       pyside2_library_info.qt_rel_dir)
-             if os.path.basename(x[0]) == 'qt.conf']
+    datas = get_qt_conf_file(pyside2_library_info)
 
     # Collect required Qt binaries.
     binaries = get_qt_binaries(pyside2_library_info)
