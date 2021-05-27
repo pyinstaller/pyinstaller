@@ -123,6 +123,18 @@ pyqt5_library_info = Qt5LibraryInfo('PyQt5')
 pyside2_library_info = Qt5LibraryInfo('PySide2')
 
 
+def get_qt_library_info(namespace):
+    """
+    Return Qt5LibraryInfo instance for the given namespace.
+    """
+    if namespace == 'PyQt5':
+        return pyqt5_library_info
+    elif namespace == 'PySide2':
+        return pyside2_library_info
+
+    raise ValueError(f'Invalid namespace: {namespace}!')
+
+
 def qt_plugins_dir(namespace):
     """
     Return list of paths searched for plugins.
@@ -131,18 +143,8 @@ def qt_plugins_dir(namespace):
 
     :return: Plugin directory paths
     """
-    if namespace not in ['PyQt5', 'PySide2']:
-        raise Exception('Invalid namespace: {0}'.format(namespace))
-    if namespace == 'PyQt5':
-        paths = [pyqt5_library_info.location['PluginsPath']]
-    elif namespace == 'PySide2':
-        paths = [pyside2_library_info.location['PluginsPath']]
-    else:
-        paths = hooks.eval_statement("""
-            from {0}.QtCore import QCoreApplication;
-            app = QCoreApplication([]);
-            print(list(app.libraryPaths()))
-            """.format(namespace))
+    qt_info = get_qt_library_info(namespace)
+    paths = [qt_info.location['PluginsPath']]
     if not paths:
         raise Exception('Cannot find {0} plugin directories'.format(namespace))
     else:
@@ -168,9 +170,8 @@ def qt_plugins_binaries(plugin_type, namespace):
 
     :return: Plugin directory path corresponding to the given plugin_type
     """
-    if namespace not in ['PyQt5', 'PySide2']:
-        raise Exception('Invalid namespace: {0}'.format(namespace))
-    pdir = qt_plugins_dir(namespace=namespace)
+    qt_info = get_qt_library_info(namespace)
+    pdir = qt_plugins_dir(namespace)
     files = []
     for path in pdir:
         files.extend(misc.dlls_in_dir(os.path.join(path, plugin_type)))
@@ -181,15 +182,11 @@ def qt_plugins_binaries(plugin_type, namespace):
     # ``*.dylib`` in a certain directory. On Windows this would grab debug
     # copies of Qt plugins, which then causes PyInstaller to add a dependency on
     # the Debug CRT *in addition* to the release CRT.
-    if compat.is_win and namespace in ['PyQt5', 'PySide2']:
+    if compat.is_win:
         files = [f for f in files if not f.endswith("d.dll")]
 
     logger.debug("Found plugin files %s for plugin %s", files, plugin_type)
-    if namespace == 'PyQt5':
-        plugin_dir = os.path.join(pyqt5_library_info.qt_rel_dir, 'plugins')
-    else:
-        plugin_dir = os.path.join(pyside2_library_info.qt_rel_dir, 'plugins')
-    dest_dir = os.path.join(plugin_dir, plugin_type)
+    dest_dir = os.path.join(qt_info.qt_rel_dir, 'plugins', plugin_type)
     binaries = [(f, dest_dir) for f in files]
     return binaries
 
@@ -405,13 +402,12 @@ def add_qt5_dependencies(hook_file):
     assert hook_name.startswith('hook-')
     module_name = hook_name[5:]
     namespace = module_name.split('.')[0]
-    if namespace not in ('PyQt5', 'PySide2'):
-        raise Exception('Invalid namespace: {0}'.format(namespace))
-    is_PyQt5 = namespace == 'PyQt5'
+    # Retrieve Qt library info structure
+    qt_info = get_qt_library_info(namespace)
 
-    # Exit if the requested library can't be imported.
-    if ((is_PyQt5 and not pyqt5_library_info.version) or
-        (not is_PyQt5 and not pyside2_library_info.version)):
+    # Exit if the requested library can't be imported. NOTE: qt_info.version
+    # can be empty list on older Qt5 versions (#5381)
+    if qt_info.version is None:
         return [], [], []
 
     # Look up the module returned by this import.
@@ -428,11 +424,9 @@ def add_qt5_dependencies(hook_file):
         # On Windows, find this library; other platforms already provide the
         # full path.
         if compat.is_win:
-            imp = bindepend.getfullnameof(imp,
-                # First, look for Qt binaries in the local Qt install.
-                pyqt5_library_info.location['BinariesPath'] if is_PyQt5 else
-                pyside2_library_info.location['BinariesPath']
-            )
+            # First, look for Qt binaries in the local Qt install.
+            imp = bindepend.getfullnameof(
+                imp, qt_info.location['BinariesPath'])
 
         # Strip off the extension and ``lib`` prefix (Linux/Mac) to give the raw
         # name. Lowercase (since Windows always normalized names to lowercase).
@@ -477,14 +471,8 @@ def add_qt5_dependencies(hook_file):
         more_binaries = qt_plugins_binaries(plugin, namespace=namespace)
         binaries.extend(more_binaries)
     # Change translation_base to datas.
-    tp = (
-        pyqt5_library_info.location['TranslationsPath'] if is_PyQt5
-        else pyside2_library_info.location['TranslationsPath']
-    )
-    qt_rel_dir = (
-        pyqt5_library_info.qt_rel_dir if is_PyQt5
-        else pyside2_library_info.qt_rel_dir
-    )
+    tp = qt_info.location['TranslationsPath']
+    tp_dst = os.path.join(qt_info.qt_rel_dir, 'translations')
     datas = []
     for tb in translations_base:
         src = os.path.join(tp, tb + '_*.qm')
@@ -493,7 +481,7 @@ def add_qt5_dependencies(hook_file):
         # and
         # https://github.com/pyinstaller/pyinstaller/issues/2857#issuecomment-368744341.
         if glob.glob(src):
-            datas.append((src, os.path.join(qt_rel_dir, 'translations')))
+            datas.append((src, tp_dst))
         else:
             logger.warning('Unable to find Qt5 translations %s. These '
                            'translations were not packaged.', src)
