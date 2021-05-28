@@ -207,6 +207,38 @@ def test_PyQt5_QWebEngine(pyi_builder, data_dir, monkeypatch):
                             **USE_WINDOWED_KWARG)
 
 
+@QtPyLibs
+def test_Qt_QtWidgets(pyi_builder, QtPyLib, monkeypatch):
+    _qt_dll_path_clean(monkeypatch, QtPyLib)
+    pytest.importorskip(QtPyLib)
+
+    pyi_builder.test_source(
+        """
+        import sys
+
+        from {0}.QtWidgets import QApplication, QWidget
+        from {0}.QtCore import QTimer
+
+        is_qt6 = '{0}' in {{'PySide6', 'PyQt6'}}
+
+        app = QApplication(sys.argv)
+        window = QWidget()
+        window.setWindowTitle('Hello world!')
+        window.show()
+
+        # Exit Qt when the main loop becomes idle.
+        QTimer.singleShot(0, app.exit)
+
+        if is_qt6:
+            # Qt6: exec_() is deprecated in PySide6 and removed from
+            # PyQt6 in favor of exec()
+            res = app.exec()
+        else:
+            res = app.exec_()
+        sys.exit(res)
+        """.format(QtPyLib), **USE_WINDOWED_KWARG)
+
+
 @PYQT5_NEED_OPENGL
 @QtPyLibs
 def test_Qt_QtQml(pyi_builder, QtPyLib, monkeypatch):
