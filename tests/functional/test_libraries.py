@@ -309,7 +309,14 @@ def test_Qt_QTranslate(pyi_builder, monkeypatch, QtPyLib):
         app = QApplication([])
         translator = QTranslator()
         locale = QLocale('de_DE')
-        translation_path = QLibraryInfo.location(QLibraryInfo.TranslationsPath)
+        if hasattr(QLibraryInfo, 'path'):
+            # Qt6
+            translation_path = QLibraryInfo.path(
+                QLibraryInfo.LibraryPath.TranslationsPath)
+        else:
+            # Qt5
+            translation_path = QLibraryInfo.location(
+                QLibraryInfo.TranslationsPath)
 
         print('Qt locale path: %s' % translation_path)
 
