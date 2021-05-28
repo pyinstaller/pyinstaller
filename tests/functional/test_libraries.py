@@ -273,6 +273,9 @@ def test_Qt_QtNetwork_SSL_support(pyi_builder, monkeypatch, QtPyLib):
 
 
 # Test that the ``PyQt5.Qt`` module works by importing something from it.
+# NOTE: the ``PyQt5.Qt`` consolidating module is specific to PyQt5. It
+# is not present in either PySide2 nor PySide6, and its consolidating
+# behavior has been removed in PyQt6.
 #
 # The Qt Bluetooth API (which any import to ``PyQt5.Qt`` implicitly imports)
 # isn't compatible with Windows Server 2012 R2, the OS Appveyor runs.
