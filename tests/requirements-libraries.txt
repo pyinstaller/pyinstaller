@@ -29,8 +29,10 @@ future==0.18.2
 gevent==21.1.2
 pygments==2.9.0
 pyside2==5.15.2
+pyside6==6.1.0
 pyqt5==5.15.4
 pyqtwebengine==5.15.4
+pyqt6==6.1.0
 python-dateutil==2.8.1
 pytz==2021.1
 requests==2.25.1
