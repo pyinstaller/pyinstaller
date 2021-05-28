@@ -113,31 +113,38 @@ PYQT5_NEED_OPENGL = pytest.mark.skipif(is_module_satisfies('PyQt5 <= 5.10.1'),
 
 
 # Parametrize test to run the same basic code on both Python Qt libraries.
-QtPyLibs = pytest.mark.parametrize('QtPyLib', ['PyQt5', 'PySide2'])
+QtPyLibs = pytest.mark.parametrize('QtPyLib', ['PyQt5', 'PyQt6',
+                                               'PySide2', 'PySide6'])
 
 # OS X bundles, produced by the ``--windowed`` flag, invoke a unique code path
 # that sometimes causes failures in Qt applications.
 USE_WINDOWED_KWARG = dict(pyi_args=['--windowed']) if is_darwin else {}
 
 
-# Define a function to remove paths with ``path_to_clean`` in them during a
-# test so that PyQt5/PySide2 tests pass. Only remove them in Windows, since
-# Mac/Linux Qt libraries don't rely on the path to find libraries.
-def path_clean(monkeypatch, path_to_clean):
-    if is_win:
-        # Eliminate the other library from the path.
-        path_to_clean = dict(PyQt5='PySide2', PySide2='PyQt5')[path_to_clean]
-        new_path = os.pathsep.join(
-            [x for x in os.environ['PATH'].split(os.pathsep)
-             if path_to_clean not in x]
-        )
-        monkeypatch.setenv('PATH', new_path)
+# Clean up PATH so that of all potentially installed Qt-based packages
+# (PyQt5, PyQt6, PySide2, and PySide6), only the Qt shared libraries of
+# the specified package (namespace) remain in the PATH.
+# This is necessary to prevent DLL interference in tests when multiple
+# Qt-based packages are installed. Applicable only on Windows, as on
+# other OSes the Qt shared library path(s) are not added to PATH.
+def _qt_dll_path_clean(monkeypatch, namespace):
+    if not is_win:
+        return
+
+    # Remove all other Qt5/6 bindings from PATH
+    all_namespaces = {'PyQt5', 'PyQt6', 'PySide2', 'PySide6'}
+    all_namespaces.discard(namespace)
+    new_path = os.pathsep.join(
+        [x for x in os.environ['PATH'].split(os.pathsep)
+         if not any(ns in x for ns in all_namespaces)]
+    )
+    monkeypatch.setenv('PATH', new_path)
 
 
 @PYQT5_NEED_OPENGL
 @importorskip('PyQt5')
 def test_PyQt5_uic(tmpdir, pyi_builder, data_dir, monkeypatch):
-    path_clean(monkeypatch, 'PyQt5')
+    _qt_dll_path_clean(monkeypatch, 'PyQt5')
     # Note that including the data_dir fixture copies files needed by this test.
     pyi_builder.test_script('pyi_lib_PyQt5-uic.py')
 
@@ -171,7 +178,7 @@ def get_QWebEngine_html(qt_flavor, data_dir):
     reason='This version of the OS X wheel does not include QWebEngine.')
 @importorskip('PyQt5')
 def test_PyQt5_QWebEngine(pyi_builder, data_dir, monkeypatch):
-    path_clean(monkeypatch, 'PyQt5')
+    _qt_dll_path_clean(monkeypatch, 'PyQt5')
     if is_darwin:
         # This tests running the QWebEngine on OS X. To do so, the test must:
         #
@@ -202,8 +209,8 @@ def test_PyQt5_QWebEngine(pyi_builder, data_dir, monkeypatch):
 
 @PYQT5_NEED_OPENGL
 @QtPyLibs
-def test_Qt5_QtQml(pyi_builder, QtPyLib, monkeypatch):
-    path_clean(monkeypatch, QtPyLib)
+def test_Qt_QtQml(pyi_builder, QtPyLib, monkeypatch):
+    _qt_dll_path_clean(monkeypatch, QtPyLib)
     pytest.importorskip(QtPyLib)
 
     pyi_builder.test_source(
@@ -244,20 +251,25 @@ def test_Qt5_QtQml(pyi_builder, QtPyLib, monkeypatch):
 
 @pytest.mark.parametrize('QtPyLib', [
     'PyQt5',
+    'PyQt6',
     pytest.param(
         'PySide2',
-        marks=xfail(is_win, reason='PySide2 SSL hook needs updating.')
-    )
+        marks=xfail(is_win, reason='PySide2 wheels on Windows do not '
+                                   'include SSL DLLs.')),
+    pytest.param(
+        'PySide6',
+        marks=xfail(is_win, reason='PySide6 wheels on Windows do not '
+                                   'include SSL DLLs.')),
 ])
-def test_Qt5_SSL_support(pyi_builder, monkeypatch, QtPyLib):
-    path_clean(monkeypatch, QtPyLib)
+def test_Qt_QtNetwork_SSL_support(pyi_builder, monkeypatch, QtPyLib):
+    _qt_dll_path_clean(monkeypatch, QtPyLib)
     pytest.importorskip(QtPyLib)
 
     pyi_builder.test_source(
         """
-        from PyQt5.QtNetwork import QSslSocket
+        from {0}.QtNetwork import QSslSocket
         assert QSslSocket.supportsSsl()
-        """, **USE_WINDOWED_KWARG)
+        """.format(QtPyLib), **USE_WINDOWED_KWARG)
 
 
 # Test that the ``PyQt5.Qt`` module works by importing something from it.
@@ -275,14 +287,14 @@ def test_Qt5_SSL_support(pyi_builder, monkeypatch, QtPyLib):
 @pytest.mark.skipif(is_module_satisfies('PyQt5 == 5.11.3') and is_darwin,
     reason='This version of the OS X wheel does not include QWebEngine.')
 def test_PyQt5_Qt(pyi_builder, monkeypatch):
-    path_clean(monkeypatch, 'PyQt5')
+    _qt_dll_path_clean(monkeypatch, 'PyQt5')
     pyi_builder.test_source('from PyQt5.Qt import QLibraryInfo',
                             **USE_WINDOWED_KWARG)
 
 
 @QtPyLibs
-def test_Qt5_QTranslate(pyi_builder, monkeypatch, QtPyLib):
-    path_clean(monkeypatch, QtPyLib)
+def test_Qt_QTranslate(pyi_builder, monkeypatch, QtPyLib):
+    _qt_dll_path_clean(monkeypatch, QtPyLib)
     pytest.importorskip(QtPyLib)
     pyi_builder.test_source(
         """
