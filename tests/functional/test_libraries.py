@@ -141,72 +141,6 @@ def _qt_dll_path_clean(monkeypatch, namespace):
     monkeypatch.setenv('PATH', new_path)
 
 
-@PYQT5_NEED_OPENGL
-@importorskip('PyQt5')
-def test_PyQt5_uic(tmpdir, pyi_builder, data_dir, monkeypatch):
-    _qt_dll_path_clean(monkeypatch, 'PyQt5')
-    # Note that including the data_dir fixture copies files needed by this test.
-    pyi_builder.test_script('pyi_lib_PyQt5-uic.py')
-
-
-# Produce the source code for QWebEngine tests by inserting the path of an HTML
-# page to display.
-def get_QWebEngine_html(qt_flavor, data_dir):
-    return """
-        from {0}.QtWidgets import QApplication
-        from {0}.QtWebEngineWidgets import QWebEngineView
-        from {0}.QtCore import QUrl, QTimer
-
-        app = QApplication([])
-        view = QWebEngineView()
-        view.load(QUrl.fromLocalFile({1}))
-        view.show()
-        view.page().loadFinished.connect(
-            # Display the web page for one second after it loads.
-            lambda ok: QTimer.singleShot(1000, app.quit))
-        app.exec_()
-        """.format(qt_flavor,
-                   # Use repr to avoid accidental special characters in Windows
-                   # filenames: ``c:\temp`` is ``c<tab>emp``!
-                   repr(data_dir.join('test_web_page.html').strpath))
-
-
-@xfail(is_linux, reason='See issue #4666')
-@pytest.mark.skipif(is_win and not is_64bits, reason="Qt 5.11+ for Windows "
-    "only provides pre-compiled Qt WebEngine binaries for 64-bit processors.")
-@pytest.mark.skipif(is_module_satisfies('PyQt5 == 5.11.3') and is_darwin,
-    reason='This version of the OS X wheel does not include QWebEngine.')
-@importorskip('PyQt5')
-def test_PyQt5_QWebEngine(pyi_builder, data_dir, monkeypatch):
-    _qt_dll_path_clean(monkeypatch, 'PyQt5')
-    if is_darwin:
-        # This tests running the QWebEngine on OS X. To do so, the test must:
-        #
-        # 1. Run only a onedir build -- onefile builds don't work.
-        if pyi_builder._mode != 'onedir':
-            pytest.skip('The QWebEngine .app bundle '
-                        'only supports onedir mode.')
-
-        # 2. Only test the Mac .app bundle, by modifying the executes this
-        #    fixture runs.
-        _old_find_executables = pyi_builder._find_executables
-        # Create a replacement method that selects just the .app bundle.
-
-        def _replacement_find_executables(self, name):
-            path_to_onedir, path_to_app_bundle = _old_find_executables(name)
-            return [path_to_app_bundle]
-        # Use this in the fixture. See https://stackoverflow.com/a/28060251 and
-        # https://docs.python.org/3/howto/descriptor.html.
-        pyi_builder._find_executables = \
-            _replacement_find_executables.__get__(pyi_builder)
-
-    # 3. Run the test with specific command-line arguments. Otherwise, OS X
-    # builds fail. Also use this for the Linux and Windows builds, since this is
-    # a common case.
-    pyi_builder.test_source(get_QWebEngine_html('PyQt5', data_dir),
-                            **USE_WINDOWED_KWARG)
-
-
 @QtPyLibs
 def test_Qt_QtWidgets(pyi_builder, QtPyLib, monkeypatch):
     _qt_dll_path_clean(monkeypatch, QtPyLib)
@@ -315,29 +249,6 @@ def test_Qt_QtNetwork_SSL_support(pyi_builder, monkeypatch, QtPyLib):
         """.format(QtPyLib), **USE_WINDOWED_KWARG)
 
 
-# Test that the ``PyQt5.Qt`` module works by importing something from it.
-# NOTE: the ``PyQt5.Qt`` consolidating module is specific to PyQt5. It
-# is not present in either PySide2 nor PySide6, and its consolidating
-# behavior has been removed in PyQt6.
-#
-# The Qt Bluetooth API (which any import to ``PyQt5.Qt`` implicitly imports)
-# isn't compatible with Windows Server 2012 R2, the OS Appveyor runs.
-# Specifically, running on Server 2012 causes the test to display an error in
-# `a dialog box <https://github.com/mindfulness-at-the-computer/mindfulness-at-the-computer/issues/234>`_.
-# The alternative of using a newer Appveyor OS `fails <https://github.com/pyinstaller/pyinstaller/pull/3563>`_.
-# Therefore, skip this test on Appveyor by testing for one of its `environment
-# variables <https://www.appveyor.com/docs/environment-variables/>`_.
-@skipif(os.environ.get('APPVEYOR') == 'True',
-        reason='The Appveyor OS is incompatible with PyQt.Qt.')
-@importorskip('PyQt5')
-@pytest.mark.skipif(is_module_satisfies('PyQt5 == 5.11.3') and is_darwin,
-    reason='This version of the OS X wheel does not include QWebEngine.')
-def test_PyQt5_Qt(pyi_builder, monkeypatch):
-    _qt_dll_path_clean(monkeypatch, 'PyQt5')
-    pyi_builder.test_source('from PyQt5.Qt import QLibraryInfo',
-                            **USE_WINDOWED_KWARG)
-
-
 @QtPyLibs
 def test_Qt_QTranslate(pyi_builder, monkeypatch, QtPyLib):
     _qt_dll_path_clean(monkeypatch, QtPyLib)
@@ -372,6 +283,105 @@ def test_Qt_QTranslate(pyi_builder, monkeypatch, QtPyLib):
             print('Qt locale %s not found!' % locale.name())
             assert False
         """.format(QtPyLib))
+
+
+# Test that the ``PyQt5.Qt`` module works by importing something from it.
+#
+# NOTE: the ``PyQt5.Qt`` consolidating module is specific to PyQt5. It
+# is not present in either PySide2 nor PySide6, and its consolidating
+# behavior has been removed in PyQt6.
+#
+# The Qt Bluetooth API (which any import to ``PyQt5.Qt`` implicitly imports)
+# isn't compatible with Windows Server 2012 R2, the OS Appveyor runs.
+# Specifically, running on Server 2012 causes the test to display an error in
+# `a dialog box
+# <https://github.com/mindfulness-at-the-computer/mindfulness-at-the-computer/issues/234>`_.
+# The alternative of using a newer Appveyor OS `fails
+# <https://github.com/pyinstaller/pyinstaller/pull/3563>`_.
+# Therefore, skip this test on Appveyor by testing for one of its `environment
+# variables <https://www.appveyor.com/docs/environment-variables/>`_.
+@skipif(os.environ.get('APPVEYOR') == 'True',
+        reason='The Appveyor OS is incompatible with PyQt.Qt.')
+@importorskip('PyQt5')
+@pytest.mark.skipif(is_module_satisfies('PyQt5 == 5.11.3') and is_darwin,
+                    reason='This version of the OS X wheel does not '
+                           'include QWebEngine.')
+def test_PyQt5_Qt(pyi_builder, monkeypatch):
+    _qt_dll_path_clean(monkeypatch, 'PyQt5')
+    pyi_builder.test_source('from PyQt5.Qt import QLibraryInfo',
+                            **USE_WINDOWED_KWARG)
+
+
+@PYQT5_NEED_OPENGL
+@importorskip('PyQt5')
+def test_PyQt5_uic(tmpdir, pyi_builder, data_dir, monkeypatch):
+    _qt_dll_path_clean(monkeypatch, 'PyQt5')
+    # Note that including the data_dir fixture copies files needed by
+    # this test.
+    pyi_builder.test_script('pyi_lib_PyQt5-uic.py')
+
+
+# QtWebEngine test. This module is specific to PyQt5 and PySide2, as
+# it has not been ported to Qt6 yet (as of Qt6 6.1.0)
+
+# Produce the source code for QWebEngine tests by inserting the path of an HTML
+# page to display.
+def get_QWebEngine_html(qt_flavor, data_dir):
+    return """
+        from {0}.QtWidgets import QApplication
+        from {0}.QtWebEngineWidgets import QWebEngineView
+        from {0}.QtCore import QUrl, QTimer
+
+        app = QApplication([])
+        view = QWebEngineView()
+        view.load(QUrl.fromLocalFile({1}))
+        view.show()
+        view.page().loadFinished.connect(
+            # Display the web page for one second after it loads.
+            lambda ok: QTimer.singleShot(1000, app.quit))
+        app.exec_()
+        """.format(qt_flavor,
+                   # Use repr to avoid accidental special characters in Windows
+                   # filenames: ``c:\temp`` is ``c<tab>emp``!
+                   repr(data_dir.join('test_web_page.html').strpath))
+
+
+@xfail(is_linux, reason='See issue #4666')
+@pytest.mark.skipif(is_win and not is_64bits,
+                    reason="Qt 5.11+ for Windows only provides pre-compiled "
+                           "Qt WebEngine binaries for 64-bit processors.")
+@pytest.mark.skipif(is_module_satisfies('PyQt5 == 5.11.3') and is_darwin,
+                    reason='This version of the OS X wheel does not '
+                           'include QWebEngine.')
+@importorskip('PyQt5')
+def test_PyQt5_QWebEngine(pyi_builder, data_dir, monkeypatch):
+    _qt_dll_path_clean(monkeypatch, 'PyQt5')
+    if is_darwin:
+        # This tests running the QWebEngine on OS X. To do so, the test must:
+        #
+        # 1. Run only a onedir build -- onefile builds don't work.
+        if pyi_builder._mode != 'onedir':
+            pytest.skip('The QWebEngine .app bundle '
+                        'only supports onedir mode.')
+
+        # 2. Only test the Mac .app bundle, by modifying the executes this
+        #    fixture runs.
+        _old_find_executables = pyi_builder._find_executables
+        # Create a replacement method that selects just the .app bundle.
+
+        def _replacement_find_executables(self, name):
+            path_to_onedir, path_to_app_bundle = _old_find_executables(name)
+            return [path_to_app_bundle]
+        # Use this in the fixture. See https://stackoverflow.com/a/28060251 and
+        # https://docs.python.org/3/howto/descriptor.html.
+        pyi_builder._find_executables = \
+            _replacement_find_executables.__get__(pyi_builder)
+
+    # 3. Run the test with specific command-line arguments. Otherwise, OS X
+    # builds fail. Also use this for the Linux and Windows builds, since this
+    # is a common case.
+    pyi_builder.test_source(get_QWebEngine_html('PyQt5', data_dir),
+                            **USE_WINDOWED_KWARG)
 
 
 @importorskip('PySide2')
