@@ -221,11 +221,17 @@ def test_Qt_QtQml(pyi_builder, QtPyLib, monkeypatch):
         from {0}.QtQml import QQmlApplicationEngine
         from {0}.QtCore import QTimer, QUrl
 
+        is_qt6 = '{0}' in {{'PyQt6', 'PySide6'}}
+
         # Select a style via the `command line <https://doc.qt.io/qt-5/qtquickcontrols2-styles.html#command-line-argument>`_,
         # since currently PyQt5 doesn't `support https://riverbankcomputing.com/pipermail/pyqt/2018-March/040180.html>`_
         # ``QQuickStyle``. Using this style with the QML below helps to verify
         # that all QML files are packaged; see https://github.com/pyinstaller/pyinstaller/issues/3711.
-        app = QGuiApplication(sys.argv + ['-style', 'imagine'])
+        #
+        # In Qt5, the style name is lower case ('imagine'), whereas
+        # in Qt6, it is capitalized ('Imagine')
+        app = QGuiApplication(sys.argv +
+            ['-style', 'Imagine' if is_qt6 else 'imagine'])
         engine = QQmlApplicationEngine()
         engine.loadData(b'''
             import QtQuick 2.11
@@ -243,7 +249,12 @@ def test_Qt_QtQml(pyi_builder, QtPyLib, monkeypatch):
         # Exit Qt when the main loop becomes idle.
         QTimer.singleShot(0, app.exit)
 
-        res = app.exec_()
+        if is_qt6:
+            # Qt6: exec_() is deprecated in PySide6 and removed from
+            # PyQt6 in favor of exec()
+            res = app.exec()
+        else:
+            res = app.exec_()
         del engine
         sys.exit(res)
         """.format(QtPyLib), **USE_WINDOWED_KWARG)
