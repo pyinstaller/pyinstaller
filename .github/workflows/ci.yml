@@ -36,7 +36,8 @@ jobs:
             libespeak1 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 \
             libxkbcommon-x11-0 libxcb-icccm4 libxcb1 openssl \
             libxcb-randr0-dev libxcb-xtest0-dev libxcb-xinerama0-dev \
-            libxcb-shape0-dev libxcb-xkb-dev xvfb
+            libxcb-shape0-dev libxcb-xkb-dev xvfb \
+            libopengl0 libegl1
 
       - name: Download AppImage tool
         if: startsWith(matrix.os, 'ubuntu')
