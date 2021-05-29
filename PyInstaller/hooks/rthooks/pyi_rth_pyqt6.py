@@ -1,0 +1,25 @@
+#-----------------------------------------------------------------------------
+# Copyright (c) 2021, PyInstaller Development Team.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+#
+# The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: Apache-2.0
+#-----------------------------------------------------------------------------
+
+import os
+import sys
+
+# The path to Qt's components may not default to the wheel layout for
+# self-compiled PyQt6 installations. Mandate the wheel layout. See
+# ``utils/hooks/qt.py`` for more details.
+#
+# Try PyQt6 6.0.3-style path first...
+pyqt_path = os.path.join(sys._MEIPASS, 'PyQt6', 'Qt6')
+if not os.path.isdir(pyqt_path):
+    # ... and fall back to the older version
+    pyqt_path = os.path.join(sys._MEIPASS, 'PyQt6', 'Qt')
+os.environ['QT_PLUGIN_PATH'] = os.path.join(pyqt_path, 'plugins')
+os.environ['QML2_IMPORT_PATH'] = os.path.join(pyqt_path, 'qml')
