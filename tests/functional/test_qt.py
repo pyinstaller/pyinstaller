@@ -235,6 +235,70 @@ def test_Qt_QTranslate(pyi_builder, monkeypatch, QtPyLib):
         """.format(QtPyLib))
 
 
+@PYQT5_NEED_OPENGL
+@QtPyLibs
+def test_Qt_Ui_file(tmpdir, pyi_builder, data_dir, monkeypatch, QtPyLib):
+    pytest.importorskip(QtPyLib)
+    _qt_dll_path_clean(monkeypatch, QtPyLib)
+    # Note that including the data_dir fixture copies files needed by
+    # this test.
+    pyi_builder.test_source(
+        """
+        import os
+
+        import {0}.QtQuickWidgets  # Used instead of hiddenimports
+
+        from {0}.QtWidgets import QApplication, QWidget
+        from {0}.QtCore import QTimer
+
+        from pyi_get_datadir import get_data_dir
+
+        is_qt6 = '{0}' in {{'PyQt6', 'PySide6'}}
+        is_pyqt = '{0}' in {{'PyQt5', 'PyQt6'}}
+
+        app = QApplication([])
+
+        # In Qt6, QtQuick supports multiple render APIs and automatically
+        # selects one. However, QtQuickWidgets.QQuickWidget that is used
+        # by the test UI file supports only OpenGL, so we need to
+        # explicitly select it via QQuickWindow.setGraphicsApi() call.
+        if is_qt6:
+            try:
+                # This seems to be unsupported on macOS version of PySide6
+                # at the time of writing (v.6.1.0)
+                from {0}.QtQuick import QQuickWindow, QSGRendererInterface
+                QQuickWindow.setGraphicsApi(
+                    QSGRendererInterface.GraphicsApi.OpenGL)
+            except Exception:
+                pass
+
+        # Load the UI
+        ui_file = os.path.join(get_data_dir(), 'Qt_Ui_file', 'gui.ui')
+        if is_pyqt:
+            # Use PyQt.uic
+            from {0} import uic
+            window = QWidget()
+            uic.loadUi(ui_file, window)
+        else:
+            # Use PySide.QtUiTools.QUiLoader
+            from {0}.QtUiTools import QUiLoader
+            loader = QUiLoader()
+            window = loader.load(ui_file)
+        window.show()
+
+        # Exit Qt when the main loop becomes idle.
+        QTimer.singleShot(0, app.exit)
+
+        # Run the main loop
+        if is_qt6:
+            # Qt6: exec_() is deprecated in PySide6 and removed from
+            # PyQt6 in favor of exec()
+            app.exec()
+        else:
+            app.exec_()
+        """.format(QtPyLib))
+
+
 # Test that the ``PyQt5.Qt`` module works by importing something from it.
 #
 # NOTE: the ``PyQt5.Qt`` consolidating module is specific to PyQt5. It
@@ -260,15 +324,6 @@ def test_PyQt5_Qt(pyi_builder, monkeypatch):
     _qt_dll_path_clean(monkeypatch, 'PyQt5')
     pyi_builder.test_source('from PyQt5.Qt import QLibraryInfo',
                             **USE_WINDOWED_KWARG)
-
-
-@PYQT5_NEED_OPENGL
-@importorskip('PyQt5')
-def test_PyQt5_uic(tmpdir, pyi_builder, data_dir, monkeypatch):
-    _qt_dll_path_clean(monkeypatch, 'PyQt5')
-    # Note that including the data_dir fixture copies files needed by
-    # this test.
-    pyi_builder.test_script('pyi_lib_PyQt5-uic.py')
 
 
 # QtWebEngine test. This module is specific to PyQt5 and PySide2, as
