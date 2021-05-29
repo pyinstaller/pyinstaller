@@ -26,12 +26,46 @@ PYQT5_NEED_OPENGL = pytest.mark.skipif(
 
 
 # Parametrize test to run the same basic code on both Python Qt libraries.
-QtPyLibs = pytest.mark.parametrize('QtPyLib', ['PyQt5', 'PyQt6',
-                                               'PySide2', 'PySide6'])
+_QT_PY_PACKAGES = ['PyQt5', 'PyQt6', 'PySide2', 'PySide6']
+QtPyLibs = pytest.mark.parametrize('QtPyLib', _QT_PY_PACKAGES)
 
 # OS X bundles, produced by the ``--windowed`` flag, invoke a unique code path
 # that sometimes causes failures in Qt applications.
 USE_WINDOWED_KWARG = dict(pyi_args=['--windowed']) if is_darwin else {}
+
+
+# This is an ugly work-around for an even uglier problem on Windows: we need
+# to ensure that each Qt-based package that is going to be used in a test is
+# imported wihout ``pytest.monkeypatch`` being active.
+#
+# The imports usually happen either during test collection (e.g., due to
+# ``@importorskip`` annotation on the test) or during the actual test execution
+# (e.g., due to ``pytest.importorskip()`` call). The latter case may happen
+# under ``pytest.monkeypatch`` being active, which leads to problems if this is
+# the first import of the package.
+#
+# Specifically, when a Qt-based package is imported, it adds the path to its Qt
+# DLLs to PATH (applies only to Windows). Therefore, if (first) import happens
+# under ``pytest.monkeypatch``, the PATH # modification is lost for subsequent
+# tests (that use the same package). This in turn causes incomplete builds of
+# the test programs, because ``pyi_builder`` calls PyInstaller's
+# ``pyi_main.run()`` within the test process instead of spawning a separate
+# process.
+#
+# Therefore, we manually try to import each package, as if ``@importorskip``
+# annotation for that package was present on at least one test (at the
+# moment, PySide6 and PyQt6 tests all use ``pytest.importorskip()`` under
+# ``pytest.monkeypatch``, and are susceptible to the above problem).
+def _ensure_qt_packages_are_imported():
+    for pkg in _QT_PY_PACKAGES:
+        try:
+            __import__(pkg)
+        except Exception:
+            pass
+
+
+if is_win:
+    _ensure_qt_packages_are_imported()  # Applicable only to Windows
 
 
 # Clean up PATH so that of all potentially installed Qt-based packages
@@ -56,8 +90,8 @@ def _qt_dll_path_clean(monkeypatch, namespace):
 
 @QtPyLibs
 def test_Qt_QtWidgets(pyi_builder, QtPyLib, monkeypatch):
-    _qt_dll_path_clean(monkeypatch, QtPyLib)
     pytest.importorskip(QtPyLib)
+    _qt_dll_path_clean(monkeypatch, QtPyLib)
 
     pyi_builder.test_source(
         """
@@ -89,8 +123,8 @@ def test_Qt_QtWidgets(pyi_builder, QtPyLib, monkeypatch):
 @PYQT5_NEED_OPENGL
 @QtPyLibs
 def test_Qt_QtQml(pyi_builder, QtPyLib, monkeypatch):
-    _qt_dll_path_clean(monkeypatch, QtPyLib)
     pytest.importorskip(QtPyLib)
+    _qt_dll_path_clean(monkeypatch, QtPyLib)
 
     pyi_builder.test_source(
         """
@@ -155,8 +189,8 @@ def test_Qt_QtQml(pyi_builder, QtPyLib, monkeypatch):
                                    'include SSL DLLs.')),
 ])
 def test_Qt_QtNetwork_SSL_support(pyi_builder, monkeypatch, QtPyLib):
-    _qt_dll_path_clean(monkeypatch, QtPyLib)
     pytest.importorskip(QtPyLib)
+    _qt_dll_path_clean(monkeypatch, QtPyLib)
 
     pyi_builder.test_source(
         """
@@ -167,8 +201,8 @@ def test_Qt_QtNetwork_SSL_support(pyi_builder, monkeypatch, QtPyLib):
 
 @QtPyLibs
 def test_Qt_QTranslate(pyi_builder, monkeypatch, QtPyLib):
-    _qt_dll_path_clean(monkeypatch, QtPyLib)
     pytest.importorskip(QtPyLib)
+    _qt_dll_path_clean(monkeypatch, QtPyLib)
     pyi_builder.test_source(
         """
         from {0}.QtWidgets import QApplication
