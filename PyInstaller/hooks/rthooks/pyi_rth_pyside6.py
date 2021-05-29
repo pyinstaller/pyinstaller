@@ -21,3 +21,8 @@ else:
     pyqt_path = os.path.join(sys._MEIPASS, 'Qt', 'PySide6')
 os.environ['QT_PLUGIN_PATH'] = os.path.join(pyqt_path, 'plugins')
 os.environ['QML2_IMPORT_PATH'] = os.path.join(pyqt_path, 'qml')
+# Modelled after similar PATH modification in PyQt5 rthook. With PySide6,
+# this modification seems necessary for SSL DLLs to be found in onefile
+# builds (provided they were available during collection).
+if sys.platform.startswith('win') and 'PATH' in os.environ:
+    os.environ['PATH'] = sys._MEIPASS + os.pathsep + os.environ['PATH']
