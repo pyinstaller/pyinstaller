@@ -177,6 +177,7 @@ class BUNDLE(Target):
             plistlib.dump(info_plist_dict, plist_fh)
 
         links = []
+        _QT_BASE_PATH = {'PySide2', 'PySide6', 'PyQt5', 'PySide6'}
         for inm, fnm, typ in self.toc:
             # Adjust name for extensions, if applicable
             inm, fnm, typ = add_suffix_to_extension(inm, fnm, typ)
@@ -190,7 +191,7 @@ class BUNDLE(Target):
                                  codesign_identity=self.codesign_identity,
                                  entitlements_file=self.entitlements_file)
             # Add most data files to a list for symlinking later.
-            if typ == 'DATA' and base_path not in ('PySide2', 'PyQt5'):
+            if typ == 'DATA' and base_path not in _QT_BASE_PATH:
                 links.append((inm, fnm))
             else:
                 tofnm = os.path.join(self.name, "Contents", "MacOS", inm)
