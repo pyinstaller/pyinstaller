@@ -18,4 +18,4 @@
 # Assume that if people are really using tkinter in their application, they
 # will also import it directly and thus PyInstaller bundles the right GUI
 # library.
-excludedimports = ['tkinter', 'PyQt5']
+excludedimports = ['tkinter', 'PyQt5', 'PySide2', 'PyQt6', 'PySide6']
