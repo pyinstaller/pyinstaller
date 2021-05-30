@@ -65,29 +65,7 @@ def _check_for_compiler():
 has_compiler = _check_for_compiler()
 skipif_no_compiler = skipif(not has_compiler, reason="Requires a C compiler")
 
-
-def skip(reason):
-    """
-    Unconditionally skip the currently decorated test with the passed reason.
-
-    This decorator is intended to be called either directly as a function _or_
-    indirectly as a decorator. This differs from both:
-
-    * `pytest.skip()`, intended to be called only directly as a function.
-      Attempting to call this function indirectly as a decorator produces
-      extraneous ignorable messages on standard output resembling
-      `SKIP [1] PyInstaller/utils/tests.py:65: could not import 'win32com'`.
-    * `pytest.mark.skip()`, intended to be called only indirectly as a
-      decorator. Attempting to call this decorator directly as a function
-      reduces to a noop.
-
-    Parameters
-    ----------
-    reason : str
-        Human-readable message justifying the skipping of this test.
-    """
-
-    return skipif(True, reason=reason)
+skip = pytest.mark.skip
 
 
 def importorskip(modname, minversion=None):
