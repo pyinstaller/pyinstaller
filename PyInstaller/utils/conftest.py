@@ -55,7 +55,6 @@ from PyInstaller.compat import is_darwin, is_win, safe_repr, \
     architecture, is_linux
 from PyInstaller.depend.analysis import initialize_modgraph
 from PyInstaller.utils.win32 import winutils
-from PyInstaller.utils.hooks.qt import pyqt5_library_info, pyside2_library_info
 
 
 
@@ -535,12 +534,6 @@ def pyi_builder(tmpdir, monkeypatch, request, pyi_modgraph):
             if request.node.rep_call.passed:
                 if tmpdir.exists():
                     tmpdir.remove(rec=1, ignore_errors=True)
-    # Clear any PyQt5 state.
-    try:
-        del pyqt5_library_info.version
-        del pyside2_library_info.version
-    except AttributeError:
-        pass
 
 
 # Fixture for .spec based tests.
