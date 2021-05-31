@@ -16,6 +16,7 @@ import pytest
 
 from PyInstaller.compat import is_win, is_darwin, is_linux, is_64bits
 from PyInstaller.utils.hooks import is_module_satisfies
+from PyInstaller.utils.hooks.qt import get_qt_library_info
 from PyInstaller.utils.tests import importorskip, xfail, skipif
 
 
@@ -68,6 +69,35 @@ if is_win:
     _ensure_qt_packages_are_imported()  # Applicable only to Windows
 
 
+# Similarly to the above PATH-related concerns on Windows, we also
+# need to ensure that all QtLibraryInfo structures in Qt hook utils
+# are initialized at this point, before the actual tests start. This is
+# to prevent test-order-dependent behavior and potential issues, and
+# applies to all platforms.
+#
+# Some tests (e.g., test_import::test_import_pyqt5_uic_port) may modify
+# search path to fake PyQt5 module, and if that test is the point of
+# initialization for the corresponding QtLibraryInfo structure (triggered
+# by hooks' access to .version attribute), the structure ends up with
+# invalid data for subsequent tests as well.
+#
+# Former solution to this problem was clearing QtLibraryInfo.version
+# at the end of pyi_builder() fixture, which triggers re-initialization
+# in each test. But as the content of QtLibraryInfo should be immutable
+# (save for the test with fake module), it seems better to pre-initialize
+# the structures in order to ensure predictable behavior.
+def _ensure_qt_library_info_is_initialized():
+    for pkg in _QT_PY_PACKAGES:
+        try:
+            info = get_qt_library_info(pkg)
+            assert info.version  # trigger initialiatuon
+        except Exception:
+            pass
+
+
+_ensure_qt_library_info_is_initialized()
+
+
 # Clean up PATH so that of all potentially installed Qt-based packages
 # (PyQt5, PyQt6, PySide2, and PySide6), only the Qt shared libraries of
 # the specified package (namespace) remain in the PATH.
@@ -79,7 +109,7 @@ def _qt_dll_path_clean(monkeypatch, namespace):
         return
 
     # Remove all other Qt5/6 bindings from PATH
-    all_namespaces = {'PyQt5', 'PyQt6', 'PySide2', 'PySide6'}
+    all_namespaces = set(_QT_PY_PACKAGES)
     all_namespaces.discard(namespace)
     new_path = os.pathsep.join(
         [x for x in os.environ['PATH'].split(os.pathsep)
