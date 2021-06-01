@@ -747,7 +747,7 @@ def build(ctx):
                                 ctx.env.PYI_SYSTEM + "-" + ctx.env.PYI_ARCH)
     install_path = os.path.normpath(install_path)
 
-    if machine():
+    if machine() and ctx.env.DEST_OS != 'darwin':
         install_path += '-' + machine()
 
     if not ctx.env.LIB_Z:

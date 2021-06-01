@@ -67,7 +67,8 @@ DEFAULT_WORKPATH = os.path.join(os.getcwd(), 'build')
 
 
 PLATFORM = compat.system + '-' + compat.architecture
-# Include machine name in path to bootloader for some machines.
-# e.g. 'arm'
-if compat.machine:
+# Include machine name in path to bootloader for some machines (e.g., 'arm').
+# Explicitly avoid doing this on macOS, where we keep universal2 bootloaders
+# in Darwin-64bit folder regardless of whether we are on x86_64 or arm64.
+if compat.machine and not compat.is_darwin:
     PLATFORM += '-' + compat.machine
