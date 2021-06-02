@@ -147,11 +147,8 @@ PLATFORMS = {
     # must check/update this tag.
     "Linux-64bit":  "manylinux2014_x86_64",
     "Linux-32bit": "manylinux2014_i686",
-    # The macOS version must be kept in sync with the -mmacosx-version-min in
-    # the waf build script.
-    # TODO: Once we start shipping universal2 bootloaders and PyPA have
-    #       decided what the wheel tag should be, we will need to set it here.
-    "Darwin-64bit": "macosx_10_13_x86_64",
+    # macOS needs special handling. This gets done dynamically later.
+    "Darwin-64bit": None,
 }
 
 # Create a subclass of Wheel() for each platform.
@@ -166,6 +163,49 @@ for (pyi_plat_name, plat_name) in PLATFORMS.items():
     command: Type[Wheel] = type(command_name, (Wheel,), platform)
     command.description = f"Create a {command.PYI_PLAT_NAME} wheel"
     wheel_commands[command_name] = command
+
+
+class bdist_macos(wheel_commands["wheel_darwin_64bit"]):
+    def finalize_options(self):
+        """Choose a platform tag that reflects the platform of the bootloaders.
+
+        Namely:
+        * The minimum supported macOS version should mirror that of the
+          bootloaders.
+        * The architecture should similarly mirror the bootloader
+          architecture(s).
+
+        """
+        try:
+            from PyInstaller.utils.osx import get_binary_architectures,\
+                macosx_version_min
+        except ImportError:
+            raise SystemExit(
+                "Building wheels for macOS requires that PyInstaller and "
+                "macholib be installed. Please run:\n"
+                "    pip install -e . macholib")
+
+        bootloader = os.path.join(self.bootloaders_dir(), "run")
+        is_fat, architectures = get_binary_architectures(bootloader)
+
+        if is_fat and sorted(architectures) == ["arm64", "x86_64"]:
+            # An arm64 + x86_64 dual architecture binary gets the special name
+            # universal2.
+            architectures = "universal2"
+        else:
+            # It's unlikely that there will be other multi-architecture types
+            # but if one crops up, the syntax is to join them with underscores.
+            architectures = "_".join(architectures)
+
+        # Fetch the macOS deployment target the bootloaders are compiled with
+        # and set that in the tag too.
+        version = "_".join(map(str, macosx_version_min(bootloader)[:2]))
+
+        self.PLAT_NAME = f"macosx_{version}_{architectures}"
+        super().finalize_options()
+
+
+wheel_commands["wheel_darwin_64bit"] = bdist_macos
 
 
 class bdist_wheels(Command):
