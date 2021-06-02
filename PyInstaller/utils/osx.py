@@ -101,11 +101,33 @@ def get_macos_sdk_version(filename):
     header = binary.headers[0]
     # Find version command using helper
     version_cmd = _find_version_cmd(header)
+    return _hex_triplet(version_cmd[1].sdk)
+
+
+def _hex_triplet(version):
     # Parse SDK version number
-    major = (version_cmd[1].sdk & 0xFF0000) >> 16
-    minor = (version_cmd[1].sdk & 0xFF00) >> 8
-    revision = (version_cmd[1].sdk & 0xFF)
+    major = (version & 0xFF0000) >> 16
+    minor = (version & 0xFF00) >> 8
+    revision = (version & 0xFF)
     return major, minor, revision
+
+
+def macosx_version_min(filename: str) -> tuple:
+    """Get the -macosx-version-min used to compile a macOS binary.
+
+    For fat binaries, the minimum version is selected.
+
+    """
+    versions = []
+    for header in MachO(filename).headers:
+        cmd = _find_version_cmd(header)
+        if cmd[0].cmd == LC_VERSION_MIN_MACOSX:
+            versions.append(cmd[1].version)
+        else:
+            # macOS >= 10.14 uses LC_BUILD_VERSION instead.
+            versions.append(cmd[1].minos)
+
+    return min(map(_hex_triplet, versions))
 
 
 def set_macos_sdk_version(filename, major, minor, revision):
