@@ -275,6 +275,9 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None,
         # Flow Guard enabled, as it breaks them.
         if is_win and versioninfo.pefile_check_control_flow_guard(fnm):
             logger.info('Disabling UPX for %s due to CFG!', fnm)
+        elif misc.is_file_qt_plugin(fnm):
+            logger.info('Disabling UPX for %s due to it being a Qt plugin!',
+                        fnm)
         else:
             bestopt = "--best"
             # FIXME: Linux builds of UPX do not seem to contain LZMA
