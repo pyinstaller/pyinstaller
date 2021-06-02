@@ -251,3 +251,44 @@ def module_parent_packages(full_modname):
         prefix += '.' + pkg if prefix else pkg
         parents.append(prefix)
     return parents
+
+
+def is_file_qt_plugin(filename):
+    """
+    Check if the given file is a Qt plugin file.
+    :param filename: Full path to file to check.
+    :return: True if given file is a Qt plugin file, False if not.
+    """
+
+    # Check the file contents; scan for QTMETADATA string
+    # The scan is based on the brute-force Windows codepath of
+    # findPatternUnloaded() from qtbase/src/corelib/plugin/qlibrary.cpp
+    # in Qt5.
+    with open(filename, 'rb') as fp:
+        fp.seek(0, os.SEEK_END)
+        end_pos = fp.tell()
+
+        SEARCH_CHUNK_SIZE = 8192
+        QTMETADATA_MAGIC = b'QTMETADATA '
+
+        magic_offset = -1
+        while end_pos >= len(QTMETADATA_MAGIC):
+            start_pos = max(end_pos - SEARCH_CHUNK_SIZE, 0)
+            chunk_size = end_pos - start_pos
+            # Is the remaining chunk large enough to hold the pattern?
+            if chunk_size < len(QTMETADATA_MAGIC):
+                break
+            # Read and scan the chunk
+            fp.seek(start_pos, os.SEEK_SET)
+            buf = fp.read(chunk_size)
+            pos = buf.rfind(QTMETADATA_MAGIC)
+            if pos != -1:
+                magic_offset = start_pos + pos
+                break
+            # Adjust search location for next chunk; ensure proper
+            # overlap
+            end_pos = start_pos + len(QTMETADATA_MAGIC) - 1
+        if magic_offset == -1:
+            return False
+
+        return True
