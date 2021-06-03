@@ -5,6 +5,10 @@ recursive-include PyInstaller/bootloader/images *
 # from source. (Wheels don't work on MSYS2.)
 recursive-include PyInstaller/bootloader/Windows-32bit *
 recursive-include PyInstaller/bootloader/Windows-64bit *
+# Until pip 20.1.2 is considered old, keep the macOS bootloaders
+# in here too so that older pips which don't recognise the universal2
+# wheel tag can still use the sdist.
+recursive-include PyInstaller/bootloader/Darwin-64bit *
 include pyproject.toml
 # These files need to be explicitly included
 include PyInstaller/fake-modules/*.py
