@@ -102,7 +102,8 @@ def build_osxcross
     mkdir -p $SDK
     # Extract the SDK from Xcode.xip into MacOSX*.tar.*
     ./tools/gen_sdk_package_tools_dmg.sh $SDK/Xcode_tools.dmg || exit 1
-    mv MacOSX11*.tar.* tarballs/
+    # Take the SDK with highest version
+    mv $(ls MacOSX*.sdk.tar.* | sort -V | tail -n1) tarballs/
     # Build the build-tools into directory `target/`
     UNATTENDED=1 ./build.sh
 
