@@ -358,53 +358,6 @@ Vagrant.configure(2) do |config|
         :keep_color => true
   end
 
-  #--- Mac OS X ---
-  config.vm.define "darwin64" do |b|
-    b.vm.box = "jhcook/yosemite-clitools"
-
-    # Guest additions are not available for OS X and thus no shared folders
-    b.vm.synced_folder "..", "/vagrant", :type => "rsync",
-      # Avoid rsyncing the huge SDKs not used here
-      :rsync__args => ["--verbose", "--archive", "--delete", "-z",
-                       "--include=bootloader", "--include=PyInstaller",
-                       "--exclude=/*", "--cvs-exclude", "--exclude=*.pyc",
-                       "--exclude=bootloader/build",
-                       "--exclude=bootloader/_sdks",
-                       "--exclude=bootloader/.lock-*",
-                       "--exclude=bootloader/.waf-*",
-                       "--exclude=bootloader/waf-*"],
-      # chown fails on the OS X box, since group 'vagrant' is missing
-      :rsync__chown => false
-
-    b.vm.provider :virtualbox do |v|
-      v.customize ['modifyvm', :id, '--ostype', 'MacOS1010_64']
-      v.customize ['modifyvm', :id, '--paravirtprovider', 'default']
-      # Adjust CPU settings according to
-      # https://github.com/geerlingguy/macos-virtualbox-vm
-      v.customize ['modifyvm', :id, '--cpuidset',
-                   # Leaf       EAX        EBX         ECX         EDX
-                   '00000001', '000306a9', '00020800', '80000201', '178bfbff']
-      # This should make make the box less choppy (source: geerlingguy)
-      #v.customize ["modifyvm", :id, '--audio', 'off']
-      # Disable USB variant requiring Virtualbox proprietary extension packs
-      v.customize ["modifyvm", :id, '--usbehci', 'off', '--usbxhci', 'off']
-      # Apple recommends 128MB (source: geerlingguy)
-      #v.customize ["modifyvm", :id, '--videocapmaxsize', '128MB']
-    end
-    b.vm.provision "fix permissions", :type => :shell, :privileged => true,
-        :inline => "chown -R vagrant: /vagrant"
-    ## install (security and other) updates
-    b.vm.provision "update software", :type => :shell, :privileged => true,
-        :inline => update_darwin
-    #b.vm.provision :reload  # for the case updates require reboot
-    # For this box we do not need any additional packages
-    #b.vm.provision "packages darwin", :type => :shell, :privileged => false,
-    #    :inline => packages_darwin
-    b.vm.provision "build bootloader", :type => :shell, :privileged => false,
-        :inline => build_bootloader("darwin64"),
-        :keep_color => true
-  end
-
   #--- Windows 64 bit
   #- This box requires interaction, automated build is not possible at
   #- the moment. Please see the README for more information.
