@@ -31,7 +31,3 @@ pyroma   # Checks if package follows best practices of Python packaging.
 chardet  # character encoding detector.
 readme-renderer   # Check PyPI description is valid reStructuredText
 zestreleaser.towncrier  # integrate towncrier into zest.releaser
-
-sphinx
-sphinx_rtd_theme
-sphinx-autodoc-typehints
