@@ -125,10 +125,7 @@ passing ``--no-universal2`` flag to the ``waf`` build command.
 
 Now you can build the bootloader as shown above.
 
-Alternatively you may want to use the `darwin64` build-guest
-provided by the Vagrantfile (see below).
-
-By default, the build script targets Mac OSX 10.7, which can be overridden by
+By default, the build script targets Mac OSX 10.13, which can be overridden by
 exporting the MACOSX_DEPLOYMENT_TARGET environment variable.
 
 .. _cross-building for mac os x:
@@ -462,7 +459,7 @@ All guests [#]_ will automatically build the bootloader when running
 .. [#] Except of guest `osxcross`, which will build the OS X SDK and cctools
        as described in section :ref:`cross-building for mac os x`.
 
-All guests (except of `darwin64`), when building the bootloaders, are sharing
+When building the bootloaders, the guests are sharing
 the PyInstaller distribution folder and will put the built executables onto
 the build-host (into :file:`../PyInstaller/bootloader/`).
 
@@ -483,7 +480,7 @@ Example usage::
 You can pass some parameters for configuring the Vagrantfile by setting
 environment variables, like this::
 
-    GUI=1 TARGET=OSX vagrant up darwin64
+    GUI=1 TARGET=OSX vagrant up linux64
 
 or like this::
 
@@ -496,7 +493,7 @@ We currently provide this guests:
 :linux64:  GNU/Linux (some recent version) used to build the GNU/Linux
            bootloaders.
 
-           * If ``TARGET=OS`` is set, cross-builds the bootloaders for OS X
+           * If ``TARGET=OSX`` is set, cross-builds the bootloaders for OS X
              (see :ref:`cross-building for mac os x`).
 
            * If ``TARGET=WINDOWS`` is set, cross-builds the bootloaders
@@ -505,21 +502,6 @@ We currently provide this guests:
 
            * Otherwise (which is the default) bootloaders for GNU/Linux are
              build.
-
-:darwin64:  Mac OS X 'Yosemite' – not actually used by the PyInstaller team,
-            but provided for testing.
-
-            This guest, when building the bootloaders, does *not* put the
-            built executables onto the build-host. You need to fetch them
-            using::
-
-             vagrant plugin install vagrant-scp vagrant-reload # required only once
-             vagrant scp -a darwin64:/vagrant/PyInstaller/bootloader/Darwin-* \
-                            ../PyInstaller/bootloader/
-
-            This is due the fact that this machine doesn't include the
-            Virtualbox guest additions and thus doesn't support shared
-            folders.
 
 :windows10: Windows 10, used for building the Windows bootloaders
             using Visual  C++.
