@@ -38,8 +38,8 @@
     #include <unistd.h>
 #endif
 
-/* On Mac OS X send debug msg also to syslog for gui app in debug mode. */
-#if defined(__APPLE__) && defined(WINDOWED) && defined(LAUNCH_DEBUG)
+/* On Mac OS X send debug msg also to syslog for windowed app. */
+#if defined(__APPLE__) && defined(WINDOWED)
     #include <syslog.h>
 #endif
 
@@ -204,7 +204,7 @@ pyi_global_printf(const char *fmt, ...)
     /* This allows to see bootloader debug messages in the Console.app log viewer. */
     /* https://en.wikipedia.org/wiki/Console_(OS_X) */
     /* Levels DEBUG and INFO are ignored so use level NOTICE. */
-#if defined(__APPLE__) && defined(WINDOWED) && defined(LAUNCH_DEBUG)
+#if defined(__APPLE__) && defined(WINDOWED)
     va_start(v, fmt);
     vsyslog(LOG_NOTICE, fmt, v);
     va_end(v);
@@ -223,7 +223,7 @@ void pyi_global_perror(const char *funcname, const char *fmt, ...) {
     va_end(v);
     perror(funcname);  // perror() writes to stderr
 
-    #if defined(__APPLE__) && defined(WINDOWED) && defined(LAUNCH_DEBUG)
+    #if defined(__APPLE__) && defined(WINDOWED)
         va_start(v, fmt);
             vsyslog(LOG_NOTICE, fmt, v);
             vsyslog(LOG_NOTICE, "%m\n", NULL);  // %m emits the result of strerror()
