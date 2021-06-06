@@ -332,6 +332,10 @@ class EXE(Target):
                 On Windows or OSX governs whether to use the console executable
                 or the windowed executable. Always True on Linux/Unix (always
                 console executable - it does not matter there).
+            disable_windowed_traceback
+                Disable traceback dump of unhandled exception in windowed
+                (noconsole) mode (Windows and macOS only), and instead display
+                a message that this feature is disabled.
             debug
                 Setting to True gives you progress mesages from the executable
                 (for console=False there will be annoying MessageBoxes on Windows).
@@ -380,6 +384,8 @@ class EXE(Target):
         self.bootloader_ignore_signals = kwargs.get(
             'bootloader_ignore_signals', False)
         self.console = kwargs.get('console', True)
+        self.disable_windowed_traceback = kwargs.get(
+            'disable_windowed_traceback', False)
         self.debug = kwargs.get('debug', False)
         self.name = kwargs.get('name', None)
         self.icon = kwargs.get('icon', None)
@@ -464,6 +470,10 @@ class EXE(Target):
         if self.bootloader_ignore_signals:
             # no value; presence means "true"
             self.toc.append(("pyi-bootloader-ignore-signals", "", "OPTION"))
+
+        if self.disable_windowed_traceback:
+            # no value; presence means "true"
+            self.toc.append(("pyi-disable-windowed-traceback", "", "OPTION"))
 
         if is_win:
             filename = os.path.join(CONF['workpath'], CONF['specnm'] + ".exe.manifest")
