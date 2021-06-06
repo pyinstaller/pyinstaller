@@ -385,13 +385,28 @@ _pyi_extract_exception_message(PyObject *pvalue)
 }
 
 /*
+ * Traceback formatting options for _pyi_extract_exception_traceback.
+ */
+enum
+{
+    /* String representation of the list containing traceback lines. */
+    PYI_TB_FMT_REPR = 0,
+    /* Concatenate the traceback lines into single string, using
+     * default LF newlines. */
+    PYI_TB_FMT_LF = 1,
+    /* Concatenate the traceback lines into single string, and replace
+     * the LF newlines with CRLF. */
+    PYI_TB_FMT_CRLF = 2
+};
+
+/*
  * Extract python exception traceback from error indicator data
  * returned by PyErr_Fetch().
  * Returns a copy of traceback string or NULL. Must be freed by caller.
  */
 static char *
 _pyi_extract_exception_traceback(PyObject *ptype, PyObject *pvalue,
-                                 PyObject *ptraceback)
+                                 PyObject *ptraceback, int fmt_mode)
 {
     PyObject *module;
     char *retval = NULL;
@@ -403,10 +418,29 @@ _pyi_extract_exception_traceback(PyObject *ptype, PyObject *pvalue,
         PyObject *func = PI_PyObject_GetAttrString(module, "format_exception");
         if (func) {
             PyObject *tb, *tb_str;
-            const char *tb_cchar;
+            const char *tb_cchar = NULL;
             tb = PI_PyObject_CallFunctionObjArgs(func, ptype, pvalue,
                                                  ptraceback, NULL);
-            tb_str = PI_PyObject_Str(tb);
+            if (fmt_mode == PYI_TB_FMT_REPR) {
+                /* Represent the list as string */
+                tb_str = PI_PyObject_Str(tb);
+            } else {
+                /* Join the list using empty string */
+                PyObject *tb_empty = PI_PyUnicode_FromString("");
+                tb_str = PI_PyUnicode_Join(tb_empty, tb);
+                Py_DECREF(tb_empty);
+                if (fmt_mode == PYI_TB_FMT_CRLF) {
+                    /* Replace LF with CRLF */
+                    PyObject *lf = PI_PyUnicode_FromString("\n");
+                    PyObject *crlf = PI_PyUnicode_FromString("\r\n");
+                    PyObject *tb_str_crlf = PI_PyUnicode_Replace(tb_str, lf, crlf, -1);
+                    Py_DECREF(lf);
+                    Py_DECREF(crlf);
+                    /* Swap */
+                    Py_DECREF(tb_str);
+                    tb_str = tb_str_crlf;
+                }
+            }
             tb_cchar = PI_PyUnicode_AsUTF8(tb_str);
             if (tb_cchar) {
                 retval = strdup(tb_cchar);
@@ -496,13 +530,13 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
 
                     PI_PyErr_Fetch(&ptype, &pvalue, &ptraceback);
                     msg_exc = _pyi_extract_exception_message(pvalue);
-                    msg_tb = _pyi_extract_exception_traceback(ptype, pvalue,
-                                                              ptraceback);
+                    msg_tb = _pyi_extract_exception_traceback(
+                        ptype, pvalue, ptraceback, PYI_TB_FMT_REPR);
                     PI_PyErr_Restore(ptype, pvalue, ptraceback);
                 #endif
 
                 /* If the error was SystemExit, PyErr_Print calls exit() without
-                 * returning. This means we won't print "Failed to execute" on 
+                 * returning. This means we won't print "Failed to execute" on
                  * normal SystemExit's.
                  */
                 PI_PyErr_Print();

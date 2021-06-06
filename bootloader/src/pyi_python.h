@@ -134,6 +134,8 @@ EXTDECLPROC(void, PyErr_Restore, (PyObject *, PyObject *, PyObject *));
 EXTDECLPROC(PyObject *, PyObject_Str, (PyObject *));
 EXTDECLPROC(PyObject *, PyObject_GetAttrString, (PyObject *, const char *));
 EXTDECLPROC(const char *, PyUnicode_AsUTF8, (PyObject *));
+EXTDECLPROC(PyObject *, PyUnicode_Join, (PyObject *, PyObject *));
+EXTDECLPROC(PyObject *, PyUnicode_Replace, (PyObject *, PyObject *, PyObject *, size_t));  /* Py_ssize_t */
 
 /*
  * Macros for reference counting through exported functions

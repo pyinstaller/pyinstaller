@@ -86,6 +86,8 @@ DECLPROC(PyUnicode_FromFormat);
 DECLPROC(PyUnicode_DecodeFSDefault);
 DECLPROC(PyUnicode_Decode);
 DECLPROC(PyUnicode_AsUTF8);
+DECLPROC(PyUnicode_Join);
+DECLPROC(PyUnicode_Replace);
 
 DECLPROC(PyEval_EvalCode);
 DECLPROC(PyMarshal_ReadObjectFromString);
@@ -158,6 +160,8 @@ pyi_python_map_names(HMODULE dll, int pyvers)
     GETPROC(dll, PyUnicode_Decode);
     GETPROC(dll, PyUnicode_DecodeFSDefault);
     GETPROC(dll, PyUnicode_AsUTF8);
+    GETPROC(dll, PyUnicode_Join);
+    GETPROC(dll, PyUnicode_Replace);
 
     VS("LOADER: Loaded functions from Python library.\n");
 
