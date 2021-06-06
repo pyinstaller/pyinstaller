@@ -42,6 +42,7 @@
 #include "pyi_python.h"
 #include "pyi_pythonlib.h"
 #include "pyi_win32_utils.h"  /* CreateActContext */
+#include "pyi_exception_dialog.h"
 
 /* Max count of possible opened archives in multipackage mode. */
 #define _MAX_ARCHIVE_POOL_LEN 20
@@ -515,9 +516,10 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
              * (Since we evaluate module-level code, which is not allowed to return an
              * object, the Python object returned is always None.) */
             if (!retval) {
-                #if defined(WINDOWED) && defined(LAUNCH_DEBUG)
-                    /* In windowed mode, we will display error details in
-                     * dialogs. For that, we need to extract the error
+                #if defined(WINDOWED)
+                    /* In windowed mode, we need to display error information
+                     * via non-console means (i.e., error dialog on Windows,
+                     * syslog on macOS). For that, we need to extract the error
                      * indicator data before PyErr_Print() call below clears
                      * it. But it seems that for PyErr_Print() to properly
                      * exit on SystemExit(), we also need to restore the error
@@ -527,11 +529,18 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
                      */
                     PyObject *ptype, *pvalue, *ptraceback;
                     char *msg_exc, *msg_tb;
+                    int fmt_mode = PYI_TB_FMT_REPR;
+
+                    #if defined(_WIN32)
+                        fmt_mode = PYI_TB_FMT_CRLF;
+                    #elif defined(__APPLE__)
+                        fmt_mode = PYI_TB_FMT_LF;
+                    #endif
 
                     PI_PyErr_Fetch(&ptype, &pvalue, &ptraceback);
                     msg_exc = _pyi_extract_exception_message(pvalue);
                     msg_tb = _pyi_extract_exception_traceback(
-                        ptype, pvalue, ptraceback, PYI_TB_FMT_REPR);
+                        ptype, pvalue, ptraceback, fmt_mode);
                     PI_PyErr_Restore(ptype, pvalue, ptraceback);
                 #endif
 
@@ -540,22 +549,29 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
                  * normal SystemExit's.
                  */
                 PI_PyErr_Print();
-                FATALERROR("Failed to execute script %s\n", ptoc->name);
 
-                #if defined(WINDOWED) && defined(LAUNCH_DEBUG)
-                    /* As console is unavailable in windowed mode, we display
-                     * error details (exception message and traceback) in
-                     * additional error dialogs (Windows only).
-                     */
-                    if (msg_exc) {
-                        FATALERROR("Error: %s\n", msg_exc);
-                        free(msg_exc);
-                    }
-                    if (msg_tb) {
-                        FATALERROR("Traceback: %s\n", msg_tb);
-                        free(msg_tb);
-                    }
-                #endif /* if defined(WINDOWED) and defined(LAUNCH_DEBUG) */
+                /* Display error information */
+                #if !defined(WINDOWED)
+                    /* Non-windowed mode; PyErr_print() above dumps the
+                     * traceback, so the only thing we need to do here
+                     * is provide a summary */
+                     FATALERROR("Failed to execute script '%s' due to unhandled exception!\n", ptoc->name);
+                #else
+                    #if defined(_WIN32)
+                        /* Windows; use custom dialog */
+                        pyi_unhandled_exception_dialog(ptoc->name, msg_exc, msg_tb);
+                    #elif defined(__APPLE__)
+                        /* macOS .app bundle; use FATALERROR(), which
+                         * prints to stderr (invisible) as well as sends
+                         * the message to syslog */
+                         FATALERROR("Failed to execute script '%s' due to unhandled exception: %s\n", ptoc->name, msg_exc);
+                         FATALERROR("Traceback:\n%s\n", msg_tb);
+                    #endif
+
+                    /* Clean up exception information strings */
+                    free(msg_exc);
+                    free(msg_tb);
+                #endif /* if !defined(WINDOWED) */
 
                 /* Be consistent with python interpreter, which returns
                  * 1 if it exits due to unhandled exception.
