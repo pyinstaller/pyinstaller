@@ -392,6 +392,13 @@ def __add_options(parser):
                         'Use "NONE" to not apply any icon, '
                         "thereby making the OS to show some default "
                         "(default: apply PyInstaller's icon)")
+    g.add_argument("--disable-windowed-traceback",
+                   dest="disable_windowed_traceback", action="store_true",
+                   default=False,
+                   help="Disable traceback dump of unhandled exception in "
+                        "windowed (noconsole) mode (Windows and macOS only), "
+                        "and instead display a message that this feature is "
+                        "disabled.")
 
     g = parser.add_argument_group('Windows specific options')
     g.add_argument("--version-file",
@@ -489,7 +496,7 @@ def __add_options(parser):
 def main(scripts, name=None, onefile=None,
          console=True, debug=None, strip=False, noupx=False, upx_exclude=None,
          runtime_tmpdir=None, pathex=None, version_file=None, specpath=None,
-         bootloader_ignore_signals=False,
+         bootloader_ignore_signals=False, disable_windowed_traceback=False,
          datas=None, binaries=None, icon_file=None, manifest=None, resources=None, bundle_identifier=None,
          hiddenimports=None, hookspath=None, key=None, runtime_hooks=None,
          excludes=None, uac_admin=False, uac_uiaccess=False,
@@ -630,6 +637,7 @@ def main(scripts, name=None, onefile=None,
         'excludes': excludes or [],
         # only Windows and Mac OS X distinguish windowed and console apps
         'console': console,
+        'disable_windowed_traceback': disable_windowed_traceback,
         # Icon filename. Only OSX uses this item.
         'icon': icon_file,
         # .app bundle identifier. Only OSX uses this item.

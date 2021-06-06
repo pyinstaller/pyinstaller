@@ -539,8 +539,13 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
 
                     PI_PyErr_Fetch(&ptype, &pvalue, &ptraceback);
                     msg_exc = _pyi_extract_exception_message(pvalue);
-                    msg_tb = _pyi_extract_exception_traceback(
-                        ptype, pvalue, ptraceback, fmt_mode);
+                    if (pyi_arch_get_option(status, "pyi-disable-windowed-traceback") != NULL) {
+                        /* Traceback is disabled via option */
+                        msg_tb = strdup("Traceback is disabled via bootloader option.");
+                    } else {
+                        msg_tb = _pyi_extract_exception_traceback(
+                            ptype, pvalue, ptraceback, fmt_mode);
+                    }
                     PI_PyErr_Restore(ptype, pvalue, ptraceback);
                 #endif
 
