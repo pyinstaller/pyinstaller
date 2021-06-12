@@ -31,9 +31,12 @@ def install():
         return
 
     def _frozen_name(name):
-        if name:
+        # If the given (file)name does not exist, fall back to searching
+        # for its basename in sys._MEIPASS, where PyInstaller usually
+        # collects shared libraries.
+        if name and not os.path.isfile(name):
             frozen_name = os.path.join(sys._MEIPASS, os.path.basename(name))
-            if os.path.exists(frozen_name) and not os.path.isdir(frozen_name):
+            if os.path.isfile(frozen_name):
                 name = frozen_name
         return name
 
