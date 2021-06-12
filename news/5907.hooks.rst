@@ -1,0 +1,3 @@
+Switch the library search order in ``ctypes`` hooks: first check whether
+the given name exists as-is, before trying to search for its basename in
+``sys._MEIPASS`` (instead of the other way around).
