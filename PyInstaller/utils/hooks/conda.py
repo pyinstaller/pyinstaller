@@ -12,7 +12,9 @@
 # language=rst
 """
 Additional helper methods for working specifically with Anaconda distributions
-are found at :attr:`PyInstaller.util.hooks.conda_support` which is designed to
+are found at
+:mod:`PyInstaller.utils.hooks.conda_support<PyInstaller.utils.hooks.conda>`
+which is designed to
 mimic (albeit loosely) the `importlib.metadata`_ package. These functions find
 and parse the distribution metadata from json files located in the
 ``conda-meta`` directory.
@@ -41,6 +43,7 @@ import sys
 from pathlib import Path
 import json
 import fnmatch
+from typing import List, Iterable
 
 from PyInstaller import compat
 from PyInstaller.log import logger
@@ -198,18 +201,20 @@ class PackagePath(_PackagePath):
         return Path(sys.prefix) / self
 
 
-def walk_dependency_tree(initial, excludes=None):
+def walk_dependency_tree(initial: str, excludes: Iterable[str] = None) -> dict:
     """
     Collect a :class:`Distribution` and all direct and indirect
     dependencies of that distribution.
 
-    :param initial: Distribution name to collect from.
-    :type initial: str
-    :param excludes: Distributions to exclude, defaults to ``None``.
-    :type excludes: iterable  of str, optional
-    :return: A ``{name: distribution}`` dictionary where ``distribution``
-             is the output of ``conda_support.distribution(name)``.
-    :rtype: dict
+    Arguments:
+        initial:
+            Distribution name to collect from.
+        excludes:
+            Distributions to exclude.
+    Returns:
+        A ``{name: distribution}`` mapping where ``distribution`` is the output
+        of :func:`conda_support.distribution(name) <distribution>`.
+
     """
     if excludes is not None:
         excludes = set(excludes)
@@ -257,33 +262,42 @@ def _iter_distributions(name, dependencies, excludes):
         return [Distribution.from_name(name)]
 
 
-def requires(name, strip_versions=False):
+def requires(name: str, strip_versions=False) -> List[str]:
     """
     List requirements of a distribution.
 
-    :param name: The name of the distribution.
-    :param strip_versions: List only their names, not their version
-                           constraints.
-    :return: List of distribution names.
+    Arguments:
+        name:
+            The name of the distribution.
+        strip_versions:
+            List only their names, not their version constraints.
+    Returns:
+        A list of distribution names.
+
     """
     if strip_versions:
         return distribution(name).dependencies
     return distribution(name).raw["depends"]
 
 
-def files(name, dependencies=False, excludes=None):
+def files(name: str, dependencies=False, excludes=None) -> List[PackagePath]:
     """
     List all files belonging to a distribution.
 
-    :param name: The name of the distribution.
-    :param dependencies: Recursively collect files of dependencies too.
-    :type dependencies: bool
-    :param excludes: Distributions to ignore if **dependencies** is true.
-    :return: List of :class:`PackagePath`\\ s.
+    Arguments:
+        name:
+            The name of the distribution.
+        dependencies:
+            Recursively collect files of dependencies too.
+        excludes:
+            Distributions to ignore if **dependencies** is true.
+    Returns:
+        All filenames belonging to the given distribution.
 
     With ``dependencies=False``, this is just a shortcut for::
 
         conda_support.distribution(name).files
+
     """
     return [file
             for dist in _iter_distributions(name, dependencies, excludes)
@@ -296,26 +310,28 @@ else:
     lib_dir = PackagePath("lib")
 
 
-def collect_dynamic_libs(name, dest=".", dependencies=True, excludes=None):
+def collect_dynamic_libs(name: str, dest: str = ".", dependencies: bool = True,
+                         excludes: Iterable[str] = None) -> List:
     """
     Collect DLLs for distribution **name**.
 
-    :param name: The distribution's project-name.
-    :type name: str
-    :param dest: Target destination, defaults to ``'.'``.
-    :type dest: str, optional
-    :param dependencies: Recursively collect libs for dependent distributions
-                         (recommended).
-    :type dependencies: bool, optional
-    :param excludes: Dependent distributions to skip, defaults to ``None``.
-    :type excludes: iterable, optional
-    :return: List of DLLs in PyInstaller's ``(source, dest)`` format.
-    :rtype: list
+    Arguments:
+        name:
+            The distribution's project-name.
+        dest:
+            Target destination, defaults to ``'.'``.
+        dependencies:
+            Recursively collect libs for dependent distributions (recommended).
+        excludes:
+            Dependent distributions to skip, defaults to ``None``.
+    Returns:
+        List of DLLs in PyInstaller's ``(source, dest)`` format.
 
     This collects libraries only from Conda's shared ``lib`` (Unix) or
     ``Library/bin`` (Windows) folders. To collect from inside a distribution's
     installation use the regular
-    :meth:`PyInstaller.utils.hooks.collect_collect_dynamic_libs`.
+    :func:`PyInstaller.utils.hooks.collect_dynamic_libs`.
+
     """
     _files = []
     for file in files(name, dependencies, excludes):
@@ -329,12 +345,14 @@ def collect_dynamic_libs(name, dest=".", dependencies=True, excludes=None):
 # --- Map packages to distributions and vice-versa ---
 
 
-def _get_package_name(file):
-    """Determine the package name of a Python file in ``sys.path``.
+def _get_package_name(file: PackagePath):
+    """Determine the package name of a Python file in :data:`sys.path`.
 
-    :param file: A Python filename relative to Conda root (sys.prefix).
-    :type file: PackagePath
-    :return: Package name or None.
+    Arguments:
+        file:
+            A Python filename relative to Conda root (sys.prefix).
+    Returns:
+        Package name or None.
 
     This function only considers single file packages e.g. ``foo.py`` or
     top level ``foo/__init__.py``\\ s. Anything else is ignored (returning
