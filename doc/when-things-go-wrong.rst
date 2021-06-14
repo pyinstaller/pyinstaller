@@ -228,7 +228,7 @@ Extending the Path
 ------------------
 
 If Analysis recognizes that a module is needed, but cannot find that module,
-it is often because the script is manipulating ``sys.path``.
+it is often because the script is manipulating :data:`sys.path`.
 The easiest thing to do in this case is to use the ``--paths=`` option
 to list all the other places that the script might be searching for imports::
 
@@ -236,7 +236,7 @@ to list all the other places that the script might be searching for imports::
                     --paths=/path/to/otherdir myscript.py
 
 These paths will be noted in the spec file.
-They will be added to the current ``sys.path`` during analysis.
+They will be added to the current :data:`sys.path` during analysis.
 
 
 Listing Hidden Imports
@@ -247,9 +247,9 @@ but the app fails with an import error,
 the problem is a hidden import; that is, an import that is not
 visible to the analysis phase.
 
-Hidden imports can occur when the code is using ``__import__``,
-``imp.find_module()``
-or perhaps ``exec`` or ``eval``.
+Hidden imports can occur when the code is using :func:`__import__`,
+:func:`importlib.import_module`
+or perhaps :func:`exec` or :func:`eval`.
 Hidden imports can also occur when an extension module uses the
 Python/C API to do an import.
 When this occurs, Analysis can detect nothing.
@@ -266,21 +266,21 @@ or by editing the spec file,
 or with a hook file (see :ref:`Understanding PyInstaller Hooks` below).
 
 
-Extending a Package's ``__path__``
-----------------------------------
+Extending a Package's :attr:`__path__`
+----------------------------------------------
 
 Python allows a script to extend the search path used for imports
-through the ``__path__`` mechanism.
-Normally, the ``__path__`` of an imported module has only one entry,
+through the :attr:`__path__` mechanism.
+Normally, the :attr:`__path__` of an imported module has only one entry,
 the directory in which the ``__init__.py`` was found.
-But ``__init__.py`` is free to extend its ``__path__`` to include other directories.
+But ``__init__.py`` is free to extend its :attr:`__path__` to include other directories.
 For example, the ``win32com.shell.shell`` module actually resolves to
 ``win32com/win32comext/shell/shell.pyd``.
-This is because ``win32com/__init__.py`` appends ``../win32comext`` to its ``__path__``.
+This is because ``win32com/__init__.py`` appends ``../win32comext`` to its :attr:`__path__`.
 
 Because the ``__init__.py`` of an imported module
 is not actually executed during analysis,
-changes it makes to ``__path__`` are not seen by |PyInstaller|.
+changes it makes to :attr:`__path__` are not seen by |PyInstaller|.
 We fix the problem with the same hook mechanism we use for hidden imports,
 with some additional logic; see :ref:`Understanding PyInstaller Hooks` below.
 

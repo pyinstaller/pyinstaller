@@ -1224,7 +1224,7 @@ Fixed the following issues:
 - Solaris fixes.
 - Use library modulegraph for module dependency analysis.
 - Bootloader debug messages ``LOADER: ...`` printed to stderr.
-- PyInstaller no longer extends ``sys.path`` and bundled 3rd-party
+- PyInstaller no longer extends :data:`sys.path` and bundled 3rd-party
   libraries do not interfere with their other versions.
 - Enhancemants to ``Analysis()``:
 

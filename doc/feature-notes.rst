@@ -80,13 +80,13 @@ Gotchas
 ~~~~~~~~~~~~~~~
 
 The ctypes detection system at :ref:`Analysis time <spec-file operations>`
-is based on ``ctypes.util.find_library()``.
+is based on :func:`ctypes.util.find_library`.
 This means that you have to make sure
 that while performing ``Analysis`` and running frozen,
-all the environment values ``find_library()`` uses to search libraries
+all the environment values :func:`~ctypes.util.find_library` uses to search libraries
 are aligned to those when running un-frozen.
 Examples include using ``LD_LIBRARY_PATH`` or ``DYLD_LIBRARY_PATH`` to
-widen ``find_library()`` scope.
+widen :func:`~ctypes.util.find_library` scope.
 
 
 SWIG support
