@@ -16,7 +16,7 @@ import pkgutil
 import sys
 import textwrap
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, Callable
 
 from PyInstaller import compat
 from PyInstaller import HOMEPATH
@@ -80,9 +80,20 @@ def __exec_statement(statement, capture_stdout=True):
 
 
 def exec_statement(statement):
-    """
-    Executes a Python statement in an externally spawned interpreter, and
-    returns anything that was emitted in the standard output as a single string.
+    """Execute a single Python statement in an externally-spawned interpreter
+    and return the standard output that results, as a string.
+
+    Examples::
+
+        tk_version = exec_statement(
+            "from _tkinter import TK_VERSION; print(TK_VERSION)"
+        )
+
+        mpl_data_dir = exec_statement(
+            "import matplotlib; print(matplotlib.get_data_path())"
+        )
+        datas = [ (mpl_data_dir, "") ]
+
     """
     return __exec_statement(statement, capture_stdout=True)
 
@@ -141,6 +152,19 @@ def exec_script_rc(script_filename, *args, env=None):
 
 
 def eval_statement(statement):
+    """Execute a single Python statement in an externally-spawned interpreter
+    then :func:`eval` its output (if any).
+
+    Example::
+
+      databases = eval_statement('''
+         import sqlalchemy.databases
+         print(sqlalchemy.databases.__all__)
+         ''')
+      for db in databases:
+         hiddenimports.append("sqlalchemy.databases." + db)
+
+    """
     txt = exec_statement(statement).strip()
     if not txt:
         # return an empty string which is "not true" but iterable
@@ -198,7 +222,6 @@ def get_homebrew_path(formula=''):
     """
     Return the homebrew path to the requested formula, or the global prefix when
     called with no argument.  Returns the path as a string or None if not found.
-    :param formula:
     """
     import subprocess
     brewcmd = ['brew', '--prefix']
@@ -338,7 +361,7 @@ def get_module_file_attribute(package):
 
     Since modules *cannot* be directly imported during analysis, this function
     spawns a subprocess importing this module and returning the value of this
-    module's `__file__` attribute.
+    module's ``__file__`` attribute.
 
     Parameters
     ----------
@@ -378,71 +401,7 @@ def get_module_file_attribute(package):
 
 
 def is_module_satisfies(requirements, version=None, version_attr='__version__'):
-    """
-    `True` if the module, package, or C extension described by the passed
-    requirements string both exists and satisfies these requirements.
-
-    This function checks module versions and extras (i.e., optional install-
-    time features) via the same low-level algorithm leveraged by
-    `easy_install` and `pip`, and should _always_ be called in lieu of manual
-    checking. Attempting to manually check versions and extras invites subtle
-    issues, particularly when comparing versions lexicographically (e.g.,
-    `'00.5' > '0.6'` is `True`, despite being semantically untrue).
-
-    Requirements
-    ----------
-    This function is typically used to compare the version of a currently
-    installed module with some desired version. To do so, a string of the form
-    `{module_name} {comparison_operator} {version}` (e.g., `sphinx >= 1.3`) is
-    passed as the `requirements` parameter, where:
-
-    * `{module_name}` is the fully-qualified name of the module, package, or C
-      extension to be tested (e.g., `yaml`). This is _not_ a `setuptools`-
-      specific distribution name (e.g., `PyYAML`).
-    * `{comparison_operator}` is the numeric comparison to be performed. All
-      numeric Python comparisons are supported (e.g., `!=`, `==`, `<`, `>=`).
-    * `{version}` is the desired PEP 0440-compliant version (e.g., `3.14-rc5`)
-      to be compared against the current version of this module.
-
-    This function may also be used to test multiple versions and/or extras.  To
-    do so, a string formatted ala the `pkg_resources.Requirements.parse()`
-    class method (e.g., `idontevenknow<1.6,>1.9,!=1.9.6,<2.0a0,==2.4c1`) is
-    passed as the `requirements` parameter. (See URL below.)
-
-    Implementation
-    ----------
-    This function behaves as follows:
-
-    * If one or more `setuptools` distributions exist for this module, this
-      module was installed via either `easy_install` or `pip`. In either case,
-      `setuptools` machinery is used to validate the passed requirements.
-    * Else, these requirements are manually validated. Since manually
-      validating extras is non-trivial, only versions are manually validated:
-      * If these requirements test only extras (e.g., `Norf [foo, bar]`),
-        `True` is unconditionally returned.
-      * Else, these requirements test one or more versions. Then:
-        1. These requirements are converted into an instance of
-           `pkg_resources.Requirements`, thus parsing these requirements into
-           their constituent components. This is surprisingly non-trivial!
-        1. The current version of the desired module is found as follows:
-           * If the passed `version` parameter is non-`None`, that is used.
-           * Else, a subprocess importing this module is spawned and the value
-             of this module's version attribute in that subprocess is used. The
-             name of this attribute defaults to `__version__` but may be
-             configured with the passed `version_attr` parameter.
-        1. These requirements are validated against this version.
-
-    Note that `setuptools` is generally considered to be the most robust means
-    of comparing version strings in Python. The alternative `LooseVersion()`
-    and `StrictVersion()` functions provided by the standard
-    `distutils.version` module fail for common edge cases: e.g.,
-
-        >>> from distutils.version import LooseVersion
-        >>> LooseVersion('1.5') >= LooseVersion('1.5-rc2')
-        False
-        >>> from pkg_resources import parse_version
-        >>> parse_version('1.5') >= parse_version('1.5-rc2')
-        True
+    """Test if a :pep:`0440` requirement is installed.
 
     Parameters
     ----------
@@ -475,21 +434,23 @@ def is_module_satisfies(requirements, version=None, version_attr='__version__'):
         `version_attr` parameter.
     ValueError
         If the passed specification does _not_ comply with
-        `pkg_resources.Requirements` syntax.
-
-    See Also
-    ----------
-    https://pythonhosted.org/setuptools/pkg_resources.html#id12
-        `pkg_resources.Requirements` syntax details.
+        `pkg_resources.Requirements`_ syntax.
 
     Examples
-    ----------
+    --------
+
+    ::
+
         # Assume PIL 2.9.0, Sphinx 1.3.1, and SQLAlchemy 0.6 are all installed.
         >>> from PyInstaller.utils.hooks import is_module_satisfies
         >>> is_module_satisfies('sphinx >= 1.3.1')
         True
         >>> is_module_satisfies('sqlalchemy != 0.6')
         False
+
+        >>> is_module_satisfies('sphinx >= 1.3.1; sqlalchemy != 0.6')
+        False
+
 
         # Compare two arbitrary versions. In this case, the module name
         # "sqlalchemy" is simply ignored.
@@ -503,6 +464,14 @@ def is_module_satisfies(requirements, version=None, version_attr='__version__'):
         # installed by setuptools, this optional parameter is usually ignored.
         >>> is_module_satisfies('PIL == 2.9.0', version_attr='PILLOW_VERSION')
         True
+
+    .. seealso::
+
+        `pkg_resources.Requirements`_ for the syntax details.
+
+    .. _`pkg_resources.Requirements`:
+            https://pythonhosted.org/setuptools/pkg_resources.html#id12
+
     """
     # If no version was explicitly passed...
     if version is None:
@@ -570,9 +539,8 @@ def get_package_paths(package):
     """
     Given a package, return the path to packages stored on this machine
     and also returns the path to this particular package. For example,
-    if pkg.subpkg lives in /abs/path/to/python/libs, then this function
-    returns (/abs/path/to/python/libs,
-             /abs/path/to/python/libs/pkg/subpkg).
+    if pkg.subpkg lives in /abs/path/to/python/libs, then this function returns
+    ``(/abs/path/to/python/libs, /abs/path/to/python/libs/pkg/subpkg)``.
     """
     file_attr = get_module_file_attribute(package)
 
@@ -587,22 +555,28 @@ def get_package_paths(package):
     return pkg_base, pkg_dir
 
 
-def collect_submodules(package, filter=lambda name: True):
-    """
-    :param package: A string which names the package which will be search for
-        submodules.
-    :param approve: A function to filter through the submodules found,
-        selecting which should be included in the returned list. It takes one
-        argument, a string, which gives the name of a submodule. Only if the
-        function returns true is the given submodule is added to the list of
-        returned modules. For example, ``filter=lambda name: 'test' not in
-        name`` will return modules that don't contain the word ``test``.
-    :return: A list of strings which specify all the modules in package. Its
-        results can be directly assigned to ``hiddenimports`` in a hook script;
-        see, for example, ``hook-sphinx.py``.
+def collect_submodules(package: str,
+                       filter: Callable[[str], bool] = lambda name: True):
+    """List all submodules of a given package.
+
+    Arguments:
+        package:
+            An ``import``-able package.
+        filter:
+            Filter the submodules found: A callable which takes a submodule
+            name and returns true if it should be included.
+    Returns:
+        All submodules to be assigned to ``hiddenimports`` in a hook.
 
     This function is used only for hook scripts, but not by the body of
     PyInstaller.
+
+    Examples::
+
+        # Collect all submodules of Sphinx don't contain the word ``test``.
+        hiddenimports = collect_submodules(
+            "Sphinx", ``filter=lambda name: 'test' not in name)
+
     """
     # Accept only strings as packages.
     if not isinstance(package, compat.string_types):
@@ -690,11 +664,17 @@ def collect_submodules(package, filter=lambda name: True):
 def is_module_or_submodule(name, mod_or_submod):
     """
     This helper function is designed for use in the ``filter`` argument of
-    ``collect_submodules``, by returning ``True`` if the given ``name`` is
-    a module or a submodule of ``mod_or_submod``. For example:
-    ``collect_submodules('foo', lambda name: not is_module_or_submodule(name,
-    'foo.test'))`` excludes ``foo.test`` and ``foo.test.one`` but not
-    ``foo.testifier``.
+    :func:`collect_submodules`, by returning ``True`` if the given ``name`` is
+    a module or a submodule of ``mod_or_submod``.
+
+    Examples:
+
+        The following excludes ``foo.test`` and ``foo.test.one`` but not
+        ``foo.testifier``. ::
+
+            collect_submodules('foo',
+             lambda name: not is_module_or_submodule(name, 'foo.test'))``
+
     """
     return name.startswith(mod_or_submod + '.') or name == mod_or_submod
 
@@ -1134,15 +1114,36 @@ def requirements_for_package(package_name):
     return hiddenimports
 
 
-# Given a package name as a string, return a tuple of ``datas, binaries,
-# hiddenimports`` containing all data files, binaries, and modules in the given
-# package. The value of ``include_py_files`` is passed directly to
-# ``collect_data_files``.
-#
-# Typical use: ``datas, binaries, hiddenimports = collect_all('my_module_name')``.
 def collect_all(
         package_name, include_py_files=True, filter_submodules=None,
-        exclude_datas=None, include_datas=None):
+        exclude_datas=None, include_datas=None) -> Tuple[list, list, list]:
+    """Collect everything for a given package name.
+
+    Arguments:
+        package_name:
+            An ``import``-able package name.
+        include_py_files:
+            Forwarded onto :func:`collect_data_files`.
+        filter_submodules:
+            Forwarded onto :func:`collect_submodules`.
+        exclude_datas:
+            Forwarded onto :func:`collect_data_files`.
+        include_datas:
+            Forwarded onto :func:`collect_data_files`.
+
+    Returns:
+        tuple: A  ``(datas, binaries, hiddenimports)`` triplet containing:
+
+        - All data files, raw Python files (if **include_py_files**) and
+          package metadata folders.
+        - All dynamic libraries as returned by :func:`collect_dynamic_libs`.
+        - All submodules of **packagename** and its dependencies.
+
+    Typical use::
+
+        datas, binaries, hiddenimports = collect_all('my_module_name')
+
+    """
     datas = []
     try:
         datas += copy_metadata(package_name)
