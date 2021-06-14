@@ -122,7 +122,8 @@ If ``__file__`` is checked from inside a package or library (say
     PyInstaller --add-data=/path/to/my_library/file.dat:./my_library
 
 However, in this case it is much easier to switch to :ref:`the spec file
-<Using Spec Files>` and use the :meth:`collect_data_files` helper function::
+<Using Spec Files>` and use the
+:func:`PyInstaller.utils.hooks.collect_data_files` helper function::
 
     from PyInstaller.utils.hooks import collect_data_files
 

@@ -3,8 +3,6 @@
 Understanding PyInstaller Hooks
 ==================================
 
-.. py:currentmodule:: PyInstaller.utils.hooks
-
 .. note::
 
    We strongly encourage package developers
@@ -29,7 +27,7 @@ A hook can tell about additional source files or data files to import,
 or files not to import.
 
 A hook file is a Python script, and can use all Python features.
-It can also import helper methods from ``PyInstaller.utils.hooks``
+It can also import helper methods from :mod:`PyInstaller.utils.hooks`
 and useful variables from ``PyInstaller.compat``.
 These helpers are documented below.
 
@@ -247,240 +245,95 @@ applies them to the bundle being created.
 Useful Items in ``PyInstaller.compat``
 ----------------------------------------
 
-A hook may import the following names from ``PyInstaller.compat``,
+.. automodule:: PyInstaller.compat
+.. py:currentmodule:: PyInstaller.compat
+
+A hook may import the following names from :mod:`PyInstaller.compat`,
 for example::
 
    from PyInstaller.compat import base_prefix, is_win
 
-``is_py36``, ``is_py37``, ``is_py38``, ``is_py39``:
-   True when the current version of Python is at least 3.6, 3.7, 3.8 or 3.9 respectively.
+.. py:data:: is_py36, is_py37, is_py38, is_py39
 
-``is_win``:
+    True when the current version of Python is at least 3.6, 3.7, 3.8 or 3.9
+    respectively.
+
+.. py:data::  is_win
+
    True in a Windows system.
-``is_cygwin``:
-   True when ``sys.platform=='cygwin'``.
-``is_darwin``:
+
+.. py:data:: is_cygwin
+
+   True when ``sys.platform == 'cygwin'``.
+
+.. py:data:: is_darwin
+
    True in Mac OS X.
-``is_linux``:
-   True in any GNU/Linux system (``sys.platform.startswith('linux')``).
-``is_solar``:
+
+.. py:data:: is_linux
+
+   True in any GNU/Linux system.
+
+.. py:data:: is_solar
+
    True in Solaris.
-``is_aix``:
+
+.. py:data:: is_aix
+
    True in AIX.
-``is_freebsd``:
+
+.. py:data:: is_freebsd
+
    True in FreeBSD.
-``is_openbsd``:
+
+.. py:data:: is_openbsd
+
    True in OpenBSD.
 
-``is_venv``:
+.. py:data:: is_venv
+
    True in any virtual environment (either virtualenv or venv).
-``base_prefix``:
+
+.. py:data:: base_prefix
+
    String, the correct path to the base Python installation,
    whether the installation is native or a virtual environment.
 
-``EXTENSION_SUFFIXES``:
+.. py:data:: EXTENSION_SUFFIXES
+
    List of Python C-extension file suffixes. Used for finding all
-   binary dependencies in a folder; see file:`hook-cryptography.py`
+   binary dependencies in a folder; see :file:`hook-cryptography.py`
    for an example.
+
 
 Useful Items in ``PyInstaller.utils.hooks``
 --------------------------------------------
 
-A hook may import useful functions from ``PyInstaller.utils.hooks``.
+.. py:currentmodule:: PyInstaller.utils.hooks
+
+.. automodule:: PyInstaller.utils.hooks
+
+A hook may import useful functions from :mod:`PyInstaller.utils.hooks`.
 Use a fully-qualified import statement, for example::
 
    from PyInstaller.utils.hooks import collect_data_files, eval_statement
 
-The ``PyInstaller.utils.hooks`` functions listed here are generally useful
-and used in a number of existing hooks.
-There are several more functions besides these that serve the needs
-of specific hooks, such as hooks for PyQt5.
-You are welcome to read the ``PyInstaller.utils.hooks`` module
-(and read the existing hooks that import from it) to get code and ideas.
+The functions listed here are generally useful and used in a number of existing
+hooks.
 
-``exec_statement( 'statement' )``:
-   Execute a single Python statement in an externally-spawned interpreter
-   and return the standard output that results, as a string.
-   Examples::
-
-     tk_version = exec_statement(
-        "from _tkinter import TK_VERSION; print(TK_VERSION)"
-        )
-
-     mpl_data_dir = exec_statement(
-        "import matplotlib; print(matplotlib._get_data_path())"
-        )
-     datas = [ (mpl_data_dir, "") ]
-
-``eval_statement( 'statement' )``:
-   Execute a single Python statement in an externally-spawned interpreter.
-   If the resulting standard output text is not empty, apply
-   the ``eval()`` function to it; else return None. Example::
-
-      databases = eval_statement('''
-         import sqlalchemy.databases
-         print(sqlalchemy.databases.__all__)
-         ''')
-      for db in databases:
-         hiddenimports.append("sqlalchemy.databases." + db)
-
-``is_module_satisfies( requirements, version=None, version_attr='__version__' )``:
-   Check that the named module (fully-qualified) exists and satisfies the
-   given requirement. Example::
-
-       if is_module_satisfies('sqlalchemy >= 0.6'):
-
-   This function provides robust version checking based on the same low-level
-   algorithm used by ``easy_install`` and ``pip``, and should always be
-   used in preference to writing your own comparison code.
-   In particular, version strings should never be compared lexicographically
-   (except for exact equality).
-   For example ``'00.5' > '0.6'`` returns True, which is not the desired result.
-
-   The ``requirements`` argument uses the same syntax as supported by
-   the `Package resources`_ module of setup tools (follow the link to
-   see the supported syntax).
-
-   The optional ``version`` argument is is a PEP0440-compliant,
-   dot-delimited version specifier such as ``'3.14-rc5'``.
-
-   When the package being queried has been installed by ``easy_install``
-   or ``pip``, the existing setup tools machinery is used to perform the test
-   and the ``version`` and ``version_attr`` arguments are ignored.
-
-   When that is not the case, the ``version`` argument is taken as the
-   installed version of the package
-   (perhaps obtained by interrogating the package in some other way).
-   When ``version`` is ``None``, the named package is imported into a
-   subprocess, and the ``__version__`` value of that import is tested.
-   If the package uses some other name than ``__version__`` for its version
-   global, that name can be passed as the ``version_attr`` argument.
-
-   For more details and examples refer to the function's doc-string, found
-   in ``Pyinstaller/utils/hooks/__init__.py``.
-
-
-``collect_all( 'package-name', include_py_files=False )``:
-   Given a package name as a string, this function returns a tuple of ``datas, binaries,
-   hiddenimports`` containing all data files, binaries, and modules in the given
-   package, including any modules specified in the requirements for the
-   distribution of this module. The value of ``include_py_files`` is passed
-   directly to ``collect_data_files``.
-
-   Typical use: ``datas, binaries, hiddenimports = collect_all('my_module_name')``.
-   For example, ``hook-gevent.py`` invokes ``collect_all``, which gathers:
-
-   * All data files, such as ``__greenlet_primitives.pxd``, ``__hub_local.pxd``,
-     and many, many more.
-   * All binaries, such as ``__greenlet_primitives.cp37-win_amd64.pyd`` (on a
-     Windows 64-bit install) and many, many more.
-   * All modules in ``gevent``, such as ``gevent.threadpool``,
-     ``gevent._semaphore``, and many, many more.
-   * All requirements. ``pip show gevent`` gives ``Requires: cffi, greenlet``.
-     Therefore, the ``cffi`` and ``greenlet`` modules are included.
-
-``collect_submodules( 'package-name', pattern=None )``:
-   Returns a list of strings that specify all the modules in a package,
-   ready to be assigned to the ``hiddenimports`` global.
-   Returns an empty list when ``package`` does not name a package
-   (a package is defined as a module that contains a ``__path__`` attribute).
-
-   The ``pattern``, if given, is function to filter through the submodules
-   found, selecting which should be included in the returned list. It takes one
-   argument, a string, which gives the name of a submodule. Only if the
-   function returns true is the given submodule is added to the list of
-   returned modules. For example, ``filter=lambda name: 'test' not in
-   name`` will return modules that don't contain the word ``test``.
-
-``is_module_or_submodule( name, mod_or_submod )``:
-   This helper function is designed for use in the ``filter`` argument of
-   ``collect_submodules``, by returning ``True`` if the given ``name`` is
-   a module or a submodule of ``mod_or_submod``. For example:
-   ``collect_submodules('foo', lambda name: not is_module_or_submodule(name,
-   'foo.test'))`` excludes ``foo.test`` and ``foo.test.one`` but not
-   ``foo.testifier``.
-
-``collect_data_files( package, include_py_files=False, subdir=None, excludes=None, includes=None )``:
-    This routine produces a list of ``(source, dest)`` non-Python (i.e. data)
-    files which reside in ``package``. Its results can be directly assigned to
-    ``datas`` in a hook script; see, for example, ``hook-sphinx.py``.
-    Parameters:
-
-    -   The ``package`` parameter is a string which names the package.
-    -   By default, all Python executable files (those ending in ``.py``,
-        ``.pyc``, and so on) will NOT be collected; setting the
-        ``include_py_files`` argument to ``True`` collects these files as well.
-        This is typically used with Python routines (such as those in
-        ``pkgutil``) that search a given directory for Python executable files
-        then load them as extensions or plugins.
-    -   The ``subdir`` argument gives a subdirectory relative to ``package`` to
-        search, which is helpful when submodules are imported at run-time from a
-        directory lacking ``__init__.py``.
-    -   The ``excludes`` argument contains a sequence of strings or Paths. These
-        provide a list of `globs <https://docs.python.org/3/library/pathlib.html#pathlib.Path.glob>`_
-        to exclude from the collected data files; if a directory matches the
-        provided glob, all files it contains will be excluded as well. All
-        elements must be relative paths, which are relative to the provided
-        package's path (/ ``subdir`` if provided).
-
-        Therefore, ``*.txt`` will exclude only ``.txt`` files in ``package``\ 's
-        path, while ``**/*.txt`` will exclude all ``.txt`` files in
-        ``package``\ 's path and all its subdirectories. Likewise,
-        ``**/__pycache__`` will exclude all files contained in any subdirectory
-        named ``__pycache__``.
-    -   The ``includes`` function like ``excludes``, but only include matching
-        paths. ``excludes`` override ``includes``: a file or directory in both
-        lists will be excluded.
-
-    This function does not work on zipped Python eggs.
-
-``collect_dynamic_libs( 'module-name' )``:
-   Returns a list of (source, dest) tuples for all the dynamic libs
-   present in a module directory.
-   The list is ready to be assigned to the ``binaries`` global variable.
-   The function uses ``os.walk()`` to examine all files in the
-   module directory recursively.
-   The name of each file found is tested against the likely patterns for
-   a dynamic lib: ``*.dll``, ``*.dylib``, ``lib*.pyd``, and ``lib*.so``.
-   Example::
-
-      binaries = collect_dynamic_libs( 'enchant' )
-
-``get_module_file_attribute( 'module-name' )``:
-   Return the absolute path to *module-name*, a fully-qualified module name.
-   Example::
-
-      nacl_dir = os.path.dirname(get_module_file_attribute('nacl'))
-
-``get_package_paths( 'package-name' )``:
-   Given the name of a package, return a tuple.
-   The first element is the absolute path to the folder where the package is stored.
-   The second element is the absolute path to the named package.
-   For example, if ``pkg.subpkg`` is stored in ``/abs/Python/lib``
-   the result of::
-
-      get_package_paths( 'pkg.subpkg' )
-
-   is the tuple, ``( '/abs/Python/lib', '/abs/Python/lib/pkg/subpkg' )``
-
+.. autofunction:: exec_statement
+.. autofunction:: eval_statement
+.. autofunction:: is_module_satisfies
+.. autofunction:: collect_all
+.. autofunction:: collect_submodules
+.. autofunction:: is_module_or_submodule
+.. autofunction:: collect_data_files
+.. autofunction:: collect_dynamic_libs
+.. autofunction:: get_module_file_attribute
+.. autofunction:: get_package_paths
 .. autofunction:: copy_metadata
-
-.. autofunction:: PyInstaller.utils.hooks.collect_entry_point
-
-``get_homebrew_path( formula='' )``:
-   Return the homebrew path to the named formula, or to the
-   global prefix when formula is omitted. Returns None if
-   not found.
-
-
-``django_find_root_dir()``:
-   Return the path to the top-level Python package containing
-   the Django files, or None if nothing can be found.
-
-``django_dottedstring_imports( 'django-root-dir' )``:
-   Return a list of all necessary Django modules specified in
-   the Django settings.py file, such as the
-   ``Django.settings.INSTALLED_APPS`` list and many others.
+.. autofunction:: collect_entry_point
+.. autofunction:: get_homebrew_path
 
 
 Support for Conda
@@ -574,7 +427,8 @@ Or, it can simply set values in the four global variables, because
 these will be examined after ``hook()`` returns.
 
 Hooks may access the user parameters, given in the ``hooksconfig`` argument in
-the spec file, by calling :func:`get_hook_config()` inside a `hook()` function.
+the spec file, by calling :func:`~PyInstaller.utils.hooks.get_hook_config`
+inside a `hook()` function.
 
 .. autofunction:: PyInstaller.utils.hooks.get_hook_config
 
