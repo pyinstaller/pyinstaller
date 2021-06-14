@@ -118,3 +118,11 @@ div.note p.admonition-title:after {
    a little black stub poking out under the scrollbar. */
 .wy-nav-side { padding-bottom: unset; }
 .wy-menu-vertical { padding-bottom: 1em; }
+
+/* Autodoc functions/classes */
+html.writer-html4 .rst-content dl:not(.docutils) > dt, html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) > dt {
+  /* This is a loose merge of the styles for inline literals and headings. */
+  background-color: #EEEA;
+  border: 2px outset #e1e4e520;
+  color: #034040;
+}
