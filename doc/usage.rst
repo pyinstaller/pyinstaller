@@ -652,7 +652,7 @@ before your code has started executing.
 The |bootloader| gets the names of opened documents from
 the OpenDocument event and encodes them into the ``argv``
 string before starting your code.
-Thus your code can query ``sys.argv`` to get the names
+Thus your code can query :data:`sys.argv` to get the names
 of documents that should be opened at startup.
 
 OpenDocument is the only AppleEvent the |bootloader| handles.

@@ -94,7 +94,7 @@ The names defined by these statements are visible to Analysis
 as attributes of the namespace.
 
 Thus a hook is a normal Python script and can use all normal Python facilities.
-For example it could test ``sys.version`` and adjust its
+For example it could test :data:`sys.version` and adjust its
 assignment to ``hiddenimports`` based on that.
 There are many hooks in the |PyInstaller| installation,
 but a much larger collection can be found in the
@@ -212,7 +212,7 @@ applies them to the bundle being created.
       datas = [ ('/usr/share/icons/education_*.png', 'icons') ]
 
    If you need to collect multiple directories or nested directories,
-   you can use helper functions from the ``PyInstaller.utils.hooks`` module
+   you can use helper functions from the :mod:`PyInstaller.utils.hooks` module
    (see below) to create this list, for example::
 
       datas  = collect_data_files('submodule1')
@@ -388,14 +388,14 @@ which has the following immutable properties:
       * A non-package module or C extension, this is the absolute path of the
         corresponding file.
 
-``__path__``:
+:attr:`__path__`:
    A list of the absolute paths of all directories comprising the module
    if it is a package, or ``None``. Typically the list contains only the
    absolute path of the package's directory.
 
 ``co``:
     Code object compiled from the contents of ``__file__`` (e.g., via the
-    ``compile()`` builtin).
+    :func:`compile` builtin).
 
 ``analysis``:
     The ``Analysis`` object that loads the hook.
@@ -542,7 +542,7 @@ The ``psim_api`` object also offers the following methods:
    path that the imported module would add dynamically to
    the path if the module was executed normally.
    ``directory`` is a string, a pathname to add to the
-   ``__path__`` attribute.
+   :attr:`__path__` attribute.
 
 
 .. include:: _common_definitions.txt

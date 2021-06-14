@@ -78,7 +78,7 @@ Running Python code requires several steps:
    It sets up the Python import mechanism to load modules
    only from archives embedded in the executable.
    It also adds the attributes ``frozen``
-   and ``_MEIPASS`` to the ``sys`` built-in module.
+   and ``_MEIPASS`` to the :mod:`sys` built-in module.
 
 2. Execute any run-time hooks: first those specified by the
    user, then any standard ones.
@@ -86,9 +86,9 @@ Running Python code requires several steps:
 3. Install python "egg" files.
    When a module is part of a zip file (.egg),
    it has been bundled into the :file:`./eggs` directory.
-   Installing means appending .egg file names to ``sys.path``.
+   Installing means appending .egg file names to :data:`sys.path`.
    Python automatically detects whether an
-   item in ``sys.path`` is a zip file or a directory.
+   item in :data:`sys.path` is a zip file or a directory.
 
 4. Run the main script.
 
@@ -110,10 +110,10 @@ bundled with the app) and for C-extensions.
 The code can be read in :file:`./PyInstaller/loader/pyi_mod03_importers.py`.
 
 At runtime the PyInstaller :pep:`302` hooks are appended
-to the variable ``sys.meta_path``.
+to the variable :data:`sys.meta_path`.
 When trying to import modules the interpreter will
-first try PEP 302 hooks in ``sys.meta_path``
-before searching in ``sys.path``.
+first try PEP 302 hooks in :data:`sys.meta_path`
+before searching in :data:`sys.path`.
 As a result, the Python interpreter
 loads imported python modules from the archive embedded
 in the bundled executable.
@@ -123,7 +123,7 @@ in a bundled app:
 
 1. Is it a built-in module?
    A list of built-in modules is in variable
-   ``sys.builtin_module_names``.
+   :data:`sys.builtin_module_names`.
 
 2. Is it a module embedded in the executable?
    Then load it from embedded archive.
@@ -133,12 +133,12 @@ in a bundled app:
    :file:`{package.subpackage.module}.pyd` or
    :file:`{package.subpackage.module}.so`.
 
-4. Next examine paths in the ``sys.path``.
+4. Next examine paths in the :data:`sys.path`.
    There could be any additional location with python modules
    or ``.egg`` filenames.
 
 5. If the module was not found then
-   raise ``ImportError``.
+   raise :class:`ImportError`.
 
 Splash screen startup
 -------------------------------------
@@ -224,7 +224,7 @@ is not available at boot time, the module does not establish the connection
 until initialization.
 
 This module does not support reloads while the splash screen is displayed, i.e.
-it cannot be reloaded (such as by ``importlib.reload``), because the splash
+it cannot be reloaded (such as by :func:`importlib.reload`), because the splash
 screen closes automatically when the connection to this instance of the
 module is lost.
 
@@ -237,9 +237,9 @@ Functions
 .. Note::
     Note that if the ``_PYIBoot_SPLASH`` environment variable does not exist or an
     error occurs during the connection, the module will **not** raise an error, but simply
-    not initialize itself (i.e. ``pyi_splash.is_alive()`` will return ``False``). Before
+    not initialize itself (i.e. :func:`pyi_splash.is_alive` will return ``False``). Before
     sending commands to the splash screen, one should check if the module was initialized
-    correctly, otherwise a ``RuntimeError`` will be raised.
+    correctly, otherwise a :class:`RuntimeError` will be raised.
 
 .. py:function:: is_alive()
 
@@ -443,7 +443,7 @@ All parts of a ZlibArchive are stored in the
 
 A ZlibArchive is used at run-time to import bundled python modules.
 Even with maximum compression this works  faster than the normal import.
-Instead of searching ``sys.path``, there's a lookup in the dictionary.
+Instead of searching :data:`sys.path`, there's a lookup in the dictionary.
 There are no directory operations and no
 file to open (the file is already open).
 There's just a seek, a read and a decompress.
@@ -586,10 +586,10 @@ even when all the components of the application bundle are the same
 and the two applications execute in identical ways.
 
 You can assure that a build will produce the same bits
-by setting the ``PYTHONHASHSEED`` environment variable to a known
+by setting the :envvar:`PYTHONHASHSEED` environment variable to a known
 integer value before running |PyInstaller|.
 This forces Python to use the same random hash sequence until
-``PYTHONHASHSEED`` is unset or set to ``'random'``.
+:envvar:`PYTHONHASHSEED` is unset or set to ``'random'``.
 For example, execute |PyInstaller| in a script such as
 the following (for GNU/Linux and OS X)::
 
