@@ -74,6 +74,17 @@ intersphinx_mapping = {
     'python': ('http://docs.python.org/3', None),
 }
 
+# Autodoc cross references which don't exist and should not be warned about.
+nitpick_ignore = [
+    ("envvar", "CC"),
+    # Only applicable to AIX
+    ("envvar", "OBJECT_MODE"),
+    # TODO: Create autodoc-ed API references for these so that they can be
+    #       cross referenced properly.
+    ("py:mod", "Splash"),
+    ("py:class", "TOC"),
+]
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
