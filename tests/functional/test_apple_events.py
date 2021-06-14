@@ -30,14 +30,17 @@ from PyInstaller.utils.tests import importorskip
 
 
 @pytest.mark.darwin
-def test_osx_custom_protocol_handler(tmpdir, pyi_builder_spec):
+@pytest.mark.parametrize("mode", ['onedir', 'onefile'])
+def test_osx_custom_protocol_handler(tmpdir, pyi_builder_spec, monkeypatch,
+                                     mode):
     app_path = os.path.join(tmpdir, 'dist',
                             'pyi_osx_custom_protocol_handler.app')
     logfile_path = os.path.join(tmpdir, 'dist', 'args.log')
 
     # Generate new URL scheme to avoid collisions
     custom_url_scheme = "pyi-test-%i" % time.time()
-    os.environ["PYI_CUSTOM_URL_SCHEME"] = custom_url_scheme
+    monkeypatch.setenv("PYI_CUSTOM_URL_SCHEME", custom_url_scheme)
+    monkeypatch.setenv("PYI_BUILD_MODE", mode)
 
     pyi_builder_spec.test_spec('pyi_osx_custom_protocol_handler.spec')
 
@@ -60,7 +63,8 @@ def test_osx_custom_protocol_handler(tmpdir, pyi_builder_spec):
 
 @pytest.mark.darwin
 @importorskip('PyQt5')
-def test_osx_event_forwarding(tmpdir, pyi_builder_spec):
+@pytest.mark.parametrize("mode", ['onedir', 'onefile'])
+def test_osx_event_forwarding(tmpdir, pyi_builder_spec, monkeypatch, mode):
     app_path = os.path.join(tmpdir, 'dist',
                             'pyi_osx_event_forwarding.app')
 
@@ -70,8 +74,9 @@ def test_osx_event_forwarding(tmpdir, pyi_builder_spec):
     unique_key = int(time.time())
     custom_url_scheme = "pyi-test-%i" % unique_key
     custom_file_ext = 'pyi_test_%i' % unique_key
-    os.environ["PYI_CUSTOM_URL_SCHEME"] = custom_url_scheme
-    os.environ["PYI_CUSTOM_FILE_EXT"] = custom_file_ext
+    monkeypatch.setenv("PYI_CUSTOM_URL_SCHEME", custom_url_scheme)
+    monkeypatch.setenv("PYI_CUSTOM_FILE_EXT", custom_file_ext)
+    monkeypatch.setenv("PYI_BUILD_MODE", mode)
 
     # test_script builds the app then implicitly runs the script, so we
     # pass arg "0" to tell the built script to exit right away here.
