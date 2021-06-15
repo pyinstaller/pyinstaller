@@ -70,6 +70,30 @@ def __add_options(parser):
                         version=__version__,
                         help='Show program version info and exit.')
 
+
+def generate_parser() -> argparse.ArgumentParser:
+    """Build an argparse parser for PyInstaller's main CLI."""
+
+    import PyInstaller.building.makespec
+    import PyInstaller.building.build_main
+    import PyInstaller.log
+
+    parser = argparse.ArgumentParser(formatter_class=_SmartFormatter)
+    parser.prog = "pyinstaller"
+    __add_options(parser)
+
+    PyInstaller.building.makespec.__add_options(parser)
+    PyInstaller.building.build_main.__add_options(parser)
+    PyInstaller.log.__add_options(parser)
+    parser.add_argument('filenames', metavar='scriptname', nargs='+',
+                        help=("name of scriptfiles to be processed or "
+                              "exactly one .spec-file. If a .spec-file is "
+                              "specified, most options are unnecessary "
+                              "and are ignored."))
+
+    return parser
+
+
 def run(pyi_args=None, pyi_config=None):
     """
     pyi_args     allows running PyInstaller programatically without a subprocess
@@ -77,22 +101,10 @@ def run(pyi_args=None, pyi_config=None):
     """
     check_requirements()
 
-    import PyInstaller.building.makespec
-    import PyInstaller.building.build_main
     import PyInstaller.log
 
     try:
-        parser = argparse.ArgumentParser(formatter_class=_SmartFormatter)
-        __add_options(parser)
-        PyInstaller.building.makespec.__add_options(parser)
-        PyInstaller.building.build_main.__add_options(parser)
-        PyInstaller.log.__add_options(parser)
-        parser.add_argument('filenames', metavar='scriptname', nargs='+',
-                            help=("name of scriptfiles to be processed or "
-                                  "exactly one .spec-file. If a .spec-file is "
-                                  "specified, most options are unnecessary "
-                                  "and are ignored."))
-
+        parser = generate_parser()
         args = parser.parse_args(pyi_args)
         PyInstaller.log.__process_options(parser, args)
 

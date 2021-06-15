@@ -58,11 +58,9 @@ or, on Windows,
 Options
 ~~~~~~~~~~~~~~~
 
-General Options
-------------------
+A full list of the ``pyinstaller`` command's options are as follows:
 
 .. include:: _pyinstaller-options.tmp
-
 
 
 Shortening the Command
