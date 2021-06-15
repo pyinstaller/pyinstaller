@@ -93,18 +93,6 @@ typedef void (*sighandler_t)(int);
 static char **argv_pyi = NULL;
 static int argc_pyi = 0;
 
-/*
- * Watch for OpenDocument AppleEvents and add the files passed in to the
- * sys.argv command line on the Python side.
- *
- * This allows on Mac OS X to open files when a file is dragged and dropped
- * on the App icon in the OS X dock.
- */
-#if defined(__APPLE__) && defined(WINDOWED)
-static void process_apple_events(Boolean);
-#endif
-
-
 // some platforms do not provide strnlen
 #ifndef HAVE_STRNLEN
 size_t
@@ -1009,7 +997,7 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
     }
 
     #if defined(__APPLE__) && defined(WINDOWED)
-    process_apple_events(true /* short timeout (250 ms) */);
+    pyi_process_apple_events(true /* short timeout (250 ms) */);
     #endif
 
     pid = fork();
@@ -1064,7 +1052,7 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
         if (wait_rc == 0) {
             /* Child not done yet -- wait for and process AppleEvents with a
              * 1 second timeout, forwarding file-open events to the child. */
-            process_apple_events(false /* long timeout (1 sec) */);
+            pyi_process_apple_events(false /* long timeout (1 sec) */);
         }
     } while (!wait_rc);
     #else
@@ -1490,7 +1478,7 @@ static pascal OSErr handle_apple_event(const AppleEvent *theAppleEvent, AppleEve
         return generic_forward_apple_event(theAppleEvent, kAEMiscStandards, evtID, "Activate");
     default:
         /* Not 'GURL', 'odoc', 'rapp', or 'actv'  -- this is not reached unless there is a
-         * programming error in the code that sets up the handler(s) in process_apple_events. */
+         * programming error in the code that sets up the handler(s) in pyi_process_apple_events. */
         OTHERERROR("LOADER [AppleEvent]: %s called with unexpected event type '%s'!",
                    __FUNCTION__, CC2Str(evtCode));
         return errAEEventNotHandled;
@@ -1521,7 +1509,7 @@ static OSStatus evt_handler_proc(EventHandlerCallRef href, EventRef eref, void *
     VS("LOADER [AppleEvent]: what=%hu message=%lx ('%s') modifiers=%hu\n",
        eventRecord.what, eventRecord.message, CC2Str((FourCharCode)eventRecord.message), eventRecord.modifiers);
     /* This will end up calling one of the callback functions
-     * that we installed in process_apple_events() */
+     * that we installed in pyi_process_apple_events() */
     err = AEProcessAppleEvent(&eventRecord);
     if (err == errAEEventNotHandled) {
         VS("LOADER [AppleEvent]: Ignored event.\n");
@@ -1535,7 +1523,7 @@ static OSStatus evt_handler_proc(EventHandlerCallRef href, EventRef eref, void *
 }
 
 /* Apple event message pump */
-static void process_apple_events(Boolean short_timeout)
+void pyi_process_apple_events(bool short_timeout)
 {
     static EventHandlerUPP handler;
     static AEEventHandlerUPP handler_ae;
@@ -1625,7 +1613,7 @@ static void process_apple_events(Boolean short_timeout)
         static Boolean once = false;
         if (!once) {
             /* Log this only once since this is compiled-in even in non-debug mode and we
-             * want to avoid console spam, since process_apple_events may be called a lot. */
+             * want to avoid console spam, since pyi_process_apple_events may be called a lot. */
             OTHERERROR("LOADER [AppleEvent]: ERROR installing handler.\n");
             once = true;
         }

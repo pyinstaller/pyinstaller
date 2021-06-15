@@ -58,4 +58,16 @@ int pyi_utils_initialize_args(const int argc, char *const argv[]);
 void pyi_utils_get_args(int *argc, char ***argv);
 void pyi_utils_free_args();
 
+/* Apple event handling */
+#if defined(__APPLE__) && defined(WINDOWED)
+/*
+ * Watch for OpenDocument AppleEvents and add the files passed in to the
+ * sys.argv command line on the Python side.
+ *
+ * This allows on Mac OS X to open files when a file is dragged and dropped
+ * on the App icon in the OS X dock.
+ */
+void pyi_process_apple_events(bool short_timeout);
+#endif  /* defined(__APPLE__) && defined(WINDOWED) */
+
 #endif  /* HEADER_PY_UTILS_H */

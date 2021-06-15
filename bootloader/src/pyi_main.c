@@ -198,6 +198,24 @@ pyi_main(int argc, char * argv[])
             strcpy(archive_status->mainpath, archive_status->temppath);
         }
 
+        /* On macOS in windowed mode, process Apple events and convert
+         * them to sys.argv - but only if we are in onedir mode! */
+#if defined(__APPLE__) && defined(WINDOWED)
+        if (!in_child) {
+            /* Initialize argc_pyi and argv_pyi with argc and argv */
+            if (pyi_utils_initialize_args(archive_status->argc, archive_status->argv) < 0) {
+                return -1;
+            }
+            /* Process Apple events; this updates argc_pyi/argv_pyi
+             * accordingly */
+            pyi_process_apple_events(true);  /* short_timeout */
+            /* Update pointer to arguments */
+            pyi_utils_get_args(&archive_status->argc, &archive_status->argv);
+            /* TODO: do we need to de-register Apple event handlers before
+             * entering python? */
+        }
+#endif
+
         /* Main code to initialize Python and run user's code. */
         pyi_launch_initialize(archive_status);
         rc = pyi_launch_execute(archive_status);
@@ -207,6 +225,11 @@ pyi_main(int argc, char * argv[])
          * execution mode, i.e. when using --onedir on Windows or macOS. */
         pyi_splash_finalize(splash_status);
         pyi_splash_status_free(&splash_status);
+
+#if defined(__APPLE__) && defined(WINDOWED)
+        /* Clean up arguments that were used with Apple event processing .*/
+        pyi_utils_free_args();
+#endif
     }
     else {
 

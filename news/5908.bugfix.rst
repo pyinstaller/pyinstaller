@@ -1,0 +1,2 @@
+(macOS) The file paths passed from the UI (`Open with...`) to app bundles
+built in ``onedir`` mode are now reflected in ``sys.argv``.
