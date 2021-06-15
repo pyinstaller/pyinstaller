@@ -9,7 +9,7 @@ When you execute
 
 the first thing |PyInstaller| does is to build a spec (specification) file
 :file:`myscript.spec`.
-That file is stored in the ``--specpath=`` directory,
+That file is stored in the :option:`--specpath` directory,
 by default the current directory.
 
 The spec file tells |PyInstaller| how to process your script.
@@ -54,12 +54,12 @@ replaced by the options in the spec file.
 
 Only the following command-line options have an effect when building from a spec file:
 
-* ``--upx-dir=``
-* ``--distpath=``
-* ``--workpath=``
-* ``--noconfirm``
-* ``--ascii``
-* ``--clean``
+* :option:`--upx-dir`
+* :option:`--distpath`
+* :option:`--workpath`
+* :option:`--noconfirm`
+* :option:`--ascii`
+* :option:`--clean`
 
 .. _spec-file operations:
 
@@ -98,9 +98,9 @@ The statements in a spec file create instances of four classes,
   - ``scripts``: the python scripts named on the command line;
   - ``pure``: pure python modules needed by the scripts;
   - ``binaries``: non-python modules needed by the scripts, including names 
-    given by the ``--add-binary`` option;
+    given by the :option:`--add-binary` option;
   - ``datas``: non-binary files included in the app, including names given 
-    by the ``--add-data`` option.
+    by the :option:`--add-data` option.
 
 * An instance of class ``PYZ`` is a ``.pyz`` archive (described
   under :ref:`Inspecting Archives` below), which contains all the
@@ -141,7 +141,7 @@ In either case, to find the data files at run-time, see :ref:`Run-time Informati
 Adding Data Files
 ------------------
 
-You can add data files to the bundle by using the ``--add-data`` command option, or by 
+You can add data files to the bundle by using the :option:`--add-data` command option, or by
 adding them as a list to the spec file.
 
 When using the spec file, provide a list that
@@ -264,7 +264,7 @@ Adding Binary Files
    `binary` dependencies. Files like images and PDFs should go into the
    ``datas``.
 
-You can add binary files to the bundle by using the ``--add-binary`` command option, 
+You can add binary files to the bundle by using the :option:`--add-binary` command option,
 or by adding them as a list to the spec file.
 In the spec file, make a list of tuples that describe the files needed.
 Assign the list of tuples to the ``binaries=`` argument of Analysis.
@@ -280,7 +280,7 @@ Adding binary files works in a similar way as adding data files. As described in
 Normally |PyInstaller| learns about ``.so`` and ``.dll`` libraries by
 analyzing the imported modules.
 Sometimes it is not clear that a module is imported;
-in that case you use a ``--hidden-import=`` command option.
+in that case you use a :option:`--hidden-import` command option.
 But even that might not find all dependencies.
 
 Suppose you have a module ``special_ops.so`` that is written in C
@@ -370,7 +370,8 @@ Spec File Options for a Mac OS X Bundle
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When you build a windowed Mac OS X app
-(that is, running in Mac OS X, you specify the ``--onefile --windowed`` options),
+(that is, running in Mac OS X, you specify the :option:`--onefile`
+:option:`--windowed` options),
 the spec file contains an additional statement to
 create the Mac OS X application bundle, or app folder::
 
@@ -380,9 +381,9 @@ create the Mac OS X application bundle, or app folder::
              bundle_identifier=None)
 
 The ``icon=`` argument to ``BUNDLE`` will have the path to an icon file
-that you specify using the ``--icon=`` option.
+that you specify using the :option:`--icon` option.
 The ``bundle_identifier`` will have the value you specify with the
-``--osx-bundle-identifier=`` option.
+:option:`--osx-bundle-identifier` option.
 
 An :file:`Info.plist` file is an important part of a Mac OS X app bundle.
 (See the `Apple bundle overview`_ for a discussion of the contents
@@ -437,7 +438,8 @@ The :mod:`Splash` Target
 
 For a splash screen to be displayed by the bootloader, the :mod:`Splash` target must be called
 at build time. This class can be added when the spec file is created with the command-line
-option ``--splash IMAGE_FILE``. By default, the option to display the optional text is disabled
+option :option:`--splash IMAGE_FILE <--splash>`. By default, the option to
+display the optional text is disabled
 (``text_pos=None``). For more information about the splash screen, see :ref:`splash screen`
 section. The :mod:`Splash` Target looks like this::
 
@@ -649,7 +651,7 @@ Other globals contain information about the build environment:
 	The relative path to the :file:`dist` folder where
 	the application will be stored.
 	The default path is relative to the current directory.
-	If the ``--distpath=`` option is used, ``DISTPATH`` contains that value.
+	If the :option:`--distpath` option is used, ``DISTPATH`` contains that value.
 
 ``HOMEPATH``
 	The absolute path to the |PyInstaller|

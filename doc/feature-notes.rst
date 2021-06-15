@@ -70,7 +70,7 @@ We feel that it should be enough to cover most ctypes' usages, with little or
 no modification required in your code.
 
 If |PyInstaller| does not detect a library, you can add it to your
-bundle by passing the respective information to ``--add-binary`` option or
+bundle by passing the respective information to :option:`--add-binary` option or
 :ref:`listing it in the .spec-file <adding binary files>`. If your frozen
 application will be able to pick up the library at run-time can not be
 guaranteed as it depends on the detailed implementation.
@@ -132,7 +132,7 @@ These will typically show up as in a traceback like this
     ModuleNotFoundError: No module named 'csv'
 
 So if you are using a Cython C object module, which imports Python modules,
-you will have to list these as ``--hidden-import``.
+you will have to list these as :option:`--hidden-import`.
 
 
 macOS multi-arch support
@@ -171,7 +171,7 @@ of frozen application, or creating a non-native single-arch version using
 ``universal2`` environment, must therefore be explicitly enabled. This
 can be done either by specifying the target architecture in the ``.spec``
 file via the ``target_arch=`` argument to ``EXE()``, or on command-line
-via the ``--target-arch`` switch. Valid values are ``x86_64``, ``arm64``,
+via the :option:`--target-arch` switch. Valid values are ``x86_64``, ``arm64``,
 and ``universal2``.
 
 
@@ -217,7 +217,7 @@ a binary.
 the generated executable itself.** Instead of ad-hoc signing, it is also
 possible to use real code-signing identity. To do so, either specify your
 identity in the ``.spec`` file via ``codesign_identity=`` argument to
-``EXE()`` , or on command-line via the ``--codesign-identity`` switch.
+``EXE()`` , or on command-line via the :option:`--codesign-identity` switch.
 
 Being able to provide codesign identity allows user to ensure that all
 collected binaries in either ``onefile`` or ``onedir`` build are signed
@@ -240,14 +240,14 @@ signing of embedded binaries cannot be performed in a post-processing step.
 Furthermore, it is possible to specify entitlements file to be used
 when signing the collected binaries and the executable. This can be
 done in the ``.spec`` file via ``entitlements_file=`` argument to
-``EXE()``, or on command-line via the ``--osx-entitlements-file`` switch.
+``EXE()``, or on command-line via the :option:`--osx-entitlements-file` switch.
 
 App bundles
 ~~~~~~~~~~~
 
 |PyInstaller| also automatically attempts to sign `.app bundles`, either
 using ad-hoc identity or actual signing identity, if provided via
-``--codesign-identity`` switch. In addition to passing same options as
+:option:`--codesign-identity` switch. In addition to passing same options as
 when signing collected binaries (identity, hardened runtime, entitlement),
 deep signing is also enabled via by passing ``--deep`` option to the
 ``codesign`` utility.

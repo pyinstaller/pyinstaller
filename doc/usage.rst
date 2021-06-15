@@ -187,9 +187,9 @@ been UPX-compressed, the full execution sequence is:
 * The Python interpreter executes your script.
 
 |PyInstaller| looks for UPX on the execution path
-or the path specified with the ``--upx-dir`` option.
+or the path specified with the :option:`--upx-dir` option.
 If UPX exists, |PyInstaller| applies it to the final executable,
-unless the ``--noupx`` option was given.
+unless the :option:`--noupx` option was given.
 UPX has been used with |PyInstaller| output often, usually with no problems.
 
 
@@ -199,7 +199,7 @@ Encrypting Python Bytecode
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To encrypt the Python bytecode modules stored in the bundle,
-pass the ``--key=``\ *key-string*  argument on
+pass the :option:`--key`\ =\ *key-string*  argument on
 the command line.
 
 For this to work, you need to run::
@@ -287,7 +287,7 @@ Defining the Extraction Location
 In rare cases, when you bundle to a single executable
 (see :ref:`Bundling to One File` and :ref:`how the one-file program works`),
 you may want to control the location of the temporary directory at compile
-time. This can be done using the ``--runtime-tmpdir`` option. If this option is
+time. This can be done using the :option:`--runtime-tmpdir` option. If this option is
 given, the bootloader will ignore any temp-folder location defined by the
 run-time OS. Please use this option only if you know what you are doing.
 
@@ -413,7 +413,7 @@ The version text file is encoded UTF-8 and may contain non-ASCII characters.
 Be sure to edit and save the text file in UTF-8 unless you are
 certain it contains only ASCII string values.
 
-Your edited version text file can be given with the ``--version-file=``
+Your edited version text file can be given with the :option:`--version-file`
 option to ``pyinstaller`` or ``pyi-makespec``.
 The text data is converted to a Version resource and
 installed in the bundled app.
@@ -459,14 +459,14 @@ Building Mac OS X App Bundles
 
 Under Mac OS X, |PyInstaller| always builds a UNIX executable in
 :file:`dist`.
-If you specify ``--onedir``, the output is a folder named :file:`myscript`
+If you specify :option:`--onedir`, the output is a folder named :file:`myscript`
 containing supporting files and an executable named :file:`myscript`.
-If you specify ``--onefile``, the output is a single UNIX executable
+If you specify :option:`--onefile`, the output is a single UNIX executable
 named :file:`myscript`.
 Either executable can be started from a Terminal command line.
 Standard input and output work as normal through that Terminal window.
 
-If you specify ``--windowed`` with either option, the ``dist`` folder
+If you specify :option:`--windowed` with either option, the ``dist`` folder
 also contains an OS X application named :file:`myscript.app`.
 
 As you probably know, an application is a special type of folder.
@@ -477,14 +477,14 @@ The one built by |PyInstaller| contains a folder always named
   + A folder :file:`Resources` that contains an icon file.
   + A file :file:`Info.plist` that describes the app.
   + A folder :file:`MacOS` that contains the the executable and
-    supporting files, just as in the ``--onedir`` folder.
+    supporting files, just as in the :option:`--onedir` folder.
 
-Use the ``icon=`` argument to specify a custom icon for the application.
+Use the :option:`--icon` argument to specify a custom icon for the application.
 It will be copied into the :file:`Resources` folder.
 (If you do not specify an icon file, |PyInstaller| supplies a
 file :file:`icon-windowed.icns` with the |PyInstaller| logo.)
 
-Use the ``osx-bundle-identifier=`` argument to add a bundle identifier.
+Use the :option:`--osx-bundle-identifier` argument to add a bundle identifier.
 This becomes the ``CFBundleIdentifier`` used in code-signing
 (see the `PyInstaller code signing recipe`_
 and for more detail, the `Apple code signing overview`_ technical note).

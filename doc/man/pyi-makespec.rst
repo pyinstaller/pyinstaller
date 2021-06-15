@@ -25,7 +25,7 @@ files that cover basic usages::
 
 By default, ``pyi-makespec`` generates a spec file that tells
 |PyInstaller| to create a distribution directory contains the main
-executable and the dynamic libraries. The option ``--onefile``
+executable and the dynamic libraries. The option :option:`--onefile`
 specifies that you want PyInstaller to build a single file with
 everything inside.
 

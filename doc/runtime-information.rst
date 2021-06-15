@@ -93,7 +93,8 @@ Placing data files at expected locations inside the bundle
 
 To place the data-files where your code expects them to be (i.e., relative
 to the main script or bundle directory), you can use the **dest** parameter
-of the ``--add-data=source:dest`` command-line switches. Assuming you normally
+of the :option:`--add-data=source:dest <--add-data>` command-line switches.
+Assuming you normally
 use the following code in a file named ``my_script.py`` to locate a file
 ``file.dat`` in the same folder::
 
@@ -117,7 +118,7 @@ It will be found correctly at runtime without changing ``my_script.py``.
 
 If ``__file__`` is checked from inside a package or library (say
 ``my_library.data``) then ``__file__`` will be
-``[app root]/my_library/data.pyc`` and ``--add-data`` should mirror that::
+``[app root]/my_library/data.pyc`` and :option:`--add-data` should mirror that::
 
     PyInstaller --add-data=/path/to/my_library/file.dat:./my_library
 
