@@ -220,7 +220,7 @@ to mount the ``/tmp`` folder with a "no-execution" option.
 That option is not compatible with a |PyInstaller|
 one-file bundle. It needs to execute code out of :file:`/tmp`.
 If you know the target environment,
-``--runtime-tmpdir`` might be a workaround.)
+:option:`--runtime-tmpdir` might be a workaround.)
 
 Because the program makes a temporary folder with a unique name,
 you can run multiple copies of the app;
@@ -235,7 +235,7 @@ Thus if your app crashes frequently, your users will lose disk space to
 multiple :file:`_MEI{xxxxxx}` temporary folders.
 
 It is possible to control the location of the :file:`_MEI{xxxxxx}` folder by
-using the ``--runtime-tmpdir`` command line option. The specified path is
+using the :option:`--runtime-tmpdir` command line option. The specified path is
 stored in the executable, and the bootloader will create the
 :file:`_MEI{xxxxxx}` folder inside of the specified folder. Please see
 :ref:`defining the extraction location` for details.

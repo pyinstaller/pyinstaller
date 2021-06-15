@@ -33,7 +33,7 @@ This will produce the |bootloader| executables for your current platform
 * :file:`../PyInstaller/bootloader/{OS_ARCH}/runw_d` (OS X and Windows only).
 
 The bootloaders architecture defaults to the machine's one, but can be changed
-using the ``--target-arch=`` option – given the appropriate compiler and
+using the :option:`--target-arch` option – given the appropriate compiler and
 development files are installed. E.g. to build a 32-bit bootloader on a 64-bit
 machine, run::
 

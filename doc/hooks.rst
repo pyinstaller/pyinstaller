@@ -67,7 +67,7 @@ Examples of these actions are shown below.
 When the module that needs these hidden imports is useful only to your project,
 store the hook file(s) somewhere near your source file.
 Then specify their location to the ``pyinstaller`` or ``pyi-makespec``
-command with the ``--additional-hooks-dir=`` option.
+command with the :option:`--additional-hooks-dir` option.
 If the hook file(s) are at the same level as the script,
 the command could be simply::
 
@@ -116,7 +116,7 @@ might catch up with these changes.
 If both PyInstaller and your package provide hooks for some module,
 your package's hooks take precedence,
 but can still be overridden by the command line option
-``--additional-hooks-dir``.
+:option:`--additional-hooks-dir`.
 
 
 You can tell PyInstaller about the additional hooks
@@ -139,7 +139,7 @@ This defines two entry-points:
    It must return a sequence of strings,
    each element of which provides an additional absolute path
    to search for hooks.
-   This is equivalent to passing the ``--additional-hooks-dir``
+   This is equivalent to passing the :option:`--additional-hooks-dir`
    command-line option to PyInstaller for each string in the sequence.
 
    In this example, the function is ``get_hook_dirs() -> List[str]``.
@@ -179,7 +179,7 @@ applies them to the bundle being created.
 ``hiddenimports``
     A list of module names (relative or absolute) that should
     be part of the bundled app.
-    This has the same effect as the ``--hidden-import`` command line option,
+    This has the same effect as the :option:`--hidden-import` command line option,
     but it can contain a list of names and is applied automatically
     only when the hooked module is imported.
     Example::
@@ -442,7 +442,7 @@ by Analysis, before it has located the path to that module or package
 
 Hooks of this type are only recognized if they are stored in
 a sub-folder named ``pre_find_module_path`` in a hooks folder,
-either in the distributed hooks folder or an ``--additional-hooks-dir`` folder.
+either in the distributed hooks folder or an :option:`--additional-hooks-dir` folder.
 You may have normal hooks as well as hooks of this type for the same module.
 For example |PyInstaller| includes both a ``hooks/hook-distutils.py``
 and also a ``hooks/pre_find_module_path/hook-distutils.py``.
@@ -487,7 +487,7 @@ However, if there are normal hooks for these names, they will be called.
 
 Hooks of this type are only recognized if they are stored in a sub-folder
 named ``pre_safe_import_module`` in a hooks folder,
-either in the distributed hooks folder or an ``--additional-hooks-dir`` folder.
+either in the distributed hooks folder or an :option:`--additional-hooks-dir` folder.
 (See the distributed ``hooks/pre_safe_import_module`` folder for examples.)
 
 You may have normal hooks as well as hooks of this type for the same module.
