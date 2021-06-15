@@ -1003,32 +1003,9 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
     int ignore_signals;
     int signum;
 
-    argv_pyi = (char**)calloc(argc + 1, sizeof(char*));
-    argc_pyi = 0;
-    if (!argv_pyi) {
-        FATALERROR("LOADER: failed to allocate argv_pyi: %s\n", strerror(errno));
+    /* Initialize argv_pyi and argc_pyi */
+    if (pyi_utils_initialize_args(argc, argv) < 0) {
         goto cleanup;
-    }
-
-    for (i = 0; i < argc; i++) {
-    #if defined(__APPLE__) && defined(WINDOWED)
-
-        /* if we are on a Mac, it passes a strange -psnxxx argument.  Filter it out. */
-        if (strstr(argv[i], "-psn") == argv[i]) {
-            /* skip */
-        }
-        else
-    #endif
-        {
-            char *const tmp = strdup(argv[i]);
-            if (!tmp) {
-                FATALERROR("LOADER: failed to strdup argv[%d]: %s\n", i, strerror(errno));
-                /* If we can't allocate basic amounts of memory at this critical point,
-                 * we should probably just give up. */
-                goto cleanup;
-            }
-            argv_pyi[argc_pyi++] = tmp;
-        }
     }
 
     #if defined(__APPLE__) && defined(WINDOWED)
@@ -1105,10 +1082,7 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
 
   cleanup:
     VS("LOADER: freeing args\n");
-    for (i = 0; i < argc_pyi; i++) {
-        free(argv_pyi[i]);
-    }
-    free(argv_pyi);
+    pyi_utils_free_args();
 
     /* Either wait() failed, or we jumped to `cleanup` and
      * didn't wait() at all. Either way, exit with error,
@@ -1131,6 +1105,97 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
     }
     return 1;
 }
+
+
+/*
+ * Initialize private argc_pyi and argv_pyi from the given argc and
+ * argv by creating a deep copy. The resulting argc_pyi and argv_pyi
+ * can be retrieved by pyi_utils_get_args() and are freed/cleaned-up by
+ * pyi_utils_free_args().
+ *
+ * The argv_pyi contains argc_pyi + 1 elements, with the last element
+ * being NULL (i.e., it is execv-compatible NULL-terminated array).
+ *
+ * On macOS, this function filters out the -psnxxx argument that is
+ * passed to executable when .app bundle is launched from Finder:
+ * https://stackoverflow.com/questions/10242115/os-x-strange-psn-command-line-parameter-when-launched-from-finder
+ */
+int pyi_utils_initialize_args(const int argc, char *const argv[])
+{
+    int i;
+
+    argv_pyi = (char**)calloc(argc + 1, sizeof(char*));
+    argc_pyi = 0;
+    if (!argv_pyi) {
+        FATALERROR("LOADER: failed to allocate argv_pyi: %s\n", strerror(errno));
+        return -1;
+    }
+
+    for (i = 0; i < argc; i++) {
+        char *tmp;
+
+        /* Filter out -psnxxx argument that is used on macOS to pass
+         * unique process serial number (PSN) to apps launched via Finder. */
+        #if defined(__APPLE__) && defined(WINDOWED)
+        if (strstr(argv[i], "-psn") == argv[i]) {
+            continue;
+        }
+        #endif
+
+        /* Copy the argument */
+        tmp = strdup(argv[i]);
+        if (!tmp) {
+            FATALERROR("LOADER: failed to strdup argv[%d]: %s\n", i, strerror(errno));
+            /* If we can't allocate basic amounts of memory at this critical point,
+             * we should probably just give up. */
+            return -1;
+        }
+        argv_pyi[argc_pyi++] = tmp;
+    }
+
+    return 0;
+}
+
+/*
+ * Retrieve value of argc_pyi and the pointer to argv_pyi. The retrieved
+ * arguments are originally the same as the ones passed to
+ * pyi_utils_initialize_args(), but may have been modified by subsequent
+ * processing code (e.g., Apple event processing).
+ *
+ * The argv_pyi array is NULL terminated (i.e., contains argc_pyi + 1)
+ * entries, and the last entry is NULL).
+ *
+ * The ownership of array is not transferred, i.e., it should not be
+ * explicitly freed by the caller. Instead, the array and its resources
+ * are cleaned up oncepyi_utils_free_args() is called.
+ */
+void pyi_utils_get_args(int *argc, char ***argv)
+{
+    if (argc) {
+        *argc = argc_pyi;
+    }
+    if (argv) {
+        *argv = argv_pyi;
+    }
+}
+
+/*
+ * Free/clean-up the private arguments (pyi_argv).
+ */
+void pyi_utils_free_args()
+{
+    /* Free each entry */
+    int i;
+    for (i = 0; i < argc_pyi; i++) {
+        free(argv_pyi[i]);
+    }
+    /* Free the list */
+    free(argv_pyi);
+    /* Clean-up the variables, just in case */
+    argc_pyi = 0;
+    argv_pyi = NULL;
+}
+
 
 /*
  * On Mac OS X this converts events from kAEOpenDocuments and kAEGetURL into sys.argv.
