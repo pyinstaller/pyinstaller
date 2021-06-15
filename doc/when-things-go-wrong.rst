@@ -134,7 +134,7 @@ try setting the correct path in the environment variable
 Getting Debug Messages
 ----------------------
 
-The ``--debug=all`` option (and its :ref:`choices <pyinstaller how to generate>`) provides a
+The ``--debug=all`` option (and its :ref:`choices <What To Generate>`) provides a
 signficiant amount of diagnostic information.
 This can be useful during development of a complex package,
 or when your app doesn't seem to be starting,

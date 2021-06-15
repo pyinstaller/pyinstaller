@@ -91,6 +91,7 @@ div.note p.admonition-title:after {
 }
 	
 /* --- Inline literals. --- */
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).option > dt,
 .rst-content code.literal, .rst-content tt.literal {
   color: #034040;
   background: unset;
@@ -100,6 +101,7 @@ div.note p.admonition-title:after {
 }
 /* Inline literals with link targets
  * (usually generated with :func:`PyInstaller.foo.bar`). */
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).option > dt,
 .rst-content a code.literal, .rst-content tt.literal {
   border-bottom: solid 1px #0001;
 }
@@ -120,7 +122,8 @@ div.note p.admonition-title:after {
 .wy-menu-vertical { padding-bottom: 1em; }
 
 /* Autodoc functions/classes */
-html.writer-html4 .rst-content dl:not(.docutils) > dt, html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) > dt {
+html.writer-html4 .rst-content dl:not(.docutils) > dt,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple):not(.option) > dt {
   /* This is a loose merge of the styles for inline literals and headings. */
   background-color: #EEEA;
   border: 2px outset #e1e4e520;

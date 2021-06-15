@@ -163,7 +163,7 @@ you could modify the spec file as follows::
              )
 
 And the command line equivalent (see
-:ref:`options-group What to bundle, where to search`
+:ref:`What To Bundle, Where To Search`
 for platform-specific details)::
 
 	pyinstaller --add-data 'src/README.txt:.' myscript.py
@@ -296,7 +296,7 @@ You could add it to the bundle this way::
              ...
 
 Or via the command line (again, see
-:ref:`options-group What to bundle, where to search`
+:ref:`What To Bundle, Where To Search`
 for platform-specific details)::
 
 	pyinstaller --add-binary '/usr/lib/libiodbc.2.dylib:.' myscript.py

@@ -21,12 +21,16 @@ import PyInstaller.building.makespec
 import PyInstaller.log
 
 
-def run():
+def generate_parser():
     p = argparse.ArgumentParser()
     PyInstaller.building.makespec.__add_options(p)
     PyInstaller.log.__add_options(p)
     p.add_argument('scriptname', nargs='+')
+    return p
 
+
+def run():
+    p = generate_parser()
     args = p.parse_args()
     PyInstaller.log.__process_options(p, args)
 
