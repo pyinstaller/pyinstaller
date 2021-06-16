@@ -1085,8 +1085,8 @@ def create_manifest(filename, manifest, console, uac_admin=False, uac_uiaccess=F
     # only write a new manifest if it is different from the old
     need_new = not os.path.exists(filename)
     if not need_new:
-        old_xml = ManifestFromXMLFile(filename).toprettyxml().replace('\r','')
-        new_xml = manifest.toprettyxml().replace('\r','')
+        old_xml = ManifestFromXMLFile(filename).toprettyxml().replace('\r', '')
+        new_xml = manifest.toprettyxml().replace('\r', '')
 
         # this only works if PYTHONHASHSEED is set in environment
         need_new = (old_xml != new_xml)
