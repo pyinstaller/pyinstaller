@@ -476,6 +476,15 @@ class EXE(Target):
             self.toc.append(("pyi-disable-windowed-traceback", "", "OPTION"))
 
         if is_win:
+            if not self.icon:
+                # --icon not specified; use default from bootloader folder
+                if self.console:
+                    icon = 'icon-console.ico'
+                else:
+                    icon = 'icon-windowed.ico'
+                self.icon = os.path.join(
+                    os.path.dirname(os.path.dirname(__file__)),
+                    'bootloader', 'images', icon)
             filename = os.path.join(CONF['workpath'], CONF['specnm'] + ".exe.manifest")
             self.manifest = winmanifest.create_manifest(filename, self.manifest,
                 self.console, self.uac_admin, self.uac_uiaccess)
@@ -607,12 +616,6 @@ class EXE(Target):
             os.close(fd)
             self._copyfile(exe, tmpnm)
             os.chmod(tmpnm, 0o755)
-            if not self.icon:
-                # --icon not specified; use default from bootloader folder
-                self.icon = os.path.join(
-                    os.path.dirname(os.path.dirname(__file__)),
-                    'bootloader', 'images',
-                    'icon-console.ico' if self.console else 'icon-windowed.ico')
             if self.icon != "NONE":
                 icon.CopyIcons(tmpnm, self.icon)
             if self.versrsrc:
