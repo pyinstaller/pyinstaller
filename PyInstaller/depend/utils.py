@@ -22,6 +22,7 @@ import re
 import struct
 from types import CodeType
 import zipfile
+import ctypes.util
 
 from PyInstaller.exceptions import ExecCommandFailed
 from PyInstaller.lib.modulegraph import util, modulegraph
@@ -158,18 +159,36 @@ def __recursively_scan_code_objects_for_ctypes(code: CodeType):
     from PyInstaller.depend.bytecode import any_alias, search_recursively
 
     binaries = []
-    names = {
+    ctypes_dll_names = {
         *any_alias("ctypes.CDLL"), *any_alias("ctypes.cdll.LoadLibrary"),
         *any_alias("ctypes.WinDLL"), *any_alias("ctypes.windll.LoadLibrary"),
         *any_alias("ctypes.OleDLL"), *any_alias("ctypes.oledll.LoadLibrary"),
         *any_alias("ctypes.PyDLL"), *any_alias("ctypes.pydll.LoadLibrary"),
+    }
+    find_library_names = {
         *any_alias("ctypes.util.find_library"),
     }
 
     for calls in bytecode.recursive_function_calls(code).values():
         for (name, args) in calls:
-            if name in names and len(args) == 1 and isinstance(args[0], str):
+            if not len(args) == 1 or not isinstance(args[0], str):
+                continue
+            if name in ctypes_dll_names:
+                # ctypes.*DLL() or ctypes.*dll.LoadLibrary()
                 binaries.append(*args)
+            elif name in find_library_names:
+                # ctypes.util.find_library() needs to be handled separately,
+                # because we need to resolve the library base name given
+                # as the argument (without prefix and suffix, e.g. 'gs')
+                # into corresponding full name (e.g., 'libgs.so.9').
+                libname = args[0]
+                if libname:
+                    libname = ctypes.util.find_library(libname)
+                    if libname:
+                        # On Windows, `find_library` may return
+                        # a full pathname. See issue #1934
+                        libname = os.path.basename(libname)
+                        binaries.append(libname)
 
     # The above handles any flavour of function/class call.
     # We still need to capture the (albeit rarely used) case of loading
