@@ -27,7 +27,7 @@ import pytest
 def test_appimage_loading(tmp_path, pyi_builder_spec, arch):
     # Skip the test if appimagetool is not found
     appimagetool = pathlib.Path.home() / ('appimagetool-%s.AppImage' % arch)
-    if appimagetool.is_file():
+    if not appimagetool.is_file():
         pytest.skip('%s not found' % appimagetool)
 
     # Ensure appimagetool is executable
