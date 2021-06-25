@@ -1,9 +1,9 @@
 
 .. _Guidelines for Commits:
 
-=============================
+======================
 Guidelines for Commits
-=============================
+======================
 
 **Please help keeping code and changes comprehensible for years.
 Provide a readable commit-history following this guideline.**
@@ -33,7 +33,7 @@ find breaking changes any revert those breaking changes.
 
 
 In Detail
-====================
+=========
 
 A commit should be one (and just one) logical unit.
 It should be something that someone might want to patch or
@@ -73,9 +73,8 @@ If it could be useful in pieces, make separate commits.
 
 .. _commit messages:
 
-===================================
 Please Write Good Commit Messages
-===================================
+=================================
 
 **Please help keeping code and changes comprehensible for years.
 Write good commit messages following this guideline.**
@@ -100,7 +99,7 @@ rebase -i …`` and ``git push -f …`` to update your pull-request. See
 
 
 Content of the commit message
-==================================
+=============================
 
 **Write meaningful commit messages.**
 
@@ -121,7 +120,7 @@ Examples of good commit messages are
 .. _commit message first line:
 
 The first Line
-=====================
+==============
 
 The first line of the commit message shall
 
@@ -148,7 +147,7 @@ The first line of the commit message shall
 .. _commit message body:
 
 The Commit-Message Body
-==================================
+=======================
 
 The body of a commit log should:
 
@@ -193,7 +192,7 @@ The body of a commit log should:
 .. _commit message standard prefixes:
 
 Standard prefixes
-========================
+=================
 
 Please state the "subsystem" this commit is related to as a prefix in the
 first line. Do learn which prefixes others used for the files you changed you
@@ -226,7 +225,7 @@ Examples for "subsystems" are:
 
 
 Please set the correct Author
-====================================
+=============================
 
 .. highlight: bash
 
@@ -247,7 +246,7 @@ Options ...` to set these values.
 
 
 Further Reading
-=======================
+===============
 
 Further hints and tutorials about writing good commit messages can also be
 found at:
@@ -270,7 +269,7 @@ found at:
   commits as we ask you strongly to use.)
 
 Credits
-=========================
+=======
 
 This page was composed from material found at
 

@@ -6,13 +6,11 @@ Development Guide
 =============================
 
 
-.. include:: quickstart.txt
-
-
 .. toctree::
    :maxdepth: 2
    :caption: Developer Documentation
 
+   quickstart
    git
    coding-conventions
    testing

@@ -1,7 +1,6 @@
-
-
-Quick-start
-=============================
+===========
+Quickstart
+===========
 
 * Our git repository is at https://github.com/pyinstaller/pyinstaller::
 
