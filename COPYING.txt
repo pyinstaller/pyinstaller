@@ -56,13 +56,13 @@ in the documentation directory, in the file
 ``doc/CREDITS.rst``.
 
 The core team that coordinates development on GitHub can be found here:
-https://github.com/pyinstaller/pyinstaller.  As of 2020, it consists of:
+https://github.com/pyinstaller/pyinstaller.  As of 2021, it consists of:
 
 * Hartmut Goebel
-* Legorooj
+* Jasper Harrison
 * Bryan Jones
 * Brenainn Woodsend
-
+* Rok Mandeljc
 
 Our Copyright Policy
 --------------------
