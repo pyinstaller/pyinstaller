@@ -5,19 +5,9 @@ PyInstaller bundles a Python application and all its dependencies into a single
 package. The user can run the packaged app without installing a Python
 interpreter or any modules.
 
-
-**Help keeping PyInstaller alive:**
-Maintaining PyInstaller is a huge amount of work.
-PyInstaller development can only continue
-if users and companies provide sustainable funding. See
-http://www.pyinstaller.org/funding.html for how to support PyInstaller.
-
-
 :Documentation: https://pyinstaller.readthedocs.io/
 :Website:       http://www.pyinstaller.org/
 :Code:          https://github.com/pyinstaller/pyinstaller
-:Donate, Fund:  http://www.pyinstaller.org/funding.html
-
 
 PyInstaller reads a Python script written by you. It analyzes your code
 to discover every other module and library your script needs in order to
@@ -60,7 +50,7 @@ PyInstaller is available on PyPI. You can install it through `pip`::
 
 
 Requirements and Tested Platforms
-------------------------------------
+---------------------------------
 
 - Python: 
 
@@ -104,7 +94,7 @@ For more details, see the `manual`_.
 
 
 Untested Platforms
----------------------
+------------------
 
 The following platforms have been contributed and any feedback or
 enhancements on these are welcome.
@@ -142,28 +132,19 @@ or simply use it directly from the source (pyinstaller.py).
 
 
 Support
----------------------
+-------
 
 See http://www.pyinstaller.org/support.html for how to find help as well as
 for commercial support.
 
 
-Funding
----------------------
-
-Maintaining PyInstaller is a huge amount of work.
-PyInstaller development can only continue
-if users and companies provide sustainable funding. See
-http://www.pyinstaller.org/funding.html for how to support PyInstaller.
-
-
 Changes in this Release
--------------------------
+-----------------------
 
 You can find a detailed list of changes in this release
-in the `change log`_ section of the manual.
+in the `Changelog`_ section of the manual.
 
 
 .. _tinyaes: https://github.com/naufraghi/tinyaes-py
 .. _`manual`: https://pyinstaller.readthedocs.io/en/latest/
-.. _`change log`: https://pyinstaller.readthedocs.io/en/latest/CHANGES.html
+.. _`Changelog`: https://pyinstaller.readthedocs.io/en/latest/CHANGES.html
