@@ -235,7 +235,7 @@ to list all the other places that the script might be searching for imports::
        pyi-makespec --paths=/path/to/thisdir \
                     --paths=/path/to/otherdir myscript.py
 
-These paths will be noted in the spec file.
+These paths will be noted in the spec file in the ``pathex`` argument.
 They will be added to the current :data:`sys.path` during analysis.
 
 
