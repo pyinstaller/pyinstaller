@@ -7,6 +7,7 @@
     'gi.repository.Gtk':    ['pyi_rth_gtk.py'],
     'gi.repository.Gst':    ['pyi_rth_gstreamer.py'],
     'gst':        ['pyi_rth_gstreamer.py'],
+    'inspect':    ['pyi_rth_inspect.py'],
     'kivy':       ['pyi_rth_kivy.py'],
     'kivy.lib.gstplayer': ['pyi_rth_gstreamer.py'],
     'matplotlib': ['pyi_rth_mplconfig.py'],

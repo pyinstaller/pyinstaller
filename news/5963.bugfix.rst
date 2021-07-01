@@ -1,0 +1,2 @@
+Fix :func:`inspect.getmodule` failing to resolve module from stack-frame
+obtained via :func:`inspect.stack`.
