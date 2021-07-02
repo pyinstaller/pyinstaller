@@ -503,12 +503,17 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
 
             /* Unmarshall code object */
             code = PI_PyMarshal_ReadObjectFromString((const char *) data, ptoc->ulen);
-
             if (!code) {
                 FATALERROR("Failed to unmarshal code object for %s\n", ptoc->name);
                 PI_PyErr_Print();
                 return -1;
             }
+
+            /* Store the code object to __main__ module's _pyi_main_co
+             * attribute, so it can be retrieved by FrozenImporter,
+             * if necessary. */
+            PI_PyObject_SetAttrString(__main__, "_pyi_main_co", code);
+
             /* Run it */
             retval = PI_PyEval_EvalCode(code, main_dict, main_dict);
 
