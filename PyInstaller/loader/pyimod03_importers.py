@@ -584,3 +584,10 @@ def install():
                 pathFinders.append(item)
     sys.meta_path.extend(reversed(pathFinders))
     # TODO Do we need for Python 3 _frozen_importlib.FrozenImporter? Could it be also removed?
+
+    # Set the FrozenImporter as loader for __main__, in order for python
+    # to treat __main__ as a module instead of a built-in.
+    try:
+        sys.modules['__main__'].__loader__ = fimp
+    except Exception:
+        pass
