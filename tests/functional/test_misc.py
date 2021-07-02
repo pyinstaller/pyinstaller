@@ -53,3 +53,14 @@ def test_inspect_getmodule_from_stackframes(pyi_builder):
         module_names = [module.__name__ for module in modules]
         assert module_names == expected_module_names
         """, pyi_args=['--paths', pathex], run_from_path=True)
+
+
+# Test whether dis can disassemble the __main__ module, as per #5897.
+def test_dis_main(pyi_builder):
+    pyi_builder.test_source(
+        """
+        import dis
+        import sys
+
+        print(dis.dis(sys.modules["__main__"].__loader__.get_code("__main__")))
+        """)
