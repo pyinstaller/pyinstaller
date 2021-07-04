@@ -41,8 +41,8 @@ A. First process: bootloader starts.
 
     2. Modify various environment variables:
 
-       - GNU/Linux: If set, save the original value of LD_LIBRARY_PATH
-         into LD_LIBRARY_PATH_ORIG.
+       - GNU/Linux: Save the original value of LD_LIBRARY_PATH (or an
+         empty string, if not set) into LD_LIBRARY_PATH_ORIG.
          Prepend our path to LD_LIBRARY_PATH.
 
        - AIX: same thing, but using LIBPATH and LIBPATH_ORIG.

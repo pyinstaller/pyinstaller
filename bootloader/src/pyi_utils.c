@@ -851,11 +851,15 @@ set_dynamic_library_path(const char* path)
      * that we have bundled.
      */
     orig_path = pyi_getenv(env_var);
-    if (orig_path) {
-        pyi_setenv(env_var_orig, orig_path);
-        VS("LOADER: %s=%s\n", env_var_orig, orig_path);
-    }
-    /* prepend our path to the original path, pyi_strjoin can deal with orig_path being NULL or empty string */
+    /* it is important that we ALWAYS set env_var_orig to simplify restoring env_var.
+     * empty string in env_var_orig means env_var was either not present or empty [=invalid].
+     */
+    if (!orig_path)
+        orig_path = "";
+    pyi_setenv(env_var_orig, orig_path);
+    VS("LOADER: %s=%s\n", env_var_orig, orig_path);
+
+    /* prepend our path to the original path, pyi_strjoin can deal with orig_path being empty */
     new_path = pyi_strjoin(path, ":", orig_path);
     rc = pyi_setenv(env_var, new_path);
     VS("LOADER: %s=%s\n", env_var, new_path);
