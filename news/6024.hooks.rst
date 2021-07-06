@@ -1,0 +1,6 @@
+Rework the ``matplotlib.backends`` hook to attempt performing
+auto-detection of the used backend(s) instead of collecting all
+available backends. Implement :ref:`hook configuration option
+<matplotlib hook options>` that allows users to swich between
+this new behavior and the old behavior of collecting all backends,
+or to manually specify the backend(s) to be collected.
