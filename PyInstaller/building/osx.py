@@ -150,8 +150,8 @@ class BUNDLE(Target):
                            # Cli option --osx-bundle-identifier sets this value.
                            "CFBundleIdentifier": self.bundle_identifier,
 
-                           # Fix for #156 - 'MacOS' must be in the name - not sure why
-                           "CFBundleExecutable": 'MacOS/%s' % os.path.basename(self.exename),
+                           "CFBundleExecutable":
+                               os.path.basename(self.exename),
                            "CFBundleIconFile": os.path.basename(self.icon),
                            "CFBundleInfoDictionaryVersion": "6.0",
                            "CFBundlePackageType": "APPL",
