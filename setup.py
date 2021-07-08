@@ -91,7 +91,7 @@ class Wheel(bdist_wheel):
     # The setuptools platform tag.
     PLAT_NAME = "manylinux2014_x86_64"
     # The folder of bootloaders from PyInstaller/bootloaders to include.
-    PYI_PLAT_NAME = "Linux-64bit"
+    PYI_PLAT_NAME = "Linux-64bit-intel"
 
     def finalize_options(self):
         # Inject the platform name.
@@ -145,8 +145,14 @@ PLATFORMS = {
     # The manylinux version tag depends on the glibc version compiled against.
     # If we ever change the docker image used to build the bootloaders then we
     # must check/update this tag.
-    "Linux-64bit":  "manylinux2014_x86_64",
-    "Linux-32bit": "manylinux2014_i686",
+    # These are the only architectures currently supported by manylinux.
+    # Other platforms must use generic bdist_wheel which will produce a wheel
+    # which is not allowed on PyPI.
+    "Linux-64bit-intel":  "manylinux2014_x86_64",
+    "Linux-32bit-intel": "manylinux2014_i686",
+    "Linux-64bit-arm": "manylinux2014_aarch64",
+    "Linux-64bit-ppc": "manylinux2014_ppc64le",
+    "Linux-64bit-s390x": "manylinux2014_s390x",
     # macOS needs special handling. This gets done dynamically later.
     "Darwin-64bit": None,
 }

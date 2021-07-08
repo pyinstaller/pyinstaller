@@ -108,6 +108,17 @@ refer to ``python ./waf --help`` for further options related to LSB building.
        as LSB binary.
 
 
+Cross Building for Different Architectures
+------------------------------------------
+
+Bootloaders can be built for other architectures such as ARM or MIPS using
+Docker_.
+The :blob:`bootloader/Dockerfile` contains the instructions on how to do this.
+Open it in some flavour of text previewer to see them::
+
+    less bootloader/Dockerfile
+
+
 Building for Mac OS X
 ========================
 

@@ -23,6 +23,7 @@ import sys
 import errno
 import importlib.machinery
 from PyInstaller.exceptions import ExecCommandFailed
+from PyInstaller._shared_with_waf import _pyi_machine
 
 # Copied from https://docs.python.org/3/library/platform.html#cross-platform.
 is_64bits = sys.maxsize > 2**32
@@ -229,13 +230,7 @@ else:
     system = platform.system()
 
 # Machine suffix for bootloader.
-# PyInstaller is reported to work on ARM architecture, so for that
-# case we need an extra identifying specifier on the bootloader
-# name string, like: Linux-32bit-arm, over normal Linux-32bit
-machine = 'arm' if platform.machine().startswith('arm') else \
-    'aarch' if platform.machine().startswith('aarch') else \
-    'sw_64' if platform.machine().startswith('sw_64') else None
-
+machine = _pyi_machine(platform.machine(), platform.system())
 
 # Set and get environment variables does not handle unicode strings correctly
 # on Windows.
