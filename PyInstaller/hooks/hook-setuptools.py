@@ -13,8 +13,6 @@
 from PyInstaller.compat import is_unix, is_darwin
 from PyInstaller.utils.hooks import collect_submodules
 
-excludedimports = ["setuptools.py27compat", "setuptools.py33compat"]
-
 hiddenimports = [
     # Test case import/test_zipimport2 fails during importing
     # pkg_resources or setuptools when module not present.
