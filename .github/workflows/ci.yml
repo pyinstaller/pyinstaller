@@ -68,7 +68,7 @@ jobs:
           pip install --progress-bar=off -U -r tests/requirements-tools.txt -r tests/requirements-libraries.txt
           # Compile bootloader
           cd bootloader
-          python waf all
+          python waf all CFLAGS="-fcf-protection=none"
           cd ..
 
           # Install PyInstaller.
