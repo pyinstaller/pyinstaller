@@ -311,9 +311,15 @@ class FrozenImporter(object):
         ImportError should be raised if module not found.
         """
         try:
-            # extract() returns None if fullname not in the archive, thus the
-            # next line will raise an execpion which will be catched just
-            # below and raise the ImportError.
+            if fullname == '__main__':
+                # Special handling for __main__ module; the bootloader
+                # should store code object to _pyi_main_co attribute of
+                # the module.
+                return sys.modules['__main__']._pyi_main_co
+
+            # extract() returns None if fullname not in the archive, and the
+            # subsequent subscription attempt raises exception, which
+            # is turned into ImportError.
             return self._pyz_archive.extract(fullname)[1]
         except Exception as e:
             raise ImportError(
@@ -584,3 +590,10 @@ def install():
                 pathFinders.append(item)
     sys.meta_path.extend(reversed(pathFinders))
     # TODO Do we need for Python 3 _frozen_importlib.FrozenImporter? Could it be also removed?
+
+    # Set the FrozenImporter as loader for __main__, in order for python
+    # to treat __main__ as a module instead of a built-in.
+    try:
+        sys.modules['__main__'].__loader__ = fimp
+    except Exception:
+        pass

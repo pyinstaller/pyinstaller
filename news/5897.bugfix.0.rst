@@ -1,0 +1,1 @@
+Fix ``__main__`` module being recognized as built-in instead of module.
