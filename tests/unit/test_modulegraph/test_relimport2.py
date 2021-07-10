@@ -22,23 +22,23 @@ class TestModuleGraphImport (unittest.TestCase):
 
 
     def test_init_as_script(self):
-        self.mf.run_script(os.path.join(self.root, 'pkg/__init__.py'))
-        n = self.mf.findNode('mod1')
+        self.mf.add_script(os.path.join(self.root, 'pkg/__init__.py'))
+        n = self.mf.find_node('mod1')
         self.assertIs(n, None)
 
-        n = self.mf.findNode('.mod2.*')
+        n = self.mf.find_node('.mod2.*')
         self.assertIsInstance(n, modulegraph.InvalidRelativeImport)
 
     def test_subpkg_bad_import(self):
         self.mf.import_hook('pkg.sub')
 
-        n = self.mf.findNode('toplevel')
+        n = self.mf.find_node('toplevel')
         self.assertIs(n, None)
 
-        n = self.mf.findNode('pkg.mod1')
+        n = self.mf.find_node('pkg.mod1')
         self.assertIsInstance(n, modulegraph.SourceModule)
 
-        n = self.mf.findNode('pkg.mod3')
+        n = self.mf.find_node('pkg.mod3')
         self.assertIsInstance(n, modulegraph.SourceModule)
 
 if __name__ == "__main__":

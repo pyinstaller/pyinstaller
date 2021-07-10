@@ -1,4 +1,3 @@
-from __future__ import print_function
 import sys
 import os
 import argparse
@@ -62,7 +61,7 @@ def create_graph(scripts, domods, debuglevel, excludes, path_extras):
             else:
                 mf.import_hook(arg)
         else:
-            mf.run_script(arg)
+            mf.add_script(arg)
     return mf
 
 

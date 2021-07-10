@@ -1,0 +1,4 @@
+(macOS) Implement support for Apple Silicon M1 (``arm64``) platform
+and different targets for frozen applications (thin-binary ``x86_64``,
+thin-binary ``arm64``, and fat-binary ``universal2``), with build-time
+arch validation and ad-hoc resigning of all collected binaries.

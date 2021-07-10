@@ -1,6 +1,6 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2020, PyInstaller Development Team.
+ * Copyright (c) 2013-2021, PyInstaller Development Team.
  *
  * Distributed under the terms of the GNU General Public License (version 2
  * or later) with exception for distributing the bootloader.
@@ -25,9 +25,6 @@
 /* windows.h will use API for WinServer 2003 with SP1 and WinXP with SP2 */
 #define _WIN32_WINNT 0x0502
 
-/* TODO: use safe string functions */
-#define _CRT_SECURE_NO_WARNINGS 1
-
 #include <windows.h>
 #include <commctrl.h> /* InitCommonControls */
 #include <stdio.h>    /* _fileno */
@@ -36,10 +33,7 @@
 #include <sddl.h>     /* ConvertStringSecurityDescriptorToSecurityDescriptorW */
 
 /* PyInstaller headers. */
-#include "msvc_stdint.h" /* int32_t */
 #include "pyi_global.h"  /* PATH_MAX */
-#include "pyi_archive.h"
-#include "pyi_path.h"
 #include "pyi_utils.h"
 #include "pyi_win32_utils.h"
 
@@ -180,6 +174,10 @@ pyi_win32_wcs_to_mbs(const wchar_t *wstr)
     }
 
     str = (char *)calloc(len + 1, sizeof(char));
+    if (str == NULL) {
+        FATAL_WINERROR("win32_wcs_to_mbs", "Out of memory.");
+        return NULL;
+    };
 
     ret = WideCharToMultiByte(CP_ACP,    /* CodePage */
                               0,         /* dwFlags */
@@ -196,91 +194,6 @@ pyi_win32_wcs_to_mbs(const wchar_t *wstr)
         return NULL;
     }
     return str;
-}
-
-/* Convert a wide string to an ANSI string, also attempting to get the MS-DOS
- *  ShortFileName if the string is a filename. ShortFileName allows Python 2.7 to
- *  accept filenames which cannot encode in the current ANSI codepage.
- *
- *  Returns a newly allocated buffer containing the ANSI characters terminated by a null
- *  character. The caller is responsible for freeing this buffer with free().
- *
- *  Returns NULL and logs error reason if encoding fails.
- */
-
-char *
-pyi_win32_wcs_to_mbs_sfn(const wchar_t *wstr)
-{
-    DWORD wsfnlen;
-    wchar_t * wstr_sfn = NULL;
-    char * str = NULL;
-    DWORD ret;
-
-    wsfnlen = GetShortPathNameW(wstr, NULL, 0);
-
-    if (wsfnlen) {
-        wstr_sfn = (wchar_t *)calloc(wsfnlen + 1, sizeof(wchar_t));
-        ret = GetShortPathNameW(wstr, wstr_sfn, wsfnlen);
-
-        if (ret) {
-            str = pyi_win32_wcs_to_mbs(wstr_sfn);
-        }
-        free(wstr_sfn);
-    }
-
-    if (!str) {
-        VS("Failed to get short path name for filename. GetShortPathNameW: \n%s\n",
-           GetWinErrorString(0)
-           );
-        str = pyi_win32_wcs_to_mbs(wstr);
-    }
-    return str;
-}
-
-/* Convert a UTF-8 string to an ANSI string, also attempting to get the MS-DOS
- *  ShortFileName if the string is a filename. ShortFileName allows Python 2.7 to
- *  accept filenames which cannot encode in the current ANSI codepage.
- *
- *  Preserves the filename's original basename, since the bootloader code depends on
- *  the unmodified basename. Assumes that the basename can be encoded using the current
- *  ANSI codepage.
- *
- *  This is a workaround for <https://github.com/pyinstaller/pyinstaller/issues/298>.
- *
- *  Copies the converted string to `dest`, which must be a buffer
- *  of at least PATH_MAX characters. Returns 'dest' if successful.
- *
- *  Returns NULL and logs error reason if encoding fails.
- */
-char *
-pyi_win32_utf8_to_mbs_sfn_keep_basename(char * dest, const char * src)
-{
-    char * mbs_buffer;
-    char * mbs_sfn_buffer;
-    char basename[PATH_MAX];
-    char dirname[PATH_MAX];
-
-    /* Convert path to mbs*/
-    mbs_buffer = pyi_win32_utf8_to_mbs(NULL, src, 0);
-
-    if (NULL == mbs_buffer) {
-        return NULL;
-    }
-
-    /* Convert path again to mbs, this time with SFN */
-    mbs_sfn_buffer = pyi_win32_utf8_to_mbs_sfn(NULL, src, 0);
-
-    if (NULL == mbs_sfn_buffer) {
-        free(mbs_buffer);
-        return NULL;
-    }
-
-    pyi_path_basename(basename, mbs_buffer);
-    pyi_path_dirname(dirname, mbs_sfn_buffer);
-    pyi_path_join(dest, dirname, basename);
-    free(mbs_buffer);
-    free(mbs_sfn_buffer);
-    return dest;
 }
 
 /* We shouldn't need to convert ANSI to wchar_t since everything is provided as wchar_t */
@@ -300,6 +213,9 @@ pyi_win32_argv_to_utf8(int argc, wchar_t **wargv)
     char ** argv;
 
     argv = (char **)calloc(argc + 1, sizeof(char *));
+    if (argv == NULL) {
+        return NULL;
+    };
 
     for (i = 0; i < argc; i++) {
         argv[i] = pyi_win32_utils_to_utf8(NULL, wargv[i], 0);
@@ -331,6 +247,9 @@ pyi_win32_wargv_from_utf8(int argc, char **argv)
     wchar_t ** wargv;
 
     wargv = (wchar_t **)calloc(argc + 1, sizeof(wchar_t *));
+    if (wargv == NULL) {
+        return NULL;
+    };
 
     for (i = 0; i < argc; i++) {
         wargv[i] = pyi_win32_utils_from_utf8(NULL, argv[i], 0);
@@ -390,6 +309,10 @@ pyi_win32_utils_to_utf8(char *str, const wchar_t *wstr, size_t len)
         }
 
         output = (char *)calloc(len + 1, sizeof(char));
+        if (output == NULL) {
+            FATAL_WINERROR("win32_utils_to_utf8", "Out of memory.");
+            return NULL;
+        };
     }
     else {
         output = str;
@@ -450,6 +373,10 @@ pyi_win32_utils_from_utf8(wchar_t *wstr, const char *str, size_t wlen)
         }
 
         output = (wchar_t *)calloc(wlen + 1, sizeof(wchar_t));
+        if (output == NULL) {
+            FATAL_WINERROR("win32_utils_from_utf8", "Out of memory.");
+            return NULL;
+        };
     }
     else {
         output = wstr;
@@ -470,12 +397,12 @@ pyi_win32_utils_from_utf8(wchar_t *wstr, const char *str, size_t wlen)
     return output;
 }
 
-/* Convenience function to convert UTF-8 to ANSI optionally with SFN.
- * Calls pyi_win32_utils_from_utf8 followed by pyi_win32_wcs_to_mbs_sfn
+/* Convert an UTF-8 string to an ANSI string.
+ *
+ *  Returns NULL if encoding fails.
  */
-
 char *
-pyi_win32_utf8_to_mbs_ex(char * dst, const char * src, size_t max, int sfn)
+pyi_win32_utf8_to_mbs(char * dst, const char * src, size_t max)
 {
     wchar_t * wsrc;
     char * mbs;
@@ -486,12 +413,7 @@ pyi_win32_utf8_to_mbs_ex(char * dst, const char * src, size_t max, int sfn)
         return NULL;
     }
 
-    if (sfn) {
-        mbs = pyi_win32_wcs_to_mbs_sfn(wsrc);
-    }
-    else {
-        mbs = pyi_win32_wcs_to_mbs(wsrc);
-    }
+    mbs = pyi_win32_wcs_to_mbs(wsrc);
 
     free(wsrc);
 
@@ -509,70 +431,52 @@ pyi_win32_utf8_to_mbs_ex(char * dst, const char * src, size_t max, int sfn)
     }
 }
 
-char *
-pyi_win32_utf8_to_mbs(char * dst, const char * src, size_t max)
-{
-    return pyi_win32_utf8_to_mbs_ex(dst, src, max, 0);
-}
 
-char *
-pyi_win32_utf8_to_mbs_sfn(char * dst, const char * src, size_t max)
-{
-    return pyi_win32_utf8_to_mbs_ex(dst, src, max, 1);
-}
-/* Convenience function to convert UTF-8 argv to ANSI characters for Py2Sys_SetArgv
- *  Optionally use ShortFileNames to improve compatibility on Python 2.
+/* Retrieve the SID of the current user.
+ *  Used in a compatibility work-around for wine, which at the time of writing
+ *  (version 5.0.2) does not properly support SID S-1-3-4 (directory owner),
+ *  and therefore user's actual SID must be used instead.
  *
- *  Returns a newly allocated array of pointers to newly allocated buffers containing
- *  ANSI characters. The caller is responsible for freeing both the array and the buffers
- *  using free()
- *
- *  Returns NULL and logs the error reason if an error occurs.
+ *  Returns SID string on success, NULL on failure. The returned string must
+ *  be freed using LocalFree().
  */
-
-char **
-pyi_win32_argv_mbcs_from_utf8_ex(int argc, char **argv, int sfn)
+static wchar_t *
+_pyi_win32_get_user_sid()
 {
-    int i, j;
-    char ** argv_mbcs;
+    HANDLE process_token = INVALID_HANDLE_VALUE;
+    DWORD user_info_size = 0;
+    PTOKEN_USER user_info = NULL;
+    wchar_t *sid = NULL;
 
-    argv_mbcs = (char **)calloc(argc + 1, sizeof(char *));
-
-    for (i = 0; i < argc; i++) {
-        argv_mbcs[i] = pyi_win32_utf8_to_mbs_ex(NULL, argv[i], 0, sfn);
-
-        if (NULL == argv_mbcs[i]) {
-            goto err;
+    // Get access token for the calling process
+    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &process_token)) {
+        goto cleanup;
+    }
+    // Get buffer size and allocate buffer
+    if (!GetTokenInformation(process_token, TokenUser, NULL, 0, &user_info_size)) {
+        if (GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
+            goto cleanup;
         }
     }
-    argv_mbcs[argc] = NULL;
-
-    return argv_mbcs;
-err:
-
-    for (j = 0; j <= i; j++) {
-        free(argv_mbcs[j]);
+    user_info = (PTOKEN_USER)calloc(1, user_info_size);
+    if (!user_info) {
+        goto cleanup;
     }
-    free(argv_mbcs);
-    return NULL;
-}
+    // Get user information
+    if (!GetTokenInformation(process_token, TokenUser, user_info, user_info_size, &user_info_size)) {
+        goto cleanup;
+    }
+    // Convert SID to string
+    ConvertSidToStringSidW(user_info->User.Sid, &sid);
 
-/* Convert elements of __wargv to ANSI characters.
- *  See pyi_win32_argv_mbcs_from_utf8_ex
- */
-char **
-pyi_win32_argv_mbcs_from_utf8(int argc, char **argv)
-{
-    return pyi_win32_argv_mbcs_from_utf8_ex(argc, argv, 0);
-}
+    // Cleanup
+cleanup:
+    free(user_info);
+    if (process_token != INVALID_HANDLE_VALUE) {
+        CloseHandle(process_token);
+    }
 
-/* Convert elements of __wargv to ANSI encoded MS-DOS ShortFileNames.
- *  See pyi_win32_argv_mbcs_from_utf8_ex
- */
-char **
-pyi_win32_argv_mbcs_from_utf8_sfn(int argc, char **argv)
-{
-    return pyi_win32_argv_mbcs_from_utf8_ex(argc, argv, 1);
+    return sid;
 }
 
 /* Create a directory at path with restricted permissions.
@@ -584,12 +488,20 @@ pyi_win32_argv_mbcs_from_utf8_sfn(int argc, char **argv)
 int
 pyi_win32_mkdir(const wchar_t *path)
 {
-    wchar_t stringSecurityDesc[] = // ACE String :
+    wchar_t *sid = NULL;
+    wchar_t stringSecurityDesc[PATH_MAX];
+
+    // ACE String :
+    sid = _pyi_win32_get_user_sid(); // Resolve user's SID for compatibility with wine
+    _snwprintf(stringSecurityDesc, PATH_MAX,
         L"D:" // DACL (D) :
         L"(A;" // Authorize (A)
         L";FA;" // FILE_ALL_ACCESS (FA)
-        L";;S-1-3-4)"; // For the current directory owner (SID: S-1-3-4)
+        L";;%s)", // For the current user (retrieved SID) or current directory owner (SID: S-1-3-4)
         // no other permissions are granted
+        sid ? sid : L"S-1-3-4");
+    LocalFree(sid); // Must be freed using LocalFree()
+    VS("LOADER: creating directory %S with security string: %S\n", path, stringSecurityDesc);
 
     SECURITY_ATTRIBUTES securityAttr;
     PSECURITY_DESCRIPTOR *lpSecurityDesc;

@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# Copyright (c) 2014-2020, PyInstaller Development Team.
+# Copyright (c) 2014-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -11,7 +11,7 @@
 #
 # Helper-script for updating waf
 
-VERSION=2.0.19
+VERSION=2.0.20
 ARCHNAME=waf-$VERSION.tar.bz2
 URL=https://waf.io/$ARCHNAME
 

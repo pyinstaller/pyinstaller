@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -18,3 +18,5 @@ import sys
 _ROOT_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
 sys.path.append(_ROOT_DIR)
 
+# Bring all fixtures into this file.
+from PyInstaller.utils.conftest import *  # noqa

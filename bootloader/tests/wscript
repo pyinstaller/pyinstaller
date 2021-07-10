@@ -1,0 +1,42 @@
+# -*- mode: python -*- vim: filetype=python
+# -----------------------------------------------------------------------------
+# Copyright (c) 2014-2021, PyInstaller Development Team.
+#
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
+#
+# The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
+# -----------------------------------------------------------------------------
+
+def configure(ctx):
+    ctx.check_cc(lib='cmocka', mandatory=False, uselib_store='CMOCKA')
+
+def build(ctx):
+
+    def test_program(name):
+        if ctx.env.DEST_OS == 'win32':
+            # Z: inflate*()
+            # ADVAPI32: ConvertStringSecurityDescriptorToSecurityDescriptorW()
+            extra_libs=['ADVAPI32', 'Z']
+        else:
+            extra_libs=[]
+        ctx.program(
+            source= ["test_%s.c" % name],
+            target="test_%s" % name,
+            includes='../src',
+            use=ctx.env.link_with_dynlibs + ["CMOCKA", "OBJECTS"] + extra_libs,
+            stlib=ctx.env.link_with_staticlibs,
+            install_path=None,
+        )
+
+    if ctx.env.DEST_OS == 'win32' and ctx.variant.endswith('w'):
+        # Skip building tests on Windows with windowed variants. In addition to
+        # requiring additional libraries, these also expect the entry point to
+        # be WinMain() instead of main().
+        return
+
+    if "LIB_CMOCKA" in ctx.env:
+        test_program("path")
+        test_program("launch")

@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -16,9 +16,9 @@ Configure PyInstaller for the current Python installation.
 
 import os
 
-from . import compat
-from . import log as logging
-from .compat import is_win, is_darwin
+from PyInstaller import compat
+from PyInstaller import log as logging
+from PyInstaller.compat import is_win, is_darwin
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +35,11 @@ def test_UPX(config, upx_dir):
             cmd, '-V', __raise_ENOENT__=True).strip().splitlines()
         if vers:
             v = vers[0].split()[1]
+            try:
+                # v = "3.96-git-d7ba31cab8ce"
+                v = v.split("-")[0]
+            except Exception:
+                pass
             hasUPX = tuple(map(int, v.split(".")))
             if is_win and hasUPX < (1, 92):
                 logger.error('UPX is too old! Python 2.4 under Windows requires UPX 1.92+')
@@ -60,7 +65,7 @@ def _get_pyinst_cache_dir():
     if compat.getenv('PYINSTALLER_CONFIG_DIR'):
         cache_dir = compat.getenv('PYINSTALLER_CONFIG_DIR')
     elif is_win:
-        cache_dir = compat.getenv('APPDATA')
+        cache_dir = compat.getenv('LOCALAPPDATA')
         if not cache_dir:
             cache_dir = os.path.expanduser('~\\Application Data')
     elif is_darwin:
@@ -84,16 +89,6 @@ def _get_pyinst_cache_dir():
                 os.makedirs(parent_dir)
             os.rename(old_cache_dir, cache_dir)
     return cache_dir
-
-
-#FIXME: Rename to get_official_hooks_dir().
-#FIXME: Remove the "hook_type" parameter after unifying hook types.
-def get_importhooks_dir(hook_type=None):
-    from . import PACKAGEPATH
-    if not hook_type:
-        return os.path.join(PACKAGEPATH, 'hooks')
-    else:
-        return os.path.join(PACKAGEPATH, 'hooks', hook_type)
 
 
 def get_config(upx_dir, **kw):

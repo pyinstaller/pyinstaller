@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -41,7 +41,6 @@ sys.exec_prefix = sys.prefix
 
 
 # Python 3.3+ defines also sys.base_prefix. Let's set them too.
-# TODO Do these variables does not hurt on Python 3.2 and 2.7?
 sys.base_prefix = sys.prefix
 sys.base_exec_prefix = sys.exec_prefix
 
@@ -62,12 +61,7 @@ if VIRTENV in os.environ:
 # application.
 python_path = []
 for pth in sys.path:
-    if not os.path.isabs(pth):
-        # careful about using abspath with non-unicode path,
-        # it breaks multibyte character that contain slash under win32/Python 2
-        # TODO: Revert when dropping suport for is_py2.
-        pth = os.path.abspath(pth)
-    python_path.append(pth)
+    python_path.append(os.path.abspath(pth))
     sys.path = python_path
 
 
@@ -95,11 +89,10 @@ class NullWriter:
         return False
 
 
-# In Python 3 sys.stdout/err is None in GUI mode on Windows.
-# In Python 2 we need to check .fileno().
-if sys.stdout is None or sys.stdout.fileno() < 0:
+# sys.stdout/err is None in GUI mode on Windows.
+if sys.stdout is None:
     sys.stdout = NullWriter()
-if sys.stderr is None or sys.stderr.fileno() < 0:
+if sys.stderr is None:
     sys.stderr = NullWriter()
 
 
@@ -125,86 +118,9 @@ except ImportError:
 if sys.warnoptions:
     import warnings
 
-try:
-    import ctypes
-    import os
-    from ctypes import LibraryLoader, DEFAULT_MODE
-
-    def _frozen_name(name):
-        if name:
-            frozen_name = os.path.join(sys._MEIPASS, os.path.basename(name))
-            if os.path.exists(frozen_name):
-                name = frozen_name
-        return name
-
-    class PyInstallerImportError(OSError):
-        def __init__(self, name):
-            self.msg = ("Failed to load dynlib/dll %r. "
-                        "Most probably this dynlib/dll was not found "
-                        "when the application was frozen.") % name
-            self.args = (self.msg,)
-
-    class PyInstallerCDLL(ctypes.CDLL):
-        def __init__(self, name, *args, **kwargs):
-            name = _frozen_name(name)
-            try:
-                super(PyInstallerCDLL, self).__init__(name, *args, **kwargs)
-            except Exception as base_error:
-                raise PyInstallerImportError(name)
-
-    ctypes.CDLL = PyInstallerCDLL
-    ctypes.cdll = LibraryLoader(PyInstallerCDLL)
-
-    class PyInstallerPyDLL(ctypes.PyDLL):
-        def __init__(self, name, *args, **kwargs):
-            name = _frozen_name(name)
-            try:
-                super(PyInstallerPyDLL, self).__init__(name, *args, **kwargs)
-            except Exception as base_error:
-                raise PyInstallerImportError(name)
-
-    ctypes.PyDLL = PyInstallerPyDLL
-    ctypes.pydll = LibraryLoader(PyInstallerPyDLL)
-
-    if sys.platform.startswith('win'):
-        class PyInstallerWinDLL(ctypes.WinDLL):
-            def __init__(self, name,*args, **kwargs):
-                name = _frozen_name(name)
-                try:
-                    super(PyInstallerWinDLL, self).__init__(name, *args, **kwargs)
-                except Exception as base_error:
-                    raise PyInstallerImportError(name)
-
-        ctypes.WinDLL = PyInstallerWinDLL
-        ctypes.windll = LibraryLoader(PyInstallerWinDLL)
-
-        class PyInstallerOleDLL(ctypes.OleDLL):
-            def __init__(self, name,*args, **kwargs):
-                name = _frozen_name(name)
-                try:
-                    super(PyInstallerOleDLL, self).__init__(name, *args, **kwargs)
-                except Exception as base_error:
-                    raise PyInstallerImportError(name)
-
-        ctypes.OleDLL = PyInstallerOleDLL
-        ctypes.oledll = LibraryLoader(PyInstallerOleDLL)
-except ImportError:
-    pass
-
-# On Mac OS X insert sys._MEIPASS in the first position of the list of paths
-# that ctypes uses to search for libraries.
-#
-# Note: 'ctypes' module will NOT be bundled with every app because code in this
-#       module is not scanned for module dependencies. It is safe to wrap
-#       'ctypes' module into 'try/except ImportError' block.
-if sys.platform.startswith('darwin'):
-    try:
-        from ctypes.macholib import dyld
-        dyld.DEFAULT_LIBRARY_FALLBACK.insert(0, sys._MEIPASS)
-    except ImportError:
-        # Do nothing when module 'ctypes' is not available.
-        pass
-
+# Install the hooks for ctypes
+import pyimod04_ctypes  # noqa: E402
+pyimod04_ctypes.install()
 
 # Make .eggs and zipfiles available at runtime
 d = "eggs"

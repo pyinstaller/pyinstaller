@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -17,7 +17,6 @@ import signal
 # Third-party imports
 # -------------------
 import pytest
-from PyInstaller.utils.tests import skipif_win
 
 signals = sorted([
     key for key in dir(signal)
@@ -25,7 +24,8 @@ signals = sorted([
 ])
 
 
-@skipif_win
+@pytest.mark.darwin
+@pytest.mark.linux
 @pytest.mark.parametrize('signame', signals)
 @pytest.mark.parametrize('ignore', [True, False])
 def test_signal_handled(pyi_builder, signame, ignore):
@@ -36,6 +36,10 @@ def test_signal_handled(pyi_builder, signame, ignore):
         pytest.skip(
             'Messing with {} interferes with bootloader'.format(signame)
         )
+    elif signame == 'SIGTSTP':
+        pytest.xfail(
+            '{} is not caught to allow Ctrl-Z'.format(signame)
+        )
 
     verb = 'ignored' if ignore else 'handled'
     app_name = 'test_signal_{}_{}'.format(verb, signame)
@@ -43,7 +47,6 @@ def test_signal_handled(pyi_builder, signame, ignore):
 
     pyi_builder.test_source(
         """
-        from __future__ import print_function
         import psutil
         import signal
         import sys

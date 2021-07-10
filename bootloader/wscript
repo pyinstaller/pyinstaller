@@ -1,6 +1,6 @@
 # -*- mode: python -*- vim: filetype=python
 # -----------------------------------------------------------------------------
-# Copyright (c) 2014-2020, PyInstaller Development Team.
+# Copyright (c) 2014-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -54,6 +54,7 @@ DESTOS_TO_SYSTEM = {
     'sunos': platform.system(),  ## FIXME: inhibits cross-compile
     'hpux': 'HP-UX',
     'aix': 'AIX',
+    'cygwin': 'Cygwin',
 }
 
 # Map from platform.system() to waf's DEST_OS
@@ -66,10 +67,18 @@ SYSTEM_TO_BUILDOS = {
     'SunOS': 'sunos',
     'HP-UX': 'hpux',
     'AIX': 'aix',
+    'Cygwin': 'cygwin',
 }
 
 # waf's name of the system we are building on
-BUILD_OS = SYSTEM_TO_BUILDOS.get(platform.system(), platform.system())
+if sys.platform == 'cygwin':
+    # Cygwin needs special handling, because platform.system() contains
+    # identifiers such as MSYS_NT-10.0-19042 and CYGWIN_NT-10.0-19042 that
+    # do not fit PyInstaller's OS naming scheme, nor waf's DEST_OS, which is
+    # 'cygwin'.
+    BUILD_OS = SYSTEM_TO_BUILDOS.get('Cygwin')
+else:
+    BUILD_OS = SYSTEM_TO_BUILDOS.get(platform.system(), platform.system())
 
 is_cross = None
 
@@ -86,6 +95,8 @@ def machine():
         return 'arm'
     elif mach.startswith('aarch'):
         return 'aarch'
+    elif mach.startswith('sw_64'):
+        return 'sw_64'
     else:
         # Assume x86/x86_64 machine.
         return None
@@ -170,6 +181,21 @@ def options(ctx):
                    default='4.0',
                    dest='lsb_version')
 
+    grp = ctx.add_option_group('macOS-specific options',
+                               'These options have effect only on macOS.')
+    grp.add_option('--universal2',
+                   action='store_true',
+                   help='When building for 64-bit platform, build universal2 '
+                        'fat binary (x86_64, arm64). (This is the default.).',
+                   default=None,
+                   dest='macos_universal2')
+    grp.add_option('--no-universal2',
+                   action='store_false',
+                   help='When building for 64-bit platform, build a thin '
+                        'binary. Allows building with older toolchains that '
+                        'do not support universal2 binaries.',
+                   default=None,
+                   dest='macos_universal2')
 
 @conf
 def set_lsb_compiler(ctx):
@@ -303,8 +329,14 @@ def set_arch_flags(ctx):
 
         # Enable 64bit porting warnings and other warnings too.
         ctx.env.append_value('CFLAGS', '/W3')
+        # Disable warnings about deprecated POSIX function names
+        ctx.env.append_value('CFLAGS', '/D_CRT_NONSTDC_NO_WARNINGS')
+        # Disable warnings about unsafe CRT functions
+        ctx.env.append_value('CFLAGS', '/D_CRT_SECURE_NO_WARNINGS')
         # We use SEH exceptions in winmain.c; make sure they are activated.
         ctx.env.append_value('CFLAGS', '/EHa')
+        # Set the PE checksum on resulting binary
+        ctx.env.append_value('LINKFLAGS', '/RELEASE')
 
     # Ensure proper architecture flags on Mac OS X.
     elif ctx.env.DEST_OS == 'darwin':
@@ -313,7 +345,22 @@ def set_arch_flags(ctx):
         if ctx.env.PYI_ARCH == '32bit':
             mac_arch = ['-arch', 'i386']
         else:
-            mac_arch = ['-arch', 'x86_64']
+            UNIVERSAL2_FLAGS = ['-arch', 'x86_64', '-arch', 'arm64']
+            if ctx.options.macos_universal2 in (None, True):
+                # Check for universal2 support if set to auto-detect
+                # (neither --universal2 nor --no-universal2 is provided),
+                # or if universal2 is explicitly enabled
+                supported = ctx.check_cc(
+                    cflags=UNIVERSAL2_FLAGS,
+                    linkflags=UNIVERSAL2_FLAGS,
+                    features='c cprogram',
+                    msg='Checking for universal2 support',
+                    mandatory=ctx.options.macos_universal2)
+                ctx.options.macos_universal2 = supported
+            if ctx.options.macos_universal2:
+                mac_arch = UNIVERSAL2_FLAGS
+            else:
+                mac_arch = ['-arch', 'x86_64']
         ctx.env.append_value('CFLAGS', mac_arch)
         ctx.env.append_value('CXXFLAGS', mac_arch)
         ctx.env.append_value('LINKFLAGS', mac_arch)
@@ -345,7 +392,7 @@ def set_arch_flags(ctx):
         if machine() == 'sw_64':
             # The gcc has no '-m64' option under sw64 machine, but the
             # __x86_64__ macro needs to be defined
-            conf.env.append_value('CCDEFINES', '__x86_64__')
+            ctx.env.append_value('CCDEFINES', '__x86_64__')
         # This ensures proper compilation with 64bit gcc and 32bit Python
         # or vice versa or with manually choosen --target-arch.
         # Option -m32/-m64 has to be passed to cflags and linkflages.
@@ -401,8 +448,8 @@ def configure(ctx):
         ctx.msg('System', 'Assuming cross-compilation for %s' %
                 DESTOS_TO_SYSTEM[ctx.env.DEST_OS])
 
-        if ctx.env.DEST_OS in ('freebsd', 'hpux', 'sunos'):
-            # For these FreeBSD and HP-UX we determine some settings from
+        if ctx.env.DEST_OS in ('hpux', 'sunos'):
+            # For SunOS and HP-UX we determine some settings from
             # Python's sysconfig. For cross-compiling somebody needs to
             # implement options to overwrite these values as they may be
             # wrong.
@@ -410,6 +457,22 @@ def configure(ctx):
             ctx.fatal('Cross-compiling for target %s is not yet supported. '
                       'If you want this feature, please help implementing. '
                       'See the wscript file for details.' % ctx.env.DEST_OS)
+
+    if ctx.env.DEST_OS == 'darwin':
+        # macOS 10.13 is the oldest version supported by Apple.
+        # According to OS X doc this variable is equivalent to gcc option:
+        #   -mmacosx-version-min=10.13
+        #
+        # MACOSX_DEPLOYMENT_TARGET must be set before the compiler toolchain
+        # is used for the first time (i.e., check_sizeof_pointer() call
+        # made by detect_arch() call below), otherwise it will be
+        # automatically set to the toolchain's default value.
+        if not os.environ.get('MACOSX_DEPLOYMENT_TARGET'):
+            ctx.msg('MacOS deployment target', 'Setting to 10.13')
+            os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.13'
+        else:
+            ctx.msg('MacOS deployment target', 'Already set - %s' % (
+                    os.environ.get('MACOSX_DEPLOYMENT_TARGET')))
 
     # Detect architecture after completing compiler search
     ctx.detect_arch()
@@ -539,30 +602,25 @@ def configure(ctx):
                 ctx.env.append_value('STATICLIBPATH', '/usr/local/lib/hpux64')
 
 
-    elif ctx.env.DEST_OS == 'darwin':
-        # OS X 10.7 might not understand some load commands.
-        # The following variable fixes 10.7 compatibility.
-        # According to OS X doc this variable is equivalent to gcc option:
-        #   -mmacosx-version-min=10.7
-        os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.7'
-
     ### Libraries
 
     if ctx.env.DEST_OS == 'win32':
         if ctx.env.CC_NAME == 'msvc':
-            ctx.check_libs_msvc('user32 comctl32 kernel32 advapi32 ws2_32',
+            ctx.check_libs_msvc('user32 comctl32 kernel32 advapi32 gdi32',
                                 mandatory=True)
         else:
             ctx.check_cc(lib='user32', mandatory=True)
             ctx.check_cc(lib='comctl32', mandatory=True)
             ctx.check_cc(lib='kernel32', mandatory=True)
             ctx.check_cc(lib='advapi32', mandatory=True)
-            ctx.check_cc(lib='ws2_32', mandatory=True)
+            ctx.check_cc(lib='gdi32', mandatory=True)
     else:
         # Mac OS X and FreeBSD do not need libdl.
         # https://stackoverflow.com/questions/20169660/where-is-libdl-so-on-mac-os-x
         if ctx.env.DEST_OS not in ('darwin', 'freebsd', 'openbsd'):
             ctx.check_cc(lib='dl', mandatory=True)
+            # libdl to be thread-safe requires libpthread!
+            ctx.check_cc(lib='pthread', mandatory=True)
         if ctx.env.DEST_OS == 'freebsd' and sysconfig.get_config_var('HAVE_PTHREAD_H'):
             # On FreeBSD if python has threads: libthr needs to be loaded in
             # the main process, so the bootloader needs to be link to thr.
@@ -579,6 +637,8 @@ def configure(ctx):
             ctx.env.append_value('DEFINES', 'GC_FIND_LEAK')
             ctx.env.append_value('DEFINES', 'GC_DEBUG')
             ctx.env.append_value('DEFINES', 'SAVE_CALL_CHAIN')
+
+    ctx.recurse("tests")
 
     ### Functions
 
@@ -599,6 +659,8 @@ def configure(ctx):
     # OS support for these functions varies.
     for header, function_name in (('stdlib.h', 'unsetenv'),
                                   ('stdlib.h', 'mkdtemp'),
+                                  ('libgen.h', 'dirname'),
+                                  ('libgen.h', 'basename'),
                                   ('string.h', 'strndup'),
                                   ('string.h', 'strnlen')):
         ctx.check(
@@ -628,10 +690,6 @@ def configure(ctx):
             # Use Unicode entry point wmain/wWinMain
             ctx.env.append_value('LINKFLAGS', '-municode')
 
-    if ctx.env.DEST_OS == 'darwin':
-        ctx.env.append_value('CFLAGS', '-mmacosx-version-min=10.7')
-        ctx.env.append_value('LINKFLAGS', '-mmacosx-version-min=10.7')
-
     # On linux link only with needed libraries.
     # -Wl,--as-needed is on some platforms detected during configure but
     # fails during build. (Mac OS X, Solaris, AIX)
@@ -642,12 +700,6 @@ def configure(ctx):
         # This tool allows reducing the size of executables.
         ctx.find_program([assoc_programm(ctx, 'strip')], var='STRIP')
         ctx.load('strip', tooldir='tools')
-        # There is a strip flag for AIX environment
-        if ctx.env.DEST_OS == 'aix':
-            if ctx.env.PYI_ARCH == '32bit':
-                ctx.env.append_value('STRIPFLAGS', '-X32')
-            elif ctx.env.PYI_ARCH == '64bit':
-                ctx.env.append_value('STRIPFLAGS', '-X64')
 
     def windowed(name, baseenv):
         """Setup windowed environment based on `baseenv`."""
@@ -698,7 +750,6 @@ def configure(ctx):
     ## setup windowed RELEASE environment
     windowed('releasew', release_env)
 
-
 # TODO Use 'strip' command to decrease the size of compiled bootloaders.
 def build(ctx):
     if not ctx.variant:
@@ -710,7 +761,7 @@ def build(ctx):
                                 ctx.env.PYI_SYSTEM + "-" + ctx.env.PYI_ARCH)
     install_path = os.path.normpath(install_path)
 
-    if machine():
+    if machine() and ctx.env.DEST_OS != 'darwin':
         install_path += '-' + machine()
 
     if not ctx.env.LIB_Z:
@@ -729,15 +780,19 @@ def build(ctx):
         # Do not strip bootloaders when using MSVC.
         features = ''
 
+    ctx.objects(source=ctx.path.ant_glob('src/*.c', excl="src/main.c"),
+                includes='src windows zlib',
+                target="OBJECTS")
+
+    ctx.env.link_with_dynlibs = []
+    ctx.env.link_with_staticlibs = []
     if ctx.env.DEST_OS == 'win32':
-        # Use different RC file (icon) for console/windowed mode - remove '_d'
-        icon_rc = 'windows/' + exe_name.replace('_d', '') + '.rc'
         # On Windows we need to link library zlib statically.
         ctx.program(
-            source=ctx.path.ant_glob(['src/*.c', icon_rc]),
+            source=['src/main.c'],
             target=exe_name,
             install_path=install_path,
-            use='USER32 COMCTL32 KERNEL32 ADVAPI32 WS2_32 Z',
+            use='OBJECTS USER32 COMCTL32 KERNEL32 ADVAPI32 GDI32 Z',
             includes='src windows zlib',
             features=features,
         )
@@ -747,7 +802,8 @@ def build(ctx):
         # here. The decision if a lib is required for a specific platform is
         # made in the configure phase.
         libs = ['DL', 'M', 'Z',  # 'z' - zlib, 'm' - math,
-                'THR']  # may be used on FreBSD
+                'PTHREAD', # important! needs for libdl to be thread-safe
+                'THR'] # may be used on FreBSD
         staticlibs = []
         if ctx.env.DEST_OS == 'aix':
             # link statically with zlib, case sensitive
@@ -757,14 +813,19 @@ def build(ctx):
         if ctx.options.boehmgc:
             libs.append('GC')
 
+        ctx.env.link_with_dynlibs = libs
+        ctx.env.link_with_staticlibs = staticlibs
+
         ctx.program(
-            source=ctx.path.ant_glob('src/*.c'),
+            source='src/main.c',
             target=exe_name,
             includes='src',
-            use=libs,
+            use=libs + ["OBJECTS"],
             stlib=staticlibs,
             install_path=install_path,
             features=features)
+
+    ctx.recurse("tests")
 
 
 class make_all(BuildContext):

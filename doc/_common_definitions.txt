@@ -17,7 +17,6 @@
 .. _Cython: http://www.cython.org/
 .. _Django: https://www.djangoproject.com/
 .. _dnspython: http://www.dnspython.org/
-.. _Dropbox: https://www.dropbox.com/home
 .. _`easy_install`: http://peak.telecommunity.com/DevCenter/EasyInstall
 .. _`Microsoft COM`: http://www.microsoft.com/com/default.mspx
 .. _`GPL License`: https://raw.github.com/pyinstaller/pyinstaller/develop/COPYING.txt
@@ -29,6 +28,7 @@
 .. _`How to Contribute`: https://github.com/pyinstaller/pyinstaller/wiki/How-to-Contribute
 .. _`How to Report Bugs`: https://github.com/pyinstaller/pyinstaller/wiki/How-to-Report-Bugs
 .. _ImageMagick: http://www.imagemagick.org/script/index.php
+.. _`importlib.metadata`: https://docs.python.org/3/library/importlib.metadata.html
 .. _imputil: http://docs.python.org/2.7/library/imputil.html
 .. _`Info Property List`: https://developer.apple.com/library/mac/#documentation/MacOSX/Conceptual/BPRuntimeConfig/Articles/ConfigFiles.html
 .. _MacPorts: https://www.macports.org/
@@ -38,14 +38,16 @@
 .. _MinGW-w64: http://mingw-w64.sourceforge.net/
 .. _Modulefinder: http://docs.python.org/2.7/library/modulefinder.html
 .. _netpbm package: http://netpbm.sourceforge.net/
+.. _NextCloud: https://nextcloud.org
 .. _Parallels: http://www.parallels.com
+.. _pathlib: https://docs.python.org/3/library/pathlib.html
 .. _pefile: https://pypi.python.org/pypi/pefile/
 .. _PIL: http://www.pythonware.com/products/pil/
 .. _pip: http://www.pip-installer.org/
 .. _pip-Win: https://sites.google.com/site/pydatalog/python/pip-for-windows
 .. _plistlib: https://docs.python.org/3/library/plistlib.html
 .. _png2icns: http://icns.sourceforge.net/
-.. _PyCrypto: https://pypi.python.org/pypi/pycrypto/
+.. _tinyaes: https://github.com/naufraghi/tinyaes-py
 .. _PyInstaller.org: https://github.com/pyinstaller/pyinstaller/wiki/Community
 .. _`PyInstaller at GitHub`: https://github.com/pyinstaller/pyinstaller
 .. _`PyInstaller code signing recipe`: https://github.com/pyinstaller/pyinstaller/wiki/Recipe-OSX-Code-Signing
@@ -53,7 +55,6 @@
 .. _PyInstaller\/hooks\/hook-win32com.py: http://www.pyinstaller.org/browser/trunk/PyInstaller/hooks/hook-win32com.py?rev=latest
 .. _`PyInstaller Email List`: https://groups.google.com/forum/#!forum/pyinstaller
 .. _`PyInstaller Issue #1309`: https://github.com/pyinstaller/pyinstaller/issues/1309
-.. _`PyInstaller Issue #1527`: https://github.com/pyinstaller/pyinstaller/issues/1527
 .. _`PyInstaller Recipes`: https://github.com/pyinstaller/pyinstaller/wiki/Recipes
 .. _pypi: https://pypi.python.org/pypi/PyInstaller/
 .. _pypiwin32: https://pypi.python.org/pypi/pypiwin32/219
@@ -68,6 +69,7 @@
 .. _`Supported Packages`: https://github.com/pyinstaller/pyinstaller/wiki/Supported-Packages
 .. _TDM-GCC: http://tdm-gcc.tdragon.net/
 .. _TkInter: http://wiki.python.org/moin/TkInter
+.. _`Tcl/Tk`: http://www.tcl.tk/
 .. _`towncrier`: https://pypi.org/project/towncrier/
 .. _UPX: https://upx.github.io/
 .. _venv: https://docs.python.org/3/library/venv.html

@@ -1,33 +1,16 @@
-graft bootloader
-graft doc
-graft PyInstaller
-graft tests
-
-include *.rst
-include *.txt
-include *.toml
-include pyinstaller.py
-include pyinstaller-gui.py
-
-prune bootloader/build
-prune bootloader/.waf-*
-prune bootloader/.waf3-*
-prune bootloader/waf-*
-prune bootloader/waf3-*
-prune bootloader/_sdks
-prune bootloader/.vagrant
-exclude bootloader/.lock-waf*
-
-prune doc/source
-prune doc/_build
-recursive-exclude doc *.tmp
-include news/_template.rst
-prune news
-
-prune old
-prune scripts
-prune tests/scripts
-prune .github
-
-exclude .* *.yml *~ .directory
-global-exclude *.py[co]
+recursive-include bootloader *.c *.h wscript waf strip.py
+recursive-exclude PyInstaller/bootloader *
+recursive-include PyInstaller/bootloader/images *
+# Keep the Windows bootloaders so that MSYS2 users aren't required to build
+# from source. (Wheels don't work on MSYS2.)
+recursive-include PyInstaller/bootloader/Windows-32bit *
+recursive-include PyInstaller/bootloader/Windows-64bit *
+# Until pip 20.1.2 is considered old, keep the macOS bootloaders
+# in here too so that older pips which don't recognise the universal2
+# wheel tag can still use the sdist.
+recursive-include PyInstaller/bootloader/Darwin-64bit *
+include pyproject.toml
+# These files need to be explicitly included
+include PyInstaller/fake-modules/*.py
+include PyInstaller/hooks/rthooks.dat
+include PyInstaller/lib/README.rst

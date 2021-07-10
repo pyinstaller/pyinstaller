@@ -1,8 +1,8 @@
 ---
 name: Bug report
-about: Report a bug encountered while freezing you program or runing your frozen program
+about: Report a bug encountered while freezing you program or running your frozen program
 title: ''
-labels:
+labels: triage
 assignees: ''
 ---
 
@@ -18,15 +18,16 @@ Welcome to the PyInstaller issue tracker! Before creating an issue, please heed 
    maintainers to reproduce, the faster it'll be fixed.
 -->
 
-+++ ONLY TEXT +++ DO NOT POST IMAGES +++
+<!-- +++ ONLY TEXT +++ DO NOT POST IMAGES +++ -->
 
 ## Description of the issue
 
-## Context information (for bug reports)
+### Context information (for bug reports)
 
 * Output of `pyinstaller --version`: ```(paste here)```
-* Version of Python: e.g. 3.7
-* Platform: e.g GNU/Linux (distribution), Windows (language settings), OS X, conda, FreeBSD
+* Version of Python: <!-- e.g. 3.7 -->
+* Platform: <!-- e.g GNU/Linux (distribution), Windows (language settings), OS X, FreeBSD -->
+* How you installed Python: <!-- e.g. python.org/downloads, conda, brew, pyenv, apt, Windows store -->
 * Did you also try this on another platform? Does it work there?
 
 
@@ -41,7 +42,7 @@ pip install https://github.com/pyinstaller/pyinstaller/archive/develop.zip
 
 ### Make sure [everything is packaged correctly](https://github.com/pyinstaller/pyinstaller/wiki/How-to-Report-Bugs#make-sure-everything-is-packaged-correctly)
 
-  * [ ] start with celan installation
+  * [ ] start with clean installation
   * [ ] use the latest development version
   * [ ] Run your frozen program **from a command window (shell)** — instead of double-clicking on it
   * [ ] Package your program in **--onedir mode**
@@ -60,6 +61,7 @@ us reproducing and fixing a quite complex problem within approx 1 hour.
 ```
 
 ### Stacktrace / full error message
+
 
 ```
 (paste text here)

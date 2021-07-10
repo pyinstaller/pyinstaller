@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #-----------------------------------------------------------------------------
-# Copyright (c) 2017-2020, PyInstaller Development Team.
+# Copyright (c) 2017-2021, PyInstaller Development Team.
 # Author: Hartmut Goebel
 #
 # Distributed under the terms of the GNU General Public License (version 2
@@ -21,8 +21,6 @@
 # Note: This code is using raw file-access instead of module `pefile` to be
 # used in the CI-tests prior to installing other packages. It does not use
 # `argparse` to reduce the overhead and be quick.
-
-from __future__ import print_function
 
 import glob
 import struct

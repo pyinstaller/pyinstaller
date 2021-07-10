@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -26,17 +26,19 @@ import sys
 import struct
 
 from PyInstaller.config import CONF
-from .. import compat
-from ..compat import is_darwin, is_win, EXTENSION_SUFFIXES, \
-    open_file, is_py3, is_py37, is_cygwin
-from ..depend import dylib
-from ..depend.bindepend import match_binding_redirect
-from ..utils import misc
-from ..utils.misc import load_py_data_struct, save_py_data_struct
-from .. import log as logging
+from PyInstaller import compat
+from PyInstaller.compat import is_darwin, is_win, EXTENSION_SUFFIXES, \
+    is_py37, is_cygwin
+from PyInstaller.depend import dylib
+from PyInstaller.depend.bindepend import match_binding_redirect
+from PyInstaller.utils import misc
+from PyInstaller import log as logging
 
 if is_win:
-    from ..utils.win32 import winmanifest, winresource
+    from PyInstaller.utils.win32 import winmanifest, winresource, versioninfo
+
+if is_darwin:
+    import PyInstaller.utils.osx as osxutils
 
 logger = logging.getLogger(__name__)
 
@@ -90,45 +92,40 @@ def _check_guts_toc(attr, old, toc, last_build, pyc=0):
 
 #---
 
-def add_suffix_to_extensions(toc):
+def add_suffix_to_extension(inm, fnm, typ):
     """
-    Returns a new TOC with proper library suffix for EXTENSION items.
+    Take a TOC entry (inm, fnm, typ) and adjust the inm for EXTENSION
+    or DEPENDENCY to include the full library suffix.
     """
-    # TODO: Fix this recursive import
-    from .datastruct import TOC
-    new_toc = TOC()
-    for inm, fnm, typ in toc:
-        if typ == 'EXTENSION':
-            if is_py3:
-                # Change the dotted name into a relative path. This places C
-                # extensions in the Python-standard location. This only works
-                # in Python 3; see comments above
-                # ``sys.meta_path.append(CExtensionImporter())`` in
-                # ``pyimod03_importers``.
-                inm = inm.replace('.', os.sep)
-            # In some rare cases extension might already contain a suffix.
-            # Skip it in this case.
-            if os.path.splitext(inm)[1] not in EXTENSION_SUFFIXES:
-                # Determine the base name of the file.
-                if is_py3:
-                    base_name = os.path.basename(inm)
-                else:
-                    base_name = inm.rsplit('.')[-1]
-                assert '.' not in base_name
-                # Use this file's existing extension. For extensions such as
-                # ``libzmq.cp36-win_amd64.pyd``, we can't use
-                # ``os.path.splitext``, which would give only the ```.pyd`` part
-                # of the extension.
-                inm = inm + os.path.basename(fnm)[len(base_name):]
+    if typ == 'EXTENSION':
+        if fnm.endswith(inm):
+            # If inm completely fits into end of the fnm, it has
+            # already been processed
+            return inm, fnm, typ
+        # Change the dotted name into a relative path. This places C
+        # extensions in the Python-standard location.
+        inm = inm.replace('.', os.sep)
+        # In some rare cases extension might already contain a suffix.
+        # Skip it in this case.
+        if os.path.splitext(inm)[1] not in EXTENSION_SUFFIXES:
+            # Determine the base name of the file.
+            base_name = os.path.basename(inm)
+            assert '.' not in base_name
+            # Use this file's existing extension. For extensions such as
+            # ``libzmq.cp36-win_amd64.pyd``, we can't use
+            # ``os.path.splitext``, which would give only the ```.pyd`` part
+            # of the extension.
+            inm = inm + os.path.basename(fnm)[len(base_name):]
 
-        elif typ == 'DEPENDENCY':
-            # Use the suffix from the filename.
-            # TODO Verify what extensions are by DEPENDENCIES.
-            binext = os.path.splitext(fnm)[1]
-            if not os.path.splitext(inm)[1] == binext:
-                inm = inm + binext
-        new_toc.append((inm, fnm, typ))
-    return new_toc
+    elif typ == 'DEPENDENCY':
+        # Use the suffix from the filename.
+        # TODO Verify what extensions are by DEPENDENCIES.
+        binext = os.path.splitext(fnm)[1]
+        if not os.path.splitext(inm)[1] == binext:
+            inm = inm + binext
+
+    return inm, fnm, typ
+
 
 def applyRedirects(manifest, redirects):
     """
@@ -153,7 +150,9 @@ def applyRedirects(manifest, redirects):
     return redirecting
 
 
-def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None):
+def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None,
+               target_arch=None, codesign_identity=None,
+               entitlements_file=None):
     """
     Cache prevents preprocessing binary files again and again.
 
@@ -161,7 +160,7 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None):
                to determine level of paths for @loader_path like
                '@loader_path/../../' for qt4 plugins.
     """
-    from ..config import CONF
+    from PyInstaller.config import CONF
     # On darwin a cache is required anyway to keep the libaries
     # with relative install names. Caching on darwin does not work
     # since we need to modify binary headers to use relative paths
@@ -189,12 +188,31 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None):
     pyver = ('py%d%s') % (sys.version_info[0], sys.version_info[1])
     arch = platform.architecture()[0]
     cachedir = os.path.join(CONF['cachedir'], 'bincache%d%d_%s_%s' % (strip, upx, pyver, arch))
+    if target_arch:
+        cachedir = os.path.join(cachedir, target_arch)
+    if is_darwin:
+        # Separate by codesign identity
+        if codesign_identity:
+            # Compute hex digest of codesign identity string to prevent
+            # issues with invalid characters.
+            csi_hash = hashlib.sha256(codesign_identity.encode('utf-8'))
+            cachedir = os.path.join(cachedir, csi_hash.hexdigest())
+        else:
+            cachedir = os.path.join(cachedir, 'adhoc')  # ad-hoc signing
+        # Separate by entitlements
+        if entitlements_file:
+            # Compute hex digest of entitlements file contents
+            with open(entitlements_file, 'rb') as fp:
+                ef_hash = hashlib.sha256(fp.read())
+            cachedir = os.path.join(cachedir, ef_hash.hexdigest())
+        else:
+            cachedir = os.path.join(cachedir, 'no-entitlements')
     if not os.path.exists(cachedir):
         os.makedirs(cachedir)
     cacheindexfn = os.path.join(cachedir, "index.dat")
     if os.path.exists(cacheindexfn):
         try:
-            cache_index = load_py_data_struct(cacheindexfn)
+            cache_index = misc.load_py_data_struct(cacheindexfn)
         except Exception as e:
             # tell the user they may want to fix their cache
             # .. however, don't delete it for them; if it keeps getting
@@ -224,10 +242,6 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None):
         if digest != cache_index[basenm]:
             os.remove(cachedfile)
         else:
-            # On Mac OS X we need relative paths to dll dependencies
-            # starting with @executable_path
-            if is_darwin:
-                dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
             return cachedfile
 
 
@@ -253,17 +267,28 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None):
 
     if upx:
         if strip:
-            fnm = checkCache(fnm, strip=True, upx=False)
-        bestopt = "--best"
-        # FIXME: Linux builds of UPX do not seem to contain LZMA (they assert out)
-        # A better configure-time check is due.
-        if CONF["hasUPX"] >= (3,) and os.name == "nt":
-            bestopt = "--lzma"
+            fnm = checkCache(fnm, strip=True, upx=False, dist_nm=dist_nm,
+                             target_arch=target_arch,
+                             codesign_identity=codesign_identity,
+                             entitlements_file=entitlements_file)
+        # We meed to avoid using UPX with Windows DLLs that have Control
+        # Flow Guard enabled, as it breaks them.
+        if is_win and versioninfo.pefile_check_control_flow_guard(fnm):
+            logger.info('Disabling UPX for %s due to CFG!', fnm)
+        elif misc.is_file_qt_plugin(fnm):
+            logger.info('Disabling UPX for %s due to it being a Qt plugin!',
+                        fnm)
+        else:
+            bestopt = "--best"
+            # FIXME: Linux builds of UPX do not seem to contain LZMA
+            # (they assert out). A better configure-time check is due.
+            if CONF["hasUPX"] >= (3,) and os.name == "nt":
+                bestopt = "--lzma"
 
-        upx_executable = "upx"
-        if CONF.get('upx_dir'):
-            upx_executable = os.path.join(CONF['upx_dir'], upx_executable)
-        cmd = [upx_executable, bestopt, "-q", cachedfile]
+            upx_executable = "upx"
+            if CONF.get('upx_dir'):
+                upx_executable = os.path.join(CONF['upx_dir'], upx_executable)
+            cmd = [upx_executable, bestopt, "-q", cachedfile]
     else:
         if strip:
             strip_options = []
@@ -351,12 +376,18 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None):
 
     # update cache index
     cache_index[basenm] = digest
-    save_py_data_struct(cacheindexfn, cache_index)
+    misc.save_py_data_struct(cacheindexfn, cache_index)
 
     # On Mac OS X we need relative paths to dll dependencies
-    # starting with @executable_path
+    # starting with @executable_path. Modifying headers invalidates
+    # signatures, so remove any existing signature and then re-add
+    # it after paths are rewritten.
     if is_darwin:
+        osxutils.binary_to_target_arch(cachedfile, target_arch,
+                                       display_name=fnm)
+        osxutils.remove_signature_from_binary(cachedfile)
         dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
+        osxutils.sign_binary(cachedfile, codesign_identity, entitlements_file)
     return cachedfile
 
 
@@ -366,9 +397,7 @@ def cacheDigest(fnm, redirects):
         for chunk in iter(lambda: f.read(16 * 1024), b""):
             hasher.update(chunk)
     if redirects:
-        redirects = str(redirects)
-        if is_py3:
-            redirects = redirects.encode('utf-8')
+        redirects = str(redirects).encode('utf-8')
         hasher.update(redirects)
     digest = bytearray(hasher.digest())
     return digest
@@ -382,7 +411,7 @@ def _check_path_overlap(path):
 
     Raise SystemExit if there is overlap, return True otherwise
     """
-    from ..config import CONF
+    from PyInstaller.config import CONF
     specerr = 0
     if CONF['workpath'].startswith(path):
         logger.error('Specfile error: The output path "%s" contains '
@@ -410,7 +439,7 @@ def _make_clean_directory(path):
             except OSError:
                 _rmtree(path)
 
-        os.makedirs(path)
+        os.makedirs(path, exist_ok=True)
 
 
 def _rmtree(path):
@@ -418,7 +447,7 @@ def _rmtree(path):
     Remove directory and all its contents, but only after user confirmation,
     or if the -y option is set
     """
-    from ..config import CONF
+    from PyInstaller.config import CONF
     if CONF['noconfirm']:
         choice = 'y'
     elif sys.stdout.isatty():
@@ -430,8 +459,9 @@ def _rmtree(path):
                          '-y option (remove output directory without '
                          'confirmation).' % path)
     if choice.strip().lower() == 'y':
-        print("On your own risk, you can use the option `--noconfirm` "
-              "to get rid of this question.")
+        if not CONF['noconfirm']:
+            print("On your own risk, you can use the option `--noconfirm` "
+                  "to get rid of this question.")
         logger.info('Removing dir %s', path)
         shutil.rmtree(path)
     else:
@@ -600,7 +630,7 @@ def _load_code(modname, filename):
 
         # Open the source file in binary mode and allow the `compile()` call to
         # detect the source encoding.
-        with open_file(filename, 'rb') as f:
+        with open(filename, 'rb') as f:
             source = f.read()
         return compile(source, filename, 'exec')
 
@@ -638,8 +668,9 @@ def strip_paths_in_code(co, new_filename=None):
 
     # Paths to remove from filenames embedded in code objects
     replace_paths = sys.path + CONF['pathex']
-    # Make sure paths end with os.sep
-    replace_paths = [os.path.join(f, '') for f in replace_paths]
+    # Make sure paths end with os.sep and the longest paths are first
+    replace_paths = sorted((os.path.join(f, '') for f in replace_paths),
+                           key=len, reverse=True)
 
     if new_filename is None:
         original_filename = os.path.normpath(co.co_filename)

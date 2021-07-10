@@ -1,6 +1,6 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2020, PyInstaller Development Team.
+ * Copyright (c) 2013-2021, PyInstaller Development Team.
  *
  * Distributed under the terms of the GNU General Public License (version 2
  * or later) with exception for distributing the bootloader.
@@ -92,14 +92,12 @@ main(int argc, char **argv)
 
     #ifdef __FreeBSD__
     fp_except_t m;
-    #endif
 
     /* 754 requires that FP exceptions run in "no stop" mode by default,
      * and until C vendors implement C99's ways to control FP exceptions,
      * Python requires non-stop mode.  Alas, some platforms enable FP
      * exceptions by default.  Here we disable them.
      */
-    #ifdef __FreeBSD__
     m = fpgetmask();
     fpsetmask(m & ~FP_X_OFL);
     #endif

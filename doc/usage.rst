@@ -58,11 +58,9 @@ or, on Windows,
 Options
 ~~~~~~~~~~~~~~~
 
-General Options
-------------------
+A full list of the ``pyinstaller`` command's options are as follows:
 
 .. include:: _pyinstaller-options.tmp
-
 
 
 Shortening the Command
@@ -102,23 +100,24 @@ Or in Windows, use the little-known BAT file line continuation::
 Running |PyInstaller| from Python code
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you want to run |PyInstaller| from within Python code use the ``run``
-function of the ``__main__`` module and pass all command line arguments in as
-a list, e.g.
+If you want to run |PyInstaller| from Python code, you can use the ``run`` function
+defined in ``PyInstaller.__main__``. For instance, the following code:
 
 .. code-block:: python
 
     import PyInstaller.__main__
 
     PyInstaller.__main__.run([
-        '--name=%s' % package_name,
+        'my_script.py',
         '--onefile',
-        '--windowed',
-        '--add-binary=%s' % os.path.join('resource', 'path', '*.png'),
-        '--add-data=%s' % os.path.join('resource', 'path', '*.txt'),
-        '--icon=%s' % os.path.join('resource', 'path', 'icon.ico'),
-        os.path.join('my_package', '__main__.py'),
+        '--windowed'
     ])
+
+Is equivalent to:
+
+.. code-block:: shell
+
+    pyinstaller my_script.py --onefile --windowed
 
 
 Running |PyInstaller| with Python optimizations
@@ -188,9 +187,9 @@ been UPX-compressed, the full execution sequence is:
 * The Python interpreter executes your script.
 
 |PyInstaller| looks for UPX on the execution path
-or the path specified with the ``--upx-dir`` option.
+or the path specified with the :option:`--upx-dir` option.
 If UPX exists, |PyInstaller| applies it to the final executable,
-unless the ``--noupx`` option was given.
+unless the :option:`--noupx` option was given.
 UPX has been used with |PyInstaller| output often, usually with no problems.
 
 
@@ -200,14 +199,84 @@ Encrypting Python Bytecode
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To encrypt the Python bytecode modules stored in the bundle,
-pass the ``--key=``\ *key-string*  argument on
+pass the :option:`--key`\ =\ *key-string*  argument on
 the command line.
 
-For this to work, you must have the PyCrypto_
-module installed.
+For this to work, you need to run::
+
+    pip install pyinstaller[encryption]
+
 The *key-string* is a string of 16 characters which is used to
 encrypt each file of Python byte-code before it is stored in
 the archive inside the executable file.
+
+This feature uses the tinyaes_ module internally for the encryption.
+
+
+.. _splash screen:
+
+Splash Screen *(Experimental)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. Note::
+    This feature is incompatible with macOS. In the current design, the
+    splash screen operates in a secondary thread, which is disallowed by
+    the Tcl/Tk (or rather, the underlying GUI toolkit) on macOS.
+
+Some applications may require a splash screen as soon as the application
+(bootloader) has been started, because especially in onefile mode large
+applications may have long extraction/startup times, while the bootloader
+prepares everything, where the user cannot judge whether the application
+was started successfully or not.
+
+The bootloader is able to display a one-image (i.e. only an image) splash
+screen, which is displayed before the actual main extraction process starts.
+The splash screen supports non-transparent and hard-cut-transparent images as background
+image, so non-rectangular splash screens can also be displayed.
+
+This splash screen is based on `Tcl/Tk`_, which is the same library used by the Python
+module `tkinter`_. PyInstaller bundles the dynamic libraries of tcl and tk into the
+application at compile time. These are loaded into the bootloader at startup of the
+application after they have been extracted (if the program has been packaged as an
+onefile archive). Since the file sizes of the necessary dynamic libraries are very small,
+there is almost no delay between the start of the application and the splash screen.
+The compressed size of the files necessary for the splash screen is about *1.5 MB*.
+
+As an additional feature, text can optionally be displayed on the splash screen. This
+can be changed/updated from within Python. This offers the possibility to
+display the splash screen during longer startup procedures of a Python program
+(e.g. waiting for a network response or loading large files into memory). You
+can also start a GUI behind the splash screen, and only after it is completely
+initialized the splash screen can be closed. Optionally, the font, color and
+size of the text can be set. However, the font must be installed on the user
+system, as it is not bundled. If the font is not available, a fallback font is used.
+
+If the splash screen is configured to show text, it will automatically (as onefile archive)
+display the name of the file that is currently being unpacked, this acts as a progress bar.
+
+
+The ``pyi_splash`` Module
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The splash screen is controlled from within Python by the :mod:`pyi_splash` module, which can
+be imported at runtime. This module **cannot** be installed by a package manager
+because it is part of PyInstaller and is included as needed.
+This module must be imported within the Python program. The usage is as follows::
+
+    import pyi_splash
+
+    # Update the text on the splash screen
+    pyi_splash.update_text("PyInstaller is a great software!")
+    pyi_splash.update_text("Second time's a charm!")
+
+    # Close the splash screen. It does not matter when the call
+    # to this function is made, the splash screen remains open until
+    # this function is called or the Python program is terminated.
+    pyi_splash.close()
+
+Of course the import should be in a ``try ... except`` block, in case the program is
+used externally as a normal Python script, without a bootloader.
+For a detailed description see :ref:`pyi_splash Module`.
 
 
 .. _defining the extraction location:
@@ -218,7 +287,7 @@ Defining the Extraction Location
 In rare cases, when you bundle to a single executable
 (see :ref:`Bundling to One File` and :ref:`how the one-file program works`),
 you may want to control the location of the temporary directory at compile
-time. This can be done using the ``--runtime-tmpdir`` option. If this option is
+time. This can be done using the :option:`--runtime-tmpdir` option. If this option is
 given, the bootloader will ignore any temp-folder location defined by the
 run-time OS. Please use this option only if you know what you are doing.
 
@@ -238,36 +307,38 @@ Supporting Multiple Python Environments
 
 When you need to bundle your application within one OS
 but for different versions of Python and support libraries -- for example,
-a Python 3 version and a Python 2.7 version;
+a Python 3.6 version and a Python 3.7 version;
 or a supported version that uses Qt4 and a development version that uses Qt5 --
-we recommend you use virtualenv_.
-With virtualenv you can maintain different combinations of Python
+we recommend you use venv_.
+With `venv` you can maintain different combinations of Python
 and installed packages, and switch from one combination to another easily.
-(If you work only with Python 3.4 and later, ``python3 -m venv``
-does the same job, see module venv_.)
+These are called `virtual environments` or `venvs` in short.
 
-* Use virtualenv to create as many different development environments as you need,
+* Use `venv` to create as many different development environments as you need,
   each with its unique combination of Python and installed packages.
-* Install |PyInstaller| in each environment.
-* Use |PyInstaller| to build your application in each environment.
+* Install |PyInstaller| in each virtual environment.
+* Use |PyInstaller| to build your application in each virtual environment.
 
-Note that when using virtualenv, the path to the |PyInstaller| commands is:
+Note that when using `venv`, the path to the |PyInstaller| commands is:
 
 * Windows: ENV_ROOT\\Scripts
 * Others:  ENV_ROOT/bin
 
-Under Windows, the pip-Win_ package installs virtualenv and makes it
+Under Windows, the pip-Win_ package makes it
 especially easy to set up different environments and switch between them.
 Under GNU/Linux and Mac OS, you switch environments at the command line.
 
-See :pep:`405` for more information about Python virtual environments.
+See :pep:`405`
+and the official `Python Tutorial on Virtual Environments and Packages
+<https://docs.python.org/3/tutorial/venv.html>`_
+for more information about Python virtual environments.
 
 
 Supporting Multiple Operating Systems
 ---------------------------------------
 
 If you need to distribute your application for more than one OS,
-for example both Windows and Mac OS X, you must install |PyInstaller|
+for example both Windows and Mac OS X, you must install |PyInstaller|
 on each platform and bundle your app separately on each.
 
 You can do this from a single machine using virtualization.
@@ -277,19 +348,22 @@ You set up a virtual machine for each "guest" OS.
 In it you install
 Python, the support packages your application needs, and PyInstaller.
 
-The Dropbox_ system is useful with virtual machines.
-Install a Dropbox client in each virtual machine, all linked to your Dropbox account.
-Keep a single copy of your script(s) in a Dropbox folder.
+A `File Sync & Share`__ system like NextCloud_ is useful with virtual machines.
+Install the synchronization client in each virtual machine,
+all linked to your synchronization account.
+Keep a single copy of your script(s) in a synchronized folder.
 Then on any virtual machine you can run |PyInstaller| thus::
 
-    cd ~/Dropbox/project_folder/src # GNU/Linux, Mac -- Windows similar
+    cd ~/NextCloud/project_folder/src # GNU/Linux, Mac -- Windows similar
     rm *.pyc # get rid of modules compiled by another Python
     pyinstaller --workpath=path-to-local-temp-folder  \
                 --distpath=path-to-local-dist-folder  \
                 ...other options as required...       \
                 ./myscript.py
 
-|PyInstaller| reads scripts from the common Dropbox folder,
+__ https://en.wikipedia.org/wiki/Enterprise_file_synchronization_and_sharing
+
+|PyInstaller| reads scripts from the common synchronized folder,
 but writes its work files and the bundled app in folders that
 are local to the virtual machine.
 
@@ -339,7 +413,7 @@ The version text file is encoded UTF-8 and may contain non-ASCII characters.
 Be sure to edit and save the text file in UTF-8 unless you are
 certain it contains only ASCII string values.
 
-Your edited version text file can be given with the ``--version-file=``
+Your edited version text file can be given with the :option:`--version-file`
 option to ``pyinstaller`` or ``pyi-makespec``.
 The text data is converted to a Version resource and
 installed in the bundled app.
@@ -380,19 +454,19 @@ Or you can apply the ``unicode()`` function to the object
 to reproduce the version text file.
 
 
-Building Mac OS X App Bundles
+Building Mac OS X App Bundles
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Under Mac OS X, |PyInstaller| always builds a UNIX executable in
 :file:`dist`.
-If you specify ``--onedir``, the output is a folder named :file:`myscript`
+If you specify :option:`--onedir`, the output is a folder named :file:`myscript`
 containing supporting files and an executable named :file:`myscript`.
-If you specify ``--onefile``, the output is a single UNIX executable
+If you specify :option:`--onefile`, the output is a single UNIX executable
 named :file:`myscript`.
 Either executable can be started from a Terminal command line.
 Standard input and output work as normal through that Terminal window.
 
-If you specify ``--windowed`` with either option, the ``dist`` folder
+If you specify :option:`--windowed` with either option, the ``dist`` folder
 also contains an OS X application named :file:`myscript.app`.
 
 As you probably know, an application is a special type of folder.
@@ -402,15 +476,15 @@ The one built by |PyInstaller| contains a folder always named
   + A folder :file:`Frameworks` which is empty.
   + A folder :file:`Resources` that contains an icon file.
   + A file :file:`Info.plist` that describes the app.
-  + A folder :file:`MacOS` that contains the the executable and 
-    supporting files, just as in the ``--onedir`` folder.
+  + A folder :file:`MacOS` that contains the the executable and
+    supporting files, just as in the :option:`--onedir` folder.
 
-Use the ``icon=`` argument to specify a custom icon for the application.
+Use the :option:`--icon` argument to specify a custom icon for the application.
 It will be copied into the :file:`Resources` folder.
 (If you do not specify an icon file, |PyInstaller| supplies a
 file :file:`icon-windowed.icns` with the |PyInstaller| logo.)
 
-Use the ``osx-bundle-identifier=`` argument to add a bundle identifier.
+Use the :option:`--osx-bundle-identifier` argument to add a bundle identifier.
 This becomes the ``CFBundleIdentifier`` used in code-signing
 (see the `PyInstaller code signing recipe`_
 and for more detail, the `Apple code signing overview`_ technical note).
@@ -454,9 +528,9 @@ You must make a unique version of the app for each word-length supported.
 Windows
 ---------------
 
-For **Python >= 3.5** targeting *Windows < 10*, the developer needs to take
+The developer needs to take
 special care to include the Visual C++ run-time .dlls:
-Python 3.5 uses Visual Studio 2015 run-time, which has been renamed into
+Python 3.5+ uses Visual Studio 2015 run-time, which has been renamed into
 `“Universal CRT“
 <https://blogs.msdn.microsoft.com/vcblog/2015/03/03/introducing-the-universal-crt/>`_
 and has become part of Windows 10.
@@ -505,6 +579,12 @@ It should be compatible with later versions of Mac OS X.
 
 Building 32-bit Apps in Mac OS X
 ====================================
+
+.. note:: This section still refers to Python 2.7 provided by Apple.
+          It might not be valid for Python 3 installed
+          from `MacPorts`_ or `Homebrew`_.
+
+          Please contribute to keep this section up-to-date.
 
 Older versions of Mac OS X supported both 32-bit and 64-bit executables.
 PyInstaller builds an app using the the word-length of the Python used to execute it.
@@ -570,7 +650,7 @@ before your code has started executing.
 The |bootloader| gets the names of opened documents from
 the OpenDocument event and encodes them into the ``argv``
 string before starting your code.
-Thus your code can query ``sys.argv`` to get the names
+Thus your code can query :data:`sys.argv` to get the names
 of documents that should be opened at startup.
 
 OpenDocument is the only AppleEvent the |bootloader| handles.
@@ -578,6 +658,30 @@ If you want to handle other events, or events that
 are delivered after the program has launched, you must
 set up the appropriate handlers.
 
+
+AIX
+----------------------
+
+Depending on whether Python was build as a 32-bit or a 64-bit executable
+you may need to set or unset
+the environment variable :envvar:`OBJECT_MODE`.
+To determine the size the following command can be used::
+
+    $ python -c "import sys; print(sys.maxsize <= 2**32)"
+    True
+
+When the answer is ``True`` (as above) Python was build as a 32-bit
+executable.
+
+When working with a 32-bit Python executable proceed as follows::
+
+    $ unset OBJECT_MODE
+    $ pyinstaller <your arguments>
+
+When working with a 64-bit Python executable proceed as follows::
+
+    $ export OBJECT_MODE=64
+    $ pyinstaller <your arguments>
 
 
 .. include:: _common_definitions.txt

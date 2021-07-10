@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -8,8 +8,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-from __future__ import print_function
 
 # sys.path  should contain absolute paths.
 # With relative paths frozen application will
@@ -22,19 +20,14 @@ import os
 import sys
 import tempfile
 
-
-# Python 3 does not have function os.getcwdu() since all strings are unicode.
-getcwd = os.getcwdu if sys.version_info[0] < 3 else os.getcwd
-
-
 print('sys.stderr.encoding:', sys.stderr.encoding)
 print('sys.path', sys.path)
-print('CWD:', repr(getcwd()))
+print('CWD:', repr(os.getcwd()))
 
 # Change working directory.
 os.chdir(tempfile.gettempdir())
 print('Changing working directory...')
-print('CWD:', repr(getcwd()))
+print('CWD:', repr(os.getcwd()))
 
 # Try import a module. It should fail
 try:

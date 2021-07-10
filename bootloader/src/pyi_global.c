@@ -1,6 +1,6 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2020, PyInstaller Development Team.
+ * Copyright (c) 2013-2021, PyInstaller Development Team.
  *
  * Distributed under the terms of the GNU General Public License (version 2
  * or later) with exception for distributing the bootloader.
@@ -25,9 +25,6 @@
 /* #define STB_DEFINE  1/ * * / */
 /* #define STB_NO_REGISTRY 1 / * No need for Windows registry functions in stb.h. * / */
 
-/* TODO: use safe string functions */
-#define _CRT_SECURE_NO_WARNINGS 1
-
 #include <stdarg.h>  /* va_list, va_start(), va_end() */
 #include <stdio.h>
 
@@ -41,8 +38,8 @@
     #include <unistd.h>
 #endif
 
-/* On Mac OS X send debug msg also to syslog for gui app in debug mode. */
-#if defined(__APPLE__) && defined(WINDOWED) && defined(LAUNCH_DEBUG)
+/* On Mac OS X send debug msg also to syslog for windowed app. */
+#if defined(__APPLE__) && defined(WINDOWED)
     #include <syslog.h>
 #endif
 
@@ -112,61 +109,29 @@ mbothererror(const char *fmt, ...)
 
     void mbfatal_winerror(const char * funcname, const char *fmt, ...)
     {
+        char fullmsg[MBTXTLEN];
         char msg[MBTXTLEN];
-        int size = 0;
         DWORD error_code = GetLastError();
         va_list args;
 
         va_start(args, fmt);
-            size = vsnprintf(msg, MBTXTLEN, fmt, args);
+            vsnprintf(msg, MBTXTLEN, fmt, args);
         va_end(args);
-
-        if(size < MBTXTLEN) {
-            strncpy(msg + size, funcname, MBTXTLEN - size - 1);
-            size += strlen(funcname);
-        }
-
-        if(size < MBTXTLEN) {
-            strncpy(msg + size, ": ", 2);
-            size += 2;
-        }
-
-        if(size < MBTXTLEN) {
-            strncpy(msg + size, GetWinErrorString(error_code), MBTXTLEN - size - 1);
-        }
-
-        msg[MBTXTLEN-1] = '\0';
-
-        show_message_box(msg, "Fatal error detected", MB_ICONEXCLAMATION);
+        snprintf(fullmsg, MBTXTLEN, "%s%s: %s", msg, funcname, GetWinErrorString(error_code));
+        show_message_box(fullmsg, "Fatal error detected", MB_ICONEXCLAMATION);
     }
 
     void mbfatal_perror(const char * funcname, const char *fmt, ...)
     {
+        char fullmsg[MBTXTLEN];
         char msg[MBTXTLEN];
-        int size = 0;
         va_list args;
 
         va_start(args, fmt);
-            size = vsnprintf(msg, MBTXTLEN, fmt, args);
+            vsnprintf(msg, MBTXTLEN, fmt, args);
         va_end(args);
-
-        if(size < MBTXTLEN) {
-            strncpy(msg + size, funcname, MBTXTLEN - size - 1);
-            size += strlen(funcname);
-        }
-
-        if(size < MBTXTLEN) {
-            strncpy(msg + size, ": ", 2);
-            size += 2;
-        }
-
-        if(size < MBTXTLEN) {
-            strncpy(msg + size, strerror(errno), MBTXTLEN - size - 1);
-        }
-
-        msg[MBTXTLEN-1] = '\0';
-
-        show_message_box(msg, "Fatal error detected", MB_ICONEXCLAMATION);
+        snprintf(fullmsg, MBTXTLEN, "%s%s: %s", msg, funcname, strerror(errno));
+        show_message_box(fullmsg, "Fatal error detected", MB_ICONEXCLAMATION);
     }
 #endif  /* _WIN32 and WINDOWED */
 
@@ -239,7 +204,7 @@ pyi_global_printf(const char *fmt, ...)
     /* This allows to see bootloader debug messages in the Console.app log viewer. */
     /* https://en.wikipedia.org/wiki/Console_(OS_X) */
     /* Levels DEBUG and INFO are ignored so use level NOTICE. */
-#if defined(__APPLE__) && defined(WINDOWED) && defined(LAUNCH_DEBUG)
+#if defined(__APPLE__) && defined(WINDOWED)
     va_start(v, fmt);
     vsyslog(LOG_NOTICE, fmt, v);
     va_end(v);
@@ -258,7 +223,7 @@ void pyi_global_perror(const char *funcname, const char *fmt, ...) {
     va_end(v);
     perror(funcname);  // perror() writes to stderr
 
-    #if defined(__APPLE__) && defined(WINDOWED) && defined(LAUNCH_DEBUG)
+    #if defined(__APPLE__) && defined(WINDOWED)
         va_start(v, fmt);
             vsyslog(LOG_NOTICE, fmt, v);
             vsyslog(LOG_NOTICE, "%m\n", NULL);  // %m emits the result of strerror()

@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -21,10 +21,8 @@ zest.releaser allows customization by exposing some entry points. For details:
 https://zestreleaser.readthedocs.org/en/latest/entrypoints.html
 """
 
-from __future__ import print_function
-
 import os
-from ..compat import exec_command, getenv
+from PyInstaller.compat import exec_command, getenv
 
 
 def sign_source_distribution(data):

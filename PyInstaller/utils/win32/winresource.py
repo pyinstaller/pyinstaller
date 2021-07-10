@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2020, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -18,7 +18,7 @@ winresource.py <dstpath> <srcpath>
 Updates or adds resources from file <srcpath> in file <dstpath>.
 """
 
-from ...compat import pywintypes, win32api
+from PyInstaller.compat import pywintypes, win32api
 
 import PyInstaller.log as logging
 logger = logging.getLogger(__name__)

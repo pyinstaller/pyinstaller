@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2020, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -19,23 +19,19 @@ support the operation of CopyIcons_FromIco(). None of these classes
 and globals are referenced outside this module.
 '''
 
+import os.path
+import struct
+
+from PyInstaller.compat import win32api, pywintypes
+from PyInstaller import config
+
+import PyInstaller.log as logging
+logger = logging.getLogger(__name__)
+
 RT_ICON = 3
 RT_GROUP_ICON = 14
 LOAD_LIBRARY_AS_DATAFILE = 2
 
-import os.path
-import struct
-import types
-try:
-    StringTypes = types.StringTypes
-except AttributeError:
-    StringTypes = [ type("") ]
-
-from ...compat import win32api
-from ... import config
-
-import PyInstaller.log as logging
-logger = logging.getLogger(__name__)
 
 class Structure:
     def __init__(self):
@@ -58,8 +54,8 @@ class Structure:
             return self._fields_[index]
         try:
             return self.__dict__[name]
-        except KeyError:
-            raise AttributeError(name)
+        except KeyError as e:
+            raise AttributeError(name) from e
 
     def __setattr__(self, name, value):
         if name in self._names_:
@@ -174,7 +170,7 @@ def CopyIcons(dstpath, srcpath):
     relative or absolute.
     '''
 
-    if type(srcpath) in StringTypes:
+    if isinstance(srcpath, str):
         # just a single string, make it a one-element list
         srcpath = [ srcpath ]
 
@@ -224,6 +220,18 @@ def CopyIcons(dstpath, srcpath):
     else:
         logger.info("Copying icons from %s", srcpath)
 
+    # Bail out quickly if the input is invalid. Letting images in the wrong
+    # format be passed to Window's API gives very cryptic error messages as
+    # it's generally unclear why PyInstaller would treat an image file as an
+    # executable.
+    if srcext != ".exe":
+        raise ValueError(
+            f"Received icon path '{srcpath}' which exists but is not in the "
+            f"correct format. On Windows, only '.ico' images or other "
+            f"'.exe' files may be used as icons. Please convert your "
+            f"'{srcext}' file to a '.ico' then try again."
+        )
+
     try:
         # Attempt to load the .ico or .exe containing the icon into memory
         # using the same mechanism as if it were a DLL. If this fails for
@@ -231,7 +239,7 @@ def CopyIcons(dstpath, srcpath):
         # .ico/.exe) then LoadLibraryEx returns a null handle and win32api
         # raises a unique exception with a win error code and a string.
         hsrc = win32api.LoadLibraryEx(srcpath, 0, LOAD_LIBRARY_AS_DATAFILE)
-    except win32api.error as W32E:
+    except pywintypes.error as W32E:
         # We could continue with no icon (i.e. just return) however it seems
         # best to terminate the build with a message.
         raise SystemExit(

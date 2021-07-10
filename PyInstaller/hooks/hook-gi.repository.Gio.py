@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -23,7 +23,7 @@ import sys
 
 import PyInstaller.log as logging
 from PyInstaller.compat import is_darwin, is_win, is_linux, base_prefix
-from PyInstaller.utils.hooks import get_gi_typelibs, get_gi_libdir, exec_statement
+from PyInstaller.utils.hooks.gi import get_gi_typelibs, get_gi_libdir
 
 logger = logging.getLogger(__name__)
 

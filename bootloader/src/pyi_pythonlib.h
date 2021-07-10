@@ -1,6 +1,6 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2020, PyInstaller Development Team.
+ * Copyright (c) 2013-2021, PyInstaller Development Team.
  *
  * Distributed under the terms of the GNU General Public License (version 2
  * or later) with exception for distributing the bootloader.
@@ -17,6 +17,8 @@
 
 #ifndef PYI_PYTHONLIB_H
 #define PYI_PYTHONLIB_H
+
+#include "pyi_archive.h"
 
 int pyi_pylib_attach(ARCHIVE_STATUS *status, int *loadedNew);
 int pyi_pylib_load(ARCHIVE_STATUS *status);  /* note - pyi_pylib_attach will call this if not already loaded */

@@ -6,7 +6,8 @@ Requirements
 Windows
 ~~~~~~~~
 
-|PyInstaller| runs in Windows XP or newer.
+|PyInstaller| runs in Windows 8 or newer
+(Windows 7 should work too, but is not supported).
 It can create graphical windowed apps (apps that do not need a command window).
 
 |PyInstaller| requires two Python modules in a Windows system.

@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -16,7 +16,7 @@ This module parses all Django dependencies from the module mysite.settings.py.
 NOTE: With newer version of Django this is most likely the part of PyInstaller
       that will be broken.
 
-Tested with Django 1.8.
+Tested with Django 2.2
 """
 
 
@@ -34,10 +34,16 @@ from django.conf import settings
 from PyInstaller.utils.hooks import collect_submodules
 
 
-hiddenimports = list(settings.INSTALLED_APPS) + \
-                 list(settings.TEMPLATE_CONTEXT_PROCESSORS) + \
-                 list(settings.TEMPLATE_LOADERS) + \
-                 [settings.ROOT_URLCONF]
+hiddenimports = list(settings.INSTALLED_APPS)
+
+# do not fail script when settings does not have such attributes
+if hasattr(settings, 'TEMPLATE_CONTEXT_PROCESSORS'):
+    hiddenimports += list(settings.TEMPLATE_CONTEXT_PROCESSORS)
+
+if hasattr(settings, 'TEMPLATE_LOADERS'):
+    hiddenimports += list(settings.TEMPLATE_LOADERS)
+
+hiddenimports += [settings.ROOT_URLCONF]
 
 
 def _remove_class(class_name):
@@ -78,21 +84,6 @@ for v in settings.DATABASES.values():
     hiddenimports.append(v['ENGINE'])
 
 
-def find_url_callbacks(urls_module):
-    if isinstance(urls_module, list):
-        urlpatterns = urls_module
-        hid_list = []
-    else:
-        urlpatterns = urls_module.urlpatterns
-        hid_list = [urls_module.__name__]
-    for pattern in urlpatterns:
-        if isinstance(pattern, RegexURLPattern):
-            hid_list.append(pattern.callback.__module__)
-        elif isinstance(pattern, RegexURLResolver):
-            hid_list += find_url_callbacks(pattern.urlconf_module)
-    return hid_list
-
-
 # Add templatetags and context processors for each installed app.
 for app in settings.INSTALLED_APPS:
     app_templatetag_module = app + '.templatetags'
@@ -100,18 +91,6 @@ for app in settings.INSTALLED_APPS:
     hiddenimports.append(app_templatetag_module)
     hiddenimports += collect_submodules(app_templatetag_module)
     hiddenimports.append(app_ctx_proc_module)
-
-
-from django.core.urlresolvers import RegexURLPattern, RegexURLResolver
-
-
-# Construct base module name - without 'settings' suffix.
-base_module_name = '.'.join(os.environ['DJANGO_SETTINGS_MODULE'].split('.')[0:-1])
-base_module = __import__(base_module_name, {}, {}, ["urls"])
-urls = base_module.urls
-
-# Find url imports.
-hiddenimports += find_url_callbacks(urls)
 
 # Deduplicate imports.
 hiddenimports = list(set(hiddenimports))

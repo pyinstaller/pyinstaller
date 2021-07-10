@@ -9,6 +9,8 @@ This sections describes details about specific features. For a
 please refer to the website.
 
 
+.. _ctypes dependencies:
+
 Ctypes Dependencies
 =========================
 
@@ -68,7 +70,7 @@ We feel that it should be enough to cover most ctypes' usages, with little or
 no modification required in your code.
 
 If |PyInstaller| does not detect a library, you can add it to your
-bundle by passing the respective information to ``--add-binary`` option or
+bundle by passing the respective information to :option:`--add-binary` option or
 :ref:`listing it in the .spec-file <adding binary files>`. If your frozen
 application will be able to pick up the library at run-time can not be
 guaranteed as it depends on the detailed implementation.
@@ -78,13 +80,13 @@ Gotchas
 ~~~~~~~~~~~~~~~
 
 The ctypes detection system at :ref:`Analysis time <spec-file operations>`
-is based on ``ctypes.util.find_library()``.
+is based on :func:`ctypes.util.find_library`.
 This means that you have to make sure
 that while performing ``Analysis`` and running frozen,
-all the environment values ``find_library()`` uses to search libraries
+all the environment values :func:`~ctypes.util.find_library` uses to search libraries
 are aligned to those when running un-frozen.
 Examples include using ``LD_LIBRARY_PATH`` or ``DYLD_LIBRARY_PATH`` to
-widen ``find_library()`` scope.
+widen :func:`~ctypes.util.find_library` scope.
 
 
 SWIG support
@@ -105,7 +107,7 @@ requires:
 - The C-module must sit just beside the wrapper module (thus a relative import
   would work).
 
-Also some restrictions apply for Python 3, due to the way the SWIG wrapper is
+Also some restrictions apply, due to the way the SWIG wrapper is
 implemented:
 
 - The C-module will become a `global` module. As a consequence, you can not
@@ -130,8 +132,130 @@ These will typically show up as in a traceback like this
     ModuleNotFoundError: No module named 'csv'
 
 So if you are using a Cython C object module, which imports Python modules,
-you will have to list these as ``--hidden-import``.
+you will have to list these as :option:`--hidden-import`.
 
+
+macOS multi-arch support
+========================
+
+With the introduction of Apple Silicon M1, there are now several architecture
+options available for python:
+
+- single-arch ``x86_64`` with thin binaries: older `python.org` builds,
+  `Homebrew`_ python running natively on Intel Macs or under `rosetta2`
+  on M1 Macs
+- single-arch ``arm64`` with thin binaries: `Homebrew`_ python running
+  natively on M1 macs
+- multi-arch ``universal2`` with fat binaries (i.e., containing both
+  ``x86_64`` and ``arm64`` slices): recent ``universal2`` `python.org`
+  builds
+
+|PyInstaller| aims to support all possible combinations stemming from
+the above options:
+
+- single-arch application created using corresponding single-arch python
+- ``universal2`` application created using ``universal2`` python
+- single-arch application created using ``universal2`` python (i.e.,
+  reducing ``universal2`` fat binaries into either ``x86_64`` or ``arm64``
+  thin binaries)
+
+**By default, PyInstaller targets the current running architecture
+and produces a single-arch binary** (``x86_64`` when running on Intel Mac
+or under `rosetta2` on M1 Mac, or ``arm64`` when running on M1 Mac). The
+reason for that is that even with a ``universal2`` python environment,
+some packages may end up providing only single-arch binaries, making it
+impossible to create a functional ``universal2`` frozen application.
+
+The alternative options, such as creating a ``universal2`` version
+of frozen application, or creating a non-native single-arch version using
+``universal2`` environment, must therefore be explicitly enabled. This
+can be done either by specifying the target architecture in the ``.spec``
+file via the ``target_arch=`` argument to ``EXE()``, or on command-line
+via the :option:`--target-arch` switch. Valid values are ``x86_64``, ``arm64``,
+and ``universal2``.
+
+
+Architecture validation during binary collection
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To prevent run-time issues caused by missing or mismatched architecture slices
+in binaries, the binary collection process performs strict architecture validation.
+It checks whether collected binary files contain required arch slice(s), and if
+not, the build process is aborted with an error message about the problematic
+binary.
+
+In such cases, creating frozen application for the selected target
+architecture will not be possible unless the problem of missing arch slices
+is manually addressed (for example, by downloading the wheel corresponding to
+the missing architecture, and stiching the offending binary files together
+using the ``lipo`` utility).
+
+
+Trimming fat binaries for single-arch targets
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When targeting a single architecture, the build process extracts the
+corresponding arch slice from any collected fat binaries, including the
+bootloader. This results in a completely thin build even when building
+in ``universal2`` python environment.
+
+
+macOS binary code signing
+=========================
+
+With Apple Silicon M1 architecture, macOS introduced mandatory code signing,
+even if ad-hoc (i.e., without actual code-signing identity). This means
+that ``arm64`` arch slices (but possibly also ``x86_64`` ones, especially
+in ``universal2`` binaries) in collected binaries always come with signature.
+
+The processing of binaries done by |PyInstaller| (e.g., library path
+rewriting in binaries' headers) invalidates their signatures. Therefore,
+the signatures need to be re-generated, otherwise the OS refuses to load
+a binary.
+
+**By default, PyInstaller ad-hoc (re)signs all collected binaries and
+the generated executable itself.** Instead of ad-hoc signing, it is also
+possible to use real code-signing identity. To do so, either specify your
+identity in the ``.spec`` file via ``codesign_identity=`` argument to
+``EXE()`` , or on command-line via the :option:`--codesign-identity` switch.
+
+Being able to provide codesign identity allows user to ensure that all
+collected binaries in either ``onefile`` or ``onedir`` build are signed
+with their identity. This is useful because for ``onefile`` builds,
+signing of embedded binaries cannot be performed in a post-processing step.
+
+.. note::
+   When codesign identity is specified, |PyInstaller| also turns on
+   *hardened runtime* by passing ``--options=runtime`` to the ``codesign``
+   command. This requires the codesign identity to be a valid Apple-issued
+   code signing certificate, and will not work with self-signed certificates.
+
+   Trying to use self-signed certificate as a codesign identity will result
+   in shared libraries failing to load, with the following reason reported:
+
+      `[libname]: code signature in ([libname]) not valid for use in process
+      using Library Validation: mapped file has no Team ID and is not a
+      platform binary (signed with custom identity or adhoc?)`
+
+Furthermore, it is possible to specify entitlements file to be used
+when signing the collected binaries and the executable. This can be
+done in the ``.spec`` file via ``entitlements_file=`` argument to
+``EXE()``, or on command-line via the :option:`--osx-entitlements-file` switch.
+
+App bundles
+~~~~~~~~~~~
+
+|PyInstaller| also automatically attempts to sign `.app bundles`, either
+using ad-hoc identity or actual signing identity, if provided via
+:option:`--codesign-identity` switch. In addition to passing same options as
+when signing collected binaries (identity, hardened runtime, entitlement),
+deep signing is also enabled via by passing ``--deep`` option to the
+``codesign`` utility.
+
+Should the signing of the bundle fail for whatever reason, the error
+message from the ``codesign`` utility will be printed to the console,
+along with a warning that manual intervention and manual signing of the
+bundle are required.
 
 .. include:: _common_definitions.txt
 

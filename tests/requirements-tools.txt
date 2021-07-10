@@ -19,23 +19,27 @@ execnet >= 1.5.0
 pytest >= 2.7.3
 
 # Plugin allowing running tests in parallel.
-pytest-xdist == 1.25.0; python_version == '2.7'
-pytest-xdist; python_version != '2.7'
+pytest-xdist
 
 # Plugin to abort hanging tests.
-pytest-timeout
+git+https://github.com/pytest-dev/pytest-timeout.git@1a35f94298c1260500907bd674b75cf59df0c949
 # allows specifying order without duplicates
 pytest-drop-dup-tests
+# reruns failed flaky tests
+pytest-rerunfailures
 
 # Better subprocess alternative with implemented timeout.
 psutil
 
 # Check new flake8 violations on pull requests
-flake8-diff
+flake8
 
-subprocess32; python_version == '2.7'
-
-# Current pypiwin32 simply installs pywin32.
 pywin32; sys_platform == 'win32'
 
 lxml
+
+# crypto support (`--key` option)
+tinyaes ~= 1.0
+
+# Ability to retry a failed test
+flaky

@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -13,9 +13,8 @@
 import os
 
 from PyInstaller.utils import misc
-from PyInstaller.utils.misc import load_py_data_struct, save_py_data_struct
-from .. import log as logging
-from .utils import _check_guts_eq
+from PyInstaller import log as logging
+from PyInstaller.building.utils import _check_guts_eq
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +41,7 @@ def unique_name(entry):
 class TOC(list):
     # TODO Simplify the representation and use directly Modulegraph objects.
     """
-    TOC (Table of Contents) class is a list of tuples of the form (name, path, tytecode).
+    TOC (Table of Contents) class is a list of tuples of the form (name, path, typecode).
 
     typecode    name                   path                        description
     --------------------------------------------------------------------------------------
@@ -122,7 +121,7 @@ class Target(object):
     invcnum = 0
 
     def __init__(self):
-        from ..config import CONF
+        from PyInstaller.config import CONF
         # Get a (per class) unique number to avoid conflicts between
         # toc objects
         self.invcnum = self.__class__.invcnum
@@ -149,7 +148,7 @@ class Target(object):
                         self.__class__.__name__, self.tocbasename)
         else:
             try:
-                data = load_py_data_struct(self.tocfilename)
+                data = misc.load_py_data_struct(self.tocfilename)
             except:
                 logger.info("Building because %s is bad", self.tocbasename)
             else:
@@ -183,7 +182,7 @@ class Target(object):
         maybe avoid regenerating it later.
         """
         data = tuple(getattr(self, g[0]) for g in self._GUTS)
-        save_py_data_struct(self.tocfilename, data)
+        misc.save_py_data_struct(self.tocfilename, data)
 
 
 class Tree(Target, TOC):

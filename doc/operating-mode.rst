@@ -68,9 +68,9 @@ and other major packages.
 For a complete list, see `Supported Packages`_.
 
 Some Python scripts import modules in ways that |PyInstaller| cannot detect:
-for example, by using the ``__import__()`` function with variable data,
-using ``imp.find_module()``,
-or manipulating the ``sys.path`` value at run time.
+for example, by using the :func:`__import__` function with variable data,
+using :func:`importlib.import_module`,
+or manipulating the :data:`sys.path` value at run time.
 If your script requires files that |PyInstaller| does not know about,
 you must help it:
 
@@ -220,7 +220,7 @@ to mount the ``/tmp`` folder with a "no-execution" option.
 That option is not compatible with a |PyInstaller|
 one-file bundle. It needs to execute code out of :file:`/tmp`.
 If you know the target environment,
-``--runtime-tmpdir`` might be a workaround.)
+:option:`--runtime-tmpdir` might be a workaround.)
 
 Because the program makes a temporary folder with a unique name,
 you can run multiple copies of the app;
@@ -235,7 +235,7 @@ Thus if your app crashes frequently, your users will lose disk space to
 multiple :file:`_MEI{xxxxxx}` temporary folders.
 
 It is possible to control the location of the :file:`_MEI{xxxxxx}` folder by
-using the ``--runtime-tmpdir`` command line option. The specified path is
+using the :option:`--runtime-tmpdir` command line option. The specified path is
 stored in the executable, and the bootloader will create the
 :file:`_MEI{xxxxxx}` folder inside of the specified folder. Please see
 :ref:`defining the extraction location` for details.

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2020, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -25,9 +25,6 @@ Proposed usage::
   find PyInstaller/hooks/ -size -2c -print -delete
 
 """
-
-from __future__ import print_function
-
 import glob
 import os
 import sys

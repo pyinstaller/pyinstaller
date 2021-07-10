@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -12,16 +12,20 @@
 import os
 import plistlib
 import shutil
-from ..compat import is_darwin, FileExistsError
-from .api import EXE, COLLECT
-from .datastruct import Target, TOC, logger
-from .utils import _check_path_overlap, _rmtree, add_suffix_to_extensions, checkCache
 
+from PyInstaller.compat import is_darwin
+from PyInstaller.building.api import EXE, COLLECT
+from PyInstaller.building.datastruct import Target, TOC, logger
+from PyInstaller.building.utils import _check_path_overlap, _rmtree, \
+    add_suffix_to_extension, checkCache
+
+if is_darwin:
+    import PyInstaller.utils.osx as osxutils
 
 
 class BUNDLE(Target):
     def __init__(self, *args, **kws):
-        from ..config import CONF
+        from PyInstaller.config import CONF
 
         # BUNDLE only has a sense under Mac OS X, it's a noop on other platforms
         if not is_darwin:
@@ -54,6 +58,9 @@ class BUNDLE(Target):
         self.strip = False
         self.upx = False
         self.console = True
+        self.target_arch = None
+        self.codesign_identity = None
+        self.entitlements_file = None
 
         # .app bundle identifier for Code Signing
         self.bundle_identifier = kws.get('bundle_identifier')
@@ -71,6 +78,9 @@ class BUNDLE(Target):
                 self.upx = arg.upx
                 self.upx_exclude = arg.upx_exclude
                 self.console = arg.console
+                self.target_arch = arg.target_arch
+                self.codesign_identity = arg.codesign_identity
+                self.entitlements_file = arg.entitlements_file
             elif isinstance(arg, TOC):
                 self.toc.extend(arg)
                 # TOC doesn't have a strip or upx attribute, so there is no way for us to
@@ -81,6 +91,9 @@ class BUNDLE(Target):
                 self.upx = arg.upx_binaries
                 self.upx_exclude = arg.upx_exclude
                 self.console = arg.console
+                self.target_arch = arg.target_arch
+                self.codesign_identity = arg.codesign_identity
+                self.entitlements_file = arg.entitlements_file
             else:
                 logger.info("unsupported entry %s", arg.__class__.__name__)
         # Now, find values for app filepath (name), app name (appname), and name
@@ -89,11 +102,6 @@ class BUNDLE(Target):
         for inm, name, typ in self.toc:
             if typ == "EXECUTABLE":
                 self.exename = name
-                if self.name is None:
-                    self.appname = "Mac%s" % (os.path.splitext(inm)[0],)
-                    self.name = os.path.join(CONF['specpath'], self.appname + ".app")
-                else:
-                    self.name = os.path.join(CONF['specpath'], self.name)
                 break
         self.__postinit__()
 
@@ -142,8 +150,8 @@ class BUNDLE(Target):
                            # Cli option --osx-bundle-identifier sets this value.
                            "CFBundleIdentifier": self.bundle_identifier,
 
-                           # Fix for #156 - 'MacOS' must be in the name - not sure why
-                           "CFBundleExecutable": 'MacOS/%s' % os.path.basename(self.exename),
+                           "CFBundleExecutable":
+                               os.path.basename(self.exename),
                            "CFBundleIconFile": os.path.basename(self.icon),
                            "CFBundleInfoDictionaryVersion": "6.0",
                            "CFBundlePackageType": "APPL",
@@ -151,35 +159,39 @@ class BUNDLE(Target):
 
                            }
 
-        # Setting EXE console=True implies LSBackgroundOnly=True.
-        # But it still can be overwrite by the user.
+        # Set some default values.
+        # But they still can be overwritten by the user.
         if self.console:
+            # Setting EXE console=True implies LSBackgroundOnly=True.
             info_plist_dict['LSBackgroundOnly'] = True
+        else:
+            # Let's use high resolution by default.
+            info_plist_dict['NSHighResolutionCapable'] = True
 
         # Merge info_plist settings from spec file
         if isinstance(self.info_plist, dict) and self.info_plist:
             info_plist_dict.update(self.info_plist)
 
         plist_filename = os.path.join(self.name, "Contents", "Info.plist")
-        try:
-            # python >= 3.4
-            with open(plist_filename, "wb") as plist_fh:
-                plistlib.dump(info_plist_dict, plist_fh)
-        except AttributeError:
-            # python 2.7
-            plistlib.writePlist(info_plist_dict, plist_filename)
+        with open(plist_filename, "wb") as plist_fh:
+            plistlib.dump(info_plist_dict, plist_fh)
 
         links = []
-        toc = add_suffix_to_extensions(self.toc)
-        for inm, fnm, typ in toc:
+        _QT_BASE_PATH = {'PySide2', 'PySide6', 'PyQt5', 'PySide6'}
+        for inm, fnm, typ in self.toc:
+            # Adjust name for extensions, if applicable
+            inm, fnm, typ = add_suffix_to_extension(inm, fnm, typ)
             # Copy files from cache. This ensures that are used files with relative
             # paths to dynamic library dependencies (@executable_path)
             base_path = inm.split('/', 1)[0]
             if typ in ('EXTENSION', 'BINARY'):
                 fnm = checkCache(fnm, strip=self.strip, upx=self.upx,
-                                 upx_exclude=self.upx_exclude, dist_nm=inm)
+                                 upx_exclude=self.upx_exclude, dist_nm=inm,
+                                 target_arch=self.target_arch,
+                                 codesign_identity=self.codesign_identity,
+                                 entitlements_file=self.entitlements_file)
             # Add most data files to a list for symlinking later.
-            if typ == 'DATA' and base_path not in ('base_library.zip', 'PySide2', 'PyQt5'):
+            if typ == 'DATA' and base_path not in _QT_BASE_PATH:
                 links.append((inm, fnm))
             else:
                 tofnm = os.path.join(self.name, "Contents", "MacOS", inm)
@@ -193,7 +205,7 @@ class BUNDLE(Target):
                 else:
                     shutil.copy(fnm, tofnm)
 
-        logger.info('moving BUNDLE data files to Resource directory')
+        logger.info('Moving BUNDLE data files to Resource directory')
 
         # Mac OS X Code Signing does not work when .app bundle contains
         # data files in dir ./Contents/MacOS.
@@ -236,3 +248,15 @@ class BUNDLE(Target):
                 os.symlink(os.path.relpath(os.path.join(res_dir, inm),
                                            os.path.split(os.path.join(bin_dir, inm))[0]),
                            os.path.join(bin_dir, inm))
+
+        # Sign the bundle
+        logger.info('Signing the BUNDLE...')
+        try:
+            osxutils.sign_binary(self.name, self.codesign_identity,
+                                 self.entitlements_file, deep=True)
+        except Exception as e:
+            logger.warning("Error while signing the bundle: %s", e)
+            logger.warning("You will need to sign the bundle manually!")
+
+        logger.info("Building BUNDLE %s completed successfully.",
+                    self.tocbasename)

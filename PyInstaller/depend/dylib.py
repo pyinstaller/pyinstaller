@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2020, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -33,12 +33,12 @@ import PyInstaller.log as logging
 logger = logging.getLogger(__name__)
 
 
-_BOOTLOADER_FNAMES = set(['run', 'run_d', 'runw', 'runw_d'])
+_BOOTLOADER_FNAMES = {'run', 'run_d', 'runw', 'runw_d'}
 
 
 # Ignoring some system libraries speeds up packaging process
-_excludes = set([
-    # Ignore annoying warnings with Windows system dlls.
+_excludes = {
+    # Ignore annoying warnings with Windows system DLLs.
     #
     # 'W: library kernel32.dll required via ctypes not found'
     # 'W: library coredll.dll required via ctypes not found'
@@ -63,7 +63,7 @@ _excludes = set([
     # Some modules tries to import the Python library.
     # e.g. pyreadline.console.console
     r'python\%s\%s',
-])
+}
 
 # Regex includes - overrides excludes.
 # Include list is used only to override specific libraries
@@ -71,7 +71,7 @@ _excludes = set([
 _includes = set()
 
 
-_win_includes = set([
+_win_includes = {
     # DLLs are from 'Microsoft Visual C++ 2010 Redistributable Package'.
     # http://msdn.microsoft.com/en-us/library/8kche8ah(v=vs.100).aspx
     #
@@ -80,7 +80,8 @@ _win_includes = set([
     #
     # Visual Studio C++ 2010 does not need Assembly manifests anymore and
     # uses C++ runtime libraries the old way - pointing to C:\Windows\System32.
-    # It is necessary to allow inclusion of these libraries from C:\Windows\System32.
+    # It is necessary to allow inclusion of these libraries from
+    # C:\Windows\System32.
     r'atl100\.dll',
     r'msvcr100\.dll',
     r'msvcp100\.dll',
@@ -96,21 +97,31 @@ _win_includes = set([
     r'ucrtbase\.dll',
     r'vcruntime140\.dll',
 
+    # Additional DLLs from VC 2015/2017/2019 runtime. Allow these to be
+    # collected to avoid missing-DLL errors when the target machine does
+    # not have the VC redistributable installed.
+    r'msvcp140\.dll',
+    r'msvcp140_1\.dll',
+    r'msvcp140_2\.dll',
+    r'vcruntime140_1\.dll',
+    r'vcomp140\.dll',
+    r'concrt140\.dll',
+
     # Allow pythonNN.dll, pythoncomNN.dll, pywintypesNN.dll
     r'py(?:thon(?:com(?:loader)?)?|wintypes)\d+\.dll',
-])
+}
 
-_win_excludes = set([
+_win_excludes = {
     # On Windows, only .dll files can be loaded.
     r'.*\.so',
     r'.*\.dylib',
 
     # MS assembly excludes
     r'Microsoft\.Windows\.Common-Controls',
-])
+}
 
 
-_unix_excludes = set([
+_unix_excludes = {
     r'libc\.so(\..*)?',
     r'libdl\.so(\..*)?',
     r'libm\.so(\..*)?',
@@ -132,16 +143,17 @@ _unix_excludes = set([
     r'libnss_nisplus.*\.so(\..*)?',
     r'libresolv\.so(\..*)?',
     r'libutil\.so(\..*)?',
-    # libGL can reference some hw specific libraries (like nvidia libs).
-    r'libGL\..*',
+    # graphical interface libraries come with graphical stack (see libglvnd)
+    r'libE?(Open)?GLX?(ESv1_CM|ESv2)?(dispatch)?\.so(\..*)?',
+    r'libdrm\.so(\..*)?',
     # libxcb-dri changes ABI frequently (e.g.: between Ubuntu LTS releases) and
     # is usually installed as dependency of the graphics stack anyway. No need
     # to bundle it.
     r'libxcb\.so(\..*)?',
     r'libxcb-dri.*\.so(\..*)?',
-])
+}
 
-_aix_excludes = set([
+_aix_excludes = {
     r'libbz2\.a',
     r'libc\.a',
     r'libC\.a',
@@ -152,7 +164,7 @@ _aix_excludes = set([
     r'librt\\.a',
     r'librtl\.a',
     r'libz\.a',
-])
+}
 
 
 if is_win:
@@ -220,7 +232,9 @@ elif is_win:
         def __init__(self, global_exclude_list):
             self._exclude_list = global_exclude_list
             # use normpath because msys2 uses / instead of \
-            self._windows_dir = os.path.normpath(winutils.get_windows_dir().lower())
+            self._windows_dir = os.path.normpath(
+                winutils.get_windows_dir().lower()
+            )
 
         def search(self, libname):
             libname = libname.lower()
@@ -299,12 +313,27 @@ def mac_set_relative_dylib_deps(libname, distname):
         """
         For system libraries is still used absolute path. It is unchanged.
         """
-        # Match non system dynamic libraries.
-        if not util.in_system_path(pth):
-            # Use relative path to dependend dynamic libraries bases on
-            # location of the executable.
-            return os.path.join('@loader_path', parent_dir,
-                os.path.basename(pth))
+        # Leave system dynamic libraries unchanged
+        if util.in_system_path(pth):
+            return None
+
+        # The older python.org builds that use system Tcl/Tk framework
+        # have their _tkinter.cpython-*-darwin.so library linked against
+        # /Library/Frameworks/Tcl.framework/Versions/8.5/Tcl and
+        # /Library/Frameworks/Tk.framework/Versions/8.5/Tk, although the
+        # actual frameworks are located in /System/Library/Frameworks.
+        # Therefore, they slip through the above in_system_path() check,
+        # and we need to exempt them manually.
+        _exemptions = [
+            '/Library/Frameworks/Tcl.framework/',
+            '/Library/Frameworks/Tk.framework/'
+        ]
+        if any([x in pth for x in _exemptions]):
+            return None
+
+        # Use relative path to dependent dynamic libraries based on the
+        # location of the executable.
+        return os.path.join('@loader_path', parent_dir, os.path.basename(pth))
 
     # Rewrite mach headers with @loader_path.
     dll = MachO(libname)

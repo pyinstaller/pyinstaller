@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2020, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -22,26 +22,20 @@ from glob import glob
 import zipfile
 import collections
 
-from .. import compat
-from ..compat import (is_win, is_win_10, is_unix,
-                      is_aix, is_solar, is_cygwin, is_hpux,
-                      is_darwin, is_freebsd, is_openbsd, is_venv, is_conda,
-                      base_prefix, PYDYLIB_NAMES)
-from . import dylib, utils
+from PyInstaller import compat
+from PyInstaller.depend import dylib, utils
 
-from .. import log as logging
-from ..utils.win32 import winutils
+from PyInstaller import log as logging
+from PyInstaller.utils.win32 import winutils
 
 logger = logging.getLogger(__name__)
 
 seen = set()
 
 # Import windows specific stuff.
-if is_win:
-    from ..utils.win32.winmanifest import RT_MANIFEST
-    from ..utils.win32.winmanifest import GetManifestResources
-    from ..utils.win32.winmanifest import Manifest
-    from ..utils.win32 import winresource
+if compat.is_win:
+    from distutils.sysconfig import get_python_lib
+    from PyInstaller.utils.win32 import winmanifest, winresource
     import pefile
     # Do not load all the directories information from the PE file
     pefile.fast_load = True
@@ -56,23 +50,18 @@ def getfullnameof(mod, xtrapath=None):
     Return the full path name of MOD.
     Will search the full Windows search path, as well as sys.path
     """
-    # TODO: Allow in import-hooks to specify additional paths where the PyInstaller
-    #       should look for other libraries.
-    #       Or allow to automatically look for dlls in directories where are .pyd files.
-    # SciPy/Numpy Windows builds from http://www.lfd.uci.edu/~gohlke/pythonlibs
-    # Contain some dlls in directory like C:\Python27\Lib\site-packages\numpy\core\
-    from distutils.sysconfig import get_python_lib
-    numpy_core_paths = [os.path.join(get_python_lib(), 'numpy', 'core')]
-    # In virtualenv numpy might be installed directly in real prefix path.
-    # Then include this path too.
-    if is_venv:
-        numpy_core_paths.append(
-            os.path.join(base_prefix, 'Lib', 'site-packages', 'numpy', 'core')
-        )
+    pywin32_paths = []
+    if compat.is_win:
+        pywin32_paths = [os.path.join(get_python_lib(), 'pywin32_system32')]
+        if compat.is_venv:
+            pywin32_paths.append(
+                os.path.join(compat.base_prefix, 'Lib', 'site-packages',
+                             'pywin32_system32')
+            )
 
-    # TODO check if this 'numpy' workaround is still necessary!
-    # Search sys.path first!
-    epath = (sys.path + numpy_core_paths + winutils.get_system_path() +
+    epath = (sys.path +  # Search sys.path first!
+             pywin32_paths +
+             winutils.get_system_path() +
              compat.getenv('PATH', '').split(os.pathsep))
     if xtrapath is not None:
         if type(xtrapath) == type(''):
@@ -125,7 +114,7 @@ def _getImports_pe(pth):
                 # sym.forwarder is a bytes object. Convert it to a string.
                 forwarder = winutils.convert_dll_name_to_str(sym.forwarder)
                 # sym.forwarder is for example 'KERNEL32.EnterCriticalSection'
-                dll, _ = forwarder.split('.')
+                dll = forwarder.split('.')[0]
                 dlls.add(dll + ".dll")
 
     pe.close()
@@ -179,14 +168,14 @@ def matchDLLArch(filename):
     :rtype:
     """
     # TODO: check machine type on other platforms?
-    if not is_win:
+    if not compat.is_win:
         return True
 
     global _exe_machine_type
     try:
         if _exe_machine_type is None:
-            pefilename = sys.executable  # for exception handling
-            exe_pe = pefile.PE(sys.executable, fast_load=True)
+            pefilename = compat.python_executable  # for exception handling
+            exe_pe = pefile.PE(pefilename, fast_load=True)
             _exe_machine_type = exe_pe.FILE_HEADER.Machine
             exe_pe.close()
 
@@ -196,7 +185,7 @@ def matchDLLArch(filename):
         pe.close()
     except pefile.PEFormatError as exc:
         raise SystemExit('Can not get architecture from file: %s\n'
-                         '  Reason: %s' % (pefilename, exception))
+                         '  Reason: %s' % (pefilename, exc))
     return match_arch
 
 
@@ -224,7 +213,7 @@ def Dependencies(lTOC, xtrapath=None, manifest=None, redirects=None):
             continue
         logger.debug("Analyzing %s", pth)
         seen.add(nm.upper())
-        if is_win:
+        if compat.is_win:
             for ftocnm, fn in getAssemblyFiles(pth, manifest, redirects):
                 lTOC.append((ftocnm, fn, 'BINARY'))
         for lib, npth in selectImports(pth, xtrapath):
@@ -275,7 +264,7 @@ def pkg_resources_get_default_cache():
             return os.path.join(dirname, 'Python-Eggs')
     else:
         raise RuntimeError(
-            "Please set the PYTHON_EGG_CACHE enviroment variable"
+            "Please set the PYTHON_EGG_CACHE environment variable"
         )
 
 
@@ -341,6 +330,9 @@ def getAssemblies(pth):
     Redistributable runtime libraries 9.0.
 
     Python 3.3+ is compiled with version 10.0 and does not use SxS assemblies.
+
+    FIXME: Can this be removed since we now only support Python 3.5+?
+    FIXME: IS there some test-case covering this?
     """
     if pth.lower().endswith(".manifest"):
         return []
@@ -348,11 +340,11 @@ def getAssemblies(pth):
     manifestnm = pth + ".manifest"
     if os.path.isfile(manifestnm):
         with open(manifestnm, "rb") as fd:
-            res = {RT_MANIFEST: {1: {0: fd.read()}}}
+            res = {winmanifest.RT_MANIFEST: {1: {0: fd.read()}}}
     else:
         # check the binary for embedded manifest
         try:
-            res = GetManifestResources(pth)
+            res = winmanifest.GetManifestResources(pth)
         except winresource.pywintypes.error as exc:
             if exc.args[0] == winresource.ERROR_BAD_EXE_FORMAT:
                 logger.info('Cannot get manifest resource from non-PE '
@@ -360,16 +352,18 @@ def getAssemblies(pth):
                 return []
             raise
     rv = []
-    if RT_MANIFEST in res and len(res[RT_MANIFEST]):
-        for name in res[RT_MANIFEST]:
-            for language in res[RT_MANIFEST][name]:
+    if winmanifest.RT_MANIFEST in res and len(res[winmanifest.RT_MANIFEST]):
+        for name in res[winmanifest.RT_MANIFEST]:
+            for language in res[winmanifest.RT_MANIFEST][name]:
                 # check the manifest for dependent assemblies
                 try:
-                    manifest = Manifest()
-                    manifest.filename = ":".join([pth, str(RT_MANIFEST),
-                                                  str(name), str(language)])
-                    manifest.parse_string(res[RT_MANIFEST][name][language],
-                                          False)
+                    manifest = winmanifest.Manifest()
+                    manifest.filename = ":".join([
+                        pth, str(winmanifest.RT_MANIFEST),
+                        str(name), str(language),
+                    ])
+                    manifest.parse_string(
+                        res[winmanifest.RT_MANIFEST][name][language], False)
                 except Exception as exc:
                     logger.error("Can not parse manifest resource %s, %s"
                                  " from %s", name, language, pth, exc_info=1)
@@ -418,7 +412,7 @@ def getAssemblyFiles(pth, manifest=None, redirects=None):
             logger.debug("Skipping optional assembly %s", assembly.getid())
             continue
 
-        from ..config import CONF
+        from PyInstaller.config import CONF
         if CONF.get("win_no_prefer_redirects"):
             files = assembly.find_files()
         else:
@@ -502,7 +496,7 @@ def selectImports(pth, xtrapath=None):
     for lib in dlls:
         if lib.upper() in seen:
             continue
-        if not is_win and not is_cygwin:
+        if not compat.is_win:
             # all other platforms
             npth = lib
             lib = os.path.basename(lib)
@@ -536,7 +530,7 @@ def selectImports(pth, xtrapath=None):
         else:
             # Don't spew out false warnings on win 10 and UCRT (see issue
             # #1566).
-            if not (is_win_10 and lib.startswith("api-ms-win-crt")):
+            if not (compat.is_win_10 and lib.startswith("api-ms-win-crt")):
                 logger.warning("lib not found: %s dependency of %s", lib, pth)
 
     return rv
@@ -549,20 +543,20 @@ def _getImports_ldd(pth):
     This implementation is for ldd platforms (mostly unix).
     """
     rslt = set()
-    if is_aix:
+    if compat.is_aix:
         # Match libs of the form
         #   'archivelib.a(objectmember.so/.o)'
         # or
         #   'sharedlib.so'
         # Will not match the fake lib '/unix'
         lddPattern = re.compile(r"^\s*(((?P<libarchive>(.*\.a))(?P<objectmember>\(.*\)))|((?P<libshared>(.*\.so))))$")
-    elif is_hpux:
+    elif compat.is_hpux:
         # Match libs of the form
         #   'sharedlib.so => full-path-to-lib
         # e.g.
         #   'libpython2.7.so =>      /usr/local/lib/hpux32/libpython2.7.so'
         lddPattern = re.compile(r"^\s+(.*)\s+=>\s+(.*)$")
-    elif is_solar:
+    elif compat.is_solar:
         # Match libs of the form
         #   'sharedlib.so => full-path-to-lib
         # e.g.
@@ -575,7 +569,7 @@ def _getImports_ldd(pth):
     for line in compat.exec_command('ldd', pth).splitlines():
         m = lddPattern.search(line)
         if m:
-            if is_aix:
+            if compat.is_aix:
                 libarchive = m.group('libarchive')
                 if libarchive:
                     # We matched an archive lib with a request for a particular
@@ -588,7 +582,7 @@ def _getImports_ldd(pth):
                     #   'sharedlib.so'
                     lib = m.group('libshared')
                     name = os.path.basename(lib)
-            elif is_hpux:
+            elif compat.is_hpux:
                 name, lib = m.group(1), m.group(2)
             else:
                 name, lib = m.group(1), m.group(2)
@@ -597,6 +591,11 @@ def _getImports_ldd(pth):
                 # should be ignored. See also:
                 # http://www.trilithium.com/johan/2005/08/linux-gate/
                 continue
+
+            if compat.is_cygwin:
+                # exclude Windows system library
+                if lib.lower().startswith('/cygdrive/c/windows/system'):
+                    continue
 
             if os.path.exists(lib):
                 # Add lib if it is not already found.
@@ -617,6 +616,7 @@ def _getImports_macholib(pth):
     from macholib.MachO import MachO
     from macholib.mach_o import LC_RPATH
     from macholib.dyld import dyld_find
+    from macholib.util import in_system_path
     rslt = set()
     seen = set()  # Libraries read from binary headers.
 
@@ -668,7 +668,7 @@ def _getImports_macholib(pth):
 
     # for distributions like Anaconda, all of the dylibs are stored in the lib directory
     # of the Python distribution, not alongside of the .so's in each module's subdirectory.
-    run_paths.add(os.path.join(base_prefix, 'lib'))
+    run_paths.add(os.path.join(compat.base_prefix, 'lib'))
 
     ## Try to find files in file system.
 
@@ -712,7 +712,12 @@ def _getImports_macholib(pth):
                 lib = dyld_find(lib, executable_path=exec_path)
                 rslt.add(lib)
             except ValueError:
-                logger.error('Can not find path %s (needed by %s)', lib, pth)
+                # Starting with Big Sur, system libraries are hidden. And
+                # we do not collect system libraries on any macOS version
+                # anyway, so suppress the corresponding error messages.
+                if not in_system_path(lib):
+                    logger.error('Can not find path %s (needed by %s)',
+                                 lib, pth)
 
     return rslt
 
@@ -721,7 +726,7 @@ def getImports(pth):
     """
     Forwards to the correct getImports implementation for the platform.
     """
-    if is_win or is_cygwin:
+    if compat.is_win:
         if pth.lower().endswith(".manifest"):
             return []
         try:
@@ -738,7 +743,7 @@ def getImports(pth):
                 '  Reason: %s', exception,
                 exc_info=not isinstance(exception, pefile.PEFormatError))
             return []
-    elif is_darwin:
+    elif compat.is_darwin:
         return _getImports_macholib(pth)
     else:
         return _getImports_ldd(pth)
@@ -751,15 +756,15 @@ def findLibrary(name):
     Emulate the algorithm used by dlopen.
     `name`must include the prefix, e.g. ``libpython2.4.so``
     """
-    assert is_unix, ("Current implementation for Unix only (Linux, Solaris, "
-                     "AIX, FreeBSD)")
+    assert compat.is_unix, \
+        "Current implementation for Unix only (Linux, Solaris, AIX, FreeBSD)"
 
     lib = None
 
     # Look in the LD_LIBRARY_PATH according to platform.
-    if is_aix:
+    if compat.is_aix:
         lp = compat.getenv('LIBPATH', '')
-    elif is_darwin:
+    elif compat.is_darwin:
         lp = compat.getenv('DYLD_LIBRARY_PATH', '')
     else:
         lp = compat.getenv('LD_LIBRARY_PATH', '')
@@ -805,14 +810,14 @@ def findLibrary(name):
         except ImportError:
             logger.debug('Multiarch directory not detected.')
 
-        if is_aix:
+        if compat.is_aix:
             paths.append('/opt/freeware/lib')
-        elif is_hpux:
+        elif compat.is_hpux:
             if compat.architecture == '32bit':
                 paths.append('/usr/local/lib/hpux32')
             else:
                 paths.append('/usr/local/lib/hpux64')
-        elif is_freebsd or is_openbsd:
+        elif compat.is_freebsd or compat.is_openbsd:
             paths.append('/usr/local/lib')
         for path in paths:
             libs = glob(os.path.join(path, name + '*'))
@@ -825,7 +830,7 @@ def findLibrary(name):
         return None
 
     # Resolve the file name into the soname
-    if is_freebsd or is_aix or is_openbsd:
+    if compat.is_freebsd or compat.is_aix or compat.is_openbsd:
         # On FreeBSD objdump doesn't show SONAME,
         # and on AIX objdump does not exist,
         # so we just return the lib we've found
@@ -844,7 +849,7 @@ def _get_so_name(filename):
     # TODO verify that objdump works on other unixes and not Linux only.
     cmd = ["objdump", "-p", filename]
     pattern = r'\s+SONAME\s+([^\s]+)'
-    if is_solar:
+    if compat.is_solar:
         cmd = ["elfdump", "-d", filename]
         pattern = r'\s+SONAME\s+[^\s]+\s+([^\s]+)'
     m = re.search(pattern, compat.exec_command(*cmd))
@@ -874,21 +879,30 @@ def get_python_library_path():
     """
     def _find_lib_in_libdirs(*libdirs):
         for libdir in libdirs:
-            for name in PYDYLIB_NAMES:
+            for name in compat.PYDYLIB_NAMES:
                 full_path = os.path.join(libdir, name)
                 if os.path.exists(full_path):
                     return full_path
         return None
 
+    # If this is Microsoft App Store Python, check the compat.base_path first.
+    # While compat.python_executable resolves to actual python.exe file, the
+    # latter contains relative library reference that does not get properly
+    # resolved by getfullnameof().
+    if compat.is_ms_app_store:
+        python_libname = _find_lib_in_libdirs(compat.base_prefix)
+        if python_libname:
+            return python_libname
+
     # Try to get Python library name from the Python executable. It assumes that Python
     # library is not statically linked.
-    dlls = getImports(sys.executable)
+    dlls = getImports(compat.python_executable)
     for filename in dlls:
-        for name in PYDYLIB_NAMES:
+        for name in compat.PYDYLIB_NAMES:
             if os.path.basename(filename) == name:
                 # On Windows filename is just like 'python27.dll'. Convert it
                 # to absolute path.
-                if is_win and not os.path.isabs(filename):
+                if compat.is_win and not os.path.isabs(filename):
                     filename = getfullnameof(filename)
                 # Python library found. Return absolute path to it.
                 return filename
@@ -896,13 +910,13 @@ def get_python_library_path():
     # Python library NOT found. Resume searching using alternative methods.
 
     # Work around for python venv having VERSION.dll rather than pythonXY.dll
-    if is_win and 'VERSION.dll' in dlls:
+    if compat.is_win and 'VERSION.dll' in dlls:
         pydll = 'python%d%d.dll' % sys.version_info[:2]
         return getfullnameof(pydll)
 
     # Applies only to non Windows platforms and conda.
 
-    if is_conda:
+    if compat.is_conda:
         # Conda needs to be the first here since it overrules the operating
         # system specific paths.
         python_libname = _find_lib_in_libdirs(
@@ -910,13 +924,13 @@ def get_python_library_path():
         if python_libname:
             return python_libname
 
-    elif is_unix:
-        for name in PYDYLIB_NAMES:
+    elif compat.is_unix:
+        for name in compat.PYDYLIB_NAMES:
             python_libname = findLibrary(name)
             if python_libname:
                 return python_libname
 
-    elif is_darwin:
+    elif compat.is_darwin:
         # On MacPython, Analysis.assemble is able to find the libpython with
         # no additional help, asking for sys.executable dependencies.
         # However, this fails on system python, because the shared library
@@ -941,7 +955,7 @@ def get_python_library_path():
       * apt-get install python3-dev
       * apt-get install python-dev
     * If you're building Python by yourself, please rebuild your Python with `--enable-shared` (or, `--enable-framework` on Darwin)
-    """ % (", ".join(PYDYLIB_NAMES),)
+    """ % (", ".join(compat.PYDYLIB_NAMES),)
     raise IOError(msg)
 
 
@@ -954,9 +968,9 @@ def findSystemLibrary(name):
     if os.path.isabs(name):
         return name
 
-    if is_unix:
+    if compat.is_unix:
         return findLibrary(name)
-    elif is_win:
+    elif compat.is_win:
         return getfullnameof(name)
     else:
         # This seems to work, and is similar to what we have above..

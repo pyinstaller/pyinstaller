@@ -1,6 +1,6 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2020, PyInstaller Development Team.
+ * Copyright (c) 2013-2021, PyInstaller Development Team.
  *
  * Distributed under the terms of the GNU General Public License (version 2
  * or later) with exception for distributing the bootloader.
@@ -15,21 +15,20 @@
  * Path manipulation utilities.
  */
 
-/* TODO: use safe string functions */
-#define _CRT_SECURE_NO_WARNINGS 1
-
 #include <sys/types.h> /* struct stat, struct _stat */
 #include <sys/stat.h>  /* stat() */
 
 #ifdef _WIN32
     #include <windows.h>  /* GetModuleFileNameW */
     #include <wchar.h>
+    #ifdef __GNUC__
+        #include <libgen.h> /* basename(), dirname() */
+    #endif
 #elif __APPLE__
     #include <libgen.h>      /* basename(), dirname() */
     #include <mach-o/dyld.h> /* _NSGetExecutablePath() */
 #else
     #include <libgen.h>  /* basename() */
-    #include <limits.h>  /* PATH_MAX */
     #include <unistd.h>  /* unlink */
 #endif
 
@@ -38,34 +37,35 @@
 #include <string.h>
 
 /* PyInstaller headers. */
+#include "pyi_path.h"
 #include "pyi_global.h"  /* PATH_MAX */
 #include "pyi_utils.h"
 #include "pyi_win32_utils.h"
-#include "pyi_python27_compat.h"  /* is_py2 */
 
 /*
  * Giving a fullpath, it will copy to the buffer a string
  * which contains the path without last component.
  */
-void
+bool
 pyi_path_dirname(char *result, const char *path)
 {
-/* FIXME: This should be somthink like HAVE_DIRNAME */
-#ifdef _WIN32
+#ifndef HAVE_DIRNAME
     size_t len = 0;
     char *match = NULL;
 
     /* Copy path to result and then just write '\0' to the place with path separator. */
-    strncpy(result, path, strlen(path) + 1);
-    /* Remove separator from the end. */
-    len = strlen(result);
+    if (snprintf(result, PATH_MAX, "%s", path) >= PATH_MAX) {
+        return false;
+    }
 
-    if (result[len] == PYI_SEP) {
+    /* Remove separator from the end. */
+    len = strlen(result)-1;
+    if (len >= 0 && result[len] == PYI_SEP) {
         result[len] = PYI_NULLCHAR;
     }
+
     /* Remove the rest of the string. */
     match = strrchr(result, PYI_SEP);
-
     if (match != NULL) {
         *match = PYI_NULLCHAR;
     }
@@ -74,27 +74,30 @@ pyi_path_dirname(char *result, const char *path)
         *result = PYI_CURDIR;
         result[1] = PYI_NULLCHAR;
     }
-#else /* ifdef _WIN32 */
+#else /* ifndef HAVE_DIRNAME */
       /* Use dirname() for other platforms. */
     char *dirpart = NULL;
     char tmp[PATH_MAX];
     /* Copy path to 'tmp' because dirname() modifies the original string! */
-    strcpy(tmp, path);
-
+    if (snprintf(tmp, PATH_MAX, "%s", path) >= PATH_MAX) {
+        return false;
+    }
     dirpart = (char *) dirname((char *) tmp);  /* _XOPEN_SOURCE - no 'const'. */
-    strcpy(result, dirpart);
-#endif /* ifdef _WIN32 */
+    if (snprintf(result, PATH_MAX, "%s", dirpart) >= PATH_MAX) {
+        return false;
+    }
+#endif /* ifndef HAVE_DIRNAME */
+    return true;
 }
 
 /*
  * Returns the last component of the path in filename. Return result
  * in new buffer.
  */
-void
+bool
 pyi_path_basename(char *result, const char *path)
 {
-/* FIXME: This should be somthink like HAVE_BASENAME */
-#ifdef _WIN32
+#ifndef HAVE_BASENAME
     /* Search for the last directory separator in PATH.  */
     char *basename = strrchr (path, '\\');
 
@@ -109,7 +112,8 @@ pyi_path_basename(char *result, const char *path)
     char *base = NULL;
     base = (char *) basename((char *) path);  /* _XOPEN_SOURCE - no 'const'. */
     strcpy(result, base);
-#endif /* ifdef _WIN32 */
+#endif /* ifndef HAVE_BASENAME */
+    return true;
 }
 
 /*
@@ -127,49 +131,33 @@ pyi_path_basename(char *result, const char *path)
 char *
 pyi_path_join(char *result, const char *path1, const char *path2)
 {
-    size_t len = 0;
-
-    if (NULL == result) {
-        len = strlen(path1) + strlen(path2) + 2;
-        result = malloc(len);
-
-        if (NULL == result) {
-            return NULL;
-        }
-
-        memset(result, 0, len);
+    size_t len, len2;
+    /* Copy path1 to result */
+    len = snprintf(result, PATH_MAX, "%s", path1);
+    if (len >= PATH_MAX-1) {
+        return NULL;
     }
-    else {
-        memset(result, 0, PATH_MAX);
-    }
-    /* Copy path1 to result without null terminator */
-    strncpy(result, path1, strlen(path1));
     /* Append trailing slash if missing. */
-    len = strlen(result);
-
-    if (result[len - 1] != PYI_SEP) {
-        result[len] = PYI_SEP;
-        result[len + 1] = PYI_NULLCHAR;
+    if (result[len-1] != PYI_SEP) {
+        result[len++] = PYI_SEP;
+        result[len++] = PYI_NULLCHAR;
     }
+    len = PATH_MAX - len;
+    len2 = strlen(path2);
+    if (len2 >= len) {
+        return NULL;
+    };
     /* Remove trailing slash from path2 if present. */
-    len = strlen(path2);
-
-    if (path2[len - 1] == PYI_SEP) {
+    if (path2[len2 - 1] == PYI_SEP) {
         /* Append path2 without slash. */
-        strncat(result, path2, len - 2);
+        strncat(result, path2, len);
+        result[strlen(result) - 1] = PYI_NULLCHAR;
     }
     else {
         /* path2 does not end with slash. */
-        strcat(result, path2);
+        strncat(result, path2, len);
     }
     return result;
-}
-
-/* Normalize a pathname. Return result in new buffer. */
-/* TODO implement this function */
-void
-pyi_path_normalize(char *result, const char *path)
-{
 }
 
 
@@ -189,7 +177,7 @@ pyi_path_fullpath_keep_basename(char *abs, const char *rel)
     if (realpath(dirname, full_dirname) == NULL) {
         return false;
     }
-    return (pyi_path_join(abs, full_dirname, basename) == NULL);
+    return (pyi_path_join(abs, full_dirname, basename) != NULL);
 }
 #endif
 
@@ -200,8 +188,20 @@ int
 pyi_path_fullpath(char *abs, size_t abs_size, const char *rel)
 {
 #ifdef _WIN32
-    /* TODO use _wfullpath - wchar_t function. */
-    return _fullpath(abs, rel, abs_size) != NULL;
+    wchar_t wrel[PATH_MAX + 1];
+    wchar_t *wabs = NULL;
+
+    pyi_win32_utils_from_utf8(wrel, rel, PATH_MAX);
+
+    wabs = _wfullpath(NULL, wrel, PATH_MAX);
+    if (wabs == NULL) {
+        return 0;
+    }
+
+    char *ret = pyi_win32_utils_to_utf8(abs, wabs, abs_size);
+    free(wabs);
+
+    return ret != NULL;
 #else
     return realpath(rel, abs) != NULL;
 #endif
@@ -224,45 +224,25 @@ pyi_path_exists(char * path)
 /* Search $PATH for the program named 'appname' and return its full path.
  * 'result' should be a buffer of at least PATH_MAX characters.
  */
-int
+bool
 pyi_search_path(char * result, const char * appname)
 {
-    char * path = pyi_getenv("PATH");
-    char dirname[PATH_MAX + 1];
-    char filename[PATH_MAX + 1];
+    char *path = pyi_getenv("PATH"); // returns a copy
+    char *dirname;
 
     if (NULL == path) {
-        return -1;
+        return false;
     }
 
-    while (1) {
-        char *delim = strchr(path, PYI_PATHSEP);
-
-        if (delim) {
-            size_t len = delim - path;
-
-            if (len > PATH_MAX) {
-                len = PATH_MAX;
-            }
-            strncpy(dirname, path, len);
-            *(dirname + len) = '\0';
+    dirname = strtok(path, PYI_PATHSEPSTR);
+    while (dirname != NULL) {
+        if ((pyi_path_join(result, dirname, appname) != NULL)
+            && pyi_path_exists(result)) {
+            return true;
         }
-        else {  /* last $PATH element */
-            strncpy(dirname, path, PATH_MAX);
-        }
-        pyi_path_join(filename, dirname, appname);
-
-        if (pyi_path_exists(filename)) {
-            strncpy(result, filename, PATH_MAX);
-            return 0;
-        }
-
-        if (!delim) {
-            break;
-        }
-        path = delim + 1;
+        dirname = strtok(NULL, PYI_PATHSEPSTR);
     }
-    return -1;
+    return false;
 }
 
 /*
@@ -274,12 +254,9 @@ pyi_search_path(char * result, const char * appname)
  * execfile - buffer where to put path to executable.
  * appname - usually the item argv[0].
  */
-int
+bool
 pyi_path_executable(char *execfile, const char *appname)
 {
-    char buffer[PATH_MAX];
-    size_t result = -1;
-
 #ifdef _WIN32
     wchar_t modulename_w[PATH_MAX];
 
@@ -287,15 +264,16 @@ pyi_path_executable(char *execfile, const char *appname)
      */
     if (!GetModuleFileNameW(NULL, modulename_w, PATH_MAX)) {
         FATAL_WINERROR("GetModuleFileNameW", "Failed to get executable path.");
-        return -1;
+        return false;
     }
 
     if (!pyi_win32_utils_to_utf8(execfile, modulename_w, PATH_MAX)) {
         FATALERROR("Failed to convert executable path to UTF-8.");
-        return -1;
+        return false;
     }
 
 #elif __APPLE__
+    char buffer[PATH_MAX];
     uint32_t length = sizeof(buffer);
 
     /* Mac OS X has special function to obtain path to executable.
@@ -303,56 +281,73 @@ pyi_path_executable(char *execfile, const char *appname)
      */
     if (_NSGetExecutablePath(buffer, &length) != 0) {
         FATALERROR("System error - unable to load!\n");
-        return -1;
+        return false;
     }
 
     if (pyi_path_fullpath(execfile, PATH_MAX, buffer) == false) {
         VS("LOADER: Cannot get fullpath for %s\n", execfile);
-        return -1;
+        return false;
     }
 
 #else /* ifdef _WIN32 */
-    if (appname[0] == PYI_SEP || strchr(appname, PYI_SEP)) {
-        /* Absolute or relative path: Canonicalize directory path,
-         * but keep original basename.
-         */
-        if (pyi_path_fullpath_keep_basename(execfile, appname) == false) {
-            VS("LOADER: Cannot get fullpath for %s\n", execfile);
-            return -1;
-        }
-    }
-    else {
-        /* No absolute or relative path, just program name: search $PATH.
-         */
-        result = pyi_search_path(buffer, appname);
-        if (-1 == result) {
-            /* Searching $PATH failed, user is crazy. */
-            VS("LOADER: Searching $PATH failed for %s", appname);
-            strncpy(buffer, appname, PATH_MAX);
-            if (buffer[PATH_MAX-1] != '\0') {
-                VS("LOADER: Appname too large %s\n", appname);
-                return -1;
+    /* On Linux, Cygwin, FreeBSD, and Solaris, we try these /proc paths first
+     */
+    size_t name_len = -1;
+
+    #if defined(__linux__) || defined(__CYGWIN__)
+    name_len = readlink("/proc/self/exe", execfile, PATH_MAX-1);  /* Linux, Cygwin */
+    #elif defined(__FreeBSD__)
+    name_len = readlink("/proc/curproc/file", execfile, PATH_MAX-1);  /* FreeBSD */
+    #elif defined(__sun)
+    name_len = readlink("/proc/self/path/a.out", execfile, PATH_MAX-1);  /* Solaris */
+    #endif
+
+    if (name_len != -1) {
+        /* execfile is not yet zero-terminated. result is the byte count. */
+        *(execfile + name_len) = '\0';
+    } else {
+        if (strchr(appname, PYI_SEP)) {
+            /* Absolute or relative path: Canonicalize directory path,
+             * but keep original basename.
+             */
+            if (pyi_path_fullpath_keep_basename(execfile, appname) == false) {
+                VS("LOADER: Cannot get fullpath for %s\n", execfile);
+                return false;
             }
         }
-        if (pyi_path_fullpath_keep_basename(execfile, buffer) == false) {
-            VS("LOADER: Cannot get fullpath for %s\n", execfile);
-            return -1;
+        else {
+            /* No absolute or relative path, just program name: search $PATH.
+             */
+            char buffer[PATH_MAX];
+            if (! pyi_search_path(buffer, appname)) {
+                /* Searching $PATH failed, user is crazy. */
+                VS("LOADER: Searching $PATH failed for %s", appname);
+                if (snprintf(buffer, PATH_MAX, "%s", appname) >= PATH_MAX) {
+                    VS("LOADER: Full path to application exceeds PATH_MAX: %s\n", appname);
+                    return false;
+                }
+            }
+            if (pyi_path_fullpath_keep_basename(execfile, buffer) == false) {
+                VS("LOADER: Cannot get fullpath for %s\n", execfile);
+                return false;
+            }
         }
     }
 #endif /* ifdef _WIN32 */
     VS("LOADER: executable is %s\n", execfile);
-    return 0;
+    return true;
 }
 
 /*
  * Return absolute path to homepath. It is the directory containing executable.
  */
-void
+bool
 pyi_path_homepath(char *homepath, const char *thisfile)
 {
     /* Fill in here (directory of thisfile). */
-    pyi_path_dirname(homepath, thisfile);
+    bool rc = pyi_path_dirname(homepath, thisfile);
     VS("LOADER: homepath is %s\n", homepath);
+    return rc;
 }
 
 /*
@@ -362,14 +357,15 @@ pyi_path_homepath(char *homepath, const char *thisfile)
  * archivefile - buffer where to put path the .pkg.
  * thisfile    - usually the executable's filename.
  */
-void
+bool
 pyi_path_archivefile(char *archivefile, const char *thisfile)
 {
-    strcpy(archivefile, thisfile);
 #ifdef _WIN32
+    strcpy(archivefile, thisfile);
     strcpy(archivefile + strlen(archivefile) - 3, "pkg");
+    return true;
 #else
-    strcat(archivefile, ".pkg");
+    return (snprintf(archivefile, PATH_MAX, "%s.pkg", thisfile) < PATH_MAX);
 #endif
 }
 
@@ -380,13 +376,11 @@ pyi_path_archivefile(char *archivefile, const char *thisfile)
 FILE*
 pyi_path_fopen(const char* filename, const char* mode)
 {
-    wchar_t wfilename[MAX_PATH];
+    wchar_t wfilename[PATH_MAX];
     wchar_t wmode[10];
 
-    pyi_win32_utils_from_utf8(wfilename, filename, MAX_PATH);
+    pyi_win32_utils_from_utf8(wfilename, filename, PATH_MAX);
     pyi_win32_utils_from_utf8(wmode, mode, 10);
     return _wfopen(wfilename, wmode);
 }
-#else
-    #define pyi_path_fopen(x, y)    fopen(x, y)
 #endif

@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2020, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -19,11 +19,11 @@ import argparse
 import platform
 
 
-from . import __version__
-from . import log as logging
+from PyInstaller import __version__
+from PyInstaller import log as logging
 
 # note: don't import anything else until this function is run!
-from .compat import check_requirements, is_conda
+from PyInstaller.compat import check_requirements, is_conda
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +70,30 @@ def __add_options(parser):
                         version=__version__,
                         help='Show program version info and exit.')
 
+
+def generate_parser() -> argparse.ArgumentParser:
+    """Build an argparse parser for PyInstaller's main CLI."""
+
+    import PyInstaller.building.makespec
+    import PyInstaller.building.build_main
+    import PyInstaller.log
+
+    parser = argparse.ArgumentParser(formatter_class=_SmartFormatter)
+    parser.prog = "pyinstaller"
+    __add_options(parser)
+
+    PyInstaller.building.makespec.__add_options(parser)
+    PyInstaller.building.build_main.__add_options(parser)
+    PyInstaller.log.__add_options(parser)
+    parser.add_argument('filenames', metavar='scriptname', nargs='+',
+                        help=("name of scriptfiles to be processed or "
+                              "exactly one .spec-file. If a .spec-file is "
+                              "specified, most options are unnecessary "
+                              "and are ignored."))
+
+    return parser
+
+
 def run(pyi_args=None, pyi_config=None):
     """
     pyi_args     allows running PyInstaller programatically without a subprocess
@@ -77,22 +101,10 @@ def run(pyi_args=None, pyi_config=None):
     """
     check_requirements()
 
-    import PyInstaller.building.makespec
-    import PyInstaller.building.build_main
     import PyInstaller.log
 
     try:
-        parser = argparse.ArgumentParser(formatter_class=_SmartFormatter)
-        __add_options(parser)
-        PyInstaller.building.makespec.__add_options(parser)
-        PyInstaller.building.build_main.__add_options(parser)
-        PyInstaller.log.__add_options(parser)
-        parser.add_argument('filenames', metavar='scriptname', nargs='+',
-                            help=("name of scriptfiles to be processed or "
-                                  "exactly one .spec-file. If a .spec-file is "
-                                  "specified, most options are unnecessary "
-                                  "and are ignored."))
-
+        parser = generate_parser()
         args = parser.parse_args(pyi_args)
         PyInstaller.log.__process_options(parser, args)
 
@@ -115,6 +127,9 @@ def run(pyi_args=None, pyi_config=None):
 
     except KeyboardInterrupt:
         raise SystemExit("Aborted by user request.")
+    except RecursionError:
+        from PyInstaller import _recursion_to_deep_message
+        _recursion_to_deep_message.raise_with_msg()
 
 
 if __name__ == '__main__':

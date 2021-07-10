@@ -1,0 +1,4 @@
+Add option to opt-out from reporting full traceback for unhandled exceptions
+in windowed mode (Windows and macOS only), via ``--disable-windowed-traceback``
+PyInstaller CLI switch and the corresponding ``disable_windowed_traceback``
+boolean argument to ``EXE()`` in spec file.

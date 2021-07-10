@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -15,34 +15,21 @@ __all__ = ('HOMEPATH', 'PLATFORM', '__version__')
 import os
 import sys
 
-from . import compat
-from .compat import is_win, is_py2
-from .utils.git import get_repo_revision
+from PyInstaller import compat
+from PyInstaller.utils.git import get_repo_revision
 
 
 # Note: Keep this variable as plain string so it could be updated automatically
 #       when doing a release.
-__version__ = '3.6'
+__version__ = '5.0.dev0'
 
 
 # Absolute path of this package's directory. Save this early so all
 # submodules can use the absolute path. This is required e.g. if the
-# current directorey changes prior to loading the hooks.
+# current directory changes prior to loading the hooks.
 PACKAGEPATH = os.path.abspath(os.path.dirname(__file__))
 
 HOMEPATH = os.path.dirname(PACKAGEPATH)
-if is_win and is_py2:
-    # This ensures for Python 2 that PyInstaller will work on Windows
-    # with paths containing foreign characters.
-    try:
-        unicode(HOMEPATH)
-    except UnicodeDecodeError:
-        # Do conversion to ShortPathName really only in case HOMEPATH is not
-        # ascii only - conversion to unicode type cause this unicode error.
-        try:
-            HOMEPATH = compat.win32api.GetShortPathName(HOMEPATH)
-        except ImportError:
-            pass
 
 
 # Update __version__ as necessary.
@@ -71,16 +58,17 @@ else:
 ## Default values of paths where to put files created by PyInstaller.
 ## Mind option-help in build_main when changes these
 # Folder where to put created .spec file.
-DEFAULT_SPECPATH = compat.getcwd()
+DEFAULT_SPECPATH = os.getcwd()
 # Folder where to put created .spec file.
 # Where to put the final app.
-DEFAULT_DISTPATH = os.path.join(compat.getcwd(), 'dist')
+DEFAULT_DISTPATH = os.path.join(os.getcwd(), 'dist')
 # Where to put all the temporary work files, .log, .pyz and etc.
-DEFAULT_WORKPATH = os.path.join(compat.getcwd(), 'build')
+DEFAULT_WORKPATH = os.path.join(os.getcwd(), 'build')
 
 
 PLATFORM = compat.system + '-' + compat.architecture
-# Include machine name in path to bootloader for some machines.
-# e.g. 'arm'
-if compat.machine:
+# Include machine name in path to bootloader for some machines (e.g., 'arm').
+# Explicitly avoid doing this on macOS, where we keep universal2 bootloaders
+# in Darwin-64bit folder regardless of whether we are on x86_64 or arm64.
+if compat.machine and not compat.is_darwin:
     PLATFORM += '-' + compat.machine

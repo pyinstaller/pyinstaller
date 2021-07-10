@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -9,10 +9,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-
-# This import forces Python 2 to handle string as unicode - as with prefix 'u'.
-from __future__ import unicode_literals
 
 # Encode unicode string into utf8 and then back to unicode strings.
 # The original string and the result should be equal.

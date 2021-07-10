@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -24,16 +24,18 @@ from operator import itemgetter
 
 from PyInstaller import HOMEPATH, PLATFORM
 from PyInstaller.archive.writers import ZlibArchiveWriter, CArchiveWriter
-from PyInstaller.building.utils import _check_guts_toc, add_suffix_to_extensions, \
+from PyInstaller.building.utils import _check_guts_toc, \
+    add_suffix_to_extension, \
     checkCache, strip_paths_in_code, get_code_object, \
     _make_clean_directory
-from PyInstaller.compat import is_win, is_darwin, is_linux, is_cygwin, exec_command_all
+from PyInstaller.compat import is_win, is_darwin, is_linux, is_cygwin, \
+    exec_command_all, is_64bits
 from PyInstaller.depend import bindepend
 from PyInstaller.depend.analysis import get_bootstrap_modules
 from PyInstaller.depend.utils import is_path_to_egg
 from PyInstaller.building.datastruct import TOC, Target, _check_guts_eq
 from PyInstaller.utils import misc
-from .. import log as logging
+from PyInstaller import log as logging
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +70,7 @@ class PYZ(Target):
 
         """
 
-        from ..config import CONF
+        from PyInstaller.config import CONF
         Target.__init__(self)
         name = kwargs.get('name', None)
         cipher = kwargs.get('cipher', None)
@@ -153,10 +155,13 @@ class PKG(Target):
                  'BINARY': 'b',
                  'ZIPFILE': 'Z',
                  'EXECUTABLE': 'b',
-                 'DEPENDENCY': 'd'}
+                 'DEPENDENCY': 'd',
+                 'SPLASH': 'l'}
 
     def __init__(self, toc, name=None, cdict=None, exclude_binaries=0,
-                 strip_binaries=False, upx_binaries=False, upx_exclude=None):
+                 strip_binaries=False, upx_binaries=False, upx_exclude=None,
+                 target_arch=None, codesign_identity=None,
+                 entitlements_file=None):
         """
         toc
                 A TOC (Table of Contents)
@@ -184,6 +189,9 @@ class PKG(Target):
         self.strip_binaries = strip_binaries
         self.upx_binaries = upx_binaries
         self.upx_exclude = upx_exclude or []
+        self.target_arch = target_arch
+        self.codesign_identity = codesign_identity
+        self.entitlements_file = entitlements_file
         # This dict tells PyInstaller what items embedded in the executable should
         # be compressed.
         if self.cdict is None:
@@ -193,6 +201,7 @@ class PKG(Target):
                           'EXECUTABLE': COMPRESSED,
                           'PYSOURCE': COMPRESSED,
                           'PYMODULE': COMPRESSED,
+                          'SPLASH': COMPRESSED,
                           # Do not compress PYZ as a whole. Single modules are
                           # compressed when creating PYZ archive.
                           'PYZ': UNCOMPRESSED}
@@ -205,7 +214,10 @@ class PKG(Target):
             ('exclude_binaries', _check_guts_eq),
             ('strip_binaries', _check_guts_eq),
             ('upx_binaries', _check_guts_eq),
-            ('upx_exclude', _check_guts_eq)
+            ('upx_exclude', _check_guts_eq),
+            ('target_arch', _check_guts_eq),
+            ('codesign_identity', _check_guts_eq),
+            ('entitlements_file', _check_guts_eq),
             # no calculated/analysed values
             )
 
@@ -222,17 +234,20 @@ class PKG(Target):
         seenInms = {}
         seenFnms = {}
         seenFnms_typ = {}
-        toc = add_suffix_to_extensions(self.toc)
         # 'inm'  - relative filename inside a CArchive
         # 'fnm'  - absolute filename as it is on the file system.
-        for inm, fnm, typ in toc:
+        for inm, fnm, typ in self.toc:
+            # Adjust name for extensions, if applicable
+            inm, fnm, typ = add_suffix_to_extension(inm, fnm, typ)
             # Ensure filename 'fnm' is not None or empty string. Otherwise
             # it will fail in case of 'typ' being type OPTION.
             if fnm and not os.path.isfile(fnm) and is_path_to_egg(fnm):
                 # file is contained within python egg, it is added with the egg
                 continue
             if typ in ('BINARY', 'EXTENSION', 'DEPENDENCY'):
-                if not self.exclude_binaries:
+                if self.exclude_binaries and typ == 'EXTENSION':
+                    self.dependencies.append((inm, fnm, typ))
+                elif not self.exclude_binaries or typ == 'DEPENDENCY':
                     if typ == 'BINARY':
                         # Avoid importing the same binary extension twice. This might
                         # happen if they come from different sources (eg. once from
@@ -259,7 +274,10 @@ class PKG(Target):
                     fnm = checkCache(fnm, strip=self.strip_binaries,
                                      upx=self.upx_binaries,
                                      upx_exclude=self.upx_exclude,
-                                     dist_nm=inm)
+                                     dist_nm=inm,
+                                     target_arch=self.target_arch,
+                                     codesign_identity=self.codesign_identity,
+                                     entitlements_file=self.entitlements_file)
 
                     mytoc.append((inm, fnm, self.cdict.get(typ, 0),
                                   self.xformdict.get(typ, 'b')))
@@ -314,6 +332,10 @@ class EXE(Target):
                 On Windows or OSX governs whether to use the console executable
                 or the windowed executable. Always True on Linux/Unix (always
                 console executable - it does not matter there).
+            disable_windowed_traceback
+                Disable traceback dump of unhandled exception in windowed
+                (noconsole) mode (Windows and macOS only), and instead display
+                a message that this feature is disabled.
             debug
                 Setting to True gives you progress mesages from the executable
                 (for console=False there will be annoying MessageBoxes on Windows).
@@ -325,6 +347,8 @@ class EXE(Target):
             icon
                 Windows or OSX only. icon='myicon.ico' to use an icon file or
                 icon='notepad.exe,0' to grab an icon resource.
+                Defaults to use PyInstaller's console or windowed icon.
+                icon=`NONE` to not add any icon.
             version
                 Windows only. version='myversion.txt'. Use grab_version.py to get
                 a version resource from an executable and then edit the output to
@@ -336,8 +360,23 @@ class EXE(Target):
             uac_uiaccess
                 Windows only. Setting to True allows an elevated application to
                 work with Remote Desktop
+            target_arch
+                macOS only. Used to explicitly specify the target architecture;
+                either single-arch ('x86_64' or 'arm64') or 'universal2'. Used
+                in checks that the collected binaries contain the requires arch
+                slice(s) and/or to convert fat binaries into thin ones as
+                necessary. If not specified (default), a single-arch build
+                corresponding to running architecture is assumed.
+            codesign_identity
+                macOS only. Use the provided identity to sign collected
+                binaries and the generated executable. If signing identity is
+                not provided, ad-hoc signing is performed.
+            entitlements_file
+                macOS only. Optional path to entitlements file to use with
+                code signing of collected binaries (--entitlements option
+                to codesign utility).
         """
-        from ..config import CONF
+        from PyInstaller.config import CONF
         Target.__init__(self)
 
         # Available options for EXE in .spec files.
@@ -345,6 +384,8 @@ class EXE(Target):
         self.bootloader_ignore_signals = kwargs.get(
             'bootloader_ignore_signals', False)
         self.console = kwargs.get('console', True)
+        self.disable_windowed_traceback = kwargs.get(
+            'disable_windowed_traceback', False)
         self.debug = kwargs.get('debug', False)
         self.name = kwargs.get('name', None)
         self.icon = kwargs.get('icon', None)
@@ -361,6 +402,28 @@ class EXE(Target):
         # On Windows allows the exe to request admin privileges.
         self.uac_admin = kwargs.get('uac_admin', False)
         self.uac_uiaccess = kwargs.get('uac_uiaccess', False)
+
+        # Target architecture (macOS only)
+        self.target_arch = kwargs.get('target_arch', None)
+        if is_darwin:
+            if self.target_arch is None:
+                import platform
+                self.target_arch = platform.machine()
+            else:
+                assert self.target_arch in {'x86_64', 'arm64', 'universal2'}, \
+                    f"Unsupported target arch: {self.target_arch}"
+            logger.info("EXE target arch: %s", self.target_arch)
+        else:
+            self.target_arch = None  # explicitly disable
+
+        # Code signing identity (macOS only)
+        self.codesign_identity = kwargs.get('codesign_identity', None)
+        if is_darwin:
+            logger.info("Code signing identity: %s", self.codesign_identity)
+        else:
+            self.codesign_identity = None  # explicitly disable
+        # Code signing entitlements
+        self.entitlements_file = kwargs.get('entitlements_file', None)
 
         if CONF['hasUPX']:
             self.upx = kwargs.get('upx', False)
@@ -408,7 +471,20 @@ class EXE(Target):
             # no value; presence means "true"
             self.toc.append(("pyi-bootloader-ignore-signals", "", "OPTION"))
 
+        if self.disable_windowed_traceback:
+            # no value; presence means "true"
+            self.toc.append(("pyi-disable-windowed-traceback", "", "OPTION"))
+
         if is_win:
+            if not self.icon:
+                # --icon not specified; use default from bootloader folder
+                if self.console:
+                    icon = 'icon-console.ico'
+                else:
+                    icon = 'icon-windowed.ico'
+                self.icon = os.path.join(
+                    os.path.dirname(os.path.dirname(__file__)),
+                    'bootloader', 'images', icon)
             filename = os.path.join(CONF['workpath'], CONF['specnm'] + ".exe.manifest")
             self.manifest = winmanifest.create_manifest(filename, self.manifest,
                 self.console, self.uac_admin, self.uac_uiaccess)
@@ -433,7 +509,10 @@ class EXE(Target):
         self.pkg = PKG(self.toc, cdict=kwargs.get('cdict', None),
                        exclude_binaries=self.exclude_binaries,
                        strip_binaries=self.strip, upx_binaries=self.upx,
-                       upx_exclude=self.upx_exclude
+                       upx_exclude=self.upx_exclude,
+                       target_arch=self.target_arch,
+                       codesign_identity=self.codesign_identity,
+                       entitlements_file=self.entitlements_file
                        )
         self.dependencies = self.pkg.dependencies
 
@@ -455,6 +534,9 @@ class EXE(Target):
             ('uac_uiaccess', _check_guts_eq),
             ('manifest', _check_guts_eq),
             ('append_pkg', _check_guts_eq),
+            ('target_arch', _check_guts_eq),
+            ('codesign_identity', _check_guts_eq),
+            ('entitlements_file', _check_guts_eq),
             # for the case the directory ius shared between platforms:
             ('pkgname', _check_guts_eq),
             ('toc', _check_guts_eq),
@@ -515,7 +597,7 @@ class EXE(Target):
         return bootloader_file
 
     def assemble(self):
-        from ..config import CONF
+        from PyInstaller.config import CONF
         logger.info("Building EXE from %s", self.tocbasename)
         trash = []
         if os.path.exists(self.name):
@@ -526,8 +608,7 @@ class EXE(Target):
         if not os.path.exists(exe):
             raise SystemExit(_MISSING_BOOTLOADER_ERRORMSG)
 
-
-        if is_win and (self.icon or self.versrsrc or self.resources):
+        if is_win:
             fd, tmpnm = tempfile.mkstemp(prefix=os.path.basename(exe) + ".",
                                          dir=CONF['workpath'])
             # need to close the file, otherwise copying resources will fail
@@ -535,7 +616,7 @@ class EXE(Target):
             os.close(fd)
             self._copyfile(exe, tmpnm)
             os.chmod(tmpnm, 0o755)
-            if self.icon:
+            if self.icon != "NONE":
                 icon.CopyIcons(tmpnm, self.icon)
             if self.versrsrc:
                 versioninfo.SetVersion(tmpnm, self.versrsrc)
@@ -587,7 +668,7 @@ class EXE(Target):
                         logger.error("Error while updating resource %s %s in %s"
                                      " from data file %s",
                                      restype, resname, tmpnm, resfile, exc_info=1)
-            if is_win and self.manifest and not self.exclude_binaries:
+            if self.manifest and not self.exclude_binaries:
                 self.manifest.update_resources(tmpnm, [1])
             trash.append(tmpnm)
             exe = tmpnm
@@ -613,6 +694,77 @@ class EXE(Target):
                 logger.debug(stderr)
             if retcode != 0:
                 raise SystemError("objcopy Failure: %s" % stderr)
+        elif is_darwin:
+            import PyInstaller.utils.osx as osxutils
+
+            # Copy bootloader
+            logger.info("Copying bootloader exe to %s", self.name)
+            with open(self.name, 'wb') as outf:
+                with open(exe, 'rb') as inf:
+                    shutil.copyfileobj(inf, outf, length=64*1024)
+
+            # Convert bootloader to target arch
+            logger.info("Converting EXE to target arch (%s)", self.target_arch)
+            osxutils.binary_to_target_arch(self.name, self.target_arch,
+                                           display_name='Bootloader EXE')
+
+            # Strip signatures from all arch slices. Strictly speaking,
+            # we need to remove signature (if present) from the last
+            # slice, because we will be appending data to it. When
+            # building universal2 bootloaders natively on macOS, only
+            # arm64 slices have a (dummy) signature. However, when
+            # cross-compiling with osxcross, we seem to get dummy
+            # signatures on both x86_64 and arm64 slices. While the former
+            # should not have any impact, it does seem to cause issues
+            # with further binary signing using real identity. Therefore,
+            # we remove all signatures and re-sign the binary using
+            # dummy signature once the data is appended.
+            logger.info("Removing signature(s) from EXE")
+            osxutils.remove_signature_from_binary(self.name)
+
+            # Append the data
+            with open(self.name, 'ab') as outf:
+                with open(self.pkg.name, 'rb') as inf:
+                    shutil.copyfileobj(inf, outf, length=64*1024)
+
+            # If the version of macOS SDK used to build bootloader exceeds
+            # that of macOS SDK used to built Python library (and, by
+            # extension, bundled Tcl/Tk libraries), force the version
+            # declared by the frozen executable to match that of the Python
+            # library.
+            # Having macOS attempt to enable new features (based on SDK
+            # version) for frozen application has no benefit if the Python
+            # library does not support them as well.
+            # On the other hand, there seem to be UI issues in tkinter
+            # due to failed or partial enablement of dark mode (i.e., the
+            # bootloader executable being built against SDK 10.14 or later,
+            # which causes macOS to enable dark mode, and Tk libraries being
+            # built against an earlier SDK version that does not support the
+            # dark mode). With python.org Intel macOS installers, this
+            # manifests as black Tk windows and UI elements (see issue #5827),
+            # while in Anaconda python, it may result in white text on bright
+            # background.
+            pylib_version = osxutils.get_macos_sdk_version(
+                bindepend.get_python_library_path())
+            exe_version = osxutils.get_macos_sdk_version(self.name)
+            if pylib_version < exe_version:
+                logger.info(
+                    "Rewriting executable's macOS SDK version (%d.%d.%d) to "
+                    "match the SDK version of the Python library (%d.%d.%d) "
+                    "in order to avoid inconsistent behavior and potential UI "
+                    "issues in the frozen application.", *exe_version,
+                    *pylib_version)
+                osxutils.set_macos_sdk_version(self.name, *pylib_version)
+
+            # Fix Mach-O header for codesigning on OS X.
+            logger.info("Fixing EXE for code signing %s", self.name)
+            osxutils.fix_exe_for_code_signing(self.name)
+
+            # Re-sign the binary (either ad-hoc or using real identity,
+            # if provided)
+            logger.info("Re-signing the EXE")
+            osxutils.sign_binary(self.name, self.codesign_identity,
+                                 self.entitlements_file)
         else:
             # Fall back to just append on end of file
             logger.info("Appending archive to EXE %s", self.name)
@@ -624,11 +776,10 @@ class EXE(Target):
                 with open(self.pkg.name, 'rb') as infh:
                     shutil.copyfileobj(infh, outf, length=64*1024)
 
-        if is_darwin:
-            # Fix Mach-O header for codesigning on OS X.
-            logger.info("Fixing EXE for code signing %s", self.name)
-            import PyInstaller.utils.osx as osxutils
-            osxutils.fix_exe_for_code_signing(self.name)
+        if is_win:
+            # Set checksum to appease antiviral software.
+            from PyInstaller.utils.win32.winutils import set_exe_checksum
+            set_exe_checksum(self.name)
 
         os.chmod(self.name, 0o755)
         # get mtime for storing into the guts
@@ -659,11 +810,14 @@ class COLLECT(Target):
                 name
                     The name of the directory to be built.
         """
-        from ..config import CONF
+        from PyInstaller.config import CONF
         Target.__init__(self)
         self.strip_binaries = kws.get('strip', False)
         self.upx_exclude = kws.get("upx_exclude", [])
         self.console = True
+        self.target_arch = None
+        self.codesign_identity = None
+        self.entitlements_file = None
 
         if CONF['hasUPX']:
             self.upx_binaries = kws.get('upx', False)
@@ -687,6 +841,9 @@ class COLLECT(Target):
                 self.toc.append((os.path.basename(arg.name), arg.name, arg.typ))
                 if isinstance(arg, EXE):
                     self.console = arg.console
+                    self.target_arch = arg.target_arch
+                    self.codesign_identity = arg.codesign_identity
+                    self.entitlements_file = arg.entitlements_file
                     for tocnm, fnm, typ in arg.toc:
                         if tocnm == os.path.basename(arg.name) + ".manifest":
                             self.toc.append((tocnm, fnm, typ))
@@ -710,8 +867,9 @@ class COLLECT(Target):
     def assemble(self):
         _make_clean_directory(self.name)
         logger.info("Building COLLECT %s", self.tocbasename)
-        toc = add_suffix_to_extensions(self.toc)
-        for inm, fnm, typ in toc:
+        for inm, fnm, typ in self.toc:
+            # Adjust name for extensions, if applicable
+            inm, fnm, typ = add_suffix_to_extension(inm, fnm, typ)
             if not os.path.exists(fnm) or not os.path.isfile(fnm) and is_path_to_egg(fnm):
                 # file is contained within python egg, it is added with the egg
                 continue
@@ -732,7 +890,10 @@ class COLLECT(Target):
                 fnm = checkCache(fnm, strip=self.strip_binaries,
                                  upx=self.upx_binaries,
                                  upx_exclude=self.upx_exclude,
-                                 dist_nm=inm)
+                                 dist_nm=inm,
+                                 target_arch=self.target_arch,
+                                 codesign_identity=self.codesign_identity,
+                                 entitlements_file=self.entitlements_file)
             if typ != 'DEPENDENCY':
                 if os.path.isdir(fnm):
                     # beacuse shutil.copy2() is the default copy function
@@ -790,7 +951,8 @@ class MERGE(object):
         Filter shared dependencies to be only in first executable.
         """
         for analysis, _, _ in args:
-            path = os.path.abspath(analysis.scripts[-1][1]).replace(self._common_prefix, "", 1)
+            path = os.path.normcase(os.path.abspath(analysis.scripts[-1][1]))
+            path = path.replace(self._common_prefix, "", 1)
             path = os.path.splitext(path)[0]
             if os.path.normcase(path) in self._id_to_path:
                 path = self._id_to_path[os.path.normcase(path)]
@@ -807,8 +969,46 @@ class MERGE(object):
                     self._dependencies[tpl[1]] = path
                 else:
                     dep_path = self._get_relative_path(path, self._dependencies[tpl[1]])
+                    # Ignore references that point to the origin package.
+                    # This can happen if the same resource is listed
+                    # multiple times in TOCs (e.g., once as binary and
+                    # once as data).
+                    if dep_path.endswith(path):
+                        logger.debug("Ignoring self-reference of %s for %s, "
+                                     "located in %s - duplicated TOC entry?",
+                                     tpl[1], path, dep_path)
+                        # Clear the entry as it is a duplicate.
+                        toc[i] = (None, None, None)
+                        continue
                     logger.debug("Referencing %s to be a dependecy for %s, located in %s" % (tpl[1], path, dep_path))
-                    analysis.dependencies.append((":".join((dep_path, tpl[0])), tpl[1], "DEPENDENCY"))
+                    # Determine the path relative to dep_path (i.e, within
+                    # the target directory) from the 'name' component
+                    # of the TOC tuple. If entry is EXTENSION, then the
+                    # relative path needs to be reconstructed from the
+                    # name components.
+                    if tpl[2] == 'EXTENSION':
+                        # Split on os.path.sep first, to handle additional
+                        # path prefix (e.g., lib-dynload)
+                        ext_components = tpl[0].split(os.path.sep)
+                        ext_components = ext_components[:-1] \
+                            + ext_components[-1].split('.')[:-1]
+                        if ext_components:
+                            rel_path = os.path.join(*ext_components)
+                        else:
+                            rel_path = ''
+                    else:
+                        rel_path = os.path.dirname(tpl[0])
+                    # Take filename from 'path' (second component of
+                    # TOC tuple); this way, we don't need to worry about
+                    # suffix of extensions.
+                    filename = os.path.basename(tpl[1])
+                    # Construct the full file path relative to dep_path...
+                    filename = os.path.join(rel_path, filename)
+                    # ...and use it in new DEPENDENCY entry
+                    analysis.dependencies.append(
+                        (":".join((dep_path, filename)),
+                         tpl[1],
+                         "DEPENDENCY"))
                     toc[i] = (None, None, None)
             # Clean the list
             toc[:] = [tpl for tpl in toc if tpl != (None, None, None)]

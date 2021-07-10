@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -11,20 +11,21 @@
 import os
 import re
 
-from ..hooks import collect_submodules, collect_system_data_files, eval_statement, exec_statement
-from ... import log as logging
-from ...compat import base_prefix, is_darwin, is_win, open_file, \
-    text_read_mode, text_type
-from ...depend.bindepend import findSystemLibrary
+from PyInstaller.utils.hooks import collect_submodules, \
+    collect_system_data_files, eval_statement, exec_statement
+from PyInstaller import log as logging
+from PyInstaller import compat
+from PyInstaller.depend.bindepend import findSystemLibrary
 
 logger = logging.getLogger(__name__)
 
 
-def get_typelibs(module, version):
-    """deprecated; only here for backwards compat.
-    """
-    logger.warning("get_typelibs is deprecated, use get_gi_typelibs instead")
-    return get_gi_typelibs(module, version)[1]
+__all__ = [
+    'get_gi_libdir', 'get_gi_typelibs', 'gir_library_path_fix',
+    'get_glib_system_data_dirs', 'get_glib_sysconf_dirs',
+    'collect_glib_share_files', 'collect_glib_etc_files',
+    'collect_glib_translations'
+]
 
 
 def get_gi_libdir(module, version):
@@ -110,17 +111,17 @@ def get_gi_typelibs(module, version):
 def gir_library_path_fix(path):
     import subprocess
     # 'PyInstaller.config' cannot be imported as other top-level modules.
-    from ...config import CONF
+    from PyInstaller.config import CONF
 
     path = os.path.abspath(path)
 
     # On OSX we need to recompile the GIR files to reference the loader path,
     # but this is not necessary on other platforms
-    if is_darwin:
+    if compat.is_darwin:
 
         # If using a virtualenv, the base prefix and the path of the typelib
         # have really nothing to do with each other, so try to detect that
-        common_path = os.path.commonprefix([base_prefix, path])
+        common_path = os.path.commonprefix([compat.base_prefix, path])
         if common_path == '/':
             logger.debug("virtualenv detected? fixing the gir path...")
             common_path = os.path.abspath(os.path.join(path, '..', '..', '..'))
@@ -143,12 +144,12 @@ def gir_library_path_fix(path):
                          'package.', gir_file)
             return None
 
-        with open_file(gir_file, text_read_mode, encoding='utf-8') as f:
+        with open(gir_file, 'r', encoding='utf-8') as f:
             lines = f.readlines()
         # GIR files are `XML encoded <https://developer.gnome.org/gi/stable/gi-gir-reference.html>`_,
         # which means they are by definition encoded using UTF-8.
-        with open_file(os.path.join(CONF['workpath'], gir_name), 'w',
-                       encoding='utf-8') as f:
+        with open(os.path.join(CONF['workpath'], gir_name), 'w',
+                  encoding='utf-8') as f:
             for line in lines:
                 if 'shared-library' in line:
                     split = re.split('(=)', line)
@@ -157,7 +158,7 @@ def gir_library_path_fix(path):
                         if 'lib' in item:
                             files[count] = '@loader_path/' + os.path.basename(item)
                     line = ''.join(split[0:2]) + ''.join(files)
-                f.write(text_type(line))
+                f.write(line)
 
         # g-ir-compiler expects a file so we cannot just pipe the fixed file to it.
         command = subprocess.Popen(('g-ir-compiler', os.path.join(CONF['workpath'], gir_name),
@@ -187,7 +188,7 @@ def get_glib_system_data_dirs():
 
 def get_glib_sysconf_dirs():
     """Try to return the sysconf directories, eg /etc."""
-    if is_win:
+    if compat.is_win:
         # On windows, if you look at gtkwin32.c, sysconfdir is actually
         # relative to the location of the GTK DLL. Since that's what
         # we're actually interested in (not the user path), we have to
@@ -215,7 +216,7 @@ def collect_glib_share_files(*path):
     if glib_data_dirs is None:
         return []
 
-    destdir = os.path.join('share', *path[:-1])
+    destdir = os.path.join('share', *path)
 
     # TODO: will this return too much?
     collected = []
@@ -232,7 +233,7 @@ def collect_glib_etc_files(*path):
     if glib_config_dirs is None:
         return []
 
-    destdir = os.path.join('etc', *path[:-1])
+    destdir = os.path.join('etc', *path)
 
     # TODO: will this return too much?
     collected = []
@@ -245,19 +246,22 @@ def collect_glib_etc_files(*path):
 _glib_translations = None
 
 
-def collect_glib_translations(prog):
+def collect_glib_translations(prog, lang_list=None):
     """
     Return a list of translations in the system locale directory whose names equal prog.mo.
     """
     global _glib_translations
     if _glib_translations is None:
-        _glib_translations = collect_glib_share_files('locale')
+        if lang_list is not None:
+            trans = []
+            for lang in lang_list:
+                trans += collect_glib_share_files(os.path.join("locale", lang))
+            _glib_translations = trans
+        else:
+            _glib_translations = collect_glib_share_files('locale')
 
     names = [os.sep + prog + '.mo',
              os.sep + prog + '.po']
     namelen = len(names[0])
 
     return [(src, dst) for src, dst in _glib_translations if src[-namelen:] in names]
-
-__all__ = ('get_typelibs', 'get_gi_libdir', 'get_gi_typelibs', 'gir_library_path_fix', 'get_glib_system_data_dirs',
-           'get_glib_sysconf_dirs', 'collect_glib_share_files', 'collect_glib_etc_files', 'collect_glib_translations')

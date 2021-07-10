@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -15,12 +15,12 @@ This module contains various helper functions for git DVCS
 """
 
 import os
-from ..compat import exec_command, exec_command_rc, FileNotFoundError
+from PyInstaller.compat import exec_command, exec_command_rc
 
 try:
     WindowsError
 except NameError:
-    # No running on Windows
+    # Not running on Windows
     WindowsError = FileNotFoundError
 
 def get_repo_revision():
@@ -29,7 +29,7 @@ def get_repo_revision():
     cwd = os.path.dirname(gitdir)
     if not path.exists(gitdir):
         try:
-            from ._gitrevision import rev
+            from PyInstaller.utils._gitrevision import rev
             if not rev.startswith('$'):
                 # the format specifier has been substituted
                 return '+' + rev

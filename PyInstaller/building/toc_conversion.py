@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -12,10 +12,10 @@
 import os
 import zipfile
 import pkg_resources
-from ..depend.utils import get_path_to_egg
-from .datastruct import TOC, Tree
-from .. import log as logging
-from ..compat import ALL_SUFFIXES
+from PyInstaller.depend.utils import get_path_to_egg
+from PyInstaller.building.datastruct import TOC, Tree
+from PyInstaller import log as logging
+from PyInstaller.compat import ALL_SUFFIXES
 
 logger = logging.getLogger(__name__)
 
@@ -39,9 +39,9 @@ class DependencyProcessor(object):
         self._distributions = set()
         self.__seen_distribution_paths = set()
         # Include files that were found by hooks.
-        # graph.flatten() should include only those modules that are reachable
+        # graph.iter_graph() should include only those modules that are reachable
         # from top-level script.
-        for node in graph.flatten(start=graph._top_script_node):
+        for node in graph.iter_graph(start=graph._top_script_node):
             # Update 'binaries', 'datas'
             name = node.identifier
             if name in additional_files:
@@ -133,7 +133,7 @@ class DependencyProcessor(object):
     @staticmethod
     def __collect_data_files_from_zip(zipfilename):
         # 'PyInstaller.config' cannot be imported as other top-level modules.
-        from ..config import CONF
+        from PyInstaller.config import CONF
         workpath = os.path.join(CONF['workpath'], os.path.basename(zipfilename))
         try:
             os.makedirs(workpath)

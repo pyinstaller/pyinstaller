@@ -3,7 +3,6 @@ setuptools
 docutils
 jinja2
 sphinx
-uuid
 pyusb
 pytz
 pyenchant
@@ -22,7 +21,6 @@ multiprocessing
 # package-management.
 twisted
 PIL
-# PyQt4
 MySQL-python
 psycopg2
 # gst
@@ -32,4 +30,18 @@ scipy
 pycrypto
 pygame
 #pyodbc
-wxPython
+wxPython # was installed for windows only
+
+### Others from old setupenv_unix.py and setupenv_windows.py
+keyring
+markdown
+pycparser
+pyexcelerate
+pylint
+# pyodbc # was installed for unix only
+qt4reactor
+requests
+scapy
+# pywin32 -- windows only
+
+six  # was installed for unix only

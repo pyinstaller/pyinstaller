@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2014-2020, PyInstaller Development Team.
+# Copyright (c) 2014-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -10,6 +10,7 @@
 #-----------------------------------------------------------------------------
 
 import os
+import glob
 from PyInstaller.utils.hooks.qt import add_qt5_dependencies, \
     pyside2_library_info
 from PyInstaller.utils.hooks import get_module_file_attribute, \
@@ -26,36 +27,27 @@ def get_relative_path_if_possible(actual, possible_prefix):
         return possible_relative_path
 
 
-def prefix_with_path(prefix_path, *paths):
-    if compat.is_py2:
-        return os.path.join(*(prefix_path + list(paths)))
-    else:
-        return os.path.join(*prefix_path, *paths)  # noqa: E999
-
-
 # Ensure PySide2 is importable before adding info depending on it.
-if pyside2_library_info.version:
+if pyside2_library_info.version is not None:
     hiddenimports, binaries, datas = add_qt5_dependencies(__file__)
 
     # Include the web engine process, translations, and resources.
     # According to https://bugreports.qt.io/browse/PYSIDE-642
     # there's no subdir for windows
-    if compat.is_win:
-        rel_data_path = ['PySide2']
-    else:
-        rel_data_path = ['PySide2', 'Qt']
+    rel_data_path = pyside2_library_info.qt_rel_dir
 
     pyside2_locations = pyside2_library_info.location
     if compat.is_darwin:
         # This is based on the layout of the Mac wheel from PyPi.
         data_path = pyside2_locations['DataPath']
         libraries = ['QtCore', 'QtWebEngineCore', 'QtQuick', 'QtQml',
-                     'QtNetwork', 'QtGui', 'QtWebChannel',
+                     'QtQmlModels', 'QtNetwork', 'QtGui', 'QtWebChannel',
                      'QtPositioning']
         for i in libraries:
+            framework_dir = i + '.framework'
             datas += collect_system_data_files(
-                os.path.join(data_path, 'lib', i + '.framework'),
-                prefix_with_path(rel_data_path, 'lib'), True)
+                os.path.join(data_path, 'lib', framework_dir),
+                os.path.join(rel_data_path, 'lib', framework_dir), True)
         datas += [(os.path.join(data_path, 'lib', 'QtWebEngineCore.framework',
                                 'Resources'), os.curdir)]
     else:
@@ -64,19 +56,19 @@ if pyside2_library_info.version:
         datas += [
             # Gather translations needed by Chromium.
             (os.path.join(pyside2_locations['TranslationsPath'], locales),
-             prefix_with_path(rel_data_path, 'translations', locales)),
+             os.path.join(rel_data_path, 'translations', locales)),
             # Per the `docs
             # <https://doc.qt.io/qt-5.10/qtwebengine-deploying.html#deploying-resources>`_,
             # ``DataPath`` is the base directory for ``resources``.
             #
             (os.path.join(pyside2_locations['DataPath'], resources),
-             prefix_with_path(rel_data_path, resources)),
+             os.path.join(rel_data_path, resources)),
             # Include the webengine process. The ``LibraryExecutablesPath``
             # is only valid on Windows and Linux.
             #
             (os.path.join(pyside2_locations['LibraryExecutablesPath'],
                           'QtWebEngineProcess*'),
-             prefix_with_path(rel_data_path, get_relative_path_if_possible(
+             os.path.join(rel_data_path, get_relative_path_if_possible(
                  pyside2_locations['LibraryExecutablesPath'],
                  pyside2_locations['PrefixPath'] + '/')))
         ]
@@ -97,6 +89,6 @@ if pyside2_library_info.version:
             if os.path.basename(imp).startswith('libnss3.so'):
                 # Find the location of NSS: given a ``/path/to/libnss.so``,
                 # add ``/path/to/nss/*.so`` to get the missing NSS libraries.
-                nss_subdir = os.path.join(os.path.dirname(imp), 'nss')
-                if os.path.exists(nss_subdir):
-                    binaries.append((os.path.join(nss_subdir, '*.so'), 'nss'))
+                nss_glob = os.path.join(os.path.dirname(imp), 'nss', '*.so')
+                if glob.glob(nss_glob):
+                    binaries.append((nss_glob, 'nss'))

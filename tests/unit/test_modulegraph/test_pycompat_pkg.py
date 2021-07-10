@@ -21,36 +21,36 @@ class TestModuleGraphImport (unittest.TestCase):
         mf = modulegraph.ModuleGraph(path=[ root ] + sys.path)
         mf.import_hook('pkg.api')
 
-        node = mf.findNode('pkg')
+        node = mf.find_node('pkg')
         self.assertIsInstance(node, modulegraph.Package)
 
-        node = mf.findNode('pkg.api')
+        node = mf.find_node('pkg.api')
         self.assertIsInstance(node, modulegraph.SourceModule)
 
         if sys.version_info[0] == 2:
-            node = mf.findNode('pkg.api2')
+            node = mf.find_node('pkg.api2')
             self.assertIsInstance(node, modulegraph.SourceModule)
 
-            node = mf.findNode('pkg.api3')
+            node = mf.find_node('pkg.api3')
             self.assertIsInstance(node, modulegraph.InvalidSourceModule)
 
-            node = mf.findNode('http.client')
+            node = mf.find_node('http.client')
             self.assertIs(node, None)
 
-            node = mf.findNode('urllib2')
+            node = mf.find_node('urllib2')
             self.assertIsInstance(node, modulegraph.SourceModule)
 
         else:
-            node = mf.findNode('pkg.api2')
+            node = mf.find_node('pkg.api2')
             self.assertIsInstance(node, modulegraph.InvalidSourceModule)
 
-            node = mf.findNode('pkg.api3')
+            node = mf.find_node('pkg.api3')
             self.assertIsInstance(node, modulegraph.SourceModule)
 
-            node = mf.findNode('http.client')
+            node = mf.find_node('http.client')
             self.assertIsInstance(node, modulegraph.SourceModule)
 
-            node = mf.findNode('urllib2')
+            node = mf.find_node('urllib2')
             self.assertIs(node, None)
 
 

@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -12,6 +12,8 @@
 
 import pytest
 import os
+import pathlib
+from importlib.machinery import EXTENSION_SUFFIXES
 
 from PyInstaller.building import utils
 
@@ -78,3 +80,50 @@ def test_format_binaries_and_datas_with_bracket(tmpdir):
 
     res = utils.format_binaries_and_datas(datas, str(tmpdir))
     assert res == expected
+
+
+def test_add_suffix_to_extension():
+    SUFFIX = EXTENSION_SUFFIXES[0]
+    # Each test case is a tuple of four values:
+    #  * input inm
+    #  * output (expected) inm
+    #  * fnm
+    #  * typ
+    # where (inm, fnm, typ) is a TOC entry tuple
+    # All paths are in POSIX format (and are converted to OS-specific
+    # path during the test itself).
+    CASES = [
+        # Stand-alone extension module
+        ('mypkg',
+         'mypkg' + SUFFIX,
+         'lib38/site-packages/mypkg' + SUFFIX,
+         'EXTENSION'),
+        # Extension module nested in a package
+        ('pkg.subpkg._extension',
+         'pkg/subpkg/_extension' + SUFFIX,
+         'lib38/site-packages/pkg/subpkg/_extension' + SUFFIX,
+         'EXTENSION'),
+        # Built-in extension originating from lib-dynload
+        ('lib-dynload/_extension',
+         'lib-dynload/_extension' + SUFFIX,
+         'lib38/lib-dynload/_extension' + SUFFIX,
+         'EXTENSION'),
+    ]
+
+    for case in CASES:
+        inm1 = str(pathlib.PurePath(case[0]))
+        inm2 = str(pathlib.PurePath(case[1]))
+        fnm = str(pathlib.PurePath(case[2]))
+        typ = case[3]
+
+        toc = (inm1, fnm, typ)
+        toc_expected = (inm2, fnm, typ)
+
+        # Ensure that processing a TOC entry produces expected result.
+        toc2 = utils.add_suffix_to_extension(*toc)
+        assert toc2 == toc_expected
+
+        # Ensure that processing an already-processed TOC entry leaves
+        # it unchanged (i.e., does not mangle it)
+        toc3 = utils.add_suffix_to_extension(*toc2)
+        assert toc3 == toc2

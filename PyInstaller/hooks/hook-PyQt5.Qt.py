@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2020, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -23,4 +23,7 @@ if mfi:
     for f in os.listdir(os.path.dirname(mfi)):
         root, ext = os.path.splitext(os.path.basename(f))
         if root.startswith('Qt') and root != 'Qt':
+            # On Linux and OS X, PyQt 5.14.1 has a ``.abi3`` suffix on all library names. Remove it.
+            if root.endswith('.abi3'):
+                root = root[:-5]
             hiddenimports.append('PyQt5.' + root)

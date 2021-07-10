@@ -17,11 +17,11 @@ class ImpliesTestCase(unittest.TestCase):
 
         # First check that 'getopt' isn't accidently in the graph:
         mg = modulegraph.ModuleGraph(path=[root]+sys.path)
-        mg.run_script(os.path.join(root, 'script.py'))
-        node = mg.findNode('mod')
+        mg.add_script(os.path.join(root, 'script.py'))
+        node = mg.find_node('mod')
         self.assertIsInstance(node, modulegraph.SourceModule)
 
-        node = mg.findNode('getopt')
+        node = mg.find_node('getopt')
         self.assertEqual(node, None)
 
         # Now check that adding an implied dependency actually adds
@@ -29,16 +29,16 @@ class ImpliesTestCase(unittest.TestCase):
         mg = modulegraph.ModuleGraph(path=[root]+sys.path, implies={
             'mod': ['getopt']})
         self.assertEqual(node, None)
-        mg.run_script(os.path.join(root, 'script.py'))
-        node = mg.findNode('mod')
+        mg.add_script(os.path.join(root, 'script.py'))
+        node = mg.find_node('mod')
         self.assertIsInstance(node, modulegraph.SourceModule)
 
-        node = mg.findNode('getopt')
+        node = mg.find_node('getopt')
         self.assertIsInstance(node, modulegraph.SourceModule)
 
         # Check that the edges are correct:
-        self.assertIn(mg.findNode('mod'), mg.get_edges(node)[1])
-        self.assertIn(node, mg.get_edges(mg.findNode('mod'))[0])
+        self.assertIn(mg.find_node('mod'), mg.get_edges(node)[1])
+        self.assertIn(node, mg.get_edges(mg.find_node('mod'))[0])
 
     def testPackagedImplies(self):
         root = os.path.join(
@@ -47,11 +47,11 @@ class ImpliesTestCase(unittest.TestCase):
 
         # First check that 'getopt' isn't accidently in the graph:
         mg = modulegraph.ModuleGraph(path=[root]+sys.path)
-        mg.run_script(os.path.join(root, 'script.py'))
-        node = mg.findNode('mod')
+        mg.add_script(os.path.join(root, 'script.py'))
+        node = mg.find_node('mod')
         self.assertIsInstance(node, modulegraph.SourceModule)
 
-        node = mg.findNode('getopt')
+        node = mg.find_node('getopt')
         self.assertEqual(node, None)
 
 
@@ -59,18 +59,18 @@ class ImpliesTestCase(unittest.TestCase):
         # 'getopt' to the graph:
         mg = modulegraph.ModuleGraph(path=[root]+sys.path, implies={
             'pkg.relative': ['getopt']})
-        node = mg.findNode('getopt')
+        node = mg.find_node('getopt')
         self.assertEqual(node, None)
-        mg.run_script(os.path.join(root, 'script.py'))
-        node = mg.findNode('pkg.relative')
+        mg.add_script(os.path.join(root, 'script.py'))
+        node = mg.find_node('pkg.relative')
         self.assertIsInstance(node, modulegraph.SourceModule)
 
-        node = mg.findNode('getopt')
+        node = mg.find_node('getopt')
         self.assertIsInstance(node, modulegraph.SourceModule)
 
         # Check that the edges are correct:
-        self.assertIn(mg.findNode('pkg.relative'), mg.get_edges(node)[1])
-        self.assertIn(node, mg.get_edges(mg.findNode('pkg.relative'))[0])
+        self.assertIn(mg.find_node('pkg.relative'), mg.get_edges(node)[1])
+        self.assertIn(node, mg.get_edges(mg.find_node('pkg.relative'))[0])
 
 
 if __name__ == '__main__':

@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2020, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -21,7 +21,7 @@ import py_compile
 import sys
 
 from PyInstaller import log as logging
-from PyInstaller.compat import BYTECODE_MAGIC, is_py2, text_read_mode
+from PyInstaller.compat import BYTECODE_MAGIC, is_win
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +94,7 @@ def get_path_to_toplevel_modules(filename):
 def mtime(fnm):
     try:
         # TODO: explain why this doesn't use os.path.getmtime() ?
-        #       - It is probably not used because it returns fload and not int.
+        #       - It is probably not used because it returns float and not int.
         return os.stat(fnm)[8]
     except:
         return 0
@@ -125,6 +125,10 @@ def compile_py_files(toc, workpath):
         # Keep unrelevant items unchanged.
         if typ != 'PYMODULE':
             new_toc.append((nm, fnm, typ))
+            continue
+
+        if fnm in ('-', None):
+            # If fmn represents a namespace then skip
             continue
 
         if fnm.endswith('.py') :
@@ -205,12 +209,7 @@ def save_py_data_struct(filename, data):
     dirname = os.path.dirname(filename)
     if not os.path.exists(dirname):
         os.makedirs(dirname)
-    if is_py2:
-        import codecs
-        f = codecs.open(filename, 'w', encoding='utf-8')
-    else:
-        f = open(filename, 'w', encoding='utf-8')
-    with f:
+    with open(filename, 'w', encoding='utf-8') as f:
         pprint.pprint(data, f)
 
 
@@ -220,15 +219,14 @@ def load_py_data_struct(filename):
     :param filename:
     :return:
     """
-    if is_py2:
-        import codecs
-        f = codecs.open(filename, text_read_mode, encoding='utf-8')
-    else:
-        f = open(filename, text_read_mode, encoding='utf-8')
-    with f:
+    with open(filename, 'r', encoding='utf-8') as f:
         # Binding redirects are stored as a named tuple, so bring the namedtuple
         # class into scope for parsing the TOC.
-        from ..depend.bindepend import BindingRedirect
+        from PyInstaller.depend.bindepend import BindingRedirect  # noqa: F401
+
+        if is_win:
+            # import versioninfo so that VSVersionInfo can parse correctly
+            from PyInstaller.utils.win32 import versioninfo  # noqa: F401
 
         return eval(f.read())
 
@@ -253,3 +251,44 @@ def module_parent_packages(full_modname):
         prefix += '.' + pkg if prefix else pkg
         parents.append(prefix)
     return parents
+
+
+def is_file_qt_plugin(filename):
+    """
+    Check if the given file is a Qt plugin file.
+    :param filename: Full path to file to check.
+    :return: True if given file is a Qt plugin file, False if not.
+    """
+
+    # Check the file contents; scan for QTMETADATA string
+    # The scan is based on the brute-force Windows codepath of
+    # findPatternUnloaded() from qtbase/src/corelib/plugin/qlibrary.cpp
+    # in Qt5.
+    with open(filename, 'rb') as fp:
+        fp.seek(0, os.SEEK_END)
+        end_pos = fp.tell()
+
+        SEARCH_CHUNK_SIZE = 8192
+        QTMETADATA_MAGIC = b'QTMETADATA '
+
+        magic_offset = -1
+        while end_pos >= len(QTMETADATA_MAGIC):
+            start_pos = max(end_pos - SEARCH_CHUNK_SIZE, 0)
+            chunk_size = end_pos - start_pos
+            # Is the remaining chunk large enough to hold the pattern?
+            if chunk_size < len(QTMETADATA_MAGIC):
+                break
+            # Read and scan the chunk
+            fp.seek(start_pos, os.SEEK_SET)
+            buf = fp.read(chunk_size)
+            pos = buf.rfind(QTMETADATA_MAGIC)
+            if pos != -1:
+                magic_offset = start_pos + pos
+                break
+            # Adjust search location for next chunk; ensure proper
+            # overlap
+            end_pos = start_pos + len(QTMETADATA_MAGIC) - 1
+        if magic_offset == -1:
+            return False
+
+        return True

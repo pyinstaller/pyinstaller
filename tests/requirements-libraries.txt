@@ -16,76 +16,59 @@
 # `# pyup: ignore <https://pyup.io/docs/bot/filter/>`_ comment.
 #
 # - v. 2.2 and above fails.
-Django==2.1.8; python_version != '2.7'  # pyup: ignore
-# - v 3.1.0 fails.
-matplotlib==3.0.3; python_version != '2.7'  # pyup: ignore
+Django==2.1.8  # pyup: ignore
+# - v 21.1.0 fails; earlier versions not tested.
+keyring==19.2.0  # pyup: ignore
 
 
 # Working
 # -------
 # These packages work with no (known) issues.
-babel==2.7.0
-boto==2.49.0
-boto3==1.10.7
-botocore==1.13.7
+babel==2.9.1
 future==0.18.2
-h5py==2.10.0
-markdown==3.1.1
-pendulum==2.0.5
-phonenumbers==8.10.22
-Pillow==6.2.1
-pinyin==0.4.0
-pycparser==2.19
-pycryptodome==3.9.0
-pycryptodomex==3.9.0
-pyexcelerate==0.8.0
-pygments==2.4.2
-python-dateutil==2.8.0
-pytz==2019.3
-pyusb==1.0.2
-pyzmq==18.1.0
-requests==2.22.0
+gevent==21.1.2
+pygments==2.9.0
+pyside2==5.15.2
+pyside6==6.1.0
+pyqt5==5.15.4
+pyqtwebengine==5.15.4
+pyqt6==6.1.0
+python-dateutil==2.8.1
+pytz==2021.1
+requests==2.25.1
 # simplejson is used for text_c_extension
-simplejson==3.16.0
+simplejson==3.17.2
+sphinx==2.4.4 # pyup: ignore
 # Required for test_namespace_package
-sqlalchemy==1.3.10
-Unidecode==1.1.1
-zeep==3.4.0
-zope.interface==4.6.0
+sqlalchemy==1.4.20
+zope.interface==5.4.0
+Pillow==8.3.0
 
 
-# Special cases
-# -------------
-openpyxl==3.0.0; python_version > '3.5'
+# Python versions not supported / supported for older package versions
+# -------------------------------------------------------
 
-# Wheels are available only on OS X and Win 32. The only Windows 64-bit Python
-# tests run are for Python 3.7, so exclude that. There's no way to simply
-# exclude Windows 64 bit Python.
-pyenchant==2.0.0; sys_platform == 'darwin' or (sys_platform == 'win32' and python_version <= '3.6')
+# iPython 7.17 dropped support for python 3.6
+# https://ipython.readthedocs.io/en/stable/whatsnew/version7.html#ipython-7-17
+ipython==7.25.0; python_version > '3.6'
+ipython==7.16.1; python_version <= '3.6'  # pyup: ignore
 
-# No wheel for Python 3.5 or higher.
-PySide==1.2.4; sys_platform == 'win32' and python_version == '2.7'
+# pandas also dropped support
+pandas==1.3.0; python_version > '3.6'
+pandas==1.1.5; python_version <= '3.6'  # pyup: ignore
 
-# uvloop does not currently support Windows.
-uvloop==0.13.0; python_version != '2.7' and sys_platform != 'win32'
+# so did numpy
+numpy==1.21.0; python_version > '3.6'
+numpy==1.19.4; python_version <= '3.6'  # pyup: ignore
 
-# web3 current releases don't support Python 3.5.
-web3==5.2.2; python_version > '3.5'
+# scipy too
+scipy==1.7.0; python_version > '3.6'
+scipy==1.5.4; python_version <= '3.6'  # pyup: ignore
 
+# and matplotlib
+matplotlib==3.4.2; python_version > '3.6'
+matplotlib==3.3.4; python_version <= '3.6'  # pyup: ignore
 
-# Python 3 only
-# -------------
-gevent==1.4.0; python_version != '2.7'
-ipython==7.9.0; python_version != '2.7'
-keyring==19.2.0; python_version != '2.7'
-numpy==1.17.3; python_version != '2.7'
-pandas==0.25.3; python_version != '2.7'
-pylint==2.4.3; python_version != '2.7'
-# This does provide Mac and Linux wheels for Python 2.7. Given EOL coming soon,
-# don't bother testing them.
-PySide2==5.13.0; python_version != '2.7'
-pyqt5==5.13.2; python_version != '2.7'
-pyqtwebengine==5.12.1; python_version != '2.7'
-scipy==1.3.1; python_version != '2.7'
-sphinx==2.2.1; python_version != '2.7'
-twisted==19.7.0; python_version == '2.7'
+# Install PyInstaller Hook Sample, to ensure that tests declared in
+# entry-points are discovered.
+https://github.com/pyinstaller/hooksample/archive/v4.0rc1.zip  # pyup: ignore

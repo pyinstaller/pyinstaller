@@ -1,12 +1,13 @@
 .. _creating pull-requests:
 
+======================
 Creating Pull-Requests
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+======================
 
 .. highlight: bash
 
 Example
-.............
+-------
 
 * Create an account on https://github.com
 

@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -15,20 +15,22 @@ import pkg_resources
 import pkgutil
 import sys
 import textwrap
+from pathlib import Path
+from typing import Tuple, Callable
 
-from ...compat import base_prefix, exec_command_stdout, exec_python, \
-    is_darwin, is_py2, is_py3, is_venv, string_types, open_file, \
-    EXTENSION_SUFFIXES, ALL_SUFFIXES
-from ... import HOMEPATH
-from ... import log as logging
-from ...exceptions import ExecCommandFailed
+from PyInstaller import compat
+from PyInstaller import HOMEPATH
+from PyInstaller import log as logging
+from PyInstaller.exceptions import ExecCommandFailed
+from PyInstaller.utils.hooks.win32 import \
+    get_pywin32_module_file_attribute  # noqa: F401
 
 logger = logging.getLogger(__name__)
 
 # These extensions represent Python executables and should therefore be
 # ignored when collecting data files.
 # NOTE: .dylib files are not Python executable and should not be in this list.
-PY_IGNORE_EXTENSIONS = set(ALL_SUFFIXES)
+PY_IGNORE_EXTENSIONS = set(compat.ALL_SUFFIXES)
 
 # Some hooks need to save some values. This is the dict that can be used for
 # that.
@@ -40,14 +42,14 @@ PY_IGNORE_EXTENSIONS = set(ALL_SUFFIXES)
 hook_variables = {}
 
 
-def __exec_python_cmd(cmd, env=None):
+def __exec_python_cmd(cmd, env=None, capture_stdout=True):
     """
-    Executes an externally spawned Python interpreter and returns
-    anything that was emitted in the standard output as a single
-    string.
+    Executes an externally spawned Python interpreter. If capture_stdout
+    is set to True, returns anything that was emitted in the standard
+    output as a single string. Otherwise, returns the exit code.
     """
     # 'PyInstaller.config' cannot be imported as other top-level modules.
-    from ...config import CONF
+    from PyInstaller.config import CONF
     if env is None:
         env = {}
     # Update environment. Defaults to 'os.environ'
@@ -58,38 +60,58 @@ def __exec_python_cmd(cmd, env=None):
     # PyInstaller HOMEPATH to sys.path too.
     pp = os.pathsep.join(CONF['pathex'] + [HOMEPATH])
 
-    # On Python 2, `os.environ` may only contain bytes.
-    # Encode unicode filenames using FS encoding.
-    # TODO: `os.environ` wrapper that encodes automatically?
-    if is_py2:
-        if isinstance(pp, unicode):
-            pp = pp.encode(sys.getfilesystemencoding())
-
     # PYTHONPATH might be already defined in the 'env' argument or in
     # the original 'os.environ'. Prepend it.
     if 'PYTHONPATH' in pp_env:
         pp = os.pathsep.join([pp_env.get('PYTHONPATH'), pp])
     pp_env['PYTHONPATH'] = pp
 
-    txt = exec_python(*cmd, env=pp_env)
-    return txt.strip()
+    if capture_stdout:
+        txt = compat.exec_python(*cmd, env=pp_env)
+        return txt.strip()
+    else:
+        return compat.exec_python_rc(*cmd, env=pp_env)
+
+
+def __exec_statement(statement, capture_stdout=True):
+    statement = textwrap.dedent(statement)
+    cmd = ['-c', statement]
+    return __exec_python_cmd(cmd, capture_stdout=capture_stdout)
 
 
 def exec_statement(statement):
+    """Execute a single Python statement in an externally-spawned interpreter
+    and return the standard output that results, as a string.
+
+    Examples::
+
+        tk_version = exec_statement(
+            "from _tkinter import TK_VERSION; print(TK_VERSION)"
+        )
+
+        mpl_data_dir = exec_statement(
+            "import matplotlib; print(matplotlib.get_data_path())"
+        )
+        datas = [ (mpl_data_dir, "") ]
+
+    """
+    return __exec_statement(statement, capture_stdout=True)
+
+
+def exec_statement_rc(statement):
     """
     Executes a Python statement in an externally spawned interpreter, and
-    returns anything that was emitted in the standard output as a single string.
+    returns the exit code.
     """
-    statement = textwrap.dedent(statement)
-    cmd = ['-c', statement]
-    return __exec_python_cmd(cmd)
+    return __exec_statement(statement, capture_stdout=False)
 
 
-def exec_script(script_filename, env=None, *args):
+def __exec_script(script_filename, *args, env=None, capture_stdout=True):
     """
-    Executes a Python script in an externally spawned interpreter, and
-    returns anything that was emitted in the standard output as a
-    single string.
+    Executes a Python script in an externally spawned interpreter. If
+    capture_stdout is set to True, returns anything that was emitted in
+    the standard output as a single string. Otherwise, returns the exit
+    code.
 
     To prevent misuse, the script passed to utils.hooks.exec_script
     must be located in the `PyInstaller/utils/hooks/subproc` directory.
@@ -103,10 +125,46 @@ def exec_script(script_filename, env=None, *args):
 
     cmd = [script_filename]
     cmd.extend(args)
-    return __exec_python_cmd(cmd, env=env)
+    return __exec_python_cmd(cmd, env=env, capture_stdout=capture_stdout)
+
+
+def exec_script(script_filename, *args, env=None):
+    """
+    Executes a Python script in an externally spawned interpreter, and
+    returns anything that was emitted in the standard output as a
+    single string.
+
+    To prevent misuse, the script passed to utils.hooks.exec_script
+    must be located in the `PyInstaller/utils/hooks/subproc` directory.
+    """
+    return __exec_script(script_filename, *args, env=env, capture_stdout=True)
+
+
+def exec_script_rc(script_filename, *args, env=None):
+    """
+    Executes a Python script in an externally spawned interpreter, and
+    returns the exit code.
+
+    To prevent misuse, the script passed to utils.hooks.exec_script
+    must be located in the `PyInstaller/utils/hooks/subproc` directory.
+    """
+    return __exec_script(script_filename, *args, env=env, capture_stdout=False)
 
 
 def eval_statement(statement):
+    """Execute a single Python statement in an externally-spawned interpreter
+    then :func:`eval` its output (if any).
+
+    Example::
+
+      databases = eval_statement('''
+         import sqlalchemy.databases
+         print(sqlalchemy.databases.__all__)
+         ''')
+      for db in databases:
+         hiddenimports.append("sqlalchemy.databases." + db)
+
+    """
     txt = exec_statement(statement).strip()
     if not txt:
         # return an empty string which is "not true" but iterable
@@ -114,7 +172,7 @@ def eval_statement(statement):
     return eval(txt)
 
 
-def eval_script(scriptfilename, env=None, *args):
+def eval_script(scriptfilename, *args, env=None):
     txt = exec_script(scriptfilename, *args, env=env).strip()
     if not txt:
         # return an empty string which is "not true" but iterable
@@ -164,7 +222,6 @@ def get_homebrew_path(formula=''):
     """
     Return the homebrew path to the requested formula, or the global prefix when
     called with no argument.  Returns the path as a string or None if not found.
-    :param formula:
     """
     import subprocess
     brewcmd = ['brew', '--prefix']
@@ -182,34 +239,9 @@ def get_homebrew_path(formula=''):
     except subprocess.CalledProcessError:
         logger.debug('homebrew formula "%s" not installed' % formula)
     if path:
-        if is_py3:
-            path = path.decode('utf8')  # OS X filenames are UTF-8
-        return path
+        return path.decode('utf8')  # OS X filenames are UTF-8
     else:
         return None
-
-
-# TODO Move to "hooks/hook-OpenGL.py", the only place where this is called.
-def opengl_arrays_modules():
-    """
-    Return list of array modules for OpenGL module.
-
-    e.g. 'OpenGL.arrays.vbo'
-    """
-    statement = 'import OpenGL; print(OpenGL.__path__[0])'
-    opengl_mod_path = exec_statement(statement)
-    arrays_mod_path = os.path.join(opengl_mod_path, 'arrays')
-    files = glob.glob(arrays_mod_path + '/*.py')
-    modules = []
-
-    for f in files:
-        mod = os.path.splitext(os.path.basename(f))[0]
-        # Skip __init__ module.
-        if mod == '__init__':
-            continue
-        modules.append('OpenGL.arrays.' + mod)
-
-    return modules
 
 
 def remove_prefix(string, prefix):
@@ -245,11 +277,39 @@ def remove_file_extension(filename):
 
     For Python C modules it removes even whole '.cpython-34m.so' etc.
     """
-    for suff in EXTENSION_SUFFIXES:
+    for suff in compat.EXTENSION_SUFFIXES:
         if filename.endswith(suff):
             return filename[0:filename.rfind(suff)]
     # Fallback to ordinary 'splitext'.
     return os.path.splitext(filename)[0]
+
+
+def can_import_module(module_name):
+    """
+    Check if the specified module can be imported.
+
+    Intended as a silent module availability check, as it does not print
+    ModuleNotFoundError traceback to stderr when the module is unavailable.
+
+    Parameters
+    ----------
+    module_name : str
+        Fully-qualified name of the module.
+
+    Returns
+    ----------
+    bool
+        Boolean indicating whether the module can be imported or not.
+    """
+
+    rc = exec_statement_rc("""
+        try:
+            import {0}
+        except ModuleNotFoundError:
+            raise SystemExit(1)
+        """.format(module_name)
+    )
+    return rc == 0
 
 
 # TODO: Replace most calls to exec_statement() with calls to this function.
@@ -301,7 +361,7 @@ def get_module_file_attribute(package):
 
     Since modules *cannot* be directly imported during analysis, this function
     spawns a subprocess importing this module and returning the value of this
-    module's `__file__` attribute.
+    module's ``__file__`` attribute.
 
     Parameters
     ----------
@@ -322,9 +382,9 @@ def get_module_file_attribute(package):
         # The built-in ``datetime`` module returns ``None``. Mark this as
         # an ``ImportError``.
         if not attr:
-            raise ImportError
+            raise ImportError('Unable to load module attributes')
     # Second try to import module in a subprocess. Might raise ImportError.
-    except (AttributeError, ImportError):
+    except (AttributeError, ImportError) as e:
         # Statement to return __file__ attribute of a package.
         __file__statement = """
             import %s as p
@@ -336,76 +396,12 @@ def get_module_file_attribute(package):
         """
         attr = exec_statement(__file__statement % package)
         if not attr.strip():
-            raise ImportError
+            raise ImportError('Unable to load module attribute') from e
     return attr
 
 
 def is_module_satisfies(requirements, version=None, version_attr='__version__'):
-    """
-    `True` if the module, package, or C extension described by the passed
-    requirements string both exists and satisfies these requirements.
-
-    This function checks module versions and extras (i.e., optional install-
-    time features) via the same low-level algorithm leveraged by
-    `easy_install` and `pip`, and should _always_ be called in lieu of manual
-    checking. Attempting to manually check versions and extras invites subtle
-    issues, particularly when comparing versions lexicographically (e.g.,
-    `'00.5' > '0.6'` is `True`, despite being semantically untrue).
-
-    Requirements
-    ----------
-    This function is typically used to compare the version of a currently
-    installed module with some desired version. To do so, a string of the form
-    `{module_name} {comparison_operator} {version}` (e.g., `sphinx >= 1.3`) is
-    passed as the `requirements` parameter, where:
-
-    * `{module_name}` is the fully-qualified name of the module, package, or C
-      extension to be tested (e.g., `yaml`). This is _not_ a `setuptools`-
-      specific distribution name (e.g., `PyYAML`).
-    * `{comparison_operator}` is the numeric comparison to be performed. All
-      numeric Python comparisons are supported (e.g., `!=`, `==`, `<`, `>=`).
-    * `{version}` is the desired PEP 0440-compliant version (e.g., `3.14-rc5`)
-      to be compared against the current version of this module.
-
-    This function may also be used to test multiple versions and/or extras.  To
-    do so, a string formatted ala the `pkg_resources.Requirements.parse()`
-    class method (e.g., `idontevenknow<1.6,>1.9,!=1.9.6,<2.0a0,==2.4c1`) is
-    passed as the `requirements` parameter. (See URL below.)
-
-    Implementation
-    ----------
-    This function behaves as follows:
-
-    * If one or more `setuptools` distributions exist for this module, this
-      module was installed via either `easy_install` or `pip`. In either case,
-      `setuptools` machinery is used to validate the passed requirements.
-    * Else, these requirements are manually validated. Since manually
-      validating extras is non-trivial, only versions are manually validated:
-      * If these requirements test only extras (e.g., `Norf [foo, bar]`),
-        `True` is unconditionally returned.
-      * Else, these requirements test one or more versions. Then:
-        1. These requirements are converted into an instance of
-           `pkg_resources.Requirements`, thus parsing these requirements into
-           their constituent components. This is surprisingly non-trivial!
-        1. The current version of the desired module is found as follows:
-           * If the passed `version` parameter is non-`None`, that is used.
-           * Else, a subprocess importing this module is spawned and the value
-             of this module's version attribute in that subprocess is used. The
-             name of this attribute defaults to `__version__` but may be
-             configured with the passed `version_attr` parameter.
-        1. These requirements are validated against this version.
-
-    Note that `setuptools` is generally considered to be the most robust means
-    of comparing version strings in Python. The alternative `LooseVersion()`
-    and `StrictVersion()` functions provided by the standard
-    `distutils.version` module fail for common edge cases: e.g.,
-
-        >>> from distutils.version import LooseVersion
-        >>> LooseVersion('1.5') >= LooseVersion('1.5-rc2')
-        False
-        >>> from pkg_resources import parse_version
-        >>> parse_version('1.5') >= parse_version('1.5-rc2')
-        True
+    """Test if a :pep:`0440` requirement is installed.
 
     Parameters
     ----------
@@ -438,21 +434,23 @@ def is_module_satisfies(requirements, version=None, version_attr='__version__'):
         `version_attr` parameter.
     ValueError
         If the passed specification does _not_ comply with
-        `pkg_resources.Requirements` syntax.
-
-    See Also
-    ----------
-    https://pythonhosted.org/setuptools/pkg_resources.html#id12
-        `pkg_resources.Requirements` syntax details.
+        `pkg_resources.Requirements`_ syntax.
 
     Examples
-    ----------
+    --------
+
+    ::
+
         # Assume PIL 2.9.0, Sphinx 1.3.1, and SQLAlchemy 0.6 are all installed.
-        >>> from PyInstaller.util.hooks import is_module_satisfies
+        >>> from PyInstaller.utils.hooks import is_module_satisfies
         >>> is_module_satisfies('sphinx >= 1.3.1')
         True
         >>> is_module_satisfies('sqlalchemy != 0.6')
         False
+
+        >>> is_module_satisfies('sphinx >= 1.3.1; sqlalchemy != 0.6')
+        False
+
 
         # Compare two arbitrary versions. In this case, the module name
         # "sqlalchemy" is simply ignored.
@@ -466,6 +464,14 @@ def is_module_satisfies(requirements, version=None, version_attr='__version__'):
         # installed by setuptools, this optional parameter is usually ignored.
         >>> is_module_satisfies('PIL == 2.9.0', version_attr='PILLOW_VERSION')
         True
+
+    .. seealso::
+
+        `pkg_resources.Requirements`_ for the syntax details.
+
+    .. _`pkg_resources.Requirements`:
+            https://pythonhosted.org/setuptools/pkg_resources.html#id12
+
     """
     # If no version was explicitly passed...
     if version is None:
@@ -492,7 +498,10 @@ def is_module_satisfies(requirements, version=None, version_attr='__version__'):
     # If no version was explicitly passed, query this module for it.
     if version is None:
         module_name = requirements_parsed.project_name
-        version = get_module_attribute(module_name, version_attr)
+        if can_import_module(module_name):
+            version = get_module_attribute(module_name, version_attr)
+        else:
+            version = None
 
     if not version:
         # Module does not exist in the system.
@@ -530,9 +539,8 @@ def get_package_paths(package):
     """
     Given a package, return the path to packages stored on this machine
     and also returns the path to this particular package. For example,
-    if pkg.subpkg lives in /abs/path/to/python/libs, then this function
-    returns (/abs/path/to/python/libs,
-             /abs/path/to/python/libs/pkg/subpkg).
+    if pkg.subpkg lives in /abs/path/to/python/libs, then this function returns
+    ``(/abs/path/to/python/libs, /abs/path/to/python/libs/pkg/subpkg)``.
     """
     file_attr = get_module_file_attribute(package)
 
@@ -547,26 +555,32 @@ def get_package_paths(package):
     return pkg_base, pkg_dir
 
 
-def collect_submodules(package, filter=lambda name: True):
-    """
-    :param package: A string which names the package which will be search for
-        submodules.
-    :param approve: A function to filter through the submodules found,
-        selecting which should be included in the returned list. It takes one
-        argument, a string, which gives the name of a submodule. Only if the
-        function returns true is the given submodule is added to the list of
-        returned modules. For example, ``filter=lambda name: 'test' not in
-        name`` will return modules that don't contain the word ``test``.
-    :return: A list of strings which specify all the modules in package. Its
-        results can be directly assigned to ``hiddenimports`` in a hook script;
-        see, for example, ``hook-sphinx.py``.
+def collect_submodules(package: str,
+                       filter: Callable[[str], bool] = lambda name: True):
+    """List all submodules of a given package.
+
+    Arguments:
+        package:
+            An ``import``-able package.
+        filter:
+            Filter the submodules found: A callable which takes a submodule
+            name and returns true if it should be included.
+    Returns:
+        All submodules to be assigned to ``hiddenimports`` in a hook.
 
     This function is used only for hook scripts, but not by the body of
     PyInstaller.
+
+    Examples::
+
+        # Collect all submodules of Sphinx don't contain the word ``test``.
+        hiddenimports = collect_submodules(
+            "Sphinx", ``filter=lambda name: 'test' not in name)
+
     """
     # Accept only strings as packages.
-    if not isinstance(package, string_types):
-        raise ValueError
+    if not isinstance(package, compat.string_types):
+        raise TypeError('package must be a str')
 
     logger.debug('Collecting submodules for %s' % package)
     # Skip a module which is not a package.
@@ -578,10 +592,12 @@ def collect_submodules(package, filter=lambda name: True):
     pkg_base, pkg_dir = get_package_paths(package)
 
     # Walk the package. Since this performs imports, do it in a separate
-    # process.
+    # process. Because module import may result in exta output to stdout,
+    # we enclose the output module names with special prefix and suffix.
     names = exec_statement("""
         import sys
         import pkgutil
+        import traceback
 
         # ``pkgutil.walk_packages`` doesn't walk subpackages of zipped files
         # per https://bugs.python.org/issue14209. This is a workaround.
@@ -606,7 +622,9 @@ def collect_submodules(package, filter=lambda name: True):
                         if onerror is not None:
                             onerror(name)
                         else:
-                            raise
+                            traceback.print_exc(file=sys.stderr)
+                            print("collect_submodules: failed to import %r!" %
+                                  name, file=sys.stderr)
                     else:
                         path = getattr(sys.modules[name], '__path__', None) or []
 
@@ -620,7 +638,7 @@ def collect_submodules(package, filter=lambda name: True):
                         #yield from walk_packages(path, name+'.', onerror)
 
         for module_loader, name, ispkg in walk_packages([{}], '{}.'):
-            print(name)
+            print('\\n$_pyi:' + name + '*')
         """.format(
                   # Use repr to escape Windows backslashes.
                   repr(pkg_dir), package))
@@ -629,6 +647,13 @@ def collect_submodules(package, filter=lambda name: True):
     mods = {package}
     # Filter through the returend submodules.
     for name in names.split():
+        # Filter out extra output during module imports by checking
+        # for the special prefix and suffix
+        if name.startswith("$_pyi:") and name.endswith("*"):
+            name = name[6:-1]
+        else:
+            continue
+
         if filter(name):
             mods.add(name)
 
@@ -639,11 +664,17 @@ def collect_submodules(package, filter=lambda name: True):
 def is_module_or_submodule(name, mod_or_submod):
     """
     This helper function is designed for use in the ``filter`` argument of
-    ``collect_submodules``, by returning ``True`` if the given ``name`` is
-    a module or a submodule of ``mod_or_submod``. For example:
-    ``collect_submodules('foo', lambda name: not is_module_or_submodule(name,
-    'foo.test'))`` excludes ``foo.test`` and ``foo.test.one`` but not
-    ``foo.testifier``.
+    :func:`collect_submodules`, by returning ``True`` if the given ``name`` is
+    a module or a submodule of ``mod_or_submod``.
+
+    Examples:
+
+        The following excludes ``foo.test`` and ``foo.test.one`` but not
+        ``foo.testifier``. ::
+
+            collect_submodules('foo',
+             lambda name: not is_module_or_submodule(name, 'foo.test'))``
+
     """
     return name.startswith(mod_or_submod + '.') or name == mod_or_submod
 
@@ -668,8 +699,8 @@ def collect_dynamic_libs(package, destdir=None):
                     should be put.
     """
     # Accept only strings as packages.
-    if not isinstance(package, string_types):
-        raise ValueError
+    if not isinstance(package, compat.string_types):
+        raise TypeError('package must be a str')
 
     logger.debug('Collecting dynamic libraries for %s' % package)
     pkg_base, pkg_dir = get_package_paths(package)
@@ -694,20 +725,39 @@ def collect_dynamic_libs(package, destdir=None):
     return dylibs
 
 
-def collect_data_files(package, include_py_files=False, subdir=None):
-    """
-    This routine produces a list of (source, dest) non-Python (i.e. data)
-    files which reside in package. Its results can be directly assigned to
-    ``datas`` in a hook script; see, for example, hook-sphinx.py. The
-    package parameter must be a string which names the package.
-    By default, all Python executable files (those ending in .py, .pyc,
-    and so on) will NOT be collected; setting the include_py_files
-    argument to True collects these files as well. This is typically used
-    with Python routines (such as those in pkgutil) that search a given
-    directory for Python executable files then load them as extensions or
-    plugins. The optional subdir give a subdirectory relative to package to
-    search, which is helpful when submodules are imported at run-time from a
-    directory lacking __init__.py
+def collect_data_files(package, include_py_files=False, subdir=None,
+                       excludes=None, includes=None):
+    r"""
+    This routine produces a list of ``(source, dest)`` non-Python (i.e. data)
+    files which reside in ``package``. Its results can be directly assigned to
+    ``datas`` in a hook script; see, for example, ``hook-sphinx.py``.
+    Parameters:
+
+    -   The ``package`` parameter is a string which names the package.
+    -   By default, all Python executable files (those ending in ``.py``,
+        ``.pyc``, and so on) will NOT be collected; setting the
+        ``include_py_files`` argument to ``True`` collects these files as well.
+        This is typically used with Python routines (such as those in
+        ``pkgutil``) that search a given directory for Python executable files
+        then load them as extensions or plugins.
+    -   The ``subdir`` argument gives a subdirectory relative to ``package`` to
+        search, which is helpful when submodules are imported at run-time from a
+        directory lacking ``__init__.py``.
+    -   The ``excludes`` argument contains a sequence of strings or Paths. These
+        provide a list of `globs <https://docs.python.org/3/library/pathlib.html#pathlib.Path.glob>`_
+        to exclude from the collected data files; if a directory matches the
+        provided glob, all files it contains will be excluded as well. All
+        elements must be relative paths, which are relative to the provided
+        package's path (/ ``subdir`` if provided).
+
+        Therefore, ``*.txt`` will exclude only ``.txt`` files in ``package``\ 's
+        path, while ``**/*.txt`` will exclude all ``.txt`` files in
+        ``package``\ 's path and all its subdirectories. Likewise,
+        ``**/__pycache__`` will exclude all files contained in any subdirectory
+        named ``__pycache__``.
+    -   The ``includes`` function like ``excludes``, but only include matching
+        paths. ``excludes`` override ``includes``: a file or directory in both
+        lists will be excluded.
 
     This function does not work on zipped Python eggs.
 
@@ -717,25 +767,70 @@ def collect_data_files(package, include_py_files=False, subdir=None):
     logger.debug('Collecting data files for %s' % package)
 
     # Accept only strings as packages.
-    if not isinstance(package, string_types):
-        raise ValueError
+    if not isinstance(package, compat.string_types):
+        raise TypeError('package must be a str')
 
+    # Compute the root path for the provided patckage.
     pkg_base, pkg_dir = get_package_paths(package)
     if subdir:
         pkg_dir = os.path.join(pkg_dir, subdir)
-    # Walk through all file in the given package, looking for data files.
-    datas = []
-    for dirpath, dirnames, files in os.walk(pkg_dir):
-        for f in files:
-            extension = os.path.splitext(f)[1]
-            if include_py_files or (extension not in PY_IGNORE_EXTENSIONS):
-                # Produce the tuple
-                # (/abs/path/to/source/mod/submod/file.dat,
-                #  mod/submod)
-                source = os.path.join(dirpath, f)
-                dest = remove_prefix(dirpath,
-                                     os.path.dirname(pkg_base) + os.sep)
-                datas.append((source, dest))
+    pkg_base = os.path.dirname(pkg_base)
+    # Ensure `pkg_base` ends with a single slash
+    # Subtle difference on Windows: In some cases `dirname` keeps the
+    # trailing slash, e.g. dirname("//aaa/bbb/"), see issue #4707.
+    if not pkg_base.endswith(os.sep):
+        pkg_base += os.sep
+
+    # Make sure the excludes are a list; this also makes a copy, so we don't
+    # modify the original.
+    excludes = list(excludes) if excludes else []
+    # These excludes may contain direcories which need to be searched.
+    excludes_len = len(excludes)
+    # Including py files means don't exclude them. This pattern will search any
+    # directories for containing files, so don't modify ``excludes_len``.
+    if not include_py_files:
+        excludes += ['**/*' + s for s in compat.ALL_SUFFIXES]
+
+    # Exclude .pyo files if include_py_files is False.
+    if not include_py_files and ".pyo" not in compat.ALL_SUFFIXES:
+        excludes.append('**/*.pyo')
+
+    # If not specified, include all files. Follow the same process as the
+    # excludes.
+    includes = list(includes) if includes else ["**/*"]
+    includes_len = len(includes)
+
+    # Determine what source files to use.
+    sources = set()
+
+    # A helper function to glob the in/ex "cludes", adding a wildcard to refer
+    # to all files under a subdirectory if a subdirectory is matched by the
+    # first ``clude_len`` patterns. Otherwise, it in/excludes the matched file.
+    # **This modifies** ``cludes``.
+    def clude_walker(
+        # A list of paths relative to ``pkg_dir`` to in/exclude.
+        cludes,
+        # The number of ``cludes`` for which matching directories should be
+        # searched for all files under them.
+        clude_len,
+        # True if the list is includes, False for excludes.
+        is_include
+    ):
+        for i, c in enumerate(cludes):
+            for g in Path(pkg_dir).glob(c):
+                if g.is_dir():
+                    # Only files are sources. Subdirectories are not.
+                    if i < clude_len:
+                        # In/exclude all files under a matching subdirectory.
+                        cludes.append(str((g / "**/*").relative_to(pkg_dir)))
+                else:
+                    # In/exclude a matching file.
+                    sources.add(g) if is_include else sources.discard(g)
+    clude_walker(includes, includes_len, True)
+    clude_walker(excludes, excludes_len, False)
+
+    # Tranform the sources into tuples for ``datas``.
+    datas = [(str(s), remove_prefix(str(s.parent), pkg_base)) for s in sources]
 
     logger.debug("collect_data_files - Found files: %s", datas)
     return datas
@@ -751,12 +846,17 @@ def collect_system_data_files(path, destdir=None, include_py_files=False):
     PyInstaller.
     """
     # Accept only strings as paths.
-    if not isinstance(path, string_types):
-        raise ValueError
+    if not isinstance(path, compat.string_types):
+        raise TypeError('path must be a str')
     # The call to ``remove_prefix`` below assumes a path separate of ``os.sep``,
     # which may not be true on Windows; Windows allows Linux path separators in
-    # filenames. Fix this.
+    # filenames. Fix this by normalizing the path.
     path = os.path.normpath(path)
+    # Ensure `path` ends with a single slash
+    # Subtle difference on Windows: In some cases `dirname` keeps the
+    # trailing slash, e.g. dirname("//aaa/bbb/"), see issue #4707.
+    if not path.endswith(os.sep):
+        path += os.sep
 
     # Walk through all file in the given package, looking for data files.
     datas = []
@@ -768,8 +868,7 @@ def collect_system_data_files(path, destdir=None, include_py_files=False):
                 # (/abs/path/to/source/mod/submod/file.dat,
                 #  mod/submod/destdir)
                 source = os.path.join(dirpath, f)
-                dest = remove_prefix(dirpath,
-                                     os.path.dirname(path) + os.sep)
+                dest = remove_prefix(dirpath, path)
                 if destdir is not None:
                     dest = os.path.join(destdir, dest)
                 datas.append((source, dest))
@@ -777,39 +876,10 @@ def collect_system_data_files(path, destdir=None, include_py_files=False):
     return datas
 
 
-def _find_prefix(filename):
-    """
-    In virtualenv, _CONFIG_H and _MAKEFILE may have same or different
-    prefixes, depending on the version of virtualenv.
-    Try to find the correct one, which is assumed to be the longest one.
-    """
-    if not is_venv:
-        return sys.prefix
-    filename = os.path.abspath(filename)
-    prefixes = [os.path.abspath(sys.prefix), base_prefix]
-    possible_prefixes = []
-    for prefix in prefixes:
-        common = os.path.commonprefix([prefix, filename])
-        if common == prefix:
-            possible_prefixes.append(prefix)
-    possible_prefixes.sort(key=lambda p: len(p), reverse=True)
-    return possible_prefixes[0]
+def copy_metadata(package_name, recursive=False):
+    """Collect distribution metadata so that
+    ``pkg_resources.get_distribution()`` can find it.
 
-
-def relpath_to_config_or_make(filename):
-    """
-    The following is refactored out of hook-sysconfig and hook-distutils,
-    both of which need to generate "datas" tuples for pyconfig.h and
-    Makefile, under the same conditions.
-    """
-
-    # Relative path in the dist directory.
-    prefix = _find_prefix(filename)
-    return os.path.relpath(os.path.dirname(filename), prefix)
-
-
-def copy_metadata(package_name):
-    """
     This function returns a list to be assigned to the ``datas`` global
     variable. This list instructs PyInstaller to copy the metadata for the
     given package to PyInstaller's data directory.
@@ -818,63 +888,122 @@ def copy_metadata(package_name):
     ----------
     package_name : str
         Specifies the name of the package for which metadata should be copied.
+    recursive : bool
+        If true, collect metadata for the package's dependencies too.
+        This enables use of ``pkg_resources.require('package')`` inside an
+        application.
 
     Returns
-    ----------
+    -------
     list
         This should be assigned to ``datas``.
 
     Examples
-    ----------
+    --------
         >>> from PyInstaller.utils.hooks import copy_metadata
         >>> copy_metadata('sphinx')
         [('c:\\python27\\lib\\site-packages\\Sphinx-1.3.2.dist-info',
           'Sphinx-1.3.2.dist-info')]
+
+
+    Some packages rely on metadata files accessed through the
+    ``pkg_resources`` module. Normally |PyInstaller| does not include these
+    metadata files. If a package fails without them, you can use this
+    function in a hook file to easily add them to the bundle. The tuples in
+    the returned list have two strings. The first is the full pathname to a
+    folder in this system. The second is the folder name only. When these
+    tuples are added to ``datas``\\ , the folder will be bundled at the top
+    level.
+
+    .. versionchanged:: 4.3.1
+
+        Prevent ``dist-info`` metadata folders being renamed to ``egg-info``
+        which broke ``pkg_resources.require`` with *extras* (see
+        :issue:`#3033`).
+
+    .. versionchanged:: 4.4.0
+
+        Add the **recursive** option.
+
     """
+    from collections import deque
 
-    # Some notes: to look at the metadata locations for all installed
-    # packages::
-    #
-    #     for key, value in pkg_resources.working_set.by_key.iteritems():
-    #         print('{}: {}'.format(key, value.egg_info))
-    #
-    # Looking at this output, I see three general types of packages:
-    #
-    # 1. ``pypubsub: c:\python27\lib\site-packages\pypubsub-3.3.0-py2.7.egg\EGG-INFO``
-    # 2. ``codechat: c:\users\bjones\documents\documentation\CodeChat.egg-info``
-    # 3. ``zest.releaser: c:\python27\lib\site-packages\zest.releaser-6.2.dist-info``
-    # 4. ``pyserial: None``
-    #
-    # The first item shows that some metadata will be nested inside an egg. I
-    # assume we'll have to deal with zipped eggs, but I don't have any examples
-    # handy. The second and third items show different naming conventions for
-    # the metadata-containing directory. The fourth item shows a package with no
-    # metadata.
-    #
-    # So, in cases 1-3, copy the metadata directory. In case 4, emit an error
-    # -- there's no metadata to copy.
-    # See https://pythonhosted.org/setuptools/pkg_resources.html#getting-or-creating-distributions.
-    # Unfortunately, there's no documentation on the ``egg_info`` attribute; it
-    # was found through trial and error.
-    dist = pkg_resources.get_distribution(package_name)
-    metadata_dir = dist.egg_info
-    # Determine a destination directory based on the standardized egg name for
-    # this distribution. This avoids some problems discussed in
-    # https://github.com/pyinstaller/pyinstaller/issues/1888.
-    dest_dir = '{}.egg-info'.format(dist.egg_name())
-    # Per https://github.com/pyinstaller/pyinstaller/issues/1888, ``egg_info``
-    # isn't always defined. Try a workaround based on a suggestion by
-    # @benoit-pierre in that issue.
-    if metadata_dir is None:
-        # We assume that this is an egg, so guess a name based on `egg_name()
-        # <https://pythonhosted.org/setuptools/pkg_resources.html#distribution-methods>`_.
-        metadata_dir = os.path.join(dist.location, dest_dir)
+    todo = deque([package_name])
+    done = set()
+    out = []
 
-    assert os.path.exists(metadata_dir)
-    logger.debug('Package {} metadata found in {} belongs in {}'.format(
-      package_name, metadata_dir, dest_dir))
+    while todo:
+        package_name = todo.pop()
+        if package_name in done:
+            continue
+        dist = pkg_resources.get_distribution(package_name)
+        dest = _copy_metadata_dest(dist.egg_info, dist.project_name)
+        out.append((dist.egg_info, dest))
+        if not recursive:
+            return out
+        done.add(package_name)
+        todo.extend(i.project_name for i in dist.requires())
 
-    return [(metadata_dir, dest_dir)]
+    return out
+
+
+def _normalise_dist(name: str) -> str:
+    return name.lower().replace("_", "-")
+
+
+def _copy_metadata_dest(egg_path: str, project_name: str) -> str:
+    """Choose an appropriate destination path for a distribution's metadata.
+
+    Args:
+        egg_path:
+            The output of ``pkg_resources.get_distribution("xyz").egg_info``:
+            A full path to the source ``xyz-version.dist-info`` or
+            ``xyz-version.egg-info`` folder containing package metadata.
+        project_name:
+            The distribution name given
+    Returns:
+        The *dest* parameter: where in the bundle should this folder go.
+    Raises:
+        RuntimeError:
+            If **egg_path** is none. i.e. No metadata found.
+
+    """
+    if egg_path is None:
+        # According to older implementations of this function, packages may
+        # have no metadata. I have no idea when this can happen...
+        raise RuntimeError(
+            f"No metadata path found for distribution '{project_name}'.")
+
+    egg_path = Path(egg_path)
+    _project_name = _normalise_dist(project_name)
+
+    # There has been a fair amount of whack-a-mole fixing to this step.
+    # If new cases appear which this function can't handle, add them to the
+    # corresponding test:
+    #   tests/unit/test_hookutils.py::test_copy_metadata_dest()
+    # See there also for example input/outputs.
+
+    # The most obvious answer is that the metadata folder should have the same
+    # name in a PyInstaller build as it does normally::
+    if _normalise_dist(egg_path.name).startswith(_project_name):
+        # e.g. .../lib/site-packages/xyz-1.2.3.dist-info
+        return egg_path.name
+
+    # Using just the base-name breaks for an egg_path of the form:
+    #   '.../site-packages/xyz-version.win32.egg/EGG-INFO'
+    # because multiple collected metadata folders will be written to the same
+    # name 'EGG-INFO' and clobber each other (see #1888).
+    # In this case, the correct behaviour appears to be to use the last 2 parts
+    # of the path:
+    if len(egg_path.parts) >= 2:
+        if _normalise_dist(egg_path.parts[-2]).startswith(_project_name):
+            return os.path.join(*egg_path.parts[-2:])
+
+    # This is something unheard of.
+    raise RuntimeError(
+        f"Unknown metadata type '{egg_path}' from the '{project_name}' "
+        f"distribution. Please report this at "
+        f"https://github/pyinstaller/pyinstaller/issues.")
 
 
 def get_installer(module):
@@ -899,7 +1028,7 @@ def get_installer(module):
     # which should be the program that installed the module.
     installer_file = os.path.join(metadata_dir, 'INSTALLER')
     if os.path.isdir(metadata_dir) and os.path.exists(installer_file):
-        with open_file(installer_file, 'r') as installer_file_object:
+        with open(installer_file, 'r') as installer_file_object:
             lines = installer_file_object.readlines()
             if lines[0] != '':
                 installer = lines[0].rstrip('\r\n')
@@ -907,9 +1036,9 @@ def get_installer(module):
                     'Found installer: \'{0}\' for module: \'{1}\' from package: \'{2}\''.format(installer, module,
                                                                                                 package))
                 return installer
-    if is_darwin:
+    if compat.is_darwin:
         try:
-            output = exec_command_stdout('port', 'provides', file_name)
+            output = compat.exec_command_stdout('port', 'provides', file_name)
             if 'is provided by' in output:
                 logger.debug(
                     'Found installer: \'macports\' for module: \'{0}\' from package: \'{1}\''.format(module, package))
@@ -950,14 +1079,14 @@ def _map_distribution_to_packages():
         # Ignore any entries in ``sys.path`` that don't exist.
         try:
             lds = os.listdir(p)
-        except:
+        except Exception:
             pass
         else:
             for ld in lds:
                 # Not all packages belong to a distribution. Skip these.
                 try:
                     dist = pkg_resources.get_distribution(ld)
-                except:
+                except Exception:
                     pass
                 else:
                     dist_to_packages.setdefault(dist.key, []).append(ld)
@@ -985,21 +1114,49 @@ def requirements_for_package(package_name):
     return hiddenimports
 
 
-# Given a package name as a string, return a tuple of ``datas, binaries,
-# hiddenimports`` containing all data files, binaries, and modules in the given
-# package. The value of ``include_py_files`` is passed directly to
-# ``collect_data_files``.
-#
-# Typical use: ``datas, binaries, hiddenimports = collect_all('my_module_name')``.
-def collect_all(package_name, include_py_files=True):
+def collect_all(
+        package_name, include_py_files=True, filter_submodules=None,
+        exclude_datas=None, include_datas=None) -> Tuple[list, list, list]:
+    """Collect everything for a given package name.
+
+    Arguments:
+        package_name:
+            An ``import``-able package name.
+        include_py_files:
+            Forwarded onto :func:`collect_data_files`.
+        filter_submodules:
+            Forwarded onto :func:`collect_submodules`.
+        exclude_datas:
+            Forwarded onto :func:`collect_data_files`.
+        include_datas:
+            Forwarded onto :func:`collect_data_files`.
+
+    Returns:
+        tuple: A  ``(datas, binaries, hiddenimports)`` triplet containing:
+
+        - All data files, raw Python files (if **include_py_files**) and
+          package metadata folders.
+        - All dynamic libraries as returned by :func:`collect_dynamic_libs`.
+        - All submodules of **packagename** and its dependencies.
+
+    Typical use::
+
+        datas, binaries, hiddenimports = collect_all('my_module_name')
+
+    """
     datas = []
     try:
         datas += copy_metadata(package_name)
     except Exception as e:
         logger.warning('Unable to copy metadata for %s: %s', package_name, e)
-    datas += collect_data_files(package_name, include_py_files)
+    datas += collect_data_files(package_name, include_py_files,
+                                excludes=exclude_datas, includes=include_datas)
     binaries = collect_dynamic_libs(package_name)
-    hiddenimports = collect_submodules(package_name)
+    if filter_submodules:
+        hiddenimports = collect_submodules(package_name,
+                                           filter=filter_submodules)
+    else:
+        hiddenimports = collect_submodules(package_name)
     try:
         hiddenimports += requirements_for_package(package_name)
     except Exception as e:
@@ -1009,8 +1166,84 @@ def collect_all(package_name, include_py_files=True):
     return datas, binaries, hiddenimports
 
 
-# These imports need to be here due to these modules recursively importing this module.
-from .django import *
-from .gi import *
-from .qt import *
-from .win32 import *
+def collect_entry_point(name: str) -> Tuple[list, list]:
+    """Collect modules and metadata for all exporters of a given entry point.
+
+    Args:
+        name:
+            The name of the entry point. Check the documentation for the
+            library which uses the entry point to find out its name.
+    Returns:
+        A ``(datas, hiddenimports)`` pair which should be assigned to the
+        ``datas`` and ``hiddenimports`` globals respectively.
+
+    For libraries, such as ``pytest`` or ``keyring``, which rely on plugins to
+    extend their behaviour.
+
+    Examples:
+        Pytest uses an entry point called ``'pytest11'`` for its extensions.
+        To collect all those extensions use::
+
+            datas, hiddenimports = collect_entry_point("pytest11")
+
+        These values may be used in a hook or added to the ``datas`` and
+        ``hiddenimports`` arguments in the ``.spec`` file. See :ref:`using spec
+        files`.
+
+    .. versionadded:: 4.3
+
+    """
+    import pkg_resources
+    datas = []
+    imports = []
+    for dist in pkg_resources.iter_entry_points(name):
+        datas += copy_metadata(dist.dist.project_name)
+        imports.append(dist.module_name)
+    return datas, imports
+
+
+def get_hook_config(hook_api, module_name, key):
+    """
+    Get user settings for hooks.
+
+    Args:
+        module_name:
+            The module/package for which the key setting belong to.
+        key:
+            A key for the config.
+    Returns:
+        The value for the config. ``None`` if not set.
+
+    The ``get_hook_config`` function will lookup settings in the
+    ``Analysis.hooksconfig`` dict.
+
+    The hook settings can be added to ``.spec`` file in the form of::
+
+        a = Analysis(["my-app.py"],
+            ...
+            hooksconfig = {
+                "gi": {
+                    "icons": ["Adwaita"],
+                    "themes": ["Adwaita"],
+                    "languages": ["en_GB", "zh_CN"],
+                },
+            },
+            ...
+        )
+
+    """
+    config = hook_api.analysis.hooksconfig
+    value = None
+    if module_name in config and key in config[module_name]:
+        value = config[module_name][key]
+    return value
+
+if compat.is_pure_conda:
+    from PyInstaller.utils.hooks import conda as conda_support  # noqa: F401
+elif compat.is_conda:
+    from PyInstaller.utils.hooks.conda import CONDA_META_DIR as _tmp
+    logger.warning(
+        "Assuming this isn't an Anaconda environment or an additional venv/"
+        "pipenv/... environment manager is being used on top because the "
+        "conda-meta folder %s doesn't exist.", _tmp)
+    del _tmp

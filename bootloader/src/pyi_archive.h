@@ -1,6 +1,6 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2020, PyInstaller Development Team.
+ * Copyright (c) 2013-2021, PyInstaller Development Team.
  *
  * Distributed under the terms of the GNU General Public License (version 2
  * or later) with exception for distributing the bootloader.
@@ -18,6 +18,10 @@
 #ifndef PYI_ARCHIVE_H
 #define PYI_ARCHIVE_H
 
+#include "pyi_global.h"
+#include <stdio.h>  /* FILE */
+#include <inttypes.h>  /* uint64_t */
+
 /* Types of CArchive items. */
 #define ARCHIVE_ITEM_BINARY           'b'  /* binary */
 #define ARCHIVE_ITEM_DEPENDENCY       'd'  /* runtime option */
@@ -28,13 +32,14 @@
 #define ARCHIVE_ITEM_PYSOURCE         's'  /* Python script (v3) */
 #define ARCHIVE_ITEM_DATA             'x'  /* data */
 #define ARCHIVE_ITEM_RUNTIME_OPTION   'o'  /* runtime option */
+#define ARCHIVE_ITEM_SPLASH           'l'  /* splash resources */
 
 /* TOC entry for a CArchive */
 typedef struct _toc {
     int  structlen;  /*len of this one - including full len of name */
-    int  pos;        /* pos rel to start of concatenation */
-    int  len;        /* len of the data (compressed) */
-    int  ulen;       /* len of data (uncompressed) */
+    uint32_t pos;    /* pos rel to start of concatenation */
+    uint32_t len;    /* len of the data (compressed) */
+    uint32_t ulen;   /* len of data (uncompressed) */
     char cflag;      /* is it compressed (really a byte) */
     char typcd;      /* type code -'b' binary, 'z' zlib, 'm' module,
                       * 's' script (v3),'x' data, 'o' runtime option  */
@@ -45,8 +50,8 @@ typedef struct _toc {
 /* The CArchive Cookie, from end of the archive. */
 typedef struct _cookie {
     char magic[8];      /* 'MEI\014\013\012\013\016' */
-    int  len;           /* len of entire package */
-    int  TOC;           /* pos (rel to start) of TableOfContents */
+    uint32_t len;       /* len of entire package */
+    uint32_t TOC;       /* pos (rel to start) of TableOfContents */
     int  TOClen;        /* length of TableOfContents */
     int  pyvers;        /* new in v4 */
     char pylibname[64]; /* Filename of Python dynamic library e.g. python2.7.dll. */
@@ -54,7 +59,7 @@ typedef struct _cookie {
 
 typedef struct _archive_status {
     FILE * fp;
-    int    pkgstart;
+    uint64_t pkgstart;
     TOC *  tocbuff;
     TOC *  tocend;
     COOKIE cookie;
@@ -115,36 +120,27 @@ extern int pyvers;
 /**
  * The gory detail level
  */
-int pyi_arch_set_paths(ARCHIVE_STATUS *status, char const * archivePath,
-                       char const * archiveName);
 int pyi_arch_open(ARCHIVE_STATUS *status);
 
 /*
  * Memory allocation wrappers.
  */
-void pyi_arch_status_free_memory(ARCHIVE_STATUS *status);
+ARCHIVE_STATUS *pyi_arch_status_new();
+void pyi_arch_status_free(ARCHIVE_STATUS *status);
 
 /*
  * Setup the paths and open the archive
  *
- * @param archivePath  The path (with trailing backslash) to the archive.
+ * @param archivePath  The path including filename to the archive.
  *
- * @param archiveName  The file name of the archive, without a path.
- *
- * @param workpath     The path (with trailing backslash) to where
- *                     the binaries were extracted. If they have not
- *                     benn extracted yet, this is NULL. If they have,
- *                     this will either be archivePath, or a temp dir
- *                     where the user has write permissions.
- *
- * @return 0 on success, non-zero otherwise.
+ * @return true on success, false otherwise.
  */
-int pyi_arch_setup(ARCHIVE_STATUS *status, char const * archivePath,
-                   char const * archiveName);
+bool pyi_arch_setup(ARCHIVE_STATUS *status, char const * archivePath);
 
 TOC *getFirstTocEntry(ARCHIVE_STATUS *status);
 TOC *getNextTocEntry(ARCHIVE_STATUS *status, TOC *entry);
 
 char * pyi_arch_get_option(const ARCHIVE_STATUS * status, char * optname);
+TOC *pyi_arch_find_by_name(ARCHIVE_STATUS *status, const char *name);
 
 #endif  /* PYI_ARCHIVE_H */

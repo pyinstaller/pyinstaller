@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -11,14 +11,9 @@
 
 
 from threading import Thread
+from queue import Queue
 
-from PyInstaller.compat import is_py2
 from PyInstaller.loader.pyimod02_archive import ArchiveFile
-
-if is_py2:
-    from Queue import Queue
-else:
-    from queue import Queue
 
 
 def test_threading_import(tmpdir):

@@ -1,0 +1,2 @@
+(Windows) Implement a custom dialog for displaying information about unhandled
+exception and its traceback when running in windowed/noconsole mode.

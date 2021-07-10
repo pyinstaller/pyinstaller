@@ -9,7 +9,7 @@ source or whether it is bundled ("frozen"). You can use the following code to
 check "are we bundled?"::
 
     import sys
-    if getattr(sys, 'frozen') and hasattr(sys, '_MEIPASS'):
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
         print('running in a PyInstaller bundle')
     else:
         print('running in a normal Python process')
@@ -46,19 +46,91 @@ the following code will get its path (in both the non-bundled and the bundled
 case)::
 
     from os import path
-    path_to_dat = path.join(path.dirname(__file__), 'file.dat')
+    path_to_dat = path.abspath(path.join(path.dirname(__file__), 'file.dat'))
 
-In the bundled main script itself the above might not work, as it is unclear
-where it resides in the package hierarchy. So in when trying to find data files
-relative to the main script, ``sys._MEIPASS`` can be used. The following will
-get the path to a file ``other-file.dat`` next to the main script if not
-bundled and in the bundle folder if it is bundled::
+In the main script (the ``__main__`` module) itself, the ``__file__``
+variable contains path to the script file. In Python 3.8 and earlier,
+this path is either absolute or relative (depending on how the script
+was passed to the ``python`` interpreter), while in Python 3.9 and later,
+it is always an absolute path. In the bundled script, the |PyInstaller|
+|bootloader| always sets the ``__file__`` variable inside the ``__main__``
+module to the absolute path inside the bundle directory, as if the
+byte-compiled entry-point script existed there.
+
+For example, if your entry-point script is called ``program.py``, then
+the ``__file__`` attribute inside the bundled script will point to
+``sys._MEIPASS + 'program.py'``. Therefore, locating a data file relative
+to the main script can be either done directly using ``sys._MEIPASS`` or
+via the parent path of the ``__file__`` inside the main script.
+
+The following example will get the path to a file ``other-file.dat``
+located next to the main script if not bundled and inside the bundle folder
+if it is bundled::
 
     from os import path
-    import sys
-    bundle_dir = getattr(sys, '_MEIPASS', path.abspath(path.dirname(__file__)))
+    bundle_dir = path.abspath(path.dirname(__file__))
     path_to_dat = path.join(bundle_dir, 'other-file.dat')
 
+Or, if you'd rather use pathlib_::
+
+    from pathlib import Path
+    bundle_dir = Path(__file__).parent
+    path_to_dat = Path.cwd() / bundle_dir / "other-file.dat"
+
+.. versionchanged:: 4.3
+
+    Formerly, the ``__file__`` attribute of the entry-point script
+    (the ``__main__`` module) was set to only its basename rather than
+    its full (absolute or relative) path within the bundle directory.
+    Therefore, |PyInstaller| documentation used to suggest ``sys._MEIPASS``
+    as means for locating resources relative to the bundled entry-point
+    script. Now, ``__file__`` is always set to the absolute full path,
+    and is the preferred way of locating such resources.
+
+
+Placing data files at expected locations inside the bundle
+----------------------------------------------------------
+
+To place the data-files where your code expects them to be (i.e., relative
+to the main script or bundle directory), you can use the **dest** parameter
+of the :option:`--add-data=source:dest <--add-data>` command-line switches.
+Assuming you normally
+use the following code in a file named ``my_script.py`` to locate a file
+``file.dat`` in the same folder::
+
+    from os import path
+    path_to_dat = path.abspath(path.join(path.dirname(__file__), 'file.dat'))
+
+Or the pathlib_ equivalent::
+
+    from pathlib import Path
+    path_to_dat = (Path.cwd() / __file__).with_name("file.dat")
+
+And ``my_script.py`` is **not** part of a package (not in a folder containing
+an ``__init_.py``), then ``__file__`` will be ``[app root]/my_script.pyc``
+meaning that if you put ``file.dat`` in the root of your package, using::
+
+    PyInstaller --add-data=/path/to/file.dat:.
+
+It will be found correctly at runtime without changing ``my_script.py``.
+
+.. note:: Windows users should use ``;`` instead of ``:`` in the above line.
+
+If ``__file__`` is checked from inside a package or library (say
+``my_library.data``) then ``__file__`` will be
+``[app root]/my_library/data.pyc`` and :option:`--add-data` should mirror that::
+
+    PyInstaller --add-data=/path/to/my_library/file.dat:./my_library
+
+However, in this case it is much easier to switch to :ref:`the spec file
+<Using Spec Files>` and use the
+:func:`PyInstaller.utils.hooks.collect_data_files` helper function::
+
+    from PyInstaller.utils.hooks import collect_data_files
+
+    a = Analysis(...,
+                 datas=collect_data_files("my_library"),
+                 ...)
 
 Using ``sys.executable`` and ``sys.argv[0]``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -5,6 +5,63 @@ Thanks goes to all the kind PyInstaller contributors who have contributed
 new code, bug reports, fixes, comments and ideas. A brief list follows,
 please let us know if your name is omitted by accident:
 
+Contributions to PyInstaller 4.3
+--------------------------------
+
+* Rok Mandeljc - Core Developer
+* Brénainn Woodsend - Core Developer
+* Jasper Harrison (Legorooj) - Core Developer, Maintainer, Release Manager
+* Hartmut Goebel, Core Developer, Maintainer
+* xoviat
+
+* Dan Yeaw, Bruno Oliveira, Maxim Kalinchenko, Max Mäusezahl, Olivier FAURAX, richardsheridan, memo-off
+
+
+Contributions to PyInstaller 4.2
+----------------------------------
+
+* Rok Mandeljc
+* Hartmut Goebel - Core developer, maintainer and release manager.
+* Legorooj - Core developer.
+* Bryan A. Jones - Core developer and PyQt5-tamer.
+* Mickaël Schoentgen
+* Brénainn Woodsend
+
+* Damien Elmes, Dan Yeaw, hdf, Diggy, Filip Gospodinov, Kyle Altendorf,
+  Matt Simpson, Nathan Summers, Phoenix, Starbuck5, Tom Hu, rockwalrus
+
+
+Contributions to PyInstaller 4.1
+----------------------------------
+
+* Hartmut Goebel - Core developer, maintainer and release manager.
+* Legorooj - Core developer.
+* Bryan A. Jones - Core developer and PyQt5-tamer.
+* Rok Mandeljc
+* Mickaël Schoentgen
+* Brénainn Woodsend
+
+* Aaron Althauser, Alex, Andrew Nelson, Benedikt Brückmann, Brénainn Woodsend,
+  Calin Culianu, Dan Yeaw, Ievgen Popovych, Loïc Messal, Łukasz Stolcman,
+  Matt, Mohamed, Petrus, Riz, Riz Syed, Santi Santichaivekin, Sid Gupta,
+  Victor Stinner, byehack, dcgloe, johnthagen, ozelikov,
+
+
+Contributions to PyInstaller 4.0
+----------------------------------
+
+* Hartmut Goebel - Core developer, maintainer and release manager.
+* Legorooj - Core developer.
+* Bryan A. Jones - Core developer and PyQt5-tamer.
+
+* M Felt aka aixtools, jonnyhsu, Corey Dexter, Rok Mandeljc, Dan Yeaw, Florian
+  Baumann, Ievgen Popovych, Ram Rachum, coreydexter, AndCycle, Dan Cutright,
+  David Kiliani, David Maiden Mueller, FeralRobot, Frederico, Ilya Orson,
+  ItsCinnabar, Juan Sotomayor, Matt M, Matteo Bertini, Michael Felt, Mohamed
+  Feddad, Nehal J Wani, Or Groman, Sebastian Hohmann, Vaclav Dvorak, Ville
+  Ilvonen, bwoodsend, eldadr, jeremyd2019, kraptor, seedgou.
+
+
 Contributions to PyInstaller 3.6
 ----------------------------------
 

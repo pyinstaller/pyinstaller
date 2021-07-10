@@ -89,3 +89,43 @@ div.note p.admonition-title {
 div.note p.admonition-title:after {
     content: ": "
 }
+	
+/* --- Inline literals. --- */
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).option > dt,
+.rst-content code.literal, .rst-content tt.literal {
+  color: #034040;
+  background: unset;
+  border: unset;
+  padding: 2px 2px;
+  font-weight: 1000;
+}
+/* Inline literals with link targets
+ * (usually generated with :func:`PyInstaller.foo.bar`). */
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).option > dt,
+.rst-content a code.literal, .rst-content tt.literal {
+  border-bottom: solid 1px #0001;
+}
+
+/* Make the sidebar shrink if the window is narrow (e.g. panel left-ed). */
+.wy-nav-side {
+  width: min(28%, 300px);
+}
+.wy-side-scroll, .wy-side-nav-search, .wy-menu-vertical {
+  width: 100%;
+}
+.wy-nav-content-wrap {
+  margin-left: min(28%, 300px);
+}
+/* Move padding beneath the last contents entry so that there isn't
+   a little black stub poking out under the scrollbar. */
+.wy-nav-side { padding-bottom: unset; }
+.wy-menu-vertical { padding-bottom: 1em; }
+
+/* Autodoc functions/classes */
+html.writer-html4 .rst-content dl:not(.docutils) > dt,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple):not(.option) > dt {
+  /* This is a loose merge of the styles for inline literals and headings. */
+  background-color: #EEEA;
+  border: 2px outset #e1e4e520;
+  color: #034040;
+}

@@ -1,0 +1,3 @@
+(macOS) In ``onedir`` ``windowed`` (.app bundle) mode, perform an
+interation of Apple event processing to convert ``odoc`` and ``GURL``
+events to ``sys.argv`` before entering frozen python script.

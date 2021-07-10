@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2020, PyInstaller Development Team.
+# Copyright (c) 2013-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -14,14 +14,12 @@
 Show dll dependencies of executable files or other dynamic libraries.
 """
 
-from __future__ import print_function
-
 import glob
 import argparse
 
 
 import PyInstaller.depend.bindepend
-from PyInstaller import is_win
+from PyInstaller.compat import is_win
 import PyInstaller.log
 
 

@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-from PyInstaller.compat import is_py2
 from PyInstaller.utils.tests import skipif
 
 import pytest
@@ -17,7 +16,6 @@ import pytest
 from PyInstaller import compat
 
 
-@skipif(is_py2, reason="In Python 2, subprocess' stdout is not decoded")
 def test_exec_command_subprocess_wrong_encoding_reports_nicely(capsys):
     # Ensure a nice error message is printed if decoding the output of the
     # subprocess fails.

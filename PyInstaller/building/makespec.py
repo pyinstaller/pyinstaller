@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -17,13 +17,13 @@ Automatically build spec files containing a description of the project
 import os
 import sys
 import argparse
-from distutils.version import LooseVersion
 
-from .. import HOMEPATH, DEFAULT_SPECPATH
-from .. import log as logging
-from ..compat import expand_path, is_darwin, is_win, open_file, text_type
-from .templates import onefiletmplt, onedirtmplt, cipher_absent_template, \
-    cipher_init_template, bundleexetmplt, bundletmplt
+from PyInstaller import HOMEPATH, DEFAULT_SPECPATH
+from PyInstaller import log as logging
+from PyInstaller.compat import expand_path, is_darwin, is_win
+from PyInstaller.building.templates import onefiletmplt, onedirtmplt, \
+    cipher_absent_template, cipher_init_template, bundleexetmplt, \
+    bundletmplt, splashtmpl
 
 logger = logging.getLogger(__name__)
 add_command_sep = os.pathsep
@@ -67,9 +67,11 @@ path_conversions = (
 def add_data_or_binary(string):
     try:
         src, dest = string.split(add_command_sep)
-    except ValueError:
+    except ValueError as e:
         # Split into SRC and DEST failed, wrong syntax
-        raise argparse.ArgumentError("Wrong syntax, should be SRC{}DEST".format(add_command_sep))
+        raise argparse.ArgumentError(
+            "Wrong syntax, should be SRC{}DEST".format(add_command_sep)
+        ) from e
     if not src or not dest:
         # Syntax was correct, but one or both of SRC and DEST was not given
         raise argparse.ArgumentError("You have to specify both SRC and DEST")
@@ -78,12 +80,24 @@ def add_data_or_binary(string):
 
 
 def make_variable_path(filename, conversions=path_conversions):
+    if not os.path.isabs(filename):
+        # os.path.commonpath can not compare relative and absolute
+        # paths, and if filename is not absolut, none of the
+        # paths in conversions will match anyway.
+        return None, filename
     for (from_path, to_name) in conversions:
         assert os.path.abspath(from_path) == from_path, (
             "path '%s' should already be absolute" % from_path)
-        if filename[:len(from_path)] == from_path:
+        try:
+            common_path = os.path.commonpath([filename, from_path])
+        except ValueError:
+            # Per https://docs.python.org/3/library/os.path.html#os.path.commonpath,
+            # this raises ValueError in several cases which prevent computing
+            # a common path.
+            common_path = None
+        if common_path == from_path:
             rest = filename[len(from_path):]
-            if rest[0] in "\\/":
+            if rest.startswith(('\\', '/')):
                 rest = rest[1:]
             return to_name, rest
     return None, filename
@@ -102,6 +116,109 @@ class Path:
         if self.variable_prefix is None:
             return repr(self.path)
         return "os.path.join(" + self.variable_prefix + "," + repr(self.filename_suffix) + ")"
+
+
+# An object used to construct extra preamble for the spec file, in order
+# to accommodate extra collect_*() calls from the command-line
+class Preamble:
+    def __init__(self, datas, binaries, hiddenimports, collect_data,
+                 collect_binaries, collect_submodules, collect_all,
+                 copy_metadata, recursive_copy_metadata):
+        # Initialize with literal values - will be switched to preamble
+        # variable name later, if necessary
+        self.binaries = binaries or []
+        self.hiddenimports = hiddenimports or []
+        self.datas = datas or []
+        # Preamble content
+        self.content = []
+
+        # Import statements
+        if collect_data:
+            self._add_hookutil_import('collect_data_files')
+        if collect_binaries:
+            self._add_hookutil_import('collect_dynamic_libs')
+        if collect_submodules:
+            self._add_hookutil_import('collect_submodules')
+        if collect_all:
+            self._add_hookutil_import('collect_all')
+        if copy_metadata or recursive_copy_metadata:
+            self._add_hookutil_import('copy_metadata')
+        if self.content:
+            self.content += ['']  # empty line to separate the section
+        # Variables
+        if collect_data or copy_metadata or collect_all \
+                or recursive_copy_metadata:
+            self._add_var('datas', self.datas)
+            self.datas = 'datas'  # switch to variable
+        if collect_binaries or collect_all:
+            self._add_var('binaries', self.binaries)
+            self.binaries = 'binaries'  # switch to variable
+        if collect_submodules or collect_all:
+            self._add_var('hiddenimports', self.hiddenimports)
+            self.hiddenimports = 'hiddenimports'  # switch to variable
+        # Content - collect_data_files
+        for entry in collect_data:
+            self._add_collect_data(entry)
+        # Content - copy_metadata
+        for entry in copy_metadata:
+            self._add_copy_metadata(entry)
+        # Content - copy_metadata(..., recursive=True)
+        for entry in recursive_copy_metadata:
+            self._add_recursive_copy_metadata(entry)
+        # Content - collect_binaries
+        for entry in collect_binaries:
+            self._add_collect_binaries(entry)
+        # Content - collect_submodules
+        for entry in collect_submodules:
+            self._add_collect_submodules(entry)
+        # Content - collect_all
+        for entry in collect_all:
+            self._add_collect_all(entry)
+        # Merge
+        if self.content and self.content[-1] != '':
+            self.content += ['']  # empty line
+        self.content = '\n'.join(self.content)
+
+    def _add_hookutil_import(self, name):
+        self.content += [
+            'from PyInstaller.utils.hooks import {0}'.format(name)
+        ]
+
+    def _add_var(self, name, initial_value):
+        self.content += [
+            '{0} = {1}'.format(name, initial_value)
+        ]
+
+    def _add_collect_data(self, name):
+        self.content += [
+            'datas += collect_data_files(\'{0}\')'.format(name)
+        ]
+
+    def _add_copy_metadata(self, name):
+        self.content += [
+            'datas += copy_metadata(\'{0}\')'.format(name)
+        ]
+
+    def _add_recursive_copy_metadata(self, name):
+        self.content += [
+            'datas += copy_metadata(\'{0}\', recursive=True)'.format(name)
+        ]
+
+    def _add_collect_binaries(self, name):
+        self.content += [
+            'binaries += collect_dynamic_libs(\'{0}\')'.format(name)
+        ]
+
+    def _add_collect_submodules(self, name):
+        self.content += [
+            'hiddenimports += collect_submodules(\'{0}\')'.format(name)
+        ]
+
+    def _add_collect_all(self, name):
+        self.content += [
+            'tmp_ret = collect_all(\'{0}\')'.format(name),
+            'datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]'  # noqa: E501
+        ]
 
 
 def __add_options(parser):
@@ -149,6 +266,31 @@ def __add_options(parser):
                    metavar="MODULENAME", dest='hiddenimports',
                    help='Name an import not visible in the code of the script(s). '
                    'This option can be used multiple times.')
+    g.add_argument('--collect-submodules', action="append", default=[],
+                   metavar="MODULENAME", dest='collect_submodules',
+                   help='Collect all submodules from the specified package '
+                   'or module. This option can be used multiple times.')
+    g.add_argument('--collect-data', '--collect-datas', action="append",
+                   default=[], metavar="MODULENAME", dest='collect_data',
+                   help='Collect all data from the specified package or '
+                   ' module. This option can be used multiple times.')
+    g.add_argument('--collect-binaries', action="append", default=[],
+                   metavar="MODULENAME", dest='collect_binaries',
+                   help='Collect all binaries from the specified package or '
+                   ' module. This option can be used multiple times.')
+    g.add_argument('--collect-all', action="append", default=[],
+                   metavar="MODULENAME", dest='collect_all',
+                   help='Collect all submodules, data files, and binaries '
+                   'from the specified package or module. This option can '
+                   'be used multiple times.')
+    g.add_argument('--copy-metadata', action="append", default=[],
+                   metavar="PACKAGENAME", dest='copy_metadata',
+                   help='Copy metadata for the specified package. '
+                   'This option can be used multiple times.')
+    g.add_argument('--recursive-copy-metadata', action="append", default=[],
+                   metavar="PACKAGENAME", dest='recursive_copy_metadata',
+                   help='Copy metadata for the specified package and all its '
+                   'dependencies. This option can be used multiple times.')
     g.add_argument("--additional-hooks-dir", action="append", dest="hookspath",
                    default=[],
                    help="An additional path to search for hooks. "
@@ -168,6 +310,11 @@ def __add_options(parser):
                    'This option can be used multiple times.')
     g.add_argument('--key', dest='key',
                    help='The key used to encrypt Python bytecode.')
+    g.add_argument('--splash',
+                   dest='splash', metavar="IMAGE_FILE",
+                   help="(EXPERIMENTAL) Add an splash screen with the image"
+                        " IMAGE_FILE to the application. The splash screen"
+                        " can show progress updates while unpacking.")
 
     g = parser.add_argument_group('How to generate')
     g.add_argument("-d", "--debug",
@@ -237,11 +384,21 @@ def __add_options(parser):
                         "script is a '.pyw' file. "
                         "This option is ignored in *NIX systems.")
     g.add_argument("-i", "--icon", dest="icon_file",
-                   metavar="<FILE.ico or FILE.exe,ID or FILE.icns>",
+                   metavar='<FILE.ico or FILE.exe,ID or FILE.icns or "NONE">',
                    help="FILE.ico: apply that icon to a Windows executable. "
                         "FILE.exe,ID, extract the icon with ID from an exe. "
                         "FILE.icns: apply the icon to the "
-                        ".app bundle on Mac OS X")
+                        ".app bundle on Mac OS X. "
+                        'Use "NONE" to not apply any icon, '
+                        "thereby making the OS to show some default "
+                        "(default: apply PyInstaller's icon)")
+    g.add_argument("--disable-windowed-traceback",
+                   dest="disable_windowed_traceback", action="store_true",
+                   default=False,
+                   help="Disable traceback dump of unhandled exception in "
+                        "windowed (noconsole) mode (Windows and macOS only), "
+                        "and instead display a message that this feature is "
+                        "disabled.")
 
     g = parser.add_argument_group('Windows specific options')
     g.add_argument("--version-file",
@@ -294,6 +451,29 @@ def __add_options(parser):
                         'in reverse DNS notation. For example: com.mycompany.department.appname '
                         "(default: first script's basename)")
 
+    g.add_argument('--target-architecture', '--target-arch',
+                   dest='target_arch', metavar='ARCH', default=None,
+                   help="Target architecture (macOS only; valid values: "
+                        "x86_64, arm64, universal2). Enables switching "
+                        "between universal2 and single-arch version of "
+                        "frozen application (provided python installation "
+                        "supports the target architecture). If not target "
+                        "architecture is not specified, the current running "
+                        "architecture is targeted.")
+
+    g.add_argument('--codesign-identity', dest='codesign_identity',
+                   metavar='IDENTITY', default=None,
+                   help="Code signing identity (macOS only). Use the provided "
+                        "identity to sign collected binaries and generated "
+                        "executable. If signing identity is not provided, "
+                        "ad-hoc signing is performed instead.")
+
+    g.add_argument('--osx-entitlements-file', dest='entitlements_file',
+                   metavar='FILENAME', default=None,
+                   help="Entitlements file to use when code-signing the "
+                        "collected binaries (macOS only).")
+
+
     g = parser.add_argument_group('Rarely used special options')
     g.add_argument("--runtime-tmpdir", dest="runtime_tmpdir", metavar="PATH",
                    help="Where to extract libraries and support files in "
@@ -316,12 +496,15 @@ def __add_options(parser):
 def main(scripts, name=None, onefile=None,
          console=True, debug=None, strip=False, noupx=False, upx_exclude=None,
          runtime_tmpdir=None, pathex=None, version_file=None, specpath=None,
-         bootloader_ignore_signals=False,
+         bootloader_ignore_signals=False, disable_windowed_traceback=False,
          datas=None, binaries=None, icon_file=None, manifest=None, resources=None, bundle_identifier=None,
          hiddenimports=None, hookspath=None, key=None, runtime_hooks=None,
          excludes=None, uac_admin=False, uac_uiaccess=False,
          win_no_prefer_redirects=False, win_private_assemblies=False,
-         **kwargs):
+         collect_submodules=None, collect_binaries=None, collect_data=None,
+         collect_all=None, copy_metadata=None, splash=None,
+         recursive_copy_metadata=None, target_arch=None,
+         codesign_identity=None, entitlements_file=None, **kwargs):
     # If appname is not specified - use the basename of the main script as name.
     if name is None:
         name = os.path.splitext(os.path.basename(scripts[0]))[0]
@@ -393,18 +576,14 @@ def main(scripts, name=None, onefile=None,
     scripts = list(map(Path, scripts))
 
     if key:
-        # Tries to import PyCrypto since we need it for bytecode obfuscation. Also make sure its
-        # version is >= 2.4.
+        # Tries to import tinyaes since we need it for bytecode obfuscation.
         try:
-            import Crypto
-            is_version_acceptable = LooseVersion(Crypto.__version__) >= LooseVersion('2.4')
-            if not is_version_acceptable:
-                logger.error('PyCrypto version must be >= 2.4, older versions are not supported.')
-                sys.exit(1)
+            import tinyaes  # noqa: F401 (test import)
         except ImportError:
-            logger.error('We need PyCrypto >= 2.4 to use byte-code obfuscation but we could not')
+            logger.error('We need tinyaes to use byte-code obfuscation but we '
+                         'could not')
             logger.error('find it. You can install it with pip by running:')
-            logger.error('  pip install PyCrypto')
+            logger.error('  pip install tinyaes')
             sys.exit(1)
         cipher_init = cipher_init_template % {'key': key}
     else:
@@ -417,12 +596,28 @@ def main(scripts, name=None, onefile=None,
     if DEBUG_ALL_CHOICE[0] in debug:
         debug = DEBUG_ARGUMENT_CHOICES
 
+    # Create preamble (for collect_*() calls)
+    preamble = Preamble(
+        datas, binaries, hiddenimports, collect_data, collect_binaries,
+        collect_submodules, collect_all, copy_metadata, recursive_copy_metadata
+    )
+
+    if splash:
+        splash_init = splashtmpl % {'splash_image': splash}
+        splash_binaries = ("\n"
+                           + " " * (10 if onefile else 15)  # noqa: W503
+                           + "splash.binaries,")  # noqa: W503
+        splash_target = "\n" + " " * 10 + "splash,"
+    else:
+        splash_init = splash_binaries = splash_target = ""
+
     d = {
         'scripts': scripts,
         'pathex': pathex,
-        'binaries': binaries,
-        'datas': datas,
-        'hiddenimports': hiddenimports,
+        'binaries': preamble.binaries,
+        'datas': preamble.datas,
+        'hiddenimports': preamble.hiddenimports,
+        'preamble': preamble.content,
         'name': name,
         'noarchive': 'noarchive' in debug,
         'options': [('v', None, 'OPTION')] if 'imports' in debug else [],
@@ -442,27 +637,38 @@ def main(scripts, name=None, onefile=None,
         'excludes': excludes or [],
         # only Windows and Mac OS X distinguish windowed and console apps
         'console': console,
+        'disable_windowed_traceback': disable_windowed_traceback,
         # Icon filename. Only OSX uses this item.
         'icon': icon_file,
         # .app bundle identifier. Only OSX uses this item.
         'bundle_identifier': bundle_identifier,
+        # Target architecture (macOS only)
+        'target_arch': target_arch,
+        # Code signing identity (macOS only)
+        'codesign_identity': codesign_identity,
+        # Entitlements file (macOS only)
+        'entitlements_file': entitlements_file,
         # Windows assembly searching options
         'win_no_prefer_redirects': win_no_prefer_redirects,
         'win_private_assemblies': win_private_assemblies,
+        # splash screen
+        'splash_init': splash_init,
+        'splash_target': splash_target,
+        'splash_binaries': splash_binaries,
     }
 
     # Write down .spec file to filesystem.
     specfnm = os.path.join(specpath, name + '.spec')
-    with open_file(specfnm, 'w', encoding='utf-8') as specfile:
+    with open(specfnm, 'w', encoding='utf-8') as specfile:
         if onefile:
-            specfile.write(text_type(onefiletmplt % d))
+            specfile.write(onefiletmplt % d)
             # For OSX create .app bundle.
             if is_darwin and not console:
-                specfile.write(text_type(bundleexetmplt % d))
+                specfile.write(bundleexetmplt % d)
         else:
-            specfile.write(text_type(onedirtmplt % d))
+            specfile.write(onedirtmplt % d)
             # For OSX create .app bundle.
             if is_darwin and not console:
-                specfile.write(text_type(bundletmplt % d))
+                specfile.write(bundletmplt % d)
 
     return specfnm

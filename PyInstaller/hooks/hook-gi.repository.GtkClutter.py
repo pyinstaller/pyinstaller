@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -12,6 +12,6 @@
 Import hook for PyGObject's "gi.repository.GtkClutter" package.
 """
 
-from PyInstaller.utils.hooks import get_gi_typelibs
+from PyInstaller.utils.hooks.gi import get_gi_typelibs
 
 binaries, datas, hiddenimports = get_gi_typelibs('GtkClutter', '1.0')

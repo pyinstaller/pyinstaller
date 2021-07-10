@@ -27,7 +27,7 @@ Some of the recipes there include:
 
 * Bundling a typical Django app.
 
-* A use of a run-time hook to set the PyQt4 API level.
+* A use of a run-time hook to set the PyQt5 API level.
 
 * A workaround for a multiprocessing constraint under Windows.
 
@@ -45,7 +45,7 @@ Build-time Messages
 --------------------
 
 When the ``Analysis`` step runs, it produces error and warning messages.
-These display after the command line if the ``--log-level`` option allows it.
+These display after the command line if the :option:`--log-level` option allows it.
 Analysis also puts messages in a warnings file
 named :file:`build/{name}/warn-{name}.txt` in the
 ``work-path=`` directory.
@@ -87,7 +87,7 @@ You can open it in any web browser.
 Find a module name, then keep clicking the "imported by" links
 until you find the top-level import that causes that module to be included.
 
-If you specify ``--log-level=DEBUG`` to the ``pyinstaller`` command,
+If you specify :option:`--log-level=DEBUG <--log-level>` to the ``pyinstaller`` command,
 |PyInstaller| additionally generates a GraphViz_ input file representing the
 dependency graph.
 The file is :file:`build/{name}/graph-{name}.dot` in the
@@ -108,7 +108,7 @@ Build-Time Python Errors
 |PyInstaller| sometimes terminates by raising a Python exception.
 In most cases the reason is clear from the exception message,
 for example "Your system is not supported", or "Pyinstaller
-requires at least Python 2.7".
+requires at least Python 3.6".
 Others clearly indicate a bug that should be reported.
 
 One of these errors can be puzzling, however:
@@ -134,14 +134,14 @@ try setting the correct path in the environment variable
 Getting Debug Messages
 ----------------------
 
-The ``--debug=all`` option (and its :ref:`choices <pyinstaller how to generate>`) provides a
-signficiant amount of diagnostic information.
+The :option:`--debug=all <--debug>` option (and its :ref:`choices <What To
+Generate>`) provides a significant amount of diagnostic information.
 This can be useful during development of a complex package,
 or when your app doesn't seem to be starting,
 or just to learn how the runtime works.
 
 Normally the debug progress messages go to standard output.
-If the ``--windowed`` option is used when bundling a Windows app,
+If the :option:`--windowed` option is used when bundling a Windows app,
 they are sent to any attached debugger. If you are not using a debugger
 (or don't have one), the DebugView_ the free (beer) tool can be used to
 display such messages. It has to be started before running the bundled
@@ -149,9 +149,9 @@ application.
 
 .. _DebugView: https://docs.microsoft.com/en-us/sysinternals/downloads/debugview
 
-For a ``--windowed`` Mac OS app they are not displayed.
+For a :option:`--windowed` Mac OS app they are not displayed.
 
-Consider bundling without ``--debug`` for your production version.
+Consider bundling without :option:`--debug` for your production version.
 Debugging messages require system calls and have an impact on performance.
 
 
@@ -160,9 +160,9 @@ Debugging messages require system calls and have an impact on performance.
 Getting Python's Verbose Imports
 --------------------------------
 
-You can build the app with the ``--debug=imports`` option
+You can build the app with the :option:`--debug=imports<--debug>` option
 (see `Getting Debug Messages`_ above),
-which will pass the ``-v`` (verbose imports) flag
+which will pass the :option:`-v` (verbose imports) flag
 to the embedded Python interpreter.
 This can be extremely useful.
 It can be informative even with apps that are apparently working,
@@ -170,15 +170,15 @@ to make sure that they are getting all imports from the bundle,
 and not leaking out to the local installed Python.
 
 Python verbose and warning messages always go to standard output
-and are not visible when the ``--windowed`` option is used.
+and are not visible when the :option:`--windowed` option is used.
 Remember to not use this for your production version.
 
 
 Figuring Out Why Your GUI Application Won't Start
 ---------------------------------------------------
 
-If you are using the ``--windowed`` option,
-your bundled application ay fail to start with an error message like
+If you are using the :option:`--windowed` option,
+your bundled application may fail to start with an error message like
 ``Failed to execute script my_gui``.
 In this case, you will want to get more verbose output to find out
 what is going on.
@@ -188,11 +188,11 @@ what is going on.
   in `Terminal` instead of clicking on ``my_gui.app``.
 
 * For Windows, you will need to re-bundle your application without the
-  ``--windowed`` option.
+  :option:`--windowed` option.
   Then you can run the resulting executable from the command line,
   i.e.: ``my_gui.exe``.
 
-* For Unix and GNU/Linux there in no ``--windowed`` option.
+* For Unix and GNU/Linux there in no :option:`--windowed` option.
   Anyway, if a your GUI application fails,
   you can run your application on the command line,
   i.e. ``./dist/my_gui``.
@@ -228,15 +228,15 @@ Extending the Path
 ------------------
 
 If Analysis recognizes that a module is needed, but cannot find that module,
-it is often because the script is manipulating ``sys.path``.
-The easiest thing to do in this case is to use the ``--paths=`` option
+it is often because the script is manipulating :data:`sys.path`.
+The easiest thing to do in this case is to use the :option:`--paths` option
 to list all the other places that the script might be searching for imports::
 
        pyi-makespec --paths=/path/to/thisdir \
                     --paths=/path/to/otherdir myscript.py
 
 These paths will be noted in the spec file.
-They will be added to the current ``sys.path`` during analysis.
+They will be added to the current :data:`sys.path` during analysis.
 
 
 Listing Hidden Imports
@@ -247,40 +247,40 @@ but the app fails with an import error,
 the problem is a hidden import; that is, an import that is not
 visible to the analysis phase.
 
-Hidden imports can occur when the code is using ``__import__``,
-``imp.find_module()``
-or perhaps ``exec`` or ``eval``.
+Hidden imports can occur when the code is using :func:`__import__`,
+:func:`importlib.import_module`
+or perhaps :func:`exec` or :func:`eval`.
 Hidden imports can also occur when an extension module uses the
 Python/C API to do an import.
 When this occurs, Analysis can detect nothing.
 There will be no warnings, only an ImportError at run-time.
 
 To find these hidden imports,
-build the app with the ``--debug=imports`` flag
+build the app with the :option:`--debug=imports<--debug>` flag
 (see :ref:`Getting Python's Verbose Imports` above)
 and run it.
 
 Once you know what modules are needed, you add the needed modules
-to the bundle using the ``--hidden-import=`` command option,
+to the bundle using the :option:`--hidden-import` command option,
 or by editing the spec file,
 or with a hook file (see :ref:`Understanding PyInstaller Hooks` below).
 
 
-Extending a Package's ``__path__``
-----------------------------------
+Extending a Package's :attr:`__path__`
+----------------------------------------------
 
 Python allows a script to extend the search path used for imports
-through the ``__path__`` mechanism.
-Normally, the ``__path__`` of an imported module has only one entry,
+through the :attr:`__path__` mechanism.
+Normally, the :attr:`__path__` of an imported module has only one entry,
 the directory in which the ``__init__.py`` was found.
-But ``__init__.py`` is free to extend its ``__path__`` to include other directories.
+But ``__init__.py`` is free to extend its :attr:`__path__` to include other directories.
 For example, the ``win32com.shell.shell`` module actually resolves to
 ``win32com/win32comext/shell/shell.pyd``.
-This is because ``win32com/__init__.py`` appends ``../win32comext`` to its ``__path__``.
+This is because ``win32com/__init__.py`` appends ``../win32comext`` to its :attr:`__path__`.
 
 Because the ``__init__.py`` of an imported module
 is not actually executed during analysis,
-changes it makes to ``__path__`` are not seen by |PyInstaller|.
+changes it makes to :attr:`__path__` are not seen by |PyInstaller|.
 We fix the problem with the same hook mechanism we use for hidden imports,
 with some additional logic; see :ref:`Understanding PyInstaller Hooks` below.
 
@@ -304,7 +304,7 @@ These are small scripts that manipulate the environment before your main script 
 effectively providing additional top-level code to your script.
 
 There are two ways of providing runtime hooks.
-You can name them with the option ``--runtime-hook=``\ *path-to-script*.
+You can name them with the option :option:`--runtime-hook`\ =\ *path-to-script*.
 
 Second, some runtime hooks are provided.
 At the end of an analysis,
@@ -318,8 +318,8 @@ and will be called before your main script starts.
 
 Hooks you name with the option are executed
 in the order given, and before any installed runtime hooks.
-If you specify  ``--runtime-hook=file1.py --runtime-hook=file2.py``
-then the execution order at runtime will be:
+If you specify  :option:`--runtime-hook=file1.py --runtime-hook=file2.py
+<--runtime-hook>` then the execution order at runtime will be:
 
 1. Code of :file:`file1.py`.
 2. Code of :file:`file2.py`.

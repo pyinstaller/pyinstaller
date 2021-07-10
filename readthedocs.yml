@@ -1,0 +1,14 @@
+version: 2
+
+sphinx:
+  configuration: doc/conf.py
+
+formats: all
+
+python:
+  version: 3.7
+  install:
+    # Needed for autodoc to be able to read PyInstaller docstrings.
+    - method: pip
+      path: .
+    - requirements: doc/requirements.txt

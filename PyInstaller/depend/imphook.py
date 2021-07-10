@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2020, PyInstaller Development Team.
+# Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -17,11 +17,11 @@ Code related to processing of import hooks.
 import glob, sys, weakref
 import os.path
 
-from .. import log as logging
-from ..compat import (
-    expand_path, importlib_load_source, FileNotFoundError)
-from .imphookapi import PostGraphAPI
-from ..building.utils import format_binaries_and_datas
+from PyInstaller.exceptions import ImportErrorWhenRunningHook
+from PyInstaller import log as logging
+from PyInstaller.compat import expand_path, importlib_load_source
+from PyInstaller.depend.imphookapi import PostGraphAPI
+from PyInstaller.building.utils import format_binaries_and_datas
 
 logger = logging.getLogger(__name__)
 
@@ -124,6 +124,10 @@ class ModuleHookCache(dict):
                 # Fully-qualified name of this hook's corresponding module,
                 # constructed by removing the "hook-" prefix and ".py" suffix.
                 module_name = os.path.basename(hook_filename)[5:-3]
+                if module_name in self:
+                    logger.warning("Several hooks defined for module %r. "
+                                   "Please take care they do not conflict.",
+                                   module_name)
 
                 # Lazily loadable hook object.
                 module_hook = ModuleHook(
@@ -275,6 +279,7 @@ class ModuleHook(object):
 
         # Note that the passed module graph is already a weak reference,
         # avoiding circular reference issues. See ModuleHookCache.__init__().
+        # TODO: Add a failure message
         assert isinstance(module_graph, weakref.ProxyTypes)
         self.module_graph = module_graph
         self.module_name = module_name
@@ -286,15 +291,20 @@ class ModuleHook(object):
 
         # Safety check, see above
         global HOOKS_MODULE_NAMES
-        assert self.hook_module_name not in HOOKS_MODULE_NAMES
-        HOOKS_MODULE_NAMES.add(self.hook_module_name)
+        if self.hook_module_name in HOOKS_MODULE_NAMES:
+            # When self._shallow is true, this class never loads the hook and
+            # sets the attributes to empty values
+            self._shallow = True
+        else:
+            self._shallow = False
+            HOOKS_MODULE_NAMES.add(self.hook_module_name)
 
         # Attributes subsequently defined by the _load_hook_module() method.
         self._hook_module = None
 
 
     def __getattr__(self, attr_name):
-        '''
+        """
         Get the magic attribute with the passed name (e.g., `datas`) from this
         lazily loaded hook script if any _or_ raise `AttributeError` otherwise.
 
@@ -312,7 +322,7 @@ class ModuleHook(object):
         See Also
         ----------
         Class docstring for supported magic attributes.
-        '''
+        """
 
         # If this is a magic attribute, initialize this attribute by lazy
         # loading this hook script and then return this attribute. To avoid
@@ -326,7 +336,7 @@ class ModuleHook(object):
 
 
     def __setattr__(self, attr_name, attr_value):
-        '''
+        """
         Set the attribute with the passed name to the passed value.
 
         If this is a magic attribute, this hook script will be lazily loaded
@@ -337,7 +347,7 @@ class ModuleHook(object):
         See Also
         ----------
         Class docstring for supported magic attributes.
-        '''
+        """
 
         # If this is a magic attribute, initialize this attribute by lazy
         # loading this hook script before overwriting this attribute.
@@ -372,16 +382,36 @@ class ModuleHook(object):
         Class docstring for supported attributes.
         """
 
-        # If this hook script module has already been loaded, noop.
-        if self._hook_module is not None:
+        # If this hook script module has already been loaded,
+        # or we are _shallow, noop.
+        if self._hook_module is not None or self._shallow:
+            if self._shallow:
+                self._hook_module = True  # Not None
+                # Inform the user
+                logger.debug(
+                    'Skipping module hook %r from %r because a hook for %s has'
+                    ' already been loaded.',
+                    *os.path.split(self.hook_filename)[::-1], self.module_name
+                )
+                # Set the default attributes to empty instances of the type.
+                for attr_name, \
+                        (attr_type, _) in _MAGIC_MODULE_HOOK_ATTRS.items():
+                    super(ModuleHook, self).__setattr__(attr_name, attr_type())
             return
 
         # Load and execute the hook script. Even if mechanisms from the import
         # machinery are used, this does not import the hook as the module.
+        head, tail = os.path.split(self.hook_filename)
         logger.info(
-            'Loading module hook "%s"...', os.path.basename(self.hook_filename))
-        self._hook_module = importlib_load_source(
-            self.hook_module_name, self.hook_filename)
+            'Loading module hook %r from %r...', tail, head)
+        try:
+            self._hook_module = importlib_load_source(
+                self.hook_module_name, self.hook_filename)
+        except ImportError:
+            logger.debug("Hook failed with:", exc_info=True)
+            raise ImportErrorWhenRunningHook(
+                self.hook_module_name, self.hook_filename)
+
 
         # Copy hook script attributes into magic attributes exposed as instance
         # variables of the current "ModuleHook" instance.
@@ -401,13 +431,17 @@ class ModuleHook(object):
             # Expose this attribute as an instance variable of the same name.
             setattr(self, attr_name, attr_value)
 
-
     ## Hooks
 
-    def post_graph(self):
+    def post_graph(self, analysis):
         """
         Call the **post-graph hook** (i.e., `hook()` function) defined by this
         hook script if any.
+
+        Parameters
+        ----------
+        analysis: build_main.Analysis
+            Analysis that calls the hook
 
         This method is intended to be called _after_ the module graph for this
         application is constructed.
@@ -418,16 +452,20 @@ class ModuleHook(object):
 
         # Call this hook script's hook() function, which modifies attributes
         # accessed by subsequent methods and hence must be called first.
-        self._process_hook_func()
+        self._process_hook_func(analysis)
 
         # Order is insignificant here.
         self._process_hidden_imports()
         self._process_excluded_imports()
 
-
-    def _process_hook_func(self):
+    def _process_hook_func(self, analysis):
         """
         Call this hook's `hook()` function if defined.
+
+        Parameters
+        ----------
+        analysis: build_main.Analysis
+            Analysis that calls the hook
         """
 
         # If this hook script defines no hook() function, noop.
@@ -436,8 +474,14 @@ class ModuleHook(object):
 
         # Call this hook() function.
         hook_api = PostGraphAPI(
-            module_name=self.module_name, module_graph=self.module_graph)
-        self._hook_module.hook(hook_api)
+            module_name=self.module_name, module_graph=self.module_graph,
+            analysis=analysis)
+        try:
+            self._hook_module.hook(hook_api)
+        except ImportError:
+            logger.debug("Hook failed with:", exc_info=True)
+            raise ImportErrorWhenRunningHook(
+                self.hook_module_name, self.hook_filename)
 
         # Update all magic attributes modified by the prior call.
         self.datas.update(set(hook_api._added_datas))
@@ -469,7 +513,7 @@ class ModuleHook(object):
             try:
                 # Graph node for this module. Do not implicitly create namespace
                 # packages for non-existent packages.
-                caller = self.module_graph.findNode(
+                caller = self.module_graph.find_node(
                     self.module_name, create_nspkg=False)
 
                 # Manually import this hidden import from this module.
@@ -534,11 +578,10 @@ class ModuleHook(object):
         # TODO: Optimize this by using a pattern and walking the graph
         # only once.
         for item in set(self.excludedimports):
-            excluded_node = self.module_graph.findNode(item, create_nspkg=False)
+            excluded_node = self.module_graph.find_node(item, create_nspkg=False)
             if excluded_node is None:
                 logger.info("Import to be excluded not found: %r", item)
                 continue
-            logger.info("Excluding import %r", item)
             imports_to_remove = set(find_all_package_nodes(item))
 
             # Remove references between module nodes, as though they would
@@ -551,14 +594,14 @@ class ModuleHook(object):
                 # modules, this `src` does import
                 references = set(
                     node.identifier
-                    for node in self.module_graph.getReferences(src))
+                    for node in self.module_graph.outgoing(src))
 
                 # Remove all of these imports which are also in
                 # "imports_to_remove".
                 for dest in imports_to_remove & references:
                     self.module_graph.removeReference(src, dest)
-                    logger.info(
-                        "  Removing import of %s from module %s", dest, src)
+                    logger.debug(
+                        "Excluding import of %s from module %s", dest, src)
 
 
 class AdditionalFilesCache(object):
@@ -571,8 +614,11 @@ class AdditionalFilesCache(object):
         self._datas = {}
 
     def add(self, modname, binaries, datas):
-        self._binaries[modname] = binaries or []
-        self._datas[modname] = datas or []
+
+        self._binaries.setdefault(modname, [])
+        self._binaries[modname].extend(binaries or [])
+        self._datas.setdefault(modname, [])
+        self._datas[modname].extend(datas or [])
 
     def __contains__(self, name):
         return name in self._binaries or name in self._datas
