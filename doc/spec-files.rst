@@ -97,6 +97,8 @@ The statements in a spec file create instances of four classes,
 
   - ``scripts``: the python scripts named on the command line;
   - ``pure``: pure python modules needed by the scripts;
+  - ``pathex``: a list of paths to search for imports (like using PYTHONPATH),
+    including paths given by the :option:`--paths` option.
   - ``binaries``: non-python modules needed by the scripts, including names 
     given by the :option:`--add-binary` option;
   - ``datas``: non-binary files included in the app, including names given 
