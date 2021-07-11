@@ -43,6 +43,14 @@ def commit(name, rawtext, text, lineno, inliner, options={}, content=[]):
     return [node], []
 
 
+def blob(name, rawtext, text, lineno, inliner, options={}, content=[]):
+    """Reference a file within this repo and get a link to it on Github."""
+    options.setdefault('classes', []).append("blob")
+    url = "https://github.com/pyinstaller/pyinstaller/tree/develop/" + text
+    node = nodes.reference(rawtext, text, refuri=url, **options)
+    return [node], []
+
+
 def issue(name, rawtext, text, lineno, inliner, options={}, content=[]):
     msg = None
     try:
@@ -75,3 +83,4 @@ def autolink(pattern):
 def setup(app):
     app.add_role('issue', issue)
     app.add_role('commit', commit)
+    app.add_role('blob', blob)

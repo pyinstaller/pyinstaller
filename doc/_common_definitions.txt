@@ -17,6 +17,7 @@
 .. _Cython: http://www.cython.org/
 .. _Django: https://www.djangoproject.com/
 .. _dnspython: http://www.dnspython.org/
+.. _Docker: https://www.docker.com/
 .. _`easy_install`: http://peak.telecommunity.com/DevCenter/EasyInstall
 .. _`Microsoft COM`: http://www.microsoft.com/com/default.mspx
 .. _`GPL License`: https://raw.github.com/pyinstaller/pyinstaller/develop/COPYING.txt

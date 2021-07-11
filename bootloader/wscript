@@ -24,6 +24,11 @@ from waflib.Configure import conf
 from waflib import Logs, Utils, Options
 from waflib.Build import BuildContext, InstallContext
 
+# waf doesn't work unless it's ran from in this folder so it is safe to assume
+# the current working directory here.
+sys.path.insert(0, os.path.realpath("../PyInstaller/"))
+import _shared_with_waf
+
 # The following two variables are used by the target "waf dist"
 VERSION = 'nodist'
 APPNAME = 'PyInstallerBootloader'
@@ -83,23 +88,12 @@ else:
 is_cross = None
 
 
-def machine():
+def machine(ctx):
     """
-    Differenciate path to bootloader with machine name if necessary.
-
-    Machine name in bootloader is necessary only for non-x86 architecture.
+    Determine path to bootloader based on C compiler target.
     """
-    # IMPORTANT: Keep this in line with PyInstaller.compat.machine()
-    mach = platform.machine()
-    if mach.startswith('arm'):
-        return 'arm'
-    elif mach.startswith('aarch'):
-        return 'aarch'
-    elif mach.startswith('sw_64'):
-        return 'sw_64'
-    else:
-        # Assume x86/x86_64 machine.
-        return None
+    return _shared_with_waf._pyi_machine(
+        ctx.env.DEST_CPU, DESTOS_TO_SYSTEM[ctx.env.DEST_OS])
 
 
 def assoc_programm(ctx, name):
@@ -289,7 +283,13 @@ def detect_arch(ctx):
         # the bits and this is testing the pointer size (via module struct).
         # We do the same here.
         arch = "%sbit" % (8 * check_sizeof_pointer(ctx))
-        ctx.msg('Platform', '%s-%s detected based on compiler' % (system, arch))
+        _machine = machine(ctx)
+        if _machine is not None:
+            plat = '%s-%s-%s detected based on compiler' \
+                   % (system, arch, _machine)
+        else:
+            plat = '%s-%s detected based on compiler' % (system, arch)
+        ctx.msg('Platform', plat)
         ctx.env.ARCH_FLAGS_REQUIRED = False
     if not arch in ('32bit','64bit'):
         ctx.fatal('Unrecognized target architecture: %s' % arch)
@@ -389,7 +389,7 @@ def set_arch_flags(ctx):
 
     # Other compiler - not msvc.
     else:
-        if machine() == 'sw_64':
+        if machine(ctx) == 'sw_64':
             # The gcc has no '-m64' option under sw64 machine, but the
             # __x86_64__ macro needs to be defined
             ctx.env.append_value('CCDEFINES', '__x86_64__')
@@ -761,8 +761,8 @@ def build(ctx):
                                 ctx.env.PYI_SYSTEM + "-" + ctx.env.PYI_ARCH)
     install_path = os.path.normpath(install_path)
 
-    if machine() and ctx.env.DEST_OS != 'darwin':
-        install_path += '-' + machine()
+    if machine(ctx) and ctx.env.DEST_OS != 'darwin':
+        install_path += '-' + machine(ctx)
 
     if not ctx.env.LIB_Z:
         # If the operating system does not provide zlib, build our own. The
@@ -824,6 +824,22 @@ def build(ctx):
             stlib=staticlibs,
             install_path=install_path,
             features=features)
+
+    # This warning is deliberately at the end of the build in the hopes that
+    # it'll be more visible amongst all the other stuff written to stdout.
+    if machine(ctx) and machine(ctx) == "unknown":
+        Logs.log.warning(
+            "The target architecture reported by the compiler '%s' was not "
+            "recognised and defaulted to 'unknown'. "
+            "You should verify that `PyInstaller.compat.machine` is also "
+            "'unknown' on the target machine. "
+            "If it isn't then please add '%s' to "
+            "`PyInstaller._shared_with_waf._pyi_machine()` "
+            "and submit a pull request. "
+            "Without this match, PyInstaller will not be able to find the "
+            "bootloaders you just built!"
+            % (ctx.env.DEST_CPU, ctx.env.DEST_CPU)
+        )
 
     ctx.recurse("tests")
 
