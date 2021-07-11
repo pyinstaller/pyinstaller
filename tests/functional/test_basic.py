@@ -14,10 +14,13 @@
 # ---------------
 import locale
 import os
+import subprocess
 import sys
 
 # Third-party imports
 # -------------------
+import time
+
 import pytest
 
 # Local imports
@@ -380,16 +383,25 @@ def test_set_icon(pyi_builder, data_dir):
     pyi_builder.test_source("print('Hello Python!')", pyi_args=args)
 
 
-def test_osx_app_console_option(pyi_builder, data_dir):
-    if is_darwin:
-        # On OS X icon is applied only for windowed mode.
-        args = ['--windowed', '--osx-app-console']
-    else:
-        pytest.skip('option --icon works only on Windows and Mac OS X')
-    pyi_builder.test_source("""
-        print('Hello Python!')
-        input()
-    """, pyi_args=args)
+@pytest.mark.darwin
+def test_osx_app_console_option(tmpdir, pyi_builder_spec, monkeypatch):
+    # -*- mode: python ; coding: utf-8 -*-
+    app_path = os.path.join(tmpdir, 'dist',
+                            'osx console option.app')
+    is_console_path = os.path.join(tmpdir, 'dist', 'itsaconsole.txt')
+
+
+    pyi_builder_spec.test_spec('osx_console_option.spec')
+
+    # First run using 'open' registers custom protocol handler
+    subprocess.check_call(['open', app_path])
+    # 'open' starts program in a different process
+    #  so we need to wait for it to finish
+    time.sleep(5)
+
+    assert os.path.exists(is_console_path), 'did not find confirmation that \
+                                               .app is running in console mode'
+
 
 
 def test_python_home(pyi_builder):

@@ -13,7 +13,6 @@ import os
 import plistlib
 from pathlib import Path
 import shutil
-import shlex
 from ..compat import is_darwin
 from .api import EXE, COLLECT
 from .datastruct import Target, TOC, logger
@@ -160,8 +159,8 @@ class BUNDLE(Target):
 
             # write new wrapper script
             shell_script = '''#!/bin/bash
-            dir=$(cd "$( dirname "${0}")" && pwd )
-            open -a Terminal "file://${dir}/%s"''' % shlex.quote(self.appname)
+dir=$(cd "$( dirname "${0}")" && pwd )
+open -a Terminal "${dir}/%s"''' % self.appname
             wrapper_script = app_path / 'Contents/MacOS/wrapper'
             with open(wrapper_script, 'w') as f:
                 f.write(shell_script)

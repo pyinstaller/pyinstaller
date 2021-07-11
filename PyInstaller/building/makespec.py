@@ -510,8 +510,7 @@ def main(scripts, name=None, onefile=None,
         # We need to encapsulate it into apostrofes.
         bundle_identifier = "'%s'" % bundle_identifier
 
-    if osx_app_console:
-        osx_app_console = True
+    osx_app_console = bool(osx_app_console)
 
     if manifest:
         if "<" in manifest:
