@@ -13,6 +13,7 @@ import os
 import plistlib
 from pathlib import Path
 import shutil
+import shlex
 from ..compat import is_darwin
 from .api import EXE, COLLECT
 from .datastruct import Target, TOC, logger

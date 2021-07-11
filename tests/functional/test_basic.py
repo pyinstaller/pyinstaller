@@ -403,7 +403,6 @@ def test_osx_app_console_option(tmpdir, pyi_builder_spec, monkeypatch):
                                                .app is running in console mode'
 
 
-
 def test_python_home(pyi_builder):
     pyi_builder.test_script('pyi_python_home.py')
 
