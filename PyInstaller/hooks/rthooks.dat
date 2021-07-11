@@ -11,6 +11,7 @@
     'kivy':       ['pyi_rth_kivy.py'],
     'kivy.lib.gstplayer': ['pyi_rth_gstreamer.py'],
     'matplotlib': ['pyi_rth_mplconfig.py'],
+    'pkgutil': ['pyi_rth_pkgutil.py'],
     'pkg_resources':  ['pyi_rth_pkgres.py'],
     'PyQt5':      ['pyi_rth_pyqt5.py'],
     'PyQt5.QtWebEngineWidgets': ['pyi_rth_pyqt5webengine.py'],
