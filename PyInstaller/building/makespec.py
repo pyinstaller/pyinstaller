@@ -259,7 +259,9 @@ def __add_options(parser):
                    metavar="DIR", action="append", default=[],
                    help="A path to search for imports (like using PYTHONPATH). "
                         "Multiple paths are allowed, separated "
-                        "by %s, or use this option multiple times"
+                        "by ``%s``, or use this option multiple times. "
+                        "Equivalent to supplying the ``pathex`` argument in "
+                        "the spec file."
                         % repr(os.pathsep))
     g.add_argument('--hidden-import', '--hiddenimport',
                    action='append', default=[],
