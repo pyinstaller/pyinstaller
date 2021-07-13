@@ -263,12 +263,12 @@ pyi_path_executable(char *execfile, const char *appname)
     /* GetModuleFileNameW returns an absolute, fully qualified path
      */
     if (!GetModuleFileNameW(NULL, modulename_w, PATH_MAX)) {
-        FATAL_WINERROR("GetModuleFileNameW", "Failed to get executable path.");
+        FATAL_WINERROR("GetModuleFileNameW", "Failed to get executable path.\n");
         return false;
     }
 
     if (!pyi_win32_utils_to_utf8(execfile, modulename_w, PATH_MAX)) {
-        FATALERROR("Failed to convert executable path to UTF-8.");
+        FATALERROR("Failed to convert executable path to UTF-8.\n");
         return false;
     }
 
@@ -321,7 +321,7 @@ pyi_path_executable(char *execfile, const char *appname)
             char buffer[PATH_MAX];
             if (! pyi_search_path(buffer, appname)) {
                 /* Searching $PATH failed, user is crazy. */
-                VS("LOADER: Searching $PATH failed for %s", appname);
+                VS("LOADER: Searching $PATH failed for %s\n", appname);
                 if (snprintf(buffer, PATH_MAX, "%s", appname) >= PATH_MAX) {
                     VS("LOADER: Full path to application exceeds PATH_MAX: %s\n", appname);
                     return false;

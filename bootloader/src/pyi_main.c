@@ -155,7 +155,7 @@ pyi_main(int argc, char * argv[])
 #else
         /* Windows */
         if (pyi_win32_utils_from_utf8(dllpath_w, extractionpath, PATH_MAX) == NULL) {
-            FATALERROR("Failed to convert DLL search path!");
+            FATALERROR("Failed to convert DLL search path!\n");
             return -1;
         }
 #endif  /* defined(__CYGWIN__) */

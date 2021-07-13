@@ -498,7 +498,7 @@ pyi_pylib_start_python(ARCHIVE_STATUS *status)
 
     /* Check for a python error */
     if (PI_PyErr_Occurred()) {
-        FATALERROR("Error detected starting Python VM.");
+        FATALERROR("Error detected starting Python VM.\n");
         return -1;
     }
 
@@ -675,7 +675,7 @@ pyi_pylib_finalize(ARCHIVE_STATUS *status)
      */
     if (status->is_pylib_loaded == true) {
         #ifndef WINDOWED
-            /* 
+            /*
              * We need to manually flush the buffers because otherwise there can be errors.
              * The native python interpreter flushes buffers before calling Py_Finalize,
              * so we need to manually do the same. See isse #4908.
