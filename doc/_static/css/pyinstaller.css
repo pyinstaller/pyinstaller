@@ -129,3 +129,9 @@ html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(
   border: 2px outset #e1e4e520;
   color: #034040;
 }
+
+/* Space the bullet list entries out slightly only in the changelog to make
+them more readable. */
+.rst-content .section[id="changelog-for-pyinstaller"] ul li { margin-bottom: 14px; }
+/* But don't space out lists within lists because they look stupid. */
+.rst-content .section[id="changelog-for-pyinstaller"] ul li ul li { margin-bottom: unset; }

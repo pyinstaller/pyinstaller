@@ -78,7 +78,9 @@ Features
                            "languages": ["en_GB", "zh_CN"]
                        }
                    },
-                   ...) (:issue:`#5853`)
+                   ...)
+
+  (:issue:`#5853`)
 * Automatically exclude Qt plugins from UPX processing. (:issue:`#4178`)
 * Collect distribution metadata automatically.
   This works by scanning collected Python files for uses of:
@@ -103,7 +105,7 @@ Features
 Bugfix
 ~~~~~~
 
-* (macOS) App bundles built in ``onedir`` mode now filter out ``-psnxxx˙`
+* (macOS) App bundles built in ``onedir`` mode now filter out ``-psnxxx``
   command-line argument from ``sys.argv``, to keep behavior consistent
   with bundles built in ``onefile`` mode. (:issue:`#5920`)
 * (macOS) Ensure that the macOS SDK version reported by the frozen application
