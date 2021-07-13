@@ -70,21 +70,5 @@ int pyi_launch_execute(ARCHIVE_STATUS *status);
  */
 void pyi_parent_to_background();
 
-/*
- * Call a simple "int func(void)" entry point.  Assumes such a function
- * exists in the main namespace.
- * Return non zero on failure, with -2 if the specific error is
- * that the function does not exist in the namespace.
- *
- * @param name		Name of the function to execute.
- * @param presult	Integer return value.
- */
-int callSimpleEntryPoint(char *name, int *presult);
-
-/**
- * Clean up extracted binaries
- */
-void cleanUp(ARCHIVE_STATUS *status);
-
 #endif  /* PYI_LAUNCH_H */
 
