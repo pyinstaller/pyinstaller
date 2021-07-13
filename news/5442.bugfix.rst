@@ -1,2 +1,0 @@
-(macOS) Remove spurious ``MacOS/`` prefix from ``CFBundleExecutable`` property
-in the generated ``Info.plist`` when building an app bundle.

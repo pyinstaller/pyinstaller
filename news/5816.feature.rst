@@ -1,1 +1,0 @@
-(Windows) Add support for Python from Microsoft App Store.

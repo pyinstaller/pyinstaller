@@ -12,6 +12,201 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+4.4 (2021-07-13)
+----------------
+
+Features
+~~~~~~~~
+
+* (macOS) Implement signing of .app bundle (ad-hoc or with actual signing
+  identity, if provided). (:issue:`#5581`)
+* (macOS) Implement support for Apple Silicon M1 (``arm64``) platform
+  and different targets for frozen applications (thin-binary ``x86_64``,
+  thin-binary ``arm64``, and fat-binary ``universal2``), with build-time
+  arch validation and ad-hoc resigning of all collected binaries.
+  (:issue:`#5581`)
+* (macOS) In ``onedir`` ``windowed`` (.app bundle) mode, perform an
+  interation of Apple event processing to convert ``odoc`` and ``GURL``
+  events to ``sys.argv`` before entering frozen python script. (:issue:`#5920`)
+* (macOS) In windowed (.app bundle) mode, always log unhandled exception
+  information to ``syslog``, regardless of debug mode. (:issue:`#5890`)
+* (Windows) Add support for Python from Microsoft App Store. (:issue:`#5816`)
+* (Windows) Implement a custom dialog for displaying information about
+  unhandled
+  exception and its traceback when running in windowed/noconsole mode.
+  (:issue:`#5890`)
+* Add **recursive** option to :func:`PyInstaller.utils.hooks.copy_metadata()`.
+  (:issue:`#5830`)
+* Add ``--codesign-identity``  command-line switch to perform code-signing
+  with actual signing identity instead of ad-hoc signing (macOS only).
+  (:issue:`#5581`)
+* Add ``--osx-entitlements-file`` command-line switch that specifies optional
+  entitlements file to be used during code signing of collected binaries
+  (macOS only). (:issue:`#5581`)
+* Add ``--target-arch`` command-line switch to select target architecture
+  for frozen application (macOS only). (:issue:`#5581`)
+* Add a splash screen that displays a background image and text:
+  The splash screen can be controlled from within Python using the
+  ``pyi_splash`` module.
+  A splash screen can be added using the ``--splash IMAGE_FILE`` option.
+  If optional text is enabled, the splash screen will show the progress of
+  unpacking in
+  onefile mode.
+  This feature is supported only on Windows and Linux.
+  A huge thanks to `@Chrisg2000 <https://github.com/Chrisg2000>`_ for
+  programming this feature. (:issue:`#4354`, :issue:`#4887`)
+* Add hooks for ``PyQt6``. (:issue:`#5865`)
+* Add hooks for ``PySide6``. (:issue:`#5865`)
+* Add option to opt-out from reporting full traceback for unhandled exceptions
+  in windowed mode (Windows and macOS only), via
+  ``--disable-windowed-traceback``
+  PyInstaller CLI switch and the corresponding ``disable_windowed_traceback``
+  boolean argument to ``EXE()`` in spec file. (:issue:`#5890`)
+* Allow specify which icon set, themes and locales
+  to pack with Gtk applications.
+  Pass a keyword arg ``hooksconfig`` to
+  Analysis.
+
+  .. code-block:: python
+
+      a = Analysis(["my-gtk-app.py"],
+                   ...,
+                   hooksconfig={
+                       "gi": {
+                           "icons": ["Adwaita"],
+                           "themes": ["Adwaita"],
+                           "languages": ["en_GB", "zh_CN"]
+                       }
+                   },
+                   ...) (:issue:`#5853`)
+* Automatically exclude Qt plugins from UPX processing. (:issue:`#4178`)
+* Collect distribution metadata automatically.
+  This works by scanning collected Python files for uses of:
+
+  * ``pkg_resources.get_distribution()``
+  * ``pkg_resources.require()``
+  * ``importlib.metadata.distribution()``
+  * ``importlib.metadata.metadata()``
+  * ``importlib.metadata.files()``
+  * ``importlib.metadata.version()``
+
+  In all cases, the metadata will only be collected if the distribution name is
+  given as a plain string literal. Anything more complex will still require a
+  hook containing :func:`PyInstaller.utils.hooks.copy_metadata`.
+  (:issue:`#5830`)
+* Implement support for :func:`pkgutil.iter_modules`. (:issue:`#1905`)
+* Windows: Provide a meaningful error message if given an icon in an
+  unsupported
+  Image format. (:issue:`#5755`)
+
+
+Bugfix
+~~~~~~
+
+* (macOS) App bundles built in ``onedir`` mode now filter out ``-psnxxx˙`
+  command-line argument from ``sys.argv``, to keep behavior consistent
+  with bundles built in ``onefile`` mode. (:issue:`#5920`)
+* (macOS) Ensure that the macOS SDK version reported by the frozen application
+  corresponds to the minimum of the SDK version used to build the bootloader
+  and the SDK version used to build the Python library. Having the application
+  report more recent version than Python library and other bundled libraries
+  may result in macOS attempting to enable additional features that are not
+  available in the Python library, which may in turn cause inconsistent
+  behavior
+  and UI issues with ``tkinter``. (:issue:`#5839`)
+* (macOS) Remove spurious ``MacOS/`` prefix from ``CFBundleExecutable``
+  property
+  in the generated ``Info.plist`` when building an app bundle. (:issue:`#4413`,
+  :issue:`#5442`)
+* (macOS) The drag & drop file paths passed to app bundles built in
+  ``onedir`` mode are now reflected in ``sys.argv``. (:issue:`#5436`)
+* (macOS) The file paths passed from the UI (`Open with...`) to app bundles
+  built in ``onedir`` mode are now reflected in ``sys.argv``. (:issue:`#5908`)
+* (macOS) Work around the ``tkinter`` UI issues due to problems with
+  dark mode activation: black ``Tk`` window with macOS Intel installers
+  from ``python.org``, or white text on bright background with Anaconda
+  python. (:issue:`#5827`)
+* (Windows) Enable collection of additional VC runtime DLLs (``msvcp140.dll``,
+  ``msvcp140_1.dll``, ``msvcp140_2.dll``, and ``vcruntime140_1.dll``), to
+  allow frozen applications to run on Windows systems that do not have
+  `Visual Studio 2015/2017/2019 Redistributable` installed. (:issue:`#5770`)
+* Enable retrieval of code object for ``__main__`` module via its associated
+  loader (i.e., ``FrozenImporter``). (:issue:`#5897`)
+* Fix :func:`inspect.getmodule` failing to resolve module from stack-frame
+  obtained via :func:`inspect.stack`. (:issue:`#5963`)
+* Fix ``__main__`` module being recognized as built-in instead of module.
+  (:issue:`#5897`)
+* Fix a bug in :ref:`ctypes dependency scanning <Ctypes Dependencies>` which
+  caused references to be missed if the preceding code contains more than
+  256 names or 256 literals. (:issue:`#5830`)
+* Fix collection of duplicated ``_struct`` and ``zlib`` extension modules
+  with mangled filenames. (:issue:`#5851`)
+* Fix python library lookup when building with RH SCL python 3.8 or later.
+  (:issue:`#5749`)
+* Prevent :func:`PyInstaller.utils.hooks.copy_metadata` from renaming
+  ``[...].dist-info`` metadata folders to ``[...].egg-info`` which breaks usage
+  of ``pkg_resources.requires()`` with *extras*. (:issue:`#5774`)
+* Prevent a bootloader executable without an embedded CArchive from being
+  misidentified as having one, which leads to undefined behavior in frozen
+  applications with side-loaded CArchive packages. (:issue:`#5762`)
+* Prevent the use of ``sys`` or ``os`` as variables in the global namespace
+  in frozen script from affecting the ``ctypes`` hooks thar are installed
+  during bootstrap. (:issue:`#5797`)
+* Windows: Fix EXE being rebuilt when there are no changes. (:issue:`#5921`)
+
+
+Hooks
+~~~~~
+
+* * Add ``PostGraphAPI.analysis`` attribute.
+    Hooks can access the ``Analysis`` object
+    through the ``hook()`` function.
+
+  * Hooks may access a ``Analysis.hooksconfig`` attribute
+    assigned on ``Analysis`` construction.
+
+    A helper function :func:`~PyInstaller.utils.hooks.get_hook_config`
+    was defined in ``utils.hooks`` to get the config. (:issue:`#5853`)
+* Add support for ``PyQt5`` 5.15.4. (:issue:`#5631`)
+* Do not exclude ``setuptools.py27compat`` and ``setuptools.py33compat``
+  as they are required by other ``setuptools`` modules. (:issue:`#5979`)
+* Switch the library search order in ``ctypes`` hooks: first check whether
+  the given name exists as-is, before trying to search for its basename in
+  ``sys._MEIPASS`` (instead of the other way around). (:issue:`#5907`)
+
+
+Bootloader
+~~~~~~~~~~
+
+* (macOS) Build bootloader as ``universal2`` binary by default (can
+  be disabled by passing ``--no-universal2`` to waf). (:issue:`#5581`)
+* Add Tcl/Tk based Splash screen, which is controlled from
+  within Python. The necessary module to create the Splash
+  screen in PyInstaller is under :mod:`Splash` available.
+  A huge thanks to `@Chrisg2000 <https://github.com/Chrisg2000>`_ for
+  programming this feature. (:issue:`#4887`)
+* Provide a Dockerfile to build Linux bootloaders for different architectures.
+  (:issue:`#5995`)
+
+
+Documentation
+~~~~~~~~~~~~~
+
+* Document the new macOS multi-arch support and code-signing behavior
+  in corresponding sub-sections of ``Notes about specific Features``.
+  (:issue:`#5581`)
+
+
+Bootloader build
+~~~~~~~~~~~~~~~~
+
+* Update ``clang`` in ``linux64`` Vagrant VM to ``clang-11`` from
+  ``apt.llvm.org`` so it can build ``universal2`` macOS bootloader.
+  (:issue:`#5581`)
+* Update ``crossosx`` Vagrant VM to build the toolchain from ``Command Line
+  Tools for Xcode`` instead of full ``Xcode package``. (:issue:`#5581`)
+
+
 4.3 (2021-04-16)
 ----------------
 
@@ -151,6 +346,21 @@ PyInstaller Core
   directory. This prevents them from shadowing shared libraries with the
   same basename that are located in a package and loaded via ``ctypes`` or
   ``cffi``, and also declutters the bundle's root directory. (:issue:`#5604`)
+
+Breaking
+~~~~~~~~
+
+* No longer collect ``pyconfig.h`` and ``makefile`` for :mod:`sysconfig`. Instead
+  of :func:`~sysconfig.get_config_h_filename` and
+  :func:`~sysconfig.get_makefile_filename`, you should use
+  :func:`~sysconfig.get_config_vars` which no longer depends on those files. (:issue:`#5218`)
+* The ``__file__`` attribute in the ``__main__`` module (entry-point
+  script) is now set to the absolute file name inside the ``_MEIPASS``
+  (as if script file existed there) instead of just script filename.
+  This better matches the behavior of ``__file__`` in the unfrozen script,
+  but might break the existing code that explicitly relies on the old
+  frozen behavior. (:issue:`#5649`)
+
 
 
 4.2 (2021-01-13)

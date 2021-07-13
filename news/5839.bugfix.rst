@@ -1,7 +1,0 @@
-(macOS) Ensure that the macOS SDK version reported by the frozen application
-corresponds to the minimum of the SDK version used to build the bootloader
-and the SDK version used to build the Python library. Having the application
-report more recent version than Python library and other bundled libraries
-may result in macOS attempting to enable additional features that are not
-available in the Python library, which may in turn cause inconsistent behavior
-and UI issues with ``tkinter``.

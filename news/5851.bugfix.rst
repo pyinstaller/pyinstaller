@@ -1,2 +1,0 @@
-Fix collection of duplicated ``_struct`` and ``zlib`` extension modules
-with mangled filenames.

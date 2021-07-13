@@ -1,2 +1,0 @@
-Update ``crossosx`` Vagrant VM to build the toolchain from ``Command Line
-Tools for Xcode`` instead of full ``Xcode package``.

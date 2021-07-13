@@ -1,1 +1,0 @@
-Add **recursive** option to :func:`PyInstaller.utils.hooks.copy_metadata()`.

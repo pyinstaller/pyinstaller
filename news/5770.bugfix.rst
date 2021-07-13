@@ -1,4 +1,0 @@
-(Windows) Enable collection of additional VC runtime DLLs (``msvcp140.dll``,
-``msvcp140_1.dll``, ``msvcp140_2.dll``, and ``vcruntime140_1.dll``), to
-allow frozen applications to run on Windows systems that do not have
-`Visual Studio 2015/2017/2019 Redistributable` installed.

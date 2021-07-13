@@ -1,2 +1,0 @@
-Add ``--codesign-identity``  command-line switch to perform code-signing
-with actual signing identity instead of ad-hoc signing (macOS only).

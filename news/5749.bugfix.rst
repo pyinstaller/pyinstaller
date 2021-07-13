@@ -1,1 +1,0 @@
-Fix python library lookup when building with RH SCL python 3.8 or later.

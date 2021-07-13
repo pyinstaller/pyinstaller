@@ -1,2 +1,0 @@
-Document the new macOS multi-arch support and code-signing behavior
-in corresponding sub-sections of ``Notes about specific Features``.

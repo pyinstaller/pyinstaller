@@ -1,3 +1,0 @@
-Prevent a bootloader executable without an embedded CArchive from being
-misidentified as having one, which leads to undefined behavior in frozen
-applications with side-loaded CArchive packages.

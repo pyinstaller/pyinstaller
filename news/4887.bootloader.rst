@@ -1,4 +1,0 @@
-Add Tcl/Tk based Splash screen, which is controlled from
-within Python. The necessary module to create the Splash
-screen in PyInstaller is under :mod:`Splash` available.
-A huge thanks to `@Chrisg2000 <https://github.com/Chrisg2000>`_ for programming this feature.

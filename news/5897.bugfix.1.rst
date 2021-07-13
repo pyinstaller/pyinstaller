@@ -1,2 +1,0 @@
-Enable retrieval of code object for ``__main__`` module via its associated
-loader (i.e., ``FrozenImporter``).

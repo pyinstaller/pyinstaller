@@ -1,2 +1,0 @@
-Do not exclude ``setuptools.py27compat`` and ``setuptools.py33compat``
-as they are required by other ``setuptools`` modules.

@@ -1,1 +1,0 @@
-Automatically exclude Qt plugins from UPX processing.

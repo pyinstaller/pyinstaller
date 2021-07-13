@@ -1,6 +1,0 @@
-The ``__file__`` attribute in the ``__main__`` module (entry-point
-script) is now set to the absolute file name inside the ``_MEIPASS``
-(as if script file existed there) instead of just script filename.
-This better matches the behavior of ``__file__`` in the unfrozen script,
-but might break the existing code that explicitly relies on the old
-frozen behavior.

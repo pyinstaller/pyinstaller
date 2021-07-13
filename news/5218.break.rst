@@ -1,4 +1,0 @@
-No longer collect ``pyconfig.h`` and ``makefile`` for :mod:`sysconfig`. Instead
-of :func:`~sysconfig.get_config_h_filename` and
-:func:`~sysconfig.get_makefile_filename`, you should use
-:func:`~sysconfig.get_config_vars` which no longer depends on those files.

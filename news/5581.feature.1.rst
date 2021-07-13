@@ -1,2 +1,0 @@
-Add ``--target-arch`` command-line switch to select target architecture
-for frozen application (macOS only).

@@ -1,1 +1,0 @@
-Add support for ``PyQt5`` 5.15.4.

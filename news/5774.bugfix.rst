@@ -1,3 +1,0 @@
-Prevent :func:`PyInstaller.utils.hooks.copy_metdata` from renaming
-``[...].dist-info`` metadata folders to ``[...].egg-info`` which breaks usage
-of ``pkg_resources.requires()`` with *extras*.

@@ -1,2 +1,0 @@
-(macOS) In windowed (.app bundle) mode, always log unhandled exception
-information to ``syslog``, regardless of debug mode.

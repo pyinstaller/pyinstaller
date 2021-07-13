@@ -1,2 +1,0 @@
-(macOS) The drag & drop file paths passed to app bundles built in
-``onedir`` mode are now reflected in ``sys.argv``.

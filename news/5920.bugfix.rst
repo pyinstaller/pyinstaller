@@ -1,3 +1,0 @@
-(macOS) App bundles built in ``onedir`` mode now filter out ``-psnxxx˙`
-command-line argument from ``sys.argv``, to keep behavior consistent
-with bundles built in ``onefile`` mode.

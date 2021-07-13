@@ -1,3 +1,0 @@
-Fix a bug in :ref:`ctypes dependency scanning <Ctypes Dependencies>` which
-caused references to be missed if the preceding code contains more than
-256 names or 256 literals.

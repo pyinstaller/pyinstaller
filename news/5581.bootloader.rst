@@ -1,2 +1,0 @@
-(macOS) Build bootloader as ``universal2`` binary by default (can
-be disabled by passing ``--no-universal2`` to waf).
