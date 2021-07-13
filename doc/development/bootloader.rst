@@ -1,6 +1,0 @@
-.. _bootloader:
-
-Bootloader Internals
---------------------
-
-
