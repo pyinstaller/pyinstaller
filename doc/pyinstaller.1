@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "PYINSTALLER" "1" "2021-04-17" "4.3" "PyInstaller"
+.TH "PYINSTALLER" "1" "2021-07-13" "4.4" "PyInstaller"
 .SH NAME
 pyinstaller \- Configure and build a PyInstaller project in one run
 .
@@ -55,6 +55,17 @@ If you pass a \fI\&.spec\fP\-file, this will be processed and most options given
 the command\-line will have no effect.
 Please see the PyInstaller Manual for more information.
 .SH OPTIONS
+.SS Positional Arguments
+.sp
+scriptname
+.INDENT 0.0
+.INDENT 3.5
+name of scriptfiles to be processed or exactly one .spec\-file. If a
+\&.spec\-file is specified, most options are unnecessary and are
+ignored.
+.UNINDENT
+.UNINDENT
+.SS Optional Arguments
 .INDENT 0.0
 .TP
 .B \-h\fP,\fB  \-\-help
@@ -67,181 +78,173 @@ Show program version info and exit.
 Where to put the bundled app (default: .dist)
 .TP
 .BI \-\-workpath \ WORKPATH
-Where to put all the temporary work files, .log, .pyz
-and etc. (default: .build)
+Where to put all the temporary work files, .log, .pyz and etc. (default:
+\&.build)
 .TP
 .B \-y\fP,\fB  \-\-noconfirm
-Replace output directory (default:
-SPECPATHdistSPECNAME) without asking for
-confirmation
+Replace output directory (default: SPECPATHdistSPECNAME) without asking
+for confirmation
 .TP
 .BI \-\-upx\-dir \ UPX_DIR
-Path to UPX utility (default: search the execution
-path)
+Path to UPX utility (default: search the execution path)
 .TP
 .B \-a\fP,\fB  \-\-ascii
-Do not include unicode encoding support (default:
-included if available)
+Do not include unicode encoding support (default: included if available)
 .TP
 .B \-\-clean
-Clean PyInstaller cache and remove temporary files
-before building.
+Clean PyInstaller cache and remove temporary files before building.
 .TP
 .BI \-\-log\-level \ LEVEL
-Amount of detail in build\-time console messages. LEVEL
-may be one of TRACE, DEBUG, INFO, WARN, ERROR,
-CRITICAL (default: INFO).
+Amount of detail in build\-time console messages. LEVEL may be one of TRACE,
+DEBUG, INFO, WARN, ERROR, CRITICAL (default: INFO).
 .UNINDENT
-.SS What to generate
+.SS What To Generate
 .INDENT 0.0
 .TP
 .B \-D\fP,\fB  \-\-onedir
-Create a one\-folder bundle containing an executable
-(default)
+Create a one\-folder bundle containing an executable (default)
 .TP
 .B \-F\fP,\fB  \-\-onefile
 Create a one\-file bundled executable.
 .TP
 .BI \-\-specpath \ DIR
-Folder to store the generated spec file (default:
-current directory)
+Folder to store the generated spec file (default: current directory)
 .TP
 .BI \-n \ NAME\fR,\fB \ \-\-name \ NAME
-Name to assign to the bundled app and spec file
-(default: first script\(aqs basename)
+Name to assign to the bundled app and spec file (default: first script\(aqs
+basename)
 .UNINDENT
-.SS What to bundle, where to search
+.SS What To Bundle, Where To Search
 .INDENT 0.0
 .TP
 .BI \-\-add\-data \ <SRC;DEST or SRC:DEST>
-Additional non\-binary files or folders to be added to
-the executable. The path separator is platform
-specific, \fBos.pathsep\fP (which is \fB;\fP on Windows
-and \fB:\fP on most unix systems) is used. This option
-can be used multiple times.
+Additional non\-binary files or folders to be added to the executable. The
+path separator is platform specific, \fBos.pathsep\fP (which is \fB;\fP on
+Windows and \fB:\fP on most unix systems) is used. This option can be used
+multiple times.
 .TP
 .BI \-\-add\-binary \ <SRC;DEST or SRC:DEST>
-Additional binary files to be added to the executable.
-See the \fB\-\-add\-data\fP option for more details. This
-option can be used multiple times.
+Additional binary files to be added to the executable. See the
+\fB\-\-add\-data\fP option for more details. This option can be used multiple
+times.
 .TP
 .BI \-p \ DIR\fR,\fB \ \-\-paths \ DIR
-A path to search for imports (like using PYTHONPATH).
-Multiple paths are allowed, separated by \(aq;\(aq, or use
-this option multiple times
+A path to search for imports (like using PYTHONPATH). Multiple paths are
+allowed, separated by \fB\(aq;\(aq\fP, or use this option
+multiple times. Equivalent to supplying the \fBpathex\fP argument in the spec
+file.
 .TP
 .BI \-\-hidden\-import \ MODULENAME\fR,\fB \ \-\-hiddenimport \ MODULENAME
-Name an import not visible in the code of the
-script(s). This option can be used multiple times.
-.TP
-.BI \-\-collect\-submodules \ MODULENAME
-Collect all submodules from the specified package or
-module. This option can be used multiple times.
-.TP
-.BI \-\-collect\-data \ MODULENAME\fR,\fB \ \-\-collect\-datas \ MODULENAME
-Collect all data from the specified package or module.
-This option can be used multiple times.
-.TP
-.BI \-\-collect\-binaries \ MODULENAME
-Collect all binaries from the specified package or
-module. This option can be used multiple times.
-.TP
-.BI \-\-collect\-all \ MODULENAME
-Collect all submodules, data files, and binaries from
-the specified package or module. This option can be
+Name an import not visible in the code of the script(s). This option can be
 used multiple times.
 .TP
+.BI \-\-collect\-submodules \ MODULENAME
+Collect all submodules from the specified package or module. This option
+can be used multiple times.
+.TP
+.BI \-\-collect\-data \ MODULENAME\fR,\fB \ \-\-collect\-datas \ MODULENAME
+Collect all data from the specified package or module. This option can be
+used multiple times.
+.TP
+.BI \-\-collect\-binaries \ MODULENAME
+Collect all binaries from the specified package or module. This option can
+be used multiple times.
+.TP
+.BI \-\-collect\-all \ MODULENAME
+Collect all submodules, data files, and binaries from the specified package
+or module. This option can be used multiple times.
+.TP
 .BI \-\-copy\-metadata \ PACKAGENAME
-Copy metadata for the specified package. This option
-can be used multiple times.
+Copy metadata for the specified package. This option can be used multiple
+times.
 .TP
-.BI \-\-additional\-hooks\-dir \ HOOKSPATH
-An additional path to search for hooks. This option
-can be used multiple times.
-.TP
-.BI \-\-runtime\-hook \ RUNTIME_HOOKS
-Path to a custom runtime hook file. A runtime hook is
-code that is bundled with the executable and is
-executed before any other code or module to set up
-special features of the runtime environment. This
+.BI \-\-recursive\-copy\-metadata \ PACKAGENAME
+Copy metadata for the specified package and all its dependencies. This
 option can be used multiple times.
 .TP
+.BI \-\-additional\-hooks\-dir \ HOOKSPATH
+An additional path to search for hooks. This option can be used multiple
+times.
+.TP
+.BI \-\-runtime\-hook \ RUNTIME_HOOKS
+Path to a custom runtime hook file. A runtime hook is code that is bundled
+with the executable and is executed before any other code or module to set
+up special features of the runtime environment. This option can be used
+multiple times.
+.TP
 .BI \-\-exclude\-module \ EXCLUDES
-Optional module or package (the Python name, not the
-path name) that will be ignored (as though it was not
-found). This option can be used multiple times.
+Optional module or package (the Python name, not the path name) that will
+be ignored (as though it was not found). This option can be used multiple
+times.
 .TP
 .BI \-\-key \ KEY
 The key used to encrypt Python bytecode.
+.TP
+.BI \-\-splash \ IMAGE_FILE
+(EXPERIMENTAL) Add an splash screen with the image IMAGE_FILE to the
+application. The splash screen can show progress updates
+while unpacking.
 .UNINDENT
-.SS How to generate
+.SS How To Generate
+.sp
+\-d {all,imports,bootloader,noarchive}, \-\-debug {all,imports,bootloader,noarchive}
+.INDENT 0.0
+.INDENT 3.5
+Provide assistance with debugging a frozen application. This argument may
+be provided multiple times to select several of the following options.  \-
+all: All three of the following options.  \- imports: specify the \-v option
+to the underlying   Python interpreter, causing it to print a message
+each time a module is initialized, showing the   place (filename or
+built\-in module) from which it   is loaded. See
+\fI\%https://docs.python.org/3/using/cmdline.html#id4\fP\&.  \- bootloader: tell the
+bootloader to issue progress   messages while initializing and starting the
+bundled app. Used to diagnose problems with   missing imports.  \-
+noarchive: instead of storing all frozen Python   source files as an
+archive inside the resulting   executable, store them as files in the
+resulting   output directory.
+.UNINDENT
+.UNINDENT
 .INDENT 0.0
 .TP
-.BI \-d \ <all,imports,bootloader,noarchive>\fR,\fB \ \-\-debug \ <all,imports,bootloader,noarchive>
-Provide assistance with debugging a frozen
-application. This argument may be provided multiple
-times to select several of the following options.
-.INDENT 7.0
-.IP \(bu 2
-all: All three of the following options.
-.IP \(bu 2
-imports: specify the \-v option to the underlying
-Python interpreter, causing it to print a message
-each time a module is initialized, showing the
-place (filename or built\-in module) from which it
-is loaded. See
-\fI\%https://docs.python.org/3/using/cmdline.html#id4\fP\&.
-.IP \(bu 2
-bootloader: tell the bootloader to issue progress
-messages while initializing and starting the
-bundled app. Used to diagnose problems with
-missing imports.
-.IP \(bu 2
-noarchive: instead of storing all frozen Python
-source files as an archive inside the resulting
-executable, store them as files in the resulting
-output directory.
-.UNINDENT
-.TP
 .B \-s\fP,\fB  \-\-strip
-Apply a symbol\-table strip to the executable and
-shared libs (not recommended for Windows)
+Apply a symbol\-table strip to the executable and shared libs (not
+recommended for Windows)
 .TP
 .B \-\-noupx
-Do not use UPX even if it is available (works
-differently between Windows and *nix)
+Do not use UPX even if it is available (works differently between Windows
+and *nix)
 .TP
 .BI \-\-upx\-exclude \ FILE
-Prevent a binary from being compressed when using upx.
-This is typically used if upx corrupts certain
-binaries during compression. FILE is the filename of
-the binary without path. This option can be used
+Prevent a binary from being compressed when using upx. This is typically
+used if upx corrupts certain binaries during compression.
+FILE is the filename of the binary without path. This option can be used
 multiple times.
 .UNINDENT
-.SS Windows and Mac OS X specific options
+.SS Windows And Mac Os X Specific Options
 .INDENT 0.0
 .TP
 .B \-c\fP,\fB  \-\-console\fP,\fB  \-\-nowindowed
-Open a console window for standard i/o (default). On
-Windows this option will have no effect if the first
-script is a \(aq.pyw\(aq file.
+Open a console window for standard i/o (default). On Windows this option
+will have no effect if the first script is a \(aq.pyw\(aq file.
 .TP
 .B \-w\fP,\fB  \-\-windowed\fP,\fB  \-\-noconsole
-Windows and Mac OS X: do not provide a console window
-for standard i/o. On Mac OS X this also triggers
-building an OS X .app bundle. On Windows this option
-will be set if the first script is a \(aq.pyw\(aq file. This
-option is ignored in *NIX systems.
+Windows and Mac OS X: do not provide a console window for standard i/o. On
+Mac OS X this also triggers building an OS X .app bundle. On Windows this
+option will be set if the first script is a \(aq.pyw\(aq file. This option is
+ignored in *NIX systems.
 .TP
 .BI \-i \ <FILE.ico or FILE.exe,ID or FILE.icns or "NONE">\fR,\fB \ \-\-icon \ <FILE.ico or FILE.exe,ID or FILE.icns or "NONE">
-FILE.ico: apply that icon to a Windows executable.
-FILE.exe,ID, extract the icon with ID from an exe.
-FILE.icns: apply the icon to the .app bundle on Mac OS
-X. Use "NONE" to not apply any icon, thereby making
-the OS to show some default (default: apply
-PyInstaller\(aqs icon)
+FILE.ico: apply that icon to a Windows executable. FILE.exe,ID, extract the
+icon with ID from an exe. FILE.icns: apply the icon to the .app bundle on
+Mac OS X. Use "NONE" to not apply any icon, thereby making the OS to show
+some default (default: apply PyInstaller\(aqs icon)
+.TP
+.B \-\-disable\-windowed\-traceback
+Disable traceback dump of unhandled exception in windowed (noconsole) mode
+(Windows and macOS only), and instead display a message that this feature
+is disabled.
 .UNINDENT
-.SS Windows specific options
+.SS Windows Specific Options
 .INDENT 0.0
 .TP
 .BI \-\-version\-file \ FILE
@@ -251,71 +254,76 @@ add a version resource from FILE to the exe
 add manifest FILE or XML to the exe
 .TP
 .BI \-r \ RESOURCE\fR,\fB \ \-\-resource \ RESOURCE
-Add or update a resource to a Windows executable. The
-RESOURCE is one to four items,
-FILE[,TYPE[,NAME[,LANGUAGE]]]. FILE can be a data file
-or an exe/dll. For data files, at least TYPE and NAME
-must be specified. LANGUAGE defaults to 0 or may be
-specified as wildcard * to update all resources of the
-given TYPE and NAME. For exe/dll files, all resources
-from FILE will be added/updated to the final
-executable if TYPE, NAME and LANGUAGE are omitted or
-specified as wildcard *.This option can be used
-multiple times.
+Add or update a resource to a Windows executable. The RESOURCE is one to
+four items, FILE[,TYPE[,NAME[,LANGUAGE]]]. FILE can be a data file or an
+exe/dll. For data files, at least TYPE and NAME must be specified. LANGUAGE
+defaults to 0 or may be specified as wildcard * to update all resources of
+the given TYPE and NAME. For exe/dll files, all resources from FILE will be
+added/updated to the final executable if TYPE, NAME and LANGUAGE are
+omitted or specified as wildcard *.This option can be used multiple times.
 .TP
 .B \-\-uac\-admin
-Using this option creates a Manifest which will
-request elevation upon application restart.
+Using this option creates a Manifest which will request elevation upon
+application restart.
 .TP
 .B \-\-uac\-uiaccess
-Using this option allows an elevated application to
-work with Remote Desktop.
+Using this option allows an elevated application to work with Remote
+Desktop.
 .UNINDENT
-.SS Windows Side\-by\-side Assembly searching options (advanced)
+.SS Windows Side\-By\-Side Assembly Searching Options (Advanced)
 .INDENT 0.0
 .TP
 .B \-\-win\-private\-assemblies
-Any Shared Assemblies bundled into the application
-will be changed into Private Assemblies. This means
-the exact versions of these assemblies will always be
-used, and any newer versions installed on user
-machines at the system level will be ignored.
+Any Shared Assemblies bundled into the application will be changed into
+Private Assemblies. This means the exact versions of these assemblies will
+always be used, and any newer versions installed on user machines at the
+system level will be ignored.
 .TP
 .B \-\-win\-no\-prefer\-redirects
-While searching for Shared or Private Assemblies to
-bundle into the application, PyInstaller will prefer
-not to follow policies that redirect to newer
-versions, and will try to bundle the exact versions of
-the assembly.
+While searching for Shared or Private Assemblies to bundle into the
+application, PyInstaller will prefer not to follow policies that redirect
+to newer versions, and will try to bundle the exact versions of the
+assembly.
 .UNINDENT
-.SS Mac OS X specific options
+.SS Mac Os X Specific Options
 .INDENT 0.0
 .TP
 .BI \-\-osx\-bundle\-identifier \ BUNDLE_IDENTIFIER
-Mac OS X .app bundle identifier is used as the default
-unique program name for code signing purposes. The
-usual form is a hierarchical name in reverse DNS
-notation. For example:
-com.mycompany.department.appname (default: first
+Mac OS X .app bundle identifier is used as the default unique program name
+for code signing purposes. The usual form is a hierarchical name in reverse
+DNS notation. For example: com.mycompany.department.appname (default: first
 script\(aqs basename)
+.TP
+.BI \-\-target\-architecture \ ARCH\fR,\fB \ \-\-target\-arch \ ARCH
+Target architecture (macOS only; valid values: x86_64, arm64, universal2).
+Enables switching between universal2 and single\-arch version of frozen
+application (provided python installation supports the target
+architecture). If not target architecture is not specified, the current
+running architecture is targeted.
+.TP
+.BI \-\-codesign\-identity \ IDENTITY
+Code signing identity (macOS only). Use the provided identity to sign
+collected binaries and generated executable. If signing identity is not
+provided, ad\-hoc signing is performed instead.
+.TP
+.BI \-\-osx\-entitlements\-file \ FILENAME
+Entitlements file to use when code\-signing the collected binaries (macOS
+only).
 .UNINDENT
-.SS Rarely used special options
+.SS Rarely Used Special Options
 .INDENT 0.0
 .TP
 .BI \-\-runtime\-tmpdir \ PATH
-Where to extract libraries and support files in
-\fIonefile\fP\-mode. If this option is given, the
-bootloader will ignore any temp\-folder location
-defined by the run\-time OS. The \fB_MEIxxxxxx\fP\-folder
-will be created here. Please use this option only if
-you know what you are doing.
+Where to extract libraries and support files in \fIonefile\fP\-mode. If this
+option is given, the bootloader will ignore any temp\- folder location
+defined by the run\-time OS. The \fB_MEIxxxxxx\fP\-folder will be created here.
+Please use this option only if you know what you are doing.
 .TP
 .B \-\-bootloader\-ignore\-signals
-Tell the bootloader to ignore signals rather than
-forwarding them to the child process. Useful in
-situations where e.g. a supervisor process signals
-both the bootloader and child (e.g. via a process
-group) to avoid signalling the child twice.
+Tell the bootloader to ignore signals rather than forwarding them to the
+child process. Useful in situations where e.g. a supervisor process signals
+both the bootloader and child (e.g. via a process group) to avoid
+signalling the child twice.
 .UNINDENT
 .SH ENVIRONMENT VARIABLES
 .INDENT 0.0
