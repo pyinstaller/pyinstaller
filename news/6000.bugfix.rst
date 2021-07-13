@@ -1,0 +1,2 @@
+(Cygwin) Add ``_MEIPASS`` to DLL search path to fix loading of python shared
+library in onefile builds made in cygwin environment and executed outside of it.
