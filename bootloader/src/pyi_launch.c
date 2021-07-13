@@ -474,14 +474,14 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
     __main__ = PI_PyImport_AddModule("__main__");
 
     if (!__main__) {
-        FATALERROR("Could not get __main__ module.");
+        FATALERROR("Could not get __main__ module.\n");
         return -1;
     }
 
     main_dict = PI_PyModule_GetDict(__main__);
 
     if (!main_dict) {
-        FATALERROR("Could not get __main__ module's dict.");
+        FATALERROR("Could not get __main__ module's dict.\n");
         return -1;
     }
 

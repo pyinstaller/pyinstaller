@@ -1479,7 +1479,7 @@ static pascal OSErr handle_apple_event(const AppleEvent *theAppleEvent, AppleEve
     default:
         /* Not 'GURL', 'odoc', 'rapp', or 'actv'  -- this is not reached unless there is a
          * programming error in the code that sets up the handler(s) in pyi_process_apple_events. */
-        OTHERERROR("LOADER [AppleEvent]: %s called with unexpected event type '%s'!",
+        OTHERERROR("LOADER [AppleEvent]: %s called with unexpected event type '%s'!\n",
                    __FUNCTION__, CC2Str(evtCode));
         return errAEEventNotHandled;
     }

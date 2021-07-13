@@ -175,7 +175,7 @@ pyi_win32_wcs_to_mbs(const wchar_t *wstr)
 
     str = (char *)calloc(len + 1, sizeof(char));
     if (str == NULL) {
-        FATAL_WINERROR("win32_wcs_to_mbs", "Out of memory.");
+        FATAL_WINERROR("win32_wcs_to_mbs", "Out of memory.\n");
         return NULL;
     };
 
@@ -310,7 +310,7 @@ pyi_win32_utils_to_utf8(char *str, const wchar_t *wstr, size_t len)
 
         output = (char *)calloc(len + 1, sizeof(char));
         if (output == NULL) {
-            FATAL_WINERROR("win32_utils_to_utf8", "Out of memory.");
+            FATAL_WINERROR("win32_utils_to_utf8", "Out of memory.\n");
             return NULL;
         };
     }
@@ -374,7 +374,7 @@ pyi_win32_utils_from_utf8(wchar_t *wstr, const char *str, size_t wlen)
 
         output = (wchar_t *)calloc(wlen + 1, sizeof(wchar_t));
         if (output == NULL) {
-            FATAL_WINERROR("win32_utils_from_utf8", "Out of memory.");
+            FATAL_WINERROR("win32_utils_from_utf8", "Out of memory.\n");
             return NULL;
         };
     }
