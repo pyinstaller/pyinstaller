@@ -576,19 +576,6 @@ pyi_remove_temp_path(const char *dir)
 }
 #endif /* ifdef _WIN32 */
 
-/* TODO is this function still used? Could it be removed? */
-/*
- * If binaries were extracted, this should be called
- * to remove them
- */
-void
-cleanUp(ARCHIVE_STATUS *status)
-{
-    if (status->temppath[0]) {
-        pyi_remove_temp_path(status->temppath);
-    }
-}
-
 /*
  * helper for extract2fs
  * which may try multiple places

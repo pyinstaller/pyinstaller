@@ -596,66 +596,6 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
     return 0;
 }
 
-/*
- * call a simple "int func(void)" entry point.  Assumes such a function
- * exists in the main namespace.
- * Return non zero on failure, with -2 if the specific error is
- * that the function does not exist in the namespace.
- */
-int
-callSimpleEntryPoint(char *name, int *presult)
-{
-    int rc = -1;
-    /* Objects with no ref. */
-    PyObject *mod, *dict;
-    /* Objects with refs to kill. */
-    PyObject *func = NULL, *pyresult = NULL;
-
-    mod = PI_PyImport_AddModule("__main__");  /* NO ref added */
-
-    if (!mod) {
-        VS("LOADER: No __main__\n");
-        goto done;
-    }
-    dict = PI_PyModule_GetDict(mod);  /* NO ref added */
-
-    if (!mod) {
-        VS("LOADER: No __dict__\n");
-        goto done;
-    }
-    func = PI_PyDict_GetItemString(dict, name);
-
-    if (func == NULL) {  /* should explicitly check KeyError */
-        VS("LOADER: CallSimpleEntryPoint can't find the function name\n");
-        rc = -2;
-        goto done;
-    }
-    pyresult = PI_PyObject_CallFunction(func, "");
-
-    if (pyresult == NULL) {
-        goto done;
-    }
-    PI_PyErr_Clear();
-    *presult = PI_PyLong_AsLong(pyresult);
-    rc = PI_PyErr_Occurred() ? -1 : 0;
-    VS( rc ? "LOADER: Finished with failure\n" : "LOADER: Finished OK\n");
-    /* all done! */
-done:
-    Py_XDECREF(func);
-    Py_XDECREF(pyresult);
-
-    /* can't leave Python error set, else it may
-     *  cause failures in later async code */
-    if (rc) {
-        /* But we will print them 'cos they may be useful */
-        PI_PyErr_Print();
-    }
-    PI_PyErr_Clear();
-    return rc;
-}
-
-/* For finer grained control. */
-
 void
 pyi_launch_initialize(ARCHIVE_STATUS * status)
 {
