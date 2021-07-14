@@ -1,0 +1,2 @@
+Add a hook for ``pandas.io.formats.style`` to deal with indirect import of 
+``jinja2`` and the missing template file.
