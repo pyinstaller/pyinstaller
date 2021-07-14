@@ -391,6 +391,18 @@ def test_pandas_extension(pyi_builder):
         """)
 
 
+@importorskip('pandas')
+@importorskip('jinja2')
+def test_pandas_io_formats_style(pyi_builder):
+    # pandas.io.formats.style requires jinja2 as hiddenimport, as
+    # well as collected template file from pandas/io/formats/templates.
+    # See #6008 and #6009.
+    pyi_builder.test_source(
+        """
+        import pandas.io.formats.style
+        """)
+
+
 @importorskip('win32ctypes')
 @pytest.mark.skipif(not is_win,
                     reason='pywin32-ctypes is supported only on Windows')
