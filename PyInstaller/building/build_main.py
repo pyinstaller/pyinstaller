@@ -450,8 +450,12 @@ class Analysis(Target):
         for name, co in ctypes_code_objs.items():
             # Get dlls that might be needed by ctypes.
             logger.debug('Scanning %s for shared libraries or dlls', name)
-            ctypes_binaries = scan_code_for_ctypes(co)
-            self.binaries.extend(set(ctypes_binaries))
+            try:
+                ctypes_binaries = scan_code_for_ctypes(co)
+                self.binaries.extend(set(ctypes_binaries))
+            except Exception as ex:
+                raise RuntimeError(f"Failed to scan the module '{name}'. "
+                                   f"This is a bug. Please report it.") from ex
 
         self.datas.extend(
             (dest, source, "DATA") for (dest, source) in

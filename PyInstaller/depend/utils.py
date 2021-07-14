@@ -219,7 +219,8 @@ def _scan_code_for_ctypes_getattr(code: CodeType):
 
     key_names = ("cdll", "oledll", "pydll", "windll")
 
-    for (name, attrs) in _ctypes_getattr_regex.findall(code.co_code):
+    for match in bytecode.finditer(_ctypes_getattr_regex, code.co_code):
+        name, attrs = match.groups()
         name = bytecode.load(name, code)
         attrs = bytecode.loads(attrs, code)
 
