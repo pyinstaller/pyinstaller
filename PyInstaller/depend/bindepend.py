@@ -602,8 +602,8 @@ def _getImports_ldd(pth):
                 if lib not in rslt:
                     rslt.add(lib)
             else:
-                logger.error('Can not find %s in path %s (needed by %s)',
-                             name, lib, pth)
+                logger.warning('Cannot find %s in path %s (needed by %s)',
+                               name, lib, pth)
     return rslt
 
 
@@ -699,7 +699,7 @@ def _getImports_macholib(pth):
                     break
             # Log error if no existing file found.
             if not final_lib:
-                logger.error('Can not find path %s (needed by %s)', lib, pth)
+                logger.warning('Cannot find path %s (needed by %s)', lib, pth)
 
         # Macholib has to be used to get absolute path to libraries.
         else:
@@ -716,8 +716,8 @@ def _getImports_macholib(pth):
                 # we do not collect system libraries on any macOS version
                 # anyway, so suppress the corresponding error messages.
                 if not in_system_path(lib):
-                    logger.error('Can not find path %s (needed by %s)',
-                                 lib, pth)
+                    logger.warning('Cannot find path %s (needed by %s)',
+                                   lib, pth)
 
     return rslt
 
