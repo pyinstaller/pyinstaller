@@ -604,6 +604,14 @@ def _getImports_ldd(pth):
             else:
                 logger.warning('Cannot find %s in path %s (needed by %s)',
                                name, lib, pth)
+        elif line.endswith("not found"):
+            # On glibc-based linux distributions, missing libraries
+            # are marked with name.so => not found
+            tokens = line.split('=>')
+            if len(tokens) != 2:
+                continue
+            name = tokens[0].strip()
+            logger.warning('Cannot find %s (needed by %s)', name, pth)
     return rslt
 
 
