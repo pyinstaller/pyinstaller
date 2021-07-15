@@ -26,7 +26,8 @@ import os
 import re
 
 
-from PyInstaller.compat import is_win, is_win_10, is_unix, is_aix, is_darwin
+from PyInstaller.compat import is_win, is_win_10, is_unix, is_aix, is_darwin, \
+    is_linux
 
 
 import PyInstaller.log as logging
@@ -274,6 +275,11 @@ def include_library(libname):
 # libraries
 _warning_suppressions = [
 ]
+
+# On some systems (e.g., openwrt), libc.so might point to ldd. Suppress
+# warnings about it.
+if is_linux:
+    _warning_suppressions.append(r'ldd')
 
 # Suppress false warnings on win 10 and UCRT (see issue #1566).
 if is_win_10:
