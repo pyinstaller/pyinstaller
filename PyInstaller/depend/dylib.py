@@ -26,7 +26,7 @@ import os
 import re
 
 
-from PyInstaller.compat import is_win, is_unix, is_aix, is_darwin
+from PyInstaller.compat import is_win, is_win_10, is_unix, is_aix, is_darwin
 
 
 import PyInstaller.log as logging
@@ -268,6 +268,39 @@ def include_library(libname):
     else:
         # By default include library.
         return True
+
+
+# Patterns for suppressing warnings about missing dynamically linked
+# libraries
+_warning_suppressions = [
+]
+
+# Suppress false warnings on win 10 and UCRT (see issue #1566).
+if is_win_10:
+    _warning_suppressions.append(r'api-ms-win-crt.*')
+
+
+class MissingLibWarningSuppressionList:
+    def __init__(self):
+        self.regex = re.compile('|'.join(_warning_suppressions), re.I)
+
+    def search(self, libname):
+        # Running re.search() on '' regex never returns None.
+        if _warning_suppressions:
+            return self.regex.match(os.path.basename(libname))
+        else:
+            return False
+
+
+missing_lib_warning_suppression_list = MissingLibWarningSuppressionList()
+
+
+def warn_missing_lib(libname):
+    """
+    Check if a missing-library warning should be displayed for the
+    given library name (or full path).
+    """
+    return not missing_lib_warning_suppression_list.search(libname)
 
 
 def mac_set_relative_dylib_deps(libname, distname):
