@@ -274,6 +274,11 @@ def include_library(libname):
 # Patterns for suppressing warnings about missing dynamically linked
 # libraries
 _warning_suppressions = [
+    # We fail to discover shiboken2 (PySide2) and shiboken6 (PySide6)
+    # shared libraries due to the way the packages set up the search
+    # path to the library, which is located in a separate package.
+    # Suppress the harmless warnings to avoid confusion.
+    r'(lib)?shiboken.*',
 ]
 
 # On some systems (e.g., openwrt), libc.so might point to ldd. Suppress
