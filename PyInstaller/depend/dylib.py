@@ -26,8 +26,7 @@ import os
 import re
 
 
-from PyInstaller.compat import is_win, is_win_10, is_unix, is_aix, is_darwin, \
-    is_linux
+from PyInstaller import compat
 
 
 import PyInstaller.log as logging
@@ -168,13 +167,13 @@ _aix_excludes = {
 }
 
 
-if is_win:
+if compat.is_win:
     _includes |= _win_includes
     _excludes |= _win_excludes
-elif is_aix:
+elif compat.is_aix:
     # The exclude list for AIX differs from other *nix platforms.
     _excludes |= _aix_excludes
-elif is_unix:
+elif compat.is_unix:
     # Common excludes for *nix platforms -- except AIX.
     _excludes |= _unix_excludes
 
@@ -207,7 +206,7 @@ exclude_list = ExcludeList()
 include_list = IncludeList()
 
 
-if is_darwin:
+if compat.is_darwin:
     # On Mac use macholib to decide if a binary is a system one.
     from macholib import util
 
@@ -228,7 +227,7 @@ if is_darwin:
 
     exclude_list = MacExcludeList(exclude_list)
 
-elif is_win:
+elif compat.is_win:
     class WinExcludeList(object):
         def __init__(self, global_exclude_list):
             self._exclude_list = global_exclude_list
@@ -283,11 +282,11 @@ _warning_suppressions = [
 
 # On some systems (e.g., openwrt), libc.so might point to ldd. Suppress
 # warnings about it.
-if is_linux:
+if compat.is_linux:
     _warning_suppressions.append(r'ldd')
 
 # Suppress false warnings on win 10 and UCRT (see issue #1566).
-if is_win_10:
+if compat.is_win_10:
     _warning_suppressions.append(r'api-ms-win-crt.*')
 
 
