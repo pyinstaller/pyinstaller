@@ -310,6 +310,13 @@ def __add_options(parser):
                    'not the path name) that will be ignored (as though '
                    'it was not found). '
                    'This option can be used multiple times.')
+    g.add_argument('--include-syslibs', dest='syslibs',
+                   help='Comma-separated list of system libraries (without '
+                   'a "lib" prefix) to include in the bundle. Default is to '
+                   'include all required libraries, but if this option is '
+                   'used then only the given libs will be bundled. To exclude '
+                   'all (other than libpython which is always included), pass '
+                   'an empty list. ')
     g.add_argument('--key', dest='key',
                    help='The key used to encrypt Python bytecode.')
     g.add_argument('--splash',
@@ -501,7 +508,7 @@ def main(scripts, name=None, onefile=None,
          bootloader_ignore_signals=False, disable_windowed_traceback=False,
          datas=None, binaries=None, icon_file=None, manifest=None, resources=None, bundle_identifier=None,
          hiddenimports=None, hookspath=None, key=None, runtime_hooks=None,
-         excludes=None, uac_admin=False, uac_uiaccess=False,
+         excludes=None, syslibs=None, uac_admin=False, uac_uiaccess=False,
          win_no_prefer_redirects=False, win_private_assemblies=False,
          collect_submodules=None, collect_binaries=None, collect_data=None,
          collect_all=None, copy_metadata=None, splash=None,
@@ -635,8 +642,10 @@ def main(scripts, name=None, onefile=None,
         'hookspath': hookspath,
         # List with custom runtime hook files.
         'runtime_hooks': runtime_hooks or [],
-        # List of modules/pakages to ignore.
+        # List of modules/packages to ignore.
         'excludes': excludes or [],
+        # List of system libraries to include
+        'syslibs': syslibs,
         # only Windows and Mac OS X distinguish windowed and console apps
         'console': console,
         'disable_windowed_traceback': disable_windowed_traceback,

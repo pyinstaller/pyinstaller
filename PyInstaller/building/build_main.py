@@ -99,6 +99,27 @@ def setupUPXFlags():
     compat.setenv("UPX", f)
 
 
+# Filter for syslibs
+def _should_include_binary(binary_tuple, syslibs):
+    dest = binary_tuple[0]
+    if not dest.startswith('lib') or dest.startswith('lib-dynload'):
+        return True
+    if dest.startswith('libpython'):
+        return True
+    src = binary_tuple[1]
+    if src.startswith('/lib'):
+        src = src.split('/', 3)[2]
+    elif src.startswith('/usr/lib'):
+        src = src.split('/', 4)[3]
+    else:
+        return True
+    for syslib in syslibs.split(','):
+        lib = 'lib' + syslib
+        if src.startswith(lib + '.') or src.startswith(lib + '-'):
+            return True
+    return False
+
+
 class Analysis(Target):
     """
     Class does analysis of the user's main Python scripts.
@@ -132,7 +153,7 @@ class Analysis(Target):
 
     def __init__(self, scripts, pathex=None, binaries=None, datas=None,
                  hiddenimports=None, hookspath=None, hooksconfig=None,
-                 excludes=None, runtime_hooks=None, cipher=None,
+                 excludes=None, syslibs=None, runtime_hooks=None, cipher=None,
                  win_no_prefer_redirects=False, win_private_assemblies=False,
                  noarchive=False):
         """
@@ -155,6 +176,10 @@ class Analysis(Target):
         excludes
                 An optional list of module or package names (their Python names,
                 not path names) that will be ignored (as though they were not found).
+        syslibs
+                An optional list of system libraries to keep included in the binaries.  
+                If not set, all will be included.  If an empty list, none will be included,
+                except for libpython which is always included.
         runtime_hooks
                 An optional list of scripts to use as users' runtime hooks. Specified
                 as file names.
@@ -238,6 +263,7 @@ class Analysis(Target):
             self.hiddenimports.append('tinyaes')
 
         self.excludes = excludes or []
+        self.syslibs = syslibs
         self.scripts = TOC()
         self.pure = TOC()
         self.binaries = TOC()
@@ -535,6 +561,10 @@ class Analysis(Target):
                 self.datas.append((name, path, 'DATA'))
             # Store no source in the archive.
             self.pure = TOC()
+
+        # Filter unwanted system libraries from the binaries list
+        if self.syslibs is not None:
+            self.binaries = [i for i in self.binaries if _should_include_binary(i, self.syslibs)]
 
         # Write warnings about missing modules.
         self._write_warnings()
