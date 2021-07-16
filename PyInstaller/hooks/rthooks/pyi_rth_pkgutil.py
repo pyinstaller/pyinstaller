@@ -36,10 +36,6 @@ import pkgutil
 from pyimod03_importers import FrozenImporter
 
 
-SYS_PREFIX = sys._MEIPASS + os.path.sep
-SYS_PREFIXLEN = len(SYS_PREFIX)
-
-
 _orig_pkgutil_iter_modules = pkgutil.iter_modules
 
 
@@ -65,6 +61,10 @@ def _pyi_pkgutil_iter_modules(path=None, prefix=''):
             is_pkg = importer.is_package(entry)
             yield pkgutil.ModuleInfo(importer, prefix + entry, is_pkg)
     else:
+        # Declare SYS_PREFIX locally, to avoid clash with eponymous
+        # global symbol from pyi_rth_pkgutil hook.
+        SYS_PREFIX = sys._MEIPASS + os.path.sep
+        SYS_PREFIXLEN = len(SYS_PREFIX)
         # Only single path is supported, and it must start with
         # sys._MEIPASS
         pkg_path = os.path.normpath(path[0])
