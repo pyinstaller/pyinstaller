@@ -62,9 +62,8 @@ Requirements and Tested Platforms
 
  - PyInstaller should work on Windows 7 or newer, but we only officially support Windows 8+.
 
- - We don't support Python installed from the Windows store when not using virtual environments due to 
-   `permission errors <https://github.com/pyinstaller/pyinstaller/pull/4702>`_ 
-   that can't easily be fixed.
+ - Support for Python installed from the Windows store without using virtual
+   environments requires PyInstaller 4.4 or later.
     
 - GNU/Linux (32bit/64bit)
 
