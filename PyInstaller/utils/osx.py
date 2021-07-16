@@ -15,6 +15,7 @@ Utils for Mac OS X platform.
 """
 
 import os
+import math
 import shutil
 
 from PyInstaller.compat import base_prefix, exec_command_all
@@ -219,15 +220,16 @@ def fix_exe_for_code_signing(filename):
     symtab_sec.strsize += delta
     # .. as well as its parent __LINEDIT segment
     linkedit_seg.filesize += delta
-    # FIXME: do we actually need to adjust in-memory size as well? It
-    # seems unnecessary, as we have no use for the extended part being
-    # loaded in the executable's address space...
-    #linkedit_seg.vmsize += delta
+    # Compute new vmsize by rounding filesize up to full page size
+    page_size = (0x4000 if _get_arch_string(header.header).startswith('arm64')
+                 else 0x1000)
+    linkedit_seg.vmsize = \
+        math.ceil(linkedit_seg.filesize / page_size) * page_size
 
     # NOTE: according to spec, segments need to be aligned to page
     # boundaries: 0x4000 (16 kB) for arm64, 0x1000 (4 kB) for other arches.
     # But it seems we can get away without rounding and padding the segment
-    # size - perhaps because it's the last one?
+    # file size - perhaps because it is the last one?
 
     # Write changes
     with open(filename, 'rb+') as fp:
