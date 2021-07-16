@@ -25,6 +25,7 @@ forming a nice hierarchy rather than copied everywhere its needed.
 import dis
 import re
 from types import CodeType
+from typing import Pattern
 
 
 def _instruction_to_regex(x: str):
@@ -62,6 +63,32 @@ def bytecode_regex(pattern: bytes, flags=re.VERBOSE | re.DOTALL):
         pattern,
     )
     return re.compile(pattern, flags=flags)
+
+
+def finditer(pattern: Pattern, string):
+    """Call ``pattern.finditer(string)`` but remove any matches beginning on an
+    odd byte. i.e. match.start() is not a multiple of 2.
+
+    This should be used to avoid false positive matches where a bytecode pair's
+    argument is mistaken for an opcode.
+    """
+    matches = pattern.finditer(string)
+    while True:
+        for match in matches:
+            if match.start() % 2 == 0:
+                # All is good. This match starts on an OPCODE.
+                yield match
+            else:
+                # This match has started on an odd byte meaning that it's a
+                # false positive and should be skipped. There is a very slim
+                # chance that a genuine match overlaps this one and, because
+                # re.finditer() doesn't allow overlapping matches, it would be
+                # lost. To avoid that, restart the regex scan starting at the
+                # next even byte.
+                matches = pattern.finditer(string, match.start() + 1)
+                break
+        else:
+            break
 
 
 # language=PythonVerboseRegExp
@@ -150,7 +177,7 @@ def function_calls(code: CodeType) -> list:
     match: re.Match
     out = []
 
-    for match in _call_function_bytecode.finditer(code.co_code):
+    for match in finditer(_call_function_bytecode, code.co_code):
         function_root, methods, args, arg_count = match.groups()
 
         # For foo():

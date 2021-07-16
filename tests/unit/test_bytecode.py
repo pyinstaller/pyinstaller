@@ -3,6 +3,7 @@
 Tests for PyInstaller.depend.bytecode
 """
 
+import re
 from types import CodeType
 from textwrap import dedent, indent
 import operator
@@ -12,6 +13,7 @@ from PyInstaller.depend.bytecode import (
     function_calls,
     recursive_function_calls,
     any_alias,
+    finditer,
 )
 
 
@@ -177,3 +179,26 @@ def test_local_functions():
 
 def test_any_alias():
     assert tuple(any_alias("foo.bar.pop")) == ("foo.bar.pop", "bar.pop", "pop")
+
+
+def test_finditer():
+    """Test that bytecode.finditer() yields matches only that start on an even
+     byte (``match.start() % 2 == 0``).
+
+    There are 3 permutations here when considering a match:
+    - A match starts on an even byte:
+        That's good! Include that sequence.
+    - A single character match starts on an odd byte:
+        Ignore it. It's a false positive.
+    - A multi-character match starts on an odd byte:
+        This match will be a false positive but there may be a genuine match
+        shortly afterwards (in the case of the test below - it'll be the next
+        character) which overlaps with this one so we must override regex's
+        behaviour of ignoring overlapping matches to prevent these from getting
+        lost.
+
+    """
+    matches = list(finditer(re.compile(r"\d+"),
+                            "0123" " 456" "7 89" "0 12" " 3 4"))
+    aligned = [i.group() for i in matches]
+    assert aligned == ["0123", "567", "890", "12"]
