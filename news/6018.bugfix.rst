@@ -1,0 +1,2 @@
+Fix an error when rhtooks for ``pkgutil`` and ``pkg_resources`` are used
+together.
