@@ -22,7 +22,7 @@ import py
 # Local imports
 # -------------
 from PyInstaller.compat import is_win, is_darwin, is_linux
-from PyInstaller.utils.tests import importorskip, xfail, skipif
+from PyInstaller.utils.tests import importorskip, xfail, skipif, requires
 
 # :todo: find a way to get this from `conftest` or such
 # Directory with testing modules used in some tests.
@@ -106,7 +106,7 @@ def test_pygments(pyi_builder):
         """)
 
 
-@importorskip('zope.interface')
+@requires('zope.interface')
 def test_zope_interface(pyi_builder):
     # Tests that `nspkg.pth`-based namespace package are bundled properly.
     # The `nspkg.pth` file is created by setuptools and thus changes
@@ -199,7 +199,7 @@ def test_sqlite3(pyi_builder):
 # Note that @importorskip('scapy') isn't sufficient; this doesn't ask scapy to
 # import its backend dependencies (such as pcapy or dnet). scapy.all does import
 # the backends, skipping this test if they aren't installed.
-@importorskip('scapy.all')
+@requires('scapy >= 2.0')
 def test_scapy(pyi_builder):
     pyi_builder.test_source(
         """
@@ -218,7 +218,7 @@ def test_scapy(pyi_builder):
         """)
 
 
-@importorskip('scapy.all')
+@requires('scapy >= 2.0')
 def test_scapy2(pyi_builder):
     pyi_builder.test_source(
         """
@@ -227,7 +227,7 @@ def test_scapy2(pyi_builder):
         """)
 
 
-@importorskip('scapy.all')
+@requires('scapy >= 2.0')
 def test_scapy3(pyi_builder):
     pyi_builder.test_source(
         """
@@ -346,7 +346,7 @@ def test_pil_img_conversion(pyi_builder):
                   '--console'])
 
 
-@importorskip('PIL.ImageQt')
+@requires("pillow >= 1.1.6")
 @importorskip('PyQt5')
 def test_pil_PyQt5(pyi_builder):
     # hook-PIL is excluding PyQt5, but is must still be included

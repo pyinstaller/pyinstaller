@@ -16,14 +16,12 @@ Decorators for skipping PyInstaller tests when specific requirements are not met
 
 import os
 import sys
-import traceback
 import distutils.ccompiler
 import inspect
 import textwrap
 import shutil
 
 import pytest
-from _pytest.runner import Skipped
 
 from PyInstaller.compat import is_win
 
@@ -68,51 +66,67 @@ skipif_no_compiler = skipif(not has_compiler, reason="Requires a C compiler")
 skip = pytest.mark.skip
 
 
-def importorskip(modname, minversion=None):
+def importorskip(package: str):
+    """Skip a decorated test if **package** is not importable.
+
+    Arguments:
+        package:
+            The name of the module. May be anything that is allowed after the
+            ``import`` keyword. e.g. 'numpy' or 'PIL.Image'.
+    Returns:
+        A pytest marker which either skips the test or does nothing.
+
+    This function intentionally does not import the module. Doing so can lead
+    to `sys.path` and `PATH` being polluted, which then breaks later builds.
+
     """
-    This decorator skips the currently decorated test if the module with the
-    passed name is unimportable _or_ importable but of a version less than the
-    passed minimum version if any.
+    if not _importable(package):
+        return pytest.mark.skip(f"Can't import '{package}'.")
+    return pytest.mark.skipif(
+        False, reason=f"Don't skip: '{package}' is importable.")
 
-    This decorator's name is intentionally mispelled as `importerskip` rather
-    than `importerskip` to coincide with the `pytest.importorskip()` function
-    internally called by this decorator.
 
-    Parameters
-    ----------
-    modname : str
-        Fully-qualified name of the module required by this test.
-    minversion : str
-        Optional minimum version of this module as a string (e.g., `3.14.15`)
-        required by this test _or_ `None` if any module version is acceptable.
-        Defaults to `None`.
+def _importable(package: str):
+    from importlib.util import find_spec
 
-    Returns
-    ----------
-    pytest.skipif
-        Decorator describing these requirements if unmet _or_ the identity
-        decorator otherwise (i.e., if these requirements are met).
+    # The find_spec() function is used by the importlib machinery to locate a
+    # module to import. Using it finds the module but doesn't run it.
+    # Unfortunately, it does import parent modules to check submodules.
+    if "." in package:
+        # Using subprocesses is slow. If the top level module doesn't exist
+        # then we can skip it.
+        if not _importable(package.split(".")[0]):
+            return False
+        # This is a submodule, import it in isolation.
+        from subprocess import run, DEVNULL
+        return run([sys.executable, "-c", "import " + package],
+                   stdout=DEVNULL, stderr=DEVNULL).returncode == 0
+
+    return find_spec(package) is not None
+
+
+def requires(requirement: str):
+    """Mark a test to be skipped if **requirement** is not satisfied.
+
+    Args:
+        requirement:
+            A distribution name and optionally a version. See
+            :func:`pkg_resources.require` which this argument is
+            forwarded to.
+    Returns:
+        Either a skip marker or a dummy marker.
+
+    This function intentionally does not import the module. Doing so can lead
+    to `sys.path` and `PATH` being polluted, which then breaks later builds.
+
     """
-
-    # Defer to the eponymous function of the same name.
+    import pkg_resources
     try:
-        pytest.importorskip(modname, minversion)
-    # Silently convert expected import and syntax errors into @skip decoration.
-    except Skipped as exc:
-        return skip(str(exc))
-    # Convert all other unexpected errors into the same decoration.
-    except Exception as exc:
-        # For debuggability, print a verbose stacktrace.
-        print('importorskip: Exception in module "{}":'.format(modname))
-        print('-' * 60)
-        traceback.print_exc(file=sys.stdout)
-        print('-' * 60)
-
-        return skip(str(exc))
-    # Else, this module is importable and optionally satisfies this minimum
-    # version. Reduce this decoration to a noop.
-    else:
-        return pytest.mark.skipif(False, reason='')
+        pkg_resources.require(requirement)
+        return pytest.mark.skipif(
+            False, reason=f"Don't skip: '{requirement}' is satisfied.")
+    except pkg_resources.DistributionNotFound:
+        return pytest.mark.skip("Requires " + requirement)
 
 
 def gen_sourcefile(tmpdir, source, test_id=None):
