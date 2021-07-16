@@ -9,86 +9,16 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-import os
-import glob
-from PyInstaller.utils.hooks.qt import add_qt5_dependencies, \
-    pyside2_library_info
-from PyInstaller.utils.hooks import get_module_file_attribute, \
-    collect_system_data_files
-from PyInstaller.depend.bindepend import getImports
-import PyInstaller.compat as compat
-
-
-def get_relative_path_if_possible(actual, possible_prefix):
-    possible_relative_path = os.path.relpath(actual, possible_prefix)
-    if possible_relative_path.startswith(os.pardir):
-        return actual
-    else:
-        return possible_relative_path
+from PyInstaller.utils.hooks.qt import pyside2_library_info, \
+    add_qt5_dependencies, get_qt_webengine_binaries_and_data_files
 
 
 # Ensure PySide2 is importable before adding info depending on it.
 if pyside2_library_info.version is not None:
     hiddenimports, binaries, datas = add_qt5_dependencies(__file__)
 
-    # Include the web engine process, translations, and resources.
-    # According to https://bugreports.qt.io/browse/PYSIDE-642
-    # there's no subdir for windows
-    rel_data_path = pyside2_library_info.qt_rel_dir
-
-    pyside2_locations = pyside2_library_info.location
-    if compat.is_darwin:
-        # This is based on the layout of the Mac wheel from PyPi.
-        data_path = pyside2_locations['DataPath']
-        libraries = ['QtCore', 'QtWebEngineCore', 'QtQuick', 'QtQml',
-                     'QtQmlModels', 'QtNetwork', 'QtGui', 'QtWebChannel',
-                     'QtPositioning']
-        for i in libraries:
-            framework_dir = i + '.framework'
-            datas += collect_system_data_files(
-                os.path.join(data_path, 'lib', framework_dir),
-                os.path.join(rel_data_path, 'lib', framework_dir), True)
-        datas += [(os.path.join(data_path, 'lib', 'QtWebEngineCore.framework',
-                                'Resources'), os.curdir)]
-    else:
-        locales = 'qtwebengine_locales'
-        resources = 'resources'
-        datas += [
-            # Gather translations needed by Chromium.
-            (os.path.join(pyside2_locations['TranslationsPath'], locales),
-             os.path.join(rel_data_path, 'translations', locales)),
-            # Per the `docs
-            # <https://doc.qt.io/qt-5.10/qtwebengine-deploying.html#deploying-resources>`_,
-            # ``DataPath`` is the base directory for ``resources``.
-            #
-            (os.path.join(pyside2_locations['DataPath'], resources),
-             os.path.join(rel_data_path, resources)),
-            # Include the webengine process. The ``LibraryExecutablesPath``
-            # is only valid on Windows and Linux.
-            #
-            (os.path.join(pyside2_locations['LibraryExecutablesPath'],
-                          'QtWebEngineProcess*'),
-             os.path.join(rel_data_path, get_relative_path_if_possible(
-                 pyside2_locations['LibraryExecutablesPath'],
-                 pyside2_locations['PrefixPath'] + '/')))
-        ]
-
-    # Add Linux-specific libraries.
-    if compat.is_linux:
-        # The automatic library detection fails for `NSS
-        # <https://packages.ubuntu.com/search?keywords=libnss3>`_, which is
-        # used by QtWebEngine. In some distributions, the ``libnss``
-        # supporting libraries are stored in a subdirectory ``nss``. Since
-        # ``libnss`` is not statically linked to these, but dynamically loads
-        # them, we need to search for and add them.
-        #
-        # First, get all libraries linked to ``PyQt5.QtWebEngineWidgets``.
-        for imp in getImports(
-                get_module_file_attribute('PySide2.QtWebEngineWidgets')):
-            # Look for ``libnss3.so``.
-            if os.path.basename(imp).startswith('libnss3.so'):
-                # Find the location of NSS: given a ``/path/to/libnss.so``,
-                # add ``/path/to/nss/*.so`` to get the missing NSS libraries.
-                nss_glob = os.path.join(os.path.dirname(imp), 'nss', '*.so')
-                if glob.glob(nss_glob):
-                    binaries.append((nss_glob, 'nss'))
+    # Include helper process executable, translations, and resources.
+    webengine_binaries, webengine_datas = \
+        get_qt_webengine_binaries_and_data_files(pyside2_library_info)
+    binaries += webengine_binaries
+    datas += webengine_datas
