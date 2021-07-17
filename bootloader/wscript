@@ -417,6 +417,23 @@ def set_arch_flags(ctx):
         ctx.env.WINRC_SRC_F = '-i'
 
 
+# A bare minimum zlib program. Testing zlib-dev availability requires
+# explicitly using libz defined symbols instead of just compiling
+# 'include <zlib.h>' with `-lz` because zlib's development headers may be
+# installed but with libz.so `sstrip`-ed making it not linkable to.
+ZLIB_TEST_FRAGMENT = r"""
+#include <stdio.h>
+#include <zlib.h>
+
+int main (int argc, char **argv)
+{
+	printf("Hello\n");
+	printf("Zlib: %s\n", zlibVersion());
+	return 0;
+}
+"""
+
+
 def configure(ctx):
     ctx.msg('Python Version', sys.version.replace(os.linesep, ''))
     # For MSVC the target arch must already been set when the compiler is
@@ -628,7 +645,8 @@ def configure(ctx):
         elif ctx.env.DEST_OS == 'hpux' and sysconfig.get_config_var('HAVE_PTHREAD_H'):
             ctx.check_cc(lib='pthread', mandatory=True)
         ctx.check_cc(lib='m', mandatory=True)
-        ctx.check_cc(lib='z', mandatory=True, uselib_store='Z')
+        ctx.check_cc(lib='z', mandatory=True, uselib_store='Z',
+                     fragment=ZLIB_TEST_FRAGMENT)
         # This uses Boehm GC to manage memory - it replaces malloc() / free()
         # functions. Some messages are printed if memory is not deallocated.
         if ctx.options.boehmgc:
