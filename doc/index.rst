@@ -66,6 +66,7 @@ Contents:
    when-things-go-wrong
    advanced-topics
    hooks
+   hooks-config
    bootloader-building
    CHANGES
    CREDITS
