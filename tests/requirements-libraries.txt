@@ -33,7 +33,7 @@ pyside6==6.1.0
 pyqt5==5.15.4
 pyqtwebengine==5.15.4
 pyqt6==6.1.0
-python-dateutil==2.8.1
+python-dateutil==2.8.2
 pytz==2021.1
 requests==2.25.1
 # simplejson is used for text_c_extension
