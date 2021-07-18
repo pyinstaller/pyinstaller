@@ -459,18 +459,6 @@ class TestRegression5 (unittest.TestCase):
         self.assertIsInstance(node, modulegraph.Package)
         self.assertIn(os.path.join('distutils', '__init__'), node.filename)
 
-class TestDeeplyNested (unittest.TestCase):
-    def setUp(self):
-        root = os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                'testpkg-regr6')
-        self.mf = modulegraph.ModuleGraph(path=[ root ] + sys.path)
-        self.mf.add_script(os.path.join(root, 'script.py'))
-
-    def testRegr(self):
-        node = self.mf.find_node('os')
-        self.assertIsNot(node, None)
-
 
 class TestRelativeReferenceToToplevel (unittest.TestCase):
     if not hasattr(unittest.TestCase, 'assertIsInstance'):
