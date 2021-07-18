@@ -148,6 +148,11 @@ def options(ctx):
                         'directory first to ensure all files are actually '
                         'recompiled.',
                    dest='show_warnings')
+    ctx.add_option('--static-zlib', action='store_true',
+                   help="Statically compile zlib into the bootloaders rather "
+                        "than dynamically linking to the system-wide copy. "
+                        "This is always done on Windows.",
+                   default=False)
 
     grp = ctx.add_option_group('Linux Standard Base (LSB) compliance',
                                'These options have effect only on Linux.')
@@ -417,6 +422,22 @@ def set_arch_flags(ctx):
         ctx.env.WINRC_SRC_F = '-i'
 
 
+# A bare minimum zlib program. Testing zlib-dev availability requires
+# explicitly using libz defined symbols instead of just compiling
+# 'include <zlib.h>' with `-lz` because zlib's development headers may be
+# installed but with libz.so `sstrip`-ed making it not linkable to.
+ZLIB_TEST_FRAGMENT = r"""
+#include <stdio.h>
+#include <zlib.h>
+
+int main ()
+{
+	printf("Zlib: %s\n", zlibVersion());
+	return 0;
+}
+"""
+
+
 def configure(ctx):
     ctx.msg('Python Version', sys.version.replace(os.linesep, ''))
     # For MSVC the target arch must already been set when the compiler is
@@ -628,7 +649,31 @@ def configure(ctx):
         elif ctx.env.DEST_OS == 'hpux' and sysconfig.get_config_var('HAVE_PTHREAD_H'):
             ctx.check_cc(lib='pthread', mandatory=True)
         ctx.check_cc(lib='m', mandatory=True)
-        ctx.check_cc(lib='z', mandatory=True, uselib_store='Z')
+
+        # Opting out of dynamically linked zlib can be done either with the
+        # --static-zlib option or with a PYI_STATIC_ZLIB=1 environment variable.
+        static_zlib = bool(int(os.environ.get("PYI_STATIC_ZLIB", '0')))
+        static_zlib = static_zlib or ctx.options.static_zlib
+        if static_zlib:
+            # This serves as a signal to later on when the C code gets compiled.
+            ctx.env.LIB_Z = None
+        else:
+            ctx.check_cc(lib='z', mandatory=False, uselib_store='Z',
+                         fragment=ZLIB_TEST_FRAGMENT)
+            if not ctx.env.LIB_Z:
+                ctx.fatal(
+                    "The zlib development package is either missing or the "
+                    "shared library cannot be linked against. For security "
+                    "(and marginally better filesize), you should install the "
+                    "zlib-dev or zlib-devel packages with your system package "
+                    "manager and try again. If you cannot do this, for example"
+                    " distributions such as OpenWRT use sstrip on libraries "
+                    "making linking impossible, then either use the "
+                    "--static-zlib option or set the PYI_STATIC_ZLIB=1 "
+                    "environment variable. If you are installing directly with"
+                    " pip, then use the environment variable."
+                )
+
         # This uses Boehm GC to manage memory - it replaces malloc() / free()
         # functions. Some messages are printed if memory is not deallocated.
         if ctx.options.boehmgc:
