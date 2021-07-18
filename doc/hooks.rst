@@ -358,6 +358,19 @@ Support for Conda
 
 .. autofunction:: PyInstaller.utils.hooks.conda.collect_dynamic_libs
 
+
+Subprocess isolation with :mod:`PyInstaller.isolated`
+-----------------------------------------------------
+
+.. currentmodule:: PyInstaller.isolated
+.. automodule:: PyInstaller.isolated
+.. autofunction:: call
+.. autofunction:: decorate
+.. autoclass:: Python
+    :members: call
+.. currentmodule:: PyInstaller.utils.hooks
+
+
 .. _the hook(hook_api) function:
 
 The ``hook(hook_api)`` Function
