@@ -217,7 +217,11 @@ class Analysis(Target):
         # Add hook directories from PyInstaller entry points.
         for entry_point in pkg_resources.iter_entry_points(
                 'pyinstaller40', 'hook-dirs'):
-            self.hookspath += list(entry_point.load()())
+            try:
+                self.hookspath += list(entry_point.load()())
+            except Exception as e:
+                logger.warning("Failed to load hook entry point '%s': %s",
+                               entry_point, e)
 
         self.hooksconfig = {}
         if hooksconfig:
