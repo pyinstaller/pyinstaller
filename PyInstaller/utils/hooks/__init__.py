@@ -87,6 +87,10 @@ def exec_statement(statement):
         mpl_data_dir = exec_statement("import matplotlib; print(matplotlib.get_data_path())")
         datas = [ (mpl_data_dir, "") ]
 
+    Notes:
+        As of v4.6.0, usage of this function is discouraged in favour of the
+        new :mod:`PyInstaller.isolated` module.
+
     """
     return __exec_statement(statement, capture_stdout=True)
 
@@ -152,6 +156,11 @@ def eval_statement(statement):
          ''')
       for db in databases:
          hiddenimports.append("sqlalchemy.databases." + db)
+
+    Notes:
+        As of v4.6.0, usage of this function is discouraged in favour of the
+        new :mod:`PyInstaller.isolated` module.
+
     """
     txt = exec_statement(statement).strip()
     if not txt:
