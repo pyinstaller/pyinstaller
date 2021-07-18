@@ -430,9 +430,8 @@ ZLIB_TEST_FRAGMENT = r"""
 #include <stdio.h>
 #include <zlib.h>
 
-int main (int argc, char **argv)
+int main ()
 {
-	printf("Hello\n");
 	printf("Zlib: %s\n", zlibVersion());
 	return 0;
 }
@@ -663,16 +662,16 @@ def configure(ctx):
                          fragment=ZLIB_TEST_FRAGMENT)
             if not ctx.env.LIB_Z:
                 ctx.fatal(
-                    "The zlib development package is either missing or not "
-                    "linkable to. For security (and marginally better filesize"
-                    "), you should install the zlib-dev or zlib-devel packages"
-                    " with your system package manager and try again. If you "
-                    "can't do this, for example on distributions like OpenWRT "
-                    "which use sstrip on libraries making linking impossible, "
-                    "then either use the --static-zlib option or set the "
-                    "PYI_STATIC_ZLIB=1 environment variable. If you're "
-                    "installing directly with pip, then use the environment "
-                    "variable."
+                    "The zlib development package is either missing or the "
+                    "shared library cannot be linked against. For security "
+                    "(and marginally better filesize), you should install the "
+                    "zlib-dev or zlib-devel packages with your system package "
+                    "manager and try again. If you cannot do this, for example"
+                    " distributions such as OpenWRT use sstrip on libraries "
+                    "making linking impossible, then either use the "
+                    "--static-zlib option or set the PYI_STATIC_ZLIB=1 "
+                    "environment variable. If you are installing directly with"
+                    " pip, then use the environment variable."
                 )
 
         # This uses Boehm GC to manage memory - it replaces malloc() / free()
