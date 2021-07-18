@@ -522,7 +522,7 @@ def __wrap_python(args, kwargs):
     # It is necessary to run binaries with 'arch' command.
     if is_darwin:
         if architecture == '64bit':
-            if machine == 'arm':
+            if platform.machine() == 'arm64':
                 py_prefix = ['arch', '-arm64']  # Apple M1
             else:
                 py_prefix = ['arch', '-x86_64']  # Intel
