@@ -46,6 +46,7 @@ from PyInstaller.depend.utils import \
 from PyInstaller.archive import pyz_crypto
 from PyInstaller.utils.misc import \
     get_path_to_toplevel_modules, get_unicode_modules, mtime
+from PyInstaller.utils.hooks import exec_statement
 
 if is_win:
     from PyInstaller.utils.win32 import winmanifest
@@ -97,6 +98,45 @@ def setupUPXFlags():
     f = "--compress-icons=0 " + f
     f = "--best " + f
     compat.setenv("UPX", f)
+
+
+def discover_hook_directories():
+    """
+    Discover hook directories via pkg_resources and pyinstaller40
+    entry points. Perform the discovery in a subprocess to avoid
+    importing the package(s) in the main process.
+
+    :return: list of discovered hook directories.
+    """
+
+    hook_directories = []
+    output = exec_statement("""
+        import sys
+        import pkg_resources
+
+        entry_points = pkg_resources.iter_entry_points(
+            'pyinstaller40', 'hook-dirs')
+        for entry_point in entry_points:
+            try:
+                hook_dirs = entry_point.load()()
+                for hook_dir in hook_dirs:
+                    print('\\n$_pyi:' + hook_dir + '*')
+            except Exception as e:
+                print("discover_hook_directories: Failed to process hook "
+                      "entry point '%s': %s" % (entry_point, e),
+                      file=sys.stderr)
+    """)
+
+    for line in output.split():
+        # Filter out extra output by checking for the special prefix
+        # and suffix
+        if line.startswith("$_pyi:") and line.endswith("*"):
+            hook_directories.append(line[6:-1])
+
+    logger.debug("discover_hook_directories: Hook directories: %s",
+                 hook_directories)
+
+    return hook_directories
 
 
 class Analysis(Target):
@@ -215,9 +255,7 @@ class Analysis(Target):
             self.hookspath.extend(hookspath)
 
         # Add hook directories from PyInstaller entry points.
-        for entry_point in pkg_resources.iter_entry_points(
-                'pyinstaller40', 'hook-dirs'):
-            self.hookspath += list(entry_point.load()())
+        self.hookspath += discover_hook_directories()
 
         self.hooksconfig = {}
         if hooksconfig:
