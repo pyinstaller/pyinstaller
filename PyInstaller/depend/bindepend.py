@@ -942,9 +942,9 @@ def get_python_library_path():
         # and exec_prefix. That's why we can use just sys.prefix.
         # In virtualenv PyInstaller is not able to find Python library.
         # We need special care for this case.
-        python_libname = _find_lib_in_libdirs((
+        python_libname = _find_lib_in_libdirs(
             compat.base_prefix,
-            os.path.join(compat.base_prefix, 'lib')))
+            os.path.join(compat.base_prefix, 'lib'))
         if python_libname:
             return python_libname
 
