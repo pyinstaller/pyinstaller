@@ -23,7 +23,7 @@ few simple rules:
   Our categories are:
   ``feature``,
   ``bugfix``,
-  ``break`` (breaking changes),
+  ``breaking`` (breaking changes),
   ``hooks`` (all hook-related changes),
   ``bootloader``,
   ``moduleloader``,

@@ -26,7 +26,7 @@ CHANGELOG_GUIDE = (
     "https://github.com/pyinstaller/pyinstaller/"
     "blob/develop/doc/development/changelog-entries.rst#changelog-entries")
 
-CHANGE_TYPES = {'bootloader', 'break', 'bugfix', 'build', 'core', 'doc',
+CHANGE_TYPES = {'bootloader', 'breaking', 'bugfix', 'build', 'core', 'doc',
                 'feature', 'hooks', 'moduleloader', 'process', 'tests'}
 
 NEWS_PATTERN = re.compile(r"(\d+)\.(\w+)\.(?:(\d+)\.)?rst")
