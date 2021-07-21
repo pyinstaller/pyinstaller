@@ -127,3 +127,43 @@ def test_add_suffix_to_extension():
         # it unchanged (i.e., does not mangle it)
         toc3 = utils.add_suffix_to_extension(*toc2)
         assert toc3 == toc2
+
+
+def test_should_include_system_binary():
+    CASES = [
+        ('lib-dynload/any',
+         '/usr/lib64/any',
+         [],
+         True),
+        ('libany',
+         '/lib64/libpython.so',
+         [],
+         True),
+        ('any',
+         '/lib/python/site-packages/any',
+         [],
+         True),
+        ('libany',
+         '/etc/libany',
+         [],
+         True),
+        ('libany',
+         '/usr/lib/libany',
+         ['*any*'],
+         True),
+        ('libany2',
+         '/lib/libany2',
+         ['libnone*', 'libany*'],
+         True),
+        ('libnomatch',
+         '/lib/libnomatch',
+         ['libnone*', 'libany*'],
+         False),
+    ]
+
+    for case in CASES:
+        tuple = (case[0], case[1])
+        excepts = case[2]
+        expected = case[3]
+
+        assert utils._should_include_system_binary(tuple, excepts) == expected

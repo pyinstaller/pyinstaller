@@ -14,6 +14,7 @@
 #--- functions for checking guts ---
 # NOTE: By GUTS it is meant intermediate files and data structures that
 # PyInstaller creates for bundling files and creating final executable.
+import fnmatch
 import glob
 import hashlib
 import os
@@ -733,3 +734,25 @@ def fake_pyc_timestamp(buf):
 
     ts = b'pyi0'  # So people know where this comes from
     return buf[:start] + ts + buf[end:]
+
+
+def _should_include_system_binary(binary_tuple, exceptions):
+    """
+    Return True if the given binary_tuple describes a system binary that
+    should be included.  Exclude all system library binaries other than
+    those with "lib-dynload" in the destination or "python" in the source,
+    except for those matching the patterns in the exceptions list.  Intended
+    to only be used from the Analysis method exclude_system_libraries.
+    """
+    dest = binary_tuple[0]
+    if dest.startswith('lib-dynload'):
+        return True
+    src = binary_tuple[1]
+    if fnmatch.fnmatch(src, '*python*'):
+        return True
+    if not src.startswith('/lib') and not src.startswith('/usr/lib'):
+        return True
+    for exception in exceptions:
+        if fnmatch.fnmatch(dest, exception):
+            return True
+    return False
