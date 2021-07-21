@@ -39,8 +39,8 @@ from PyInstaller.building.datastruct import TOC, Target, Tree, _check_guts_eq
 from PyInstaller.building.splash import Splash
 from PyInstaller.building.osx import BUNDLE
 from PyInstaller.building.toc_conversion import DependencyProcessor
-from PyInstaller.building.utils import \
-    _check_guts_toc_mtime, format_binaries_and_datas
+from PyInstaller.building.utils import _check_guts_toc_mtime, \
+    format_binaries_and_datas, _should_include_system_binary
 from PyInstaller.depend.utils import \
     create_py3_base_library, scan_code_for_ctypes
 from PyInstaller.archive import pyz_crypto
@@ -644,6 +644,19 @@ class Analysis(Target):
         logger.debug('Adding Python library to binary dependencies')
         binaries.append((os.path.basename(python_lib), python_lib, 'BINARY'))
         logger.info('Using Python library %s', python_lib)
+
+    def exclude_system_libraries(self, list_of_exceptions=[]):
+        """
+        This method may be optionally called from the spec file to exclude
+        any system libraries from the list of binaries other than those
+        containing the shell-style wildcards in list_of_exceptions.
+        Those that match '*python*' or are stored under 'lib-dynload' are
+        always treated as exceptions and not excluded.
+        """
+
+        self.binaries = \
+            [i for i in self.binaries
+                if _should_include_system_binary(i, list_of_exceptions)]
 
 
 class ExecutableBuilder(object):

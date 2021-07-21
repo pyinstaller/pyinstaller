@@ -433,6 +433,29 @@ Finally the key ``CFBundleDocumentTypes`` tells Mac OS X what filetypes your
 application supports (see `Apple document types`_).
 
 
+.. _posix specific options:
+
+POSIX Specific Options
+~~~~~~~~~~~~~~~~~~~~~~
+
+By default all required system libraries are bundled.
+To exclude all or most non-Python shared system libraries from the bundle,
+you can add a call to the function ``exclude_system_libraries``
+from the Analysis class.
+System libraries are defined as files that come from under ``/lib*`` or
+``/usr/lib*``
+as is the case on POSIX and related operating systems.
+The function accepts an optional parameter
+that is a list of file wildcards exceptions,
+to not exclude library files that match those wildcards in the bundle.
+For example to exclude all non-Python system libraries except "libexpat"
+and anything containing "krb" use this::
+
+    a = Analysis( ...
+                )
+    a.exclude_system_libraries(list_of_exceptions=['libexpat*', '*krb*'])
+
+
 .. _splash screen target:
 
 
