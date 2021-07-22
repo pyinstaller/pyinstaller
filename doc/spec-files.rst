@@ -451,8 +451,8 @@ to not exclude library files that match those wildcards in the bundle.
 For example to exclude all non-Python system libraries except "libexpat"
 and anything containing "krb" use this::
 
-    a = Analysis( ...
-                )
+    a = Analysis(...)
+
     a.exclude_system_libraries(list_of_exceptions=['libexpat*', '*krb*'])
 
 
