@@ -23,7 +23,8 @@ GStreamer 1.4.5, gst-python 1.4.0, PyGObject 3.14.0, and GObject Introspection 1
 import glob
 import os
 
-from PyInstaller.utils.hooks import exec_statement, get_hook_config
+from PyInstaller.utils.hooks import get_hook_config
+from PyInstaller import isolated
 from PyInstaller.utils.hooks.gi import (collect_glib_share_files, collect_glib_translations, get_gi_typelibs)
 
 binaries, datas, hiddenimports = get_gi_typelibs('Gst', '1.0')
@@ -48,19 +49,18 @@ def hook(hook_api):
     hook_api.add_datas(hook_datas)
 
 
-statement = """
-import os
-import gi
-gi.require_version('Gst', '1.0')
-from gi.repository import Gst
-Gst.init(None)
-reg = Gst.Registry.get()
-plug = reg.find_plugin('coreelements')
-path = plug.get_filename()
-print(os.path.dirname(path))
-"""
+@isolated.call
+def plugin_path():
+    import os
+    import gi
+    gi.require_version('Gst', '1.0')
+    from gi.repository import Gst
+    Gst.init(None)
+    reg = Gst.Registry.get()
+    plug = reg.find_plugin('coreelements')
+    path = plug.get_filename()
+    return os.path.dirname(path)
 
-plugin_path = exec_statement(statement)
 
 # Use a pattern of libgst* as all GStreamer plugins that conform to GStreamer standards start with libgst, and we may
 # have mixed plugin extensions, e.g., .so and .dylib.

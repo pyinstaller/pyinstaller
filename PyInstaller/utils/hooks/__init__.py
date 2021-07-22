@@ -25,6 +25,7 @@ from PyInstaller import log as logging
 from PyInstaller.exceptions import ExecCommandFailed
 from PyInstaller.utils.hooks.win32 import \
     get_pywin32_module_file_attribute  # noqa: F401
+from PyInstaller import isolated
 
 logger = logging.getLogger(__name__)
 
@@ -177,7 +178,8 @@ def eval_script(scriptfilename, *args, env=None):
     return eval(txt)
 
 
-def get_pyextension_imports(modname):
+@isolated.decorate
+def get_pyextension_imports(module_name):
     """
     Return list of modules required by binary (C/C++) Python extension.
 
@@ -190,30 +192,16 @@ def get_pyextension_imports(modname):
 
     This function could be used for 'hiddenimports' in PyInstaller hooks files.
     """
+    import sys
+    import importlib
 
-    statement = """
-        import sys
-        # Importing distutils filters common modules, especially in virtualenv.
-        import distutils
-        original_modlist = set(sys.modules.keys())
-        # When importing this module - sys.modules gets updated.
-        import %(modname)s
-        all_modlist = set(sys.modules.keys())
-        diff = all_modlist - original_modlist
-        # Module list contain original modname. We do not need it there.
-        diff.discard('%(modname)s')
-        # Print module list to stdout.
-        print(list(diff))
-    """ % {
-        'modname': modname
-    }
-    module_imports = eval_statement(statement)
+    original = set(sys.modules.keys())
 
-    if not module_imports:
-        logger.error('Cannot find imports for module %s' % modname)
-        return []  # Means no imports found or looking for imports failed.
-    # module_imports = filter(lambda x: not x.startswith('distutils'), module_imports)
-    return module_imports
+    # When importing this module - sys.modules gets updated.
+    importlib.import_module(module_name)
+
+    # Find and return which new modules have been loaded.
+    return list(set(sys.modules.keys()) - original - {module_name})
 
 
 def get_homebrew_path(formula=''):
@@ -568,75 +556,57 @@ def collect_submodules(package: str, filter: Callable[[str], bool] = lambda name
     # Determine the filesystem path to the specified package.
     pkg_base, pkg_dir = get_package_paths(package)
 
-    # Walk the package. Since this performs imports, do it in a separate process. Because module import may result in
-    # exta output to stdout, we enclose the output module names with special prefix and suffix.
-    names = exec_statement(
-        """
-        import sys
-        import pkgutil
-        import traceback
+    # Walk the package. Since this performs imports, do it in a separate process.
+    modules = _collect_submodules(pkg_dir, package)
+    # Apply the user defined filter function.
+    modules = [i for i in modules if filter(i)]
 
-        # ``pkgutil.walk_packages`` does not walk subpackages of zipped files per https://bugs.python.org/issue14209.
-        # This is a workaround.
-        def walk_packages(path=None, prefix='', onerror=None):
-            def seen(p, m={{}}):
-                if p in m:
-                    return True
-                m[p] = True
+    logger.debug("collect_submodules - Found submodules: %s", modules)
+    return modules
 
-            for importer, name, ispkg in pkgutil.iter_modules(path, prefix):
-                if not name.startswith(prefix):
-                    name = prefix + name
-                yield importer, name, ispkg
 
-                if ispkg:
-                    try:
-                        __import__(name)
-                    except ImportError:
-                        if onerror is not None:
-                            onerror(name)
-                    except Exception:
-                        if onerror is not None:
-                            onerror(name)
-                        else:
-                            traceback.print_exc(file=sys.stderr)
-                            print("collect_submodules: failed to import %r!" % name, file=sys.stderr)
-                    else:
-                        path = getattr(sys.modules[name], '__path__', None) or []
+@isolated.decorate
+def _collect_submodules(pkg_dir, package):
+    import sys
+    import pkgutil
+    import traceback
 
-                        # don't traverse path items we've seen before
-                        path = [p for p in path if not seen(p)]
+    # ``pkgutil.walk_packages`` doesn't walk subpackages of zipped files per https://bugs.python.org/issue14209. This is
+    # a workaround.
+    seen = set()
 
-                        # Use Py2 code here. It still works in Py3.
-                        for item in walk_packages(path, name+'.', onerror):
-                            yield item
-                        # This is the original Py3 code.
-                        #yield from walk_packages(path, name+'.', onerror)
+    def walk_packages(path=None, prefix=''):
 
-        for module_loader, name, ispkg in walk_packages([{}], '{}.'):
-            print('\\n$_pyi:' + name + '*')
-        """.format(
-            # Use repr to escape Windows backslashes.
-            repr(pkg_dir),
-            package
-        )
-    )
+        for importer, name, ispkg in pkgutil.iter_modules(path, prefix):
+            if not name.startswith(prefix):
+                name = prefix + name
+            yield importer, name, ispkg
 
-    # Include the package itself in the results.
-    mods = {package}
-    # Filter through the returend submodules.
-    for name in names.split():
-        # Filter out extra output during module imports by checking for the special prefix and suffix
-        if name.startswith("$_pyi:") and name.endswith("*"):
-            name = name[6:-1]
-        else:
-            continue
+            if not ispkg:
+                # Only packages can have submodules.
+                continue
 
-        if filter(name):
-            mods.add(name)
+            try:
+                __import__(name)
+            except Exception:
+                traceback.print_exc()
+                # Ignore all errors. Don't attempt to recurse to submodules if this module didn't even make it into
+                # sys.modules.
+                if name not in sys.modules:
+                    continue
+            path = getattr(sys.modules[name], '__path__', None) or []
 
-    logger.debug("collect_submodules - Found submodules: %s", mods)
-    return list(mods)
+            # Don't traverse path items we've seen before.
+            path = [p for p in path if p not in seen]
+            seen.update(path)
+            yield from walk_packages(path, name + '.')
+
+    # The top level module.
+    modules = [package]
+    # And all its submodules.
+    modules.extend(name for (_, name, _) in walk_packages([pkg_dir], package + '.'))
+
+    return modules
 
 
 def is_module_or_submodule(name, mod_or_submod):

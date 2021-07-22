@@ -11,28 +11,26 @@
 import os
 import re
 
-from PyInstaller import compat
+from PyInstaller.utils.hooks import collect_submodules, collect_system_data_files
+from PyInstaller import isolated
 from PyInstaller import log as logging
+from PyInstaller import compat
 from PyInstaller.depend.bindepend import findSystemLibrary
-from PyInstaller.utils.hooks import collect_submodules, collect_system_data_files, eval_statement, exec_statement
 
 logger = logging.getLogger(__name__)
 
 
+@isolated.decorate
 def get_gi_libdir(module, version):
-    statement = """
-        import gi
-        gi.require_version("GIRepository", "2.0")
-        from gi.repository import GIRepository
-        repo = GIRepository.Repository.get_default()
-        module, version = (%r, %r)
-        repo.require(module, version, GIRepository.RepositoryLoadFlags.IREPOSITORY_LOAD_FLAG_LAZY)
-        print(repo.get_shared_library(module))
-    """
-    statement %= (module, version)
-    libs = exec_statement(statement).split(',')
+    import gi
+    gi.require_version("GIRepository", "2.0")
+    from gi.repository import GIRepository
+
+    repo = GIRepository.Repository.get_default()
+    repo.require(module, version, GIRepository.RepositoryLoadFlags.IREPOSITORY_LOAD_FLAG_LAZY)
+    libs = repo.get_shared_library(module)
     for lib in libs:
-        path = findSystemLibrary(lib.strip())
+        path = findSystemLibrary(lib)
         return os.path.normpath(os.path.dirname(path))
 
     raise ValueError("Could not find libdir for %s-%s" % (module, version))
@@ -50,46 +48,42 @@ def get_gi_typelibs(module, version):
     binaries = []
     hiddenimports = []
 
-    statement = """
+    @isolated.decorate
+    def _gi_typelibs(module, version):
         import gi
         gi.require_version("GIRepository", "2.0")
         from gi.repository import GIRepository
+
         repo = GIRepository.Repository.get_default()
-        module, version = (%r, %r)
         repo.require(module, version, GIRepository.RepositoryLoadFlags.IREPOSITORY_LOAD_FLAG_LAZY)
-        get_deps = getattr(repo, 'get_immediate_dependencies', None)
-        if not get_deps:
-            get_deps = repo.get_dependencies
-        print({'sharedlib': repo.get_shared_library(module),
-               'typelib': repo.get_typelib_path(module),
-               'deps': get_deps(module) or []})
-    """
-    statement %= (module, version)
-    typelibs_data = eval_statement(statement)
-    if not typelibs_data:
-        logger.error("gi repository 'GIRepository 2.0' not found. Please make sure corresponding package is installed.")
-        # :todo: should we raise a SystemError here?
-    else:
-        logger.debug("Adding files for %s %s", module, version)
+        get_deps = getattr(repo, 'get_immediate_dependencies', None) or repo.get_dependencies
+        return {
+            'sharedlib': repo.get_shared_library(module),
+            'typelib': repo.get_typelib_path(module),
+            'deps': get_deps(module) or []
+        }
 
-        if typelibs_data['sharedlib']:
-            for lib in typelibs_data['sharedlib'].split(','):
-                path = findSystemLibrary(lib.strip())
-                if path:
-                    logger.debug('Found shared library %s at %s', lib, path)
-                    binaries.append((path, '.'))
+    typelibs_data = _gi_typelibs(module, version)
+    logger.debug("Adding files for %s %s", module, version)
 
-        d = gir_library_path_fix(typelibs_data['typelib'])
-        if d:
-            logger.debug('Found gir typelib at %s', d)
-            datas.append(d)
+    if typelibs_data['sharedlib']:
+        for lib in typelibs_data['sharedlib'].split(','):
+            path = findSystemLibrary(lib.strip())
+            if path:
+                logger.debug('Found shared library %s at %s', lib, path)
+                binaries.append((path, '.'))
 
-        hiddenimports += collect_submodules('gi.overrides', lambda name: name.endswith('.' + module))
+    d = gir_library_path_fix(typelibs_data['typelib'])
+    if d:
+        logger.debug('Found gir typelib at %s', d)
+        datas.append(d)
 
-        # Load dependencies recursively
-        for dep in typelibs_data['deps']:
-            m, _ = dep.rsplit('-', 1)
-            hiddenimports += ['gi.repository.%s' % m]
+    hiddenimports += collect_submodules('gi.overrides', lambda name: name.endswith('.' + module))
+
+    # Load dependencies recursively
+    for dep in typelibs_data['deps']:
+        m, _ = dep.rsplit('-', 1)
+        hiddenimports += ['gi.repository.%s' % m]
 
     return binaries, datas, hiddenimports
 
@@ -159,18 +153,12 @@ def gir_library_path_fix(path):
         return path, 'gi_typelibs'
 
 
+@isolated.decorate
 def get_glib_system_data_dirs():
-    statement = """
-        import gi
-        gi.require_version('GLib', '2.0')
-        from gi.repository import GLib
-        print(GLib.get_system_data_dirs())
-    """
-    data_dirs = eval_statement(statement)
-    if not data_dirs:
-        logger.error("gi repository 'GLib 2.0' not found. Please make sure corresponding package is installed.")
-        # :todo: should we raise a SystemError here?
-    return data_dirs
+    import gi
+    gi.require_version('GLib', '2.0')
+    from gi.repository import GLib
+    return GLib.get_system_data_dirs()
 
 
 def get_glib_sysconf_dirs():
@@ -182,16 +170,13 @@ def get_glib_sysconf_dirs():
         # that is what we are actually interested in (not the user path), we have to do that the hard way...
         return [os.path.join(get_gi_libdir('GLib', '2.0'), 'etc')]
 
-    statement = """
+    @isolated.call
+    def data_dirs():
         import gi
         gi.require_version('GLib', '2.0')
         from gi.repository import GLib
-        print(GLib.get_system_config_dirs())
-    """
-    data_dirs = eval_statement(statement)
-    if not data_dirs:
-        logger.error("gi repository 'GLib 2.0' not found. Please make sure corresponding package is installed.")
-        # :todo: should we raise a SystemError here?
+        return GLib.get_system_config_dirs()
+
     return data_dirs
 
 
