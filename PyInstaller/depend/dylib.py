@@ -26,7 +26,7 @@ import os
 import re
 
 
-from PyInstaller.compat import is_win, is_unix, is_aix, is_darwin
+from PyInstaller import compat
 
 
 import PyInstaller.log as logging
@@ -167,13 +167,13 @@ _aix_excludes = {
 }
 
 
-if is_win:
+if compat.is_win:
     _includes |= _win_includes
     _excludes |= _win_excludes
-elif is_aix:
+elif compat.is_aix:
     # The exclude list for AIX differs from other *nix platforms.
     _excludes |= _aix_excludes
-elif is_unix:
+elif compat.is_unix:
     # Common excludes for *nix platforms -- except AIX.
     _excludes |= _unix_excludes
 
@@ -206,7 +206,7 @@ exclude_list = ExcludeList()
 include_list = IncludeList()
 
 
-if is_darwin:
+if compat.is_darwin:
     # On Mac use macholib to decide if a binary is a system one.
     from macholib import util
 
@@ -227,7 +227,7 @@ if is_darwin:
 
     exclude_list = MacExcludeList(exclude_list)
 
-elif is_win:
+elif compat.is_win:
     class WinExcludeList(object):
         def __init__(self, global_exclude_list):
             self._exclude_list = global_exclude_list
@@ -268,6 +268,49 @@ def include_library(libname):
     else:
         # By default include library.
         return True
+
+
+# Patterns for suppressing warnings about missing dynamically linked
+# libraries
+_warning_suppressions = [
+    # We fail to discover shiboken2 (PySide2) and shiboken6 (PySide6)
+    # shared libraries due to the way the packages set up the search
+    # path to the library, which is located in a separate package.
+    # Suppress the harmless warnings to avoid confusion.
+    r'(lib)?shiboken.*',
+]
+
+# On some systems (e.g., openwrt), libc.so might point to ldd. Suppress
+# warnings about it.
+if compat.is_linux:
+    _warning_suppressions.append(r'ldd')
+
+# Suppress false warnings on win 10 and UCRT (see issue #1566).
+if compat.is_win_10:
+    _warning_suppressions.append(r'api-ms-win-crt.*')
+
+
+class MissingLibWarningSuppressionList:
+    def __init__(self):
+        self.regex = re.compile('|'.join(_warning_suppressions), re.I)
+
+    def search(self, libname):
+        # Running re.search() on '' regex never returns None.
+        if _warning_suppressions:
+            return self.regex.match(os.path.basename(libname))
+        else:
+            return False
+
+
+missing_lib_warning_suppression_list = MissingLibWarningSuppressionList()
+
+
+def warn_missing_lib(libname):
+    """
+    Check if a missing-library warning should be displayed for the
+    given library name (or full path).
+    """
+    return not missing_lib_warning_suppression_list.search(libname)
 
 
 def mac_set_relative_dylib_deps(libname, distname):

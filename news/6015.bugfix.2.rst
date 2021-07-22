@@ -1,0 +1,1 @@
+(Linux) Fix spurious missing library warning when ``libc.so`` points to ``ldd``.

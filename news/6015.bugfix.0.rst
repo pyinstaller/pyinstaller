@@ -1,0 +1,1 @@
+Downgrade messages about missing dynamic link libraries from ERROR to WARNING.

@@ -527,11 +527,8 @@ def selectImports(pth, xtrapath=None):
                 logger.debug("Adding %s dependency of %s from %s",
                              lib, os.path.basename(pth), npth)
                 rv.append((lib, npth))
-        else:
-            # Don't spew out false warnings on win 10 and UCRT (see issue
-            # #1566).
-            if not (compat.is_win_10 and lib.startswith("api-ms-win-crt")):
-                logger.warning("lib not found: %s dependency of %s", lib, pth)
+        elif dylib.warn_missing_lib(lib):
+            logger.warning("lib not found: %s dependency of %s", lib, pth)
 
     return rv
 
@@ -601,9 +598,18 @@ def _getImports_ldd(pth):
                 # Add lib if it is not already found.
                 if lib not in rslt:
                     rslt.add(lib)
-            else:
-                logger.error('Can not find %s in path %s (needed by %s)',
-                             name, lib, pth)
+            elif dylib.warn_missing_lib(name):
+                logger.warning('Cannot find %s in path %s (needed by %s)',
+                               name, lib, pth)
+        elif line.endswith("not found"):
+            # On glibc-based linux distributions, missing libraries
+            # are marked with name.so => not found
+            tokens = line.split('=>')
+            if len(tokens) != 2:
+                continue
+            name = tokens[0].strip()
+            if dylib.warn_missing_lib(name):
+                logger.warning('Cannot find %s (needed by %s)', name, pth)
     return rslt
 
 
@@ -697,9 +703,9 @@ def _getImports_macholib(pth):
                     final_lib = os.path.abspath(os.path.join(run_path, lib))
                     rslt.add(final_lib)
                     break
-            # Log error if no existing file found.
-            if not final_lib:
-                logger.error('Can not find path %s (needed by %s)', lib, pth)
+            # Log warning if no existing file found.
+            if not final_lib and dylib.warn_missing_lib(lib):
+                logger.warning('Cannot find path %s (needed by %s)', lib, pth)
 
         # Macholib has to be used to get absolute path to libraries.
         else:
@@ -715,9 +721,9 @@ def _getImports_macholib(pth):
                 # Starting with Big Sur, system libraries are hidden. And
                 # we do not collect system libraries on any macOS version
                 # anyway, so suppress the corresponding error messages.
-                if not in_system_path(lib):
-                    logger.error('Can not find path %s (needed by %s)',
-                                 lib, pth)
+                if not in_system_path(lib) and dylib.warn_missing_lib(lib):
+                    logger.warning('Cannot find path %s (needed by %s)',
+                                   lib, pth)
 
     return rslt
 
