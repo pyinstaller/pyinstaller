@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-from PyInstaller.utils.hooks import eval_statement
+from PyInstaller import isolated
 
 # This is basically a copy of pre_safe_import_module/hook-six.moves.py adopted to setuptools.extern.six resp.
 # setuptools._vendor.six. Please see pre_safe_import_module/hook-six.moves.py for documentation.
@@ -18,24 +18,18 @@ from PyInstaller.utils.hooks import eval_statement
 
 
 def pre_safe_import_module(api):
-    real_to_six_module_name = eval_statement(
-        """
+    @isolated.call
+    def real_to_six_module_name():
         try:
             import setuptools._vendor.six as six
         except ImportError:
             import setuptools.extern.six as six
 
-        print('{')
+        return {
+            moved.mod: 'setuptools.extern.six.moves.' + moved.name
+            for moved in six._moved_attributes if isinstance(moved, (six.MovedModule, six.MovedAttribute))
+        }
 
-        for moved in six._moved_attributes:
-            if isinstance(moved, (six.MovedModule, six.MovedAttribute)):
-                print('  %r: %r,' % (moved.mod, 'setuptools.extern.six.moves.' + moved.name))
-
-        print('}')
-        """
-    )
-    if isinstance(real_to_six_module_name, str):
-        raise SystemExit("pre-safe-import-module hook failed, needs fixing.")
     api.add_runtime_package(api.module_name)
     for real_module_name, six_module_name in real_to_six_module_name.items():
         api.add_alias_module(real_module_name, six_module_name)

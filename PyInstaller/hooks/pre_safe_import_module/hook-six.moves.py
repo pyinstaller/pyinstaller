@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-from PyInstaller.utils.hooks import eval_statement
+from PyInstaller import isolated
 
 
 def pre_safe_import_module(api):
@@ -27,24 +27,22 @@ def pre_safe_import_module(api):
     tkinter_tix` to `import tkinter.tix`). For each such mapping, this hook adds a corresponding module alias to the
     graph allowing PyInstaller to translate the former to the latter.
     """
-    # Dictionary from conventional module names to "six.moves" attribute names (e.g., from `tkinter.tix` to
-    # `six.moves.tkinter_tix`).
-    real_to_six_module_name = eval_statement(
+    @isolated.call
+    def real_to_six_module_name():
+        """
+        Generate a dictionary from conventional module names to "six.moves" attribute names (e.g., from `tkinter.tix` to
+        `six.moves.tkinter_tix`).
         """
         import six
-        print('{')
 
-        # Iterate over the "six._moved_attributes" list rather than the # "six._importer.known_modules" dictionary,
-        # as "urllib"-specific moved modules # are overwritten in the latter with unhelpful "LazyModule" objects.
-        for moved_module in six._moved_attributes:
-            # If this is a moved module or attribute, map the corresponding module. In the case of moved attributes,
-            # the attribute's module is mapped while the attribute itself is mapped at runtime and hence ignored here.
-            if isinstance(moved_module, (six.MovedModule, six.MovedAttribute)):
-                print('  %r: %r,' % (moved_module.mod, 'six.moves.' + moved_module.name))
-
-        print('}')
-        """
-    )
+        # Iterate over the "six._moved_attributes" list rather than the "six._importer.known_modules" dictionary, as
+        # "urllib"-specific moved modules are overwritten in the latter with unhelpful "LazyModule" objects. If this is
+        # a moved module or attribute, map the corresponding module. In the case of moved attributes, the attribute's
+        # module is mapped while the attribute itself is mapped at runtime and hence ignored here.
+        return {
+            moved.mod: 'six.moves.' + moved.name
+            for moved in six._moved_attributes if isinstance(moved, (six.MovedModule, six.MovedAttribute))
+        }
 
     # Add "six.moves" as a runtime package rather than module. Modules cannot physically contain submodules; only
     # packages can. In "from"-style import statements (e.g., "from six.moves import queue"), this implies that:

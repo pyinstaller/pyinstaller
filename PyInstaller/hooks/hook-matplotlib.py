@@ -9,11 +9,15 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-from PyInstaller.utils.hooks import exec_statement
+from PyInstaller import isolated
 
-mpl_data_dir = exec_statement("import matplotlib; print(matplotlib.get_data_path())")
-assert mpl_data_dir, "Failed to determine matplotlib's data directory!"
+
+@isolated.decorate
+def mpl_data_dir():
+    import matplotlib
+    return matplotlib.get_data_path()
+
 
 datas = [
-    (mpl_data_dir, "matplotlib/mpl-data"),
+    (mpl_data_dir(), "matplotlib/mpl-data"),
 ]

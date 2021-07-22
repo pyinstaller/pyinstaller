@@ -34,7 +34,7 @@ from PyInstaller.compat import PYDYLIB_NAMES, is_win
 from PyInstaller.depend import bindepend
 from PyInstaller.depend.analysis import initialize_modgraph
 from PyInstaller.depend.utils import (create_py3_base_library, scan_code_for_ctypes)
-from PyInstaller.utils.hooks import exec_statement
+from PyInstaller import isolated
 from PyInstaller.utils.misc import (
     absnormpath, compile_py_files, get_path_to_toplevel_modules, get_unicode_modules, mtime
 )
@@ -90,6 +90,7 @@ def setupUPXFlags():
     compat.setenv("UPX", f)
 
 
+@isolated.decorate
 def discover_hook_directories():
     """
     Discover hook directories via pkg_resources and pyinstaller40 entry points. Perform the discovery in a subprocess
@@ -98,28 +99,20 @@ def discover_hook_directories():
     :return: list of discovered hook directories.
     """
 
+    import sys  # noqa: F401
+    from traceback import format_exception_only
+    import pkg_resources
+    from PyInstaller.log import logger
+
+    entry_points = pkg_resources.iter_entry_points('pyinstaller40', 'hook-dirs')
+
     hook_directories = []
-    output = exec_statement(
-        """
-        import sys
-        import pkg_resources
-
-        entry_points = pkg_resources.iter_entry_points('pyinstaller40', 'hook-dirs')
-        for entry_point in entry_points:
-            try:
-                hook_dirs = entry_point.load()()
-                for hook_dir in hook_dirs:
-                    print('\\n$_pyi:' + hook_dir + '*')
-            except Exception as e:
-                print("discover_hook_directories: Failed to process hook entry point '%s': %s" %
-                      (entry_point, e), file=sys.stderr)
-        """
-    )
-
-    for line in output.split():
-        # Filter out extra output by checking for the special prefix and suffix
-        if line.startswith("$_pyi:") and line.endswith("*"):
-            hook_directories.append(line[6:-1])
+    for entry_point in entry_points:
+        try:
+            hook_directories.extend(entry_point.load()())
+        except Exception as e:
+            msg = "".join(format_exception_only(type(e), e)).strip()
+            logger.warning("discover_hook_directories: Failed to process hook entry point '%s': %s", entry_point, msg)
 
     logger.debug("discover_hook_directories: Hook directories: %s", hook_directories)
 

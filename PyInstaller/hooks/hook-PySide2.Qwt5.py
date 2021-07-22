@@ -9,13 +9,23 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-from PyInstaller.utils.hooks import eval_statement
+from PyInstaller import isolated
 
 hiddenimports = ['PySide2.QtCore', 'PySide2.QtWidgets', 'PySide2.QtGui', 'PySide2.QtSvg']
 
-if eval_statement("from PySide2 import Qwt5; print(hasattr(Qwt5, 'toNumpy'))"):
-    hiddenimports.append("numpy")
-if eval_statement("from PySide2 import Qwt5; print(hasattr(Qwt5, 'toNumeric'))"):
-    hiddenimports.append("Numeric")
-if eval_statement("from PySide2 import Qwt5; print(hasattr(Qwt5, 'toNumarray'))"):
-    hiddenimports.append("numarray")
+
+@isolated.decorate
+def conditional_imports():
+    from PySide2 import Qwt5
+
+    out = []
+    if hasattr(Qwt5, "toNumpy"):
+        out.append("numpy")
+    if hasattr(Qwt5, "toNumeric"):
+        out.append("numeric")
+    if hasattr(Qwt5, "toNumarray"):
+        out.append("numarray")
+    return out
+
+
+hiddenimports += conditional_imports()
