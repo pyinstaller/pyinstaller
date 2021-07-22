@@ -709,3 +709,113 @@ def get_qt_conf_file(qt_library_info):
              qt_library_info.qt_rel_dir)
              if os.path.basename(x[0]) == 'qt.conf']
     return datas
+
+
+# Collect QtWebEngine helper process executable, translations, and resources.
+def get_qt_webengine_binaries_and_data_files(qt_library_info):
+    binaries = []
+    datas = []
+
+    # Output directory (varies between PyQt and PySide and among OSes;
+    # the difference is abstracted by qt_library_info.qt_rel_dir)
+    rel_data_path = qt_library_info.qt_rel_dir
+
+    if compat.is_darwin:
+        # On macOS, Qt shared libraries are provided in form of .framework
+        # bundles. However, PyInstaller collects shared library from the
+        # bundle into top-level application directory, breaking the
+        # bundle structure.
+        #
+        # QtWebEngine and its underlying Chromium engine, however, have
+        # very strict data file layout requirements due to sandboxing,
+        # and does not work if the helper process executable does not
+        # load the shared library from QtWebEngineCore.framework (which
+        # also needs to contain all resources).
+        #
+        # Therefore, we collect the QtWebEngineCore.framework manually,
+        # in order to obtain a working QtWebEngineProcess helper
+        # executable. But because that bypasses our dependency scanner,
+        # we need to collect the dependent .framework bundles as well.
+        # And we need to override QTWEBENGINEPROCESS_PATH in rthook,
+        # because the QtWebEngineWidgets python extension actually loads
+        # up the copy of shared library that is located in sys._MEIPASS
+        # (as opposed to the manually-copied one in .framework bundle).
+        # Furthermore, because the extension modules use Qt shared libraries
+        # in sys._MEIPASS, we also copy all contents of
+        # QtWebEngineCore.framework/Resources into sys._MEIPASS to
+        # make resource loading in the main process work.
+        #
+        # Besides being ugly, this approach has three main ramifications:
+        # 1. we bundle two copies of each Qt shared library involved:
+        #    the copy actually used by main process, picked up by
+        #    dependency scanner; and a copy in manually-collected
+        #    .framework bundle that's used by the helper process
+        # 2. the trick with copying contents of Resource directory of
+        #    QtWebEngineCore.framework does not work in onefile mode,
+        #    and consequently QtWebEngine does not work in onefile mode
+        # 3. copying contents of QtWebEngineCore.framework/Resource means
+        #    that its Info.plist ends up in sys._MEIPASS, causing the
+        #    main process in onedir mode to be mis-identified as
+        #    "QtWebEngineProcess"
+        #
+        # In the near future, this quagmire will hopefully be properly
+        # sorted out, but in the mean time, we have to live with what
+        # we've been given.
+        data_path = qt_library_info.location['DataPath']
+        libraries = ['QtCore', 'QtWebEngineCore', 'QtQuick', 'QtQml',
+                     'QtQmlModels', 'QtNetwork', 'QtGui', 'QtWebChannel',
+                     'QtPositioning']
+        for i in libraries:
+            framework_dir = i + '.framework'
+            datas += hooks.collect_system_data_files(
+                os.path.join(data_path, 'lib', framework_dir),
+                os.path.join(rel_data_path, 'lib', framework_dir), True)
+        datas += [(os.path.join(data_path, 'lib', 'QtWebEngineCore.framework',
+                                'Resources'), os.curdir)]
+    else:
+        # Windows and linux
+        locales = 'qtwebengine_locales'
+        resources = 'resources'
+        datas += [
+            # Translations
+            (os.path.join(qt_library_info.location['TranslationsPath'],
+                          locales),
+             os.path.join(rel_data_path, 'translations', locales)),
+            # Resources; ``DataPath`` is the base directory for ``resources``,
+            # as per the `docs
+            # <https://doc.qt.io/qt-5.10/qtwebengine-deploying.html#deploying-resources>`_
+            (os.path.join(qt_library_info.location['DataPath'], resources),
+             os.path.join(rel_data_path, resources)),
+            # Helper process executable (QtWebEngineProcess), located in
+            # ``LibraryExecutablesPath``.
+            (os.path.join(qt_library_info.location['LibraryExecutablesPath'],
+                          'QtWebEngineProcess*'),
+             os.path.join(rel_data_path, os.path.relpath(
+                qt_library_info.location['LibraryExecutablesPath'],
+                qt_library_info.location['PrefixPath'])))
+        ]
+
+    # Add Linux-specific libraries.
+    if compat.is_linux:
+        # The automatic library detection fails for `NSS
+        # <https://packages.ubuntu.com/search?keywords=libnss3>`_, which is
+        # used by QtWebEngine. In some distributions, the ``libnss``
+        # supporting libraries are stored in a subdirectory ``nss``.
+        # Since ``libnss`` is not statically linked to these, but dynamically
+        # loads them, we need to search for and add them.
+
+        # First, get all libraries linked to ``QtWebEngineWidgets``
+        # extension module.
+        module_file = hooks.get_module_file_attribute(
+            qt_library_info.namespace + '.QtWebEngineWidgets')
+        module_imports = bindepend.getImports(module_file)
+        for imp in module_imports:
+            # Look for ``libnss3.so``.
+            if os.path.basename(imp).startswith('libnss3.so'):
+                # Find the location of NSS: given a ``/path/to/libnss.so``,
+                # add ``/path/to/nss/*.so`` to get the missing NSS libraries.
+                nss_glob = os.path.join(os.path.dirname(imp), 'nss', '*.so')
+                if glob.glob(nss_glob):
+                    binaries.append((nss_glob, 'nss'))
+
+    return binaries, datas

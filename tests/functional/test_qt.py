@@ -392,35 +392,19 @@ def get_QWebEngine_html(qt_flavor, data_dir):
 def test_PyQt5_QWebEngine(pyi_builder, data_dir, monkeypatch):
     _qt_dll_path_clean(monkeypatch, 'PyQt5')
     if is_darwin:
-        # This tests running the QWebEngine on OS X. To do so, the test must:
-        #
-        # 1. Run only a onedir build -- onefile builds don't work.
+        # QWebEngine on OS X only works with a onedir build -- onefile builds
+        # don't work. Skip the test execution for onefile builds.
         if pyi_builder._mode != 'onedir':
             pytest.skip('The QWebEngine .app bundle '
                         'only supports onedir mode.')
 
-        # 2. Only test the Mac .app bundle, by modifying the executes this
-        #    fixture runs.
-        _old_find_executables = pyi_builder._find_executables
-        # Create a replacement method that selects just the .app bundle.
-
-        def _replacement_find_executables(self, name):
-            path_to_onedir, path_to_app_bundle = _old_find_executables(name)
-            return [path_to_app_bundle]
-        # Use this in the fixture. See https://stackoverflow.com/a/28060251 and
-        # https://docs.python.org/3/howto/descriptor.html.
-        pyi_builder._find_executables = \
-            _replacement_find_executables.__get__(pyi_builder)
-
-    # 3. Run the test with specific command-line arguments. Otherwise, OS X
-    # builds fail. Also use this for the Linux and Windows builds, since this
-    # is a common case.
     pyi_builder.test_source(get_QWebEngine_html('PyQt5', data_dir),
                             **USE_WINDOWED_KWARG)
 
 
 @importorskip('PySide2')
-def test_PySide2_QWebEngine(pyi_builder, data_dir):
+def test_PySide2_QWebEngine(pyi_builder, data_dir, monkeypatch):
+    _qt_dll_path_clean(monkeypatch, 'PySide2')
     if is_darwin:
         # QWebEngine on OS X only works with a onedir build -- onefile builds
         # don't work. Skip the test execution for onefile builds.
