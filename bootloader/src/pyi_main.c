@@ -226,7 +226,14 @@ pyi_main(int argc, char * argv[])
             }
             /* Process Apple events; this updates argc_pyi/argv_pyi
              * accordingly */
-            pyi_process_apple_events(true);  /* short_timeout */
+            /* NOTE: processing Apple events swallows up the initial
+             * OAPP event, which seems to cause segmentation faults
+             * in tkinter-based frozen bundles made with Homebrew
+             * python 3.9 and Tcl/Tk 8.6.11. Until the exact cause
+             * is determined and addressed, this functionality must
+             * remain disabled.
+             */
+            /*pyi_process_apple_events(true);*/  /* short_timeout */
             /* Update pointer to arguments */
             pyi_utils_get_args(&archive_status->argc, &archive_status->argv);
             /* TODO: do we need to de-register Apple event handlers before
