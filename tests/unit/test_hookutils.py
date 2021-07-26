@@ -20,6 +20,7 @@ from PyInstaller.utils.hooks import collect_data_files, collect_submodules, \
     remove_file_extension, is_module_or_submodule, \
     is_module_satisfies, _copy_metadata_dest
 from PyInstaller.compat import exec_python, is_win
+from PyInstaller import log as logging
 
 
 class TestRemovePrefix(object):
@@ -115,11 +116,16 @@ def mod_list(monkeypatch):
 
 
 class TestCollectSubmodules(object):
-    # An error should be thrown if a module, not a package, was passed.
-    def test_collect_submod_module(self):
-        # os is a module, not a package.
-        with pytest.raises(TypeError):
-            collect_submodules(__import__('os'))
+    # A message should be emitted if a module, not a package, was passed.
+    def test_collect_submod_module(self, caplog):
+        with caplog.at_level(logging.DEBUG):
+            assert collect_submodules('os') == []
+            assert "Module os is not a package." in caplog.records[-1].msg
+
+    # A TypeError should be raised if given something other than a str.
+    def test_not_a_string(self):
+        with pytest.raises(TypeError, match="package must be a str"):
+            collect_submodules(os)
 
     # The package name itself should be in the returned list.
     def test_collect_submod_itself(self, mod_list):
