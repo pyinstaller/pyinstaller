@@ -1,0 +1,2 @@
+Make the error handing of :func:`~PyInstaller.utils.hooks.collect_submodules`
+configurable.

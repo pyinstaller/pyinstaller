@@ -523,7 +523,7 @@ def get_package_paths(package):
     return pkg_base, pkg_dir
 
 
-def collect_submodules(package: str, filter: Callable[[str], bool] = lambda name: True):
+def collect_submodules(package: str, filter: Callable[[str], bool] = lambda name: True, on_error="warn once"):
     """
     List all submodules of a given package.
 
@@ -533,6 +533,15 @@ def collect_submodules(package: str, filter: Callable[[str], bool] = lambda name
         filter:
             Filter the submodules found: A callable that takes a submodule name and returns True if it should be
             included.
+        on_error:
+            The action to take when a submodule fails to import. May be any of:
+
+            - raise: Errors are reraised and terminate the build.
+            - warn: Errors are downgraded to warnings.
+            - warn once: The first error issues a warning but all
+              subsequent errors are ignored to minimise *stderr polution*. This
+              is the default.
+            - ignore: Skip all errors. Don't warn about anything.
     Returns:
         All submodules to be assigned to ``hiddenimports`` in a hook.
 
@@ -541,11 +550,20 @@ def collect_submodules(package: str, filter: Callable[[str], bool] = lambda name
     Examples::
 
         # Collect all submodules of Sphinx don't contain the word ``test``.
-        hiddenimports = collect_submodules("Sphinx", filter=lambda name: 'test' not in name)
+        hiddenimports = collect_submodules(
+            "Sphinx", ``filter=lambda name: 'test' not in name)
+
+    .. versionchanged:: 4.5
+        Add the **on_error** parameter.
+
     """
     # Accept only strings as packages.
     if not isinstance(package, compat.string_types):
         raise TypeError('package must be a str')
+    if on_error not in ("ignore", "warn once", "warn", "raise"):
+        raise ValueError(
+            f"Invalid on-error action '{on_error}': Must be one of ('ignore', 'warn once', 'warn', 'raise')"
+        )
 
     logger.debug('Collecting submodules for %s' % package)
     # Skip a module which is not a package.
@@ -557,7 +575,7 @@ def collect_submodules(package: str, filter: Callable[[str], bool] = lambda name
     pkg_base, pkg_dir = get_package_paths(package)
 
     # Walk the package. Since this performs imports, do it in a separate process.
-    modules = _collect_submodules(pkg_dir, package)
+    modules = _collect_submodules(pkg_dir, package, on_error)
     # Apply the user defined filter function.
     modules = [i for i in modules if filter(i)]
 
@@ -566,10 +584,10 @@ def collect_submodules(package: str, filter: Callable[[str], bool] = lambda name
 
 
 @isolated.decorate
-def _collect_submodules(pkg_dir, package):
+def _collect_submodules(pkg_dir, package, on_error):
     import sys
     import pkgutil
-    import traceback
+    from traceback import format_exception_only
     from collections import deque
 
     # ``pkgutil.walk_packages`` doesn't walk subpackages of zipped files per https://bugs.python.org/issue14209. This is
@@ -591,10 +609,17 @@ def _collect_submodules(pkg_dir, package):
 
             try:
                 __import__(name)
-            except Exception:
-                traceback.print_exc()
-                # Ignore all errors. Don't attempt to recurse to submodules if this module didn't even make it into
-                # sys.modules.
+            except Exception as ex:
+                # Catch all errors then either raise, warn or ignore them as determined by the *on_error* parameter.
+                if on_error in ("warn", "warn once"):
+                    from PyInstaller.log import logger
+                    ex = "".join(format_exception_only(type(ex), ex)).strip()
+                    logger.warning(f"Failed to collect submodules for '{name}' because importing '{name}' raised: {ex}")
+                    if on_error == "warn once":
+                        on_error = "ignore"
+                elif on_error == "raise":
+                    raise ImportError(f"Unable to load submodule '{name}'.") from ex
+                # Don't attempt to recurse to submodules if this module didn't even make it into sys.modules.
                 if name not in sys.modules:
                     continue
             path = getattr(sys.modules[name], '__path__', None) or []
@@ -1016,11 +1041,14 @@ def requirements_for_package(package_name):
     return hiddenimports
 
 
-def collect_all(package_name,
-                include_py_files=True,
-                filter_submodules=None,
-                exclude_datas=None,
-                include_datas=None) -> Tuple[list, list, list]:
+def collect_all(
+    package_name,
+    include_py_files=True,
+    filter_submodules=None,
+    exclude_datas=None,
+    include_datas=None,
+    on_error="warn once",
+) -> Tuple[list, list, list]:
     """
     Collect everything for a given package name.
 
@@ -1035,6 +1063,8 @@ def collect_all(package_name,
             Forwarded to :func:`collect_data_files`.
         include_datas:
             Forwarded to :func:`collect_data_files`.
+        on_error:
+            Forwarded onto :func:`collect_submodules`.
 
     Returns:
         tuple: A ``(datas, binaries, hiddenimports)`` triplet containing:
@@ -1055,7 +1085,7 @@ def collect_all(package_name,
     datas += collect_data_files(package_name, include_py_files, excludes=exclude_datas, includes=include_datas)
     binaries = collect_dynamic_libs(package_name)
     if filter_submodules:
-        hiddenimports = collect_submodules(package_name, filter=filter_submodules)
+        hiddenimports = collect_submodules(package_name, on_error=on_error, filter=filter_submodules)
     else:
         hiddenimports = collect_submodules(package_name)
     try:
