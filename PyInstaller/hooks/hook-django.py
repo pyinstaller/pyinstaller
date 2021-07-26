@@ -20,7 +20,9 @@ from PyInstaller.utils.hooks import django
 
 logger = logging.getLogger(__name__)
 
-datas, binaries, hiddenimports = hooks.collect_all('django')
+# Collect everything. Some submodules of django are not importable without considerable external setup. Ignore the
+# errors they raise.
+datas, binaries, hiddenimports = hooks.collect_all('django', on_error="ignore")
 
 root_dir = django.django_find_root_dir()
 if root_dir:
