@@ -570,17 +570,20 @@ def _collect_submodules(pkg_dir, package):
     import sys
     import pkgutil
     import traceback
+    from collections import deque
 
     # ``pkgutil.walk_packages`` doesn't walk subpackages of zipped files per https://bugs.python.org/issue14209. This is
     # a workaround.
     seen = set()
+    todo = deque([([pkg_dir], package + ".")])
+    modules = [package]
 
-    def walk_packages(path=None, prefix=''):
-
+    while todo:
+        path, prefix = todo.pop()
         for importer, name, ispkg in pkgutil.iter_modules(path, prefix):
             if not name.startswith(prefix):
                 name = prefix + name
-            yield importer, name, ispkg
+            modules.append(name)
 
             if not ispkg:
                 # Only packages can have submodules.
@@ -599,12 +602,7 @@ def _collect_submodules(pkg_dir, package):
             # Don't traverse path items we've seen before.
             path = [p for p in path if p not in seen]
             seen.update(path)
-            yield from walk_packages(path, name + '.')
-
-    # The top level module.
-    modules = [package]
-    # And all its submodules.
-    modules.extend(name for (_, name, _) in walk_packages([pkg_dir], package + '.'))
+            todo.append((path, name + '.'))
 
     return modules
 
