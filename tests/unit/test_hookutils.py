@@ -14,6 +14,7 @@ import pytest
 import pathlib
 import shutil
 from os.path import join
+import re
 
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules, \
     get_module_file_attribute, remove_prefix, remove_suffix, \
@@ -142,6 +143,8 @@ class TestCollectSubmodules(object):
             TEST_MOD,
             # Python extensions end with '.pyd' on Windows and with  '.so' on Linux, Mac OS, and other OSes.
             TEST_MOD + '.pyextension',
+            TEST_MOD + '.raises_error_on_import_1',
+            TEST_MOD + '.raises_error_on_import_2',
             TEST_MOD + '.subpkg',
             TEST_MOD + '.subpkg.twelve',
             TEST_MOD + '.two'
@@ -202,6 +205,42 @@ class TestCollectSubmodules(object):
 
         assert ml == ['foo', 'foo.bar']
 
+    # Test each possible value for the **on_error** parameter to collect_submodules().
+    def test_error_propagation(self, capfd, monkeypatch):
+        monkeypatch.setattr('PyInstaller.config.CONF', {'pathex': [TEST_MOD_PATH]})
+        monkeypatch.syspath_prepend(TEST_MOD_PATH)
+
+        # Test the default of warning only for the 1st error.
+        collect_submodules(TEST_MOD)
+        error = capfd.readouterr().err
+        # Note that there is no guarantee which submodule will be collected first so we don't know exactly what the
+        # error will be from raises_error_on_import_1 or raises_error_on_import_2.
+        assert re.match(
+            ".*Failed .* for 'hookutils_package.raises_error_on_import_[12]' because .* "
+            "raised: AssertionError: I cannot be imported", error
+        )
+        # Make sure that only one warning was issued.
+        assert error.count("Failed") == 1
+
+        # Test ignore everything.
+        collect_submodules(TEST_MOD, on_error="ignore")
+        assert capfd.readouterr().err == ''
+
+        # Test warning for all errors. There should be two in total.
+        collect_submodules(TEST_MOD, on_error="warn")
+        error = capfd.readouterr().err
+        assert "raises_error_on_import_1" in error
+        assert "raises_error_on_import_2" in error
+        assert error.count("Failed") == 2
+
+        # Test treating errors as errors.
+        with pytest.raises(RuntimeError) as ex_info:
+            collect_submodules(TEST_MOD, on_error="raise")
+            # The traceback should include the cause of the error...
+            assert ex_info.match('(?s).* assert 0, "I cannot be imported!"')
+            # ... and the name of the offending submodule in an easy to spot format.
+            assert ex_info.match("Unable to load submodule " "'hookutils_package.raises_error_on_import_[12]'")
+
 
 def test_is_module_or_submodule():
     assert is_module_or_submodule('foo.bar', 'foo.bar')
@@ -255,6 +294,10 @@ def test_collect_data_module():
             join('py_files_not_in_package', 'ten.dat'),
             'pyextension.pyd',
             'pyextension.so',
+            join('raises_error_on_import_1', '__init__.py'),
+            join('raises_error_on_import_1', 'foo.py'),
+            join('raises_error_on_import_2', '__init__.py'),
+            join('raises_error_on_import_2', 'foo.py'),
             join('subpkg', '__init__.py'),
             join('subpkg', 'thirteen.txt'),
             join('subpkg', 'twelve.py'),
