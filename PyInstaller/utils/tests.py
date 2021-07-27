@@ -80,13 +80,13 @@ def importorskip(package: str):
     to `sys.path` and `PATH` being polluted, which then breaks later builds.
 
     """
-    if not _importable(package):
+    if not importable(package):
         return pytest.mark.skip(f"Can't import '{package}'.")
     return pytest.mark.skipif(
         False, reason=f"Don't skip: '{package}' is importable.")
 
 
-def _importable(package: str):
+def importable(package: str):
     from importlib.util import find_spec
 
     # The find_spec() function is used by the importlib machinery to locate a
@@ -95,7 +95,7 @@ def _importable(package: str):
     if "." in package:
         # Using subprocesses is slow. If the top level module doesn't exist
         # then we can skip it.
-        if not _importable(package.split(".")[0]):
+        if not importable(package.split(".")[0]):
             return False
         # This is a submodule, import it in isolation.
         from subprocess import run, DEVNULL
