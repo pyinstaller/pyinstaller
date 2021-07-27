@@ -17,7 +17,7 @@ import pytest
 from PyInstaller.compat import is_win, is_darwin, is_linux, is_64bits
 from PyInstaller.utils.hooks import is_module_satisfies
 from PyInstaller.utils.hooks.qt import get_qt_library_info
-from PyInstaller.utils.tests import importorskip, xfail, skipif
+from PyInstaller.utils.tests import requires, xfail, skipif
 
 
 PYQT5_NEED_OPENGL = pytest.mark.skipif(
@@ -26,9 +26,18 @@ PYQT5_NEED_OPENGL = pytest.mark.skipif(
     'the OpenGL software renderer, which this test requires.')
 
 
+def qt_param(qt_flavor, *args, **kwargs):
+    """A Qt flavour to be used in @pytest.mark.parametrize() which implicitly
+    skips the test if said flavor is not installed."""
+    p = pytest.param(qt_flavor, *args, **kwargs)
+    return pytest.param(
+        *p.values, marks=(requires(qt_flavor),) + p.marks, id=p.id)
+
+
 # Parametrize test to run the same basic code on both Python Qt libraries.
 _QT_PY_PACKAGES = ['PyQt5', 'PyQt6', 'PySide2', 'PySide6']
-QtPyLibs = pytest.mark.parametrize('QtPyLib', _QT_PY_PACKAGES)
+QtPyLibs = pytest.mark.parametrize(
+    'QtPyLib', [qt_param(i) for i in _QT_PY_PACKAGES])
 
 # OS X bundles, produced by the ``--windowed`` flag, invoke a unique code path
 # that sometimes causes failures in Qt applications.
@@ -120,7 +129,6 @@ def _qt_dll_path_clean(monkeypatch, namespace):
 
 @QtPyLibs
 def test_Qt_QtWidgets(pyi_builder, QtPyLib, monkeypatch):
-    pytest.importorskip(QtPyLib)
     _qt_dll_path_clean(monkeypatch, QtPyLib)
 
     pyi_builder.test_source(
@@ -153,7 +161,6 @@ def test_Qt_QtWidgets(pyi_builder, QtPyLib, monkeypatch):
 @PYQT5_NEED_OPENGL
 @QtPyLibs
 def test_Qt_QtQml(pyi_builder, QtPyLib, monkeypatch):
-    pytest.importorskip(QtPyLib)
     _qt_dll_path_clean(monkeypatch, QtPyLib)
 
     pyi_builder.test_source(
@@ -207,19 +214,18 @@ def test_Qt_QtQml(pyi_builder, QtPyLib, monkeypatch):
 
 
 @pytest.mark.parametrize('QtPyLib', [
-    'PyQt5',
-    'PyQt6',
-    pytest.param(
+    qt_param('PyQt5'),
+    qt_param('PyQt6'),
+    qt_param(
         'PySide2',
         marks=xfail(is_win, reason='PySide2 wheels on Windows do not '
                                    'include SSL DLLs.')),
-    pytest.param(
+    qt_param(
         'PySide6',
         marks=xfail(is_win, reason='PySide6 wheels on Windows do not '
                                    'include SSL DLLs.')),
 ])
 def test_Qt_QtNetwork_SSL_support(pyi_builder, monkeypatch, QtPyLib):
-    pytest.importorskip(QtPyLib)
     _qt_dll_path_clean(monkeypatch, QtPyLib)
 
     pyi_builder.test_source(
@@ -231,7 +237,6 @@ def test_Qt_QtNetwork_SSL_support(pyi_builder, monkeypatch, QtPyLib):
 
 @QtPyLibs
 def test_Qt_QTranslate(pyi_builder, monkeypatch, QtPyLib):
-    pytest.importorskip(QtPyLib)
     _qt_dll_path_clean(monkeypatch, QtPyLib)
     pyi_builder.test_source(
         """
@@ -268,7 +273,6 @@ def test_Qt_QTranslate(pyi_builder, monkeypatch, QtPyLib):
 @PYQT5_NEED_OPENGL
 @QtPyLibs
 def test_Qt_Ui_file(tmpdir, pyi_builder, data_dir, monkeypatch, QtPyLib):
-    pytest.importorskip(QtPyLib)
     _qt_dll_path_clean(monkeypatch, QtPyLib)
     # Note that including the data_dir fixture copies files needed by
     # this test.
@@ -346,7 +350,7 @@ def test_Qt_Ui_file(tmpdir, pyi_builder, data_dir, monkeypatch, QtPyLib):
 # variables <https://www.appveyor.com/docs/environment-variables/>`_.
 @skipif(os.environ.get('APPVEYOR') == 'True',
         reason='The Appveyor OS is incompatible with PyQt.Qt.')
-@importorskip('PyQt5')
+@requires('PyQt5')
 @pytest.mark.skipif(is_module_satisfies('PyQt5 == 5.11.3') and is_darwin,
                     reason='This version of the OS X wheel does not '
                            'include QWebEngine.')
@@ -388,7 +392,7 @@ def get_QWebEngine_html(qt_flavor, data_dir):
 @pytest.mark.skipif(is_module_satisfies('PyQt5 == 5.11.3') and is_darwin,
                     reason='This version of the OS X wheel does not '
                            'include QWebEngine.')
-@importorskip('PyQt5')
+@requires('PyQt5')
 def test_PyQt5_QWebEngine(pyi_builder, data_dir, monkeypatch):
     _qt_dll_path_clean(monkeypatch, 'PyQt5')
     if is_darwin:
@@ -402,7 +406,7 @@ def test_PyQt5_QWebEngine(pyi_builder, data_dir, monkeypatch):
                             **USE_WINDOWED_KWARG)
 
 
-@importorskip('PySide2')
+@requires('PySide2')
 def test_PySide2_QWebEngine(pyi_builder, data_dir, monkeypatch):
     _qt_dll_path_clean(monkeypatch, 'PySide2')
     if is_darwin:
