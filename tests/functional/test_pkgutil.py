@@ -29,6 +29,7 @@ import os
 import pytest
 
 from PyInstaller.compat import exec_python_rc
+from PyInstaller.utils.tests import importable
 
 
 # Read the output file produced by test script. Each line consists of
@@ -53,7 +54,8 @@ def _read_results_file(filename):
 def test_pkgutil_iter_modules(package, script_dir, tmpdir, pyi_builder,
                               archive):
     # Ensure package is available
-    pytest.importorskip(package)
+    if not importable(package.split(".")[0]):
+        pytest.skip("Needs " + package)
 
     # Full path to test script
     test_script = 'pyi_pkgutil_iter_modules.py'
