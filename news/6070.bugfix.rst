@@ -1,0 +1,2 @@
+Fix crash in windowed bootloader when the traceback for unhandled exception
+cannot be retrieved.
