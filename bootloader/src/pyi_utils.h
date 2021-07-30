@@ -51,6 +51,7 @@ dylib_t pyi_utils_dlopen(const char *dllpath);
 int pyi_utils_dlclose(dylib_t dll);
 int pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS *status,
                            const int argc, char *const argv[]);
+pid_t pyi_utils_get_child_pid();
 int pyi_utils_set_environment(const ARCHIVE_STATUS *status);
 
 /* Argument handling */

@@ -949,6 +949,15 @@ set_systemd_env()
  */
 pid_t child_pid = 0;
 
+/*
+ * Retrieve child process' PID, if available.
+ */
+pid_t
+pyi_utils_get_child_pid()
+{
+    return child_pid;
+}
+
 static void
 _ignoring_signal_handler(int signum)
 {
@@ -1247,8 +1256,11 @@ static OSErr generic_forward_apple_event(const AppleEvent *const theAppleEvent /
     DescType actualType = 0, typeCode = typeWildCard;
     char *buf = NULL; /* dynamic buffer to hold copied event param data */
     Size bufSize = 0, actualSize = 0;
+    pid_t child_pid;
 
     VS("LOADER [AppleEvent]: Forwarder called for \"%s\".\n", descStr);
+
+    child_pid = pyi_utils_get_child_pid();
     if (!child_pid) {
         /* Child not up yet -- there is no way to "forward" this before child started!. */
          VS("LOADER [AppleEvent]: Child not up yet (child_pid is 0)\n");
@@ -1352,7 +1364,7 @@ static OSErr handle_odoc_GURL_events(const AppleEvent *theAppleEvent, const AEEv
 
     VS("LOADER [AppleEvent]: %s handler called.\n", descStr);
 
-    if (!child_pid) {
+    if (!pyi_utils_get_child_pid()) {
         /* Child process is not up yet -- so we pick up kAEOpen and/or kAEGetURL events and append them to argv. */
 
         AEDescList docList;
@@ -1453,7 +1465,7 @@ static OSErr handle_odoc_GURL_events(const AppleEvent *theAppleEvent, const AEEv
                                        descStr);
 }
 
-/* This brings the child_pid's windows to the foreground when the user double-clicks the
+/* This brings the child process's windows to the foreground when the user double-clicks the
  * app's icon again in the macOS UI. 'rapp' is accepted by us only when the child is
  * already running. */
 static OSErr handle_rapp_event(const AppleEvent *const theAppleEvent, const AEEventID evtID)
