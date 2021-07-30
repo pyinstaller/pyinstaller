@@ -1492,8 +1492,8 @@ static OSErr handle_rapp_event(const AppleEvent *const theAppleEvent, const AEEv
 /* Top-level event handler -- dispatches 'odoc', 'GURL', 'rapp', or 'actv' events. */
 static pascal OSErr handle_apple_event(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon handlerRefCon)
 {
-    const FourCharCode evtCode = (FourCharCode)handlerRefCon;
-    const AEEventID evtID = (AEEventID)handlerRefCon;
+    const FourCharCode evtCode = (FourCharCode)(intptr_t)handlerRefCon;
+    const AEEventID evtID = (AEEventID)(intptr_t)handlerRefCon;
     (void)reply; /* unused */
 
     VS("LOADER [AppleEvent]: %s called with code '%s'.\n", __FUNCTION__, CC2Str(evtCode));
