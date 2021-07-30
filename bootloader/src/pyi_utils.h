@@ -55,6 +55,7 @@ int pyi_utils_set_environment(const ARCHIVE_STATUS *status);
 
 /* Argument handling */
 int pyi_utils_initialize_args(const int argc, char *const argv[]);
+int pyi_utils_append_to_args(const char *arg);
 void pyi_utils_get_args(int *argc, char ***argv);
 void pyi_utils_free_args();
 

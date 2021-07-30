@@ -1139,6 +1139,40 @@ int pyi_utils_initialize_args(const int argc, char *const argv[])
 }
 
 /*
+ * Append given argument to private argv_pyi and increment argc_pyi.
+ * The argv_pyi array is reallocated accordingly.
+ *
+ * Returns 0 on success, -1 on failure (due to failed array reallocation).
+ * On failure, argv_pyi and argc_pyi remain unchanged.
+ */
+int pyi_utils_append_to_args(const char *arg)
+{
+    char **new_argv_pyi;
+    char *new_arg;
+
+    /* Make a copy of new argument */
+    new_arg = strdup(arg);
+    if (!new_arg) {
+        return -1;
+    }
+
+    /* Reallocate argv_pyi array, making space for new argument plus
+     * terminating NULL */
+    new_argv_pyi = (char**)realloc(argv_pyi, (argc_pyi + 2) * sizeof(char *));
+    if (!new_argv_pyi) {
+        free(new_arg);
+        return -1;
+    }
+    argv_pyi = new_argv_pyi;
+
+    /* Store new argument */
+    argv_pyi[argc_pyi++] = new_arg;
+    argv_pyi[argc_pyi] = NULL;
+
+    return 0;
+}
+
+/*
  * Retrieve value of argc_pyi and the pointer to argv_pyi. The retrieved
  * arguments are originally the same as the ones passed to
  * pyi_utils_initialize_args(), but may have been modified by subsequent
@@ -1364,7 +1398,7 @@ static OSErr handle_odoc_GURL_events(const AppleEvent *theAppleEvent, const AEEv
                 VS("LOADER [AppleEvent ARGV_EMU]: err[%ld]: not enough space in buffer (%ld > %ld)\n",
                    index-1L, (long)actualSize, (long)bufSize);
             } else {
-                /* Copied data to buf, now ensure data is a simple file path and then copy to argv_pyi[argc_pyi] */
+                /* Copied data to buf, now ensure data is a simple file path and then append it to argv_pyi */
                 char *tmp_str = NULL;
                 Boolean ok;
 
@@ -1395,20 +1429,13 @@ static OSErr handle_odoc_GURL_events(const AppleEvent *theAppleEvent, const AEEv
                     }
                 }
                 /* Append URL to argv_pyi array, reallocating as necessary */
-                VS("LOADER [AppleEvent ARGV_EMU]: arg[%d] = %s\n", (int)argc_pyi, buf);
-                tmp_str = strdup(buf);
-                ok = realloc_checked((void **)&argv_pyi, (argc_pyi + 2) * sizeof(char *));
-                if (!ok || !tmp_str) {
-                    /* Out of memory. Extremely unlikely -- not clear what to do here.
-                     * Attempt to silently continue. */
-                    OTHERERROR("LOADER [AppleEvent ARGV_EMU]: allocation for arg[%d] failed: %s\n",
-                               argc_pyi, strerror(errno));
-                    free(tmp_str); /* free of possible NULL ok */
-                    continue;
+                VS("LOADER [AppleEvent ARGV_EMU]: appending '%s' to argv_pyi\n", buf);
+                if (pyi_utils_append_to_args(buf) < 0) {
+                    OTHERERROR("LOADER [AppleEvent ARGV_EMU]: failed to append to argv_pyi: %s\n",
+                               buf, strerror(errno));
+                } else {
+                    VS("LOADER [AppleEvent ARGV_EMU]: argv entry appended.\n");
                 }
-                argv_pyi[argc_pyi++] = tmp_str;
-                argv_pyi[argc_pyi] = NULL;
-                VS("LOADER [AppleEvent ARGV_EMU]: argv entry appended.\n");
             }
         }
 
