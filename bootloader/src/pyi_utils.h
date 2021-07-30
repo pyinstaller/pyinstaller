@@ -51,7 +51,9 @@ dylib_t pyi_utils_dlopen(const char *dllpath);
 int pyi_utils_dlclose(dylib_t dll);
 int pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS *status,
                            const int argc, char *const argv[]);
+#ifndef _WIN32
 pid_t pyi_utils_get_child_pid();
+#endif
 int pyi_utils_set_environment(const ARCHIVE_STATUS *status);
 
 /* Argument handling */
@@ -59,17 +61,5 @@ int pyi_utils_initialize_args(const int argc, char *const argv[]);
 int pyi_utils_append_to_args(const char *arg);
 void pyi_utils_get_args(int *argc, char ***argv);
 void pyi_utils_free_args();
-
-/* Apple event handling */
-#if defined(__APPLE__) && defined(WINDOWED)
-/*
- * Watch for OpenDocument AppleEvents and add the files passed in to the
- * sys.argv command line on the Python side.
- *
- * This allows on Mac OS X to open files when a file is dragged and dropped
- * on the App icon in the OS X dock.
- */
-void pyi_process_apple_events(bool short_timeout);
-#endif  /* defined(__APPLE__) && defined(WINDOWED) */
 
 #endif  /* HEADER_PY_UTILS_H */
