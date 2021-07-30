@@ -380,7 +380,7 @@ _pyi_extract_exception_message(PyObject *pvalue)
     if (pvalue_cchar) {
         retval = strdup(pvalue_cchar);
     }
-    Py_DECREF(pvalue_str);
+    PI_Py_DecRef(pvalue_str);
 
     return retval;
 }
@@ -429,16 +429,16 @@ _pyi_extract_exception_traceback(PyObject *ptype, PyObject *pvalue,
                 /* Join the list using empty string */
                 PyObject *tb_empty = PI_PyUnicode_FromString("");
                 tb_str = PI_PyUnicode_Join(tb_empty, tb);
-                Py_DECREF(tb_empty);
+                PI_Py_DecRef(tb_empty);
                 if (fmt_mode == PYI_TB_FMT_CRLF) {
                     /* Replace LF with CRLF */
                     PyObject *lf = PI_PyUnicode_FromString("\n");
                     PyObject *crlf = PI_PyUnicode_FromString("\r\n");
                     PyObject *tb_str_crlf = PI_PyUnicode_Replace(tb_str, lf, crlf, -1);
-                    Py_DECREF(lf);
-                    Py_DECREF(crlf);
+                    PI_Py_DecRef(lf);
+                    PI_Py_DecRef(crlf);
                     /* Swap */
-                    Py_DECREF(tb_str);
+                    PI_Py_DecRef(tb_str);
                     tb_str = tb_str_crlf;
                 }
             }
@@ -446,12 +446,12 @@ _pyi_extract_exception_traceback(PyObject *ptype, PyObject *pvalue,
             if (tb_cchar) {
                 retval = strdup(tb_cchar);
             }
-            Py_DECREF(tb);
-            Py_DECREF(tb_str);
+            PI_Py_DecRef(tb);
+            PI_Py_DecRef(tb_str);
         }
-        Py_DECREF(func);
+        PI_Py_DecRef(func);
     }
-    Py_DECREF(module);
+    PI_Py_DecRef(module);
 
     return retval;
 }
@@ -499,7 +499,7 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
             VS("LOADER: Running %s.py\n", ptoc->name);
             __file__ = PI_PyUnicode_FromString(buf);
             PI_PyObject_SetAttrString(__main__, "__file__", __file__);
-            Py_DECREF(__file__);
+            PI_Py_DecRef(__file__);
 
             /* Unmarshall code object */
             code = PI_PyMarshal_ReadObjectFromString((const char *) data, ptoc->ulen);

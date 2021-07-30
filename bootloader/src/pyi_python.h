@@ -137,25 +137,6 @@ EXTDECLPROC(const char *, PyUnicode_AsUTF8, (PyObject *));
 EXTDECLPROC(PyObject *, PyUnicode_Join, (PyObject *, PyObject *));
 EXTDECLPROC(PyObject *, PyUnicode_Replace, (PyObject *, PyObject *, PyObject *, size_t));  /* Py_ssize_t */
 
-/*
- * Macros for reference counting through exported functions
- * (that is: without binding to the binary structure of a PyObject.
- * These rely on the Py_IncRef/Py_DecRef API functions on Pyhton 2.4+.
- *
- * Python versions before 2.4 do not export IncRef/DecRef as a binary API,
- * but only as macros in header files. Since we support Python 2.4+ we do not
- * need to provide an emulated incref/decref as it was with older Python
- * versions.
- *
- * We do not want to depend on Python.h for many reasons (including the fact
- * that we would like to have a single binary for all Python versions).
- */
-
-#define Py_XINCREF(o)    PI_Py_IncRef(o)
-#define Py_XDECREF(o)    PI_Py_DecRef(o)
-#define Py_DECREF(o)     Py_XDECREF(o)
-#define Py_INCREF(o)     Py_XINCREF(o)
-
 int pyi_python_map_names(HMODULE dll, int pyvers);
 
 #endif  /* PYI_PYTHON_H */
