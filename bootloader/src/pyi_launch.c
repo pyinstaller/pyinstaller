@@ -418,33 +418,38 @@ _pyi_extract_exception_traceback(PyObject *ptype, PyObject *pvalue,
     if (module != NULL) {
         PyObject *func = PI_PyObject_GetAttrString(module, "format_exception");
         if (func) {
-            PyObject *tb, *tb_str;
+            PyObject *tb = NULL;
+            PyObject *tb_str = NULL;
             const char *tb_cchar = NULL;
             tb = PI_PyObject_CallFunctionObjArgs(func, ptype, pvalue,
                                                  ptraceback, NULL);
-            if (fmt_mode == PYI_TB_FMT_REPR) {
-                /* Represent the list as string */
-                tb_str = PI_PyObject_Str(tb);
-            } else {
-                /* Join the list using empty string */
-                PyObject *tb_empty = PI_PyUnicode_FromString("");
-                tb_str = PI_PyUnicode_Join(tb_empty, tb);
-                PI_Py_DecRef(tb_empty);
-                if (fmt_mode == PYI_TB_FMT_CRLF) {
-                    /* Replace LF with CRLF */
-                    PyObject *lf = PI_PyUnicode_FromString("\n");
-                    PyObject *crlf = PI_PyUnicode_FromString("\r\n");
-                    PyObject *tb_str_crlf = PI_PyUnicode_Replace(tb_str, lf, crlf, -1);
-                    PI_Py_DecRef(lf);
-                    PI_Py_DecRef(crlf);
-                    /* Swap */
-                    PI_Py_DecRef(tb_str);
-                    tb_str = tb_str_crlf;
+            if (tb != NULL) {
+                if (fmt_mode == PYI_TB_FMT_REPR) {
+                    /* Represent the list as string */
+                    tb_str = PI_PyObject_Str(tb);
+                } else {
+                    /* Join the list using empty string */
+                    PyObject *tb_empty = PI_PyUnicode_FromString("");
+                    tb_str = PI_PyUnicode_Join(tb_empty, tb);
+                    PI_Py_DecRef(tb_empty);
+                    if (fmt_mode == PYI_TB_FMT_CRLF) {
+                        /* Replace LF with CRLF */
+                        PyObject *lf = PI_PyUnicode_FromString("\n");
+                        PyObject *crlf = PI_PyUnicode_FromString("\r\n");
+                        PyObject *tb_str_crlf = PI_PyUnicode_Replace(tb_str, lf, crlf, -1);
+                        PI_Py_DecRef(lf);
+                        PI_Py_DecRef(crlf);
+                        /* Swap */
+                        PI_Py_DecRef(tb_str);
+                        tb_str = tb_str_crlf;
+                    }
                 }
             }
-            tb_cchar = PI_PyUnicode_AsUTF8(tb_str);
-            if (tb_cchar) {
-                retval = strdup(tb_cchar);
+            if (tb_str != NULL) {
+                tb_cchar = PI_PyUnicode_AsUTF8(tb_str);
+                if (tb_cchar) {
+                    retval = strdup(tb_cchar);
+                }
             }
             PI_Py_DecRef(tb);
             PI_Py_DecRef(tb_str);
