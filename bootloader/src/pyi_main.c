@@ -44,6 +44,7 @@
 #include "pyi_launch.h"
 #include "pyi_win32_utils.h"
 #include "pyi_splash.h"
+#include "pyi_apple_events.h"
 
 int
 pyi_main(int argc, char * argv[])
@@ -216,28 +217,35 @@ pyi_main(int argc, char * argv[])
             strcpy(archive_status->mainpath, archive_status->temppath);
         }
 
-        /* On macOS in windowed mode, process Apple events and convert
-         * them to sys.argv - but only if we are in onedir mode! */
 #if defined(__APPLE__) && defined(WINDOWED)
         if (!in_child) {
             /* Initialize argc_pyi and argv_pyi with argc and argv */
             if (pyi_utils_initialize_args(archive_status->argc, archive_status->argv) < 0) {
                 return -1;
             }
-            /* Process Apple events; this updates argc_pyi/argv_pyi
-             * accordingly */
-            /* NOTE: processing Apple events swallows up the initial
-             * OAPP event, which seems to cause segmentation faults
-             * in tkinter-based frozen bundles made with Homebrew
-             * python 3.9 and Tcl/Tk 8.6.11. Until the exact cause
-             * is determined and addressed, this functionality must
-             * remain disabled.
+            /* Optional argv emulation for onedir .app bundles */
+            if (pyi_arch_get_option(archive_status, "pyi-macos-argv-emulation") != NULL) {
+                /* Install event handlers */
+                pyi_apple_install_event_handlers();
+                /* Process Apple events; this updates argc_pyi/argv_pyi
+                 * accordingly */
+                pyi_apple_process_events(0.25);  /* short_timeout (250 ms) */
+                /* Uninstall event handlers */
+                pyi_apple_uninstall_event_handlers();
+                /* NOTE: processing Apple events swallows up the initial
+                 * activation event, whatever it might have been (typically
+                 * oapp, but could also be odoc or GURL if application is
+                 * launched in response to request to open file/URL).
+                 * This seems to cause issues with Tcl/Tk, so argv
+                 * emulation should not be used in conjuction with
+                 * UI frameworks.
+                 */
+            }
+            /* Update pointer to arguments; regardless of argv-emulation,
+             * because pyi_utils_initialize_args() also filters out
+             * -psn_xxx argument.
              */
-            /*pyi_process_apple_events(true);*/  /* short_timeout */
-            /* Update pointer to arguments */
             pyi_utils_get_args(&archive_status->argc, &archive_status->argv);
-            /* TODO: do we need to de-register Apple event handlers before
-             * entering python? */
         }
 #endif
 

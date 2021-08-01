@@ -1,0 +1,3 @@
+(macOS) The :ref:`argv emulation <macos event forwarding and argv emulation>`
+functionality is now available as an optional feature for app bundles
+built in either ``onefile`` or ``onedir`` mode.
