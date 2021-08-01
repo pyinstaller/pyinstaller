@@ -1,0 +1,29 @@
+
+on: workflow_dispatch
+name: Wheel Builder
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+
+      - name: Install dependencies
+        run: python -m pip install -U -e . setuptools wheel twine macholib
+
+      - name: Build Wheels
+        run: |
+          python setup.py sdist bdist_wheels
+          python -m twine check dist/*
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: wheels
+          path: dist/*
