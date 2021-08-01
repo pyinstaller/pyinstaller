@@ -22,6 +22,17 @@ Contributions to PyInstaller 4.4
 
 * Rok Mandeljc - Core Developer
 * Brénainn Woodsend - Core Developer
+* Jasper Harrison - Maintainer, Release Manager
+* Dave Dykstra
+* Andy Hobbs
+* Nicholas Ollinger
+
+
+Contributions to PyInstaller 4.4
+--------------------------------
+
+* Rok Mandeljc - Core Developer
+* Brénainn Woodsend - Core Developer
 * Jasper Harrison - Core Developer, Maintainer, Release Manager
 * Hartmut Goebel - Core Developer
 * xoviat
