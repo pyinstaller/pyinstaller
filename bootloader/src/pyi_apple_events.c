@@ -346,6 +346,9 @@ static pascal OSErr handle_apple_event(const AppleEvent *theAppleEvent, AppleEve
     VS("LOADER [AppleEvent]: %s called with code '%s'.\n", __FUNCTION__, CC2Str(evtCode));
 
     switch(evtID) {
+    case kAEOpenApplication:
+        /* Nothing to do here, just make sure we report event as handled. */
+        return noErr;
     case kAEOpenDocuments:
     case kAEGetURL:
         return handle_odoc_GURL_events(theAppleEvent, evtID);
@@ -423,6 +426,11 @@ int pyi_apple_install_event_handlers()
     _ae_ctx.upp_handler_ae = NewAEEventHandlerUPP(handle_apple_event);
 
     /* Register Apple Event handlers */
+    /* 'oapp' (open application) */
+    err = AEInstallEventHandler(kCoreEventClass, kAEOpenApplication, _ae_ctx.upp_handler_ae, (SRefCon)kAEOpenApplication, false);
+    if (err != noErr) {
+        goto end;
+    }
     /* 'odoc' (open document) */
     err = AEInstallEventHandler(kCoreEventClass, kAEOpenDocuments, _ae_ctx.upp_handler_ae, (SRefCon)kAEOpenDocuments, false);
     if (err != noErr) {
@@ -455,6 +463,7 @@ end:
         AERemoveEventHandler(kCoreEventClass, kAEReopenApplication, _ae_ctx.upp_handler_ae, false);
         AERemoveEventHandler(kInternetEventClass, kAEGetURL, _ae_ctx.upp_handler_ae, false);
         AERemoveEventHandler(kCoreEventClass, kAEOpenDocuments, _ae_ctx.upp_handler_ae, false);
+        AERemoveEventHandler(kCoreEventClass, kAEOpenApplication, _ae_ctx.upp_handler_ae, false);
 
         DisposeEventHandlerUPP(_ae_ctx.upp_handler);
         DisposeAEEventHandlerUPP(_ae_ctx.upp_handler_ae);
@@ -489,6 +498,7 @@ int pyi_apple_uninstall_event_handlers()
     AERemoveEventHandler(kCoreEventClass, kAEReopenApplication, _ae_ctx.upp_handler_ae, false);
     AERemoveEventHandler(kInternetEventClass, kAEGetURL, _ae_ctx.upp_handler_ae, false);
     AERemoveEventHandler(kCoreEventClass, kAEOpenDocuments, _ae_ctx.upp_handler_ae, false);
+    AERemoveEventHandler(kCoreEventClass, kAEOpenApplication, _ae_ctx.upp_handler_ae, false);
 
     /* Cleanup UPPs */
     DisposeEventHandlerUPP(_ae_ctx.upp_handler);
