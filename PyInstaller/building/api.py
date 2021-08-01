@@ -682,18 +682,16 @@ class EXE(Target):
             logger.info("Copying archive to %s", self.pkgname)
             self._copyfile(self.pkg.name, self.pkgname)
         elif is_linux:
-            self._copyfile(exe, self.name)
+            import lief
             logger.info("Appending archive to ELF section in EXE %s", self.name)
-            retcode, stdout, stderr = exec_command_all(
-                'objcopy', '--add-section', 'pydata=%s' % self.pkg.name,
-                self.name)
-            logger.debug("objcopy returned %i", retcode)
-            if stdout:
-                logger.debug(stdout)
-            if stderr:
-                logger.debug(stderr)
-            if retcode != 0:
-                raise SystemError("objcopy Failure: %s" % stderr)
+            elf_target = lief.parse(exe)
+            elf_section = lief.ELF.Section()
+            elf_section.name = "pydata"
+            elf_section.type = lief.ELF.SECTION_TYPES.PROGBITS
+            with open(self.pkg.name, "rb") as elf_section_data:
+                elf_section.content = list(elf_section_data.read())
+            elf_section = elf_target.add(elf_section, True)
+            elf_target.write(self.name)
         elif is_darwin:
             import PyInstaller.utils.osx as osxutils
 

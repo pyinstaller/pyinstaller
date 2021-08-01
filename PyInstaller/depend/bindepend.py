@@ -850,16 +850,13 @@ def _get_so_name(filename):
     """
     Return the soname of a library.
 
-    Soname is usefull whene there are multiple symplinks to one library.
+    Soname is useful when there are multiple symlinks to one library.
     """
-    # TODO verify that objdump works on other unixes and not Linux only.
-    cmd = ["objdump", "-p", filename]
-    pattern = r'\s+SONAME\s+([^\s]+)'
-    if compat.is_solar:
-        cmd = ["elfdump", "-d", filename]
-        pattern = r'\s+SONAME\s+[^\s]+\s+([^\s]+)'
-    m = re.search(pattern, compat.exec_command(*cmd))
-    return m.group(1)
+
+    import lief
+    elf_target = lief.parse(filename)
+    elf_target_soname = elf_target[lief.ELF.DYNAMIC_TAGS.SONAME].name
+    return elf_target_soname
 
 
 def get_python_library_path():
