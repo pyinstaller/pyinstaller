@@ -563,4 +563,83 @@ void pyi_apple_process_events(float timeout)
     VS("LOADER [AppleEvent]: Out of the event loop.\n");
 }
 
+
+/*
+ * Submit oapp (open application) event to ourselves. This is an attempt
+ * to mitigate the issues with some UI frameworks (Tcl/Tk, in particular)
+ * that are causes by argv-emu being enabled in onedir mode. In this case,
+ * argv-emu swallows initial activation event (usually oapp; or odoc/GURL
+ * if launched via file/url open request). This function attempts to
+ * mitigate that by submitting a manual oapp event to itself so that the
+ * UI framework finds the activation even in the event queue, as if no
+ * Apple Event processing took place in the bootloader.
+ */
+void pyi_apple_submit_oapp_event()
+{
+    AppleEvent event = {typeNull, nil};
+    AEAddressDesc target = {typeNull, nil};
+    EventRef event_ref;
+    ProcessSerialNumber psn;
+    OSErr err;
+
+    VS("LOADER [AppleEvent]: Submitting 'oapp' event...\n");
+
+    // Get PSN via GetCurrentProcess. This function is deprecated, but
+    // we cannot use {0, kCurrentProcess} because we need our event
+    // to be queued.
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
+    err = GetCurrentProcess(&psn);
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+    if (err != noErr) {
+        OTHERERROR("LOADER [AppleEvent]: Failed to obtain PSN: %d\n", (int)err);
+        goto cleanup;
+    }
+
+    // Create target address using the PSN, ...
+    err = AECreateDesc(typeProcessSerialNumber, &psn, sizeof(psn), &target);
+    if (err != noErr) {
+        OTHERERROR("LOADER [AppleEvent]: Failed to create AEAddressDesc: %d\n", (int)err);
+        goto cleanup;
+    }
+
+    // ... create OAPP event, ...
+    err = AECreateAppleEvent(kCoreEventClass, kAEOpenApplication, &target, kAutoGenerateReturnID, kAnyTransactionID, &event);
+    if (err != noErr) {
+        OTHERERROR("LOADER [AppleEvent]: Failed to create OAPP event: %d\n", (int)err);
+        goto cleanup;
+    }
+
+    // ... and send it
+    err = AESendMessage(&event, NULL, kAENoReply, 60 /* 60 = about 1.0 seconds timeout */);
+    if (err != noErr) {
+        OTHERERROR("LOADER [AppleEvent]: Failed to send event: %d\n", (int)err);
+        goto cleanup;
+    } else {
+        VS("LOADER [AppleEvent]: Submitted 'oapp' event.\n");
+    }
+
+    // Now wait for the event to show up in event queue (this implicitly
+    // assumes that no other activation event shows up, but those would
+    // also solve the problem we are trying to mitigate).
+    VS("LOADER [AppleEvent]: Waiting for 'oapp' event to show up in queue...\n");
+    err = ReceiveNextEvent(1, event_types_ae, 10.0, kEventLeaveInQueue, &event_ref);
+    if (err != noErr) {
+        OTHERERROR("LOADER [AppleEvent]: Timed out while waiting for submitted 'oapp' event to show up in queue!\n");
+    } else {
+        VS("LOADER [AppleEvent]: Submitted 'oapp' event is available in the queue.\n");
+    }
+
+cleanup:
+    AEDisposeDesc(&event);
+    AEDisposeDesc(&target);
+
+    return;
+}
+
+
 #endif /* if defined(__APPLE__) && defined(WINDOWED) */
