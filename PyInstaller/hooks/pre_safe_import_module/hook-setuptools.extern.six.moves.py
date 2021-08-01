@@ -18,9 +18,9 @@ from PyInstaller.utils.hooks import eval_statement
 # Note that the moves are defined in 'setuptools._vendor.six' but are imported
 # under 'setuptools.extern.six'.
 
+
 def pre_safe_import_module(api):
-    real_to_six_module_name = eval_statement(
-'''
+    real_to_six_module_name = eval_statement('''
 try:
     import setuptools._vendor.six as six
 except ImportError:

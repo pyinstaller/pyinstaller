@@ -8,8 +8,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-
 """
 Configure PyInstaller for the current Python installation.
 """
@@ -18,7 +16,7 @@ import os
 
 from PyInstaller import compat
 from PyInstaller import log as logging
-from PyInstaller.compat import is_win, is_darwin
+from PyInstaller.compat import is_darwin, is_win
 
 logger = logging.getLogger(__name__)
 
@@ -31,8 +29,8 @@ def test_UPX(config, upx_dir):
 
     hasUPX = 0
     try:
-        vers = compat.exec_command(
-            cmd, '-V', __raise_ENOENT__=True).strip().splitlines()
+        vers = compat.exec_command(cmd, '-V',
+                                   __raise_ENOENT__=True).strip().splitlines()
         if vers:
             v = vers[0].split()[1]
             try:
@@ -42,7 +40,9 @@ def test_UPX(config, upx_dir):
                 pass
             hasUPX = tuple(map(int, v.split(".")))
             if is_win and hasUPX < (1, 92):
-                logger.error('UPX is too old! Python 2.4 under Windows requires UPX 1.92+')
+                logger.error(
+                    'UPX is too old! Python 2.4 under Windows requires UPX 1.92+'
+                )
                 hasUPX = 0
     except Exception as e:
         if isinstance(e, OSError) and e.errno == 2:

@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 import sys
 
 from PyInstaller import compat
@@ -30,4 +29,5 @@ def hook(hook_api):
         # with "too many values to unpack".
         hook_api.add_datas(collect_tcl_tk_files(hook_api.__file__))
     else:
-        logger.error("... skipping Tcl/Tk handling on unsupported platform %s", sys.platform)
+        logger.error("... skipping Tcl/Tk handling on unsupported platform %s",
+                     sys.platform)

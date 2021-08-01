@@ -48,4 +48,5 @@ def get_pywin32_module_file_attribute(module_name):
     """
     return exec_statement(statement % module_name)
 
+
 __all__ = ('get_pywin32_module_file_attribute', )

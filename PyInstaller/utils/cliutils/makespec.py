@@ -8,8 +8,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-
 """
 Automatically build spec files containing a description of the project
 """
@@ -41,11 +39,13 @@ def run():
         args.pathex.extend(p.split(os.pathsep))
 
     try:
-        name = PyInstaller.building.makespec.main(args.scriptname, **vars(args))
+        name = PyInstaller.building.makespec.main(args.scriptname,
+                                                  **vars(args))
         print('wrote %s' % name)
         print('now run pyinstaller.py to build the executable')
     except KeyboardInterrupt:
         raise SystemExit("Aborted by user request.")
+
 
 if __name__ == '__main__':
     run()

@@ -9,16 +9,14 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
-import os
 import locale
+import os
 
 from PyInstaller import compat
-from PyInstaller.depend import bindepend
-from PyInstaller.building.datastruct import Tree
-from PyInstaller.utils import hooks as hookutils
 from PyInstaller import log as logging
-
+from PyInstaller.building.datastruct import Tree
+from PyInstaller.depend import bindepend
+from PyInstaller.utils import hooks as hookutils
 
 logger = logging.getLogger(__name__)
 
@@ -72,8 +70,7 @@ def _warn_if_activetcl_or_teapot_installed(tcl_root, tcltree):
                 break
 
     if mentions_activetcl and mentions_teapot:
-        logger.warning(
-            """
+        logger.warning("""
 You appear to be using an ActiveTcl build of Tcl/Tk, which PyInstaller has
 difficulty freezing. To fix this, comment out all references to "teapot" in:
 
@@ -262,10 +259,12 @@ def collect_tcl_tk_files(tkinter_ext_file):
         logger.error('Tk data directory "%s" not found.', tk_root)
         return []
 
-    tcltree = Tree(
-        tcl_root, prefix='tcl', excludes=['demos', '*.lib', 'tclConfig.sh'])
-    tktree = Tree(
-        tk_root, prefix='tk', excludes=['demos', '*.lib', 'tkConfig.sh'])
+    tcltree = Tree(tcl_root,
+                   prefix='tcl',
+                   excludes=['demos', '*.lib', 'tclConfig.sh'])
+    tktree = Tree(tk_root,
+                  prefix='tk',
+                  excludes=['demos', '*.lib', 'tkConfig.sh'])
 
     # If the current Tcl installation is a Teapot-distributed version of
     # ActiveTcl and the current platform is OS X, warn that this is bad.

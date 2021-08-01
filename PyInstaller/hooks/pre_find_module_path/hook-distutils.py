@@ -8,7 +8,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 # -----------------------------------------------------------------------------
-
 """
 `distutils`-specific pre-find module path hook.
 
@@ -17,7 +16,6 @@ When run from within a venv (virtual environment), this hook changes the
 venv-specific `distutils` package. While the former is suitable for freezing,
 the latter is intended for use _only_ from within venvs.
 """
-
 
 import distutils
 import os

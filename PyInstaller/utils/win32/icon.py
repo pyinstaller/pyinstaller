@@ -8,7 +8,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
 '''
 The code in this module supports the --icon parameter in Windows.
 (For --icon support under OSX see building/osx.py.)
@@ -22,10 +21,10 @@ and globals are referenced outside this module.
 import os.path
 import struct
 
-from PyInstaller.compat import win32api, pywintypes
-from PyInstaller import config
-
 import PyInstaller.log as logging
+from PyInstaller import config
+from PyInstaller.compat import pywintypes, win32api
+
 logger = logging.getLogger(__name__)
 
 RT_ICON = 3
@@ -71,23 +70,28 @@ class Structure:
         data = file.read(self._sizeInBytes)
         self._fields_ = list(struct.unpack(self._format_, data))
 
+
 class ICONDIRHEADER(Structure):
     _names_ = "idReserved", "idType", "idCount"
     _format_ = "hhh"
+
 
 class ICONDIRENTRY(Structure):
     _names_ = ("bWidth", "bHeight", "bColorCount", "bReserved", "wPlanes",
                "wBitCount", "dwBytesInRes", "dwImageOffset")
     _format_ = "bbbbhhii"
 
+
 class GRPICONDIR(Structure):
     _names_ = "idReserved", "idType", "idCount"
     _format_ = "hhh"
+
 
 class GRPICONDIRENTRY(Structure):
     _names_ = ("bWidth", "bHeight", "bColorCount", "bReserved", "wPlanes",
                "wBitCount", "dwBytesInRes", "nID")
     _format_ = "bbbbhhih"
+
 
 # An IconFile instance is created for each .ico file given.
 class IconFile:
@@ -101,9 +105,7 @@ class IconFile:
         except OSError:
             # The icon file can't be opened for some reason. Stop the
             # program with an informative message.
-            raise SystemExit(
-                'Unable to open icon file {}'.format(path)
-            )
+            raise SystemExit('Unable to open icon file {}'.format(path))
         self.entries = []
         self.images = []
         header = self.header = ICONDIRHEADER()
@@ -130,6 +132,7 @@ class IconFile:
             data = data + e.tostring()
         return data
 
+
 def CopyIcons_FromIco(dstpath, srcpath, id=1):
     '''
     Use the Win API UpdateResource facility to apply the icon
@@ -150,13 +153,16 @@ def CopyIcons_FromIco(dstpath, srcpath, id=1):
         data = f.grp_icon_dir()
         data = data + f.grp_icondir_entries(iconid)
         win32api.UpdateResource(hdst, RT_GROUP_ICON, i, data)
-        logger.info("Writing RT_GROUP_ICON %d resource with %d bytes", i, len(data))
+        logger.info("Writing RT_GROUP_ICON %d resource with %d bytes", i,
+                    len(data))
         for data in f.images:
             win32api.UpdateResource(hdst, RT_ICON, iconid, data)
-            logger.info("Writing RT_ICON %d resource with %d bytes", iconid, len(data))
+            logger.info("Writing RT_ICON %d resource with %d bytes", iconid,
+                        len(data))
             iconid = iconid + 1
 
     win32api.EndUpdateResource(hdst, 0)
+
 
 def CopyIcons(dstpath, srcpath):
     '''
@@ -172,7 +178,7 @@ def CopyIcons(dstpath, srcpath):
 
     if isinstance(srcpath, str):
         # just a single string, make it a one-element list
-        srcpath = [ srcpath ]
+        srcpath = [srcpath]
 
     def splitter(s):
         '''
@@ -200,12 +206,13 @@ def CopyIcons(dstpath, srcpath):
         for s in srcpath:
             e = os.path.splitext(s[0])[1]
             if e.lower() != '.ico':
-                raise ValueError('Multiple icons supported only from .ico files')
+                raise ValueError(
+                    'Multiple icons supported only from .ico files')
             srcs.append(s[0])
         return CopyIcons_FromIco(dstpath, srcs)
 
     # Just one source given.
-    srcpath,index = srcpath[0]
+    srcpath, index = srcpath[0]
     srcext = os.path.splitext(srcpath)[1]
     # Handle the simple case of foo.ico, ignoring any ,index.
     if srcext.lower() == '.ico':
@@ -229,8 +236,7 @@ def CopyIcons(dstpath, srcpath):
             f"Received icon path '{srcpath}' which exists but is not in the "
             f"correct format. On Windows, only '.ico' images or other "
             f"'.exe' files may be used as icons. Please convert your "
-            f"'{srcext}' file to a '.ico' then try again."
-        )
+            f"'{srcext}' file to a '.ico' then try again.")
 
     try:
         # Attempt to load the .ico or .exe containing the icon into memory
@@ -244,8 +250,7 @@ def CopyIcons(dstpath, srcpath):
         # best to terminate the build with a message.
         raise SystemExit(
             "Unable to load icon file {}\n    {} (Error code {})".format(
-                srcpath, W32E.strerror, W32E.winerror)
-        )
+                srcpath, W32E.strerror, W32E.winerror))
     hdst = win32api.BeginUpdateResource(dstpath, 0)
     if index is None:
         grpname = win32api.EnumResourceNames(hsrc, RT_GROUP_ICON)[0]
@@ -260,6 +265,7 @@ def CopyIcons(dstpath, srcpath):
         win32api.UpdateResource(hdst, RT_ICON, iconname, data)
     win32api.FreeLibrary(hsrc)
     win32api.EndUpdateResource(hdst, 0)
+
 
 if __name__ == "__main__":
     import sys

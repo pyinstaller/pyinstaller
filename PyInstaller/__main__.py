@@ -8,20 +8,16 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-
 """
 Main command-line interface to PyInstaller.
 """
 
-import os
 import argparse
+import os
 import platform
-
 
 from PyInstaller import __version__
 from PyInstaller import log as logging
-
 # note: don't import anything else until this function is run!
 from PyInstaller.compat import check_requirements, is_conda
 
@@ -35,7 +31,6 @@ logger = logging.getLogger(__name__)
 #
 # This is used by the ``--debug`` option.
 class _SmartFormatter(argparse.HelpFormatter):
-
     def _split_lines(self, text, width):
         if text.startswith('R|'):
             # The underlying implementation of ``RawTextHelpFormatter._split_lines``
@@ -66,7 +61,9 @@ def run_build(pyi_config, spec_file, **kwargs):
 
 
 def __add_options(parser):
-    parser.add_argument('-v', '--version', action='version',
+    parser.add_argument('-v',
+                        '--version',
+                        action='version',
                         version=__version__,
                         help='Show program version info and exit.')
 
@@ -74,8 +71,8 @@ def __add_options(parser):
 def generate_parser() -> argparse.ArgumentParser:
     """Build an argparse parser for PyInstaller's main CLI."""
 
-    import PyInstaller.building.makespec
     import PyInstaller.building.build_main
+    import PyInstaller.building.makespec
     import PyInstaller.log
 
     parser = argparse.ArgumentParser(formatter_class=_SmartFormatter)
@@ -85,7 +82,9 @@ def generate_parser() -> argparse.ArgumentParser:
     PyInstaller.building.makespec.__add_options(parser)
     PyInstaller.building.build_main.__add_options(parser)
     PyInstaller.log.__add_options(parser)
-    parser.add_argument('filenames', metavar='scriptname', nargs='+',
+    parser.add_argument('filenames',
+                        metavar='scriptname',
+                        nargs='+',
                         help=("name of scriptfiles to be processed or "
                               "exactly one .spec-file. If a .spec-file is "
                               "specified, most options are unnecessary "

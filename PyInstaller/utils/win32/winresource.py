@@ -8,8 +8,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-
 """
 Read and write resources from/to Win32 PE files.
 
@@ -18,11 +16,10 @@ winresource.py <dstpath> <srcpath>
 Updates or adds resources from file <srcpath> in file <dstpath>.
 """
 
+import PyInstaller.log as logging
 from PyInstaller.compat import pywintypes, win32api
 
-import PyInstaller.log as logging
 logger = logging.getLogger(__name__)
-
 
 LOAD_LIBRARY_AS_DATAFILE = 2
 ERROR_BAD_EXE_FORMAT = 193
@@ -61,7 +58,10 @@ class File(object):
         """
         UpdateResources(self.filename, data, type_, names, languages)
 
-    def update_resources_from_datafile(self, srcpath, type_, names=None,
+    def update_resources_from_datafile(self,
+                                       srcpath,
+                                       type_,
+                                       names=None,
                                        languages=None):
         """
         Update or add resource data from file srcpath.
@@ -73,7 +73,10 @@ class File(object):
         UpdateResourcesFromDataFile(self.filename, srcpath, type_, names,
                                     languages)
 
-    def update_resources_from_dict(self, res, types=None, names=None,
+    def update_resources_from_dict(self,
+                                   res,
+                                   types=None,
+                                   names=None,
                                    languages=None):
         """
         Update or add resources from resource dict.
@@ -82,10 +85,12 @@ class File(object):
         names = a list of resource names to update (None = all)
         languages = a list of resource languages to update (None = all)
         """
-        UpdateResourcesFromDict(self.filename, res, types, names,
-                                languages)
+        UpdateResourcesFromDict(self.filename, res, types, names, languages)
 
-    def update_resources_from_resfile(self, srcpath, types=None, names=None,
+    def update_resources_from_resfile(self,
+                                      srcpath,
+                                      types=None,
+                                      names=None,
                                       languages=None):
         """
         Update or add resources from dll/exe file srcpath.
@@ -119,25 +124,19 @@ def _GetResources(hsrc, types=None, names=None, languages=None):
         # logger.debug("Enumerating resource types")
         enum_types = win32api.EnumResourceTypes(hsrc)
         if types and not "*" in types:
-            enum_types = filter(lambda type_:
-                                type_ in types,
-                                enum_types)
+            enum_types = filter(lambda type_: type_ in types, enum_types)
         for type_ in enum_types:
             # logger.debug("Enumerating resources of type %s", type_)
             enum_names = win32api.EnumResourceNames(hsrc, type_)
             if names and not "*" in names:
-                enum_names = filter(lambda name:
-                                    name in names,
-                                    enum_names)
+                enum_names = filter(lambda name: name in names, enum_names)
             for name in enum_names:
                 # logger.debug("Enumerating resources of type %s name %s", type_, name)
-                enum_languages = win32api.EnumResourceLanguages(hsrc,
-                                                                type_,
-                                                                name)
+                enum_languages = win32api.EnumResourceLanguages(
+                    hsrc, type_, name)
                 if languages and not "*" in languages:
-                    enum_languages = filter(lambda language:
-                                            language in languages,
-                                            enum_languages)
+                    enum_languages = filter(
+                        lambda language: language in languages, enum_languages)
                 for language in enum_languages:
                     data = win32api.LoadResource(hsrc, type_, name, language)
                     if not type_ in res:
@@ -205,7 +204,10 @@ def UpdateResources(dstpath, data, type_, names=None, languages=None):
     win32api.EndUpdateResource(hdst, 0)
 
 
-def UpdateResourcesFromDataFile(dstpath, srcpath, type_, names=None,
+def UpdateResourcesFromDataFile(dstpath,
+                                srcpath,
+                                type_,
+                                names=None,
                                 languages=None):
     """
     Update or add resource data from file srcpath in dll/exe file dstpath.
@@ -219,7 +221,10 @@ def UpdateResourcesFromDataFile(dstpath, srcpath, type_, names=None,
     UpdateResources(dstpath, data, type_, names, languages)
 
 
-def UpdateResourcesFromDict(dstpath, res, types=None, names=None,
+def UpdateResourcesFromDict(dstpath,
+                            res,
+                            types=None,
+                            names=None,
                             languages=None):
     """
     Update or add resources from resource dict in dll/exe file dstpath.
@@ -241,11 +246,14 @@ def UpdateResourcesFromDict(dstpath, res, types=None, names=None,
                     for language in res[type_][name]:
                         if not languages or language in languages:
                             UpdateResources(dstpath,
-                                            res[type_][name][language],
-                                            type_, [name], [language])
+                                            res[type_][name][language], type_,
+                                            [name], [language])
 
 
-def UpdateResourcesFromResFile(dstpath, srcpath, types=None, names=None,
+def UpdateResourcesFromResFile(dstpath,
+                               srcpath,
+                               types=None,
+                               names=None,
                                languages=None):
     """
     Update or add resources from dll/exe file srcpath in dll/exe file dstpath.

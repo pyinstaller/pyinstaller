@@ -11,14 +11,14 @@
 import os
 import re
 
-from PyInstaller.utils.hooks import collect_submodules, \
-    collect_system_data_files, eval_statement, exec_statement
-from PyInstaller import log as logging
 from PyInstaller import compat
+from PyInstaller import log as logging
 from PyInstaller.depend.bindepend import findSystemLibrary
+from PyInstaller.utils.hooks import (collect_submodules,
+                                     collect_system_data_files, eval_statement,
+                                     exec_statement)
 
 logger = logging.getLogger(__name__)
-
 
 __all__ = [
     'get_gi_libdir', 'get_gi_typelibs', 'gir_library_path_fix',
@@ -97,8 +97,8 @@ def get_gi_typelibs(module, version):
             logger.debug('Found gir typelib at %s', d)
             datas.append(d)
 
-        hiddenimports += collect_submodules('gi.overrides',
-                           lambda name: name.endswith('.' + module))
+        hiddenimports += collect_submodules(
+            'gi.overrides', lambda name: name.endswith('.' + module))
 
         # Load dependencies recursively
         for dep in typelibs_data['deps']:
@@ -110,6 +110,7 @@ def get_gi_typelibs(module, version):
 
 def gir_library_path_fix(path):
     import subprocess
+
     # 'PyInstaller.config' cannot be imported as other top-level modules.
     from PyInstaller.config import CONF
 
@@ -134,21 +135,24 @@ def gir_library_path_fix(path):
         gir_file = os.path.join(gir_path, gir_name)
 
         if not os.path.exists(gir_path):
-            logger.error('Unable to find gir directory: %s.\n'
-                         'Try installing your platforms gobject-introspection '
-                         'package.', gir_path)
+            logger.error(
+                'Unable to find gir directory: %s.\n'
+                'Try installing your platforms gobject-introspection '
+                'package.', gir_path)
             return None
         if not os.path.exists(gir_file):
-            logger.error('Unable to find gir file: %s.\n'
-                         'Try installing your platforms gobject-introspection '
-                         'package.', gir_file)
+            logger.error(
+                'Unable to find gir file: %s.\n'
+                'Try installing your platforms gobject-introspection '
+                'package.', gir_file)
             return None
 
         with open(gir_file, 'r', encoding='utf-8') as f:
             lines = f.readlines()
         # GIR files are `XML encoded <https://developer.gnome.org/gi/stable/gi-gir-reference.html>`_,
         # which means they are by definition encoded using UTF-8.
-        with open(os.path.join(CONF['workpath'], gir_name), 'w',
+        with open(os.path.join(CONF['workpath'], gir_name),
+                  'w',
                   encoding='utf-8') as f:
             for line in lines:
                 if 'shared-library' in line:
@@ -156,13 +160,15 @@ def gir_library_path_fix(path):
                     files = re.split('(["|,])', split[2])
                     for count, item in enumerate(files):
                         if 'lib' in item:
-                            files[count] = '@loader_path/' + os.path.basename(item)
+                            files[count] = '@loader_path/' + os.path.basename(
+                                item)
                     line = ''.join(split[0:2]) + ''.join(files)
                 f.write(line)
 
         # g-ir-compiler expects a file so we cannot just pipe the fixed file to it.
-        command = subprocess.Popen(('g-ir-compiler', os.path.join(CONF['workpath'], gir_name),
-                                    '-o', os.path.join(CONF['workpath'], typelib_name)))
+        command = subprocess.Popen(
+            ('g-ir-compiler', os.path.join(CONF['workpath'], gir_name), '-o',
+             os.path.join(CONF['workpath'], typelib_name)))
         command.wait()
 
         return os.path.join(CONF['workpath'], typelib_name), 'gi_typelibs'
@@ -222,7 +228,9 @@ def collect_glib_share_files(*path):
     collected = []
     for data_dir in glib_data_dirs:
         p = os.path.join(data_dir, *path)
-        collected += collect_system_data_files(p, destdir=destdir, include_py_files=False)
+        collected += collect_system_data_files(p,
+                                               destdir=destdir,
+                                               include_py_files=False)
 
     return collected
 
@@ -239,9 +247,12 @@ def collect_glib_etc_files(*path):
     collected = []
     for config_dir in glib_config_dirs:
         p = os.path.join(config_dir, *path)
-        collected += collect_system_data_files(p, destdir=destdir, include_py_files=False)
+        collected += collect_system_data_files(p,
+                                               destdir=destdir,
+                                               include_py_files=False)
 
     return collected
+
 
 _glib_translations = None
 
@@ -260,8 +271,8 @@ def collect_glib_translations(prog, lang_list=None):
         else:
             _glib_translations = collect_glib_share_files('locale')
 
-    names = [os.sep + prog + '.mo',
-             os.sep + prog + '.po']
+    names = [os.sep + prog + '.mo', os.sep + prog + '.po']
     namelen = len(names[0])
 
-    return [(src, dst) for src, dst in _glib_translations if src[-namelen:] in names]
+    return [(src, dst) for src, dst in _glib_translations
+            if src[-namelen:] in names]

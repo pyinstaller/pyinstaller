@@ -10,13 +10,10 @@
 # ----------------------------------------------------------------------------
 import os
 
-from PyInstaller.utils.hooks import eval_script
 from PyInstaller.utils import misc
+from PyInstaller.utils.hooks import eval_script
 
-
-__all__ = [
-    'django_dottedstring_imports', 'django_find_root_dir'
-]
+__all__ = ['django_dottedstring_imports', 'django_find_root_dir']
 
 
 def django_dottedstring_imports(django_root_dir):
@@ -35,9 +32,12 @@ def django_dottedstring_imports(django_root_dir):
     pths.append(django_root_dir)
 
     default_settings_module = os.path.basename(django_root_dir) + '.settings'
-    settings_module = os.environ.get('DJANGO_SETTINGS_MODULE', default_settings_module)
-    env = {'DJANGO_SETTINGS_MODULE': settings_module,
-           'PYTHONPATH': os.pathsep.join(pths)}
+    settings_module = os.environ.get('DJANGO_SETTINGS_MODULE',
+                                     default_settings_module)
+    env = {
+        'DJANGO_SETTINGS_MODULE': settings_module,
+        'PYTHONPATH': os.pathsep.join(pths)
+    }
     ret = eval_script('django_import_finder.py', env=env)
 
     return ret
@@ -56,6 +56,7 @@ def django_find_root_dir():
     """
     # 'PyInstaller.config' cannot be imported as other top-level modules.
     from PyInstaller.config import CONF
+
     # Get the directory with manage.py. Manage.py is supplied to PyInstaller as the
     # first main executable script.
     manage_py = CONF['main_script']
@@ -72,7 +73,8 @@ def django_find_root_dir():
             if os.path.isdir(os.path.join(manage_dir, f)):
                 subfiles = os.listdir(os.path.join(manage_dir, f))
                 # Subdirectory contains critical files.
-                if ('settings.py' in subfiles or 'settings' in subfiles) and 'urls.py' in subfiles:
+                if ('settings.py' in subfiles
+                        or 'settings' in subfiles) and 'urls.py' in subfiles:
                     settings_dir = os.path.join(manage_dir, f)
                     break  # Find the first directory.
 

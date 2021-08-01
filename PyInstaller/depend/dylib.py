@@ -8,8 +8,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-
 """
 Manipulating with dynamic libraries.
 """
@@ -18,23 +16,17 @@ import os.path
 
 from PyInstaller.utils.win32 import winutils
 
-
 __all__ = ['exclude_list', 'include_list', 'include_library']
-
 
 import os
 import re
 
-
+import PyInstaller.log as logging
 from PyInstaller import compat
 
-
-import PyInstaller.log as logging
 logger = logging.getLogger(__name__)
 
-
 _BOOTLOADER_FNAMES = {'run', 'run_d', 'runw', 'runw_d'}
-
 
 # Ignoring some system libraries speeds up packaging process
 _excludes = {
@@ -52,7 +44,6 @@ _excludes = {
     r'oleaut32\.dll',
     r'shell32\.dll',
     r'ole32\.dll',
-
     r'coredll\.dll',
     r'crypt32\.dll',
     r'kernel32',
@@ -69,7 +60,6 @@ _excludes = {
 # Include list is used only to override specific libraries
 # from exclude list.
 _includes = set()
-
 
 _win_includes = {
     # DLLs are from 'Microsoft Visual C++ 2010 Redistributable Package'.
@@ -120,7 +110,6 @@ _win_excludes = {
     r'Microsoft\.Windows\.Common-Controls',
 }
 
-
 _unix_excludes = {
     r'libc\.so(\..*)?',
     r'libdl\.so(\..*)?',
@@ -166,7 +155,6 @@ _aix_excludes = {
     r'libz\.a',
 }
 
-
 if compat.is_win:
     _includes |= _win_includes
     _excludes |= _win_excludes
@@ -205,7 +193,6 @@ class IncludeList(object):
 exclude_list = ExcludeList()
 include_list = IncludeList()
 
-
 if compat.is_darwin:
     # On Mac use macholib to decide if a binary is a system one.
     from macholib import util
@@ -228,13 +215,13 @@ if compat.is_darwin:
     exclude_list = MacExcludeList(exclude_list)
 
 elif compat.is_win:
+
     class WinExcludeList(object):
         def __init__(self, global_exclude_list):
             self._exclude_list = global_exclude_list
             # use normpath because msys2 uses / instead of \
             self._windows_dir = os.path.normpath(
-                winutils.get_windows_dir().lower()
-            )
+                winutils.get_windows_dir().lower())
 
         def search(self, libname):
             libname = libname.lower()

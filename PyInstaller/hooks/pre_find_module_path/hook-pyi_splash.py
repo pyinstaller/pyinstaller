@@ -8,7 +8,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 # -----------------------------------------------------------------------------
-
 """
 This hook does not move a module that can be installed by a package manager,
 but points to a PyInstaller internal module that can be imported into

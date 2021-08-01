@@ -9,15 +9,17 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
-import os
 import argparse
+import os
+
 
 def run():
     parser = argparse.ArgumentParser()
-    parser.add_argument('info_file', metavar='info-file',
+    parser.add_argument('info_file',
+                        metavar='info-file',
                         help="text file containing version info")
-    parser.add_argument('exe_file', metavar='exe-file',
+    parser.add_argument('exe_file',
+                        metavar='exe-file',
                         help="full pathname of a Windows executable")
     args = parser.parse_args()
 
@@ -26,10 +28,12 @@ def run():
 
     try:
         import PyInstaller.utils.win32.versioninfo
-        vs = PyInstaller.utils.win32.versioninfo.SetVersion(exe_file, info_file)
+        PyInstaller.utils.win32.versioninfo.SetVersion(
+            exe_file, info_file)
         print(('Version info set in: %s' % exe_file))
     except KeyboardInterrupt:
         raise SystemExit("Aborted by user request.")
+
 
 if __name__ == '__main__':
     run()

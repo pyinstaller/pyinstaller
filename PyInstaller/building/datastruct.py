@@ -9,12 +9,11 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 import os
 
-from PyInstaller.utils import misc
 from PyInstaller import log as logging
 from PyInstaller.building.utils import _check_guts_eq
+from PyInstaller.utils import misc
 
 logger = logging.getLogger(__name__)
 
@@ -122,12 +121,14 @@ class Target(object):
 
     def __init__(self):
         from PyInstaller.config import CONF
+
         # Get a (per class) unique number to avoid conflicts between
         # toc objects
         self.invcnum = self.__class__.invcnum
         self.__class__.invcnum += 1
-        self.tocfilename = os.path.join(CONF['workpath'], '%s-%02d.toc' %
-                                        (self.__class__.__name__, self.invcnum))
+        self.tocfilename = os.path.join(
+            CONF['workpath'],
+            '%s-%02d.toc' % (self.__class__.__name__, self.invcnum))
         self.tocbasename = os.path.basename(self.tocfilename)
         self.dependencies = TOC()
 
@@ -218,14 +219,14 @@ class Tree(Target, TOC):
             self.excludes = []
         self.__postinit__()
 
-    _GUTS = (# input parameters
-            ('root', _check_guts_eq),
-            ('prefix', _check_guts_eq),
-            ('excludes', _check_guts_eq),
-            ('typecode', _check_guts_eq),
-            ('data', None),  # tested below
-            # no calculated/analysed values
-            )
+    _GUTS = (  # input parameters
+        ('root', _check_guts_eq),
+        ('prefix', _check_guts_eq),
+        ('excludes', _check_guts_eq),
+        ('typecode', _check_guts_eq),
+        ('data', None),  # tested below
+        # no calculated/analysed values
+    )
 
     def _check_guts(self, data, last_build):
         if Target._check_guts(self, data, last_build):

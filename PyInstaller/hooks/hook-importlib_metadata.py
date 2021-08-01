@@ -8,8 +8,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-
 """
 importlib_metadata is a library to access the metadata for a Python package.
 This functionality intends to replace most uses of pkg_resources entry point

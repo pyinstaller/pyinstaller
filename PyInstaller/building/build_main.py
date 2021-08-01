@@ -8,14 +8,12 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
 """
 Build packages using spec files.
 
 NOTE: All global variables, classes and imported modules create API
       for .spec files.
 """
-
 
 import glob
 import os
@@ -25,28 +23,27 @@ import sys
 
 import pkg_resources
 
-
 # Relative imports to PyInstaller modules.
-from PyInstaller import HOMEPATH, DEFAULT_DISTPATH, DEFAULT_WORKPATH
-from PyInstaller import compat
+from PyInstaller import DEFAULT_DISTPATH, DEFAULT_WORKPATH, HOMEPATH, compat
 from PyInstaller import log as logging
-from PyInstaller.utils.misc import absnormpath, compile_py_files
-from PyInstaller.compat import is_win, PYDYLIB_NAMES
+from PyInstaller.archive import pyz_crypto
+from PyInstaller.building.api import COLLECT, EXE, MERGE, PYZ
+from PyInstaller.building.datastruct import TOC, Target, Tree, _check_guts_eq
+from PyInstaller.building.osx import BUNDLE
+from PyInstaller.building.splash import Splash
+from PyInstaller.building.toc_conversion import DependencyProcessor
+from PyInstaller.building.utils import (_check_guts_toc_mtime,
+                                        _should_include_system_binary,
+                                        format_binaries_and_datas)
+from PyInstaller.compat import PYDYLIB_NAMES, is_win
 from PyInstaller.depend import bindepend
 from PyInstaller.depend.analysis import initialize_modgraph
-from PyInstaller.building.api import PYZ, EXE, COLLECT, MERGE
-from PyInstaller.building.datastruct import TOC, Target, Tree, _check_guts_eq
-from PyInstaller.building.splash import Splash
-from PyInstaller.building.osx import BUNDLE
-from PyInstaller.building.toc_conversion import DependencyProcessor
-from PyInstaller.building.utils import _check_guts_toc_mtime, \
-    format_binaries_and_datas, _should_include_system_binary
-from PyInstaller.depend.utils import \
-    create_py3_base_library, scan_code_for_ctypes
-from PyInstaller.archive import pyz_crypto
-from PyInstaller.utils.misc import \
-    get_path_to_toplevel_modules, get_unicode_modules, mtime
+from PyInstaller.depend.utils import (create_py3_base_library,
+                                      scan_code_for_ctypes)
 from PyInstaller.utils.hooks import exec_statement
+from PyInstaller.utils.misc import (absnormpath, compile_py_files,
+                                    get_path_to_toplevel_modules,
+                                    get_unicode_modules, mtime)
 
 if is_win:
     from PyInstaller.utils.win32 import winmanifest
@@ -54,16 +51,18 @@ if is_win:
 logger = logging.getLogger(__name__)
 
 STRINGTYPE = type('')
-TUPLETYPE = type((None,))
+TUPLETYPE = type((None, ))
 
 rthooks = {}
 
 # place where the loader modules and initialization scripts live
 _init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
 
-IMPORT_TYPES = ['top-level', 'conditional', 'delayed', 'delayed, conditional',
-                'optional', 'conditional, optional', 'delayed, optional',
-                'delayed, conditional, optional']
+IMPORT_TYPES = [
+    'top-level', 'conditional', 'delayed', 'delayed, conditional', 'optional',
+    'conditional, optional', 'delayed, optional',
+    'delayed, conditional, optional'
+]
 
 WARNFILE_HEADER = """\
 
@@ -170,10 +169,19 @@ class Analysis(Target):
         absnormpath(os.path.join(HOMEPATH, "support", "removeTK.py"))
     }
 
-    def __init__(self, scripts, pathex=None, binaries=None, datas=None,
-                 hiddenimports=None, hookspath=None, hooksconfig=None,
-                 excludes=None, runtime_hooks=None, cipher=None,
-                 win_no_prefer_redirects=False, win_private_assemblies=False,
+    def __init__(self,
+                 scripts,
+                 pathex=None,
+                 binaries=None,
+                 datas=None,
+                 hiddenimports=None,
+                 hookspath=None,
+                 hooksconfig=None,
+                 excludes=None,
+                 runtime_hooks=None,
+                 cipher=None,
+                 win_no_prefer_redirects=False,
+                 win_private_assemblies=False,
                  noarchive=False):
         """
         scripts
@@ -221,7 +229,8 @@ class Analysis(Target):
             if not os.path.isabs(script):
                 script = os.path.join(spec_dir, script)
             if absnormpath(script) in self._old_scripts:
-                logger.warning('Ignoring obsolete auto-added script %s', script)
+                logger.warning('Ignoring obsolete auto-added script %s',
+                               script)
                 continue
             # Normalize script path.
             script = os.path.normpath(script)
@@ -238,7 +247,8 @@ class Analysis(Target):
         # search.
         CONF['pathex'] = self.pathex
         # Extend sys.path so PyInstaller could find all necessary modules.
-        logger.info('Extending PYTHONPATH with paths\n' + pprint.pformat(self.pathex))
+        logger.info('Extending PYTHONPATH with paths\n' +
+                    pprint.pformat(self.pathex))
         sys.path.extend(self.pathex)
 
         # Set global variable to hold assembly binding redirects
@@ -266,13 +276,14 @@ class Analysis(Target):
         self.custom_runtime_hooks = runtime_hooks or []
 
         if cipher:
-            logger.info('Will encrypt Python bytecode with key: %s', cipher.key)
+            logger.info('Will encrypt Python bytecode with key: %s',
+                        cipher.key)
             # Create a Python module which contains the decryption key which will
             # be used at runtime by pyi_crypto.PyiBlockCipher.
-            pyi_crypto_key_path = os.path.join(CONF['workpath'], 'pyimod00_crypto_key.py')
+            pyi_crypto_key_path = os.path.join(CONF['workpath'],
+                                               'pyimod00_crypto_key.py')
             with open(pyi_crypto_key_path, 'w', encoding='utf-8') as f:
-                f.write('# -*- coding: utf-8 -*-\n'
-                        'key = %r\n' % cipher.key)
+                f.write('# -*- coding: utf-8 -*-\n' 'key = %r\n' % cipher.key)
             self.hiddenimports.append('tinyaes')
 
         self.excludes = excludes or []
@@ -291,46 +302,47 @@ class Analysis(Target):
 
         self.__postinit__()
 
-
         # TODO create function to convert datas/binaries from 'hook format' to TOC.
         # Initialise 'binaries' and 'datas' with lists specified in .spec file.
         if binaries:
             logger.info("Appending 'binaries' from .spec")
-            for name, pth in format_binaries_and_datas(binaries, workingdir=spec_dir):
+            for name, pth in format_binaries_and_datas(binaries,
+                                                       workingdir=spec_dir):
                 self.binaries.append((name, pth, 'BINARY'))
         if datas:
             logger.info("Appending 'datas' from .spec")
-            for name, pth in format_binaries_and_datas(datas, workingdir=spec_dir):
+            for name, pth in format_binaries_and_datas(datas,
+                                                       workingdir=spec_dir):
                 self.datas.append((name, pth, 'DATA'))
 
-    _GUTS = (# input parameters
-            ('inputs', _check_guts_eq),  # parameter `scripts`
-            ('pathex', _check_guts_eq),
-            ('hiddenimports', _check_guts_eq),
-            ('hookspath', _check_guts_eq),
-            ('hooksconfig', _check_guts_eq),
-            ('excludes', _check_guts_eq),
-            ('custom_runtime_hooks', _check_guts_eq),
-            ('win_no_prefer_redirects', _check_guts_eq),
-            ('win_private_assemblies', _check_guts_eq),
-            ('noarchive', _check_guts_eq),
+    _GUTS = (  # input parameters
+        ('inputs', _check_guts_eq),  # parameter `scripts`
+        ('pathex', _check_guts_eq),
+        ('hiddenimports', _check_guts_eq),
+        ('hookspath', _check_guts_eq),
+        ('hooksconfig', _check_guts_eq),
+        ('excludes', _check_guts_eq),
+        ('custom_runtime_hooks', _check_guts_eq),
+        ('win_no_prefer_redirects', _check_guts_eq),
+        ('win_private_assemblies', _check_guts_eq),
+        ('noarchive', _check_guts_eq),
 
-            #'cipher': no need to check as it is implied by an
-            # additional hidden import
+        #'cipher': no need to check as it is implied by an
+        # additional hidden import
 
-            #calculated/analysed values
-            ('_python_version', _check_guts_eq),
-            ('scripts', _check_guts_toc_mtime),
-            ('pure', lambda *args: _check_guts_toc_mtime(*args, **{'pyc': 1})),
-            ('binaries', _check_guts_toc_mtime),
-            ('zipfiles', _check_guts_toc_mtime),
-            ('zipped_data', None),  # TODO check this, too
-            ('datas', _check_guts_toc_mtime),
-            # TODO: Need to add "dependencies"?
+        #calculated/analysed values
+        ('_python_version', _check_guts_eq),
+        ('scripts', _check_guts_toc_mtime),
+        ('pure', lambda *args: _check_guts_toc_mtime(*args, **{'pyc': 1})),
+        ('binaries', _check_guts_toc_mtime),
+        ('zipfiles', _check_guts_toc_mtime),
+        ('zipped_data', None),  # TODO check this, too
+        ('datas', _check_guts_toc_mtime),
+        # TODO: Need to add "dependencies"?
 
-            # cached binding redirects - loaded into CONF for PYZ/COLLECT to find.
-            ('binding_redirects', None),
-            )
+        # cached binding redirects - loaded into CONF for PYZ/COLLECT to find.
+        ('binding_redirects', None),
+    )
 
     def _extend_pathex(self, spec_pathex, scripts):
         """
@@ -377,7 +389,8 @@ class Analysis(Target):
 
         # Store previously found binding redirects in CONF for later use by PKG/COLLECT
         from PyInstaller.config import CONF
-        self.binding_redirects = CONF['binding_redirects'] = data['binding_redirects']
+        self.binding_redirects = CONF['binding_redirects'] = data[
+            'binding_redirects']
 
         return False
 
@@ -389,8 +402,8 @@ class Analysis(Target):
 
         for m in self.excludes:
             logger.debug("Excluding module '%s'" % m)
-        self.graph = initialize_modgraph(
-            excludes=self.excludes, user_hook_dirs=self.hookspath)
+        self.graph = initialize_modgraph(excludes=self.excludes,
+                                         user_hook_dirs=self.hookspath)
 
         # TODO Find a better place where to put 'base_library.zip' and when to created it.
         # For Python 3 it is necessary to create file 'base_library.zip'
@@ -401,7 +414,8 @@ class Analysis(Target):
         create_py3_base_library(libzip_filename, graph=self.graph)
         # Bundle base_library.zip as data file.
         # Data format of TOC item:   ('relative_path_in_dist_dir', 'absolute_path_on_disk', 'DATA')
-        self.datas.append((os.path.basename(libzip_filename), libzip_filename, 'DATA'))
+        self.datas.append(
+            (os.path.basename(libzip_filename), libzip_filename, 'DATA'))
 
         # Expand sys.path of module graph.
         # The attribute is the set of paths to use for imports: sys.path,
@@ -415,16 +429,19 @@ class Analysis(Target):
         if not is_win:
             # Linux/MacOS: get a real, non-link path to the running Python executable.
             while os.path.islink(python):
-                python = os.path.join(os.path.dirname(python), os.readlink(python))
+                python = os.path.join(os.path.dirname(python),
+                                      os.readlink(python))
             depmanifest = None
         else:
             # Windows: Create a manifest to embed into built .exe, containing the same
             # dependencies as python.exe.
-            depmanifest = winmanifest.Manifest(type_="win32", name=CONF['specnm'],
-                                               processorArchitecture=winmanifest.processor_architecture(),
-                                               version=(1, 0, 0, 0))
-            depmanifest.filename = os.path.join(CONF['workpath'],
-                                                CONF['specnm'] + ".exe.manifest")
+            depmanifest = winmanifest.Manifest(
+                type_="win32",
+                name=CONF['specnm'],
+                processorArchitecture=winmanifest.processor_architecture(),
+                version=(1, 0, 0, 0))
+            depmanifest.filename = os.path.join(
+                CONF['workpath'], CONF['specnm'] + ".exe.manifest")
 
         # We record "binaries" separately from the modulegraph, as there
         # is no way to record those dependencies in the graph. These include
@@ -439,9 +456,10 @@ class Analysis(Target):
         # This also ensures that its assembly depencies under Windows get added to the
         # built .exe's manifest. Python 2.7 extension modules have no assembly
         # dependencies, and rely on the app-global dependencies set by the .exe.
-        self.binaries.extend(bindepend.Dependencies([('', python, '')],
-                                                    manifest=depmanifest,
-                                                    redirects=self.binding_redirects)[1:])
+        self.binaries.extend(
+            bindepend.Dependencies([('', python, '')],
+                                   manifest=depmanifest,
+                                   redirects=self.binding_redirects)[1:])
         if is_win:
             depmanifest.writeprettyxml()
 
@@ -478,7 +496,6 @@ class Analysis(Target):
         self.zipped_data.extend(deps_proc.make_zipped_data_toc())
         # Note: zipped eggs are collected below
 
-
         ### Look for dlls that are imported by Python 'ctypes' module.
         # First get code objects of all modules that import 'ctypes'.
         logger.info('Looking for ctypes DLLs')
@@ -495,15 +512,15 @@ class Analysis(Target):
                 raise RuntimeError(f"Failed to scan the module '{name}'. "
                                    f"This is a bug. Please report it.") from ex
 
-        self.datas.extend(
-            (dest, source, "DATA") for (dest, source) in
-            format_binaries_and_datas(self.graph.metadata_required())
-        )
+        self.datas.extend((dest, source, "DATA")
+                          for (dest, source) in format_binaries_and_datas(
+                              self.graph.metadata_required()))
 
         # Analyze run-time hooks.
         # Run-time hooks has to be executed before user scripts. Add them
         # to the beginning of 'priority_scripts'.
-        priority_scripts = self.graph.analyze_runtime_hooks(self.custom_runtime_hooks) + priority_scripts
+        priority_scripts = self.graph.analyze_runtime_hooks(
+            self.custom_runtime_hooks) + priority_scripts
 
         # 'priority_scripts' is now a list of the graph nodes of custom runtime
         # hooks, then regular runtime hooks, then the PyI loader scripts.
@@ -526,8 +543,9 @@ class Analysis(Target):
         # Add remaining binary dependencies - analyze Python C-extensions and what
         # DLLs they depend on.
         logger.info('Looking for dynamic libraries')
-        self.binaries.extend(bindepend.Dependencies(self.binaries,
-                                                    redirects=self.binding_redirects))
+        self.binaries.extend(
+            bindepend.Dependencies(self.binaries,
+                                   redirects=self.binding_redirects))
 
         ### Include zipped Python eggs.
         logger.info('Looking for eggs')
@@ -540,7 +558,8 @@ class Analysis(Target):
         if is_win:
             # Remove duplicate redirects
             self.binding_redirects[:] = list(set(self.binding_redirects))
-            logger.info("Found binding redirects: \n%s", self.binding_redirects)
+            logger.info("Found binding redirects: \n%s",
+                        self.binding_redirects)
 
         # Filter binaries to adjust path of extensions that come from
         # python's lib-dynload directory. Prefix them with lib-dynload
@@ -573,7 +592,8 @@ class Analysis(Target):
                 name += '.pyc'
                 new_toc.append((name, path, typecode))
             # Put the result of byte-compiling this TOC in datas. Mark all entries as data.
-            for name, path, typecode in compile_py_files(new_toc, CONF['workpath']):
+            for name, path, typecode in compile_py_files(
+                    new_toc, CONF['workpath']):
                 self.datas.append((name, path, 'DATA'))
             # Store no source in the archive.
             self.pure = TOC()
@@ -592,9 +612,8 @@ class Analysis(Target):
             if not depInfo or depInfo == 'direct':
                 imptype = 0
             else:
-                imptype = (depInfo.conditional
-                           + 2 * depInfo.function
-                           + 4 * depInfo.tryexcept)
+                imptype = (depInfo.conditional + 2 * depInfo.function +
+                           4 * depInfo.tryexcept)
             return '%s (%s)' % (name, IMPORT_TYPES[imptype])
 
         from PyInstaller.config import CONF
@@ -603,9 +622,13 @@ class Analysis(Target):
             wf.write(WARNFILE_HEADER)
             for (n, p, status) in miss_toc:
                 importers = self.graph.get_importers(n)
-                print(status, 'module named', n, '- imported by',
-                      ', '.join(dependency_description(name, data)
-                                for name, data in importers),
+                print(status,
+                      'module named',
+                      n,
+                      '- imported by',
+                      ', '.join(
+                          dependency_description(name, data)
+                          for name, data in importers),
                       file=wf)
         logger.info("Warnings written to %s", CONF['warnfile'])
 
@@ -616,7 +639,8 @@ class Analysis(Target):
         from PyInstaller.config import CONF
         with open(CONF['xref-file'], 'w', encoding='utf-8') as fh:
             self.graph.create_xref(fh)
-            logger.info("Graph cross-reference written to %s", CONF['xref-file'])
+            logger.info("Graph cross-reference written to %s",
+                        CONF['xref-file'])
         if logger.getEffectiveLevel() > logging.DEBUG:
             return
         # The `DOT language's <https://www.graphviz.org/doc/info/lang.html>`_
@@ -639,7 +663,9 @@ class Analysis(Target):
                 return
 
         # Python lib not in dependencies - try to find it.
-        logger.info('Python library not in binary dependencies. Doing additional searching...')
+        logger.info(
+            'Python library not in binary dependencies. Doing additional searching...'
+        )
         python_lib = bindepend.get_python_library_path()
         logger.debug('Adding Python library to binary dependencies')
         binaries.append((os.path.basename(python_lib), python_lib, 'BINARY'))
@@ -683,10 +709,12 @@ def build(spec, distpath, workpath, clean_build):
 
     # Add 'specname' to workpath and distpath if they point to PyInstaller homepath.
     if os.path.dirname(distpath) == HOMEPATH:
-        distpath = os.path.join(HOMEPATH, CONF['specnm'], os.path.basename(distpath))
+        distpath = os.path.join(HOMEPATH, CONF['specnm'],
+                                os.path.basename(distpath))
     CONF['distpath'] = distpath
     if os.path.dirname(workpath) == HOMEPATH:
-        workpath = os.path.join(HOMEPATH, CONF['specnm'], os.path.basename(workpath), CONF['specnm'])
+        workpath = os.path.join(HOMEPATH, CONF['specnm'],
+                                os.path.basename(workpath), CONF['specnm'])
     else:
         workpath = os.path.join(workpath, CONF['specnm'])
 
@@ -697,7 +725,8 @@ def build(spec, distpath, workpath, clean_build):
     # Clean PyInstaller cache (CONF['cachedir']) and temporary files (workpath)
     # to be able start a clean build.
     if clean_build:
-        logger.info('Removing temporary files and cleaning cache in %s', CONF['cachedir'])
+        logger.info('Removing temporary files and cleaning cache in %s',
+                    CONF['cachedir'])
         for pth in (CONF['cachedir'], workpath):
             if os.path.exists(pth):
                 # Remove all files in 'pth'.
@@ -759,25 +788,37 @@ def build(spec, distpath, workpath, clean_build):
         raise SystemExit('spec "{}" not found'.format(spec))
     exec(code, spec_namespace)
 
+
 def __add_options(parser):
-    parser.add_argument("--distpath", metavar="DIR",
+    parser.add_argument("--distpath",
+                        metavar="DIR",
                         default=DEFAULT_DISTPATH,
                         help=('Where to put the bundled app (default: %s)' %
                               os.path.join(os.curdir, 'dist')))
-    parser.add_argument('--workpath', default=DEFAULT_WORKPATH,
+    parser.add_argument('--workpath',
+                        default=DEFAULT_WORKPATH,
                         help=('Where to put all the temporary work files, '
                               '.log, .pyz and etc. (default: %s)' %
                               os.path.join(os.curdir, 'build')))
-    parser.add_argument('-y', '--noconfirm',
-                        action="store_true", default=False,
+    parser.add_argument('-y',
+                        '--noconfirm',
+                        action="store_true",
+                        default=False,
                         help='Replace output directory (default: %s) without '
-                        'asking for confirmation' % os.path.join('SPECPATH', 'dist', 'SPECNAME'))
-    parser.add_argument('--upx-dir', default=None,
-                        help='Path to UPX utility (default: search the execution path)')
-    parser.add_argument("-a", "--ascii", action="store_true",
+                        'asking for confirmation' %
+                        os.path.join('SPECPATH', 'dist', 'SPECNAME'))
+    parser.add_argument(
+        '--upx-dir',
+        default=None,
+        help='Path to UPX utility (default: search the execution path)')
+    parser.add_argument("-a",
+                        "--ascii",
+                        action="store_true",
                         help="Do not include unicode encoding support "
                         "(default: included if available)")
-    parser.add_argument('--clean', dest='clean_build', action='store_true',
+    parser.add_argument('--clean',
+                        dest='clean_build',
+                        action='store_true',
                         default=False,
                         help='Clean PyInstaller cache and remove temporary '
                         'files before building.')
@@ -810,4 +851,5 @@ def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
     CONF['ui_admin'] = kw.get('ui_admin', False)
     CONF['ui_access'] = kw.get('ui_uiaccess', False)
 
-    build(specfile, kw.get('distpath'), kw.get('workpath'), kw.get('clean_build'))
+    build(specfile, kw.get('distpath'), kw.get('workpath'),
+          kw.get('clean_build'))

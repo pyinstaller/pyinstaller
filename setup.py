@@ -17,15 +17,14 @@ from typing import Type
 
 from setuptools import setup, find_packages
 
-
-# Hack required to allow compat to not fail when pypiwin32 isn't found
-os.environ["PYINSTALLER_NO_PYWIN32_FAILURE"] = "1"
-
-
 #-- plug-in building the bootloader
 
 from distutils.core import Command
 from distutils.command.build import build
+
+
+# Hack required to allow compat to not fail when pypiwin32 isn't found
+os.environ["PYINSTALLER_NO_PYWIN32_FAILURE"] = "1"
 
 try:
     from wheel.bdist_wheel import bdist_wheel
@@ -39,9 +38,13 @@ class build_bootloader(Command):
     Wrapper for distutil command `build`.
     """
 
-    user_options =[]
-    def initialize_options(self): pass
-    def finalize_options(self): pass
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
 
     def bootloader_exists(self):
         # Checks is the console, non-debug bootloader exists
@@ -50,7 +53,8 @@ class build_bootloader(Command):
         exe = 'run'
         if is_win or is_cygwin:
             exe = 'run.exe'
-        exe = os.path.join(HOMEPATH, 'PyInstaller', 'bootloader', PLATFORM, exe)
+        exe = os.path.join(HOMEPATH, 'PyInstaller', 'bootloader', PLATFORM,
+                           exe)
         return os.path.isfile(exe)
 
     def compile_bootloader(self):
@@ -69,8 +73,9 @@ class build_bootloader(Command):
             return
         if self.bootloader_exists():
             return
-        print('No precompiled bootloader found. Trying to compile it for you ...',
-              file=sys.stderr)
+        print(
+            'No precompiled bootloader found. Trying to compile it for you ...',
+            file=sys.stderr)
         self.compile_bootloader()
 
 
@@ -148,7 +153,7 @@ PLATFORMS = {
     # These are the only architectures currently supported by manylinux.
     # Other platforms must use generic bdist_wheel which will produce a wheel
     # which is not allowed on PyPI.
-    "Linux-64bit-intel":  "manylinux2014_x86_64",
+    "Linux-64bit-intel": "manylinux2014_x86_64",
     "Linux-32bit-intel": "manylinux2014_i686",
     "Linux-64bit-arm": "manylinux2014_aarch64",
     "Linux-64bit-ppc": "manylinux2014_ppc64le",
@@ -166,7 +171,7 @@ for (pyi_plat_name, plat_name) in PLATFORMS.items():
     # Create and register the subclass, overriding the PLAT_NAME and
     # PYI_PLAT_NAME attributes.
     platform = {"PLAT_NAME": plat_name, "PYI_PLAT_NAME": pyi_plat_name}
-    command: Type[Wheel] = type(command_name, (Wheel,), platform)
+    command: Type[Wheel] = type(command_name, (Wheel, ), platform)
     command.description = f"Create a {command.PYI_PLAT_NAME} wheel"
     wheel_commands[command_name] = command
 
@@ -222,8 +227,12 @@ class bdist_wheels(Command):
 
     # Overload these to keep the abstract metaclass happy.
     user_options = []
-    def initialize_options(self): pass
-    def finalize_options(self): pass
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
 
     def run(self) -> None:
         command: Type[Wheel]
@@ -248,14 +257,15 @@ class bdist_wheels(Command):
 #--
 
 setup(
-    setup_requires = ["setuptools >= 39.2.0"],
-    cmdclass = {'build_bootloader': build_bootloader,
-                'build': MyBuild,
-                **wheel_commands,
-                'bdist_wheels': bdist_wheels,
-                },
+    setup_requires=["setuptools >= 39.2.0"],
+    cmdclass={
+        'build_bootloader': build_bootloader,
+        'build': MyBuild,
+        **wheel_commands,
+        'bdist_wheels': bdist_wheels,
+    },
     packages=find_packages(include=["PyInstaller", "PyInstaller.*"]),
-    package_data = {
+    package_data={
         "PyInstaller": [
             # Include all bootloaders in wheels by default.
             "bootloader/*/*",

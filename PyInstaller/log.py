@@ -8,8 +8,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-
 """
 Logging module for PyInstaller
 """
@@ -17,7 +15,7 @@ Logging module for PyInstaller
 __all__ = ['getLogger', 'INFO', 'WARN', 'DEBUG', 'TRACE', 'ERROR', 'FATAL']
 
 import logging
-from logging import getLogger, INFO, WARN, DEBUG, ERROR, FATAL
+from logging import DEBUG, ERROR, FATAL, INFO, WARN, getLogger
 
 TRACE = logging.TRACE = DEBUG - 5
 logging.addLevelName(TRACE, 'TRACE')
@@ -29,14 +27,15 @@ logger = getLogger('PyInstaller')
 
 def __add_options(parser):
     levels = ('TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'CRITICAL')
-    parser.add_argument('--log-level',
-                        choices=levels, metavar="LEVEL",
-                        default='INFO',
-                        dest='loglevel',
-                        help=('Amount of detail in build-time console messages. '
-                              'LEVEL may be one of %s (default: %%(default)s).'
-                              % ', '.join(levels))
-    )
+    parser.add_argument(
+        '--log-level',
+        choices=levels,
+        metavar="LEVEL",
+        default='INFO',
+        dest='loglevel',
+        help=('Amount of detail in build-time console messages. '
+              'LEVEL may be one of %s (default: %%(default)s).' %
+              ', '.join(levels)))
 
 
 def __process_options(parser, opts):

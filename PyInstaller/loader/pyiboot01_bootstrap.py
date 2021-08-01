@@ -9,23 +9,20 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 ### Start bootstrap process
 # Only python built-in modules can be used.
 
 import sys
+
 import pyimod03_importers
 
 # Extend Python import machinery by adding PEP302 importers to sys.meta_path.
 pyimod03_importers.install()
 
-
 ### Bootstrap process is complete.
 # We can use other python modules (e.g. os)
 
-
 import os
-
 
 # Let other python modules know that the code is running in frozen mode.
 if not hasattr(sys, 'frozen'):
@@ -33,17 +30,14 @@ if not hasattr(sys, 'frozen'):
 
 # sys._MEIPASS is now set in the bootloader. Hooray.
 
-
 # Python 3 C-API function Py_SetPath() resets sys.prefix to empty string.
 # Python 2 was using PYTHONHOME for sys.prefix. Let's do the same for Python 3.
 sys.prefix = sys._MEIPASS
 sys.exec_prefix = sys.prefix
 
-
 # Python 3.3+ defines also sys.base_prefix. Let's set them too.
 sys.base_prefix = sys.prefix
 sys.base_exec_prefix = sys.exec_prefix
-
 
 # Some packages behaves differently when running inside virtual environment.
 # E.g. IPython tries to append path VIRTUAL_ENV to sys.path.
@@ -54,7 +48,6 @@ if VIRTENV in os.environ:
     # deleting the var from os.environ does not delete it from the environment.
     os.environ[VIRTENV] = ''
     del os.environ[VIRTENV]
-
 
 # Ensure sys.path contains absolute paths. Otherwise import of other python
 # modules will fail when current working directory is changed by frozen
@@ -95,7 +88,6 @@ if sys.stdout is None:
 if sys.stderr is None:
     sys.stderr = NullWriter()
 
-
 # At least on Windows, Python seems to hook up the codecs on this
 # import, so it's not enough to just package up all the encodings.
 #
@@ -112,7 +104,6 @@ try:
 except ImportError:
     pass
 
-
 # In the Python interpreter 'warnings' module is imported when 'sys.warnoptions'
 # is not empty. Mimic this behavior in PyInstaller.
 if sys.warnoptions:
@@ -120,6 +111,7 @@ if sys.warnoptions:
 
 # Install the hooks for ctypes
 import pyimod04_ctypes  # noqa: E402
+
 pyimod04_ctypes.install()
 
 # Make .eggs and zipfiles available at runtime

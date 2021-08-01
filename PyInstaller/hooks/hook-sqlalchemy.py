@@ -10,10 +10,10 @@
 #-----------------------------------------------------------------------------
 
 import re
-from PyInstaller.utils.hooks import (
-    exec_statement, is_module_satisfies, logger)
+
 from PyInstaller.lib.modulegraph.modulegraph import SourceModule
 from PyInstaller.lib.modulegraph.util import guess_encoding
+from PyInstaller.utils.hooks import exec_statement, is_module_satisfies, logger
 
 # 'sqlalchemy.testing' causes bundling a lot of unnecessary modules.
 excludedimports = ['sqlalchemy.testing']
@@ -28,14 +28,16 @@ if is_module_satisfies('sqlalchemy >= 1.4'):
 
 # In SQLAlchemy >= 0.6, the "sqlalchemy.dialects" package provides dialects.
 if is_module_satisfies('sqlalchemy >= 0.6'):
-    dialects = exec_statement("import sqlalchemy.dialects;print(sqlalchemy.dialects.__all__)")
+    dialects = exec_statement(
+        "import sqlalchemy.dialects;print(sqlalchemy.dialects.__all__)")
     dialects = eval(dialects.strip())
 
     for n in dialects:
         hiddenimports.append("sqlalchemy.dialects." + n)
 # In SQLAlchemy <= 0.5, the "sqlalchemy.databases" package provides dialects.
 else:
-    databases = exec_statement("import sqlalchemy.databases; print(sqlalchemy.databases.__all__)")
+    databases = exec_statement(
+        "import sqlalchemy.databases; print(sqlalchemy.databases.__all__)")
     databases = eval(databases.strip())
 
     for n in databases:

@@ -12,8 +12,8 @@
 # ********************************************
 # hook-sphinx.py - Pyinstaller hook for Sphinx
 # ********************************************
-from PyInstaller.utils.hooks import collect_submodules, collect_data_files, \
-    eval_statement
+from PyInstaller.utils.hooks import (collect_data_files, collect_submodules,
+                                     eval_statement)
 
 hiddenimports = (
     # Per http://sphinx-doc.org/extensions.html#builtin-sphinx-extensions,
@@ -53,11 +53,11 @@ hiddenimports = (
     #
     # Sphinx relies on a number of built-in extensions that are dynamically
     # imported. Collect all those.
-    list(eval_statement("""
+    list(
+        eval_statement("""
         from sphinx.application import builtin_extensions
         print(builtin_extensions)
-    """))
-)
+    """)))
 
 # Sphinx also relies on a number of data files in its directory hierarchy: for
 # example, *.html and *.conf files in ``sphinx.themes``, translation files in

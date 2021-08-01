@@ -8,8 +8,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-
 """
 Classes facilitating communication between PyInstaller and import hooks.
 
@@ -20,10 +18,10 @@ modifications into appropriate operations on the current `PyiModuleGraph`
 instance, thus modifying which modules will be frozen into the executable.
 """
 
-from PyInstaller.lib.modulegraph.modulegraph import RuntimeModule, \
-    RuntimePackage
 from PyInstaller.building.datastruct import TOC
 from PyInstaller.building.utils import format_binaries_and_datas
+from PyInstaller.lib.modulegraph.modulegraph import (RuntimeModule,
+                                                     RuntimePackage)
 
 
 class PreSafeImportModuleAPI(object):
@@ -79,14 +77,12 @@ class PreSafeImportModuleAPI(object):
     module_name : str
         Fully-qualified name of this module (e.g., `email.mime.text`).
     """
-
     def __init__(self, module_graph, module_basename, module_name,
                  parent_package):
         self._module_graph = module_graph
         self.module_basename = module_basename
         self.module_name = module_name
         self._parent_package = parent_package
-
 
     # Immutable properties. No corresponding setters are defined.
     @property
@@ -98,7 +94,6 @@ class PreSafeImportModuleAPI(object):
     def parent_package(self):
         """Parent Package of this node"""
         return self._parent_package
-
 
     def add_runtime_module(self, module_name):
         """
@@ -132,7 +127,6 @@ class PreSafeImportModuleAPI(object):
 
         self._module_graph.add_module(RuntimeModule(module_name))
 
-
     def add_runtime_package(self, package_name):
         """
         Add a graph node representing a non-namespace Python package with the
@@ -164,7 +158,6 @@ class PreSafeImportModuleAPI(object):
 
         self._module_graph.add_module(RuntimePackage(package_name))
 
-
     def add_alias_module(self, real_module_name, alias_module_name):
         """
         Alias the source module to the target module with the passed names.
@@ -185,7 +178,6 @@ class PreSafeImportModuleAPI(object):
         """
 
         self._module_graph.alias_module(real_module_name, alias_module_name)
-
 
     def append_package_path(self, directory):
         """
@@ -254,7 +246,6 @@ class PreFindModulePathAPI(object):
         required, consider an alternative type of hook (e.g., pre-import module
         hooks).
     """
-
     def __init__(
         self,
         module_graph,
@@ -353,7 +344,6 @@ class PostGraphAPI(object):
         empty list. This is equivalent to the global
         `binaries` hook attribute.
     """
-
     def __init__(self, module_name, module_graph, analysis):
         # Mutable attributes.
         self.module_graph = module_graph
@@ -497,7 +487,8 @@ class PostGraphAPI(object):
         if isinstance(list_of_tuples, TOC):
             self._added_binaries.extend(i[:2] for i in list_of_tuples)
         else:
-            self._added_binaries.extend(format_binaries_and_datas(list_of_tuples))
+            self._added_binaries.extend(
+                format_binaries_and_datas(list_of_tuples))
 
     def add_datas(self, list_of_tuples):
         """

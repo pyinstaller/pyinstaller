@@ -8,8 +8,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-
 """
 Utils for Windows platform.
 """
@@ -19,9 +17,9 @@ __all__ = ['get_windows_dir']
 import os
 import sys
 
+import PyInstaller.log as logging
 from PyInstaller import compat
 
-import PyInstaller.log as logging
 logger = logging.getLogger(__name__)
 
 
@@ -93,8 +91,7 @@ def import_pywin32_module(module_name):
     module = None
 
     try:
-        module = __import__(
-            module_name, globals={}, locals={}, fromlist=[''])
+        module = __import__(module_name, globals={}, locals={}, fromlist=[''])
     except ImportError as exc:
         if str(exc).startswith('No system module'):
             # True if "sys.frozen" is currently set.
@@ -122,8 +119,10 @@ def import_pywin32_module(module_name):
                 if os.path.isdir(pywin32_dll_dir):
                     sys.path.append(pywin32_dll_dir)
                     try:
-                        module = __import__(
-                            name=module_name, globals={}, locals={}, fromlist=[''])
+                        module = __import__(name=module_name,
+                                            globals={},
+                                            locals={},
+                                            fromlist=[''])
                         break
                     except ImportError:
                         pass

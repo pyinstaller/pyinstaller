@@ -8,8 +8,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-
 """
 This module contains code useful for doing releases of PyInstaller.
 
@@ -22,6 +20,7 @@ https://zestreleaser.readthedocs.org/en/latest/entrypoints.html
 """
 
 import os
+
 from PyInstaller.compat import exec_command, getenv
 
 

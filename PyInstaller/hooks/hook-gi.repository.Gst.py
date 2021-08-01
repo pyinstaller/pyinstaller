@@ -17,16 +17,16 @@ Tested with GStreamer 1.4.5, gst-python 1.4.0, PyGObject 3.16.2, and GObject Int
 GStreamer 1.4.5, gst-python 1.4.0, PyGObject 3.14.0, and GObject Introspection 1.42 on Windows 7
 """
 
-
 # GStreamer contains a lot of plugins. We need to collect them and bundle them wih the exe file.
 # We also need to resolve binary dependencies of these GStreamer plugins.
 
-
 import glob
 import os
+
 from PyInstaller.utils.hooks import exec_statement, get_hook_config
-from PyInstaller.utils.hooks.gi import collect_glib_share_files, \
-        collect_glib_translations, get_gi_typelibs
+from PyInstaller.utils.hooks.gi import (collect_glib_share_files,
+                                        collect_glib_translations,
+                                        get_gi_typelibs)
 
 binaries, datas, hiddenimports = get_gi_typelibs('Gst', '1.0')
 
@@ -39,13 +39,13 @@ def hook(hook_api):
     hook_datas = []
     lang_list = get_hook_config(hook_api, "gi", "languages")
 
-    for prog in ['gst-plugins-bad-1.0',
-                 'gst-plugins-base-1.0',
-                 'gst-plugins-good-1.0',
-                 'gst-plugins-ugly-1.0',
-                 'gstreamer-1.0']:
+    for prog in [
+            'gst-plugins-bad-1.0', 'gst-plugins-base-1.0',
+            'gst-plugins-good-1.0', 'gst-plugins-ugly-1.0', 'gstreamer-1.0'
+    ]:
         hook_datas += collect_glib_translations(prog, lang_list)
     hook_api.add_datas(hook_datas)
+
 
 statement = """
 import os

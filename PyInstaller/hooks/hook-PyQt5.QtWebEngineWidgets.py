@@ -9,9 +9,9 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-from PyInstaller.utils.hooks.qt import pyqt5_library_info, \
-    add_qt5_dependencies, get_qt_webengine_binaries_and_data_files
-
+from PyInstaller.utils.hooks.qt import (
+    add_qt5_dependencies, get_qt_webengine_binaries_and_data_files,
+    pyqt5_library_info)
 
 # Ensure PyQt5 is importable before adding info depending on it.
 if pyqt5_library_info.version is not None:

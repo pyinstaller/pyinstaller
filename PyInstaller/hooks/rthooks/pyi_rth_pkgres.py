@@ -10,14 +10,13 @@
 #-----------------------------------------------------------------------------
 
 import os
-import sys
 import pathlib
+import sys
 
 import pkg_resources
 from pyimod03_importers import FrozenImporter
 
 SYS_PREFIX = pathlib.PurePath(sys._MEIPASS)
-
 
 # To make pkg_resources work with frozen modules we need to set the 'Provider'
 # class for FrozenImporter. This class decides where to look for resources
@@ -48,7 +47,6 @@ SYS_PREFIX = pathlib.PurePath(sys._MEIPASS)
 
 class _TocFilesystem:
     """A prefix tree implementation for embedded filesystem reconstruction."""
-
     def __init__(self, toc_files, toc_dirs=[]):
         # Reconstruct the fileystem hierarchy by building a prefix tree from
         # the given file and directory paths
@@ -103,7 +101,6 @@ _toc_tree_cache = {}
 
 class PyiFrozenProvider(pkg_resources.NullProvider):
     """Custom pkg_resourvces provider for FrozenImporter."""
-
     def __init__(self, module):
         super().__init__(module)
 

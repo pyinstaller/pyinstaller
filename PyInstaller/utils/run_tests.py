@@ -9,11 +9,11 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 # -----------------------------------------------------------------------------
 
-import sys
 import argparse
+import sys
 
-import pytest
 import pkg_resources
+import pytest
 
 from PyInstaller import compat
 
@@ -34,9 +34,10 @@ def paths_to_test(include_only=None):
                                                        "tests"):
         # Implement ``include_only``.
         if (not include_only  # If falsey, include everything,
-            # Otherwise, include only the specified modules.
-            or any(entry_point.module_name.startswith(name)
-                   for name in include_only)):
+                # Otherwise, include only the specified modules.
+                or any(
+                    entry_point.module_name.startswith(name)
+                    for name in include_only)):
             test_path_list += list(entry_point.load()())
     return test_path_list
 
@@ -64,7 +65,8 @@ if __name__ == "__main__":
     # Look only for the ``--include_only`` argument.
     parser = argparse.ArgumentParser(
         description='Run PyInstaller packaging tests.')
-    parser.add_argument("--include_only", action="append",
+    parser.add_argument("--include_only",
+                        action="append",
                         help="Only run tests from the specified package.")
     args, unknown = parser.parse_known_args(sys.argv)
     # Convert the parsed args into a dict using ``vars(args)``.

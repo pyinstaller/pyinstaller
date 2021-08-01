@@ -8,22 +8,21 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-
 """
 Utils for Mac OS X platform.
 """
 
-import os
 import math
+import os
 import shutil
 
-from PyInstaller.compat import base_prefix, exec_command_all
+from macholib.mach_o import (LC_BUILD_VERSION, LC_CODE_SIGNATURE,
+                             LC_SEGMENT_64, LC_SYMTAB, LC_VERSION_MIN_MACOSX)
 from macholib.MachO import MachO
-from macholib.mach_o import LC_BUILD_VERSION, LC_VERSION_MIN_MACOSX, \
-    LC_SEGMENT_64, LC_SYMTAB, LC_CODE_SIGNATURE
 
 import PyInstaller.log as logging
+from PyInstaller.compat import base_prefix, exec_command_all
+
 logger = logging.getLogger(__name__)
 
 
@@ -80,8 +79,10 @@ def _find_version_cmd(header):
     # The SDK version is stored in LC_BUILD_VERSION command (used when
     # targeting the latest versions of macOS) or in older LC_VERSION_MIN_MACOSX
     # command. Check for presence of either.
-    version_cmd = [cmd for cmd in header.commands
-                   if cmd[0].cmd in {LC_BUILD_VERSION, LC_VERSION_MIN_MACOSX}]
+    version_cmd = [
+        cmd for cmd in header.commands
+        if cmd[0].cmd in {LC_BUILD_VERSION, LC_VERSION_MIN_MACOSX}
+    ]
     assert len(version_cmd) == 1, \
         "Expected exactly one LC_BUILD_VERSION or " \
         "LC_VERSION_MIN_MACOSX command!"
@@ -190,20 +191,21 @@ def fix_exe_for_code_signing(filename):
 
     # Sanity check: ensure the executable slice is not signed (otherwise
     # signature's section comes last in the __LINKEDIT segment).
-    sign_sec = [cmd for cmd in header.commands
-                if cmd[0].cmd == LC_CODE_SIGNATURE]
+    sign_sec = [
+        cmd for cmd in header.commands if cmd[0].cmd == LC_CODE_SIGNATURE
+    ]
     assert len(sign_sec) == 0, "Executable contains code signature!"
 
     # Find __LINKEDIT segment by name (16-byte zero padded string)
     __LINKEDIT_NAME = b'__LINKEDIT\x00\x00\x00\x00\x00\x00'
-    linkedit_seg = [cmd for cmd in header.commands
-                    if cmd[0].cmd == LC_SEGMENT_64
-                    and cmd[1].segname == __LINKEDIT_NAME]
+    linkedit_seg = [
+        cmd for cmd in header.commands
+        if cmd[0].cmd == LC_SEGMENT_64 and cmd[1].segname == __LINKEDIT_NAME
+    ]
     assert len(linkedit_seg) == 1, "Expected exactly one __LINKEDIT segment!"
     linkedit_seg = linkedit_seg[0][1]  # Take the segment command entry
     # Find SYMTAB section
-    symtab_sec = [cmd for cmd in header.commands
-                  if cmd[0].cmd == LC_SYMTAB]
+    symtab_sec = [cmd for cmd in header.commands if cmd[0].cmd == LC_SYMTAB]
     assert len(symtab_sec) == 1, "Expected exactly one SYMTAB section!"
     symtab_sec = symtab_sec[0][1]  # Take the symtab command entry
     # Sanity check; the string table is located at the end of the SYMTAB
@@ -238,19 +240,21 @@ def fix_exe_for_code_signing(filename):
     # In fat binaries, we also need to adjust the fat header. macholib as
     # of version 1.14 does not support this, so we need to do it ourselves...
     if executable.fat:
-        from macholib.mach_o import FAT_MAGIC, FAT_MAGIC_64
-        from macholib.mach_o import fat_header, fat_arch, fat_arch64
+        from macholib.mach_o import (FAT_MAGIC, FAT_MAGIC_64, fat_arch,
+                                     fat_arch64, fat_header)
         with open(filename, 'rb+') as fp:
             # Taken from MachO.load_fat() implementation. The fat
             # header's signature has already been validated when we
             # loaded the file for the first time.
             fat = fat_header.from_fileobj(fp)
             if fat.magic == FAT_MAGIC:
-                archs = [fat_arch.from_fileobj(fp)
-                         for i in range(fat.nfat_arch)]
+                archs = [
+                    fat_arch.from_fileobj(fp) for i in range(fat.nfat_arch)
+                ]
             elif fat.magic == FAT_MAGIC_64:
-                archs = [fat_arch64.from_fileobj(fp)
-                         for i in range(fat.nfat_arch)]
+                archs = [
+                    fat_arch64.from_fileobj(fp) for i in range(fat.nfat_arch)
+                ]
             # Adjust the size in the fat header for the last slice
             arch = archs[-1]
             arch.size = file_size - arch.offset
@@ -292,8 +296,9 @@ def get_binary_architectures(filename):
     list of architectures with lipo/codesign compatible names.
     """
     executable = MachO(filename)
-    return bool(executable.fat), [_get_arch_string(hdr.header)
-                                  for hdr in executable.headers]
+    return bool(executable.fat), [
+        _get_arch_string(hdr.header) for hdr in executable.headers
+    ]
 
 
 def convert_binary_to_thin_arch(filename, thin_arch):
@@ -304,10 +309,10 @@ def convert_binary_to_thin_arch(filename, thin_arch):
     cmd_args = ['lipo', '-thin', thin_arch, filename, '-output', filename]
     retcode, stdout, stderr = exec_command_all(*cmd_args)
     if retcode != 0:
-        logger.warning("lipo command (%r) failed with error code %d!\n"
-                       "stdout: %r\n"
-                       "stderr: %r",
-                       cmd_args, retcode, stdout, stderr)
+        logger.warning(
+            "lipo command (%r) failed with error code %d!\n"
+            "stdout: %r\n"
+            "stderr: %r", cmd_args, retcode, stdout, stderr)
         raise SystemError("lipo failure!")
 
 
@@ -348,10 +353,10 @@ def remove_signature_from_binary(filename):
     cmd_args = ['codesign', '--remove', '--all-architectures', filename]
     retcode, stdout, stderr = exec_command_all(*cmd_args)
     if retcode != 0:
-        logger.warning("codesign command (%r) failed with error code %d!\n"
-                       "stdout: %r\n"
-                       "stderr: %r",
-                       cmd_args, retcode, stdout, stderr)
+        logger.warning(
+            "codesign command (%r) failed with error code %d!\n"
+            "stdout: %r\n"
+            "stderr: %r", cmd_args, retcode, stdout, stderr)
         raise SystemError("codesign failure!")
 
 
@@ -372,12 +377,14 @@ def sign_binary(filename, identity=None, entitlements_file=None, deep=False):
         extra_args.append('--deep')
 
     logger.debug("Signing file %r", filename)
-    cmd_args = ['codesign', '-s', identity, '--force', '--all-architectures',
-                '--timestamp', *extra_args, filename]
+    cmd_args = [
+        'codesign', '-s', identity, '--force', '--all-architectures',
+        '--timestamp', *extra_args, filename
+    ]
     retcode, stdout, stderr = exec_command_all(*cmd_args)
     if retcode != 0:
-        logger.warning("codesign command (%r) failed with error code %d!\n"
-                       "stdout: %r\n"
-                       "stderr: %r",
-                       cmd_args, retcode, stdout, stderr)
+        logger.warning(
+            "codesign command (%r) failed with error code %d!\n"
+            "stdout: %r\n"
+            "stderr: %r", cmd_args, retcode, stdout, stderr)
         raise SystemError("codesign failure!")
