@@ -6,6 +6,17 @@ new code, bug reports, fixes, comments and ideas. A brief list follows,
 please let us know if your name is omitted by accident:
 
 
+Contributions to PyInstaller 4.5
+--------------------------------
+
+* Rok Mandeljc - Core Developer
+* Brénainn Woodsend - Core Developer
+* Jasper Harrison - Maintainer, Release Manager
+* Dave Dykstra
+* Andy Hobbs
+* Nicholas Ollinger
+
+
 Contributions to PyInstaller 4.4
 --------------------------------
 
