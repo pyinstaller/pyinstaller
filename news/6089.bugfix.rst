@@ -1,0 +1,3 @@
+(macOS) Fix potential loss of Apple Events during ``onefile`` app bundle
+start-up, when the child process is not yet ready to receive events
+forwarded by the parent process.
