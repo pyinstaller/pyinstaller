@@ -993,12 +993,16 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
         goto cleanup;
     }
 
-    /* macOS argv emulation */
-    #if defined(__APPLE__) && defined(WINDOWED)
+    /* macOS: Apple Events handling */
+#if defined(__APPLE__) && defined(WINDOWED)
+    /* Install Apple Event handlers */
+    pyi_apple_install_event_handlers();
+    /* argv emulation; do a short (250 ms) cycle of Apple Events processing
+     * before bringing up the child process */
     if (pyi_arch_get_option(status, "pyi-macos-argv-emulation") != NULL) {
-        pyi_process_apple_events(true /* short timeout (250 ms) */);
+        pyi_apple_process_events(0.25);  /* short timeout (250 ms) */
     }
-    #endif
+#endif
 
     pid = fork();
     if (pid < 0) {
@@ -1043,8 +1047,8 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
         }
     }
 
-    #if defined(__APPLE__) && defined(WINDOWED)
-    /* MacOS code -- forward events to child! */
+#if defined(__APPLE__) && defined(WINDOWED)
+    /* macOS: forward events to child */
     do {
         /* The below loop will iterate about once every second on Apple,
          * waiting on the event queue most of that time. */
@@ -1052,12 +1056,14 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
         if (wait_rc == 0) {
             /* Child not done yet -- wait for and process AppleEvents with a
              * 1 second timeout, forwarding file-open events to the child. */
-            pyi_process_apple_events(false /* long timeout (1 sec) */);
+            pyi_apple_process_events(1.0);  /* long timeout (1 sec) */
         }
     } while (!wait_rc);
-    #else
+    /* Uninstall event handlers */
+    pyi_apple_uninstall_event_handlers();
+#else
     wait_rc = waitpid(child_pid, &rc, 0);
-    #endif
+#endif
     if (wait_rc < 0) {
         VS("LOADER: failed to wait for child process: %s\n", strerror(errno));
     }
@@ -1068,7 +1074,7 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
         signal(signum, SIG_DFL);
     }
 
-  cleanup:
+cleanup:
     VS("LOADER: freeing args\n");
     pyi_utils_free_args();
 
