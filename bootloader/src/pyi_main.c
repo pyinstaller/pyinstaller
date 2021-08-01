@@ -232,14 +232,15 @@ pyi_main(int argc, char * argv[])
                 pyi_apple_process_events(0.25);  /* short_timeout (250 ms) */
                 /* Uninstall event handlers */
                 pyi_apple_uninstall_event_handlers();
-                /* NOTE: processing Apple events swallows up the initial
+                /* The processing of Apple events swallows up the initial
                  * activation event, whatever it might have been (typically
                  * oapp, but could also be odoc or GURL if application is
                  * launched in response to request to open file/URL).
-                 * This seems to cause issues with Tcl/Tk, so argv
-                 * emulation should not be used in conjuction with
-                 * UI frameworks.
+                 * This seems to cause issues with some UI frameworks
+                 * (Tcl/Tk, in particular); so we submit a new oapp event
+                 * to ourselves...
                  */
+                 pyi_apple_submit_oapp_event();
             }
             /* Update pointer to arguments; regardless of argv-emulation,
              * because pyi_utils_initialize_args() also filters out

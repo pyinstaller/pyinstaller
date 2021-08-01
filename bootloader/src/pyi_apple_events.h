@@ -38,6 +38,12 @@ int pyi_apple_uninstall_event_handlers();
  */
 void pyi_apple_process_events(float timeout);
 
+/*
+ * Attempt to submit oapp event to ourselves in order to mitigate
+ * issues with UI frameworks when argv-emu is used in onedir mode.
+ */
+void pyi_apple_submit_oapp_event();
+
 #endif  /* defined(__APPLE__) && defined(WINDOWED) */
 
 #endif  /* PYI_APPLE_EVENTS_H */
