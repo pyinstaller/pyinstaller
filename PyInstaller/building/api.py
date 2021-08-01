@@ -338,6 +338,9 @@ class EXE(Target):
                 Windows only. Setting to True creates a Manifest with will request elevation upon application start.
             uac_uiaccess
                 Windows only. Setting to True allows an elevated application to work with Remote Desktop.
+            argv_emulation
+                macOS only. Enables argv emulation in macOS .app bundles (i.e., windowed bootloader). If enabled, the
+                initial open document/URL Apple Events are intercepted by bootloader and converted into sys.argv.
             target_arch
                 macOS only. Used to explicitly specify the target architecture; either single-arch ('x86_64' or 'arm64')
                 or 'universal2'. Used in checks that the collected binaries contain the requires arch slice(s) and/or
@@ -373,6 +376,9 @@ class EXE(Target):
         # On Windows allows the exe to request admin privileges.
         self.uac_admin = kwargs.get('uac_admin', False)
         self.uac_uiaccess = kwargs.get('uac_uiaccess', False)
+
+        # macOS argv emulation
+        self.argv_emulation = kwargs.get('argv_emulation', False)
 
         # Target architecture (macOS only)
         self.target_arch = kwargs.get('target_arch', None)
@@ -445,6 +451,10 @@ class EXE(Target):
             # no value; presence means "true"
             self.toc.append(("pyi-disable-windowed-traceback", "", "OPTION"))
 
+        if self.argv_emulation:
+            # no value; presence means "true"
+            self.toc.append(("pyi-macos-argv-emulation", "", "OPTION"))
+
         if is_win:
             if not self.icon:
                 # --icon not specified; use default from bootloader folder
@@ -501,6 +511,7 @@ class EXE(Target):
         ('uac_uiaccess', _check_guts_eq),
         ('manifest', _check_guts_eq),
         ('append_pkg', _check_guts_eq),
+        ('argv_emulation', _check_guts_eq),
         ('target_arch', _check_guts_eq),
         ('codesign_identity', _check_guts_eq),
         ('entitlements_file', _check_guts_eq),
