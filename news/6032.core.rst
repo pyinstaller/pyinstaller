@@ -1,2 +1,0 @@
-Isolate discovery of 3rd-party hook directories into a separate
-subprocess to avoid importing packages in the main process.

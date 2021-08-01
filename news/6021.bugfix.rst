@@ -1,1 +1,0 @@
-(macOS) Fix python shared library detection for non-framework python builds when the library  path cannot be inferred from imports of the ``python`` executable.

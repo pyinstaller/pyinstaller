@@ -1,4 +1,0 @@
-(POSIX) Add ``exclude_system_libraries`` function to the Analysis class
-for .spec files,
-to exclude most or all non-Python system libraries from the bundle.
-Documented in new :ref:`POSIX Specific Options` section.

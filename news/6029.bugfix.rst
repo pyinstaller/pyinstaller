@@ -1,1 +1,0 @@
-Fix architecture detection on Apple M1

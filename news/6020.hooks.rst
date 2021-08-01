@@ -1,2 +1,0 @@
-Simplify the ``PySide2.QWebEngineWidgets`` and ``PyQt5.QWebEngineWidgets`` by 
-merging most of their code into a common helper function.

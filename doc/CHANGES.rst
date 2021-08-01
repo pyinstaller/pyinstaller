@@ -12,6 +12,94 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+4.5 (2021-08-01)
+----------------
+
+Features
+~~~~~~~~
+
+* (POSIX) Add ``exclude_system_libraries`` function to the Analysis class
+  for .spec files,
+  to exclude most or all non-Python system libraries from the bundle.
+  Documented in new :ref:`POSIX Specific Options` section. (:issue:`#6022`)
+
+
+Bugfix
+~~~~~~
+
+* (Cygwin) Add ``_MEIPASS`` to DLL search path to fix loading of python shared
+  library in onefile builds made in cygwin environment and executed outside of
+  it. (:issue:`#6000`)
+* (Linux) Display missing library warnings for "not found" lines in ``ldd``
+  output (i.e., ``libsomething.so => not found``) instead of quietly
+  ignoring them. (:issue:`#6015`)
+* (Linux) Fix spurious missing library warning when ``libc.so`` points to
+  ``ldd``. (:issue:`#6015`)
+* (macOS) Fix python shared library detection for non-framework python builds
+  when the library  path cannot be inferred from imports of the ``python``
+  executable. (:issue:`#6021`)
+* (macOS) Fix the crashes in ``onedir`` bundles of ``tkinter``-based
+  applications
+  created using Homebrew python 3.9 and Tcl/Tk 8.6.11. (:issue:`#6043`)
+* (macOS) When fixing executable for codesigning, update the value of
+  ``vmsize`` field in the ``__LINKEDIT`` segment. (:issue:`#6039`)
+* Downgrade messages about missing dynamic link libraries from ERROR to
+  WARNING. (:issue:`#6015`)
+* Fix a bytecode parsing bug which caused tuple index errors whilst scanning
+  modules which use :mod:`ctypes`. (:issue:`#6007`)
+* Fix an error when rhtooks for ``pkgutil`` and ``pkg_resources`` are used
+  together. (:issue:`#6018`)
+* Fix architecture detection on Apple M1 (:issue:`#6029`)
+* Fix crash in windowed bootloader when the traceback for unhandled exception
+  cannot be retrieved. (:issue:`#6070`)
+* Improve handling of errors when loading hook entry-points. (:issue:`#6028`)
+* Suppress missing library warning for ``shiboken2`` (``PySide2``) and
+  ``shiboken6`` (``PySide6``) shared library. (:issue:`#6015`)
+
+
+Incompatible Changes
+~~~~~~~~~~~~~~~~~~~~
+
+* (macOS) Disable processing of Apple events for the purpose of argv emulation
+  in ``onedir`` application bundles. This functionality was introduced in
+  |PyInstaller| 4.4 by (:issue:`#5920`) in response to feature requests
+  (:issue:`#5436`) and (:issue:`#5908`), but was discovered to be breaking
+  ``tkinter``-based ``onedir`` bundles made with Homebrew python 3.9 and
+  Tcl/Tk 8.6.11 (:issue:`#6043`). As such, until the cause is investigated
+  and the issue addressed, this feature is reverted/disabled. (:issue:`#6048`)
+
+
+Hooks
+~~~~~
+
+* Add a hook for ``pandas.io.formats.style`` to deal with indirect import of
+  ``jinja2`` and the missing template file. (:issue:`#6010`)
+* Simplify the ``PySide2.QWebEngineWidgets`` and ``PyQt5.QWebEngineWidgets`` by
+  merging most of their code into a common helper function. (:issue:`#6020`)
+
+
+Documentation
+~~~~~~~~~~~~~
+
+* Add a page describing hook configuration mechanism and the currently
+  implemented options. (:issue:`#6025`)
+
+
+PyInstaller Core
+~~~~~~~~~~~~~~~~
+
+* Isolate discovery of 3rd-party hook directories into a separate
+  subprocess to avoid importing packages in the main process. (:issue:`#6032`)
+
+
+Bootloader build
+~~~~~~~~~~~~~~~~
+
+* Allow statically linking zlib on non-Windows specified via either a
+  ``--static-zlib`` flag or a ``PYI_STATIC_ZLIB=1`` environment variable.
+  (:issue:`#6010`)
+
+
 4.4 (2021-07-13)
 ----------------
 

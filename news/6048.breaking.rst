@@ -1,7 +1,0 @@
-(macOS) Disable processing of Apple events for the purpose of argv emulation
-in ``onedir`` application bundles. This functionality was introduced in
-|PyInstaller| 4.4 by (:issue:`#5920`) in response to feature requests
-(:issue:`#5436`) and (:issue:`#5908`), but was discovered to be breaking
-``tkinter``-based ``onedir`` bundles made with Homebrew python 3.9 and
-Tcl/Tk 8.6.11 (:issue:`#6043`). As such, until the cause is investigated
-and the issue addressed, this feature is reverted/disabled.

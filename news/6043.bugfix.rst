@@ -1,2 +1,0 @@
-(macOS) Fix the crashes in ``onedir`` bundles of ``tkinter``-based applications
-created using Homebrew python 3.9 and Tcl/Tk 8.6.11.

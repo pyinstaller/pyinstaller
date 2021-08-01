@@ -1,2 +1,0 @@
-(macOS) When fixing executable for codesigning, update the value of
-``vmsize`` field in the ``__LINKEDIT`` segment.

@@ -1,2 +1,0 @@
-Suppress missing library warning for ``shiboken2`` (``PySide2``) and
-``shiboken6`` (``PySide6``) shared library. 

@@ -1,2 +1,0 @@
-Fix a bytecode parsing bug which caused tuple index errors whilst scanning
-modules which use :mod:`ctypes`.

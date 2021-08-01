@@ -1,3 +1,0 @@
-(Linux) Display missing library warnings for "not found" lines in ``ldd`` 
-output (i.e., ``libsomething.so => not found``) instead of quietly 
-ignoring them.

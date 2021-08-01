@@ -1,2 +1,0 @@
-Allow statically linking zlib on non-Windows specified via either a
-``--static-zlib`` flag or a ``PYI_STATIC_ZLIB=1`` environment variable.

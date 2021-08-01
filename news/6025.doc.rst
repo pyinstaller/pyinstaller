@@ -1,2 +1,0 @@
-Add a page describing hook configuration mechanism and the currently 
-implemented options.
