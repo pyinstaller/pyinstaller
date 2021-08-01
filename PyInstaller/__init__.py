@@ -21,7 +21,7 @@ from PyInstaller.utils.git import get_repo_revision
 
 # Note: Keep this variable as plain string so it could be updated automatically
 #       when doing a release.
-__version__ = '4.5'
+__version__ = '5.0.dev0'
 
 
 # Absolute path of this package's directory. Save this early so all
