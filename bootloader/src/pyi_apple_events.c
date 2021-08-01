@@ -138,7 +138,7 @@ static OSErr generic_forward_apple_event(const AppleEvent *const theAppleEvent /
         }
     }
     VS("LOADER [AppleEvent]: Sending message...\n");
-    err = AESendMessage(&childEvent, NULL, kAENoReply, 60 /* 60 = about 1.0 seconds timeout */);
+    err = AESendMessage(&childEvent, NULL, kAENoReply, kAEDefaultTimeout);
     VS("LOADER [AppleEvent]: Handler sent \"%s\" message to child pid %ld.\n", descStr, (long)child_pid);
 release_evt:
     free(buf);
