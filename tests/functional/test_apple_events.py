@@ -8,7 +8,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
 """
 OSX-specific test to check handling AppleEvents by bootloader
 """
@@ -31,10 +30,8 @@ from PyInstaller.utils.tests import importorskip
 
 @pytest.mark.darwin
 @pytest.mark.parametrize("mode", ['onefile'])
-def test_osx_custom_protocol_handler(tmpdir, pyi_builder_spec, monkeypatch,
-                                     mode):
-    app_path = os.path.join(tmpdir, 'dist',
-                            'pyi_osx_custom_protocol_handler.app')
+def test_osx_custom_protocol_handler(tmpdir, pyi_builder_spec, monkeypatch, mode):
+    app_path = os.path.join(tmpdir, 'dist', 'pyi_osx_custom_protocol_handler.app')
     logfile_path = os.path.join(tmpdir, 'dist', 'args.log')
 
     # Generate new URL scheme to avoid collisions
@@ -65,8 +62,7 @@ def test_osx_custom_protocol_handler(tmpdir, pyi_builder_spec, monkeypatch,
 @importorskip('PyQt5')
 @pytest.mark.parametrize("mode", ['onefile'])
 def test_osx_event_forwarding(tmpdir, pyi_builder_spec, monkeypatch, mode):
-    app_path = os.path.join(tmpdir, 'dist',
-                            'pyi_osx_event_forwarding.app')
+    app_path = os.path.join(tmpdir, 'dist', 'pyi_osx_event_forwarding.app')
 
     logfile_path = os.path.join(tmpdir, 'dist', 'events.log')
 
@@ -80,8 +76,7 @@ def test_osx_event_forwarding(tmpdir, pyi_builder_spec, monkeypatch, mode):
 
     # test_script builds the app then implicitly runs the script, so we
     # pass arg "0" to tell the built script to exit right away here.
-    pyi_builder_spec.test_spec('pyi_osx_event_forwarding.spec',
-                               app_args=["0"])
+    pyi_builder_spec.test_spec('pyi_osx_event_forwarding.spec', app_args=["0"])
 
     timeout = 60.0  # Give up after 60 seconds
     polltime = 0.25  # Poll events.log every 250ms
@@ -139,8 +134,7 @@ def test_osx_event_forwarding(tmpdir, pyi_builder_spec, monkeypatch, mode):
     n_files = 32
     assoc_files = []
     for ii in range(n_files):
-        assoc_path = os.path.join(tmpdir, 'dist',
-                                  'AFile{}.{}'.format(ii, custom_file_ext))
+        assoc_path = os.path.join(tmpdir, 'dist', 'AFile{}.{}'.format(ii, custom_file_ext))
         with open(assoc_path, 'wt') as fh:
             fh.write("File contents #{}\n".format(ii))
         assoc_files.append(assoc_path)
@@ -154,8 +148,7 @@ def test_osx_event_forwarding(tmpdir, pyi_builder_spec, monkeypatch, mode):
     # The generator below produces odd numbered files as "file://" URLs, and
     # even numbered are just file paths. They all should end up appended to
     # sys.argv in the app as simple file paths.
-    subprocess.check_call(['open', *[('file://' if ii % 2 else '') + ff
-                                     for ii, ff in enumerate(assoc_files)]])
+    subprocess.check_call(['open', *[('file://' if ii % 2 else '') + ff for ii, ff in enumerate(assoc_files)]])
 
     args = wait_for_started()
     assert args is not None, 'App start timed out'
@@ -169,8 +162,7 @@ def test_osx_event_forwarding(tmpdir, pyi_builder_spec, monkeypatch, mode):
     # This is a trick to make our app lose focus so that Qt forwards
     # the "Activated" events properly to our event handler in
     # pyi_pyqt5_log_events.py
-    subprocess.check_call(['osascript', "-e",
-                           'tell application "System Events" to activate'])
+    subprocess.check_call(['osascript', "-e", 'tell application "System Events" to activate'])
     time.sleep(1.0)  # delay for above applescript
 
     # The app is running now, in the background, and doesn't have focus

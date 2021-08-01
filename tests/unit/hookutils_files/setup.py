@@ -19,5 +19,5 @@ setup(
     packages=find_packages(),
     # Manually include the fake extension modules for testing. They aren't
     # automatically included.
-    package_data={'hookutils_package' : ['pyextension.*']},
+    package_data={'hookutils_package': ['pyextension.*']},
 )

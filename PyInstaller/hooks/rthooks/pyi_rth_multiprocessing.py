@@ -9,17 +9,17 @@
 # SPDX-License-Identifier: Apache-2.0
 #-----------------------------------------------------------------------------
 
-import sys
-
+import multiprocessing
+import multiprocessing.spawn as spawn
 # 'spawn' multiprocessing needs some adjustments on osx
 import os
 import re
-import multiprocessing
-import multiprocessing.spawn as spawn
+import sys
 from subprocess import _args_from_interpreter_flags
 
 # prevent spawn from trying to read __main__ in from the main script
 multiprocessing.process.ORIGINAL_DIR = None
+
 
 def _freeze_support():
     # we want to catch the two processes that are spawned by the
@@ -34,13 +34,15 @@ def _freeze_support():
     # look for those flags and the import statement, then exec() the
     # code ourselves.
 
-    if (len(sys.argv) >= 2 and
-        sys.argv[-2] == '-c' and
-        sys.argv[-1].startswith(
-            ('from multiprocessing.semaphore_tracker import main',  # Py<3.8
-             'from multiprocessing.resource_tracker import main',  # Py>=3.8
-             'from multiprocessing.forkserver import main')) and
-        set(sys.argv[1:-2]) == set(_args_from_interpreter_flags())):
+    if (
+        len(sys.argv) >= 2 and sys.argv[-2] == '-c' and sys.argv[-1].startswith(
+            (
+                'from multiprocessing.semaphore_tracker import main',  # Py<3.8
+                'from multiprocessing.resource_tracker import main',  # Py>=3.8
+                'from multiprocessing.forkserver import main'
+            )
+        ) and set(sys.argv[1:-2]) == set(_args_from_interpreter_flags())
+    ):
         exec(sys.argv[-1])
         sys.exit()
 
@@ -55,6 +57,7 @@ def _freeze_support():
         spawn.spawn_main(**kwds)
         sys.exit()
 
+
 multiprocessing.freeze_support = spawn.freeze_support = _freeze_support
 
 # Bootloader unsets _MEIPASS2 for child processes to allow running
@@ -67,7 +70,6 @@ if sys.platform.startswith('win'):
 else:
     import multiprocessing.popen_fork as forking
     import multiprocessing.popen_spawn_posix as spawning
-
 
 
 # Mix-in to re-set _MEIPASS2 from sys._MEIPASS.
@@ -94,6 +96,7 @@ class FrozenSupportMixIn():
 # Patch forking.Popen to re-set _MEIPASS2 from sys._MEIPASS.
 class _Popen(FrozenSupportMixIn, forking.Popen):
     pass
+
 
 forking.Popen = _Popen
 

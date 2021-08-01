@@ -8,8 +8,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-
 """
 This module is for the miscellaneous routines which do not fit somewhere else.
 """
@@ -131,18 +129,18 @@ def compile_py_files(toc, workpath):
             # If fmn represents a namespace then skip
             continue
 
-        if fnm.endswith('.py') :
+        if fnm.endswith('.py'):
             # we are given a source path, determine the object path if any
             src_fnm = fnm
             # assume we want pyo only when now running -O or -OO
             obj_fnm = src_fnm + ('o' if sys.flags.optimize else 'c')
-            if not os.path.exists(obj_fnm) :
+            if not os.path.exists(obj_fnm):
                 # alas that one is not there so assume the other choice
                 obj_fnm = src_fnm + ('c' if sys.flags.optimize else 'o')
         else:
             # fnm is not "name.py" so assume we are given name.pyc/.pyo
-            obj_fnm = fnm # take that namae to be the desired object
-            src_fnm = fnm[:-1] # drop the 'c' or 'o' to make a source name
+            obj_fnm = fnm  # take that namae to be the desired object
+            src_fnm = fnm[:-1]  # drop the 'c' or 'o' to make a source name
 
         # We need to perform a build ourselves if obj_fnm doesn't exist,
         # or if src_fnm is newer than obj_fnm, or if obj_fnm was created

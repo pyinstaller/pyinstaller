@@ -9,22 +9,18 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 # Tested with django 2.2
 
-
-import sys
 import glob
 import os
+
 from PyInstaller import log as logging
 from PyInstaller.utils import hooks
 from PyInstaller.utils.hooks import django
 
-
 logger = logging.getLogger(__name__)
 
 datas, binaries, hiddenimports = hooks.collect_all('django')
-
 
 root_dir = django.django_find_root_dir()
 if root_dir:
@@ -41,11 +37,11 @@ if root_dir:
     default_settings_module = f'{package_name}.settings'
     settings_module = os.environ.get('DJANGO_SETTINGS_MODULE', default_settings_module)
     hiddenimports += [
-            # TODO Consider including 'mysite.settings.py' in source code as a data files.
-            #      Since users might need to edit this file.
-            settings_module,
-            package_name + '.urls',
-            package_name + '.wsgi',
+        # TODO Consider including 'mysite.settings.py' in source code as a data files.
+        #      Since users might need to edit this file.
+        settings_module,
+        package_name + '.urls',
+        package_name + '.wsgi',
     ]
     # Django hiddenimports from the standard Python library.
     hiddenimports += [
@@ -57,18 +53,17 @@ if root_dir:
     # They are necessary for some commands.
     logger.info('Collecting Django migration scripts.')
     migration_modules = [
-             'django.conf.app_template.migrations',
-             'django.contrib.admin.migrations',
-             'django.contrib.auth.migrations',
-             'django.contrib.contenttypes.migrations',
-             'django.contrib.flatpages.migrations',
-             'django.contrib.redirects.migrations',
-             'django.contrib.sessions.migrations',
-             'django.contrib.sites.migrations',
+        'django.conf.app_template.migrations',
+        'django.contrib.admin.migrations',
+        'django.contrib.auth.migrations',
+        'django.contrib.contenttypes.migrations',
+        'django.contrib.flatpages.migrations',
+        'django.contrib.redirects.migrations',
+        'django.contrib.sessions.migrations',
+        'django.contrib.sites.migrations',
     ]
     # Include migration scripts of Django-based apps too.
-    installed_apps = eval(hooks.get_module_attribute(
-        settings_module, 'INSTALLED_APPS'))
+    installed_apps = eval(hooks.get_module_attribute(settings_module, 'INSTALLED_APPS'))
     migration_modules.extend(set(app + '.migrations' for app in installed_apps))
     # Copy migration files.
     for mod in migration_modules:
@@ -92,7 +87,6 @@ if root_dir:
         for f in files:
             # Place those files next to the executable.
             datas.append((f, '.'))
-
 
 else:
     logger.warning('No django root directory could be found!')

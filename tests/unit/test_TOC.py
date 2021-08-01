@@ -16,9 +16,8 @@ import pytest
 
 from PyInstaller.building.datastruct import TOC
 
-
 ELEMS1 = (
-    ('encodings', '/usr/lib/python2.7/encodings/__init__.py','PYMODULE'),
+    ('encodings', '/usr/lib/python2.7/encodings/__init__.py', 'PYMODULE'),
     ('_random', '/usr/lib/python2.7/lib-dynload/_random.so', 'EXTENSION'),
     ('libreadline.so.6', '/lib64/libreadline.so.6', 'BINARY'),
 )
@@ -28,9 +27,7 @@ ELEMS2 = (
     ('schubidu', '/home/otherguy/schibidu', 'PKG'),
 )
 
-ELEMS3 = (
-    ('PIL.Image.py', '/usr/lib/python2.7/encodings/__init__.py','PYMODULE'),
-)
+ELEMS3 = (('PIL.Image.py', '/usr/lib/python2.7/encodings/__init__.py', 'PYMODULE'),)
 
 
 def test_init_empty():
@@ -262,6 +259,7 @@ def test_rsub_non_existing():
 
 # The following tests verify that case-insensitive comparisons are used on Windows
 # and only for appropriate TOC entry types
+
 
 @pytest.mark.win32
 def test_append_other_case_mixed():

@@ -1,4 +1,3 @@
-
 hiddenimports = ['pkg_without_hook_for_pkg.sub1.sub11']
 
 NAME = 'pkg_without_hook_for_pkg.sub1'
@@ -18,9 +17,7 @@ assert imp.find_module(hookmodnm, searchpath) is not None, "Error in the hook's 
 hookmodnm = 'hook-pkg_without_hook_for_pkg'
 try:
     imp.find_module(hookmodnm, searchpath)
-    raise Exception('Self-test of hook %s failed: hook for parent exists'
-                    % NAME)
+    raise Exception('Self-test of hook %s failed: hook for parent exists' % NAME)
 except ImportError as e:
     if e.name != hookmodnm:
-        raise Exception('Self-test of hook %s failed: hook for parent exists '
-                        'and has import errors.' % NAME)
+        raise Exception('Self-test of hook %s failed: hook for parent exists and has import errors.' % NAME)

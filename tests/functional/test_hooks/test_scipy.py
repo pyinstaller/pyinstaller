@@ -8,7 +8,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
 """
 Functional tests for SciPy.
 """
@@ -44,7 +43,8 @@ def test_scipy(pyi_builder):
             import scipy._lib
         else:
             import scipy.lib
-        """)
+        """
+    )
 
 
 @xfail(is_win, reason='Issue scipy/scipy#5461.')

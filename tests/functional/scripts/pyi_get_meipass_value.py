@@ -9,13 +9,11 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 # Bootloader unsets _MEIPASS2 for child processes so that if the program
 # invokes another PyInstaller one-file program as subprocess, this
 # subprocess will not fooled into thinking that it is already unpacked.
 #
 # This test checks if it is really unset in a subprocess.
-
 
 import os
 import subprocess
@@ -35,17 +33,13 @@ def _get_meipass_value():
     if meipass.startswith(b'%'):
         meipass = ''
 
-
     return meipass
 
 
 meipass = _get_meipass_value()
 
-
-
 print(meipass)
 print(('_MEIPASS2 value: %s' % sys._MEIPASS))
-
 
 if meipass:
     raise SystemExit('Error: _MEIPASS2 env variable available in subprocess.')

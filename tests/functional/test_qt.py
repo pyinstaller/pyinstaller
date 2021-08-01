@@ -19,25 +19,23 @@ from PyInstaller.utils.hooks import is_module_satisfies
 from PyInstaller.utils.hooks.qt import get_qt_library_info
 from PyInstaller.utils.tests import requires, xfail, skipif
 
-
 PYQT5_NEED_OPENGL = pytest.mark.skipif(
     is_module_satisfies('PyQt5 <= 5.10.1'),
     reason='PyQt5 v5.10.1 and older does not package ``opengl32sw.dll``, '
-    'the OpenGL software renderer, which this test requires.')
+    'the OpenGL software renderer, which this test requires.'
+)
 
 
 def qt_param(qt_flavor, *args, **kwargs):
     """A Qt flavour to be used in @pytest.mark.parametrize() which implicitly
     skips the test if said flavor is not installed."""
     p = pytest.param(qt_flavor, *args, **kwargs)
-    return pytest.param(
-        *p.values, marks=(requires(qt_flavor),) + p.marks, id=p.id)
+    return pytest.param(*p.values, marks=(requires(qt_flavor),) + p.marks, id=p.id)
 
 
 # Parametrize test to run the same basic code on both Python Qt libraries.
 _QT_PY_PACKAGES = ['PyQt5', 'PyQt6', 'PySide2', 'PySide6']
-QtPyLibs = pytest.mark.parametrize(
-    'QtPyLib', [qt_param(i) for i in _QT_PY_PACKAGES])
+QtPyLibs = pytest.mark.parametrize('QtPyLib', [qt_param(i) for i in _QT_PY_PACKAGES])
 
 # OS X bundles, produced by the ``--windowed`` flag, invoke a unique code path
 # that sometimes causes failures in Qt applications.
@@ -123,8 +121,7 @@ def _qt_dll_path_clean(monkeypatch, namespace):
     all_namespaces = set(_QT_PY_PACKAGES)
     all_namespaces.discard(namespace)
     new_path = os.pathsep.join(
-        [x for x in os.environ['PATH'].split(os.pathsep)
-         if not any(ns in x for ns in all_namespaces)]
+        [x for x in os.environ['PATH'].split(os.pathsep) if not any(ns in x for ns in all_namespaces)]
     )
     monkeypatch.setenv('PATH', new_path)
 
@@ -157,7 +154,8 @@ def test_Qt_QtWidgets(pyi_builder, QtPyLib, monkeypatch):
         else:
             res = app.exec_()
         sys.exit(res)
-        """.format(QtPyLib), **USE_WINDOWED_KWARG)
+        """.format(QtPyLib), **USE_WINDOWED_KWARG
+    )
 
 
 @PYQT5_NEED_OPENGL
@@ -212,21 +210,20 @@ def test_Qt_QtQml(pyi_builder, QtPyLib, monkeypatch):
             res = app.exec_()
         del engine
         sys.exit(res)
-        """.format(QtPyLib), **USE_WINDOWED_KWARG)
+        """.format(QtPyLib), **USE_WINDOWED_KWARG
+    )
 
 
-@pytest.mark.parametrize('QtPyLib', [
-    qt_param('PyQt5'),
-    qt_param('PyQt6'),
-    qt_param(
-        'PySide2',
-        marks=xfail(is_win, reason='PySide2 wheels on Windows do not '
-                                   'include SSL DLLs.')),
-    qt_param(
-        'PySide6',
-        marks=xfail(is_win, reason='PySide6 wheels on Windows do not '
-                                   'include SSL DLLs.')),
-])
+@pytest.mark.parametrize(
+    'QtPyLib', [
+        qt_param('PyQt5'),
+        qt_param('PyQt6'),
+        qt_param('PySide2', marks=xfail(is_win, reason='PySide2 wheels on Windows do not '
+                                        'include SSL DLLs.')),
+        qt_param('PySide6', marks=xfail(is_win, reason='PySide6 wheels on Windows do not '
+                                        'include SSL DLLs.')),
+    ]
+)
 def test_Qt_QtNetwork_SSL_support(pyi_builder, monkeypatch, QtPyLib):
     _qt_dll_path_clean(monkeypatch, QtPyLib)
 
@@ -234,7 +231,8 @@ def test_Qt_QtNetwork_SSL_support(pyi_builder, monkeypatch, QtPyLib):
         """
         from {0}.QtNetwork import QSslSocket
         assert QSslSocket.supportsSsl()
-        """.format(QtPyLib), **USE_WINDOWED_KWARG)
+        """.format(QtPyLib), **USE_WINDOWED_KWARG
+    )
 
 
 @QtPyLibs
@@ -269,7 +267,8 @@ def test_Qt_QTranslate(pyi_builder, monkeypatch, QtPyLib):
         else:
             print('Qt locale %s not found!' % locale.name())
             assert False
-        """.format(QtPyLib))
+        """.format(QtPyLib)
+    )
 
 
 @PYQT5_NEED_OPENGL
@@ -332,7 +331,8 @@ def test_Qt_Ui_file(tmpdir, pyi_builder, data_dir, monkeypatch, QtPyLib):
             app.exec()
         else:
             app.exec_()
-        """.format(QtPyLib))
+        """.format(QtPyLib)
+    )
 
 
 # Test that the ``PyQt5.Qt`` module works by importing something from it.
@@ -350,20 +350,21 @@ def test_Qt_Ui_file(tmpdir, pyi_builder, data_dir, monkeypatch, QtPyLib):
 # <https://github.com/pyinstaller/pyinstaller/pull/3563>`_.
 # Therefore, skip this test on Appveyor by testing for one of its `environment
 # variables <https://www.appveyor.com/docs/environment-variables/>`_.
-@skipif(os.environ.get('APPVEYOR') == 'True',
-        reason='The Appveyor OS is incompatible with PyQt.Qt.')
+@skipif(os.environ.get('APPVEYOR') == 'True', reason='The Appveyor OS is incompatible with PyQt.Qt.')
 @requires('PyQt5')
-@pytest.mark.skipif(is_module_satisfies('PyQt5 == 5.11.3') and is_darwin,
-                    reason='This version of the OS X wheel does not '
-                           'include QWebEngine.')
+@pytest.mark.skipif(
+    is_module_satisfies('PyQt5 == 5.11.3') and is_darwin,
+    reason='This version of the OS X wheel does not '
+    'include QWebEngine.'
+)
 def test_PyQt5_Qt(pyi_builder, monkeypatch):
     _qt_dll_path_clean(monkeypatch, 'PyQt5')
-    pyi_builder.test_source('from PyQt5.Qt import QLibraryInfo',
-                            **USE_WINDOWED_KWARG)
+    pyi_builder.test_source('from PyQt5.Qt import QLibraryInfo', **USE_WINDOWED_KWARG)
 
 
 # QtWebEngine test. This module is specific to PyQt5 and PySide2, as
 # it has not been ported to Qt6 yet (as of Qt6 6.1.0)
+
 
 # Produce the source code for QWebEngine tests by inserting the path of an HTML
 # page to display.
@@ -381,19 +382,25 @@ def get_QWebEngine_html(qt_flavor, data_dir):
             # Display the web page for one second after it loads.
             lambda ok: QTimer.singleShot(1000, app.quit))
         app.exec_()
-        """.format(qt_flavor,
-                   # Use repr to avoid accidental special characters in Windows
-                   # filenames: ``c:\temp`` is ``c<tab>emp``!
-                   repr(data_dir.join('test_web_page.html').strpath))
+        """.format(
+        qt_flavor,
+        # Use repr to avoid accidental special characters in Windows
+        # filenames: ``c:\temp`` is ``c<tab>emp``!
+        repr(data_dir.join('test_web_page.html').strpath)
+    )
 
 
 @xfail(is_linux, reason='See issue #4666')
-@pytest.mark.skipif(is_win and not is_64bits,
-                    reason="Qt 5.11+ for Windows only provides pre-compiled "
-                           "Qt WebEngine binaries for 64-bit processors.")
-@pytest.mark.skipif(is_module_satisfies('PyQt5 == 5.11.3') and is_darwin,
-                    reason='This version of the OS X wheel does not '
-                           'include QWebEngine.')
+@pytest.mark.skipif(
+    is_win and not is_64bits,
+    reason="Qt 5.11+ for Windows only provides pre-compiled "
+    "Qt WebEngine binaries for 64-bit processors."
+)
+@pytest.mark.skipif(
+    is_module_satisfies('PyQt5 == 5.11.3') and is_darwin,
+    reason='This version of the OS X wheel does not '
+    'include QWebEngine.'
+)
 @requires('PyQt5')
 def test_PyQt5_QWebEngine(pyi_builder, data_dir, monkeypatch):
     _qt_dll_path_clean(monkeypatch, 'PyQt5')
@@ -401,11 +408,9 @@ def test_PyQt5_QWebEngine(pyi_builder, data_dir, monkeypatch):
         # QWebEngine on OS X only works with a onedir build -- onefile builds
         # don't work. Skip the test execution for onefile builds.
         if pyi_builder._mode != 'onedir':
-            pytest.skip('The QWebEngine .app bundle '
-                        'only supports onedir mode.')
+            pytest.skip('The QWebEngine .app bundle only supports onedir mode.')
 
-    pyi_builder.test_source(get_QWebEngine_html('PyQt5', data_dir),
-                            **USE_WINDOWED_KWARG)
+    pyi_builder.test_source(get_QWebEngine_html('PyQt5', data_dir), **USE_WINDOWED_KWARG)
 
 
 @requires('PySide2')
@@ -415,8 +420,6 @@ def test_PySide2_QWebEngine(pyi_builder, data_dir, monkeypatch):
         # QWebEngine on OS X only works with a onedir build -- onefile builds
         # don't work. Skip the test execution for onefile builds.
         if pyi_builder._mode != 'onedir':
-            pytest.skip('The QWebEngine .app bundle '
-                        'only supports onedir mode.')
+            pytest.skip('The QWebEngine .app bundle only supports onedir mode.')
 
-    pyi_builder.test_source(get_QWebEngine_html('PySide2', data_dir),
-                            **USE_WINDOWED_KWARG)
+    pyi_builder.test_source(get_QWebEngine_html('PySide2', data_dir), **USE_WINDOWED_KWARG)

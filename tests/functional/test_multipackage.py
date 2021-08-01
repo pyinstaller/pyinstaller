@@ -5,8 +5,7 @@ from PyInstaller.utils.tests import importorskip
 
 @importorskip('psutil')  # Used as test for nested extension
 @pytest.mark.parametrize(
-    "spec_file",
-    (
+    "spec_file", (
         "test_multipackage1.spec",
         "test_multipackage2.spec",
         "test_multipackage3.spec",

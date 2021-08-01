@@ -8,7 +8,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 # -----------------------------------------------------------------------------
-
 """
 `distutils`-specific pre-find module path hook.
 
@@ -17,7 +16,6 @@ When run from within a venv (virtual environment), this hook changes the
 venv-specific `distutils` package. While the former is suitable for freezing,
 the latter is intended for use _only_ from within venvs.
 """
-
 
 import distutils
 import os
@@ -39,5 +37,4 @@ def pre_find_module_path(api):
     if system_module_path != loaded_module_path:
         # Find this package in its parent directory.
         api.search_dirs = [system_module_path]
-        logger.info('distutils: retargeting to non-venv dir %r',
-                    system_module_path)
+        logger.info('distutils: retargeting to non-venv dir %r', system_module_path)

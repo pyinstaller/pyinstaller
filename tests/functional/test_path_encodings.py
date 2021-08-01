@@ -95,7 +95,7 @@ def test_win_codepage_path_disabled_shortfilename(pyi_builder, monkeypatch):
     # our codepage filename
     fsutil_distdir = pyi_builder._distdir
 
-    if(subprocess.call(['fsutil', '8dot3name', 'strip', fsutil_distdir])):
+    if (subprocess.call(['fsutil', '8dot3name', 'strip', fsutil_distdir])):
         pytest.xfail("Administrator privileges required to strip ShortFileName.")
 
     tmpdir = os.path.join(str(pyi_builder._tmpdir), cp_filename + "_TMP")

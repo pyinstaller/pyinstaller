@@ -31,24 +31,26 @@ def test_exec_command_subprocess_wrong_encoding_reports_nicely(capsys):
 
 # List every known platform.machine() or waf's ctx.env.DEST_CPU (in the
 # bootloader/wscript file) output on Linux here.
-@pytest.mark.parametrize("input, output", [
-    ("x86_64", "intel"),
-    ("x64", "intel"),
-    ("i686", "intel"),
-    ("i386", "intel"),
-    ("x86", "intel"),
-    ("armv5", "arm"),
-    ("armv7h", "arm"),
-    ("armv7a", "arm"),
-    ("arm", "arm"),
-    ("aarch64", "arm"),
-    ("ppc64le", "ppc"),
-    ("ppc64", "ppc"),
-    ("ppc32le", "ppc"),
-    ("powerpc", "ppc"),
-    ("s390x", "s390x"),
-    ("something-alien", "unknown"),
-])
+@pytest.mark.parametrize(
+    "input, output", [
+        ("x86_64", "intel"),
+        ("x64", "intel"),
+        ("i686", "intel"),
+        ("i386", "intel"),
+        ("x86", "intel"),
+        ("armv5", "arm"),
+        ("armv7h", "arm"),
+        ("armv7a", "arm"),
+        ("arm", "arm"),
+        ("aarch64", "arm"),
+        ("ppc64le", "ppc"),
+        ("ppc64", "ppc"),
+        ("ppc32le", "ppc"),
+        ("powerpc", "ppc"),
+        ("s390x", "s390x"),
+        ("something-alien", "unknown"),
+    ]
+)
 def test_linux_machine(input, output):
     assert _pyi_machine(input, "Linux") == output
 

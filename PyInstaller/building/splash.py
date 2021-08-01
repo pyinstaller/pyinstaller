@@ -8,22 +8,19 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 # -----------------------------------------------------------------------------
-import importlib
 import io
 import os
 import re
 import struct
 
-from PyInstaller.building import splash_templates
-from PyInstaller.building.datastruct import Target, TOC
-from PyInstaller.building.utils import misc, _check_guts_eq, _check_guts_toc
 from PyInstaller import log as logging
 from PyInstaller.archive.writers import SplashWriter
-from PyInstaller.compat import is_cygwin, is_win, is_darwin
-from PyInstaller.depend import bindepend
+from PyInstaller.building import splash_templates
+from PyInstaller.building.datastruct import TOC, Target
+from PyInstaller.building.utils import _check_guts_eq, _check_guts_toc, misc
+from PyInstaller.compat import is_darwin
 from PyInstaller.utils.hooks import exec_statement
-from PyInstaller.utils.hooks.tcl_tk import TK_ROOTNAME, \
-    collect_tcl_tk_files, find_tcl_tk_shared_libs
+from PyInstaller.utils.hooks.tcl_tk import (TK_ROOTNAME, collect_tcl_tk_files, find_tcl_tk_shared_libs)
 
 try:
     from PIL import Image as PILImage
@@ -200,12 +197,15 @@ class Splash(Target):
             # this module is imported from build_main.py, instead we just
             # want to inform the user that the splash screen feature is not
             # supported on his platform
-            self._tkinter_module = importlib.import_module('_tkinter')
+            import _tkinter
+            self._tkinter_module = _tkinter
             self._tkinter_file = self._tkinter_module.__file__
         except ModuleNotFoundError:
-            raise SystemExit("You platform does not support the splash screen"
-                             " feature, since tkinter is not installed. Please"
-                             " install tkinter and try again.")
+            raise SystemExit(
+                "You platform does not support the splash screen"
+                " feature, since tkinter is not installed. Please"
+                " install tkinter and try again."
+            )
 
         # Calculated / analysed values
         self.uses_tkinter = self._uses_tkinter(binaries)
@@ -218,15 +218,15 @@ class Splash(Target):
             # be [/System]/Library/Frameworks/Tcl.framework/Tcl
             if self.tcl_lib[1] is None or 'Library/Frameworks/Tcl.framework' \
                                           in self.tcl_lib[1]:
-                raise SystemExit("The splash screen feature does not support"
-                                 " macOS system framework version of Tcl/Tk.")
+                raise SystemExit(
+                    "The splash screen feature does not support"
+                    " macOS system framework version of Tcl/Tk."
+                )
         # Check if tcl/tk was found
         assert all(self.tcl_lib)
         assert all(self.tk_lib)
-        logger.debug("Use Tcl Library from %s and Tk From %s"
-                     % (self.tcl_lib, self.tk_lib))
-        self.splash_requirements = set([self.tcl_lib[0], self.tk_lib[0]]
-                                       + splash_requirements)  # noqa: W503
+        logger.debug("Use Tcl Library from %s and Tk From %s" % (self.tcl_lib, self.tk_lib))
+        self.splash_requirements = set([self.tcl_lib[0], self.tk_lib[0]] + splash_requirements)  # noqa: W503
 
         logger.info("Collect tcl/tk binaries for the splash screen")
         tcltk_tree = collect_tcl_tk_files(self._tkinter_file)
@@ -245,8 +245,7 @@ class Splash(Target):
 
             # Only add the intersection of the required and the collected
             # resources or add all entries if full_tk is true
-            self.binaries.extend(toc for toc in tcltk_tree
-                                 if toc[0] in self.splash_requirements)
+            self.binaries.extend(toc for toc in tcltk_tree if toc[0] in self.splash_requirements)
 
         # Check if all requirements were found
         fnames = [toc[0] for toc in (binaries + datas + self.binaries)]
@@ -256,16 +255,17 @@ class Splash(Target):
                 # Item is not bundled, so warn the user about it.
                 # This actually may happen on some tkinter installations
                 # on which there is no license.terms file
-                logger.warning("The local Tcl/Tk installation is missing"
-                               " the file %s. The behavior of the splash"
-                               " screen is therefore undefined and may be"
-                               " unsupported." % _item)
+                logger.warning(
+                    "The local Tcl/Tk installation is missing"
+                    " the file %s. The behavior of the splash"
+                    " screen is therefore undefined and may be"
+                    " unsupported." % _item
+                )
                 return False
             return True
 
         # Remove all files which were not found
-        self.splash_requirements = set(filter(_filter,
-                                              self.splash_requirements))
+        self.splash_requirements = set(filter(_filter, self.splash_requirements))
 
         # Test if the tcl/tk version is supported by the bootloader.
         self.test_tk_version()
@@ -308,8 +308,7 @@ class Splash(Target):
 
         # check if image has been modified
         if misc.mtime(self.image_file) > last_build:
-            logger.info("Building %s because file %s changed",
-                        self.tocbasename, self.image_file)
+            logger.info("Building %s because file %s changed", self.tocbasename, self.image_file)
             return True
 
         return False
@@ -347,10 +346,10 @@ class Splash(Target):
                 _img.close()
                 _img_resized.close()
                 _image_data = _image_stream.getvalue()
-                logger.info("Resized image %s from dimensions %s to"
-                            " (%d, %d)" % (self.image_file,
-                                           str(_orig_size),
-                                           _w, _h))
+                logger.info(
+                    "Resized image %s from dimensions %s to"
+                    " (%d, %d)" % (self.image_file, str(_orig_size), _w, _h)
+                )
                 return _image_data
             else:
                 raise ValueError(
@@ -358,9 +357,9 @@ class Splash(Target):
                     " max_img_size (w: %d, h:%d), but the image cannot"
                     " be resized due to missing PIL.Image! Either install"
                     " the Pillow package, adjust the max_img_size, or use"
-                    " an image of compatible dimensions."
-                    % (_orig_size[0], _orig_size[1], self.max_img_size[0],
-                       self.max_img_size[1]))
+                    " an image of compatible dimensions." %
+                    (_orig_size[0], _orig_size[1], self.max_img_size[0], self.max_img_size[1])
+                )
 
         # Open image file
         image_file = open(self.image_file, 'rb')
@@ -369,8 +368,7 @@ class Splash(Target):
         if image_file.read(8) == b'\x89PNG\r\n\x1a\n':
             # self.image_file is a PNG file
             image_file.seek(16)
-            img_size = (struct.unpack("!I", image_file.read(4))[0],
-                        struct.unpack("!I", image_file.read(4))[0])
+            img_size = (struct.unpack("!I", image_file.read(4))[0], struct.unpack("!I", image_file.read(4))[0])
 
             if img_size > self.max_img_size:
                 # The image exceeds the maximum image size, so resize it
@@ -389,24 +387,27 @@ class Splash(Target):
                 img.save(image_data, format='PNG')
                 img.close()
                 image = image_data.getvalue()
-            logger.info("Converted image %s to PNG format" %
-                        self.image_file)
+            logger.info("Converted image %s to PNG format" % self.image_file)
         else:
-            raise ValueError("The image %s needs to be converted to a PNG"
-                             " file, but PIL.Image is not available! Either"
-                             " install the Pillow package, or use a PNG image"
-                             " for you splash screen." % self.image_file)
+            raise ValueError(
+                "The image %s needs to be converted to a PNG"
+                " file, but PIL.Image is not available! Either"
+                " install the Pillow package, or use a PNG image"
+                " for you splash screen." % self.image_file
+            )
 
         image_file.close()
 
-        res = SplashWriter(self.name,  # noqa: F841
-                           self.splash_requirements,
-                           self.tcl_lib[0],  # tcl86t.dll
-                           self.tk_lib[0],  # tk86t.dll
-                           TK_ROOTNAME,
-                           self.rundir,
-                           image,
-                           self.script)
+        SplashWriter(
+            self.name,  # noqa: F841
+            self.splash_requirements,
+            self.tcl_lib[0],  # tcl86t.dll
+            self.tk_lib[0],  # tk86t.dll
+            TK_ROOTNAME,
+            self.rundir,
+            image,
+            self.script
+        )
 
     def test_tk_version(self):
         tcl_version = float(self._tkinter_module.TCL_VERSION)
@@ -414,35 +415,43 @@ class Splash(Target):
 
         # Test if tcl/tk version is supported
         if tcl_version < 8.6 or tk_version < 8.6:
-            logger.warning("The installed Tcl/Tk (%s/%s) version might not"
-                           " work with the splash screen feature of the"
-                           " bootloader. The bootloader is tested against"
-                           " Tcl/Tk 8.6" % (self._tkinter_module.TCL_VERSION,
-                                            self._tkinter_module.TK_VERSION))
+            logger.warning(
+                "The installed Tcl/Tk (%s/%s) version might not"
+                " work with the splash screen feature of the"
+                " bootloader. The bootloader is tested against"
+                " Tcl/Tk 8.6" % (self._tkinter_module.TCL_VERSION, self._tkinter_module.TK_VERSION)
+            )
 
         # This should be impossible, since tcl/tk is released together with
         # the same version number, but just in case
         if tcl_version != tk_version:
-            logger.warning("The installed version of Tcl (%s) and Tk (%s) do"
-                           " not match. PyInstaller is tested against matching"
-                           " versions" % (self._tkinter_module.TCL_VERSION,
-                                          self._tkinter_module.TK_VERSION))
+            logger.warning(
+                "The installed version of Tcl (%s) and Tk (%s) do"
+                " not match. PyInstaller is tested against matching"
+                " versions" % (self._tkinter_module.TCL_VERSION, self._tkinter_module.TK_VERSION)
+            )
 
         # Test if tcl is threaded.
         # If the variable tcl_platform(threaded) exist, the tcl
         # interpreter was compiled with thread support.
-        threaded = bool(exec_statement("""
+        threaded = bool(
+            exec_statement(
+                """
         from tkinter import Tcl, TclError
         try:
             print(Tcl().getvar('tcl_platform(threaded)'))
         except TclError:
-            pass"""))
+            pass"""
+            )
+        )
 
         if not threaded:
             # This is a feature breaking problem, so exit
-            raise SystemExit("The installed tcl version is not threaded."
-                             " PyInstaller only supports the splash screen"
-                             " using threaded tcl.")
+            raise SystemExit(
+                "The installed tcl version is not threaded."
+                " PyInstaller only supports the splash screen"
+                " using threaded tcl."
+            )
 
     def generate_script(self):
         """Generate the script for the splash screen
@@ -453,22 +462,25 @@ class Splash(Target):
         d = {}
         if self.text_pos is not None:
             logger.debug("Add text support to splash screen")
-            d.update({
-                'pad_x': self.text_pos[0],
-                'pad_y': self.text_pos[1],
-                'color': self.text_color,
-                'font': self.text_font,
-                'font_size': self.text_size,
-                'default_text': self.text_default,
-            })
+            d.update(
+                {
+                    'pad_x': self.text_pos[0],
+                    'pad_y': self.text_pos[1],
+                    'color': self.text_color,
+                    'font': self.text_font,
+                    'font_size': self.text_size,
+                    'default_text': self.text_default,
+                }
+            )
         script = splash_templates.build_script(text_options=d)
 
         if self.minify_script:
             # Remove any documentation, empty lines and unnecessary spaces
-            script = '\n'.join(line for line in map(lambda l: l.strip(),
-                                                    script.splitlines())
-                               if not line.startswith('#')  # documentation
-                               and line)  # empty lines # noqa: W503
+            script = '\n'.join(
+                line for line in map(lambda l: l.strip(), script.splitlines())
+                if not line.startswith('#')  # documentation
+                and line
+            )  # empty lines # noqa: W503
             # Remove unnecessary spaces
             script = re.sub(' +', ' ', script)
 

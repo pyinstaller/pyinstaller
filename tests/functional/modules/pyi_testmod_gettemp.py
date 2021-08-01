@@ -11,6 +11,7 @@
 
 import os, sys
 
+
 def gettemp(basename):
     """
     Get the path to a temp file previously written by the temp runner. Useful to

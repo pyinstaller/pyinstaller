@@ -8,20 +8,18 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-
 """
 Decorators for skipping PyInstaller tests when specific requirements are not met.
 """
 
-import os
-import sys
 import distutils.ccompiler
 import inspect
-import textwrap
+import os
 import shutil
+import textwrap
 
 import pytest
+import sys
 
 from PyInstaller.compat import is_win
 
@@ -30,8 +28,10 @@ parametrize = pytest.mark.parametrize
 skipif = pytest.mark.skipif
 xfail = pytest.mark.xfail
 
+
 def _check_for_compiler():
-    import tempfile, sys
+    import tempfile
+
     # change to some tempdir since cc.has_function() would compile into the
     # current directory, leaving garbage
     old_wd = os.getcwd()
@@ -82,8 +82,7 @@ def importorskip(package: str):
     """
     if not importable(package):
         return pytest.mark.skip(f"Can't import '{package}'.")
-    return pytest.mark.skipif(
-        False, reason=f"Don't skip: '{package}' is importable.")
+    return pytest.mark.skipif(False, reason=f"Don't skip: '{package}' is importable.")
 
 
 def importable(package: str):
@@ -98,9 +97,8 @@ def importable(package: str):
         if not importable(package.split(".")[0]):
             return False
         # This is a submodule, import it in isolation.
-        from subprocess import run, DEVNULL
-        return run([sys.executable, "-c", "import " + package],
-                   stdout=DEVNULL, stderr=DEVNULL).returncode == 0
+        from subprocess import DEVNULL, run
+        return run([sys.executable, "-c", "import " + package], stdout=DEVNULL, stderr=DEVNULL).returncode == 0
 
     return find_spec(package) is not None
 
@@ -123,8 +121,7 @@ def requires(requirement: str):
     import pkg_resources
     try:
         pkg_resources.require(requirement)
-        return pytest.mark.skipif(
-            False, reason=f"Don't skip: '{requirement}' is satisfied.")
+        return pytest.mark.skipif(False, reason=f"Don't skip: '{requirement}' is satisfied.")
     except pkg_resources.DistributionNotFound:
         return pytest.mark.skip("Requires " + requirement)
 

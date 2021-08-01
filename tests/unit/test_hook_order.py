@@ -19,18 +19,14 @@ from PyInstaller.utils.tests import skip
 def test_hook_order(pyi_builder):
 
     subprocess.run(
-        [
-            sys.executable, '-m', 'pip', 'install', '-e',
-            os.path.join(os.path.dirname(__file__), 'hook_order_hooks')
-        ]
+        [sys.executable, '-m', 'pip', 'install', '-e',
+         os.path.join(os.path.dirname(__file__), 'hook_order_hooks')]
     )
 
-    atexit.register(lambda: subprocess.run(
-        [
-            sys.executable, '-m', 'pip', 'uninstall', 'pyi_example_package',
-            '--yes', '-q', '-q', '-q'
-        ]
-    ))
+    atexit.register(
+        lambda: subprocess.
+        run([sys.executable, '-m', 'pip', 'uninstall', 'pyi_example_package', '--yes', '-q', '-q', '-q'])
+    )
 
     pyi_builder.test_source(
         '''
@@ -39,8 +35,5 @@ def test_hook_order(pyi_builder):
         except:
             pass
         ''',
-        pyi_args=[
-            '--additional-hooks-dir={}'.format(
-                os.path.join(os.path.dirname(__file__), 'hook_order_hooks')
-            )
-        ])
+        pyi_args=['--additional-hooks-dir={}'.format(os.path.join(os.path.dirname(__file__), 'hook_order_hooks'))]
+    )

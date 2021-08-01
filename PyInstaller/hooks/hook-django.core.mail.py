@@ -8,8 +8,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-
 """
 django.core.mail uses part of the email package.
 Problem is: when using runserver with autoreload mode, the thread that
@@ -20,11 +18,6 @@ We then need to name those modules as hidden imports, otherwise at
 runtime the autoreload thread will complain with a traceback.
 """
 
-
 hiddenimports = [
-    'email.mime.message',
-    'email.mime.image',
-    'email.mime.text',
-    'email.mime.multipart',
-    'email.mime.audio'
+    'email.mime.message', 'email.mime.image', 'email.mime.text', 'email.mime.multipart', 'email.mime.audio'
 ]

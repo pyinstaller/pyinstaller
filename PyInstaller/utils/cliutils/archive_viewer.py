@@ -8,8 +8,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-
 """
 Viewer for archives packaged by archive.py
 """
@@ -21,10 +19,10 @@ import sys
 import tempfile
 import zlib
 
-from PyInstaller.loader import pyimod02_archive
+import PyInstaller.log
 from PyInstaller.archive.readers import CArchiveReader, NotAnArchiveError
 from PyInstaller.compat import stdin_input
-import PyInstaller.log
+from PyInstaller.loader import pyimod02_archive
 
 stack = []
 cleanup = []
@@ -216,7 +214,6 @@ def get_archive_content(filename):
 
 
 class ZlibArchive(pyimod02_archive.ZlibArchiveReader):
-
     def checkmagic(self):
         """ Overridable.
             Check to see if the file object self.lib actually has a file
@@ -224,36 +221,42 @@ class ZlibArchive(pyimod02_archive.ZlibArchiveReader):
         """
         self.lib.seek(self.start)  # default - magic is at start of file.
         if self.lib.read(len(self.MAGIC)) != self.MAGIC:
-            raise RuntimeError("%s is not a valid %s archive file"
-                               % (self.path, self.__class__.__name__))
+            raise RuntimeError("%s is not a valid %s archive file" % (self.path, self.__class__.__name__))
         if self.lib.read(len(self.pymagic)) != self.pymagic:
-            print("Warning: pyz is from a different Python version",
-                  file=sys.stderr)
+            print("Warning: pyz is from a different Python version", file=sys.stderr)
         self.lib.read(4)
 
 
 def run():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-l', '--log',
-                        default=False,
-                        action='store_true',
-                        dest='debug',
-                        help='Print an archive log (default: %(default)s)')
-    parser.add_argument('-r', '--recursive',
-                        default=False,
-                        action='store_true',
-                        dest='rec_debug',
-                        help='Recursively print an archive log (default: %(default)s). '
-                        'Can be combined with -r')
-    parser.add_argument('-b', '--brief',
-                        default=False,
-                        action='store_true',
-                        dest='brief',
-                        help='Print only file name. (default: %(default)s). '
-                        'Can be combined with -r')
+    parser.add_argument(
+        '-l',
+        '--log',
+        default=False,
+        action='store_true',
+        dest='debug',
+        help='Print an archive log (default: %(default)s)'
+    )
+    parser.add_argument(
+        '-r',
+        '--recursive',
+        default=False,
+        action='store_true',
+        dest='rec_debug',
+        help='Recursively print an archive log (default: %(default)s). '
+        'Can be combined with -r'
+    )
+    parser.add_argument(
+        '-b',
+        '--brief',
+        default=False,
+        action='store_true',
+        dest='brief',
+        help='Print only file name. (default: %(default)s). '
+        'Can be combined with -r'
+    )
     PyInstaller.log.__add_options(parser)
-    parser.add_argument('name', metavar='pyi_archive',
-                        help="pyinstaller archive to show content of")
+    parser.add_argument('name', metavar='pyi_archive', help="pyinstaller archive to show content of")
 
     args = parser.parse_args()
     PyInstaller.log.__process_options(parser, args)
@@ -263,6 +266,6 @@ def run():
     except KeyboardInterrupt:
         raise SystemExit("Aborted by user request.")
 
+
 if __name__ == '__main__':
     run()
-

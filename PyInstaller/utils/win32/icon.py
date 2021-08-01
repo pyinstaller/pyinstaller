@@ -8,7 +8,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
 '''
 The code in this module supports the --icon parameter in Windows.
 (For --icon support under OSX see building/osx.py.)
@@ -22,10 +21,10 @@ and globals are referenced outside this module.
 import os.path
 import struct
 
-from PyInstaller.compat import win32api, pywintypes
-from PyInstaller import config
-
 import PyInstaller.log as logging
+from PyInstaller import config
+from PyInstaller.compat import pywintypes, win32api
+
 logger = logging.getLogger(__name__)
 
 RT_ICON = 3
@@ -71,23 +70,26 @@ class Structure:
         data = file.read(self._sizeInBytes)
         self._fields_ = list(struct.unpack(self._format_, data))
 
+
 class ICONDIRHEADER(Structure):
     _names_ = "idReserved", "idType", "idCount"
     _format_ = "hhh"
 
+
 class ICONDIRENTRY(Structure):
-    _names_ = ("bWidth", "bHeight", "bColorCount", "bReserved", "wPlanes",
-               "wBitCount", "dwBytesInRes", "dwImageOffset")
+    _names_ = ("bWidth", "bHeight", "bColorCount", "bReserved", "wPlanes", "wBitCount", "dwBytesInRes", "dwImageOffset")
     _format_ = "bbbbhhii"
+
 
 class GRPICONDIR(Structure):
     _names_ = "idReserved", "idType", "idCount"
     _format_ = "hhh"
 
+
 class GRPICONDIRENTRY(Structure):
-    _names_ = ("bWidth", "bHeight", "bColorCount", "bReserved", "wPlanes",
-               "wBitCount", "dwBytesInRes", "nID")
+    _names_ = ("bWidth", "bHeight", "bColorCount", "bReserved", "wPlanes", "wBitCount", "dwBytesInRes", "nID")
     _format_ = "bbbbhhih"
+
 
 # An IconFile instance is created for each .ico file given.
 class IconFile:
@@ -101,9 +103,7 @@ class IconFile:
         except OSError:
             # The icon file can't be opened for some reason. Stop the
             # program with an informative message.
-            raise SystemExit(
-                'Unable to open icon file {}'.format(path)
-            )
+            raise SystemExit('Unable to open icon file {}'.format(path))
         self.entries = []
         self.images = []
         header = self.header = ICONDIRHEADER()
@@ -129,6 +129,7 @@ class IconFile:
             id = id + 1
             data = data + e.tostring()
         return data
+
 
 def CopyIcons_FromIco(dstpath, srcpath, id=1):
     '''
@@ -158,6 +159,7 @@ def CopyIcons_FromIco(dstpath, srcpath, id=1):
 
     win32api.EndUpdateResource(hdst, 0)
 
+
 def CopyIcons(dstpath, srcpath):
     '''
     Called from building/api.py to handle icons. If the input was by
@@ -172,7 +174,7 @@ def CopyIcons(dstpath, srcpath):
 
     if isinstance(srcpath, str):
         # just a single string, make it a one-element list
-        srcpath = [ srcpath ]
+        srcpath = [srcpath]
 
     def splitter(s):
         '''
@@ -205,7 +207,7 @@ def CopyIcons(dstpath, srcpath):
         return CopyIcons_FromIco(dstpath, srcs)
 
     # Just one source given.
-    srcpath,index = srcpath[0]
+    srcpath, index = srcpath[0]
     srcext = os.path.splitext(srcpath)[1]
     # Handle the simple case of foo.ico, ignoring any ,index.
     if srcext.lower() == '.ico':
@@ -243,8 +245,7 @@ def CopyIcons(dstpath, srcpath):
         # We could continue with no icon (i.e. just return) however it seems
         # best to terminate the build with a message.
         raise SystemExit(
-            "Unable to load icon file {}\n    {} (Error code {})".format(
-                srcpath, W32E.strerror, W32E.winerror)
+            "Unable to load icon file {}\n    {} (Error code {})".format(srcpath, W32E.strerror, W32E.winerror)
         )
     hdst = win32api.BeginUpdateResource(dstpath, 0)
     if index is None:
@@ -260,6 +261,7 @@ def CopyIcons(dstpath, srcpath):
         win32api.UpdateResource(hdst, RT_ICON, iconname, data)
     win32api.FreeLibrary(hsrc)
     win32api.EndUpdateResource(hdst, 0)
+
 
 if __name__ == "__main__":
     import sys

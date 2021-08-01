@@ -92,7 +92,8 @@ def finditer(pattern: Pattern, string):
 
 
 # language=PythonVerboseRegExp
-_call_function_bytecode = bytecode_regex(rb"""
+_call_function_bytecode = bytecode_regex(
+    rb"""
     # Matches `global_function('some', 'constant', 'arguments')`.
 
     # Load the global function.
@@ -114,10 +115,12 @@ _call_function_bytecode = bytecode_regex(rb"""
     ((?:`EXTENDED_ARG`.)*
      (?:`CALL_FUNCTION`|`CALL_METHOD`).)
 
-""")
+"""
+)
 
 # language=PythonVerboseRegExp
-_extended_arg_bytecode = bytecode_regex(rb"""(
+_extended_arg_bytecode = bytecode_regex(
+    rb"""(
 
     # Arbitrary number of EXTENDED_ARG pairs.
     (?:`EXTENDED_ARG`.)*
@@ -125,7 +128,8 @@ _extended_arg_bytecode = bytecode_regex(rb"""(
     # Followed by some other instruction (usually a LOAD).
     [^`EXTENDED_ARG`].
 
-)""")
+)"""
+)
 
 
 def extended_arguments(extended_args: bytes):

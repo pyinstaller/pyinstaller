@@ -8,13 +8,12 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-
 """
 This module contains various helper functions for git DVCS
 """
 
 import os
+
 from PyInstaller.compat import exec_command, exec_command_rc
 
 try:
@@ -23,8 +22,9 @@ except NameError:
     # Not running on Windows
     WindowsError = FileNotFoundError
 
+
 def get_repo_revision():
-    path = os.path # shortcut
+    path = os.path  # shortcut
     gitdir = path.normpath(path.join(path.dirname(os.path.abspath(__file__)), '..', '..', '.git'))
     cwd = os.path.dirname(gitdir)
     if not path.exists(gitdir):
@@ -39,8 +39,7 @@ def get_repo_revision():
     try:
         # need to update index first to get reliable state
         exec_command_rc('git', 'update-index', '-q', '--refresh', cwd=cwd)
-        recent = exec_command('git', 'describe', '--long', '--dirty', '--tag',
-                              cwd=cwd).strip()
+        recent = exec_command('git', 'describe', '--long', '--dirty', '--tag', cwd=cwd).strip()
         if recent.endswith('-dirty'):
             tag, changes, rev, dirty = recent.rsplit('-', 3)
             rev = rev + '.mod'

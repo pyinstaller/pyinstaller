@@ -13,7 +13,6 @@ import sysconfig
 
 from PyInstaller.compat import is_win
 
-
 if not is_win and hasattr(sysconfig, '_get_sysconfigdata_name'):
     # Python 3.6 uses additional modules like
     # `_sysconfigdata_m_linux_x86_64-linux-gnu`, see

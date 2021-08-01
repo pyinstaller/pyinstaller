@@ -18,9 +18,10 @@ from PyInstaller.utils.hooks import eval_statement
 # Note that the moves are defined in 'setuptools._vendor.six' but are imported
 # under 'setuptools.extern.six'.
 
+
 def pre_safe_import_module(api):
     real_to_six_module_name = eval_statement(
-'''
+        '''
 try:
     import setuptools._vendor.six as six
 except ImportError:
@@ -35,7 +36,8 @@ for moved in six._moved_attributes:
             'setuptools.extern.six.moves.' + moved.name))
 
 print('}')
-''')
+'''
+    )
     if isinstance(real_to_six_module_name, str):
         raise SystemExit("pre-safe-import-module hook failed, needs fixing.")
     api.add_runtime_package(api.module_name)

@@ -11,11 +11,13 @@
 
 import os
 import zipfile
+
 import pkg_resources
-from PyInstaller.depend.utils import get_path_to_egg
-from PyInstaller.building.datastruct import TOC, Tree
+
 from PyInstaller import log as logging
+from PyInstaller.building.datastruct import TOC, Tree
 from PyInstaller.compat import ALL_SUFFIXES
+from PyInstaller.depend.utils import get_path_to_egg
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +51,6 @@ class DependencyProcessor(object):
                 self._datas.update(additional_files.datas(name))
             # Any module can belong to a single distribution
             self._distributions.update(self._get_distribution_for_node(node))
-
 
     def _get_distribution_for_node(self, node):
         """Get the distribution a module belongs to.
@@ -94,7 +95,6 @@ class DependencyProcessor(object):
         }
         return dists
 
-
     # Public methods.
 
     def make_binaries_toc(self):
@@ -104,9 +104,10 @@ class DependencyProcessor(object):
     def make_datas_toc(self):
         toc = TOC((x, y, 'DATA') for x, y in self._datas)
         for dist in self._distributions:
-            if (dist._pyinstaller_info['egg'] and
-                not dist._pyinstaller_info['zipped'] and
-                not dist._pyinstaller_info['zip-safe']):
+            if (
+                dist._pyinstaller_info['egg'] and not dist._pyinstaller_info['zipped']
+                and not dist._pyinstaller_info['zip-safe']
+            ):
                 # this is a un-zipped, not-zip-safe egg
                 toplevel = dist.get_metadata('top_level.txt').strip()
                 basedir = dist.location
@@ -116,19 +117,15 @@ class DependencyProcessor(object):
                 toc.extend(tree)
         return toc
 
-
     def make_zipfiles_toc(self):
         # TODO create a real TOC when handling of more files is added.
         toc = []
         for dist in self._distributions:
-            if (dist._pyinstaller_info['zipped'] and
-                not dist._pyinstaller_info['egg']):
+            if (dist._pyinstaller_info['zipped'] and not dist._pyinstaller_info['egg']):
                 # Hmm, this should never happen as normal zip-files
                 # are not associated with an distribution, are they?
-                toc.append(("eggs/" + os.path.basename(dist.location),
-                            dist.location, 'ZIPFILE'))
+                toc.append(("eggs/" + os.path.basename(dist.location), dist.location, 'ZIPFILE'))
         return toc
-
 
     @staticmethod
     def __collect_data_files_from_zip(zipfilename):
@@ -145,7 +142,6 @@ class DependencyProcessor(object):
         with zipfile.ZipFile(zipfilename) as zfh:
             zfh.extractall(workpath)
         return Tree(workpath, excludes=PY_IGNORE_EXTENSIONS)
-
 
     def make_zipped_data_toc(self):
         toc = TOC()

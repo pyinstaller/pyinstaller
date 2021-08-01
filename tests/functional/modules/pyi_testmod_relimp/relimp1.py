@@ -9,11 +9,10 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 name = 'pyi_testmod_relimp.relimp1'
 
 from . import relimp2 as upper
-from . pyi_testmod_relimp import relimp2 as lower
+from .pyi_testmod_relimp import relimp2 as lower
 
 assert upper.name == 'pyi_testmod_relimp.relimp2'
 assert lower.name == 'pyi_testmod_relimp.pyi_testmod_relimp.relimp2'

@@ -27,14 +27,11 @@
 # custom implementation that augments the output of original
 # implementation with contents of PYZ archive from FrozenImporter's TOC.
 
-
 import os
+import pkgutil
 import sys
 
-import pkgutil
-
 from pyimod03_importers import FrozenImporter
-
 
 _orig_pkgutil_iter_modules = pkgutil.iter_modules
 

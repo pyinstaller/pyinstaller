@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
+
 def _test_basic_imports():
     # import a very simple and rarely used pure-python lib ...
     import getopt  # noqa: F401

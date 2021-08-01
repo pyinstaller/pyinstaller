@@ -8,7 +8,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
 """
 Functional test exercising the default protocol `kwargs` of version 3 of the
 PyPubSub API.
@@ -17,11 +16,12 @@ PyPubSub API.
 from wx.lib.pubsub import setupkwargs
 from wx.lib.pubsub import pub as Publisher
 
+
 def on_message(number):
     print('Message received.')
     if not number == 762:
-        raise SystemExit(
-            'Message data "762" expected but received "%s".' % str(number))
+        raise SystemExit('Message data "762" expected but received "%s".' % str(number))
+
 
 Publisher.subscribe(on_message, 'topic.subtopic')
 Publisher.sendMessage('topic.subtopic', number=762)

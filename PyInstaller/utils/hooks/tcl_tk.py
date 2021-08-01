@@ -9,16 +9,14 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
-import os
 import locale
+import os
 
 from PyInstaller import compat
-from PyInstaller.depend import bindepend
-from PyInstaller.building.datastruct import Tree
-from PyInstaller.utils import hooks as hookutils
 from PyInstaller import log as logging
-
+from PyInstaller.building.datastruct import Tree
+from PyInstaller.depend import bindepend
+from PyInstaller.utils import hooks as hookutils
 
 logger = logging.getLogger(__name__)
 
@@ -58,8 +56,7 @@ def _warn_if_activetcl_or_teapot_installed(tcl_root, tcltree):
     mentions_teapot = False
     # TCL/TK reads files using the system encoding:
     # https://www.tcl.tk/doc/howto/i18n.html#system_encoding
-    with open(init_resource, 'r',
-              encoding=locale.getpreferredencoding()) as init_file:
+    with open(init_resource, 'r', encoding=locale.getpreferredencoding()) as init_file:
         for line in init_file.readlines():
             line = line.strip().lower()
             if line.startswith('#'):
@@ -80,7 +77,8 @@ difficulty freezing. To fix this, comment out all references to "teapot" in:
      %s
 
 See https://github.com/pyinstaller/pyinstaller/issues/621 for more information.
-            """ % init_resource)
+            """ % init_resource
+        )
 
 
 def _find_tcl_tk_dir():
@@ -95,10 +93,8 @@ def _find_tcl_tk_dir():
         second element is the value of `${TK_LIBRARY}`.
     """
     # Python code to get path to TCL_LIBRARY.
-    tcl_root = hookutils.exec_statement(
-        'from tkinter import Tcl; print(Tcl().eval("info library"))')
-    tk_version = hookutils.exec_statement(
-        'from _tkinter import TK_VERSION; print(TK_VERSION)')
+    tcl_root = hookutils.exec_statement('from tkinter import Tcl; print(Tcl().eval("info library"))')
+    tk_version = hookutils.exec_statement('from _tkinter import TK_VERSION; print(TK_VERSION)')
 
     # TK_LIBRARY is in the same prefix as Tcl.
     tk_root = os.path.join(os.path.dirname(tcl_root), 'tk%s' % tk_version)
@@ -213,8 +209,7 @@ def _collect_tcl_modules(tcl_root):
     """
 
     # Obtain Tcl major version.
-    tcl_version = hookutils.exec_statement(
-        'from tkinter import Tcl; print(Tcl().eval("info tclversion"))')
+    tcl_version = hookutils.exec_statement('from tkinter import Tcl; print(Tcl().eval("info tclversion"))')
     tcl_version = tcl_version.split('.')[0]
 
     modules_dirname = 'tcl' + str(tcl_version)
@@ -246,9 +241,11 @@ def collect_tcl_tk_files(tkinter_ext_file):
     # (starting with macOS 11, the data path cannot be found until shared
     # library discovery is fixed).
     if compat.is_darwin and not tcl_root and not tk_root:
-        logger.info('Not collecting Tcl/Tk data - either python is using '
-                    'macOS\' system Tcl/Tk framework, or Tcl/Tk data '
-                    'directories could not be found.')
+        logger.info(
+            'Not collecting Tcl/Tk data - either python is using '
+            'macOS\' system Tcl/Tk framework, or Tcl/Tk data '
+            'directories could not be found.'
+        )
         return []
 
     # TODO Shouldn't these be fatal exceptions?
@@ -262,10 +259,8 @@ def collect_tcl_tk_files(tkinter_ext_file):
         logger.error('Tk data directory "%s" not found.', tk_root)
         return []
 
-    tcltree = Tree(
-        tcl_root, prefix='tcl', excludes=['demos', '*.lib', 'tclConfig.sh'])
-    tktree = Tree(
-        tk_root, prefix='tk', excludes=['demos', '*.lib', 'tkConfig.sh'])
+    tcltree = Tree(tcl_root, prefix='tcl', excludes=['demos', '*.lib', 'tclConfig.sh'])
+    tktree = Tree(tk_root, prefix='tk', excludes=['demos', '*.lib', 'tkConfig.sh'])
 
     # If the current Tcl installation is a Teapot-distributed version of
     # ActiveTcl and the current platform is OS X, warn that this is bad.

@@ -40,7 +40,8 @@ def test_pep302_loader_builtin(pyi_builder):
         assert ldr.is_package(mod) == False
         assert ldr.get_code(mod) is None
         assert ldr.get_source(mod) is None
-        """)
+        """
+    )
 
 
 def test_pep302_loader_frozen_module(pyi_builder):
@@ -55,7 +56,8 @@ def test_pep302_loader_frozen_module(pyi_builder):
         assert ldr.get_source(mod) is None
         # Import at the very end, just to get the module frozen.
         import compileall
-        """)
+        """
+    )
 
 
 def test_pep302_loader_frozen_package(pyi_builder):
@@ -70,7 +72,8 @@ def test_pep302_loader_frozen_package(pyi_builder):
         assert ldr.get_source(mod) is None
         # Import at the very end, just to get the module frozen.
         import distutils
-        """)
+        """
+    )
 
 
 def test_pep302_loader_frozen_submodule(pyi_builder):
@@ -85,7 +88,8 @@ def test_pep302_loader_frozen_submodule(pyi_builder):
         assert ldr.get_source(mod) is None
         # Import at the very end, just to get the module frozen.
         import distutils.config
-        """)
+        """
+    )
 
 
 def test_pep302_loader_cextension(pyi_builder):
@@ -100,4 +104,5 @@ def test_pep302_loader_cextension(pyi_builder):
         assert ldr.get_source(mod) is None
         # Import at the very end, just to get the module frozen.
         import sqlite3
-        """)
+        """
+    )

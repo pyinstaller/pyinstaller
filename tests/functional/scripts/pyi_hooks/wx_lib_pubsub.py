@@ -8,7 +8,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
 """
 Functional test exercising PyPubSub's default protocol.
 
@@ -52,8 +51,7 @@ except ImportError:
     def on_message(number):
         print('Message received.')
         if not number == 762:
-            raise SystemExit(
-                'Message data "762" expected but received "%s".' % str(number))
+            raise SystemExit('Message data "762" expected but received "%s".' % str(number))
 
     Publisher.subscribe(on_message, 'topic.subtopic')
     Publisher.sendMessage('topic.subtopic', number=762)
@@ -67,8 +65,7 @@ else:
     def on_message(message):
         print('Message received.')
         if not message.data == 762:
-            raise SystemExit(
-                'Message data "762" expected but received "%s".' % str(message.data))
+            raise SystemExit('Message data "762" expected but received "%s".' % str(message.data))
 
     Publisher.subscribe(on_message, 'topic.subtopic')
     Publisher.sendMessage('topic.subtopic', 762)

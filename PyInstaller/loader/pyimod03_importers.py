@@ -8,20 +8,17 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
 """
 PEP-302 and PEP-451 importers for frozen applications.
 """
-
 
 ### **NOTE** This module is used during bootstrap.
 ### Import *ONLY* builtin modules.
 ### List of built-in modules: sys.builtin_module_names
 
-
 import sys
-import _frozen_importlib
 
+import _frozen_importlib
 import pyimod01_os_path as pyi_os_path
 from pyimod02_archive import ArchiveReadError, ZlibArchiveReader
 
@@ -34,12 +31,15 @@ SYS_PREFIXLEN = len(SYS_PREFIX)
 imp_new_module = type(sys)
 
 if sys.flags.verbose and sys.stderr:
+
     def trace(msg, *a):
         sys.stderr.write(msg % a)
         sys.stderr.write("\n")
 else:
+
     def trace(msg, *a):
         pass
+
 
 class FrozenPackageImporter(object):
     """
@@ -85,7 +85,6 @@ class FrozenImporter(object):
 
         FrozenImporter.install()
     """
-
     def __init__(self):
         """
         Load, unzip and initialize the Zip archive bundled with the executable.
@@ -129,13 +128,9 @@ class FrozenImporter(object):
             try:
                 return self._pyz_archive.is_pep420_namespace_package(fullname)
             except Exception as e:
-                raise ImportError(
-                    'Loader FrozenImporter cannot handle module ' + fullname
-                ) from e
+                raise ImportError('Loader FrozenImporter cannot handle module ' + fullname) from e
         else:
-            raise ImportError(
-                'Loader FrozenImporter cannot handle module ' + fullname
-            )
+            raise ImportError('Loader FrozenImporter cannot handle module ' + fullname)
 
     def find_module(self, fullname, path=None):
         # Deprecated in Python 3.4, see PEP-451
@@ -175,8 +170,7 @@ class FrozenImporter(object):
                 entry_name = ".".join(parts)
                 if entry_name in self.toc:
                     module_loader = FrozenPackageImporter(self, entry_name)
-                    trace("import %s as %s # PyInstaller PYZ (__path__ override: %s)",
-                          entry_name, fullname, p)
+                    trace("import %s as %s # PyInstaller PYZ (__path__ override: %s)", entry_name, fullname, p)
                     break
         # Release the interpreter's import lock.
         if module_loader is None:
@@ -261,8 +255,7 @@ class FrozenImporter(object):
                 ### Set __spec__
                 # In Python 3.4 was introduced module attribute __spec__ to
                 # consolidate all module attributes.
-                module.__spec__ = _frozen_importlib.ModuleSpec(
-                    entry_name, self, is_package=is_pkg)
+                module.__spec__ = _frozen_importlib.ModuleSpec(entry_name, self, is_package=is_pkg)
 
                 ### Add module object to sys.modules dictionary.
                 # Module object must be in sys.modules before the loader
@@ -287,7 +280,6 @@ class FrozenImporter(object):
 
             raise
 
-
         # Module returned only in case of no exception.
         return module
 
@@ -298,9 +290,7 @@ class FrozenImporter(object):
             try:
                 return self._pyz_archive.is_package(fullname)
             except Exception as e:
-                raise ImportError(
-                    'Loader FrozenImporter cannot handle module ' + fullname
-                ) from e
+                raise ImportError('Loader FrozenImporter cannot handle module ' + fullname) from e
         else:
             raise ImportError('Loader FrozenImporter cannot handle module ' + fullname)
 
@@ -322,9 +312,7 @@ class FrozenImporter(object):
             # is turned into ImportError.
             return self._pyz_archive.extract(fullname)[1]
         except Exception as e:
-            raise ImportError(
-                'Loader FrozenImporter cannot handle module ' + fullname
-            ) from e
+            raise ImportError('Loader FrozenImporter cannot handle module ' + fullname) from e
 
     def get_source(self, fullname):
         """
@@ -335,9 +323,7 @@ class FrozenImporter(object):
         """
         if fullname in self.toc:
             # Try loading .py file from the filesystem
-            filename = pyi_os_path.os_path_join(
-                SYS_PREFIX,
-                fullname.replace('.', pyi_os_path.os_sep) + '.py')
+            filename = pyi_os_path.os_path_join(SYS_PREFIX, fullname.replace('.', pyi_os_path.os_sep) + '.py')
             try:
                 with open(filename, 'r') as fp:
                     return fp.read()
@@ -383,11 +369,11 @@ class FrozenImporter(object):
         # suffix (__init__.pyc for a package, or just .pyc for a module).
         # Method is_package() will raise ImportError if module not found.
         if self.is_package(fullname):
-            filename = pyi_os_path.os_path_join(pyi_os_path.os_path_join(SYS_PREFIX,
-                fullname.replace('.', pyi_os_path.os_sep)), '__init__.pyc')
+            filename = pyi_os_path.os_path_join(
+                pyi_os_path.os_path_join(SYS_PREFIX, fullname.replace('.', pyi_os_path.os_sep)), '__init__.pyc'
+            )
         else:
-            filename = pyi_os_path.os_path_join(SYS_PREFIX,
-                fullname.replace('.', pyi_os_path.os_sep) + '.pyc')
+            filename = pyi_os_path.os_path_join(SYS_PREFIX, fullname.replace('.', pyi_os_path.os_sep) + '.pyc')
         return filename
 
     def find_spec(self, fullname, path=None, target=None):
@@ -435,8 +421,7 @@ class FrozenImporter(object):
                 parts.append(modname)
                 entry_name = ".".join(parts)
                 if entry_name in self.toc:
-                    trace("import %s as %s # PyInstaller PYZ (__path__ override: %s)",
-                          entry_name, fullname, p)
+                    trace("import %s as %s # PyInstaller PYZ (__path__ override: %s)", entry_name, fullname, p)
                     break
             else:
                 entry_name = None
@@ -448,25 +433,24 @@ class FrozenImporter(object):
         if self._is_pep420_namespace_package(entry_name):
             # PEP-420 namespace package; as per PEP 451, we need to
             # return a spec with "loader" set to None (a.k.a. not set)
-            spec = _frozen_importlib.ModuleSpec(
-                fullname, None,
-                is_package=True)
+            spec = _frozen_importlib.ModuleSpec(fullname, None, is_package=True)
             # Set submodule_search_locations, which seems to fill the
             # __path__ attribute.
-            spec.submodule_search_locations = [
-                pyi_os_path.os_path_dirname(self.get_filename(entry_name))
-            ]
+            spec.submodule_search_locations = [pyi_os_path.os_path_dirname(self.get_filename(entry_name))]
             return spec
 
         # origin has to be the filename
         origin = self.get_filename(entry_name)
         is_pkg = self.is_package(entry_name)
 
-        spec =  _frozen_importlib.ModuleSpec(
-            fullname, self,
-            is_package=is_pkg, origin=origin,
+        spec = _frozen_importlib.ModuleSpec(
+            fullname,
+            self,
+            is_package=is_pkg,
+            origin=origin,
             # Provide the entry_name for the loader to use during loading
-            loader_state = entry_name)
+            loader_state=entry_name
+        )
 
         # Make the import machinery set __file__.
         # PEP 451 says: "has_location" is true if the module is locatable. In
@@ -479,9 +463,7 @@ class FrozenImporter(object):
         # Set submodule_search_locations for packages. Seems to be
         # required for importlib_resources from 3.2.0 - see issue #5395.
         if is_pkg:
-            spec.submodule_search_locations = [
-                pyi_os_path.os_path_dirname(self.get_filename(entry_name))
-            ]
+            spec.submodule_search_locations = [pyi_os_path.os_path_dirname(self.get_filename(entry_name))]
 
         return spec
 

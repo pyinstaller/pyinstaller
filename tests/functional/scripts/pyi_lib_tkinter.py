@@ -9,14 +9,11 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 # Ensure environment variables TCL_LIBRARY and TK_LIBRARY are set properly.
 # and data files are bundled.
 
-
 import glob
 import os
-
 
 # In Python 3 module name is 'tkinter'
 try:
@@ -44,7 +41,6 @@ def compare(test_name, expect, frozen):
 
 tcl_dir = os.environ['TCL_LIBRARY']
 tk_dir = os.environ['TK_LIBRARY']
-
 
 compare('Tcl', os.path.join(sys.prefix, 'tcl'), tcl_dir)
 compare('Tk', os.path.join(sys.prefix, 'tk'), tk_dir)

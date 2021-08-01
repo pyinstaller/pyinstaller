@@ -8,26 +8,27 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-
 """
 Code related to processing of import hooks.
 """
 
-import glob, sys, weakref
+import glob
 import os.path
+import sys
+import weakref
 
-from PyInstaller.exceptions import ImportErrorWhenRunningHook
 from PyInstaller import log as logging
+from PyInstaller.building.utils import format_binaries_and_datas
 from PyInstaller.compat import expand_path, importlib_load_source
 from PyInstaller.depend.imphookapi import PostGraphAPI
-from PyInstaller.building.utils import format_binaries_and_datas
+from PyInstaller.exceptions import ImportErrorWhenRunningHook
 
 logger = logging.getLogger(__name__)
 
 # Safety check: Hook module names need to be unique. Duplicate names might
 # occur if the cached PyuModuleGraph has an issue.
 HOOKS_MODULE_NAMES = set()
+
 
 class ModuleHookCache(dict):
     """
@@ -58,7 +59,6 @@ class ModuleHookCache(dict):
     in that cache to the same cache-specific namespace, preventing edge-case
     collisions with existing in-memory modules in other caches.
     """
-
     def __init__(self, module_graph, hook_dirs):
         """
         Cache all hook scripts in the passed directories.
@@ -92,13 +92,11 @@ class ModuleHookCache(dict):
 
         # String unique to this cache prefixing the names of all in-memory
         # modules lazily loaded from cached hook scripts, privatized for safety.
-        self._hook_module_name_prefix = '__PyInstaller_hooks_{}_'.format(
-            ModuleHookCache._cache_id_next)
+        self._hook_module_name_prefix = '__PyInstaller_hooks_{}_'.format(ModuleHookCache._cache_id_next)
         ModuleHookCache._cache_id_next += 1
 
         # Cache all hook scripts in the passed directories.
         self._cache_hook_dirs(hook_dirs)
-
 
     def _cache_hook_dirs(self, hook_dirs):
         """
@@ -115,8 +113,7 @@ class ModuleHookCache(dict):
             # Canonicalize this directory's path and validate its existence.
             hook_dir = os.path.abspath(expand_path(hook_dir))
             if not os.path.isdir(hook_dir):
-                raise FileNotFoundError(
-                    'Hook directory "{}" not found.'.format(hook_dir))
+                raise FileNotFoundError('Hook directory "{}" not found.'.format(hook_dir))
 
             # For each hook script in this directory...
             hook_filenames = glob.glob(os.path.join(hook_dir, 'hook-*.py'))
@@ -125,9 +122,10 @@ class ModuleHookCache(dict):
                 # constructed by removing the "hook-" prefix and ".py" suffix.
                 module_name = os.path.basename(hook_filename)[5:-3]
                 if module_name in self:
-                    logger.warning("Several hooks defined for module %r. "
-                                   "Please take care they do not conflict.",
-                                   module_name)
+                    logger.warning(
+                        "Several hooks defined for module %r. "
+                        "Please take care they do not conflict.", module_name
+                    )
 
                 # Lazily loadable hook object.
                 module_hook = ModuleHook(
@@ -140,7 +138,6 @@ class ModuleHookCache(dict):
                 # Add this hook to this module's list of hooks.
                 module_hooks = self.setdefault(module_name, [])
                 module_hooks.append(module_hook)
-
 
     def remove_modules(self, *module_names):
         """
@@ -165,6 +162,7 @@ class ModuleHookCache(dict):
             # Remove this module and its hook script objects from this cache.
             self.pop(module_name, None)
 
+
 # Dictionary mapping the names of magic attributes required by the "ModuleHook"
 # class to 2-tuples "(default_type, sanitizer_func)", where:
 #
@@ -184,7 +182,7 @@ _MAGIC_MODULE_HOOK_ATTRS = {
     # * "datas", sanitized from hook-style 2-tuple lists defined by hooks into
     #   TOC-style 2-tuple sets consumable by "ModuleHook" callers.
     # * "binaries", sanitized in the same way.
-    'datas':    (set, format_binaries_and_datas),
+    'datas': (set, format_binaries_and_datas),
     'binaries': (set, format_binaries_and_datas),
     'excludedimports': (set, None),
 
@@ -197,6 +195,7 @@ _MAGIC_MODULE_HOOK_ATTRS = {
     #   can have side effects dependent on this order!
     'hiddenimports': (list, None),
 }
+
 
 class ModuleHook(object):
     """
@@ -252,8 +251,7 @@ class ModuleHook(object):
 
     ## Magic
 
-    def __init__(self, module_graph, module_name, hook_filename,
-                 hook_module_name_prefix):
+    def __init__(self, module_graph, module_name, hook_filename, hook_module_name_prefix):
         """
         Initialize this metadata.
 
@@ -286,8 +284,7 @@ class ModuleHook(object):
         self.hook_filename = hook_filename
 
         # Name of the in-memory module fabricated to refer to this hook script.
-        self.hook_module_name = (
-            hook_module_name_prefix + self.module_name.replace('.', '_'))
+        self.hook_module_name = (hook_module_name_prefix + self.module_name.replace('.', '_'))
 
         # Safety check, see above
         global HOOKS_MODULE_NAMES
@@ -301,7 +298,6 @@ class ModuleHook(object):
 
         # Attributes subsequently defined by the _load_hook_module() method.
         self._hook_module = None
-
 
     def __getattr__(self, attr_name):
         """
@@ -334,7 +330,6 @@ class ModuleHook(object):
         else:
             raise AttributeError(attr_name)
 
-
     def __setattr__(self, attr_name, attr_value):
         """
         Set the attribute with the passed name to the passed value.
@@ -357,7 +352,6 @@ class ModuleHook(object):
         # Set this attribute to the passed value. To avoid recursion, the
         # superclass method rather than setattr() is called.
         return super(ModuleHook, self).__setattr__(attr_name, attr_value)
-
 
     ## Loading
 
@@ -402,21 +396,16 @@ class ModuleHook(object):
         # Load and execute the hook script. Even if mechanisms from the import
         # machinery are used, this does not import the hook as the module.
         head, tail = os.path.split(self.hook_filename)
-        logger.info(
-            'Loading module hook %r from %r...', tail, head)
+        logger.info('Loading module hook %r from %r...', tail, head)
         try:
-            self._hook_module = importlib_load_source(
-                self.hook_module_name, self.hook_filename)
+            self._hook_module = importlib_load_source(self.hook_module_name, self.hook_filename)
         except ImportError:
             logger.debug("Hook failed with:", exc_info=True)
-            raise ImportErrorWhenRunningHook(
-                self.hook_module_name, self.hook_filename)
-
+            raise ImportErrorWhenRunningHook(self.hook_module_name, self.hook_filename)
 
         # Copy hook script attributes into magic attributes exposed as instance
         # variables of the current "ModuleHook" instance.
-        for attr_name, (default_type, sanitizer_func) in (
-            _MAGIC_MODULE_HOOK_ATTRS.items()):
+        for attr_name, (default_type, sanitizer_func) in (_MAGIC_MODULE_HOOK_ATTRS.items()):
             # Unsanitized value of this attribute.
             attr_value = getattr(self._hook_module, attr_name, None)
 
@@ -473,15 +462,12 @@ class ModuleHook(object):
             return
 
         # Call this hook() function.
-        hook_api = PostGraphAPI(
-            module_name=self.module_name, module_graph=self.module_graph,
-            analysis=analysis)
+        hook_api = PostGraphAPI(module_name=self.module_name, module_graph=self.module_graph, analysis=analysis)
         try:
             self._hook_module.hook(hook_api)
         except ImportError:
             logger.debug("Hook failed with:", exc_info=True)
-            raise ImportErrorWhenRunningHook(
-                self.hook_module_name, self.hook_filename)
+            raise ImportErrorWhenRunningHook(self.hook_module_name, self.hook_filename)
 
         # Update all magic attributes modified by the prior call.
         self.datas.update(set(hook_api._added_datas))
@@ -495,9 +481,7 @@ class ModuleHook(object):
             # Remove the graph link between the hooked module and item.
             # This removes the 'item' node from the graph if no other
             # links go to it (no other modules import it)
-            self.module_graph.removeReference(
-                hook_api.node, deleted_module_name)
-
+            self.module_graph.removeReference(hook_api.node, deleted_module_name)
 
     def _process_hidden_imports(self):
         """
@@ -513,8 +497,7 @@ class ModuleHook(object):
             try:
                 # Graph node for this module. Do not implicitly create namespace
                 # packages for non-existent packages.
-                caller = self.module_graph.find_node(
-                    self.module_name, create_nspkg=False)
+                caller = self.module_graph.find_node(self.module_name, create_nspkg=False)
 
                 # Manually import this hidden import from this module.
                 self.module_graph.import_hook(import_module_name, caller)
@@ -523,7 +506,6 @@ class ModuleHook(object):
             # and hence are only "soft" recommendations.
             except ImportError:
                 logger.warning('Hidden import "%s" not found!', import_module_name)
-
 
     #FIXME: This is pretty... intense. Attempting to cleanly "undo" prior module
     #graph operations is a recipe for subtle edge cases and difficult-to-debug
@@ -558,7 +540,6 @@ class ModuleHook(object):
         So remove all import-edges from the current module (and it's
         submodules) to the given `excludedimports` (end their submodules).
         """
-
         def find_all_package_nodes(name):
             mods = [name]
             name += '.'
@@ -592,16 +573,13 @@ class ModuleHook(object):
             # message above.
             for src in hooked_mods:
                 # modules, this `src` does import
-                references = set(
-                    node.identifier
-                    for node in self.module_graph.outgoing(src))
+                references = set(node.identifier for node in self.module_graph.outgoing(src))
 
                 # Remove all of these imports which are also in
                 # "imports_to_remove".
                 for dest in imports_to_remove & references:
                     self.module_graph.removeReference(src, dest)
-                    logger.debug(
-                        "Excluding import of %s from module %s", dest, src)
+                    logger.debug("Excluding import of %s from module %s", dest, src)
 
 
 class AdditionalFilesCache(object):

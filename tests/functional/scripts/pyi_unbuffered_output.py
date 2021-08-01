@@ -30,12 +30,9 @@ import sys
 
 # Argument parser
 parser = argparse.ArgumentParser(description="Unbuffered stdio test")
-parser.add_argument('--num-stars', type=int, default=5,
-                    help="Number of star characters to print.")
-parser.add_argument('--output-stream', type=str, default='stdout',
-                    help="Output stream ('stdout' or 'stderr')")
-parser.add_argument('--stream-mode', type=str, default='text',
-                    help="Output stream mode ('text' or 'binary')")
+parser.add_argument('--num-stars', type=int, default=5, help="Number of star characters to print.")
+parser.add_argument('--output-stream', type=str, default='stdout', help="Output stream ('stdout' or 'stderr')")
+parser.add_argument('--stream-mode', type=str, default='text', help="Output stream mode ('text' or 'binary')")
 args = parser.parse_args()
 
 # Select output stream and mode

@@ -13,11 +13,10 @@ import os
 import plistlib
 import shutil
 
+from PyInstaller.building.api import COLLECT, EXE
+from PyInstaller.building.datastruct import TOC, Target, logger
+from PyInstaller.building.utils import (_check_path_overlap, _rmtree, add_suffix_to_extension, checkCache)
 from PyInstaller.compat import is_darwin
-from PyInstaller.building.api import EXE, COLLECT
-from PyInstaller.building.datastruct import Target, TOC, logger
-from PyInstaller.building.utils import _check_path_overlap, _rmtree, \
-    add_suffix_to_extension, checkCache
 
 if is_darwin:
     import PyInstaller.utils.osx as osxutils
@@ -35,8 +34,9 @@ class BUNDLE(Target):
         self.icon = kws.get('icon')
         if not self.icon:
             # --icon not specified; use the default in the pyinstaller folder
-            self.icon = os.path.join(os.path.dirname(os.path.dirname(__file__)),
-                'bootloader', 'images', 'icon-windowed.icns')
+            self.icon = os.path.join(
+                os.path.dirname(os.path.dirname(__file__)), 'bootloader', 'images', 'icon-windowed.icns'
+            )
         else:
             # user gave an --icon=path. If it is relative, make it
             # relative to the spec file location.
@@ -132,32 +132,30 @@ class BUNDLE(Target):
             logger.warning("icon not found %s", self.icon)
 
         # Key/values for a minimal Info.plist file
-        info_plist_dict = {"CFBundleDisplayName": self.appname,
-                           "CFBundleName": self.appname,
+        info_plist_dict = {
+            "CFBundleDisplayName": self.appname,
+            "CFBundleName": self.appname,
 
-                           # Required by 'codesign' utility.
-                           # The value for CFBundleIdentifier is used as the default unique
-                           # name of your program for Code Signing purposes.
-                           # It even identifies the APP for access to restricted OS X areas
-                           # like Keychain.
-                           #
-                           # The identifier used for signing must be globally unique. The usal
-                           # form for this identifier is a hierarchical name in reverse DNS
-                           # notation, starting with the toplevel domain, followed by the
-                           # company name, followed by the department within the company, and
-                           # ending with the product name. Usually in the form:
-                           #   com.mycompany.department.appname
-                           # Cli option --osx-bundle-identifier sets this value.
-                           "CFBundleIdentifier": self.bundle_identifier,
-
-                           "CFBundleExecutable":
-                               os.path.basename(self.exename),
-                           "CFBundleIconFile": os.path.basename(self.icon),
-                           "CFBundleInfoDictionaryVersion": "6.0",
-                           "CFBundlePackageType": "APPL",
-                           "CFBundleShortVersionString": self.version,
-
-                           }
+            # Required by 'codesign' utility.
+            # The value for CFBundleIdentifier is used as the default unique
+            # name of your program for Code Signing purposes.
+            # It even identifies the APP for access to restricted OS X areas
+            # like Keychain.
+            #
+            # The identifier used for signing must be globally unique. The usal
+            # form for this identifier is a hierarchical name in reverse DNS
+            # notation, starting with the toplevel domain, followed by the
+            # company name, followed by the department within the company, and
+            # ending with the product name. Usually in the form:
+            #   com.mycompany.department.appname
+            # Cli option --osx-bundle-identifier sets this value.
+            "CFBundleIdentifier": self.bundle_identifier,
+            "CFBundleExecutable": os.path.basename(self.exename),
+            "CFBundleIconFile": os.path.basename(self.icon),
+            "CFBundleInfoDictionaryVersion": "6.0",
+            "CFBundlePackageType": "APPL",
+            "CFBundleShortVersionString": self.version,
+        }
 
         # Set some default values.
         # But they still can be overwritten by the user.
@@ -185,11 +183,16 @@ class BUNDLE(Target):
             # paths to dynamic library dependencies (@executable_path)
             base_path = inm.split('/', 1)[0]
             if typ in ('EXTENSION', 'BINARY'):
-                fnm = checkCache(fnm, strip=self.strip, upx=self.upx,
-                                 upx_exclude=self.upx_exclude, dist_nm=inm,
-                                 target_arch=self.target_arch,
-                                 codesign_identity=self.codesign_identity,
-                                 entitlements_file=self.entitlements_file)
+                fnm = checkCache(
+                    fnm,
+                    strip=self.strip,
+                    upx=self.upx,
+                    upx_exclude=self.upx_exclude,
+                    dist_nm=inm,
+                    target_arch=self.target_arch,
+                    codesign_identity=self.codesign_identity,
+                    entitlements_file=self.entitlements_file
+                )
             # Add most data files to a list for symlinking later.
             if typ == 'DATA' and base_path not in _QT_BASE_PATH:
                 links.append((inm, fnm))
@@ -232,31 +235,34 @@ class BUNDLE(Target):
                         # Build path from previous path and the next part of the base path
                         path = os.path.join(path, part)
                         try:
-                            relative_source_path = os.path.relpath(os.path.join(res_dir, path),
-                                                                   os.path.split(os.path.join(bin_dir, path))[0])
+                            relative_source_path = os.path.relpath(
+                                os.path.join(res_dir, path),
+                                os.path.split(os.path.join(bin_dir, path))[0]
+                            )
                             dest_path = os.path.join(bin_dir, path)
                             os.symlink(relative_source_path, dest_path)
                             break
                         except FileExistsError:
                             pass
                     if not os.path.exists(os.path.join(bin_dir, inm)):
-                        relative_source_path = os.path.relpath(os.path.join(res_dir, inm),
-                                                               os.path.split(os.path.join(bin_dir, inm))[0])
+                        relative_source_path = os.path.relpath(
+                            os.path.join(res_dir, inm),
+                            os.path.split(os.path.join(bin_dir, inm))[0]
+                        )
                         dest_path = os.path.join(bin_dir, inm)
                         os.symlink(relative_source_path, dest_path)
             else:  # If path is empty, e.g., a top level file, try to just symlink the file
-                os.symlink(os.path.relpath(os.path.join(res_dir, inm),
-                                           os.path.split(os.path.join(bin_dir, inm))[0]),
-                           os.path.join(bin_dir, inm))
+                os.symlink(
+                    os.path.relpath(os.path.join(res_dir, inm),
+                                    os.path.split(os.path.join(bin_dir, inm))[0]), os.path.join(bin_dir, inm)
+                )
 
         # Sign the bundle
         logger.info('Signing the BUNDLE...')
         try:
-            osxutils.sign_binary(self.name, self.codesign_identity,
-                                 self.entitlements_file, deep=True)
+            osxutils.sign_binary(self.name, self.codesign_identity, self.entitlements_file, deep=True)
         except Exception as e:
             logger.warning("Error while signing the bundle: %s", e)
             logger.warning("You will need to sign the bundle manually!")
 
-        logger.info("Building BUNDLE %s completed successfully.",
-                    self.tocbasename)
+        logger.info("Building BUNDLE %s completed successfully.", self.tocbasename)

@@ -9,10 +9,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #-----------------------------------------------------------------------------
 
-
 import os
 import sys
-
 
 # Without this environment variable set to 'no' importing 'gst'
 # causes 100% CPU load. (Tested on OSX.)

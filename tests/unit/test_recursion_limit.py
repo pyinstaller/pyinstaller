@@ -57,8 +57,7 @@ def test_recursion_to_deep(large_import_chain):
         mg.add_script(str(script))
 
 
-def test_RecursionError_prints_message(tmpdir, large_import_chain,
-                                       monkeypatch):
+def test_RecursionError_prints_message(tmpdir, large_import_chain, monkeypatch):
     """
     modulegraph is recursive and thus triggers RecursionError if
     nesting of imported modules is to deep. Ensure a respective
@@ -69,10 +68,14 @@ def test_RecursionError_prints_message(tmpdir, large_import_chain,
     path, script = large_import_chain
 
     default_args = [
-        '--specpath', str(tmpdir),
-        '--distpath', str(tmpdir.join("dist")),
-        '--workpath', str(tmpdir.join("build")),
-        '--path', str(tmpdir),
+        '--specpath',
+        str(tmpdir),
+        '--distpath',
+        str(tmpdir.join("dist")),
+        '--workpath',
+        str(tmpdir.join("build")),
+        '--path',
+        str(tmpdir),
     ]
 
     pyi_args = [script] + default_args

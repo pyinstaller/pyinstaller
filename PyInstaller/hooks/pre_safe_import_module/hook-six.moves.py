@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 from PyInstaller.utils.hooks import eval_statement
 
 
@@ -35,7 +34,7 @@ def pre_safe_import_module(api):
     # Dictionary from conventional module names to "six.moves" attribute names
     # (e.g., from `tkinter.tix` to `six.moves.tkinter_tix`).
     real_to_six_module_name = eval_statement(
-'''
+        '''
 import six
 print('{')
 
@@ -51,7 +50,8 @@ for moved_module in six._moved_attributes:
             moved_module.mod, 'six.moves.' + moved_module.name))
 
 print('}')
-''')
+'''
+    )
 
     # Add "six.moves" as a runtime package rather than module. Modules cannot
     # physically contain submodules; only packages can. In "from"-style import

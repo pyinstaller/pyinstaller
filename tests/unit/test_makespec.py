@@ -13,10 +13,10 @@ import os
 
 from PyInstaller.building import makespec
 
+
 def test_make_variable_path():
     p = os.path.join(makespec.HOMEPATH, "aaa", "bbb", "ccc")
-    assert (makespec.make_variable_path(p) ==
-            ("HOMEPATH", os.path.join("aaa", "bbb", "ccc")))
+    assert (makespec.make_variable_path(p) == ("HOMEPATH", os.path.join("aaa", "bbb", "ccc")))
 
 
 def test_make_variable_path_regression():
@@ -32,8 +32,7 @@ def test_Path_constructor():
 def test_Path_repr():
     p = makespec.Path(makespec.HOMEPATH, "aaa", "bbb", "ccc")
     assert p.path == os.path.join(makespec.HOMEPATH, "aaa", "bbb", "ccc")
-    assert (repr(p) ==
-            "os.path.join(HOMEPATH,%r)" % os.path.join("aaa", "bbb", "ccc"))
+    assert (repr(p) == "os.path.join(HOMEPATH,%r)" % os.path.join("aaa", "bbb", "ccc"))
 
 
 def test_Path_repr_relative():
@@ -45,6 +44,4 @@ def test_Path_repr_relative():
 def test_Path_regression():
     p = makespec.Path(makespec.HOMEPATH + "-aaa", "bbb", "ccc")
     assert p.path == os.path.join(makespec.HOMEPATH + "-aaa", "bbb", "ccc")
-    assert (repr(p) ==
-            repr(os.path.join(makespec.HOMEPATH + "-aaa", "bbb", "ccc")))
-
+    assert (repr(p) == repr(os.path.join(makespec.HOMEPATH + "-aaa", "bbb", "ccc")))

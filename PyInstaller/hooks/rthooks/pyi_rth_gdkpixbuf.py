@@ -11,8 +11,8 @@
 
 import atexit
 import os
-import tempfile
 import sys
+import tempfile
 
 pixbuf_file = os.path.join(sys._MEIPASS, 'lib', 'gdk-pixbuf', 'loaders.cache')
 
@@ -34,6 +34,5 @@ if os.path.exists(pixbuf_file) and sys.platform != 'win32':
         atexit.register(os.unlink, pixbuf_file)
     except OSError:
         pass
-
 
 os.environ['GDK_PIXBUF_MODULE_FILE'] = pixbuf_file

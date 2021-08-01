@@ -8,7 +8,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
 """
 Define a modified ModuleGraph that can return its contents as
 a TOC and in other ways act like the old ImpTracker.
@@ -36,31 +35,28 @@ Other added methods look up nodes by identifier and return facts
 about them, replacing what the old ImpTracker list could do.
 """
 
+import ast
 import os
 import re
 import sys
 import traceback
-import ast
-
-from copy import deepcopy
 from collections import defaultdict
+from copy import deepcopy
 
-from PyInstaller import compat
-from PyInstaller import HOMEPATH, PACKAGEPATH
+from PyInstaller import HOMEPATH, PACKAGEPATH, compat
 from PyInstaller import log as logging
-from PyInstaller.log import INFO, DEBUG, TRACE
 from PyInstaller.building.datastruct import TOC
-from PyInstaller.depend.imphook import AdditionalFilesCache, ModuleHookCache
-from PyInstaller.depend.imphookapi import PreSafeImportModuleAPI,\
-    PreFindModulePathAPI
+from PyInstaller.compat import (
+    BAD_MODULE_TYPES, BINARY_MODULE_TYPES, MODULE_TYPES_TO_TOC_DICT, PURE_PYTHON_MODULE_TYPES, PY3_BASE_MODULES,
+    VALID_MODULE_TYPES, importlib_load_source
+)
 from PyInstaller.depend import bytecode
-from PyInstaller.compat import importlib_load_source, PY3_BASE_MODULES, \
-    PURE_PYTHON_MODULE_TYPES, BINARY_MODULE_TYPES, VALID_MODULE_TYPES, \
-    BAD_MODULE_TYPES, MODULE_TYPES_TO_TOC_DICT
+from PyInstaller.depend.imphook import AdditionalFilesCache, ModuleHookCache
+from PyInstaller.depend.imphookapi import (PreFindModulePathAPI, PreSafeImportModuleAPI)
 from PyInstaller.lib.modulegraph.find_modules import get_implies
 from PyInstaller.lib.modulegraph.modulegraph import ModuleGraph
+from PyInstaller.log import DEBUG, INFO, TRACE
 from PyInstaller.utils.hooks import collect_submodules, is_package
-
 
 logger = logging.getLogger(__name__)
 
@@ -129,9 +125,7 @@ class PyiModuleGraph(ModuleGraph):
         self._top_script_node = None
         self._additional_files_cache = AdditionalFilesCache()
         # Command line, Entry Point, and then builtin hook dirs.
-        self._user_hook_dirs = (
-            list(user_hook_dirs) + [os.path.join(PACKAGEPATH, 'hooks')]
-        )
+        self._user_hook_dirs = (list(user_hook_dirs) + [os.path.join(PACKAGEPATH, 'hooks')])
         # Hook-specific lookup tables.
         # These need to reset when reusing cached PyiModuleGraph to avoid
         # hooks to refer to files or data from another test-case.
@@ -151,8 +145,7 @@ class PyiModuleGraph(ModuleGraph):
                 # Ignore if this hook path doesn't have run-time hooks.
                 continue
             except Exception as e:
-                logger.error('Unable to read run-time hooks from %r: %s' %
-                             (uhd_path, e))
+                logger.error('Unable to read run-time hooks from %r: %s' % (uhd_path, e))
                 continue
 
             self._merge_rthooks(rthooks, uhd, uhd_path)
@@ -169,41 +162,39 @@ class PyiModuleGraph(ModuleGraph):
         absolute.
         """
         # Check that the root element is a dict.
-        assert isinstance(rthooks, dict), (
-            'The root element in %s must be a dict.' % uhd_path)
+        assert isinstance(rthooks, dict), ('The root element in %s must be a dict.' % uhd_path)
         for module_name, python_file_name_list in rthooks.items():
             # Ensure the key is a string.
-            assert isinstance(module_name, compat.string_types), (
-                '%s must be a dict whose keys are strings; %s '
+            assert isinstance(
+                module_name, compat.string_types
+            ), ('%s must be a dict whose keys are strings; %s '
                 'is not a string.' % (uhd_path, module_name))
             # Ensure the value is a list.
-            assert isinstance(python_file_name_list, list), (
-                'The value of %s key %s must be a list.' %
-                (uhd_path, module_name))
+            assert isinstance(python_file_name_list,
+                              list), ('The value of %s key %s must be a list.' % (uhd_path, module_name))
             if module_name in self._available_rthooks:
                 logger.warning(
                     'Runtime hooks for %s have already been defined. Skipping '
-                    'the runtime hooks for %s that are defined in %s.',
-                    module_name, module_name, os.path.join(uhd, 'rthooks')
+                    'the runtime hooks for %s that are defined in %s.', module_name, module_name,
+                    os.path.join(uhd, 'rthooks')
                 )
                 # Skip this module
                 continue
             # Merge this with existing run-time hooks.
             for python_file_name in python_file_name_list:
                 # Ensure each item in the list is a string.
-                assert isinstance(python_file_name, compat.string_types), (
-                    '%s key %s, item %r must be a string.' %
-                    (uhd_path, module_name, python_file_name))
+                assert isinstance(
+                    python_file_name, compat.string_types
+                ), ('%s key %s, item %r must be a string.' % (uhd_path, module_name, python_file_name))
                 # Transform it into an absolute path.
                 abs_path = os.path.join(uhd, 'rthooks', python_file_name)
                 # Make sure this file exists.
                 assert os.path.exists(abs_path), (
                     'In %s, key %s, the file %r expected to be located at '
-                    '%r does not exist.' %
-                    (uhd_path, module_name, python_file_name, abs_path))
+                    '%r does not exist.' % (uhd_path, module_name, python_file_name, abs_path)
+                )
                 # Merge it.
                 self._available_rthooks[module_name].append(abs_path)
-
 
     @staticmethod
     def _findCaller(*args, **kwargs):
@@ -236,8 +227,7 @@ class PyiModuleGraph(ModuleGraph):
             fn, lno, func, sinfo = self._findCaller()
         except ValueError:  # pragma: no cover
             fn, lno, func, sinfo = "(unknown file)", 0, "(unknown function)", None
-        record = logger.makeRecord(
-            logger.name, level, fn, lno, msg, [], None, func, None, sinfo)
+        record = logger.makeRecord(logger.name, level, fn, lno, msg, [], None, func, None, sinfo)
 
         logger.handle(record)
 
@@ -272,7 +262,6 @@ class PyiModuleGraph(ModuleGraph):
 
         return ModuleHookCache(self, hook_dirs)
 
-
     def _analyze_base_modules(self):
         """
         Analyze dependencies of the the modules in base_library.zip.
@@ -286,10 +275,7 @@ class PyiModuleGraph(ModuleGraph):
             else:
                 required_mods.append(m)
         # Initialize ModuleGraph.
-        self._base_modules = [mod
-            for req in required_mods
-            for mod in self.import_hook(req)]
-
+        self._base_modules = [mod for req in required_mods for mod in self.import_hook(req)]
 
     def add_script(self, pathname, caller=None):
         """
@@ -301,8 +287,7 @@ class PyiModuleGraph(ModuleGraph):
         if self._top_script_node is None:
             # Remember the node for the first script.
             try:
-                self._top_script_node = super(PyiModuleGraph, self).add_script(
-                    pathname)
+                self._top_script_node = super(PyiModuleGraph, self).add_script(pathname)
             except SyntaxError:
                 print("\nSyntax error in", pathname, file=sys.stderr)
                 formatted_lines = traceback.format_exc().splitlines(True)
@@ -318,8 +303,7 @@ class PyiModuleGraph(ModuleGraph):
                 # Defaults to as any additional script is called from the
                 # top-level script.
                 caller = self._top_script_node
-            return super(PyiModuleGraph, self).add_script(
-                pathname, caller=caller)
+            return super(PyiModuleGraph, self).add_script(pathname, caller=caller)
 
     def process_post_graph_hooks(self, analysis):
         """
@@ -353,8 +337,7 @@ class PyiModuleGraph(ModuleGraph):
             # For each remaining hookable module and corresponding hooks...
             for module_name, module_hooks in self._hooks.items():
                 # Graph node for this module if imported or "None" otherwise.
-                module_node = self.find_node(
-                    module_name, create_nspkg=False)
+                module_node = self.find_node(module_name, create_nspkg=False)
 
                 # If this module has not been imported, temporarily ignore it.
                 # This module is retained in the cache, as a subsequently run
@@ -374,10 +357,7 @@ class PyiModuleGraph(ModuleGraph):
 
                     # Cache all external dependencies listed by this script
                     # after running this hook, which could add dependencies.
-                    self._additional_files_cache.add(
-                        module_name,
-                        module_hook.binaries,
-                        module_hook.datas)
+                    self._additional_files_cache.add(module_name, module_hook.binaries, module_hook.datas)
 
                 # Prevent this module's hooks from being run again.
                 hooked_module_names.add(module_name)
@@ -414,11 +394,9 @@ class PyiModuleGraph(ModuleGraph):
             # For the absolute path of each such hook...
             for hook in self._hooks_pre_safe_import_module[module_name]:
                 # Dynamically import this hook as a fabricated module.
-                logger.info('Processing pre-safe import module hook %s '
-                            'from %r.', module_name, hook.hook_filename)
+                logger.info('Processing pre-safe import module hook %s from %r.', module_name, hook.hook_filename)
                 hook_module_name = 'PyInstaller_hooks_pre_safe_import_module_' + module_name.replace('.', '_')
-                hook_module = importlib_load_source(hook_module_name,
-                                                    hook.hook_filename)
+                hook_module = importlib_load_source(hook_module_name, hook.hook_filename)
 
                 # Object communicating changes made by this hook back to us.
                 hook_api = PreSafeImportModuleAPI(
@@ -430,10 +408,7 @@ class PyiModuleGraph(ModuleGraph):
 
                 # Run this hook, passed this object.
                 if not hasattr(hook_module, 'pre_safe_import_module'):
-                    raise NameError(
-                        'pre_safe_import_module() function not defined by '
-                        'hook %r.' % hook_module
-                    )
+                    raise NameError('pre_safe_import_module() function not defined by hook %r.' % hook_module)
                 hook_module.pre_safe_import_module(hook_api)
 
                 # Respect method call changes requested by this hook.
@@ -444,8 +419,7 @@ class PyiModuleGraph(ModuleGraph):
             del self._hooks_pre_safe_import_module[module_name]
 
         # Call the superclass method.
-        return super(PyiModuleGraph, self)._safe_import_module(
-            module_basename, module_name, parent_package)
+        return super(PyiModuleGraph, self)._safe_import_module(module_basename, module_name, parent_package)
 
     def _find_module_path(self, fullname, module_name, search_dirs):
         """
@@ -465,11 +439,9 @@ class PyiModuleGraph(ModuleGraph):
             # For the absolute path of each such hook...
             for hook in self._hooks_pre_find_module_path[fullname]:
                 # Dynamically import this hook as a fabricated module.
-                logger.info('Processing pre-find module path hook %s from %r.',
-                            fullname, hook.hook_filename)
+                logger.info('Processing pre-find module path hook %s from %r.', fullname, hook.hook_filename)
                 hook_fullname = 'PyInstaller_hooks_pre_find_module_path_' + fullname.replace('.', '_')
-                hook_module = importlib_load_source(hook_fullname,
-                                                    hook.hook_filename)
+                hook_module = importlib_load_source(hook_fullname, hook.hook_filename)
 
                 # Object communicating changes made by this hook back to us.
                 hook_api = PreFindModulePathAPI(
@@ -480,10 +452,7 @@ class PyiModuleGraph(ModuleGraph):
 
                 # Run this hook, passed this object.
                 if not hasattr(hook_module, 'pre_find_module_path'):
-                    raise NameError(
-                        'pre_find_module_path() function not defined by '
-                        'hook %r.' % hook_module
-                    )
+                    raise NameError('pre_find_module_path() function not defined by hook %r.' % hook_module)
                 hook_module.pre_find_module_path(hook_api)
 
                 # Respect method call changes requested by this hook.
@@ -493,8 +462,7 @@ class PyiModuleGraph(ModuleGraph):
             del self._hooks_pre_find_module_path[fullname]
 
         # Call the superclass method.
-        return super(PyiModuleGraph, self)._find_module_path(
-            fullname, module_name, search_dirs)
+        return super(PyiModuleGraph, self)._find_module_path(fullname, module_name, search_dirs)
 
     def get_code_objects(self):
         """
@@ -625,7 +593,7 @@ class PyiModuleGraph(ModuleGraph):
 
     # Return true if the named item is in the graph as a BuiltinModule node.
     # The passed name is a basename.
-    def is_a_builtin(self, name) :
+    def is_a_builtin(self, name):
         node = self.find_node(name)
         if node is None:
             return False
@@ -656,13 +624,11 @@ class PyiModuleGraph(ModuleGraph):
                 return self.graph.edge_data(edge)
 
         node = self.find_node(name)
-        if node is None : return []
+        if node is None:
+            return []
         _, importers = self.get_edges(node)
-        importers = (importer.identifier
-                     for importer in importers
-                     if importer is not None)
-        return [(importer, get_importer_edge_data(importer))
-                for importer in importers]
+        importers = (importer.identifier for importer in importers if importer is not None)
+        return [(importer, get_importer_edge_data(importer)) for importer in importers]
 
     # TODO create class from this function.
     def analyze_runtime_hooks(self, custom_runhooks):
@@ -729,7 +695,9 @@ class PyiModuleGraph(ModuleGraph):
     def get_code_using(self, module: str) -> dict:
         """Find modules that import a given **module**."""
         co_dict = {}
-        pure_python_module_types = PURE_PYTHON_MODULE_TYPES | {'Script',}
+        pure_python_module_types = PURE_PYTHON_MODULE_TYPES | {
+            'Script',
+        }
         node = self.find_node(module)
         if node:
             referrers = self.incoming(node)
@@ -800,8 +768,9 @@ class PyiModuleGraph(ModuleGraph):
         In the case of a match, collect the required metadata.
 
         """
-        from PyInstaller.utils.hooks import copy_metadata
         from pkg_resources import DistributionNotFound
+
+        from PyInstaller.utils.hooks import copy_metadata
 
         # Generate sets of possible function names to search for.
         need_metadata = set()
@@ -836,6 +805,7 @@ class PyiModuleGraph(ModuleGraph):
 
 _cached_module_graph_ = None
 
+
 def initialize_modgraph(excludes=(), user_hook_dirs=()):
     """
     Create the cached module graph.
@@ -869,8 +839,7 @@ def initialize_modgraph(excludes=(), user_hook_dirs=()):
     # `pyi_modgraph` calls this function with empty excludes, creating
     # a graph suitable for the huge majority of tests.
     global _cached_module_graph_
-    if (_cached_module_graph_ and
-        _cached_module_graph_._excludes == excludes):
+    if (_cached_module_graph_ and _cached_module_graph_._excludes == excludes):
         logger.info('Reusing cached module dependency graph...')
         graph = deepcopy(_cached_module_graph_)
         graph._reset(user_hook_dirs)
@@ -885,7 +854,7 @@ def initialize_modgraph(excludes=(), user_hook_dirs=()):
         # get_implies() are hidden imports known by modulgraph.
         implies=get_implies(),
         user_hook_dirs=user_hook_dirs,
-        )
+    )
 
     if not _cached_module_graph_:
         # Only cache the first graph, see above for explanation.
@@ -925,12 +894,12 @@ def get_bootstrap_modules():
                 mod_name = os.path.join('lib-dynload', mod_name)
             loader_mods.append((mod_name, mod_file, 'EXTENSION'))
     # NOTE:These modules should be kept simple without any complicated dependencies.
-    loader_mods +=[
+    loader_mods += [
         ('struct', os.path.abspath(mod_struct.__file__), 'PYMODULE'),
         ('pyimod01_os_path', os.path.join(loaderpath, 'pyimod01_os_path.pyc'), 'PYMODULE'),
-        ('pyimod02_archive',  os.path.join(loaderpath, 'pyimod02_archive.pyc'), 'PYMODULE'),
-        ('pyimod03_importers',  os.path.join(loaderpath, 'pyimod03_importers.pyc'), 'PYMODULE'),
-        ('pyimod04_ctypes',  os.path.join(loaderpath, 'pyimod04_ctypes.pyc'), 'PYMODULE'),  # noqa: E501
+        ('pyimod02_archive', os.path.join(loaderpath, 'pyimod02_archive.pyc'), 'PYMODULE'),
+        ('pyimod03_importers', os.path.join(loaderpath, 'pyimod03_importers.pyc'), 'PYMODULE'),
+        ('pyimod04_ctypes', os.path.join(loaderpath, 'pyimod04_ctypes.pyc'), 'PYMODULE'),  # noqa: E501
         ('pyiboot01_bootstrap', os.path.join(loaderpath, 'pyiboot01_bootstrap.py'), 'PYSOURCE'),
     ]
     return loader_mods

@@ -24,7 +24,6 @@ import threading
 import time
 
 import requests
-
 """
 Note: to re-create the server.pem file use the
 following commands.
@@ -42,9 +41,7 @@ else:
     # we are running in a normal Python environment
     basedir = os.path.dirname(__file__)
 
-
 SERVER_CERT = os.path.join(basedir, u"server.pem")
-
 
 if not os.path.exists(SERVER_CERT):
     raise SystemExit('Certificate-File %s is missing' % SERVER_CERT)
@@ -61,9 +58,7 @@ def main():
         try:
             # SSL server copied from here:
             # http://www.piware.de/2011/01/creating-an-https-server-in-python/
-            httpd = BaseHTTPServer.HTTPServer(
-                ('localhost', SERVER_PORT),
-                SimpleHTTPServer.SimpleHTTPRequestHandler)
+            httpd = BaseHTTPServer.HTTPServer(('localhost', SERVER_PORT), SimpleHTTPServer.SimpleHTTPRequestHandler)
         except socket.error as e:
             if e.errno == 98:  # Address in use
                 SERVER_PORT += 1
@@ -78,9 +73,7 @@ def main():
         # Did not break from loop, so we ran out of retries
         assert False, "Could not bind server port: all ports in use."
 
-    httpd.socket = ssl.wrap_socket(
-        httpd.socket, certfile=SERVER_CERT, server_side=True
-    )
+    httpd.socket = ssl.wrap_socket(httpd.socket, certfile=SERVER_CERT, server_side=True)
 
     def ssl_server():
         httpd.serve_forever()
@@ -94,10 +87,9 @@ def main():
     time.sleep(1)
 
     # Use requests to get a page from the server
-    requests.get(
-        u"https://localhost:{}".format(SERVER_PORT),
-        verify=SERVER_CERT)
+    requests.get(u"https://localhost:{}".format(SERVER_PORT), verify=SERVER_CERT)
     # requests.get("https://github.com")
+
 
 if __name__ == '__main__':
     main()

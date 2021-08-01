@@ -8,35 +8,34 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-
 """
 Show dll dependencies of executable files or other dynamic libraries.
 """
 
-import glob
 import argparse
-
+import glob
 
 import PyInstaller.depend.bindepend
-from PyInstaller.compat import is_win
 import PyInstaller.log
+from PyInstaller.compat import is_win
 
 
 def run():
     parser = argparse.ArgumentParser()
     PyInstaller.log.__add_options(parser)
-    parser.add_argument('filenames', nargs='+',
-                        metavar='executable-or-dynamic-library',
-                        help=("executables or dynamic libraries for which "
-                              "the dependencies should be shown"))
+    parser.add_argument(
+        'filenames',
+        nargs='+',
+        metavar='executable-or-dynamic-library',
+        help=("executables or dynamic libraries for which "
+              "the dependencies should be shown")
+    )
 
     args = parser.parse_args()
     PyInstaller.log.__process_options(parser, args)
 
     # Suppress all informative messages from the dependency code.
-    PyInstaller.log.getLogger('PyInstaller.build.bindepend').setLevel(
-            PyInstaller.log.WARN)
+    PyInstaller.log.getLogger('PyInstaller.build.bindepend').setLevel(PyInstaller.log.WARN)
 
     try:
         for a in args.filenames:
@@ -48,6 +47,7 @@ def run():
                 print(fn, imports)
     except KeyboardInterrupt:
         raise SystemExit("Aborted by user request.")
+
 
 if __name__ == '__main__':
     run()

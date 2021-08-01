@@ -8,7 +8,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
 """
 Functional tests for the Python Imaging Library (PIL).
 
@@ -32,7 +31,8 @@ def test_pil_no_tkinter(pyi_builder):
     unimportable by frozen applications explicitly importing only the latter.
     """
 
-    pyi_builder.test_source("""
+    pyi_builder.test_source(
+        """
         import PIL.Image
 
         # Dynamically importing the Tkinter package should fail with an
@@ -51,7 +51,8 @@ def test_pil_no_tkinter(pyi_builder):
             raise SystemExit('ERROR: Module _tkinter is bundled.')
         except ImportError:
             pass
-        """)
+        """
+    )
 
 
 @importorskip('PIL')
@@ -67,7 +68,8 @@ def test_pil_tkinter(pyi_builder):
     * PyInstaller [issue #1584](https://github.com/pyinstaller/pyinstaller/issues/1584).
     """
 
-    pyi_builder.test_source("""
+    pyi_builder.test_source(
+        """
         import PIL.Image
 
         # Statically importing the Tkinter package should succeed, implying this
@@ -78,4 +80,5 @@ def test_pil_tkinter(pyi_builder):
             import tkinter
         except ImportError:
             raise SystemExit('ERROR: Module tkinter is NOT bundled.')
-        """)
+        """
+    )

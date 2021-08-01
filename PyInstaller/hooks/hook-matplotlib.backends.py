@@ -9,10 +9,8 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 from PyInstaller.compat import is_darwin
-from PyInstaller.utils.hooks import (
-    eval_statement, exec_statement, logger)
+from PyInstaller.utils.hooks import eval_statement, exec_statement, logger
 
 
 def get_matplotlib_backend_module_names():
@@ -52,8 +50,7 @@ except Exception:
 """
 
     # List of the human-readable names of all available backends.
-    backend_names = eval_statement(
-        'import matplotlib; print(matplotlib.rcsetup.all_backends)')
+    backend_names = eval_statement('import matplotlib; print(matplotlib.rcsetup.all_backends)')
 
     # List of the fully-qualified names of all importable backend modules.
     module_names = []
@@ -78,6 +75,7 @@ except Exception:
             logger.info('  Matplotlib backend "%s": ignored\n    %s' % (backend_name, stdout))
 
     return module_names
+
 
 # Freeze all importable backends, as PyInstaller is unable to determine exactly
 # which backends are required by the current program.

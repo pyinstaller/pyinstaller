@@ -21,6 +21,7 @@ import time
 
 from os.path import join
 from tempfile import mkdtemp
+
 logger = log.getLogger(__name__)
 
 
@@ -56,6 +57,7 @@ from PySide2 import QtGui
 
     logger.warn("Analysis duration: %s", duration)
     shutil.rmtree(tempdir, ignore_errors=True)
+
 
 if __name__ == '__main__':
     speed_pefile()

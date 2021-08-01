@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 from PyInstaller.utils.hooks import collect_submodules
 
 hiddenimports = []
@@ -19,4 +18,3 @@ hiddenimports = []
 for mod in collect_submodules('sqlite3'):
     if not mod.startswith('sqlite3.test'):
         hiddenimports.append(mod)
-

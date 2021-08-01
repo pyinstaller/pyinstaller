@@ -9,28 +9,26 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-
 """
 Utility functions related to analyzing/bundling dependencies.
 """
 
+import ctypes.util
 import io
-import marshal
 import os
 import re
 import struct
-from types import CodeType
 import zipfile
-import ctypes.util
+from types import CodeType
 
-from PyInstaller.exceptions import ExecCommandFailed
-from PyInstaller.lib.modulegraph import util, modulegraph
+import marshal
 
 from PyInstaller import compat
-from PyInstaller.depend.dylib import include_library
 from PyInstaller import log as logging
 from PyInstaller.depend import bytecode
+from PyInstaller.depend.dylib import include_library
+from PyInstaller.exceptions import ExecCommandFailed
+from PyInstaller.lib.modulegraph import modulegraph
 
 try:
     # source_hash only exists in Python 3.7
@@ -52,6 +50,7 @@ def create_py3_base_library(libzip_filename, graph):
     # building.utils and depend.utils (this module); building.utils
     # imports depend.bindepend, which in turn imports depend.utils.
     from PyInstaller.building.utils import strip_paths_in_code
+
     # Construct regular expression for matching modules that should be bundled
     # into base_library.zip.
     # Excluded are plain 'modules' or 'submodules.ANY_NAME'.
@@ -73,9 +72,7 @@ def create_py3_base_library(libzip_filename, graph):
             graph_nodes = list(graph.iter_graph())
             graph_nodes.sort(key=lambda item: item.identifier)
             for mod in graph_nodes:
-                if type(mod) in (modulegraph.SourceModule,
-                                 modulegraph.Package,
-                                 modulegraph.CompiledModule):
+                if type(mod) in (modulegraph.SourceModule, modulegraph.Package, modulegraph.CompiledModule):
                     # Bundling just required modules.
                     if module_filter.match(mod.identifier):
                         st = os.stat(mod.filename)
@@ -141,9 +138,10 @@ def scan_code_for_ctypes(co):
                 filename = co.co_filename
             except:
                 filename = 'UNKNOWN'
-            logger.warning("Ignoring %s imported from %s - ctypes imports "
-                           "are only supported using bare filenames",
-                           binary, filename)
+            logger.warning(
+                "Ignoring %s imported from %s - ctypes imports "
+                "are only supported using bare filenames", binary, filename
+            )
             binaries.remove(binary)
 
     binaries = _resolveCtypesImports(binaries)
@@ -160,10 +158,14 @@ def __recursively_scan_code_objects_for_ctypes(code: CodeType):
 
     binaries = []
     ctypes_dll_names = {
-        *any_alias("ctypes.CDLL"), *any_alias("ctypes.cdll.LoadLibrary"),
-        *any_alias("ctypes.WinDLL"), *any_alias("ctypes.windll.LoadLibrary"),
-        *any_alias("ctypes.OleDLL"), *any_alias("ctypes.oledll.LoadLibrary"),
-        *any_alias("ctypes.PyDLL"), *any_alias("ctypes.pydll.LoadLibrary"),
+        *any_alias("ctypes.CDLL"),
+        *any_alias("ctypes.cdll.LoadLibrary"),
+        *any_alias("ctypes.WinDLL"),
+        *any_alias("ctypes.windll.LoadLibrary"),
+        *any_alias("ctypes.OleDLL"),
+        *any_alias("ctypes.oledll.LoadLibrary"),
+        *any_alias("ctypes.PyDLL"),
+        *any_alias("ctypes.pydll.LoadLibrary"),
     }
     find_library_names = {
         *any_alias("ctypes.util.find_library"),
@@ -200,7 +202,8 @@ def __recursively_scan_code_objects_for_ctypes(code: CodeType):
     return binaries
 
 
-_ctypes_getattr_regex = bytecode.bytecode_regex(rb"""
+_ctypes_getattr_regex = bytecode.bytecode_regex(
+    rb"""
     # Matches 'foo.bar' or 'foo.bar.whizz'.
 
     # Load the 'foo'.
@@ -210,7 +213,8 @@ _ctypes_getattr_regex = bytecode.bytecode_regex(rb"""
     # Load the 'bar.whizz'.
     ((?:(?:`EXTENDED_ARG`.)*
      (?:`LOAD_METHOD`|`LOAD_ATTR`).)+)
-""")
+"""
+)
 
 
 def _scan_code_for_ctypes_getattr(code: CodeType):
@@ -256,6 +260,7 @@ def _resolveCtypesImports(cbinaries):
 
     """
     from ctypes.util import find_library
+
     from PyInstaller.config import CONF
 
     if compat.is_unix:
@@ -332,6 +337,7 @@ def _resolveCtypesImports(cbinaries):
 
 LDCONFIG_CACHE = None  # cache the output of `/sbin/ldconfig -p`
 
+
 def load_ldconfig_cache():
     """
     Create a cache of the `ldconfig`-output to call it only once.
@@ -349,8 +355,7 @@ def load_ldconfig_cache():
         # If `lsconfig` is not found in $PATH, search it in some fixed
         # directories. Simply use a second call instead of fiddling
         # around with checks for empty env-vars and string-concat.
-        ldconfig = find_executable('ldconfig',
-                                   '/usr/sbin:/sbin:/usr/bin:/usr/sbin')
+        ldconfig = find_executable('ldconfig', '/usr/sbin:/sbin:/usr/bin:/usr/sbin')
 
         # if we still couldn't find 'ldconfig' command
         if ldconfig is None:
@@ -400,8 +405,7 @@ def load_ldconfig_cache():
                 # See #5540. This particular line is harmless.
                 pass
             else:
-                logger.warning(
-                    "Unrecognised line of output %r from ldconfig", line)
+                logger.warning("Unrecognised line of output %r from ldconfig", line)
             continue
 
         path = m.groups()[-1]
