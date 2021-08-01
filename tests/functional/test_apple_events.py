@@ -23,7 +23,7 @@ from PyInstaller.utils.tests import importorskip
 
 
 @pytest.mark.darwin
-@pytest.mark.parametrize("mode", ['onefile'])
+@pytest.mark.parametrize("mode", ['onefile', 'onedir'])
 def test_osx_custom_protocol_handler(tmpdir, pyi_builder_spec, monkeypatch, mode):
     app_path = os.path.join(tmpdir, 'dist', 'pyi_osx_custom_protocol_handler.app')
     logfile_path = os.path.join(tmpdir, 'dist', 'args.log')
@@ -53,7 +53,7 @@ def test_osx_custom_protocol_handler(tmpdir, pyi_builder_spec, monkeypatch, mode
 
 @pytest.mark.darwin
 @importorskip('PyQt5')
-@pytest.mark.parametrize("mode", ['onefile'])
+@pytest.mark.parametrize("mode", ['onefile', 'onedir'])
 def test_osx_event_forwarding(tmpdir, pyi_builder_spec, monkeypatch, mode):
     app_path = os.path.join(tmpdir, 'dist', 'pyi_osx_event_forwarding.app')
 
