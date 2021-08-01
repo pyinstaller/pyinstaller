@@ -676,16 +676,17 @@ class EXE(Target):
         # NOTE: Do not look up for bootloader file in the cache because it might
         #       get corrupted by UPX when UPX is available. See #1863 for details.
 
+        objcopy_bin = shutil.which('objcopy')
         if not self.append_pkg:
             logger.info("Copying bootloader exe to %s", self.name)
             self._copyfile(exe, self.name)
             logger.info("Copying archive to %s", self.pkgname)
             self._copyfile(self.pkg.name, self.pkgname)
-        elif is_linux:
+        elif is_linux and objcopy_bin:
             self._copyfile(exe, self.name)
             logger.info("Appending archive to ELF section in EXE %s", self.name)
             retcode, stdout, stderr = exec_command_all(
-                'objcopy', '--add-section', 'pydata=%s' % self.pkg.name,
+                objcopy_bin, '--add-section', 'pydata=%s' % self.pkg.name,
                 self.name)
             logger.debug("objcopy returned %i", retcode)
             if stdout:
