@@ -518,6 +518,15 @@ def __add_options(parser):
 
     g = parser.add_argument_group('Mac OS specific options')
     g.add_argument(
+        "--argv-emulation",
+        dest="argv_emulation",
+        action="store_true",
+        default=False,
+        help="Enable argv emulation for macOS app bundles. If enabled, the intial open document/URL event is processed "
+        "by the bootloader and the passed file paths or URLs are appended to sys.argv.",
+    )
+
+    g.add_argument(
         '--osx-bundle-identifier',
         dest='bundle_identifier',
         help="Mac OS .app bundle identifier is used as the default unique program name for code signing purposes. "
@@ -612,6 +621,7 @@ def main(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    argv_emulation=False,
     **_kwargs
 ):
     # If appname is not specified - use the basename of the main script as name.
@@ -748,6 +758,8 @@ def main(
         'icon': icon_file,
         # .app bundle identifier. Only OSX uses this item.
         'bundle_identifier': bundle_identifier,
+        # argv emulation (macOS only)
+        'argv_emulation': argv_emulation,
         # Target architecture (macOS only)
         'target_arch': target_arch,
         # Code signing identity (macOS only)

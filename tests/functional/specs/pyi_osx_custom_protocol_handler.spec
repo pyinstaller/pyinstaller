@@ -28,6 +28,7 @@ if build_mode == 'onefile':
                name=app_name,
                debug=True,
                bootloader_ignore_signals=False,
+               argv_emulation=True,
                strip=False,
                upx=False,
                console=False )
@@ -39,6 +40,7 @@ elif build_mode == 'onedir':
                name=app_name,
                debug=True,
                bootloader_ignore_signals=False,
+               argv_emulation=True,
                strip=False,
                upx=False,
                console=False )

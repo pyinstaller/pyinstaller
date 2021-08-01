@@ -993,8 +993,11 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
         goto cleanup;
     }
 
+    /* macOS argv emulation */
     #if defined(__APPLE__) && defined(WINDOWED)
-    pyi_process_apple_events(true /* short timeout (250 ms) */);
+    if (pyi_arch_get_option(status, "pyi-macos-argv-emulation") != NULL) {
+        pyi_process_apple_events(true /* short timeout (250 ms) */);
+    }
     #endif
 
     pid = fork();
