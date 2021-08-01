@@ -140,6 +140,22 @@ static OSErr generic_forward_apple_event(const AppleEvent *const theAppleEvent /
     VS("LOADER [AppleEvent]: Sending message...\n");
     err = AESendMessage(&childEvent, NULL, kAENoReply, kAEDefaultTimeout);
     VS("LOADER [AppleEvent]: Handler sent \"%s\" message to child pid %ld.\n", descStr, (long)child_pid);
+
+    /* In onefile build, we may encounter a race condition between parent
+     * and child process, because child_pid becomes valid immediately after
+     * fork, but the child process may not be able to receive the events yet.
+     * In such cases, AESendMessage fails with procNotFound (-600). Accommodate
+     * such cases with 10 retries, spaced 0.5 second apart (for 5 seconds
+     * of total retry time) */
+    if (err == procNotFound) {
+        int retry = 0;
+        while (err == procNotFound && retry++ < 5) {
+            VS("LOADER [AppleEvent]: Sending failed with procNotFound; re-trying in 1 second (attempt %d)\n", retry);
+            usleep(500000); /* sleep 0.5 second (kAENoReply = no timeout) */
+            err = AESendMessage(&childEvent, NULL, kAENoReply, kAEDefaultTimeout);
+        }
+    }
+
 release_evt:
     free(buf);
     AEDisposeDesc(&childEvent);
