@@ -15,6 +15,9 @@
  * Handling of Apple Events in macOS windowed (app bundle) mode:
  *  - argv emulation
  *  - event forwarding to child process
+ *
+ * This allows the app bundle to open file by dragging and dropping it
+ * onto app's icon in the macOS dock.
  */
 
 #ifndef PYI_APPLE_EVENTS_H
@@ -22,14 +25,18 @@
 
 #if defined(__APPLE__) && defined(WINDOWED)
 
+/* Install Apple Event handlers */
+int pyi_apple_install_event_handlers();
+
+/* Uninstall Apple Event handlers */
+int pyi_apple_uninstall_event_handlers();
+
 /*
- * Watch for OpenDocument AppleEvents and add the files passed in to the
- * sys.argv command line on the Python side.
- *
- * This allows on Mac OS X to open files when a file is dragged and dropped
- * on the App icon in the OS X dock.
+ * Process Apple Events, either appending them to sys.argv (if argv-emu
+ * is enabled and child process is not (yet) running, or forwarding
+ * them to the child process.
  */
-void pyi_process_apple_events(bool short_timeout);
+void pyi_apple_process_events(float timeout);
 
 #endif  /* defined(__APPLE__) && defined(WINDOWED) */
 

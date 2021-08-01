@@ -37,6 +37,30 @@ extern Boolean ConvertEventRefToEventRecord(EventRef inEvent, EventRecord *outEv
  * TODO: The below can be simplified considerably if re-written in Objective C (e.g. put into pyi_utils_osx.m).
  */
 
+
+/* Static context structure for keeping track of data */
+static struct AppleEventHandlerContext
+{
+    /* Event handlers for argv-emu / event forwarding */
+    Boolean installed;  /* Are handlers installed? */
+
+    EventHandlerUPP upp_handler;  /* UPP for event handler callback */
+    AEEventHandlerUPP upp_handler_ae;  /* UPP for AppleEvent handler callback */
+
+    EventHandlerRef handler_ref;  /* Reference to installer event handler */
+} _ae_ctx = {
+    false,  /* installed */
+    NULL,  /* handler */
+    NULL,  /* handler_ae */
+    NULL,  /* handler_ref */
+};
+
+/* Event types list: used to register handler and to listen for events */
+static const EventTypeSpec event_types_ae[] = {
+    { kEventClassAppleEvent, kEventAppleEvent },
+};
+
+
 /* Convert a FourCharCode into a string (useful for debug). Returned buffer is a static buffer, so subsequent calls
  * may overwrite the same buffer. */
 static const char *CC2Str(FourCharCode code) {
@@ -378,102 +402,155 @@ static OSStatus evt_handler_proc(EventHandlerCallRef href, EventRef eref, void *
     return noErr;
 }
 
-/* Apple event message pump */
-void pyi_process_apple_events(bool short_timeout)
+
+/*
+ * Install Apple Event handlers. The handlers must be install prior to
+ * calling pyi_apple_process_events().
+ */
+int pyi_apple_install_event_handlers()
 {
-    static EventHandlerUPP handler;
-    static AEEventHandlerUPP handler_ae;
-    static Boolean did_install = false;
-    static EventHandlerRef handler_ref;
-    EventTypeSpec event_types[1];  /*  List of event types to handle. */
-    event_types[0].eventClass = kEventClassAppleEvent;
-    event_types[0].eventKind = kEventAppleEvent;
+    OSStatus err;
 
-    VS("LOADER [AppleEvent]: Processing...\n");
-
-    if (!did_install) {
-        OSStatus err;
-        handler = NewEventHandlerUPP(evt_handler_proc);
-        handler_ae = NewAEEventHandlerUPP(handle_apple_event);
-        /* register 'odoc' (open document) */
-        err = AEInstallEventHandler(kCoreEventClass, kAEOpenDocuments, handler_ae, (SRefCon)kAEOpenDocuments, false);
-        if (err == noErr) {
-            /* register 'GURL' (open url) */
-            err = AEInstallEventHandler(kInternetEventClass, kAEGetURL, handler_ae, (SRefCon)kAEGetURL, false);
-        }
-        if (err == noErr) {
-            /* register 'rapp' (re-open application) */
-            err = AEInstallEventHandler(kCoreEventClass, kAEReopenApplication, handler_ae,
-                                        (SRefCon)kAEReopenApplication, false);
-        }
-        if (err == noErr) {
-            /* register 'actv' (activate) */
-            err = AEInstallEventHandler(kAEMiscStandards, kAEActivate, handler_ae, (SRefCon)kAEActivate, false);
-        }
-        if (err == noErr) {
-            err = InstallApplicationEventHandler(handler, 1, event_types, NULL, &handler_ref);
-        }
-
-        if (err != noErr) {
-            /* App-wide handler failed. Uninstall everything. */
-            AERemoveEventHandler(kAEMiscStandards, kAEActivate, handler_ae, false);
-            AERemoveEventHandler(kCoreEventClass, kAEReopenApplication, handler_ae, false);
-            AERemoveEventHandler(kInternetEventClass, kAEGetURL, handler_ae, false);
-            AERemoveEventHandler(kCoreEventClass, kAEOpenDocuments, handler_ae, false);
-            DisposeEventHandlerUPP(handler);
-            DisposeAEEventHandlerUPP(handler_ae);
-            VS("LOADER [AppleEvent]: Disposed handlers.\n");
-        } else {
-            VS("LOADER [AppleEvent]: Installed handlers.\n");
-            did_install = true;
-        }
+    /* Already installed; nothing to do */
+    if (_ae_ctx.installed) {
+        return 0;
     }
 
-    if (did_install) {
-        /* Event pump: Process events for up to 1.0 (or 0.25) seconds (or until an error is encountered) */
-        const EventTimeout timeout = short_timeout ? 0.25 : 1.0; /* number of seconds */
-        for (;;) {
-            OSStatus status;
-            EventRef event_ref; /* Event that caused ReceiveNextEvent to return. */
+    VS("LOADER [AppleEvent]: Installing event handlers...\n");
 
-            VS("LOADER [AppleEvent]: Calling ReceiveNextEvent\n");
+    /* Allocate UPP (universal procedure pointer) for handler functions */
+    _ae_ctx.upp_handler = NewEventHandlerUPP(evt_handler_proc);
+    _ae_ctx.upp_handler_ae = NewAEEventHandlerUPP(handle_apple_event);
 
-            status = ReceiveNextEvent(1, event_types, timeout, kEventRemoveFromQueue, &event_ref);
+    /* Register Apple Event handlers */
+    /* 'odoc' (open document) */
+    err = AEInstallEventHandler(kCoreEventClass, kAEOpenDocuments, _ae_ctx.upp_handler_ae, (SRefCon)kAEOpenDocuments, false);
+    if (err != noErr) {
+        goto end;
+    }
+    /* 'GURL' (open url) */
+    err = AEInstallEventHandler(kInternetEventClass, kAEGetURL, _ae_ctx.upp_handler_ae, (SRefCon)kAEGetURL, false);
+    if (err != noErr) {
+        goto end;
+    }
+    /* 'rapp' (re-open application) */
+    err = AEInstallEventHandler(kCoreEventClass, kAEReopenApplication, _ae_ctx.upp_handler_ae, (SRefCon)kAEReopenApplication, false);
+    if (err != noErr) {
+        goto end;
+    }
+    /* register 'actv' (activate) */
+    err = AEInstallEventHandler(kAEMiscStandards, kAEActivate, _ae_ctx.upp_handler_ae, (SRefCon)kAEActivate, false);
+    if (err != noErr) {
+        goto end;
+    }
 
-            if (status == eventLoopTimedOutErr) {
-                VS("LOADER [AppleEvent]: ReceiveNextEvent timed out\n");
+    /* Install application event handler */
+    err = InstallApplicationEventHandler(_ae_ctx.upp_handler, 1, event_types_ae, NULL, &_ae_ctx.handler_ref);
+
+end:
+    if (err != noErr) {
+        /* Failed to install one of AE handlers or application event handler.
+         * Remove everything. */
+        AERemoveEventHandler(kAEMiscStandards, kAEActivate, _ae_ctx.upp_handler_ae, false);
+        AERemoveEventHandler(kCoreEventClass, kAEReopenApplication, _ae_ctx.upp_handler_ae, false);
+        AERemoveEventHandler(kInternetEventClass, kAEGetURL, _ae_ctx.upp_handler_ae, false);
+        AERemoveEventHandler(kCoreEventClass, kAEOpenDocuments, _ae_ctx.upp_handler_ae, false);
+
+        DisposeEventHandlerUPP(_ae_ctx.upp_handler);
+        DisposeAEEventHandlerUPP(_ae_ctx.upp_handler_ae);
+
+        OTHERERROR("LOADER [AppleEvent]: Failed to install event handlers!\n");
+        return -1;
+    }
+
+    VS("LOADER [AppleEvent]: Installed event handlers.\n");
+    _ae_ctx.installed = true;
+    return 0;
+}
+
+/*
+ * Uninstall Apple Event handlers.
+ */
+int pyi_apple_uninstall_event_handlers()
+{
+    /* Not installed; nothing to do */
+    if (!_ae_ctx.installed) {
+        return 0;
+    }
+
+    VS("LOADER [AppleEvent]: Uninstalling event handlers...\n");
+
+    /* Remove application event handler */
+    RemoveEventHandler(_ae_ctx.handler_ref);
+    _ae_ctx.handler_ref = NULL;
+
+    /* Remove Apple Event handlers */
+    AERemoveEventHandler(kAEMiscStandards, kAEActivate, _ae_ctx.upp_handler_ae, false);
+    AERemoveEventHandler(kCoreEventClass, kAEReopenApplication, _ae_ctx.upp_handler_ae, false);
+    AERemoveEventHandler(kInternetEventClass, kAEGetURL, _ae_ctx.upp_handler_ae, false);
+    AERemoveEventHandler(kCoreEventClass, kAEOpenDocuments, _ae_ctx.upp_handler_ae, false);
+
+    /* Cleanup UPPs */
+    DisposeEventHandlerUPP(_ae_ctx.upp_handler);
+    DisposeAEEventHandlerUPP(_ae_ctx.upp_handler_ae);
+
+    _ae_ctx.upp_handler = NULL;
+    _ae_ctx.upp_handler_ae = NULL;
+
+    _ae_ctx.installed = false;
+
+    VS("LOADER [AppleEvent]: Uninstalled event handlers.\n");
+
+    return 0;
+}
+
+
+/*
+ * Apple event message pump; retrieves and processes Apple Events until
+ * the specified timeout (in seconds) or an error is reached.
+ */
+void pyi_apple_process_events(float timeout)
+{
+    /* No-op if we failed to install event handlers */
+    if (!_ae_ctx.installed) {
+        return;
+    }
+
+    VS("LOADER [AppleEvent]: Processing Apple Events...\n");
+
+    /* Event pump: process events until timeout (in seconds) or error */
+    for (;;) {
+        OSStatus status;
+        EventRef event_ref; /* Event that caused ReceiveNextEvent to return. */
+
+        VS("LOADER [AppleEvent]: Calling ReceiveNextEvent\n");
+
+        status = ReceiveNextEvent(1, event_types_ae, timeout, kEventRemoveFromQueue, &event_ref);
+
+        if (status == eventLoopTimedOutErr) {
+            VS("LOADER [AppleEvent]: ReceiveNextEvent timed out\n");
+            break;
+        } else if (status != 0) {
+            VS("LOADER [AppleEvent]: ReceiveNextEvent fetching events failed\n");
+            break;
+        } else {
+            /* We actually pulled an event off the queue, so process it.
+               We now 'own' the event_ref and must release it. */
+            VS("LOADER [AppleEvent]: ReceiveNextEvent got an EVENT\n");
+
+            VS("LOADER [AppleEvent]: Dispatching event...\n");
+            status = SendEventToEventTarget(event_ref, GetEventDispatcherTarget());
+
+            ReleaseEvent(event_ref);
+            event_ref = NULL;
+            if (status != 0) {
+                VS("LOADER [AppleEvent]: processing events failed\n");
                 break;
-            } else if (status != 0) {
-                VS("LOADER [AppleEvent]: ReceiveNextEvent fetching events failed\n");
-                break;
-            } else {
-                /* We actually pulled an event off the queue, so process it.
-                   We now 'own' the event_ref and must release it. */
-                VS("LOADER [AppleEvent]: ReceiveNextEvent got an EVENT\n");
-
-                VS("LOADER [AppleEvent]: Dispatching event...\n");
-                status = SendEventToEventTarget(event_ref, GetEventDispatcherTarget());
-
-                ReleaseEvent(event_ref);
-                event_ref = NULL;
-                if (status != 0) {
-                    VS("LOADER [AppleEvent]: processing events failed\n");
-                    break;
-                }
             }
         }
-
-        VS("LOADER [AppleEvent]: Out of the event loop.\n");
-
-    } else {
-        static Boolean once = false;
-        if (!once) {
-            /* Log this only once since this is compiled-in even in non-debug mode and we
-             * want to avoid console spam, since pyi_process_apple_events may be called a lot. */
-            OTHERERROR("LOADER [AppleEvent]: ERROR installing handler.\n");
-            once = true;
-        }
     }
+
+    VS("LOADER [AppleEvent]: Out of the event loop.\n");
 }
 
 #endif /* if defined(__APPLE__) && defined(WINDOWED) */
