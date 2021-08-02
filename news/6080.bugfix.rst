@@ -1,0 +1,1 @@
+Fix hook loader function not finding hooks if path has whitespaces.
