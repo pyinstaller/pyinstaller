@@ -59,6 +59,14 @@ jobs:
           path: ${{ env.pip_cache_dir }}
           key: ${{ runner.os }}-${{ matrix.python-version }}
 
+      - name: Check if bootloader code conforms to gnu90 C standard
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          # Compile bootloader
+          cd bootloader
+          CC="gcc -std=gnu90" python waf all
+          cd ..
+
       - name: Set up environment
         run: |
           # Update pip.
