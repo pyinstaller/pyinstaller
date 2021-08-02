@@ -135,6 +135,8 @@ So if you are using a Cython C object module, which imports Python modules,
 you will have to list these as :option:`--hidden-import`.
 
 
+.. _macos multi-arch support:
+
 macOS multi-arch support
 ========================
 
@@ -257,6 +259,8 @@ message from the ``codesign`` utility will be printed to the console,
 along with a warning that manual intervention and manual signing of the
 bundle are required.
 
+
+.. _macos event forwarding and argv emulation:
 
 macOS event forwarding and argv emulation in app bundles
 ========================================================

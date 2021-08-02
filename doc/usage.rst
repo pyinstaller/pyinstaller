@@ -558,33 +558,39 @@ So you have the following options:
 Mac OS X
 -------------------
 
-Making Mac OS X apps Forward-Compatible
-========================================
+Making Mac OS apps Forward-Compatible
+=====================================
 
-In Mac OS X, components from one version of the OS are usually compatible
-with later versions, but they may not work with earlier versions.
+On Mac OS, system components from one version of the OS are usually compatible
+with later versions, but they may not work with earlier versions. While
+|PyInstaller| does not collect system components of the OS, the collected
+3rd party binaries (e.g., python extension modules) are built against
+specific version of the OS libraries, and may or may not support older
+OS versions.
 
-The only way to be certain your app supports an older version of Mac OS X
-is to run PyInstaller in the oldest version of the OS you need to support.
+As such, the only way to ensure that your frozen application supports
+an older version of the OS is to freeze it on the oldest version of the
+OS that you wish to support. This applies especially when building with
+`Homebrew`_ python, as its binaries usually explicitly target the
+running OS.
 
-For example, to be sure of compatibility with "Snow Leopard" (10.6)
-and later versions, you should execute PyInstaller in that environment.
-You would create a copy of Mac OS X 10.6, typically in a virtual machine.
-In it, install the desired level of Python
-(the default Python in Snow Leopard was 2.6, which PyInstaller no longer supports),
-and install |PyInstaller|, your source, and all its dependencies.
-Then build your app in that environment.
-It should be compatible with later versions of Mac OS X.
+For example, to ensure compatibility with "Mojave" (10.14) and later versions,
+you should set up a full environment (i.e., install python, |PyInstaller|,
+your application's code, and all its dependencies) in a copy of macOS 10.14,
+using a virtual machine if necessary. Then use |PyInstaller| to freeze
+your application in that environment; the generated frozen application
+should be compatible with that and later versions of macOS.
 
 
-Building 32-bit Apps in Mac OS X
-====================================
+Building 32-bit Apps in Mac OS X
+================================
 
-.. note:: This section still refers to Python 2.7 provided by Apple.
-          It might not be valid for Python 3 installed
-          from `MacPorts`_ or `Homebrew`_.
-
-          Please contribute to keep this section up-to-date.
+.. note:: This section is largely obsolete, as support for 32-bit application
+          was removed in macOS 10.15 Catalina (for 64-bit multi-arch support
+          on modern versions of macOS, see :ref:`here <macos multi-arch support>`).
+          However, |PyInstaller| still supports building 32-bit bootloader,
+          and 32-bit/64-bit Python installers are stil available from
+          python.org for (some) versions of Python 3.6 and 3.7.
 
 Older versions of Mac OS X supported both 32-bit and 64-bit executables.
 PyInstaller builds an app using the the word-length of the Python used to execute it.
@@ -592,8 +598,8 @@ That will typically be a 64-bit version of Python,
 resulting in a 64-bit executable.
 To create a 32-bit executable, run PyInstaller under a 32-bit Python.
 
-Python as installed in OS X will usually be executable in either 64- or 32-bit mode.
-To verify this, apply the ``file`` command to the Python executable::
+To verify that the installed python version supports execution in either
+64- or 32-bit mode, use the ``file`` command on the Python executable::
 
     $ file /usr/local/bin/python3
     /usr/local/bin/python3: Mach-O universal binary with 2 architectures
@@ -604,59 +610,49 @@ The OS chooses which architecture to run, and typically defaults to 64-bit.
 You can force the use of either architecture by name using the ``arch`` command::
 
     $ /usr/local/bin/python3
-    Python 3.4.2 (v3.4.2:ab2c023a9432, Oct  5 2014, 20:42:22)
+    Python 3.7.6 (v3.7.6:43364a7ae0, Dec 18 2019, 14:12:53)
     [GCC 4.2.1 (Apple Inc. build 5666) (dot 3)] on darwin
     Type "help", "copyright", "credits" or "license" for more information.
     >>> import sys; sys.maxsize
     9223372036854775807
 
     $ arch -i386 /usr/local/bin/python3
-    Python 3.4.2 (v3.4.2:ab2c023a9432, Oct  5 2014, 20:42:22)
+    Python 3.7.6 (v3.7.6:43364a7ae0, Dec 18 2019, 14:12:53)
     [GCC 4.2.1 (Apple Inc. build 5666) (dot 3)] on darwin
     Type "help", "copyright", "credits" or "license" for more information.
     >>> import sys; sys.maxsize
     2147483647
 
-Apple's default ``/usr/bin/python`` may circumvent the ``arch``
-specification and run 64-bit regardless.
-(That is not the case if you apply ``arch`` to a specific version
-such as ``/usr/bin/python2.7``.)
-To make sure of running 32-bit in all cases, set the following environment variable::
-
-    VERSIONER_PYTHON_PREFER_32_BIT=yes
-    arch -i386 /usr/bin/python pyinstaller --clean -F -w myscript.py
+.. note:: |PyInstaller| does not provide pre-built 32-bit bootloaders for
+          macOS anymore. In order to use |PyInstaller| with 32-bit python,
+          you need to :ref:`build the bootloader <building the bootloader>`
+          yourself, using an XCode
+          version that still supports compiling 32-bit. Depending on the
+          compiler/toolchain, you may also need to explicitly pass
+          ``--target-arch=32bit`` to the ``waf`` command.
 
 
 Getting the Opened Document Names
-====================================
+=================================
 
-.. Note::
-
-	Support for OpenDocument events is broken in |PyInstaller| 3.0
-	owing to code changes needed in the bootloader to support current
-	versions of Mac OS X.
-	Do not attempt to use this feature until it has been fixed.
-	If this feature is important to you, follow and comment on
-	the status of `PyInstaller Issue #1309`_.
-
-When a user double-clicks a document of a type your application
-supports, or when a user drags a document icon and drops it
-on your application's icon, Mac OS X launches your application
+When user double-clicks a document of a type that is registered with
+your application, or when a user drags a document and drops it
+on your application's icon, Mac OS launches your application
 and provides the name(s) of the opened document(s) in the
 form of an OpenDocument AppleEvent.
-This AppleEvent is received by the |bootloader|
-before your code has started executing.
 
-The |bootloader| gets the names of opened documents from
-the OpenDocument event and encodes them into the ``argv``
-string before starting your code.
-Thus your code can query :data:`sys.argv` to get the names
-of documents that should be opened at startup.
+These events are typically handled via installed event handlers in your
+application (e.g., using ``Carbon`` API via ``ctypes``, or using
+facilities provided by UI toolkits, such as ``tkinter`` or ``PyQt5``).
 
-OpenDocument is the only AppleEvent the |bootloader| handles.
-If you want to handle other events, or events that
-are delivered after the program has launched, you must
-set up the appropriate handlers.
+Alternatively, |PyInstaller| also supports conversion of open
+document/URL events into arguments that are appended to :data:`sys.argv`.
+This applies only to events received during application launch, i.e.,
+before your frozen code is started. To handle events that are dispatched
+while your application is already running, you need to set up corresponding
+event handlers.
+
+For details, see :ref:`this section <macos event forwarding and argv emulation>`.
 
 
 AIX
