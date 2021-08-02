@@ -1,0 +1,2 @@
+On non-Windows, prevent ``onefile`` cleanup from recursing into symlinked
+directories and just remove the link instead.
