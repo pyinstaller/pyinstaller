@@ -478,12 +478,15 @@ remove_one(wchar_t *wfnm, size_t pos, struct _wfinddata_t wfinfo)
     wfnm[pos] = PYI_NULLCHAR;
     wcscat(wfnm, wfinfo.name);
 
-    if (wfinfo.attrib & _A_SUBDIR) {
-        /* Use recursion to remove subdirectories. */
-        /* TODO: prevent recursion into symlinked directories to match
-         * the behavior of non-Windows codepath */
-        pyi_win32_utils_to_utf8(fnm, wfnm, PATH_MAX);
-        pyi_remove_temp_path(fnm);
+    if ((wfinfo.attrib & _A_SUBDIR)) {
+        if (!pyi_win32_is_symlink(wfnm)) {
+            /* Use recursion to remove subdirectories. */
+            pyi_win32_utils_to_utf8(fnm, wfnm, PATH_MAX);
+            pyi_remove_temp_path(fnm);
+        } else {
+            /* Remove only directory link */
+            _wrmdir(wfnm);
+        }
     }
     else if (_wremove(wfnm)) {
         /* HACK: Possible concurrency issue... spin a little while */

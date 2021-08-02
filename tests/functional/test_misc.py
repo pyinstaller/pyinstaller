@@ -92,8 +92,6 @@ def test_utf8_mode_locale(locale, pyi_builder, monkeypatch):
 
 
 # Test that onefile cleanup does not remove contents of a directory that user symlinks into sys._MEIPASS (see #6074).
-@pytest.mark.linux
-@pytest.mark.darwin
 def test_onefile_cleanup_symlinked_dir(pyi_builder, tmpdir):
     if pyi_builder._mode != 'onefile':
         pytest.skip('The test is relevant only to onefile builds.')
@@ -105,6 +103,12 @@ def test_onefile_cleanup_symlinked_dir(pyi_builder, tmpdir):
         output_file = os.path.join(output_dir, f'preexisting-{idx}.txt')
         with open(output_file, 'w') as fp:
             fp.write(f'Pre-existing file #{idx}')
+
+    # Check if OS supports creation of symbolic links
+    try:
+        os.symlink(output_dir, str(tmpdir / 'testdir'))
+    except OSError:
+        pytest.skip("OS does not support (unprivileged) creation of symbolic links.")
 
     # Run the test program
     pyi_builder.test_source(
