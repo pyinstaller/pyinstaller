@@ -1,0 +1,3 @@
+Fix hook loader function not finding hooks if path has whitespaces.
+(Re-apply the fix that has been inadvertedly undone during the
+codebase reformatting.)

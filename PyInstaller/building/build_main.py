@@ -117,7 +117,7 @@ def discover_hook_directories():
     )
 
     # Use splitlines rather than split, because split can break on any whitespaces in the path.
-    for line in output.split():
+    for line in output.splitlines():
         # Filter out extra output by checking for the special prefix and suffix
         if line.startswith("$_pyi:") and line.endswith("*"):
             hook_directories.append(line[6:-1])
