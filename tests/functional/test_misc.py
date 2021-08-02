@@ -89,3 +89,46 @@ def test_utf8_mode_locale(locale, pyi_builder, monkeypatch):
         import sys
         assert sys.flags.utf8_mode == 1
         """)
+
+
+# Test that onefile cleanup does not remove contents of a directory that user symlinks into sys._MEIPASS (see #6074).
+@pytest.mark.linux
+@pytest.mark.darwin
+def test_onefile_cleanup_symlinked_dir(pyi_builder, tmpdir):
+    if pyi_builder._mode != 'onefile':
+        pytest.skip('The test is relevant only to onefile builds.')
+
+    # Create output directory with five pre-existing files
+    output_dir = str(tmpdir / 'output_dir')
+    os.mkdir(output_dir)
+    for idx in range(5):
+        output_file = os.path.join(output_dir, f'preexisting-{idx}.txt')
+        with open(output_file, 'w') as fp:
+            fp.write(f'Pre-existing file #{idx}')
+
+    # Run the test program
+    pyi_builder.test_source(
+        """
+        import sys
+        import os
+
+        # Output directory is passed via argv[1]; create symlink to it inside the _MEIPASS
+        output_dir = os.path.join(sys._MEIPASS, 'output')
+        os.symlink(sys.argv[1], output_dir)
+
+        # Create five files
+        for idx in range(5):
+            output_file = os.path.join(output_dir, f'output-{idx}.txt')
+            with open(output_file, 'w') as fp:
+                fp.write(f'Output file #{idx}')
+        """,
+        app_args=[output_dir]
+    )
+
+    # Output directory should contain all five pre-existing and five new files.
+    for idx in range(5):
+        output_file = os.path.join(output_dir, f'preexisting-{idx}.txt')
+        assert os.path.isfile(output_file)
+    for idx in range(5):
+        output_file = os.path.join(output_dir, f'output-{idx}.txt')
+        assert os.path.isfile(output_file)
