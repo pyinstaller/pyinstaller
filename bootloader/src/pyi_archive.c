@@ -394,7 +394,7 @@ _pyi_find_cookie_offset(FILE *fp)
     /* Search the file back to front, in overlapping SEARCH_CHUNK_SIZE
      * chunks. */
     do {
-        size_t chunk_size;
+        size_t chunk_size, i;
         start_pos = (end_pos >= SEARCH_CHUNK_SIZE) ? (end_pos - SEARCH_CHUNK_SIZE) : 0;
         chunk_size = (size_t)(end_pos - start_pos);
 
@@ -414,7 +414,7 @@ _pyi_find_cookie_offset(FILE *fp)
         }
 
         /* Scan the chunk */
-        for (size_t i = chunk_size - MAGIC_SIZE + 1; i > 0; i--) {
+        for (i = chunk_size - MAGIC_SIZE + 1; i > 0; i--) {
             if (_pyi_match_magic(buffer + i - 1)) {
                 offset = start_pos + i - 1;
                 goto cleanup;
