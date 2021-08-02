@@ -127,7 +127,9 @@ def discover_hook_directories():
                       file=sys.stderr)
     """)
 
-    for line in output.split():
+    # use splitlines rather than split, because split can break on any white
+    # spaces in the path
+    for line in output.splitlines():
         # Filter out extra output by checking for the special prefix
         # and suffix
         if line.startswith("$_pyi:") and line.endswith("*"):
