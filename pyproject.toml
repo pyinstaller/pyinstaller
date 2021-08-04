@@ -65,6 +65,13 @@
 		name = "Bootloader build"
 		showcontent = true
 
+[tool.yapf]
+indent_width = 4
+column_limit = 120
+dedent_closing_brackets = true
+spaces_before_comment = "2"
+space_between_ending_comma_and_closing_bracket = 0
+
 [build-system]
 # Tells pip to install wheel before trying to install PyInstaller
 # from an sdist or from Github.
