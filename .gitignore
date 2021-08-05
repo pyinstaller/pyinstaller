@@ -89,6 +89,15 @@ tests/old_suite/basic/test_pyz_as_external_file.exe.pkg
 /bootloader/.waf-*/
 /bootloader/.waf3-*/
 
+# Exclude all but the standard bootloaders
+PyInstaller/bootloader/*
+!PyInstaller/bootloader/Darwin-64bit
+!PyInstaller/bootloader/Linux-32bit-intel/
+!PyInstaller/bootloader/Linux-64bit-intel/
+!PyInstaller/bootloader/Windows-32bit/
+!PyInstaller/bootloader/Windows-64bit/
+!PyInstaller/bootloader/images/
+
 # Mac OS X
 .DS_store
 
