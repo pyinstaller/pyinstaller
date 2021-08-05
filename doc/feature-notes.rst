@@ -346,6 +346,484 @@ mode.) and as such need to be handled via event handlers.
    against using `argv emulation` in combination with UI toolkits.
 
 
+Practical examples
+~~~~~~~~~~~~~~~~~~
+
+This section provides some practical examples on handling file and URL
+open events in macOS application bundles, via `argv emulation` in a simple
+one-shot program, or via installed event handlers in a GUI application.
+
+
+Registering supported file types and custom URL schemas
+-------------------------------------------------------
+
+In order for macOS application bundle to handle open operations
+on files and custom URL schemas, the OS needs to be informed what
+file types and what URL schemas the application supports. This
+is done in the bundle's ``Info.plist`` file, via ``CFBundleDocumentTypes``
+and ``CFBundleURLTypes`` entries:
+
+.. code-block:: xml
+
+   <?xml version="1.0" encoding="UTF-8"?>
+   <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+   <plist version="1.0">
+   <dict>
+     [...] <!-- preceding entries --->
+     <key>CFBundleDocumentTypes</key>
+     <array>
+       <dict>
+         <key>CFBundleTypeName</key>
+         <string>MyCustomFileType</string>
+         <key>CFBundleTypeExtensions</key>
+         <array>
+           <string>mcf</string>
+         </array>
+         <key>CFBundleTypeRole</key>
+         <string>Viewer</string>
+       </dict>
+     </array>
+     <key>CFBundleURLTypes</key>
+     <array>
+       <dict>
+         <key>CFBundleURLName</key>
+         <string>MyCustomUrlSchema</string>
+         <key>CFBundleTypeRole</key>
+         <string>Viewer</string>
+         <key>CFBundleURLSchemes</key>
+         <array>
+           <string>my-url</string>
+         </array>
+       </dict>
+     </array>
+   </dict>
+   </plist>
+
+In the above example, the application declares itself a viewer for
+made-up ``.mcf`` files, and as a viewer for URLs beginning with
+``my-url://``.
+
+|PyInstaller| automatically generates an ``Info.plist`` file for your
+application bundle; to have it include the entries shown above, add the
+``info_plist`` argument to the ``BUNDLE()`` directive in the
+:ref:`.spec file <using spec files>`, and set its content as follows:
+
+.. code-block:: python
+
+   app = BUNDLE(
+       # [...]
+       info_plist={
+           'CFBundleURLTypes': [{
+               'CFBundleURLName': 'MyCustomUrlSchema',
+               'CFBundleTypeRole': 'Viewer',
+               'CFBundleURLSchemes': ['my-url', ],
+           }],
+           'CFBundleDocumentTypes': [{
+               'CFBundleTypeName': 'MyCustomFileType',
+               'CFBundleTypeExtensions': ['mcf', ],
+               'CFBundleTypeRole': "Viewer",
+           }],
+       }
+   )
+
+
+Open event handling with argv emulation
+---------------------------------------
+
+Consider the following python script that began its life as a command-line
+utility, to be invoked from the terminal::
+
+  python3 img2gray.py image1.png image2.png ...
+
+The script processes each passed image, converts it to grayscale, and
+saves it next to the original, with `-gray` appended to the file name:
+
+.. code-block:: python
+
+   # img2gray.py
+   import sys
+   import os
+
+   import PIL.Image
+
+
+   if len(sys.argv) < 2:
+       print(f"Usage: {sys.argv[0]} <filename> [filenames...]")
+       sys.exit(1)
+
+   # Convert all given files
+   for input_filename in sys.argv[1:]:
+       filename, ext = os.path.splitext(input_filename)
+       output_filename = filename + '-gray' + ext
+
+       img = PIL.Image.open(input_filename)
+       img_g = img.convert('L')
+       img_g.save(output_filename)
+
+
+If you generate an application bundle (as opposed to a command-line
+POSIX application), the most likely way of user interaction will be
+dragging image files onto the bundle's icon or using ``Open with...``
+entry from the image file's context menu. Such interaction generates
+open file events, and in general requires your application code to
+implement event handling.
+
+Enabling `argv emulation` in |PyInstaller| causes its bootloader to
+process events during the application startup, and extend ``sys.argv``
+with any file paths or URLs that might have been received via open file
+or URL requests. This allows your application to process the received
+filenames as if they were passed via command-line, without any
+modifications to the code itself.
+
+The following :ref:`.spec file <using spec files>` provides
+a complete example for a ``onedir`` application bundle that allows
+conversion of ``.png`` and ``.jpg`` images:
+
+.. code-block:: python
+
+   # img2gray.spec
+   a = Analysis(['img2gray.py'], )
+
+   pyz = PYZ(a.pure, a.zipped_data)
+
+   exe = EXE(
+        pyz,
+        a.scripts,
+        exclude_binaries=True,
+        name='img2gray',
+        debug=False,
+        bootloader_ignore_signals=False,
+        strip=False,
+        upx=False,
+        console=False,
+        argv_emulation=True,  # enable argv emulation
+   )
+
+   coll = COLLECT(
+        exe,
+        a.binaries,
+        a.zipfiles,
+        a.datas,
+        strip=False,
+        upx=False,
+        upx_exclude=[],
+        name='img2gray'
+   )
+
+   app = BUNDLE(
+        coll,
+        name='img2gray.app',
+        # Register .png and .jpg as supported file types
+        info_plist={
+             'CFBundleDocumentTypes': [{
+                  'CFBundleTypeName': "Convertable image types",
+                  'CFBundleTypeExtensions': [
+                       'png', 'jpg',
+                  ],
+                  'CFBundleTypeRole': "Viewer",
+             }],
+        }
+   )
+
+The user can now drag image file(s) onto the icon of the resulting ``img2gray``
+application bundle, or select ``img2gray`` under the ``Open with...`` entry
+in the image file's context menu.
+
+.. note::
+
+   The `argv emulation` handles only initial open event, which is received
+   before your frozen python code is started. If you wish to handle
+   subsequent open requests while the application is still running,
+   you need to implement proper event handling in your python code.
+
+
+Open event handling in a ``tkinter``-based GUI application
+----------------------------------------------------------
+
+The Tcl/Tk framework used by ``tkinter`` allows application to
+provide event handlers for pre-defined types of Apple Events, by
+registering `macOS-specific commands <https://www.tcl.tk/man/tcl8.6/TkCmd/tk_mac.html>`_.
+
+The handler for open file events can be registered via
+``::tk::mac::OpenDocument`` command, while the handler for open URL
+events can be registered via ``::tk::mac::LaunchURL`` command. The
+latter is available starting with Tcl/Tk 8.6.10 [*]_.
+
+.. [*] At the time of writing, python.org builds use Tcl/Tk 8.6.5, except
+       for the Python 3.9.x `macOS 64-bit universal2 installer` builds, which
+       use Tcl/Tk 8.6.10. Homebrew Python requires ``tkinter`` to be explicitly
+       installed as ``python-tk``, and uses latest version of Tcl/Tk, 8.6.11.
+       Registering ``::tk::mac::LaunchURL`` command with versions of Tcl/Tk
+       older than 8.6.10 is essentially no-op.
+
+The following application illustrates the event handling using ``tkinter``,
+by logging all received open file/URL events into a scrollable text
+widget:
+
+.. code-block:: python
+
+   # eventlogger_tk.py
+   import sys
+
+   import tkinter
+   import tkinter.scrolledtext
+
+
+   class Application:
+       def __init__(self):
+           # Create UI
+           self.window = tkinter.Tk()
+           self.window.geometry('800x600')
+           self.window.title("Tk-based event logger")
+
+           self.text_view = tkinter.scrolledtext.ScrolledText()
+           self.text_view.pack(fill=tkinter.BOTH, expand=1)
+           self.text_view.configure(state='disabled')
+
+           # Register event handlers
+           # See https://tcl.tk/man/tcl/TkCmd/tk_mac.html for list of
+           # macOS-specific commands
+           self.window.createcommand("::tk::mac::OpenDocument", self.open_document_handler)
+           self.window.createcommand("::tk::mac::LaunchURL", self.open_url_handler)  # works with Tcl/Tk >= 8.6.10
+
+       def append_message(self, msg):
+           """Append message to text view."""
+           self.text_view.configure(state='normal')
+           self.text_view.insert('end', msg + '\n')
+           self.text_view.configure(state='disabled')
+
+       def run(self):
+           """Run the main loop."""
+           app.append_message("Application started!")
+           app.append_message(f"Args: {sys.argv[1:]}")
+           self.window.mainloop()
+
+       # Event handlers
+       def open_document_handler(self, *args):
+           app.append_message(f"Open document event: {args}")
+
+       def open_url_handler(self, *args):
+           app.append_message(f"Open URL event: {args}")
+
+
+   if __name__ == '__main__':
+       app = Application()
+       app.run()
+
+
+The corresponding :ref:`.spec file <using spec files>` that builds
+a ``onedir`` application bundle with a custom file association
+(``.pyi_tk``) and a custom URL schema (``pyi-tk://``):
+
+.. code-block:: python
+
+   a = Analysis(['eventlogger_tk.py'])
+
+   pyz = PYZ(a.pure, a.zipped_data)
+
+   exe = EXE(
+       pyz,
+       a.scripts,
+       exclude_binaries=True,
+       name='eventlogger_tk',
+       debug=False,
+       bootloader_ignore_signals=False,
+       strip=False,
+       upx=False,
+       console=False,
+       argv_emulation=False,  # unnecessary as app handles events
+   )
+
+   coll = COLLECT(
+       exe,
+       a.binaries,
+       a.zipfiles,
+       a.datas,
+       strip=False,
+       upx=False,
+       name='eventlogger_tk'
+   )
+
+   app = BUNDLE(
+       coll,
+       name='eventlogger_tk.app',
+       # Register custom protocol handler and custom file extension
+       info_plist={
+           'CFBundleURLTypes': [{
+               'CFBundleURLName': 'MyCustomUrlSchemaTk',
+               'CFBundleTypeRole': 'Viewer',
+               'CFBundleURLSchemes': ['pyi-tk'],
+           }],
+           'CFBundleDocumentTypes': [{
+               'CFBundleTypeName': 'MyCustomFileTypeTk',
+               'CFBundleTypeExtensions': [
+                   'pyi_tk',
+               ],
+               'CFBundleTypeRole': "Viewer",
+            }],
+       }
+   )
+
+
+Once running, the application logs all received open file and open URL
+requests. These are generated either by trying to open a file with
+``.pyi_tk`` extension using the UI, or using ``open`` command from
+the terminal::
+
+    $ touch file1.pyi_tk file2.pyi_tk file3.pyi_tk file4.pyi_tk
+
+    $ open file1.pyi_tk
+    $ open file2.pyi_tk
+
+    $ open pyi-tk://test1
+    $ open pyi-tk://test2
+
+    $ open file3.pyi_tk file4.pyi_tk
+
+
+Open event handling in a Qt-based GUI application
+-------------------------------------------------
+
+In Qt-based applications, open file and open URL requests are handled
+by installing application-wide event filter for `QFileOpenEvent
+<https://doc.qt.io/qt-5/qfileopenevent.html>`_.
+
+This event abstracts both open file and open URL request, with file
+open requests having ``file://`` URL schema. An event contains a
+single file name or URL, so an open request containing multiple
+targets generates corresponding number of ``QFileOpenEvent`` events.
+
+Below is an example application and its corresponding :ref:`.spec file <using spec files>`:
+
+.. code-block:: python
+
+   # eventlogger_qt.py
+   import sys
+   import signal
+
+   from PySide2 import QtCore, QtWidgets
+
+
+   class Application(QtWidgets.QApplication):
+       """
+       QtWidgets.QApplication with extra handling for macOS Open
+       document/URL events.
+       """
+       openFileRequest = QtCore.Signal(QtCore.QUrl, name='openFileRequest')
+
+       def event(self, event):
+           if event.type() == QtCore.QEvent.FileOpen:
+               # Emit signal so that main window can handle the given URL.
+               # Or open a new application window for the file, or whatever
+               # is appropriate action for your application.
+               self.openFileRequest.emit(event.url())
+               return True
+           return super().event(event)
+
+
+   class MainWindow(QtWidgets.QMainWindow):
+       """
+       Main window.
+       """
+       def __init__(self, *args, **kwargs):
+           super().__init__(*args, **kwargs)
+
+           self.resize(800, 600)
+
+           self.setWindowTitle("Qt-based event logger")
+
+           # Construct the UI
+           self.scroll_area = QtWidgets.QScrollArea()
+           self.scroll_area.setWidgetResizable(True)
+           self.setCentralWidget(self.scroll_area)
+
+           self.text_edit = QtWidgets.QTextEdit()
+           self.scroll_area.setWidget(self.text_edit)
+           self.text_edit.setReadOnly(True)
+
+       def append_message(self, msg):
+           """
+           Append message to text view.
+           """
+           self.text_edit.append(msg)
+
+       def handle_open_file_request(self, url):
+           self.append_message(f"Open request: {url.toString()}")
+
+
+   if __name__ == '__main__':
+       # Make Ctrl+C work
+       signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+       app = Application(list(sys.argv))
+
+       window = MainWindow()
+       window.show()
+
+       window.append_message("Application started!")
+       window.append_message(f"Args: {sys.argv[1:]}")
+
+       app.openFileRequest.connect(window.handle_open_file_request)
+
+       app.exec_()
+
+
+.. code-block:: python
+
+   # eventlogger_qt.spec
+   a = Analysis(['eventlogger_qt.py'])
+
+   pyz = PYZ(a.pure, a.zipped_data)
+
+   exe = EXE(
+       pyz,
+       a.scripts,
+       exclude_binaries=True,
+       name='eventlogger_qt',
+       debug=False,
+       bootloader_ignore_signals=False,
+       strip=False,
+       upx=False,
+       console=False,
+       argv_emulation=False,  # unnecessary as app handles events
+   )
+
+   coll = COLLECT(
+       exe,
+       a.binaries,
+       a.zipfiles,
+       a.datas,
+       strip=False,
+       upx=False,
+       name='eventlogger_qt'
+   )
+
+   app = BUNDLE(
+       coll,
+       name='eventlogger_qt.app',
+       # Register custom protocol handler and custom file extension
+       info_plist={
+           'CFBundleURLTypes': [{
+               'CFBundleURLName': 'MyCustomUrlSchemaQt',
+               'CFBundleTypeRole': 'Viewer',
+               'CFBundleURLSchemes': ['pyi-qt'],
+           }],
+           'CFBundleDocumentTypes': [{
+               'CFBundleTypeName': 'MyCustomFileTypeQt',
+               'CFBundleTypeExtensions': [
+                   'pyi_qt',
+               ],
+               'CFBundleTypeRole': "Viewer",
+            }],
+       }
+   )
+
+The application behaves in the same way as its ``tkinter``-based
+counterpart, except that the associated file extension and URL
+schema have been adjusted to prevent interference between the two
+example applications.
+
+
 Initial open event
 ~~~~~~~~~~~~~~~~~~
 
