@@ -195,7 +195,7 @@ def options(ctx):
                         'do not support universal2 binaries. '
                         'The resultant architecture is determined by the '
                         'compiler\'s default which is usually to build a '
-                        'native executable. This may be overrode by '
+                        'native executable. This may be overridden by '
                         "setting the CC environment variable "
                         "(CC='clang -arch=arm64' python waf all).",
                    default=None,
