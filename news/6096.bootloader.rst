@@ -1,0 +1,3 @@
+Change the behaviour of the ``--no-universal2`` flag so that it now assumes the
+target architecture of the compiler (which may be overridden via the ``CC``
+environment variable to facilitate cross compiling).

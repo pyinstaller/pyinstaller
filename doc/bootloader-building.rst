@@ -138,7 +138,26 @@ built. This behavior can be controlled by passing ``--universal2`` or
 use ``--universal2`` flag and a toolchain that lacks support for
 `universal2` binaries will result in configuration error.
 
-Now you can build the bootloader as shown above.
+The ``--no-universal2`` flag leaves the target architecture unspecified letting
+the resultant executable's architecture be the C compiler's default (which is
+almost certainly the architecture of the build machine). Should you want to
+build a thin executable of either architecture, use the ``--no-universal2`` flag
+and then optionally override the compiler, adding the ``-arch`` flag, via the
+``CC`` environment variable.
+
+Build a thin, native executable::
+
+    python waf --no-universal2 all
+
+Build a thin, ``x86_64`` executable (irregardless of the build machine's
+architecture)::
+
+    CC='clang -arch=x86_64' python waf --no-universal2  all
+
+Build a thin, ``arm64`` executable (irregardless of the build machine's
+architecture)::
+
+    CC='clang -arch=arm64' python waf --no-universal2 all
 
 By default, the build script targets Mac OSX 10.13, which can be overridden by
 exporting the MACOSX_DEPLOYMENT_TARGET environment variable.
