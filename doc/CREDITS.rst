@@ -6,6 +6,12 @@ new code, bug reports, fixes, comments and ideas. A brief list follows,
 please let us know if your name is omitted by accident:
 
 
+Contributions to PyInstaller 4.5.1
+----------------------------------
+
+* Jasper Harrison - Maintainer, Release Manager
+* ankith26
+
 Contributions to PyInstaller 4.5
 --------------------------------
 

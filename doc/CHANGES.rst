@@ -12,6 +12,16 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+4.5.1 (2021-08-06)
+------------------
+
+Bugfix
+~~~~~~
+
+* Fix hook loader function not finding hooks if path has whitespaces.
+  (:issue:`#6080`)
+
+
 4.5 (2021-08-01)
 ----------------
 
