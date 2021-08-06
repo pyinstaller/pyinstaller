@@ -950,6 +950,8 @@ Older Versions
    CHANGES-2
    CHANGES-1
 
+.. include:: _common_definitions.txt
+
 .. Emacs config:
  Local Variables:
  mode: rst
