@@ -192,7 +192,12 @@ def options(ctx):
                    action='store_false',
                    help='When building for 64-bit platform, build a thin '
                         'binary. Allows building with older toolchains that '
-                        'do not support universal2 binaries.',
+                        'do not support universal2 binaries. '
+                        'The resultant architecture is determined by the '
+                        'compiler\'s default which is usually to build a '
+                        'native executable. This may be overrode by '
+                        "setting the CC environment variable "
+                        "(CC='clang -arch=arm64' python waf all).",
                    default=None,
                    dest='macos_universal2')
 
@@ -365,9 +370,9 @@ def set_arch_flags(ctx):
             if ctx.options.macos_universal2:
                 mac_arch = UNIVERSAL2_FLAGS
             else:
-                mac_arch = ['-arch', 'x86_64']
+                # Default to whatever the compiler is configured to build.
+                mac_arch = []
         ctx.env.append_value('CFLAGS', mac_arch)
-        ctx.env.append_value('CXXFLAGS', mac_arch)
         ctx.env.append_value('LINKFLAGS', mac_arch)
 
     # AIX specific flags
