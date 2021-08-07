@@ -208,3 +208,31 @@ def test_collect_rthooks_fail_1(tmpdir, monkeypatch):
     hd1 = _gen_pseudo_rthooks("h1", rh1, tmpdir, False)
     with pytest.raises(AssertionError):
         FakePyiModuleGraph(HOMEPATH, user_hook_dirs=[str(hd1)])
+
+
+class FakeGraph(analysis.PyiModuleGraph):
+    """A simplified module graph containing a single node module *foo* with user-defined content."""
+    def __init__(self, source):
+        self.code = compile(source, "<>", "exec")
+
+    def get_code_using(self, package):
+        return {"foo": self.code}
+
+
+def test_metadata_searching():
+    """Test the top level for bytecode scanning for metadata requirements."""
+    from PyInstaller.utils.hooks import copy_metadata
+
+    # This test analyses code which implies that PyInstaller's own metadata (and possibly that of its dependencies) is
+    # required.
+    pyinstaller = set(copy_metadata("pyinstaller"))
+    with_dependencies = set(copy_metadata("pyinstaller", recursive=True))
+
+    self = FakeGraph("from importlib.metadata import distribution; distribution('pyinstaller')")
+    assert pyinstaller == self.metadata_required()
+
+    self = FakeGraph("import pkg_resources; pkg_resources.get_distribution('pyinstaller')")
+    assert pyinstaller == self.metadata_required()
+
+    self = FakeGraph("import pkg_resources; pkg_resources.require('pyinstaller')")
+    assert with_dependencies == self.metadata_required()

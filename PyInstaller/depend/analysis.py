@@ -720,7 +720,7 @@ class PyiModuleGraph(ModuleGraph):
         for method in methods:
             need_metadata.update(bytecode.any_alias(package + "." + method))
         for method in recursive_methods:
-            need_metadata.update(bytecode.any_alias(package + "." + method))
+            need_recursive_metadata.update(bytecode.any_alias(package + "." + method))
 
         out = set()
 
