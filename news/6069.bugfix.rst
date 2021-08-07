@@ -1,0 +1,3 @@
+Fix a bug in implicit metadata collection where, on seeing
+``pkg_resources.require("foo")``, PyInstaller would only collect ``foo``\ s
+metadata instead of metadata for ``foo`` and all its dependencies.
