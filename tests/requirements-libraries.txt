@@ -62,7 +62,7 @@ numpy==1.21.1; python_version > '3.6'
 numpy==1.19.4; python_version <= '3.6'  # pyup: ignore
 
 # scipy too
-scipy==1.7.0; python_version > '3.6'
+scipy==1.7.1; python_version > '3.6'
 scipy==1.5.4; python_version <= '3.6'  # pyup: ignore
 
 # and matplotlib
