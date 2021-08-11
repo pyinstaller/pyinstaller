@@ -24,7 +24,7 @@ and parse the distribution metadata from json files located in the
 This module is available only if run inside a Conda environment. Usage of this
 module should therefore be wrapped in a conditional clause::
 
-    from PyInstaller.utils.hooks import is_pure_conda
+    from PyInstaller.compat import is_pure_conda
 
     if is_pure_conda:
         from PyInstaller.utils.hooks import conda_support
