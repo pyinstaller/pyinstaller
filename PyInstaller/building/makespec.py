@@ -365,7 +365,11 @@ def __add_options(parser):
         'it was not found). '
         'This option can be used multiple times.'
     )
-    g.add_argument('--key', dest='key', help='The key used to encrypt Python bytecode.')
+    g.add_argument(
+        '--key',
+        dest='key',
+        help='The key used to encrypt Python bytecode.',
+    )
     g.add_argument(
         '--splash',
         dest='splash',
@@ -498,7 +502,12 @@ def __add_options(parser):
     g.add_argument(
         "--version-file", dest="version_file", metavar="FILE", help="add a version resource from FILE to the exe"
     )
-    g.add_argument("-m", "--manifest", metavar="<FILE or XML>", help="add manifest FILE or XML to the exe")
+    g.add_argument(
+        "-m",
+        "--manifest",
+        metavar="<FILE or XML>",
+        help="add manifest FILE or XML to the exe",
+    )
     g.add_argument(
         "-r",
         "--resource",

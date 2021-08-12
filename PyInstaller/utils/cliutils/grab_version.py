@@ -21,7 +21,11 @@ def run():
             'executable targets in an Installer spec file.'
         )
     )
-    parser.add_argument('exe_file', metavar='exe-file', help="full pathname of a Windows executable")
+    parser.add_argument(
+        'exe_file',
+        metavar='exe-file',
+        help="full pathname of a Windows executable",
+    )
     parser.add_argument(
         'out_filename',
         metavar='out-filename',

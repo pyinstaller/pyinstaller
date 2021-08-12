@@ -23,7 +23,10 @@ def generate_parser():
     p = argparse.ArgumentParser()
     PyInstaller.building.makespec.__add_options(p)
     PyInstaller.log.__add_options(p)
-    p.add_argument('scriptname', nargs='+')
+    p.add_argument(
+        'scriptname',
+        nargs='+',
+    )
     return p
 
 

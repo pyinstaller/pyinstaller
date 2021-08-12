@@ -63,7 +63,11 @@ def run_pytest(*args, **kwargs):
 if __name__ == "__main__":
     # Look only for the ``--include_only`` argument.
     parser = argparse.ArgumentParser(description='Run PyInstaller packaging tests.')
-    parser.add_argument("--include_only", action="append", help="Only run tests from the specified package.")
+    parser.add_argument(
+        "--include_only",
+        action="append",
+        help="Only run tests from the specified package.",
+    )
     args, unknown = parser.parse_known_args(sys.argv)
     # Convert the parsed args into a dict using ``vars(args)``.
     sys.exit(run_pytest(*unknown, **vars(args)))

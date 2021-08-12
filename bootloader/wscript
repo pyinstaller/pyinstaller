@@ -106,50 +106,50 @@ def options(ctx):
         action='store_true',
         help='Include debugging info for GDB.',
         default=False,
-        dest='debug'
-    )  # yapf: disable
+        dest='debug',
+    )
     ctx.add_option(
         '--leak-detector',
         action='store_true',
         help='Link with Boehm garbage collector to detect memory leaks.',
         default=False,
-        dest='boehmgc'
+        dest='boehmgc',
     )
     ctx.add_option(
         '--clang',
         action='store_true',
         help='Try to find clang C compiler instead of gcc.',
         default=False,
-        dest='clang'
+        dest='clang',
     )
     ctx.add_option(
         '--gcc',
         action='store_true',
         help='Try to find GNU C compiler.',
         default=False,
-        dest='gcc'
-    )  # yapf: disable
+        dest='gcc',
+    )
     ctx.add_option(
         '--target-arch',
         action='store',
         help='Target architecture format (32bit, 64bit). This option allows to build 32-bit bootloader with a 64-bit '
         'compiler and a 64-bit Python.',
         default=None,
-        dest='target_arch'
+        dest='target_arch',
     )
     ctx.add_option(
         '--show-warnings',
         action='store_true',
         help='Make gcc print out the warnings we consider as being non-fatal. All other warinings are still treated as '
         'errors. Remember to delete the `build` directory first to ensure all files are actually recompiled.',
-        dest='show_warnings'
+        dest='show_warnings',
     )
     ctx.add_option(
         '--static-zlib',
         action='store_true',
         help='Statically compile zlib into the bootloaders rather than dynamically linking to the system-wide copy. '
         'This is always done on Windows.',
-        default=False
+        default=False,
     )
 
     grp = ctx.add_option_group('Linux Standard Base (LSB) compliance', 'These options have effect only on Linux.')
@@ -158,29 +158,29 @@ def options(ctx):
         action='store_true',
         help='Build "normal" (non-LSB-compliant) bootloader (this is the default).',
         default=True,
-        dest='nolsb'
+        dest='nolsb',
     )
     grp.add_option(
         '--lsb',
         action='store_false',
         help='Build LSB compliant bootloader.',
         default=True,
-        dest='nolsb'
-    )  # yapf: disable
+        dest='nolsb',
+    )
     grp.add_option(
         '--lsbcc-path',
         action='store',
         help='Path where to look for lsbcc. By default PATH is searched for lsbcc otherwise is tried file '
         '/opt/lsb/bin/lsbcc. [Default: lsbcc]',
         default=None,
-        dest='lsbcc_path'
+        dest='lsbcc_path',
     )
     grp.add_option(
         '--lsb-target-version',
         action='store',
         help='Specify LSB target version [Default: 4.0]',
         default='4.0',
-        dest='lsb_version'
+        dest='lsb_version',
     )
 
     grp = ctx.add_option_group('macOS-specific options', 'These options have effect only on macOS.')
@@ -189,7 +189,7 @@ def options(ctx):
         action='store_true',
         help='When building for 64-bit platform, build universal2 fat binary (x86_64, arm64). This is the default.',
         default=None,
-        dest='macos_universal2'
+        dest='macos_universal2',
     )
     grp.add_option(
         '--no-universal2',
@@ -199,7 +199,7 @@ def options(ctx):
         "is usually to build a native executable. This may be overridden by setting the CC environment variable, e.g., "
         "CC='clang -arch=arm64' python waf all",
         default=None,
-        dest='macos_universal2'
+        dest='macos_universal2',
     )
 
 

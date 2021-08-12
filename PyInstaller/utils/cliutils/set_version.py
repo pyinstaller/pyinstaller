@@ -15,8 +15,16 @@ import os
 
 def run():
     parser = argparse.ArgumentParser()
-    parser.add_argument('info_file', metavar='info-file', help="text file containing version info")
-    parser.add_argument('exe_file', metavar='exe-file', help="full pathname of a Windows executable")
+    parser.add_argument(
+        'info_file',
+        metavar='info-file',
+        help="text file containing version info",
+    )
+    parser.add_argument(
+        'exe_file',
+        metavar='exe-file',
+        help="full pathname of a Windows executable",
+    )
     args = parser.parse_args()
 
     info_file = os.path.abspath(args.info_file)

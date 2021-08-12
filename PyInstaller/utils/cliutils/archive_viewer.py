@@ -256,7 +256,11 @@ def run():
         'Can be combined with -r'
     )
     PyInstaller.log.__add_options(parser)
-    parser.add_argument('name', metavar='pyi_archive', help="pyinstaller archive to show content of")
+    parser.add_argument(
+        'name',
+        metavar='pyi_archive',
+        help="pyinstaller archive to show content of",
+    )
 
     args = parser.parse_args()
     PyInstaller.log.__process_options(parser, args)

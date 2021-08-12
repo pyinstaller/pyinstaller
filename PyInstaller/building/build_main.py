@@ -782,7 +782,11 @@ def __add_options(parser):
         help='Replace output directory (default: %s) without '
         'asking for confirmation' % os.path.join('SPECPATH', 'dist', 'SPECNAME')
     )
-    parser.add_argument('--upx-dir', default=None, help='Path to UPX utility (default: search the execution path)')
+    parser.add_argument(
+        '--upx-dir',
+        default=None,
+        help='Path to UPX utility (default: search the execution path)',
+    )
     parser.add_argument(
         "-a",
         "--ascii",
