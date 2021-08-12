@@ -50,21 +50,21 @@ _TEST_FILES = sorted([
 _PARAMETERS = (
     (None, None, _TEST_FILES),
     ('abc', None, [join('abc', f) for f in _TEST_FILES]),
-    (None, ['*.py'], 
-     [f for f in _TEST_FILES if not f.endswith('.py')]),
-    (None, ['*.py', '*.pyd'], 
-     [f for f in _TEST_FILES if not f.endswith(('.py', '.pyd'))]),
-    (None, ['subpkg'], 
-     [f for f in _TEST_FILES 
-      if not f.startswith('subpkg')]),
-    (None, ['subpkg', 'sub_pkg'],
-     [f for f in _TEST_FILES 
-      if not (f.startswith('subpkg') or os.sep+'sub_pkg'+os.sep in f)]),
-    ('klm', ['subpkg', 'sub_pkg', '*.py', '*.pyd'],
-     [join('klm', f) for f in _TEST_FILES 
-      if not (f.startswith('subpkg') or os.sep+'sub_pkg'+os.sep in f or
-              f.endswith(('.py', '.pyd')))]),
+    (None, ['*.py'], [f for f in _TEST_FILES if not f.endswith('.py')]),
+    (None, ['*.py', '*.pyd'], [f for f in _TEST_FILES if not f.endswith(('.py', '.pyd'))]),
+    (None, ['subpkg'], [f for f in _TEST_FILES if not f.startswith('subpkg')]),
+    (
+        None, ['subpkg',
+               'sub_pkg'], [f for f in _TEST_FILES if not (f.startswith('subpkg') or os.sep + 'sub_pkg' + os.sep in f)]
+    ),
+    (
+        'klm', ['subpkg', 'sub_pkg', '*.py', '*.pyd'], [
+            join('klm', f) for f in _TEST_FILES
+            if not (f.startswith('subpkg') or os.sep + 'sub_pkg' + os.sep in f or f.endswith(('.py', '.pyd')))
+        ]
+    ),
 )
+
 
 @pytest.mark.parametrize("prefix,excludes,result", _PARAMETERS)
 def test_Tree(monkeypatch, prefix, excludes, result):

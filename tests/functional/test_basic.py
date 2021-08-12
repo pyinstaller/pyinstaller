@@ -42,15 +42,9 @@ def test_absolute_python_path(pyi_builder):
 
 
 @pytest.mark.linux
-@skipif(not os.path.exists('/proc/self/status'),
-        reason='/proc/self/status does not exist')
-@pytest.mark.parametrize("symlink_name",
-                         ["symlink",
-                          "very_long_name_in_symlink",
-                          "sub/dir/progam"])
-def test_symlink_basename_is_kept(pyi_builder_spec, symlink_name,
-                                  tmpdir, SPEC_DIR, SCRIPT_DIR):
-
+@skipif(not os.path.exists('/proc/self/status'), reason='/proc/self/status does not exist')
+@pytest.mark.parametrize("symlink_name", ["symlink", "very_long_name_in_symlink", "sub/dir/progam"])
+def test_symlink_basename_is_kept(pyi_builder_spec, symlink_name, tmpdir, SPEC_DIR, SCRIPT_DIR):
     def patch(spec_name, symlink_name):
         content = SPEC_DIR.join(spec_name).read_text(encoding="utf-8")
         content = content.replace("@SYMLINKNAME@", symlink_name)
@@ -81,21 +75,20 @@ def test_pyz_as_external_file(pyi_builder, monkeypatch):
 
     pyi_builder.test_source("print('Hello Python!')")
 
+
 def test_base_modules_regex(pyi_builder):
     """
     Verify that the regex for excluding modules listed in
     PY3_BASE_MODULES does not exclude other modules.
     """
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         import resources_testmod
         print('OK')
         """)
 
 
 def test_celementtree(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         from xml.etree.cElementTree import ElementTree
         print('OK')
         """)
@@ -103,8 +96,7 @@ def test_celementtree(pyi_builder):
 
 # Test a build with some complexity with the ``noarchive`` debug option.
 def test_noarchive(pyi_builder):
-    pyi_builder.test_source("from xml.etree.cElementTree import ElementTree",
-                            pyi_args=['--debug=noarchive'])
+    pyi_builder.test_source("from xml.etree.cElementTree import ElementTree", pyi_args=['--debug=noarchive'])
 
 
 @importorskip('codecs')
@@ -113,27 +105,30 @@ def test_codecs(pyi_builder):
 
 
 def test_compiled_filenames(pyi_builder):
-    pyi_builder.test_source("""
+    pyi_builder.test_source(
+        """
     import pyi_dummy_module
     from os.path import isabs
 
     assert not isabs(pyi_dummy_module.dummy.__code__.co_filename), "pyi_dummy_module.dummy.__code__.co_filename has compiled filename: %s" % (pyi_dummy_module.dummy.__code__.co_filename,)
     assert not isabs(pyi_dummy_module.DummyClass.dummyMethod.__code__.co_filename), "pyi_dummy_module.DummyClass.dummyMethod.__code__.co_filename has compiled filename: %s" % (pyi_dummy_module.DummyClass.dummyMethod.__code__.co_filename,)
-    """)
+    """
+    )
+
 
 def test_decoders_ascii(pyi_builder):
     pyi_builder.test_source(
         """
         # Convert type 'bytes' to type 'str'.
         assert b'foo'.decode('ascii') == 'foo'
-        """)
+        """
+    )
 
 
 def test_distutils_submod(pyi_builder):
     # Test import of submodules of distutils package
     # PyI fails to include `distutils.version` when running from virtualenv
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         from distutils.version import LooseVersion
         """)
 
@@ -147,7 +142,8 @@ def test_dynamic_module(pyi_builder):
         print("'foo' value: %s" % pyi_testmod_dynamic.foo)
         assert pyi_testmod_dynamic.foo is not None
         assert pyi_testmod_dynamic.foo == 'A new value!'
-        """)
+        """
+    )
 
 
 def test_email(pyi_builder):
@@ -158,7 +154,8 @@ def test_email(pyi_builder):
         from email.mime.text import MIMEText
         from email.mime.multipart import MIMEMultipart
         from email.mime.nonmultipart import MIMENonMultipart
-        """)
+        """
+    )
 
 
 @importorskip('tinyaes')
@@ -176,7 +173,8 @@ def test_feature_crypto(pyi_builder):
         # The test runner uses 'test_key' as key.
         assert key == 'test_key'.zfill(CRYPT_BLOCK_SIZE)
         """,
-        pyi_args=['--key=test_key'])
+        pyi_args=['--key=test_key']
+    )
 
 
 def test_feature_nocrypto(pyi_builder):
@@ -188,7 +186,8 @@ def test_feature_nocrypto(pyi_builder):
             raise AssertionError('The pyimod00_crypto_key module must NOT be there if crypto is disabled.')
         except ImportError:
             pass
-        """)
+        """
+    )
 
 
 def test_filename(pyi_builder):
@@ -229,7 +228,8 @@ def test_ctypes_hooks_are_in_place(pyi_builder):
         """
         import ctypes
         assert ctypes.CDLL.__name__ == 'PyInstallerCDLL', ctypes.CDLL
-        """)
+        """
+    )
 
 
 # TODO test it on OS X.
@@ -264,7 +264,8 @@ def test_chdir_meipass(pyi_builder):
         import os, sys
         os.chdir(sys._MEIPASS)
         print(os.getcwd())
-        """)
+        """
+    )
 
 
 def test_option_exclude_module(pyi_builder):
@@ -285,11 +286,13 @@ def test_option_exclude_module(pyi_builder):
             # not bundle 'xml.sax' module.
             pass
         """,
-        pyi_args=['--exclude-module', 'xml.sax'])
+        pyi_args=['--exclude-module', 'xml.sax']
+    )
 
 
 def test_option_verbose(pyi_builder, monkeypatch):
     "Test to ensure that option V can be set and has effect."
+
     # This option is like 'python -v' - trace import statements.
     # 'None' should be allowed or '' also.
 
@@ -307,13 +310,13 @@ def test_option_verbose(pyi_builder, monkeypatch):
         print('test - PYTHONVERBOSE - trace import statements')
         import re # just import anything
         print('test - done')
-        """)
+        """
+    )
 
 
 def test_option_w_unset(pyi_builder):
     "Test to ensure that option W is not set by default."
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         import sys
         assert 'ignore' not in sys.warnoptions
         """)
@@ -331,8 +334,7 @@ def test_option_w_ignore(pyi_builder, monkeypatch, capsys):
     EXE = PyInstaller.building.build_main.EXE
     monkeypatch.setattr('PyInstaller.building.build_main.EXE', MyEXE)
 
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         import sys
         assert 'ignore' in sys.warnoptions
         """)
@@ -363,7 +365,8 @@ def test_python_makefile(pyi_builder, distutils):
         import sysconfig
     unfrozen_keys = sorted(sysconfig.get_config_vars().keys())
 
-    pyi_builder.test_source("""
+    pyi_builder.test_source(
+        """
     # The error is raised immediately on import.
     {}import sysconfig
 
@@ -375,7 +378,8 @@ def test_python_makefile(pyi_builder, distutils):
     unfrozen_keys = {}
     assert sorted(sysconfig.get_config_vars()) == unfrozen_keys
 
-    """.format(distutils, unfrozen_keys))
+    """.format(distutils, unfrozen_keys)
+    )
 
 
 def test_set_icon(pyi_builder, data_dir):
@@ -397,17 +401,18 @@ def test_invalid_icon(tmpdir, data_dir):
     from PyInstaller.utils.win32.icon import CopyIcons
 
     icon = os.path.join(data_dir.strpath, 'pyi_icon.png')
-    bootloader_src = os.path.join(
-        HOMEPATH, 'PyInstaller', 'bootloader', PLATFORM, "run.exe")
+    bootloader_src = os.path.join(HOMEPATH, 'PyInstaller', 'bootloader', PLATFORM, "run.exe")
     exe = os.path.join(tmpdir, "run.exe")
-    shutil.copy(bootloader_src,  exe)
+    shutil.copy(bootloader_src, exe)
     assert os.path.isfile(icon)
     assert os.path.isfile(exe)
 
-    with pytest.raises(ValueError,
-                       match="path '.*pyi_icon.png' .* not in the correct "
-                             "format.*"
-                             "convert your '.png' file to a '.ico' .*"):
+    with pytest.raises(
+        ValueError,
+        match="path '.*pyi_icon.png' .* not in the correct "
+        "format.*"
+        "convert your '.png' file to a '.ico' .*"
+    ):
         CopyIcons(exe, icon)
 
 
@@ -451,8 +456,7 @@ def test_site_module_disabled(pyi_builder):
 
 
 def test_time_module(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         import time
         print(time.strptime(time.ctime()))
         """)
@@ -467,8 +471,7 @@ def test_time_module_localized(pyi_builder, monkeypatch):
     # time.ctime was using 'C'
     # time.strptime was using 'xx_YY' from the environment.
     monkeypatch.setenv('LC_ALL', 'cs_CZ.UTF-8')
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         import time
         print(time.strptime(time.ctime()))
         """)
@@ -480,7 +483,8 @@ def test_xmldom_module(pyi_builder):
         print('Importing xml.dom')
         from xml.dom import pulldom
         print('Importing done')
-        """)
+        """
+    )
 
 
 def test_threading_module(pyi_builder):
@@ -508,7 +512,8 @@ def test_threading_module(pyi_builder):
         t1.join() ; print_('t1 joined')
         t2.join() ; print_('t2 joined')
         print_('finished.')
-        """)
+        """
+    )
 
 
 def test_threading_module2(pyi_builder):
@@ -521,7 +526,8 @@ def test_argument(pyi_builder):
         import sys
         assert sys.argv[1] == "--argument", "sys.argv[1] was %r, expected %r" % (sys.argv[1], "--argument")
         ''',
-        app_args=["--argument"])
+        app_args=["--argument"]
+    )
 
 
 @importorskip('win32com')
@@ -534,7 +540,8 @@ def test_pywin32_win32com(pyi_builder):
         import win32com
         import win32com.client
         import win32com.server
-        """)
+        """
+    )
 
 
 #@pytest.mark.xfail(reason="Requires post-create-package hooks (issue #1322)")
@@ -547,7 +554,8 @@ def test_pywin32_comext(pyi_builder):
         from win32com.shell import shell
         from win32com.propsys import propsys
         from win32com.bits import bits
-        """)
+        """
+    )
 
 
 @importorskip('win32ui')
@@ -561,12 +569,14 @@ def test_pywin32_win32ui(pyi_builder):
         import win32ui
         from pywin.mfc.dialog import Dialog
         d = Dialog(win32ui.IDD_SIMPLE_INPUT)
-        """)
+        """
+    )
 
 
 @pytest.mark.win32
 def test_renamed_exe(pyi_builder):
     _old_find_executables = pyi_builder._find_executables
+
     def _find_executables(name):
         oldexes = _old_find_executables(name)
         newexes = []
@@ -579,6 +589,7 @@ def test_renamed_exe(pyi_builder):
 
     pyi_builder._find_executables = _find_executables
     pyi_builder.test_source("print('Hello Python!')")
+
 
 def test_spec_with_utf8(pyi_builder_spec):
     pyi_builder_spec.test_spec('spec-with-utf8.spec')
@@ -604,12 +615,14 @@ def test_hook_collect_submodules(pyi_builder, script_dir):
         """
         import pyi_collect_submodules_mod
         __import__('pyi_testmod_relimp.B.C')
-        """,
-        ['--additional-hooks-dir=%s' % script_dir.join('pyi_hooks')])
+        """, ['--additional-hooks-dir=%s' % script_dir.join('pyi_hooks')]
+    )
+
 
 # Test that PyInstaller can handle a script with an arbitrary extension.
 def test_arbitrary_ext(pyi_builder):
     pyi_builder.test_script('pyi_arbitrary_ext.foo')
+
 
 def test_option_runtime_tmpdir(pyi_builder):
     "Test to ensure that option `runtime_tmpdir` can be set and has effect."
@@ -629,8 +642,8 @@ def test_option_runtime_tmpdir(pyi_builder):
             raise SystemExit('Expected sys._MEIPASS to be under current working dir.'
                              ' sys._MEIPASS = ' + runtime_tmpdir + ', cwd = ' + cwd)
         print('test - done')
-        """,
-        ['--runtime-tmpdir=.']) # set runtime-tmpdir to current working dir
+        """, ['--runtime-tmpdir=.']
+    )  # set runtime-tmpdir to current working dir
 
 
 @xfail(reason='Issue #3037 - all scripts share the same global vars')
@@ -663,9 +676,8 @@ def test_pe_checksum(pyi_builder):
         header_sum = wintypes.DWORD()
         checksum = wintypes.DWORD()
         assert ctypes.windll.imagehlp.MapFileAndCheckSumW(
-            ctypes.c_wchar_p(exe),
-            ctypes.byref(header_sum),
-            ctypes.byref(checksum)) == 0
+            ctypes.c_wchar_p(exe), ctypes.byref(header_sum), ctypes.byref(checksum)
+        ) == 0
 
         assert header_sum.value == checksum.value
 
@@ -686,8 +698,7 @@ def test_onefile_longpath(pyi_builder, tmpdir):
     # Generate long target filename/path; eight equivalents of SHA256
     # strings plus data.txt should push just the _MEIPASS-relative path
     # beyond 260 characters...
-    dst_filename = os.path.join(
-        *[32*chr(c) for c in range(ord('A'), ord('A')+8)], 'data.txt')
+    dst_filename = os.path.join(*[32 * chr(c) for c in range(ord('A'), ord('A') + 8)], 'data.txt')
     assert len(dst_filename) >= 260
     # Name for --add-data
     if is_win:
@@ -705,8 +716,8 @@ def test_onefile_longpath(pyi_builder, tmpdir):
         with open(data_file, 'r') as fp:
             secret = fp.read()
         assert secret == r'{secret}'
-        """.format(data_file=dst_filename, secret=_SECRET),
-        ['--add-data', str(add_data_name)])
+        """.format(data_file=dst_filename, secret=_SECRET), ['--add-data', str(add_data_name)]
+    )
 
 
 @pytest.mark.win32
@@ -732,8 +743,7 @@ def test_onefile_has_manifest(pyi_builder, icon):
     elif icon == 'icon_given':
         # Locate pyinstaller's default icon, and explicitly give it
         # via --icon argument
-        icon_path = os.path.join(PACKAGEPATH, 'bootloader', 'images',
-                                 'icon-console.ico')
+        icon_path = os.path.join(PACKAGEPATH, 'bootloader', 'images', 'icon-console.ico')
         extra_args = ['--icon', icon_path]
     # Build the executable...
     pyi_builder.test_source("""print('Hello world!')""", extra_args)

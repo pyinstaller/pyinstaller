@@ -32,6 +32,7 @@ IMAGE_FILE_MACHINE_AMD64 = 0x8664
 IMAGE_FILE_MACHINE_I386 = 0x14c
 IMAGE_FILE_MACHINE_IA64 = 0x200
 
+
 # Basic structure from https://stackoverflow.com/questions/1345632/
 def check_pefile(filename):
     with open(filename, "rb") as fh:
@@ -55,6 +56,7 @@ def check_pefile(filename):
     else:
         return None, "Handled architecture: 0x%x" % machine
 
+
 def check(filename, expected_bits):
     bits, desc = check_pefile(filename)
     okay = True
@@ -77,6 +79,7 @@ def main():
         raise SystemExit("*** FAILED.")
     else:
         print("*** Okay.")
+
 
 if __name__ == '__main__':
     main()

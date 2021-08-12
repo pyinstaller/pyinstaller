@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 # This hook was tested with Pillow 2.9.0 (Maintained fork of PIL):
 # https://pypi.python.org/pypi/Pillow
 

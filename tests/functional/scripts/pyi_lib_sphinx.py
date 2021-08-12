@@ -32,14 +32,18 @@ sphinx_path = os.path.join(get_data_dir(), 'sphinx')
 # http://sphinx-doc.org/invocation.html#invocation-of-sphinx-build for more
 # details of the options below.
 ret = sphinx.cmd.build.main([
-   # Rebuild all files.
-   '-a', '-E',
-   # Produce html output.
-   '-b', 'html',
-   # Specify an output directory for data files.
-   '-d', os.path.join(sphinx_path, '_build', 'doctrees'),
-   # Specify the location of the source (index.rst).
-   sphinx_path,
-   # Build directory for the resulting HTML files.
-   os.path.join(sphinx_path, '_build', 'html') ])
+    # Rebuild all files.
+    '-a',
+    '-E',
+    # Produce html output.
+    '-b',
+    'html',
+    # Specify an output directory for data files.
+    '-d',
+    os.path.join(sphinx_path, '_build', 'doctrees'),
+    # Specify the location of the source (index.rst).
+    sphinx_path,
+    # Build directory for the resulting HTML files.
+    os.path.join(sphinx_path, '_build', 'html')
+])
 raise SystemExit(ret)

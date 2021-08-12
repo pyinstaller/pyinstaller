@@ -14,4 +14,5 @@
 # installed, eg. when be run by a git checkout.
 
 from PyInstaller.utils.cliutils.grab_version import run
+
 run()

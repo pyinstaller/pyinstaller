@@ -7,50 +7,18 @@ should return True or False. Currently returns
 True, but that might do the wrong thing with
 data-files that are zipfiles.
 """
-import os as _os
-import zipfile as _zipfile
 import errno as _errno
-import time as _time
-import sys as _sys
+import os as _os
 import stat as _stat
+import zipfile as _zipfile
+from io import BytesIO as _BytesIO, StringIO as _StringIO
 
-_DFLT_DIR_MODE = (
-    _stat.S_IXOTH
-    | _stat.S_IXGRP
-    | _stat.S_IXUSR
-    | _stat.S_IROTH
-    | _stat.S_IRGRP
-    | _stat.S_IRUSR)
+import sys as _sys
+import time as _time
 
-_DFLT_FILE_MODE = (
-    _stat.S_IROTH
-    | _stat.S_IRGRP
-    | _stat.S_IRUSR)
+_DFLT_DIR_MODE = (_stat.S_IXOTH | _stat.S_IXGRP | _stat.S_IXUSR | _stat.S_IROTH | _stat.S_IRGRP | _stat.S_IRUSR)
 
-
-if _sys.version_info[0] == 2:
-    from StringIO import StringIO as _BaseStringIO
-    from StringIO import StringIO as _BaseBytesIO
-
-    class _StringIO (_BaseStringIO):
-        def __enter__(self):
-            return self
-
-        def __exit__(self, exc_type, exc_value, traceback):
-            self.close()
-            return False
-
-    class _BytesIO (_BaseBytesIO):
-        def __enter__(self):
-            return self
-
-        def __exit__(self, exc_type, exc_value, traceback):
-            self.close()
-            return False
-
-else:
-    from io import StringIO as _StringIO
-    from io import BytesIO as _BytesIO
+_DFLT_FILE_MODE = (_stat.S_IROTH | _stat.S_IRGRP | _stat.S_IRUSR)
 
 
 def _locate(path):
@@ -68,14 +36,10 @@ def _locate(path):
                 break
 
         if path == root:
-            raise IOError(
-                _errno.ENOENT, full_path,
-                "No such file or directory")
+            raise IOError(_errno.ENOENT, full_path, "No such file or directory")
 
         if not _os.path.isfile(path):
-            raise IOError(
-                _errno.ENOENT, full_path,
-                "No such file or directory")
+            raise IOError(_errno.ENOENT, full_path, "No such file or directory")
 
         rest.reverse()
         return path, '/'.join(rest).strip('/')
@@ -86,11 +50,9 @@ _open = open
 
 def open(path, mode='r'):
     if 'w' in mode or 'a' in mode:
-        raise IOError(
-            _errno.EINVAL, path, "Write access not supported")
+        raise IOError(_errno.EINVAL, path, "Write access not supported")
     elif 'r+' in mode:
-        raise IOError(
-            _errno.EINVAL, path, "Write access not supported")
+        raise IOError(_errno.EINVAL, path, "Write access not supported")
 
     full_path = path
     path, rest = _locate(path)
@@ -102,17 +64,13 @@ def open(path, mode='r'):
             zf = _zipfile.ZipFile(path, 'r')
 
         except _zipfile.error:
-            raise IOError(
-                _errno.ENOENT, full_path,
-                "No such file or directory")
+            raise IOError(_errno.ENOENT, full_path, "No such file or directory")
 
         try:
             data = zf.read(rest)
         except (_zipfile.error, KeyError):
             zf.close()
-            raise IOError(
-                _errno.ENOENT, full_path,
-                "No such file or directory")
+            raise IOError(_errno.ENOENT, full_path, "No such file or directory")
         zf.close()
 
         if mode == 'rb':
@@ -136,9 +94,7 @@ def listdir(path):
             zf = _zipfile.ZipFile(path, 'r')
 
         except _zipfile.error:
-            raise IOError(
-                _errno.ENOENT, full_path,
-                "No such file or directory")
+            raise IOError(_errno.ENOENT, full_path, "No such file or directory")
 
         result = set()
         seen = False
@@ -157,7 +113,7 @@ def listdir(path):
                         pass
                     elif nm[len(rest)] == '/':
                         seen = True
-                        value = nm[len(rest)+1:].split('/')[0]
+                        value = nm[len(rest) + 1:].split('/')[0]
                     else:
                         value = None
 
@@ -165,16 +121,12 @@ def listdir(path):
                         result.add(value)
         except _zipfile.error:
             zf.close()
-            raise IOError(
-                _errno.ENOENT, full_path,
-                "No such file or directory")
+            raise IOError(_errno.ENOENT, full_path, "No such file or directory")
 
         zf.close()
 
         if not seen:
-            raise IOError(
-                _errno.ENOENT, full_path,
-                "No such file or directory")
+            raise IOError(_errno.ENOENT, full_path, "No such file or directory")
 
         return list(result)
 
@@ -217,9 +169,7 @@ def isfile(path):
                 return False
 
         # No trace in zipfile
-        raise IOError(
-            _errno.ENOENT, full_path,
-            "No such file or directory")
+        raise IOError(_errno.ENOENT, full_path, "No such file or directory")
 
 
 def isdir(path):
@@ -240,9 +190,7 @@ def isdir(path):
         try:
             zf = _zipfile.ZipFile(path)
         except _zipfile.error:
-            raise IOError(
-                _errno.ENOENT, full_path,
-                "No such file or directory")
+            raise IOError(_errno.ENOENT, full_path, "No such file or directory")
 
         try:
             zf.getinfo(rest)
@@ -265,9 +213,7 @@ def isdir(path):
             if nm.startswith(rest):
                 return True
 
-        raise IOError(
-            _errno.ENOENT, full_path,
-            "No such file or directory")
+        raise IOError(_errno.ENOENT, full_path, "No such file or directory")
     finally:
         if zf is not None:
             zf.close()
@@ -282,9 +228,7 @@ def islink(path):
     try:
         zf = _zipfile.ZipFile(path)
     except _zipfile.error:
-        raise IOError(
-            _errno.ENOENT, full_path,
-            "No such file or directory")
+        raise IOError(_errno.ENOENT, full_path, "No such file or directory")
     try:
         try:
             zf.getinfo(rest)
@@ -308,9 +252,7 @@ def islink(path):
                 # Directory without listing
                 return False
 
-        raise IOError(
-            _errno.ENOENT, full_path,
-            "No such file or directory")
+        raise IOError(_errno.ENOENT, full_path, "No such file or directory")
 
     finally:
         zf.close()
@@ -321,9 +263,7 @@ def readlink(path):
     path, rest = _locate(path)
     if rest:
         # No symlinks inside zipfiles
-        raise OSError(
-            _errno.ENOENT, full_path,
-            "No such file or directory")
+        raise OSError(_errno.ENOENT, full_path, "No such file or directory")
 
     return _os.readlink(path)
 
@@ -356,9 +296,7 @@ def getmode(path):
                 if nm.startswith(rest):
                     break
             else:
-                raise IOError(
-                    _errno.ENOENT, full_path,
-                    "No such file or directory")
+                raise IOError(_errno.ENOENT, full_path, "No such file or directory")
 
             # Directory exists, but has no entry of its own.
             return _DFLT_DIR_MODE
@@ -402,9 +340,7 @@ def getmtime(path):
                 if nm.startswith(rest):
                     break
             else:
-                raise IOError(
-                    _errno.ENOENT, full_path,
-                    "No such file or directory")
+                raise IOError(_errno.ENOENT, full_path, "No such file or directory")
 
             # Directory exists, but has no entry of its
             # own, fake mtime by using the timestamp of

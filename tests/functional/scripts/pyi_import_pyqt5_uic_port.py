@@ -18,13 +18,13 @@
 # so an ImportError should be raised. So the ImportError is what we
 # expect and we just ignore it.
 
-
 import PyQt5
 
 # Ensure it's our fake module
 assert PyQt5.__pyinstaller_fake_module_marker__ == '__pyinstaller_fake_module_marker__'
 
 import PyQt5.uic.port_v3
+
 print(PyQt5.uic.port_v3.__path__)
 
 try:

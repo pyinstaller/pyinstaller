@@ -8,14 +8,12 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
 """
 Functional tests for Matplotlib.
 """
 
 import pytest
 from PyInstaller.utils.tests import importorskip
-
 
 # List of 3-tuples "(backend_name, package_name, binding)",
 # where:
@@ -30,28 +28,22 @@ backend_rcParams_key_values = [
 
 # Same list, decorated to skip all backends whose packages are unimportable#.
 backend_rcParams_key_values_skipped_if_unimportable = [
-    pytest.param(*backend_rcParams_key_value,
-                 marks=importorskip(backend_rcParams_key_value[1]))
+    pytest.param(*backend_rcParams_key_value, marks=importorskip(backend_rcParams_key_value[1]))
     for backend_rcParams_key_value in backend_rcParams_key_values
 ]
 
 print(backend_rcParams_key_values_skipped_if_unimportable)
 
 # Names of all packages required by backends listed above.
-package_names = [
-    backend_rcParams_key_value[1]
-    for backend_rcParams_key_value in backend_rcParams_key_values
-]
+package_names = [backend_rcParams_key_value[1] for backend_rcParams_key_value in backend_rcParams_key_values]
 
 
 # Test Matplotlib with access to only one backend at a time.
 @importorskip('matplotlib')
 @pytest.mark.parametrize(
-    'backend_name, package_name, binding',
-    backend_rcParams_key_values_skipped_if_unimportable,
-    ids=package_names)
-def test_matplotlib(pyi_builder, monkeypatch,
-                    backend_name, package_name, binding):
+    'backend_name, package_name, binding', backend_rcParams_key_values_skipped_if_unimportable, ids=package_names
+)
+def test_matplotlib(pyi_builder, monkeypatch, backend_name, package_name, binding):
     '''
     Test Matplotlib with the passed backend enabled, the passed backend package
     included with this frozen application, all other backend packages explicitly
@@ -67,13 +59,13 @@ def test_matplotlib(pyi_builder, monkeypatch,
     # when multiple Qt packages are frozen into the same application. For each
     # such package, all other Qt packages must be excluded.
     pyi_args = [
-        '--exclude-module=' + package_name_excludable
-        for package_name_excludable in package_names
-        if  package_name_excludable != package_name
+        '--exclude-module=' + package_name_excludable for package_name_excludable in package_names
+        if package_name_excludable != package_name
     ]
 
     # Script to be tested, enabling this Qt backend.
-    test_script = ("""
+    test_script = (
+        """
     import matplotlib, os, sys, tempfile
 
     # Localize test parameters.
@@ -103,9 +95,10 @@ def test_matplotlib(pyi_builder, monkeypatch,
     # Matplotlib 1.3.0.
     from mpl_toolkits import axes_grid1
     """.format(
-        backend_name=backend_name,
-        binding=binding,
-    ))
+            backend_name=backend_name,
+            binding=binding,
+        )
+    )
 
     # Test this script.
     pyi_builder.test_source(test_script, pyi_args=pyi_args)

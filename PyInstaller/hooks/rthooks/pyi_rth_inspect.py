@@ -9,11 +9,9 @@
 # SPDX-License-Identifier: Apache-2.0
 #-----------------------------------------------------------------------------
 
-
-import sys
-import os
 import inspect
-
+import os
+import sys
 
 _orig_inspect_getsourcefile = inspect.getsourcefile
 
@@ -34,8 +32,7 @@ def _pyi_getsourcefile(object):
         # frozen entry-point script, convert it to corresponding .pyc
         # in sys._MEIPASS
         if filename.endswith('.py'):
-            filename = os.path.normpath(
-                os.path.join(sys._MEIPASS, filename + 'c'))
+            filename = os.path.normpath(os.path.join(sys._MEIPASS, filename + 'c'))
             # Ensure the relative path did not try to jump out of
             # sys._MEIPASS, just in case...
             if filename.startswith(sys._MEIPASS):

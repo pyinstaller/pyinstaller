@@ -23,6 +23,7 @@ for readability
 from docutils import nodes
 from docutils.parsers.rst.roles import set_classes
 
+
 def commit(name, rawtext, text, lineno, inliner, options={}, content=[]):
     msg = None
     try:
@@ -31,8 +32,7 @@ def commit(name, rawtext, text, lineno, inliner, options={}, content=[]):
     except ValueError:
         msg = 'The commit-id must be a hex-string; "%s" is invalid.' % text
     if len(text) < 8:
-        msg = ('The commit-id "%s" is to short, '
-               'please provide at least 8 characters.' % text)
+        msg = ('The commit-id "%s" is to short, please provide at least 8 characters.' % text)
     if msg:
         msg = inliner.reporter.error(msg, line=lineno)
         prb = inliner.problematic(rawtext, rawtext, msg)
@@ -64,7 +64,8 @@ def issue(name, rawtext, text, lineno, inliner, options={}, content=[]):
     except ValueError:
         msg = inliner.reporter.error(
             'The issue number must be a number larger then zero; '
-            '"%s" is invalid.' % text, line=lineno)
+            '"%s" is invalid.' % text, line=lineno
+        )
         prb = inliner.problematic(rawtext, rawtext, msg)
         return [prb], [msg]
     options.setdefault('classes', []).append("issue")
@@ -78,7 +79,9 @@ def autolink(pattern):
         url = pattern % (text,)
         node = nodes.reference(rawtext, text, refuri=url, **options)
         return [node], []
+
     return role
+
 
 def setup(app):
     app.add_role('issue', issue)

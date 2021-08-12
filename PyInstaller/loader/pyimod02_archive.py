@@ -22,26 +22,24 @@
 # See pyi_carchive.py for a more general archive (contains anything)
 # that can be understood by a C program.
 
-
 ### **NOTE** This module is used during bootstrap.
 ### Import *ONLY* builtin modules.
 
+import _thread as thread
 import marshal
 import struct
 import sys
 import zlib
-import _thread as thread
-
 
 # For decrypting Python modules.
 CRYPT_BLOCK_SIZE = 16
-
 
 # content types for PYZ
 PYZ_TYPE_MODULE = 0
 PYZ_TYPE_PKG = 1
 PYZ_TYPE_DATA = 2
 PYZ_TYPE_NSPKG = 3  # PEP-420 namespace package
+
 
 class FilePos(object):
     """
@@ -60,7 +58,6 @@ class ArchiveFile(object):
     File class support auto open when access member from file object
     This class is use to avoid file locking on windows
     """
-
     def __init__(self, *args, **kwargs):
         self.args = args
         self.kwargs = kwargs
@@ -151,7 +148,6 @@ class ArchiveReader(object):
                 self.checkmagic()
                 self.loadtoc()
 
-
     def loadtoc(self):
         """
         Overridable.
@@ -222,12 +218,10 @@ class ArchiveReader(object):
         self.lib.seek(self.start)  # default - magic is at start of file
 
         if self.lib.read(len(self.MAGIC)) != self.MAGIC:
-            raise ArchiveReadError("%s is not a valid %s archive file"
-                                   % (self.path, self.__class__.__name__))
+            raise ArchiveReadError("%s is not a valid %s archive file" % (self.path, self.__class__.__name__))
 
         if self.lib.read(len(self.pymagic)) != self.pymagic:
-            raise ArchiveReadError("%s has version mismatch to dll" %
-                (self.path))
+            raise ArchiveReadError("%s has version mismatch to dll" % (self.path))
 
         self.lib.read(4)
 
@@ -284,7 +278,7 @@ class ZlibArchiveReader(ArchiveReader):
         if path is None:
             offset = 0
         elif offset is None:
-            for i in range(len(path) - 1, - 1, - 1):
+            for i in range(len(path) - 1, -1, -1):
                 if path[i] == '?':
                     try:
                         offset = int(path[i + 1:])
@@ -333,6 +327,5 @@ class ZlibArchiveReader(ArchiveReader):
             if typ in (PYZ_TYPE_MODULE, PYZ_TYPE_PKG, PYZ_TYPE_NSPKG):
                 obj = marshal.loads(obj)
         except EOFError as e:
-            raise ImportError("PYZ entry '%s' failed to unmarshal" %
-                              name) from e
+            raise ImportError("PYZ entry '%s' failed to unmarshal" % name) from e
         return typ, obj

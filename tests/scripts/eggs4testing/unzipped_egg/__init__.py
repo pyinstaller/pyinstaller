@@ -9,9 +9,8 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 # This file is part of the package for testing eggs in `PyInstaller`.
 
-
 import pkg_resources
+
 data = pkg_resources.resource_string(__name__, 'data/datafile.txt').rstrip()

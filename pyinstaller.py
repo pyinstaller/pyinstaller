@@ -14,4 +14,5 @@
 # installed, eg. when be run by a git checkout.
 
 from PyInstaller.__main__ import run
+
 run()

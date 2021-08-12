@@ -8,8 +8,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-
 """
 This module contains code useful for doing releases of PyInstaller.
 
@@ -22,6 +20,7 @@ https://zestreleaser.readthedocs.org/en/latest/entrypoints.html
 """
 
 import os
+
 from PyInstaller.compat import exec_command, getenv
 
 
@@ -36,8 +35,7 @@ def sign_source_distribution(data):
     dist_dir = os.path.join(data['tagdir'], 'dist')
     cmd = ['gpg', '--detach-sign', '--armor']
     if getenv("PYINSTALLER_CODESIGNING_ID"):
-        print("Using gpg identity", getenv("PYINSTALLER_CODESIGNING_ID"),
-              "for signing.")
+        print("Using gpg identity", getenv("PYINSTALLER_CODESIGNING_ID"), "for signing.")
         cmd.extend(['--local-user', getenv("PYINSTALLER_CODESIGNING_ID")])
     # Sign all files in 'dist' directory.
     for f in os.listdir(dist_dir):

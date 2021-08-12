@@ -48,7 +48,8 @@ SECTION_REGEX = re.compile(
     # Followed by a non-zero number of either blank lines or indented lines.
     (?:(?:\ +.*)?\n)+
 
-""", re.MULTILINE | re.VERBOSE)
+""", re.MULTILINE | re.VERBOSE
+)
 
 
 def help_to_rst(help: str, cross_references=True):
@@ -57,8 +58,7 @@ def help_to_rst(help: str, cross_references=True):
 
     # We could stick the summary (``usage: pyinstaller [-h] [--help] ...``)
     # into a code block but it's pretty unhelpful so I'm choosing to omit it.
-    sections = "\n".join(section_to_rst(section, cross_references)
-                         for section in sections)
+    sections = "\n".join(section_to_rst(section, cross_references) for section in sections)
 
     return sections
 
@@ -73,8 +73,7 @@ def section_to_rst(section: str, cross_references=True) -> str:
     title, body = section.split("\n", maxsplit=1)
 
     rst_title = rst_headerise(title, cross_references)
-    rst_body = OPTION_REGEX.sub(
-        partial(option_to_rst, cross_references=cross_references), body)
+    rst_body = OPTION_REGEX.sub(partial(option_to_rst, cross_references=cross_references), body)
 
     return rst_title + rst_body
 
@@ -96,7 +95,8 @@ OPTION_REGEX = re.compile(
     # Blank lines are allowed.
     (((?:\1\ +(.*))?\n)*)
 
-""", re.MULTILINE | re.VERBOSE)
+""", re.MULTILINE | re.VERBOSE
+)
 
 
 def option_to_rst(m: re.Match, cross_references=True) -> str:
@@ -115,11 +115,7 @@ def option_to_rst(m: re.Match, cross_references=True) -> str:
     # Escape characters which turn into invalid rst.
     body = body.replace("*", r"\*")
     # Re-wrap the help block.
-    body = "\n".join(
-        wrap(dedent(body),
-             width=75,
-             break_on_hyphens=False,
-             break_long_words=False))
+    body = "\n".join(wrap(dedent(body), width=75, break_on_hyphens=False, break_long_words=False))
 
     template = ".. option:: {}\n\n{}\n\n" \
         if cross_references else "{}\n\n{}\n\n"

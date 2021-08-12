@@ -39,7 +39,8 @@ def test_gevent(pyi_builder):
         """,
         # reduce footprint of the test (and avoid issued introduced by one of
         # these packages breaking)
-        excludes=["PySide2", "PyQt5", "numpy", "scipy"])
+        excludes=["PySide2", "PyQt5", "numpy", "scipy"]
+    )
 
 
 @importorskip('gevent')
@@ -51,7 +52,8 @@ def test_gevent_monkey(pyi_builder):
         """,
         # reduce footprint of the test (and avoid issued introduced by one of
         # these packages breaking)
-        excludes=["PySide2", "PyQt5", "numpy", "scipy"])
+        excludes=["PySide2", "PyQt5", "numpy", "scipy"]
+    )
 
 
 @xfail(is_darwin, reason='Issue #1895.')
@@ -61,29 +63,21 @@ def test_tkinter(pyi_builder):
 
 def test_pkg_resource_res_string(pyi_builder, monkeypatch):
     # Include some data files for testing pkg_resources module.
-    datas = os.pathsep.join((str(_MODULES_DIR.join('pkg3', 'sample-data.txt')),
-                             'pkg3'))
-    pyi_builder.test_script('pkg_resource_res_string.py',
-                            pyi_args=['--add-data', datas])
+    datas = os.pathsep.join((str(_MODULES_DIR.join('pkg3', 'sample-data.txt')), 'pkg3'))
+    pyi_builder.test_script('pkg_resource_res_string.py', pyi_args=['--add-data', datas])
 
 
 def test_pkgutil_get_data(pyi_builder, monkeypatch):
     # Include some data files for testing pkg_resources module.
-    datas = os.pathsep.join((str(_MODULES_DIR.join('pkg3', 'sample-data.txt')),
-                             'pkg3'))
-    pyi_builder.test_script('pkgutil_get_data.py',
-                            pyi_args=['--add-data', datas])
+    datas = os.pathsep.join((str(_MODULES_DIR.join('pkg3', 'sample-data.txt')), 'pkg3'))
+    pyi_builder.test_script('pkgutil_get_data.py', pyi_args=['--add-data', datas])
 
 
-@xfail(
-    reason='Our import mechanism returns the wrong loader-class for __main__.'
-)
+@xfail(reason='Our import mechanism returns the wrong loader-class for __main__.')
 def test_pkgutil_get_data__main__(pyi_builder, monkeypatch):
     # Include some data files for testing pkg_resources module.
-    datas = os.pathsep.join((str(_MODULES_DIR.join('pkg3', 'sample-data.txt')),
-                             'pkg3'))
-    pyi_builder.test_script('pkgutil_get_data__main__.py',
-                            pyi_args=['--add-data', datas])
+    datas = os.pathsep.join((str(_MODULES_DIR.join('pkg3', 'sample-data.txt')), 'pkg3'))
+    pyi_builder.test_script('pkgutil_get_data__main__.py', pyi_args=['--add-data', datas])
 
 
 @importorskip('sphinx')
@@ -103,7 +97,8 @@ def test_pygments(pyi_builder):
 
         code = 'print "Hello World"'
         print(highlight(code, PythonLexer(), HtmlFormatter()))
-        """)
+        """
+    )
 
 
 @requires('zope.interface')
@@ -117,7 +112,8 @@ def test_zope_interface(pyi_builder):
         # Package 'zope' does not contain __init__.py file.
         # Just importing 'zope.interface' is sufficient.
         import zope.interface
-        """)
+        """
+    )
 
 
 @importorskip('idlelib')
@@ -129,16 +125,19 @@ def test_idlelib(pyi_builder):
             import idlelib.TreeWidget
         except:
             import idlelib.tree
-        """)
+        """
+    )
 
 
 @importorskip('keyring')
-@skipif(is_linux, reason="SecretStorage backend on linux requires active "
-                         "D-BUS session and initialized keyring, and may "
-                         "need to unlock the keyring via UI prompt.")
+@skipif(
+    is_linux,
+    reason="SecretStorage backend on linux requires active "
+    "D-BUS session and initialized keyring, and may "
+    "need to unlock the keyring via UI prompt."
+)
 def test_keyring(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         import keyring
         keyring.get_password("test", "test")
         """)
@@ -151,13 +150,13 @@ def test_numpy(pyi_builder):
         import numpy
         from numpy.core.numeric import dot
         print('dot(3, 4):', dot(3, 4))
-        """)
+        """
+    )
 
 
 @importorskip('pytz')
 def test_pytz(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         import pytz
         pytz.timezone('US/Eastern')
         """)
@@ -168,18 +167,19 @@ def test_requests(tmpdir, pyi_builder, data_dir, monkeypatch):
     # Note that including the data_dir fixture copies files needed by this test.
     # Include the data files.
     datas = os.pathsep.join((str(data_dir.join('*')), os.curdir))
-    pyi_builder.test_script('pyi_lib_requests.py',
-                            pyi_args=['--add-data', datas])
+    pyi_builder.test_script('pyi_lib_requests.py', pyi_args=['--add-data', datas])
 
 
 @importorskip('urllib3.packages.six')
 def test_urllib3_six(pyi_builder):
     # Test for pre-safe-import urllib3.packages.six.moves.
-    pyi_builder.test_source("""
+    pyi_builder.test_source(
+        """
         import urllib3.connectionpool
         import types
         assert isinstance(urllib3.connectionpool.queue, types.ModuleType)
-        """)
+        """
+    )
 
 
 @importorskip('sqlite3')
@@ -193,7 +193,8 @@ def test_sqlite3(pyi_builder):
         csr.execute('CREATE TABLE Example (id)')
         for line in conn.iterdump():
              print(line)
-        """)
+        """
+    )
 
 
 # Note that @importorskip('scapy') isn't sufficient; this doesn't ask scapy to
@@ -215,7 +216,8 @@ def test_scapy(pyi_builder):
         BOOTP # scapy.layers.dhcp.BOOTP
         DNS # scapy.layers.dns.DNS
         ICMP # scapy.layers.inet.ICMP
-        """)
+        """
+    )
 
 
 @requires('scapy >= 2.0')
@@ -224,7 +226,8 @@ def test_scapy2(pyi_builder):
         """
         # Test the hook to scapy.layers.all
         from scapy.layers.all import DHCP
-        """)
+        """
+    )
 
 
 @requires('scapy >= 2.0')
@@ -258,7 +261,8 @@ def test_scapy3(pyi_builder):
         # import inet (neither directly nor indirectly), otherwise the test
         # above fails.
         import scapy.layers.ir
-        """)
+        """
+    )
 
 
 @importorskip('sqlalchemy')
@@ -270,7 +274,8 @@ def test_sqlalchemy(pyi_builder):
         import sqlalchemy
         # This import was known to fail with sqlalchemy 0.9.1
         import sqlalchemy.ext.declarative
-        """)
+        """
+    )
 
 
 @importorskip('twisted')
@@ -291,7 +296,8 @@ def test_twisted(pyi_builder):
         # Ensure default reactor was loaded - it has method 'listenTCP' to start server.
         if not hasattr(reactor, 'listenTCP'):
             raise SystemExit('Twisted reactor not properly initialized.')
-        """)
+        """
+    )
 
 
 @importorskip('pyexcelerate')
@@ -301,7 +307,8 @@ def test_pyexcelerate(pyi_builder):
         # Requires PyExcelerate 0.6.1 or higher
         # Tested on Windows 7 x64 SP1 with CPython 2.7.6
         import pyexcelerate
-        """)
+        """
+    )
 
 
 @importorskip('usb')
@@ -321,7 +328,8 @@ def test_usb(pyi_builder):
         import usb.core
         # NoBackendError fails the test if no backends are found.
         usb.core.find()
-        """)
+        """
+    )
 
 
 @importorskip('zeep')
@@ -331,7 +339,8 @@ def test_zeep(pyi_builder):
         # Test the hook to zeep
         from zeep import utils
         utils.get_version()
-        """)
+        """
+    )
 
 
 @importorskip('PIL')
@@ -340,10 +349,14 @@ def test_pil_img_conversion(pyi_builder):
     datas = os.pathsep.join((str(_DATA_DIR.join('PIL_images')), '.'))
     pyi_builder.test_script(
         'pyi_lib_PIL_img_conversion.py',
-        pyi_args=['--add-data', datas,
-                  # Use console mode or else on Windows the VS() messageboxes
-                  # will stall pytest.
-                  '--console'])
+        pyi_args=[
+            '--add-data',
+            datas,
+            # Use console mode or else on Windows the VS() messageboxes
+            # will stall pytest.
+            '--console'
+        ]
+    )
 
 
 @requires("pillow >= 1.1.6")
@@ -377,7 +390,8 @@ def test_pil_plugins(pyi_builder):
             raise SystemExit('No PIL image plugins were bundled!')
         else:
             print('PIL supported image formats: %s' % plugins)
-        """)
+        """
+    )
 
 
 @importorskip('pandas')
@@ -388,7 +402,8 @@ def test_pandas_extension(pyi_builder):
         """
         from pandas._libs.lib import is_float
         assert is_float(1) == 0
-        """)
+        """
+    )
 
 
 @importorskip('pandas')
@@ -397,15 +412,13 @@ def test_pandas_io_formats_style(pyi_builder):
     # pandas.io.formats.style requires jinja2 as hiddenimport, as
     # well as collected template file from pandas/io/formats/templates.
     # See #6008 and #6009.
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         import pandas.io.formats.style
         """)
 
 
 @importorskip('win32ctypes')
-@pytest.mark.skipif(not is_win,
-                    reason='pywin32-ctypes is supported only on Windows')
+@pytest.mark.skipif(not is_win, reason='pywin32-ctypes is supported only on Windows')
 @pytest.mark.parametrize('submodule', ['win32api', 'win32cred', 'pywintypes'])
 def test_pywin32ctypes(pyi_builder, submodule):
     pyi_builder.test_source("""

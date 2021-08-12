@@ -8,7 +8,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
 """
 Replace the code of real 'site' module by fake code doing nothing.
 
@@ -21,8 +20,9 @@ virtualenv environment.
 
 import os
 
-from PyInstaller.utils.hooks import logger
 from PyInstaller import PACKAGEPATH
+from PyInstaller.utils.hooks import logger
+
 
 def pre_find_module_path(api):
     #FIXME: For reusability, move this into a new

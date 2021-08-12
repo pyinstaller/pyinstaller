@@ -9,6 +9,5 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 # cElementTree has a hidden import (Python >=2.5 stdlib version)
 hiddenimports = ['xml.etree.ElementTree']

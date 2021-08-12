@@ -9,10 +9,11 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 # -----------------------------------------------------------------------------
 
-import os
 import glob
-from PyInstaller.utils.hooks import get_module_file_attribute
+import os
+
 from PyInstaller.compat import is_win
+from PyInstaller.utils.hooks import get_module_file_attribute
 
 binaries = []
 
@@ -23,11 +24,9 @@ binaries = []
 if is_win:
     extra_dll_locations = ['extra-dll', '.libs']
     for location in extra_dll_locations:
-        dll_glob = os.path.join(os.path.dirname(
-            get_module_file_attribute('scipy')), location, "*.dll")
+        dll_glob = os.path.join(os.path.dirname(get_module_file_attribute('scipy')), location, "*.dll")
         if glob.glob(dll_glob):
             binaries.append((dll_glob, "."))
 
 # collect library-wide utility extension modules
-hiddenimports = ['scipy._lib.%s' % m for m in [
-    'messagestream', "_ccallback_c", "_fpumode"]]
+hiddenimports = ['scipy._lib.%s' % m for m in ['messagestream', "_ccallback_c", "_fpumode"]]

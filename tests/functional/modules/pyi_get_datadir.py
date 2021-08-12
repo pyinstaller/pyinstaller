@@ -21,6 +21,7 @@ import os.path
 # -------------
 from pyi_testmod_gettemp import gettemp
 
+
 # Functions
 # ---------
 # This function returns the location of the
@@ -34,6 +35,4 @@ def get_data_dir():
         return gettemp('data')
     else:
         # 2. Not frozen: rely on the filesystem layout of this git repository.
-        return os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                            '..', 'data')
-
+        return os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data')

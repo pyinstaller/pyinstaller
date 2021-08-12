@@ -43,7 +43,8 @@ def test_multiprocess_pool(pyi_builder):
 @importorskip('multiprocessing')
 @pytest.mark.timeout(timeout=60)
 def test_multiprocess_spawn_semaphore(pyi_builder, capfd):
-    pyi_builder.test_source("""
+    pyi_builder.test_source(
+        """
         import sys
 
         from multiprocessing import set_start_method, Process, Semaphore
@@ -68,7 +69,8 @@ def test_multiprocess_spawn_semaphore(pyi_builder, capfd):
             proc.start()
             s.release()
             proc.join()
-        """)
+        """
+    )
 
     out, err = capfd.readouterr()
 
@@ -87,7 +89,8 @@ def test_multiprocess_spawn_semaphore(pyi_builder, capfd):
 @importorskip('multiprocessing')
 @pytest.mark.timeout(timeout=60)
 def test_multiprocess_fork_semaphore(pyi_builder, capfd):
-    pyi_builder.test_source("""
+    pyi_builder.test_source(
+        """
         import sys
 
         from multiprocessing import set_start_method, Process, Semaphore
@@ -112,7 +115,8 @@ def test_multiprocess_fork_semaphore(pyi_builder, capfd):
             proc.start()
             s.release()
             proc.join()
-        """)
+        """
+    )
 
     out, err = capfd.readouterr()
 
@@ -127,13 +131,12 @@ def test_multiprocess_fork_semaphore(pyi_builder, capfd):
         assert out.count(substring) == 1
 
 
-
-
 @skipif(is_win, reason='forkserver is not available on windows')
 @importorskip('multiprocessing')
 @pytest.mark.timeout(timeout=60)
 def test_multiprocess_forkserver_semaphore(pyi_builder, capfd):
-    pyi_builder.test_source("""
+    pyi_builder.test_source(
+        """
         import sys
 
         from multiprocessing import set_start_method, Process, Semaphore
@@ -158,7 +161,8 @@ def test_multiprocess_forkserver_semaphore(pyi_builder, capfd):
             proc.start()
             s.release()
             proc.join()
-        """)
+        """
+    )
 
     out, err = capfd.readouterr()
 
@@ -177,7 +181,8 @@ def test_multiprocess_forkserver_semaphore(pyi_builder, capfd):
 @pytest.mark.timeout(timeout=60)
 def test_multiprocess_spawn_process(pyi_builder, capfd):
     # Test whether this terminates, see issue #4865
-    pyi_builder.test_source("""
+    pyi_builder.test_source(
+        """
     import sys, time
     import multiprocessing as mp
 
@@ -193,14 +198,16 @@ def test_multiprocess_spawn_process(pyi_builder, capfd):
     proc = mp.Process(target=test)
     proc.start()
     proc.join()
-    """)
+    """
+    )
 
 
 @importorskip('multiprocessing')
 @pytest.mark.timeout(timeout=60)
 def test_multiprocess_spawn_pool(pyi_builder, capfd):
     # Test whether this terminates, see issue #4865
-    pyi_builder.test_source("""
+    pyi_builder.test_source(
+        """
     import sys, time
     import multiprocessing as mp
 
@@ -215,4 +222,5 @@ def test_multiprocess_spawn_pool(pyi_builder, capfd):
     print('In main')
     with mp.Pool() as p:
         p.map(test, 'in pool')
-    """)
+    """
+    )

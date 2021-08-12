@@ -64,7 +64,6 @@ is_frozen = getattr(sys, 'frozen', False)
 
 assert is_default or is_zip or is_frozen, "Unsupported provider type!"
 
-
 ########################################################################
 #                Validate behavior of resource_exists()                #
 ########################################################################
@@ -161,7 +160,6 @@ assert (is_default and ret) or \
 
 # Submodule in subpackage, with empty path
 assert resource_exists(pkgname + '.subpkg1.c', '')
-
 
 ########################################################################
 #                Validate behavior of resource_isdir()                 #

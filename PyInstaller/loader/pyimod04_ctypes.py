@@ -6,7 +6,6 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-
 """
 Hooks to make ctypes.CDLL, .PyDLL, etc. look in sys._MEIPASS first.
 """
@@ -42,9 +41,11 @@ def install():
 
     class PyInstallerImportError(OSError):
         def __init__(self, name):
-            self.msg = ("Failed to load dynlib/dll %r. "
-                        "Most probably this dynlib/dll was not found "
-                        "when the application was frozen.") % name
+            self.msg = (
+                "Failed to load dynlib/dll %r. "
+                "Most probably this dynlib/dll was not found "
+                "when the application was frozen."
+            ) % name
             self.args = (self.msg,)
 
     class PyInstallerCDLL(ctypes.CDLL):
@@ -70,6 +71,7 @@ def install():
     ctypes.pydll = ctypes.LibraryLoader(PyInstallerPyDLL)
 
     if sys.platform.startswith('win'):
+
         class PyInstallerWinDLL(ctypes.WinDLL):
             def __init__(self, name, *args, **kwargs):
                 name = _frozen_name(name)

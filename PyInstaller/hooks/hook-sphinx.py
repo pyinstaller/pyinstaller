@@ -12,8 +12,7 @@
 # ********************************************
 # hook-sphinx.py - Pyinstaller hook for Sphinx
 # ********************************************
-from PyInstaller.utils.hooks import collect_submodules, collect_data_files, \
-    eval_statement
+from PyInstaller.utils.hooks import (collect_data_files, collect_submodules, eval_statement)
 
 hiddenimports = (
     # Per http://sphinx-doc.org/extensions.html#builtin-sphinx-extensions,
@@ -40,8 +39,7 @@ hiddenimports = (
     #        'en': SearchEnglish,
     #
     # So, we need all the languages in "sphinx.search".
-    collect_submodules('sphinx.search') +
-    collect_submodules('sphinx.websupport.search') +
+    collect_submodules('sphinx.search') + collect_submodules('sphinx.websupport.search') +
     collect_submodules('sphinx.domains') +
     #
     # From sphinx.cmdline line 173:
@@ -53,10 +51,14 @@ hiddenimports = (
     #
     # Sphinx relies on a number of built-in extensions that are dynamically
     # imported. Collect all those.
-    list(eval_statement("""
+    list(
+        eval_statement(
+            """
         from sphinx.application import builtin_extensions
         print(builtin_extensions)
-    """))
+        """
+        )
+    )
 )
 
 # Sphinx also relies on a number of data files in its directory hierarchy: for

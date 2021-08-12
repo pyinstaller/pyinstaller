@@ -22,8 +22,7 @@ dist_main_len = len(os.path.join("dist", "main"))
 # 4141), importing sub-module app.hook will fail.
 #
 plugins_dir = Path("p").absolute()
-plugin_names = [chr(ord("a") + 10 + i) * (dist_main_len + i)
-                for i in range(5, -5, -1)]
+plugin_names = [chr(ord("a") + 10 + i) * (dist_main_len + i) for i in range(5, -5, -1)]
 print(plugin_names)
 
 for pn in plugin_names:

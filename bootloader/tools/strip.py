@@ -39,15 +39,20 @@ If stripping at installation time is preferred, use the following::
     Build.InstallContext.copy_fun = copy_fun
 """
 
+
 def configure(conf):
     conf.find_program('strip')
     conf.env.append_value('STRIPFLAGS', '')
 
+
 from waflib import Task, TaskGen
+
+
 class strip(Task.Task):
     run_str = '${STRIP} ${STRIPFLAGS} ${SRC}'
-    color   = 'BLUE'
-    after   = ['cprogram', 'cxxprogram', 'cshlib', 'cxxshlib', 'fcprogram', 'fcshlib']
+    color = 'BLUE'
+    after = ['cprogram', 'cxxprogram', 'cshlib', 'cxxshlib', 'fcprogram', 'fcshlib']
+
 
 @TaskGen.feature('strip')
 @TaskGen.after('apply_link')

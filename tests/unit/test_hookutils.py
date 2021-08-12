@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 import os
 import pytest
 import pathlib
@@ -114,6 +113,7 @@ def mod_list(monkeypatch):
     # Use the hookutils_test_files package for testing.
     return collect_submodules(TEST_MOD)
 
+
 class TestCollectSubmodules(object):
     # An error should be thrown if a module, not a package, was passed.
     def test_collect_submod_module(self):
@@ -132,13 +132,15 @@ class TestCollectSubmodules(object):
     # Check that all packages get included
     def test_collect_submod_all_included(self, mod_list):
         mod_list.sort()
-        assert mod_list == [TEST_MOD,
-                            # Python extensions on Windows ends with '.pyd' and
-                            # '.so' on Linux, Mac OS X and other operating systems.
-                            TEST_MOD + '.pyextension',
-                            TEST_MOD + '.subpkg',
-                            TEST_MOD + '.subpkg.twelve',
-                            TEST_MOD + '.two']
+        assert mod_list == [
+            TEST_MOD,
+            # Python extensions on Windows ends with '.pyd' and
+            # '.so' on Linux, Mac OS X and other operating systems.
+            TEST_MOD + '.pyextension',
+            TEST_MOD + '.subpkg',
+            TEST_MOD + '.subpkg.twelve',
+            TEST_MOD + '.two'
+        ]
 
     # Dynamic libraries (.dll, .dylib) are not included in the list.
     def test_collect_submod_no_dynamiclib(self, mod_list):
@@ -154,8 +156,7 @@ class TestCollectSubmodules(object):
         # fixture, so that the path to the TEST_MOD will be set correctly.
         mod_list = collect_submodules(TEST_MOD + '.subpkg')
         mod_list.sort()
-        assert mod_list == [TEST_MOD + '.subpkg',
-                            TEST_MOD + '.subpkg.twelve']
+        assert mod_list == [TEST_MOD + '.subpkg', TEST_MOD + '.subpkg.twelve']
 
     # Test in an ``.egg`` file.
     def test_collect_submod_egg(self, tmpdir, monkeypatch):
@@ -188,13 +189,9 @@ class TestCollectSubmodules(object):
     # should not affect the collected modules list.
     def test_collect_submod_stdout_interference(self, monkeypatch):
         TEST_MOD = 'foo'
-        TEST_MOD_PATH = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            'hookutils_files2'
-        )
+        TEST_MOD_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hookutils_files2')
 
-        monkeypatch.setattr('PyInstaller.config.CONF',
-                            {'pathex': [TEST_MOD_PATH]})
+        monkeypatch.setattr('PyInstaller.config.CONF', {'pathex': [TEST_MOD_PATH]})
         monkeypatch.syspath_prepend(TEST_MOD_PATH)
 
         ml = collect_submodules(TEST_MOD)
@@ -229,20 +226,23 @@ def test_collect_data_module():
         # This is used to invoke ``collect_data_files(*args, **kwargs)``, then
         # provide the expected results to verify correctness. The order is:
         ## args,     kwargs, expected_results_sequence
-        ([TEST_MOD], {},     ('dynamiclib.dll',
-                              'dynamiclib.dylib',
-                              'nine.dat',
-                              join('py_files_not_in_package', 'data', 'eleven.dat'),
-                              join('py_files_not_in_package', 'ten.dat'),
-                              # Not backwards! On Windows, ``.so`` files are
-                              # just data and vice versa.
-                              'pyextension.so' if is_win else 'pyextension.pyd',
-                              join('subpkg', 'thirteen.txt'),
-        )),
+        (
+            [TEST_MOD],
+            {},
+            (
+                'dynamiclib.dll',
+                'dynamiclib.dylib',
+                'nine.dat',
+                join('py_files_not_in_package', 'data', 'eleven.dat'),
+                join('py_files_not_in_package', 'ten.dat'),
+                # Not backwards! On Windows, ``.so`` files are
+                # just data and vice versa.
+                'pyextension.so' if is_win else 'pyextension.pyd',
+                join('subpkg', 'thirteen.txt'),
+            )
+        ),
         # Test collecting from a subpackage.
-        ([TEST_MOD + '.subpkg'], {}, (
-                    join('subpkg', 'thirteen.txt'),
-        )),
+        ([TEST_MOD + '.subpkg'], {}, (join('subpkg', 'thirteen.txt'),)),
         ([TEST_MOD], dict(include_py_files=True, excludes=['**/__pycache__']), (
             '__init__.py',
             'dynamiclib.dll',
@@ -260,8 +260,7 @@ def test_collect_data_module():
             join('subpkg', 'twelve.py'),
             'two.py',
         )),
-        ([TEST_MOD], dict(excludes=['py_files_not_in_package',
-                                    '**/__pycache__']), (
+        ([TEST_MOD], dict(excludes=['py_files_not_in_package', '**/__pycache__']), (
             'dynamiclib.dll',
             'dynamiclib.dylib',
             'nine.dat',
@@ -274,23 +273,20 @@ def test_collect_data_module():
             join('py_files_not_in_package', 'ten.dat'),
             join('subpkg', 'thirteen.txt'),
         )),
-        ([TEST_MOD], dict(includes=['*.dat']), (
-            'nine.dat',
-        )),
-        ([TEST_MOD], dict(subdir="py_files_not_in_package",
-                          excludes=['**/__pycache__']), (
+        ([TEST_MOD], dict(includes=['*.dat']), ('nine.dat',)),
+        ([TEST_MOD], dict(subdir="py_files_not_in_package", excludes=['**/__pycache__']), (
             join('py_files_not_in_package', 'data', 'eleven.dat'),
             join('py_files_not_in_package', 'ten.dat'),
         )),
     ],
-    ids=['package', 'subpackage', 'package with py files', 'excludes',
-         '** includes', 'includes', 'subdir']
+    ids=['package', 'subpackage', 'package with py files', 'excludes', '** includes', 'includes', 'subdir']
 )
 def data_lists(monkeypatch, request):
     def _sort(sequence):
         l = list(sequence)
         l.sort()
         return tuple(l)
+
     # Add path with 'hookutils_files' module to ``sys.path`` so tests
     # could find this module - useful for subprocesses.
     monkeypatch.syspath_prepend(TEST_MOD_PATH)
@@ -309,10 +305,8 @@ def test_collect_data_all_included(data_lists):
     subfiles, src, dst = data_lists
     # Check the source and dest lists against the correct values in
     # subfiles.
-    src_compare = tuple([join(TEST_MOD_PATH, TEST_MOD, subpath)
-                         for subpath in subfiles])
-    dst_compare = [os.path.dirname(join(TEST_MOD, subpath))
-                   for subpath in subfiles]
+    src_compare = tuple([join(TEST_MOD_PATH, TEST_MOD, subpath) for subpath in subfiles])
+    dst_compare = [os.path.dirname(join(TEST_MOD, subpath)) for subpath in subfiles]
     dst_compare.sort()
     dst_compare = tuple(dst_compare)
     assert src == src_compare
@@ -325,19 +319,22 @@ def test_get_module_file_attribute_non_exist_module():
         get_module_file_attribute('pyinst_nonexisting_module_name')
 
 
-@pytest.mark.parametrize("egg_path,name,target", [
-    # Something installed via `pip install -e .`.
-    ("editable/install/CodeChat.egg-info", "CodeChat", "CodeChat.egg-info"),
-    # An egg distribution - it's unlikely we'll ever see these now.
-    ("lib/site-packages/pypubsub-3.3.0-py2.7.egg/EGG-INFO",
-     "pypubsub", "pypubsub-3.3.0-py2.7.egg/EGG-INFO"),
-    # A classic wheel-installed distribution.
-    ("lib/site-packages/zest.releaser-6.2.dist-info",
-     "zest.releaser", "zest.releaser-6.2.dist-info"),
-    # Must be tolerant to case and -/_ mismatch.
-    ("/site-packages/importlib_metadata-4.0.1.dist-info",
-     "ImPorTlib-mEtADatA", "importlib_metadata-4.0.1.dist-info")
-])
+@pytest.mark.parametrize(
+    "egg_path,name,target",
+    [
+        # Something installed via `pip install -e .`.
+        ("editable/install/CodeChat.egg-info", "CodeChat", "CodeChat.egg-info"),
+        # An egg distribution - it's unlikely we'll ever see these now.
+        ("lib/site-packages/pypubsub-3.3.0-py2.7.egg/EGG-INFO", "pypubsub", "pypubsub-3.3.0-py2.7.egg/EGG-INFO"),
+        # A classic wheel-installed distribution.
+        ("lib/site-packages/zest.releaser-6.2.dist-info", "zest.releaser", "zest.releaser-6.2.dist-info"),
+        # Must be tolerant to case and -/_ mismatch.
+        (
+            "/site-packages/importlib_metadata-4.0.1.dist-info", "ImPorTlib-mEtADatA",
+            "importlib_metadata-4.0.1.dist-info"
+        )
+    ]
+)
 def test_copy_metadata_dest(egg_path, name, target):
     """Test choosing dest path for copy_metadata() across distribution types.
     """
@@ -350,8 +347,7 @@ def test_copy_metadata_dest(egg_path, name, target):
 
 
 def test_erroneous_distribution_type():
-    with pytest.raises(RuntimeError, match="Unknown .* type 'foo' from the "
-                                           "'bar' distribution"):
+    with pytest.raises(RuntimeError, match="Unknown .* type 'foo' from the 'bar' distribution"):
         _copy_metadata_dest("foo", "bar")
     with pytest.raises(RuntimeError, match=r"No .* distribution 'foo'\."):
         _copy_metadata_dest(None, "foo")

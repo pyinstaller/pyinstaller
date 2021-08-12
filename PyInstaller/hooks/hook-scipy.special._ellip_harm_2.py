@@ -8,7 +8,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
 """
 Module hook for the `scipy.special._ellip_harm_2` C extension first introduced
 by SciPy >= 0.15.0.

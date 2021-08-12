@@ -9,13 +9,13 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 import pytest
 import os
 import pathlib
 from importlib.machinery import EXTENSION_SUFFIXES
 
 from PyInstaller.building import utils
+
 
 def test_format_binaries_and_datas_not_found_raises_error(tmpdir):
     datas = [('non-existing.txt', '.')]
@@ -26,27 +26,23 @@ def test_format_binaries_and_datas_not_found_raises_error(tmpdir):
 
 
 def test_format_binaries_and_datas_1(tmpdir):
+    def _(path):
+        return os.path.join(*path.split('/'))
 
-    def _(path): return os.path.join(*path.split('/'))
-
-    datas = [(_('existing.txt'), '.'),
-             (_('other.txt'),    'foo'),
-             (_('*.log'),        'logs'),
-             (_('a/*.log'),      'lll'),
-             (_('a/here.tex'),   '.'),
-             (_('b/[abc].tex'),   'tex')]
+    datas = [(_('existing.txt'), '.'), (_('other.txt'), 'foo'), (_('*.log'), 'logs'), (_('a/*.log'), 'lll'),
+             (_('a/here.tex'), '.'), (_('b/[abc].tex'), 'tex')]
 
     expected = set()
     for dest, src in (
-            ('existing.txt',  'existing.txt'),
-            ('foo/other.txt', 'other.txt'),
-            ('logs/aaa.log',  'aaa.log'),
-            ('logs/bbb.log',  'bbb.log'),
-            ('lll/xxx.log',   'a/xxx.log'),
-            ('lll/yyy.log',   'a/yyy.log'),
-            ('here.tex',      'a/here.tex'),
-            ('tex/a.tex',     'b/a.tex'),
-            ('tex/b.tex',     'b/b.tex'),
+        ('existing.txt', 'existing.txt'),
+        ('foo/other.txt', 'other.txt'),
+        ('logs/aaa.log', 'aaa.log'),
+        ('logs/bbb.log', 'bbb.log'),
+        ('lll/xxx.log', 'a/xxx.log'),
+        ('lll/yyy.log', 'a/yyy.log'),
+        ('here.tex', 'a/here.tex'),
+        ('tex/a.tex', 'b/a.tex'),
+        ('tex/b.tex', 'b/b.tex'),
     ):
         src = tmpdir.join(_(src)).ensure()
         expected.add((_(dest), str(src)))
@@ -64,14 +60,13 @@ def test_format_binaries_and_datas_with_bracket(tmpdir):
     # See issue #2314: the filename contains brackets which are
     # interpreted by glob().
 
-    def _(path): return os.path.join(*path.split('/'))
+    def _(path):
+        return os.path.join(*path.split('/'))
 
-    datas = [(_('b/[abc].tex'),   'tex')]
+    datas = [(_('b/[abc].tex'), 'tex')]
 
     expected = set()
-    for dest, src in (
-            ('tex/[abc].tex',     'b/[abc].tex'),
-    ):
+    for dest, src in (('tex/[abc].tex', 'b/[abc].tex'),):
         src = tmpdir.join(_(src)).ensure()
         expected.add((_(dest), str(src)))
 
@@ -94,20 +89,17 @@ def test_add_suffix_to_extension():
     # path during the test itself).
     CASES = [
         # Stand-alone extension module
-        ('mypkg',
-         'mypkg' + SUFFIX,
-         'lib38/site-packages/mypkg' + SUFFIX,
-         'EXTENSION'),
+        ('mypkg', 'mypkg' + SUFFIX, 'lib38/site-packages/mypkg' + SUFFIX, 'EXTENSION'),
         # Extension module nested in a package
-        ('pkg.subpkg._extension',
-         'pkg/subpkg/_extension' + SUFFIX,
-         'lib38/site-packages/pkg/subpkg/_extension' + SUFFIX,
-         'EXTENSION'),
+        (
+            'pkg.subpkg._extension', 'pkg/subpkg/_extension' + SUFFIX,
+            'lib38/site-packages/pkg/subpkg/_extension' + SUFFIX, 'EXTENSION'
+        ),
         # Built-in extension originating from lib-dynload
-        ('lib-dynload/_extension',
-         'lib-dynload/_extension' + SUFFIX,
-         'lib38/lib-dynload/_extension' + SUFFIX,
-         'EXTENSION'),
+        (
+            'lib-dynload/_extension', 'lib-dynload/_extension' + SUFFIX, 'lib38/lib-dynload/_extension' + SUFFIX,
+            'EXTENSION'
+        ),
     ]
 
     for case in CASES:
@@ -131,34 +123,13 @@ def test_add_suffix_to_extension():
 
 def test_should_include_system_binary():
     CASES = [
-        ('lib-dynload/any',
-         '/usr/lib64/any',
-         [],
-         True),
-        ('libany',
-         '/lib64/libpython.so',
-         [],
-         True),
-        ('any',
-         '/lib/python/site-packages/any',
-         [],
-         True),
-        ('libany',
-         '/etc/libany',
-         [],
-         True),
-        ('libany',
-         '/usr/lib/libany',
-         ['*any*'],
-         True),
-        ('libany2',
-         '/lib/libany2',
-         ['libnone*', 'libany*'],
-         True),
-        ('libnomatch',
-         '/lib/libnomatch',
-         ['libnone*', 'libany*'],
-         False),
+        ('lib-dynload/any', '/usr/lib64/any', [], True),
+        ('libany', '/lib64/libpython.so', [], True),
+        ('any', '/lib/python/site-packages/any', [], True),
+        ('libany', '/etc/libany', [], True),
+        ('libany', '/usr/lib/libany', ['*any*'], True),
+        ('libany2', '/lib/libany2', ['libnone*', 'libany*'], True),
+        ('libnomatch', '/lib/libnomatch', ['libnone*', 'libany*'], False),
     ]
 
     for case in CASES:

@@ -17,21 +17,21 @@ from typing import Type
 
 from setuptools import setup, find_packages
 
-
-# Hack required to allow compat to not fail when pypiwin32 isn't found
-os.environ["PYINSTALLER_NO_PYWIN32_FAILURE"] = "1"
-
-
 #-- plug-in building the bootloader
 
 from distutils.core import Command
 from distutils.command.build import build
 
+# Hack required to allow compat to not fail when pypiwin32 isn't found
+os.environ["PYINSTALLER_NO_PYWIN32_FAILURE"] = "1"
+
 try:
     from wheel.bdist_wheel import bdist_wheel
 except ImportError:
-    raise SystemExit("Error: Building wheels requires the 'wheel' package. "
-                     "Please `pip install wheel` then try again.")
+    raise SystemExit(
+        "Error: Building wheels requires the 'wheel' package. "
+        "Please `pip install wheel` then try again."
+    )
 
 
 class build_bootloader(Command):
@@ -39,9 +39,13 @@ class build_bootloader(Command):
     Wrapper for distutil command `build`.
     """
 
-    user_options =[]
-    def initialize_options(self): pass
-    def finalize_options(self): pass
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
 
     def bootloader_exists(self):
         # Checks is the console, non-debug bootloader exists
@@ -61,16 +65,14 @@ class build_bootloader(Command):
         cmd = [sys.executable, './waf', 'configure', 'all']
         rc = subprocess.call(cmd, cwd=src_dir)
         if rc:
-            raise SystemExit('ERROR: Failed compiling the bootloader. '
-                             'Please compile manually and rerun setup.py')
+            raise SystemExit('ERROR: Failed compiling the bootloader. Please compile manually and rerun setup.py')
 
     def run(self):
         if getattr(self, 'dry_run', False):
             return
         if self.bootloader_exists():
             return
-        print('No precompiled bootloader found. Trying to compile it for you ...',
-              file=sys.stderr)
+        print('No precompiled bootloader found. Trying to compile it for you ...', file=sys.stderr)
         self.compile_bootloader()
 
 
@@ -103,7 +105,8 @@ class Wheel(bdist_wheel):
                 f"Error: No bootloaders for {self.PLAT_NAME} found in "
                 f"{self.bootloaders_dir()}. See "
                 f"https://pyinstaller.readthedocs.io/en/stable/"
-                f"bootloader-building.html for how to compile them.")
+                f"bootloader-building.html for how to compile them."
+            )
 
         self.distribution.package_data = {
             "PyInstaller": [
@@ -148,7 +151,7 @@ PLATFORMS = {
     # These are the only architectures currently supported by manylinux.
     # Other platforms must use generic bdist_wheel which will produce a wheel
     # which is not allowed on PyPI.
-    "Linux-64bit-intel":  "manylinux2014_x86_64",
+    "Linux-64bit-intel": "manylinux2014_x86_64",
     "Linux-32bit-intel": "manylinux2014_i686",
     "Linux-64bit-arm": "manylinux2014_aarch64",
     "Linux-64bit-ppc": "manylinux2014_ppc64le",
@@ -189,7 +192,8 @@ class bdist_macos(wheel_commands["wheel_darwin_64bit"]):
             raise SystemExit(
                 "Building wheels for macOS requires that PyInstaller and "
                 "macholib be installed. Please run:\n"
-                "    pip install -e . macholib")
+                "    pip install -e . macholib"
+            )
 
         bootloader = os.path.join(self.bootloaders_dir(), "run")
         is_fat, architectures = get_binary_architectures(bootloader)
@@ -222,15 +226,18 @@ class bdist_wheels(Command):
 
     # Overload these to keep the abstract metaclass happy.
     user_options = []
-    def initialize_options(self): pass
-    def finalize_options(self): pass
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
 
     def run(self) -> None:
         command: Type[Wheel]
         for (name, command) in wheel_commands.items():
             if not command.has_bootloaders():
-                print("Skipping", name, "because no bootloaders were found in",
-                      command.bootloaders_dir())
+                print("Skipping", name, "because no bootloaders were found in", command.bootloaders_dir())
                 continue
 
             print("running", name)
@@ -248,14 +255,15 @@ class bdist_wheels(Command):
 #--
 
 setup(
-    setup_requires = ["setuptools >= 39.2.0"],
-    cmdclass = {'build_bootloader': build_bootloader,
-                'build': MyBuild,
-                **wheel_commands,
-                'bdist_wheels': bdist_wheels,
-                },
+    setup_requires=["setuptools >= 39.2.0"],
+    cmdclass={
+        'build_bootloader': build_bootloader,
+        'build': MyBuild,
+        **wheel_commands,
+        'bdist_wheels': bdist_wheels,
+    },
     packages=find_packages(include=["PyInstaller", "PyInstaller.*"]),
-    package_data = {
+    package_data={
         "PyInstaller": [
             # Include all bootloaders in wheels by default.
             "bootloader/*/*",

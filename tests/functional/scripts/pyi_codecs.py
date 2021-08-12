@@ -15,7 +15,6 @@
 
 import codecs
 
-
 str_a = 'foo bar fóó bář, fěě, ďěž'
 str_a_utf8 = codecs.getencoder('utf-8')(str_a)[0]
 str_b = codecs.getdecoder('utf-8')(str_a_utf8)[0]

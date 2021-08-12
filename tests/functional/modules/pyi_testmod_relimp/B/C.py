@@ -9,14 +9,13 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 name = 'pyi_testmod_relimp.B.C'
 
-from . import D                 # Imports pyi_testmod_relimp.B.D
-from .D import X                # Imports pyi_testmod_relimp.B.D.X
-from .. import E                # Imports pyi_testmod_relimp.E
-from ..F import G               # Imports pyi_testmod_relimp.F.G
-from ..F import H               # Imports pyi_testmod_relimp.F.H
+from . import D  # Imports pyi_testmod_relimp.B.D
+from .D import X  # Imports pyi_testmod_relimp.B.D.X
+from .. import E  # Imports pyi_testmod_relimp.E
+from ..F import G  # Imports pyi_testmod_relimp.F.G
+from ..F import H  # Imports pyi_testmod_relimp.F.H
 
 assert D.name == 'pyi_testmod_relimp.B.D'
 assert E.name == 'pyi_testmod_relimp.E'

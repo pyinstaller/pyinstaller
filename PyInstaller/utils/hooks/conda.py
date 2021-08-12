@@ -39,11 +39,11 @@ rather than the *package name* you import it with. i.e Use
 ``package_distribution("PIL")``.
 """
 
+import fnmatch
+import json
 import sys
 from pathlib import Path
-import json
-import fnmatch
-from typing import List, Iterable
+from typing import Iterable, List
 
 from PyInstaller import compat
 from PyInstaller.log import logger
@@ -95,7 +95,8 @@ class Distribution(object):
         except (TypeError, AssertionError):
             raise TypeError(
                 "Distribution requires a path to a conda-meta json. Perhaps "
-                "you want `distribution({})` instead?".format(repr(json_path)))
+                "you want `distribution({})` instead?".format(repr(json_path))
+            )
 
         # Everything we need (including this distribution's name) is kept in
         # the metadata json.
@@ -109,8 +110,7 @@ class Distribution(object):
         self.packages = self._init_package_names()
 
     def __repr__(self):
-        return "{}(name=\"{}\", packages={})".format(
-            type(self).__name__, self.name, self.packages)
+        return "{}(name=\"{}\", packages={})".format(type(self).__name__, self.name, self.packages)
 
     def _init_dependencies(self):
         """
@@ -159,7 +159,8 @@ class Distribution(object):
             return distributions[name]
         raise ModuleNotFoundError(
             "Distribution {} is either not installed or was not installed "
-            "using Conda.".format(name))
+            "using Conda.".format(name)
+        )
 
     @classmethod
     def from_package_name(cls, name):
@@ -179,7 +180,8 @@ class Distribution(object):
             return distributions_by_package[name]
         raise ModuleNotFoundError(
             "Package {} is either not installed or was not installed using "
-            "Conda.".format(name))
+            "Conda.".format(name)
+        )
 
 
 distribution = Distribution.from_name
@@ -230,13 +232,13 @@ def walk_dependency_tree(initial: str, excludes: Iterable[str] = None) -> dict:
         try:
             # Collect and save it's metadata.
             done[name] = distribution = Distribution.from_name(name)
-            logger.debug("Collected Conda distribution '%s', "
-                         "a dependency of '%s'.", name, initial)
+            logger.debug("Collected Conda distribution '%s', a dependency of '%s'.", name, initial)
         except ModuleNotFoundError:
             logger.warning(
                 "Conda distribution '%s', dependency of '%s', was not found. "
                 "If you installed this distribution with pip then you may "
-                "ignore this warning.", name, initial)
+                "ignore this warning.", name, initial
+            )
             continue
         # For each dependency:
         for _name in distribution.dependencies:
@@ -299,9 +301,7 @@ def files(name: str, dependencies=False, excludes=None) -> List[PackagePath]:
         conda_support.distribution(name).files
 
     """
-    return [file
-            for dist in _iter_distributions(name, dependencies, excludes)
-            for file in dist.files]
+    return [file for dist in _iter_distributions(name, dependencies, excludes) for file in dist.files]
 
 
 if compat.is_win:
@@ -310,8 +310,7 @@ else:
     lib_dir = PackagePath("lib")
 
 
-def collect_dynamic_libs(name: str, dest: str = ".", dependencies: bool = True,
-                         excludes: Iterable[str] = None) -> List:
+def collect_dynamic_libs(name: str, dest: str = ".", dependencies: bool = True, excludes: Iterable[str] = None) -> List:
     """
     Collect DLLs for distribution **name**.
 

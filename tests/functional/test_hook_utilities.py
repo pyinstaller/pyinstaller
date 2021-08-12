@@ -15,14 +15,12 @@ def test_collect_entry_point(pyi_builder_spec, script_dir, tmpdir):
 
     """
     import pkg_resources
-    plugins = sorted(
-        i.module_name for i in pkg_resources.iter_entry_points("pytest11"))
+    plugins = sorted(i.module_name for i in pkg_resources.iter_entry_points("pytest11"))
 
     assert len(plugins), "The pytest11 entry point appears to have moved."
 
     pyi_builder_spec.test_spec('list_pytest11_entry_point.spec')
-    exe = join(tmpdir, "dist", "list_pytest11_entry_point",
-               "list_pytest11_entry_point")
+    exe = join(tmpdir, "dist", "list_pytest11_entry_point", "list_pytest11_entry_point")
 
     p = run([exe], stdout=PIPE, check=True, universal_newlines=True)
     collected_plugins = p.stdout.strip("\n").split("\n")

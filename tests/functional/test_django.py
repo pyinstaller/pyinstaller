@@ -8,7 +8,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
 """
 Functional tests for the Django content management system (CMS).
 """
@@ -32,7 +31,7 @@ from PyInstaller.utils.tests import importorskip, xfail
 # Import error occurs on win/py37
 @xfail(is_win and is_py37, reason='Fails on win/py37.')
 # Django test might sometimes hang.
-@pytest.mark.timeout(timeout=7*60)
+@pytest.mark.timeout(timeout=7 * 60)
 def test_django(pyi_builder, monkeypatch, data_dir):
     # Extend sys.path so PyInstaller could find modules from 'tmpdir/django/'.
     monkeypatch.syspath_prepend(data_dir.strpath)

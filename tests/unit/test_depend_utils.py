@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 import os
 import pytest
 import textwrap
@@ -18,16 +17,13 @@ from PyInstaller.depend import utils
 from PyInstaller.compat import is_unix, is_win
 
 CTYPES_CLASSNAMES = (
-    'CDLL',   'ctypes.CDLL',
-    'WinDLL', 'ctypes.WinDLL',
-    'OleDLL', 'ctypes.OleDLL',
-    'PyDLL',  'ctypes.PyDLL')
+    'CDLL', 'ctypes.CDLL', 'WinDLL', 'ctypes.WinDLL', 'OleDLL', 'ctypes.OleDLL', 'PyDLL', 'ctypes.PyDLL'
+)
 
 
 def __scan_code_for_ctypes(code, monkeypatch, extended_args):
     # _resolveCtypesImports would filter our some of our names
-    monkeypatch.setattr(utils, '_resolveCtypesImports',
-                        lambda cbinaries: cbinaries)
+    monkeypatch.setattr(utils, '_resolveCtypesImports', lambda cbinaries: cbinaries)
     code = textwrap.dedent(code)
 
     if extended_args:
@@ -61,8 +57,7 @@ def test_ctypes_LibraryLoader(monkeypatch, classname, extended_args):
 
 @pytest.mark.parametrize('classname', CTYPES_CLASSNAMES)
 @pytest.mark.parametrize('extended_args', [False, True])
-def test_ctypes_LibraryLoader_LoadLibrary(monkeypatch, classname,
-                                          extended_args):
+def test_ctypes_LibraryLoader_LoadLibrary(monkeypatch, classname, extended_args):
     code = "%s.LoadLibrary('somelib.xxx')" % classname.lower()
     res = __scan_code_for_ctypes(code, monkeypatch, extended_args)
     assert res == set(['somelib.xxx'])

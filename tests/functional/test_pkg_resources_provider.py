@@ -37,10 +37,7 @@ from PyInstaller.utils.tests import importorskip
 from PyInstaller.compat import exec_python, exec_python_rc
 
 # Directory with testing modules used in some tests.
-_MODULES_DIR = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)),
-    'modules'
-)
+_MODULES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modules')
 
 
 def __exec_python_script(script_filename, pathex):
@@ -57,9 +54,7 @@ def __exec_python_script(script_filename, pathex):
 def __get_test_package_path(package_type, tmpdir, monkeypatch):
     # Same test package, in two different formats: source package or
     # zipped egg (built on-the-fly)
-    src_path = os.path.join(_MODULES_DIR,
-                            'pyi_pkg_resources_provider',
-                            'package')
+    src_path = os.path.join(_MODULES_DIR, 'pyi_pkg_resources_provider', 'package')
     # Source package
     if package_type == 'pkg':
         return src_path
@@ -82,30 +77,27 @@ def __get_test_package_path(package_type, tmpdir, monkeypatch):
 
 @importorskip('pkg_resources')
 @pytest.mark.parametrize('package_type', ['pkg', 'egg'])
-def test_pkg_resources_provider_source(package_type, tmpdir, script_dir,
-                                       monkeypatch):
+def test_pkg_resources_provider_source(package_type, tmpdir, script_dir, monkeypatch):
     # Run the test script unfrozen - to validate it is working and to
     # verify the behavior of pkg_resources.DefaultProvider / ZipProvider.
     pathex = __get_test_package_path(package_type, tmpdir, monkeypatch)
     test_script = 'pyi_pkg_resources_provider.py'
-    test_script = os.path.join(str(script_dir),  # not is_py36: str()
-                               test_script)
+    test_script = os.path.join(
+        str(script_dir),  # not is_py36: str()
+        test_script
+    )
     ret = __exec_python_script(test_script, pathex=pathex)
     assert ret == 0, "Test script failed!"
 
 
 @importorskip('pkg_resources')
 @pytest.mark.parametrize('package_type', ['pkg', 'egg'])
-def test_pkg_resources_provider_frozen(pyi_builder, package_type, tmpdir,
-                                       script_dir, monkeypatch):
+def test_pkg_resources_provider_frozen(pyi_builder, package_type, tmpdir, script_dir, monkeypatch):
     # Run the test script as a frozen program
     pathex = __get_test_package_path(package_type, tmpdir, monkeypatch)
     test_script = 'pyi_pkg_resources_provider.py'
-    hooks_dir = os.path.join(_MODULES_DIR,
-                             'pyi_pkg_resources_provider',
-                             'hooks')
-    pyi_builder.test_script(test_script, pyi_args=[
-        '--paths', pathex,
-        '--hidden-import', 'pyi_pkgres_testpkg',
-        '--additional-hooks-dir', hooks_dir]
+    hooks_dir = os.path.join(_MODULES_DIR, 'pyi_pkg_resources_provider', 'hooks')
+    pyi_builder.test_script(
+        test_script,
+        pyi_args=['--paths', pathex, '--hidden-import', 'pyi_pkgres_testpkg', '--additional-hooks-dir', hooks_dir]
     )

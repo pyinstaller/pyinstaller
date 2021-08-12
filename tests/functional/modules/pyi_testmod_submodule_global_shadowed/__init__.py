@@ -9,7 +9,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
 '''
 Mock package defining a global variable of the same name as a mock submodule of
 this package.
@@ -17,7 +16,6 @@ this package.
 This package is exercised by the `test_import_submodule_global_shadowed`
 functional test.
 '''
-
 
 submodule = 'That is not dead which can eternal lie.'
 '''

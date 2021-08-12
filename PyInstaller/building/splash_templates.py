@@ -8,11 +8,10 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 # -----------------------------------------------------------------------------
-
 """
 Templates for the splash screen tcl script
 """
-from PyInstaller.compat import is_win, is_cygwin, is_darwin
+from PyInstaller.compat import is_cygwin, is_darwin, is_win
 
 ipc_script = r"""
 proc _ipc_server {channel clientaddr clientport} {

@@ -9,12 +9,9 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 # PYTHONHOME (sys.prefix) has to be same as sys._MEIPASS.
 
-
 import sys
-
 
 print(('sys._MEIPASS: ' + sys._MEIPASS))
 print(('sys.prefix: ' + sys.prefix))

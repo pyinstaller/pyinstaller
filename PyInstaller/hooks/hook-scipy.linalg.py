@@ -9,7 +9,5 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 # The hidden import is necessary for SciPy 0.16+.
 hiddenimports = ['scipy.linalg.cython_blas', 'scipy.linalg.cython_lapack']
-

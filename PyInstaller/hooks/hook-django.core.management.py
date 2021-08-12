@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 from PyInstaller.utils.hooks import collect_submodules
 
 # Module django.core.management.commands.shell imports IPython but it

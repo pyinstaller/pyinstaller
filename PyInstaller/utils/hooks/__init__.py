@@ -11,15 +11,15 @@
 import copy
 import glob
 import os
-import pkg_resources
 import pkgutil
 import sys
 import textwrap
 from pathlib import Path
-from typing import Tuple, Callable
+from typing import Callable, Tuple
 
-from PyInstaller import compat
-from PyInstaller import HOMEPATH
+import pkg_resources
+
+from PyInstaller import HOMEPATH, compat
 from PyInstaller import log as logging
 from PyInstaller.exceptions import ExecCommandFailed
 from PyInstaller.utils.hooks.win32 import \
@@ -119,9 +119,11 @@ def __exec_script(script_filename, *args, env=None, capture_stdout=True):
     script_filename = os.path.basename(script_filename)
     script_filename = os.path.join(os.path.dirname(__file__), 'subproc', script_filename)
     if not os.path.exists(script_filename):
-        raise SystemError("To prevent misuse, the script passed to "
-                          "PyInstaller.utils.hooks.exec_script must be located "
-                          "in the `PyInstaller/utils/hooks/subproc` directory.")
+        raise SystemError(
+            "To prevent misuse, the script passed to "
+            "PyInstaller.utils.hooks.exec_script must be located "
+            "in the `PyInstaller/utils/hooks/subproc` directory."
+        )
 
     cmd = [script_filename]
     cmd.extend(args)
@@ -208,7 +210,9 @@ def get_pyextension_imports(modname):
         diff.discard('%(modname)s')
         # Print module list to stdout.
         print(list(diff))
-    """ % {'modname': modname}
+    """ % {
+        'modname': modname
+    }
     module_imports = eval_statement(statement)
 
     if not module_imports:
@@ -302,7 +306,8 @@ def can_import_module(module_name):
         Boolean indicating whether the module can be imported or not.
     """
 
-    rc = exec_statement_rc("""
+    rc = exec_statement_rc(
+        """
         try:
             import {0}
         except ModuleNotFoundError:
@@ -343,14 +348,15 @@ def get_module_attribute(module_name, attr_name):
     # undefined, which should be sufficiently obscure as to avoid collisions
     # with actual attribute values. That's the hope, anyway.
     attr_value_if_undefined = '!)ABadCafe@(D15ea5e#*DeadBeef$&Fee1Dead%^'
-    attr_value = exec_statement("""
+    attr_value = exec_statement(
+        """
         import %s as m
         print(getattr(m, %r, %r))
-    """ % (module_name, attr_name, attr_value_if_undefined))
+        """ % (module_name, attr_name, attr_value_if_undefined)
+    )
 
     if attr_value == attr_value_if_undefined:
-        raise AttributeError(
-            'Module %r has no attribute %r' % (module_name, attr_name))
+        raise AttributeError('Module %r has no attribute %r' % (module_name, attr_name))
     else:
         return attr_value
 
@@ -555,8 +561,7 @@ def get_package_paths(package):
     return pkg_base, pkg_dir
 
 
-def collect_submodules(package: str,
-                       filter: Callable[[str], bool] = lambda name: True):
+def collect_submodules(package: str, filter: Callable[[str], bool] = lambda name: True):
     """List all submodules of a given package.
 
     Arguments:
@@ -594,7 +599,8 @@ def collect_submodules(package: str,
     # Walk the package. Since this performs imports, do it in a separate
     # process. Because module import may result in exta output to stdout,
     # we enclose the output module names with special prefix and suffix.
-    names = exec_statement("""
+    names = exec_statement(
+        """
         import sys
         import pkgutil
         import traceback
@@ -640,8 +646,11 @@ def collect_submodules(package: str,
         for module_loader, name, ispkg in walk_packages([{}], '{}.'):
             print('\\n$_pyi:' + name + '*')
         """.format(
-                  # Use repr to escape Windows backslashes.
-                  repr(pkg_dir), package))
+            # Use repr to escape Windows backslashes.
+            repr(pkg_dir),
+            package
+        )
+    )
 
     # Include the package itself in the results.
     mods = {package}
@@ -725,8 +734,7 @@ def collect_dynamic_libs(package, destdir=None):
     return dylibs
 
 
-def collect_data_files(package, include_py_files=False, subdir=None,
-                       excludes=None, includes=None):
+def collect_data_files(package, include_py_files=False, subdir=None, excludes=None, includes=None):
     r"""
     This routine produces a list of ``(source, dest)`` non-Python (i.e. data)
     files which reside in ``package``. Its results can be directly assigned to
@@ -826,6 +834,7 @@ def collect_data_files(package, include_py_files=False, subdir=None,
                 else:
                     # In/exclude a matching file.
                     sources.add(g) if is_include else sources.discard(g)
+
     clude_walker(includes, includes_len, True)
     clude_walker(excludes, excludes_len, False)
 
@@ -971,8 +980,7 @@ def _copy_metadata_dest(egg_path: str, project_name: str) -> str:
     if egg_path is None:
         # According to older implementations of this function, packages may
         # have no metadata. I have no idea when this can happen...
-        raise RuntimeError(
-            f"No metadata path found for distribution '{project_name}'.")
+        raise RuntimeError(f"No metadata path found for distribution '{project_name}'.")
 
     egg_path = Path(egg_path)
     _project_name = _normalise_dist(project_name)
@@ -1003,7 +1011,8 @@ def _copy_metadata_dest(egg_path: str, project_name: str) -> str:
     raise RuntimeError(
         f"Unknown metadata type '{egg_path}' from the '{project_name}' "
         f"distribution. Please report this at "
-        f"https://github/pyinstaller/pyinstaller/issues.")
+        f"https://github/pyinstaller/pyinstaller/issues."
+    )
 
 
 def get_installer(module):
@@ -1033,22 +1042,26 @@ def get_installer(module):
             if lines[0] != '':
                 installer = lines[0].rstrip('\r\n')
                 logger.debug(
-                    'Found installer: \'{0}\' for module: \'{1}\' from package: \'{2}\''.format(installer, module,
-                                                                                                package))
+                    'Found installer: \'{0}\' for module: \'{1}\' from package: \'{2}\''.format(
+                        installer, module, package
+                    )
+                )
                 return installer
     if compat.is_darwin:
         try:
             output = compat.exec_command_stdout('port', 'provides', file_name)
             if 'is provided by' in output:
                 logger.debug(
-                    'Found installer: \'macports\' for module: \'{0}\' from package: \'{1}\''.format(module, package))
+                    'Found installer: \'macports\' for module: \'{0}\' from package: \'{1}\''.format(module, package)
+                )
                 return 'macports'
         except ExecCommandFailed:
             pass
         real_path = os.path.realpath(file_name)
         if 'Cellar' in real_path:
             logger.debug(
-                'Found installer: \'homebrew\' for module: \'{0}\' from package: \'{1}\''.format(module, package))
+                'Found installer: \'homebrew\' for module: \'{0}\' from package: \'{1}\''.format(module, package)
+            )
             return 'homebrew'
     return None
 
@@ -1106,17 +1119,20 @@ def requirements_for_package(package_name):
             required_packages = dist_to_packages[requirement.key]
             hiddenimports.extend(required_packages)
         else:
-            logger.warning('Unable to find package for requirement %s from '
-                           'package %s.',
-                           requirement.project_name, package_name)
+            logger.warning(
+                'Unable to find package for requirement %s from '
+                'package %s.', requirement.project_name, package_name
+            )
 
     logger.info('Packages required by %s:\n%s', package_name, hiddenimports)
     return hiddenimports
 
 
-def collect_all(
-        package_name, include_py_files=True, filter_submodules=None,
-        exclude_datas=None, include_datas=None) -> Tuple[list, list, list]:
+def collect_all(package_name,
+                include_py_files=True,
+                filter_submodules=None,
+                exclude_datas=None,
+                include_datas=None) -> Tuple[list, list, list]:
     """Collect everything for a given package name.
 
     Arguments:
@@ -1149,19 +1165,16 @@ def collect_all(
         datas += copy_metadata(package_name)
     except Exception as e:
         logger.warning('Unable to copy metadata for %s: %s', package_name, e)
-    datas += collect_data_files(package_name, include_py_files,
-                                excludes=exclude_datas, includes=include_datas)
+    datas += collect_data_files(package_name, include_py_files, excludes=exclude_datas, includes=include_datas)
     binaries = collect_dynamic_libs(package_name)
     if filter_submodules:
-        hiddenimports = collect_submodules(package_name,
-                                           filter=filter_submodules)
+        hiddenimports = collect_submodules(package_name, filter=filter_submodules)
     else:
         hiddenimports = collect_submodules(package_name)
     try:
         hiddenimports += requirements_for_package(package_name)
     except Exception as e:
-        logger.warning('Unable to determine requirements for %s: %s',
-                       package_name, e)
+        logger.warning('Unable to determine requirements for %s: %s', package_name, e)
 
     return datas, binaries, hiddenimports
 
@@ -1238,6 +1251,7 @@ def get_hook_config(hook_api, module_name, key):
         value = config[module_name][key]
     return value
 
+
 if compat.is_pure_conda:
     from PyInstaller.utils.hooks import conda as conda_support  # noqa: F401
 elif compat.is_conda:
@@ -1245,5 +1259,6 @@ elif compat.is_conda:
     logger.warning(
         "Assuming this isn't an Anaconda environment or an additional venv/"
         "pipenv/... environment manager is being used on top because the "
-        "conda-meta folder %s doesn't exist.", _tmp)
+        "conda-meta folder %s doesn't exist.", _tmp
+    )
     del _tmp

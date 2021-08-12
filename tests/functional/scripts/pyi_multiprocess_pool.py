@@ -13,7 +13,7 @@ import multiprocessing
 
 
 def f(x):
-    return x*x
+    return x * x
 
 
 if __name__ == '__main__':
@@ -22,7 +22,7 @@ if __name__ == '__main__':
     pool = multiprocessing.Pool(processes=4)
     print('Evaluate "f(10)" asynchronously.')
     res = pool.apply_async(f, [10])
-    print(res.get(timeout=1))          # prints "100"
+    print(res.get(timeout=1))  # prints "100"
     print('Print "[0, 1, 4,..., 81]"')
     print(pool.map(f, range(10)))
     # this is old code, based on Python 2, not using Pool as a context, so we

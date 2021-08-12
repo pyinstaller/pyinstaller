@@ -8,7 +8,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
 """
 Hook for QtAwesome (https://github.com/spyder-ide/qtawesome).
 Font files and charmaps need to be included with module.

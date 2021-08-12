@@ -8,8 +8,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-
 """
 Utilities to create data structures for embedding Python modules and additional
 files into the executable.
@@ -23,19 +21,17 @@ files into the executable.
 # See pyi_carchive.py for a more general archive (contains anything)
 # that can be understood by a C program.
 
-import os
-import sys
-import struct
-from types import CodeType
-import marshal
-import zlib
 import io
+import marshal
+import os
+import struct
+import sys
+import zlib
+from types import CodeType
 
-from PyInstaller.building.utils import get_code_object, strip_paths_in_code,\
-    fake_pyc_timestamp
-from PyInstaller.loader.pyimod02_archive import PYZ_TYPE_MODULE, PYZ_TYPE_PKG, \
-    PYZ_TYPE_DATA, PYZ_TYPE_NSPKG
+from PyInstaller.building.utils import (fake_pyc_timestamp, get_code_object, strip_paths_in_code)
 from PyInstaller.compat import BYTECODE_MAGIC, is_py37, is_win
+from PyInstaller.loader.pyimod02_archive import (PYZ_TYPE_DATA, PYZ_TYPE_MODULE, PYZ_TYPE_NSPKG, PYZ_TYPE_PKG)
 
 
 class ArchiveWriter(object):
@@ -99,8 +95,7 @@ class ArchiveWriter(object):
             self.update_headers(toc_pos)
         self.lib.close()
 
-
-    ####### manages keeping the internal TOC and the guts in sync #######
+    # manages keeping the internal TOC and the guts in sync #
     def add(self, entry):
         """
         Override this to influence the mechanics of the Archive.
@@ -135,19 +130,24 @@ class ArchiveWriter(object):
 
                 # List of all marshallable types.
                 MARSHALLABLE_TYPES = {
-                    bool, int, float, complex, str, bytes, bytearray, tuple,
-                    list, set, frozenset, dict, CodeType
+                    bool, int, float, complex, str, bytes, bytearray, tuple, list, set, frozenset, dict, CodeType
                 }
 
                 for module_name, module_tuple in self.toc.items():
                     if type(module_name) not in MARSHALLABLE_TYPES:
                         print('Module name "%s" (%s) unmarshallable.' % (module_name, type(module_name)))
                     if type(module_tuple) not in MARSHALLABLE_TYPES:
-                        print('Module "%s" tuple "%s" (%s) unmarshallable.' % (module_name, module_tuple, type(module_tuple)))
+                        print(
+                            'Module "%s" tuple "%s" (%s) unmarshallable.' %
+                            (module_name, module_tuple, type(module_tuple))
+                        )
                     elif type(module_tuple) == tuple:
                         for i in range(len(module_tuple)):
                             if type(module_tuple[i]) not in MARSHALLABLE_TYPES:
-                                print('Module "%s" tuple index %s item "%s" (%s) unmarshallable.' % (module_name, i, module_tuple[i], type(module_tuple[i])))
+                                print(
+                                    'Module "%s" tuple index %s item "%s" (%s) unmarshallable.' %
+                                    (module_name, i, module_tuple[i], type(module_tuple[i]))
+                                )
 
             raise
 
@@ -186,7 +186,6 @@ class ZlibArchiveWriter(ArchiveWriter):
         self.cipher = cipher or None
 
         super(ZlibArchiveWriter, self).__init__(archive_path, logical_toc)
-
 
     def add(self, entry):
         name, path, typ = entry
@@ -227,7 +226,6 @@ class ZlibArchiveWriter(ArchiveWriter):
         self.lib.write(struct.pack('!B', self.cipher is not None))
 
 
-
 class CTOC(object):
     """
     A class encapsulating the table of contents of a CArchive.
@@ -252,7 +250,7 @@ class CTOC(object):
             # (and standard shared libraries should have the same) and
             # thus the C-code still can handle this correctly.
             nm = nm.encode('utf-8')
-            nmlen = len(nm) + 1       # add 1 for a '\0'
+            nmlen = len(nm) + 1  # add 1 for a '\0'
             # align to 16 byte boundary so xplatform C can read
             toclen = nmlen + self.ENTRYLEN
             if toclen % 16 == 0:
@@ -261,9 +259,12 @@ class CTOC(object):
                 padlen = 16 - (toclen % 16)
                 pad = b'\0' * padlen
                 nmlen = nmlen + padlen
-            rslt.append(struct.pack(self.ENTRYSTRUCT + '%is' % nmlen,
-                                    nmlen + self.ENTRYLEN, dpos, dlen, ulen,
-                                    flag, ord(typcd), nm + pad))
+            rslt.append(
+                struct.pack(
+                    self.ENTRYSTRUCT + '%is' % nmlen, nmlen + self.ENTRYLEN, dpos, dlen, ulen, flag, ord(typcd),
+                    nm + pad
+                )
+            )
 
         return b''.join(rslt)
 
@@ -433,7 +434,7 @@ class CArchiveWriter(ArchiveWriter):
                 # We only want to change it for pyc files
                 modify_header = typcd in ('M', 'm', 's')
                 while 1:
-                    buf = fh.read(16*1024)
+                    buf = fh.read(16 * 1024)
                     if not buf:
                         break
                     if modify_header:
@@ -448,7 +449,7 @@ class CArchiveWriter(ArchiveWriter):
             else:
                 assert fh
                 while 1:
-                    buf = fh.read(16*1024)
+                    buf = fh.read(16 * 1024)
                     if not buf:
                         break
                     self.lib.write(buf)
@@ -463,7 +464,6 @@ class CArchiveWriter(ArchiveWriter):
 
         # Record the entry in the CTOC
         self.toc.add(where, dlen, ulen, flag, typcd, nm)
-
 
     def save_trailer(self, tocpos):
         """
@@ -482,9 +482,9 @@ class CArchiveWriter(ArchiveWriter):
         pyvers = sys.version_info[0] * 10 + sys.version_info[1]
         # Before saving cookie we need to convert it to corresponding
         # C representation.
-        cookie = struct.pack(self._cookie_format, self.MAGIC, total_len,
-                             tocpos, toclen, pyvers,
-                             self._pylib_name.encode('ascii'))
+        cookie = struct.pack(
+            self._cookie_format, self.MAGIC, total_len, tocpos, toclen, pyvers, self._pylib_name.encode('ascii')
+        )
         self.lib.write(cookie)
 
 
@@ -524,12 +524,11 @@ class SplashWriter(ArchiveWriter):
     #
     _header_format = '!16s 16s 16s 16s ii ii ii'
     HDRLEN = struct.calcsize(_header_format)
+
     # The created resource will be compressed by the CArchive,
     # so no need to compress the data here
 
-    def __init__(self, archive_path, name_list,
-                 tcl_libname, tk_libname, tklib, rundir,
-                 image, script):
+    def __init__(self, archive_path, name_list, tcl_libname, tk_libname, tklib, rundir, image, script):
         """
         Custom writer for splash screen resources which will be bundled
         into the CArchive as an entry.
@@ -581,17 +580,13 @@ class SplashWriter(ArchiveWriter):
         :return:
         """
         self.lib.seek(self.start)
-        self.lib.write(struct.pack(self._header_format,
-                                   self._tcl_libname.encode("utf-8"),
-                                   self._tk_libname.encode("utf-8"),
-                                   self._tklib.encode("utf-8"),
-                                   self._rundir.encode("utf-8"),
-                                   self._script_len,
-                                   self._script_offset,
-                                   self._image_len,
-                                   self._image_offset,
-                                   self._requirements_len,
-                                   self._requirements_offset))
+        self.lib.write(
+            struct.pack(
+                self._header_format, self._tcl_libname.encode("utf-8"), self._tk_libname.encode("utf-8"),
+                self._tklib.encode("utf-8"), self._rundir.encode("utf-8"), self._script_len, self._script_offset,
+                self._image_len, self._image_offset, self._requirements_len, self._requirements_offset
+            )
+        )
 
     def save_trailer(self, script_pos):
         """ Adds the image and script """

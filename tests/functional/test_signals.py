@@ -18,10 +18,7 @@ import signal
 # -------------------
 import pytest
 
-signals = sorted([
-    key for key in dir(signal)
-    if key.startswith('SIG') and not key.startswith('SIG_')
-])
+signals = sorted([key for key in dir(signal) if key.startswith('SIG') and not key.startswith('SIG_')])
 
 
 @pytest.mark.darwin
@@ -33,13 +30,9 @@ def test_signal_handled(pyi_builder, signame, ignore):
     if signame in ['SIGKILL', 'SIGSTOP']:
         pytest.skip('{} cannot be caught'.format(signame))
     elif signame in ['SIGCHLD', 'SIGCLD']:
-        pytest.skip(
-            'Messing with {} interferes with bootloader'.format(signame)
-        )
+        pytest.skip('Messing with {} interferes with bootloader'.format(signame))
     elif signame == 'SIGTSTP':
-        pytest.xfail(
-            '{} is not caught to allow Ctrl-Z'.format(signame)
-        )
+        pytest.xfail('{} is not caught to allow Ctrl-Z'.format(signame))
 
     verb = 'ignored' if ignore else 'handled'
     app_name = 'test_signal_{}_{}'.format(verb, signame)
@@ -108,4 +101,5 @@ def test_signal_handled(pyi_builder, signame, ignore):
         """.format(signame=signame, app_name=app_name, ignore=ignore),
         app_name=app_name,
         runtime=5,
-        pyi_args=pyi_args)
+        pyi_args=pyi_args
+    )

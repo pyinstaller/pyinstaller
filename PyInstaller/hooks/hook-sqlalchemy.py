@@ -10,10 +10,10 @@
 #-----------------------------------------------------------------------------
 
 import re
-from PyInstaller.utils.hooks import (
-    exec_statement, is_module_satisfies, logger)
+
 from PyInstaller.lib.modulegraph.modulegraph import SourceModule
 from PyInstaller.lib.modulegraph.util import guess_encoding
+from PyInstaller.utils.hooks import exec_statement, is_module_satisfies, logger
 
 # 'sqlalchemy.testing' causes bundling a lot of unnecessary modules.
 excludedimports = ['sqlalchemy.testing']
@@ -75,6 +75,5 @@ def hook(hook_api):
 
     hidden_imports_set -= known_imports
     if len(hidden_imports_set):
-        logger.info("  Found %d sqlalchemy hidden imports",
-                    len(hidden_imports_set))
+        logger.info("  Found %d sqlalchemy hidden imports", len(hidden_imports_set))
         hook_api.add_imports(*list(hidden_imports_set))

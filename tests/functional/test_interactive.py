@@ -8,8 +8,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-
 """
 Interactive tests are successful when they are able to run
 the executable for some time. Otherwise it is marked as fail.
@@ -27,23 +25,20 @@ _RUNTIME = 10  # In seconds.
 @importorskip('IPython')
 @pytest.mark.skipif(is_win, reason='See issue #3535.')
 def test_ipython(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         from IPython import embed
         embed()
         """, runtime=_RUNTIME)
 
 
 # Splash screen is not supported on macOS due to incompatible design.
-@pytest.mark.skipif(is_darwin, reason="Splash screen is not supported "
-                                      "on macOS.")
+@pytest.mark.skipif(is_darwin, reason="Splash screen is not supported on macOS.")
 @pytest.mark.parametrize("mode", ['onedir', 'onefile'])
 def test_pyi_splash(pyi_builder_spec, capfd, monkeypatch, mode):
     if mode == 'onefile':
         monkeypatch.setenv('_TEST_SPLASH_ONEFILE', 'onefile')
 
-    pyi_builder_spec.test_spec('spec_with_splash.spec',
-                               runtime=_RUNTIME)
+    pyi_builder_spec.test_spec('spec_with_splash.spec', runtime=_RUNTIME)
 
     out, err = capfd.readouterr()
     assert 'SPLASH: Splash screen started' in err, \

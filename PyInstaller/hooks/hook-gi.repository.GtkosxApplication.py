@@ -15,8 +15,5 @@ Import hook for PyGObject https://wiki.gnome.org/PyGObject
 from PyInstaller.compat import is_darwin
 from PyInstaller.utils.hooks.gi import get_gi_typelibs
 
-
 if is_darwin:
-    binaries, datas, hiddenimports = get_gi_typelibs(
-        'GtkosxApplication', '1.0'
-    )
+    binaries, datas, hiddenimports = get_gi_typelibs('GtkosxApplication', '1.0')

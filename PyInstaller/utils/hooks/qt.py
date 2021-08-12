@@ -8,16 +8,15 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
+import glob
+import json
 import os
 import sys
-import json
-import glob
 
-from PyInstaller.utils import hooks
-from PyInstaller.depend import bindepend
-from PyInstaller import log as logging
 from PyInstaller import compat
-from PyInstaller.utils import misc
+from PyInstaller import log as logging
+from PyInstaller.depend import bindepend
+from PyInstaller.utils import hooks, misc
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +90,8 @@ class QtLibraryInfo:
             # initialization was already done.
             self.version = None
             # Get library path information from Qt. See QLibraryInfo_.
-            json_str = hooks.exec_statement("""
+            json_str = hooks.exec_statement(
+                """
                 import sys
 
                 # exec_statement only captures stdout. If there are
@@ -144,12 +144,12 @@ class QtLibraryInfo:
                     'version': version,
                     'location': location,
                 }))
-            """ % self.namespace)
+                """ % self.namespace
+            )
             try:
                 qli = json.loads(json_str)
             except Exception as e:
-                logger.warning('Cannot read QLibraryInfo output: raised %s when '
-                               'decoding:\n%s', str(e), json_str)
+                logger.warning('Cannot read QLibraryInfo output: raised %s when decoding:\n%s', str(e), json_str)
                 qli = {}
 
             for k, v in qli.items():
@@ -200,10 +200,12 @@ def qt_plugins_dir(namespace):
                 valid_paths.append(str(path))  # must be 8-bit chars for one-file builds
         qt_plugin_paths = valid_paths
     if not qt_plugin_paths:
-        raise Exception("""
+        raise Exception(
+            """
             Cannot find existing {0} plugin directories
             Paths checked: {1}
-            """.format(namespace, ", ".join(paths)))
+            """.format(namespace, ", ".join(paths))
+        )
     return qt_plugin_paths
 
 
@@ -427,7 +429,7 @@ _qt5_dynamic_dependencies_dict = {
     "qt5webchannel":            (".QtWebChannel",          None,               ),
     "qt5texttospeech":          (None,                     None,               "texttospeech"),
     "qt5serialbus":             (None,                     None,               "canbus"),
-}
+}  # yapf: disable
 
 # The dynamic dependency dictionary for Qt6 is constructed automatically
 # from its Qt5 counterpart, by copying the entries and substituting
@@ -473,8 +475,7 @@ def add_qt_dependencies(hook_file):
 
     # Look up the module returned by this import.
     module = hooks.get_module_file_attribute(module_name)
-    logger.debug('add_qt%d_dependencies: Examining %s, based on hook of %s.',
-                 qt_info.qt_major, module, hook_file)
+    logger.debug('add_qt%d_dependencies: Examining %s, based on hook of %s.', qt_info.qt_major, module, hook_file)
 
     # Walk through all the static dependencies of a dynamically-linked library
     # (``.so``/``.dll``/``.dylib``).
@@ -486,8 +487,7 @@ def add_qt_dependencies(hook_file):
         # full path.
         if compat.is_win:
             # First, look for Qt binaries in the local Qt install.
-            imp = bindepend.getfullnameof(
-                imp, qt_info.location['BinariesPath'])
+            imp = bindepend.getfullnameof(imp, qt_info.location['BinariesPath'])
 
         # Strip off the extension and ``lib`` prefix (Linux/Mac) to give the raw
         # name. Lowercase (since Windows always normalized names to lowercase).
@@ -508,17 +508,15 @@ def add_qt_dependencies(hook_file):
         if lib_name.endswith('_conda'):
             lib_name = lib_name[:-6]
 
-        logger.debug('add_qt%d_dependencies: raw lib %s -> parsed lib %s',
-                     qt_info.qt_major, imp, lib_name)
+        logger.debug('add_qt%d_dependencies: raw lib %s -> parsed lib %s', qt_info.qt_major, imp, lib_name)
 
         # Follow only Qt dependencies.
         _qt_dynamic_dependencies_dict = (
-            _qt5_dynamic_dependencies_dict if qt_info.qt_major == 5
-            else _qt6_dynamic_dependencies_dict)
+            _qt5_dynamic_dependencies_dict if qt_info.qt_major == 5 else _qt6_dynamic_dependencies_dict
+        )
         if lib_name in _qt_dynamic_dependencies_dict:
             # Follow these to find additional dependencies.
-            logger.debug('add_qt%d_dependencies: Import of %s.',
-                         qt_info.qt_major, imp)
+            logger.debug('add_qt%d_dependencies: Import of %s.', qt_info.qt_major, imp)
             imports.update(bindepend.getImports(imp))
             # Look up which plugins and translations are needed.
             dd = _qt_dynamic_dependencies_dict[lib_name]
@@ -549,17 +547,19 @@ def add_qt_dependencies(hook_file):
         if glob.glob(src):
             datas.append((src, tp_dst))
         else:
-            logger.warning('Unable to find Qt%d translations %s. These '
-                           'translations were not packaged.',
-                           qt_info.qt_major, src)
+            logger.warning(
+                'Unable to find Qt%d translations %s. These '
+                'translations were not packaged.', qt_info.qt_major, src
+            )
     # Change hiddenimports to a list.
     hiddenimports = list(hiddenimports)
 
-    logger.debug('add_qt%d_dependencies: imports from %s:\n'
-                 '  hiddenimports = %s\n'
-                 '  binaries = %s\n'
-                 '  datas = %s',
-                 qt_info.qt_major, hook_name, hiddenimports, binaries, datas)
+    logger.debug(
+        'add_qt%d_dependencies: imports from %s:\n'
+        '  hiddenimports = %s\n'
+        '  binaries = %s\n'
+        '  datas = %s', qt_info.qt_major, hook_name, hiddenimports, binaries, datas
+    )
     return hiddenimports, binaries, datas
 
 
@@ -569,7 +569,6 @@ def add_qt_dependencies(hook_file):
 # Returns (hiddenimports, binaries, datas). Typical usage: ``hiddenimports,
 # binaries, datas = add_qt5_dependencies(__file__)``.
 add_qt5_dependencies = add_qt_dependencies  # Use generic implementation
-
 
 # add_qt6_dependencies
 # --------------------
@@ -600,9 +599,9 @@ def _find_all_or_none(globs_to_include, num_files, qt_library_info):
         # In PyQt5/PyQt6, the DLLs we are looking for are located in
         # location['BinariesPath'], whereas in PySide2/PySide6, they
         # are located in location['PrefixPath'].
-        dll_path = os.path.join(qt_library_info.location[
-            'BinariesPath' if qt_library_info.is_pyqt else 'PrefixPath'
-        ], dll)
+        dll_path = os.path.join(
+            qt_library_info.location['BinariesPath' if qt_library_info.is_pyqt else 'PrefixPath'], dll
+        )
         dll_file_paths = glob.glob(dll_path)
         for dll_file_path in dll_file_paths:
             to_include.append((dll_file_path, dst_dll_path))
@@ -640,9 +639,12 @@ def get_qt_network_ssl_binaries(qt_library_info):
         return []
 
     # Check if QtNetwork supports SSL
-    ssl_enabled = hooks.eval_statement("""
+    ssl_enabled = hooks.eval_statement(
+        """
         from {}.QtNetwork import QSslSocket
-        print(QSslSocket.supportsSsl())""".format(qt_library_info.namespace))
+        print(QSslSocket.supportsSsl())
+        """.format(qt_library_info.namespace)
+    )
     if not ssl_enabled:
         return []
 
@@ -651,12 +653,8 @@ def get_qt_network_ssl_binaries(qt_library_info):
     # provided by Conda) put the libraries into the BinariesPath.
     # PyQt5 also uses BinariesPath.
     # Accommodate both options by searching both locations...
-    locations = (
-        qt_library_info.location['BinariesPath'],
-        qt_library_info.location['PrefixPath']
-    )
-    dll_names = ('libeay32.dll', 'ssleay32.dll', 'libssl-1_1-x64.dll',
-                 'libcrypto-1_1-x64.dll')
+    locations = (qt_library_info.location['BinariesPath'], qt_library_info.location['PrefixPath'])
+    dll_names = ('libeay32.dll', 'ssleay32.dll', 'libssl-1_1-x64.dll', 'libcrypto-1_1-x64.dll')
     binaries = []
     for location in locations:
         for dll in dll_names:
@@ -680,9 +678,10 @@ def get_qt_qml_files(qt_library_info):
     # https://github.com/pyinstaller/pyinstaller/issues/3864
     qmldir = qt_library_info.location['Qml2ImportsPath']
     if not qmldir or not os.path.exists(qmldir):
-        logger.warning('QML directory for %s, %r, does not exist. '
-                       'QML files not packaged.', qt_library_info.namespace,
-                       qmldir)
+        logger.warning(
+            'QML directory for %s, %r, does not exist. '
+            'QML files not packaged.', qt_library_info.namespace, qmldir
+        )
         return [], []
 
     qml_rel_dir = os.path.join(qt_library_info.qt_rel_dir, 'qml')
@@ -690,8 +689,7 @@ def get_qt_qml_files(qt_library_info):
     binaries = [
         # Produce ``/path/to/Qt/Qml/path_to_qml_binary/qml_binary,
         # PyQt5/Qt/Qml/path_to_qml_binary``.
-        (f, os.path.join(qml_rel_dir,
-                         os.path.dirname(os.path.relpath(f, qmldir))))
+        (f, os.path.join(qml_rel_dir, os.path.dirname(os.path.relpath(f, qmldir))))
         for f in misc.dlls_in_subdirs(qmldir)
     ]
 
@@ -704,10 +702,10 @@ def get_qt_conf_file(qt_library_info):
     if qt_library_info.version is None:
         return []
     # Find ``qt.conf`` in location['PrefixPath']
-    datas = [x for x in hooks.collect_system_data_files(
-             qt_library_info.location['PrefixPath'],
-             qt_library_info.qt_rel_dir)
-             if os.path.basename(x[0]) == 'qt.conf']
+    datas = [
+        x for x in hooks.collect_system_data_files(qt_library_info.location['PrefixPath'], qt_library_info.qt_rel_dir)
+        if os.path.basename(x[0]) == 'qt.conf'
+    ]
     return datas
 
 
@@ -762,38 +760,41 @@ def get_qt_webengine_binaries_and_data_files(qt_library_info):
         # sorted out, but in the mean time, we have to live with what
         # we've been given.
         data_path = qt_library_info.location['DataPath']
-        libraries = ['QtCore', 'QtWebEngineCore', 'QtQuick', 'QtQml',
-                     'QtQmlModels', 'QtNetwork', 'QtGui', 'QtWebChannel',
-                     'QtPositioning']
+        libraries = [
+            'QtCore', 'QtWebEngineCore', 'QtQuick', 'QtQml', 'QtQmlModels', 'QtNetwork', 'QtGui', 'QtWebChannel',
+            'QtPositioning'
+        ]
         for i in libraries:
             framework_dir = i + '.framework'
             datas += hooks.collect_system_data_files(
-                os.path.join(data_path, 'lib', framework_dir),
-                os.path.join(rel_data_path, 'lib', framework_dir), True)
-        datas += [(os.path.join(data_path, 'lib', 'QtWebEngineCore.framework',
-                                'Resources'), os.curdir)]
+                os.path.join(data_path, 'lib', framework_dir), os.path.join(rel_data_path, 'lib', framework_dir), True
+            )
+        datas += [(os.path.join(data_path, 'lib', 'QtWebEngineCore.framework', 'Resources'), os.curdir)]
     else:
         # Windows and linux
         locales = 'qtwebengine_locales'
         resources = 'resources'
-        datas += [
-            # Translations
-            (os.path.join(qt_library_info.location['TranslationsPath'],
-                          locales),
-             os.path.join(rel_data_path, 'translations', locales)),
-            # Resources; ``DataPath`` is the base directory for ``resources``,
-            # as per the `docs
-            # <https://doc.qt.io/qt-5.10/qtwebengine-deploying.html#deploying-resources>`_
-            (os.path.join(qt_library_info.location['DataPath'], resources),
-             os.path.join(rel_data_path, resources)),
-            # Helper process executable (QtWebEngineProcess), located in
-            # ``LibraryExecutablesPath``.
-            (os.path.join(qt_library_info.location['LibraryExecutablesPath'],
-                          'QtWebEngineProcess*'),
-             os.path.join(rel_data_path, os.path.relpath(
-                qt_library_info.location['LibraryExecutablesPath'],
-                qt_library_info.location['PrefixPath'])))
-        ]
+
+        # Translations
+        datas.append((
+            os.path.join(qt_library_info.location['TranslationsPath'], locales),
+            os.path.join(rel_data_path, 'translations', locales),
+        ))
+
+        # Resources; ``DataPath`` is the base directory for ``resources``,
+        # as per the `docs
+        # <https://doc.qt.io/qt-5.10/qtwebengine-deploying.html#deploying-resources>`_
+        datas.append(
+            (os.path.join(qt_library_info.location['DataPath'], resources), os.path.join(rel_data_path, resources)),
+        )
+
+        # Helper process executable (QtWebEngineProcess), located in
+        # ``LibraryExecutablesPath``.
+        dest = os.path.join(
+            rel_data_path,
+            os.path.relpath(qt_library_info.location['LibraryExecutablesPath'], qt_library_info.location['PrefixPath'])
+        )
+        datas.append((os.path.join(qt_library_info.location['LibraryExecutablesPath'], 'QtWebEngineProcess*'), dest))
 
     # Add Linux-specific libraries.
     if compat.is_linux:
@@ -806,8 +807,7 @@ def get_qt_webengine_binaries_and_data_files(qt_library_info):
 
         # First, get all libraries linked to ``QtWebEngineWidgets``
         # extension module.
-        module_file = hooks.get_module_file_attribute(
-            qt_library_info.namespace + '.QtWebEngineWidgets')
+        module_file = hooks.get_module_file_attribute(qt_library_info.namespace + '.QtWebEngineWidgets')
         module_imports = bindepend.getImports(module_file)
         for imp in module_imports:
             # Look for ``libnss3.so``.

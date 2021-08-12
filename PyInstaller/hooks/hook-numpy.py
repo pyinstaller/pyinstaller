@@ -24,8 +24,8 @@ be high priority. Feel free to @mention either bwoodsend or Legorooj on Github
 for help keeping it working.
 """
 
-from PyInstaller.utils.hooks import collect_dynamic_libs
 from PyInstaller.compat import is_conda, is_pure_conda
+from PyInstaller.utils.hooks import collect_dynamic_libs
 
 # Collect all DLLs inside numpy's installation folder, dump them into built
 # app's root.

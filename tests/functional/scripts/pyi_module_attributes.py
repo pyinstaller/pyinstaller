@@ -9,10 +9,8 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 # Compare attributes of ElementTree (cElementTree) module from frozen executable
 # with ElementTree (cElementTree) module from standard python.
-
 
 import copy
 import os
@@ -41,8 +39,7 @@ def exec_python(pycode):
     # Python executable.
     env = copy.deepcopy(os.environ)
     env['PATH'] = _env_path
-    out = subprocess.Popen([_pyexe, '-c', pycode], env=env,
-        stdout=subprocess.PIPE, shell=False).stdout.read()
+    out = subprocess.Popen([_pyexe, '-c', pycode], env=env, stdout=subprocess.PIPE, shell=False).stdout.read()
     # In Python 3 stdout is a byte array and must be converted to string.
     out = out.decode('ascii').strip()
 

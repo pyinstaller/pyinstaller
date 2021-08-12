@@ -8,8 +8,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-
 """
 This module parses all Django dependencies from the module mysite.settings.py.
 
@@ -19,20 +17,19 @@ NOTE: With newer version of Django this is most likely the part of PyInstaller
 Tested with Django 2.2
 """
 
-
 import os
 
 # Calling django.setup() avoids the exception AppRegistryNotReady()
 # and also reads the user settings from DJANGO_SETTINGS_MODULE.
 # https://stackoverflow.com/questions/24793351/django-appregistrynotready
 import django
+
 django.setup()
 
 # This allows to access all django settings even from the settings.py module.
 from django.conf import settings
 
 from PyInstaller.utils.hooks import collect_submodules
-
 
 hiddenimports = list(settings.INSTALLED_APPS)
 
@@ -82,7 +79,6 @@ if hasattr(settings, 'TEMPLATES'):
 # Include database backends - it is a dict.
 for v in settings.DATABASES.values():
     hiddenimports.append(v['ENGINE'])
-
 
 # Add templatetags and context processors for each installed app.
 for app in settings.INSTALLED_APPS:

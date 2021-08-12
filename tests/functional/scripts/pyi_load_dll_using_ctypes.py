@@ -32,4 +32,3 @@ else:
 tct = CDLL(os.path.join(get_data_dir(), 'ctypes_dylib', name))
 # The "dummy" function in ctypes_dylib returning value + 12.
 assert tct.dummy(42) == (42 + 12)
-

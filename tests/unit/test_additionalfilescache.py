@@ -13,21 +13,14 @@ from PyInstaller.depend.imphook import AdditionalFilesCache
 
 
 def test_binaries_and_datas():
-    datas, binaries, modnames = [
-        [('source', 'dest'), ('src', 'dst')],
-        [('abc', 'def'), ('ghi', 'jkl')],
-        ['testmodule1', 'testmodule2']
-    ]
+    datas, binaries, modnames = [[('source', 'dest'), ('src', 'dst')], [('abc', 'def'), ('ghi', 'jkl')],
+                                 ['testmodule1', 'testmodule2']]
 
     cache = AdditionalFilesCache()
     for modname in modnames:
-        cache.add(
-            modname, binaries, datas
-        )
+        cache.add(modname, binaries, datas)
         assert cache.datas(modname) == datas
-        cache.add(
-            modname, binaries, datas
-        )
+        cache.add(modname, binaries, datas)
         # This should be extended. Therefore it should be binaries*2
         assert cache.binaries(modname) != binaries
         assert cache.binaries(modname) == binaries * 2

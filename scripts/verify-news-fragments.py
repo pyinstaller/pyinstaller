@@ -24,10 +24,12 @@ from pathlib import Path
 
 CHANGELOG_GUIDE = (
     "https://github.com/pyinstaller/pyinstaller/"
-    "blob/develop/doc/development/changelog-entries.rst#changelog-entries")
+    "blob/develop/doc/development/changelog-entries.rst#changelog-entries"
+)
 
-CHANGE_TYPES = {'bootloader', 'breaking', 'bugfix', 'build', 'core', 'doc',
-                'feature', 'hooks', 'moduleloader', 'process', 'tests'}
+CHANGE_TYPES = {
+    'bootloader', 'breaking', 'bugfix', 'build', 'core', 'doc', 'feature', 'hooks', 'moduleloader', 'process', 'tests'
+}
 
 NEWS_PATTERN = re.compile(r"(\d+)\.(\w+)\.(?:(\d+)\.)?rst")
 
@@ -51,8 +53,7 @@ def validate_name(name):
         )
 
     if match.group(2) not in CHANGE_TYPES:
-        sys.exit("'{}' of of invalid type '{}'. Valid types are:\n{}".format(
-            name, match.group(2), CHANGE_TYPES))
+        sys.exit("'{}' of of invalid type '{}'. Valid types are:\n{}".format(name, match.group(2), CHANGE_TYPES))
 
     print(name, "is ok")
 

@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 from threading import Thread
 from queue import Queue
 
@@ -59,4 +58,3 @@ def test_threading_import(tmpdir):
 
     # Wait for the other thread to finish.
     thread.join()
-

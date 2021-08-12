@@ -8,8 +8,7 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-from PyInstaller.utils.hooks.qt import pyqt6_library_info, \
-    add_qt6_dependencies, get_qt_qml_files
+from PyInstaller.utils.hooks.qt import (add_qt6_dependencies, get_qt_qml_files, pyqt6_library_info)
 
 hiddenimports, binaries, datas = add_qt6_dependencies(__file__)
 qml_binaries, qml_datas = get_qt_qml_files(pyqt6_library_info)

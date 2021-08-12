@@ -9,23 +9,17 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 import os
 
-
 # Directory with testing modules used in some tests.
-_MODULES_DIR = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)),
-    'modules'
-)
+_MODULES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modules')
 
 
 # Test inspect.getmodule() on stack-frames obtained by inspect.stack().
 # Reproduces the issue reported by #5963 while expanding the test to
 # cover a package and its submodule in addition to the __main__ module.
 def test_inspect_getmodule_from_stackframes(pyi_builder):
-    pathex = os.path.join(_MODULES_DIR,
-                          'pyi_inspect_getmodule_from_stackframes')
+    pathex = os.path.join(_MODULES_DIR, 'pyi_inspect_getmodule_from_stackframes')
     # NOTE: run_from_path MUST be True, otherwise cwd + rel_path coincides
     # with sys._MEIPASS + rel_path and masks the path resolving issue
     # in onedir builds.
@@ -52,7 +46,10 @@ def test_inspect_getmodule_from_stackframes(pyi_builder):
         # Verify module names
         module_names = [module.__name__ for module in modules]
         assert module_names == expected_module_names
-        """, pyi_args=['--paths', pathex], run_from_path=True)
+        """,
+        pyi_args=['--paths', pathex],
+        run_from_path=True
+    )
 
 
 # Test whether dis can disassemble the __main__ module, as per #5897.
@@ -63,4 +60,5 @@ def test_dis_main(pyi_builder):
         import sys
 
         print(dis.dis(sys.modules["__main__"].__loader__.get_code("__main__")))
-        """)
+        """
+    )

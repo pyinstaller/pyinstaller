@@ -8,22 +8,21 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-
 """
 Various classes and functions to provide some backwards-compatibility
 with previous versions of Python onward.
 """
 
+import errno
+import importlib.machinery
 import os
 import platform
 import site
 import subprocess
 import sys
-import errno
-import importlib.machinery
-from PyInstaller.exceptions import ExecCommandFailed
+
 from PyInstaller._shared_with_waf import _pyi_machine
+from PyInstaller.exceptions import ExecCommandFailed
 
 # Copied from https://docs.python.org/3/library/platform.html#cross-platform.
 is_64bits = sys.maxsize > 2**32
@@ -62,48 +61,55 @@ is_unix = is_linux or is_solar or is_aix or is_freebsd or is_hpux or is_openbsd
 # <https://docs.python.org/3/whatsnew/3.8.html#build-and-c-api-changes>
 _pyver = sys.version_info[:2]
 if is_win or is_cygwin:
-    PYDYLIB_NAMES = {'python%d%d.dll' % _pyver,
-                     'libpython%d%d.dll' % _pyver,
-                     'libpython%d%dm.dll' % _pyver,
-                     'libpython%d.%d.dll' % _pyver,
-                     'libpython%d.%dm.dll' % _pyver}  # For MSYS2 environment
+    PYDYLIB_NAMES = {
+        'python%d%d.dll' % _pyver,
+        'libpython%d%d.dll' % _pyver,
+        'libpython%d%dm.dll' % _pyver,
+        'libpython%d.%d.dll' % _pyver,
+        'libpython%d.%dm.dll' % _pyver
+    }  # For MSYS2 environment
 elif is_darwin:
     # libpython%d.%dm.dylib for Conda virtual environment installations
-    PYDYLIB_NAMES = {'Python', '.Python',
-                     'Python%d' % _pyver[0],
-                     'libpython%d.%d.dylib' % _pyver,
-                     'libpython%d.%dm.dylib' % _pyver}
+    PYDYLIB_NAMES = {
+        'Python', '.Python',
+        'Python%d' % _pyver[0],
+        'libpython%d.%d.dylib' % _pyver,
+        'libpython%d.%dm.dylib' % _pyver
+    }
 elif is_aix:
     # Shared libs on AIX may be archives with shared object members,
     # hence the ".a" suffix. However, starting with python 2.7.11
     # libpython?.?.so and Python3 libpython?.?m.so files are produced.
-    PYDYLIB_NAMES = {'libpython%d.%d.a' % _pyver,
-                     'libpython%d.%dm.a' % _pyver,
-                     'libpython%d.%d.so' % _pyver,
-                     'libpython%d.%dm.so' % _pyver}
+    PYDYLIB_NAMES = {
+        'libpython%d.%d.a' % _pyver,
+        'libpython%d.%dm.a' % _pyver,
+        'libpython%d.%d.so' % _pyver,
+        'libpython%d.%dm.so' % _pyver
+    }
 elif is_freebsd:
-    PYDYLIB_NAMES = {'libpython%d.%d.so.1' % _pyver,
-                     'libpython%d.%dm.so.1' % _pyver,
-                     'libpython%d.%d.so.1.0' % _pyver,
-                     'libpython%d.%dm.so.1.0' % _pyver}
+    PYDYLIB_NAMES = {
+        'libpython%d.%d.so.1' % _pyver,
+        'libpython%d.%dm.so.1' % _pyver,
+        'libpython%d.%d.so.1.0' % _pyver,
+        'libpython%d.%dm.so.1.0' % _pyver
+    }
 elif is_openbsd:
-    PYDYLIB_NAMES = {'libpython%d.%d.so.0.0' % _pyver,
-                     'libpython%d.%dm.so.0.0' % _pyver}
+    PYDYLIB_NAMES = {'libpython%d.%d.so.0.0' % _pyver, 'libpython%d.%dm.so.0.0' % _pyver}
 elif is_hpux:
     PYDYLIB_NAMES = {'libpython%d.%d.so' % _pyver}
 elif is_unix:
     # Other *nix platforms.
     # Python 2 .so library on Linux is: libpython2.7.so.1.0
     # Python 3 .so library on Linux is: libpython3.2mu.so.1.0, libpython3.3m.so.1.0
-    PYDYLIB_NAMES = {'libpython%d.%d.so.1.0' % _pyver,
-                     'libpython%d.%dm.so.1.0' % _pyver,
-                     'libpython%d.%dmu.so.1.0' % _pyver,
-                     'libpython%d.%dm.so' % _pyver,
-                     'libpython%d.%d.so' % _pyver}
+    PYDYLIB_NAMES = {
+        'libpython%d.%d.so.1.0' % _pyver,
+        'libpython%d.%dm.so.1.0' % _pyver,
+        'libpython%d.%dmu.so.1.0' % _pyver,
+        'libpython%d.%dm.so' % _pyver,
+        'libpython%d.%d.so' % _pyver
+    }
 else:
-    raise SystemExit('Your platform is not yet supported. '
-                     'Please define constant PYDYLIB_NAMES for your platform.')
-
+    raise SystemExit('Your platform is not yet supported. Please define constant PYDYLIB_NAMES for your platform.')
 
 # Function with which to open files.
 open_file = open
@@ -132,7 +138,6 @@ if __debug__:
 else:
     _PYOPTS = '-O'
 
-
 # In a virtual environment created by virtualenv (github.com/pypa/virtualenv)
 # there exists sys.real_prefix with the path to the base Python
 # installation from which the virtual environment was created.
@@ -149,9 +154,7 @@ else:
 # compat.base_prefix with the path to the
 # base Python installation.
 
-base_prefix = os.path.abspath(
-    getattr(sys, 'real_prefix', getattr(sys, 'base_prefix', sys.prefix))
-)
+base_prefix = os.path.abspath(getattr(sys, 'real_prefix', getattr(sys, 'base_prefix', sys.prefix)))
 # Ensure `base_prefix` is not containing any relative parts.
 is_venv = is_virtualenv = base_prefix != os.path.abspath(sys.prefix)
 
@@ -175,28 +178,28 @@ is_ms_app_store = is_win and os.path.getsize(python_executable) == 0
 
 if is_ms_app_store:
     # Locate the actual executable inside base_prefix.
-    python_executable = os.path.join(
-        base_prefix, os.path.basename(python_executable))
+    python_executable = os.path.join(base_prefix, os.path.basename(python_executable))
     if not os.path.exists(python_executable):
-        raise SystemExit('PyInstaller cannot locate real python executable '
-                         'belonging to Python from Microsoft App Store!')
+        raise SystemExit(
+            'PyInstaller cannot locate real python executable '
+            'belonging to Python from Microsoft App Store!'
+        )
 
 # In Python 3.4 module 'imp' is deprecated and there is another way how
 # to obtain magic value.
 import importlib.util
-BYTECODE_MAGIC = importlib.util.MAGIC_NUMBER
 
+BYTECODE_MAGIC = importlib.util.MAGIC_NUMBER
 
 # List of suffixes for Python C extension modules.
 from importlib.machinery import EXTENSION_SUFFIXES, all_suffixes
-ALL_SUFFIXES = all_suffixes()
 
+ALL_SUFFIXES = all_suffixes()
 
 # In Python 3 'Tkinter' has been made lowercase - 'tkinter'.
 # TODO: remove once all references are gone from both pyinstaller and
 # pyinstaller-hooks-contrib!
 modname_tkinter = 'tkinter'
-
 
 # On Windows we require pywin32-ctypes
 # -> all pyinstaller modules should use win32api from PyInstaller.compat to
@@ -209,10 +212,11 @@ if is_win:
         # This environment variable is set by setup.py
         # - It's not an error for pywin32 to not be installed at that point
         if not os.environ.get('PYINSTALLER_NO_PYWIN32_FAILURE'):
-            raise SystemExit('PyInstaller cannot check for assembly dependencies.\n'
-                             'Please install pywin32-ctypes.\n\n'
-                             'pip install pywin32-ctypes\n')
-
+            raise SystemExit(
+                'PyInstaller cannot check for assembly dependencies.\n'
+                'Please install pywin32-ctypes.\n\n'
+                'pip install pywin32-ctypes\n'
+            )
 
 # macOS's platform.architecture() can be buggy, so we do this manually here.
 # Based off the python documentation:
@@ -239,6 +243,7 @@ machine = _pyi_machine(platform.machine(), platform.system())
 # as suggested in <http://docs.python.org/library/os.html#os.environ>:
 # "Calling putenv() directly does not change os.environ, so it's
 # better to modify os.environ." (Same for unsetenv.)
+
 
 def getenv(name, default=None):
     """
@@ -267,6 +272,7 @@ def unsetenv(name):
 
 
 # Exec commands in subprocesses.
+
 
 def exec_command(*cmdargs, **kwargs):
     """
@@ -356,8 +362,7 @@ def exec_command(*cmdargs, **kwargs):
         # provide more information to ease debugging.
         print('--' * 20, file=sys.stderr)
         print(str(e), file=sys.stderr)
-        print('These are the bytes around the offending byte:',
-              file=sys.stderr)
+        print('These are the bytes around the offending byte:', file=sys.stderr)
         print('--' * 20, file=sys.stderr)
         raise
     return out
@@ -481,8 +486,13 @@ def exec_command_all(*cmdargs, **kwargs):
         `exec_command()` function for discussion.
     """
     encoding = kwargs.pop('encoding', None)
-    proc = subprocess.Popen(cmdargs, bufsize=-1,  # Default OS buffer size.
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs)
+    proc = subprocess.Popen(
+        cmdargs,
+        bufsize=-1,  # Default OS buffer size.
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        **kwargs
+    )
     # Waits for subprocess to complete.
     try:
         out, err = proc.communicate(timeout=60)
@@ -505,8 +515,7 @@ def exec_command_all(*cmdargs, **kwargs):
         # provide more information to ease debugging.
         print('--' * 20, file=sys.stderr)
         print(str(e), file=sys.stderr)
-        print('These are the bytes around the offending byte:',
-              file=sys.stderr)
+        print('These are the bytes around the offending byte:', file=sys.stderr)
         print('--' * 20, file=sys.stderr)
         raise
 
@@ -577,6 +586,7 @@ def exec_python_rc(*args, **kwargs):
 
 ## Path handling.
 
+
 def expand_path(path):
     """
     Replace initial tilde '~' in path with user's home directory and also
@@ -606,12 +616,7 @@ def getsitepackages(prefixes=None):
         seen.add(prefix)
 
         if os.sep == '/':
-            sitepackages.append(
-                os.path.join(
-                    prefix, "lib", "python%d.%d" % sys.version_info[:2],
-                    "site-packages"
-                )
-            )
+            sitepackages.append(os.path.join(prefix, "lib", "python%d.%d" % sys.version_info[:2], "site-packages"))
         else:
             sitepackages.append(prefix)
             sitepackages.append(os.path.join(prefix, "lib", "site-packages"))

@@ -20,19 +20,23 @@ from PyInstaller.building.api import PYZ
 # Directory with testing modules used in some tests.
 _MODULES_DIR = Path(__file__).absolute().parent / "modules"
 
+
 def test_issue_2492(monkeypatch, tmpdir):
     # Crash if an extension module has an hidden import to ctypes (e.g. added
     # by the hook).
 
     # Need to set up some values
-    monkeypatch.setattr('PyInstaller.config.CONF',
-                        {'workpath': str(tmpdir),
-                         'spec': str(tmpdir),
-                         'warnfile': str(tmpdir.join('warn.txt')),
-                         'dot-file': str(tmpdir.join('imports.dot')),
-                         'xref-file': str(tmpdir.join('imports.xref')),
-                         'hiddenimports': [],
-                         'specnm': 'issue_2492_script'})
+    monkeypatch.setattr(
+        'PyInstaller.config.CONF', {
+            'workpath': str(tmpdir),
+            'spec': str(tmpdir),
+            'warnfile': str(tmpdir.join('warn.txt')),
+            'dot-file': str(tmpdir.join('imports.dot')),
+            'xref-file': str(tmpdir.join('imports.xref')),
+            'hiddenimports': [],
+            'specnm': 'issue_2492_script'
+        }
+    )
     # Speedup: avoid analyzing base_library.zip
     monkeypatch.setattr(analysis, 'PY3_BASE_MODULES', [])
 
@@ -40,8 +44,7 @@ def test_issue_2492(monkeypatch, tmpdir):
     script.write('import _struct')
     # create a hook
     tmpdir.join('hook-_struct.py').write('hiddenimports = ["ctypes"]')
-    a = Analysis([str(script)], hookspath=[str(tmpdir)],
-                 excludes=['encodings', 'pydoc', 'xml', 'distutils'])
+    Analysis([str(script)], hookspath=[str(tmpdir)], excludes=['encodings', 'pydoc', 'xml', 'distutils'])
 
 
 def test_issue_5131(monkeypatch, tmpdir):
@@ -54,7 +57,6 @@ def test_issue_5131(monkeypatch, tmpdir):
     is collecting all source files - caused by this being marked as "PYMODULE"
     in the TOC.
     """
-
     def getImports(*args, **kwargs):
         # Our faked binary does not match the expected file-format for all
         # platforms, thus the resp. code might crash. Simply ignore this.
@@ -63,14 +65,17 @@ def test_issue_5131(monkeypatch, tmpdir):
         except:  # noqa
             return []
 
-    monkeypatch.setattr('PyInstaller.config.CONF',
-                        {'workpath': str(tmpdir),
-                         'spec': str(tmpdir),
-                         'warnfile': str(tmpdir.join('warn.txt')),
-                         'dot-file': str(tmpdir.join('imports.dot')),
-                         'xref-file': str(tmpdir.join('imports.xref')),
-                         'hiddenimports': [],
-                         'specnm': 'issue_5131_script'})
+    monkeypatch.setattr(
+        'PyInstaller.config.CONF', {
+            'workpath': str(tmpdir),
+            'spec': str(tmpdir),
+            'warnfile': str(tmpdir.join('warn.txt')),
+            'dot-file': str(tmpdir.join('imports.dot')),
+            'xref-file': str(tmpdir.join('imports.xref')),
+            'hiddenimports': [],
+            'specnm': 'issue_5131_script'
+        }
+    )
     # Speedup: avoid analyzing base_library.zip
     monkeypatch.setattr(analysis, 'PY3_BASE_MODULES', [])
 
@@ -82,16 +87,15 @@ def test_issue_5131(monkeypatch, tmpdir):
     init.write_binary(b'\0\0\0\0\0\0\0\0\0\0\0\0' * 20)
     script = tmpdir.join('script.py')
     script.write('import mypkg')
-    a = Analysis([str(script)],
-                 excludes=['encodings', 'pydoc', 'xml', 'distutils'])
+    a = Analysis([str(script)], excludes=['encodings', 'pydoc', 'xml', 'distutils'])
     PYZ(a.pure, a.zipped_data)
 
 
 def test_issue_4141(pyi_builder):  #script_dir,
     extra_path = _MODULES_DIR / 'pyi_issue_4141'
-    pyi_builder.test_script('pyi_issue_4141.py',
-                            app_name="main", run_from_path=True,
-                            pyi_args=['--path', str(extra_path)])
+    pyi_builder.test_script(
+        'pyi_issue_4141.py', app_name="main", run_from_path=True, pyi_args=['--path', str(extra_path)]
+    )
 
 
 def test_5734():
@@ -127,4 +131,5 @@ def test_5797(pyi_builder):
             exception_name = type(e).__name__
             assert exception_name == 'PyInstallerImportError', \
                 f"Unexpected execption type: {exception_name}"
-        """)
+        """
+    )

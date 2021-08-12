@@ -12,8 +12,6 @@
 # This module is not a "fake module" in the classical sense,
 # but a real module that can be imported. It acts as an RPC
 # interface for the functions of the bootloader.
-
-
 """
 This module connects to the bootloader to send messages to the splash screen.
 
@@ -38,16 +36,16 @@ screen closes automatically when the connection to this instance of the
 module is lost.
 """
 
-import os
 import atexit
+import os
+
 # import the _socket module instead of the socket module.
 # All used functions to connect to the ipc system are provided
 # by the C module and the users program does not necessarily need to include
 # the socket module and all required module it uses.
 import _socket
 
-__all__ = ["CLOSE_CONNECTION", "FLUSH_CHARACTER",
-           "is_alive", "close", "update_text"]
+__all__ = ["CLOSE_CONNECTION", "FLUSH_CHARACTER", "is_alive", "close", "update_text"]
 
 try:
     # The user might have excluded logging from imports
@@ -96,11 +94,9 @@ def _initialize():
         _ipc_socket_closed = False
 
         _initialized = True
-        _log(20, "A connection to the splash screen was"
-                 " successfully established.")  # log-level: info
+        _log(20, "A connection to the splash screen was successfully established.")  # log-level: info
     except OSError as err:
-        raise ConnectionError("Unable to connect to the tcp server socket"
-                              " on port %d" % _ipc_port) from err
+        raise ConnectionError("Unable to connect to the tcp server socket on port %d" % _ipc_port) from err
 
 
 # We expect a splash screen from the bootloader, but if _PYIBoot_SPLASH
@@ -113,13 +109,15 @@ try:
     _initialize()
 except (KeyError, ValueError) as _err:
     # log-level: warning
-    _log(30, "The environment does not allow connecting to the"
-             " splash screen. Are the splash resources attached"
-             " to the bootloader or did an error occur?", exc_info=_err)
+    _log(
+        30, "The environment does not allow connecting to the"
+        " splash screen. Are the splash resources attached"
+        " to the bootloader or did an error occur?",
+        exc_info=_err
+    )
 except ConnectionError as _err:
     # log-level: error
-    _log(40, "Cannot connect to the bootloaders ipc server socket",
-         exc_info=_err)
+    _log(40, "Cannot connect to the bootloaders ipc server socket", exc_info=_err)
 
 
 def _check_connection(func):
@@ -128,7 +126,6 @@ def _check_connection(func):
     The wrapped function may raise a ConnectionError if the module was not
     initialized correctly.
     """
-
     def wrapper(*args, **kwargs):
         """ Executes the wrapped function if the environment allows it.
 
@@ -138,13 +135,14 @@ def _check_connection(func):
         :raises RuntimeError: if the module was not initialized correctly.
         """
         if _initialized and _ipc_socket_closed:
-            _log(20, "The module has been disabled, so the use of the splash"
-                     " screen is not longer supported.")  # log-level: info
+            _log(
+                20, "The module has been disabled, so the use of the splash"
+                " screen is not longer supported."
+            )  # log-level: info
             return
 
         elif not _initialized:
-            raise RuntimeError("This module is not initialized."
-                               " Did this module failed to load?")
+            raise RuntimeError("This module is not initialized. Did this module failed to load?")
 
         return func(*args, **kwargs)
 
@@ -170,8 +168,7 @@ def _send_command(cmd, args=None):
     try:
         _ipc_socket.sendall(full_cmd.encode("utf-8") + FLUSH_CHARACTER)
     except OSError as err:
-        raise ConnectionError(
-            "Unable to send '%s' to the bootloader" % full_cmd) from err
+        raise ConnectionError("Unable to send '%s' to the bootloader" % full_cmd) from err
 
 
 def is_alive():
@@ -211,6 +208,7 @@ def close():
 @atexit.register
 def _exit():
     close()
+
 
 # Discarded idea:
 # Problem:

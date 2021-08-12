@@ -22,8 +22,8 @@ import os
 import sys
 
 import PyInstaller.log as logging
-from PyInstaller.compat import is_darwin, is_win, is_linux, base_prefix
-from PyInstaller.utils.hooks.gi import get_gi_typelibs, get_gi_libdir
+from PyInstaller.compat import base_prefix, is_darwin, is_linux, is_win
+from PyInstaller.utils.hooks.gi import get_gi_libdir, get_gi_typelibs
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +49,6 @@ else:
     # To add a new platform add a new elif above with the proper is_<platform> and
     # proper pattern for finding the Gio modules on your platform.
     logger.warning('Bundling Gio modules is currently not supported on your platform.')
-
 
 # Bundle the mime cache -- might not be needed on Windows
 # -> this is used for content type detection (also used by GdkPixbuf)

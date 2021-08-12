@@ -8,20 +8,18 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-
 """
 Utils for Windows platform.
 """
 
-__all__ = ['get_windows_dir']
+__all__ = ['get_windows_dir', 'set_exe_checksum']
 
 import os
 import sys
 
+import PyInstaller.log as logging
 from PyInstaller import compat
 
-import PyInstaller.log as logging
 logger = logging.getLogger(__name__)
 
 
@@ -62,10 +60,10 @@ def extend_system_path(paths):
     """
     # imported here to avoid circular import
     from PyInstaller import compat
-    old_PATH = compat.getenv('PATH', '')
-    paths.append(old_PATH)
-    new_PATH = os.pathsep.join(paths)
-    compat.setenv('PATH', new_PATH)
+    old_path = compat.getenv('PATH', '')
+    paths.append(old_path)
+    new_path = os.pathsep.join(paths)
+    compat.setenv('PATH', new_path)
 
 
 def import_pywin32_module(module_name):
@@ -93,8 +91,7 @@ def import_pywin32_module(module_name):
     module = None
 
     try:
-        module = __import__(
-            module_name, globals={}, locals={}, fromlist=[''])
+        module = __import__(module_name, globals={}, locals={}, fromlist=[''])
     except ImportError as exc:
         if str(exc).startswith('No system module'):
             # True if "sys.frozen" is currently set.
@@ -122,8 +119,7 @@ def import_pywin32_module(module_name):
                 if os.path.isdir(pywin32_dll_dir):
                     sys.path.append(pywin32_dll_dir)
                     try:
-                        module = __import__(
-                            name=module_name, globals={}, locals={}, fromlist=[''])
+                        module = __import__(name=module_name, globals={}, locals={}, fromlist=[''])
                         break
                     except ImportError:
                         pass

@@ -8,7 +8,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
 """
 Functional tests for the PyPubSub API bundled with wxPython.
 
@@ -19,17 +18,18 @@ are implicitly skipped under Python 3.
 import pkg_resources
 from PyInstaller.utils.tests import importorskip, xfail
 
-
 try:
     # These tests fail under wxPython versions which support multiple pubsub
     # APIs. See https://github.com/pyinstaller/pyinstaller/issues/1704.
-    wxPython_fail = ( pkg_resources.parse_version('2.8.10') <=
-                      pkg_resources.get_distribution('wxPython').parsed_version <
-                      pkg_resources.parse_version('2.9') )
+    wxPython_fail = (
+        pkg_resources.parse_version('2.8.10') <= pkg_resources.get_distribution('wxPython').parsed_version <
+        pkg_resources.parse_version('2.9')
+    )
 except pkg_resources.DistributionNotFound:
     # Linux wxPython installations don't provide distribution metadata, but pass
     # all the tests below.
     wxPython_fail = False
+
 
 @xfail
 @xfail(wxPython_fail, reason='Unsupported wxPython version')
@@ -40,12 +40,12 @@ def test_wx_lib_pubsub_protocol_default(pyi_builder):
     """
     pyi_builder.test_script('pyi_hooks/wx_lib_pubsub.py')
 
+
 @xfail
 # This test will pass when test_import.test_import_respects_path passes, since
 # that test provides a simple example of what causes this wxPython version to
 # fail.
-@xfail(wxPython_fail,
-       reason='PyInstaller does not support this wxPython version')
+@xfail(wxPython_fail, reason='PyInstaller does not support this wxPython version')
 @importorskip('wx.lib.pubsub.core')
 def test_wx_lib_pubsub_protocol_kwargs(pyi_builder):
     """
@@ -54,6 +54,7 @@ def test_wx_lib_pubsub_protocol_kwargs(pyi_builder):
     The `wx.lib.pubsub.core` package is specific to this version.
     """
     pyi_builder.test_script('pyi_hooks/wx_lib_pubsub_setupkwargs.py')
+
 
 @xfail
 @xfail(wxPython_fail, reason='Unsupported wxPython version')

@@ -9,13 +9,11 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 # Test that the Pythons 'site' module is disabled and Python is not searching
 # for any user-specific site directories.
 
 # Check that option -S is passed to Python interpreter and that sys.path has
 # not been modified.
-
 
 import sys
 
@@ -33,8 +31,7 @@ if not sys.flags.no_site:
 # Default values 'site' module when it is disabled.
 # On Py2, ENABLE_USER_SITE should be False; on Py3, it should be None.
 if site.ENABLE_USER_SITE not in (None, False):
-    raise SystemExit('ENABLE_USER_SITE is %s, expected %s.' %
-                     (site.ENABLE_USER_SITE, (None, False)))
+    raise SystemExit('ENABLE_USER_SITE is %s, expected %s.' % (site.ENABLE_USER_SITE, (None, False)))
 
 # Since we import `site` here in the test, this causes USER_SITE and USER_BASE to be
 # initialized on Py2, so all we can do is confirm that the paths aren't in sys.path
@@ -48,7 +45,6 @@ if site.USER_SITE is not None:
 if site.USER_BASE is not None:
     if site.USER_SITE in sys.path:
         raise SystemExit('USER_BASE found in sys.path')
-
 
 # Check if this is realy our fake-site module
 assert site.__pyinstaller__faked__site__module__ == True
