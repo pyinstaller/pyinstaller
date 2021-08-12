@@ -11,7 +11,7 @@
 """
 Templates for the splash screen tcl script
 """
-from PyInstaller.compat import is_cygwin, is_darwin, is_win
+from PyInstaller.compat import is_win, is_cygwin, is_darwin
 
 ipc_script = r"""
 proc _ipc_server {channel clientaddr clientport} {

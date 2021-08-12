@@ -32,7 +32,7 @@ def commit(name, rawtext, text, lineno, inliner, options={}, content=[]):
     except ValueError:
         msg = 'The commit-id must be a hex-string; "%s" is invalid.' % text
     if len(text) < 8:
-        msg = ('The commit-id "%s" is to short, please provide at least 8 characters.' % text)
+        msg = ('The commit-id "%s" is to short, ' 'please provide at least 8 characters.' % text)
     if msg:
         msg = inliner.reporter.error(msg, line=lineno)
         prb = inliner.problematic(rawtext, rawtext, msg)

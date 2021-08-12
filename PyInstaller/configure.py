@@ -16,7 +16,7 @@ import os
 
 from PyInstaller import compat
 from PyInstaller import log as logging
-from PyInstaller.compat import is_darwin, is_win
+from PyInstaller.compat import is_win, is_darwin
 
 logger = logging.getLogger(__name__)
 

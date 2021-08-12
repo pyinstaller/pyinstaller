@@ -12,14 +12,14 @@
 Decorators for skipping PyInstaller tests when specific requirements are not met.
 """
 
+import os
+import sys
 import distutils.ccompiler
 import inspect
-import os
-import shutil
 import textwrap
+import shutil
 
 import pytest
-import sys
 
 from PyInstaller.compat import is_win
 
@@ -30,8 +30,7 @@ xfail = pytest.mark.xfail
 
 
 def _check_for_compiler():
-    import tempfile
-
+    import tempfile, sys
     # change to some tempdir since cc.has_function() would compile into the
     # current directory, leaving garbage
     old_wd = os.getcwd()
@@ -97,7 +96,7 @@ def importable(package: str):
         if not importable(package.split(".")[0]):
             return False
         # This is a submodule, import it in isolation.
-        from subprocess import DEVNULL, run
+        from subprocess import run, DEVNULL
         return run([sys.executable, "-c", "import " + package], stdout=DEVNULL, stderr=DEVNULL).returncode == 0
 
     return find_spec(package) is not None
@@ -157,6 +156,6 @@ def gen_sourcefile(tmpdir, source, test_id=None):
     scriptfile = tmpdir / (testname + '.py')
     source = textwrap.dedent(source)
     with scriptfile.open('w', encoding='utf-8') as ofh:
-        print('# -*- coding: utf-8 -*-', file=ofh)
+        print(u'# -*- coding: utf-8 -*-', file=ofh)
         print(source, file=ofh)
     return scriptfile

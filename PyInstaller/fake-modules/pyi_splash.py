@@ -36,9 +36,8 @@ screen closes automatically when the connection to this instance of the
 module is lost.
 """
 
-import atexit
 import os
-
+import atexit
 # import the _socket module instead of the socket module.
 # All used functions to connect to the ipc system are provided
 # by the C module and the users program does not necessarily need to include
@@ -94,9 +93,9 @@ def _initialize():
         _ipc_socket_closed = False
 
         _initialized = True
-        _log(20, "A connection to the splash screen was successfully established.")  # log-level: info
+        _log(20, "A connection to the splash screen was" " successfully established.")  # log-level: info
     except OSError as err:
-        raise ConnectionError("Unable to connect to the tcp server socket on port %d" % _ipc_port) from err
+        raise ConnectionError("Unable to connect to the tcp server socket" " on port %d" % _ipc_port) from err
 
 
 # We expect a splash screen from the bootloader, but if _PYIBoot_SPLASH
@@ -142,7 +141,7 @@ def _check_connection(func):
             return
 
         elif not _initialized:
-            raise RuntimeError("This module is not initialized. Did this module failed to load?")
+            raise RuntimeError("This module is not initialized." " Did this module failed to load?")
 
         return func(*args, **kwargs)
 

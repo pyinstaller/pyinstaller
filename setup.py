@@ -17,13 +17,13 @@ from typing import Type
 
 from setuptools import setup, find_packages
 
+# Hack required to allow compat to not fail when pypiwin32 isn't found
+os.environ["PYINSTALLER_NO_PYWIN32_FAILURE"] = "1"
+
 #-- plug-in building the bootloader
 
 from distutils.core import Command
 from distutils.command.build import build
-
-# Hack required to allow compat to not fail when pypiwin32 isn't found
-os.environ["PYINSTALLER_NO_PYWIN32_FAILURE"] = "1"
 
 try:
     from wheel.bdist_wheel import bdist_wheel
@@ -65,7 +65,7 @@ class build_bootloader(Command):
         cmd = [sys.executable, './waf', 'configure', 'all']
         rc = subprocess.call(cmd, cwd=src_dir)
         if rc:
-            raise SystemExit('ERROR: Failed compiling the bootloader. Please compile manually and rerun setup.py')
+            raise SystemExit('ERROR: Failed compiling the bootloader. ' 'Please compile manually and rerun setup.py')
 
     def run(self):
         if getattr(self, 'dry_run', False):

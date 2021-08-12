@@ -13,8 +13,8 @@
 """
 
 import os
-
-from PyInstaller.utils.hooks import (get_module_file_attribute, is_module_satisfies)
+from PyInstaller.utils.hooks import get_module_file_attribute, \
+    is_module_satisfies
 
 if is_module_satisfies("importlib_resources >= 1.2.0"):
     # since 1.2.0 importlib.metadata is used which PyInstaller knows how to

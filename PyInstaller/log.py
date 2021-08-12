@@ -15,7 +15,7 @@ Logging module for PyInstaller
 __all__ = ['getLogger', 'INFO', 'WARN', 'DEBUG', 'TRACE', 'ERROR', 'FATAL']
 
 import logging
-from logging import DEBUG, ERROR, FATAL, INFO, WARN, getLogger
+from logging import getLogger, INFO, WARN, DEBUG, ERROR, FATAL
 
 TRACE = logging.TRACE = DEBUG - 5
 logging.addLevelName(TRACE, 'TRACE')

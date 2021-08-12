@@ -9,9 +9,9 @@
 # SPDX-License-Identifier: Apache-2.0
 #-----------------------------------------------------------------------------
 
-import inspect
-import os
 import sys
+import os
+import inspect
 
 _orig_inspect_getsourcefile = inspect.getsourcefile
 

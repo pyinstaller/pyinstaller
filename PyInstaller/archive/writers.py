@@ -21,17 +21,19 @@ files into the executable.
 # See pyi_carchive.py for a more general archive (contains anything)
 # that can be understood by a C program.
 
-import io
-import marshal
 import os
-import struct
 import sys
-import zlib
+import struct
 from types import CodeType
+import marshal
+import zlib
+import io
 
-from PyInstaller.building.utils import (fake_pyc_timestamp, get_code_object, strip_paths_in_code)
+from PyInstaller.building.utils import get_code_object, strip_paths_in_code,\
+    fake_pyc_timestamp
+from PyInstaller.loader.pyimod02_archive import PYZ_TYPE_MODULE, PYZ_TYPE_PKG, \
+    PYZ_TYPE_DATA, PYZ_TYPE_NSPKG
 from PyInstaller.compat import BYTECODE_MAGIC, is_py37, is_win
-from PyInstaller.loader.pyimod02_archive import (PYZ_TYPE_DATA, PYZ_TYPE_MODULE, PYZ_TYPE_NSPKG, PYZ_TYPE_PKG)
 
 
 class ArchiveWriter(object):
@@ -95,7 +97,7 @@ class ArchiveWriter(object):
             self.update_headers(toc_pos)
         self.lib.close()
 
-    # manages keeping the internal TOC and the guts in sync #
+    ####### manages keeping the internal TOC and the guts in sync #######
     def add(self, entry):
         """
         Override this to influence the mechanics of the Archive.

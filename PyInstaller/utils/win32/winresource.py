@@ -16,8 +16,9 @@ winresource.py <dstpath> <srcpath>
 Updates or adds resources from file <srcpath> in file <dstpath>.
 """
 
-import PyInstaller.log as logging
 from PyInstaller.compat import pywintypes, win32api
+
+import PyInstaller.log as logging
 
 logger = logging.getLogger(__name__)
 
@@ -130,10 +131,8 @@ def _GetResources(hsrc, types=None, names=None, languages=None):
                     res[type_][name][language] = data
     except pywintypes.error as exception:
         if exception.args[0] in (
-            ERROR_RESOURCE_DATA_NOT_FOUND,
-            ERROR_RESOURCE_TYPE_NOT_FOUND,
-            ERROR_RESOURCE_NAME_NOT_FOUND,
-            ERROR_RESOURCE_LANG_NOT_FOUND,
+            ERROR_RESOURCE_DATA_NOT_FOUND, ERROR_RESOURCE_TYPE_NOT_FOUND, ERROR_RESOURCE_NAME_NOT_FOUND,
+            ERROR_RESOURCE_LANG_NOT_FOUND
         ):
             # logger.info('%s: %s', exception.args[1:3])
             pass

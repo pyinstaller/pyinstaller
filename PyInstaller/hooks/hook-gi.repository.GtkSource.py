@@ -9,7 +9,9 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-from PyInstaller.utils.hooks.gi import (collect_glib_share_files, get_gi_typelibs)
+
+from PyInstaller.utils.hooks.gi import collect_glib_share_files, \
+        get_gi_typelibs
 
 binaries, datas, hiddenimports = get_gi_typelibs('GtkSource', '3.0')
 

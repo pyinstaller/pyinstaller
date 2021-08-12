@@ -21,8 +21,9 @@ __all__ = ['exclude_list', 'include_list', 'include_library']
 import os
 import re
 
-import PyInstaller.log as logging
 from PyInstaller import compat
+
+import PyInstaller.log as logging
 
 logger = logging.getLogger(__name__)
 

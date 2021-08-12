@@ -9,11 +9,11 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 # -----------------------------------------------------------------------------
 
-import argparse
 import sys
+import argparse
 
-import pkg_resources
 import pytest
+import pkg_resources
 
 from PyInstaller import compat
 

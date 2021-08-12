@@ -30,7 +30,7 @@ from PyInstaller.compat import is_py37, is_win
 def test_unbuffered_stdio(tmp_path, output_stream, stream_mode, pyi_builder_spec):
     # Unbuffered text layer was introduced in Python 3.7
     if stream_mode == 'text' and not is_py37:
-        pytest.skip("Unbuffered text layer of stdout and stderr streams requires Python 3.7 or later.")
+        pytest.skip("Unbuffered text layer of stdout and stderr streams " "requires Python 3.7 or later.")
 
     # Freeze the test program; test_spec() builds the app and runs it,
     # so explicitly set the number of stars to 0 for this run.

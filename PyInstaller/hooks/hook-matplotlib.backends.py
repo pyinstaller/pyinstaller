@@ -10,7 +10,7 @@
 #-----------------------------------------------------------------------------
 
 from PyInstaller.compat import is_darwin
-from PyInstaller.utils.hooks import eval_statement, exec_statement, logger
+from PyInstaller.utils.hooks import (eval_statement, exec_statement, logger)
 
 
 def get_matplotlib_backend_module_names():

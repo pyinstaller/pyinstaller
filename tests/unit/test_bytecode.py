@@ -98,7 +98,7 @@ def test_global_functions():
             if wop(4) > whip(5):
                 whiz(6)
                 [7 for i in whallop(8)]
-        """
+    """
     )
     assert function_calls(code) == [
         ("foo", [1, 2]),
@@ -200,6 +200,6 @@ def test_finditer():
         lost.
 
     """
-    matches = list(finditer(re.compile(r"\d+"), "0123 4567 890 12 3 4"))
+    matches = list(finditer(re.compile(r"\d+"), "0123" " 456" "7 89" "0 12" " 3 4"))
     aligned = [i.group() for i in matches]
     assert aligned == ["0123", "567", "890", "12"]

@@ -20,8 +20,8 @@ virtualenv environment.
 
 import os
 
-from PyInstaller import PACKAGEPATH
 from PyInstaller.utils.hooks import logger
+from PyInstaller import PACKAGEPATH
 
 
 def pre_find_module_path(api):

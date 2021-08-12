@@ -11,15 +11,15 @@
 import copy
 import glob
 import os
+import pkg_resources
 import pkgutil
 import sys
 import textwrap
 from pathlib import Path
-from typing import Callable, Tuple
+from typing import Tuple, Callable
 
-import pkg_resources
-
-from PyInstaller import HOMEPATH, compat
+from PyInstaller import compat
+from PyInstaller import HOMEPATH
 from PyInstaller import log as logging
 from PyInstaller.exceptions import ExecCommandFailed
 from PyInstaller.utils.hooks.win32 import \
@@ -352,7 +352,7 @@ def get_module_attribute(module_name, attr_name):
         """
         import %s as m
         print(getattr(m, %r, %r))
-        """ % (module_name, attr_name, attr_value_if_undefined)
+    """ % (module_name, attr_name, attr_value_if_undefined)
     )
 
     if attr_value == attr_value_if_undefined:

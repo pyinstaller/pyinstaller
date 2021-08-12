@@ -13,7 +13,6 @@
 # Only python built-in modules can be used.
 
 import sys
-
 import pyimod03_importers
 
 # Extend Python import machinery by adding PEP302 importers to sys.meta_path.

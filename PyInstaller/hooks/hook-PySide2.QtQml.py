@@ -8,7 +8,8 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-from PyInstaller.utils.hooks.qt import (add_qt5_dependencies, get_qt_qml_files, pyside2_library_info)
+from PyInstaller.utils.hooks.qt import pyside2_library_info, \
+    add_qt5_dependencies, get_qt_qml_files
 
 hiddenimports, binaries, datas = add_qt5_dependencies(__file__)
 qml_binaries, qml_datas = get_qt_qml_files(pyside2_library_info)

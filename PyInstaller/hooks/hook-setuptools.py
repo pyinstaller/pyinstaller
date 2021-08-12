@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-from PyInstaller.compat import is_darwin, is_unix
+from PyInstaller.compat import is_unix, is_darwin
 from PyInstaller.utils.hooks import collect_submodules
 
 hiddenimports = [

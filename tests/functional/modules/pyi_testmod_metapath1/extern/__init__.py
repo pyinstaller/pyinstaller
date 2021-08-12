@@ -98,7 +98,7 @@ class VendorImporter:
             sys.meta_path.append(self)
 
 
-# --- Code of pkg_resources/extern/__init__.py ends here
+#--- Code of pkg_resources/extern/__init__.py ends here
 
 
 class MyVendorImporter(VendorImporter):

@@ -17,8 +17,8 @@ PEP-302 and PEP-451 importers for frozen applications.
 ### List of built-in modules: sys.builtin_module_names
 
 import sys
-
 import _frozen_importlib
+
 import pyimod01_os_path as pyi_os_path
 from pyimod02_archive import ArchiveReadError, ZlibArchiveReader
 

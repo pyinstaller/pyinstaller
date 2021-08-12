@@ -12,13 +12,14 @@
 Utils for Windows platform.
 """
 
-__all__ = ['get_windows_dir', 'set_exe_checksum']
+__all__ = ['get_windows_dir']
 
 import os
 import sys
 
-import PyInstaller.log as logging
 from PyInstaller import compat
+
+import PyInstaller.log as logging
 
 logger = logging.getLogger(__name__)
 
@@ -60,10 +61,10 @@ def extend_system_path(paths):
     """
     # imported here to avoid circular import
     from PyInstaller import compat
-    old_path = compat.getenv('PATH', '')
-    paths.append(old_path)
-    new_path = os.pathsep.join(paths)
-    compat.setenv('PATH', new_path)
+    old_PATH = compat.getenv('PATH', '')
+    paths.append(old_PATH)
+    new_PATH = os.pathsep.join(paths)
+    compat.setenv('PATH', new_PATH)
 
 
 def import_pywin32_module(module_name):

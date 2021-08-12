@@ -13,22 +13,22 @@
 Utility functions related to analyzing/bundling dependencies.
 """
 
-import ctypes.util
 import io
+import marshal
 import os
 import re
 import struct
-import zipfile
 from types import CodeType
+import zipfile
+import ctypes.util
 
-import marshal
+from PyInstaller.exceptions import ExecCommandFailed
+from PyInstaller.lib.modulegraph import util, modulegraph
 
 from PyInstaller import compat
+from PyInstaller.depend.dylib import include_library
 from PyInstaller import log as logging
 from PyInstaller.depend import bytecode
-from PyInstaller.depend.dylib import include_library
-from PyInstaller.exceptions import ExecCommandFailed
-from PyInstaller.lib.modulegraph import modulegraph
 
 try:
     # source_hash only exists in Python 3.7
@@ -50,7 +50,6 @@ def create_py3_base_library(libzip_filename, graph):
     # building.utils and depend.utils (this module); building.utils
     # imports depend.bindepend, which in turn imports depend.utils.
     from PyInstaller.building.utils import strip_paths_in_code
-
     # Construct regular expression for matching modules that should be bundled
     # into base_library.zip.
     # Excluded are plain 'modules' or 'submodules.ANY_NAME'.
@@ -260,7 +259,6 @@ def _resolveCtypesImports(cbinaries):
 
     """
     from ctypes.util import find_library
-
     from PyInstaller.config import CONF
 
     if compat.is_unix:

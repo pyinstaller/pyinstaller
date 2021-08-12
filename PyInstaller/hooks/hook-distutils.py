@@ -16,6 +16,8 @@ the active Python interpreter, which the `distutils.sysconfig` module parses at
 runtime for platform-specific metadata.
 """
 
+from PyInstaller import compat
+
 # From Python 3.6 and later ``distutils.sysconfig`` takes on the same
 # behaviour as regular ``sysconfig`` of moving the config vars to a
 # module (see hook-sysconfig.py). It doesn't use a nice
@@ -23,8 +25,5 @@ runtime for platform-specific metadata.
 # locate it but the module is the same file that ``sysconfig`` uses so
 # we can use the ``_get_sysconfigdata_name()`` from regular ``sysconfig``.
 import sysconfig
-
-from PyInstaller import compat
-
 if not compat.is_win and hasattr(sysconfig, '_get_sysconfigdata_name'):
     hiddenimports = [sysconfig._get_sysconfigdata_name()]

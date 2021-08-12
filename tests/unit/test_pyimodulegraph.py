@@ -67,7 +67,7 @@ def test_metadata_collection(tmpdir):
 
         distribution("setuptools")
         {importlib_metadata}.version("altgraph")
-        '''
+    '''
         )
     )
 

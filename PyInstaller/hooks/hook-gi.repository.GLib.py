@@ -17,14 +17,13 @@ Tested with GLib 2.44.1, PyGObject 3.16.2, and GObject Introspection 1.44.0 on M
 GLib 2.42.2, PyGObject 3.14.0, and GObject Introspection 1.42 on Windows 7
 """
 
-import glob
 import os
+import glob
 
-from PyInstaller.compat import is_win
 from PyInstaller.utils.hooks import get_hook_config
-from PyInstaller.utils.hooks.gi import (
-    collect_glib_share_files, collect_glib_translations, get_gi_libdir, get_gi_typelibs
-)
+from PyInstaller.utils.hooks.gi import collect_glib_translations, \
+    collect_glib_share_files, get_gi_typelibs, get_gi_libdir
+from PyInstaller.compat import is_win
 
 binaries, datas, hiddenimports = get_gi_typelibs('GLib', '2.0')
 

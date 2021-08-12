@@ -9,11 +9,10 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 # -----------------------------------------------------------------------------
 
-import glob
 import os
-
-from PyInstaller.compat import is_win
+import glob
 from PyInstaller.utils.hooks import get_module_file_attribute
+from PyInstaller.compat import is_win
 
 binaries = []
 

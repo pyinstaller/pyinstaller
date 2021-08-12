@@ -11,8 +11,8 @@
 
 import atexit
 import os
-import sys
 import tempfile
+import sys
 
 pixbuf_file = os.path.join(sys._MEIPASS, 'lib', 'gdk-pixbuf', 'loaders.cache')
 

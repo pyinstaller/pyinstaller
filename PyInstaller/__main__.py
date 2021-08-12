@@ -12,12 +12,13 @@
 Main command-line interface to PyInstaller.
 """
 
-import argparse
 import os
+import argparse
 import platform
 
 from PyInstaller import __version__
 from PyInstaller import log as logging
+
 # note: don't import anything else until this function is run!
 from PyInstaller.compat import check_requirements, is_conda
 
@@ -69,8 +70,8 @@ def __add_options(parser):
 def generate_parser() -> argparse.ArgumentParser:
     """Build an argparse parser for PyInstaller's main CLI."""
 
-    import PyInstaller.building.build_main
     import PyInstaller.building.makespec
+    import PyInstaller.building.build_main
     import PyInstaller.log
 
     parser = argparse.ArgumentParser(formatter_class=_SmartFormatter)

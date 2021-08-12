@@ -22,8 +22,8 @@ import os
 import sys
 
 import PyInstaller.log as logging
-from PyInstaller.compat import base_prefix, is_darwin, is_linux, is_win
-from PyInstaller.utils.hooks.gi import get_gi_libdir, get_gi_typelibs
+from PyInstaller.compat import is_darwin, is_win, is_linux, base_prefix
+from PyInstaller.utils.hooks.gi import get_gi_typelibs, get_gi_libdir
 
 logger = logging.getLogger(__name__)
 

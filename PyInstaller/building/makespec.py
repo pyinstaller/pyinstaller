@@ -12,16 +12,16 @@
 Automatically build spec files containing a description of the project
 """
 
-import argparse
 import os
 import sys
+import argparse
 
-from PyInstaller import DEFAULT_SPECPATH, HOMEPATH
+from PyInstaller import HOMEPATH, DEFAULT_SPECPATH
 from PyInstaller import log as logging
-from PyInstaller.building.templates import (
-    bundleexetmplt, bundletmplt, cipher_absent_template, cipher_init_template, onedirtmplt, onefiletmplt, splashtmpl
-)
 from PyInstaller.compat import expand_path, is_darwin, is_win
+from PyInstaller.building.templates import onefiletmplt, onedirtmplt, \
+    cipher_absent_template, cipher_init_template, bundleexetmplt, \
+    bundletmplt, splashtmpl
 
 logger = logging.getLogger(__name__)
 add_command_sep = os.pathsep
@@ -70,7 +70,7 @@ def add_data_or_binary(string):
         # Syntax was correct, but one or both of SRC and DEST was not given
         raise argparse.ArgumentError("You have to specify both SRC and DEST")
     # Return tuple containing SRC and SRC
-    return src, dest
+    return (src, dest)
 
 
 def make_variable_path(filename, conversions=path_conversions):
@@ -564,7 +564,7 @@ def __add_options(parser):
         help='Mac OS X .app bundle identifier is used as the default unique program '
         'name for code signing purposes. The usual form is a hierarchical name '
         'in reverse DNS notation. For example: com.mycompany.department.appname '
-        '(default: first script\'s basename)'
+        "(default: first script's basename)"
     )
 
     g.add_argument(
@@ -670,7 +670,7 @@ def main(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    **_kwargs
+    **kwargs
 ):
     # If appname is not specified - use the basename of the main script as name.
     if name is None:
@@ -747,7 +747,7 @@ def main(
         try:
             import tinyaes  # noqa: F401 (test import)
         except ImportError:
-            logger.error('We need tinyaes to use byte-code obfuscation but we could not')
+            logger.error('We need tinyaes to use byte-code obfuscation but we ' 'could not')
             logger.error('find it. You can install it with pip by running:')
             logger.error('  pip install tinyaes')
             sys.exit(1)

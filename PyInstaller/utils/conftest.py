@@ -16,25 +16,29 @@
 # ---------------
 import copy
 import glob
-import logging
 import os
+import pytest
 import re
-import shutil
 import subprocess
+import sys
+import inspect
+import textwrap
+import io
+import shutil
 from contextlib import suppress
+
+# Third-party imports
+# -------------------
+import py
+import psutil  # Manages subprocess timeout.
 
 # Set a handler for the root-logger to inhibit 'basicConfig()' (called in
 # PyInstaller.log) is setting up a stream handler writing to stderr. This
 # avoids log messages to be written (and captured) twice: once on stderr and
 # once by pytests's caplog.
-logging.getLogger().addHandler(logging.NullHandler())
+import logging
 
-# Third-party imports
-# -------------------
-import psutil  # Manages subprocess timeout.
-import py
-import pytest
-import sys
+logging.getLogger().addHandler(logging.NullHandler())
 
 # Local imports
 # -------------
@@ -42,12 +46,13 @@ import sys
 _ROOT_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
 sys.path.append(_ROOT_DIR)
 
+from PyInstaller import configure, config
 from PyInstaller import __main__ as pyi_main
-from PyInstaller import configure
-from PyInstaller.compat import (architecture, is_darwin, is_linux, is_win, safe_repr)
-from PyInstaller.depend.analysis import initialize_modgraph
-from PyInstaller.utils.cliutils import archive_viewer
 from PyInstaller.utils.tests import gen_sourcefile
+from PyInstaller.utils.cliutils import archive_viewer
+from PyInstaller.compat import is_darwin, is_win, safe_repr, \
+    architecture, is_linux
+from PyInstaller.depend.analysis import initialize_modgraph
 from PyInstaller.utils.win32 import winutils
 
 # Globals
@@ -354,7 +359,7 @@ class AppBuilder(object):
             prog_env['PATH'] = os.pathsep.join(winutils.get_system_path())
 
         exe_path = prog
-        if run_from_path:
+        if (run_from_path):
             # Run executable in the temp directory
             # Add the directory containing the executable to $PATH
             # Basically, pretend we are a shell executing the program from $PATH.
@@ -427,12 +432,16 @@ class AppBuilder(object):
         default_args = [
             '--debug=bootloader',
             '--noupx',
-            '--specpath', self._specdir,
-            '--distpath', self._distdir,
-            '--workpath', self._builddir,
-            '--path', _get_modules_dir(self._request),
+            '--specpath',
+            self._specdir,
+            '--distpath',
+            self._distdir,
+            '--workpath',
+            self._builddir,
+            '--path',
+            _get_modules_dir(self._request),
             '--log-level=INFO',
-        ]   # yapf: disable
+        ]
 
         # Choose bundle mode.
         if self._mode == 'onedir':
@@ -503,7 +512,10 @@ def pyi_modgraph():
 @pytest.fixture(params=['onedir', 'onefile'])
 def pyi_builder(tmpdir, monkeypatch, request, pyi_modgraph):
     # Save/restore environment variable PATH.
-    monkeypatch.setenv('PATH', os.environ['PATH'])
+    monkeypatch.setenv(
+        'PATH',
+        os.environ['PATH'],
+    )
     # PyInstaller or a test case might manipulate 'sys.path'.
     # Reset it for every test.
     monkeypatch.syspath_prepend(None)
@@ -528,7 +540,10 @@ def pyi_builder(tmpdir, monkeypatch, request, pyi_modgraph):
 @pytest.fixture
 def pyi_builder_spec(tmpdir, request, monkeypatch, pyi_modgraph):
     # Save/restore environment variable PATH.
-    monkeypatch.setenv('PATH', os.environ['PATH'])
+    monkeypatch.setenv(
+        'PATH',
+        os.environ['PATH'],
+    )
     # Set current working directory to
     monkeypatch.chdir(tmpdir)
     # PyInstaller or a test case might manipulate 'sys.path'.

@@ -13,16 +13,15 @@ Various classes and functions to provide some backwards-compatibility
 with previous versions of Python onward.
 """
 
-import errno
-import importlib.machinery
 import os
 import platform
 import site
 import subprocess
 import sys
-
-from PyInstaller._shared_with_waf import _pyi_machine
+import errno
+import importlib.machinery
 from PyInstaller.exceptions import ExecCommandFailed
+from PyInstaller._shared_with_waf import _pyi_machine
 
 # Copied from https://docs.python.org/3/library/platform.html#cross-platform.
 is_64bits = sys.maxsize > 2**32
@@ -109,7 +108,7 @@ elif is_unix:
         'libpython%d.%d.so' % _pyver
     }
 else:
-    raise SystemExit('Your platform is not yet supported. Please define constant PYDYLIB_NAMES for your platform.')
+    raise SystemExit('Your platform is not yet supported. ' 'Please define constant PYDYLIB_NAMES for your platform.')
 
 # Function with which to open files.
 open_file = open

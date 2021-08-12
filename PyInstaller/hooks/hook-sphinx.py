@@ -12,7 +12,8 @@
 # ********************************************
 # hook-sphinx.py - Pyinstaller hook for Sphinx
 # ********************************************
-from PyInstaller.utils.hooks import (collect_data_files, collect_submodules, eval_statement)
+from PyInstaller.utils.hooks import collect_submodules, collect_data_files, \
+    eval_statement
 
 hiddenimports = (
     # Per http://sphinx-doc.org/extensions.html#builtin-sphinx-extensions,
@@ -56,7 +57,7 @@ hiddenimports = (
             """
         from sphinx.application import builtin_extensions
         print(builtin_extensions)
-        """
+    """
         )
     )
 )
