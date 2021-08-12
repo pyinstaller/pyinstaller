@@ -13,9 +13,8 @@
 
 from PyInstaller.utils.hooks import can_import_module, collect_submodules
 
-# We need to collect submodules from win32ctypes.core.cffi or
-# win32ctypes.core.ctypes for win32ctypes.core to work. The use of
-# the backend is determined by availability of cffi.
+# We need to collect submodules from win32ctypes.core.cffi or win32ctypes.core.ctypes for win32ctypes.core to work. The
+# use of the backend is determined by availability of cffi.
 if can_import_module('cffi'):
     hiddenimports = collect_submodules('win32ctypes.core.cffi')
 else:

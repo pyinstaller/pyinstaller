@@ -9,5 +9,4 @@
 
 
 def pre_safe_import_module(api):
-    api.add_alias_module('pyi_testmod_submodule_from_aliased_pkg',
-                         'alias_name')
+    api.add_alias_module('pyi_testmod_submodule_from_aliased_pkg', 'alias_name')

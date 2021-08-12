@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #-----------------------------------------------------------------------------
 # Copyright (c) 2013-2021, PyInstaller Development Team.
 #
@@ -24,10 +24,12 @@ from pathlib import Path
 
 CHANGELOG_GUIDE = (
     "https://github.com/pyinstaller/pyinstaller/"
-    "blob/develop/doc/development/changelog-entries.rst#changelog-entries")
+    "blob/develop/doc/development/changelog-entries.rst#changelog-entries"
+)
 
-CHANGE_TYPES = {'bootloader', 'breaking', 'bugfix', 'build', 'core', 'doc',
-                'feature', 'hooks', 'moduleloader', 'process', 'tests'}
+CHANGE_TYPES = {
+    'bootloader', 'breaking', 'bugfix', 'build', 'core', 'doc', 'feature', 'hooks', 'moduleloader', 'process', 'tests'
+}
 
 NEWS_PATTERN = re.compile(r"(\d+)\.(\w+)\.(?:(\d+)\.)?rst")
 
@@ -35,7 +37,8 @@ NEWS_DIR = Path(__file__).absolute().parent.parent / "news"
 
 
 def validate_name(name):
-    """Check a filename/filepath matches the required format.
+    """
+    Check a filename/filepath matches the required format.
 
     :param name: Name of news fragment file.
     :type: str, os.Pathlike
@@ -45,14 +48,12 @@ def validate_name(name):
     match = NEWS_PATTERN.fullmatch(Path(name).name)
     if match is None:
         raise SystemExit(
-            f"'{name}' does not match the '(pr-number).(type).rst' or "
-            f"'(pr-number).(type).(enumeration).rst' changelog entries "
-            f"formats. See:\n{CHANGELOG_GUIDE}"
+            f"'{name}' does not match the '(pr-number).(type).rst' or '(pr-number).(type).(enumeration).rst' changelog "
+            f"entries formats. See:\n{CHANGELOG_GUIDE}"
         )
 
     if match.group(2) not in CHANGE_TYPES:
-        sys.exit("'{}' of of invalid type '{}'. Valid types are:\n{}".format(
-            name, match.group(2), CHANGE_TYPES))
+        sys.exit("'{}' of of invalid type '{}'. Valid types are:\n{}".format(name, match.group(2), CHANGE_TYPES))
 
     print(name, "is ok")
 

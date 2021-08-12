@@ -180,21 +180,25 @@ def options(ctx):
                    default='4.0',
                    dest='lsb_version')
 
-    grp = ctx.add_option_group('macOS-specific options',
-                               'These options have effect only on macOS.')
-    grp.add_option('--universal2',
-                   action='store_true',
-                   help='When building for 64-bit platform, build universal2 '
-                        'fat binary (x86_64, arm64). (This is the default.).',
-                   default=None,
-                   dest='macos_universal2')
-    grp.add_option('--no-universal2',
-                   action='store_false',
-                   help='When building for 64-bit platform, build a thin '
-                        'binary. Allows building with older toolchains that '
-                        'do not support universal2 binaries.',
-                   default=None,
-                   dest='macos_universal2')
+    grp = ctx.add_option_group('macOS-specific options', 'These options have effect only on macOS.')
+    grp.add_option(
+        '--universal2',
+        action='store_true',
+        help='When building for 64-bit platform, build universal2 fat binary (x86_64, arm64). This is the default.',
+        default=None,
+        dest='macos_universal2',
+    )
+    grp.add_option(
+        '--no-universal2',
+        action='store_false',
+        help="When building for 64-bit platform, build a thin binary. Allows building with older toolchains that do "
+        "not support universal2 binaries. The resultant architecture is determined by the compiler's default, which "
+        "is usually to build a native executable. This may be overridden by setting the CC environment variable, e.g., "
+        "CC='clang -arch=arm64' python waf all",
+        default=None,
+        dest='macos_universal2',
+    )
+
 
 @conf
 def set_lsb_compiler(ctx):
@@ -365,9 +369,9 @@ def set_arch_flags(ctx):
             if ctx.options.macos_universal2:
                 mac_arch = UNIVERSAL2_FLAGS
             else:
-                mac_arch = ['-arch', 'x86_64']
+                # Default to whatever the compiler is configured to build.
+                mac_arch = []
         ctx.env.append_value('CFLAGS', mac_arch)
-        ctx.env.append_value('CXXFLAGS', mac_arch)
         ctx.env.append_value('LINKFLAGS', mac_arch)
 
     # AIX specific flags

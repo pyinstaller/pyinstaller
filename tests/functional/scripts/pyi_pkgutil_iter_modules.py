@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 import sys
 import argparse
 import pkgutil
@@ -17,11 +16,23 @@ import importlib
 
 # Argument parser
 parser = argparse.ArgumentParser(description="pkgutil iter_modules test")
-parser.add_argument('package', type=str, help="Package to test.")
-parser.add_argument('--prefix', type=str, default='',
-                    help="Optional prefix to pass to iter_modules.")
-parser.add_argument('--output-file', default=None, type=str,
-                    help="Output file.")
+parser.add_argument(
+    'package',
+    type=str,
+    help="Package to test.",
+)
+parser.add_argument(
+    '--prefix',
+    type=str,
+    default='',
+    help="Optional prefix to pass to iter_modules.",
+)
+parser.add_argument(
+    '--output-file',
+    default=None,
+    type=str,
+    help="Output file.",
+)
 args = parser.parse_args()
 
 # Output file (optional)

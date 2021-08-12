@@ -9,9 +9,8 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 #
-# This assists in creating an ``.egg`` package for use with the
-# ``test_pkg_resources_provider``. To build the package, execute
-# ``python setup.py bdist_egg``.
+# This assists in creating an ``.egg`` package for use with the ``test_pkg_resources_provider``. To build the package,
+# execute ``python setup.py bdist_egg``.
 
 import setuptools
 

@@ -13,12 +13,11 @@
 """
 
 import os
-from PyInstaller.utils.hooks import get_module_file_attribute, \
-    is_module_satisfies
+
+from PyInstaller.utils.hooks import get_module_file_attribute, is_module_satisfies
 
 if is_module_satisfies("importlib_resources >= 1.2.0"):
-    # since 1.2.0 importlib.metadata is used which PyInstaller knows how to
-    # handle.
+    # since 1.2.0 importlib.metadata is used which PyInstaller knows how to handle.
     pass
 else:
     # include the version.txt file, used to set __version__
@@ -29,6 +28,3 @@ else:
 
 if is_module_satisfies("importlib_resources >= 1.3.1"):
     hiddenimports = ['importlib_resources.trees']
-
-# this is only required for python2 support
-excludedimports = ['importlib_resources._py2']

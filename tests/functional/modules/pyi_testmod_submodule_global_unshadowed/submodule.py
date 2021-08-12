@@ -9,11 +9,9 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
+"""
+Mock module of the same name as but _not_ shadowed by a global variable defined by the `__init__`
+submodule of this package.
 
-'''
-Mock module of the same name as but _not_ shadowed by a global variable defined
-by the `__init__` submodule of this package.
-
-This module is exercised by the `test_import_submodule_global_unshadowed`
-functional test.
-'''
+This module is exercised by the `test_import_submodule_global_unshadowed` functional test.
+"""

@@ -9,12 +9,9 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 import sys
 
-
 frozen_encoding = str(sys.getfilesystemencoding())
-
 
 # For various OS is encoding different.
 if sys.platform.startswith('win'):
@@ -27,11 +24,8 @@ elif sys.platform.startswith('darwin'):
 else:
     encoding = 'utf-8'
 
-
 print('Encoding expected: ' + encoding)
 print('Encoding current: ' + frozen_encoding)
 
-
 if not frozen_encoding == encoding:
-    raise SystemExit('Frozen encoding %s is not the same as unfrozen %s.' %
-                     (frozen_encoding, encoding))
+    raise SystemExit('Frozen encoding %s is not the same as unfrozen %s.' % (frozen_encoding, encoding))

@@ -8,12 +8,12 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-"""Print all modules exporting the entry point 'pytest11'."""
+"""
+Print all modules exporting the entry point 'pytest11'.
+"""
 
 import pkg_resources
 
-plugins = sorted(
-    i.module_name for i in pkg_resources.iter_entry_points("pytest11"))
+plugins = sorted(i.module_name for i in pkg_resources.iter_entry_points("pytest11"))
 
 print("\n".join(plugins))

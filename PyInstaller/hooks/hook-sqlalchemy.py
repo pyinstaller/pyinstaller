@@ -10,17 +10,16 @@
 #-----------------------------------------------------------------------------
 
 import re
-from PyInstaller.utils.hooks import (
-    exec_statement, is_module_satisfies, logger)
+
 from PyInstaller.lib.modulegraph.modulegraph import SourceModule
 from PyInstaller.lib.modulegraph.util import guess_encoding
+from PyInstaller.utils.hooks import exec_statement, is_module_satisfies, logger
 
 # 'sqlalchemy.testing' causes bundling a lot of unnecessary modules.
 excludedimports = ['sqlalchemy.testing']
 
-# include most common database bindings
-# some database bindings are detected and include some
-# are not. We should explicitly include database backends.
+# Include most common database bindings some database bindings are detected and include some are not. We should
+# explicitly include database backends.
 hiddenimports = ['pysqlite2', 'MySQLdb', 'psycopg2', 'sqlalchemy.ext.baked']
 
 if is_module_satisfies('sqlalchemy >= 1.4'):
@@ -44,13 +43,12 @@ else:
 
 def hook(hook_api):
     """
-    SQLAlchemy 0.9 introduced the decorator 'util.dependencies'.  This
-    decorator does imports.  eg:
+    SQLAlchemy 0.9 introduced the decorator 'util.dependencies'.  This decorator does imports. E.g.:
 
             @util.dependencies("sqlalchemy.sql.schema")
 
-    This hook scans for included SQLAlchemy modules and then scans those modules
-    for any util.dependencies and marks those modules as hidden imports.
+    This hook scans for included SQLAlchemy modules and then scans those modules for any util.dependencies and marks
+    those modules as hidden imports.
     """
 
     if not is_module_satisfies('sqlalchemy >= 0.9'):
@@ -75,6 +73,5 @@ def hook(hook_api):
 
     hidden_imports_set -= known_imports
     if len(hidden_imports_set):
-        logger.info("  Found %d sqlalchemy hidden imports",
-                    len(hidden_imports_set))
+        logger.info("  Found %d sqlalchemy hidden imports", len(hidden_imports_set))
         hook_api.add_imports(*list(hidden_imports_set))

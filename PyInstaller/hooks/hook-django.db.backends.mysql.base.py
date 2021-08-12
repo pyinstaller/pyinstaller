@@ -9,6 +9,5 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 # Compiler module (see class DatabaseOperations)
 hiddenimports = ["django.db.backends.mysql.compiler"]

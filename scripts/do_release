@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Do a full stable release:
 # - asks some questions
 # - remove '.devN' version string

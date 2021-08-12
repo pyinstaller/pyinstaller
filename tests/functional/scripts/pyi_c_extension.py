@@ -9,8 +9,8 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# In dist directory are Python C-extension file names like module.submodule.so
-# E.g.  ./simplejson/_speedups.so  ->  ./simplejson._speedups.so
+# In dist directory are Python C-extension file names, e.g., module.submodule.so
+# For example: ./simplejson/_speedups.so -> ./simplejson._speedups.so
 
 import os
 import sys
@@ -26,9 +26,8 @@ frozen_modpath = _speedups.__file__
 print('Module path expected:', modpath, '+ ext', file=sys.stderr)
 print('Module path  current:', frozen_modpath, file=sys.stderr)
 
-# Filename extensions can include several dots (e.g.
-# '.cpython-33m.so'), so we can not simply use os.path.splitext(), but
-# have to loop over all possible extensions.
+# Filename extensions can include several dots (e.g., '.cpython-33m.so'), so we cannot simply use os.path.splitext(),
+# but have to loop over all possible extensions.
 for ext in EXTENSION_SUFFIXES:
     if modpath + ext == frozen_modpath:
         print('             matched:', modpath + ext, file=sys.stderr)

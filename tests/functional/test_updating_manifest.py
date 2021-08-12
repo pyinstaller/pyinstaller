@@ -42,21 +42,19 @@ test_manifest_which_uses_non_ascii = \
 
 @pytest.mark.win32
 def test_reading_manifest(tmpdir):
-    """Check not using invalid encoding when reading XML manifest files
-
-    Currently, Python 3.6.5, "open" built-in functions uses the
-    encoding which locale.getpreferredencoding() returns. But generally,
-    XML manifest files are written with UTF-8 even localized Windows.
-    We check here not to use local encoding against UTF-8 manifest file.
     """
-    # This import only works on Windows. Place it here, protected by the
-    # `@pytest.mark.win32`` decorator.
+    Check not using invalid encoding when reading XML manifest files.
+
+    Currently, in Python 3.6.5, "open" built-in function uses the encoding which locale.getpreferredencoding() returns.
+    But generally, XML manifest files are written with UTF-8 even on localized Windows. We check here not to use local
+    encoding against UTF-8 manifest file.
+    """
+    # This import only works on Windows. Place it here, protected by the `@pytest.mark.win32`` decorator.
     from PyInstaller.utils.win32 import winmanifest
 
     # We create the XML file written with UTF-8 as Microsoft tools do.
     tmppath = tmpdir.join('manifest.xml')
     with tmppath.open('wt', ensure=True, encoding='utf-8') as write_handle:
         write_handle.write(test_manifest_which_uses_non_ascii)
-    # ... and check the following method always uses UTF-8.
-    # It will read the file, reformat and overwrite it.
+    # ... and check the following method always uses UTF-8. It will read the file, reformat and overwrite it.
     winmanifest.create_manifest(str(tmppath), None, None)

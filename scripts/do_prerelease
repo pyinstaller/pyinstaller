@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Create tar.gz archive for source distribution, sign it with GPG and
 # upload it to PYPI.
 release  # zest.releaser command

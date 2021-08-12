@@ -8,16 +8,13 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-
 """
 PyInstaller hook file for Pygments. Tested with version 2.0.2.
 """
 
 from PyInstaller.utils.hooks import collect_submodules
 
-# The following applies to pygments version 2.0.2, as reported by ``pip show
-# pygments``.
+# The following applies to pygments version 2.0.2, as reported by ``pip show pygments``.
 #
 # From pygments.formatters, line 37::
 #

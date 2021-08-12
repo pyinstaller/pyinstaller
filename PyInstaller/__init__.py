@@ -18,9 +18,7 @@ import sys
 from PyInstaller import compat
 from PyInstaller.utils.git import get_repo_revision
 
-
-# Note: Keep this variable as plain string so it could be updated automatically
-#       when doing a release.
+# Note: Keep this variable as plain string so it could be updated automatically when doing a release.
 __version__ = '4.6.dev0'
 
 

@@ -9,6 +9,5 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 # xml.dom.domreg line 54
 hiddenimports = ['xml.dom.minidom']

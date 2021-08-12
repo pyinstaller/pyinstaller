@@ -15,9 +15,11 @@ import pytest
 
 def test_ctypes_cdll_unknown_dll(pyi_builder, capfd):
     with pytest.raises(pytest.fail.Exception, match="Running exe .* failed"):
-        pyi_builder.test_source("""
+        pyi_builder.test_source(
+            """
             import ctypes
             ctypes.cdll.LoadLibrary('non-existing-2017')
-            """)
+            """
+        )
     out, err = capfd.readouterr()
     assert "Failed to load dynlib/dll" in err

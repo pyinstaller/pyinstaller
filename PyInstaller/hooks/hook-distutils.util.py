@@ -9,7 +9,5 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# distutils.util.run_2to3() import lib2to3. Strip it sinse chances are low
-# this is used by a frozen package.
-
+# distutils.util.run_2to3() imports lib2to3. Exclude it as chances are low that it is used by the frozen package.
 excludedimports = ['lib2to3.refactor']

@@ -9,5 +9,5 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# only required when run as `__main__`
+# Only required when run as `__main__`.
 excludedimports = ["doctest"]

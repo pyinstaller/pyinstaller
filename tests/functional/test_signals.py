@@ -10,18 +10,11 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# Library imports
-# ---------------
 import signal
 
-# Third-party imports
-# -------------------
 import pytest
 
-signals = sorted([
-    key for key in dir(signal)
-    if key.startswith('SIG') and not key.startswith('SIG_')
-])
+signals = sorted([key for key in dir(signal) if key.startswith('SIG') and not key.startswith('SIG_')])
 
 
 @pytest.mark.darwin
@@ -33,13 +26,9 @@ def test_signal_handled(pyi_builder, signame, ignore):
     if signame in ['SIGKILL', 'SIGSTOP']:
         pytest.skip('{} cannot be caught'.format(signame))
     elif signame in ['SIGCHLD', 'SIGCLD']:
-        pytest.skip(
-            'Messing with {} interferes with bootloader'.format(signame)
-        )
+        pytest.skip('Messing with {} interferes with bootloader'.format(signame))
     elif signame == 'SIGTSTP':
-        pytest.xfail(
-            '{} is not caught to allow Ctrl-Z'.format(signame)
-        )
+        pytest.xfail('{} is not caught to allow Ctrl-Z'.format(signame))
 
     verb = 'ignored' if ignore else 'handled'
     app_name = 'test_signal_{}_{}'.format(verb, signame)
@@ -78,13 +67,11 @@ def test_signal_handled(pyi_builder, signame, ignore):
         parent = child.parent()
 
         if parent.name() == '{app_name}':
-            # We are the forked child of the bootloader process.
-            # Signal our parent process to mimic the behavior
-            # of an external program signalling the process running
-            # the executable that pyinstaller produced.
+            # We are the forked child of the bootloader process. Signal our parent process to mimic the behavior
+            # of an external program signalling the process running the executable that pyinstaller produced.
             target = parent
         elif ignore:
-            # can't pytest.skip() from inside this process
+            # Cannot use pytest.skip() from inside this process.
             print('Bootloader did not fork; test is invalid')
             sys.exit(0)
         else:
@@ -108,4 +95,5 @@ def test_signal_handled(pyi_builder, signame, ignore):
         """.format(signame=signame, app_name=app_name, ignore=ignore),
         app_name=app_name,
         runtime=5,
-        pyi_args=pyi_args)
+        pyi_args=pyi_args
+    )

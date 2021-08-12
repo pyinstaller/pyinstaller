@@ -9,5 +9,4 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
-from .baz import say_hello_please
+from .baz import say_hello_please  # noqa: F401

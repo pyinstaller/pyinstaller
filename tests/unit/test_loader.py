@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 from threading import Thread
 from queue import Queue
 
@@ -18,9 +17,8 @@ from PyInstaller.loader.pyimod02_archive import ArchiveFile
 
 def test_threading_import(tmpdir):
     """
-    On Python 3.3+, PyInstaller doesn't acquire a lock when performing an
-    import. Therefore, two thread could both be reading the .pyz archive at the
-    same time. At the core, the ArchiveFile class performs these reads. This
+    On Python 3.3+, PyInstaller does not acquire a lock when performing an import. Therefore, two threads could both
+    be reading the .pyz archive at the same time. At the core, the ArchiveFile class performs these reads. This
     test verifies that multi-threaded reads work.
 
     For more information, see https://github.com/pyinstaller/pyinstaller/pull/2010.
@@ -35,15 +33,13 @@ def test_threading_import(tmpdir):
     q1 = Queue()
     q2 = Queue()
 
-    # This function, which is run in a separate thread, works to ensure that
-    # both threads open a file at the same time.
+    # This function, which is run in a separate thread, works to ensure that both threads open a file at the same time.
     def foo():
         with ar:
             # Wait until both threads have opened the file.
             q1.put(1)
             assert q2.get() == 2
-            # Wait until the other thread has closed the file before closing it
-            # here.
+            # Wait until the other thread has closed the file before closing it here.
             assert q2.get() == 3
 
     thread = Thread(target=foo)
@@ -59,4 +55,3 @@ def test_threading_import(tmpdir):
 
     # Wait for the other thread to finish.
     thread.join()
-
