@@ -5,10 +5,25 @@ Coding conventions
 
 The |PyInstaller| project follows the :pep:`8` Style Guide for Python Code for
 new code.
+It uses yapf_ to do the bulk of the formatting (mostly putting spaces in the
+correct places) automatically and flake8_ to validate :pep:`8` rules which yapf_
+doesn't cover.
 
-.. TODO: precise how to use flake8
+Before submitting changes to |PyInstaller|, please check your code with both
+tools.
 
-Please check your code with a style guide checker, e.g. flake8.
+To install them run::
+
+    pip install flake8 yapf==0.31.0
+
+Reformat your code automatically with yapf_::
+
+    yapf -rip .
+
+Then manually adjust your code based on any suggestions given by flake8_::
+
+    git diff -U0 last-commit-id-which-you-did-not-write -- | flake8 --diff -
+
 
 Please abstain from reformatting existing code, even it it doesn't follow
 PEP 8. We will not accept reformatting changes since they make it harder to
