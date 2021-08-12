@@ -43,7 +43,14 @@ class QtLibraryInfo:
         # PrefixPath does not reflect the required relative target path for the frozen application.
         if namespace == 'PyQt5':
             # PyQt5 uses PyQt5/Qt on all platforms, or PyQt5/Qt5 from version 5.15.4 on
-            if hooks.is_module_satisfies("PyQt5 >= 5.15.4"):
+            try:
+                # The call below might fail with AttributeError on some PyQt5 versions (e.g., 5.9.2 from conda's main
+                # channel); missing dist information forces a fallback codepath that tries to check for __version__
+                # attribute that does not exist, either. So handle the error gracefully and assume old layout.
+                new_layout = hooks.is_module_satisfies("PyQt5 >= 5.15.4")
+            except AttributeError:
+                new_layout = False
+            if new_layout:
                 self.qt_rel_dir = os.path.join('PyQt5', 'Qt5')
             else:
                 self.qt_rel_dir = os.path.join('PyQt5', 'Qt')
