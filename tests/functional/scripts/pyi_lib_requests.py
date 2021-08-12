@@ -41,7 +41,7 @@ else:
     # we are running in a normal Python environment
     basedir = os.path.dirname(__file__)
 
-SERVER_CERT = os.path.join(basedir, u"server.pem")
+SERVER_CERT = os.path.join(basedir, "server.pem")
 
 if not os.path.exists(SERVER_CERT):
     raise SystemExit('Certificate-File %s is missing' % SERVER_CERT)
@@ -87,7 +87,7 @@ def main():
     time.sleep(1)
 
     # Use requests to get a page from the server
-    requests.get(u"https://localhost:{}".format(SERVER_PORT), verify=SERVER_CERT)
+    requests.get("https://localhost:{}".format(SERVER_PORT), verify=SERVER_CERT)
     # requests.get("https://github.com")
 
 

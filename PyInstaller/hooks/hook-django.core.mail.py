@@ -19,5 +19,9 @@ runtime the autoreload thread will complain with a traceback.
 """
 
 hiddenimports = [
-    'email.mime.message', 'email.mime.image', 'email.mime.text', 'email.mime.multipart', 'email.mime.audio'
+    'email.mime.message',
+    'email.mime.image',
+    'email.mime.text',
+    'email.mime.multipart',
+    'email.mime.audio',
 ]

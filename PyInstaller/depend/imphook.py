@@ -12,14 +12,16 @@
 Code related to processing of import hooks.
 """
 
-import glob, sys, weakref
+import glob
 import os.path
+import sys
+import weakref
 
-from PyInstaller.exceptions import ImportErrorWhenRunningHook
 from PyInstaller import log as logging
+from PyInstaller.building.utils import format_binaries_and_datas
 from PyInstaller.compat import expand_path, importlib_load_source
 from PyInstaller.depend.imphookapi import PostGraphAPI
-from PyInstaller.building.utils import format_binaries_and_datas
+from PyInstaller.exceptions import ImportErrorWhenRunningHook
 
 logger = logging.getLogger(__name__)
 
@@ -282,7 +284,7 @@ class ModuleHook(object):
         self.hook_filename = hook_filename
 
         # Name of the in-memory module fabricated to refer to this hook script.
-        self.hook_module_name = (hook_module_name_prefix + self.module_name.replace('.', '_'))
+        self.hook_module_name = hook_module_name_prefix + self.module_name.replace('.', '_')
 
         # Safety check, see above
         global HOOKS_MODULE_NAMES
@@ -403,7 +405,7 @@ class ModuleHook(object):
 
         # Copy hook script attributes into magic attributes exposed as instance
         # variables of the current "ModuleHook" instance.
-        for attr_name, (default_type, sanitizer_func) in (_MAGIC_MODULE_HOOK_ATTRS.items()):
+        for attr_name, (default_type, sanitizer_func) in _MAGIC_MODULE_HOOK_ATTRS.items():
             # Unsanitized value of this attribute.
             attr_value = getattr(self._hook_module, attr_name, None)
 

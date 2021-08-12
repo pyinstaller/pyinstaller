@@ -12,19 +12,18 @@
 Find external dependencies of binary libraries.
 """
 
+import collections
 import ctypes.util
 import os
 import re
 import sys
-from glob import glob
 # Required for extracting eggs.
 import zipfile
-import collections
+from glob import glob
 
 from PyInstaller import compat
-from PyInstaller.depend import dylib, utils
-
 from PyInstaller import log as logging
+from PyInstaller.depend import dylib, utils
 from PyInstaller.utils.win32 import winutils
 
 logger = logging.getLogger(__name__)
@@ -34,8 +33,11 @@ seen = set()
 # Import windows specific stuff.
 if compat.is_win:
     from distutils.sysconfig import get_python_lib
-    from PyInstaller.utils.win32 import winmanifest, winresource
+
     import pefile
+
+    from PyInstaller.utils.win32 import winmanifest, winresource
+
     # Do not load all the directories information from the PE file
     pefile.fast_load = True
 
@@ -183,7 +185,7 @@ def matchDLLArch(filename):
         match_arch = pe.FILE_HEADER.Machine == _exe_machine_type
         pe.close()
     except pefile.PEFormatError as exc:
-        raise SystemExit('Can not get architecture from file: %s\n' '  Reason: %s' % (pefilename, exc))
+        raise SystemExit('Can not get architecture from file: %s\n  Reason: %s' % (pefilename, exc))
     return match_arch
 
 
@@ -342,7 +344,7 @@ def getAssemblies(pth):
             res = winmanifest.GetManifestResources(pth)
         except winresource.pywintypes.error as exc:
             if exc.args[0] == winresource.ERROR_BAD_EXE_FORMAT:
-                logger.info('Cannot get manifest resource from non-PE ' 'file %s', pth)
+                logger.info('Cannot get manifest resource from non-PE file %s', pth)
                 return []
             raise
     rv = []
@@ -360,7 +362,7 @@ def getAssemblies(pth):
                     ])
                     manifest.parse_string(res[winmanifest.RT_MANIFEST][name][language], False)
                 except Exception as exc:
-                    logger.error("Can not parse manifest resource %s, %s" " from %s", name, language, pth, exc_info=1)
+                    logger.error("Can not parse manifest resource %s, %s from %s", name, language, pth, exc_info=1)
                 else:
                     if manifest.dependentAssemblies:
                         logger.debug("Dependent assemblies of %s:", pth)
@@ -604,9 +606,9 @@ def _getImports_macholib(pth):
 
     This implementation is for Mac OS X and uses library macholib.
     """
-    from macholib.MachO import MachO
-    from macholib.mach_o import LC_RPATH
     from macholib.dyld import dyld_find
+    from macholib.mach_o import LC_RPATH
+    from macholib.MachO import MachO
     from macholib.util import in_system_path
     rslt = set()
     seen = set()  # Libraries read from binary headers.
@@ -784,6 +786,7 @@ def findLibrary(name):
         try:
             # Module available only in Python 2.7+
             import sysconfig
+
             # 'multiarchsubdir' works on Debian/Ubuntu only in Python 2.7 and 3.3+.
             arch_subdir = sysconfig.get_config_var('multiarchsubdir')
             # Ignore if None is returned.

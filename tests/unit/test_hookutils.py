@@ -347,7 +347,7 @@ def test_copy_metadata_dest(egg_path, name, target):
 
 
 def test_erroneous_distribution_type():
-    with pytest.raises(RuntimeError, match="Unknown .* type 'foo' from the " "'bar' distribution"):
+    with pytest.raises(RuntimeError, match="Unknown .* type 'foo' from the 'bar' distribution"):
         _copy_metadata_dest("foo", "bar")
     with pytest.raises(RuntimeError, match=r"No .* distribution 'foo'\."):
         _copy_metadata_dest(None, "foo")

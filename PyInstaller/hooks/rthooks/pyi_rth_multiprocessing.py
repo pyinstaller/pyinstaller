@@ -9,13 +9,12 @@
 # SPDX-License-Identifier: Apache-2.0
 #-----------------------------------------------------------------------------
 
-import sys
-
+import multiprocessing
+import multiprocessing.spawn as spawn
 # 'spawn' multiprocessing needs some adjustments on osx
 import os
 import re
-import multiprocessing
-import multiprocessing.spawn as spawn
+import sys
 from subprocess import _args_from_interpreter_flags
 
 # prevent spawn from trying to read __main__ in from the main script

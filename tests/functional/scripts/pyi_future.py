@@ -21,21 +21,21 @@ assert list(b) == [65, 66, 67, 68]
 assert repr(b) == "b'ABCD'"
 # These raise TypeErrors:
 try:
-    b + u'EFGH'
+    b + 'EFGH'
 except TypeError:
     pass
 else:
     assert False, "`bytes + str` did not raise TypeError"
 
 try:
-    bytes(b',').join([u'Fred', u'Bill'])
+    bytes(b',').join(['Fred', 'Bill'])
 except TypeError:
     pass
 else:
     assert False, "`bytes.join([str, str])` did not raise TypeError"
 
 # Backported Py3 str object
-s = str(u'ABCD')
+s = str('ABCD')
 assert s != bytes(b'ABCD')
 assert isinstance(s.encode('utf-8'), bytes)
 assert isinstance(b.decode('utf-8'), str)
@@ -94,7 +94,7 @@ z = pow(-1, 0.5)
 
 # Compatible output from isinstance() across Py2/3:
 assert isinstance(2**64, int)  # long integers
-assert isinstance(u'blah', str)
+assert isinstance('blah', str)
 assert isinstance('blah', str)  # only if unicode_literals is in effect
 
 

@@ -25,11 +25,11 @@
 ### **NOTE** This module is used during bootstrap.
 ### Import *ONLY* builtin modules.
 
+import _thread as thread
 import marshal
 import struct
 import sys
 import zlib
-import _thread as thread
 
 # For decrypting Python modules.
 CRYPT_BLOCK_SIZE = 16

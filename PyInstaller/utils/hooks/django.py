@@ -10,8 +10,8 @@
 # ----------------------------------------------------------------------------
 import os
 
-from PyInstaller.utils.hooks import eval_script
 from PyInstaller.utils import misc
+from PyInstaller.utils.hooks import eval_script
 
 __all__ = ['django_dottedstring_imports', 'django_find_root_dir']
 
@@ -52,6 +52,7 @@ def django_find_root_dir():
     """
     # 'PyInstaller.config' cannot be imported as other top-level modules.
     from PyInstaller.config import CONF
+
     # Get the directory with manage.py. Manage.py is supplied to PyInstaller as the
     # first main executable script.
     manage_py = CONF['main_script']

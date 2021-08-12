@@ -20,4 +20,4 @@ try:
     raise Exception('Self-test of hook %s failed: hook for parent exists' % NAME)
 except ImportError as e:
     if e.name != hookmodnm:
-        raise Exception('Self-test of hook %s failed: hook for parent exists ' 'and has import errors.' % NAME)
+        raise Exception('Self-test of hook %s failed: hook for parent exists and has import errors.' % NAME)

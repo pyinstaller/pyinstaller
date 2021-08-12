@@ -12,12 +12,12 @@
 Show dll dependencies of executable files or other dynamic libraries.
 """
 
-import glob
 import argparse
+import glob
 
 import PyInstaller.depend.bindepend
-from PyInstaller.compat import is_win
 import PyInstaller.log
+from PyInstaller.compat import is_win
 
 
 def run():

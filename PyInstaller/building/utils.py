@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-#--- functions for checking guts ---
+# --- functions for checking guts ---
 # NOTE: By GUTS it is meant intermediate files and data structures that
 # PyInstaller creates for bundling files and creating final executable.
 import fnmatch
@@ -20,34 +20,32 @@ import os.path
 import pkgutil
 import platform
 import shutil
+import struct
 import sys
 
-import struct
-
-from PyInstaller.config import CONF
 from PyInstaller import compat
-from PyInstaller.compat import is_darwin, is_win, EXTENSION_SUFFIXES, \
-    is_py37, is_cygwin
+from PyInstaller import log as logging
+from PyInstaller.compat import (EXTENSION_SUFFIXES, is_cygwin, is_darwin, is_py37, is_win)
+from PyInstaller.config import CONF
 from PyInstaller.depend import dylib
 from PyInstaller.depend.bindepend import match_binding_redirect
 from PyInstaller.utils import misc
-from PyInstaller import log as logging
 
 if is_win:
-    from PyInstaller.utils.win32 import winmanifest, winresource, versioninfo
+    from PyInstaller.utils.win32 import versioninfo, winmanifest, winresource
 
 if is_darwin:
     import PyInstaller.utils.osx as osxutils
 
 logger = logging.getLogger(__name__)
 
-#-- Helpers for checking guts.
+# -- Helpers for checking guts.
 #
 # NOTE: By _GUTS it is meant intermediate files and data structures that
 # PyInstaller creates for bundling files and creating final executable.
 
 
-def _check_guts_eq(attr, old, new, last_build):
+def _check_guts_eq(attr, old, new, _last_build):
     """
     rebuild is required if values differ
     """
@@ -57,7 +55,7 @@ def _check_guts_eq(attr, old, new, last_build):
     return False
 
 
-def _check_guts_toc_mtime(attr, old, toc, last_build, pyc=0):
+def _check_guts_toc_mtime(_attr, old, _toc, last_build, pyc=0):
     """
     rebuild is required if mtimes of files listed in old toc are newer
     than last_build
@@ -85,10 +83,7 @@ def _check_guts_toc(attr, old, toc, last_build, pyc=0):
 
     Use this for input parameters.
     """
-    return (_check_guts_eq(attr, old, toc, last_build) or _check_guts_toc_mtime(attr, old, toc, last_build, pyc=pyc))
-
-
-#---
+    return _check_guts_eq(attr, old, toc, last_build) or _check_guts_toc_mtime(attr, old, toc, last_build, pyc=pyc)
 
 
 def add_suffix_to_extension(inm, fnm, typ):
@@ -166,6 +161,7 @@ def checkCache(
                '@loader_path/../../' for qt4 plugins.
     """
     from PyInstaller.config import CONF
+
     # On darwin a cache is required anyway to keep the libaries
     # with relative install names. Caching on darwin does not work
     # since we need to modify binary headers to use relative paths
@@ -189,7 +185,7 @@ def checkCache(
     # Make cachedir per Python major/minor version.
     # This allows parallel building of executables with different
     # Python versions as one user.
-    pyver = ('py%d%s') % (sys.version_info[0], sys.version_info[1])
+    pyver = 'py%d%s' % (sys.version_info[0], sys.version_info[1])
     arch = platform.architecture()[0]
     cachedir = os.path.join(CONF['cachedir'], 'bincache%d%d_%s_%s' % (strip, upx, pyver, arch))
     if target_arch:
@@ -217,11 +213,11 @@ def checkCache(
     if os.path.exists(cacheindexfn):
         try:
             cache_index = misc.load_py_data_struct(cacheindexfn)
-        except Exception as e:
+        except Exception:
             # tell the user they may want to fix their cache
             # .. however, don't delete it for them; if it keeps getting
             #    corrupted, we'll never find out
-            logger.warn("pyinstaller bincache may be corrupted; " "use pyinstaller --clean to fix")
+            logger.warn("pyinstaller bincache may be corrupted; use pyinstaller --clean to fix")
             raise
     else:
         cache_index = {}
@@ -346,8 +342,8 @@ def checkCache(
                                 str(name), str(language)
                             ])
                             manifest.parse_string(res[winmanifest.RT_MANIFEST][name][language], False)
-                        except Exception as exc:
-                            logger.error("Cannot parse manifest resource %s, " "%s", name, language)
+                        except Exception:
+                            logger.error("Cannot parse manifest resource %s, =%s", name, language)
                             logger.error("From file %s", cachedfile, exc_info=1)
                         else:
                             # optionally change manifest to private assembly
@@ -366,7 +362,7 @@ def checkCache(
                             if redirecting or private:
                                 try:
                                     manifest.update_resources(os.path.abspath(cachedfile), [name], [language])
-                                except Exception as e:
+                                except Exception:
                                     logger.error(os.path.abspath(cachedfile))
                                     raise
 
@@ -414,10 +410,10 @@ def _check_path_overlap(path):
     from PyInstaller.config import CONF
     specerr = 0
     if CONF['workpath'].startswith(path):
-        logger.error('Specfile error: The output path "%s" contains ' 'WORKPATH (%s)', path, CONF['workpath'])
+        logger.error('Specfile error: The output path "%s" contains WORKPATH (%s)', path, CONF['workpath'])
         specerr += 1
     if CONF['specpath'].startswith(path):
-        logger.error('Specfile error: The output path "%s" contains ' 'SPECPATH (%s)', path, CONF['specpath'])
+        logger.error('Specfile error: The output path "%s" contains SPECPATH (%s)', path, CONF['specpath'])
         specerr += 1
     if specerr:
         raise SystemExit(
@@ -463,7 +459,7 @@ def _rmtree(path):
         )
     if choice.strip().lower() == 'y':
         if not CONF['noconfirm']:
-            print("On your own risk, you can use the option `--noconfirm` " "to get rid of this question.")
+            print("On your own risk, you can use the option `--noconfirm` to get rid of this question.")
         logger.info('Removing dir %s', path)
         shutil.rmtree(path)
     else:
@@ -471,15 +467,15 @@ def _rmtree(path):
 
 
 # TODO Refactor to prohibit empty target directories. As the docstring
-#below documents, this function currently permits the second item of each
-#2-tuple in "hook.datas" to be the empty string, in which case the target
-#directory defaults to the source directory's basename. However, this
-#functionality is very fragile and hence bad. Instead:
+# below documents, this function currently permits the second item of each
+# 2-tuple in "hook.datas" to be the empty string, in which case the target
+# directory defaults to the source directory's basename. However, this
+# functionality is very fragile and hence bad. Instead:
 #
-#* An exception should be raised if such item is empty.
-#* All hooks currently passing the empty string for such item (e.g.,
-#  "hooks/hook-babel.py", "hooks/hook-matplotlib.py") should be refactored
-#  to instead pass such basename.
+# * An exception should be raised if such item is empty.
+# * All hooks currently passing the empty string for such item (e.g.,
+#   "hooks/hook-babel.py", "hooks/hook-matplotlib.py") should be refactored
+#   to instead pass such basename.
 def format_binaries_and_datas(binaries_or_datas, workingdir=None):
     """
     Convert the passed list of hook-style 2-tuples into a returned set of
@@ -542,7 +538,7 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
             src_root_paths = glob.glob(src_root_path_or_glob)
 
         if not src_root_paths:
-            msg = 'Unable to find "%s" when adding binary and data files.' % (src_root_path_or_glob)
+            msg = 'Unable to find "%s" when adding binary and data files.' % src_root_path_or_glob
             # on Debian/Ubuntu, missing pyconfig.h files can be fixed with
             # installing python-dev
             if src_root_path_or_glob.endswith("pyconfig.h"):
@@ -562,12 +558,11 @@ package, or unsuitable build parameters of Python installation.
                 # Normalizing the result to remove redundant relative
                 # paths (e.g., removing "./" from "trg/./file").
                 toc_datas.add((
-                    os.path.normpath(os.path.join(trg_root_dir,
-                                                  os.path.basename(src_root_path))), os.path.normpath(src_root_path)
+                    os.path.normpath(os.path.join(trg_root_dir, os.path.basename(src_root_path))),
+                    os.path.normpath(src_root_path),
                 ))
             elif os.path.isdir(src_root_path):
-                for src_dir, src_subdir_basenames, src_file_basenames in \
-                    os.walk(src_root_path):
+                for src_dir, src_subdir_basenames, src_file_basenames in os.walk(src_root_path):
                     # Ensure the current source directory is a subdirectory
                     # of the passed top-level source directory. Since
                     # os.walk() does *NOT* follow symlinks by default, this

@@ -20,6 +20,7 @@ https://zestreleaser.readthedocs.org/en/latest/entrypoints.html
 """
 
 import os
+
 from PyInstaller.compat import exec_command, getenv
 
 

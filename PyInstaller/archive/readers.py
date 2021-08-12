@@ -14,8 +14,8 @@ This CArchiveReader is used only by the archieve_viewer utility.
 
 # TODO clean up this module
 
-import struct
 import os
+import struct
 
 from PyInstaller.loader.pyimod02_archive import ArchiveReader
 

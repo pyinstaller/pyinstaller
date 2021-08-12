@@ -22,21 +22,21 @@ from PyInstaller.utils.hooks import eval_statement
 def pre_safe_import_module(api):
     real_to_six_module_name = eval_statement(
         '''
-try:
-    import setuptools._vendor.six as six
-except ImportError:
-    import setuptools.extern.six as six
+    try:
+        import setuptools._vendor.six as six
+    except ImportError:
+        import setuptools.extern.six as six
 
-print('{')
+    print('{')
 
-for moved in six._moved_attributes:
-    if isinstance(moved, (six.MovedModule, six.MovedAttribute)):
-        print('  %r: %r,' % (
-            moved.mod,
-            'setuptools.extern.six.moves.' + moved.name))
+    for moved in six._moved_attributes:
+        if isinstance(moved, (six.MovedModule, six.MovedAttribute)):
+            print('  %r: %r,' % (
+                moved.mod,
+                'setuptools.extern.six.moves.' + moved.name))
 
-print('}')
-'''
+    print('}')
+    '''
     )
     if isinstance(real_to_six_module_name, str):
         raise SystemExit("pre-safe-import-module hook failed, needs fixing.")

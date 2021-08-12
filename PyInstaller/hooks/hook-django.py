@@ -11,9 +11,9 @@
 
 # Tested with django 2.2
 
-import sys
 import glob
 import os
+
 from PyInstaller import log as logging
 from PyInstaller.utils import hooks
 from PyInstaller.utils.hooks import django

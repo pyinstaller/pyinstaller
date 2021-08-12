@@ -1,4 +1,4 @@
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
@@ -7,23 +7,27 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 import os
 import zipfile
+
 import pkg_resources
-from PyInstaller.depend.utils import get_path_to_egg
-from PyInstaller.building.datastruct import TOC, Tree
+
 from PyInstaller import log as logging
+from PyInstaller.building.datastruct import TOC, Tree
 from PyInstaller.compat import ALL_SUFFIXES
+from PyInstaller.depend.utils import get_path_to_egg
 
 logger = logging.getLogger(__name__)
 
 # create a list of excludes suitable for Tree.
-PY_IGNORE_EXTENSIONS = set(['*' + x for x in ALL_SUFFIXES] +
-                           # Exclude EGG-INFO, too, as long as we do not have a way to hold several
-                           # in one archive
-                           ['EGG-INFO'])
+PY_IGNORE_EXTENSIONS = {
+    *('*' + x for x in ALL_SUFFIXES),
+    # Exclude EGG-INFO, too, as long as we do not have a way to hold several
+    # in one archive
+    'EGG-INFO',
+}
 
 
 class DependencyProcessor(object):

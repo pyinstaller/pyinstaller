@@ -21,10 +21,9 @@ and globals are referenced outside this module.
 import os.path
 import struct
 
-from PyInstaller.compat import win32api, pywintypes
-from PyInstaller import config
-
 import PyInstaller.log as logging
+from PyInstaller import config
+from PyInstaller.compat import pywintypes, win32api
 
 logger = logging.getLogger(__name__)
 

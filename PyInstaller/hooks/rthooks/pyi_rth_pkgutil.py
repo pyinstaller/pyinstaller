@@ -28,9 +28,8 @@
 # implementation with contents of PYZ archive from FrozenImporter's TOC.
 
 import os
-import sys
-
 import pkgutil
+import sys
 
 from pyimod03_importers import FrozenImporter
 

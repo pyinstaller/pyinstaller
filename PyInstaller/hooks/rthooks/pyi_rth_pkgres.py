@@ -10,8 +10,8 @@
 #-----------------------------------------------------------------------------
 
 import os
-import sys
 import pathlib
+import sys
 
 import pkg_resources
 from pyimod03_importers import FrozenImporter

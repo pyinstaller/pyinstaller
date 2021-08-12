@@ -16,10 +16,10 @@ import glob
 import os
 from shutil import which
 
+from PyInstaller.compat import exec_command_stdout, is_darwin, is_linux, is_win
 from PyInstaller.config import CONF
-from PyInstaller.compat import exec_command_stdout, is_darwin, is_win, is_linux
-from PyInstaller.utils.hooks import logger, get_hook_config
-from PyInstaller.utils.hooks.gi import (collect_glib_translations, get_gi_typelibs, get_gi_libdir)
+from PyInstaller.utils.hooks import get_hook_config, logger
+from PyInstaller.utils.hooks.gi import (collect_glib_translations, get_gi_libdir, get_gi_typelibs)
 
 loaders_path = os.path.join('gdk-pixbuf-2.0', '2.10.0', 'loaders')
 
@@ -34,7 +34,7 @@ gdk_pixbuf_query_loaders = None
 try:
     libdir = get_gi_libdir('GdkPixbuf', '2.0')
 except ValueError:
-    logger.warning('"hook-gi.repository.GdkPixbuf" ignored, ' 'since GdkPixbuf library not found')
+    logger.warning('"hook-gi.repository.GdkPixbuf" ignored, since GdkPixbuf library not found')
     libdir = None
 
 if libdir:

@@ -34,5 +34,5 @@ def pre_find_module_path(api):
         api.search_dirs = [module_dir]
         logger.info('Adding pyi_splash module to application dependencies.')
     else:
-        logger.info('A local module named "pyi_splash" is installed. ' 'Use the installed one instead.')
+        logger.info('A local module named "pyi_splash" is installed. Use the installed one instead.')
         return

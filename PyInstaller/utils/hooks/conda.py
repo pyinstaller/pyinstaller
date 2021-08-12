@@ -39,11 +39,11 @@ rather than the *package name* you import it with. i.e Use
 ``package_distribution("PIL")``.
 """
 
+import fnmatch
+import json
 import sys
 from pathlib import Path
-import json
-import fnmatch
-from typing import List, Iterable
+from typing import Iterable, List
 
 from PyInstaller import compat
 from PyInstaller.log import logger
@@ -232,7 +232,7 @@ def walk_dependency_tree(initial: str, excludes: Iterable[str] = None) -> dict:
         try:
             # Collect and save it's metadata.
             done[name] = distribution = Distribution.from_name(name)
-            logger.debug("Collected Conda distribution '%s', " "a dependency of '%s'.", name, initial)
+            logger.debug("Collected Conda distribution '%s', a dependency of '%s'.", name, initial)
         except ModuleNotFoundError:
             logger.warning(
                 "Conda distribution '%s', dependency of '%s', was not found. "

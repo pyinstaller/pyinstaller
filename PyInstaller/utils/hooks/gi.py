@@ -11,11 +11,10 @@
 import os
 import re
 
-from PyInstaller.utils.hooks import collect_submodules, \
-    collect_system_data_files, eval_statement, exec_statement
-from PyInstaller import log as logging
 from PyInstaller import compat
+from PyInstaller import log as logging
 from PyInstaller.depend.bindepend import findSystemLibrary
+from PyInstaller.utils.hooks import (collect_submodules, collect_system_data_files, eval_statement, exec_statement)
 
 logger = logging.getLogger(__name__)
 
@@ -108,6 +107,7 @@ def get_gi_typelibs(module, version):
 
 def gir_library_path_fix(path):
     import subprocess
+
     # 'PyInstaller.config' cannot be imported as other top-level modules.
     from PyInstaller.config import CONF
 
@@ -163,9 +163,9 @@ def gir_library_path_fix(path):
 
         # g-ir-compiler expects a file so we cannot just pipe the fixed file to it.
         command = subprocess.Popen((
-            'g-ir-compiler', os.path.join(CONF['workpath'],
-                                          gir_name), '-o', os.path.join(CONF['workpath'], typelib_name)
-        ))
+            'g-ir-compiler', os.path.join(CONF['workpath'], gir_name),
+            '-o', os.path.join(CONF['workpath'], typelib_name)
+        ))  # yapf: disable
         command.wait()
 
         return os.path.join(CONF['workpath'], typelib_name), 'gi_typelibs'

@@ -81,17 +81,17 @@ winmanifest.py <dstpath> <xmlpath>
 Updates or adds manifest <xmlpath> as resource in Win32 PE file <dstpath>.
 """
 
-import os
-from glob import glob
 import hashlib
+import os
 import sys
 import xml
+from glob import glob
 from xml.dom import Node, minidom
 from xml.dom.minidom import Document, Element
 
 from PyInstaller import compat
-from PyInstaller.compat import string_types
 from PyInstaller import log as logging
+from PyInstaller.compat import string_types
 from PyInstaller.utils.win32 import winresource
 
 logger = logging.getLogger(__name__)
@@ -167,7 +167,7 @@ class File(_File):
             self.hashalg = hashalg.upper()
         else:
             self.hashalg = None
-        if (os.path.isfile(filename) and hashalg and hashlib and hasattr(hashlib, hashalg.lower())):
+        if os.path.isfile(filename) and hashalg and hashlib and hasattr(hashlib, hashalg.lower()):
             self.calc_hash()
         else:
             self.hash = hash
@@ -398,16 +398,16 @@ class Manifest(object):
                 except Exception:
                     logger.error("Could not parse file %s", manifestpth, exc_info=1)
                 else:
-                    logger.debug("Checking publisher policy for " "binding redirects")
+                    logger.debug("Checking publisher policy for binding redirects")
                     for assembly in policy.dependentAssemblies:
-                        if (not assembly.same_id(self, True) or assembly.optional):
+                        if not assembly.same_id(self, True) or assembly.optional:
                             continue
                         for redirect in assembly.bindingRedirects:
                             old = "-".join([".".join([str(i) for i in part]) for part in redirect[0]])
                             new = ".".join([str(i) for i in redirect[1]])
-                            logger.debug("Found redirect for " "version(s) %s -> %s", old, new)
-                            if (version >= redirect[0][0] and version <= redirect[0][-1] and version != redirect[1]):
-                                logger.debug("Applying redirect " "%s -> %s", ".".join([str(i) for i in version]), new)
+                            logger.debug("Found redirect for version(s) %s -> %s", old, new)
+                            if redirect[0][0] <= version <= redirect[0][-1] and version != redirect[1]:
+                                logger.debug("Applying redirect %s -> %s", ".".join([str(i) for i in version]), new)
                                 version = redirect[1]
                                 redirected = True
             if not redirected:
@@ -787,7 +787,7 @@ class Manifest(object):
             docE.aChild(aId)
         else:
             aId.unlink()
-        if self.applyPublisherPolicy != None:
+        if self.applyPublisherPolicy is not None:
             ppE = doc.cE("publisherPolicy")
             if self.applyPublisherPolicy:
                 ppE.setA("apply", "yes")
@@ -1016,10 +1016,10 @@ def create_manifest(filename, manifest, console, uac_admin=False, uac_uiaccess=F
         # Update dependent assemblies
         depmanifest = ManifestFromXMLFile(filename)
         for assembly in depmanifest.dependentAssemblies:
-            if not assembly.name in dep_names:
+            if assembly.name not in dep_names:
                 manifest.dependentAssemblies.append(assembly)
                 dep_names.add(assembly.name)
-    if (not console and not "Microsoft.Windows.Common-Controls" in dep_names):
+    if not console and "Microsoft.Windows.Common-Controls" not in dep_names:
         # Add Microsoft.Windows.Common-Controls to dependent assemblies
         manifest.dependentAssemblies.append(
             Manifest(

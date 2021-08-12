@@ -18,10 +18,9 @@ modifications into appropriate operations on the current `PyiModuleGraph`
 instance, thus modifying which modules will be frozen into the executable.
 """
 
-from PyInstaller.lib.modulegraph.modulegraph import RuntimeModule, \
-    RuntimePackage
 from PyInstaller.building.datastruct import TOC
 from PyInstaller.building.utils import format_binaries_and_datas
+from PyInstaller.lib.modulegraph.modulegraph import (RuntimeModule, RuntimePackage)
 
 
 class PreSafeImportModuleAPI(object):

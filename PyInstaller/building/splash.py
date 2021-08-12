@@ -8,22 +8,19 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 # -----------------------------------------------------------------------------
-import importlib
 import io
 import os
 import re
 import struct
 
-from PyInstaller.building import splash_templates
-from PyInstaller.building.datastruct import Target, TOC
-from PyInstaller.building.utils import misc, _check_guts_eq, _check_guts_toc
 from PyInstaller import log as logging
 from PyInstaller.archive.writers import SplashWriter
-from PyInstaller.compat import is_cygwin, is_win, is_darwin
-from PyInstaller.depend import bindepend
+from PyInstaller.building import splash_templates
+from PyInstaller.building.datastruct import TOC, Target
+from PyInstaller.building.utils import _check_guts_eq, _check_guts_toc, misc
+from PyInstaller.compat import is_darwin
 from PyInstaller.utils.hooks import exec_statement
-from PyInstaller.utils.hooks.tcl_tk import TK_ROOTNAME, \
-    collect_tcl_tk_files, find_tcl_tk_shared_libs
+from PyInstaller.utils.hooks.tcl_tk import (TK_ROOTNAME, collect_tcl_tk_files, find_tcl_tk_shared_libs)
 
 try:
     from PIL import Image as PILImage
@@ -200,7 +197,8 @@ class Splash(Target):
             # this module is imported from build_main.py, instead we just
             # want to inform the user that the splash screen feature is not
             # supported on his platform
-            self._tkinter_module = importlib.import_module('_tkinter')
+            import _tkinter
+            self._tkinter_module = _tkinter
             self._tkinter_file = self._tkinter_module.__file__
         except ModuleNotFoundError:
             raise SystemExit(
@@ -228,7 +226,7 @@ class Splash(Target):
         assert all(self.tcl_lib)
         assert all(self.tk_lib)
         logger.debug("Use Tcl Library from %s and Tk From %s" % (self.tcl_lib, self.tk_lib))
-        self.splash_requirements = set([self.tcl_lib[0], self.tk_lib[0]] + splash_requirements)  # noqa: W503
+        self.splash_requirements = set([self.tcl_lib[0], self.tk_lib[0]] + splash_requirements)
 
         logger.info("Collect tcl/tk binaries for the splash screen")
         tcltk_tree = collect_tcl_tk_files(self._tkinter_file)
@@ -400,7 +398,7 @@ class Splash(Target):
 
         image_file.close()
 
-        res = SplashWriter(
+        SplashWriter(
             self.name,  # noqa: F841
             self.splash_requirements,
             self.tcl_lib[0],  # tcl86t.dll
@@ -433,19 +431,16 @@ class Splash(Target):
                 " versions" % (self._tkinter_module.TCL_VERSION, self._tkinter_module.TK_VERSION)
             )
 
-        # Test if tcl is threaded.
-        # If the variable tcl_platform(threaded) exist, the tcl
-        # interpreter was compiled with thread support.
-        threaded = bool(
-            exec_statement(
-                """
-        from tkinter import Tcl, TclError
-        try:
-            print(Tcl().getvar('tcl_platform(threaded)'))
-        except TclError:
-            pass"""
-            )
-        )
+            # Test if tcl is threaded.
+            # If the variable tcl_platform(threaded) exist, the tcl
+            # interpreter was compiled with thread support.
+            threaded = bool(exec_statement("""
+                from tkinter import Tcl, TclError
+                try:
+                    print(Tcl().getvar('tcl_platform(threaded)'))
+                except TclError:
+                    pass
+            """))  # yapf: disable
 
         if not threaded:
             # This is a feature breaking problem, so exit

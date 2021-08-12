@@ -19,10 +19,10 @@ import sys
 import tempfile
 import zlib
 
-from PyInstaller.loader import pyimod02_archive
+import PyInstaller.log
 from PyInstaller.archive.readers import CArchiveReader, NotAnArchiveError
 from PyInstaller.compat import stdin_input
-import PyInstaller.log
+from PyInstaller.loader import pyimod02_archive
 
 stack = []
 cleanup = []

@@ -44,7 +44,7 @@ def test_issue_2492(monkeypatch, tmpdir):
     script.write('import _struct')
     # create a hook
     tmpdir.join('hook-_struct.py').write('hiddenimports = ["ctypes"]')
-    a = Analysis([str(script)], hookspath=[str(tmpdir)], excludes=['encodings', 'pydoc', 'xml', 'distutils'])
+    Analysis([str(script)], hookspath=[str(tmpdir)], excludes=['encodings', 'pydoc', 'xml', 'distutils'])
 
 
 def test_issue_5131(monkeypatch, tmpdir):

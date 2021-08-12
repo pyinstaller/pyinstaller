@@ -9,14 +9,14 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-import os
 import locale
+import os
 
 from PyInstaller import compat
-from PyInstaller.depend import bindepend
-from PyInstaller.building.datastruct import Tree
-from PyInstaller.utils import hooks as hookutils
 from PyInstaller import log as logging
+from PyInstaller.building.datastruct import Tree
+from PyInstaller.depend import bindepend
+from PyInstaller.utils import hooks as hookutils
 
 logger = logging.getLogger(__name__)
 

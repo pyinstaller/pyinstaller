@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-__all__ = ('HOMEPATH', 'PLATFORM', '__version__')
+__all__ = ('HOMEPATH', 'PLATFORM', '__version__', 'DEFAULT_DISTPATH', 'DEFAULT_SPECPATH', 'DEFAULT_WORKPATH')
 
 import os
 import sys
@@ -50,8 +50,8 @@ else:
     import pkg_resources
     __version__ = pkg_resources.get_distribution('PyInstaller').version
 
-## Default values of paths where to put files created by PyInstaller.
-## Mind option-help in build_main when changes these
+# Default values of paths where to put files created by PyInstaller.
+# Mind option-help in build_main when changes these
 # Folder where to put created .spec file.
 DEFAULT_SPECPATH = os.getcwd()
 # Folder where to put created .spec file.

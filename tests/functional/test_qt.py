@@ -408,7 +408,7 @@ def test_PyQt5_QWebEngine(pyi_builder, data_dir, monkeypatch):
         # QWebEngine on OS X only works with a onedir build -- onefile builds
         # don't work. Skip the test execution for onefile builds.
         if pyi_builder._mode != 'onedir':
-            pytest.skip('The QWebEngine .app bundle ' 'only supports onedir mode.')
+            pytest.skip('The QWebEngine .app bundle only supports onedir mode.')
 
     pyi_builder.test_source(get_QWebEngine_html('PyQt5', data_dir), **USE_WINDOWED_KWARG)
 
@@ -420,6 +420,6 @@ def test_PySide2_QWebEngine(pyi_builder, data_dir, monkeypatch):
         # QWebEngine on OS X only works with a onedir build -- onefile builds
         # don't work. Skip the test execution for onefile builds.
         if pyi_builder._mode != 'onedir':
-            pytest.skip('The QWebEngine .app bundle ' 'only supports onedir mode.')
+            pytest.skip('The QWebEngine .app bundle only supports onedir mode.')
 
     pyi_builder.test_source(get_QWebEngine_html('PySide2', data_dir), **USE_WINDOWED_KWARG)

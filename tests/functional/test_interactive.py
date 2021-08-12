@@ -32,7 +32,7 @@ def test_ipython(pyi_builder):
 
 
 # Splash screen is not supported on macOS due to incompatible design.
-@pytest.mark.skipif(is_darwin, reason="Splash screen is not supported " "on macOS.")
+@pytest.mark.skipif(is_darwin, reason="Splash screen is not supported on macOS.")
 @pytest.mark.parametrize("mode", ['onedir', 'onefile'])
 def test_pyi_splash(pyi_builder_spec, capfd, monkeypatch, mode):
     if mode == 'onefile':

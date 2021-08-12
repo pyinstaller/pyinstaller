@@ -12,16 +12,15 @@
 Utils for Mac OS X platform.
 """
 
-import os
 import math
+import os
 import shutil
 
-from PyInstaller.compat import base_prefix, exec_command_all
+from macholib.mach_o import (LC_BUILD_VERSION, LC_CODE_SIGNATURE, LC_SEGMENT_64, LC_SYMTAB, LC_VERSION_MIN_MACOSX)
 from macholib.MachO import MachO
-from macholib.mach_o import LC_BUILD_VERSION, LC_VERSION_MIN_MACOSX, \
-    LC_SEGMENT_64, LC_SYMTAB, LC_CODE_SIGNATURE
 
 import PyInstaller.log as logging
+from PyInstaller.compat import base_prefix, exec_command_all
 
 logger = logging.getLogger(__name__)
 
@@ -231,8 +230,7 @@ def fix_exe_for_code_signing(filename):
     # In fat binaries, we also need to adjust the fat header. macholib as
     # of version 1.14 does not support this, so we need to do it ourselves...
     if executable.fat:
-        from macholib.mach_o import FAT_MAGIC, FAT_MAGIC_64
-        from macholib.mach_o import fat_header, fat_arch, fat_arch64
+        from macholib.mach_o import (FAT_MAGIC, FAT_MAGIC_64, fat_arch, fat_arch64, fat_header)
         with open(filename, 'rb+') as fp:
             # Taken from MachO.load_fat() implementation. The fat
             # header's signature has already been validated when we

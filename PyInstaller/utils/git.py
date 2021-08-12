@@ -13,6 +13,7 @@ This module contains various helper functions for git DVCS
 """
 
 import os
+
 from PyInstaller.compat import exec_command, exec_command_rc
 
 try:
