@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #-----------------------------------------------------------------------------
 # Copyright (c) 2013-2021, PyInstaller Development Team.
 #
@@ -37,7 +37,8 @@ NEWS_DIR = Path(__file__).absolute().parent.parent / "news"
 
 
 def validate_name(name):
-    """Check a filename/filepath matches the required format.
+    """
+    Check a filename/filepath matches the required format.
 
     :param name: Name of news fragment file.
     :type: str, os.Pathlike
@@ -47,9 +48,8 @@ def validate_name(name):
     match = NEWS_PATTERN.fullmatch(Path(name).name)
     if match is None:
         raise SystemExit(
-            f"'{name}' does not match the '(pr-number).(type).rst' or "
-            f"'(pr-number).(type).(enumeration).rst' changelog entries "
-            f"formats. See:\n{CHANGELOG_GUIDE}"
+            f"'{name}' does not match the '(pr-number).(type).rst' or '(pr-number).(type).(enumeration).rst' changelog "
+            f"entries formats. See:\n{CHANGELOG_GUIDE}"
         )
 
     if match.group(2) not in CHANGE_TYPES:
