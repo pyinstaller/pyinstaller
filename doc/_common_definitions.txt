@@ -22,6 +22,7 @@
 .. _`Microsoft COM`: http://www.microsoft.com/com/default.mspx
 .. _`GPL License`: https://raw.github.com/pyinstaller/pyinstaller/develop/COPYING.txt
 .. _FAQ: https://github.com/pyinstaller/pyinstaller/wiki/FAQ
+.. _flake8: https://flake8.pycqa.org/
 .. _Git: http://git-scm.com/downloads
 .. _GraphicConverter: http://www.lemkesoft.de/en/products/graphic-converter/
 .. _GraphViz: https://graphviz.org/
@@ -83,6 +84,7 @@
 .. _Wine: http://www.winehq.org/
 .. _WxPython: http://www.wxpython.org/
 .. _Xcode: http://developer.apple.com/xcode
+.. _yapf: https://github.com/google/yapf
 
 .. Emacs config:
  Local Variables:
