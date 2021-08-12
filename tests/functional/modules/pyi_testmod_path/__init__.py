@@ -12,4 +12,4 @@ import os.path
 # Insert a/ at the beginning of __path__.
 __path__.insert(0, os.path.join(__path__[0], 'a'))
 # Import b, which should now find a/b.py, no ./b.py.
-import b
+import b  # noqa: F401, E402

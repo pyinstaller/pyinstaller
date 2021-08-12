@@ -19,6 +19,9 @@ if sys.platform == 'darwin':
     if not os.path.isdir(pyqt_path):
         # ... and fall back to the older version
         pyqt_path = os.path.join(sys._MEIPASS, 'PyQt5', 'Qt')
-    os.environ['QTWEBENGINEPROCESS_PATH'] = os.path.normpath(os.path.join(
-        pyqt_path, 'lib', 'QtWebEngineCore.framework', 'Helpers',
-        'QtWebEngineProcess.app', 'Contents', 'MacOS', 'QtWebEngineProcess'))
+    os.environ['QTWEBENGINEPROCESS_PATH'] = os.path.normpath(
+        os.path.join(
+            pyqt_path, 'lib', 'QtWebEngineCore.framework', 'Helpers', 'QtWebEngineProcess.app', 'Contents', 'MacOS',
+            'QtWebEngineProcess'
+        )
+    )

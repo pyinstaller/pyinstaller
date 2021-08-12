@@ -12,8 +12,8 @@
 import os
 import sys
 
-# The path to Qt's components may not default to the wheel layout for
-# self-compiled PyQt5 installations. Mandate the wheel layout. See
+# The path to Qt's components may not default to the wheel layout for self-compiled PyQt5 installations. Mandate the
+# wheel layout. See:
 # ``utils/hooks/qt.py`` for more details.
 #
 # Try PyQt5 5.15.4-style path first...

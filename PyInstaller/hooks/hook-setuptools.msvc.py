@@ -9,5 +9,5 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# Only imported if numpy is installed, not mean to pull in numpy.
+# Only imported if numpy is installed; avoid pulling in numpy.
 excludedimports = ["numpy"]

@@ -9,30 +9,29 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 import os
 import pytest
 import textwrap
 
 from PyInstaller.depend import utils
-from PyInstaller.compat import is_unix, is_win
+from PyInstaller.compat import is_win
 
 CTYPES_CLASSNAMES = (
-    'CDLL',   'ctypes.CDLL',
+    'CDLL', 'ctypes.CDLL',
     'WinDLL', 'ctypes.WinDLL',
     'OleDLL', 'ctypes.OleDLL',
-    'PyDLL',  'ctypes.PyDLL')
+    'PyDLL', 'ctypes.PyDLL',
+)  # yapf: disable
 
 
 def __scan_code_for_ctypes(code, monkeypatch, extended_args):
     # _resolveCtypesImports would filter our some of our names
-    monkeypatch.setattr(utils, '_resolveCtypesImports',
-                        lambda cbinaries: cbinaries)
+    monkeypatch.setattr(utils, '_resolveCtypesImports', lambda cbinaries: cbinaries)
     code = textwrap.dedent(code)
 
     if extended_args:
-        # Chuck in a load of preceding rubbish to test if the bytecode scanner
-        # can correctly handle the EXTENDED_ARGS opcode.
+        # Chuck in a load of preceding rubbish to test if the bytecode scanner can correctly
+        # handle the EXTENDED_ARGS opcode.
         from test_bytecode import many_constants, many_globals
         code = many_constants() + many_globals() + code
 
@@ -52,8 +51,7 @@ def test_ctypes_CDLL_call(monkeypatch, classname, extended_args):
 @pytest.mark.parametrize('classname', CTYPES_CLASSNAMES)
 @pytest.mark.parametrize('extended_args', [False, True])
 def test_ctypes_LibraryLoader(monkeypatch, classname, extended_args):
-    # This type of useage is only valif on Windows and the lib-name will
-    # always get `.dll` appended.
+    # This type of usage is only valif on Windows and the lib-name will always get `.dll` appended.
     code = "%s.somelib" % classname.lower()
     res = __scan_code_for_ctypes(code, monkeypatch, extended_args)
     assert res == set(['somelib.dll'])
@@ -61,8 +59,7 @@ def test_ctypes_LibraryLoader(monkeypatch, classname, extended_args):
 
 @pytest.mark.parametrize('classname', CTYPES_CLASSNAMES)
 @pytest.mark.parametrize('extended_args', [False, True])
-def test_ctypes_LibraryLoader_LoadLibrary(monkeypatch, classname,
-                                          extended_args):
+def test_ctypes_LibraryLoader_LoadLibrary(monkeypatch, classname, extended_args):
     code = "%s.LoadLibrary('somelib.xxx')" % classname.lower()
     res = __scan_code_for_ctypes(code, monkeypatch, extended_args)
     assert res == set(['somelib.xxx'])

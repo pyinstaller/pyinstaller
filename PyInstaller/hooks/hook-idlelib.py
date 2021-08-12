@@ -9,6 +9,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 from PyInstaller.utils.hooks import collect_data_files
+
 datas = collect_data_files('idlelib')

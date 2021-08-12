@@ -9,8 +9,8 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 name = 'pyi_testmod_relimp.B.D'
+
 
 class X:
     name = 'pyi_testmod_relimp.B.D.X'

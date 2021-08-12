@@ -9,7 +9,5 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
-# Module scipy.io.matlab allows to parse matlab files.
-# The hidden import is necessary for SciPy 0.11+.
+# Module scipy.io.matlab allows to parse matlab files. The hidden import is necessary for SciPy 0.11+.
 hiddenimports = ['scipy.io.matlab.streams']

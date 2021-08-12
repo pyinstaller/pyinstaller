@@ -9,16 +9,13 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 import sys
 import os
 
 import PIL.Image
 
-
 # Disable "leaking" the installed version.
 PIL.Image.__file__ = '/'
-
 
 # Convert tiff to png.
 basedir = sys._MEIPASS

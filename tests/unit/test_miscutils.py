@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 import pytest
 
 from PyInstaller.utils.misc import load_py_data_struct, save_py_data_struct
@@ -33,13 +32,7 @@ def test_versioninfo(tmp_path):
             date=(0, 0)
         ),
         kids=[
-            StringFileInfo(
-                [
-                    StringTable(
-                        '040904b0',
-                        [StringStruct('FileDescription',
-                                      'versioninfo test')])
-                ]),
+            StringFileInfo([StringTable('040904b0', [StringStruct('FileDescription', 'versioninfo test')])]),
             VarFileInfo([VarStruct('Translation', [1033, 1200])])
         ]
     )

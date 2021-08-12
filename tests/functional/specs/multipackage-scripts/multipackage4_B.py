@@ -10,4 +10,5 @@
 #-----------------------------------------------------------------------------
 
 import multipackage_test_pkg
+
 multipackage_test_pkg.test_function()

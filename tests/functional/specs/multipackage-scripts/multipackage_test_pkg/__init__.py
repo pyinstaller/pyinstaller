@@ -9,30 +9,31 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
+
 def _test_basic_imports():
-    # import a very simple and rarely used pure-python lib ...
+    # Import a very simple and rarely used pure-python lib ...
     import getopt  # noqa: F401
-    # ... and a module importing a shared lib
+    # ... and a module importing a shared lib.
     import ssl  # noqa: F401
 
     print('Hello World!')
 
 
 def _test_nested_data_file():
-    # try reading secret from a file in sub-directory
+    # Try reading secret from a file in sub-directory.
     import os
 
     secret_file = os.path.join(__path__[0], 'data', 'secret.txt')
-    print("Reading secret from %s..." % (secret_file))
+    print("Reading secret from %s..." % secret_file)
     with open(secret_file, 'r') as fp:
         secret = fp.read().strip()
-    print("Secret: %s" % (secret))
+    print("Secret: %s" % secret)
 
     assert secret == 'Secret1234'
 
 
 def _test_nested_extensions():
-    # import psutil, which contains an extension in its package directory
+    # Import psutil, which contains an extension in its package directory.
     import psutil  # noqa: F401
     print("Successfully imported psutil!")
 

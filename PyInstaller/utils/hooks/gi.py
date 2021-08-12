@@ -11,21 +11,12 @@
 import os
 import re
 
-from PyInstaller.utils.hooks import collect_submodules, \
-    collect_system_data_files, eval_statement, exec_statement
-from PyInstaller import log as logging
 from PyInstaller import compat
+from PyInstaller import log as logging
 from PyInstaller.depend.bindepend import findSystemLibrary
+from PyInstaller.utils.hooks import collect_submodules, collect_system_data_files, eval_statement, exec_statement
 
 logger = logging.getLogger(__name__)
-
-
-__all__ = [
-    'get_gi_libdir', 'get_gi_typelibs', 'gir_library_path_fix',
-    'get_glib_system_data_dirs', 'get_glib_sysconf_dirs',
-    'collect_glib_share_files', 'collect_glib_etc_files',
-    'collect_glib_translations'
-]
 
 
 def get_gi_libdir(module, version):
@@ -35,8 +26,7 @@ def get_gi_libdir(module, version):
         from gi.repository import GIRepository
         repo = GIRepository.Repository.get_default()
         module, version = (%r, %r)
-        repo.require(module, version,
-                     GIRepository.RepositoryLoadFlags.IREPOSITORY_LOAD_FLAG_LAZY)
+        repo.require(module, version, GIRepository.RepositoryLoadFlags.IREPOSITORY_LOAD_FLAG_LAZY)
         print(repo.get_shared_library(module))
     """
     statement %= (module, version)
@@ -50,8 +40,8 @@ def get_gi_libdir(module, version):
 
 def get_gi_typelibs(module, version):
     """
-    Return a tuple of (binaries, datas, hiddenimports) to be used by PyGObject
-    related hooks. Searches for and adds dependencies recursively.
+    Return a tuple of (binaries, datas, hiddenimports) to be used by PyGObject related hooks. Searches for and adds
+    dependencies recursively.
 
     :param module: GI module name, as passed to 'gi.require_version()'
     :param version: GI module version, as passed to 'gi.require_version()'
@@ -66,8 +56,7 @@ def get_gi_typelibs(module, version):
         from gi.repository import GIRepository
         repo = GIRepository.Repository.get_default()
         module, version = (%r, %r)
-        repo.require(module, version,
-                     GIRepository.RepositoryLoadFlags.IREPOSITORY_LOAD_FLAG_LAZY)
+        repo.require(module, version, GIRepository.RepositoryLoadFlags.IREPOSITORY_LOAD_FLAG_LAZY)
         get_deps = getattr(repo, 'get_immediate_dependencies', None)
         if not get_deps:
             get_deps = repo.get_dependencies
@@ -78,9 +67,7 @@ def get_gi_typelibs(module, version):
     statement %= (module, version)
     typelibs_data = eval_statement(statement)
     if not typelibs_data:
-        logger.error("gi repository 'GIRepository 2.0' not found. "
-                     "Please make sure libgirepository-gir2.0 resp. "
-                     "lib64girepository-gir2.0 is installed.")
+        logger.error("gi repository 'GIRepository 2.0' not found. Please make sure corresponding package is installed.")
         # :todo: should we raise a SystemError here?
     else:
         logger.debug("Adding files for %s %s", module, version)
@@ -97,8 +84,7 @@ def get_gi_typelibs(module, version):
             logger.debug('Found gir typelib at %s', d)
             datas.append(d)
 
-        hiddenimports += collect_submodules('gi.overrides',
-                           lambda name: name.endswith('.' + module))
+        hiddenimports += collect_submodules('gi.overrides', lambda name: name.endswith('.' + module))
 
         # Load dependencies recursively
         for dep in typelibs_data['deps']:
@@ -110,17 +96,18 @@ def get_gi_typelibs(module, version):
 
 def gir_library_path_fix(path):
     import subprocess
+
     # 'PyInstaller.config' cannot be imported as other top-level modules.
     from PyInstaller.config import CONF
 
     path = os.path.abspath(path)
 
-    # On OSX we need to recompile the GIR files to reference the loader path,
-    # but this is not necessary on other platforms
+    # On Mac OS we need to recompile the GIR files to reference the loader path,
+    # but this is not necessary on other platforms.
     if compat.is_darwin:
 
         # If using a virtualenv, the base prefix and the path of the typelib
-        # have really nothing to do with each other, so try to detect that
+        # have really nothing to do with each other, so try to detect that.
         common_path = os.path.commonprefix([compat.base_prefix, path])
         if common_path == '/':
             logger.debug("virtualenv detected? fixing the gir path...")
@@ -134,22 +121,22 @@ def gir_library_path_fix(path):
         gir_file = os.path.join(gir_path, gir_name)
 
         if not os.path.exists(gir_path):
-            logger.error('Unable to find gir directory: %s.\n'
-                         'Try installing your platforms gobject-introspection '
-                         'package.', gir_path)
+            logger.error(
+                "Unable to find gir directory: %s.\nTry installing your platform's gobject-introspection package.",
+                gir_path
+            )
             return None
         if not os.path.exists(gir_file):
-            logger.error('Unable to find gir file: %s.\n'
-                         'Try installing your platforms gobject-introspection '
-                         'package.', gir_file)
+            logger.error(
+                "Unable to find gir file: %s.\nTry installing your platform's gobject-introspection package.", gir_file
+            )
             return None
 
         with open(gir_file, 'r', encoding='utf-8') as f:
             lines = f.readlines()
         # GIR files are `XML encoded <https://developer.gnome.org/gi/stable/gi-gir-reference.html>`_,
         # which means they are by definition encoded using UTF-8.
-        with open(os.path.join(CONF['workpath'], gir_name), 'w',
-                  encoding='utf-8') as f:
+        with open(os.path.join(CONF['workpath'], gir_name), 'w', encoding='utf-8') as f:
             for line in lines:
                 if 'shared-library' in line:
                     split = re.split('(=)', line)
@@ -161,8 +148,10 @@ def gir_library_path_fix(path):
                 f.write(line)
 
         # g-ir-compiler expects a file so we cannot just pipe the fixed file to it.
-        command = subprocess.Popen(('g-ir-compiler', os.path.join(CONF['workpath'], gir_name),
-                                    '-o', os.path.join(CONF['workpath'], typelib_name)))
+        command = subprocess.Popen((
+            'g-ir-compiler', os.path.join(CONF['workpath'], gir_name),
+            '-o', os.path.join(CONF['workpath'], typelib_name)
+        ))  # yapf: disable
         command.wait()
 
         return os.path.join(CONF['workpath'], typelib_name), 'gi_typelibs'
@@ -179,20 +168,18 @@ def get_glib_system_data_dirs():
     """
     data_dirs = eval_statement(statement)
     if not data_dirs:
-        logger.error("gi repository 'GIRepository 2.0' not found. "
-                     "Please make sure libgirepository-gir2.0 resp. "
-                     "lib64girepository-gir2.0 is installed.")
+        logger.error("gi repository 'GLib 2.0' not found. Please make sure corresponding package is installed.")
         # :todo: should we raise a SystemError here?
     return data_dirs
 
 
 def get_glib_sysconf_dirs():
-    """Try to return the sysconf directories, eg /etc."""
+    """
+    Try to return the sysconf directories (e.g., /etc).
+    """
     if compat.is_win:
-        # On windows, if you look at gtkwin32.c, sysconfdir is actually
-        # relative to the location of the GTK DLL. Since that's what
-        # we're actually interested in (not the user path), we have to
-        # do that the hard way'''
+        # On Windows, if you look at gtkwin32.c, sysconfdir is actually relative to the location of the GTK DLL. Since
+        # that is what we are actually interested in (not the user path), we have to do that the hard way...
         return [os.path.join(get_gi_libdir('GLib', '2.0'), 'etc')]
 
     statement = """
@@ -203,15 +190,15 @@ def get_glib_sysconf_dirs():
     """
     data_dirs = eval_statement(statement)
     if not data_dirs:
-        logger.error("gi repository 'GIRepository 2.0' not found. "
-                     "Please make sure libgirepository-gir2.0 resp. "
-                     "lib64girepository-gir2.0 is installed.")
+        logger.error("gi repository 'GLib 2.0' not found. Please make sure corresponding package is installed.")
         # :todo: should we raise a SystemError here?
     return data_dirs
 
 
 def collect_glib_share_files(*path):
-    """path is relative to the system data directory (eg, /usr/share)"""
+    """
+    Path is relative to the system data directory (e.g., /usr/share).
+    """
     glib_data_dirs = get_glib_system_data_dirs()
     if glib_data_dirs is None:
         return []
@@ -228,7 +215,9 @@ def collect_glib_share_files(*path):
 
 
 def collect_glib_etc_files(*path):
-    """path is relative to the system config directory (eg, /etc)"""
+    """
+    Path is relative to the system config directory (e.g., /etc).
+    """
     glib_config_dirs = get_glib_sysconf_dirs()
     if glib_config_dirs is None:
         return []
@@ -242,6 +231,7 @@ def collect_glib_etc_files(*path):
         collected += collect_system_data_files(p, destdir=destdir, include_py_files=False)
 
     return collected
+
 
 _glib_translations = None
 
@@ -260,8 +250,7 @@ def collect_glib_translations(prog, lang_list=None):
         else:
             _glib_translations = collect_glib_share_files('locale')
 
-    names = [os.sep + prog + '.mo',
-             os.sep + prog + '.po']
+    names = [os.sep + prog + '.mo', os.sep + prog + '.po']
     namelen = len(names[0])
 
     return [(src, dst) for src, dst in _glib_translations if src[-namelen:] in names]

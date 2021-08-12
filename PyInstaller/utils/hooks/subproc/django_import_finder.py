@@ -8,35 +8,29 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-
 """
 This module parses all Django dependencies from the module mysite.settings.py.
 
-NOTE: With newer version of Django this is most likely the part of PyInstaller
-      that will be broken.
+NOTE: With newer version of Django this is most likely the part of PyInstaller that will be broken.
 
 Tested with Django 2.2
 """
 
-
-import os
-
-# Calling django.setup() avoids the exception AppRegistryNotReady()
-# and also reads the user settings from DJANGO_SETTINGS_MODULE.
+# Calling django.setup() avoids the exception AppRegistryNotReady() and also reads the user settings
+# from DJANGO_SETTINGS_MODULE.
 # https://stackoverflow.com/questions/24793351/django-appregistrynotready
 import django
+
 django.setup()
 
 # This allows to access all django settings even from the settings.py module.
-from django.conf import settings
+from django.conf import settings  # noqa: E402
 
-from PyInstaller.utils.hooks import collect_submodules
-
+from PyInstaller.utils.hooks import collect_submodules  # noqa: E402
 
 hiddenimports = list(settings.INSTALLED_APPS)
 
-# do not fail script when settings does not have such attributes
+# Do not fail script when settings does not have such attributes.
 if hasattr(settings, 'TEMPLATE_CONTEXT_PROCESSORS'):
     hiddenimports += list(settings.TEMPLATE_CONTEXT_PROCESSORS)
 
@@ -50,7 +44,7 @@ def _remove_class(class_name):
     return '.'.join(class_name.split('.')[0:-1])
 
 
-### Changes in Django 1.7.
+#-- Changes in Django 1.7.
 
 # Remove class names and keep just modules.
 if hasattr(settings, 'AUTHENTICATION_BACKENDS'):
@@ -82,7 +76,6 @@ if hasattr(settings, 'TEMPLATES'):
 # Include database backends - it is a dict.
 for v in settings.DATABASES.values():
     hiddenimports.append(v['ENGINE'])
-
 
 # Add templatetags and context processors for each installed app.
 for app in settings.INSTALLED_APPS:

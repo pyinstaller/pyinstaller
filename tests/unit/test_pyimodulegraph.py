@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 import types
 import pytest
 import itertools
@@ -36,14 +35,13 @@ def test_get_co_using_ctypes(tmpdir):
 
 
 def test_get_co_using_ctypes_from_extension():
-    # If an extension module has an hidden import to ctypes (e.g. added by the
-    # hook), the extension module must not show up in the result of
-    # `get_co_using_ctypes()`, since it has no code-object to be analyzed.
+    # If an extension module has an hidden import to ctypes (e.g. added by the hook), the extension module must not
+    # show up in the result of `get_co_using_ctypes()`, since it has no code-object to be analyzed.
     # See issue #2492 and test_regression::issue_2492.
     logging.logger.setLevel(logging.DEBUG)
     mg = analysis.PyiModuleGraph(HOMEPATH, excludes=["xencodings"])
     struct = mg.createNode(modulegraph.Extension, '_struct', 'struct.so')
-    mg.implyNodeReference(struct, 'ctypes') # simulate the hidden import
+    mg.implyNodeReference(struct, 'ctypes')  # simulate the hidden import
     res = mg.get_code_using("ctypes")
     # _struct must not be in the results
     assert '_struct' not in res
@@ -60,13 +58,17 @@ def test_metadata_collection(tmpdir):
     else:
         importlib_metadata = "importlib_metadata"
 
-    script.write(dedent(f'''
-        from {importlib_metadata} import distribution, version
-        import {importlib_metadata}
+    script.write(
+        dedent(
+            f'''
+            from {importlib_metadata} import distribution, version
+            import {importlib_metadata}
 
-        distribution("setuptools")
-        {importlib_metadata}.version("altgraph")
-    '''))
+            distribution("setuptools")
+            {importlib_metadata}.version("altgraph")
+            '''
+        )
+    )
 
     mg.add_script(str(script))
     metadata = mg.metadata_required()
@@ -86,7 +88,6 @@ def fresh_pyi_modgraph(monkeypatch):
     """
     Get a fresh PyiModuleGraph
     """
-
     def fake_base_modules(self):
         # speed up set up
         self._base_modules = ()
@@ -95,8 +96,7 @@ def fresh_pyi_modgraph(monkeypatch):
     # ensure we get a fresh PyiModuleGraph
     monkeypatch.setattr(analysis, "_cached_module_graph_", None)
     # speed up setup
-    monkeypatch.setattr(analysis.PyiModuleGraph,
-                        "_analyze_base_modules", fake_base_modules)
+    monkeypatch.setattr(analysis.PyiModuleGraph, "_analyze_base_modules", fake_base_modules)
     return analysis.initialize_modgraph()
 
 
@@ -211,7 +211,9 @@ def test_collect_rthooks_fail_1(tmpdir, monkeypatch):
 
 
 class FakeGraph(analysis.PyiModuleGraph):
-    """A simplified module graph containing a single node module *foo* with user-defined content."""
+    """
+    A simplified module graph containing a single node module *foo* with user-defined content.
+    """
     def __init__(self, source):
         self.code = compile(source, "<>", "exec")
 
@@ -220,7 +222,9 @@ class FakeGraph(analysis.PyiModuleGraph):
 
 
 def test_metadata_searching():
-    """Test the top level for bytecode scanning for metadata requirements."""
+    """
+    Test the top level for bytecode scanning for metadata requirements.
+    """
     from PyInstaller.utils.hooks import copy_metadata
 
     # This test analyses code which implies that PyInstaller's own metadata (and possibly that of its dependencies) is

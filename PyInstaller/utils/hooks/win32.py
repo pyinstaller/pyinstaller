@@ -12,18 +12,16 @@
 
 def get_pywin32_module_file_attribute(module_name):
     """
-    Get the absolute path of the PyWin32 DLL specific to the PyWin32 module
-    with the passed name.
+    Get the absolute path of the PyWin32 DLL specific to the PyWin32 module with the passed name.
 
     On import, each PyWin32 module:
 
     * Imports a DLL specific to that module.
-    * Overwrites the values of all module attributes with values specific to
-      that DLL. This includes that module's `__file__` attribute, which then
-      provides the absolute path of that DLL.
+    * Overwrites the values of all module attributes with values specific to that DLL. This includes that module's
+      `__file__` attribute, which then provides the absolute path of that DLL.
 
-    This function safely imports that module in a PyWin32-aware subprocess and
-    returns the value of that module's `__file__` attribute.
+    This function safely imports that module in a PyWin32-aware subprocess and returns the value of that module's
+    `__file__` attribute.
 
     Parameters
     ----------
@@ -48,4 +46,5 @@ def get_pywin32_module_file_attribute(module_name):
     """
     return exec_statement(statement % module_name)
 
-__all__ = ('get_pywin32_module_file_attribute', )
+
+__all__ = ('get_pywin32_module_file_attribute',)

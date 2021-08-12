@@ -10,7 +10,8 @@
 #-----------------------------------------------------------------------------
 
 import pkgutil
-import pkg3
+
+import pkg3  # noqa: F401
 
 expected_data = 'This is data text for testing the packaging module data.'.encode('ascii')
 

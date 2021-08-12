@@ -8,17 +8,14 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-
 """
 This CArchiveReader is used only by the archieve_viewer utility.
 """
 
 # TODO clean up this module
 
-import struct
 import os
-
+import struct
 
 from PyInstaller.loader.pyimod02_archive import ArchiveReader
 
@@ -49,18 +46,16 @@ class CTOCReader(object):
         p = 0
 
         while p < len(s):
-            (slen, dpos, dlen, ulen, flag, typcd) = struct.unpack(self.ENTRYSTRUCT,
-                                                        s[p:p + self.ENTRYLEN])
+            slen, dpos, dlen, ulen, flag, typcd = struct.unpack(self.ENTRYSTRUCT, s[p:p + self.ENTRYLEN])
             nmlen = slen - self.ENTRYLEN
             p = p + self.ENTRYLEN
-            (nm,) = struct.unpack('%is' % nmlen, s[p:p + nmlen])
+            nm, = struct.unpack('%is' % nmlen, s[p:p + nmlen])
             p = p + nmlen
             # nm may have up to 15 bytes of padding
             nm = nm.rstrip(b'\0')
             nm = nm.decode('utf-8')
             typcd = chr(typcd)
             self.data.append((dpos, dlen, ulen, flag, typcd, nm))
-
 
     def get(self, ndx):
         """
@@ -87,21 +82,18 @@ class CArchiveReader(ArchiveReader):
     """
     An Archive subclass that can hold arbitrary data.
 
-    This class encapsulates all files that are bundled within an executable.
-    It can contain ZlibArchive (Python .pyc files), dlls, Python C extensions
-    and all other data files that are bundled in --onefile mode.
+    This class encapsulates all files that are bundled within an executable. It can contain ZlibArchive (Python .pyc
+    files), dlls, Python C extensions and all other data files that are bundled in --onefile mode.
 
     Easily handled from C or from Python.
     """
-    # MAGIC is useful to verify that conversion of Python data types
-    # to C structure and back works properly.
+    # MAGIC is useful to verify that conversion of Python data types to C structure and back works properly.
     MAGIC = b'MEI\014\013\012\013\016'
     HDRLEN = 0
     LEVEL = 9
 
-    # Cookie - holds some information for the bootloader. C struct format
-    # definition. '!' at the beginning means network byte order.
-    # C struct looks like:
+    # Cookie - holds some information for the bootloader. C struct format definition. '!' at the beginning means network
+    # byte order. C struct looks like:
     #
     #   typedef struct _cookie {
     #       char magic[8]; /* 'MEI\014\013\012\013\016' */
@@ -127,10 +119,9 @@ class CArchiveReader(ArchiveReader):
         self.length = length
         self._pylib_name = pylib_name
 
-
         # A CArchive created from scratch starts at 0, no leading bootloader.
         self.pkg_start = 0
-        super(CArchiveReader, self).__init__(archive_path, start)
+        super().__init__(archive_path, start)
 
     def checkmagic(self):
         """
@@ -162,27 +153,22 @@ class CArchiveReader(ArchiveReader):
             if pos != -1:
                 magic_offset = start_pos + pos
                 break
-            # Adjust search location for next chunk; ensure proper
-            # overlap
+            # Adjust search location for next chunk; ensure proper overlap
             end_pos = start_pos + len(self.MAGIC) - 1
         if magic_offset == -1:
-            raise RuntimeError("%s is not a valid %s archive file" %
-                               (self.path, self.__class__.__name__))
+            raise RuntimeError("%s is not a valid %s archive file" % (self.path, self.__class__.__name__))
         filelen = magic_offset + self._cookie_size
         # Read the whole cookie
         self.lib.seek(magic_offset, os.SEEK_SET)
         buf = self.lib.read(self._cookie_size)
-        (magic, totallen, tocpos, toclen, pyvers, pylib_name) = struct.unpack(
-            self._cookie_format, buf)
+        magic, totallen, tocpos, toclen, pyvers, pylib_name = struct.unpack(self._cookie_format, buf)
         if magic != self.MAGIC:
-            raise RuntimeError("%s is not a valid %s archive file" %
-                               (self.path, self.__class__.__name__))
+            raise RuntimeError("%s is not a valid %s archive file" % (self.path, self.__class__.__name__))
 
         self.pkg_start = filelen - totallen
         if self.length:
             if totallen != self.length or self.pkg_start != self.start:
-                raise RuntimeError('Problem with embedded archive in %s' %
-                        self.path)
+                raise RuntimeError('Problem with embedded archive in %s' % self.path)
         # Verify presence of Python library name.
         if not pylib_name:
             raise RuntimeError('Python library filename not defined in archive.')
@@ -213,7 +199,7 @@ class CArchiveReader(ArchiveReader):
                 return None
         else:
             ndx = name
-        (dpos, dlen, ulen, flag, typcd, nm) = self.toc.get(ndx)
+        dpos, dlen, ulen, flag, typcd, nm = self.toc.get(ndx)
 
         with self.lib:
             self.lib.seek(self.pkg_start + dpos)
@@ -223,16 +209,16 @@ class CArchiveReader(ArchiveReader):
             import zlib
             rslt = zlib.decompress(rslt)
         if typcd == 'M':
-            return (1, rslt)
+            return 1, rslt
 
-        return (typcd == 'M', rslt)
+        return typcd == 'M', rslt
 
     def contents(self):
         """
         Return the names of the entries.
         """
         rslt = []
-        for (dpos, dlen, ulen, flag, typcd, nm) in self.toc:
+        for dpos, dlen, ulen, flag, typcd, nm in self.toc:
             rslt.append(nm)
         return rslt
 
@@ -246,12 +232,11 @@ class CArchiveReader(ArchiveReader):
 
         if ndx == -1:
             raise KeyError("Member '%s' not found in %s" % (name, self.path))
-        (dpos, dlen, ulen, flag, typcd, nm) = self.toc.get(ndx)
+        dpos, dlen, ulen, flag, typcd, nm = self.toc.get(ndx)
 
         if typcd not in "zZ":
             raise NotAnArchiveError('%s is not an archive' % name)
 
         if flag:
-            raise ValueError('Cannot open compressed archive %s in place' %
-                    name)
+            raise ValueError('Cannot open compressed archive %s in place' % name)
         return CArchiveReader(self.path, self.pkg_start + dpos, dlen)

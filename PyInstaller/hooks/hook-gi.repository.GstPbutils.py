@@ -9,10 +9,11 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 """
-Import hook for Gst(GStreamer) http://gstreamer.freedesktop.org/ introspected through
+Import hook for Gst (GStreamer) http://gstreamer.freedesktop.org introspected through
 PyGobject https://wiki.gnome.org/PyGObject via the GObject Introspection middleware
 layer https://wiki.gnome.org/Projects/GObjectIntrospection
 """
+
 from PyInstaller.utils.hooks.gi import get_gi_typelibs
 
 binaries, datas, hiddenimports = get_gi_typelibs('GstPbutils', '1.0')

@@ -9,10 +9,8 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
-# Compare attributes of ElementTree (cElementTree) module from frozen executable
-# with ElementTree (cElementTree) module from standard python.
-
+# Compare attributes of ElementTree (cElementTree) module from frozen executable with ElementTree (cElementTree)
+# module from standard python.
 
 import copy
 import os
@@ -36,14 +34,12 @@ def exec_python(pycode):
 
     Return stdout of the invoked command.
     """
-    # Environment variable 'PATH' has to be defined on Windows.
-    # Otherwise dynamic library pythonXY.dll cannot be found by
-    # Python executable.
+    # Environment variable 'PATH' has to be defined on Windows, otherwise dynamic library pythonXY.dll cannot be
+    # found by the Python executable.
     env = copy.deepcopy(os.environ)
     env['PATH'] = _env_path
-    out = subprocess.Popen([_pyexe, '-c', pycode], env=env,
-        stdout=subprocess.PIPE, shell=False).stdout.read()
-    # In Python 3 stdout is a byte array and must be converted to string.
+    out = subprocess.Popen([_pyexe, '-c', pycode], env=env, stdout=subprocess.PIPE, shell=False).stdout.read()
+    # In Python 3, stdout is a byte array and must be converted to string.
     out = out.decode('ascii').strip()
 
     return out
@@ -74,12 +70,12 @@ lst.sort()
 print(lst)
 """
 
-## Pure Python module.
+# Pure Python module.
 _expect = exec_python(subproc_code.format('xml.etree.ElementTree'))
 _frozen = dir(ET)
 compare('ElementTree', _expect, _frozen)
 
-## C-extension Python module.
+# C-extension Python module.
 _expect = exec_python(subproc_code.format('xml.etree.cElementTree'))
 _frozen = dir(cET)
 compare('cElementTree', _expect, _frozen)

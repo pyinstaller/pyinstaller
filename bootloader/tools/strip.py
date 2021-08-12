@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 #-----------------------------------------------------------------------------
 # Copyright (c) 2014-2021, PyInstaller Development Team.
 #
@@ -32,22 +32,26 @@ If stripping at installation time is preferred, use the following::
         try:
             tsk = kw['tsk']
         except KeyError:
-    	    pass
+            pass
         else:
-    	    if isinstance(tsk.task, ccroot.link_task):
-    		    self.cmd_and_log('strip %s' % tgt)
+            if isinstance(tsk.task, ccroot.link_task):
+                self.cmd_and_log('strip %s' % tgt)
     Build.InstallContext.copy_fun = copy_fun
 """
+
+from waflib import Task, TaskGen
+
 
 def configure(conf):
     conf.find_program('strip')
     conf.env.append_value('STRIPFLAGS', '')
 
-from waflib import Task, TaskGen
+
 class strip(Task.Task):
     run_str = '${STRIP} ${STRIPFLAGS} ${SRC}'
-    color   = 'BLUE'
-    after   = ['cprogram', 'cxxprogram', 'cshlib', 'cxxshlib', 'fcprogram', 'fcshlib']
+    color = 'BLUE'
+    after = ['cprogram', 'cxxprogram', 'cshlib', 'cxxshlib', 'fcprogram', 'fcshlib']
+
 
 @TaskGen.feature('strip')
 @TaskGen.after('apply_link')

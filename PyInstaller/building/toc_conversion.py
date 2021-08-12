@@ -1,4 +1,4 @@
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
@@ -7,25 +7,26 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 import os
 import zipfile
+
 import pkg_resources
-from PyInstaller.depend.utils import get_path_to_egg
-from PyInstaller.building.datastruct import TOC, Tree
+
 from PyInstaller import log as logging
+from PyInstaller.building.datastruct import TOC, Tree
 from PyInstaller.compat import ALL_SUFFIXES
+from PyInstaller.depend.utils import get_path_to_egg
 
 logger = logging.getLogger(__name__)
 
 # create a list of excludes suitable for Tree.
-PY_IGNORE_EXTENSIONS = set(
-    ['*' + x for x in ALL_SUFFIXES] +
-    # Exclude EGG-INFO, too, as long as we do not have a way to hold several
-    # in one archive
-    ['EGG-INFO']
-)
+PY_IGNORE_EXTENSIONS = {
+    *('*' + x for x in ALL_SUFFIXES),
+    # Exclude EGG-INFO, too, as long as we do not have a way to hold several in one archive.
+    'EGG-INFO',
+}
 
 
 class DependencyProcessor(object):
@@ -38,9 +39,8 @@ class DependencyProcessor(object):
         self._datas = set()
         self._distributions = set()
         self.__seen_distribution_paths = set()
-        # Include files that were found by hooks.
-        # graph.iter_graph() should include only those modules that are reachable
-        # from top-level script.
+        # Include files that were found by hooks. graph.iter_graph() should include only those modules that are
+        # reachable from the top-level script.
         for node in graph.iter_graph(start=graph._top_script_node):
             # Update 'binaries', 'datas'
             name = node.identifier
@@ -50,9 +50,9 @@ class DependencyProcessor(object):
             # Any module can belong to a single distribution
             self._distributions.update(self._get_distribution_for_node(node))
 
-
     def _get_distribution_for_node(self, node):
-        """Get the distribution a module belongs to.
+        """
+        Get the distribution a module belongs to.
 
         Bug: This currently only handles packages in eggs.
         """
@@ -87,13 +87,12 @@ class DependencyProcessor(object):
         dists = list(pkg_resources.find_distributions(distpath))
         assert len(dists) == 1
         dist = dists[0]
-        dist._pyinstaller_info = info = {
+        dist._pyinstaller_info = {
             'zipped': zipfile.is_zipfile(dist.location),
             'egg': True,  # TODO when supporting other types
             'zip-safe': dist.has_metadata('zip-safe'),
         }
         return dists
-
 
     # Public methods.
 
@@ -104,9 +103,10 @@ class DependencyProcessor(object):
     def make_datas_toc(self):
         toc = TOC((x, y, 'DATA') for x, y in self._datas)
         for dist in self._distributions:
-            if (dist._pyinstaller_info['egg'] and
-                not dist._pyinstaller_info['zipped'] and
-                not dist._pyinstaller_info['zip-safe']):
+            if (
+                dist._pyinstaller_info['egg'] and not dist._pyinstaller_info['zipped']
+                and not dist._pyinstaller_info['zip-safe']
+            ):
                 # this is a un-zipped, not-zip-safe egg
                 toplevel = dist.get_metadata('top_level.txt').strip()
                 basedir = dist.location
@@ -116,19 +116,14 @@ class DependencyProcessor(object):
                 toc.extend(tree)
         return toc
 
-
     def make_zipfiles_toc(self):
         # TODO create a real TOC when handling of more files is added.
         toc = []
         for dist in self._distributions:
-            if (dist._pyinstaller_info['zipped'] and
-                not dist._pyinstaller_info['egg']):
-                # Hmm, this should never happen as normal zip-files
-                # are not associated with an distribution, are they?
-                toc.append(("eggs/" + os.path.basename(dist.location),
-                            dist.location, 'ZIPFILE'))
+            if dist._pyinstaller_info['zipped'] and not dist._pyinstaller_info['egg']:
+                # Hmm, this should never happen as normal zip-files are not associated with a distribution, are they?
+                toc.append(("eggs/" + os.path.basename(dist.location), dist.location, 'ZIPFILE'))
         return toc
-
 
     @staticmethod
     def __collect_data_files_from_zip(zipfilename):
@@ -141,32 +136,30 @@ class DependencyProcessor(object):
             import errno
             if e.errno != errno.EEXIST:
                 raise
-        # TODO extract only those file which whould then be included
+        # TODO: extract only those file which would then be included
         with zipfile.ZipFile(zipfilename) as zfh:
             zfh.extractall(workpath)
         return Tree(workpath, excludes=PY_IGNORE_EXTENSIONS)
-
 
     def make_zipped_data_toc(self):
         toc = TOC()
         logger.debug('Looking for egg data files...')
         for dist in self._distributions:
             if dist._pyinstaller_info['egg']:
-                # TODO: check in docu if top_level.txt always exists
+                # TODO: check in docs if top_level.txt always exists
                 toplevel = dist.get_metadata('top_level.txt').strip()
                 if dist._pyinstaller_info['zipped']:
                     # this is a zipped egg
                     tree = self.__collect_data_files_from_zip(dist.location)
                     toc.extend(tree)
                 elif dist._pyinstaller_info['zip-safe']:
-                    # this is a un-zipped, zip-safe egg
+                    # this is an un-zipped, zip-safe egg
                     basedir = dist.location
                     if toplevel:
                         os.path.join(basedir, toplevel)
                     tree = Tree(dist.location, excludes=PY_IGNORE_EXTENSIONS)
                     toc.extend(tree)
                 else:
-                    # this is a un-zipped, not-zip-safe egg, handled in
-                    # make_datas_toc()
+                    # this is an un-zipped, not-zip-safe egg, handled in make_datas_toc()
                     pass
         return toc

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #-----------------------------------------------------------------------------
 # Copyright (c) 2005-2021, PyInstaller Development Team.
 #

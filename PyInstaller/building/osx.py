@@ -13,11 +13,10 @@ import os
 import plistlib
 import shutil
 
+from PyInstaller.building.api import COLLECT, EXE
+from PyInstaller.building.datastruct import TOC, Target, logger
+from PyInstaller.building.utils import (_check_path_overlap, _rmtree, add_suffix_to_extension, checkCache)
 from PyInstaller.compat import is_darwin
-from PyInstaller.building.api import EXE, COLLECT
-from PyInstaller.building.datastruct import Target, TOC, logger
-from PyInstaller.building.utils import _check_path_overlap, _rmtree, \
-    add_suffix_to_extension, checkCache
 
 if is_darwin:
     import PyInstaller.utils.osx as osxutils
@@ -27,22 +26,22 @@ class BUNDLE(Target):
     def __init__(self, *args, **kws):
         from PyInstaller.config import CONF
 
-        # BUNDLE only has a sense under Mac OS X, it's a noop on other platforms
+        # BUNDLE only has a sense under Mac OS, it's a noop on other platforms
         if not is_darwin:
             return
 
-        # get a path to a .icns icon for the app bundle.
+        # Get a path to a .icns icon for the app bundle.
         self.icon = kws.get('icon')
         if not self.icon:
             # --icon not specified; use the default in the pyinstaller folder
-            self.icon = os.path.join(os.path.dirname(os.path.dirname(__file__)),
-                'bootloader', 'images', 'icon-windowed.icns')
+            self.icon = os.path.join(
+                os.path.dirname(os.path.dirname(__file__)), 'bootloader', 'images', 'icon-windowed.icns'
+            )
         else:
-            # user gave an --icon=path. If it is relative, make it
-            # relative to the spec file location.
+            # User gave an --icon=path. If it is relative, make it relative to the spec file location.
             if not os.path.isabs(self.icon):
                 self.icon = os.path.join(CONF['specpath'], self.icon)
-        # ensure icon path is absolute
+        # Ensure icon path is absolute
         self.icon = os.path.abspath(self.icon)
 
         Target.__init__(self)
@@ -83,8 +82,8 @@ class BUNDLE(Target):
                 self.entitlements_file = arg.entitlements_file
             elif isinstance(arg, TOC):
                 self.toc.extend(arg)
-                # TOC doesn't have a strip or upx attribute, so there is no way for us to
-                # tell which cache we should draw from.
+                # TOC doesn't have a strip or upx attribute, so there is no way for us to tell which cache we should
+                # draw from.
             elif isinstance(arg, COLLECT):
                 self.toc.extend(arg.toc)
                 self.strip = arg.strip_binaries
@@ -96,9 +95,8 @@ class BUNDLE(Target):
                 self.entitlements_file = arg.entitlements_file
             else:
                 logger.info("unsupported entry %s", arg.__class__.__name__)
-        # Now, find values for app filepath (name), app name (appname), and name
-        # of the actual executable (exename) from the first EXECUTABLE item in
-        # toc, which might have come from a COLLECT too (not from an EXE).
+        # Now, find values for app filepath (name), app name (appname), and name of the actual executable (exename) from
+        # the first EXECUTABLE item in toc, which might have come from a COLLECT too (not from an EXE).
         for inm, name, typ in self.toc:
             if typ == "EXECUTABLE":
                 self.exename = name
@@ -111,8 +109,8 @@ class BUNDLE(Target):
     )
 
     def _check_guts(self, data, last_build):
-        # BUNDLE always needs to be executed, since it will clean the output
-        # directory anyway to make sure there is no existing cruft accumulating
+        # BUNDLE always needs to be executed, since it will clean the output directory anyway to make sure there is no
+        # existing cruft accumulating.
         return 1
 
     def assemble(self):
@@ -120,7 +118,7 @@ class BUNDLE(Target):
             _rmtree(self.name)
         logger.info("Building BUNDLE %s", self.tocbasename)
 
-        # Create a minimal Mac bundle structure
+        # Create a minimal Mac bundle structure.
         os.makedirs(os.path.join(self.name, "Contents", "MacOS"))
         os.makedirs(os.path.join(self.name, "Contents", "Resources"))
         os.makedirs(os.path.join(self.name, "Contents", "Frameworks"))
@@ -132,35 +130,28 @@ class BUNDLE(Target):
             logger.warning("icon not found %s", self.icon)
 
         # Key/values for a minimal Info.plist file
-        info_plist_dict = {"CFBundleDisplayName": self.appname,
-                           "CFBundleName": self.appname,
+        info_plist_dict = {
+            "CFBundleDisplayName": self.appname,
+            "CFBundleName": self.appname,
 
-                           # Required by 'codesign' utility.
-                           # The value for CFBundleIdentifier is used as the default unique
-                           # name of your program for Code Signing purposes.
-                           # It even identifies the APP for access to restricted OS X areas
-                           # like Keychain.
-                           #
-                           # The identifier used for signing must be globally unique. The usal
-                           # form for this identifier is a hierarchical name in reverse DNS
-                           # notation, starting with the toplevel domain, followed by the
-                           # company name, followed by the department within the company, and
-                           # ending with the product name. Usually in the form:
-                           #   com.mycompany.department.appname
-                           # Cli option --osx-bundle-identifier sets this value.
-                           "CFBundleIdentifier": self.bundle_identifier,
+            # Required by 'codesign' utility.
+            # The value for CFBundleIdentifier is used as the default unique name of your program for Code Signing
+            # purposes. It even identifies the APP for access to restricted OS X areas like Keychain.
+            #
+            # The identifier used for signing must be globally unique. The usal form for this identifier is a
+            # hierarchical name in reverse DNS notation, starting with the toplevel domain, followed by the company
+            # name, followed by the department within the company, and ending with the product name. Usually in the
+            # form: com.mycompany.department.appname
+            # CLI option --osx-bundle-identifier sets this value.
+            "CFBundleIdentifier": self.bundle_identifier,
+            "CFBundleExecutable": os.path.basename(self.exename),
+            "CFBundleIconFile": os.path.basename(self.icon),
+            "CFBundleInfoDictionaryVersion": "6.0",
+            "CFBundlePackageType": "APPL",
+            "CFBundleShortVersionString": self.version,
+        }
 
-                           "CFBundleExecutable":
-                               os.path.basename(self.exename),
-                           "CFBundleIconFile": os.path.basename(self.icon),
-                           "CFBundleInfoDictionaryVersion": "6.0",
-                           "CFBundlePackageType": "APPL",
-                           "CFBundleShortVersionString": self.version,
-
-                           }
-
-        # Set some default values.
-        # But they still can be overwritten by the user.
+        # Set some default values. But they still can be overwritten by the user.
         if self.console:
             # Setting EXE console=True implies LSBackgroundOnly=True.
             info_plist_dict['LSBackgroundOnly'] = True
@@ -181,15 +172,20 @@ class BUNDLE(Target):
         for inm, fnm, typ in self.toc:
             # Adjust name for extensions, if applicable
             inm, fnm, typ = add_suffix_to_extension(inm, fnm, typ)
-            # Copy files from cache. This ensures that are used files with relative
-            # paths to dynamic library dependencies (@executable_path)
+            # Copy files from cache. This ensures that are used files with relative paths to dynamic library
+            # dependencies (@executable_path)
             base_path = inm.split('/', 1)[0]
             if typ in ('EXTENSION', 'BINARY'):
-                fnm = checkCache(fnm, strip=self.strip, upx=self.upx,
-                                 upx_exclude=self.upx_exclude, dist_nm=inm,
-                                 target_arch=self.target_arch,
-                                 codesign_identity=self.codesign_identity,
-                                 entitlements_file=self.entitlements_file)
+                fnm = checkCache(
+                    fnm,
+                    strip=self.strip,
+                    upx=self.upx,
+                    upx_exclude=self.upx_exclude,
+                    dist_nm=inm,
+                    target_arch=self.target_arch,
+                    codesign_identity=self.codesign_identity,
+                    entitlements_file=self.entitlements_file
+                )
             # Add most data files to a list for symlinking later.
             if typ == 'DATA' and base_path not in _QT_BASE_PATH:
                 links.append((inm, fnm))
@@ -199,17 +195,15 @@ class BUNDLE(Target):
                 if not os.path.exists(todir):
                     os.makedirs(todir)
                 if os.path.isdir(fnm):
-                    # beacuse shutil.copy2() is the default copy function
-                    # for shutil.copytree, this will also copy file metadata
+                    # Because shutil.copy2() is the default copy function for shutil.copytree, this will also copy file
+                    # metadata.
                     shutil.copytree(fnm, tofnm)
                 else:
                     shutil.copy(fnm, tofnm)
 
         logger.info('Moving BUNDLE data files to Resource directory')
 
-        # Mac OS X Code Signing does not work when .app bundle contains
-        # data files in dir ./Contents/MacOS.
-        #
+        # Mac OS Code Signing does not work when .app bundle contains data files in dir ./Contents/MacOS.
         # Put all data files in ./Resources and create symlinks in ./MacOS.
         bin_dir = os.path.join(self.name, 'Contents', 'MacOS')
         res_dir = os.path.join(self.name, 'Contents', 'Resources')
@@ -219,8 +213,8 @@ class BUNDLE(Target):
             if not os.path.exists(todir):
                 os.makedirs(todir)
             if os.path.isdir(fnm):
-                # beacuse shutil.copy2() is the default copy function
-                # for shutil.copytree, this will also copy file metadata
+                # Because shutil.copy2() is the default copy function for shutil.copytree, this will also copy file
+                # metadata.
                 shutil.copytree(fnm, tofnm)
             else:
                 shutil.copy(fnm, tofnm)
@@ -232,31 +226,34 @@ class BUNDLE(Target):
                         # Build path from previous path and the next part of the base path
                         path = os.path.join(path, part)
                         try:
-                            relative_source_path = os.path.relpath(os.path.join(res_dir, path),
-                                                                   os.path.split(os.path.join(bin_dir, path))[0])
+                            relative_source_path = os.path.relpath(
+                                os.path.join(res_dir, path),
+                                os.path.split(os.path.join(bin_dir, path))[0]
+                            )
                             dest_path = os.path.join(bin_dir, path)
                             os.symlink(relative_source_path, dest_path)
                             break
                         except FileExistsError:
                             pass
                     if not os.path.exists(os.path.join(bin_dir, inm)):
-                        relative_source_path = os.path.relpath(os.path.join(res_dir, inm),
-                                                               os.path.split(os.path.join(bin_dir, inm))[0])
+                        relative_source_path = os.path.relpath(
+                            os.path.join(res_dir, inm),
+                            os.path.split(os.path.join(bin_dir, inm))[0]
+                        )
                         dest_path = os.path.join(bin_dir, inm)
                         os.symlink(relative_source_path, dest_path)
-            else:  # If path is empty, e.g., a top level file, try to just symlink the file
-                os.symlink(os.path.relpath(os.path.join(res_dir, inm),
-                                           os.path.split(os.path.join(bin_dir, inm))[0]),
-                           os.path.join(bin_dir, inm))
+            else:  # If path is empty, e.g., a top-level file, try to just symlink the file.
+                os.symlink(
+                    os.path.relpath(os.path.join(res_dir, inm),
+                                    os.path.split(os.path.join(bin_dir, inm))[0]), os.path.join(bin_dir, inm)
+                )
 
         # Sign the bundle
         logger.info('Signing the BUNDLE...')
         try:
-            osxutils.sign_binary(self.name, self.codesign_identity,
-                                 self.entitlements_file, deep=True)
+            osxutils.sign_binary(self.name, self.codesign_identity, self.entitlements_file, deep=True)
         except Exception as e:
             logger.warning("Error while signing the bundle: %s", e)
             logger.warning("You will need to sign the bundle manually!")
 
-        logger.info("Building BUNDLE %s completed successfully.",
-                    self.tocbasename)
+        logger.info("Building BUNDLE %s completed successfully.", self.tocbasename)

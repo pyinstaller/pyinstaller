@@ -11,24 +11,23 @@
 
 from PyInstaller.utils.hooks import eval_statement
 
-### This basically is a copy of pre_safe_import_module/hook-six.moves.py
-### adopted to urllib3.packages.six.
-### Please see pre_safe_import_module/hook-six.moves.py for documentation.
+# This basically is a copy of pre_safe_import_module/hook-six.moves.py adopted to urllib3.packages.six. Please see
+# pre_safe_import_module/hook-six.moves.py for documentation.
+
 
 def pre_safe_import_module(api):
     real_to_six_module_name = eval_statement(
-'''
-import urllib3.packages.six as six
-print('{')
+        """
+        import urllib3.packages.six as six
+        print('{')
 
-for moved in six._moved_attributes:
-    if isinstance(moved, (six.MovedModule, six.MovedAttribute)):
-        print('  %r: %r,' % (
-            moved.mod,
-            'urllib3.packages.six.moves.' + moved.name))
+        for moved in six._moved_attributes:
+            if isinstance(moved, (six.MovedModule, six.MovedAttribute)):
+                print('  %r: %r,' % (moved.mod, 'urllib3.packages.six.moves.' + moved.name))
 
-print('}')
-''')
+        print('}')
+        """
+    )
     if isinstance(real_to_six_module_name, str):
         raise SystemExit("pre-safe-import-module hook failed, needs fixing.")
     api.add_runtime_package(api.module_name)

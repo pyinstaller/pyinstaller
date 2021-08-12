@@ -9,19 +9,18 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 import os
 
-from PyInstaller.utils import misc
 from PyInstaller import log as logging
 from PyInstaller.building.utils import _check_guts_eq
+from PyInstaller.utils import misc
 
 logger = logging.getLogger(__name__)
 
 
 def unique_name(entry):
     """
-    Return the filename used to enforce uniqueness for the given TOC entry
+    Return the filename used to enforce uniqueness for the given TOC entry.
 
     Parameters
     ----------
@@ -39,7 +38,7 @@ def unique_name(entry):
 
 
 class TOC(list):
-    # TODO Simplify the representation and use directly Modulegraph objects.
+    # TODO: simplify the representation and use directly Modulegraph objects.
     """
     TOC (Table of Contents) class is a list of tuples of the form (name, path, typecode).
 
@@ -58,7 +57,7 @@ class TOC(list):
     PyInstaller uses TOC data type to collect necessary files bundle them into an executable.
     """
     def __init__(self, initlist=None):
-        super(TOC, self).__init__(self)
+        super().__init__()
         self.filenames = set()
         if initlist:
             for entry in initlist:
@@ -73,7 +72,7 @@ class TOC(list):
 
         if unique not in self.filenames:
             self.filenames.add(unique)
-            super(TOC, self).append(entry)
+            super().append(entry)
 
     def insert(self, pos, entry):
         if not isinstance(entry, tuple):
@@ -83,7 +82,7 @@ class TOC(list):
 
         if unique not in self.filenames:
             self.filenames.add(unique)
-            super(TOC, self).insert(pos, entry)
+            super().insert(pos, entry)
 
     def __add__(self, other):
         result = TOC(self)
@@ -96,8 +95,7 @@ class TOC(list):
         return result
 
     def extend(self, other):
-        # TODO: look if this can be done more efficient with out the
-        # loop, e.g. by not using a list as base at all
+        # TODO: look if this can be done more efficient with out the loop, e.g. by not using a list as base at all.
         for entry in other:
             self.append(entry)
 
@@ -109,6 +107,8 @@ class TOC(list):
             unique = unique_name(entry)
 
             if unique in filenames:
+                # Directly use list.append() instead of TOC.append() to avoid unnecessary uniqueness checks.
+                # Hence the use of super(TOC, result).
                 super(TOC, result).append(entry)
         return result
 
@@ -122,12 +122,11 @@ class Target(object):
 
     def __init__(self):
         from PyInstaller.config import CONF
-        # Get a (per class) unique number to avoid conflicts between
-        # toc objects
+
+        # Get a (per class) unique number to avoid conflicts between toc objects
         self.invcnum = self.__class__.invcnum
         self.__class__.invcnum += 1
-        self.tocfilename = os.path.join(CONF['workpath'], '%s-%02d.toc' %
-                                        (self.__class__.__name__, self.invcnum))
+        self.tocfilename = os.path.join(CONF['workpath'], '%s-%02d.toc' % (self.__class__.__name__, self.invcnum))
         self.tocbasename = os.path.basename(self.tocfilename)
         self.dependencies = TOC()
 
@@ -135,21 +134,18 @@ class Target(object):
         """
         Check if the target need to be rebuild and if so, re-assemble.
 
-        `__postinit__` is to be called at the end of `__init__` of
-        every subclass of Target. `__init__` is meant to setup the
-        parameters and `__postinit__` is checking if rebuild is
-        required and in case calls `assemble()`
+        `__postinit__` is to be called at the end of `__init__` of every subclass of Target. `__init__` is meant to
+        setup the parameters and `__postinit__` is checking if rebuild is required and in case calls `assemble()`
         """
         logger.info("checking %s", self.__class__.__name__)
         data = None
         last_build = misc.mtime(self.tocfilename)
         if last_build == 0:
-            logger.info("Building %s because %s is non existent",
-                        self.__class__.__name__, self.tocbasename)
+            logger.info("Building %s because %s is non existent", self.__class__.__name__, self.tocbasename)
         else:
             try:
                 data = misc.load_py_data_struct(self.tocfilename)
-            except:
+            except Exception:
                 logger.info("Building because %s is bad", self.tocbasename)
             else:
                 # create a dict for easier access
@@ -163,7 +159,7 @@ class Target(object):
 
     def _check_guts(self, data, last_build):
         """
-        Returns True if rebuild/assemble is required
+        Returns True if rebuild/assemble is required.
         """
         if len(data) != len(self._GUTS):
             logger.info("Building because %s is bad", self.tocbasename)
@@ -178,8 +174,7 @@ class Target(object):
 
     def _save_guts(self):
         """
-        Save the input parameters and the work-product of this run to
-        maybe avoid regenerating it later.
+        Save the input parameters and the work-product of this run to maybe avoid regenerating it later.
         """
         data = tuple(getattr(self, g[0]) for g in self._GUTS)
         misc.save_py_data_struct(self.tocfilename, data)
@@ -187,8 +182,8 @@ class Target(object):
 
 class Tree(Target, TOC):
     """
-    This class is a way of creating a TOC (Table of Contents) that describes
-    some or all of the files within a directory.
+    This class is a way of creating a TOC (Table of Contents) that describes some or all of the files within a
+    directory.
     """
     def __init__(self, root=None, prefix=None, excludes=None, typecode='DATA'):
         """
@@ -200,13 +195,12 @@ class Tree(Target, TOC):
                 A list of names to exclude. Two forms are allowed:
 
                     name
-                        Files with this basename will be excluded (do not
-                        include the path).
+                        Files with this basename will be excluded (do not include the path).
                     *.ext
                         Any file with the given extension will be excluded.
         typecode
-                The typecode to be used for all files found in this tree.
-                See the TOC class for for information about the typcodes.
+                The typecode to be used for all files found in this tree. See the TOC class for for information about
+                the typcodes.
         """
         Target.__init__(self)
         TOC.__init__(self)
@@ -218,29 +212,26 @@ class Tree(Target, TOC):
             self.excludes = []
         self.__postinit__()
 
-    _GUTS = (# input parameters
-            ('root', _check_guts_eq),
-            ('prefix', _check_guts_eq),
-            ('excludes', _check_guts_eq),
-            ('typecode', _check_guts_eq),
-            ('data', None),  # tested below
-            # no calculated/analysed values
-            )
+    _GUTS = (  # input parameters
+        ('root', _check_guts_eq),
+        ('prefix', _check_guts_eq),
+        ('excludes', _check_guts_eq),
+        ('typecode', _check_guts_eq),
+        ('data', None),  # tested below
+        # no calculated/analysed values
+    )
 
     def _check_guts(self, data, last_build):
         if Target._check_guts(self, data, last_build):
             return True
-        # Walk the collected directories as check if they have been
-        # changed - which means files have been added or removed.
-        # There is no need to check for the files, since `Tree` is
-        # only about the directory contents (which is the list of
-        # files).
+        # Walk the collected directories as check if they have been changed - which means files have been added or
+        # removed. There is no need to check for the files, since `Tree` is only about the directory contents (which is
+        # the list of files).
         stack = [data['root']]
         while stack:
             d = stack.pop()
             if misc.mtime(d) > last_build:
-                logger.info("Building %s because directory %s changed",
-                            self.tocbasename, d)
+                logger.info("Building %s because directory %s changed", self.tocbasename, d)
                 return True
             for nm in os.listdir(d):
                 path = os.path.join(d, nm)
@@ -252,7 +243,7 @@ class Tree(Target, TOC):
     def _save_guts(self):
         # Use the attribute `data` to save the list
         self.data = self
-        super(Tree, self)._save_guts()
+        super()._save_guts()
         del self.data
 
     def assemble(self):
