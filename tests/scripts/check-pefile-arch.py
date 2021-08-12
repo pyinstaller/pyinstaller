@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #-----------------------------------------------------------------------------
 # Copyright (c) 2017-2021, PyInstaller Development Team.
 # Author: Hartmut Goebel
@@ -11,26 +11,24 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 #
-# Verify if a list of pe-files was the expected arch-bits.
+# Verify that given PE files have the expected arch-bits.
 #
 # Usage: check-pefile-arch.py (32|64) FILEGLOB ...
 #
-# Since this script targets to win32 command.com, the FILEGLOBs are processed
-# in the script.
+# Since this script targets to win32 command.com, the FILEGLOBs are processed in the script.
 #
-# Note: This code is using raw file-access instead of module `pefile` to be
-# used in the CI-tests prior to installing other packages. It does not use
-# `argparse` to reduce the overhead and be quick.
+# Note: This code is using raw file-access instead of module `pefile` to be used in the CI-tests prior to installing
+# other packages. It does not use `argparse` to reduce the overhead and be quick.
 
 import glob
 import struct
 import sys
 
-# A more complete list can be found at
-# https://stackoverflow.com/questions/1001404/
+# A more complete list can be found at: https://stackoverflow.com/questions/1001404/
 IMAGE_FILE_MACHINE_AMD64 = 0x8664
 IMAGE_FILE_MACHINE_I386 = 0x14c
 IMAGE_FILE_MACHINE_IA64 = 0x200
+
 
 # Basic structure from https://stackoverflow.com/questions/1345632/
 def check_pefile(filename):
@@ -55,6 +53,7 @@ def check_pefile(filename):
     else:
         return None, "Handled architecture: 0x%x" % machine
 
+
 def check(filename, expected_bits):
     bits, desc = check_pefile(filename)
     okay = True
@@ -77,6 +76,7 @@ def main():
         raise SystemExit("*** FAILED.")
     else:
         print("*** Okay.")
+
 
 if __name__ == '__main__':
     main()

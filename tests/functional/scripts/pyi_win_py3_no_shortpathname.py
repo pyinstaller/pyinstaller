@@ -9,11 +9,14 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# This script is used by multiple tests. It checks that various paths set by the
-# bootloader are usable filenames.
+# This script is used by multiple tests.
+# It checks that various paths set by the bootloader are usable filenames.
 
-import sys, os
+import sys
+import os
+
 import win32api
+
 
 def check_shortpathname(fn):
     lfn = win32api.GetLongPathNameW(fn)
@@ -22,6 +25,7 @@ def check_shortpathname(fn):
     if lfn != fn:
         print("ShortPathName: Expected %s, got %s" % (fn, lfn))
         raise SystemExit(-1)
+
 
 print("sys.executable:", ascii(sys.executable))
 
@@ -41,7 +45,6 @@ if not os.path.exists(sys._MEIPASS):
     raise SystemExit("sys._MEIPASS does not exist.")
 tmp = os.path.normcase(win32api.GetTempPath())
 if os.path.normcase(win32api.GetLongPathNameW(tmp)) == tmp:
-    # Test only if TempPath is not a short path. This might happen if e.g
-    # TMP=c:\users\runner~1\appdata\local\temp, since the username is too long
+    # Test only if TempPath is not a short path. This might for example happen if
+    # TMP=c:\users\runner~1\appdata\local\temp, due to  username being too long.
     check_shortpathname(sys._MEIPASS)
-

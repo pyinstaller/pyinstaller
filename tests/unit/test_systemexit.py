@@ -8,12 +8,9 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
 """
-In `#4592 <https://github.com/pyinstaller/pyinstaller/pull/4592>`_, the
-bootloader was modified to allow the execution traceback to be shown in
-Windowed mode. Unfortunately, this modification caused the recurrence of
-a bug raised in #1869. A quick summary of the bug would be
+In `#4592 <https://github.com/pyinstaller/pyinstaller/pull/4592>`_, the bootloader was modified to allow the execution
+traceback to be shown in Windowed mode. Unfortunately, this modification caused the recurrence of a bug raised in #1869.
 """
 
 import pytest

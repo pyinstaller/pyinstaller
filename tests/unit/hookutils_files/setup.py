@@ -9,15 +9,14 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 #
-# This assists in creating a ``.egg`` package for use with testing
-# ``collect_submodules``. To do so, execute ``python setup.py bdist_egg``.
+# This assists in creating a ``.egg`` package for use with testing ``collect_submodules``.
+# To do so, execute ``python setup.py bdist_egg``.
 from setuptools import setup, find_packages
 
 setup(
     name='hookutils_egg',
     zip_safe=True,
     packages=find_packages(),
-    # Manually include the fake extension modules for testing. They aren't
-    # automatically included.
-    package_data={'hookutils_package' : ['pyextension.*']},
+    # Manually include the fake extension modules for testing. They are not automatically included.
+    package_data={'hookutils_package': ['pyextension.*']},
 )

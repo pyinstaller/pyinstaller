@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 msg = """
 =============================================================
 A RecursionError (maximum recursion depth exceeded) occurred.

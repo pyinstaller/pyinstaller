@@ -13,12 +13,11 @@
 import os
 import sys
 
-# To verify that the bootloader actually uses the unresolved symlink basename
-# when executing the second process, check what `Name:` entry in
-# '/proc/self/status' says. This value is truncated to 15 characters.
+# To verify that the bootloader actually uses the unresolved symlink basename when executing the second process,
+# check what the `Name:` entry in '/proc/self/status' says. This value is truncated to 15 characters.
 #
-# This test is run twice: once with a short basename and once with a long
-# basename to detect if this 15 character limit is no longer true.
+# This test is run twice: once with a short basename and once with a long basename, in order to detect if this
+# 15-character limit is no longer true.
 
 with open('/proc/self/status', 'r') as fh:
     for line in fh.readlines():

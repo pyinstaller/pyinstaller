@@ -13,15 +13,14 @@ Documentation roles for PyInstaller
 
 :issue:`1234` - link to github issue
 
-:commit:`1a2b3c4d5e6fa23b` - link to commit-id, text will be shortened to 8 digits
-for readability
+:commit:`1a2b3c4d5e6fa23b` - link to commit-id, text will be shortened to 8 digits for readability
 """
 # Based on examples taken from
 # <http://docutils.sourceforge.net/docs/howto/rst-roles.html> and
 # <http://protips.readthedocs.io/link-roles.html>
 
 from docutils import nodes
-from docutils.parsers.rst.roles import set_classes
+
 
 def commit(name, rawtext, text, lineno, inliner, options={}, content=[]):
     msg = None
@@ -31,8 +30,7 @@ def commit(name, rawtext, text, lineno, inliner, options={}, content=[]):
     except ValueError:
         msg = 'The commit-id must be a hex-string; "%s" is invalid.' % text
     if len(text) < 8:
-        msg = ('The commit-id "%s" is to short, '
-               'please provide at least 8 characters.' % text)
+        msg = 'The commit-id "%s" is to short, please provide at least 8 characters.' % text
     if msg:
         msg = inliner.reporter.error(msg, line=lineno)
         prb = inliner.problematic(rawtext, rawtext, msg)
@@ -44,7 +42,9 @@ def commit(name, rawtext, text, lineno, inliner, options={}, content=[]):
 
 
 def blob(name, rawtext, text, lineno, inliner, options={}, content=[]):
-    """Reference a file within this repo and get a link to it on Github."""
+    """
+    Reference a file within this repo and get a link to it on Github.
+    """
     options.setdefault('classes', []).append("blob")
     url = "https://github.com/pyinstaller/pyinstaller/tree/develop/" + text
     node = nodes.reference(rawtext, text, refuri=url, **options)
@@ -63,8 +63,8 @@ def issue(name, rawtext, text, lineno, inliner, options={}, content=[]):
             raise ValueError
     except ValueError:
         msg = inliner.reporter.error(
-            'The issue number must be a number larger then zero; '
-            '"%s" is invalid.' % text, line=lineno)
+            'The issue number must be a number larger then zero; "%s" is invalid.' % text, line=lineno
+        )
         prb = inliner.problematic(rawtext, rawtext, msg)
         return [prb], [msg]
     options.setdefault('classes', []).append("issue")
@@ -78,7 +78,9 @@ def autolink(pattern):
         url = pattern % (text,)
         node = nodes.reference(rawtext, text, refuri=url, **options)
         return [node], []
+
     return role
+
 
 def setup(app):
     app.add_role('issue', issue)

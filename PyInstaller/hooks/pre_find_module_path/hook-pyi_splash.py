@@ -8,11 +8,9 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 # -----------------------------------------------------------------------------
-
 """
-This hook does not move a module that can be installed by a package manager,
-but points to a PyInstaller internal module that can be imported into
-the users python instance.
+This hook does not move a module that can be installed by a package manager, but points to a PyInstaller internal
+module that can be imported into the users python instance.
 
 The module is implemented in 'PyInstaller/fake-modules/pyi_splash.py'.
 """
@@ -25,9 +23,8 @@ from PyInstaller.utils.hooks import logger
 
 def pre_find_module_path(api):
     try:
-        # Test if a module named 'pyi_splash' is locally installed.
-        # This prevents that a potentially required dependency is not
-        # packed
+        # Test if a module named 'pyi_splash' is locally installed. This prevents that a potentially required dependency
+        # is not packed
         import pyi_splash  # noqa: F401
     except ImportError:
         module_dir = os.path.join(PACKAGEPATH, 'fake-modules')
@@ -35,6 +32,5 @@ def pre_find_module_path(api):
         api.search_dirs = [module_dir]
         logger.info('Adding pyi_splash module to application dependencies.')
     else:
-        logger.info('A local module named "pyi_splash" is installed. '
-                    'Use the installed one instead.')
+        logger.info('A local module named "pyi_splash" is installed. Use the installed one instead.')
         return

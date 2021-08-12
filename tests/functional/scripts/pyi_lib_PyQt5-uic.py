@@ -9,26 +9,15 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# Library imports
-# ---------------
 import os
 
-# Third-party imports
-# -------------------
-# Instead of creating a custom .spec file: inform PyInstaller of the
-# hidden import of QtQuickWidgets, which is performed inside of uic.loadUi.
-import PyQt5.QtQuickWidgets
-# Other Qt imports used in the code below.
 from PyQt5.QtWidgets import QApplication, QDialog
 from PyQt5 import uic
 from PyQt5.QtCore import QTimer
+import PyQt5.QtQuickWidgets  # noqa: F401 - serves as a hiddenimport (loaded in uic.loadUi())
 
-# Local imports
-# -------------
 from pyi_get_datadir import get_data_dir
 
-# Test code
-# ---------
 app = QApplication([])
 window = QDialog()
 uic.loadUi(os.path.join(get_data_dir(), 'PyQt5_uic', 'PyQt5-uic.ui'), window)

@@ -10,7 +10,6 @@
 #-----------------------------------------------------------------------------
 
 import multiprocessing
-import sys
 
 
 class SendeventProcess(multiprocessing.Process):

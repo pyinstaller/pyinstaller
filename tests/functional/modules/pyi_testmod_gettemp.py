@@ -9,12 +9,14 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-import os, sys
+import os
+import sys
+
 
 def gettemp(basename):
     """
-    Get the path to a temp file previously written by the temp runner. Useful to
-    compare results between running in interpreter and running frozen.
+    Get the path to a temp file previously written by the temp runner.
+    Useful to compare results between running in interpreter and running frozen.
     """
     exec_dir = os.path.dirname(sys.executable)
     # onedir mode:

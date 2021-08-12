@@ -15,8 +15,7 @@ from PyInstaller.utils.tests import requires
 
 @requires('six >= 1.0')
 def test_six_moves(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         from six.moves import UserList
         UserList
         """)

@@ -8,6 +8,9 @@ bootloader/build
 PyInstaller/lib
 tests/unit/test_modulegraph
 
+# This is a sphinx config file, similar to doc/conf.py
+tests/functional/data/sphinx/conf.py
+
 # yapf wastes a lot of time if it tries to reformat setuptools's build cache.
 build
 

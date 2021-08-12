@@ -1,1 +1,3 @@
-""" package.nspkg.mod """
+"""
+package.nspkg.mod
+"""

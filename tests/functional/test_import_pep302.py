@@ -10,24 +10,19 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# PEP-302 import hooks specification contain section 'Optional
-# Extensions to the Importer Protocol'
+# PEP-302 import hooks specification contain section 'Optional Extensions to the Importer Protocol'
 #
-# This section is meant to be optional but the reality is different.
-# Some Python modules (e.g. Flask) depends on implementation of these
-# optional functions:
+# This section is meant to be optional but the reality is different. Some Python modules (e.g. Flask) depends on
+# implementation of these optional functions:
 #
 #   loader.is_package(fullmodname)
 #   loader.get_code(fullmodname)
 #   loader.get_source(fullmodname)
 #
-# This test-cases test the return values of these functions for
-# importers from pyimod03_importers module.
+# This test-cases test the return values of these functions for importers from pyimod03_importers module.
 
-# Note: The modules need to be imported at the end of the resp. code.
-#       Otherwise the pkgutil-functions take a very different branch
-#       (since the module is already in sys.modules) and what we want
-#       to test will not be tested.
+# Note: The modules need to be imported at the end of the resp. code. Otherwise the pkgutil-functions take a very
+#       different branch (since the module is already in sys.modules) and what we want to test will not be tested.
 
 
 def test_pep302_loader_builtin(pyi_builder):
@@ -40,7 +35,8 @@ def test_pep302_loader_builtin(pyi_builder):
         assert ldr.is_package(mod) == False
         assert ldr.get_code(mod) is None
         assert ldr.get_source(mod) is None
-        """)
+        """
+    )
 
 
 def test_pep302_loader_frozen_module(pyi_builder):
@@ -55,7 +51,8 @@ def test_pep302_loader_frozen_module(pyi_builder):
         assert ldr.get_source(mod) is None
         # Import at the very end, just to get the module frozen.
         import compileall
-        """)
+        """
+    )
 
 
 def test_pep302_loader_frozen_package(pyi_builder):
@@ -70,7 +67,8 @@ def test_pep302_loader_frozen_package(pyi_builder):
         assert ldr.get_source(mod) is None
         # Import at the very end, just to get the module frozen.
         import distutils
-        """)
+        """
+    )
 
 
 def test_pep302_loader_frozen_submodule(pyi_builder):
@@ -85,7 +83,8 @@ def test_pep302_loader_frozen_submodule(pyi_builder):
         assert ldr.get_source(mod) is None
         # Import at the very end, just to get the module frozen.
         import distutils.config
-        """)
+        """
+    )
 
 
 def test_pep302_loader_cextension(pyi_builder):
@@ -100,4 +99,5 @@ def test_pep302_loader_cextension(pyi_builder):
         assert ldr.get_source(mod) is None
         # Import at the very end, just to get the module frozen.
         import sqlite3
-        """)
+        """
+    )

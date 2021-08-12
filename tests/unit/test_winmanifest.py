@@ -18,18 +18,11 @@ from PyInstaller import HOMEPATH, PLATFORM
 
 @pytest.mark.win32
 def test_manifest_from_res_file(tmp_path):
-    # This import only works on Windows. Place it here, protected by the
-    # `@pytest.mark.win32`` decorator.
+    # This import only works on Windows. Place it here, protected by the `@pytest.mark.win32`` decorator.
     from PyInstaller.utils.win32 import winmanifest
 
     # Locate bootloader executable
-    bootloader_file = os.path.join(
-        HOMEPATH,
-        'PyInstaller',
-        'bootloader',
-        PLATFORM,
-        'run.exe'
-    )
+    bootloader_file = os.path.join(HOMEPATH, 'PyInstaller', 'bootloader', PLATFORM, 'run.exe')
 
     # Create a local copy
     test_file = str(tmp_path / 'test_file.exe')
@@ -41,7 +34,8 @@ def test_manifest_from_res_file(tmp_path):
         type_="win32",
         name='test_file.exe',
         processorArchitecture=winmanifest.processor_architecture(),
-        version=(1, 0, 0, 0))
+        version=(1, 0, 0, 0)
+    )
     manifest.filename = manifest_filename
     manifest.requestedExecutionLevel = 'asInvoker'
     manifest.uiAccess = True

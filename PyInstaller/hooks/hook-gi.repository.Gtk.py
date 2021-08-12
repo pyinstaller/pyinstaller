@@ -14,12 +14,11 @@ Import hook for PyGObject https://wiki.gnome.org/PyGObject
 
 import os
 import os.path
-import glob
 
 from PyInstaller.compat import is_win
 from PyInstaller.utils.hooks import get_hook_config
-from PyInstaller.utils.hooks.gi import collect_glib_share_files, \
-        collect_glib_etc_files, collect_glib_translations, get_gi_typelibs
+from PyInstaller.utils.hooks.gi import \
+    collect_glib_etc_files, collect_glib_share_files, collect_glib_translations, get_gi_typelibs
 
 binaries, datas, hiddenimports = get_gi_typelibs('Gtk', '3.0')
 
@@ -41,14 +40,14 @@ def hook(hook_api):
 
     if theme_list is not None:
         for theme in theme_list:
-            hook_datas += collect_glib_share_files(
-                    os.path.join('themes', theme))
+            hook_datas += collect_glib_share_files(os.path.join('themes', theme))
     else:
         hook_datas += collect_glib_share_files('themes')
 
     hook_datas += collect_glib_translations('gtk30', lang_list)
 
     hook_api.add_datas(hook_datas)
+
 
 # these only seem to be required on Windows
 if is_win:

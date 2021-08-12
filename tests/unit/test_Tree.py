@@ -20,8 +20,8 @@ import PyInstaller.building.datastruct
 
 
 class Tree(PyInstaller.building.datastruct.Tree):
-    # A stripped-down version of PyInstaller.building.datastruct.Tree,
-    # not checking guts, but only the `assemble()` step
+    # A stripped-down version of PyInstaller.building.datastruct.Tree that does not check the guts,
+    # but only the `assemble()` step.
     def __postinit__(self):
         self.assemble()
 
@@ -50,21 +50,17 @@ _TEST_FILES = sorted([
 _PARAMETERS = (
     (None, None, _TEST_FILES),
     ('abc', None, [join('abc', f) for f in _TEST_FILES]),
-    (None, ['*.py'], 
-     [f for f in _TEST_FILES if not f.endswith('.py')]),
-    (None, ['*.py', '*.pyd'], 
-     [f for f in _TEST_FILES if not f.endswith(('.py', '.pyd'))]),
-    (None, ['subpkg'], 
-     [f for f in _TEST_FILES 
-      if not f.startswith('subpkg')]),
+    (None, ['*.py'], [f for f in _TEST_FILES if not f.endswith('.py')]),
+    (None, ['*.py', '*.pyd'], [f for f in _TEST_FILES if not f.endswith(('.py', '.pyd'))]),
+    (None, ['subpkg'], [f for f in _TEST_FILES if not f.startswith('subpkg')]),
     (None, ['subpkg', 'sub_pkg'],
-     [f for f in _TEST_FILES 
-      if not (f.startswith('subpkg') or os.sep+'sub_pkg'+os.sep in f)]),
-    ('klm', ['subpkg', 'sub_pkg', '*.py', '*.pyd'],
-     [join('klm', f) for f in _TEST_FILES 
-      if not (f.startswith('subpkg') or os.sep+'sub_pkg'+os.sep in f or
-              f.endswith(('.py', '.pyd')))]),
-)
+     [f for f in _TEST_FILES if not (f.startswith('subpkg') or os.sep + 'sub_pkg' + os.sep in f)]),
+    ('klm', ['subpkg', 'sub_pkg', '*.py', '*.pyd'], [
+        join('klm', f) for f in _TEST_FILES
+        if not (f.startswith('subpkg') or os.sep + 'sub_pkg' + os.sep in f or f.endswith(('.py', '.pyd')))
+    ]),
+)  # yapf: disable
+
 
 @pytest.mark.parametrize("prefix,excludes,result", _PARAMETERS)
 def test_Tree(monkeypatch, prefix, excludes, result):

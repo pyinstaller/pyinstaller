@@ -8,42 +8,35 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-
 """
 Main command-line interface to PyInstaller.
 """
 
-import os
 import argparse
+import os
 import platform
-
 
 from PyInstaller import __version__
 from PyInstaller import log as logging
-
-# note: don't import anything else until this function is run!
-from PyInstaller.compat import check_requirements, is_conda
+# Note: do not import anything else until compat.check_requirements function is run!
+from PyInstaller import compat
 
 logger = logging.getLogger(__name__)
 
-
-# Taken from https://stackoverflow.com/a/22157136 to format args more flexibly:
-# any help text which beings with ``R|`` will have all newlines preserved; the
-# help text will be line wrapped. See
+# Taken from https://stackoverflow.com/a/22157136 to format args more flexibly: any help text which beings with ``R|``
+# will have all newlines preserved; the help text will be line wrapped. See
 # https://docs.python.org/3/library/argparse.html#formatter-class.
-#
+
+
 # This is used by the ``--debug`` option.
 class _SmartFormatter(argparse.HelpFormatter):
-
     def _split_lines(self, text, width):
         if text.startswith('R|'):
-            # The underlying implementation of ``RawTextHelpFormatter._split_lines``
-            # invokes this; mimic it.
+            # The underlying implementation of ``RawTextHelpFormatter._split_lines`` invokes this; mimic it.
             return text[2:].splitlines()
         else:
             # Invoke the usual formatter.
-            return super(_SmartFormatter, self)._split_lines(text, width)
+            return super()._split_lines(text, width)
 
 
 def run_makespec(filenames, **opts):
@@ -66,16 +59,22 @@ def run_build(pyi_config, spec_file, **kwargs):
 
 
 def __add_options(parser):
-    parser.add_argument('-v', '--version', action='version',
-                        version=__version__,
-                        help='Show program version info and exit.')
+    parser.add_argument(
+        '-v',
+        '--version',
+        action='version',
+        version=__version__,
+        help='Show program version info and exit.',
+    )
 
 
 def generate_parser() -> argparse.ArgumentParser:
-    """Build an argparse parser for PyInstaller's main CLI."""
+    """
+    Build an argparse parser for PyInstaller's main CLI.
+    """
 
-    import PyInstaller.building.makespec
     import PyInstaller.building.build_main
+    import PyInstaller.building.makespec
     import PyInstaller.log
 
     parser = argparse.ArgumentParser(formatter_class=_SmartFormatter)
@@ -85,11 +84,13 @@ def generate_parser() -> argparse.ArgumentParser:
     PyInstaller.building.makespec.__add_options(parser)
     PyInstaller.building.build_main.__add_options(parser)
     PyInstaller.log.__add_options(parser)
-    parser.add_argument('filenames', metavar='scriptname', nargs='+',
-                        help=("name of scriptfiles to be processed or "
-                              "exactly one .spec-file. If a .spec-file is "
-                              "specified, most options are unnecessary "
-                              "and are ignored."))
+    parser.add_argument(
+        'filenames',
+        metavar='scriptname',
+        nargs='+',
+        help="Name of scriptfiles to be processed or exactly one .spec file. If a .spec file is specified, most "
+        "options are unnecessary and are ignored.",
+    )
 
     return parser
 
@@ -99,7 +100,7 @@ def run(pyi_args=None, pyi_config=None):
     pyi_args     allows running PyInstaller programatically without a subprocess
     pyi_config   allows checking configuration once when running multiple tests
     """
-    check_requirements()
+    compat.check_requirements()
 
     import PyInstaller.log
 
@@ -108,16 +109,13 @@ def run(pyi_args=None, pyi_config=None):
         args = parser.parse_args(pyi_args)
         PyInstaller.log.__process_options(parser, args)
 
-        # Print PyInstaller version, Python version and platform
-        # as the first line to stdout.
-        # This helps identify PyInstaller, Python and platform version
-        #  when users report issues.
+        # Print PyInstaller version, Python version, and platform as the first line to stdout. This helps us identify
+        # PyInstaller, Python, and platform version when users report issues.
         logger.info('PyInstaller: %s' % __version__)
-        logger.info('Python: %s%s', platform.python_version(),
-                    " (conda)" if is_conda else "")
+        logger.info('Python: %s%s', platform.python_version(), " (conda)" if compat.is_conda else "")
         logger.info('Platform: %s' % platform.platform())
 
-        # Skip creating .spec when .spec file is supplied
+        # Skip creating .spec when .spec file is supplied.
         if args.filenames[0].endswith('.spec'):
             spec_file = args.filenames[0]
         else:

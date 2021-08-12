@@ -8,8 +8,8 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-from PyInstaller.utils.hooks.qt import pyside2_library_info, \
-    get_qt_binaries, get_qt_conf_file
+
+from PyInstaller.utils.hooks.qt import get_qt_binaries, get_qt_conf_file, pyside2_library_info
 
 # Only proceed if PySide2 can be imported.
 if pyside2_library_info.version is not None:

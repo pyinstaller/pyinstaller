@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #-----------------------------------------------------------------------------
 # Copyright (c) 2013-2021, PyInstaller Development Team.
 #
@@ -10,8 +10,8 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# This utility is primary meant to be used when PyInstaller is not
-# installed, eg. when be run by a git checkout.
+# This utility is primarily meant to be used when PyInstaller is not installed, e.g., to be run from a git checkout.
 
 from PyInstaller.utils.cliutils.archive_viewer import run
+
 run()

@@ -18,7 +18,6 @@ from PyQt5.QtWidgets import QWidget, QApplication, qApp
 
 
 class EventHandler(QObject):
-
     def __init__(self, logfile, parent=None):
         super().__init__(parent=parent)
         assert isinstance(logfile, str) and logfile
@@ -26,31 +25,33 @@ class EventHandler(QObject):
         self.activate_count = 0
 
     def eventFilter(self, obj, event):
-        """ This event filter just logs the URLs it receives as FileOpen
-        events to self.logfile """
+        """
+        This event filter just logs the URLs it receives as FileOpen events to self.logfile
+        """
         try:
             if event.type() == QEvent.FileOpen:
                 with open(self.logfile, 'a') as file:
                     file.write("url {}\n".format(event.url().toString()))
-                    file.write("activate_count {}\n"
-                               .format(self.activate_count))
+                    file.write("activate_count {}\n".format(self.activate_count))
                 qApp.quit()  # Tell app to quit after receiving this event
                 return True
             elif event.type() == QEvent.ApplicationActivate:
                 self.activate_count += 1
         except Exception as e:
-            print("Caught exception in eventFilter exception: " + repr(e),
-                  file=sys.stderr)
+            print("Caught exception in eventFilter exception: " + repr(e), file=sys.stderr)
         return super().eventFilter(obj, event)
 
     def log_started(self):
         try:
             with open(self.logfile, 'wt') as file:
-                file.write("started {}\n"
-                           .format(json.dumps({"argv": sys.argv})))
+                file.write("started {}\n".format(json.dumps({"argv": sys.argv})))
         except Exception as e:
-            print("Caught exception while attempting to write/open",
-                  self.logfile, "exception: " + repr(e), file=sys.stderr)
+            print(
+                "Caught exception while attempting to write/open",
+                self.logfile,
+                "exception: " + repr(e),
+                file=sys.stderr
+            )
             qApp.quit()
 
 
@@ -58,8 +59,7 @@ def main():
     basedir = os.path.dirname(sys.executable)
     # if script is inside .app package
     if os.path.basename(basedir) == 'MacOS':
-        basedir = os.path.abspath(
-            os.path.join(basedir, os.pardir, os.pardir, os.pardir))
+        basedir = os.path.abspath(os.path.join(basedir, os.pardir, os.pardir, os.pardir))
 
     logfile = os.path.join(basedir, 'events.log')
 
@@ -76,7 +76,8 @@ def main():
         # Last arg is timeout (may be passed-in from test script)
         timeout = int(1000 * float(sys.argv[-1]))
     except (ValueError, IndexError):
-        """Arg was missing or bad arg, use default"""
+        # Arg was missing or bad arg, use default
+        pass
     # Quit the app after timeout milliseconds if we never get the event
     QTimer.singleShot(timeout, app.quit)
     app.exec_()

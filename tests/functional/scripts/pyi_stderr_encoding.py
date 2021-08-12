@@ -19,7 +19,7 @@ with open(gettemp("stderr_encoding.build")) as f:
     encoding = f.read()
 frozen_encoding = sys.stderr.encoding
 
-# Normalize encoding names - "UTF-8" should be the same as "utf8"
+# Normalize encoding names - "UTF-8" should be the same as "utf8".
 encoding = codecs.lookup(encoding).name
 frozen_encoding = codecs.lookup(frozen_encoding).name
 
@@ -27,6 +27,4 @@ print('Encoding expected:', encoding)
 print('Encoding current:', frozen_encoding)
 
 if frozen_encoding != encoding:
-    raise SystemExit('Frozen encoding %s is not the same as unfrozen %s.' %
-                     (frozen_encoding, encoding))
-
+    raise SystemExit('Frozen encoding %s is not the same as unfrozen %s.' % (frozen_encoding, encoding))

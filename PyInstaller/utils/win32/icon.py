@@ -8,24 +8,22 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
+"""
+The code in this module supports the --icon parameter on Windows.
+(For --icon support under Mac OS, see building/osx.py.)
 
-'''
-The code in this module supports the --icon parameter in Windows.
-(For --icon support under OSX see building/osx.py.)
-
-The only entry point, called from api.py, is CopyIcons(), below.
-All the elaborate structure of classes that follows is used to
-support the operation of CopyIcons_FromIco(). None of these classes
-and globals are referenced outside this module.
-'''
+The only entry point, called from api.py, is CopyIcons(), below. All the elaborate structure of classes that follows
+is used to support the operation of CopyIcons_FromIco(). None of these classes and globals are referenced outside
+this module.
+"""
 
 import os.path
 import struct
 
-from PyInstaller.compat import win32api, pywintypes
-from PyInstaller import config
-
 import PyInstaller.log as logging
+from PyInstaller import config
+from PyInstaller.compat import pywintypes, win32api
+
 logger = logging.getLogger(__name__)
 
 RT_ICON = 3
@@ -71,23 +69,26 @@ class Structure:
         data = file.read(self._sizeInBytes)
         self._fields_ = list(struct.unpack(self._format_, data))
 
+
 class ICONDIRHEADER(Structure):
     _names_ = "idReserved", "idType", "idCount"
     _format_ = "hhh"
 
+
 class ICONDIRENTRY(Structure):
-    _names_ = ("bWidth", "bHeight", "bColorCount", "bReserved", "wPlanes",
-               "wBitCount", "dwBytesInRes", "dwImageOffset")
+    _names_ = ("bWidth", "bHeight", "bColorCount", "bReserved", "wPlanes", "wBitCount", "dwBytesInRes", "dwImageOffset")
     _format_ = "bbbbhhii"
+
 
 class GRPICONDIR(Structure):
     _names_ = "idReserved", "idType", "idCount"
     _format_ = "hhh"
 
+
 class GRPICONDIRENTRY(Structure):
-    _names_ = ("bWidth", "bHeight", "bColorCount", "bReserved", "wPlanes",
-               "wBitCount", "dwBytesInRes", "nID")
+    _names_ = ("bWidth", "bHeight", "bColorCount", "bReserved", "wPlanes", "wBitCount", "dwBytesInRes", "nID")
     _format_ = "bbbbhhih"
+
 
 # An IconFile instance is created for each .ico file given.
 class IconFile:
@@ -101,9 +102,7 @@ class IconFile:
         except OSError:
             # The icon file can't be opened for some reason. Stop the
             # program with an informative message.
-            raise SystemExit(
-                'Unable to open icon file {}'.format(path)
-            )
+            raise SystemExit('Unable to open icon file {}'.format(path))
         self.entries = []
         self.images = []
         header = self.header = ICONDIRHEADER()
@@ -130,22 +129,22 @@ class IconFile:
             data = data + e.tostring()
         return data
 
+
 def CopyIcons_FromIco(dstpath, srcpath, id=1):
-    '''
-    Use the Win API UpdateResource facility to apply the icon
-    resource(s) to the .exe file.
+    """
+    Use the Win API UpdateResource facility to apply the icon resource(s) to the .exe file.
 
     :param str dstpath: absolute path of the .exe file being built.
     :param str srcpath: list of 1 or more .ico file paths
-    '''
+    """
     icons = map(IconFile, srcpath)
     logger.info("Copying icons from %s", srcpath)
 
     hdst = win32api.BeginUpdateResource(dstpath, 0)
 
     iconid = 1
-    # Each step in the following enumerate() will instantiate an IconFile
-    # object, as a result of deferred execution of the map() above.
+    # Each step in the following enumerate() will instantiate an IconFile object, as a result of deferred execution
+    # of the map() above.
     for i, f in enumerate(icons):
         data = f.grp_icon_dir()
         data = data + f.grp_icondir_entries(iconid)
@@ -158,27 +157,26 @@ def CopyIcons_FromIco(dstpath, srcpath, id=1):
 
     win32api.EndUpdateResource(hdst, 0)
 
-def CopyIcons(dstpath, srcpath):
-    '''
-    Called from building/api.py to handle icons. If the input was by
-    --icon on the command line, srcpath is a single string. However it
-    is possible to modify the spec file adding icon=['foo.ico','bar.ico']
-    to the EXE() statement. In that case, srcpath is a list of strings.
 
-    The string format is either path-to-.ico or path-to-.exe,n for n an
-    integer resource index in the .exe. In either case the path can be
-    relative or absolute.
-    '''
+def CopyIcons(dstpath, srcpath):
+    """
+    Called from building/api.py to handle icons. If the input was by --icon on the command line, srcpath is a single
+    string. However, it is possible to modify the spec file adding icon=['foo.ico','bar.ico'] to the EXE() statement.
+    In that case, srcpath is a list of strings.
+
+    The string format is either path-to-.ico or path-to-.exe,n for n an integer resource index in the .exe. In either
+    case, the path can be relative or absolute.
+    """
 
     if isinstance(srcpath, str):
-        # just a single string, make it a one-element list
-        srcpath = [ srcpath ]
+        # Just a single string, make it a one-element list.
+        srcpath = [srcpath]
 
     def splitter(s):
-        '''
+        """
         Convert "pathname" to tuple ("pathname", None)
         Convert "pathname,n" to tuple ("pathname", n)
-        '''
+        """
         try:
             srcpath, index = s.split(',')
             return srcpath.strip(), int(index)
@@ -189,13 +187,11 @@ def CopyIcons(dstpath, srcpath):
     srcpath = list(map(splitter, srcpath))
 
     if len(srcpath) > 1:
-        # More than one icon source given. We currently handle multiple
-        # icons by calling CopyIcons_FromIco(), which only allows .ico.
-        # In principle we could accept a mix of .ico and .exe, but it
-        # would complicate things. If you need it submit a pull request.
+        # More than one icon source given. We currently handle multiple icons by calling CopyIcons_FromIco(), which only
+        # allows .ico. In principle we could accept a mix of .ico and .exe, but it would complicate things. If you need
+        # it, submit a pull request.
         #
-        # Note that a ",index" on a .ico is just ignored in the single
-        # or multiple case.
+        # Note that a ",index" on a .ico is just ignored in the single or multiple case.
         srcs = []
         for s in srcpath:
             e = os.path.splitext(s[0])[1]
@@ -205,14 +201,14 @@ def CopyIcons(dstpath, srcpath):
         return CopyIcons_FromIco(dstpath, srcs)
 
     # Just one source given.
-    srcpath,index = srcpath[0]
+    srcpath, index = srcpath[0]
     srcext = os.path.splitext(srcpath)[1]
-    # Handle the simple case of foo.ico, ignoring any ,index.
+    # Handle the simple case of foo.ico, ignoring any index.
     if srcext.lower() == '.ico':
         return CopyIcons_FromIco(dstpath, [srcpath])
 
-    # Single source is not .ico, presumably it is .exe (and if not, some
-    # error will occur). If relative, make it relative to the .spec file.
+    # Single source is not .ico, presumably it is .exe (and if not, some error will occur). If relative, make it
+    # relative to the .spec file.
     if not os.path.isabs(srcpath):
         srcpath = os.path.join(config.CONF['specpath'], srcpath)
     if index is not None:
@@ -220,31 +216,24 @@ def CopyIcons(dstpath, srcpath):
     else:
         logger.info("Copying icons from %s", srcpath)
 
-    # Bail out quickly if the input is invalid. Letting images in the wrong
-    # format be passed to Window's API gives very cryptic error messages as
-    # it's generally unclear why PyInstaller would treat an image file as an
-    # executable.
+    # Bail out quickly if the input is invalid. Letting images in the wrong format be passed to Windows API gives very
+    # cryptic error messages, as it is generally unclear why PyInstaller would treat an image file as an executable.
     if srcext != ".exe":
         raise ValueError(
-            f"Received icon path '{srcpath}' which exists but is not in the "
-            f"correct format. On Windows, only '.ico' images or other "
-            f"'.exe' files may be used as icons. Please convert your "
-            f"'{srcext}' file to a '.ico' then try again."
+            f"Received icon path '{srcpath}' which exists but is not in the correct format. On Windows, only '.ico' "
+            f"images or other '.exe' files may be used as icons. Please convert your '{srcext}' file to a '.ico' "
+            "and try again."
         )
 
     try:
-        # Attempt to load the .ico or .exe containing the icon into memory
-        # using the same mechanism as if it were a DLL. If this fails for
-        # any reason (for example if the file does not exist or is not a
-        # .ico/.exe) then LoadLibraryEx returns a null handle and win32api
-        # raises a unique exception with a win error code and a string.
+        # Attempt to load the .ico or .exe containing the icon into memory using the same mechanism as if it were a DLL.
+        # If this fails for any reason (for example if the file does not exist or is not a .ico/.exe) then LoadLibraryEx
+        # returns a null handle and win32api raises a unique exception with a win error code and a string.
         hsrc = win32api.LoadLibraryEx(srcpath, 0, LOAD_LIBRARY_AS_DATAFILE)
     except pywintypes.error as W32E:
-        # We could continue with no icon (i.e. just return) however it seems
-        # best to terminate the build with a message.
+        # We could continue with no icon (i.e., just return), but it seems best to terminate the build with a message.
         raise SystemExit(
-            "Unable to load icon file {}\n    {} (Error code {})".format(
-                srcpath, W32E.strerror, W32E.winerror)
+            "Unable to load icon file {}\n    {} (Error code {})".format(srcpath, W32E.strerror, W32E.winerror)
         )
     hdst = win32api.BeginUpdateResource(dstpath, 0)
     if index is None:
@@ -260,6 +249,7 @@ def CopyIcons(dstpath, srcpath):
         win32api.UpdateResource(hdst, RT_ICON, iconname, data)
     win32api.FreeLibrary(hsrc)
     win32api.EndUpdateResource(hdst, 0)
+
 
 if __name__ == "__main__":
     import sys

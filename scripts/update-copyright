@@ -9,11 +9,10 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
+"""
+This script updates the copyright year to the current year.
 
-"""This script updates the copyright year to the current year.
-
-If checks all non-binary files tracked by git. It also lists all
-non-binary files tracked missing our copyright header.
+If checks all non-binary files tracked by git. It also lists all non-binary files tracked missing our copyright header.
 
 Run this at the beginning of each new year.
 """
@@ -27,79 +26,79 @@ import time
 import fnmatch
 
 YEAR = str(time.localtime().tm_year)
-LAST_YEAR = str(time.localtime().tm_year-1)
+LAST_YEAR = str(time.localtime().tm_year - 1)
 
-EXCLUDE = set(
-    '''
-    .gitattributes
-    .gitignore
-    .dockerignore
-    .pylintrc
-    MANIFEST.in
-    bootloader/uncrustify.cfg
-    bootloader/src/msvc_stdint.h
-    bootloader/waf
-    bootloader/windows/run.rc
-    bootloader/windows/runw.rc
-    doc/CHANGES.rst
-    doc/CREDITS.rst
-    doc/source/tools/rst2newlatex.py
-    doc/source/tools/rst2xml.py
-    old/examples/file_version_info.txt
-    PyInstaller/lib/pefile.py
-    PyInstaller/utils/_gitrevision.py
-    tests/functional/data/sphinx/conf.py
-    tests/old_suite/basic/test_pkg_structures-version.txt
-    tests/scripts/eggs4testing/unzipped_egg/data/datafile.txt
-    tests/scripts/eggs4testing/zipped_egg/data/datafile.txt
-    tests/functional/data/requests/openssl.conf
-    tests/functional/data/requests/server.pem
-    '''.split())
+EXCLUDE = {
+    '.gitattributes',
+    '.gitignore',
+    '.dockerignore',
+    '.pylintrc',
+    'MANIFEST.in',
+    'bootloader/uncrustify.cfg',
+    'bootloader/src/msvc_stdint.h',
+    'bootloader/waf',
+    'bootloader/windows/run.rc',
+    'bootloader/windows/runw.rc',
+    'doc/CHANGES.rst',
+    'doc/CREDITS.rst',
+    'doc/source/tools/rst2newlatex.py',
+    'doc/source/tools/rst2xml.py',
+    'old/examples/file_version_info.txt',
+    'PyInstaller/lib/pefile.py',
+    'PyInstaller/utils/_gitrevision.py',
+    'tests/functional/data/sphinx/conf.py',
+    'tests/old_suite/basic/test_pkg_structures-version.txt',
+    'tests/scripts/eggs4testing/unzipped_egg/data/datafile.txt',
+    'tests/scripts/eggs4testing/zipped_egg/data/datafile.txt',
+    'tests/functional/data/requests/openssl.conf',
+    'tests/functional/data/requests/server.pem',
+}
 
-EXCLUDE_GLOBS = '''
-    bootloader/.waf-*
-    bootloader/.waf3-*
-    bootloader/waf-*
-    bootloader/waf3-*
-    doc/*.1
-    doc/*.rst
-    doc/*/*.rst
-    news/*.rst
-    */EGG-INFO/*
-    */*.egg-info/*
-    *.egg
-    *.yml
-    *.svg
-    tests/functional/logs/*.toc
-    tests/functional/modules/nspkg*-pkg/*
-    tests/old_suite/multipackage/*.toc
-    .github/ISSUE_TEMPLATE/*.md
-    .github/CONTRIBUTING.md
-    .github/SECURITY.md
-    '''.split()
+EXCLUDE_GLOBS = {
+    'bootloader/.waf-*',
+    'bootloader/.waf3-*',
+    'bootloader/waf-*',
+    'bootloader/waf3-*',
+    'doc/*.1',
+    'doc/*.rst',
+    'doc/*/*.rst',
+    'news/*.rst',
+    '*/EGG-INFO/*',
+    '*/*.egg-info/*',
+    '*.egg',
+    '*.yml',
+    '*.svg',
+    'tests/functional/logs/*.toc',
+    'tests/functional/modules/nspkg*-pkg/*',
+    'tests/old_suite/multipackage/*.toc',
+    '.github/ISSUE_TEMPLATE/*.md',
+    '.github/CONTRIBUTING.md',
+    '.github/SECURITY.md',
+}
 
-EXCLUDE_DIRS = tuple(
-    '''
-    bootloader/zlib/
-    tests/unit/test_altgraph/
-    tests/unit/test_modulegraph/
-    '''.split())
-
+EXCLUDE_DIRS = (
+    'bootloader/zlib/',
+    'tests/unit/test_altgraph/',
+    'tests/unit/test_modulegraph/',
+)
 
 script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
 base_dir = os.path.dirname(script_dir)
 os.chdir(base_dir)
 
+
 def get_file_list():
     def chunks(l, n):
-        """Yield successive n-sized chunks from l."""
+        """
+        Yield successive n-sized chunks from l.
+        """
         for i in range(0, len(l), n):
-            yield l[i:i+n]
+            yield l[i:i + n]
 
     text = subprocess.check_output(
-        'git ls-tree -rz --name-only --full-tree HEAD | '
-        'git check-attr text -z --stdin', shell=True)
-    text = text.rstrip(b'\0') # strip trailing NULL-byte
+        'git ls-tree -rz --name-only --full-tree HEAD | git check-attr text -z --stdin', shell=True
+    )
+    text = text.rstrip(b'\0')  # strip trailing NULL-byte
     for entry in chunks(text.split(b'\0'), 3):
         assert len(entry) == 3, entry
         assert entry[1] == b"text", entry
@@ -122,19 +121,20 @@ def ignore(filename):
     return False
 
 
-P1 = re.compile(r'(Copyright[: ].* 2[0-9]{3})-(2[0-9]{3})(,? PyInstaller Development Team)',
-                flags=re.IGNORECASE)
-P2 = re.compile(r'(Copyright[: ].*) (2[0-9]{3})(,? PyInstaller Development Team)',
-                flags=re.IGNORECASE)
+P1 = re.compile(r'(Copyright[: ].* 2[0-9]{3})-(2[0-9]{3})(,? PyInstaller Development Team)', flags=re.IGNORECASE)
+P2 = re.compile(r'(Copyright[: ].*) (2[0-9]{3})(,? PyInstaller Development Team)', flags=re.IGNORECASE)
 
 
 def transform(text):
-    """Transform text or return None if no change."""
+    """
+    Transform text or return None if no change.
+    """
     orig_text = text
     text = P1.sub(r'\1-' + YEAR + r'\3', text)
     text = P2.sub(r'\1 \2-' + YEAR + r'\3', text)
     if text != orig_text:
         return text
+
 
 OLD_HEADER = """\
 # Distributed under the terms of the GNU General Public License (version 2
@@ -153,12 +153,16 @@ NEW_HEADER = """\
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 """.strip()
 
+
 def replace_header_content(text):
-    """Transform text or return None if no change."""
+    """
+    Transform text or return None if no change.
+    """
     orig_text = text
     text = text.replace(OLD_HEADER, NEW_HEADER)
     if text != orig_text:
         return text
+
 
 def has_our_copyright(text):
     if len(text) <= 30:
@@ -178,9 +182,7 @@ for filename in files:
         except UnicodeDecodeError as e:
             raise SystemExit("%s in file %r" % (e, filename))
     newtext = transform(text)
-    #newtext = replace_header_content(text)
     if newtext:
-        pass
         with open(filename, 'w', encoding='utf-8') as f:
             f.write(newtext)
     elif ignore(filename):
@@ -201,9 +203,11 @@ if missing_copyright:
     for f in missing_copyright:
         print(f)
 
-print("""
+print(
+    """
 You may now run
   git diff develop # verify changes
   git add -u       # batch-commit all these chages
   git grep %s    # grep for remaining years
-""" % LAST_YEAR)
+""" % LAST_YEAR
+)

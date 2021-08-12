@@ -170,7 +170,7 @@ then bundled as a one-folder app.
 Then bundle it as a one-file app and launch it directly and also via a
 symbolic link::
 
-	#!/usr/bin/python3
+	#!/usr/bin/env python3
 	import sys, os
 	frozen = 'not'
 	if getattr(sys, 'frozen', False):

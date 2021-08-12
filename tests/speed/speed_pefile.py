@@ -21,6 +21,7 @@ import time
 
 from os.path import join
 from tempfile import mkdtemp
+
 logger = log.getLogger(__name__)
 
 
@@ -51,11 +52,12 @@ from PySide2 import QtGui
     CONF['specnm'] = 'speed_pefile_script'
 
     start = time.time()
-    a = Analysis([script])
+    Analysis([script])
     duration = time.time() - start
 
-    logger.warn("Analysis duration: %s", duration)
+    logger.warning("Analysis duration: %s", duration)
     shutil.rmtree(tempdir, ignore_errors=True)
+
 
 if __name__ == '__main__':
     speed_pefile()

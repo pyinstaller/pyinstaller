@@ -9,20 +9,15 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 #
-# Tests for pkgutil.iter_modules(). The test attempts to list contents
-# of a package in both unfrozen and frozen version, and compares the
-# obtained lists.
+# Tests for pkgutil.iter_modules(). The test attempts to list contents of a package in both unfrozen and frozen version,
+# and compares the obtained lists.
 #
-# We test two packages; altgraph (pure-python) and psutil (contains
-# binary extensions). The extensions are present on filesystem as-is,
-# and are therefore handled by python's FileFinder. The collected .pyc
-# modules, however, are embedded in PYZ archive, and are not visible
-# to standard python's finders/loaders. The exception to that is
-# noarchive mode, where .pyc modules are not collected into archive;
-# as they are present on filesystem as-is, they are again handled
-# directly by python's FileFinder. Therefore, the test is performed
-# both in archive and in noarchive mode, to cover both cases.
-
+# We test two packages; altgraph (pure-python) and psutil (contains binary extensions). The extensions are present on
+# filesystem as-is, and are therefore handled by python's FileFinder. The collected .pyc modules, however, are embedded
+# in PYZ archive, and are not visible to standard python's finders/loaders. The exception to that is noarchive mode,
+# where .pyc modules are not collected into archive; as they are present on filesystem as-is, they are again handled
+# directly by python's FileFinder. Therefore, the test is performed both in archive and in noarchive mode, to cover both
+# cases.
 
 import os
 
@@ -32,8 +27,8 @@ from PyInstaller.compat import exec_python_rc
 from PyInstaller.utils.tests import importable
 
 
-# Read the output file produced by test script. Each line consists of
-# two elements separated by semi-colon: name;ispackage
+# Read the output file produced by test script. Each line consists of two elements separated by semi-colon:
+# name;ispackage
 def _read_results_file(filename):
     output = []
     with open(filename, 'r') as fp:
@@ -45,14 +40,16 @@ def _read_results_file(filename):
     return sorted(output)
 
 
-@pytest.mark.parametrize('package', [
-    'altgraph',  # pure python package
-    'psutil',  # package with extensions
-    'psutil.tests',  # sub-package
-])
+@pytest.mark.parametrize(
+    'package',
+    [
+        'altgraph',  # pure python package
+        'psutil',  # package with extensions
+        'psutil.tests',  # sub-package
+    ]
+)
 @pytest.mark.parametrize('archive', ['archive', 'noarchive'])
-def test_pkgutil_iter_modules(package, script_dir, tmpdir, pyi_builder,
-                              archive):
+def test_pkgutil_iter_modules(package, script_dir, tmpdir, pyi_builder, archive):
     # Ensure package is available
     if not importable(package.split(".")[0]):
         pytest.skip("Needs " + package)
@@ -76,18 +73,15 @@ def test_pkgutil_iter_modules(package, script_dir, tmpdir, pyi_builder,
         pyi_args=[
             # ensure everything is collected
             '--collect-submodules', package,
-            # however, psutil.tests pulls in pip and wheel, which in
-            # turn manage to pull in pyinstaller.exe/__main__ and break
-            # Windows noarchive build. So exclude those explicitly.
-            '--exclude', 'pip', '--exclude', 'wheel',
+            # however, psutil.tests pulls in pip and wheel, which in turn manage to pull in pyinstaller.exe/__main__ and
+            # break Windows noarchive build. So exclude those explicitly.
+            '--exclude', 'pip',
+            '--exclude', 'wheel',
             # enable/disable noarchive
             *debug_args,
         ],
-        app_args=[
-            package,
-            '--output-file', out_frozen,
-        ]
-    )
+        app_args=[package, '--output-file', out_frozen],
+    )  # yapf: disable
     # Read results
     results_frozen = _read_results_file(out_frozen)
 

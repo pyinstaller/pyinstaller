@@ -8,17 +8,15 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
 """
 GNU/Linux-specific test to check the bootloader from the AppImage.
 """
 
-# Library imports
-# ---------------
 import os
 import pathlib
 import stat
 import subprocess
+
 import pytest
 
 
@@ -39,8 +37,7 @@ def test_appimage_loading(tmp_path, pyi_builder_spec, arch):
     app_path = os.path.join(tmp_path, '%s-%s.AppImage' % (app_name, arch))
 
     # Freeze the app
-    pyi_builder_spec.test_source('print("OK")', app_name=app_name,
-                                 pyi_args=["--onedir"])
+    pyi_builder_spec.test_source('print("OK")', app_name=app_name, pyi_args=["--onedir"])
 
     # Prepare the dist folder for AppImage compliancy
     tools_dir = os.path.join(os.path.dirname(__file__), 'data', 'appimage')
@@ -49,8 +46,7 @@ def test_appimage_loading(tmp_path, pyi_builder_spec, arch):
 
     # Create the AppImage
     app_dir = os.path.join(tmp_path, 'dist', 'AppRun')
-    subprocess.check_call([appimagetool, "--no-appstream", app_dir,
-                           app_path])
+    subprocess.check_call([appimagetool, "--no-appstream", app_dir, app_path])
 
     # Launch the AppImage
     st = os.stat(app_path)

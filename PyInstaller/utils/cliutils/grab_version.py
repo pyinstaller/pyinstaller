@@ -9,22 +9,29 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
-import codecs
 import argparse
+import codecs
 
 
 def run():
     parser = argparse.ArgumentParser(
-        epilog = ('The printed output may be saved to a file, edited and '
-                  'used as the input for a version resource on any of the '
-                  'executable targets in an Installer spec file.'))
-    parser.add_argument('exe_file', metavar='exe-file',
-                        help="full pathname of a Windows executable")
-    parser.add_argument('out_filename', metavar='out-filename', nargs='?',
-                        default='file_version_info.txt',
-                        help=("filename where the grabbed version info "
-                              "will be saved"))
+        epilog=(
+            'The printed output may be saved to a file, edited and used as the input for a version resource on any of '
+            'the executable targets in a PyInstaller .spec file.'
+        )
+    )
+    parser.add_argument(
+        'exe_file',
+        metavar='exe-file',
+        help="full pathname of a Windows executable",
+    )
+    parser.add_argument(
+        'out_filename',
+        metavar='out-filename',
+        nargs='?',
+        default='file_version_info.txt',
+        help="filename where the grabbed version info will be saved",
+    )
 
     args = parser.parse_args()
 
@@ -34,10 +41,11 @@ def run():
         if not vs:
             raise SystemExit("Error: VersionInfo resource not found in exe")
         with codecs.open(args.out_filename, 'w', 'utf-8') as fp:
-            fp.write(u"%s" % (vs,))
+            fp.write(str(vs))
         print('Version info written to: %s' % args.out_filename)
     except KeyboardInterrupt:
         raise SystemExit("Aborted by user request.")
+
 
 if __name__ == '__main__':
     run()
