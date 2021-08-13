@@ -32,7 +32,7 @@ def run():
         nargs='?',
         default='file_version_info.txt',
         help=("filename where the grabbed version info "
-              "will be saved")
+              "will be saved"),
     )
 
     args = parser.parse_args()

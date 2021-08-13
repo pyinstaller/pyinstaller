@@ -28,7 +28,7 @@ def run():
         nargs='+',
         metavar='executable-or-dynamic-library',
         help=("executables or dynamic libraries for which "
-              "the dependencies should be shown")
+              "the dependencies should be shown"),
     )
 
     args = parser.parse_args()

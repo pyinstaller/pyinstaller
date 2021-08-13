@@ -62,7 +62,11 @@ def run_build(pyi_config, spec_file, **kwargs):
 
 def __add_options(parser):
     parser.add_argument(
-        '-v', '--version', action='version', version=__version__, help='Show program version info and exit.'
+        '-v',
+        '--version',
+        action='version',
+        version=__version__,
+        help='Show program version info and exit.',
     )
 
 
@@ -88,7 +92,7 @@ def generate_parser() -> argparse.ArgumentParser:
             "name of scriptfiles to be processed or "
             "exactly one .spec-file. If a .spec-file is "
             "specified, most options are unnecessary "
-            "and are ignored."
+            "and are ignored.",
         )
     )
 

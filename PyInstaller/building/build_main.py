@@ -764,14 +764,14 @@ def __add_options(parser):
         "--distpath",
         metavar="DIR",
         default=DEFAULT_DISTPATH,
-        help=('Where to put the bundled app (default: %s)' % os.path.join(os.curdir, 'dist'))
+        help=('Where to put the bundled app (default: %s)' % os.path.join(os.curdir, 'dist')),
     )
     parser.add_argument(
         '--workpath',
         default=DEFAULT_WORKPATH,
         help=(
             'Where to put all the temporary work files, '
-            '.log, .pyz and etc. (default: %s)' % os.path.join(os.curdir, 'build')
+            '.log, .pyz and etc. (default: %s)' % os.path.join(os.curdir, 'build'),
         )
     )
     parser.add_argument(
@@ -780,7 +780,7 @@ def __add_options(parser):
         action="store_true",
         default=False,
         help='Replace output directory (default: %s) without '
-        'asking for confirmation' % os.path.join('SPECPATH', 'dist', 'SPECNAME')
+        'asking for confirmation' % os.path.join('SPECPATH', 'dist', 'SPECNAME'),
     )
     parser.add_argument(
         '--upx-dir',
@@ -792,7 +792,7 @@ def __add_options(parser):
         "--ascii",
         action="store_true",
         help="Do not include unicode encoding support "
-        "(default: included if available)"
+        "(default: included if available)",
     )
     parser.add_argument(
         '--clean',
@@ -800,7 +800,7 @@ def __add_options(parser):
         action='store_true',
         default=False,
         help='Clean PyInstaller cache and remove temporary '
-        'files before building.'
+        'files before building.',
     )
 
 

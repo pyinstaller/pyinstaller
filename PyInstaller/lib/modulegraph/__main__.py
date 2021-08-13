@@ -17,13 +17,13 @@ def parse_arguments():
         action='store_true',
         dest='domods',
         default=False,
-        help='arguments are module names, not script files'
+        help='arguments are module names, not script files',
     )
     parser.add_argument(
-        '-x', metavar='NAME', action='append', dest='excludes', default=[], help='Add NAME to the excludes list'
+        '-x', metavar='NAME', action='append', dest='excludes', default=[], help='Add NAME to the excludes list',
     )
     parser.add_argument(
-        '-p', action='append', metavar='PATH', dest='addpath', default=[], help='Add PATH to the module search path'
+        '-p', action='append', metavar='PATH', dest='addpath', default=[], help='Add PATH to the module search path',
     )
     parser.add_argument('-g', '--dot', action='store_const', dest='output', const='dot', help='Output a .dot graph')
     parser.add_argument('-h', '--html', action='store_const', dest='output', const='html', help='Output a HTML file')

@@ -267,7 +267,7 @@ def __add_options(parser):
         "Multiple paths are allowed, separated "
         "by ``%s``, or use this option multiple times. "
         "Equivalent to supplying the ``pathex`` argument in "
-        "the spec file." % repr(os.pathsep)
+        "the spec file." % repr(os.pathsep),
     )
     g.add_argument(
         '--hidden-import',
@@ -277,7 +277,7 @@ def __add_options(parser):
         metavar="MODULENAME",
         dest='hiddenimports',
         help='Name an import not visible in the code of the script(s). '
-        'This option can be used multiple times.'
+        'This option can be used multiple times.',
     )
     g.add_argument(
         '--collect-submodules',
@@ -286,7 +286,7 @@ def __add_options(parser):
         metavar="MODULENAME",
         dest='collect_submodules',
         help='Collect all submodules from the specified package '
-        'or module. This option can be used multiple times.'
+        'or module. This option can be used multiple times.',
     )
     g.add_argument(
         '--collect-data',
@@ -296,7 +296,7 @@ def __add_options(parser):
         metavar="MODULENAME",
         dest='collect_data',
         help='Collect all data from the specified package or '
-        ' module. This option can be used multiple times.'
+        ' module. This option can be used multiple times.',
     )
     g.add_argument(
         '--collect-binaries',
@@ -305,7 +305,7 @@ def __add_options(parser):
         metavar="MODULENAME",
         dest='collect_binaries',
         help='Collect all binaries from the specified package or '
-        ' module. This option can be used multiple times.'
+        ' module. This option can be used multiple times.',
     )
     g.add_argument(
         '--collect-all',
@@ -315,7 +315,7 @@ def __add_options(parser):
         dest='collect_all',
         help='Collect all submodules, data files, and binaries '
         'from the specified package or module. This option can '
-        'be used multiple times.'
+        'be used multiple times.',
     )
     g.add_argument(
         '--copy-metadata',
@@ -324,7 +324,7 @@ def __add_options(parser):
         metavar="PACKAGENAME",
         dest='copy_metadata',
         help='Copy metadata for the specified package. '
-        'This option can be used multiple times.'
+        'This option can be used multiple times.',
     )
     g.add_argument(
         '--recursive-copy-metadata',
@@ -333,7 +333,7 @@ def __add_options(parser):
         metavar="PACKAGENAME",
         dest='recursive_copy_metadata',
         help='Copy metadata for the specified package and all its '
-        'dependencies. This option can be used multiple times.'
+        'dependencies. This option can be used multiple times.',
     )
     g.add_argument(
         "--additional-hooks-dir",
@@ -341,7 +341,7 @@ def __add_options(parser):
         dest="hookspath",
         default=[],
         help="An additional path to search for hooks. "
-        "This option can be used multiple times."
+        "This option can be used multiple times.",
     )
     g.add_argument(
         '--runtime-hook',
@@ -352,7 +352,7 @@ def __add_options(parser):
         'is code that is bundled with the executable and '
         'is executed before any other code or module '
         'to set up special features of the runtime environment. '
-        'This option can be used multiple times.'
+        'This option can be used multiple times.',
     )
     g.add_argument(
         '--exclude-module',
@@ -362,7 +362,7 @@ def __add_options(parser):
         help='Optional module or package (the Python name, '
         'not the path name) that will be ignored (as though '
         'it was not found). '
-        'This option can be used multiple times.'
+        'This option can be used multiple times.',
     )
     g.add_argument(
         '--key',
@@ -375,7 +375,7 @@ def __add_options(parser):
         metavar="IMAGE_FILE",
         help="(EXPERIMENTAL) Add an splash screen with the image"
         " IMAGE_FILE to the application. The splash screen"
-        " can show progress updates while unpacking."
+        " can show progress updates while unpacking.",
     )
 
     g = parser.add_argument_group('How to generate')
@@ -419,7 +419,7 @@ def __add_options(parser):
             "  source files as an archive inside the resulting\n"
             "  executable, store them as files in the resulting\n"
             "  output directory.\n"
-            "\n"
+            "\n",
         )
     )
     g.add_argument(
@@ -427,14 +427,14 @@ def __add_options(parser):
         "--strip",
         action="store_true",
         help="Apply a symbol-table strip to the executable and shared libs "
-        "(not recommended for Windows)"
+        "(not recommended for Windows)",
     )
     g.add_argument(
         "--noupx",
         action="store_true",
         default=False,
         help="Do not use UPX even if it is available "
-        "(works differently between Windows and *nix)"
+        "(works differently between Windows and *nix)",
     )
     g.add_argument(
         "--upx-exclude",
@@ -445,7 +445,7 @@ def __add_options(parser):
         "upx. This is typically used if upx corrupts certain "
         "binaries during compression. "
         "FILE is the filename of the binary without path. "
-        "This option can be used multiple times."
+        "This option can be used multiple times.",
     )
 
     g = parser.add_argument_group('Windows and Mac OS X specific options')
@@ -458,7 +458,7 @@ def __add_options(parser):
         default=True,
         help="Open a console window for standard i/o (default). "
         "On Windows this option will have no effect if the "
-        "first script is a '.pyw' file."
+        "first script is a '.pyw' file.",
     )
     g.add_argument(
         "-w",
@@ -471,7 +471,7 @@ def __add_options(parser):
         "On Mac OS X this also triggers building an OS X .app bundle. "
         "On Windows this option will be set if the first "
         "script is a '.pyw' file. "
-        "This option is ignored in *NIX systems."
+        "This option is ignored in *NIX systems.",
     )
     g.add_argument(
         "-i",
@@ -484,7 +484,7 @@ def __add_options(parser):
         ".app bundle on Mac OS X. "
         'Use "NONE" to not apply any icon, '
         "thereby making the OS to show some default "
-        "(default: apply PyInstaller's icon)"
+        "(default: apply PyInstaller's icon)",
     )
     g.add_argument(
         "--disable-windowed-traceback",
@@ -494,12 +494,15 @@ def __add_options(parser):
         help="Disable traceback dump of unhandled exception in "
         "windowed (noconsole) mode (Windows and macOS only), "
         "and instead display a message that this feature is "
-        "disabled."
+        "disabled.",
     )
 
     g = parser.add_argument_group('Windows specific options')
     g.add_argument(
-        "--version-file", dest="version_file", metavar="FILE", help="add a version resource from FILE to the exe"
+        "--version-file",
+        dest="version_file",
+        metavar="FILE",
+        help="add a version resource from FILE to the exe",
     )
     g.add_argument(
         "-m",
@@ -525,7 +528,7 @@ def __add_options(parser):
         "files, all resources from FILE will be added/updated "
         "to the final executable if TYPE, NAME and LANGUAGE "
         "are omitted or specified as wildcard *."
-        "This option can be used multiple times."
+        "This option can be used multiple times.",
     )
     g.add_argument(
         '--uac-admin',
@@ -533,7 +536,7 @@ def __add_options(parser):
         action="store_true",
         default=False,
         help='Using this option creates a Manifest '
-        'which will request elevation upon application restart.'
+        'which will request elevation upon application restart.',
     )
     g.add_argument(
         '--uac-uiaccess',
@@ -541,7 +544,7 @@ def __add_options(parser):
         action="store_true",
         default=False,
         help='Using this option allows an elevated application to '
-        'work with Remote Desktop.'
+        'work with Remote Desktop.',
     )
 
     g = parser.add_argument_group('Windows Side-by-side Assembly searching options (advanced)')
@@ -553,7 +556,7 @@ def __add_options(parser):
         "will be changed into Private Assemblies. This means "
         "the exact versions of these assemblies will always "
         "be used, and any newer versions installed on user "
-        "machines at the system level will be ignored."
+        "machines at the system level will be ignored.",
     )
     g.add_argument(
         "--win-no-prefer-redirects",
@@ -562,7 +565,7 @@ def __add_options(parser):
         help="While searching for Shared or Private Assemblies to "
         "bundle into the application, PyInstaller will prefer "
         "not to follow policies that redirect to newer versions, "
-        "and will try to bundle the exact versions of the assembly."
+        "and will try to bundle the exact versions of the assembly.",
     )
 
     g = parser.add_argument_group('Mac OS X specific options')
@@ -572,7 +575,7 @@ def __add_options(parser):
         help='Mac OS X .app bundle identifier is used as the default unique program '
         'name for code signing purposes. The usual form is a hierarchical name '
         'in reverse DNS notation. For example: com.mycompany.department.appname '
-        '(default: first script\'s basename)'
+        '(default: first script\'s basename)',
     )
 
     g.add_argument(
@@ -587,7 +590,7 @@ def __add_options(parser):
         "frozen application (provided python installation "
         "supports the target architecture). If not target "
         "architecture is not specified, the current running "
-        "architecture is targeted."
+        "architecture is targeted.",
     )
 
     g.add_argument(
@@ -598,7 +601,7 @@ def __add_options(parser):
         help="Code signing identity (macOS only). Use the provided "
         "identity to sign collected binaries and generated "
         "executable. If signing identity is not provided, "
-        "ad-hoc signing is performed instead."
+        "ad-hoc signing is performed instead.",
     )
 
     g.add_argument(
@@ -607,7 +610,7 @@ def __add_options(parser):
         metavar='FILENAME',
         default=None,
         help="Entitlements file to use when code-signing the "
-        "collected binaries (macOS only)."
+        "collected binaries (macOS only).",
     )
 
     g = parser.add_argument_group('Rarely used special options')
@@ -621,7 +624,7 @@ def __add_options(parser):
         "any temp-folder location defined by the run-time OS. "
         "The ``_MEIxxxxxx``-folder will be created here. "
         "Please use this option only if you know what you "
-        "are doing."
+        "are doing.",
     )
     g.add_argument(
         "--bootloader-ignore-signals",
@@ -633,7 +636,7 @@ def __add_options(parser):
             "Useful in situations where e.g. a supervisor "
             "process signals both the bootloader and child "
             "(e.g. via a process group) to avoid signalling "
-            "the child twice."
+            "the child twice.",
         )
     )
 

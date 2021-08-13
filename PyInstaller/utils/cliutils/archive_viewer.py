@@ -235,7 +235,7 @@ def run():
         default=False,
         action='store_true',
         dest='debug',
-        help='Print an archive log (default: %(default)s)'
+        help='Print an archive log (default: %(default)s)',
     )
     parser.add_argument(
         '-r',
@@ -244,7 +244,7 @@ def run():
         action='store_true',
         dest='rec_debug',
         help='Recursively print an archive log (default: %(default)s). '
-        'Can be combined with -r'
+        'Can be combined with -r',
     )
     parser.add_argument(
         '-b',
@@ -253,7 +253,7 @@ def run():
         action='store_true',
         dest='brief',
         help='Print only file name. (default: %(default)s). '
-        'Can be combined with -r'
+        'Can be combined with -r',
     )
     PyInstaller.log.__add_options(parser)
     parser.add_argument(
