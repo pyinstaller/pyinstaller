@@ -23,10 +23,8 @@ def hook(hook_api):
     log a non-fatal error otherwise.
     """
     if compat.is_win or compat.is_darwin or compat.is_unix:
-        # collect_tcl_tk_files() returns a Tree, so we need to store it
-        # into `hook_api.datas` in order to prevent
-        # `building.imphook.format_binaries_and_datas` from crashing
-        # with "too many values to unpack".
+        # collect_tcl_tk_files() returns a Tree, so we need to store it into `hook_api.datas` in order to prevent
+        # `building.imphook.format_binaries_and_datas` from crashing with "too many values to unpack".
         hook_api.add_datas(collect_tcl_tk_files(hook_api.__file__))
     else:
         logger.error("... skipping Tcl/Tk handling on unsupported platform %s", sys.platform)

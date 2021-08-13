@@ -30,9 +30,8 @@ def install():
         return
 
     def _frozen_name(name):
-        # If the given (file)name does not exist, fall back to searching
-        # for its basename in sys._MEIPASS, where PyInstaller usually
-        # collects shared libraries.
+        # If the given (file)name does not exist, fall back to searching for its basename in sys._MEIPASS, where
+        # PyInstaller usually collects shared libraries.
         if name and not os.path.isfile(name):
             frozen_name = os.path.join(sys._MEIPASS, os.path.basename(name))
             if os.path.isfile(frozen_name):
@@ -95,12 +94,10 @@ def install():
         ctypes.oledll = ctypes.LibraryLoader(PyInstallerOleDLL)
 
 
-# On Mac OS X insert sys._MEIPASS in the first position of the list of paths
-# that ctypes uses to search for libraries.
+# On Mac OS X insert sys._MEIPASS in the first position of the list of paths that ctypes uses to search for libraries.
 #
-# Note: 'ctypes' module will NOT be bundled with every app because code in this
-#       module is not scanned for module dependencies. It is safe to wrap
-#       'ctypes' module into 'try/except ImportError' block.
+# Note: 'ctypes' module will NOT be bundled with every app because code in this module is not scanned for module
+#       dependencies. It is safe to wrap 'ctypes' module into 'try/except ImportError' block.
 if sys.platform.startswith('darwin'):
     try:
         from ctypes.macholib import dyld

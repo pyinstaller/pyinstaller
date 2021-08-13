@@ -9,9 +9,8 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# This test code is taken from the example code for the `future` library, with
-# a few modifications to allow execution on 32-bit platforms.
-# http://python-future.org/overview.html#code-examples
+# This test code is taken from the example code for the `future` library, with a few modifications to allow execution on
+# 32-bit platforms. http://python-future.org/overview.html#code-examples
 
 from builtins import (bytes, str, open, super, range, zip, round, input, int, pow, object)
 
@@ -85,8 +84,7 @@ for i in range(2**30)[:10]:
 my_iter = zip(range(3), ['a', 'b', 'c'])
 assert my_iter != list(my_iter)
 
-# The round() function behaves as it does in Python 3, using
-# "Banker's Rounding" to the nearest even last digit:
+# The round() function behaves as it does in Python 3, using "Banker's Rounding" to the nearest even last digit:
 assert round(0.1250, 2) == 0.12
 
 # pow() supports fractional exponents of negative numbers like in Py3:

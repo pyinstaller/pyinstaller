@@ -11,9 +11,7 @@
 
 from PyInstaller.utils.hooks import collect_data_files
 
-# Need to include modules in PyQt6.uic.widget-plugins, so they can be
-# dynamically loaded by uic. They should both be included as separate
-# (data-like) files, so they can be found by os.listdir and friends. However,
-# this directory isn't a package, refer to it using the package (PyQt6.uic)
-# followed by the subdirectory name (``widget-plugins/``).
+# Need to include modules in PyQt6.uic.widget-plugins, so they can be dynamically loaded by uic. They should both be
+# included as separate (data-like) files, so they can be found by os.listdir and friends. However, this directory isn't
+# a package, refer to it using the package (PyQt6.uic) followed by the subdirectory name (``widget-plugins/``).
 datas = collect_data_files('PyQt6.uic', True, 'widget-plugins')

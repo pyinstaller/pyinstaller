@@ -32,8 +32,7 @@ xfail = pytest.mark.xfail
 def _check_for_compiler():
     import tempfile
 
-    # change to some tempdir since cc.has_function() would compile into the
-    # current directory, leaving garbage
+    # Change to some tempdir since cc.has_function() would compile into the current directory, leaving garbage.
     old_wd = os.getcwd()
     tmp = tempfile.mkdtemp()
     os.chdir(tmp)
@@ -46,8 +45,8 @@ def _check_for_compiler():
         except distutils.errors.DistutilsPlatformError:
             has_compiler = False
     else:
-        # The C standard library contains the ``clock`` function. Use that to
-        # determine if a compiler is installed. This doesn't work on Windows::
+        # The C standard library contains the ``clock`` function. Use that to determine if a compiler is installed. This
+        # doesn't work on Windows::
         #
         #   Users\bjones\AppData\Local\Temp\a.out.exe.manifest : general error
         #   c1010070: Failed to load and parse the manifest. The system cannot
@@ -71,13 +70,13 @@ def importorskip(package: str):
 
     Arguments:
         package:
-            The name of the module. May be anything that is allowed after the
-            ``import`` keyword. e.g. 'numpy' or 'PIL.Image'.
+            The name of the module. May be anything that is allowed after the ``import`` keyword. e.g. 'numpy' or
+            'PIL.Image'.
     Returns:
         A pytest marker which either skips the test or does nothing.
 
-    This function intentionally does not import the module. Doing so can lead
-    to `sys.path` and `PATH` being polluted, which then breaks later builds.
+    This function intentionally does not import the module. Doing so can lead to `sys.path` and `PATH` being
+    polluted, which then breaks later builds.
 
     """
     if not importable(package):
@@ -88,12 +87,10 @@ def importorskip(package: str):
 def importable(package: str):
     from importlib.util import find_spec
 
-    # The find_spec() function is used by the importlib machinery to locate a
-    # module to import. Using it finds the module but doesn't run it.
-    # Unfortunately, it does import parent modules to check submodules.
+    # The find_spec() function is used by the importlib machinery to locate a module to import. Using it finds the
+    # module but doesn't run it. Unfortunately, it does import parent modules to check submodules.
     if "." in package:
-        # Using subprocesses is slow. If the top level module doesn't exist
-        # then we can skip it.
+        # Using subprocesses is slow. If the top level module doesn't exist then we can skip it.
         if not importable(package.split(".")[0]):
             return False
         # This is a submodule, import it in isolation.
@@ -108,14 +105,13 @@ def requires(requirement: str):
 
     Args:
         requirement:
-            A distribution name and optionally a version. See
-            :func:`pkg_resources.require` which this argument is
+            A distribution name and optionally a version. See :func:`pkg_resources.require` which this argument is
             forwarded to.
     Returns:
         Either a skip marker or a dummy marker.
 
-    This function intentionally does not import the module. Doing so can lead
-    to `sys.path` and `PATH` being polluted, which then breaks later builds.
+    This function intentionally does not import the module. Doing so can lead to `sys.path` and `PATH` being
+    polluted, which then breaks later builds.
 
     """
     import pkg_resources
@@ -130,22 +126,18 @@ def gen_sourcefile(tmpdir, source, test_id=None):
     """
     Generate a source file for testing.
 
-    The source will be written into a file named like the
-    test-function. This file will then be passed to `test_script`.
-    If you need other related file, e.g. as `.toc`-file for
-    testing the content, put it at at the normal place. Just mind
-    to take the basnename from the test-function's name.
+    The source will be written into a file named like the test-function. This file will then be passed to
+    `test_script`. If you need other related file, e.g. as `.toc`-file for testing the content, put it at at the
+    normal place. Just mind to take the basnename from the test-function's name.
 
-    :param script: Source code to create executable from. This
-                   will be saved into a temporary file which is
-                   then passed on to `test_script`.
+    :param script: Source code to create executable from. This will be saved into a temporary file which is then
+                   passed on to `test_script`.
 
-    :param test_id: Test-id for parametrized tests. If given, it
-                    will be appended to the script filename,
+    :param test_id: Test-id for parametrized tests. If given, it will be appended to the script filename,
                     separated by two underscores.
 
-    Ensure that the caller of `test_source` is in a UTF-8
-    encoded file with the correct '# -*- coding: utf-8 -*-' marker.
+    Ensure that the caller of `test_source` is in a UTF-8 encoded file with the correct '# -*- coding: utf-8 -*-'
+    marker.
     """
     testname = inspect.stack()[1][3]
     if test_id:

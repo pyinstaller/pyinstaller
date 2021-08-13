@@ -47,8 +47,7 @@ def files_in_dir(directory, file_patterns=[]):
 
 def get_unicode_modules():
     """
-    Try importing codecs and encodings to include unicode support
-    in created binary.
+    Try importing codecs and encodings to include unicode support in created binary.
     """
     modules = []
     try:
@@ -65,8 +64,8 @@ def get_path_to_toplevel_modules(filename):
     """
     Return the path to top-level directory that contains Python modules.
 
-    It will look in parent directories for __init__.py files. The first parent
-    directory without __init__.py is the top-level directory.
+    It will look in parent directories for __init__.py files. The first parent directory without __init__.py is the
+    top-level directory.
 
     Returned directory might be used to extend the PYTHONPATH.
     """
@@ -100,27 +99,22 @@ def mtime(fnm):
 
 def compile_py_files(toc, workpath):
     """
-    Given a TOC or equivalent list of tuples, generates all the required
-    pyc/pyo files, writing in a local directory if required, and returns the
-    list of tuples with the updated pathnames.
+    Given a TOC or equivalent list of tuples, generates all the required pyc/pyo files, writing in a local directory
+    if required, and returns the list of tuples with the updated pathnames.
 
-    In the old system using ImpTracker, the generated TOC of "pure" modules
-    already contains paths to nm.pyc or nm.pyo and it is only necessary
-    to check that these files are not older than the source.
-    In the new system using ModuleGraph, the path given is to nm.py
-    and we do not know if nm.pyc/.pyo exists. The following logic works
-    with both (so if at some time modulegraph starts returning filenames
-    of .pyc, it will cope).
+    In the old system using ImpTracker, the generated TOC of "pure" modules already contains paths to nm.pyc or
+    nm.pyo and it is only necessary to check that these files are not older than the source. In the new system using
+    ModuleGraph, the path given is to nm.py and we do not know if nm.pyc/.pyo exists. The following logic works with
+    both (so if at some time modulegraph starts returning filenames of .pyc, it will cope).
     """
 
-    # For those modules that need to be rebuilt, use the build directory
-    # PyInstaller creates during the build process.
+    # For those modules that need to be rebuilt, use the build directory PyInstaller creates during the build process.
     basepath = os.path.join(workpath, "localpycos")
 
     # Copy everything from toc to this new TOC, possibly unchanged.
     new_toc = []
     for (nm, fnm, typ) in toc:
-        # Keep unrelevant items unchanged.
+        # Keep irrelevant items unchanged.
         if typ != 'PYMODULE':
             new_toc.append((nm, fnm, typ))
             continue
@@ -142,13 +136,12 @@ def compile_py_files(toc, workpath):
             obj_fnm = fnm  # take that namae to be the desired object
             src_fnm = fnm[:-1]  # drop the 'c' or 'o' to make a source name
 
-        # We need to perform a build ourselves if obj_fnm doesn't exist,
-        # or if src_fnm is newer than obj_fnm, or if obj_fnm was created
-        # by a different Python version.
-        # TODO: explain why this does read()[:4] (reading all the file)
-        # instead of just read(4)? Yes for many a .pyc file, it is all
-        # in one sector so there's no difference in I/O but still it
-        # seems inelegant to copy it all then subscript 4 bytes.
+        # We need to perform a build ourselves if obj_fnm doesn't exist, or if src_fnm is newer than obj_fnm, or if
+        # obj_fnm was created by a different Python version.
+
+        # TODO: explain why this does read()[:4] (reading all the file) instead of just read(4)? Yes for many a .pyc
+        #       file, it is all in one sector so there's no difference in I/O but still it seems inelegant to copy it
+        #       all then subscript 4 bytes.
         needs_compile = mtime(src_fnm) > mtime(obj_fnm)
         if not needs_compile:
             with open(obj_fnm, 'rb') as fh:
@@ -156,24 +149,22 @@ def compile_py_files(toc, workpath):
         if needs_compile:
             try:
                 # TODO: there should be no need to repeat the compile,
-                # because ModuleGraph does a compile and stores the result
-                # in the .code member of the graph node. Should be possible
-                # to get the node and write the code to obj_fnm
+                #       because ModuleGraph does a compile and stores the result in the .code member of the graph node.
+                #       Should be possible to get the node and write the code to obj_fnm
                 py_compile.compile(src_fnm, obj_fnm)
                 logger.debug("compiled %s", src_fnm)
             except IOError:
-                # If we're compiling on a system directory, probably we don't
-                # have write permissions; thus we compile to a local directory
-                # and change the TOC entry accordingly.
+                # If we're compiling on a system directory, probably we don't have write permissions; thus we compile to
+                # a local directory and change the TOC entry accordingly.
                 ext = os.path.splitext(obj_fnm)[1]
 
                 if "__init__" not in obj_fnm:
-                    # If it's a normal module, use last part of the qualified
-                    # name as module name and the first as leading path
+                    # If it's a normal module, use last part of the qualified name as module name and the first as
+                    # leading path
                     leading, mod_name = nm.split(".")[:-1], nm.split(".")[-1]
                 else:
-                    # In case of a __init__ module, use all the qualified name
-                    # as leading path and use "__init__" as the module name
+                    # In case of a __init__ module, use all the qualified name as leading path and use "__init__" as the
+                    # module name.
                     leading, mod_name = nm.split("."), "__init__"
 
                 leading = os.path.join(basepath, *leading)
@@ -218,8 +209,7 @@ def load_py_data_struct(filename):
     :return:
     """
     with open(filename, 'r', encoding='utf-8') as f:
-        # Binding redirects are stored as a named tuple, so bring the namedtuple
-        # class into scope for parsing the TOC.
+        # Binding redirects are stored as a named tuple, so bring the namedtuple class into scope for parsing the TOC.
         from PyInstaller.depend.bindepend import BindingRedirect  # noqa: F401
 
         if is_win:
@@ -242,8 +232,7 @@ def module_parent_packages(full_modname):
     """
     prefix = ''
     parents = []
-    # Ignore the last component in module name and get really just
-    # parent, grand parent, grandgrand parent, etc.
+    # Ignore the last component in module name and get really just parent, grandparent, great grandparent, etc.
     for pkg in full_modname.split('.')[0:-1]:
         # Ensure first item does not start with dot '.'
         prefix += '.' + pkg if prefix else pkg
@@ -258,10 +247,8 @@ def is_file_qt_plugin(filename):
     :return: True if given file is a Qt plugin file, False if not.
     """
 
-    # Check the file contents; scan for QTMETADATA string
-    # The scan is based on the brute-force Windows codepath of
-    # findPatternUnloaded() from qtbase/src/corelib/plugin/qlibrary.cpp
-    # in Qt5.
+    # Check the file contents; scan for QTMETADATA string The scan is based on the brute-force Windows codepath of
+    # findPatternUnloaded() from qtbase/src/corelib/plugin/qlibrary.cpp in Qt5.
     with open(filename, 'rb') as fp:
         fp.seek(0, os.SEEK_END)
         end_pos = fp.tell()
@@ -283,8 +270,7 @@ def is_file_qt_plugin(filename):
             if pos != -1:
                 magic_offset = start_pos + pos
                 break
-            # Adjust search location for next chunk; ensure proper
-            # overlap
+            # Adjust search location for next chunk; ensure proper overlap
             end_pos = start_pos + len(QTMETADATA_MAGIC) - 1
         if magic_offset == -1:
             return False

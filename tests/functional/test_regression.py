@@ -16,8 +16,7 @@ from PyInstaller.depend import analysis, bindepend
 from PyInstaller.building.build_main import Analysis
 from PyInstaller.building.api import PYZ
 
-# :todo: find a way to get this from `conftest` or such
-# Directory with testing modules used in some tests.
+# :todo: find a way to get this from `conftest` or such directory with testing modules used in some tests.
 _MODULES_DIR = Path(__file__).absolute().parent / "modules"
 
 

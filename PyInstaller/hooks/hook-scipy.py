@@ -17,10 +17,8 @@ from PyInstaller.utils.hooks import get_module_file_attribute
 
 binaries = []
 
-# package the DLL bundle that official scipy wheels for Windows ship
-# The DLL bundle will either be in extra-dll on windows proper
-# and in .libs if installed on a virtualenv created from MinGW (Git-Bash
-# for example)
+# Package the DLL bundle that official scipy wheels for Windows ship The DLL bundle will either be in extra-dll on
+# windows proper and in .libs if installed on a virtualenv created from MinGW (Git-Bash for example)
 if is_win:
     extra_dll_locations = ['extra-dll', '.libs']
     for location in extra_dll_locations:

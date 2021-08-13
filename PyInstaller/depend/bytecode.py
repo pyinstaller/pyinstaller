@@ -1,24 +1,18 @@
 # -*- coding: utf-8 -*-
-"""
-Tools for searching bytecode for key statements which indicate need for
-additional resources e.g. data file, package metadata.
+"""Tools for searching bytecode for key statements which indicate need for additional resources e.g. data file,
+package metadata.
 
-By *bytecode* I mean the ``code`` object given by ``compile()``, accessible
-from the ``__code__`` attribute of any non-builtin function or, in
-PyInstallerLand, the ``PyiModuleGraph.node("some.module").code`` attribute.
-The best guide for bytecode format I've found is the disassembler reference:
-https://docs.python.org/3/library/dis.html
+By *bytecode* I mean the ``code`` object given by ``compile()``, accessible from the ``__code__`` attribute of any
+non-builtin function or, in PyInstallerLand, the ``PyiModuleGraph.node("some.module").code`` attribute. The best
+guide for bytecode format I've found is the disassembler reference: https://docs.python.org/3/library/dis.html
 
-This parser implementation aims to combine the flexibility and speed of regex
-with the clarity of the output of ``dis.dis(code)``. It hasn't achieved the 2nd
-but C'est la vie...
+This parser implementation aims to combine the flexibility and speed of regex with the clarity of the output of
+``dis.dis(code)``. It hasn't achieved the 2nd but C'est la vie...
 
-The biggest clarity killer here is the ``EXTENDED_ARG`` opcode which can appear
-almost anywhere and therefore needs to be tiptoed around at every step.
-If this code needs to expand significantly then I would recommend to upgrade to
-a regex-based grammar parsing library such as Reparse. This way, little steps
-like unpacking ``EXTENDED_ARGS`` can be defined once then simply referenced
-forming a nice hierarchy rather than copied everywhere its needed.
+The biggest clarity killer here is the ``EXTENDED_ARG`` opcode which can appear almost anywhere and therefore needs
+to be tiptoed around at every step. If this code needs to expand significantly then I would recommend to upgrade to a
+regex-based grammar parsing library such as Reparse. This way, little steps like unpacking ``EXTENDED_ARGS`` can be
+defined once then simply referenced forming a nice hierarchy rather than copied everywhere its needed.
 
 """
 
@@ -31,8 +25,7 @@ from typing import Pattern
 def _instruction_to_regex(x: str):
     """Get a regex-escaped opcode byte from its human readable name."""
     if x not in dis.opname:  # pragma: no cover
-        # These opcodes are available only in Python >=3.7.
-        # For our purposes, these aliases will do.
+        # These opcodes are available only in Python >=3.7. For our purposes, these aliases will do.
         if x == "LOAD_METHOD":
             x = "LOAD_ATTR"
         elif x == "CALL_METHOD":
@@ -45,13 +38,10 @@ def bytecode_regex(pattern: bytes, flags=re.VERBOSE | re.DOTALL):
 
     ``bytecode_regex`` provides a very thin wrapper around :func:`re.compile`.
 
-      * Any opcode names wrapped in backticks are substituted for their
-        corresponding opcode bytes.
-      * Patterns are compiled in VERBOSE mode by default so that whitespace and
-        comments may be used.
+      * Any opcode names wrapped in backticks are substituted for their corresponding opcode bytes.
+      * Patterns are compiled in VERBOSE mode by default so that whitespace and comments may be used.
 
-    This aims to mirror the output of :func:`dis.dis` which is far more
-    readable than looking at raw byte strings.
+    This aims to mirror the output of :func:`dis.dis` which is far more readable than looking at raw byte strings.
 
     """
     assert isinstance(pattern, bytes)
@@ -66,11 +56,10 @@ def bytecode_regex(pattern: bytes, flags=re.VERBOSE | re.DOTALL):
 
 
 def finditer(pattern: Pattern, string):
-    """Call ``pattern.finditer(string)`` but remove any matches beginning on an
-    odd byte. i.e. match.start() is not a multiple of 2.
+    """Call ``pattern.finditer(string)`` but remove any matches beginning on an odd byte. i.e. match.start() is not a
+     multiple of 2.
 
-    This should be used to avoid false positive matches where a bytecode pair's
-    argument is mistaken for an opcode.
+    This should be used to avoid false positive matches where a bytecode pair's argument is mistaken for an opcode.
     """
     matches = pattern.finditer(string)
     while True:
@@ -79,12 +68,10 @@ def finditer(pattern: Pattern, string):
                 # All is good. This match starts on an OPCODE.
                 yield match
             else:
-                # This match has started on an odd byte meaning that it's a
-                # false positive and should be skipped. There is a very slim
-                # chance that a genuine match overlaps this one and, because
-                # re.finditer() doesn't allow overlapping matches, it would be
-                # lost. To avoid that, restart the regex scan starting at the
-                # next even byte.
+                # This match has started on an odd byte meaning that it's a false positive and should be skipped. There
+                # is a very slim chance that a genuine match overlaps this one and, because re.finditer() doesn't allow
+                # overlapping matches, it would be lost. To avoid that, restart the regex scan starting at the next even
+                # byte.
                 matches = pattern.finditer(string, match.start() + 1)
                 break
         else:
@@ -96,8 +83,7 @@ _call_function_bytecode = bytecode_regex(
     rb"""
     # Matches `global_function('some', 'constant', 'arguments')`.
 
-    # Load the global function.
-    # In code with >256 of names, this may require extended name references.
+    # Load the global function. In code with >256 of names, this may require extended name references.
     ((?:`EXTENDED_ARG`.)*
      (?:`LOAD_NAME`|`LOAD_GLOBAL`|`LOAD_FAST`).)
 
@@ -105,13 +91,12 @@ _call_function_bytecode = bytecode_regex(
     ((?:(?:`EXTENDED_ARG`.)*
      (?:`LOAD_METHOD`|`LOAD_ATTR`).)*)
 
-    # Load however many arguments it takes. These (for now) must all be
-    # constants. Again, code with >256 constants may need extended enumeration.
+    # Load however many arguments it takes. These (for now) must all be constants.
+    # Again, code with >256 constants may need extended enumeration.
     ((?:(?:`EXTENDED_ARG`.)*
      `LOAD_CONST`.)*)
 
-    # Call the function. The parameter is the argument count (which may also be
-    # >256).
+    # Call the function. The parameter is the argument count (which may also be >256).
     ((?:`EXTENDED_ARG`.)*
      (?:`CALL_FUNCTION`|`CALL_METHOD`).)
 
@@ -166,11 +151,9 @@ def load(raw: bytes, code: CodeType) -> str:
 
 
 def loads(raw: bytes, code: CodeType) -> list:
-    """Parse multiple consecutive LOAD_xxx instructions. Or load() in a for
-    loop.
+    """Parse multiple consecutive LOAD_xxx instructions. Or load() in a for loop.
 
-    May be used to unpack a function's parameters or nested attributes
-    ``(foo.bar.pop.whack)``.
+    May be used to unpack a function's parameters or nested attributes ``(foo.bar.pop.whack)``.
 
     """
     return [load(i, code) for i in _extended_arg_bytecode.findall(raw)]
@@ -196,8 +179,7 @@ def function_calls(code: CodeType) -> list:
         arg_count = extended_arguments(arg_count)
 
         if arg_count != len(args):
-            # This happens if there are variable or keyword arguments.
-            # Bail out in either case.
+            # This happens if there are variable or keyword arguments. Bail out in either case.
             continue
 
         out.append((function, args))
@@ -206,8 +188,7 @@ def function_calls(code: CodeType) -> list:
 
 
 def search_recursively(search: callable, code: CodeType, _memo=None) -> dict:
-    """Apply a search function to a code object, recursing into child code
-    objects (function definitions)."""
+    """Apply a search function to a code object, recursing into child code objects (function definitions). """
     if _memo is None:
         _memo = {}
     if code not in _memo:
@@ -219,8 +200,8 @@ def search_recursively(search: callable, code: CodeType, _memo=None) -> dict:
 
 
 def recursive_function_calls(code: CodeType) -> dict:
-    """Scan a code object, recursing into function definitions and bodies of
-    comprehension loops, for function calls on constant arguments."""
+    """Scan a code object, recursing into function definitions and bodies of comprehension loops, for function calls
+    on constant arguments. """
     return search_recursively(function_calls, code)
 
 
@@ -241,8 +222,7 @@ def any_alias(full_name: str):
         from foo.bar import wizz
         wizz()
 
-    However, it'll fail for any form of aliases and quite likely find false
-    matches.
+    However, it'll fail for any form of aliases and quite likely find false matches.
 
     """
     parts = full_name.split('.')

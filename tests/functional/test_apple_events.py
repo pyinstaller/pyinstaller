@@ -43,8 +43,7 @@ def test_osx_custom_protocol_handler(tmpdir, pyi_builder_spec, monkeypatch, mode
 
     # First run using 'open' registers custom protocol handler
     subprocess.check_call(['open', app_path])
-    # 'open' starts program in a different process
-    #  so we need to wait for it to finish
+    # 'open' starts program in a different process so we need to wait for it to finish
     time.sleep(5)
 
     # Call custom protocol handler
@@ -74,8 +73,8 @@ def test_osx_event_forwarding(tmpdir, pyi_builder_spec, monkeypatch, mode):
     monkeypatch.setenv("PYI_CUSTOM_FILE_EXT", custom_file_ext)
     monkeypatch.setenv("PYI_BUILD_MODE", mode)
 
-    # test_script builds the app then implicitly runs the script, so we
-    # pass arg "0" to tell the built script to exit right away here.
+    # test_script builds the app then implicitly runs the script, so we pass arg "0" to tell the built script to exit
+    # right away here.
     pyi_builder_spec.test_spec('pyi_osx_event_forwarding.spec', app_args=["0"])
 
     timeout = 60.0  # Give up after 60 seconds
@@ -96,8 +95,7 @@ def test_osx_event_forwarding(tmpdir, pyi_builder_spec, monkeypatch, mode):
                         first = log_lines[0]
                         assert first.startswith('started '), \
                             "Unexpected line in log file"
-                        # Now, parse the logged args
-                        # e.g. 'started {"argv": ["Arg1, ...]}'
+                        # Now, parse the logged args. e.g. 'started {"argv": ["Arg1, ...]}'
                         dd = json.loads(first.split(" ", 1)[-1])
                         assert 'argv' in dd, "First line missing argv"
                         return dd['argv']  # it started ok, abort loop
@@ -113,9 +111,8 @@ def test_osx_event_forwarding(tmpdir, pyi_builder_spec, monkeypatch, mode):
     # clean up the log file created by test_spec() running the app
     os.remove(logfile_path)
 
-    # Run using 'open', passing a 0-timeout as an arg.
-    # macOS will auto-register the custom protocol handler and extension
-    # association. Then app will quit immediately due to the "0" arg.
+    # Run using 'open', passing a 0-timeout as an arg. macOS will auto-register the custom protocol handler and
+    # extension association. Then app will quit immediately due to the "0" arg.
     subprocess.check_call(['open', app_path, '--args', "0"])
 
     assert wait_for_started(), 'App start timed out'
@@ -128,8 +125,7 @@ def test_osx_event_forwarding(tmpdir, pyi_builder_spec, monkeypatch, mode):
     # 1. Try the file extension -- this tests the AppleEvent rewrite of
     #    a "file://" event to a regular filesystem path.
 
-    # Create 32 files that are associated with this app.
-    # This tests the robustness of the argv-emu by spamming it with
+    # Create 32 files that are associated with this app. This tests the robustness of the argv-emu by spamming it with
     # lots of args and seeing what happens.
     n_files = 32
     assoc_files = []
@@ -141,52 +137,45 @@ def test_osx_event_forwarding(tmpdir, pyi_builder_spec, monkeypatch, mode):
 
     # Open app again by "open"ing the associated files.
     #
-    # These are sent as Apple Events to the app immediately after it starts,
-    # which the bootloader translates back into file paths at startup, passing
-    # them as argv to the subordinate app.
+    # These are sent as Apple Events to the app immediately after it starts, which the bootloader translates back into
+    # file paths at startup, passing them as argv to the subordinate app.
     #
-    # The generator below produces odd numbered files as "file://" URLs, and
-    # even numbered are just file paths. They all should end up appended to
-    # sys.argv in the app as simple file paths.
+    # The generator below produces odd numbered files as "file://" URLs, and even numbered are just file paths. They all
+    # should end up appended to sys.argv in the app as simple file paths.
     subprocess.check_call(['open', *[('file://' if ii % 2 else '') + ff for ii, ff in enumerate(assoc_files)]])
 
     args = wait_for_started()
     assert args is not None, 'App start timed out'
-    # Test that all the file paths were received in argv via pre-startup
-    # translation of file:// AppleEvent -> argv filesystem path.
-    assert assoc_files == args[1:], \
-        "An expected file path was not received by the app"
+    # Test that all the file paths were received in argv via pre-startup translation of file:// AppleEvent -> argv
+    # filesystem path.
+    assert assoc_files == args[1:], "An expected file path was not received by the app"
 
     # At this point the app is running.
 
-    # This is a trick to make our app lose focus so that Qt forwards
-    # the "Activated" events properly to our event handler in
-    # pyi_pyqt5_log_events.py
+    # This is a trick to make our app lose focus so that Qt forwards the "Activated" events properly to our event
+    # handler in pyi_pyqt5_log_events.py
     subprocess.check_call(['osascript', "-e", 'tell application "System Events" to activate'])
     time.sleep(1.0)  # delay for above applescript
 
     # The app is running now, in the background, and doesn't have focus
 
-    # 2. Call open passing the app path again -- this should activate the
-    #    already-running app and the activation_count should be 2 after it
-    #    exits.
+    # 2. Call open passing the app path again -- this should activate the already-running app and the activation_count
+    #    should be 2 after it exits.
     subprocess.check_call(['open', app_path])
     time.sleep(1.0)  # the activate event gets sent with a delay
 
-    # 3. Call open again using the url associated with the app. This should
-    #    forward the Apple URL event to the already-running app.
+    # 3. Call open again using the url associated with the app. This should forward the Apple URL event to the
+    #    already-running app.
     url = custom_url_scheme + "://lowecase_required/hello_world/"
-    # Test support for large URL data ~64KB.
-    # Note: We would have gone larger but 'open' itself seems to not
-    # consistently like data over a certain size.
+    # Test support for large URL data ~64KB. Note: We would have gone larger but 'open' itself seems to not consistently
+    # like data over a certain size.
     url += 'x' * 64000  # Append 64 KB of data to URL to stress-test
     subprocess.check_call(['open', url])
     activation_count = None
 
     def wait_for_event_in_logfile():
         t0 = time.time()  # mark start time
-        # Wait for the program to finish -- poll for expected line to appear
-        # in events.log
+        # Wait for the program to finish -- poll for expected line to appear in events.log
         while True:
             assert os.path.exists(logfile_path), 'Missing events logfile'
             with open(logfile_path, 'rt') as fh:
@@ -210,11 +199,9 @@ def test_osx_event_forwarding(tmpdir, pyi_builder_spec, monkeypatch, mode):
             if elapsed > timeout:
                 return False
 
-    assert wait_for_event_in_logfile(), \
-        'URL event did not appear in log before timeout'
+    assert wait_for_event_in_logfile(), 'URL event did not appear in log before timeout'
 
-    assert activation_count == 2, \
-        "App did not receive rapp (re-Open app) event properly"
+    assert activation_count == 2, "App did not receive rapp (re-Open app) event properly"
 
     # Delete all the temp files to be polite
     for ff in assoc_files:

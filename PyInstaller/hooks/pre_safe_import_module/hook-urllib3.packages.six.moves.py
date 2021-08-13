@@ -11,9 +11,8 @@
 
 from PyInstaller.utils.hooks import eval_statement
 
-### This basically is a copy of pre_safe_import_module/hook-six.moves.py
-### adopted to urllib3.packages.six.
-### Please see pre_safe_import_module/hook-six.moves.py for documentation.
+# This basically is a copy of pre_safe_import_module/hook-six.moves.py adopted to urllib3.packages.six. Please see
+# pre_safe_import_module/hook-six.moves.py for documentation.
 
 
 def pre_safe_import_module(api):

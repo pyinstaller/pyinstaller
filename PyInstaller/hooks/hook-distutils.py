@@ -16,12 +16,10 @@ the active Python interpreter, which the `distutils.sysconfig` module parses at
 runtime for platform-specific metadata.
 """
 
-# From Python 3.6 and later ``distutils.sysconfig`` takes on the same
-# behaviour as regular ``sysconfig`` of moving the config vars to a
-# module (see hook-sysconfig.py). It doesn't use a nice
-# `get module name` function like ``sysconfig`` does to help us
-# locate it but the module is the same file that ``sysconfig`` uses so
-# we can use the ``_get_sysconfigdata_name()`` from regular ``sysconfig``.
+# From Python 3.6 and later ``distutils.sysconfig`` takes on the same behaviour as regular ``sysconfig`` of moving the
+# config vars to a module (see hook-sysconfig.py). It doesn't use a nice `get module name` function like ``sysconfig``
+# does to help us locate it but the module is the same file that ``sysconfig`` uses so we can use the
+# ``_get_sysconfigdata_name()`` from regular ``sysconfig``.
 import sysconfig
 
 from PyInstaller import compat

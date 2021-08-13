@@ -14,9 +14,7 @@ import sysconfig
 from PyInstaller.compat import is_win
 
 if not is_win and hasattr(sysconfig, '_get_sysconfigdata_name'):
-    # Python 3.6 uses additional modules like
-    # `_sysconfigdata_m_linux_x86_64-linux-gnu`, see
+    # Python 3.6 uses additional modules like `_sysconfigdata_m_linux_x86_64-linux-gnu`, see
     # https://github.com/python/cpython/blob/3.6/Lib/sysconfig.py#L417
-    # Note: Some versions of Anaconda backport this feature to before 3.6.
-    # See issue #3105
+    # Note: Some versions of Anaconda backport this feature to before 3.6. See issue #3105
     hiddenimports = [sysconfig._get_sysconfigdata_name()]

@@ -72,8 +72,7 @@ class PYZ(Target):
         name = kwargs.get('name', None)
         cipher = kwargs.get('cipher', None)
         self.toc = TOC()
-        # If available, use code objects directly from ModuleGraph to
-        # speed up PyInstaller.
+        # If available, use code objects directly from ModuleGraph to speed up PyInstaller.
         self.code_dict = {}
         for t in tocs:
             self.toc.extend(t)
@@ -88,11 +87,10 @@ class PYZ(Target):
         self.cipher = cipher
         if cipher:
             key_file = ('pyimod00_crypto_key', os.path.join(CONF['workpath'], 'pyimod00_crypto_key.pyc'), 'PYMODULE')
-            # Insert the key as the first module in the list. The key module contains
-            # just variables and does not depend on other modules.
+            # Insert the key as the first module in the list. The key module contains just variables and does not depend
+            # on other modules.
             self.dependencies.insert(0, key_file)
-        # Compile the top-level modules so that they end up in the CArchive and can be
-        # imported by the bootstrap script.
+        # Compile the top-level modules so that they end up in the CArchive and can be imported by the bootstrap script.
         self.dependencies = misc.compile_py_files(self.dependencies, CONF['workpath'])
         self.__postinit__()
 
@@ -113,8 +111,7 @@ class PYZ(Target):
         toc = self.toc - self.dependencies
         for entry in toc[:]:
             if not entry[0] in self.code_dict and entry[2] == 'PYMODULE':
-                # For some reason the code-object, modulegraph created
-                # is not available. Recreate it
+                # For some reason the code-object, modulegraph created is not available. Recreate it
                 try:
                     self.code_dict[entry[0]] = get_code_object(entry[0], entry[1])
                 except SyntaxError:
@@ -194,8 +191,7 @@ class PKG(Target):
         self.target_arch = target_arch
         self.codesign_identity = codesign_identity
         self.entitlements_file = entitlements_file
-        # This dict tells PyInstaller what items embedded in the executable should
-        # be compressed.
+        # This dict tells PyInstaller what items embedded in the executable should be compressed.
         if self.cdict is None:
             self.cdict = {
                 'EXTENSION': COMPRESSED,
@@ -205,8 +201,7 @@ class PKG(Target):
                 'PYSOURCE': COMPRESSED,
                 'PYMODULE': COMPRESSED,
                 'SPLASH': COMPRESSED,
-                # Do not compress PYZ as a whole. Single modules are
-                # compressed when creating PYZ archive.
+                # Do not compress PYZ as a whole. Single modules are compressed when creating PYZ archive.
                 'PYZ': UNCOMPRESSED
             }
         self.__postinit__()
@@ -253,9 +248,8 @@ class PKG(Target):
                     self.dependencies.append((inm, fnm, typ))
                 elif not self.exclude_binaries or typ == 'DEPENDENCY':
                     if typ == 'BINARY':
-                        # Avoid importing the same binary extension twice. This might
-                        # happen if they come from different sources (eg. once from
-                        # binary dependence, and once from direct import).
+                        # Avoid importing the same binary extension twice. This might happen if they come from different
+                        # sources (eg. once from binary dependence, and once from direct import).
                         if inm in seen_inms:
                             logger.warning('Two binaries added with the same internal name.')
                             logger.warning(pprint.pformat((inm, fnm, typ)))
@@ -264,8 +258,7 @@ class PKG(Target):
                             logger.warning('Skipping %s.' % fnm)
                             continue
 
-                        # Warn if the same binary extension was included
-                        # with multiple internal names
+                        # Warn if the same binary extension was included with multiple internal names
                         if fnm in seen_fnms:
                             logger.warning('One binary added with two internal names.')
                             logger.warning(pprint.pformat((inm, fnm, typ)))
@@ -290,8 +283,7 @@ class PKG(Target):
             elif typ == 'OPTION':
                 mytoc.append((inm, '', 0, 'o'))
             elif typ in ('PYSOURCE', 'PYMODULE'):
-                # collect sourcefiles and module in a toc of it's own
-                # which will not be sorted.
+                # collect sourcefiles and module in a toc of it's own which will not be sorted.
                 srctoc.append((inm, fnm, self.cdict[typ], self.xformdict[typ]))
             else:
                 mytoc.append((inm, fnm, self.cdict.get(typ, 0), self.xformdict.get(typ, 'b')))
@@ -299,8 +291,7 @@ class PKG(Target):
         # Bootloader has to know the name of Python library. Pass python libname to CArchive.
         pylib_name = os.path.basename(bindepend.get_python_library_path())
 
-        # Sort content alphabetically by type and name to support
-        # reproducible builds.
+        # Sort content alphabetically by type and name to support reproducible builds.
         mytoc.sort(key=itemgetter(3, 0))
         # Do *not* sort modules and scripts, as their order is important.
         # TODO: Think about having all modules first and then all scripts.
@@ -397,8 +388,7 @@ class EXE(Target):
         self.strip = kwargs.get('strip', False)
         self.upx_exclude = kwargs.get("upx_exclude", [])
         self.runtime_tmpdir = kwargs.get('runtime_tmpdir', None)
-        # If ``append_pkg`` is false, the archive will not be appended
-        # to the exe, but copied beside it.
+        # If ``append_pkg`` is false, the archive will not be appended to the exe, but copied beside it.
         self.append_pkg = kwargs.get('append_pkg', True)
 
         # On Windows allows the exe to request admin privileges.
@@ -432,8 +422,7 @@ class EXE(Target):
         else:
             self.upx = False
 
-        # Old .spec format included in 'name' the path where to put created
-        # app. New format includes only exename.
+        # Old .spec format included in 'name' the path where to put created app. New format includes only exename.
         #
         # Ignore fullpath in the 'name' and prepend DISTPATH or WORKPATH.
         # DISTPATH - onefile
@@ -494,9 +483,8 @@ class EXE(Target):
 
             self.toc.append((manifest_filename, filename, 'BINARY'))
             if not self.exclude_binaries:
-                # Onefile mode: manifest file is explicitly loaded.
-                # Store name of manifest file as bootloader option. Allows
-                # the exe to be renamed.
+                # Onefile mode: manifest file is explicitly loaded. Store name of manifest file as bootloader option.
+                # Allows the exe to be renamed.
                 self.toc.append(("pyi-windows-manifest-filename " + manifest_filename, "", "OPTION"))
 
             if self.versrsrc:
@@ -517,8 +505,7 @@ class EXE(Target):
         )
         self.dependencies = self.pkg.dependencies
 
-        # Get the path of the bootloader and store it in a TOC, so it
-        # can be checked for being changed.
+        # Get the path of the bootloader and store it in a TOC, so it can be checked for being changed.
         exe = self._bootloader_file('run', '.exe' if is_win or is_cygwin else '')
         self.exefiles = TOC([(os.path.basename(exe), exe, 'EXECUTABLE')])
 
@@ -612,8 +599,8 @@ class EXE(Target):
 
         if is_win:
             fd, tmpnm = tempfile.mkstemp(prefix=os.path.basename(exe) + ".", dir=CONF['workpath'])
-            # need to close the file, otherwise copying resources will fail
-            # with "the file [...] is being used by another process"
+            # need to close the file, otherwise copying resources will fail with "the file [...] is being used by
+            # another process"
             os.close(fd)
             self._copyfile(exe, tmpnm)
             os.chmod(tmpnm, 0o755)
@@ -645,29 +632,26 @@ class EXE(Target):
                 except winresource.pywintypes.error as exc:
                     if exc.args[0] != winresource.ERROR_BAD_EXE_FORMAT:
                         logger.error(
-                            "Error while updating resources in %s"
-                            " from resource file %s", tmpnm, resfile, exc_info=1
+                            "Error while updating resources in %s from resource file %s", tmpnm, resfile, exc_info=1
                         )
                         continue
 
-                    # Handle the case where the file contains no resources, and is
-                    # intended as a single resource to be added to the exe.
+                    # Handle the case where the file contains no resources, and is intended as a single resource to be
+                    # added to the exe.
                     if not restype or not resname:
                         logger.error("resource type and/or name not specified")
                         continue
                     if "*" in (restype, resname):
                         logger.error(
-                            "no wildcards allowed for resource type "
-                            "and name when source file does not "
-                            "contain resources"
+                            "no wildcards allowed for resource type and name when source file does not contain "
+                            "resources"
                         )
                         continue
                     try:
                         winresource.UpdateResourcesFromDataFile(tmpnm, resfile, restype, [resname], [reslang or 0])
                     except winresource.pywintypes.error:
                         logger.error(
-                            "Error while updating resource %s %s in %s"
-                            " from data file %s",
+                            "Error while updating resource %s %s in %s from data file %s",
                             restype,
                             resname,
                             tmpnm,
@@ -713,17 +697,12 @@ class EXE(Target):
             logger.info("Converting EXE to target arch (%s)", self.target_arch)
             osxutils.binary_to_target_arch(self.name, self.target_arch, display_name='Bootloader EXE')
 
-            # Strip signatures from all arch slices. Strictly speaking,
-            # we need to remove signature (if present) from the last
-            # slice, because we will be appending data to it. When
-            # building universal2 bootloaders natively on macOS, only
-            # arm64 slices have a (dummy) signature. However, when
-            # cross-compiling with osxcross, we seem to get dummy
-            # signatures on both x86_64 and arm64 slices. While the former
-            # should not have any impact, it does seem to cause issues
-            # with further binary signing using real identity. Therefore,
-            # we remove all signatures and re-sign the binary using
-            # dummy signature once the data is appended.
+            # Strip signatures from all arch slices. Strictly speaking, we need to remove signature (if present) from
+            # the last slice, because we will be appending data to it. When building universal2 bootloaders natively on
+            # macOS, only arm64 slices have a (dummy) signature. However, when cross-compiling with osxcross, we seem to
+            # get dummy signatures on both x86_64 and arm64 slices. While the former should not have any impact, it does
+            # seem to cause issues with further binary signing using real identity. Therefore, we remove all signatures
+            # and re-sign the binary using dummy signature once the data is appended.
             logger.info("Removing signature(s) from EXE")
             osxutils.remove_signature_from_binary(self.name)
 
@@ -732,23 +711,16 @@ class EXE(Target):
                 with open(self.pkg.name, 'rb') as inf:
                     shutil.copyfileobj(inf, outf, length=64 * 1024)
 
-            # If the version of macOS SDK used to build bootloader exceeds
-            # that of macOS SDK used to built Python library (and, by
-            # extension, bundled Tcl/Tk libraries), force the version
-            # declared by the frozen executable to match that of the Python
-            # library.
-            # Having macOS attempt to enable new features (based on SDK
-            # version) for frozen application has no benefit if the Python
-            # library does not support them as well.
-            # On the other hand, there seem to be UI issues in tkinter
-            # due to failed or partial enablement of dark mode (i.e., the
-            # bootloader executable being built against SDK 10.14 or later,
-            # which causes macOS to enable dark mode, and Tk libraries being
-            # built against an earlier SDK version that does not support the
-            # dark mode). With python.org Intel macOS installers, this
-            # manifests as black Tk windows and UI elements (see issue #5827),
-            # while in Anaconda python, it may result in white text on bright
-            # background.
+            # If the version of macOS SDK used to build bootloader exceeds that of macOS SDK used to built Python
+            # library (and, by extension, bundled Tcl/Tk libraries), force the version declared by the frozen executable
+            # to match that of the Python library.
+            # Having macOS attempt to enable new features (based on SDK version) for frozen application has no benefit
+            # if the Python library does not support them as well.
+            # On the other hand, there seem to be UI issues in tkinter due to failed or partial enablement of dark mode
+            # (i.e., the bootloader executable being built against SDK 10.14 or later, which causes macOS to enable dark
+            # mode, and Tk libraries being built against an earlier SDK version that does not support the dark mode).
+            # With python.org Intel macOS installers, this manifests as black Tk windows and UI elements (see issue
+            # #5827), while in Anaconda python, it may result in white text on bright background.
             pylib_version = osxutils.get_macos_sdk_version(bindepend.get_python_library_path())
             exe_version = osxutils.get_macos_sdk_version(self.name)
             if pylib_version < exe_version:
@@ -764,8 +736,7 @@ class EXE(Target):
             logger.info("Fixing EXE for code signing %s", self.name)
             osxutils.fix_exe_for_code_signing(self.name)
 
-            # Re-sign the binary (either ad-hoc or using real identity,
-            # if provided)
+            # Re-sign the binary (either ad-hoc or using real identity, if provided).
             logger.info("Re-signing the EXE")
             osxutils.sign_binary(self.name, self.codesign_identity, self.entitlements_file)
         else:
@@ -825,12 +796,10 @@ class COLLECT(Target):
             self.upx_binaries = False
 
         self.name = kws.get('name')
-        # Old .spec format included in 'name' the path where to collect files
-        # for the created app.
-        # app. New format includes only directory name.
+        # Old .spec format included in 'name' the path where to collect files for the created app. app. New format
+        # includes only directory name.
         #
-        # The 'name' directory is created in DISTPATH and necessary files are
-        # then collected to this directory.
+        # The 'name' directory is created in DISTPATH and necessary files are then collected to this directory.
         self.name = os.path.join(CONF['distpath'], os.path.basename(self.name))
 
         self.toc = TOC()
@@ -860,8 +829,8 @@ class COLLECT(Target):
     )
 
     def _check_guts(self, data, last_build):
-        # COLLECT always needs to be executed, since it will clean the output
-        # directory anyway to make sure there is no existing cruft accumulating
+        # COLLECT always needs to be executed, since it will clean the output directory anyway to make sure there is no
+        # existing cruft accumulating
         return 1
 
     def assemble(self):
@@ -898,8 +867,8 @@ class COLLECT(Target):
                 )
             if typ != 'DEPENDENCY':
                 if os.path.isdir(fnm):
-                    # beacuse shutil.copy2() is the default copy function
-                    # for shutil.copytree, this will also copy file metadata
+                    # Because shutil.copy2() is the default copy function for shutil.copytree, this will also copy file
+                    # metadata.
                     shutil.copytree(fnm, tofnm)
                 else:
                     shutil.copy(fnm, tofnm)
@@ -914,16 +883,14 @@ class COLLECT(Target):
 
 class MERGE(object):
     """
-    Merge repeated dependencies from other executables into the first
-    execuable. Data and binary files are then present only once and some
-    disk space is thus reduced.
+    Merge repeated dependencies from other executables into the first executable. Data and binary files are then
+    present only once and some disk space is thus reduced.
     """
     def __init__(self, *args):
         """
-        Repeated dependencies are then present only once in the first
-        executable in the 'args' list. Other executables depend on the
-        first one. Other executables have to extract necessary files
-        from the first executable.
+        Repeated dependencies are then present only once in the first executable in the 'args' list. Other
+        executables depend on the first one. Other executables have to extract necessary files from the first
+        executable.
 
         args  dependencies in a list of (Analysis, id, filename) tuples.
               Replace id with the correct filename.
@@ -970,10 +937,8 @@ class MERGE(object):
                     self._dependencies[tpl[1]] = path
                 else:
                     dep_path = self._get_relative_path(path, self._dependencies[tpl[1]])
-                    # Ignore references that point to the origin package.
-                    # This can happen if the same resource is listed
-                    # multiple times in TOCs (e.g., once as binary and
-                    # once as data).
+                    # Ignore references that point to the origin package. This can happen if the same resource is listed
+                    # multiple times in TOCs (e.g., once as binary and once as data).
                     if dep_path.endswith(path):
                         logger.debug(
                             "Ignoring self-reference of %s for %s, "
@@ -982,15 +947,12 @@ class MERGE(object):
                         # Clear the entry as it is a duplicate.
                         toc[i] = (None, None, None)
                         continue
-                    logger.debug("Referencing %s to be a dependecy for %s, located in %s" % (tpl[1], path, dep_path))
-                    # Determine the path relative to dep_path (i.e, within
-                    # the target directory) from the 'name' component
-                    # of the TOC tuple. If entry is EXTENSION, then the
-                    # relative path needs to be reconstructed from the
-                    # name components.
+                    logger.debug("Referencing %s to be a dependency for %s, located in %s" % (tpl[1], path, dep_path))
+                    # Determine the path relative to dep_path (i.e, within the target directory) from the 'name'
+                    # component of the TOC tuple. If entry is EXTENSION, then the relative path needs to be
+                    # reconstructed from the name components.
                     if tpl[2] == 'EXTENSION':
-                        # Split on os.path.sep first, to handle additional
-                        # path prefix (e.g., lib-dynload)
+                        # Split on os.path.sep first, to handle additional path prefix (e.g., lib-dynload)
                         ext_components = tpl[0].split(os.path.sep)
                         ext_components = ext_components[:-1] \
                             + ext_components[-1].split('.')[:-1]
@@ -1000,8 +962,7 @@ class MERGE(object):
                             rel_path = ''
                     else:
                         rel_path = os.path.dirname(tpl[0])
-                    # Take filename from 'path' (second component of
-                    # TOC tuple); this way, we don't need to worry about
+                    # Take filename from 'path' (second component of TOC tuple); this way, we don't need to worry about
                     # suffix of extensions.
                     filename = os.path.basename(tpl[1])
                     # Construct the full file path relative to dep_path...
@@ -1012,9 +973,7 @@ class MERGE(object):
             # Clean the list
             toc[:] = [tpl for tpl in toc if tpl != (None, None, None)]
 
-    # TODO move this function to PyInstaller.compat module (probably improve
-    #      function compat.relpath()
-    # TODO use os.path.relpath instead
+    # TODO use pathlib.Path.relative_to() instead.
     def _get_relative_path(self, startpath, topath):
         start = startpath.split(os.sep)[:-1]
         start = ['..'] * len(start)
@@ -1028,8 +987,6 @@ class MERGE(object):
 UNCOMPRESSED = 0
 COMPRESSED = 1
 
-_MISSING_BOOTLOADER_ERRORMSG = """
-Fatal error: PyInstaller does not include a pre-compiled bootloader for your
-platform. For more details and instructions how to build the bootloader see
-<https://pyinstaller.readthedocs.io/en/stable/bootloader-building.html>
-"""
+_MISSING_BOOTLOADER_ERRORMSG = """Fatal error: PyInstaller does not include a pre-compiled bootloader for your 
+platform. For more details and instructions how to build the bootloader see 
+<https://pyinstaller.readthedocs.io/en/stable/bootloader-building.html> """

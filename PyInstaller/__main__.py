@@ -23,12 +23,11 @@ from PyInstaller.compat import check_requirements, is_conda
 
 logger = logging.getLogger(__name__)
 
-
-# Taken from https://stackoverflow.com/a/22157136 to format args more flexibly:
-# any help text which beings with ``R|`` will have all newlines preserved; the
-# help text will be line wrapped. See
+# Taken from https://stackoverflow.com/a/22157136 to format args more flexibly: any help text which beings with ``R|``
+# will have all newlines preserved; the help text will be line wrapped. See
 # https://docs.python.org/3/library/argparse.html#formatter-class.
-#
+
+
 # This is used by the ``--debug`` option.
 class _SmartFormatter(argparse.HelpFormatter):
     def _split_lines(self, text, width):
@@ -113,10 +112,8 @@ def run(pyi_args=None, pyi_config=None):
         args = parser.parse_args(pyi_args)
         PyInstaller.log.__process_options(parser, args)
 
-        # Print PyInstaller version, Python version and platform
-        # as the first line to stdout.
-        # This helps identify PyInstaller, Python and platform version
-        #  when users report issues.
+        # Print PyInstaller version, Python version and platform as the first line to stdout. This helps identify
+        # PyInstaller, Python and platform version when users report issues.
         logger.info('PyInstaller: %s' % __version__)
         logger.info('Python: %s%s', platform.python_version(), " (conda)" if is_conda else "")
         logger.info('Platform: %s' % platform.platform())

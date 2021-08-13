@@ -24,9 +24,8 @@ from PyInstaller.utils.hooks import logger
 
 def pre_find_module_path(api):
     try:
-        # Test if a module named 'pyi_splash' is locally installed.
-        # This prevents that a potentially required dependency is not
-        # packed
+        # Test if a module named 'pyi_splash' is locally installed. This prevents that a potentially required dependency
+        # is not packed
         import pyi_splash  # noqa: F401
     except ImportError:
         module_dir = os.path.join(PACKAGEPATH, 'fake-modules')

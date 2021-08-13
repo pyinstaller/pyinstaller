@@ -22,17 +22,12 @@ multiprocessing.process.ORIGINAL_DIR = None
 
 
 def _freeze_support():
-    # we want to catch the two processes that are spawned by the
-    # multiprocessing code:
-    # - the semaphore tracker, which cleans up named semaphores in
-    #   the spawn multiprocessing mode
-    # - the fork server, which keeps track of worker processes in
-    #   forkserver mode.
-    # both of these processes are started by spawning a new copy of the
-    # running executable, passing it the flags from
+    # We want to catch the two processes that are spawned by the multiprocessing code:
+    # - the semaphore tracker, which cleans up named semaphores in the spawn multiprocessing mode
+    # - the fork server, which keeps track of worker processes in forkserver mode.
+    # both of these processes are started by spawning a new copy of the running executable, passing it the flags from
     # _args_from_interpreter_flags and then "-c" and an import statement.
-    # look for those flags and the import statement, then exec() the
-    # code ourselves.
+    # Look for those flags and the import statement, then exec() the code ourselves.
 
     if (
         len(sys.argv) >= 2 and sys.argv[-2] == '-c' and sys.argv[-1].startswith((
@@ -58,10 +53,8 @@ def _freeze_support():
 
 multiprocessing.freeze_support = spawn.freeze_support = _freeze_support
 
-# Bootloader unsets _MEIPASS2 for child processes to allow running
-# PyInstaller binaries inside pyinstaller binaries.
-# This is ok for mac or unix with fork() system call.
-# But on Windows we need to overcome missing fork() function.
+# Bootloader unsets _MEIPASS2 for child processes to allow running PyInstaller binaries inside pyinstaller binaries.
+# This is ok for mac or unix with fork() system call. But on Windows we need to overcome missing fork() function.
 
 if sys.platform.startswith('win'):
     import multiprocessing.popen_spawn_win32 as forking
@@ -81,10 +74,8 @@ class FrozenSupportMixIn:
             super().__init__(*args, **kw)
         finally:
             if hasattr(sys, 'frozen'):
-                # On some platforms (e.g. AIX) 'os.unsetenv()' is not
-                # available. In those cases we cannot delete the variable
-                # but only set it to the empty string. The bootloader
-                # can handle this case.
+                # On some platforms (e.g. AIX) 'os.unsetenv()' is not available. In those cases we cannot delete the
+                # variable but only set it to the empty string. The bootloader can handle this case.
                 if hasattr(os, 'unsetenv'):
                     os.unsetenv('_MEIPASS2')
                 else:

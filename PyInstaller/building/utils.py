@@ -76,8 +76,7 @@ def _check_guts_toc_mtime(_attr, old, _toc, last_build, pyc=0):
 
 def _check_guts_toc(attr, old, toc, last_build, pyc=0):
     """
-    rebuild is required if either toc content changed or mtimes of
-    files listed in old toc are newer than last_build
+    rebuild is required if either toc content changed or mtimes of files listed in old toc are newer than last_build
 
     if pyc=1, check for .py files, too
 
@@ -88,8 +87,7 @@ def _check_guts_toc(attr, old, toc, last_build, pyc=0):
 
 def add_suffix_to_extension(inm, fnm, typ):
     """
-    Take a TOC entry (inm, fnm, typ) and adjust the inm for EXTENSION
-    or DEPENDENCY to include the full library suffix.
+    Take a TOC entry (inm, fnm, typ) and adjust the inm for EXTENSION or DEPENDENCY to include the full library suffix.
     """
     if typ == 'EXTENSION':
         if fnm.endswith(inm):
@@ -123,8 +121,7 @@ def add_suffix_to_extension(inm, fnm, typ):
 
 def applyRedirects(manifest, redirects):
     """
-    Apply the binding redirects specified by 'redirects' to the dependent assemblies
-    of 'manifest'.
+    Apply the binding redirects specified by 'redirects' to the dependent assemblies of 'manifest'.
 
     :param manifest:
     :type manifest:
@@ -156,8 +153,7 @@ def checkCache(
     """
     Cache prevents preprocessing binary files again and again.
 
-    'dist_nm'  Filename relative to dist directory. We need it on Mac
-               to determine level of paths for @loader_path like
+    'dist_nm'  Filename relative to dist directory. We need it on Mac to determine level of paths for @loader_path like
                '@loader_path/../../' for qt4 plugins.
     """
     from PyInstaller.config import CONF
@@ -214,25 +210,22 @@ def checkCache(
         try:
             cache_index = misc.load_py_data_struct(cacheindexfn)
         except Exception:
-            # tell the user they may want to fix their cache
-            # .. however, don't delete it for them; if it keeps getting
-            #    corrupted, we'll never find out
+            # tell the user they may want to fix their cache .. however, don't delete it for them; if it keeps getting
+            # corrupted, we'll never find out
             logger.warning("pyinstaller bincache may be corrupted; use pyinstaller --clean to fix")
             raise
     else:
         cache_index = {}
 
-    # Verify if the file we're looking for is present in the cache.
-    # Use the dist_mn if given to avoid different extension modules
-    # sharing the same basename get corrupted.
+    # Verify if the file we're looking for is present in the cache. Use the dist_mn if given to avoid different
+    # extension modules sharing the same basename get corrupted.
     if dist_nm:
         basenm = os.path.normcase(dist_nm)
     else:
         basenm = os.path.normcase(os.path.basename(fnm))
 
-    # Binding redirects should be taken into account to see if the file
-    # needs to be reprocessed. The redirects may change if the versions of dependent
-    # manifests change due to system updates.
+    # Binding redirects should be taken into account to see if the file needs to be reprocessed. The redirects may
+    # change if the versions of dependent manifests change due to system updates.
     redirects = CONF.get('binding_redirects', [])
     digest = cacheDigest(fnm, redirects)
     cachedfile = os.path.join(cachedir, basenm)
@@ -274,8 +267,7 @@ def checkCache(
                 codesign_identity=codesign_identity,
                 entitlements_file=entitlements_file
             )
-        # We meed to avoid using UPX with Windows DLLs that have Control
-        # Flow Guard enabled, as it breaks them.
+        # We meed to avoid using UPX with Windows DLLs that have Control Flow Guard enabled, as it breaks them.
         if is_win and versioninfo.pefile_check_control_flow_guard(fnm):
             logger.info('Disabling UPX for %s due to CFG!', fnm)
         elif misc.is_file_qt_plugin(fnm):
@@ -295,24 +287,20 @@ def checkCache(
         if strip:
             strip_options = []
             if is_darwin:
-                # The default strip behaviour breaks some shared libraries
-                # under Mac OSX.
+                # The default strip behaviour breaks some shared libraries under Mac OSX.
                 # -S = strip only debug symbols.
                 strip_options = ["-S"]
             cmd = ["strip"] + strip_options + [cachedfile]
 
     if not os.path.exists(os.path.dirname(cachedfile)):
         os.makedirs(os.path.dirname(cachedfile))
-    # There are known some issues with 'shutil.copy2' on Mac OS X 10.11
-    # with copying st_flags. Issue #1650.
-    # 'shutil.copy' copies also permission bits and it should be sufficient for
-    # PyInstalle purposes.
+    # There are known some issues with 'shutil.copy2' on Mac OS X 10.11 with copying st_flags. Issue #1650.
+    # 'shutil.copy' copies also permission bits and it should be sufficient for PyInstaller's purposes.
     shutil.copy(fnm, cachedfile)
     # TODO find out if this is still necessary when no longer using shutil.copy2()
     if hasattr(os, 'chflags'):
-        # Some libraries on FreeBSD have immunable flag (libthr.so.3, for example)
-        # If flags still remains, os.chmod will failed with:
-        # OSError: [Errno 1] Operation not permitted.
+        # Some libraries on FreeBSD have immunable flag (libthr.so.3, for example) If flags still remains, os.chmod()
+        # will fail with: OSError: [Errno 1] Operation not permitted.
         try:
             os.chflags(cachedfile, 0)
         except OSError:
@@ -320,8 +308,7 @@ def checkCache(
     os.chmod(cachedfile, 0o755)
 
     if os.path.splitext(fnm.lower())[1] in (".pyd", ".dll"):
-        # When shared assemblies are bundled into the app, they may optionally be
-        # changed into private assemblies.
+        # When shared assemblies are bundled into the app, they may optionally be changed into private assemblies.
         try:
             res = winmanifest.GetManifestResources(os.path.abspath(cachedfile))
         except winresource.pywintypes.error as e:
@@ -375,10 +362,8 @@ def checkCache(
     cache_index[basenm] = digest
     misc.save_py_data_struct(cacheindexfn, cache_index)
 
-    # On Mac OS X we need relative paths to dll dependencies
-    # starting with @executable_path. Modifying headers invalidates
-    # signatures, so remove any existing signature and then re-add
-    # it after paths are rewritten.
+    # On Mac OS X we need relative paths to dll dependencies starting with @executable_path. Modifying headers
+    # invalidates signatures, so remove any existing signature and then re-add it after paths are rewritten.
     if is_darwin:
         osxutils.binary_to_target_arch(cachedfile, target_arch, display_name=fnm)
         osxutils.remove_signature_from_binary(cachedfile)
@@ -401,9 +386,8 @@ def cacheDigest(fnm, redirects):
 
 def _check_path_overlap(path):
     """
-    Check that path does not overlap with WORKPATH or SPECPATH (i.e.
-    WORKPATH and SPECPATH may not start with path, which could be
-    caused by a faulty hand-edited specfile)
+    Check that path does not overlap with WORKPATH or SPECPATH (i.e. WORKPATH and SPECPATH may not start with path,
+    which could be caused by a faulty hand-edited specfile)
 
     Raise SystemExit if there is overlap, return True otherwise
     """
@@ -417,8 +401,8 @@ def _check_path_overlap(path):
         specerr += 1
     if specerr:
         raise SystemExit(
-            'Error: Please edit/recreate the specfile (%s) '
-            'and set a different output name (e.g. "dist").' % CONF['spec']
+            'Error: Please edit/recreate the specfile (%s) and set a different output name (e.g. "dist").' %
+            CONF['spec']
         )
     return True
 
@@ -439,23 +423,19 @@ def _make_clean_directory(path):
 
 def _rmtree(path):
     """
-    Remove directory and all its contents, but only after user confirmation,
-    or if the -y option is set
+    Remove directory and all its contents, but only after user confirmation, or if the -y option is set
     """
     from PyInstaller.config import CONF
     if CONF['noconfirm']:
         choice = 'y'
     elif sys.stdout.isatty():
         choice = compat.stdin_input(
-            'WARNING: The output directory "%s" and ALL ITS '
-            'CONTENTS will be REMOVED! Continue? (y/N)' % path
+            'WARNING: The output directory "%s" and ALL ITS CONTENTS will be REMOVED! Continue? (y/N)' % path
         )
     else:
         raise SystemExit(
-            'Error: The output directory "%s" is not empty. '
-            'Please remove all its contents or use the '
-            '-y option (remove output directory without '
-            'confirmation).' % path
+            'Error: The output directory "%s" is not empty. Please remove all its contents or use the -y option (remove'
+            ' output directory without confirmation).' % path
         )
     if choice.strip().lower() == 'y':
         if not CONF['noconfirm']:
@@ -466,11 +446,9 @@ def _rmtree(path):
         raise SystemExit('User aborted')
 
 
-# TODO Refactor to prohibit empty target directories. As the docstring
-# below documents, this function currently permits the second item of each
-# 2-tuple in "hook.datas" to be the empty string, in which case the target
-# directory defaults to the source directory's basename. However, this
-# functionality is very fragile and hence bad. Instead:
+# TODO Refactor to prohibit empty target directories. As the docstring below documents, this function currently permits
+# the second item of each 2-tuple in "hook.datas" to be the empty string, in which case the target directory defaults to
+# the source directory's basename. However, this functionality is very fragile and hence bad. Instead:
 #
 # * An exception should be raised if such item is empty.
 # * All hooks currently passing the empty string for such item (e.g.,
@@ -478,51 +456,45 @@ def _rmtree(path):
 #   to instead pass such basename.
 def format_binaries_and_datas(binaries_or_datas, workingdir=None):
     """
-    Convert the passed list of hook-style 2-tuples into a returned set of
-    `TOC`-style 2-tuples.
+    Convert the passed list of hook-style 2-tuples into a returned set of `TOC`-style 2-tuples.
 
     Elements of the passed list are 2-tuples `(source_dir_or_glob, target_dir)`.
     Elements of the returned set are 2-tuples `(target_file, source_file)`.
-    For backwards compatibility, the order of elements in the former tuples are
-    the reverse of the order of elements in the latter tuples!
+    For backwards compatibility, the order of elements in the former tuples are the reverse of the order of elements in
+    the latter tuples!
 
     Parameters
     ----------
     binaries_or_datas : list
-        List of hook-style 2-tuples (e.g., the top-level `binaries` and `datas`
-        attributes defined by hooks) whose:
+        List of hook-style 2-tuples (e.g., the top-level `binaries` and `datas` attributes defined by hooks) whose:
         * The first element is either:
-          * A glob matching only the absolute or relative paths of source
-            non-Python data files.
-          * The absolute or relative path of a source directory containing only
-            source non-Python data files.
-        * The second element ist he relative path of the target directory
-          into which these source files will be recursively copied.
+          * A glob matching only the absolute or relative paths of source non-Python data files.
+          * The absolute or relative path of a source directory containing only source non-Python data files.
+        * The second element ist he relative path of the target directory into which these source files will be
+          recursively copied.
 
-        If the optional `workingdir` parameter is passed, source paths may be
-        either absolute or relative; else, source paths _must_ be absolute.
+        If the optional `workingdir` parameter is passed, source paths may be either absolute or relative; else, source
+        paths _must_ be absolute.
     workingdir : str
-        Optional absolute path of the directory to which all relative source
-        paths in the `binaries_or_datas` parameter will be prepended by (and
-        hence converted into absolute paths) _or_ `None` if these paths are to
-        be preserved as relative. Defaults to `None`.
+        Optional absolute path of the directory to which all relative source paths in the `binaries_or_datas`
+        parameter will be prepended by (and hence converted into absolute paths) _or_ `None` if these paths are to be
+        preserved as relative. Defaults to `None`.
 
     Returns
     ----------
     set
         Set of `TOC`-style 2-tuples whose:
         * First element is the absolute or relative path of a target file.
-        * Second element is the absolute or relative path of the corresponding
-          source file to be copied to this target file.
+        * Second element is the absolute or relative path of the corresponding source file to be copied to this target
+          file.
     """
     toc_datas = set()
 
     for src_root_path_or_glob, trg_root_dir in binaries_or_datas:
         if not trg_root_dir:
             raise SystemExit(
-                "Empty DEST not allowed when adding binary "
-                "and data files. "
-                "Maybe you want to used %r.\nCaused by %r." % (os.curdir, src_root_path_or_glob)
+                "Empty DEST not allowed when adding binary and data files. Maybe you want to used %r.\nCaused by %r." %
+                (os.curdir, src_root_path_or_glob)
             )
         # Convert relative to absolute paths if required.
         if workingdir and not os.path.isabs(src_root_path_or_glob):
@@ -533,14 +505,12 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
         if os.path.isfile(src_root_path_or_glob):
             src_root_paths = [src_root_path_or_glob]
         else:
-            # List of the absolute paths of all source paths matching the
-            # current glob.
+            # List of the absolute paths of all source paths matching the current glob.
             src_root_paths = glob.glob(src_root_path_or_glob)
 
         if not src_root_paths:
             msg = 'Unable to find "%s" when adding binary and data files.' % src_root_path_or_glob
-            # on Debian/Ubuntu, missing pyconfig.h files can be fixed with
-            # installing python-dev
+            # on Debian/Ubuntu, missing pyconfig.h files can be fixed with installing python-dev
             if src_root_path_or_glob.endswith("pyconfig.h"):
                 msg += """This would mean your Python installation doesn't
 come with proper library files. This usually happens by missing development
@@ -555,35 +525,31 @@ package, or unsuitable build parameters of Python installation.
 
         for src_root_path in src_root_paths:
             if os.path.isfile(src_root_path):
-                # Normalizing the result to remove redundant relative
-                # paths (e.g., removing "./" from "trg/./file").
+                # Normalizing the result to remove redundant relative paths (e.g., removing "./" from "trg/./file").
                 toc_datas.add((
                     os.path.normpath(os.path.join(trg_root_dir, os.path.basename(src_root_path))),
                     os.path.normpath(src_root_path),
                 ))
             elif os.path.isdir(src_root_path):
                 for src_dir, src_subdir_basenames, src_file_basenames in os.walk(src_root_path):
-                    # Ensure the current source directory is a subdirectory
-                    # of the passed top-level source directory. Since
-                    # os.walk() does *NOT* follow symlinks by default, this
-                    # should be the case. (But let's make sure.)
+                    # Ensure the current source directory is a subdirectory of the passed top-level source directory.
+                    # Since os.walk() does *NOT* follow symlinks by default, this should be the case. (But let's make
+                    # sure.)
                     assert src_dir.startswith(src_root_path)
 
-                    # Relative path of the current target directory,
-                    # obtained by:
+                    # Relative path of the current target directory, obtained by:
                     #
-                    # * Stripping the top-level source directory from the
-                    #   current source directory (e.g., removing "/top" from
-                    #   "/top/dir").
-                    # * Normalizing the result to remove redundant relative
-                    #   paths (e.g., removing "./" from "trg/./file").
+                    # * Stripping the top-level source directory from the current source directory (e.g., removing
+                    #   "/top" from "/top/dir").
+                    # * Normalizing the result to remove redundant relative paths (e.g., removing "./" from
+                    #   "trg/./file").
                     trg_dir = os.path.normpath(os.path.join(trg_root_dir, os.path.relpath(src_dir, src_root_path)))
 
                     for src_file_basename in src_file_basenames:
                         src_file = os.path.join(src_dir, src_file_basename)
                         if os.path.isfile(src_file):
-                            # Normalize the result to remove redundant relative
-                            # paths (e.g., removing "./" from "trg/./file").
+                            # Normalize the result to remove redundant relative paths (e.g., removing "./" from
+                            # "trg/./file").
                             toc_datas.add((
                                 os.path.normpath(os.path.join(trg_dir, src_file_basename)), os.path.normpath(src_file)
                             ))
@@ -610,19 +576,15 @@ def _load_code(modname, filename):
     if loader and hasattr(loader, 'get_code'):
         return loader.get_code(modname)
     else:
-        # Just as ``python foo.bar`` will read and execute statements in
-        # ``foo.bar``,  even though it lacks the ``.py`` extension, so
-        # ``pyinstaller foo.bar``  should also work. However, Python's import
-        # machinery doesn't load files without a ``.py`` extension. So, use
-        # ``compile`` instead.
+        # Just as ``python foo.bar`` will read and execute statements in ``foo.bar``,  even though it lacks the ``.py``
+        # extension, so ``pyinstaller foo.bar``  should also work. However, Python's import machinery doesn't load files
+        # without a ``.py`` extension. So, use ``compile`` instead.
         #
-        # On a side note, neither the Python 2 nor Python 3 calls to
-        # ``pkgutil`` and ``find_module`` above handle modules ending in
-        # ``.pyw``, even though ``imp.find_module`` and ``import <name>`` both
-        # work. This code supports ``.pyw`` files.
+        # On a side note, neither the Python 2 nor Python 3 calls to ``pkgutil`` and ``find_module`` above handle
+        # modules ending in ``.pyw``, even though ``imp.find_module`` and ``import <name>`` both work. This code
+        # supports ``.pyw`` files.
 
-        # Open the source file in binary mode and allow the `compile()` call to
-        # detect the source encoding.
+        # Open the source file in binary mode and allow the `compile()` call to detect the source encoding.
         with open(filename, 'rb') as f:
             source = f.read()
         return compile(source, filename, 'exec')
@@ -632,17 +594,14 @@ def get_code_object(modname, filename):
     """
     Get the code-object for a module.
 
-    This is a extra-simple version for compiling a module. It's
-    not worth spending more effort here, as it is only used in the
-    rare case if outXX-Analysis.toc exists, but outXX-PYZ.toc does
-    not.
+    This is a extra-simple version for compiling a module. It's not worth spending more effort here, as it is only
+    used in the rare case if outXX-Analysis.toc exists, but outXX-PYZ.toc does not.
     """
 
     try:
         if filename in ('-', None):
-            # This is a NamespacePackage, modulegraph marks them
-            # by using the filename '-'. (But wants to use None,
-            # so check for None, too, to be forward-compatible.)
+            # This is a NamespacePackage, modulegraph marks them by using the filename '-'. (But wants to use None, so
+            # check for None, too, to be forward-compatible.)
             logger.debug('Compiling namespace package %s', modname)
             txt = '#\n'
             return compile(txt, filename, 'exec')

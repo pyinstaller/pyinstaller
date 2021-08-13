@@ -15,10 +15,8 @@ import sys
 tcldir = os.path.join(sys._MEIPASS, 'tcl')
 tkdir = os.path.join(sys._MEIPASS, 'tk')
 
-# Notify "tkinter" of data directories.
-# On macOS, we do not collect data directories if system Tcl/Tk
-# framework is used. On other OSes, we always collect them, so their
-# absence is considered an error.
+# Notify "tkinter" of data directories. On macOS, we do not collect data directories if system Tcl/Tk framework is used.
+# On other OSes, we always collect them, so their absence is considered an error.
 is_darwin = sys.platform == 'darwin'
 
 if os.path.isdir(tcldir):

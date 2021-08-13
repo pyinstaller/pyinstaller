@@ -46,15 +46,14 @@ if pattern:
     for f in glob.glob(pattern):
         binaries.append((f, 'gio_modules'))
 else:
-    # To add a new platform add a new elif above with the proper is_<platform> and
-    # proper pattern for finding the Gio modules on your platform.
+    # To add a new platform add a new elif above with the proper is_<platform> and proper pattern for finding the Gio
+    # modules on your platform.
     logger.warning('Bundling Gio modules is currently not supported on your platform.')
 
 # Bundle the mime cache -- might not be needed on Windows
 # -> this is used for content type detection (also used by GdkPixbuf)
-# -> gio/xdgmime/xdgmime.c looks for mime/mime.cache in the users home directory,
-#    followed by XDG_DATA_DIRS if specified in the environment, otherwise
-#    it searches /usr/local/share/ and /usr/share/
+# -> gio/xdgmime/xdgmime.c looks for mime/mime.cache in the users home directory, followed by XDG_DATA_DIRS if specified
+#    in the environment, otherwise it searches /usr/local/share/ and /usr/share/
 if not is_win:
     _mime_searchdirs = ['/usr/local/share', '/usr/share']
     if 'XDG_DATA_DIRS' in os.environ:

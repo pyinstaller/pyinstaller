@@ -19,9 +19,8 @@ from PyInstaller import compat
 
 
 def paths_to_test(include_only=None):
-    """If ``include_only`` is falsey, this functions returns paths from all entry
-    points. Otherwise, this parameter must be a string or sequence of strings.
-    In this case, this function will return *only* paths from entry points
+    """If ``include_only`` is falsey, this functions returns paths from all entry points. Otherwise, this parameter
+    must be a string or sequence of strings. In this case, this function will return *only* paths from entry points
     whose ``module_name`` begins with the provided string(s).
     """
     # Convert a string to a list.
@@ -41,9 +40,8 @@ def paths_to_test(include_only=None):
     return test_path_list
 
 
-# Run pytest on all tests registered by the PyInstaller setuptools testing
-# entry point. If provided, the ``include_only`` argument is passed to
-# ``path_to_test``.
+# Run pytest on all tests registered by the PyInstaller setuptools testing entry point. If provided,
+# the ``include_only`` argument is passed to ``path_to_test``.
 def run_pytest(*args, **kwargs):
     paths = paths_to_test(include_only=kwargs.pop("include_only", None))
     # Return an error code if no tests were discovered.
@@ -53,8 +51,7 @@ def run_pytest(*args, **kwargs):
         # https://docs.pytest.org/en/latest/usage.html#possible-exit-codes.
         return 5
     else:
-        # See
-        # https://docs.pytest.org/en/latest/usage.html#calling-pytest-from-python-code.
+        # See https://docs.pytest.org/en/latest/usage.html#calling-pytest-from-python-code.
         # Omit ``args[0]``, which is the name of this script.
         print("pytest " + " ".join([*paths, *args[1:]]))
         return pytest.main([*paths, *args[1:]], **kwargs)

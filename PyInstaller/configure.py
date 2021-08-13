@@ -68,8 +68,7 @@ def _get_pyinst_cache_dir():
     elif is_darwin:
         cache_dir = os.path.expanduser('~/Library/Application Support')
     else:
-        # According to XDG specification
-        # http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html
+        # According to XDG specification: http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html
         old_cache_dir = compat.getenv('XDG_DATA_HOME')
         if not old_cache_dir:
             old_cache_dir = os.path.expanduser('~/.local/share')

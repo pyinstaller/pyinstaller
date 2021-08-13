@@ -151,8 +151,7 @@ wm attributes . -transparentcolor magenta
 """
 
 elif is_darwin:
-    # This is untested, but should work following:
-    # https://stackoverflow.com/a/44296157/5869139
+    # This is untested, but should work following: https://stackoverflow.com/a/44296157/5869139
     transparent_setup = r"""
 wm attributes . -transparent 1
 . configure -background systemTransparent

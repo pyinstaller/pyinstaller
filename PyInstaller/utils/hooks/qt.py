@@ -23,11 +23,9 @@ logger = logging.getLogger(__name__)
 
 # QtLibraryInfo
 # --------------
-# This class uses introspection to determine the location of Qt files. This is
-# essential to deal with the many variants of the PyQt5/6 and PySide2/6
-# package, each of which places files in a different location.
-# Therefore, this class provides all location-related members of
-# `QLibraryInfo <http://doc.qt.io/qt-5/qlibraryinfo.html>`_.
+# This class uses introspection to determine the location of Qt files. This is essential to deal with the many variants
+# of the PyQt5/6 and PySide2/6 package, each of which places files in a different location. Therefore, this class
+# provides all location-related members of `QLibraryInfo <http://doc.qt.io/qt-5/qlibraryinfo.html>`_.
 class QtLibraryInfo:
     def __init__(self, namespace):
         if namespace not in ['PyQt5', 'PyQt6', 'PySide2', 'PySide6']:
@@ -37,33 +35,26 @@ class QtLibraryInfo:
         self.is_pyqt = namespace in {'PyQt5', 'PyQt6'}
         # Distinction between Qt5 and Qt6
         self.qt_major = 6 if namespace in {'PyQt6', 'PySide6'} else 5
-        # Determine relative path where Qt libraries and data need to
-        # be collected in the frozen application. This varies between
-        # PyQt5/PyQt6/PySide2/PySide6, their versions, and platforms.
-        # NOTE: it is tempting to consider deriving this path as simply the
-        # value of QLibraryInfo.PrefixPath, taken relative to the package's
-        # root directory. However, we also need to support non-wheel
-        # deployments (e.g., with Qt installed in custom path on Windows,
-        # or with Qt and PyQt5 installed on linux using native package
-        # manager), and in those, the Qt PrefixPath does not reflect
-        # the required relative target path for the frozen application.
+        # Determine relative path where Qt libraries and data need to be collected in the frozen application. This
+        # varies between PyQt5/PyQt6/PySide2/PySide6, their versions, and platforms. NOTE: it is tempting to consider
+        # deriving this path as simply the value of QLibraryInfo.PrefixPath, taken relative to the package's root
+        # directory. However, we also need to support non-wheel deployments (e.g., with Qt installed in custom path on
+        # Windows, or with Qt and PyQt5 installed on linux using native package manager), and in those, the Qt
+        # PrefixPath does not reflect the required relative target path for the frozen application.
         if namespace == 'PyQt5':
-            # PyQt5 uses PyQt5/Qt on all platforms, or PyQt5/Qt5 from
-            # version 5.15.4 on
+            # PyQt5 uses PyQt5/Qt on all platforms, or PyQt5/Qt5 from version 5.15.4 on
             if hooks.is_module_satisfies("PyQt5 >= 5.15.4"):
                 self.qt_rel_dir = os.path.join('PyQt5', 'Qt5')
             else:
                 self.qt_rel_dir = os.path.join('PyQt5', 'Qt')
         elif namespace == 'PyQt6':
-            # Similarly to PyQt5, PyQt6 switched from PyQt6/Qt to PyQt6/Qt6
-            # in 6.0.3
+            # Similarly to PyQt5, PyQt6 switched from PyQt6/Qt to PyQt6/Qt6 in 6.0.3
             if hooks.is_module_satisfies("PyQt6 >= 6.0.3"):
                 self.qt_rel_dir = os.path.join('PyQt6', 'Qt6')
             else:
                 self.qt_rel_dir = os.path.join('PyQt6', 'Qt')
         elif namespace == 'PySide2':
-            # PySide2 uses PySide2/Qt on linux and macOS, and PySide2
-            # on Windows
+            # PySide2 uses PySide2/Qt on linux and macOS, and PySide2 on Windows
             if compat.is_win:
                 self.qt_rel_dir = 'PySide2'
             else:
@@ -75,19 +66,15 @@ class QtLibraryInfo:
             else:
                 self.qt_rel_dir = os.path.join('PySide6', 'Qt')
 
-    # Initialize most of this class only when values are first requested from
-    # it.
+    # Initialize most of this class only when values are first requested from it.
     def __getattr__(self, name):
         if 'version' in self.__dict__:
-            # Initialization was already done, but requested attribute is not
-            # availiable.
+            # Initialization was already done, but requested attribute is not availiable.
             raise AttributeError(name)
         else:
-            # Ensure self.version exists, even if PyQt{5,6}/PySide{2,6} cannot
-            # be imported. Hooks and util functions use `if .version` to check
-            # whether package was imported and other attributes are
-            # expected to be available.  This also serves as a marker that
-            # initialization was already done.
+            # Ensure self.version exists, even if PyQt{5,6}/PySide{2,6} cannot be imported. Hooks and util functions use
+            # `if .version` to check whether package was imported and other attributes are expected to be available.
+            # This also serves as a marker that initialization was already done.
             self.version = None
             # Get library path information from Qt. See QLibraryInfo_.
             json_str = hooks.exec_statement(
@@ -226,10 +213,9 @@ def qt_plugins_binaries(plugin_type, namespace):
 
     # Windows:
     #
-    # dlls_in_dir() grabs all files ending with ``*.dll``, ``*.so`` and
-    # ``*.dylib`` in a certain directory. On Windows this would grab debug
-    # copies of Qt plugins, which then causes PyInstaller to add a dependency on
-    # the Debug CRT *in addition* to the release CRT.
+    # dlls_in_dir() grabs all files ending with ``*.dll``, ``*.so`` and ``*.dylib`` in a certain directory. On Windows
+    # this would grab debug copies of Qt plugins, which then causes PyInstaller to add a dependency on the Debug CRT *in
+    # addition* to the release CRT.
     if compat.is_win:
         files = [f for f in files if not f.endswith("d.dll")]
 
@@ -243,58 +229,50 @@ def qt_plugins_binaries(plugin_type, namespace):
 # ----------------------
 # This is the core of PyInstaller's approach to Qt deployment. It's based on:
 #
-# - Discovering the location of Qt libraries by introspection, using
-#   QtLibraryInfo_. This provides compatibility with many variants of Qt5/6
-#   (conda, self-compiled, provided by a Linux distro, etc.) and many versions
-#   of Qt5/6, all of which vary in the location of Qt files.
-# - Placing all frozen PyQt5/6 or PySide2/6 Qt files in a standard subdirectory
-#   layout, which matches the layout of the corresponding wheel on PyPI.
-#   This is necessary to support Qt installs which are not in a subdirectory
-#   of the PyQt5/6 or PySide2/6 wrappers. See ``hooks/rthooks/pyi_rth_qt5.py``
-#   for the use of environment variables to establish this layout.
-# - Emitting warnings on missing QML and translation files which some
-#   installations don't have.
-# - Determining additional files needed for deployment by following the Qt
-#   deployment process using `_qt_dynamic_dependencies_dict`_ and
-#   add_qt_dependencies_.
+# - Discovering the location of Qt libraries by introspection, using QtLibraryInfo_. This provides compatibility with
+#   many variants of Qt5/6 (conda, self-compiled, provided by a Linux distro, etc.) and many versions of Qt5/6, all of
+#   which vary in the location of Qt files.
+
+# - Placing all frozen PyQt5/6 or PySide2/6 Qt files in a standard subdirectory layout, which matches the layout of the
+#   corresponding wheel on PyPI. This is necessary to support Qt installs which are not in a subdirectory of the PyQt5/6
+#   or PySide2/6 wrappers. See ``hooks/rthooks/pyi_rth_qt5.py`` for the use of environment variables to establish this
+#   layout.
+
+# - Emitting warnings on missing QML and translation files which some installations don't have.
+
+# - Determining additional files needed for deployment by following the Qt deployment process using
+#   _qt_dynamic_dependencies_dict`_ and add_qt_dependencies_.
 #
 # _qt_dynamic_dependencies_dict
 # -----------------------------
-# This dictionary provides dynamics dependencies (plugins and translations) that
-# can't be discovered using ``getImports``. It was built by combining
-# information from:
+# This dictionary provides dynamics dependencies (plugins and translations) that can't be discovered using
+# ``getImports``. It was built by combining information from:
 #
 # - Qt `deployment <http://doc.qt.io/qt-5/deployment.html>`_ docs. Specifically:
 #
-#   -   The `deploying Qt for Linux/X11 <http://doc.qt.io/qt-5/linux-deployment.html#qt-plugins>`_
-#       page specifies including the Qt Platform Abstraction (QPA) plugin,
-#       ``libqxcb.so``. There's little other guidance provided.
+#   -   The `deploying Qt for Linux/X11 <http://doc.qt.io/qt-5/linux-deployment.html#qt-plugins>`_ page specifies
+#       including the Qt Platform Abstraction (QPA) plugin, ``libqxcb.so``. There's little other guidance provided.
 #   -   The `Qt for Windows - Deployment <http://doc.qt.io/qt-5/windows-deployment.html#creating-the-application-package>`_
-#       page likewise specifies the ``qwindows.dll`` QPA. This is found by the
-#       dependency walker, so it doesn't need to explicitly specified.
+#       page likewise specifies the ``qwindows.dll`` QPA. This is found by the dependency walker, so it doesn't need to
+#       explicitly specified.
 #
-#       -   For dynamic OpenGL applications, the ``libEGL.dll``,
-#           ``libGLESv2.dll``, ``d3dcompiler_XX.dll`` (the XX is a version
-#           number), and ``opengl32sw.dll`` libraries are also needed.
-#       -   If Qt was configured to use ICU, the ``icudtXX.dll``,
-#           ``icuinXX.dll``, and ``icuucXX.dll`` libraries are needed.
+#       -   For dynamic OpenGL applications, the ``libEGL.dll``, ``libGLESv2.dll``, ``d3dcompiler_XX.dll`` (the XX is a
+#           version number), and ``opengl32sw.dll`` libraries are also needed.
+#       -   If Qt was configured to use ICU, the ``icudtXX.dll``, ``icuinXX.dll``, and ``icuucXX.dll`` libraries are
+#           needed.
 #
 #       These are included by ``hook-PyQt5.py``.
 #
-#   -   The `Qt for macOS - Deployment <http://doc.qt.io/qt-5/osx-deployment.html#qt-plugins>`_
-#       page specifies the ``libqcocoa.dylib`` QPA, but little else. The
-#       `Mac deployment tool <http://doc.qt.io/qt-5/osx-deployment.html#the-mac-deployment-tool>`_
-#       provides the following rules:
+#   -   The `Qt for macOS - Deployment <http://doc.qt.io/qt-5/osx-deployment.html#qt-plugins>`_ page specifies the
+#       ``libqcocoa.dylib`` QPA, but little else. The `Mac deployment tool
+#       <http://doc.qt.io/qt-5/osx-deployment.html#the-mac-deployment-tool>`_ provides the following rules:
 #
 #       -   The platform plugin is always deployed.
 #       -   The image format plugins are always deployed.
 #       -   The print support plugin is always deployed.
-#       -   SQL driver plugins are deployed if the application uses the Qt SQL
-#           module.
-#       -   Script plugins are deployed if the application uses the Qt Script
-#           module.
-#       -   The SVG icon plugin is deployed if the application uses the Qt SVG
-#           module.
+#       -   SQL driver plugins are deployed if the application uses the Qt SQL module.
+#       -   Script plugins are deployed if the application uses the Qt Script module.
+#       -   The SVG icon plugin is deployed if the application uses the Qt SVG module.
 #       -   The accessibility plugin is always deployed.
 #
 #   -   Per the `Deploying QML Applications <http://doc.qt.io/qt-5/qtquick-deployment.html>`_

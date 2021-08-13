@@ -17,8 +17,8 @@ Tested with GStreamer 1.4.5, gst-python 1.4.0, PyGObject 3.16.2, and GObject Int
 GStreamer 1.4.5, gst-python 1.4.0, PyGObject 3.14.0, and GObject Introspection 1.42 on Windows 7
 """
 
-# GStreamer contains a lot of plugins. We need to collect them and bundle them wih the exe file.
-# We also need to resolve binary dependencies of these GStreamer plugins.
+# GStreamer contains a lot of plugins. We need to collect them and bundle them wih the exe file. We also need to resolve
+# binary dependencies of these GStreamer plugins.
 
 import glob
 import os
@@ -62,8 +62,8 @@ print(os.path.dirname(path))
 
 plugin_path = exec_statement(statement)
 
-# Use a pattern of libgst* since all GStreamer plugins that conform to GStreamer standards start with libgst
-# and we may have mixed plugin extensions, e.g., .so and .dylib.
+# Use a pattern of libgst* since all GStreamer plugins that conform to GStreamer standards start with libgst and we may
+# have mixed plugin extensions, e.g., .so and .dylib.
 for pattern in ['libgst*.dll', 'libgst*.dylib', 'libgst*.so']:
     pattern = os.path.join(plugin_path, pattern)
     binaries += [(f, os.path.join('gst_plugins')) for f in glob.glob(pattern)]

@@ -28,9 +28,8 @@ _MODULES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modules
 
 
 def test_nameclash(pyi_builder):
-    # test-case for issue #964: Nameclashes in module information gathering
-    # All pyinstaller specific module attributes should be prefixed,
-    # to avoid nameclashes.
+    # test-case for issue #964: Nameclashes in module information gathering All pyinstaller specific module attributes
+    # should be prefixed, to avoid nameclashes.
     pyi_builder.test_source("""
         import pyi_testmod_nameclash.nameclash
         """)
@@ -93,11 +92,10 @@ def test_import_submodule_global_shadowed(pyi_builder):
     """
     Functional test validating issue #1919.
 
-    `ModuleGraph` previously ignored `from`-style imports of submodules from
-    packages whose `__init__` submodules declared global variables of the same
-    name as those submodules. This test exercises this sporadic edge case by
-    unsuccessfully importing a submodule "shadowed" by a global variable of the
-    same name defined by their package's `__init__` submodule.
+    `ModuleGraph` previously ignored `from`-style imports of submodules from packages whose `__init__` submodules
+    declared global variables of the same name as those submodules. This test exercises this sporadic edge case by
+    unsuccessfully importing a submodule "shadowed" by a global variable of the same name defined by their package's
+    `__init__` submodule.
     """
 
     pyi_builder.test_source(
@@ -123,15 +121,13 @@ def test_import_submodule_global_unshadowed(pyi_builder):
     '''
     Functional test validating issue #1919.
 
-    `ModuleGraph` previously ignored `from`-style imports of submodules from
-    packages whose `__init__` submodules declared global variables of the same
-    name as those submodules. This test exercises this sporadic edge case by
+    `ModuleGraph` previously ignored `from`-style imports of submodules from packages whose `__init__` submodules
+    declared global variables of the same name as those submodules. This test exercises this sporadic edge case by
     successfully importing a submodule:
 
-    * Initially "shadowed" by a global variable of the same name defined by
-      their package's `__init__` submodule.
-    * Subsequently "unshadowed" when this global variable is then undefined by
-      their package's `__init__` submodule.
+    * Initially "shadowed" by a global variable of the same name defined by their package's `__init__` submodule.
+    * Subsequently "unshadowed" when this global variable is then undefined by their package's `__init__` submodule.
+
     '''
 
     pyi_builder.test_source(
@@ -158,20 +154,18 @@ def test_import_submodule_from_aliased_pkg(pyi_builder, script_dir):
 
 
 def test_module_with_coding_utf8(pyi_builder):
-    # Module ``utf8_encoded_module`` simply has an ``coding`` header
-    # and uses same German umlauts.
+    # Module ``utf8_encoded_module`` simply has an ``coding`` header and uses same German umlauts.
     pyi_builder.test_source("import module_with_coding_utf8")
 
 
 def test_hiddenimport(pyi_builder):
-    # The script simply does nothing, not even print out a line.
-    # The check is done by comparing with logs/test_hiddenimport.toc
+    # The script simply does nothing, not even print out a line. The check is done by comparing with
+    # logs/test_hiddenimport.toc
     pyi_builder.test_source('pass', ['--hidden-import=a_hidden_import'])
 
 
 def test_error_during_import(pyi_builder):
-    # See ticket #27: historically, PyInstaller was catching all
-    # errors during imports...
+    # See ticket #27: historically, PyInstaller was catching all errors during imports...
     pyi_builder.test_source(
         """
         try:
@@ -201,8 +195,7 @@ def test_import_non_existing_raises_import_error(pyi_builder):
 #
 # * pyi_testmod_path/
 #
-#   * __init__.py -- inserts a/ into __path__, then imports b, which now refers
-#     to a/b.py, not ./b.py.
+#   * __init__.py -- inserts a/ into __path__, then imports b, which now refers to a/b.py, not ./b.py.
 #   * b.py - raises an exception. **Should not be imported.**
 #   * a/ -- contains no __init__.py.
 #
@@ -214,10 +207,9 @@ def test_import_respects_path(pyi_builder, script_dir):
     )
 
 
-# Verify correct handling of sys.meta_path redirects like pkg_resources 28.6.1
-# does: '_vendor.xxx' gets imported as 'extern.xxx' and using '__import__()'.
-# Note: This also requires a hook, since 'pyi_testmod_metapath1._vendor' is
-# not imported directly and won't be found by modulegraph.
+# Verify correct handling of sys.meta_path redirects like pkg_resources 28.6.1 does: '_vendor.xxx' gets imported as
+# 'extern.xxx' and using '__import__()'. Note: This also requires a hook, since 'pyi_testmod_metapath1._vendor' is not
+# imported directly and won't be found by modulegraph.
 def test_import_metapath1(pyi_builder, script_dir):
     pyi_builder.test_source(
         'import pyi_testmod_metapath1', ['--additional-hooks-dir=' + script_dir.join('pyi_hooks').strpath]
@@ -250,8 +242,7 @@ def test_import_pyi_splash(pyi_builder):
 @skipif_no_compiler
 @skipif(is_win, reason="CDLL(None) seams to be not valid on Windows")
 def test_ctypes_CDLL_None(pyi_builder):
-    # Make sure we are able to load CDLL(None)
-    # -> pip does this for some reason
+    # Make sure we are able to load CDLL(None) -> pip does this for some reason
     pyi_builder.test_source(
         """
         import ctypes, ctypes.util
@@ -275,10 +266,8 @@ def __monkeypatch_resolveCtypesImports(monkeypatch, compiled_dylib):
         CONF['pathex'] = old_pathex
         return res
 
-    # Add the path to ctypes_dylib to pathex, only for
-    # _resolveCtypesImports. We can not monkeypath CONF['pathex']
-    # here, as it will be overwritten when pyi_builder is starting up.
-    # So be monkeypatch _resolveCtypesImports by a wrapper.
+    # Add the path to ctypes_dylib to pathex, only for _resolveCtypesImports. We can not monkeypath CONF['pathex'] here,
+    # as it will be overwritten when pyi_builder is starting up. So be monkeypatch _resolveCtypesImports by a wrapper.
     monkeypatch.setattr(PyInstaller.depend.utils, "_resolveCtypesImports", mocked_resolveCtypesImports)
 
 
@@ -288,8 +277,7 @@ def skip_if_lib_missing(libname, text=None):
     pytest decorator to evaluate the required shared lib.
 
     :param libname: Name of the required library.
-    :param text: Text to put into the reason message
-                 (defaults to 'lib%s.so' % libname)
+    :param text: Text to put into the reason message (defaults to 'lib%s.so' % libname)
 
     :return: pytest decorator with a reason.
     """
@@ -315,10 +303,9 @@ _template_ctypes_CDLL_find_library = """
     """
 
 
-# At least on Linux, we can not use our own `ctypes_dylib` because
-# `find_library` does not consult LD_LIBRARY_PATH and hence does not
-# find our lib. This tests verifies the path of the loaded library and
-# thus checks if the library is collected into the frozen application.
+# At least on Linux, we can not use our own `ctypes_dylib` because `find_library` does not consult LD_LIBRARY_PATH and
+# hence does not find our lib. This tests verifies the path of the loaded library and thus checks if the library is
+# collected into the frozen application.
 # TODO: Check how this behaves on other platforms.
 @skip_if_lib_missing('png', 'libpng.so (Ghostscript)')
 def test_ctypes_CDLL_find_library__png(pyi_builder):
@@ -345,8 +332,7 @@ for prefix in ('', 'ctypes.'):
     for funcname in ('CDLL', 'PyDLL', 'WinDLL', 'OleDLL', 'cdll.LoadLibrary'):
         ids.append(prefix + funcname)
         params = (prefix + funcname, ids[-1])
-        # Marking doesn't seem to chain here, so select just one skippping mark
-        # instead of both.
+        # Marking doesn't seem to chain here, so select just one skipping mark instead of both.
         if not has_compiler:
             params = pytest.param(*params, marks=skipif_no_compiler(params))
         elif funcname in ("WinDLL", "OleDLL"):
@@ -357,9 +343,8 @@ for prefix in ('', 'ctypes.'):
 
 @pytest.mark.parametrize("funcname,test_id", parameters, ids=ids)
 def test_ctypes_gen(pyi_builder, monkeypatch, funcname, compiled_dylib, test_id):
-    # evaluate the soname here, so the test-code contains a constant.
-    # We want the name of the dynamically-loaded library only, not its path.
-    # See discussion in https://github.com/pyinstaller/pyinstaller/pull/1478#issuecomment-139622994.
+    # Evaluate the soname here, so the test-code contains a constant. We want the name of the dynamically-loaded library
+    # only, not its path. See discussion in https://github.com/pyinstaller/pyinstaller/pull/1478#issuecomment-139622994.
     soname = compiled_dylib.basename
 
     source = """
@@ -374,8 +359,7 @@ def test_ctypes_gen(pyi_builder, monkeypatch, funcname, compiled_dylib, test_id)
 @pytest.mark.parametrize("funcname,test_id", parameters, ids=ids)
 def test_ctypes_in_func_gen(pyi_builder, monkeypatch, funcname, compiled_dylib, test_id):
     """
-    This is much like test_ctypes_gen except that the ctypes calls
-    are in a function. See issue #1620.
+    This is much like test_ctypes_gen except that the ctypes calls are in a function. See issue #1620.
     """
     soname = compiled_dylib.basename
 
@@ -406,9 +390,8 @@ def test_ctypes_cdll_builtin_extension(pyi_builder):
         import ctypes
         import importlib.machinery
 
-        # Try to load CDLL with all possible extension suffices; this
-        # should fail in all cases, as built-in extensions should not
-        # be in the ctypes' search path.
+        # Try to load CDLL with all possible extension suffices; this should fail in all cases, as built-in extensions
+        # should not be in the ctypes' search path.
         builtin_ext = '{0}'
         for suffix in importlib.machinery.EXTENSION_SUFFIXES:
             try:
@@ -420,13 +403,12 @@ def test_ctypes_cdll_builtin_extension(pyi_builder):
     )
 
 
-# TODO: Add test-cases for the prefabricated library loaders supporting
-# attribute accesses on windows. Example::
+# TODO: Add test-cases for the prefabricated library loaders supporting attribute accesses on windows. Example::
 #
 #   cdll.kernel32.GetModuleHandleA(None)
 #
-# Of course we need to use dlls which is not are commony available on
-# windows but mot excluded in PyInstaller.depend.dylib
+# Of course we need to use dlls which is not are commonly available on windows but mot excluded in
+# PyInstaller.depend.dylib
 
 
 def test_egg_unzipped(pyi_builder):
@@ -485,8 +467,7 @@ def test_egg_zipped(pyi_builder):
 
 
 def test_nspkg1(pyi_builder):
-    # Test inclusion of namespace packages implemented using
-    # pkg_resources.declare_namespace
+    # Test inclusion of namespace packages implemented using pkg_resources.declare_namespace
     pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg1-pkg', '*.egg'))
     pyi_builder.test_source(
         """
@@ -499,8 +480,8 @@ def test_nspkg1(pyi_builder):
 
 
 def test_nspkg1_empty(pyi_builder):
-    # Test inclusion of a namespace-only packages in an zipped egg.
-    # This package only defines the namespace, nothing is contained there.
+    # Test inclusion of a namespace-only packages in an zipped egg. This package only defines the namespace, nothing is
+    # contained there.
     pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg1-pkg', '*.egg'))
     pyi_builder.test_source(
         """
@@ -542,9 +523,8 @@ def test_nspkg3(pyi_builder):
         """
         import nspkg3.aaa
         try:
-            # pkgutil ignores items of sys.path that are not strings
-            # referring to existing directories. So this zipped egg
-            # *must* be ignored.
+            # pkgutil ignores items of sys.path that are not strings referring to existing directories. So this zipped
+            # egg *must* be ignored.
             import nspkg3.bbb.zzz
         except ImportError:
             pass
@@ -563,9 +543,8 @@ def test_nspkg3(pyi_builder):
 
 
 def test_nspkg3_empty(pyi_builder):
-    # Test inclusion of a namespace-only package in a zipped egg
-    # using pkgutil.extend_path.
-    # This package only defines namespace, nothing is contained there.
+    # Test inclusion of a namespace-only package in a zipped egg using pkgutil.extend_path. This package only defines
+    # namespace, nothing is contained there.
     pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg3-pkg', '*_empty.egg'))
     pyi_builder.test_source(
         """
@@ -577,8 +556,7 @@ def test_nspkg3_empty(pyi_builder):
 
 
 def test_nspkg3_aaa(pyi_builder):
-    # Test inclusion of a namespace package in an directory using
-    # pkgutil.extend_path
+    # Test inclusion of a namespace package in an directory using pkgutil.extend_path
     pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg3-pkg', '*.egg'))
     pyi_builder.test_source(
         """
@@ -589,8 +567,7 @@ def test_nspkg3_aaa(pyi_builder):
 
 
 def test_nspkg3_bbb_zzz(pyi_builder):
-    # Test inclusion of a namespace package in an zipped egg using
-    # pkgutil.extend_path
+    # Test inclusion of a namespace package in an zipped egg using pkgutil.extend_path
     pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg3-pkg', '*.egg'))
     pyi_builder.test_source(
         """
@@ -675,9 +652,8 @@ def test_nspkg_attributes_pep420(pyi_builder):
 
 
 def test_pkg_without_hook_for_pkg(pyi_builder, script_dir):
-    # The package `pkg_without_hook_for_pkg` does not have a hook, but
-    # `pkg_without_hook_for_pkg.sub1` has one. And this hook includes
-    # the "hidden" import `pkg_without_hook_for_pkg.sub1.sub11`
+    # The package `pkg_without_hook_for_pkg` does not have a hook, but `pkg_without_hook_for_pkg.sub1` has one. And this
+    # hook includes the "hidden" import `pkg_without_hook_for_pkg.sub1.sub11`
     pyi_builder.test_source(
         'import pkg_without_hook_for_pkg.sub1', ['--additional-hooks-dir=%s' % script_dir.join('pyi_hooks')]
     )

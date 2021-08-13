@@ -496,9 +496,8 @@ def is_module_satisfies(requirements, version=None, version_attr='__version__'):
         else:
             return True
 
-    # Either a module version was explicitly passed or no setuptools
-    # distribution exists for this module. First, parse a setuptools
-    # "Requirements" object from this requirements string.
+    # Either a module version was explicitly passed or no setuptools distribution exists for this module. First, parse a
+    # setuptools "Requirements" object from this requirements string.
     requirements_parsed = pkg_resources.Requirement.parse(requirements)
 
     # If no version was explicitly passed, query this module for it.
@@ -519,8 +518,7 @@ def is_module_satisfies(requirements, version=None, version_attr='__version__'):
 
 def is_package(module_name):
     """
-    Check if a Python module is really a module or is a package containing
-    other modules.
+    Check if a Python module is really a module or is a package containing other modules.
 
     :param module_name: Module name to check.
     :return: True if module is a package else otherwise.
@@ -543,19 +541,16 @@ def is_package(module_name):
 
 def get_package_paths(package):
     """
-    Given a package, return the path to packages stored on this machine
-    and also returns the path to this particular package. For example,
-    if pkg.subpkg lives in /abs/path/to/python/libs, then this function returns
-    ``(/abs/path/to/python/libs, /abs/path/to/python/libs/pkg/subpkg)``.
+    Given a package, return the path to packages stored on this machine and also returns the path to this particular
+    package. For example, if pkg.subpkg lives in /abs/path/to/python/libs, then this function returns ``(
+    /abs/path/to/python/libs, /abs/path/to/python/libs/pkg/subpkg)``.
     """
     file_attr = get_module_file_attribute(package)
 
     # package.__file__ = /abs/path/to/package/subpackage/__init__.py.
-    # Search for Python files in /abs/path/to/package/subpackage; pkg_dir
-    # stores this path.
+    # Search for Python files in /abs/path/to/package/subpackage; pkg_dir stores this path.
     pkg_dir = os.path.dirname(file_attr)
-    # When found, remove /abs/path/to/ from the filename; pkg_base stores
-    # this path to be removed.
+    # When found, remove /abs/path/to/ from the filename; pkg_base store this path to be removed.
     pkg_base = remove_suffix(pkg_dir, package.replace('.', os.sep))
 
     return pkg_base, pkg_dir
@@ -596,9 +591,8 @@ def collect_submodules(package: str, filter: Callable[[str], bool] = lambda name
     # Determine the filesystem path to the specified package.
     pkg_base, pkg_dir = get_package_paths(package)
 
-    # Walk the package. Since this performs imports, do it in a separate
-    # process. Because module import may result in exta output to stdout,
-    # we enclose the output module names with special prefix and suffix.
+    # Walk the package. Since this performs imports, do it in a separate process. Because module import may result in
+    # exta output to stdout, we enclose the output module names with special prefix and suffix.
     names = exec_statement(
         """
         import sys
@@ -656,8 +650,7 @@ def collect_submodules(package: str, filter: Callable[[str], bool] = lambda name
     mods = {package}
     # Filter through the returend submodules.
     for name in names.split():
-        # Filter out extra output during module imports by checking
-        # for the special prefix and suffix
+        # Filter out extra output during module imports by checking for the special prefix and suffix
         if name.startswith("$_pyi:") and name.endswith("*"):
             name = name[6:-1]
         else:
@@ -688,8 +681,7 @@ def is_module_or_submodule(name, mod_or_submod):
     return name.startswith(mod_or_submod + '.') or name == mod_or_submod
 
 
-# Patterns of dynamic library filenames that might be bundled with some
-# installed Python packages.
+# Patterns of dynamic library filenames that might be bundled with some installed Python packages.
 PY_DYLIB_PATTERNS = [
     '*.dll',
     '*.dylib',
@@ -720,9 +712,7 @@ def collect_dynamic_libs(package, destdir=None):
         for pattern in PY_DYLIB_PATTERNS:
             files = glob.glob(os.path.join(dirpath, pattern))
             for source in files:
-                # Produce the tuple
-                # (/abs/path/to/source/mod/submod/file.pyd,
-                #  mod/submod/file.pyd)
+                # Produce the tuple (/abs/path/to/source/mod/submod/file.pyd, mod/submod/file.pyd)
                 if destdir:
                     # Libraries will be put in the same directory.
                     dest = destdir
@@ -783,19 +773,17 @@ def collect_data_files(package, include_py_files=False, subdir=None, excludes=No
     if subdir:
         pkg_dir = os.path.join(pkg_dir, subdir)
     pkg_base = os.path.dirname(pkg_base)
-    # Ensure `pkg_base` ends with a single slash
-    # Subtle difference on Windows: In some cases `dirname` keeps the
+    # Ensure `pkg_base` ends with a single slash. Subtle difference on Windows: In some cases `dirname` keeps the
     # trailing slash, e.g. dirname("//aaa/bbb/"), see issue #4707.
     if not pkg_base.endswith(os.sep):
         pkg_base += os.sep
 
-    # Make sure the excludes are a list; this also makes a copy, so we don't
-    # modify the original.
+    # Make sure the excludes are a list; this also makes a copy, so we don't modify the original.
     excludes = list(excludes) if excludes else []
     # These excludes may contain direcories which need to be searched.
     excludes_len = len(excludes)
-    # Including py files means don't exclude them. This pattern will search any
-    # directories for containing files, so don't modify ``excludes_len``.
+    # Including py files means don't exclude them. This pattern will search any directories for containing files, so
+    # don't modify ``excludes_len``.
     if not include_py_files:
         excludes += ['**/*' + s for s in compat.ALL_SUFFIXES]
 
@@ -811,15 +799,13 @@ def collect_data_files(package, include_py_files=False, subdir=None, excludes=No
     # Determine what source files to use.
     sources = set()
 
-    # A helper function to glob the in/ex "cludes", adding a wildcard to refer
-    # to all files under a subdirectory if a subdirectory is matched by the
-    # first ``clude_len`` patterns. Otherwise, it in/excludes the matched file.
-    # **This modifies** ``cludes``.
+    # A helper function to glob the in/ex "cludes", adding a wildcard to refer to all files under a subdirectory if a
+    # subdirectory is matched by the first ``clude_len`` patterns. Otherwise, it in/excludes the matched file. **This
+    # modifies** ``cludes``.
     def clude_walker(
         # A list of paths relative to ``pkg_dir`` to in/exclude.
         cludes,
-        # The number of ``cludes`` for which matching directories should be
-        # searched for all files under them.
+        # The number of ``cludes`` for which matching directories should be searched for all files under them.
         clude_len,
         # True if the list is includes, False for excludes.
         is_include
@@ -857,13 +843,11 @@ def collect_system_data_files(path, destdir=None, include_py_files=False):
     # Accept only strings as paths.
     if not isinstance(path, compat.string_types):
         raise TypeError('path must be a str')
-    # The call to ``remove_prefix`` below assumes a path separate of ``os.sep``,
-    # which may not be true on Windows; Windows allows Linux path separators in
-    # filenames. Fix this by normalizing the path.
+    # The call to ``remove_prefix`` below assumes a path separate of ``os.sep``, which may not be true on Windows;
+    # Windows allows Linux path separators in filenames. Fix this by normalizing the path.
     path = os.path.normpath(path)
-    # Ensure `path` ends with a single slash
-    # Subtle difference on Windows: In some cases `dirname` keeps the
-    # trailing slash, e.g. dirname("//aaa/bbb/"), see issue #4707.
+    # Ensure `path` ends with a single slash. Subtle difference on Windows: In some cases `dirname` keeps the trailing
+    # slash, e.g. dirname("//aaa/bbb/"), see issue #4707.
     if not path.endswith(os.sep):
         path += os.sep
 
@@ -873,9 +857,7 @@ def collect_system_data_files(path, destdir=None, include_py_files=False):
         for f in files:
             extension = os.path.splitext(f)[1]
             if include_py_files or (extension not in PY_IGNORE_EXTENSIONS):
-                # Produce the tuple
-                # (/abs/path/to/source/mod/submod/file.dat,
-                #  mod/submod/destdir)
+                # Produce the tuple: (/abs/path/to/source/mod/submod/file.dat, mod/submod/destdir)
                 source = os.path.join(dirpath, f)
                 dest = remove_prefix(dirpath, path)
                 if destdir is not None:
@@ -978,31 +960,28 @@ def _copy_metadata_dest(egg_path: str, project_name: str) -> str:
 
     """
     if egg_path is None:
-        # According to older implementations of this function, packages may
-        # have no metadata. I have no idea when this can happen...
+        # According to older implementations of this function, packages may have no metadata. I have no idea when this
+        # can happen...
         raise RuntimeError(f"No metadata path found for distribution '{project_name}'.")
 
     egg_path = Path(egg_path)
     _project_name = _normalise_dist(project_name)
 
-    # There has been a fair amount of whack-a-mole fixing to this step.
-    # If new cases appear which this function can't handle, add them to the
-    # corresponding test:
+    # There has been a fair amount of whack-a-mole fixing to this step. If new cases appear which this function can't
+    # handle, add them to the corresponding test:
     #   tests/unit/test_hookutils.py::test_copy_metadata_dest()
     # See there also for example input/outputs.
 
-    # The most obvious answer is that the metadata folder should have the same
-    # name in a PyInstaller build as it does normally::
+    # The most obvious answer is that the metadata folder should have the same name in a PyInstaller build as it does
+    # normally::
     if _normalise_dist(egg_path.name).startswith(_project_name):
         # e.g. .../lib/site-packages/xyz-1.2.3.dist-info
         return egg_path.name
 
     # Using just the base-name breaks for an egg_path of the form:
     #   '.../site-packages/xyz-version.win32.egg/EGG-INFO'
-    # because multiple collected metadata folders will be written to the same
-    # name 'EGG-INFO' and clobber each other (see #1888).
-    # In this case, the correct behaviour appears to be to use the last 2 parts
-    # of the path:
+    # because multiple collected metadata folders will be written to the same name 'EGG-INFO' and clobber each other
+    # (see #1888). In this case, the correct behaviour appears to be to use the last 2 parts of the path:
     if len(egg_path.parts) >= 2:
         if _normalise_dist(egg_path.parts[-2]).startswith(_project_name):
             return os.path.join(*egg_path.parts[-2:])
@@ -1033,8 +1012,8 @@ def get_installer(module):
             package = pkg
             break
     metadata_dir, dest_dir = copy_metadata(package)[0]
-    # Check for an INSTALLER file in the metedata_dir and return the first line
-    # which should be the program that installed the module.
+    # Check for an INSTALLER file in the metedata_dir and return the first line which should be the program that
+    # installed the module.
     installer_file = os.path.join(metadata_dir, 'INSTALLER')
     if os.path.isdir(metadata_dir) and os.path.exists(installer_file):
         with open(installer_file, 'r') as installer_file_object:
@@ -1066,9 +1045,8 @@ def get_installer(module):
     return None
 
 
-# ``_map_distribution_to_packages`` is expensive. Compute it when used, then
-# return the memoized value. This is a simple alternative to
-# ``functools.lru_cache``.
+# ``_map_distribution_to_packages`` is expensive. Compute it when used, then return the memoized value. This is a simple
+# alternative to ``functools.lru_cache``.
 def _memoize(f):
     memo = []
 
@@ -1107,9 +1085,8 @@ def _map_distribution_to_packages():
     return dist_to_packages
 
 
-# Given a ``package_name`` as a string, this function returns a list of packages
-# needed to satisfy the requirements. This output can be assigned directly to
-# ``hiddenimports``.
+# Given a ``package_name`` as a string, this function returns a list of packages needed to satisfy the requirements.
+# This output can be assigned directly to ``hiddenimports``.
 def requirements_for_package(package_name):
     hiddenimports = []
 
@@ -1150,8 +1127,7 @@ def collect_all(package_name,
     Returns:
         tuple: A  ``(datas, binaries, hiddenimports)`` triplet containing:
 
-        - All data files, raw Python files (if **include_py_files**) and
-          package metadata folders.
+        - All data files, raw Python files (if **include_py_files**) and package metadata folders.
         - All dynamic libraries as returned by :func:`collect_dynamic_libs`.
         - All submodules of **packagename** and its dependencies.
 
@@ -1257,8 +1233,7 @@ if compat.is_pure_conda:
 elif compat.is_conda:
     from PyInstaller.utils.hooks.conda import CONDA_META_DIR as _tmp
     logger.warning(
-        "Assuming this isn't an Anaconda environment or an additional venv/"
-        "pipenv/... environment manager is being used on top because the "
-        "conda-meta folder %s doesn't exist.", _tmp
+        "Assuming this isn't an Anaconda environment or an additional venv/pipenv/... environment manager is being used "
+        "on top because the conda-meta folder %s doesn't exist.", _tmp
     )
     del _tmp

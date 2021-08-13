@@ -27,8 +27,7 @@ from PyInstaller.exceptions import ExecCommandFailed
 # Copied from https://docs.python.org/3/library/platform.html#cross-platform.
 is_64bits = sys.maxsize > 2**32
 
-# Distinguish specific code for various Python versions.
-# Variables 'is_pyXY' mean that Python X.Y and up is supported.
+# Distinguish specific code for various Python versions. Variables 'is_pyXY' mean that Python X.Y and up is supported.
 # Keep even unsupported versions here to keep 3rd-party hooks working.
 is_py35 = sys.version_info >= (3, 5)
 is_py36 = sys.version_info >= (3, 6)
@@ -49,16 +48,13 @@ is_freebsd = sys.platform.startswith('freebsd')
 is_openbsd = sys.platform.startswith('openbsd')
 is_hpux = sys.platform.startswith('hp-ux')
 
-# Some code parts are similar to several unix platforms
-# (e.g. Linux, Solaris, AIX)
-# Mac OS X is not considered as unix since there are many
-# platform specific details for Mac in PyInstaller.
+# Some code parts are similar to several unix platforms (e.g. Linux, Solaris, AIX).
+# Mac OS X is not considered as unix since there are many platform specific details for Mac in PyInstaller.
 is_unix = is_linux or is_solar or is_aix or is_freebsd or is_hpux or is_openbsd
 
 # On different platforms is different file for dynamic python library.
 # TODO: When removing support for is_py37, the "m" variants can be
-# removed, see
-# <https://docs.python.org/3/whatsnew/3.8.html#build-and-c-api-changes>
+# removed, see <https://docs.python.org/3/whatsnew/3.8.html#build-and-c-api-changes>
 _pyver = sys.version_info[:2]
 if is_win or is_cygwin:
     PYDYLIB_NAMES = {
@@ -77,9 +73,8 @@ elif is_darwin:
         'libpython%d.%dm.dylib' % _pyver
     }
 elif is_aix:
-    # Shared libs on AIX may be archives with shared object members,
-    # hence the ".a" suffix. However, starting with python 2.7.11
-    # libpython?.?.so and Python3 libpython?.?m.so files are produced.
+    # Shared libs on AIX may be archives with shared object members, hence the ".a" suffix. However, starting with
+    # python 2.7.11 libpython?.?.so and Python3 libpython?.?m.so files are produced.
     PYDYLIB_NAMES = {
         'libpython%d.%d.a' % _pyver,
         'libpython%d.%dm.a' % _pyver,
@@ -121,8 +116,7 @@ stdin_input = input
 # Safe repr that always outputs ascii
 safe_repr = ascii
 
-# String types to replace `isinstance(foo, str)`
-# Use `isinstance(foo, string_types)` instead.
+# String types to replace `isinstance(foo, str)`. Obselete since dropping support for Python 2.x.
 string_types = str
 
 # Correct extension ending: 'c' or 'o'
@@ -138,42 +132,33 @@ if __debug__:
 else:
     _PYOPTS = '-O'
 
-# In a virtual environment created by virtualenv (github.com/pypa/virtualenv)
-# there exists sys.real_prefix with the path to the base Python
-# installation from which the virtual environment was created.
-# This is true regardless of
-# the version of Python used to execute the virtualenv command.
+# In a virtual environment created by virtualenv (github.com/pypa/virtualenv) there exists sys.real_prefix with the path
+# to the base Python installation from which the virtual environment was created. This is true regardless of the version
+# of Python used to execute the virtualenv command.
 #
-# In a virtual environment created by the venv module available in
-# the Python standard lib, there exists sys.base_prefix with the path to
-# the base implementation. This does not exist in
-# a virtual environment created by virtualenv.
+# In a virtual environment created by the venv module available in the Python standard lib, there exists sys.base_prefix
+# with the path to the base implementation. This does not exist in a virtual environment created by virtualenv.
 #
-# The following code creates compat.is_venv and is.virtualenv
-# that are True when running a virtual environment, and also
-# compat.base_prefix with the path to the
-# base Python installation.
+# The following code creates compat.is_venv and is.virtualenv that are True when running a virtual environment, and also
+# compat.base_prefix with the path to the base Python installation.
 
 base_prefix = os.path.abspath(getattr(sys, 'real_prefix', getattr(sys, 'base_prefix', sys.prefix)))
 # Ensure `base_prefix` is not containing any relative parts.
 is_venv = is_virtualenv = base_prefix != os.path.abspath(sys.prefix)
 
-# Conda environments sometimes have different paths or apply patches to
-# packages that can affect how a hook or package should access resources.
-# Method for determining conda taken from:
-# https://stackoverflow.com/questions/47610844#47610844
+# Conda environments sometimes have different paths or apply patches to packages that can affect how a hook or package
+# should access resources. Method for determining conda taken from https://stackoverflow.com/questions/47610844#47610844
 is_conda = os.path.isdir(os.path.join(base_prefix, 'conda-meta'))
 
-# Similar to ``is_conda`` but is ``False`` using another ``venv``-like manager
-# on top. In this case, no packages encountered will be conda packages meaning
-# that the default non-conda behaviour is generally desired from PyInstaller.
+# Similar to ``is_conda`` but is ``False`` using another ``venv``-like manager on top. In this case, no packages
+# encountered will be conda packages meaning that the default non-conda behaviour is generally desired from PyInstaller.
 is_pure_conda = os.path.isdir(os.path.join(sys.prefix, 'conda-meta'))
 
 # Full path to python interpreter.
 python_executable = getattr(sys, '_base_executable', sys.executable)
 
-# Is this Python from Microsoft App Store (Windows only)?
-# Python from Microsoft App Store has executable pointing at empty shims.
+# Is this Python from Microsoft App Store (Windows only)? Python from Microsoft App Store has executable pointing at
+# empty shims.
 is_ms_app_store = is_win and os.path.getsize(python_executable) == 0
 
 if is_ms_app_store:
@@ -185,8 +170,7 @@ if is_ms_app_store:
             'belonging to Python from Microsoft App Store!'
         )
 
-# In Python 3.4 module 'imp' is deprecated and there is another way how
-# to obtain magic value.
+# In Python 3.4 module 'imp' is deprecated and there is another way how to obtain magic value.
 import importlib.util
 
 BYTECODE_MAGIC = importlib.util.MAGIC_NUMBER
@@ -197,8 +181,7 @@ from importlib.machinery import EXTENSION_SUFFIXES, all_suffixes
 ALL_SUFFIXES = all_suffixes()
 
 # In Python 3 'Tkinter' has been made lowercase - 'tkinter'.
-# TODO: remove once all references are gone from both pyinstaller and
-# pyinstaller-hooks-contrib!
+# TODO: remove once all references are gone from both pyinstaller and pyinstaller-hooks-contrib!
 modname_tkinter = 'tkinter'
 
 # On Windows we require pywin32-ctypes
@@ -218,16 +201,13 @@ if is_win:
                 'pip install pywin32-ctypes\n'
             )
 
-# macOS's platform.architecture() can be buggy, so we do this manually here.
-# Based off the python documentation:
+# macOS's platform.architecture() can be buggy, so we do this manually here. Based off the python documentation:
 # https://docs.python.org/3/library/platform.html#platform.architecture
 architecture = '64bit' if sys.maxsize > 2**32 and is_darwin else \
     '32bit' if is_darwin else platform.architecture()[0]
 
-# Cygwin needs special handling, because platform.system() contains
-# identifiers such as MSYS_NT-10.0-19042 and CYGWIN_NT-10.0-19042 that
-# do not fit PyInstaller's OS naming scheme. Explicitly set `system` to
-# 'Cygwin'.
+# Cygwin needs special handling, because platform.system() contains identifiers such as MSYS_NT-10.0-19042 and
+# CYGWIN_NT-10.0-19042 that do not fit PyInstaller's OS naming scheme. Explicitly set `system` to 'Cygwin'.
 if is_cygwin:
     system = 'Cygwin'
 else:
@@ -236,12 +216,10 @@ else:
 # Machine suffix for bootloader.
 machine = _pyi_machine(platform.machine(), platform.system())
 
-# Set and get environment variables does not handle unicode strings correctly
-# on Windows.
+# Set and get environment variables does not handle unicode strings correctly on Windows.
 
-# Acting on os.environ instead of using getenv()/setenv()/unsetenv(),
-# as suggested in <http://docs.python.org/library/os.html#os.environ>:
-# "Calling putenv() directly does not change os.environ, so it's
+# Acting on os.environ instead of using getenv()/setenv()/unsetenv(), as suggested in
+# <http://docs.python.org/library/os.html#os.environ>: "Calling putenv() directly does not change os.environ, so it's
 # better to modify os.environ." (Same for unsetenv.)
 
 
@@ -499,20 +477,17 @@ def exec_command_all(*cmdargs, **kwargs):
     except subprocess.TimeoutExpired:
         proc.kill()
         raise
-    # stdout/stderr are returned as a byte array NOT as string.
-    # Thus we need to convert that to proper encoding.
+    # stdout/stderr are returned as a byte array NOT as string. Thus we need to convert that to proper encoding.
     try:
         if encoding:
             out = out.decode(encoding)
             err = err.decode(encoding)
         else:
-            # If no encoding is given, assume we're reading filenames from
-            # stdout only because it's the common case.
+            # If no encoding is given, assume we're reading filenames from stdout only because it's the common case.
             out = os.fsdecode(out)
             err = os.fsdecode(err)
     except UnicodeDecodeError as e:
-        # The sub-process used a different encoding,
-        # provide more information to ease debugging.
+        # The sub-process used a different encoding, provide more information to ease debugging.
         print('--' * 20, file=sys.stderr)
         print(str(e), file=sys.stderr)
         print('These are the bytes around the offending byte:', file=sys.stderr)
@@ -525,10 +500,9 @@ def exec_command_all(*cmdargs, **kwargs):
 def __wrap_python(args, kwargs):
     cmdargs = [sys.executable]
 
-    # Mac OS X supports universal binaries (binary for multiple architectures.
-    # We need to ensure that subprocess binaries are running for the same
-    # architecture as python executable.
-    # It is necessary to run binaries with 'arch' command.
+    # Mac OS X supports universal binaries (binary for multiple architectures. We need to ensure that subprocess
+    # binaries are running for the same architecture as python executable. It is necessary to run binaries with 'arch'
+    # command.
     if is_darwin:
         if architecture == '64bit':
             if platform.machine() == 'arm64':
@@ -539,9 +513,8 @@ def __wrap_python(args, kwargs):
             py_prefix = ['arch', '-i386']
         else:
             py_prefix = []
-        # Since OS X 10.11 the environment variable DYLD_LIBRARY_PATH is no
-        # more inherited by child processes, so we proactively propagate
-        # the current value using the `-e` option of the `arch` command.
+        # Since OS X 10.11 the environment variable DYLD_LIBRARY_PATH is no more inherited by child processes, so we
+        # proactively propagate the current value using the `-e` option of the `arch` command.
         if 'DYLD_LIBRARY_PATH' in os.environ:
             path = os.environ['DYLD_LIBRARY_PATH']
             py_prefix += ['-e', 'DYLD_LIBRARY_PATH=%s' % path]
@@ -623,14 +596,11 @@ def getsitepackages(prefixes=None):
     return sitepackages
 
 
-# Backported for virtualenv.
-# Module 'site' in virtualenv might not have this attribute.
+# Backported for virtualenv. Module 'site' in virtualenv might not have this attribute.
 getsitepackages = getattr(site, 'getsitepackages', getsitepackages)
 
-# Wrapper to load a module from a Python source file.
-# This function loads import hooks when processing them.
 
-
+# Wrapper to load a module from a Python source file. This function loads import hooks when processing them.
 def importlib_load_source(name, pathname):
     # Import module from a file.
     mod_loader = importlib.machinery.SourceFileLoader(name, pathname)
@@ -640,10 +610,8 @@ def importlib_load_source(name, pathname):
 # Patterns of module names that should be bundled into the base_library.zip.
 
 PY3_BASE_MODULES = {
-    # Python 3.x
-    # These modules are direct or indirect dependencies of encodings.* modules.
-    # encodings modules must be recursively included to set the I/O encoding during
-    # python startup.
+    # These modules are direct or indirect dependencies of encodings.* modules. encodings modules must be recursively
+    # included to set the I/O encoding during python startup.
     '_bootlocale',
     '_collections_abc',
     '_weakrefset',
@@ -683,8 +651,8 @@ PURE_PYTHON_MODULE_TYPES = {
     'FlatPackage',
     'ArchiveModule',
 }
-# Object types of special Python modules (built-in, run-time, namespace package)
-# in modulegraph dependency graph that do not have code object.
+# Object types of special Python modules (built-in, run-time, namespace package) in modulegraph dependency graph that do
+# not have code object.
 SPECIAL_MODULE_TYPES = {
     'AliasNode',
     'BuiltinModule',
@@ -694,16 +662,14 @@ SPECIAL_MODULE_TYPES = {
     # PyInstaller handles scripts differently and not as standard Python modules.
     'Script',
 }
-# Object types of Binary Python modules (extensions, etc) in modulegraph
-# dependency graph.
+# Object types of Binary Python modules (extensions, etc) in modulegraph dependency graph.
 BINARY_MODULE_TYPES = {
     'Extension',
     'ExtensionPackage',
 }
 # Object types of valid Python modules in modulegraph dependency graph.
 VALID_MODULE_TYPES = PURE_PYTHON_MODULE_TYPES | SPECIAL_MODULE_TYPES | BINARY_MODULE_TYPES
-# Object types of bad/missing/invalid Python modules in modulegraph
-# dependency graph.
+# Object types of bad/missing/invalid Python modules in modulegraph dependency graph.
 # TODO Should be 'Invalid' module types also in the 'MISSING' set?
 BAD_MODULE_TYPES = {
     'BadModule',
@@ -712,10 +678,9 @@ BAD_MODULE_TYPES = {
     'InvalidCompiledModule',
     'MissingModule',
 
-    # Runtime modules and packages are technically valid rather than bad, but
-    # exist only in-memory rather than on-disk (typically due to
-    # pre_safe_import_module() hooks) and hence cannot be physically frozen.
-    # For simplicity, these nodes are categorized as bad rather than valid.
+    # Runtime modules and packages are technically valid rather than bad, but exist only in-memory rather than on-disk
+    # (typically due to pre_safe_import_module() hooks) and hence cannot be physically frozen. For simplicity, these
+    # nodes are categorized as bad rather than valid.
     'RuntimeModule',
     'RuntimePackage',
 }

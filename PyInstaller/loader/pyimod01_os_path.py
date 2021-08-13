@@ -24,11 +24,9 @@ _mindirlen = 0
 
 # Wrap os.environ, os.listdir(), os.sep
 
-# We cannot cache the content of os.listdir(). It was found to cause problems
-# with programs that dynamically add python modules to be reimported by that
-# same program (i.e., plugins), because the cache is only built once
-# at the beginning, and never updated. So, we must really list the directory
-# again.
+# We cannot cache the content of os.listdir(). It was found to cause problems with programs that dynamically add python
+# modules to be reimported by that same program (i.e., plugins), because the cache is only built once at the beginning,
+# and never updated. So, we must really list the directory again.
 
 if 'posix' in _builtin_names:  # For Linux, Unix, Mac OS X
     from posix import environ as os_environ
@@ -67,8 +65,7 @@ def os_path_dirname(a, sep=os_sep, mindirlen=_mindirlen):
 
 # Wrap os.path.basename()
 if sys.platform.startswith('win'):
-    # Implementation from ntpath.py module
-    # from standard Python 2.7 Library.
+    # Implementation from ntpath.py module from standard Python 2.7 Library.
     def os_path_basename(pth):
         ## Implementation of os.path.splitdrive()
         if pth[1:2] == ':':
@@ -83,12 +80,10 @@ if sys.platform.startswith('win'):
         while i and p[i - 1] not in '/\\':
             i = i - 1
         head, tail = p[:i], p[i:]  # now tail has no slashes
-        # Windows implementation is based on split(). We need
-        # to return only tail.
+        # Windows implementation is based on split(). We need to return only tail.
         return tail
 else:
-    # Implementation from ntpath.py module
-    # from standard Python 2.7 Library.
+    # Implementation from ntpath.py module from standard Python 2.7 Library.
     def os_path_basename(pth):
         i = pth.rfind('/') + 1
         return pth[i:]

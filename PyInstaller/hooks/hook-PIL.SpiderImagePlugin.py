@@ -9,8 +9,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# PIL's SpiderImagePlugin features a tkPhotoImage() method which imports
-# ImageTk (and thus brings the whole Tcl/Tk library in).
-# Assume that if people are really using tkinter in their application, they
-# will also import it directly.
+# PIL's SpiderImagePlugin features a tkPhotoImage() method which imports ImageTk (and thus brings the whole Tcl/Tk
+# library in). Assume that if people are really using tkinter in their application, they will also import it directly.
 excludedimports = ['tkinter']

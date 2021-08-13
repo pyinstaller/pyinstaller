@@ -13,13 +13,10 @@ Utilities to create data structures for embedding Python modules and additional
 files into the executable.
 """
 
-# While an Archive is really an abstraction for any "filesystem
-# within a file", it is tuned for use with imputil.FuncImporter.
-# This assumes it contains python code objects, indexed by the
-# the internal name (ie, no '.py').
+# While an Archive is really an abstraction for any "filesystem within a file", it is tuned for use with
+# imputil.FuncImporter. This assumes it contains python code objects, indexed by the the internal name (ie, no '.py').
 #
-# See pyi_carchive.py for a more general archive (contains anything)
-# that can be understood by a C program.
+# See pyi_carchive.py for a more general archive (contains anything) that can be understood by a C program.
 
 import io
 import marshal
@@ -36,12 +33,9 @@ from PyInstaller.loader.pyimod02_archive import (PYZ_TYPE_DATA, PYZ_TYPE_MODULE,
 
 class ArchiveWriter(object):
     """
-    A base class for a repository of python code objects.
-    The extract method is used by imputil.ArchiveImporter
-    to get code objects by name (fully qualified name), so
-    an enduser "import a.b" would become
-      extract('a.__init__')
-      extract('a.b')
+    A base class for a repository of python code objects. The extract method is used by imputil.ArchiveImporter to
+    get code objects by name (fully qualified name), so an enduser "import a.b" would become extract('a.__init__')
+    extract('a.b')
     """
     MAGIC = b'PYL\0'
     HDRLEN = 12  # default is MAGIC followed by python's magic, int pos of toc
@@ -49,10 +43,8 @@ class ArchiveWriter(object):
 
     def __init__(self, archive_path, logical_toc):
         """
-        Create an archive file of name 'archive_path'.
-        logical_toc is a 'logical TOC' - a list of (name, path, ...)
-        where name is the internal name, eg 'a'
-        and path is a file to get the object from, eg './a.pyc'.
+        Create an archive file of name 'archive_path'. logical_toc is a 'logical TOC' - a list of (name, path,
+        ...) where name is the internal name, eg 'a' and path is a file to get the object from, eg './a.pyc'.
         """
         self.start = 0
 
@@ -86,8 +78,8 @@ class ArchiveWriter(object):
 
     def _finalize(self):
         """
-        Finalize an archive which has been opened using _start_add_entries(),
-        writing any needed padding and the table of contents.
+        Finalize an archive which has been opened using _start_add_entries(), writing any needed padding and the
+        table of contents.
         """
         toc_pos = self.lib.tell()
         self.save_trailer(toc_pos)
@@ -98,11 +90,9 @@ class ArchiveWriter(object):
     # manages keeping the internal TOC and the guts in sync #
     def add(self, entry):
         """
-        Override this to influence the mechanics of the Archive.
-        Assumes entry is a seq beginning with (nm, pth, ...) where
-        nm is the key by which we'll be asked for the object.
-        pth is the name of where we find the object. Overrides of
-        get_obj_from can make use of further elements in entry.
+        Override this to influence the mechanics of the Archive. Assumes entry is a seq beginning with (nm, pth,
+        ...) where nm is the key by which we'll be asked for the object. pth is the name of where we find the object.
+        Overrides of get_obj_from can make use of further elements in entry.
         """
         nm = entry[0]
         pth = entry[1]
@@ -116,8 +106,7 @@ class ArchiveWriter(object):
 
     def save_trailer(self, tocpos):
         """
-        Default - toc is a dict
-        Gets marshaled to self.lib
+        Default - toc is a dict Gets marshaled to self.lib
         """
         try:
             self.lib.write(marshal.dumps(self.toc))
@@ -180,8 +169,7 @@ class ZlibArchiveWriter(ArchiveWriter):
         """
         code_dict      dict containing module code objects from ModuleGraph.
         """
-        # Keep references to module code objects constructed by ModuleGraph
-        # to avoid writting .pyc/pyo files to hdd.
+        # Keep references to module code objects constructed by ModuleGraph to avoid writting .pyc/pyo files to hdd.
         self.code_dict = code_dict or {}
         self.cipher = cipher or None
 
@@ -192,8 +180,7 @@ class ZlibArchiveWriter(ArchiveWriter):
         if typ == 'PYMODULE':
             typ = PYZ_TYPE_MODULE
             if path in ('-', None):
-                # This is a NamespacePackage, modulegraph marks them
-                # by using the filename '-'. (But wants to use None,
+                # This is a NamespacePackage, modulegraph marks them by using the filename '-'. (But wants to use None,
                 # so check for None, too, to be forward-compatible.)
                 typ = PYZ_TYPE_NSPKG
             else:
@@ -206,8 +193,8 @@ class ZlibArchiveWriter(ArchiveWriter):
             typ = PYZ_TYPE_DATA
             with open(path, 'rb') as fh:
                 data = fh.read()
-            # No need to use forward slash as path-separator here since
-            # pkg_resources on Windows back slash as path-separator.
+            # No need to use forward slash as path-separator here since pkg_resources on Windows back slash as
+            # path-separator.
 
         obj = zlib.compress(data, self.COMPRESSION_LEVEL)
 
@@ -245,10 +232,8 @@ class CTOC(object):
         """
         rslt = []
         for (dpos, dlen, ulen, flag, typcd, nm) in self.data:
-            # Encode all names using UTF-8. This should be save as
-            # standard python modules only contain ascii-characters
-            # (and standard shared libraries should have the same) and
-            # thus the C-code still can handle this correctly.
+            # Encode all names using UTF-8. This should be save as standard python modules only contain ascii-characters
+            # (and standard shared libraries should have the same) and thus the C-code still can handle this correctly.
             nm = nm.encode('utf-8')
             nmlen = len(nm) + 1  # add 1 for a '\0'
             # align to 16 byte boundary so xplatform C can read
@@ -281,13 +266,12 @@ class CTOC(object):
 
         This function is used only while creating an executable.
         """
-        # Ensure forward slashes in paths are on Windows converted to back
-        # slashes '\\' since on Windows the bootloader works only with back
-        # slashes.
+        # Ensure forward slashes in paths are on Windows converted to back slashes '\\' since on Windows the bootloader
+        # works only with back slashes.
         nm = os.path.normpath(nm)
         if is_win and os.path.sep == '/':
-            # When building under MSYS, the above path normalization
-            # uses Unix-style separators, so replace them manually.
+            # When building under MSYS, the above path normalization uses Unix-style separators, so replace them
+            # manually.
             nm = nm.replace(os.path.sep, '\\')
         self.data.append((dpos, dlen, ulen, flag, typcd, nm))
 
@@ -296,21 +280,18 @@ class CArchiveWriter(ArchiveWriter):
     """
     An Archive subclass that can hold arbitrary data.
 
-    This class encapsulates all files that are bundled within an executable.
-    It can contain ZlibArchive (Python .pyc files), dlls, Python C extensions
-    and all other data files that are bundled in --onefile mode.
+    This class encapsulates all files that are bundled within an executable. It can contain ZlibArchive (Python .pyc
+    files), dlls, Python C extensions and all other data files that are bundled in --onefile mode.
 
     Easily handled from C or from Python.
     """
-    # MAGIC is usefull to verify that conversion of Python data types
-    # to C structure and back works properly.
+    # MAGIC is usefull to verify that conversion of Python data types to C structure and back works properly.
     MAGIC = b'MEI\014\013\012\013\016'
     HDRLEN = 0
     LEVEL = 9
 
-    # Cookie - holds some information for the bootloader. C struct format
-    # definition. '!' at the beginning means network byte order.
-    # C struct looks like:
+    # Cookie - holds some information for the bootloader. C struct format definition. '!' at the beginning means network
+    # byte order. C struct looks like:
     #
     #   typedef struct _cookie {
     #       char magic[8]; /* 'MEI\014\013\012\013\016' */
@@ -374,8 +355,8 @@ class CArchiveWriter(ArchiveWriter):
                 ulen = 0
                 flag = 0
             elif typcd == 's':
-                # If it's a source code file, compile it to a code object and marshall
-                # the object so it can be unmarshalled by the bootloader.
+                # If it's a source code file, compile it to a code object and marshall the object so it can be
+                # unmarshalled by the bootloader.
 
                 code = get_code_object(nm, pathnm)
                 code = strip_paths_in_code(code)
@@ -389,28 +370,21 @@ class CArchiveWriter(ArchiveWriter):
                 header = fh.read(4)
                 fh.seek(0)
                 if header == BYTECODE_MAGIC:
-                    # Read whole header and load code.
-                    # According to PEP-552, in python versions prior to
-                    # 3.7, the PYC header consists of three 32-bit words
-                    # (magic, timestamp, and source file size).
-                    # From python 3.7 on, the PYC header was extended to
-                    # four 32-bit words (magic, flags, and, depending on
-                    # the flags, either timestamp and source file size,
-                    # or a 64-bit hash).
+                    # Read whole header and load code. According to PEP-552, in python versions prior to 3.7, the PYC
+                    # header consists of three 32-bit words (magic, timestamp, and source file size).
+                    # From python 3.7 on, the PYC header was extended to four 32-bit words (magic, flags, and, depending
+                    # on the flags, either timestamp and source file size, or a 64-bit hash).
                     if is_py37:
                         header = fh.read(16)
                     else:
                         header = fh.read(12)
                     code = marshal.load(fh)
-                    # Strip paths from code, marshal back into module form.
-                    # The header fields (timestamp, size, hash, etc.) are
-                    # all referring to the source file, so our modification
-                    # of the code object does not affect them, and we can
-                    # re-use the original header.
+                    # Strip paths from code, marshal back into module form. The header fields (timestamp, size, hash,
+                    # etc.) are all referring to the source file, so our modification of the code object does not affect
+                    # them, and we can re-use the original header.
                     code = strip_paths_in_code(code)
                     data = header + marshal.dumps(code)
-                    # Create file-like object for timestamp re-write
-                    # in the subsequent steps
+                    # Create file-like object for timestamp re-write in the subsequent steps
                     fh = io.BytesIO(data)
                     ulen = len(data)
             else:
@@ -480,8 +454,7 @@ class CArchiveWriter(ArchiveWriter):
         # now save teh cookie
         total_len = tocpos + toclen + self._cookie_size
         pyvers = sys.version_info[0] * 10 + sys.version_info[1]
-        # Before saving cookie we need to convert it to corresponding
-        # C representation.
+        # Before saving cookie we need to convert it to corresponding C representation.
         cookie = struct.pack(
             self._cookie_format, self.MAGIC, total_len, tocpos, toclen, pyvers, self._pylib_name.encode('ascii')
         )
@@ -496,13 +469,10 @@ class SplashWriter(ArchiveWriter):
     with the typecode ARCHIVE_ITEM_SPLASH. This writer creates the bundled
     information in the archive.
     """
-    # This struct describes the splash resources as it will be in an
-    # buffer inside the bootloader. All necessary parts are bundled, the
-    # *_len and *_offset fields describe the data beyond this header
-    # definition.
-    # Whereas script and image fields are binary data, the requirements
-    # fields describe an array of strings. Each string is null-terminated
-    # in order to easily iterate over this list from within C.
+    # This struct describes the splash resources as it will be in an buffer inside the bootloader. All necessary parts
+    # are bundled, the *_len and *_offset fields describe the data beyond this header definition.
+    # Whereas script and image fields are binary data, the requirements fields describe an array of strings. Each string
+    # is null-terminated in order to easily iterate over this list from within C.
     #
     #   typedef struct _splash_data_header {
     #       char tcl_libname[16];  /* Name of tcl library, e.g. tcl86t.dll */
@@ -562,11 +532,10 @@ class SplashWriter(ArchiveWriter):
 
     def add(self, name):
         """
-        This methods adds a name to the requirement list in the splash
-        data. This list (more an array) contains the names of all files
-        the bootloader needs to extract before the splash screen can be
-        started. The implementation terminates every name with a null-byte,
-        that keeps the list short memory wise and makes it iterable from C.
+        This methods adds a name to the requirement list in the splash data. This list (more an array) contains the
+        names of all files the bootloader needs to extract before the splash screen can be started. The
+        implementation terminates every name with a null-byte, that keeps the list short memory wise and makes it
+        iterable from C.
         """
         name = name.encode('utf-8')
         self.lib.write(name + b'\0')
@@ -598,17 +567,14 @@ class SplashWriter(ArchiveWriter):
         self.save_image()
 
     def save_script(self):
-        """ Add the tcl/tk script into the archive.
-        This strips out every comment in the source to save some space
+        """ Add the tcl/tk script into the archive. This strips out every comment in the source to save some space.
         """
         self._script_len = len(self._script)
         self.lib.write(self._script.encode("utf-8"))
 
     def save_image(self):
-        """Copy the image into the archive.
-        If self._image are bytes the buffer will be written directly into
-        the archive, otherwise it is assumed to be a path and the file will
-        be written into it.
+        """Copy the image into the archive. If self._image are bytes the buffer will be written directly into the
+        archive, otherwise it is assumed to be a path and the file will be written into it.
         """
         if isinstance(self._image, bytes):
             # image was converted by PIL/Pillow

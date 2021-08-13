@@ -26,8 +26,7 @@ from PyInstaller.compat import expand_path, is_darwin, is_win
 logger = logging.getLogger(__name__)
 add_command_sep = os.pathsep
 
-# This list gives valid choices for the ``--debug`` command-line option, except
-# for the ``all`` choice.
+# This list gives valid choices for the ``--debug`` command-line option, except for the ``all`` choice.
 DEBUG_ARGUMENT_CHOICES = ['imports', 'bootloader', 'noarchive']
 # This is the ``all`` choice.
 DEBUG_ALL_CHOICE = ['all']
@@ -40,8 +39,8 @@ def quote_win_filepath(path):
 
 def make_path_spec_relative(filename, spec_dir):
     """
-    Make the filename relative to the directory containing .spec file if filename
-    is relative and not absolute. Otherwise keep filename untouched.
+    Make the filename relative to the directory containing .spec file if filename is relative and not absolute.
+    Otherwise keep filename untouched.
     """
     if os.path.isabs(filename):
         return filename
@@ -52,11 +51,9 @@ def make_path_spec_relative(filename, spec_dir):
         return filename
 
 
-# Support for trying to avoid hard-coded paths in the .spec files.
-# Eg, all files rooted in the Installer directory tree will be
-# written using "HOMEPATH", thus allowing this spec file to
-# be used with any Installer installation.
-# Same thing could be done for other paths too.
+# Support for trying to avoid hard-coded paths in the .spec files. Eg, all files rooted in the Installer directory tree
+# will be written using "HOMEPATH", thus allowing this spec file to be used with any Installer installation. Same thing
+# could be done for other paths too.
 path_conversions = ((HOMEPATH, "HOMEPATH"),)
 
 
@@ -75,8 +72,7 @@ def add_data_or_binary(string):
 
 def make_variable_path(filename, conversions=path_conversions):
     if not os.path.isabs(filename):
-        # os.path.commonpath can not compare relative and absolute
-        # paths, and if filename is not absolut, none of the
+        # os.path.commonpath can not compare relative and absolute paths, and if filename is not absolut, none of the
         # paths in conversions will match anyway.
         return None, filename
     for (from_path, to_name) in conversions:
@@ -84,9 +80,8 @@ def make_variable_path(filename, conversions=path_conversions):
         try:
             common_path = os.path.commonpath([filename, from_path])
         except ValueError:
-            # Per https://docs.python.org/3/library/os.path.html#os.path.commonpath,
-            # this raises ValueError in several cases which prevent computing
-            # a common path.
+            # Per https://docs.python.org/3/library/os.path.html#os.path.commonpath, this raises ValueError in several
+            # cases which prevent computing a common path.
             common_path = None
         if common_path == from_path:
             rest = filename[len(from_path):]
@@ -96,8 +91,8 @@ def make_variable_path(filename, conversions=path_conversions):
     return None, filename
 
 
-# An object used in place of a "path string" which knows how to repr()
-# itself using variable names instead of hard-coded paths.
+# An object used in place of a "path string" which knows how to repr() itself using variable names instead of hard-coded
+# paths.
 class Path:
     def __init__(self, *parts):
         self.path = os.path.join(*parts)
@@ -111,15 +106,14 @@ class Path:
         return "os.path.join(" + self.variable_prefix + "," + repr(self.filename_suffix) + ")"
 
 
-# An object used to construct extra preamble for the spec file, in order
-# to accommodate extra collect_*() calls from the command-line
+# An object used to construct extra preamble for the spec file, in order to accommodate extra collect_*() calls from the
+# command-line
 class Preamble:
     def __init__(
         self, datas, binaries, hiddenimports, collect_data, collect_binaries, collect_submodules, collect_all,
         copy_metadata, recursive_copy_metadata
     ):
-        # Initialize with literal values - will be switched to preamble
-        # variable name later, if necessary
+        # Initialize with literal values - will be switched to preamble variable name later, if necessary
         self.binaries = binaries or []
         self.hiddenimports = hiddenimports or []
         self.datas = datas or []
@@ -203,8 +197,7 @@ class Preamble:
 
 def __add_options(parser):
     """
-    Add the `Makespec` options to a option-parser instance or a
-    option group.
+    Add the `Makespec` options to a option-parser instance or a option group.
     """
     g = parser.add_argument_group('What to generate')
     g.add_argument(
@@ -758,9 +751,10 @@ def main(
         try:
             import tinyaes  # noqa: F401 (test import)
         except ImportError:
-            logger.error('We need tinyaes to use byte-code obfuscation but we could not')
-            logger.error('find it. You can install it with pip by running:')
-            logger.error('  pip install tinyaes')
+            logger.error(
+                'We need tinyaes to use byte-code obfuscation but we could not find it. You can install it '
+                'with pip by running:\n  pip install tinyaes'
+            )
             sys.exit(1)
         cipher_init = cipher_init_template % {'key': key}
     else:

@@ -95,8 +95,7 @@ class TOC(list):
         return result
 
     def extend(self, other):
-        # TODO: look if this can be done more efficient with out the
-        # loop, e.g. by not using a list as base at all
+        # TODO: look if this can be done more efficient with out the loop, e.g. by not using a list as base at all
         for entry in other:
             self.append(entry)
 
@@ -134,10 +133,8 @@ class Target(object):
         """
         Check if the target need to be rebuild and if so, re-assemble.
 
-        `__postinit__` is to be called at the end of `__init__` of
-        every subclass of Target. `__init__` is meant to setup the
-        parameters and `__postinit__` is checking if rebuild is
-        required and in case calls `assemble()`
+        `__postinit__` is to be called at the end of `__init__` of every subclass of Target. `__init__` is meant to
+        setup the parameters and `__postinit__` is checking if rebuild is required and in case calls `assemble()`
         """
         logger.info("checking %s", self.__class__.__name__)
         data = None
@@ -176,8 +173,7 @@ class Target(object):
 
     def _save_guts(self):
         """
-        Save the input parameters and the work-product of this run to
-        maybe avoid regenerating it later.
+        Save the input parameters and the work-product of this run to maybe avoid regenerating it later.
         """
         data = tuple(getattr(self, g[0]) for g in self._GUTS)
         misc.save_py_data_struct(self.tocfilename, data)
@@ -185,8 +181,8 @@ class Target(object):
 
 class Tree(Target, TOC):
     """
-    This class is a way of creating a TOC (Table of Contents) that describes
-    some or all of the files within a directory.
+    This class is a way of creating a TOC (Table of Contents) that describes some or all of the files within a
+    directory.
     """
     def __init__(self, root=None, prefix=None, excludes=None, typecode='DATA'):
         """
@@ -198,13 +194,12 @@ class Tree(Target, TOC):
                 A list of names to exclude. Two forms are allowed:
 
                     name
-                        Files with this basename will be excluded (do not
-                        include the path).
+                        Files with this basename will be excluded (do not include the path).
                     *.ext
                         Any file with the given extension will be excluded.
         typecode
-                The typecode to be used for all files found in this tree.
-                See the TOC class for for information about the typcodes.
+                The typecode to be used for all files found in this tree. See the TOC class for for information about
+                 the typcodes.
         """
         Target.__init__(self)
         TOC.__init__(self)
@@ -228,11 +223,9 @@ class Tree(Target, TOC):
     def _check_guts(self, data, last_build):
         if Target._check_guts(self, data, last_build):
             return True
-        # Walk the collected directories as check if they have been
-        # changed - which means files have been added or removed.
-        # There is no need to check for the files, since `Tree` is
-        # only about the directory contents (which is the list of
-        # files).
+        # Walk the collected directories as check if they have been changed - which means files have been added or
+        # removed. There is no need to check for the files, since `Tree` is only about the directory contents (which is
+        # the list of files).
         stack = [data['root']]
         while stack:
             d = stack.pop()

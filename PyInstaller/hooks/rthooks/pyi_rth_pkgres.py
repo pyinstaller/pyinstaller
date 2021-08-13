@@ -18,31 +18,23 @@ from pyimod03_importers import FrozenImporter
 
 SYS_PREFIX = pathlib.PurePath(sys._MEIPASS)
 
-# To make pkg_resources work with frozen modules we need to set the 'Provider'
-# class for FrozenImporter. This class decides where to look for resources
-# and other stuff. 'pkg_resources.NullProvider' is dedicated to PEP302
-# import hooks like FrozenImporter is. It uses method __loader__.get_data() in
-# methods pkg_resources.resource_string() and pkg_resources.resource_stream()
+# To make pkg_resources work with frozen modules we need to set the 'Provider' class for FrozenImporter. This class
+# decides where to look for resources and other stuff. 'pkg_resources.NullProvider' is dedicated to PEP302 import hooks
+# like FrozenImporter is. It uses method __loader__.get_data() in methods pkg_resources.resource_string() and
+# pkg_resources.resource_stream()
 #
-# We provide PyiFrozenProvider, which subclasses the NullProvider and
-# implements _has(), _isdir(), and _listdir() methods, which are needed
-# for pkg_resources.resource_exists(), resource_isdir(), and resource_listdir()
-# to work. We cannot use the DefaultProvider, because it provides
-# filesystem-only implementations (and overrides _get() with a filesystem-only
-# one), whereas our provider needs to also support embedded resources.
+# We provide PyiFrozenProvider, which subclasses the NullProvider and implements _has(), _isdir(), and _listdir()
+# methods, which are needed for pkg_resources.resource_exists(), resource_isdir(), and resource_listdir() to work. We
+# cannot use the DefaultProvider, because it provides filesystem-only implementations (and overrides _get() with a
+# filesystem-only one), whereas our provider needs to also support embedded resources.
 #
-# The PyiFrozenProvider allows querying/listing both PYZ-embedded and
-# on-filesystem resources in a frozen package. The results are typically
-# combined for both types of resources (e.g., when listing a directory
-# or checking whether a resource exists). When the order of precedence
-# matters, the PYZ-embedded resources take precedence over the on-filesystem
-# ones, to keep the behavior consistent with the actual file content
-# retrieval via _get() method (which in turn uses FrozenImporter's get_data()
-# method). For example, when checking whether a resource is a directory
-# via _isdir(), a PYZ-embedded file will take precedence over a potential
-# on-filesystem directory. Also, in contrast to unfrozen packages, the frozen
-# ones do not contain source .py files, which are therefore absent from
-# content listings.
+# The PyiFrozenProvider allows querying/listing both PYZ-embedded and on-filesystem resources in a frozen package. The
+# results are typically combined for both types of resources (e.g., when listing a directory or checking whether a
+# resource exists). When the order of precedence matters, the PYZ-embedded resources take precedence over the
+# on-filesystem ones, to keep the behavior consistent with the actual file content retrieval via _get() method (which in
+# turn uses FrozenImporter's get_data() method). For example, when checking whether a resource is a directory via
+# _isdir(), a PYZ-embedded file will take precedence over a potential on-filesystem directory. Also, in contrast to
+# unfrozen packages, the frozen ones do not contain source .py files, which are therefore absent from content listings.
 
 
 class _TocFilesystem:
@@ -104,21 +96,17 @@ class PyiFrozenProvider(pkg_resources.NullProvider):
     def __init__(self, module):
         super().__init__(module)
 
-        # Get top-level path; if "module" corresponds to a package,
-        # we need the path to the package itself. If "module" is a
-        # submodule in a package, we need the path to the parent
-        # package.
+        # Get top-level path; if "module" corresponds to a package, we need the path to the package itself. If "module"
+        # is a submodule in a package, we need the path to the parent package.
         self._pkg_path = pathlib.PurePath(module.__file__).parent
 
-        # Defer initialization of PYZ-embedded resources tree to the
-        # first access
+        # Defer initialization of PYZ-embedded resources tree to the first access
         self._embedded_tree = None
 
     def _init_embedded_tree(self, rel_pkg_path, pkg_name):
-        # Collect relevant entries from TOC. We are interested in either
-        # files that are located in the package/module's directory (data
-        # files) or in packages that are prefixed with package/module's
-        # name (to reconstruct subpackage directories)
+        # Collect relevant entries from TOC. We are interested in either files that are located in the package/module's
+        # directory (data files) or in packages that are prefixed with package/module's name (to reconstruct subpackage
+        # directories)
         data_files = []
         package_dirs = []
         for entry in self.loader.toc:
@@ -153,11 +141,9 @@ class PyiFrozenProvider(pkg_resources.NullProvider):
         return self._embedded_tree
 
     def _normalize_path(self, path):
-        # Avoid using Path.resolve(), because it resolves symlinks. This
-        # is undesirable, because the pure path in self._pkg_path does
-        # not have symlinks resolved, so comparison between the two
-        # would be faulty. So use os.path.abspath() instead to normalize
-        # the path
+        # Avoid using Path.resolve(), because it resolves symlinks. This is undesirable, because the pure path in
+        # self._pkg_path does not have symlinks resolved, so comparison between the two would be faulty. So use
+        # os.path.abspath() instead to normalize the path
         return pathlib.Path(os.path.abspath(path))
 
     def _is_relative_to_package(self, path):
@@ -169,8 +155,7 @@ class PyiFrozenProvider(pkg_resources.NullProvider):
         if not self._is_relative_to_package(path):
             return False
 
-        # Check the filesystem first to avoid unnecessarily computing
-        # the relative path...
+        # Check the filesystem first to avoid unnecessarily computing the relative path...
         if path.exists():
             return True
         rel_path = path.relative_to(SYS_PREFIX)
@@ -203,8 +188,8 @@ class PyiFrozenProvider(pkg_resources.NullProvider):
         content = self.embedded_tree.path_listdir(rel_path)
         # ... as well as the actual one
         if path.is_dir():
-            # Use os.listdir() to avoid having to convert Path objects
-            # to strings... Also make sure to de-duplicate the results
+            # Use os.listdir() to avoid having to convert Path objects to strings... Also make sure to de-duplicate the
+            # results
             path = str(path)  # not is_py36
             content = list(set(content + os.listdir(path)))
         return content

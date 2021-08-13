@@ -24,8 +24,7 @@ logger = logging.getLogger(__name__)
 # create a list of excludes suitable for Tree.
 PY_IGNORE_EXTENSIONS = {
     *('*' + x for x in ALL_SUFFIXES),
-    # Exclude EGG-INFO, too, as long as we do not have a way to hold several
-    # in one archive
+    # Exclude EGG-INFO, too, as long as we do not have a way to hold several in one archive
     'EGG-INFO',
 }
 
@@ -40,9 +39,8 @@ class DependencyProcessor(object):
         self._datas = set()
         self._distributions = set()
         self.__seen_distribution_paths = set()
-        # Include files that were found by hooks.
-        # graph.iter_graph() should include only those modules that are reachable
-        # from top-level script.
+        # Include files that were found by hooks. graph.iter_graph() should include only those modules that are
+        # reachable from top-level script.
         for node in graph.iter_graph(start=graph._top_script_node):
             # Update 'binaries', 'datas'
             name = node.identifier
@@ -122,8 +120,7 @@ class DependencyProcessor(object):
         toc = []
         for dist in self._distributions:
             if dist._pyinstaller_info['zipped'] and not dist._pyinstaller_info['egg']:
-                # Hmm, this should never happen as normal zip-files
-                # are not associated with an distribution, are they?
+                # Hmm, this should never happen as normal zip-files are not associated with a distribution, are they?
                 toc.append(("eggs/" + os.path.basename(dist.location), dist.location, 'ZIPFILE'))
         return toc
 
@@ -162,7 +159,6 @@ class DependencyProcessor(object):
                     tree = Tree(dist.location, excludes=PY_IGNORE_EXTENSIONS)
                     toc.extend(tree)
                 else:
-                    # this is a un-zipped, not-zip-safe egg, handled in
-                    # make_datas_toc()
+                    # this is a un-zipped, not-zip-safe egg, handled in make_datas_toc()
                     pass
         return toc

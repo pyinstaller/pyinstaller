@@ -27,8 +27,8 @@ PYQT5_NEED_OPENGL = pytest.mark.skipif(
 
 
 def qt_param(qt_flavor, *args, **kwargs):
-    """A Qt flavour to be used in @pytest.mark.parametrize() which implicitly
-    skips the test if said flavor is not installed."""
+    """A Qt flavour to be used in @pytest.mark.parametrize() which implicitly skips the test if said flavor is not
+    installed. """
     p = pytest.param(qt_flavor, *args, **kwargs)
     return pytest.param(*p.values, marks=(requires(qt_flavor),) + p.marks, id=p.id)
 
@@ -37,35 +37,28 @@ def qt_param(qt_flavor, *args, **kwargs):
 _QT_PY_PACKAGES = ['PyQt5', 'PyQt6', 'PySide2', 'PySide6']
 QtPyLibs = pytest.mark.parametrize('QtPyLib', [qt_param(i) for i in _QT_PY_PACKAGES])
 
-# OS X bundles, produced by the ``--windowed`` flag, invoke a unique code path
-# that sometimes causes failures in Qt applications.
+# OS X bundles, produced by the ``--windowed`` flag, invoke a unique code path that sometimes causes failures in Qt
+# applications.
 USE_WINDOWED_KWARG = dict(pyi_args=['--windowed']) if is_darwin else {}
 
 
-# This is an ugly work-around for an even uglier problem on Windows: we need
-# to ensure that each Qt-based package that is going to be used in a test is
-# imported wihout ``pytest.monkeypatch`` being active.
+# This is an ugly work-around for an even uglier problem on Windows: we need to ensure that each Qt-based package that
+# is going to be used in a test is imported wihout ``pytest.monkeypatch`` being active.
 #
-# The imports used to happen either during test collection (e.g., due to
-# ``@pytest.importorskip`` annotation on the test) or during the actual
-# test execution - either due to ``pytest.importorskip()`` call inside
-# the test, or when actually building the frozen test application. With
-# the introduction of ``PyInstaller.utils.tests.requires`` that does
-# not actually import the package (but rather just checks its availability),
-# the imports happen only within the tests, when building the application.
-# This leads to problems if the very first import of the package happens
-# inside the test that uses ``pytest.monkeypatch``.
+# The imports used to happen either during test collection (e.g., due to ``@pytest.importorskip`` annotation on the
+# test) or during the actual test execution - either due to ``pytest.importorskip()`` call inside the test, or when
+# actually building the frozen test application. With the introduction of ``PyInstaller.utils.tests.requires`` that does
+# not actually import the package (but rather just checks its availability), the imports happen only within the tests,
+# when building the application. This leads to problems if the very first import of the package happens inside the test
+# that uses ``pytest.monkeypatch``.
 #
-# Specifically, when a Qt-based package is imported, it adds the path to its Qt
-# DLLs to PATH (applies only to Windows). Therefore, if (first) import happens
-# under ``pytest.monkeypatch``, the PATH modification is lost for subsequent
-# tests (that use the same package). This in turn causes incomplete builds of
-# the test programs, because ``pyi_builder`` calls PyInstaller's
-# ``pyi_main.run()`` within the test process instead of spawning a separate
-# process.
+# Specifically, when a Qt-based package is imported, it adds the path to its Qt DLLs to PATH (applies only to Windows).
+# Therefore, if (first) import happens under ``pytest.monkeypatch``, the PATH modification is lost for subsequent tests
+# (that use the same package). This in turn causes incomplete builds of the test programs, because ``pyi_builder`` calls
+# PyInstaller's ``pyi_main.run()`` within the test process instead of spawning a separate process.
 #
-# Therefore, we manually try to import each Qt-based package, to ensure
-# that their first-time import happens outside of the ``pytest.monkeypatch``.
+# Therefore, we manually try to import each Qt-based package, to ensure that their first-time import happens outside of
+# the ``pytest.monkeypatch``.
 def _ensure_qt_packages_are_imported():
     for pkg in _QT_PY_PACKAGES:
         try:
@@ -78,23 +71,17 @@ if is_win:
     _ensure_qt_packages_are_imported()  # Applicable only to Windows
 
 
-# Similarly to the above PATH-related concerns on Windows, we also
-# need to ensure that all QtLibraryInfo structures in Qt hook utils
-# are initialized at this point, before the actual tests start. This is
-# to prevent test-order-dependent behavior and potential issues, and
-# applies to all platforms.
+# Similarly to the above PATH-related concerns on Windows, we also need to ensure that all QtLibraryInfo structures in
+# Qt hook utils are initialized at this point, before the actual tests start. This is to prevent test-order-dependent
+# behavior and potential issues, and applies to all platforms.
 #
-# Some tests (e.g., test_import::test_import_pyqt5_uic_port) may modify
-# search path to fake PyQt5 module, and if that test is the point of
-# initialization for the corresponding QtLibraryInfo structure (triggered
-# by hooks' access to .version attribute), the structure ends up with
-# invalid data for subsequent tests as well.
+# Some tests (e.g., test_import::test_import_pyqt5_uic_port) may modify search path to fake PyQt5 module, and if that
+# test is the point of initialization for the corresponding QtLibraryInfo structure (triggered by hooks' access to
+# .version attribute), the structure ends up with invalid data for subsequent tests as well.
 #
-# Former solution to this problem was clearing QtLibraryInfo.version
-# at the end of pyi_builder() fixture, which triggers re-initialization
-# in each test. But as the content of QtLibraryInfo should be immutable
-# (save for the test with fake module), it seems better to pre-initialize
-# the structures in order to ensure predictable behavior.
+# Former solution to this problem was clearing QtLibraryInfo.version at the end of pyi_builder() fixture, which triggers
+# re-initialization in each test. But as the content of QtLibraryInfo should be immutable (save for the test with fake
+# module), it seems better to pre-initialize the structures in order to ensure predictable behavior.
 def _ensure_qt_library_info_is_initialized():
     for pkg in _QT_PY_PACKAGES:
         try:
@@ -107,12 +94,10 @@ def _ensure_qt_library_info_is_initialized():
 _ensure_qt_library_info_is_initialized()
 
 
-# Clean up PATH so that of all potentially installed Qt-based packages
-# (PyQt5, PyQt6, PySide2, and PySide6), only the Qt shared libraries of
-# the specified package (namespace) remain in the PATH.
-# This is necessary to prevent DLL interference in tests when multiple
-# Qt-based packages are installed. Applicable only on Windows, as on
-# other OSes the Qt shared library path(s) are not added to PATH.
+# Clean up PATH so that of all potentially installed Qt-based packages (PyQt5, PyQt6, PySide2, and PySide6), only the Qt
+# shared libraries of the specified package (namespace) remain in the PATH.
+# This is necessary to prevent DLL interference in tests when multiple Qt-based packages are installed. Applicable only
+# on Windows, as on other OSes the Qt shared library path(s) are not added to PATH.
 def _qt_dll_path_clean(monkeypatch, namespace):
     if not is_win:
         return

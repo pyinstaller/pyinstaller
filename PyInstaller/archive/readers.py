@@ -88,15 +88,13 @@ class CArchiveReader(ArchiveReader):
 
     Easily handled from C or from Python.
     """
-    # MAGIC is useful to verify that conversion of Python data types
-    # to C structure and back works properly.
+    # MAGIC is useful to verify that conversion of Python data types to C structure and back works properly.
     MAGIC = b'MEI\014\013\012\013\016'
     HDRLEN = 0
     LEVEL = 9
 
-    # Cookie - holds some information for the bootloader. C struct format
-    # definition. '!' at the beginning means network byte order.
-    # C struct looks like:
+    # Cookie - holds some information for the bootloader. C struct format definition. '!' at the beginning means network
+    # byte order. C struct looks like:
     #
     #   typedef struct _cookie {
     #       char magic[8]; /* 'MEI\014\013\012\013\016' */
@@ -156,8 +154,7 @@ class CArchiveReader(ArchiveReader):
             if pos != -1:
                 magic_offset = start_pos + pos
                 break
-            # Adjust search location for next chunk; ensure proper
-            # overlap
+            # Adjust search location for next chunk; ensure proper overlap
             end_pos = start_pos + len(self.MAGIC) - 1
         if magic_offset == -1:
             raise RuntimeError("%s is not a valid %s archive file" % (self.path, self.__class__.__name__))

@@ -24,8 +24,7 @@ import py
 from PyInstaller.compat import is_win, is_darwin, is_linux
 from PyInstaller.utils.tests import importorskip, xfail, skipif, requires
 
-# :todo: find a way to get this from `conftest` or such
-# Directory with testing modules used in some tests.
+# :todo: find a way to get this from `conftest` or such directory with testing modules used in some tests.
 _MODULES_DIR = py.path.local(os.path.abspath(__file__)).dirpath('modules')
 _DATA_DIR = py.path.local(os.path.abspath(__file__)).dirpath('data')
 
@@ -197,9 +196,6 @@ def test_sqlite3(pyi_builder):
     )
 
 
-# Note that @importorskip('scapy') isn't sufficient; this doesn't ask scapy to
-# import its backend dependencies (such as pcapy or dnet). scapy.all does import
-# the backends, skipping this test if they aren't installed.
 @requires('scapy >= 2.0')
 def test_scapy(pyi_builder):
     pyi_builder.test_source(

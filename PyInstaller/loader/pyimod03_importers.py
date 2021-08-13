@@ -25,9 +25,8 @@ from pyimod02_archive import ArchiveReadError, ZlibArchiveReader
 SYS_PREFIX = sys._MEIPASS + pyi_os_path.os_sep
 SYS_PREFIXLEN = len(SYS_PREFIX)
 
-# In Python 3 it is recommended to use class 'types.ModuleType' to create a new module.
-# However, 'types' module is not a built-in module. The 'types' module uses this trick
-# with using type() function:
+# In Python 3 it is recommended to use class 'types.ModuleType' to create a new module. However, 'types' module is not a
+# built-in module. The 'types' module uses this trick with using type() function:
 imp_new_module = type(sys)
 
 if sys.flags.verbose and sys.stderr:
@@ -43,12 +42,10 @@ else:
 
 class FrozenPackageImporter(object):
     """
-    Wrapper class for FrozenImporter that imports one specific fullname from
-    a module named by an alternate fullname. The alternate fullname is derived from the
-    __path__ of the package module containing that module.
+    Wrapper class for FrozenImporter that imports one specific fullname from a module named by an alternate fullname.
+    The alternate fullname is derived from the __path__ of the package module containing that module.
 
-    This is called by FrozenImporter.find_module whenever a module is found as a result
-    of searching module.__path__
+    This is called by FrozenImporter.find_module whenever a module is found as a result of searching module.__path__
     """
     def __init__(self, importer, entry_name):
         self._entry_name = entry_name

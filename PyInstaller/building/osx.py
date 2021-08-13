@@ -38,8 +38,7 @@ class BUNDLE(Target):
                 os.path.dirname(os.path.dirname(__file__)), 'bootloader', 'images', 'icon-windowed.icns'
             )
         else:
-            # user gave an --icon=path. If it is relative, make it
-            # relative to the spec file location.
+            # user gave an --icon=path. If it is relative, make it relative to the spec file location.
             if not os.path.isabs(self.icon):
                 self.icon = os.path.join(CONF['specpath'], self.icon)
         # ensure icon path is absolute
@@ -83,8 +82,8 @@ class BUNDLE(Target):
                 self.entitlements_file = arg.entitlements_file
             elif isinstance(arg, TOC):
                 self.toc.extend(arg)
-                # TOC doesn't have a strip or upx attribute, so there is no way for us to
-                # tell which cache we should draw from.
+                # TOC doesn't have a strip or upx attribute, so there is no way for us to tell which cache we should
+                # draw from.
             elif isinstance(arg, COLLECT):
                 self.toc.extend(arg.toc)
                 self.strip = arg.strip_binaries
@@ -96,9 +95,8 @@ class BUNDLE(Target):
                 self.entitlements_file = arg.entitlements_file
             else:
                 logger.info("unsupported entry %s", arg.__class__.__name__)
-        # Now, find values for app filepath (name), app name (appname), and name
-        # of the actual executable (exename) from the first EXECUTABLE item in
-        # toc, which might have come from a COLLECT too (not from an EXE).
+        # Now, find values for app filepath (name), app name (appname), and name of the actual executable (exename) from
+        # the first EXECUTABLE item in toc, which might have come from a COLLECT too (not from an EXE).
         for inm, name, typ in self.toc:
             if typ == "EXECUTABLE":
                 self.exename = name
@@ -111,8 +109,8 @@ class BUNDLE(Target):
     )
 
     def _check_guts(self, data, last_build):
-        # BUNDLE always needs to be executed, since it will clean the output
-        # directory anyway to make sure there is no existing cruft accumulating
+        # BUNDLE always needs to be executed, since it will clean the output directory anyway to make sure there is no
+        # existing cruft accumulating
         return 1
 
     def assemble(self):
@@ -137,16 +135,13 @@ class BUNDLE(Target):
             "CFBundleName": self.appname,
 
             # Required by 'codesign' utility.
-            # The value for CFBundleIdentifier is used as the default unique
-            # name of your program for Code Signing purposes.
-            # It even identifies the APP for access to restricted OS X areas
-            # like Keychain.
+            # The value for CFBundleIdentifier is used as the default unique name of your program for Code Signing
+            # purposes. It even identifies the APP for access to restricted OS X areas like Keychain.
             #
-            # The identifier used for signing must be globally unique. The usal
-            # form for this identifier is a hierarchical name in reverse DNS
-            # notation, starting with the toplevel domain, followed by the
-            # company name, followed by the department within the company, and
-            # ending with the product name. Usually in the form:
+            # The identifier used for signing must be globally unique. The usal form for this identifier is a
+            # hierarchical name in reverse DNS notation, starting with the toplevel domain, followed by the company
+            # name, followed by the department within the company, and ending with the product name. Usually in the
+            # form:
             #   com.mycompany.department.appname
             # Cli option --osx-bundle-identifier sets this value.
             "CFBundleIdentifier": self.bundle_identifier,
@@ -157,8 +152,7 @@ class BUNDLE(Target):
             "CFBundleShortVersionString": self.version,
         }
 
-        # Set some default values.
-        # But they still can be overwritten by the user.
+        # Set some default values. But they still can be overwritten by the user.
         if self.console:
             # Setting EXE console=True implies LSBackgroundOnly=True.
             info_plist_dict['LSBackgroundOnly'] = True
@@ -179,8 +173,8 @@ class BUNDLE(Target):
         for inm, fnm, typ in self.toc:
             # Adjust name for extensions, if applicable
             inm, fnm, typ = add_suffix_to_extension(inm, fnm, typ)
-            # Copy files from cache. This ensures that are used files with relative
-            # paths to dynamic library dependencies (@executable_path)
+            # Copy files from cache. This ensures that are used files with relative paths to dynamic library
+            # dependencies (@executable_path)
             base_path = inm.split('/', 1)[0]
             if typ in ('EXTENSION', 'BINARY'):
                 fnm = checkCache(
@@ -202,17 +196,15 @@ class BUNDLE(Target):
                 if not os.path.exists(todir):
                     os.makedirs(todir)
                 if os.path.isdir(fnm):
-                    # beacuse shutil.copy2() is the default copy function
-                    # for shutil.copytree, this will also copy file metadata
+                    # Because shutil.copy2() is the default copy function for shutil.copytree, this will also copy file
+                    # metadata.
                     shutil.copytree(fnm, tofnm)
                 else:
                     shutil.copy(fnm, tofnm)
 
         logger.info('Moving BUNDLE data files to Resource directory')
 
-        # Mac OS X Code Signing does not work when .app bundle contains
-        # data files in dir ./Contents/MacOS.
-        #
+        # Mac OS X Code Signing does not work when .app bundle contains data files in dir ./Contents/MacOS.
         # Put all data files in ./Resources and create symlinks in ./MacOS.
         bin_dir = os.path.join(self.name, 'Contents', 'MacOS')
         res_dir = os.path.join(self.name, 'Contents', 'Resources')
@@ -222,8 +214,8 @@ class BUNDLE(Target):
             if not os.path.exists(todir):
                 os.makedirs(todir)
             if os.path.isdir(fnm):
-                # beacuse shutil.copy2() is the default copy function
-                # for shutil.copytree, this will also copy file metadata
+                # Because shutil.copy2() is the default copy function for shutil.copytree, this will also copy file
+                # metadata.
                 shutil.copytree(fnm, tofnm)
             else:
                 shutil.copy(fnm, tofnm)

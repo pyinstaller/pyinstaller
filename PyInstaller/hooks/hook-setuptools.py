@@ -13,8 +13,7 @@ from PyInstaller.compat import is_darwin, is_unix
 from PyInstaller.utils.hooks import collect_submodules
 
 hiddenimports = [
-    # Test case import/test_zipimport2 fails during importing
-    # pkg_resources or setuptools when module not present.
+    # Test case import/test_zipimport2 fails during importing pkg_resources or setuptools when module not present.
     'distutils.command.build_ext',
     'setuptools.msvc',
 ]
@@ -23,9 +22,7 @@ hiddenimports = [
 if is_unix or is_darwin:
     hiddenimports.append('syslog')
 
-# setuptools >= 39.0.0 is "vendoring" its own direct dependencies from
-# "_vendor" to "extern". This also requires
-# 'pre_safe_import_module/hook-setuptools.extern.six.moves.py' to make the
-# moves defined in 'setuptools._vendor.six' importable under
-# 'setuptools.extern.six'.
+# setuptools >= 39.0.0 is "vendoring" its own direct dependencies from "_vendor" to "extern". This also requires
+# 'pre_safe_import_module/hook-setuptools.extern.six.moves.py' to make the moves defined in 'setuptools._vendor.six'
+# importable under 'setuptools.extern.six'.
 hiddenimports.extend(collect_submodules('setuptools._vendor'))

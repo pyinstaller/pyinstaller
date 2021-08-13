@@ -11,8 +11,7 @@
 """
 Build packages using spec files.
 
-NOTE: All global variables, classes and imported modules create API
-      for .spec files.
+NOTE: All global variables, classes and imported modules create API for .spec files.
 """
 
 import glob
@@ -96,9 +95,8 @@ def setupUPXFlags():
 
 def discover_hook_directories():
     """
-    Discover hook directories via pkg_resources and pyinstaller40
-    entry points. Perform the discovery in a subprocess to avoid
-    importing the package(s) in the main process.
+    Discover hook directories via pkg_resources and pyinstaller40 entry points. Perform the discovery in a subprocess
+    to avoid importing the package(s) in the main process.
 
     :return: list of discovered hook directories.
     """
@@ -135,11 +133,9 @@ def discover_hook_directories():
 
 
 class Analysis(Target):
-    """
-    Class does analysis of the user's main Python scripts.
+    """Class does analysis of the user's main Python scripts.
 
-    An Analysis has five outputs, all TOCs (Table of Contents) accessed as
-    attributes of the analysis.
+    An Analysis has five outputs, all TOCs (Table of Contents) accessed as attributes of the analysis.
 
     scripts
             The scripts you gave Analysis as input, with any runtime hook scripts
@@ -193,29 +189,23 @@ class Analysis(Target):
         hiddenimport
                 An optional list of additional (hidden) modules to include.
         hookspath
-                An optional list of additional paths to search for hooks.
-                (hook-modules).
+                An optional list of additional paths to search for hooks. (hook-modules).
         hooksconfig
-                An optional dict of config settings for hooks.
-                (hook-modules).
+                An optional dict of config settings for hooks. (hook-modules).
         excludes
-                An optional list of module or package names (their Python names,
-                not path names) that will be ignored (as though they were not found).
+                An optional list of module or package names (their Python names, not path names) that will be ignored
+                (as though they were not found).
         runtime_hooks
-                An optional list of scripts to use as users' runtime hooks. Specified
-                as file names.
+                An optional list of scripts to use as users' runtime hooks. Specified as file names.
         cipher
-                Add optional instance of the pyz_crypto.PyiBlockCipher class
-                (with a provided key).
+                Add optional instance of the pyz_crypto.PyiBlockCipher class (with a provided key).
         win_no_prefer_redirects
-                If True, prefers not to follow version redirects when searching for
-                Windows SxS Assemblies.
+                If True, prefers not to follow version redirects when searching for Windows SxS Assemblies.
         win_private_assemblies
-                If True, changes all bundled Windows SxS Assemblies into Private
-                Assemblies to enforce assembly versions.
+                If True, changes all bundled Windows SxS Assemblies into Private Assemblies to enforce assembly
+                versions.
         noarchive
-                If True, don't place source files in a archive, but keep them as
-                individual files.
+                If True, don't place source files in a archive, but keep them as individual files.
         """
         super(Analysis, self).__init__()
         from PyInstaller.config import CONF
@@ -239,9 +229,8 @@ class Analysis(Target):
         CONF['main_script'] = self.inputs[0]
 
         self.pathex = self._extend_pathex(pathex, self.inputs)
-        # Set global config variable 'pathex' to make it available for
-        # PyInstaller.utils.hooks and import hooks. Path extensions for module
-        # search.
+        # Set global config variable 'pathex' to make it available for PyInstaller.utils.hooks and import hooks. Path
+        # extensions for module search.
         CONF['pathex'] = self.pathex
         # Extend sys.path so PyInstaller could find all necessary modules.
         logger.info('Extending PYTHONPATH with paths\n' + pprint.pformat(self.pathex))
@@ -255,8 +244,8 @@ class Analysis(Target):
         self.hiddenimports.extend(CONF['hiddenimports'])
 
         self.hookspath = []
-        # Append directories in `hookspath` (`--additional-hooks-dir`) to
-        # take precedence over those from the entry points.
+        # Append directories in `hookspath` (`--additional-hooks-dir`) to take precedence over those from the entry
+        # points.
         if hookspath:
             self.hookspath.extend(hookspath)
 
@@ -267,14 +256,13 @@ class Analysis(Target):
         if hooksconfig:
             self.hooksconfig.update(hooksconfig)
 
-        # Custom runtime hook files that should be included and started before
-        # any existing PyInstaller runtime hooks.
+        # Custom runtime hook files that should be included and started before any existing PyInstaller runtime hooks.
         self.custom_runtime_hooks = runtime_hooks or []
 
         if cipher:
             logger.info('Will encrypt Python bytecode with key: %s', cipher.key)
-            # Create a Python module which contains the decryption key which will
-            # be used at runtime by pyi_crypto.PyiBlockCipher.
+            # Create a Python module which contains the decryption key which will be used at runtime by
+            # pyi_crypto.PyiBlockCipher.
             pyi_crypto_key_path = os.path.join(CONF['workpath'], 'pyimod00_crypto_key.py')
             with open(pyi_crypto_key_path, 'w', encoding='utf-8') as f:
                 f.write('# -*- coding: utf-8 -*-\nkey = %r\n' % cipher.key)
@@ -319,8 +307,7 @@ class Analysis(Target):
         ('win_private_assemblies', _check_guts_eq),
         ('noarchive', _check_guts_eq),
 
-        # 'cipher': no need to check as it is implied by an
-        # additional hidden import
+        # 'cipher': no need to check as it is implied by an additional hidden import
 
         # calculated/analysed values
         ('_python_version', _check_guts_eq),
@@ -338,8 +325,8 @@ class Analysis(Target):
 
     def _extend_pathex(self, spec_pathex, scripts):
         """
-        Normalize additional paths where PyInstaller will look for modules and
-        add paths with scripts to the list of paths.
+        Normalize additional paths where PyInstaller will look for modules and add paths with scripts to the list of
+        paths.
 
         :param spec_pathex: Additional paths defined defined in .spec file.
         :param scripts: Scripts to create executable from.
@@ -369,9 +356,8 @@ class Analysis(Target):
             if mtime(fnm) > last_build:
                 logger.info("Building because %s changed", fnm)
                 return True
-        # Now we know that none of the input parameters and none of
-        # the input files has changed. So take the values calculated
-        # resp. analysed in the last run and store them in `self`.
+        # Now we know that none of the input parameters and none of the input files has changed. So take the values
+        # calculated resp. analysed in the last run and store them in `self`.
         self.scripts = TOC(data['scripts'])
         self.pure = TOC(data['pure'])
         self.binaries = TOC(data['binaries'])
@@ -396,19 +382,17 @@ class Analysis(Target):
         self.graph = initialize_modgraph(excludes=self.excludes, user_hook_dirs=self.hookspath)
 
         # TODO Find a better place where to put 'base_library.zip' and when to created it.
-        # For Python 3 it is necessary to create file 'base_library.zip'
-        # containing core Python modules. In Python 3 some built-in modules
-        # are written in pure Python. base_library.zip is a way how to have
-        # those modules as "built-in".
+        # For Python 3 it is necessary to create file 'base_library.zip' containing core Python modules. In Python 3
+        # some built-in modules are written in pure Python. base_library.zip is a way how to have those modules as
+        # "built-in".
         libzip_filename = os.path.join(CONF['workpath'], 'base_library.zip')
         create_py3_base_library(libzip_filename, graph=self.graph)
         # Bundle base_library.zip as data file.
         # Data format of TOC item:   ('relative_path_in_dist_dir', 'absolute_path_on_disk', 'DATA')
         self.datas.append((os.path.basename(libzip_filename), libzip_filename, 'DATA'))
 
-        # Expand sys.path of module graph.
-        # The attribute is the set of paths to use for imports: sys.path,
-        # plus our loader, plus other paths from e.g. --path option).
+        # Expand sys.path of module graph. The attribute is the set of paths to use for imports: sys.path, plus our
+        # loader, plus other paths from e.g. --path option).
         self.graph.path = self.pathex + self.graph.path
         self.graph.set_setuptools_nspackages()
 
@@ -421,8 +405,7 @@ class Analysis(Target):
                 python = os.path.join(os.path.dirname(python), os.readlink(python))
             depmanifest = None
         else:
-            # Windows: Create a manifest to embed into built .exe, containing the same
-            # dependencies as python.exe.
+            # Windows: Create a manifest to embed into built .exe, containing the same dependencies as python.exe.
             depmanifest = winmanifest.Manifest(
                 type_="win32",
                 name=CONF['specnm'],
@@ -431,19 +414,15 @@ class Analysis(Target):
             )
             depmanifest.filename = os.path.join(CONF['workpath'], CONF['specnm'] + ".exe.manifest")
 
-        # We record "binaries" separately from the modulegraph, as there
-        # is no way to record those dependencies in the graph. These include
-        # the python executable and any binaries added by hooks later.
-        # "binaries" are not the same as "extensions" which are .so or .dylib
-        # that are found and recorded as extension nodes in the graph.
-        # Reset seen variable before running bindepend. We use bindepend only for
-        # the python executable.
+        # We record "binaries" separately from the modulegraph, as there is no way to record those dependencies in the
+        # graph. These include the python executable and any binaries added by hooks later. "binaries" are not the same
+        # as "extensions" which are .so or .dylib that are found and recorded as extension nodes in the graph. Reset
+        # seen variable before running bindepend. We use bindepend only for the python executable.
         bindepend.seen.clear()
 
-        # Add binary and assembly dependencies of Python.exe.
-        # This also ensures that its assembly depencies under Windows get added to the
-        # built .exe's manifest. Python 2.7 extension modules have no assembly
-        # dependencies, and rely on the app-global dependencies set by the .exe.
+        # Add binary and assembly dependencies of Python.exe. This also ensures that its assembly depencies under
+        # Windows get added to the built .exe's manifest. Python 2.7 extension modules have no assembly dependencies,
+        # and rely on the app-global dependencies set by the .exe.
         self.binaries.extend(
             bindepend.Dependencies([('', python, '')], manifest=depmanifest, redirects=self.binding_redirects)[1:]
         )
@@ -452,19 +431,17 @@ class Analysis(Target):
 
         # -- Module graph. --
         #
-        # Construct the module graph of import relationships between modules
-        # required by this user's application. For each entry point (top-level
-        # user-defined Python script), all imports originating from this entry
-        # point are recursively parsed into a subgraph of the module graph. This
-        # subgraph is then connected to this graph's root node, ensuring
-        # imported module nodes will be reachable from the root node -- which is
-        # is (arbitrarily) chosen to be the first entry point's node.
+        # Construct the module graph of import relationships between modules required by this user's application. For
+        # each entry point (top-level user-defined Python script), all imports originating from this entry point are
+        # recursively parsed into a subgraph of the module graph. This subgraph is then connected to this graph's root
+        # node, ensuring imported module nodes will be reachable from the root node -- which is is (arbitrarily) chosen
+        # to be the first entry point's node.
 
         # List to hold graph nodes of scripts and runtime hooks in use order.
         priority_scripts = []
 
-        # Assume that if the script does not exist, Modulegraph will raise error.
-        # Save the graph nodes of each in sequence.
+        # Assume that if the script does not exist, Modulegraph will raise error. Save the graph nodes of each in
+        # sequence.
         for script in self.inputs:
             logger.info("Analyzing %s", script)
             priority_scripts.append(self.graph.add_script(script))
@@ -500,14 +477,12 @@ class Analysis(Target):
         self.datas.extend((dest, source, "DATA")
                           for (dest, source) in format_binaries_and_datas(self.graph.metadata_required()))
 
-        # Analyze run-time hooks.
-        # Run-time hooks has to be executed before user scripts. Add them
-        # to the beginning of 'priority_scripts'.
+        # Analyze run-time hooks. Run-time hooks has to be executed before user scripts. Add them to the beginning of
+        # 'priority_scripts'.
         priority_scripts = self.graph.analyze_runtime_hooks(self.custom_runtime_hooks) + priority_scripts
 
-        # 'priority_scripts' is now a list of the graph nodes of custom runtime
-        # hooks, then regular runtime hooks, then the PyI loader scripts.
-        # Further on, we will make sure they end up at the front of self.scripts
+        # 'priority_scripts' is now a list of the graph nodes of custom runtime hooks, then regular runtime hooks, then
+        # the PyI loader scripts. Further on, we will make sure they end up at the front of self.scripts
 
         # -- Extract the nodes of the graph as TOCs for further processing. --
 
@@ -519,12 +494,10 @@ class Analysis(Target):
         # Fill the "pure" list with pure Python modules.
         assert len(self.pure) == 0
         self.pure = self.graph.make_pure_toc()
-        # And get references to module code objects constructed by ModuleGraph
-        # to avoid writing .pyc/pyo files to hdd.
+        # And get references to module code objects constructed by ModuleGraph to avoid writing .pyc/pyo files to hdd.
         self.pure._code_cache = self.graph.get_code_objects()
 
-        # Add remaining binary dependencies - analyze Python C-extensions and what
-        # DLLs they depend on.
+        # Add remaining binary dependencies - analyze Python C-extensions and what DLLs they depend on.
         logger.info('Looking for dynamic libraries')
         self.binaries.extend(bindepend.Dependencies(self.binaries, redirects=self.binding_redirects))
 
@@ -532,8 +505,7 @@ class Analysis(Target):
         logger.info('Looking for eggs')
         self.zipfiles.extend(deps_proc.make_zipfiles_toc())
 
-        # Verify that Python dynamic library can be found.
-        # Without dynamic Python library PyInstaller cannot continue.
+        # Verify that Python dynamic library can be found. Without dynamic Python library PyInstaller cannot continue.
         self._check_python_library(self.binaries)
 
         if is_win:
@@ -541,10 +513,8 @@ class Analysis(Target):
             self.binding_redirects[:] = list(set(self.binding_redirects))
             logger.info("Found binding redirects: \n%s", self.binding_redirects)
 
-        # Filter binaries to adjust path of extensions that come from
-        # python's lib-dynload directory. Prefix them with lib-dynload
-        # so that we'll collect them into subdirectory instead of
-        # directly into _MEIPASS
+        # Filter binaries to adjust path of extensions that come from python's lib-dynload directory. Prefix them with
+        # lib-dynload so that we'll collect them into subdirectory instead of directly into _MEIPASS
         for idx, tpl in enumerate(self.binaries):
             name, path, typecode = tpl
             if typecode == 'EXTENSION' \
@@ -564,11 +534,9 @@ class Analysis(Target):
                 # Special case: modules have an implied filename to add.
                 if os.path.splitext(os.path.basename(path))[0] == '__init__':
                     name += os.sep + '__init__'
-                # Append the extension for the compiled result.
-                # In python 3.5 (PEP-488) .pyo files were replaced by
-                # .opt-1.pyc and .opt-2.pyc. However, it seems that for
-                # bytecode-only module distribution, we always need to
-                # use the .pyc extension.
+                # Append the extension for the compiled result. In python 3.5 (PEP-488) .pyo files were replaced by
+                # .opt-1.pyc and .opt-2.pyc. However, it seems that for bytecode-only module distribution, we always
+                # need to use the .pyc extension.
                 name += '.pyc'
                 new_toc.append((name, path, typecode))
             # Put the result of byte-compiling this TOC in datas. Mark all entries as data.
@@ -584,8 +552,8 @@ class Analysis(Target):
 
     def _write_warnings(self):
         """
-        Write warnings about missing modules. Get them from the graph
-        and use the graph to figure out who tried to import them.
+        Write warnings about missing modules. Get them from the graph and use the graph to figure out who tried to
+        import them.
         """
         def dependency_description(name, dep_info):
             if not dep_info or dep_info == 'direct':
@@ -628,8 +596,8 @@ class Analysis(Target):
 
     def _check_python_library(self, binaries):
         """
-        Verify presence of the Python dynamic library in the binary dependencies.
-        Python library is an essential piece that has to be always included.
+        Verify presence of the Python dynamic library in the binary dependencies. Python library is an essential
+        piece that has to be always included.
         """
         # First check that libpython is in resolved binary dependencies.
         for (nm, filename, typ) in binaries:
@@ -648,11 +616,9 @@ class Analysis(Target):
 
     def exclude_system_libraries(self, list_of_exceptions=None):
         """
-        This method may be optionally called from the spec file to exclude
-        any system libraries from the list of binaries other than those
-        containing the shell-style wildcards in list_of_exceptions.
-        Those that match '*python*' or are stored under 'lib-dynload' are
-        always treated as exceptions and not excluded.
+        This method may be optionally called from the spec file to exclude any system libraries from the list of
+        binaries other than those containing the shell-style wildcards in list_of_exceptions. Those that match
+        '*python*' or are stored under 'lib-dynload' are always treated as exceptions and not excluded.
         """
 
         self.binaries = [i for i in self.binaries if _should_include_system_binary(i, list_of_exceptions or [])]
@@ -693,8 +659,7 @@ def build(spec, distpath, workpath, clean_build):
     CONF['dot-file'] = os.path.join(workpath, 'graph-%s.dot' % CONF['specnm'])
     CONF['xref-file'] = os.path.join(workpath, 'xref-%s.html' % CONF['specnm'])
 
-    # Clean PyInstaller cache (CONF['cachedir']) and temporary files (workpath)
-    # to be able start a clean build.
+    # Clean PyInstaller cache (CONF['cachedir']) and temporary files (workpath) to be able start a clean build.
     if clean_build:
         logger.info('Removing temporary files and cleaning cache in %s', CONF['cachedir'])
         for pth in (CONF['cachedir'], workpath):
@@ -713,14 +678,14 @@ def build(spec, distpath, workpath, clean_build):
             os.makedirs(pth)
 
     # Construct NAMESPACE for running the Python code from .SPEC file.
-    # NOTE: Passing NAMESPACE allows to avoid having global variables in this
-    #       module and makes isolated environment for running tests.
+    # NOTE: Passing NAMESPACE allows to avoid having global variables in this module and makes isolated environment for
+    #       running tests.
     # NOTE: Defining NAMESPACE allows to map any class to a apecific name for .SPEC.
     # FIXME: Some symbols might be missing. Add them if there are some failures.
     # TODO: What from this .spec API is deprecated and could be removed?
     spec_namespace = {
-        # Set of global variables that can be used while processing .spec file.
-        # Some of them act as configuration options.
+        # Set of global variables that can be used while processing .spec file. Some of them act as configuration
+        # options.
         'DISTPATH': CONF['distpath'],
         'HOMEPATH': HOMEPATH,
         'SPEC': CONF['spec'],
@@ -743,16 +708,14 @@ def build(spec, distpath, workpath, clean_build):
         'pyi_crypto': pyz_crypto,
     }
 
-    # Set up module PyInstaller.config for passing some arguments to 'exec'
-    # function.
+    # Set up module PyInstaller.config for passing some arguments to 'exec' function.
     from PyInstaller.config import CONF
     CONF['workpath'] = workpath
 
     # Execute the specfile. Read it as a binary file...
     try:
         with open(spec, 'rb') as f:
-            # ... then let Python determine the encoding, since ``compile`` accepts
-            # byte strings.
+            # ... then let Python determine the encoding, since ``compile`` accepts byte strings.
             code = compile(f.read(), spec, 'exec')
     except FileNotFoundError:
         raise SystemExit('spec "{}" not found'.format(spec))
@@ -764,23 +727,20 @@ def __add_options(parser):
         "--distpath",
         metavar="DIR",
         default=DEFAULT_DISTPATH,
-        help=('Where to put the bundled app (default: %s)' % os.path.join(os.curdir, 'dist')),
+        help='Where to put the bundled app (default: ./dist)',
     )
     parser.add_argument(
         '--workpath',
         default=DEFAULT_WORKPATH,
-        help=(
-            'Where to put all the temporary work files, '
-            '.log, .pyz and etc. (default: %s)' % os.path.join(os.curdir, 'build'),
-        )
+        help='Where to put all the temporary work files, .log, .pyz and etc. (default: ./build)',
     )
     parser.add_argument(
         '-y',
         '--noconfirm',
         action="store_true",
         default=False,
-        help='Replace output directory (default: %s) without '
-        'asking for confirmation' % os.path.join('SPECPATH', 'dist', 'SPECNAME'),
+        help='Replace output directory (default: %s) without asking for confirmation' %
+        os.path.join('SPECPATH', 'dist', 'SPECNAME'),
     )
     parser.add_argument(
         '--upx-dir',
@@ -791,16 +751,14 @@ def __add_options(parser):
         "-a",
         "--ascii",
         action="store_true",
-        help="Do not include unicode encoding support "
-        "(default: included if available)",
+        help="Do not include unicode encoding support (default: included if available)",
     )
     parser.add_argument(
         '--clean',
         dest='clean_build',
         action='store_true',
         default=False,
-        help='Clean PyInstaller cache and remove temporary '
-        'files before building.',
+        help='Clean PyInstaller cache and remove temporary files before building.',
     )
 
 
@@ -809,15 +767,14 @@ def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
     from PyInstaller.config import CONF
     CONF['noconfirm'] = noconfirm
 
-    # Some modules are included if they are detected at build-time or
-    # if a command-line argument is specified. (e.g. --ascii)
+    # Some modules are included if they are detected at build-time or if a command-line argument is specified. (e.g.
+    # --ascii).
     if CONF.get('hiddenimports') is None:
         CONF['hiddenimports'] = []
     # Test unicode support.
     if not ascii:
         CONF['hiddenimports'].extend(get_unicode_modules())
 
-    # FIXME: this should be a global import, but can't due to recursive imports
     # If configuration dict is supplied - skip configuration step.
     if pyi_config is None:
         import PyInstaller.configure as configure

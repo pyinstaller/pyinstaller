@@ -9,18 +9,15 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 #
-# These tests run a test script (scripts/pyi_pkg_resources_provider.py)
-# in unfrozen and frozen form, in combination with a custom test package
-# (modules/pyi_pkg_resources_provider/package) in either source or
-# zipped egg form.
+# These tests run a test script (scripts/pyi_pkg_resources_provider.py) in unfrozen and frozen form, in combination with
+# a custom test package (modules/pyi_pkg_resources_provider/package) in either source or zipped egg form.
 #
-# Running the unfrozen test script allows us to verify the behavior of
-# DefaultProvider and ZipProvider from pkg_resources and thereby also
-# validate the test script itself. Running the frozen test validates
-# the behavior of the PyiFrozenProvider.
+# Running the unfrozen test script allows us to verify the behavior of DefaultProvider and ZipProvider from
+# pkg_resources and thereby also validate the test script itself. Running the frozen test validates the behavior of the
+# PyiFrozenProvider.
 #
-# For details on the structure of the test and the contents of the test
-# package, see the top comment in the test script itself.
+# For details on the structure of the test and the contents of the test package, see the top comment in the test script
+# itself.
 
 # Library imports
 # ---------------
@@ -52,8 +49,7 @@ def __exec_python_script(script_filename, pathex):
 
 
 def __get_test_package_path(package_type, tmpdir, monkeypatch):
-    # Same test package, in two different formats: source package or
-    # zipped egg (built on-the-fly)
+    # Same test package, in two different formats: source package or zipped egg (built on-the-fly)
     src_path = os.path.join(_MODULES_DIR, 'pyi_pkg_resources_provider', 'package')
     # Source package
     if package_type == 'pkg':
@@ -62,8 +58,7 @@ def __get_test_package_path(package_type, tmpdir, monkeypatch):
     dest_path = tmpdir.join('src')
     shutil.copytree(src_path, dest_path.strpath)
     monkeypatch.chdir(dest_path)
-    # Create an egg from the test package. For debug, show the output of
-    # the egg build.
+    # Create an egg from the test package. For debug, show the output of the egg build.
     print(exec_python('setup.py', 'bdist_egg'))
     # Obtain the name of the egg, which depends on the Python version.
     dist_path = dest_path.join('dist')
@@ -78,8 +73,8 @@ def __get_test_package_path(package_type, tmpdir, monkeypatch):
 @importorskip('pkg_resources')
 @pytest.mark.parametrize('package_type', ['pkg', 'egg'])
 def test_pkg_resources_provider_source(package_type, tmpdir, script_dir, monkeypatch):
-    # Run the test script unfrozen - to validate it is working and to
-    # verify the behavior of pkg_resources.DefaultProvider / ZipProvider.
+    # Run the test script unfrozen - to validate it is working and to verify the behavior of
+    # pkg_resources.DefaultProvider / ZipProvider.
     pathex = __get_test_package_path(package_type, tmpdir, monkeypatch)
     test_script = 'pyi_pkg_resources_provider.py'
     test_script = os.path.join(

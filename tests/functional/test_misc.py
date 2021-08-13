@@ -15,14 +15,12 @@ import os
 _MODULES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modules')
 
 
-# Test inspect.getmodule() on stack-frames obtained by inspect.stack().
-# Reproduces the issue reported by #5963 while expanding the test to
-# cover a package and its submodule in addition to the __main__ module.
+# Test inspect.getmodule() on stack-frames obtained by inspect.stack(). Reproduces the issue reported by #5963 while
+# expanding the test to cover a package and its submodule in addition to the __main__ module.
 def test_inspect_getmodule_from_stackframes(pyi_builder):
     pathex = os.path.join(_MODULES_DIR, 'pyi_inspect_getmodule_from_stackframes')
-    # NOTE: run_from_path MUST be True, otherwise cwd + rel_path coincides
-    # with sys._MEIPASS + rel_path and masks the path resolving issue
-    # in onedir builds.
+    # NOTE: run_from_path MUST be True, otherwise cwd + rel_path coincides with sys._MEIPASS + rel_path and masks the
+    #       path resolving issue in onedir builds.
     pyi_builder.test_source(
         """
         import helper_package

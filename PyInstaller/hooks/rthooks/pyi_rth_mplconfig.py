@@ -9,22 +9,18 @@
 # SPDX-License-Identifier: Apache-2.0
 #-----------------------------------------------------------------------------
 
-# matplotlib will create $HOME/.matplotlib folder in user's home directory.
-# In this directory there is fontList.cache file which lists paths
-# to matplotlib fonts.
+# matplotlib will create $HOME/.matplotlib folder in user's home directory. In this directory there is fontList.cache
+# file which lists paths to matplotlib fonts.
 #
-# When you run your onefile exe for the first time it's extracted to for example
-# "_MEIxxxxx" temp directory and fontList.cache file is created with fonts paths
-# pointing to this directory.
+# When you run your onefile exe for the first time it's extracted to for example "_MEIxxxxx" temp directory and
+# fontList.cache file is created with fonts paths pointing to this directory.
 #
-# Second time you run your exe new directory is created "_MEIyyyyy" but
-# fontList.cache file still points to previous directory which was deleted.
-# And then you will get error like:
+# Second time you run your exe new directory is created "_MEIyyyyy" but fontList.cache file still points to previous
+# directory which was deleted. And then you will get error like:
 #
 #     RuntimeError: Could not open facefile
 #
-# We need to force matplotlib to recreate config directory every time you run
-# your app.
+# We need to force matplotlib to recreate config directory every time you run your app.
 
 import atexit
 import os

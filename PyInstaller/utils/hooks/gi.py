@@ -46,8 +46,8 @@ def get_gi_libdir(module, version):
 
 def get_gi_typelibs(module, version):
     """
-    Return a tuple of (binaries, datas, hiddenimports) to be used by PyGObject
-    related hooks. Searches for and adds dependencies recursively.
+    Return a tuple of (binaries, datas, hiddenimports) to be used by PyGObject related hooks. Searches for and adds
+    dependencies recursively.
 
     :param module: GI module name, as passed to 'gi.require_version()'
     :param version: GI module version, as passed to 'gi.require_version()'
@@ -134,15 +134,13 @@ def gir_library_path_fix(path):
         if not os.path.exists(gir_path):
             logger.error(
                 'Unable to find gir directory: %s.\n'
-                'Try installing your platforms gobject-introspection '
-                'package.', gir_path
+                'Try installing your platforms gobject-introspection package.', gir_path
             )
             return None
         if not os.path.exists(gir_file):
             logger.error(
                 'Unable to find gir file: %s.\n'
-                'Try installing your platforms gobject-introspection '
-                'package.', gir_file
+                'Try installing your platforms gobject-introspection package.', gir_file
             )
             return None
 
@@ -194,10 +192,8 @@ def get_glib_system_data_dirs():
 def get_glib_sysconf_dirs():
     """Try to return the sysconf directories, eg /etc."""
     if compat.is_win:
-        # On windows, if you look at gtkwin32.c, sysconfdir is actually
-        # relative to the location of the GTK DLL. Since that's what
-        # we're actually interested in (not the user path), we have to
-        # do that the hard way'''
+        # On windows, if you look at gtkwin32.c, sysconfdir is actually relative to the location of the GTK DLL. Since
+        # that's what we're actually interested in (not the user path), we have to do that the hard way'''
         return [os.path.join(get_gi_libdir('GLib', '2.0'), 'etc')]
 
     statement = """

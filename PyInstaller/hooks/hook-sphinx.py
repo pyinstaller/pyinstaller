@@ -15,12 +15,11 @@
 from PyInstaller.utils.hooks import (collect_data_files, collect_submodules, eval_statement)
 
 hiddenimports = (
-    # Per http://sphinx-doc.org/extensions.html#builtin-sphinx-extensions,
-    # Sphinx extensions are all placed in ``sphinx.ext``. Include these.
+    # Per http://sphinx-doc.org/extensions.html#builtin-sphinx-extensions, Sphinx extensions are all placed in
+    # ``sphinx.ext``. Include these.
     collect_submodules('sphinx.ext') +
     #
-    # The following analysis applies to Sphinx v. 1.3.1, reported by "pip show
-    # sphinx".
+    # The following analysis applies to Sphinx v. 1.3.1, reported by "pip show sphinx".
     #
     # From sphinx.application line 429:
     #
@@ -49,8 +48,7 @@ hiddenimports = (
     # Add this module.
     ['locale'] +
     #
-    # Sphinx relies on a number of built-in extensions that are dynamically
-    # imported. Collect all those.
+    # Sphinx relies on a number of built-in extensions that are dynamically imported. Collect all those.
     list(
         eval_statement(
             """
@@ -61,7 +59,6 @@ hiddenimports = (
     )
 )
 
-# Sphinx also relies on a number of data files in its directory hierarchy: for
-# example, *.html and *.conf files in ``sphinx.themes``, translation files in
-# ``sphinx.locale``, etc.
+# Sphinx also relies on a number of data files in its directory hierarchy: for example, *.html and *.conf files in
+# ``sphinx.themes``, translation files in ``sphinx.locale``, etc.
 datas = collect_data_files('sphinx') + collect_data_files('alabaster')

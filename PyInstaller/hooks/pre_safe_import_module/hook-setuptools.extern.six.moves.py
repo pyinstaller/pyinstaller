@@ -11,12 +11,10 @@
 
 from PyInstaller.utils.hooks import eval_statement
 
-### This basically is a copy of pre_safe_import_module/hook-six.moves.py
-### adopted to setuptools.extern.six resp. setuptools._vendor.six.
-### Please see pre_safe_import_module/hook-six.moves.py for documentation.
+# This basically is a copy of pre_safe_import_module/hook-six.moves.py adopted to setuptools.extern.six resp.
+# setuptools._vendor.six. Please see pre_safe_import_module/hook-six.moves.py for documentation.
 
-# Note that the moves are defined in 'setuptools._vendor.six' but are imported
-# under 'setuptools.extern.six'.
+# Note that the moves are defined in 'setuptools._vendor.six' but are imported under 'setuptools.extern.six'.
 
 
 def pre_safe_import_module(api):

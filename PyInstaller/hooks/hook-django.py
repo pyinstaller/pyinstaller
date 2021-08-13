@@ -31,8 +31,7 @@ if root_dir:
     for submod in settings_py_imports:
         hiddenimports.append(submod)
         hiddenimports += hooks.collect_submodules(submod)
-    # Include main django modules - settings.py, urls.py, wsgi.py.
-    # Without them the django server won't run.
+    # Include main django modules - settings.py, urls.py, wsgi.py. Without them the django server won't run.
     package_name = os.path.basename(root_dir)
     default_settings_module = f'{package_name}.settings'
     settings_module = os.environ.get('DJANGO_SETTINGS_MODULE', default_settings_module)
@@ -49,8 +48,7 @@ if root_dir:
         'html.parser',
     ]
 
-    # Bundle django DB schema migration scripts as data files.
-    # They are necessary for some commands.
+    # Bundle django DB schema migration scripts as data files. They are necessary for some commands.
     logger.info('Collecting Django migration scripts.')
     migration_modules = [
         'django.conf.app_template.migrations',

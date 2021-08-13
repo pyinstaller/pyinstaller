@@ -13,12 +13,9 @@
 #
 # Currently not implemented in the Manifest class:
 # * Validation (only very basic sanity checks are currently in place)
-# * comClass, typelib, comInterfaceProxyStub and windowClass child elements of
-#   the file element
-# * comInterfaceExternalProxyStub and windowClass child elements of the
-#   assembly element
-# * Application Configuration File and Multilanguage User Interface (MUI)
-#   support when searching for assembly files
+# * comClass, typelib, comInterfaceProxyStub and windowClass child elements of the file element
+# * comInterfaceExternalProxyStub and windowClass child elements of the assembly element
+# * Application Configuration File and Multilanguage User Interface (MUI) support when searching for assembly files
 #
 # Isolated Applications and Side-by-side Assemblies:
 # http://msdn.microsoft.com/en-us/library/dd408052%28VS.85%29.aspx
@@ -57,24 +54,19 @@
 # 2009-06-18  chg: Use glob instead of regular expression in Manifest.find_files
 #
 # 2009-05-04  fix: Don't fail if manifest has empty description
-#             fix: Manifests created by the toxml, toprettyxml, writexml or
-#                  writeprettyxml methods are now correctly recognized by
-#                  Windows, which expects the XML declaration to be ordered
-#                  version-encoding-standalone (standalone being optional)
-#             add: 'encoding' keyword argument in toxml, toprettyxml, writexml
-#                  and writeprettyxml methods
-#             chg: UpdateManifestResourcesFromXML and
-#                  UpdateManifestResourcesFromXMLFile: set resource name
-#                  depending on file type ie. exe or dll
+#             fix: Manifests created by the toxml, toprettyxml, writexml or writeprettyxml methods are now correctly
+#                  recognized by Windows, which expects the XML declaration to be ordered version-encoding-standalone
+#                  (standalone being optional)
+#             add: 'encoding' keyword argument in toxml, toprettyxml, writexml and writeprettyxml methods
+#             chg: UpdateManifestResourcesFromXML and UpdateManifestResourcesFromXMLFile: set resource name depending on
+#                  file type ie. exe or dll
 #             fix: typo in __main__: UpdateManifestResourcesFromDataFile
 #                  should have been UpdateManifestResourcesFromXMLFile
 #
 # 2009-03-21  First version
 """
-Create, parse and write MS Windows Manifest files.
-Find files which are part of an assembly, by searching shared and
-private assemblies.
-Update or add manifest resources in Win32 PE files.
+Create, parse and write MS Windows Manifest files. Find files which are part of an assembly, by searching shared and
+private assemblies. Update or add manifest resources in Win32 PE files.
 
 Commandline usage:
 winmanifest.py <dstpath> <xmlpath>
@@ -180,9 +172,8 @@ class File(_File):
         """
         Calculate the hash of the file.
 
-        Will be called automatically from the constructor if the file exists
-        and hashalg is given (and supported), but may also be called manually
-        e.g. to update the hash if the file has changed.
+        Will be called automatically from the constructor if the file exists and hashalg is given (and supported),
+        but may also be called manually e.g. to update the hash if the file has changed.
 
         """
         with open(self.filename, "rb") as fd:
@@ -420,17 +411,15 @@ class Manifest(object):
 
         If any files are not found, return an empty list.
 
-        IMPORTANT NOTE: On some Windows systems, the dependency listed in the manifest
-        will not actually be present, and finding its files will fail. This is because
-        a newer version of the dependency is installed, and the manifest's dependency
-        is being redirected to a newer version. To properly bundle the newer version of
-        the assembly, you need to find the newer version by setting
-        ignore_policies=False, and then either create a .config file for each bundled
-        assembly, or modify each bundled assembly to point to the newer version.
+        IMPORTANT NOTE: On some Windows systems, the dependency listed in the manifest will not actually be present,
+        and finding its files will fail. This is because a newer version of the dependency is installed,
+        and the manifest's dependency is being redirected to a newer version. To properly bundle the newer version of
+        the assembly, you need to find the newer version by setting ignore_policies=False, and then either create a
+        .config file for each bundled assembly, or modify each bundled assembly to point to the newer version.
 
-        This is important because Python 2.7's app manifest depends on version 21022
-        of the VC90 assembly, but the Python 2.7.9 installer will install version
-        30729 of the assembly along with a policy file that enacts the version redirect.
+        This is important because Python 2.7's app manifest depends on version 21022 of the VC90 assembly,
+        but the Python 2.7.9 installer will install version 30729 of the assembly along with a policy file that
+        enacts the version redirect.
 
         """
 
@@ -540,13 +529,11 @@ class Manifest(object):
         """
         Return an identification string which uniquely names a manifest.
 
-        This string is a combination of the manifest's processorArchitecture,
-        name, publicKeyToken, version and language.
+        This string is a combination of the manifest's processorArchitecture, name, publicKeyToken, version and
+        language.
 
         Arguments:
-        version (tuple or list of integers) - If version is given, use it
-                                              instead of the manifest's
-                                              version.
+        version (tuple or list of integers) - If version is given, use it instead of the manifest's version.
 
         """
         if not self.name:
@@ -570,9 +557,8 @@ class Manifest(object):
         """
         Get and return the manifest's language as string.
 
-        Can be either language-culture e.g. 'en-us' or a string indicating
-        language neutrality, e.g. 'x-ww' on Windows XP or 'none' on Vista
-        and later.
+        Can be either language-culture e.g. 'en-us' or a string indicating language neutrality, e.g. 'x-ww' on
+        Windows XP or 'none' on Vista and later.
 
         """
         if not language:
@@ -585,14 +571,14 @@ class Manifest(object):
         """
         Return an identification string which can be used to find a policy.
 
-        This string is a combination of the manifest's processorArchitecture,
-        major and minor version, name, publicKeyToken and language.
+        This string is a combination of the manifest's processorArchitecture, major and minor version, name,
+        publicKeyToken and language.
 
         Arguments:
-        fuzzy (boolean)             - If False, insert the full version in
-                                      the id string. Default is True (omit).
-        windowsversion              - If not specified (or None), default to
-        (tuple or list of integers)   sys.getwindowsversion().
+            fuzzy (boolean):
+                 If False, insert the full version in the id string. Default is True (omit).
+            windowsversion (tuple or list of integers or None):
+                If not specified (or None), default to sys.getwindowsversion().
 
         """
         if not self.name:
@@ -736,8 +722,7 @@ class Manifest(object):
         """
         Return a bool indicating if another manifest has the same identitiy.
 
-        This is done by comparing language, name, processorArchitecture,
-        publicKeyToken, type and version.
+        This is done by comparing language, name, processorArchitecture, publicKeyToken, type and version.
 
         """
         if skip_version_check:

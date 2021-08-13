@@ -72,11 +72,9 @@ class VendorImporter:
                 __import__(extant)
                 mod = sys.modules[extant]
                 sys.modules[fullname] = mod
-                # mysterious hack:
-                # Remove the reference to the extant package/module
-                # on later Python versions to cause relative imports
-                # in the vendor package to resolve the same modules
-                # as those going through this importer.
+                # mysterious hack: Remove the reference to the extant package/module on later Python versions to cause
+                # relative imports in the vendor package to resolve the same modules as those going through this
+                # importer.
                 if sys.version_info > (3, 3):
                     del sys.modules[extant]
                 return mod
@@ -84,10 +82,8 @@ class VendorImporter:
                 pass
         else:
             raise ImportError(
-                "The '{target}' package is required; "
-                "normally this is bundled with this package so if you get "
-                "this warning, consult the packager of your "
-                "distribution.".format(**locals())
+                "The '{target}' package is required; normally this is bundled with this package so if you get "
+                "this warning, consult the packager of your distribution.".format(**locals())
             )
 
     def install(self):

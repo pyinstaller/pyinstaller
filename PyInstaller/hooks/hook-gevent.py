@@ -20,6 +20,5 @@ datas, binaries, hiddenimports = collect_all(
     exclude_datas=["**/tests"]
 )
 
-# Gevent uses ``pkg_resources.require("...")`` which means that all its
-# dependencies must also have their metadata.
+# Gevent uses ``pkg_resources.require("...")`` which means that all its dependencies must also have their metadata.
 datas += copy_metadata('gevent', recursive=True)

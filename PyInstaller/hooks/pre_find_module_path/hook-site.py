@@ -25,8 +25,7 @@ from PyInstaller.utils.hooks import logger
 
 
 def pre_find_module_path(api):
-    #FIXME: For reusability, move this into a new
-    #PyInstaller.configure.get_fake_modules_dir() utility function.
+    # FIXME: For reusability, move this into a new PyInstaller.configure.get_fake_modules_dir() utility function.
     # Absolute path of the faked sub-package.
     fake_dir = os.path.join(PACKAGEPATH, 'fake-modules')
 

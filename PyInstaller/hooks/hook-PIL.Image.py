@@ -9,11 +9,9 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# This hook was tested with Pillow 2.9.0 (Maintained fork of PIL):
-# https://pypi.python.org/pypi/Pillow
+# This hook was tested with Pillow 2.9.0 (Maintained fork of PIL): https://pypi.python.org/pypi/Pillow
 
 from PyInstaller.utils.hooks import collect_submodules
 
-# Include all PIL image plugins - module names containing 'ImagePlugin'.
-# e.g.  PIL.JpegImagePlugin
+# Include all PIL image plugins - module names containing 'ImagePlugin'. e.g.  PIL.JpegImagePlugin
 hiddenimports = collect_submodules('PIL', lambda name: 'ImagePlugin' in name)

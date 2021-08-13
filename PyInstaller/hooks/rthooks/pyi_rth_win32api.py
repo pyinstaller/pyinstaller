@@ -9,10 +9,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #-----------------------------------------------------------------------------
 
-# Starting with Python 3.8, win32api failed with "ImportError: DLL load failed
-# while importing win32clipboard: The specified module could not be found."
-# This seems to be caused by pywintypes.dll not being found in various
-# situations.
+# Starting with Python 3.8, win32api failed with "ImportError: DLL load failed while importing win32clipboard: The
+# specified module could not be found." This seems to be caused by pywintypes.dll not being found in various situations.
 # See https://github.com/mhammond/pywin32/pull/1430 and
 # https://github.com/mhammond/pywin32/commit/71afa71e11e6631be611ca5cb57cda526
 # As a work-around, import pywintypes prior to win32api.

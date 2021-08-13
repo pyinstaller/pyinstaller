@@ -14,8 +14,7 @@ from PyInstaller.utils.hooks import collect_submodules, is_module_satisfies
 # Pandas keeps Python extensions loaded with dynamic imports here.
 hiddenimports = collect_submodules('pandas._libs')
 
-# Pandas 1.2.0 and later require cmath hidden import on linux and macOS.
-# On Windows, this is not strictly required, but we add it anyway to keep
-# things simple (and future-proof).
+# Pandas 1.2.0 and later require cmath hidden import on linux and macOS. On Windows, this is not strictly required, but
+# we add it anyway to keep things simple (and future-proof).
 if is_module_satisfies('pandas >= 1.2.0'):
     hiddenimports += ['cmath']

@@ -16,15 +16,13 @@ import tempfile
 
 pixbuf_file = os.path.join(sys._MEIPASS, 'lib', 'gdk-pixbuf', 'loaders.cache')
 
-# If we're not on Windows we need to rewrite the cache
-# -> we rewrite on OSX to support --onefile mode
+# If we're not on Windows we need to rewrite the cache -> we rewrite on OSX to support --onefile mode
 if os.path.exists(pixbuf_file) and sys.platform != 'win32':
 
     with open(pixbuf_file, 'rb') as fp:
         contents = fp.read()
 
-    # create a temporary file with the cache and cleverly replace the prefix
-    # we injected with the actual path
+    # create a temporary file with the cache and cleverly replace the prefix we injected with the actual path
     fd, pixbuf_file = tempfile.mkstemp()
     with os.fdopen(fd, 'wb') as fp:
         libpath = os.path.join(sys._MEIPASS, 'lib').encode('utf-8')
