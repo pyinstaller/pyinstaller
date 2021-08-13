@@ -270,4 +270,4 @@ def collect_tcl_tk_files(tkinter_ext_file):
     # Collect Tcl modules
     tclmodulestree = _collect_tcl_modules(tcl_root)
 
-    return (tcltree + tktree + tclmodulestree)
+    return tcltree + tktree + tclmodulestree

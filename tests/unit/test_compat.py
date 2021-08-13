@@ -22,7 +22,7 @@ def test_exec_command_subprocess_wrong_encoding_reports_nicely(capsys):
     # subprocess fails.
     # Actually `exec_python()` is used for running the progam, so we can use a
     # small Python script.
-    prog = ("""import sys; sys.stdout.buffer.write(b'dfadfadf\\xa0:::::')""")
+    prog = """import sys; sys.stdout.buffer.write(b'dfadfadf\\xa0:::::')"""
     with pytest.raises(UnicodeDecodeError):
         res = compat.exec_python('-c', prog)
     out, err = capsys.readouterr()

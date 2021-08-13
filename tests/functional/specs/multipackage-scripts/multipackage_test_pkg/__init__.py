@@ -24,10 +24,10 @@ def _test_nested_data_file():
     import os
 
     secret_file = os.path.join(__path__[0], 'data', 'secret.txt')
-    print("Reading secret from %s..." % (secret_file))
+    print("Reading secret from %s..." % secret_file)
     with open(secret_file, 'r') as fp:
         secret = fp.read().strip()
-    print("Secret: %s" % (secret))
+    print("Secret: %s" % secret)
 
     assert secret == 'Secret1234'
 

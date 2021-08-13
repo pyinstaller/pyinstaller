@@ -71,7 +71,7 @@ else:
 
 
 # Mix-in to re-set _MEIPASS2 from sys._MEIPASS.
-class FrozenSupportMixIn():
+class FrozenSupportMixIn:
     def __init__(self, *args, **kw):
         if hasattr(sys, 'frozen'):
             # We have to set original _MEIPASS2 value from sys._MEIPASS

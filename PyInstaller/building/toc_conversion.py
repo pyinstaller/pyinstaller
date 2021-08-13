@@ -121,7 +121,7 @@ class DependencyProcessor(object):
         # TODO create a real TOC when handling of more files is added.
         toc = []
         for dist in self._distributions:
-            if (dist._pyinstaller_info['zipped'] and not dist._pyinstaller_info['egg']):
+            if dist._pyinstaller_info['zipped'] and not dist._pyinstaller_info['egg']:
                 # Hmm, this should never happen as normal zip-files
                 # are not associated with an distribution, are they?
                 toc.append(("eggs/" + os.path.basename(dist.location), dist.location, 'ZIPFILE'))

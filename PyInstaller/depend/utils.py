@@ -437,7 +437,7 @@ def get_path_to_egg(path):
     # TODO add support for unpacked eggs and for new .whl packages.
     lastpath = None  # marker to stop recursion
     while path and path != lastpath:
-        if os.path.splitext(path)[1].lower() == (".egg"):
+        if os.path.splitext(path)[1].lower() == ".egg":
             if os.path.isfile(path) or os.path.isdir(path):
                 return path
         lastpath = path
