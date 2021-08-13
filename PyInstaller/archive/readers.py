@@ -203,7 +203,7 @@ class CArchiveReader(ArchiveReader):
                 return None
         else:
             ndx = name
-        (dpos, dlen, ulen, flag, typcd, nm) = self.toc.get(ndx)
+        dpos, dlen, ulen, flag, typcd, nm = self.toc.get(ndx)
 
         with self.lib:
             self.lib.seek(self.pkg_start + dpos)
@@ -213,9 +213,9 @@ class CArchiveReader(ArchiveReader):
             import zlib
             rslt = zlib.decompress(rslt)
         if typcd == 'M':
-            return (1, rslt)
+            return 1, rslt
 
-        return (typcd == 'M', rslt)
+        return typcd == 'M', rslt
 
     def contents(self):
         """
@@ -236,7 +236,7 @@ class CArchiveReader(ArchiveReader):
 
         if ndx == -1:
             raise KeyError("Member '%s' not found in %s" % (name, self.path))
-        (dpos, dlen, ulen, flag, typcd, nm) = self.toc.get(ndx)
+        dpos, dlen, ulen, flag, typcd, nm = self.toc.get(ndx)
 
         if typcd not in "zZ":
             raise NotAnArchiveError('%s is not an archive' % name)
