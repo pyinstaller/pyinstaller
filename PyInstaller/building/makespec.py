@@ -213,7 +213,7 @@ def __add_options(parser):
         dest="onefile",
         action="store_false",
         default=False,
-        help="Create a one-folder bundle containing an executable (default)"
+        help="Create a one-folder bundle containing an executable (default)",
     )
     g.add_argument(
         "-F",
@@ -221,15 +221,17 @@ def __add_options(parser):
         dest="onefile",
         action="store_true",
         default=False,
-        help="Create a one-file bundled executable."
+        help="Create a one-file bundled executable.",
     )
     g.add_argument(
-        "--specpath", metavar="DIR", help="Folder to store the generated spec file "
-        "(default: current directory)"
+        "--specpath",
+        metavar="DIR",
+        help="Folder to store the generated spec file (default: current directory)",
     )
     g.add_argument(
-        "-n", "--name", help="Name to assign to the bundled app and spec file "
-        "(default: first script's basename)"
+        "-n",
+        "--name",
+        help="Name to assign to the bundled app and spec file (default: first script's basename)",
     )
 
     g = parser.add_argument_group('What to bundle, where to search')
@@ -240,11 +242,9 @@ def __add_options(parser):
         type=add_data_or_binary,
         metavar='<SRC;DEST or SRC:DEST>',
         dest='datas',
-        help='Additional non-binary files or folders to be added '
-        'to the executable. The path separator  is platform '
-        'specific, ``os.pathsep`` (which is ``;`` on Windows '
-        'and ``:`` on most unix systems) is used. This option '
-        'can be used multiple times.'
+        help='Additional non-binary files or folders to be added to the executable. The path separator  is platform '
+        'specific, ``os.pathsep`` (which is ``;`` on Windows and ``:`` on most unix systems) is used. This option '
+        'can be used multiple times.',
     )
     g.add_argument(
         '--add-binary',
@@ -253,9 +253,8 @@ def __add_options(parser):
         type=add_data_or_binary,
         metavar='<SRC;DEST or SRC:DEST>',
         dest="binaries",
-        help='Additional binary files to be added to the executable. '
-        'See the ``--add-data`` option for more details. '
-        'This option can be used multiple times.'
+        help='Additional binary files to be added to the executable. See the ``--add-data`` option for more details. '
+        'This option can be used multiple times.',
     )
     g.add_argument(
         "-p",
