@@ -217,7 +217,7 @@ def checkCache(
             # tell the user they may want to fix their cache
             # .. however, don't delete it for them; if it keeps getting
             #    corrupted, we'll never find out
-            logger.warn("pyinstaller bincache may be corrupted; use pyinstaller --clean to fix")
+            logger.warning("pyinstaller bincache may be corrupted; use pyinstaller --clean to fix")
             raise
     else:
         cache_index = {}
@@ -601,8 +601,8 @@ def _load_code(modname, filename):
     importer = pkgutil.get_importer(path_item)
     package, _, modname = modname.rpartition('.')
 
-    if hasattr(importer, 'find_loader'):
-        loader, portions = importer.find_loader(modname)
+    if hasattr(importer, 'find_spec'):
+        loader = importer.find_spec(modname, filename).loader
     else:
         loader = importer.find_module(modname)
 

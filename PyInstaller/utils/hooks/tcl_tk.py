@@ -216,7 +216,7 @@ def _collect_tcl_modules(tcl_root):
     modules_path = os.path.join(tcl_root, '..', modules_dirname)
 
     if not os.path.isdir(modules_path):
-        logger.warn('Tcl modules directory %s does not exist.', modules_path)
+        logger.warning('Tcl modules directory %s does not exist.', modules_path)
         return []
 
     return Tree(modules_path, prefix=modules_dirname)

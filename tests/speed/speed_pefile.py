@@ -55,7 +55,7 @@ from PySide2 import QtGui
     a = Analysis([script])
     duration = time.time() - start
 
-    logger.warn("Analysis duration: %s", duration)
+    logger.warning("Analysis duration: %s", duration)
     shutil.rmtree(tempdir, ignore_errors=True)
 
 

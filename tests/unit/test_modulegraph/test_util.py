@@ -24,22 +24,6 @@ class TestUtil (unittest.TestCase):
         fn = util.imp_find_module('encodings.aliases')[1]
         self.assertSamePath(encodings.aliases.__file__, fn)
 
-    def test_imp_walk(self):
-        imps = list(util.imp_walk('encodings.aliases'))
-        self.assertEqual(len(imps), 2)
-
-        self.assertEqual(imps[0][0], 'encodings')
-        self.assertSamePath(encodings.__file__, imps[0][1][1])
-
-        self.assertEqual(imps[1][0], 'aliases')
-        self.assertSamePath(encodings.aliases.__file__, imps[1][1][1])
-
-        # Close all files, avoid warning by unittest
-        for i in imps:
-            if i[1][0] is not None:
-                i[1][0].close()
-
-
     def test_guess_encoding(self):
         fp = BytesIO(b"# coding: utf-8")
         self.assertEqual(util.guess_encoding(fp), "utf-8")
