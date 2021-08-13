@@ -1,4 +1,4 @@
-#!/bin/bash -ex
+#!/usr/bin/env bash
 #-----------------------------------------------------------------------------
 # Copyright (c) 2018-2021, PyInstaller Development Team.
 #
@@ -24,6 +24,9 @@
 # Note: this functionality is contributed and not maintained
 # by the PyInstaller maintainers. If you find it useful,
 # please consider contributing to its maintenance and improvement.
+
+set -e
+set -x
 
 _args="py.test -n8 tests/functional"
 if [[ -n $1 ]]; then
