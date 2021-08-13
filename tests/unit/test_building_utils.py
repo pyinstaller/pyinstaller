@@ -29,8 +29,14 @@ def test_format_binaries_and_datas_1(tmpdir):
     def _(path):
         return os.path.join(*path.split('/'))
 
-    datas = [(_('existing.txt'), '.'), (_('other.txt'), 'foo'), (_('*.log'), 'logs'), (_('a/*.log'), 'lll'),
-             (_('a/here.tex'), '.'), (_('b/[abc].tex'), 'tex')]
+    datas = [
+        (_('existing.txt'), '.'),
+        (_('other.txt'), 'foo'),
+        (_('*.log'), 'logs'),
+        (_('a/*.log'), 'lll'),
+        (_('a/here.tex'), '.'),
+        (_('b/[abc].tex'), 'tex'),
+    ]
 
     expected = set()
     for dest, src in (
@@ -89,18 +95,21 @@ def test_add_suffix_to_extension():
     # path during the test itself).
     CASES = [
         # Stand-alone extension module
-        ('mypkg', 'mypkg' + SUFFIX, 'lib38/site-packages/mypkg' + SUFFIX, 'EXTENSION'),
+        ('mypkg',
+         'mypkg' + SUFFIX,
+         'lib38/site-packages/mypkg' + SUFFIX,
+         'EXTENSION'),
         # Extension module nested in a package
-        (
-            'pkg.subpkg._extension', 'pkg/subpkg/_extension' + SUFFIX,
-            'lib38/site-packages/pkg/subpkg/_extension' + SUFFIX, 'EXTENSION'
-        ),
+        ('pkg.subpkg._extension',
+         'pkg/subpkg/_extension' + SUFFIX,
+         'lib38/site-packages/pkg/subpkg/_extension' + SUFFIX,
+         'EXTENSION'),
         # Built-in extension originating from lib-dynload
-        (
-            'lib-dynload/_extension', 'lib-dynload/_extension' + SUFFIX, 'lib38/lib-dynload/_extension' + SUFFIX,
-            'EXTENSION'
-        ),
-    ]
+        ('lib-dynload/_extension',
+         'lib-dynload/_extension' + SUFFIX,
+         'lib38/lib-dynload/_extension' + SUFFIX,
+         'EXTENSION'),
+    ]  # yapf: disable
 
     for case in CASES:
         inm1 = str(pathlib.PurePath(case[0]))

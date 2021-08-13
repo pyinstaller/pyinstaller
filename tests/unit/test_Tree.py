@@ -53,17 +53,13 @@ _PARAMETERS = (
     (None, ['*.py'], [f for f in _TEST_FILES if not f.endswith('.py')]),
     (None, ['*.py', '*.pyd'], [f for f in _TEST_FILES if not f.endswith(('.py', '.pyd'))]),
     (None, ['subpkg'], [f for f in _TEST_FILES if not f.startswith('subpkg')]),
-    (
-        None, ['subpkg',
-               'sub_pkg'], [f for f in _TEST_FILES if not (f.startswith('subpkg') or os.sep + 'sub_pkg' + os.sep in f)]
-    ),
-    (
-        'klm', ['subpkg', 'sub_pkg', '*.py', '*.pyd'], [
-            join('klm', f) for f in _TEST_FILES
-            if not (f.startswith('subpkg') or os.sep + 'sub_pkg' + os.sep in f or f.endswith(('.py', '.pyd')))
-        ]
-    ),
-)
+    (None, ['subpkg', 'sub_pkg'],
+     [f for f in _TEST_FILES if not (f.startswith('subpkg') or os.sep + 'sub_pkg' + os.sep in f)]),
+    ('klm', ['subpkg', 'sub_pkg', '*.py', '*.pyd'], [
+        join('klm', f) for f in _TEST_FILES
+        if not (f.startswith('subpkg') or os.sep + 'sub_pkg' + os.sep in f or f.endswith(('.py', '.pyd')))
+    ]),
+)  # yapf: disable
 
 
 @pytest.mark.parametrize("prefix,excludes,result", _PARAMETERS)

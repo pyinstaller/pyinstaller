@@ -105,15 +105,20 @@ make_package(
     ['nspkg3', 'nspkg3.a'],
     ['nspkg3/a/__init__.py'],
     zip_safe=True,
-    declare_namespace_template=pkgutil_extend_path_template
+    declare_namespace_template=pkgutil_extend_path_template,
 )
 make_package(
-    'nspkg3-aaa', ['nspkg3'], ['nspkg3/aaa/__init__.py'], declare_namespace_template=pkgutil_extend_path_template
+    'nspkg3-aaa',
+    ['nspkg3'],
+    ['nspkg3/aaa/__init__.py'],
+    declare_namespace_template=pkgutil_extend_path_template,
 )
 make_package(
-    'nspkg3-bbb', ['nspkg3', 'nspkg3.bbb'], ['nspkg3/bbb/zzz/__init__.py'],
+    'nspkg3-bbb',
+    ['nspkg3', 'nspkg3.bbb'],
+    ['nspkg3/bbb/zzz/__init__.py'],
     zip_safe=True,
-    declare_namespace_template=pkgutil_extend_path_template
+    declare_namespace_template=pkgutil_extend_path_template,
 )
 make_package('nspkg3-ccc', ['nspkg3'], ['nspkg3/ccc.py'], declare_namespace_template=pkgutil_extend_path_template)
 make_package('nspkg3-empty', ['nspkg3'], [], zip_safe=True, declare_namespace_template=pkgutil_extend_path_template)

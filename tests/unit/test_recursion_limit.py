@@ -68,15 +68,11 @@ def test_RecursionError_prints_message(tmpdir, large_import_chain, monkeypatch):
     path, script = large_import_chain
 
     default_args = [
-        '--specpath',
-        str(tmpdir),
-        '--distpath',
-        str(tmpdir.join("dist")),
-        '--workpath',
-        str(tmpdir.join("build")),
-        '--path',
-        str(tmpdir),
-    ]
+        '--specpath', str(tmpdir),
+        '--distpath', str(tmpdir.join("dist")),
+        '--workpath', str(tmpdir.join("build")),
+        '--path', str(tmpdir),
+    ]  # yapf: disable
 
     pyi_args = [script] + default_args
     PYI_CONFIG = configure.get_config(upx_dir=None)

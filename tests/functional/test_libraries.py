@@ -350,13 +350,12 @@ def test_pil_img_conversion(pyi_builder):
     pyi_builder.test_script(
         'pyi_lib_PIL_img_conversion.py',
         pyi_args=[
-            '--add-data',
-            datas,
+            '--add-data', datas,
             # Use console mode or else on Windows the VS() messageboxes
             # will stall pytest.
             '--console'
         ]
-    )
+    )  # yapf: disable
 
 
 @requires("pillow >= 1.1.6")

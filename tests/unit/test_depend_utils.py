@@ -17,8 +17,11 @@ from PyInstaller.depend import utils
 from PyInstaller.compat import is_unix, is_win
 
 CTYPES_CLASSNAMES = (
-    'CDLL', 'ctypes.CDLL', 'WinDLL', 'ctypes.WinDLL', 'OleDLL', 'ctypes.OleDLL', 'PyDLL', 'ctypes.PyDLL'
-)
+    'CDLL', 'ctypes.CDLL',
+    'WinDLL', 'ctypes.WinDLL',
+    'OleDLL', 'ctypes.OleDLL',
+    'PyDLL', 'ctypes.PyDLL',
+)  # yapf: disable
 
 
 def __scan_code_for_ctypes(code, monkeypatch, extended_args):

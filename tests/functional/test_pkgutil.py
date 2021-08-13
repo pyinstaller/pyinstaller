@@ -76,24 +76,17 @@ def test_pkgutil_iter_modules(package, script_dir, tmpdir, pyi_builder, archive)
         test_script,
         pyi_args=[
             # ensure everything is collected
-            '--collect-submodules',
-            package,
+            '--collect-submodules', package,
             # however, psutil.tests pulls in pip and wheel, which in
             # turn manage to pull in pyinstaller.exe/__main__ and break
             # Windows noarchive build. So exclude those explicitly.
-            '--exclude',
-            'pip',
-            '--exclude',
-            'wheel',
+            '--exclude', 'pip',
+            '--exclude', 'wheel',
             # enable/disable noarchive
             *debug_args,
         ],
-        app_args=[
-            package,
-            '--output-file',
-            out_frozen,
-        ]
-    )
+        app_args=[package, '--output-file', out_frozen],
+    )  # yapf: disable
     # Read results
     results_frozen = _read_results_file(out_frozen)
 

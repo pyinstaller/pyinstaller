@@ -278,7 +278,7 @@ def test_collect_data_module():
             join('py_files_not_in_package', 'data', 'eleven.dat'),
             join('py_files_not_in_package', 'ten.dat'),
         )),
-    ],
+    ],  # yapf: disable
     ids=['package', 'subpackage', 'package with py files', 'excludes', '** includes', 'includes', 'subdir']
 )
 def data_lists(monkeypatch, request):
@@ -319,22 +319,19 @@ def test_get_module_file_attribute_non_exist_module():
         get_module_file_attribute('pyinst_nonexisting_module_name')
 
 
-@pytest.mark.parametrize(
-    "egg_path,name,target",
-    [
-        # Something installed via `pip install -e .`.
-        ("editable/install/CodeChat.egg-info", "CodeChat", "CodeChat.egg-info"),
-        # An egg distribution - it's unlikely we'll ever see these now.
-        ("lib/site-packages/pypubsub-3.3.0-py2.7.egg/EGG-INFO", "pypubsub", "pypubsub-3.3.0-py2.7.egg/EGG-INFO"),
-        # A classic wheel-installed distribution.
-        ("lib/site-packages/zest.releaser-6.2.dist-info", "zest.releaser", "zest.releaser-6.2.dist-info"),
-        # Must be tolerant to case and -/_ mismatch.
-        (
-            "/site-packages/importlib_metadata-4.0.1.dist-info", "ImPorTlib-mEtADatA",
-            "importlib_metadata-4.0.1.dist-info"
-        )
-    ]
-)
+@pytest.mark.parametrize("egg_path,name,target", [
+    # Something installed via `pip install -e .`.
+    ("editable/install/CodeChat.egg-info", "CodeChat", "CodeChat.egg-info"),
+    # An egg distribution - it's unlikely we'll ever see these now.
+    ("lib/site-packages/pypubsub-3.3.0-py2.7.egg/EGG-INFO",
+     "pypubsub", "pypubsub-3.3.0-py2.7.egg/EGG-INFO"),
+    # A classic wheel-installed distribution.
+    ("lib/site-packages/zest.releaser-6.2.dist-info",
+     "zest.releaser", "zest.releaser-6.2.dist-info"),
+    # Must be tolerant to case and -/_ mismatch.
+    ("/site-packages/importlib_metadata-4.0.1.dist-info",
+     "ImPorTlib-mEtADatA", "importlib_metadata-4.0.1.dist-info")
+])  # yapf: disable
 def test_copy_metadata_dest(egg_path, name, target):
     """Test choosing dest path for copy_metadata() across distribution types.
     """
@@ -347,7 +344,7 @@ def test_copy_metadata_dest(egg_path, name, target):
 
 
 def test_erroneous_distribution_type():
-    with pytest.raises(RuntimeError, match="Unknown .* type 'foo' from the 'bar' distribution"):
+    with pytest.raises(RuntimeError, match="Unknown .* type 'foo' from the " "'bar' distribution"):
         _copy_metadata_dest("foo", "bar")
     with pytest.raises(RuntimeError, match=r"No .* distribution 'foo'\."):
         _copy_metadata_dest(None, "foo")
