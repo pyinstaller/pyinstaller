@@ -1,1 +1,1 @@
-print(('this is module %s' % __name__))
+print('this is module %s' % __name__)

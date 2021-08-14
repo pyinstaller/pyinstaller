@@ -20,8 +20,8 @@ import PyInstaller.building.datastruct
 
 
 class Tree(PyInstaller.building.datastruct.Tree):
-    # A stripped-down version of PyInstaller.building.datastruct.Tree,
-    # not checking guts, but only the `assemble()` step
+    # A stripped-down version of PyInstaller.building.datastruct.Tree that does not check the guts,
+    # but only the `assemble()` step.
     def __postinit__(self):
         self.assemble()
 

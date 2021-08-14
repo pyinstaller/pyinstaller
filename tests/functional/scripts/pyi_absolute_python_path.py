@@ -9,10 +9,8 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# sys.path  should contain absolute paths.
-# With relative paths frozen application will
-# fail to import modules when currect working
-# directory is changed.
+# sys.path should contain absolute paths. With relative paths, the frozen application will fail to import modules when
+# current working directory is changed.
 
 import os
 import sys

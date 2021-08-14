@@ -80,8 +80,7 @@ def test_import_missing_submodule(pyi_builder):
         except ImportError as e:
             assert e.message.endswith(' bbb')
         else:
-            raise RuntimeError('Buggy test-case: module'
-                       'pyi_testmod_missing_submod.aaa.bbb must not exist')
+            raise RuntimeError('Buggy test-case: module pyi_testmod_missing_submod.aaa.bbb must not exist')
         # parent module exists and must be included
         __import__('pyi_testmod_missing_submod.aaa')
         """
@@ -118,7 +117,7 @@ def test_import_submodule_global_shadowed(pyi_builder):
 
 
 def test_import_submodule_global_unshadowed(pyi_builder):
-    '''
+    """
     Functional test validating issue #1919.
 
     `ModuleGraph` previously ignored `from`-style imports of submodules from packages whose `__init__` submodules
@@ -127,8 +126,7 @@ def test_import_submodule_global_unshadowed(pyi_builder):
 
     * Initially "shadowed" by a global variable of the same name defined by their package's `__init__` submodule.
     * Subsequently "unshadowed" when this global variable is then undefined by their package's `__init__` submodule.
-
-    '''
+    """
 
     pyi_builder.test_source(
         """

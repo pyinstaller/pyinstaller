@@ -9,8 +9,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 """
-Functional test exercising the default protocol `kwargs` of version 3 of the
-PyPubSub API.
+Functional test exercising the default protocol `kwargs` of version 3 of the PyPubSub API.
 """
 
 from wx.lib.pubsub import setupkwargs  # noqa: F401

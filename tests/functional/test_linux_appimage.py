@@ -12,12 +12,11 @@
 GNU/Linux-specific test to check the bootloader from the AppImage.
 """
 
-# Library imports
-# ---------------
 import os
 import pathlib
 import stat
 import subprocess
+
 import pytest
 
 

@@ -9,14 +9,12 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# This little sample application generates a plugin on the fly,
-# and then tries to import it.
+# This little sample application generates a plugin on the fly, and then tries to import it.
 
 import os
 import sys
 
-# We first import a static plugin; the application might have
-# certain plugins that it always loads.
+# We first import a static plugin; the application might have certain plugins that it always loads.
 try:
     print('Attempting to import static_plugin...')
     mdl = __import__('static_plugin')

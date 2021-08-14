@@ -10,17 +10,11 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# Library imports
-# ---------------
 import os
 
-# Third-party imports
-# -------------------
 import pytest
 import py
 
-# Local imports
-# -------------
 from PyInstaller.compat import is_win, is_darwin, is_linux
 from PyInstaller.utils.tests import importorskip, xfail, skipif, requires
 
@@ -36,8 +30,7 @@ def test_gevent(pyi_builder):
         import gevent
         gevent.spawn(lambda: x)
         """,
-        # reduce footprint of the test (and avoid issued introduced by one of
-        # these packages breaking)
+        # Reduce footprint of the test (and avoid issued introduced by one of these packages breaking).
         excludes=["PySide2", "PyQt5", "numpy", "scipy"]
     )
 
@@ -49,8 +42,7 @@ def test_gevent_monkey(pyi_builder):
         from gevent.monkey import patch_all
         patch_all()
         """,
-        # reduce footprint of the test (and avoid issued introduced by one of
-        # these packages breaking)
+        # Reduce footprint of the test (and avoid issued introduced by one of these packages breaking).
         excludes=["PySide2", "PyQt5", "numpy", "scipy"]
     )
 
@@ -102,10 +94,9 @@ def test_pygments(pyi_builder):
 
 @requires('zope.interface')
 def test_zope_interface(pyi_builder):
-    # Tests that `nspkg.pth`-based namespace package are bundled properly.
-    # The `nspkg.pth` file is created by setuptools and thus changes
-    # frequently. If this test fails most propably
-    # _SETUPTOOLS_NAMESPACEPKG_PTHs in modulegraph needs to be updated.
+    # Tests that `nspkg.pth`-based namespace package are bundled properly. The `nspkg.pth` file is created by
+    # setuptools and thus changes frequently. If this test fails, most probably _SETUPTOOLS_NAMESPACEPKG_PTHs
+    # in modulegraph needs to be updated.
     pyi_builder.test_source(
         """
         # Package 'zope' does not contain __init__.py file.
@@ -131,8 +122,7 @@ def test_idlelib(pyi_builder):
 @importorskip('keyring')
 @skipif(
     is_linux,
-    reason="SecretStorage backend on linux requires active "
-    "D-BUS session and initialized keyring, and may "
+    reason="SecretStorage backend on linux requires active D-BUS session and initialized keyring, and may "
     "need to unlock the keyring via UI prompt."
 )
 def test_keyring(pyi_builder):
@@ -208,10 +198,10 @@ def test_scapy(pyi_builder):
 
         # Test-case taken from issue #202.
         from scapy.all import *
-        DHCP # scapy.layers.dhcp.DHCP
-        BOOTP # scapy.layers.dhcp.BOOTP
-        DNS # scapy.layers.dns.DNS
-        ICMP # scapy.layers.inet.ICMP
+        DHCP  # scapy.layers.dhcp.DHCP
+        BOOTP  # scapy.layers.dhcp.BOOTP
+        DNS  # scapy.layers.dns.DNS
+        ICMP  # scapy.layers.inet.ICMP
         """
     )
 
@@ -231,11 +221,9 @@ def test_scapy3(pyi_builder):
     pyi_builder.test_source(
         """
         # Test whether
-        # a) scapy packet layers are not included if neither scapy.all nor
-        #    scapy.layers.all are imported.
+        # a) scapy packet layers are not included if neither scapy.all nor scapy.layers.all are imported
         # b) packages are included if imported explicitly
 
-        # This test-case assumes, that layer modules are imported only if
         NAME = 'hook-scapy.layers.all'
         layer_inet = 'scapy.layers.inet'
 
@@ -246,16 +234,15 @@ def test_scapy3(pyi_builder):
                                  % NAME)
             except ImportError, e:
                 if not e.args[0].endswith(' inet'):
-                    raise SystemExit('Self-test of hook %s failed: package module found'
-                                    ' and has import errors: %r' % (NAME, e))
+                    raise SystemExit('Self-test of hook %s failed: package module found and has import errors: %r'
+                                     % (NAME, e))
 
         import scapy
         testit()
         import scapy.layers
         testit()
-        # Explicitly import a single layer module. Note: This module MUST NOT
-        # import inet (neither directly nor indirectly), otherwise the test
-        # above fails.
+        # Explicitly import a single layer module. Note: This module MUST NOT import inet (neither directly nor
+        # indirectly), otherwise the test above fails.
         import scapy.layers.ir
         """
     )
@@ -265,8 +252,7 @@ def test_scapy3(pyi_builder):
 def test_sqlalchemy(pyi_builder):
     pyi_builder.test_source(
         """
-        # The hook behaviour is to include with sqlalchemy all installed database
-        # backends.
+        # The hook behaviour is to include with sqlalchemy all installed database backends.
         import sqlalchemy
         # This import was known to fail with sqlalchemy 0.9.1
         import sqlalchemy.ext.declarative
@@ -284,8 +270,7 @@ def test_twisted(pyi_builder):
         # There are different types of platform specific reactors.
         # Platform specific reactor is wrapped into twisted.internet.reactor module.
         from twisted.internet import reactor
-        # Applications importing module twisted.internet.reactor might fail
-        # with error like:
+        # Applications importing module twisted.internet.reactor might fail with error like:
         #
         #     AttributeError: 'module' object has no attribute 'listenTCP'
         #
@@ -313,8 +298,7 @@ def test_usb(pyi_builder):
     # See if the usb package is supported on this platform.
     try:
         import usb
-        # This will verify that the backend is present; if not, it will
-        # skip this test.
+        # This will verify that the backend is present; if not, it will skip this test.
         usb.core.find()
     except (ImportError, usb.core.NoBackendError):
         pytest.skip('USB backnd not found.')
@@ -347,8 +331,7 @@ def test_pil_img_conversion(pyi_builder):
         'pyi_lib_PIL_img_conversion.py',
         pyi_args=[
             '--add-data', datas,
-            # Use console mode or else on Windows the VS() messageboxes
-            # will stall pytest.
+            # Use console mode or else on Windows the VS() messageboxes will stall pytest.
             '--console'
         ]
     )  # yapf: disable
@@ -357,13 +340,13 @@ def test_pil_img_conversion(pyi_builder):
 @requires("pillow >= 1.1.6")
 @importorskip('PyQt5')
 def test_pil_PyQt5(pyi_builder):
-    # hook-PIL is excluding PyQt5, but is must still be included
-    # since it is imported elsewhere. Also see issue #1584.
+    # hook-PIL is excluding PyQt5, but is must still be included since it is imported elsewhere.
+    # Also see issue #1584.
     pyi_builder.test_source("""
-    import PyQt5
-    import PIL
-    import PIL.ImageQt
-    """)
+        import PyQt5
+        import PIL
+        import PIL.ImageQt
+        """)
 
 
 @importorskip('PIL')
@@ -374,15 +357,14 @@ def test_pil_plugins(pyi_builder):
         from PIL.Image import frombytes
         print(frombytes)
 
-        # PIL import hook should bundle all available PIL plugins. Verify that plugins
-        # are bundled.
+        # PIL import hook should bundle all available PIL plugins. Verify that plugins are collected.
         from PIL import Image
         Image.init()
         MIN_PLUG_COUNT = 7  # Without all plugins the count is usually 6.
         plugins = list(Image.SAVE.keys())
         plugins.sort()
         if len(plugins) < MIN_PLUG_COUNT:
-            raise SystemExit('No PIL image plugins were bundled!')
+            raise SystemExit('No PIL image plugins were collected!')
         else:
             print('PIL supported image formats: %s' % plugins)
         """
@@ -404,9 +386,8 @@ def test_pandas_extension(pyi_builder):
 @importorskip('pandas')
 @importorskip('jinja2')
 def test_pandas_io_formats_style(pyi_builder):
-    # pandas.io.formats.style requires jinja2 as hiddenimport, as
-    # well as collected template file from pandas/io/formats/templates.
-    # See #6008 and #6009.
+    # pandas.io.formats.style requires jinja2 as hiddenimport, as well as collected template file
+    # from pandas/io/formats/templates. See #6008 and #6009.
     pyi_builder.test_source("""
         import pandas.io.formats.style
         """)

@@ -33,8 +33,8 @@ import sys
 
 class VendorImporter:
     """
-    A PEP 302 meta path importer for finding optionally-vendored
-    or otherwise naturally-installed packages from root_name.
+    A PEP 302 meta path importer for finding optionally-vendored or otherwise naturally-installed
+    packages from root_name.
     """
     def __init__(self, root_name, vendored_names=(), vendor_pkg=None):
         self.root_name = root_name
@@ -51,8 +51,7 @@ class VendorImporter:
 
     def find_module(self, fullname, path=None):
         """
-        Return self when fullname starts with root_name and the
-        target module is one vendored through this importer.
+        Return self when fullname starts with root_name and the target module is one vendored through this importer.
         """
         root, base, target = fullname.partition(self.root_name + '.')
         if root:

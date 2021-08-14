@@ -9,8 +9,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 """
-Functional test exercising the non-default protocol `arg1` of version 3 of the
-PyPubSub API.
+Functional test exercising the non-default protocol `arg1` of version 3 of the PyPubSub API.
 """
 
 from wx.lib.pubsub import setuparg1  # noqa: F401

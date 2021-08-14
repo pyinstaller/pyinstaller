@@ -27,8 +27,9 @@ PYQT5_NEED_OPENGL = pytest.mark.skipif(
 
 
 def qt_param(qt_flavor, *args, **kwargs):
-    """A Qt flavour to be used in @pytest.mark.parametrize() which implicitly skips the test if said flavor is not
-    installed. """
+    """
+    A Qt flavour to be used in @pytest.mark.parametrize(). Implicitly skips the test if said flavor is not installed.
+    """
     p = pytest.param(qt_flavor, *args, **kwargs)
     return pytest.param(*p.values, marks=(requires(qt_flavor),) + p.marks, id=p.id)
 
@@ -86,7 +87,7 @@ def _ensure_qt_library_info_is_initialized():
     for pkg in _QT_PY_PACKAGES:
         try:
             info = get_qt_library_info(pkg)
-            assert info.version  # trigger initialiatuon
+            assert info.version  # trigger initialization
         except Exception:
             pass
 
@@ -133,8 +134,7 @@ def test_Qt_QtWidgets(pyi_builder, QtPyLib, monkeypatch):
         QTimer.singleShot(0, app.exit)
 
         if is_qt6:
-            # Qt6: exec_() is deprecated in PySide6 and removed from
-            # PyQt6 in favor of exec()
+            # Qt6: exec_() is deprecated in PySide6 and removed from PyQt6 in favor of exec()
             res = app.exec()
         else:
             res = app.exec_()
@@ -160,16 +160,12 @@ def test_Qt_QtQml(pyi_builder, QtPyLib, monkeypatch):
 
         # Select a style via the `command line
         # <https://doc.qt.io/qt-5/qtquickcontrols2-styles.html#command-line-argument>`_,
-        # as PyQt5 currently does not `support
-        # https://riverbankcomputing.com/pipermail/pyqt/2018-March/040180.html>`_
-        # ``QQuickStyle``. Using this style with the QML below helps to verify
-        # that all QML files are packaged; see
+        # as PyQt5 currently does not `support https://riverbankcomputing.com/pipermail/pyqt/2018-March/040180.html>`_
+        # ``QQuickStyle``. Using this style with the QML below helps to verify that all QML files are packaged; see
         # https://github.com/pyinstaller/pyinstaller/issues/3711.
         #
-        # In Qt5, the style name is lower case ('imagine'), whereas
-        # in Qt6, it is capitalized ('Imagine')
-        app = QGuiApplication(sys.argv +
-            ['-style', 'Imagine' if is_qt6 else 'imagine'])
+        # In Qt5, the style name is lower case ('imagine'), whereas in Qt6, it is capitalized ('Imagine')
+        app = QGuiApplication(sys.argv + ['-style', 'Imagine' if is_qt6 else 'imagine'])
         engine = QQmlApplicationEngine()
         engine.loadData(b'''
             import QtQuick 2.11
@@ -188,8 +184,7 @@ def test_Qt_QtQml(pyi_builder, QtPyLib, monkeypatch):
         QTimer.singleShot(0, app.exit)
 
         if is_qt6:
-            # Qt6: exec_() is deprecated in PySide6 and removed from
-            # PyQt6 in favor of exec()
+            # Qt6: exec_() is deprecated in PySide6 and removed from PyQt6 in favor of exec()
             res = app.exec()
         else:
             res = app.exec_()
@@ -203,10 +198,8 @@ def test_Qt_QtQml(pyi_builder, QtPyLib, monkeypatch):
     'QtPyLib', [
         qt_param('PyQt5'),
         qt_param('PyQt6'),
-        qt_param('PySide2', marks=xfail(is_win, reason='PySide2 wheels on Windows do not '
-                                        'include SSL DLLs.')),
-        qt_param('PySide6', marks=xfail(is_win, reason='PySide6 wheels on Windows do not '
-                                        'include SSL DLLs.')),
+        qt_param('PySide2', marks=xfail(is_win, reason='PySide2 wheels on Windows do not include SSL DLLs.')),
+        qt_param('PySide6', marks=xfail(is_win, reason='PySide6 wheels on Windows do not include SSL DLLs.')),
     ]
 )
 def test_Qt_QtNetwork_SSL_support(pyi_builder, monkeypatch, QtPyLib):
@@ -226,11 +219,7 @@ def test_Qt_QTranslate(pyi_builder, monkeypatch, QtPyLib):
     pyi_builder.test_source(
         """
         from {0}.QtWidgets import QApplication
-        from {0}.QtCore import (
-            QTranslator,
-            QLocale,
-            QLibraryInfo,
-        )
+        from {0}.QtCore import QTranslator, QLocale, QLibraryInfo
 
         # Initialize Qt default translations
         app = QApplication([])
@@ -238,12 +227,10 @@ def test_Qt_QTranslate(pyi_builder, monkeypatch, QtPyLib):
         locale = QLocale('de_DE')
         if hasattr(QLibraryInfo, 'path'):
             # Qt6
-            translation_path = QLibraryInfo.path(
-                QLibraryInfo.LibraryPath.TranslationsPath)
+            translation_path = QLibraryInfo.path(QLibraryInfo.LibraryPath.TranslationsPath)
         else:
             # Qt5
-            translation_path = QLibraryInfo.location(
-                QLibraryInfo.TranslationsPath)
+            translation_path = QLibraryInfo.location(QLibraryInfo.TranslationsPath)
 
         print('Qt locale path: %s' % translation_path)
 
@@ -260,8 +247,7 @@ def test_Qt_QTranslate(pyi_builder, monkeypatch, QtPyLib):
 @QtPyLibs
 def test_Qt_Ui_file(tmpdir, pyi_builder, data_dir, monkeypatch, QtPyLib):
     _qt_dll_path_clean(monkeypatch, QtPyLib)
-    # Note that including the data_dir fixture copies files needed by
-    # this test.
+    # Note that including the data_dir fixture copies files needed by this test.
     pyi_builder.test_source(
         """
         import os
@@ -278,17 +264,14 @@ def test_Qt_Ui_file(tmpdir, pyi_builder, data_dir, monkeypatch, QtPyLib):
 
         app = QApplication([])
 
-        # In Qt6, QtQuick supports multiple render APIs and automatically
-        # selects one. However, QtQuickWidgets.QQuickWidget that is used
-        # by the test UI file supports only OpenGL, so we need to
-        # explicitly select it via QQuickWindow.setGraphicsApi() call.
+        # In Qt6, QtQuick supports multiple render APIs and automatically selects one.
+        # However, QtQuickWidgets.QQuickWidget that is used by the test UI file supports only OpenGL,
+        # so we need to explicitly select it via QQuickWindow.setGraphicsApi() call.
         if is_qt6:
             try:
-                # This seems to be unsupported on macOS version of PySide6
-                # at the time of writing (v.6.1.0)
+                # This seems to be unsupported on macOS version of PySide6 at the time of writing (6.1.0)
                 from {0}.QtQuick import QQuickWindow, QSGRendererInterface
-                QQuickWindow.setGraphicsApi(
-                    QSGRendererInterface.GraphicsApi.OpenGL)
+                QQuickWindow.setGraphicsApi(QSGRendererInterface.GraphicsApi.OpenGL)
             except Exception:
                 pass
 
@@ -311,8 +294,7 @@ def test_Qt_Ui_file(tmpdir, pyi_builder, data_dir, monkeypatch, QtPyLib):
 
         # Run the main loop
         if is_qt6:
-            # Qt6: exec_() is deprecated in PySide6 and removed from
-            # PyQt6 in favor of exec()
+            # Qt6: exec_() is deprecated in PySide6 and removed from PyQt6 in favor of exec()
             app.exec()
         else:
             app.exec_()
@@ -322,37 +304,30 @@ def test_Qt_Ui_file(tmpdir, pyi_builder, data_dir, monkeypatch, QtPyLib):
 
 # Test that the ``PyQt5.Qt`` module works by importing something from it.
 #
-# NOTE: the ``PyQt5.Qt`` consolidating module is specific to PyQt5. It
-# is not present in either PySide2 nor PySide6, and its consolidating
-# behavior has been removed in PyQt6.
+# NOTE: the ``PyQt5.Qt`` consolidating module is specific to PyQt5. It is not present in either PySide2 nor PySide6,
+# and its consolidating behavior has been removed in PyQt6.
 #
-# The Qt Bluetooth API (which any import to ``PyQt5.Qt`` implicitly imports)
-# isn't compatible with Windows Server 2012 R2, the OS Appveyor runs.
-# Specifically, running on Server 2012 causes the test to display an error in
-# `a dialog box
-# <https://github.com/mindfulness-at-the-computer/mindfulness-at-the-computer/issues/234>`_.
-# The alternative of using a newer Appveyor OS `fails
-# <https://github.com/pyinstaller/pyinstaller/pull/3563>`_.
-# Therefore, skip this test on Appveyor by testing for one of its `environment
-# variables <https://www.appveyor.com/docs/environment-variables/>`_.
+# The Qt Bluetooth API (which any import to ``PyQt5.Qt`` implicitly imports) is not compatible with Windows Server
+# 2012 R2, the OS Appveyor runs. Specifically, running on Server 2012 causes the test to display an error in
+# `a dialog box <https://github.com/mindfulness-at-the-computer/mindfulness-at-the-computer/issues/234>`_.
+# The alternative of using a newer Appveyor OS `fails <https://github.com/pyinstaller/pyinstaller/pull/3563>`_.
+# Therefore, skip this test on Appveyor by testing for one of its `environment variables
+# <https://www.appveyor.com/docs/environment-variables/>`_.
 @skipif(os.environ.get('APPVEYOR') == 'True', reason='The Appveyor OS is incompatible with PyQt.Qt.')
 @requires('PyQt5')
 @pytest.mark.skipif(
     is_module_satisfies('PyQt5 == 5.11.3') and is_darwin,
-    reason='This version of the OS X wheel does not '
-    'include QWebEngine.'
+    reason='This version of the OS X wheel does not include QWebEngine.'
 )
 def test_PyQt5_Qt(pyi_builder, monkeypatch):
     _qt_dll_path_clean(monkeypatch, 'PyQt5')
     pyi_builder.test_source('from PyQt5.Qt import QLibraryInfo', **USE_WINDOWED_KWARG)
 
 
-# QtWebEngine test. This module is specific to PyQt5 and PySide2, as
-# it has not been ported to Qt6 yet (as of Qt6 6.1.0)
+# QtWebEngine test. This module is specific to PyQt5 and PySide2, as it has not been ported to Qt6 yet (as of Qt6 6.1.0)
 
 
-# Produce the source code for QWebEngine tests by inserting the path of an HTML
-# page to display.
+# Produce the source code for QWebEngine tests by inserting the path of an HTML page to display.
 def get_QWebEngine_html(qt_flavor, data_dir):
     return """
         from {0}.QtWidgets import QApplication
@@ -369,8 +344,7 @@ def get_QWebEngine_html(qt_flavor, data_dir):
         app.exec_()
         """.format(
         qt_flavor,
-        # Use repr to avoid accidental special characters in Windows
-        # filenames: ``c:\temp`` is ``c<tab>emp``!
+        # Use repr to avoid accidental special characters in Windows filenames: ``c:\temp`` is ``c<tab>emp``!
         repr(data_dir.join('test_web_page.html').strpath)
     )
 
@@ -378,20 +352,18 @@ def get_QWebEngine_html(qt_flavor, data_dir):
 @xfail(is_linux, reason='See issue #4666')
 @pytest.mark.skipif(
     is_win and not is_64bits,
-    reason="Qt 5.11+ for Windows only provides pre-compiled "
-    "Qt WebEngine binaries for 64-bit processors."
+    reason="Qt 5.11+ for Windows only provides pre-compiled Qt WebEngine binaries for 64-bit processors."
 )
 @pytest.mark.skipif(
     is_module_satisfies('PyQt5 == 5.11.3') and is_darwin,
-    reason='This version of the OS X wheel does not '
-    'include QWebEngine.'
+    reason='This version of the OS X wheel does not include QWebEngine.'
 )
 @requires('PyQt5')
 def test_PyQt5_QWebEngine(pyi_builder, data_dir, monkeypatch):
     _qt_dll_path_clean(monkeypatch, 'PyQt5')
     if is_darwin:
-        # QWebEngine on OS X only works with a onedir build -- onefile builds
-        # don't work. Skip the test execution for onefile builds.
+        # QWebEngine on Mac OS only works with a onedir build -- onefile builds do not work.
+        # Skip the test execution for onefile builds.
         if pyi_builder._mode != 'onedir':
             pytest.skip('The QWebEngine .app bundle only supports onedir mode.')
 
@@ -402,8 +374,8 @@ def test_PyQt5_QWebEngine(pyi_builder, data_dir, monkeypatch):
 def test_PySide2_QWebEngine(pyi_builder, data_dir, monkeypatch):
     _qt_dll_path_clean(monkeypatch, 'PySide2')
     if is_darwin:
-        # QWebEngine on OS X only works with a onedir build -- onefile builds
-        # don't work. Skip the test execution for onefile builds.
+        # QWebEngine on Mac OS only works with a onedir build -- onefile builds do not work.
+        # Skip the test execution for onefile builds.
         if pyi_builder._mode != 'onedir':
             pytest.skip('The QWebEngine .app bundle only supports onedir mode.')
 

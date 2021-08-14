@@ -11,23 +11,21 @@
 """
 Functional tests for the PyPubSub API bundled with wxPython.
 
-Since wxPython is currently only stably supported under Python 2, these tests
-are implicitly skipped under Python 3.
+Since wxPython is currently only stably supported under Python 2, these tests are implicitly skipped under Python 3.
 """
 
 import pkg_resources
 from PyInstaller.utils.tests import importorskip, xfail
 
 try:
-    # These tests fail under wxPython versions which support multiple pubsub
-    # APIs. See https://github.com/pyinstaller/pyinstaller/issues/1704.
+    # These tests fail under wxPython versions which support multiple pubsub APIs.
+    # See https://github.com/pyinstaller/pyinstaller/issues/1704.
     wxPython_fail = (
         pkg_resources.parse_version('2.8.10') <= pkg_resources.get_distribution('wxPython').parsed_version <
         pkg_resources.parse_version('2.9')
     )
 except pkg_resources.DistributionNotFound:
-    # Linux wxPython installations don't provide distribution metadata, but pass
-    # all the tests below.
+    # Linux wxPython installations don't provide distribution metadata, but pass all the tests below.
     wxPython_fail = False
 
 
@@ -42,9 +40,8 @@ def test_wx_lib_pubsub_protocol_default(pyi_builder):
 
 
 @xfail
-# This test will pass when test_import.test_import_respects_path passes, since
-# that test provides a simple example of what causes this wxPython version to
-# fail.
+# This test will pass when test_import.test_import_respects_path passes, since that test provides a simple example
+# of what causes this wxPython version to fail.
 @xfail(wxPython_fail, reason='PyInstaller does not support this wxPython version')
 @importorskip('wx.lib.pubsub.core')
 def test_wx_lib_pubsub_protocol_kwargs(pyi_builder):

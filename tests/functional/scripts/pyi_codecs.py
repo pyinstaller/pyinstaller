@@ -10,8 +10,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# Encode unicode string into utf8 and then back to unicode strings.
-# The original string and the result should be equal.
+# Encode a string into utf8 bytestring and decode it back. The resulting string should match the original.
 
 import codecs
 

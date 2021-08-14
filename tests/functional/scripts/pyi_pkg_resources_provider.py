@@ -37,18 +37,15 @@
 #     ├── _datafile.json
 #     └── __init__.py
 #
-# When run as unfrozen script, this script can be used to check the
-# behavior of "native" providers that come with pkg_resources, e.g.,
-# DefaultProvider (for regular packages) and ZipProvider (for eggs).
+# When run as unfrozen script, this script can be used to check the behavior of "native" providers that come with
+# pkg_resources, such as DefaultProvider (for regular packages) and ZipProvider (for eggs).
 #
-# When run as a frozen application, this script validates the behavior
-# of the frozen provider implemented by PyInstaller. Due to transitivity
-# of test results, this script running without errors both as a native
-# script and as a frozen application serves as proof of conformance for
-# the PyInstaller's provider.
+# When run as a frozen application, this script validates the behavior of the frozen provider implemented by
+# PyInstaller. Due to transitivity of test results, this script running without errors both as a native script and
+# as a frozen application serves as proof of conformance for the PyInstaller's provider.
 #
-# Wherever the behavior between the native providers is inconsistent,
-# we allow the same leeway for the PyInstaller's frozen provider.
+# Wherever the behavior between the native providers is inconsistent, we allow the same leeway for the PyInstaller's
+# frozen provider.
 
 import sys
 from pkg_resources import resource_exists, resource_isdir, resource_listdir
@@ -115,8 +112,7 @@ assert resource_exists(pkgname, 'subpkg1/data/extra/extra_entry1.json')
 assert not resource_exists(pkgname, 'subpkg1/non-existant')
 
 # A source script file in package
-#  > PyiFrozenProvider returns False because frozen application does
-#    not contain source files
+#  > PyiFrozenProvider returns False because frozen application does not contain source files
 ret = resource_exists(pkgname, '__init__.py')
 assert (not is_frozen and ret) or \
        (is_frozen and not ret)
@@ -125,8 +121,7 @@ assert (not is_frozen and ret) or \
 #  * DefaultProvider returns True
 #  * ZipProvider returns False
 #  > PyiFrozenProvider disallows jumping to parent, and returns False
-# NOTE: using .. in path is deprecated (since setuptools 40.8.0) and
-# will raise exception in a future release
+# NOTE: using .. in path is deprecated (since setuptools 40.8.0) and will raise exception in a future release.
 ret = resource_exists(pkgname, '..')
 assert (is_default and ret) or \
        (is_zip and not ret) or \
@@ -136,8 +131,7 @@ assert (is_default and ret) or \
 #  * DefaultProvider returns True
 #  * ZipProvider returns False
 #  > PyiFrozenProvider disallows jumping to parent, and returns False
-# NOTE: using .. in path is deprecated (since setuptools 40.8.0) and
-# will raise exception in a future release
+# NOTE: using .. in path is deprecated (since setuptools 40.8.0) and will raise exception in a future release.
 ret = resource_exists(pkgname + '.subpkg1', '..')
 assert (is_default and ret) or \
        (is_zip and not ret) or \
@@ -213,16 +207,14 @@ assert not resource_isdir(pkgname, 'subpkg1/data/extra/extra_entry1.json')
 assert not resource_isdir(pkgname, 'subpkg1/non-existant')
 
 # A source script file in package - should return False
-# NOTE: PyFrozenProvider returns False because the file does not
-# exist.
+# NOTE: PyFrozenProvider returns False because the file does not exist.
 assert not resource_isdir(pkgname, '__init__.py')
 
 # Parent of package's top-level directory
 #  * DefaultProvider returns True
 #  * ZipProvider returns False
 #  > PyiFrozenProvider disallows jumping to parent, and returns False
-# NOTE: using .. in path is deprecated (since setuptools 40.8.0) and
-# will raise exception in a future release
+# NOTE: using .. in path is deprecated (since setuptools 40.8.0) and will raise exception in a future release.
 ret = resource_isdir(pkgname, '..')
 assert (is_default and ret) or \
        (is_zip and not ret) or \
@@ -232,8 +224,7 @@ assert (is_default and ret) or \
 #  * DefaultProvider returns True
 #  * ZipProvider returns False
 #  > PyiFrozenProvider disallows jumping to parent, and returns False
-# NOTE: using .. in path is deprecated (since setuptools 40.8.0) and
-# will raise exception in a future release
+# NOTE: using .. in path is deprecated (since setuptools 40.8.0) and will raise exception in a future release.
 ret = resource_isdir(pkgname + '.subpkg1', '..')
 assert (is_default and ret) or \
        (is_zip and not ret) or \
@@ -277,8 +268,7 @@ def _listdir_test(pkgname, path, expected):
 # List package's top-level directory
 #  * DefaultProvider lists the directory
 #  * ZipProvider returns empty list
-#  > PyiFrozenProvider lists the directory, but does not provide source
-#    .py files
+#  > PyiFrozenProvider lists the directory, but does not provide source .py files
 if is_zip:
     expected = []
 else:
@@ -286,14 +276,12 @@ else:
 _listdir_test(pkgname, '.', expected)
 
 # List package's top-level directory, with empty path
-#  > PyiFrozenProvider lists the directory, but does not provide source
-#    .py files
+#  > PyiFrozenProvider lists the directory, but does not provide source .py files
 expected = ['__init__.py', 'a.py', 'b.py', 'subpkg1', 'subpkg2', 'subpkg3']
 _listdir_test(pkgname, '', expected)
 
 # List subpackage's directory (relative to main package)
-#  > PyiFrozenProvider lists the directory, but does not provide source
-#    .py files
+#  > PyiFrozenProvider lists the directory, but does not provide source .py files
 expected = ['__init__.py', 'c.py', 'd.py', 'data']
 _listdir_test(pkgname, 'subpkg1', expected)
 
@@ -363,45 +351,37 @@ assert (is_default and pkgname in content) or \
 #  * DefaultProvider actually lists the parent directory
 #  * ZipProvider returns empty list
 #  > PyiFrozenProvider disallows jumping to parent, and returns False
-# NOTE: using .. in path is deprecated (since setuptools 40.8.0) and
-# will raise exception in a future release
+# NOTE: using .. in path is deprecated (since setuptools 40.8.0) and will raise exception in a future release.
 if is_default:
     expected = ['__init__.py', 'a.py', 'b.py', 'subpkg1', 'subpkg2', 'subpkg3']
 else:
     expected = []
 _listdir_test(pkgname + '.subpkg1', '..', expected)
 
-# Attempt to list directory of subpackage that has no data files or
-# directories (relative to main package)
+# Attempt to list directory of subpackage that has no data files or directories (relative to main package)
 expected = ['__init__.py', 'mod.py', 'subsubpkg21']
 _listdir_test(pkgname, 'subpkg2', expected)
 
-# Attempt to list directory of subpackage that has no data files or
-# directories (relative to subpackage itself)
+# Attempt to list directory of subpackage that has no data files or directories (relative to subpackage itself)
 expected = ['__init__.py', 'mod.py', 'subsubpkg21']
 _listdir_test(pkgname + '.subpkg2', '', expected)  # empty path!
 
-# Attempt to list directory of subsubpackage that has no data
-# files/directories (relative to main package)
+# Attempt to list directory of subsubpackage that has no data files/directories (relative to main package)
 expected = ['__init__.py', 'mod.py']
 _listdir_test(pkgname, 'subpkg2/subsubpkg21', expected)
 
-# Attempt to list directory of subsubpackage that has no data
-# files/directories (relative to parent subpackage)
+# Attempt to list directory of subsubpackage that has no data files/directories (relative to parent subpackage)
 expected = ['__init__.py', 'mod.py']
 _listdir_test(pkgname + '.subpkg2', 'subsubpkg21', expected)
 
-# Attempt to list directory of subsubpackage that has no data
-# files/directories (relative to subsubpackage itself)
+# Attempt to list directory of subsubpackage that has no data files/directories (relative to subsubpackage itself)
 expected = ['__init__.py', 'mod.py']
 _listdir_test(pkgname + '.subpkg2.subsubpkg21', '', expected)  # empty path!
 
-# Attempt to list submodule in main package - should give the same results
-# as listing the package itself
+# Attempt to list submodule in main package - should give the same results as listing the package itself
 assert sorted(resource_listdir(pkgname + '.a', '')) == \
        sorted(resource_listdir(pkgname, ''))  # empty path!
 
-# Attempt to list submodule in subpackage - should give the same results
-# as listing the subpackage itself
+# Attempt to list submodule in subpackage - should give the same results as listing the subpackage itself
 assert sorted(resource_listdir(pkgname + '.subpkg1.c', '')) == \
        sorted(resource_listdir(pkgname + '.subpkg1', ''))  # empty path!

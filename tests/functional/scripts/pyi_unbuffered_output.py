@@ -9,18 +9,13 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# A simple program for testing unbuffered mode of python stdout and
-# stderr streams (both binary and text layers).
+# A simple program for testing unbuffered mode of python stdout and stderr streams (both binary and text layers).
 #
-# The program periodically prints star ('*') character to a single line
-# on the specified output stream (stdout or stderr). Once the selected
-# number of stars have been printed, the end-of-transmission is signalled
-# by 'E' character.
+# The program periodically prints star ('*') character to a single line on the specified output stream (stdout or
+# stderr). Once the selected number of stars have been printed, the end-of-transmission is signalled by 'E' character.
 #
-# In the unbuffered mode, the caller should receive the characters
-# individually, and have enough time to process them. In the buffered
-# mode, all printed characters including the terminating E will be
-# received at once.
+# In the unbuffered mode, the caller should receive the characters individually, and have enough time to process them.
+# In the buffered mode, all printed characters including the terminating E will be received at once.
 #
 # NOTE: the unbuffered mode for text layers was introduced in Python 3.7.
 
@@ -51,10 +46,8 @@ parser.add_argument(
 args = parser.parse_args()
 
 # Select output stream and mode
-assert args.output_stream in {'stdout', 'stderr'}, \
-    f"Invalid output stream: {args.output_stream}!"
-assert args.stream_mode in {'text', 'binary'}, \
-    f"Invalid output stream mode: {args.stream_mode}!"
+assert args.output_stream in {'stdout', 'stderr'}, f"Invalid output stream: {args.output_stream}!"
+assert args.stream_mode in {'text', 'binary'}, f"Invalid output stream mode: {args.stream_mode}!"
 
 stream = sys.stdout if args.output_stream == 'stdout' else sys.stderr
 if args.stream_mode == 'binary':

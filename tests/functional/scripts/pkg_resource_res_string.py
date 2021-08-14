@@ -16,7 +16,7 @@ import pkg3
 
 expected_data = 'This is data text for testing the packaging module data.'.encode('ascii')
 
-# With frozen app the resources is available in directory os.path.join(sys._MEIPASS, 'pkg3/sample-data.txt')
+# In a frozen app, the resources is available at: os.path.join(sys._MEIPASS, 'pkg3/sample-data.txt')
 data = res.resource_string(pkg3.__name__, 'sample-data.txt')
 if not data:
     raise SystemExit('Error: Could not read data with pkgutil.get_data().')

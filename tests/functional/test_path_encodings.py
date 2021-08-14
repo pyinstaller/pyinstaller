@@ -27,9 +27,8 @@ def test_ascii_path(pyi_builder):
 
 @pytest.mark.linux
 def test_linux_non_unicode_path(pyi_builder, monkeypatch):
-    # If we set the locale to 'C', mbstowcs should be completely useless. This
-    # test verifies that _Py_char2wchar will decode the "undecodable" bytes and
-    # will decode even filenames that weren't encoded with the locale encoding.
+    # If we set the locale to 'C', mbstowcs should be completely useless. This test verifies that _Py_char2wchar will
+    # decode the "undecodable" bytes and will decode even filenames that weren't encoded with the locale encoding.
     distdir = pyi_builder._distdir
     unicode_filename = 'ěščřžýáíé日本語'
     pyi_builder._distdir = os.path.join(distdir, unicode_filename)
@@ -62,9 +61,8 @@ def test_osx_linux_unicode_path(pyi_builder, monkeypatch):
 @pytest.mark.win32
 def test_win_codepage_path(pyi_builder, monkeypatch):
     distdir = pyi_builder._distdir
-    # Create some bytes and decode with the current codepage to get a filename that
-    # is guaranteed to encode with the current codepage.
-    # Assumes a one-byte codepage, i.e. not cp937 (shift-JIS) which is multibyte
+    # Create some bytes and decode with the current codepage to get a filename that is guaranteed to encode with the
+    # current codepage. Assumes a one-byte codepage, i.e., not cp937 (shift-JIS) which is multibyte.
     cp_filename = bytes(bytearray(range(0x80, 0x86))).decode('mbcs')
 
     pyi_builder._distdir = os.path.join(distdir, cp_filename)
@@ -80,18 +78,15 @@ def test_win_codepage_path(pyi_builder, monkeypatch):
 @pytest.mark.win32
 def test_win_codepage_path_disabled_shortfilename(pyi_builder, monkeypatch):
     distdir = pyi_builder._distdir
-    # Create some bytes and decode with the current codepage to get a filename that
-    # is guaranteed to encode with the current codepage.
-    # Assumes a one-byte codepage, i.e. not cp937 (shift-JIS) which is multibyte
+    # Create some bytes and decode with the current codepage to get a filename that is guaranteed to encode with the
+    # current codepage. Assumes a one-byte codepage, i.e., not cp937 (shift-JIS) which is multibyte.
     cp_filename = bytes(bytearray(range(0x80, 0x86))).decode('mbcs')
 
     distdir = os.path.join(distdir, cp_filename)
     os.makedirs(distdir)
 
-    # Try to remove ShortFileName from this folder using `fsutil`
-    # Requires admin privileges, so `xfail` if we don't have them.
-    # `8dot3name strip` only affects subfolders, so pass the folder containing
-    # our codepage filename
+    # Try to remove ShortFileName from this folder using `fsutil`. Requires admin privileges, so `xfail` if we do not
+    # have them. `8dot3name strip` only affects subfolders, so pass the folder containing our codepage filename.
     fsutil_distdir = pyi_builder._distdir
 
     if subprocess.call(['fsutil', '8dot3name', 'strip', fsutil_distdir]):
@@ -118,8 +113,7 @@ def test_win_non_codepage_path(pyi_builder, monkeypatch):
 
     tmpdir = os.path.join(str(pyi_builder._tmpdir), non_cp_filename + "_TMP")
 
-    # To test what happens with a non-ANSI tempdir, we will also need to pass
-    # the TMP environ as wide chars.
+    # To test what happens with a non-ANSI tempdir, we will also need to pass the TMP environ as wide chars.
     monkeypatch.setenv('TMPDIR', tmpdir)
     monkeypatch.setenv('TMP', tmpdir)
 
@@ -133,7 +127,9 @@ def test_win_py3_no_shortpathname(pyi_builder):
 
 @pytest.mark.win32
 def test_win_TEMP_has_shortpathname(pyi_builder, monkeypatch, tmp_path):
-    """Test if script if pass if $TMP holds a short path name"""
+    """
+    Test if script if pass if $TMP holds a short path name.
+    """
     tmp = tmp_path / "longlongfilename" / "xxx"
     tmp.mkdir(parents=True, exist_ok=True)
     import win32api

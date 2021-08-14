@@ -9,10 +9,8 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# Test bootloader behaviour for threading code.
-# Default behaviour of Python interpreter is to wait for all threads
-# before exiting main process.
-# Bootloader should behave also this way.
+# Test bootloader behavior for threading code. The default behavior of Python interpreter is to wait for all threads
+# before exiting the main process. Bootloader should behave in the same way.
 
 import os
 import sys
@@ -32,8 +30,7 @@ if 'PYI_THREAD_TEST_CASE' in os.environ:
             print('TWO')
             print('THREE')
 
-    # Main process should not exit before the thread stops.
-    # This is the behaviour of Python interpreter.
+    # Main process should not exit before the thread stops. This is the behaviour of Python interpreter.
     TestThreadClass().start()
 
 # Execute itself in a subprocess.
@@ -66,6 +63,6 @@ else:
         print(" +++++++ SUBPROCESS ERROR OUTPUT +++++++")
         print(err)
         raise SystemExit(
-            'Subprocess did not print ONE, TWO, THREE in correct order. '
-            '(output was %r, return code was %s)' % (out, proc.returncode)
+            'Subprocess did not print ONE, TWO, THREE in correct order. (output was %r, return code was %s)' %
+            (out, proc.returncode)
         )

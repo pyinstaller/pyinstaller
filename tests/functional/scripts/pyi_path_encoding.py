@@ -9,8 +9,8 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# This script is used by multiple tests. It checks that various paths set by the
-# bootloader are usable filenames.
+# This script is used by multiple tests.
+# It checks that various paths set by the bootloader are usable filenames.
 
 import sys
 import os

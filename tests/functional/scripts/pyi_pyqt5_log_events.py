@@ -25,8 +25,9 @@ class EventHandler(QObject):
         self.activate_count = 0
 
     def eventFilter(self, obj, event):
-        """ This event filter just logs the URLs it receives as FileOpen
-        events to self.logfile """
+        """
+        This event filter just logs the URLs it receives as FileOpen events to self.logfile
+        """
         try:
             if event.type() == QEvent.FileOpen:
                 with open(self.logfile, 'a') as file:
@@ -75,7 +76,8 @@ def main():
         # Last arg is timeout (may be passed-in from test script)
         timeout = int(1000 * float(sys.argv[-1]))
     except (ValueError, IndexError):
-        """Arg was missing or bad arg, use default"""
+        # Arg was missing or bad arg, use default
+        pass
     # Quit the app after timeout milliseconds if we never get the event
     QTimer.singleShot(timeout, app.quit)
     app.exec_()

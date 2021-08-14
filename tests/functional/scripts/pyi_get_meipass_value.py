@@ -9,9 +9,8 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# Bootloader unsets _MEIPASS2 for child processes so that if the program
-# invokes another PyInstaller one-file program as subprocess, this
-# subprocess will not fooled into thinking that it is already unpacked.
+# Bootloader unsets _MEIPASS2 for child processes so that if the program invokes another PyInstaller one-file program
+# as subprocess, this subprocess will not fooled into thinking that it is already unpacked.
 #
 # This test checks if it is really unset in a subprocess.
 

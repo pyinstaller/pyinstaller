@@ -10,6 +10,6 @@
 #-----------------------------------------------------------------------------
 from PyInstaller.utils.hooks import collect_data_files
 
-# Since pyi_testmod_path/b lacks an __init__, it's not a module and won't be
-# found by modulegraph. So, include its contents in the filesystem.
+# Since pyi_testmod_path/a lacks an __init__, it is not a regular package and its contents will not be
+# found by modulegraph. So, collect its contents manually, and ensure they end up on filesystem.
 datas = collect_data_files('pyi_testmod_path', True, 'a')

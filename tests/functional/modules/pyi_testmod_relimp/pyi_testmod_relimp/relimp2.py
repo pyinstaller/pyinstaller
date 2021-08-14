@@ -23,7 +23,7 @@ assert pyi_testmod_relimp.name == 'pyi_testmod_relimp'
 import pyi_testmod_relimp.relimp2  # noqa: E402
 assert pyi_testmod_relimp.relimp2.name == 'pyi_testmod_relimp.relimp2'
 
-# While this seams to work when running Python, it is wrong:
+# While this seems to work when running Python, it is wrong:
 #  .pyi_testmod_relimp should be a sibling of this package
 #from .pyi_testmod_relimp import relimp2  # noqa: E402
 #assert pyi_testmod_relimp2.name == 'pyi_testmod_relimp.relimp2'

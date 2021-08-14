@@ -10,7 +10,7 @@
 #-----------------------------------------------------------------------------
 
 # This test code is taken from the example code for the `future` library, with a few modifications to allow execution on
-# 32-bit platforms. http://python-future.org/overview.html#code-examples
+# 32-bit platforms: http://python-future.org/overview.html#code-examples
 
 from builtins import (bytes, str, super, range, zip, round, int, pow, object)
 
@@ -96,8 +96,8 @@ assert isinstance('blah', str)
 assert isinstance('blah', str)  # only if unicode_literals is in effect
 
 
-# Py3-style iterators written as new-style classes (subclasses of
-# future.types.newobject) are automatically backward compatible with Py2:
+# Py3-style iterators written as new-style classes (subclasses of future.types.newobject) are automatically
+# backward-compatible with Py2:
 class Upper(object):
     def __init__(self, iterable):
         self._iter = iter(iterable)

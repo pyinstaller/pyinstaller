@@ -25,10 +25,8 @@ def test_inspect_getmodule_from_stackframes(pyi_builder):
         """
         import helper_package
 
-        # helper_package.test_call_chain() calls eponymous function in
-        # helper_package.helper_module, which in turn uses inspect.stack()
-        # and inspect.getmodule() to obtain list of modules involved in
-        # the chain call.
+        # helper_package.test_call_chain() calls eponymous function in helper_package.helper_module, which in turn uses
+        # inspect.stack() and inspect.getmodule() to obtain list of modules involved in the chain call.
         modules = helper_package.test_call_chain()
 
         # Expected call chain

@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# NOTE Relative imports do not work beyond toplevel package.
+# NOTE: relative imports do not work beyond toplevel package.
 
 # Should look for module 'pyi_testmod_relimp3c' in current directory.
 from .pyi_testmod_relimp3c import c1

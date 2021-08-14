@@ -63,8 +63,7 @@ def test_format_binaries_and_datas_1(tmpdir):
 
 
 def test_format_binaries_and_datas_with_bracket(tmpdir):
-    # See issue #2314: the filename contains brackets which are
-    # interpreted by glob().
+    # See issue #2314: the filename contains brackets which are interpreted by glob().
 
     def _(path):
         return os.path.join(*path.split('/'))
@@ -90,9 +89,8 @@ def test_add_suffix_to_extension():
     #  * output (expected) inm
     #  * fnm
     #  * typ
-    # where (inm, fnm, typ) is a TOC entry tuple
-    # All paths are in POSIX format (and are converted to OS-specific
-    # path during the test itself).
+    # where (inm, fnm, typ) is a TOC entry tuple.
+    # All paths are in POSIX format (and are converted to OS-specific path during the test itself).
     CASES = [
         # Stand-alone extension module
         ('mypkg',
@@ -124,8 +122,7 @@ def test_add_suffix_to_extension():
         toc2 = utils.add_suffix_to_extension(*toc)
         assert toc2 == toc_expected
 
-        # Ensure that processing an already-processed TOC entry leaves
-        # it unchanged (i.e., does not mangle it)
+        # Ensure that processing an already-processed TOC entry leaves it unchanged (i.e., does not mangle it).
         toc3 = utils.add_suffix_to_extension(*toc2)
         assert toc3 == toc2
 

@@ -30,8 +30,8 @@ def __scan_code_for_ctypes(code, monkeypatch, extended_args):
     code = textwrap.dedent(code)
 
     if extended_args:
-        # Chuck in a load of preceding rubbish to test if the bytecode scanner
-        # can correctly handle the EXTENDED_ARGS opcode.
+        # Chuck in a load of preceding rubbish to test if the bytecode scanner can correctly
+        # handle the EXTENDED_ARGS opcode.
         from test_bytecode import many_constants, many_globals
         code = many_constants() + many_globals() + code
 
@@ -51,8 +51,7 @@ def test_ctypes_CDLL_call(monkeypatch, classname, extended_args):
 @pytest.mark.parametrize('classname', CTYPES_CLASSNAMES)
 @pytest.mark.parametrize('extended_args', [False, True])
 def test_ctypes_LibraryLoader(monkeypatch, classname, extended_args):
-    # This type of useage is only valif on Windows and the lib-name will
-    # always get `.dll` appended.
+    # This type of usage is only valif on Windows and the lib-name will always get `.dll` appended.
     code = "%s.somelib" % classname.lower()
     res = __scan_code_for_ctypes(code, monkeypatch, extended_args)
     assert res == set(['somelib.dll'])

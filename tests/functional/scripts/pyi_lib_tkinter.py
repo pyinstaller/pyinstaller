@@ -9,8 +9,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# Ensure environment variables TCL_LIBRARY and TK_LIBRARY are set properly.
-# and data files are bundled.
+# Ensure that environment variables TCL_LIBRARY and TK_LIBRARY are set properly, and that data files are collected.
 
 import glob
 import os

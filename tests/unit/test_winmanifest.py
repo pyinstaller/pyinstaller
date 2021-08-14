@@ -18,8 +18,7 @@ from PyInstaller import HOMEPATH, PLATFORM
 
 @pytest.mark.win32
 def test_manifest_from_res_file(tmp_path):
-    # This import only works on Windows. Place it here, protected by the
-    # `@pytest.mark.win32`` decorator.
+    # This import only works on Windows. Place it here, protected by the `@pytest.mark.win32`` decorator.
     from PyInstaller.utils.win32 import winmanifest
 
     # Locate bootloader executable

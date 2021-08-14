@@ -9,8 +9,8 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 """
-Interactive tests are successful when they are able to run
-the executable for some time. Otherwise it is marked as fail.
+Interactive tests are successful when they are able to run the executable for some time.
+Otherwise it is marked as fail.
 
 Note: All tests in this file should use the argument 'runtime'.
 """
@@ -42,5 +42,4 @@ def test_pyi_splash(pyi_builder_spec, capfd, monkeypatch, mode):
 
     out, err = capfd.readouterr()
     assert 'SPLASH: Splash screen started' in err, \
-        ("Cannot find log entry indicating start of splash screen in:\n{}"
-         .format(err))
+        "Cannot find log entry indicating start of splash screen in:\n{}".format(err)

@@ -15,8 +15,8 @@ import sys
 
 def gettemp(basename):
     """
-    Get the path to a temp file previously written by the temp runner. Useful to
-    compare results between running in interpreter and running frozen.
+    Get the path to a temp file previously written by the temp runner.
+    Useful to compare results between running in interpreter and running frozen.
     """
     exec_dir = os.path.dirname(sys.executable)
     # onedir mode:

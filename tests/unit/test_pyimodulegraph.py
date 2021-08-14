@@ -35,9 +35,8 @@ def test_get_co_using_ctypes(tmpdir):
 
 
 def test_get_co_using_ctypes_from_extension():
-    # If an extension module has an hidden import to ctypes (e.g. added by the
-    # hook), the extension module must not show up in the result of
-    # `get_co_using_ctypes()`, since it has no code-object to be analyzed.
+    # If an extension module has an hidden import to ctypes (e.g. added by the hook), the extension module must not
+    # show up in the result of `get_co_using_ctypes()`, since it has no code-object to be analyzed.
     # See issue #2492 and test_regression::issue_2492.
     logging.logger.setLevel(logging.DEBUG)
     mg = analysis.PyiModuleGraph(HOMEPATH, excludes=["xencodings"])
@@ -62,12 +61,12 @@ def test_metadata_collection(tmpdir):
     script.write(
         dedent(
             f'''
-        from {importlib_metadata} import distribution, version
-        import {importlib_metadata}
+            from {importlib_metadata} import distribution, version
+            import {importlib_metadata}
 
-        distribution("setuptools")
-        {importlib_metadata}.version("altgraph")
-        '''
+            distribution("setuptools")
+            {importlib_metadata}.version("altgraph")
+            '''
         )
     )
 
@@ -212,7 +211,9 @@ def test_collect_rthooks_fail_1(tmpdir, monkeypatch):
 
 
 class FakeGraph(analysis.PyiModuleGraph):
-    """A simplified module graph containing a single node module *foo* with user-defined content."""
+    """
+    A simplified module graph containing a single node module *foo* with user-defined content.
+    """
     def __init__(self, source):
         self.code = compile(source, "<>", "exec")
 
@@ -221,7 +222,9 @@ class FakeGraph(analysis.PyiModuleGraph):
 
 
 def test_metadata_searching():
-    """Test the top level for bytecode scanning for metadata requirements."""
+    """
+    Test the top level for bytecode scanning for metadata requirements.
+    """
     from PyInstaller.utils.hooks import copy_metadata
 
     # This test analyses code which implies that PyInstaller's own metadata (and possibly that of its dependencies) is

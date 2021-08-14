@@ -9,18 +9,16 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# This requires you hand-crafted PyQt5 package, since some
-# distributions do not include PyQt5.uic.port_v3 for Python and the
-# other way round.
+# This requires a custom hand-crafted PyQt5 package, since some distributions do not include PyQt5.uic.port_v3
+# for Python 2 and the other way round.
 #
-# PyQt5.uic.port_v2.test raises an AssertionError if imported under
-# Python 3. But the hook should prohibit the inclusion of this module,
-# so an ImportError should be raised. So the ImportError is what we
-# expect and we just ignore it.
+# PyQt5.uic.port_v2.test raises an AssertionError if imported under Python 3. But the hook should prohibit the
+# inclusion of this module, so an ImportError should be raised. Therefore, the ImportError is what we expect
+# and we just ignore it.
 
 import PyQt5
 
-# Ensure it's our fake module
+# Ensure PyQt5 is our fake package.
 assert PyQt5.__pyinstaller_fake_module_marker__ == '__pyinstaller_fake_module_marker__'
 
 import PyQt5.uic.port_v3  # noqa: E402

@@ -11,6 +11,6 @@
 
 from PyInstaller.utils.hooks import collect_submodules
 
-# pyi_testmod_metapath1._vendor is not imported directly and won't be
-# found by modulegraph. So, explicitly include this sub-package.
+# pyi_testmod_metapath1._vendor is not imported directly and will not be found by modulegraph.
+# So, explicitly include this sub-package.
 hiddenimports = collect_submodules('pyi_testmod_metapath1._vendor')

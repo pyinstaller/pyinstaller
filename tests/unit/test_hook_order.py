@@ -17,7 +17,6 @@ from PyInstaller.utils.tests import skip
 
 @skip(reason='')
 def test_hook_order(pyi_builder):
-
     subprocess.run([sys.executable, '-m', 'pip', 'install', '-e', str(Path.with_name(__file__, 'hook_order_hooks'))])
 
     args = [sys.executable, '-m', 'pip', 'uninstall', 'pyi_example_package', '--yes', '-q', '-q', '-q']

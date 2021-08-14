@@ -19,17 +19,11 @@
 # For details on the structure of the test and the contents of the test package, see the top comment in the test script
 # itself.
 
-# Library imports
-# ---------------
 import os
 import shutil
 
-# Third-party imports
-# -------------------
 import pytest
 
-# Local imports
-# -------------
 from PyInstaller.utils.tests import importorskip
 from PyInstaller.compat import exec_python, exec_python_rc
 

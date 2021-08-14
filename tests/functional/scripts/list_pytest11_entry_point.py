@@ -8,7 +8,9 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-"""Print all modules exporting the entry point 'pytest11'."""
+"""
+Print all modules exporting the entry point 'pytest11'.
+"""
 
 import pkg_resources
 

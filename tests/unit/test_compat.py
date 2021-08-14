@@ -16,10 +16,8 @@ from PyInstaller._shared_with_waf import _pyi_machine
 
 
 def test_exec_command_subprocess_wrong_encoding_reports_nicely(capsys):
-    # Ensure a nice error message is printed if decoding the output of the
-    # subprocess fails.
-    # Actually `exec_python()` is used for running the progam, so we can use a
-    # small Python script.
+    # Ensure a nice error message is printed if decoding the output of the subprocess fails.
+    # As `exec_python()` is used for running the progam, we can use a small Python script.
     prog = """import sys; sys.stdout.buffer.write(b'dfadfadf\\xa0:::::')"""
     with pytest.raises(UnicodeDecodeError):
         compat.exec_python('-c', prog)
@@ -27,8 +25,7 @@ def test_exec_command_subprocess_wrong_encoding_reports_nicely(capsys):
     assert 'bytes around the offending' in err
 
 
-# List every known platform.machine() or waf's ctx.env.DEST_CPU (in the
-# bootloader/wscript file) output on Linux here.
+# List every known platform.machine() or waf's ctx.env.DEST_CPU (in the bootloader/wscript file) output on Linux here.
 @pytest.mark.parametrize(
     "input, output", [
         ("x86_64", "intel"),

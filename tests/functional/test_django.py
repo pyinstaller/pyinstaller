@@ -18,12 +18,11 @@ from PyInstaller.compat import is_win, is_py37
 from PyInstaller.utils.tests import importorskip, xfail
 
 
-# In Django 2.1, ``django/contrib/auth/password_validation.py``, line 168, which
-# is
+# In Django 2.1, ``django/contrib/auth/password_validation.py``, line 168, which is
 #
 #   ``DEFAULT_PASSWORD_LIST_PATH = Path(__file__).resolve().parent / 'common-passwords.txt.gz'``,
 #
-# the call to ``resolve()`` causes Python 3.5 to raise an exception that ``password_validation.pyc`` doesn't exist.
+# the call to ``resolve()`` causes Python 3.5 to raise an exception that ``password_validation.pyc`` does not exist.
 # Python 3.6 added the default argument ``strict=False``, which ignores this exception. This file is in the archive, but
 # not the filesystem.
 @importorskip('django')

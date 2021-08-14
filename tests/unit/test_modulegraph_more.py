@@ -100,15 +100,19 @@ def test_package_init_is_extension(tmpdir, num, modname, expected_nodetype):
     def create_package_files(test_case):
         (tmpdir / 'myextpkg' / 'subpkg').ensure(dir=True)
         m = wt('myextpkg', '__init__' + EXTENSION_SUFFIXES[0])
-        if test_case == 1: return m  # noqa: E701
+        if test_case == 1:
+            return m
         wt('myextpkg', '__init__.py')
-        if test_case == 2: return m  # noqa: E701 return extension module anway
+        if test_case == 2:
+            return m  # return extension module anway
         m = wt('myextpkg', 'other.py')
         m = wt('myextpkg', 'other' + EXTENSION_SUFFIXES[0])
-        if test_case == 3: return m  # noqa: E701
+        if test_case == 3:
+            return m
         m = wt('myextpkg', 'subpkg', '__init__.py')
         m = wt('myextpkg', 'subpkg', '__init__' + EXTENSION_SUFFIXES[0])
-        if test_case == 4: return m  # noqa: E701
+        if test_case == 4:
+            return m
         m = wt('myextpkg', 'subpkg', 'other.py')
         m = wt('myextpkg', 'subpkg', 'other' + EXTENSION_SUFFIXES[0])
         return m
@@ -123,8 +127,7 @@ def test_package_init_is_extension(tmpdir, num, modname, expected_nodetype):
     assert node.filename == str(module_file)
 
 
-#-- Basic tests - these seem to be missing in the original modulegraph
-#-- test-suite
+#-- Basic tests - these seem to be missing in the original modulegraph test-suite
 
 
 def test_relative_import_missing(tmpdir):
@@ -170,8 +173,7 @@ def test_zipped_module_source_and_compiled(tmpdir):
     zipfilename = str(tmpdir.join('unstuff.zip'))
     _zip_directory(zipfilename, tmpdir)
     node = _import_and_get_node(tmpdir, 'stuff', path=[zipfilename])
-    # Do not care whether it's source or compiled, as long as it is
-    # neither invalid nor missing.
+    # Do not care whether it is source or compiled, as long as it is neither invalid nor missing.
     assert node.__class__ in (modulegraph.SourceModule, modulegraph.CompiledModule)
     assert node.filename.startswith(os.path.join(zipfilename, 'stuff.py'))
 
@@ -406,20 +408,15 @@ def test_swig_import_simple_BUGGY(tmpdir):
 
     assert isinstance(mg.find_node('pyi_test_osgeo'), modulegraph.Package)
     assert isinstance(mg.find_node('pyi_test_osgeo.pyi_gdal'), modulegraph.SourceModule)
-    # The "C" module is frozen under its unqualified rather than qualified
-    # name. See comment in modulegraph._safe_import_hook.
-    # BUG: modulegraph contains a probable bug: Only the module's identifier
-    # is changed, not the module's graphident. Thus the node is still found
-    # under it's old name. The relevant code was brought from PyInstaller to
-    # upstream, so this might be PyInstaller's fault. See
-    # test_swig_import_simple for what it should be.
-    # This is a separate test-case, not marked as xfail, so we can spot
-    # whether the SWIG support works at all.
+    # The "C" module is frozen under its unqualified rather than qualified name.
+    # See comment in modulegraph._safe_import_hook.
+    # BUG: modulegraph contains a probable bug: Only the module's identifier is changed, not the module's graphident.
+    # Thus the node is still found under its old name. The relevant code was brought from PyInstaller to upstream,
+    # so this might be PyInstaller's fault. See test_swig_import_simple for what it should be.
+    # This is a separate test-case, not marked as xfail, so we can spot whether the SWIG support works at all.
     assert isinstance(mg.find_node('pyi_test_osgeo._pyi_gdal'), modulegraph.SourceModule)
-    # Due the the buggy implementation, the graphident is unchanged, but
-    # at least the identifier should have changed.
-    assert mg.find_node('pyi_test_osgeo._pyi_gdal').identifier \
-        == '_pyi_gdal'
+    # Due the the buggy implementation, the graphident is unchanged, but at least the identifier should have changed.
+    assert mg.find_node('pyi_test_osgeo._pyi_gdal').identifier == '_pyi_gdal'
     # Due the the buggy implementation, this node does not exist.
     assert mg.find_node('_pyi_gdal') is None
     return mg  # for use in test_swig_import_simple_BUG
@@ -429,36 +426,30 @@ def test_swig_import_simple_BUGGY(tmpdir):
 def test_swig_import_simple(tmpdir):
     # Test the expected (but not implemented) behavior if SWIG support.
     mg = test_swig_import_simple_BUGGY(tmpdir)
-    # Given the bug in modulegraph (see test_swig_import_simple_BUGGY) this is
-    # what would be the expected behavior.
-    # TODO: When modulegraph is fixed, merge the two test-cases and correct
-    # test_swig_import_from_top_level and siblings.
+    # Given the bug in modulegraph (see test_swig_import_simple_BUGGY) this is what would be the expected behavior.
+    # TODO: When modulegraph is fixed, merge the two test-cases and correct test_swig_import_from_top_level
+    # and siblings.
     assert mg.find_node('pyi_test_osgeo._pyi_gdal') is None
     assert isinstance(mg.find_node('_pyi_gdal'), modulegraph.SourceModule)
 
 
 def test_swig_import_from_top_level(tmpdir):
-    # While there is a SWIG wrapper module as expected, the package module
-    # already imports the "C" module in the same way the SWIG wrapper would
-    # do.
-    # See the issue #1522 (at about 2017-04-26), pull-request #2578 and commit
-    # 711e9e77c93a979a63648ba05f725b30dbb7c3cc.
+    # While there is a SWIG wrapper module as expected, the package module already imports the "C" module in the
+    # same way the SWIG wrapper would do.
+    # See the issue #1522 (at about 2017-04-26), pull-request #2578 and commit 711e9e77c93a979a63648ba05f725b30dbb7c3cc.
     #
-    # For Python > 2.6, SWIG tries to import the C module from the package's
-    # directory and if this fails, uses "import _XXX" (which is the code
-    # triggering import in modulegraph). For Python 2 this is a relative
-    # import, but for Python 3 this is an absolute import.
+    # For Python > 2.6, SWIG tries to import the C module from the package's directory and if this fails,
+    # uses "import _XXX" (which is the code triggering import in modulegraph). For Python 2, this is a relative import,
+    # but for Python 3, this is an absolute import.
     #
-    # In this test-case, the package's __init__.py contains code equivalent to
-    # the SWIG wrapper-module, causing the C module to be searched as an
-    # absolute import (in Python 3). But the importing module is not a SWIG
-    # candidate (names do not match), leading to the (absolute) C module to
-    # become a MissingModule - which is okay up to this point. Now if the SWIG
-    # wrapper-module imports the C module, there already is this
-    # MissingModule, inhibiting modulegraph's SWIG import mechanism.
+    # In this test-case, the package's __init__.py contains code equivalent to the SWIG wrapper-module, causing the C
+    # module to be searched as an absolute import (in Python 3). But the importing module is not a SWIG candidate
+    # (names do not match), leading to the (absolute) C module to become a MissingModule - which is okay up to this
+    # point. Now if the SWIG wrapper-module imports the C module, there already is this MissingModule, inhibiting
+    # modulegraph's SWIG import mechanism.
     #
-    # This is where commit 711e9e77c93 steps in and tries to reimport the C
-    # module (relative to the SWIG wrapper-module).
+    # This is where the commit 711e9e77c93 steps in and tries to reimport the C module (relative to the
+    # SWIG wrapper-module).
     libdir = tmpdir.join('lib')
     path = [str(libdir)]
     osgeo = libdir.join('pyi_test_osgeo')
@@ -473,8 +464,8 @@ def test_swig_import_from_top_level(tmpdir):
 
     assert isinstance(mg.find_node('pyi_test_osgeo'), modulegraph.Package)
     assert isinstance(mg.find_node('pyi_test_osgeo.pyi_gdal'), modulegraph.SourceModule)
-    # The "C" module is frozen under its unqualified rather than qualified
-    # name. See comment in modulegraph._safe_import_hook.
+    # The "C" module is frozen under its unqualified rather than qualified name.
+    # See comment in modulegraph._safe_import_hook.
     # Due the the buggy implementation (see test_swig_import_simple):
     assert isinstance(mg.find_node('pyi_test_osgeo._pyi_gdal'), modulegraph.SourceModule)
     assert mg.find_node('_pyi_gdal') is None
@@ -484,8 +475,7 @@ def test_swig_import_from_top_level(tmpdir):
 
 
 def test_swig_import_from_top_level_missing(tmpdir):
-    # Like test_swig_import_from_top_level, but the "C" module is missing and
-    # should be reported as a MissingModule.
+    # Like test_swig_import_from_top_level, but the "C" module is missing and should be reported as a MissingModule.
     libdir = tmpdir.join('lib')
     path = [str(libdir)]
     osgeo = libdir.join('pyi_test_osgeo')
@@ -499,19 +489,16 @@ def test_swig_import_from_top_level_missing(tmpdir):
     mg.add_script(str(script))
     assert isinstance(mg.find_node('pyi_test_osgeo'), modulegraph.Package)
     assert isinstance(mg.find_node('pyi_test_osgeo.pyi_gdal'), modulegraph.SourceModule)
-    # BUG: Again, this is unecpected behaviour in modulegraph: While
-    # MissingModule('_pyi_gdal') is (arguable) removed when trying to import
-    # the SWIG C module, there is no MissingModule('pyi_test_osgeo.pyi_gdal')
-    # added, but again MissingModule('_pyi_gdal'). I still need to understand
-    # why.
+    # BUG: Again, this is unecpected behaviour in modulegraph: While MissingModule('_pyi_gdal') is (arguably) removed
+    # when trying to import the SWIG C module, there is no MissingModule('pyi_test_osgeo.pyi_gdal') added, but again
+    # MissingModule('_pyi_gdal'). I still need to understand why.
     assert mg.find_node('pyi_test_osgeo._pyi_gdal') is None
     assert isinstance(mg.find_node('_pyi_gdal'), modulegraph.MissingModule)
 
 
 def test_swig_import_from_top_level_but_nested(tmpdir):
-    # Like test_swig_import_from_top_level, but both the wrapper and the "top
-    # level" are nested. This is intented to test relative import of the "C"
-    # module.
+    # Like test_swig_import_from_top_level, but both the wrapper and the "top level" are nested.
+    # This is intented to test relative import of the "C" module.
     libdir = tmpdir.join('lib')
     path = [str(libdir)]
     osgeo = libdir.join('pyi_test_osgeo')
@@ -527,8 +514,8 @@ def test_swig_import_from_top_level_but_nested(tmpdir):
     mg.add_script(str(script))
 
     assert isinstance(mg.find_node('pyi_test_osgeo.x.y.pyi_gdal'), modulegraph.SourceModule)
-    # The "C" module is frozen under its unqualified rather than qualified
-    # name. See comment in modulegraph._safe_import_hook.
+    # The "C" module is frozen under its unqualified rather than qualified name.
+    # See comment in modulegraph._safe_import_hook.
     # Due the the buggy implementation (see test_swig_import_simple):
     assert isinstance(mg.find_node('pyi_test_osgeo.x.y._pyi_gdal'), modulegraph.SourceModule)
     assert mg.find_node('_pyi_gdal') is None
@@ -538,10 +525,9 @@ def test_swig_import_from_top_level_but_nested(tmpdir):
 
 
 def test_swig_top_level_but_no_swig_at_all(tmpdir):
-    # From the script import an absolute module which looks like a SWIG
-    # candidate but is no SWIG module. See issue #3040 ('_decimal')
-    # The center of this test-case is that it doesn't raise a recursion too
-    # deep error.
+    # From the script import an absolute module which looks like a SWIG candidate but is no SWIG module.
+    # See issue #3040 ('_decimal').
+    # The center of this test-case is that it does not raise a recursion too deep error.
     libdir = tmpdir.join('lib')
     path = [str(libdir)]
     libdir.join('pyi_dezimal.py').ensure().write('import _pyi_dezimal')
@@ -572,10 +558,9 @@ def test_swig_top_level_but_no_swig_at_all_existing(tmpdir):
 
 
 def test_swig_candidate_but_not_swig(tmpdir):
-    # From a package module import an absolute module which looks like a SWIG
-    # candidate but is no SWIG module . See issue #2911 (tifffile).
-    # The center of this test-case is that it doesn't raise a recursion too
-    # deep error.
+    # From a package module import an absolute module which looks like a SWIG candidate, but is no SWIG module.
+    # See issue #2911 (tifffile).
+    # The center of this test-case is that it does not raise a recursion too deep error.
     libdir = tmpdir.join('lib')
     path = [str(libdir)]
     pkg = libdir.join('pkg')
@@ -590,15 +575,14 @@ def test_swig_candidate_but_not_swig(tmpdir):
     assert isinstance(mg.find_node('pkg'), modulegraph.Package)
     assert isinstance(mg.find_node('pkg.mymod'), modulegraph.SourceModule)
     assert mg.find_node('pkg._mymod') is None
-    # This is not a SWIG module, thus the SWIG import mechanism should not
-    # trigger.
+    # This is not a SWIG module, thus the SWIG import mechanism should not trigger.
     assert isinstance(mg.find_node('_mymod'), modulegraph.MissingModule)
 
 
 def test_swig_candidate_but_not_swig2(tmpdir):
     """
-    Variation of test_swig_candidate_but_not_swig using differnt import
-    statements (like tifffile/tifffile.py does)
+    Variation of test_swig_candidate_but_not_swig using differnt import statements
+    (like tifffile/tifffile.py does).
     """
     libdir = tmpdir.join('lib')
     path = [str(libdir)]
@@ -618,8 +602,7 @@ def test_swig_candidate_but_not_swig2(tmpdir):
 
 
 def test_swig_candidate_but_not_swig_missing(tmpdir):
-    # Like test_swig_candidate_but_not_swig, but the "C" module is missing and
-    # should be reported as a MissingModule.
+    # Like test_swig_candidate_but_not_swig, but the "C" module is missing and should be reported as a MissingModule.
     libdir = tmpdir.join('lib')
     path = [str(libdir)]
     pkg = libdir.join('pkg')
@@ -639,8 +622,8 @@ def test_swig_candidate_but_not_swig_missing(tmpdir):
 
 def test_swig_candidate_but_not_swig_missing2(tmpdir):
     """
-    Variation of test_swig_candidate_but_not_swig_missing using differnt import
-    statements (like tifffile/tifffile.py does)
+    Variation of test_swig_candidate_but_not_swig_missing using differnt import statements
+    (like tifffile/tifffile.py does).
     """
     libdir = tmpdir.join('lib')
     path = [str(libdir)]

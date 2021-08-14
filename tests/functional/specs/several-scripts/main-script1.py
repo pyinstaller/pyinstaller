@@ -11,7 +11,7 @@ class _Popen(basemod.Popen):
         super().__init__(*args, **kw)
 
 
-# Reduce recursion limit to shorten traceback
+# Reduce recursion limit to shorten the traceback.
 sys.setrecursionlimit(50)
 
 basemod.Popen = _Popen

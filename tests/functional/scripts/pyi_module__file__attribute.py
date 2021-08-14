@@ -9,10 +9,9 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# Test the value of the __file__ module attribute.
-# In frozen mode it is for package set to
-#
+# Test the value of the __file__ attribute; for a frozen package, it should be:
 #   sys.prefix/package/__init__.pyc
+# and for a frozen module, it should be:
 #   sys.prefix/module.pyc
 
 import os

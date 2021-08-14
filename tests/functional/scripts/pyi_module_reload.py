@@ -9,12 +9,10 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# PyInstaller always loads modules from the embedded archive before
-# looking at sys.path.
+# PyInstaller always loads modules from the embedded archive before looking at sys.path.
 #
-# This tests creates module with the same name as the one in the
-# embbedded archive. Python should always load module from the
-# embedded archive.
+# This tests creates a module with the same name as the one in the embbedded archive. The frozen application
+# should always load the module from the embedded archive.
 
 import os
 import sys

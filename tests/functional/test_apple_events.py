@@ -9,22 +9,16 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 """
-OSX-specific test to check handling AppleEvents by bootloader
+OSX-specific test to check handling AppleEvents by bootloader.
 """
 
-# Library imports
-# ---------------
 import json
 import os
 import subprocess
 import time
 
-# Third-party imports
-# -------------------
 import pytest
 
-# Local imports
-# -------------
 from PyInstaller.utils.tests import importorskip
 
 
@@ -82,8 +76,7 @@ def test_osx_event_forwarding(tmpdir, pyi_builder_spec, monkeypatch, mode):
 
     def wait_for_started():
         t0 = time.time()  # mark start time
-        # Poll logfile for app to be started (it writes "started" to the first
-        # log line)
+        # Poll logfile for app to be started (it writes "started" to the first log line)
         while True:
             elapsed = time.time() - t0
             if elapsed > timeout:
@@ -93,8 +86,7 @@ def test_osx_event_forwarding(tmpdir, pyi_builder_spec, monkeypatch, mode):
                     log_lines = fh.readlines()
                     if log_lines:
                         first = log_lines[0]
-                        assert first.startswith('started '), \
-                            "Unexpected line in log file"
+                        assert first.startswith('started '), "Unexpected line in log file"
                         # Now, parse the logged args. e.g. 'started {"argv": ["Arg1, ...]}'
                         dd = json.loads(first.split(" ", 1)[-1])
                         assert 'argv' in dd, "First line missing argv"
@@ -122,8 +114,7 @@ def test_osx_event_forwarding(tmpdir, pyi_builder_spec, monkeypatch, mode):
     os.remove(logfile_path)
 
     # At this point both the protocol handler and the file ext are registered
-    # 1. Try the file extension -- this tests the AppleEvent rewrite of
-    #    a "file://" event to a regular filesystem path.
+    # 1. Try the file extension -- this tests the AppleEvent rewrite of a "file://" event to a regular filesystem path.
 
     # Create 32 files that are associated with this app. This tests the robustness of the argv-emu by spamming it with
     # lots of args and seeing what happens.
@@ -186,8 +177,7 @@ def test_osx_event_forwarding(tmpdir, pyi_builder_spec, monkeypatch, mode):
                 assert url_line.startswith("url ")
                 assert activation_line.startswith("activate_count ")
                 url_part = url_line.split(" ", 1)[-1]
-                assert url_part.strip().lower() == url.lower(), \
-                    'Logged url does not match expected'
+                assert url_part.strip().lower() == url.lower(), 'Logged url does not match expected'
                 activation_part = activation_line.split(" ", 1)[-1]
                 nonlocal activation_count
                 activation_count = int(activation_part.strip())

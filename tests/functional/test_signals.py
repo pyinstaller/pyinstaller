@@ -10,12 +10,8 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# Library imports
-# ---------------
 import signal
 
-# Third-party imports
-# -------------------
 import pytest
 
 signals = sorted([key for key in dir(signal) if key.startswith('SIG') and not key.startswith('SIG_')])
@@ -71,13 +67,11 @@ def test_signal_handled(pyi_builder, signame, ignore):
         parent = child.parent()
 
         if parent.name() == '{app_name}':
-            # We are the forked child of the bootloader process.
-            # Signal our parent process to mimic the behavior
-            # of an external program signalling the process running
-            # the executable that pyinstaller produced.
+            # We are the forked child of the bootloader process. Signal our parent process to mimic the behavior
+            # of an external program signalling the process running the executable that pyinstaller produced.
             target = parent
         elif ignore:
-            # can't pytest.skip() from inside this process
+            # Cannot use pytest.skip() from inside this process.
             print('Bootloader did not fork; test is invalid')
             sys.exit(0)
         else:
