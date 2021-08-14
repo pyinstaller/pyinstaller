@@ -91,8 +91,8 @@ def generate_parser() -> argparse.ArgumentParser:
             "name of scriptfiles to be processed or "
             "exactly one .spec-file. If a .spec-file is "
             "specified, most options are unnecessary "
-            "and are ignored.",
-        )
+            "and are ignored."
+        ),
     )
 
     return parser

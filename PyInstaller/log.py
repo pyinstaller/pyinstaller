@@ -34,9 +34,9 @@ def __add_options(parser):
         default='INFO',
         dest='loglevel',
         help=(
-            'Amount of detail in build-time console messages. '
-            'LEVEL may be one of %s (default: %%(default)s).' % ', '.join(levels),
-        )
+            'Amount of detail in build-time console messages. LEVEL may be one of %s (default: %%(default)s).' %
+            ', '.join(levels)
+        ),
     )
 
 

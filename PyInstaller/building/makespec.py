@@ -412,8 +412,8 @@ def __add_options(parser):
             "  source files as an archive inside the resulting\n"
             "  executable, store them as files in the resulting\n"
             "  output directory.\n"
-            "\n",
-        )
+            "\n"
+        ),
     )
     g.add_argument(
         "-s",
@@ -629,8 +629,8 @@ def __add_options(parser):
             "Useful in situations where e.g. a supervisor "
             "process signals both the bootloader and child "
             "(e.g. via a process group) to avoid signalling "
-            "the child twice.",
-        )
+            "the child twice."
+        ),
     )
 
 
