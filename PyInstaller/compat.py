@@ -15,6 +15,7 @@ with previous versions of Python onward.
 
 import errno
 import importlib.machinery
+import importlib.util
 import os
 import platform
 import site
@@ -170,15 +171,12 @@ if is_ms_app_store:
             'belonging to Python from Microsoft App Store!'
         )
 
-# In Python 3.4 module 'imp' is deprecated and there is another way how to obtain magic value.
-import importlib.util
-
+# Bytecode magic value
 BYTECODE_MAGIC = importlib.util.MAGIC_NUMBER
 
 # List of suffixes for Python C extension modules.
-from importlib.machinery import EXTENSION_SUFFIXES, all_suffixes
-
-ALL_SUFFIXES = all_suffixes()
+EXTENSION_SUFFIXES = importlib.machinery.EXTENSION_SUFFIXES
+ALL_SUFFIXES = importlib.machinery.all_suffixes()
 
 # In Python 3 'Tkinter' has been made lowercase - 'tkinter'.
 # TODO: remove once all references are gone from both pyinstaller and pyinstaller-hooks-contrib!
@@ -189,8 +187,8 @@ modname_tkinter = 'tkinter'
 #    ensure that it can work on MSYS2 (which requires pywin32-ctypes)
 if is_win:
     try:
-        from win32ctypes.pywin32 import pywintypes  # noqa: F401
-        from win32ctypes.pywin32 import win32api
+        from win32ctypes.pywin32 import pywintypes  # noqa: F401, E402
+        from win32ctypes.pywin32 import win32api  # noqa: F401, E402
     except ImportError:
         # This environment variable is set by setup.py
         # - It's not an error for pywin32 to not be installed at that point
@@ -557,7 +555,7 @@ def exec_python_rc(*args, **kwargs):
     return exec_command_rc(*cmdargs, **kwargs)
 
 
-## Path handling.
+#- Path handling.
 
 
 def expand_path(path):

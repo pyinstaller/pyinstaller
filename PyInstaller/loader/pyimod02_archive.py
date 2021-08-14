@@ -18,8 +18,8 @@
 
 # See pyi_carchive.py for a more general archive (contains anything) that can be understood by a C program.
 
-### **NOTE** This module is used during bootstrap.
-### Import *ONLY* builtin modules.
+# **NOTE** This module is used during bootstrap.
+# Import *ONLY* builtin modules.
 
 import _thread as thread
 import marshal
@@ -147,19 +147,14 @@ class ArchiveReader(object):
         # Use marshal.loads() since load() arg must be a file object Convert the read list into a dict for faster access
         self.toc = dict(marshal.loads(self.lib.read()))
 
-    ######## This is what is called by FuncImporter #######
-    ## Since an Archive is flat, we ignore parent and modname.
-    #XXX obsolete - imputil only code
-    ##  def get_code(self, parent, modname, fqname):
-    ##      pass
-
+    #------ This is what is called by FuncImporter ------
     def is_package(self, name):
         ispkg, pos = self.toc.get(name, (0, None))
         if pos is None:
             return None
         return bool(ispkg)
 
-    ####### Core method - Override as needed  #########
+    #------ Core method - Override as needed  ------
     def extract(self, name):
         """
         Get the object corresponding to name, or None. For use with imputil ArchiveImporter, object is a python code
@@ -181,9 +176,7 @@ class ArchiveReader(object):
             obj = marshal.loads(self.lib.read())
         return ispkg, obj
 
-    ########################################################################
-    # Informational methods
-
+    #------ Informational methods ------
     def contents(self):
         """
         Return a list of the contents Default implementation assumes self.toc is a dict like object. Not required by
@@ -271,7 +264,7 @@ class ZlibArchiveReader(ArchiveReader):
 
         # Try to import the key module. If the key module is not available then it means that encryption is disabled.
         try:
-            import pyimod00_crypto_key
+            import pyimod00_crypto_key  # noqa: F401
             self.cipher = Cipher()
         except ImportError:
             self.cipher = None

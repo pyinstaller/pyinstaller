@@ -103,7 +103,7 @@ def create_py3_base_library(libzip_filename, graph):
                             info = zipfile.ZipInfo(new_name)
                             zf.writestr(info, fc.getvalue())
 
-    except Exception as e:
+    except Exception:
         logger.error('base_library.zip could not be created!')
         raise
 
@@ -125,7 +125,7 @@ def scan_code_for_ctypes(co):
             # TODO make these warnings show up somewhere.
             try:
                 filename = co.co_filename
-            except:
+            except Exception:
                 filename = 'UNKNOWN'
             logger.warning(
                 "Ignoring %s imported from %s - ctypes imports are only supported using bare filenames", binary,
@@ -401,7 +401,7 @@ def load_ldconfig_cache():
         # ldconfig may know about several versions of the same lib,
         # e.g. differents arch, different libc, etc. Use the first
         # entry.
-        if not name in LDCONFIG_CACHE:
+        if name not in LDCONFIG_CACHE:
             LDCONFIG_CACHE[name] = path
 
 

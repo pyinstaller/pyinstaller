@@ -13,7 +13,6 @@ import multiprocessing
 import multiprocessing.spawn as spawn
 # 'spawn' multiprocessing needs some adjustments on osx
 import os
-import re
 import sys
 from subprocess import _args_from_interpreter_flags
 

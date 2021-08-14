@@ -20,7 +20,6 @@ Documentation roles for PyInstaller
 # <http://protips.readthedocs.io/link-roles.html>
 
 from docutils import nodes
-from docutils.parsers.rst.roles import set_classes
 
 
 def commit(name, rawtext, text, lineno, inliner, options={}, content=[]):

@@ -19,7 +19,6 @@ GLib 2.42.2, PyGObject 3.14.0, and GObject Introspection 1.42 on Windows 7
 
 import glob
 import os
-import sys
 
 import PyInstaller.log as logging
 from PyInstaller.compat import base_prefix, is_darwin, is_linux, is_win

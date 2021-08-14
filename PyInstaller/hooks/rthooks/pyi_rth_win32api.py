@@ -15,4 +15,4 @@
 # https://github.com/mhammond/pywin32/commit/71afa71e11e6631be611ca5cb57cda526
 # As a work-around, import pywintypes prior to win32api.
 
-import pywintypes
+import pywintypes  # noqa: F401

@@ -52,12 +52,14 @@ def pefile_read_version(filename):
 
     {
         # Translation independent information.
-        # VS_FIXEDFILEINFO - Contains version information about a file. This information is language and code page independent.
+        # VS_FIXEDFILEINFO - Contains version information about a file.
+        # This information is language and code page independent.
         'FileVersion':      (1, 2, 3, 4),
         'ProductVersion':   (9, 10, 11, 12),
 
         # PE files might contain several translations of version information.
-        # VS_VERSIONINFO - Depicts the organization of data in a file-version resource. It is the root structure that contains all other file-version information structures.
+        # VS_VERSIONINFO - Depicts the organization of data in a file-version resource.
+        # It is the root structure that contains all other file-version information structures.
         'translations': {
             'lang_id1' : {
                 'Comments':         '日本語, Unicode 対応.',
@@ -105,8 +107,14 @@ def pefile_read_version(filename):
     }
     pe = pefile.PE(filename)
     #ffi = pe.VS_FIXEDFILEINFO
-    #vers['FileVersion'] = (ffi.FileVersionMS >> 16, ffi.FileVersionMS & 0xFFFF, ffi.FileVersionLS >> 16, ffi.FileVersionLS & 0xFFFF)
-    #vers['ProductVersion'] = (ffi.ProductVersionMS >> 16, ffi.ProductVersionMS & 0xFFFF, ffi.ProductVersionLS >> 16, ffi.ProductVersionLS & 0xFFFF)
+    #vers['FileVersion'] = (
+    #    ffi.FileVersionMS >> 16, ffi.FileVersionMS & 0xFFFF,
+    #    ffi.FileVersionLS >> 16, ffi.FileVersionLS & 0xFFFF,
+    #)
+    #vers['ProductVersion'] = (
+    #    ffi.ProductVersionMS >> 16, ffi.ProductVersionMS & 0xFFFF,
+    #    ffi.ProductVersionLS >> 16, ffi.ProductVersionLS & 0xFFFF,
+    #)
     #print(pe.VS_FIXEDFILEINFO.FileVersionMS)
     # TODO Only first available language is used for now.
     #vers = pe.FileInfo[0].StringTable[0].entries
@@ -137,7 +145,7 @@ def decode(pathnm):
         return None
     data = win32api.LoadResource(h, pefile.RESOURCE_TYPE['RT_VERSION'], res[0])
     vs = VSVersionInfo()
-    j = vs.fromRaw(data)
+    vs.fromRaw(data)
     win32api.FreeLibrary(h)
     return vs
 

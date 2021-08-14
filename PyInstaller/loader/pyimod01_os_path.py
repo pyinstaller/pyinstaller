@@ -9,12 +9,11 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-### **NOTE** This module is used during bootstrap.
-### Import *ONLY* builtin modules.
-### List of built-in modules: sys.builtin_module_names
+# **NOTE** This module is used during bootstrap.
+# Import *ONLY* builtin modules.
+# List of built-in modules: sys.builtin_module_names
 """
-Set up 'os' and 'os.path' module replacement functions for use during import
-bootstrap.
+Set up 'os' and 'os.path' module replacement functions for use during import bootstrap.
 """
 
 import sys
@@ -67,21 +66,17 @@ def os_path_dirname(a, sep=os_sep, mindirlen=_mindirlen):
 if sys.platform.startswith('win'):
     # Implementation from ntpath.py module from standard Python 2.7 Library.
     def os_path_basename(pth):
-        ## Implementation of os.path.splitdrive()
+        # Implementation of os.path.splitdrive()
         if pth[1:2] == ':':
-            d = pth[0:2]
             p = pth[2:]
         else:
-            d = ''
             p = pth
-        ## Implementation of os.path.split()
-        # set i to index beyond p's last slash
+        # Implementation of os.path.split(): set i to index beyond p's last slash.
         i = len(p)
         while i and p[i - 1] not in '/\\':
             i = i - 1
-        head, tail = p[:i], p[i:]  # now tail has no slashes
-        # Windows implementation is based on split(). We need to return only tail.
-        return tail
+        # Windows implementation is based on split(). We need to return only tail (which now contains no slashes).
+        return p[i:]
 else:
     # Implementation from ntpath.py module from standard Python 2.7 Library.
     def os_path_basename(pth):

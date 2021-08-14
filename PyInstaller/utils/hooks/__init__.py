@@ -1233,7 +1233,7 @@ if compat.is_pure_conda:
 elif compat.is_conda:
     from PyInstaller.utils.hooks.conda import CONDA_META_DIR as _tmp
     logger.warning(
-        "Assuming this isn't an Anaconda environment or an additional venv/pipenv/... environment manager is being used "
-        "on top because the conda-meta folder %s doesn't exist.", _tmp
+        "Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being "
+        "used on top, because the conda-meta folder %s does not exist.", _tmp
     )
     del _tmp

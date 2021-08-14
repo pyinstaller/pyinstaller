@@ -9,8 +9,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-import sys
-
 
 def pre_find_module_path(hook_api):
     # Forbid imports in the port_v2 directory under Python 3 The code wouldn't import and would crash the build process.

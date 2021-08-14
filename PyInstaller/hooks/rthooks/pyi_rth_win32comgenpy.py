@@ -37,7 +37,7 @@ except OSError:
     pass
 
 # Override the default path to gen_py cache.
-import win32com
+import win32com  # noqa: E402
 
 win32com.__gen_path__ = genpydir
 
@@ -47,6 +47,6 @@ if hasattr(win32com, '__loader__'):
     del win32com.__loader__
 
 # Ensure genpydir is in 'gen_py' module paths.
-import win32com.gen_py
+import win32com.gen_py  # noqa: E402
 
 win32com.gen_py.__path__.insert(0, genpydir)

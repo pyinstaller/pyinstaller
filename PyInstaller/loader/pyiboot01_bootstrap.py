@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-### Start bootstrap process
+#-- Start bootstrap process
 # Only python built-in modules can be used.
 
 import sys
@@ -19,10 +19,10 @@ import pyimod03_importers
 # Extend Python import machinery by adding PEP302 importers to sys.meta_path.
 pyimod03_importers.install()
 
-### Bootstrap process is complete.
+#-- Bootstrap process is complete.
 # We can use other python modules (e.g. os)
 
-import os
+import os  # noqa: E402
 
 # Let other python modules know that the code is running in frozen mode.
 if not hasattr(sys, 'frozen'):
@@ -93,14 +93,14 @@ if sys.stderr is None:
 # Import 'encodings' module in a run-time hook is not enough since some run-time hooks require this module and the order
 # of running code from from run-time hooks is not defined.
 try:
-    import encodings
+    import encodings  # noqa: F401
 except ImportError:
     pass
 
 # In the Python interpreter 'warnings' module is imported when 'sys.warnoptions' is not empty. Mimic this behavior in
 # PyInstaller.
 if sys.warnoptions:
-    import warnings
+    import warnings  # noqa: F401
 
 # Install the hooks for ctypes
 import pyimod04_ctypes  # noqa: E402

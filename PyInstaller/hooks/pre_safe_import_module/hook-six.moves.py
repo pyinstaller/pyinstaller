@@ -34,8 +34,8 @@ def pre_safe_import_module(api):
         import six
         print('{')
 
-        # Iterate over the "six._moved_attributes" list rather than the # "six._importer.known_modules" dictionary, 
-        # as "urllib"-specific moved modules # are overwritten in the latter with unhelpful "LazyModule" objects. 
+        # Iterate over the "six._moved_attributes" list rather than the # "six._importer.known_modules" dictionary,
+        # as "urllib"-specific moved modules # are overwritten in the latter with unhelpful "LazyModule" objects.
         for moved_module in six._moved_attributes:
             # If this is a moved module or attribute, map the corresponding module. In
             # the case of moved attributes, the attribute's module is mapped while the

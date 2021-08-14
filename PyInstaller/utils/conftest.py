@@ -31,10 +31,11 @@ logging.getLogger().addHandler(logging.NullHandler())
 
 # Third-party imports
 # -------------------
-import psutil  # Manages subprocess timeout.
-import py
-import pytest
-import sys
+# Manages subprocess timeout.
+import psutil  # noqa: E402
+import py  # noqa: E402
+import pytest  # noqa: E402
+import sys  # noqa: E402
 
 # Local imports
 # -------------
@@ -42,13 +43,13 @@ import sys
 _ROOT_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
 sys.path.append(_ROOT_DIR)
 
-from PyInstaller import __main__ as pyi_main
-from PyInstaller import configure
-from PyInstaller.compat import (architecture, is_darwin, is_linux, is_win, safe_repr)
-from PyInstaller.depend.analysis import initialize_modgraph
-from PyInstaller.utils.cliutils import archive_viewer
-from PyInstaller.utils.tests import gen_sourcefile
-from PyInstaller.utils.win32 import winutils
+from PyInstaller import __main__ as pyi_main  # noqa: E402
+from PyInstaller import configure  # noqa: E402
+from PyInstaller.compat import architecture, is_darwin, is_linux, is_win, safe_repr  # noqa: E402
+from PyInstaller.depend.analysis import initialize_modgraph  # noqa: E402
+from PyInstaller.utils.cliutils import archive_viewer  # noqa: E402
+from PyInstaller.utils.tests import gen_sourcefile  # noqa: E402
+from PyInstaller.utils.win32 import winutils  # noqa: E402
 
 # Globals
 # =======

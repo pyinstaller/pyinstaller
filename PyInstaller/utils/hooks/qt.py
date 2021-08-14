@@ -11,7 +11,6 @@
 import glob
 import json
 import os
-import sys
 
 from PyInstaller import compat
 from PyInstaller import log as logging
@@ -245,16 +244,16 @@ def qt_plugins_binaries(plugin_type, namespace):
 #
 # _qt_dynamic_dependencies_dict
 # -----------------------------
-# This dictionary provides dynamics dependencies (plugins and translations) that can't be discovered using
+# This dictionary provides dynamics dependencies (plugins and translations) that cannot be discovered using
 # ``getImports``. It was built by combining information from:
 #
 # - Qt `deployment <http://doc.qt.io/qt-5/deployment.html>`_ docs. Specifically:
 #
 #   -   The `deploying Qt for Linux/X11 <http://doc.qt.io/qt-5/linux-deployment.html#qt-plugins>`_ page specifies
 #       including the Qt Platform Abstraction (QPA) plugin, ``libqxcb.so``. There's little other guidance provided.
-#   -   The `Qt for Windows - Deployment <http://doc.qt.io/qt-5/windows-deployment.html#creating-the-application-package>`_
-#       page likewise specifies the ``qwindows.dll`` QPA. This is found by the dependency walker, so it doesn't need to
-#       explicitly specified.
+#   -   The `Qt for Windows - Deployment
+#       <http://doc.qt.io/qt-5/windows-deployment.html#creating-the-application-package>`_ page likewise specifies
+#       the ``qwindows.dll`` QPA. This is found by the dependency walker, so it does not need to explicitly specified.
 #
 #       -   For dynamic OpenGL applications, the ``libEGL.dll``, ``libGLESv2.dll``, ``d3dcompiler_XX.dll`` (the XX is a
 #           version number), and ``opengl32sw.dll`` libraries are also needed.
@@ -275,9 +274,11 @@ def qt_plugins_binaries(plugin_type, namespace):
 #       -   The SVG icon plugin is deployed if the application uses the Qt SVG module.
 #       -   The accessibility plugin is always deployed.
 #
-#   -   Per the `Deploying QML Applications <http://doc.qt.io/qt-5/qtquick-deployment.html>`_
-#       page, QML-based applications need the ``qml/`` directory available.
+#   -   Per the `Deploying QML Applications <http://doc.qt.io/qt-5/qtquick-deployment.html>`_ page, QML-based
+#       applications need the ``qml/`` directory available.
+#
 #       This is handled by ``hook-PyQt5.QtQuick.py``.
+#
 #   -   Per the `Deploying Qt WebEngine Applications <https://doc.qt.io/qt-5.10/qtwebengine-deploying.html>`_
 #       page, deployment may include:
 #
@@ -285,44 +286,37 @@ def qt_plugins_binaries(plugin_type, namespace):
 #       -   QML imports (if Qt Quick integration is used).
 #       -   Qt WebEngine process, which should be located at
 #           ``QLibraryInfo::location(QLibraryInfo::LibraryExecutablesPath)``
-#           for Windows and Linux, and in ``.app/Helpers/QtWebEngineProcess``
-#           for Mac.
+#           for Windows and Linux, and in ``.app/Helpers/QtWebEngineProcess`` for Mac.
 #       -   Resources: the files listed in deployWebEngineCore_.
-#       -   Translations: on macOS: ``.app/Content/Resources``; on Linux and
-#           Windows: ``qtwebengine_locales`` directory in the directory
-#           specified by ``QLibraryInfo::location(QLibraryInfo::TranslationsPath)``.
-#       -   Audio and video codecs: Probably covered if Qt5Multimedia is
-#           referenced?
+#       -   Translations: on macOS: ``.app/Content/Resources``; on Linux and Windows: ``qtwebengine_locales``
+#           directory in the directory specified by ``QLibraryInfo::location(QLibraryInfo::TranslationsPath)``.
+#       -   Audio and video codecs: Probably covered if Qt5Multimedia is referenced?
 #
 #       This is handled by ``hook-PyQt5.QtWebEngineWidgets.py``.
 #
-#   -   Since `QAxContainer <http://doc.qt.io/qt-5/activeqt-index.html>`_ is a
-#       statically-linked library, it doesn't need any special handling.
+#   -   Since `QAxContainer <http://doc.qt.io/qt-5/activeqt-index.html>`_ is a statically-linked library, it
+#       does not need any special handling.
 #
-# - Sources for the `Windows Deployment Tool <http://doc.qt.io/qt-5/windows-deployment.html#the-windows-deployment-tool>`_
-#   show more detail:
+# - Sources for the `Windows Deployment Tool
+#   <http://doc.qt.io/qt-5/windows-deployment.html#the-windows-deployment-tool>`_ show more detail:
 #
-#   -   The `PluginModuleMapping struct <https://code.woboq.org/qt5/qttools/src/windeployqt/main.cpp.html#PluginModuleMapping>`_
-#       and the following ``pluginModuleMappings`` global provide a mapping
-#       between a plugin directory name and an `enum of Qt plugin names
-#       <https://code.woboq.org/qt5/qttools/src/windeployqt/main.cpp.html#QtModule>`_.
+#   -   The `PluginModuleMapping struct
+#       <https://code.woboq.org/qt5/qttools/src/windeployqt/main.cpp.html#PluginModuleMapping>`_ and the following
+#       ``pluginModuleMappings`` global provide a mapping between a plugin directory name and an `enum of Qt plugin
+#       names <https://code.woboq.org/qt5/qttools/src/windeployqt/main.cpp.html#QtModule>`_.
 #   -   The `QtModuleEntry struct <https://code.woboq.org/qt5/qttools/src/windeployqt/main.cpp.html#QtModuleEntry>`_
-#       and ``qtModuleEntries`` global connect this enum to the name of the Qt5
-#       library it represents and to the translation files this library
-#       requires. (Ignore the ``option`` member -- it's just for command-line
-#       parsing.)
+#       and ``qtModuleEntries`` global connect this enum to the name of the Qt5 library it represents and to the
+#       translation files this library requires. (Ignore the ``option`` member -- it's just for command-line parsing.)
 #
-#   Manually combining these two provides a mapping of Qt library names to the
-#   translation and plugin(s) needed by the library. The process is: take the
-#   key of the dict below from ``QtModuleEntry.libraryName``, but make it
-#   lowercase (since Windows files will be normalized to lowercase). The
-#   ``QtModuleEntry.translation`` provides the ``translation_base``. Match the
-#   ``QtModuleEntry.module`` with ``PluginModuleMapping.module`` to find the
+#   Manually combining these two provides a mapping of Qt library names to the translation and plugin(s) needed by the
+#   library. The process is: take the key of the dict below from ``QtModuleEntry.libraryName``, but make it lowercase
+#   (since Windows files will be normalized to lowercase). The ``QtModuleEntry.translation`` provides the
+#   ``translation_base``. Match the ``QtModuleEntry.module`` with ``PluginModuleMapping.module`` to find the
 #   ``PluginModuleMapping.directoryName`` for the required plugin(s).
 #
-#   -   The `deployWebEngineCore <https://code.woboq.org/qt5/qttools/src/windeployqt/main.cpp.html#_ZL19deployWebEngineCoreRK4QMapI7QStringS0_ERK7OptionsbPS0_>`_
-#       function copies the following files from ``resources/``, and also copies
-#       the web engine process executable.
+#   -   The `deployWebEngineCore
+#       <https://code.woboq.org/qt5/qttools/src/windeployqt/main.cpp.html#_ZL19deployWebEngineCoreRK4QMapI7QStringS0_ERK7OptionsbPS0_>`_
+#       function copies the following files from ``resources/``, and also copies the web engine process executable.
 #
 #       -   ``icudtl.dat``
 #       -   ``qtwebengine_devtools_resources.pak``
@@ -336,77 +330,74 @@ def qt_plugins_binaries(plugin_type, namespace):
 #
 #   -   Always include ``platforms/libqcocoa.dylib``.
 #   -   Always include ``printsupport/libcocoaprintersupport.dylib``
-#   -   Include ``bearer/`` if ``QtNetwork`` is included (and some other
-#       condition I didn't look up).
+#   -   Include ``bearer/`` if ``QtNetwork`` is included (and some other condition I didn't look up).
 #   -   Always include ``imageformats/``, except for ``qsvg``.
 #   -   Include ``imageformats/qsvg`` if ``QtSvg`` is included.
 #   -   Always include ``iconengines/``.
 #   -   Include ``sqldrivers/`` if ``QtSql`` is included.
-#   -   Include ``mediaservice/`` and ``audio/`` if ``QtMultimedia`` is
-#       included.
+#   -   Include ``mediaservice/`` and ``audio/`` if ``QtMultimedia`` is included.
 #
-#   The always includes will be handled by ``hook-PyQt5.py`` or
-#   ``hook-PySide2.py``; optional includes are already covered by the dict
-#   below.
+#   The always includes will be handled by ``hook-PyQt5.py`` or ``hook-PySide2.py``; optional includes are already
+#   covered by the dict below.
 #
 _qt5_dynamic_dependencies_dict = {
-    ## "lib_name":              (.hiddenimports,           translations_base,  zero or more plugins...)
-    "qt5bluetooth":             (".QtBluetooth",           None,               ),  # noqa: E241,E202
-    "qt5concurrent":            (None,                     "qtbase",           ),
-    "qt5core":                  (".QtCore",                "qtbase",           ),
+    #- "lib_name":              (.hiddenimports,           translations_base,  zero or more plugins...)
+    "qt5bluetooth":             (".QtBluetooth",           None,               ),  # noqa
+    "qt5concurrent":            (None,                     "qtbase",           ),  # noqa
+    "qt5core":                  (".QtCore",                "qtbase",           ),  # noqa
     # This entry generated by hand -- it's not present in the Windows deployment tool sources.
-    "qtdbus":                   (".QtDBus",                None,               ),
-    "qt5declarative":           (None,                     "qtquick1",         "qml1tooling"),
-    "qt5designer":              (".QtDesigner",            None,               ),
-    "qt5designercomponents":    (None,                     None,               ),
-    "enginio":                  (None,                     None,               ),
+    "qtdbus":                   (".QtDBus",                None,               ),  # noqa
+    "qt5declarative":           (None,                     "qtquick1",         "qml1tooling"),  # noqa
+    "qt5designer":              (".QtDesigner",            None,               ),  # noqa
+    "qt5designercomponents":    (None,                     None,               ),  # noqa
+    "enginio":                  (None,                     None,               ),  # noqa
     "qt5gamepad":               (None,                     None,               "gamepads"),
-    # Note: The ``platformthemes`` plugin is for Linux only, and comes from earlier PyInstaller code in ``hook-PyQt5.QtGui.py``. The ``styles`` plugin comes from the suggestion at https://github.com/pyinstaller/pyinstaller/issues/2156.
-    # ``xcbglintegrations`` and ``egldeviceintegrations`` were added manually
-    # for linux
+    # The ``platformthemes`` plugin is Linux-only, and comes from earlier PyInstaller code in ``hook-PyQt5.QtGui.py``.
+    # The ``styles`` plugin comes from the suggestion at https://github.com/pyinstaller/pyinstaller/issues/2156.
+    # ``xcbglintegrations`` and ``egldeviceintegrations`` were added manually for linux
     "qt5gui":                   (".QtGui",                 "qtbase",           "accessible", "iconengines", "imageformats", "platforms", "platforminputcontexts", "platformthemes", "styles", "xcbglintegrations", "egldeviceintegrations"),  # noqa
-    "qt5help":                  (".QtHelp",                "qt_help",          ),
+    "qt5help":                  (".QtHelp",                "qt_help",          ),  # noqa
     # This entry generated by hand -- it's not present in the Windows deployment tool sources.
-    "qt5macextras":             (".QtMacExtras",           None,               ),
-    "qt5multimedia":            (".QtMultimedia",          "qtmultimedia",     "audio", "mediaservice", "playlistformats"),
-    "qt5multimediawidgets":     (".QtMultimediaWidgets",   "qtmultimedia",     ),
-    "qt5multimediaquick_p":     (None,                     "qtmultimedia",     ),
-    "qt5network":               (".QtNetwork",             "qtbase",           "bearer"),
-    "qt5nfc":                   (".QtNfc",                 None,               ),
+    "qt5macextras":             (".QtMacExtras",           None,               ),  # noqa
+    "qt5multimedia":            (".QtMultimedia",          "qtmultimedia",     "audio", "mediaservice", "playlistformats"),  # noqa
+    "qt5multimediawidgets":     (".QtMultimediaWidgets",   "qtmultimedia",     ),  # noqa
+    "qt5multimediaquick_p":     (None,                     "qtmultimedia",     ),  # noqa
+    "qt5network":               (".QtNetwork",             "qtbase",           "bearer"),  # noqa
+    "qt5nfc":                   (".QtNfc",                 None,               ),  # noqa
     "qt5opengl":                (".QtOpenGL",              None,               ),  # noqa
-    "qt5positioning":           (".QtPositioning",         None,               "position"),
-    "qt5printsupport":          (".QtPrintSupport",        None,               "printsupport"),
-    "qt5qml":                   (".QtQml",                 "qtdeclarative",    ),
-    "qmltooling":               (None,                     None,               "qmltooling"),
+    "qt5positioning":           (".QtPositioning",         None,               "position"),  # noqa
+    "qt5printsupport":          (".QtPrintSupport",        None,               "printsupport"),  # noqa
+    "qt5qml":                   (".QtQml",                 "qtdeclarative",    ),  # noqa
+    "qmltooling":               (None,                     None,               "qmltooling"),  # noqa
     "qt5quick":                 (".QtQuick",               "qtdeclarative",    "scenegraph", "qmltooling"),  # noqa
-    "qt5quickparticles":        (None,                     None,               ),
-    "qt5quickwidgets":          (".QtQuickWidgets",        None,               ),
-    "qt5script":                (None,                     "qtscript",         ),
-    "qt5scripttools":           (None,                     "qtscript",         ),
-    "qt5sensors":               (".QtSensors",             None,               "sensors", "sensorgestures"),
-    "qt5serialport":            (".QtSerialPort",          "qtserialport",     ),
-    "qt5sql":                   (".QtSql",                 "qtbase",           "sqldrivers"),
-    "qt5svg":                   (".QtSvg",                 None,               ),
-    "qt5test":                  (".QtTest",                "qtbase",           ),
-    "qt5webkit":                (None,                     None,               ),
-    "qt5webkitwidgets":         (None,                     None,               ),
-    "qt5websockets":            (".QtWebSockets",          None,               ),
-    "qt5widgets":               (".QtWidgets",             "qtbase",           ),
-    "qt5winextras":             (".QtWinExtras",           None,               ),
-    "qt5xml":                   (".QtXml",                 "qtbase",           ),
-    "qt5xmlpatterns":           (".QXmlPatterns",          "qtxmlpatterns",    ),
+    "qt5quickparticles":        (None,                     None,               ),  # noqa
+    "qt5quickwidgets":          (".QtQuickWidgets",        None,               ),  # noqa
+    "qt5script":                (None,                     "qtscript",         ),  # noqa
+    "qt5scripttools":           (None,                     "qtscript",         ),  # noqa
+    "qt5sensors":               (".QtSensors",             None,               "sensors", "sensorgestures"),  # noqa
+    "qt5serialport":            (".QtSerialPort",          "qtserialport",     ),  # noqa
+    "qt5sql":                   (".QtSql",                 "qtbase",           "sqldrivers"),  # noqa
+    "qt5svg":                   (".QtSvg",                 None,               ),  # noqa
+    "qt5test":                  (".QtTest",                "qtbase",           ),  # noqa
+    "qt5webkit":                (None,                     None,               ),  # noqa
+    "qt5webkitwidgets":         (None,                     None,               ),  # noqa
+    "qt5websockets":            (".QtWebSockets",          None,               ),  # noqa
+    "qt5widgets":               (".QtWidgets",             "qtbase",           ),  # noqa
+    "qt5winextras":             (".QtWinExtras",           None,               ),  # noqa
+    "qt5xml":                   (".QtXml",                 "qtbase",           ),  # noqa
+    "qt5xmlpatterns":           (".QXmlPatterns",          "qtxmlpatterns",    ),  # noqa
     "qt5webenginecore":         (".QtWebEngineCore",       None,               "qtwebengine"),  # noqa
-    "qt5webengine":             (".QtWebEngine",           "qtwebengine",      "qtwebengine"),
-    "qt5webenginewidgets":      (".QtWebEngineWidgets",    None,               "qtwebengine"),
-    "qt53dcore":                (None,                     None,               ),
-    "qt53drender":              (None,                     None,               "sceneparsers", "renderplugins", "geometryloaders"),
-    "qt53dquick":               (None,                     None,               ),
-    "qt53dquickRender":         (None,                     None,               ),
-    "qt53dinput":               (None,                     None,               ),
-    "qt5location":              (".QtLocation",            None,               "geoservices"),
-    "qt5webchannel":            (".QtWebChannel",          None,               ),
-    "qt5texttospeech":          (None,                     None,               "texttospeech"),
-    "qt5serialbus":             (None,                     None,               "canbus"),
+    "qt5webengine":             (".QtWebEngine",           "qtwebengine",      "qtwebengine"),  # noqa
+    "qt5webenginewidgets":      (".QtWebEngineWidgets",    None,               "qtwebengine"),  # noqa
+    "qt53dcore":                (None,                     None,               ),  # noqa
+    "qt53drender":              (None,                     None,               "sceneparsers", "renderplugins", "geometryloaders"),  # noqa
+    "qt53dquick":               (None,                     None,               ),  # noqa
+    "qt53dquickRender":         (None,                     None,               ),  # noqa
+    "qt53dinput":               (None,                     None,               ),  # noqa
+    "qt5location":              (".QtLocation",            None,               "geoservices"),  # noqa
+    "qt5webchannel":            (".QtWebChannel",          None,               ),  # noqa
+    "qt5texttospeech":          (None,                     None,               "texttospeech"),  # noqa
+    "qt5serialbus":             (None,                     None,               "canbus"),  # noqa
 }  # yapf: disable
 
 # The dynamic dependency dictionary for Qt6 is constructed automatically

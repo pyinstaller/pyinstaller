@@ -25,7 +25,9 @@ logger = logging.getLogger(__name__)
 
 
 def dlls_in_subdirs(directory):
-    """Returns a list *.dll, *.so, *.dylib in given directories and subdirectories."""
+    """
+    Returns a list *.dll, *.so, *.dylib in given directories and subdirectories.
+    """
     filelist = []
     for root, dirs, files in os.walk(directory):
         filelist.extend(dlls_in_dir(root))
@@ -33,12 +35,16 @@ def dlls_in_subdirs(directory):
 
 
 def dlls_in_dir(directory):
-    """Returns a list of *.dll, *.so, *.dylib in given directory."""
+    """
+    Returns a list of *.dll, *.so, *.dylib in given directory.
+    """
     return files_in_dir(directory, ["*.so", "*.dll", "*.dylib"])
 
 
 def files_in_dir(directory, file_patterns=[]):
-    """Returns a list of files which match a pattern in given directory."""
+    """
+    Returns a list of files which match a pattern in given directory.
+    """
     files = []
     for file_pattern in file_patterns:
         files.extend(glob.glob(os.path.join(directory, file_pattern)))
@@ -52,7 +58,7 @@ def get_unicode_modules():
     modules = []
     try:
         # `codecs` depends on `encodings` and this is then included.
-        import codecs
+        import codecs  # noqa: F401
         modules.append('codecs')
     except ImportError:
         logger.error("Cannot detect modules 'codecs'.")
@@ -93,7 +99,7 @@ def mtime(fnm):
         # TODO: explain why this doesn't use os.path.getmtime() ?
         #       - It is probably not used because it returns float and not int.
         return os.stat(fnm)[8]
-    except:
+    except Exception:
         return 0
 
 

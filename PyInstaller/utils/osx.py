@@ -195,7 +195,8 @@ def fix_exe_for_code_signing(filename):
     symtab_sec = symtab_sec[0][1]  # Take the symtab command entry
     # Sanity check; the string table is located at the end of the SYMTAB section, which in turn is the last section in
     # the __LINKEDIT segment
-    assert linkedit_seg.fileoff + linkedit_seg.filesize == symtab_sec.stroff + symtab_sec.strsize, "Sanity check failed!"
+    assert linkedit_seg.fileoff + linkedit_seg.filesize == symtab_sec.stroff + symtab_sec.strsize, \
+        "Sanity check failed!"
 
     # Compute the old/declared file size (header.offset is zero for single-arch thin binaries)
     old_file_size = header.offset + linkedit_seg.fileoff + linkedit_seg.filesize

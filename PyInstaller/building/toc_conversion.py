@@ -86,7 +86,7 @@ class DependencyProcessor(object):
         dists = list(pkg_resources.find_distributions(distpath))
         assert len(dists) == 1
         dist = dists[0]
-        dist._pyinstaller_info = info = {
+        dist._pyinstaller_info = {
             'zipped': zipfile.is_zipfile(dist.location),
             'egg': True,  # TODO when supporting other types
             'zip-safe': dist.has_metadata('zip-safe'),

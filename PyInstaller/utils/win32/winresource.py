@@ -109,23 +109,23 @@ def _GetResources(hsrc, types=None, names=None, languages=None):
     try:
         # logger.debug("Enumerating resource types")
         enum_types = win32api.EnumResourceTypes(hsrc)
-        if types and not "*" in types:
+        if types and "*" not in types:
             enum_types = filter(lambda type_: type_ in types, enum_types)
         for type_ in enum_types:
             # logger.debug("Enumerating resources of type %s", type_)
             enum_names = win32api.EnumResourceNames(hsrc, type_)
-            if names and not "*" in names:
+            if names and "*" not in names:
                 enum_names = filter(lambda name: name in names, enum_names)
             for name in enum_names:
                 # logger.debug("Enumerating resources of type %s name %s", type_, name)
                 enum_languages = win32api.EnumResourceLanguages(hsrc, type_, name)
-                if languages and not "*" in languages:
+                if languages and "*" not in languages:
                     enum_languages = filter(lambda language: language in languages, enum_languages)
                 for language in enum_languages:
                     data = win32api.LoadResource(hsrc, type_, name, language)
-                    if not type_ in res:
+                    if type_ not in res:
                         res[type_] = {}
-                    if not name in res[type_]:
+                    if name not in res[type_]:
                         res[type_][name] = {}
                     res[type_][name][language] = data
     except pywintypes.error as exception:
@@ -169,15 +169,15 @@ def UpdateResources(dstpath, data, type_, names=None, languages=None):
     # Look for existing resources.
     res = GetResources(dstpath, [type_], names, languages)
     # add type_, names and languages not already present in existing resources
-    if not type_ in res and type_ != "*":
+    if type_ not in res and type_ != "*":
         res[type_] = {}
     if names:
         for name in names:
-            if not name in res[type_] and name != "*":
+            if name not in res[type_] and name != "*":
                 res[type_][name] = []
                 if languages:
                     for language in languages:
-                        if not language in res[type_][name] and language != "*":
+                        if language not in res[type_][name] and language != "*":
                             res[type_][name].append(language)
     # add resource to destination, overwriting existing resources
     hdst = win32api.BeginUpdateResource(dstpath, 0)

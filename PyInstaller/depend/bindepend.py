@@ -62,7 +62,7 @@ def getfullnameof(mod, xtrapath=None):
         pywin32_paths + winutils.get_system_path() + compat.getenv('PATH', '').split(os.pathsep)
     )
     if xtrapath is not None:
-        if type(xtrapath) == type(''):
+        if isinstance(xtrapath, str):
             epath.insert(0, xtrapath)
         else:
             epath = xtrapath + epath
@@ -346,7 +346,7 @@ def getAssemblies(pth):
                         str(language),
                     ])
                     manifest.parse_string(res[winmanifest.RT_MANIFEST][name][language], False)
-                except Exception as exc:
+                except Exception:
                     logger.error("Can not parse manifest resource %s, %s from %s", name, language, pth, exc_info=1)
                 else:
                     if manifest.dependentAssemblies:
@@ -589,7 +589,7 @@ def _getImports_macholib(pth):
     rslt = set()
     seen = set()  # Libraries read from binary headers.
 
-    ## Walk through mach binary headers.
+    #- Walk through mach binary headers.
 
     m = MachO(pth)
     for header in m.headers:
@@ -630,7 +630,7 @@ def _getImports_macholib(pth):
     # alongside of the .so's in each module's subdirectory.
     run_paths.add(os.path.join(compat.base_prefix, 'lib'))
 
-    ## Try to find files in file system.
+    #- Try to find files in file system.
 
     # In cases with @loader_path or @executable_path try to look in the same directory as the checked binary is. This
     # seems to work in most cases.
@@ -883,13 +883,13 @@ def get_python_library_path():
 
     # Python library NOT found. Provide helpful feedback.
     msg = """Python library not found: %s
-    This would mean your Python installation doesn't come with proper library files.
-    This usually happens by missing development package, or unsuitable build parameters of Python installation.
+    This means your Python installation does not come with proper shared library files.
+    This usually happens due to missing development package, or unsuitable build parameters of the Python installation.
 
-    * On Debian/Ubuntu, you would need to install Python development packages
+    * On Debian/Ubuntu, you need to install Python development packages:
       * apt-get install python3-dev
       * apt-get install python-dev
-    * If you're building Python by yourself, please rebuild your Python with `--enable-shared` (or, `--enable-framework` on Darwin)
+    * If you are building Python by yourself, rebuild with `--enable-shared` (or, `--enable-framework` on macOS).
     """ % (", ".join(compat.PYDYLIB_NAMES),)
     raise IOError(msg)
 

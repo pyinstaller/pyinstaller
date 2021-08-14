@@ -144,7 +144,7 @@ class Target(object):
         else:
             try:
                 data = misc.load_py_data_struct(self.tocfilename)
-            except:
+            except Exception:
                 logger.info("Building because %s is bad", self.tocbasename)
             else:
                 # create a dict for easier access

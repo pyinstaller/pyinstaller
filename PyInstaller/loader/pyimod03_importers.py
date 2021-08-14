@@ -12,9 +12,9 @@
 PEP-302 and PEP-451 importers for frozen applications.
 """
 
-### **NOTE** This module is used during bootstrap.
-### Import *ONLY* builtin modules.
-### List of built-in modules: sys.builtin_module_names
+# **NOTE** This module is used during bootstrap.
+# Import *ONLY* builtin modules.
+# List of built-in modules: sys.builtin_module_names
 
 import sys
 
@@ -160,7 +160,8 @@ class FrozenImporter(object):
                     continue
                 p = p[SYS_PREFIXLEN:]
                 parts = p.split(pyi_os_path.os_sep)
-                if not parts: continue
+                if not parts:
+                    continue
                 if not parts[0]:
                     parts = parts[1:]
                 parts.append(modname)
@@ -211,7 +212,7 @@ class FrozenImporter(object):
                 # executable so that data files can be found.
                 module.__file__ = self.get_filename(entry_name)
 
-                ### Set __path__  if 'fullname' is a package.
+                #-- Set __path__  if 'fullname' is a package.
                 # Python has modules and packages. A Python package is container
                 # for several modules or packages.
                 if is_pkg:
@@ -231,13 +232,13 @@ class FrozenImporter(object):
                     # Set __path__ to point to 'sys.prefix/package/subpackage'.
                     module.__path__ = [pyi_os_path.os_path_dirname(module.__file__)]
 
-                ### Set __loader__
+                #-- Set __loader__
                 # The attribute __loader__ improves support for module 'pkg_resources' and
                 # with the frozen apps the following functions are working:
                 # pkg_resources.resource_string(), pkg_resources.resource_stream().
                 module.__loader__ = self
 
-                ### Set __package__
+                #-- Set __package__
                 # Accoring to PEP302 this attribute must be set.
                 # When it is present, relative imports will be based on this
                 # attribute rather than the module __name__ attribute.
@@ -249,12 +250,12 @@ class FrozenImporter(object):
                 else:
                     module.__package__ = fullname.rsplit('.', 1)[0]
 
-                ### Set __spec__
+                #-- Set __spec__
                 # In Python 3.4 was introduced module attribute __spec__ to
                 # consolidate all module attributes.
                 module.__spec__ = _frozen_importlib.ModuleSpec(entry_name, self, is_package=is_pkg)
 
-                ### Add module object to sys.modules dictionary.
+                #-- Add module object to sys.modules dictionary.
                 # Module object must be in sys.modules before the loader
                 # executes the module code. This is crucial because the module
                 # code may (directly or indirectly) import itself; adding it
@@ -280,7 +281,7 @@ class FrozenImporter(object):
         # Module returned only in case of no exception.
         return module
 
-    ### Optional Extensions to the PEP-302 Importer Protocol
+    #-- Optional Extensions to the PEP-302 Importer Protocol --
 
     def is_package(self, fullname):
         if fullname in self.toc:
@@ -412,7 +413,8 @@ class FrozenImporter(object):
                     continue
                 p = p[SYS_PREFIXLEN:]
                 parts = p.split(pyi_os_path.os_sep)
-                if not parts: continue
+                if not parts:
+                    continue
                 if not parts[0]:
                     parts = parts[1:]
                 parts.append(modname)
@@ -565,7 +567,7 @@ def install():
     for item in reversed(sys.meta_path):
         if getattr(item, '__name__', None) == 'PathFinder':
             sys.meta_path.remove(item)
-            if not item in pathFinders:
+            if item not in pathFinders:
                 pathFinders.append(item)
     sys.meta_path.extend(reversed(pathFinders))
     # TODO Do we need for Python 3 _frozen_importlib.FrozenImporter? Could it be also removed?

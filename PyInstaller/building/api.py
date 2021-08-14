@@ -987,6 +987,6 @@ class MERGE(object):
 UNCOMPRESSED = 0
 COMPRESSED = 1
 
-_MISSING_BOOTLOADER_ERRORMSG = """Fatal error: PyInstaller does not include a pre-compiled bootloader for your 
-platform. For more details and instructions how to build the bootloader see 
-<https://pyinstaller.readthedocs.io/en/stable/bootloader-building.html> """
+_MISSING_BOOTLOADER_ERRORMSG = """Fatal error: PyInstaller does not include a pre-compiled bootloader for your
+platform. For more details and instructions how to build the bootloader see
+<https://pyinstaller.readthedocs.io/en/stable/bootloader-building.html>"""

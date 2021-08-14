@@ -51,10 +51,10 @@ class ModuleHookCache(dict):
     """
     0-based identifier unique to the next `ModuleHookCache` to be instantiated.
 
-    This identifier is incremented on each instantiation of a new `ModuleHookCache` to isolate in-memory modules of 
-    lazily loaded hook scripts in that cache to the same cache-specific namespace, preventing edge-case collisions 
+    This identifier is incremented on each instantiation of a new `ModuleHookCache` to isolate in-memory modules of
+    lazily loaded hook scripts in that cache to the same cache-specific namespace, preventing edge-case collisions
     with existing in-memory modules in other caches.
-    
+
     """
     def __init__(self, module_graph, hook_dirs):
         """
@@ -176,8 +176,8 @@ _MAGIC_MODULE_HOOK_ATTRS = {
     # Collections in which order is significant. This includes:
     #
     # * "hiddenimports", as order of importation is significant. On module importation, hook scripts are loaded and hook
-    #   functions declared by these scripts are called. As these scripts and functions can have side effects dependent on
-    #   module importation order, module importation itself can have side effects dependent on this order!
+    #   functions declared by these scripts are called. As these scripts and functions can have side effects dependent
+    #   on module importation order, module importation itself can have side effects dependent on this order!
     'hiddenimports': (list, None),
 }
 
@@ -226,7 +226,7 @@ class ModuleHook(object):
         `_load_hook_module()` method _or_ `None` if this method has yet to be accessed.
     """
 
-    ## Magic
+    #-- Magic --
 
     def __init__(self, module_graph, module_name, hook_filename, hook_module_name_prefix):
         """
@@ -320,7 +320,7 @@ class ModuleHook(object):
         # called.
         return super(ModuleHook, self).__setattr__(attr_name, attr_value)
 
-    ## Loading
+    #-- Loading --
 
     def _load_hook_module(self):
         """
@@ -381,7 +381,7 @@ class ModuleHook(object):
             # Expose this attribute as an instance variable of the same name.
             setattr(self, attr_name, attr_value)
 
-    ## Hooks
+    #-- Hooks --
 
     def post_graph(self, analysis):
         """
