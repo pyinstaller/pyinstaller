@@ -567,8 +567,8 @@ def _load_code(modname, filename):
     importer = pkgutil.get_importer(path_item)
     package, _, modname = modname.rpartition('.')
 
-    if hasattr(importer, 'find_spec'):
-        loader = importer.find_spec(modname, filename).loader
+    if hasattr(importer, 'find_loader'):
+        loader, portions = importer.find_loader(modname)
     else:
         loader = importer.find_module(modname)
 
