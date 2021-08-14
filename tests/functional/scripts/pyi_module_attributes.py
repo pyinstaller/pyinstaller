@@ -71,12 +71,12 @@ lst.sort()
 print(lst)
 """
 
-## Pure Python module.
+# Pure Python module.
 _expect = exec_python(subproc_code.format('xml.etree.ElementTree'))
 _frozen = dir(ET)
 compare('ElementTree', _expect, _frozen)
 
-## C-extension Python module.
+# C-extension Python module.
 _expect = exec_python(subproc_code.format('xml.etree.cElementTree'))
 _frozen = dir(cET)
 compare('cElementTree', _expect, _frozen)

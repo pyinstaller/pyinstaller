@@ -1,9 +1,10 @@
-import os, sys
+import os
+import sys
 from pathlib import Path
 
 # Import the application's "app" package.
 # This does not(!) contain a sub-module app.hook.
-import app
+import app  # noqa: F401
 
 # Paths from #4141, where the script was called "main"
 #   dist/main/app.py

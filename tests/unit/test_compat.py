@@ -9,8 +9,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-from PyInstaller.utils.tests import skipif
-
 import pytest
 
 from PyInstaller import compat
@@ -24,7 +22,7 @@ def test_exec_command_subprocess_wrong_encoding_reports_nicely(capsys):
     # small Python script.
     prog = """import sys; sys.stdout.buffer.write(b'dfadfadf\\xa0:::::')"""
     with pytest.raises(UnicodeDecodeError):
-        res = compat.exec_python('-c', prog)
+        compat.exec_python('-c', prog)
     out, err = capsys.readouterr()
     assert 'bytes around the offending' in err
 

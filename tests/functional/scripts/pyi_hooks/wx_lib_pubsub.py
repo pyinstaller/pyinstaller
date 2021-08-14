@@ -41,7 +41,7 @@ exe folder (or temp folder) and makes it visible to `imp.find_loader`.
 # Importing this module has no side effects; it either raises ImportError
 # or does nothing.
 try:
-    import wx.lib.pubsub.autosetuppubsubv1
+    import wx.lib.pubsub.autosetuppubsubv1  # noqa: F401
 # If that failed, the current version of wxPython is 2.9 or newer, in which case
 # the default protocol is the version 3 "kwargs" protocol.
 except ImportError:

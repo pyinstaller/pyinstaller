@@ -10,22 +10,15 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# Library imports
-# ---------------
 import locale
 import os
 import sys
 import shutil
 
-# Third-party imports
-# -------------------
 import pytest
 
-# Local imports
-# -------------
-from PyInstaller.compat import is_darwin, is_win, is_py37
-from PyInstaller.utils.tests import importorskip, skipif, \
-    skipif_no_compiler, xfail
+from PyInstaller.compat import is_darwin, is_win
+from PyInstaller.utils.tests import importorskip, skipif, skipif_no_compiler, xfail
 
 
 def test_run_from_path_environ(pyi_builder):
@@ -107,12 +100,18 @@ def test_codecs(pyi_builder):
 def test_compiled_filenames(pyi_builder):
     pyi_builder.test_source(
         """
-    import pyi_dummy_module
-    from os.path import isabs
+        import pyi_dummy_module
+        from os.path import isabs
 
-    assert not isabs(pyi_dummy_module.dummy.__code__.co_filename), "pyi_dummy_module.dummy.__code__.co_filename has compiled filename: %s" % (pyi_dummy_module.dummy.__code__.co_filename,)
-    assert not isabs(pyi_dummy_module.DummyClass.dummyMethod.__code__.co_filename), "pyi_dummy_module.DummyClass.dummyMethod.__code__.co_filename has compiled filename: %s" % (pyi_dummy_module.DummyClass.dummyMethod.__code__.co_filename,)
-    """
+        assert not isabs(pyi_dummy_module.dummy.__code__.co_filename), (
+            "pyi_dummy_module.dummy.__code__.co_filename has compiled filename: %s" %
+            (pyi_dummy_module.dummy.__code__.co_filename, )
+        )
+        assert not isabs(pyi_dummy_module.DummyClass.dummyMethod.__code__.co_filename), (
+            "pyi_dummy_module.DummyClass.dummyMethod.__code__.co_filename has compiled filename: %s" %
+            (pyi_dummy_module.DummyClass.dummyMethod.__code__.co_filename, )
+        )
+        """
     )
 
 

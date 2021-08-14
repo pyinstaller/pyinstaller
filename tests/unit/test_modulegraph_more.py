@@ -279,7 +279,8 @@ def test_import_order_1(tmpdir):
         ('b/e/', 'from . import i'),
         ('b/e/i', '#'),
     ):
-        if filename.endswith('/'): filename += '__init__'
+        if filename.endswith('/'):
+            filename += '__init__'
         tmpdir.join(*(filename + '.py').split('/')).ensure().write(content)
 
     script = tmpdir.join('script.py')
@@ -323,7 +324,8 @@ def test_import_order_2(tmpdir):
         ('b/f/n/', '#'),
         ('b/f/n/p', 'from ...e import l'),
     ):
-        if filename.endswith('/'): filename += '__init__'
+        if filename.endswith('/'):
+            filename += '__init__'
         tmpdir.join(*(filename + '.py').split('/')).ensure().write(content)
 
     script = tmpdir.join('script.py')

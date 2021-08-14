@@ -19,7 +19,7 @@ from PyInstaller.utils.hooks import collect_data_files, collect_submodules, \
     get_module_file_attribute, remove_prefix, remove_suffix, \
     remove_file_extension, is_module_or_submodule, \
     is_module_satisfies, _copy_metadata_dest
-from PyInstaller.compat import exec_python, ALL_SUFFIXES, is_win
+from PyInstaller.compat import exec_python, is_win
 
 
 class TestRemovePrefix(object):
@@ -225,7 +225,7 @@ def test_collect_data_module():
     params=[
         # This is used to invoke ``collect_data_files(*args, **kwargs)``, then
         # provide the expected results to verify correctness. The order is:
-        ## args,     kwargs, expected_results_sequence
+        # args, kwargs, expected_results_sequence
         (
             [TEST_MOD],
             {},
@@ -283,9 +283,8 @@ def test_collect_data_module():
 )
 def data_lists(monkeypatch, request):
     def _sort(sequence):
-        l = list(sequence)
-        l.sort()
-        return tuple(l)
+        sorted_list = sorted(list(sequence))
+        return tuple(sorted_list)
 
     # Add path with 'hookutils_files' module to ``sys.path`` so tests
     # could find this module - useful for subprocesses.

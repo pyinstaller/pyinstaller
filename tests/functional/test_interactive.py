@@ -16,7 +16,7 @@ Note: All tests in this file should use the argument 'runtime'.
 """
 import pytest
 
-from PyInstaller.utils.tests import importorskip, xfail
+from PyInstaller.utils.tests import importorskip
 from PyInstaller.compat import is_win, is_darwin
 
 _RUNTIME = 10  # In seconds.

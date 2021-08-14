@@ -47,4 +47,4 @@ if site.USER_BASE is not None:
         raise SystemExit('USER_BASE found in sys.path')
 
 # Check if this is realy our fake-site module
-assert site.__pyinstaller__faked__site__module__ == True
+assert site.__pyinstaller__faked__site__module__

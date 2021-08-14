@@ -13,7 +13,7 @@ Functional test exercising the default protocol `kwargs` of version 3 of the
 PyPubSub API.
 """
 
-from wx.lib.pubsub import setupkwargs
+from wx.lib.pubsub import setupkwargs  # noqa: F401
 from wx.lib.pubsub import pub as Publisher
 
 

@@ -1,11 +1,8 @@
-hiddenimports = ['pkg_without_hook_for_pkg.sub1.sub11']
-
-NAME = 'pkg_without_hook_for_pkg.sub1'
-
-# self-test for this test-case:
 import PyInstaller.hooks
 import os
 from importlib.util import find_spec
+
+NAME = 'pkg_without_hook_for_pkg.sub1'
 
 # 1. ensure self-test is working by searching for _this_ hook
 hookmodnm = 'hook-' + NAME
@@ -19,3 +16,6 @@ try:
 except ImportError as e:
     if e.name != hookmodnm:
         raise Exception('Self-test of hook %s failed: hook for parent exists and has import errors.' % NAME)
+
+# The actual hook part
+hiddenimports = ['pkg_without_hook_for_pkg.sub1.sub11']

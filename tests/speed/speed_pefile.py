@@ -52,7 +52,7 @@ from PySide2 import QtGui
     CONF['specnm'] = 'speed_pefile_script'
 
     start = time.time()
-    a = Analysis([script])
+    Analysis([script])
     duration = time.time() - start
 
     logger.warning("Analysis duration: %s", duration)

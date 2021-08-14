@@ -13,7 +13,7 @@ Functional test exercising the non-default protocol `arg1` of version 3 of the
 PyPubSub API.
 """
 
-from wx.lib.pubsub import setuparg1
+from wx.lib.pubsub import setuparg1  # noqa: F401
 from wx.lib.pubsub import pub as Publisher
 
 

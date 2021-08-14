@@ -13,7 +13,7 @@ Functional tests for SciPy.
 """
 
 from PyInstaller.compat import is_darwin, is_win
-from PyInstaller.utils.tests import importorskip, skip, xfail
+from PyInstaller.utils.tests import importorskip, xfail
 
 
 @xfail(is_win, reason='Issue scipy/scipy#5461.')

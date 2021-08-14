@@ -12,7 +12,7 @@
 # This test code is taken from the example code for the `future` library, with a few modifications to allow execution on
 # 32-bit platforms. http://python-future.org/overview.html#code-examples
 
-from builtins import (bytes, str, open, super, range, zip, round, input, int, pow, object)
+from builtins import (bytes, str, super, range, zip, round, int, pow, object)
 
 # Backported Py3 bytes object
 b = bytes(b'ABCD')
@@ -68,9 +68,9 @@ class VerboseList(list):
 #     Traceback (most recent call last):
 #      File "tests\functional\scripts\pyi_future.py", line 66, in <module>
 #        for i in range(10**15)[:10]:
-#      File "C:\Users\bjones\Downloads\WinPython-32bit-2.7.10.3\python-2.7.10\lib\site-packages\future\types\newrange.py", line 122, in __getitem__
+#      File "C:\Users\user\python-2.7.10\lib\site-packages\future\types\newrange.py", line 122, in __getitem__
 #        return self.__getitem_slice(index)
-#      File "C:\Users\bjones\Downloads\WinPython-32bit-2.7.10.3\python-2.7.10\lib\site-packages\future\types\newrange.py", line 134, in __getitem_slice
+#      File "C:\Users\user\python-2.7.10\lib\site-packages\future\types\newrange.py", line 134, in __getitem_slice
 #        scaled_indices = (self._step * n for n in slce.indices(self._len))
 #     OverflowError: cannot fit 'long' into an index-sized integer
 #

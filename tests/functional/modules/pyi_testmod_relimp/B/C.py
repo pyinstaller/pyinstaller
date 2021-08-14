@@ -11,11 +11,16 @@
 
 name = 'pyi_testmod_relimp.B.C'
 
-from . import D  # Imports pyi_testmod_relimp.B.D
-from .D import X  # Imports pyi_testmod_relimp.B.D.X
-from .. import E  # Imports pyi_testmod_relimp.E
-from ..F import G  # Imports pyi_testmod_relimp.F.G
-from ..F import H  # Imports pyi_testmod_relimp.F.H
+# Import pyi_testmod_relimp.B.D
+from . import D  # noqa: E402
+# Import pyi_testmod_relimp.B.D.X
+from .D import X  # noqa: E402, F401
+# Import pyi_testmod_relimp.E
+from .. import E  # noqa: E402
+# Import pyi_testmod_relimp.F.G
+from ..F import G  # noqa: E402
+# Import pyi_testmod_relimp.F.H
+from ..F import H  # noqa: E402
 
 assert D.name == 'pyi_testmod_relimp.B.D'
 assert E.name == 'pyi_testmod_relimp.E'

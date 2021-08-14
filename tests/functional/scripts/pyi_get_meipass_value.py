@@ -15,7 +15,6 @@
 #
 # This test checks if it is really unset in a subprocess.
 
-import os
 import subprocess
 import sys
 

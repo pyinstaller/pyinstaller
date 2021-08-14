@@ -15,7 +15,6 @@
 # directory is changed.
 
 import os
-
 import sys
 import tempfile
 
@@ -33,6 +32,6 @@ try:
     for pth in sys.path:
         if not os.path.isabs(pth):
             raise SystemExit('ERROR: sys.path not absolute')
-    import datetime
-except:
+    import datetime  # noqa: F401
+except Exception:
     raise SystemExit('ERROR: sys.path not absolute')

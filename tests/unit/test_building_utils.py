@@ -21,7 +21,7 @@ def test_format_binaries_and_datas_not_found_raises_error(tmpdir):
     datas = [('non-existing.txt', '.')]
     tmpdir.join('existing.txt').ensure()
     # TODO Tighten test when introducing PyInstaller.exceptions
-    with pytest.raises(SystemExit) as context:
+    with pytest.raises(SystemExit):
         utils.format_binaries_and_datas(datas, str(tmpdir))
 
 

@@ -14,12 +14,9 @@
 
 import glob
 import os
+import sys
 
-# In Python 3 module name is 'tkinter'
-try:
-    from tkinter import *
-except ImportError:
-    from Tkinter import *
+import tkinter  # noqa: F401
 
 
 def compare(test_name, expect, frozen):

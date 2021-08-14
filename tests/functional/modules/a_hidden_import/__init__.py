@@ -1,1 +1,1 @@
-from . import submodule
+from . import submodule  # noqa: F401

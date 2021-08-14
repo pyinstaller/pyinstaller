@@ -12,7 +12,8 @@
 # This script is used by multiple tests. It checks that various paths set by the
 # bootloader are usable filenames.
 
-import sys, os
+import sys
+import os
 
 print("sys.executable:", ascii(sys.executable))
 

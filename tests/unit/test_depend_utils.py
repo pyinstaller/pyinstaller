@@ -14,7 +14,7 @@ import pytest
 import textwrap
 
 from PyInstaller.depend import utils
-from PyInstaller.compat import is_unix, is_win
+from PyInstaller.compat import is_win
 
 CTYPES_CLASSNAMES = (
     'CDLL', 'ctypes.CDLL',

@@ -19,8 +19,8 @@ import ctypes.util
 import pytest
 
 from PyInstaller.compat import is_darwin, is_win
-from PyInstaller.utils.tests import skipif, importorskip, \
-    skipif_no_compiler, xfail, has_compiler
+import PyInstaller.depend.utils
+from PyInstaller.utils.tests import skipif, importorskip, skipif_no_compiler, xfail, has_compiler
 
 # :todo: find a way to get this from `conftest` or such
 # Directory with testing modules used in some tests.
@@ -251,8 +251,6 @@ def test_ctypes_CDLL_None(pyi_builder):
         """
     )
 
-
-import PyInstaller.depend.utils
 
 __orig_resolveCtypesImports = PyInstaller.depend.utils._resolveCtypesImports
 

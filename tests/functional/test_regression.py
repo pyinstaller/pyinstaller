@@ -90,7 +90,7 @@ def test_issue_5131(monkeypatch, tmpdir):
     PYZ(a.pure, a.zipped_data)
 
 
-def test_issue_4141(pyi_builder):  #script_dir,
+def test_issue_4141(pyi_builder):
     extra_path = _MODULES_DIR / 'pyi_issue_4141'
     pyi_builder.test_script(
         'pyi_issue_4141.py', app_name="main", run_from_path=True, pyi_args=['--path', str(extra_path)]
