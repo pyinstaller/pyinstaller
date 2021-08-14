@@ -37,7 +37,7 @@ class _SmartFormatter(argparse.HelpFormatter):
             return text[2:].splitlines()
         else:
             # Invoke the usual formatter.
-            return super(_SmartFormatter, self)._split_lines(text, width)
+            return super()._split_lines(text, width)
 
 
 def run_makespec(filenames, **opts):

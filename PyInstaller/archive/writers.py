@@ -173,7 +173,7 @@ class ZlibArchiveWriter(ArchiveWriter):
         self.code_dict = code_dict or {}
         self.cipher = cipher or None
 
-        super(ZlibArchiveWriter, self).__init__(archive_path, logical_toc)
+        super().__init__(archive_path, logical_toc)
 
     def add(self, entry):
         name, path, typ = entry
@@ -317,13 +317,13 @@ class CArchiveWriter(ArchiveWriter):
         self._pylib_name = pylib_name
 
         # A CArchive created from scratch starts at 0, no leading bootloader.
-        super(CArchiveWriter, self).__init__(archive_path, logical_toc)
+        super().__init__(archive_path, logical_toc)
 
     def _start_add_entries(self, path):
         """
         Open an empty archive for addition of entries.
         """
-        super(CArchiveWriter, self)._start_add_entries(path)
+        super()._start_add_entries(path)
         # Override parents' toc {} with a class.
         self.toc = CTOC()
 
@@ -528,7 +528,7 @@ class SplashWriter(ArchiveWriter):
         self._requirements_len = 0
         self._requirements_offset = 0
 
-        super(SplashWriter, self).__init__(archive_path, name_list)
+        super().__init__(archive_path, name_list)
 
     def add(self, name):
         """

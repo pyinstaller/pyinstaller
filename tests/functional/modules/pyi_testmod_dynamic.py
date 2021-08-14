@@ -28,7 +28,7 @@ class DynamicModule(types.ModuleType):
     __file__ = __file__
 
     def __init__(self, name):
-        super(DynamicModule, self).__init__(name)
+        super().__init__(name)
         self.foo = "A new value!"
 
 

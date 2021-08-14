@@ -207,7 +207,7 @@ class Analysis(Target):
         noarchive
                 If True, don't place source files in a archive, but keep them as individual files.
         """
-        super(Analysis, self).__init__()
+        super().__init__()
         from PyInstaller.config import CONF
 
         self.inputs = []

@@ -260,7 +260,7 @@ def test_import_order_1(tmpdir):
         def _load_module(self, fqname, pathname, loader):
             if not record or record[-1] != fqname:
                 record.append(fqname)  # record non-consecutive entries
-            return super(MyModuleGraph, self)._load_module(fqname, pathname, loader)
+            return super()._load_module(fqname, pathname, loader)
 
     record = []
 
@@ -302,7 +302,7 @@ def test_import_order_2(tmpdir):
         def _load_module(self, fqname, pathname, loader):
             if not record or record[-1] != fqname:
                 record.append(fqname)  # record non-consecutive entries
-            return super(MyModuleGraph, self)._load_module(fqname, pathname, loader)
+            return super()._load_module(fqname, pathname, loader)
 
     record = []
 

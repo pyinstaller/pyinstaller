@@ -57,7 +57,7 @@ class TOC(list):
     PyInstaller uses TOC data type to collect necessary files bundle them into an executable.
     """
     def __init__(self, initlist=None):
-        super(TOC, self).__init__(self)
+        super().__init__()
         self.filenames = set()
         if initlist:
             for entry in initlist:
@@ -72,7 +72,7 @@ class TOC(list):
 
         if unique not in self.filenames:
             self.filenames.add(unique)
-            super(TOC, self).append(entry)
+            super().append(entry)
 
     def insert(self, pos, entry):
         if not isinstance(entry, tuple):
@@ -82,7 +82,7 @@ class TOC(list):
 
         if unique not in self.filenames:
             self.filenames.add(unique)
-            super(TOC, self).insert(pos, entry)
+            super().insert(pos, entry)
 
     def __add__(self, other):
         result = TOC(self)
@@ -107,6 +107,8 @@ class TOC(list):
             unique = unique_name(entry)
 
             if unique in filenames:
+                # Directly use list.append() instead of TOC.append() to avoid unnecessary uniqueness checks.
+                # Hence the use of super(TOC, result).
                 super(TOC, result).append(entry)
         return result
 
@@ -242,7 +244,7 @@ class Tree(Target, TOC):
     def _save_guts(self):
         # Use the attribute `data` to save the list
         self.data = self
-        super(Tree, self)._save_guts()
+        super()._save_guts()
         del self.data
 
     def assemble(self):

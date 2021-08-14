@@ -260,7 +260,7 @@ class ZlibArchiveReader(ArchiveReader):
             else:
                 offset = 0
 
-        super(ZlibArchiveReader, self).__init__(path, offset)
+        super().__init__(path, offset)
 
         # Try to import the key module. If the key module is not available then it means that encryption is disabled.
         try:

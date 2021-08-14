@@ -92,7 +92,7 @@ class PyiModuleGraph(ModuleGraph):
     LOG_LEVEL_MAPPING = {0: INFO, 1: DEBUG, 2: TRACE, 3: TRACE, 4: TRACE}
 
     def __init__(self, pyi_homepath, user_hook_dirs=(), excludes=(), **kwargs):
-        super(PyiModuleGraph, self).__init__(excludes=excludes, **kwargs)
+        super().__init__(excludes=excludes, **kwargs)
         # Homepath to the place where is PyInstaller located.
         self._homepath = pyi_homepath
         # modulegraph Node for the main python script that is analyzed by PyInstaller.
@@ -263,7 +263,7 @@ class PyiModuleGraph(ModuleGraph):
         if self._top_script_node is None:
             # Remember the node for the first script.
             try:
-                self._top_script_node = super(PyiModuleGraph, self).add_script(pathname)
+                self._top_script_node = super().add_script(pathname)
             except SyntaxError:
                 print("\nSyntax error in", pathname, file=sys.stderr)
                 formatted_lines = traceback.format_exc().splitlines(True)
@@ -278,7 +278,7 @@ class PyiModuleGraph(ModuleGraph):
             if not caller:
                 # Defaults to as any additional script is called from the top-level script.
                 caller = self._top_script_node
-            return super(PyiModuleGraph, self).add_script(pathname, caller=caller)
+            return super().add_script(pathname, caller=caller)
 
     def process_post_graph_hooks(self, analysis):
         """
@@ -386,7 +386,7 @@ class PyiModuleGraph(ModuleGraph):
             del self._hooks_pre_safe_import_module[module_name]
 
         # Call the superclass method.
-        return super(PyiModuleGraph, self)._safe_import_module(module_basename, module_name, parent_package)
+        return super()._safe_import_module(module_basename, module_name, parent_package)
 
     def _find_module_path(self, fullname, module_name, search_dirs):
         """
@@ -427,7 +427,7 @@ class PyiModuleGraph(ModuleGraph):
             del self._hooks_pre_find_module_path[fullname]
 
         # Call the superclass method.
-        return super(PyiModuleGraph, self)._find_module_path(fullname, module_name, search_dirs)
+        return super()._find_module_path(fullname, module_name, search_dirs)
 
     def get_code_objects(self):
         """
