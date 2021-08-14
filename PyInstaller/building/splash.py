@@ -389,15 +389,15 @@ class Splash(Target):
                 " versions" % (self._tkinter_module.TCL_VERSION, self._tkinter_module.TK_VERSION)
             )
 
-            # Test if tcl is threaded.
-            # If the variable tcl_platform(threaded) exist, the tcl interpreter was compiled with thread support.
-            threaded = bool(exec_statement("""
-                from tkinter import Tcl, TclError
-                try:
-                    print(Tcl().getvar('tcl_platform(threaded)'))
-                except TclError:
-                    pass
-            """))  # yapf: disable
+        # Test if tcl is threaded.
+        # If the variable tcl_platform(threaded) exist, the tcl interpreter was compiled with thread support.
+        threaded = bool(exec_statement("""
+            from tkinter import Tcl, TclError
+            try:
+                print(Tcl().getvar('tcl_platform(threaded)'))
+            except TclError:
+                pass
+        """))  # yapf: disable
 
         if not threaded:
             # This is a feature breaking problem, so exit
