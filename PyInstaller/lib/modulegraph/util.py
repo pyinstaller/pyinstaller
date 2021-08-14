@@ -1,23 +1,23 @@
+
 # Filter DeprecationWarnings until the code has been revised
 import warnings
-
 warnings.filterwarnings("ignore", "the imp module is deprecated in")
 warnings.filterwarnings("ignore", "imp_walk will be removed in a future")
 
-import imp
-import inspect
-import marshal
 import os
-import re
+import imp
 import sys
+import re
+import marshal
 import warnings
+import inspect
 
-from dis import get_instructions
-from io import BytesIO, StringIO
+try:
+    unicode
+except NameError:
+    unicode = str
 
-unicode = str
-
-_READ_MODE = 'r'
+from ._compat import StringIO, BytesIO, get_instructions, _READ_MODE
 
 
 def imp_find_module(name, path=None):
@@ -64,7 +64,9 @@ def imp_walk(name):
 
     raise ImportError if a name can not be found.
     """
-    warnings.warn("imp_walk will be removed in a future version", DeprecationWarning)
+    warnings.warn(
+        "imp_walk will be removed in a future version",
+        DeprecationWarning)
 
     if name in sys.builtin_module_names:
         yield name, (None, None, ("", "", imp.C_BUILTIN))
@@ -80,11 +82,20 @@ def imp_walk(name):
                     res = (fp, res.path, ('.py', _READ_MODE, imp.PY_SOURCE))
                 elif res.path.endswith('.pyc') or res.path.endswith('.pyo'):
                     co = res.get_code(namepart)
-                    fp = BytesIO(imp.get_magic() + b'\0\0\0\0' + marshal.dumps(co))
+                    fp = BytesIO(
+                        imp.get_magic() + b'\0\0\0\0' + marshal.dumps(co))
                     res = (fp, res.path, ('.pyc', 'rb', imp.PY_COMPILED))
 
                 else:
-                    res = (None, res.path, (os.path.splitext(res.path)[-1], 'rb', imp.C_EXTENSION))
+                    res = (
+                        None,
+                        res.path,
+                        (
+                            os.path.splitext(res.path)[-1],
+                            'rb',
+                            imp.C_EXTENSION
+                        )
+                    )
 
                 break
             elif isinstance(res, tuple):
