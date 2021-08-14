@@ -32,20 +32,19 @@ If stripping at installation time is preferred, use the following::
         try:
             tsk = kw['tsk']
         except KeyError:
-    	    pass
+            pass
         else:
-    	    if isinstance(tsk.task, ccroot.link_task):
-    		    self.cmd_and_log('strip %s' % tgt)
+            if isinstance(tsk.task, ccroot.link_task):
+                self.cmd_and_log('strip %s' % tgt)
     Build.InstallContext.copy_fun = copy_fun
 """
+
+from waflib import Task, TaskGen
 
 
 def configure(conf):
     conf.find_program('strip')
     conf.env.append_value('STRIPFLAGS', '')
-
-
-from waflib import Task, TaskGen
 
 
 class strip(Task.Task):
