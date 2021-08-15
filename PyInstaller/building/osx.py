@@ -26,11 +26,11 @@ class BUNDLE(Target):
     def __init__(self, *args, **kws):
         from PyInstaller.config import CONF
 
-        # BUNDLE only has a sense under Mac OS X, it's a noop on other platforms
+        # BUNDLE only has a sense under Mac OS, it's a noop on other platforms
         if not is_darwin:
             return
 
-        # get a path to a .icns icon for the app bundle.
+        # Get a path to a .icns icon for the app bundle.
         self.icon = kws.get('icon')
         if not self.icon:
             # --icon not specified; use the default in the pyinstaller folder
@@ -38,10 +38,10 @@ class BUNDLE(Target):
                 os.path.dirname(os.path.dirname(__file__)), 'bootloader', 'images', 'icon-windowed.icns'
             )
         else:
-            # user gave an --icon=path. If it is relative, make it relative to the spec file location.
+            # User gave an --icon=path. If it is relative, make it relative to the spec file location.
             if not os.path.isabs(self.icon):
                 self.icon = os.path.join(CONF['specpath'], self.icon)
-        # ensure icon path is absolute
+        # Ensure icon path is absolute
         self.icon = os.path.abspath(self.icon)
 
         Target.__init__(self)
@@ -110,7 +110,7 @@ class BUNDLE(Target):
 
     def _check_guts(self, data, last_build):
         # BUNDLE always needs to be executed, since it will clean the output directory anyway to make sure there is no
-        # existing cruft accumulating
+        # existing cruft accumulating.
         return 1
 
     def assemble(self):
@@ -118,7 +118,7 @@ class BUNDLE(Target):
             _rmtree(self.name)
         logger.info("Building BUNDLE %s", self.tocbasename)
 
-        # Create a minimal Mac bundle structure
+        # Create a minimal Mac bundle structure.
         os.makedirs(os.path.join(self.name, "Contents", "MacOS"))
         os.makedirs(os.path.join(self.name, "Contents", "Resources"))
         os.makedirs(os.path.join(self.name, "Contents", "Frameworks"))
@@ -141,9 +141,8 @@ class BUNDLE(Target):
             # The identifier used for signing must be globally unique. The usal form for this identifier is a
             # hierarchical name in reverse DNS notation, starting with the toplevel domain, followed by the company
             # name, followed by the department within the company, and ending with the product name. Usually in the
-            # form:
-            #   com.mycompany.department.appname
-            # Cli option --osx-bundle-identifier sets this value.
+            # form: com.mycompany.department.appname
+            # CLI option --osx-bundle-identifier sets this value.
             "CFBundleIdentifier": self.bundle_identifier,
             "CFBundleExecutable": os.path.basename(self.exename),
             "CFBundleIconFile": os.path.basename(self.icon),
@@ -204,7 +203,7 @@ class BUNDLE(Target):
 
         logger.info('Moving BUNDLE data files to Resource directory')
 
-        # Mac OS X Code Signing does not work when .app bundle contains data files in dir ./Contents/MacOS.
+        # Mac OS Code Signing does not work when .app bundle contains data files in dir ./Contents/MacOS.
         # Put all data files in ./Resources and create symlinks in ./MacOS.
         bin_dir = os.path.join(self.name, 'Contents', 'MacOS')
         res_dir = os.path.join(self.name, 'Contents', 'Resources')
@@ -243,7 +242,7 @@ class BUNDLE(Target):
                         )
                         dest_path = os.path.join(bin_dir, inm)
                         os.symlink(relative_source_path, dest_path)
-            else:  # If path is empty, e.g., a top level file, try to just symlink the file
+            else:  # If path is empty, e.g., a top-level file, try to just symlink the file.
                 os.symlink(
                     os.path.relpath(os.path.join(res_dir, inm),
                                     os.path.split(os.path.join(bin_dir, inm))[0]), os.path.join(bin_dir, inm)

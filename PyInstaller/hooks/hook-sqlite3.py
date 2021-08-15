@@ -13,8 +13,7 @@ from PyInstaller.utils.hooks import collect_submodules
 
 hiddenimports = []
 
-# On Windows in Python 3.4 'sqlite3' package might contain tests. these tests are not necessary for the final
-# executable.
+# On Windows in Python 3.4 'sqlite3' package might contain tests that are not required in frozen application.
 for mod in collect_submodules('sqlite3'):
     if not mod.startswith('sqlite3.test'):
         hiddenimports.append(mod)

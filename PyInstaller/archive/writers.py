@@ -9,8 +9,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 """
-Utilities to create data structures for embedding Python modules and additional
-files into the executable.
+Utilities to create data structures for embedding Python modules and additional files into the executable.
 """
 
 # While an Archive is really an abstraction for any "filesystem within a file", it is tuned for use with
@@ -26,16 +25,16 @@ import sys
 import zlib
 from types import CodeType
 
-from PyInstaller.building.utils import (fake_pyc_timestamp, get_code_object, strip_paths_in_code)
+from PyInstaller.building.utils import fake_pyc_timestamp, get_code_object, strip_paths_in_code
 from PyInstaller.compat import BYTECODE_MAGIC, is_py37, is_win
-from PyInstaller.loader.pyimod02_archive import (PYZ_TYPE_DATA, PYZ_TYPE_MODULE, PYZ_TYPE_NSPKG, PYZ_TYPE_PKG)
+from PyInstaller.loader.pyimod02_archive import PYZ_TYPE_DATA, PYZ_TYPE_MODULE, PYZ_TYPE_NSPKG, PYZ_TYPE_PKG
 
 
 class ArchiveWriter(object):
     """
     A base class for a repository of python code objects. The extract method is used by imputil.ArchiveImporter to
-    get code objects by name (fully qualified name), so an enduser "import a.b" would become extract('a.__init__')
-    extract('a.b')
+    get code objects by name (fully qualified name), so an end-user "import a.b" becomes extract('a.__init__') and
+    extract('a.b').
     """
     MAGIC = b'PYL\0'
     HDRLEN = 12  # default is MAGIC followed by python's magic, int pos of toc
@@ -43,8 +42,8 @@ class ArchiveWriter(object):
 
     def __init__(self, archive_path, logical_toc):
         """
-        Create an archive file of name 'archive_path'. logical_toc is a 'logical TOC' - a list of (name, path,
-        ...) where name is the internal name, eg 'a' and path is a file to get the object from, eg './a.pyc'.
+        Create an archive file of name 'archive_path'. logical_toc is a 'logical TOC', a list of (name, path, ...),
+        where name is the internal name (e.g., 'a') and path is a file to get the object from (e.g., './a.pyc').
         """
         self.start = 0
 
@@ -60,17 +59,16 @@ class ArchiveWriter(object):
         # Reserve space for the header.
         if self.HDRLEN:
             self.lib.write(b'\0' * self.HDRLEN)
-        # Create an empty table of contents.
-        # Use a list to support reproducible builds
+        # Create an empty table of contents. Use a list to support reproducible builds.
         self.toc = []
 
     def _add_from_table_of_contents(self, toc):
         """
         Add entries from a logical TOC (without absolute positioning info).
-        An entry is an entry in a logical TOC is a tuple,
+        An entry in a logical TOC is a tuple:
           entry[0] is name (under which it will be saved).
           entry[1] is fullpathname of the file.
-          entry[2] is a flag for it's storage format (True or 1 if compressed)
+          entry[2] is a flag for its storage format (True or 1 if compressed).
           entry[3] is the entry's type code.
         """
         for toc_entry in toc:
@@ -90,8 +88,8 @@ class ArchiveWriter(object):
     # manages keeping the internal TOC and the guts in sync #
     def add(self, entry):
         """
-        Override this to influence the mechanics of the Archive. Assumes entry is a seq beginning with (nm, pth,
-        ...) where nm is the key by which we'll be asked for the object. pth is the name of where we find the object.
+        Override this to influence the mechanics of the Archive. Assumes entry is a seq beginning with (nm, pth, ...),
+        where nm is the key by which we will be asked for the object. pth is the name of where we find the object.
         Overrides of get_obj_from can make use of further elements in entry.
         """
         nm = entry[0]
@@ -110,18 +108,15 @@ class ArchiveWriter(object):
         """
         try:
             self.lib.write(marshal.dumps(self.toc))
-        # If the TOC to be marshalled contains an unmarshallable object, Python
-        # raises a cryptic exception providing no details on why such object is
-        # unmarshallable. Correct this by iteratively inspecting the TOC for
+        # If the TOC to be marshalled contains an unmarshallable object, Python raises a cryptic exception providing no
+        # details on why such object is unmarshallable. Correct this by iteratively inspecting the TOC for
         # unmarshallable objects.
         except ValueError as exception:
             if str(exception) == 'unmarshallable object':
-
                 # List of all marshallable types.
                 MARSHALLABLE_TYPES = {
                     bool, int, float, complex, str, bytes, bytearray, tuple, list, set, frozenset, dict, CodeType
                 }
-
                 for module_name, module_tuple in self.toc.items():
                     if type(module_name) not in MARSHALLABLE_TYPES:
                         print('Module name "%s" (%s) unmarshallable.' % (module_name, type(module_name)))
@@ -152,13 +147,11 @@ class ArchiveWriter(object):
 
 class ZlibArchiveWriter(ArchiveWriter):
     """
-    ZlibArchive - an archive with compressed entries. Archive is read
-    from the executable created by PyInstaller.
+    ZlibArchive - an archive with compressed entries. Archive is read from the executable created by PyInstaller.
 
     This archive is used for bundling python modules inside the executable.
 
-    NOTE: The whole ZlibArchive (PYZ) is compressed so it is not necessary
-          to compress single modules with zlib.
+    NOTE: The whole ZlibArchive (PYZ) is compressed, so it is not necessary to compress individual modules.
     """
     MAGIC = b'PYZ\0'
     TOCPOS = 8
@@ -207,7 +200,7 @@ class ZlibArchiveWriter(ArchiveWriter):
 
     def update_headers(self, tocpos):
         """
-        add level
+        Add level.
         """
         ArchiveWriter.update_headers(self, tocpos)
         self.lib.write(struct.pack('!B', self.cipher is not None))
@@ -232,8 +225,8 @@ class CTOC(object):
         """
         rslt = []
         for (dpos, dlen, ulen, flag, typcd, nm) in self.data:
-            # Encode all names using UTF-8. This should be save as standard python modules only contain ascii-characters
-            # (and standard shared libraries should have the same) and thus the C-code still can handle this correctly.
+            # Encode all names using UTF-8. This should be safe as standard python modules only contain ascii-characters
+            # (and standard shared libraries should have the same), and thus the C-code still can handle this correctly.
             nm = nm.encode('utf-8')
             nmlen = len(nm) + 1  # add 1 for a '\0'
             # align to 16 byte boundary so xplatform C can read
@@ -355,7 +348,7 @@ class CArchiveWriter(ArchiveWriter):
                 ulen = 0
                 flag = 0
             elif typcd == 's':
-                # If it's a source code file, compile it to a code object and marshall the object so it can be
+                # If it is a source code file, compile it to a code object and marshall the object, so it can be
                 # unmarshalled by the bootloader.
 
                 code = get_code_object(nm, pathnm)
@@ -384,7 +377,7 @@ class CArchiveWriter(ArchiveWriter):
                     # them, and we can re-use the original header.
                     code = strip_paths_in_code(code)
                     data = header + marshal.dumps(code)
-                    # Create file-like object for timestamp re-write in the subsequent steps
+                    # Create file-like object for timestamp re-write in the subsequent steps.
                     fh = io.BytesIO(data)
                     ulen = len(data)
             else:
@@ -397,7 +390,7 @@ class CArchiveWriter(ArchiveWriter):
         where = self.lib.tell()
         assert flag in range(3)
         if not fh and not code_data:
-            # no need to write anything
+            # No need to write anything.
             pass
         elif flag == 1:
             comprobj = zlib.compressobj(self.LEVEL)
@@ -405,7 +398,7 @@ class CArchiveWriter(ArchiveWriter):
                 self.lib.write(comprobj.compress(code_data))
             else:
                 assert fh
-                # We only want to change it for pyc files
+                # We only want to change it for pyc files.
                 modify_header = typcd in ('M', 'm', 's')
                 while 1:
                     buf = fh.read(16 * 1024)
@@ -416,7 +409,6 @@ class CArchiveWriter(ArchiveWriter):
                         buf = fake_pyc_timestamp(buf)
                     self.lib.write(comprobj.compress(buf))
             self.lib.write(comprobj.flush())
-
         else:
             if code_data is not None:
                 self.lib.write(code_data)
@@ -441,11 +433,9 @@ class CArchiveWriter(ArchiveWriter):
 
     def save_trailer(self, tocpos):
         """
-        Save the table of contents and the cookie for the bootlader to
-        disk.
+        Save the table of contents and the cookie for the bootlader to disk.
 
-        CArchives can be opened from the end - the cookie points
-        back to the start.
+        CArchives can be opened from the end - the cookie points back to the start.
         """
         tocstr = self.toc.tobinary()
         self.lib.write(tocstr)
@@ -463,11 +453,10 @@ class CArchiveWriter(ArchiveWriter):
 
 class SplashWriter(ArchiveWriter):
     """
-    This ArchiveWriter bundles the data for the splash screen resources
+    This ArchiveWriter bundles the data for the splash screen resources.
 
-    Splash screen resources will be added as an entry into the CArchive
-    with the typecode ARCHIVE_ITEM_SPLASH. This writer creates the bundled
-    information in the archive.
+    Splash screen resources will be added as an entry into the CArchive with the typecode ARCHIVE_ITEM_SPLASH.
+    This writer creates the bundled information in the archive.
     """
     # This struct describes the splash resources as it will be in an buffer inside the bootloader. All necessary parts
     # are bundled, the *_len and *_offset fields describe the data beyond this header definition.
@@ -495,13 +484,11 @@ class SplashWriter(ArchiveWriter):
     _header_format = '!16s 16s 16s 16s ii ii ii'
     HDRLEN = struct.calcsize(_header_format)
 
-    # The created resource will be compressed by the CArchive,
-    # so no need to compress the data here
+    # The created resource will be compressed by the CArchive, so no need to compress the data here.
 
     def __init__(self, archive_path, name_list, tcl_libname, tk_libname, tklib, rundir, image, script):
         """
-        Custom writer for splash screen resources which will be bundled
-        into the CArchive as an entry.
+        Custom writer for splash screen resources which will be bundled into the CArchive as an entry.
 
         :param archive_path: The filename of the archive to create
         :param name_list: List of filenames for the requirements array
@@ -542,23 +529,34 @@ class SplashWriter(ArchiveWriter):
         self._requirements_len += len(name) + 1  # zero byte at the end
 
     def update_headers(self, tocpos):
-        """ Updates the offsets of the fields
+        """
+        Updates the offsets of the fields.
 
-        This function is called after self.save_trailer()
+        This function is called after self.save_trailer().
         :param tocpos:
         :return:
         """
         self.lib.seek(self.start)
         self.lib.write(
             struct.pack(
-                self._header_format, self._tcl_libname.encode("utf-8"), self._tk_libname.encode("utf-8"),
-                self._tklib.encode("utf-8"), self._rundir.encode("utf-8"), self._script_len, self._script_offset,
-                self._image_len, self._image_offset, self._requirements_len, self._requirements_offset
+                self._header_format,
+                self._tcl_libname.encode("utf-8"),
+                self._tk_libname.encode("utf-8"),
+                self._tklib.encode("utf-8"),
+                self._rundir.encode("utf-8"),
+                self._script_len,
+                self._script_offset,
+                self._image_len,
+                self._image_offset,
+                self._requirements_len,
+                self._requirements_offset,
             )
         )
 
     def save_trailer(self, script_pos):
-        """ Adds the image and script """
+        """
+        Adds the image and script.
+        """
         self._requirements_offset = script_pos - self._requirements_len
 
         self._script_offset = script_pos
@@ -567,14 +565,16 @@ class SplashWriter(ArchiveWriter):
         self.save_image()
 
     def save_script(self):
-        """ Add the tcl/tk script into the archive. This strips out every comment in the source to save some space.
+        """
+        Add the tcl/tk script into the archive. This strips out every comment in the source to save some space.
         """
         self._script_len = len(self._script)
         self.lib.write(self._script.encode("utf-8"))
 
     def save_image(self):
-        """Copy the image into the archive. If self._image are bytes the buffer will be written directly into the
-        archive, otherwise it is assumed to be a path and the file will be written into it.
+        """
+        Copy the image into the archive. If self._image are bytes the buffer will be written directly into the archive,
+        otherwise it is assumed to be a path and the file will be written into it.
         """
         if isinstance(self._image, bytes):
             # image was converted by PIL/Pillow

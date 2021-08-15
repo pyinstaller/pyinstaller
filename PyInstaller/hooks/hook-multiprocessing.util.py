@@ -11,6 +11,6 @@
 
 # In Python 3.8 mutliprocess.utils has _cleanup_tests() to cleanup multiprocessing resources when multiprocessing tests
 # completed. This function import `tests` which is the complete Python test-suite, pulling in many more dependencies,
-# e.g. tkinter.
+# e.g., tkinter.
 
 excludedimports = ['test']

@@ -43,8 +43,8 @@ class File(object):
         types = a list of resource types to search for (None = all)
         names = a list of resource names to search for (None = all)
         languages = a list of resource languages to search for (None = all)
-        Return a dict of the form {type_: {name: {language: data}}} which
-        might also be empty if no matching resources were found.
+        Return a dict of the form {type_: {name: {language: data}}}, which might also be empty if no matching resources
+        were found.
         """
         return GetResources(self.filename, types, names, languages)
 
@@ -96,8 +96,8 @@ def _GetResources(hsrc, types=None, names=None, languages=None):
     types = a list of resource types to search for (None = all)
     names = a list of resource names to search for (None = all)
     languages = a list of resource languages to search for (None = all)
-    Return a dict of the form {type_: {name: {language: data}}} which
-    might also be empty if no matching resources were found.
+    Return a dict of the form {type_: {name: {language: data}}}, which might also be empty if no matching resources
+    were found.
     """
     if types:
         types = set(types)
@@ -149,8 +149,8 @@ def GetResources(filename, types=None, names=None, languages=None):
     types = a list of resource types to search for (None = all)
     names = a list of resource names to search for (None = all)
     languages = a list of resource languages to search for (None = all)
-    Return a dict of the form {type_: {name: {language: data}}} which
-    might also be empty if no matching resources were found.
+    Return a dict of the form {type_: {name: {language: data}}}, which might also be empty if no matching resources
+    were found.
     """
     hsrc = win32api.LoadLibraryEx(filename, 0, LOAD_LIBRARY_AS_DATAFILE)
     res = _GetResources(hsrc, types, names, languages)

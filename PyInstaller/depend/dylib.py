@@ -58,10 +58,10 @@ _excludes = {
 _includes = set()
 
 _win_includes = {
-    # DLLs are from 'Microsoft Visual C++ 2010 Redistributable Package'.
+    # DLLs are from 'Microsoft Visual C++ 2010 Redistributable Package'
     # http://msdn.microsoft.com/en-us/library/8kche8ah(v=vs.100).aspx
     #
-    # Python 3.3 and 3.4 depends use Visual Studio C++ 2010 for Windows builds. python33.dll depends on msvcr100.dll.
+    # Python 3.3 and 3.4 use Visual Studio C++ 2010 for Windows builds; python33.dll depends on msvcr100.dll.
     #
     # Visual Studio C++ 2010 does not need Assembly manifests anymore and uses C++ runtime libraries the old way -
     # pointing to C:\Windows\System32. It is necessary to allow inclusion of these libraries from C:\Windows\System32.
@@ -194,7 +194,7 @@ if compat.is_darwin:
             self._exclude_list = global_exclude_list
 
         def search(self, libname):
-            # First try global exclude list. If it matches then return it's result otherwise continue with other check.
+            # First try global exclude list. If it matches, return its result; otherwise continue with other check.
             result = self._exclude_list.search(libname)
             if result:
                 return result
@@ -228,7 +228,7 @@ elif compat.is_win:
 
 def include_library(libname):
     """
-    Check if a dynamic library should be included with application or not.
+    Check if the dynamic library should be included with application or not.
     """
     # For configuration phase we need to have exclude / include lists None so these checking is skipped and library gets
     # included.
@@ -237,7 +237,7 @@ def include_library(libname):
             # Library is excluded and is not overriden by include list. It should be then excluded.
             return False
         else:
-            # Include library
+            # Include library.
             return True
     else:
         # By default include library.
@@ -285,7 +285,7 @@ def warn_missing_lib(libname):
 
 def mac_set_relative_dylib_deps(libname, distname):
     """
-    On Mac OS X set relative paths to dynamic library dependencies of `libname`.
+    On Mac OS set relative paths to dynamic library dependencies of `libname`.
 
     Relative paths allow to avoid using environment variable DYLD_LIBRARY_PATH. There are known some issues with
     DYLD_LIBRARY_PATH. Relative paths is more flexible mechanism.
@@ -296,22 +296,21 @@ def mac_set_relative_dylib_deps(libname, distname):
     'distname'  path of the library relative to dist directory of frozen executable. We need this to determine the level
                 of directory level for @loader_path of binaries not found in dist directory.
 
-                E.g. qt4 plugins are not in the same directory as Qt*.dylib files. Without using '@loader_path/../..'
-                for qt plugins Mac OS X would not be able to resolve shared library dependencies and qt plugins will
-                not be loaded.
+                For example, Qt5 plugins are not in the same directory as Qt*.dylib files. Without using
+                '@loader_path/../..' for Qt plugins, Mac OS would not be able to resolve shared library dependencies,
+                and Qt plugins will not be loaded.
     """
 
     from macholib import util
     from macholib.MachO import MachO
 
-    # Ignore bootloader otherwise PyInstaller fails with exception like
+    # Ignore bootloader; otherwise PyInstaller fails with exception like
     # 'ValueError: total_size > low_offset (288 > 0)'
     if os.path.basename(libname) in _BOOTLOADER_FNAMES:
         return
 
-    # Determine how many directories up is the directory with shared
-    # dynamic libraries. '../'
-    # E.g.  ./qt4_plugins/images/ -> ./../../
+    # Determine how many directories up ('../') is the directory with shared dynamic libraries.
+    # E.g., ./qt4_plugins/images/ -> ./../../
     parent_dir = ''
     # Check if distname is not only base filename.
     if os.path.dirname(distname):
@@ -322,7 +321,7 @@ def mac_set_relative_dylib_deps(libname, distname):
         """
         For system libraries is still used absolute path. It is unchanged.
         """
-        # Leave system dynamic libraries unchanged
+        # Leave system dynamic libraries unchanged.
         if util.in_system_path(pth):
             return None
 
@@ -331,7 +330,10 @@ def mac_set_relative_dylib_deps(libname, distname):
         # /Library/Frameworks/Tk.framework/Versions/8.5/Tk, although the actual frameworks are located in
         # /System/Library/Frameworks. Therefore, they slip through the above in_system_path() check, and we need to
         # exempt them manually.
-        _exemptions = ['/Library/Frameworks/Tcl.framework/', '/Library/Frameworks/Tk.framework/']
+        _exemptions = [
+            '/Library/Frameworks/Tcl.framework/',
+            '/Library/Frameworks/Tk.framework/',
+        ]
         if any([x in pth for x in _exemptions]):
             return None
 

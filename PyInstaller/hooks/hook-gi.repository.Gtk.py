@@ -17,9 +17,8 @@ import os.path
 
 from PyInstaller.compat import is_win
 from PyInstaller.utils.hooks import get_hook_config
-from PyInstaller.utils.hooks.gi import (
+from PyInstaller.utils.hooks.gi import \
     collect_glib_etc_files, collect_glib_share_files, collect_glib_translations, get_gi_typelibs
-)
 
 binaries, datas, hiddenimports = get_gi_typelibs('Gtk', '3.0')
 

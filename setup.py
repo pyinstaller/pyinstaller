@@ -45,7 +45,7 @@ class build_bootloader(Command):
         pass
 
     def bootloader_exists(self):
-        # Checks is the console, non-debug bootloader exists
+        # Checks if the console, non-debug bootloader exists
         from PyInstaller import HOMEPATH, PLATFORM
         from PyInstaller.compat import is_win, is_cygwin
         exe = 'run'

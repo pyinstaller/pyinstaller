@@ -12,7 +12,7 @@
 import os
 import sys
 
-# Without this environment variable set to 'no' importing 'gst' causes 100% CPU load. (Tested on OSX.)
+# Without this environment variable set to 'no' importing 'gst' causes 100% CPU load. (Tested on Mac OS.)
 os.environ['GST_REGISTRY_FORK'] = 'no'
 
 gst_plugin_paths = [sys._MEIPASS, os.path.join(sys._MEIPASS, 'gst-plugins')]

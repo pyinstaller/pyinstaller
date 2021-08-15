@@ -73,6 +73,6 @@ def _restart_with_reloader(*args):
 
 # Override get_commands() function otherwise the app will complain that there are no commands.
 django.core.management.get_commands = _get_commands
-# Override restart_with_reloader() function otherwise the app might complain that some commands do not exist. e.g.
-# runserver.
+# Override restart_with_reloader() function, otherwise the app might complain that some commands do not exist;
+# e.g., runserver.
 django.utils.autoreload.restart_with_reloader = _restart_with_reloader

@@ -32,8 +32,8 @@ def pefile_check_control_flow_guard(filename):
     Returns
     ----------
     bool
-        True if file is a PE file with CFG enabled. False if CFG is not
-        enabled or if file could not be processed using pefile library.
+        True if file is a PE file with CFG enabled. False if CFG is not enabled or if file could not be processed using
+        the pefile library.
     """
     try:
         pe = pefile.PE(filename)
@@ -151,7 +151,9 @@ def decode(pathnm):
 
 
 def nextDWord(offset):
-    """ Align `offset` to the next 4-byte boundary """
+    """
+    Align `offset` to the next 4-byte boundary.
+    """
     return ((offset + 3) >> 2) << 2
 
 
@@ -347,12 +349,13 @@ class FixedFileInfo:
 
     def __str__(self, indent=''):
         fv = (
-            self.fileVersionMS >> 16, self.fileVersionMS & 0xffff, self.fileVersionLS >> 16, self.fileVersionLS & 0xFFFF
-        )
+            self.fileVersionMS >> 16, self.fileVersionMS & 0xffff,
+            self.fileVersionLS >> 16, self.fileVersionLS & 0xffff,
+        )  # yapf: disable
         pv = (
-            self.productVersionMS >> 16, self.productVersionMS & 0xffff, self.productVersionLS >> 16,
-            self.productVersionLS & 0xFFFF
-        )
+            self.productVersionMS >> 16, self.productVersionMS & 0xffff,
+            self.productVersionLS >> 16, self.productVersionLS & 0xffff,
+        )  # yapf: disable
         fd = (self.fileDateMS, self.fileDateLS)
         tmp = [
             'FixedFileInfo(', '# filevers and prodvers should be always a tuple with four items: (1, 2, 3, 4)',
@@ -373,11 +376,12 @@ class FixedFileInfo:
 
     def __repr__(self):
         fv = (
-            self.fileVersionMS >> 16, self.fileVersionMS & 0xffff, self.fileVersionLS >> 16, self.fileVersionLS & 0xffff
-        )
+            self.fileVersionMS >> 16, self.fileVersionMS & 0xffff,
+            self.fileVersionLS >> 16, self.fileVersionLS & 0xffff,
+        )  # yapf: disable
         pv = (
             self.productVersionMS >> 16, self.productVersionMS & 0xffff,
-            self.productVersionLS >> 16, self.productVersionLS & 0xffff
+            self.productVersionLS >> 16, self.productVersionLS & 0xffff,
         )  # yapf: disable
         fd = (self.fileDateMS, self.fileDateLS)
         return (
@@ -508,7 +512,7 @@ class StringStruct:
     def toRaw(self):
         raw_name = getRaw(self.name)
         raw_val = getRaw(self.val)
-        # TODO document the size of vallen and sublen.
+        # TODO: document the size of vallen and sublen.
         vallen = len(raw_val) + 2
         typ = 1
         sublen = 6 + len(raw_name) + 2

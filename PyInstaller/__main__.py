@@ -18,8 +18,8 @@ import platform
 
 from PyInstaller import __version__
 from PyInstaller import log as logging
-# note: don't import anything else until this function is run!
-from PyInstaller.compat import check_requirements, is_conda
+# Note: do not import anything else until check_requirements function is run!
+from PyInstaller.compat import check_requirements
 
 logger = logging.getLogger(__name__)
 
@@ -32,8 +32,7 @@ logger = logging.getLogger(__name__)
 class _SmartFormatter(argparse.HelpFormatter):
     def _split_lines(self, text, width):
         if text.startswith('R|'):
-            # The underlying implementation of ``RawTextHelpFormatter._split_lines``
-            # invokes this; mimic it.
+            # The underlying implementation of ``RawTextHelpFormatter._split_lines`` invokes this; mimic it.
             return text[2:].splitlines()
         else:
             # Invoke the usual formatter.
@@ -70,7 +69,9 @@ def __add_options(parser):
 
 
 def generate_parser() -> argparse.ArgumentParser:
-    """Build an argparse parser for PyInstaller's main CLI."""
+    """
+    Build an argparse parser for PyInstaller's main CLI.
+    """
 
     import PyInstaller.building.build_main
     import PyInstaller.building.makespec
@@ -87,12 +88,8 @@ def generate_parser() -> argparse.ArgumentParser:
         'filenames',
         metavar='scriptname',
         nargs='+',
-        help=(
-            "name of scriptfiles to be processed or "
-            "exactly one .spec-file. If a .spec-file is "
-            "specified, most options are unnecessary "
-            "and are ignored."
-        ),
+        help="Name of scriptfiles to be processed or exactly one .spec file. If a .spec file is specified, most "
+        "options are unnecessary and are ignored.",
     )
 
     return parser
@@ -106,19 +103,20 @@ def run(pyi_args=None, pyi_config=None):
     check_requirements()
 
     import PyInstaller.log
+    from PyInstaller.compat import is_conda
 
     try:
         parser = generate_parser()
         args = parser.parse_args(pyi_args)
         PyInstaller.log.__process_options(parser, args)
 
-        # Print PyInstaller version, Python version and platform as the first line to stdout. This helps identify
-        # PyInstaller, Python and platform version when users report issues.
+        # Print PyInstaller version, Python version, and platform as the first line to stdout. This helps us identify
+        # PyInstaller, Python, and platform version when users report issues.
         logger.info('PyInstaller: %s' % __version__)
         logger.info('Python: %s%s', platform.python_version(), " (conda)" if is_conda else "")
         logger.info('Platform: %s' % platform.platform())
 
-        # Skip creating .spec when .spec file is supplied
+        # Skip creating .spec when .spec file is supplied.
         if args.filenames[0].endswith('.spec'):
             spec_file = args.filenames[0]
         else:

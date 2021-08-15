@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# hook for https://pypi.org/project/Scrapy/
+# Hook for https://pypi.org/project/Scrapy/
 # https://stackoverflow.com/questions/49085970/no-such-file-or-directory-error-using-pyinstaller-and-scrapy
 
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules

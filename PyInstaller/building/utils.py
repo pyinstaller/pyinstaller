@@ -10,8 +10,8 @@
 #-----------------------------------------------------------------------------
 
 # --- functions for checking guts ---
-# NOTE: By GUTS it is meant intermediate files and data structures that
-# PyInstaller creates for bundling files and creating final executable.
+# NOTE: by GUTS it is meant intermediate files and data structures that PyInstaller creates for bundling files and
+# creating final executable.
 import fnmatch
 import glob
 import hashlib
@@ -41,13 +41,13 @@ logger = logging.getLogger(__name__)
 
 # -- Helpers for checking guts.
 #
-# NOTE: By _GUTS it is meant intermediate files and data structures that
-# PyInstaller creates for bundling files and creating final executable.
+# NOTE: by _GUTS it is meant intermediate files and data structures that PyInstaller creates for bundling files and
+# creating final executable.
 
 
 def _check_guts_eq(attr, old, new, _last_build):
     """
-    rebuild is required if values differ
+    Rebuild is required if values differ.
     """
     if old != new:
         logger.info("Building because %s changed", attr)
@@ -57,14 +57,13 @@ def _check_guts_eq(attr, old, new, _last_build):
 
 def _check_guts_toc_mtime(_attr, old, _toc, last_build, pyc=0):
     """
-    rebuild is required if mtimes of files listed in old toc are newer
-    than last_build
+    Rebuild is required if mtimes of files listed in old toc are newer than last_build.
 
-    if pyc=1, check for .py files, too
+    If pyc=1, check for .py files as well.
 
     Use this for calculated/analysed values read from cache.
     """
-    for (nm, fnm, typ) in old:
+    for nm, fnm, typ in old:
         if misc.mtime(fnm) > last_build:
             logger.info("Building because %s changed", fnm)
             return True
@@ -76,9 +75,9 @@ def _check_guts_toc_mtime(_attr, old, _toc, last_build, pyc=0):
 
 def _check_guts_toc(attr, old, toc, last_build, pyc=0):
     """
-    rebuild is required if either toc content changed or mtimes of files listed in old toc are newer than last_build
+    Rebuild is required if either toc content changed or mtimes of files listed in old toc are newer than last_build.
 
-    if pyc=1, check for .py files, too
+    If pyc=1, check for .py files as well.
 
     Use this for input parameters.
     """
@@ -91,27 +90,22 @@ def add_suffix_to_extension(inm, fnm, typ):
     """
     if typ == 'EXTENSION':
         if fnm.endswith(inm):
-            # If inm completely fits into end of the fnm, it has
-            # already been processed
+            # If inm completely fits into end of the fnm, it has already been processed.
             return inm, fnm, typ
-        # Change the dotted name into a relative path. This places C
-        # extensions in the Python-standard location.
+        # Change the dotted name into a relative path. This places C extensions in the Python-standard location.
         inm = inm.replace('.', os.sep)
-        # In some rare cases extension might already contain a suffix.
-        # Skip it in this case.
+        # In some rare cases extension might already contain a suffix. Skip it in this case.
         if os.path.splitext(inm)[1] not in EXTENSION_SUFFIXES:
             # Determine the base name of the file.
             base_name = os.path.basename(inm)
             assert '.' not in base_name
-            # Use this file's existing extension. For extensions such as
-            # ``libzmq.cp36-win_amd64.pyd``, we can't use
-            # ``os.path.splitext``, which would give only the ```.pyd`` part
-            # of the extension.
+            # Use this file's existing extension. For extensions such as ``libzmq.cp36-win_amd64.pyd``, we cannot use
+            # ``os.path.splitext``, which would give only the ```.pyd`` part of the extension.
             inm = inm + os.path.basename(fnm)[len(base_name):]
 
     elif typ == 'DEPENDENCY':
         # Use the suffix from the filename.
-        # TODO Verify what extensions are by DEPENDENCIES.
+        # TODO: verify what extensions are by DEPENDENCIES.
         binext = os.path.splitext(fnm)[1]
         if not os.path.splitext(inm)[1] == binext:
             inm = inm + binext
@@ -158,16 +152,15 @@ def checkCache(
     """
     from PyInstaller.config import CONF
 
-    # On darwin a cache is required anyway to keep the libaries
-    # with relative install names. Caching on darwin does not work
-    # since we need to modify binary headers to use relative paths
-    # to dll depencies and starting with '@loader_path'.
+    # On Mac OS, a cache is required anyway to keep the libaries with relative install names.
+    # Caching on Mac OS does not work since we need to modify binary headers to use relative paths to dll depencies and
+    # starting with '@loader_path'.
     if not strip and not upx and not is_darwin and not is_win:
         return fnm
 
     if dist_nm is not None and ":" in dist_nm:
-        # A file embedded in another pyinstaller build via multipackage
-        # No actual file exists to process
+        # A file embedded in another PyInstaller build via multipackage.
+        # No actual file exists to process.
         return fnm
 
     if strip:
@@ -177,10 +170,9 @@ def checkCache(
     upx_exclude = upx_exclude or []
     upx = (upx and (is_win or is_cygwin) and os.path.normcase(os.path.basename(fnm)) not in upx_exclude)
 
-    # Load cache index
+    # Load cache index.
     # Make cachedir per Python major/minor version.
-    # This allows parallel building of executables with different
-    # Python versions as one user.
+    # This allows parallel building of executables with different Python versions as one user.
     pyver = 'py%d%s' % (sys.version_info[0], sys.version_info[1])
     arch = platform.architecture()[0]
     cachedir = os.path.join(CONF['cachedir'], 'bincache%d%d_%s_%s' % (strip, upx, pyver, arch))
@@ -189,8 +181,7 @@ def checkCache(
     if is_darwin:
         # Separate by codesign identity
         if codesign_identity:
-            # Compute hex digest of codesign identity string to prevent
-            # issues with invalid characters.
+            # Compute hex digest of codesign identity string to prevent issues with invalid characters.
             csi_hash = hashlib.sha256(codesign_identity.encode('utf-8'))
             cachedir = os.path.join(cachedir, csi_hash.hexdigest())
         else:
@@ -210,14 +201,14 @@ def checkCache(
         try:
             cache_index = misc.load_py_data_struct(cacheindexfn)
         except Exception:
-            # tell the user they may want to fix their cache .. however, don't delete it for them; if it keeps getting
-            # corrupted, we'll never find out
-            logger.warning("pyinstaller bincache may be corrupted; use pyinstaller --clean to fix")
+            # Tell the user they may want to fix their cache... However, do not delete it for them; if it keeps getting
+            # corrupted, we will never find out.
+            logger.warning("PyInstaller bincache may be corrupted; use pyinstaller --clean to fix it.")
             raise
     else:
         cache_index = {}
 
-    # Verify if the file we're looking for is present in the cache. Use the dist_mn if given to avoid different
+    # Verify that the file we are looking for is present in the cache. Use the dist_mn if given to avoid different
     # extension modules sharing the same basename get corrupted.
     if dist_nm:
         basenm = os.path.normcase(dist_nm)
@@ -236,7 +227,7 @@ def checkCache(
         else:
             return cachedfile
 
-    # Optionally change manifest and its deps to private assemblies
+    # Optionally change manifest and its dependencies to private assemblies.
     if fnm.lower().endswith(".manifest"):
         manifest = winmanifest.Manifest()
         manifest.filename = fnm
@@ -267,15 +258,15 @@ def checkCache(
                 codesign_identity=codesign_identity,
                 entitlements_file=entitlements_file
             )
-        # We meed to avoid using UPX with Windows DLLs that have Control Flow Guard enabled, as it breaks them.
+        # We need to avoid using UPX with Windows DLLs that have Control Flow Guard enabled, as it breaks them.
         if is_win and versioninfo.pefile_check_control_flow_guard(fnm):
             logger.info('Disabling UPX for %s due to CFG!', fnm)
         elif misc.is_file_qt_plugin(fnm):
             logger.info('Disabling UPX for %s due to it being a Qt plugin!', fnm)
         else:
             bestopt = "--best"
-            # FIXME: Linux builds of UPX do not seem to contain LZMA
-            # (they assert out). A better configure-time check is due.
+            # FIXME: Linux builds of UPX do not seem to contain LZMA (they assert out).
+            # A better configure-time check is due.
             if CONF["hasUPX"] >= (3,) and os.name == "nt":
                 bestopt = "--lzma"
 
@@ -287,20 +278,19 @@ def checkCache(
         if strip:
             strip_options = []
             if is_darwin:
-                # The default strip behaviour breaks some shared libraries under Mac OSX.
-                # -S = strip only debug symbols.
-                strip_options = ["-S"]
+                # The default strip behavior breaks some shared libraries under Mac OS.
+                strip_options = ["-S"]  # -S = strip only debug symbols.
             cmd = ["strip"] + strip_options + [cachedfile]
 
     if not os.path.exists(os.path.dirname(cachedfile)):
         os.makedirs(os.path.dirname(cachedfile))
-    # There are known some issues with 'shutil.copy2' on Mac OS X 10.11 with copying st_flags. Issue #1650.
+    # There are known some issues with 'shutil.copy2' on Mac OS 10.11 with copying st_flags. Issue #1650.
     # 'shutil.copy' copies also permission bits and it should be sufficient for PyInstaller's purposes.
     shutil.copy(fnm, cachedfile)
-    # TODO find out if this is still necessary when no longer using shutil.copy2()
+    # TODO: find out if this is still necessary when no longer using shutil.copy2()
     if hasattr(os, 'chflags'):
-        # Some libraries on FreeBSD have immunable flag (libthr.so.3, for example) If flags still remains, os.chmod()
-        # will fail with: OSError: [Errno 1] Operation not permitted.
+        # Some libraries on FreeBSD have immunable flag (libthr.so.3, for example). If this flag is preserved,
+        # os.chmod() fails with: OSError: [Errno 1] Operation not permitted.
         try:
             os.chflags(cachedfile, 0)
         except OSError:
@@ -362,7 +352,7 @@ def checkCache(
     cache_index[basenm] = digest
     misc.save_py_data_struct(cacheindexfn, cache_index)
 
-    # On Mac OS X we need relative paths to dll dependencies starting with @executable_path. Modifying headers
+    # On Mac OS we need relative paths to dll dependencies starting with @executable_path. Modifying headers
     # invalidates signatures, so remove any existing signature and then re-add it after paths are rewritten.
     if is_darwin:
         osxutils.binary_to_target_arch(cachedfile, target_arch, display_name=fnm)
@@ -386,8 +376,8 @@ def cacheDigest(fnm, redirects):
 
 def _check_path_overlap(path):
     """
-    Check that path does not overlap with WORKPATH or SPECPATH (i.e. WORKPATH and SPECPATH may not start with path,
-    which could be caused by a faulty hand-edited specfile)
+    Check that path does not overlap with WORKPATH or SPECPATH (i.e., WORKPATH and SPECPATH may not start with path,
+    which could be caused by a faulty hand-edited specfile).
 
     Raise SystemExit if there is overlap, return True otherwise
     """
@@ -409,7 +399,7 @@ def _check_path_overlap(path):
 
 def _make_clean_directory(path):
     """
-    Create a clean directory from the given directory name
+    Create a clean directory from the given directory name.
     """
     if _check_path_overlap(path):
         if os.path.isdir(path) or os.path.isfile(path):
@@ -423,7 +413,7 @@ def _make_clean_directory(path):
 
 def _rmtree(path):
     """
-    Remove directory and all its contents, but only after user confirmation, or if the -y option is set
+    Remove directory and all its contents, but only after user confirmation, or if the -y option is set.
     """
     from PyInstaller.config import CONF
     if CONF['noconfirm']:
@@ -512,14 +502,13 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
             msg = 'Unable to find "%s" when adding binary and data files.' % src_root_path_or_glob
             # on Debian/Ubuntu, missing pyconfig.h files can be fixed with installing python-dev
             if src_root_path_or_glob.endswith("pyconfig.h"):
-                msg += """This would mean your Python installation doesn't
-come with proper library files. This usually happens by missing development
-package, or unsuitable build parameters of Python installation.
-* On Debian/Ubuntu, you would need to install Python development packages
+                msg += """This means your Python installation does not come with proper shared library files.
+This usually happens due to missing development package, or unsuitable build parameters of the Python installation.
+
+* On Debian/Ubuntu, you need to install Python development packages:
   * apt-get install python3-dev
   * apt-get install python-dev
-* If you're building Python by yourself, please rebuild your Python with
-`--enable-shared` (or, `--enable-framework` on Darwin)
+* If you are building Python by yourself, rebuild with `--enable-shared` (or, `--enable-framework` on macOS).
 """
             raise SystemExit(msg)
 
@@ -594,7 +583,7 @@ def get_code_object(modname, filename):
     """
     Get the code-object for a module.
 
-    This is a extra-simple version for compiling a module. It's not worth spending more effort here, as it is only
+    This is a extra-simple version for compiling a module. It is not worth spending more effort here, as it is only
     used in the rare case if outXX-Analysis.toc exists, but outXX-PYZ.toc does not.
     """
 
@@ -618,7 +607,6 @@ def get_code_object(modname, filename):
 
 
 def strip_paths_in_code(co, new_filename=None):
-
     # Paths to remove from filenames embedded in code objects
     replace_paths = sys.path + CONF['pathex']
     # Make sure paths end with os.sep and the longest paths are first
@@ -661,8 +649,8 @@ def fake_pyc_timestamp(buf):
     """
     Reset the timestamp from a .pyc-file header to a fixed value.
 
-    This enables deterministic builds without having to set pyinstaller
-    source metadata (mtime) since that changes the pyc-file contents.
+    This enables deterministic builds without having to set pyinstaller source metadata (mtime) since that changes the
+    pyc-file contents.
 
     _buf_ must at least contain the full pyc-file header.
     """
@@ -670,15 +658,15 @@ def fake_pyc_timestamp(buf):
         "Expected pyc magic {}, got {}".format(compat.BYTECODE_MAGIC, buf[:4])
     start, end = 4, 8
     if is_py37:
-        # see https://www.python.org/dev/peps/pep-0552/
+        # See https://www.python.org/dev/peps/pep-0552/
         (flags,) = struct.unpack_from(">I", buf, 4)
         if flags & 1:
             # We are in the future and hash-based pyc-files are used, so
-            # clear "check_source" flag, since there is no source
+            # clear "check_source" flag, since there is no source.
             buf[4:8] = struct.pack(">I", flags ^ 2)
             return buf
         else:
-            # no hash-based pyc-file, timestamp is the next field
+            # No hash-based pyc-file, timestamp is the next field.
             start, end = 8, 12
 
     ts = b'pyi0'  # So people know where this comes from
@@ -687,11 +675,11 @@ def fake_pyc_timestamp(buf):
 
 def _should_include_system_binary(binary_tuple, exceptions):
     """
-    Return True if the given binary_tuple describes a system binary that
-    should be included.  Exclude all system library binaries other than
-    those with "lib-dynload" in the destination or "python" in the source,
-    except for those matching the patterns in the exceptions list.  Intended
-    to only be used from the Analysis method exclude_system_libraries.
+    Return True if the given binary_tuple describes a system binary that should be included.
+
+    Exclude all system library binaries other than those with "lib-dynload" in the destination or "python" in the
+    source, except for those matching the patterns in the exceptions list. Intended to be used from the Analysis
+    exclude_system_libraries method.
     """
     dest = binary_tuple[0]
     if dest.startswith('lib-dynload'):

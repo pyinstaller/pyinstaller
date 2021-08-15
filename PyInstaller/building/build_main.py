@@ -21,7 +21,6 @@ import shutil
 
 import sys
 
-# Relative imports to PyInstaller modules.
 from PyInstaller import DEFAULT_DISTPATH, DEFAULT_WORKPATH, HOMEPATH, compat
 from PyInstaller import log as logging
 from PyInstaller.archive import pyz_crypto
@@ -50,7 +49,7 @@ TUPLETYPE = type((None,))
 
 rthooks = {}
 
-# place where the loader modules and initialization scripts live
+# Place where the loader modules and initialization scripts live.
 _init_code_path = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
 
 IMPORT_TYPES = [
@@ -82,12 +81,10 @@ IMPORTANT: Do NOT post this list to the issue-tracker. Use it as a basis for
 def setupUPXFlags():
     f = compat.getenv("UPX", "")
     if is_win:
-        # Binaries built with Visual Studio 7.1 require --strip-loadconf
-        # or they won't compress. Configure.py makes sure that UPX is new
-        # enough to support --strip-loadconf.
+        # Binaries built with Visual Studio 7.1 require --strip-loadconf or they will not compress. Configure.py makes
+        # sure that UPX is new enough to support --strip-loadconf.
         f = "--strip-loadconf " + f
-    # Do not compress any icon, so that additional icons in the executable
-    # can still be externally bound
+    # Do not compress any icon, so that additional icons in the executable can still be externally bound.
     f = "--compress-icons=0 " + f
     f = "--best " + f
     compat.setenv("UPX", f)
@@ -107,23 +104,20 @@ def discover_hook_directories():
         import sys
         import pkg_resources
 
-        entry_points = pkg_resources.iter_entry_points(
-            'pyinstaller40', 'hook-dirs')
+        entry_points = pkg_resources.iter_entry_points('pyinstaller40', 'hook-dirs')
         for entry_point in entry_points:
             try:
                 hook_dirs = entry_point.load()()
                 for hook_dir in hook_dirs:
                     print('\\n$_pyi:' + hook_dir + '*')
             except Exception as e:
-                print("discover_hook_directories: Failed to process hook "
-                      "entry point '%s': %s" % (entry_point, e),
-                      file=sys.stderr)
+                print("discover_hook_directories: Failed to process hook entry point '%s': %s" %
+                      (entry_point, e), file=sys.stderr)
         """
     )
 
     for line in output.split():
-        # Filter out extra output by checking for the special prefix
-        # and suffix
+        # Filter out extra output by checking for the special prefix and suffix
         if line.startswith("$_pyi:") and line.endswith("*"):
             hook_directories.append(line[6:-1])
 
@@ -133,23 +127,21 @@ def discover_hook_directories():
 
 
 class Analysis(Target):
-    """Class does analysis of the user's main Python scripts.
+    """
+    Class that performs analysis of the user's main Python scripts.
 
     An Analysis has five outputs, all TOCs (Table of Contents) accessed as attributes of the analysis.
 
     scripts
-            The scripts you gave Analysis as input, with any runtime hook scripts
-            prepended.
+            The scripts you gave Analysis as input, with any runtime hook scripts prepended.
     pure
             The pure Python modules.
     binaries
-            The extensionmodules and their dependencies. The secondary dependecies
-            are filtered. On Windows files from C:\\Windows are excluded by default.
-            On Linux/Unix only system libraries from /lib or /usr/lib are excluded.
+            The extensionmodules and their dependencies. The secondary dependecies are filtered. On Windows files from
+            C:\\Windows are excluded by default. On Linux/Unix only system libraries from /lib or /usr/lib are excluded.
     datas
-            Data-file dependencies. These are data-file that are found to be needed
-            by modules. They can be anything: plugins, font files, images, translations,
-            etc.
+            Data-file dependencies. These are data-file that are found to be needed by modules. They can be anything:
+            plugins, font files, images, translations, etc.
     zipfiles
             The zipfiles dependencies (usually .egg files).
     """
@@ -193,19 +185,18 @@ class Analysis(Target):
         hooksconfig
                 An optional dict of config settings for hooks. (hook-modules).
         excludes
-                An optional list of module or package names (their Python names, not path names) that will be ignored
-                (as though they were not found).
+                An optional list of module or package names (their Python names, not path names) that will be
+                ignored (as though they were not found).
         runtime_hooks
                 An optional list of scripts to use as users' runtime hooks. Specified as file names.
         cipher
                 Add optional instance of the pyz_crypto.PyiBlockCipher class (with a provided key).
         win_no_prefer_redirects
-                If True, prefers not to follow version redirects when searching for Windows SxS Assemblies.
+                If True, prefer not to follow version redirects when searching for Windows SxS Assemblies.
         win_private_assemblies
-                If True, changes all bundled Windows SxS Assemblies into Private Assemblies to enforce assembly
-                versions.
+                If True, change all bundled Windows SxS Assemblies into Private Assemblies to enforce assembly versions.
         noarchive
-                If True, don't place source files in a archive, but keep them as individual files.
+                If True, do not place source files in a archive, but keep them as individual files.
         """
         super().__init__()
         from PyInstaller.config import CONF
@@ -284,7 +275,7 @@ class Analysis(Target):
 
         self.__postinit__()
 
-        # TODO create function to convert datas/binaries from 'hook format' to TOC.
+        # TODO: create a function to convert datas/binaries from 'hook format' to TOC.
         # Initialise 'binaries' and 'datas' with lists specified in .spec file.
         if binaries:
             logger.info("Appending 'binaries' from .spec")
@@ -381,7 +372,7 @@ class Analysis(Target):
             logger.debug("Excluding module '%s'" % m)
         self.graph = initialize_modgraph(excludes=self.excludes, user_hook_dirs=self.hookspath)
 
-        # TODO Find a better place where to put 'base_library.zip' and when to created it.
+        # TODO: find a better place where to put 'base_library.zip' and when to created it.
         # For Python 3 it is necessary to create file 'base_library.zip' containing core Python modules. In Python 3
         # some built-in modules are written in pure Python. base_library.zip is a way how to have those modules as
         # "built-in".
@@ -462,7 +453,7 @@ class Analysis(Target):
         # -- Look for dlls that are imported by Python 'ctypes' module. --
         # First get code objects of all modules that import 'ctypes'.
         logger.info('Looking for ctypes DLLs')
-        # dict like:  {'module1': code_obj, 'module2': code_obj}
+        # dict like: {'module1': code_obj, 'module2': code_obj}
         ctypes_code_objs = self.graph.get_code_using("ctypes")
 
         for name, co in ctypes_code_objs.items():
@@ -514,12 +505,13 @@ class Analysis(Target):
             logger.info("Found binding redirects: \n%s", self.binding_redirects)
 
         # Filter binaries to adjust path of extensions that come from python's lib-dynload directory. Prefix them with
-        # lib-dynload so that we'll collect them into subdirectory instead of directly into _MEIPASS
+        # lib-dynload so that we will collect them into subdirectory instead of directly into _MEIPASS
         for idx, tpl in enumerate(self.binaries):
             name, path, typecode = tpl
-            if typecode == 'EXTENSION' \
-               and not os.path.dirname(os.path.normpath(name)) \
-               and os.path.basename(os.path.dirname(path)) == 'lib-dynload':
+            if (
+                typecode == 'EXTENSION' and not os.path.dirname(os.path.normpath(name))
+                and os.path.basename(os.path.dirname(path)) == 'lib-dynload'
+            ):
                 name = os.path.join('lib-dynload', name)
                 self.binaries[idx] = (name, path, typecode)
 
@@ -579,8 +571,8 @@ class Analysis(Target):
         logger.info("Warnings written to %s", CONF['warnfile'])
 
     def _write_graph_debug(self):
-        """Write a xref (in html) and with `--log-level DEBUG` a dot-drawing
-        of the graph.
+        """
+        Write a xref (in html) and with `--log-level DEBUG` a dot-drawing of the graph.
         """
         from PyInstaller.config import CONF
         with open(CONF['xref-file'], 'w', encoding='utf-8') as fh:
@@ -588,8 +580,8 @@ class Analysis(Target):
             logger.info("Graph cross-reference written to %s", CONF['xref-file'])
         if logger.getEffectiveLevel() > logging.DEBUG:
             return
-        # The `DOT language's <https://www.graphviz.org/doc/info/lang.html>`_
-        # default character encoding (see the end of the linked page) is UTF-8.
+        # The `DOT language's <https://www.graphviz.org/doc/info/lang.html>`_ default character encoding (see the end
+        # of the linked page) is UTF-8.
         with open(CONF['dot-file'], 'w', encoding='utf-8') as fh:
             self.graph.graphreport(fh)
             logger.info("Graph drawing written to %s", CONF['dot-file'])
@@ -727,25 +719,25 @@ def __add_options(parser):
         "--distpath",
         metavar="DIR",
         default=DEFAULT_DISTPATH,
-        help='Where to put the bundled app (default: ./dist)',
+        help="Where to put the bundled app (default: ./dist)",
     )
     parser.add_argument(
         '--workpath',
         default=DEFAULT_WORKPATH,
-        help='Where to put all the temporary work files, .log, .pyz and etc. (default: ./build)',
+        help="Where to put all the temporary work files, .log, .pyz and etc. (default: ./build)",
     )
     parser.add_argument(
         '-y',
         '--noconfirm',
         action="store_true",
         default=False,
-        help='Replace output directory (default: %s) without asking for confirmation' %
+        help="Replace output directory (default: %s) without asking for confirmation" %
         os.path.join('SPECPATH', 'dist', 'SPECNAME'),
     )
     parser.add_argument(
         '--upx-dir',
         default=None,
-        help='Path to UPX utility (default: search the execution path)',
+        help="Path to UPX utility (default: search the execution path)",
     )
     parser.add_argument(
         "-a",
@@ -758,17 +750,16 @@ def __add_options(parser):
         dest='clean_build',
         action='store_true',
         default=False,
-        help='Clean PyInstaller cache and remove temporary files before building.',
+        help="Clean PyInstaller cache and remove temporary files before building.",
     )
 
 
 def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
-
     from PyInstaller.config import CONF
     CONF['noconfirm'] = noconfirm
 
-    # Some modules are included if they are detected at build-time or if a command-line argument is specified. (e.g.
-    # --ascii).
+    # Some modules are included if they are detected at build-time or if a command-line argument is specified
+    # (e.g., --ascii).
     if CONF.get('hiddenimports') is None:
         CONF['hiddenimports'] = []
     # Test unicode support.

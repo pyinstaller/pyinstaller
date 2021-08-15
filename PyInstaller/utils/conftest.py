@@ -9,11 +9,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# Imports
-# =======
-
-# Library imports
-# ---------------
 import copy
 import glob
 import logging
@@ -23,22 +18,17 @@ import shutil
 import subprocess
 from contextlib import suppress
 
-# Set a handler for the root-logger to inhibit 'basicConfig()' (called in
-# PyInstaller.log) is setting up a stream handler writing to stderr. This
-# avoids log messages to be written (and captured) twice: once on stderr and
+# Set a handler for the root-logger to inhibit 'basicConfig()' (called in PyInstaller.log) is setting up a stream
+# handler writing to stderr. This avoids log messages to be written (and captured) twice: once on stderr and
 # once by pytests's caplog.
 logging.getLogger().addHandler(logging.NullHandler())
 
-# Third-party imports
-# -------------------
 # Manages subprocess timeout.
 import psutil  # noqa: E402
 import py  # noqa: E402
 import pytest  # noqa: E402
 import sys  # noqa: E402
 
-# Local imports
-# -------------
 # Expand sys.path with PyInstaller source.
 _ROOT_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
 sys.path.append(_ROOT_DIR)
@@ -51,36 +41,36 @@ from PyInstaller.utils.cliutils import archive_viewer  # noqa: E402
 from PyInstaller.utils.tests import gen_sourcefile  # noqa: E402
 from PyInstaller.utils.win32 import winutils  # noqa: E402
 
-# Globals
-# =======
-# Timeout for running the executable. If executable does not exit in this time
-# then it is interpreted as test failure.
+# Timeout for running the executable. If executable does not exit in this time, it is interpreted as a test failure.
 _EXE_TIMEOUT = 60  # In sec.
 # Number of retries we should attempt if the executable times out.
 _MAX_RETRIES = 2
 # All currently supported platforms
 SUPPORTED_OSES = {"darwin", "linux", "win32"}
 
-# Code
-# ====
 # Fixtures
 # --------
 
 
 @pytest.fixture
 def SPEC_DIR(request):
-    """Return the directory where the test spec-files reside"""
+    """
+    Return the directory where the test spec-files reside.
+    """
     return py.path.local(_get_spec_dir(request))
 
 
 @pytest.fixture
 def SCRIPT_DIR(request):
-    """Return the directory where the test scripts reside"""
+    """
+    Return the directory where the test scripts reside.
+    """
     return py.path.local(_get_script_dir(request))
 
 
 def pytest_runtest_setup(item):
-    """Markers to skip tests based on the current platform.
+    """
+    Markers to skip tests based on the current platform.
     https://pytest.org/en/stable/example/markers.html#marking-platform-specific-tests-with-pytest
 
     Available markers: see setup.cfg [tool:pytest] markers
@@ -96,13 +86,11 @@ def pytest_runtest_setup(item):
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
 def pytest_runtest_makereport(item, call):
-    # execute all other hooks to obtain the report object
+    # Execute all other hooks to obtain the report object.
     outcome = yield
     rep = outcome.get_result()
 
-    # set an report attribute for each phase of a call, which can
-    # be "setup", "call", "teardown"
-
+    # Set a report attribute for each phase of a call, which can be "setup", "call", "teardown".
     setattr(item, "rep_" + rep.when, rep)
 
 
@@ -111,7 +99,7 @@ def _get_base_dir(request):
     return os.path.dirname(os.path.abspath(request.fspath.strpath))
 
 
-# Directory with Python scripts for functional tests. E.g. main scripts, etc.
+# Directory with Python scripts for functional tests.
 def _get_script_dir(request):
     return os.path.join(_get_base_dir(request), 'scripts')
 
@@ -147,8 +135,7 @@ def _data_dir_copy(
     request,
     # The name of the subdirectory located in data/name to copy.
     subdir_name,
-    # The tmpdir object for this test. See
-    # https://pytest.org/latest/tmpdir.html.
+    # The tmpdir object for this test. See: https://pytest.org/latest/tmpdir.html.
     tmpdir
 ):
 
@@ -157,8 +144,7 @@ def _data_dir_copy(
     tmp_data_dir = tmpdir.join('data', subdir_name)
     # Copy the data.
     shutil.copytree(source_data_dir.strpath, tmp_data_dir.strpath)
-    # Return the temporary data directory, so that the copied data can now be
-    # used.
+    # Return the temporary data directory, so that the copied data can now be used.
     return tmp_data_dir
 
 
@@ -203,7 +189,7 @@ class AppBuilder(object):
         Test a Python script given as source code.
 
         The source will be written into a file named like the test-function. This file will then be passed to
-        `test_script`. If you need other related file, e.g. as `.toc`-file for testing the content, put it at at the
+        `test_script`. If you need other related file, e.g., as `.toc`-file for testing the content, put it at at the
         normal place. Just mind to take the basnename from the test-function's name.
 
         :param script: Source code to create executable from. This will be saved into a temporary file which is then
@@ -319,7 +305,7 @@ class AppBuilder(object):
         # For Windows append .exe extension to patterns.
         if is_win:
             patterns = [pt + '.exe' for pt in patterns]
-        # For Mac OS X append pattern for .app bundles.
+        # For Mac OS append pattern for .app bundles.
         if is_darwin:
             # e.g:  ./dist/name.app/Contents/MacOS/name
             pt = os.path.join(self._distdir, name + '.app', 'Contents', 'MacOS', name)
@@ -387,9 +373,9 @@ class AppBuilder(object):
             retcode = process.returncode
         except (psutil.TimeoutExpired, subprocess.TimeoutExpired):
             if runtime:
-                # When 'runtime' is set then expired timeout is a good sing
-                # that the executable was running successfully for a specified time.
-                # TODO Is there a better way return success than 'retcode = 0'?
+                # When 'runtime' is set, the expired timeout is a good sign that the executable was running successfully
+                # for a specified time.
+                # TODO: is there a better way return success than 'retcode = 0'?
                 retcode = 0
             else:
                 # Exe is running and it is not interactive. Fail the test.
@@ -432,7 +418,7 @@ class AppBuilder(object):
         # if self._mode is None then just the spec file was supplied.
 
         pyi_args = [self.script] + default_args + args
-        # TODO fix return code in running PyInstaller programatically
+        # TODO: fix return code in running PyInstaller programatically.
         PYI_CONFIG = configure.get_config(upx_dir=None)
         # Override CACHEDIR for PyInstaller and put it into self.tmpdir
         PYI_CONFIG['cachedir'] = str(self._tmpdir)
@@ -530,7 +516,7 @@ def pyi_builder_spec(tmpdir, request, monkeypatch, pyi_modgraph):
 def compiled_dylib(tmpdir, request):
     tmp_data_dir = _data_dir_copy(request, 'ctypes_dylib', tmpdir)
 
-    # Compile the ctypes_dylib in the tmpdir: Make tmpdir/data the CWD. Don't use monkeypatch.chdir to change, then
+    # Compile the ctypes_dylib in the tmpdir: Make tmpdir/data the CWD. Do NOT use monkeypatch.chdir() to change and
     # monkeypatch.undo() to restore the CWD, since this will undo ALL monkeypatches (such as the pyi_builder's additions
     # to sys.path), breaking the test.
     old_wd = tmp_data_dir.chdir()

@@ -19,7 +19,8 @@ from PyInstaller import compat
 
 
 def paths_to_test(include_only=None):
-    """If ``include_only`` is falsey, this functions returns paths from all entry points. Otherwise, this parameter
+    """
+    If ``include_only`` is falsey, this functions returns paths from all entry points. Otherwise, this parameter
     must be a string or sequence of strings. In this case, this function will return *only* paths from entry points
     whose ``module_name`` begins with the provided string(s).
     """

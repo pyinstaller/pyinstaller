@@ -8,28 +8,30 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-"""Define a modified ModuleGraph that can return its contents as a TOC and in other ways act like the old ImpTracker.
-TODO: This class, along with TOC and Tree should be in a separate module.
+"""
+Define a modified ModuleGraph that can return its contents as a TOC and in other ways act like the old ImpTracker.
+TODO: This class, along with TOC and Tree, should be in a separate module.
 
 For reference, the ModuleGraph node types and their contents:
 
-  nodetype       identifier       filename
+ nodetype         identifier        filename
 
- Script         full path to .py   full path to .py
- SourceModule     basename         full path to .py
- BuiltinModule    basename         None
- CompiledModule   basename         full path to .pyc
- Extension        basename         full path to .so
- MissingModule    basename         None
- Package          basename         full path to __init__.py
+ Script           full path to .py  full path to .py
+ SourceModule     basename          full path to .py
+ BuiltinModule    basename          None
+ CompiledModule   basename          full path to .pyc
+ Extension        basename          full path to .so
+ MissingModule    basename          None
+ Package          basename          full path to __init__.py
         packagepath is ['path to package']
         globalnames is set of global names __init__.py defines
- ExtensionPackage basename         full path to __init__.{so,dll}
+ ExtensionPackage basename          full path to __init__.{so,dll}
         packagepath is ['path to package']
 
 The main extension here over ModuleGraph is a method to extract nodes from the flattened graph and return them as a
 TOC, or added to a TOC. Other added methods look up nodes by identifier and return facts about them, replacing what
-the old ImpTracker list could do. """
+the old ImpTracker list could do.
+"""
 
 import ast
 import os
@@ -111,9 +113,8 @@ class PyiModuleGraph(ModuleGraph):
         self._additional_files_cache = AdditionalFilesCache()
         # Command line, Entry Point, and then builtin hook dirs.
         self._user_hook_dirs = [*user_hook_dirs, os.path.join(PACKAGEPATH, 'hooks')]
-        # Hook-specific lookup tables.
-        # These need to reset when reusing cached PyiModuleGraph to avoid
-        # hooks to refer to files or data from another test-case.
+        # Hook-specific lookup tables. These need to reset when reusing cached PyiModuleGraph to avoid hooks to refer to
+        # files or data from another test-case.
         logger.info('Caching module graph hooks...')
         self._hooks = self._cache_hooks("")
         self._hooks_pre_safe_import_module = self._cache_hooks('pre_safe_import_module')
@@ -139,26 +140,25 @@ class PyiModuleGraph(ModuleGraph):
         self._available_rthooks = dict(self._available_rthooks)
 
     def _merge_rthooks(self, rthooks, uhd, uhd_path):
-        """The expected data structure for a run-time hook file is a Python dictionary of type ``Dict[str,
-        List[str]]`` where the dictionary keys are module names the the sequence strings are Python file names.
+        """
+        The expected data structure for a run-time hook file is a Python dictionary of type ``Dict[str, List[str]]``,
+        where the dictionary keys are module names and the sequence strings are Python file names.
 
         Check then merge this data structure, updating the file names to be absolute.
         """
         # Check that the root element is a dict.
-        assert isinstance(rthooks, dict), ('The root element in %s must be a dict.' % uhd_path)
+        assert isinstance(rthooks, dict), 'The root element in %s must be a dict.' % uhd_path
         for module_name, python_file_name_list in rthooks.items():
             # Ensure the key is a string.
-            assert isinstance(
-                module_name, compat.string_types
-            ), ('%s must be a dict whose keys are strings; %s '
-                'is not a string.' % (uhd_path, module_name))
+            assert isinstance(module_name, compat.string_types), \
+                '%s must be a dict whose keys are strings; %s is not a string.' % (uhd_path, module_name)
             # Ensure the value is a list.
-            assert isinstance(python_file_name_list,
-                              list), ('The value of %s key %s must be a list.' % (uhd_path, module_name))
+            assert isinstance(python_file_name_list, list), \
+                'The value of %s key %s must be a list.' % (uhd_path, module_name)
             if module_name in self._available_rthooks:
                 logger.warning(
-                    'Runtime hooks for %s have already been defined. Skipping the runtime hooks for %s that are defined'
-                    ' in %s.', module_name, module_name, os.path.join(uhd, 'rthooks')
+                    'Runtime hooks for %s have already been defined. Skipping the runtime hooks for %s that are '
+                    'defined in %s.', module_name, module_name, os.path.join(uhd, 'rthooks')
                 )
                 # Skip this module
                 continue
@@ -170,10 +170,9 @@ class PyiModuleGraph(ModuleGraph):
                 # Transform it into an absolute path.
                 abs_path = os.path.join(uhd, 'rthooks', python_file_name)
                 # Make sure this file exists.
-                assert os.path.exists(abs_path), (
-                    'In %s, key %s, the file %r expected to be located at '
-                    '%r does not exist.' % (uhd_path, module_name, python_file_name, abs_path)
-                )
+                assert os.path.exists(abs_path), \
+                    'In %s, key %s, the file %r expected to be located at %r does not exist.' % \
+                    (uhd_path, module_name, python_file_name, abs_path)
                 # Merge it.
                 self._available_rthooks[module_name].append(abs_path)
 
@@ -258,7 +257,7 @@ class PyiModuleGraph(ModuleGraph):
         """
         Wrap the parent's 'run_script' method and create graph from the first script in the analysis, and save its
         node to use as the "caller" node for all others. This gives a connected graph rather than a collection of
-        unrelated trees,
+        unrelated trees.
         """
         if self._top_script_node is None:
             # Remember the node for the first script.
@@ -333,8 +332,7 @@ class PyiModuleGraph(ModuleGraph):
                 # Prevent this module's hooks from being run again.
                 hooked_module_names.add(module_name)
 
-            # Prevent all post-graph hooks run above from being run again by the
-            # next iteration.
+            # Prevent all post-graph hooks run above from being run again by the next iteration.
             self._hooks.remove_modules(*hooked_module_names)
 
             # If no post-graph hooks were run, terminate iteration.
@@ -500,11 +498,11 @@ class PyiModuleGraph(ModuleGraph):
 
     @staticmethod
     def _node_to_toc(node, typecode=None):
-        # TODO This is terrible. Everything in Python has a type. It's nonsensical to even speak of "nodes [that] are
-        # not typed." How would that even occur? After all, even "None" has a type! (It's "NoneType", for the curious.)
+        # TODO This is terrible. Everything in Python has a type. It is nonsensical to even speak of "nodes [that] are
+        # not typed." How would that even occur? After all, even "None" has a type! (It is "NoneType", for the curious.)
         # Remove this, please.
 
-        # get node type e.g. Script
+        # Get node type, e.g., Script
         mg_type = type(node).__name__
         assert mg_type is not None
 
@@ -552,7 +550,8 @@ class PyiModuleGraph(ModuleGraph):
         return type(node).__name__ == 'BuiltinModule'
 
     def get_importers(self, name):
-        """List all modules importing the module with the passed name.
+        """
+        List all modules importing the module with the passed name.
 
         Returns a list of (identifier, DependencyIinfo)-tuples. If the names module has not yet been imported, this
         method returns an empty list.
@@ -582,7 +581,7 @@ class PyiModuleGraph(ModuleGraph):
         importers = (importer.identifier for importer in importers if importer is not None)
         return [(importer, get_importer_edge_data(importer)) for importer in importers]
 
-    # TODO create class from this function.
+    # TODO: create a class from this function.
     def analyze_runtime_hooks(self, custom_runhooks):
         """
         Analyze custom run-time hooks and run-time hooks implied by found modules.
@@ -618,17 +617,17 @@ class PyiModuleGraph(ModuleGraph):
     def add_hiddenimports(self, module_list):
         """
         Add hidden imports that are either supplied as CLI option --hidden-import=MODULENAME or as dependencies from
-        some PyInstaller features when enabled (e.g. crypto feature).
+        some PyInstaller features when enabled (e.g., crypto feature).
         """
         assert self._top_script_node is not None
-        # Analyze the script's hidden imports (named on the command line)
+        # Analyze the script's hidden imports (named on the command line).
         for modnm in module_list:
             node = self.find_node(modnm)
             if node is not None:
                 logger.debug('Hidden import %r already found', modnm)
             else:
                 logger.info("Analyzing hidden import %r", modnm)
-                # ModuleGraph throws ImportError if import not found
+                # ModuleGraph throws ImportError if import not found.
                 try:
                     nodes = self.import_hook(modnm)
                     assert len(nodes) == 1
@@ -636,12 +635,14 @@ class PyiModuleGraph(ModuleGraph):
                 except ImportError:
                     logger.error("Hidden import %r not found", modnm)
                     continue
-            # Create references from the top script to the hidden import, even if found otherwise. Don't waste time
-            # checking whether it as actually added by this (test-) script.
+            # Create references from the top script to the hidden import, even if found otherwise. Do not waste time
+            # checking whether it is actually added by this (test-) script.
             self.add_edge(self._top_script_node, node)
 
     def get_code_using(self, module: str) -> dict:
-        """Find modules that import a given **module**."""
+        """
+        Find modules that import a given **module**.
+        """
         co_dict = {}
         pure_python_module_types = PURE_PYTHON_MODULE_TYPES | {
             'Script',
@@ -665,9 +666,11 @@ class PyiModuleGraph(ModuleGraph):
         return co_dict
 
     def metadata_required(self) -> set:
-        """Collect metadata for all packages that appear to need it."""
+        """
+        Collect metadata for all packages that appear to need it.
+        """
 
-        # List every function that we can think of which is known to need metadata.
+        # List every function that we can think of which is known to require metadata.
         out = set()
 
         out |= self._metadata_from(
@@ -688,7 +691,8 @@ class PyiModuleGraph(ModuleGraph):
         return out
 
     def _metadata_from(self, package, methods=(), recursive_methods=()) -> set:
-        """Collect metadata whose requirements are implied by given function names.
+        """
+        Collect metadata whose requirements are implied by given function names.
 
         Args:
             package:
@@ -705,7 +709,6 @@ class PyiModuleGraph(ModuleGraph):
         Scan all source code to be included for usage of particular *key* functions which imply that that code will
         require metadata for some distribution (which may not be its own) at runtime. In the case of a match,
         collect the required metadata.
-
         """
         from pkg_resources import DistributionNotFound
 
@@ -721,13 +724,13 @@ class PyiModuleGraph(ModuleGraph):
 
         out = set()
 
-        for (name, code) in self.get_code_using(package).items():
+        for name, code in self.get_code_using(package).items():
             for calls in bytecode.recursive_function_calls(code).values():
-                for (function_name, args) in calls:
+                for function_name, args in calls:
                     # Only consider function calls taking one argument.
                     if len(args) != 1:
                         continue
-                    package, = args
+                    package = args[0]
                     try:
                         if function_name in need_metadata:
                             out.update(copy_metadata(package))
@@ -735,8 +738,7 @@ class PyiModuleGraph(ModuleGraph):
                             out.update(copy_metadata(package, recursive=True))
 
                     except DistributionNotFound:
-                        # Currently, we'll opt to silently skip over missing
-                        # metadata.
+                        # Currently, we opt to silently skip over missing metadata.
                         continue
 
         return out
@@ -765,12 +767,12 @@ def initialize_modgraph(excludes=(), user_hook_dirs=()):
     PyiModuleGraph
         Module graph with core dependencies.
     """
-    # normalize parameters to ensure tuples and make camparism work
+    # Normalize parameters to ensure tuples and make comparison work.
     user_hook_dirs = user_hook_dirs or ()
     excludes = excludes or ()
 
-    # If there is a graph cached with the same same excludes, reuse it. See ``PyiModulegraph._reset()`` for why what is
-    # reset. This cache is uses primary to speed up the test-suite. Fixture `pyi_modgraph` calls this function with
+    # If there is a graph cached with the same excludes, reuse it. See ``PyiModulegraph._reset()`` for what is
+    # reset. This cache is used primarily to speed up the test-suite. Fixture `pyi_modgraph` calls this function with
     # empty excludes, creating a graph suitable for the huge majority of tests.
     global _cached_module_graph_
     if _cached_module_graph_ and _cached_module_graph_._excludes == excludes:

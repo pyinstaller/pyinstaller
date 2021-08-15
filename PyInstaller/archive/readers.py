@@ -46,10 +46,10 @@ class CTOCReader(object):
         p = 0
 
         while p < len(s):
-            (slen, dpos, dlen, ulen, flag, typcd) = struct.unpack(self.ENTRYSTRUCT, s[p:p + self.ENTRYLEN])
+            slen, dpos, dlen, ulen, flag, typcd = struct.unpack(self.ENTRYSTRUCT, s[p:p + self.ENTRYLEN])
             nmlen = slen - self.ENTRYLEN
             p = p + self.ENTRYLEN
-            (nm,) = struct.unpack('%is' % nmlen, s[p:p + nmlen])
+            nm, = struct.unpack('%is' % nmlen, s[p:p + nmlen])
             p = p + nmlen
             # nm may have up to 15 bytes of padding
             nm = nm.rstrip(b'\0')
@@ -82,9 +82,8 @@ class CArchiveReader(ArchiveReader):
     """
     An Archive subclass that can hold arbitrary data.
 
-    This class encapsulates all files that are bundled within an executable.
-    It can contain ZlibArchive (Python .pyc files), dlls, Python C extensions
-    and all other data files that are bundled in --onefile mode.
+    This class encapsulates all files that are bundled within an executable. It can contain ZlibArchive (Python .pyc
+    files), dlls, Python C extensions and all other data files that are bundled in --onefile mode.
 
     Easily handled from C or from Python.
     """
@@ -162,7 +161,7 @@ class CArchiveReader(ArchiveReader):
         # Read the whole cookie
         self.lib.seek(magic_offset, os.SEEK_SET)
         buf = self.lib.read(self._cookie_size)
-        (magic, totallen, tocpos, toclen, pyvers, pylib_name) = struct.unpack(self._cookie_format, buf)
+        magic, totallen, tocpos, toclen, pyvers, pylib_name = struct.unpack(self._cookie_format, buf)
         if magic != self.MAGIC:
             raise RuntimeError("%s is not a valid %s archive file" % (self.path, self.__class__.__name__))
 
@@ -219,7 +218,7 @@ class CArchiveReader(ArchiveReader):
         Return the names of the entries.
         """
         rslt = []
-        for (dpos, dlen, ulen, flag, typcd, nm) in self.toc:
+        for dpos, dlen, ulen, flag, typcd, nm in self.toc:
             rslt.append(nm)
         return rslt
 

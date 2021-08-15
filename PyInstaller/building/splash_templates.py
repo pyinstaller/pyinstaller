@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 # -----------------------------------------------------------------------------
 """
-Templates for the splash screen tcl script
+Templates for the splash screen tcl script.
 """
 from PyInstaller.compat import is_cygwin, is_darwin, is_win
 
@@ -177,7 +177,9 @@ raise .
 
 
 def build_script(text_options=None):
-    """ This function builds the tcl script for the splash screen """
+    """
+    This function builds the tcl script for the splash screen.
+    """
     # Order is important!
     script = [
         ipc_script,
@@ -189,7 +191,6 @@ def build_script(text_options=None):
         # If the default font is used we need a different syntax
         if text_options['font'] == "TkDefaultFont":
             script.append(splash_canvas_default_font % text_options)
-
         else:
             script.append(splash_canvas_custom_font % text_options)
         script.append(splash_canvas_text % text_options)

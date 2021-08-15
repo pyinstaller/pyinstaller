@@ -18,7 +18,7 @@ import sys
 # Try PyQt6 6.0.3-style path first...
 pyqt_path = os.path.join(sys._MEIPASS, 'PyQt6', 'Qt6')
 if not os.path.isdir(pyqt_path):
-    # ... and fall back to the older version
+    # ... and fall back to the older version.
     pyqt_path = os.path.join(sys._MEIPASS, 'PyQt6', 'Qt')
 os.environ['QT_PLUGIN_PATH'] = os.path.join(pyqt_path, 'plugins')
 os.environ['QML2_IMPORT_PATH'] = os.path.join(pyqt_path, 'qml')

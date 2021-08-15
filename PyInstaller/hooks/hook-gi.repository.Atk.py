@@ -11,6 +11,7 @@
 """
 Import hook for PyGObject https://wiki.gnome.org/PyGObject
 """
+
 from PyInstaller.utils.hooks import get_hook_config
 from PyInstaller.utils.hooks.gi import (collect_glib_translations, get_gi_typelibs)
 

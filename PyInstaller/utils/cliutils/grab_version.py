@@ -16,9 +16,8 @@ import codecs
 def run():
     parser = argparse.ArgumentParser(
         epilog=(
-            'The printed output may be saved to a file, edited and '
-            'used as the input for a version resource on any of the '
-            'executable targets in an Installer spec file.'
+            'The printed output may be saved to a file, edited and used as the input for a version resource on any of '
+            'the executable targets in a PyInstaller .spec file.'
         )
     )
     parser.add_argument(
@@ -31,8 +30,7 @@ def run():
         metavar='out-filename',
         nargs='?',
         default='file_version_info.txt',
-        help=("filename where the grabbed version info "
-              "will be saved"),
+        help="filename where the grabbed version info will be saved",
     )
 
     args = parser.parse_args()

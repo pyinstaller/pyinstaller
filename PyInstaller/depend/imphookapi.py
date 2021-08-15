@@ -15,7 +15,6 @@ PyInstaller passes instances of classes defined by this module to corresponding 
 hooks, which commonly modify the contents of these instances before returning. PyInstaller then detects and converts
 these modifications into appropriate operations on the current `PyiModuleGraph` instance, thus modifying which
 modules will be frozen into the executable.
-
 """
 
 from PyInstaller.building.datastruct import TOC
@@ -76,12 +75,16 @@ class PreSafeImportModuleAPI(object):
     # Immutable properties. No corresponding setters are defined.
     @property
     def module_graph(self):
-        """Current module graph"""
+        """
+        Current module graph.
+        """
         return self._module_graph
 
     @property
     def parent_package(self):
-        """Parent Package of this node"""
+        """
+        Parent Package of this node.
+        """
         return self._parent_package
 
     def add_runtime_module(self, module_name):
@@ -104,8 +107,7 @@ class PreSafeImportModuleAPI(object):
 
         Examples
         ----------
-        This method is typically called by `pre_safe_import_module()` hooks:
-        e.g.,
+        This method is typically called by `pre_safe_import_module()` hooks, e.g.:
 
             def pre_safe_import_module(api):
                 api.add_runtime_module(api.module_name)
@@ -133,8 +135,7 @@ class PreSafeImportModuleAPI(object):
 
         Examples
         ----------
-        This method is typically called by `pre_safe_import_module()` hooks:
-        e.g.,
+        This method is typically called by `pre_safe_import_module()` hooks, e.g.:
 
             def pre_safe_import_module(api):
                 api.add_runtime_package(api.module_name)
@@ -153,11 +154,9 @@ class PreSafeImportModuleAPI(object):
         Parameters
         ----------
         real_module_name : str
-            Fully-qualified name of the **existing module** (i.e., the
-            module being aliased).
+            Fully-qualified name of the **existing module** (i.e., the module being aliased).
         alias_module_name : str
-            Fully-qualified name of the **non-existent module** (i.e.,
-            the alias to be created).
+            Fully-qualified name of the **non-existent module** (i.e., the alias to be created).
         """
 
         self._module_graph.alias_module(real_module_name, alias_module_name)
@@ -182,8 +181,7 @@ class PreSafeImportModuleAPI(object):
 class PreFindModulePathAPI(object):
     """
     Metadata communicating changes made by the current **pre-find module path hook** (i.e., hook run immediately
-    _before_ a call to `ModuleGraph._find_module_path()` finding the hooked module's absolute path) back to
-    PyInstaller.
+    _before_ a call to `ModuleGraph._find_module_path()` finding the hooked module's absolute path) back to PyInstaller.
 
     Pre-find module path hooks _must_ define a `pre_find_module_path()` function accepting an instance of this class,
     whose attributes describe the subsequent `ModuleGraph._find_module_path()` call to be performed.
@@ -238,7 +236,7 @@ class PreFindModulePathAPI(object):
     @property
     def module_graph(self):
         """
-        Current module graph
+        Current module graph.
         """
         return self._module_graph
 
@@ -319,14 +317,12 @@ class PostGraphAPI(object):
         self._co = self.module.code
         self._analysis = analysis
 
-        # To enforce immutability, convert this module's package path if any
-        # into an immutable tuple.
+        # To enforce immutability, convert this module's package path if any into an immutable tuple.
         self.___path__ = tuple(self.module.packagepath) \
             if self.module.packagepath is not None else None
 
-        #FIXME: Refactor "_added_datas", "_added_binaries", and
-        #"_deleted_imports" into sets. Since order of importation is
-        #significant, "_added_imports" must remain a list.
+        #FIXME: Refactor "_added_datas", "_added_binaries", and "_deleted_imports" into sets. Since order of
+        #import is important, "_added_imports" must remain a list.
 
         # Private attributes.
         self._added_binaries = []
@@ -368,7 +364,7 @@ class PostGraphAPI(object):
     @property
     def analysis(self):
         """
-        build_main.Analysis that calls the hook
+        build_main.Analysis that calls the hook.
         """
         return self._analysis
 

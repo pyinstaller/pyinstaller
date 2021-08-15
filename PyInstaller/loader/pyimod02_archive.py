@@ -11,10 +11,11 @@
 
 # TODO clean up this module
 
-# Subclasses may not need marshal or struct, but since they're builtin, importing is safe.
+# Subclasses may not need marshal or struct, but since they are builtin, importing is safe.
 #
-# While an Archive is really an abstraction for any "filesystem within a file", it is tuned for use with
-# imputil.FuncImporter. This assumes it contains python code objects, indexed by the the internal name (ie, no '.py').
+# While an Archive is really an abstraction for any "filesystem within a file", it is tuned for use with the
+# imputil.FuncImporter. This assumes it contains python code objects, indexed by the the internal name (i.e.,
+# without '.py' suffix).
 
 # See pyi_carchive.py for a more general archive (contains anything) that can be understood by a C program.
 
@@ -107,7 +108,7 @@ class ArchiveReadError(RuntimeError):
 class ArchiveReader(object):
     """
     A base class for a repository of python code objects. The extract method is used by imputil.ArchiveImporter to
-    get code objects by name (fully qualified name), so an enduser "import a.b" would become:
+    get code objects by name (fully qualified name), so an end-user "import a.b" becomes:
         extract('a.__init__')
         extract('a.b')
     """
@@ -125,8 +126,8 @@ class ArchiveReader(object):
         self.path = path
         self.start = start
 
-        # In Python 3 module 'imp' is no longer built-in and we cannot use it. There is for Python 3 another way how to
-        # obtain magic value. We cannot use at this bootstrap stage importlib directly but its frozen variant.
+        # In Python3, the MAGIC_NUMBER value is available in the importlib module. However, in the bootstrap phase
+        # we cannot use importlib directly, but rather its frozen variant.
         import _frozen_importlib
         self.pymagic = _frozen_importlib._bootstrap_external.MAGIC_NUMBER
 
@@ -144,7 +145,8 @@ class ArchiveReader(object):
         self.lib.seek(self.start + self.TOCPOS)
         (offset,) = struct.unpack('!i', self.lib.read(4))
         self.lib.seek(self.start + offset)
-        # Use marshal.loads() since load() arg must be a file object Convert the read list into a dict for faster access
+        # Use marshal.loads() since load() arg must be a file object. Convert the loaded list into a dict for
+        # faster access.
         self.toc = dict(marshal.loads(self.lib.read()))
 
     #------ This is what is called by FuncImporter ------
@@ -158,7 +160,7 @@ class ArchiveReader(object):
     def extract(self, name):
         """
         Get the object corresponding to name, or None. For use with imputil ArchiveImporter, object is a python code
-        object. 'name' is the name as specified in an 'import name'. 'import a.b' will become:
+        object. 'name' is the name as specified in an 'import name'. 'import a.b' becomes:
              extract('a') (return None because 'a' is not a code object)
              extract('a.__init__') (return a code object)
              extract('a.b') (return a code object)
@@ -172,7 +174,7 @@ class ArchiveReader(object):
             return None
         with self.lib:
             self.lib.seek(self.start + pos)
-            # use marshal.loads() sind load() arg must be a file object
+            # Use marshal.loads() since load() arg must be a file object.
             obj = marshal.loads(self.lib.read())
         return ispkg, obj
 
@@ -188,7 +190,7 @@ class ArchiveReader(object):
         """
         Overridable. Check to see if the file object self.lib actually has a file we understand.
         """
-        self.lib.seek(self.start)  # default - magic is at start of file
+        self.lib.seek(self.start)  # default - magic is at the start of file
 
         if self.lib.read(len(self.MAGIC)) != self.MAGIC:
             raise ArchiveReadError("%s is not a valid %s archive file" % (self.path, self.__class__.__name__))
@@ -204,8 +206,8 @@ class Cipher(object):
     This class is used only to decrypt Python modules.
     """
     def __init__(self):
-        # At build-type the key is given to us from inside the spec file, at bootstrap-time, we must look for it
-        # ourselves by trying to import the generated 'pyi_crypto_key' module.
+        # At build-time the key is given to us from inside the spec file. At bootstrap-time, we must look for it
+        # ourselves, by trying to import the generated 'pyi_crypto_key' module.
         import pyimod00_crypto_key
         key = pyimod00_crypto_key.key
 
@@ -223,8 +225,8 @@ class Cipher(object):
         del sys.modules['tinyaes']
 
     def __create_cipher(self, iv):
-        # The 'AES' class is stateful, this factory method is used to re-initialize the block cipher class with each
-        # call to xcrypt().
+        # The 'AES' class is stateful, and this factory method is used to re-initialize the block cipher class with
+        # each call to xcrypt().
         return self._aesmod.AES(self.key.encode(), iv)
 
     def decrypt(self, data):
@@ -238,7 +240,7 @@ class ZlibArchiveReader(ArchiveReader):
 
     This archive is used for bundling python modules inside the executable.
 
-    NOTE: The whole ZlibArchive (PYZ) is compressed so it is not necessary to compress single modules with zlib.
+    NOTE: The whole ZlibArchive (PYZ) is compressed, so it is not necessary to compress individual modules.
     """
     MAGIC = b'PYZ\0'
     TOCPOS = 8
@@ -262,7 +264,7 @@ class ZlibArchiveReader(ArchiveReader):
 
         super().__init__(path, offset)
 
-        # Try to import the key module. If the key module is not available then it means that encryption is disabled.
+        # Try to import the key module. Its lack of availability indicates that the encryption is disabled.
         try:
             import pyimod00_crypto_key  # noqa: F401
             self.cipher = Cipher()

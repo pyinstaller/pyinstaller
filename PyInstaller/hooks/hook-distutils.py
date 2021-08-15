@@ -11,9 +11,8 @@
 """
 `distutils`-specific post-import hook.
 
-This hook freezes the external `Makefile` and `pyconfig.h` files bundled with
-the active Python interpreter, which the `distutils.sysconfig` module parses at
-runtime for platform-specific metadata.
+This hook freezes the external `Makefile` and `pyconfig.h` files bundled with the active Python interpreter, which the
+`distutils.sysconfig` module parses at runtime for platform-specific metadata.
 """
 
 # From Python 3.6 and later ``distutils.sysconfig`` takes on the same behaviour as regular ``sysconfig`` of moving the

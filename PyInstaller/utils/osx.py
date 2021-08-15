@@ -9,14 +9,14 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 """
-Utils for Mac OS X platform.
+Utils for Mac OS platform.
 """
 
 import math
 import os
 import shutil
 
-from macholib.mach_o import (LC_BUILD_VERSION, LC_CODE_SIGNATURE, LC_SEGMENT_64, LC_SYMTAB, LC_VERSION_MIN_MACOSX)
+from macholib.mach_o import LC_BUILD_VERSION, LC_CODE_SIGNATURE, LC_SEGMENT_64, LC_SYMTAB, LC_VERSION_MIN_MACOSX
 from macholib.MachO import MachO
 
 import PyInstaller.log as logging
@@ -78,19 +78,15 @@ def _find_version_cmd(header):
     # The SDK version is stored in LC_BUILD_VERSION command (used when targeting the latest versions of macOS) or in
     # older LC_VERSION_MIN_MACOSX command. Check for presence of either.
     version_cmd = [cmd for cmd in header.commands if cmd[0].cmd in {LC_BUILD_VERSION, LC_VERSION_MIN_MACOSX}]
-    assert len(version_cmd) == 1, \
-        "Expected exactly one LC_BUILD_VERSION or " \
-        "LC_VERSION_MIN_MACOSX command!"
+    assert len(version_cmd) == 1, "Expected exactly one LC_BUILD_VERSION or LC_VERSION_MIN_MACOSX command!"
     return version_cmd[0]
 
 
 def get_macos_sdk_version(filename):
     """
-    Obtain the version of macOS SDK against which the given binary
-    was built.
+    Obtain the version of macOS SDK against which the given binary was built.
 
-    NOTE: currently, version is retrieved only from the first arch
-    slice in the binary.
+    NOTE: currently, version is retrieved only from the first arch slice in the binary.
 
     :return: (major, minor, revision) tuple
     """
@@ -110,10 +106,10 @@ def _hex_triplet(version):
 
 
 def macosx_version_min(filename: str) -> tuple:
-    """Get the -macosx-version-min used to compile a macOS binary.
+    """
+    Get the -macosx-version-min used to compile a macOS binary.
 
     For fat binaries, the minimum version is selected.
-
     """
     versions = []
     for header in MachO(filename).headers:
@@ -129,8 +125,7 @@ def macosx_version_min(filename: str) -> tuple:
 
 def set_macos_sdk_version(filename, major, minor, revision):
     """
-    Overwrite the macOS SDK version declared in the given binary with
-    the specified version.
+    Overwrite the macOS SDK version declared in the given binary with the specified version.
 
     NOTE: currently, only version in the first arch slice is modified.
     """
@@ -154,10 +149,10 @@ def fix_exe_for_code_signing(filename):
     """
     Fixes the Mach-O headers to make code signing possible.
 
-    Code signing on OS X does not work out of the box with embedding .pkg archive into the executable.
+    Code signing on Mac OS does not work out of the box with embedding .pkg archive into the executable.
 
     The fix is done this way:
-    - Make the embedded .pkg archive part of the Mach-O 'String Table'. 'String Table' is at end of the OS X exe file
+    - Make the embedded .pkg archive part of the Mach-O 'String Table'. 'String Table' is at end of the Mac OS exe file,
       so just change the size of the table to cover the end of the file.
     - Fix the size of the __LINKEDIT segment.
 
@@ -167,9 +162,7 @@ def fix_exe_for_code_signing(filename):
     create a dummy signature when executable is built. In such cases, that signature needs to be removed before this
     function is called.
 
-    Mach-O format specification:
-
-    http://developer.apple.com/documentation/Darwin/Reference/ManPages/man5/Mach-O.5.html
+    Mach-O format specification: http://developer.apple.com/documentation/Darwin/Reference/ManPages/man5/Mach-O.5.html
     """
     # Estimate the file size after data was appended
     file_size = os.path.getsize(filename)
@@ -194,18 +187,18 @@ def fix_exe_for_code_signing(filename):
     assert len(symtab_sec) == 1, "Expected exactly one SYMTAB section!"
     symtab_sec = symtab_sec[0][1]  # Take the symtab command entry
     # Sanity check; the string table is located at the end of the SYMTAB section, which in turn is the last section in
-    # the __LINKEDIT segment
+    # the __LINKEDIT segment.
     assert linkedit_seg.fileoff + linkedit_seg.filesize == symtab_sec.stroff + symtab_sec.strsize, \
         "Sanity check failed!"
 
-    # Compute the old/declared file size (header.offset is zero for single-arch thin binaries)
+    # Compute the old/declared file size (header.offset is zero for single-arch thin binaries).
     old_file_size = header.offset + linkedit_seg.fileoff + linkedit_seg.filesize
     delta = file_size - old_file_size
     # Expand the string table in SYMTAB section...
     symtab_sec.strsize += delta
-    # .. as well as its parent __LINEDIT segment
+    # .. as well as its parent __LINEDIT segment.
     linkedit_seg.filesize += delta
-    # Compute new vmsize by rounding filesize up to full page size
+    # Compute new vmsize by rounding filesize up to full page size.
     page_size = (0x4000 if _get_arch_string(header.header).startswith('arm64') else 0x1000)
     linkedit_seg.vmsize = math.ceil(linkedit_seg.filesize / page_size) * page_size
 
@@ -222,18 +215,17 @@ def fix_exe_for_code_signing(filename):
     if executable.fat:
         from macholib.mach_o import (FAT_MAGIC, FAT_MAGIC_64, fat_arch, fat_arch64, fat_header)
         with open(filename, 'rb+') as fp:
-            # Taken from MachO.load_fat() implementation. The fat
-            # header's signature has already been validated when we
+            # Taken from MachO.load_fat() implementation. The fat header's signature has already been validated when we
             # loaded the file for the first time.
             fat = fat_header.from_fileobj(fp)
             if fat.magic == FAT_MAGIC:
                 archs = [fat_arch.from_fileobj(fp) for i in range(fat.nfat_arch)]
             elif fat.magic == FAT_MAGIC_64:
                 archs = [fat_arch64.from_fileobj(fp) for i in range(fat.nfat_arch)]
-            # Adjust the size in the fat header for the last slice
+            # Adjust the size in the fat header for the last slice.
             arch = archs[-1]
             arch.size = file_size - arch.offset
-            # Now write the fat headers back to the file
+            # Now write the fat headers back to the file.
             fp.seek(0)
             fat.to_fileobj(fp)
             for arch in archs:
@@ -242,8 +234,8 @@ def fix_exe_for_code_signing(filename):
 
 def _get_arch_string(header):
     """
-    Converts cputype and cpusubtype from mach_o.mach_header_64 into arch string comparible with lipo/codesign. The
-    list of supported architectures can be found in man(1) arch.
+    Converts cputype and cpusubtype from mach_o.mach_header_64 into arch string comparible with lipo/codesign.
+    The list of supported architectures can be found in man(1) arch.
     """
     # NOTE: the constants below are taken from macholib.mach_o
     cputype = header.cputype
@@ -345,7 +337,8 @@ def sign_binary(filename, identity=None, entitlements_file=None, deep=False):
     retcode, stdout, stderr = exec_command_all(*cmd_args)
     if retcode != 0:
         logger.warning(
-            "codesign command (%r) failed with error code %d!\nstdout: %r\nstderr: %r", cmd_args, retcode, stdout,
-            stderr
+            "codesign command (%r) failed with error code %d!\n"
+            "stdout: %r\n"
+            "stderr: %r", cmd_args, retcode, stdout, stderr
         )
         raise SystemError("codesign failure!")

@@ -21,13 +21,13 @@ _orig_inspect_getsourcefile = inspect.getsourcefile
 def _pyi_getsourcefile(object):
     filename = inspect.getfile(object)
     if not os.path.isabs(filename):
-        # Check if given filename matches the basename of __main__'s __file__
+        # Check if given filename matches the basename of __main__'s __file__.
         main_file = sys.modules['__main__'].__file__
         if filename == os.path.basename(main_file):
             return main_file
 
         # If filename ends with .py suffix and does not correspond to frozen entry-point script, convert it to
-        # corresponding .pyc in sys._MEIPASS
+        # corresponding .pyc in sys._MEIPASS.
         if filename.endswith('.py'):
             filename = os.path.normpath(os.path.join(sys._MEIPASS, filename + 'c'))
             # Ensure the relative path did not try to jump out of sys._MEIPASS, just in case...
@@ -37,7 +37,7 @@ def _pyi_getsourcefile(object):
         # If filename is already PyInstaller-compatible, prevent any further processing (i.e., with original
         # implementation).
         return filename
-    # Use original implementation as a fallback
+    # Use original implementation as a fallback.
     return _orig_inspect_getsourcefile(object)
 
 

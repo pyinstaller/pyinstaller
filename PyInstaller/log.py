@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 """
-Logging module for PyInstaller
+Logging module for PyInstaller.
 """
 
 __all__ = ['getLogger', 'INFO', 'WARN', 'DEBUG', 'TRACE', 'ERROR', 'FATAL']
@@ -33,10 +33,8 @@ def __add_options(parser):
         metavar="LEVEL",
         default='INFO',
         dest='loglevel',
-        help=(
-            'Amount of detail in build-time console messages. LEVEL may be one of %s (default: %%(default)s).' %
-            ', '.join(levels)
-        ),
+        help='Amount of detail in build-time console messages. LEVEL may be one of %s (default: %%(default)s).' %
+        ', '.join(levels),
     )
 
 

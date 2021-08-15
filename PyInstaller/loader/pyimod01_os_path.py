@@ -27,7 +27,7 @@ _mindirlen = 0
 # modules to be reimported by that same program (i.e., plugins), because the cache is only built once at the beginning,
 # and never updated. So, we must really list the directory again.
 
-if 'posix' in _builtin_names:  # For Linux, Unix, Mac OS X
+if 'posix' in _builtin_names:  # For Linux, Unix, Mac OS
     from posix import environ as os_environ
     from posix import listdir as os_listdir
     os_sep = '/'
@@ -38,7 +38,7 @@ elif 'nt' in _builtin_names:  # For Windows
     os_sep = '\\'
     _mindirlen = 3
 else:
-    raise ImportError('No os specific module found')
+    raise ImportError('No OS-specific module found!')
 
 
 # Wrap os.path.join()

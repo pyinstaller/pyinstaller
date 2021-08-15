@@ -17,18 +17,16 @@ from PyInstaller.utils.hooks import eval_statement
 
 def pre_safe_import_module(api):
     real_to_six_module_name = eval_statement(
-        '''
+        """
         import urllib3.packages.six as six
         print('{')
 
         for moved in six._moved_attributes:
             if isinstance(moved, (six.MovedModule, six.MovedAttribute)):
-                print('  %r: %r,' % (
-                    moved.mod,
-                    'urllib3.packages.six.moves.' + moved.name))
+                print('  %r: %r,' % (moved.mod, 'urllib3.packages.six.moves.' + moved.name))
 
         print('}')
-        '''
+        """
     )
     if isinstance(real_to_six_module_name, str):
         raise SystemExit("pre-safe-import-module hook failed, needs fixing.")

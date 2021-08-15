@@ -37,7 +37,6 @@ except ValueError:
     libdir = None
 
 if libdir:
-
     # Distributions either package gdk-pixbuf-query-loaders in the GI libs directory (not on the path), or on the path
     # with or without a -x64 suffix depending on the architecture
     cmds = [
@@ -92,8 +91,8 @@ if libdir:
             # we also move the package structure to point to lib/gdk-pixbuf instead of lib/gdk-pixbuf-2.0/2.10.0 in
             # order to make compatible for OSX application signing.
             #
-            # On OSX we use @executable_path to specify a path relative to the generated bundle. However, on non-Windows
-            # we need to rewrite the loader cache because it isn't relocatable by default. See
+            # On Mac OS we use @executable_path to specify a path relative to the generated bundle. However, on
+            # non-Windows, we need to rewrite the loader cache because it is not relocatable by default. See
             # https://bugzilla.gnome.org/show_bug.cgi?id=737523
             #
             # To make it easier to rewrite, we just always write @executable_path, since its significantly easier to

@@ -19,8 +19,7 @@ from PyInstaller.utils.hooks.tcl_tk import collect_tcl_tk_files
 def hook(hook_api):
     # Use a hook-function to get the module's attr:`__file__` easily.
     """
-    Freeze all external Tcl/Tk data files if this is a supported platform *or*
-    log a non-fatal error otherwise.
+    Freeze all external Tcl/Tk data files if this is a supported platform *or* log a non-fatal error otherwise.
     """
     if compat.is_win or compat.is_darwin or compat.is_unix:
         # collect_tcl_tk_files() returns a Tree, so we need to store it into `hook_api.datas` in order to prevent

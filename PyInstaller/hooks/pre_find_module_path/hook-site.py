@@ -11,11 +11,10 @@
 """
 Replace the code of real 'site' module by fake code doing nothing.
 
-The real 'site' does some magic to find paths to other possible
-Python modules. We do not want this behaviour for frozen applications.
+The real 'site' does some magic to find paths to other possible Python modules.
+We do not want this behaviour for frozen applications.
 
-Fake 'site' makes PyInstaller to work with distutils and to work inside
-virtualenv environment.
+Fake 'site' makes PyInstaller to work with distutils and to work inside virtualenv environment.
 """
 
 import os
@@ -25,7 +24,7 @@ from PyInstaller.utils.hooks import logger
 
 
 def pre_find_module_path(api):
-    # FIXME: For reusability, move this into a new PyInstaller.configure.get_fake_modules_dir() utility function.
+    # FIXME: for reusability, move this into a new PyInstaller.configure.get_fake_modules_dir() utility function.
     # Absolute path of the faked sub-package.
     fake_dir = os.path.join(PACKAGEPATH, 'fake-modules')
 

@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 """
-This module contains various helper functions for git DVCS
+This module contains various helper functions for git DVCS.
 """
 
 import os
@@ -47,7 +47,7 @@ def get_repo_revision():
             tag, changes, rev = recent.rsplit('-', 2)
         if changes == '0':
             return ''
-        # According to pep440 local version identifier starts with '+'.
+        # According to PEP440, local version identifier starts with '+'.
         return '+' + rev
     except (FileNotFoundError, WindowsError):
         # Be silent when git command is not found.

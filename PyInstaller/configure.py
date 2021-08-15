@@ -39,7 +39,7 @@ def test_UPX(config, upx_dir):
                 pass
             hasUPX = tuple(map(int, v.split(".")))
             if is_win and hasUPX < (1, 92):
-                logger.error('UPX is too old! Python 2.4 under Windows requires UPX 1.92+')
+                logger.error('UPX is too old! Python 2.4 under Windows requires UPX 1.92+.')
                 hasUPX = 0
     except Exception as e:
         if isinstance(e, OSError) and e.errno == 2:
@@ -76,7 +76,7 @@ def _get_pyinst_cache_dir():
         if not cache_dir:
             cache_dir = os.path.expanduser('~/.cache')
     cache_dir = os.path.join(cache_dir, 'pyinstaller')
-    # Move old cache-dir, if any, to now location
+    # Move old cache-dir, if any, to new location.
     if old_cache_dir and not os.path.exists(cache_dir):
         old_cache_dir = os.path.join(old_cache_dir, 'pyinstaller')
         if os.path.exists(old_cache_dir):

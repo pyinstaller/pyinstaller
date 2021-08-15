@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 """
-Viewer for archives packaged by archive.py
+Viewer for archives packaged by archive.py.
 """
 
 import argparse
@@ -29,7 +29,6 @@ cleanup = []
 
 
 def main(name, brief, debug, rec_debug, **unused_options):
-
     global stack
 
     if not os.path.isfile(name):
@@ -108,12 +107,12 @@ def do_cleanup():
         try:
             os.remove(filename)
         except Exception as e:
-            print("couldn't delete", filename, e.args, file=sys.stderr)
+            print("could not delete", filename, e.args, file=sys.stderr)
     cleanup = []
 
 
 def usage():
-    print("U: go Up one level", file=sys.stderr)
+    print("U: go up one level", file=sys.stderr)
     print("O <name>: open embedded archive name", file=sys.stderr)
     print("X <name>: extract name", file=sys.stderr)
     print("Q: quit", file=sys.stderr)
@@ -215,9 +214,9 @@ def get_archive_content(filename):
 
 class ZlibArchive(pyimod02_archive.ZlibArchiveReader):
     def checkmagic(self):
-        """ Overridable.
-            Check to see if the file object self.lib actually has a file
-            we understand.
+        """
+        Overridable.
+        Check to see if the file object self.lib actually has a file we understand.
         """
         self.lib.seek(self.start)  # default - magic is at start of file.
         if self.lib.read(len(self.MAGIC)) != self.MAGIC:
@@ -243,8 +242,7 @@ def run():
         default=False,
         action='store_true',
         dest='rec_debug',
-        help='Recursively print an archive log (default: %(default)s). '
-        'Can be combined with -r',
+        help='Recursively print an archive log (default: %(default)s). Can be combined with -r',
     )
     parser.add_argument(
         '-b',
@@ -252,14 +250,13 @@ def run():
         default=False,
         action='store_true',
         dest='brief',
-        help='Print only file name. (default: %(default)s). '
-        'Can be combined with -r',
+        help='Print only file name. (default: %(default)s). Can be combined with -r',
     )
     PyInstaller.log.__add_options(parser)
     parser.add_argument(
         'name',
         metavar='pyi_archive',
-        help="pyinstaller archive to show content of",
+        help="PyInstaller archive to show content of",
     )
 
     args = parser.parse_args()

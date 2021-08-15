@@ -11,8 +11,8 @@
 """
 This module contains code useful for doing releases of PyInstaller.
 
-PyInstaller uses package 'zest.releaser' to automate releases. This module
-contains mostly customization for the release process.
+PyInstaller uses package 'zest.releaser' to automate releases. This module contains mostly customization for the
+release process.
 
 zest.releaser allows customization by exposing some entry points. For details:
 

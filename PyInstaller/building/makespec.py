@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 """
-Automatically build spec files containing a description of the project
+Automatically build spec files containing a description of the project.
 """
 
 import argparse
@@ -91,8 +91,8 @@ def make_variable_path(filename, conversions=path_conversions):
     return None, filename
 
 
-# An object used in place of a "path string" which knows how to repr() itself using variable names instead of hard-coded
-# paths.
+# An object used in place of a "path string", which knows how to repr() itself using variable names instead of
+# hard-coded paths.
 class Path:
     def __init__(self, *parts):
         self.path = os.path.join(*parts)
@@ -134,8 +134,7 @@ class Preamble:
         if self.content:
             self.content += ['']  # empty line to separate the section
         # Variables
-        if collect_data or copy_metadata or collect_all \
-                or recursive_copy_metadata:
+        if collect_data or copy_metadata or collect_all or recursive_copy_metadata:
             self._add_var('datas', self.datas)
             self.datas = 'datas'  # switch to variable
         if collect_binaries or collect_all:
@@ -191,7 +190,7 @@ class Preamble:
     def _add_collect_all(self, name):
         self.content += [
             'tmp_ret = collect_all(\'{0}\')'.format(name),
-            'datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]'  # noqa: E501
+            'datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]'
         ]
 
 
@@ -256,11 +255,9 @@ def __add_options(parser):
         metavar="DIR",
         action="append",
         default=[],
-        help="A path to search for imports (like using PYTHONPATH). "
-        "Multiple paths are allowed, separated "
-        "by ``%s``, or use this option multiple times. "
-        "Equivalent to supplying the ``pathex`` argument in "
-        "the spec file." % repr(os.pathsep),
+        help="A path to search for imports (like using PYTHONPATH). Multiple paths are allowed, separated by ``%s``, "
+        "or use this option multiple times. Equivalent to supplying the ``pathex`` argument in the spec file." %
+        repr(os.pathsep),
     )
     g.add_argument(
         '--hidden-import',
@@ -269,8 +266,7 @@ def __add_options(parser):
         default=[],
         metavar="MODULENAME",
         dest='hiddenimports',
-        help='Name an import not visible in the code of the script(s). '
-        'This option can be used multiple times.',
+        help='Name an import not visible in the code of the script(s). This option can be used multiple times.',
     )
     g.add_argument(
         '--collect-submodules',
@@ -278,8 +274,7 @@ def __add_options(parser):
         default=[],
         metavar="MODULENAME",
         dest='collect_submodules',
-        help='Collect all submodules from the specified package '
-        'or module. This option can be used multiple times.',
+        help='Collect all submodules from the specified package or module. This option can be used multiple times.',
     )
     g.add_argument(
         '--collect-data',
@@ -288,8 +283,7 @@ def __add_options(parser):
         default=[],
         metavar="MODULENAME",
         dest='collect_data',
-        help='Collect all data from the specified package or '
-        ' module. This option can be used multiple times.',
+        help='Collect all data from the specified package or module. This option can be used multiple times.',
     )
     g.add_argument(
         '--collect-binaries',
@@ -297,8 +291,7 @@ def __add_options(parser):
         default=[],
         metavar="MODULENAME",
         dest='collect_binaries',
-        help='Collect all binaries from the specified package or '
-        ' module. This option can be used multiple times.',
+        help='Collect all binaries from the specified package or module. This option can be used multiple times.',
     )
     g.add_argument(
         '--collect-all',
@@ -306,8 +299,7 @@ def __add_options(parser):
         default=[],
         metavar="MODULENAME",
         dest='collect_all',
-        help='Collect all submodules, data files, and binaries '
-        'from the specified package or module. This option can '
+        help='Collect all submodules, data files, and binaries from the specified package or module. This option can '
         'be used multiple times.',
     )
     g.add_argument(
@@ -316,8 +308,7 @@ def __add_options(parser):
         default=[],
         metavar="PACKAGENAME",
         dest='copy_metadata',
-        help='Copy metadata for the specified package. '
-        'This option can be used multiple times.',
+        help='Copy metadata for the specified package. This option can be used multiple times.',
     )
     g.add_argument(
         '--recursive-copy-metadata',
@@ -325,37 +316,32 @@ def __add_options(parser):
         default=[],
         metavar="PACKAGENAME",
         dest='recursive_copy_metadata',
-        help='Copy metadata for the specified package and all its '
-        'dependencies. This option can be used multiple times.',
+        help='Copy metadata for the specified package and all its dependencies. This option can be used multiple '
+        'times.',
     )
     g.add_argument(
         "--additional-hooks-dir",
         action="append",
         dest="hookspath",
         default=[],
-        help="An additional path to search for hooks. "
-        "This option can be used multiple times.",
+        help="An additional path to search for hooks. This option can be used multiple times.",
     )
     g.add_argument(
         '--runtime-hook',
         action='append',
         dest='runtime_hooks',
         default=[],
-        help='Path to a custom runtime hook file. A runtime hook '
-        'is code that is bundled with the executable and '
-        'is executed before any other code or module '
-        'to set up special features of the runtime environment. '
-        'This option can be used multiple times.',
+        help='Path to a custom runtime hook file. A runtime hook is code that is bundled with the executable and is '
+        'executed before any other code or module to set up special features of the runtime environment. This option '
+        'can be used multiple times.',
     )
     g.add_argument(
         '--exclude-module',
         dest='excludes',
         action='append',
         default=[],
-        help='Optional module or package (the Python name, '
-        'not the path name) that will be ignored (as though '
-        'it was not found). '
-        'This option can be used multiple times.',
+        help='Optional module or package (the Python name, not the path name) that will be ignored (as though it was '
+        'not found). This option can be used multiple times.',
     )
     g.add_argument(
         '--key',
@@ -366,29 +352,24 @@ def __add_options(parser):
         '--splash',
         dest='splash',
         metavar="IMAGE_FILE",
-        help="(EXPERIMENTAL) Add an splash screen with the image"
-        " IMAGE_FILE to the application. The splash screen"
-        " can show progress updates while unpacking.",
+        help="(EXPERIMENTAL) Add an splash screen with the image IMAGE_FILE to the application. The splash screen can "
+        "display progress updates while unpacking.",
     )
 
     g = parser.add_argument_group('How to generate')
     g.add_argument(
         "-d",
         "--debug",
-        # If this option is not specified, then its default value is
-        # an empty list (no debug options selected).
+        # If this option is not specified, then its default value is an empty list (no debug options selected).
         default=[],
-        # Note that ``nargs`` is omitted. This produces a single item
-        # not stored in a list, as opposed to list containing one
-        # item, per `nargs <https://docs.python.org/3/library/argparse.html#nargs>`_.
+        # Note that ``nargs`` is omitted. This produces a single item not stored in a list, as opposed to a list
+        # containing one item, as per `nargs <https://docs.python.org/3/library/argparse.html#nargs>`_.
         nargs=None,
         # The options specified must come from this list.
         choices=DEBUG_ALL_CHOICE + DEBUG_ARGUMENT_CHOICES,
-        # Append choice, rather than storing them (which would
-        # overwrite any previous selections).
+        # Append choice, rather than storing them (which would overwrite any previous selections).
         action='append',
-        # Allow newlines in the help text; see the
-        # ``_SmartFormatter`` in ``__main__.py``.
+        # Allow newlines in the help text; see the ``_SmartFormatter`` in ``__main__.py``.
         help=(
             "R|Provide assistance with debugging a frozen\n"
             "application. This argument may be provided multiple\n"
@@ -419,26 +400,22 @@ def __add_options(parser):
         "-s",
         "--strip",
         action="store_true",
-        help="Apply a symbol-table strip to the executable and shared libs "
-        "(not recommended for Windows)",
+        help="Apply a symbol-table strip to the executable and shared libs (not recommended for Windows)",
     )
     g.add_argument(
         "--noupx",
         action="store_true",
         default=False,
-        help="Do not use UPX even if it is available "
-        "(works differently between Windows and *nix)",
+        help="Do not use UPX even if it is available (works differently between Windows and *nix)",
     )
     g.add_argument(
         "--upx-exclude",
         dest="upx_exclude",
         metavar="FILE",
         action="append",
-        help="Prevent a binary from being compressed when using "
-        "upx. This is typically used if upx corrupts certain "
-        "binaries during compression. "
-        "FILE is the filename of the binary without path. "
-        "This option can be used multiple times.",
+        help="Prevent a binary from being compressed when using upx. This is typically used if upx corrupts certain "
+        "binaries during compression. FILE is the filename of the binary without path. This option can be used "
+        "multiple times.",
     )
 
     g = parser.add_argument_group('Windows and Mac OS X specific options')
@@ -449,9 +426,8 @@ def __add_options(parser):
         dest="console",
         action="store_true",
         default=True,
-        help="Open a console window for standard i/o (default). "
-        "On Windows this option will have no effect if the "
-        "first script is a '.pyw' file.",
+        help="Open a console window for standard i/o (default). On Windows this option has no effect if the first "
+        "script is a '.pyw' file.",
     )
     g.add_argument(
         "-w",
@@ -459,35 +435,26 @@ def __add_options(parser):
         "--noconsole",
         dest="console",
         action="store_false",
-        help="Windows and Mac OS X: do not provide a console window "
-        "for standard i/o. "
-        "On Mac OS X this also triggers building an OS X .app bundle. "
-        "On Windows this option will be set if the first "
-        "script is a '.pyw' file. "
-        "This option is ignored in *NIX systems.",
+        help="Windows and Mac OS X: do not provide a console window for standard i/o. On Mac OS this also triggers "
+        "building a Mac OS .app bundle. On Windows this option is automatically set if the first script is a '.pyw' "
+        "file. This option is ignored on *NIX systems.",
     )
     g.add_argument(
         "-i",
         "--icon",
         dest="icon_file",
         metavar='<FILE.ico or FILE.exe,ID or FILE.icns or "NONE">',
-        help="FILE.ico: apply that icon to a Windows executable. "
-        "FILE.exe,ID, extract the icon with ID from an exe. "
-        "FILE.icns: apply the icon to the "
-        ".app bundle on Mac OS X. "
-        'Use "NONE" to not apply any icon, '
-        "thereby making the OS to show some default "
-        "(default: apply PyInstaller's icon)",
+        help="FILE.ico: apply the icon to a Windows executable. FILE.exe,ID: extract the icon with ID from an exe. "
+        "FILE.icns: apply the icon to the .app bundle on Mac OS. Use \"NONE\" to not apply any icon, thereby making "
+        "the OS to show some default (default: apply PyInstaller's icon)",
     )
     g.add_argument(
         "--disable-windowed-traceback",
         dest="disable_windowed_traceback",
         action="store_true",
         default=False,
-        help="Disable traceback dump of unhandled exception in "
-        "windowed (noconsole) mode (Windows and macOS only), "
-        "and instead display a message that this feature is "
-        "disabled.",
+        help="Disable traceback dump of unhandled exception in windowed (noconsole) mode (Windows and macOS only), "
+        "and instead display a message that this feature is disabled.",
     )
 
     g = parser.add_argument_group('Windows specific options')
@@ -495,13 +462,13 @@ def __add_options(parser):
         "--version-file",
         dest="version_file",
         metavar="FILE",
-        help="add a version resource from FILE to the exe",
+        help="Add a version resource from FILE to the exe.",
     )
     g.add_argument(
         "-m",
         "--manifest",
         metavar="<FILE or XML>",
-        help="add manifest FILE or XML to the exe",
+        help="Add manifest FILE or XML to the exe.",
     )
     g.add_argument(
         "-r",
@@ -510,34 +477,25 @@ def __add_options(parser):
         metavar="RESOURCE",
         action="append",
         default=[],
-        help="Add or update a resource to a Windows executable. "
-        "The RESOURCE is one to four items, "
-        "FILE[,TYPE[,NAME[,LANGUAGE]]]. "
-        "FILE can be a "
-        "data file or an exe/dll. For data files, at least "
-        "TYPE and NAME must be specified. LANGUAGE defaults "
-        "to 0 or may be specified as wildcard * to update all "
-        "resources of the given TYPE and NAME. For exe/dll "
-        "files, all resources from FILE will be added/updated "
-        "to the final executable if TYPE, NAME and LANGUAGE "
-        "are omitted or specified as wildcard *."
-        "This option can be used multiple times.",
+        help="Add or update a resource to a Windows executable. The RESOURCE is one to four items, "
+        "FILE[,TYPE[,NAME[,LANGUAGE]]]. FILE can be a data file or an exe/dll. For data files, at least TYPE and NAME "
+        "must be specified. LANGUAGE defaults to 0 or may be specified as wildcard * to update all resources of the "
+        "given TYPE and NAME. For exe/dll files, all resources from FILE will be added/updated to the final executable "
+        "if TYPE, NAME and LANGUAGE are omitted or specified as wildcard *. This option can be used multiple times.",
     )
     g.add_argument(
         '--uac-admin',
         dest='uac_admin',
         action="store_true",
         default=False,
-        help='Using this option creates a Manifest '
-        'which will request elevation upon application restart.',
+        help="Using this option creates a Manifest that will request elevation upon application start.",
     )
     g.add_argument(
         '--uac-uiaccess',
         dest='uac_uiaccess',
         action="store_true",
         default=False,
-        help='Using this option allows an elevated application to '
-        'work with Remote Desktop.',
+        help="Using this option allows an elevated application to work with Remote Desktop.",
     )
 
     g = parser.add_argument_group('Windows Side-by-side Assembly searching options (advanced)')
@@ -545,30 +503,26 @@ def __add_options(parser):
         "--win-private-assemblies",
         dest="win_private_assemblies",
         action="store_true",
-        help="Any Shared Assemblies bundled into the application "
-        "will be changed into Private Assemblies. This means "
-        "the exact versions of these assemblies will always "
-        "be used, and any newer versions installed on user "
-        "machines at the system level will be ignored.",
+        help="Any Shared Assemblies bundled into the application will be changed into Private Assemblies. This means "
+        "the exact versions of these assemblies will always be used, and any newer versions installed on user machines "
+        "at the system level will be ignored.",
     )
     g.add_argument(
         "--win-no-prefer-redirects",
         dest="win_no_prefer_redirects",
         action="store_true",
-        help="While searching for Shared or Private Assemblies to "
-        "bundle into the application, PyInstaller will prefer "
-        "not to follow policies that redirect to newer versions, "
-        "and will try to bundle the exact versions of the assembly.",
+        help="While searching for Shared or Private Assemblies to bundle into the application, PyInstaller will "
+        "prefer not to follow policies that redirect to newer versions, and will try to bundle the exact versions of "
+        "the assembly.",
     )
 
-    g = parser.add_argument_group('Mac OS X specific options')
+    g = parser.add_argument_group('Mac OS specific options')
     g.add_argument(
         '--osx-bundle-identifier',
         dest='bundle_identifier',
-        help='Mac OS X .app bundle identifier is used as the default unique program '
-        'name for code signing purposes. The usual form is a hierarchical name '
-        'in reverse DNS notation. For example: com.mycompany.department.appname '
-        '(default: first script\'s basename)',
+        help="Mac OS .app bundle identifier is used as the default unique program name for code signing purposes. "
+        "The usual form is a hierarchical name in reverse DNS notation. For example: com.mycompany.department.appname "
+        "(default: first script's basename)",
     )
 
     g.add_argument(
@@ -577,13 +531,9 @@ def __add_options(parser):
         dest='target_arch',
         metavar='ARCH',
         default=None,
-        help="Target architecture (macOS only; valid values: "
-        "x86_64, arm64, universal2). Enables switching "
-        "between universal2 and single-arch version of "
-        "frozen application (provided python installation "
-        "supports the target architecture). If not target "
-        "architecture is not specified, the current running "
-        "architecture is targeted.",
+        help="Target architecture (macOS only; valid values: x86_64, arm64, universal2). Enables switching between "
+        "universal2 and single-arch version of frozen application (provided python installation supports the target "
+        "architecture). If not target architecture is not specified, the current running architecture is targeted.",
     )
 
     g.add_argument(
@@ -591,10 +541,8 @@ def __add_options(parser):
         dest='codesign_identity',
         metavar='IDENTITY',
         default=None,
-        help="Code signing identity (macOS only). Use the provided "
-        "identity to sign collected binaries and generated "
-        "executable. If signing identity is not provided, "
-        "ad-hoc signing is performed instead.",
+        help="Code signing identity (macOS only). Use the provided identity to sign collected binaries and generated "
+        "executable. If signing identity is not provided, ad-hoc signing is performed instead.",
     )
 
     g.add_argument(
@@ -602,8 +550,7 @@ def __add_options(parser):
         dest='entitlements_file',
         metavar='FILENAME',
         default=None,
-        help="Entitlements file to use when code-signing the "
-        "collected binaries (macOS only).",
+        help="Entitlements file to use when code-signing the collected binaries (macOS only).",
     )
 
     g = parser.add_argument_group('Rarely used special options')
@@ -611,26 +558,17 @@ def __add_options(parser):
         "--runtime-tmpdir",
         dest="runtime_tmpdir",
         metavar="PATH",
-        help="Where to extract libraries and support files in "
-        "`onefile`-mode. "
-        "If this option is given, the bootloader will ignore "
-        "any temp-folder location defined by the run-time OS. "
-        "The ``_MEIxxxxxx``-folder will be created here. "
-        "Please use this option only if you know what you "
-        "are doing.",
+        help="Where to extract libraries and support files in `onefile`-mode. If this option is given, the bootloader "
+        "will ignore any temp-folder location defined by the run-time OS. The ``_MEIxxxxxx``-folder will be created "
+        "here. Please use this option only if you know what you are doing.",
     )
     g.add_argument(
         "--bootloader-ignore-signals",
         action="store_true",
         default=False,
-        help=(
-            "Tell the bootloader to ignore signals rather "
-            "than forwarding them to the child process. "
-            "Useful in situations where e.g. a supervisor "
-            "process signals both the bootloader and child "
-            "(e.g. via a process group) to avoid signalling "
-            "the child twice."
-        ),
+        help="Tell the bootloader to ignore signals rather than forwarding them to the child process. Useful in "
+        "situations where for example a supervisor process signals both the bootloader and the child (e.g., via a "
+        "process group) to avoid signalling the child twice.",
     )
 
 
@@ -686,8 +624,7 @@ def main(
     else:
         # Expand tilde to user's home directory.
         specpath = expand_path(specpath)
-    # If cwd is the root directory of PyInstaller then generate .spec file
-    # subdirectory ./appname/.
+    # If cwd is the root directory of PyInstaller, generate the .spec file in ./appname/ subdirectory.
     if specpath == HOMEPATH:
         specpath = os.path.join(HOMEPATH, name)
     # Create directory tree if missing.
@@ -709,13 +646,13 @@ def main(
         exe_options = "%s, uac_uiaccess=%s" % (exe_options, 'True')
     if icon_file:
         # Icon file for Windows.
-        # On Windows default icon is embedded in the bootloader executable.
+        # On Windows, the default icon is embedded in the bootloader executable.
         exe_options = "%s, icon='%s'" % (exe_options, quote_win_filepath(icon_file))
-        # Icon file for OSX.
+        # Icon file for Mac OS.
         # We need to encapsulate it into apostrofes.
         icon_file = "'%s'" % icon_file
     else:
-        # On OSX default icon has to be copied into the .app bundle.
+        # On Mac OS, the default icon has to be copied into the .app bundle.
         # The the text value 'None' means - use default icon.
         icon_file = 'None'
 
@@ -747,7 +684,7 @@ def main(
     scripts = list(map(Path, scripts))
 
     if key:
-        # Tries to import tinyaes since we need it for bytecode obfuscation.
+        # Try to import tinyaes as we need it for bytecode obfuscation.
         try:
             import tinyaes  # noqa: F401 (test import)
         except ImportError:
@@ -775,10 +712,7 @@ def main(
 
     if splash:
         splash_init = splashtmpl % {'splash_image': splash}
-        splash_binaries = (
-            "\n" + " " * (10 if onefile else 15)  # noqa: W503
-            + "splash.binaries,"
-        )  # noqa: W503
+        splash_binaries = "\n" + " " * (10 if onefile else 15) + "splash.binaries,"
         splash_target = "\n" + " " * 10 + "splash,"
     else:
         splash_init = splash_binaries = splash_target = ""
@@ -807,10 +741,10 @@ def main(
         'runtime_hooks': runtime_hooks or [],
         # List of modules/pakages to ignore.
         'excludes': excludes or [],
-        # only Windows and Mac OS X distinguish windowed and console apps
+        # only Windows and Mac OS distinguish windowed and console apps
         'console': console,
         'disable_windowed_traceback': disable_windowed_traceback,
-        # Icon filename. Only OSX uses this item.
+        # Icon filename. Only Mac OS uses this item.
         'icon': icon_file,
         # .app bundle identifier. Only OSX uses this item.
         'bundle_identifier': bundle_identifier,
@@ -834,12 +768,12 @@ def main(
     with open(specfnm, 'w', encoding='utf-8') as specfile:
         if onefile:
             specfile.write(onefiletmplt % d)
-            # For OSX create .app bundle.
+            # For Mac OS create .app bundle.
             if is_darwin and not console:
                 specfile.write(bundleexetmplt % d)
         else:
             specfile.write(onedirtmplt % d)
-            # For OSX create .app bundle.
+            # For Mac OS create .app bundle.
             if is_darwin and not console:
                 specfile.write(bundletmplt % d)
 

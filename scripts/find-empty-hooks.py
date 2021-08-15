@@ -24,6 +24,7 @@ Proposed usage::
   find PyInstaller/hooks/ -size -2c -print -delete
 
 """
+
 import glob
 import os
 import sys

@@ -15,16 +15,16 @@ class ExecCommandFailed(SystemExit):
 
 
 class HookError(Exception):
-    """Base class for hook related errors."""
+    """
+    Base class for hook related errors.
+    """
     pass
 
 
 class ImportErrorWhenRunningHook(HookError):
     def __str__(self):
         return (
-            "Failed to import module {0} required by hook for module {1}. "
-            "Please check whether module {0} actually exists and whether "
-            "the hook is compatible with your version of {1}: You might "
-            "want to read more about hooks in the manual and provide "
-            "a pull-request to improve PyInstaller.".format(self.args[0], self.args[1])
+            "Failed to import module {0} required by hook for module {1}. Please check whether module {0} actually "
+            "exists and whether the hook is compatible with your version of {1}: You might want to read more about "
+            "hooks in the manual and provide a pull-request to improve PyInstaller.".format(self.args[0], self.args[1])
         )

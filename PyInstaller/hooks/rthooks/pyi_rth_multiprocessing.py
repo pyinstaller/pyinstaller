@@ -66,8 +66,7 @@ else:
 class FrozenSupportMixIn:
     def __init__(self, *args, **kw):
         if hasattr(sys, 'frozen'):
-            # We have to set original _MEIPASS2 value from sys._MEIPASS
-            # to get --onefile mode working.
+            # We have to set original _MEIPASS2 value from sys._MEIPASS to get --onefile mode working.
             os.putenv('_MEIPASS2', sys._MEIPASS)  # @UndefinedVariable
         try:
             super().__init__(*args, **kw)

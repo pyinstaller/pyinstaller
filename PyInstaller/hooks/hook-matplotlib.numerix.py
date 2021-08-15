@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 """
-The matplotlib.numerix package sneaks these imports in under the radar:
+The matplotlib.numerix package sneaks these imports in under the radar.
 """
 
 hiddenimports = [

@@ -38,10 +38,11 @@ SYS_PREFIX = pathlib.PurePath(sys._MEIPASS)
 
 
 class _TocFilesystem:
-    """A prefix tree implementation for embedded filesystem reconstruction."""
+    """
+    A prefix tree implementation for embedded filesystem reconstruction.
+    """
     def __init__(self, toc_files, toc_dirs=[]):
-        # Reconstruct the fileystem hierarchy by building a prefix tree from
-        # the given file and directory paths
+        # Reconstruct the fileystem hierarchy by building a prefix tree from the given file and directory paths.
         self._tree = dict()
 
         # Data files
@@ -92,7 +93,9 @@ _toc_tree_cache = {}
 
 
 class PyiFrozenProvider(pkg_resources.NullProvider):
-    """Custom pkg_resourvces provider for FrozenImporter."""
+    """
+    Custom pkg_resourvces provider for FrozenImporter.
+    """
     def __init__(self, module):
         super().__init__(module)
 
@@ -100,13 +103,13 @@ class PyiFrozenProvider(pkg_resources.NullProvider):
         # is a submodule in a package, we need the path to the parent package.
         self._pkg_path = pathlib.PurePath(module.__file__).parent
 
-        # Defer initialization of PYZ-embedded resources tree to the first access
+        # Defer initialization of PYZ-embedded resources tree to the first access.
         self._embedded_tree = None
 
     def _init_embedded_tree(self, rel_pkg_path, pkg_name):
         # Collect relevant entries from TOC. We are interested in either files that are located in the package/module's
         # directory (data files) or in packages that are prefixed with package/module's name (to reconstruct subpackage
-        # directories)
+        # directories).
         data_files = []
         package_dirs = []
         for entry in self.loader.toc:
@@ -125,15 +128,13 @@ class PyiFrozenProvider(pkg_resources.NullProvider):
     @property
     def embedded_tree(self):
         if self._embedded_tree is None:
-            # Construct a path relative to _MEIPASS directory for
-            # searching the TOC
+            # Construct a path relative to _MEIPASS directory for searching the TOC.
             rel_pkg_path = self._pkg_path.relative_to(SYS_PREFIX)
 
-            # Reconstruct package name prefix (use package path to
-            # obtain correct prefix in case of a module)
+            # Reconstruct package name prefix (use package path to obtain correct prefix in case of a module).
             pkg_name = '.'.join(rel_pkg_path.parts)
 
-            # Initialize and cache the tree, if necessary
+            # Initialize and cache the tree, if necessary.
             if pkg_name not in _toc_tree_cache:
                 _toc_tree_cache[pkg_name] = \
                     self._init_embedded_tree(rel_pkg_path, pkg_name)
@@ -143,14 +144,14 @@ class PyiFrozenProvider(pkg_resources.NullProvider):
     def _normalize_path(self, path):
         # Avoid using Path.resolve(), because it resolves symlinks. This is undesirable, because the pure path in
         # self._pkg_path does not have symlinks resolved, so comparison between the two would be faulty. So use
-        # os.path.abspath() instead to normalize the path
+        # os.path.abspath() instead to normalize the path.
         return pathlib.Path(os.path.abspath(path))
 
     def _is_relative_to_package(self, path):
         return path == self._pkg_path or self._pkg_path in path.parents
 
     def _has(self, path):
-        # Prevent access outside the package
+        # Prevent access outside the package.
         path = self._normalize_path(path)
         if not self._is_relative_to_package(path):
             return False
@@ -162,7 +163,7 @@ class PyiFrozenProvider(pkg_resources.NullProvider):
         return self.embedded_tree.path_exists(rel_path)
 
     def _isdir(self, path):
-        # Prevent access outside the package
+        # Prevent access outside the package.
         path = self._normalize_path(path)
         if not self._is_relative_to_package(path):
             return False
@@ -171,25 +172,25 @@ class PyiFrozenProvider(pkg_resources.NullProvider):
         rel_path = path.relative_to(SYS_PREFIX)
         node = self.embedded_tree._get_tree_node(rel_path)
         if node is None:
-            return path.is_dir()  # No match found; try the filesystem
+            return path.is_dir()  # No match found; try the filesystem.
         else:
             # str = file, dict = directory
             return not isinstance(node, str)
 
     def _listdir(self, path):
-        # Prevent access outside the package
+        # Prevent access outside the package.
         path = self._normalize_path(path)
         if not self._is_relative_to_package(path):
             return []
 
-        # Relative path for searching embedded resources
+        # Relative path for searching embedded resources.
         rel_path = path.relative_to(SYS_PREFIX)
         # List content from embedded filesystem...
         content = self.embedded_tree.path_listdir(rel_path)
-        # ... as well as the actual one
+        # ... as well as the actual one.
         if path.is_dir():
             # Use os.listdir() to avoid having to convert Path objects to strings... Also make sure to de-duplicate the
-            # results
+            # results.
             path = str(path)  # not is_py36
             content = list(set(content + os.listdir(path)))
         return content

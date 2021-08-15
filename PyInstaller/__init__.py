@@ -17,19 +17,18 @@ import sys
 from PyInstaller import compat
 from PyInstaller.utils.git import get_repo_revision
 
-# Note: Keep this variable as plain string so it could be updated automatically
-#       when doing a release.
+# Note: Keep this variable as plain string so it could be updated automatically when doing a release.
 __version__ = '5.0.dev0'
 
 # Absolute path of this package's directory. Save this early so all submodules can use the absolute path. This is
-# required e.g. if the current directory changes prior to loading the hooks.
+# required for example if the current directory changes prior to loading the hooks.
 PACKAGEPATH = os.path.abspath(os.path.dirname(__file__))
 
 HOMEPATH = os.path.dirname(PACKAGEPATH)
 
 # Update __version__ as necessary.
 if os.path.exists(os.path.join(HOMEPATH, 'setup.py')):
-    # PyInstaller is run directly from source without installation or __version__ is called from 'setup.py' ...
+    # PyInstaller is run directly from source without installation, or __version__ is called from 'setup.py'...
     if compat.getenv('PYINSTALLER_DO_RELEASE') == '1':
         # Suppress the git revision when doing a release.
         pass
@@ -46,12 +45,14 @@ else:
     import pkg_resources
     __version__ = pkg_resources.get_distribution('PyInstaller').version
 
-# Default values of paths where to put files created by PyInstaller. Mind option-help in build_main when changes these
-# Folder where to put created .spec file.
+# Default values of paths where to put files created by PyInstaller. If changing these, do not forget to update the
+# help text for corresponding command-line options, defined in build_main.
+
+# Where to put created .spec file.
 DEFAULT_SPECPATH = os.getcwd()
-# Folder where to put created .spec file. Where to put the final app.
+# Where to put the final frozen application.
 DEFAULT_DISTPATH = os.path.join(os.getcwd(), 'dist')
-# Where to put all the temporary work files, .log, .pyz and etc.
+# Where to put all the temporary files; .log, .pyz, etc.
 DEFAULT_WORKPATH = os.path.join(os.getcwd(), 'build')
 
 PLATFORM = compat.system + '-' + compat.architecture

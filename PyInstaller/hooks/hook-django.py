@@ -36,8 +36,8 @@ if root_dir:
     default_settings_module = f'{package_name}.settings'
     settings_module = os.environ.get('DJANGO_SETTINGS_MODULE', default_settings_module)
     hiddenimports += [
-        # TODO Consider including 'mysite.settings.py' in source code as a data files.
-        #      Since users might need to edit this file.
+        # TODO: consider including 'mysite.settings.py' in source code as a data files,
+        #       since users might need to edit this file.
         settings_module,
         package_name + '.urls',
         package_name + '.wsgi',

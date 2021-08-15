@@ -77,11 +77,9 @@ def create_py3_base_library(libzip_filename, graph):
                         # Name inside the archive. The ZIP format specification requires forward slashes as directory
                         # separator.
                         if type(mod) is modulegraph.Package:
-                            new_name = mod.identifier.replace('.', '/') \
-                                + '/__init__.pyc'
+                            new_name = mod.identifier.replace('.', '/') + '/__init__.pyc'
                         else:
-                            new_name = mod.identifier.replace('.', '/') \
-                                + '.pyc'
+                            new_name = mod.identifier.replace('.', '/') + '.pyc'
 
                         # Write code to a file. This code is similar to py_compile.compile().
                         with io.BytesIO() as fc:
@@ -99,7 +97,7 @@ def create_py3_base_library(libzip_filename, graph):
                                 fc.write(struct.pack('<II', timestamp, size))
                             code = strip_paths_in_code(mod.code)  # Strip paths
                             marshal.dump(code, fc)
-                            # Use a ZipInfo to set timestamp for deterministic build
+                            # Use a ZipInfo to set timestamp for deterministic build.
                             info = zipfile.ZipInfo(new_name)
                             zf.writestr(info, fc.getvalue())
 
@@ -111,15 +109,15 @@ def create_py3_base_library(libzip_filename, graph):
 def scan_code_for_ctypes(co):
     binaries = __recursively_scan_code_objects_for_ctypes(co)
 
-    # If any of the libraries has been requested with anything different then the bare filename, drop that entry and
-    # warn the user - pyinstaller would need to patch the compiled pyc file to make it work correctly!
+    # If any of the libraries has been requested with anything else than the basename, drop that entry and warn the
+    # user - PyInstaller would need to patch the compiled pyc file to make it work correctly!
     binaries = set(binaries)
     for binary in list(binaries):
-        # 'binary' might be in some cases None. Some Python modules might contain code like the following. For example
-        # PyObjC.objc._bridgesupport contain code like that.
+        # 'binary' might be in some cases None. Some Python modules (e.g., PyObjC.objc._bridgesupport) might contain
+        # code like this:
         #     dll = ctypes.CDLL(None)
         if not binary:
-            # None values has to be removed too.
+            # None values have to be removed too.
             binaries.remove(binary)
         elif binary != os.path.basename(binary):
             # TODO make these warnings show up somewhere.
@@ -128,8 +126,7 @@ def scan_code_for_ctypes(co):
             except Exception:
                 filename = 'UNKNOWN'
             logger.warning(
-                "Ignoring %s imported from %s - ctypes imports are only supported using bare filenames", binary,
-                filename
+                "Ignoring %s imported from %s - only basenames are supported with ctypes imports!", binary, filename
             )
             binaries.remove(binary)
 
@@ -174,13 +171,12 @@ def __recursively_scan_code_objects_for_ctypes(code: CodeType):
                 if libname:
                     libname = ctypes.util.find_library(libname)
                     if libname:
-                        # On Windows, `find_library` may return a full pathname. See issue #1934
+                        # On Windows, `find_library` may return a full pathname. See issue #1934.
                         libname = os.path.basename(libname)
                         binaries.append(libname)
 
     # The above handles any flavour of function/class call. We still need to capture the (albeit rarely used) case of
     # loading libraries with ctypes.cdll's getattr.
-
     for i in search_recursively(_scan_code_for_ctypes_getattr, code).values():
         binaries.extend(i)
 
@@ -203,7 +199,9 @@ _ctypes_getattr_regex = bytecode.bytecode_regex(
 
 
 def _scan_code_for_ctypes_getattr(code: CodeType):
-    """Detect uses of ``ctypes.cdll.library_name`` which would imply that ``library_name.dll`` should be collected."""
+    """
+    Detect uses of ``ctypes.cdll.library_name``, which implies that ``library_name.dll`` should be collected.
+    """
 
     key_names = ("cdll", "oledll", "pydll", "windll")
 
@@ -225,7 +223,7 @@ def _scan_code_for_ctypes_getattr(code: CodeType):
                 yield attrs[1] + ".dll"
 
 
-# TODO Reuse this code with modulegraph implementation
+# TODO: reuse this code with modulegraph implementation.
 def _resolveCtypesImports(cbinaries):
     """
     Completes ctypes BINARY entries for modules with their full path.
@@ -239,7 +237,6 @@ def _resolveCtypesImports(cbinaries):
     Example:
     >>> _resolveCtypesImports(['libgs.so'])
     [(libgs.so', ''/usr/lib/libgs.so', 'BINARY')]
-
     """
     from ctypes.util import find_library
 
@@ -268,8 +265,8 @@ def _resolveCtypesImports(cbinaries):
 
     ret = []
 
-    # Try to locate the shared library on disk. This is done by executing ctypes.util.find_library prepending
-    # ImportTracker's local paths to library search paths, then replaces original values.
+    # Try to locate the shared library on the disk. This is done by calling ctypes.util.find_library with
+    # ImportTracker's local paths temporarily prepended to the library search paths (and restored after the call).
     old = _setPaths()
     for cbin in cbinaries:
         try:
@@ -280,13 +277,12 @@ def _resolveCtypesImports(cbinaries):
             # In these cases, find_library() should return None.
             cpath = None
         if compat.is_unix:
-            # CAVEAT: find_library() is not the correct function. Ctype's documentation says that it is meant to resolve
+            # CAVEAT: find_library() is not the correct function. ctype's documentation says that it is meant to resolve
             # only the filename (as a *compiler* does) not the full path. Anyway, it works well enough on Windows and
-            # Mac. On Linux, we need to implement more code to find out the full path.
+            # Mac OS. On Linux, we need to implement more code to find out the full path.
             if cpath is None:
                 cpath = cbin
-            # "man ld.so" says that we should first search LD_LIBRARY_PATH
-            # and then the ldcache
+            # "man ld.so" says that we should first search LD_LIBRARY_PATH and then the ldcache.
             for d in compat.getenv(envvar, '').split(os.pathsep):
                 if os.path.isfile(os.path.join(d, cpath)):
                     cpath = os.path.join(d, cpath)
@@ -304,7 +300,7 @@ def _resolveCtypesImports(cbinaries):
             # 'W: library kernel32.dll required via ctypes not found'
             if not include_library(cbin):
                 continue
-            logger.warning("library %s required via ctypes not found", cbin)
+            logger.warning("Library %s required via ctypes not found", cbin)
         else:
             if not include_library(cpath):
                 continue
@@ -319,8 +315,7 @@ LDCONFIG_CACHE = None  # cache the output of `/sbin/ldconfig -p`
 def load_ldconfig_cache():
     """
     Create a cache of the `ldconfig`-output to call it only once.
-    It contains thousands of libraries and running it on every dylib
-    is expensive.
+    It contains thousands of libraries and running it on every dylib is expensive.
     """
     global LDCONFIG_CACHE
 
@@ -330,18 +325,17 @@ def load_ldconfig_cache():
     from distutils.spawn import find_executable
     ldconfig = find_executable('ldconfig')
     if ldconfig is None:
-        # If `lsconfig` is not found in $PATH, search it in some fixed
-        # directories. Simply use a second call instead of fiddling
-        # around with checks for empty env-vars and string-concat.
+        # If `ldconfig` is not found in $PATH, search for it in some fixed directories. Simply use a second call instead
+        # of fiddling around with checks for empty env-vars and string-concat.
         ldconfig = find_executable('ldconfig', '/usr/sbin:/sbin:/usr/bin:/usr/sbin')
 
-        # if we still couldn't find 'ldconfig' command
+        # If we still could not find the 'ldconfig' command...
         if ldconfig is None:
             LDCONFIG_CACHE = {}
             return
 
     if compat.is_freebsd or compat.is_openbsd:
-        # This has a quite different format than other Unixes
+        # This has a quite different format than other Unixes:
         # [vagrant@freebsd-10 ~]$ ldconfig -r
         # /var/run/ld-elf.so.hints:
         #     search directories: /lib:/usr/lib:/usr/lib/compat:...
@@ -351,9 +345,8 @@ def load_ldconfig_cache():
         splitlines_count = 2
         pattern = re.compile(r'^\s+\d+:-l(\S+)(\s.*)? => (\S+)')
     else:
-        # Skip first line of the library list because it is just
-        # an informative line and might contain localized characters.
-        # Example of first line with local cs_CZ.UTF-8:
+        # Skip first line of the library list because it is just an informative line and might contain localized
+        # characters. Example of first line with locale set to cs_CZ.UTF-8:
         #$ /sbin/ldconfig -p
         #V keši „/etc/ld.so.cache“ nalezeno knihoven: 2799
         #      libzvbi.so.0 (libc6,x86-64) => /lib64/libzvbi.so.0
@@ -388,31 +381,27 @@ def load_ldconfig_cache():
 
         path = m.groups()[-1]
         if compat.is_freebsd or compat.is_openbsd:
-            # Insert `.so` at the end of the lib's basename. soname
-            # and filename may have (different) trailing versions. We
-            # assume the `.so` in the filename to mark the end of the
-            # lib's basename.
+            # Insert `.so` at the end of the lib's basename. soname and filename may have (different) trailing versions.
+            # We assume the `.so` in the filename to mark the end of the lib's basename.
             bname = os.path.basename(path).split('.so', 1)[0]
             name = 'lib' + m.group(1)
             assert name.startswith(bname)
             name = bname + '.so' + name[len(bname):]
         else:
             name = m.group(1)
-        # ldconfig may know about several versions of the same lib,
-        # e.g. differents arch, different libc, etc. Use the first
-        # entry.
+        # ldconfig may know about several versions of the same lib, e.g., differents arch, different libc, etc.
+        # Use the first entry.
         if name not in LDCONFIG_CACHE:
             LDCONFIG_CACHE[name] = path
 
 
 def get_path_to_egg(path):
     """
-    Return the path to the python egg file, if the path points to a
-    file inside a (or to an egg directly).
+    Return the path to the python egg file, if the given path points to a file inside (or directly to) an egg.
     Return `None` otherwise.
     """
-    # This assumes, eggs are not nested.
-    # TODO add support for unpacked eggs and for new .whl packages.
+    # This assumes that eggs are not nested.
+    # TODO: add support for unpacked eggs and for new .whl packages.
     lastpath = None  # marker to stop recursion
     while path and path != lastpath:
         if os.path.splitext(path)[1].lower() == ".egg":
@@ -425,7 +414,6 @@ def get_path_to_egg(path):
 
 def is_path_to_egg(path):
     """
-    Check if path points to a file inside a python egg file (or to an egg
-       directly).
+    Check if the given path points to a file inside (or directly to) a python egg file.
     """
     return get_path_to_egg(path) is not None

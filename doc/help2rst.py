@@ -56,8 +56,8 @@ def help_to_rst(help: str, cross_references=True):
     """
     summary, *sections = SECTION_REGEX.findall(help)
 
-    # We could stick the summary (``usage: pyinstaller [-h] [--help] ...``) into a code block but it's pretty unhelpful,
-    # so I'm choosing to omit it.
+    # We could stick the summary (``usage: pyinstaller [-h] [--help] ...``) into a code block, but it is pretty
+    # unhelpful, so I choose to omit it.
     sections = "\n".join(section_to_rst(section, cross_references) for section in sections)
 
     return sections

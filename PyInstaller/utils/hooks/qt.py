@@ -8,6 +8,7 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
+
 import glob
 import json
 import os
@@ -80,10 +81,8 @@ class QtLibraryInfo:
                 """
                 import sys
 
-                # exec_statement only captures stdout. If there are
-                # errors, capture them to stdout so they can be displayed to the
-                # user. Do this early, in case package imports produce stderr
-                # output.
+                # exec_statement only captures stdout. If there are errors, capture them to stdout so they can be
+                # displayed to the user. Do this early, in case package imports produce stderr output.
                 sys.stderr = sys.stdout
 
                 import json
@@ -93,34 +92,22 @@ class QtLibraryInfo:
                     print('False')
                     raise SystemExit(0)
 
-                # QLibraryInfo isn't always valid until a QCoreApplication is
-                # instantiated.
+                # QLibraryInfo is not always valid until a QCoreApplication is instantiated.
                 app = QCoreApplication(sys.argv)
-                # Qt6 deprecated QLibraryInfo.location() in favor of
-                # QLibraryInfo.path(), and QLibraryInfo.LibraryLocation
-                # enum was replaced by QLibraryInfo.LibraryPath.
+                # Qt6 deprecated QLibraryInfo.location() in favor of QLibraryInfo.path(), and
+                # QLibraryInfo.LibraryLocation enum was replaced by QLibraryInfo.LibraryPath.
                 if hasattr(QLibraryInfo, 'path'):
-                    # Qt6; enumerate path enum values directly from
-                    # the QLibraryInfo.LibraryPath enum.
-                    path_names = [x for x in dir(QLibraryInfo.LibraryPath)
-                                  if x.endswith('Path')]
-                    location = {x: QLibraryInfo.path(
-                                getattr(QLibraryInfo.LibraryPath, x))
-                                for x in path_names}
+                    # Qt6; enumerate path enum values directly from the QLibraryInfo.LibraryPath enum.
+                    path_names = [x for x in dir(QLibraryInfo.LibraryPath) if x.endswith('Path')]
+                    location = {x: QLibraryInfo.path(getattr(QLibraryInfo.LibraryPath, x)) for x in path_names}
                 else:
-                    # Qt5; in recent versions, location enum values
-                    # can be enumeratd from QLibraryInfo.LibraryLocation.
-                    # However, in older versions of Qt5 and its python
-                    # bindings, that is unavailable. Hence the enumeration
-                    # of "*Path"-named members of QLibraryInfo.
-                    path_names = [x for x in dir(QLibraryInfo)
-                                  if x.endswith('Path')]
-                    location = {x: QLibraryInfo.location(
-                                getattr(QLibraryInfo, x))
-                                for x in path_names}
+                    # Qt5; in recent versions, location enum values can be enumeratd from QLibraryInfo.LibraryLocation.
+                    # However, in older versions of Qt5 and its python bindings, that is unavailable. Hence the
+                    # enumeration of "*Path"-named members of QLibraryInfo.
+                    path_names = [x for x in dir(QLibraryInfo) if x.endswith('Path')]
+                    location = {x: QLibraryInfo.location(getattr(QLibraryInfo, x)) for x in path_names}
 
-                # Determine Qt version. Works for Qt 5.8 and later, where
-                # QLibraryInfo.version() was introduced.
+                # Determine Qt version. Works for Qt 5.8 and later, where QLibraryInfo.version() was introduced.
                 try:
                     version = QLibraryInfo.version().segments()
                 except AttributeError:
@@ -171,7 +158,7 @@ def qt_plugins_dir(namespace):
     """
     Return list of paths searched for plugins.
 
-    :param namespace: Import namespace (PyQt5, PyQt6, PySide2, or PySide6)
+    :param namespace: Import namespace (PyQt5, PyQt6, PySide2, or PySide6).
 
     :return: Plugin directory paths
     """
@@ -187,10 +174,7 @@ def qt_plugins_dir(namespace):
         qt_plugin_paths = valid_paths
     if not qt_plugin_paths:
         raise Exception(
-            """
-            Cannot find existing {0} plugin directories
-            Paths checked: {1}
-            """.format(namespace, ", ".join(paths))
+            "Cannot find existing {0} plugin directories. Paths checked: {1}".format(namespace, ", ".join(paths))
         )
     return qt_plugin_paths
 
@@ -213,8 +197,8 @@ def qt_plugins_binaries(plugin_type, namespace):
     # Windows:
     #
     # dlls_in_dir() grabs all files ending with ``*.dll``, ``*.so`` and ``*.dylib`` in a certain directory. On Windows
-    # this would grab debug copies of Qt plugins, which then causes PyInstaller to add a dependency on the Debug CRT *in
-    # addition* to the release CRT.
+    # this would grab debug copies of Qt plugins, which then causes PyInstaller to add a dependency on the Debug CRT
+    # *in addition* to the release CRT.
     if compat.is_win:
         files = [f for f in files if not f.endswith("d.dll")]
 
@@ -400,11 +384,9 @@ _qt5_dynamic_dependencies_dict = {
     "qt5serialbus":             (None,                     None,               "canbus"),  # noqa
 }  # yapf: disable
 
-# The dynamic dependency dictionary for Qt6 is constructed automatically
-# from its Qt5 counterpart, by copying the entries and substituting
-# qt5 in the name with qt6. If the entry already exists in the dictionary,
-# it is not copied, which allows us to provide Qt6-specific overrides,
-# should they prove necessary.
+# The dynamic dependency dictionary for Qt6 is constructed automatically from its Qt5 counterpart, by copying the
+# entries and substituting qt5 in the name with qt6. If the entry already exists in the dictionary, it is not
+# copied, which allows us to provide Qt6-specific overrides, should they prove necessary.
 _qt6_dynamic_dependencies_dict = {}
 
 for lib_name, content in _qt5_dynamic_dependencies_dict.items():
@@ -417,28 +399,26 @@ del lib_name, content
 
 # add_qt_dependencies
 # --------------------
-# Generic implemnentation that finds the Qt 5/6 dependencies based on
-# the hook name of a PyQt5/PyQt6/PySide2/PySide6 hook. Returns
-# (hiddenimports, binaries, datas). Typical usage: ``hiddenimports, binaries,
-# datas = add_qt5_dependencies(__file__)``.
+# Generic implemnentation that finds the Qt 5/6 dependencies based on the hook name of a PyQt5/PyQt6/PySide2/PySide6
+# hook. Returns (hiddenimports, binaries, datas). Typical usage:
+# ``hiddenimports, binaries, datas = add_qt5_dependencies(__file__)``.
 def add_qt_dependencies(hook_file):
     # Accumulate all dependencies in a set to avoid duplicates.
     hiddenimports = set()
     translations_base = set()
     plugins = set()
 
-    # Find the module underlying this Qt hook: change
-    # ``/path/to/hook-PyQt5.blah.py`` to ``PyQt5.blah``.
+    # Find the module underlying this Qt hook: change ``/path/to/hook-PyQt5.blah.py`` to ``PyQt5.blah``.
     hook_name, hook_ext = os.path.splitext(os.path.basename(hook_file))
     assert hook_ext.startswith('.py')
     assert hook_name.startswith('hook-')
     module_name = hook_name[5:]
     namespace = module_name.split('.')[0]
-    # Retrieve Qt library info structure
+    # Retrieve Qt library info structure.
     qt_info = get_qt_library_info(namespace)
 
-    # Exit if the requested library can't be imported. NOTE: qt_info.version
-    # can be empty list on older Qt5 versions (#5381)
+    # Exit if the requested library cannot be imported.
+    # NOTE: qt_info.version can be empty list on older Qt5 versions (#5381).
     if qt_info.version is None:
         return [], [], []
 
@@ -446,34 +426,30 @@ def add_qt_dependencies(hook_file):
     module = hooks.get_module_file_attribute(module_name)
     logger.debug('add_qt%d_dependencies: Examining %s, based on hook of %s.', qt_info.qt_major, module, hook_file)
 
-    # Walk through all the static dependencies of a dynamically-linked library
-    # (``.so``/``.dll``/``.dylib``).
+    # Walk through all the static dependencies of a dynamically-linked library (``.so``/``.dll``/``.dylib``).
     imports = set(bindepend.getImports(module))
     while imports:
         imp = imports.pop()
 
-        # On Windows, find this library; other platforms already provide the
-        # full path.
+        # On Windows, find this library; other platforms already provide the full path.
         if compat.is_win:
             # First, look for Qt binaries in the local Qt install.
             imp = bindepend.getfullnameof(imp, qt_info.location['BinariesPath'])
 
-        # Strip off the extension and ``lib`` prefix (Linux/Mac) to give the raw
-        # name. Lowercase (since Windows always normalized names to lowercase).
+        # Strip off the extension and ``lib`` prefix (Linux/Mac) to give the raw name.
+        # Lowercase (since Windows always normalizes names to lowercase).
         lib_name = os.path.splitext(os.path.basename(imp))[0].lower()
-        # Linux libraries sometimes have a dotted version number --
-        # ``libfoo.so.3``. It's now ''libfoo.so``, but the ``.so`` must also be
-        # removed.
+        # Linux libraries sometimes have a dotted version number -- ``libfoo.so.3``. It is now ''libfoo.so``,
+        # but the ``.so`` must also be removed.
         if compat.is_linux and os.path.splitext(lib_name)[1] == '.so':
             lib_name = os.path.splitext(lib_name)[0]
         if lib_name.startswith('lib'):
             lib_name = lib_name[3:]
-        # Mac: rename from ``qt`` to ``qt5`` or ``qt6`` to match names in
-        # Windows/Linux.
+        # Mac: rename from ``qt`` to ``qt5`` or ``qt6`` to match names in Windows/Linux.
         if compat.is_darwin and lib_name.startswith('qt'):
             lib_name = 'qt' + str(qt_info.qt_major) + lib_name[2:]
 
-        # match libs with QT_LIBINFIX set to '_conda', i.e. conda-forge builds
+        # Match libs with QT_LIBINFIX set to '_conda', i.e. conda-forge builds.
         if lib_name.endswith('_conda'):
             lib_name = lib_name[:-6]
 
@@ -517,8 +493,7 @@ def add_qt_dependencies(hook_file):
             datas.append((src, tp_dst))
         else:
             logger.warning(
-                'Unable to find Qt%d translations %s. These '
-                'translations were not packaged.', qt_info.qt_major, src
+                'Unable to find Qt%d translations %s. These translations were not packaged.', qt_info.qt_major, src
             )
     # Change hiddenimports to a list.
     hiddenimports = list(hiddenimports)
@@ -534,40 +509,36 @@ def add_qt_dependencies(hook_file):
 
 # add_qt5_dependencies
 # --------------------
-# Find the Qt5 dependencies based on the hook name of a PySide2/PyQt5 hook.
-# Returns (hiddenimports, binaries, datas). Typical usage: ``hiddenimports,
-# binaries, datas = add_qt5_dependencies(__file__)``.
+# Find the Qt5 dependencies based on the hook name of a PySide2/PyQt5 hook. Returns (hiddenimports, binaries, datas).
+# Typical usage: ``hiddenimports, binaries, datas = add_qt5_dependencies(__file__)``.
 add_qt5_dependencies = add_qt_dependencies  # Use generic implementation
 
 # add_qt6_dependencies
 # --------------------
-# Find the Qt6 dependencies based on the hook name of a PySide6/PyQt6 hook.
-# Returns (hiddenimports, binaries, datas). Typical usage: ``hiddenimports,
-# binaries, datas = add_qt6_dependencies(__file__)``.
+# Find the Qt6 dependencies based on the hook name of a PySide6/PyQt6 hook. Returns (hiddenimports, binaries, datas).
+# Typical usage: ``hiddenimports, binaries, datas = add_qt6_dependencies(__file__)``.
 add_qt6_dependencies = add_qt_dependencies  # Use generic implementation
 
 
 def _find_all_or_none(globs_to_include, num_files, qt_library_info):
     """
-    globs_to_include is a list of file name globs
-    If the number of found files does not match num_files
-    then no files will be included.
+    globs_to_include is a list of file name globs.
+    If the number of found files does not match num_files, no files will be included.
     """
-    # This function is required because CI is failing to include libEGL. The
-    # error in AppVeyor is::
+    # This function is required because CI is failing to include libEGL.
+    # The error in AppVeyor is::
     #
     #   [2312] LOADER: Running pyi_lib_PyQt5-uic.py
     #   Failed to load libEGL (Access is denied.)
     #   More info: https://github.com/pyinstaller/pyinstaller/pull/3568
     #
-    # Since old PyQt5 wheels do not include d3dcompiler_4?.dll, libEGL.dll and
-    # libGLESv2.dll will not be included for PyQt5 builds during CI.
+    # Since old PyQt5 wheels do not include d3dcompiler_4?.dll, libEGL.dll and libGLESv2.dll will not be included
+    # for PyQt5 builds during CI.
     to_include = []
     dst_dll_path = '.'
     for dll in globs_to_include:
-        # In PyQt5/PyQt6, the DLLs we are looking for are located in
-        # location['BinariesPath'], whereas in PySide2/PySide6, they
-        # are located in location['PrefixPath'].
+        # In PyQt5/PyQt6, the DLLs we are looking for are located in location['BinariesPath'], whereas in
+        # PySide2/PySide6, they are located in location['PrefixPath'].
         dll_path = os.path.join(
             qt_library_info.location['BinariesPath' if qt_library_info.is_pyqt else 'PrefixPath'], dll
         )
@@ -579,7 +550,7 @@ def _find_all_or_none(globs_to_include, num_files, qt_library_info):
     return []
 
 
-# Gather required Qt binaries, but only if all binaries in a group exist.
+# Collect required Qt binaries, but only if all binaries in a group exist.
 def get_qt_binaries(qt_library_info):
     binaries = []
     angle_files = ['libEGL.dll', 'libGLESv2.dll', 'd3dcompiler_??.dll']
@@ -596,18 +567,18 @@ def get_qt_binaries(qt_library_info):
     return binaries
 
 
-# Gather additional shared libraries required for SSL support in QtNetwork,
-# if they are available. Applicable only to Windows. See issue #3520, #4048.
+# Collect additional shared libraries required for SSL support in QtNetwork, if they are available.
+# Applicable only to Windows. See issue #3520, #4048.
 def get_qt_network_ssl_binaries(qt_library_info):
-    # No-op if requested Qt-based package is not available
+    # No-op if requested Qt-based package is not available.
     if qt_library_info.version is None:
         return []
 
-    # Applicable only to Windows
+    # Applicable only to Windows.
     if not compat.is_win:
         return []
 
-    # Check if QtNetwork supports SSL
+    # Check if QtNetwork supports SSL.
     ssl_enabled = hooks.eval_statement(
         """
         from {}.QtNetwork import QSslSocket
@@ -617,10 +588,8 @@ def get_qt_network_ssl_binaries(qt_library_info):
     if not ssl_enabled:
         return []
 
-    # PyPI version of PySide2 requires user to manually install SSL
-    # libraries into the PrefixPath. Other versions (e.g., the one
-    # provided by Conda) put the libraries into the BinariesPath.
-    # PyQt5 also uses BinariesPath.
+    # PyPI version of PySide2 requires user to manually install SSL libraries into the PrefixPath. Other versions
+    # (e.g., the one provided by Conda) put the libraries into the BinariesPath. PyQt5 also uses BinariesPath.
     # Accommodate both options by searching both locations...
     locations = (qt_library_info.location['BinariesPath'], qt_library_info.location['PrefixPath'])
     dll_names = ('libeay32.dll', 'ssleay32.dll', 'libssl-1_1-x64.dll', 'libcrypto-1_1-x64.dll')
@@ -633,31 +602,28 @@ def get_qt_network_ssl_binaries(qt_library_info):
     return binaries
 
 
-# Gather additional binaries and data for QtQml module.
+# Collect additional binaries and data for QtQml module.
 def get_qt_qml_files(qt_library_info):
-    # No-op if requested Qt-based package is not available
+    # No-op if requested Qt-based package is not available.
     if qt_library_info.version is None:
         return [], []
 
-    # Not all PyQt5/PySide2 installs have QML files. In this case,
-    # location['Qml2ImportsPath'] is empty. Furthermore, even if location
-    # path is provided, the directory itself may not exist.
+    # Not all PyQt5/PySide2 installs have QML files. In this case, location['Qml2ImportsPath'] is empty.
+    # Furthermore, even if location path is provided, the directory itself may not exist.
     #
     # https://github.com/pyinstaller/pyinstaller/pull/3229#issuecomment-359735031
     # https://github.com/pyinstaller/pyinstaller/issues/3864
     qmldir = qt_library_info.location['Qml2ImportsPath']
     if not qmldir or not os.path.exists(qmldir):
         logger.warning(
-            'QML directory for %s, %r, does not exist. '
-            'QML files not packaged.', qt_library_info.namespace, qmldir
+            'QML directory for %s, %r, does not exist. QML files not packaged.', qt_library_info.namespace, qmldir
         )
         return [], []
 
     qml_rel_dir = os.path.join(qt_library_info.qt_rel_dir, 'qml')
     datas = [(qmldir, qml_rel_dir)]
     binaries = [
-        # Produce ``/path/to/Qt/Qml/path_to_qml_binary/qml_binary,
-        # PyQt5/Qt/Qml/path_to_qml_binary``.
+        # Produce ``/path/to/Qt/Qml/path_to_qml_binary/qml_binary, PyQt5/Qt/Qml/path_to_qml_binary``.
         (f, os.path.join(qml_rel_dir, os.path.dirname(os.path.relpath(f, qmldir))))
         for f in misc.dlls_in_subdirs(qmldir)
     ]
@@ -667,10 +633,10 @@ def get_qt_qml_files(qt_library_info):
 
 # Collect the ``qt.conf`` file.
 def get_qt_conf_file(qt_library_info):
-    # No-op if requested Qt-based package is not available
+    # No-op if requested Qt-based package is not available.
     if qt_library_info.version is None:
         return []
-    # Find ``qt.conf`` in location['PrefixPath']
+    # Find ``qt.conf`` in location['PrefixPath'].
     datas = [
         x for x in hooks.collect_system_data_files(qt_library_info.location['PrefixPath'], qt_library_info.qt_rel_dir)
         if os.path.basename(x[0]) == 'qt.conf'
@@ -683,51 +649,36 @@ def get_qt_webengine_binaries_and_data_files(qt_library_info):
     binaries = []
     datas = []
 
-    # Output directory (varies between PyQt and PySide and among OSes;
-    # the difference is abstracted by qt_library_info.qt_rel_dir)
+    # Output directory (varies between PyQt and PySide and among OSes; the difference is abstracted by
+    # qt_library_info.qt_rel_dir)
     rel_data_path = qt_library_info.qt_rel_dir
 
     if compat.is_darwin:
-        # On macOS, Qt shared libraries are provided in form of .framework
-        # bundles. However, PyInstaller collects shared library from the
-        # bundle into top-level application directory, breaking the
-        # bundle structure.
+        # On macOS, Qt shared libraries are provided in form of .framework bundles. However, PyInstaller collects shared
+        # library from the bundle into top-level application directory, breaking the bundle structure.
         #
-        # QtWebEngine and its underlying Chromium engine, however, have
-        # very strict data file layout requirements due to sandboxing,
-        # and does not work if the helper process executable does not
-        # load the shared library from QtWebEngineCore.framework (which
-        # also needs to contain all resources).
+        # QtWebEngine and its underlying Chromium engine, however, have very strict data file layout requirements due to
+        # sandboxing, and does not work if the helper process executable does not load the shared library from
+        # QtWebEngineCore.framework (which also needs to contain all resources).
         #
-        # Therefore, we collect the QtWebEngineCore.framework manually,
-        # in order to obtain a working QtWebEngineProcess helper
-        # executable. But because that bypasses our dependency scanner,
-        # we need to collect the dependent .framework bundles as well.
-        # And we need to override QTWEBENGINEPROCESS_PATH in rthook,
-        # because the QtWebEngineWidgets python extension actually loads
-        # up the copy of shared library that is located in sys._MEIPASS
-        # (as opposed to the manually-copied one in .framework bundle).
-        # Furthermore, because the extension modules use Qt shared libraries
-        # in sys._MEIPASS, we also copy all contents of
-        # QtWebEngineCore.framework/Resources into sys._MEIPASS to
-        # make resource loading in the main process work.
+        # Therefore, we collect the QtWebEngineCore.framework manually, in order to obtain a working QtWebEngineProcess
+        # helper executable. But because that bypasses our dependency scanner, we need to collect the dependent
+        # .framework bundles as well. And we need to override QTWEBENGINEPROCESS_PATH in rthook, because the
+        # QtWebEngineWidgets python extension actually loads up the copy of shared library that is located in
+        # sys._MEIPASS (as opposed to the manually-copied one in .framework bundle). Furthermore, because the extension
+        # modules use Qt shared libraries in sys._MEIPASS, we also copy all contents of
+        # QtWebEngineCore.framework/Resources into sys._MEIPASS to make resource loading in the main process work.
         #
         # Besides being ugly, this approach has three main ramifications:
-        # 1. we bundle two copies of each Qt shared library involved:
-        #    the copy actually used by main process, picked up by
-        #    dependency scanner; and a copy in manually-collected
-        #    .framework bundle that's used by the helper process
-        # 2. the trick with copying contents of Resource directory of
-        #    QtWebEngineCore.framework does not work in onefile mode,
-        #    and consequently QtWebEngine does not work in onefile mode
-        # 3. copying contents of QtWebEngineCore.framework/Resource means
-        #    that its Info.plist ends up in sys._MEIPASS, causing the
-        #    main process in onedir mode to be mis-identified as
-        #    "QtWebEngineProcess"
+        # 1. we bundle two copies of each Qt shared library involved: the copy used by main process, picked up by
+        #    dependency scanner; and a copy in manually-collected .framework bundle that is used by the helper process.
+        # 2. the trick with copying contents of Resource directory of QtWebEngineCore.framework does not work in onefile
+        #    mode, and consequently QtWebEngine does not work in onefile mode.
+        # 3. copying contents of QtWebEngineCore.framework/Resource means that its Info.plist ends up in sys._MEIPASS,
+        #    causing the main process in onedir mode to be mis-identified as "QtWebEngineProcess".
         #
-        # In the near future, this quagmire will hopefully be properly
-        # sorted out, but in the mean time, we have to live with what
-        # we've been given.
+        # In the near future, this quagmire will hopefully be properly sorted out, but in the mean time, we have to live
+        # with what we have been given.
         data_path = qt_library_info.location['DataPath']
         libraries = [
             'QtCore', 'QtWebEngineCore', 'QtQuick', 'QtQml', 'QtQmlModels', 'QtNetwork', 'QtGui', 'QtWebChannel',
@@ -750,15 +701,13 @@ def get_qt_webengine_binaries_and_data_files(qt_library_info):
             os.path.join(rel_data_path, 'translations', locales),
         ))
 
-        # Resources; ``DataPath`` is the base directory for ``resources``,
-        # as per the `docs
-        # <https://doc.qt.io/qt-5.10/qtwebengine-deploying.html#deploying-resources>`_
+        # Resources; ``DataPath`` is the base directory for ``resources``, as per the
+        # `docs <https://doc.qt.io/qt-5.10/qtwebengine-deploying.html#deploying-resources>`_.
         datas.append(
             (os.path.join(qt_library_info.location['DataPath'], resources), os.path.join(rel_data_path, resources)),
         )
 
-        # Helper process executable (QtWebEngineProcess), located in
-        # ``LibraryExecutablesPath``.
+        # Helper process executable (QtWebEngineProcess), located in ``LibraryExecutablesPath``.
         dest = os.path.join(
             rel_data_path,
             os.path.relpath(qt_library_info.location['LibraryExecutablesPath'], qt_library_info.location['PrefixPath'])
@@ -767,22 +716,19 @@ def get_qt_webengine_binaries_and_data_files(qt_library_info):
 
     # Add Linux-specific libraries.
     if compat.is_linux:
-        # The automatic library detection fails for `NSS
-        # <https://packages.ubuntu.com/search?keywords=libnss3>`_, which is
-        # used by QtWebEngine. In some distributions, the ``libnss``
-        # supporting libraries are stored in a subdirectory ``nss``.
-        # Since ``libnss`` is not statically linked to these, but dynamically
-        # loads them, we need to search for and add them.
+        # The automatic library detection fails for `NSS <https://packages.ubuntu.com/search?keywords=libnss3>`_, which
+        # is used by QtWebEngine. In some distributions, the ``libnss`` supporting libraries are stored in a
+        # subdirectory ``nss``. Since ``libnss`` is not statically linked to these, but dynamically loads them, we need
+        # to search for and add them.
 
-        # First, get all libraries linked to ``QtWebEngineWidgets``
-        # extension module.
+        # First, get all libraries linked to ``QtWebEngineWidgets`` extension module.
         module_file = hooks.get_module_file_attribute(qt_library_info.namespace + '.QtWebEngineWidgets')
         module_imports = bindepend.getImports(module_file)
         for imp in module_imports:
             # Look for ``libnss3.so``.
             if os.path.basename(imp).startswith('libnss3.so'):
-                # Find the location of NSS: given a ``/path/to/libnss.so``,
-                # add ``/path/to/nss/*.so`` to get the missing NSS libraries.
+                # Find the location of NSS: given a ``/path/to/libnss.so``, add ``/path/to/nss/*.so`` to get the
+                # missing NSS libraries.
                 nss_glob = os.path.join(os.path.dirname(imp), 'nss', '*.so')
                 if glob.glob(nss_glob):
                     binaries.append((nss_glob, 'nss'))

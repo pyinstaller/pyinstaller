@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 """
-Automatically build spec files containing a description of the project
+Automatically build a spec file containing the description of the project.
 """
 
 import argparse
@@ -35,7 +35,7 @@ def run():
     args = p.parse_args()
     PyInstaller.log.__process_options(p, args)
 
-    # Split pathex by using the path separator
+    # Split pathex by using the path separator.
     temppaths = args.pathex[:]
     args.pathex = []
     for p in temppaths:
@@ -43,8 +43,8 @@ def run():
 
     try:
         name = PyInstaller.building.makespec.main(args.scriptname, **vars(args))
-        print('wrote %s' % name)
-        print('now run pyinstaller.py to build the executable')
+        print('Wrote %s.' % name)
+        print('Now run pyinstaller.py to build the executable.')
     except KeyboardInterrupt:
         raise SystemExit("Aborted by user request.")
 

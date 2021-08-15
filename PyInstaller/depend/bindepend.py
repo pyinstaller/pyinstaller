@@ -38,7 +38,7 @@ if compat.is_win:
 
     from PyInstaller.utils.win32 import winmanifest, winresource
 
-    # Do not load all the directories information from the PE file
+    # Do not load all the directories information from the PE file.
     pefile.fast_load = True
 
 
@@ -80,7 +80,7 @@ def _getImports_pe(pth):
     This implementation walks through the PE header and uses library pefile for that and supports 32/64bit Windows
     """
     dlls = set()
-    # By default library pefile parses all PE information. We are only interested in the list of dependent dlls.
+    # By default, pefile library parses all PE information. We are only interested in the list of dependent dlls.
     # Performance is improved by reading only needed information. https://code.google.com/p/pefile/wiki/UsageExamples
 
     pe = pefile.PE(pth, fast_load=True)
@@ -94,7 +94,7 @@ def _getImports_pe(pth):
     )
 
     # Some libraries have no other binary dependencies. Use empty list in that case. Otherwise pefile would return None.
-    # e.g. C:\windows\system32\kernel32.dll on Wine
+    # e.g., C:\windows\system32\kernel32.dll on Wine
     for entry in getattr(pe, 'DIRECTORY_ENTRY_IMPORT', []):
         dll_str = winutils.convert_dll_name_to_str(entry.dll)
         dlls.add(dll_str)
@@ -155,7 +155,7 @@ def matchDLLArch(filename):
     Return True if the DLL given by filename matches the CPU type/architecture of the Python process running
     PyInstaller.
 
-    Always returns True on non-Windows platforms
+    Always returns True on non-Windows platforms.
 
     :param filename:
     :type filename:
@@ -179,7 +179,7 @@ def matchDLLArch(filename):
         match_arch = pe.FILE_HEADER.Machine == _exe_machine_type
         pe.close()
     except pefile.PEFormatError as exc:
-        raise SystemExit('Can not get architecture from file: %s\n  Reason: %s' % (pefilename, exc))
+        raise SystemExit('Cannot get architecture from file: %s\n  Reason: %s' % (pefilename, exc))
     return match_arch
 
 
@@ -308,8 +308,8 @@ def getAssemblies(pth):
     """
     On Windows return the dependent Side-by-Side (SxS) assemblies of a binary as a list of Manifest objects.
 
-    Dependent assemblies are required only by binaries compiled with MSVC 9.0. Python 2.7 and 3.2 is compiled with
-    MSVC 9.0 and thus depends on Microsoft Redistributable runtime libraries 9.0.
+    Dependent assemblies are required only by binaries compiled with MSVC 9.0. Python 2.7 and 3.2 are compiled with
+    MSVC 9.0 and thus depend on Microsoft Redistributable runtime libraries 9.0.
 
     Python 3.3+ is compiled with version 10.0 and does not use SxS assemblies.
 
@@ -347,7 +347,7 @@ def getAssemblies(pth):
                     ])
                     manifest.parse_string(res[winmanifest.RT_MANIFEST][name][language], False)
                 except Exception:
-                    logger.error("Can not parse manifest resource %s, %s from %s", name, language, pth, exc_info=1)
+                    logger.error("Cannot parse manifest resource %s, %s from %s", name, language, pth, exc_info=1)
                 else:
                     if manifest.dependentAssemblies:
                         logger.debug("Dependent assemblies of %s:", pth)
@@ -377,10 +377,7 @@ def getAssemblyFiles(pth, manifest=None, redirects=None):
             continue
         if manifest and assembly.name not in _depNames:
             # Add assembly as dependency to our final output exe's manifest
-            logger.info(
-                "Adding %s to dependent assemblies "
-                "of final executable\n  required by %s", assembly.name, pth
-            )
+            logger.info("Adding %s to dependent assemblies of final executable\n  required by %s", assembly.name, pth)
             manifest.dependentAssemblies.append(assembly)
             _depNames.add(assembly.name)
         if not dylib.include_library(assembly.name):
@@ -400,7 +397,7 @@ def getAssemblyFiles(pth, manifest=None, redirects=None):
             # the policy file is redirecting it to a newer version. So, we collect the newer version instead.
             files = assembly.find_files(ignore_policies=False)
             if len(files) and redirects is not None:
-                # New version was found, old version was not. Add a redirect in the app configuration
+                # New version was found, old version was not. Add a redirect in the app configuration.
                 old_version = assembly.version
                 new_version = assembly.get_policy_redirect()
                 logger.info("Adding redirect %s version %s -> %s", assembly.name, old_version, new_version)
@@ -433,14 +430,13 @@ def getAssemblyFiles(pth, manifest=None, redirects=None):
                     seen.add(fn.upper())
                     rv.append((ftocnm, fn))
                 else:
-                    #logger.info("skipping %s part of assembly %s dependency of %s",
-                    #            ftocnm, assembly.name, pth)
+                    #logger.info("skipping %s part of assembly %s dependency of %s", ftocnm, assembly.name, pth)
                     pass
         else:
             logger.error("Assembly %s not found", assembly.getid())
 
     # Convert items in list from 'bytes' type to 'str' type.
-    # NOTE: With Python 3 we somehow get type 'bytes' and it then causes other issues and failures with PyInstaller.
+    # NOTE: with Python 3 we somehow get type 'bytes' and it then causes other issues and failures with PyInstaller.
     new_rv = []
     for item in rv:
         a = item[0].decode('ascii')
@@ -475,7 +471,7 @@ def selectImports(pth, xtrapath=None):
             # plain win case
             npth = getfullnameof(lib, xtrapath)
 
-        # now npth is a candidate lib if found check again for excludes but with regex FIXME: split the list
+        # Now npth is a candidate lib if found. Check again for excludes, but with regex. FIXME: split the list.
         if npth:
             candidatelib = npth
         else:
@@ -594,7 +590,7 @@ def _getImports_macholib(pth):
     m = MachO(pth)
     for header in m.headers:
         for idx, name, lib in header.walkRelocatables():
-            # Sometimes some libraries are present multiple times.
+            # Sometimes libraries are present multiple times.
             if lib not in seen:
                 seen.add(lib)
 
@@ -612,7 +608,7 @@ def _getImports_macholib(pth):
             cmd_type = command[0].cmd
             if cmd_type == LC_RPATH:
                 rpath = command[2].decode('utf-8')
-                # Remove trailing '\x00' characters. e.g. '../lib\x00\x00'
+                # Remove trailing '\x00' characters. E.g., '../lib\x00\x00'
                 rpath = rpath.rstrip('\x00')
                 # Replace the @executable_path and @loader_path keywords with the actual path to the binary.
                 executable_path = os.path.dirname(pth)
@@ -626,7 +622,7 @@ def _getImports_macholib(pth):
                 if '.framework' in pth:
                     run_paths.update(['../../../'])
 
-    # for distributions like Anaconda, all of the dylibs are stored in the lib directory of the Python distribution, not
+    # For distributions like Anaconda, all of the dylibs are stored in the lib directory of the Python distribution, not
     # alongside of the .so's in each module's subdirectory.
     run_paths.add(os.path.join(compat.base_prefix, 'lib'))
 
@@ -637,8 +633,7 @@ def _getImports_macholib(pth):
     exec_path = os.path.abspath(os.path.dirname(pth))
 
     for lib in seen:
-
-        # Suppose that @rpath is not used for system libraries and using macholib can be avoided. macholib can't handle
+        # Suppose that @rpath is not used for system libraries and using macholib can be avoided. macholib cannot handle
         # @rpath.
         if lib.startswith('@rpath'):
             lib = lib.replace('@rpath', '.')  # Make path relative.
@@ -659,7 +654,7 @@ def _getImports_macholib(pth):
 
         # Macholib has to be used to get absolute path to libraries.
         else:
-            # macholib can't handle @loader_path. It has to be handled the same way as @executable_path. It is also
+            # macholib cannot handle @loader_path. It has to be handled the same way as @executable_path. It is also
             # replaced by 'exec_path'.
             if lib.startswith('@loader_path'):
                 lib = lib.replace('@loader_path', '@executable_path')
@@ -688,7 +683,7 @@ def getImports(pth):
             # Assemblies can pull in files which aren't necessarily PE, but are still needed by the assembly. Any
             # additional binary dependencies should already have been handled by selectAssemblies in that case, so just
             # warn, return an empty list and continue. For less specific errors also log the traceback.
-            logger.warning('Can not get binary dependencies for file: %s', pth)
+            logger.warning('Cannot get binary dependencies for file: %s', pth)
             logger.warning('  Reason: %s', exception, exc_info=not isinstance(exception, pefile.PEFormatError))
             return []
     elif compat.is_darwin:
@@ -701,10 +696,9 @@ def findLibrary(name):
     """
     Look for a library in the system.
 
-    Emulate the algorithm used by dlopen. `name`must include the prefix, e.g. ``libpython2.4.so``
+    Emulate the algorithm used by dlopen. `name` must include the prefix, e.g., ``libpython2.4.so``.
     """
-    assert compat.is_unix, \
-        "Current implementation for Unix only (Linux, Solaris, AIX, FreeBSD)"
+    assert compat.is_unix, "Current implementation for Unix only (Linux, Solaris, AIX, FreeBSD)"
 
     lib = None
 
@@ -771,14 +765,14 @@ def findLibrary(name):
                 lib = libs[0]
                 break
 
-    # give up :(
+    # Give up :(
     if lib is None:
         return None
 
     # Resolve the file name into the soname
     if compat.is_freebsd or compat.is_aix or compat.is_openbsd:
-        # On FreeBSD objdump doesn't show SONAME, and on AIX objdump does not exist, so we just return the lib we've
-        # found.
+        # On FreeBSD objdump does not show SONAME, and on AIX objdump does not exist, so we just return the lib we
+        # have found.
         return lib
     else:
         dir = os.path.dirname(lib)
@@ -789,7 +783,7 @@ def _get_so_name(filename):
     """
     Return the soname of a library.
 
-    Soname is usefull whene there are multiple symplinks to one library.
+    Soname is useful when there are multiple symplinks to one library.
     """
     # TODO verify that objdump works on other unixes and not Linux only.
     cmd = ["objdump", "-p", filename]
@@ -805,19 +799,18 @@ def get_python_library_path():
     """
     Find dynamic Python library that will be bundled with frozen executable.
 
-    NOTE: This is a fallback option when Python library is probably linked statically with the Python executable and
-          we need to search more for it. On Debian/Ubuntu this is the case.
+    NOTE: This is a fallback option when the Python executable is likely statically linked with the Python library and
+          we need to search more for it. For example, this is the case on Debian/Ubuntu.
 
     Return  full path to Python dynamic library or None when not found.
 
-
     We need to know name of the Python dynamic library for the bootloader. Bootloader has to know what library to
-    load and not trying to guess.
+    load and not try to guess.
 
-    Some linux distributions (e.g. debian-based) statically build the Python executable to the libpython,
-    so bindepend doesn't include it in its output. In this situation let's try to find it.
+    Some linux distributions (e.g. debian-based) statically link the Python executable to the libpython,
+    so bindepend does not include it in its output. In this situation let's try to find it.
 
-    Darwin custom builds could possibly also have non-framework style libraries, so this method also checks for that
+    Custom Mac OS builds could possibly also have non-framework style libraries, so this method also checks for that
     variant as well.
     """
     def _find_lib_in_libdirs(*libdirs):
@@ -872,12 +865,15 @@ def get_python_library_path():
     elif compat.is_darwin:
         # On MacPython, Analysis.assemble is able to find the libpython with no additional help, asking for
         # sys.executable dependencies. However, this fails on system python, because the shared library is not listed as
-        # a dependency of the binary (most probably it's opened at runtime using some dlopen trickery). This happens on
-        # Mac OS X when Python is compiled as Framework.
+        # a dependency of the binary (most probably it is opened at runtime using some dlopen trickery). This happens on
+        # Mac OS when Python is compiled as Framework.
 
-        # Python compiled as Framework contains same values in sys.prefix and exec_prefix. That's why we can use just
-        # sys.prefix. In virtualenv PyInstaller is not able to find Python library. We need special care for this case.
-        python_libname = _find_lib_in_libdirs(compat.base_prefix, os.path.join(compat.base_prefix, 'lib'))
+        # Python compiled as Framework contains same values in sys.prefix and exec_prefix. That is why we can use just
+        # sys.prefix. In virtualenv, PyInstaller is not able to find Python library. We need special care for this case.
+        python_libname = _find_lib_in_libdirs(
+            compat.base_prefix,
+            os.path.join(compat.base_prefix, 'lib'),
+        )
         if python_libname:
             return python_libname
 
@@ -895,10 +891,11 @@ def get_python_library_path():
 
 
 def findSystemLibrary(name):
-    '''
-        Given a library name, try to resolve the path to that library. If the
-        path is already an absolute path, return that without searching.
-    '''
+    """
+    Given a library name, try to resolve the path to that library.
+
+    If the path is already an absolute path, return it without searching.
+    """
 
     if os.path.isabs(name):
         return name

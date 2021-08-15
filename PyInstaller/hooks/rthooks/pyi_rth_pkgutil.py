@@ -33,10 +33,10 @@ _orig_pkgutil_iter_modules = pkgutil.iter_modules
 
 def _pyi_pkgutil_iter_modules(path=None, prefix=''):
     # Use original implementation to discover on-filesystem modules (binary extensions in regular builds, or both binary
-    # extensions and compiled pyc modules in noarchive debug builds)
+    # extensions and compiled pyc modules in noarchive debug builds).
     yield from _orig_pkgutil_iter_modules(path, prefix)
 
-    # Find the instance of PyInstaller's FrozenImporter
+    # Find the instance of PyInstaller's FrozenImporter.
     for importer in pkgutil.iter_importers():
         if isinstance(importer, FrozenImporter):
             break
@@ -44,7 +44,7 @@ def _pyi_pkgutil_iter_modules(path=None, prefix=''):
         return
 
     if not path:
-        # Search for all top-level packages/modules. These will have no dots in their entry names
+        # Search for all top-level packages/modules. These will have no dots in their entry names.
         for entry in importer.toc:
             if entry.count('.') != 0:
                 continue
@@ -54,13 +54,13 @@ def _pyi_pkgutil_iter_modules(path=None, prefix=''):
         # Declare SYS_PREFIX locally, to avoid clash with eponymous global symbol from pyi_rth_pkgutil hook.
         SYS_PREFIX = sys._MEIPASS + os.path.sep
         SYS_PREFIXLEN = len(SYS_PREFIX)
-        # Only single path is supported, and it must start with sys._MEIPASS
+        # Only single path is supported, and it must start with sys._MEIPASS.
         pkg_path = os.path.normpath(path[0])
         assert pkg_path.startswith(SYS_PREFIX)
         # Construct package prefix from path...
         pkg_prefix = pkg_path[SYS_PREFIXLEN:]
         pkg_prefix = pkg_prefix.replace(os.path.sep, '.')
-        # ... and ensure it ends with a dot (so we can directly filter out the package itself)
+        # ... and ensure it ends with a dot (so we can directly filter out the package itself).
         if not pkg_prefix.endswith('.'):
             pkg_prefix += '.'
         pkg_prefix_len = len(pkg_prefix)

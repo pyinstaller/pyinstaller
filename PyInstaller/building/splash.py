@@ -83,14 +83,13 @@ class Splash(Target):
         :type text_pos: Tuple[int, int]
         :keyword text_size:
             The desired size of the font. If the size argument is a positive number, it is interpreted as a size in
-            points. If size is a negative number, its absolute value is interpreted as a size in pixels. Default ``12``
+            points. If size is a negative number, its absolute value is interpreted as a size in pixels. Default: ``12``
         :type text_size: int
         :keyword text_font:
             An optional name of a font for the text. This font must be installed on the user system, otherwise the
             system default font is used. If this parameter is omitted, the default font is also used.
         :keyword text_color:
-            An optional color for the text. Either RGB HTML notation or color names are supported.
-            Default: black
+            An optional color for the text. Either RGB HTML notation or color names are supported. Default: black
             (Windows: Due to a implementation issue the color magenta/ rgb(255, 0, 255) is forbidden)
         :type text_color: str
         :keyword text_default:
@@ -106,9 +105,8 @@ class Splash(Target):
             The splash screen is created by executing an Tcl/Tk script. This option enables minimizing the script,
             meaning removing all non essential parts from the script. Default: True
         :keyword rundir:
-            The folder name in which tcl/tk will be extracted at runtime.
-            There should be no matching folder in your application to
-            avoid conflicts. Default:  ``__splash``
+            The folder name in which tcl/tk will be extracted at runtime. There should be no matching folder in your
+            application to avoid conflicts. Default:  ``__splash``
         :type rundir: str
         :keyword name:
             An optional alternative filename for the .res file. If not specified, a name is generated.
@@ -175,9 +173,8 @@ class Splash(Target):
             self._tkinter_file = self._tkinter_module.__file__
         except ModuleNotFoundError:
             raise SystemExit(
-                "You platform does not support the splash screen"
-                " feature, since tkinter is not installed. Please"
-                " install tkinter and try again."
+                "You platform does not support the splash screen feature, since tkinter is not installed. Please "
+                "install tkinter and try again."
             )
 
         # Calculated / analysed values
@@ -188,12 +185,8 @@ class Splash(Target):
             # Outdated Tcl/Tk 8.5 system framework is not supported. Depending on macOS version, the library path will
             # come up empty (hidden system libraries on Big Sur), or will be
             # [/System]/Library/Frameworks/Tcl.framework/Tcl
-            if self.tcl_lib[1] is None or 'Library/Frameworks/Tcl.framework' \
-                                          in self.tcl_lib[1]:
-                raise SystemExit(
-                    "The splash screen feature does not support"
-                    " macOS system framework version of Tcl/Tk."
-                )
+            if self.tcl_lib[1] is None or 'Library/Frameworks/Tcl.framework' in self.tcl_lib[1]:
+                raise SystemExit("The splash screen feature does not support macOS system framework version of Tcl/Tk.")
         # Check if tcl/tk was found
         assert all(self.tcl_lib)
         assert all(self.tk_lib)
@@ -208,12 +201,12 @@ class Splash(Target):
 
         self.binaries = TOC()
         if not self.uses_tkinter:
-            # the users script does not use tkinter, so we need to provide a TOC of all necessary files add the shared
+            # The user's script does not use tkinter, so we need to provide a TOC of all necessary files add the shared
             # libraries to the binaries.
             self.binaries.append((self.tcl_lib[0], self.tcl_lib[1], 'BINARY'))
             self.binaries.append((self.tk_lib[0], self.tk_lib[1], 'BINARY'))
 
-            # Only add the intersection of the required and the collected resources or add all entries if full_tk is
+            # Only add the intersection of the required and the collected resources, or add all entries if full_tk is
             # true.
             self.binaries.extend(toc for toc in tcltk_tree if toc[0] in self.splash_requirements)
 
@@ -223,7 +216,7 @@ class Splash(Target):
         def _filter(_item):
             if _item not in fnames:
                 # Item is not bundled, so warn the user about it. This actually may happen on some tkinter installations
-                # on which there is no license.terms file.
+                # that are missing the license.terms file.
                 logger.warning(
                     "The local Tcl/Tk installation is missing the file %s. The behavior of the splash screen is "
                     "therefore undefined and may be unsupported." % _item
@@ -272,7 +265,7 @@ class Splash(Target):
         if Target._check_guts(self, data, last_build):
             return True
 
-        # check if image has been modified
+        # Check if the image has been modified.
         if misc.mtime(self.image_file) > last_build:
             logger.info("Building %s because file %s changed", self.tocbasename, self.image_file)
             return True
@@ -282,8 +275,7 @@ class Splash(Target):
     def assemble(self):
         logger.info("Building Splash %s" % self.name)
 
-        # Function to resize a given image to fit into the area
-        # defined by max_img_size
+        # Function to resize a given image to fit into the area defined by max_img_size.
         def _resize_image(_image, _orig_size):
             if PILImage:
                 _w, _h = _orig_size
@@ -313,15 +305,14 @@ class Splash(Target):
                 _img_resized.close()
                 _image_data = _image_stream.getvalue()
                 logger.info(
-                    "Resized image %s from dimensions %s to"
-                    " (%d, %d)" % (self.image_file, str(_orig_size), _w, _h)
+                    "Resized image %s from dimensions %s to (%d, %d)" % (self.image_file, str(_orig_size), _w, _h)
                 )
                 return _image_data
             else:
                 raise ValueError(
-                    "The splash image dimensions (w: %d, h: %d) exceed max_img_size (w: %d, h:%d), but the image cannot"
-                    " be resized due to missing PIL.Image! Either install the Pillow package, adjust the max_img_size, "
-                    "or use an image of compatible dimensions." %
+                    "The splash image dimensions (w: %d, h: %d) exceed max_img_size (w: %d, h:%d), but the image "
+                    "cannot be resized due to missing PIL.Image! Either install the Pillow package, adjust the "
+                    "max_img_size, or use an image of compatible dimensions." %
                     (_orig_size[0], _orig_size[1], self.max_img_size[0], self.max_img_size[1])
                 )
 
@@ -360,7 +351,7 @@ class Splash(Target):
         image_file.close()
 
         SplashWriter(
-            self.name,  # noqa: F841
+            self.name,
             self.splash_requirements,
             self.tcl_lib[0],  # tcl86t.dll
             self.tk_lib[0],  # tk86t.dll
@@ -385,33 +376,34 @@ class Splash(Target):
         # This should be impossible, since tcl/tk is released together with the same version number, but just in case
         if tcl_version != tk_version:
             logger.warning(
-                "The installed version of Tcl (%s) and Tk (%s) do not match. PyInstaller is tested against matching"
-                " versions" % (self._tkinter_module.TCL_VERSION, self._tkinter_module.TK_VERSION)
+                "The installed version of Tcl (%s) and Tk (%s) do not match. PyInstaller is tested against matching "
+                "versions" % (self._tkinter_module.TCL_VERSION, self._tkinter_module.TK_VERSION)
             )
 
         # Test if tcl is threaded.
         # If the variable tcl_platform(threaded) exist, the tcl interpreter was compiled with thread support.
-        threaded = bool(exec_statement("""
+        threaded = bool(exec_statement(
+            """
             from tkinter import Tcl, TclError
             try:
                 print(Tcl().getvar('tcl_platform(threaded)'))
             except TclError:
                 pass
-        """))  # yapf: disable
+            """
+        ))  # yapf: disable
 
         if not threaded:
-            # This is a feature breaking problem, so exit
+            # This is a feature breaking problem, so exit.
             raise SystemExit(
-                "The installed tcl version is not threaded."
-                " PyInstaller only supports the splash screen"
-                " using threaded tcl."
+                "The installed tcl version is not threaded. PyInstaller only supports the splash screen "
+                "using threaded tcl."
             )
 
     def generate_script(self):
-        """Generate the script for the splash screen
+        """
+        Generate the script for the splash screen.
 
-        If minify_script is True, all unnecessary parts will be
-        removed
+        If minify_script is True, all unnecessary parts will be removed.
         """
         d = {}
         if self.text_pos is not None:
@@ -431,24 +423,24 @@ class Splash(Target):
             script = '\n'.join(
                 line for line in map(lambda l: l.strip(), script.splitlines())
                 if not line.startswith('#')  # documentation
-                and line
-            )  # empty lines # noqa: W503
+                and line  # empty lines
+            )
             # Remove unnecessary spaces
             script = re.sub(' +', ' ', script)
 
-        # Write script to disk, so that it is transparent to the use what script is executed
+        # Write script to disk, so that it is transparent to the user what script is executed.
         with open(self.script_name, "w") as script_file:
             script_file.write(script)
         return script
 
     @staticmethod
     def _uses_tkinter(binaries):
-        # Test for _tkinter instead of tkinter, because a user might use a different wrapping library for tk
+        # Test for _tkinter instead of tkinter, because a user might use a different wrapping library for tk.
         return '_tkinter' in binaries.filenames
 
     @staticmethod
     def _find_rundir(structure):
-        # First try a name the user could understand, if one would find the directory
+        # First try a name the user could understand, if one would find the directory.
         rundir = '__splash%s'
         candidate = rundir % ""
         counter = 0

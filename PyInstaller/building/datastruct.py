@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 def unique_name(entry):
     """
-    Return the filename used to enforce uniqueness for the given TOC entry
+    Return the filename used to enforce uniqueness for the given TOC entry.
 
     Parameters
     ----------
@@ -38,7 +38,7 @@ def unique_name(entry):
 
 
 class TOC(list):
-    # TODO Simplify the representation and use directly Modulegraph objects.
+    # TODO: simplify the representation and use directly Modulegraph objects.
     """
     TOC (Table of Contents) class is a list of tuples of the form (name, path, typecode).
 
@@ -95,7 +95,7 @@ class TOC(list):
         return result
 
     def extend(self, other):
-        # TODO: look if this can be done more efficient with out the loop, e.g. by not using a list as base at all
+        # TODO: look if this can be done more efficient with out the loop, e.g. by not using a list as base at all.
         for entry in other:
             self.append(entry)
 
@@ -123,8 +123,7 @@ class Target(object):
     def __init__(self):
         from PyInstaller.config import CONF
 
-        # Get a (per class) unique number to avoid conflicts between
-        # toc objects
+        # Get a (per class) unique number to avoid conflicts between toc objects
         self.invcnum = self.__class__.invcnum
         self.__class__.invcnum += 1
         self.tocfilename = os.path.join(CONF['workpath'], '%s-%02d.toc' % (self.__class__.__name__, self.invcnum))
@@ -160,7 +159,7 @@ class Target(object):
 
     def _check_guts(self, data, last_build):
         """
-        Returns True if rebuild/assemble is required
+        Returns True if rebuild/assemble is required.
         """
         if len(data) != len(self._GUTS):
             logger.info("Building because %s is bad", self.tocbasename)
@@ -201,7 +200,7 @@ class Tree(Target, TOC):
                         Any file with the given extension will be excluded.
         typecode
                 The typecode to be used for all files found in this tree. See the TOC class for for information about
-                 the typcodes.
+                the typcodes.
         """
         Target.__init__(self)
         TOC.__init__(self)

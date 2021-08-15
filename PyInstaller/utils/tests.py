@@ -46,7 +46,7 @@ def _check_for_compiler():
             has_compiler = False
     else:
         # The C standard library contains the ``clock`` function. Use that to determine if a compiler is installed. This
-        # doesn't work on Windows::
+        # does not work on Windows::
         #
         #   Users\bjones\AppData\Local\Temp\a.out.exe.manifest : general error
         #   c1010070: Failed to load and parse the manifest. The system cannot
@@ -58,7 +58,7 @@ def _check_for_compiler():
     return has_compiler
 
 
-# A decorator to skip tests if a C compiler isn't detected.
+# A decorator to skip tests if a C compiler is not detected.
 has_compiler = _check_for_compiler()
 skipif_no_compiler = skipif(not has_compiler, reason="Requires a C compiler")
 
@@ -66,7 +66,8 @@ skip = pytest.mark.skip
 
 
 def importorskip(package: str):
-    """Skip a decorated test if **package** is not importable.
+    """
+    Skip a decorated test if **package** is not importable.
 
     Arguments:
         package:
@@ -77,7 +78,6 @@ def importorskip(package: str):
 
     This function intentionally does not import the module. Doing so can lead to `sys.path` and `PATH` being
     polluted, which then breaks later builds.
-
     """
     if not importable(package):
         return pytest.mark.skip(f"Can't import '{package}'.")
@@ -88,7 +88,7 @@ def importable(package: str):
     from importlib.util import find_spec
 
     # The find_spec() function is used by the importlib machinery to locate a module to import. Using it finds the
-    # module but doesn't run it. Unfortunately, it does import parent modules to check submodules.
+    # module but does not run it. Unfortunately, it does import parent modules to check submodules.
     if "." in package:
         # Using subprocesses is slow. If the top level module doesn't exist then we can skip it.
         if not importable(package.split(".")[0]):
@@ -101,7 +101,8 @@ def importable(package: str):
 
 
 def requires(requirement: str):
-    """Mark a test to be skipped if **requirement** is not satisfied.
+    """
+    Mark a test to be skipped if **requirement** is not satisfied.
 
     Args:
         requirement:
@@ -112,7 +113,6 @@ def requires(requirement: str):
 
     This function intentionally does not import the module. Doing so can lead to `sys.path` and `PATH` being
     polluted, which then breaks later builds.
-
     """
     import pkg_resources
     try:

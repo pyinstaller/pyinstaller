@@ -11,17 +11,14 @@
 """
 This module holds run-time PyInstaller configuration.
 
-Variable CONF is a dict() with all configuration options that are necessary
-for the build phase. Build phase is done by passing .spec file to exec()
-function. CONF variable is the only way how to pass arguments to exec() and
-how to avoid using 'global' variables.
+Variable CONF is a dict() with all configuration options that are necessary for the build phase. Build phase is done by
+passing .spec file to exec() function. CONF variable is the only way how to pass arguments to exec() and how to avoid
+using 'global' variables.
 
-NOTE: Having 'global' variables does not play well with the test suite
-because it does not provide isolated environments for tests. Some tests might
-fail in this case.
+NOTE: Having 'global' variables does not play well with the test suite because it does not provide isolated environments
+for tests. Some tests might fail in this case.
 
-NOTE: The 'CONF' dict() is cleaned after building phase to not interfere with
-any other possible test.
+NOTE: The 'CONF' dict() is cleaned after building phase to not interfere with any other possible test.
 
 To pass any arguments to build phase, just do:
 

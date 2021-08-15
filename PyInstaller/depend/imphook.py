@@ -384,7 +384,7 @@ class ModuleHook(object):
 
     def post_graph(self, analysis):
         """
-        Call the **post-graph hook** (i.e., `hook()` function) defined by this hook script if any.
+        Call the **post-graph hook** (i.e., `hook()` function) defined by this hook script, if any.
 
         Parameters
         ----------

@@ -10,12 +10,10 @@
 #-----------------------------------------------------------------------------
 """
 django.core.mail uses part of the email package.
-Problem is: when using runserver with autoreload mode, the thread that
-checks fore changed files unwillingly trigger further imports within
-the email package because of the LazyImporter in email (used in 2.5 for
-backward compatibility).
-We then need to name those modules as hidden imports, otherwise at
-runtime the autoreload thread will complain with a traceback.
+The problem is: when using runserver with autoreload mode, the thread that checks for changed files triggers further
+imports within the email package, because of the LazyImporter in email (used in 2.5 for backward compatibility).
+We then need to name those modules as hidden imports, otherwise at runtime the autoreload thread will complain
+with a traceback.
 """
 
 hiddenimports = [

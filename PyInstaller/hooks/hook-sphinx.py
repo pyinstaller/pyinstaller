@@ -8,7 +8,7 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-#
+
 # ********************************************
 # hook-sphinx.py - Pyinstaller hook for Sphinx
 # ********************************************

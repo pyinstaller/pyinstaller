@@ -14,11 +14,11 @@ import sys
 
 
 def install():
-    """Install the hooks.
+    """
+    Install the hooks.
 
-    This must be done from a function as opposed to at module-level,
-    because when the module is imported/executed, the import machinery
-    is not completely set up yet.
+    This must be done from a function as opposed to at module-level, because when the module is imported/executed,
+    the import machinery is not completely set up yet.
     """
 
     import os
@@ -41,10 +41,9 @@ def install():
     class PyInstallerImportError(OSError):
         def __init__(self, name):
             self.msg = (
-                "Failed to load dynlib/dll %r. "
-                "Most probably this dynlib/dll was not found "
-                "when the application was frozen."
-            ) % name
+                "Failed to load dynlib/dll %r. Most likely this dynlib/dll was not found when the application "
+                "was frozen." % name
+            )
             self.args = (self.msg,)
 
     class PyInstallerCDLL(ctypes.CDLL):
@@ -94,7 +93,7 @@ def install():
         ctypes.oledll = ctypes.LibraryLoader(PyInstallerOleDLL)
 
 
-# On Mac OS X insert sys._MEIPASS in the first position of the list of paths that ctypes uses to search for libraries.
+# On Mac OS insert sys._MEIPASS in the first position of the list of paths that ctypes uses to search for libraries.
 #
 # Note: 'ctypes' module will NOT be bundled with every app because code in this module is not scanned for module
 #       dependencies. It is safe to wrap 'ctypes' module into 'try/except ImportError' block.

@@ -43,7 +43,7 @@ else:
 
 def hook(hook_api):
     """
-    SQLAlchemy 0.9 introduced the decorator 'util.dependencies'.  This decorator does imports.  eg:
+    SQLAlchemy 0.9 introduced the decorator 'util.dependencies'.  This decorator does imports. E.g.:
 
             @util.dependencies("sqlalchemy.sql.schema")
 

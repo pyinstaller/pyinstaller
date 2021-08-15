@@ -11,14 +11,13 @@
 """
 This module parses all Django dependencies from the module mysite.settings.py.
 
-NOTE: With newer version of Django this is most likely the part of PyInstaller
-      that will be broken.
+NOTE: With newer version of Django this is most likely the part of PyInstaller that will be broken.
 
 Tested with Django 2.2
 """
 
-# Calling django.setup() avoids the exception AppRegistryNotReady()
-# and also reads the user settings from DJANGO_SETTINGS_MODULE.
+# Calling django.setup() avoids the exception AppRegistryNotReady() and also reads the user settings
+# from DJANGO_SETTINGS_MODULE.
 # https://stackoverflow.com/questions/24793351/django-appregistrynotready
 import django
 
@@ -31,7 +30,7 @@ from PyInstaller.utils.hooks import collect_submodules  # noqa: E402
 
 hiddenimports = list(settings.INSTALLED_APPS)
 
-# do not fail script when settings does not have such attributes
+# Do not fail script when settings does not have such attributes.
 if hasattr(settings, 'TEMPLATE_CONTEXT_PROCESSORS'):
     hiddenimports += list(settings.TEMPLATE_CONTEXT_PROCESSORS)
 

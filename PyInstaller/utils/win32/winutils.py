@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 """
-Utils for Windows platform.
+Utilities for Windows platform.
 """
 
 __all__ = ['get_windows_dir', 'set_exe_checksum']
@@ -25,13 +25,13 @@ logger = logging.getLogger(__name__)
 
 def get_windows_dir():
     """
-    Return the Windows directory e.g. C:\\Windows.
+    Return the Windows directory, e.g., C:\\Windows.
     """
-    # imported here to avoid circular import
+    # Imported here to avoid circular import.
     from PyInstaller import compat
     windir = compat.win32api.GetWindowsDirectory()
     if not windir:
-        raise SystemExit("Error: Can not determine your Windows directory")
+        raise SystemExit("Error: Cannot determine Windows directory!")
     return windir
 
 
@@ -39,15 +39,14 @@ def get_system_path():
     """
     Return the required Windows system paths.
     """
-    # imported here to avoid circular import
+    # Imported here to avoid circular import.
     from PyInstaller import compat
     _bpath = []
     sys_dir = compat.win32api.GetSystemDirectory()
-    # Ensure C:\Windows\system32  and C:\Windows directories are
-    # always present in PATH variable.
-    # C:\Windows\system32 is valid even for 64bit Windows. Access do DLLs are
-    # transparently redirected to C:\Windows\syswow64 for 64bit applactions.
-    # http://msdn.microsoft.com/en-us/library/aa384187(v=vs.85).aspx
+    # Ensure C:\Windows\system32  and C:\Windows directories are always present in PATH variable.
+    # C:\Windows\system32 is valid even for 64-bit Windows. Access do DLLs are transparently redirected to
+    # C:\Windows\syswow64 for 64bit applactions.
+    # See http://msdn.microsoft.com/en-us/library/aa384187(v=vs.85).aspx
     _bpath = [sys_dir, get_windows_dir()]
     return _bpath
 
@@ -70,13 +69,12 @@ def import_pywin32_module(module_name):
     """
     Import and return the PyWin32 module with the passed name.
 
-    When imported, the `pywintypes` and `pythoncom` modules both internally
-    import dynamic libraries (e.g., `pywintypes.py` imports `pywintypes34.dll`
-    under Python 3.4). The Anaconda Python distribution for Windows installs
-    these libraries to non-standard directories, resulting in
+    When imported, the `pywintypes` and `pythoncom` modules both internally import dynamic libraries
+    (e.g., `pywintypes.py` imports `pywintypes34.dll` under Python 3.4). The Anaconda Python distribution for Windows
+    installs these libraries to non-standard directories, resulting in
     `"ImportError: No system module 'pywintypes' (pywintypes34.dll)"`
-    exceptions. This function catches these exceptions, searches for these
-    libraries, adds their directories to `sys.path`, and retries.
+    exceptions. This function catches these exceptions, searches for these libraries, adds their directories to
+    `sys.path`, and retries.
 
     Parameters
     ----------
@@ -100,14 +98,13 @@ def import_pywin32_module(module_name):
             # Current value of "sys.frozen" if any.
             sys_frozen = getattr(sys, 'frozen', None)
 
-            # Force PyWin32 to search "sys.path" for DLLs. By default, PyWin32
-            # only searches "site-packages\win32\lib/", "sys.prefix", and
-            # Windows system directories (e.g., "C:\Windows\System32"). This is
-            # an ugly hack, but there is no other way.
+            # Force PyWin32 to search "sys.path" for DLLs. By default, PyWin32 only searches "site-packages\win32\lib",
+            # "sys.prefix", and Windows system directories (e.g., "C:\Windows\System32"). This is an ugly hack, but
+            # there is no other way.
             sys.frozen = '|_|GLYH@CK'
 
-            # If isolated to a venv, the preferred site.getsitepackages()
-            # function is unreliable. Fallback to searching "sys.path" instead.
+            # If isolated to a venv, the preferred site.getsitepackages() function is unreliable. Fall back to searching
+            # "sys.path" instead.
             if compat.is_venv:
                 sys_paths = sys.path
             else:
@@ -146,7 +143,7 @@ def convert_dll_name_to_str(dll_name):
     :param dll_name:
     :return:
     """
-    # imported here to avoid circular import
+    # Imported here to avoid circular import.
     if isinstance(dll_name, bytes):
         return str(dll_name, encoding='UTF-8')
     else:
@@ -154,11 +151,11 @@ def convert_dll_name_to_str(dll_name):
 
 
 def set_exe_checksum(exe_path):
-    """Set executable's checksum in its metadata.
+    """
+    Set executable's checksum in its metadata.
 
-    This optional checksum is supposed to protect the executable against
-    corruption but some anti-viral software have taken to flagging anything
-    without it set correctly as malware. See issue #5579.
+    This optional checksum is supposed to protect the executable against corruption but some anti-viral software have
+    taken to flagging anything without it set correctly as malware. See issue #5579.
     """
     import pefile
     pe = pefile.PE(exe_path)
