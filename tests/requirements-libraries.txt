@@ -27,7 +27,7 @@ keyring==19.2.0  # pyup: ignore
 babel==2.9.1
 future==0.18.2
 gevent==21.8.0
-pygments==2.9.0
+pygments==2.10.0
 pyside2==5.15.2
 pyside6==6.1.0
 pyqt5==5.15.4
