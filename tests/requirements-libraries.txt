@@ -27,7 +27,7 @@ keyring==19.2.0  # pyup: ignore
 babel==2.9.1
 future==0.18.2
 gevent==21.8.0
-pygments==2.9.0
+pygments==2.10.0
 pyside2==5.15.2
 pyside6==6.1.0
 pyqt5==5.15.4
@@ -66,7 +66,7 @@ scipy==1.7.1; python_version > '3.6'
 scipy==1.5.4; python_version <= '3.6'  # pyup: ignore
 
 # and matplotlib
-matplotlib==3.4.2; python_version > '3.6'
+matplotlib==3.4.3; python_version > '3.6'
 matplotlib==3.3.4; python_version <= '3.6'  # pyup: ignore
 
 # Install PyInstaller Hook Sample, to ensure that tests declared in
