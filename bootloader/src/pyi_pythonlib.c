@@ -248,6 +248,57 @@ pyi_pylib_set_runtime_opts(ARCHIVE_STATUS *status)
     return 0;
 }
 
+/* Enable UTF-8 mode as per PEP540. Applicable to Python 3.7 and later.
+ * It seems Py_UTF8Mode must be set before Py_SetPath is called, but
+ * in practice, it is probably a good idea to call it before any
+ * Py_* functions are used
+ */
+static void
+pyi_pylib_set_pep540_utf8_mode()
+{
+    int enable_utf8_mode = -1;
+    char *env_utf8 = NULL;
+
+    /* Applicable only to Python 3.7 and later */
+    if (pyvers < 307) {
+        return;
+    }
+
+    /* Honor the setting via PYTHONUTF8 environment variable (valid
+     * values are 0 and 1, same as with python interpreter) */
+    env_utf8 = pyi_getenv("PYTHONUTF8");
+    if (env_utf8) {
+        if (strcmp(env_utf8, "0") == 0) {
+            enable_utf8_mode = 0;
+        } else if (strcmp(env_utf8, "1") == 0) {
+            enable_utf8_mode = 1;
+        } else {
+            OTHERERROR("Invalid value for PYTHONUTF8=%s; disabling utf-8 mode!\n", env_utf8);
+            enable_utf8_mode = 0;
+        }
+    }
+
+#ifndef _WIN32
+    if (enable_utf8_mode < 0) {
+        /* On non-Windows, the C locale and the POSIX locale enable the
+         * UTF-8 Mode (PEP 540) */
+        const char *ctype_loc = setlocale(LC_CTYPE, NULL);
+        if (ctype_loc != NULL && (strcmp(ctype_loc, "C") == 0 || strcmp(ctype_loc, "POSIX") == 0)) {
+            enable_utf8_mode = 1;
+        }
+    }
+#endif
+
+    /* Enable/disable UTF-8 mode */
+    if (enable_utf8_mode > 0) {
+        VS("LOADER: Enabling UTF-8 mode\n");
+        *PI_Py_UTF8Mode = 1;
+    } else {
+        *PI_Py_UTF8Mode = 0;
+    }
+}
+
+
 void
 pyi_free_wargv(wchar_t ** wargv)
 {
@@ -400,6 +451,11 @@ pyi_pylib_start_python(ARCHIVE_STATUS *status)
     static wchar_t pypath_w[MAX_PYPATH_SIZE];
     static wchar_t pyhome_w[PATH_MAX + 1];
     static wchar_t progname_w[PATH_MAX + 1];
+
+    /* Enable PEP540 UTF-8 mode, if necessary. Must be done before Py_SetPath()
+     * is called for the setting to take effect (but we should probably also
+     * set it before pyi_locale_char2wchar() calls). */
+    pyi_pylib_set_pep540_utf8_mode();
 
     /* Decode using current locale */
     if (!pyi_locale_char2wchar(progname_w, status->executablename, PATH_MAX)) {
