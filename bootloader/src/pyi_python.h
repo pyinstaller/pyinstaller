@@ -66,6 +66,7 @@ EXTDECLVAR(int, Py_IgnoreEnvironmentFlag);
 EXTDECLVAR(int, Py_DontWriteBytecodeFlag);
 EXTDECLVAR(int, Py_NoUserSiteDirectory);
 EXTDECLVAR(int, Py_UnbufferedStdioFlag);
+EXTDECLVAR(int, Py_UTF8Mode);
 
 /* This initializes the table of loaded modules (sys.modules), and creates the fundamental modules builtins, __main__ and sys. It also initializes the module search path (sys.path). It does not set sys.argv; */
 EXTDECLPROC(int, Py_Initialize, (void));
