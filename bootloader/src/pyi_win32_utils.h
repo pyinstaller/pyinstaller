@@ -30,6 +30,8 @@ char * pyi_win32_utf8_to_mbs(char * dst, const char * src, size_t max);
 
 int pyi_win32_mkdir(const wchar_t *path);
 
+int pyi_win32_is_symlink(const wchar_t *path);
+
 #endif /* ifdef _WIN32 */
 
 #endif  /* UTILS_H */

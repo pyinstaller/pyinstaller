@@ -44,6 +44,10 @@ static ULONG_PTR actToken;
     #define STATUS_SXS_EARLY_DEACTIVATION 0xC015000F
 #endif
 
+#ifndef IO_REPARSE_TAG_SYMLINK
+    #define IO_REPARSE_TAG_SYMLINK 0xA000000CL
+#endif
+
 #define ERROR_STRING_MAX 4096
 static char errorString[ERROR_STRING_MAX];
 
@@ -521,5 +525,28 @@ pyi_win32_mkdir(const wchar_t *path)
     };
     return 0;
 }
+
+/* Check if the given path is a symbolic link. */
+int pyi_win32_is_symlink(const wchar_t *path)
+{
+    WIN32_FIND_DATAW info;
+    HANDLE ret;
+
+    ret = FindFirstFileExW(path, FindExInfoBasic, &info, FindExSearchNameMatch, NULL, 0);
+    if (ret == INVALID_HANDLE_VALUE) {
+        /* Failed to look up path; assume it is not symbolic link */
+        return 0;
+    }
+    FindClose(ret);
+
+    if (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
+        if (info.dwReserved0 == IO_REPARSE_TAG_SYMLINK) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
 
 #endif  /* _WIN32 */
