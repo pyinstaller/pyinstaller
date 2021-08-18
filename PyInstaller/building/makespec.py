@@ -32,8 +32,8 @@ DEBUG_ARGUMENT_CHOICES = ['imports', 'bootloader', 'noarchive']
 DEBUG_ALL_CHOICE = ['all']
 
 
-def quote_win_filepath(path):
-    # quote all \ with another \ after using normpath to clean up the path
+def escape_win_filepath(path):
+    # escape all \ with another \ after using normpath to clean up the path
     return os.path.normpath(path).replace('\\', '\\\\')
 
 
@@ -649,15 +649,15 @@ def main(
     # Handle additional EXE options.
     exe_options = ''
     if version_file:
-        exe_options = "%s, version='%s'" % (exe_options, quote_win_filepath(version_file))
+        exe_options += "\n    version='%s'," % escape_win_filepath(version_file)
     if uac_admin:
-        exe_options = "%s, uac_admin=%s" % (exe_options, 'True')
+        exe_options += "\n    uac_admin=True,"
     if uac_uiaccess:
-        exe_options = "%s, uac_uiaccess=%s" % (exe_options, 'True')
+        exe_options += "\n    uac_uiaccess=True,"
     if icon_file:
         # Icon file for Windows.
         # On Windows, the default icon is embedded in the bootloader executable.
-        exe_options = "%s, icon='%s'" % (exe_options, quote_win_filepath(icon_file))
+        exe_options += "\n    icon='%s'," % escape_win_filepath(icon_file)
         # Icon file for Mac OS.
         # We need to encapsulate it into apostrofes.
         icon_file = "'%s'" % icon_file
@@ -673,13 +673,13 @@ def main(
     if manifest:
         if "<" in manifest:
             # Assume XML string
-            exe_options = "%s, manifest='%s'" % (exe_options, manifest.replace("'", "\\'"))
+            exe_options += "\n    manifest='%s'," % manifest.replace("'", "\\'")
         else:
             # Assume filename
-            exe_options = "%s, manifest='%s'" % (exe_options, quote_win_filepath(manifest))
+            exe_options += "\n    manifest='%s'," % escape_win_filepath(manifest)
     if resources:
-        resources = list(map(quote_win_filepath, resources))
-        exe_options = "%s, resources=%s" % (exe_options, repr(resources))
+        resources = list(map(escape_win_filepath, resources))
+        exe_options += "\n    resources=%s," % repr(resources)
 
     hiddenimports = hiddenimports or []
     upx_exclude = upx_exclude or []
@@ -722,8 +722,8 @@ def main(
 
     if splash:
         splash_init = splashtmpl % {'splash_image': splash}
-        splash_binaries = "\n" + " " * (10 if onefile else 15) + "splash.binaries,"
-        splash_target = "\n" + " " * 10 + "splash,"
+        splash_binaries = "\n    splash.binaries,"
+        splash_target = "\n    splash,"
     else:
         splash_init = splash_binaries = splash_target = ""
 
