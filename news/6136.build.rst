@@ -1,0 +1,2 @@
+(Windows) Enable `Control Flow Guard <https://docs.microsoft.com/en-us/windows/win32/secbp/control-flow-guard>`_
+for the Windows bootloader.

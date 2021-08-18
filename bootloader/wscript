@@ -700,6 +700,11 @@ def configure(ctx):
             ctx.env.append_value(
                 'LINKFLAGS', '/SUBSYSTEM:CONSOLE,%s' % ('5.01' if ctx.env.PYI_ARCH == '32bit' else '5.02')
             )
+
+            # Enable support for Control Flow Guard
+            # https://docs.microsoft.com/en-us/windows/win32/secbp/control-flow-guard
+            ctx.env.append_value('CFLAGS', '/guard:cf')
+            ctx.env.append_value('LINKFLAGS', '/guard:cf')
         else:
             # Use Visual C++ compatible alignment
             ctx.env.append_value('CFLAGS', '-mms-bitfields')
