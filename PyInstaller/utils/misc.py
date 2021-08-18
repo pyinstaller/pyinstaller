@@ -160,14 +160,17 @@ def compile_py_files(toc, workpath):
                 # to a local directory and change the TOC entry accordingly.
                 ext = os.path.splitext(obj_fnm)[1]
 
+                split_nm = nm.split(".")
                 if "__init__" not in obj_fnm:
                     # If it is a normal module, use the last part of the qualified name as the module name and the first
                     # part as the leading path.
-                    leading, mod_name = nm.split(".")[:-1], nm.split(".")[-1]
+                    leading = split_nm[:-1]
+                    mod_name = split_nm[-1]
                 else:
                     # In case of an __init__ module, use all the qualified name as the leading path and use "__init__"
                     # as the module name.
-                    leading, mod_name = nm.split("."), "__init__"
+                    leading = split_nm
+                    mod_name = "__init__"
 
                 leading = os.path.join(basepath, *leading)
 
