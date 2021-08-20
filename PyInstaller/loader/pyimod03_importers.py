@@ -56,6 +56,22 @@ class FrozenPackageImporter(object):
         return self._importer.load_module(fullname, self._entry_name)
 
 
+def _decode_source(source_bytes):
+    """
+    Decode bytes representing source code and return the string. Universal newline support is used in the decoding.
+    Based on CPython's implementation of the same functionality:
+    https://github.com/python/cpython/blob/3.9/Lib/importlib/_bootstrap_external.py#L679-L688
+    """
+    # Local imports to avoid bootstrap issues
+    import io
+    import tokenize
+
+    source_bytes_readline = io.BytesIO(source_bytes).readline
+    encoding = tokenize.detect_encoding(source_bytes_readline)
+    newline_decoder = io.IncrementalNewlineDecoder(decoder=None, translate=True)
+    return newline_decoder.decode(source_bytes.decode(encoding[0]))
+
+
 class FrozenImporter(object):
     """
     Load bytecode of Python modules from the executable created by PyInstaller.
@@ -290,11 +306,13 @@ class FrozenImporter(object):
         Return None, unless the corresponding source file was explicitly collected to the filesystem.
         """
         if fullname in self.toc:
-            # Try loading .py file from the filesystem
+            # Try loading the .py file from the filesystem (only for collected modules)
             filename = pyi_os_path.os_path_join(SYS_PREFIX, fullname.replace('.', pyi_os_path.os_sep) + '.py')
             try:
-                with open(filename, 'r') as fp:
-                    return fp.read()
+                # Read in binary mode, then decode
+                with open(filename, 'rb') as fp:
+                    source_bytes = fp.read()
+                return _decode_source(source_bytes)
             except FileNotFoundError:
                 pass
             return None
