@@ -19,9 +19,10 @@ This hook freezes the external `Makefile` and `pyconfig.h` files bundled with th
 # config vars to a module (see hook-sysconfig.py). It doesn't use a nice `get module name` function like ``sysconfig``
 # does to help us locate it but the module is the same file that ``sysconfig`` uses so we can use the
 # ``_get_sysconfigdata_name()`` from regular ``sysconfig``.
-import sysconfig
-
-from PyInstaller import compat
-
-if not compat.is_win and hasattr(sysconfig, '_get_sysconfigdata_name'):
+try:
+    import sysconfig
     hiddenimports = [sysconfig._get_sysconfigdata_name()]
+except AttributeError:
+    # Either sysconfig has no attribute _get_sysconfigdata_name (i.e., the function does not exist), or this is Windows
+    # and the _get_sysconfigdata_name() call failed due to missing sys.abiflags attribute.
+    pass
