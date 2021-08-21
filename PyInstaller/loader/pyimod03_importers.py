@@ -63,6 +63,7 @@ def _decode_source(source_bytes):
     https://github.com/python/cpython/blob/3.9/Lib/importlib/_bootstrap_external.py#L679-L688
     """
     # Local imports to avoid bootstrap issues
+    # NOTE: both modules are listed in compat.PY3_BASE_MODULES and collected into base_library.zip.
     import io
     import tokenize
 
