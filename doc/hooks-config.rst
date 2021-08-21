@@ -16,19 +16,21 @@ hook settings:
 
 .. code-block:: python
 
-    a = Analysis(["program.py"],
-                ...,
-                hooksconfig={
-                    "some_hook_id": {
-                        "foo": ["entry1", "entry2"],
-                        "bar": 42,
-                        "enable_x": True,
-                    },
-                    "another_hook_id": {
-                        "baz": "value",
-                    }
-                },
-                ...)
+    a = Analysis(
+        ["program.py"],
+        ...,
+        hooksconfig={
+            "some_hook_id": {
+                "foo": ["entry1", "entry2"],
+                "bar": 42,
+                "enable_x": True,
+            },
+            "another_hook_id": {
+                "baz": "value",
+            },
+        },
+        ...,
+    )
 
 
 .. _supported hooks and options:
@@ -74,16 +76,18 @@ translations to British English and Simplified Chinese:
 
 .. code-block:: python
 
-    a = Analysis(["my-gtk-app.py"],
-                 ...,
-                 hooksconfig={
-                     "gi": {
-                         "icons": ["Adwaita"],
-                         "themes": ["Adwaita"],
-                         "languages": ["en_GB", "zh_CN"]
-                     }
-                 },
-                 ...)
+    a = Analysis(
+        ["my-gtk-app.py"],
+        ...,
+        hooksconfig={
+            "gi": {
+                "icons": ["Adwaita"],
+                "themes": ["Adwaita"],
+                "languages": ["en_GB", "zh_CN"],
+            },
+        },
+        ...,
+    )
 
 
 
@@ -124,14 +128,16 @@ data from ``mypackage`` by setting the corresponding option in their
 
 .. code-block:: python
 
-    a = Analysis(["program-using-mypackage.py"],
-                 ...,
-                 hooksconfig={
-                     "mypackage": {
-                         "collect_extra_data": True,
-                     }
-                 },
-                 ...)
+    a = Analysis(
+        ["program-using-mypackage.py"],
+        ...,
+        hooksconfig={
+            "mypackage": {
+                "collect_extra_data": True,
+            },
+        },
+        ...,
+    )
 
 
 .. include:: _common_definitions.txt
