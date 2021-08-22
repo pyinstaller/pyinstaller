@@ -225,6 +225,8 @@ elif compat.is_win:
 
     exclude_list = WinExcludeList(exclude_list)
 
+_seen_wine_dlls = set()  # Used for warning tracking in include_library()
+
 
 def include_library(libname):
     """
@@ -246,7 +248,9 @@ def include_library(libname):
     # turning it into the "standard" missing DLL problem. Exclusion should not affect the bundle's ability to run under
     #  Wine itself, as the excluded DLLs are available there.
     if compat.is_win_wine and compat.is_wine_dll(libname):
-        logger.warning("Excluding Wine built-in DLL: %s", libname)  # displayed only if DLL would have been included
+        if libname not in _seen_wine_dlls:
+            logger.warning("Excluding Wine built-in DLL: %s", libname)  # displayed only if DLL would have been included
+            _seen_wine_dlls.add(libname)  # display only once for each DLL
         return False
 
     return True
