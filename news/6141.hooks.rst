@@ -1,0 +1,2 @@
+Prevent potential error in hooks for Qt-based packages that could be triggered 
+by a partial ``PyQt6`` installation.
