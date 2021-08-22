@@ -156,6 +156,22 @@ def test_module_with_coding_utf8(pyi_builder):
     pyi_builder.test_source("import module_with_coding_utf8")
 
 
+# Test that our FrozenImporter's get_source() method can load source files with utf-8 emoji characters. See issue #6143.
+def test_source_utf8_emoji(pyi_builder):
+    # Collect the module's source as data file
+    datas = os.pathsep.join((os.path.join(_MODULES_DIR, 'module_with_utf8_emoji.py'), os.curdir))
+    pyi_builder.test_source(
+        """
+        import inspect
+
+        import module_with_utf8_emoji
+
+        # Retrieve source code
+        source = inspect.getsource(module_with_utf8_emoji)
+        """, ['--add-data', datas]
+    )
+
+
 def test_hiddenimport(pyi_builder):
     # The script simply does nothing, not even print out a line. The check is done by comparing with
     # logs/test_hiddenimport.toc

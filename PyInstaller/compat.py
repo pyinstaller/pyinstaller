@@ -602,6 +602,7 @@ PY3_BASE_MODULES = {
     'sre_compile',
     'sre_constants',
     'sre_parse',
+    'tokenize',  # used by loader/pymod03_importers.py
     'traceback',  # for startup errors
     'types',
     'weakref',
