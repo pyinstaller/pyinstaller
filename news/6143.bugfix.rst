@@ -1,0 +1,2 @@
+Fix handling of encodings when reading the collected .py source files
+via ``FrozenImporter.get_source()``.
