@@ -61,21 +61,21 @@ def test_matplotlib(pyi_builder, monkeypatch, backend_name, package_name, bindin
     # Script to be tested, enabling this Qt backend.
     test_script = (
         """
-        import matplotlib, os, sys, tempfile
+        import os
+        import sys
+        import tempfile
 
-        # Localize test parameters.
-        backend_name = {backend_name!r}
-        binding = {binding!r}
+        import matplotlib
 
         # Report these parameters.
-        print('Testing Matplotlib with backend', repr(backend_name), 'and binding ($QT_API)', repr(binding))
+        print('Testing Matplotlib with backend=%r and QT_API=%r' % ({backend_name!r}, {binding!r}))
 
         # Configure Matplotlib *BEFORE* calling any Matplotlib functions.
-        matplotlib.rcParams['backend'] = backend_name
-        os.environ['QT_API'] = binding
+        matplotlib.rcParams['backend'] = {backend_name!r}
+        os.environ['QT_API'] = {binding!r}
 
         # Enable the desired backend *BEFORE* plotting with this backend.
-        matplotlib.use(backend_name)
+        matplotlib.use({backend_name!r})
 
         # A runtime hook should force Matplotlib to create its configuration directory in a temporary directory
         # rather than in $HOME/.matplotlib.
@@ -87,6 +87,9 @@ def test_matplotlib(pyi_builder, monkeypatch, backend_name, package_name, bindin
         # Test access to the standard 'mpl_toolkits' namespace package installed with Matplotlib.
         # Note that this import was reported to fail under Matplotlib 1.3.0.
         from mpl_toolkits import axes_grid1
+
+        # Try importing pyplot. This will attempt to activate the selected backend.
+        from matplotlib import pyplot as plt
         """.format(backend_name=backend_name, binding=binding)
     )
 

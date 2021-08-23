@@ -89,6 +89,114 @@ translations to British English and Simplified Chinese:
         ...,
     )
 
+.. _matplotlib hook options:
+
+Matplotlib hooks
+----------------
+
+The hooks for ``matplotlib`` package allow user to control the backend
+collection behavior via ``backends`` option under the ``matplotlib``
+identifier, as described below.
+
+**Hook identifier:** ``matplotlib``
+
+**Options**
+
+ * ``backends`` [*string* or *list of strings*]: backend selection method
+   or name(s) of backend(s) to collect. Valid string values: ``'auto'``,
+   ``'all'``, or a human-readable backend name (e.g., ``'TkAgg'``). To
+   specify multiple backends to be collected, use a list of strings
+   (e.g., ``['TkAgg', 'Qt5Agg']``).
+
+**Backend selection process**
+
+If ``backends`` option is set to ``'auto'`` (or not specified), the hook
+performs auto-detection of used backends, by scanning the code for
+:func:`matplotlib.use` function calls with literal arguments. For example,
+``matplotlib.use('TkAgg')`` being used in the code results in the
+``TkAgg`` backend being collected. If no such calls are found, the default
+backend is determined as the first importable GUI-based backend, using the
+same priority list as internally used by the :func:`matplotlib.get_backend`
+and :func:`matplotlib.pyplot.switch_backend` functions: ``['MacOSX',
+'Qt5Agg', 'Gtk3Agg', 'TkAgg', 'WxAgg']``. If no GUI-based backend is
+importable, the headless ``'Agg'`` is collected instead.
+
+.. note::
+    Due to limitations of the bytecode-scanning approach, only specific
+    forms of :func:`matplotlib.use` invocation can be automatically detected.
+    The backend must be specified as string literal (as opposed to being
+    passed via a variable). The second optional argument, ``force``, can
+    also be specified, but it must also be a literal and must not be
+    specified as a keyword argument:
+
+    .. code-block:: python
+
+        import matplotlib
+
+        matplotlib.use('TkAgg')  # detected
+        matplotlib.use('TkAgg', False)  # detected
+
+        backend = 'TkAgg'
+        matplotlib.use(backend)  # not detected
+
+        matplotlib.use('TkAgg', force=False)  # not detected
+
+    In addition to ``matplotlib`` module name, its common alias, ``mpl``
+    is also recongized:
+
+    .. code-block:: python
+
+        import matplotlib as mpl
+        mpl.use('TkAgg')  # detected
+
+
+    Importing the function from the module should also work:
+
+    .. code-block:: python
+
+        from matplotlib import use
+        use('TkAgg')  # detected
+
+
+If ``backends`` option is set to ``'all'``, all (importable) backends are
+selected, which corresponds to the behavior of |PyInstaller| 4.x and earlier.
+The list of importable backends depends on the packages installed in the
+environment; for example, the ``Qt5Agg`` backend becomes importable if
+either the ``PyQt5`` or the ``PySide2`` package is installed.
+
+Otherwise, the value of the ``backends`` option is treated as a backend
+name (if it is a string) or a list of backend names (if it is a list).
+In the case of user-provided backend names, no additional validation
+is performed; the backends are collected regardless of whether they are
+importable or not.
+
+**Example**
+
+.. code-block:: python
+
+    a = Analysis(
+        ["my-matplotlib-app.py"],
+        ...,
+        hooksconfig={
+            "matplotlib": {
+                "backends": "auto",  # auto-detect; the default behavior
+                # "backends": "all",  # collect all backends
+                # "backends": "TkAgg",  # collect a specific backend
+                # "backends": ["TkAgg", "Qt5Agg"],  # collect multiple backends
+            },
+        },
+        ...,
+    )
+
+.. note::
+    The ``Qt5Agg`` backend conditionally imports both the ``PyQt5`` and
+    the ``PySide2`` package. Therefore, if both are installed in your
+    environment, |PyInstaller| will end up collecting both. In addition
+    to increasing the frozen application's size, this might also cause
+    conflicts between the collected versions of the shared libraries.
+    To prevent that, use the :option:`--exclude-module` option to exclude
+    one of the two packages (i.e., ``--exclude-module PyQt5`` or
+    ``--exclude-module PySide2``).
 
 
 
