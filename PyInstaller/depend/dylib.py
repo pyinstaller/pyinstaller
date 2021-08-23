@@ -225,23 +225,35 @@ elif compat.is_win:
 
     exclude_list = WinExcludeList(exclude_list)
 
+_seen_wine_dlls = set()  # Used for warning tracking in include_library()
+
 
 def include_library(libname):
     """
     Check if the dynamic library should be included with application or not.
     """
-    # For configuration phase we need to have exclude / include lists None so these checking is skipped and library gets
-    # included.
     if exclude_list:
         if exclude_list.search(libname) and not include_list.search(libname):
-            # Library is excluded and is not overriden by include list. It should be then excluded.
+            # Library is excluded and is not overriden by include list. It should be excluded.
             return False
-        else:
-            # Include library.
-            return True
-    else:
-        # By default include library.
-        return True
+
+    # If we are running under Wine and the library is a Wine built-in DLL, ensure that it is always excluded. Typically,
+    # excluding a DLL leads to an incomplete bundle and run-time errors when the said DLL is not installed on the target
+    # system. However, having Wine built-in DLLs collected is even more detrimental, as they usually provide Wine's
+    # implementation of low-level functionality, and therefore cannot be used on actual Windows (i.e., system libraries
+    # from the C:\Windows\system32 directory that might end up collected due to ``_win_includes`` list; a prominent
+    # example are VC runtime DLLs, for which Wine provides their own implementation, unless user explicitly installs
+    # Microsoft's VC redistributable package in their Wine environment). Therefore, excluding the Wine built-in DLLs
+    # actually improves the chances of the bundle running on Windows, or at least makes the issue easier to debug by
+    # turning it into the "standard" missing DLL problem. Exclusion should not affect the bundle's ability to run under
+    #  Wine itself, as the excluded DLLs are available there.
+    if compat.is_win_wine and compat.is_wine_dll(libname):
+        if libname not in _seen_wine_dlls:
+            logger.warning("Excluding Wine built-in DLL: %s", libname)  # displayed only if DLL would have been included
+            _seen_wine_dlls.add(libname)  # display only once for each DLL
+        return False
+
+    return True
 
 
 # Patterns for suppressing warnings about missing dynamically linked libraries
