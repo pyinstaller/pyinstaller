@@ -184,13 +184,13 @@ In this case, you will want to get more verbose output to find out
 what is going on.
 
 * For Mac OS, you can run your application on the command line,
-  i.e.``./dist/my_gui``
+  i.e. ``./dist/my_gui``
   in `Terminal` instead of clicking on ``my_gui.app``.
 
 * For Windows, you will need to re-bundle your application without the
   :option:`--windowed` option.
   Then you can run the resulting executable from the command line,
-  i.e.: ``my_gui.exe``.
+  i.e. ``my_gui.exe``.
 
 * For Unix and GNU/Linux there in no :option:`--windowed` option.
   Anyway, if a your GUI application fails,
