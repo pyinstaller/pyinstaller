@@ -39,6 +39,7 @@ is_py310 = sys.version_info >= (3, 10)
 
 is_win = sys.platform.startswith('win')
 is_win_10 = is_win and (platform.win32_ver()[0] == '10')
+is_win_wine = False  # Running under Wine; determined later on.
 is_cygwin = sys.platform == 'cygwin'
 is_darwin = sys.platform == 'darwin'  # Mac OS X
 
@@ -243,6 +244,40 @@ else:
 
 # Machine suffix for bootloader.
 machine = _pyi_machine(platform.machine(), platform.system())
+
+
+# Wine detection and support
+def is_wine_dll(filename):
+    """
+    Check if the given PE file is a Wine DLL (PE-converted built-in, or fake/placeholder one).
+
+    Returns True if the given file is a Wine DLL, False if not (or if file cannot be analyzed or does not exist).
+    """
+    _WINE_SIGNATURES = (
+        b'Wine builtin DLL',  # PE-converted Wine DLL
+        b'Wine placeholder DLL',  # Fake/placeholder Wine DLL
+    )
+    _MAX_LEN = max([len(sig) for sig in _WINE_SIGNATURES])
+
+    # Wine places their DLL signature in the padding area between the IMAGE_DOS_HEADER and IMAGE_NT_HEADERS. So we need
+    # to compare the bytes that come right after IMAGE_DOS_HEADER, i.e., after initial 64 bytes. We can read the file
+    # directly and avoid using the pefile library to avoid performance penalty associated with full header parsing.
+    try:
+        with open(filename, 'rb') as fp:
+            fp.seek(64)
+            signature = fp.read(_MAX_LEN)
+        return signature.startswith(_WINE_SIGNATURES)
+    except Exception:
+        pass
+    return False
+
+
+if is_win:
+    try:
+        import ctypes.util  # noqa: E402
+        is_win_wine = is_wine_dll(ctypes.util.find_library('kernel32'))
+    except Exception:
+        pass
 
 # Set and get environment variables does not handle unicode strings correctly on Windows.
 

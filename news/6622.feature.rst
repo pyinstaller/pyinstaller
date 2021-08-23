@@ -1,0 +1,3 @@
+(Wine) Prevent collection of Wine built-in DLLs (in either PE-converted or
+fake/placeholder form) when building a Windows frozen application under
+Wine. Display a warning for each excluded Wine built-in DLL.
