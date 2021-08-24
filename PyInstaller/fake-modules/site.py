@@ -38,7 +38,7 @@ USER_BASE = ''
 
 # Package IPython depends on the following functionality from real site.py. This code could be probably removed when the
 # following bug is fixed: https://github.com/ipython/ipython/issues/2606
-class _Helper(object):
+class _Helper:
     """
     Define the builtin 'help'. This is a wrapper around pydoc.help (with a twist).
     """

@@ -38,7 +38,7 @@ PYZ_TYPE_DATA = 2
 PYZ_TYPE_NSPKG = 3  # PEP-420 namespace package
 
 
-class FilePos(object):
+class FilePos:
     """
     This class keeps track of the file object representing and current position in a file.
     """
@@ -49,7 +49,7 @@ class FilePos(object):
         self.pos = 0
 
 
-class ArchiveFile(object):
+class ArchiveFile:
     """
     File class support auto open when access member from file object This class is use to avoid file locking on windows.
     """
@@ -105,7 +105,7 @@ class ArchiveReadError(RuntimeError):
     pass
 
 
-class ArchiveReader(object):
+class ArchiveReader:
     """
     A base class for a repository of python code objects. The extract method is used by imputil.ArchiveImporter to
     get code objects by name (fully qualified name), so an end-user "import a.b" becomes:
@@ -201,7 +201,7 @@ class ArchiveReader(object):
         self.lib.read(4)
 
 
-class Cipher(object):
+class Cipher:
     """
     This class is used only to decrypt Python modules.
     """

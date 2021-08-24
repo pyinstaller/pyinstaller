@@ -166,7 +166,7 @@ def data_dir(
     return _data_dir_copy(request, name, tmpdir)
 
 
-class AppBuilder(object):
+class AppBuilder:
     def __init__(self, tmpdir, request, bundle_mode):
         self._tmpdir = tmpdir
         self._request = request

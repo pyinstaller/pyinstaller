@@ -29,7 +29,7 @@ ERROR_RESOURCE_NAME_NOT_FOUND = 1814
 ERROR_RESOURCE_LANG_NOT_FOUND = 1815
 
 
-class File(object):
+class File:
     """
     Win32 PE file class.
     """

@@ -182,7 +182,7 @@ _MAGIC_MODULE_HOOK_ATTRS = {
 }
 
 
-class ModuleHook(object):
+class ModuleHook:
     """
     Cached object encapsulating a lazy loadable hook script.
 
@@ -529,7 +529,7 @@ class ModuleHook(object):
                     logger.debug("Excluding import of %s from module %s", dest, src)
 
 
-class AdditionalFilesCache(object):
+class AdditionalFilesCache:
     """
     Cache for storing what binaries and datas were pushed by what modules when import hooks were processed.
     """

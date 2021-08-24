@@ -22,7 +22,7 @@ from PyInstaller.building.utils import format_binaries_and_datas
 from PyInstaller.lib.modulegraph.modulegraph import (RuntimeModule, RuntimePackage)
 
 
-class PreSafeImportModuleAPI(object):
+class PreSafeImportModuleAPI:
     """
     Metadata communicating changes made by the current **pre-safe import module hook** (i.e., hook run immediately
     _before_ a call to `ModuleGraph._safe_import_module()` recursively adding the hooked module, package,
@@ -178,7 +178,7 @@ class PreSafeImportModuleAPI(object):
         self._module_graph.append_package_path(self.module_name, directory)
 
 
-class PreFindModulePathAPI(object):
+class PreFindModulePathAPI:
     """
     Metadata communicating changes made by the current **pre-find module path hook** (i.e., hook run immediately
     _before_ a call to `ModuleGraph._find_module_path()` finding the hooked module's absolute path) back to PyInstaller.
@@ -248,7 +248,7 @@ class PreFindModulePathAPI(object):
         return self._module_name
 
 
-class PostGraphAPI(object):
+class PostGraphAPI:
     """
     Metadata communicating changes made by the current **post-graph hook** (i.e., hook run for a specific module
     transitively imported by the current application _after_ the module graph of all `import` statements performed by

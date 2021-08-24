@@ -157,7 +157,7 @@ elif compat.is_unix:
     _excludes |= _unix_excludes
 
 
-class ExcludeList(object):
+class ExcludeList:
     def __init__(self):
         self.regex = re.compile('|'.join(_excludes), re.I)
 
@@ -169,7 +169,7 @@ class ExcludeList(object):
             return False
 
 
-class IncludeList(object):
+class IncludeList:
     def __init__(self):
         self.regex = re.compile('|'.join(_includes), re.I)
 
@@ -188,7 +188,7 @@ if compat.is_darwin:
     # On Mac use macholib to decide if a binary is a system one.
     from macholib import util
 
-    class MacExcludeList(object):
+    class MacExcludeList:
         def __init__(self, global_exclude_list):
             # Wraps the global 'exclude_list' before it is overridden by this class.
             self._exclude_list = global_exclude_list
@@ -205,7 +205,7 @@ if compat.is_darwin:
 
 elif compat.is_win:
 
-    class WinExcludeList(object):
+    class WinExcludeList:
         def __init__(self, global_exclude_list):
             self._exclude_list = global_exclude_list
             # use normpath because msys2 uses / instead of \

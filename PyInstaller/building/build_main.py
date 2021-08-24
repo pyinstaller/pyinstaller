@@ -609,7 +609,7 @@ class Analysis(Target):
         self.binaries = [i for i in self.binaries if _should_include_system_binary(i, list_of_exceptions or [])]
 
 
-class ExecutableBuilder(object):
+class ExecutableBuilder:
     """
     Class that constructs the executable.
     """

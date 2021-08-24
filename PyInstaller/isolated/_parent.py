@@ -88,7 +88,7 @@ def _subprocess_env():
     return env
 
 
-class Python(object):
+class Python:
     """
     Start and connect to a separate Python subprocess.
 

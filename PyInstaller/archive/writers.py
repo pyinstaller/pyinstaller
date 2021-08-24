@@ -30,7 +30,7 @@ from PyInstaller.compat import BYTECODE_MAGIC, is_py37, is_win
 from PyInstaller.loader.pyimod02_archive import PYZ_TYPE_DATA, PYZ_TYPE_MODULE, PYZ_TYPE_NSPKG, PYZ_TYPE_PKG
 
 
-class ArchiveWriter(object):
+class ArchiveWriter:
     """
     A base class for a repository of python code objects. The extract method is used by imputil.ArchiveImporter to
     get code objects by name (fully qualified name), so an end-user "import a.b" becomes extract('a.__init__') and
@@ -206,7 +206,7 @@ class ZlibArchiveWriter(ArchiveWriter):
         self.lib.write(struct.pack('!B', self.cipher is not None))
 
 
-class CTOC(object):
+class CTOC:
     """
     A class encapsulating the table of contents of a CArchive.
 

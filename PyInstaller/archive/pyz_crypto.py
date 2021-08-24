@@ -14,7 +14,7 @@ import os
 BLOCK_SIZE = 16
 
 
-class PyiBlockCipher(object):
+class PyiBlockCipher:
     """
     This class is used only to encrypt Python modules.
     """

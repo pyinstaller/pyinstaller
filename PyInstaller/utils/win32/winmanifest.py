@@ -199,7 +199,7 @@ class ManifestXMLParseError(InvalidManifestError):
     pass
 
 
-class Manifest(object):
+class Manifest:
     # Manifests:
     # http://msdn.microsoft.com/en-us/library/aa375365%28VS.85%29.aspx
     """

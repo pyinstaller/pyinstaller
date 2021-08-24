@@ -321,7 +321,7 @@ class DependencyInfo (namedtuple("DependencyInfo",
 #erroneously tests whether "module.packagepath is not None" to determine
 #whether a node is a package or not. However, "isinstance(module, Package)" is
 #a significantly more reliable test. Refactor the former into the latter.
-class Node(object):
+class Node:
     """
     Abstract base class (ABC) of all objects added to a `ModuleGraph`.
 

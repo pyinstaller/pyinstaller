@@ -65,7 +65,7 @@ for _path in sys.path:
 PYTHONPATH_PREFIXES.sort(key=lambda p: len(p.parts), reverse=True)
 
 
-class Distribution(object):
+class Distribution:
     """
     A bucket class representation of a Conda distribution.
 

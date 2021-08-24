@@ -29,7 +29,7 @@ PY_IGNORE_EXTENSIONS = {
 }
 
 
-class DependencyProcessor(object):
+class DependencyProcessor:
     """
     Class to convert final module dependency graph into TOC data structures.
     TOC data structures are suitable for creating the final executable.

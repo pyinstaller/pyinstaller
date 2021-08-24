@@ -24,7 +24,7 @@ class NotAnArchiveError(Exception):
     pass
 
 
-class CTOCReader(object):
+class CTOCReader:
     """
     A class encapsulating the table of contents of a CArchive.
 

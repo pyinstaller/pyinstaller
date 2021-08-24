@@ -392,7 +392,7 @@ class FixedFileInfo:
         )
 
 
-class StringFileInfo(object):
+class StringFileInfo:
     """
     WORD        wLength;      // length of the version resource
     WORD        wValueLength; // length of the Value member in the current

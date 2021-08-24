@@ -40,7 +40,7 @@ else:
         pass
 
 
-class FrozenPackageImporter(object):
+class FrozenPackageImporter:
     """
     Wrapper class for FrozenImporter that imports one specific fullname from a module named by an alternate fullname.
     The alternate fullname is derived from the __path__ of the package module containing that module.
@@ -73,7 +73,7 @@ def _decode_source(source_bytes):
     return newline_decoder.decode(source_bytes.decode(encoding[0]))
 
 
-class FrozenImporter(object):
+class FrozenImporter:
     """
     Load bytecode of Python modules from the executable created by PyInstaller.
 

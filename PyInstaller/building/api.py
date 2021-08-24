@@ -864,7 +864,7 @@ class COLLECT(Target):
         logger.info("Building COLLECT %s completed successfully.", self.tocbasename)
 
 
-class MERGE(object):
+class MERGE:
     """
     Merge repeated dependencies from other executables into the first executable. Data and binary files are then
     present only once and some disk space is thus reduced.

@@ -117,7 +117,7 @@ class TOC(list):
         return result.__sub__(self)
 
 
-class Target(object):
+class Target:
     invcnum = 0
 
     def __init__(self):
