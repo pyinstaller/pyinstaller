@@ -17,25 +17,6 @@ To install the current development version use::
     pip install https://github.com/pyinstaller/pyinstaller/tarball/develop
 
 
-Installing in Mac OS X
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-Mac OS X 10.8 comes with Python 2.7 pre-installed by Apple.
-However, Python 2.7 is end-of-life and no longer supported by |PyInstaller|,
-also
-major packages such as
-PyQt, Numpy, Matplotlib, Scipy, and the like,
-have dropped support for Python 2.7, too.
-Thus we strongly
-recommend that you install these using either `MacPorts`_ or `Homebrew`_.
-
-|PyInstaller| users report fewer problems when they use a package manager
-than when they attempt to install major packages individually.
-
-Alternatively you might install Python 3 following the
-`official guide <https://docs.python.org/3/using/mac.html>`_.
-
-
 Installing from the archive
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
