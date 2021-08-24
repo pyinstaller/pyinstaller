@@ -1,4 +1,4 @@
-#-----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 # Copyright (c) 2005-2021, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
@@ -7,12 +7,13 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
-#-----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 """
 Various classes and functions to provide some backwards-compatibility with previous versions of Python onward.
 """
 
 import errno
+
 import importlib.machinery
 import importlib.util
 import os
@@ -121,17 +122,8 @@ safe_repr = ascii
 string_types = str
 
 # Correct extension ending: 'c' or 'o'
-if __debug__:
-    PYCO = 'c'
-else:
-    PYCO = 'o'
 
-# Options for python interpreter when invoked in a subprocess.
-if __debug__:
-    # Python started *without* -O
-    _PYOPTS = ''
-else:
-    _PYOPTS = '-O'
+PYCO = 'c'
 
 # In a virtual environment created by virtualenv (github.com/pypa/virtualenv) there exists sys.real_prefix with the path
 # to the base Python installation from which the virtual environment was created. This is true regardless of the version
@@ -177,10 +169,6 @@ BYTECODE_MAGIC = importlib.util.MAGIC_NUMBER
 EXTENSION_SUFFIXES = importlib.machinery.EXTENSION_SUFFIXES
 ALL_SUFFIXES = importlib.machinery.all_suffixes()
 
-# In Python 3 'Tkinter' has been made lowercase - 'tkinter'.
-# TODO: remove once all references are gone from both pyinstaller and pyinstaller-hooks-contrib!
-modname_tkinter = 'tkinter'
-
 # On Windows we require pywin32-ctypes.
 # -> all pyinstaller modules should use win32api from PyInstaller.compat to
 #    ensure that it can work on MSYS2 (which requires pywin32-ctypes)
@@ -207,10 +195,7 @@ else:
 
 # Cygwin needs special handling, because platform.system() contains identifiers such as MSYS_NT-10.0-19042 and
 # CYGWIN_NT-10.0-19042 that do not fit PyInstaller's OS naming scheme. Explicitly set `system` to 'Cygwin'.
-if is_cygwin:
-    system = 'Cygwin'
-else:
-    system = platform.system()
+system = 'Cygwin' if is_cygwin else platform.system()
 
 # Machine suffix for bootloader.
 machine = _pyi_machine(platform.machine(), platform.system())
@@ -256,7 +241,7 @@ if is_win:
 # better to modify os.environ." (Same for unsetenv.)
 
 
-def getenv(name, default=None):
+def getenv(name, default=None) -> str:
     """
     Returns unicode string containing value of environment variable 'name'.
     """
@@ -283,7 +268,7 @@ def unsetenv(name):
 # Exec commands in subprocesses.
 
 
-def exec_command(*cmdargs, **kwargs):
+def exec_command(*cmdargs: str, encoding: str = None, raise_enoent: bool = None, **kwargs):
     """
     Run the command specified by the passed positional arguments, optionally configured by the passed keyword arguments.
 
@@ -318,7 +303,7 @@ def exec_command(*cmdargs, **kwargs):
     encoding : str, optional
         Optional keyword argument specifying the encoding with which to decode this command's standard output under
         Python 3. As this function's return value should be ignored, this argument should _never_ be passed.
-    __raise_ENOENT__ : boolean, optional
+    raise_enoent : boolean, optional
         Optional keyword argument to simply raise the exception if the executing the command fails since to the command
         is not found. This is useful to checking id a command exists.
 
@@ -330,8 +315,6 @@ def exec_command(*cmdargs, **kwargs):
         Ignore this value. See discussion above.
     """
 
-    encoding = kwargs.pop('encoding', None)
-    raise_enoent = kwargs.pop('__raise_ENOENT__', None)
     proc = subprocess.Popen(cmdargs, stdout=subprocess.PIPE, **kwargs)
     try:
         out = proc.communicate(timeout=60)[0]
@@ -364,7 +347,7 @@ def exec_command(*cmdargs, **kwargs):
     return out
 
 
-def exec_command_rc(*cmdargs, **kwargs):
+def exec_command_rc(*cmdargs: str, **kwargs) -> int:
     """
     Return the exit code of the command specified by the passed positional arguments, optionally configured by the
     passed keyword arguments.
@@ -392,7 +375,7 @@ def exec_command_rc(*cmdargs, **kwargs):
     return subprocess.call(cmdargs, **kwargs)
 
 
-def exec_command_stdout(*command_args, **kwargs):
+def exec_command_stdout(*command_args: str, encoding: str = None, **kwargs) -> str:
     """
     Capture and return the standard output of the command specified by the passed positional arguments, optionally
     configured by the passed keyword arguments.
@@ -408,7 +391,7 @@ def exec_command_stdout(*command_args, **kwargs):
 
     Parameters
     ----------
-    cmdargs : list
+    command_args : list[str]
         Variadic list whose:
         1. Mandatory first element is the absolute path, relative path, or basename in the current `${PATH}` of the
            command to run.
@@ -426,9 +409,6 @@ def exec_command_stdout(*command_args, **kwargs):
         Unicode string of this command's standard output decoded according to the "encoding" keyword argument.
     """
 
-    # Value of the passed "encoding" parameter, defaulting to None.
-    encoding = kwargs.pop('encoding', None)
-
     # If no encoding was specified, the current locale is defaulted to. Else, an encoding was specified. To ensure this
     # encoding is respected, the "universal_newlines" option is disabled if also passed. Nice, eh?
     kwargs['universal_newlines'] = encoding is None
@@ -441,7 +421,7 @@ def exec_command_stdout(*command_args, **kwargs):
     return stdout if encoding is None else stdout.decode(encoding)
 
 
-def exec_command_all(*cmdargs: str, **kwargs):
+def exec_command_all(*cmdargs: str, encoding: str = None, **kwargs) -> (int, str, str):
     """
     Run the command specified by the passed positional arguments, optionally configured by the passed keyword arguments.
 
@@ -467,7 +447,6 @@ def exec_command_all(*cmdargs: str, **kwargs):
     (int, str, str)
         Ignore this 3-element tuple `(exit_code, stdout, stderr)`. See the `exec_command()` function for discussion.
     """
-    encoding = kwargs.pop('encoding', None)
     proc = subprocess.Popen(
         cmdargs,
         bufsize=-1,  # Default OS buffer size.
@@ -524,8 +503,8 @@ def __wrap_python(args, kwargs):
             py_prefix += ['-e', 'DYLD_LIBRARY_PATH=%s' % path]
         cmdargs = py_prefix + cmdargs
 
-    if _PYOPTS:
-        cmdargs.append(_PYOPTS)
+    if not __debug__:
+        cmdargs.append('-O')
 
     cmdargs.extend(args)
 
