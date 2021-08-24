@@ -10,12 +10,6 @@ Windows
 (Windows 7 should work too, but is not supported).
 It can create graphical windowed apps (apps that do not need a command window).
 
-|PyInstaller| requires two Python modules in a Windows system.
-It requires either the PyWin32_ or pypiwin32_ Python extension for Windows.
-If you install |PyInstaller| using pip, and PyWin32 is not already installed,
-pypiwin32 is automatically installed.
-|PyInstaller| also requires the pefile_ package.
-
 The pip-Win_ package is recommended, but not required.
 
 Mac OS X

@@ -20,11 +20,6 @@ To install the current development version use::
 Installing in Windows
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-For Windows, PyWin32_ or the more recent pypiwin32_, is a prerequisite.
-The latter is installed automatically when you install |PyInstaller|
-using pip_ or `easy_install`_.
-If necessary, follow the pypiwin32_ link to install it manually.
-
 It is particularly easy to use pip-Win_ to install |PyInstaller|
 along with the correct version of PyWin32_.
 pip-Win_ also provides virtualenv_, which makes it simple
