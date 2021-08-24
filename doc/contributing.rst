@@ -61,7 +61,7 @@ Some ideas how you can help:
   to the fitting section in the manual.
 
   .. |support tickets:| replace:: **support tickets:**
-  .. _`support tickets:`: https://github.com/pyinstaller/pyinstaller/issues?q=is%3Aopen+is%3Aissue+label%3Asupport
+  .. _`support tickets:`: https://github.com/pyinstaller/pyinstaller/issues?q=is%3Aopen+is%3Aissue+label%3Akind%3Asupport
 
 * **Triage** |open issues,|_ which means: read the report; ask the issue
   requester to provide missing information and to try with the latest
@@ -78,12 +78,12 @@ Some ideas how you can help:
   issues`__ you can pick one from. Please provide a pull-request for your
   changes. :ref:`Read more »» <writing documentation>`
 
-  __ https://github.com/pyinstaller/pyinstaller/issues?q=is%3Aopen+is%3Aissue+label%3Adocumentation
+  __ https://github.com/pyinstaller/pyinstaller/issues?q=is%3Aopen+is%3Aissue+label%3Aarea%3Adocumentation
 
 * **Pick an** |pull-request-issue|_ and provide one.
 
   .. |pull-request-issue| replace:: **issue requesting a pull-request**
-  .. _`pull-request-issue`: https://github.com/pyinstaller/pyinstaller/issues?q=is%3Aopen+is%3Aissue+label%3A%22needs+a+PR%22
+  .. _`pull-request-issue`: https://github.com/pyinstaller/pyinstaller/issues?q=is%3Aopen+is%3Aissue+label%3A%22pull-request+wanted%22
 
 * **Review** |pull requests:|_ Are the commit messages following the
   guideline :ref:`Commit Messages`; do all new files have a
@@ -95,7 +95,7 @@ Some ideas how you can help:
 
 * Scan the `list of open issues`__ and pick some task :-)
 
-  __ https://github.com/pyinstaller/pyinstaller/issues?utf8=%E2%9C%93&q=is%3Aopen%20is%3Aissue
+  __ https://github.com/pyinstaller/pyinstaller/issues
 
 Thank you very much!
 
