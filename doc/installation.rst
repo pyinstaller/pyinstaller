@@ -17,38 +17,6 @@ To install the current development version use::
     pip install https://github.com/pyinstaller/pyinstaller/tarball/develop
 
 
-Installing in Windows
-~~~~~~~~~~~~~~~~~~~~~~~
-
-It is particularly easy to use pip-Win_ to install |PyInstaller|
-along with the correct version of PyWin32_.
-pip-Win_ also provides virtualenv_, which makes it simple
-to maintain multiple different Python interpreters and install packages
-such as |PyInstaller| in each of them.
-(For more on the uses of virtualenv, see :ref:`Supporting Multiple Platforms` below.)
-
-When pip-Win is working, enter this command in its Command field
-and click Run::
-
-    venv -c -i pyi-env-name
-
-This creates a new virtual environment rooted at ``C:\Python\pyi-env-name``
-and makes it the current environment.
-A new command shell
-window opens in which you can run commands within this environment.
-Enter the command ::
-
-    pip install PyInstaller
-
-Once it is installed, to use |PyInstaller|,
-
-* Start pip-Win
-* In the Command field enter ``venv pyi-env-name``
-* Click Run
-
-Then you have a command shell window in which commands such as
-`pyinstaller` execute in that Python environment.
-
 Installing in Mac OS X
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
