@@ -10,14 +10,16 @@ Windows
 (Windows 7 should work too, but is not supported).
 It can create graphical windowed apps (apps that do not need a command window).
 
-Mac OS X
-~~~~~~~~~
+Mac OS
+~~~~~~
 
-|PyInstaller| runs in Mac OS X 10.7 (Lion) or newer.
+|PyInstaller| runs on Mac OS 10.13 (High Sierra) or newer.
 It can build graphical windowed apps (apps that do not use a terminal window).
-PyInstaller builds apps that are compatible with the Mac OS X release in
+PyInstaller builds apps that are compatible with the Mac OS release in
 which you run it, and following releases.
-It can build 32-bit binaries in Mac OS X releases that support them.
+It can build ``x86_64``, ``arm64`` or hybrid *universal2* binaries on macOS
+machines of either architecture. See :ref:`macOS multi-arch support` for
+details.
 
 GNU/Linux
 ~~~~~~~~~~
