@@ -10,8 +10,6 @@ Windows
 (Windows 7 should work too, but is not supported).
 It can create graphical windowed apps (apps that do not need a command window).
 
-The pip-Win_ package is recommended, but not required.
-
 Mac OS X
 ~~~~~~~~~
 
