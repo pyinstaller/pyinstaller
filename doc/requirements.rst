@@ -10,6 +10,11 @@ Windows
 (Windows 7 should work too, but is not supported).
 It can create graphical windowed apps (apps that do not need a command window).
 
+Users wishing to support older Windows versions must be aware that Python itself
+has dropped support for Windows versions below 8.1. To support Windows 8.0 and 7
+you must build with Python 3.8 or older and to support Windows XP you must use
+Python 3.7 or older.
+
 Mac OS
 ~~~~~~
 
