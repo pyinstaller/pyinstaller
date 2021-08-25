@@ -41,7 +41,8 @@ class _TocFilesystem:
     """
     A prefix tree implementation for embedded filesystem reconstruction.
     """
-    def __init__(self, toc_files, toc_dirs=[]):
+    def __init__(self, toc_files, toc_dirs=None):
+        toc_dirs = toc_dirs or []
         # Reconstruct the fileystem hierarchy by building a prefix tree from the given file and directory paths.
         self._tree = dict()
 
