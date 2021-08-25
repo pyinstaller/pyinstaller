@@ -172,7 +172,7 @@ def checkCache(
     # shared library) seems to result in segmentation fault when they are dlopen'd. This happens in recent versions
     # of Fedora and Ubuntu linux, as well as in Alpine containers. On Mac OS, UPX (3.96) fails with
     # UnknownExecutableFormatException on most .dylibs (and interferes with code signature on other occassions). And
-    # even when it would succeed, compressed libraries cannot be (re)signed due to failed strict validation).
+    # even when it would succeed, compressed libraries cannot be (re)signed due to failed strict validation.
     upx = upx and (is_win or is_cygwin)
 
     # Match against provided UPX exclude patterns.
