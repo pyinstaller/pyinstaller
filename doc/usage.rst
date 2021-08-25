@@ -166,31 +166,77 @@ Alternatively, you can also use the path to pyinstaller::
 Using UPX
 ~~~~~~~~~~~~~~~~~~~
 
-UPX_ is a free utility available for most operating systems.
-UPX compresses executable files and libraries, making them smaller,
-sometimes much smaller.
-UPX is available for most operating systems and can compress
-a large number of executable file formats.
-See the UPX_ home page for downloads, and for the list of
-supported executable formats.
+UPX_ is a free utility for compressing executable files and libraries.
+It is available for most operating systems and can compress a large number
+of executable file formats. See the UPX_ home page for downloads, and for
+the list of supported file formats.
 
-A compressed executable program is wrapped in UPX
-startup code that dynamically decompresses the program
-when the program is launched.
-After it has been decompressed, the program runs normally.
-In the case of a |PyInstaller| one-file executable that has
-been UPX-compressed, the full execution sequence is:
+When UPX is available, |PyInstaller| uses it to individually compress
+each collected binary file (executable, shared library, or python
+extension) in order to reduce the overall size of the frozen application
+(the one-dir bundle directory, or the one-file executable). The frozen
+application's executable itself is not UPX-compressed (regardless of one-dir
+or one-file mode), as most of its size comprises the embedded archive that
+already contains individually compressed files.
 
-* The compressed program start up in the UPX decompressor code.
-* After decompression, the program executes the |PyInstaller| |bootloader|,
-  which creates a temporary environment for Python.
-* The Python interpreter executes your script.
+|PyInstaller| looks for the UPX in the standard executable path(s) (defined
+by ``PATH`` environment variable), or in the path specified viae the
+:option:`--upx-dir` command-line option. If found, it is used automatically.
+The use of UPX can be completely disabled using the :option:`--noupx`
+command-line option.
 
-|PyInstaller| looks for UPX on the execution path
-or the path specified with the :option:`--upx-dir` option.
-If UPX exists, |PyInstaller| applies it to the final executable,
-unless the :option:`--noupx` option was given.
-UPX has been used with |PyInstaller| output often, usually with no problems.
+.. note::
+    UPX is currently used only on Windows. On other operating systems,
+    the collected binaries are not processed even if UPX is found. The
+    shared libraries (e.g., the Python shared library) built on modern
+    linux distributions seem to break when processed with UPX, resulting
+    in defunct application bundles. On Mac OS, UPX currently fails to
+    process .dylib shared libraries; furthermore the UPX-compressed files
+    fail the validation check of the ``codesign`` utility, and therefore
+    cannot be code-signed (which is a requirement on the Apple M1 platform).
+
+
+Excluding problematic files from UPX processing
+-----------------------------------------------
+
+Using UPX may end up corrupting a collected shared library. Known examples
+of such corruption are Windows DLLs with `Control Flow Guard (CFG) enabled
+<https://github.com/upx/upx/issues/398>`_, as well as `Qt5 and Qt6
+plugins <https://github.com/upx/upx/issues/107>`_. In such cases,
+individual files may be need to be excluded from UPX processing, using
+the :option:`--upx-exclude` option (or using the ``upx_exclude`` argument
+in the :ref:`.spec file <using spec files>`).
+
+.. versionchanged:: 4.2
+    |PyInstaller| detects CFG-enabled DLLs and automatically excludes
+    them from UPX processing.
+
+.. versionchanged:: 4.3
+    |PyInstaller| automatically excludes Qt5 and Qt6 plugins from
+    UPX processing.
+
+Although |PyInstaller| attempts to automatically detect and exclude some of
+the problematic files from UPX processing, there are cases where the
+UPX excludes need to be speficied manually. For example, 32-bit Windows
+binaries from the ``PySide2`` package (Qt5 DLLs and python extension modules)
+have been `reported <https://github.com/pyinstaller/pyinstaller/issues/4178#issuecomment-868985789>`_
+to be corrupted by UPX.
+
+.. versionchanged:: 5.0
+    Unlike earlier releases that compared the provided UPX-exclude names
+    against basenames of the collect binary files (and, due to incomplete
+    case normalization, required provided exclude names to be lowercase
+    on Windows), the UPX-exclude pattern matching now uses OS-default
+    case sensitivity and supports the wildcard (``*``) operator. It also
+    supports specifying (full or partial) parent path of the file.
+
+The provided UPX exclude patterns are matched against *source* (origin)
+paths of the collected binary files, and the matching is performed from
+right to left.
+
+For example, to exclude Qt5 DLLs from the PySide2 package, use
+``--upx-exclude "Qt*.dll"``, and to exclude the python extensions
+from the PySide2 package, use ``--upx-exclude "PySide2\*.pyd"``.
 
 
 .. _encrypting python bytecode:

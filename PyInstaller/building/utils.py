@@ -16,7 +16,7 @@ import fnmatch
 import glob
 import hashlib
 import os
-import os.path
+import pathlib
 import pkgutil
 import platform
 import shutil
@@ -167,8 +167,25 @@ def checkCache(
         strip = True
     else:
         strip = False
+
+    # Disable UPX on non-Windows. Using UPX (3.96) on modern Linux shared libraries (for example, the python3.x.so
+    # shared library) seems to result in segmentation fault when they are dlopen'd. This happens in recent versions
+    # of Fedora and Ubuntu linux, as well as in Alpine containers. On Mac OS, UPX (3.96) fails with
+    # UnknownExecutableFormatException on most .dylibs (and interferes with code signature on other occassions). And
+    # even when it would succeed, compressed libraries cannot be (re)signed due to failed strict validation.
+    upx = upx and (is_win or is_cygwin)
+
+    # Match against provided UPX exclude patterns.
     upx_exclude = upx_exclude or []
-    upx = (upx and (is_win or is_cygwin) and os.path.normcase(os.path.basename(fnm)) not in upx_exclude)
+    if upx:
+        fnm_path = pathlib.PurePath(fnm)
+        for upx_exclude_entry in upx_exclude:
+            # pathlib.PurePath.match() matches from right to left, and supports * wildcard, but does not support the
+            # "**" syntax for directory recursion. Case sensitivity follows the OS default.
+            if fnm_path.match(upx_exclude_entry):
+                logger.info("Disabling UPX for %s due to match in exclude pattern: %s", fnm, upx_exclude_entry)
+                upx = False
+                break
 
     # Load cache index.
     # Make cachedir per Python major/minor version.
