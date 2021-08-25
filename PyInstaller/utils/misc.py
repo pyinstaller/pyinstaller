@@ -45,10 +45,13 @@ def dlls_in_dir(directory):
     return files_in_dir(directory, ["*.so", "*.dll", "*.dylib"])
 
 
-def files_in_dir(directory, file_patterns=[]):
+def files_in_dir(directory, file_patterns=None):
     """
     Returns a list of files in the given directory that match the given pattern.
     """
+
+    file_patterns = file_patterns or []
+
     files = []
     for file_pattern in file_patterns:
         files.extend(glob.glob(os.path.join(directory, file_pattern)))
