@@ -14,6 +14,7 @@ from PyInstaller.utils.hooks import is_module_satisfies
 
 if is_module_satisfies('kivy >= 1.9.1'):
     from kivy.tools.packaging.pyinstaller_hooks import (add_dep_paths, get_deps_all, get_factory_modules, kivy_modules)
+    from kivy.tools.packaging.pyinstaller_hooks import excludedimports, datas  # noqa: F401
 
     add_dep_paths()
 
