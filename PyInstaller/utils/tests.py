@@ -118,7 +118,7 @@ def requires(requirement: str):
     try:
         pkg_resources.require(requirement)
         return pytest.mark.skipif(False, reason=f"Don't skip: '{requirement}' is satisfied.")
-    except pkg_resources.DistributionNotFound:
+    except pkg_resources.ResolutionError:
         return pytest.mark.skip("Requires " + requirement)
 
 
