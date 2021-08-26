@@ -341,44 +341,65 @@ def get_module_attribute(module_name, attr_name):
 
 def get_module_file_attribute(package):
     """
-    Get the absolute path of the module with the passed name.
+    Get the absolute path to the specified module or package.
 
-    Since modules *cannot* be directly imported during analysis, this function spawns a subprocess importing the module
-    and returning the value of its ``__file__`` attribute.
+    Modules and packages *must not* be directly imported in the main process during the analysis. Therefore, to
+    avoid leaking the imports, this function uses an isolated subprocess when it needs to import the module and
+    obtain its ``__file__`` attribute.
 
     Parameters
     ----------
     package : str
-        Fully-qualified name of this module.
+        Fully-qualified name of module or package.
 
     Returns
     ----------
     str
         Absolute path of this module.
     """
-    # First try to use 'pkgutil'. - fastest but does not work on certain modules in pywin32, which replace all module
-    # attributes with those of the .dll.
+    # First, try to use 'pkgutil'. It is the fastest way, but does not work on certain modules in pywin32 that replace
+    # all module attributes with those of the .dll. In addition, we need to avoid it for submodules/subpackages,
+    # because it ends up importing their parent package, which would cause an import leak during the analysis.
+    filename = None
+    if '.' not in package:
+        try:
+            import pkgutil
+            loader = pkgutil.find_loader(package)
+            filename = loader.get_filename(package)
+            # Apparently in the past, ``None`` could be returned for built-in ``datetime`` module. Just in case this
+            # is still possible, return only if filename is valid.
+            if filename:
+                return filename
+        except (AttributeError, ImportError):
+            pass
+
+    # Second attempt: try to obtain module/package's __file__ attribute in an isolated subprocess.
+    @isolated.decorate
+    def _get_module_file_attribute(package):
+        # First try to use 'pkgutil'; it returns the filename even if the module or package cannot be imported
+        # (e.g., C-extension module with missing dependencies).
+        try:
+            import pkgutil
+            loader = pkgutil.find_loader(package)
+            filename = loader.get_filename(package)
+            # Safe-guard against ``None`` being returned (see comment in the non-isolated codepath).
+            if filename:
+                return filename
+        except (AttributeError, ImportError):
+            pass
+
+        # Fall back to import attempt
+        import importlib
+        p = importlib.import_module(package)
+        return p.__file__
+
+    # The old behavior was to return ImportError (and that is what the test are also expecting...).
     try:
-        loader = pkgutil.find_loader(package)
-        attr = loader.get_filename(package)
-        # The built-in ``datetime`` module returns ``None``. Mark this as an ``ImportError``.
-        if not attr:
-            raise ImportError('Unable to load module attributes')
-    # Second try to import module in a subprocess. Might raise ImportError.
-    except (AttributeError, ImportError) as e:
-        # Statement to return __file__ attribute of a package.
-        __file__statement = """
-            import %s as p
-            try:
-                print(p.__file__)
-            except:
-                # If p lacks a file attribute, hide the exception.
-                pass
-        """
-        attr = exec_statement(__file__statement % package)
-        if not attr.strip():
-            raise ImportError('Unable to load module attribute') from e
-    return attr
+        filename = _get_module_file_attribute(package)
+    except Exception as e:
+        raise ImportError(f"Failed to obtain the __file__ attribute of package/module {package}!") from e
+
+    return filename
 
 
 def is_module_satisfies(requirements, version=None, version_attr='__version__'):
