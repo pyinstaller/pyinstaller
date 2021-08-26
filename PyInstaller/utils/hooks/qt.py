@@ -10,10 +10,10 @@
 #-----------------------------------------------------------------------------
 
 import glob
-import json
 import os
 
 from PyInstaller import compat
+from PyInstaller import isolated
 from PyInstaller import log as logging
 from PyInstaller.depend import bindepend
 from PyInstaller.utils import hooks, misc
@@ -95,24 +95,21 @@ class QtLibraryInfo:
             # `if .version` to check whether package was imported and other attributes are expected to be available.
             # This also serves as a marker that initialization was already done.
             self.version = None
+
             # Get library path information from Qt. See QLibraryInfo_.
-            json_str = hooks.exec_statement(
-                """
-                import sys
+            @isolated.decorate
+            def _read_qt_library_info(package):
+                import importlib
 
-                # exec_statement only captures stdout. If there are errors, capture them to stdout so they can be
-                # displayed to the user. Do this early, in case package imports produce stderr output.
-                sys.stderr = sys.stdout
-
-                import json
-                try:
-                    from %s.QtCore import QLibraryInfo, QCoreApplication
-                except Exception:
-                    print('False')
-                    raise SystemExit(0)
+                # Import the Qt-based package
+                # equivalent to: from package.QtCore import QLibraryInfo, QCoreApplication
+                QtCore = importlib.import_module('.QtCore', package)
+                QLibraryInfo = QtCore.QLibraryInfo
+                QCoreApplication = QtCore.QCoreApplication
 
                 # QLibraryInfo is not always valid until a QCoreApplication is instantiated.
-                app = QCoreApplication(sys.argv)
+                app = QCoreApplication([])  # noqa: F841
+
                 # Qt6 deprecated QLibraryInfo.location() in favor of QLibraryInfo.path(), and
                 # QLibraryInfo.LibraryLocation enum was replaced by QLibraryInfo.LibraryPath.
                 if hasattr(QLibraryInfo, 'path'):
@@ -131,20 +128,20 @@ class QtLibraryInfo:
                     version = QLibraryInfo.version().segments()
                 except AttributeError:
                     version = []
-                print(json.dumps({
+
+                return {
                     'isDebugBuild': QLibraryInfo.isDebugBuild(),
                     'version': version,
                     'location': location,
-                }))
-                """ % self.namespace
-            )
-            try:
-                qli = json.loads(json_str)
-            except Exception as e:
-                logger.warning('Cannot read QLibraryInfo output: raised %s when decoding:\n%s', str(e), json_str)
-                qli = {}
+                }
 
-            for k, v in qli.items():
+            try:
+                qt_info = _read_qt_library_info(self.namespace)
+            except Exception as e:
+                logger.warning("Failed to obtain Qt info for %r: %s", self.namespace, e)
+                qt_info = {}
+
+            for k, v in qt_info.items():
                 setattr(self, k, v)
 
             return getattr(self, name)
