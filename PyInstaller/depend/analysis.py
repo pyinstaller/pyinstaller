@@ -743,6 +743,14 @@ class PyiModuleGraph(ModuleGraph):
 
         return out
 
+    def get_collected_packages(self) -> list:
+        """
+        Return the list of collected python packages.
+        """
+        return [
+            node.identifier for node in self.iter_graph(start=self._top_script_node) if type(node).__name__ == 'Package'
+        ]
+
 
 _cached_module_graph_ = None
 
