@@ -119,6 +119,39 @@ def discover_hook_directories():
     return hook_directories
 
 
+# NOTE: this helper is called via isolated.call() in Analysis.assemble(). We cannot use @isolated.decorate here, because
+# one of the tests (test_regression::test_issue_5131) needs to be able to monkey-patch it, in order to override the
+# bindepend.getImports() in the isolated subprocess (!) with its own implementation...
+def find_binary_dependencies(binaries, binding_redirects, import_packages):
+    """
+    Find dynamic dependencies (linked shared libraries) for the provided list of binaries.
+
+    Before scanning the binaries, the function imports the packages from provided list of packages to import, to ensure
+    that library search paths are properly set up (i.e., if a package sets up search paths when imported). Therefore,
+    this function *must* always be called in an isolated subprocess to avoid import leaks!
+
+    binaries
+            List of binaries to scan for dynamic dependencies.
+    binding_redirects
+            List of assembly binding redirects.
+    import_packages
+            List of packages to import prior to scanning binaries.
+
+    :return: expanded list of binaries and then dependencies.
+    """
+    from PyInstaller.depend import bindepend
+
+    # Import collected packages to set up environment
+    for package in import_packages:
+        try:
+            __import__(package)
+        except Exception:
+            pass
+
+    # Search for dependencies of the given binaries
+    return bindepend.Dependencies(binaries, redirects=binding_redirects)
+
+
 class Analysis(Target):
     """
     Class that performs analysis of the user's main Python scripts.
@@ -482,8 +515,19 @@ class Analysis(Target):
         self.pure._code_cache = self.graph.get_code_objects()
 
         # Add remaining binary dependencies - analyze Python C-extensions and what DLLs they depend on.
+        #
+        # Up until this point, we did very best not to import the packages into the main process. However, a package
+        # may set up additional library search paths during its import (e.g., by modifying PATH or calling the
+        # add_dll_directory() function on Windows, or modifying LD_LIBRARY_PATH on Linux). In order to reliably
+        # discover dynamic libraries, we therefore require an environment with all packages imported. We achieve that
+        # by gathering list of all collected packages, and spawn an isolated process, in which we first import all
+        # the packages from the list, and then peform search for dynamic libraries.
         logger.info('Looking for dynamic libraries')
-        self.binaries.extend(bindepend.Dependencies(self.binaries, redirects=self.binding_redirects))
+
+        collected_packages = self.graph.get_collected_packages()
+        self.binaries.extend(
+            isolated.call(find_binary_dependencies, list(self.binaries), self.binding_redirects, collected_packages)
+        )
 
         # Include zipped Python eggs.
         logger.info('Looking for eggs')
