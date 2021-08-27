@@ -329,7 +329,9 @@ def data_lists(monkeypatch, request):
         sorted_list = sorted(list(sequence))
         return tuple(sorted_list)
 
-    # Add path with 'hookutils_files' module to ``sys.path``, so tests can find this module - useful for subprocesses.
+    # Add path with 'hookutils_files' module to ``sys.path`` (so analysis in the main process can find it),
+    # and to ``pathex`` (so subprocess-isolated code can find it).
+    monkeypatch.setattr('PyInstaller.config.CONF', {'pathex': [TEST_MOD_PATH]})
     monkeypatch.syspath_prepend(TEST_MOD_PATH)
     # Use the hookutils_test_files package for testing.
     args, kwargs, subfiles = request.param
