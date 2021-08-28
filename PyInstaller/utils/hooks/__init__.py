@@ -499,25 +499,31 @@ def is_module_satisfies(requirements, version=None, version_attr='__version__'):
 
 def is_package(module_name):
     """
-    Check if a Python module is really a module or is a package containing other modules.
+    Check if a Python module is really a module or is a package containing other modules, without importing anything
+    in the main process.
 
     :param module_name: Module name to check.
     :return: True if module is a package else otherwise.
     """
-    # This determines if module is a package without importing the module.
-    try:
-        loader = pkgutil.find_loader(module_name)
-    except Exception:
-        # When it fails to find a module loader, then it points probably to a class or a function and module is not a
-        # package. Just return False.
-        return False
-    else:
-        if loader:
-            # A package must have a __path__ attribute.
+    def _is_package(module_name):
+        """
+        Determines whether the given name represents a package or not. If the name represents a top-level module or
+        a package, it is not imported. If the name represents a sub-module or a sub-package, its parent is imported.
+        In such cases, this function should be called from an isolated suprocess.
+        """
+        try:
+            import pkgutil
+            loader = pkgutil.find_loader(module_name)
             return loader.is_package(module_name)
-        else:
-            # In case of None - modules is probably not a package.
+        except Exception:
             return False
+
+    # For top-level packages/modules, we can perform check in the main process; otherwise, we need to isolate the
+    # call to prevent import leaks in the main process.
+    if '.' not in module_name:
+        return _is_package(module_name)
+    else:
+        return isolated.call(_is_package, module_name)
 
 
 def get_package_paths(package):
