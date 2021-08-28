@@ -65,27 +65,8 @@ def _ensure_qt_library_info_is_initialized():
 _ensure_qt_library_info_is_initialized()
 
 
-# Clean up PATH so that of all potentially installed Qt-based packages (PyQt5, PyQt6, PySide2, and PySide6), only the Qt
-# shared libraries of the specified package (namespace) remain in the PATH.
-# This is necessary to prevent DLL interference in tests when multiple Qt-based packages are installed. Applicable only
-# on Windows, as on other OSes the Qt shared library path(s) are not added to PATH.
-def _qt_dll_path_clean(monkeypatch, namespace):
-    if not is_win:
-        return
-
-    # Remove all other Qt5/6 bindings from PATH
-    all_namespaces = set(_QT_PY_PACKAGES)
-    all_namespaces.discard(namespace)
-    new_path = os.pathsep.join([
-        x for x in os.environ['PATH'].split(os.pathsep) if not any(ns in x for ns in all_namespaces)
-    ])
-    monkeypatch.setenv('PATH', new_path)
-
-
 @QtPyLibs
-def test_Qt_QtWidgets(pyi_builder, QtPyLib, monkeypatch):
-    _qt_dll_path_clean(monkeypatch, QtPyLib)
-
+def test_Qt_QtWidgets(pyi_builder, QtPyLib):
     pyi_builder.test_source(
         """
         import sys
@@ -115,9 +96,7 @@ def test_Qt_QtWidgets(pyi_builder, QtPyLib, monkeypatch):
 
 @PYQT5_NEED_OPENGL
 @QtPyLibs
-def test_Qt_QtQml(pyi_builder, QtPyLib, monkeypatch):
-    _qt_dll_path_clean(monkeypatch, QtPyLib)
-
+def test_Qt_QtQml(pyi_builder, QtPyLib):
     pyi_builder.test_source(
         """
         import sys
@@ -172,9 +151,7 @@ def test_Qt_QtQml(pyi_builder, QtPyLib, monkeypatch):
         qt_param('PySide6', marks=xfail(is_win, reason='PySide6 wheels on Windows do not include SSL DLLs.')),
     ]
 )
-def test_Qt_QtNetwork_SSL_support(pyi_builder, monkeypatch, QtPyLib):
-    _qt_dll_path_clean(monkeypatch, QtPyLib)
-
+def test_Qt_QtNetwork_SSL_support(pyi_builder, QtPyLib):
     pyi_builder.test_source(
         """
         from {0}.QtNetwork import QSslSocket
@@ -184,8 +161,7 @@ def test_Qt_QtNetwork_SSL_support(pyi_builder, monkeypatch, QtPyLib):
 
 
 @QtPyLibs
-def test_Qt_QTranslate(pyi_builder, monkeypatch, QtPyLib):
-    _qt_dll_path_clean(monkeypatch, QtPyLib)
+def test_Qt_QTranslate(pyi_builder, QtPyLib):
     pyi_builder.test_source(
         """
         from {0}.QtWidgets import QApplication
@@ -215,8 +191,7 @@ def test_Qt_QTranslate(pyi_builder, monkeypatch, QtPyLib):
 
 @PYQT5_NEED_OPENGL
 @QtPyLibs
-def test_Qt_Ui_file(tmpdir, pyi_builder, data_dir, monkeypatch, QtPyLib):
-    _qt_dll_path_clean(monkeypatch, QtPyLib)
+def test_Qt_Ui_file(tmpdir, pyi_builder, data_dir, QtPyLib):
     # Note that including the data_dir fixture copies files needed by this test.
     pyi_builder.test_source(
         """
@@ -289,8 +264,7 @@ def test_Qt_Ui_file(tmpdir, pyi_builder, data_dir, monkeypatch, QtPyLib):
     is_module_satisfies('PyQt5 == 5.11.3') and is_darwin,
     reason='This version of the OS X wheel does not include QWebEngine.'
 )
-def test_PyQt5_Qt(pyi_builder, monkeypatch):
-    _qt_dll_path_clean(monkeypatch, 'PyQt5')
+def test_PyQt5_Qt(pyi_builder):
     pyi_builder.test_source('from PyQt5.Qt import QLibraryInfo', **USE_WINDOWED_KWARG)
 
 
@@ -329,8 +303,7 @@ def get_QWebEngine_html(qt_flavor, data_dir):
     reason='This version of the OS X wheel does not include QWebEngine.'
 )
 @requires('PyQt5')
-def test_PyQt5_QWebEngine(pyi_builder, data_dir, monkeypatch):
-    _qt_dll_path_clean(monkeypatch, 'PyQt5')
+def test_PyQt5_QWebEngine(pyi_builder, data_dir):
     if is_darwin:
         # QWebEngine on Mac OS only works with a onedir build -- onefile builds do not work.
         # Skip the test execution for onefile builds.
@@ -341,8 +314,7 @@ def test_PyQt5_QWebEngine(pyi_builder, data_dir, monkeypatch):
 
 
 @requires('PySide2')
-def test_PySide2_QWebEngine(pyi_builder, data_dir, monkeypatch):
-    _qt_dll_path_clean(monkeypatch, 'PySide2')
+def test_PySide2_QWebEngine(pyi_builder, data_dir):
     if is_darwin:
         # QWebEngine on Mac OS only works with a onedir build -- onefile builds do not work.
         # Skip the test execution for onefile builds.
