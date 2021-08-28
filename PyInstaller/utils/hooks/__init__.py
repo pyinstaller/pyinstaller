@@ -12,7 +12,6 @@
 import copy
 import glob
 import os
-import pkgutil
 import sys
 import textwrap
 from pathlib import Path
