@@ -268,6 +268,7 @@ def remove_file_extension(filename):
     return os.path.splitext(filename)[0]
 
 
+@isolated.decorate
 def can_import_module(module_name):
     """
     Check if the specified module can be imported.
@@ -285,16 +286,11 @@ def can_import_module(module_name):
     bool
         Boolean indicating whether the module can be imported or not.
     """
-
-    rc = exec_statement_rc(
-        """
-        try:
-            import {0}
-        except ModuleNotFoundError:
-            raise SystemExit(1)
-        """.format(module_name)
-    )
-    return rc == 0
+    try:
+        __import__(module_name)
+        return True
+    except Exception:
+        return False
 
 
 # TODO: Replace most calls to exec_statement() with calls to this function.
