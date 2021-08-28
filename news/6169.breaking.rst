@@ -1,0 +1,4 @@
+The :func:`PyInstaller.utils.hooks.get_module_attribute` function now
+returns the actual attribute value instead of its string representation.
+The external users (e.g., 3rd party hooks) of this function must adjust
+their handling of the return value accordingly.

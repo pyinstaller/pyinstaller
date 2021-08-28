@@ -319,20 +319,17 @@ def get_module_attribute(module_name, attr_name):
     AttributeError
         If this attribute is undefined.
     """
-    # Magic string to be printed and captured below if this attribute is undefined, which should be sufficiently obscure
-    # as to avoid collisions with actual attribute values. That is the hope, anyway.
-    attr_value_if_undefined = '!)ABadCafe@(D15ea5e#*DeadBeef$&Fee1Dead%^'
-    attr_value = exec_statement(
-        """
-        import %s as m
-        print(getattr(m, %r, %r))
-        """ % (module_name, attr_name, attr_value_if_undefined)
-    )
+    @isolated.decorate
+    def _get_module_attribute(module_name, attr_name):
+        import importlib
+        module = importlib.import_module(module_name)
+        return getattr(module, attr_name)
 
-    if attr_value == attr_value_if_undefined:
-        raise AttributeError('Module %r has no attribute %r' % (module_name, attr_name))
-    else:
-        return attr_value
+    # Return AttributeError on any kind of errors, to preserve old behavior.
+    try:
+        return _get_module_attribute(module_name, attr_name)
+    except Exception as e:
+        raise AttributeError(f"Failed to retrieve attribute {attr_name} from module {module_name}") from e
 
 
 def get_module_file_attribute(package):
