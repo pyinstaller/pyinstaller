@@ -43,38 +43,8 @@ QtPyLibs = pytest.mark.parametrize('QtPyLib', [qt_param(i) for i in _QT_PY_PACKA
 USE_WINDOWED_KWARG = dict(pyi_args=['--windowed']) if is_darwin else {}
 
 
-# This is an ugly work-around for an even uglier problem on Windows: we need to ensure that each Qt-based package that
-# is going to be used in a test is imported wihout ``pytest.monkeypatch`` being active.
-#
-# The imports used to happen either during test collection (e.g., due to ``@pytest.importorskip`` annotation on the
-# test) or during the actual test execution - either due to ``pytest.importorskip()`` call inside the test, or when
-# actually building the frozen test application. With the introduction of ``PyInstaller.utils.tests.requires`` that does
-# not actually import the package (but rather just checks its availability), the imports happen only within the tests,
-# when building the application. This leads to problems if the very first import of the package happens inside the test
-# that uses ``pytest.monkeypatch``.
-#
-# Specifically, when a Qt-based package is imported, it adds the path to its Qt DLLs to PATH (applies only to Windows).
-# Therefore, if (first) import happens under ``pytest.monkeypatch``, the PATH modification is lost for subsequent tests
-# (that use the same package). This in turn causes incomplete builds of the test programs, because ``pyi_builder`` calls
-# PyInstaller's ``pyi_main.run()`` within the test process instead of spawning a separate process.
-#
-# Therefore, we manually try to import each Qt-based package, to ensure that their first-time import happens outside of
-# the ``pytest.monkeypatch``.
-def _ensure_qt_packages_are_imported():
-    for pkg in _QT_PY_PACKAGES:
-        try:
-            __import__(pkg)
-        except Exception:
-            pass
-
-
-if is_win:
-    _ensure_qt_packages_are_imported()  # Applicable only to Windows
-
-
-# Similarly to the above PATH-related concerns on Windows, we also need to ensure that all QtLibraryInfo structures in
-# Qt hook utils are initialized at this point, before the actual tests start. This is to prevent test-order-dependent
-# behavior and potential issues, and applies to all platforms.
+# We need to ensure that all QtLibraryInfo structures in Qt hook utils are initialized at this point, before the actual
+# tests start. This is to prevent test-order-dependent behavior and potential issues, and applies to all platforms.
 #
 # Some tests (e.g., test_import::test_import_pyqt5_uic_port) may modify search path to fake PyQt5 module, and if that
 # test is the point of initialization for the corresponding QtLibraryInfo structure (triggered by hooks' access to
