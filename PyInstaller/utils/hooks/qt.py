@@ -449,8 +449,10 @@ def add_qt_dependencies(hook_file):
 
         # On Windows, find this library; other platforms already provide the full path.
         if compat.is_win:
-            # First, look for Qt binaries in the local Qt install.
-            imp = bindepend.getfullnameof(imp, qt_info.location['BinariesPath'])
+            # First, look for Qt binaries in the local Qt install. For PyQt5 and PyQt6, DLLs should be in BinariesPath,
+            # while for PySide2 and PySide6, they should be in PrefixPath.
+            dll_location = qt_info.location['BinariesPath' if qt_info.is_pyqt else 'PrefixPath']
+            imp = bindepend.getfullnameof(imp, dll_location)
 
         # Strip off the extension and ``lib`` prefix (Linux/Mac) to give the raw name.
         # Lowercase (since Windows always normalizes names to lowercase).
