@@ -13,6 +13,7 @@ from pathlib import Path
 from importlib.machinery import EXTENSION_SUFFIXES
 
 from PyInstaller.depend import analysis, bindepend
+from PyInstaller.building import build_main
 from PyInstaller.building.build_main import Analysis
 from PyInstaller.building.api import PYZ
 
@@ -60,6 +61,24 @@ def test_issue_5131(monkeypatch, tmpdir):
         except Exception:
             return []
 
+    def find_binary_dependencies(*args, **kwargs):
+        # This function from build_main is executed in an isolated sub-process, and also uses getImports(); due to
+        # isolation, we need to provide local override for getImports.
+        from PyInstaller.building.build_main import find_binary_dependencies as orig_find_binary_dependencies
+        from PyInstaller.depend import bindepend
+
+        orig_getImports = bindepend.getImports
+
+        def getImports(*args, **kwargs):
+            try:
+                return orig_getImports(*args, **kwargs)
+            except Exception:
+                return []
+
+        bindepend.getImports = getImports
+
+        return orig_find_binary_dependencies(*args, **kwargs)
+
     monkeypatch.setattr(
         'PyInstaller.config.CONF', {
             'workpath': str(tmpdir),
@@ -76,6 +95,7 @@ def test_issue_5131(monkeypatch, tmpdir):
 
     orig_getImports = bindepend.getImports
     monkeypatch.setattr(bindepend, "getImports", getImports)
+    monkeypatch.setattr(build_main, "find_binary_dependencies", find_binary_dependencies)
 
     pkg = (tmpdir / 'mypkg').mkdir()
     init = pkg / ('__init__' + EXTENSION_SUFFIXES[0])
