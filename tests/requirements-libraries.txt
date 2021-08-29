@@ -37,7 +37,7 @@ python-dateutil==2.8.2
 pytz==2021.1
 requests==2.26.0
 # simplejson is used for text_c_extension
-simplejson==3.17.4
+simplejson==3.17.5
 sphinx==2.4.4 # pyup: ignore
 # Required for test_namespace_package
 sqlalchemy==1.4.23
@@ -50,7 +50,7 @@ Pillow==8.3.1
 
 # iPython 7.17 dropped support for python 3.6
 # https://ipython.readthedocs.io/en/stable/whatsnew/version7.html#ipython-7-17
-ipython==7.26.0; python_version > '3.6'
+ipython==7.27.0; python_version > '3.6'
 ipython==7.16.1; python_version <= '3.6'  # pyup: ignore
 
 # pandas also dropped support
