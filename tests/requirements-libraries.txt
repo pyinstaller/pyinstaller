@@ -37,7 +37,7 @@ python-dateutil==2.8.2
 pytz==2021.1
 requests==2.26.0
 # simplejson is used for text_c_extension
-simplejson==3.17.4
+simplejson==3.17.5
 sphinx==2.4.4 # pyup: ignore
 # Required for test_namespace_package
 sqlalchemy==1.4.23
