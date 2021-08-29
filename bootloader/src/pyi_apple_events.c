@@ -24,6 +24,7 @@
 
 #include "pyi_global.h"
 #include "pyi_utils.h"
+#include "pyi_apple_events.h"
 
 
 /* Not declared in modern headers but exists in Carbon libs since time immemorial
@@ -48,11 +49,19 @@ static struct AppleEventHandlerContext
     AEEventHandlerUPP upp_handler_ae;  /* UPP for AppleEvent handler callback */
 
     EventHandlerRef handler_ref;  /* Reference to installer event handler */
+
+    /* Deferred/pending event forwarding */
+    Boolean has_pending_event;  /* Flag indicating that pending_event is valid */
+    unsigned int retry_count;  /* Retry count for send attempts */
+    AppleEvent pending_event;  /* Copy of the event */
 } _ae_ctx = {
     false,  /* installed */
     NULL,  /* handler */
     NULL,  /* handler_ae */
     NULL,  /* handler_ref */
+    false,  /* has_pending_event */
+    0,  /* retry count */
+    {typeNull, nil},  /* pending event */
 };
 
 /* Event types list: used to register handler and to listen for events */
@@ -165,18 +174,25 @@ static OSErr generic_forward_apple_event(const AppleEvent *const theAppleEvent /
     err = AESendMessage(&childEvent, NULL, kAENoReply, kAEDefaultTimeout);
     VS("LOADER [AppleEvent]: Handler sent \"%s\" message to child pid %ld.\n", descStr, (long)child_pid);
 
-    /* In onefile build, we may encounter a race condition between parent
-     * and child process, because child_pid becomes valid immediately after
-     * fork, but the child process may not be able to receive the events yet.
-     * In such cases, AESendMessage fails with procNotFound (-600). Accommodate
-     * such cases with 10 retries, spaced 0.5 second apart (for 5 seconds
-     * of total retry time) */
+    /* In a onefile build, we may encounter a race condition between the parent
+     * and the child process, because child_pid becomes valid immediately after
+     * the process is forked, but the child process may not be able to receive
+     * the events yet. In such cases, AESendMessage fails with procNotFound (-600).
+     * To acommodate this situation,  we defer the event by storing its copy in our
+     * event context structure, so that the caller can re-attempt to send it using
+     * the pyi_apple_send_pending_event() function.
+     */
     if (err == procNotFound) {
-        int retry = 0;
-        while (err == procNotFound && retry++ < 5) {
-            VS("LOADER [AppleEvent]: Sending failed with procNotFound; re-trying in 1 second (attempt %d)\n", retry);
-            usleep(500000); /* sleep 0.5 second (kAENoReply = no timeout) */
-            err = AESendMessage(&childEvent, NULL, kAENoReply, kAEDefaultTimeout);
+        VS("LOADER [AppleEvent]: Sending failed with procNotFound; storing the pending event...\n");
+
+        err = AEDuplicateDesc(&childEvent, &_ae_ctx.pending_event);
+        if (err == noErr) {
+            _ae_ctx.retry_count = 0;
+            _ae_ctx.has_pending_event = true;
+        } else {
+            VS("LOADER [AppleEvent]: Failed to copy the pending event: %d\n", (int)err);
+            _ae_ctx.has_pending_event = false;
+            _ae_ctx.retry_count = 0;
         }
     }
 
@@ -533,8 +549,13 @@ void pyi_apple_process_events(float timeout)
         OSStatus status;
         EventRef event_ref; /* Event that caused ReceiveNextEvent to return. */
 
-        VS("LOADER [AppleEvent]: Calling ReceiveNextEvent\n");
+        /* If we have a pending event to forward, stop any further processing. */
+        if (pyi_apple_has_pending_event()) {
+            VS("LOADER [AppleEvent]: Breaking event loop due to pending event.\n");
+            break;
+        }
 
+        VS("LOADER [AppleEvent]: Calling ReceiveNextEvent\n");
         status = ReceiveNextEvent(1, event_types_ae, timeout, kEventRemoveFromQueue, &event_ref);
 
         if (status == eventLoopTimedOutErr) {
@@ -639,6 +660,64 @@ cleanup:
     AEDisposeDesc(&target);
 
     return;
+}
+
+
+/* Check if we have a pending event that we need to forward. */
+int pyi_apple_has_pending_event()
+{
+    return _ae_ctx.has_pending_event;
+}
+
+/* Clean-up the pending event data and status. */
+void pyi_apple_cleanup_pending_event()
+{
+    /* No-op if have no pending event. */
+    if (!_ae_ctx.has_pending_event) {
+        return;
+    }
+
+    /* Dispose event descriptor. */
+    AEDisposeDesc(&_ae_ctx.pending_event);
+
+    /* Cleanup state. */
+    _ae_ctx.has_pending_event = false;
+    _ae_ctx.retry_count = 0;
+}
+
+/* Attempt to re-send the pending event after the specified delay (in seconds). */
+int pyi_apple_send_pending_event(float delay)
+{
+    OSErr err;
+
+    /* No-op if have no pending event; signal success. */
+    if (!_ae_ctx.has_pending_event) {
+        return 0;
+    }
+
+    /* Sleep for the specified delay, then attempt to send the event. */
+    _ae_ctx.retry_count++;
+    VS("LOADER [AppleEvent]: Trying to forward pending event in %f second(s) (attempt %u)\n", delay, _ae_ctx.retry_count);
+    usleep(delay*1000000);  /* sec to usec */
+    err = AESendMessage(&_ae_ctx.pending_event, NULL, kAENoReply, kAEDefaultTimeout);
+
+    /* If error is procNotFound (again), continue deferring the event. */
+    if (err == procNotFound) {
+        VS("LOADER [AppleEvent]: Sending failed with procNotFound; deferring event!\n");
+        return 1;
+    }
+
+    /* Clean-up the pending event. */
+    pyi_apple_cleanup_pending_event();
+
+    /* Signal status. */
+    if (err == noErr) {
+        VS("LOADER [AppleEvent]: Successfully forwarded pending event\n");
+        return 0;
+    } else {
+        VS("LOADER [AppleEvent]: Failed to forward pending event: %d\n", (int)err);
+        return -1;
+    }
 }
 
 
