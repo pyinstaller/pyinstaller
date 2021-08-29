@@ -636,7 +636,7 @@ void pyi_apple_submit_oapp_event()
     }
 
     // ... and send it
-    err = AESendMessage(&event, NULL, kAENoReply, 60 /* 60 = about 1.0 seconds timeout */);
+    err = AESendMessage(&event, NULL, kAENoReply, kAEDefaultTimeout);
     if (err != noErr) {
         OTHERERROR("LOADER [AppleEvent]: Failed to send event: %d\n", (int)err);
         goto cleanup;
