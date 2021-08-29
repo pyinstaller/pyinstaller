@@ -44,6 +44,15 @@ void pyi_apple_process_events(float timeout);
  */
 void pyi_apple_submit_oapp_event();
 
+/* Check if we have a pending event that we need to forward. */
+int pyi_apple_has_pending_event();
+
+/* Attempt to re-send the pending event after the specified delay. */
+int pyi_apple_send_pending_event(float delay);
+
+/* Clean-up the pending event data and status. */
+void pyi_apple_cleanup_pending_event();
+
 #endif  /* defined(__APPLE__) && defined(WINDOWED) */
 
 #endif  /* PYI_APPLE_EVENTS_H */

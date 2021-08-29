@@ -1054,11 +1054,25 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
          * waiting on the event queue most of that time. */
         wait_rc = waitpid(child_pid, &rc, WNOHANG);
         if (wait_rc == 0) {
-            /* Child not done yet -- wait for and process AppleEvents with a
-             * 1 second timeout, forwarding file-open events to the child. */
+            /* Check if we have a pending event that we need to forward... */
+            if (pyi_apple_has_pending_event()) {
+                /* Attempt to re-send the pending event after 0.5 second delay. */
+                if (pyi_apple_send_pending_event(0.5) != 0) {
+                    /* Do not process additional events until the pending one
+                     * is successfully forwarded (or cleaned up by error). */
+                    continue;
+                }
+            }
+            /* Wait for and process AppleEvents with a 1-second timeout, forwarding
+             * events to the child. */
             pyi_apple_process_events(1.0);  /* long timeout (1 sec) */
         }
     } while (!wait_rc);
+    /* Check if we have a pending event to forward (for diagnostics) */
+    if (pyi_apple_has_pending_event()) {
+        VS("LOADER [AppleEvent]: Child terminated before pending event could be forwarded!\n");
+        pyi_apple_cleanup_pending_event();
+    }
     /* Uninstall event handlers */
     pyi_apple_uninstall_event_handlers();
 #else
