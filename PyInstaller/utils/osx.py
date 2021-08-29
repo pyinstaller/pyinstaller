@@ -186,18 +186,22 @@ def fix_exe_for_code_signing(filename):
     symtab_sec = [cmd for cmd in header.commands if cmd[0].cmd == LC_SYMTAB]
     assert len(symtab_sec) == 1, "Expected exactly one SYMTAB section!"
     symtab_sec = symtab_sec[0][1]  # Take the symtab command entry
-    # Sanity check; the string table is located at the end of the SYMTAB section, which in turn is the last section in
-    # the __LINKEDIT segment.
-    assert linkedit_seg.fileoff + linkedit_seg.filesize == symtab_sec.stroff + symtab_sec.strsize, \
-        "Sanity check failed!"
 
-    # Compute the old/declared file size (header.offset is zero for single-arch thin binaries).
-    old_file_size = header.offset + linkedit_seg.fileoff + linkedit_seg.filesize
-    delta = file_size - old_file_size
-    # Expand the string table in SYMTAB section...
-    symtab_sec.strsize += delta
-    # .. as well as its parent __LINEDIT segment.
-    linkedit_seg.filesize += delta
+    # The string table is located at the end of the SYMTAB section, which in turn is the last section in the __LINKEDIT
+    # segment. Therefore, the end of SYMTAB section should be aligned with the end of __LINKEDIT segment, and in turn
+    # both should be aligned with the end of the file (as we are in the last or the only arch slice).
+    #
+    # However, when removing the signature from the executable using codesign under Mac OS 10.13, the codesign utility
+    # may produce an invalid file, with declared length of __LINKEDIT segment (linkedit_seg.filesize), as reported in
+    # issue #6167.
+    #
+    # We can compensate for that by not using the declared sizes anywhere, and simply recompute them. In the final
+    # binary, the __LINKEDIT segment and the SYMTAB section MUST end at the end of the file (otherwise, we have bigger
+    # issues...). So simply recompute the declared sizes as difference between the final file length and the
+    # corresponding start offset.
+    symtab_sec.strsize = file_size - symtab_sec.stroff
+    linkedit_seg.filesize = file_size - linkedit_seg.fileoff
+
     # Compute new vmsize by rounding filesize up to full page size.
     page_size = (0x4000 if _get_arch_string(header.header).startswith('arm64') else 0x1000)
     linkedit_seg.vmsize = math.ceil(linkedit_seg.filesize / page_size) * page_size
