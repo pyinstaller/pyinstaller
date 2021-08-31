@@ -393,6 +393,21 @@ def test_pandas_io_formats_style(pyi_builder):
         """)
 
 
+@importorskip('pandas')
+@importorskip('matplotlib')
+def test_pandas_plotting_matplotlib(pyi_builder):
+    # Test that pandas.plotting works. Starting with pandas 1.3.0, the used pandas.plotting._matplotlib backend module
+    # is loaded via importlib.import_module(), and needs a hidden import. See #5994.
+    pyi_builder.test_source(
+        """
+        import pandas as pd
+
+        series = pd.Series([0, 1, 2, 3], [0, 1, 2, 3])
+        series.plot()
+        """
+    )
+
+
 @importorskip('win32ctypes')
 @pytest.mark.skipif(not is_win, reason='pywin32-ctypes is supported only on Windows')
 @pytest.mark.parametrize('submodule', ['win32api', 'win32cred', 'pywintypes'])
