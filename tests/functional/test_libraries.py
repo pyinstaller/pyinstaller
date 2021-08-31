@@ -400,7 +400,10 @@ def test_pandas_plotting_matplotlib(pyi_builder):
     # is loaded via importlib.import_module(), and needs a hidden import. See #5994.
     pyi_builder.test_source(
         """
+        import matplotlib as mpl
         import pandas as pd
+
+        mpl.use('Agg')  # Use headless Agg backend to avoid dependency on display server.
 
         series = pd.Series([0, 1, 2, 3], [0, 1, 2, 3])
         series.plot()
