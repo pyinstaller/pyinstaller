@@ -1,9 +1,10 @@
 name: Lint
 
 on:
-  pull_request:  # Trigger on PRs to develop
+  pull_request:  # Trigger on PRs to develop and v4
     branches:
       - develop
+      - v4
 
 
 jobs:
