@@ -464,9 +464,19 @@ def add_qt_dependencies(hook_file):
             lib_name = os.path.splitext(lib_name)[0]
         if lib_name.startswith('lib'):
             lib_name = lib_name[3:]
-        # Mac: rename from ``qt`` to ``qt5`` or ``qt6`` to match names in Windows/Linux.
-        if compat.is_darwin and lib_name.startswith('qt'):
-            lib_name = 'qt' + str(qt_info.qt_major) + lib_name[2:]
+        # Mac OS: handle different naming schemes. PyPI wheels ship framework-enabled Qt builds, where shared libraries
+        # are part of .framework bundles (e.g., ``PyQt5/Qt5/lib/QtCore.framework/Versions/5/QtCore``). In Anaconda
+        # (Py)Qt installations, the shared libraries are installed in environment's library directory, and contain
+        # versioned extensions, e.g., ``libQt5Core.5.dylib``.
+        if compat.is_darwin:
+            if lib_name.startswith('qt') and not lib_name.startswith('qt' + str(qt_info.qt_major)):
+                # Qt library from a framework bundle (e.g., ``QtCore``); change prefix from ``qt`` to ``qt5`` or ``qt6``
+                # to match names in Windows/Linux.
+                lib_name = 'qt' + str(qt_info.qt_major) + lib_name[2:]
+            if lib_name.endswith('.' + str(qt_info.qt_major)):
+                # Qt library from Anaconda, which originally had versioned extension, e.g., ``libfoo.5.dynlib``.
+                # The above processing turned it into ``foo.5``, so we need to remove the last two characters.
+                lib_name = lib_name[:-2]
 
         # Match libs with QT_LIBINFIX set to '_conda', i.e. conda-forge builds.
         if lib_name.endswith('_conda'):
