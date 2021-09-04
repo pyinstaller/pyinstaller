@@ -1,0 +1,2 @@
+(macOS) Robustify the macOS assembly pipeline to work around the issues with 
+the ``codesign`` utility on macOS 10.13 High Sierra.
