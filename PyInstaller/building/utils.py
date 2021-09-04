@@ -352,11 +352,13 @@ def checkCache(
     cache_index[basenm] = digest
     misc.save_py_data_struct(cacheindexfn, cache_index)
 
-    # On Mac OS we need relative paths to dll dependencies starting with @executable_path. Modifying headers
-    # invalidates signatures, so remove any existing signature and then re-add it after paths are rewritten.
+    # On Mac OS we need relative paths to dll dependencies starting with @executable_path. While modifying
+    # the headers invalidates existing signatures, we avoid removing them in order to speed things up (and
+    # to avoid potential bugs in the codesign utility, like the one reported on Mac OS 10.13 in #6167).
+    # The forced re-signing at the end should take care of the invalidated signatures.
     if is_darwin:
         osxutils.binary_to_target_arch(cachedfile, target_arch, display_name=fnm)
-        osxutils.remove_signature_from_binary(cachedfile)
+        #osxutils.remove_signature_from_binary(cachedfile)  # Disabled as per comment above.
         dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
         osxutils.sign_binary(cachedfile, codesign_identity, entitlements_file)
     return cachedfile
