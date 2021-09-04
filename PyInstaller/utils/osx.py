@@ -192,8 +192,8 @@ def fix_exe_for_code_signing(filename):
     # both should be aligned with the end of the file (as we are in the last or the only arch slice).
     #
     # However, when removing the signature from the executable using codesign under Mac OS 10.13, the codesign utility
-    # may produce an invalid file, with declared length of __LINKEDIT segment (linkedit_seg.filesize), as reported in
-    # issue #6167.
+    # may produce an invalid file, with the declared length of the __LINKEDIT segment (linkedit_seg.filesize) pointing
+    # beyond the end of file, as reported in issue #6167.
     #
     # We can compensate for that by not using the declared sizes anywhere, and simply recompute them. In the final
     # binary, the __LINKEDIT segment and the SYMTAB section MUST end at the end of the file (otherwise, we have bigger
