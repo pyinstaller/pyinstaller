@@ -8,6 +8,8 @@
 # include requirements for base testing
 -r requirements-tools.txt
 
+# Backport of importlib.resources for python 3.8 and earlier.
+importlib_resources==5.2.2; python_version < '3.9'
 
 # Needs work
 # ----------
