@@ -492,6 +492,65 @@ class FrozenImporter:
 
         exec(bytecode, module.__dict__)
 
+    def get_resource_reader(self, fullname):
+        """
+        Return importlib.resource-compatible resource reader.
+        """
+        return FrozenResourceReader(self, fullname)
+
+
+class FrozenResourceReader:
+    """
+    Resource reader for importlib.resources / importlib_resources support.
+
+    Currently supports only on-disk resources (support for resources from the embedded archive is missing).
+    However, this should cover the typical use cases (access to data files), as PyInstaller collects data files onto
+    filesystem, and only .pyc modules are collected into embedded archive. One exception are resources collected from
+    zipped eggs (which end up collected into embedded archive), but those should be rare anyway.
+
+    When listing resources, source .py files will not be listed as they are not collected by default. Similarly,
+    sub-directories that contained only .py files are not reconstructed on filesystem, so they will not be listed,
+    either. If access to .py files is required for whatever reason, they need to be explicitly collected as data files
+    anyway, which will place them on filesystem and make them appear as resources.
+
+    For on-disk resources, we *must* return path compatible with pathlib.Path() in order to avoid copy to a temporary
+    file, which might break under some circumstances, e.g., metpy with importlib_resources back-port, due to:
+    https://github.com/Unidata/MetPy/blob/a3424de66a44bf3a92b0dcacf4dff82ad7b86712/src/metpy/plots/wx_symbols.py#L24-L25
+    (importlib_resources tries to use 'fonts/wx_symbols.ttf' as a temporary filename suffix, which fails as it contains
+    a separator).
+
+    Furthermore, some packages expect files() to return either pathlib.Path or zipfile.Path, e.g.,
+    https://github.com/tensorflow/datasets/blob/master/tensorflow_datasets/core/utils/resource_utils.py#L81-L97
+    This makes implementation of mixed support for on-disk and embedded resources using importlib.abc.Traversable
+    protocol rather difficult.
+
+    So in order to maximize compatibility with unfrozen behavior, the below implementation is basically equivalent of
+    importlib.readers.FileReader from python 3.10:
+      https://github.com/python/cpython/blob/839d7893943782ee803536a47f1d4de160314f85/Lib/importlib/readers.py#L11
+    and its underlying classes, importlib.abc.TraversableResources and importlib.abc.ResourceReader:
+      https://github.com/python/cpython/blob/839d7893943782ee803536a47f1d4de160314f85/Lib/importlib/abc.py#L422
+      https://github.com/python/cpython/blob/839d7893943782ee803536a47f1d4de160314f85/Lib/importlib/abc.py#L312
+    """
+    def __init__(self, importer, name):
+        import pathlib  # Local import to avoid bootstrap issues.
+        self.importer = importer
+        self.path = pathlib.Path(sys._MEIPASS).joinpath(*name.split('.'))
+
+    def open_resource(self, resource):
+        return self.files().joinpath(resource).open('rb')
+
+    def resource_path(self, resource):
+        return str(self.path.joinpath(resource))
+
+    def is_resource(self, path):
+        return self.files().joinpath(path).is_file()
+
+    def contents(self):
+        return (item.name for item in self.files().iterdir())
+
+    def files(self):
+        return self.path
+
 
 def install():
     """

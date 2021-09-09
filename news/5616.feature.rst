@@ -1,0 +1,2 @@
+Implement basic resource reader for accessing on-filesystem resources (data files) 
+via ``importlib.resources`` (python >= 3.9) or ``importlib_resources`` (python <= 3.8).
