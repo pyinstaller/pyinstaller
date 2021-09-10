@@ -235,3 +235,11 @@ def UpdateResourcesFromResFile(dstpath, srcpath, types=None, names=None, languag
     """
     res = GetResources(srcpath, types, names, languages)
     UpdateResourcesFromDict(dstpath, res)
+
+
+def RemoveAllResources(filename):
+    """
+    Remove all resources from the dll/exe file.
+    """
+    hsrc = win32api.BeginUpdateResource(filename, True)  # bDeleteExistingResources=True
+    win32api.EndUpdateResource(hsrc, False)

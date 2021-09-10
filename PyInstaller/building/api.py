@@ -579,6 +579,9 @@ class EXE(Target):
             os.close(fd)
             self._copyfile(exe, tmpnm)
             os.chmod(tmpnm, 0o755)
+            # First, remove all resources from the file. This ensures that no manifest is embedded, even if bootloader
+            # was compiled with a toolchain that forcibly embeds a default manifest (e.g., mingw toolchain from msys2).
+            winresource.RemoveAllResources(tmpnm)
             if self.icon != "NONE":
                 icon.CopyIcons(tmpnm, self.icon)
             if self.versrsrc:
