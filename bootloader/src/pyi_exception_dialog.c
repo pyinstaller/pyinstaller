@@ -187,7 +187,7 @@ _exception_dialog_initialze(DIALOG_CONTEXT *dialog)
      * Initialize resources
      */
     /* Format the label message */
-    swprintf(dialog->wszLabelMessage, PATH_MAX, L"Failed to execute script '%s' due to unhandled exception: %s", dialog->wszScriptName, dialog->wszExceptionMessage);
+    swprintf(dialog->wszLabelMessage, PATH_MAX, L"Failed to execute script '%ls' due to unhandled exception: %ls", dialog->wszScriptName, dialog->wszExceptionMessage);
 
     /* Estimate button dimensions */
     lUnits = GetDialogBaseUnits();
