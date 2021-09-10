@@ -1,0 +1,2 @@
+(Windows) Suppress two ``snprintf`` truncation warnings that prevented
+bootloader from building with ``winlibs MinGW-w64`` toolchain.
