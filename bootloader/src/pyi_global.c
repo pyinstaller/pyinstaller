@@ -107,32 +107,34 @@ mbothererror(const char *fmt, ...)
     show_message_box(msg, "Error detected", MB_ICONWARNING);
 }
 
-    void mbfatal_winerror(const char * funcname, const char *fmt, ...)
-    {
-        char fullmsg[MBTXTLEN];
-        char msg[MBTXTLEN];
-        DWORD error_code = GetLastError();
-        va_list args;
+void mbfatal_winerror(const char * funcname, const char *fmt, ...)
+{
+    char fullmsg[MBTXTLEN];
+    char msg[MBTXTLEN];
+    DWORD error_code = GetLastError();
+    va_list args;
 
-        va_start(args, fmt);
-            vsnprintf(msg, MBTXTLEN, fmt, args);
-        va_end(args);
-        snprintf(fullmsg, MBTXTLEN, "%s%s: %s", msg, funcname, GetWinErrorString(error_code));
-        show_message_box(fullmsg, "Fatal error detected", MB_ICONEXCLAMATION);
-    }
+    va_start(args, fmt);
+    vsnprintf(msg, MBTXTLEN, fmt, args);
+    va_end(args);
 
-    void mbfatal_perror(const char * funcname, const char *fmt, ...)
-    {
-        char fullmsg[MBTXTLEN];
-        char msg[MBTXTLEN];
-        va_list args;
+    snprintf(fullmsg, MBTXTLEN, "%s%s: %s", msg, funcname, GetWinErrorString(error_code));
+    show_message_box(fullmsg, "Fatal error detected", MB_ICONEXCLAMATION);
+}
 
-        va_start(args, fmt);
-            vsnprintf(msg, MBTXTLEN, fmt, args);
-        va_end(args);
-        snprintf(fullmsg, MBTXTLEN, "%s%s: %s", msg, funcname, strerror(errno));
-        show_message_box(fullmsg, "Fatal error detected", MB_ICONEXCLAMATION);
-    }
+void mbfatal_perror(const char * funcname, const char *fmt, ...)
+{
+    char fullmsg[MBTXTLEN];
+    char msg[MBTXTLEN];
+    va_list args;
+
+    va_start(args, fmt);
+    vsnprintf(msg, MBTXTLEN, fmt, args);
+    va_end(args);
+
+    snprintf(fullmsg, MBTXTLEN, "%s%s: %s", msg, funcname, strerror(errno));
+    show_message_box(fullmsg, "Fatal error detected", MB_ICONEXCLAMATION);
+}
 #endif  /* _WIN32 and WINDOWED */
 
 /* Enable or disable debug output. */
