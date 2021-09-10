@@ -1,0 +1,6 @@
+(Windows) Fix issues in ``onedir`` frozen applications when the bootloader
+is compiled using a toolchain that forcibly embeds a default manifest
+(e.g., the ``MinGW-w64`` toolchain from ``msys2``). The issues range from
+manifest-related options (e.g., ``uac-admin``) not working to windowed frozen
+application not starting at all (with the ``The procedure entry point
+LoadIconMetric could not be located...`` error message).
