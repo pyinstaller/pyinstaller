@@ -740,3 +740,34 @@ def test_onefile_has_manifest(pyi_builder, icon):
     for exe in exes:
         res = winmanifest.GetManifestResources(exe)
         assert res, "No manifest resources found!"
+
+
+@pytest.mark.parametrize("append_pkg", [True, False], ids=["embedded", "sideload"])
+def test_sys_executable(pyi_builder, append_pkg, monkeypatch):
+    """
+    Verify that sys.executable points to the executable, regardless of build mode (onedir vs. onefile) and the
+    append_pkg setting (embedded vs. side-loaded CArchive PKG).
+    """
+    # Set append_pkg; taken from test_pyz_as_external_file
+    import PyInstaller.building.build_main
+    EXE = PyInstaller.building.build_main.EXE
+
+    def MyEXE(*args, **kwargs):
+        kwargs['append_pkg'] = append_pkg
+        return EXE(*args, **kwargs)
+
+    monkeypatch.setattr('PyInstaller.building.build_main.EXE', MyEXE)
+
+    # Expected executable basename
+    exe_basename = 'test_source'
+    if is_win:
+        exe_basename += '.exe'
+
+    pyi_builder.test_source(
+        """
+        import sys
+        import os
+        exe_basename = os.path.basename(sys.executable)
+        assert exe_basename == '{}', "Unexpected basename(sys.executable): " + exe_basename
+        """.format(exe_basename)
+    )
