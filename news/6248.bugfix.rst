@@ -1,0 +1,7 @@
+(Windows) Remove the attempt to load the manifest of a ``onefile``
+frozen executable via the activation context, which fails with ``An
+attempt to set the process default activation context failed because
+the process default activation context was already set.`` message that
+can be observed in debug builds. This approach has been invalid ever
+since :issue:`3746` implemented direct manifest embedding into the
+``onefile`` executable.
