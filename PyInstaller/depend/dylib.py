@@ -271,6 +271,7 @@ if compat.is_linux:
 # Suppress false warnings on win 10 and UCRT (see issue #1566).
 if compat.is_win_10:
     _warning_suppressions.append(r'api-ms-win-crt.*')
+    _warning_suppressions.append(r'api-ms-win-core.*')
 
 
 class MissingLibWarningSuppressionList:
