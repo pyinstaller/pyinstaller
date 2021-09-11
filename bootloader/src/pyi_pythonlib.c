@@ -457,7 +457,7 @@ pyi_pylib_start_python(ARCHIVE_STATUS *status)
     pyi_pylib_set_pep540_utf8_mode();
 
     /* Decode using current locale */
-    if (!pyi_locale_char2wchar(progname_w, status->archivename, PATH_MAX)) {
+    if (!pyi_locale_char2wchar(progname_w, status->executablename, PATH_MAX)) {
         FATALERROR("Failed to convert progname to wchar_t\n");
         return -1;
     }

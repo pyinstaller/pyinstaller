@@ -75,6 +75,7 @@ typedef struct _archive_status {
      *    (formerly called _Py_char2wchar) first.
      */
     char archivename[PATH_MAX];
+    char executablename[PATH_MAX];
     char homepath[PATH_MAX];
     char temppath[PATH_MAX];
     /*
@@ -131,11 +132,12 @@ void pyi_arch_status_free(ARCHIVE_STATUS *status);
 /*
  * Setup the paths and open the archive
  *
- * @param archivePath  The path including filename to the archive.
+ * @param archive_path  The path including filename to the archive (can be different from executable path).
+ * @param executable_path  The path including filename to the executable.
  *
  * @return true on success, false otherwise.
  */
-bool pyi_arch_setup(ARCHIVE_STATUS *status, char const * archivePath);
+bool pyi_arch_setup(ARCHIVE_STATUS *status, char const * archive_path, char const * executable_path);
 
 TOC *getFirstTocEntry(ARCHIVE_STATUS *status);
 TOC *getNextTocEntry(ARCHIVE_STATUS *status, TOC *entry);

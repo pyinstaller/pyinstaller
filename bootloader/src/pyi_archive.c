@@ -534,18 +534,17 @@ pyi_arch_open(ARCHIVE_STATUS *status)
  * Sets f_archivename, f_homepath, f_mainpath
  */
 bool
-pyi_arch_setup(ARCHIVE_STATUS *status, char const * archivePath)
+pyi_arch_setup(ARCHIVE_STATUS *status, char const * archive_path, char const * executable_path)
 {
-    /* Get the archive Path */
-    if (strlen(archivePath) >= PATH_MAX) {
-        // Should never come here, since `archivePath` was already processed
-        // by pyi_path_executable or pyi_path_archivefile.
+    /* Copy archive path and executable path */
+    if (snprintf(status->archivename, PATH_MAX, "%s", archive_path) >= PATH_MAX) {
         return false;
     }
-
-    strcpy(status->archivename, archivePath);
+    if (snprintf(status->executablename, PATH_MAX, "%s", executable_path) >= PATH_MAX) {
+        return false;
+    }
     /* Set homepath to where the archive is */
-    pyi_path_dirname(status->homepath, archivePath);
+    pyi_path_dirname(status->homepath, archive_path);
     /*
      * Initial value of mainpath is homepath. It might be overriden
      * by temppath if it is available.
