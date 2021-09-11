@@ -427,7 +427,9 @@ class EXE(Target):
             base_name = os.path.splitext(os.path.basename(self.name))[0]
         else:
             base_name = os.path.basename(self.name)
-        self.pkgname = base_name + '.pkg'
+        # Create the CArchive PKG in WORKPATH. When instancing PKG(), set name so that guts check can test whether the
+        # file already exists.
+        self.pkgname = os.path.join(CONF['workpath'], base_name + '.pkg')
 
         self.toc = TOC()
 
@@ -483,6 +485,7 @@ class EXE(Target):
 
         self.pkg = PKG(
             self.toc,
+            name=self.pkgname,
             cdict=kwargs.get('cdict', None),
             exclude_binaries=self.exclude_binaries,
             strip_binaries=self.strip,
@@ -658,8 +661,12 @@ class EXE(Target):
         if not self.append_pkg:
             logger.info("Copying bootloader exe to %s", self.name)
             self._copyfile(exe, self.name)
-            logger.info("Copying archive to %s", self.pkgname)
-            self._copyfile(self.pkg.name, self.pkgname)
+            # In onefile mode, copy the stand-alone pkg next to the executable. In onedir, this will be done by the
+            # COLLECT() target.
+            if not self.exclude_binaries:
+                pkg_dst = os.path.join(os.path.dirname(self.name), os.path.basename(self.pkgname))
+                logger.info("Copying archive %s to %s", self.pkg.name, pkg_dst)
+                self._copyfile(self.pkg.name, pkg_dst)
         elif is_linux:
             self._copyfile(exe, self.name)
             logger.info("Appending archive to ELF section in EXE %s", self.name)

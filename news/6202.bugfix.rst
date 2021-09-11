@@ -1,0 +1,4 @@
+Fix the location of the generated stand-alone pkg file when using the
+side-load mode (``pkg_append=False``) in combination with ``onefile`` mode.
+The package file is now placed next to the executable instead of next to
+the .spec file.
