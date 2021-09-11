@@ -470,11 +470,11 @@ class EXE(Target):
 
             manifest_filename = os.path.basename(self.name) + ".manifest"
 
-            self.toc.append((manifest_filename, filename, 'BINARY'))
-            if not self.exclude_binaries:
-                # Onefile mode: manifest file is explicitly loaded. Store name of manifest file as bootloader option.
-                # Allows the exe to be renamed.
-                self.toc.append(("pyi-windows-manifest-filename " + manifest_filename, "", "OPTION"))
+            # In the onedir mode, we need to collect the manifest file, so that it is placed next to the executable as
+            # an external manifest. In the onefile mode, we do not need to collect the manifest, as it is embedded into
+            # the final executable by the assembly pipeline.
+            if self.exclude_binaries:
+                self.toc.append((manifest_filename, filename, 'BINARY'))  # Onedir mode.
 
             if self.versrsrc:
                 if not isinstance(self.versrsrc, versioninfo.VSVersionInfo) and not os.path.isabs(self.versrsrc):
@@ -647,6 +647,8 @@ class EXE(Target):
                             resfile,
                             exc_info=1
                         )
+            # In onefile mode, we need to embed the manifest into the executable in order for manifest-related options
+            # (e.g., uac-admin) to work.
             if self.manifest and not self.exclude_binaries:
                 self.manifest.update_resources(tmpnm, [1])
             trash.append(tmpnm)
