@@ -18,7 +18,6 @@
 #ifdef _WIN32
 
 char * GetWinErrorString(DWORD error_code);
-int CreateActContext(const char *manifestpath);
 
 char ** pyi_win32_argv_to_utf8(int argc, wchar_t **wargv);
 wchar_t ** pyi_win32_wargv_from_utf8(int argc, char **argv);
