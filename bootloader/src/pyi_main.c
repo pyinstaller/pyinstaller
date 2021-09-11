@@ -102,8 +102,11 @@ pyi_main(int argc, char * argv[])
 
     VS("LOADER: _MEIPASS2 is %s\n", (extractionpath ? extractionpath : "NULL"));
 
-    if ((! pyi_arch_setup(archive_status, executable)) &&
-        (! pyi_arch_setup(archive_status, archivefile))) {
+    /* Try opening the archive; first attempt to read it from executable
+     * itself (embedded mode), then from a stand-alone pkg file (sideload mode)
+     */
+    if ((! pyi_arch_setup(archive_status, executable, executable)) &&
+        (! pyi_arch_setup(archive_status, archivefile, executable))) {
             FATALERROR("Cannot open self %s or archive %s\n",
                        executable, archivefile);
             return -1;
