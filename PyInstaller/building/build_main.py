@@ -703,8 +703,7 @@ def build(spec, distpath, workpath, clean_build):
 
     # Create DISTPATH and workpath if they does not exist.
     for pth in (CONF['distpath'], workpath):
-        if not os.path.exists(pth):
-            os.makedirs(pth)
+        os.makedirs(pth, exist_ok=True)
 
     # Construct NAMESPACE for running the Python code from .SPEC file.
     # NOTE: Passing NAMESPACE allows to avoid having global variables in this module and makes isolated environment for
