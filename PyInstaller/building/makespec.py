@@ -397,6 +397,15 @@ def __add_options(parser):
         ),
     )
     g.add_argument(
+        '--python-option',
+        dest='python_options',
+        metavar='PYTHON_OPTION',
+        action='append',
+        default=[],
+        help='Specify a command-line option to pass to the Python interpreter at runtime. Currently supports '
+        '"v" (equivalent to "--debug imports"), "u", and "W <warning control>".',
+    )
+    g.add_argument(
         "-s",
         "--strip",
         action="store_true",
@@ -578,6 +587,7 @@ def main(
     onefile=None,
     console=True,
     debug=None,
+    python_options=[],
     strip=False,
     noupx=False,
     upx_exclude=None,
@@ -717,6 +727,11 @@ def main(
     else:
         splash_init = splash_binaries = splash_target = ""
 
+    # Create OPTIONs array
+    if 'imports' in debug and 'v' not in python_options:
+        python_options.append('v')
+    python_options_array = [(opt, None, 'OPTION') for opt in python_options]
+
     d = {
         'scripts': scripts,
         'pathex': pathex,
@@ -726,7 +741,7 @@ def main(
         'preamble': preamble.content,
         'name': name,
         'noarchive': 'noarchive' in debug,
-        'options': [('v', None, 'OPTION')] if 'imports' in debug else [],
+        'options': python_options_array,
         'debug_bootloader': 'bootloader' in debug,
         'bootloader_ignore_signals': bootloader_ignore_signals,
         'strip': strip,
