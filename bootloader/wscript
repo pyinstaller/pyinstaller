@@ -87,16 +87,12 @@ def machine(ctx):
     return _shared_with_waf._pyi_machine(ctx.env.DEST_CPU, DESTOS_TO_SYSTEM[ctx.env.DEST_OS])
 
 
-def assoc_programm(ctx, name):
-    # Search for other programs that we need, based on the name of the compiler (replace "gcc" or "clang" by the
-    # tool name)
-    cc = ctx.env.CC[0]
-    prog = re.sub(r'(^|^.*-)(gcc|clang)(-.*|\.exe$|$)', r'\1' + name + r'\3', os.path.basename(cc))
-    prog = os.path.join(os.path.dirname(cc), prog)
-    # waf unconditionally appends the extension, even if there is one already. So we need to remove the existing one.
-    exts = Utils.is_win32 and r'\.(exe|com|bat|cmd)$' or r'\.(sh|pl|py)$'
-    prog = re.sub(exts, '', prog)
-    return prog
+def find_program_next_to_cc(ctx, name, var):
+    # Tries to find a program in the same directory as cc or on the normal PATH.
+    environ = getattr(ctx, 'environ', os.environ)
+    path = [os.path.dirname(ctx.env.CC[0])]
+    path.extend(environ.get('PATH', '').split(os.pathsep))
+    ctx.find_program(name, var=var, path_list=path)
 
 
 def options(ctx):
@@ -502,7 +498,7 @@ def configure(ctx):
         if ctx.env.CC_NAME != 'msvc':
             # Load tool to process *.rc* files for C/C++ like icon for exe files. For msvc, waf loads this tool
             # automatically.
-            ctx.find_program([assoc_programm(ctx, 'windres')], var='WINRC')
+            find_program_next_to_cc(ctx, 'windres', var='WINRC')
             ctx.load('winres')
 
     # ** C Compiler optimizations **
@@ -725,7 +721,7 @@ def configure(ctx):
 
     if ctx.env.CC_NAME != 'msvc':
         # This tool allows reducing the size of executables.
-        ctx.find_program([assoc_programm(ctx, 'strip')], var='STRIP')
+        find_program_next_to_cc(ctx, 'strip', var='STRIP')
         ctx.load('strip', tooldir='tools')
 
     def windowed(name, baseenv):
