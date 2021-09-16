@@ -107,6 +107,7 @@ def test_utf8_mode_envvar(python_utf8, pyi_builder, monkeypatch):
 @pytest.mark.parametrize('locale', ['C', 'POSIX'])
 def test_utf8_mode_locale(locale, pyi_builder, monkeypatch):
     monkeypatch.setenv('LC_CTYPE', locale)
+    monkeypatch.setenv('LC_ALL', locale)  # Required by macOS CI; setting just LC_CTYPE is not enough.
     pyi_builder.test_source("""
         import sys
         assert sys.flags.utf8_mode == 1
