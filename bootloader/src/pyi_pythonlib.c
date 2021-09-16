@@ -278,12 +278,28 @@ pyi_pylib_set_pep540_utf8_mode()
     }
 
 #ifndef _WIN32
+    /* On non-Windows, the C locale and the POSIX locale enable the
+     * UTF-8 Mode (PEP 540) */
     if (enable_utf8_mode < 0) {
-        /* On non-Windows, the C locale and the POSIX locale enable the
-         * UTF-8 Mode (PEP 540) */
-        const char *ctype_loc = setlocale(LC_CTYPE, NULL);
-        if (ctype_loc != NULL && (strcmp(ctype_loc, "C") == 0 || strcmp(ctype_loc, "POSIX") == 0)) {
+        const char *lc_ctype = NULL;
+        char *orig_lc_ctype = NULL;
+
+        /* Get original value of LC_CTYPE. */
+        lc_ctype = setlocale(LC_CTYPE, NULL);
+        if (lc_ctype) {
+            orig_lc_ctype = strdup(lc_ctype);
+        }
+
+        /* Set user-preferred locale, and retrieve corresponding LC_CTYPE. */
+        lc_ctype = setlocale(LC_CTYPE, "");
+        if (lc_ctype != NULL && (strcmp(lc_ctype, "C") == 0 || strcmp(lc_ctype, "POSIX") == 0)) {
             enable_utf8_mode = 1;
+        }
+
+        /* Restore old value. */
+        if (orig_lc_ctype) {
+            setlocale(LC_CTYPE, orig_lc_ctype);
+            free(orig_lc_ctype);
         }
     }
 #endif
