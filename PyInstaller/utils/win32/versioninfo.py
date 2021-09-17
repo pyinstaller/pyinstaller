@@ -519,13 +519,13 @@ class StringStruct:
         raw_name = getRaw(self.name)
         raw_val = getRaw(self.val)
         # TODO: document the size of vallen and sublen.
-        vallen = len(raw_val) + 2
+        vallen = len(self.val) + 1  # Number of (wide-)characters, not bytes!
         typ = 1
         sublen = 6 + len(raw_name) + 2
         pad = b''
         if sublen % 4:
             pad = b'\000\000'
-        sublen = sublen + len(pad) + vallen
+        sublen = sublen + len(pad) + (vallen * 2)
         return struct.pack('hhh', sublen, vallen, typ) + raw_name + b'\000\000' + pad + raw_val + b'\000\000'
 
     def __eq__(self, other):
