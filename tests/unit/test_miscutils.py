@@ -41,3 +41,35 @@ def test_versioninfo(tmp_path):
     save_py_data_struct(file, vsinfo)
 
     assert vsinfo == load_py_data_struct(file)
+
+
+@pytest.mark.win32
+def test_versioninfo_str(tmp_path):
+    from PyInstaller.utils.win32.versioninfo import VSVersionInfo, \
+        FixedFileInfo, StringFileInfo, StringTable, StringStruct, \
+        VarFileInfo, VarStruct
+
+    vsinfo = VSVersionInfo(
+        ffi=FixedFileInfo(
+            filevers=(1, 2, 3, 4),
+            prodvers=(5, 6, 7, 8),
+            mask=0x3f,
+            flags=0x1,
+            OS=0x40004,
+            fileType=0x42,
+            subtype=0x42,
+            date=(0, 0)
+        ),
+        kids=[
+            StringFileInfo([StringTable('040904b0', [StringStruct('FileDescription', 'versioninfo test')])]),
+            VarFileInfo([VarStruct('Translation', [1033, 1200])])
+        ]
+    )
+
+    # "Serialize" to string. This is what grab_version.py utility does to write VsVersionInfo to output text file.
+    vs_info_str = str(vsinfo)
+
+    # "Deserialize" via eval. This is what versioninfo.SetVersion() does to read VsVersionInfo from text file.
+    vsinfo2 = eval(vs_info_str)
+
+    assert vsinfo == vsinfo2
