@@ -489,7 +489,7 @@ class StringTable:
     def __str__(self, indent=''):
         new_indent = indent + '  '
         tmp = (',\n' + new_indent).join(str(kid) for kid in self.kids)
-        return f"{indent}StringTable(\n{new_indent}u'{self.name}',\n{new_indent}[{tmp}])"
+        return f"{indent}StringTable(\n{new_indent}'{self.name}',\n{new_indent}[{tmp}])"
 
     def __repr__(self):
         return 'versioninfo.StringTable(%r, %r)' % (self.name, self.kids)
@@ -532,7 +532,7 @@ class StringStruct:
         return self.toRaw() == other
 
     def __str__(self, indent=''):
-        return "StringStruct(u'%s', u'%s')" % (self.name, self.val)
+        return "StringStruct('%s', '%s')" % (self.name, self.val)
 
     def __repr__(self):
         return 'versioninfo.StringStruct(%r, %r)' % (self.name, self.val)
@@ -632,7 +632,7 @@ class VarStruct:
         return self.toRaw() == other
 
     def __str__(self, indent=''):
-        return "VarStruct(u'%s', %r)" % (self.name, self.kids)
+        return "VarStruct('%s', %r)" % (self.name, self.kids)
 
     def __repr__(self):
         return 'versioninfo.VarStruct(%r, %r)' % (self.name, self.kids)
