@@ -12,7 +12,6 @@
 
 import codecs
 import struct
-import textwrap
 
 # ::TODO:: #1920 revert to using pypi version
 import pefile
@@ -223,19 +222,18 @@ class VSVersionInfo:
         indent = indent + '  '
         tmp = [kid.__str__(indent + '  ') for kid in self.kids]
         tmp = ', \n'.join(tmp)
-        return textwrap.dedent(
-            """# UTF-8
-            #
-            # For more details about fixed file info 'ffi' see:
-            # http://msdn.microsoft.com/en-us/library/ms646997.aspx
-            VSVersionInfo(
-            %sffi=%s,
-            %skids=[
-            %s
-            %s]
-            )
-            """ % (indent, self.ffi.__str__(indent), indent, tmp, indent)
-        )
+        return '\n'.join([
+            "# UTF-8",
+            "#",
+            "# For more details about fixed file info 'ffi' see:",
+            "# http://msdn.microsoft.com/en-us/library/ms646997.aspx",
+            "VSVersionInfo(",
+            indent + f"ffi={self.ffi.__str__(indent)},",
+            indent + "kids=[",
+            tmp,
+            indent + "]",
+            ")",
+        ])
 
     def __repr__(self):
         return "versioninfo.VSVersionInfo(ffi=%r, kids=%r)" % (self.ffi, self.kids)
@@ -358,19 +356,27 @@ class FixedFileInfo:
         )  # yapf: disable
         fd = (self.fileDateMS, self.fileDateLS)
         tmp = [
-            'FixedFileInfo(', '# filevers and prodvers should be always a tuple with four items: (1, 2, 3, 4)',
+            'FixedFileInfo(',
+            '# filevers and prodvers should be always a tuple with four items: (1, 2, 3, 4)',
             '# Set not needed items to zero 0.',
             'filevers=%s,' % (fv,),
-            'prodvers=%s,' % (pv,), "# Contains a bitmask that specifies the valid bits 'flags'r",
+            'prodvers=%s,' % (pv,),
+            "# Contains a bitmask that specifies the valid bits 'flags'r",
             'mask=%s,' % hex(self.fileFlagsMask),
             '# Contains a bitmask that specifies the Boolean attributes of the file.',
-            'flags=%s,' % hex(self.fileFlags), '# The operating system for which this file was designed.',
+            'flags=%s,' % hex(self.fileFlags),
+            '# The operating system for which this file was designed.',
             '# 0x4 - NT and there is no need to change it.',
-            'OS=%s,' % hex(self.fileOS), '# The general type of file.', '# 0x1 - the file is an application.',
-            'fileType=%s,' % hex(self.fileType), '# The function of the file.',
+            'OS=%s,' % hex(self.fileOS),
+            '# The general type of file.',
+            '# 0x1 - the file is an application.',
+            'fileType=%s,' % hex(self.fileType),
+            '# The function of the file.',
             '# 0x0 - the function is not defined for this fileType',
-            'subtype=%s,' % hex(self.fileSubtype), '# Creation date and time stamp.',
-            'date=%s' % (fd,), ')'
+            'subtype=%s,' % hex(self.fileSubtype),
+            '# Creation date and time stamp.',
+            'date=%s' % (fd,),
+            ')',
         ]
         return f'\n{indent}  '.join(tmp)
 
@@ -431,9 +437,9 @@ class StringFileInfo(object):
         return self.toRaw() == other
 
     def __str__(self, indent=''):
-        indent += '  '
-        tmp = ', \n'.join(kid.__str__(indent) for kid in self.kids)
-        return f'{indent}StringFileInfo(\n{indent}[\n{tmp}\n{indent}])'
+        new_indent = indent + '  '
+        tmp = ', \n'.join(kid.__str__(new_indent) for kid in self.kids)
+        return f'{indent}StringFileInfo(\n{new_indent}[\n{tmp}\n{new_indent}])'
 
     def __repr__(self):
         return 'versioninfo.StringFileInfo(%r)' % self.kids
@@ -481,9 +487,9 @@ class StringTable:
         return self.toRaw() == other
 
     def __str__(self, indent=''):
-        indent += '  '
-        tmp = (',\n' + indent).join(str(kid) for kid in self.kids)
-        return f"{indent}StringTable(\n{indent}u'{self.name}',\n{indent}[{tmp}])"
+        new_indent = indent + '  '
+        tmp = (',\n' + new_indent).join(str(kid) for kid in self.kids)
+        return f"{indent}StringTable(\n{new_indent}u'{self.name}',\n{new_indent}[{tmp}])"
 
     def __repr__(self):
         return 'versioninfo.StringTable(%r, %r)' % (self.name, self.kids)
