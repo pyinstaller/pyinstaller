@@ -1,0 +1,2 @@
+Update the Linux bootloader cross compiler Dockerfile to allow using `the official PyPA base images
+<https://quay.io/organization/pypa/>`_ in place of the dockcross ones.
