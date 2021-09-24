@@ -338,6 +338,11 @@ class EXE(Target):
                 Windows only. Setting to True creates a Manifest with will request elevation upon application start.
             uac_uiaccess
                 Windows only. Setting to True allows an elevated application to work with Remote Desktop.
+            embed_manifest
+                Windows only. Setting to True (the default) embeds the manifest into the executable. Setting to False
+                generates an external .exe.manifest file. Applicable only in onedir mode (exclude_binaries=True); in
+                onefile mode (exclude_binaries=False), the manifest is always embedded in the executable, regardless
+                of this option.
             argv_emulation
                 macOS only. Enables argv emulation in macOS .app bundles (i.e., windowed bootloader). If enabled, the
                 initial open document/URL Apple Events are intercepted by bootloader and converted into sys.argv.
@@ -366,6 +371,7 @@ class EXE(Target):
         self.icon = kwargs.get('icon', None)
         self.versrsrc = kwargs.get('version', None)
         self.manifest = kwargs.get('manifest', None)
+        self.embed_manifest = kwargs.get('embed_manifest', True)
         self.resources = kwargs.get('resources', [])
         self.strip = kwargs.get('strip', False)
         self.upx_exclude = kwargs.get("upx_exclude", [])
@@ -458,6 +464,11 @@ class EXE(Target):
             self.toc.append(("pyi-macos-argv-emulation", "", "OPTION"))
 
         if is_win:
+            if not self.exclude_binaries:
+                # onefile mode forces embed_manifest=True
+                if not self.embed_manifest:
+                    logger.warning("Ignoring embed_manifest=False setting in onefile mode!")
+                self.embed_manifest = True
             if not self.icon:
                 # --icon not specified; use default from bootloader folder
                 if self.console:
@@ -472,11 +483,11 @@ class EXE(Target):
 
             manifest_filename = os.path.basename(self.name) + ".manifest"
 
-            # In the onedir mode, we need to collect the manifest file, so that it is placed next to the executable as
-            # an external manifest. In the onefile mode, we do not need to collect the manifest, as it is embedded into
-            # the final executable by the assembly pipeline.
-            if self.exclude_binaries:
-                self.toc.append((manifest_filename, filename, 'BINARY'))  # Onedir mode.
+            # If external manifest file is requested (supported only in onedir mode), add the file to the TOC in order
+            # for it to be collected as an external manifest file. Otherwise, the assembly pipeline will embed the
+            # manifest into the executable later on.
+            if not self.embed_manifest:
+                self.toc.append((manifest_filename, filename, 'BINARY'))
 
             if self.versrsrc:
                 if not isinstance(self.versrsrc, versioninfo.VSVersionInfo) and not os.path.isabs(self.versrsrc):
@@ -513,6 +524,7 @@ class EXE(Target):
         ('uac_admin', _check_guts_eq),
         ('uac_uiaccess', _check_guts_eq),
         ('manifest', _check_guts_eq),
+        ('embed_manifest', _check_guts_eq),
         ('append_pkg', _check_guts_eq),
         ('argv_emulation', _check_guts_eq),
         ('target_arch', _check_guts_eq),
@@ -650,9 +662,8 @@ class EXE(Target):
                             resfile,
                             exc_info=1
                         )
-            # In onefile mode, we need to embed the manifest into the executable in order for manifest-related options
-            # (e.g., uac-admin) to work.
-            if self.manifest and not self.exclude_binaries:
+            # Embed the manifest into the executable.
+            if self.embed_manifest:
                 self.manifest.update_resources(tmpnm, [1])
             trash.append(tmpnm)
             exe = tmpnm
