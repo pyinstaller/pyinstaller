@@ -290,7 +290,9 @@ class FrozenImporter(object):
         Return None, unless the corresponding source file was explicitly collected to the filesystem.
         """
         if fullname in self.toc:
-            # Try loading .py file from the filesystem
+            # Try loading the .py file from the filesystem (only for collected modules)
+            if self.is_package(fullname):
+                fullname += '.__init__'
             filename = pyi_os_path.os_path_join(SYS_PREFIX, fullname.replace('.', pyi_os_path.os_sep) + '.py')
             try:
                 with open(filename, 'r') as fp:
