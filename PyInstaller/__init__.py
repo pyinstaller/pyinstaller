@@ -60,3 +60,6 @@ PLATFORM = compat.system + '-' + compat.architecture
 # where we keep universal2 bootloaders in Darwin-64bit folder regardless of whether we are on x86_64 or arm64.
 if compat.machine and not compat.is_darwin:
     PLATFORM += '-' + compat.machine
+# Similarly, disambiguate musl Linux from glibc Linux.
+if compat.is_musl:
+    PLATFORM += '-musl'
