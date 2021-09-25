@@ -96,6 +96,16 @@ def machine(ctx):
         ctx.env.DEST_CPU, DESTOS_TO_SYSTEM[ctx.env.DEST_OS])
 
 
+@conf
+def is_musl(ctx):
+    """Return true if the C compiler targets Linux using musl libc. Always false on non-Linux."""
+    if ctx.env.DEST_OS != 'linux':
+        return False
+    from subprocess import run, PIPE
+    spec = run(ctx.env.CC + ["-v"], stderr=PIPE).stderr
+    return re.search(rb'--target=\S+-musl', spec) or re.search(rb'Target: .*musl', spec)
+
+
 def find_program_next_to_cc(ctx, name, var):
     # Tries to find a program in the same directory as cc or on the normal PATH.
     environ = getattr(ctx, 'environ', os.environ)
@@ -807,6 +817,9 @@ def build(ctx):
 
     if machine(ctx) and ctx.env.DEST_OS != 'darwin':
         install_path += '-' + machine(ctx)
+
+    if ctx.is_musl():
+        install_path += "-musl"
 
     if not ctx.env.LIB_Z:
         # If the operating system does not provide zlib, build our own. The

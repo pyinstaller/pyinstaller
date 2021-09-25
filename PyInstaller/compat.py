@@ -52,6 +52,10 @@ is_hpux = sys.platform.startswith('hp-ux')
 # Mac OS is not considered as unix since there are many platform-specific details for Mac in PyInstaller.
 is_unix = is_linux or is_solar or is_aix or is_freebsd or is_hpux or is_openbsd
 
+# Linux distributions such as Alpine or OpenWRT use musl as their libc implementation and resultantly need specially
+# compiled bootloaders. On musl systems, ldd with no arguments prints 'musl' and its version.
+is_musl = is_linux and "musl" in subprocess.getoutput(["ldd"])
+
 # On different platforms is different file for dynamic python library.
 # TODO: When removing support for is_py37, the "m" variants can be
 # removed, see <https://docs.python.org/3/whatsnew/3.8.html#build-and-c-api-changes>
