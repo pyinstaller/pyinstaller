@@ -237,7 +237,7 @@ class bdist_wheels(Command):
             # is that each command should only run once - this is at odds with what we want, because we need to run
             # 'build' for every platform. The only way I can get it not to skip subsequent builds is to isolate the
             # processes completely using subprocesses...
-            subprocess.run([sys.executable, __file__, "-q", name])
+            subprocess.run([sys.executable, __file__, "-q", name], stderr=subprocess.PIPE, check=True)
 
 
 #--
