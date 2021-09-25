@@ -1,0 +1,3 @@
+Add hooks for ``QtPositioning`` and ``QtLocation`` modules of the Qt5-based
+packages (``PySide2`` and ``PyQt5``) to ensure that corresponding plugins
+are collected.
