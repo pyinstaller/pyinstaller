@@ -480,6 +480,13 @@ def __add_options(parser):
         help="Add manifest FILE or XML to the exe.",
     )
     g.add_argument(
+        "--no-embed-manifest",
+        dest="embed_manifest",
+        action="store_false",
+        help="Generate an external .exe.manifest file instead of embedding the manifest into the exe. Applicable only "
+        "to onedir mode; in onefile mode, the manifest is always embedded, regardless of this option.",
+    )
+    g.add_argument(
         "-r",
         "--resource",
         dest="resources",
@@ -601,6 +608,7 @@ def main(
     binaries=None,
     icon_file=None,
     manifest=None,
+    embed_manifest=True,
     resources=None,
     bundle_identifier=None,
     hiddenimports=None,
@@ -677,6 +685,8 @@ def main(
         else:
             # Assume filename
             exe_options = "%s, manifest='%s'" % (exe_options, quote_win_filepath(manifest))
+    if not embed_manifest:
+        exe_options = "%s, embed_manifest=%s" % (exe_options, 'False')
     if resources:
         resources = list(map(quote_win_filepath, resources))
         exe_options = "%s, resources=%s" % (exe_options, repr(resources))
