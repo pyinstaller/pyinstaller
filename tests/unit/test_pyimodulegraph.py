@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 import types
 import pytest
 import itertools
@@ -43,7 +42,7 @@ def test_get_co_using_ctypes_from_extension():
     logging.logger.setLevel(logging.DEBUG)
     mg = analysis.PyiModuleGraph(HOMEPATH, excludes=["xencodings"])
     struct = mg.createNode(modulegraph.Extension, '_struct', 'struct.so')
-    mg.implyNodeReference(struct, 'ctypes') # simulate the hidden import
+    mg.implyNodeReference(struct, 'ctypes')  # simulate the hidden import
     res = mg.get_code_using("ctypes")
     # _struct must not be in the results
     assert '_struct' not in res
@@ -60,13 +59,17 @@ def test_metadata_collection(tmpdir):
     else:
         importlib_metadata = "importlib_metadata"
 
-    script.write(dedent(f'''
+    script.write(
+        dedent(
+            f'''
         from {importlib_metadata} import distribution, version
         import {importlib_metadata}
 
         distribution("setuptools")
         {importlib_metadata}.version("altgraph")
-    '''))
+    '''
+        )
+    )
 
     mg.add_script(str(script))
     metadata = mg.metadata_required()
@@ -86,7 +89,6 @@ def fresh_pyi_modgraph(monkeypatch):
     """
     Get a fresh PyiModuleGraph
     """
-
     def fake_base_modules(self):
         # speed up set up
         self._base_modules = ()
@@ -95,8 +97,7 @@ def fresh_pyi_modgraph(monkeypatch):
     # ensure we get a fresh PyiModuleGraph
     monkeypatch.setattr(analysis, "_cached_module_graph_", None)
     # speed up setup
-    monkeypatch.setattr(analysis.PyiModuleGraph,
-                        "_analyze_base_modules", fake_base_modules)
+    monkeypatch.setattr(analysis.PyiModuleGraph, "_analyze_base_modules", fake_base_modules)
     return analysis.initialize_modgraph()
 
 
