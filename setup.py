@@ -153,6 +153,8 @@ PLATFORMS = {
     "Linux-64bit-arm": "manylinux2014_aarch64",
     "Linux-64bit-ppc": "manylinux2014_ppc64le",
     "Linux-64bit-s390x": "manylinux2014_s390x",
+    "Linux-64bit-intel-musl": "musllinux_1_1_x86_64",
+    "Linux-64bit-arm-musl": "musllinux_1_1_aarch64",
     # macOS needs special handling. This gets done dynamically later.
     "Darwin-64bit": None,
 }
