@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
 __all__ = ('HOMEPATH', 'PLATFORM', '__version__')
 
 import os
@@ -21,14 +20,12 @@ from PyInstaller.utils.git import get_repo_revision
 # Note: Keep this variable as plain string so it could be updated automatically when doing a release.
 __version__ = '4.6.dev0'
 
-
 # Absolute path of this package's directory. Save this early so all
 # submodules can use the absolute path. This is required e.g. if the
 # current directory changes prior to loading the hooks.
 PACKAGEPATH = os.path.abspath(os.path.dirname(__file__))
 
 HOMEPATH = os.path.dirname(PACKAGEPATH)
-
 
 # Update __version__ as necessary.
 if os.path.exists(os.path.join(HOMEPATH, 'setup.py')):
@@ -52,7 +49,6 @@ else:
     import pkg_resources
     __version__ = pkg_resources.get_distribution('PyInstaller').version
 
-
 ## Default values of paths where to put files created by PyInstaller.
 ## Mind option-help in build_main when changes these
 # Folder where to put created .spec file.
@@ -62,7 +58,6 @@ DEFAULT_SPECPATH = os.getcwd()
 DEFAULT_DISTPATH = os.path.join(os.getcwd(), 'dist')
 # Where to put all the temporary work files, .log, .pyz and etc.
 DEFAULT_WORKPATH = os.path.join(os.getcwd(), 'build')
-
 
 PLATFORM = compat.system + '-' + compat.architecture
 # Include machine name in path to bootloader for some machines (e.g., 'arm').
