@@ -18,7 +18,6 @@ is a way how PyInstaller does the dependency analysis and creates executable.
 import os
 import pprint
 import shutil
-import tempfile
 from operator import itemgetter
 
 from PyInstaller import HOMEPATH, PLATFORM
@@ -39,6 +38,9 @@ logger = logging.getLogger(__name__)
 if is_win:
     from PyInstaller.utils.win32.winutils import set_exe_checksum
     from PyInstaller.utils.win32 import (icon, versioninfo, winmanifest, winresource)
+
+if is_darwin:
+    import PyInstaller.utils.osx as osxutils
 
 
 class PYZ(Target):
@@ -578,7 +580,6 @@ class EXE(Target):
     def assemble(self):
         from PyInstaller.config import CONF
         logger.info("Building EXE from %s", self.tocbasename)
-        trash = []
         if os.path.exists(self.name):
             os.remove(self.name)
         if not os.path.exists(os.path.dirname(self.name)):
@@ -587,20 +588,25 @@ class EXE(Target):
         if not os.path.exists(exe):
             raise SystemExit(_MISSING_BOOTLOADER_ERRORMSG)
 
+        # Step 1: copy the bootloader file, and perform any operations that need to be done prior to appending the PKG.
+        logger.info("Copying bootloader EXE to %s", self.name)
+        self._copyfile(exe, self.name)
+        os.chmod(self.name, 0o755)
+
         if is_win:
-            fd, tmpnm = tempfile.mkstemp(prefix=os.path.basename(exe) + ".", dir=CONF['workpath'])
-            # We need to close the file, otherwise copying resources fails with "the file [...] is being used by
-            # another process"
-            os.close(fd)
-            self._copyfile(exe, tmpnm)
-            os.chmod(tmpnm, 0o755)
             # First, remove all resources from the file. This ensures that no manifest is embedded, even if bootloader
             # was compiled with a toolchain that forcibly embeds a default manifest (e.g., mingw toolchain from msys2).
-            winresource.RemoveAllResources(tmpnm)
+            winresource.RemoveAllResources(self.name)
+            # Embed icon.
             if self.icon != "NONE":
-                icon.CopyIcons(tmpnm, self.icon)
+                logger.info("Copying icon to EXE")
+                icon.CopyIcons(self.name, self.icon)
+            # Embed version info.
             if self.versrsrc:
-                versioninfo.SetVersion(tmpnm, self.versrsrc)
+                logger.info("Copying version information to EXE")
+                versioninfo.SetVersion(self.name, self.versrsrc)
+            # Embed other resources.
+            logger.info("Copying %d resources to EXE", len(self.resources))
             for res in self.resources:
                 res = res.split(",")
                 for i in range(1, len(res)):
@@ -620,12 +626,15 @@ class EXE(Target):
                     reslang = res[3]
                 try:
                     winresource.UpdateResourcesFromResFile(
-                        tmpnm, resfile, [restype or "*"], [resname or "*"], [reslang or "*"]
+                        self.name, resfile, [restype or "*"], [resname or "*"], [reslang or "*"]
                     )
                 except winresource.pywintypes.error as exc:
                     if exc.args[0] != winresource.ERROR_BAD_EXE_FORMAT:
                         logger.error(
-                            "Error while updating resources in %s from resource file %s!", tmpnm, resfile, exc_info=1
+                            "Error while updating resources in %s from resource file %s!",
+                            self.name,
+                            resfile,
+                            exc_info=1
                         )
                         continue
 
@@ -641,37 +650,38 @@ class EXE(Target):
                         )
                         continue
                     try:
-                        winresource.UpdateResourcesFromDataFile(tmpnm, resfile, restype, [resname], [reslang or 0])
+                        winresource.UpdateResourcesFromDataFile(self.name, resfile, restype, [resname], [reslang or 0])
                     except winresource.pywintypes.error:
                         logger.error(
                             "Error while updating resource %s %s in %s from data file %s!",
                             restype,
                             resname,
-                            tmpnm,
+                            self.name,
                             resfile,
                             exc_info=1
                         )
             # Embed the manifest into the executable.
             if self.embed_manifest:
-                self.manifest.update_resources(tmpnm, [1])
-            trash.append(tmpnm)
-            exe = tmpnm
+                logger.info("Emedding manifest in EXE")
+                self.manifest.update_resources(self.name, [1])
+        elif is_darwin:
+            # Convert bootloader to the target arch
+            logger.info("Converting EXE to target arch (%s)", self.target_arch)
+            osxutils.binary_to_target_arch(self.name, self.target_arch, display_name='Bootloader EXE')
 
-        # NOTE: Do not look up for bootloader file in the cache because it might get corrupted by UPX when UPX is
-        #       available. See #1863 for details.
-
+        # Step 2: append the PKG, if necessary
         if not self.append_pkg:
-            logger.info("Copying bootloader exe to %s", self.name)
-            self._copyfile(exe, self.name)
             # In onefile mode, copy the stand-alone pkg next to the executable. In onedir, this will be done by the
             # COLLECT() target.
             if not self.exclude_binaries:
                 pkg_dst = os.path.join(os.path.dirname(self.name), os.path.basename(self.pkgname))
-                logger.info("Copying archive %s to %s", self.pkg.name, pkg_dst)
+                logger.info("Copying stand-alone PKG archive from %s to %s", self.pkg.name, pkg_dst)
                 self._copyfile(self.pkg.name, pkg_dst)
+            else:
+                logger.info("Stand-alone PKG archive will be handled by COLLECT")
         elif is_linux:
-            self._copyfile(exe, self.name)
-            logger.info("Appending archive to ELF section in EXE %s", self.name)
+            # Linux: append PKG into ELF section using objcopy
+            logger.info("Appending PKG archive to ELF section in EXE")
             retcode, stdout, stderr = exec_command_all(
                 'objcopy', '--add-section', 'pydata=%s' % self.pkg.name, self.name
             )
@@ -683,17 +693,7 @@ class EXE(Target):
             if retcode != 0:
                 raise SystemError("objcopy Failure: %s" % stderr)
         elif is_darwin:
-            import PyInstaller.utils.osx as osxutils
-
-            # Copy bootloader
-            logger.info("Copying bootloader exe to %s", self.name)
-            with open(self.name, 'wb') as outf:
-                with open(exe, 'rb') as inf:
-                    shutil.copyfileobj(inf, outf, length=64 * 1024)
-
-            # Convert bootloader to target arch
-            logger.info("Converting EXE to target arch (%s)", self.target_arch)
-            osxutils.binary_to_target_arch(self.name, self.target_arch, display_name='Bootloader EXE')
+            # macOS: remove signature, append PKG, and fix-up headers so that PKG appears to be part of the executable.
 
             # Strip signatures from all arch slices. Strictly speaking, we need to remove signature (if present) from
             # the last slice, because we will be appending data to it. When building universal2 bootloaders natively on
@@ -704,11 +704,27 @@ class EXE(Target):
             logger.info("Removing signature(s) from EXE")
             osxutils.remove_signature_from_binary(self.name)
 
-            # Append the data
+            # Append the PKG data
+            logger.info("Appending PKG archive to EXE")
             with open(self.name, 'ab') as outf:
                 with open(self.pkg.name, 'rb') as inf:
                     shutil.copyfileobj(inf, outf, length=64 * 1024)
 
+            # Fix Mach-O header for code signing
+            logger.info("Fixing EXE headers for code signing")
+            osxutils.fix_exe_for_code_signing(self.name)
+        else:
+            # Fall back to just appending PKG at the end of the file
+            logger.info("Appending PKG archive to EXE")
+            with open(self.name, 'ab') as outf:
+                with open(self.pkg.name, 'rb') as inf:
+                    shutil.copyfileobj(inf, outf, length=64 * 1024)
+
+        # Step 3: post-processing
+        if is_win:
+            # Set checksum to appease antiviral software.
+            set_exe_checksum(self.name)
+        elif is_darwin:
             # If the version of macOS SDK used to build bootloader exceeds that of macOS SDK used to built Python
             # library (and, by extension, bundled Tcl/Tk libraries), force the version declared by the frozen executable
             # to match that of the Python library.
@@ -729,33 +745,14 @@ class EXE(Target):
                 )
                 osxutils.set_macos_sdk_version(self.name, *pylib_version)
 
-            # Fix Mach-O header for codesigning on OS X.
-            logger.info("Fixing EXE for code signing %s", self.name)
-            osxutils.fix_exe_for_code_signing(self.name)
-
             # Re-sign the binary (either ad-hoc or using real identity, if provided).
             logger.info("Re-signing the EXE")
             osxutils.sign_binary(self.name, self.codesign_identity, self.entitlements_file)
-        else:
-            # Fall back to just append on end of file
-            logger.info("Appending archive to EXE %s", self.name)
-            with open(self.name, 'wb') as outf:
-                # write the bootloader data
-                with open(exe, 'rb') as infh:
-                    shutil.copyfileobj(infh, outf, length=64 * 1024)
-                # write the archive data
-                with open(self.pkg.name, 'rb') as infh:
-                    shutil.copyfileobj(infh, outf, length=64 * 1024)
 
-        if is_win:
-            # Set checksum to appease antiviral software.
-            set_exe_checksum(self.name)
-
+        # Ensure executable flag is set
         os.chmod(self.name, 0o755)
-        # get mtime for storing into the guts
+        # Get mtime for storing into the guts
         self.mtm = misc.mtime(self.name)
-        for item in trash:
-            os.remove(item)
         logger.info("Building EXE from %s completed successfully.", self.tocbasename)
 
     def _copyfile(self, infile, outfile):
