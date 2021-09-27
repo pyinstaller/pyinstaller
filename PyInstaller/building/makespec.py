@@ -659,11 +659,6 @@ def main(
     if not os.path.exists(specpath):
         os.makedirs(specpath)
 
-    # Append specpath to PYTHONPATH - where to look for additional Python modules.
-    pathex = pathex or []
-    pathex = pathex[:]
-    pathex.append(specpath)
-
     # Handle additional EXE options.
     exe_options = ''
     if version_file:
@@ -754,7 +749,7 @@ def main(
 
     d = {
         'scripts': scripts,
-        'pathex': pathex,
+        'pathex': pathex or [],
         'binaries': preamble.binaries,
         'datas': preamble.datas,
         'hiddenimports': preamble.hiddenimports,
