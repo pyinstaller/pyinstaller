@@ -20,6 +20,7 @@ import sys
 # Required for extracting eggs.
 import zipfile
 from glob import glob
+import subprocess
 
 from PyInstaller import compat
 from PyInstaller import log as logging
@@ -526,7 +527,20 @@ def _getImports_ldd(pth):
     else:
         lddPattern = re.compile(r"\s*(.*?)\s+=>\s+(.*?)\s+\(.*\)")
 
-    for line in compat.exec_command('ldd', pth).splitlines():
+    p = subprocess.run(['ldd', pth], stderr=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True)
+
+    for line in p.stderr.splitlines():
+        if not line:
+            continue
+        # Python extensions (including stdlib ones) are not linked against python.so but rely on Python's symbols having
+        # already been loaded into symbol space at runtime. musl's ldd issues a series of harmless warnings to stderr
+        # telling us that those symbols are unfindable. These should be suppressed.
+        elif line.startswith("Error relocating ") and line.endswith(" symbol not found"):
+            continue
+        # Propagate any other warnings it might have.
+        print(line, file=sys.stderr)
+
+    for line in p.stdout.splitlines():
         m = lddPattern.search(line)
         if m:
             if compat.is_aix:
