@@ -723,7 +723,7 @@ def findLibrary(name):
         lp = compat.getenv('DYLD_LIBRARY_PATH', '')
     else:
         lp = compat.getenv('LD_LIBRARY_PATH', '')
-    for path in lp.split(os.pathsep):
+    for path in filter(None, lp.split(os.pathsep)):
         libs = glob(os.path.join(path, name + '*'))
         if libs:
             lib = libs[0]
