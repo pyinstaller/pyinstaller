@@ -322,6 +322,12 @@ def load_ldconfig_cache():
     if LDCONFIG_CACHE is not None:
         return
 
+    if compat.is_musl:
+        # Musl deliberately doesn't use ldconfig. The ldconfig executable either doesn't exist or it's a functionless
+        # executable which, on calling with any arguments, simply tells you that those arguments are invalid.
+        LDCONFIG_CACHE = {}
+        return
+
     from distutils.spawn import find_executable
     ldconfig = find_executable('ldconfig')
     if ldconfig is None:
