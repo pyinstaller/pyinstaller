@@ -784,7 +784,8 @@ def findLibrary(name):
 
 
 def _which_library(name, dirs):
-    """Search for a shared library in a list of directories.
+    """
+    Search for a shared library in a list of directories.
 
     Args:
         name:
@@ -795,9 +796,18 @@ def _which_library(name, dirs):
         The path to the library if found or None otherwise.
 
     """
+    matcher = _library_matcher(name)
     for path in dirs:
-        for found in glob(os.path.join(path, name + "*")):
-            return found
+        for _path in os.listdir(path):
+            if matcher(_path):
+                return os.path.join(path, _path)
+
+
+def _library_matcher(name):
+    """
+    Create a callable that matches libraries if **name** is a valid library prefix for input library full names.
+    """
+    return re.compile(name + r"[0-9]*\.").match
 
 
 def _get_so_name(filename):
