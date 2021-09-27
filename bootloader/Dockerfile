@@ -53,10 +53,6 @@ RUN make install
 ENV PATH=/opt/python/cp39-cp39/bin:$PATH
 
 WORKDIR /io
-# Redefine the C compiler so that works. Because this compiler is so old, C99 features need to be explicitly enabled and
-# PATH_MAX needs to be manually defined. -std=c99 truly means strict posix C99 compliance which disables the non-posix
-# symbols like seeko() which we use for huge files. The last define re-enables them.
-ENV CC="$CC -std=c99 -D PATH_MAX=1024 -D_POSIX_C_SOURCE=200808L"
 
 # Set building the bootloader as the default run command.
 CMD cd bootloader && python3 ./waf all
