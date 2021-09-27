@@ -1,0 +1,2 @@
+Fix a runaway glob which caused ``ctypes.util.find_library("libfoo")`` to non-deterministically pick any library
+matching ``libfoo*`` to bundle instead of ``libfoo.so``.
