@@ -714,8 +714,6 @@ def findLibrary(name):
     """
     assert compat.is_unix, "Current implementation for Unix only (Linux, Solaris, AIX, FreeBSD)"
 
-    lib = None
-
     # Look in the LD_LIBRARY_PATH according to platform.
     if compat.is_aix:
         lp = compat.getenv('LIBPATH', '')
@@ -723,11 +721,7 @@ def findLibrary(name):
         lp = compat.getenv('DYLD_LIBRARY_PATH', '')
     else:
         lp = compat.getenv('LD_LIBRARY_PATH', '')
-    for path in filter(None, lp.split(os.pathsep)):
-        libs = glob(os.path.join(path, name + '*'))
-        if libs:
-            lib = libs[0]
-            break
+    lib = _which_library(name, filter(None, lp.split(os.pathsep)))
 
     # Look in /etc/ld.so.cache
     # Solaris does not have /sbin/ldconfig. Just check if this file exists.
@@ -773,11 +767,7 @@ def findLibrary(name):
                 paths.append('/usr/local/lib/hpux64')
         elif compat.is_freebsd or compat.is_openbsd:
             paths.append('/usr/local/lib')
-        for path in paths:
-            libs = glob(os.path.join(path, name + '*'))
-            if libs:
-                lib = libs[0]
-                break
+        lib = _which_library(name, paths)
 
     # Give up :(
     if lib is None:
@@ -791,6 +781,23 @@ def findLibrary(name):
     else:
         dir = os.path.dirname(lib)
         return os.path.join(dir, _get_so_name(lib))
+
+
+def _which_library(name, dirs):
+    """Search for a shared library in a list of directories.
+
+    Args:
+        name:
+            The library name including the `lib` prefix but excluding any `.so` suffix.
+        dirs:
+            An iterable of folders to search in.
+    Returns:
+        The path to the library if found or None otherwise.
+
+    """
+    for path in dirs:
+        for found in glob(os.path.join(path, name + "*")):
+            return found
 
 
 def _get_so_name(filename):
