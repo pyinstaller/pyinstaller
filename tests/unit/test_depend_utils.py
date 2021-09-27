@@ -14,7 +14,7 @@ import pytest
 import textwrap
 
 from PyInstaller.depend import utils
-from PyInstaller.compat import is_win
+from PyInstaller.compat import is_win, is_musl
 
 CTYPES_CLASSNAMES = (
     'CDLL', 'ctypes.CDLL',
@@ -94,6 +94,12 @@ def test_ctypes_util_find_library_as_default_argument():
 @pytest.mark.linux
 def test_ldconfig_cache():
     utils.load_ldconfig_cache()
+
+    if is_musl:
+        # load_ldconfig_cache() should be a no-op on musl because musl does not use ldconfig.
+        assert not utils.LDCONFIG_CACHE
+        return
+
     libpath = None
     for soname in utils.LDCONFIG_CACHE:
         if soname.startswith('libc.so.'):
