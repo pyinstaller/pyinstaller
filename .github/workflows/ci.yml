@@ -100,3 +100,13 @@ jobs:
           # dir all the way to the top of the filesystem per
           # https://docs.pytest.org/en/latest/customize.html).
           python -m PyInstaller.utils.run_tests -c PyInstaller/utils/pytest.ini --include_only=pyi_hooksample.
+
+  test-alpine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: docker build -f alpine.dockerfile -t foo .
+      - run: >
+          docker run foo pytest
+          -n 3 --maxfail 3 --durations 10 tests/unit tests/functional
+          --force-flaky --no-flaky-report --reruns 3 --reruns-delay 10
