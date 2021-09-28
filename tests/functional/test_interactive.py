@@ -17,7 +17,7 @@ Note: All tests in this file should use the argument 'runtime'.
 import pytest
 
 from PyInstaller.utils.tests import importorskip
-from PyInstaller.compat import is_win, is_darwin
+from PyInstaller.compat import is_win, is_darwin, is_musl
 
 _RUNTIME = 10  # In seconds.
 
@@ -34,6 +34,7 @@ def test_ipython(pyi_builder):
 # Splash screen is not supported on macOS due to incompatible design.
 @pytest.mark.skipif(is_darwin, reason="Splash screen is not supported on macOS.")
 @pytest.mark.parametrize("mode", ['onedir', 'onefile'])
+@pytest.mark.xfail(is_musl, reason="musl + tkinter is known to cause mysterious segfaults.")
 def test_pyi_splash(pyi_builder_spec, capfd, monkeypatch, mode):
     if mode == 'onefile':
         monkeypatch.setenv('_TEST_SPLASH_ONEFILE', 'onefile')
