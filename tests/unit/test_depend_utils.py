@@ -66,6 +66,7 @@ def test_ctypes_LibraryLoader_LoadLibrary(monkeypatch, classname, extended_args)
 
 
 @pytest.mark.parametrize('extended_args', [False, True])
+@pytest.mark.skipif(is_musl, reason="find_library() doesn't work on musl")
 def test_ctypes_util_find_library(monkeypatch, extended_args):
     # for lind_library() we need a lib actually existing on the system
     if is_win:
