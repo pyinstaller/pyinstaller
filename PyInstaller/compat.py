@@ -56,6 +56,19 @@ is_unix = is_linux or is_solar or is_aix or is_freebsd or is_hpux or is_openbsd
 # compiled bootloaders. On musl systems, ldd with no arguments prints 'musl' and its version.
 is_musl = is_linux and "musl" in subprocess.getoutput(["ldd"])
 
+# macOS versions
+# macOS 11 (Big Sur): if python is not compiled with Big Sur support, it ends up in compatibility mode by default, which
+# is indicated by platform.mac_ver() returning '10.16'. The lack of proper Big Sur support breaks find_library()
+# function from ctypes.util module, as starting with Big Sur, shared libraries are not visible on disk anymore. Support
+# for the new library search mechanism was added in python 3.9 when compiled with Big Sur support. In such cases,
+# platform.mac_ver() reports version as '11.x'. The behavior can be further modified via SYSTEM_VERSION_COMPAT
+# environment variable; which allows explicitly enabling or disabling the compatibility mode. However, note that
+# disabling the compatibility mode and using python that does not properly support Big Sur still leaves find_library()
+# broken (which is a scenario that we ignore at the moment).
+is_macos_11_compat = is_darwin and platform.mac_ver()[0].startswith('10.16')
+is_macos_11_native = is_darwin and platform.mac_ver()[0].startswith('11')
+is_macos_11 = is_macos_11_compat or is_macos_11_native
+
 # On different platforms is different file for dynamic python library.
 # TODO: When removing support for is_py37, the "m" variants can be
 # removed, see <https://docs.python.org/3/whatsnew/3.8.html#build-and-c-api-changes>
