@@ -14,7 +14,7 @@ import pytest
 import textwrap
 
 from PyInstaller.depend import utils
-from PyInstaller.compat import is_win, is_musl
+from PyInstaller.compat import is_win, is_musl, is_macos_11_compat
 
 CTYPES_CLASSNAMES = (
     'CDLL', 'ctypes.CDLL',
@@ -67,6 +67,7 @@ def test_ctypes_LibraryLoader_LoadLibrary(monkeypatch, classname, extended_args)
 
 @pytest.mark.parametrize('extended_args', [False, True])
 @pytest.mark.skipif(is_musl, reason="find_library() doesn't work on musl")
+@pytest.mark.skipif(is_macos_11_compat, reason="find_library() requires python built with Big Sur support.")
 def test_ctypes_util_find_library(monkeypatch, extended_args):
     # for lind_library() we need a lib actually existing on the system
     if is_win:
