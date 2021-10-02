@@ -19,7 +19,13 @@ jobs:
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8, 3.9]
-        os: ['windows-latest', 'ubuntu-latest', 'macos-10.15']
+        os: ['windows-latest', 'ubuntu-latest', 'macos-10.15', 'macos-latest']
+        exclude:
+          # Python 3.6 is not available on macOS 11
+          - os: macos-11
+            python-version: 3.6
+          - os: macos-latest
+            python-version: 3.6
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -84,6 +90,14 @@ jobs:
           Xvfb :99 &
           echo "DISPLAY=:99" >> $GITHUB_ENV
           echo "QT_DEBUG_PLUGINS=1" >> $GITHUB_ENV
+
+      # Required on macOS 11 by tests that register custom URL schema. This could also be achieved by passing
+      # --basetemp to pytest, but using environment variable allows us to have a unified "Run test" step for
+      # all OSes.
+      - name: Relocate temporary dir
+        if: matrix.os == 'macos-11' || matrix.os == 'macos-latest'
+        run: |
+          echo "PYTEST_DEBUG_TEMPROOT=$RUNNER_TEMP" >> $GITHUB_ENV
 
       - name: Run tests
         uses: xoviat/actions-pytest@0.1-alpha2
