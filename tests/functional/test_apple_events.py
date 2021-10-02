@@ -16,8 +16,28 @@ import json
 import os
 import subprocess
 import time
+import functools
 
 import pytest
+
+from PyInstaller.compat import is_macos_11
+
+
+# On macOS 11, the custom URL schema registration does not work properly if the .app bundle is located in the default
+# temporary path (/var or /private/var prefix). Therefore, for the tests below to work, the pytest's base temporary
+# path needs to be moved (for example, via the --basetemp argument).
+def macos11_check_tmpdir(test):
+    @functools.wraps(test)
+    def wrapped(**kwargs):
+        tmpdir = kwargs['tmpdir']
+        if is_macos_11 and str(tmpdir).startswith(('/var', '/private/var')):
+            pytest.skip(
+                "The custom URL schema registration does not work on macOS 11 when .app bundles are placed in "
+                "the default temporary path."
+            )
+        return test(**kwargs)
+
+    return wrapped
 
 
 # This test function is similar to the former test_osx_event_forwarding, but is designed to test onefile vs onedir
@@ -284,6 +304,7 @@ def _test_apple_events_handling(appname, tmpdir, pyi_builder_spec, monkeypatch, 
 
 
 @pytest.mark.darwin
+@macos11_check_tmpdir
 @pytest.mark.parametrize("build_mode", ['onefile', 'onedir'])
 @pytest.mark.parametrize("argv_emu", [True, False], ids=["emu", "noemu"])
 def test_apple_event_handling_carbon(tmpdir, pyi_builder_spec, monkeypatch, build_mode, argv_emu):
