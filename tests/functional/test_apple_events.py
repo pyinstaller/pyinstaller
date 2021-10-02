@@ -16,13 +16,33 @@ import json
 import os
 import subprocess
 import time
+import functools
 
 import pytest
 
 from PyInstaller.utils.tests import importorskip
+from PyInstaller.compat import is_macos_11
+
+
+# On macOS 11, the custom URL schema registration does not work properly if the .app bundle is located in the default
+# temporary path (/var or /private/var prefix). Therefore, for the tests below to work, the pytest's base temporary
+# path needs to be moved (for example, via the --basetemp argument).
+def macos11_check_tmpdir(test):
+    @functools.wraps(test)
+    def wrapped(**kwargs):
+        tmpdir = kwargs['tmpdir']
+        if is_macos_11 and str(tmpdir).startswith(('/var', '/private/var')):
+            pytest.skip(
+                "The custom URL schema registration does not work on macOS 11 when .app bundles are placed in "
+                "the default temporary path."
+            )
+        return test(**kwargs)
+
+    return wrapped
 
 
 @pytest.mark.darwin
+@macos11_check_tmpdir
 @pytest.mark.parametrize("mode", ['onefile'])
 def test_osx_custom_protocol_handler(tmpdir, pyi_builder_spec, monkeypatch, mode):
     app_path = os.path.join(tmpdir, 'dist', 'pyi_osx_custom_protocol_handler.app')
@@ -52,6 +72,7 @@ def test_osx_custom_protocol_handler(tmpdir, pyi_builder_spec, monkeypatch, mode
 
 
 @pytest.mark.darwin
+@macos11_check_tmpdir
 @importorskip('PyQt5')
 @pytest.mark.parametrize("mode", ['onefile'])
 def test_osx_event_forwarding(tmpdir, pyi_builder_spec, monkeypatch, mode):
