@@ -19,7 +19,6 @@ import re
 import sys
 # Required for extracting eggs.
 import zipfile
-from glob import glob
 import subprocess
 
 from PyInstaller import compat
