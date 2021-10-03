@@ -427,7 +427,12 @@ _qt5_dynamic_dependencies_dict = {
 # The dynamic dependency dictionary for Qt6 is constructed automatically from its Qt5 counterpart, by copying the
 # entries and substituting qt5 in the name with qt6. If the entry already exists in the dictionary, it is not
 # copied, which allows us to provide Qt6-specific overrides, should they prove necessary.
-_qt6_dynamic_dependencies_dict = {}
+_qt6_dynamic_dependencies_dict = {
+    # Qt6Network:
+    # networkinformationbackends plugins were introduced in Qt 6.1, and renamed to networkinformation in Qt 6.2
+    # tls plugins were introduced in Qt 6.2
+    "qt6network":               (".QtNetwork",             "qtbase",           "networkinformationbackend", "networkinformation", "tls"),  # noqa
+}  # yapf: disable
 
 for lib_name, content in _qt5_dynamic_dependencies_dict.items():
     if lib_name.startswith('qt5'):
