@@ -198,6 +198,27 @@ def qt_plugins_dir(namespace):
     return qt_plugin_paths
 
 
+def _qt_filter_release_plugins(plugin_files):
+    """
+    Filter the provided list of Qt plugin files and remove the debug variants, under the assumption that both the
+    release version of a plugin (qtplugin.dll) and its debug variant (qtplugind.dll) appear in the list.
+    """
+    # All basenames for lookup
+    plugin_basenames = {os.path.normcase(os.path.basename(f)) for f in plugin_files}
+    # Process all given filenames
+    release_plugin_files = []
+    for plugin_filename in plugin_files:
+        plugin_basename = os.path.normcase(os.path.basename(plugin_filename))
+        if plugin_basename.endswith('d.dll'):
+            # If we can find a variant without trailing 'd' in the plugin list, then the DLL we are dealing with is a
+            # debug variant and needs to be excluded.
+            release_name = os.path.splitext(plugin_basename)[0][:-1] + '.dll'
+            if release_name in plugin_basenames:
+                continue
+        release_plugin_files.append(plugin_filename)
+    return release_plugin_files
+
+
 def qt_plugins_binaries(plugin_type, namespace):
     """
     Return list of dynamic libraries formatted for mod.binaries.
@@ -219,7 +240,7 @@ def qt_plugins_binaries(plugin_type, namespace):
     # this would grab debug copies of Qt plugins, which then causes PyInstaller to add a dependency on the Debug CRT
     # *in addition* to the release CRT.
     if compat.is_win:
-        files = [f for f in files if not f.endswith("d.dll")]
+        files = _qt_filter_release_plugins(files)
 
     logger.debug("Found plugin files %s for plugin %s", files, plugin_type)
     dest_dir = os.path.join(qt_info.qt_rel_dir, 'plugins', plugin_type)
