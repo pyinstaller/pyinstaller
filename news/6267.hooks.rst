@@ -1,0 +1,3 @@
+Update the ``gi.repository.GtkSource`` hook to accept a module-versions
+hooksconfig dict in order to allow the hook to be used with GtkSource versions
+greater than 3.0.
