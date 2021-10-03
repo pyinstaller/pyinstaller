@@ -62,17 +62,22 @@ from the system ``/usr/share`` directory.
    collect all available translations.
 
  * ``icons`` [*list of strings*]: list of icon themes (e.g., `Adwaita`)
-   that shoud be collected. By default, ``gi`` hooks collect all available
+   that should be collected. By default, ``gi`` hooks collect all available
    icon themes.
 
  * ``themes`` [*list of strings*]: list of Gtk themes (e.g., `Adwaita`)
-   that shoud be collected. By default, ``gi`` hooks collect all available
+   that should be collected. By default, ``gi`` hooks collect all available
    icon themes.
+
+ * ``module-versions`` [*dict of version strings*]: versions of gi modules to
+   use. For example, a key of 'GtkSource' and value to '4' will use
+   gtksourceview4.
 
 **Example**
 
-Collect only ``Adwaita`` theme and icons, and limit the collected
-translations to British English and Simplified Chinese:
+Collect only ``Adwaita`` theme and icons, limit the collected
+translations to British English and Simplified Chinese, and use
+version 3.0 of Gtk and version 4 of GtkSource:
 
 .. code-block:: python
 
@@ -84,10 +89,16 @@ translations to British English and Simplified Chinese:
                 "icons": ["Adwaita"],
                 "themes": ["Adwaita"],
                 "languages": ["en_GB", "zh_CN"],
+                "module-versions": {
+                    "Gtk": "3.0",
+                    "GtkSource": "4",
+                },
             },
         },
         ...,
     )
+
+.. note:: Currently only the ``module-versions`` configuration is available for ``GtkSource``.
 
 .. _matplotlib hook options:
 
