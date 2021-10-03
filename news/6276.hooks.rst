@@ -1,0 +1,2 @@
+Update ``QtNetwork`` hook for ``PyQt6`` and ``PySide6``  to collect the
+new ``tls`` plugins that were introduced in Qt 6.2.
