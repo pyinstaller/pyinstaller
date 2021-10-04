@@ -163,3 +163,30 @@ def test_versioninfo_written_to_exe(tmp_path):
 
     values = read_file_version_info(test_file, 'FileDescription', 'ProductName', 'ProductVersion')
     assert values == [FILE_DESCRIPTION, PRODUCT_NAME, PRODUCT_VERSION]
+
+
+CHINESE_LOREM_IPSUM = """
+索感歴新策理通幻月続本初迷検価泉属速棄者。料流重者県作軽渡獲県行選見。意鑑民供変介画同表後院苦面例紙約度電心
+時盤止野断希茶術同懲上権策全崎査応校匹国。真村辺名下周一場庭戸原図会正前対校米利。岩録開教純止表乗都偉別際政難然始京国京
+校県水路中旅続球是校高約止性振下上派若福。案神整細番公流関閲元弊導説大実枝際確導
+"""
+
+
+def test_decode():
+    """
+    Test PyInstaller.utils.misc.decode().
+    """
+    import codecs
+    from PyInstaller.utils.misc import decode
+
+    # Test UTF8 with or without the BOM.
+    assert decode(CHINESE_LOREM_IPSUM.encode()) == CHINESE_LOREM_IPSUM
+    assert decode(codecs.BOM_UTF8 + CHINESE_LOREM_IPSUM.encode()) == CHINESE_LOREM_IPSUM
+
+    # Test non-default UTF variants specified via a BOM.
+    assert decode(codecs.BOM_UTF32_LE + codecs.utf_32_le_encode(CHINESE_LOREM_IPSUM)[0]) == CHINESE_LOREM_IPSUM
+    assert decode(codecs.BOM_UTF16_BE + codecs.utf_16_be_encode(CHINESE_LOREM_IPSUM)[0]) == CHINESE_LOREM_IPSUM
+
+    # Test using the encoding comment.
+    with_cookie = "# encoding: gb18030\n" + CHINESE_LOREM_IPSUM
+    assert decode(with_cookie.encode("GB18030")) == with_cookie
