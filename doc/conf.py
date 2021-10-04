@@ -74,6 +74,7 @@ extensions = ['sphinx.ext.intersphinx',
               'sphinx.ext.autodoc',
               'sphinx.ext.napoleon',
               'sphinx_autodoc_typehints',
+              'sphinxcontrib.towncrier',
               'pyi_sphinx_roles']
 
 intersphinx_mapping = {
@@ -91,6 +92,10 @@ nitpick_ignore = [
     ("py:mod", "Splash"),
     ("py:class", "TOC"),
 ]
+
+# Don't include a preview if there are no news items. i.e. towncrier has already been ran.
+towncrier_draft_include_empty = False
+towncrier_draft_working_directory = os.path.abspath('..')
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
