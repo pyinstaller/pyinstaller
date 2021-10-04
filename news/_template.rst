@@ -1,3 +1,5 @@
+{{ versiondata.version }} ({{ versiondata.date }})
+{{ top_underline * ((versiondata.version + versiondata.date)|length + 4)}}
 {% macro print_issue_numbers(issues) %}
 {% for issue in issues if issue.startswith('#') %}
 {% if loop.first %} ({% endif %}

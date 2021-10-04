@@ -22,7 +22,7 @@ pycmd  # Contains 'py.cleanup' that removes all .pyc files and similar.
 wheel>0.24.0  # For creating .whl packages
 twine         # For secure upload of tar.gz to PYPI.
 
-towncrier>=19.2.0    # For creating the change-log file.
+towncrier>=21.3.0    # For creating the change-log file.
 
 zest.releaser>=6.18  # Makes releasing easier
 # Addons for zest.releaser:
