@@ -642,8 +642,10 @@ def SetVersion(exenm, versionfile):
     if isinstance(versionfile, VSVersionInfo):
         vs = versionfile
     else:
-        with codecs.open(versionfile, 'r', 'utf-8') as fp:
-            txt = fp.read()
+        # Read and parse the version file. It may have a byte order marker or encoding cookie - respect it if it does.
+        from PyInstaller.utils.misc import decode
+        with open(versionfile, 'rb') as fp:
+            txt = decode(fp.read())
         vs = eval(txt)
 
     # Remember overlay

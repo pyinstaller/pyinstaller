@@ -17,6 +17,10 @@ import os
 import pprint
 import py_compile
 import sys
+import codecs
+import re
+import tokenize
+import io
 
 from PyInstaller import log as logging
 from PyInstaller.compat import BYTECODE_MAGIC, is_win
@@ -282,3 +286,28 @@ def is_file_qt_plugin(filename):
             return False
 
         return True
+
+
+BOM_MARKERS_TO_DECODERS = {
+    codecs.BOM_UTF32_LE: codecs.utf_32_le_decode,
+    codecs.BOM_UTF32_BE: codecs.utf_32_be_decode,
+    codecs.BOM_UTF32: codecs.utf_32_decode,
+    codecs.BOM_UTF16_LE: codecs.utf_16_le_decode,
+    codecs.BOM_UTF16_BE: codecs.utf_16_be_decode,
+    codecs.BOM_UTF16: codecs.utf_16_decode,
+    codecs.BOM_UTF8: codecs.utf_8_decode,
+}
+BOM_RE = re.compile(rb"\A(%s)?(.*)" % b"|".join(map(re.escape, BOM_MARKERS_TO_DECODERS)), re.DOTALL)
+
+
+def decode(raw: bytes):
+    """
+    Decode bytes to string, respecting and removing any byte-order marks if present, or respecting but not removing any
+    PEP263 encoding comments (# encoding: cp1252).
+    """
+    bom, raw = BOM_RE.match(raw).groups()
+    if bom:
+        return BOM_MARKERS_TO_DECODERS[bom](raw)[0]
+
+    encoding, _ = tokenize.detect_encoding(io.BytesIO(raw).readline)
+    return raw.decode(encoding)

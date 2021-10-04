@@ -1,0 +1,2 @@
+(Windows) Tolerate reading Windows VSVersionInfo files with unicode byte order
+marks.
