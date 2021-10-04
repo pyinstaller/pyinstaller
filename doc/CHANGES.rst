@@ -10,6 +10,9 @@ Changelog for PyInstaller
    To add a new change log entry, please see
    https://pyinstaller.readthedocs.io/en/latest/development/changelog-entries.html
 
+.. Preview unreleased news fragments.
+.. towncrier-draft-entries:: The Next Release
+
 .. towncrier release notes start
 
 4.5.1 (2021-08-06)
