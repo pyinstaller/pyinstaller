@@ -84,6 +84,9 @@ jobs:
           # Make sure the help options print.
           python -m pyinstaller -h
 
+          # Run Qt-based tests with offscreen backend
+          echo "QT_QPA_PLATFORM=offscreen" >> $GITHUB_ENV
+
       - name: Start display server
         if: startsWith(matrix.os, 'ubuntu')
         run: |
