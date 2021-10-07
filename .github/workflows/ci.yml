@@ -89,7 +89,6 @@ jobs:
         run: |
           Xvfb :99 &
           echo "DISPLAY=:99" >> $GITHUB_ENV
-          echo "QT_DEBUG_PLUGINS=1" >> $GITHUB_ENV
 
       # Required on macOS 11 by tests that register custom URL schema. This could also be achieved by passing
       # --basetemp to pytest, but using environment variable allows us to have a unified "Run test" step for
