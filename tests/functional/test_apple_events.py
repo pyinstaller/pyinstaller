@@ -80,6 +80,9 @@ def test_osx_event_forwarding(tmpdir, pyi_builder_spec, monkeypatch, mode):
 
     logfile_path = os.path.join(tmpdir, 'dist', 'events.log')
 
+    # This test requires the default (windowed) display backend, so reset any QT_QPA_PLATFORM override.
+    monkeypatch.delenv("QT_QPA_PLATFORM", raising=False)
+
     # Generate unique URL scheme & file ext to avoid collisions
     unique_key = int(time.time())
     custom_url_scheme = "pyi-test-%i" % unique_key
