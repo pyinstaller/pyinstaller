@@ -34,8 +34,7 @@ jobs:
       run: yapf --recursive --parallel --diff .
 
     - name: Run Lint
-      run: |
-        git diff -U0 origin/${{ github.base_ref }} -- | flake8 --diff -
+      run: flake8 .
 
     - name: Test Packaging
       run: |
