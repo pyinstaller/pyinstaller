@@ -42,7 +42,7 @@ from PyInstaller.utils.tests import gen_sourcefile  # noqa: E402
 from PyInstaller.utils.win32 import winutils  # noqa: E402
 
 # Timeout for running the executable. If executable does not exit in this time, it is interpreted as a test failure.
-_EXE_TIMEOUT = 60  # In sec.
+_EXE_TIMEOUT = 3 * 60  # In sec.
 # Number of retries we should attempt if the executable times out.
 _MAX_RETRIES = 2
 # All currently supported platforms
@@ -380,7 +380,7 @@ class AppBuilder:
             else:
                 # Exe is running and it is not interactive. Fail the test.
                 retcode = 1
-                _msg('TIMED OUT!')
+                _msg(f'TIMED OUT while running executable (timeout: {timeout} sec)!')
             # Kill the subprocess and its child processes.
             for p in list(process.children(recursive=True)) + [process]:
                 with suppress(psutil.NoSuchProcess):
