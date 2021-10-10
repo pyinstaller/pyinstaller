@@ -10,7 +10,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-import codecs
 import struct
 
 # ::TODO:: #1920 revert to using pypi version
