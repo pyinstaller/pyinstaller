@@ -6,7 +6,6 @@ on:
       - develop
       - v4
 
-
 jobs:
   run:
     runs-on: ubuntu-latest
@@ -24,17 +23,20 @@ jobs:
     - name: Setup Python
       uses: actions/setup-python@v2
       with:
-        python-version: 3.8
+        python-version: '3.10'
 
     - name: Install dependencies
-      run: pip install -U flake8 wheel setuptools yapf==0.31.0 toml
+      run: pip install --upgrade bandit codespell flake8 wheel setuptools yapf==0.31.0 toml
 
     - name: Test that yapf has been applied
       # If this check fails for your PR, run `yapf -rip .`
       run: yapf --recursive --parallel --diff .
 
     - name: Run Lint
-      run: flake8 .
+      run: |
+        bandit --recursive  --skip B101,B102,B103,B105,B110,B112,B301,B302,B303,B306,B307,B318,B320,B403,B404,B405,B406,B408,B410,B504,B602,B603,B607,B608 .
+        codespell --ignore-words-list=ba,bre,datas,gir,glyh,sur,te --skip="*.svg" || true
+        flake8 .
 
     - name: Test Packaging
       run: |
