@@ -35,7 +35,7 @@ jobs:
     - name: Run Lint
       run: |
         bandit --recursive  --skip B101,B102,B103,B105,B110,B112,B301,B302,B303,B306,B307,B318,B320,B403,B404,B405,B406,B408,B410,B504,B602,B603,B607,B608 .
-        codespell --ignore-words-list=ba,bre,datas,gir,glyh,sur,te --skip="*.svg" || true
+        codespell --ignore-words-list=ba,bre,creat,datas,gir,glyh,seh,sur,te --skip="*.svg" || true
         flake8 .
 
     - name: Test Packaging
