@@ -30,10 +30,13 @@ def get_gi_libdir(module, version):
 
     repo = GIRepository.Repository.get_default()
     repo.require(module, version, GIRepository.RepositoryLoadFlags.IREPOSITORY_LOAD_FLAG_LAZY)
-    libs = repo.get_shared_library(module)
-    for lib in libs:
+    libs = repo.get_shared_library(module)  # comma-separated list of paths to shared libraries or None
+    if not libs:
+        raise ValueError("Could not find shared library for %s-%s" % (module, version))
+    for lib in libs.split(','):
         path = findSystemLibrary(lib)
-        return os.path.normpath(os.path.dirname(path))
+        if path:
+            return os.path.normpath(os.path.dirname(path))
 
     raise ValueError("Could not find libdir for %s-%s" % (module, version))
 
