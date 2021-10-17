@@ -45,7 +45,7 @@ sphinx==2.4.4 # pyup: ignore
 # Required for test_namespace_package
 sqlalchemy==1.4.25
 zope.interface==5.4.0
-Pillow==8.3.2
+Pillow==8.4.0
 
 
 # Python versions not supported / supported for older package versions
