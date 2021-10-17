@@ -30,6 +30,7 @@ babel==2.9.1
 future==0.18.2
 gevent==21.8.0
 pygments==2.10.0
+PyGObject==3.42.0; sys_platform == 'linux'
 pyside2==5.15.2; python_version < '3.10'
 pyside6==6.2.0
 pyqt5==5.15.4; python_version < '3.10'

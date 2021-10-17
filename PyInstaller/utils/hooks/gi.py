@@ -22,9 +22,11 @@ logger = logging.getLogger(__name__)
 
 @isolated.decorate
 def get_gi_libdir(module, version):
+    import os
     import gi
     gi.require_version("GIRepository", "2.0")
     from gi.repository import GIRepository
+    from PyInstaller.depend.bindepend import findSystemLibrary
 
     repo = GIRepository.Repository.get_default()
     repo.require(module, version, GIRepository.RepositoryLoadFlags.IREPOSITORY_LOAD_FLAG_LAZY)
