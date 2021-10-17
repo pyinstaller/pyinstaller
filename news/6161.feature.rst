@@ -1,3 +1,3 @@
 Improve matching of UPX exclude patterns to include OS-default case sensitivity,
 the wildcard operator (``*``), and support for parent directories in the pattern.
-Enables use of patterns like ``"Qt*.dll"`` and ``"PySide2\\*.pyd"``.
+Enables use of patterns like ``"Qt*.dll"`` and ``"PySide2*.pyd"``.

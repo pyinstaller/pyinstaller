@@ -1,2 +1,2 @@
-Fix ``sys.executable`` pointing to the external package file instead of
-the executable when in package side-load mode (``pkg_append=False``).
+Fix :data:`sys.executable` pointing to the external package file instead of the
+executable when in package side-load mode (``pkg_append=False``).

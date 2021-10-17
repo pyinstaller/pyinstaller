@@ -1,5 +1,5 @@
-Implement support for PEP540 UTF-8 mode to match behavior of Python
+Implement support for :pep:`540` UTF-8 mode to match behavior of Python
 interpreter (applicable to Python 3.7 and later). The UTF-8 mode can be
-explicitly enabled or disabled via ``PYTHONUTF8`` environment variable.
-Unless explicitly disabled, it is auto-enabled on linux and macOS when
-locale is set to ``C`` or ``POSIX``.
+explicitly enabled or disabled via :envvar:`PYTHONUTF8` environment variable.
+Unless explicitly disabled, it is auto-enabled on linux and macOS when locale is
+set to ``C`` or ``POSIX``.

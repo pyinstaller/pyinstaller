@@ -50,7 +50,7 @@ Bugfix
   WARNING. (:issue:`#6015`)
 * Fix a bytecode parsing bug which caused tuple index errors whilst scanning
   modules which use :mod:`ctypes`. (:issue:`#6007`)
-* Fix an error when rhtooks for ``pkgutil`` and ``pkg_resources`` are used
+* Fix an error when runtime hooks for ``pkgutil`` and ``pkg_resources`` are used
   together. (:issue:`#6018`)
 * Fix architecture detection on Apple M1 (:issue:`#6029`)
 * Fix crash in windowed bootloader when the traceback for unhandled exception
@@ -117,7 +117,7 @@ Features
   arch validation and ad-hoc resigning of all collected binaries.
   (:issue:`#5581`)
 * (macOS) In ``onedir`` ``windowed`` (.app bundle) mode, perform an
-  interation of Apple event processing to convert ``odoc`` and ``GURL``
+  iteration of Apple event processing to convert ``odoc`` and ``GURL``
   events to ``sys.argv`` before entering frozen python script. (:issue:`#5920`)
 * (macOS) In windowed (.app bundle) mode, always log unhandled exception
   information to ``syslog``, regardless of debug mode. (:issue:`#5890`)
@@ -243,7 +243,7 @@ Bugfix
   misidentified as having one, which leads to undefined behavior in frozen
   applications with side-loaded CArchive packages. (:issue:`#5762`)
 * Prevent the use of ``sys`` or ``os`` as variables in the global namespace
-  in frozen script from affecting the ``ctypes`` hooks thar are installed
+  in frozen script from affecting the ``ctypes`` hooks that are installed
   during bootstrap. (:issue:`#5797`)
 * Windows: Fix EXE being rebuilt when there are no changes. (:issue:`#5921`)
 
@@ -499,7 +499,7 @@ Bugfix
   (:issue:`#5062`, :issue:`#5272`, :issue:`#5434`)
 * (Windows) PyInstaller's default icon is no longer built into the bootloader,
   but
-  added at freeze-time. Thus, when specifiying an icon, only that icon is
+  added at freeze-time. Thus, when specifying an icon, only that icon is
   contained in the executable and displayed for a shortcut. (:issue:`#870`,
   :issue:`#2995`)
 * (Windows) Fix "toc is bad" error messages
@@ -597,7 +597,7 @@ Bugfix
   module. (:issue:`#5157`)
 * Remove duplicate logging messages (:issue:`#5277`)
 * Fix sw_64 architecture support (:issue:`#5296`)
-* (AIX) Include python-malloc labeled libraries in search for libpython.
+* (AIX) Include python-malloc labelled libraries in search for libpython.
   (:issue:`#4210`)
 
 
@@ -609,22 +609,22 @@ Hooks
   arguments of ``collect_data_files``, and to the `filter` argument of
   ``collect_submodules``. (:issue:`#5113`)
 * Add hook for difflib to not pull in doctests, which is only
-  required when run as main programm.
+  required when run as main program.
 * Add hook for distutils.util to not pull in lib2to3 unittests, which will be
-  rearly used in frozen packages.
+  rarely used in frozen packages.
 * Add hook for heapq to not pull in doctests, which is only
-  required when run as main programm.
+  required when run as main program.
 * Add hook for multiprocessing.util to not pull in python test-suite and thus
   e.g. tkinter.
 * Add hook for numpy._pytesttester to not pull in pytest.
-* Add hook for pickle to not pull in doctests and argpargs, which are only
-  required when run as main programm.
+* Add hook for pickle to not pull in doctests and argparse, which are only
+  required when run as main program.
 * Add hook for PIL.ImageFilter to not pull
   numpy, which is an optional component.
 * Add hook for setuptools to not pull in numpy, which is only imported if
   installed, not mean to be a dependency
 * Add hook for zope.interface to not pull in pytest unittests, which will be
-  rearly used in frozen packages.
+  rarely used in frozen packages.
 * Add hook-gi.repository.HarfBuzz to fix Typelib error with Gtk apps.
   (:issue:`#5133`)
 * Enable overriding Django settings path by `DJANGO_SETTINGS_MODULE`
@@ -674,7 +674,7 @@ Hooks
 Bootloader
 ~~~~~~~~~~
 
-* Fix freeing memory allocted by Python using ``free()`` instead of
+* Fix freeing memory allocated by Python using ``free()`` instead of
   ``PyMem_RawFree()``. (:issue:`#4441`)
 * (GNU/Linux) Avoid segfault when temp path is missing. (:issue:`#5255`)
 * (GNU/Linux) Replace a ``strncpy()`` call in ``pyi_path_dirname()`` with
@@ -693,7 +693,7 @@ Bootloader
 Documentation
 ~~~~~~~~~~~~~
 
-* Add zlib to build the requirements in the Building the Bootlooder section of
+* Add zlib to build the requirements in the Building the Bootloader section of
   the docs. (:issue:`#5130`)
 
 
@@ -704,7 +704,7 @@ PyInstaller Core
   (:issue:`#4406`, :issue:`#5156`)
 * Prevent a local directory with clashing name from shadowing a system library.
   (:issue:`#5182`)
-* Use module loaders to get module content instea of an quirky way semming from
+* Use module loaders to get module content instead of a quirky way stemming from
   early Python 2.x times. (:issue:`#5157`)
 * (OSX) Exempt the ``Tcl``/``Tk`` dynamic libraries in the system framework
   from relative path overwrite. Fix missing ``Tcl``/``Tk`` dynlib on older
@@ -768,11 +768,11 @@ Features
 Bugfix
 ~~~~~~
 
-* (AIX) Include python-malloc labeled libraries in search for libpython.
+* (AIX) Include python-malloc labelled libraries in search for libpython.
   (:issue:`#4738`)
 * (win32) Fix Security Alerts caused by subtle implementation differences
-  between posix anf windows in ``os.path.dirname()``. (:issue:`#4707`)
-* (win32) Fix struct format strings for versioninfo. (:issue:`#4861`)
+  between posix and windows in ``os.path.dirname()``. (:issue:`#4707`)
+* (win32) Fix struct format strings for VSVersionInfo. (:issue:`#4861`)
 * (Windows) cv2: bundle the `opencv_videoio_ffmpeg*.dll`, if available.
   (:issue:`#4999`)
 * (Windows) GLib: bundle the spawn helper executables for `g_spawn*` API.
@@ -892,11 +892,11 @@ Bootloader
 ~~~~~~~~~~
 
 * Rework bootloader from using strcpy/strncpy with "is this string
-  terminated"-check to use snprintf(); check succes at more places. (This
+  terminated"-check to use snprintf(); check success at more places. (This
   started from fixing GCC warnings for strncpy and strncat.)
 * Fix: When copying files, too much data was copied in most cases. This
   corrupted the file and inhibited using shared dependencies. (:issue:`#4303`)
-* In debug and windowed mode, show the traceback in dialogs to help debug
+* In debug and windowed mode, show the traceback in dialogues to help debug
   pyiboot01_bootstrap errors. (:issue:`#4213`, :issue:`#4592`)
 * Started a small test-suite for bootloader basic functions. (:issue:`#4585`)
 

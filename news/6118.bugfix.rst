@@ -1,2 +1,2 @@
-(Windows) Fix collection of ``sysconfig`` platform-specific data module when
+(Windows) Fix collection of :mod:`sysconfig` platform-specific data module when
 using MSYS2/MINGW python.
