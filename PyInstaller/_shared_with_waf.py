@@ -64,8 +64,10 @@ def _pyi_machine(machine, system):
     if machine.startswith(("ppc", "powerpc")):
         # PowerPC comes in 64 vs 32 bit and little vs big endian variants.
         return "ppc"
+    if machine in ("mips64", "mips"):
+        return "mips"
     # Machines with no known aliases :)
-    if machine in ("s390x", "mips"):
+    if machine in ("s390x",):
         return machine
 
     # Unknown architectures are allowed by default, but will all be placed under one directory. In theory, trying to
