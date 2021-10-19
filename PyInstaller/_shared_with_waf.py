@@ -41,9 +41,9 @@ def _pyi_machine(machine, system):
     """
     # See the corresponding tests in tests/unit/test_compat.py for examples.
 
-    if platform.machine() == "sw_64":
-        # This explicitly inhibits cross compiling the bootloader for or on a SunWay machine.
-        return "sw_64"
+    if platform.machine() == "sw_64" or platform.machine() == "loongarch64":
+        # This explicitly inhibits cross compiling the bootloader for or on SunWay and LoongArch machine.
+        return platform.machine()
 
     if system != "Linux":
         # No architecture specifier for anything par Linux.
