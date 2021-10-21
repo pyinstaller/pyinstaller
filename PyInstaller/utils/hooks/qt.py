@@ -432,6 +432,7 @@ _qt6_dynamic_dependencies_dict = {
     # networkinformationbackends plugins were introduced in Qt 6.1, and renamed to networkinformation in Qt 6.2
     # tls plugins were introduced in Qt 6.2
     "qt6network":               (".QtNetwork",             "qtbase",           "networkinformationbackend", "networkinformation", "tls"),  # noqa
+    "qt6openglwidgets":         (".QtOpenGLWidgets",       "qtbase", ),  # noqa
 }  # yapf: disable
 
 for lib_name, content in _qt5_dynamic_dependencies_dict.items():

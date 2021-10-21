@@ -1,0 +1,1 @@
+Add a hook for ``QtOpenGLWidgets`` for ``PyQt6`` and ``PySide6`` to collect the new ``QtOpenGLWidgets`` module introduced in Qt6
