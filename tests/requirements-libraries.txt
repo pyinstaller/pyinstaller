@@ -44,7 +44,7 @@ requests==2.26.0
 simplejson==3.17.5
 sphinx==2.4.4 # pyup: ignore
 # Required for test_namespace_package
-sqlalchemy==1.4.25
+sqlalchemy==1.4.26
 zope.interface==5.4.0
 Pillow==8.4.0
 
