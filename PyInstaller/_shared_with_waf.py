@@ -41,9 +41,9 @@ def _pyi_machine(machine, system):
     """
     # See the corresponding tests in tests/unit/test_compat.py for examples.
 
-    if platform.machine() == "sw_64":
-        # This explicitly inhibits cross compiling the bootloader for or on a SunWay machine.
-        return "sw_64"
+    if platform.machine() == "sw_64" or platform.machine() == "loongarch64":
+        # This explicitly inhibits cross compiling the bootloader for or on SunWay and LoongArch machine.
+        return platform.machine()
 
     if system != "Linux":
         # No architecture specifier for anything par Linux.
@@ -64,8 +64,10 @@ def _pyi_machine(machine, system):
     if machine.startswith(("ppc", "powerpc")):
         # PowerPC comes in 64 vs 32 bit and little vs big endian variants.
         return "ppc"
+    if machine in ("mips64", "mips"):
+        return "mips"
     # Machines with no known aliases :)
-    if machine in ("s390x", "mips"):
+    if machine in ("s390x",):
         return machine
 
     # Unknown architectures are allowed by default, but will all be placed under one directory. In theory, trying to
