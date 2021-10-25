@@ -43,6 +43,8 @@ def test_exec_command_subprocess_wrong_encoding_reports_nicely(capsys):
         ("ppc32le", "ppc"),
         ("powerpc", "ppc"),
         ("s390x", "s390x"),
+        ("mips", "mips"),
+        ("mips64", "mips"),
         ("something-alien", "unknown"),
     ]
 )
