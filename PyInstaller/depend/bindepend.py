@@ -736,9 +736,15 @@ def findLibrary(name):
         paths = ['/lib', '/usr/lib']
         # Architecture dependent locations.
         if compat.architecture == '32bit':
-            paths.extend(['/lib32', '/usr/lib32', '/usr/lib/i386-linux-gnu'])
+            paths.extend(['/lib32', '/usr/lib32'])
         else:
-            paths.extend(['/lib64', '/usr/lib64', '/usr/lib/x86_64-linux-gnu'])
+            paths.extend(['/lib64', '/usr/lib64'])
+        # Machine dependent locations.
+        if compat.machine == 'intel':
+            if compat.architecture == '32bit':
+                paths.extend(['/usr/lib/i386-linux-gnu'])
+            else:
+                paths.extend(['/usr/lib/x86_64-linux-gnu'])
 
         # On Debian/Ubuntu /usr/bin/python is linked statically with libpython. Newer Debian/Ubuntu with multiarch
         # support puts the libpythonX.Y.so in paths like /usr/lib/i386-linux-gnu/.
