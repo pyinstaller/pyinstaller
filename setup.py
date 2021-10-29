@@ -1,4 +1,3 @@
-#! /usr/bin/env python3
 #-----------------------------------------------------------------------------
 # Copyright (c) 2005-2021, PyInstaller Development Team.
 #
