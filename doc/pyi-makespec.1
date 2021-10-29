@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "PYI-MAKESPEC" "1" "2021-08-06" "4.5.1" "PyInstaller"
+.TH "PYI-MAKESPEC" "1" "2021-10-29" "4.6" "PyInstaller"
 .SH NAME
 pyi-makespec \- Create a spec file for your PyInstaller project
 .
@@ -158,7 +158,7 @@ The key used to encrypt Python bytecode.
 .TP
 .BI \-\-splash \ IMAGE_FILE
 (EXPERIMENTAL) Add an splash screen with the image IMAGE_FILE to the
-application. The splash screen can show progress updates
+application. The splash screen can display progress updates
 while unpacking.
 .UNINDENT
 .SS How To Generate
@@ -182,6 +182,11 @@ directory.
 .UNINDENT
 .INDENT 0.0
 .TP
+.BI \-\-python\-option \ PYTHON_OPTION
+Specify a command\-line option to pass to the Python interpreter at runtime.
+Currently supports "v" (equivalent to "\-\-debug imports"), "u", and "W
+<warning control>".
+.TP
 .B \-s\fP,\fB  \-\-strip
 Apply a symbol\-table strip to the executable and shared libs (not
 recommended for Windows)
@@ -201,18 +206,18 @@ multiple times.
 .TP
 .B \-c\fP,\fB  \-\-console\fP,\fB  \-\-nowindowed
 Open a console window for standard i/o (default). On Windows this option
-will have no effect if the first script is a \(aq.pyw\(aq file.
+has no effect if the first script is a \(aq.pyw\(aq file.
 .TP
 .B \-w\fP,\fB  \-\-windowed\fP,\fB  \-\-noconsole
 Windows and Mac OS X: do not provide a console window for standard i/o. On
-Mac OS X this also triggers building an OS X .app bundle. On Windows this
-option will be set if the first script is a \(aq.pyw\(aq file. This option is
-ignored in *NIX systems.
+Mac OS this also triggers building a Mac OS .app bundle. On Windows this
+option is automatically set if the first script is a \(aq.pyw\(aq file. This
+option is ignored on *NIX systems.
 .TP
 .BI \-i \ <FILE.ico or FILE.exe,ID or FILE.icns or "NONE">\fR,\fB \ \-\-icon \ <FILE.ico or FILE.exe,ID or FILE.icns or "NONE">
-FILE.ico: apply that icon to a Windows executable. FILE.exe,ID, extract the
+FILE.ico: apply the icon to a Windows executable. FILE.exe,ID: extract the
 icon with ID from an exe. FILE.icns: apply the icon to the .app bundle on
-Mac OS X. Use "NONE" to not apply any icon, thereby making the OS to show
+Mac OS. Use "NONE" to not apply any icon, thereby making the OS to show
 some default (default: apply PyInstaller\(aqs icon)
 .TP
 .B \-\-disable\-windowed\-traceback
@@ -224,10 +229,15 @@ is disabled.
 .INDENT 0.0
 .TP
 .BI \-\-version\-file \ FILE
-add a version resource from FILE to the exe
+Add a version resource from FILE to the exe.
 .TP
 .BI \-m \ <FILE or XML>\fR,\fB \ \-\-manifest \ <FILE or XML>
-add manifest FILE or XML to the exe
+Add manifest FILE or XML to the exe.
+.TP
+.B \-\-no\-embed\-manifest
+Generate an external .exe.manifest file instead of embedding the manifest
+into the exe. Applicable only to onedir mode; in onefile
+mode, the manifest is always embedded, regardless of this option.
 .TP
 .BI \-r \ RESOURCE\fR,\fB \ \-\-resource \ RESOURCE
 Add or update a resource to a Windows executable. The RESOURCE is one to
@@ -236,11 +246,12 @@ exe/dll. For data files, at least TYPE and NAME must be specified. LANGUAGE
 defaults to 0 or may be specified as wildcard * to update all resources of
 the given TYPE and NAME. For exe/dll files, all resources from FILE will be
 added/updated to the final executable if TYPE, NAME and LANGUAGE are
-omitted or specified as wildcard *.This option can be used multiple times.
+omitted or specified as wildcard *. This option can be used multiple
+times.
 .TP
 .B \-\-uac\-admin
-Using this option creates a Manifest which will request elevation upon
-application restart.
+Using this option creates a Manifest that will request elevation upon
+application start.
 .TP
 .B \-\-uac\-uiaccess
 Using this option allows an elevated application to work with Remote
@@ -261,11 +272,11 @@ application, PyInstaller will prefer not to follow policies that redirect
 to newer versions, and will try to bundle the exact versions of the
 assembly.
 .UNINDENT
-.SS Mac Os X Specific Options
+.SS Mac Os Specific Options
 .INDENT 0.0
 .TP
 .BI \-\-osx\-bundle\-identifier \ BUNDLE_IDENTIFIER
-Mac OS X .app bundle identifier is used as the default unique program name
+Mac OS .app bundle identifier is used as the default unique program name
 for code signing purposes. The usual form is a hierarchical name in reverse
 DNS notation. For example: com.mycompany.department.appname (default: first
 script\(aqs basename)
@@ -297,9 +308,9 @@ Please use this option only if you know what you are doing.
 .TP
 .B \-\-bootloader\-ignore\-signals
 Tell the bootloader to ignore signals rather than forwarding them to the
-child process. Useful in situations where e.g. a supervisor process signals
-both the bootloader and child (e.g. via a process group) to avoid
-signalling the child twice.
+child process. Useful in situations where for example a supervisor process
+signals both the bootloader and the child (e.g., via a process group) to
+avoid signalling the child twice.
 .UNINDENT
 .SH ENVIRONMENT VARIABLES
 .INDENT 0.0
