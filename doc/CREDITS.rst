@@ -5,6 +5,15 @@ Thanks goes to all the kind PyInstaller contributors who have contributed
 new code, bug reports, fixes, comments and ideas. A brief list follows,
 please let us know if your name is omitted by accident:
 
+Contributions to PyInstaller 4.6
+--------------------------------
+
+* Rok Mandeljc - Core Developer
+* Brénainn Woodsend - Core Developer
+* Jasper Harrison - Maintainer, Release Manager
+
+* Anssi Alahutta, Dan Yeaw, Eric Missimer, Chris Hillery, Melvin Wang, wangling12, eric15342335
+
 
 Contributions to PyInstaller 4.5.1
 ----------------------------------

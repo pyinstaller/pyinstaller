@@ -1,1 +1,0 @@
-Fix compatibility with with MIPS and loongarch64 architectures.

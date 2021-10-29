@@ -1,1 +1,0 @@
-Ship precompiled wheels for musl-based Linux distributions (such as Alpine or OpenWRT) on ``x86_64`` and ``aarch64``.

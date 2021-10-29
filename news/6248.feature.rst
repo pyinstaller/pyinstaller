@@ -1,8 +1,0 @@
-(Windows) Embed the manifest into generated ``onedir`` executables by
-default, in order to avoid potential issues when user renames the executable
-(e.g., the manifest not being found anymore due to activation context
-caching when user renames the executable and attempts to run it before
-also renaming the manifest file). The old behavior of generating the
-external manifest file in ``onedir`` mode can be re-enabled using the
-:option:`--no-embed-manifest` command-line switch, or via the
-``embed_manifest=False`` argument to ``EXE()`` in the .spec file.

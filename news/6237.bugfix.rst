@@ -1,4 +1,0 @@
-Fix the ``FrozenImporter.get_source()`` to correctly handle the packages'
-``__init__.py`` source  files. This in turn fixes missing-source-file
-errors for packages that use ``pytorch`` JIT when the source .py files
-are collected and available (for example, ``kornia``).

@@ -1,5 +1,0 @@
-(Windows) By default, manifest is now embedded into the executable in
-``onedir`` mode. The old behavior of generating the external manifest
-file can be re-enabled using the :option:`--no-embed-manifest`
-command-line switch, or via the ``embed_manifest=False`` argument to
-``EXE()`` in the .spec file.

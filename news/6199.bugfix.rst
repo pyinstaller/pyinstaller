@@ -1,3 +1,0 @@
-(Windows) Fix displayed script name and exception message in the
-unhandled exception dialog (windowed mode) when bootloader is compiled
-using the ``MinGW-w64`` toolchain.

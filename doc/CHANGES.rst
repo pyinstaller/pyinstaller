@@ -15,6 +15,136 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+4.6 (2021-10-29)
+-------------------------------
+
+Features
+~~~~~~~~
+
+* Add support for Python 3.10. (:issue:`#5693`)
+
+* (Windows) Embed the manifest into generated ``onedir`` executables by
+  default, in order to avoid potential issues when user renames the executable
+  (e.g., the manifest not being found anymore due to activation context
+  caching when user renames the executable and attempts to run it before
+  also renaming the manifest file). The old behavior of generating the
+  external manifest file in ``onedir`` mode can be re-enabled using the
+  :option:`--no-embed-manifest` command-line switch, or via the
+  ``embed_manifest=False`` argument to ``EXE()`` in the .spec file.
+  (:issue:`#6248`)
+* (Windows) Respect :pep:`239` encoding specifiers in Window's VSVersionInfo
+  files. (:issue:`#6259`)
+* Implement basic resource reader for accessing on-filesystem resources (data
+  files)
+  via ``importlib.resources`` (python >= 3.9) or ``importlib_resources``
+  (python <= 3.8). (:issue:`#5616`)
+* Ship precompiled wheels for musl-based Linux distributions (such as Alpine or
+  OpenWRT) on ``x86_64`` and ``aarch64``. (:issue:`#6245`)
+
+
+Bugfix
+~~~~~~
+
+* (macOS) Ensure that executable pre-processing and post-processing steps
+  (target arch selection, SDK version adjustment, (re)signing) are applied in
+  the stand-alone PKG mode. (:issue:`#6251`)
+* (macOS) Robustify the macOS assembly pipeline to work around the issues with
+  the ``codesign`` utility on macOS 10.13 High Sierra. (:issue:`#6167`)
+* (Windows) Fix collection of ``sysconfig`` platform-specific data module when
+  using MSYS2/MINGW python. (:issue:`#6118`)
+* (Windows) Fix displayed script name and exception message in the
+  unhandled exception dialog (windowed mode) when bootloader is compiled
+  using the ``MinGW-w64`` toolchain. (:issue:`#6199`)
+* (Windows) Fix issues in ``onedir`` frozen applications when the bootloader
+  is compiled using a toolchain that forcibly embeds a default manifest
+  (e.g., the ``MinGW-w64`` toolchain from ``msys2``). The issues range from
+  manifest-related options (e.g., ``uac-admin``) not working to windowed frozen
+  application not starting at all (with the ``The procedure entry point
+  LoadIconMetric could not be located...`` error message). (:issue:`#6196`)
+* (Windows) Fix the declared length of strings in the optional embedded
+  product version information resource structure. The declared lengths
+  were twice too long, and resulted in trailing garbage characters when
+  the version information was read using `ctypes` and winver API.
+  (:issue:`#6219`)
+* (Windows) Remove the attempt to load the manifest of a ``onefile``
+  frozen executable via the activation context, which fails with ``An
+  attempt to set the process default activation context failed because
+  the process default activation context was already set.`` message that
+  can be observed in debug builds. This approach has been invalid ever
+  since :issue:`3746` implemented direct manifest embedding into the
+  ``onefile`` executable. (:issue:`#6248`)
+* (Windows) Suppress missing library warnings for ``api-ms-win-core-*`` DLLs.
+  (:issue:`#6201`)
+* (Windows) Tolerate reading Windows VSVersionInfo files with unicode byte
+  order
+  marks. (:issue:`#6259`)
+* Fix ``sys.executable`` pointing to the external package file instead of
+  the executable when in package side-load mode (``pkg_append=False``).
+  (:issue:`#6202`)
+* Fix a runaway glob which caused ``ctypes.util.find_library("libfoo")`` to
+  non-deterministically pick any library
+  matching ``libfoo*`` to bundle instead of ``libfoo.so``. (:issue:`#6245`)
+* Fix compatibility with with MIPS and loongarch64 architectures.
+  (:issue:`#6306`)
+* Fix the ``FrozenImporter.get_source()`` to correctly handle the packages'
+  ``__init__.py`` source  files. This in turn fixes missing-source-file
+  errors for packages that use ``pytorch`` JIT when the source .py files
+  are collected and available (for example, ``kornia``). (:issue:`#6237`)
+* Fix the location of the generated stand-alone pkg file when using the
+  side-load mode (``pkg_append=False``) in combination with ``onefile`` mode.
+  The package file is now placed next to the executable instead of next to
+  the .spec file. (:issue:`#6202`)
+* When generating spec files, avoid hard-coding the spec file's location as the
+  ``pathex`` argument to the ``Analysis``. (:issue:`#6254`)
+
+
+Incompatible Changes
+~~~~~~~~~~~~~~~~~~~~
+
+* (Windows) By default, manifest is now embedded into the executable in
+  ``onedir`` mode. The old behavior of generating the external manifest
+  file can be re-enabled using the :option:`--no-embed-manifest`
+  command-line switch, or via the ``embed_manifest=False`` argument to
+  ``EXE()`` in the .spec file. (:issue:`#6248`)
+
+
+Hooks
+~~~~~
+
+* (macOS) Fix compatibility with Anaconda ``PyQt5`` package. (:issue:`#6181`)
+* Add a hook for ``pandas.plotting`` to restore compatibility with ``pandas``
+  1.3.0
+  and later. (:issue:`#5994`)
+* Add a hook for ``QtOpenGLWidgets`` for ``PyQt6`` and ``PySide6`` to collect
+  the new ``QtOpenGLWidgets`` module introduced in Qt6 (:issue:`#6310`)
+* Add hooks for ``QtPositioning`` and ``QtLocation`` modules of the Qt5-based
+  packages (``PySide2`` and ``PyQt5``) to ensure that corresponding plugins
+  are collected. (:issue:`#6250`)
+* Fix compatibility with ``PyQt5`` 5.9.2 from conda's  main channel.
+  (:issue:`#6114`)
+* Prevent potential error in hooks for Qt-based packages that could be
+  triggered
+  by a partial ``PyQt6`` installation. (:issue:`#6141`)
+* Update ``QtNetwork`` hook for ``PyQt6`` and ``PySide6``  to collect the
+  new ``tls`` plugins that were introduced in Qt 6.2. (:issue:`#6276`)
+* Update the ``gi.repository.GtkSource`` hook to accept a module-versions
+  hooksconfig dict in order to allow the hook to be used with GtkSource
+  versions
+  greater than 3.0. (:issue:`#6267`)
+
+
+Bootloader
+~~~~~~~~~~
+
+* (Windows) Suppress two ``snprintf`` truncation warnings that prevented
+  bootloader from building with ``winlibs MinGW-w64`` toolchain.
+  (:issue:`#6196`)
+* Update the Linux bootloader cross compiler Dockerfile to allow using `the
+  official PyPA base images
+  <https://quay.io/organization/pypa/>`_ in place of the dockcross ones.
+  (:issue:`#6245`)
+
+
 4.5.1 (2021-08-06)
 ------------------
 
