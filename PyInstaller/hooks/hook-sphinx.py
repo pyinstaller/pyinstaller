@@ -9,56 +9,33 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# ********************************************
-# hook-sphinx.py - Pyinstaller hook for Sphinx
-# ********************************************
-from PyInstaller.utils.hooks import (collect_data_files, collect_submodules, eval_statement)
+from PyInstaller.utils.hooks import collect_data_files, collect_submodules, eval_statement
 
-hiddenimports = (
-    # Per http://sphinx-doc.org/extensions.html#builtin-sphinx-extensions, Sphinx extensions are all placed in
-    # ``sphinx.ext``. Include these.
-    collect_submodules('sphinx.ext') +
-    #
-    # The following analysis applies to Sphinx v. 1.3.1, reported by "pip show sphinx".
-    #
-    # From sphinx.application line 429:
-    #
-    #    mod = __import__(extension, None, None, ['setup'])
-    #
-    # From sphinx.search line 228:
-    #
-    #    lang_class = getattr(__import__(module, None, None, [classname]),
-    #                         classname)
-    #
-    # From sphinx.search line 119:
-    #
-    #    languages = {
-    #        'da': 'sphinx.search.da.SearchDanish',
-    #        'de': 'sphinx.search.de.SearchGerman',
-    #        'en': SearchEnglish,
-    #
-    # So, we need all the languages in "sphinx.search".
-    collect_submodules('sphinx.search') + collect_submodules('sphinx.websupport.search') +
-    collect_submodules('sphinx.domains') +
-    #
-    # From sphinx.cmdline line 173:
-    #
-    #    locale = __import__('locale')  # due to submodule of the same name
-    #
-    # Add this module.
-    ['locale'] +
-    #
-    # Sphinx relies on a number of built-in extensions that are dynamically imported. Collect all those.
-    list(
-        eval_statement(
-            """
+# Sphinx consists of several extensions that are lazily loaded. So collect all submodules to ensure we do not miss
+# any of them.
+hiddenimports = collect_submodules('sphinx')
+
+# For each extension in sphinx.application.builtin_extensions that does not come from the sphinx package, do a
+# collect_submodules(). We need to do this explicitly because collect_submodules() does not seem to work with
+# namespace packages, which precludes us from simply doing hiddenimports += collect_submodules('sphinxcontrib')
+builtin_extensions = list(
+    eval_statement(
+        """
         from sphinx.application import builtin_extensions
         print(builtin_extensions)
         """
-        )
     )
 )
+for extension in builtin_extensions:
+    if extension.startswith('sphinx.'):
+        continue  # Already collected
+    hiddenimports += collect_submodules(extension)
 
-# Sphinx also relies on a number of data files in its directory hierarchy: for example, *.html and *.conf files in
-# ``sphinx.themes``, translation files in ``sphinx.locale``, etc.
+# This is inherited from an earlier version of the hook, and seems to have been required in Sphinx v.1.3.1 era due to
+# https://github.com/sphinx-doc/sphinx/blob/b87ce32e7dc09773f9e71305e66e8d6aead53dd1/sphinx/cmdline.py#L173.
+# It does not hurt to keep it around, just in case.
+hiddenimports += ['locale']
+
+# Collect all data files: *.html and *.conf files in ``sphinx.themes``, translation files in ``sphinx.locale``, etc.
+# Also collect all data files for the alabaster theme.
 datas = collect_data_files('sphinx') + collect_data_files('alabaster')
