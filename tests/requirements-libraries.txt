@@ -36,7 +36,7 @@ pyside6==6.2.0
 pyqt5==5.15.6; python_version < '3.10'
 pyqtwebengine==5.15.5; python_version < '3.10'
 pyqt6==6.2.0  # PyQt6 Qt6 bindings
-pyqt6-qt6==6.2.0  # Qt6 binaries (keep in sync with pyqt6 version!)
+pyqt6-qt6==6.2.1  # Qt6 binaries (keep in sync with pyqt6 version!)
 python-dateutil==2.8.2
 pytz==2021.3
 requests==2.26.0
