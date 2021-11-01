@@ -802,7 +802,7 @@ def _which_library(name, dirs):
 
     """
     matcher = _library_matcher(name)
-    for path in dirs:
+    for path in filter(os.path.exists, dirs):
         for _path in os.listdir(path):
             if matcher(_path):
                 return os.path.join(path, _path)
