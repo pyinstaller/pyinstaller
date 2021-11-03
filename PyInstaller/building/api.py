@@ -673,7 +673,7 @@ class EXE(Target):
                         )
             # Embed the manifest into the executable.
             if self.embed_manifest:
-                logger.info("Emedding manifest in EXE")
+                logger.info("Embedding manifest in EXE")
                 self.manifest.update_resources(build_name, [1])
         elif is_darwin:
             # Convert bootloader to the target arch
