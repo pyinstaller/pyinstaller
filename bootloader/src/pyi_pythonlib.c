@@ -757,16 +757,16 @@ pyi_pylib_finalize(ARCHIVE_STATUS *status)
             VS("LOADER: Manually flushing stdout and stderr\n");
 
             /* sys.stdout.flush() */
-            PI_PyRun_SimpleString(
+            PI_PyRun_SimpleStringFlags(
                 "import sys; sys.stdout.flush(); \
                 (sys.__stdout__.flush if sys.__stdout__ \
-                is not sys.stdout else (lambda: None))()");
+                is not sys.stdout else (lambda: None))()", NULL);
 
             /* sys.stderr.flush() */
-            PI_PyRun_SimpleString(
+            PI_PyRun_SimpleStringFlags(
                 "import sys; sys.stderr.flush(); \
                 (sys.__stderr__.flush if sys.__stderr__ \
-                is not sys.stderr else (lambda: None))()");
+                is not sys.stderr else (lambda: None))()", NULL);
 
         #endif
 
