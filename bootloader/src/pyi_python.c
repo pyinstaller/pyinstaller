@@ -72,7 +72,7 @@ DECLPROC(PyObject_CallFunctionObjArgs);
 DECLPROC(PyObject_SetAttrString);
 DECLPROC(PyObject_GetAttrString);
 DECLPROC(PyObject_Str);
-DECLPROC(PyRun_SimpleString);
+DECLPROC(PyRun_SimpleStringFlags);
 DECLPROC(PySys_AddWarnOption);
 DECLPROC(PySys_SetArgvEx);
 DECLPROC(PySys_GetObject);
@@ -141,7 +141,7 @@ pyi_python_map_names(HMODULE dll, int pyvers)
     GETPROC(dll, PyObject_GetAttrString);
     GETPROC(dll, PyObject_Str);
 
-    GETPROC(dll, PyRun_SimpleString);
+    GETPROC(dll, PyRun_SimpleStringFlags);
 
     GETPROC(dll, PySys_AddWarnOption);
     GETPROC(dll, PySys_SetArgvEx);
