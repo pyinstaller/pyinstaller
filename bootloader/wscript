@@ -575,6 +575,11 @@ def configure(ctx):
     if ctx.env.DEST_OS == 'win32':
         ctx.env.append_value('DEFINES', 'WIN32')
         ctx.env.append_value('CPPPATH', '../zlib')
+        # Set minimum feature level for Windows headers to Windows 7.
+        # As per MSDN: "If you define NTDDI_VERSION, you must also define _WIN32_WINNT."
+        # https://docs.microsoft.com/en-us/windows/win32/winprog/using-the-windows-headers#macros-for-conditional-declarations
+        ctx.env.append_value('DEFINES', 'NTDDI_VERSION=0x06010000')
+        ctx.env.append_value('DEFINES', '_WIN32_WINNT=0x0601')
 
     elif ctx.env.DEST_OS == 'sunos':
         ctx.env.append_value('DEFINES', 'SUNOS')
