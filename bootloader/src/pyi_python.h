@@ -47,10 +47,12 @@
  */
 
 /* Forward declarations of opaque Python types. */
-struct _object;
-typedef struct _object PyObject;
+struct _PyObject;
+typedef struct _PyObject PyObject;
 struct _PyThreadState;
 typedef struct _PyThreadState PyThreadState;
+struct _PyCompilerFlags;
+typedef struct _PyCompilerFlags PyCompilerFlags;
 
 /* The actual declarations of var & function entry points used. */
 
@@ -84,7 +86,7 @@ EXTDECLPROC(wchar_t *, Py_GetPath, (void));  /* new in Python 3 */
 
 EXTDECLPROC(void, PySys_SetPath, (wchar_t *));
 EXTDECLPROC(int, PySys_SetArgvEx, (int, wchar_t **, int));
-EXTDECLPROC(int, PyRun_SimpleString, (char *));  /* Py3: UTF-8 encoded string */
+EXTDECLPROC(int, PyRun_SimpleStringFlags, (const char *, PyCompilerFlags *));  /* Py3: UTF-8 encoded string */
 
 /* In Python 3 for these the first argument has to be a UTF-8 encoded string: */
 EXTDECLPROC(PyObject *, PyImport_ExecCodeModule, (char *, PyObject *));
