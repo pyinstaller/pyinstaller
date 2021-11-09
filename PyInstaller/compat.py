@@ -206,6 +206,12 @@ if is_win:
                 'Please install pywin32-ctypes.\n\n'
                 'pip install pywin32-ctypes\n'
             )
+    except Exception:
+        if sys.flags.optimize == 2:
+            raise SystemExit("pycparser, a Windows only indirect dependency of PyInstaller, is incompatible with "
+                             "Python's \"discard docstrings\" (-OO) flag mode. For more information see:\n"
+                             "    https://github.com/pyinstaller/pyinstaller/issues/6345")
+        raise
 
 # macOS's platform.architecture() can be buggy, so we do this manually here. Based off the python documentation:
 # https://docs.python.org/3/library/platform.html#platform.architecture
