@@ -1,5 +1,0 @@
-(Windows) Explicitly set ``NTDDI_VERSION=0x06010000`` and
-``_WIN32_WINNT=0x0601`` when compiling Windows bootloaders to request
-Windows 7 feature level for Windows headers. The windowed bootloader
-requires at least Windows Vista feature level, and some toolchains
-(e.g., mingw cross-compiler on linux) set too low level by default.

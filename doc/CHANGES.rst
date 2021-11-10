@@ -15,6 +15,39 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+4.7 (2021-11-10)
+----------------
+
+Bugfix
+~~~~~~
+
+* Fix a bug since v4.6 where certain Unix system directories were incorrectly
+  assumed to exist and resulted in
+  a :class:`FileNotFoundError`. (:issue:`#6331`)
+
+
+Hooks
+~~~~~
+
+* Update ``sphinx`` hook for compatibility with latest version (4.2.0).
+  (:issue:`#6330`)
+
+
+Bootloader
+~~~~~~~~~~
+
+* (Windows) Explicitly set ``NTDDI_VERSION=0x06010000`` and
+  ``_WIN32_WINNT=0x0601`` when compiling Windows bootloaders to request
+  Windows 7 feature level for Windows headers. The windowed bootloader
+  requires at least Windows Vista feature level, and some toolchains
+  (e.g., mingw cross-compiler on linux) set too low level by default.
+  (:issue:`#6338`)
+* (Windows) Remove the check for the unused ``windres`` utility when compiling
+  with MinGW toolchain. (:issue:`#6339`)
+* Replace use of ``PyRun_SimpleString`` with ``PyRun_SimpleStringFlags``.
+  (:issue:`#6332`)
+
+
 4.6 (2021-10-29)
 -------------------------------
 
