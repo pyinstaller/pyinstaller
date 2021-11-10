@@ -20,6 +20,7 @@ import platform
 import site
 import subprocess
 import sys
+import shutil
 
 from PyInstaller._shared_with_waf import _pyi_machine
 from PyInstaller.exceptions import ExecCommandFailed
@@ -217,6 +218,14 @@ if is_win:
                 'Please install pywin32-ctypes.\n\n'
                 'pip install pywin32-ctypes\n'
             )
+    except Exception:
+        if sys.flags.optimize == 2:
+            raise SystemExit(
+                "pycparser, a Windows only indirect dependency of PyInstaller, is incompatible with "
+                "Python's \"discard docstrings\" (-OO) flag mode. For more information see:\n"
+                "    https://github.com/pyinstaller/pyinstaller/issues/6345"
+            )
+        raise
 
 # macOS's platform.architecture() can be buggy, so we do this manually here. Based off the python documentation:
 # https://docs.python.org/3/library/platform.html#platform.architecture
@@ -716,3 +725,30 @@ def check_requirements():
     # Fail hard if Python does not have minimum required version
     if sys.version_info < (3, 6):
         raise EnvironmentError('PyInstaller requires at Python 3.6 or newer.')
+
+    # There are some old packages which used to be backports of libraries which are now part of the standard library.
+    # These backports are now unmaintained and contain only an older subset of features leading to obscure errors like
+    # "enum has not attribute IntFlag" if installed.
+    if is_py38:
+        from importlib.metadata import distribution, PackageNotFoundError
+    else:
+        from importlib_metadata import distribution, PackageNotFoundError
+
+    for name in ["enum34", "typing"]:
+        try:
+            distribution(name)
+        except PackageNotFoundError:
+            pass
+        else:
+            raise SystemExit(
+                f"The '{name}' package is an obsolete backport of a standard library package and is "
+                f"incompatible with PyInstaller. Please "
+                f"`{'conda remove' if is_conda else 'pip uninstall'} {name}` then try again."
+            )
+
+    # Bail out if binutils is not installed.
+    if is_linux and shutil.which("objdump") is None:
+        raise SystemExit(
+            "On Linux, objdump is required. It is typically provided by the 'binutils' package "
+            "installable via your Linux distribution's package manager."
+        )
