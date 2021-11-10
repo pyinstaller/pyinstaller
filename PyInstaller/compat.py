@@ -739,6 +739,24 @@ def check_requirements():
     if sys.version_info < (3, 6):
         raise EnvironmentError('PyInstaller requires at Python 3.6 or newer.')
 
+    # There are some old packages which used to be backports of libraries which are now part of the standard library.
+    # These backports are now unmaintained and contain only an older subset of features leading to obscure errors like
+    # "enum has not attribute IntFlag" if installed.
+    if is_py38:
+        from importlib.metadata import distribution, PackageNotFoundError
+    else:
+        from importlib_metadata import distribution, PackageNotFoundError
+
+    for name in ["enum34", "typing"]:
+        try:
+            distribution(name)
+        except PackageNotFoundError:
+            pass
+        else:
+            raise SystemExit(f"The '{name}' package is an obsolete backport of a standard library package and is "
+                             f"incompatible with PyInstaller. Please "
+                             f"`{'conda remove' if is_conda else 'pip uninstall'} {name}` then try again.")
+
     # Bail out if binutils is not installed.
     if is_linux and shutil.which("objdump") is None:
         raise SystemExit("On Linux, objdump is required. It is typically provided by the 'binutils' package "
