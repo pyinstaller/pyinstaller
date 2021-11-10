@@ -209,9 +209,11 @@ if is_win:
             )
     except Exception:
         if sys.flags.optimize == 2:
-            raise SystemExit("pycparser, a Windows only indirect dependency of PyInstaller, is incompatible with "
-                             "Python's \"discard docstrings\" (-OO) flag mode. For more information see:\n"
-                             "    https://github.com/pyinstaller/pyinstaller/issues/6345")
+            raise SystemExit(
+                "pycparser, a Windows only indirect dependency of PyInstaller, is incompatible with "
+                "Python's \"discard docstrings\" (-OO) flag mode. For more information see:\n"
+                "    https://github.com/pyinstaller/pyinstaller/issues/6345"
+            )
         raise
 
 # macOS's platform.architecture() can be buggy, so we do this manually here. Based off the python documentation:
@@ -753,11 +755,15 @@ def check_requirements():
         except PackageNotFoundError:
             pass
         else:
-            raise SystemExit(f"The '{name}' package is an obsolete backport of a standard library package and is "
-                             f"incompatible with PyInstaller. Please "
-                             f"`{'conda remove' if is_conda else 'pip uninstall'} {name}` then try again.")
+            raise SystemExit(
+                f"The '{name}' package is an obsolete backport of a standard library package and is "
+                f"incompatible with PyInstaller. Please "
+                f"`{'conda remove' if is_conda else 'pip uninstall'} {name}` then try again."
+            )
 
     # Bail out if binutils is not installed.
     if is_linux and shutil.which("objdump") is None:
-        raise SystemExit("On Linux, objdump is required. It is typically provided by the 'binutils' package "
-                         "installable via your Linux distribution's package manager.")
+        raise SystemExit(
+            "On Linux, objdump is required. It is typically provided by the 'binutils' package "
+            "installable via your Linux distribution's package manager."
+        )
