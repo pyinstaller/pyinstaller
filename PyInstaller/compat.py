@@ -21,6 +21,7 @@ import platform
 import site
 import subprocess
 import sys
+import shutil
 
 from PyInstaller._shared_with_waf import _pyi_machine
 from PyInstaller.exceptions import ExecCommandFailed
@@ -737,3 +738,8 @@ def check_requirements():
     # Fail hard if Python does not have minimum required version
     if sys.version_info < (3, 6):
         raise EnvironmentError('PyInstaller requires at Python 3.6 or newer.')
+
+    # Bail out if binutils is not installed.
+    if is_linux and shutil.which("objdump") is None:
+        raise SystemExit("On Linux, objdump is required. It is typically provided by the 'binutils' package "
+                         "installable via your Linux distribution's package manager.")
