@@ -1,0 +1,3 @@
+Prevent invalid handle errors when an application compiled in :option:`--windowed` mode uses :mod:`subprocess` without
+explicitly setting **stdin**, **stdout** and **stderr** to either :data:`~subprocess.PIPE` or
+:data:`~subprocess.DEVNULL`.
