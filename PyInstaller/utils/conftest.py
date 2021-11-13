@@ -350,12 +350,12 @@ class AppBuilder:
         # Using sys.stdout/sys.stderr for subprocess fixes printing messages in Windows command prompt. Py.test is then
         # able to collect stdout/sterr messages and display them if a test fails.
         for _ in range(_MAX_RETRIES):
-            retcode = self.__run_executable(args, exe_path, prog_env, prog_cwd, runtime)
+            retcode = self._run_executable_(args, exe_path, prog_env, prog_cwd, runtime)
             if retcode != 1:  # retcode == 1 means a timeout
                 break
         return retcode
 
-    def __run_executable(self, args, exe_path, prog_env, prog_cwd, runtime):
+    def _run_executable_(self, args, exe_path, prog_env, prog_cwd, runtime):
         process = psutil.Popen(
             args, executable=exe_path, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=prog_env, cwd=prog_cwd
         )
@@ -554,3 +554,18 @@ def compiled_dylib(tmpdir, request):
         old_wd.chdir()
 
     return tmp_data_dir
+
+
+@pytest.fixture
+def pyi_windowed_builder(pyi_builder: AppBuilder):
+    """A pyi_builder equivalent for testing --windowed applications."""
+
+    # psutil.Popen() somehow bypasses an application's windowed/console mode so that any application built in
+    # --windowed mode but invoked with psutil still recieves valid std{in,out,err} handles and behaves exactly like
+    # a console application. In short, testing windowed mode with psutil is a null test. We must instead use subprocess.
+
+    def _run_executable_(args, exe_path, prog_env, prog_cwd, runtime):
+        return subprocess.run([exe_path, *args], env=prog_env, cwd=prog_cwd, timeout=runtime).returncode
+
+    pyi_builder._run_executable_ = _run_executable_
+    yield pyi_builder

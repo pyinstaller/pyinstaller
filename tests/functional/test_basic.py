@@ -770,3 +770,31 @@ def test_sys_executable(pyi_builder, append_pkg, monkeypatch):
         assert exe_basename == '{}', "Unexpected basename(sys.executable): " + exe_basename
         """.format(exe_basename)
     )
+
+
+@pytest.mark.win32
+def test_subprocess_in_windowed_mode(pyi_windowed_builder):
+    """Test invoking subprocesses from a PyInstaller app built in windowed mode."""
+
+    pyi_windowed_builder.test_source(
+        r"""
+        from subprocess import PIPE, run
+        from unittest import TestCase
+
+        # Lazily use unittest's rich assertEqual() for assertions with builtin diagnostics.
+        assert_equal = TestCase().assertEqual
+
+        run([{0}, "-c", ""], check=True)
+
+        # Verify that stdin, stdout and stderr still work and haven't been muddled.
+        p = run([{0}, "-c", "print('foo')"], stdout=PIPE, universal_newlines=True)
+        assert_equal(p.stdout, "foo\n", p.stdout)
+
+        p = run([{0}, "-c", r"import sys; sys.stderr.write('bar\n')"], stderr=PIPE, universal_newlines=True)
+        assert_equal(p.stderr, "bar\n", p.stderr)
+
+        p = run([{0}], input="print('foo')\nprint('bar')\n", stdout=PIPE, universal_newlines=True)
+        assert_equal(p.stdout, "foo\nbar\n", p.stdout)
+        """.format(repr(sys.executable)),
+        pyi_args=["--windowed"]
+    )
