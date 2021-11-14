@@ -1027,7 +1027,7 @@ def create_manifest(filename, manifest, console, uac_admin=False, uac_uiaccess=F
             if assembly.name not in dep_names:
                 manifest.dependentAssemblies.append(assembly)
                 dep_names.add(assembly.name)
-    if not console and "Microsoft.Windows.Common-Controls" not in dep_names:
+    if "Microsoft.Windows.Common-Controls" not in dep_names:
         # Add Microsoft.Windows.Common-Controls to dependent assemblies.
         manifest.dependentAssemblies.append(
             Manifest(
