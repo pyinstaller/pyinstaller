@@ -215,6 +215,7 @@ class Manifest(object):
     """
     def __init__(
         self,
+        manifestType="assembly",
         manifestVersion=None,
         noInheritable=False,
         noInherit=False,
@@ -233,7 +234,7 @@ class Manifest(object):
     ):
         self.filename = None
         self.optional = None
-        self.manifestType = "assembly"
+        self.manifestType = manifestType
         self.manifestVersion = manifestVersion or [1, 0]
         self.noInheritable = noInheritable
         self.noInherit = noInherit
@@ -833,22 +834,23 @@ class Manifest(object):
                 docE.aChild(fE)
 
         # Add compatibility section: http://stackoverflow.com/a/10158920
-        cE = doc.cE("compatibility")
-        cE.setAttribute("xmlns", "urn:schemas-microsoft-com:compatibility.v1")
-        caE = doc.cE("application")
-        supportedOS_guids = {
-            "Vista": "{e2011457-1546-43c5-a5fe-008deee3d3f0}",
-            "7": "{35138b9a-5d96-4fbd-8e2d-a2440225f93a}",
-            "8": "{4a2f28e3-53b9-4441-ba9c-d69d4a4a6e38}",
-            "8.1": "{1f676c76-80e1-4239-95bb-83d0f6d0da78}",
-            "10": "{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}"
-        }
-        for guid in supportedOS_guids.values():
-            sosE = doc.cE("supportedOS")
-            sosE.setAttribute("Id", guid)
-            caE.aChild(sosE)
-        cE.aChild(caE)
-        docE.aChild(cE)
+        if self.manifestType == "assembly":
+            cE = doc.cE("compatibility")
+            cE.setAttribute("xmlns", "urn:schemas-microsoft-com:compatibility.v1")
+            caE = doc.cE("application")
+            supportedOS_guids = {
+                "Vista": "{e2011457-1546-43c5-a5fe-008deee3d3f0}",
+                "7": "{35138b9a-5d96-4fbd-8e2d-a2440225f93a}",
+                "8": "{4a2f28e3-53b9-4441-ba9c-d69d4a4a6e38}",
+                "8.1": "{1f676c76-80e1-4239-95bb-83d0f6d0da78}",
+                "10": "{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}"
+            }
+            for guid in supportedOS_guids.values():
+                sosE = doc.cE("supportedOS")
+                sosE.setAttribute("Id", guid)
+                caE.aChild(sosE)
+            cE.aChild(caE)
+            docE.aChild(cE)
 
         # Add application.windowsSettings section to enable longPathAware
         # option (issue #5423).
@@ -1029,12 +1031,13 @@ def create_manifest(filename, manifest, console, uac_admin=False, uac_uiaccess=F
         # Add Microsoft.Windows.Common-Controls to dependent assemblies.
         manifest.dependentAssemblies.append(
             Manifest(
+                manifestType='dependentAssembly',
                 type_="win32",
                 name="Microsoft.Windows.Common-Controls",
                 language="*",
                 processorArchitecture=processor_architecture(),
                 version=(6, 0, 0, 0),
-                publicKeyToken="6595b64144ccf1df"
+                publicKeyToken="6595b64144ccf1df",
             )
         )
     if uac_admin:
