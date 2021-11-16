@@ -772,7 +772,6 @@ def test_sys_executable(pyi_builder, append_pkg, monkeypatch):
     )
 
 
-@pytest.mark.darwin
 @pytest.mark.win32
 def test_subprocess_in_windowed_mode(pyi_windowed_builder):
     """Test invoking subprocesses from a PyInstaller app built in windowed mode."""

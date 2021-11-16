@@ -18,7 +18,7 @@ class Popen(subprocess.Popen):
 
     # In windowed mode, force any unused pipes (stdin, stdout and stderr) to be DEVNULL instead of inheriting the
     # invalid corresponding handles from this parent process.
-    if not isinstance(sys.stdout, io.IOBase):
+    if sys.platform == "win32" and not isinstance(sys.stdout, io.IOBase):
 
         def _get_handles(self, stdin, stdout, stderr):
             stdin, stdout, stderr = (subprocess.DEVNULL if pipe is None else pipe for pipe in (stdin, stdout, stderr))
