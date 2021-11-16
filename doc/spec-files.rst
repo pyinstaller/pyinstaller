@@ -72,8 +72,8 @@ the ``pyinstaller`` command executes the spec file as code.
 Your bundled application is created by the execution of the spec file.
 The following is a shortened example of a spec file for a minimal, one-folder app::
 
-	block_cipher = None
-	a = Analysis(['minimal.py'],
+    block_cipher = None
+    a = Analysis(['minimal.py'],
              pathex=['/Developer/PItests/minimal'],
              binaries=None,
              datas=None,
@@ -82,10 +82,10 @@ The following is a shortened example of a spec file for a minimal, one-folder ap
              runtime_hooks=None,
              excludes=None,
              cipher=block_cipher)
-	pyz = PYZ(a.pure, a.zipped_data,
+    pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
-	exe = EXE(pyz,... )
-	coll = COLLECT(...)
+    exe = EXE(pyz,... )
+    coll = COLLECT(...)
 
 The statements in a spec file create instances of four classes,
 ``Analysis``, ``PYZ``, ``EXE`` and ``COLLECT``.
@@ -100,9 +100,9 @@ The statements in a spec file create instances of four classes,
   - ``pathex``: a list of paths to search for imports (like using
     :envvar:`PYTHONPATH`), including paths given by the :option:`--paths`
     option.
-  - ``binaries``: non-python modules needed by the scripts, including names 
+  - ``binaries``: non-python modules needed by the scripts, including names
     given by the :option:`--add-binary` option;
-  - ``datas``: non-binary files included in the app, including names given 
+  - ``datas``: non-binary files included in the app, including names given
     by the :option:`--add-data` option.
 
 * An instance of class ``PYZ`` is a ``.pyz`` archive (described
@@ -160,7 +160,7 @@ Each tuple has two values, both of which must be strings:
 For example, to add a single README file to the top level of a one-folder app,
 you could modify the spec file as follows::
 
-	a = Analysis(...
+    a = Analysis(...
              datas=[ ('src/README.txt', '.') ],
              ...
              )
@@ -169,7 +169,7 @@ And the command line equivalent (see
 :ref:`What To Bundle, Where To Search`
 for platform-specific details)::
 
-	pyinstaller --add-data 'src/README.txt:.' myscript.py
+    pyinstaller --add-data 'src/README.txt:.' myscript.py
 
 You have made the ``datas=`` argument a one-item list.
 The item is a tuple in which the first string says the existing file
@@ -181,7 +181,7 @@ The strings may use either ``/`` or ``\`` as the path separator character.
 You can specify input files using "glob" abbreviations.
 For example to include all the ``.mp3`` files from a certain folder::
 
-	a = Analysis(...
+    a = Analysis(...
              datas= [ ('/mygame/sfx/*.mp3', 'sfx' ) ],
              ...
              )
@@ -196,7 +196,7 @@ in a separate statement::
              ( 'src/README.txt', '.' ),
              ( '/mygame/sfx/*.mp3', 'sfx' )
              ]
-	a = Analysis(...
+    a = Analysis(...
              datas = added_files,
              ...
              )
@@ -225,19 +225,19 @@ For example, suppose that part of your application is a module named ``helpmod``
 In the same folder as your script and its spec file you have this folder
 arrangement::
 
-	helpmod
-		__init__.py
-		helpmod.py
-		help_data.txt
+    helpmod
+        __init__.py
+        helpmod.py
+        help_data.txt
 
-Because your script includes the statement ``import helpmod``, 
+Because your script includes the statement ``import helpmod``,
 |PyInstaller| will create this folder arrangement in your bundled app.
 However, it will only include the ``.py`` files.
 The data file :file:`help_data.txt` will not be automatically included.
 To cause it to be included also, you would add a ``datas`` tuple
 to the spec file::
 
-	a = Analysis(...
+    a = Analysis(...
              datas= [ ('helpmod/help_data.txt', 'helpmod' ) ],
              ...
              )
@@ -247,14 +247,14 @@ using its base folder path, as described in the previous section.
 However, this data file is part of a module, so you can also retrieve
 its contents using the standard library function ``pkgutil.get_data()``::
 
-	import pkgutil
-	help_bin = pkgutil.get_data( 'helpmod', 'help_data.txt' )
+    import pkgutil
+    help_bin = pkgutil.get_data( 'helpmod', 'help_data.txt' )
 
 This returns the contents of the :file:`help_data.txt`
 file as a binary string.
 If it is actually characters, you must decode it::
 
-	help_utf = help_bin.decode('UTF-8', 'ignore')
+    help_utf = help_bin.decode('UTF-8', 'ignore')
 
 
 .. _adding binary files:
@@ -271,8 +271,8 @@ You can add binary files to the bundle by using the :option:`--add-binary` comma
 or by adding them as a list to the spec file.
 In the spec file, make a list of tuples that describe the files needed.
 Assign the list of tuples to the ``binaries=`` argument of Analysis.
- 
-Adding binary files works in a similar way as adding data files. As described in 
+
+Adding binary files works in a similar way as adding data files. As described in
 :ref:`Adding Binary Files`, each tuple should have two values:
 
     * The first string specifies the file or files as they are in this system now.
@@ -302,9 +302,9 @@ Or via the command line (again, see
 :ref:`What To Bundle, Where To Search`
 for platform-specific details)::
 
-	pyinstaller --add-binary '/usr/lib/libiodbc.2.dylib:.' myscript.py
+    pyinstaller --add-binary '/usr/lib/libiodbc.2.dylib:.' myscript.py
 
-If you wish to store ``libiodbc.2.dylib`` on a specific folder inside the bundle, 
+If you wish to store ``libiodbc.2.dylib`` on a specific folder inside the bundle,
 for example ``vendor``, then you could specify it, using the second element of the tuple::
 
     a = Analysis(...
@@ -339,7 +339,7 @@ following are supported for a bundled app:
 * ``W`` and an option to change warning behavior: ``W ignore`` or
   ``W once`` or ``W error``.
 
-To pass one or more of these options, 
+To pass one or more of these options,
 create a list of tuples, one for each option, and pass the list as
 an additional argument to the EXE call.
 Each tuple has three elements:
@@ -412,7 +412,7 @@ XML types.  Here's an example::
              bundle_identifier=None,
              version='0.0.1',
              info_plist={
-             	'NSPrincipalClass': 'NSApplication',
+                'NSPrincipalClass': 'NSApplication',
                 'NSAppleScriptEnabled': False,
                 'CFBundleDocumentTypes': [
                     {
@@ -422,7 +422,7 @@ XML types.  Here's an example::
                         'LSHandlerRank': 'Owner'
                         }
                     ]
-             	},
+                },
              )
 
 In the above example, the key/value ``'NSPrincipalClass': 'NSApplication'`` is
@@ -580,7 +580,7 @@ a list of tuples, each tuple having three elements:
 
 * The first element is an Analysis object, an instance of class Analysis,
   as applied to one of the apps.
-  
+
 * The second element is the script name of the analyzed app (without the ``.py`` extension).
 
 * The third element is the name for the executable (usually the same as the script).
@@ -599,9 +599,9 @@ Suppose you have a product that comprises three apps named
 (because we have no imagination) ``foo``, ``bar`` and ``zap``:
 
     ``pyi-makespec`` *options as appropriate...* ``foo.py``
-    
+
     ``pyi-makespec`` *options as appropriate...* ``bar.py``
-    
+
     ``pyi-makespec`` *options as appropriate...* ``zap.py``
 
 Check for warnings and test each of the apps individually.
@@ -652,7 +652,7 @@ The output in the :file:`dist` folder will be all three apps, but
 the apps :file:`dist/bar/bar` and :file:`dist/zap/zap` will refer to
 the contents of :file:`dist/foo/` for shared dependencies.
 
-There are several multipackage examples in the 
+There are several multipackage examples in the
 |PyInstaller| distribution folder under :file:`tests/functional/specs`.
 
 Remember that a spec file is executable Python.
@@ -674,34 +674,34 @@ which are discussed in the preceding sections.
 Other globals contain information about the build environment:
 
 ``DISTPATH``
-	The relative path to the :file:`dist` folder where
-	the application will be stored.
-	The default path is relative to the current directory.
-	If the :option:`--distpath` option is used, ``DISTPATH`` contains that value.
+    The relative path to the :file:`dist` folder where
+    the application will be stored.
+    The default path is relative to the current directory.
+    If the :option:`--distpath` option is used, ``DISTPATH`` contains that value.
 
 ``HOMEPATH``
-	The absolute path to the |PyInstaller|
-	distribution, typically in the current Python site-packages folder.
+    The absolute path to the |PyInstaller|
+    distribution, typically in the current Python site-packages folder.
 
 ``SPEC``
-	The complete spec file argument given to the
-	``pyinstaller`` command, for example :file:`myscript.spec`
-	or :file:`source/myscript.spec`.
+    The complete spec file argument given to the
+    ``pyinstaller`` command, for example :file:`myscript.spec`
+    or :file:`source/myscript.spec`.
 
 ``SPECPATH``
-	The path prefix to the ``SPEC`` value as returned by ``os.path.split()``.
+    The path prefix to the ``SPEC`` value as returned by ``os.path.split()``.
 
 ``specnm``
-	The name of the spec file, for example :file:`myscript`.
+    The name of the spec file, for example :file:`myscript`.
 
 ``workpath``
-	The path to the :file:`build` directory. The default is relative to
-	the current directory. If the ``workpath=`` option is used,
-	``workpath`` contains that value.
+    The path to the :file:`build` directory. The default is relative to
+    the current directory. If the ``workpath=`` option is used,
+    ``workpath`` contains that value.
 
 ``WARNFILE``
-	The full path to the warnings file in the build directory,
-	for example :file:`build/warn-myscript.txt`.
+    The full path to the warnings file in the build directory,
+    for example :file:`build/warn-myscript.txt`.
 
 
 .. include:: _common_definitions.txt
