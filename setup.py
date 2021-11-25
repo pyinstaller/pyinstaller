@@ -44,9 +44,6 @@ class build_bootloader(Command):
         pass
 
     def bootloader_exists(self):
-        # Force recompile
-        if os.environ.get("PYINSTALLER_COMPILE_BOOTLOADER"):
-            return False
         # Checks if the console, non-debug bootloader exists
         from PyInstaller import HOMEPATH, PLATFORM
         from PyInstaller.compat import is_win, is_cygwin
@@ -69,9 +66,12 @@ class build_bootloader(Command):
     def run(self):
         if getattr(self, 'dry_run', False):
             return
-        if self.bootloader_exists():
+        if self.bootloader_exists() and not os.environ.get("PYINSTALLER_COMPILE_BOOTLOADER"):
             return
-        print('No precompiled bootloader found. Trying to compile it for you ...', file=sys.stderr)
+        print(
+            'No precompiled bootloader found or compile forced. Trying to compile the bootloader for you ...',
+            file=sys.stderr
+        )
         self.compile_bootloader()
 
 
