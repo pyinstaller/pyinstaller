@@ -491,5 +491,34 @@ int pyi_win32_is_symlink(const wchar_t *path)
     return 0;
 }
 
+/* Check if the given path is just a drive letter */
+int pyi_win32_is_drive_root(const wchar_t *path)
+{
+    /* For now, handle just drive letter, optionally followed by the path separator.
+       E.g., "C:" or "Z:\".
+     */
+    size_t len;
+
+    len = wcslen(path);
+    if (len == 2 || len == 3) {
+        /* First character must be a letter */
+        if (!iswalpha(path[0])) {
+            return 0;
+        }
+        /* Second character must be the colon */
+        if (path[1] != L':') {
+            return 0;
+        }
+        /* Third character, if present, must be the Windows directory separator */
+        if (len > 2 && (path[2] != L'\\')) {
+            return 0;
+        }
+
+        return 1;
+    }
+
+    return 0;
+}
+
 
 #endif  /* _WIN32 */
