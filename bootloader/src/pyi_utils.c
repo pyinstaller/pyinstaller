@@ -270,8 +270,13 @@ wchar_t
         return NULL;
     }
     // Get the absolute path
-    wruntime_tmpdir_abspath = _wfullpath(NULL, wruntime_tmpdir_expanded,
-                                         PATH_MAX);
+    if (pyi_win32_is_drive_root(wruntime_tmpdir_expanded)) {
+        /* Disk drive (e.g., "c:"); do not attempt to call _wfullpath(), because it will return
+           the current directory of this drive. So return a verbatim copy instead. */
+        wruntime_tmpdir_abspath = _wcsdup(wruntime_tmpdir_expanded);
+    } else {
+        wruntime_tmpdir_abspath = _wfullpath(NULL, wruntime_tmpdir_expanded, PATH_MAX);
+    }
     if (!wruntime_tmpdir_abspath) {
         FATALERROR("LOADER: Failed to obtain the absolute path of the runtime-tmpdir.\n");
         return NULL;
