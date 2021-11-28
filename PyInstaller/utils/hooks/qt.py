@@ -709,7 +709,16 @@ def get_qt_webengine_binaries_and_data_files(qt_library_info):
     # qt_library_info.qt_rel_dir)
     rel_data_path = qt_library_info.qt_rel_dir
 
+    is_macos_framework = False
     if compat.is_darwin:
+        # Determine if we are dealing with a framework-based Qt build (e.g., PyPI wheels) or a dylib-based one
+        # (e.g., Anaconda). The former requires special handling, while the latter is handled in the same way as
+        # Windows and Linux builds.
+        is_macos_framework = os.path.exists(
+            os.path.join(qt_library_info.location['LibrariesPath'], 'QtWebEngineCore.framework')
+        )
+
+    if is_macos_framework:
         # On macOS, Qt shared libraries are provided in form of .framework bundles. However, PyInstaller collects shared
         # library from the bundle into top-level application directory, breaking the bundle structure.
         #
@@ -747,7 +756,7 @@ def get_qt_webengine_binaries_and_data_files(qt_library_info):
             )
         datas += [(os.path.join(data_path, 'lib', 'QtWebEngineCore.framework', 'Resources'), os.curdir)]
     else:
-        # Windows and linux
+        # Windows and linux (or Anaconda on macOS)
         locales = 'qtwebengine_locales'
         resources = 'resources'
 
@@ -768,7 +777,7 @@ def get_qt_webengine_binaries_and_data_files(qt_library_info):
             rel_data_path,
             os.path.relpath(qt_library_info.location['LibraryExecutablesPath'], qt_library_info.location['PrefixPath'])
         )
-        datas.append((os.path.join(qt_library_info.location['LibraryExecutablesPath'], 'QtWebEngineProcess*'), dest))
+        binaries.append((os.path.join(qt_library_info.location['LibraryExecutablesPath'], 'QtWebEngineProcess*'), dest))
 
     # Add Linux-specific libraries.
     if compat.is_linux:

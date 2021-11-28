@@ -13,9 +13,13 @@ import os
 import sys
 
 if sys.platform == 'darwin':
-    os.environ['QTWEBENGINEPROCESS_PATH'] = os.path.normpath(
+    # If QtWebEngineProcess was collected from a framework-based Qt build, we need to set QTWEBENGINEPROCESS_PATH.
+    # If not (a dylib-based build; Anaconda on macOS), it should be found automatically, same as on other OSes.
+    process_path = os.path.normpath(
         os.path.join(
             sys._MEIPASS, 'PySide2', 'Qt', 'lib', 'QtWebEngineCore.framework', 'Helpers', 'QtWebEngineProcess.app',
             'Contents', 'MacOS', 'QtWebEngineProcess'
         )
     )
+    if os.path.exists(process_path):
+        os.environ['QTWEBENGINEPROCESS_PATH'] = process_path
