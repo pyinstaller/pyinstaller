@@ -140,6 +140,15 @@ def find_binary_dependencies(binaries, binding_redirects, import_packages):
     :return: expanded list of binaries and then dependencies.
     """
     from PyInstaller.depend import bindepend
+    from PyInstaller import compat
+
+    # In the case of MS App Store python, add compat.base_prefix to extra library search paths. In addition to
+    # python38.dll (that we manage to resolve by other means, if necessary), this directory also contains
+    # python3.dll that might be required by some 3rd-party extension modules, and would otherwise end up missing
+    # during the dependency analysis.
+    extra_libdirs = []
+    if compat.is_ms_app_store:
+        extra_libdirs.append(compat.base_prefix)
 
     # Import collected packages to set up environment
     for package in import_packages:
@@ -149,7 +158,7 @@ def find_binary_dependencies(binaries, binding_redirects, import_packages):
             pass
 
     # Search for dependencies of the given binaries
-    return bindepend.Dependencies(binaries, redirects=binding_redirects)
+    return bindepend.Dependencies(binaries, redirects=binding_redirects, xtrapath=extra_libdirs)
 
 
 class Analysis(Target):
