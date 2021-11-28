@@ -1,0 +1,2 @@
+The bootloader can be force compiled during pip install by setting the
+environment variable ``PYINSTALLER_COMPILE_BOOTLOADER``.

@@ -43,6 +43,10 @@ machine, run::
 If this reports an error, read the detailed notes that follow,
 then ask for technical help.
 
+By setting the environment variable ``PYINSTALLER_COMPILE_BOOTLOADER``
+the pip_ setup will attempt to build the bootloader for your platform, even
+if it is already present.
+
 Supported platforms are
 
 * GNU/Linux (using gcc)
