@@ -198,9 +198,11 @@ def fix_exe_for_code_signing(filename):
     # We can compensate for that by not using the declared sizes anywhere, and simply recompute them. In the final
     # binary, the __LINKEDIT segment and the SYMTAB section MUST end at the end of the file (otherwise, we have bigger
     # issues...). So simply recompute the declared sizes as difference between the final file length and the
-    # corresponding start offset.
-    symtab_sec.strsize = file_size - symtab_sec.stroff
-    linkedit_seg.filesize = file_size - linkedit_seg.fileoff
+    # corresponding start offset (NOTE: the offset is relative to start of the slice, which is stored in header.offset.
+    # In thin binaries, header.offset is zero and start offset is relative to the start of file, but with fat binaries,
+    # header.offset is non-zero)
+    symtab_sec.strsize = file_size - (header.offset + symtab_sec.stroff)
+    linkedit_seg.filesize = file_size - (header.offset + linkedit_seg.fileoff)
 
     # Compute new vmsize by rounding filesize up to full page size.
     page_size = (0x4000 if _get_arch_string(header.header).startswith('arm64') else 0x1000)
