@@ -54,7 +54,7 @@ Pillow==8.4.0
 
 # iPython 7.17 dropped support for python 3.6
 # https://ipython.readthedocs.io/en/stable/whatsnew/version7.html#ipython-7-17
-ipython==7.29.0; python_version > '3.6'
+ipython==7.30.0; python_version > '3.6'
 ipython==7.16.1; python_version <= '3.6'  # pyup: ignore
 
 # pandas also dropped support
