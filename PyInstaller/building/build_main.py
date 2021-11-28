@@ -491,7 +491,18 @@ class Analysis(Target):
 
         # Add remaining binary dependencies - analyze Python C-extensions and what DLLs they depend on.
         logger.info('Looking for dynamic libraries')
-        self.binaries.extend(bindepend.Dependencies(self.binaries, redirects=self.binding_redirects))
+
+        # In the case of MS App Store python, add compat.base_prefix to extra library search paths. In addition to
+        # python38.dll (that we manage to resolve by other means, if necessary), this directory also contains
+        # python3.dll that might be required by some 3rd-party extension modules, and would otherwise end up missing
+        # during the dependency analysis.
+        extra_libdirs = []
+        if compat.is_ms_app_store:
+            extra_libdirs.append(compat.base_prefix)
+
+        self.binaries.extend(
+            bindepend.Dependencies(self.binaries, redirects=self.binding_redirects, xtrapath=extra_libdirs)
+        )
 
         # Include zipped Python eggs.
         logger.info('Looking for eggs')
