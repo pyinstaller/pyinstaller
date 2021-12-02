@@ -261,12 +261,22 @@ def _get_arch_string(header):
     assert False, 'Unhandled architecture!'
 
 
+class InvalidBinaryError(Exception):
+    """
+    Exception raised by ˙get_binary_architectures˙ when it is passed an invalid binary.
+    """
+    pass
+
+
 def get_binary_architectures(filename):
     """
     Inspects the given binary and returns tuple (is_fat, archs), where is_fat is boolean indicating fat/thin binary,
     and arch is list of architectures with lipo/codesign compatible names.
     """
-    executable = MachO(filename)
+    try:
+        executable = MachO(filename)
+    except ValueError as e:
+        raise InvalidBinaryError("Invalid Mach-O binary!") from e
     return bool(executable.fat), [_get_arch_string(hdr.header) for hdr in executable.headers]
 
 
