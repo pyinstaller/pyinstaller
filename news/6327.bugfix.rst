@@ -1,0 +1,2 @@
+Fix build errors when a Windows DLL/PYD file is collected as a binary on
+a non-Windows OS.
