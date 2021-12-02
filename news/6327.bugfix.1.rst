@@ -1,0 +1,2 @@
+Fix build errors when a linux shared library (.so) file is collected as
+a binary on macOS.
