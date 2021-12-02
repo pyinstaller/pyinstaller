@@ -357,10 +357,16 @@ def checkCache(
     # to avoid potential bugs in the codesign utility, like the one reported on Mac OS 10.13 in #6167).
     # The forced re-signing at the end should take care of the invalidated signatures.
     if is_darwin:
-        osxutils.binary_to_target_arch(cachedfile, target_arch, display_name=fnm)
-        #osxutils.remove_signature_from_binary(cachedfile)  # Disabled as per comment above.
-        dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
-        osxutils.sign_binary(cachedfile, codesign_identity, entitlements_file)
+        try:
+            osxutils.binary_to_target_arch(cachedfile, target_arch, display_name=fnm)
+            #osxutils.remove_signature_from_binary(cachedfile)  # Disabled as per comment above.
+            dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
+            osxutils.sign_binary(cachedfile, codesign_identity, entitlements_file)
+        except osxutils.InvalidBinaryError:
+            # Raised by osxutils.binary_to_target_arch when the given file is not a valid macOS binary (for example,
+            # a linux .so file; see issue #6327). The error prevents any further processing, so just ignore it.
+            pass
+
     return cachedfile
 
 
