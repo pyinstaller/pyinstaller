@@ -14,7 +14,7 @@ import os
 
 import pytest
 
-from PyInstaller.compat import is_win, is_darwin, is_linux, is_64bits
+from PyInstaller.compat import is_win, is_darwin
 from PyInstaller.utils.hooks import is_module_satisfies
 from PyInstaller.utils.hooks.qt import get_qt_library_info
 from PyInstaller.utils.tests import requires, xfail, skipif
@@ -324,59 +324,74 @@ def test_PyQt5_Qt(pyi_builder, monkeypatch):
     pyi_builder.test_source('from PyQt5.Qt import QLibraryInfo', **USE_WINDOWED_KWARG)
 
 
-# QtWebEngine test. This module is specific to PyQt5 and PySide2, as it has not been ported to Qt6 yet (as of Qt6 6.1.0)
+# Run the the QtWebEngine test for chosen Qt-based package flavor.
+def _test_Qt_QtWebEngine(pyi_builder, monkeypatch, qt_flavor):
+    _qt_dll_path_clean(monkeypatch, qt_flavor)
 
+    if is_darwin:
+        # QtWebEngine on Mac OS only works with a onedir build -- onefile builds do not work.
+        # Skip the test execution for onefile builds.
+        if pyi_builder._mode != 'onedir':
+            pytest.skip('QtWebEngine on macOS is supported only in onedir mode.')
 
-# Produce the source code for QWebEngine tests by inserting the path of an HTML page to display.
-def get_QWebEngine_html(qt_flavor, data_dir):
-    return """
+    source = """
         from {0}.QtWidgets import QApplication
         from {0}.QtWebEngineWidgets import QWebEngineView
         from {0}.QtCore import QUrl, QTimer
 
+        is_qt6 = '{0}' in {{'PyQt6', 'PySide6'}}
+
+        # Web page to display
+        WEB_PAGE_HTML = '''
+            <!doctype html>
+            <html lang="en">
+                <head>
+                    <meta charset="utf-8">
+                    <title>Test web page</title>
+                </head>
+                <body>
+                    <p>This is a test web page with internationalised characters.</p>
+                    <p>HЯ⾀ÄÉÖÜ</p>
+                </body>
+            </html>
+        '''
+
         app = QApplication([])
+
         view = QWebEngineView()
-        view.load(QUrl.fromLocalFile({1}))
+        view.setHtml(WEB_PAGE_HTML)
         view.show()
         view.page().loadFinished.connect(
             # Display the web page for one second after it loads.
             lambda ok: QTimer.singleShot(1000, app.quit))
-        app.exec_()
-        """.format(
-        qt_flavor,
-        # Use repr to avoid accidental special characters in Windows filenames: ``c:\temp`` is ``c<tab>emp``!
-        repr(data_dir.join('test_web_page.html').strpath)
-    )
+
+        if is_qt6:
+            # Qt6: exec_() is deprecated in PySide6 and removed from PyQt6 in favor of exec()
+            app.exec()
+        else:
+            app.exec_()
+        """.format(qt_flavor)
+
+    pyi_builder.test_source(source, **USE_WINDOWED_KWARG)
 
 
-@xfail(is_linux, reason='See issue #4666')
-@pytest.mark.skipif(
-    is_win and not is_64bits,
-    reason="Qt 5.11+ for Windows only provides pre-compiled Qt WebEngine binaries for 64-bit processors."
-)
-@pytest.mark.skipif(
-    is_module_satisfies('PyQt5 == 5.11.3') and is_darwin,
-    reason='This version of the OS X wheel does not include QWebEngine.'
-)
 @requires('PyQt5')
-def test_PyQt5_QWebEngine(pyi_builder, data_dir, monkeypatch):
-    _qt_dll_path_clean(monkeypatch, 'PyQt5')
-    if is_darwin:
-        # QWebEngine on Mac OS only works with a onedir build -- onefile builds do not work.
-        # Skip the test execution for onefile builds.
-        if pyi_builder._mode != 'onedir':
-            pytest.skip('The QWebEngine .app bundle only supports onedir mode.')
-
-    pyi_builder.test_source(get_QWebEngine_html('PyQt5', data_dir), **USE_WINDOWED_KWARG)
+@requires('PyQtWebEngine')
+def test_Qt_QtWebEngine_PyQt5(pyi_builder, monkeypatch):
+    _test_Qt_QtWebEngine(pyi_builder, monkeypatch, 'PyQt5')
 
 
 @requires('PySide2')
-def test_PySide2_QWebEngine(pyi_builder, data_dir, monkeypatch):
-    _qt_dll_path_clean(monkeypatch, 'PySide2')
-    if is_darwin:
-        # QWebEngine on Mac OS only works with a onedir build -- onefile builds do not work.
-        # Skip the test execution for onefile builds.
-        if pyi_builder._mode != 'onedir':
-            pytest.skip('The QWebEngine .app bundle only supports onedir mode.')
+def test_Qt_QtWebEngine_PySide2(pyi_builder, monkeypatch):
+    _test_Qt_QtWebEngine(pyi_builder, monkeypatch, 'PySide2')
 
-    pyi_builder.test_source(get_QWebEngine_html('PySide2', data_dir), **USE_WINDOWED_KWARG)
+
+@requires('PyQt6 >= 6.2.2')
+@requires('PyQt6-WebEngine')  # NOTE: base Qt6 must be 6.2.2 or newer, QtWebEngine can be older
+def test_Qt_QtWebEngine_PyQt6(pyi_builder, monkeypatch):
+    _test_Qt_QtWebEngine(pyi_builder, monkeypatch, 'PyQt6')
+
+
+@requires('PySide6 >= 6.2.2')
+def test_Qt_QtWebEngine_PySide6(pyi_builder, monkeypatch):
+    _test_Qt_QtWebEngine(pyi_builder, monkeypatch, 'PySide6')
