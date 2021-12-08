@@ -1,0 +1,4 @@
+Replace the dual-process ``onedir`` mode on Linux and other Unix-like OSes
+with a single-process implementation. This makes ``onedir`` mode on these
+OSes comparable to Windows and macOS, where single-process ``onedir`` mode
+has already been used for a while.

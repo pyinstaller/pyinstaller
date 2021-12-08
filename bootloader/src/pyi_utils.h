@@ -56,6 +56,10 @@ pid_t pyi_utils_get_child_pid();
 #endif
 int pyi_utils_set_environment(const ARCHIVE_STATUS *status);
 
+#if !defined(_WIN32) && !defined(__APPLE__)
+int pyi_utils_replace_process(const char *thisfile, const int argc, char *const argv[]);
+#endif
+
 /* Argument handling */
 int pyi_utils_initialize_args(const int argc, char *const argv[]);
 int pyi_utils_append_to_args(const char *arg);
