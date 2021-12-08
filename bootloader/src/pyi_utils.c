@@ -1087,6 +1087,32 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
 }
 
 
+#if !defined(__APPLE__)
+
+/* Replace the current process with another instance of itself, i.e.,
+ * restart the process in-place (exec() without fork()). Used on linux
+ * and unix-like OSes to achieve single-process onedir execution mode.
+ */
+int pyi_utils_replace_process(const char *thisfile, const int argc, char *const argv[])
+{
+    int rc;
+
+    /* Use helper to copy argv into NULL-terminated arguments array, argv_pyi. */
+    if (pyi_utils_initialize_args(argc, argv) < 0) {
+        return -1;
+    }
+    /* Replace the current executable image. */
+    rc = execvp(thisfile, argv_pyi);
+    /* This part is reached only if exec() failed. */
+    if (rc < 0) {
+        VS("Failed to exec: %s\n", strerror(errno));
+    }
+    return rc;
+}
+
+#endif /* !defined(__APPLE) */
+
+
 /*
  * Initialize private argc_pyi and argv_pyi from the given argc and
  * argv by creating a deep copy. The resulting argc_pyi and argv_pyi

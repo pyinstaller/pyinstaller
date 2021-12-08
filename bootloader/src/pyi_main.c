@@ -91,6 +91,21 @@ pyi_main(int argc, char * argv[])
      * might get overwritten later on (on Windows and macOS, single
      * process is used for --onedir mode). */
     in_child = (extractionpath != NULL);
+    if (in_child) {
+        /* Check if _PYI_ONEDIR_MODE is set to 1; this is set by linux/unix
+         * bootloaders when they restart themselves within the same process
+         * to achieve single-process onedir execution mode. This case should
+         * be treated as if extractionpath was not set at this point yet,
+         * i.e., in_child needs to be reset to 0. */
+        char *pyi_onedir_mode = pyi_getenv("_PYI_ONEDIR_MODE");
+        if (pyi_onedir_mode) {
+            if (strcmp(pyi_onedir_mode, "1") == 0) {
+                in_child = 0;
+            }
+            free(pyi_onedir_mode);
+            pyi_unsetenv("_PYI_ONEDIR_MODE");
+        }
+    }
 
     /* If the Python program we are about to run invokes another PyInstaller
      * one-file program as subprocess, this subprocess must not be fooled into
@@ -140,6 +155,40 @@ pyi_main(int argc, char * argv[])
     if (!extractionpath && !pyi_launch_need_to_extract_binaries(archive_status)) {
         VS("LOADER: No need to extract files to run; setting extractionpath to homepath\n");
         extractionpath = homepath;
+    }
+
+#else
+
+    /* On other OSes (linux and unix-like), we also use single-process for
+     * --onedir mode. However, in contrast to Windows and macOS, we need to
+     * set environment (i.e., LD_LIBRARY_PATH) and then restart/replace the
+     * process via exec() without fork() for the environment changes (library
+     * search path) to take effect. */
+     if (!extractionpath && !pyi_launch_need_to_extract_binaries(archive_status)) {
+        VS("LOADER: No need to extract files to run; setting up environment and restarting bootloader...\n");
+
+        /* Set _MEIPASS2, so that the restarted bootloader process will enter
+         * the codepath that corresponds to child process. */
+        pyi_setenv("_MEIPASS2", homepath);
+
+        /* Set _PYI_ONEDIR_MODE to signal to restarted bootloader that it
+         * should reset in_child variable even though it is operating in
+         * child-process mode. This is necessary for splash screen to
+         * be shown. */
+        pyi_setenv("_PYI_ONEDIR_MODE", "1");
+
+        /* Set up the environment, especially LD_LIBRARY_PATH. This is the
+         * main reason we are going to restart the bootloader in the first
+         * place. */
+        if (pyi_utils_set_environment(archive_status) == -1) {
+            return -1;
+        }
+
+        /* Restart the process. The helper function performs exec() without
+         * fork(), so we never return from the call. */
+        if (pyi_utils_replace_process(executable, argc, argv) == -1) {
+            return -1;
+        }
     }
 
 #endif
