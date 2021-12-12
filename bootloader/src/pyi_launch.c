@@ -548,6 +548,7 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
                     #endif
 
                     PI_PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+                    PI_PyErr_NormalizeException(&ptype, &pvalue, &ptraceback);
                     msg_exc = _pyi_extract_exception_message(pvalue);
                     if (pyi_arch_get_option(status, "pyi-disable-windowed-traceback") != NULL) {
                         /* Traceback is disabled via option */

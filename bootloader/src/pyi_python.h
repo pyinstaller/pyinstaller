@@ -134,6 +134,7 @@ EXTDECLPROC(PyObject *, PyMarshal_ReadObjectFromString, (const char *, size_t));
 /* Used to get traceback information while launching run scripts */
 EXTDECLPROC(void, PyErr_Fetch, (PyObject **, PyObject **, PyObject **));
 EXTDECLPROC(void, PyErr_Restore, (PyObject *, PyObject *, PyObject *));
+EXTDECLPROC(void, PyErr_NormalizeException, (PyObject **, PyObject **, PyObject **));
 EXTDECLPROC(PyObject *, PyObject_Str, (PyObject *));
 EXTDECLPROC(PyObject *, PyObject_GetAttrString, (PyObject *, const char *));
 EXTDECLPROC(const char *, PyUnicode_AsUTF8, (PyObject *));

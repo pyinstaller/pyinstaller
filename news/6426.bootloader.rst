@@ -1,0 +1,5 @@
+When user script terminates with an uncaught exception, ensure that the
+exception data obtained via ``PyErr_Fetch`` is normalized by also calling
+``PyErr_NormalizeException``. Otherwise, trying to format the traceback
+via ``traceback.format_exception`` fails in some circumstances, and no
+traceback can be displayed in the windowed bootloader's error report.
