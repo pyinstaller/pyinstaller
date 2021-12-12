@@ -1,0 +1,3 @@
+Fix a bug that prevented traceback from uncaught exception to be
+retrieved and displayed in the windowed bootloader's error reporting
+facility (uncaught exception dialog on Windows, syslog on macOS).
