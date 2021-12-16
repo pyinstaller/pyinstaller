@@ -21,6 +21,10 @@
 
 #include "pyi_archive.h"
 
+#ifndef _WIN32
+#include <sys/types.h> /* pid_t */
+#endif
+
 // some platforms do not provide strnlen
 #ifndef HAVE_STRNLEN
 size_t strnlen(const char *str, size_t n);
