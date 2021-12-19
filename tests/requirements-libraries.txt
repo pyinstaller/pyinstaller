@@ -46,7 +46,7 @@ pytz==2021.3
 requests==2.26.0
 # simplejson is used for text_c_extension
 simplejson==3.17.6
-sphinx==4.3.1
+sphinx==4.3.2
 # Required for test_namespace_package
 sqlalchemy==1.4.28
 zope.interface==5.4.0
