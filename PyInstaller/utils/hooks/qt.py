@@ -511,6 +511,22 @@ def add_qt_dependencies(hook_file):
 
         logger.debug('add_qt%d_dependencies: raw lib %s -> parsed lib %s', qt_info.qt_major, imp, lib_name)
 
+        # PySide2 and PySide6 on linux seem to link all extension modules against libQt5Core, libQt5Network, and
+        # libQt5Qml (or their libQt6* equivalents). While the first two are reasonable, the libQt5Qml dependency pulls
+        # in whole QtQml module, along with its data and plugins, which in turn pull in several other Qt libraries,
+        # greatly inflating the bundle size (see #6447).
+        #
+        # Similarly, some extension modules (QtWebChannel, QtWebEngine*) seem to be also linked against libQt5Qml,
+        # even when the module can be used without having the whole QtQml module collected.
+        #
+        # Therefore, we explicitly prevent inclusion of QtQml based on the dynamic library dependency, except for
+        # QtQml* and QtQuick* modules, whose use directly implies the use of QtQml.
+        if lib_name in ("qt5qml", "qt6qml"):
+            short_module_name = module_name.split('.', 1)[-1]  # PySide2.QtModule -> QtModule
+            if not short_module_name.startswith(('QtQml', 'QtQuick')):
+                logger.debug('add_qt%d_dependencies: Ignoring import of %s.', qt_info.qt_major, imp)
+                continue
+
         # Follow only Qt dependencies.
         _qt_dynamic_dependencies_dict = (
             _qt5_dynamic_dependencies_dict if qt_info.qt_major == 5 else _qt6_dynamic_dependencies_dict
