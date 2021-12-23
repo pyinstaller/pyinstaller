@@ -25,7 +25,8 @@ from PyInstaller import log as logging
 from PyInstaller.archive.writers import CArchiveWriter, ZlibArchiveWriter
 from PyInstaller.building.datastruct import TOC, Target, _check_guts_eq
 from PyInstaller.building.utils import (
-    _check_guts_toc, _make_clean_directory, add_suffix_to_extension, checkCache, get_code_object, strip_paths_in_code
+    _check_guts_toc, _make_clean_directory, _rmtree, add_suffix_to_extension, checkCache, get_code_object,
+    strip_paths_in_code
 )
 from PyInstaller.compat import (exec_command_all, is_cygwin, is_darwin, is_linux, is_win)
 from PyInstaller.depend import bindepend
@@ -581,7 +582,10 @@ class EXE(Target):
         from PyInstaller.config import CONF
         logger.info("Building EXE from %s", self.tocbasename)
         if os.path.exists(self.name):
-            os.remove(self.name)
+            if os.path.isdir(self.name):
+                _rmtree(self.name)  # will prompt for confirmation if --noconfirm is not given
+            else:
+                os.remove(self.name)
         if not os.path.exists(os.path.dirname(self.name)):
             os.makedirs(os.path.dirname(self.name))
         exe = self.exefiles[0][1]  # pathname of bootloader

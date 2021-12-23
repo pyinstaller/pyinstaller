@@ -1,0 +1,2 @@
+Fix a crash when a onefile build attempts to overwrite an existing onedir build
+on macOS or Linux
