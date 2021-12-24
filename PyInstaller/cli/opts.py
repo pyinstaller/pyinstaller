@@ -286,16 +286,16 @@ def add_makespec_options(cmd: click.Command) -> click.Command:
     cmd = optgroup.option(
         '--collect-metadata-recursive',
         multiple=True,
-        metavar='PACKAGENAME',
-        help='Recursively collect all metadata from the specified package and it\'s dependencies. '
+        metavar='DISTRIBUTIONNAME',
+        help='Recursively collect all metadata from the specified distribution and it\'s dependencies. '
         'This option can be use multiple times.'
     )(cmd)
     cmd = optgroup.option(
         '--collect-metadata',
         multiple=True,
-        metavar='PACKAGENAME',
+        metavar='DISTRIBUTIONNAME',
         type=str,
-        help='Collect all metadata from the specified package. '
+        help='Collect all metadata from the specified distribution. '
         'This option can be use multiple times.'
     )(cmd)
     cmd = optgroup.option(
