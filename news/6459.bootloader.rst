@@ -1,0 +1,2 @@
+(Windows) Set the bootloader executable's stack size to 2 MB to match the
+stack size of the python interpreter executable.
