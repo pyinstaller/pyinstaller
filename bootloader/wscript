@@ -723,6 +723,11 @@ def configure(ctx):
             # https://blogs.msdn.microsoft.com/vcblog/2012/10/08/windows-xp-targeting-with-c-in-visual-studio-2012/
             ctx.env.append_value('LINKFLAGS', '/SUBSYSTEM:CONSOLE,%s' % (
                 '5.01' if ctx.env.PYI_ARCH == '32bit' else '5.02'))
+
+            # Increase the executable's stack size from the default 1 MiB (0x100000) to 2 MB (0x1E8480) to match
+            # the stack size under the Python interpreter.
+            # https://github.com/python/cpython/blob/a9e0b2b49374df91c40fe409508cfcdc6332450e/PCbuild/python.vcxproj#L97
+            ctx.env.append_value('LINKFLAGS', '/stack:2000000')
         else:
             # Use Visual C++ compatible alignment
             ctx.env.append_value('CFLAGS', '-mms-bitfields')
@@ -732,6 +737,12 @@ def configure(ctx):
 
             # Use Unicode entry point wmain/wWinMain
             ctx.env.append_value('LINKFLAGS', '-municode')
+
+            # Set the executable's stack size to 2 MB (0x1E8480) to match the stack size under the Python interpreter.
+            # The MSYS2/MINGW64 gcc toolchain seems to use 2 MiB (0x200000) stack by default, so we are slightly
+            # decreasing the stack size here, in order to keep it synchronized with the python itself and with the
+            # MSVC-compiled bootloaders.
+            ctx.env.append_value('LINKFLAGS', '-Wl,--stack,2000000')
 
     # On linux link only with needed libraries.
     # -Wl,--as-needed is on some platforms detected during configure but
