@@ -1270,3 +1270,90 @@ void pyi_utils_free_args()
     argc_pyi = 0;
     argv_pyi = NULL;
 }
+
+
+/*
+ * The base for MAGIC pattern(s) used within the bootloader. The actual
+ * pattern should be programmatically constructed by copying this
+ * array to a buffer and adjusting the fourth byte. This way, we avoid
+ * storing the actual pattern in the executable, which would produce
+ * false-positive matches when the executable is scanned.
+ */
+const unsigned char MAGIC_BASE[8] = {
+    'M', 'E', 'I', 000,
+    013, 012, 013, 016
+};
+
+/*
+ * Perform full back-to-front scan of the given file and search for the
+ * specified MAGIC pattern.
+ *
+ * Returns offset within the file if MAGIC pattern is found, 0 otherwise.
+ */
+uint64_t
+pyi_utils_find_magic_pattern(FILE *fp, const unsigned char *magic, size_t magic_len)
+{
+    static const int SEARCH_CHUNK_SIZE = 8192;
+    unsigned char *buffer = NULL;
+    uint64_t start_pos, end_pos;
+    uint64_t offset = 0;  /* return value */
+
+    /* Allocate the read buffer */
+    buffer = malloc(SEARCH_CHUNK_SIZE);
+    if (!buffer) {
+        VS("LOADER: failed to allocate read buffer (%d bytes)!\n", SEARCH_CHUNK_SIZE);
+        goto cleanup;
+    }
+
+    /* Determine file size */
+    if (pyi_fseek(fp, 0, SEEK_END) < 0) {
+        VS("LOADER: failed to seek to the end of the file!\n");
+        goto cleanup;
+    }
+    end_pos = pyi_ftell(fp);
+
+    /* Sanity check */
+    if (end_pos < magic_len) {
+        VS("LOADER: file is too short to contain magic pattern!\n");
+        goto cleanup;
+    }
+
+    /* Search the file back to front, in overlapping SEARCH_CHUNK_SIZE
+     * chunks. */
+    do {
+        size_t chunk_size, i;
+        start_pos = (end_pos >= SEARCH_CHUNK_SIZE) ? (end_pos - SEARCH_CHUNK_SIZE) : 0;
+        chunk_size = (size_t)(end_pos - start_pos);
+
+        /* Is the remaining chunk large enough to hold the pattern? */
+        if (chunk_size < magic_len) {
+            break;
+        }
+
+        /* Read the chunk */
+        if (pyi_fseek(fp, start_pos, SEEK_SET) < 0) {
+            VS("LOADER: failed to seek to the offset 0x%" PRIX64 "!\n", start_pos);
+            goto cleanup;
+        }
+        if (fread(buffer, 1, chunk_size, fp) != chunk_size) {
+            VS("LOADER: failed to read chunk (%zd bytes)!\n", chunk_size);
+            goto cleanup;
+        }
+
+        /* Scan the chunk */
+        for (i = chunk_size - magic_len + 1; i > 0; i--) {
+            if (memcmp(buffer + i -1, magic, magic_len) == 0) {
+                offset = start_pos + i - 1;
+                goto cleanup;
+            }
+        }
+
+        /* Adjust search location for next chunk; ensure proper overlap */
+        end_pos = start_pos + magic_len - 1;
+    } while (start_pos > 0);
+
+cleanup:
+    free(buffer);
+
+    return offset;
+}
