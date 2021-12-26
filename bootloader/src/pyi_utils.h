@@ -70,4 +70,8 @@ int pyi_utils_append_to_args(const char *arg);
 void pyi_utils_get_args(int *argc, char ***argv);
 void pyi_utils_free_args();
 
+/* Magic pattern matching */
+extern const unsigned char MAGIC_BASE[8];
+uint64_t pyi_utils_find_magic_pattern(FILE *fp, const unsigned char *magic, size_t magic_len);
+
 #endif  /* HEADER_PY_UTILS_H */
