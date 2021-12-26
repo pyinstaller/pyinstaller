@@ -685,8 +685,11 @@ class EXE(Target):
             osxutils.binary_to_target_arch(self.name, self.target_arch, display_name='Bootloader EXE')
 
         # Step 2: append the PKG, if necessary
-        if not self.append_pkg:
-            # In onefile mode, copy the stand-alone pkg next to the executable. In onedir, this will be done by the
+        if self.append_pkg:
+            append_file = self.pkg.name  # Append PKG
+            append_type = 'PKG archive'  # For debug messages
+        else:
+            # In onefile mode, copy the stand-alone PKG next to the executable. In onedir, this will be done by the
             # COLLECT() target.
             if not self.exclude_binaries:
                 pkg_dst = os.path.join(os.path.dirname(self.name), os.path.basename(self.pkgname))
@@ -694,12 +697,25 @@ class EXE(Target):
                 self._copyfile(self.pkg.name, pkg_dst)
             else:
                 logger.info("Stand-alone PKG archive will be handled by COLLECT")
-        elif is_linux:
-            # Linux: append PKG into ELF section using objcopy
-            logger.info("Appending PKG archive to ELF section in EXE")
-            retcode, stdout, stderr = exec_command_all(
-                'objcopy', '--add-section', 'pydata=%s' % self.pkg.name, self.name
-            )
+
+            # The bootloader requires package side-loading to be explicitly enabled, which is done by embedding custom
+            # signature to the executable. This extra signature ensures that the sideload-enabled executable is at least
+            # slightly different from the stock bootloader executables, which should prevent antivirus programs from
+            # flagging our stock bootloaders due to sideload-enabled applications in the wild.
+
+            # Write to temporary file
+            pkgsig_file = self.pkg.name + '.sig'
+            with open(pkgsig_file, "wb") as f:
+                # 8-byte MAGIC; slightly changed PKG MAGIC pattern
+                f.write(b'MEI\015\013\012\013\016')
+
+            append_file = pkgsig_file  # Append PKG-SIG
+            append_type = 'PKG sideload signature'  # For debug messages
+
+        if is_linux:
+            # Linux: append data into custom ELF section using objcopy.
+            logger.info("Appending %s to custom ELF section in EXE", append_type)
+            retcode, stdout, stderr = exec_command_all('objcopy', '--add-section', 'pydata=%s' % append_file, self.name)
             logger.debug("objcopy returned %i", retcode)
             if stdout:
                 logger.debug(stdout)
@@ -708,7 +724,8 @@ class EXE(Target):
             if retcode != 0:
                 raise SystemError("objcopy Failure: %s" % stderr)
         elif is_darwin:
-            # macOS: remove signature, append PKG, and fix-up headers so that PKG appears to be part of the executable.
+            # macOS: remove signature, append data, and fix-up headers so that the appended data appears to be part of
+            # the executable (which is required by strict validation during code-signing).
 
             # Strip signatures from all arch slices. Strictly speaking, we need to remove signature (if present) from
             # the last slice, because we will be appending data to it. When building universal2 bootloaders natively on
@@ -719,20 +736,20 @@ class EXE(Target):
             logger.info("Removing signature(s) from EXE")
             osxutils.remove_signature_from_binary(self.name)
 
-            # Append the PKG data
-            logger.info("Appending PKG archive to EXE")
+            # Append the data
+            logger.info("Appending %s to EXE", append_type)
             with open(self.name, 'ab') as outf:
-                with open(self.pkg.name, 'rb') as inf:
+                with open(append_file, 'rb') as inf:
                     shutil.copyfileobj(inf, outf, length=64 * 1024)
 
-            # Fix Mach-O header for code signing
+            # Fix Mach-O headers
             logger.info("Fixing EXE headers for code signing")
             osxutils.fix_exe_for_code_signing(self.name)
         else:
-            # Fall back to just appending PKG at the end of the file
-            logger.info("Appending PKG archive to EXE")
+            # Fall back to just appending data at the end of the file
+            logger.info("Appending %s to EXE", append_type)
             with open(self.name, 'ab') as outf:
-                with open(self.pkg.name, 'rb') as inf:
+                with open(append_file, 'rb') as inf:
                     shutil.copyfileobj(inf, outf, length=64 * 1024)
 
         # Step 3: post-processing
