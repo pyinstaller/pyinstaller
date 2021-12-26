@@ -336,25 +336,6 @@ cleanup:
     return rc;
 }
 
-/*
- * Try matching 8 bytes from the given buffer against the archive's
- * COOKIE MAGIC pattern, in a way that prevents storing the MAGIC
- * pattern in a matchable form anywhere in the executable.
- *
- * Returns 1 if buf matches the MAGIC pattern, 0 otherwise.
- */
-static int _pyi_match_magic(unsigned char *buf)
-{
-    /* MAGIC pattern (8 bytes): { 'M', 'E', 'I', 014, 013, 012, 013, 016 }
-       Stored in two parts and separated by unused data to prevent
-       direct matches on itself when scanning the executable. */
-    static const unsigned char MAGIC[] = {
-        'M', 'E', 'I', 014,  /* first part */
-        013, 016, 016, 017,
-        013, 012, 013, 016   /* second part */
-    };
-    return memcmp(buf, MAGIC, 4) == 0 && memcmp(buf+4, MAGIC+8, 4) == 0;
-}
 
 /*
  * Perform full back-to-front scan of the file to search for the
@@ -363,72 +344,17 @@ static int _pyi_match_magic(unsigned char *buf)
  * Returns offset within the file if MAGIC pattern is found, 0 otherwise.
  */
 static uint64_t
-_pyi_find_cookie_offset(FILE *fp)
+_pyi_find_pkg_cookie_offset(FILE *fp)
 {
-    const size_t MAGIC_SIZE = 8;  /* 8-byte pattern */
-    static const int SEARCH_CHUNK_SIZE = 8192;
-    unsigned char *buffer = NULL;
-    uint64_t start_pos, end_pos;
-    uint64_t offset = 0;  /* return value */
+    /* Prepare MAGIC pattern; we need to do this programmatically to
+     * prevent the pattern itself being stored in the code and matched
+     * when we scan the executable */
+    unsigned char magic[8];
+    memcpy(magic, MAGIC_BASE, sizeof(magic));
+    magic[3] += 0x0C; /* 0x00 -> 0x0C */
 
-    /* Allocate the read buffer */
-    buffer = malloc(SEARCH_CHUNK_SIZE);
-    if (!buffer) {
-        VS("LOADER: failed to allocate read buffer (%d bytes)!\n", SEARCH_CHUNK_SIZE);
-        goto cleanup;
-    }
-
-    /* Determine file size */
-    if (pyi_fseek(fp, 0, SEEK_END) < 0) {
-        VS("LOADER: failed to seek to the end of the file!\n");
-        goto cleanup;
-    }
-    end_pos = pyi_ftell(fp);
-
-    /* Sanity check */
-    if (end_pos < MAGIC_SIZE) {
-        VS("LOADER: file is too short!\n");
-        goto cleanup;
-    }
-
-    /* Search the file back to front, in overlapping SEARCH_CHUNK_SIZE
-     * chunks. */
-    do {
-        size_t chunk_size;
-        start_pos = (end_pos >= SEARCH_CHUNK_SIZE) ? (end_pos - SEARCH_CHUNK_SIZE) : 0;
-        chunk_size = (size_t)(end_pos - start_pos);
-
-        /* Is the remaining chunk large enough to hold the pattern? */
-        if (chunk_size < MAGIC_SIZE) {
-            break;
-        }
-
-        /* Read the chunk */
-        if (pyi_fseek(fp, start_pos, SEEK_SET) < 0) {
-            VS("LOADER: failed to seek to the offset 0x%" PRIX64 "!\n", start_pos);
-            goto cleanup;
-        }
-        if (fread(buffer, 1, chunk_size, fp) != chunk_size) {
-            VS("LOADER: failed to read chunk (%zd bytes)!\n", chunk_size);
-            goto cleanup;
-        }
-
-        /* Scan the chunk */
-        for (size_t i = chunk_size - MAGIC_SIZE + 1; i > 0; i--) {
-            if (_pyi_match_magic(buffer + i - 1)) {
-                offset = start_pos + i - 1;
-                goto cleanup;
-            }
-        }
-
-        /* Adjust search location for next chunk; ensure proper overlap */
-        end_pos = start_pos + MAGIC_SIZE - 1;
-    } while (start_pos > 0);
-
-cleanup:
-    free(buffer);
-
-    return offset;
+    /* Search using the helper */
+    return pyi_utils_find_magic_pattern(fp, magic, sizeof(magic));
 }
 
 /*
@@ -467,7 +393,7 @@ pyi_arch_open(ARCHIVE_STATUS *status)
     }
 
     /* Search for the embedded archive's cookie */
-    cookie_pos = _pyi_find_cookie_offset(status->fp);
+    cookie_pos = _pyi_find_pkg_cookie_offset(status->fp);
     if (cookie_pos == 0) {
         VS("LOADER: Cannot find cookie!\n");
         return -1;

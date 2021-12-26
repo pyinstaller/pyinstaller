@@ -74,4 +74,8 @@ void pyi_utils_free_args();
 void pyi_process_apple_events(bool short_timeout);
 #endif  /* defined(__APPLE__) && defined(WINDOWED) */
 
+/* Magic pattern matching */
+extern const unsigned char MAGIC_BASE[8];
+uint64_t pyi_utils_find_magic_pattern(FILE *fp, const unsigned char *magic, size_t magic_len);
+
 #endif  /* HEADER_PY_UTILS_H */
