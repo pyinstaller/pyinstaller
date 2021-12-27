@@ -12,8 +12,6 @@
 Utilities for Windows platform.
 """
 
-__all__ = ['get_windows_dir', 'set_exe_checksum']
-
 import os
 import sys
 
@@ -150,15 +148,28 @@ def convert_dll_name_to_str(dll_name):
         return dll_name
 
 
-def set_exe_checksum(exe_path):
+def fixup_exe_headers(exe_path, timestamp=None):
     """
-    Set executable's checksum in its metadata.
+    Set executable's checksum and build timestamp in its headers.
 
     This optional checksum is supposed to protect the executable against corruption but some anti-viral software have
     taken to flagging anything without it set correctly as malware. See issue #5579.
     """
     import pefile
-    pe = pefile.PE(exe_path, fast_load=True)
+    pe = pefile.PE(exe_path, fast_load=False)  # full load because we need all headers
+    # Set build timestamp.
+    # See: https://0xc0decafe.com/malware-analyst-guide-to-pe-timestamps
+    if timestamp is not None:
+        timestamp = int(timestamp)
+        # Set timestamp field in FILE_HEADER
+        pe.FILE_HEADER.TimeDateStamp = timestamp
+        # MSVC-compiled executables contain (at least?) one DIRECTORY_ENTRY_DEBUG entry that also contains timestamp
+        # with same value as set in FILE_HEADER. So modify that as well, as long as it is set.
+        debug_entries = getattr(pe, 'DIRECTORY_ENTRY_DEBUG', [])
+        for debug_entry in debug_entries:
+            if debug_entry.struct.TimeDateStamp:
+                debug_entry.struct.TimeDateStamp = timestamp
+    # Set PE checksum
     pe.OPTIONAL_HEADER.CheckSum = pe.generate_checksum()
     pe.close()
     pe.write(exe_path)
