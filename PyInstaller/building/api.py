@@ -731,9 +731,16 @@ class EXE(Target):
         else:
             # Fall back to just appending PKG at the end of the file
             logger.info("Appending PKG archive to EXE")
-            with open(self.name, 'ab') as outf:
-                with open(self.pkg.name, 'rb') as inf:
-                    shutil.copyfileobj(inf, outf, length=64 * 1024)
+            error_count = 0
+            while error_count < 750:
+                try:
+                    with open(self.name, 'ab') as outf, open(self.pkg.name, 'rb') as inf:
+                        shutil.copyfileobj(inf, outf, length=64 * 1024)
+                        break
+                except PermissionError as exc:
+                    error_count += 1
+                    if error_count >= 749:
+                        raise exc
 
         # Step 3: post-processing
         if is_win:
