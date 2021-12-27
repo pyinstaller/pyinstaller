@@ -585,7 +585,7 @@ As a result, two builds may not produce bit-for-bit identical results
 even when all the components of the application bundle are the same
 and the two applications execute in identical ways.
 
-You can assure that a build will produce the same bits
+You can ensure that a build will produce the same bits
 by setting the :envvar:`PYTHONHASHSEED` environment variable to a known
 integer value before running |PyInstaller|.
 This forces Python to use the same random hash sequence until
@@ -602,6 +602,13 @@ the following (for GNU/Linux and OS X)::
     cksum dist/myscript/myscript | awk '{print $1}' > dist/myscript/checksum.txt
     # let Python be unpredictable again
     unset PYTHONHASHSEED
+
+.. versionchanged:: 4.8
+   The build timestamp in the PE headers of the generated Windows
+   executables is set to the current time during the assembly process.
+   A custom timestamp value can be specified via the ``SOURCE_DATE_EPOCH``
+   environment variable to achieve `reproducible builds
+   <https://reproducible-builds.org/docs/source-date-epoch>`_.
 
 
 .. include:: _common_definitions.txt
