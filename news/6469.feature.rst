@@ -1,0 +1,3 @@
+(Windows) Set the executable's build time in PE header to the current
+time. A custom timestamp can be specified via the ``SOURCE_DATE_EPOCH``
+environment variable to allow reproducible builds.

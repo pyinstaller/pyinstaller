@@ -16,6 +16,7 @@ is a way how PyInstaller does the dependency analysis and creates executable.
 """
 
 import os
+import time
 import pprint
 import shutil
 from operator import itemgetter
@@ -37,8 +38,7 @@ from PyInstaller.utils import misc
 logger = logging.getLogger(__name__)
 
 if is_win:
-    from PyInstaller.utils.win32.winutils import set_exe_checksum
-    from PyInstaller.utils.win32 import (icon, versioninfo, winmanifest, winresource)
+    from PyInstaller.utils.win32 import (icon, versioninfo, winmanifest, winresource, winutils)
 
 if is_darwin:
     import PyInstaller.utils.osx as osxutils
@@ -726,8 +726,10 @@ class EXE(Target):
 
         # Step 3: post-processing
         if is_win:
-            # Set checksum to appease antiviral software.
-            set_exe_checksum(self.name)
+            # Set checksum to appease antiviral software. Also set build timestamp to current time to increase entropy
+            # (but honor SOURCE_DATE_EPOCH environment variable for reproducible builds).
+            build_timestamp = int(os.environ.get('SOURCE_DATE_EPOCH', time.time()))
+            winutils.fixup_exe_headers(self.name, build_timestamp)
         elif is_darwin:
             # If the version of macOS SDK used to build bootloader exceeds that of macOS SDK used to built Python
             # library (and, by extension, bundled Tcl/Tk libraries), force the version declared by the frozen executable
