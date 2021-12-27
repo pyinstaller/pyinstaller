@@ -38,9 +38,6 @@ if compat.is_win:
 
     from PyInstaller.utils.win32 import winmanifest, winresource
 
-    # Do not load all the directories information from the PE file.
-    pefile.fast_load = True
-
 
 def getfullnameof(mod, xtrapath=None):
     """

@@ -34,7 +34,7 @@ def pefile_check_control_flow_guard(filename):
         the pefile library.
     """
     try:
-        pe = pefile.PE(filename)
+        pe = pefile.PE(filename, fast_load=True)
         # https://docs.microsoft.com/en-us/windows/win32/debug/pe-format
         # IMAGE_DLLCHARACTERISTICS_GUARD_CF = 0x4000
         return bool(pe.OPTIONAL_HEADER.DllCharacteristics & 0x4000)

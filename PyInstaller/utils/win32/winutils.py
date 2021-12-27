@@ -158,7 +158,7 @@ def set_exe_checksum(exe_path):
     taken to flagging anything without it set correctly as malware. See issue #5579.
     """
     import pefile
-    pe = pefile.PE(exe_path)
+    pe = pefile.PE(exe_path, fast_load=True)
     pe.OPTIONAL_HEADER.CheckSum = pe.generate_checksum()
     pe.close()
     pe.write(exe_path)
