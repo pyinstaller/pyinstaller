@@ -46,6 +46,39 @@
 #include "pyi_splash.h"
 #include "pyi_apple_events.h"
 
+
+static int
+_pyi_allow_pkg_sideload(const char *executable)
+{
+    FILE *file = NULL;
+    uint64_t magic_offset;
+    unsigned char magic[8];
+
+    int rc = 0;
+
+    /* First, find the PKG sideload signature in the executable */
+    file = pyi_path_fopen(executable, "rb");
+    if (!file) {
+        return -1;
+    }
+
+    /* Prepare magic pattern */
+    memcpy(magic, MAGIC_BASE, sizeof(magic));
+    magic[3] += 0x0D;  /* 0x00 -> 0x0D */
+
+    /* Find magic pattern in the executable */
+    magic_offset = pyi_utils_find_magic_pattern(file, magic, sizeof(magic));
+    if (magic_offset == 0) {
+        fclose(file);
+        return 1; /* Error code 1: no embedded PKG sideload signature */
+    }
+
+    /* TODO: expand the verification by embedding hash of the PKG file */
+
+    /* Allow PKG to be sideloaded */
+    return 0;
+}
+
 int
 pyi_main(int argc, char * argv[])
 {
@@ -121,11 +154,21 @@ pyi_main(int argc, char * argv[])
     /* Try opening the archive; first attempt to read it from executable
      * itself (embedded mode), then from a stand-alone pkg file (sideload mode)
      */
-    if ((! pyi_arch_setup(archive_status, executable, executable)) &&
-        (! pyi_arch_setup(archive_status, archivefile, executable))) {
-            FATALERROR("Cannot open self %s or archive %s\n",
+    if (!pyi_arch_setup(archive_status, executable, executable)) {
+        if (!pyi_arch_setup(archive_status, archivefile, executable)) {
+            FATALERROR("Cannot open PyInstaller archive from executable (%s) or external archive (%s)\n",
                        executable, archivefile);
             return -1;
+        } else if (extractionpath == NULL) {
+            /* Check if package side-load is allowed. But only on the first
+             * run, in the parent process (i.e., when extractionpath is not
+             * yet set). */
+            rc = _pyi_allow_pkg_sideload(executable);
+            if (rc != 0) {
+                FATALERROR("Cannot side-load external archive %s (code %d)!\n", archivefile, rc);
+                return -1;
+            }
+        }
     }
 
 #if defined(__linux__)
