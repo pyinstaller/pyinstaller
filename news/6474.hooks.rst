@@ -1,0 +1,4 @@
+Update ``numpy`` hook for compatibility with version 1.22; the hook
+cannot exclude ``distutils`` and ``numpy.distutils`` anymore, as they
+are required by ``numpy.testing``, which is used by some external
+packages, such as ``scipy``.
