@@ -19,8 +19,6 @@ from PyInstaller.utils.tests import importorskip
 def test_scipy(pyi_builder):
     pyi_builder.test_source(
         """
-        from distutils.version import LooseVersion
-
         # Test top-level SciPy importability.
         import scipy
         from scipy import *
@@ -34,11 +32,8 @@ def test_scipy(pyi_builder):
         import scipy.signal
 
         # SciPy >= 0.16 privatized the previously public "scipy.lib" package as "scipy._lib".
-        # Since this package is problematic, test its importability regardless of SciPy version.
-        if LooseVersion(scipy.__version__) >= LooseVersion('0.16.0'):
-            import scipy._lib
-        else:
-            import scipy.lib
+        # Since this package is problematic, test its importability regardless of its private status.
+        import scipy._lib
         """
     )
 
