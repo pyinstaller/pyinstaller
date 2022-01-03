@@ -17,7 +17,7 @@ import asyncio
 
 import pytest
 
-from PyInstaller.compat import is_py37, is_win
+from PyInstaller.compat import is_win
 
 
 @pytest.mark.skipif(
@@ -27,10 +27,6 @@ from PyInstaller.compat import is_py37, is_win
 @pytest.mark.parametrize('stream_mode', ['binary', 'text'])
 @pytest.mark.parametrize('output_stream', ['stdout', 'stderr'])
 def test_unbuffered_stdio(tmp_path, output_stream, stream_mode, pyi_builder_spec):
-    # Unbuffered text layer was introduced in Python 3.7
-    if stream_mode == 'text' and not is_py37:
-        pytest.skip("Unbuffered text layer of stdout and stderr streams requires Python 3.7 or later.")
-
     # Freeze the test program; test_spec() builds the app and runs it, so explicitly set the number of
     # stars to 0 for this run.
     pyi_builder_spec.test_spec('pyi_unbuffered_output.spec', app_args=['--num-stars', '0'])

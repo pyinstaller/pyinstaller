@@ -20,6 +20,7 @@ import re
 import struct
 import zipfile
 from types import CodeType
+from importlib.util import source_hash as importlib_source_hash
 
 import marshal
 
@@ -29,12 +30,6 @@ from PyInstaller.depend import bytecode
 from PyInstaller.depend.dylib import include_library
 from PyInstaller.exceptions import ExecCommandFailed
 from PyInstaller.lib.modulegraph import modulegraph
-
-try:
-    # source_hash only exists in Python 3.7
-    from importlib.util import source_hash as importlib_source_hash
-except ImportError:
-    pass
 
 logger = logging.getLogger(__name__)
 
@@ -71,9 +66,6 @@ def create_py3_base_library(libzip_filename, graph):
                 if type(mod) in (modulegraph.SourceModule, modulegraph.Package, modulegraph.CompiledModule):
                     # Bundling just required modules.
                     if module_filter.match(mod.identifier):
-                        st = os.stat(mod.filename)
-                        timestamp = int(st.st_mtime)
-                        size = st.st_size & 0xFFFFFFFF
                         # Name inside the archive. The ZIP format specification requires forward slashes as directory
                         # separator.
                         if type(mod) is modulegraph.Package:
@@ -85,16 +77,15 @@ def create_py3_base_library(libzip_filename, graph):
                         with io.BytesIO() as fc:
                             # Prepare all data in byte stream file-like object.
                             fc.write(compat.BYTECODE_MAGIC)
-                            if compat.is_py37:
-                                # Additional bitfield according to PEP 552 0b01 means hash based but don't check the
-                                # hash
-                                fc.write(struct.pack('<I', 0b01))
-                                with open(mod.filename, 'rb') as fs:
-                                    source_bytes = fs.read()
-                                source_hash = importlib_source_hash(source_bytes)
-                                fc.write(source_hash)
-                            else:
-                                fc.write(struct.pack('<II', timestamp, size))
+
+                            # Additional bitfield according to PEP 552 0b01 means hash based but don't check the
+                            # hash
+                            fc.write(struct.pack('<I', 0b01))
+                            with open(mod.filename, 'rb') as fs:
+                                source_bytes = fs.read()
+                            source_hash = importlib_source_hash(source_bytes)
+                            fc.write(source_hash)
+
                             code = strip_paths_in_code(mod.code)  # Strip paths
                             marshal.dump(code, fc)
                             # Use a ZipInfo to set timestamp for deterministic build.

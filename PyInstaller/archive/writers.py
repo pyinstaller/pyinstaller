@@ -26,7 +26,7 @@ import zlib
 from types import CodeType
 
 from PyInstaller.building.utils import fake_pyc_timestamp, get_code_object, strip_paths_in_code
-from PyInstaller.compat import BYTECODE_MAGIC, is_py37, is_win
+from PyInstaller.compat import BYTECODE_MAGIC, is_win
 from PyInstaller.loader.pyimod02_archive import PYZ_TYPE_DATA, PYZ_TYPE_MODULE, PYZ_TYPE_NSPKG, PYZ_TYPE_PKG
 
 
@@ -363,14 +363,10 @@ class CArchiveWriter(ArchiveWriter):
                 header = fh.read(4)
                 fh.seek(0)
                 if header == BYTECODE_MAGIC:
-                    # Read whole header and load code. According to PEP-552, in python versions prior to 3.7, the PYC
-                    # header consists of three 32-bit words (magic, timestamp, and source file size).
-                    # From python 3.7 on, the PYC header was extended to four 32-bit words (magic, flags, and, depending
-                    # on the flags, either timestamp and source file size, or a 64-bit hash).
-                    if is_py37:
-                        header = fh.read(16)
-                    else:
-                        header = fh.read(12)
+                    # Read whole header and load code. According to PEP-552, the PYC header consists of four 32-bit
+                    # words (magic, flags, and, depending on the flags, either timestamp and source file size, or a
+                    # 64-bit hash).
+                    header = fh.read(16)
                     code = marshal.load(fh)
                     # Strip paths from code, marshal back into module form. The header fields (timestamp, size, hash,
                     # etc.) are all referring to the source file, so our modification of the code object does not affect

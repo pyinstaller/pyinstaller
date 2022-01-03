@@ -14,7 +14,7 @@ Functional tests for the Django content management system (CMS).
 
 import pytest
 
-from PyInstaller.compat import is_win, is_py37
+from PyInstaller.compat import is_win
 from PyInstaller.utils.tests import importorskip, xfail
 
 
@@ -26,8 +26,8 @@ from PyInstaller.utils.tests import importorskip, xfail
 # Python 3.6 added the default argument ``strict=False``, which ignores this exception. This file is in the archive, but
 # not the filesystem.
 @importorskip('django')
-# Import error occurs on win/py37
-@xfail(is_win and is_py37, reason='Fails on win/py37.')
+# Import error occurs on windows.
+@xfail(is_win, reason='Fails on windows.')
 # Django test might sometimes hang.
 @pytest.mark.timeout(timeout=7 * 60)
 def test_django(pyi_builder, monkeypatch, data_dir):

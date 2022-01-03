@@ -16,8 +16,6 @@
 #
 # In the unbuffered mode, the caller should receive the characters individually, and have enough time to process them.
 # In the buffered mode, all printed characters including the terminating E will be received at once.
-#
-# NOTE: the unbuffered mode for text layers was introduced in Python 3.7.
 
 import argparse
 import time

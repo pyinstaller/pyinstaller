@@ -18,14 +18,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9, '3.10']
+        python-version: [3.7, 3.8, 3.9, '3.10']
         os: ['windows-latest', 'ubuntu-latest', 'macos-10.15', 'macos-latest']
-        exclude:
-          # Python 3.6 is not available on macOS 11
-          - os: macos-11
-            python-version: 3.6
-          - os: macos-latest
-            python-version: 3.6
       fail-fast: false
     steps:
       - uses: actions/checkout@v2

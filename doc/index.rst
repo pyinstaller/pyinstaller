@@ -12,7 +12,7 @@ PyInstaller Manual
 |PyInstaller| bundles a Python application and all its dependencies into
 a single package.
 The user can run the packaged app without installing a Python interpreter or any modules.
-|PyInstaller| supports Python 3.6 or newer,
+|PyInstaller| supports Python 3.7 or newer,
 and correctly bundles the major Python packages
 such as numpy, PyQt, Django, wxPython, and others.
 

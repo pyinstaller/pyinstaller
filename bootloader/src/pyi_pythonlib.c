@@ -248,7 +248,7 @@ pyi_pylib_set_runtime_opts(ARCHIVE_STATUS *status)
     return 0;
 }
 
-/* Enable UTF-8 mode as per PEP540. Applicable to Python 3.7 and later.
+/* Enable UTF-8 mode as per PEP540.
  * It seems Py_UTF8Mode must be set before Py_SetPath is called, but
  * in practice, it is probably a good idea to call it before any
  * Py_* functions are used
@@ -258,11 +258,6 @@ pyi_pylib_set_pep540_utf8_mode()
 {
     int enable_utf8_mode = -1;
     char *env_utf8 = NULL;
-
-    /* Applicable only to Python 3.7 and later */
-    if (pyvers < 307) {
-        return;
-    }
 
     /* Honor the setting via PYTHONUTF8 environment variable (valid
      * values are 0 and 1, same as with python interpreter) */
@@ -624,12 +619,7 @@ pyi_pylib_import_modules(ARCHIVE_STATUS *status)
 
             /* Unmarshall code object for module; we need to skip
                the pyc header */
-            if (pyvers >= 307) {
-                /* Python 3.7 changed header size to 16 bytes */
-                co = PI_PyMarshal_ReadObjectFromString((const char *) modbuf + 16, ptoc->ulen - 16);
-            } else {
-                co = PI_PyMarshal_ReadObjectFromString((const char *) modbuf + 12, ptoc->ulen - 12);
-            }
+            co = PI_PyMarshal_ReadObjectFromString((const char *) modbuf + 16, ptoc->ulen - 16);
 
             if (co != NULL) {
                 VS("LOADER: running unmarshalled code object for %s...\n", ptoc->name);
