@@ -25,30 +25,6 @@ AIX, Solaris, FreeBSD and OpenBSD
 but testing against them is not part of our continuous integration tests.
 
 
-What's New This Release
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-Release 4.0 adds support for 3rd-party packages to provide PyInstaller hooks
-along with the package. This allows Maintainers of other Python packages to
-deliver up-to-date PyInstaller hooks as part of their package.
-See our `sample project`__ for more information.
-
-__ https://github.com/pyinstaller/hooksample
-
-PyInstaller uses this option itself to provide updated hooks much faster:
-Many hooks are moved into the new package `pyinstaller-hooks-contrib`__,
-which is updated monthly.
-This package is installed automatically when installing PyInstaller,
-but can also be updated independently.
-
-__ https://github.com/pyinstaller/pyinstaller-hooks-contrib
-
-Finally, this version drops support for Python 2.7,
-which is end-of-life since January 2020..
-The minimum required version is now Python 3.6.
-The last version supporting Python 2.7 was PyInstaller 3.6.
-
-
 Contents:
 
 .. toctree::
