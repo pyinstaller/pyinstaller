@@ -522,26 +522,6 @@ class TestInvalidAsyncFunction (unittest.TestCase):
             if not isinstance(value, types):
                 self.fail("%r is not an instance of %r"%(value, types))
 
-    @unittest.skipUnless(sys.version_info[:2] == (3,5), "Requires python 3.5")
-    def test_invalid_async_function(self):
-        # In python 3.5 the following function is invalid:
-        #
-        #    async def foo():
-        #       yield 1
-        #
-        # This is a syntax error that's reported when compiling the AST
-        # to bytecode, which caused an error in modulegraph.
-        #
-        # In python 3.6 this is valid code (and in earlier versions async
-        # versions didn't exist)
-        root = os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                'testpkg-regr8')
-        mf = modulegraph.ModuleGraph(path=[ root ] + sys.path)
-        mf.add_script(os.path.join(root, 'script.py'))
-
-        n = mf.find_node('mod')
-        self.assertIsInstance(n, modulegraph.InvalidSourceModule)
 
 if __name__ == "__main__":
     unittest.main()

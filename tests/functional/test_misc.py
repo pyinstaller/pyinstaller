@@ -13,9 +13,6 @@ import os
 
 import pytest
 
-from PyInstaller.compat import is_py37
-from PyInstaller.utils.tests import skipif
-
 # Directory with testing modules used in some tests.
 _MODULES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modules')
 
@@ -66,7 +63,6 @@ def test_dis_main(pyi_builder):
 
 
 # Test that setting PYTHONUTF8 controls the PEP540 UTF-8 mode on all OSes, regardless of current locale setting.
-@skipif(not is_py37, reason="PEP540 UTF-8 mode is available in Python 3.7 and later.")
 @pytest.mark.parametrize('python_utf8', [True, False])
 def test_utf8_mode_envvar(python_utf8, pyi_builder, monkeypatch):
     monkeypatch.setenv('PYTHONUTF8', str(int(python_utf8)))
@@ -81,7 +77,6 @@ def test_utf8_mode_envvar(python_utf8, pyi_builder, monkeypatch):
 # Test that PEP540 UTF-8 mode is automatically enabled for C and POSIX locales (applicable only to macOS and linux).
 @pytest.mark.linux
 @pytest.mark.darwin
-@skipif(not is_py37, reason="PEP540 UTF-8 mode is available in Python 3.7 and later.")
 @pytest.mark.parametrize('locale', ['C', 'POSIX'])
 def test_utf8_mode_locale(locale, pyi_builder, monkeypatch):
     monkeypatch.setenv('LC_CTYPE', locale)

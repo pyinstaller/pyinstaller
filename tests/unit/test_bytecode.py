@@ -8,7 +8,6 @@ from types import CodeType
 from textwrap import dedent, indent
 import operator
 
-from PyInstaller import compat
 from PyInstaller.depend.bytecode import (
     function_calls,
     recursive_function_calls,
@@ -90,10 +89,9 @@ def test_global_functions():
     code = compile_(many_globals() + "foo(.456)")
     assert function_calls(code) == [('foo', [.456])]
 
-    # And the unlikely case of >256 arguments to one function call. This is a syntax error on Python <= 3.6
-    if compat.is_py37:
-        code = compile_(many_arguments())
-        assert function_calls(code) == [('foo', list(range(300)))]
+    # And the unlikely case of >256 arguments to one function call.
+    code = compile_(many_arguments())
+    assert function_calls(code) == [('foo', list(range(300)))]
 
     # For loops, if statements should work. The iterable in a comprehension loop works but the statement to be executed
     # repeatedly gets its own code object and therefore requires recursion (tested later).

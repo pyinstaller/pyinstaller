@@ -28,7 +28,7 @@ but is not tested against them as part of the continuous integration tests.
 Main Advantages
 ---------------
 
-- Works out-of-the-box with any Python version 3.6-3.10.
+- Works out-of-the-box with any Python version 3.7-3.10.
 - Fully multi-platform, and uses the OS support to load the dynamic libraries,
   thus ensuring full compatibility.
 - Correctly bundles the major Python packages such as numpy, PyQt5,
@@ -54,7 +54,7 @@ Requirements and Tested Platforms
 
 - Python: 
 
- - 3.6-3.10
+ - 3.7-3.10
  - tinyaes_ 1.0+ (only if using bytecode encryption).
    Instead of installing tinyaes, ``pip install pyinstaller[encryption]`` instead.
 

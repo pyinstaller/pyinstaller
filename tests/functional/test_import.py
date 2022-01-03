@@ -635,7 +635,7 @@ def test_nspkg_attributes(pyi_builder):
 def test_nspkg_attributes_pep420(pyi_builder):
     # Test that PEP-420 namespace packages have proper attributes:
     #  * __path__ should contain at least one path
-    #  * __file__ should be unset (python 3.6) or None (python 3.7 and later)
+    #  * __file__ should be None
     pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg-pep420', 'path*'))
     pyi_builder.test_source(
         """
@@ -648,10 +648,7 @@ def test_nspkg_attributes_pep420(pyi_builder):
             path = getattr(pkg, '__path__', None)
             assert path is not None and len(path) >= 1, "invalid __path__"
             # Validate __file__
-            if version_info[0:2] < (3, 7):
-                assert not hasattr(pkg, '__file__'), "invalid __file__"
-            else:
-                assert getattr(pkg, '__file__') is None, "invalid __file__"
+            assert getattr(pkg, '__file__') is None, "invalid __file__"
 
         validate_nspkg_pep420(package)
         validate_nspkg_pep420(package.nspkg)

@@ -25,7 +25,7 @@ import sys
 
 from PyInstaller import compat
 from PyInstaller import log as logging
-from PyInstaller.compat import (EXTENSION_SUFFIXES, is_cygwin, is_darwin, is_py37, is_win)
+from PyInstaller.compat import (EXTENSION_SUFFIXES, is_cygwin, is_darwin, is_win)
 from PyInstaller.config import CONF
 from PyInstaller.depend import dylib
 from PyInstaller.depend.bindepend import match_binding_redirect
@@ -682,17 +682,16 @@ def fake_pyc_timestamp(buf):
     assert buf[:4] == compat.BYTECODE_MAGIC, \
         "Expected pyc magic {}, got {}".format(compat.BYTECODE_MAGIC, buf[:4])
     start, end = 4, 8
-    if is_py37:
-        # See https://www.python.org/dev/peps/pep-0552/
-        (flags,) = struct.unpack_from(">I", buf, 4)
-        if flags & 1:
-            # We are in the future and hash-based pyc-files are used, so
-            # clear "check_source" flag, since there is no source.
-            buf[4:8] = struct.pack(">I", flags ^ 2)
-            return buf
-        else:
-            # No hash-based pyc-file, timestamp is the next field.
-            start, end = 8, 12
+    # See https://www.python.org/dev/peps/pep-0552/
+    (flags,) = struct.unpack_from(">I", buf, 4)
+    if flags & 1:
+        # We are in the future and hash-based pyc-files are used, so
+        # clear "check_source" flag, since there is no source.
+        buf[4:8] = struct.pack(">I", flags ^ 2)
+        return buf
+    else:
+        # No hash-based pyc-file, timestamp is the next field.
+        start, end = 8, 12
 
     ts = b'pyi0'  # So people know where this comes from
     return buf[:start] + ts + buf[end:]

@@ -738,8 +738,8 @@ def check_requirements():
     Fail hard if any requirement is not met.
     """
     # Fail hard if Python does not have minimum required version
-    if sys.version_info < (3, 6):
-        raise EnvironmentError('PyInstaller requires at Python 3.6 or newer.')
+    if sys.version_info < (3, 7):
+        raise EnvironmentError('PyInstaller requires at Python 3.7 or newer.')
 
     # There are some old packages which used to be backports of libraries which are now part of the standard library.
     # These backports are now unmaintained and contain only an older subset of features leading to obscure errors like
