@@ -760,6 +760,10 @@ def findLibrary(name):
         except ImportError:
             logger.debug('Multiarch directory not detected.')
 
+        # Termux (a Ubuntu like subsystem for Android) has an additional libraries directory.
+        if os.path.isdir('/data/data/com.termux/files/usr/lib'):
+            paths.append('/data/data/com.termux/files/usr/lib')
+
         if compat.is_aix:
             paths.append('/opt/freeware/lib')
         elif compat.is_hpux:
