@@ -1,2 +1,0 @@
-(Windows) Fix compatibility issues with python 3.9.8 from python.org, arising 
-from the lack of embedded manifest in the ``python.exe`` executable.

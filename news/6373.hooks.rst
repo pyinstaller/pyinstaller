@@ -1,1 +1,0 @@
-(macOS) Add support for Anaconda-installed ``PyQtWebEngine``.

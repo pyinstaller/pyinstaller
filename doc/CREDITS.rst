@@ -6,6 +6,16 @@ new code, bug reports, fixes, comments and ideas. A brief list follows,
 please let us know if your name is omitted by accident:
 
 
+Contributions to PyInstaller 4.8
+--------------------------------
+
+* Rok Mandeljc - Core Developer
+* Jasper Harrison - Core Develop, Maintainer, Release Manager
+* Brénainn Woodsend - Core Developer
+
+*	Ankith, Safihre, luc-x41
+
+
 Contributions to PyInstaller 4.7
 --------------------------------
 

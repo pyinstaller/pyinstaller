@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "PYINSTALLER" "1" "2021-11-10" "4.7" "PyInstaller"
+.TH "PYINSTALLER" "1" "2022-01-06" "4.8" "PyInstaller"
 .SH NAME
 pyinstaller \- Configure and build a PyInstaller project in one run
 .
@@ -34,7 +34,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .ad l
 \.SH SYNOPSIS
 .sp
-\fBpyinstaller\fP <options> SCRIPT...
+\fBpyinstaller\fP <options> SCRIPT…
 .sp
 \fBpyinstaller\fP <options> SPECFILE
 .SH DESCRIPTION
@@ -61,8 +61,7 @@ scriptname
 .INDENT 0.0
 .INDENT 3.5
 Name of scriptfiles to be processed or exactly one .spec file. If a .spec
-file is specified, most options are unnecessary and are
-ignored.
+file is specified, most options are unnecessary and are ignored.
 .UNINDENT
 .UNINDENT
 .SS Optional Arguments
@@ -82,7 +81,7 @@ Where to put all the temporary work files, .log, .pyz and etc. (default:
 \&./build)
 .TP
 .B \-y\fP,\fB  \-\-noconfirm
-Replace output directory (default: SPECPATHdistSPECNAME) without asking
+Replace output directory (default: SPECPATH/dist/SPECNAME) without asking
 for confirmation
 .TP
 .BI \-\-upx\-dir \ UPX_DIR
@@ -111,7 +110,7 @@ Create a one\-file bundled executable.
 Folder to store the generated spec file (default: current directory)
 .TP
 .BI \-n \ NAME\fR,\fB \ \-\-name \ NAME
-Name to assign to the bundled app and spec file (default: first script\(aqs
+Name to assign to the bundled app and spec file (default: first script’s
 basename)
 .UNINDENT
 .SS What To Bundle, Where To Search
@@ -130,9 +129,9 @@ times.
 .TP
 .BI \-p \ DIR\fR,\fB \ \-\-paths \ DIR
 A path to search for imports (like using PYTHONPATH). Multiple paths are
-allowed, separated by \fB\(aq;\(aq\fP, or use this option
-multiple times. Equivalent to supplying the \fBpathex\fP argument in the spec
-file.
+allowed, separated by \fB\(aq:\(aq\fP, or use this option multiple times.
+Equivalent to supplying the                         \fBpathex\fP argument in
+the spec file.
 .TP
 .BI \-\-hidden\-import \ MODULENAME\fR,\fB \ \-\-hiddenimport \ MODULENAME
 Name an import not visible in the code of the script(s). This option can be
@@ -182,12 +181,12 @@ The key used to encrypt Python bytecode.
 .TP
 .BI \-\-splash \ IMAGE_FILE
 (EXPERIMENTAL) Add an splash screen with the image IMAGE_FILE to the
-application. The splash screen can display progress updates
-while unpacking.
+application. The splash screen can display progress updates while
+unpacking.
 .UNINDENT
 .SS How To Generate
 .sp
-\-d {all,imports,bootloader,noarchive}, \-\-debug {all,imports,bootloader,noarchive}
+\-d {all,imports,bootloader,noarchive}, –debug {all,imports,bootloader,noarchive}
 .INDENT 0.0
 .INDENT 3.5
 Provide assistance with debugging a frozen application. This argument may
@@ -208,8 +207,8 @@ resulting   output directory.
 .TP
 .BI \-\-python\-option \ PYTHON_OPTION
 Specify a command\-line option to pass to the Python interpreter at runtime.
-Currently supports "v" (equivalent to "\-\-debug imports"), "u", and "W
-<warning control>".
+Currently supports “v” (equivalent to “–debug imports”), “u”, and “W
+<warning control>”.
 .TP
 .B \-s\fP,\fB  \-\-strip
 Apply a symbol\-table strip to the executable and shared libs (not
@@ -221,28 +220,28 @@ and *nix)
 .TP
 .BI \-\-upx\-exclude \ FILE
 Prevent a binary from being compressed when using upx. This is typically
-used if upx corrupts certain binaries during compression.
-FILE is the filename of the binary without path. This option can be used
-multiple times.
+used if upx corrupts certain binaries during compression. FILE is the
+filename of the binary                         without path. This option
+can be used multiple times.
 .UNINDENT
 .SS Windows And Mac Os X Specific Options
 .INDENT 0.0
 .TP
 .B \-c\fP,\fB  \-\-console\fP,\fB  \-\-nowindowed
 Open a console window for standard i/o (default). On Windows this option
-has no effect if the first script is a \(aq.pyw\(aq file.
+has no effect if the first script is a ‘.pyw’ file.
 .TP
 .B \-w\fP,\fB  \-\-windowed\fP,\fB  \-\-noconsole
 Windows and Mac OS X: do not provide a console window for standard i/o. On
 Mac OS this also triggers building a Mac OS .app bundle. On Windows this
-option is automatically set if the first script is a \(aq.pyw\(aq file. This
+option is automatically set if the first script is a ‘.pyw’ file. This
 option is ignored on *NIX systems.
 .TP
-.BI \-i \ <FILE.ico or FILE.exe,ID or FILE.icns or "NONE">\fR,\fB \ \-\-icon \ <FILE.ico or FILE.exe,ID or FILE.icns or "NONE">
+.BI \-i \ <FILE.ico or FILE.exe,ID or FILE.icns or “NONE”>\fR,\fB \ \-\-icon \ <FILE.ico or FILE.exe,ID or FILE.icns or “NONE”>
 FILE.ico: apply the icon to a Windows executable. FILE.exe,ID: extract the
 icon with ID from an exe. FILE.icns: apply the icon to the .app bundle on
-Mac OS. Use "NONE" to not apply any icon, thereby making the OS to show
-some default (default: apply PyInstaller\(aqs icon)
+Mac OS. Use “NONE” to not apply any icon, thereby making the OS to show
+some default (default: apply PyInstaller’s icon)
 .TP
 .B \-\-disable\-windowed\-traceback
 Disable traceback dump of unhandled exception in windowed (noconsole) mode
@@ -260,8 +259,8 @@ Add manifest FILE or XML to the exe.
 .TP
 .B \-\-no\-embed\-manifest
 Generate an external .exe.manifest file instead of embedding the manifest
-into the exe. Applicable only to onedir mode; in onefile
-mode, the manifest is always embedded, regardless of this option.
+into the exe. Applicable only to onedir mode; in onefile mode, the manifest
+is always embedded,                         regardless of this option.
 .TP
 .BI \-r \ RESOURCE\fR,\fB \ \-\-resource \ RESOURCE
 Add or update a resource to a Windows executable. The RESOURCE is one to
@@ -303,7 +302,7 @@ assembly.
 Mac OS .app bundle identifier is used as the default unique program name
 for code signing purposes. The usual form is a hierarchical name in reverse
 DNS notation. For example: com.mycompany.department.appname (default: first
-script\(aqs basename)
+script’s basename)
 .TP
 .BI \-\-target\-architecture \ ARCH\fR,\fB \ \-\-target\-arch \ ARCH
 Target architecture (macOS only; valid values: x86_64, arm64, universal2).
@@ -326,7 +325,7 @@ only).
 .TP
 .BI \-\-runtime\-tmpdir \ PATH
 Where to extract libraries and support files in \fIonefile\fP\-mode. If this
-option is given, the bootloader will ignore any temp\- folder location
+option is given, the bootloader will ignore any temp\-folder location
 defined by the run\-time OS. The \fB_MEIxxxxxx\fP\-folder will be created here.
 Please use this option only if you know what you are doing.
 .TP

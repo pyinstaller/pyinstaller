@@ -15,6 +15,116 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+4.8 (2022-01-06)
+----------------
+
+Features
+~~~~~~~~
+
+* (Windows) Set the executable's build time in PE header to the current
+  time. A custom timestamp can be specified via the ``SOURCE_DATE_EPOCH``
+  environment variable to allow reproducible builds. (:issue:`#6469`)
+* Add strictly unofficial support for the `Termux
+  <https://f-droid.org/en/packages/com.termux/>`_ platform. (:issue:`#6484`)
+* Replace the dual-process ``onedir`` mode on Linux and other Unix-like OSes
+  with a single-process implementation. This makes ``onedir`` mode on these
+  OSes comparable to Windows and macOS, where single-process ``onedir`` mode
+  has already been used for a while. (:issue:`#6407`)
+
+
+Bugfix
+~~~~~~
+
+* (macOS) Fix regression in generation of ``universal2`` executables that
+  caused the generated executable to fail ``codesign`` strict validation.
+  (:issue:`#6381`)
+* (Windows) Fix ``onefile`` extraction behavior when the run-time temporary
+  directory is set to a drive letter. The application's temporary directory
+  is now created directly on the specified drive as opposed to the current
+  directory on the specified drive. (:issue:`#6051`)
+* (Windows) Fix compatibility issues with python 3.9.8 from python.org, arising
+  from the lack of embedded manifest in the ``python.exe`` executable.
+  (:issue:`#6367`)
+* (Windows) Fix stack overflow in `pyarmor`-protected frozen applications,
+  caused
+  by the executable's stack being smaller than that of the python interpreter.
+  (:issue:`#6459`)
+* (Windows) Fix the ``python3.dll`` shared library not being found and
+  collected when using Python from MS App Store. (:issue:`#6390`)
+* Fix a bug that prevented traceback from uncaught exception to be
+  retrieved and displayed in the windowed bootloader's error reporting
+  facility (uncaught exception dialog on Windows, syslog on macOS).
+  (:issue:`#6426`)
+* Fix a crash when a onefile build attempts to overwrite an existing onedir
+  build
+  on macOS or Linux (:issue:`#6418`)
+* Fix build errors when a linux shared library (.so) file is collected as
+  a binary on macOS. (:issue:`#6327`)
+* Fix build errors when a Windows DLL/PYD file is collected as a binary on
+  a non-Windows OS. (:issue:`#6327`)
+* Fix handling of encodings when reading the collected .py source files
+  via ``FrozenImporter.get_source()``. (:issue:`#6143`)
+* Fix hook loader function not finding hooks if path has whitespaces.
+  (Re-apply the fix that has been inadvertedly undone during the
+  codebase reformatting.) (:issue:`#6080`)
+* Windows: Prevent invalid handle errors when an application compiled in
+  :option:`--windowed` mode uses :mod:`subprocess`
+  without explicitly setting **stdin**, **stdout** and **stderr** to either
+  :data:`~subprocess.PIPE` or
+  :data:`~subprocess.DEVNULL`. (:issue:`#6364`)
+
+
+Hooks
+~~~~~
+
+* (macOS) Add support for Anaconda-installed ``PyQtWebEngine``.
+  (:issue:`#6373`)
+* Add hooks for ``PySide6.QtWebEngineWidgets`` and
+  ``PyQt6.QtWebEngineWidgets``.
+  The ``QtWebEngine`` support in PyInstaller requires ``Qt6`` v6.2.2 or later,
+  so if an earlier version is encountered, we exit with an error instead of
+  producing a defunct build. (:issue:`#6387`)
+* Avoid collecting the whole ``QtQml`` module and its dependencies in cases
+  when it is not necessary (i.e., the application does not use ``QtQml`` or
+  ``QtQuick`` modules). The unnecessary collection was triggered due to
+  extension modules being linked against the ``libQt5Qml`` or ``libQt6Qml``
+  shared library, and affected pure widget-based applications (``PySide2``
+  and ``PySide6`` on Linux) and widget-based applications that use
+  ``QtWebEngineWidgets`` (``PySide2``, ``PySide6``, ``PyQt5``, and ``PyQt6``
+  on all OSes). (:issue:`#6447`)
+* Update ``numpy`` hook for compatibility with version 1.22; the hook
+  cannot exclude ``distutils`` and ``numpy.distutils`` anymore, as they
+  are required by ``numpy.testing``, which is used by some external
+  packages, such as ``scipy``. (:issue:`#6474`)
+
+
+Bootloader
+~~~~~~~~~~
+
+* (Windows) Set the bootloader executable's stack size to 2 MB to match the
+  stack size of the python interpreter executable. (:issue:`#6459`)
+* Implement single-process ``onedir`` mode for Linux and Unix-like OSes as a
+  replacement for previously-used two-process implementation. The new mode
+  uses ``exec()`` without ``fork()`` to restart the bootloader executable
+  image within the same process after setting up the environment (i.e., the
+  ``LD_LIBRARY_PATH`` and other environment variables). (:issue:`#6407`)
+* Lock the PKG sideload mode in the bootloader unless the executable has a
+  special signature embedded. (:issue:`#6470`)
+* When user script terminates with an uncaught exception, ensure that the
+  exception data obtained via ``PyErr_Fetch`` is normalized by also calling
+  ``PyErr_NormalizeException``. Otherwise, trying to format the traceback
+  via ``traceback.format_exception`` fails in some circumstances, and no
+  traceback can be displayed in the windowed bootloader's error report.
+  (:issue:`#6426`)
+
+
+Bootloader build
+~~~~~~~~~~~~~~~~
+
+* The bootloader can be force compiled during pip install by setting the
+  environment variable ``PYINSTALLER_COMPILE_BOOTLOADER``. (:issue:`#6384`)
+
+
 4.7 (2021-11-10)
 ----------------
 

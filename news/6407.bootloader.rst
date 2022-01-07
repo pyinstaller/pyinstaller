@@ -1,5 +1,0 @@
-Implement single-process ``onedir`` mode for Linux and Unix-like OSes as a
-replacement for previously-used two-process implementation. The new mode 
-uses ``exec()`` without ``fork()`` to restart the bootloader executable
-image within the same process after setting up the environment (i.e., the
-``LD_LIBRARY_PATH`` and other environment variables).

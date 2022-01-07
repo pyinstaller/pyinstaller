@@ -1,4 +1,0 @@
-(Windows) Fix ``onefile`` extraction behavior when the run-time temporary
-directory is set to a drive letter. The application's temporary directory
-is now created directly on the specified drive as opposed to the current
-directory on the specified drive.
