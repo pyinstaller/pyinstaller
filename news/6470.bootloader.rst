@@ -1,2 +1,0 @@
-Lock the PKG sideload mode in the bootloader unless the executable has a
-special signature embedded.
