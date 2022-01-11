@@ -382,7 +382,12 @@ _qt5_dynamic_dependencies_dict = {
     # Qt5Gui:
     # The ``platformthemes`` plugins are available only on Linux.
     # Same goes for ``xcbglintegrations`` and ``egldeviceintegrations`` plugins.
-    "qt5gui":                   (".QtGui",                 "qtbase",           "accessible", "iconengines", "imageformats", "platforms", "platforminputcontexts", "platformthemes", "xcbglintegrations", "egldeviceintegrations"),  # noqa
+    # The ``wayland-decoration-client``, ``wayland-graphics-integration-client``, and ``wayland-shell-integration``
+    # plugins are part of Qt5WaylandClient Qt module, whose shared library (e.g., libQt5WaylandClient.so) is linked
+    # by the wayland-related ``platforms`` plugins. Ideally, we would collect these plugins based on the
+    # Qt5WaylandClient shared library entry, but as our Qt hook utilities do not scan the plugins using this dictionary,
+    # that would not work. So instead we list these plugins under Qt5Gui to achieve pretty much the same end result.
+    "qt5gui":                   (".QtGui",                 "qtbase",           "accessible", "iconengines", "imageformats", "platforms", "platforminputcontexts", "platformthemes", "xcbglintegrations", "egldeviceintegrations", "wayland-decoration-client", "wayland-graphics-integration-client", "wayland-shell-integration"),  # noqa
     "qt5help":                  (".QtHelp",                "qt_help",          ),  # noqa
     "qt5location":              (".QtLocation",            None,               "geoservices"),  # noqa
     "qt5macextras":             (".QtMacExtras",           None,               ),  # noqa
