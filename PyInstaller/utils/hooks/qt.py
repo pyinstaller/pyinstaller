@@ -366,6 +366,11 @@ def qt_plugins_binaries(plugin_type, namespace):
 #
 _qt5_dynamic_dependencies_dict = {
     #- "lib_name":              (.hiddenimports,           translations_base,  zero or more plugins...)
+    "qt53dcore":                (None,                     None,               ),  # noqa
+    "qt53dinput":               (None,                     None,               ),  # noqa
+    "qt53dquick":               (None,                     None,               ),  # noqa
+    "qt53dquickrender":         (None,                     None,               ),  # noqa
+    "qt53drender":              (None,                     None,               "sceneparsers", "renderplugins", "geometryloaders"),  # noqa
     "qt5bluetooth":             (".QtBluetooth",           None,               ),  # noqa
     "qt5concurrent":            (None,                     "qtbase",           ),  # noqa
     "qt5core":                  (".QtCore",                "qtbase",           ),  # noqa
@@ -379,10 +384,11 @@ _qt5_dynamic_dependencies_dict = {
     # Same goes for ``xcbglintegrations`` and ``egldeviceintegrations`` plugins.
     "qt5gui":                   (".QtGui",                 "qtbase",           "accessible", "iconengines", "imageformats", "platforms", "platforminputcontexts", "platformthemes", "xcbglintegrations", "egldeviceintegrations"),  # noqa
     "qt5help":                  (".QtHelp",                "qt_help",          ),  # noqa
+    "qt5location":              (".QtLocation",            None,               "geoservices"),  # noqa
     "qt5macextras":             (".QtMacExtras",           None,               ),  # noqa
     "qt5multimedia":            (".QtMultimedia",          "qtmultimedia",     "audio", "mediaservice", "playlistformats"),  # noqa
-    "qt5multimediawidgets":     (".QtMultimediaWidgets",   "qtmultimedia",     ),  # noqa
     "qt5multimediaquick":       (None,                     "qtmultimedia",     ),  # noqa
+    "qt5multimediawidgets":     (".QtMultimediaWidgets",   "qtmultimedia",     ),  # noqa
     "qt5network":               (".QtNetwork",             "qtbase",           "bearer"),  # noqa
     "qt5nfc":                   (".QtNfc",                 None,               ),  # noqa
     "qt5opengl":                (".QtOpenGL",              None,               ),  # noqa
@@ -395,10 +401,16 @@ _qt5_dynamic_dependencies_dict = {
     "qt5script":                (None,                     "qtscript",         ),  # noqa
     "qt5scripttools":           (None,                     "qtscript",         ),  # noqa
     "qt5sensors":               (".QtSensors",             None,               "sensors", "sensorgestures"),  # noqa
+    "qt5serialbus":             (None,                     None,               "canbus"),  # noqa
     "qt5serialport":            (".QtSerialPort",          "qtserialport",     ),  # noqa
     "qt5sql":                   (".QtSql",                 "qtbase",           "sqldrivers"),  # noqa
     "qt5svg":                   (".QtSvg",                 None,               ),  # noqa
     "qt5test":                  (".QtTest",                "qtbase",           ),  # noqa
+    "qt5texttospeech":          (None,                     None,               "texttospeech"),  # noqa
+    "qt5webchannel":            (".QtWebChannel",          None,               ),  # noqa
+    "qt5webengine":             (".QtWebEngine",           "qtwebengine",      "qtwebengine"),  # noqa
+    "qt5webenginecore":         (".QtWebEngineCore",       None,               "qtwebengine"),  # noqa
+    "qt5webenginewidgets":      (".QtWebEngineWidgets",    None,               "qtwebengine"),  # noqa
     "qt5webkit":                (None,                     None,               ),  # noqa
     "qt5webkitwidgets":         (None,                     None,               ),  # noqa
     "qt5websockets":            (".QtWebSockets",          None,               ),  # noqa
@@ -406,18 +418,6 @@ _qt5_dynamic_dependencies_dict = {
     "qt5winextras":             (".QtWinExtras",           None,               ),  # noqa
     "qt5xml":                   (".QtXml",                 "qtbase",           ),  # noqa
     "qt5xmlpatterns":           (".QXmlPatterns",          "qtxmlpatterns",    ),  # noqa
-    "qt5webenginecore":         (".QtWebEngineCore",       None,               "qtwebengine"),  # noqa
-    "qt5webengine":             (".QtWebEngine",           "qtwebengine",      "qtwebengine"),  # noqa
-    "qt5webenginewidgets":      (".QtWebEngineWidgets",    None,               "qtwebengine"),  # noqa
-    "qt53dcore":                (None,                     None,               ),  # noqa
-    "qt53drender":              (None,                     None,               "sceneparsers", "renderplugins", "geometryloaders"),  # noqa
-    "qt53dquick":               (None,                     None,               ),  # noqa
-    "qt53dquickrender":         (None,                     None,               ),  # noqa
-    "qt53dinput":               (None,                     None,               ),  # noqa
-    "qt5location":              (".QtLocation",            None,               "geoservices"),  # noqa
-    "qt5webchannel":            (".QtWebChannel",          None,               ),  # noqa
-    "qt5texttospeech":          (None,                     None,               "texttospeech"),  # noqa
-    "qt5serialbus":             (None,                     None,               "canbus"),  # noqa
 }  # yapf: disable
 
 # The dynamic dependency dictionary for Qt6 is constructed automatically from its Qt5 counterpart, by copying the
