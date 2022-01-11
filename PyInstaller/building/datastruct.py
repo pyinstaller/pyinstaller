@@ -94,6 +94,11 @@ class TOC(list):
         result.extend(self)
         return result
 
+    def __iadd__(self, other):
+        for entry in other:
+            self.append(entry)
+        return self
+
     def extend(self, other):
         # TODO: look if this can be done more efficient with out the loop, e.g. by not using a list as base at all.
         for entry in other:
@@ -115,6 +120,27 @@ class TOC(list):
     def __rsub__(self, other):
         result = TOC(other)
         return result.__sub__(self)
+
+    def __setitem__(self, key, value):
+        if isinstance(key, slice):
+            if key == slice(None, None, None):
+                # special case: set the entire list
+                self.filenames = set()
+                self.clear()
+                self.extend(value)
+                return
+            else:
+                raise KeyError("TOC.__setitem__ doesn't handle slices")
+
+        else:
+            old_value = self[key]
+            old_name = unique_name(old_value)
+            self.filenames.remove(old_name)
+
+            new_name = unique_name(value)
+            if new_name not in self.filenames:
+                self.filenames.add(new_name)
+                super(TOC, self).__setitem__(key, value)
 
 
 class Target:
