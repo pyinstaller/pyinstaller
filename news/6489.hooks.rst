@@ -1,0 +1,1 @@
+Add hooks for ``PySide6.QtMultimedia`` and ``PyQt6.QtMultimedia``.
