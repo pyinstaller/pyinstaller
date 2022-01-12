@@ -45,7 +45,9 @@ jobs:
             libxkbcommon-x11-0 libxcb-icccm4 libxcb1 openssl \
             libxcb-randr0-dev libxcb-xtest0-dev libxcb-xinerama0-dev \
             libxcb-shape0-dev libxcb-xkb-dev xvfb \
-            libopengl0 libegl1
+            libopengl0 libegl1 \
+            libpulse0 libpulse-mainloop-glib0 \
+            libgstreamer-plugins-base1.0-0 libgstreamer-gl1.0-0
 
       - name: Download AppImage tool
         if: startsWith(matrix.os, 'ubuntu')
