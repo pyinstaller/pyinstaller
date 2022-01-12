@@ -395,3 +395,25 @@ def test_Qt_QtWebEngine_PyQt6(pyi_builder, monkeypatch):
 @requires('PySide6 >= 6.2.2')
 def test_Qt_QtWebEngine_PySide6(pyi_builder, monkeypatch):
     _test_Qt_QtWebEngine(pyi_builder, monkeypatch, 'PySide6')
+
+
+# QtMultimedia test that also uses PySide's true_property, which triggers hidden dependency on QtMultimediaWidgets
+# python module.
+# See:
+# https://github.com/pyinstaller/pyinstaller/pull/6496#issuecomment-1011098019
+# https://github.com/qtproject/pyside-pyside-setup/blob/5.15.2/sources/shiboken2/shibokenmodule/files.dir/shibokensupport/signature/mapping.py#L577-L586
+# https://github.com/qtproject/pyside-pyside-setup/blob/v6.2.2.1/sources/shiboken6/shibokenmodule/files.dir/shibokensupport/signature/mapping.py#L614-L627
+@pytest.mark.parametrize('QtPyLib', [
+    qt_param('PySide2'),
+    qt_param('PySide6'),
+])
+def test_Qt_QtMultimedia_with_true_property(pyi_builder, monkeypatch, QtPyLib):
+    _qt_dll_path_clean(monkeypatch, QtPyLib)
+    pyi_builder.test_source(
+        """
+        from {0} import QtCore, QtMultimedia
+        from __feature__ import true_property
+
+        app = QtCore.QCoreApplication()
+        """.format(QtPyLib), **USE_WINDOWED_KWARG
+    )
