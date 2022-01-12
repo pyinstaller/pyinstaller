@@ -1,0 +1,2 @@
+Add hooks for ``QtMultimediaWidgets`` of all four supported Qt bindings
+(``PySide2``, ``PySide6``, ``PyQt5``, and ``PySide6``).
