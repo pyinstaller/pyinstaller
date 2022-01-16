@@ -29,7 +29,7 @@ keyring==19.2.0  # pyup: ignore
 babel==2.9.1
 future==0.18.2
 gevent==21.12.0
-ipython==8.0.0
+ipython==8.0.0; python_version >= '3.8'
 pygments==2.11.2
 PyGObject==3.42.0; sys_platform == 'linux'
 pyside2==5.15.2.1; python_version < '3.10'
