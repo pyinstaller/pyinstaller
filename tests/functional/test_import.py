@@ -18,7 +18,7 @@ import ctypes.util
 
 import pytest
 
-from PyInstaller.compat import is_darwin, is_win
+from PyInstaller.compat import is_win
 import PyInstaller.depend.utils
 from PyInstaller.utils.tests import skipif, importorskip, skipif_no_compiler, xfail, has_compiler
 
@@ -671,7 +671,6 @@ def test_pkg_without_hook_for_pkg(pyi_builder, script_dir):
     )
 
 
-@xfail(is_darwin, reason='Issue #1895.')
 def test_app_with_plugin(pyi_builder, data_dir, monkeypatch):
     datas = os.pathsep.join(('data/*/static_plugin.py', os.curdir))
     pyi_builder.test_script('pyi_app_with_plugin.py', pyi_args=['--add-data', datas])
