@@ -19,7 +19,7 @@ jobs:
     strategy:
       matrix:
         python-version: [3.7, 3.8, 3.9, '3.10']
-        os: ['windows-latest', 'ubuntu-latest', 'macos-10.15', 'macos-latest']
+        os: ['windows-latest', 'ubuntu-latest', 'macos-10.15', 'macos-11']
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
