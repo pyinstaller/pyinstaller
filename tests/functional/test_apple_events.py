@@ -146,14 +146,22 @@ def _test_apple_events_handling(appname, tmpdir, pyi_builder_spec, monkeypatch, 
 
     # 3. Put application into background so that we can re-activate it. Taken from the former test_osx_event_forwarding
     # that used PyQt5, in case we ever try to use this test function with PyQt5-based logger.
-    subprocess.check_call(['osascript', "-e", 'tell application "System Events" to activate'])
+    app_put_to_background = False
+    try:
+        # On GitHub Actions macos-11 runner, launching osascript sometimes fails with the following error:
+        # "osascript: can't open default scripting component."
+        subprocess.check_call(['osascript', "-e", 'tell application "System Events" to activate'])
+        app_put_to_background = True
+    except Exception:
+        pass
     time.sleep(1.0)  # delay for above applescript
 
-    # The app is running now, in the background, and does not have focus.
+    if app_put_to_background:
+        # The app is running now, in the background, and does not have focus.
 
-    # 4. Call open passing the app path again -- this should activate the already-running app.
-    subprocess.check_call(['open', app_path])
-    time.sleep(1.0)  # the activate event gets sent with a delay
+        # 4. Call open passing the app path again -- this should activate the already-running app.
+        subprocess.check_call(['open', app_path])
+        time.sleep(1.0)  # the activate event gets sent with a delay
 
     # 5. Call open with first four associated files.
     files_list = [('file://' if ii % 2 else '') + ff for ii, ff in enumerate(assoc_files[:4])]
@@ -252,8 +260,9 @@ def _test_apple_events_handling(appname, tmpdir, pyi_builder_spec, monkeypatch, 
         assert data == assoc_files
 
     # Validate activation count at the time of finish. One contribution should be from the initial oapp event (if
-    # applicable), and one from re-activation when we sent application to background and then called it forward.
-    expected_activations = initial_oapp + 1
+    # applicable), and one from re-activation when we sent application to background and then called it forward
+    # (provided there was no osascript error).
+    expected_activations = initial_oapp + app_put_to_background
     assert activation_count == expected_activations, "Application did not handle activation event(s) as expected!"
 
     # The rest of events should be received normally, regardless of argv-emu. Either directly (onedir), or via the
@@ -266,9 +275,11 @@ def _test_apple_events_handling(appname, tmpdir, pyi_builder_spec, monkeypatch, 
     assert data == [url_hello]
 
     # Event: rapp (re-activation)
-    event, data = events[event_idx]
-    event_idx += 1
-    assert event == 'rapp'
+    # Applicable only if we successfully put application to background via osascript
+    if app_put_to_background:
+        event, data = events[event_idx]
+        event_idx += 1
+        assert event == 'rapp'
 
     # Event: odoc with first 4 files
     event, data = events[event_idx]
