@@ -15,8 +15,10 @@ Note that the original unmaintained PIL has been obsoleted by the PIL-compatible
 which retains the same Python package `PIL`.
 """
 
-from PyInstaller.compat import is_darwin
-from PyInstaller.utils.tests import importorskip, skip, xfail
+import pytest
+
+from PyInstaller.utils.tests import importorskip, skip
+from PyInstaller.utils.hooks import can_import_module
 
 
 # "excludedimports" support is currently non-deterministic and hence cannot be marked as @xfail. If this test was
@@ -53,9 +55,10 @@ def test_pil_no_tkinter(pyi_builder):
     )
 
 
+# The tkinter module may be available for import, but not actually importable due to missing shared libraries.
+# Therefore, we need to use `can_import_module`-based skip decorator instead of `@importorskip`.
 @importorskip('PIL')
-@importorskip('tkinter')
-@xfail(is_darwin, reason='Issue #1895. Known to fail with macpython - python.org binary.')
+@pytest.mark.skipif(not can_import_module("tkinter"), reason="tkinter cannot be imported.")
 def test_pil_tkinter(pyi_builder):
     """
     Ensure that the Tkinter package excluded by `PIL` package hooks is importable by frozen applications explicitly

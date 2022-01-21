@@ -15,8 +15,9 @@ import os
 import pytest
 import py
 
-from PyInstaller.compat import is_win, is_darwin, is_linux
+from PyInstaller.compat import is_win, is_linux
 from PyInstaller.utils.tests import importorskip, xfail, skipif, requires
+from PyInstaller.utils.hooks import can_import_module
 
 # :todo: find a way to get this from `conftest` or such directory with testing modules used in some tests.
 _MODULES_DIR = py.path.local(os.path.abspath(__file__)).dirpath('modules')
@@ -47,7 +48,9 @@ def test_gevent_monkey(pyi_builder):
     )
 
 
-@xfail(is_darwin, reason='Issue #1895.')
+# The tkinter module may be available for import, but not actually importable due to missing shared libraries.
+# Therefore, we need to use `can_import_module`-based skip decorator instead of `@importorskip`.
+@pytest.mark.skipif(not can_import_module("tkinter"), reason="tkinter cannot be imported.")
 def test_tkinter(pyi_builder):
     pyi_builder.test_script('pyi_lib_tkinter.py')
 
@@ -106,7 +109,10 @@ def test_zope_interface(pyi_builder):
     )
 
 
+# The tkinter module may be available for import, but not actually importable due to missing shared libraries.
+# Therefore, we need to use `can_import_module`-based skip decorator instead of `@importorskip`.
 @importorskip('idlelib')
+@pytest.mark.skipif(not can_import_module("tkinter"), reason="tkinter cannot be imported.")
 def test_idlelib(pyi_builder):
     pyi_builder.test_source(
         """
