@@ -31,5 +31,13 @@ jobs:
         run: |
           ls -l /usr/local/lib/libtcl* || echo "Tcl/Tk 8.6 not found!"
 
+      - name: List contents of /usr/local/lib
+        run: |
+          ls -l /usr/local/lib
+
+      - name: List contents of /usr/local/lib
+        run: |
+          ls -l /usr/local/Cellar/tcl-tk/*/*
+
       - name: Try importing tkinter
         run: python3 -c 'import tkinter'
