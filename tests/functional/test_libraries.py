@@ -117,10 +117,7 @@ def test_idlelib(pyi_builder):
     pyi_builder.test_source(
         """
         # This file depends on loading some icons, located based on __file__.
-        try:
-            import idlelib.TreeWidget
-        except:
-            import idlelib.tree
+        import idlelib.tree
         """
     )
 
