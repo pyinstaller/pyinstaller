@@ -214,7 +214,6 @@ def test_module_attributes(tmpdir, pyi_builder):
     pyi_builder.test_script('pyi_module_attributes.py')
 
 
-@xfail(is_darwin, reason='Issue #1895.')
 def test_module_reload(pyi_builder):
     pyi_builder.test_script('pyi_module_reload.py')
 
