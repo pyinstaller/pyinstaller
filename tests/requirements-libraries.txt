@@ -20,7 +20,6 @@ importlib_resources==5.4.0; python_version < '3.9'
 # - v. 2.2 and above fails.
 Django==2.1.8  # pyup: ignore
 # - v 21.1.0 fails; earlier versions not tested.
-keyring==19.2.0  # pyup: ignore
 
 
 # Working
@@ -30,6 +29,9 @@ babel==2.9.1
 future==0.18.2
 gevent==21.12.0
 ipython==8.0.1; python_version >= '3.8'
+# keyring >= 23.1 requires python >= 3.8.7 on macOS 11 and later (with dyld shared cache support)
+keyring==23.0.1; sys_platform == 'darwin' and python_version < '3.8.7'  # pyup: ignore
+keyring==23.5.0; sys_platform != 'darwin' or python_version >= '3.8.7'
 matplotlib==3.5.1; python_version >= '3.8'
 pandas==1.4.0; python_version >= '3.8'
 pygments==2.11.2
