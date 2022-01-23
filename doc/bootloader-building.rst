@@ -316,7 +316,7 @@ Build using Visual Studio C++
      administrative powershell::
 
        … one-line-install as written on the chocolatey homepage
-       choco install -y python vcbuildtools
+       choco install -y python3 visualstudio2019-workload-vctools
 
 * Useful Links:
 
