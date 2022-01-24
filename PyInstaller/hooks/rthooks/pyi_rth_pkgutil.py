@@ -52,11 +52,16 @@ def _pyi_pkgutil_iter_modules(path=None, prefix=''):
             yield pkgutil.ModuleInfo(importer, prefix + entry, is_pkg)
     else:
         # Declare SYS_PREFIX locally, to avoid clash with eponymous global symbol from pyi_rth_pkgutil hook.
-        SYS_PREFIX = sys._MEIPASS + os.path.sep
+        #
+        # Use os.path.realpath() to fully resolve any symbolic links in sys._MEIPASS, in order to avoid path mis-matches
+        # when the given search paths also contain symbolic links and are already fully resolved. See #6537 for an
+        # example of such a problem with onefile build on macOS, where the temporary directory is placed under /var,
+        # which is actually a symbolic link to /private/var.
+        SYS_PREFIX = os.path.realpath(sys._MEIPASS) + os.path.sep
         SYS_PREFIXLEN = len(SYS_PREFIX)
 
         for pkg_path in path:
-            pkg_path = os.path.normpath(pkg_path)
+            pkg_path = os.path.realpath(pkg_path)  # Fully resolve the given path, in case it contains symbolic links.
             if not pkg_path.startswith(SYS_PREFIX):
                 # if the path does not start with sys._MEIPASS then it cannot be a bundled package.
                 continue
