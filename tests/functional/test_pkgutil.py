@@ -49,7 +49,7 @@ def _read_results_file(filename):
     ]
 )
 @pytest.mark.parametrize('archive', ['archive', 'noarchive'])
-def test_pkgutil_iter_modules(package, script_dir, tmpdir, pyi_builder, archive):
+def test_pkgutil_iter_modules(package, script_dir, tmpdir, pyi_builder, archive, resolve_pkg_path=False):
     # Ensure package is available
     if not importable(package.split(".")[0]):
         pytest.skip("Needs " + package)
@@ -80,10 +80,25 @@ def test_pkgutil_iter_modules(package, script_dir, tmpdir, pyi_builder, archive)
             # enable/disable noarchive
             *debug_args,
         ],
-        app_args=[package, '--output-file', out_frozen],
+        app_args=[package, '--output-file', out_frozen] + (['--resolve-pkg-path'] if resolve_pkg_path else [])
     )  # yapf: disable
     # Read results
     results_frozen = _read_results_file(out_frozen)
 
     # Compare
     assert results_unfrozen == results_frozen
+
+
+# Repeat test_pkgutil_iter_modules() test with package path resolving enabled. In this mode, the test script fully
+# resolves the package path before passing it to pkgutil.iter_modules(), reproducing the scenario of #6537 on macOS:
+# the temporary directory used by onefile builds is placed in /var, which is symbolic link to /private/var. Therefore,
+# the resolved package path (/private/var/...) in the frozen application may differ from non-resolved one (/var/...),
+# and our pkgutil.iter_modules() therefore needs to explicitly resolve the given paths and the sys._MEIPASS prefix to
+# ensure proper matching.
+# The test is applicable only to macOS in onefile mode.
+@pytest.mark.darwin
+def test_pkgutil_iter_modules_resolve_pkg_path(script_dir, tmpdir, pyi_builder):
+    if pyi_builder._mode != 'onefile':
+        pytest.skip('The test is applicable only to onefile mode.')
+    # A single combination (altgraph package, archive mode) is enough to check for proper symlink handling.
+    test_pkgutil_iter_modules('altgraph', script_dir, tmpdir, pyi_builder, archive=True, resolve_pkg_path=True)
