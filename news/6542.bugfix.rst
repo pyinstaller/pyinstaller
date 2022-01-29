@@ -1,0 +1,2 @@
+Fix finding ``libpython3x.so`` when Python is installed with pyenv and the
+python executable is not linked against ``libpython3x.so``.
