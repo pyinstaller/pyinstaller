@@ -899,11 +899,12 @@ def get_python_library_path():
             if python_libname:
                 return python_libname
 
-    elif compat.is_darwin:
+    if compat.is_darwin or compat.is_linux:
         # On MacPython, Analysis.assemble is able to find the libpython with no additional help, asking for
         # sys.executable dependencies. However, this fails on system python, because the shared library is not listed as
         # a dependency of the binary (most probably it is opened at runtime using some dlopen trickery). This happens on
         # Mac OS when Python is compiled as Framework.
+        # Linux using pyenv is similarly linked so that sys.executable dependencies does not yield libpython.so.
 
         # Python compiled as Framework contains same values in sys.prefix and exec_prefix. That is why we can use just
         # sys.prefix. In virtualenv, PyInstaller is not able to find Python library. We need special care for this case.
