@@ -74,7 +74,10 @@ jobs:
       - name: Set up environment
         run: |
           # Update pip.
-          python -m pip install -U pip setuptools wheel
+          #
+          # pip 22.0 seems to be causing issues with pytest on our Windows runners, so pin to 21.3.1
+          # until we figure out what is going on...
+          python -m pip install -U pip==21.3.1 setuptools wheel
 
           # Install dependencies for tests.
           pip install --progress-bar=off -U -r tests/requirements-tools.txt -r tests/requirements-libraries.txt
