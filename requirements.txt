@@ -5,7 +5,7 @@
 
 ## IMPORTANT: Keep aligned with setup.cfg
 
-setuptools<50.0.0   # 50.0.0 breaks a modulegraph regession test
+setuptools
 altgraph
 pyinstaller-hooks-contrib >= 2020.11
 pefile; sys_platform == 'win32'
