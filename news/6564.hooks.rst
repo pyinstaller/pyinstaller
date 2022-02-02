@@ -1,0 +1,2 @@
+Add a work-around for compatibility with ``setuptools 60.7.0`` and its vendoring 
+of ``jaraco.text`` in ``pkg_resources``.
