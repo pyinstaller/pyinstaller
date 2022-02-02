@@ -68,7 +68,10 @@ jobs:
           path: ${{ env.pip_cache_dir }}
           key: ${{ runner.os }}-${{ matrix.python-version }}
 
+      # Use bash for this step, so that we can avoid dealing with PowerShell
+      # syntax for writing to environmental file on Windows.
       - name: Set up environment
+        shell: bash
         run: |
           # Update pip.
           #
@@ -91,6 +94,10 @@ jobs:
 
           # Run Qt-based tests with offscreen backend
           echo "QT_QPA_PLATFORM=offscreen" >> $GITHUB_ENV
+
+          # Prevent setuptools from replacing distutils with its vendored version, as our test suite is not
+          # ready for that.
+          echo "SETUPTOOLS_USE_DISTUTILS=not-today" >> $GITHUB_ENV
 
       - name: Start display server
         if: startsWith(matrix.os, 'ubuntu')
@@ -128,6 +135,9 @@ jobs:
       - uses: actions/checkout@v2
       - run: docker build -f alpine.dockerfile -t foo .
       - run: >
-          docker run foo pytest
+          docker run
+          -e SETUPTOOLS_USE_DISTUTILS='not-today'
+          foo
+          pytest
           -n 3 --maxfail 3 --durations 10 tests/unit tests/functional
           --force-flaky --no-flaky-report --reruns 3 --reruns-delay 10
