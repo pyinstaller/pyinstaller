@@ -15,6 +15,44 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+4.9 (2022-02-03)
+----------------
+
+Bugfix
+~~~~~~
+
+* Add support for external paths when running ``pkgutil.iter_modules``.
+  Add support for multiple search paths to ``pkgutil.iter_modules``.
+  Correctly handle ``pkgutil.iter_modules`` with an empty list.
+  (:issue:`#6529`)
+* Fix finding ``libpython3x.so`` when Python is installed with pyenv and the
+  python executable is not linked against ``libpython3x.so``. (:issue:`#6542`)
+* Fix handling of symbolic links in the path matching part of the
+  PyInstaller's ``pkgutil.iter_modules`` replacement/override. (:issue:`#6537`)
+
+
+Hooks
+~~~~~
+
+* Add hooks for ``PySide6.QtMultimedia`` and ``PyQt6.QtMultimedia``.
+  (:issue:`#6489`)
+* Add hooks for ``QtMultimediaWidgets`` of all four supported Qt bindings
+  (``PySide2``, ``PySide6``, ``PyQt5``, and ``PySide6``). (:issue:`#6489`)
+* Add support for ``setuptools 60.7.1`` and its vendoring  of ``jaraco.text``
+  in ``pkg_resources``. Exit with an error message if ``setuptools 60.7.0``
+  is encountered due to incompatibility with PyInstaller's loader logic.
+  (:issue:`#6564`)
+* Collect the ``QtWaylandClient``-related plugins to enable Wayland support in
+  the
+  frozen applications using any of the four supported Qt bindings (``PySide2``,
+  ``PyQt5``, ``PySide6``, and ``PyQt6``). (:issue:`#6483`)
+* Fix the issue with missing ``QtMultimediaWidgets`` module when using
+  ``PySide2.QtMultimedia`` or ``PySide6.QtMultimedia`` in combination
+  with PySide's ``true_property`` `feature
+  <https://doc.qt.io/qtforpython/feature-why.html#the-true-property-feature>`_.
+  (:issue:`#6489`)
+
+
 4.8 (2022-01-06)
 ----------------
 
