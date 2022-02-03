@@ -68,10 +68,7 @@ jobs:
           path: ${{ env.pip_cache_dir }}
           key: ${{ runner.os }}-${{ matrix.python-version }}
 
-      # Use bash for this step, so that we can avoid dealing with PowerShell
-      # syntax for writing to environmental file on Windows.
       - name: Set up environment
-        shell: bash
         run: |
           # Update pip.
           #
@@ -92,9 +89,23 @@ jobs:
           # Make sure the help options print.
           python -m pyinstaller -h
 
-          # Run Qt-based tests with offscreen backend
+      - name: Set up environment variables (non-Windows)
+        if: ${{ !startsWith(matrix.os, 'windows') }}
+        run: |
+          # Run Qt-based tests with offscreen backend. This seems to break QtWebEngine tests on Windows, so
+          # apply it only here, in non-Windows path.
           echo "QT_QPA_PLATFORM=offscreen" >> $GITHUB_ENV
 
+          # Prevent setuptools from replacing distutils with its vendored version, as our test suite is not
+          # ready for that.
+          echo "SETUPTOOLS_USE_DISTUTILS=not-today" >> $GITHUB_ENV
+
+      # Use bash for this step, so that we can avoid dealing with PowerShell
+      # syntax for writing to environmental file on Windows.
+      - name: Set up environment variables (Windows)
+        if: startsWith(matrix.os, 'windows')
+        shell: bash
+        run: |
           # Prevent setuptools from replacing distutils with its vendored version, as our test suite is not
           # ready for that.
           echo "SETUPTOOLS_USE_DISTUTILS=not-today" >> $GITHUB_ENV
