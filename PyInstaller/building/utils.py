@@ -142,7 +142,8 @@ def checkCache(
     dist_nm=None,
     target_arch=None,
     codesign_identity=None,
-    entitlements_file=None
+    entitlements_file=None,
+    strict_arch_validation=False
 ):
     """
     Cache prevents preprocessing binary files again and again.
@@ -273,7 +274,8 @@ def checkCache(
                 dist_nm=dist_nm,
                 target_arch=target_arch,
                 codesign_identity=codesign_identity,
-                entitlements_file=entitlements_file
+                entitlements_file=entitlements_file,
+                strict_arch_validation=strict_arch_validation,
             )
         # We need to avoid using UPX with Windows DLLs that have Control Flow Guard enabled, as it breaks them.
         if (is_win or is_cygwin) and versioninfo.pefile_check_control_flow_guard(fnm):
@@ -383,6 +385,19 @@ def checkCache(
             # Raised by osxutils.binary_to_target_arch when the given file is not a valid macOS binary (for example,
             # a linux .so file; see issue #6327). The error prevents any further processing, so just ignore it.
             pass
+        except osxutils.IncompatibleBinaryArchError:
+            # Raised by osxutils.binary_to_target_arch when the given file does not contain (all) required arch slices.
+            # Depending on the strict validation mode, re-raise or swallow the error.
+            #
+            # Strict validation should be enabled only for binaries where the architecture *must* match the target one,
+            # i.e., the extension modules. Everything else is pretty much a gray area, for example:
+            #  * a universal2 extension may have its x86_64 and arm64 slices linked against distinct single-arch/thin
+            #    shared libraries
+            #  * a collected executable that is launched by python code via a subprocess can be x86_64-only, even though
+            #    the actual python code is running on M1 in native arm64 mode.
+            if strict_arch_validation:
+                raise
+            logger.debug("File %s failed optional architecture validation - collecting as-is!", fnm)
 
     return cachedfile
 
