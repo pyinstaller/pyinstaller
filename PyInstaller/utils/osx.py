@@ -268,6 +268,13 @@ class InvalidBinaryError(Exception):
     pass
 
 
+class IncompatibleBinaryArchError(Exception):
+    """
+    Exception raised by `binary_to_target_arch` when the passed binary fails the strict architecture check.
+    """
+    pass
+
+
 def get_binary_architectures(filename):
     """
     Inspects the given binary and returns tuple (is_fat, archs), where is_fat is boolean indicating fat/thin binary,
@@ -302,19 +309,23 @@ def binary_to_target_arch(filename, target_arch, display_name=None):
         display_name = filename  # Same as input file
     # Check the binary
     is_fat, archs = get_binary_architectures(filename)
-    if is_fat:
-        if target_arch == 'universal2':
-            return  # Assume fat binary is universal2; nothing to do
-        else:
-            assert target_arch in archs, f"{display_name} does not contain slice for {target_arch}!"
+    if target_arch == 'universal2':
+        if not is_fat:
+            raise IncompatibleBinaryArchError(f"{display_name} is not a fat binary!")
+        # Assume fat binary is universal2; nothing to do
+    else:
+        if is_fat:
+            if target_arch not in archs:
+                raise IncompatibleBinaryArchError(f"{display_name} does not contain slice for {target_arch}!")
             # Convert to thin arch
             logger.debug("Converting fat binary %s (%s) to thin binary (%s)", filename, display_name, target_arch)
             convert_binary_to_thin_arch(filename, target_arch)
-    else:
-        assert target_arch != 'universal2', f"{display_name} is not a fat binary!"
-        assert target_arch in archs, \
-            f"{display_name} is incompatible with target arch {target_arch} (has arch: {archs[0]})!"
-        return  # Nothing to do
+        else:
+            if target_arch not in archs:
+                raise IncompatibleBinaryArchError(
+                    f"{display_name} is incompatible with target arch {target_arch} (has arch: {archs[0]})!"
+                )
+            # Binary has correct arch; nothing to do
 
 
 def remove_signature_from_binary(filename):

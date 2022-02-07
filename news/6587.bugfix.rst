@@ -1,0 +1,5 @@
+(macOS) Limit the strict architecture validation for collected binaries to
+extension modules only. Fixes architecture validation errors when a
+``universal2`` package has its multi-arch extension modules' arch slices
+linked against distinct single-arch thin shared libraries, as is the
+case with ``scipy`` 1.8.0 macOS ``universal2`` wheel.
