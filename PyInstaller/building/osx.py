@@ -184,7 +184,8 @@ class BUNDLE(Target):
                     dist_nm=inm,
                     target_arch=self.target_arch,
                     codesign_identity=self.codesign_identity,
-                    entitlements_file=self.entitlements_file
+                    entitlements_file=self.entitlements_file,
+                    strict_arch_validation=(typ == 'EXTENSION'),
                 )
             # Add most data files to a list for symlinking later.
             if typ == 'DATA' and base_path not in _QT_BASE_PATH:

@@ -273,7 +273,8 @@ class PKG(Target):
                         dist_nm=inm,
                         target_arch=self.target_arch,
                         codesign_identity=self.codesign_identity,
-                        entitlements_file=self.entitlements_file
+                        entitlements_file=self.entitlements_file,
+                        strict_arch_validation=(typ == 'EXTENSION'),
                     )
 
                     mytoc.append((inm, fnm, self.cdict.get(typ, 0), self.xformdict.get(typ, 'b')))
@@ -878,7 +879,8 @@ class COLLECT(Target):
                     dist_nm=inm,
                     target_arch=self.target_arch,
                     codesign_identity=self.codesign_identity,
-                    entitlements_file=self.entitlements_file
+                    entitlements_file=self.entitlements_file,
+                    strict_arch_validation=(typ == 'EXTENSION'),
                 )
             if typ != 'DEPENDENCY':
                 if os.path.isdir(fnm):
