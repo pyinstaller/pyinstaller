@@ -57,6 +57,10 @@ def _pyi_machine(machine, system):
     if machine.startswith(("arm", "aarch")):
         # ARM has a huge number of similar and aliased sub-versions, such as armv5, armv6l armv8h, aarch64.
         return "arm"
+    if machine in ("thumb"):
+        # Reported by waf/gcc when Thumb instruction set is enabled on 32-bit ARM. The platform.machine() returns "arm"
+        # regardless of the instruction set.
+        return "arm"
     if machine in ("x86_64", "x64", "x86"):
         return "intel"
     if re.fullmatch("i[1-6]86", machine):
