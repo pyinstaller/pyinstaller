@@ -148,9 +148,12 @@ class Python:
         if self._child is None:
             raise RuntimeError("An isolated.Python object must be used in a 'with' clause.")
 
-        # Send 3 lines to the child process: The function's code attribute and its args and kwargs, all serialised.
+        # Send 5 lines to the child process: The function's code attribute, its default args and kwargs, and its actual
+        # args and kwargs, all serialised.
         self._write_handle.writelines([
             b64encode(dumps(function.__code__)), b"\n",
+            b64encode(dumps(function.__defaults__)), b"\n",
+            b64encode(dumps(function.__kwdefaults__)), b"\n",
             b64encode(dumps(args)), b"\n",
             b64encode(dumps(kwargs)), b"\n",
         ])  # yapf: disable

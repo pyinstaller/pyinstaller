@@ -44,8 +44,10 @@ def run_next_command(read_fh, write_fh):
         # It's time to end this child process
         return False
 
-    # There are 3 lines to read: The function's code, its args, then it kwargs.
+    # There are 5 lines to read: The function's code, its default args, its default kwargs, its args, and its kwargs.
     code = loads(b64decode(first_line.strip()))
+    _defaults = loads(b64decode(read_fh.readline().strip()))
+    _kwdefaults = loads(b64decode(read_fh.readline().strip()))
     args = loads(b64decode(read_fh.readline().strip()))
     kwargs = loads(b64decode(read_fh.readline().strip()))
 
@@ -54,6 +56,8 @@ def run_next_command(read_fh, write_fh):
         GLOBALS = {"__builtins__": __builtins__, "__isolated__": True}
         # Reconstruct the function.
         function = types.FunctionType(code, GLOBALS)
+        function.__defaults__ = _defaults
+        function.__kwdefaults__ = _kwdefaults
 
         # Run it.
         output = function(*args, **kwargs)
