@@ -215,3 +215,39 @@ def test_is_isolated():
     assert is_isolated() is False
     assert isolated.call(is_isolated) is True
     assert is_isolated() is False
+
+
+def test_default_args():
+    """
+    Verify that default arguments are properly passed to the isolated function call.
+    """
+    def isolated_function(arg1='default1', arg2='default2', arg3='default3'):
+        return arg1, arg2, arg3
+
+    # Sanity check
+    assert isolated_function.__defaults__ == ('default1', 'default2', 'default3')
+    assert isolated_function.__kwdefaults__ is None
+
+    # Test by keeping the second argument at the default value
+    expected = 'override1', 'default2', 'override3'
+    with isolated.Python() as child:
+        actual = child.call(isolated_function, arg1='override1', arg3='override3')
+    assert actual == expected
+
+
+def test_default_kwargs():
+    """
+    Verify that default keyword-only arguments are properly passed to the isolated function call.
+    """
+    def isolated_function(*args, kwarg1='default1', kwarg2='default2', kwarg3='default3'):
+        return kwarg1, kwarg2, kwarg3
+
+    # Sanity check
+    assert isolated_function.__defaults__ is None
+    assert isolated_function.__kwdefaults__ == {'kwarg1': 'default1', 'kwarg2': 'default2', 'kwarg3': 'default3'}
+
+    # Test by keeping the second keyword-only argument at the default value
+    expected = 'override1', 'default2', 'override3'
+    with isolated.Python() as child:
+        actual = child.call(isolated_function, kwarg1='override1', kwarg3='override3')
+    assert actual == expected
