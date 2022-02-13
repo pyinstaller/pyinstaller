@@ -192,6 +192,26 @@ is manually addressed (for example, by downloading the wheel corresponding to
 the missing architecture, and stiching the offending binary files together
 using the ``lipo`` utility).
 
+.. versionchanged:: 4.10
+   In earlier |PyInstaller| versions, the architecture validation was performed
+   on all collected binaries, such as python extension modules and the
+   shared libraries referenced by those extensions. As of |PyInstaller| 4.10,
+   the architecture validation is limited to only python extension modules.
+
+   The individual architecture slices in a multi-arch ``universal2`` extension
+   may be linked against (slices in) ``universal2`` shared libraries, or
+   against distinct single-arch thin shared libraries. This latter case makes
+   it impossible to reliably validate architecture of the collected shared
+   libraries w.r.t. the target application architecture.
+
+   However, the extension modules do need to be fully compatible with the target
+   application architecture. Therefore, their continued validation should
+   hopefully suffice to detect attempts at using incompatible single-arch
+   python packages [*]_.
+
+.. [*] Although nothing really prevents a package from having distinct,
+   architecture-specific extension modules...
+
 
 Trimming fat binaries for single-arch targets
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
