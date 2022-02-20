@@ -82,3 +82,27 @@ def test_pil_tkinter(pyi_builder):
             raise SystemExit('ERROR: Module tkinter is NOT bundled.')
         """
     )
+
+
+@importorskip('PIL')
+@importorskip('matplotlib')
+def test_pil_no_matplotlib(pyi_builder):
+    """
+    Ensure that using PIL.Image does not pull in `matplotlib` when the latter is not explicitly imported by the program.
+    The import chain in question,
+    PIL.Image -> PIL -> PIL.ImageShow -> IPython -> matplotlib_inline.backend_inline -> matplotlib,
+    should be broken by the PIL hook excluding IPython.
+    """
+
+    pyi_builder.test_source(
+        """
+        import PIL.Image
+
+        # Use dynamic import of matplotlib to prevent PyInstaller from picking up the import.
+        try:
+            __import__('matplotlib')
+            raise SystemExit('ERROR: matplotlib is bundled.')
+        except ImportError:
+            pass
+        """
+    )
