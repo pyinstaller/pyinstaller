@@ -26,26 +26,18 @@ _DATA_DIR = py.path.local(os.path.abspath(__file__)).dirpath('data')
 
 @importorskip('gevent')
 def test_gevent(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         import gevent
         gevent.spawn(lambda: x)
-        """,
-        # Reduce footprint of the test (and avoid issued introduced by one of these packages breaking).
-        excludes=["PySide2", "PyQt5", "numpy", "scipy"]
-    )
+        """)
 
 
 @importorskip('gevent')
 def test_gevent_monkey(pyi_builder):
-    pyi_builder.test_source(
-        """
+    pyi_builder.test_source("""
         from gevent.monkey import patch_all
         patch_all()
-        """,
-        # Reduce footprint of the test (and avoid issued introduced by one of these packages breaking).
-        excludes=["PySide2", "PyQt5", "numpy", "scipy"]
-    )
+        """)
 
 
 # The tkinter module may be available for import, but not actually importable due to missing shared libraries.
