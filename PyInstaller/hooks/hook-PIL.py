@@ -15,3 +15,7 @@
 # Ignore tkinter to prevent inclusion of Tcl/Tk library and other GUI libraries. Assume that if people are really using
 # tkinter in their application, they will also import it directly and thus PyInstaller bundles the right GUI library.
 excludedimports = ['tkinter', 'PyQt5', 'PySide2', 'PyQt6', 'PySide6']
+
+# Similarly, prevent inclusion of IPython, which in turn ends up pulling in whole matplotlib, along with its optional
+# GUI library dependencies.
+excludedimports += ['IPython']
