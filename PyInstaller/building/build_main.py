@@ -765,7 +765,17 @@ def __add_options(parser):
     )
 
 
-def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
+def main(
+    pyi_config,
+    specfile,
+    noconfirm=False,
+    ascii=False,
+    distpath=DEFAULT_DISTPATH,
+    workpath=DEFAULT_WORKPATH,
+    upx_dir=None,
+    clean_build=False,
+    **kw
+):
     from PyInstaller.config import CONF
     CONF['noconfirm'] = noconfirm
 
@@ -780,7 +790,7 @@ def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
     # If configuration dict is supplied - skip configuration step.
     if pyi_config is None:
         import PyInstaller.configure as configure
-        CONF.update(configure.get_config(kw.get('upx_dir')))
+        CONF.update(configure.get_config(upx_dir))
     else:
         CONF.update(pyi_config)
 
@@ -790,4 +800,4 @@ def main(pyi_config, specfile, noconfirm, ascii=False, **kw):
     CONF['ui_admin'] = kw.get('ui_admin', False)
     CONF['ui_access'] = kw.get('ui_uiaccess', False)
 
-    build(specfile, kw.get('distpath'), kw.get('workpath'), kw.get('clean_build'))
+    build(specfile, distpath, workpath, clean_build)
