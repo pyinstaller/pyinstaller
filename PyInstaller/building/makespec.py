@@ -453,10 +453,12 @@ def __add_options(parser):
         "-i",
         "--icon",
         dest="icon_file",
-        metavar='<FILE.ico or FILE.exe,ID or FILE.icns or "NONE">',
+        metavar='<FILE.ico or FILE.exe,ID or FILE.icns or Image or "NONE">',
         help="FILE.ico: apply the icon to a Windows executable. FILE.exe,ID: extract the icon with ID from an exe. "
-        "FILE.icns: apply the icon to the .app bundle on Mac OS. Use \"NONE\" to not apply any icon, thereby making "
-        "the OS to show some default (default: apply PyInstaller's icon)",
+        "FILE.icns: apply the icon to the .app bundle on Mac OS. If an image file is entered that isn't in the "
+        "platform format (ico on Windows, icns on Mac), PyInstaller tries to use PIL to translate the icon into the "
+        "correct format (if PIL is installed). Use \"NONE\" to not apply any icon, thereby making the OS to show some default "
+        "(default: apply PyInstaller's icon)",
     )
     g.add_argument(
         "--disable-windowed-traceback",
