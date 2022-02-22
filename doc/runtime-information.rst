@@ -74,8 +74,7 @@ if it is bundled::
 Or, if you'd rather use pathlib_::
 
     from pathlib import Path
-    bundle_dir = Path(__file__).parent
-    path_to_dat = Path.cwd() / bundle_dir / "other-file.dat"
+    path_to_dat = Path(__file__).resolve().with_name("other-file.dat")
 
 .. versionchanged:: 4.3
 
@@ -104,7 +103,7 @@ use the following code in a file named ``my_script.py`` to locate a file
 Or the pathlib_ equivalent::
 
     from pathlib import Path
-    path_to_dat = (Path.cwd() / __file__).with_name("file.dat")
+    path_to_dat = Path(__file__).resolve().with_name("file.dat")
 
 And ``my_script.py`` is **not** part of a package (not in a folder containing
 an ``__init_.py``), then ``__file__`` will be ``[app root]/my_script.pyc``
