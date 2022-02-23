@@ -70,6 +70,8 @@ def _pyi_machine(machine, system):
         return "ppc"
     if machine in ("mips64", "mips"):
         return "mips"
+    if machine.startswith("riscv"):
+        return "riscv"
     # Machines with no known aliases :)
     if machine in ("s390x",):
         return machine
