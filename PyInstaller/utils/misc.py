@@ -152,7 +152,7 @@ def compile_py_files(toc, workpath):
         # TODO: explain why this does read()[:4] (reading all the file) instead of just read(4)? Yes for many a .pyc
         #       file, it is all in one sector so there is no difference in I/O, but still it seems inelegant to copy it
         #       all then subscript 4 bytes.
-        needs_compile = mtime(src_fnm) > mtime(obj_fnm)
+        needs_compile = not os.path.exists(obj_fnm) or mtime(src_fnm) > mtime(obj_fnm)
         if not needs_compile:
             with open(obj_fnm, 'rb') as fh:
                 needs_compile = fh.read()[:4] != BYTECODE_MAGIC
@@ -184,7 +184,7 @@ def compile_py_files(toc, workpath):
 
                 obj_fnm = os.path.join(leading, mod_name + ext)
                 # TODO: see above TODO regarding read()[:4] versus read(4).
-                needs_compile = mtime(src_fnm) > mtime(obj_fnm)
+                needs_compile = not os.path.exists(obj_fnm) or mtime(src_fnm) > mtime(obj_fnm)
                 if not needs_compile:
                     with open(obj_fnm, 'rb') as fh:
                         needs_compile = fh.read()[:4] != BYTECODE_MAGIC
