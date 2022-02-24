@@ -151,7 +151,7 @@ def compile_py_files(toc, workpath):
 
         # We need to perform a build ourselves if obj_fnm does not exist, or if src_fnm is newer than obj_fnm, or if
         # obj_fnm was created by a different Python version.
-        needs_compile = mtime(src_fnm) > mtime(obj_fnm)
+        needs_compile = not os.path.exists(obj_fnm) or mtime(src_fnm) > mtime(obj_fnm)
         if not needs_compile:
             with open(obj_fnm, 'rb') as fh:
                 needs_compile = fh.read(4) != BYTECODE_MAGIC
@@ -185,7 +185,7 @@ def compile_py_files(toc, workpath):
                     os.makedirs(leading)
 
                 obj_fnm = os.path.join(leading, mod_name + ext)
-                needs_compile = mtime(src_fnm) > mtime(obj_fnm)
+                needs_compile = not os.path.exists(obj_fnm) or mtime(src_fnm) > mtime(obj_fnm)
                 if not needs_compile:
                     with open(obj_fnm, 'rb') as fh:
                         needs_compile = fh.read(4) != BYTECODE_MAGIC
