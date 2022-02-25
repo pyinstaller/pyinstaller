@@ -80,7 +80,7 @@ class _PyiArgumentParser(argparse.ArgumentParser):
         """
         Nbefore = len(getattr(self, "_actions", []))
         __add_options(self)  # preserves old behavior
-        newactions = self._actions[Nbefore:]
+        newactions = getattr(self, "_actions", [])[Nbefore:]
         self._pyi_action_groups[name].extend(newactions)
 
     def _forbid_options(self, args: argparse.Namespace, group: str, errmsg: str=""):
