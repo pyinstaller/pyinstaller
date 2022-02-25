@@ -204,7 +204,7 @@ def __add_options(parser):
         "--onedir",
         dest="onefile",
         action="store_false",
-        default=False,
+        default=None,
         help="Create a one-folder bundle containing an executable (default)",
     )
     g.add_argument(
@@ -212,7 +212,7 @@ def __add_options(parser):
         "--onefile",
         dest="onefile",
         action="store_true",
-        default=False,
+        default=None,
         help="Create a one-file bundled executable.",
     )
     g.add_argument(
@@ -434,7 +434,7 @@ def __add_options(parser):
         "--nowindowed",
         dest="console",
         action="store_true",
-        default=True,
+        default=None,
         help="Open a console window for standard i/o (default). On Windows this option has no effect if the first "
         "script is a '.pyw' file.",
     )
@@ -444,6 +444,7 @@ def __add_options(parser):
         "--noconsole",
         dest="console",
         action="store_false",
+        default=None,
         help="Windows and Mac OS X: do not provide a console window for standard i/o. On Mac OS this also triggers "
         "building a Mac OS .app bundle. On Windows this option is automatically set if the first script is a '.pyw' "
         "file. This option is ignored on *NIX systems.",
@@ -772,7 +773,7 @@ def main(
         # List of modules/pakages to ignore.
         'excludes': excludes or [],
         # only Windows and Mac OS distinguish windowed and console apps
-        'console': console,
+        'console': bool(console),
         'disable_windowed_traceback': disable_windowed_traceback,
         # Icon filename. Only Mac OS uses this item.
         'icon': icon_file,

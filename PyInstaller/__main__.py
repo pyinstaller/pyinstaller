@@ -15,6 +15,7 @@ Main command-line interface to PyInstaller.
 import argparse
 import os
 import platform
+from collections import defaultdict
 
 from PyInstaller import __version__
 from PyInstaller import log as logging
@@ -68,7 +69,43 @@ def __add_options(parser):
     )
 
 
-def generate_parser() -> argparse.ArgumentParser:
+class _PyiArgumentParser(argparse.ArgumentParser):
+    def __init__(self, *args, **kwargs):
+        self._pyi_action_groups = defaultdict(list)
+        super().__init__(*args, **kwargs)
+
+    def _add_options(self, __add_options: callable, name: str=""):
+        """
+        Mutate self with the given callable, storing any new actions added in a named group
+        """
+        Nbefore = len(getattr(self, "_actions", []))
+        __add_options(self)  # preserves old behavior
+        newactions = self._actions[Nbefore:]
+        self._pyi_action_groups[name].extend(newactions)
+
+    def _forbid_options(self, args: argparse.Namespace, group: str, errmsg: str=""):
+        """Forbid options from a named action group"""
+        opts = {}
+        for action in self._pyi_action_groups[group]:
+            dest = action.dest
+            # prefer the first long name of an option, for legibility; fall back on first short name
+            longnames = (name for name in action.option_strings if name.startswith("--"))
+            name = next(longnames, action.option_strings[0])
+            if getattr(args, dest) is not self.get_default(dest):
+                if dest in opts:
+                    # NOTE: edge case: some options have the same dest, lump them together
+                    opts[dest] += f"/{name}"
+                else:
+                    opts[dest] = name
+
+        if opts:
+            badopts = ', '.join(opts.values())
+            if errmsg:
+                errmsg = "\n" + errmsg
+            raise SystemExit(f"option(s) not allowed: {badopts}{errmsg}")
+
+
+def generate_parser() -> _PyiArgumentParser:
     """
     Build an argparse parser for PyInstaller's main CLI.
     """
@@ -77,13 +114,14 @@ def generate_parser() -> argparse.ArgumentParser:
     import PyInstaller.building.makespec
     import PyInstaller.log
 
-    parser = argparse.ArgumentParser(formatter_class=_SmartFormatter)
+    parser = _PyiArgumentParser(formatter_class=_SmartFormatter)
     parser.prog = "pyinstaller"
-    __add_options(parser)
 
-    PyInstaller.building.makespec.__add_options(parser)
-    PyInstaller.building.build_main.__add_options(parser)
-    PyInstaller.log.__add_options(parser)
+    parser._add_options(__add_options)
+    parser._add_options(PyInstaller.building.makespec.__add_options, name="makespec")
+    parser._add_options(PyInstaller.building.build_main.__add_options, name="build_main")
+    parser._add_options(PyInstaller.log.__add_options, name="log")
+
     parser.add_argument(
         'filenames',
         metavar='scriptname',
@@ -117,6 +155,7 @@ def run(pyi_args=None, pyi_config=None):
 
         # Skip creating .spec when .spec file is supplied.
         if args.filenames[0].endswith('.spec'):
+            parser._forbid_options(args, group="makespec", errmsg="makespec options not valid when a .spec file is given")
             spec_file = args.filenames[0]
         else:
             spec_file = run_makespec(**vars(args))
