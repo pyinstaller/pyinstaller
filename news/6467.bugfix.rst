@@ -1,0 +1,3 @@
+(Windows) Use a made up (not ``.exe``) suffix for intermediate executable files during the build process to prevent
+antiviruses from attempting to scan the file whilst PyInstaller is still working on it leading to a
+:class:`PermissionError` at build time.
