@@ -83,26 +83,39 @@ class _PyiArgumentParser(argparse.ArgumentParser):
         newactions = getattr(self, "_actions", [])[Nbefore:]
         self._pyi_action_groups[name].extend(newactions)
 
+    def _option_name(self, action):
+        """
+        Get the option name(s) associated with an action
+
+        For options that define both short and long names, this function will
+        return the long names joined by "/"
+        """
+        longnames = [name for name in action.option_strings if name.startswith("--")]
+        if longnames:
+            name = "/".join(longnames)
+        else:
+            name = action.option_strings[0]
+        return name
+
     def _forbid_options(self, args: argparse.Namespace, group: str, errmsg: str=""):
         """Forbid options from a named action group"""
-        opts = {}
+        opts = defaultdict(str)
         for action in self._pyi_action_groups[group]:
             dest = action.dest
-            # prefer the first long name of an option, for legibility; fall back on first short name
-            longnames = (name for name in action.option_strings if name.startswith("--"))
-            name = next(longnames, action.option_strings[0])
+            name = self._option_name(action)
             if getattr(args, dest) is not self.get_default(dest):
                 if dest in opts:
-                    # NOTE: edge case: some options have the same dest, lump them together
-                    opts[dest] += f"/{name}"
-                else:
-                    opts[dest] = name
+                    opts[dest] += "/"
+                opts[dest] += name
 
+        # if any options from the forbidden group are not the default values,
+        # the user must have passed them in, so issue an error report
         if opts:
-            badopts = ', '.join(opts.values())
+            sep = "\n  "
+            badopts = sep.join(opts.values())
             if errmsg:
                 errmsg = "\n" + errmsg
-            raise SystemExit(f"option(s) not allowed: {badopts}{errmsg}")
+            raise SystemExit(f"option(s) not allowed:{sep}{badopts}{errmsg}")
 
 
 def generate_parser() -> _PyiArgumentParser:
