@@ -581,6 +581,11 @@ class EXE(Target):
 
     def assemble(self):
         from PyInstaller.config import CONF
+
+        # On Windows, we must never create a file with a .exe suffix that we then have to (re)write to (see #6467).
+        # Any intermediate/temporary file must have an alternative suffix.
+        build_name = self.name + '.notanexecutable' if is_win or is_cygwin else self.name
+
         logger.info("Building EXE from %s", self.tocbasename)
         if os.path.exists(self.name):
             if os.path.isdir(self.name):
@@ -594,22 +599,22 @@ class EXE(Target):
             raise SystemExit(_MISSING_BOOTLOADER_ERRORMSG)
 
         # Step 1: copy the bootloader file, and perform any operations that need to be done prior to appending the PKG.
-        logger.info("Copying bootloader EXE to %s", self.name)
-        self._copyfile(exe, self.name)
-        os.chmod(self.name, 0o755)
+        logger.info("Copying bootloader EXE to %s", build_name)
+        self._copyfile(exe, build_name)
+        os.chmod(build_name, 0o755)
 
         if is_win:
             # First, remove all resources from the file. This ensures that no manifest is embedded, even if bootloader
             # was compiled with a toolchain that forcibly embeds a default manifest (e.g., mingw toolchain from msys2).
-            winresource.RemoveAllResources(self.name)
+            winresource.RemoveAllResources(build_name)
             # Embed icon.
             if self.icon != "NONE":
                 logger.info("Copying icon to EXE")
-                icon.CopyIcons(self.name, self.icon)
+                icon.CopyIcons(build_name, self.icon)
             # Embed version info.
             if self.versrsrc:
                 logger.info("Copying version information to EXE")
-                versioninfo.SetVersion(self.name, self.versrsrc)
+                versioninfo.SetVersion(build_name, self.versrsrc)
             # Embed other resources.
             logger.info("Copying %d resources to EXE", len(self.resources))
             for res in self.resources:
@@ -631,13 +636,13 @@ class EXE(Target):
                     reslang = res[3]
                 try:
                     winresource.UpdateResourcesFromResFile(
-                        self.name, resfile, [restype or "*"], [resname or "*"], [reslang or "*"]
+                        build_name, resfile, [restype or "*"], [resname or "*"], [reslang or "*"]
                     )
                 except winresource.pywintypes.error as exc:
                     if exc.args[0] != winresource.ERROR_BAD_EXE_FORMAT:
                         logger.error(
                             "Error while updating resources in %s from resource file %s!",
-                            self.name,
+                            build_name,
                             resfile,
                             exc_info=1
                         )
@@ -655,24 +660,24 @@ class EXE(Target):
                         )
                         continue
                     try:
-                        winresource.UpdateResourcesFromDataFile(self.name, resfile, restype, [resname], [reslang or 0])
+                        winresource.UpdateResourcesFromDataFile(build_name, resfile, restype, [resname], [reslang or 0])
                     except winresource.pywintypes.error:
                         logger.error(
                             "Error while updating resource %s %s in %s from data file %s!",
                             restype,
                             resname,
-                            self.name,
+                            build_name,
                             resfile,
                             exc_info=1
                         )
             # Embed the manifest into the executable.
             if self.embed_manifest:
                 logger.info("Emedding manifest in EXE")
-                self.manifest.update_resources(self.name, [1])
+                self.manifest.update_resources(build_name, [1])
         elif is_darwin:
             # Convert bootloader to the target arch
             logger.info("Converting EXE to target arch (%s)", self.target_arch)
-            osxutils.binary_to_target_arch(self.name, self.target_arch, display_name='Bootloader EXE')
+            osxutils.binary_to_target_arch(build_name, self.target_arch, display_name='Bootloader EXE')
 
         # Step 2: append the PKG, if necessary
         if self.append_pkg:
@@ -682,7 +687,7 @@ class EXE(Target):
             # In onefile mode, copy the stand-alone PKG next to the executable. In onedir, this will be done by the
             # COLLECT() target.
             if not self.exclude_binaries:
-                pkg_dst = os.path.join(os.path.dirname(self.name), os.path.basename(self.pkgname))
+                pkg_dst = os.path.join(os.path.dirname(build_name), os.path.basename(self.pkgname))
                 logger.info("Copying stand-alone PKG archive from %s to %s", self.pkg.name, pkg_dst)
                 self._copyfile(self.pkg.name, pkg_dst)
             else:
@@ -705,7 +710,9 @@ class EXE(Target):
         if is_linux:
             # Linux: append data into custom ELF section using objcopy.
             logger.info("Appending %s to custom ELF section in EXE", append_type)
-            retcode, stdout, stderr = exec_command_all('objcopy', '--add-section', 'pydata=%s' % append_file, self.name)
+            retcode, stdout, stderr = exec_command_all(
+                'objcopy', '--add-section', 'pydata=%s' % append_file, build_name
+            )
             logger.debug("objcopy returned %i", retcode)
             if stdout:
                 logger.debug(stdout)
@@ -724,21 +731,21 @@ class EXE(Target):
             # seem to cause issues with further binary signing using real identity. Therefore, we remove all signatures
             # and re-sign the binary using dummy signature once the data is appended.
             logger.info("Removing signature(s) from EXE")
-            osxutils.remove_signature_from_binary(self.name)
+            osxutils.remove_signature_from_binary(build_name)
 
             # Append the data
             logger.info("Appending %s to EXE", append_type)
-            with open(self.name, 'ab') as outf:
+            with open(build_name, 'ab') as outf:
                 with open(append_file, 'rb') as inf:
                     shutil.copyfileobj(inf, outf, length=64 * 1024)
 
             # Fix Mach-O headers
             logger.info("Fixing EXE headers for code signing")
-            osxutils.fix_exe_for_code_signing(self.name)
+            osxutils.fix_exe_for_code_signing(build_name)
         else:
             # Fall back to just appending data at the end of the file
             logger.info("Appending %s to EXE", append_type)
-            with open(self.name, 'ab') as outf:
+            with open(build_name, 'ab') as outf:
                 with open(append_file, 'rb') as inf:
                     shutil.copyfileobj(inf, outf, length=64 * 1024)
 
@@ -747,7 +754,7 @@ class EXE(Target):
             # Set checksum to appease antiviral software. Also set build timestamp to current time to increase entropy
             # (but honor SOURCE_DATE_EPOCH environment variable for reproducible builds).
             build_timestamp = int(os.environ.get('SOURCE_DATE_EPOCH', time.time()))
-            winutils.fixup_exe_headers(self.name, build_timestamp)
+            winutils.fixup_exe_headers(build_name, build_timestamp)
         elif is_darwin:
             # If the version of macOS SDK used to build bootloader exceeds that of macOS SDK used to built Python
             # library (and, by extension, bundled Tcl/Tk libraries), force the version declared by the frozen executable
@@ -760,23 +767,25 @@ class EXE(Target):
             # With python.org Intel macOS installers, this manifests as black Tk windows and UI elements (see issue
             # #5827), while in Anaconda python, it may result in white text on bright background.
             pylib_version = osxutils.get_macos_sdk_version(bindepend.get_python_library_path())
-            exe_version = osxutils.get_macos_sdk_version(self.name)
+            exe_version = osxutils.get_macos_sdk_version(build_name)
             if pylib_version < exe_version:
                 logger.info(
                     "Rewriting the executable's macOS SDK version (%d.%d.%d) to match the SDK version of the Python "
                     "library (%d.%d.%d) in order to avoid inconsistent behavior and potential UI issues in the "
                     "frozen application.", *exe_version, *pylib_version
                 )
-                osxutils.set_macos_sdk_version(self.name, *pylib_version)
+                osxutils.set_macos_sdk_version(build_name, *pylib_version)
 
             # Re-sign the binary (either ad-hoc or using real identity, if provided).
             logger.info("Re-signing the EXE")
-            osxutils.sign_binary(self.name, self.codesign_identity, self.entitlements_file)
+            osxutils.sign_binary(build_name, self.codesign_identity, self.entitlements_file)
 
         # Ensure executable flag is set
-        os.chmod(self.name, 0o755)
+        os.chmod(build_name, 0o755)
         # Get mtime for storing into the guts
-        self.mtm = misc.mtime(self.name)
+        self.mtm = misc.mtime(build_name)
+        if build_name != self.name:
+            os.rename(build_name, self.name)
         logger.info("Building EXE from %s completed successfully.", self.tocbasename)
 
     def _copyfile(self, infile, outfile):
