@@ -1,0 +1,2 @@
+(macOS) Remove the 60 seconds timeout for each ``codesign`` and ``lipo`` operation which caused build abortion when
+processing huge binaries.
