@@ -14,13 +14,14 @@ Utils for Mac OS platform.
 
 import math
 import os
+import subprocess
 import shutil
 
 from macholib.mach_o import LC_BUILD_VERSION, LC_CODE_SIGNATURE, LC_SEGMENT_64, LC_SYMTAB, LC_VERSION_MIN_MACOSX
 from macholib.MachO import MachO
 
 import PyInstaller.log as logging
-from PyInstaller.compat import base_prefix, exec_command_all
+from PyInstaller.compat import base_prefix
 
 logger = logging.getLogger(__name__)
 
@@ -292,12 +293,9 @@ def convert_binary_to_thin_arch(filename, thin_arch):
     Convert the given fat binary into thin one with the specified target architecture.
     """
     cmd_args = ['lipo', '-thin', thin_arch, filename, '-output', filename]
-    retcode, stdout, stderr = exec_command_all(*cmd_args)
-    if retcode != 0:
-        logger.warning(
-            "lipo command (%r) failed with error code %d!\nstdout: %r\nstderr: %r", cmd_args, retcode, stdout, stderr
-        )
-        raise SystemError("lipo failure!")
+    p = subprocess.run(cmd_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+    if p.returncode:
+        raise SystemError(f"lipo command ({cmd_args}) failed with error code {p.returncode}!\noutput: {p.stdout}")
 
 
 def binary_to_target_arch(filename, target_arch, display_name=None):
@@ -334,14 +332,9 @@ def remove_signature_from_binary(filename):
     """
     logger.debug("Removing signature from file %r", filename)
     cmd_args = ['codesign', '--remove', '--all-architectures', filename]
-    retcode, stdout, stderr = exec_command_all(*cmd_args)
-    if retcode != 0:
-        logger.warning(
-            "codesign command (%r) failed with error code %d!\n"
-            "stdout: %r\n"
-            "stderr: %r", cmd_args, retcode, stdout, stderr
-        )
-        raise SystemError("codesign failure!")
+    p = subprocess.run(cmd_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+    if p.returncode:
+        raise SystemError(f"codesign command ({cmd_args}) failed with error code {p.returncode}!\noutput: {p.stdout}")
 
 
 def sign_binary(filename, identity=None, entitlements_file=None, deep=False):
@@ -361,11 +354,6 @@ def sign_binary(filename, identity=None, entitlements_file=None, deep=False):
 
     logger.debug("Signing file %r", filename)
     cmd_args = ['codesign', '-s', identity, '--force', '--all-architectures', '--timestamp', *extra_args, filename]
-    retcode, stdout, stderr = exec_command_all(*cmd_args)
-    if retcode != 0:
-        logger.warning(
-            "codesign command (%r) failed with error code %d!\n"
-            "stdout: %r\n"
-            "stderr: %r", cmd_args, retcode, stdout, stderr
-        )
-        raise SystemError("codesign failure!")
+    p = subprocess.run(cmd_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+    if p.returncode:
+        raise SystemError(f"codesign command ({cmd_args}) failed with error code {p.returncode}!\noutput: {p.stdout}")
