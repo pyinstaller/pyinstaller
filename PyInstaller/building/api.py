@@ -16,6 +16,7 @@ is a way how PyInstaller does the dependency analysis and creates executable.
 """
 
 import os
+import subprocess
 import time
 import pprint
 import shutil
@@ -29,7 +30,7 @@ from PyInstaller.building.utils import (
     _check_guts_toc, _make_clean_directory, _rmtree, add_suffix_to_extension, checkCache, get_code_object,
     strip_paths_in_code
 )
-from PyInstaller.compat import (exec_command_all, is_cygwin, is_darwin, is_linux, is_win)
+from PyInstaller.compat import (is_cygwin, is_darwin, is_linux, is_win)
 from PyInstaller.depend import bindepend
 from PyInstaller.depend.analysis import get_bootstrap_modules
 from PyInstaller.depend.utils import is_path_to_egg
@@ -721,16 +722,11 @@ class EXE(Target):
         if is_linux:
             # Linux: append data into custom ELF section using objcopy.
             logger.info("Appending %s to custom ELF section in EXE", append_type)
-            retcode, stdout, stderr = exec_command_all(
-                'objcopy', '--add-section', 'pydata=%s' % append_file, build_name
-            )
-            logger.debug("objcopy returned %i", retcode)
-            if stdout:
-                logger.debug(stdout)
-            if stderr:
-                logger.debug(stderr)
-            if retcode != 0:
-                raise SystemError("objcopy Failure: %s" % stderr)
+            cmd = ['objcopy', '--add-section', f'pydata={append_file}', build_name]
+            p = subprocess.run(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
+            if p.returncode:
+                raise SystemError(f"objcopy Failure: {p.returncode} {p.stdout}")
+
         elif is_darwin:
             # macOS: remove signature, append data, and fix-up headers so that the appended data appears to be part of
             # the executable (which is required by strict validation during code-signing).
