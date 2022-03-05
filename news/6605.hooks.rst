@@ -1,4 +1,0 @@
-Add ``IPython`` to the list of excluded packages in the ``PIL`` hook in
-order to prevent automatic collection of ``IPython`` when it is not
-imported anywhere else. This in turn prevents whole ``matplotlib`` being
-automatically pulled in when using  ``PIL.Image``.

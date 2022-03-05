@@ -15,6 +15,56 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+4.10 (2022-03-05)
+-----------------
+
+Features
+~~~~~~~~
+
+* (Wine) Prevent collection of Wine built-in DLLs (in either PE-converted or
+  fake/placeholder form) when building a Windows frozen application under
+  Wine. Display a warning for each excluded Wine built-in DLL. (:issue:`#6622`)
+
+
+Bugfix
+~~~~~~
+
+* (Linux) Remove the timeout on ``objcopy`` operations to prevent wrongful
+  abortions when processing large executables on slow disks. (:issue:`#6647`)
+* (macOS) Limit the strict architecture validation for collected binaries to
+  extension modules only. Fixes architecture validation errors when a
+  ``universal2`` package has its multi-arch extension modules' arch slices
+  linked against distinct single-arch thin shared libraries, as is the
+  case with ``scipy`` 1.8.0 macOS ``universal2`` wheel. (:issue:`#6587`)
+* (macOS) Remove the 60 seconds timeout for each ``codesign`` and ``lipo``
+  operation which caused build abortion when
+  processing huge binaries. (:issue:`#6644`)
+* (Windows) Use a made up (not ``.exe``) suffix for intermediate executable
+  files during the build process to prevent
+  antiviruses from attempting to scan the file whilst PyInstaller is still
+  working on it leading to a
+  :class:`PermissionError` at build time. (:issue:`#6467`)
+* Fix an attempt to collect a non-existent ``.pyc`` file when the corresponding
+  source ``.py`` file has ``st_mtime`` set to zero. (:issue:`#6625`)
+
+
+Hooks
+~~~~~
+
+* Add ``IPython`` to the list of excluded packages in the ``PIL`` hook in
+  order to prevent automatic collection of ``IPython`` when it is not
+  imported anywhere else. This in turn prevents whole ``matplotlib`` being
+  automatically pulled in when using  ``PIL.Image``. (:issue:`#6605`)
+
+
+Bootloader
+~~~~~~~~~~
+
+* Fix detection of 32-bit ``arm`` platform when Thumb instruction set is
+  enabled in the compiler. In this case, the ``ctx.env.DEST_CPU`` in
+  ``waf`` build script is set to ``thumb`` instead of ``arm``. (:issue:`#6532`)
+
+
 4.9 (2022-02-03)
 ----------------
 

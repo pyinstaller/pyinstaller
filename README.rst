@@ -5,7 +5,7 @@ PyInstaller bundles a Python application and all its dependencies into a single
 package. The user can run the packaged app without installing a Python
 interpreter or any modules.
 
-:Documentation: https://pyinstaller.readthedocs.io/en/v4.9
+:Documentation: https://pyinstaller.readthedocs.io/en/v4.10
 :Website:       http://www.pyinstaller.org/
 :Code:          https://github.com/pyinstaller/pyinstaller
 
@@ -145,5 +145,5 @@ in the `Changelog`_ section of the manual.
 
 
 .. _tinyaes: https://github.com/naufraghi/tinyaes-py
-.. _`manual`: https://pyinstaller.readthedocs.io/en/v4.9/
-.. _`Changelog`: https://pyinstaller.readthedocs.io/en/v4.9/CHANGES.html
+.. _`manual`: https://pyinstaller.readthedocs.io/en/v4.10/
+.. _`Changelog`: https://pyinstaller.readthedocs.io/en/v4.10/CHANGES.html

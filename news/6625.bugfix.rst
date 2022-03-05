@@ -1,2 +1,0 @@
-Fix an attempt to collect a non-existent ``.pyc`` file when the corresponding
-source ``.py`` file has ``st_mtime`` set to zero.

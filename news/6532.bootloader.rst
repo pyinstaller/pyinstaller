@@ -1,3 +1,0 @@
-Fix detection of 32-bit ``arm`` platform when Thumb instruction set is
-enabled in the compiler. In this case, the ``ctx.env.DEST_CPU`` in
-``waf`` build script is set to ``thumb`` instead of ``arm``.

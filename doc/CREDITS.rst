@@ -6,6 +6,17 @@ new code, bug reports, fixes, comments and ideas. A brief list follows,
 please let us know if your name is omitted by accident:
 
 
+Contributions to PyInstaller 4.10
+---------------------------------
+
+* Rok Mandeljc
+* Brénainn Woodsend
+* Andreas Schwab
+* GoldinGuy
+* Sapphire Becker
+* dennisvang
+
+
 Contributions to PyInstaller 4.9
 --------------------------------
 
