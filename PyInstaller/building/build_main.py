@@ -286,7 +286,7 @@ class Analysis(Target):
         self.custom_runtime_hooks = runtime_hooks or []
 
         if cipher:
-            logger.info('Will encrypt Python bytecode with key: %s', cipher.key)
+            logger.info('Will encrypt Python bytecode with provided cipher key')
             # Create a Python module which contains the decryption key which will be used at runtime by
             # pyi_crypto.PyiBlockCipher.
             pyi_crypto_key_path = os.path.join(CONF['workpath'], 'pyimod00_crypto_key.py')
