@@ -121,5 +121,6 @@ splashtmpl = """splash = Splash(%(splash_image)r,
                 datas=a.datas,
                 text_pos=None,
                 text_size=12,
-                minify_script=True)
+                minify_script=True,
+                always_on_top=True)
 """
