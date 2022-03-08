@@ -120,6 +120,11 @@ class Splash(Target):
             resized to fit the maximum width (to keep the original aspect ratio). This option can be disabled by
             setting it to None. Default: (760, 480)
         :type max_img_size: Tuple[int, int]
+        :keyword always_on_top:
+            Force the splashscreen to be always on top of other windows. If disabled, other windows (e.g., from other
+            applications) can cover the splash screen by user bringing them to front. This might be useful for
+            frozen applications with long startup times. Default: True
+        :type always_on_top: bool
         """
         from ..config import CONF
         Target.__init__(self)
@@ -151,6 +156,9 @@ class Splash(Target):
         self.text_font = kwargs.get("text_font", "TkDefaultFont")
         self.text_color = kwargs.get("text_color", "black")
         self.text_default = kwargs.get("text_default", "Initializing")
+
+        # always-on-top behavior
+        self.always_on_top = kwargs.get("always_on_top", True)
 
         # Save the generated file separately so that it is not necessary to generate the data again and again
         root = os.path.splitext(self.tocfilename)[0]
@@ -244,6 +252,7 @@ class Splash(Target):
         ('text_font', _check_guts_eq),
         ('text_color', _check_guts_eq),
         ('text_default', _check_guts_eq),
+        ('always_on_top', _check_guts_eq),
         ('full_tk', _check_guts_eq),
         ('minify_script', _check_guts_eq),
         ('rundir', _check_guts_eq),
@@ -416,7 +425,7 @@ class Splash(Target):
                 'font_size': self.text_size,
                 'default_text': self.text_default,
             })
-        script = splash_templates.build_script(text_options=d)
+        script = splash_templates.build_script(text_options=d, always_on_top=self.always_on_top)
 
         if self.minify_script:
             # Remove any documentation, empty lines and unnecessary spaces
