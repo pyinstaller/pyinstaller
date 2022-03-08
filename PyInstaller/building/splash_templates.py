@@ -162,21 +162,46 @@ else:
     # For Linux there is no common way to create a transparent window
     transparent_setup = r""
 
-align_windows = r"""
-# Position all widget in the window
+pack_widgets = r"""
+# Position all widgets in the window
 pack .root
 grid .root.canvas   -column 0 -row 0 -columnspan 1 -rowspan 2
+"""
 
-# Set position and mode of the window
+# Enable always-on-top behavior, by setting overrideredirect and the topmost attribute.
+position_window_on_top = r"""
+# Set position and mode of the window - always-on-top behavior
 wm overrideredirect . 1
 wm geometry         . +${x_position}+${y_position}
 wm attributes       . -topmost 1
+"""
 
+# Disable always-on-top behavior
+if is_win or is_cygwin or is_darwin:
+    # On Windows, we disable the always-on-top behavior while still setting overrideredirect
+    # (to disable window decorations), but set topmost attribute to 0.
+    position_window = r"""
+# Set position and mode of the window
+wm overrideredirect . 1
+wm geometry         . +${x_position}+${y_position}
+wm attributes       . -topmost 0
+"""
+else:
+    # On Linux, we must not use overrideredirect; instead, we set X11-specific type attribute to splash,
+    # which lets the window manager to properly handle the splash screen (without window decorations
+    # but allowing other windows to be brought to front).
+    position_window = r"""
+# Set position and mode of the window
+wm geometry         . +${x_position}+${y_position}
+wm attributes       . -type splash
+"""
+
+raise_window = r"""
 raise .
 """
 
 
-def build_script(text_options=None):
+def build_script(text_options=None, always_on_top=False):
     """
     This function builds the tcl script for the splash screen.
     """
@@ -196,6 +221,9 @@ def build_script(text_options=None):
         script.append(splash_canvas_text % text_options)
 
     script.append(transparent_setup)
-    script.append(align_windows)
+
+    script.append(pack_widgets)
+    script.append(position_window_on_top if always_on_top else position_window)
+    script.append(raise_window)
 
     return '\n'.join(script)
