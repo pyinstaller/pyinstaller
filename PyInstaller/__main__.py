@@ -78,10 +78,10 @@ class _PyiArgumentParser(argparse.ArgumentParser):
         """
         Mutate self with the given callable, storing any new actions added in a named group
         """
-        Nbefore = len(getattr(self, "_actions", []))
+        n_actions_before = len(getattr(self, "_actions", []))
         __add_options(self)  # preserves old behavior
-        newactions = getattr(self, "_actions", [])[Nbefore:]
-        self._pyi_action_groups[name].extend(newactions)
+        new_actions = getattr(self, "_actions", [])[n_actions_before:]
+        self._pyi_action_groups[name].extend(new_actions)
 
     def _option_name(self, action):
         """
@@ -99,23 +99,23 @@ class _PyiArgumentParser(argparse.ArgumentParser):
 
     def _forbid_options(self, args: argparse.Namespace, group: str, errmsg: str=""):
         """Forbid options from a named action group"""
-        opts = defaultdict(str)
+        options = defaultdict(str)
         for action in self._pyi_action_groups[group]:
             dest = action.dest
             name = self._option_name(action)
             if getattr(args, dest) is not self.get_default(dest):
-                if dest in opts:
-                    opts[dest] += "/"
-                opts[dest] += name
+                if dest in options:
+                    options[dest] += "/"
+                options[dest] += name
 
         # if any options from the forbidden group are not the default values,
         # the user must have passed them in, so issue an error report
-        if opts:
+        if options:
             sep = "\n  "
-            badopts = sep.join(opts.values())
+            bad = sep.join(options.values())
             if errmsg:
                 errmsg = "\n" + errmsg
-            raise SystemExit(f"option(s) not allowed:{sep}{badopts}{errmsg}")
+            raise SystemExit(f"option(s) not allowed:{sep}{bad}{errmsg}")
 
 
 def generate_parser() -> _PyiArgumentParser:
