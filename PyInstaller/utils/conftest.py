@@ -174,6 +174,7 @@ class AppBuilder:
         self._specdir = str(tmpdir)
         self._distdir = str(tmpdir / 'dist')
         self._builddir = str(tmpdir / 'build')
+        self._is_spec = False
 
     def test_spec(self, specfile, *args, **kwargs):
         """
@@ -182,6 +183,7 @@ class AppBuilder:
         __tracebackhide__ = True
         specfile = os.path.join(_get_spec_dir(self._request), specfile)
         # 'test_script' should handle .spec properly as script.
+        self._is_spec = True
         return self.test_script(specfile, *args, **kwargs)
 
     def test_source(self, source, *args, **kwargs):
@@ -236,7 +238,8 @@ class AppBuilder:
             app_args = []
 
         if app_name:
-            pyi_args.extend(['--name', app_name])
+            if not self._is_spec:
+                pyi_args.extend(['--name', app_name])
         else:
             # Derive name from script name.
             app_name = os.path.splitext(os.path.basename(script))[0]
@@ -400,22 +403,29 @@ class AppBuilder:
 
         Return True if build succeded False otherwise.
         """
-        default_args = [
-            '--debug=bootloader',
-            '--noupx',
-            '--specpath', self._specdir,
-            '--distpath', self._distdir,
-            '--workpath', self._builddir,
-            '--path', _get_modules_dir(self._request),
-            '--log-level=INFO',
-        ]   # yapf: disable
+        if self._is_spec:
+            default_args = [
+                '--distpath', self._distdir,
+                '--workpath', self._builddir,
+                '--log-level=INFO',
+            ]  # yapf: disable
+        else:
+            default_args = [
+                '--debug=bootloader',
+                '--noupx',
+                '--specpath', self._specdir,
+                '--distpath', self._distdir,
+                '--workpath', self._builddir,
+                '--path', _get_modules_dir(self._request),
+                '--log-level=INFO',
+            ]  # yapf: disable
 
-        # Choose bundle mode.
-        if self._mode == 'onedir':
-            default_args.append('--onedir')
-        elif self._mode == 'onefile':
-            default_args.append('--onefile')
-        # if self._mode is None then just the spec file was supplied.
+            # Choose bundle mode.
+            if self._mode == 'onedir':
+                default_args.append('--onedir')
+            elif self._mode == 'onefile':
+                default_args.append('--onefile')
+            # if self._mode is None then just the spec file was supplied.
 
         pyi_args = [self.script] + default_args + args
         # TODO: fix return code in running PyInstaller programatically.
