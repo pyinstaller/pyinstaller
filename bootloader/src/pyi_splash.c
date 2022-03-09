@@ -334,20 +334,28 @@ pyi_splash_extract(ARCHIVE_STATUS *archive_status, SPLASH_STATUS *splash_status)
         }
     }
 
+    /* Alter the paths inside SPLASH_STATUS to load the the libraries from the
+     * correct place */
     if (extracted) {
-        /* Alter the paths inside SPLASH_STATUS to load the the libraries from the
-         * correct place */
+        /* Onefile mode; the libraries were extracted into a sub-directory of
+         * temppath */
         pyi_path_join(run_dir, archive_status->temppath, splash_status->rundir);
-
-        strncpy(tmp, splash_status->tcl_libpath, PATH_MAX);
-        pyi_path_join(splash_status->tcl_libpath, run_dir, tmp);
-
-        strncpy(tmp, splash_status->tk_libpath, PATH_MAX);
-        pyi_path_join(splash_status->tk_libpath, run_dir, tmp);
-
-        pyi_path_basename(tmp, splash_status->tk_lib);
-        pyi_path_join(splash_status->tk_lib, run_dir, tmp);
+    } else {
+        /* Onedir mode; we also need to adjust the paths to shared libraries so that
+         * the absolute paths are used. On Windows, we could seemingly get away with
+         * using just library base name, but not so on Linux, where we would end up
+         * trying to load system-wide library instead of the bundled one. */
+        strncpy(run_dir, archive_status->homepath, PATH_MAX);
     }
+
+    strncpy(tmp, splash_status->tcl_libpath, PATH_MAX);
+    pyi_path_join(splash_status->tcl_libpath, run_dir, tmp);
+
+    strncpy(tmp, splash_status->tk_libpath, PATH_MAX);
+    pyi_path_join(splash_status->tk_libpath, run_dir, tmp);
+
+    pyi_path_basename(tmp, splash_status->tk_lib);
+    pyi_path_join(splash_status->tk_lib, run_dir, tmp);
 
 cleanup:
     free(tmp_toc);
