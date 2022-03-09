@@ -643,6 +643,13 @@ def main(
     argv_emulation=False,
     **_kwargs
 ):
+    # Default values for onefile and console when not explicitly specified on command-line (indicated by None)
+    if onefile is None:
+        onefile = False
+
+    if console is None:
+        console = True
+
     # If appname is not specified - use the basename of the main script as name.
     if name is None:
         name = os.path.splitext(os.path.basename(scripts[0]))[0]
@@ -773,7 +780,7 @@ def main(
         # List of modules/pakages to ignore.
         'excludes': excludes or [],
         # only Windows and Mac OS distinguish windowed and console apps
-        'console': bool(console),
+        'console': console,
         'disable_windowed_traceback': disable_windowed_traceback,
         # Icon filename. Only Mac OS uses this item.
         'icon': icon_file,
