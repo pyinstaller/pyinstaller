@@ -1,0 +1,2 @@
+Issue an error report if a `.spec` file will not be generated, but options
+specific to that functionality are given.
