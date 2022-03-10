@@ -31,7 +31,6 @@ logger = logging.getLogger(__name__)
 
 # This is used by the ``--debug`` option.
 class _SmartFormatter(argparse.HelpFormatter):
-
     def _split_lines(self, text, width):
         if text.startswith('R|'):
             # The underlying implementation of ``RawTextHelpFormatter._split_lines`` invokes this; mimic it.
@@ -71,7 +70,6 @@ def __add_options(parser):
 
 
 class _PyiArgumentParser(argparse.ArgumentParser):
-
     def __init__(self, *args, **kwargs):
         self._pyi_action_groups = defaultdict(list)
         super().__init__(*args, **kwargs)
