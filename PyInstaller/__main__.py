@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 
 # This is used by the ``--debug`` option.
 class _SmartFormatter(argparse.HelpFormatter):
+
     def _split_lines(self, text, width):
         if text.startswith('R|'):
             # The underlying implementation of ``RawTextHelpFormatter._split_lines`` invokes this; mimic it.
@@ -70,11 +71,12 @@ def __add_options(parser):
 
 
 class _PyiArgumentParser(argparse.ArgumentParser):
+
     def __init__(self, *args, **kwargs):
         self._pyi_action_groups = defaultdict(list)
         super().__init__(*args, **kwargs)
 
-    def _add_options(self, __add_options: callable, name: str=""):
+    def _add_options(self, __add_options: callable, name: str = ""):
         """
         Mutate self with the given callable, storing any new actions added in a named group
         """
@@ -97,7 +99,7 @@ class _PyiArgumentParser(argparse.ArgumentParser):
             name = action.option_strings[0]
         return name
 
-    def _forbid_options(self, args: argparse.Namespace, group: str, errmsg: str=""):
+    def _forbid_options(self, args: argparse.Namespace, group: str, errmsg: str = ""):
         """Forbid options from a named action group"""
         options = defaultdict(str)
         for action in self._pyi_action_groups[group]:
@@ -168,7 +170,9 @@ def run(pyi_args=None, pyi_config=None):
 
         # Skip creating .spec when .spec file is supplied.
         if args.filenames[0].endswith('.spec'):
-            parser._forbid_options(args, group="makespec", errmsg="makespec options not valid when a .spec file is given")
+            parser._forbid_options(
+                args, group="makespec", errmsg="makespec options not valid when a .spec file is given"
+            )
             spec_file = args.filenames[0]
         else:
             spec_file = run_makespec(**vars(args))
