@@ -18,7 +18,7 @@ from PyInstaller.archive.writers import SplashWriter
 from PyInstaller.building import splash_templates
 from PyInstaller.building.datastruct import TOC, Target
 from PyInstaller.building.utils import _check_guts_eq, _check_guts_toc, misc
-from PyInstaller.compat import is_darwin
+from PyInstaller.compat import is_darwin, is_win, is_cygwin
 from PyInstaller.utils.hooks import exec_statement
 from PyInstaller.utils.hooks.tcl_tk import (TK_ROOTNAME, collect_tcl_tk_files, find_tcl_tk_shared_libs)
 
@@ -217,6 +217,24 @@ class Splash(Target):
             # Only add the intersection of the required and the collected resources, or add all entries if full_tk is
             # true.
             self.binaries.extend(toc for toc in tcltk_tree if toc[0] in self.splash_requirements)
+
+        # Handle extra requirements of Tcl/Tk shared libraries (e.g., vcruntime140.dll on Windows - see issue #6284).
+        # These need to be added to splash requirements, so they are extracted into the initial runtime directory in
+        # order to make onefile builds work.
+        #
+        # The really proper way to implement this would be to perform full dependency analysis on self.tcl_lib[0] and
+        # self.tk_lib[0], and ensure that those dependencies are collected and added to splash requirements. This
+        # would, for example, ensure that on Linux, dependent X libraries are collected, just as if the frozen app
+        # itself was using tkinter. On the other hand, collecting all the extra shared libraries on Linux is currently
+        # futile anyway, because the bootloader's parent process would need to set LD_LIBRARY_PATH to the initial
+        # runtime directory to actually have them loaded (and that requires process to be restarted to take effect).
+        #
+        # So for now, we only deal with this on Windows, in a quick'n'dirty work-around way, by assuming that
+        # vcruntime140.dll is already collected as dependency of some other shared library (e.g., the python shared
+        # library).
+        if is_win or is_cygwin:
+            EXTRA_REQUIREMENTS = {'vcruntime140.dll'}
+            self.splash_requirements.update([name for name, *_ in binaries if name.lower() in EXTRA_REQUIREMENTS])
 
         # Check if all requirements were found.
         fnames = [toc[0] for toc in (binaries + datas + self.binaries)]
