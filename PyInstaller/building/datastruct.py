@@ -105,17 +105,9 @@ class TOC(list):
             self.append(entry)
 
     def __sub__(self, other):
+        # Construct new TOC with entries not contained in the other TOC
         other = TOC(other)
-        filenames = self.filenames - other.filenames
-        result = TOC()
-        for entry in self:
-            unique = unique_name(entry)
-
-            if unique in filenames:
-                # Directly use list.append() instead of TOC.append() to avoid unnecessary uniqueness checks.
-                # Hence the use of super(TOC, result).
-                super(TOC, result).append(entry)
-        return result
+        return TOC([entry for entry in self if unique_name(entry) not in other.filenames])
 
     def __rsub__(self, other):
         result = TOC(other)
