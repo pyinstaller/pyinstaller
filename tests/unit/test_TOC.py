@@ -257,6 +257,14 @@ def test_rsub_non_existing():
     assert result == expected
 
 
+def test_sub_after_sub():
+    toc = TOC(ELEMS1)
+    toc -= [ELEMS1[0]]
+    toc -= [ELEMS1[1]]
+    expected = list(ELEMS1[2:])
+    assert toc == expected
+
+
 # The following tests verify that case-insensitive comparisons are used on Windows and only for
 # appropriate TOC entry types
 
