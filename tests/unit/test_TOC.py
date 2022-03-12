@@ -264,6 +264,14 @@ def test_sub_after_setitem():
     assert len(toc) == 3
 
 
+def test_sub_after_sub():
+    toc = TOC(ELEMS1)
+    toc -= [ELEMS1[0]]
+    toc -= [ELEMS1[1]]
+    expected = list(ELEMS1[2:])
+    assert toc == expected
+
+
 def test_setitem_1():
     toc = TOC()
     toc[:] = ELEMS1

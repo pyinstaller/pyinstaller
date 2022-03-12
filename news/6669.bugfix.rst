@@ -1,0 +1,2 @@
+Fix the behavior of ``TOC.__sub__`` operator where repeated subtractions
+result in an empty TOC.
