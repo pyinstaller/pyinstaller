@@ -1,0 +1,5 @@
+(Windows) The ``TOC`` class now internally case-normalizes names of
+all file-related entries, regardless of their type code, as opposed to
+just ``BINARY`` and ``DATA`` entries. This ensures the behavior that is
+consistent with the underlying case-insensitive filesystem on Windows,
+but may affect assumptions made by external ``TOC`` users.

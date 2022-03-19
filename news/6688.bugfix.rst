@@ -1,0 +1,2 @@
+(Windows) Ensure consistent behavior w.r.t. case normalization of the
+entry name when subtracting ``TOC`` entries without specified type code.

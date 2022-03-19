@@ -31,7 +31,7 @@ def unique_name(entry):
     unique_name: str
     """
     name, path, typecode = entry
-    if typecode in ('BINARY', 'DATA'):
+    if typecode != 'OPTION' and name is not None:
         name = os.path.normcase(name)
 
     return name
