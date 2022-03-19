@@ -1,0 +1,5 @@
+Fix frozen module loading errors during the frozen application's bootstrap
+that arise from the bootloader's use of the ``PRIu64`` macro with the
+``PyUnicode_FromFormat`` call and the former translating to an incompatible
+format specifier on some toolchains (e.g., when cross-compiling Windows
+bootloader with mingw-w64 7.0.0 toolchain on Ubuntu 20.04 LTS).
