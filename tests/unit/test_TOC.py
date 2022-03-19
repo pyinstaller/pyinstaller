@@ -14,7 +14,7 @@
 
 import os
 
-from PyInstaller.building.datastruct import TOC
+from PyInstaller.building.datastruct import TOC, unique_name
 
 ELEMS1 = (
     ('encodings', '/usr/lib/python2.7/encodings/__init__.py', 'PYMODULE'),
@@ -277,7 +277,7 @@ def test_setitem_1():
     toc[:] = ELEMS1
     for e in ELEMS1:
         assert e in toc
-        assert e[0] in toc.filenames
+        assert unique_name(e) in toc.filenames
 
 
 def test_setitem_2():
@@ -285,20 +285,26 @@ def test_setitem_2():
     toc[1] = ELEMS3[0]
 
     assert ELEMS1[0] in toc
-    assert ELEMS1[0][0] in toc.filenames
+    assert unique_name(ELEMS1[0]) in toc.filenames
 
     assert ELEMS3[0] in toc
-    assert ELEMS3[0][0] in toc.filenames
+    assert unique_name(ELEMS3[0]) in toc.filenames
 
     assert ELEMS1[2] in toc
-    assert ELEMS1[2][0] in toc.filenames
+    assert unique_name(ELEMS1[2]) in toc.filenames
 
     for e in toc:
-        assert e[0] in toc.filenames
+        assert unique_name(e) in toc.filenames
 
 
-# The following tests verify that case-insensitive comparisons are used on Windows and only for
-# appropriate TOC entry types
+# The following tests verify that case-insensitive comparisons are used on Windows.
+#
+# As of #6689, the case normalization is applied to all file-related TOC entries, regardless of the type, to provide
+# behavior that better mimics the underlying case-insensitive filesystem. Previously, case normalization was applied
+# only to the BINARY and DATA entries.
+#
+# On other OSes, case-sensitive comparisons are used (even on macOS, where filesystem is also case-insensitive by
+# default).
 is_case_sensitive = os.path.normcase('CamelCase') == 'CamelCase'
 
 
@@ -316,12 +322,13 @@ def test_append_other_case_mixed():
 
 def test_append_other_case_pymodule():
     # Try appending a PYMODULE entry with same-but-differently-cased name as an existing PYMODULE entry.
-    # Added on all OSes.
+    # Not added on Windows, added elsewhere.
     toc = TOC(ELEMS1)
     elem = ('EnCodIngs', '/usr/lib/python2.7/encodings.py', 'PYMODULE')
     toc.append(elem)
     expected = list(ELEMS1)
-    expected.append(elem)
+    if is_case_sensitive:
+        expected.append(elem)
     assert toc == expected
 
 
@@ -351,12 +358,13 @@ def test_insert_other_case_mixed():
 
 def test_insert_other_case_pymodule():
     # Try appending a PYMODULE entry with same-but-differently-cased name as an existing PYMODULE entry.
-    # Added on all OSes.
+    # Not added on Windows, added elsewhere.
     toc = TOC(ELEMS1)
     elem = ('EnCodIngs', '/usr/lib/python2.7/encodings.py', 'PYMODULE')
     toc.insert(1, elem)
     expected = list(ELEMS1)
-    expected.insert(1, elem)
+    if is_case_sensitive:
+        expected.insert(1, elem)
     assert toc == expected
 
 
@@ -414,5 +422,6 @@ def test_subtract_other_case_pymodule():
     toc.append(elem)
     toc -= [('modcamelcase', None, None)]
     expected = list(ELEMS1)
-    expected.append(elem)
+    if is_case_sensitive:
+        expected.append(elem)
     assert toc == expected
