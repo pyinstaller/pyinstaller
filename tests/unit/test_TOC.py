@@ -12,7 +12,7 @@
 # This contains tests for the class:``TOC``, see
 # https://pyinstaller.readthedocs.io/en/latest/advanced-topics.html#the-toc-and-tree-classes
 
-import pytest
+import os
 
 from PyInstaller.building.datastruct import TOC
 
@@ -57,7 +57,7 @@ def test_append_existing():
 
 
 def test_append_keep_filename():
-    # name in TOC should be the same as the one added
+    # The entry name in TOC should be identical to the one added (i.e., the case must be preserved).
     toc = TOC()
     entry = ('EnCodIngs', '/usr/lib/python2.7/encodings.py', 'BINARY')
     toc.append(entry)
@@ -81,7 +81,7 @@ def test_insert_existing():
 
 
 def test_insert_keep_filename():
-    # name in TOC should be the same as the one added
+    # The entry name in TOC should be identical to the one added (i.e., the case must be preserved).
     toc = TOC()
     entry = ('EnCodIngs', '/usr/lib/python2.7/encodings.py', 'BINARY')
     toc.insert(1, entry)
@@ -299,21 +299,24 @@ def test_setitem_2():
 
 # The following tests verify that case-insensitive comparisons are used on Windows and only for
 # appropriate TOC entry types
+is_case_sensitive = os.path.normcase('CamelCase') == 'CamelCase'
 
 
-@pytest.mark.win32
 def test_append_other_case_mixed():
-    # If a binary file is added with the same filename as an existing pymodule, it should not be added.
+    # Try appending a BINARY entry with same-but-differently-cased name as an existing PYMODULE entry.
+    # Not added on Windows, added elsewhere.
     toc = TOC(ELEMS1)
     elem = ('EnCodIngs', '/usr/lib/python2.7/encodings.py', 'BINARY')
     toc.append(elem)
     expected = list(ELEMS1)
+    if is_case_sensitive:
+        expected.append(elem)
     assert toc == expected
 
 
-@pytest.mark.win32
 def test_append_other_case_pymodule():
-    # Python modules should not use C-I comparisons. Both 'encodings' and 'EnCodIngs' should be added.
+    # Try appending a PYMODULE entry with same-but-differently-cased name as an existing PYMODULE entry.
+    # Added on all OSes.
     toc = TOC(ELEMS1)
     elem = ('EnCodIngs', '/usr/lib/python2.7/encodings.py', 'PYMODULE')
     toc.append(elem)
@@ -322,28 +325,33 @@ def test_append_other_case_pymodule():
     assert toc == expected
 
 
-@pytest.mark.win32
 def test_append_other_case_binary():
-    # Binary files should use C-I comparisons. 'LiBrEADlInE.so.6' should not be added.
+    # Try appending a BINARY entry with same-but-differently-cased name as an existing BINARY entry.
+    # Not added on Windows, added elsewhere.
     toc = TOC(ELEMS1)
-    toc.append(('LiBrEADlInE.so.6', '/lib64/libreadline.so.6', 'BINARY'))
+    elem = ('LiBrEADlInE.so.6', '/lib64/libreadline.so.6', 'BINARY')
+    toc.append(elem)
     expected = list(ELEMS1)
+    if is_case_sensitive:
+        expected.append(elem)
     assert toc == expected
 
 
-@pytest.mark.win32
 def test_insert_other_case_mixed():
-    # If a binary file is added with the same filename as an existing pymodule, it should not be added.
+    # Try inserting a BINARY entry with same-but-differently-cased name as an existing PYMODULE entry.
+    # Not added on Windows, added elsewhere.
     toc = TOC(ELEMS1)
     elem = ('EnCodIngs', '/usr/lib/python2.7/encodings.py', 'BINARY')
     toc.insert(1, elem)
     expected = list(ELEMS1)
+    if is_case_sensitive:
+        expected.insert(1, elem)
     assert toc == expected
 
 
-@pytest.mark.win32
 def test_insert_other_case_pymodule():
-    # Python modules should not use C-I comparisons. Both 'encodings' and 'EnCodIngs' should be added.
+    # Try appending a PYMODULE entry with same-but-differently-cased name as an existing PYMODULE entry.
+    # Added on all OSes.
     toc = TOC(ELEMS1)
     elem = ('EnCodIngs', '/usr/lib/python2.7/encodings.py', 'PYMODULE')
     toc.insert(1, elem)
@@ -352,10 +360,13 @@ def test_insert_other_case_pymodule():
     assert toc == expected
 
 
-@pytest.mark.win32
 def test_insert_other_case_binary():
-    # Binary files should use C-I comparisons. 'LiBrEADlInE.so.6' should not be added.
+    # Try appending a BINARY entry with same-but-differently-cased name as an existing BINARY entry.
+    # Not added on Windows, added elsewhere.
     toc = TOC(ELEMS1)
-    toc.insert(1, ('LiBrEADlInE.so.6', '/lib64/libreadline.so.6', 'BINARY'))
+    elem = ('LiBrEADlInE.so.6', '/lib64/libreadline.so.6', 'BINARY')
+    toc.insert(1, elem)
     expected = list(ELEMS1)
+    if is_case_sensitive:
+        expected.insert(1, elem)
     assert toc == expected
