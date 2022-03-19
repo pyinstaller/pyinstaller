@@ -1,0 +1,3 @@
+Add a note about case normalization of the name for keeping track of the
+entries in the ``TOC`` class, and its implication on entry addition/removal
+behavior on different OSes.

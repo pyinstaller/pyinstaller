@@ -316,6 +316,26 @@ are ``None``.
 Because set membership is based on the *name* element of a tuple only,
 it is not necessary to give accurate *path* and *typecode* elements when subtracting.
 
+.. Note::
+    When determining the set membership of the file-related entries, the *name*
+    is case-normalized using the :func:`os.path.normcase` function. Therefore on
+    Windows, the *name* comparison is effectively performed in *case-insensitive*
+    way, while on the other OSes, it is performes in *case-sensitive* way, and
+    roughly mimicks the behavior of the underyling filesystem.
+
+    This means that on Windows, it is impossible to add multiple entries with
+    the same name but different case, and it is possible to remove an entry
+    via subtraction by giving its name in either upper or lower (or even mixed)
+    case.
+
+    On other OSes, it is possible to add multiple entries with differently-cased
+    name, and removal of an entry via subtraction requires an exact
+    (case-sensitive) match.
+
+    This behavior is applicable to all file-related typecodes (all typecodes
+    other than ``'OPTION'``), or when typecode is not specified (e.g., for
+    subtraction operator).
+
 In order to add files to a TOC, you need to know the *typecode* values
 and their related *path* values.
 A *typecode* is a one-word string.
