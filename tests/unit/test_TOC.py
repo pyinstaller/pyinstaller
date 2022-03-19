@@ -370,3 +370,49 @@ def test_insert_other_case_binary():
     if is_case_sensitive:
         expected.insert(1, elem)
     assert toc == expected
+
+
+# Test that subtraction works as expected when the entry specifies only the name, without path and typecode.
+# On Windows, the subtraction should work with case-normalized names for BINARY and DATA entries, while on other
+# OSes, it should be case sensitive for all entry types.
+def test_subtract_same_case_binary():
+    # Subtract with same case - removes element on all OSes
+    toc = TOC(ELEMS1)
+    elem = ('libCamelCase.so.1', '/lib64/libcamelcase.so.1', 'BINARY')
+    toc.append(elem)
+    toc -= [('libCamelCase.so.1', None, None)]
+    expected = list(ELEMS1)
+    assert toc == expected
+
+
+def test_subtract_other_case_binary():
+    # Subtract with different case - removes element only on Windows
+    toc = TOC(ELEMS1)
+    elem = ('libCamelCase.so.1', '/lib64/libcamelcase.so.1', 'BINARY')
+    toc.append(elem)
+    toc -= [('libcamelcase.so.1', None, None)]
+    expected = list(ELEMS1)
+    if is_case_sensitive:
+        expected.append(elem)
+    assert toc == expected
+
+
+def test_subtract_same_case_pymodule():
+    # Subtract with same case - removes element on all OSes
+    toc = TOC(ELEMS1)
+    elem = ('modCamelCase', '/lib64/python3.9/site-packages/modCamelCase.py', 'PYMODULE')
+    toc.append(elem)
+    toc -= [('modCamelCase', None, None)]
+    expected = list(ELEMS1)
+    assert toc == expected
+
+
+def test_subtract_other_case_pymodule():
+    # Subtract with different case - removes element only on Windows
+    toc = TOC(ELEMS1)
+    elem = ('modCamelCase', '/lib64/python3.9/site-packages/modCamelCase.py', 'PYMODULE')
+    toc.append(elem)
+    toc -= [('modcamelcase', None, None)]
+    expected = list(ELEMS1)
+    expected.append(elem)
+    assert toc == expected
