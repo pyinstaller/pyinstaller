@@ -889,9 +889,22 @@ def copy_metadata(package_name, recursive=False):
         package_name = todo.pop()
         if package_name in done:
             continue
+
         dist = pkg_resources.get_distribution(package_name)
-        dest = _copy_metadata_dest(dist.egg_info, dist.project_name)
-        out.append((dist.egg_info, dest))
+        if dist.egg_info is not None:
+            # If available, dist.egg_info points to the source .egg-info or .dist-info directory.
+            dest = _copy_metadata_dest(dist.egg_info, dist.project_name)
+            out.append((dist.egg_info, dest))
+        else:
+            # When .egg-info is not a directory but a single file, dist.egg_info is None, and we need to resolve the
+            # path ourselves. This format is common on Ubuntu/Debian with their deb-packaged python packages.
+            dist_src = _resolve_legacy_metadata_path(dist)
+            if dist_src is None:
+                raise RuntimeError(
+                    f"No metadata path found for distribution '{dist.project_name}' (legacy fallback search failed)."
+                )
+            out.append((dist_src, '.'))  # It is a file, so dest path needs to be '.'
+
         if not recursive:
             return out
         done.add(package_name)
@@ -902,6 +915,41 @@ def copy_metadata(package_name, recursive=False):
 
 def _normalise_dist(name: str) -> str:
     return name.lower().replace("_", "-")
+
+
+def _resolve_legacy_metadata_path(dist):
+    """
+    Attempt to resolve the legacy metadata file for the given distribution.
+    The .egg-info file is commonly used by Debian/Ubuntu when packaging python packages.
+
+    Args:
+        dist:
+            The distribution information as returned by ``pkg_resources.get_distribution("xyz")``.
+    Returns:
+        The path to the distribution's metadata file.
+    """
+
+    candidates = [
+        # This fallback was in place in pre-#5774 times. However, it is insufficient, because dist.egg_name() may be
+        # greenlet-0.4.15-py3.8 (Ubuntu 20.04 package) while the file we are searching for is greenlet-0.4.15.egg-info.
+        f"{dist.egg_name()}.egg-info",
+        # The extra name-version.egg-info path format
+        f"{dist.project_name}-{dist.version}.egg-info",
+        # And the name_with_underscores-version.egg-info.format
+        f"{dist.project_name.replace('-', '_')}-{dist.version}.egg-info",
+    ]
+
+    # As an additional attempt, try to remove the-pyX.Y suffix from egg name.
+    pyxx_suffix = f"-py{sys.version_info[0]}.{sys.version_info[1]}"
+    if dist.egg_name().endswith(pyxx_suffix):
+        candidates.append(dist.egg_name()[:-len(pyxx_suffix)] + ".egg-info")
+
+    for candidate in candidates:
+        candidate_path = os.path.join(dist.location, candidate)
+        if os.path.isfile(candidate_path):
+            return candidate_path
+
+    return None
 
 
 def _copy_metadata_dest(egg_path: str, project_name: str) -> str:

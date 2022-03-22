@@ -1,0 +1,4 @@
+Fix collection of package metadata when the latter is provided in the
+form of ``.egg-info`` file instead of more conventional ``.egg-info``
+directory or standard ``.dist-info`` directory. Such metadata format
+is often found in Debian and Ubuntu deb packages of python software.
