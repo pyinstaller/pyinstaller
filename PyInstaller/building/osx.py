@@ -17,6 +17,7 @@ from PyInstaller.building.api import COLLECT, EXE
 from PyInstaller.building.datastruct import TOC, Target, logger
 from PyInstaller.building.utils import (_check_path_overlap, _rmtree, add_suffix_to_extension, checkCache)
 from PyInstaller.compat import is_darwin
+from PyInstaller.config import CONF
 
 if is_darwin:
     import PyInstaller.utils.osx as osxutils
@@ -24,8 +25,6 @@ if is_darwin:
 
 class BUNDLE(Target):
     def __init__(self, *args, **kws):
-        from PyInstaller.config import CONF
-
         # BUNDLE only has a sense under Mac OS, it's a noop on other platforms
         if not is_darwin:
             return
@@ -41,8 +40,6 @@ class BUNDLE(Target):
             # User gave an --icon=path. If it is relative, make it relative to the spec file location.
             if not os.path.isabs(self.icon):
                 self.icon = os.path.join(CONF['specpath'], self.icon)
-        # Ensure icon path is absolute
-        self.icon = os.path.abspath(self.icon)
 
         Target.__init__(self)
 
@@ -123,11 +120,45 @@ class BUNDLE(Target):
         os.makedirs(os.path.join(self.name, "Contents", "Resources"))
         os.makedirs(os.path.join(self.name, "Contents", "Frameworks"))
 
+        # explicitly error if file not found
+        if not os.path.exists(self.icon):
+            raise FileNotFoundError(f"Icon input file {self.icon} not found")
+
+        srcext = os.path.splitext(self.icon)[1]
+
+        # if not a natively supported type, try to use PIL to translate into .icns
+        if srcext.lower() != '.icns':
+            try:
+                from PIL import Image as PILImage
+                import PIL
+            except ImportError:
+                PILImage = None
+
+            if PILImage:
+                try:
+                    generated_icon = os.path.join(CONF["cachedir"], "generated.icns")
+                    with PILImage.open(self.icon) as im:
+                        im.save(generated_icon)
+                    self.icon = generated_icon
+                except PIL.UnidentifiedImageError:
+                    raise ValueError("Something went wrong converting icon image to '.icns' with PIL, perhaps the image format"
+                                    " is unsupported. Try again with a different file or use an '.icns' image.")
+            
+            # if PIL isn't found, the user is notified that they can either try and install PIL or translate to .ico
+            # however they see fit
+            else:
+                raise ValueError(
+                    f"Received icon image '{self.icon}' which exists but is not in the correct format. On Mac, only '.icns' "
+                    f"images may be used as icons. If PIL is installed, automatic conversion "
+                    f"will be attempted. Please install PIL or convert your '{srcext}' file to a '.icns' "
+                    "and try again."
+                )
+
+        #Ensure icon path is absolute
+        self.icon = os.path.abspath(self.icon)
+
         # Copy icns icon to Resources directory.
-        if os.path.exists(self.icon):
-            shutil.copy(self.icon, os.path.join(self.name, 'Contents', 'Resources'))
-        else:
-            logger.warning("icon not found %s", self.icon)
+        shutil.copy(self.icon, os.path.join(self.name, 'Contents', 'Resources'))
 
         # Key/values for a minimal Info.plist file
         info_plist_dict = {
