@@ -74,10 +74,11 @@ def test_unbuffered_stdio(tmp_path, output_stream, stream_mode, pyi_builder_spec
             "--output-stream", output_stream,
             "--stream-mode", stream_mode
         )  # yapf: disable
-        loop.run_until_complete(proc)
+        transport, _ = loop.run_until_complete(proc)
         loop.run_forever()
     finally:
         loop.close()
+        transport.close()
 
     # Check the number of received stars
     assert counter_proto.count == EXPECTED_STARS
