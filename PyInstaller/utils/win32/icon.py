@@ -103,17 +103,18 @@ class IconFile:
             # The icon file can't be opened for some reason. Stop the
             # program with an informative message.
             raise SystemExit('Unable to open icon file {}'.format(path))
-        self.entries = []
-        self.images = []
-        header = self.header = ICONDIRHEADER()
-        header.fromfile(file)
-        for i in range(header.idCount):
-            entry = ICONDIRENTRY()
-            entry.fromfile(file)
-            self.entries.append(entry)
-        for e in self.entries:
-            file.seek(e.dwImageOffset, 0)
-            self.images.append(file.read(e.dwBytesInRes))
+        with file:
+            self.entries = []
+            self.images = []
+            header = self.header = ICONDIRHEADER()
+            header.fromfile(file)
+            for i in range(header.idCount):
+                entry = ICONDIRENTRY()
+                entry.fromfile(file)
+                self.entries.append(entry)
+            for e in self.entries:
+                file.seek(e.dwImageOffset, 0)
+                self.images.append(file.read(e.dwBytesInRes))
 
     def grp_icon_dir(self):
         return self.header.tostring()

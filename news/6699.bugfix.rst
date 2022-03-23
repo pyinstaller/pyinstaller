@@ -1,0 +1,2 @@
+Fix leakage of file handles during the build process. This is only significant
+if PyInstaller is ran repeatedly in one process of Python.

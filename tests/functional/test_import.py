@@ -660,6 +660,8 @@ def test_nspkg_attributes_pep420(pyi_builder):
 #--- hooks related stuff ---
 
 
+# imp leaks file handles.
+@pytest.mark.filterwarnings("ignore", category=ResourceWarning)
 def test_pkg_without_hook_for_pkg(pyi_builder, script_dir):
     # The package `pkg_without_hook_for_pkg` does not have a hook, but `pkg_without_hook_for_pkg.sub1` has one. And this
     # hook includes the "hidden" import `pkg_without_hook_for_pkg.sub1.sub11`
