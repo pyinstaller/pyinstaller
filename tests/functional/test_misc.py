@@ -58,3 +58,25 @@ def test_dis_main(pyi_builder):
         print(dis.dis(sys.modules["__main__"].__loader__.get_code("__main__")))
         """
     )
+
+
+# Test that single-file metadata (as commonly found in Debian/Ubuntu packages) is properly collected by copy_metadata().
+def test_single_file_metadata(pyi_builder):
+    # Add directory containing the my-test-package metadata to search path
+    extra_path = os.path.join(_MODULES_DIR, "pyi_single_file_metadata")
+
+    pyi_builder.test_source(
+        """
+        import pkg_resources
+
+        # The pkg_resources.get_distribution() call automatically triggers collection of the metadata. While it does not
+        # raise an error if metadata is not found while freezing, the calls below will fall at run-time in that case.
+        dist = pkg_resources.get_distribution('my-test-package')
+
+        # Sanity check
+        assert dist.project_name == 'my-test-package'
+        assert dist.version == '1.0'
+        assert dist.egg_name() == f'my_test_package-{dist.version}-py{sys.version_info[0]}.{sys.version_info[1]}'
+        """,
+        pyi_args=['--paths', extra_path]
+    )
