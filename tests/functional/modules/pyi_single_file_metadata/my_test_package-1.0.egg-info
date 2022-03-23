@@ -1,0 +1,14 @@
+Metadata-Version: 2.1
+Name: my-test-package
+Version: 1.0
+Summary: Test package for single-file metadata
+Author: PyInstaller Team
+License: MIT
+Platform: Windows
+Platform: Linux
+Platform: Solaris
+Platform: Mac OS-X
+Platform: Unix
+Requires-Python: >=3.6
+
+The package for single-file metadata.
