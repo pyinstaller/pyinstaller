@@ -262,6 +262,14 @@ class Analysis(Target):
         logger.info('Extending PYTHONPATH with paths\n' + pprint.pformat(self.pathex))
         sys.path.extend(self.pathex)
 
+        # If pkg_resources has already been imported, force update of its working set to account for changes made to
+        # sys.path. Otherwise, distribution data in the added path(s) may not be discovered.
+        if 'pkg_resources' in sys.modules:
+            # See https://github.com/pypa/setuptools/issues/373
+            import pkg_resources
+            if hasattr(pkg_resources, '_initialize_master_working_set'):
+                pkg_resources._initialize_master_working_set()
+
         # Set global variable to hold assembly binding redirects
         CONF['binding_redirects'] = []
 
