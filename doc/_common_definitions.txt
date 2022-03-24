@@ -18,28 +18,20 @@
 .. _Django: https://www.djangoproject.com/
 .. _dnspython: http://www.dnspython.org/
 .. _Docker: https://www.docker.com/
-.. _`easy_install`: http://peak.telecommunity.com/DevCenter/EasyInstall
-.. _`Microsoft COM`: http://www.microsoft.com/com/default.mspx
 .. _`GPL License`: https://raw.github.com/pyinstaller/pyinstaller/develop/COPYING.txt
 .. _FAQ: https://github.com/pyinstaller/pyinstaller/wiki/FAQ
 .. _flake8: https://flake8.pycqa.org/
 .. _Git: http://git-scm.com/downloads
-.. _GraphicConverter: http://www.lemkesoft.de/en/products/graphic-converter/
 .. _GraphViz: https://graphviz.org/
 .. _Homebrew: http://brew.sh/
-.. _`How to Contribute`: https://github.com/pyinstaller/pyinstaller/wiki/How-to-Contribute
+.. _`How to Contribute`: https://pyinstaller.readthedocs.io/en/latest/contributing.html
 .. _`How to Report Bugs`: https://github.com/pyinstaller/pyinstaller/wiki/How-to-Report-Bugs
-.. _ImageMagick: http://www.imagemagick.org/script/index.php
 .. _`importlib.metadata`: https://docs.python.org/3/library/importlib.metadata.html
-.. _imputil: http://docs.python.org/2.7/library/imputil.html
 .. _`Info Property List`: https://developer.apple.com/library/mac/#documentation/MacOSX/Conceptual/BPRuntimeConfig/Articles/ConfigFiles.html
 .. _MacPorts: https://www.macports.org/
-.. _makeicns: https://bitbucket.org/mkae/makeicns
 .. _marshalled: http://docs.python.org/library/marshal
 .. _MinGW: http://sourceforge.net/downloads/mingw/
 .. _MinGW-w64: http://mingw-w64.sourceforge.net/
-.. _Modulefinder: http://docs.python.org/2.7/library/modulefinder.html
-.. _netpbm package: http://netpbm.sourceforge.net/
 .. _NextCloud: https://nextcloud.org
 .. _Parallels: http://www.parallels.com
 .. _pathlib: https://docs.python.org/3/library/pathlib.html
@@ -48,7 +40,6 @@
 .. _pip: http://www.pip-installer.org/
 .. _pip-Win: https://sites.google.com/site/pydatalog/python/pip-for-windows
 .. _plistlib: https://docs.python.org/3/library/plistlib.html
-.. _png2icns: http://icns.sourceforge.net/
 .. _tinyaes: https://github.com/naufraghi/tinyaes-py
 .. _PyInstaller.org: https://github.com/pyinstaller/pyinstaller/wiki/Community
 .. _`PyInstaller at GitHub`: https://github.com/pyinstaller/pyinstaller
@@ -67,7 +58,6 @@
 .. _Recipe: http://www.pyinstaller.org/wiki/Recipe
 .. _setup_tools: https://pypi.python.org/pypi/setuptools
 .. _`Package resources`: https://pythonhosted.org/setuptools/pkg_resources.html#requirements-parsing
-.. _source/common/launch.c: http://www.pyinstaller.org/browser/trunk/source/common/launch.c?rev=latest
 .. _`Supported Packages`: https://github.com/pyinstaller/pyinstaller/wiki/Supported-Packages
 .. _TDM-GCC: http://tdm-gcc.tdragon.net/
 .. _TkInter: http://wiki.python.org/moin/TkInter
