@@ -32,7 +32,7 @@ run the following command:
 
     py.test
 
-Or, to speed up test runs by sending tests to multiple CPUs:
+Or, to speed up test runs by sending tests to multiple CPUs: (requires pytest-xdist)
 
     py.test -n NUM
 
