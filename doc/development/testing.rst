@@ -54,7 +54,7 @@ To run the test-suite, please proceed as follows.
 
 
 To learn how we run the test-suite in the continuous integration tests please
-have a look at |.travis.yml|_ (for GNU/Linux and OS X) and |appveyor.yml|_
+have a look at |.travis.yml|_ (for GNU/Linux and macOS) and |appveyor.yml|_
 (for Windows).
 
 
