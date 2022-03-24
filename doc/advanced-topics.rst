@@ -591,7 +591,7 @@ integer value before running |PyInstaller|.
 This forces Python to use the same random hash sequence until
 :envvar:`PYTHONHASHSEED` is unset or set to ``'random'``.
 For example, execute |PyInstaller| in a script such as
-the following (for GNU/Linux and OS X)::
+the following (for GNU/Linux and macOS)::
 
     # set seed to a known repeatable integer value
     PYTHONHASHSEED=1

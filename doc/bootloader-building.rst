@@ -29,8 +29,8 @@ This will produce the |bootloader| executables for your current platform
 
 * :file:`../PyInstaller/bootloader/{OS_ARCH}/run`,
 * :file:`../PyInstaller/bootloader/{OS_ARCH}/run_d`,
-* :file:`../PyInstaller/bootloader/{OS_ARCH}/runw` (OS X and Windows only), and
-* :file:`../PyInstaller/bootloader/{OS_ARCH}/runw_d` (OS X and Windows only).
+* :file:`../PyInstaller/bootloader/{OS_ARCH}/runw` (macOS and Windows only), and
+* :file:`../PyInstaller/bootloader/{OS_ARCH}/runw_d` (macOS and Windows only).
 
 The bootloaders architecture defaults to the machine's one, but can be changed
 using the :option:`--target-arch` option – given the appropriate compiler and
@@ -123,11 +123,11 @@ Open it in some flavour of text previewer to see them::
     less bootloader/Dockerfile
 
 
-Building for Mac OS X
+Building for macOS
 ========================
 
-On Mac OS X please install Xcode_, Apple's suite of tools for developing
-software for Mac OS X.
+On macOS please install Xcode_, Apple's suite of tools for developing
+software for macOS.
 Instead of installing the full `Xcode` package, you can also install
 and use `Command Line Tools for Xcode <https://developer.apple.com/download/more/>`_.
 Installing either will provide the `clang` compiler.
@@ -163,18 +163,18 @@ architecture)::
 
     CC='clang -arch=arm64' python waf --no-universal2 all
 
-By default, the build script targets Mac OSX 10.13, which can be overridden by
+By default, the build script targets macOS 10.13, which can be overridden by
 exporting the MACOSX_DEPLOYMENT_TARGET environment variable.
 
-.. _cross-building for mac os x:
+.. _cross-building for macos:
 
-Cross-Building for Mac OS X
+Cross-Building for macOS
 -----------------------------------
 
-For cross-compiling for OS X you need the Clang/LLVM compiler, the
+For cross-compiling for macOS you need the Clang/LLVM compiler, the
 `cctools` (ld, lipo, …), and the OSX SDK. Clang/LLVM is a cross compiler by
 default and is available on nearly every GNU/Linux distribution, so you just
-need a proper port of the cctools and the OS X SDK.
+need a proper port of the cctools and the macOS SDK.
 
 This is easy to get and needs to be done only once and the result can be
 transferred to you build-system. The build-system can then be a normal
@@ -227,9 +227,9 @@ Please proceed as follows:
 Building the Bootloader
 .......................................
 
-Again, simply use the Vagrantfile to automatically build the OS X bootloaders::
+Again, simply use the Vagrantfile to automatically build the macOS bootloaders::
 
-     export TARGET=OSX  # make the Vagrantfile build for OS X
+     export TARGET=OSX  # make the Vagrantfile build for macOS
      vagrant up linux64 && vagrant halt linux
 
 This should create the bootloaders in
@@ -243,7 +243,7 @@ This should create the bootloaders in
 
      vagrant destroy build-osxcross
 
-4. If you are finished with the OS X bootloaders, unset `TARGET` again::
+4. If you are finished with the macOS bootloaders, unset `TARGET` again::
 
      unset TARGET
 
@@ -495,7 +495,7 @@ All guests [#]_ will automatically build the bootloader when running
 `vagrant provision GUEST`. They will build both 32- and 64-bit bootloaders.
 
 .. [#] Except of guest `osxcross`, which will build the OS X SDK and cctools
-       as described in section :ref:`cross-building for mac os x`.
+       as described in section :ref:`cross-building for macos`.
 
 When building the bootloaders, the guests are sharing
 the PyInstaller distribution folder and will put the built executables onto
@@ -531,8 +531,8 @@ We currently provide this guests:
 :linux64:  GNU/Linux (some recent version) used to build the GNU/Linux
            bootloaders.
 
-           * If ``TARGET=OSX`` is set, cross-builds the bootloaders for OS X
-             (see :ref:`cross-building for mac os x`).
+           * If ``TARGET=OSX`` is set, cross-builds the bootloaders for macOS
+             (see :ref:`cross-building for macos`).
 
            * If ``TARGET=WINDOWS`` is set, cross-builds the bootloaders
              for Windows using mingw. Please have in mind that this imposes
@@ -552,7 +552,7 @@ We currently provide this guests:
                       `Passw0rd!`).
 
 :build-osxcross: GNU/Linux guest used to build the OS X SDK and `cctools` as
-                 described in section :ref:`cross-building for mac os x`.
+                 described in section :ref:`cross-building for macos`.
 
 
 .. include:: _common_definitions.txt

@@ -150,7 +150,7 @@ This is the heart of the ``myscript`` executable in the folder.
 
 The |PyInstaller| |bootloader| is a binary
 executable program for the active platform
-(Windows, GNU/Linux, Mac OS X, etc.).
+(Windows, GNU/Linux, macOS, etc.).
 When the user launches your program, it is the |bootloader| that runs.
 The |bootloader| creates a temporary Python environment
 such that the Python interpreter will find all imported modules and
@@ -230,7 +230,7 @@ nothing is shared.
 
 The :file:`_MEI{xxxxxx}` folder is not removed if the program crashes
 or is killed (kill -9 on Unix, killed by the Task Manager on Windows,
-"Force Quit" on Mac OS).
+"Force Quit" on macOS).
 Thus if your app crashes frequently, your users will lose disk space to
 multiple :file:`_MEI{xxxxxx}` temporary folders.
 
@@ -262,13 +262,13 @@ Using a Console Window
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 By default the |bootloader| creates a command-line console
-(a terminal window in GNU/Linux and Mac OS, a command window in Windows).
+(a terminal window in GNU/Linux and macOS, a command window in Windows).
 It gives this window to the Python interpreter for its standard input and output.
 Your script's use of ``print`` and ``input()`` are directed here.
 Error messages from Python and default logging output
 also appear in the console window.
 
-An option for Windows and Mac OS is to tell |PyInstaller| to not provide a console window.
+An option for Windows and macOS is to tell |PyInstaller| to not provide a console window.
 The |bootloader| starts Python with no target for standard output or input.
 Do this when your script has a graphical interface for user input and can properly
 report its own diagnostics.

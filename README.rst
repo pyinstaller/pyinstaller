@@ -16,7 +16,7 @@ Python interpreter! -- and puts them with your script in a single folder, or
 optionally in a single executable file.
 
 
-PyInstaller is tested against Windows, Mac OS X, and GNU/Linux.
+PyInstaller is tested against Windows, macOS, and GNU/Linux.
 However, it is not a cross-compiler:
 to make a Windows app you run PyInstaller in Windows; to make
 a GNU/Linux app you run it in GNU/Linux, etc.
@@ -37,7 +37,7 @@ Main Advantages
   tricks to make external packages work are already integrated.)
 - Libraries like PyQt5, PySide2, wxPython, matplotlib or Django are fully
   supported, without having to handle plugins or external data files manually.
-- Works with code signing on OS X.
+- Works with code signing on macOS.
 - Bundles MS Visual C++ DLLs on Windows.
 
 
@@ -77,9 +77,9 @@ Requirements and Tested Platforms
    This typically can be found in the distribution-package `binutils`,
    too.
 
-- Mac OS X (64bit):
+- macOS (64bit):
 
- - Mac OS X 10.13 (High Sierra) or newer.
+ - macOS 10.13 (High Sierra) or newer.
 
 
 Usage
