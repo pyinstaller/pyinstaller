@@ -15,12 +15,12 @@ has dropped support for Windows versions below 8.1. To support Windows 8.0 and 7
 you must build with Python 3.8 or older and to support Windows XP you must use
 Python 3.7 or older.
 
-Mac OS
+macOS
 ~~~~~~
 
-|PyInstaller| runs on Mac OS 10.13 (High Sierra) or newer.
+|PyInstaller| runs on macOS 10.13 (High Sierra) or newer.
 It can build graphical windowed apps (apps that do not use a terminal window).
-PyInstaller builds apps that are compatible with the Mac OS release in
+PyInstaller builds apps that are compatible with the macOS release in
 which you run it, and following releases.
 It can build ``x86_64``, ``arm64`` or hybrid *universal2* binaries on macOS
 machines of either architecture. See :ref:`macOS multi-arch support` for
