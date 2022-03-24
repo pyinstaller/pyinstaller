@@ -78,7 +78,7 @@ reStructuredText Cheat-sheet
 
 * Combining markup and links::
 
-    The easies way to install PyInstaller is using |pip|_::
+    The easiest way to install PyInstaller is using |pip|_::
 
     .. |pip| replace:: :command:`pip`
     .. _pip: https://pip.pypa.io/
