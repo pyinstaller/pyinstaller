@@ -147,7 +147,7 @@ command-line option.
     the collected binaries are not processed even if UPX is found. The
     shared libraries (e.g., the Python shared library) built on modern
     linux distributions seem to break when processed with UPX, resulting
-    in defunct application bundles. On Mac OS, UPX currently fails to
+    in defunct application bundles. On macOS, UPX currently fails to
     process .dylib shared libraries; furthermore the UPX-compressed files
     fail the validation check of the ``codesign`` utility, and therefore
     cannot be code-signed (which is a requirement on the Apple M1 platform).
@@ -329,7 +329,7 @@ Note that when using `venv`, the path to the |PyInstaller| commands is:
 
 Under Windows, the pip-Win_ package makes it
 especially easy to set up different environments and switch between them.
-Under GNU/Linux and Mac OS, you switch environments at the command line.
+Under GNU/Linux and macOS, you switch environments at the command line.
 
 See :pep:`405`
 and the official `Python Tutorial on Virtual Environments and Packages
@@ -341,7 +341,7 @@ Supporting Multiple Operating Systems
 ---------------------------------------
 
 If you need to distribute your application for more than one OS,
-for example both Windows and Mac OS X, you must install |PyInstaller|
+for example both Windows and macOS, you must install |PyInstaller|
 on each platform and bundle your app separately on each.
 
 You can do this from a single machine using virtualization.
@@ -371,7 +371,7 @@ but writes its work files and the bundled app in folders that
 are local to the virtual machine.
 
 If you share the same home directory on multiple platforms, for
-example GNU/Linux and OS X, you will need to set the PYINSTALLER_CONFIG_DIR
+example GNU/Linux and macOS, you will need to set the PYINSTALLER_CONFIG_DIR
 environment variable to different values on each platform otherwise
 PyInstaller may cache files for one platform and use them on the other
 platform, as by default it uses a subdirectory of your home directory
@@ -457,10 +457,10 @@ Or you can apply the ``unicode()`` function to the object
 to reproduce the version text file.
 
 
-Building Mac OS X App Bundles
+Building macOS App Bundles
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Under Mac OS X, |PyInstaller| always builds a UNIX executable in
+Under macOS, |PyInstaller| always builds a UNIX executable in
 :file:`dist`.
 If you specify :option:`--onedir`, the output is a folder named :file:`myscript`
 containing supporting files and an executable named :file:`myscript`.
@@ -470,7 +470,7 @@ Either executable can be started from a Terminal command line.
 Standard input and output work as normal through that Terminal window.
 
 If you specify :option:`--windowed` with either option, the ``dist`` folder
-also contains an OS X application named :file:`myscript.app`.
+also contains a macOS application named :file:`myscript.app`.
 
 As you probably know, an application is a special type of folder.
 The one built by |PyInstaller| contains a folder always named
@@ -493,7 +493,7 @@ This becomes the ``CFBundleIdentifier`` used in code-signing
 and for more detail, the `Apple code signing overview`_ technical note).
 
 You can add other items to the :file:`Info.plist` by editing the spec file;
-see :ref:`Spec File Options for a Mac OS X Bundle` below.
+see :ref:`Spec File Options for a macOS Bundle` below.
 
 
 Platform-specific Notes
@@ -558,13 +558,13 @@ So you have the following options:
 
 
 
-Mac OS X
+macOS
 -------------------
 
-Making Mac OS apps Forward-Compatible
+Making macOS apps Forward-Compatible
 =====================================
 
-On Mac OS, system components from one version of the OS are usually compatible
+On macOS, system components from one version of the OS are usually compatible
 with later versions, but they may not work with earlier versions. While
 |PyInstaller| does not collect system components of the OS, the collected
 3rd party binaries (e.g., python extension modules) are built against
@@ -585,7 +585,7 @@ your application in that environment; the generated frozen application
 should be compatible with that and later versions of macOS.
 
 
-Building 32-bit Apps in Mac OS X
+Building 32-bit Apps in macOS
 ================================
 
 .. note:: This section is largely obsolete, as support for 32-bit application
@@ -595,7 +595,7 @@ Building 32-bit Apps in Mac OS X
           and 32-bit/64-bit Python installers are stil available from
           python.org for (some) versions of Python 3.7.
 
-Older versions of Mac OS X supported both 32-bit and 64-bit executables.
+Older versions of macOS supported both 32-bit and 64-bit executables.
 PyInstaller builds an app using the the word-length of the Python used to execute it.
 That will typically be a 64-bit version of Python,
 resulting in a 64-bit executable.
@@ -640,7 +640,7 @@ Getting the Opened Document Names
 
 When user double-clicks a document of a type that is registered with
 your application, or when a user drags a document and drops it
-on your application's icon, Mac OS launches your application
+on your application's icon, macOS launches your application
 and provides the name(s) of the opened document(s) in the
 form of an OpenDocument AppleEvent.
 
