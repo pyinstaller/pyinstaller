@@ -30,7 +30,7 @@ Inside is a script named ``setup.py``.
 Execute ``python setup.py install``
 with administrator privilege to install or upgrade |PyInstaller|.
 
-For platforms other than Windows, GNU/Linux and Mac OS, you must first
+For platforms other than Windows, GNU/Linux and macOS, you must first
 build a |bootloader| program for your platform: see :ref:`Building the Bootloader`.
 After the |bootloader| has been created,
 use ``python setup.py install`` with administrator privileges
@@ -46,19 +46,19 @@ execution path. To verify this, enter the command::
 
     pyinstaller --version
 
-The result should resemble ``3.n`` for a released version,
-and ``3.n.dev0-xxxxxx`` for a development branch.
+The result should resemble ``4.n`` for a released version,
+and ``4.n.dev0-xxxxxx`` for a development branch.
 
 If the command is not found, make sure the execution path includes
 the proper directory:
 
 * Windows: ``C:\PythonXY\Scripts`` where *XY* stands for the
   major and minor Python version number,
-  for example ``C:\Python34\Scripts`` for Python 3.4)
+  for example ``C:\Python38\Scripts`` for Python 3.8)
 * GNU/Linux: ``/usr/bin/``
-* OS X (using the default Apple-supplied Python) ``/usr/bin``
-* OS X (using Python installed by homebrew) ``/usr/local/bin``
-* OS X (using Python installed by macports) ``/opt/local/bin``
+* macOS (using the default Apple-supplied Python) ``/usr/bin``
+* macOS (using Python installed by homebrew) ``/usr/local/bin``
+* macOS (using Python installed by macports) ``/opt/local/bin``
 
 To display the current path in Windows the command is ``echo %path%``
 and in other systems, ``echo $PATH``.

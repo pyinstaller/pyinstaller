@@ -128,7 +128,7 @@ are checked in most systems.
 If you cannot put the python library there,
 try setting the correct path in the environment variable
 ``LD_LIBRARY_PATH`` in GNU/Linux or
-``DYLD_LIBRARY_PATH`` in OS X.
+``DYLD_LIBRARY_PATH`` in macOS.
 
 
 Getting Debug Messages
@@ -149,7 +149,7 @@ application.
 
 .. _DebugView: https://docs.microsoft.com/en-us/sysinternals/downloads/debugview
 
-For a :option:`--windowed` Mac OS app they are not displayed.
+For a :option:`--windowed` macOS app they are not displayed.
 
 Consider bundling without :option:`--debug` for your production version.
 Debugging messages require system calls and have an impact on performance.
@@ -183,7 +183,7 @@ your bundled application may fail to start with an error message like
 In this case, you will want to get more verbose output to find out
 what is going on.
 
-* For Mac OS, you can run your application on the command line,
+* For macOS, you can run your application on the command line,
   i.e. ``./dist/my_gui``
   in `Terminal` instead of clicking on ``my_gui.app``.
 

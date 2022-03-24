@@ -268,7 +268,7 @@ for example::
 
 .. py:data:: is_darwin
 
-   True in Mac OS X.
+   True in macOS.
 
 .. py:data:: is_linux
 

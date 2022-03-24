@@ -367,16 +367,16 @@ For example modify the spec file this way::
    versions. The unbuffered text layer requires Python 3.7 or later.
 
 
-.. _spec file options for a mac os x bundle:
+.. _spec file options for a macOS bundle:
 
-Spec File Options for a Mac OS X Bundle
+Spec File Options for a macOS Bundle
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-When you build a windowed Mac OS X app
-(that is, running in Mac OS X, you specify the :option:`--onefile`
+When you build a windowed macOS app
+(that is, running in macOS, you specify the :option:`--onefile`
 :option:`--windowed` options),
 the spec file contains an additional statement to
-create the Mac OS X application bundle, or app folder::
+create the macOS application bundle, or app folder::
 
     app = BUNDLE(exe,
              name='myscript.app',
@@ -388,7 +388,7 @@ that you specify using the :option:`--icon` option.
 The ``bundle_identifier`` will have the value you specify with the
 :option:`--osx-bundle-identifier` option.
 
-An :file:`Info.plist` file is an important part of a Mac OS X app bundle.
+An :file:`Info.plist` file is an important part of a macOS app bundle.
 (See the `Apple bundle overview`_ for a discussion of the contents
 of ``Info.plist``.)
 
@@ -426,10 +426,10 @@ XML types.  Here's an example::
              )
 
 In the above example, the key/value ``'NSPrincipalClass': 'NSApplication'`` is
-necessary to allow Mac OS X to render applications using retina resolution.
+necessary to allow macOS to render applications using retina resolution.
 The key ``'NSAppleScriptEnabled'`` is assigned the Python boolean
 ``False``, which will be output to :file:`Info.plist` properly as ``<false/>``.
-Finally the key ``CFBundleDocumentTypes`` tells Mac OS X what filetypes your
+Finally the key ``CFBundleDocumentTypes`` tells macOS what filetypes your
 application supports (see `Apple document types`_).
 
 
@@ -515,9 +515,9 @@ since the splash binaries do not need to be included into the executable::
                   ...)
 
 On Windows/macOS images with per-pixel transparency are supported. This allows
-non-rectengular splash screen images. On Windows the transparent borders of the image
+non-rectangular splash screen images. On Windows the transparent borders of the image
 are hard-cuted, meaning that fading transparent values are not supported. There is
-no common implementation for non-rectengular windows on Linux, so images with per-
+no common implementation for non-rectangular windows on Linux, so images with per-
 pixel transparency is not supported.
 
 The splash target can be configured in various ways. The constructor of the :mod:`Splash`
