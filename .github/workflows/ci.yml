@@ -87,7 +87,7 @@ jobs:
           pip install --progress-bar=off .
 
           # Make sure the help options print.
-          python -m pyinstaller -h
+          python -m PyInstaller -h
 
       - name: Set up environment variables (non-Windows)
         if: ${{ !startsWith(matrix.os, 'windows') }}
