@@ -219,16 +219,18 @@ def CopyIcons(dstpath, srcpath):
 
         if PILImage:
             try:
-                generated_icon = os.path.join(config.CONF["cachedir"], "generated.ico")
+                generated_icon = os.path.join(config.CONF["workpath"], "generated.ico")
                 with PILImage.open(srcpath) as im:
                     im.save(generated_icon)
                 srcpath = generated_icon
                 srcext = ".ico"
             except PIL.UnidentifiedImageError:
-                raise ValueError("Something went wrong converting icon image to '.ico' with PIL, perhaps the image format"
-                                 " is unsupported. Try again with a different file or use an '.ico' image or another"
-                                 " exe instead.")
-        
+                raise ValueError(
+                    "Something went wrong converting icon image to '.ico' with PIL, perhaps the image format"
+                    " is unsupported. Try again with a different file or use an '.ico' image or another"
+                    " exe instead."
+                )
+
         # if PIL isn't found, the user is notified that they can either try and install PIL or translate to .ico
         # however they see fit
         else:
@@ -237,7 +239,7 @@ def CopyIcons(dstpath, srcpath):
                 f"images or other '.exe' files may be used as icons. If PIL is installed, automatic conversion "
                 f"will be attempted. Please install PIL or convert your '{srcext}' file to a '.ico' "
                 "and try again."
-            )            
+            )
 
     # Handle the simple case of foo.ico, ignoring any index.
     if srcext.lower() == '.ico':

@@ -17,7 +17,6 @@ from PyInstaller.building.api import COLLECT, EXE
 from PyInstaller.building.datastruct import TOC, Target, logger
 from PyInstaller.building.utils import (_check_path_overlap, _rmtree, add_suffix_to_extension, checkCache)
 from PyInstaller.compat import is_darwin
-from PyInstaller.config import CONF
 
 if is_darwin:
     import PyInstaller.utils.osx as osxutils
@@ -25,6 +24,8 @@ if is_darwin:
 
 class BUNDLE(Target):
     def __init__(self, *args, **kws):
+        from PyInstaller.config import CONF
+
         # BUNDLE only has a sense under Mac OS, it's a noop on other platforms
         if not is_darwin:
             return
@@ -111,6 +112,8 @@ class BUNDLE(Target):
         return 1
 
     def assemble(self):
+        from PyInstaller.config import CONF
+
         if _check_path_overlap(self.name) and os.path.isdir(self.name):
             _rmtree(self.name)
         logger.info("Building BUNDLE %s", self.tocbasename)
@@ -136,14 +139,16 @@ class BUNDLE(Target):
 
             if PILImage:
                 try:
-                    generated_icon = os.path.join(CONF["cachedir"], "generated.icns")
+                    generated_icon = os.path.join(CONF["workpath"], "generated.icns")
                     with PILImage.open(self.icon) as im:
                         im.save(generated_icon)
                     self.icon = generated_icon
                 except PIL.UnidentifiedImageError:
-                    raise ValueError("Something went wrong converting icon image to '.icns' with PIL, perhaps the image format"
-                                    " is unsupported. Try again with a different file or use an '.icns' image.")
-            
+                    raise ValueError(
+                        "Something went wrong converting icon image to '.icns' with PIL, perhaps the image format"
+                        " is unsupported. Try again with a different file or use an '.icns' image."
+                    )
+
             # if PIL isn't found, the user is notified that they can either try and install PIL or translate to .ico
             # however they see fit
             else:
