@@ -1,0 +1,1 @@
+Fix a mix up when the entry-point script and a package have the same name.

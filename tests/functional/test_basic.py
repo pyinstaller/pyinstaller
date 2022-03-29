@@ -14,6 +14,9 @@ import locale
 import os
 import sys
 import shutil
+from pathlib import Path
+import subprocess
+import re
 
 import pytest
 
@@ -797,3 +800,27 @@ def test_subprocess_in_windowed_mode(pyi_windowed_builder):
         """.format(repr(sys.executable)),
         pyi_args=["--windowed"]
     )
+
+
+def test_package_entry_point_name_collision(pyi_builder):
+    """
+    Check when an imported package has the same name as the entry point script. Despite the obvious ambiguity, Python
+    still handles this case fine and PyInstaller should too.
+    """
+    script = Path(__file__, "../data/name_clash_with_entry_point/matching_name.py").resolve()
+
+    # Each file prints its filename and the value of __name__.
+    expected = [
+        ('matching_name.py', '__main__'),
+        ('matching_name/__init__.py', 'matching_name'),
+        ('matching_name/submodule.py', 'matching_name.submodule'),
+    ]
+
+    # Include a verification that unfrozen Python does still work.
+    p = subprocess.run([sys.executable, str(script)], stdout=subprocess.PIPE, universal_newlines=True)
+    assert re.findall("Running (.*) as (.*)", p.stdout) == expected
+
+    pyi_builder.test_script(str(script))
+    exe, = pyi_builder._find_executables("matching_name")
+    p = subprocess.run([exe], stdout=subprocess.PIPE, universal_newlines=True)
+    assert re.findall("Running (.*) as (.*)", p.stdout) == expected

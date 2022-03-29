@@ -17,7 +17,6 @@ import glob
 import hashlib
 import os
 import pathlib
-import pkgutil
 import platform
 import shutil
 import struct
@@ -586,45 +585,11 @@ This usually happens due to missing development package, or unsuitable build par
     return toc_datas
 
 
-def _load_code(modname, filename):
-    path_item = os.path.dirname(filename)
-    if os.path.basename(filename).startswith('__init__.py'):
-        # this is a package
-        path_item = os.path.dirname(path_item)
-    if os.path.basename(path_item) == '__pycache__':
-        path_item = os.path.dirname(path_item)
-    importer = pkgutil.get_importer(path_item)
-    package, _, modname = modname.rpartition('.')
-
-    if hasattr(importer, 'find_loader'):
-        loader, portions = importer.find_loader(modname)
-    else:
-        loader = importer.find_module(modname)
-
-    logger.debug('Compiling %s', filename)
-    if loader and hasattr(loader, 'get_code'):
-        return loader.get_code(modname)
-    else:
-        # Just as ``python foo.bar`` will read and execute statements in ``foo.bar``,  even though it lacks the ``.py``
-        # extension, so ``pyinstaller foo.bar``  should also work. However, Python's import machinery doesn't load files
-        # without a ``.py`` extension. So, use ``compile`` instead.
-        #
-        # On a side note, neither the Python 2 nor Python 3 calls to ``pkgutil`` and ``find_module`` above handle
-        # modules ending in ``.pyw``, even though ``imp.find_module`` and ``import <name>`` both work. This code
-        # supports ``.pyw`` files.
-
-        # Open the source file in binary mode and allow the `compile()` call to detect the source encoding.
-        with open(filename, 'rb') as f:
-            source = f.read()
-        return compile(source, filename, 'exec')
-
-
 def get_code_object(modname, filename):
     """
     Get the code-object for a module.
 
-    This is a extra-simple version for compiling a module. It is not worth spending more effort here, as it is only
-    used in the rare case if outXX-Analysis.toc exists, but outXX-PYZ.toc does not.
+    This is a simplifed non-performant version which circumvents __pycache__.
     """
 
     try:
@@ -636,10 +601,9 @@ def get_code_object(modname, filename):
             return compile(txt, filename, 'exec')
         else:
             logger.debug('Compiling %s', filename)
-            co = _load_code(modname, filename)
-            if not co:
-                raise ValueError("Module file %s is missing" % filename)
-            return co
+            with open(filename, 'rb') as f:
+                source = f.read()
+            return compile(source, filename, 'exec')
     except SyntaxError as e:
         print("Syntax error in ", filename)
         print(e.args)
