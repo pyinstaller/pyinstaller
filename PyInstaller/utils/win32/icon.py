@@ -23,6 +23,7 @@ import struct
 import PyInstaller.log as logging
 from PyInstaller import config
 from PyInstaller.compat import pywintypes, win32api
+from PyInstaller.utils.icon import validate_icon
 
 logger = logging.getLogger(__name__)
 
@@ -203,43 +204,12 @@ def CopyIcons(dstpath, srcpath):
 
     # Just one source given.
     srcpath, index = srcpath[0]
+    
+    # validates the icon, which means it will always return a path to an existing "exe"
+    # or "ico" file or raise an Exception trying
+    srcpath = validate_icon(srcpath, ("exe", "ico"), "ico", config.CONF["workpath"])
+
     srcext = os.path.splitext(srcpath)[1]
-
-    # early exit for files that don't exist
-    if not os.path.isfile(srcpath):
-        raise FileNotFoundError(f"Icon input file {srcpath} not found")
-
-    # if not a natively supported type, try to use PIL to translate into .ico
-    if srcext.lower() not in ['.ico', '.exe']:
-        try:
-            from PIL import Image as PILImage
-            import PIL
-        except ImportError:
-            PILImage = None
-
-        if PILImage:
-            try:
-                generated_icon = os.path.join(config.CONF["workpath"], "generated.ico")
-                with PILImage.open(srcpath) as im:
-                    im.save(generated_icon)
-                srcpath = generated_icon
-                srcext = ".ico"
-            except PIL.UnidentifiedImageError:
-                raise ValueError(
-                    "Something went wrong converting icon image to '.ico' with PIL, perhaps the image format"
-                    " is unsupported. Try again with a different file or use an '.ico' image or another"
-                    " exe instead."
-                )
-
-        # if PIL isn't found, the user is notified that they can either try and install PIL or translate to .ico
-        # however they see fit
-        else:
-            raise ValueError(
-                f"Received icon image '{srcpath}' which exists but is not in the correct format. On Windows, only '.ico' "
-                f"images or other '.exe' files may be used as icons. If PIL is installed, automatic conversion "
-                f"will be attempted. Please install PIL or convert your '{srcext}' file to a '.ico' "
-                "and try again."
-            )
 
     # Handle the simple case of foo.ico, ignoring any index.
     if srcext.lower() == '.ico':
@@ -253,15 +223,6 @@ def CopyIcons(dstpath, srcpath):
         logger.info("Copying icon from %s, %d", srcpath, index)
     else:
         logger.info("Copying icons from %s", srcpath)
-
-    # Bail out quickly if the input is invalid. Letting images in the wrong format be passed to Windows API gives very
-    # cryptic error messages, as it is generally unclear why PyInstaller would treat an image file as an executable.
-    if srcext != ".exe":
-        raise ValueError(
-            f"Received icon path '{srcpath}' which exists but is not in the correct format. On Windows, only '.ico' "
-            f"images or other '.exe' files may be used as icons. Please convert your '{srcext}' file to a '.ico' "
-            "and try again."
-        )
 
     try:
         # Attempt to load the .ico or .exe containing the icon into memory using the same mechanism as if it were a DLL.
