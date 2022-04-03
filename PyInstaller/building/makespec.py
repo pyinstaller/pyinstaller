@@ -14,6 +14,7 @@ Automatically build spec files containing a description of the project.
 
 import argparse
 import os
+import re
 
 from PyInstaller import DEFAULT_SPECPATH, HOMEPATH
 from PyInstaller import log as logging
@@ -21,7 +22,6 @@ from PyInstaller.building.templates import bundleexetmplt, bundletmplt, onedirtm
 from PyInstaller.compat import expand_path, is_darwin, is_win
 
 logger = logging.getLogger(__name__)
-add_command_sep = os.pathsep
 
 # This list gives valid choices for the ``--debug`` command-line option, except for the ``all`` choice.
 DEBUG_ARGUMENT_CHOICES = ['imports', 'bootloader', 'noarchive']
@@ -54,17 +54,31 @@ def make_path_spec_relative(filename, spec_dir):
 path_conversions = ((HOMEPATH, "HOMEPATH"),)
 
 
-def add_data_or_binary(string):
-    try:
-        src, dest = string.split(add_command_sep)
-    except ValueError as e:
-        # Split into SRC and DEST failed, wrong syntax
-        raise argparse.ArgumentError("Wrong syntax, should be SRC{}DEST".format(add_command_sep)) from e
-    if not src or not dest:
-        # Syntax was correct, but one or both of SRC and DEST was not given
-        raise argparse.ArgumentError("You have to specify both SRC and DEST")
-    # Return tuple containing SRC and SRC
-    return src, dest
+class SourceDestAction(argparse.Action):
+    """
+    A command line option which takes multiple source:dest pairs.
+    """
+    def __init__(self, *args, default=None, metavar=None, **kwargs):
+        super().__init__(*args, default=[], metavar='SOURCE:DEST', **kwargs)
+
+    def __call__(self, parser, namespace, value, option_string=None):
+        try:
+            # Find the only separator that isn't a Windows drive.
+            separator, = (m for m in re.finditer(rf"(^\w:[/\\])|[:{os.pathsep}]", value) if not m[1])
+        except ValueError:
+            # Split into SRC and DEST failed, wrong syntax
+            raise argparse.ArgumentError(self, f'Wrong syntax, should be {self.option_strings[0]}=SOURCE:DEST')
+        src = value[:separator.start()]
+        dest = value[separator.end():]
+        if not src or not dest:
+            # Syntax was correct, but one or both of SRC and DEST was not given
+            raise argparse.ArgumentError(self, "You have to specify both SOURCE and DEST")
+
+        # argparse is not particularly smart with copy by reference typed defaults. If the current list is the default,
+        # replace it before modifying it to avoid changing the default.
+        if getattr(namespace, self.dest) is self.default:
+            setattr(namespace, self.dest, [])
+        getattr(namespace, self.dest).append((src, dest))
 
 
 def make_variable_path(filename, conversions=path_conversions):
@@ -236,23 +250,19 @@ def __add_options(parser):
     g = parser.add_argument_group('What to bundle, where to search')
     g.add_argument(
         '--add-data',
-        action='append',
-        default=[],
-        type=add_data_or_binary,
-        metavar='<SRC;DEST or SRC:DEST>',
+        action=SourceDestAction,
         dest='datas',
-        help='Additional non-binary files or folders to be added to the executable. The path separator  is platform '
-        'specific, ``os.pathsep`` (which is ``;`` on Windows and ``:`` on most unix systems) is used. This option '
-        'can be used multiple times.',
+        help="Additional data files or directories containing data files to be added to the application. The argument "
+        'value should be in form of "source:dest_dir", where source is the path to file (or directory) to be '
+        "collected, dest_dir is the destination directory relative to the top-level application directory, and both "
+        "paths are separated by a colon (:). To put a file in the top-level application directory, use . as a "
+        "dest_dir. This option can be used multiple times."
     )
     g.add_argument(
         '--add-binary',
-        action='append',
-        default=[],
-        type=add_data_or_binary,
-        metavar='<SRC;DEST or SRC:DEST>',
+        action=SourceDestAction,
         dest="binaries",
-        help='Additional binary files to be added to the executable. See the ``--add-data`` option for more details. '
+        help='Additional binary files to be added to the executable. See the ``--add-data`` option for the format. '
         'This option can be used multiple times.',
     )
     g.add_argument(

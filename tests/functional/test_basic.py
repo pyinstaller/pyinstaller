@@ -637,11 +637,7 @@ def test_onefile_longpath(pyi_builder, tmpdir):
     dst_filename = os.path.join(*[32 * chr(c) for c in range(ord('A'), ord('A') + 8)], 'data.txt')
     assert len(dst_filename) >= 260
     # Name for --add-data
-    if is_win:
-        add_data_name = src_filename + ';' + os.path.dirname(dst_filename)
-    else:
-        add_data_name = src_filename + ':' + os.path.dirname(dst_filename)
-
+    add_data_name = src_filename + ':' + os.path.dirname(dst_filename)
     pyi_builder.test_source(
         """
         import sys
