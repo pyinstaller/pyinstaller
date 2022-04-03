@@ -163,11 +163,9 @@ you could modify the spec file as follows::
              ...
              )
 
-And the command line equivalent (see
-:ref:`What To Bundle, Where To Search`
-for platform-specific details)::
+And the command line equivalent::
 
-    pyinstaller --add-data 'src/README.txt:.' myscript.py
+    pyinstaller --add-data "src/README.txt:." myscript.py
 
 You have made the ``datas=`` argument a one-item list.
 The item is a tuple in which the first string says the existing file
@@ -296,11 +294,9 @@ You could add it to the bundle this way::
              binaries=[ ( '/usr/lib/libiodbc.2.dylib', '.' ) ],
              ...
 
-Or via the command line (again, see
-:ref:`What To Bundle, Where To Search`
-for platform-specific details)::
+Or via the command line::
 
-    pyinstaller --add-binary '/usr/lib/libiodbc.2.dylib:.' myscript.py
+    pyinstaller --add-binary "/usr/lib/libiodbc.2.dylib:." myscript.py
 
 If you wish to store ``libiodbc.2.dylib`` on a specific folder inside the bundle,
 for example ``vendor``, then you could specify it, using the second element of the tuple::

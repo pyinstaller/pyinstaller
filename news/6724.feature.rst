@@ -1,0 +1,5 @@
+(Windows) The :option:`--add-data` and :option:`--add-binary` options accept the
+POSIX syntax of ``--add-data=source:dest`` rather than
+``--add-data=source;dest``. The latter will continue to work on Windows to avoid
+breaking backwards compatibility but is discouraged in favour of the now cross
+platform format.
