@@ -17,6 +17,7 @@ from PyInstaller.building.api import COLLECT, EXE
 from PyInstaller.building.datastruct import TOC, Target, logger
 from PyInstaller.building.utils import (_check_path_overlap, _rmtree, add_suffix_to_extension, checkCache)
 from PyInstaller.compat import is_darwin
+from PyInstaller.utils.icon import validate_icon
 
 if is_darwin:
     import PyInstaller.utils.osx as osxutils
@@ -123,41 +124,9 @@ class BUNDLE(Target):
         os.makedirs(os.path.join(self.name, "Contents", "Resources"))
         os.makedirs(os.path.join(self.name, "Contents", "Frameworks"))
 
-        # explicitly error if file not found
-        if not os.path.exists(self.icon):
-            raise FileNotFoundError(f"Icon input file {self.icon} not found")
-
-        srcext = os.path.splitext(self.icon)[1]
-
-        # if not a natively supported type, try to use PIL to translate into .icns
-        if srcext.lower() != '.icns':
-            try:
-                from PIL import Image as PILImage
-                import PIL
-            except ImportError:
-                PILImage = None
-
-            if PILImage:
-                try:
-                    generated_icon = os.path.join(CONF["workpath"], "generated.icns")
-                    with PILImage.open(self.icon) as im:
-                        im.save(generated_icon)
-                    self.icon = generated_icon
-                except PIL.UnidentifiedImageError:
-                    raise ValueError(
-                        "Something went wrong converting icon image to '.icns' with PIL, perhaps the image format"
-                        " is unsupported. Try again with a different file or use an '.icns' image."
-                    )
-
-            # if PIL isn't found, the user is notified that they can either try and install PIL or translate to .ico
-            # however they see fit
-            else:
-                raise ValueError(
-                    f"Received icon image '{self.icon}' which exists but is not in the correct format. On Mac, only '.icns' "
-                    f"images may be used as icons. If PIL is installed, automatic conversion "
-                    f"will be attempted. Please install PIL or convert your '{srcext}' file to a '.icns' "
-                    "and try again."
-                )
+        # validates the icon, which means it will always return a path to an existing "icns"
+        # file or raise an Exception trying
+        self.icon = validate_icon(self.icon, ("icns",), "icns", CONF["workpath"])
 
         #Ensure icon path is absolute
         self.icon = os.path.abspath(self.icon)

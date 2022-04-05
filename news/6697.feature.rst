@@ -1,0 +1,2 @@
+Translate icon images into the correct platform format automatically
+using PIL/Pillow, if installed.

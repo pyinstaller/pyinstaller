@@ -2,6 +2,7 @@ from typing import Tuple
 
 import os
 
+
 def validate_icon(icon_path: str, allowed_types: Tuple[str], convert_type: str, workpath: str) -> str:
     """
     Outputs or a valid icon path or raises an Exception trying
@@ -51,5 +52,5 @@ def validate_icon(icon_path: str, allowed_types: Tuple[str], convert_type: str, 
                 f"will be attempted. Please install PIL or convert your '{extension}' file to one of {allowed_types} "
                 "and try again."
             )
-    
+
     return icon_path

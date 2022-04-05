@@ -204,7 +204,7 @@ def CopyIcons(dstpath, srcpath):
 
     # Just one source given.
     srcpath, index = srcpath[0]
-    
+
     # validates the icon, which means it will always return a path to an existing "exe"
     # or "ico" file or raise an Exception trying
     srcpath = validate_icon(srcpath, ("exe", "ico"), "ico", config.CONF["workpath"])
