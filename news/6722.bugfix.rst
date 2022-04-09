@@ -1,0 +1,2 @@
+Remove the hard-coded 60 second timeout on UPX subprocesses which causes UPX
+applied to large files to fail unnecessarily.
