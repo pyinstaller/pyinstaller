@@ -19,7 +19,9 @@ import os
 import platform
 import shutil
 import struct
+import subprocess
 import sys
+import textwrap
 
 from PyInstaller import compat
 from PyInstaller import log as logging
@@ -344,9 +346,13 @@ def checkCache(
                                     raise
 
     if cmd:
-        logger.info("Executing - " + ' '.join(cmd))
-        # terminates if execution fails
-        compat.exec_command(*cmd)
+        logger.info("Executing - " + "".join(cmd))
+        p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+        if p.returncode:
+            raise SystemExit(
+                f"The subprocess:\n    {''.join(cmd)}\nexited with error {p.returncode} and error "
+                "output:\n" + textwrap.indent(p.stdout, "    ")
+            )
 
     # update cache index
     cache_index[basenm] = digest
