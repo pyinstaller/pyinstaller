@@ -17,7 +17,7 @@ from PyInstaller.building.api import COLLECT, EXE
 from PyInstaller.building.datastruct import TOC, Target, logger
 from PyInstaller.building.utils import (_check_path_overlap, _rmtree, add_suffix_to_extension, checkCache)
 from PyInstaller.compat import is_darwin
-from PyInstaller.utils.icon import validate_icon
+from PyInstaller.building.icon import validate_icon
 
 if is_darwin:
     import PyInstaller.utils.osx as osxutils

@@ -23,7 +23,7 @@ import struct
 import PyInstaller.log as logging
 from PyInstaller import config
 from PyInstaller.compat import pywintypes, win32api
-from PyInstaller.utils.icon import validate_icon
+from PyInstaller.building.icon import validate_icon
 
 logger = logging.getLogger(__name__)
 
