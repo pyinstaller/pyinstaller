@@ -14,9 +14,10 @@ import sys
 
 import pytest
 
+
 def test_icon_validation(monkeypatch):
     from PyInstaller.building.icon import validate_icon
-    
+
     # Currently assumes PIL/Pillow is installed on the testing machine
 
     workpath = data_dir = "PyInstaller/bootloader/images"
@@ -43,18 +44,18 @@ def test_icon_validation(monkeypatch):
     if ret_filetype != ".ico":
         pytest.fail("icon validation didn't convert to the right format", False)
 
-    os.remove(ret) # cleanup
+    os.remove(ret)  # cleanup
 
     # Some random non-image file: Raises an image conversion error
 
     icon = os.path.join(data_dir, 'pyi_icon.notanicon')
     with open(icon, "w") as f:
         f.write("this is in fact, not an icon")
-    
+
     with pytest.raises(ValueError):
         validate_icon(icon, ("ico",), "ico", workpath)
 
-    os.remove(icon) # cleanup
+    os.remove(icon)  # cleanup
 
     # Alternative image - after calling monkeypatch.setitem(sys.modules, "PIL", None): Raise the install pillow error
 

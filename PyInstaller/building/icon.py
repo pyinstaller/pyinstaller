@@ -34,7 +34,7 @@ def validate_icon(icon_path: str, allowed_types: Tuple[str], convert_type: str, 
         raise FileNotFoundError(f"Icon input file {icon_path} not found")
 
     _, extension = os.path.splitext(icon_path)
-    extension = extension[1:] # get rid of the "." in ".whatever"
+    extension = extension[1:]  # get rid of the "." in ".whatever"
 
     if extension not in allowed_types:
         try:
@@ -51,18 +51,18 @@ def validate_icon(icon_path: str, allowed_types: Tuple[str], convert_type: str, 
                 icon_path = generated_icon
             except PIL.UnidentifiedImageError:
                 raise ValueError(
-                    f"Something went wrong converting icon image '{icon_path}' to '.{convert_type}' with Pillow, perhaps the image format"
-                    " is unsupported. Try again with a different file or use a file that can be used without conversion"
-                    f" on this platform: {allowed_types}"
+                    f"Something went wrong converting icon image '{icon_path}' to '.{convert_type}' with Pillow, "
+                    f"perhaps the image format is unsupported. Try again with a different file or use a file that can "
+                    f"be used without conversion on this platform: {allowed_types}"
                 )
-        # if Pillow isn't found, the user is notified that they can either try and install Pillow or translate to .ico
-        # however they see fit
+        # if Pillow isn't found, the user is notified that they can either try and install Pillow or translate to the
+        # correct format however they see fit
         else:
             raise ValueError(
-                f"Received icon image '{icon_path}' which exists but is not in the correct format. On this platform, only {allowed_types} "
-                f"images may be used as icons. If Pillow is installed, automatic conversion "
-                f"will be attempted. Please install Pillow or convert your '{extension}' file to one of {allowed_types} "
-                "and try again."
+                f"Received icon image '{icon_path}' which exists but is not in the correct format. On this platform, "
+                f"only {allowed_types} images may be used as icons. If Pillow is installed, automatic conversion will "
+                f"be attempted. Please install Pillow or convert your '{extension}' file to one of {allowed_types} "
+                f"and try again."
             )
 
     return icon_path
