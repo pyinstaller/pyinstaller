@@ -14,7 +14,7 @@ from typing import Tuple
 import os
 
 
-def validate_icon(icon_path: str, allowed_types: Tuple[str], convert_type: str, workpath: str) -> str:
+def normalize_icon_type(icon_path: str, allowed_types: Tuple[str], convert_type: str, workpath: str) -> str:
     """
     Outputs a valid icon path or raises an Exception trying
     Checks to be sure the icon exists, and attempts to use Pillow to convert
@@ -45,7 +45,7 @@ def validate_icon(icon_path: str, allowed_types: Tuple[str], convert_type: str, 
 
         if PILImage:
             try:
-                generated_icon = os.path.join(workpath, f"generated{os.getpid()}.{convert_type}")
+                generated_icon = os.path.join(workpath, f"generated{hash(icon_path)}.{convert_type}")
                 with PILImage.open(icon_path) as im:
                     im.save(generated_icon)
                 icon_path = generated_icon

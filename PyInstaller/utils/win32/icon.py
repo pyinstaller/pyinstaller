@@ -23,7 +23,7 @@ import struct
 import PyInstaller.log as logging
 from PyInstaller import config
 from PyInstaller.compat import pywintypes, win32api
-from PyInstaller.building.icon import validate_icon
+from PyInstaller.building.icon import normalize_icon_type
 
 logger = logging.getLogger(__name__)
 
@@ -205,9 +205,8 @@ def CopyIcons(dstpath, srcpath):
     # Just one source given.
     srcpath, index = srcpath[0]
 
-    # validates the icon, which means it will always return a path to an existing "exe"
-    # or "ico" file or raise an Exception trying
-    srcpath = validate_icon(srcpath, ("exe", "ico"), "ico", config.CONF["workpath"])
+    # Makes sure the icon exists and attempts to convert to the proper format if applicable
+    srcpath = normalize_icon_type(srcpath, ("exe", "ico"), "ico", config.CONF["workpath"])
 
     srcext = os.path.splitext(srcpath)[1]
 

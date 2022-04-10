@@ -17,7 +17,7 @@ from PyInstaller.building.api import COLLECT, EXE
 from PyInstaller.building.datastruct import TOC, Target, logger
 from PyInstaller.building.utils import (_check_path_overlap, _rmtree, add_suffix_to_extension, checkCache)
 from PyInstaller.compat import is_darwin
-from PyInstaller.building.icon import validate_icon
+from PyInstaller.building.icon import normalize_icon_type
 
 if is_darwin:
     import PyInstaller.utils.osx as osxutils
@@ -124,9 +124,8 @@ class BUNDLE(Target):
         os.makedirs(os.path.join(self.name, "Contents", "Resources"))
         os.makedirs(os.path.join(self.name, "Contents", "Frameworks"))
 
-        # validates the icon, which means it will always return a path to an existing "icns"
-        # file or raise an Exception trying
-        self.icon = validate_icon(self.icon, ("icns",), "icns", CONF["workpath"])
+        # Makes sure the icon exists and attempts to convert to the proper format if applicable
+        self.icon = normalize_icon_type(self.icon, ("icns",), "icns", CONF["workpath"])
 
         #Ensure icon path is absolute
         self.icon = os.path.abspath(self.icon)

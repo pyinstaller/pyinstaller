@@ -15,8 +15,8 @@ import sys
 import pytest
 
 
-def test_icon_validation(monkeypatch):
-    from PyInstaller.building.icon import validate_icon
+def test_normalize_icon_type(monkeypatch):
+    from PyInstaller.building.icon import normalize_icon_type
 
     # Currently assumes PIL/Pillow is installed on the testing machine
 
@@ -26,19 +26,19 @@ def test_icon_validation(monkeypatch):
 
     icon = "this_is_not_a_file.ico"
     with pytest.raises(FileNotFoundError):
-        validate_icon(icon, ("ico",), "ico", workpath)
+        normalize_icon_type(icon, ("ico",), "ico", workpath)
 
     # Native image - file path is passed through unchanged
 
     icon = os.path.join(data_dir, 'icon-console.ico')
-    ret = validate_icon(icon, ("ico",), "ico", workpath)
+    ret = normalize_icon_type(icon, ("ico",), "ico", workpath)
     if ret != icon:
         pytest.fail("icon validation changed path even though the format was correct already", False)
 
     # Alternative image - output is a different file with the correct suffix
 
     icon = os.path.join(data_dir, 'github_logo.png')
-    ret = validate_icon(icon, ("ico",), "ico", workpath)
+    ret = normalize_icon_type(icon, ("ico",), "ico", workpath)
 
     _, ret_filetype = os.path.splitext(ret)
     if ret_filetype != ".ico":
@@ -53,7 +53,7 @@ def test_icon_validation(monkeypatch):
         f.write("this is in fact, not an icon")
 
     with pytest.raises(ValueError):
-        validate_icon(icon, ("ico",), "ico", workpath)
+        normalize_icon_type(icon, ("ico",), "ico", workpath)
 
     os.remove(icon)  # cleanup
 
@@ -62,4 +62,4 @@ def test_icon_validation(monkeypatch):
     monkeypatch.setitem(sys.modules, "PIL", None)
     icon = os.path.join(data_dir, 'github_logo.png')
     with pytest.raises(ValueError):
-        validate_icon(icon, ("ico",), "ico", workpath)
+        normalize_icon_type(icon, ("ico",), "ico", workpath)
