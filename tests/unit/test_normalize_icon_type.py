@@ -11,16 +11,18 @@
 
 import os
 import sys
+from pathlib import Path
 
 import pytest
 
+import PyInstaller
 
-def test_normalize_icon_type(monkeypatch):
+
+def test_normalize_icon_type(monkeypatch, tmp_path):
     from PyInstaller.building.icon import normalize_icon_type
 
-    # Currently assumes PIL/Pillow is installed on the testing machine
-
-    workpath = data_dir = "PyInstaller/bootloader/images"
+    data_dir = str(Path(PyInstaller.__file__).with_name("bootloader") / "images")
+    workpath = str(tmp_path)
 
     # Nonexistent image - FileNotFoundError
 
@@ -35,6 +37,10 @@ def test_normalize_icon_type(monkeypatch):
     if ret != icon:
         pytest.fail("icon validation changed path even though the format was correct already", False)
 
+    # Skip later, so fails above can be detected even if Pillow isn't insatlled
+
+    pytest.importorskip("PIL", reason="Needs PIL / Pillow for remaining test cases")
+
     # Alternative image - output is a different file with the correct suffix
 
     icon = os.path.join(data_dir, 'github_logo.png')
@@ -44,8 +50,6 @@ def test_normalize_icon_type(monkeypatch):
     if ret_filetype != ".ico":
         pytest.fail("icon validation didn't convert to the right format", False)
 
-    os.remove(ret)  # cleanup
-
     # Some random non-image file: Raises an image conversion error
 
     icon = os.path.join(data_dir, 'pyi_icon.notanicon')
@@ -54,8 +58,6 @@ def test_normalize_icon_type(monkeypatch):
 
     with pytest.raises(ValueError):
         normalize_icon_type(icon, ("ico",), "ico", workpath)
-
-    os.remove(icon)  # cleanup
 
     # Alternative image - after calling monkeypatch.setitem(sys.modules, "PIL", None): Raise the install pillow error
 
