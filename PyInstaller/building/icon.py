@@ -37,34 +37,34 @@ def normalize_icon_type(icon_path: str, allowed_types: Tuple[str], convert_type:
     _, extension = os.path.splitext(icon_path)
     extension = extension[1:]  # get rid of the "." in ".whatever"
 
-    if extension not in allowed_types:
-        try:
-            from PIL import Image as PILImage
-            import PIL
-        except ImportError:
-            PILImage = None
+    # if the file is already in the right format, pass it back unchanged
+    if extension in allowed_types:
+        return icon_path
 
-        if PILImage:
-            try:
-                _generated_name = f"generated-{hashlib.sha256(icon_path.encode()).hexdigest()}.{convert_type}"
-                generated_icon = os.path.join(workpath, _generated_name)
-                with PILImage.open(icon_path) as im:
-                    im.save(generated_icon)
-                icon_path = generated_icon
-            except PIL.UnidentifiedImageError:
-                raise ValueError(
-                    f"Something went wrong converting icon image '{icon_path}' to '.{convert_type}' with Pillow, "
-                    f"perhaps the image format is unsupported. Try again with a different file or use a file that can "
-                    f"be used without conversion on this platform: {allowed_types}"
-                )
-        # if Pillow isn't found, the user is notified that they can either try and install Pillow or translate to the
-        # correct format however they see fit
-        else:
+    # if PIL is found, try and use it, otherwise raise an error
+    try:
+        from PIL import Image as PILImage
+        import PIL
+
+        try:
+            _generated_name = f"generated-{hashlib.sha256(icon_path.encode()).hexdigest()}.{convert_type}"
+            generated_icon = os.path.join(workpath, _generated_name)
+            with PILImage.open(icon_path) as im:
+                im.save(generated_icon)
+            icon_path = generated_icon
+        except PIL.UnidentifiedImageError:
             raise ValueError(
-                f"Received icon image '{icon_path}' which exists but is not in the correct format. On this platform, "
-                f"only {allowed_types} images may be used as icons. If Pillow is installed, automatic conversion will "
-                f"be attempted. Please install Pillow or convert your '{extension}' file to one of {allowed_types} "
-                f"and try again."
+                f"Something went wrong converting icon image '{icon_path}' to '.{convert_type}' with Pillow, "
+                f"perhaps the image format is unsupported. Try again with a different file or use a file that can "
+                f"be used without conversion on this platform: {allowed_types}"
             )
+
+    except ImportError:
+        raise ValueError(
+            f"Received icon image '{icon_path}' which exists but is not in the correct format. On this platform, "
+            f"only {allowed_types} images may be used as icons. If Pillow is installed, automatic conversion will "
+            f"be attempted. Please install Pillow or convert your '{extension}' file to one of {allowed_types} "
+            f"and try again."
+        )
 
     return icon_path

@@ -127,7 +127,7 @@ class BUNDLE(Target):
         # Makes sure the icon exists and attempts to convert to the proper format if applicable
         self.icon = normalize_icon_type(self.icon, ("icns",), "icns", CONF["workpath"])
 
-        #Ensure icon path is absolute
+        # Ensure icon path is absolute
         self.icon = os.path.abspath(self.icon)
 
         # Copy icns icon to Resources directory.
