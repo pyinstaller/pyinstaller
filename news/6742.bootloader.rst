@@ -1,0 +1,2 @@
+Remove superfluous argument to ``pyi_arch_status_new`` call in ``pyi_main.c``
+to allow building with compilers that enable ``-Wunprototyped-calls``.
