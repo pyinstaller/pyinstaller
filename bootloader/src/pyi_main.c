@@ -99,7 +99,7 @@ pyi_main(int argc, char * argv[])
 
     VS("PyInstaller Bootloader 3.x\n");
 
-    archive_status = pyi_arch_status_new(archive_status);
+    archive_status = pyi_arch_status_new();
     if (archive_status == NULL) {
         return -1;
     }
