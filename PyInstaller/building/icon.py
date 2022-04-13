@@ -40,23 +40,10 @@ def normalize_icon_type(icon_path: str, allowed_types: Tuple[str], convert_type:
     if extension in allowed_types:
         return icon_path
 
-    # if PIL is found, try and use it, otherwise raise an error
+    # The icon type is wrong! Let's try and import PIL
     try:
         from PIL import Image as PILImage
         import PIL
-
-        try:
-            _generated_name = f"generated-{hashlib.sha256(icon_path.encode()).hexdigest()}.{convert_type}"
-            generated_icon = os.path.join(workpath, _generated_name)
-            with PILImage.open(icon_path) as im:
-                im.save(generated_icon)
-            icon_path = generated_icon
-        except PIL.UnidentifiedImageError:
-            raise ValueError(
-                f"Something went wrong converting icon image '{icon_path}' to '.{convert_type}' with Pillow, "
-                f"perhaps the image format is unsupported. Try again with a different file or use a file that can "
-                f"be used without conversion on this platform: {allowed_types}"
-            )
 
     except ImportError:
         raise ValueError(
@@ -64,6 +51,20 @@ def normalize_icon_type(icon_path: str, allowed_types: Tuple[str], convert_type:
             f"only {allowed_types} images may be used as icons. If Pillow is installed, automatic conversion will "
             f"be attempted. Please install Pillow or convert your '{extension}' file to one of {allowed_types} "
             f"and try again."
+        )
+
+    # Let's try to use PIL to convert the icon file type
+    try:
+        _generated_name = f"generated-{hashlib.sha256(icon_path.encode()).hexdigest()}.{convert_type}"
+        generated_icon = os.path.join(workpath, _generated_name)
+        with PILImage.open(icon_path) as im:
+            im.save(generated_icon)
+        icon_path = generated_icon
+    except PIL.UnidentifiedImageError:
+        raise ValueError(
+            f"Something went wrong converting icon image '{icon_path}' to '.{convert_type}' with Pillow, "
+            f"perhaps the image format is unsupported. Try again with a different file or use a file that can "
+            f"be used without conversion on this platform: {allowed_types}"
         )
 
     return icon_path
