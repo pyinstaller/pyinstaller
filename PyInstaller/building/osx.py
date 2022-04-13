@@ -17,6 +17,7 @@ from PyInstaller.building.api import COLLECT, EXE
 from PyInstaller.building.datastruct import TOC, Target, logger
 from PyInstaller.building.utils import (_check_path_overlap, _rmtree, add_suffix_to_extension, checkCache)
 from PyInstaller.compat import is_darwin
+from PyInstaller.building.icon import normalize_icon_type
 
 if is_darwin:
     import PyInstaller.utils.osx as osxutils
@@ -41,8 +42,6 @@ class BUNDLE(Target):
             # User gave an --icon=path. If it is relative, make it relative to the spec file location.
             if not os.path.isabs(self.icon):
                 self.icon = os.path.join(CONF['specpath'], self.icon)
-        # Ensure icon path is absolute
-        self.icon = os.path.abspath(self.icon)
 
         Target.__init__(self)
 
@@ -114,6 +113,8 @@ class BUNDLE(Target):
         return 1
 
     def assemble(self):
+        from PyInstaller.config import CONF
+
         if _check_path_overlap(self.name) and os.path.isdir(self.name):
             _rmtree(self.name)
         logger.info("Building BUNDLE %s", self.tocbasename)
@@ -123,11 +124,14 @@ class BUNDLE(Target):
         os.makedirs(os.path.join(self.name, "Contents", "Resources"))
         os.makedirs(os.path.join(self.name, "Contents", "Frameworks"))
 
+        # Makes sure the icon exists and attempts to convert to the proper format if applicable
+        self.icon = normalize_icon_type(self.icon, ("icns",), "icns", CONF["workpath"])
+
+        # Ensure icon path is absolute
+        self.icon = os.path.abspath(self.icon)
+
         # Copy icns icon to Resources directory.
-        if os.path.exists(self.icon):
-            shutil.copy(self.icon, os.path.join(self.name, 'Contents', 'Resources'))
-        else:
-            logger.warning("icon not found %s", self.icon)
+        shutil.copy(self.icon, os.path.join(self.name, 'Contents', 'Resources'))
 
         # Key/values for a minimal Info.plist file
         info_plist_dict = {

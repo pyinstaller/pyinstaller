@@ -23,6 +23,7 @@ import struct
 import PyInstaller.log as logging
 from PyInstaller import config
 from PyInstaller.compat import pywintypes, win32api
+from PyInstaller.building.icon import normalize_icon_type
 
 logger = logging.getLogger(__name__)
 
@@ -203,7 +204,12 @@ def CopyIcons(dstpath, srcpath):
 
     # Just one source given.
     srcpath, index = srcpath[0]
+
+    # Makes sure the icon exists and attempts to convert to the proper format if applicable
+    srcpath = normalize_icon_type(srcpath, ("exe", "ico"), "ico", config.CONF["workpath"])
+
     srcext = os.path.splitext(srcpath)[1]
+
     # Handle the simple case of foo.ico, ignoring any index.
     if srcext.lower() == '.ico':
         return CopyIcons_FromIco(dstpath, [srcpath])
@@ -216,15 +222,6 @@ def CopyIcons(dstpath, srcpath):
         logger.info("Copying icon from %s, %d", srcpath, index)
     else:
         logger.info("Copying icons from %s", srcpath)
-
-    # Bail out quickly if the input is invalid. Letting images in the wrong format be passed to Windows API gives very
-    # cryptic error messages, as it is generally unclear why PyInstaller would treat an image file as an executable.
-    if srcext != ".exe":
-        raise ValueError(
-            f"Received icon path '{srcpath}' which exists but is not in the correct format. On Windows, only '.ico' "
-            f"images or other '.exe' files may be used as icons. Please convert your '{srcext}' file to a '.ico' "
-            "and try again."
-        )
 
     try:
         # Attempt to load the .ico or .exe containing the icon into memory using the same mechanism as if it were a DLL.
