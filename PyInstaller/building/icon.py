@@ -17,12 +17,11 @@ import hashlib
 
 def normalize_icon_type(icon_path: str, allowed_types: Tuple[str], convert_type: str, workpath: str) -> str:
     """
-    Outputs a valid icon path or raises an Exception trying
-    Checks to be sure the icon exists, and attempts to use Pillow to convert
-    it to the right format if it's in an unsupported format
+    Returns a valid icon path or raises an Exception on error.
+    Ensures that the icon exists, and, if necessary, attempts to convert it to correct OS-specific format using Pillow.
 
     Takes:
-    icon_path - the icon entered by the user
+    icon_path - the icon given by the user
     allowed_types - a tuple of icon formats that should be allowed through
         EX: ("ico", "exe")
     convert_type - the type to attempt conversion too if necessary

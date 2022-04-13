@@ -1,2 +1,1 @@
-Translate icon images into the correct platform format automatically
-using PIL/Pillow, if installed.
+Automatically convert icons into platform-supported format using PIL/Pillow, if available.

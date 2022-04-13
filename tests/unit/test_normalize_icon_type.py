@@ -16,11 +16,11 @@ from pathlib import Path
 import pytest
 
 import PyInstaller
+from PyInstaller.building.icon import normalize_icon_type
 
 
-def test_normalize_icon_type(monkeypatch, tmp_path):
-    from PyInstaller.building.icon import normalize_icon_type
-
+# Runs through the normalize_icon_type tests that don't need PIL
+def test_normalize_icon(monkeypatch, tmp_path):
     data_dir = str(Path(PyInstaller.__file__).with_name("bootloader") / "images")
     workpath = str(tmp_path)
 
@@ -37,9 +37,20 @@ def test_normalize_icon_type(monkeypatch, tmp_path):
     if ret != icon:
         pytest.fail("icon validation changed path even though the format was correct already", False)
 
-    # Skip later, so fails above can be detected even if Pillow isn't insatlled
+    # Alternative image - after calling monkeypatch.setitem(sys.modules, "PIL", None): Raise the install pillow error
 
-    pytest.importorskip("PIL", reason="Needs PIL / Pillow for remaining test cases")
+    monkeypatch.setitem(sys.modules, "PIL", None)
+    icon = os.path.join(data_dir, 'github_logo.png')
+    with pytest.raises(ValueError):
+        normalize_icon_type(icon, ("ico",), "ico", workpath)
+
+
+# Runs through the normalize_icon_type tests that DO need PIL
+def test_normalize_icon_pillow(tmp_path):
+    data_dir = str(Path(PyInstaller.__file__).with_name("bootloader") / "images")
+    workpath = str(tmp_path)
+
+    pytest.importorskip("PIL", reason="Needs PIL / Pillow for this test")
 
     # Alternative image - output is a different file with the correct suffix
 
@@ -56,12 +67,5 @@ def test_normalize_icon_type(monkeypatch, tmp_path):
     with open(icon, "w") as f:
         f.write("this is in fact, not an icon")
 
-    with pytest.raises(ValueError):
-        normalize_icon_type(icon, ("ico",), "ico", workpath)
-
-    # Alternative image - after calling monkeypatch.setitem(sys.modules, "PIL", None): Raise the install pillow error
-
-    monkeypatch.setitem(sys.modules, "PIL", None)
-    icon = os.path.join(data_dir, 'github_logo.png')
     with pytest.raises(ValueError):
         normalize_icon_type(icon, ("ico",), "ico", workpath)
