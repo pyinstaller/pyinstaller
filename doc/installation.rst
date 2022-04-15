@@ -1,7 +1,7 @@
-How to Install |PyInstaller|
+How to Install PyInstaller
 ===============================
 
-|PyInstaller| is a normal Python package.
+PyInstaller is a normal Python package.
 You can download the archive from PyPi_,
 but it is easier to install using pip_ where is is available,
 for example::
@@ -28,11 +28,11 @@ download the compressed archive from the *develop* branch of
 Expand the archive.
 Inside is a script named ``setup.py``.
 Execute ``python setup.py install``
-with administrator privilege to install or upgrade |PyInstaller|.
+with administrator privilege to install or upgrade PyInstaller.
 
 For platforms other than Windows, GNU/Linux and macOS, you must first
-build a |bootloader| program for your platform: see :ref:`Building the Bootloader`.
-After the |bootloader| has been created,
+build a bootloader program for your platform: see :ref:`Building the Bootloader`.
+After the bootloader has been created,
 use ``python setup.py install`` with administrator privileges
 to complete the installation.
 
@@ -89,8 +89,8 @@ these commands will not be installed as commands.
 However, you can still execute all the functions documented below
 by running Python scripts found in the distribution folder.
 The equivalent of the ``pyinstaller`` command is
-:file:`{pyinstaller-folder}/pyinstaller.py`.
-The other commands are found in :file:`{pyinstaller-folder}/cliutils/`
+:file:`{PyInstaller-folder}/pyinstaller.py`.
+The other commands are found in :file:`{PyInstaller-folder}/cliutils/`
 with meaningful names (``makespec.py``, etc.)
 
 

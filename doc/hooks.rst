@@ -9,7 +9,7 @@ Understanding PyInstaller Hooks
    to provide hooks with their packages.
    See section :ref:`provide hooks with package` for how easy this is.
 
-In summary, a "hook" file extends |PyInstaller| to adapt it to
+In summary, a "hook" file extends PyInstaller to adapt it to
 the special needs and methods used by a Python package.
 The word "hook" is used for two kinds of files.
 A *runtime* hook helps the bootloader to launch an app.
@@ -18,10 +18,10 @@ Other hooks run while an app is being analyzed.
 They help the Analysis phase find needed files.
 
 The majority of Python packages use normal methods of importing
-their dependencies, and |PyInstaller| locates all their files without difficulty.
+their dependencies, and PyInstaller locates all their files without difficulty.
 But some packages make unusual uses of the Python import mechanism,
 or make clever changes to the import system at runtime.
-For this or other reasons, |PyInstaller| cannot reliably find
+For this or other reasons, PyInstaller cannot reliably find
 all the needed files, or may include too many files.
 A hook can tell about additional source files or data files to import,
 or files not to import.
@@ -35,7 +35,7 @@ The name of a hook file is :file:`hook-{full.import.name}.py`,
 where *full.import.name* is
 the fully-qualified name of an imported script or module.
 You can browse through the existing hooks in the
-``hooks`` folder of the |PyInstaller| distribution folder
+``hooks`` folder of the PyInstaller distribution folder
 and see the names of the packages for which hooks have been written.
 For example ``hook-PyQt5.QtCore.py`` is a hook file telling
 about hidden imports needed by the module ``PyQt5.QtCore``.
@@ -96,7 +96,7 @@ as attributes of the namespace.
 Thus a hook is a normal Python script and can use all normal Python facilities.
 For example it could test :data:`sys.version` and adjust its
 assignment to ``hiddenimports`` based on that.
-There are many hooks in the |PyInstaller| installation,
+There are many hooks in the PyInstaller installation,
 but a much larger collection can be found in the
 `community hooks package <https://github.com/pyinstaller/pyinstaller-hooks-contrib>`_.
 Please browse through them for examples.
@@ -457,7 +457,7 @@ Hooks of this type are only recognized if they are stored in
 a sub-folder named ``pre_find_module_path`` in a hooks folder,
 either in the distributed hooks folder or an :option:`--additional-hooks-dir` folder.
 You may have normal hooks as well as hooks of this type for the same module.
-For example |PyInstaller| includes both a ``hooks/hook-distutils.py``
+For example PyInstaller includes both a ``hooks/hook-distutils.py``
 and also a ``hooks/pre_find_module_path/hook-distutils.py``.
 
 The ``pfmp_api`` object that is passed has the following immutable attribute:
@@ -478,7 +478,7 @@ of ``search_dirs`` will be used to find and analyze the module.
 For an example of use,
 see the file :file:`hooks/pre_find_module_path/hook-distutils.py`.
 It uses this method to redirect a search for distutils when
-|PyInstaller| is executing in a virtual environment.
+PyInstaller is executing in a virtual environment.
 
 
 The ``pre_safe_import_module( psim_api )`` Method
@@ -527,7 +527,7 @@ all of which are immutable (an attempt to change one raises an exception):
 
 The last two items, ``module_graph`` and ``parent_package``,
 are related to the module-graph, the internal data structure used by
-|PyInstaller| to document all imports.
+PyInstaller to document all imports.
 Normally you do not need to know about the module-graph.
 
 The ``psim_api`` object also offers the following methods:
@@ -535,7 +535,7 @@ The ``psim_api`` object also offers the following methods:
 ``add_runtime_module( fully_qualified_name )``:
    Use this method to add an imported module whose name may not
    appear in the source because it is dynamically defined at run-time.
-   This is useful to make the module known to |PyInstaller| and avoid misleading warnings.
+   This is useful to make the module known to PyInstaller and avoid misleading warnings.
    A typical use applies the name from the ``psim_api``::
 
       psim_api.add_runtime_module( psim_api.module_name )
@@ -546,12 +546,12 @@ The ``psim_api`` object also offers the following methods:
    (it will be added to the graph if it has not already been imported).
    ``alias_module_name`` is a name that might be referenced in the
    source file but should be treated as if it were ``real_module_name``.
-   This method ensures that if |PyInstaller| processes an import of
+   This method ensures that if PyInstaller processes an import of
    ``alias_module_name`` it will use ``real_module_name``.
 
 ``append_package_path( directory )``:
    The hook can use this method to add a package path
-   to be searched by |PyInstaller|, typically an import
+   to be searched by PyInstaller, typically an import
    path that the imported module would add dynamically to
    the path if the module was executed normally.
    ``directory`` is a string, a pathname to add to the

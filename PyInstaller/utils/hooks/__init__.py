@@ -864,7 +864,7 @@ def copy_metadata(package_name, recursive=False):
           'Sphinx-1.3.2.dist-info')]
 
 
-    Some packages rely on metadata files accessed through the ``pkg_resources`` module. Normally |PyInstaller| does not
+    Some packages rely on metadata files accessed through the ``pkg_resources`` module. Normally PyInstaller does not
     include these metadata files. If a package fails without them, you can use this function in a hook file to easily
     add them to the frozen bundle. The tuples in the returned list have two strings. The first is the full pathname to a
     folder in this system. The second is the folder name only. When these tuples are added to ``datas``\\ , the folder

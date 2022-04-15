@@ -4,11 +4,6 @@
 Notes about specific Features
 ===============================
 
-This sections describes details about specific features. For a
-:ref:`full list of features <website:features>`
-please refer to the website.
-
-
 .. _ctypes dependencies:
 
 Ctypes Dependencies
@@ -28,7 +23,7 @@ failing the goal to build self-contained PyInstaller executables::
   handle.function_call()
 
 
-Solution in |PyInstaller|
+Solution in PyInstaller
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 PyInstaller contains a pragmatic implementation of Ctypes dependencies: it
@@ -69,7 +64,7 @@ More in detail, the following restrictions apply:
 We feel that it should be enough to cover most ctypes' usages, with little or
 no modification required in your code.
 
-If |PyInstaller| does not detect a library, you can add it to your
+If PyInstaller does not detect a library, you can add it to your
 bundle by passing the respective information to :option:`--add-binary` option or
 :ref:`listing it in the .spec-file <adding binary files>`. If your frozen
 application will be able to pick up the library at run-time can not be
@@ -92,7 +87,7 @@ widen :func:`~ctypes.util.find_library` scope.
 SWIG support
 =========================
 
-|PyInstaller| tries to detect binary modules created by SWIG. This detection
+PyInstaller tries to detect binary modules created by SWIG. This detection
 requires:
 
 - The Python wrapper module must be imported somewhere in your application
@@ -118,10 +113,10 @@ implemented:
 Cython support
 ======================
 
-|PyInstaller| can follow import statements that refer to Cython C object
+PyInstaller can follow import statements that refer to Cython C object
 modules and bundle them – like for any other module implemented in C.
 
-But – again, as for any other module implemented in C – |PyInstaller| can not
+But – again, as for any other module implemented in C – PyInstaller can not
 determine if the Cython C object module is importing some Python module.
 These will typically show up as in a traceback like this
 (mind the ``.pyx`` extension)::
@@ -152,7 +147,7 @@ options available for python:
   ``x86_64`` and ``arm64`` slices): recent ``universal2`` `python.org`
   builds
 
-|PyInstaller| aims to support all possible combinations stemming from
+PyInstaller aims to support all possible combinations stemming from
 the above options:
 
 - single-arch application created using corresponding single-arch python
@@ -193,9 +188,9 @@ the missing architecture, and stiching the offending binary files together
 using the ``lipo`` utility).
 
 .. versionchanged:: 4.10
-   In earlier |PyInstaller| versions, the architecture validation was performed
+   In earlier PyInstaller versions, the architecture validation was performed
    on all collected binaries, such as python extension modules and the
-   shared libraries referenced by those extensions. As of |PyInstaller| 4.10,
+   shared libraries referenced by those extensions. As of PyInstaller 4.10,
    the architecture validation is limited to only python extension modules.
 
    The individual architecture slices in a multi-arch ``universal2`` extension
@@ -230,7 +225,7 @@ even if ad-hoc (i.e., without actual code-signing identity). This means
 that ``arm64`` arch slices (but possibly also ``x86_64`` ones, especially
 in ``universal2`` binaries) in collected binaries always come with signature.
 
-The processing of binaries done by |PyInstaller| (e.g., library path
+The processing of binaries done by PyInstaller (e.g., library path
 rewriting in binaries' headers) invalidates their signatures. Therefore,
 the signatures need to be re-generated, otherwise the OS refuses to load
 a binary.
@@ -247,7 +242,7 @@ with their identity. This is useful because for ``onefile`` builds,
 signing of embedded binaries cannot be performed in a post-processing step.
 
 .. note::
-   When codesign identity is specified, |PyInstaller| also turns on
+   When codesign identity is specified, PyInstaller also turns on
    *hardened runtime* by passing ``--options=runtime`` to the ``codesign``
    command. This requires the codesign identity to be a valid Apple-issued
    code signing certificate, and will not work with self-signed certificates.
@@ -267,7 +262,7 @@ done in the ``.spec`` file via ``entitlements_file=`` argument to
 App bundles
 ~~~~~~~~~~~
 
-|PyInstaller| also automatically attempts to sign `.app bundles`, either
+PyInstaller also automatically attempts to sign `.app bundles`, either
 using ad-hoc identity or actual signing identity, if provided via
 :option:`--codesign-identity` switch. In addition to passing same options as
 when signing collected binaries (identity, hardened runtime, entitlement),
@@ -295,7 +290,7 @@ a Launch/Get URL (``'GURL'``) event. Typically, a long-running UI application
 installs ``Carbon`` or ``Cocoa`` event handlers (or their equivalents provided
 by higher-level UI toolkit) to handle these requests during its runtime.
 
-|PyInstaller| provides two aspects of support for macOS event handling;
+PyInstaller provides two aspects of support for macOS event handling;
 automatic `event forwarding`, which enables frozen aplication to receive
 events in ``onefile`` mode, and optional `argv emulation` for converting
 initial opening event into ``sys.argv`` arguments. Both aspects apply only
@@ -303,16 +298,16 @@ to app bundles (i.e., the ``windowed`` bootloader variant) and not to
 POSIX (command-line) frozen applications.
 
 .. versionchanged:: 5.0
-   In earlier |PyInstaller| versions, `argv emulation` was always enabled
+   In earlier PyInstaller versions, `argv emulation` was always enabled
    in ``onefile`` mode and was unavailable in ``onedir`` mode.
-   As |PyInstaller| 5.0, `argv emulation` must be explicitly opted-in,
+   As PyInstaller 5.0, `argv emulation` must be explicitly opted-in,
    and is available in both ``onefile`` and ``onedir`` mode.
 
 
 Event forwarding
 ~~~~~~~~~~~~~~~~
 
-In |PyInstaller| ``onedir`` bundles, the application runs as a single
+In PyInstaller ``onedir`` bundles, the application runs as a single
 process, and therefore receives Apple Events normally, as other macOS
 applications would.
 
@@ -332,7 +327,7 @@ Event forwarding is implemented for the following types of Apple Events:
 Optional argv emulation
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-|PyInstaller| implements an optional feature called `argv emulation`,
+PyInstaller implements an optional feature called `argv emulation`,
 which can be toggled via ``argv_emulation=`` argument to ``EXE()``
 in the :ref:`.spec file <using spec files>`, or enabled on command-line
 via :option:`--argv-emulation` flag.
@@ -423,7 +418,7 @@ In the above example, the application declares itself a viewer for
 made-up ``.mcf`` files, and as a viewer for URLs beginning with
 ``my-url://``.
 
-|PyInstaller| automatically generates an ``Info.plist`` file for your
+PyInstaller automatically generates an ``Info.plist`` file for your
 application bundle; to have it include the entries shown above, add the
 ``info_plist`` argument to the ``BUNDLE()`` directive in the
 :ref:`.spec file <using spec files>`, and set its content as follows:
@@ -488,7 +483,7 @@ entry from the image file's context menu. Such interaction generates
 open file events, and in general requires your application code to
 implement event handling.
 
-Enabling `argv emulation` in |PyInstaller| causes its bootloader to
+Enabling `argv emulation` in PyInstaller causes its bootloader to
 process events during the application startup, and extend ``sys.argv``
 with any file paths or URLs that might have been received via open file
 or URL requests. This allows your application to process the received
@@ -857,7 +852,7 @@ If application is opened in response to open document or open URL request
 (i.e., it is not yet running when request is made), then the first
 received event is ``'odoc'`` or ``'GURL'``, respectively.
 
-In |PyInstaller|-frozen ``onefile`` bundles, the child process always
+In PyInstaller-frozen ``onefile`` bundles, the child process always
 starts with ``'oapp'`` event, regardless how the application was
 started. This is because the child is always started "normally", and
 it is the parent who receives the actual opening event; if the parent

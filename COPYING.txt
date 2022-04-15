@@ -40,7 +40,7 @@ Run-time Hooks
 
 Run-time Hooks are a different kind of files embedded within the final
 executable. To ease moving them into a separate repository, or into the
-respective project, these file are now licensed under the Apache License,
+respective project, these files are now licensed under the Apache License,
 Version 2.0.
 
 Run-time Hooks are in the directory

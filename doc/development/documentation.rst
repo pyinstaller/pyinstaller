@@ -5,7 +5,7 @@
 Improving and Building the Documentation
 ============================================
 
-|PyInstaller|'s documentation is created using Sphinx_.
+PyInstaller's documentation is created using Sphinx_.
 Sphinx uses reStructuredText_ as its markup language, and many of its
 strengths come from the power and straightforwardness of reStructuredText and
 its parsing and translating suite, Docutils_.
@@ -19,7 +19,7 @@ and pushing to the ``develop`` branch will create
 a new version at https://pyinstaller.readthedocs.io/en/latest/.
 
 
-For **small changes** (like typos) you may just fork |PyInstaller| on Github,
+For **small changes** (like typos) you may just fork PyInstaller on Github,
 edit the documentation online and create a pull-request.
 
 For anything else we ask you to clone the repository and verify your changes
@@ -48,10 +48,10 @@ case, use ``git rebase -i …`` and ``git push -f …`` to update your
 pull-request. See :ref:`updating pull-request` for details.
 
 
-|PyInstaller| extensions
+PyInstaller extensions
 ----------------------------
 
-For the |PyInstaller| documentation there are roles available [*]_
+For the PyInstaller documentation there are roles available [*]_
 in additon to the ones from `Sphinx`__ and docutils__.
 
 __ http://www.sphinx-doc.org/en/stable/markup/inline.html

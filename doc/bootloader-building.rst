@@ -11,20 +11,19 @@ the current platform (operating-system and word-size),
 the pip_ setup will attempt to build one.
 
 If there is no precompiled bootloader for your platform,
-or if you want to modify the |bootloader| source,
-you need to build the |bootloader|.
+or if you want to modify the bootloader source,
+you need to build the bootloader.
 To do this,
 
 * Download and install Python, which is required for running :command:`waf`,
-* `git clone` or download the source (see the
-  :ref:`Download section on the web-site <website:Downloads>`),
+* `git clone` or download the source from our `GitHub repository`_,
 * ``cd`` into the folder where you cloned or unpacked the source to,
 * ``cd bootloader``, and
 * make the bootloader with: ``python ./waf all``,
 * test the build by ref:`running (parts of) the test-suite
   <running-the-test-suite>`.
 
-This will produce the |bootloader| executables for your current platform
+This will produce the bootloader executables for your current platform
 (of course, for Windows these files will have the ``.exe`` extension):
 
 * :file:`../PyInstaller/bootloader/{OS_ARCH}/run`,
@@ -102,13 +101,13 @@ as follows::
 
        python ./waf distclean all --lsb
 
-LSB version 4.0 is required for successfully building of |bootloader|. Please
+LSB version 4.0 is required for successfully building of bootloader. Please
 refer to ``python ./waf --help`` for further options related to LSB building.
 
 .. [#] Linux Standard Base (LSB) is a set of open standards that should
        increase compatibility among GNU/Linux distributions. Unfortunately it is
        not widely adopted and both Debian and Ubuntu dropped support for LSB
-       in autumn 2015. Thus |PyInstaller| bootloader are no longer provided
+       in autumn 2015. Thus PyInstaller bootloaders are no longer provided
        as LSB binary.
 
 
@@ -117,7 +116,7 @@ Cross Building for Different Architectures
 
 Bootloaders can be built for other architectures such as ARM or MIPS using
 Docker_.
-The :blob:`bootloader/Dockerfile` contains the instructions on how to do this.
+The `Dockerfile <https://github.com/pyinstaller/pyinstaller/tree/develop/bootloader/Dockerfile>`_ contains the instructions on how to do this.
 Open it in some flavour of text previewer to see them::
 
     less bootloader/Dockerfile
@@ -263,7 +262,7 @@ perform the following steps
 Building for Windows
 ==========================
 
-The pre-compiled |bootloader| coming with PyInstaller are
+The pre-compiled bootloader coming with PyInstaller are
 self-contained static executable that imposes no restrictions
 on the version of Python being used.
 
@@ -368,7 +367,7 @@ create executables for cygwin, not for Windows.
 
 On Windows, when using MinGW-w64, add :file:`{PATH_TO_MINGW}\bin`
 to your system ``PATH``. variable. Before building the
-|bootloader| run for example::
+bootloader run for example::
 
         set PATH=C:\MinGW\bin;%PATH%
 

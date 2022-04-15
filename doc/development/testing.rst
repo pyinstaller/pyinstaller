@@ -7,7 +7,7 @@ Running the Test Suite
 
 To run the test-suite, please proceed as follows.
 
-1. If you don't have a git clone of |PyInstaller|, first fetch the current
+1. If you don't have a git clone of PyInstaller, first fetch the current
    development head, either using pip, …::
 
      pip download --no-deps https://github.com/pyinstaller/pyinstaller/archive/develop.zip

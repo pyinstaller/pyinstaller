@@ -3,13 +3,13 @@
 Coding conventions
 ===========================
 
-The |PyInstaller| project follows the :pep:`8` Style Guide for Python Code for
+The PyInstaller project follows the :pep:`8` Style Guide for Python Code for
 new code.
 It uses yapf_ to do the bulk of the formatting (mostly putting spaces in the
 correct places) automatically and flake8_ to validate :pep:`8` rules which yapf_
 doesn't cover.
 
-Before submitting changes to |PyInstaller|, please check your code with both
+Before submitting changes to PyInstaller, please check your code with both
 tools.
 
 To install them run::

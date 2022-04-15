@@ -1,10 +1,10 @@
 Advanced Topics
 ================
 
-The following discussions cover details of |PyInstaller| internal methods.
+The following discussions cover details of PyInstaller internal methods.
 You should not need this level of detail for normal use,
 but such details are helpful if you want to investigate
-the |PyInstaller| code and possibly contribute to it,
+the PyInstaller code and possibly contribute to it,
 as described in `How to Contribute`_.
 
 
@@ -18,7 +18,7 @@ script can begin execution.
 A summary of these steps was given in the Overview
 (:ref:`How the One-Folder Program Works` and
 :ref:`How the One-File Program Works`).
-Here is more detail to help you understand what the |bootloader|
+Here is more detail to help you understand what the bootloader
 does and how to figure out problems.
 
 
@@ -96,9 +96,9 @@ Running Python code requires several steps:
 Python imports in a bundled app
 -------------------------------------
 
-|PyInstaller| embeds compiled python code
+PyInstaller embeds compiled python code
 (``.pyc`` files) within the executable.
-|PyInstaller| injects its code into the
+PyInstaller injects its code into the
 normal Python import mechanism.
 Python allows this;
 the support is described in :pep:`302`  "New Import Hooks".
@@ -270,7 +270,7 @@ Functions
 The TOC and Tree Classes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-|PyInstaller| manages lists of files using the ``TOC``
+PyInstaller manages lists of files using the ``TOC``
 (Table Of Contents) class.
 It provides the ``Tree`` class as a convenient way to build a ``TOC``
 from a folder path.
@@ -319,7 +319,7 @@ it is not necessary to give accurate *path* and *typecode* elements when subtrac
 In order to add files to a TOC, you need to know the *typecode* values
 and their related *path* values.
 A *typecode* is a one-word string.
-|PyInstaller| uses a number of *typecode* values internally,
+PyInstaller uses a number of *typecode* values internally,
 but for the normal case you need to know only these:
 
 
@@ -343,7 +343,7 @@ for example a dynamic library.
 The types are treated the same.
 ``EXTENSION`` is generally used for a Python extension module,
 for example a module compiled by Cython_.
-|PyInstaller| will examine either type of file for dependencies,
+PyInstaller will examine either type of file for dependencies,
 and if any are found, they are also included.
 
 The Tree Class
@@ -416,7 +416,7 @@ Inspecting Archives
 
 An archive is a file that contains other files,
 for example a ``.tar`` file, a ``.jar`` file, or a ``.zip`` file.
-Two kinds of archives are used in |PyInstaller|.
+Two kinds of archives are used in PyInstaller.
 One is a ZlibArchive, which
 allows Python modules to be stored efficiently and,
 with some import hooks, imported directly.
@@ -513,7 +513,7 @@ Use the ``pyi-archive_viewer`` command to inspect any type of archive:
       ``pyi-archive_viewer`` *archivefile*
 
 With this command you can examine the contents of any archive built with
-|PyInstaller| (a ``PYZ`` or ``PKG``), or any executable (``.exe`` file
+PyInstaller (a ``PYZ`` or ``PKG``), or any executable (``.exe`` file
 or an ELF or COFF binary).
 The archive can be navigated using these commands:
 
@@ -563,7 +563,7 @@ and writes to stdout all its binary dependencies.
 This is handy to find out which DLLs are required by
 an executable or by another DLL.
 
-``pyi-bindepend`` is used by |PyInstaller| to
+``pyi-bindepend`` is used by PyInstaller to
 follow the chain of dependencies of binary extensions
 during Analysis.
 
@@ -579,7 +579,7 @@ the two bundles should be exactly, bit-for-bit identical.
 
 That is not the case normally.
 Python uses a random hash to make dicts and other hashed types,
-and this affects compiled byte-code as well as |PyInstaller|
+and this affects compiled byte-code as well as PyInstaller
 internal data structures.
 As a result, two builds may not produce bit-for-bit identical results
 even when all the components of the application bundle are the same
@@ -587,10 +587,10 @@ and the two applications execute in identical ways.
 
 You can ensure that a build will produce the same bits
 by setting the :envvar:`PYTHONHASHSEED` environment variable to a known
-integer value before running |PyInstaller|.
+integer value before running PyInstaller.
 This forces Python to use the same random hash sequence until
 :envvar:`PYTHONHASHSEED` is unset or set to ``'random'``.
-For example, execute |PyInstaller| in a script such as
+For example, execute PyInstaller in a script such as
 the following (for GNU/Linux and macOS)::
 
     # set seed to a known repeatable integer value

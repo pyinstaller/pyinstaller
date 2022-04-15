@@ -3,11 +3,11 @@
 When Things Go Wrong
 ====================
 
-The information above covers most normal uses of |PyInstaller|.
+The information above covers most normal uses of PyInstaller.
 However, the variations of Python and third-party libraries are
 endless and unpredictable.
 It may happen that when you attempt to bundle your app either
-|PyInstaller| itself, or your bundled app, terminates with a Python traceback.
+PyInstaller itself, or your bundled app, terminates with a Python traceback.
 Then please consider the following actions in sequence, before
 asking for technical help.
 
@@ -17,7 +17,7 @@ asking for technical help.
 Recipes and Examples for Specific Problems
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The |PyInstaller| `FAQ`_ page has work-arounds for some common problems.
+The PyInstaller `FAQ`_ page has work-arounds for some common problems.
 Code examples for some advanced uses and some common
 problems are available on our `PyInstaller Recipes`_ page.
 Some of the recipes there include:
@@ -77,7 +77,7 @@ Then see :ref:`Helping PyInstaller Find Modules` below for how to proceed.
 Build-Time Dependency Graph
 ----------------------------
 
-On each run |PyInstaller| writes a cross-referencing file about dependencies
+On each run PyInstaller writes a cross-referencing file about dependencies
 into the build folder:
 :file:`build/{name}/xref-{name}.html` in the
 ``work-path=`` directory is an HTML file that lists the full
@@ -88,7 +88,7 @@ Find a module name, then keep clicking the "imported by" links
 until you find the top-level import that causes that module to be included.
 
 If you specify :option:`--log-level=DEBUG <--log-level>` to the ``pyinstaller`` command,
-|PyInstaller| additionally generates a GraphViz_ input file representing the
+PyInstaller additionally generates a GraphViz_ input file representing the
 dependency graph.
 The file is :file:`build/{name}/graph-{name}.dot` in the
 ``work-path=`` directory.
@@ -105,7 +105,7 @@ For this reason the graph file is not very useful in this release.
 Build-Time Python Errors
 -------------------------
 
-|PyInstaller| sometimes terminates by raising a Python exception.
+PyInstaller sometimes terminates by raising a Python exception.
 In most cases the reason is clear from the exception message,
 for example "Your system is not supported", or "Pyinstaller
 requires at least Python 3.7".
@@ -113,16 +113,16 @@ Others clearly indicate a bug that should be reported.
 
 One of these errors can be puzzling, however:
 ``IOError("Python library not found!")``
-|PyInstaller| needs to bundle the Python library, which is the
+PyInstaller needs to bundle the Python library, which is the
 main part of the Python interpreter, linked as a dynamic load library.
 The name and location of this file varies depending on the platform in use.
 Some Python installations do not include a dynamic Python library
 by default (a static-linked one may be present but cannot be used).
 You may need to install a development package of some kind.
-Or, the library may exist but is not in a folder where |PyInstaller|
+Or, the library may exist but is not in a folder where PyInstaller
 is searching.
 
-The places where |PyInstaller| looks for the python library are
+The places where PyInstaller looks for the python library are
 different in different operating systems, but ``/lib`` and ``/usr/lib``
 are checked in most systems.
 If you cannot put the python library there,
@@ -280,7 +280,7 @@ This is because ``win32com/__init__.py`` appends ``../win32comext`` to its :attr
 
 Because the ``__init__.py`` of an imported module
 is not actually executed during analysis,
-changes it makes to :attr:`__path__` are not seen by |PyInstaller|.
+changes it makes to :attr:`__path__` are not seen by PyInstaller.
 We fix the problem with the same hook mechanism we use for hidden imports,
 with some additional logic; see :ref:`Understanding PyInstaller Hooks` below.
 
@@ -309,7 +309,7 @@ You can name them with the option :option:`--runtime-hook`\ =\ *path-to-script*.
 Second, some runtime hooks are provided.
 At the end of an analysis,
 the names in the module list produced by the Analysis phase are looked up in
-:file:`loader/rthooks.dat` in the |PyInstaller| install folder.
+:file:`loader/rthooks.dat` in the PyInstaller install folder.
 This text file is the string representation of a
 Python dictionary. The key is the module name, and the value is a list
 of hook-script pathnames.
@@ -333,7 +333,7 @@ One reason to write a run-time hook is to
 override some functions or variables from some modules.
 A good example of this is the Django runtime
 hook (see ``loader/rthooks/pyi_rth_django.py`` in the
-|PyInstaller| folder).
+PyInstaller folder).
 Django imports some modules dynamically and it is looking
 for some ``.py`` files.
 However ``.py`` files are not available in the one-file bundle.
@@ -352,13 +352,13 @@ The runtime hook does this as follows::
 Getting the Latest Version
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you have some reason to think you have found a bug in |PyInstaller|
+If you have some reason to think you have found a bug in PyInstaller
 you can try downloading the latest development version.
 This version might have fixes or features that are not yet at `PyPI`_.
 You can download the latest stable version and the latest development
 version from the `PyInstaller Downloads`_ page.
 
-You can also install the latest version of |PyInstaller| directly
+You can also install the latest version of PyInstaller directly
 using pip_::
 
     pip install https://github.com/pyinstaller/pyinstaller/archive/develop.zip
@@ -369,7 +369,7 @@ Asking for Help
 When none of the above suggestions help,
 do ask for assistance on the `PyInstaller Email List`_.
 
-Then, if you think it likely that you see a bug in |PyInstaller|,
+Then, if you think it likely that you see a bug in PyInstaller,
 refer to the `How to Report Bugs`_ page.
 
 

@@ -14,11 +14,11 @@ check "are we bundled?"::
     else:
         print('running in a normal Python process')
 
-When a bundled app starts up, the |bootloader| sets the ``sys.frozen``
+When a bundled app starts up, the bootloader sets the ``sys.frozen``
 attribute and stores the absolute path to the bundle folder in
 ``sys._MEIPASS``. For a one-folder bundle, this is the path to that folder. For
 a one-file bundle, this is the path to the temporary folder created by the
-|bootloader| (see :ref:`How the One-File Program Works`).
+bootloader (see :ref:`How the One-File Program Works`).
 
 When your app is running, it may need to access data files in one of the
 following locations:
@@ -35,7 +35,7 @@ Using ``__file__``
 
 When your program is not bundled, the Python variable ``__file__`` refers to
 the current path of the module it is contained in. When importing a module
-from a bundled script, the |PyInstaller| |bootloader| will set the module's
+from a bundled script, the PyInstaller bootloader will set the module's
 ``__file__`` attribute to the correct path relative to the bundle folder.
 
 For example, if you import ``mypackage.mymodule`` from a bundled script, then
@@ -52,8 +52,8 @@ In the main script (the ``__main__`` module) itself, the ``__file__``
 variable contains path to the script file. In Python 3.8 and earlier,
 this path is either absolute or relative (depending on how the script
 was passed to the ``python`` interpreter), while in Python 3.9 and later,
-it is always an absolute path. In the bundled script, the |PyInstaller|
-|bootloader| always sets the ``__file__`` variable inside the ``__main__``
+it is always an absolute path. In the bundled script, the PyInstaller
+bootloader always sets the ``__file__`` variable inside the ``__main__``
 module to the absolute path inside the bundle directory, as if the
 byte-compiled entry-point script existed there.
 
@@ -81,7 +81,7 @@ Or, if you'd rather use pathlib_::
     Formerly, the ``__file__`` attribute of the entry-point script
     (the ``__main__`` module) was set to only its basename rather than
     its full (absolute or relative) path within the bundle directory.
-    Therefore, |PyInstaller| documentation used to suggest ``sys._MEIPASS``
+    Therefore, PyInstaller documentation used to suggest ``sys._MEIPASS``
     as means for locating resources relative to the bundled entry-point
     script. Now, ``__file__`` is always set to the absolute full path,
     and is the preferred way of locating such resources.

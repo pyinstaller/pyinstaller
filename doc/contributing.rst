@@ -6,28 +6,16 @@ How To Contribute
 =====================
 
 **You are very welcome to contribute!**
-|PyInstaller| is a maintained by a group of volunteers.
+PyInstaller is a maintained by a group of volunteers.
 All contributions,
 like community support, bug reports, bug fixes,
 documentation improvements, enhancements and ideas are welcome.
 
-|PyInstaller| is an free software project that is created and
+PyInstaller is an free software project that is created and
 maintained by volunteers.
 It lives-and-dies based on the support it receives from others, and the fact
-that you're even considering contributing to |PyInstaller| is very
+that you're even considering contributing to PyInstaller is very
 generous of you.
-
-.. TODO: Add this: At `Pyinstaller.org`_ you find links to the mailing list,
-  IRC channel, and Git repository,
-  and the important `How to Contribute`_ link.
-  Contributions to code and documentation are welcome,
-  as well as tested hooks for installing other packages.
-
-  * The code can be found in a Git repository, at
-    https://github.com/sphinx-doc/sphinx/.
-  * Issues and feature requests should be raised in the tracker.
-  * The mailing list for development is at Google Groups.
-  * There is also the #sphinx-doc IRC channel on freenode.
 
 Since as of now all core-developers are working on PyInstaller in their
 spare-time, you can help us (and the project) most if you are following some
@@ -36,9 +24,7 @@ we have incorporating them and the earlier we will be able to incorporate them
 :-)
 
 
-If you get stuck at any point you can ask on the
-`PyInstaller Email List`_
-or `create a ticket on GitHub
+If you get stuck at any point you can `create a ticket on GitHub
 <https://github.com/pyinstaller/pyinstaller/issues/new>`_.
 
 
@@ -50,12 +36,6 @@ Some ideas how you can help
 ==============================
 
 Some ideas how you can help:
-
-* **Subscribe** to the `mailing list
-  <http://www.pyinstaller.org/support.html#mailing-list>`_ (low traffic) or
-  **join** the `IRC channel
-  <http://www.pyinstaller.org/support.html#irc-channel>`_ and share your
-  experience or answer questions from the community.
 
 * **Answer** |support tickets:|_ Often the user just needs to be pointed
   to the fitting section in the manual.
@@ -101,36 +81,6 @@ Thank you very much!
 
 If you plan to contribute frequently, just ask for write access to the main
 git repository. We would be glad to welcome you in the team!
-
-
-Sponsorship and  Project Grant
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Please consider sponsoring |PyInstaller| development, especially if your
-company benefits from this project.
-
-We welcome your patronage on `Bountysource`__:
-
-  __ https://www.bountysource.com/teams/pyinstaller
-
-* Contribute a recurring amount to the team
-* Place a bounty on a specific feature
-
-Your contribution will go towards adding new features to |PyInstaller| and
-making sure all functionality continues to meet our high quality standards.
-
-A grant for contiguous full-time development has the biggest impact for
-progress. Periods of 3 to 10 days allow a contributor to tackle substantial
-complex issues which are otherwise left to linger until somebody can’t afford
-to not fix them.
-
-Contact `Hartmut Goebel <mailto:htgoebel@crazy-compilers.com>`_ to arrange a
-grant for a core contributor.
-
-Huge thanks to all the companies and individuals who financially contributed
-to the development of |PyInstaller|. Please send a PR if you’ve donated and
-would like to be listed on the web-site.
-
 
 .. include:: _common_definitions.txt
 
