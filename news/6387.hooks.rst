@@ -1,4 +1,0 @@
-Add hooks for ``PySide6.QtWebEngineWidgets`` and ``PyQt6.QtWebEngineWidgets``.
-The ``QtWebEngine`` support in PyInstaller requires ``Qt6`` v6.2.2 or later,
-so if an earlier version is encountered, we exit with an error instead of
-producing a defunct build.

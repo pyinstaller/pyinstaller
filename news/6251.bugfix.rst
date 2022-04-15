@@ -1,3 +1,0 @@
-(macOS) Ensure that executable pre-processing and post-processing steps 
-(target arch selection, SDK version adjustment, (re)signing) are applied in 
-the stand-alone PKG mode.

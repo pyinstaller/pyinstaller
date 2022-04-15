@@ -1,3 +1,0 @@
-Running a frozen application under ``C`` or ``POSIX`` locale enables
-:pep:`540` UTF-8 mode in order to keep behavior consistent with that of
-python interpreter (Python 3.7 or later; Linux and macOS only).

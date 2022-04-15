@@ -1,8 +1,0 @@
-Avoid collecting the whole ``QtQml`` module and its dependencies in cases
-when it is not necessary (i.e., the application does not use ``QtQml`` or
-``QtQuick`` modules). The unnecessary collection was triggered due to
-extension modules being linked against the ``libQt5Qml`` or ``libQt6Qml``
-shared library, and affected pure widget-based applications (``PySide2``
-and ``PySide6`` on Linux) and widget-based applications that use
-``QtWebEngineWidgets`` (``PySide2``, ``PySide6``, ``PyQt5``, and ``PyQt6``
-on all OSes).

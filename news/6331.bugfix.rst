@@ -1,2 +1,0 @@
-Fix a bug since v4.6 where certain Unix system directories were incorrectly assumed to exist and resulted in
-a :class:`FileNotFoundError`.

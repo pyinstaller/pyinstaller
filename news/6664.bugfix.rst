@@ -1,3 +1,0 @@
-(Linux) Fix the splash screen in onedir build loading system-installed
-Tcl/Tk  shared libraries instead of bundled ones (and failing if the
-system has no Tcl/Tk installed).

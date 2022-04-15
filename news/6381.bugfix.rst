@@ -1,2 +1,0 @@
-(macOS) Fix regression in generation of ``universal2`` executables that
-caused the generated executable to fail ``codesign`` strict validation.

@@ -1,1 +1,0 @@
-(macOS) Fix compatibility with Anaconda ``PyQt5`` package.

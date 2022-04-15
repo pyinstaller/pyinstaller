@@ -1,2 +1,0 @@
-(Windows) Respect :pep:`239` encoding specifiers in Window's VSVersionInfo
-files.

@@ -1,3 +1,0 @@
-Add support for ``setuptools 60.7.1`` and its vendoring  of ``jaraco.text``
-in ``pkg_resources``. Exit with an error message if ``setuptools 60.7.0``
-is encountered due to incompatibility with PyInstaller's loader logic.

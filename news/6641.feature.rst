@@ -1,5 +1,0 @@
-Add an optional ``always_on_top`` boolean argument to the ``Splash`` class.
-This allows users to disable the always-on-top behavior of the splash
-screen for their application in order to make it less obnoxious.
-By default, the always-on-top behavior is enabled for the sake of
-consistency with earlier releases.

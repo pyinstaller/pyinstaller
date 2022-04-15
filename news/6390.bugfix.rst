@@ -1,2 +1,0 @@
-(Windows) Fix the ``python3.dll`` shared library not being found and
-collected when using Python from MS App Store.

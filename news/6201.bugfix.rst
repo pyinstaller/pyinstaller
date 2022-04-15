@@ -1,1 +1,0 @@
-(Windows) Suppress missing library warnings for ``api-ms-win-core-*`` DLLs.

@@ -1,1 +1,0 @@
-Fix compatibility with ``PyQt5`` 5.9.2 from conda's  main channel.

@@ -1,2 +1,0 @@
-When generating spec files, avoid hard-coding the spec file's location as the
-``pathex`` argument to the ``Analysis``. 

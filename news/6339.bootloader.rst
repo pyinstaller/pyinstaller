@@ -1,2 +1,0 @@
-(Windows) Remove the check for the unused ``windres`` utility when compiling 
-with MinGW toolchain.

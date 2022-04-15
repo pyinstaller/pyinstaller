@@ -1,2 +1,0 @@
-(Windows) Fix stack overflow in `pyarmor`-protected frozen applications, caused 
-by the executable's stack being smaller than that of the python interpreter.

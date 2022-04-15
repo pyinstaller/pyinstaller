@@ -1,4 +1,0 @@
-Fix the issue with missing ``QtMultimediaWidgets`` module when using
-``PySide2.QtMultimedia`` or ``PySide6.QtMultimedia`` in combination
-with PySide's ``true_property`` `feature
-<https://doc.qt.io/qtforpython/feature-why.html#the-true-property-feature>`_.

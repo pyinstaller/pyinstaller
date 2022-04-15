@@ -1,2 +1,0 @@
-(Linux) Remove the timeout on ``objcopy`` operations to prevent wrongful
-abortions when processing large executables on slow disks.

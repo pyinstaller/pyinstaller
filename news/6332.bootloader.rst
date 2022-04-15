@@ -1,1 +1,0 @@
-Replace use of ``PyRun_SimpleString`` with ``PyRun_SimpleStringFlags``.

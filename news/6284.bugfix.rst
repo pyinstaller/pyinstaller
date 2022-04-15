@@ -1,3 +1,0 @@
-(Windows) Fix the splash screen in onefile build not using the bundled copy
-of ``vcruntime140.dll`` and thus failing to load the Tcl/Tk shared libraries
-when the system has no ``vcruntime140.dll`` available.

@@ -1,4 +1,0 @@
-(Windows) Fix the declared length of strings in the optional embedded
-product version information resource structure. The declared lengths
-were twice too long, and resulted in trailing garbage characters when
-the version information was read using `ctypes` and winver API.
