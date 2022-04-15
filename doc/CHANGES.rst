@@ -15,6 +15,149 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+5.0 (2022-04-15)
+----------------
+
+Features
+~~~~~~~~
+
+* (macOS) App bundles built in ``onedir`` mode can now opt-in for :ref:`argv
+  emulation <macos event forwarding and argv emulation>` so that file paths
+  passed from the UI (`Open with...`) are reflected in :data:`sys.argv`.
+  (:issue:`#5908`)
+* (macOS) App bundles built in ``onedir`` mode can now opt-in for :ref:`argv
+  emulation <macos event forwarding and argv emulation>` so that file paths
+  received in initial drag & drop event are reflected in :data:`sys.argv`.
+  (:issue:`#5436`)
+* (macOS) The :ref:`argv emulation <macos event forwarding and argv emulation>`
+  functionality is now available as an optional feature for app bundles
+  built in either ``onefile`` or ``onedir`` mode. (:issue:`#6089`)
+* (Windows) Embed the manifest into generated ``onedir`` executables by
+  default, in order to avoid potential issues when user renames the executable
+  (e.g., the manifest not being found anymore due to activation context
+  caching when user renames the executable and attempts to run it before
+  also renaming the manifest file). The old behavior of generating the
+  external manifest file in ``onedir`` mode can be re-enabled using the
+  :option:`--no-embed-manifest` command-line switch, or via the
+  ``embed_manifest=False`` argument to ``EXE()`` in the .spec file.
+  (:issue:`#6223`)
+* (Wine) Prevent collection of Wine built-in DLLs (in either PE-converted or
+  fake/placeholder form) when building a Windows frozen application under
+  Wine. Display a warning for each excluded Wine built-in DLL. (:issue:`#6149`)
+* Add a :mod:`PyInstaller.isolated` submodule as a safer replacement to
+  :func:`PyInstaller.utils.hooks.exec_statement`. (:issue:`#6052`)
+* Improve matching of UPX exclude patterns to include OS-default case
+  sensitivity,
+  the wildcard operator (``*``), and support for parent directories in the
+  pattern.
+  Enables use of patterns like ``"Qt*.dll"`` and ``"PySide2*.pyd"``.
+  (:issue:`#6161`)
+* Make the error handing of :func:`~PyInstaller.utils.hooks.collect_submodules`
+  configurable. (:issue:`#6052`)
+
+
+Bugfix
+~~~~~~
+
+* (macOS) Fix potential loss of Apple Events during ``onefile`` app bundle
+  start-up, when the child process is not yet ready to receive events
+  forwarded by the parent process. (:issue:`#6089`)
+* (Windows) Remove the attempt to load the manifest of a ``onefile``
+  frozen executable via the activation context, which fails with *An
+  attempt to set the process default activation context failed because
+  the process default activation context was already set.* message that
+  can be observed in debug builds. This approach has been invalid ever
+  since :issue:`3746` implemented direct manifest embedding into the
+  ``onefile`` executable. (:issue:`#6203`)
+* Fix an import leak when
+  :func:`PyInstaller.utils.hooks.get_module_file_attribute`
+  is called with a sub-module or a sub-package name. (:issue:`#6169`)
+* Fix an import leak when :func:`PyInstaller.utils.hooks.is_package`
+  is called with a sub-module or a sub-package name. (:issue:`#6169`)
+* Fix import errors when calling ``get_gi_libdir()`` during packaging of GTK
+  apps.
+  Enable CI tests of GTK by adding PyGObject dependencies for the Ubuntu
+  builds. (:issue:`#6300`)
+* Issue an error report if a `.spec` file will not be generated, but
+  command-line options specific to that functionality are given.
+  (:issue:`#6660`)
+* Prevent ``onefile`` cleanup from recursing into symlinked directories and
+  just remove the link instead. (:issue:`#6074`)
+
+
+Incompatible Changes
+~~~~~~~~~~~~~~~~~~~~
+
+* (macOS) App bundles built in ``onefile`` mode do not perform
+  :ref:`argv emulation <macos event forwarding and argv emulation>` by
+  default anymore. The functionality of converting initial open document/URL
+  events into ``sys.argv`` entries must now be explicitly opted-in,
+  via ``argv_emulation=True`` argument to ``EXE()`` in the .spec file
+  or via :option:`--argv-emulation` command-line flag. (:issue:`#6089`)
+* (Windows) By default, manifest is now embedded into the executable in
+  ``onedir`` mode. The old behavior of generating the external manifest
+  file can be re-enabled using the :option:`--no-embed-manifest`
+  command-line switch, or via the ``embed_manifest=False`` argument to
+  ``EXE()`` in the .spec file. (:issue:`#6223`)
+* Issue an error report if a `.spec` file will not be generated, but
+  command-line options specific to that functionality are given.
+  (:issue:`#6660`)
+* The :func:`PyInstaller.utils.hooks.get_module_attribute` function now
+  returns the actual attribute value instead of its string representation.
+  The external users (e.g., 3rd party hooks) of this function must adjust
+  their handling of the return value accordingly. (:issue:`#6169`)
+* The ``matplotlib.backends`` hook no longer collects all available
+  ``matplotlib`` backends, but rather tries to auto-detect the used
+  backend(s) by default. The old behavior can be re-enabled via the
+  :ref:`hook configuration option <matplotlib hook options>`. (:issue:`#6024`)
+
+
+Hooks
+~~~~~
+
+* Rework the ``matplotlib.backends`` hook to attempt performing
+  auto-detection of the used backend(s) instead of collecting all
+  available backends. Implement :ref:`hook configuration option
+  <matplotlib hook options>` that allows users to swich between
+  this new behavior and the old behavior of collecting all backends,
+  or to manually specify the backend(s) to be collected. (:issue:`#6024`)
+
+
+Bootloader
+~~~~~~~~~~
+
+* Change the behaviour of the ``--no-universal2`` flag so that it now assumes
+  the
+  target architecture of the compiler (which may be overridden via the ``CC``
+  environment variable to facilitate cross compiling). (:issue:`#6096`)
+* Refactor Apple Events handling code and move it into a separate source file.
+  (:issue:`#6089`)
+
+
+Documentation
+~~~~~~~~~~~~~
+
+* Add a :ref:`new section <macos event forwarding and argv emulation>`
+  describing Apple Event forwading behavior on macOS and the optional
+  `argv emulation` for macOS app bundles, along with its caveats.
+  (:issue:`#6089`)
+* Update documentation on using ``UPX``. (:issue:`#6161`)
+
+
+PyInstaller Core
+~~~~~~~~~~~~~~~~
+
+* Drop support for Python 3.6. (:issue:`#6475`)
+
+
+Bootloader build
+~~~~~~~~~~~~~~~~
+
+* (Windows) Enable `Control Flow Guard
+  <https://docs.microsoft.com/en-us/windows/win32/secbp/control-flow-guard>`_
+  for the Windows bootloader. (:issue:`#6136`)
+
+
 4.10 (2022-03-05)
 -----------------
 

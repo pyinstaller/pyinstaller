@@ -1,3 +1,0 @@
-Add a :ref:`new section <macos event forwarding and argv emulation>`
-describing Apple Event forwading behavior on macOS and the optional
-`argv emulation` for macOS app bundles, along with its caveats.

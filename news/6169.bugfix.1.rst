@@ -1,2 +1,0 @@
-Fix an import leak when :func:`PyInstaller.utils.hooks.is_package`
-is called with a sub-module or a sub-package name.

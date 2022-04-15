@@ -1,3 +1,0 @@
-(macOS) App bundles built in ``onedir`` mode can now opt-in for :ref:`argv
-emulation <macos event forwarding and argv emulation>` so that file paths
-received in initial drag & drop event are reflected in :data:`sys.argv`.

@@ -1,1 +1,0 @@
-Refactor Apple Events handling code and move it into a separate source file.

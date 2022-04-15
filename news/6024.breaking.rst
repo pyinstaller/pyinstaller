@@ -1,4 +1,0 @@
-The ``matplotlib.backends`` hook no longer collects all available
-``matplotlib`` backends, but rather tries to auto-detect the used
-backend(s) by default. The old behavior can be re-enabled via the
-:ref:`hook configuration option <matplotlib hook options>`.

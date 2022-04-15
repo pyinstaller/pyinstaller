@@ -1,1 +1,0 @@
-Add a :mod:`PyInstaller.isolated` submodule as a safer replacement to :func:`PyInstaller.utils.hooks.exec_statement`.

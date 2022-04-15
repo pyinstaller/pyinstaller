@@ -1,2 +1,0 @@
-Fix import errors when calling ``get_gi_libdir()`` during packaging of GTK apps.
-Enable CI tests of GTK by adding PyGObject dependencies for the Ubuntu builds.

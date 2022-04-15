@@ -6,6 +6,36 @@ new code, bug reports, fixes, comments and ideas. A brief list follows,
 please let us know if your name is omitted by accident:
 
 
+Contributions to PyInstaller 5.0
+---------------------------------
+
+* Rok Mandeljc
+* Brénainn Woodsend
+* Jasper Harrison
+* Starbuck5
+* Chris Hillery
+* Dan Yeaw
+* eric15342335
+* 谭九鼎
+* AdrianIssott
+* Andreas Schwab
+* Andrii Oriekhov
+* Anssi Alahuhta
+* Brian Teague
+* Charlie Hayden
+* Emil Berg
+* Eric Missimer
+* GoldinGuy
+* James Gerity
+* Melvin Wang
+* Sapphire Becker
+* dennisvang
+* gentlegiantJGC
+* johnthagen
+* luc-x41
+* wangling12
+
+
 Contributions to PyInstaller 4.10
 ---------------------------------
 

@@ -1,6 +1,0 @@
-(macOS) App bundles built in ``onefile`` mode do not perform
-:ref:`argv emulation <macos event forwarding and argv emulation>` by
-default anymore. The functionality of converting initial open document/URL
-events into ``sys.argv`` entries must now be explicitly opted-in,
-via ``argv_emulation=True`` argument to ``EXE()`` in the .spec file
-or via :option:`--argv-emulation` command-line flag.
