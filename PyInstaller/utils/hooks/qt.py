@@ -313,7 +313,7 @@ def qt_plugins_binaries(plugin_type, namespace):
 #           directory in the directory specified by ``QLibraryInfo::location(QLibraryInfo::TranslationsPath)``.
 #       -   Audio and video codecs: Probably covered if Qt5Multimedia is referenced?
 #
-#       This is handled by ``hook-PyQt5.QtWebEngineWidgets.py``.
+#       This is handled by ``hook-PyQt5.QtWebEngineCore.py``.
 #
 #   -   Since `QAxContainer <http://doc.qt.io/qt-5/activeqt-index.html>`_ is a statically-linked library, it
 #       does not need any special handling.
@@ -745,7 +745,7 @@ def get_qt_webengine_binaries_and_data_files(qt_library_info):
         # Therefore, we collect the QtWebEngineCore.framework manually, in order to obtain a working QtWebEngineProcess
         # helper executable. But because that bypasses our dependency scanner, we need to collect the dependent
         # .framework bundles as well. And we need to override QTWEBENGINEPROCESS_PATH in rthook, because the
-        # QtWebEngineWidgets python extension actually loads up the copy of shared library that is located in
+        # QtWebEngine python extensions actually load up the copy of shared library that is located in
         # sys._MEIPASS (as opposed to the manually-copied one in .framework bundle). Furthermore, because the extension
         # modules use Qt shared libraries in sys._MEIPASS, we also copy all contents of
         # QtWebEngineCore.framework/Resources into sys._MEIPASS to make resource loading in the main process work.
@@ -802,8 +802,8 @@ def get_qt_webengine_binaries_and_data_files(qt_library_info):
         # subdirectory ``nss``. Since ``libnss`` is not statically linked to these, but dynamically loads them, we need
         # to search for and add them.
 
-        # First, get all libraries linked to ``QtWebEngineWidgets`` extension module.
-        module_file = hooks.get_module_file_attribute(qt_library_info.namespace + '.QtWebEngineWidgets')
+        # First, get all libraries linked to ``QtWebEngineCore`` extension module.
+        module_file = hooks.get_module_file_attribute(qt_library_info.namespace + '.QtWebEngineCore')
         module_imports = bindepend.getImports(module_file)
         for imp in module_imports:
             # Look for ``libnss3.so``.
