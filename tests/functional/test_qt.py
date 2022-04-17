@@ -196,6 +196,7 @@ def test_Qt_Ui_file(tmpdir, pyi_builder, data_dir, QtPyLib):
     pyi_builder.test_source(
         """
         import os
+        import sys
 
         import {0}.QtQuickWidgets  # Used instead of hiddenimports
 
@@ -240,9 +241,10 @@ def test_Qt_Ui_file(tmpdir, pyi_builder, data_dir, QtPyLib):
         # Run the main loop
         if is_qt6:
             # Qt6: exec_() is deprecated in PySide6 and removed from PyQt6 in favor of exec()
-            app.exec()
+            res = app.exec()
         else:
-            app.exec_()
+            res = app.exec_()
+        sys.exit(res)
         """.format(QtPyLib)
     )
 
@@ -277,6 +279,8 @@ def _test_Qt_QtWebEngineWidgets(pyi_builder, qt_flavor):
             pytest.skip('QtWebEngine on macOS is supported only in onedir mode.')
 
     source = """
+        import sys
+
         from {0}.QtWidgets import QApplication
         from {0}.QtWebEngineWidgets import QWebEngineView
         from {0}.QtCore import QTimer
@@ -309,9 +313,10 @@ def _test_Qt_QtWebEngineWidgets(pyi_builder, qt_flavor):
 
         if is_qt6:
             # Qt6: exec_() is deprecated in PySide6 and removed from PyQt6 in favor of exec()
-            app.exec()
+            res = app.exec()
         else:
-            app.exec_()
+            res = app.exec_()
+        sys.exit(res)
         """.format(qt_flavor)
 
     pyi_builder.test_source(source, **USE_WINDOWED_KWARG)
