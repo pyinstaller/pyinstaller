@@ -268,8 +268,8 @@ def test_PyQt5_Qt(pyi_builder):
     pyi_builder.test_source('from PyQt5.Qt import QLibraryInfo', **USE_WINDOWED_KWARG)
 
 
-# Run the the QtWebEngine test for chosen Qt-based package flavor.
-def _test_Qt_QtWebEngine(pyi_builder, qt_flavor):
+# Run the the QtWebEngineWidgets test for chosen Qt-based package flavor.
+def _test_Qt_QtWebEngineWidgets(pyi_builder, qt_flavor):
     if is_darwin:
         # QtWebEngine on Mac OS only works with a onedir build -- onefile builds do not work.
         # Skip the test execution for onefile builds.
@@ -279,7 +279,7 @@ def _test_Qt_QtWebEngine(pyi_builder, qt_flavor):
     source = """
         from {0}.QtWidgets import QApplication
         from {0}.QtWebEngineWidgets import QWebEngineView
-        from {0}.QtCore import QUrl, QTimer
+        from {0}.QtCore import QTimer
 
         is_qt6 = '{0}' in {{'PyQt6', 'PySide6'}}
 
@@ -319,24 +319,24 @@ def _test_Qt_QtWebEngine(pyi_builder, qt_flavor):
 
 @requires('PyQt5')
 @requires('PyQtWebEngine')
-def test_Qt_QtWebEngine_PyQt5(pyi_builder):
-    _test_Qt_QtWebEngine(pyi_builder, 'PyQt5')
+def test_Qt_QtWebEngineWidgets_PyQt5(pyi_builder):
+    _test_Qt_QtWebEngineWidgets(pyi_builder, 'PyQt5')
 
 
 @requires('PySide2')
-def test_Qt_QtWebEngine_PySide2(pyi_builder):
-    _test_Qt_QtWebEngine(pyi_builder, 'PySide2')
+def test_Qt_QtWebEngineWidgets_PySide2(pyi_builder):
+    _test_Qt_QtWebEngineWidgets(pyi_builder, 'PySide2')
 
 
 @requires('PyQt6 >= 6.2.2')
 @requires('PyQt6-WebEngine')  # NOTE: base Qt6 must be 6.2.2 or newer, QtWebEngine can be older
-def test_Qt_QtWebEngine_PyQt6(pyi_builder):
-    _test_Qt_QtWebEngine(pyi_builder, 'PyQt6')
+def test_Qt_QtWebEngineWidgets_PyQt6(pyi_builder):
+    _test_Qt_QtWebEngineWidgets(pyi_builder, 'PyQt6')
 
 
 @requires('PySide6 >= 6.2.2')
-def test_Qt_QtWebEngine_PySide6(pyi_builder):
-    _test_Qt_QtWebEngine(pyi_builder, 'PySide6')
+def test_Qt_QtWebEngineWidgets_PySide6(pyi_builder):
+    _test_Qt_QtWebEngineWidgets(pyi_builder, 'PySide6')
 
 
 # QtMultimedia test that also uses PySide's true_property, which triggers hidden dependency on QtMultimediaWidgets
