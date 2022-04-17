@@ -322,15 +322,95 @@ def _test_Qt_QtWebEngineWidgets(pyi_builder, qt_flavor):
     pyi_builder.test_source(source, **USE_WINDOWED_KWARG)
 
 
+# Run the the QtWebEngineQuick test for chosen Qt-based package flavor.
+def _test_Qt_QtWebEngineQuick(pyi_builder, qt_flavor):
+    if is_darwin:
+        # QtWebEngine on Mac OS only works with a onedir build -- onefile builds do not work.
+        # Skip the test execution for onefile builds.
+        if pyi_builder._mode != 'onedir':
+            pytest.skip('QtWebEngine on macOS is supported only in onedir mode.')
+
+    source = """
+        import sys
+
+        from {0}.QtGui import QGuiApplication
+        from {0}.QtQml import QQmlApplicationEngine
+
+        is_qt6 = '{0}' in {{'PyQt6', 'PySide6'}}
+
+        if is_qt6:
+            from {0}.QtWebEngineQuick import QtWebEngineQuick
+        else:
+            from {0}.QtWebEngine import QtWebEngine as QtWebEngineQuick
+        QtWebEngineQuick.initialize()
+
+        app = QGuiApplication()
+        engine = QQmlApplicationEngine()
+        engine.loadData(b'''
+            import QtQuick 2.0
+            import QtQuick.Window 2.0
+            import QtWebEngine 1.0
+
+            Window {{
+                visible: true
+                WebEngineView {{
+                    anchors.fill: true
+                    onLoadingChanged: {{
+                        if (loadRequest.status !== WebEngineView.LoadStartedStatus) {{
+                            Qt.quit()
+                        }}
+                    }}
+                    Component.onCompleted: loadHtml('
+                        <!doctype html>
+                        <html lang="en">
+                            <head>
+                                <meta charset="utf-8">
+                                <title>Test web page</title>
+                            </head>
+                            <body>
+                                <p>This is a test web page.</p>
+                            </body>
+                        </html>
+                    ')
+                }}
+            }}
+        ''')
+
+        if not engine.rootObjects():
+            sys.exit(-1)
+
+        if is_qt6:
+            # Qt6: exec_() is deprecated in PySide6 and removed from PyQt6 in favor of exec()
+            res = app.exec()
+        else:
+            res = app.exec_()
+        del engine
+        sys.exit(res)
+        """.format(qt_flavor)
+
+    pyi_builder.test_source(source, **USE_WINDOWED_KWARG)
+
+
 @requires('PyQt5')
 @requires('PyQtWebEngine')
 def test_Qt_QtWebEngineWidgets_PyQt5(pyi_builder):
     _test_Qt_QtWebEngineWidgets(pyi_builder, 'PyQt5')
 
 
+@requires('PyQt5')
+@requires('PyQtWebEngine')
+def test_Qt_QtWebEngineQuick_PyQt5(pyi_builder):
+    _test_Qt_QtWebEngineQuick(pyi_builder, 'PyQt5')
+
+
 @requires('PySide2')
 def test_Qt_QtWebEngineWidgets_PySide2(pyi_builder):
     _test_Qt_QtWebEngineWidgets(pyi_builder, 'PySide2')
+
+
+@requires('PySide2')
+def test_Qt_QtWebEngineQuick_PySide2(pyi_builder):
+    _test_Qt_QtWebEngineQuick(pyi_builder, 'PySide2')
 
 
 @requires('PyQt6 >= 6.2.2')
@@ -339,9 +419,20 @@ def test_Qt_QtWebEngineWidgets_PyQt6(pyi_builder):
     _test_Qt_QtWebEngineWidgets(pyi_builder, 'PyQt6')
 
 
+@requires('PyQt6 >= 6.2.2')
+@requires('PyQt6-WebEngine')  # NOTE: base Qt6 must be 6.2.2 or newer, QtWebEngine can be older
+def test_Qt_QtWebEngineQuick_PyQt6(pyi_builder):
+    _test_Qt_QtWebEngineQuick(pyi_builder, 'PyQt6')
+
+
 @requires('PySide6 >= 6.2.2')
 def test_Qt_QtWebEngineWidgets_PySide6(pyi_builder):
     _test_Qt_QtWebEngineWidgets(pyi_builder, 'PySide6')
+
+
+@requires('PySide6 >= 6.2.2')
+def test_Qt_QtWebEngineQuick_PySide6(pyi_builder):
+    _test_Qt_QtWebEngineQuick(pyi_builder, 'PySide6')
 
 
 # QtMultimedia test that also uses PySide's true_property, which triggers hidden dependency on QtMultimediaWidgets
