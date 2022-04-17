@@ -32,7 +32,7 @@ Example
     build-test (see below). You will need to test your hook anyway, so why not
     use a build-test from the start?
 
-  * Incorporate your changes into |PyInstaller|.
+  * Incorporate your changes into PyInstaller.
 
   * Test your changes by running *all* build tests to ensure nothing else is
     broken. Please test on as many platform as you can.

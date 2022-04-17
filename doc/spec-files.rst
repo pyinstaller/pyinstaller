@@ -7,18 +7,18 @@ When you execute
 
     ``pyinstaller`` *options*.. ``myscript.py``
 
-the first thing |PyInstaller| does is to build a spec (specification) file
+the first thing PyInstaller does is to build a spec (specification) file
 :file:`myscript.spec`.
 That file is stored in the :option:`--specpath` directory,
 by default the current directory.
 
-The spec file tells |PyInstaller| how to process your script.
+The spec file tells PyInstaller how to process your script.
 It encodes the script names and most of the options
 you give to the ``pyinstaller`` command.
 The spec file is actually executable Python code.
-|PyInstaller| builds the app by executing the contents of the spec file.
+PyInstaller builds the app by executing the contents of the spec file.
 
-For many uses of |PyInstaller| you do not need to examine or modify the spec file.
+For many uses of PyInstaller you do not need to examine or modify the spec file.
 It is usually enough to
 give all the needed information (such as hidden imports)
 as options to the ``pyinstaller`` command and let it run.
@@ -27,7 +27,7 @@ There are four cases where it is useful to modify the spec file:
 
 * When you want to bundle data files with the app.
 * When you want to include run-time libraries (``.dll`` or ``.so`` files) that
-  |PyInstaller| does not know about from any other source.
+  PyInstaller does not know about from any other source.
 * When you want to add Python run-time options to the executable.
 * When you want to create a multiprogram bundle with merged common modules.
 
@@ -66,7 +66,7 @@ Only the following command-line options have an effect when building from a spec
 Spec File Operation
 ~~~~~~~~~~~~~~~~~~~~
 
-After |PyInstaller| creates a spec file,
+After PyInstaller creates a spec file,
 or opens a spec file when one is given instead of a script,
 the ``pyinstaller`` command executes the spec file as code.
 Your bundled application is created by the execution of the spec file.
@@ -231,7 +231,7 @@ arrangement::
         help_data.txt
 
 Because your script includes the statement ``import helpmod``,
-|PyInstaller| will create this folder arrangement in your bundled app.
+PyInstaller will create this folder arrangement in your bundled app.
 However, it will only include the ``.py`` files.
 The data file :file:`help_data.txt` will not be automatically included.
 To cause it to be included also, you would add a ``datas`` tuple
@@ -263,7 +263,7 @@ Adding Binary Files
 --------------------
 
 .. Note:: `Binary` files refers to DLLs, dynamic libraries, shared
-   object-files, and such, which |PyInstaller| is going to search for further
+   object-files, and such, which PyInstaller is going to search for further
    `binary` dependencies. Files like images and PDFs should go into the
    ``datas``.
 
@@ -280,7 +280,7 @@ Adding binary files works in a similar way as adding data files. As described in
     * The second specifies the name of the *folder* to contain
       the files at run-time.
 
-Normally |PyInstaller| learns about ``.so`` and ``.dll`` libraries by
+Normally PyInstaller learns about ``.so`` and ``.dll`` libraries by
 analyzing the imported modules.
 Sometimes it is not clear that a module is imported;
 in that case you use a :option:`--hidden-import` command option.
@@ -288,10 +288,10 @@ But even that might not find all dependencies.
 
 Suppose you have a module ``special_ops.so`` that is written in C
 and uses the Python C-API.
-Your program imports ``special_ops``, and |PyInstaller| finds and
+Your program imports ``special_ops``, and PyInstaller finds and
 includes ``special_ops.so``.
 But perhaps ``special_ops.so`` links to ``libiodbc.2.dylib``.
-|PyInstaller| does not find this dependency.
+PyInstaller does not find this dependency.
 You could add it to the bundle this way::
 
     a = Analysis(...
@@ -318,7 +318,7 @@ create the list in a separate statement and pass the list by name.
 Advanced Methods of Adding Files
 ---------------------------------
 
-|PyInstaller| supports a more advanced (and complex) way of adding
+PyInstaller supports a more advanced (and complex) way of adding
 files to the bundle that may be useful for special cases.
 See :ref:`The TOC and Tree Classes` below.
 
@@ -392,7 +392,7 @@ An :file:`Info.plist` file is an important part of a macOS app bundle.
 (See the `Apple bundle overview`_ for a discussion of the contents
 of ``Info.plist``.)
 
-|PyInstaller| creates a minimal :file:`Info.plist`.
+PyInstaller creates a minimal :file:`Info.plist`.
 The ``version`` option can be used to set the application version
 using the CFBundleShortVersionString Core Foundation Key.
 
@@ -400,7 +400,7 @@ You can add or overwrite entries in the plist by passing an
 ``info_plist=`` parameter to the BUNDLE call.  Its argument should be a
 Python dict with keys and values to be included in the :file:`Info.plist`
 file.
-|PyInstaller| creates :file:`Info.plist` from the info_plist dict
+PyInstaller creates :file:`Info.plist` from the info_plist dict
 using the Python Standard Library module plistlib_.
 plistlib can handle nested Python objects (which are translated to nested
 XML), and translates Python data types to the proper :file:`Info.plist`
@@ -653,7 +653,7 @@ the apps :file:`dist/bar/bar` and :file:`dist/zap/zap` will refer to
 the contents of :file:`dist/foo/` for shared dependencies.
 
 There are several multipackage examples in the
-|PyInstaller| distribution folder under :file:`tests/functional/specs`.
+PyInstaller distribution folder under :file:`tests/functional/specs`.
 
 Remember that a spec file is executable Python.
 You can use all the Python facilities (``for`` and ``with``
@@ -666,7 +666,7 @@ Globals Available to the Spec File
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 While a spec file is executing it has access to a limited set of global names.
-These names include the classes defined by |PyInstaller|:
+These names include the classes defined by PyInstaller:
 ``Analysis``, ``BUNDLE``, ``COLLECT``, ``EXE``, ``MERGE``,
 ``PYZ``, ``TOC``, ``Tree`` and ``Splash``,
 which are discussed in the preceding sections.
@@ -680,7 +680,7 @@ Other globals contain information about the build environment:
     If the :option:`--distpath` option is used, ``DISTPATH`` contains that value.
 
 ``HOMEPATH``
-    The absolute path to the |PyInstaller|
+    The absolute path to the PyInstaller
     distribution, typically in the current Python site-packages folder.
 
 ``SPEC``

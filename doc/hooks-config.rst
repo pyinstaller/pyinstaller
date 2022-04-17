@@ -2,7 +2,7 @@
 Hook Configuration Options
 ===============================
 
-As of version 4.4, |PyInstaller| implements a mechanism for passing
+As of version 4.4, PyInstaller implements a mechanism for passing
 configuration options to the hooks. At the time of writing, this
 feature is supported only in :ref:`.spec files <using spec files>` and
 has no command-line interface equivalent.
@@ -105,7 +105,7 @@ version 3.0 of Gtk and version 4 of GtkSource:
 Matplotlib hooks
 ----------------
 
-The hooks for ``matplotlib`` package allow user to control the backend
+The hooks for the ``matplotlib`` package allow user to control the backend
 collection behavior via ``backends`` option under the ``matplotlib``
 identifier, as described below.
 
@@ -170,7 +170,7 @@ importable, the headless ``'Agg'`` is collected instead.
 
 
 If ``backends`` option is set to ``'all'``, all (importable) backends are
-selected, which corresponds to the behavior of |PyInstaller| 4.x and earlier.
+selected, which corresponds to the behavior of PyInstaller 4.x and earlier.
 The list of importable backends depends on the packages installed in the
 environment; for example, the ``Qt5Agg`` backend becomes importable if
 either the ``PyQt5`` or the ``PySide2`` package is installed.
@@ -202,7 +202,7 @@ importable or not.
 .. note::
     The ``Qt5Agg`` backend conditionally imports both the ``PyQt5`` and
     the ``PySide2`` package. Therefore, if both are installed in your
-    environment, |PyInstaller| will end up collecting both. In addition
+    environment, PyInstaller will end up collecting both. In addition
     to increasing the frozen application's size, this might also cause
     conflicts between the collected versions of the shared libraries.
     To prevent that, use the :option:`--exclude-module` option to exclude

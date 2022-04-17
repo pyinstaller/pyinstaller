@@ -1,15 +1,12 @@
-.. _PyInstaller: http://www.pyinstaller.org
+.. _website: http://www.pyinstaller.org
 
 .. |Homepage| replace:: http://www.pyinstaller.org
 .. |Manual| replace:: https://pyinstaller.readthedocs.io/
-.. |PyInstaller| replace:: `PyInstaller`
 .. |PyInstallerVersion| replace:: PyInstaller |release|
 
+.. _`GitHub repository`: https://github.com/pyinstaller/pyinstaller/
 .. _issue: https://github.com/pyinstaller/pyinstaller/issues/
-
-.. how we punctuate boot loader as a proper noun "the bootloader"
-.. |bootloader| replace:: bootloader
-
+.. _`open an issue`: https://github.com/pyinstaller/pyinstaller/issues/
 .. _`activation context`: http://msdn.microsoft.com/en-us/library/windows/desktop/aa374153(v=vs.85).aspx
 .. _`Apple bundle overview`: https://developer.apple.com/library/mac/documentation/CoreFoundation/Conceptual/CFBundles/BundleTypes/BundleTypes.html
 .. _`Apple code signing overview`: https://developer.apple.com/library/mac/technotes/tn2206/_index.html
@@ -41,11 +38,9 @@
 .. _pip-Win: https://sites.google.com/site/pydatalog/python/pip-for-windows
 .. _plistlib: https://docs.python.org/3/library/plistlib.html
 .. _tinyaes: https://github.com/naufraghi/tinyaes-py
-.. _PyInstaller.org: https://github.com/pyinstaller/pyinstaller/wiki/Community
 .. _`PyInstaller at GitHub`: https://github.com/pyinstaller/pyinstaller
 .. _`PyInstaller code signing recipe`: https://github.com/pyinstaller/pyinstaller/wiki/Recipe-OSX-Code-Signing
 .. _`PyInstaller Downloads`:  https://github.com/pyinstaller/pyinstaller/releases
-.. _PyInstaller\/hooks\/hook-win32com.py: http://www.pyinstaller.org/browser/trunk/PyInstaller/hooks/hook-win32com.py?rev=latest
 .. _`PyInstaller Email List`: https://groups.google.com/forum/#!forum/pyinstaller
 .. _`PyInstaller Issue #1309`: https://github.com/pyinstaller/pyinstaller/issues/1309
 .. _`PyInstaller Recipes`: https://github.com/pyinstaller/pyinstaller/wiki/Recipes
@@ -55,7 +50,6 @@
 .. _PySide: http://qt-project.org/wiki/About-PySide
 .. _PyWin32: http://sourceforge.net/projects/pywin32/files/
 .. _Qt: http://www.qt-project.org
-.. _Recipe: http://www.pyinstaller.org/wiki/Recipe
 .. _setup_tools: https://pypi.python.org/pypi/setuptools
 .. _`Package resources`: https://pythonhosted.org/setuptools/pkg_resources.html#requirements-parsing
 .. _`Supported Packages`: https://github.com/pyinstaller/pyinstaller/wiki/Supported-Packages
@@ -67,7 +61,6 @@
 .. _venv: https://docs.python.org/3/library/venv.html
 .. _virtualenv:  https://virtualenv.pypa.io
 .. _`Visual Studio Express`: http://www.microsoft.com/express/
-.. _wiki: http://www.pyinstaller.org/wiki
 .. _`Version Information Structures`: http://msdn.microsoft.com/en-us/library/ff468916(v=vs.85).aspx
 .. _virtualBox: https://www.virtualbox.org
 .. _VMWare: http://www.vmware.com/solutions/desktop/
@@ -75,9 +68,3 @@
 .. _WxPython: http://www.wxpython.org/
 .. _Xcode: http://developer.apple.com/xcode
 .. _yapf: https://github.com/google/yapf
-
-.. Emacs config:
- Local Variables:
- mode: rst
- ispell-local-dictionary: "american"
- End:
