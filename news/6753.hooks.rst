@@ -1,0 +1,2 @@
+Refactor ``QtWebEngine`` hooks to support both pure Widget-based and
+pure QML/Quick-based applications.
