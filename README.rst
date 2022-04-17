@@ -79,7 +79,7 @@ Requirements and Tested Platforms
 
 - macOS (64bit):
 
- - macOS 10.13 (High Sierra) or newer.
+ - macOS 10.15 (Catalina) or newer.
 
 
 Usage
