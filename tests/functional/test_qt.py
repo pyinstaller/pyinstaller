@@ -344,7 +344,7 @@ def _test_Qt_QtWebEngineQuick(pyi_builder, qt_flavor):
             from {0}.QtWebEngine import QtWebEngine as QtWebEngineQuick
         QtWebEngineQuick.initialize()
 
-        app = QGuiApplication()
+        app = QGuiApplication([])
         engine = QQmlApplicationEngine()
         engine.loadData(b'''
             import QtQuick 2.0
@@ -354,12 +354,8 @@ def _test_Qt_QtWebEngineQuick(pyi_builder, qt_flavor):
             Window {{
                 visible: true
                 WebEngineView {{
-                    anchors.fill: true
-                    onLoadingChanged: {{
-                        if (loadRequest.status !== WebEngineView.LoadStartedStatus) {{
-                            Qt.quit()
-                        }}
-                    }}
+                    id: view
+                    anchors.fill: parent
                     Component.onCompleted: loadHtml('
                         <!doctype html>
                         <html lang="en">
@@ -372,6 +368,14 @@ def _test_Qt_QtWebEngineQuick(pyi_builder, qt_flavor):
                             </body>
                         </html>
                     ')
+                }}
+                Connections {{
+                    target: view
+                    function onLoadingChanged(loadRequest) {{
+                        if (loadRequest.status !== WebEngineView.LoadStartedStatus) {{
+                            Qt.quit()
+                        }}
+                    }}
                 }}
             }}
         ''')
