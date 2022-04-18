@@ -1,0 +1,1 @@
+Prevent unactionable errors raised by UPX from terminating the build.
