@@ -872,7 +872,7 @@ event (as seen by the frozen python code) may be either ``'oapp'``,
 However, if `argv emulation` is enabled in a ``onedir`` bundle, its
 processing of initial event leaves the event queue empty. The lack
 of initial open event seems to cause segmentation fault with Tcl/Tk 8.6.11
-and `Homebrew`_ Python 3.9.6 (:issue:`#5581`). As a work-around, the
+and `Homebrew`_ Python 3.9.6 (:issue:`5581`). As a work-around, the
 bootloader attempts to submit an ``'oapp'`` event to itself, so that
 when the frozen python code inspects the event queue, it finds an
 initial open event (i.e., ``'oapp'``). These potential side effects

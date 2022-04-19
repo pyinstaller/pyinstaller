@@ -74,6 +74,8 @@ extensions = ['sphinx.ext.intersphinx',
               'sphinxcontrib.towncrier',
               'sphinx_issues']
 
+issues_github_path = "pyinstaller/pyinstaller"
+
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
     'matplotlib': ('https://matplotlib.org/stable/', None),
