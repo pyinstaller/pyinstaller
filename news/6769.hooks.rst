@@ -1,0 +1,4 @@
+Update PySide6 and PyQt6 hooks for compatibility with Qt 6.3. ``QtWebEngine`` 
+on Windows and Linux does not provide the ``qt.conf`` file for the helper 
+executable anymore, so we generate our own version of the file in order for 
+``QtWebengine`` -based frozen applications to work.
