@@ -22,7 +22,6 @@ import shutil
 import struct
 import subprocess
 import sys
-import textwrap
 
 from PyInstaller import compat
 from PyInstaller import log as logging
@@ -365,12 +364,7 @@ def checkCache(
 
     if cmd:
         logger.info("Executing - " + "".join(cmd))
-        p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
-        if p.returncode:
-            raise SystemExit(
-                f"The subprocess:\n    {''.join(cmd)}\nexited with error {p.returncode} and error "
-                "output:\n" + textwrap.indent(p.stdout, "    ")
-            )
+        subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     # update cache index
     cache_index[basenm] = digest
