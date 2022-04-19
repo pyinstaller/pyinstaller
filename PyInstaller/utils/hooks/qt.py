@@ -785,8 +785,29 @@ def get_qt_webengine_binaries_and_data_files(qt_library_info):
         # The helper QtWebEngineProcess executable should have an accompanying qt.conf file that helps it locate the
         # Qt shared libraries. Try collecting it as well
         qt_conf_file = os.path.join(qt_library_info.location['LibraryExecutablesPath'], 'qt.conf')
-        if os.path.isfile(qt_conf_file):
-            datas.append((qt_conf_file, dest))
+        if not os.path.isfile(qt_conf_file):
+            # The file seems to have been dropped from Qt 6.3 (and corresponding PySide6 and PyQt6) due to redundancy;
+            # however, we still need it in the frozen application - so generate our own.
+            from PyInstaller.config import CONF  # workpath
+            # Relative path to root prefix of bundled Qt
+            rel_prefix = os.path.relpath(
+                qt_library_info.location['PrefixPath'], qt_library_info.location['LibraryExecutablesPath']
+            )
+            # We expect the relative path to be either . or .. depending on PySide/PyQt layout; if that is not the case,
+            # warn about irregular path
+            if rel_prefix not in ('.', '..'):
+                logger.warning("Unexpected relative Qt prefix path for QtWebEngineProcess qt.conf: %s", rel_prefix)
+            # The Qt docs on qt.conf (https://doc.qt.io/qt-5/qt-conf.html) recommend using forward slashes on Windows
+            # as well, due to backslash having to be escaped. This should not matter as we expect the relative path
+            # to be . or .., but you never know...
+            if os.sep == '\\':
+                rel_prefix = rel_prefix.replace(os.sep, '/')
+            # Create temporary file in workpath
+            qt_conf_file = os.path.join(CONF['workpath'], "qt.conf")
+            with open(qt_conf_file, 'w') as fp:
+                print("[Paths]", file=fp)
+                print("Prefix = {}".format(rel_prefix), file=fp)
+        datas.append((qt_conf_file, dest))
 
     # Add Linux-specific libraries.
     if compat.is_linux:
