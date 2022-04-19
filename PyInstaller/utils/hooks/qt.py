@@ -705,19 +705,6 @@ def get_qt_qml_files(qt_library_info):
     return binaries, datas
 
 
-# Collect the ``qt.conf`` file.
-def get_qt_conf_file(qt_library_info):
-    # No-op if requested Qt-based package is not available.
-    if qt_library_info.version is None:
-        return []
-    # Find ``qt.conf`` in location['PrefixPath'].
-    datas = [
-        x for x in hooks.collect_system_data_files(qt_library_info.location['PrefixPath'], qt_library_info.qt_rel_dir)
-        if os.path.basename(x[0]) == 'qt.conf'
-    ]
-    return datas
-
-
 # Collect QtWebEngine helper process executable, translations, and resources.
 def get_qt_webengine_binaries_and_data_files(qt_library_info):
     binaries = []
@@ -796,6 +783,12 @@ def get_qt_webengine_binaries_and_data_files(qt_library_info):
             os.path.relpath(qt_library_info.location['LibraryExecutablesPath'], qt_library_info.location['PrefixPath'])
         )
         binaries.append((os.path.join(qt_library_info.location['LibraryExecutablesPath'], 'QtWebEngineProcess*'), dest))
+
+        # The helper QtWebEngineProcess executable should have an accompanying qt.conf file that helps it locate the
+        # Qt shared libraries. Try collecting it as well
+        qt_conf_file = os.path.join(qt_library_info.location['LibraryExecutablesPath'], 'qt.conf')
+        if os.path.isfile(qt_conf_file):
+            datas.append((qt_conf_file, dest))
 
     # Add Linux-specific libraries.
     if compat.is_linux:
