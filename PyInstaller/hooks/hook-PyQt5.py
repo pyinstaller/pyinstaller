@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-from PyInstaller.utils.hooks.qt import get_qt_binaries, get_qt_conf_file, pyqt5_library_info
+from PyInstaller.utils.hooks.qt import get_qt_binaries, pyqt5_library_info
 
 # Only proceed if PyQt5 can be imported.
 if pyqt5_library_info.version is not None:
@@ -19,9 +19,6 @@ if pyqt5_library_info.version is not None:
         # PyQt5.11 and later provides SIP in a private package. Support both.
         'PyQt5.sip'
     ]
-
-    # Collect the ``qt.conf`` file.
-    datas = get_qt_conf_file(pyqt5_library_info)
 
     # Collect required Qt binaries.
     binaries = get_qt_binaries(pyqt5_library_info)
