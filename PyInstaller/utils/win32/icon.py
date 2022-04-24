@@ -214,10 +214,7 @@ def CopyIcons(dstpath, srcpath):
     if srcext.lower() == '.ico':
         return CopyIcons_FromIco(dstpath, [srcpath])
 
-    # Single source is not .ico, presumably it is .exe (and if not, some error will occur). If relative, make it
-    # relative to the .spec file.
-    if not os.path.isabs(srcpath):
-        srcpath = os.path.join(config.CONF['specpath'], srcpath)
+    # Single source is not .ico, presumably it is .exe (and if not, some error will occur).
     if index is not None:
         logger.info("Copying icon from %s, %d", srcpath, index)
     else:
