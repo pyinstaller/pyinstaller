@@ -468,6 +468,10 @@ class EXE(Target):
             # no value; presence means "true"
             self.toc.append(("pyi-macos-argv-emulation", "", "OPTION"))
 
+        # If the icon path is relative, make it relative to the .spec file.
+        if self.icon and self.icon != "NONE" and not os.path.isabs(self.icon):
+            self.icon = os.path.join(CONF['specpath'], self.icon)
+
         if is_win:
             if not self.exclude_binaries:
                 # onefile mode forces embed_manifest=True

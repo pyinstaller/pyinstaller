@@ -387,6 +387,7 @@ def test_set_icon(pyi_builder, data_dir):
         args = ['--windowed', '--icon', os.path.join(data_dir.strpath, 'pyi_icon.icns')]
     else:
         pytest.skip('option --icon works only on Windows and Mac OS X')
+    os.chdir(os.path.expanduser("~"))
     pyi_builder.test_source("print('Hello Python!')", pyi_args=args)
 
 

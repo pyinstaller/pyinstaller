@@ -1,0 +1,2 @@
+Restore the pre PyInstaller 5.0 behavior of resolving relative paths to icons as
+relative to the spec file rather than the current working directory.
