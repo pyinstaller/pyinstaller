@@ -6,7 +6,7 @@ sphinx:
 formats: all
 
 python:
-  version: 3.10
+  version: 3
   install:
     # Needed for autodoc to be able to read PyInstaller docstrings.
     - method: pip
