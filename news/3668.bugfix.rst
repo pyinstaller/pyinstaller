@@ -1,6 +1,0 @@
-(Linux) Have ``glib`` runtime hook prepend the frozen application's data
-dir to the ``XDG_DATA_DIRS`` environment variable instead of completely
-overwriting it. This should fix the case when ``xdg-open`` is used to
-launch a system-installed application (for example, opening an URL in a
-web browser via the ``webbrowser`` module) and no registered applications
-being found.

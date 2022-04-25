@@ -15,6 +15,42 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+
+5.0.1 (2022-04-25)
+------------------
+
+Bugfix
+~~~~~~
+
+* (Linux) Have ``glib`` runtime hook prepend the frozen application's data
+  dir to the ``XDG_DATA_DIRS`` environment variable instead of completely
+  overwriting it. This should fix the case when ``xdg-open`` is used to
+  launch a system-installed application (for example, opening an URL in a
+  web browser via the ``webbrowser`` module) and no registered applications
+  being found. (:issue:`3668`)
+* Prevent unactionable errors raised by UPX from terminating the build.
+  (:issue:`6757`)
+* Restore the pre PyInstaller 5.0 behavior of resolving relative paths to icons
+  as
+  relative to the spec file rather than the current working directory.
+  (:issue:`6759`)
+* (Windows) Update system DLL inclusion list to allow collection of DLLs from
+  Visual Studio 2012 (VC11) runtime and Visual Studio 2013 (VC12) runtime,
+  as well as the latest version of Visual Studio 2015/2017/2019/2022 (VC14)
+  runtime (14.3). (:issue:`6778`)
+
+
+Hooks
+~~~~~
+
+* Refactor ``QtWebEngine`` hooks to support both pure Widget-based and
+  pure QML/Quick-based applications. (:issue:`6753`)
+* Update PySide6 and PyQt6 hooks for compatibility with Qt 6.3. ``QtWebEngine``
+  on Windows and Linux does not provide the ``qt.conf`` file for the helper
+  executable anymore, so we generate our own version of the file in order for
+  ``QtWebengine`` -based frozen applications to work. (:issue:`6769`)
+
+
 5.0 (2022-04-15)
 ----------------
 

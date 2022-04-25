@@ -1,4 +1,0 @@
-(Windows) Update system DLL inclusion list to allow collection of DLLs from
-Visual Studio 2012 (VC11) runtime and Visual Studio 2013 (VC12) runtime,
-as well as the latest version of Visual Studio 2015/2017/2019/2022 (VC14)
-runtime (14.3).

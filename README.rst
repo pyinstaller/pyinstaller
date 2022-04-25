@@ -145,5 +145,5 @@ in the `Changelog`_ section of the manual.
 
 
 .. _tinyaes: https://github.com/naufraghi/tinyaes-py
-.. _`manual`: https://pyinstaller.readthedocs.io/en/v5.0/
-.. _`Changelog`: https://pyinstaller.readthedocs.io/en/v5.0/CHANGES.html
+.. _`manual`: https://pyinstaller.readthedocs.io/en/v5.0.1/
+.. _`Changelog`: https://pyinstaller.readthedocs.io/en/v5.0.1/CHANGES.html

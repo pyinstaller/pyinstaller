@@ -6,6 +6,15 @@ new code, bug reports, fixes, comments and ideas. A brief list follows,
 please let us know if your name is omitted by accident:
 
 
+Contributions to PyInstaller 5.0.1
+----------------------------------
+
+* Rok Mandeljc
+* Abdelhakim Qbaich
+* Brénainn Woodsend
+* Jasper Harrison
+
+
 Contributions to PyInstaller 5.0
 ---------------------------------
 
