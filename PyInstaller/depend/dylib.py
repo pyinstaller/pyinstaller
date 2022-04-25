@@ -58,13 +58,13 @@ _excludes = {
 _includes = set()
 
 _win_includes = {
-    # DLLs are from 'Microsoft Visual C++ 2010 Redistributable Package'
+    # We need to allow collection of Visual Studio C++ (VC) runtime DLLs from system directories in order to avoid
+    # missing DLL errors when the frozen application is run on a system that does not have the corresponding VC
+    # runtime installed. The VC runtime DLLs may be dependencies of python shared library itself or of extension
+    # modules provided by 3rd party packages.
+
+    # Visual Studio 2010 (VC10) runtime
     # http://msdn.microsoft.com/en-us/library/8kche8ah(v=vs.100).aspx
-    #
-    # Python 3.3 and 3.4 use Visual Studio C++ 2010 for Windows builds; python33.dll depends on msvcr100.dll.
-    #
-    # Visual Studio C++ 2010 does not need Assembly manifests anymore and uses C++ runtime libraries the old way -
-    # pointing to C:\Windows\System32. It is necessary to allow inclusion of these libraries from C:\Windows\System32.
     r'atl100\.dll',
     r'msvcr100\.dll',
     r'msvcp100\.dll',
@@ -74,20 +74,104 @@ _win_includes = {
     r'mfcm100\.dll',
     r'mfcm100u\.dll',
 
-    # Python 3.5 uses the Univeral C Runtime which consists of these DLLs:
+    # Visual Studio 2012 (VC11) runtime
+    # https://docs.microsoft.com/en-us/visualstudio/releases/2013/2012-redistribution-vs
+    #
+    # VC110.ATL
+    r'atl110\.dll',
+    # VC110.CRT
+    r'msvcp110\.dll',
+    r'msvcr110\.dll',
+    r'vccorlib110\.dll',
+    # VC110.CXXAMP
+    r'vcamp110\.dll',
+    # VC110.MFC
+    r'mfc110\.dll',
+    r'mfc110u\.dll',
+    r'mfcm110\.dll',
+    r'mfcm110u\.dll',
+    # VC110.MFCLOC
+    r'mfc110chs\.dll',
+    r'mfc110cht\.dll',
+    r'mfc110enu\.dll',
+    r'mfc110esn\.dll',
+    r'mfc110deu\.dll',
+    r'mfc110fra\.dll',
+    r'mfc110ita\.dll',
+    r'mfc110jpn\.dll',
+    r'mfc110kor\.dll',
+    r'mfc110rus\.dll',
+    # VC110.OpenMP
+    r'vcomp110\.dll',
+    # DIA SDK
+    r'msdia110\.dll',
+
+    # Visual Studio 2013 (VC12) runtime
+    # https://docs.microsoft.com/en-us/visualstudio/releases/2013/2013-redistribution-vs
+    #
+    # VC120.CRT
+    r'msvcp120\.dll',
+    r'msvcr120\.dll',
+    r'vccorlib120\.dll',
+    # VC120.CXXAMP
+    r'vcamp120\.dll',
+    # VC120.MFC
+    r'mfc120\.dll',
+    r'mfc120u\.dll',
+    r'mfcm120\.dll',
+    r'mfcm120u\.dll',
+    # VC120.MFCLOC
+    r'mfc120chs\.dll',
+    r'mfc120cht\.dll',
+    r'mfc120deu\.dll',
+    r'mfc120enu\.dll',
+    r'mfc120esn\.dll',
+    r'mfc120fra\.dll',
+    r'mfc120ita\.dll',
+    r'mfc120jpn\.dll',
+    r'mfc120kor\.dll',
+    r'mfc120rus\.dll',
+    # VC120.OPENMP
+    r'vcomp120\.dll',
+    # DIA SDK
+    r'msdia120\.dll',
+    # Cpp REST Windows SDK
+    r'casablanca120.winrt\.dll',
+    # Mobile Services Cpp Client
+    r'zumosdk120.winrt\.dll',
+    # Cpp REST SDK
+    r'casablanca120\.dll',
+
+    # Universal C Runtime Library (since Visual Studio 2015)
+    #
+    # NOTE: these should be put under a switch, as they need not to be bundled if deployment target is Windows 10
+    # and later, as "UCRT is now a system component in Windows 10 and later, managed by Windows Update".
+    # (https://docs.microsoft.com/en-us/cpp/windows/determining-which-dlls-to-redistribute?view=msvc-170)
+    # And as discovered in #6326, Windows prefers system-installed version over the bundled one, anyway
+    # (see https://docs.microsoft.com/en-us/cpp/windows/universal-crt-deployment?view=msvc-170#local-deployment).
     r'api-ms-win-core.*',
     r'api-ms-win-crt.*',
     r'ucrtbase\.dll',
-    r'vcruntime140\.dll',
 
-    # Additional DLLs from VC 2015/2017/2019 runtime. Allow these to be collected to avoid missing-DLL errors when the
-    # target machine does not have the VC redistributable installed.
+    # Visual Studio 2015/2017/2019/2022 (VC14) runtime
+    # https://docs.microsoft.com/en-us/visualstudio/releases/2022/redistribution
+    #
+    # VC141.CRT/VC142.CRT/VC143.CRT
+    r'concrt140\.dll',
     r'msvcp140\.dll',
     r'msvcp140_1\.dll',
     r'msvcp140_2\.dll',
+    r'msvcp140_atomic_wait\.dll',
+    r'msvcp140_codecvt_ids\.dll',
+    r'vccorlib140\.dll',
+    r'vcruntime140\.dll',
     r'vcruntime140_1\.dll',
+    # VC141.CXXAMP/VC142.CXXAMP/VC143.CXXAMP
+    r'vcamp140\.dll',
+    # VC141.OpenMP/VC142.OpenMP/VC143.OpenMP
     r'vcomp140\.dll',
-    r'concrt140\.dll',
+    # DIA SDK
+    r'msdia140\.dll',
 
     # Allow pythonNN.dll, pythoncomNN.dll, pywintypesNN.dll
     r'py(?:thon(?:com(?:loader)?)?|wintypes)\d+\.dll',
