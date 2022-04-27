@@ -22,7 +22,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: [3.7, 3.8, 3.9, '3.10']
+        python-version: [3.7, 3.8, 3.9, '3.10', '3.11-dev']
         os: ['windows-latest', 'ubuntu-latest', 'macos-11']
       fail-fast: false
     steps:
@@ -75,20 +75,11 @@ jobs:
           CC="gcc -std=gnu90" python waf all
           cd ..
 
-      - name: Set up extra environment variables (non-Windows)
-        if: ${{ !startsWith(matrix.os, 'windows') }}
-        run: |
-          # Run Qt-based tests with offscreen backend. This seems to break QtWebEngine tests on Windows, so
-          # apply it only here, in non-Windows path.
-          echo "QT_QPA_PLATFORM=offscreen" >> $GITHUB_ENV
-
-      - name: Set up environment
+      - name: Install PyInstaller
         run: |
           # Update pip.
           python -m pip install -U pip setuptools wheel
 
-          # Install dependencies for tests.
-          pip install --progress-bar=off -U -r tests/requirements-tools.txt -r tests/requirements-libraries.txt
           # Compile bootloader
           cd bootloader
           python waf all
@@ -99,6 +90,23 @@ jobs:
 
           # Make sure the help options print.
           python -m PyInstaller -h
+
+      - name: Install test dependencies (tools)
+        run: |
+          pip install --progress-bar=off -U -r tests/requirements-tools.txt
+
+      - name: Install test dependencies (libraries)
+        id: install_libraries
+        if: ${{ !endsWith(matrix.python-version, '-dev') }}
+        run: |
+          pip install --progress-bar=off -U -r tests/requirements-libraries.txt
+
+      - name: Set up extra environment variables (non-Windows)
+        if: ${{ !startsWith(matrix.os, 'windows') }}
+        run: |
+          # Run Qt-based tests with offscreen backend. This seems to break QtWebEngine tests on Windows, so
+          # apply it only here, in non-Windows path.
+          echo "QT_QPA_PLATFORM=offscreen" >> $GITHUB_ENV
 
       - name: Start display server
         if: startsWith(matrix.os, 'ubuntu')
@@ -120,7 +128,10 @@ jobs:
             -n 3 --maxfail 3 --durations 10 tests/unit tests/functional
             --force-flaky --no-flaky-report --reruns 3 --reruns-delay 10
 
+      # hooksample is installed as part of tests/requirements-libraries.txt, so run this step only if we
+      # installed all libraries.
       - name: Run hooksample tests
+        if: steps.install_libraries.outcome == 'success'
         run: |
           # The ``run_tests`` script is invoked with the ``-c`` option to
           # specify a ``pytest.ini``, rather than allowing pytest to find
