@@ -59,13 +59,14 @@ def bytecode_regex(pattern: bytes, flags=re.VERBOSE | re.DOTALL):
     return re.compile(pattern, flags=flags)
 
 
-def finditer(pattern: Pattern, string):
+def finditer(pattern: Pattern, string: bytes):
     """
     Call ``pattern.finditer(string)``, but remove any matches beginning on an odd byte (i.e., matches where
     match.start() is not a multiple of 2).
 
     This should be used to avoid false positive matches where a bytecode pair's argument is mistaken for an opcode.
     """
+    assert isinstance(string, bytes)
     string = _cleanup_bytecode_string(string)
     matches = pattern.finditer(string)
     while True:

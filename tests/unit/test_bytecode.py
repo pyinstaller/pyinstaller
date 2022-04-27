@@ -207,6 +207,6 @@ def test_finditer():
         # test below - it'll be the next character) which overlaps with this one so we must override regex's
         behaviour of ignoring overlapping matches to prevent these from getting lost.
     """
-    matches = list(finditer(re.compile(r"\d+"), "0123 4567 890 12 3 4"))
+    matches = list(finditer(re.compile(rb"\d+"), b"0123 4567 890 12 3 4"))
     aligned = [i.group() for i in matches]
-    assert aligned == ["0123", "567", "890", "12"]
+    assert aligned == [b"0123", b"567", b"890", b"12"]
