@@ -37,10 +37,10 @@ flake8
 # These are required by some of basic tests
 pywin32; sys_platform == 'win32'
 
-lxml
+lxml; python_version < '3.11'
 
 # crypto support (`--key` option)
-tinyaes ~= 1.0
+tinyaes ~= 1.0; python_version < '3.11'
 
 # Ability to retry a failed test
 flaky
