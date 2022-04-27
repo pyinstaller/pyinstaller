@@ -66,6 +66,7 @@ def finditer(pattern: Pattern, string):
 
     This should be used to avoid false positive matches where a bytecode pair's argument is mistaken for an opcode.
     """
+    string = _cleanup_bytecode_string(string)
     matches = pattern.finditer(string)
     while True:
         for match in matches:
@@ -84,8 +85,9 @@ def finditer(pattern: Pattern, string):
 
 
 if not compat.is_py311:
-    def _cleanup_code(code):
-        return code  # Nothing to do here
+
+    def _cleanup_bytecode_string(bytecode):
+        return bytecode  # Nothing to do here
 
     # language=PythonVerboseRegExp
     _call_function_bytecode = bytecode_regex(
@@ -115,15 +117,15 @@ else:
     # Starting with python 3.11, the bytecode is peppered with CACHE instructions (which dis module conveniently hides
     # unless show_caches=True is used). Dealing with these CACHE instructions in regex rules is going to render them
     # unreadable, so instead we pre-process the bytecode and filter the offending opcodes out.
-    def _cleanup_code(code):
+    def _cleanup_bytecode_string(bytecode):
         CACHE = dis.opmap["CACHE"]
 
         out = []
-        for idx in range(0, len(code), 2):
-            if code[idx] == CACHE:
+        for idx in range(0, len(bytecode), 2):
+            if bytecode[idx] == CACHE:
                 continue
-            out.append(code[idx])
-            out.append(code[idx+1])
+            out.append(bytecode[idx])
+            out.append(bytecode[idx + 1])
 
         return bytes(out)
 
@@ -224,7 +226,7 @@ def function_calls(code: CodeType) -> list:
     match: re.Match
     out = []
 
-    for match in finditer(_call_function_bytecode, _cleanup_code(code.co_code)):
+    for match in finditer(_call_function_bytecode, code.co_code):
         function_root, methods, args, function_call = match.groups()
 
         # For foo():
