@@ -21,6 +21,8 @@ import re
 from types import CodeType
 from typing import Pattern
 
+from PyInstaller import compat
+
 
 def _instruction_to_regex(x: str):
     """
@@ -81,30 +83,80 @@ def finditer(pattern: Pattern, string):
             break
 
 
-# language=PythonVerboseRegExp
-_call_function_bytecode = bytecode_regex(
-    rb"""
-    # Matches `global_function('some', 'constant', 'arguments')`.
+if not compat.is_py311:
+    def _cleanup_code(code):
+        return code  # Nothing to do here
 
-    # Load the global function. In code with >256 of names, this may require extended name references.
-    ((?:`EXTENDED_ARG`.)*
-     (?:`LOAD_NAME`|`LOAD_GLOBAL`|`LOAD_FAST`).)
+    # language=PythonVerboseRegExp
+    _call_function_bytecode = bytecode_regex(
+        rb"""
+        # Matches `global_function('some', 'constant', 'arguments')`.
 
-    # For foo.bar.whizz(), the above is the 'foo', below is the 'bar.whizz'.
-    ((?:(?:`EXTENDED_ARG`.)*
-     (?:`LOAD_METHOD`|`LOAD_ATTR`).)*)
+        # Load the global function. In code with >256 of names, this may require extended name references.
+        ((?:`EXTENDED_ARG`.)*
+         (?:`LOAD_NAME`|`LOAD_GLOBAL`|`LOAD_FAST`).)
 
-    # Load however many arguments it takes. These (for now) must all be constants.
-    # Again, code with >256 constants may need extended enumeration.
-    ((?:(?:`EXTENDED_ARG`.)*
-     `LOAD_CONST`.)*)
+        # For foo.bar.whizz(), the above is the 'foo', below is the 'bar.whizz'.
+        ((?:(?:`EXTENDED_ARG`.)*
+         (?:`LOAD_METHOD`|`LOAD_ATTR`).)*)
 
-    # Call the function. The parameter is the argument count (which may also be >256) if CALL_FUNCTION or CALL_METHOD
-    # are used. For CALL_FUNCTION_EX, the parameter are flags.
-    ((?:`EXTENDED_ARG`.)*
-     (?:`CALL_FUNCTION`|`CALL_METHOD`|`CALL_FUNCTION_EX`).)
-"""
-)
+        # Load however many arguments it takes. These (for now) must all be constants.
+        # Again, code with >256 constants may need extended enumeration.
+        ((?:(?:`EXTENDED_ARG`.)*
+         `LOAD_CONST`.)*)
+
+        # Call the function. The parameter is the argument count (which may also be >256) if CALL_FUNCTION or
+        # CALL_METHOD are used. For CALL_FUNCTION_EX, the parameter are flags.
+        ((?:`EXTENDED_ARG`.)*
+         (?:`CALL_FUNCTION`|`CALL_METHOD`|`CALL_FUNCTION_EX`).)
+    """
+    )
+else:
+    # Starting with python 3.11, the bytecode is peppered with CACHE instructions (which dis module conveniently hides
+    # unless show_caches=True is used). Dealing with these CACHE instructions in regex rules is going to render them
+    # unreadable, so instead we pre-process the bytecode and filter the offending opcodes out.
+    def _cleanup_code(code):
+        CACHE = dis.opmap["CACHE"]
+
+        out = []
+        for idx in range(0, len(code), 2):
+            if code[idx] == CACHE:
+                continue
+            out.append(code[idx])
+            out.append(code[idx+1])
+
+        return bytes(out)
+
+    # Python 3.11 removed CALL_FUNCTION and CALL_METHOD, and replaced them with PRECALL + CALL instructions.
+    # The CALL_FUNCTION_EX is still present.
+
+    # language=PythonVerboseRegExp
+    _call_function_bytecode = bytecode_regex(
+        rb"""
+        # Matches `global_function('some', 'constant', 'arguments')`.
+
+        # Load the global function. In code with >256 of names, this may require extended name references.
+        ((?:`EXTENDED_ARG`.)*
+         (?:`LOAD_NAME`|`LOAD_GLOBAL`|`LOAD_FAST`).)
+
+        # For foo.bar.whizz(), the above is the 'foo', below is the 'bar.whizz'.
+        ((?:(?:`EXTENDED_ARG`.)*
+         (?:`LOAD_METHOD`|`LOAD_ATTR`).)*)
+
+        # Load however many arguments it takes. These (for now) must all be constants.
+        # Again, code with >256 constants may need extended enumeration.
+        ((?:(?:`EXTENDED_ARG`.)*
+         `LOAD_CONST`.)*)
+
+        # Call the function. Python 3.11 removed CALL_FUNCTION and CALL_METHOD in favor of PRECALL + CALL; both
+        # have the same argument (argc = argument count), so for our purposes, it suffices to match just up to the
+        # PRECALL instruction (which also saves us from having to worry about CACHE instructions between PRECALL and
+        # CALL). The argument count may probably be > 256 for PRECALL/CALL. For CALL_FUNCTION_EX, the parameter
+        # are flags.
+        ((?:`EXTENDED_ARG`.)*
+         (?:`CALL_FUNCTION_EX`|`PRECALL`).)
+    """
+    )
 
 # language=PythonVerboseRegExp
 _extended_arg_bytecode = bytecode_regex(
@@ -150,6 +202,9 @@ def load(raw: bytes, code: CodeType) -> str:
         # Then this is a literal.
         return code.co_consts[index]
     # Otherwise, it is a global name.
+    if raw[-2] == dis.opmap["LOAD_GLOBAL"] and compat.is_py311:
+        # In python 3.11, namei>>1 is pushed on stack...
+        return code.co_names[index >> 1]
     return code.co_names[index]
 
 
@@ -169,7 +224,7 @@ def function_calls(code: CodeType) -> list:
     match: re.Match
     out = []
 
-    for match in finditer(_call_function_bytecode, code.co_code):
+    for match in finditer(_call_function_bytecode, _cleanup_code(code.co_code)):
         function_root, methods, args, function_call = match.groups()
 
         # For foo():
