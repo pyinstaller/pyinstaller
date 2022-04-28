@@ -221,7 +221,7 @@ def _test_apple_events_handling(appname, tmpdir, pyi_builder_spec, monkeypatch, 
     data = json.loads(log_lines[-1].split(" ", 1)[-1])
     activation_count = data['activation_count']
 
-    # Event: intial event
+    # Event: initial event
     #
     # In onefile builds, we always receive oapp event, regardless of how application was opened (e.g., via odoc or
     # GURL), because the actual opening event is received by the parent process, whereas child is independent and

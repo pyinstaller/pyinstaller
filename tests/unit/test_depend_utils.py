@@ -51,7 +51,7 @@ def test_ctypes_CDLL_call(monkeypatch, classname, extended_args):
 @pytest.mark.parametrize('classname', CTYPES_CLASSNAMES)
 @pytest.mark.parametrize('extended_args', [False, True])
 def test_ctypes_LibraryLoader(monkeypatch, classname, extended_args):
-    # This type of usage is only valif on Windows and the lib-name will always get `.dll` appended.
+    # This type of usage is only valid on Windows and the lib-name will always get `.dll` appended.
     code = "%s.somelib" % classname.lower()
     res = __scan_code_for_ctypes(code, monkeypatch, extended_args)
     assert res == set(['somelib.dll'])

@@ -126,7 +126,7 @@ pyi_path_basename(char *result, const char *path)
  *
  * Returns NULL on failure.
  */
-/* FIXME: Need to test for absolut path2 -- or mark this function as */
+/* FIXME: Need to test for absolute path2 -- or mark this function as */
 /*        only for an relative path2 */
 char *
 pyi_path_join(char *result, const char *path1, const char *path2)

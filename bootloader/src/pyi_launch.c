@@ -210,7 +210,7 @@ _extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
 
     pyi_path_dirname(dirname, path);
 
-    /* We need to identify three situations: 1) dependecies are in a onedir archive
+    /* We need to identify three situations: 1) dependencies are in a onedir archive
      * next to the current onefile archive, 2) dependencies are in a onedir/onefile
      * archive next to the current onedir archive, 3) dependencies are in a onefile
      * archive next to the current onefile archive.

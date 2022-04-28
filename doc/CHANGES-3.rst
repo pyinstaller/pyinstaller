@@ -467,7 +467,7 @@ Bootloader
   allows to control behavior using ``Info.plist`` options - which can by set in
   PyInstaller itself or in the `.spec`-file. (:issue:`1917`, :issue:`2075`,
   :issue:`3566`)
-* (Windows) Show respectivly print utf-8 debug messages ungarbled.
+* (Windows) Show respectively print utf-8 debug messages ungarbled.
   (:issue:`3477`)
 * Fix ``setenv()`` call when ``HAVE_UNSETENV`` is not defined. (:issue:`3722`,
   :issue:`3723`)
@@ -689,7 +689,7 @@ Documentation
 
 * Remove badges from the Readme (#2853).
 
-* Update outdated sections in man-pages and otehr enhancements to the
+* Update outdated sections in man-pages and other enhancements to the
   man-page.
 
 
@@ -1055,7 +1055,7 @@ Fixed the following issues:
 - Even the "main" script is now byte-compiled (#1847, #1856)
 - The manual is on readthedocs.io now (#1578)
 - On installation try to compile the bootloader if there is none for
-  the current plattform (#1377)
+  the current platform (#1377)
 
 - (Unix) Use ``objcopy`` to create a valid ELF file (#1812, #1831)
 - (Linux): Compile with ``_FORTIFY_SOURCE`` (#1820)
@@ -1072,7 +1072,7 @@ Fixed the following issues:
 - Fix absolute path for lib used via ctypes (#1934)
 - (OSX) Fix binary cache on NFS (#1573, #1849)
 - (Windows) Fix message in grab_version (#1923)
-- (Windows) Fix wrong icon paramter in Windows example (#1764)
+- (Windows) Fix wrong icon parameter in Windows example (#1764)
 - (Windows) Fix win32 unicode handling (#1878)
 - (Windows) Fix unnecessary rebuilds caused by rebuilding winmanifest
   (#1933)
@@ -1087,7 +1087,7 @@ Fixed the following issues:
 - Update waf to version 1.8.20 (#1868)
 - Fix excludedimports, more predictable order how hooks are applied
   #1651
-- Internal impovements and code clean-up (#1754, #1760, #1794, #1858,
+- Internal improvements and code clean-up (#1754, #1760, #1794, #1858,
   #1862, #1887, #1907, #1913)
 - Clean-ups fixes and improvements for the test suite
 
@@ -1246,7 +1246,7 @@ Fixed the following issues:
 
 - Apps built with Windows 10 and Python 3.5 may not run on Windows versions
   earlier than 10 (#1566).
-- The multipackage (MERGE) feature (#1527) is currenty broken.
+- The multipackage (MERGE) feature (#1527) is currently broken.
 - (OSX) Support for OpenDocument events (#1309) is broken.
 
 .. Emacs config:

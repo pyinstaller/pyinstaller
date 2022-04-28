@@ -12,7 +12,7 @@
  */
 
 /*
- * Global shared fuctions used in many bootloader files.
+ * Global shared functions used in many bootloader files.
  */
 
 /*

@@ -44,7 +44,7 @@ few simple rules:
   - Fix crash when trying to add resources to Windows executable using
     ``--resource`` option.
 
-  If the change is relavant only fo a specific platform, use a prefix,
+  If the change is relevant only for a specific platform, use a prefix,
   like here:
 
   - (GNU/Linux) When building with ``--debug`` turn of FORTIFY_SOURCE to ease

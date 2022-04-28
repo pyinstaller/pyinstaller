@@ -318,7 +318,7 @@ def include_library(libname):
     """
     if exclude_list:
         if exclude_list.search(libname) and not include_list.search(libname):
-            # Library is excluded and is not overriden by include list. It should be excluded.
+            # Library is excluded and is not overridden by include list. It should be excluded.
             return False
 
     # If we are running under Wine and the library is a Wine built-in DLL, ensure that it is always excluded. Typically,
@@ -387,7 +387,7 @@ def mac_set_relative_dylib_deps(libname, distname):
     Relative paths allow to avoid using environment variable DYLD_LIBRARY_PATH. There are known some issues with
     DYLD_LIBRARY_PATH. Relative paths is more flexible mechanism.
 
-    Current location of dependend libraries is derived from the location of the library path (paths start with
+    Current location of dependent libraries is derived from the location of the library path (paths start with
     '@loader_path').
 
     'distname'  path of the library relative to dist directory of frozen executable. We need this to determine the level

@@ -38,7 +38,7 @@
 #     └── __init__.py
 #
 # When run as unfrozen script, this script can be used to check the behavior of "native" resource readers (or
-# compatbility adapters for python-provided loaders) that are provided by importlib.resources (or its
+# compatibility adapters for python-provided loaders) that are provided by importlib.resources (or its
 # importlib_resources back-port for python 3.8 and earlier).
 #
 # When run as a frozen application, this script validates the behavior of the resource reader implemented by
@@ -131,7 +131,7 @@ _contents_test('pyi_pkgres_testpkg.subpkg3', expected)
 ########################################################################
 # In general, files (source or data) count as resources, directories do not.
 
-# Querying non-existant resource: return False instead of raising FileNotFoundError
+# Querying non-existent resource: return False instead of raising FileNotFoundError
 assert not importlib_resources_is_resource('pyi_pkgres_testpkg', 'subpkg_nonexistant')
 assert not importlib_resources_is_resource('pyi_pkgres_testpkg.subpkg1', 'nonexistant.txt')
 
@@ -191,7 +191,7 @@ if not is_frozen:
 expected_data = b"""{\n  "_comment": "Data file in supbkg3."\n}\n"""
 _path_test('pyi_pkgres_testpkg.subpkg3', '_datafile.json', expected_data)
 
-# Try with a non-existant file; should raise FileNotFoundError.
+# Try with a non-existent file; should raise FileNotFoundError.
 # NOTE: importlib.resources in python 3.9 seems to do so, but importlib_resources 5.2.2 does not...
 try:
     _path_test('pyi_pkgres_testpkg.subpkg1', 'nonexistant.txt', None)
@@ -226,7 +226,7 @@ if not is_frozen:
     data = importlib_resources_read_binary('pyi_pkgres_testpkg', '__init__.py')
     assert data.splitlines() == expected_data.splitlines()
 
-# Try with non-existant file; should raise FileNotFoundError
+# Try with non-existent file; should raise FileNotFoundError
 try:
     importlib_resources_read_binary('pyi_pkgres_testpkg.subpkg1', 'nonexistant.txt')
 except FileNotFoundError:
@@ -260,7 +260,7 @@ if not is_frozen:
     data = importlib_resources_read_text('pyi_pkgres_testpkg', '__init__.py', encoding='utf8')
     assert data.splitlines() == expected_data.splitlines()
 
-# Try with non-existant file; should raise FileNotFoundError
+# Try with non-existent file; should raise FileNotFoundError
 try:
     importlib_resources_read_text('pyi_pkgres_testpkg.subpkg1', 'nonexistant.txt', encoding='utf8')
 except FileNotFoundError:

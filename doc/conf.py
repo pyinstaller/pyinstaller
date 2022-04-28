@@ -343,7 +343,7 @@ man_pages = [
 # If true, show URL addresses after external links.
 # man_show_urls = False
 
-# -- config prior to swiching to sphinx
+# -- config prior to switching to sphinx
 # source-link: off
 # generator: off
 # datestamp:

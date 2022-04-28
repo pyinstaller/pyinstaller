@@ -350,7 +350,7 @@ Contributions to PyInstaller 3.2
 
 - And Cycle - unicode fixes.
 - Chris Hager - QtQuick hook.
-- David Schoorisse - wrong icon paramter in Windows example.
+- David Schoorisse - wrong icon parameter in Windows example.
 - Florian Bruhin - typo hunting.
 - Garth Bushell - Support for objcopy.
 - Insoleet - lib2to3 hook
@@ -457,7 +457,7 @@ Contributions to PyInstaller 3.0
 - Noah Treuhaft - OpenCV import hook.
 - Michael Hipp - reportlab import hook.
 - Michael Sverdlik - certifi, httplib2, requests, jsonschema import hooks.
-- Santiago Reig - appy import hook.
+- Santiago Reig - apply import hook.
 
 
 Contributions to PyInstaller 2.1 and older

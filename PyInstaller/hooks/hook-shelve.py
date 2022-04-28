@@ -9,6 +9,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# Tested on Windows 7 x64 With Pyhton 3.5
+# Tested on Windows 7 x64 With Python 3.5
 
 hiddenimports = ["dbm.ndbm", "dbm.dumb", "dbm.gnu"]

@@ -15,5 +15,5 @@ from PyInstaller.utils.hooks import collect_submodules
 # necessary for a simple django project; ignore the IPython module.
 excludedimports = ['IPython', 'matplotlib', 'tkinter']
 
-# Django requres management modules for the script 'manage.py'.
+# Django requires management modules for the script 'manage.py'.
 hiddenimports = collect_submodules('django.core.management.commands')

@@ -38,7 +38,7 @@ def test_absolute_python_path(pyi_builder):
 
 @pytest.mark.linux
 @skipif(not os.path.exists('/proc/self/status'), reason='/proc/self/status does not exist')
-@pytest.mark.parametrize("symlink_name", ["symlink", "very_long_name_in_symlink", "sub/dir/progam"])
+@pytest.mark.parametrize("symlink_name", ["symlink", "very_long_name_in_symlink", "sub/dir/program"])
 def test_symlink_basename_is_kept(pyi_builder_spec, symlink_name, tmpdir, SPEC_DIR, SCRIPT_DIR):
     def patch(spec_name, symlink_name):
         content = SPEC_DIR.join(spec_name).read_text(encoding="utf-8")
@@ -211,7 +211,7 @@ def test_module_attributes(tmpdir, pyi_builder):
     with open(os.path.join(tmpdir.strpath, 'python_exe.build'), 'w') as f:
         f.write(sys.executable + "\n")
         f.write('debug=%s' % __debug__ + '\n')
-        # On Windows we need to preserve systme PATH for subprocesses in tests.
+        # On Windows we need to preserve system PATH for subprocesses in tests.
         f.write(os.environ.get('PATH') + '\n')
     pyi_builder.test_script('pyi_module_attributes.py')
 

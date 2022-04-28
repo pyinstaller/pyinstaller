@@ -153,9 +153,9 @@ def checkCache(
     """
     from PyInstaller.config import CONF
 
-    # On Mac OS, a cache is required anyway to keep the libaries with relative install names.
-    # Caching on Mac OS does not work since we need to modify binary headers to use relative paths to dll depencies and
-    # starting with '@loader_path'.
+    # On Mac OS, a cache is required anyway to keep the libraries with relative install names.
+    # Caching on Mac OS does not work since we need to modify binary headers to use relative paths to dll dependencies
+    # and starting with '@loader_path'.
     if not strip and not upx and not is_darwin and not is_win:
         return fnm
 
@@ -172,7 +172,7 @@ def checkCache(
     # Disable UPX on non-Windows. Using UPX (3.96) on modern Linux shared libraries (for example, the python3.x.so
     # shared library) seems to result in segmentation fault when they are dlopen'd. This happens in recent versions
     # of Fedora and Ubuntu linux, as well as in Alpine containers. On Mac OS, UPX (3.96) fails with
-    # UnknownExecutableFormatException on most .dylibs (and interferes with code signature on other occassions). And
+    # UnknownExecutableFormatException on most .dylibs (and interferes with code signature on other occasions). And
     # even when it would succeed, compressed libraries cannot be (re)signed due to failed strict validation.
     upx = upx and (is_win or is_cygwin)
 
@@ -499,7 +499,7 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
         * The first element is either:
           * A glob matching only the absolute or relative paths of source non-Python data files.
           * The absolute or relative path of a source directory containing only source non-Python data files.
-        * The second element ist he relative path of the target directory into which these source files will be
+        * The second element is the relative path of the target directory into which these source files will be
           recursively copied.
 
         If the optional `workingdir` parameter is passed, source paths may be either absolute or relative; else, source

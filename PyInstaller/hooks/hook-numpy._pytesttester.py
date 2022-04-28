@@ -10,7 +10,7 @@
 # -----------------------------------------------------------------------------
 
 # numpy._pytesttester is unconditionally imported by numpy.core, thus we can not exclude _pytesttester (which would be
-# preferred). Anway, we can avoid importing pytest, which pulls in anotehr 150+ modules. See
+# preferred). Anyway, we can avoid importing pytest, which pulls in anotehr 150+ modules. See
 # https://github.com/numpy/numpy/issues/17183
 
 excludedimports = ["pytest"]

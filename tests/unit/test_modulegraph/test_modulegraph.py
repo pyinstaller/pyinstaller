@@ -508,7 +508,7 @@ class TestNode (unittest.TestCase):
         self.assertNoMethods(modulegraph.Package)
         self.assertNoMethods(modulegraph.Extension)
 
-        # AliasNode is basicly a clone of an existing node
+        # AliasNode is basically a clone of an existing node
         self.assertHasExactMethods(modulegraph.Script, '__init__', 'infoTuple')
         n1 = modulegraph.Node('n1')
         n1.packagepath = ['a', 'b']
@@ -1030,7 +1030,7 @@ class TestModuleGraph (unittest.TestCase):
         list(graph.itergraphreport())
 
         # XXX: platpackages isn't implemented, and is undocumented hence
-        # it is unclear what this is inteded to be...
+        # it is unclear what this is intended to be...
         #list(graph.itergraphreport(flatpackages=...))
 
 

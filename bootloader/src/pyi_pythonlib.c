@@ -454,7 +454,7 @@ pyi_pylib_start_python(ARCHIVE_STATUS *status)
      * That is, the APIs use the string pointer as given and will neither copy
      * its contents nor free its memory.
      *
-     * NOTE: Statics are zero-initialized. */
+     * NOTE: Static variables are zero-initialized. */
     #define MAX_PYPATH_SIZE (3 * PATH_MAX + 32)
     static char pypath[MAX_PYPATH_SIZE];
 

@@ -85,7 +85,7 @@ OPTION_REGEX = re.compile(
 
     # An option name prefixed with at least 1 space.
     ^(\ +)(.*?)
-    # Optionally followed by at least 2 spaces and the start of the desciption.
+    # Optionally followed by at least 2 spaces and the start of the description.
     (?:\ {2,}(.*))?\n
 
     # More lines of description.

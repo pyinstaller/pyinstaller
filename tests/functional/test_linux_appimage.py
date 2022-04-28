@@ -39,7 +39,7 @@ def test_appimage_loading(tmp_path, pyi_builder_spec, arch):
     # Freeze the app
     pyi_builder_spec.test_source('print("OK")', app_name=app_name, pyi_args=["--onedir"])
 
-    # Prepare the dist folder for AppImage compliancy
+    # Prepare the dist folder for AppImage compliance
     tools_dir = os.path.join(os.path.dirname(__file__), 'data', 'appimage')
     script = os.path.join(tools_dir, 'create.sh')
     subprocess.check_call(['bash', script, tools_dir, tmp_path, app_name])

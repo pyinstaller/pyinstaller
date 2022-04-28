@@ -192,7 +192,7 @@ def test_pipe_leakage():
 
     with child:
         assert open_fds() == old + EXPECTED_INCREASE_IN_FDS
-    # Exiting must close them all imediately. No implicit closure by garbage collect.
+    # Exiting must close them all immediately. No implicit closure by garbage collect.
     assert open_fds() == old
 
     # Do it again just to be sure that the context manager properly restarts.

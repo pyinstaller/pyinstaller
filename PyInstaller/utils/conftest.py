@@ -254,7 +254,7 @@ class AppBuilder:
         if not self._test_building(args=pyi_args):
             pytest.fail('Building of %s failed.' % script)
 
-        marker('Build finshed, now running executable.')
+        marker('Build finished, now running executable.')
         self._test_executables(app_name, args=app_args, runtime=runtime, run_from_path=run_from_path, **kwargs)
         marker('Running executable finished.')
 
@@ -401,7 +401,7 @@ class AppBuilder:
 
         :param args: additional CLI options for PyInstaller.
 
-        Return True if build succeded False otherwise.
+        Return True if build succeeded False otherwise.
         """
         if self._is_spec:
             default_args = [
@@ -428,7 +428,7 @@ class AppBuilder:
             # if self._mode is None then just the spec file was supplied.
 
         pyi_args = [self.script] + default_args + args
-        # TODO: fix return code in running PyInstaller programatically.
+        # TODO: fix return code in running PyInstaller programmatically.
         PYI_CONFIG = configure.get_config(upx_dir=None)
         # Override CACHEDIR for PyInstaller and put it into self.tmpdir
         PYI_CONFIG['cachedir'] = str(self._tmpdir)
@@ -571,7 +571,7 @@ def pyi_windowed_builder(pyi_builder: AppBuilder):
     """A pyi_builder equivalent for testing --windowed applications."""
 
     # psutil.Popen() somehow bypasses an application's windowed/console mode so that any application built in
-    # --windowed mode but invoked with psutil still recieves valid std{in,out,err} handles and behaves exactly like
+    # --windowed mode but invoked with psutil still receives valid std{in,out,err} handles and behaves exactly like
     # a console application. In short, testing windowed mode with psutil is a null test. We must instead use subprocess.
 
     def _run_executable_(args, exe_path, prog_env, prog_cwd, runtime):
