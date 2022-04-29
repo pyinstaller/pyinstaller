@@ -28,12 +28,6 @@ def _instruction_to_regex(x: str):
     """
     Get a regex-escaped opcode byte from its human readable name.
     """
-    if x not in dis.opname:  # pragma: no cover
-        # These opcodes are available only in Python >=3.7. For our purposes, these aliases will do.
-        if x == "LOAD_METHOD":
-            x = "LOAD_ATTR"
-        elif x == "CALL_METHOD":
-            x = "CALL_FUNCTION"
     return re.escape(bytes([dis.opmap[x]]))
 
 
@@ -85,36 +79,34 @@ def finditer(pattern: Pattern, string: bytes):
             break
 
 
-if not compat.is_py311:
+# Opcodes involved in function calls with constant arguments. The differences between python versions are handled by
+# variables below, which are then used to construct the _call_function_bytecode regex.
+if not compat.is_py37:
+    _OPCODES_FUNCTION_GLOBAL = rb"`LOAD_NAME`|`LOAD_GLOBAL`|`LOAD_FAST`"
+    _OPCODES_FUNCTION_LOAD = rb"`LOAD_ATTR`"
+    _OPCODES_FUNCTION_ARGS = rb"`LOAD_CONST`"
+    _OPCODES_FUNCTION_CALL = rb"`CALL_FUNCTION`|`CALL_FUNCTION_EX`"
 
     def _cleanup_bytecode_string(bytecode):
         return bytecode  # Nothing to do here
+elif not compat.is_py311:
+    # Python 3.7 introduced two new function-related opcodes, LOAD_METHOD and CALL_METHOD
+    _OPCODES_FUNCTION_GLOBAL = rb"`LOAD_NAME`|`LOAD_GLOBAL`|`LOAD_FAST`"
+    _OPCODES_FUNCTION_LOAD = rb"`LOAD_ATTR`|`LOAD_METHOD`"
+    _OPCODES_FUNCTION_ARGS = rb"`LOAD_CONST`"
+    _OPCODES_FUNCTION_CALL = rb"`CALL_FUNCTION`|`CALL_METHOD`|`CALL_FUNCTION_EX`"
 
-    # language=PythonVerboseRegExp
-    _call_function_bytecode = bytecode_regex(
-        rb"""
-        # Matches `global_function('some', 'constant', 'arguments')`.
-
-        # Load the global function. In code with >256 of names, this may require extended name references.
-        ((?:`EXTENDED_ARG`.)*
-         (?:`LOAD_NAME`|`LOAD_GLOBAL`|`LOAD_FAST`).)
-
-        # For foo.bar.whizz(), the above is the 'foo', below is the 'bar.whizz'.
-        ((?:(?:`EXTENDED_ARG`.)*
-         (?:`LOAD_METHOD`|`LOAD_ATTR`).)*)
-
-        # Load however many arguments it takes. These (for now) must all be constants.
-        # Again, code with >256 constants may need extended enumeration.
-        ((?:(?:`EXTENDED_ARG`.)*
-         `LOAD_CONST`.)*)
-
-        # Call the function. The parameter is the argument count (which may also be >256) if CALL_FUNCTION or
-        # CALL_METHOD are used. For CALL_FUNCTION_EX, the parameter are flags.
-        ((?:`EXTENDED_ARG`.)*
-         (?:`CALL_FUNCTION`|`CALL_METHOD`|`CALL_FUNCTION_EX`).)
-    """
-    )
+    def _cleanup_bytecode_string(bytecode):
+        return bytecode  # Nothing to do here
 else:
+    # Python 3.11 removed CALL_FUNCTION and CALL_METHOD, and replaced them with PRECALL + CALL instruction sequence.
+    # As both PRECALL and CALL have the same parameter (the argument count), we need to match only up to the PRECALL.
+    # The CALL_FUNCTION_EX is still present.
+    _OPCODES_FUNCTION_GLOBAL = rb"`LOAD_NAME`|`LOAD_GLOBAL`|`LOAD_FAST`"
+    _OPCODES_FUNCTION_LOAD = rb"`LOAD_ATTR`|`LOAD_METHOD`"
+    _OPCODES_FUNCTION_ARGS = rb"`LOAD_CONST`"
+    _OPCODES_FUNCTION_CALL = rb"`PRECALL`|`CALL_FUNCTION_EX`"
+
     # Starting with python 3.11, the bytecode is peppered with CACHE instructions (which dis module conveniently hides
     # unless show_caches=True is used). Dealing with these CACHE instructions in regex rules is going to render them
     # unreadable, so instead we pre-process the bytecode and filter the offending opcodes out.
@@ -123,36 +115,31 @@ else:
     def _cleanup_bytecode_string(bytecode):
         return _cache_instruction_filter.sub(rb"\2", bytecode)
 
-    # Python 3.11 removed CALL_FUNCTION and CALL_METHOD, and replaced them with PRECALL + CALL instructions.
-    # The CALL_FUNCTION_EX is still present.
 
-    # language=PythonVerboseRegExp
-    _call_function_bytecode = bytecode_regex(
-        rb"""
-        # Matches `global_function('some', 'constant', 'arguments')`.
+# language=PythonVerboseRegExp
+_call_function_bytecode = bytecode_regex(
+    rb"""
+    # Matches `global_function('some', 'constant', 'arguments')`.
 
-        # Load the global function. In code with >256 of names, this may require extended name references.
-        ((?:`EXTENDED_ARG`.)*
-         (?:`LOAD_NAME`|`LOAD_GLOBAL`|`LOAD_FAST`).)
+    # Load the global function. In code with >256 of names, this may require extended name references.
+    ((?:`EXTENDED_ARG`.)*
+     (?:""" + _OPCODES_FUNCTION_GLOBAL + rb""").)
 
-        # For foo.bar.whizz(), the above is the 'foo', below is the 'bar.whizz'.
-        ((?:(?:`EXTENDED_ARG`.)*
-         (?:`LOAD_METHOD`|`LOAD_ATTR`).)*)
+    # For foo.bar.whizz(), the above is the 'foo', below is the 'bar.whizz'.
+    ((?:(?:`EXTENDED_ARG`.)*
+     (?:""" + _OPCODES_FUNCTION_LOAD + rb""").)*)
 
-        # Load however many arguments it takes. These (for now) must all be constants.
-        # Again, code with >256 constants may need extended enumeration.
-        ((?:(?:`EXTENDED_ARG`.)*
-         `LOAD_CONST`.)*)
+    # Load however many arguments it takes. These (for now) must all be constants.
+    # Again, code with >256 constants may need extended enumeration.
+    ((?:(?:`EXTENDED_ARG`.)*
+     """ + _OPCODES_FUNCTION_ARGS + rb""".)*)
 
-        # Call the function. Python 3.11 removed CALL_FUNCTION and CALL_METHOD in favor of PRECALL + CALL; both
-        # have the same argument (argc = argument count), so for our purposes, it suffices to match just up to the
-        # PRECALL instruction (which also saves us from having to worry about CACHE instructions between PRECALL and
-        # CALL). The argument count may probably be > 256 for PRECALL/CALL. For CALL_FUNCTION_EX, the parameter
-        # are flags.
-        ((?:`EXTENDED_ARG`.)*
-         (?:`CALL_FUNCTION_EX`|`PRECALL`).)
-    """
-    )
+    # Call the function. If opcode is CALL_FUNCTION_EX, the parameter are flags. For other opcodes, the parameter
+    # is the argument count (which may be > 256).
+    ((?:`EXTENDED_ARG`.)*
+    (?:""" + _OPCODES_FUNCTION_CALL + rb""").)
+"""
+)
 
 # language=PythonVerboseRegExp
 _extended_arg_bytecode = bytecode_regex(
