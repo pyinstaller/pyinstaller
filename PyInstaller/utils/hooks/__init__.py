@@ -686,6 +686,11 @@ def collect_dynamic_libs(package, destdir=None):
     if not isinstance(package, compat.string_types):
         raise TypeError('package must be a str')
 
+    # Skip a module which is not a package.
+    if not is_package(package):
+        logger.warning("collect_dynamic_libs - skipping library collection for module '%s' as it is not a package.", package)
+        return []
+
     pkg_base, pkg_dir = get_package_paths(package)
     # Walk through all file in the given package, looking for dynamic libraries.
     dylibs = []
@@ -740,6 +745,11 @@ def collect_data_files(package, include_py_files=False, subdir=None, excludes=No
     # Accept only strings as packages.
     if not isinstance(package, compat.string_types):
         raise TypeError('package must be a str')
+
+    # Skip a module which is not a package.
+    if not is_package(package):
+        logger.warning("collect_data_files - skipping data collection for module '%s' as it is not a package.", package)
+        return []
 
     # Compute the root path for the provided patckage.
     pkg_base, pkg_dir = get_package_paths(package)
