@@ -1,1 +1,1 @@
-Prevent collection of an entire Python site for single-file modules
+Prevent collection of an entire Python site when using `collect_data_files` or `collect_dynamic_libs` for single-file modules
