@@ -1,0 +1,1 @@
+Prevent collection of an entire Python site for single-file modules
