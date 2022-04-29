@@ -106,8 +106,8 @@ def _autodetect_used_backends(hook_api):
     # Determine the default matplotlib backend.
     #
     # Ideally, this would be done by calling ``matplotlib.get_backend()``. However, that function tries to switch to the
-    # default backend (calling ``matplotlib.pyplot.switch_backend()``), which seems to occassionaly fail on our linux CI
-    # with an error and, on other occassions, returns the headless Agg backend instead of the GUI one (even with display
+    # default backend (calling ``matplotlib.pyplot.switch_backend()``), which seems to occasionally fail on our linux CI
+    # with an error and, on other occasions, returns the headless Agg backend instead of the GUI one (even with display
     # server running). Furthermore, using ``matplotlib.get_backend()`` returns headless 'Agg' when display server is
     # unavailable, which is not ideal for automated builds.
     #

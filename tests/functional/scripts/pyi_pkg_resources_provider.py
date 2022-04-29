@@ -108,7 +108,7 @@ assert resource_exists(pkgname, 'subpkg1/data/entry1.txt')
 # Deeply nested data file
 assert resource_exists(pkgname, 'subpkg1/data/extra/extra_entry1.json')
 
-# A non-existant file/directory - should return False
+# A non-existent file/directory - should return False
 assert not resource_exists(pkgname, 'subpkg1/non-existant')
 
 # A source script file in package
@@ -170,7 +170,7 @@ assert (is_default and ret) or \
 # Package's directory, with empty path
 assert resource_isdir(pkgname, '')
 
-# Subpackage's directory (relative to main pacakge):
+# Subpackage's directory (relative to main package):
 #  * both DefaultProvider and ZipProvider return True
 assert resource_isdir(pkgname, 'subpkg1')
 assert resource_isdir(pkgname, 'subpkg2')
@@ -203,7 +203,7 @@ assert not resource_isdir(pkgname, 'subpkg1/data/entry1.txt')
 # Deeply nested data file - should return False
 assert not resource_isdir(pkgname, 'subpkg1/data/extra/extra_entry1.json')
 
-# A non-existant file-directory - should return False
+# A non-existent file-directory - should return False
 assert not resource_isdir(pkgname, 'subpkg1/non-existant')
 
 # A source script file in package - should return False
@@ -310,7 +310,7 @@ except Exception:
 else:
     assert (is_zip or is_frozen) and content == []
 
-# Attempt to list an non-existant directory in main package.
+# Attempt to list an non-existent directory in main package.
 #  * DefaultProvider raises FileNotFoundError
 #  * ZipProvider returns empty list
 #  > PyiFrozenProvider returns empty list
@@ -323,7 +323,7 @@ except Exception:
 else:
     assert (is_zip or is_frozen) and content == []
 
-# Attempt to list an non-existant directory in subpackage
+# Attempt to list an non-existent directory in subpackage
 #  * DefaultProvider raises FileNotFoundError
 #  * ZipProvider returns empty list
 #  > PyiFrozenProvider returns empty list

@@ -50,7 +50,7 @@
  * a GUI, since it is easy to embed.
  *
  * For this implementation of a tcl/tk wrapper this module loads, if splash screen
- * resouces are appended to the application, the shared libraries of tcl/tk and
+ * resources are appended to the application, the shared libraries of tcl/tk and
  * initializes a minimal tcl/tk environment to run the splash screen from.
  *
  * Only threaded tcl is in this implementation supported, meaning tcl had to be compiled
@@ -80,7 +80,7 @@ typedef struct Splash_Event Splash_Event;
 
 /*
  * Initialize the SPLASH_STATUS by defining the necessary paths
- * and resouces. Those paths and resources are copied from the
+ * and resources. Those paths and resources are copied from the
  * SPLASH_DATA_HEADER struct.
  *
  * The field data_header may be NULL, in this case the setup routine
@@ -326,7 +326,7 @@ pyi_splash_extract(ARCHIVE_STATUS *archive_status, SPLASH_STATUS *splash_status)
             }
         }
         else if (extracted) {
-            /* We extracted previously some files but we didnt find this one, so
+            /* We extracted previously some files but we didn't find this one, so
              * the dependency is not available */
             FATALERROR("SPLASH: Cannot find requirement %s in archive.\n", filename);
             rc = -1;
@@ -921,7 +921,7 @@ _splash_init(ClientData client_data)
        PI_Tcl_GetVar2(status->interp, "tcl_patchLevel", NULL, TCL_GLOBAL_ONLY),
        PI_Tcl_GetVar2(status->interp, "tk_patchLevel", NULL, TCL_GLOBAL_ONLY));
 
-    /* Extract the image from the splash resouces and
+    /* Extract the image from the splash resources and
      * pass them to tcl/tk in the variable _image_data */
     image_data_obj = PI_Tcl_NewByteArrayObj(status->image, status->image_len);
     PI_Tcl_SetVar2Ex(status->interp, "_image_data", NULL, image_data_obj,

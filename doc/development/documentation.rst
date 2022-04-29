@@ -52,7 +52,7 @@ PyInstaller extensions
 ----------------------------
 
 For the PyInstaller documentation there are roles available [*]_
-in additon to the ones from `Sphinx`__ and docutils__.
+in addition to the ones from `Sphinx`__ and docutils__.
 
 __ http://www.sphinx-doc.org/en/stable/markup/inline.html
 __ http://www.sphinx-doc.org/en/stable/rest.html#inline-markup

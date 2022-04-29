@@ -291,7 +291,7 @@ installs ``Carbon`` or ``Cocoa`` event handlers (or their equivalents provided
 by higher-level UI toolkit) to handle these requests during its runtime.
 
 PyInstaller provides two aspects of support for macOS event handling;
-automatic `event forwarding`, which enables frozen aplication to receive
+automatic `event forwarding`, which enables frozen application to receive
 events in ``onefile`` mode, and optional `argv emulation` for converting
 initial opening event into ``sys.argv`` arguments. Both aspects apply only
 to app bundles (i.e., the ``windowed`` bootloader variant) and not to
@@ -531,7 +531,7 @@ conversion of ``.png`` and ``.jpg`` images:
         # Register .png and .jpg as supported file types
         info_plist={
              'CFBundleDocumentTypes': [{
-                  'CFBundleTypeName': "Convertable image types",
+                  'CFBundleTypeName': "Convertible image types",
                   'CFBundleTypeExtensions': [
                        'png', 'jpg',
                   ],

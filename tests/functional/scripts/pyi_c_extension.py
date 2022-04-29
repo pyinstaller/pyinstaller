@@ -34,5 +34,5 @@ for ext in EXTENSION_SUFFIXES:
         break
 else:
     if not getattr(sys, 'frozen', False):
-        raise SystemExit('This script only works corretly when frozen')
+        raise SystemExit('This script only works correctly when frozen')
     raise SystemExit('Python C-extension file name is not correct.')

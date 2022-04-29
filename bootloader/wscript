@@ -147,7 +147,7 @@ def options(ctx):
     ctx.add_option(
         '--show-warnings',
         action='store_true',
-        help='Make gcc print out the warnings we consider as being non-fatal. All other warinings are still treated as '
+        help='Make gcc print out the warnings we consider as being non-fatal. All other warnings are still treated as '
         'errors. Remember to delete the `build` directory first to ensure all files are actually recompiled.',
         dest='show_warnings',
     )
@@ -406,7 +406,7 @@ def set_arch_flags(ctx):
             # The gcc has no '-m64' option under sw64 machine, but the __x86_64__ macro needs to be defined.
             ctx.env.append_value('CCDEFINES', '__x86_64__')
         # This ensures proper compilation with 64-bit gcc and 32-bit Python or vice versa or with manually
-        # choosen --target-arch. Option -m32/-m64 has to be passed to cflags and linkflages.
+        # chosen --target-arch. Option -m32/-m64 has to be passed to cflags and linkflages.
         else:
             check_arch_cflag('-m32', '-m64')
         if ctx.env.PYI_ARCH == '32bit' and ctx.env.DEST_OS == 'win32':

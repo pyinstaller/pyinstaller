@@ -235,7 +235,7 @@ class FrozenImporter:
                 module.__loader__ = self
 
                 #-- Set __package__
-                # Accoring to PEP302, this attribute must be set. When it is present, relative imports will be based
+                # According to PEP302, this attribute must be set. When it is present, relative imports will be based
                 # on this attribute rather than the module __name__ attribute. More details can be found in PEP366.
                 # For ordinary modules, this is set like: 'aa.bb.cc.dd' -> 'aa.bb.cc'
                 if is_pkg:

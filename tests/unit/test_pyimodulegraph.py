@@ -117,7 +117,7 @@ def test_cached_graph_is_not_leaking(fresh_pyi_modgraph, monkeypatch, tmpdir):
     names = [n.identifier for n in mg.iter_graph(start=node)]
     assert "uuid" in names
 
-    # the acutal test: uuid is not leaking to the other script
+    # the actual test: uuid is not leaking to the other script
     src = gen_sourcefile(tmpdir, """print""", test_id="3")
     node = mg.add_script(str(src))
     assert node is not None
@@ -140,7 +140,7 @@ def test_cached_graph_is_not_leaking_hidden_imports(fresh_pyi_modgraph, tmpdir):
     names = [n.identifier for n in mg.iter_graph(start=node)]
     assert "uuid" in names
 
-    # the acutal test: uuid is not leaking to the other script
+    # the actual test: uuid is not leaking to the other script
     src = gen_sourcefile(tmpdir, """print""", test_id="3")
     node = mg.add_script(str(src))
     assert node is not None
@@ -161,7 +161,7 @@ def test_graph_collects_script_dependencies(fresh_pyi_modgraph, tmpdir):
     mg.add_script(str(src2))
     assert mg.find_node("uuid")  # self-test
 
-    # The acutal test: uuid is (indirectly) linked to the first script
+    # The actual test: uuid is (indirectly) linked to the first script
     names = [n.identifier for n in mg.iter_graph(start=node)]
     assert str(src2) in names
     assert "uuid" in names

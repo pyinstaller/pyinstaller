@@ -207,7 +207,7 @@ print(
     """
 You may now run
   git diff develop # verify changes
-  git add -u       # batch-commit all these chages
+  git add -u       # batch-commit all these changes
   git grep %s    # grep for remaining years
 """ % LAST_YEAR
 )

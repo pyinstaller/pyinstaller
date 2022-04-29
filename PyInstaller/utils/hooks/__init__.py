@@ -558,7 +558,7 @@ def collect_submodules(package: str, filter: Callable[[str], bool] = lambda name
             - raise: Errors are reraised and terminate the build.
             - warn: Errors are downgraded to warnings.
             - warn once: The first error issues a warning but all
-              subsequent errors are ignored to minimise *stderr polution*. This
+              subsequent errors are ignored to minimise *stderr pollution*. This
               is the default.
             - ignore: Skip all errors. Don't warn about anything.
     Returns:
@@ -763,7 +763,7 @@ def collect_data_files(package, include_py_files=False, subdir=None, excludes=No
 
     # Make sure the excludes are a list; this also makes a copy, so we don't modify the original.
     excludes = list(excludes) if excludes else []
-    # These excludes may contain direcories which need to be searched.
+    # These excludes may contain directories which need to be searched.
     excludes_len = len(excludes)
     # Including py files means don't exclude them. This pattern will search any directories for containing files, so
     # do not modify ``excludes_len``.
@@ -806,7 +806,7 @@ def collect_data_files(package, include_py_files=False, subdir=None, excludes=No
     clude_walker(includes, includes_len, True)
     clude_walker(excludes, excludes_len, False)
 
-    # Tranform the sources into tuples for ``datas``.
+    # Transform the sources into tuples for ``datas``.
     datas = [(str(s), remove_prefix(str(s.parent), pkg_base)) for s in sources]
 
     logger.debug("collect_data_files - Found files: %s", datas)

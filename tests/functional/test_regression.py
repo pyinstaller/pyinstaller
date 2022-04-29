@@ -49,7 +49,7 @@ def test_issue_2492(monkeypatch, tmpdir):
 def test_issue_5131(monkeypatch, tmpdir):
     """
     While fixing the endless recursion when the package's __init__ module is an extension (see
-    tests/unit/test_modulegraph_more.py::package_init_is_extension_*), another error occured:
+    tests/unit/test_modulegraph_more.py::package_init_is_extension_*), another error occurred:
     PyInstaller.building._utils._load_code() tried to complete the source code for extension module - triggered by
     PYZ.assemble(), which is collecting all source files - caused by this being marked as "PYMODULE" in the TOC.
     """
@@ -142,6 +142,6 @@ def test_5797(pyi_builder):
         except Exception as e:
             # We expect PyInstallerImportError to be raised
             exception_name = type(e).__name__
-            assert exception_name == 'PyInstallerImportError', f"Unexpected execption type: {exception_name}"
+            assert exception_name == 'PyInstallerImportError', f"Unexpected exception type: {exception_name}"
         """
     )

@@ -129,7 +129,7 @@ class CArchiveReader(ArchiveReader):
 
         Magic signature is at end of the archive.
 
-        This fuction is used by ArchiveViewer.py utility.
+        This function is used by ArchiveViewer.py utility.
         """
         # Magic is at EOF; if we're embedded, we need to figure where that is.
         if self.length:
@@ -190,7 +190,7 @@ class CArchiveReader(ArchiveReader):
         NAME is an entry name OR the index to the TOC.
 
         Return the tuple (ispkg, contents).
-        For non-Python resoures, ispkg is meaningless (and 0).
+        For non-Python resources, ispkg is meaningless (and 0).
         Used by the import mechanism.
         """
         if isinstance(name, str):
@@ -226,7 +226,7 @@ class CArchiveReader(ArchiveReader):
         """
         Open a CArchive of name NAME embedded within this CArchive.
 
-        This fuction is used by ArchiveViewer.py utility.
+        This function is used by ArchiveViewer.py utility.
         """
         ndx = self.toc.find(name)
 

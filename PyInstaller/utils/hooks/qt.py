@@ -63,7 +63,7 @@ class QtLibraryInfo:
                 # no dist metadata, so a fallback codepath in is_module_satisfies tries to check for __version__
                 # attribute that does not exist, either. Handle such errors gracefully and assume new layout (with
                 # PyQt6, the new layout is more likely); it does not really matter what layout we assume, as library is
-                # not usable anyway, but we do neeed to be able to return an instance of QtLibraryInfo with "version"
+                # not usable anyway, but we do need to be able to return an instance of QtLibraryInfo with "version"
                 # attribute set to a falsey value.
                 new_layout = hooks.is_module_satisfies("PyQt6 >= 6.0.3")
             except AttributeError:
@@ -88,7 +88,7 @@ class QtLibraryInfo:
     # Initialize most of this class only when values are first requested from it.
     def __getattr__(self, name):
         if 'version' in self.__dict__:
-            # Initialization was already done, but requested attribute is not availiable.
+            # Initialization was already done, but requested attribute is not available.
             raise AttributeError(name)
         else:
             # Ensure self.version exists, even if PyQt{5,6}/PySide{2,6} cannot be imported. Hooks and util functions use

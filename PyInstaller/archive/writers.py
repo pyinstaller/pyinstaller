@@ -162,7 +162,7 @@ class ZlibArchiveWriter(ArchiveWriter):
         """
         code_dict      dict containing module code objects from ModuleGraph.
         """
-        # Keep references to module code objects constructed by ModuleGraph to avoid writting .pyc/pyo files to hdd.
+        # Keep references to module code objects constructed by ModuleGraph to avoid writing .pyc/pyo files to hdd.
         self.code_dict = code_dict or {}
         self.cipher = cipher or None
 
@@ -278,7 +278,7 @@ class CArchiveWriter(ArchiveWriter):
 
     Easily handled from C or from Python.
     """
-    # MAGIC is usefull to verify that conversion of Python data types to C structure and back works properly.
+    # MAGIC is useful to verify that conversion of Python data types to C structure and back works properly.
     MAGIC = b'MEI\014\013\012\013\016'
     HDRLEN = 0
     LEVEL = 9
@@ -420,7 +420,7 @@ class CArchiveWriter(ArchiveWriter):
         self.lib.write(tocstr)
         toclen = len(tocstr)
 
-        # now save teh cookie
+        # now save the cookie
         total_len = tocpos + toclen + self._cookie_size
         pyvers = sys.version_info[0] * 100 + sys.version_info[1]
         # Before saving cookie we need to convert it to corresponding C representation.

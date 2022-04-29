@@ -120,7 +120,7 @@ def _extract_from_egg(toc):
     """
     new_toc = []
     for item in toc:
-        # Item is a tupple
+        # Item is a tuple
         #  (mod_name, path, type)
         modname, pth, typ = item
         if not os.path.isfile(pth):
@@ -611,7 +611,7 @@ def _getImports_macholib(pth):
     run_paths = set()
     for header in m.headers:
         for command in header.commands:
-            # A command is a tupple like:
+            # A command is a tuple like:
             #   (<macholib.mach_o.load_command object at 0x>,
             #    <macholib.mach_o.rpath_command object at 0x>,
             #    '../lib\x00\x00')

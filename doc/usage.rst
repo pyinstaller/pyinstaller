@@ -174,7 +174,7 @@ in the :ref:`.spec file <using spec files>`).
 
 Although PyInstaller attempts to automatically detect and exclude some of
 the problematic files from UPX processing, there are cases where the
-UPX excludes need to be speficied manually. For example, 32-bit Windows
+UPX excludes need to be specified manually. For example, 32-bit Windows
 binaries from the ``PySide2`` package (Qt5 DLLs and python extension modules)
 have been `reported <https://github.com/pyinstaller/pyinstaller/issues/4178#issuecomment-868985789>`_
 to be corrupted by UPX.
@@ -592,7 +592,7 @@ Building 32-bit Apps in macOS
           was removed in macOS 10.15 Catalina (for 64-bit multi-arch support
           on modern versions of macOS, see :ref:`here <macos multi-arch support>`).
           However, PyInstaller still supports building 32-bit bootloader,
-          and 32-bit/64-bit Python installers are stil available from
+          and 32-bit/64-bit Python installers are still available from
           python.org for (some) versions of Python 3.7.
 
 Older versions of macOS supported both 32-bit and 64-bit executables.

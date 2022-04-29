@@ -66,7 +66,7 @@ static void test_basename(void **state) {
     char result[PATH_MAX];
     char input[PATH_MAX];
     // basename()'s second argument is not `const`, thus using a constant
-    // string yields to segementation fault.
+    // string yields to segmentation fault.
 
     // pyi_path_basename("/aa/bb/cc/d1d") -> "d1d"
     strcpy(input, PYI_SEPSTR "aa" PYI_SEPSTR "bb" PYI_SEPSTR "cc" PYI_SEPSTR "d1d");

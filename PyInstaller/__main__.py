@@ -148,7 +148,7 @@ def generate_parser() -> _PyiArgumentParser:
 
 def run(pyi_args=None, pyi_config=None):
     """
-    pyi_args     allows running PyInstaller programatically without a subprocess
+    pyi_args     allows running PyInstaller programmatically without a subprocess
     pyi_config   allows checking configuration once when running multiple tests
     """
     compat.check_requirements()

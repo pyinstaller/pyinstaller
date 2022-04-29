@@ -33,4 +33,4 @@ or for building a Linux Standard Base (LSB) compliant bootloader::
 
 For more details, esp. about building for other target-platforms, please read
 <https://pyinstaller.readthedocs.io/en/latest/bootloader-building.html> (resp.
-the corresponsing file in the source: `../doc/bootloader-building.rst`).
+the corresponding file in the source: `../doc/bootloader-building.rst`).

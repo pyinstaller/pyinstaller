@@ -35,7 +35,7 @@
 # 2009-07-31  chg: Find private assemblies even if unversioned
 #             add: Manifest.same_id method to check if two manifests have the same assemblyIdentity
 #
-# 2009-07-30  fix: Potential failure in File.calc_hash method if hash algorythm not supported
+# 2009-07-30  fix: Potential failure in File.calc_hash method if hash algorithm not supported
 #             add: Publisher configuration (policy) support when searching for assembly files
 #             fix: Private assemblies are now actually found if present (and no shared assembly exists)
 #             add: Python 2.3 compatibility (oldest version supported by pyinstaller)

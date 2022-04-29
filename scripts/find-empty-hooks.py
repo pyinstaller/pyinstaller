@@ -19,7 +19,7 @@ functions in hookutils.
 Proposed usage::
 
   ./scripts/find-empty-hooks.py | sort | xargs emacs
-  # In emacs, remove all content in hooks that are realy empty.
+  # In emacs, remove all content in hooks that are really empty.
   # Now delete all hook-files less then 2 bytes in size:
   find PyInstaller/hooks/ -size -2c -print -delete
 

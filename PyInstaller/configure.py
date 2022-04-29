@@ -46,7 +46,7 @@ def test_UPX(config, upx_dir):
             # No such file or directory
             pass
         else:
-            logger.info('An exception occured when testing for UPX:')
+            logger.info('An exception occurred when testing for UPX:')
             logger.info('  %r', e)
     if hasUPX:
         is_available = 'available'

@@ -43,7 +43,7 @@ class _TocFilesystem:
     """
     def __init__(self, toc_files, toc_dirs=None):
         toc_dirs = toc_dirs or []
-        # Reconstruct the fileystem hierarchy by building a prefix tree from the given file and directory paths.
+        # Reconstruct the filesystem hierarchy by building a prefix tree from the given file and directory paths.
         self._tree = dict()
 
         # Data files
@@ -77,7 +77,7 @@ class _TocFilesystem:
     def path_isdir(self, path):
         node = self._get_tree_node(path)
         if node is None:
-            return False  # Non-existant
+            return False  # Non-existent
         if isinstance(node, str):
             return False  # File
         return True
@@ -85,7 +85,7 @@ class _TocFilesystem:
     def path_listdir(self, path):
         node = self._get_tree_node(path)
         if not isinstance(node, dict):
-            return []  # Non-existant or file
+            return []  # Non-existent or file
         return list(node.keys())
 
 
