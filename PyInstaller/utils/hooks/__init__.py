@@ -688,7 +688,9 @@ def collect_dynamic_libs(package, destdir=None):
 
     # Skip a module which is not a package.
     if not is_package(package):
-        logger.warning("collect_dynamic_libs - skipping library collection for module '%s' as it is not a package.", package)
+        logger.warning(
+            "collect_dynamic_libs - skipping library collection for module '%s' as it is not a package.", package
+        )
         return []
 
     pkg_base, pkg_dir = get_package_paths(package)
