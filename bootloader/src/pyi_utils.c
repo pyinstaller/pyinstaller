@@ -294,7 +294,7 @@ wchar_t
     return wruntime_tmpdir_abspath;
 }
 
-/* TODO rename fuction and revisit */
+/* TODO rename function and revisit */
 int
 pyi_get_temp_path(char *buffer, char *runtime_tmpdir)
 {
@@ -339,7 +339,7 @@ pyi_get_temp_path(char *buffer, char *runtime_tmpdir)
      * to avoid stupid race conditions.
      */
     for (i = 0; i < 5; i++) {
-        /* TODO use race-free fuction - if any exists? */
+        /* TODO use race-free function - if any exists? */
         wchar_ret = _wtempnam(wchar_buffer, prefix);
 
         if (pyi_win32_mkdir(wchar_ret) == 0) {
@@ -877,7 +877,7 @@ pyi_utils_set_environment(const ARCHIVE_STATUS *status)
      * and PyQt applications.
      *
      * To tell the OS where to look for dynamic libraries we modify
-     * .so/.dylib files to use relative paths to other dependend
+     * .so/.dylib files to use relative paths to other dependent
      * libraries starting with @executable_path.
      *
      * For more information see:
@@ -910,7 +910,7 @@ pyi_utils_set_environment(const ARCHIVE_STATUS *status)
 }
 
 /*
- * If the program is actived by a systemd socket, systemd will set
+ * If the program is activated by a systemd socket, systemd will set
  * LISTEN_PID, LISTEN_FDS environment variable for that process.
  *
  * LISTEN_PID is set to the pid of the parent process of bootloader,
@@ -920,7 +920,7 @@ pyi_utils_set_environment(const ARCHIVE_STATUS *status)
  * LISTEN_PID environment variable remains unchanged.
  *
  * Here we change the LISTEN_PID to the child pid in child process.
- * So the application can detecte it and use the LISTEN_FDS created
+ * So the application can detect it and use the LISTEN_FDS created
  * by systemd.
  */
 int
@@ -1113,7 +1113,7 @@ cleanup:
     /* Process ended abnormally */
     if (WIFSIGNALED(rc)) {
         VS("LOADER: re-raising child signal %d\n", WTERMSIG(rc));
-        /* Mimick the signal the child received */
+        /* Mimic the signal the child received */
         raise(WTERMSIG(rc));
     }
     return 1;

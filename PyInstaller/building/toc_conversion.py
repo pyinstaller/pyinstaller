@@ -68,7 +68,7 @@ class DependencyProcessor:
         # Unzipped Eggs:
         #  .../site-packages/mock.py   # this may be a single module, too!
         #  .../site-packages/mock-1.0.1-py2.7.egg-info
-        # Unzipped Eggs (I asume: multiple-versions externaly managed):
+        # Unzipped Eggs (I assume: multiple-versions externally managed):
         #  .../site-packages/pyPdf-1.13-py2.6.egg/pyPdf/
         #  .../site-packages/pyPdf-1.13-py2.6.egg/EGG_INFO
         # Zipped Egg:

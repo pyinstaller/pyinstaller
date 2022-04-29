@@ -245,7 +245,7 @@ Functions
 
     Indicates whether the module can be used.
 
-    Returns ``False`` if the module is either not initialized ot was disabled
+    Returns ``False`` if the module is either not initialized or was disabled
     by closing the splash screen. Otherwise, the module should be usable.
 
 .. py:function:: update_text(msg)

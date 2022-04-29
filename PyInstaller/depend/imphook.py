@@ -62,7 +62,7 @@ class ModuleHookCache(dict):
 
         **Order of caching is significant** with respect to hooks for the same module, as the values of this
         dictionary are lists. Hooks for the same module will be run in the order in which they are cached. Previously
-        cached hooks are always preserved rather than overidden.
+        cached hooks are always preserved rather than overridden.
 
         By default, official hooks are cached _before_ user-defined hooks. For modules with both official and
         user-defined hooks, this implies that the former take priority over and hence will be loaded _before_ the

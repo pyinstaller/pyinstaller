@@ -172,7 +172,7 @@ class Analysis(Target):
     pure
             The pure Python modules.
     binaries
-            The extensionmodules and their dependencies. The secondary dependecies are filtered. On Windows files from
+            The extensionmodules and their dependencies. The secondary dependencies are filtered. On Windows files from
             C:\\Windows are excluded by default. On Linux/Unix only system libraries from /lib or /usr/lib are excluded.
     datas
             Data-file dependencies. These are data-file that are found to be needed by modules. They can be anything:
@@ -454,7 +454,7 @@ class Analysis(Target):
         # seen variable before running bindepend. We use bindepend only for the python executable.
         bindepend.seen.clear()
 
-        # Add binary and assembly dependencies of Python.exe. This also ensures that its assembly depencies under
+        # Add binary and assembly dependencies of Python.exe. This also ensures that its assembly dependencies under
         # Windows get added to the built .exe's manifest. Python 2.7 extension modules have no assembly dependencies,
         # and rely on the app-global dependencies set by the .exe.
         self.binaries.extend(
@@ -538,7 +538,7 @@ class Analysis(Target):
         # add_dll_directory() function on Windows, or modifying LD_LIBRARY_PATH on Linux). In order to reliably
         # discover dynamic libraries, we therefore require an environment with all packages imported. We achieve that
         # by gathering list of all collected packages, and spawn an isolated process, in which we first import all
-        # the packages from the list, and then peform search for dynamic libraries.
+        # the packages from the list, and then perform search for dynamic libraries.
         logger.info('Looking for dynamic libraries')
 
         collected_packages = self.graph.get_collected_packages()
@@ -593,7 +593,7 @@ class Analysis(Target):
 
         # Write warnings about missing modules.
         self._write_warnings()
-        # Write debug information about hte graph
+        # Write debug information about the graph
         self._write_graph_debug()
 
     def _write_warnings(self):

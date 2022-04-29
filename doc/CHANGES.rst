@@ -154,7 +154,7 @@ Hooks
 * Rework the ``matplotlib.backends`` hook to attempt performing
   auto-detection of the used backend(s) instead of collecting all
   available backends. Implement :ref:`hook configuration option
-  <matplotlib hook options>` that allows users to swich between
+  <matplotlib hook options>` that allows users to switch between
   this new behavior and the old behavior of collecting all backends,
   or to manually specify the backend(s) to be collected. (:issue:`6024`)
 
@@ -174,7 +174,7 @@ Documentation
 ~~~~~~~~~~~~~
 
 * Add a :ref:`new section <macos event forwarding and argv emulation>`
-  describing Apple Event forwading behavior on macOS and the optional
+  describing Apple Event forwarding behavior on macOS and the optional
   `argv emulation` for macOS app bundles, along with its caveats.
   (:issue:`6089`)
 * Update documentation on using ``UPX``. (:issue:`6161`)
@@ -667,7 +667,7 @@ Features
   arch validation and ad-hoc resigning of all collected binaries.
   (:issue:`5581`)
 * (macOS) In ``onedir`` ``windowed`` (.app bundle) mode, perform an
-  interation of Apple event processing to convert ``odoc`` and ``GURL``
+  interaction of Apple event processing to convert ``odoc`` and ``GURL``
   events to ``sys.argv`` before entering frozen python script. (:issue:`5920`)
 * (macOS) In windowed (.app bundle) mode, always log unhandled exception
   information to ``syslog``, regardless of debug mode. (:issue:`5890`)
@@ -1049,7 +1049,7 @@ Bugfix
   (:issue:`5062`, :issue:`5272`, :issue:`5434`)
 * (Windows) PyInstaller's default icon is no longer built into the bootloader,
   but
-  added at freeze-time. Thus, when specifiying an icon, only that icon is
+  added at freeze-time. Thus, when specifying an icon, only that icon is
   contained in the executable and displayed for a shortcut. (:issue:`870`,
   :issue:`2995`)
 * (Windows) Fix "toc is bad" error messages
@@ -1159,16 +1159,16 @@ Hooks
   arguments of ``collect_data_files``, and to the `filter` argument of
   ``collect_submodules``. (:issue:`5113`)
 * Add hook for difflib to not pull in doctests, which is only
-  required when run as main programm.
+  required when run as main program.
 * Add hook for distutils.util to not pull in lib2to3 unittests, which will be
   rearly used in frozen packages.
 * Add hook for heapq to not pull in doctests, which is only
-  required when run as main programm.
+  required when run as main program.
 * Add hook for multiprocessing.util to not pull in python test-suite and thus
   e.g. tkinter.
 * Add hook for numpy._pytesttester to not pull in pytest.
 * Add hook for pickle to not pull in doctests and argpargs, which are only
-  required when run as main programm.
+  required when run as main program.
 * Add hook for PIL.ImageFilter to not pull
   numpy, which is an optional component.
 * Add hook for setuptools to not pull in numpy, which is only imported if
@@ -1224,7 +1224,7 @@ Hooks
 Bootloader
 ~~~~~~~~~~
 
-* Fix freeing memory allocted by Python using ``free()`` instead of
+* Fix freeing memory allocated by Python using ``free()`` instead of
   ``PyMem_RawFree()``. (:issue:`4441`)
 * (GNU/Linux) Avoid segfault when temp path is missing. (:issue:`5255`)
 * (GNU/Linux) Replace a ``strncpy()`` call in ``pyi_path_dirname()`` with
@@ -1442,7 +1442,7 @@ Bootloader
 ~~~~~~~~~~
 
 * Rework bootloader from using strcpy/strncpy with "is this string
-  terminated"-check to use snprintf(); check succes at more places. (This
+  terminated"-check to use snprintf(); check success at more places. (This
   started from fixing GCC warnings for strncpy and strncat.)
 * Fix: When copying files, too much data was copied in most cases. This
   corrupted the file and inhibited using shared dependencies. (:issue:`4303`)

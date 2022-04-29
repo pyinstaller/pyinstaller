@@ -104,7 +104,7 @@ def test_package_init_is_extension(tmpdir, num, modname, expected_nodetype):
             return m
         wt('myextpkg', '__init__.py')
         if test_case == 2:
-            return m  # return extension module anway
+            return m  # return extension module anyway
         m = wt('myextpkg', 'other.py')
         m = wt('myextpkg', 'other' + EXTENSION_SUFFIXES[0])
         if test_case == 3:
@@ -498,7 +498,7 @@ def test_swig_import_from_top_level_missing(tmpdir):
 
 def test_swig_import_from_top_level_but_nested(tmpdir):
     # Like test_swig_import_from_top_level, but both the wrapper and the "top level" are nested.
-    # This is intented to test relative import of the "C" module.
+    # This is intended to test relative import of the "C" module.
     libdir = tmpdir.join('lib')
     path = [str(libdir)]
     osgeo = libdir.join('pyi_test_osgeo')
@@ -581,7 +581,7 @@ def test_swig_candidate_but_not_swig(tmpdir):
 
 def test_swig_candidate_but_not_swig2(tmpdir):
     """
-    Variation of test_swig_candidate_but_not_swig using differnt import statements
+    Variation of test_swig_candidate_but_not_swig using different import statements
     (like tifffile/tifffile.py does).
     """
     libdir = tmpdir.join('lib')
@@ -622,7 +622,7 @@ def test_swig_candidate_but_not_swig_missing(tmpdir):
 
 def test_swig_candidate_but_not_swig_missing2(tmpdir):
     """
-    Variation of test_swig_candidate_but_not_swig_missing using differnt import statements
+    Variation of test_swig_candidate_but_not_swig_missing using different import statements
     (like tifffile/tifffile.py does).
     """
     libdir = tmpdir.join('lib')

@@ -178,7 +178,7 @@ static OSErr generic_forward_apple_event(const AppleEvent *const theAppleEvent /
      * and the child process, because child_pid becomes valid immediately after
      * the process is forked, but the child process may not be able to receive
      * the events yet. In such cases, AESendMessage fails with procNotFound (-600).
-     * To acommodate this situation,  we defer the event by storing its copy in our
+     * To accommodate this situation,  we defer the event by storing its copy in our
      * event context structure, so that the caller can re-attempt to send it using
      * the pyi_apple_send_pending_event() function.
      */

@@ -299,7 +299,7 @@ Once in a while, that's not enough.
 Changing Runtime Behavior
 -------------------------
 
-More bizarre situations can be accomodated with runtime hooks.
+More bizarre situations can be accommodated with runtime hooks.
 These are small scripts that manipulate the environment before your main script runs,
 effectively providing additional top-level code to your script.
 

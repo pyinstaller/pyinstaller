@@ -419,7 +419,7 @@ def test_ctypes_cdll_builtin_extension(pyi_builder):
 #
 #   cdll.kernel32.GetModuleHandleA(None)
 #
-# Of course we need to use dlls which is not are commonly available on windows but mot excluded in
+# Of course we need to use dlls which is not are commonly available on windows but not excluded in
 # PyInstaller.depend.dylib
 
 

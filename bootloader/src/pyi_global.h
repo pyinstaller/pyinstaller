@@ -64,7 +64,7 @@ typedef int bool;
 
 /*
  * On Windows PATH_MAX does not exist but MAX_PATH does.
- * WinAPI MAX_PATH limit is only 256. MSVCR fuctions does not have this limit.
+ * WinAPI MAX_PATH limit is only 256. MSVCR functions does not have this limit.
  * Redefine PATH_MAX for Windows to support longer path names.
  */
 /* TODO use MSVCR function for file path handling. */

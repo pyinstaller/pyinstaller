@@ -17,7 +17,7 @@ ipc_script = r"""
 proc _ipc_server {channel clientaddr clientport} {
     # This function is called if a new client connects to
     # the server. This creates a channel, which calls
-    # _ipc_caller if data was send trough the connection
+    # _ipc_caller if data was send through the connection
     set client_name [format <%s:%d> $clientaddr $clientport]
 
     chan configure $channel \

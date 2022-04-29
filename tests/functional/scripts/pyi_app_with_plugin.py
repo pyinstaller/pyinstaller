@@ -54,5 +54,5 @@ for f in (plugin_filename, plugin_filename + 'c'):
         pass
 
 if is_error:
-    # Raise exeption.
+    # Raise exception.
     raise SystemExit('Failed to import the dynamic plugin.')

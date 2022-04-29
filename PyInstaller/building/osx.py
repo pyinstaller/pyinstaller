@@ -142,7 +142,7 @@ class BUNDLE(Target):
             # The value for CFBundleIdentifier is used as the default unique name of your program for Code Signing
             # purposes. It even identifies the APP for access to restricted OS X areas like Keychain.
             #
-            # The identifier used for signing must be globally unique. The usal form for this identifier is a
+            # The identifier used for signing must be globally unique. The usual form for this identifier is a
             # hierarchical name in reverse DNS notation, starting with the toplevel domain, followed by the company
             # name, followed by the department within the company, and ending with the product name. Usually in the
             # form: com.mycompany.department.appname

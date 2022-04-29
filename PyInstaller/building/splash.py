@@ -473,7 +473,7 @@ class Splash(Target):
         counter = 0
 
         # Run this loop as long as a folder exist named like rundir. In most cases __splash will be sufficient and this
-        # loop wont enter.
+        # loop won't enter.
         while any(e[0].startswith(candidate + os.sep) for e in structure):
             # just append to rundir a counter
             candidate = rundir % str(counter)

@@ -35,7 +35,7 @@ if 'PYI_THREAD_TEST_CASE' in os.environ:
 
 # Execute itself in a subprocess.
 else:
-    # Differenciate subprocess code.
+    # Differentiate subprocess code.
     itself = sys.argv[0]
     # Run subprocess.
     import subprocess

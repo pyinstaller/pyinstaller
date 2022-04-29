@@ -72,7 +72,7 @@ def add_data_or_binary(string):
 
 def make_variable_path(filename, conversions=path_conversions):
     if not os.path.isabs(filename):
-        # os.path.commonpath can not compare relative and absolute paths, and if filename is not absolut, none of the
+        # os.path.commonpath can not compare relative and absolute paths, and if filename is not absolute, none of the
         # paths in conversions will match anyway.
         return None, filename
     for (from_path, to_name) in conversions:
@@ -541,8 +541,8 @@ def __add_options(parser):
         dest="argv_emulation",
         action="store_true",
         default=False,
-        help="Enable argv emulation for macOS app bundles. If enabled, the intial open document/URL event is processed "
-        "by the bootloader and the passed file paths or URLs are appended to sys.argv.",
+        help="Enable argv emulation for macOS app bundles. If enabled, the initial open document/URL event is "
+        "processed by the bootloader and the passed file paths or URLs are appended to sys.argv.",
     )
 
     g.add_argument(
@@ -779,7 +779,7 @@ def main(
         'hookspath': hookspath,
         # List with custom runtime hook files.
         'runtime_hooks': runtime_hooks or [],
-        # List of modules/pakages to ignore.
+        # List of modules/packages to ignore.
         'excludes': excludes or [],
         # only Windows and Mac OS distinguish windowed and console apps
         'console': console,

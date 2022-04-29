@@ -111,7 +111,7 @@ class Wheel(bdist_wheel):
                 # And add the correct bootloaders as data files.
                 f"bootloader/{self.PYI_PLAT_NAME}/*",
                 "bootloader/images/*",
-                # These files need to be explictly included as well.
+                # These files need to be explicitly included as well.
                 "fake-modules/*.py",
                 "hooks/rthooks.dat",
                 "lib/README.rst",
@@ -259,7 +259,7 @@ setup(
         "PyInstaller": [
             # Include all bootloaders in wheels by default.
             "bootloader/*/*",
-            # These files need to be explictly included as well.
+            # These files need to be explicitly included as well.
             "fake-modules/*.py",
             "hooks/rthooks.dat",
             "lib/README.rst",

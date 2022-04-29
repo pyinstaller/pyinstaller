@@ -222,7 +222,7 @@ def _resolveCtypesImports(cbinaries):
     Input is a list of c-binary-names (as found by `scan_code_instruction_for_ctypes`). Output is a list of tuples
     ready to be appended to the ``binaries`` of a modules.
 
-    This function temporarily extents PATH, LD_LIBRARY_PATH or DYLD_LIBRARY_PATH (depending on the plattform) by
+    This function temporarily extents PATH, LD_LIBRARY_PATH or DYLD_LIBRARY_PATH (depending on the platform) by
     CONF['pathex'] so shared libs will be search there, too.
 
     Example:
@@ -363,7 +363,7 @@ def load_ldconfig_cache():
 
     LDCONFIG_CACHE = {}
     for line in text:
-        # :fixme: this assumes libary names do not contain whitespace
+        # :fixme: this assumes library names do not contain whitespace
         m = pattern.match(line)
 
         # Sanitize away any abnormal lines of output.
@@ -386,7 +386,7 @@ def load_ldconfig_cache():
             name = bname + '.so' + name[len(bname):]
         else:
             name = m.group(1)
-        # ldconfig may know about several versions of the same lib, e.g., differents arch, different libc, etc.
+        # ldconfig may know about several versions of the same lib, e.g., different arch, different libc, etc.
         # Use the first entry.
         if name not in LDCONFIG_CACHE:
             LDCONFIG_CACHE[name] = path

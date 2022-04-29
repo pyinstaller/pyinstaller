@@ -153,7 +153,7 @@ importable, the headless ``'Agg'`` is collected instead.
         matplotlib.use('TkAgg', force=False)  # not detected
 
     In addition to ``matplotlib`` module name, its common alias, ``mpl``
-    is also recongized:
+    is also recognized:
 
     .. code-block:: python
 

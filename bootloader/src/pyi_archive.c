@@ -12,7 +12,7 @@
  */
 
 /*
- * Fuctions related to PyInstaller archive embedded in executable.
+ * Functions related to PyInstaller archive embedded in executable.
  */
 
 #include <stdio.h>
@@ -358,7 +358,7 @@ _pyi_find_pkg_cookie_offset(FILE *fp)
 }
 
 /*
- * Fix the endianess of fields in the TOC entries.
+ * Fix the endianness of fields in the TOC entries.
  */
 static void
 _pyi_arch_fix_toc_endianess(ARCHIVE_STATUS *status)
@@ -409,7 +409,7 @@ pyi_arch_open(ARCHIVE_STATUS *status)
         FATAL_PERROR("fread", "Failed to read cookie!\n");
         return -1;
     }
-    /* Fix endianess of COOKIE fields */
+    /* Fix endianness of COOKIE fields */
     status->cookie.len = pyi_be32toh(status->cookie.len);
     status->cookie.TOC = pyi_be32toh(status->cookie.TOC);
     status->cookie.TOClen = pyi_be32toh(status->cookie.TOClen);
@@ -446,7 +446,7 @@ pyi_arch_open(ARCHIVE_STATUS *status)
         return -1;
     }
 
-    /* Fix the endianess of the fields in the TOC entries */
+    /* Fix the endianness of the fields in the TOC entries */
     _pyi_arch_fix_toc_endianess(status);
 
     /* Close file handler
@@ -472,7 +472,7 @@ pyi_arch_setup(ARCHIVE_STATUS *status, char const * archive_path, char const * e
     /* Set homepath to where the archive is */
     pyi_path_dirname(status->homepath, archive_path);
     /*
-     * Initial value of mainpath is homepath. It might be overriden
+     * Initial value of mainpath is homepath. It might be overridden
      * by temppath if it is available.
      */
     status->has_temp_directory = false;

@@ -805,7 +805,7 @@ def initialize_modgraph(excludes=(), user_hook_dirs=()):
         logger.info('Caching module dependency graph...')
         # cache a deep copy of the graph
         _cached_module_graph_ = deepcopy(graph)
-        # Clear data which does not need to be copied from teh cached graph since it will be reset by
+        # Clear data which does not need to be copied from the cached graph since it will be reset by
         # ``PyiModulegraph._reset()`` anyway.
         _cached_module_graph_._hooks = None
         _cached_module_graph_._hooks_pre_safe_import_module = None
