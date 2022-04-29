@@ -680,11 +680,12 @@ def collect_dynamic_libs(package, destdir=None):
 
     :param destdir: Relative path to ./dist/APPNAME where the libraries should be put.
     """
+    logger.debug('Collecting dynamic libraries for %s' % package)
+
     # Accept only strings as packages.
     if not isinstance(package, compat.string_types):
         raise TypeError('package must be a str')
 
-    logger.debug('Collecting dynamic libraries for %s' % package)
     pkg_base, pkg_dir = get_package_paths(package)
     # Walk through all file in the given package, looking for dynamic libraries.
     dylibs = []
