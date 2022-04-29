@@ -118,17 +118,10 @@ else:
     # Starting with python 3.11, the bytecode is peppered with CACHE instructions (which dis module conveniently hides
     # unless show_caches=True is used). Dealing with these CACHE instructions in regex rules is going to render them
     # unreadable, so instead we pre-process the bytecode and filter the offending opcodes out.
+    _cache_instruction_filter = bytecode_regex(rb"(`CACHE`.)|(..)")
+
     def _cleanup_bytecode_string(bytecode):
-        CACHE = dis.opmap["CACHE"]
-
-        out = []
-        for idx in range(0, len(bytecode), 2):
-            if bytecode[idx] == CACHE:
-                continue
-            out.append(bytecode[idx])
-            out.append(bytecode[idx + 1])
-
-        return bytes(out)
+        return _cache_instruction_filter.sub(rb"\2", bytecode)
 
     # Python 3.11 removed CALL_FUNCTION and CALL_METHOD, and replaced them with PRECALL + CALL instructions.
     # The CALL_FUNCTION_EX is still present.
