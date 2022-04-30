@@ -1,0 +1,1 @@
+Prevent collection of an entire Python site when using :func:`~PyInstaller.utils.hooks.collect_data_files` or :func:`~PyInstaller.utils.hooks.collect_dynamic_libs` for single-file modules
