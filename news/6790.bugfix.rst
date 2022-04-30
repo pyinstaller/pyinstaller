@@ -1,0 +1,6 @@
+Prevent the hook utility functions, such as
+:func:`~PyInstaller.utils.hooks.collect_submodules`,
+:func:`~PyInstaller.utils.hooks.collect_data_files`, and
+:func:`~PyInstaller.utils.hooks.collect_dynamic_libs`, from failing to
+identify a package when its PEP451-compliant loader does not implement
+the optional ``is_package`` method.

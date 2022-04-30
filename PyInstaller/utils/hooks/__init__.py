@@ -511,9 +511,9 @@ def is_package(module_name):
         In such cases, this function should be called from an isolated suprocess.
         """
         try:
-            import pkgutil
-            loader = pkgutil.find_loader(module_name)
-            return loader.is_package(module_name)
+            import importlib.util
+            spec = importlib.util.find_spec(module_name)
+            return bool(spec.submodule_search_locations)
         except Exception:
             return False
 
