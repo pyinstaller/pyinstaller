@@ -1,0 +1,4 @@
+The :func:`~PyInstaller.utils.hooks.get_package_paths` function now
+supports PEP420 namespace packages - although for backwards-compatibility
+reasons, it returns only the first path when multiple paths are
+present.

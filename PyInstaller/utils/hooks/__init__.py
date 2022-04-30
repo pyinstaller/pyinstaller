@@ -531,13 +531,38 @@ def get_package_paths(package):
     package. For example, if pkg.subpkg lives in /abs/path/to/python/libs, then this function returns
     ``(/abs/path/to/python/libs, /abs/path/to/python/libs/pkg/subpkg)``.
     """
-    file_attr = get_module_file_attribute(package)
+    def _get_package_paths(package):
+        """
+        Retrieve package path(s), as advertised by submodule_search_paths attribute of the spec obtained via
+        importlib.util.find_spec(package). If the name represents a top-level package, the package is not imported.
+        If the name represents a sub-module or a sub-package, its parent is imported. In such cases, this function
+        should be called from an isolated suprocess.
+        """
+        try:
+            import importlib.util
+            spec = importlib.util.find_spec(package)
+            if not spec.submodule_search_locations:
+                return []
+            return [str(path) for path in spec.submodule_search_locations]
+        except Exception:
+            return []
 
-    # package.__file__ = /abs/path/to/package/subpackage/__init__.py.
-    # Search for Python files in /abs/path/to/package/subpackage; pkg_dir stores this path.
-    pkg_dir = os.path.dirname(file_attr)
-    # When found, remove /abs/path/to/ from the filename; pkg_base store this path to be removed.
-    pkg_base = remove_suffix(pkg_dir, package.replace('.', os.sep))
+    # For top-level packages/modules, we can perform check in the main process; otherwise, we need to isolate the
+    # call to prevent import leaks in the main process.
+    if '.' not in package:
+        pkg_paths = _get_package_paths(package)
+    else:
+        pkg_paths = isolated.call(_get_package_paths, package)
+
+    # Due to backwards compatibility, we can return only a single path even though multiple paths are possible,
+    # for example in namespace packages split in different locations.
+    if len(pkg_paths) > 1:
+        logger.warning(
+            "get_package_paths - package %s has multiple paths (%r); returning only first one!", package, pkg_paths
+        )
+
+    pkg_dir = pkg_paths[0]
+    pkg_base = remove_suffix(pkg_dir, package.replace('.', os.sep))  # Base directory
 
     return pkg_base, pkg_dir
 
