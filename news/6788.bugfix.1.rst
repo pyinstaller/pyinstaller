@@ -1,0 +1,3 @@
+The user-provided spec file path and paths provided via :option:`--workpath`
+and :option:`--distpath` are now resolved to absolute full paths before being
+passed to PyInstaller's internals.
