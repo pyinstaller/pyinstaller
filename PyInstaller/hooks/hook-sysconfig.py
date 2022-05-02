@@ -8,6 +8,12 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
+import sys
+
+# see https://github.com/python/cpython/blob/3.9/Lib/sysconfig.py#L593
+# This will exclude `_osx_support`, `distutils`, `distutils.log` for sys.platform != 'darwin'
+if sys.platform != 'darwin':
+    excludedimports = ["_osx_support"]
 
 # Python 3.6 uses additional modules like `_sysconfigdata_m_linux_x86_64-linux-gnu`, see
 # https://github.com/python/cpython/blob/3.6/Lib/sysconfig.py#L417
