@@ -17,7 +17,9 @@ if pyqt5_library_info.version is not None:
         # PyQt5.10 and earlier uses sip in an separate package;
         'sip',
         # PyQt5.11 and later provides SIP in a private package. Support both.
-        'PyQt5.sip'
+        'PyQt5.sip',
+        # Imported via __import__ in PyQt5/__init__.py
+        'pkgutil',
     ]
 
     # Collect required Qt binaries.

@@ -13,7 +13,10 @@ from PyInstaller.utils.hooks.qt import get_qt_binaries, pyside2_library_info
 
 # Only proceed if PySide2 can be imported.
 if pyside2_library_info.version is not None:
-    hiddenimports = ['shiboken2']
+    hiddenimports = ['shiboken2', 'inspect']
+    if pyside2_library_info.version < [5, 15]:
+        # The shiboken2 bootstrap in earlier releases requires __future__ in addition to inspect
+        hiddenimports += ['__future__']
 
     # Collect required Qt binaries.
     binaries = get_qt_binaries(pyside2_library_info)

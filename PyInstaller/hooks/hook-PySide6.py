@@ -13,7 +13,7 @@ from PyInstaller.utils.hooks.qt import get_qt_binaries, pyside6_library_info
 
 # Only proceed if PySide6 can be imported.
 if pyside6_library_info.version is not None:
-    hiddenimports = ['shiboken6']
+    hiddenimports = ['shiboken6', 'inspect']
 
     # Collect required Qt binaries.
     binaries = get_qt_binaries(pyside6_library_info)
