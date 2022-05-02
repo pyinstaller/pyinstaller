@@ -685,11 +685,11 @@ def build(spec, distpath, workpath, clean_build):
 
     # Ensure starting tilde and environment variables get expanded in distpath / workpath.
     # '~/path/abc', '${env_var_name}/path/abc/def'
-    distpath = compat.expand_path(distpath)
-    workpath = compat.expand_path(workpath)
-    CONF['spec'] = compat.expand_path(spec)
+    distpath = os.path.abspath(compat.expand_path(distpath))
+    workpath = os.path.abspath(compat.expand_path(workpath))
+    CONF['spec'] = os.path.abspath(compat.expand_path(spec))
 
-    CONF['specpath'], CONF['specnm'] = os.path.split(spec)
+    CONF['specpath'], CONF['specnm'] = os.path.split(CONF['spec'])
     CONF['specnm'] = os.path.splitext(CONF['specnm'])[0]
 
     # Add 'specname' to workpath and distpath if they point to PyInstaller homepath.
@@ -700,6 +700,7 @@ def build(spec, distpath, workpath, clean_build):
         workpath = os.path.join(HOMEPATH, CONF['specnm'], os.path.basename(workpath), CONF['specnm'])
     else:
         workpath = os.path.join(workpath, CONF['specnm'])
+    CONF['workpath'] = workpath
 
     CONF['warnfile'] = os.path.join(workpath, 'warn-%s.txt' % CONF['specnm'])
     CONF['dot-file'] = os.path.join(workpath, 'graph-%s.dot' % CONF['specnm'])
@@ -719,7 +720,7 @@ def build(spec, distpath, workpath, clean_build):
                         os.remove(f)
 
     # Create DISTPATH and workpath if they does not exist.
-    for pth in (CONF['distpath'], workpath):
+    for pth in (CONF['distpath'], CONF['workpath']):
         os.makedirs(pth, exist_ok=True)
 
     # Construct NAMESPACE for running the Python code from .SPEC file.
@@ -737,7 +738,7 @@ def build(spec, distpath, workpath, clean_build):
         'specnm': CONF['specnm'],
         'SPECPATH': CONF['specpath'],
         'WARNFILE': CONF['warnfile'],
-        'workpath': workpath,
+        'workpath': CONF['workpath'],
         # PyInstaller classes for .spec.
         'TOC': TOC,
         'Analysis': Analysis,
@@ -753,17 +754,13 @@ def build(spec, distpath, workpath, clean_build):
         'pyi_crypto': pyz_crypto,
     }
 
-    # Set up module PyInstaller.config for passing some arguments to 'exec' function.
-    from PyInstaller.config import CONF
-    CONF['workpath'] = workpath
-
     # Execute the specfile. Read it as a binary file...
     try:
         with open(spec, 'rb') as f:
             # ... then let Python determine the encoding, since ``compile`` accepts byte strings.
             code = compile(f.read(), spec, 'exec')
     except FileNotFoundError:
-        raise SystemExit('spec "{}" not found'.format(spec))
+        raise SystemExit(f'Spec file "{spec}" not found!')
     exec(code, spec_namespace)
 
 
