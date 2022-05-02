@@ -1,0 +1,3 @@
+Exclude ``doctest`` in the ``pickle`` hook. Update ``PySide2``, ``PySide6``, 
+``PyQt5``, and ``PyQt6`` hooks with hidden imports that were previously
+pulled in by ``doctest`` (that was in turn pulled in by ``pickle``).

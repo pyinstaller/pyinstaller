@@ -13,7 +13,11 @@ from PyInstaller.utils.hooks.qt import get_qt_binaries, pyqt6_library_info
 
 # Only proceed if PyQt6 can be imported.
 if pyqt6_library_info.version is not None:
-    hiddenimports = ['PyQt6.sip']
+    hiddenimports = [
+        'PyQt6.sip',
+        # Imported via __import__ in PyQt6/__init__.py
+        'pkgutil',
+    ]
 
     # Collect required Qt binaries.
     binaries = get_qt_binaries(pyqt6_library_info)
