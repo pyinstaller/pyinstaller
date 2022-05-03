@@ -21,7 +21,6 @@ from PyInstaller.building.icon import normalize_icon_type
 
 # Runs through the normalize_icon_type tests that don't need PIL
 def test_normalize_icon(monkeypatch, tmp_path):
-    data_dir = str(Path(PyInstaller.__file__).with_name("bootloader") / "images")
     workpath = str(tmp_path)
 
     # Nonexistent image - FileNotFoundError
@@ -32,7 +31,7 @@ def test_normalize_icon(monkeypatch, tmp_path):
 
     # Native image - file path is passed through unchanged
 
-    icon = os.path.join(data_dir, 'icon-console.ico')
+    icon = str(Path(PyInstaller.__file__).with_name("bootloader") / "images" / 'icon-console.ico')
     ret = normalize_icon_type(icon, ("ico",), "ico", workpath)
     if ret != icon:
         pytest.fail("icon validation changed path even though the format was correct already", False)
@@ -40,21 +39,21 @@ def test_normalize_icon(monkeypatch, tmp_path):
     # Alternative image - after calling monkeypatch.setitem(sys.modules, "PIL", None): Raise the install pillow error
 
     monkeypatch.setitem(sys.modules, "PIL", None)
-    icon = os.path.join(data_dir, 'github_logo.png')
+    icon = str(Path(__file__, "../../functional/data/splash/image.png").resolve())
+    assert os.path.exists(icon)
     with pytest.raises(ValueError):
         normalize_icon_type(icon, ("ico",), "ico", workpath)
 
 
 # Runs through the normalize_icon_type tests that DO need PIL
 def test_normalize_icon_pillow(tmp_path):
-    data_dir = str(Path(PyInstaller.__file__).with_name("bootloader") / "images")
     workpath = str(tmp_path)
 
     pytest.importorskip("PIL", reason="Needs PIL / Pillow for this test")
 
     # Alternative image - output is a different file with the correct suffix
 
-    icon = os.path.join(data_dir, 'github_logo.png')
+    icon = str(Path(__file__, "../../functional/data/splash/image.png").resolve())
     ret = normalize_icon_type(icon, ("ico",), "ico", workpath)
 
     _, ret_filetype = os.path.splitext(ret)
@@ -63,7 +62,7 @@ def test_normalize_icon_pillow(tmp_path):
 
     # Some random non-image file: Raises an image conversion error
 
-    icon = os.path.join(data_dir, 'pyi_icon.notanicon')
+    icon = os.path.join(tmp_path, 'pyi_icon.notanicon')
     with open(icon, "w") as f:
         f.write("this is in fact, not an icon")
 
