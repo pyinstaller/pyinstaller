@@ -1,4 +1,5 @@
 recursive-include bootloader *.c *.h wscript waf strip.py
+recursive-include bootloader/waflib *.py
 recursive-exclude PyInstaller/bootloader *
 recursive-include PyInstaller/bootloader/images *
 # Keep the Windows bootloaders so that MSYS2 users aren't required to build
