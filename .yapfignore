@@ -7,6 +7,7 @@ bootloader/build
 # These are not ours - leave them alone.
 PyInstaller/lib
 tests/unit/test_modulegraph
+bootloader/waflib
 
 # This is a sphinx config file, similar to doc/conf.py
 tests/functional/data/sphinx/conf.py
