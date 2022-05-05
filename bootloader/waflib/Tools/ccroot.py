@@ -73,7 +73,11 @@ def apply_incpaths(self):
     lst = self.to_incnodes(self.to_list(getattr(self, 'includes', [])) + self.env.INCLUDES)
     self.includes_nodes = lst
     cwd = self.get_cwd()
-    self.env.INCPATHS = [x.path_from(cwd) for x in lst]
+    if Utils.is_win32:
+        # Visual Studio limitations
+        self.env.INCPATHS = [x.path_from(cwd) if x.is_child_of(self.bld.srcnode) else x.abspath() for x in lst]
+    else:
+        self.env.INCPATHS = [x.path_from(cwd) for x in lst]
 
 
 class link_task(Task.Task):
