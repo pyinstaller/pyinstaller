@@ -1358,32 +1358,3 @@ cleanup:
 
     return offset;
 }
-
-char *
-strtrim(char *str)
-{
-	char *start, *end;
-
-	if (!str) {
-		errno = EINVAL;
-		return NULL;
-	}
-
-	start = str;
-	while (isspace(*start))
-		start++;
-
-	if (*start == 0) {
-		str[0] = 0;
-		return str;
-	}
-
-	end = start + strlen(start) - 1;
-	while (end > start && isspace(*end))
-		end--;
-	*(++end) = 0;
-
-	memmove(str, start, end - start + 1);
-
-	return str;
-}
