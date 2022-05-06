@@ -39,7 +39,7 @@ ARG ZLIB_VERSION=1.2.11
 
 # Download and unpack zlib.
 WORKDIR /home/
-RUN curl -s https://zlib.net/zlib-${ZLIB_VERSION}.tar.gz | tar xfz -
+RUN curl -s https://zlib.net/fossils/zlib-${ZLIB_VERSION}.tar.gz | tar xfz -
 
 ENV CC=${CC:-gcc}
 
