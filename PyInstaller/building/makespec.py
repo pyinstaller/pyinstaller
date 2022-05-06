@@ -592,6 +592,7 @@ def __add_options(parser):
     )
     g.add_argument(
         "--daemon-name",
+        default=None,
         dest="daemon_name",
         help="Daemon name to use - also removes arguments (*nix only)",
     )

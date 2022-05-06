@@ -457,7 +457,7 @@ class EXE(Target):
         if self.runtime_tmpdir is not None:
             self.toc.append(("pyi-runtime-tmpdir " + self.runtime_tmpdir, "", "OPTION"))
 
-        if self.daemon_name is not None:
+        if self.daemon_name:
             self.toc.append(("pyi-daemon-name " + self.daemon_name, "", "OPTION"))
 
         if self.bootloader_ignore_signals:
