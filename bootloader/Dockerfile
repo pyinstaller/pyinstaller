@@ -41,6 +41,11 @@ ARG ZLIB_VERSION=1.2.12
 WORKDIR /home/
 RUN curl -s https://zlib.net/zlib-${ZLIB_VERSION}.tar.gz | tar xfz -
 
+# Patch zlib 1.2.12 to fix gcc misidentification when CC is set.
+# See: https://github.com/madler/zlib/issues/646
+RUN curl -s https://github.com/madler/zlib/commit/05796d3d8d5546cf1b4dfe2cd72ab746afae505d.patch -o gcc-fix.patch
+RUN patch -p 1 -i gcc-fix.patch zlib-${ZLIB_VERSION}/configure
+
 ENV CC=${CC:-gcc}
 
 WORKDIR zlib-$ZLIB_VERSION
