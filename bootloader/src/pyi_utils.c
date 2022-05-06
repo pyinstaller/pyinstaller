@@ -56,7 +56,6 @@ typedef void (*sighandler_t)(int);
 #include <string.h>
 #include <sys/stat.h> /* struct stat */
 #include <wchar.h>    /* wchar_t */
-#include <ctype.h>    /* wchar_t */
 
 /*
  * Function 'mkdtemp' (make temporary directory) is missing on some *nix platforms:
