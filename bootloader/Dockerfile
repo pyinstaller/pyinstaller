@@ -35,7 +35,7 @@
 ARG BASE=dockcross/manylinux2014-x64
 FROM ${BASE}
 
-ARG ZLIB_VERSION=1.2.11
+ARG ZLIB_VERSION=1.2.12
 
 # Download and unpack zlib.
 WORKDIR /home/
