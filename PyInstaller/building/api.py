@@ -381,6 +381,7 @@ class EXE(Target):
         self.strip = kwargs.get('strip', False)
         self.upx_exclude = kwargs.get("upx_exclude", [])
         self.runtime_tmpdir = kwargs.get('runtime_tmpdir', None)
+        self.daemon_name =  kwargs.get('daemon_name', None)
         # If ``append_pkg`` is false, the archive will not be appended to the exe, but copied beside it.
         self.append_pkg = kwargs.get('append_pkg', True)
 
@@ -455,6 +456,9 @@ class EXE(Target):
 
         if self.runtime_tmpdir is not None:
             self.toc.append(("pyi-runtime-tmpdir " + self.runtime_tmpdir, "", "OPTION"))
+
+        if self.daemon_name is not None:
+            self.toc.append(("pyi-daemon-name " + self.daemon_name, "", "OPTION"))
 
         if self.bootloader_ignore_signals:
             # no value; presence means "true"

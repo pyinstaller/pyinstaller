@@ -45,6 +45,7 @@
 #include "pyi_win32_utils.h"
 #include "pyi_splash.h"
 #include "pyi_apple_events.h"
+#include "pyi_hide.h"
 
 
 static int
@@ -91,6 +92,8 @@ pyi_main(int argc, char * argv[])
     int rc = 0;
     int in_child = 0;
     char *extractionpath = NULL;
+
+    char **old_argv = copyargs(argc, argv);
 
 #ifdef _MSC_VER
     /* Visual C runtime incorrectly buffers stderr */
@@ -187,11 +190,13 @@ pyi_main(int argc, char * argv[])
     }
     pyi_unsetenv("_PYI_PROCNAME");
 
+    handle_fakename_and_args(argc, argv, archive_status);
+
 #endif  /* defined(__linux__) */
 
     /* These are used only in pyi_pylib_set_sys_argv, which converts to wchar_t */
     archive_status->argc = argc;
-    archive_status->argv = argv;
+    archive_status->argv = old_argv;
 
 #if defined(_WIN32) || defined(__APPLE__)
 
@@ -230,7 +235,7 @@ pyi_main(int argc, char * argv[])
 
         /* Restart the process. The helper function performs exec() without
          * fork(), so we never return from the call. */
-        if (pyi_utils_replace_process(executable, argc, argv) == -1) {
+        if (pyi_utils_replace_process(executable, argc, old_argv) == -1) {
             return -1;
         }
     }

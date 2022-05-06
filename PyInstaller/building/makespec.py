@@ -591,6 +591,11 @@ def __add_options(parser):
         "here. Please use this option only if you know what you are doing.",
     )
     g.add_argument(
+        "--daemon-name",
+        dest="daemon_name",
+        help="Daemon name to use - also removes arguments (*nix only)",
+    )
+    g.add_argument(
         "--bootloader-ignore-signals",
         action="store_true",
         default=False,
@@ -611,6 +616,7 @@ def main(
     noupx=False,
     upx_exclude=None,
     runtime_tmpdir=None,
+    daemon_name=None,
     pathex=[],
     version_file=None,
     specpath=None,
@@ -773,6 +779,7 @@ def main(
         'upx': not noupx,
         'upx_exclude': upx_exclude,
         'runtime_tmpdir': runtime_tmpdir,
+        'daemon_name': daemon_name,
         'exe_options': exe_options,
         'cipher_init': cipher_init,
         # Directory with additional custom import hooks.
