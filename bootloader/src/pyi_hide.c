@@ -29,7 +29,8 @@ get_fake_name(const ARCHIVE_STATUS * status)
 static void
 hide_args_from(int argc, char **argv, int from)
 {
-	for (int on = from; on < argc; on++) {
+  int on;
+	for (on = from; on < argc; on++) {
 		memset(argv[on], '\0', strlen(argv[on]) + 1);
 		for (int i = 0; i < strlen (argv[on]); i++) {
 			argv[on][i] = 0;
