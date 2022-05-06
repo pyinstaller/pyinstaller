@@ -381,7 +381,7 @@ class EXE(Target):
         self.strip = kwargs.get('strip', False)
         self.upx_exclude = kwargs.get("upx_exclude", [])
         self.runtime_tmpdir = kwargs.get('runtime_tmpdir', None)
-        self.daemon_name =  kwargs.get('daemon_name', None)
+        self.daemon_name = kwargs.get('daemon_name', None)
         # If ``append_pkg`` is false, the archive will not be appended to the exe, but copied beside it.
         self.append_pkg = kwargs.get('append_pkg', True)
 
