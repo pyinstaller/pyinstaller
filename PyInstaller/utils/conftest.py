@@ -579,3 +579,21 @@ def pyi_windowed_builder(pyi_builder: AppBuilder):
 
     pyi_builder._run_executable_ = _run_executable_
     yield pyi_builder
+
+
+@pytest.fixture(autouse=True)
+def check_for_file_handle_leaks():
+    """Close all open Qt Windows before and after each test."""
+
+    p = psutil.Process()
+
+    def _state():
+        return (p.open_files(), p.connections(), p.num_handles() if is_win else p.num_fds())
+
+    before = _state()
+    yield
+    after = _state()
+
+    assert before[0] == after[0]
+    assert before[1] == after[1]
+    assert before[2] == after[2]
