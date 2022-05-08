@@ -127,7 +127,7 @@ jobs:
       - name: Run tests
         run: >
             pytest
-            -n 3 --maxfail 3 --durations 10 tests/unit tests/functional
+            --maxfail 3 --durations 10 tests/unit tests/functional
             --force-flaky --no-flaky-report --reruns 3 --reruns-delay 10
 
       - name: Run hooksample tests
@@ -149,7 +149,7 @@ jobs:
           -e SETUPTOOLS_USE_DISTUTILS='not-today'
           foo
           pytest
-          -n 3 --maxfail 3 --durations 10 tests/unit tests/functional
+          --maxfail 3 --durations 10 tests/unit tests/functional
           --force-flaky --no-flaky-report --reruns 3 --reruns-delay 10
 
       # Verify that installing from sdist works. This is mostly just a verification that the MANIFEST.in contains
