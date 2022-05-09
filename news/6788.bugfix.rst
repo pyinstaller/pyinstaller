@@ -1,0 +1,2 @@
+(Windows) Fix the regression causing the (relative) spec path ending up
+prepended to relative icon path twice, resulting in icon not being found.

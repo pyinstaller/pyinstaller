@@ -151,3 +151,18 @@ jobs:
           pytest
           -n 3 --maxfail 3 --durations 10 tests/unit tests/functional
           --force-flaky --no-flaky-report --reruns 3 --reruns-delay 10
+
+      # Verify that installing from sdist works. This is mostly just a verification that the MANIFEST.in contains
+      # all the extras needed to compile the bootloader.
+      - run: |
+          git clean -xfdq .
+          python setup.py -qqq sdist
+          docker build --target=wheel-factory -t bar -f alpine.dockerfile .
+      - run: |
+          sdist="$(ls dist)"
+          docker run -v "$PWD/dist:/io" bar ash -c "
+            pip install /io/$sdist
+            echo 'print(1 + 1)' > test.py
+            pyinstaller test.py
+            ./dist/test/test
+          "

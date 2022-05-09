@@ -1,3 +1,5 @@
-This directory contains an extract of zlib 1.2.11. It is the minimum set of
-files necessary to decompress data from a zip file with the inflate compression
-scheme.
+This directory contains (a subset of) source code files from zlib 1.2.12.
+
+It is the minimum set of files neccessary for supporting the inflate
+decompression scheme in the bootloader, and is used on platforms that
+lack a system-provided copy of the zlib library (e.g., Windows).

@@ -1,0 +1,4 @@
+The hook utility functions :func:`~PyInstaller.utils.hooks.collect_submodules`,
+:func:`~PyInstaller.utils.hooks.collect_data_files`, and
+:func:`~PyInstaller.utils.hooks.collect_dynamic_libs`) now support
+collection from PEP420 namespace packages.

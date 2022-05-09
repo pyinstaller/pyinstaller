@@ -95,15 +95,13 @@ class GRPICONDIRENTRY(Structure):
 class IconFile:
     def __init__(self, path):
         self.path = path
-        if not os.path.isabs(path):
-            self.path = os.path.join(config.CONF['specpath'], path)
         try:
             # The path is from the user parameter, don't trust it.
             file = open(self.path, "rb")
         except OSError:
             # The icon file can't be opened for some reason. Stop the
             # program with an informative message.
-            raise SystemExit('Unable to open icon file {}'.format(path))
+            raise SystemExit(f'Unable to open icon file {self.path}!')
         with file:
             self.entries = []
             self.images = []

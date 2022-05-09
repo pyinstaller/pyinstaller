@@ -10,7 +10,4 @@
 #-----------------------------------------------------------------------------
 
 # Only required when run as `__main__`
-excludedimports = ["argparse"]
-
-# pickle also imports `doctest`, which also is only used when run an `__main__`. Anyway, excluding it made some Qt
-# related tests fail terribly with "ModuleNotFoundError: No module named '__future__'" when running the executable.
+excludedimports = ["argparse", "doctest"]

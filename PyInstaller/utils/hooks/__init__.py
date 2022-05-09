@@ -10,7 +10,6 @@
 #-----------------------------------------------------------------------------
 
 import copy
-import glob
 import os
 import sys
 import textwrap
@@ -511,9 +510,9 @@ def is_package(module_name):
         In such cases, this function should be called from an isolated suprocess.
         """
         try:
-            import pkgutil
-            loader = pkgutil.find_loader(module_name)
-            return loader.is_package(module_name)
+            import importlib.util
+            spec = importlib.util.find_spec(module_name)
+            return bool(spec.submodule_search_locations)
         except Exception:
             return False
 
@@ -525,19 +524,70 @@ def is_package(module_name):
         return isolated.call(_is_package, module_name)
 
 
+def get_all_package_paths(package):
+    """
+    Given a package name, return all paths associated with the package. Typically, packages have a single location
+    path, but PEP 420 namespace packages may be split across multiple locations. Returns an empty list if the specified
+    package is not found or is not a package.
+    """
+    def _get_package_paths(package):
+        """
+        Retrieve package path(s), as advertised by submodule_search_paths attribute of the spec obtained via
+        importlib.util.find_spec(package). If the name represents a top-level package, the package is not imported.
+        If the name represents a sub-module or a sub-package, its parent is imported. In such cases, this function
+        should be called from an isolated suprocess. Returns an empty list if specified package is not found or is not
+        a package.
+        """
+        try:
+            import importlib.util
+            spec = importlib.util.find_spec(package)
+            if not spec or not spec.submodule_search_locations:
+                return []
+            return [str(path) for path in spec.submodule_search_locations]
+        except Exception:
+            return []
+
+    # For top-level packages/modules, we can perform check in the main process; otherwise, we need to isolate the
+    # call to prevent import leaks in the main process.
+    if '.' not in package:
+        pkg_paths = _get_package_paths(package)
+    else:
+        pkg_paths = isolated.call(_get_package_paths, package)
+
+    return pkg_paths
+
+
+def package_base_path(package_path, package):
+    """
+    Given a package location path and package name, return the package base path, i.e., the directory in which the
+    top-level package is located. For example, given the path ``/abs/path/to/python/libs/pkg/subpkg`` and
+    package name ``pkg.subpkg``, the function returns ``/abs/path/to/python/libs``.
+    """
+    return remove_suffix(package_path, package.replace('.', os.sep))  # Base directory
+
+
 def get_package_paths(package):
     """
     Given a package, return the path to packages stored on this machine and also returns the path to this particular
     package. For example, if pkg.subpkg lives in /abs/path/to/python/libs, then this function returns
     ``(/abs/path/to/python/libs, /abs/path/to/python/libs/pkg/subpkg)``.
-    """
-    file_attr = get_module_file_attribute(package)
 
-    # package.__file__ = /abs/path/to/package/subpackage/__init__.py.
-    # Search for Python files in /abs/path/to/package/subpackage; pkg_dir stores this path.
-    pkg_dir = os.path.dirname(file_attr)
-    # When found, remove /abs/path/to/ from the filename; pkg_base store this path to be removed.
-    pkg_base = remove_suffix(pkg_dir, package.replace('.', os.sep))
+    NOTE: due to backwards compatibility, this function returns only one package path along with its base directory.
+    In case of PEP 420 namespace package with multiple location, only first location is returned. To obtain all
+    package paths, use the ``get_all_package_paths`` function and obtain corresponding base directories using the
+    ``package_base_path`` helper.
+    """
+    pkg_paths = get_all_package_paths(package)
+    if not pkg_paths:
+        raise ValueError(f"Package '{package}' does not exist or is not a package!")
+
+    if len(pkg_paths) > 1:
+        logger.warning(
+            "get_package_paths - package %s has multiple paths (%r); returning only first one!", package, pkg_paths
+        )
+
+    pkg_dir = pkg_paths[0]
+    pkg_base = package_base_path(pkg_dir, package)
 
     return pkg_base, pkg_dir
 
@@ -590,13 +640,14 @@ def collect_submodules(package: str, filter: Callable[[str], bool] = lambda name
         logger.debug('collect_submodules - Module %s is not a package.' % package)
         return []
 
-    # Determine the filesystem path to the specified package.
-    pkg_base, pkg_dir = get_package_paths(package)
+    # Determine the filesystem path(s) to the specified package.
+    pkg_dirs = get_all_package_paths(package)
+    modules = []
+    for pkg_dir in pkg_dirs:
+        modules += _collect_submodules(pkg_dir, package, on_error)
 
-    # Walk the package. Since this performs imports, do it in a separate process.
-    modules = _collect_submodules(pkg_dir, package, on_error)
-    # Apply the user defined filter function.
-    modules = [i for i in modules if filter(i)]
+    # Apply the user defined filter function. Filter out duplicates at the same time.
+    modules = [i for i in set(modules) if filter(i)]
 
     logger.debug("collect_submodules - Found submodules: %s", modules)
     return modules
@@ -693,23 +744,24 @@ def collect_dynamic_libs(package, destdir=None):
         )
         return []
 
-    pkg_base, pkg_dir = get_package_paths(package)
-    # Walk through all file in the given package, looking for dynamic libraries.
+    pkg_dirs = get_all_package_paths(package)
     dylibs = []
-    for dirpath, _, __ in os.walk(pkg_dir):
-        # Try all file patterns in a given directory.
+    for pkg_dir in pkg_dirs:
+        pkg_base = package_base_path(pkg_dir, package)
+        # Recursively glob for all file patterns in the package directory
         for pattern in PY_DYLIB_PATTERNS:
-            files = glob.glob(os.path.join(dirpath, pattern))
+            files = Path(pkg_dir).rglob(pattern)
             for source in files:
-                # Produce the tuple (/abs/path/to/source/mod/submod/file.pyd, mod/submod/file.pyd)
+                # Produce the tuple ('/abs/path/to/source/mod/submod/file.pyd', 'mod/submod')
                 if destdir:
-                    # Libraries will be put in the same directory.
+                    # Put libraries in the specified target directory.
                     dest = destdir
                 else:
-                    # The directory hierarchy is preserved as in the original package.
-                    dest = remove_prefix(dirpath, os.path.dirname(pkg_base) + os.sep)
+                    # Preserve original directory hierarchy.
+                    dest = source.parent.relative_to(pkg_base)
                 logger.debug(' %s, %s' % (source, dest))
-                dylibs.append((source, dest))
+                dylibs.append((str(source), str(dest)))
+
     return dylibs
 
 
@@ -753,16 +805,6 @@ def collect_data_files(package, include_py_files=False, subdir=None, excludes=No
         logger.warning("collect_data_files - skipping data collection for module '%s' as it is not a package.", package)
         return []
 
-    # Compute the root path for the provided patckage.
-    pkg_base, pkg_dir = get_package_paths(package)
-    if subdir:
-        pkg_dir = os.path.join(pkg_dir, subdir)
-    pkg_base = os.path.dirname(pkg_base)
-    # Ensure `pkg_base` ends with a single slash. Subtle difference on Windows: in some cases, `dirname` keeps the
-    # trailing slash, e.g., dirname("//aaa/bbb/"). See issue #4707.
-    if not pkg_base.endswith(os.sep):
-        pkg_base += os.sep
-
     # Make sure the excludes are a list; this also makes a copy, so we don't modify the original.
     excludes = list(excludes) if excludes else []
     # These excludes may contain directories which need to be searched.
@@ -780,13 +822,12 @@ def collect_data_files(package, include_py_files=False, subdir=None, excludes=No
     includes = list(includes) if includes else ["**/*"]
     includes_len = len(includes)
 
-    # Determine what source files to use.
-    sources = set()
-
     # A helper function to glob the in/ex "cludes", adding a wildcard to refer to all files under a subdirectory if a
     # subdirectory is matched by the first ``clude_len`` patterns. Otherwise, it in/excludes the matched file.
     # **This modifies** ``cludes``.
     def clude_walker(
+        # Package directory to scan
+        pkg_dir,
         # A list of paths relative to ``pkg_dir`` to in/exclude.
         cludes,
         # The number of ``cludes`` for which matching directories should be searched for all files under them.
@@ -805,11 +846,23 @@ def collect_data_files(package, include_py_files=False, subdir=None, excludes=No
                     # In/exclude a matching file.
                     sources.add(g) if is_include else sources.discard(g)
 
-    clude_walker(includes, includes_len, True)
-    clude_walker(excludes, excludes_len, False)
+    # Obtain all paths for the specified package, and process each path independently.
+    datas = []
 
-    # Transform the sources into tuples for ``datas``.
-    datas = [(str(s), remove_prefix(str(s.parent), pkg_base)) for s in sources]
+    pkg_dirs = get_all_package_paths(package)
+    for pkg_dir in pkg_dirs:
+        sources = set()  # Reset sources set
+
+        pkg_base = package_base_path(pkg_dir, package)
+        if subdir:
+            pkg_dir = os.path.join(pkg_dir, subdir)
+
+        # Process the package path with clude walker
+        clude_walker(pkg_dir, includes, includes_len, True)
+        clude_walker(pkg_dir, excludes, excludes_len, False)
+
+        # Transform the sources into tuples for ``datas``.
+        datas += [(str(s), str(s.parent.relative_to(pkg_base))) for s in sources]
 
     logger.debug("collect_data_files - Found files: %s", datas)
     return datas
@@ -825,13 +878,6 @@ def collect_system_data_files(path, destdir=None, include_py_files=False):
     # Accept only strings as paths.
     if not isinstance(path, compat.string_types):
         raise TypeError('path must be a str')
-    # The call to ``remove_prefix`` below assumes a path separate of ``os.sep``, which may not be true on Windows;
-    # Windows allows Linux path separators in filenames. Fix this by normalizing the path.
-    path = os.path.normpath(path)
-    # Ensure `path` ends with a single slash. Subtle difference on Windows: in some cases `dirname` keeps the trailing
-    # slash, e.g., dirname("//aaa/bbb/"). See issue #4707.
-    if not path.endswith(os.sep):
-        path += os.sep
 
     # Walk through all file in the given package, looking for data files.
     datas = []
@@ -841,7 +887,7 @@ def collect_system_data_files(path, destdir=None, include_py_files=False):
             if include_py_files or (extension not in PY_IGNORE_EXTENSIONS):
                 # Produce the tuple: (/abs/path/to/source/mod/submod/file.dat, mod/submod/destdir)
                 source = os.path.join(dirpath, f)
-                dest = remove_prefix(dirpath, path)
+                dest = str(Path(dirpath).relative_to(path))
                 if destdir is not None:
                     dest = os.path.join(destdir, dest)
                 datas.append((source, dest))

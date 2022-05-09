@@ -94,6 +94,7 @@ class Wheel(bdist_wheel):
     PLAT_NAME = "manylinux2014_x86_64"
     # The folder of bootloaders from PyInstaller/bootloaders to include.
     PYI_PLAT_NAME = "Linux-64bit-intel"
+    ICON_TYPES = []
 
     def finalize_options(self):
         # Inject the platform name.
@@ -110,7 +111,7 @@ class Wheel(bdist_wheel):
             "PyInstaller": [
                 # And add the correct bootloaders as data files.
                 f"bootloader/{self.PYI_PLAT_NAME}/*",
-                "bootloader/images/*",
+                *(f"bootloader/images/*.{suffix}" for suffix in self.ICON_TYPES),
                 # These files need to be explicitly included as well.
                 "fake-modules/*.py",
                 "hooks/rthooks.dat",
@@ -210,6 +211,9 @@ class bdist_macos(wheel_commands["wheel_darwin_64bit"]):
 
 
 wheel_commands["wheel_darwin_64bit"] = bdist_macos
+
+wheel_commands["wheel_darwin_64bit"].ICON_TYPES = ["icns"]
+wheel_commands["wheel_windows_32bit"].ICON_TYPES = wheel_commands["wheel_windows_64bit"].ICON_TYPES = ["ico"]
 
 
 class bdist_wheels(Command):
