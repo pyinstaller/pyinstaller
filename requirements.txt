@@ -7,7 +7,7 @@
 
 setuptools
 altgraph
-pyinstaller-hooks-contrib >= 2020.11
+pyinstaller-hooks-contrib >= 2021.4
 pefile; sys_platform == 'win32'
 pywin32-ctypes; sys_platform == 'win32'
 macholib; sys_platform == 'darwin'
