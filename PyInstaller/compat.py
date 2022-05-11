@@ -451,7 +451,7 @@ def exec_command_stdout(*command_args: str, encoding: str = None, **kwargs) -> s
     return stdout if encoding is None else stdout.decode(encoding)
 
 
-def exec_command_all(*cmdargs: str, encoding: str = None, **kwargs) -> (int, str, str):
+def exec_command_all(*cmdargs: str, encoding: str = None, **kwargs):
     """
     Run the command specified by the passed positional arguments, optionally configured by the passed keyword arguments.
 
