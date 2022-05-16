@@ -1,2 +1,0 @@
-Building on Windows with MSVC no longer falls to bits if the PyInstaller repo is
-stored in a directory with a long path.

@@ -15,6 +15,61 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+5.1 (2022-05-17)
+-----------------
+
+Bugfix
+~~~~~~
+
+* (Windows) Fix the regression causing the (relative) spec path ending up
+  prepended to relative icon path twice, resulting in icon not being found.
+  (:issue:`6788`)
+* Prevent collection of an entire Python site when using
+  :func:`~PyInstaller.utils.hooks.collect_data_files` or
+  :func:`~PyInstaller.utils.hooks.collect_dynamic_libs` for single-file modules
+  (:issue:`6789`)
+* Prevent the hook utility functions, such as
+  :func:`~PyInstaller.utils.hooks.collect_submodules`,
+  :func:`~PyInstaller.utils.hooks.collect_data_files`, and
+  :func:`~PyInstaller.utils.hooks.collect_dynamic_libs`, from failing to
+  identify a package when its PEP451-compliant loader does not implement
+  the optional ``is_package`` method. (:issue:`6790`)
+* The :func:`~PyInstaller.utils.hooks.get_package_paths` function now
+  supports PEP420 namespace packages - although for backwards-compatibility
+  reasons, it returns only the first path when multiple paths are
+  present. (:issue:`6790`)
+* The hook utility functions
+  :func:`~PyInstaller.utils.hooks.collect_submodules`,
+  :func:`~PyInstaller.utils.hooks.collect_data_files`, and
+  :func:`~PyInstaller.utils.hooks.collect_dynamic_libs`) now support
+  collection from PEP420 namespace packages. (:issue:`6790`)
+* The user-provided spec file path and paths provided via :option:`--workpath`
+  and :option:`--distpath` are now resolved to absolute full paths before being
+  passed to PyInstaller's internals. (:issue:`6788`)
+
+
+Hooks
+~~~~~
+
+* Exclude ``doctest`` in the ``pickle`` hook. Update ``PySide2``, ``PySide6``,
+  ``PyQt5``, and ``PyQt6`` hooks with hidden imports that were previously
+  pulled in by ``doctest`` (that was in turn pulled in by ``pickle``).
+  (:issue:`6797`)
+
+
+Bootloader
+~~~~~~~~~~
+
+* (Windows) Update the bundled ``zlib`` sources to v1.2.12. (:issue:`6804`)
+
+
+Bootloader build
+~~~~~~~~~~~~~~~~
+
+* Building on Windows with MSVC no longer falls to bits if the PyInstaller repo
+  is
+  stored in a directory with a long path. (:issue:`6806`)
+
 
 5.0.1 (2022-04-25)
 ------------------

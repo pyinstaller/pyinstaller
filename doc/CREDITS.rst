@@ -6,6 +6,18 @@ new code, bug reports, fixes, comments and ideas. A brief list follows,
 please let us know if your name is omitted by accident:
 
 
+Contributions to PyInstaller 5.1
+--------------------------------
+
+* Rok Mandeljc
+* Brénainn Woodsend
+* Jasper Harrison
+* byehack
+* ARNTechnology
+* James Gerity
+* Kian-Meng Ang
+
+
 Contributions to PyInstaller 5.0.1
 ----------------------------------
 
