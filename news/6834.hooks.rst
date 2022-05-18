@@ -1,0 +1,3 @@
+Add support for GTK4 by adding dependencies and updating ``gi.repository.Gtk``
+and ``gi.repository.Gdk`` to work with ``module-versions`` in hooksconfig for
+``gi``.

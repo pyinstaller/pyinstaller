@@ -98,7 +98,7 @@ version 3.0 of Gtk and version 4 of GtkSource:
         ...,
     )
 
-.. note:: Currently only the ``module-versions`` configuration is available for ``GtkSource``.
+.. note:: Currently the ``module-versions`` configuration is available only for ``GtkSource``, ``Gtk``, and ``Gdk``.
 
 .. _matplotlib hook options:
 
