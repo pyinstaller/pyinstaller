@@ -137,7 +137,7 @@ or one-file mode), as most of its size comprises the embedded archive that
 already contains individually compressed files.
 
 PyInstaller looks for the UPX in the standard executable path(s) (defined
-by ``PATH`` environment variable), or in the path specified viae the
+by ``PATH`` environment variable), or in the path specified via the
 :option:`--upx-dir` command-line option. If found, it is used automatically.
 The use of UPX can be completely disabled using the :option:`--noupx`
 command-line option.
