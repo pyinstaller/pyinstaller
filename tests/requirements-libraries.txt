@@ -52,21 +52,21 @@ pyqt6-webengine-qt6==6.3  # Qt6 QtWebEngine binaries
 python-dateutil==2.8.2
 pytz==2022.1
 requests==2.27.1
-scipy==1.8.0; python_version >= '3.8'
+scipy==1.8.1; python_version >= '3.8'
 # simplejson is used for text_c_extension
 simplejson==3.17.6
 sphinx==4.5.0
 # Required for test_namespace_package
 sqlalchemy==1.4.36
 zope.interface==5.4.0
-Pillow==9.1.0
+Pillow==9.1.1
 
 
 # Python versions not supported / supported for older package versions
 # -------------------------------------------------------
 
 # numpy dropped support for python 3.7 as of 1.22
-numpy==1.22.3; python_version >= '3.8'
+numpy==1.22.4; python_version >= '3.8'
 numpy==1.21.5; python_version == '3.7'  # pyup: ignore
 
 
