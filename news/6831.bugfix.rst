@@ -1,0 +1,5 @@
+(Linux) Fix potential mismatch between the collected python shared
+library name and the name expected by the bootloader when using
+Anaconda environment. The mismatch would occur on some attempts to
+freeze a program that uses an extension that is also linked against
+the python shared library.
