@@ -854,8 +854,15 @@ def get_python_library_path():
         for libdir in libdirs:
             for name in compat.PYDYLIB_NAMES:
                 full_path = os.path.join(libdir, name)
-                if os.path.exists(full_path):
-                    return full_path
+                if not os.path.exists(full_path):
+                    continue
+                # Resolve potential symbolic links to achieve consistent results with linker-based search; e.g., on
+                # POSIX systems, linker resolves unversioned library names (python3.X.so) to versioned ones
+                # (libpython3.X.so.1.0) due to former being symbolic linkes to the latter. See #6831.
+                full_path = os.path.realpath(full_path)
+                if not os.path.exists(full_path):
+                    continue
+                return full_path
         return None
 
     # If this is Microsoft App Store Python, check the compat.base_path first. While compat.python_executable resolves
