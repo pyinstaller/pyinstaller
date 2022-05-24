@@ -242,13 +242,15 @@ stored in the executable, and the bootloader will create the
 
 .. Note::
 
-    Do *not* give administrator privileges to a one-file executable
-    (setuid root in Unix/Linux, or the "Run this program as an administrator"
-    property in Windows 7).
+    Do *not* give administrator privileges to a one-file executable on Windows
+    ("Run this program as an administrator").
     There is an unlikely but not impossible way in which a malicious attacker could
     corrupt one of the shared libraries in the temp folder
     while the bootloader is preparing it.
-    Distribute a privileged program in one-folder mode instead.
+    When distributing a privileged program in general, ensure that file
+    permissions prevent shared libraries or executables from being tampered with.
+    Otherwise, an unelevated process which has write access to these files may
+    escalate privileges by modifying them.
 
 .. Note::
     Applications that use `os.setuid()` may encounter permissions errors.
