@@ -14,6 +14,7 @@ import os
 import sys
 import textwrap
 from pathlib import Path
+from collections import deque
 from typing import Callable, Tuple
 
 import pkg_resources
@@ -634,72 +635,85 @@ def collect_submodules(package: str, filter: Callable[[str], bool] = lambda name
             f"Invalid on-error action '{on_error}': Must be one of ('ignore', 'warn once', 'warn', 'raise')"
         )
 
-    logger.debug('Collecting submodules for %s' % package)
+    logger.debug('Collecting submodules for %s', package)
+
     # Skip a module which is not a package.
     if not is_package(package):
-        logger.debug('collect_submodules - Module %s is not a package.' % package)
+        logger.debug('collect_submodules - %s is not a package.', package)
         return []
 
     # Determine the filesystem path(s) to the specified package.
-    pkg_dirs = get_all_package_paths(package)
-    modules = []
-    for pkg_dir in pkg_dirs:
-        modules += _collect_submodules(pkg_dir, package, on_error)
+    package_submodules = []
 
-    # Apply the user defined filter function. Filter out duplicates at the same time.
-    modules = [i for i in set(modules) if filter(i)]
+    todo = deque()
+    todo.append(package)
 
-    logger.debug("collect_submodules - Found submodules: %s", modules)
-    return modules
+    with isolated.Python() as isolated_python:
+        while todo:
+            # Scan the given (sub)package
+            name = todo.pop()
+            modules, subpackages, on_error = isolated_python.call(_collect_submodules, name, on_error)
+
+            # Add modules to the list of all submodules
+            package_submodules += [module for module in modules if filter(module)]
+
+            # Add sub-packages to deque for subsequent recursion
+            for subpackage_name in subpackages:
+                if filter(subpackage_name):
+                    todo.append(subpackage_name)
+
+    package_submodules = sorted(package_submodules)
+
+    logger.debug("collect_submodules - found submodules: %s", package_submodules)
+    return package_submodules
 
 
-@isolated.decorate
-def _collect_submodules(pkg_dir, package, on_error):
+# This function is called in an isolated sub-process via `isolated.Python.call`.
+def _collect_submodules(name, on_error):
     import sys
     import pkgutil
     from traceback import format_exception_only
-    from collections import deque
 
-    # ``pkgutil.walk_packages`` doesn't walk subpackages of zipped files per https://bugs.python.org/issue14209. This is
-    # a workaround.
-    seen = set()
-    todo = deque([([pkg_dir], package + ".")])
-    modules = [package]
+    from PyInstaller.utils.hooks import logger
 
-    while todo:
-        path, prefix = todo.pop()
-        for importer, name, ispkg in pkgutil.iter_modules(path, prefix):
-            if not name.startswith(prefix):
-                name = prefix + name
+    logger.debug("collect_submodules - scanning (sub)package %s", name)
+
+    modules = [name]
+    subpackages = []
+
+    # Resolve package location(s)
+    try:
+        __import__(name)
+    except Exception as ex:
+        # Catch all errors and either raise, warn, or ignore them as determined by the *on_error* parameter.
+        if on_error in ("warn", "warn once"):
+            from PyInstaller.log import logger
+            ex = "".join(format_exception_only(type(ex), ex)).strip()
+            logger.warning(f"Failed to collect submodules for '{name}' because importing '{name}' raised: {ex}")
+            if on_error == "warn once":
+                on_error = "ignore"
+            return modules, subpackages, on_error
+        elif on_error == "raise":
+            raise ImportError(f"Unable to load subpackage '{name}'.") from ex
+
+    # Do not attempt to recurse into (sub)package if it did not make it into sys.modules.
+    if name not in sys.modules:
+        return modules, subpackages, on_error
+
+    # Or if it does not have __path__ attribute.
+    paths = getattr(sys.modules[name], '__path__', None) or []
+    if not paths:
+        return modules, subpackages, on_error
+
+    # Iterate package contents
+    logger.debug("collect_submodules - scanning (sub)package %s in location(s): %s", name, paths)
+    for importer, name, ispkg in pkgutil.iter_modules(paths, name + '.'):
+        if not ispkg:
             modules.append(name)
+        else:
+            subpackages.append(name)
 
-            if not ispkg:
-                # Only packages can have submodules.
-                continue
-
-            try:
-                __import__(name)
-            except Exception as ex:
-                # Catch all errors then either raise, warn or ignore them as determined by the *on_error* parameter.
-                if on_error in ("warn", "warn once"):
-                    from PyInstaller.log import logger
-                    ex = "".join(format_exception_only(type(ex), ex)).strip()
-                    logger.warning(f"Failed to collect submodules for '{name}' because importing '{name}' raised: {ex}")
-                    if on_error == "warn once":
-                        on_error = "ignore"
-                elif on_error == "raise":
-                    raise ImportError(f"Unable to load submodule '{name}'.") from ex
-                # Don't attempt to recurse to submodules if this module didn't even make it into sys.modules.
-                if name not in sys.modules:
-                    continue
-            path = getattr(sys.modules[name], '__path__', None) or []
-
-            # Don't traverse path items we've seen before.
-            path = [p for p in path if p not in seen]
-            seen.update(path)
-            todo.append((path, name + '.'))
-
-    return modules
+    return modules, subpackages, on_error
 
 
 def is_module_or_submodule(name, mod_or_submod):

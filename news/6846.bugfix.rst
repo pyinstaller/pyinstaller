@@ -1,0 +1,3 @@
+Prevent :func:`PyInstaller.utils.hooks.collect_submodules` from recursing
+into sub-packages that are excluded by the function passed via the
+``filter`` argument.
