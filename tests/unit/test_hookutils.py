@@ -121,7 +121,7 @@ class TestCollectSubmodules(object):
     def test_collect_submod_module(self, caplog):
         with caplog.at_level(logging.DEBUG, logger='PyInstaller.utils.hooks'):
             assert collect_submodules('os') == []
-            assert "Module os is not a package." in caplog.records[-1].msg
+            assert "collect_submodules - os is not a package." in caplog.records[-1].getMessage()
 
     # A TypeError should be raised if given something other than a str.
     def test_not_a_string(self):
