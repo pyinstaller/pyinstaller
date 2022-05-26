@@ -118,9 +118,10 @@ def mod_list(monkeypatch):
 
 class TestCollectSubmodules(object):
     # A message should be emitted if a module, not a package, was passed.
+    # The module's name should be in the returned list, nevetheless.
     def test_collect_submod_module(self, caplog):
         with caplog.at_level(logging.DEBUG, logger='PyInstaller.utils.hooks'):
-            assert collect_submodules('os') == []
+            assert collect_submodules('os') == ['os']
             assert "collect_submodules - os is not a package." in caplog.records[-1].getMessage()
 
     # A TypeError should be raised if given something other than a str.
