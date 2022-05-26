@@ -640,6 +640,10 @@ def collect_submodules(package: str, filter: Callable[[str], bool] = lambda name
     # Skip a module which is not a package.
     if not is_package(package):
         logger.debug('collect_submodules - %s is not a package.', package)
+        # If module is importable, return its name in the list, in order to keep behavior consistent with the
+        # one we have for packages (i.e., we include the package in the list of returned names)
+        if can_import_module(package):
+            return [package]
         return []
 
     # Determine the filesystem path(s) to the specified package.

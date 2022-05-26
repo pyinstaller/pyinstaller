@@ -1,0 +1,4 @@
+If passed a name of an importable module instead of a package, the
+:func:`PyInstaller.utils.hooks.collect_submodules` function now returns
+a list containing the module's name, same as it would for a package
+without submodules.
