@@ -682,7 +682,7 @@ def _collect_submodules(name, on_error):
 
     logger.debug("collect_submodules - scanning (sub)package %s", name)
 
-    modules = [name]
+    modules = []
     subpackages = []
 
     # Resolve package location(s)
@@ -700,7 +700,7 @@ def _collect_submodules(name, on_error):
         elif on_error == "raise":
             raise ImportError(f"Unable to load subpackage '{name}'.") from ex
 
-    # Do not attempt to recurse into (sub)package if it did not make it into sys.modules.
+    # Do not attempt to recurse into package if it did not make it into sys.modules.
     if name not in sys.modules:
         return modules, subpackages, on_error
 
@@ -708,6 +708,9 @@ def _collect_submodules(name, on_error):
     paths = getattr(sys.modules[name], '__path__', None) or []
     if not paths:
         return modules, subpackages, on_error
+
+    # Package was successfully imported - include it in the list of modules.
+    modules.append(name)
 
     # Iterate package contents
     logger.debug("collect_submodules - scanning (sub)package %s in location(s): %s", name, paths)

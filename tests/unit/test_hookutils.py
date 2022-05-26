@@ -138,14 +138,15 @@ class TestCollectSubmodules(object):
         assert TEST_MOD + '.pyextension' in mod_list
 
     # Check that all packages get included
+    # NOTE: the new behavior (see #6846 and #6850) is that un-importable subpackages are not included.
     def test_collect_submod_all_included(self, mod_list):
         mod_list.sort()
         assert mod_list == [
             TEST_MOD,
             # Python extensions end with '.pyd' on Windows and with  '.so' on Linux, Mac OS, and other OSes.
             TEST_MOD + '.pyextension',
-            TEST_MOD + '.raises_error_on_import_1',
-            TEST_MOD + '.raises_error_on_import_2',
+            #TEST_MOD + '.raises_error_on_import_1',
+            #TEST_MOD + '.raises_error_on_import_2',
             TEST_MOD + '.subpkg',
             TEST_MOD + '.subpkg.twelve',
             TEST_MOD + '.two'
