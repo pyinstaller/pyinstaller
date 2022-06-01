@@ -1,4 +1,5 @@
 {
+    'distutils':  ['pyi_rth_distutils.py'],
     'django':     ['pyi_rth_django.py'],
     'gi':         ['pyi_rth_gi.py'],
     'gi.repository.Gio':    ['pyi_rth_gio.py'],

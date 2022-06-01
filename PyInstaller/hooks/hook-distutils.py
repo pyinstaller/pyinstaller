@@ -15,14 +15,25 @@ This hook freezes the external `Makefile` and `pyconfig.h` files bundled with th
 `distutils.sysconfig` module parses at runtime for platform-specific metadata.
 """
 
+from PyInstaller.utils.hooks import collect_submodules
+from PyInstaller.utils.hooks.distutils import is_distutils_provided_by_setuptools
+
+hiddenimports = []
+
 # From Python 3.6 and later ``distutils.sysconfig`` takes on the same behaviour as regular ``sysconfig`` of moving the
 # config vars to a module (see hook-sysconfig.py). It doesn't use a nice `get module name` function like ``sysconfig``
 # does to help us locate it but the module is the same file that ``sysconfig`` uses so we can use the
 # ``_get_sysconfigdata_name()`` from regular ``sysconfig``.
 try:
     import sysconfig
-    hiddenimports = [sysconfig._get_sysconfigdata_name()]
+    hiddenimports += [sysconfig._get_sysconfigdata_name()]
 except AttributeError:
     # Either sysconfig has no attribute _get_sysconfigdata_name (i.e., the function does not exist), or this is Windows
     # and the _get_sysconfigdata_name() call failed due to missing sys.abiflags attribute.
     pass
+
+# Handle setuptools-provided version of distutils. Our pre-safe-import-module distutils hook blocked the collection, so
+# we need to ensure that setuptools._distutils is fully collected.
+if is_distutils_provided_by_setuptools():
+    hiddenimports += collect_submodules("setuptools._distutils")
+    hiddenimports += ["_distutils_hack"]  # Seems to be included automatically, but just in case...
