@@ -1,0 +1,4 @@
+Added try except around ``ctypes.util.find_library``
+to protect against cpython bug
+https://github.com/python/cpython/issues/93094,
+which raises a ``FileNotFoundError``.
