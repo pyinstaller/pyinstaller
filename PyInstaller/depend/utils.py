@@ -160,7 +160,11 @@ def __recursively_scan_code_objects_for_ctypes(code: CodeType):
                 # 'libgs.so.9').
                 libname = args[0]
                 if libname:
-                    libname = ctypes.util.find_library(libname)
+                    try:  # this try was inserted due to the ctypes bug https://github.com/python/cpython/issues/93094
+                        libname = ctypes.util.find_library(libname)
+                    except FileNotFoundError:
+                        libname = None
+                        logger.warn(f'ctypes.util.find_library raised a FileNotFoundError. Supressing and assuming no lib with the name "{args[0]}" was found.')
                     if libname:
                         # On Windows, `find_library` may return a full pathname. See issue #1934.
                         libname = os.path.basename(libname)
