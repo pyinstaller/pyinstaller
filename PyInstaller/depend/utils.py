@@ -165,7 +165,8 @@ def __recursively_scan_code_objects_for_ctypes(code: CodeType):
                     except FileNotFoundError:
                         libname = None
                         logger.warn(
-                            f'ctypes.util.find_library raised a FileNotFoundError. Supressing and assuming no lib with the name "{args[0]}" was found.'
+                            'ctypes.util.find_library raised a FileNotFoundError. '
+                            f'Supressing and assuming no lib with the name "{args[0]}" was found.'
                         )
                     if libname:
                         # On Windows, `find_library` may return a full pathname. See issue #1934.
