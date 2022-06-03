@@ -58,7 +58,7 @@ def test_pep302_loader_frozen_module(pyi_builder):
 def test_pep302_loader_frozen_package(pyi_builder):
     pyi_builder.test_source(
         """
-        mod = 'distutils'
+        mod = 'json'
         import pkgutil
         ldr = pkgutil.get_loader(mod)
         assert ldr
@@ -66,7 +66,7 @@ def test_pep302_loader_frozen_package(pyi_builder):
         assert ldr.get_code(mod) is not None
         assert ldr.get_source(mod) is None
         # Import at the very end, just to get the module frozen.
-        import distutils
+        import json
         """
     )
 
@@ -74,7 +74,7 @@ def test_pep302_loader_frozen_package(pyi_builder):
 def test_pep302_loader_frozen_submodule(pyi_builder):
     pyi_builder.test_source(
         """
-        mod = 'distutils.config'
+        mod = 'json.encoder'
         import pkgutil
         ldr = pkgutil.get_loader(mod)
         assert ldr
@@ -82,7 +82,7 @@ def test_pep302_loader_frozen_submodule(pyi_builder):
         assert ldr.get_code(mod) is not None
         assert ldr.get_source(mod) is None
         # Import at the very end, just to get the module frozen.
-        import distutils.config
+        import json.encoder
         """
     )
 
