@@ -38,7 +38,12 @@ def normalize_icon_type(icon_path: str, allowed_types: Tuple[str], convert_type:
 
     # if the file is already in the right format, pass it back unchanged
     if extension in allowed_types:
-        return icon_path
+        # Check both the suffix and the header of the file to guard against the user confusing image types.
+        signatures = hex_signatures[extension]
+        with open(icon_path, "rb") as f:
+            header = f.read(max(len(s) for s in signatures))
+        if any(list(header)[:len(s)] == s for s in signatures):
+            return icon_path
 
     # The icon type is wrong! Let's try and import PIL
     try:
@@ -68,3 +73,13 @@ def normalize_icon_type(icon_path: str, allowed_types: Tuple[str], convert_type:
         )
 
     return icon_path
+
+
+# Possible initial bytes of icon types PyInstaller needs to be able to recognise.
+# Taken from: https://en.wikipedia.org/wiki/List_of_file_signatures
+hex_signatures = {
+    "png": [[0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]],
+    "exe": [[0x4D, 0x5A], [0x5A, 0x4D]],
+    "ico": [[0x00, 0x00, 0x01, 0x00]],
+    "icns": [[0x69, 0x63, 0x6e, 0x73]],
+}
