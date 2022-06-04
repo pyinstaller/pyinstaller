@@ -380,6 +380,15 @@ class TestRegressions2 (unittest.TestCase):
         self.assertIsInstance(node, modulegraph.SourceModule)
 
 class TestRegressions3 (unittest.TestCase):
+    # NOTE: in its original variant, this test was using the `distutils`
+    # package as the test package; this has now been replaced with `json`.
+    #
+    # The reason is that with `setuptools`-provided distutils, modulegraph
+    # fails to account for the meta-path loader used by setuptools to
+    # override the distutils, and instead finds the stdlib `distutils`.
+    # This failure is independent of the scenario of this test, which
+    # involves `mypkg` creating a subpackage that essentially forwards
+    # to a stdlib package.
     if not hasattr(unittest.TestCase, 'assertIsInstance'):
         def assertIsInstance(self, value, types):
             if not isinstance(value, types):
@@ -396,24 +405,23 @@ class TestRegressions3 (unittest.TestCase):
         self.mf = modulegraph.ModuleGraph(path=[ root ] + sys.path)
         self.mf.add_script(os.path.join(root, 'script.py'))
 
-    @unittest.skipUnless(not hasattr(sys, 'real_prefix'), "Test doesn't work in virtualenv")
     def testRegr1(self):
-        node = self.mf.find_node('mypkg.distutils')
+        node = self.mf.find_node('mypkg.json')
         self.assertIsInstance(node, modulegraph.Package)
-        node = self.mf.find_node('mypkg.distutils.ccompiler')
+        node = self.mf.find_node('mypkg.json.encoder')
         self.assertIsInstance(node, modulegraph.SourceModule)
         self.assertStartswith(node.filename, os.path.dirname(__file__))
 
-        import distutils.sysconfig, distutils.ccompiler
-        node = self.mf.find_node('distutils.ccompiler')
+        import json.encoder, json.decoder
+        node = self.mf.find_node('json.encoder')
         self.assertIsInstance(node, modulegraph.SourceModule)
         self.assertEqual(os.path.dirname(node.filename),
-                os.path.dirname(distutils.ccompiler.__file__))
+                os.path.dirname(json.encoder.__file__))
 
-        node = self.mf.find_node('distutils.sysconfig')
+        node = self.mf.find_node('json.decoder')
         self.assertIsInstance(node, modulegraph.SourceModule)
         self.assertEqual(os.path.dirname(node.filename),
-                os.path.dirname(distutils.sysconfig.__file__))
+                os.path.dirname(json.decoder.__file__))
 
 class TestRegression4 (unittest.TestCase):
     if not hasattr(unittest.TestCase, 'assertIsInstance'):

@@ -1,1 +1,1 @@
-from mypkg.distutils import ccompiler
+from mypkg.json import encoder
