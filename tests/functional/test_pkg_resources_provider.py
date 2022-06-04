@@ -21,6 +21,7 @@
 
 import os
 import shutil
+import uuid
 
 import pytest
 
@@ -49,7 +50,12 @@ def __get_test_package_path(package_type, tmpdir, monkeypatch):
     if package_type == 'pkg':
         return src_path
     # Copy files to a tmpdir for building the egg.
-    dest_path = tmpdir.join('src')
+    # NOTE: include UUID in the path where the egg will be built. This ensures that each test run has unique egg file
+    # path, even if the tmpdir's basename is not unique (which can happen with sufficiently-long test names, which
+    # are shortened for the tmpdir name, and end up colliding). The non-uniqueness in egg path seems to cause issues
+    # when running test_pkg_resources_provider_frozen[onedir-egg], test_pkg_resources_provider_frozen[onefile-egg];
+    # the second test does not find the egg-provided module unless it is re-run upon failure...
+    dest_path = tmpdir.join(f'src-{uuid.uuid4()}')
     shutil.copytree(src_path, dest_path.strpath)
     monkeypatch.chdir(dest_path)
     # Create an egg from the test package. For debug, show the output of the egg build.
