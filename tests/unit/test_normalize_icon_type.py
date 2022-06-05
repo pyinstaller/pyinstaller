@@ -63,10 +63,11 @@ def test_normalize_icon_pillow(tmp_path):
 
     # A .ico which is really a mislabelled .png: should be detected and normalised
 
-    png = shutil.copy(icon, str(tmp_path / "png-in-disguise.ico"))
-    normalised = normalize_icon_type(png, ("exe", "ico"), "ico", workpath)
-    assert normalised != png
-    assert normalize_icon_type(normalised, ("exe", "ico"), "ico", workpath) == normalised
+    for (i, suffix) in enumerate(["ico", "ICO"]):
+        png = shutil.copy(icon, str(tmp_path / f"png-in-disguise-{i}.{suffix}"))
+        normalised = normalize_icon_type(png, ("exe", "ico"), "ico", workpath)
+        assert normalised != png
+        assert normalize_icon_type(normalised, ("exe", "ico"), "ico", workpath) == normalised
 
     # Some random non-image file: Raises an image conversion error
 
