@@ -1,0 +1,3 @@
+Detect if an icon file (``.ico`` or ``.icns``) is of another image type but has
+been mislabelled as a native icon type via its file suffix then either normalise
+to a genuinely native image type if ``pillow`` is installed or raise an error.

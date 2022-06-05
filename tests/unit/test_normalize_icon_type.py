@@ -11,6 +11,7 @@
 
 import os
 import sys
+import shutil
 from pathlib import Path
 
 import pytest
@@ -59,6 +60,14 @@ def test_normalize_icon_pillow(tmp_path):
     _, ret_filetype = os.path.splitext(ret)
     if ret_filetype != ".ico":
         pytest.fail("icon validation didn't convert to the right format", False)
+
+    # A .ico which is really a mislabelled .png: should be detected and normalised
+
+    for (i, suffix) in enumerate(["ico", "ICO"]):
+        png = shutil.copy(icon, str(tmp_path / f"png-in-disguise-{i}.{suffix}"))
+        normalised = normalize_icon_type(png, ("exe", "ico"), "ico", workpath)
+        assert normalised != png
+        assert normalize_icon_type(normalised, ("exe", "ico"), "ico", workpath) == normalised
 
     # Some random non-image file: Raises an image conversion error
 
