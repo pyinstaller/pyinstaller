@@ -17,6 +17,7 @@ import os
 import subprocess
 import time
 import functools
+import uuid
 
 import pytest
 
@@ -99,6 +100,18 @@ def _test_apple_events_handling(appname, tmpdir, pyi_builder_spec, monkeypatch, 
     # Clean up the log file created by test_spec() running the app
     os.remove(logfile_path)
 
+    # Rename the dist directory into dist-{uuid}, to ensure path uniqueness for each test run. The name of the tmpdir
+    # may be the same across different test runs (with different parametrizations) due to the length of the test name;
+    # re-using the same path (even though the preceding test's contents were removed) may cause issues with app bundle
+    # registration...
+    old_dist = os.path.join(tmpdir, 'dist')
+    new_dist = os.path.join(tmpdir, f'dist-{uuid.uuid4()}')
+
+    os.rename(old_dist, new_dist)
+
+    app_path = os.path.join(new_dist, appname + '.app')
+    logfile_path = os.path.join(new_dist, 'events.log')
+
     # Run using 'open', passing a 5-second timeout as an arg to exit as soon as possible (do not pass 0 to prevent
     # skipping the event loop in the application). This will cause macOS to register the custom protocol handler and
     # file extension association.
@@ -119,7 +132,7 @@ def _test_apple_events_handling(appname, tmpdir, pyi_builder_spec, monkeypatch, 
     n_files = 32
     assoc_files = []
     for ii in range(n_files):
-        assoc_path = os.path.join(tmpdir, 'dist', 'AFile{}.{}'.format(ii, custom_file_ext))
+        assoc_path = os.path.join(tmpdir, 'AFile{}.{}'.format(ii, custom_file_ext))
         with open(assoc_path, 'wt') as fh:
             fh.write("File contents #{}\n".format(ii))
         assoc_files.append(assoc_path)
