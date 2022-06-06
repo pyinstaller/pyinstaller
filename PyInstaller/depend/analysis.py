@@ -662,6 +662,10 @@ class PyiModuleGraph(ModuleGraph):
                 if identifier == module or identifier.startswith(module + '.'):
                     # Skip self references or references from `modules`'s own submodules.
                     continue
+                # The code object may be None if referrer ends up shadowed by eponymous directory that ends up treated
+                # as a namespace package. See #6873 for an example.
+                if r.code is None:
+                    continue
                 co_dict[r.identifier] = r.code
         return co_dict
 
