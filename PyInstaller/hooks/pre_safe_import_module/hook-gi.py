@@ -27,6 +27,11 @@ def pre_safe_import_module(api):
         # NOTE: the `get_package_paths`/`get_package_all_paths` helpers read the paths from package's spec without
         # importing the (top-level) package, so they do not catch run-time path modifications. Instead, we use
         # `get_module_attribute` to import the package in isolated process and query its `__path__` attribute.
-        paths = hookutils.get_module_attribute(api.module_name, "__path__")
+        try:
+            paths = hookutils.get_module_attribute(api.module_name, "__path__")
+        except Exception:
+            # Most likely `gi` cannot be imported.
+            paths = []
+
         for path in paths:
             api.append_package_path(path)
