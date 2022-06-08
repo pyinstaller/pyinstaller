@@ -764,8 +764,10 @@ class EXE(Target):
         if is_win:
             # Set checksum to appease antiviral software. Also set build timestamp to current time to increase entropy
             # (but honor SOURCE_DATE_EPOCH environment variable for reproducible builds).
+            logger.info("Fixing EXE headers")
             build_timestamp = int(os.environ.get('SOURCE_DATE_EPOCH', time.time()))
-            winutils.fixup_exe_headers(build_name, build_timestamp)
+            winutils.set_exe_build_timestamp(build_name, build_timestamp)
+            winutils.update_exe_pe_checksum(build_name)
         elif is_darwin:
             # If the version of macOS SDK used to build bootloader exceeds that of macOS SDK used to built Python
             # library (and, by extension, bundled Tcl/Tk libraries), force the version declared by the frozen executable
