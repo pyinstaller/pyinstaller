@@ -1,0 +1,3 @@
+Exit gracefully with an explainatory :class:`SystemExit` if the user moves or
+deletes the application whilst it's still running. Note that this is only
+detected on trying to load a module which has not already been loaded.

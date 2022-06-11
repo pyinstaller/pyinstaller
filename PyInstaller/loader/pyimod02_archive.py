@@ -287,9 +287,15 @@ class ZlibArchiveReader(ArchiveReader):
         (typ, pos, length) = self.toc.get(name, (0, None, 0))
         if pos is None:
             return None
-        with self.lib:
-            self.lib.seek(self.start + pos)
-            obj = self.lib.read(length)
+        try:
+            with self.lib:
+                self.lib.seek(self.start + pos)
+                obj = self.lib.read(length)
+        except FileNotFoundError:
+            raise SystemExit(
+                f"{self.path} appears to have been moved or deleted since this application was launched. "
+                "Continouation from this state is impossible. Exiting now."
+            )
         try:
             if self.cipher:
                 obj = self.cipher.decrypt(obj)
