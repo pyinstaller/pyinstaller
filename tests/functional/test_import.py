@@ -673,3 +673,23 @@ def test_pkg_without_hook_for_pkg(pyi_builder, script_dir):
 def test_app_with_plugin(pyi_builder, data_dir, monkeypatch):
     datas = os.pathsep.join(('data/*/static_plugin.py', os.curdir))
     pyi_builder.test_script('pyi_app_with_plugin.py', pyi_args=['--add-data', datas])
+
+
+def test_app_has_moved_error(pyi_builder, tmpdir):
+    """
+    Test graceful exit from the user moving/deleting the application whilst it's still running.
+    """
+    pyi_builder.test_source(
+        f"""
+        import os
+        import sys
+        os.rename(sys.executable, {repr(str(tmpdir/ "something-else"))})
+        try:
+            # Import some non-builtin module which hasn't already been loaded.
+            import csv
+        except SystemExit:
+            pass
+        else:
+            assert 0, "A system exit should have been raised."
+        """
+    )
