@@ -90,7 +90,7 @@ def test_package(tmpdir):
     )
 )
 def test_package_init_is_extension(tmpdir, num, modname, expected_nodetype):
-    # Regression: Recursion to deep
+    # Regression: Recursion too deep
 
     def wt(*args):
         f = tmpdir.join(*args)
