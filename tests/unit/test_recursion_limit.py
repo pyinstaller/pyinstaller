@@ -37,9 +37,9 @@ def large_import_chain(tmpdir):
     return [str(tmpdir)], str(script)
 
 
-def test_recursion_to_deep(large_import_chain):
+def test_recursion_too_deep(large_import_chain):
     """
-    modulegraph is recursive and triggers RecursionError if nesting of imported modules is to deep.
+    modulegraph is recursive and triggers RecursionError if nesting of imported modules is too deep.
     This can be worked around by increasing recursion limit.
 
     With the default recursion limit (1000), the recursion error occurs at about 115 modules, with limit 2000
@@ -57,7 +57,7 @@ def test_recursion_to_deep(large_import_chain):
 
 def test_RecursionError_prints_message(tmpdir, large_import_chain, monkeypatch):
     """
-    modulegraph is recursive and triggers RecursionError if nesting of imported modules is to deep.
+    modulegraph is recursive and triggers RecursionError if nesting of imported modules is too deep.
     Ensure an informative message is printed if RecursionError occurs.
     """
     if is_win:
