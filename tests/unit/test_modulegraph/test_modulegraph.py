@@ -12,6 +12,7 @@ from PyInstaller.utils.tests import importorskip
 import textwrap
 import pickle
 
+import pytest
 from importlib._bootstrap_external import SourceFileLoader, ExtensionFileLoader
 from zipimport import zipimporter
 
@@ -150,6 +151,8 @@ class TestFunctions (unittest.TestCase):
         finally:
             pkg_resources.WorkingSet = saved_ws
 
+    @pytest.mark.filterwarnings(
+        "ignore:Use zipio.listdir instead of os_listdir:DeprecationWarning")
     def test_os_listdir(self):
         root = os.path.join(
                 os.path.dirname(os.path.abspath(__file__)), 'testdata')
