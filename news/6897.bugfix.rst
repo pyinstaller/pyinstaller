@@ -1,0 +1,4 @@
+Fix regression in ``gi`` hooks where an import of a non-existent package
+(for example, an optional dependency) in the program causes a build-time
+error and aborts the build process. Instead, display a warning and
+continue, which was the behavior in PyInstaller v4.

@@ -68,7 +68,12 @@ def get_gi_typelibs(module, version):
             'deps': get_deps(module) or []
         }
 
-    typelibs_data = _gi_typelibs(module, version)
+    try:
+        typelibs_data = _gi_typelibs(module, version)
+    except Exception as e:
+        logger.warning("Failed to query files for %s %s: %s", module, version, e)
+        return binaries, datas, hiddenimports
+
     logger.debug("Adding files for %s %s", module, version)
 
     if typelibs_data['sharedlib']:

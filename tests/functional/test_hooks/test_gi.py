@@ -63,3 +63,13 @@ def test_gi_repository(pyi_builder, repository_name, version):
         print({repository_name})
         """.format(repository_name=repository_name, version=version)
     )
+
+
+# Test behavior of get_gi_typelibs() when the specified package/typelib does not exist. Due to the way the function is
+# used in hooks, it should return empty lists and display a warning instead of raising an exception.
+def test_gi_get_gi_typelibs_nonexistant():
+    from PyInstaller.utils.hooks.gi import get_gi_typelibs
+    binaries, datas, hiddenimports = get_gi_typelibs("PackageThatSurelyDoesNotExist", "1.0")
+    assert binaries == []
+    assert datas == []
+    assert hiddenimports == []
