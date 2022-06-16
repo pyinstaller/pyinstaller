@@ -100,6 +100,9 @@ jobs:
           # ready for that.
           echo "SETUPTOOLS_USE_DISTUTILS=not-today" >> $GITHUB_ENV
 
+          # Colored pytest output on CI despite not having a tty
+          echo "FORCE_COLOR=1" >> $GITHUB_ENV
+
       # Use bash for this step, so that we can avoid dealing with PowerShell
       # syntax for writing to environmental file on Windows.
       - name: Set up environment variables (Windows)
@@ -109,6 +112,9 @@ jobs:
           # Prevent setuptools from replacing distutils with its vendored version, as our test suite is not
           # ready for that.
           echo "SETUPTOOLS_USE_DISTUTILS=not-today" >> $GITHUB_ENV
+
+          # Colored pytest output on CI despite not having a tty
+          echo "FORCE_COLOR=1" >> $GITHUB_ENV
 
       - name: Start display server
         if: startsWith(matrix.os, 'ubuntu')
