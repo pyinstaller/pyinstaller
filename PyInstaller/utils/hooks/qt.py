@@ -754,6 +754,8 @@ def get_qt_webengine_binaries_and_data_files(qt_library_info):
             'QtCore', 'QtWebEngineCore', 'QtQuick', 'QtQml', 'QtQmlModels', 'QtNetwork', 'QtGui', 'QtWebChannel',
             'QtPositioning'
         ]
+        if qt_library_info.qt_major == 6:
+            libraries.extend(['QtOpenGL', 'QtDBus'])
         for i in libraries:
             framework_dir = i + '.framework'
             datas += hooks.collect_system_data_files(

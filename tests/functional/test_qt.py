@@ -304,12 +304,40 @@ def _test_Qt_QtWebEngineWidgets(pyi_builder, qt_flavor):
 
         app = QApplication([])
 
+        class JSResultTester:
+
+            CODE = "1+1"
+            EXPECTED = 2
+
+            def __init__(self):
+                self.result = None
+
+            def setup(self, view):
+                # Need to explicitly pass 0 as world id due to
+                # https://bugreports.qt.io/browse/PYSIDE-643
+                view.page().runJavaScript(self.CODE, 0, self.store)
+
+                view.page().loadFinished.connect(
+                    # Display the web page for one second after it loads.
+                    lambda ok: QTimer.singleShot(1000, self.verify_and_quit))
+
+            def store(self, res):
+                self.result = res
+
+            def verify_and_quit(self):
+                # Make sure the renderer process is alive.
+                if self.result != self.EXPECTED:
+                    raise ValueError(
+                        f"JS result is {{self.result!r}} but expected {{self.EXPECTED!r}}. "
+                        "Is the QtWebEngine renderer process running properly?")
+                app.quit()
+
         view = QWebEngineView()
         view.setHtml(WEB_PAGE_HTML)
         view.show()
-        view.page().loadFinished.connect(
-            # Display the web page for one second after it loads.
-            lambda ok: QTimer.singleShot(1000, app.quit))
+
+        js_result_tester = JSResultTester()
+        js_result_tester.setup(view)
 
         if is_qt6:
             # Qt6: exec_() is deprecated in PySide6 and removed from PyQt6 in favor of exec()
