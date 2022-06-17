@@ -8,7 +8,7 @@ Options and special cases are covered below, under :ref:`Using PyInstaller`.
 |PyInstaller| reads a Python script written by you.
 It analyzes your code to discover every other module and library
 your script needs in order to execute.
-Then it collects copies of all those files -- including
+Then it collects and copies of all those files -- including
 the active Python interpreter! -- and puts them with
 your script in a single folder,
 or optionally in a single executable file.
