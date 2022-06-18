@@ -8,54 +8,47 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-"""
-Import hook for PyGObject https://wiki.gnome.org/PyGObject
-"""
 
 import os
 import os.path
 
 from PyInstaller.compat import is_win
-from PyInstaller.utils.hooks import get_hook_config, logger
-from PyInstaller.utils.hooks.gi import \
-    collect_glib_etc_files, collect_glib_share_files, collect_glib_translations, get_gi_typelibs
+from PyInstaller.utils.hooks import get_hook_config
+from PyInstaller.utils.hooks.gi import GiModuleInfo, collect_glib_etc_files, collect_glib_share_files, \
+    collect_glib_translations
 
 
 def hook(hook_api):
-    module_versions = get_hook_config(hook_api, 'gi', 'module-versions')
-    if module_versions:
-        version = module_versions.get('Gtk', '3.0')
-    else:
-        version = '3.0'
-    logger.info(f'Gtk version is {version}')
+    module_info = GiModuleInfo('Gtk', '3.0', hook_api=hook_api)  # Pass hook_api to read version from hook config
+    if not module_info.available:
+        return
 
-    binaries, datas, hiddenimports = get_gi_typelibs('Gtk', version)
+    binaries, datas, hiddenimports = module_info.collect_typelib_data()
 
+    # Collect fontconfig data
     datas += collect_glib_share_files('fontconfig')
 
-    hook_datas = []
-
+    # Icons, themes, translations
     icon_list = get_hook_config(hook_api, "gi", "icons")
-    theme_list = get_hook_config(hook_api, "gi", "themes")
-    lang_list = get_hook_config(hook_api, "gi", "languages")
-
     if icon_list is not None:
         for icon in icon_list:
-            hook_datas += collect_glib_share_files(os.path.join("icons", icon))
+            datas += collect_glib_share_files(os.path.join('icons', icon))
     else:
-        hook_datas += collect_glib_share_files('icons')
+        datas += collect_glib_share_files('icons')
 
+    # Themes
+    theme_list = get_hook_config(hook_api, "gi", "themes")
     if theme_list is not None:
         for theme in theme_list:
-            hook_datas += collect_glib_share_files(os.path.join('themes', theme))
+            datas += collect_glib_share_files(os.path.join('themes', theme))
     else:
-        hook_datas += collect_glib_share_files('themes')
+        datas += collect_glib_share_files('themes')
 
-    hook_datas += collect_glib_translations(f'gtk{version[0]}0', lang_list)
+    # Translations
+    lang_list = get_hook_config(hook_api, "gi", "languages")
+    datas += collect_glib_translations(f'gtk{module_info.version[0]}0', lang_list)
 
-    hook_api.add_datas(hook_datas)
-
-    # these only seem to be required on Windows
+    # These only seem to be required on Windows
     if is_win:
         datas += collect_glib_etc_files('fonts')
         datas += collect_glib_etc_files('pango')

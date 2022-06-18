@@ -8,15 +8,14 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-"""
-Import hook for PyGObject https://wiki.gnome.org/PyGObject
-"""
 
-from PyInstaller.utils.hooks.gi import get_gi_typelibs
-from PyInstaller.utils.hooks import get_hook_config, logger
+from PyInstaller.utils.hooks.gi import GiModuleInfo
+from PyInstaller.utils.hooks import get_hook_config
 
 
 def hook(hook_api):
+    # Use the Gdk version from hook config, if available. If not, try using Gtk version from hook config, so that we
+    # collect Gdk and Gtk of the same version.
     module_versions = get_hook_config(hook_api, 'gi', 'module-versions')
     if module_versions:
         version = module_versions.get('Gdk')
@@ -24,9 +23,12 @@ def hook(hook_api):
             version = module_versions.get('Gtk', '3.0')
     else:
         version = '3.0'
-    logger.info(f'Gdk version is {version}')
 
-    binaries, datas, hiddenimports = get_gi_typelibs('Gdk', version)
+    module_info = GiModuleInfo('Gdk', version)
+    if not module_info.available:
+        return
+
+    binaries, datas, hiddenimports = module_info.collect_typelib_data()
     hiddenimports += ['gi._gi_cairo', 'gi.repository.cairo']
 
     hook_api.add_datas(datas)

@@ -8,39 +8,35 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-"""
-Import hook for the GLib library https://wiki.gnome.org/Projects/GLib introspected through
-PyGobject https://wiki.gnome.org/PyGObject via the GObject Introspection middleware layer
-https://wiki.gnome.org/Projects/GObjectIntrospection
-
-Tested with GLib 2.44.1, PyGObject 3.16.2, and GObject Introspection 1.44.0 on Mac OS 10.10 and
-GLib 2.42.2, PyGObject 3.14.0, and GObject Introspection 1.42 on Windows 7.
-"""
 
 import glob
 import os
 
 from PyInstaller.compat import is_win
 from PyInstaller.utils.hooks import get_hook_config
-from PyInstaller.utils.hooks.gi import \
-    collect_glib_share_files, collect_glib_translations, get_gi_libdir, get_gi_typelibs
-
-binaries, datas, hiddenimports = get_gi_typelibs('GLib', '2.0')
+from PyInstaller.utils.hooks.gi import GiModuleInfo, collect_glib_share_files, collect_glib_translations
 
 
 def hook(hook_api):
-    hook_datas = []
+    module_info = GiModuleInfo('GLib', '2.0')
+    if not module_info.available:
+        return
+
+    binaries, datas, hiddenimports = module_info.collect_typelib_data()
+
+    # Collect translations
     lang_list = get_hook_config(hook_api, "gi", "languages")
+    datas += collect_glib_translations('glib20', lang_list)
 
-    hook_datas += collect_glib_translations('glib20', lang_list)
-    hook_api.add_datas(hook_datas)
+    # Collect schemas
+    datas += collect_glib_share_files('glib-2.0', 'schemas')
 
+    # On Windows, glib needs a spawn helper for g_spawn* API
+    if is_win:
+        pattern = os.path.join(module_info.get_libdir(), 'gspawn-*-helper*.exe')
+        for f in glob.glob(pattern):
+            binaries.append((f, '.'))
 
-datas += collect_glib_share_files('glib-2.0', 'schemas')
-
-# On Windows, glib needs a spawn helper for g_spawn* API
-if is_win:
-    libdir = get_gi_libdir('GLib', '2.0')
-    pattern = os.path.join(libdir, 'gspawn-*-helper*.exe')
-    for f in glob.glob(pattern):
-        binaries.append((f, '.'))
+    hook_api.add_datas(datas)
+    hook_api.add_binaries(binaries)
+    hook_api.add_imports(*hiddenimports)
