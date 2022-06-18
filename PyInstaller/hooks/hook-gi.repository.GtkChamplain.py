@@ -8,10 +8,9 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-"""
-Import hook for PyGObject's "gi.repository.GtkChamplain" package.
-"""
 
-from PyInstaller.utils.hooks.gi import get_gi_typelibs
+from PyInstaller.utils.hooks.gi import GiModuleInfo
 
-binaries, datas, hiddenimports = get_gi_typelibs('GtkChamplain', '0.12')
+module_info = GiModuleInfo('GtkChamplain', '0.12')
+if module_info.available:
+    binaries, datas, hiddenimports = module_info.collect_typelib_data()

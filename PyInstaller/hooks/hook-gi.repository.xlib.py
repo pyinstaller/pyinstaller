@@ -8,10 +8,9 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-"""
-Import hook for PyGObject https://wiki.gnome.org/PyGObject
-"""
 
-from PyInstaller.utils.hooks.gi import get_gi_typelibs
+from PyInstaller.utils.hooks.gi import GiModuleInfo
 
-binaries, datas, hiddenimports = get_gi_typelibs('xlib', '2.0')
+module_info = GiModuleInfo('xlib', '2.0')
+if module_info.available:
+    binaries, datas, hiddenimports = module_info.collect_typelib_data()

@@ -8,10 +8,5 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-"""
-Import hook for PyGObject https://wiki.gnome.org/PyGObject
-
-Tested with PyGObject 3.16.2 from MacPorts on Mac OS 10.10 and PyGobject 3.14.0 on Windows 7.
-"""
 
 hiddenimports = ['gi._error', 'gi._option']
