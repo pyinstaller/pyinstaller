@@ -47,7 +47,7 @@ pyqt5==5.15.7; python_version < '3.10'
 pyqtwebengine==5.15.6; python_version < '3.10'
 pyqt6==6.3.1  # PyQt6 Qt6 bindings
 pyqt6-qt6==6.3.1  # Qt6 binaries (keep in sync with pyqt6 version!)
-pyqt6-webengine==6.3  # PyQt6 QtWebEngine bindings
+pyqt6-webengine==6.3.1  # PyQt6 QtWebEngine bindings
 pyqt6-webengine-qt6==6.3  # Qt6 QtWebEngine binaries
 python-dateutil==2.8.2
 pytz==2022.1
