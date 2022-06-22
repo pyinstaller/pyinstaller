@@ -44,6 +44,7 @@ from copy import deepcopy
 from PyInstaller import HOMEPATH, PACKAGEPATH
 from PyInstaller import log as logging
 from PyInstaller.building.datastruct import TOC
+from PyInstaller.building.utils import add_suffix_to_extension
 from PyInstaller.compat import (
     BAD_MODULE_TYPES, BINARY_MODULE_TYPES, MODULE_TYPES_TO_TOC_DICT, PURE_PYTHON_MODULE_TYPES, PY3_BASE_MODULES,
     VALID_MODULE_TYPES, importlib_load_source, is_win
@@ -879,7 +880,7 @@ def get_bootstrap_modules():
             if os.path.basename(os.path.dirname(mod_file)) == 'lib-dynload':
                 # Divert extensions originating from python's lib-dynload directory, to match behavior of #5604.
                 mod_name = os.path.join('lib-dynload', mod_name)
-            loader_mods.append((mod_name, mod_file, 'EXTENSION'))
+            loader_mods.append(add_suffix_to_extension(mod_name, mod_file, 'EXTENSION'))
     loader_mods.append(('struct', os.path.abspath(mod_struct.__file__), 'PYMODULE'))
     # Loader/bootstrap modules.
     # NOTE: These modules should be kept simple without any complicated dependencies.

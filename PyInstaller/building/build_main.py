@@ -31,7 +31,8 @@ from PyInstaller.building.osx import BUNDLE
 from PyInstaller.building.splash import Splash
 from PyInstaller.building.toc_conversion import DependencyProcessor
 from PyInstaller.building.utils import (
-    _check_guts_toc_mtime, _should_include_system_binary, format_binaries_and_datas, compile_pymodule
+    _check_guts_toc_mtime, _should_include_system_binary, format_binaries_and_datas, compile_pymodule,
+    add_suffix_to_extension
 )
 from PyInstaller.compat import PYDYLIB_NAMES, is_win
 from PyInstaller.depend import bindepend
@@ -701,16 +702,23 @@ class Analysis(Target):
             self.binding_redirects[:] = list(set(self.binding_redirects))
             logger.info("Found binding redirects: \n%s", self.binding_redirects)
 
-        # Filter binaries to adjust path of extensions that come from python's lib-dynload directory. Prefix them with
-        # lib-dynload so that we will collect them into subdirectory instead of directly into _MEIPASS
-        for idx, tpl in enumerate(self.binaries):
-            name, path, typecode = tpl
-            if (
-                typecode == 'EXTENSION' and not os.path.dirname(os.path.normpath(name))
-                and os.path.basename(os.path.dirname(path)) == 'lib-dynload'
-            ):
-                name = os.path.join('lib-dynload', name)
-                self.binaries[idx] = (name, path, typecode)
+        # Convert extension module names into full filenames, and append suffix. Ensure that extensions that come from
+        # the lib-dynload are collected into _MEIPASS/lib-dynload instead of directly into _MEIPASS.
+        for idx, (dest, source, typecode) in enumerate(self.binaries):
+            if typecode != 'EXTENSION':
+                continue
+
+            # Convert to full filename and append suffix
+            dest, source, typecode = add_suffix_to_extension(dest, source, typecode)
+
+            # Divert into lib-dyload, if necessary (i.e., if file comes from lib-dynload directory) and its destination
+            # path does not already have a directory prefix.
+            src_parent = os.path.basename(os.path.dirname(source))
+            if src_parent == 'lib-dynload' and not os.path.dirname(os.path.normpath(dest)):
+                dest = os.path.join('lib-dynload', dest)
+
+            # Update
+            self.binaries[idx] = (dest, source, typecode)
 
         # Write warnings about missing modules.
         self._write_warnings()

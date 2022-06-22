@@ -26,8 +26,7 @@ from PyInstaller import log as logging
 from PyInstaller.archive.writers import CArchiveWriter, ZlibArchiveWriter
 from PyInstaller.building.datastruct import TOC, Target, _check_guts_eq
 from PyInstaller.building.utils import (
-    _check_guts_toc, _make_clean_directory, _rmtree, add_suffix_to_extension, checkCache, get_code_object,
-    strip_paths_in_code, compile_pymodule
+    _check_guts_toc, _make_clean_directory, _rmtree, checkCache, get_code_object, strip_paths_in_code, compile_pymodule
 )
 from PyInstaller.compat import (is_cygwin, is_darwin, is_linux, is_win)
 from PyInstaller.depend import bindepend
@@ -242,8 +241,6 @@ class PKG(Target):
         # 'inm'  - relative filename inside a CArchive
         # 'fnm'  - absolute filename as it is on the file system.
         for inm, fnm, typ in self.toc:
-            # Adjust name for extensions, if applicable
-            inm, fnm, typ = add_suffix_to_extension(inm, fnm, typ)
             # Ensure filename 'fnm' is not None or empty string. Otherwise, it will fail when 'typ' is OPTION.
             if fnm and not os.path.isfile(fnm) and is_path_to_egg(fnm):
                 # File is contained within python egg; it is added with the egg.
@@ -869,8 +866,6 @@ class COLLECT(Target):
         _make_clean_directory(self.name)
         logger.info("Building COLLECT %s", self.tocbasename)
         for inm, fnm, typ in self.toc:
-            # Adjust name for extensions, if applicable
-            inm, fnm, typ = add_suffix_to_extension(inm, fnm, typ)
             if not os.path.exists(fnm) or not os.path.isfile(fnm) and is_path_to_egg(fnm):
                 # File is contained within python egg; it is added with the egg.
                 continue
@@ -974,18 +969,8 @@ class MERGE:
                         continue
                     logger.debug("Referencing %s to be a dependency for %s, located in %s", tpl[1], path, dep_path)
                     # Determine the path relative to dep_path (i.e, within the target directory) from the 'name'
-                    # component of the TOC tuple. If entry is EXTENSION, then the relative path needs to be
-                    # reconstructed from the name components.
-                    if tpl[2] == 'EXTENSION':
-                        # Split on os.path.sep first, to handle additional path prefix (e.g., lib-dynload)
-                        ext_components = tpl[0].split(os.path.sep)
-                        ext_components = ext_components[:-1] + ext_components[-1].split('.')[:-1]
-                        if ext_components:
-                            rel_path = os.path.join(*ext_components)
-                        else:
-                            rel_path = ''
-                    else:
-                        rel_path = os.path.dirname(tpl[0])
+                    # component of the TOC tuple.
+                    rel_path = os.path.dirname(tpl[0])
                     # Take filename from 'path' (second component of TOC tuple); this way, we don't need to worry about
                     # suffix of extensions.
                     filename = os.path.basename(tpl[1])
