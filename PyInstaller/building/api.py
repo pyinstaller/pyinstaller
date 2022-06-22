@@ -897,16 +897,10 @@ class COLLECT(Target):
                     strict_arch_validation=(typ == 'EXTENSION'),
                 )
             if typ != 'DEPENDENCY':
-                if os.path.isdir(fnm):
-                    # Because shutil.copy2() is the default copy function for shutil.copytree, this will also copy file
-                    # metadata.
-                    shutil.copytree(fnm, tofnm)
-                else:
-                    shutil.copy(fnm, tofnm)
-                try:
-                    shutil.copystat(fnm, tofnm)
-                except OSError:
-                    logger.warning("failed to copy flags of %s", fnm)
+                # At this point, fnm should be a valid file
+                if not os.path.isfile(fnm):
+                    raise ValueError("Resource %r is not a valid file!", fnm)
+                shutil.copy2(fnm, tofnm)  # Use copy2 to (attempt to) preserve metadata
             if typ in ('EXTENSION', 'BINARY'):
                 os.chmod(tofnm, 0o755)
         logger.info("Building COLLECT %s completed successfully.", self.tocbasename)

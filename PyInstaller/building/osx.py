@@ -200,16 +200,14 @@ class BUNDLE(Target):
             if relocate_file:
                 links.append((inm, fnm))
             else:
+                # At this point, fnm should be a valid file
+                if not os.path.isfile(fnm):
+                    raise ValueError("Resource %r is not a valid file!", fnm)
                 tofnm = os.path.join(self.name, "Contents", "MacOS", inm)
                 todir = os.path.dirname(tofnm)
                 if not os.path.exists(todir):
                     os.makedirs(todir)
-                if os.path.isdir(fnm):
-                    # Because shutil.copy2() is the default copy function for shutil.copytree, this will also copy file
-                    # metadata.
-                    shutil.copytree(fnm, tofnm)
-                else:
-                    shutil.copy(fnm, tofnm)
+                shutil.copy2(fnm, tofnm)  # Use copy2 to (attempt to) preserve metadata
 
         logger.info('Moving BUNDLE data files to Resource directory')
 
@@ -218,16 +216,14 @@ class BUNDLE(Target):
         bin_dir = os.path.join(self.name, 'Contents', 'MacOS')
         res_dir = os.path.join(self.name, 'Contents', 'Resources')
         for inm, fnm in links:
+            # At this point, fnm should be a valid file
+            if not os.path.isfile(fnm):
+                raise ValueError("Resource %r is not a valid file!", fnm)
             tofnm = os.path.join(res_dir, inm)
             todir = os.path.dirname(tofnm)
             if not os.path.exists(todir):
                 os.makedirs(todir)
-            if os.path.isdir(fnm):
-                # Because shutil.copy2() is the default copy function for shutil.copytree, this will also copy file
-                # metadata.
-                shutil.copytree(fnm, tofnm)
-            else:
-                shutil.copy(fnm, tofnm)
+            shutil.copy2(fnm, tofnm)  # Use copy2 to (attempt to) preserve metadata
             base_path = os.path.split(inm)[0]
             if base_path:
                 if not os.path.exists(os.path.join(bin_dir, inm)):
