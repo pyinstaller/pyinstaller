@@ -15,7 +15,7 @@ import shutil
 
 from PyInstaller.building.api import COLLECT, EXE
 from PyInstaller.building.datastruct import TOC, Target, logger
-from PyInstaller.building.utils import (_check_path_overlap, _rmtree, add_suffix_to_extension, checkCache)
+from PyInstaller.building.utils import _check_path_overlap, _rmtree, checkCache
 from PyInstaller.compat import is_darwin
 from PyInstaller.building.icon import normalize_icon_type
 
@@ -174,8 +174,6 @@ class BUNDLE(Target):
         links = []
         _QT_BASE_PATH = {'PySide2', 'PySide6', 'PyQt5', 'PySide6'}
         for inm, fnm, typ in self.toc:
-            # Adjust name for extensions, if applicable
-            inm, fnm, typ = add_suffix_to_extension(inm, fnm, typ)
             # Copy files from cache. This ensures that are used files with relative paths to dynamic library
             # dependencies (@executable_path)
             base_path = inm.split('/', 1)[0]
