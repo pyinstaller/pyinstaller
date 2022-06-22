@@ -18,7 +18,6 @@ is a way how PyInstaller does the dependency analysis and creates executable.
 import os
 import subprocess
 import time
-import pprint
 import shutil
 from operator import itemgetter
 
@@ -240,9 +239,6 @@ class PKG(Target):
         logger.info("Building PKG (CArchive) %s", os.path.basename(self.name))
         mytoc = []
         srctoc = []
-        seen_inms = {}
-        seen_fnms = {}
-        seen_fnms_typ = {}
         # 'inm'  - relative filename inside a CArchive
         # 'fnm'  - absolute filename as it is on the file system.
         for inm, fnm, typ in self.toc:
@@ -256,27 +252,6 @@ class PKG(Target):
                 if self.exclude_binaries and typ == 'EXTENSION':
                     self.dependencies.append((inm, fnm, typ))
                 elif not self.exclude_binaries or typ == 'DEPENDENCY':
-                    if typ == 'BINARY':
-                        # Avoid importing the same binary extension twice. This might happen if they come from different
-                        # sources (eg. once from binary dependence, and once from direct import).
-                        if inm in seen_inms:
-                            logger.warning('Two binaries added with the same internal name.')
-                            logger.warning(pprint.pformat((inm, fnm, typ)))
-                            logger.warning('was placed previously at')
-                            logger.warning(pprint.pformat((inm, seen_inms[inm], seen_fnms_typ[seen_inms[inm]])))
-                            logger.warning('Skipping %s.' % fnm)
-                            continue
-
-                        # Warn if the same binary extension was included with multiple internal names
-                        if fnm in seen_fnms:
-                            logger.warning('One binary added with two internal names.')
-                            logger.warning(pprint.pformat((inm, fnm, typ)))
-                            logger.warning('was placed previously at')
-                            logger.warning(pprint.pformat((seen_fnms[fnm], fnm, seen_fnms_typ[fnm])))
-                    seen_inms[inm] = fnm
-                    seen_fnms[fnm] = inm
-                    seen_fnms_typ[fnm] = typ
-
                     fnm = checkCache(
                         fnm,
                         strip=self.strip_binaries,
@@ -288,7 +263,6 @@ class PKG(Target):
                         entitlements_file=self.entitlements_file,
                         strict_arch_validation=(typ == 'EXTENSION'),
                     )
-
                     mytoc.append((inm, fnm, self.cdict.get(typ, 0), self.xformdict.get(typ, 'b')))
             elif typ == 'OPTION':
                 mytoc.append((inm, '', 0, 'o'))
