@@ -238,7 +238,6 @@ class PKG(Target):
 
     def assemble(self):
         logger.info("Building PKG (CArchive) %s", os.path.basename(self.name))
-        trash = []
         mytoc = []
         srctoc = []
         seen_inms = {}
@@ -308,8 +307,6 @@ class PKG(Target):
         # TODO: Think about having all modules first and then all scripts.
         CArchiveWriter(self.name, srctoc + mytoc, pylib_name=pylib_name)
 
-        for item in trash:
-            os.remove(item)
         logger.info("Building PKG (CArchive) %s completed successfully.", os.path.basename(self.name))
 
 
