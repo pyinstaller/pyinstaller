@@ -1,6 +1,20 @@
 PyInstaller Overview
 ====================
 
+.. image:: https://img.shields.io/pypi/v/pyinstaller
+   :alt: PyPI
+   :target: https://pypi.org/project/pyinstaller
+.. image:: https://img.shields.io/pypi/pyversions/pyinstaller
+   :alt: PyPI - Python Version
+   :target: https://pypi.org/project/pyinstaller
+.. image:: https://img.shields.io/readthedocs/pyinstaller/stable
+   :alt: Read the Docs (version)
+   :target: https://pyinstaller.org
+.. image:: https://img.shields.io/pypi/dm/pyinstaller
+   :alt: PyPI - Downloads
+   :target: https://pypistats.org/packages/pyinstaller
+
+
 PyInstaller bundles a Python application and all its dependencies into a single
 package. The user can run the packaged app without installing a Python
 interpreter or any modules.
