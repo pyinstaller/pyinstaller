@@ -2638,12 +2638,12 @@ class ModuleGraph(ObjectGraph):
         # module's code object.
         if module_code_object_ast is not None:
             # Parse this module's AST for imports.
-            self._scan_ast(module, module_code_object_ast)
+            # self._scan_ast(module, module_code_object_ast)
 
             # Parse this module's code object for all relevant non-imports
             # (e.g., global variable declarations and undeclarations).
             self._scan_bytecode(
-                module, module_code_object, is_scanning_imports=False)
+                module, module_code_object)
         # Else, parse this module's code object for imports.
         else:
             self._scan_bytecode(
@@ -2663,6 +2663,7 @@ class ModuleGraph(ObjectGraph):
         module_code_object_ast : ast.AST
             Abstract syntax tree (AST) of this module to be parsed.
         """
+        assert False # Just a check to make sure this method isn't called
 
         visitor = _Visitor(self, module)
         visitor.visit(module_code_object_ast)
