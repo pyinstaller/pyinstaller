@@ -2643,7 +2643,7 @@ class ModuleGraph(ObjectGraph):
             # Parse this module's code object for all relevant non-imports
             # (e.g., global variable declarations and undeclarations).
             self._scan_bytecode(
-                module, module_code_object)
+                module, module_code_object, True)
         # Else, parse this module's code object for imports.
         else:
             self._scan_bytecode(
