@@ -241,9 +241,11 @@ class PKG(Target):
         # 'inm'  - relative filename inside a CArchive
         # 'fnm'  - absolute filename as it is on the file system.
         for inm, fnm, typ in self.toc:
-            # Ensure filename 'fnm' is not None or empty string. Otherwise, it will fail when 'typ' is OPTION.
-            if fnm and not os.path.isfile(fnm) and is_path_to_egg(fnm):
-                # File is contained within python egg; it is added with the egg.
+            # Ensure that the source file exists, if neccessary. Skip the check for OPTION entries, where 'fnm' is None.
+            if typ != 'OPTION' and not os.path.exists(fnm):
+                # If file is contained within python egg, it will be added with the egg.
+                if not is_path_to_egg(fnm):
+                    logger.warning("Ignoring non-existent resource %s, meant to be collected as %s", fnm, inm)
                 continue
             if typ in ('BINARY', 'EXTENSION', 'DEPENDENCY'):
                 if self.exclude_binaries and typ == 'EXTENSION':
@@ -866,11 +868,17 @@ class COLLECT(Target):
         _make_clean_directory(self.name)
         logger.info("Building COLLECT %s", self.tocbasename)
         for inm, fnm, typ in self.toc:
-            if not os.path.exists(fnm) or not os.path.isfile(fnm) and is_path_to_egg(fnm):
-                # File is contained within python egg; it is added with the egg.
+            # Ensure that the source file exists, if neccessary.
+            if not os.path.exists(fnm):
+                # If file is contained within python egg, it will be added with the egg.
+                if not is_path_to_egg(fnm):
+                    logger.warning("Ignoring non-existent resource %s, meant to be collected as %s", fnm, inm)
                 continue
+            # Disallow collection outside of the dist directory.
             if os.pardir in os.path.normpath(inm).split(os.sep) or os.path.isabs(inm):
-                raise SystemExit('Security-Alert: try to store file outside of dist-directory. Aborting. %r' % inm)
+                raise SystemExit(
+                    'Security-Alert: attempting to store file outside of the dist directory: %r. Aborting.' % inm
+                )
             tofnm = os.path.join(self.name, inm)
             todir = os.path.dirname(tofnm)
             if not os.path.exists(todir):
