@@ -66,7 +66,7 @@ Pillow==9.1.1
 # -------------------------------------------------------
 
 # numpy dropped support for python 3.7 as of 1.22
-numpy==1.22.4; python_version >= '3.8'
+numpy==1.23.0; python_version >= '3.8'
 numpy==1.21.5; python_version == '3.7'  # pyup: ignore
 
 
