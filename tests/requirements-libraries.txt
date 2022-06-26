@@ -33,7 +33,7 @@ ipython==8.4.0; python_version >= '3.8'
 keyring==23.0.1; sys_platform == 'darwin' and python_version < '3.8.7'  # pyup: ignore
 keyring==23.6.0; sys_platform != 'darwin' or python_version >= '3.8.7'
 matplotlib==3.5.2; python_version >= '3.8'
-pandas==1.4.2; python_version >= '3.8'
+pandas==1.4.3; python_version >= '3.8'
 pygments==2.12.0
 PyGObject==3.42.1; sys_platform == 'linux'
 pyside2==5.15.2.1
@@ -57,7 +57,7 @@ scipy==1.8.1; python_version >= '3.8'
 simplejson==3.17.6
 sphinx==5.0.2
 # Required for test_namespace_package
-sqlalchemy==1.4.37
+sqlalchemy==1.4.39
 zope.interface==5.4.0
 Pillow==9.1.1
 
@@ -66,7 +66,7 @@ Pillow==9.1.1
 # -------------------------------------------------------
 
 # numpy dropped support for python 3.7 as of 1.22
-numpy==1.22.4; python_version >= '3.8'
+numpy==1.23.0; python_version >= '3.8'
 numpy==1.21.5; python_version == '3.7'  # pyup: ignore
 
 
