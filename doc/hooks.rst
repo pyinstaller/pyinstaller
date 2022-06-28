@@ -241,6 +241,15 @@ applies them to the bundle being created.
 
       binaries = collect_dynamic_libs('zmq')
 
+``warn_on_missing_hiddenimports``
+   A boolean flag indicating whether missing hidden imports from the
+   hook (set via ``hiddenimports``) should generate warnings or not.
+   By default, missing hidden imports generate warnings, but individual
+   hooks can opt out of this behavior by setting this variable to ``False``.
+   Example::
+
+      warn_on_missing_hiddenimports = False
+
 
 Useful Items in ``PyInstaller.compat``
 ----------------------------------------

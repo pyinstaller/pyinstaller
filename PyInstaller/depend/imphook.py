@@ -179,6 +179,9 @@ _MAGIC_MODULE_HOOK_ATTRS = {
     #   functions declared by these scripts are called. As these scripts and functions can have side effects dependent
     #   on module importation order, module importation itself can have side effects dependent on this order!
     'hiddenimports': (list, None),
+
+    # Flags
+    'warn_on_missing_hiddenimports': (lambda: True, bool),
 }
 
 
@@ -210,6 +213,9 @@ class ModuleHook:
         Set of the fully-qualified names of all modules imported by the module being hooked that are _not_
         automatically detectable by PyInstaller (usually due to being dynamically imported in that module),
         converted from the `hiddenimports` list defined by this hook script.
+    warn_on_missing_hiddenimports : bool
+        Boolean flag indicating whether missing hidden imports from the hook should generate warnings or not. This
+        behavior is enabled by default, but individual hooks can opt out of it.
 
     Attributes (Non-magic)
     ----------
@@ -459,7 +465,8 @@ class ModuleHook:
             # If this hidden import is unimportable, print a non-fatal warning. Hidden imports often become
             # desynchronized from upstream packages and hence are only "soft" recommendations.
             except ImportError:
-                logger.warning('Hidden import "%s" not found!', import_module_name)
+                if self.warn_on_missing_hiddenimports:
+                    logger.warning('Hidden import "%s" not found!', import_module_name)
 
     # FIXME: This is pretty... intense. Attempting to cleanly "undo" prior module graph operations is a recipe for
     #        subtle edge cases and difficult-to-debug issues. It would be both safer and simpler to prevent these
