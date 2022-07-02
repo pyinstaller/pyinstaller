@@ -948,6 +948,13 @@ set_systemd_env()
  */
 pid_t child_pid = 0;
 
+/* Remember whether child has received a signal and what signal it was.
+ * In onefile mode, this allows us to re-raise the signal in the parent
+ * once the temporary directory has been cleaned up.
+ */
+int child_signalled = 0;
+int child_signal = 0;
+
 /*
  * Retrieve child process' PID, if available.
  */
@@ -1111,12 +1118,24 @@ cleanup:
     }
 
     /* Process ended abnormally */
-    if (WIFSIGNALED(rc)) {
-        VS("LOADER: re-raising child signal %d\n", WTERMSIG(rc));
-        /* Mimic the signal the child received */
-        raise(WTERMSIG(rc));
+    child_signalled = WIFSIGNALED(rc);
+    if (child_signalled) {
+        child_signal = WTERMSIG(rc);
+        VS("LOADER: child received signal %d; storing for re-raise after cleanup...\n", child_signal);
     }
     return 1;
+}
+
+/* If the child process received a signal during execution, re-raise it.
+ * Otherwise, this function is a no-op.
+ */
+void pyi_utils_reraise_child_signal()
+{
+    if (child_signalled) {
+        /* Mimic the signal the child received */
+        VS("LOADER: re-raising child signal %d\n", child_signal);
+        raise(child_signal);
+    }
 }
 
 

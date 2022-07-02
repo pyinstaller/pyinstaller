@@ -414,6 +414,10 @@ pyi_main(int argc, char * argv[])
         }
         pyi_arch_status_free(archive_status);
 
+        /* Re-raise child's signal, if necessary (non-Windows only) */
+#ifndef _WIN32
+        pyi_utils_reraise_child_signal();
+#endif
     }
     return rc;
 }
