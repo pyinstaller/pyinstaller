@@ -117,7 +117,7 @@ Is equivalent to:
 
 .. code-block:: shell
 
-    pyinstaller my_script.py --onefile --windowed
+    pyinstaller my_script.py --onefile -w
 
 
 Using UPX
