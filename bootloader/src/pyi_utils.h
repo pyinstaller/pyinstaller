@@ -57,6 +57,7 @@ int pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS *status,
                            const int argc, char *const argv[]);
 #ifndef _WIN32
 pid_t pyi_utils_get_child_pid();
+void pyi_utils_reraise_child_signal();
 #endif
 int pyi_utils_set_environment(const ARCHIVE_STATUS *status);
 
