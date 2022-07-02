@@ -140,7 +140,10 @@ def find_binary_dependencies(binaries, binding_redirects, import_packages):
 
     :return: expanded list of binaries and then dependencies.
     """
+    import os
+
     from PyInstaller.depend import bindepend
+    from PyInstaller.building.build_main import logger
     from PyInstaller import compat
 
     # In the case of MS App Store python, add compat.base_prefix to extra library search paths. In addition to
@@ -151,12 +154,37 @@ def find_binary_dependencies(binaries, binding_redirects, import_packages):
     if compat.is_ms_app_store:
         extra_libdirs.append(compat.base_prefix)
 
+    # On Windows with python >= 3.8, attempt to track calls to os.add_dll_directory() to obtain DLL search paths that
+    # are dynamically set during packages' initialization.
+    if compat.is_win and compat.is_py38:
+        added_dll_directories = []
+        _orig_add_dll_directory = os.add_dll_directory
+
+        def _pyi_add_dll_directory(path):
+            added_dll_directories.append(path)
+            return _orig_add_dll_directory(path)
+
+        os.add_dll_directory = _pyi_add_dll_directory
+
     # Import collected packages to set up environment
     for package in import_packages:
         try:
             __import__(package)
         except Exception:
             pass
+
+    # Process extra search paths on Windows
+    if compat.is_win:
+        # Directories added via os.add_dll_directory() calls.
+        if compat.is_py38:
+            logger.info("Extra DLL search directories (AddDllDirectory): %r", added_dll_directories)
+            extra_libdirs += added_dll_directories
+
+        # Directories set via PATH environment variable.
+        # NOTE: PATH might contain empty entries that need to be filtered out.
+        path_directories = [directory for directory in os.environ.get("PATH", '').split(os.pathsep) if directory]
+        logger.info("Extra DLL search directories (PATH): %r", path_directories)
+        extra_libdirs += path_directories
 
     # Search for dependencies of the given binaries
     return bindepend.Dependencies(binaries, redirects=binding_redirects, xtrapath=extra_libdirs)
