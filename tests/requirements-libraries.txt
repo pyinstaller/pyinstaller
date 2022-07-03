@@ -51,7 +51,7 @@ pyqt6-webengine==6.3.1  # PyQt6 QtWebEngine bindings
 pyqt6-webengine-qt6==6.3.1  # Qt6 QtWebEngine binaries
 python-dateutil==2.8.2
 pytz==2022.1
-requests==2.28.0
+requests==2.28.1
 scipy==1.8.1; python_version >= '3.8'
 # simplejson is used for text_c_extension
 simplejson==3.17.6
