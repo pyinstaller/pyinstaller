@@ -1,3 +1,0 @@
-(Linux) Fix the missing ``gi.repository`` error in an application frozen on
-RHEL/Fedora linux with GObject introspection installed from the distrubtion's 
-RPM package.

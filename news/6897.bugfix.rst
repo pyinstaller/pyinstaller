@@ -1,3 +1,0 @@
-Fix regression in PyInstaller v5 where an import of a non-existent
-GObject introspection (`gi`) module (for example, an optional dependency)
-in the program causes a build-time error and aborts the build process.

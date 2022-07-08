@@ -1,1 +1,0 @@
-(macOS) The ``QtWebEngine`` hook now makes ``QtOpenGL`` and ``QtDBus`` available to the renderer process with framework installs of Qt 6.

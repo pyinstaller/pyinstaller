@@ -1,3 +1,0 @@
-The :func:`PyInstaller.utils.hooks.collect_submodules` function now
-excludes un-importable subpackages from the returned modules list.
-

@@ -1,3 +1,0 @@
-Refactor the GObject introspection (``gi``) hooks so that the processing
-is performed only in hook loading stage or in the ``hook()`` function,
-but not in the mixture of two.

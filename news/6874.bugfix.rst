@@ -1,2 +1,0 @@
-(Windows) Optimize EXE PE headers fix-up process in an attempt to reduce
-the processing time and the memory footprint with large onefile builds.

@@ -1,8 +1,0 @@
-(macOS) Disable ``QtWebEngine`` sandboxing for Qt6 in the corresponding
-``PySide6`` and ``PyQt6`` run-time hooks as a work-around for the
-``QtWebEngineProcess`` helper process crashing. This is required as of
-Qt 6.3.1 due to the way PyInstaller collects Qt libraries, but is applied
-regardless of the used Qt6 version. If you are using an older version of
-Qt6 and would like to keep the sandboxing, reset the
-``QTWEBENGINE_DISABLE_SANDBOX`` environment variable at the start of your
-program, before importing Qt packages.

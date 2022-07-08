@@ -336,9 +336,11 @@ hooks.
 .. autofunction:: collect_all
 .. autofunction:: collect_submodules
 .. autofunction:: is_module_or_submodule
+.. autofunction:: is_package
 .. autofunction:: collect_data_files
 .. autofunction:: collect_dynamic_libs
 .. autofunction:: get_module_file_attribute
+.. autofunction:: get_module_attribute
 .. autofunction:: get_package_paths
 .. autofunction:: copy_metadata
 .. autofunction:: collect_entry_point

@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "PYI-MAKESPEC" "1" "2022-05-17" "5.1" "PyInstaller"
+.TH "PYI-MAKESPEC" "1" "2022-07-08" "5.2+g22d1d2a5.mod" "PyInstaller"
 .SH NAME
 pyi-makespec \- Create a spec file for your PyInstaller project
 .
@@ -34,7 +34,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .ad l
 \.SH SYNOPSIS
 .sp
-\fBpyi\-makespec\fP <options> SCRIPT [SCRIPT ...]
+\fBpyi\-makespec\fP <options> SCRIPT [SCRIPT …]
 .SH DESCRIPTION
 .sp
 The spec file is the description of what you want PyInstaller to do
@@ -87,7 +87,7 @@ Create a one\-file bundled executable.
 Folder to store the generated spec file (default: current directory)
 .TP
 .BI \-n \ NAME\fR,\fB \ \-\-name \ NAME
-Name to assign to the bundled app and spec file (default: first script\(aqs
+Name to assign to the bundled app and spec file (default: first script’s
 basename)
 .UNINDENT
 .SS What To Bundle, Where To Search
@@ -162,7 +162,7 @@ unpacking.
 .UNINDENT
 .SS How To Generate
 .sp
-\-d {all,imports,bootloader,noarchive}, \-\-debug {all,imports,bootloader,noarchive}
+\-d {all,imports,bootloader,noarchive}, –debug {all,imports,bootloader,noarchive}
 .INDENT 0.0
 .INDENT 3.5
 R|Provide assistance with debugging a frozen application. This argument may
@@ -183,8 +183,8 @@ directory.
 .TP
 .BI \-\-python\-option \ PYTHON_OPTION
 Specify a command\-line option to pass to the Python interpreter at runtime.
-Currently supports "v" (equivalent to "\-\-debug imports"), "u", and "W
-<warning control>".
+Currently supports “v” (equivalent to “–debug imports”), “u”, and “W
+<warning control>”.
 .TP
 .B \-s\fP,\fB  \-\-strip
 Apply a symbol\-table strip to the executable and shared libs (not
@@ -205,22 +205,22 @@ times.
 .TP
 .B \-c\fP,\fB  \-\-console\fP,\fB  \-\-nowindowed
 Open a console window for standard i/o (default). On Windows this option
-has no effect if the first script is a \(aq.pyw\(aq file.
+has no effect if the first script is a ‘.pyw’ file.
 .TP
 .B \-w\fP,\fB  \-\-windowed\fP,\fB  \-\-noconsole
 Windows and Mac OS X: do not provide a console window for standard i/o. On
 Mac OS this also triggers building a Mac OS .app bundle. On Windows this
-option is automatically set if the first script is a \(aq.pyw\(aq file. This
+option is automatically set if the first script is a ‘.pyw’ file. This
 option is ignored on *NIX systems.
 .TP
-.BI \-i \ <FILE.ico or FILE.exe,ID or FILE.icns or Image or "NONE">\fR,\fB \ \-\-icon \ <FILE.ico or FILE.exe,ID or FILE.icns or Image or "NONE">
+.BI \-i \ <FILE.ico or FILE.exe,ID or FILE.icns or Image or “NONE”>\fR,\fB \ \-\-icon \ <FILE.ico or FILE.exe,ID or FILE.icns or Image or “NONE”>
 FILE.ico: apply the icon to a Windows executable. FILE.exe,ID: extract the
 icon with ID from an exe. FILE.icns: apply the icon to the .app bundle on
-Mac OS. If an image file is entered that isn\(aqt in the platform format (ico
+Mac OS. If an image file is entered that isn’t in the platform format (ico
 on Windows, icns on Mac), PyInstaller tries to use Pillow to translate the
-icon into the correct format (if Pillow is installed). Use "NONE" to not
+icon into the correct format (if Pillow is installed). Use “NONE” to not
 apply any icon, thereby making the OS show some default (default: apply
-PyInstaller\(aqs icon)
+PyInstaller’s icon)
 .TP
 .B \-\-disable\-windowed\-traceback
 Disable traceback dump of unhandled exception in windowed (noconsole) mode
@@ -286,7 +286,7 @@ or URLs are appended to sys.argv.
 Mac OS .app bundle identifier is used as the default unique program name
 for code signing purposes. The usual form is a hierarchical name in reverse
 DNS notation. For example: com.mycompany.department.appname (default: first
-script\(aqs basename)
+script’s basename)
 .TP
 .BI \-\-target\-architecture \ ARCH\fR,\fB \ \-\-target\-arch \ ARCH
 Target architecture (macOS only; valid values: x86_64, arm64, universal2).
