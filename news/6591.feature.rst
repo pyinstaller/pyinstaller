@@ -1,0 +1,10 @@
+(Windows) Implement handling of console control signals in the ``onefile``
+bootloader parent process. The implemented handler suppresses the
+``CTRL_C_EVENT`` and ``CTRL_BREAK_EVENT`` to let the child process
+deal with them as they see it fit. In the case of ``CTRL_CLOSE_EVENT``,
+``CTRL_LOGOFF_EVENT``, or ``CTRL_SHUTDOWN_EVENT``, the handler attempts
+to delay the termination of the parent process in order to buy time for
+the child process to exit and for the main thread of the parent process
+to clean up the temporary directory before exiting itself. This should
+prevent the temporary directory of a ``onefile`` frozen application
+being left behind when the user closes the console window.
