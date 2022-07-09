@@ -766,6 +766,50 @@ pyi_utils_set_environment(const ARCHIVE_STATUS *status)
     return 0;
 }
 
+static BOOL WINAPI
+_pyi_win32_console_ctrl(DWORD dwCtrlType)
+{
+    /* https://docs.microsoft.com/en-us/windows/console/handlerroutine */
+    static const char *name_map[] = {
+        "CTRL_C_EVENT", // 0
+        "CTRL_BREAK_EVENT", // 1
+        "CTRL_CLOSE_EVENT", // 2
+        NULL,
+        NULL,
+        "CTRL_LOGOFF_EVENT", // 5
+        "CTRL_SHUTDOWN_EVENT" // 6
+    };
+    const char *name = (dwCtrlType >= 0 && dwCtrlType <= 6) ? name_map[dwCtrlType] : NULL;
+
+    /* NOTE: in case of CTRL_CLOSE_EVENT, CTRL_LOGOFF_EVENT, or CTRL_SHUTDOWN_EVENT, the following
+     * message may not be printed to console anymore. As per MSDN, the internal console cleanup routine
+     * might have already been executed, preventing console functions from working reliably.
+     * See Remarks section at: https://docs.microsoft.com/en-us/windows/console/setconsolectrlhandler
+     */
+    VS("LOADER: received console control signal %d (%s)!\n", dwCtrlType, name ? name : "unknown");
+
+    /* Handle Ctrl+C and Ctrl+Break signals immediately. By returning TRUE, their default handlers
+     * (which would call ExitProcess()) are not called, so we are effectively suppressing the signal
+     * here, while letting the child process (who also received it) handle it as they see it fit.
+     */
+    if (dwCtrlType == CTRL_C_EVENT || dwCtrlType == CTRL_BREAK_EVENT) {
+        return TRUE;
+    }
+
+    /* Delay the inevitable for as long as we can. The same signal should also be received
+     * by the child process (as it is in the same process group as the parent), which will
+     * terminate (after optionally processing the signal, if python code installed its own handler).
+     * Therefore, we just wait here "forever" (compared to OS-imposed timeout for signal handling)
+     * to buy time for the child process to terminate and for the main thread of this (parent)
+     * process to perform the cleanup (sidenote: this handler is executed in a separate thread).
+     * So this thread is terminated either when the main thread of the process finishes and the
+     * program exits (gracefully), or when the time runs out and the OS kills everything (see
+     * https://docs.microsoft.com/en-us/windows/console/handlerroutine#timeouts).
+     */
+    Sleep(20000);
+    return TRUE;
+}
+
 int
 pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
                        const int argc, char *const argv[])
@@ -780,11 +824,10 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
     /* Convert file name to wchar_t from utf8. */
     pyi_win32_utils_from_utf8(buffer, thisfile, PATH_MAX);
 
-    /* the parent process should ignore all signals it can */
-    signal(SIGABRT, SIG_IGN);
-    signal(SIGINT, SIG_IGN);
-    signal(SIGTERM, SIG_IGN);
-    signal(SIGBREAK, SIG_IGN);
+    /* Set up console ctrl handler; the call returns non-zero on success */
+    if (SetConsoleCtrlHandler(_pyi_win32_console_ctrl, TRUE) == 0) {
+        VS("LOADER: failed to install console ctrl handler!\n");
+    }
 
     VS("LOADER: Setting up to run child\n");
     sa.nLength = sizeof(sa);
