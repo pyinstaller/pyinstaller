@@ -72,6 +72,7 @@ dedent_closing_brackets = true
 spaces_before_comment = "2"
 space_between_ending_comma_and_closing_bracket = 0
 coalesce_brackets = true
+blank_line_before_nested_class_or_def = false
 
 [build-system]
 # Tells pip to install wheel before trying to install PyInstaller

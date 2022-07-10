@@ -506,7 +506,7 @@ class Analysis(Target):
                 ctypes_binaries = scan_code_for_ctypes(co)
                 self.binaries.extend(set(ctypes_binaries))
             except Exception as ex:
-                raise RuntimeError(f"Failed to scan the module '{name}'. " f"This is a bug. Please report it.") from ex
+                raise RuntimeError(f"Failed to scan the module '{name}'. This is a bug. Please report it.") from ex
 
         self.datas.extend((dest, source, "DATA")
                           for (dest, source) in format_binaries_and_datas(self.graph.metadata_required()))
