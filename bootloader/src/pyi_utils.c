@@ -1010,13 +1010,20 @@ pyi_utils_get_child_pid()
 static void
 _ignoring_signal_handler(int signum)
 {
-    VS("LOADER: Ignoring signal %d\n", signum);
+    /* Ignore the signal. Avoid generating debug messages as per
+     * explanation in _signal_handler().
+     */
+    (void)signum;  /* Supress unused argument warnings */
 }
 
 static void
 _signal_handler(int signum)
 {
-    VS("LOADER: Forwarding signal %d to child pid %d\n", signum, child_pid);
+    /* Forward signal to the child. Avoid generating debug messages, as
+     * functions involved are generally not signal safe. Furthermore, it
+     * may result in endless spamming of SIGPIPE, as reported and
+     * diagnosed in #5270.
+     */
     kill(child_pid, signum);
 }
 
