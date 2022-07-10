@@ -41,7 +41,7 @@ def test_exception_handling():
     # The exception should include the offending function's name and the child's traceback which itself includes the
     # breaking line of code and the exception type and message (in that order). Unfortunately, there seems to be a bug
     # in pytest's exception rewriting which makes the exception type and message unverifiable when ran under pytest.
-    assert ex_info.match(r"(?s) call to fail\(\) failed .* " 'assert 0, "It\'s broken!".*')
+    assert ex_info.match(r"""(?s) call to fail\(\) failed .* assert 0, "It's broken!".*""")
     # It should have removed the following line.
     assert "Traceback (most recent call last)" not in str(ex_info.value)
 
