@@ -14,7 +14,7 @@ tools.
 
 To install them run::
 
-    pip install flake8 yapf==0.31.0 toml
+    pip install flake8 yapf==0.32.0 toml
 
 Reformat your code automatically with yapf_::
 
