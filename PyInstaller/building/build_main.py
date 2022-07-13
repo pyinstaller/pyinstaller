@@ -161,6 +161,30 @@ def find_binary_dependencies(binaries, binding_redirects, import_packages):
     return bindepend.Dependencies(binaries, redirects=binding_redirects, xtrapath=extra_libdirs)
 
 
+def _get_module_collection_mode(mode_dict, name):
+    """
+    Determine the module/package collection mode for the given module name , based on the provided collection
+    mode settings dictionary.
+    """
+    mode = 'pyc'  # Default mode
+
+    # No settings available - return default.
+    if not mode_dict:
+        return mode
+
+    # Search the parent modules/packages in top-down fashion, and take the last given setting. This ensures that
+    # a setting given for the top-level package is recursively propagated to all its subpackages and submodules,
+    # but also allows individual sub-modules to override the setting again.
+    name_parts = name.split('.')
+    for i in range(len(name_parts)):
+        modlevel = ".".join(name_parts[:i + 1])
+        modlevel_mode = mode_dict.get(modlevel, None)
+        if modlevel_mode is not None:
+            mode = modlevel_mode
+
+    return mode
+
+
 class Analysis(Target):
     """
     Class that performs analysis of the user's main Python scripts.
@@ -202,7 +226,8 @@ class Analysis(Target):
         cipher=None,
         win_no_prefer_redirects=False,
         win_private_assemblies=False,
-        noarchive=False
+        noarchive=False,
+        module_collection_mode=None,
     ):
         """
         scripts
@@ -232,6 +257,8 @@ class Analysis(Target):
                 If True, change all bundled Windows SxS Assemblies into Private Assemblies to enforce assembly versions.
         noarchive
                 If True, do not place source files in a archive, but keep them as individual files.
+        module_collection_mode
+                An optional dict of package/module names and collection mode strings.
         """
         super().__init__()
         from PyInstaller.config import CONF
@@ -315,6 +342,7 @@ class Analysis(Target):
         self.win_private_assemblies = win_private_assemblies
         self._python_version = sys.version
         self.noarchive = noarchive
+        self.module_collection_mode = module_collection_mode or {}
 
         self.__postinit__()
 
@@ -340,6 +368,7 @@ class Analysis(Target):
         ('win_no_prefer_redirects', _check_guts_eq),
         ('win_private_assemblies', _check_guts_eq),
         ('noarchive', _check_guts_eq),
+        ('module_collection_mode', _check_guts_eq),
 
         # 'cipher': no need to check as it is implied by an additional hidden import
 
@@ -525,9 +554,39 @@ class Analysis(Target):
 
         # Extend the binaries list with all the Extensions modulegraph has found.
         self.binaries = self.graph.make_binaries_toc(self.binaries)
+
         # Fill the "pure" list with pure Python modules.
         assert len(self.pure) == 0
         self.pure = self.graph.make_pure_toc()
+
+        # Post-process "pure" list; exclude the entries that should be collected as source py files according to
+        # package-collection-mode setting.
+        pure_pyc_toc = TOC()
+        pure_py_toc = TOC()
+        # Merge package collection mode settings from .spec file. These are applied last, so they override the
+        # settings previously applied by hooks.
+        self.graph._module_collection_mode.update(self.module_collection_mode)
+        logger.debug("Module collection settings: %r", self.graph._module_collection_mode)
+        for name, path, typecode in self.pure:
+            collect_mode = _get_module_collection_mode(self.graph._module_collection_mode, name)
+            if collect_mode == 'pyc':
+                # Collect as byte-compiled modules (typically into PYZ archive, unless self.noarchive is set).
+                pure_pyc_toc.append((name, path, typecode))
+            elif collect_mode == 'py':
+                # Collect as source files
+                name = name.replace('.', os.sep)
+                # Special case: modules have an implied filename to add.
+                basename, ext = os.path.splitext(os.path.basename(path))
+                if basename == '__init__':
+                    name += os.sep + '__init__' + ext
+                else:
+                    name += ext
+                pure_py_toc.append((name, path, "DATA"))
+            else:
+                raise ValueError(f"Unhandled package collection mode for {name!r}: {collect_mode!r}!")
+        self.pure = pure_pyc_toc
+        self.datas.extend(pure_py_toc)
+
         # And get references to module code objects constructed by ModuleGraph to avoid writing .pyc/pyo files to hdd.
         self.pure._code_cache = self.graph.get_code_objects()
 

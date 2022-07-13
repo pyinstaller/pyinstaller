@@ -1,0 +1,6 @@
+Implement a mechanism for controlling the collection mode of modules and
+packages, with granularity ranging from top-level packages to individual
+sub-modules. Therefore, the hooks can now specify whether the hooked
+package should be collected as byte-compiled .pyc modules into embedded
+PYZ archive (the default behavior), or as source .py files collected as
+external data files (without corresponding modules in the PYZ archive).

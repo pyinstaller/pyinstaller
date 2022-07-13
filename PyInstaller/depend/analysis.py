@@ -86,6 +86,8 @@ class PyiModuleGraph(ModuleGraph):
         List of module names to be excluded when searching for dependencies.
     _additional_files_cache : AdditionalFilesCache
         Cache of all external dependencies (e.g., binaries, datas) listed in hook scripts for imported modules.
+    _module_collection_mode : dict
+        A dictionary of module/package collection mode settings set by hook scripts for their modules.
     _base_modules: list
         Dependencies for `base_library.zip` (which remain the same for every executable).
     """
@@ -111,6 +113,7 @@ class PyiModuleGraph(ModuleGraph):
         """
         self._top_script_node = None
         self._additional_files_cache = AdditionalFilesCache()
+        self._module_collection_mode = dict()
         # Command line, Entry Point, and then builtin hook dirs.
         self._user_hook_dirs = [*user_hook_dirs, os.path.join(PACKAGEPATH, 'hooks')]
         # Hook-specific lookup tables. These need to reset when reusing cached PyiModuleGraph to avoid hooks to refer to
@@ -328,6 +331,9 @@ class PyiModuleGraph(ModuleGraph):
                     # Cache all external dependencies listed by this script after running this hook, which could add
                     # dependencies.
                     self._additional_files_cache.add(module_name, module_hook.binaries, module_hook.datas)
+
+                    # Update package collection mode settings.
+                    self._module_collection_mode.update(module_hook.module_collection_mode)
 
                 # Prevent this module's hooks from being run again.
                 hooked_module_names.add(module_name)
