@@ -182,6 +182,11 @@ _MAGIC_MODULE_HOOK_ATTRS = {
 
     # Flags
     'warn_on_missing_hiddenimports': (lambda: True, bool),
+
+    # Package/module collection mode dictionary. If a hook sets a string, assign it to `None` (= hooked module).
+    'module_collection_mode': (dict, lambda v: v if isinstance(v, dict) else {
+        None: v
+    }),
 }
 
 
@@ -216,6 +221,8 @@ class ModuleHook:
     warn_on_missing_hiddenimports : bool
         Boolean flag indicating whether missing hidden imports from the hook should generate warnings or not. This
         behavior is enabled by default, but individual hooks can opt out of it.
+    module_collection_mode : dict
+        A dictionary of package/module names and their corresponding collection mode strings ('py', 'pyc').
 
     Attributes (Non-magic)
     ----------
@@ -386,6 +393,14 @@ class ModuleHook:
             # Expose this attribute as an instance variable of the same name.
             setattr(self, attr_name, attr_value)
 
+        # If module_collection_mode has an entry with None key, reassign it to the hooked module's name.
+        setattr(
+            self, 'module_collection_mode', {
+                key if key is not None else self.module_name: value
+                for key, value in getattr(self, 'module_collection_mode').items()
+            }
+        )
+
     #-- Hooks --
 
     def post_graph(self, analysis):
@@ -437,6 +452,7 @@ class ModuleHook:
         self.datas.update(set(hook_api._added_datas))
         self.binaries.update(set(hook_api._added_binaries))
         self.hiddenimports.extend(hook_api._added_imports)
+        self.module_collection_mode.update(hook_api._module_collection_mode)
 
         # FIXME: Deleted imports should be appended to self.excludedimports rather than handled here. However, see the
         #        _process_excluded_imports() FIXME below for a sensible alternative.

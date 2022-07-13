@@ -250,6 +250,82 @@ applies them to the bundle being created.
 
       warn_on_missing_hiddenimports = False
 
+.. _package collection mode:
+
+``module_collection_mode``
+   A setting controlling the collection mode for module(s). The value
+   can be either a string or a dictionary.
+
+   When set to a string, the variable controls the collection mode for
+   the hooked package/module. Valid values are:
+
+   * ``'pyc'``: collect byte-compiled modules, typically into the embedded
+     PYZ archive. This is the default behavior when no collection mode
+     is specified.
+
+   * ``'py'``: collect source .py files as external data files, and do
+     not collect byte-compiled modules into the PYZ archive.
+
+   The setting is applied to all child modules and subpackages, unless
+   overridden by the setting in their corresponding hook.
+
+   Alternatively, the variable can be set to a dictionary comprising
+   module/package names and corresponding collection mode strings.
+   This allows a hook to specify different settings for its main package
+   and subpackages, but also settings for other packages. When multiple
+   hooks provide a setting for the same module name, the end result
+   depends on the hook execution order.
+
+   Example::
+
+      # hook-mypackage.py
+
+      # This package must be collected in source form, due to its code
+      # searching for .py files on the filesystem...
+      module_collection_mode = 'py'
+
+   Example::
+
+      # hook-mypackage.py
+
+      # Collect only a sub-package / module as source
+      # (without creating a hook for the sub-package).
+      module_collection_mode = {
+         'mypackage.src_subpackage': 'py'
+      }
+
+   Example::
+
+      # hook-mypackage.py
+
+      # Collect whole package as source except for a signle sub-package
+      # (without creating a hook for the sub-package).
+      module_collection_mode = {
+         'mypackage': 'py',
+         'mypackage.bin_subpackage': 'pyc'
+      }
+
+   Example::
+
+      # hook-mypackage.py
+
+      # Force collection of other packages in source form.
+      module_collection_mode = {
+         'myotherpackage1': 'py',
+         'myotherpackage2': 'py',
+      }
+
+   The ability to control collection mode for other modules/packages
+   from a given hook is intended for cases when the hooked module
+   provides functionality for other modules that requires those other
+   modules to be collected in the source form (for example, JIT compilation
+   available in some deep learning frameworks). However, detection of
+   specific function imports and calls via bytecode scanning requires
+   an access to the modulegraph, and consequently the use of the
+   `the hook(hook_api) function`_. In such cases, the collection mode
+   can be modified using the `set_module_collection_mode method`_ from
+   the ``hook_api`` object instead of setting the global hook variable.
+
 
 Useful Items in ``PyInstaller.compat``
 ----------------------------------------
@@ -444,6 +520,16 @@ The ``hook_api`` object also offers the following methods:
 ``add_binaries( tuple_list )``:
    The ``tuple_list`` argument has the format used with the ``binaries``
    global variable. This call has the effect of adding items to that list.
+
+.. _set_module_collection_mode method:
+
+``set_module_collection_mode ( name, mode )``:
+   Set the `package collection mode`_ for the specified package/module name.
+   Valid values for ``mode`` are: ``'pyc'``, ``'py'``, and ``None``
+   (which clears/resets the setting for the given package/module name).
+   The collection mode may be set for the hooked package, its sub-module
+   or sub-package, or for other packages. If ``name`` is ``None``, it
+   is substituted with the hooked package/module name.
 
 The ``hook()`` function can add, remove or change included files using the
 above methods of ``hook_api``.

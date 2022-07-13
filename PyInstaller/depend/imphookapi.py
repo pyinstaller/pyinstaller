@@ -304,6 +304,9 @@ class PostGraphAPI:
     _added_binaries : list
         List of the `(name, path)` 2-tuples or TOC objects of all external C extensions imported by the current hook,
         defaulting to the empty list. This is equivalent to the global `binaries` hook attribute.
+    _module_collection_mode : dict
+        Dictionary of package/module names and their corresponding collection mode strings. This is equivalent to the
+        global `module_collection_mode` hook attribute.
     """
     def __init__(self, module_name, module_graph, analysis):
         # Mutable attributes.
@@ -329,6 +332,7 @@ class PostGraphAPI:
         self._added_datas = []
         self._added_imports = []
         self._deleted_imports = []
+        self._module_collection_mode = {}
 
     # Immutable properties. No corresponding setters are defined.
     @property
@@ -450,3 +454,16 @@ class PostGraphAPI:
             self._added_datas.extend(i[:2] for i in list_of_tuples)
         else:
             self._added_datas.extend(format_binaries_and_datas(list_of_tuples))
+
+    def set_module_collection_mode(self, name, mode):
+        """"
+        Set the package/module collection mode for the specified module
+        name. If `name` is `None`, the hooked module/package name is used.
+        Valid values for `mode` are: `'pyc'`, `'py'`, and `None`.
+        """
+        if name is None:
+            name = self.__name__
+        if mode is None:
+            self._module_collection_mode.pop(name)
+        else:
+            self._module_collection_mode[name] = mode
