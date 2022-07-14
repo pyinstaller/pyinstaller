@@ -21,7 +21,7 @@
 # http://msdn.microsoft.com/en-us/library/dd408052%28VS.85%29.aspx
 #
 # Changelog:
-# 2009-12-17  fix: small glitch in toxml / toprettyxml methods (xml declaration wasn't replaced when a different encodig
+# 2009-12-17  fix: small glitch in toxml / toprettyxml methods (xml declaration wasn't replaced when a different encoding
 #                  than UTF-8 was used)
 #             chg: catch xml.parsers.expat.ExpatError and re-raise as ManifestXMLParseError
 #             chg: support initialize option in parse method also
