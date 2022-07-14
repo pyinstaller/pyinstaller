@@ -95,7 +95,7 @@ _toc_tree_cache = {}
 
 class PyiFrozenProvider(pkg_resources.NullProvider):
     """
-    Custom pkg_resourvces provider for FrozenImporter.
+    Custom pkg_resources provider for FrozenImporter.
     """
     def __init__(self, module):
         super().__init__(module)
