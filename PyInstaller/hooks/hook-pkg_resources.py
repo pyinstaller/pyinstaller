@@ -17,7 +17,8 @@ hiddenimports = collect_submodules('pkg_resources._vendor')
 
 # pkg_resources v45.0 dropped support for Python 2 and added this module printing a warning. We could save some bytes if
 # we would replace this by a fake module.
-hiddenimports.append('pkg_resources.py2_warn')
+if is_module_satisfies('setuptools >= 45.0.0, < 49.1.1'):
+    hiddenimports.append('pkg_resources.py2_warn')
 
 excludedimports = ['__main__']
 
