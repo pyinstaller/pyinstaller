@@ -35,7 +35,7 @@ keyring==23.7.0; sys_platform != 'darwin' or python_version >= '3.8.7'
 matplotlib==3.5.2; python_version >= '3.8'
 pandas==1.4.3; python_version >= '3.8'
 pygments==2.12.0
-PyGObject==3.42.1; sys_platform == 'linux'
+PyGObject==3.42.2; sys_platform == 'linux'
 pyside2==5.15.2.1
 # pyside6 6.2.2 wheel is incompatible with python < 3.8 on macOS
 # pyside6 6.3 wheels are incompatible with python < 3.8 on linux
