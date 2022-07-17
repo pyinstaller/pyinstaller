@@ -24,11 +24,8 @@ excludedimports = ['__main__']
 
 # Some more hidden imports. See:
 # https://github.com/pyinstaller/pyinstaller-hooks-contrib/issues/15#issuecomment-663699288 `packaging` can either be
-# its own package, or embedded in `pkg_resources._vendor.packaging`, or both. Assume the worst and include both if
-# present.
+# its own package, or embedded in `pkg_resources._vendor.packaging`, or both.
 hiddenimports += collect_submodules('packaging')
-
-hiddenimports += ['pkg_resources.markers']
 
 # As of v60.7, setuptools vendored jaraco and has pkg_resources use it. Currently, the pkg_resources._vendor.jaraco
 # namespace package cannot be automatically scanned due to limited support for pure namespace packages in our hook
