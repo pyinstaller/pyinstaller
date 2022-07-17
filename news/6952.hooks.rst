@@ -1,0 +1,2 @@
+Remove ``pkg_resources`` hidden imports that aren't available including
+``py2_warn``, ``markers``, and ``_vendor.pyparsing.diagram``.
