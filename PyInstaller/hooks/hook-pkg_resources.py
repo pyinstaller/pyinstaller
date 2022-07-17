@@ -9,11 +9,19 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-from PyInstaller.utils.hooks import collect_submodules, is_module_satisfies
+from PyInstaller.utils.hooks import collect_submodules, is_module_satisfies, can_import_module
 
 # pkg_resources keeps vendored modules in its _vendor subpackage, and does sys.meta_path based import magic to expose
 # them as pkg_resources.extern.*
-hiddenimports = collect_submodules('pkg_resources._vendor')
+
+# The `railroad` package is an optional requirement for `pyparsing`. `pyparsing.diagrams` depends on `railroad`, so
+# filter it out when `railroad` is not available.
+if can_import_module('railroad'):
+    hiddenimports = collect_submodules('pkg_resources._vendor')
+else:
+    hiddenimports = collect_submodules(
+        'pkg_resources._vendor', filter=lambda name: 'pkg_resources._vendor.pyparsing.diagram' not in name
+    )
 
 # pkg_resources v45.0 dropped support for Python 2 and added this module printing a warning. We could save some bytes if
 # we would replace this by a fake module.
