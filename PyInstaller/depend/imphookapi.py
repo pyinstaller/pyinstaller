@@ -457,9 +457,9 @@ class PostGraphAPI:
 
     def set_module_collection_mode(self, name, mode):
         """"
-        Set the package/module collection mode for the specified module
-        name. If `name` is `None`, the hooked module/package name is used.
-        Valid values for `mode` are: `'pyc'`, `'py'`, and `None`.
+        Set the package/module collection mode for the specified module name. If `name` is `None`, the hooked
+        module/package name is used. `mode` can be one of valid mode strings (`'pyz'`, `'pyc'`, ˙'py'˙, `'pyz+py'`,
+        ˙'py+pyz'`) or `None`, which clears the setting for the module/package - but only  within this hook's context!
         """
         if name is None:
             name = self.__name__

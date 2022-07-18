@@ -15,9 +15,11 @@
 import fnmatch
 import glob
 import hashlib
+import marshal
 import os
 import pathlib
 import platform
+import py_compile
 import shutil
 import struct
 import subprocess
@@ -696,3 +698,79 @@ def _should_include_system_binary(binary_tuple, exceptions):
         if fnmatch.fnmatch(dest, exception):
             return True
     return False
+
+
+def compile_pymodule(name, src_path, workpath, code_cache=None):
+    """
+    Given the TOC entry (name, path, typecode) for a pure-python module, compile the module in the specified working
+    directory, and return the TOC entry for collecting the byte-compiled module. No-op for typecodes other than
+    PYMODULE.
+    """
+
+    # Construct the target .pyc filename in the workpath
+    split_name = name.split(".")
+    if "__init__" in src_path:
+        # __init__ module; use "__init__" as module name, and construct parent path using all components of the
+        # fully-qualified name
+        parent_dirs = split_name
+        mod_basename = "__init__"
+    else:
+        # Regular module; use last component of the fully-qualified name as module name, and the rest as the parent
+        # path.
+        parent_dirs = split_name[:-1]
+        mod_basename = split_name[-1]
+    pyc_path = os.path.join(workpath, *parent_dirs, mod_basename + '.pyc')
+
+    # If .pyc file already exists in our workpath, check if we can re-use it. For that:
+    #  - its modification timestamp must be newer than that of the source file
+    #  - it must be compiled for compatible python version
+    if os.path.exists(pyc_path):
+        can_reuse = False
+        if misc.mtime(pyc_path) > misc.mtime(src_path):
+            with open(pyc_path, 'rb') as fh:
+                can_reuse = fh.read(4) == compat.BYTECODE_MAGIC
+
+        if can_reuse:
+            return pyc_path
+
+    # Ensure the existence of parent directories for the target pyc path
+    os.makedirs(os.path.dirname(pyc_path), exist_ok=True)
+
+    # Check if optional cache contains module entry
+    code_object = code_cache.get(name, None) if code_cache else None
+
+    if code_object is None:
+        _, ext = os.path.splitext(src_path)
+        ext = ext.lower()
+
+        if ext == '.py':
+            # Source py file; compile...
+            py_compile.compile(src_path, pyc_path)
+            # ... and read the contents
+            with open(pyc_path, 'rb') as fp:
+                pyc_data = fp.read()
+        elif ext == '.pyc':
+            # The module is available in binary-only form. Read it...
+            with open(src_path, 'rb') as fp:
+                pyc_data = fp.read()
+            # ... verify the python version...
+            if pyc_data[:4] != compat.BYTECODE_MAGIC:
+                raise ValueError(f"The .pyc module {src_path} was compiled for incompatible version of python!")
+        else:
+            raise ValueError(f"Invalid python module file {src_path}; unhandled extension {ext}!")
+
+        # Unmarshal code object; this is necessary if we want to strip paths from it
+        code_object = marshal.loads(pyc_data[16:])
+
+    # Strip code paths from the code object
+    code_object = strip_paths_in_code(code_object)
+
+    # Write module file
+    with open(pyc_path, 'wb') as fh:
+        fh.write(compat.BYTECODE_MAGIC)
+        fh.write(struct.pack('<I', 0b01))  # PEP-552: hash-based pyc, check_source=False
+        fh.write(b'\00' * 8)  # FIXME: what to do about the checksum?
+        marshal.dump(code_object, fh)
+
+    # Return output path
+    return pyc_path
