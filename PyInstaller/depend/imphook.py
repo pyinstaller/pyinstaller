@@ -153,6 +153,17 @@ class ModuleHookCache(dict):
             self.pop(module_name, None)
 
 
+def _module_collection_mode_sanitizer(value):
+    if isinstance(value, dict):
+        # Hook set a dictionary; use it as-is
+        return value
+    elif isinstance(value, str):
+        # Hook set a mode string; convert to a dictionary and assign the string to `None` (= the hooked module).
+        return {None: value}
+
+    raise ValueError(f"Invalid module collection mode setting value: {value!r}")
+
+
 # Dictionary mapping the names of magic attributes required by the "ModuleHook" class to 2-tuples "(default_type,
 # sanitizer_func)", where:
 #
@@ -183,10 +194,8 @@ _MAGIC_MODULE_HOOK_ATTRS = {
     # Flags
     'warn_on_missing_hiddenimports': (lambda: True, bool),
 
-    # Package/module collection mode dictionary. If a hook sets a string, assign it to `None` (= hooked module).
-    'module_collection_mode': (dict, lambda v: v if isinstance(v, dict) else {
-        None: v
-    }),
+    # Package/module collection mode dictionary.
+    'module_collection_mode': (dict, _module_collection_mode_sanitizer),
 }
 
 
@@ -222,7 +231,8 @@ class ModuleHook:
         Boolean flag indicating whether missing hidden imports from the hook should generate warnings or not. This
         behavior is enabled by default, but individual hooks can opt out of it.
     module_collection_mode : dict
-        A dictionary of package/module names and their corresponding collection mode strings ('py', 'pyc').
+        A dictionary of package/module names and their corresponding collection mode strings ('pyz', 'pyc', 'py',
+        'pyz+py', 'py+pyz').
 
     Attributes (Non-magic)
     ----------

@@ -259,12 +259,25 @@ applies them to the bundle being created.
    When set to a string, the variable controls the collection mode for
    the hooked package/module. Valid values are:
 
-   * ``'pyc'``: collect byte-compiled modules, typically into the embedded
-     PYZ archive. This is the default behavior when no collection mode
-     is specified.
+   * ``'pyz'``: collect byte-compiled modules into the embedded PYZ
+     archive. This is the default behavior when no collection mode is
+     specified. If the ``noarchive`` flag is used with ``Analysis``,
+     the PYZ archive is not used, and ``pyz`` collection mode is
+     automatically turned into ``pyc`` one.
 
-   * ``'py'``: collect source .py files as external data files, and do
-     not collect byte-compiled modules into the PYZ archive.
+   * ``'pyc'``: collect byte-compiled modules as external data files
+     (as opposed to collecting them into the PYZ archive).
+
+   * ``'py'``: collect source .py files as external data files. Do not
+     collect byte-compiled modules.
+
+   * ``'pyz+py'`` or ``'py+pyz'``: collect byte-compiled modules into
+     the embedded PYZ archive and collect corresponding source .py files
+     as external data files.
+
+     If ``noarchive`` flag is in effect, the byte-compiled modules are
+     collected as external data files, which causes python to ignore
+     them due to the source files being placed next to them.
 
    The setting is applied to all child modules and subpackages, unless
    overridden by the setting in their corresponding hook.
@@ -298,11 +311,11 @@ applies them to the bundle being created.
 
       # hook-mypackage.py
 
-      # Collect whole package as source except for a signle sub-package
+      # Collect whole package as source except for a single sub-package
       # (without creating a hook for the sub-package).
       module_collection_mode = {
          'mypackage': 'py',
-         'mypackage.bin_subpackage': 'pyc'
+         'mypackage.bin_subpackage': 'pyz'
       }
 
    Example::
@@ -525,11 +538,12 @@ The ``hook_api`` object also offers the following methods:
 
 ``set_module_collection_mode ( name, mode )``:
    Set the `package collection mode`_ for the specified package/module name.
-   Valid values for ``mode`` are: ``'pyc'``, ``'py'``, and ``None``
-   (which clears/resets the setting for the given package/module name).
-   The collection mode may be set for the hooked package, its sub-module
-   or sub-package, or for other packages. If ``name`` is ``None``, it
-   is substituted with the hooked package/module name.
+   Valid values for ``mode`` are: ``'pyz'``, ``'pyc'``, ``'py'``,
+   ``'pyz+py'``, ``'py+pyz'`` and ``None``. ``None`` clears/resets the
+   setting for the given package/module name - but only within the
+   current hook's context! The collection mode may be set for the hooked
+   package, its sub-module or sub-package, or for other packages. If ``name``
+   is ``None``, it is substituted with the hooked package/module name.
 
 The ``hook()`` function can add, remove or change included files using the
 above methods of ``hook_api``.

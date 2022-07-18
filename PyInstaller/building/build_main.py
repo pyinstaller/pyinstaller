@@ -18,6 +18,7 @@ import glob
 import os
 import pprint
 import shutil
+import enum
 
 import sys
 
@@ -29,15 +30,15 @@ from PyInstaller.building.datastruct import TOC, Target, Tree, _check_guts_eq
 from PyInstaller.building.osx import BUNDLE
 from PyInstaller.building.splash import Splash
 from PyInstaller.building.toc_conversion import DependencyProcessor
-from PyInstaller.building.utils import (_check_guts_toc_mtime, _should_include_system_binary, format_binaries_and_datas)
+from PyInstaller.building.utils import (
+    _check_guts_toc_mtime, _should_include_system_binary, format_binaries_and_datas, compile_pymodule
+)
 from PyInstaller.compat import PYDYLIB_NAMES, is_win
 from PyInstaller.depend import bindepend
 from PyInstaller.depend.analysis import initialize_modgraph
-from PyInstaller.depend.utils import (create_py3_base_library, scan_code_for_ctypes)
+from PyInstaller.depend.utils import create_py3_base_library, scan_code_for_ctypes
 from PyInstaller import isolated
-from PyInstaller.utils.misc import (
-    absnormpath, compile_py_files, get_path_to_toplevel_modules, get_unicode_modules, mtime
-)
+from PyInstaller.utils.misc import absnormpath, get_path_to_toplevel_modules, get_unicode_modules, mtime
 
 if is_win:
     from PyInstaller.utils.win32 import winmanifest
@@ -161,20 +162,41 @@ def find_binary_dependencies(binaries, binding_redirects, import_packages):
     return bindepend.Dependencies(binaries, redirects=binding_redirects, xtrapath=extra_libdirs)
 
 
-def _get_module_collection_mode(mode_dict, name):
+class _ModuleCollectionMode(enum.IntFlag):
     """
-    Determine the module/package collection mode for the given module name , based on the provided collection
+    Module collection mode flags.
+    """
+    PYZ = enum.auto()  # Collect byte-compiled .pyc into PYZ archive
+    PYC = enum.auto()  # Collect byte-compiled .pyc as external data file
+    PY = enum.auto()  # Collect source .py file as external data file
+
+
+_MODULE_COLLECTION_MODES = {
+    "pyz": _ModuleCollectionMode.PYZ,
+    "pyc": _ModuleCollectionMode.PYC,
+    "py": _ModuleCollectionMode.PY,
+    "pyz+py": _ModuleCollectionMode.PYZ | _ModuleCollectionMode.PY,
+    "py+pyz": _ModuleCollectionMode.PYZ | _ModuleCollectionMode.PY,
+}
+
+
+def _get_module_collection_mode(mode_dict, name, noarchive=False):
+    """
+    Determine the module/package collection mode for the given module name, based on the provided collection
     mode settings dictionary.
     """
-    mode = 'pyc'  # Default mode
+    # Default mode: collect into PYZ, unless noarchive is enabled. In that case, collect as pyc.
+    mode_flags = _ModuleCollectionMode.PYC if noarchive else _ModuleCollectionMode.PYZ
 
-    # No settings available - return default.
+    # If we have no collection mode settings, end here and now.
     if not mode_dict:
-        return mode
+        return mode_flags
 
     # Search the parent modules/packages in top-down fashion, and take the last given setting. This ensures that
     # a setting given for the top-level package is recursively propagated to all its subpackages and submodules,
     # but also allows individual sub-modules to override the setting again.
+    mode = 'pyz'
+
     name_parts = name.split('.')
     for i in range(len(name_parts)):
         modlevel = ".".join(name_parts[:i + 1])
@@ -182,7 +204,18 @@ def _get_module_collection_mode(mode_dict, name):
         if modlevel_mode is not None:
             mode = modlevel_mode
 
-    return mode
+    # Convert mode string to _ModuleCollectionMode flags
+    try:
+        mode_flags = _MODULE_COLLECTION_MODES[mode]
+    except KeyError:
+        raise ValueError(f"Unknown module collection mode for {name!r}: {mode!r}!")
+
+    # noarchive flag being set means that we need to change _ModuleCollectionMode.PYZ into _ModuleCollectionMode.PYC
+    if noarchive and _ModuleCollectionMode.PYZ in mode_flags:
+        mode_flags ^= _ModuleCollectionMode.PYZ
+        mode_flags |= _ModuleCollectionMode.PYC
+
+    return mode_flags
 
 
 class Analysis(Target):
@@ -258,7 +291,8 @@ class Analysis(Target):
         noarchive
                 If True, do not place source files in a archive, but keep them as individual files.
         module_collection_mode
-                An optional dict of package/module names and collection mode strings.
+                An optional dict of package/module names and collection mode strings. Valid collection mode strings:
+                'pyz' (default), 'pyc', 'py', 'pyz+py' (or 'py+pyz')
         """
         super().__init__()
         from PyInstaller.config import CONF
@@ -555,40 +589,61 @@ class Analysis(Target):
         # Extend the binaries list with all the Extensions modulegraph has found.
         self.binaries = self.graph.make_binaries_toc(self.binaries)
 
-        # Fill the "pure" list with pure Python modules.
+        # Process the pure-python modules list. Depending on the collection mode, these entries end up either in "pure"
+        # list for collection into the PYZ archive, or in the "datas" list for collection as external data files.
         assert len(self.pure) == 0
-        self.pure = self.graph.make_pure_toc()
+        pure_pymodules_toc = self.graph.make_pure_toc()
 
-        # Post-process "pure" list; exclude the entries that should be collected as source py files according to
-        # package-collection-mode setting.
-        pure_pyc_toc = TOC()
-        pure_py_toc = TOC()
         # Merge package collection mode settings from .spec file. These are applied last, so they override the
         # settings previously applied by hooks.
         self.graph._module_collection_mode.update(self.module_collection_mode)
         logger.debug("Module collection settings: %r", self.graph._module_collection_mode)
-        for name, path, typecode in self.pure:
-            collect_mode = _get_module_collection_mode(self.graph._module_collection_mode, name)
-            if collect_mode == 'pyc':
-                # Collect as byte-compiled modules (typically into PYZ archive, unless self.noarchive is set).
-                pure_pyc_toc.append((name, path, typecode))
-            elif collect_mode == 'py':
-                # Collect as source files
-                name = name.replace('.', os.sep)
-                # Special case: modules have an implied filename to add.
-                basename, ext = os.path.splitext(os.path.basename(path))
-                if basename == '__init__':
-                    name += os.sep + '__init__' + ext
-                else:
-                    name += ext
-                pure_py_toc.append((name, path, "DATA"))
-            else:
-                raise ValueError(f"Unhandled package collection mode for {name!r}: {collect_mode!r}!")
-        self.pure = pure_pyc_toc
-        self.datas.extend(pure_py_toc)
 
-        # And get references to module code objects constructed by ModuleGraph to avoid writing .pyc/pyo files to hdd.
-        self.pure._code_cache = self.graph.get_code_objects()
+        pycs_dir = os.path.join(CONF['workpath'], 'localpycs')
+        code_cache = self.graph.get_code_objects()
+
+        for name, src_path, typecode in pure_pymodules_toc:
+            assert typecode == 'PYMODULE'
+            collect_mode = _get_module_collection_mode(self.graph._module_collection_mode, name, self.noarchive)
+
+            # Collect byte-compiled .pyc into PYZ archive
+            if _ModuleCollectionMode.PYZ in collect_mode:
+                self.pure.append((name, src_path, typecode))
+
+            # Pure namespace packages have no source path, and cannot be collected as external data file.
+            if src_path in (None, '-'):
+                continue
+
+            # Collect source .py file as external data file
+            if _ModuleCollectionMode.PY in collect_mode:
+                dest_path = name.replace('.', os.sep)
+                # Special case: modules have an implied filename to add.
+                basename, ext = os.path.splitext(os.path.basename(src_path))
+                if basename == '__init__':
+                    dest_path += os.sep + '__init__' + ext
+                else:
+                    dest_path += ext
+                self.datas.append((dest_path, src_path, "DATA"))
+
+            # Collect byte-compiled .pyc file as external data file
+            if _ModuleCollectionMode.PYC in collect_mode:
+                dest_path = name.replace('.', os.sep)
+                # Special case: modules have an implied filename to add.
+                basename, ext = os.path.splitext(os.path.basename(src_path))
+                if basename == '__init__':
+                    dest_path += os.sep + '__init__'
+                # Append the extension for the compiled result. In python 3.5 (PEP-488) .pyo files were replaced by
+                # .opt-1.pyc and .opt-2.pyc. However, it seems that for bytecode-only module distribution, we always
+                # need to use the .pyc extension.
+                dest_path += '.pyc'
+
+                # Compile
+                obj_path = compile_pymodule(name, src_path, workpath=pycs_dir, code_cache=code_cache)
+
+                self.datas.append((dest_path, obj_path, "DATA"))
+
+        # And get references to module code objects constructed by ModuleGraph to avoid writing .pyc files to hdd.
+        self.pure._code_cache = code_cache
 
         # Add remaining binary dependencies - analyze Python C-extensions and what DLLs they depend on.
         #
@@ -627,28 +682,6 @@ class Analysis(Target):
             ):
                 name = os.path.join('lib-dynload', name)
                 self.binaries[idx] = (name, path, typecode)
-
-        # Place Python source in data files for the noarchive case.
-        if self.noarchive:
-            # Create a new TOC of ``(dest path for .pyc, source for .py, type)``.
-            new_toc = TOC()
-            for name, path, typecode in self.pure:
-                assert typecode == 'PYMODULE'
-                # Transform a python module name into a file name.
-                name = name.replace('.', os.sep)
-                # Special case: modules have an implied filename to add.
-                if os.path.splitext(os.path.basename(path))[0] == '__init__':
-                    name += os.sep + '__init__'
-                # Append the extension for the compiled result. In python 3.5 (PEP-488) .pyo files were replaced by
-                # .opt-1.pyc and .opt-2.pyc. However, it seems that for bytecode-only module distribution, we always
-                # need to use the .pyc extension.
-                name += '.pyc'
-                new_toc.append((name, path, typecode))
-            # Put the result of byte-compiling this TOC in datas. Mark all entries as data.
-            for name, path, typecode in compile_py_files(new_toc, CONF['workpath']):
-                self.datas.append((name, path, 'DATA'))
-            # Store no source in the archive.
-            self.pure = TOC()
 
         # Write warnings about missing modules.
         self._write_warnings()
