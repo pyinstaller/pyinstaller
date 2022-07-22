@@ -28,7 +28,7 @@ from PyInstaller.archive.writers import CArchiveWriter, ZlibArchiveWriter
 from PyInstaller.building.datastruct import TOC, Target, _check_guts_eq
 from PyInstaller.building.utils import (
     _check_guts_toc, _make_clean_directory, _rmtree, add_suffix_to_extension, checkCache, get_code_object,
-    strip_paths_in_code
+    strip_paths_in_code, compile_pymodule
 )
 from PyInstaller.compat import (is_cygwin, is_darwin, is_linux, is_win)
 from PyInstaller.depend import bindepend
@@ -83,16 +83,28 @@ class PYZ(Target):
         if name is None:
             self.name = os.path.splitext(self.tocfilename)[0] + '.pyz'
         # PyInstaller bootstrapping modules.
-        self.dependencies = get_bootstrap_modules()
+        bootstrap_dependencies = get_bootstrap_modules()
         # Bundle the crypto key.
         self.cipher = cipher
         if cipher:
-            key_file = ('pyimod00_crypto_key', os.path.join(CONF['workpath'], 'pyimod00_crypto_key.pyc'), 'PYMODULE')
+            key_file = ('pyimod00_crypto_key', os.path.join(CONF['workpath'], 'pyimod00_crypto_key.py'), 'PYMODULE')
             # Insert the key as the first module in the list. The key module contains just variables and does not depend
             # on other modules.
-            self.dependencies.insert(0, key_file)
-        # Compile the top-level modules so that they end up in the CArchive and can be imported by the bootstrap script.
-        self.dependencies = misc.compile_py_files(self.dependencies, CONF['workpath'])
+            bootstrap_dependencies.insert(0, key_file)
+
+        # Compile the python modules that are part of bootstrap dependencies, so that they can be collected into the
+        # CArchive and imported by the bootstrap script.
+        self.dependencies = []
+        workpath = os.path.join(CONF['workpath'], 'localpycs')
+        for name, src_path, typecode in bootstrap_dependencies:
+            if typecode == 'PYMODULE':
+                # Compile pymodule and include the compiled .pyc file.
+                pyc_path = compile_pymodule(name, src_path, workpath, code_cache=None)
+                self.dependencies.append((name, pyc_path, typecode))
+            else:
+                # Include as is (extensions).
+                self.dependencies.append((name, src_path, typecode))
+
         self.__postinit__()
 
     _GUTS = (  # input parameters
