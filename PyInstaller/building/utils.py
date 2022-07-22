@@ -15,7 +15,6 @@
 import fnmatch
 import glob
 import hashlib
-import importlib.util
 import marshal
 import os
 import pathlib
@@ -712,7 +711,6 @@ def compile_pymodule(name, src_path, workpath, code_cache=None):
 
     # Check if optional cache contains module entry
     code_object = code_cache.get(name, None) if code_cache else None
-    src_hash = None
 
     if code_object is None:
         _, ext = os.path.splitext(src_path)
@@ -737,21 +735,6 @@ def compile_pymodule(name, src_path, workpath, code_cache=None):
         # Unmarshal code object; this is necessary if we want to strip paths from it
         code_object = marshal.loads(pyc_data[16:])
 
-        # If this this a hash-based pyc, read the hash from it
-        flags = struct.unpack('<I', pyc_data[4:8])[0]
-        if flags & 1:
-            src_hash = pyc_data[8:16]
-
-    # If source hash is unavailable (we were dealing with timestamp-based pyc file, or the code object was retrieved
-    # from the code cache), compute it
-    if src_hash is None:
-        if os.path.isfile(src_path):
-            with open(src_path, 'rb') as fp:
-                src_bytes = fp.read()
-            src_hash = importlib.util.source_hash(src_bytes)
-        else:
-            src_hash = b'\00' * 8
-
     # Strip code paths from the code object
     code_object = strip_paths_in_code(code_object)
 
@@ -759,7 +742,7 @@ def compile_pymodule(name, src_path, workpath, code_cache=None):
     with open(pyc_path, 'wb') as fh:
         fh.write(compat.BYTECODE_MAGIC)
         fh.write(struct.pack('<I', 0b01))  # PEP-552: hash-based pyc, check_source=False
-        fh.write(src_hash)
+        fh.write(b'\00' * 8)  # Zero the source hash
         marshal.dump(code_object, fh)
 
     # Return output path

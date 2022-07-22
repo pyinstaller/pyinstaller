@@ -20,7 +20,6 @@ import re
 import struct
 import zipfile
 from types import CodeType
-from importlib.util import source_hash as importlib_source_hash
 
 import marshal
 
@@ -75,17 +74,9 @@ def create_py3_base_library(libzip_filename, graph):
 
                         # Write code to a file. This code is similar to py_compile.compile().
                         with io.BytesIO() as fc:
-                            # Prepare all data in byte stream file-like object.
                             fc.write(compat.BYTECODE_MAGIC)
-
-                            # Additional bitfield according to PEP 552 0b01 means hash based but don't check the
-                            # hash
-                            fc.write(struct.pack('<I', 0b01))
-                            with open(mod.filename, 'rb') as fs:
-                                source_bytes = fs.read()
-                            source_hash = importlib_source_hash(source_bytes)
-                            fc.write(source_hash)
-
+                            fc.write(struct.pack('<I', 0b01))  # PEP-552: hash-based pyc, check_source=False
+                            fc.write(b'\00' * 8)  # Match behavior of `building.utils.compile_pymodule`
                             code = strip_paths_in_code(mod.code)  # Strip paths
                             marshal.dump(code, fc)
                             # Use a ZipInfo to set timestamp for deterministic build.
