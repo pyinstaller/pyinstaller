@@ -13,6 +13,15 @@ on:
       - '!master'
       - '!pyup/**'
 
+env:
+  # Prevent setuptools from replacing distutils with its vendored version, as our test suite is not
+  # ready for that. There also seem to be issues with setuptools-provided distutils and pip 22.2
+  # on python < 3.10.
+  SETUPTOOLS_USE_DISTUTILS: not-today
+
+  # Colored pytest output on CI despite not having a tty
+  FORCE_COLOR: 1
+
 jobs:
   tests:
     runs-on: ${{ matrix.os }}
@@ -71,34 +80,12 @@ jobs:
           CC="gcc -std=gnu90" python waf all
           cd ..
 
-      - name: Set up environment variables (non-Windows)
+      - name: Set up extra environment variables (non-Windows)
         if: ${{ !startsWith(matrix.os, 'windows') }}
         run: |
           # Run Qt-based tests with offscreen backend. This seems to break QtWebEngine tests on Windows, so
           # apply it only here, in non-Windows path.
           echo "QT_QPA_PLATFORM=offscreen" >> $GITHUB_ENV
-
-          # Prevent setuptools from replacing distutils with its vendored version, as our test suite is not
-          # ready for that. There also seem to be issues with setuptools-provided distutils and pip 22.2
-          # on python < 3.10.
-          echo "SETUPTOOLS_USE_DISTUTILS=not-today" >> $GITHUB_ENV
-
-          # Colored pytest output on CI despite not having a tty
-          echo "FORCE_COLOR=1" >> $GITHUB_ENV
-
-      # Use bash for this step, so that we can avoid dealing with PowerShell
-      # syntax for writing to environmental file on Windows.
-      - name: Set up environment variables (Windows)
-        if: startsWith(matrix.os, 'windows')
-        shell: bash
-        run: |
-          # Prevent setuptools from replacing distutils with its vendored version, as our test suite is not
-          # ready for that. There also seem to be issues with setuptools-provided distutils and pip 22.2
-          # on python < 3.10.
-          echo "SETUPTOOLS_USE_DISTUTILS=not-today" >> $GITHUB_ENV
-
-          # Colored pytest output on CI despite not having a tty
-          echo "FORCE_COLOR=1" >> $GITHUB_ENV
 
       - name: Set up environment
         run: |
