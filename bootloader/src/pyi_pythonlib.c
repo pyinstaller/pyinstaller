@@ -617,16 +617,15 @@ pyi_pylib_import_modules(ARCHIVE_STATUS *status)
 
             VS("LOADER: extracted %s\n", ptoc->name);
 
-            /* Unmarshall code object for module; we need to skip
-               the pyc header */
-            co = PI_PyMarshal_ReadObjectFromString((const char *) modbuf + 16, ptoc->ulen - 16);
+            /* Unmarshal the stored code object */
+            co = PI_PyMarshal_ReadObjectFromString((const char *) modbuf, ptoc->ulen);
 
             if (co != NULL) {
                 VS("LOADER: running unmarshalled code object for %s...\n", ptoc->name);
                 mod = PI_PyImport_ExecCodeModule(ptoc->name, co);
             }
             else {
-                VS("LOADER: failed to unmarshall code object for %s!\n", ptoc->name);
+                VS("LOADER: failed to unmarshal code object for %s!\n", ptoc->name);
                 mod = NULL;
             }
 
