@@ -15,15 +15,13 @@ This module contains miscellaneous functions that do not fit anywhere else.
 import glob
 import os
 import pprint
-import py_compile
-import sys
 import codecs
 import re
 import tokenize
 import io
 
 from PyInstaller import log as logging
-from PyInstaller.compat import BYTECODE_MAGIC, is_win
+from PyInstaller.compat import is_win
 
 logger = logging.getLogger(__name__)
 
@@ -108,95 +106,6 @@ def mtime(fnm):
         return os.stat(fnm)[8]
     except Exception:
         return 0
-
-
-def compile_py_files(toc, workpath):
-    """
-    Given a TOC or equivalent list of tuples, generates all the required pyc/pyo files, writing in a local directory
-    if required, and returns the list of tuples with the updated pathnames.
-
-    In the old system using ImpTracker, the generated TOC of "pure" modules already contains paths to nm.pyc or
-    nm.pyo and it is only necessary to check that these files are not older than the source. In the new system using
-    ModuleGraph, the path given is to nm.py and we do not know if nm.pyc/.pyo exists. The following logic works with
-    both (so if at some time modulegraph starts returning filenames of .pyc, it will cope).
-    """
-
-    # For those modules that need to be rebuilt, use the build directory PyInstaller creates during the build process.
-    basepath = os.path.join(workpath, "localpycos")
-
-    # Copy everything from toc to this new TOC, possibly unchanged.
-    new_toc = []
-    for (nm, fnm, typ) in toc:
-        # Keep irrelevant items unchanged.
-        if typ != 'PYMODULE':
-            new_toc.append((nm, fnm, typ))
-            continue
-
-        if fnm in ('-', None):
-            # If fmn represents a namespace then skip
-            continue
-
-        if fnm.endswith('.py'):
-            # We are given a source path, determine the object path, if any.
-            src_fnm = fnm
-            # Assume we want pyo only when now running -O or -OO
-            obj_fnm = src_fnm + ('o' if sys.flags.optimize else 'c')
-            if not os.path.exists(obj_fnm):
-                # Alas that one is not there so assume the other choice.
-                obj_fnm = src_fnm + ('c' if sys.flags.optimize else 'o')
-        else:
-            # fnm is not "name.py", so assume we are given name.pyc/.pyo
-            obj_fnm = fnm  # take that name to be the desired object
-            src_fnm = fnm[:-1]  # drop the 'c' or 'o' to make a source name
-
-        # We need to perform a build ourselves if obj_fnm does not exist, or if src_fnm is newer than obj_fnm, or if
-        # obj_fnm was created by a different Python version.
-        needs_compile = not os.path.exists(obj_fnm) or mtime(src_fnm) > mtime(obj_fnm)
-        if not needs_compile:
-            with open(obj_fnm, 'rb') as fh:
-                needs_compile = fh.read(4) != BYTECODE_MAGIC
-        if needs_compile:
-            try:
-                # TODO: there should be no need to repeat the compile, because ModuleGraph does a compile and stores the
-                #       result in the .code member of the graph node. Should be possible to get the node and write the
-                #       code to obj_fnm.
-                py_compile.compile(src_fnm, obj_fnm)
-                logger.debug("compiled %s", src_fnm)
-            except IOError:
-                # If we are compiling in a system directory, we probably do not have write permissions; thus we compile
-                # to a local directory and change the TOC entry accordingly.
-                ext = os.path.splitext(obj_fnm)[1]
-
-                split_nm = nm.split(".")
-                if "__init__" not in obj_fnm:
-                    # If it is a normal module, use the last part of the qualified name as the module name and the first
-                    # part as the leading path.
-                    leading = split_nm[:-1]
-                    mod_name = split_nm[-1]
-                else:
-                    # In case of an __init__ module, use all the qualified name as the leading path and use "__init__"
-                    # as the module name.
-                    leading = split_nm
-                    mod_name = "__init__"
-
-                leading = os.path.join(basepath, *leading)
-
-                if not os.path.exists(leading):
-                    os.makedirs(leading)
-
-                obj_fnm = os.path.join(leading, mod_name + ext)
-                needs_compile = not os.path.exists(obj_fnm) or mtime(src_fnm) > mtime(obj_fnm)
-                if not needs_compile:
-                    with open(obj_fnm, 'rb') as fh:
-                        needs_compile = fh.read(4) != BYTECODE_MAGIC
-                if needs_compile:
-                    # TODO: see above TODO regarding using node.code.
-                    py_compile.compile(src_fnm, obj_fnm)
-                    logger.debug("compiled %s", src_fnm)
-        # If we get to here, obj_fnm is the path to the compiled module nm.py
-        new_toc.append((nm, obj_fnm, typ))
-
-    return new_toc
 
 
 def save_py_data_struct(filename, data):
