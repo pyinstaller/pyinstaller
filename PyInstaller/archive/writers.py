@@ -25,7 +25,7 @@ import sys
 import zlib
 from types import CodeType
 
-from PyInstaller.building.utils import fake_pyc_timestamp, get_code_object, strip_paths_in_code
+from PyInstaller.building.utils import get_code_object, strip_paths_in_code
 from PyInstaller.compat import BYTECODE_MAGIC, is_win
 from PyInstaller.loader.pyimod02_archive import PYZ_TYPE_DATA, PYZ_TYPE_MODULE, PYZ_TYPE_NSPKG, PYZ_TYPE_PKG
 
@@ -342,34 +342,23 @@ class CArchiveWriter(ArchiveWriter):
                 return self._write_blob(b"", dest, type)
 
             if type == 's':
-                # If it is a source code file, compile it to a code object and marshall the object, so it can be
+                # If it is a source code file, compile it to a code object and marshal the object, so it can be
                 # unmarshalled by the bootloader.
                 code = get_code_object(dest, source)
                 code = strip_paths_in_code(code)
                 return self._write_blob(marshal.dumps(code), dest, type, compress=compress)
 
-            elif type == 'm':
+            elif type in ('m', 'M'):
+                # Read the PYC file
                 with open(source, "rb") as f:
                     data = f.read()
-                # Check if it is a PYC file
-                if data[:4] == BYTECODE_MAGIC:
-                    # Read whole header and load code. According to PEP-552, the PYC header consists of four 32-bit
-                    # words (magic, flags, and, depending on the flags, either timestamp and source file size, or a
-                    # 64-bit hash).
-                    header = data[:16]
-                    code = marshal.loads(data[16:])
-                    # Strip paths from code, marshal back into module form. The header fields (timestamp, size, hash,
-                    # etc.) are all referring to the source file, so our modification of the code object does not affect
-                    # them, and we can re-use the original header.
-                    code = strip_paths_in_code(code)
-                    data = header + marshal.dumps(code)
-                if source.endswith('.__init__.py'):
-                    type = 'M'
-                return self._write_blob(data, dest, type, compress=compress)
-
-            elif type == "M":
-                with open(source, "rb") as f:
-                    return self._write_blob(fake_pyc_timestamp(f.read()), dest, type, compress=compress)
+                assert data[:4] == BYTECODE_MAGIC
+                # Skip the PYC header, load the code object.
+                code = marshal.loads(data[16:])
+                code = strip_paths_in_code(code)
+                # These module entries are loaded and executed within the bootloader, which requires only the code
+                # object, without the PYC header.
+                return self._write_blob(marshal.dumps(code), dest, type, compress=compress)
 
             else:
                 self._write_file(source, dest, type, compress=compress)
