@@ -652,33 +652,6 @@ def strip_paths_in_code(co, new_filename=None):
         )
 
 
-def fake_pyc_timestamp(buf):
-    """
-    Reset the timestamp from a .pyc-file header to a fixed value.
-
-    This enables deterministic builds without having to set pyinstaller source metadata (mtime) since that changes the
-    pyc-file contents.
-
-    _buf_ must at least contain the full pyc-file header.
-    """
-    assert buf[:4] == compat.BYTECODE_MAGIC, \
-        "Expected pyc magic {}, got {}".format(compat.BYTECODE_MAGIC, buf[:4])
-    start, end = 4, 8
-    # See https://www.python.org/dev/peps/pep-0552/
-    (flags,) = struct.unpack_from(">I", buf, 4)
-    if flags & 1:
-        # We are in the future and hash-based pyc-files are used, so
-        # clear "check_source" flag, since there is no source.
-        buf[4:8] = struct.pack(">I", flags ^ 2)
-        return buf
-    else:
-        # No hash-based pyc-file, timestamp is the next field.
-        start, end = 8, 12
-
-    ts = b'pyi0'  # So people know where this comes from
-    return buf[:start] + ts + buf[end:]
-
-
 def _should_include_system_binary(binary_tuple, exceptions):
     """
     Return True if the given binary_tuple describes a system binary that should be included.
