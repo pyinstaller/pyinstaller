@@ -19,7 +19,7 @@
 #   loader.get_code(fullmodname)
 #   loader.get_source(fullmodname)
 #
-# This test-cases test the return values of these functions for importers from pyimod03_importers module.
+# This test-cases test the return values of these functions for importers from pyimod02_importers module.
 
 # Note: The modules need to be imported at the end of the resp. code. Otherwise the pkgutil-functions take a very
 #       different branch (since the module is already in sys.modules) and what we want to test will not be tested.

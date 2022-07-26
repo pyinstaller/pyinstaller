@@ -848,10 +848,9 @@ def get_bootstrap_modules():
     # NOTE:These modules should be kept simple without any complicated dependencies.
     loader_mods += [
         ('struct', os.path.abspath(mod_struct.__file__), 'PYMODULE'),
-        ('pyimod01_os_path', os.path.join(loaderpath, 'pyimod01_os_path.py'), 'PYMODULE'),
-        ('pyimod02_archive', os.path.join(loaderpath, 'pyimod02_archive.py'), 'PYMODULE'),
-        ('pyimod03_importers', os.path.join(loaderpath, 'pyimod03_importers.py'), 'PYMODULE'),
-        ('pyimod04_ctypes', os.path.join(loaderpath, 'pyimod04_ctypes.py'), 'PYMODULE'),
+        ('pyimod01_archive', os.path.join(loaderpath, 'pyimod01_archive.py'), 'PYMODULE'),
+        ('pyimod02_importers', os.path.join(loaderpath, 'pyimod02_importers.py'), 'PYMODULE'),
+        ('pyimod03_ctypes', os.path.join(loaderpath, 'pyimod03_ctypes.py'), 'PYMODULE'),
         ('pyiboot01_bootstrap', os.path.join(loaderpath, 'pyiboot01_bootstrap.py'), 'PYSOURCE'),
     ]
     return loader_mods

@@ -14,7 +14,7 @@ import pathlib
 import sys
 
 import pkg_resources
-from pyimod03_importers import FrozenImporter
+from pyimod02_importers import FrozenImporter
 
 SYS_PREFIX = pathlib.PurePath(sys._MEIPASS)
 
