@@ -460,7 +460,7 @@ def _rmtree(path):
     if CONF['noconfirm']:
         choice = 'y'
     elif sys.stdout.isatty():
-        choice = compat.stdin_input(
+        choice = input(
             'WARNING: The output directory "%s" and ALL ITS CONTENTS will be REMOVED! Continue? (y/N)' % path
         )
     else:

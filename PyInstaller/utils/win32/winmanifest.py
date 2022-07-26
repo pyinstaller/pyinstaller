@@ -76,7 +76,6 @@ from xml.dom.minidom import Document, Element
 
 from PyInstaller import compat
 from PyInstaller import log as logging
-from PyInstaller.compat import string_types
 from PyInstaller.utils.win32 import winresource
 
 logger = logging.getLogger(__name__)
@@ -260,7 +259,7 @@ class Manifest:
     def __eq__(self, other):
         if isinstance(other, Manifest):
             return self.toxml() == other.toxml()
-        if isinstance(other, string_types):
+        if isinstance(other, str):
             return self.toxml() == other
         return False
 
@@ -695,7 +694,7 @@ class Manifest:
         """
         Load manifest from file or file object.
         """
-        if isinstance(filename_or_file, string_types):
+        if isinstance(filename_or_file, str):
             filename = filename_or_file
         else:
             filename = filename_or_file.name
@@ -909,7 +908,7 @@ class Manifest:
         """
         if not filename_or_file:
             filename_or_file = self.filename
-        if isinstance(filename_or_file, string_types):
+        if isinstance(filename_or_file, str):
             filename_or_file = open(filename_or_file, "wb")
         xmlstr = self.toprettyxml(indent, newl, encoding)
         with filename_or_file:
@@ -921,7 +920,7 @@ class Manifest:
         """
         if not filename_or_file:
             filename_or_file = self.filename
-        if isinstance(filename_or_file, string_types):
+        if isinstance(filename_or_file, str):
             filename_or_file = open(filename_or_file, "wb")
         xmlstr = self.toxml(encoding)
         with filename_or_file:
@@ -1013,7 +1012,7 @@ def create_manifest(filename, manifest, console, uac_admin=False, uac_uiaccess=F
         # /path/NAME.exe.manifest - split extension twice to get NAME.
         name = os.path.basename(filename)
         manifest.name = os.path.splitext(os.path.splitext(name)[0])[0]
-    elif isinstance(manifest, string_types) and "<" in manifest:
+    elif isinstance(manifest, str) and "<" in manifest:
         # Assume XML string
         manifest = ManifestFromXML(manifest)
     elif not isinstance(manifest, Manifest):

@@ -15,8 +15,6 @@ import sys
 import pkg_resources
 import pytest
 
-from PyInstaller import compat
-
 
 def paths_to_test(include_only=None):
     """
@@ -25,7 +23,7 @@ def paths_to_test(include_only=None):
     whose ``module_name`` begins with the provided string(s).
     """
     # Convert a string to a list.
-    if isinstance(include_only, compat.string_types):
+    if isinstance(include_only, str):
         include_only = [include_only]
 
     # Walk through all entry points.

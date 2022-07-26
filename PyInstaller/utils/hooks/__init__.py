@@ -628,7 +628,7 @@ def collect_submodules(package: str, filter: Callable[[str], bool] = lambda name
 
     """
     # Accept only strings as packages.
-    if not isinstance(package, compat.string_types):
+    if not isinstance(package, str):
         raise TypeError('package must be a str')
     if on_error not in ("ignore", "warn once", "warn", "raise"):
         raise ValueError(
@@ -755,7 +755,7 @@ def collect_dynamic_libs(package, destdir=None):
     logger.debug('Collecting dynamic libraries for %s' % package)
 
     # Accept only strings as packages.
-    if not isinstance(package, compat.string_types):
+    if not isinstance(package, str):
         raise TypeError('package must be a str')
 
     # Skip a module which is not a package.
@@ -818,7 +818,7 @@ def collect_data_files(package, include_py_files=False, subdir=None, excludes=No
     logger.debug('Collecting data files for %s' % package)
 
     # Accept only strings as packages.
-    if not isinstance(package, compat.string_types):
+    if not isinstance(package, str):
         raise TypeError('package must be a str')
 
     # Skip a module which is not a package.
@@ -897,7 +897,7 @@ def collect_system_data_files(path, destdir=None, include_py_files=False):
     This function is intended to be used by hook scripts, not by main PyInstaller code.
     """
     # Accept only strings as paths.
-    if not isinstance(path, compat.string_types):
+    if not isinstance(path, str):
         raise TypeError('path must be a str')
 
     # Walk through all file in the given package, looking for data files.

@@ -21,7 +21,6 @@ import zlib
 
 import PyInstaller.log
 from PyInstaller.archive.readers import CArchiveReader, NotAnArchiveError
-from PyInstaller.compat import stdin_input
 from PyInstaller.loader import pyimod01_archive
 
 stack = []
@@ -45,7 +44,7 @@ def main(name, brief, debug, rec_debug, **unused_options):
 
     while 1:
         try:
-            toks = stdin_input('? ').split(None, 1)
+            toks = input('? ').split(None, 1)
         except EOFError:
             # Ctrl-D
             print(file=sys.stderr)  # Clear line.
@@ -67,7 +66,7 @@ def main(name, brief, debug, rec_debug, **unused_options):
             show(name, arch)
         elif cmd == 'O':
             if not arg:
-                arg = stdin_input('open name? ')
+                arg = input('open name? ')
             arg = arg.strip()
             try:
                 arch = get_archive(arg)
@@ -81,13 +80,13 @@ def main(name, brief, debug, rec_debug, **unused_options):
             show(arg, arch)
         elif cmd == 'X':
             if not arg:
-                arg = stdin_input('extract name? ')
+                arg = input('extract name? ')
             arg = arg.strip()
             data = get_data(arg, arch)
             if data is None:
                 print("Not found", file=sys.stderr)
                 continue
-            filename = stdin_input('to filename? ')
+            filename = input('to filename? ')
             if not filename:
                 print(repr(data))
             else:
