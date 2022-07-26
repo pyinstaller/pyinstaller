@@ -620,11 +620,12 @@ def importlib_load_source(name, pathname):
     return mod_loader.load_module()
 
 
-# Patterns of module names that should be bundled into the base_library.zip.
+# Patterns of module names that should be bundled into the base_library.zip to be available during bootstrap.
+# These modules include direct or indirect dependencies of encodings.* modules. The encodings modules must be
+# recursively included to set the I/O encoding during python startup. Similarly, this list should include
+# modules used by PyInstaller's bootstrap scripts and modules (loader/pyi*.py)
 
 PY3_BASE_MODULES = {
-    # These modules are direct or indirect dependencies of encodings.* modules. encodings modules must be recursively
-    # included to set the I/O encoding during python startup.
     '_collections_abc',
     '_weakrefset',
     'abc',
@@ -633,9 +634,10 @@ PY3_BASE_MODULES = {
     'copyreg',
     'encodings',
     'enum',
+    'fnmatch',  # dependency of pathlib
     'functools',
     'genericpath',  # dependency of os.path
-    'io',
+    'io',  # used by loader/pymod02_importers.py
     'heapq',
     'keyword',
     'linecache',
@@ -643,6 +645,7 @@ PY3_BASE_MODULES = {
     'ntpath',  # dependency of os.path
     'operator',
     'os',
+    'pathlib',  # used by loader/pymod02_importers.py
     'posixpath',  # dependency of os.path
     're',
     'reprlib',
@@ -650,9 +653,11 @@ PY3_BASE_MODULES = {
     'sre_constants',
     'sre_parse',
     'stat',  # dependency of os.path
-    'tokenize',  # used by loader/pymod03_importers.py
+    'token',  # depdendency of tokenize
+    'tokenize',  # used by loader/pymod02_importers.py
     'traceback',  # for startup errors
     'types',
+    'urllib',  # dependency of pathlib
     'weakref',
     'warnings',
 }

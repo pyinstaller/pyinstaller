@@ -13,13 +13,18 @@ PEP-302 and PEP-451 importers for frozen applications.
 """
 
 # **NOTE** This module is used during bootstrap.
-# Import *ONLY* builtin modules.
+# Import *ONLY* builtin modules or modules that are collected into the base_library.zip archive.
 # List of built-in modules: sys.builtin_module_names
+# List of modules collected into base_library.zip: PyInstaller.compat.PY3_BASE_MODULES
 
 import sys
-import os  # guaranteed to be in baselib
+import os
+import pathlib
+import io
+import tokenize
 
 import _frozen_importlib
+
 from pyimod01_archive import ArchiveReadError, ZlibArchiveReader
 
 SYS_PREFIX = sys._MEIPASS + os.sep
@@ -62,11 +67,6 @@ def _decode_source(source_bytes):
     Based on CPython's implementation of the same functionality:
     https://github.com/python/cpython/blob/3.9/Lib/importlib/_bootstrap_external.py#L679-L688
     """
-    # Local imports to avoid bootstrap issues
-    # NOTE: both modules are listed in compat.PY3_BASE_MODULES and collected into base_library.zip.
-    import io
-    import tokenize
-
     source_bytes_readline = io.BytesIO(source_bytes).readline
     encoding = tokenize.detect_encoding(source_bytes_readline)
     newline_decoder = io.IncrementalNewlineDecoder(decoder=None, translate=True)
@@ -532,7 +532,6 @@ class FrozenResourceReader:
       https://github.com/python/cpython/blob/839d7893943782ee803536a47f1d4de160314f85/Lib/importlib/abc.py#L312
     """
     def __init__(self, importer, name):
-        import pathlib  # Local import to avoid bootstrap issues.
         self.importer = importer
         self.path = pathlib.Path(sys._MEIPASS).joinpath(*name.split('.'))
 
