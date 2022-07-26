@@ -22,7 +22,7 @@ import zlib
 import PyInstaller.log
 from PyInstaller.archive.readers import CArchiveReader, NotAnArchiveError
 from PyInstaller.compat import stdin_input
-from PyInstaller.loader import pyimod02_archive
+from PyInstaller.loader import pyimod01_archive
 
 stack = []
 cleanup = []
@@ -212,7 +212,7 @@ def get_archive_content(filename):
     return output
 
 
-class ZlibArchive(pyimod02_archive.ZlibArchiveReader):
+class ZlibArchive(pyimod01_archive.ZlibArchiveReader):
     def checkmagic(self):
         """
         Overridable.

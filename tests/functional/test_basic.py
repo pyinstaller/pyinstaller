@@ -162,7 +162,7 @@ def test_feature_crypto(pyi_builder):
     pyi_builder.test_source(
         """
         from pyimod00_crypto_key import key
-        from pyimod02_archive import CRYPT_BLOCK_SIZE
+        from pyimod01_archive import CRYPT_BLOCK_SIZE
 
         # Test against issue #1663: importing a package in the bootstrap
         # phase should not interfere with subsequent imports.

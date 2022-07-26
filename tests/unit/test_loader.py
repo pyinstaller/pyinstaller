@@ -12,7 +12,7 @@
 from threading import Thread
 from queue import Queue
 
-from PyInstaller.loader.pyimod02_archive import ArchiveFile
+from PyInstaller.loader.pyimod01_archive import ArchiveFile
 
 
 def test_threading_import(tmpdir):

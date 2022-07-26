@@ -634,17 +634,22 @@ PY3_BASE_MODULES = {
     'encodings',
     'enum',
     'functools',
+    'genericpath',  # dependency of os.path
     'io',
     'heapq',
     'keyword',
     'linecache',
     'locale',
+    'ntpath',  # dependency of os.path
     'operator',
+    'os',
+    'posixpath',  # dependency of os.path
     're',
     'reprlib',
     'sre_compile',
     'sre_constants',
     'sre_parse',
+    'stat',  # dependency of os.path
     'tokenize',  # used by loader/pymod03_importers.py
     'traceback',  # for startup errors
     'types',

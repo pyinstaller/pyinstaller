@@ -17,12 +17,12 @@ PEP-302 and PEP-451 importers for frozen applications.
 # List of built-in modules: sys.builtin_module_names
 
 import sys
+import os  # guaranteed to be in baselib
 
 import _frozen_importlib
-import pyimod01_os_path as pyi_os_path
-from pyimod02_archive import ArchiveReadError, ZlibArchiveReader
+from pyimod01_archive import ArchiveReadError, ZlibArchiveReader
 
-SYS_PREFIX = sys._MEIPASS + pyi_os_path.os_sep
+SYS_PREFIX = sys._MEIPASS + os.sep
 SYS_PREFIXLEN = len(SYS_PREFIX)
 
 # In Python 3, it is recommended to use class 'types.ModuleType' to create a new module. However, 'types' module is
@@ -164,7 +164,7 @@ class FrozenImporter:
                 if not p.startswith(SYS_PREFIX):
                     continue
                 p = p[SYS_PREFIXLEN:]
-                parts = p.split(pyi_os_path.os_sep)
+                parts = p.split(os.sep)
                 if not parts:
                     continue
                 if not parts[0]:
@@ -227,7 +227,7 @@ class FrozenImporter:
                     # value 'sys.prefix' because 'xml.etree.cElementTree' fails otherwise.
                     #
                     # Set __path__ to point to 'sys.prefix/package/subpackage'.
-                    module.__path__ = [pyi_os_path.os_path_dirname(module.__file__)]
+                    module.__path__ = [os.path.dirname(module.__file__)]
 
                 #-- Set __loader__
                 # The attribute __loader__ improves support for module 'pkg_resources' and enables the following
@@ -310,7 +310,7 @@ class FrozenImporter:
             # Try loading the .py file from the filesystem (only for collected modules)
             if self.is_package(fullname):
                 fullname += '.__init__'
-            filename = pyi_os_path.os_path_join(SYS_PREFIX, fullname.replace('.', pyi_os_path.os_sep) + '.py')
+            filename = os.path.join(SYS_PREFIX, fullname.replace('.', os.sep) + '.py')
             try:
                 # Read in binary mode, then decode
                 with open(filename, 'rb') as fp:
@@ -354,11 +354,9 @@ class FrozenImporter:
         # package, or just .pyc for a module).
         # Method is_package() will raise ImportError if module not found.
         if self.is_package(fullname):
-            filename = pyi_os_path.os_path_join(
-                pyi_os_path.os_path_join(SYS_PREFIX, fullname.replace('.', pyi_os_path.os_sep)), '__init__.pyc'
-            )
+            filename = os.path.join(SYS_PREFIX, fullname.replace('.', os.path.sep), '__init__.pyc')
         else:
-            filename = pyi_os_path.os_path_join(SYS_PREFIX, fullname.replace('.', pyi_os_path.os_sep) + '.pyc')
+            filename = os.path.join(SYS_PREFIX, fullname.replace('.', os.path.sep) + '.pyc')
         return filename
 
     def find_spec(self, fullname, path=None, target=None):
@@ -394,7 +392,7 @@ class FrozenImporter:
                 if not p.startswith(SYS_PREFIX):
                     continue
                 p = p[SYS_PREFIXLEN:]
-                parts = p.split(pyi_os_path.os_sep)
+                parts = p.split(os.sep)
                 if not parts:
                     continue
                 if not parts[0]:
@@ -416,7 +414,7 @@ class FrozenImporter:
             # (a.k.a. not set)
             spec = _frozen_importlib.ModuleSpec(fullname, None, is_package=True)
             # Set submodule_search_locations, which seems to fill the __path__ attribute.
-            spec.submodule_search_locations = [pyi_os_path.os_path_dirname(self.get_filename(entry_name))]
+            spec.submodule_search_locations = [os.path.dirname(self.get_filename(entry_name))]
             return spec
 
         # origin has to be the filename
@@ -441,7 +439,7 @@ class FrozenImporter:
         # Set submodule_search_locations for packages. Seems to be required for importlib_resources from 3.2.0;
         # see issue #5395.
         if is_pkg:
-            spec.submodule_search_locations = [pyi_os_path.os_path_dirname(self.get_filename(entry_name))]
+            spec.submodule_search_locations = [os.path.dirname(self.get_filename(entry_name))]
 
         return spec
 
@@ -490,7 +488,7 @@ class FrozenImporter:
             # 'sys.prefix' because 'xml.etree.cElementTree' fails otherwise.
             #
             # Set __path__ to point to 'sys.prefix/package/subpackage'.
-            module.__path__ = [pyi_os_path.os_path_dirname(module.__file__)]
+            module.__path__ = [os.path.dirname(module.__file__)]
 
         exec(bytecode, module.__dict__)
 

@@ -26,7 +26,7 @@ import os
 import pkgutil
 import sys
 
-from pyimod03_importers import FrozenImporter
+from pyimod02_importers import FrozenImporter
 
 _orig_pkgutil_iter_modules = pkgutil.iter_modules
 
