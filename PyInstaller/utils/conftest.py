@@ -35,7 +35,7 @@ sys.path.append(_ROOT_DIR)
 
 from PyInstaller import __main__ as pyi_main  # noqa: E402
 from PyInstaller import configure  # noqa: E402
-from PyInstaller.compat import architecture, is_darwin, is_linux, is_win, safe_repr  # noqa: E402
+from PyInstaller.compat import architecture, is_darwin, is_linux, is_win  # noqa: E402
 from PyInstaller.depend.analysis import initialize_modgraph  # noqa: E402
 from PyInstaller.utils.cliutils import archive_viewer  # noqa: E402
 from PyInstaller.utils.tests import gen_sourcefile  # noqa: E402
@@ -367,7 +367,7 @@ class AppBuilder:
             print('[' + str(process.pid) + '] ', *text)
 
         # Run executable. stderr is redirected to stdout.
-        _msg('RUNNING: ', safe_repr(exe_path), ', args: ', safe_repr(args))
+        _msg('RUNNING: ', repr(exe_path), ', args: ', repr(args))
         # 'psutil' allows to use timeout in waiting for a subprocess. If not timeout was specified then it is 'None' -
         # no timeout, just waiting. Runtime is useful mostly for interactive tests.
         try:

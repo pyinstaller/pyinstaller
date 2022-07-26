@@ -41,7 +41,7 @@ import traceback
 from collections import defaultdict
 from copy import deepcopy
 
-from PyInstaller import HOMEPATH, PACKAGEPATH, compat
+from PyInstaller import HOMEPATH, PACKAGEPATH
 from PyInstaller import log as logging
 from PyInstaller.building.datastruct import TOC
 from PyInstaller.compat import (
@@ -153,7 +153,7 @@ class PyiModuleGraph(ModuleGraph):
         assert isinstance(rthooks, dict), 'The root element in %s must be a dict.' % uhd_path
         for module_name, python_file_name_list in rthooks.items():
             # Ensure the key is a string.
-            assert isinstance(module_name, compat.string_types), \
+            assert isinstance(module_name, str), \
                 '%s must be a dict whose keys are strings; %s is not a string.' % (uhd_path, module_name)
             # Ensure the value is a list.
             assert isinstance(python_file_name_list, list), \
@@ -168,7 +168,7 @@ class PyiModuleGraph(ModuleGraph):
             # Merge this with existing run-time hooks.
             for python_file_name in python_file_name_list:
                 # Ensure each item in the list is a string.
-                assert isinstance(python_file_name, compat.string_types), \
+                assert isinstance(python_file_name, str), \
                     '%s key %s, item %r must be a string.' % (uhd_path, module_name, python_file_name)
                 # Transform it into an absolute path.
                 abs_path = os.path.join(uhd, 'rthooks', python_file_name)

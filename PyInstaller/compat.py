@@ -130,23 +130,6 @@ elif is_unix:
 else:
     raise SystemExit('Your platform is not yet supported. Please define constant PYDYLIB_NAMES for your platform.')
 
-# Function with which to open files.
-open_file = open
-text_read_mode = 'r'
-
-# In Python 3 built-in function raw_input() was renamed to just 'input()'.
-stdin_input = input
-
-# Safe repr that always outputs ascii
-safe_repr = ascii
-
-# String types to replace `isinstance(foo, str)`. Obsolete since dropping support for Python 2.x.
-string_types = str
-
-# Correct extension ending: 'c' or 'o'
-
-PYCO = 'c'
-
 # In a virtual environment created by virtualenv (github.com/pypa/virtualenv) there exists sys.real_prefix with the path
 # to the base Python installation from which the virtual environment was created. This is true regardless of the version
 # of Python used to execute the virtualenv command.
