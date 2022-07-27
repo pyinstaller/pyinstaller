@@ -35,7 +35,7 @@ sys.path.append(_ROOT_DIR)
 
 from PyInstaller import __main__ as pyi_main  # noqa: E402
 from PyInstaller import configure  # noqa: E402
-from PyInstaller.compat import architecture, is_darwin, is_linux, is_win  # noqa: E402
+from PyInstaller.compat import architecture, is_darwin, is_win  # noqa: E402
 from PyInstaller.depend.analysis import initialize_modgraph  # noqa: E402
 from PyInstaller.utils.cliutils import archive_viewer  # noqa: E402
 from PyInstaller.utils.tests import gen_sourcefile  # noqa: E402
@@ -497,11 +497,10 @@ def pyi_builder(tmpdir, monkeypatch, request, pyi_modgraph):
 
     yield AppBuilder(tmpdir, request, request.param)
 
-    if is_darwin or is_linux:
-        if request.node.rep_setup.passed:
-            if request.node.rep_call.passed:
-                if tmpdir.exists():
-                    tmpdir.remove(rec=1, ignore_errors=True)
+    # Clean up the temporary directory of a successful test
+    if request.node.rep_setup.passed and request.node.rep_call.passed:
+        if tmpdir.exists():
+            tmpdir.remove(rec=1, ignore_errors=True)
 
 
 # Fixture for .spec based tests. With .spec it does not make sense to differentiate onefile/onedir mode.
