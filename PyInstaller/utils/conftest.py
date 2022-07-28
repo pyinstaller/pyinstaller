@@ -47,6 +47,8 @@ _EXE_TIMEOUT = 3 * 60  # In sec.
 _MAX_RETRIES = 2
 # All currently supported platforms
 SUPPORTED_OSES = {"darwin", "linux", "win32"}
+# Have pyi_builder fixure clean-up the temporary directories of successful tests. Controlled by environment variable.
+_PYI_BUILDER_CLEANUP = os.environ.get("PYI_BUILDER_CLEANUP", "1") == "1"
 
 # Fixtures
 # --------
@@ -498,7 +500,7 @@ def pyi_builder(tmpdir, monkeypatch, request, pyi_modgraph):
     yield AppBuilder(tmpdir, request, request.param)
 
     # Clean up the temporary directory of a successful test
-    if request.node.rep_setup.passed and request.node.rep_call.passed:
+    if _PYI_BUILDER_CLEANUP and request.node.rep_setup.passed and request.node.rep_call.passed:
         if tmpdir.exists():
             tmpdir.remove(rec=1, ignore_errors=True)
 
