@@ -14,7 +14,6 @@ Templates to generate .spec files.
 
 onefiletmplt = """# -*- mode: python ; coding: utf-8 -*-
 %(preamble)s
-%(cipher_init)s
 
 a = Analysis(
     %(scripts)s,
@@ -28,10 +27,9 @@ a = Analysis(
     excludes=%(excludes)s,
     win_no_prefer_redirects=%(win_no_prefer_redirects)s,
     win_private_assemblies=%(win_private_assemblies)s,
-    cipher=block_cipher,
     noarchive=%(noarchive)s,
 )
-pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+pyz = PYZ(a.pure, a.zipped_data)
 %(splash_init)s
 exe = EXE(
     pyz,
@@ -58,7 +56,6 @@ exe = EXE(
 
 onedirtmplt = """# -*- mode: python ; coding: utf-8 -*-
 %(preamble)s
-%(cipher_init)s
 
 a = Analysis(
     %(scripts)s,
@@ -72,10 +69,9 @@ a = Analysis(
     excludes=%(excludes)s,
     win_no_prefer_redirects=%(win_no_prefer_redirects)s,
     win_private_assemblies=%(win_private_assemblies)s,
-    cipher=block_cipher,
     noarchive=%(noarchive)s,
 )
-pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+pyz = PYZ(a.pure, a.zipped_data)
 %(splash_init)s
 exe = EXE(
     pyz,
@@ -104,14 +100,6 @@ coll = COLLECT(
     upx_exclude=%(upx_exclude)s,
     name='%(name)s',
 )
-"""
-
-cipher_absent_template = """
-block_cipher = None
-"""
-
-cipher_init_template = """
-block_cipher = pyi_crypto.PyiBlockCipher(key=%(key)r)
 """
 
 bundleexetmplt = """app = BUNDLE(

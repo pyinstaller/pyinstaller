@@ -28,3 +28,9 @@ class ImportErrorWhenRunningHook(HookError):
             "exists and whether the hook is compatible with your version of {1}: You might want to read more about "
             "hooks in the manual and provide a pull-request to improve PyInstaller.".format(self.args[0], self.args[1])
         )
+
+
+class RemovedCipherFeatureError(SystemExit):
+    def __str__(self):
+        return f"Bytecode encryption was removed in PyInstaller v6.0. {self.args[0]}" \
+               " For the rationale and alternatives see https://github.com/pyinstaller/pyinstaller/pull/6999"

@@ -73,7 +73,6 @@ the ``pyinstaller`` command executes the spec file as code.
 Your bundled application is created by the execution of the spec file.
 The following is a shortened example of a spec file for a minimal, one-folder app::
 
-    block_cipher = None
     a = Analysis(['minimal.py'],
              pathex=['/Developer/PItests/minimal'],
              binaries=None,
@@ -81,10 +80,8 @@ The following is a shortened example of a spec file for a minimal, one-folder ap
              hiddenimports=[],
              hookspath=None,
              runtime_hooks=None,
-             excludes=None,
-             cipher=block_cipher)
-    pyz = PYZ(a.pure, a.zipped_data,
-             cipher=block_cipher)
+             excludes=None)
+    pyz = PYZ(a.pure, a.zipped_data)
     exe = EXE(pyz,... )
     coll = COLLECT(...)
 
