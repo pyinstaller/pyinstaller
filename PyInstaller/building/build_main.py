@@ -24,7 +24,6 @@ import sys
 
 from PyInstaller import DEFAULT_DISTPATH, DEFAULT_WORKPATH, HOMEPATH, compat
 from PyInstaller import log as logging
-from PyInstaller.archive import pyz_crypto
 from PyInstaller.building.api import COLLECT, EXE, MERGE, PYZ
 from PyInstaller.building.datastruct import TOC, Target, Tree, _check_guts_eq, normalize_toc, normalize_pyz_toc
 from PyInstaller.building.osx import BUNDLE
@@ -305,8 +304,6 @@ class Analysis(Target):
                 ignored (as though they were not found).
         runtime_hooks
                 An optional list of scripts to use as users' runtime hooks. Specified as file names.
-        cipher
-                Add optional instance of the pyz_crypto.PyiBlockCipher class (with a provided key).
         win_no_prefer_redirects
                 If True, prefer not to follow version redirects when searching for Windows SxS Assemblies.
         win_private_assemblies
@@ -317,6 +314,11 @@ class Analysis(Target):
                 An optional dict of package/module names and collection mode strings. Valid collection mode strings:
                 'pyz' (default), 'pyc', 'py', 'pyz+py' (or 'py+pyz')
         """
+        if cipher is not None:
+            from PyInstaller.exceptions import RemovedCipherFeatureError
+            raise RemovedCipherFeatureError(
+                "Please remove the 'cipher' arguments to PYZ() and Analysis() in your spec file."
+            )
         super().__init__()
         from PyInstaller.config import CONF
 
@@ -377,15 +379,6 @@ class Analysis(Target):
         # Custom runtime hook files that should be included and started before any existing PyInstaller runtime hooks.
         self.custom_runtime_hooks = runtime_hooks or []
 
-        if cipher:
-            logger.info('Will encrypt Python bytecode with provided cipher key')
-            # Create a Python module which contains the decryption key which will be used at runtime by
-            # pyi_crypto.PyiBlockCipher.
-            pyi_crypto_key_path = os.path.join(CONF['workpath'], 'pyimod00_crypto_key.py')
-            with open(pyi_crypto_key_path, 'w', encoding='utf-8') as f:
-                f.write('# -*- coding: utf-8 -*-\nkey = %r\n' % cipher.key)
-            self.hiddenimports.append('tinyaes')
-
         self._input_binaries = []
         self._input_datas = []
 
@@ -441,8 +434,6 @@ class Analysis(Target):
 
         ('_input_binaries', _check_guts_toc),
         ('_input_datas', _check_guts_toc),
-
-        # 'cipher': no need to check as it is implied by an additional hidden import
 
         # calculated/analysed values
         ('_python_version', _check_guts_eq),
@@ -929,7 +920,6 @@ def build(spec, distpath, workpath, clean_build):
         'Splash': Splash,
         # Python modules available for .spec.
         'os': os,
-        'pyi_crypto': pyz_crypto,
     }
 
     # Execute the specfile. Read it as a binary file...

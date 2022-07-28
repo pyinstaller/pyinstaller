@@ -33,7 +33,7 @@ class ZlibArchiveWriter:
     _HEADER_LENGTH = 12 + 5
     _COMPRESSION_LEVEL = 6  # zlib compression level
 
-    def __init__(self, filename, entries, code_dict=None, cipher=None):
+    def __init__(self, filename, entries, code_dict=None):
         """
         filename
             Target filename of the archive.
@@ -44,8 +44,6 @@ class ZlibArchiveWriter:
             `DATA`).
         code_dict
             Optional code dictionary containing code objects for analyzed/collected python modules.
-        cipher
-            Optional `Cipher` object for bytecode encryption.
         """
         code_dict = code_dict or {}
 
@@ -56,7 +54,7 @@ class ZlibArchiveWriter:
             # Write entries' data and collect TOC entries
             toc = []
             for entry in entries:
-                toc_entry = self._write_entry(fp, entry, code_dict, cipher)
+                toc_entry = self._write_entry(fp, entry, code_dict)
                 toc.append(toc_entry)
 
             # Write TOC
@@ -68,17 +66,15 @@ class ZlibArchiveWriter:
             #  - PYZ magic pattern (4 bytes)
             #  - python bytecode magic pattern (4 bytes)
             #  - TOC offset (32-bit int, 4 bytes)
-            #  - encryption flag (1 byte)
             #  - 4 unused bytes
             fp.seek(0, os.SEEK_SET)
 
             fp.write(self._PYZ_MAGIC_PATTERN)
             fp.write(BYTECODE_MAGIC)
             fp.write(struct.pack('!i', toc_offset))
-            fp.write(struct.pack('!B', cipher is not None))
 
     @classmethod
-    def _write_entry(cls, fp, entry, code_dict, cipher):
+    def _write_entry(cls, fp, entry, code_dict):
         name, src_path, typecode = entry
 
         if typecode == 'PYMODULE':
@@ -102,8 +98,6 @@ class ZlibArchiveWriter:
 
         # First compress, then encrypt.
         obj = zlib.compress(data, cls._COMPRESSION_LEVEL)
-        if cipher:
-            obj = cipher.encrypt(obj)
 
         # Create TOC entry
         toc_entry = (name, (typecode, fp.tell(), len(obj)))

@@ -14,13 +14,10 @@ Automatically build spec files containing a description of the project.
 
 import argparse
 import os
-import sys
 
 from PyInstaller import DEFAULT_SPECPATH, HOMEPATH
 from PyInstaller import log as logging
-from PyInstaller.building.templates import (
-    bundleexetmplt, bundletmplt, cipher_absent_template, cipher_init_template, onedirtmplt, onefiletmplt, splashtmpl
-)
+from PyInstaller.building.templates import bundleexetmplt, bundletmplt, onedirtmplt, onefiletmplt, splashtmpl
 from PyInstaller.compat import expand_path, is_darwin, is_win
 
 logger = logging.getLogger(__name__)
@@ -91,13 +88,9 @@ def make_variable_path(filename, conversions=path_conversions):
     return None, filename
 
 
-def deprecated_key_option(x):
-    logger.log(
-        logging.DEPRECATION,
-        "Bytecode encryption will be removed in PyInstaller v6. Please remove your --key=xxx argument to avoid "
-        "breakages on upgrade. For the rationale/alternatives see https://github.com/pyinstaller/pyinstaller/pull/6999"
-    )
-    return x
+def removed_key_option(x):
+    from PyInstaller.exceptions import RemovedCipherFeatureError
+    raise RemovedCipherFeatureError("Please remove your --key=xxx argument.")
 
 
 # An object used in place of a "path string", which knows how to repr() itself using variable names instead of
@@ -356,7 +349,7 @@ def __add_options(parser):
         '--key',
         dest='key',
         help=argparse.SUPPRESS,
-        type=deprecated_key_option,
+        type=removed_key_option,
     )
     g.add_argument(
         '--splash',
@@ -732,20 +725,6 @@ def main(
     # With absolute paths replace prefix with variable HOMEPATH.
     scripts = list(map(Path, scripts))
 
-    if key:
-        # Try to import tinyaes as we need it for bytecode obfuscation.
-        try:
-            import tinyaes  # noqa: F401 (test import)
-        except ImportError:
-            logger.error(
-                'We need tinyaes to use byte-code obfuscation but we could not find it. You can install it '
-                'with pip by running:\n  pip install tinyaes'
-            )
-            sys.exit(1)
-        cipher_init = cipher_init_template % {'key': key}
-    else:
-        cipher_init = cipher_absent_template
-
     # Translate the default of ``debug=None`` to an empty list.
     if debug is None:
         debug = []
@@ -788,7 +767,6 @@ def main(
         'upx_exclude': upx_exclude,
         'runtime_tmpdir': runtime_tmpdir,
         'exe_options': exe_options,
-        'cipher_init': cipher_init,
         # Directory with additional custom import hooks.
         'hookspath': hookspath,
         # List with custom runtime hook files.

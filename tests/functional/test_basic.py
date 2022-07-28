@@ -157,38 +157,6 @@ def test_email(pyi_builder):
     )
 
 
-@importorskip('tinyaes')
-def test_feature_crypto(pyi_builder):
-    pyi_builder.test_source(
-        """
-        from pyimod00_crypto_key import key
-        from pyimod01_archive import CRYPT_BLOCK_SIZE
-
-        # Test against issue #1663: importing a package in the bootstrap
-        # phase should not interfere with subsequent imports.
-        import tinyaes
-
-        assert type(key) is str
-        # The test runner uses 'test_key' as key.
-        assert key == 'test_key'.zfill(CRYPT_BLOCK_SIZE)
-        """,
-        pyi_args=['--key=test_key']
-    )
-
-
-def test_feature_nocrypto(pyi_builder):
-    pyi_builder.test_source(
-        """
-        try:
-            import pyimod00_crypto_key
-
-            raise AssertionError('The pyimod00_crypto_key module must NOT be there if crypto is disabled.')
-        except ImportError:
-            pass
-        """
-    )
-
-
 def test_filename(pyi_builder):
     pyi_builder.test_script('pyi_filename.py')
 

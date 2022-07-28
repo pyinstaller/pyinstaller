@@ -61,16 +61,18 @@ class PYZ(Target):
 
             name
                 A filename for the .pyz. Normally not needed, as the generated name will do fine.
-            cipher
-                The block cipher that will be used to encrypt Python bytecode.
         """
+        if kwargs.get("cipher"):
+            from PyInstaller.exceptions import RemovedCipherFeatureError
+            raise RemovedCipherFeatureError(
+                "Please remove the 'cipher' arguments to PYZ() and Analysis() in your spec file."
+            )
 
         from PyInstaller.config import CONF
 
         super().__init__()
 
         name = kwargs.get('name', None)
-        cipher = kwargs.get('cipher', None)
 
         self.name = name
         if name is None:
@@ -78,14 +80,6 @@ class PYZ(Target):
 
         # PyInstaller bootstrapping modules.
         bootstrap_dependencies = get_bootstrap_modules()
-
-        # Bundle the crypto key.
-        self.cipher = cipher
-        if cipher:
-            key_file = ('pyimod00_crypto_key', os.path.join(CONF['workpath'], 'pyimod00_crypto_key.py'), 'PYMODULE')
-            # Insert the key as the first module in the list. The key module contains just variables and does not depend
-            # on other modules.
-            bootstrap_dependencies.insert(0, key_file)
 
         # Compile the python modules that are part of bootstrap dependencies, so that they can be collected into the
         # CArchive and imported by the bootstrap script.
@@ -156,7 +150,7 @@ class PYZ(Target):
         self.code_dict = {name: strip_paths_in_code(code) for name, code in self.code_dict.items()}
 
         # Create the archive
-        ZlibArchiveWriter(self.name, archive_toc, code_dict=self.code_dict, cipher=self.cipher)
+        ZlibArchiveWriter(self.name, archive_toc, code_dict=self.code_dict)
         logger.info("Building PYZ (ZlibArchive) %s completed successfully.", self.name)
 
 
