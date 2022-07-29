@@ -526,6 +526,25 @@ As a result you cannot bundle your app on a 32-bit system and run it
 on a 64-bit installation, nor vice-versa.
 You must make a unique version of the app for each word-length supported.
 
+Note that PyInstaller does bundle other shared libraries that are discovered
+via dependency analysis, such as libstdc++.so.6, libfontconfig.so.1,
+libfreetype.so.6. These libraries may be required on systems where older
+(and thus incompatible) versions of these libraries are available. On the
+other hand, the bundled libraries may cause issues when trying to load a
+system-provided shared library that is linked against a newer version of the
+system-provided library.
+
+For example, system-installed mesa DRI drivers (e.g., radeonsi_dri.so)
+depend on the system-provided version of libstdc++.so.6. If the frozen
+application bundles an older version of libstdc++.so.6 (as collected from
+the build system), this will likely cause missing symbol errors and prevent
+the DRI drivers from loading. In this case, the bundled libstdc++.so.6
+should be removed. However, this may not work on a different distribution
+that provides libstdc++.so.6 older than the one from the build system; in
+that case, the bundled version should be kept, because the system-provided
+version may lack the symbols required by other collected binaries that depend
+on libstdc++.so.6.
+
 .. _Platform-specific Notes - Windows:
 
 Windows
