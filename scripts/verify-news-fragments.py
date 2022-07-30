@@ -28,7 +28,8 @@ CHANGELOG_GUIDE = (
 )
 
 CHANGE_TYPES = {
-    'bootloader', 'breaking', 'bugfix', 'build', 'core', 'doc', 'feature', 'hooks', 'moduleloader', 'process', 'tests'
+    'bootloader', 'breaking', 'bugfix', 'build', 'core', 'doc', 'feature', 'hooks', 'moduleloader', 'process', 'tests',
+    'deprecation'
 }
 
 NEWS_PATTERN = re.compile(r"(\d+)\.(\w+)\.(?:(\d+)\.)?rst")

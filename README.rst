@@ -69,8 +69,6 @@ Requirements and Tested Platforms
     - 3.7-3.11. Note that Python 3.10.0 contains a bug making it unsupportable by
       PyInstaller. PyInstaller will also not work with beta releases of Python
       3.12.
-    - tinyaes_ 1.0+ (only if using bytecode encryption). Instead of installing
-      tinyaes, ``pip install pyinstaller[encryption]`` instead.
 - Windows (32bit/64bit):
     - PyInstaller should work on Windows 7 or newer, but we only officially support Windows 8+.
     - Support for Python installed from the Windows store without using virtual
@@ -151,7 +149,5 @@ Changes in this Release
 You can find a detailed list of changes in this release
 in the `Changelog`_ section of the manual.
 
-
-.. _tinyaes: https://github.com/naufraghi/tinyaes-py
 .. _`manual`: https://pyinstaller.org/en/v5.6.2/
 .. _`Changelog`: https://pyinstaller.org/en/v5.6.2/CHANGES.html

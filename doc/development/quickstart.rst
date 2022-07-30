@@ -22,7 +22,7 @@ Quickstart
   for more information.
 
   Reformatting code without functional changes will generally not be accepted
-  (for rational see :issue:`2727`).
+  (for rationale see :issue:`2727`).
 
 * Write meaningful commit messages.
 
