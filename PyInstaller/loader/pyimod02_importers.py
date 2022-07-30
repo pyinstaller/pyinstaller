@@ -379,11 +379,10 @@ class FrozenImporter:
         """
         entry_name = None  # None means - no module found in this importer.
 
-        if fullname in self.toc:
-            entry_name = fullname
-            trace("import %s # PyInstaller PYZ", fullname)
-        elif path is not None:
-            # Try to handle module.__path__ modifications by the modules themselves.
+        # Try to handle module.__path__ modifications by the modules themselves. This needs to be done first in
+        # order to support module overrides in alternative locations while we also have the original module
+        # available at non-override location.
+        if path is not None:
             # Reverse the fake __path__ we added to the package module into a dotted module name, and add the tail
             # module from fullname onto that to synthesize a new fullname.
             modname = fullname.rsplit('.')[-1]
@@ -404,6 +403,13 @@ class FrozenImporter:
                     break
             else:
                 entry_name = None
+
+        if entry_name is None:
+            # Either there was no path override, or the module was not available there. Check the fully qualified name
+            # of the module directly.
+            if fullname in self.toc:
+                entry_name = fullname
+                trace("import %s # PyInstaller PYZ", fullname)
 
         if entry_name is None:
             trace("# %s not found in PYZ", fullname)
