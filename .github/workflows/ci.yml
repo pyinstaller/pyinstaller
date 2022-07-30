@@ -14,11 +14,6 @@ on:
       - '!pyup/**'
 
 env:
-  # Prevent setuptools from replacing distutils with its vendored version, as our test suite is not
-  # ready for that. There also seem to be issues with setuptools-provided distutils and pip 22.2
-  # on python < 3.10.
-  SETUPTOOLS_USE_DISTUTILS: not-today
-
   # Colored pytest output on CI despite not having a tty
   FORCE_COLOR: 1
 
@@ -141,7 +136,6 @@ jobs:
       - run: docker build -f alpine.dockerfile -t foo .
       - run: >
           docker run
-          -e SETUPTOOLS_USE_DISTUTILS='not-today'
           foo
           pytest
           -n 3 --maxfail 3 --durations 10 tests/unit tests/functional
