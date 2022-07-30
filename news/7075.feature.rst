@@ -1,0 +1,2 @@
+Add support for ``setuptools``-provided ``distutils``, available since
+``setuptools >= 60.0``.

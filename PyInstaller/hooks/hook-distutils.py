@@ -8,12 +8,10 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-"""
-`distutils`-specific post-import hook.
 
-This hook freezes the external `Makefile` and `pyconfig.h` files bundled with the active Python interpreter, which the
-`distutils.sysconfig` module parses at runtime for platform-specific metadata.
-"""
+from PyInstaller.utils.hooks import is_module_satisfies
+
+hiddenimports = []
 
 # From Python 3.6 and later ``distutils.sysconfig`` takes on the same behaviour as regular ``sysconfig`` of moving the
 # config vars to a module (see hook-sysconfig.py). It doesn't use a nice `get module name` function like ``sysconfig``
@@ -21,8 +19,15 @@ This hook freezes the external `Makefile` and `pyconfig.h` files bundled with th
 # ``_get_sysconfigdata_name()`` from regular ``sysconfig``.
 try:
     import sysconfig
-    hiddenimports = [sysconfig._get_sysconfigdata_name()]
+    hiddenimports += [sysconfig._get_sysconfigdata_name()]
 except AttributeError:
     # Either sysconfig has no attribute _get_sysconfigdata_name (i.e., the function does not exist), or this is Windows
     # and the _get_sysconfigdata_name() call failed due to missing sys.abiflags attribute.
     pass
+
+# Starting with setuptools 60.0, the vendored distutils overrides the stdlib one (which will be removed in python 3.12
+# anyway), so check if we are using that version. While the distutils override behavior can be controleld via the
+# ``SETUPTOOLS_USE_DISTUTILS`` environment variable, the latter may have a different value during the build and at the
+# runtime, and so we need to ensure that both stdlib and setuptools variant of distutils are collected.
+if is_module_satisfies("setuptools >= 60.0"):
+    hiddenimports += ['setuptools._distutils']
