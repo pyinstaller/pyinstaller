@@ -19,8 +19,7 @@ PyInstaller bundles a Python application and all its dependencies into a single
 package. The user can run the packaged app without installing a Python
 interpreter or any modules.
 
-:Documentation: https://pyinstaller.readthedocs.io/
-:Website:       http://www.pyinstaller.org/
+:Documentation: https://pyinstaller.org/
 :Code:          https://github.com/pyinstaller/pyinstaller
 
 PyInstaller reads a Python script written by you. It analyzes your code
