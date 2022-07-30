@@ -1,3 +1,0 @@
-When building with ``noarchive=True`` (e.g., ``--debug noarchive`` or
-``--debug all``), the source paths are now stripped from the collected
-.pyc modules, same as if PYZ archive was used.

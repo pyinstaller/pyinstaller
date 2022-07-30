@@ -1,4 +1,0 @@
-When building with ``noarchive=True`` (e.g., ``--debug noarchive`` or
-``--debug all``), PyInstaller no longer pollutes user-writable source
-locations with its ``.pyc`` or ``.pyo`` files written next to the
-corresponding source files.

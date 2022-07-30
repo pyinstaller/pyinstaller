@@ -1,4 +1,0 @@
-(non-Windows) Avoid generating debug messages in POSIX signal handlers,
-as the functions involved are generally not signal-safe. Should also
-fix the endless spam of ``SIGPIPE`` that ocurrs under certain conditions
-when shutting down the frozen application on linux.

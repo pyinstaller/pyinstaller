@@ -1,2 +1,0 @@
-Add PyGObject hook for ``gi.repository.freetype2``. Remove warning for
-hidden import not found for gi._gobject with PyGObject 3.25.1+.

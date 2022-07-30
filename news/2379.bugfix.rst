@@ -1,6 +1,0 @@
-(non-Windows) If the child process of a ``onefile`` frozen application
-is terminated by a signal, delay re-raising of the signal in the parent
-process until after the clean up has been performed. This prevents
-``onefile`` frozen applications from leaving behind their unpacked
-temporary directories when either the parent or the child process is
-sent the ``SIGTERM`` signal.

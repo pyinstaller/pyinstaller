@@ -1,2 +1,0 @@
-Document the signal handling behavior Windows and various quirks related
-to the frozen application shutdown via the Task Manager.

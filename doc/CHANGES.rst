@@ -15,6 +15,70 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+5.3 (2022-07-30)
+-----------------
+
+Features
+~~~~~~~~
+
+* (Windows) Implement handling of console control signals in the ``onefile``
+  bootloader parent process. The implemented handler suppresses the
+  ``CTRL_C_EVENT`` and ``CTRL_BREAK_EVENT`` to let the child process
+  deal with them as they see it fit. In the case of ``CTRL_CLOSE_EVENT``,
+  ``CTRL_LOGOFF_EVENT``, or ``CTRL_SHUTDOWN_EVENT``, the handler attempts
+  to delay the termination of the parent process in order to buy time for
+  the child process to exit and for the main thread of the parent process
+  to clean up the temporary directory before exiting itself. This should
+  prevent the temporary directory of a ``onefile`` frozen application
+  being left behind when the user closes the console window. (:issue:`6591`)
+* Implement a mechanism for controlling the collection mode of modules and
+  packages, with granularity ranging from top-level packages to individual
+  sub-modules. Therefore, the hooks can now specify whether the hooked
+  package should be collected as byte-compiled .pyc modules into embedded
+  PYZ archive (the default behavior), or as source .py files collected as
+  external data files (without corresponding modules in the PYZ archive).
+  (:issue:`6945`)
+
+
+Bugfix
+~~~~~~
+
+* (non-Windows) Avoid generating debug messages in POSIX signal handlers,
+  as the functions involved are generally not signal-safe. Should also
+  fix the endless spam of ``SIGPIPE`` that ocurrs under certain conditions
+  when shutting down the frozen application on linux. (:issue:`5270`)
+* (non-Windows) If the child process of a ``onefile`` frozen application
+  is terminated by a signal, delay re-raising of the signal in the parent
+  process until after the clean up has been performed. This prevents
+  ``onefile`` frozen applications from leaving behind their unpacked
+  temporary directories when either the parent or the child process is
+  sent the ``SIGTERM`` signal. (:issue:`2379`)
+* When building with ``noarchive=True`` (e.g., ``--debug noarchive`` or
+  ``--debug all``), PyInstaller no longer pollutes user-writable source
+  locations with its ``.pyc`` or ``.pyo`` files written next to the
+  corresponding source files. (:issue:`6591`)
+* When building with ``noarchive=True`` (e.g., ``--debug noarchive`` or
+  ``--debug all``), the source paths are now stripped from the collected
+  .pyc modules, same as if PYZ archive was used. (:issue:`6591`)
+
+
+Hooks
+~~~~~
+
+* Add PyGObject hook for ``gi.repository.freetype2``. Remove warning for
+  hidden import not found for gi._gobject with PyGObject 3.25.1+.
+  (:issue:`6951`)
+* Remove ``pkg_resources`` hidden imports that aren't available including
+  ``py2_warn``, ``markers``, and ``_vendor.pyparsing.diagram``. (:issue:`6952`)
+
+
+Documentation
+~~~~~~~~~~~~~
+
+* Document the signal handling behavior Windows and various quirks related
+  to the frozen application shutdown via the Task Manager. (:issue:`6935`)
+
+
 5.2 (2022-07-08)
 -----------------
 
