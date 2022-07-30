@@ -6,12 +6,6 @@ on:
       - develop
       - v4
 
-env:
-  # Prevent setuptools from replacing distutils with its vendored version. There seem to be issues
-  # between setuptools-provided distutils and pip 22.2 on python < 3.10, which results in failure
-  # of the "Test Packaging" step.
-  SETUPTOOLS_USE_DISTUTILS: not-today
-
 jobs:
   run:
     runs-on: ubuntu-latest
