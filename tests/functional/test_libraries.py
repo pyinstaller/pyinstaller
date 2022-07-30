@@ -413,3 +413,10 @@ def test_pywin32ctypes(pyi_builder, submodule):
     pyi_builder.test_source("""
         from win32ctypes.pywin32 import {0}
         """.format(submodule))
+
+
+@importorskip('setuptools')
+def test_setuptools(pyi_builder):
+    pyi_builder.test_source("""
+        import setuptools
+        """)
