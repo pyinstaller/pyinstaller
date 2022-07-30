@@ -196,26 +196,6 @@ For example, to exclude Qt5 DLLs from the PySide2 package, use
 from the PySide2 package, use ``--upx-exclude "PySide2\*.pyd"``.
 
 
-.. _encrypting python bytecode:
-
-Encrypting Python Bytecode
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-To encrypt the Python bytecode modules stored in the bundle,
-pass the :option:`--key`\ =\ *key-string*  argument on
-the command line.
-
-For this to work, you need to run::
-
-    pip install pyinstaller[encryption]
-
-The *key-string* is a string of 16 characters which is used to
-encrypt each file of Python byte-code before it is stored in
-the archive inside the executable file.
-
-This feature uses the tinyaes_ module internally for the encryption.
-
-
 .. _splash screen:
 
 Splash Screen *(Experimental)*

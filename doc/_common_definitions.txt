@@ -37,7 +37,6 @@
 .. _pip: http://www.pip-installer.org/
 .. _pip-Win: https://sites.google.com/site/pydatalog/python/pip-for-windows
 .. _plistlib: https://docs.python.org/3/library/plistlib.html
-.. _tinyaes: https://github.com/naufraghi/tinyaes-py
 .. _`PyInstaller at GitHub`: https://github.com/pyinstaller/pyinstaller
 .. _`PyInstaller code signing recipe`: https://github.com/pyinstaller/pyinstaller/wiki/Recipe-OSX-Code-Signing
 .. _`PyInstaller Downloads`:  https://github.com/pyinstaller/pyinstaller/releases

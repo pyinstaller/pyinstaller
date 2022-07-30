@@ -91,6 +91,15 @@ def make_variable_path(filename, conversions=path_conversions):
     return None, filename
 
 
+def deprecated_key_option(x):
+    logger.log(
+        logging.DEPRECATION,
+        "Bytecode encryption will be removed in PyInstaller v6. Please remove your --key=xxx argument to avoid "
+        "breakages on upgrade. For the rationale/alternatives see https://github.com/pyinstaller/pyinstaller/pull/6999"
+    )
+    return x
+
+
 # An object used in place of a "path string", which knows how to repr() itself using variable names instead of
 # hard-coded paths.
 class Path:
@@ -346,7 +355,8 @@ def __add_options(parser):
     g.add_argument(
         '--key',
         dest='key',
-        help='The key used to encrypt Python bytecode.',
+        help=argparse.SUPPRESS,
+        type=deprecated_key_option,
     )
     g.add_argument(
         '--splash',

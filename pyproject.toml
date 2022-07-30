@@ -26,6 +26,11 @@
 		showcontent = true
 
 	[[tool.towncrier.type]]
+		directory = "deprecation"
+		name = "Deprecations"
+		showcontent = true
+
+	[[tool.towncrier.type]]
 		directory = "hooks"
 		name = "Hooks"
 		showcontent = true

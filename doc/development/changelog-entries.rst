@@ -24,6 +24,7 @@ few simple rules:
   ``feature``,
   ``bugfix``,
   ``breaking`` (breaking changes),
+  ``deprecation``,
   ``hooks`` (all hook-related changes),
   ``bootloader``,
   ``moduleloader``,
