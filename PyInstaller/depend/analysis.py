@@ -594,31 +594,36 @@ class PyiModuleGraph(ModuleGraph):
 
         :return : list of Graph nodes.
         """
-        rthooks_nodes = []
         logger.info('Analyzing run-time hooks ...')
-        # Process custom runtime hooks (from --runtime-hook options). The runtime hooks are order dependent. First hooks
-        # in the list are executed first. Put their graph nodes at the head of the priority_scripts list Pyinstaller
-        # defined rthooks and thus they are executed first.
-        if custom_runhooks:
-            for hook_file in custom_runhooks:
-                logger.info("Including custom run-time hook %r", hook_file)
-                hook_file = os.path.abspath(hook_file)
-                # Not using "try" here because the path is supposed to exist, if it does not, the raised error will
-                # explain.
-                rthooks_nodes.append(self.add_script(hook_file))
 
-        # Find runtime hooks that are implied by packages already imported. Get a temporary TOC listing all the scripts
-        # and packages graphed so far. Assuming that runtime hooks apply only to modules and packages.
+        # Process custom runtime hooks (from --runtime-hook options). These hooks are executed first, in the same order
+        # that they are specified.
+        rthook_nodes_custom = []
+        for hook_file in custom_runhooks:
+            logger.info("Including custom run-time hook %r", hook_file)
+            hook_file = os.path.abspath(hook_file)
+            # Not using "try" here because the path is supposed to exist; if not, the error will be self-explanatory.
+            rthook_nodes_custom.append(self.add_script(hook_file))
+
+        # Find runtime hooks that are implied by the imported packages/modules. Obtain a temporary TOC listing all
+        # imported modules. Under current mechanism, the runtime hooks are tied only to modules/packages.
+        included_rthooks = []
         temp_toc = self._make_toc(VALID_MODULE_TYPES)
-        for (mod_name, path, typecode) in temp_toc:
-            # Look if there is any run-time hook for given module.
-            if mod_name in self._available_rthooks:
-                # There could be several run-time hooks for a module.
-                for abs_path in self._available_rthooks[mod_name]:
-                    logger.info("Including run-time hook %r", abs_path)
-                    rthooks_nodes.append(self.add_script(abs_path))
+        for mod_name, path, typecode in temp_toc:
+            # Process hook(s) for the given module.
+            for hook_file in self._available_rthooks.get(mod_name, []):
+                hook_basename = os.path.basename(hook_file)  # used for sorting
+                included_rthooks.append((hook_basename, self.add_script(hook_file)))
 
-        return rthooks_nodes
+        # Sort the included runtime hooks by their basename. This allows predictable ordering, and also allows us to
+        # influence the order via hook filenames.
+        included_rthooks = sorted(included_rthooks, key=lambda e: e[0])
+        rthook_nodes_regular = []
+        for _, hook_node in included_rthooks:
+            logger.info("Including run-time hook %r", hook_node.filename)
+            rthook_nodes_regular.append(hook_node)
+
+        return rthook_nodes_custom + rthook_nodes_regular
 
     def add_hiddenimports(self, module_list):
         """
