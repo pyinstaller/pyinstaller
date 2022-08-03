@@ -57,6 +57,7 @@ MACRO_TO_DEST_CPU = {
     '__s390__': 's390',
     '__sh__': 'sh',
     '__xtensa__': 'xtensa',
+    '__riscv': 'riscv',
 }
 
 
