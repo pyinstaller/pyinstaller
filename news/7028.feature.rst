@@ -1,0 +1,8 @@
+(Windows) When collecting a DLL that was discovered via link-time
+dependency analysis of a collected binary/extension, attempt to preserve
+its parent directory structure instead of collecting it into application's
+top-level directory. This aims to preserve the parent directory structure
+of DLLs bundled with python packages in PyPI wheels, while the DLLs
+collected from system directories (as well as from ``Library\bin``
+directory of the Anaconda's environment) are still collected into
+top-level application directory.
