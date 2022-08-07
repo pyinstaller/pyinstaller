@@ -15,6 +15,7 @@ Find external dependencies of binary libraries.
 import collections
 import ctypes.util
 import os
+import pathlib
 import re
 import sys
 # Required for extracting eggs.
@@ -180,6 +181,51 @@ def matchDLLArch(filename):
     return match_arch
 
 
+def _get_paths_for_parent_directory_preservation():
+    """
+    Return list of paths that serve as prefixes for parent-directory preservation of collected binaries and/or
+    shared libraries. If a binary is collected from a location that starts with a path from this list, the relative
+    directory structure is preserved within the frozen application bundle; otherwise, the binary is collected to the
+    frozen application's top-level directory.
+    """
+
+    # NOTE: using all paths from `sys.path` entries instead of just `site.getsitepackages() implicitly ensures that we
+    # still collect DLLs from python's "DLLs" sub-directory into top-level directory (because "DLLs" directory is among
+    # the listed paths). On the other hand, `site.getsitepackages()` contains only python's top-level directory and its
+    # "lib/site-packages" subdirectory; so binaries from "DLLs" sub-directory would end up in sub-directory, due to
+    # being relative to python's top directory (which we would need to remove from the list).
+    orig_paths = sys.path
+
+    # Explicitly ignore top-level sys.prefix and sys.base_prefix, to prevent accidental matching of unforeseen
+    # auxiliary sub-directories. For example, under Windows anaconda, shared libraries are located in
+    # `sys.base_prefix`/Library/bin (which is not in `sys.path`), but we need to collect those to the top-level
+    # application directory.
+    #
+    # With top-level python directory excluded, we could switch from `sys.path` to `site.getsitepackages()`, but it
+    # is probably better to use `sys.path` lest it contains any extra user-defined paths.
+    excluded_paths = {
+        pathlib.Path(sys.base_prefix).resolve(),
+        pathlib.Path(sys.prefix).resolve(),
+    }
+
+    paths = []
+    for path in orig_paths:
+        path = pathlib.Path(path).resolve()
+        # Filter out non-directories (e.g., /path/to/python3x.zip)
+        if not path.is_dir():
+            continue
+        # Filter out explicitly excluded paths
+        if path in excluded_paths:
+            continue
+        paths.append(path)
+
+    # Sort by length (in term of path components) to ensure match against the longest common prefix (for example, match
+    # /path/to/venv/lib/site-packages instead of /path/to/venv when both paths are in site paths).
+    paths = sorted(paths, key=lambda x: len(x.parents), reverse=True)
+
+    return paths
+
+
 def Dependencies(lTOC, xtrapath=None, manifest=None, redirects=None):
     """
     Expand LTOC to include all the closure of binary dependencies.
@@ -193,6 +239,14 @@ def Dependencies(lTOC, xtrapath=None, manifest=None, redirects=None):
     `redirects` may be a list. Any assembly redirects found via policy files will be added to the list as
     BindingRedirect objects so they can later be used to modify any manifests that reference the redirected assembly.
     """
+
+    # Get all path prefixes for binaries' parent-directory preservation. For binaries collected from packages in (for
+    # example) site-packages directory, we should try to preserve the parent directory structure. Currently, this
+    # behavior is active only on Windows. For macOS and linux, we need to implement symlink support first.
+    parent_dir_preservation_paths = []
+    if compat.is_win:
+        parent_dir_preservation_paths = _get_paths_for_parent_directory_preservation()
+
     # Extract all necessary binary modules from Python eggs to be included directly with PyInstaller.
     lTOC = _extract_from_egg(lTOC)
 
@@ -208,7 +262,20 @@ def Dependencies(lTOC, xtrapath=None, manifest=None, redirects=None):
             if lib.upper() in seen or npth.upper() in seen:
                 continue
             seen.add(npth.upper())
-            lTOC.append((lib, npth, 'BINARY'))
+
+            # Try to preserve parent directory structure, if applicable.
+            src_path = pathlib.Path(npth).resolve()
+            for parent_dir_preservation_path in parent_dir_preservation_paths:
+                if parent_dir_preservation_path in src_path.parents:
+                    # Collect into corresponding sub-directory.
+                    rel_lib_path = src_path.relative_to(parent_dir_preservation_path)
+                    lTOC.append((str(rel_lib_path), npth, 'BINARY'))
+                    # TODO: once this codepath is enabled on linux and macOS, add a symlink to the binary into the
+                    # application top-level directory.
+                    break
+            else:
+                # Collect into top-level directory.
+                lTOC.append((lib, npth, 'BINARY'))
 
     return lTOC
 

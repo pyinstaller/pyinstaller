@@ -1,0 +1,6 @@
+(Windows) PyInstaller now attempts to preserve parent directory structure
+of DLLs that are collected from python packages (e.g., bundled with
+packages in PyPI wheels) instead of collecting them to the top-level
+application directory. This behavior might be incompatible with 3rd
+party hooks that assume the old behavior, and may result in duplication
+of DLL files or missing DLLs in hook-provided runtime search paths.
