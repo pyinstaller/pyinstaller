@@ -11,6 +11,7 @@
 
 import glob
 import os
+import pathlib
 
 from PyInstaller import compat
 from PyInstaller import isolated
@@ -99,6 +100,7 @@ class QtLibraryInfo:
             # Get library path information from Qt. See QLibraryInfo_.
             @isolated.decorate
             def _read_qt_library_info(package):
+                import os
                 import importlib
 
                 # Import the Qt-based package
@@ -123,6 +125,9 @@ class QtLibraryInfo:
                     path_names = [x for x in dir(QLibraryInfo) if x.endswith('Path')]
                     location = {x: QLibraryInfo.location(getattr(QLibraryInfo, x)) for x in path_names}
 
+                # Determine the python-based package location, by looking where the QtCore module is located.
+                package_location = os.path.dirname(QtCore.__file__)
+
                 # Determine Qt version. Works for Qt 5.8 and later, where QLibraryInfo.version() was introduced.
                 try:
                     version = QLibraryInfo.version().segments()
@@ -133,6 +138,7 @@ class QtLibraryInfo:
                     'isDebugBuild': QLibraryInfo.isDebugBuild(),
                     'version': version,
                     'location': location,
+                    'package_location': package_location,
                 }
 
             try:
@@ -608,8 +614,12 @@ def _find_all_or_none(globs_to_include, num_files, qt_library_info):
     #
     # Since old PyQt5 wheels do not include d3dcompiler_4?.dll, libEGL.dll and libGLESv2.dll will not be included
     # for PyQt5 builds during CI.
+
+    # Resolve path to the the corresponding python package (actually, its parent directory). Used to preserve directory
+    # structure when DLLs are collected from the python package (e.g., PyPI wheels).
+    package_parent_path = pathlib.Path(qt_library_info.package_location).resolve().parent
+
     to_include = []
-    dst_dll_path = '.'
     for dll in globs_to_include:
         # In PyQt5/PyQt6, the DLLs we are looking for are located in location['BinariesPath'], whereas in
         # PySide2/PySide6, they are located in location['PrefixPath'].
@@ -618,7 +628,14 @@ def _find_all_or_none(globs_to_include, num_files, qt_library_info):
         )
         dll_file_paths = glob.glob(dll_path)
         for dll_file_path in dll_file_paths:
-            to_include.append((dll_file_path, dst_dll_path))
+            dll_file_path = pathlib.Path(dll_file_path).resolve()
+            if package_parent_path in dll_file_path.parents:
+                # The DLL is located within python package; preserve the layout
+                dst_dll_path = dll_file_path.parent.relative_to(package_parent_path)
+            else:
+                # The DLL is not located within python package; collect into top-level directory
+                dst_dll_path = '.'
+            to_include.append((str(dll_file_path), str(dst_dll_path)))
     if len(to_include) == num_files:
         return to_include
     return []
@@ -627,6 +644,12 @@ def _find_all_or_none(globs_to_include, num_files, qt_library_info):
 # Collect required Qt binaries, but only if all binaries in a group exist.
 def get_qt_binaries(qt_library_info):
     binaries = []
+
+    # Applicable only to Windows.
+    if not compat.is_win:
+        return []
+
+    # OpenGL: EGL/GLES via ANGLE, software OpenGL renderer.
     angle_files = ['libEGL.dll', 'libGLESv2.dll', 'd3dcompiler_??.dll']
     binaries += _find_all_or_none(angle_files, 3, qt_library_info)
 
@@ -662,6 +685,10 @@ def get_qt_network_ssl_binaries(qt_library_info):
     if not ssl_enabled:
         return []
 
+    # Resolve path to the the corresponding python package (actually, its parent directory). Used to preserve directory
+    # structure when DLLs are collected from the python package (e.g., PyPI wheels).
+    package_parent_path = pathlib.Path(qt_library_info.package_location).resolve().parent
+
     # PyPI version of PySide2 requires user to manually install SSL libraries into the PrefixPath. Other versions
     # (e.g., the one provided by Conda) put the libraries into the BinariesPath. PyQt5 also uses BinariesPath.
     # Accommodate both options by searching both locations...
@@ -669,10 +696,18 @@ def get_qt_network_ssl_binaries(qt_library_info):
     dll_names = ('libeay32.dll', 'ssleay32.dll', 'libssl-1_1-x64.dll', 'libcrypto-1_1-x64.dll')
     binaries = []
     for location in locations:
+        location = pathlib.Path(location).resolve()
         for dll in dll_names:
-            dll_path = os.path.join(location, dll)
-            if os.path.exists(dll_path):
-                binaries.append((dll_path, '.'))
+            dll_file_path = location / dll
+            if not dll_file_path.exists():
+                continue
+            if package_parent_path in dll_file_path.parents:
+                # The DLL is located within python package; preserve the layout
+                dst_dll_path = dll_file_path.parent.relative_to(package_parent_path)
+            else:
+                # The DLL is not located within python package; collect into top-level directory
+                dst_dll_path = '.'
+            binaries.append((str(dll_file_path), str(dst_dll_path)))
     return binaries
 
 
