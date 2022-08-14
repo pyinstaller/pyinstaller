@@ -21,7 +21,6 @@ def test_scipy(pyi_builder):
         """
         # Test top-level SciPy importability.
         import scipy
-        from scipy import *
 
         # Test hooked SciPy modules.
         import scipy.io.matlab
