@@ -600,45 +600,54 @@ add_qt5_dependencies = add_qt_dependencies  # Use generic implementation
 add_qt6_dependencies = add_qt_dependencies  # Use generic implementation
 
 
-def _find_all_or_none(globs_to_include, num_files, qt_library_info):
+def _find_all_or_none(qt_library_info, mandatory_dll_patterns, optional_dll_patterns=None):
     """
-    globs_to_include is a list of file name globs.
-    If the number of found files does not match num_files, no files will be included.
+    Try to find Qt DLLs from the specified mandatory pattern list. If all mandatory patterns resolve to DLLs, collect
+    them all, as well as any DLLs from the optional pattern list. If a mandatory pattern fails to resolve to a DLL,
+    return an empty list.
+
+    This allows all-or-none collection of particular groups of Qt DLLs that may or may not be available.
     """
-    # This function is required because CI is failing to include libEGL.
-    # The error in AppVeyor is::
-    #
-    #   [2312] LOADER: Running pyi_lib_PyQt5-uic.py
-    #   Failed to load libEGL (Access is denied.)
-    #   More info: https://github.com/pyinstaller/pyinstaller/pull/3568
-    #
-    # Since old PyQt5 wheels do not include d3dcompiler_4?.dll, libEGL.dll and libGLESv2.dll will not be included
-    # for PyQt5 builds during CI.
+    optional_dll_patterns = optional_dll_patterns or []
 
     # Resolve path to the the corresponding python package (actually, its parent directory). Used to preserve directory
     # structure when DLLs are collected from the python package (e.g., PyPI wheels).
     package_parent_path = pathlib.Path(qt_library_info.package_location).resolve().parent
 
-    to_include = []
-    for dll in globs_to_include:
-        # In PyQt5/PyQt6, the DLLs we are looking for are located in location['BinariesPath'], whereas in
-        # PySide2/PySide6, they are located in location['PrefixPath'].
-        dll_path = os.path.join(
-            qt_library_info.location['BinariesPath' if qt_library_info.is_pyqt else 'PrefixPath'], dll
-        )
-        dll_file_paths = glob.glob(dll_path)
-        for dll_file_path in dll_file_paths:
-            dll_file_path = pathlib.Path(dll_file_path).resolve()
-            if package_parent_path in dll_file_path.parents:
+    # In PyQt5/PyQt6, the DLLs we are looking for are located in location['BinariesPath'], whereas in PySide2/PySide6,
+    # they are located in location['PrefixPath'].
+    dll_path = qt_library_info.location['BinariesPath' if qt_library_info.is_pyqt else 'PrefixPath']
+    dll_path = pathlib.Path(dll_path).resolve()
+
+    # Helper for processing single DLL pattern
+    def _process_dll_pattern(dll_pattern):
+        discovered_dlls = []
+
+        dll_files = dll_path.glob(dll_pattern)
+        for dll_file in dll_files:
+            if package_parent_path in dll_file.parents:
                 # The DLL is located within python package; preserve the layout
-                dst_dll_path = dll_file_path.parent.relative_to(package_parent_path)
+                dst_dll_dir = dll_file.parent.relative_to(package_parent_path)
             else:
                 # The DLL is not located within python package; collect into top-level directory
-                dst_dll_path = '.'
-            to_include.append((str(dll_file_path), str(dst_dll_path)))
-    if len(to_include) == num_files:
-        return to_include
-    return []
+                dst_dll_dir = '.'
+            discovered_dlls.append((str(dll_file), str(dst_dll_dir)))
+
+        return discovered_dlls
+
+    # Process mandatory patterns
+    collected_dlls = []
+    for pattern in mandatory_dll_patterns:
+        discovered_dlls = _process_dll_pattern(pattern)
+        if not discovered_dlls:
+            return []  # Mandatory pattern resulted in no DLLs; abort
+        collected_dlls += discovered_dlls
+
+    # Process optional patterns
+    for pattern in optional_dll_patterns:
+        collected_dlls += _process_dll_pattern(pattern)
+
+    return collected_dlls
 
 
 # Collect required Qt binaries, but only if all binaries in a group exist.
@@ -650,16 +659,12 @@ def get_qt_binaries(qt_library_info):
         return []
 
     # OpenGL: EGL/GLES via ANGLE, software OpenGL renderer.
-    angle_files = ['libEGL.dll', 'libGLESv2.dll', 'd3dcompiler_??.dll']
-    binaries += _find_all_or_none(angle_files, 3, qt_library_info)
-
-    opengl_software_renderer = ['opengl32sw.dll']
-    binaries += _find_all_or_none(opengl_software_renderer, 1, qt_library_info)
+    binaries += _find_all_or_none(qt_library_info, ['libEGL.dll', 'libGLESv2.dll'], ['d3dcompiler_??.dll'])
+    binaries += _find_all_or_none(qt_library_info, ['opengl32sw.dll'])
 
     # Include ICU files, if they exist.
     # See the "Deployment approach" section in ``PyInstaller/utils/hooks/qt.py``.
-    icu_files = ['icudt??.dll', 'icuin??.dll', 'icuuc??.dll']
-    binaries += _find_all_or_none(icu_files, 3, qt_library_info)
+    binaries += _find_all_or_none(qt_library_info, ['icudt??.dll', 'icuin??.dll', 'icuuc??.dll'])
 
     return binaries
 
