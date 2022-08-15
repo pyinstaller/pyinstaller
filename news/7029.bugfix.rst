@@ -1,0 +1,2 @@
+(Windows) Ensure that ANGLE DLLs (``libEGL.dll`` and ``libGLESv2.dll``)
+are collected when using Anaconda-installed ``PyQt5`` and ``Qt5``.
