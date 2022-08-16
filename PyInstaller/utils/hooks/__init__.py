@@ -88,7 +88,7 @@ def exec_statement(statement):
         datas = [ (mpl_data_dir, "") ]
 
     Notes:
-        As of v4.6.0, usage of this function is discouraged in favour of the
+        As of v5.0, usage of this function is discouraged in favour of the
         new :mod:`PyInstaller.isolated` module.
 
     """
@@ -158,7 +158,7 @@ def eval_statement(statement):
          hiddenimports.append("sqlalchemy.databases." + db)
 
     Notes:
-        As of v4.6.0, usage of this function is discouraged in favour of the
+        As of v5.0, usage of this function is discouraged in favour of the
         new :mod:`PyInstaller.isolated` module.
 
     """
