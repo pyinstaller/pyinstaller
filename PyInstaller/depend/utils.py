@@ -177,12 +177,18 @@ _ctypes_getattr_regex = bytecode.bytecode_regex(
     # Matches 'foo.bar' or 'foo.bar.whizz'.
 
     # Load the 'foo'.
-    ((?:`EXTENDED_ARG`.)*
-     (?:`LOAD_NAME`|`LOAD_GLOBAL`|`LOAD_FAST`).)
+    (
+      (?:(?:""" + bytecode._OPCODES_EXTENDED_ARG + rb""").)*
+      (?:""" + bytecode._OPCODES_FUNCTION_GLOBAL + rb""").
+    )
 
-    # Load the 'bar.whizz'.
-    ((?:(?:`EXTENDED_ARG`.)*
-     (?:`LOAD_METHOD`|`LOAD_ATTR`).)+)
+    # Load the 'bar.whizz' (one opcode per name component, each possibly preceded by name reference extension).
+    (
+      (?:
+        (?:(?:""" + bytecode._OPCODES_EXTENDED_ARG + rb""").)*
+        (?:""" + bytecode._OPCODES_FUNCTION_LOAD + rb""").
+      )+
+    )
 """
 )
 
